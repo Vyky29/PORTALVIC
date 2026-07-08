@@ -30,88 +30,194 @@
   overflow-wrap: anywhere;
 }
 
+.portal-pnlog-count--has-unread {
+  color: #15803d;
+  font-weight: 700;
+}
+
 .portal-pnlog-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
   min-width: 0;
 }
 
-/* Two-column layout: WhatsApp | Email */
-.portal-pnlog-cols {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  min-width: 0;
-  align-items: start;
-}
-
-@media (max-width: 780px) {
-  .portal-pnlog-cols {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-.portal-pnlog-col {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.portal-pnlog-col__title {
+.portal-pnlog-empty {
   margin: 0;
-  font-size: 14px;
+  max-width: 42rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  padding: 12px;
+}
+
+/* WhatsApp Web–style split */
+.portal-pnlog-chat {
+  display: grid;
+  grid-template-columns: minmax(240px, 340px) minmax(0, 1fr);
+  gap: 0;
+  min-width: 0;
+  min-height: min(70vh, 640px);
+  max-height: min(78vh, 720px);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.portal-pnlog-chat__list {
+  min-width: 0;
+  min-height: 0;
+  border-right: 1px solid rgba(15, 23, 42, 0.1);
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+}
+
+.portal-pnlog-chat__list-inner {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.portal-pnlog-chat__pane {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #ece5dd;
+  background-image: linear-gradient(180deg, rgba(236, 229, 221, 0.95), rgba(229, 221, 212, 0.98));
+}
+
+.portal-pnlog-conv {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  width: 100%;
+  margin: 0;
+  padding: 12px 14px;
+  border: 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+  font: inherit;
+  color: inherit;
+}
+
+.portal-pnlog-conv:hover {
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.portal-pnlog-conv.is-selected {
+  background: rgba(22, 163, 74, 0.12);
+  box-shadow: inset 3px 0 0 #16a34a;
+}
+
+.portal-pnlog-conv--unread .portal-pnlog-conv__who {
   font-weight: 800;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: #334155;
+}
+
+.portal-pnlog-conv__top {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.portal-pnlog-conv__who {
+  font-weight: 700;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.portal-pnlog-conv__when {
+  flex: 0 0 auto;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.portal-pnlog-conv__sub,
+.portal-pnlog-conv__preview {
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.portal-pnlog-conv__preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.portal-pnlog-pane-empty {
+  margin: auto;
+  padding: 24px;
+  text-align: center;
+  max-width: 28rem;
+  min-width: 0;
+}
+
+.portal-pnlog-pane-empty p {
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+}
+
+.portal-pnlog-pane-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: 10px;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #f0f2f5;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  min-width: 0;
+  flex: 0 0 auto;
+}
+
+.portal-pnlog-pane-back {
+  display: none;
+  flex: 0 0 auto;
+}
+
+.portal-pnlog-pane-head__text {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.portal-pnlog-pane-head__who {
+  font-weight: 800;
+  font-size: 15px;
+  overflow-wrap: anywhere;
   min-width: 0;
 }
 
-.portal-pnlog-col--whatsapp .portal-pnlog-col__title {
-  background: rgba(22, 163, 74, 0.1);
-  color: #15803d;
-}
-
-.portal-pnlog-col--email .portal-pnlog-col__title {
-  background: rgba(37, 99, 235, 0.1);
-  color: #1d4ed8;
-}
-
-.portal-pnlog-col__count {
+.portal-pnlog-pane-head__sub {
   font-size: 12px;
-  font-weight: 700;
-  background: rgba(15, 23, 42, 0.08);
-  color: inherit;
-  border-radius: 999px;
-  padding: 1px 8px;
+  overflow-wrap: anywhere;
   min-width: 0;
 }
 
-.portal-pnlog-col__list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
+.portal-pnlog-thread-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 14px 8px;
 }
 
-/* Chat thread bubbles */
 .portal-pnlog-thread {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding-top: 12px;
   min-width: 0;
 }
 
 .portal-pnlog-bubble {
-  max-width: 88%;
+  max-width: min(88%, 420px);
   min-width: 0;
   padding: 8px 11px;
   border-radius: 14px;
@@ -129,22 +235,9 @@
 
 .portal-pnlog-bubble--out {
   align-self: flex-end;
-  background: rgba(220, 252, 231, 0.9);
-  border-color: rgba(22, 163, 74, 0.25);
+  background: #dcf8c6;
+  border-color: rgba(22, 163, 74, 0.22);
   border-bottom-right-radius: 4px;
-}
-
-.portal-pnlog-col--email .portal-pnlog-bubble--out {
-  background: rgba(219, 234, 254, 0.9);
-  border-color: rgba(37, 99, 235, 0.25);
-}
-
-.portal-pnlog-bubble__subject {
-  font-weight: 700;
-  font-size: 12.5px;
-  line-height: 1.35;
-  overflow-wrap: anywhere;
-  min-width: 0;
 }
 
 .portal-pnlog-bubble__text {
@@ -171,11 +264,6 @@
   font-size: 11px;
   color: #64748b;
   white-space: nowrap;
-}
-
-.portal-pnlog-chip--read {
-  background: rgba(37, 99, 235, 0.16);
-  color: #1d4ed8;
 }
 
 .portal-pnlog-bubble__img {
@@ -206,89 +294,6 @@
   line-height: 1.1;
 }
 
-.portal-pnlog-empty {
-  margin: 0;
-  max-width: 42rem;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
-}
-
-.portal-pnlog-row {
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  border-radius: 12px;
-  background: #fff;
-  min-width: 0;
-}
-
-.portal-pnlog-row__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px 14px;
-  cursor: pointer;
-  list-style: none;
-  min-width: 0;
-}
-
-.portal-pnlog-row__head::-webkit-details-marker {
-  display: none;
-}
-
-.portal-pnlog-row[open] {
-  border-color: rgba(37, 99, 235, 0.35);
-  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.08);
-}
-
-.portal-pnlog-row__main {
-  flex: 1 1 220px;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.portal-pnlog-row__who {
-  font-weight: 700;
-  font-size: 14px;
-  overflow-wrap: anywhere;
-  min-width: 0;
-}
-
-.portal-pnlog-row__kind,
-.portal-pnlog-row__preview,
-.portal-pnlog-row__when,
-.portal-pnlog-row__by {
-  font-size: 12px;
-  line-height: 1.4;
-  overflow-wrap: anywhere;
-  min-width: 0;
-}
-
-.portal-pnlog-row__side {
-  flex: 0 1 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-  min-width: 0;
-  max-width: 100%;
-}
-
-.portal-pnlog-row__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  justify-content: flex-end;
-}
-
-.portal-pnlog-row__body {
-  padding: 0 14px 14px;
-  border-top: 1px solid rgba(15, 23, 42, 0.06);
-  min-width: 0;
-}
-
 .portal-pnlog-chip {
   display: inline-block;
   padding: 2px 8px;
@@ -317,64 +322,9 @@
   color: #1d4ed8;
 }
 
-.portal-pnlog-row--in {
-  border-color: rgba(37, 99, 235, 0.18);
-  background: rgba(239, 246, 255, 0.45);
-}
-
-.portal-pnlog-row--in[open] {
-  border-color: rgba(37, 99, 235, 0.45);
-  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.12);
-}
-
-/* Unread inbound: keep the card collapsed but flag it clearly. */
-.portal-pnlog-row--unread {
-  border-color: rgba(22, 163, 74, 0.55);
-  border-left-width: 4px;
-  background: rgba(220, 252, 231, 0.55);
-}
-
-.portal-pnlog-row--unread .portal-pnlog-row__who {
-  font-weight: 800;
-}
-
-.portal-pnlog-chip--unread {
-  background: #16a34a;
-  color: #fff;
-  font-weight: 700;
-}
-
-.portal-pnlog-count--has-unread {
-  color: #15803d;
-  font-weight: 700;
-}
-
-.portal-pnlog-reply-btn--head {
-  flex: 0 0 auto;
-  margin-top: 2px;
-}
-
-.portal-pnlog-row__side .portal-pnlog-reply-btn--head {
-  align-self: flex-end;
-}
-
-@media (max-width: 640px) {
-  .portal-pnlog-row__side .portal-pnlog-reply-btn--head {
-    align-self: flex-start;
-  }
-}
-
-.portal-pnlog-reply-hint {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.45;
-  max-width: 42rem;
-  overflow-wrap: anywhere;
-  min-width: 0;
-}
-
-.portal-pnlog-detail--in .portal-pnlog-detail__body {
-  background: rgba(255, 255, 255, 0.95);
+.portal-pnlog-chip--read {
+  background: rgba(37, 99, 235, 0.16);
+  color: #1d4ed8;
 }
 
 .portal-pnlog-chip--muted {
@@ -382,51 +332,96 @@
   color: #475569;
 }
 
-.portal-pnlog-detail__meta,
-.portal-pnlog-detail__subject {
-  margin: 0 0 8px;
-  font-size: 13px;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
+.portal-pnlog-chip--unread {
+  background: #16a34a;
+  color: #fff;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.portal-pnlog-composer {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  background: #f0f2f5;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
   min-width: 0;
 }
 
-.portal-pnlog-detail__error {
-  margin: 0 0 10px;
-  font-size: 12px;
-  overflow-wrap: anywhere;
+.portal-pnlog-composer--disabled {
+  padding: 14px 12px;
 }
 
-.portal-pnlog-detail__body {
-  margin: 0 0 12px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  background: rgba(248, 250, 252, 0.95);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  font-family: inherit;
-  font-size: 13px;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  max-height: min(50vh, 420px);
-  overflow: auto;
+.portal-pnlog-composer__input {
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
+  min-height: 52px;
+  max-height: 140px;
+  resize: vertical;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  background: #fff;
+  overflow-wrap: anywhere;
 }
 
-.portal-pnlog-detail__actions {
+.portal-pnlog-composer__input:focus {
+  outline: 2px solid rgba(22, 163, 74, 0.35);
+  outline-offset: 1px;
+}
+
+.portal-pnlog-composer__bar {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
   min-width: 0;
 }
 
-@media (max-width: 640px) {
-  .portal-pnlog-row__side {
-    align-items: flex-start;
-    width: 100%;
+.portal-pnlog-composer__status {
+  margin: 0;
+  flex: 1 1 140px;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  min-width: 0;
+  color: #b91c1c;
+}
+
+.portal-pnlog-composer__send {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 780px) {
+  .portal-pnlog-chat {
+    grid-template-columns: minmax(0, 1fr);
+    max-height: min(82vh, 720px);
   }
 
-  .portal-pnlog-row__chips {
-    justify-content: flex-start;
+  .portal-pnlog-chat__list {
+    border-right: 0;
+  }
+
+  .portal-pnlog-chat__pane {
+    display: none;
+  }
+
+  .portal-pnlog-chat--thread .portal-pnlog-chat__list {
+    display: none;
+  }
+
+  .portal-pnlog-chat--thread .portal-pnlog-chat__pane {
+    display: flex;
+  }
+
+  .portal-pnlog-pane-back {
+    display: inline-flex;
   }
 }

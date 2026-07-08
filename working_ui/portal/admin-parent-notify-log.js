@@ -1,5 +1,6 @@
 /**
- * Admin — parent/carer messages: outbound log + inbound WhatsApp replies (V3).
+ * Admin — Family messages: WhatsApp API threads (list + chat pane).
+ * Outbound log + inbound WhatsApp replies. Email is not shown here.
  */
 (function (global) {
   "use strict";
@@ -9,9 +10,6 @@
   var MEDIA_SIGNED_TTL = 3600;
   var signedMediaCache = Object.create(null);
 
-  // The media bucket is private: mint short-lived signed URLs for the admin's
-  // authenticated session (RLS lets portal admins read the objects). Cache by
-  // path so the 15s auto-refresh does not re-sign and flicker every image.
   async function resolveMediaSignedUrls(client, rows) {
     if (!client || !client.storage || !rows || !rows.length) return;
     var now = Date.now();
@@ -39,9 +37,7 @@
             }
           });
         }
-      } catch (_e) {
-        // Media just won't render this cycle; text/placeholder still shows.
-      }
+      } catch (_e) {}
     }
     rows.forEach(function (r) {
       var path = r && r.media_path ? String(r.media_path) : "";
@@ -69,19 +65,20 @@
 
   var state = {
     timeline: [],
+    threads: [],
     inboundAvailable: true,
     loading: false,
     query: "",
-    channel: "all",
     outcome: "all",
     pollTimer: null,
     realtimeChannel: null,
-    openKeys: Object.create(null),
+    selectedKey: "",
+    draftByKey: Object.create(null),
+    sending: false,
+    mobileShowThread: false,
+    stickToBottom: true,
   };
 
-  // Admin-side read tracking (no DB column): remember, per WhatsApp thread, the
-  // timestamp of the latest inbound the admin has already opened. A thread is
-  // "unread" while its newest reply is more recent than what was last seen.
   var SEEN_STORE_KEY = "portal_pnlog_seen_v1";
 
   function readSeenMap() {
@@ -109,9 +106,7 @@
           global.dispatchEvent(new CustomEvent("portal:family-msg-seen"));
         } catch (_ev) {}
       }
-    } catch (_e) {
-      // localStorage unavailable — unread flag just won't persist.
-    }
+    } catch (_e) {}
   }
 
   function isThreadUnread(t) {
@@ -170,6 +165,31 @@
     }
   }
 
+  function formatLondonShort(iso) {
+    if (!iso) return "";
+    try {
+      var d = new Date(iso);
+      var now = new Date();
+      var sameDay =
+        d.toLocaleDateString("en-GB", { timeZone: "Europe/London" }) ===
+        now.toLocaleDateString("en-GB", { timeZone: "Europe/London" });
+      if (sameDay) {
+        return d.toLocaleTimeString("en-GB", {
+          timeZone: "Europe/London",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+      return d.toLocaleDateString("en-GB", {
+        timeZone: "Europe/London",
+        day: "2-digit",
+        month: "short",
+      });
+    } catch (_e) {
+      return String(iso);
+    }
+  }
+
   function phoneDigits(phone) {
     return String(phone || "").replace(/\D/g, "");
   }
@@ -222,8 +242,8 @@
       .replace(/[\r\n\t]+/g, " ")
       .replace(/\s{2,}/g, " ")
       .trim();
-    if (t.length <= 120) return t;
-    return t.slice(0, 117) + "…";
+    if (t.length <= 90) return t;
+    return t.slice(0, 87) + "…";
   }
 
   function threadContextForPhone(phone) {
@@ -231,7 +251,6 @@
     var ctx = {
       parentName: "",
       parentWhatsapp: digits,
-      parentEmail: "",
       clientDisplay: "",
       sessionDate: "",
       venue: "",
@@ -243,7 +262,6 @@
       if (phoneDigits(row.parent_phone) !== digits) return;
       if (row.client_display && !ctx.clientDisplay) ctx.clientDisplay = String(row.client_display).trim();
       if (row.parent_name && !ctx.parentName) ctx.parentName = String(row.parent_name).trim();
-      if (row.parent_email && !ctx.parentEmail) ctx.parentEmail = String(row.parent_email).trim();
       if (row.session_date && !ctx.sessionDate) ctx.sessionDate = String(row.session_date).trim();
       if (row.venue && !ctx.venue) ctx.venue = String(row.venue).trim();
     });
@@ -253,16 +271,6 @@
   function replySubject(clientDisplay, parentName) {
     var label = String(clientDisplay || parentName || "Family").trim();
     return "Message · " + (label || "Family");
-  }
-
-  function replyDraftBody(parentName, inboundText) {
-    var greet = String(parentName || "").trim();
-    var head = greet ? "Hi " + greet + ",\n\n" : "Hi,\n\n";
-    var quote = String(inboundText || "").trim();
-    var quoteBlock = quote
-      ? "\n\n(Re their message: “" + quote.replace(/[\r\n\t]+/g, " ").slice(0, 280) + "”)\n\n"
-      : "\n\n";
-    return head + "This is ClubSENsational." + quoteBlock + "\n\nThank you,\nClubSENsational";
   }
 
   function ensureParentNotifySendConfigured() {
@@ -284,206 +292,28 @@
     return String(err || "send_failed").replace(/_/g, " ");
   }
 
-  function openReplyModal(inRow) {
-    if (!inRow) return;
-    if (typeof cfg.openModal !== "function" || typeof cfg.closeModal !== "function") {
-      cfg.toast("Reply unavailable — refresh the page.", "err");
-      return;
-    }
-    if (!ensureParentNotifySendConfigured()) {
-      cfg.toast("Send module not loaded — refresh the page.", "err");
-      return;
-    }
-    var ctx = threadContextForPhone(inRow.from_phone);
-    if (inRow.contact_name && !ctx.parentName) ctx.parentName = String(inRow.contact_name).trim();
-    var subj = replySubject(ctx.clientDisplay, ctx.parentName);
-    var body = replyDraftBody(ctx.parentName, inRow.body_text);
-    var defaultChannel = ctx.parentEmail ? "whatsapp" : "whatsapp";
-
-    cfg.openModal(
-      '<div class="modal-h"><h2 id="modalTitle">Reply to parent</h2></div><div class="modal-b">' +
-        '<p class="muted" style="margin-top:0;min-width:0;overflow-wrap:anywhere">Send via the portal WhatsApp API — same thread as this family reply. Logged in Family messages.</p>' +
-        '<div class="grid-2" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px">' +
-        '<div><label class="muted" for="pnlogParentName">Parent / carer name</label><input id="pnlogParentName" class="inp" style="max-width:100%" value="' +
-        esc(ctx.parentName) +
-        '" /></div>' +
-        (ctx.clientDisplay
-          ? '<div><label class="muted">Participant</label><p class="muted" style="margin:6px 0 0;overflow-wrap:anywhere">' +
-            esc(ctx.clientDisplay) +
-            "</p></div>"
-          : "") +
-        '<div style="grid-column:1/-1"><label class="muted" for="pnlogParentWa">WhatsApp (digits, incl. country code)</label><input id="pnlogParentWa" class="inp" style="max-width:100%" value="' +
-        esc(ctx.parentWhatsapp) +
-        '" autocomplete="off" /></div>' +
-        (ctx.parentEmail
-          ? '<div style="grid-column:1/-1"><label class="muted" for="pnlogParentEmail">Email (optional)</label><input id="pnlogParentEmail" class="inp" type="email" style="max-width:100%" value="' +
-            esc(ctx.parentEmail) +
-            '" autocomplete="off" /></div>'
-          : "") +
-        "</div>" +
-        '<fieldset style="margin:12px 0 0;padding:0;border:0;min-width:0"><legend class="muted" style="margin-bottom:6px">Send channel</legend>' +
-        '<div style="display:flex;flex-wrap:wrap;gap:12px;min-width:0">' +
-        '<label style="display:inline-flex;align-items:center;gap:6px;min-width:0"><input type="radio" name="pnlogChannel" value="whatsapp"' +
-        (defaultChannel === "whatsapp" ? " checked" : "") +
-        ' /> <span>WhatsApp</span></label>' +
-        (ctx.parentEmail
-          ? '<label style="display:inline-flex;align-items:center;gap:6px;min-width:0"><input type="radio" name="pnlogChannel" value="email" /> <span>Email</span></label>' +
-            '<label style="display:inline-flex;align-items:center;gap:6px;min-width:0"><input type="radio" name="pnlogChannel" value="both" /> <span>Both</span></label>'
-          : "") +
-        "</div></fieldset>" +
-        '<label class="muted" for="pnlogBody" style="display:block;margin-top:12px">Message</label>' +
-        '<textarea class="txa" id="pnlogBody" style="min-height:200px;max-width:100%">' +
-        esc(body) +
-        "</textarea>" +
-        '<p class="muted" id="pnlogSendStatus" style="margin:8px 0 0;min-width:0;overflow-wrap:anywhere;display:none" role="status"></p>' +
-        "</div>" +
-        '<div class="modal-f" style="flex-wrap:wrap;gap:8px">' +
-        '<button type="button" class="btn btn--ghost" id="pnlogClose">Close</button>' +
-        '<button type="button" class="btn btn--pri" id="pnlogSend" style="background:#15803d;border-color:#15803d">Send now</button>' +
-        "</div>"
-    );
-
-    function $(id) {
-      return document.getElementById(id);
-    }
-    function selectedChannel() {
-      var r = document.querySelector('input[name="pnlogChannel"]:checked');
-      return r && r.value ? String(r.value) : "whatsapp";
-    }
-    function updateSendButton() {
-      var ch = selectedChannel();
-      var wa = phoneDigits(($("pnlogParentWa") && $("pnlogParentWa").value) || "");
-      var em = (($("pnlogParentEmail") && $("pnlogParentEmail").value) || "").trim();
-      var btn = $("pnlogSend");
-      if (!btn) return;
-      var needEm = ch === "email" || ch === "both";
-      var needWa = ch === "whatsapp" || ch === "both";
-      btn.disabled = !((!needEm || em) && (!needWa || wa));
-    }
-    $("pnlogClose").onclick = function () {
-      cfg.closeModal();
-    };
-    ["pnlogBody", "pnlogParentWa", "pnlogParentEmail", "pnlogParentName"].forEach(function (id) {
-      var el = $(id);
-      if (el) el.addEventListener("input", updateSendButton);
-    });
-    document.querySelectorAll('input[name="pnlogChannel"]').forEach(function (el) {
-      el.addEventListener("change", updateSendButton);
-    });
-    updateSendButton();
-    $("pnlogSend").onclick = function () {
-      var ch = selectedChannel();
-      var msgBody = (($("pnlogBody") && $("pnlogBody").value) || "").trim();
-      var em = (($("pnlogParentEmail") && $("pnlogParentEmail").value) || "").trim();
-      var wa = phoneDigits(($("pnlogParentWa") && $("pnlogParentWa").value) || "");
-      if (!msgBody) {
-        cfg.toast("Message is empty", "err");
-        return;
-      }
-      if ((ch === "email" || ch === "both") && !em) {
-        cfg.toast("Enter an email address", "err");
-        return;
-      }
-      if ((ch === "whatsapp" || ch === "both") && !wa) {
-        cfg.toast("Enter a WhatsApp number", "err");
-        return;
-      }
-      var btn = $("pnlogSend");
-      var statusEl = $("pnlogSendStatus");
-      if (btn) {
-        btn.disabled = true;
-        btn.textContent = "Sending…";
-      }
-      if (statusEl) {
-        statusEl.style.display = "none";
-        statusEl.textContent = "";
-      }
-      void global.PortalParentNotifySend.send({
-        kind: "custom",
-        channel: ch,
-        parentName: (($("pnlogParentName") && $("pnlogParentName").value) || "").trim(),
-        parentEmail: em,
-        parentWhatsapp: wa,
-        subject: subj,
-        body: msgBody,
-        clientDisplay: ctx.clientDisplay || null,
-        sessionDate: ctx.sessionDate || null,
-        venue: ctx.venue || null,
-        contextWaId: String(inRow.context_wa_id || "").trim() || null,
-      }).then(function (res) {
-        if (btn) {
-          btn.disabled = false;
-          btn.textContent = "Send now";
-        }
-        updateSendButton();
-        if (!res || !res.ok) {
-          var err = formatSendError(res && res.error, res && res.data);
-          if (statusEl) {
-            statusEl.style.display = "block";
-            statusEl.textContent = err;
-          } else {
-            cfg.toast(err, "err");
-          }
-          return;
-        }
-        var msg =
-          global.PortalParentNotifySend && typeof global.PortalParentNotifySend.formatSendResult === "function"
-            ? global.PortalParentNotifySend.formatSendResult(res.data)
-            : "Sent.";
-        cfg.toast(msg, "ok");
-        cfg.closeModal();
-        void loadRows(true);
-      }).catch(function () {
-        if (btn) {
-          btn.disabled = false;
-          btn.textContent = "Send now";
-        }
-        updateSendButton();
-        if (statusEl) {
-          statusEl.style.display = "block";
-          statusEl.textContent = "Send failed — check your connection.";
-        } else {
-          cfg.toast("Send failed", "err");
-        }
-      });
-    };
-    var backdrop = document.getElementById("modalBackdrop");
-    if (backdrop) {
-      backdrop.onclick = function (e) {
-        if (e.target === backdrop) cfg.closeModal();
-      };
-    }
-  }
-
-  function normEmail(e) {
-    return String(e || "").trim().toLowerCase();
-  }
-
-  // Group the flat timeline into per-family conversation threads, split by
-  // channel so admin sees a WhatsApp column and an Email column.
-  function buildThreads(items) {
+  /** WhatsApp threads only (email stays in DB / other screens). */
+  function buildWhatsAppThreads(items) {
     var wa = {};
-    var em = {};
     function waThread(key) {
       if (!wa[key]) {
         wa[key] = {
-          key: key, channel: "whatsapp", name: "", client: "",
-          phone: key, email: "", events: [], lastAt: "",
-          hasInbound: false, hasFailed: false, hasSent: false, lastInboundId: "",
+          key: key,
+          channel: "whatsapp",
+          name: "",
+          client: "",
+          phone: key,
+          events: [],
+          lastAt: "",
+          hasInbound: false,
+          hasFailed: false,
+          hasSent: false,
+          lastInboundId: "",
           lastInboundAt: "",
+          lastInboundWaId: "",
         };
       }
       return wa[key];
-    }
-    function emThread(key) {
-      if (!em[key]) {
-        em[key] = {
-          key: key, channel: "email", name: "", client: "",
-          phone: "", email: key, events: [], lastAt: "",
-          hasInbound: false, hasFailed: false, hasSent: false, lastInboundId: "",
-        };
-      }
-      return em[key];
     }
     (items || []).forEach(function (item) {
       var row = item.row;
@@ -496,66 +326,59 @@
           meta.source === "parent_portal" ||
           String(row.wa_message_id || "").indexOf("app:") === 0;
         t.events.push({
-          dir: "in", when: row.created_at, body: row.body_text,
-          channel: "whatsapp", fromApp: fromApp, inboundId: row.id, row: row,
+          dir: "in",
+          when: row.created_at,
+          body: row.body_text,
+          channel: "whatsapp",
+          fromApp: fromApp,
+          inboundId: row.id,
+          row: row,
           messageType: String(row.message_type || "").toLowerCase(),
-          mediaUrl: row.media_url || "", mediaMime: String(row.media_mime || ""),
+          mediaUrl: row.media_url || "",
+          mediaMime: String(row.media_mime || ""),
         });
         t.hasInbound = true;
         t.lastInboundId = String(row.id || "");
+        t.lastInboundWaId = String(row.wa_message_id || row.context_wa_id || "").trim();
         var inAt = String(row.created_at || "");
         if (inAt > t.lastInboundAt) t.lastInboundAt = inAt;
         if (row.contact_name && !t.name) t.name = String(row.contact_name).trim();
         return;
       }
       var ch = String(row.channel || "").toLowerCase();
-      if (ch === "whatsapp" || ch === "both") {
-        var wkey = phoneDigits(row.parent_phone);
-        if (wkey) {
-          var wt = waThread(wkey);
-          wt.events.push({
-            dir: "out", when: row.created_at, body: row.body_text, kind: row.kind,
-            subject: row.subject, sentBy: row.sent_by_email, status: row.whatsapp_status,
-            channel: "whatsapp", row: row,
-          });
-          if (!wt.name) wt.name = String(row.parent_name || row.client_display || "").trim();
-          if (row.client_display && !wt.client) wt.client = String(row.client_display).trim();
-          if (String(row.whatsapp_status || "").toLowerCase() === "failed") wt.hasFailed = true;
-          else wt.hasSent = true;
-        }
-      }
-      if (ch === "email" || ch === "both") {
-        var ekey = normEmail(row.parent_email);
-        if (ekey) {
-          var et = emThread(ekey);
-          et.events.push({
-            dir: "out", when: row.created_at, body: row.body_text, kind: row.kind,
-            subject: row.subject, sentBy: row.sent_by_email, status: row.email_status,
-            channel: "email", row: row,
-          });
-          if (!et.name) et.name = String(row.parent_name || row.client_display || "").trim();
-          if (row.client_display && !et.client) et.client = String(row.client_display).trim();
-          if (String(row.email_status || "").toLowerCase() === "failed") et.hasFailed = true;
-          else if (String(row.email_status || "").toLowerCase() === "sent") et.hasSent = true;
-        }
-      }
+      if (ch !== "whatsapp" && ch !== "both") return;
+      var wkey = phoneDigits(row.parent_phone);
+      if (!wkey) return;
+      var wt = waThread(wkey);
+      wt.events.push({
+        dir: "out",
+        when: row.created_at,
+        body: row.body_text,
+        kind: row.kind,
+        subject: row.subject,
+        sentBy: row.sent_by_email,
+        status: row.whatsapp_status,
+        channel: "whatsapp",
+        row: row,
+      });
+      if (!wt.name) wt.name = String(row.parent_name || row.client_display || "").trim();
+      if (row.client_display && !wt.client) wt.client = String(row.client_display).trim();
+      if (String(row.whatsapp_status || "").toLowerCase() === "failed") wt.hasFailed = true;
+      else wt.hasSent = true;
     });
-    function finalize(map) {
-      return Object.keys(map)
-        .map(function (k) {
-          var t = map[k];
-          t.events.sort(function (a, b) {
-            return String(a.when || "").localeCompare(String(b.when || ""));
-          });
-          t.lastAt = t.events.length ? t.events[t.events.length - 1].when : "";
-          if (!t.name) t.name = t.channel === "whatsapp" ? "+" + t.phone : t.email;
-          return t;
-        })
-        .sort(function (a, b) {
-          return String(b.lastAt || "").localeCompare(String(a.lastAt || ""));
+    return Object.keys(wa)
+      .map(function (k) {
+        var t = wa[k];
+        t.events.sort(function (a, b) {
+          return String(a.when || "").localeCompare(String(b.when || ""));
         });
-    }
-    return { whatsapp: finalize(wa), email: finalize(em) };
+        t.lastAt = t.events.length ? t.events[t.events.length - 1].when : "";
+        if (!t.name) t.name = "+" + t.phone;
+        return t;
+      })
+      .sort(function (a, b) {
+        return String(b.lastAt || "").localeCompare(String(a.lastAt || ""));
+      });
   }
 
   function threadMatches(t) {
@@ -564,8 +387,9 @@
     if (outcome === "replies" && !t.hasInbound) return false;
     if (outcome === "failed" && !t.hasFailed) return false;
     if (outcome === "sent" && !t.hasSent) return false;
+    if (outcome === "unread" && !isThreadUnread(t)) return false;
     if (!q) return true;
-    var parts = [t.name, t.phone, t.email, t.client];
+    var parts = [t.name, t.phone, t.client];
     t.events.forEach(function (e) {
       parts.push(e.body || "");
       parts.push(e.subject || "");
@@ -574,13 +398,28 @@
     return parts.join(" ").toLowerCase().indexOf(q) >= 0;
   }
 
+  function findThread(key) {
+    var want = String(key || "");
+    for (var i = 0; i < (state.threads || []).length; i++) {
+      if (state.threads[i].key === want) return state.threads[i];
+    }
+    return null;
+  }
+
   function renderMedia(ev) {
     if (!ev || !ev.mediaUrl) return "";
     var url = esc(ev.mediaUrl);
     var mime = String(ev.mediaMime || "").toLowerCase();
     if (mime.indexOf("image") === 0) {
-      return '<a href="' + url + '" target="_blank" rel="noopener"><img class="portal-pnlog-bubble__img" src="' +
-        url + '" alt="' + esc(ev.messageType || "image") + '" loading="lazy" /></a>';
+      return (
+        '<a href="' +
+        url +
+        '" target="_blank" rel="noopener"><img class="portal-pnlog-bubble__img" src="' +
+        url +
+        '" alt="' +
+        esc(ev.messageType || "image") +
+        '" loading="lazy" /></a>'
+      );
     }
     if (mime.indexOf("video") === 0) {
       return '<video class="portal-pnlog-bubble__img" src="' + url + '" controls playsinline></video>';
@@ -588,7 +427,11 @@
     if (mime.indexOf("audio") === 0) {
       return '<audio class="portal-pnlog-bubble__audio" src="' + url + '" controls></audio>';
     }
-    return '<a class="portal-pnlog-bubble__file" href="' + url + '" target="_blank" rel="noopener">Open attachment</a>';
+    return (
+      '<a class="portal-pnlog-bubble__file" href="' +
+      url +
+      '" target="_blank" rel="noopener">Open attachment</a>'
+    );
   }
 
   function renderBubble(ev) {
@@ -602,10 +445,6 @@
       metaBits.push('<span class="portal-pnlog-chip portal-pnlog-chip--muted">Parent app</span>');
     }
     metaBits.push('<span class="portal-pnlog-bubble__time">' + esc(formatLondon(ev.when)) + "</span>");
-    var subjectLine =
-      ev.channel === "email" && ev.subject
-        ? '<div class="portal-pnlog-bubble__subject">' + esc(ev.subject) + "</div>"
-        : "";
     var mediaHtml = ev.dir === "in" ? renderMedia(ev) : "";
     var bodyStr = String(ev.body || "");
     var isReaction = ev.messageType === "reaction";
@@ -618,219 +457,363 @@
       contentHtml = '<div class="portal-pnlog-bubble__text">' + esc(bodyStr) + "</div>";
     }
     return (
-      '<div class="portal-pnlog-bubble portal-pnlog-bubble--' + side + '">' +
-      subjectLine +
+      '<div class="portal-pnlog-bubble portal-pnlog-bubble--' +
+      side +
+      '">' +
       mediaHtml +
       contentHtml +
-      '<div class="portal-pnlog-bubble__meta">' + metaBits.join(" ") + "</div>" +
+      '<div class="portal-pnlog-bubble__meta">' +
+      metaBits.join(" ") +
+      "</div></div>"
+    );
+  }
+
+  function captureComposerDraft() {
+    var ta = document.getElementById("portalPnlogComposerInput");
+    if (!ta || !state.selectedKey) return;
+    state.draftByKey[state.selectedKey] = ta.value;
+  }
+
+  function isNearBottom(el) {
+    if (!el) return true;
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  }
+
+  function scrollThreadToBottom(force) {
+    var el = document.getElementById("portalPnlogThreadScroll");
+    if (!el) return;
+    if (!force && !state.stickToBottom) return;
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function selectThread(key, opts) {
+    opts = opts || {};
+    captureComposerDraft();
+    var next = String(key || "");
+    state.selectedKey = next;
+    if (next) {
+      state.mobileShowThread = true;
+      var t = findThread(next);
+      if (t) markThreadSeen(next, t.lastInboundAt || "");
+      state.stickToBottom = true;
+    } else {
+      state.mobileShowThread = false;
+    }
+    renderChat(opts.fromRefresh);
+    if (next) {
+      global.requestAnimationFrame(function () {
+        scrollThreadToBottom(true);
+        var ta = document.getElementById("portalPnlogComposerInput");
+        if (ta && !opts.fromRefresh) {
+          try {
+            ta.focus();
+          } catch (_f) {}
+        }
+      });
+    }
+  }
+
+  function renderConvListItem(t) {
+    var unread = isThreadUnread(t);
+    var sel = t.key === state.selectedKey ? " is-selected" : "";
+    var sub = t.events.length ? bodyPreview(t.events[t.events.length - 1].body) : "";
+    var subline = "+" + t.phone + (t.client ? " · " + t.client : "");
+    return (
+      '<button type="button" class="portal-pnlog-conv' +
+      sel +
+      (unread ? " portal-pnlog-conv--unread" : "") +
+      '" data-thread-key="' +
+      esc(t.key) +
+      '">' +
+      '<span class="portal-pnlog-conv__top">' +
+      '<span class="portal-pnlog-conv__who">' +
+      esc(t.name) +
+      "</span>" +
+      '<span class="portal-pnlog-conv__when muted">' +
+      esc(formatLondonShort(t.lastAt)) +
+      "</span></span>" +
+      '<span class="portal-pnlog-conv__sub muted">' +
+      esc(subline) +
+      "</span>" +
+      '<span class="portal-pnlog-conv__preview muted">' +
+      esc(sub) +
+      "</span>" +
+      (unread ? '<span class="portal-pnlog-chip portal-pnlog-chip--unread">Unread</span>' : "") +
+      "</button>"
+    );
+  }
+
+  function renderPaneEmpty() {
+    return (
+      '<div class="portal-pnlog-pane-empty">' +
+      "<p><strong>Select a conversation</strong></p>" +
+      '<p class="muted">WhatsApp threads with families appear on the left. Replies send via the Business API number.</p>' +
       "</div>"
     );
   }
 
-  function renderThreadCard(t) {
-    var who = esc(t.name);
-    var sub = t.events.length ? esc(bodyPreview(t.events[t.events.length - 1].body)) : "";
-    var when = esc(formatLondon(t.lastAt));
-    var subline =
-      t.channel === "whatsapp"
-        ? "+" + esc(t.phone) + (t.client ? " · " + esc(t.client) : "")
-        : esc(t.email) + (t.client ? " · " + esc(t.client) : "");
-    var count = t.events.length;
-    var unread = isThreadUnread(t);
-    var isOpen = !!state.openKeys[t.key];
-    var chips =
-      '<span class="portal-pnlog-chip portal-pnlog-chip--muted">' +
-      count + (count === 1 ? " msg" : " msgs") +
-      "</span>";
-    if (unread) {
-      chips =
-        '<span class="portal-pnlog-chip portal-pnlog-chip--unread">● Unread</span> ' + chips;
-    } else if (t.hasInbound) {
-      chips = statusChip("reply", "whatsapp") + " " + chips;
+  function renderComposer(t) {
+    if (!t || !t.phone) {
+      return (
+        '<div class="portal-pnlog-composer portal-pnlog-composer--disabled">' +
+        '<p class="muted" style="margin:0">No WhatsApp number for this thread.</p></div>'
+      );
     }
-    if (t.hasFailed) {
-      chips += ' <span class="portal-pnlog-chip portal-pnlog-chip--bad">Failed</span>';
-    }
-    var replyBtn =
-      t.channel === "whatsapp"
-        ? '<button type="button" class="btn btn--pri btn--sm portal-pnlog-reply-btn portal-pnlog-reply-btn--head" ' +
-          (t.lastInboundId
-            ? 'data-inbound-id="' + esc(t.lastInboundId) + '"'
-            : 'data-thread-phone="' + esc(t.phone) + '"') +
-          ">Reply</button>"
-        : "";
-    // Unread threads start collapsed (photo 2 + alert); admin opens to read
-    // (photo 3). Manually-opened threads stay open across the 15s auto-refresh.
-    var openAttr = isOpen ? " open" : "";
+    var draft = state.draftByKey[t.key] != null ? state.draftByKey[t.key] : "";
+    var disabled = state.sending ? " disabled" : "";
     return (
-      '<details class="portal-pnlog-row portal-pnlog-row--' +
-      (t.channel === "whatsapp" ? "in" : "out") +
-      (unread ? " portal-pnlog-row--unread" : "") +
-      '"' + openAttr +
-      ' data-thread-key="' + esc(t.key) + '"' +
-      ' data-last-inbound-at="' + esc(t.lastInboundAt || "") + '">' +
-      '<summary class="portal-pnlog-row__head">' +
-      '<span class="portal-pnlog-row__main">' +
-      '<span class="portal-pnlog-row__who">' + who + "</span>" +
-      '<span class="portal-pnlog-row__kind muted">' + subline + "</span>" +
-      '<span class="portal-pnlog-row__preview muted">' + sub + "</span>" +
-      "</span>" +
-      '<span class="portal-pnlog-row__side">' +
-      '<span class="portal-pnlog-row__chips">' + chips + "</span>" +
-      '<span class="portal-pnlog-row__when muted">' + when + "</span>" +
-      replyBtn +
-      "</span></summary>" +
-      '<div class="portal-pnlog-row__body">' +
+      '<div class="portal-pnlog-composer">' +
+      '<textarea id="portalPnlogComposerInput" class="portal-pnlog-composer__input" rows="2" placeholder="Type a WhatsApp reply…" maxlength="4000"' +
+      disabled +
+      ">" +
+      esc(draft) +
+      "</textarea>" +
+      '<div class="portal-pnlog-composer__bar">' +
+      '<p id="portalPnlogComposerStatus" class="portal-pnlog-composer__status muted" role="status"></p>' +
+      '<button type="button" class="btn btn--pri portal-pnlog-composer__send" id="portalPnlogComposerSend" style="background:#15803d;border-color:#15803d"' +
+      disabled +
+      ">" +
+      (state.sending ? "Sending…" : "Send") +
+      "</button></div></div>"
+    );
+  }
+
+  function renderThreadPane(t) {
+    if (!t) return renderPaneEmpty();
+    var subline = "+" + t.phone + (t.client ? " · " + t.client : "");
+    return (
+      '<div class="portal-pnlog-pane-head">' +
+      '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-pane-back" id="portalPnlogBack">← Back</button>' +
+      '<div class="portal-pnlog-pane-head__text">' +
+      '<div class="portal-pnlog-pane-head__who">' +
+      esc(t.name) +
+      "</div>" +
+      '<div class="portal-pnlog-pane-head__sub muted">' +
+      esc(subline) +
+      "</div></div></div>" +
+      '<div class="portal-pnlog-thread-scroll" id="portalPnlogThreadScroll">' +
       '<div class="portal-pnlog-thread">' +
-      t.events.map(renderBubble).join("") +
-      "</div></div></details>"
+      (t.events.length
+        ? t.events.map(renderBubble).join("")
+        : '<p class="muted portal-pnlog-empty">No messages in this thread yet.</p>') +
+      "</div></div>" +
+      renderComposer(t)
     );
   }
 
-  function renderColumn(title, channel, threads) {
-    var cards = threads.length
-      ? threads.map(renderThreadCard).join("")
-      : '<p class="muted portal-pnlog-empty">No ' +
-        (channel === "whatsapp" ? "WhatsApp" : "email") +
-        " conversations match your filters.</p>";
-    return (
-      '<section class="portal-pnlog-col portal-pnlog-col--' + channel + '">' +
-      '<h2 class="portal-pnlog-col__title">' + esc(title) +
-      ' <span class="portal-pnlog-col__count">' + threads.length + "</span></h2>" +
-      '<div class="portal-pnlog-col__list">' + cards + "</div>" +
-      "</section>"
-    );
-  }
-
-  function renderList(items) {
+  function renderChat(fromRefresh) {
     var host = document.getElementById("portalParentNotifyLogList");
     var countEl = document.getElementById("portalParentNotifyLogCount");
     if (!host) return;
-    var grouped = buildThreads(items);
-    var ch = String(state.channel || "all").toLowerCase();
-    var showWa = ch === "all" || ch === "both" || ch === "whatsapp";
-    var showEm = ch === "all" || ch === "both" || ch === "email";
-    var waThreads = grouped.whatsapp.filter(threadMatches);
-    var emThreads = grouped.email.filter(threadMatches);
-    var unreadCount = 0;
-    if (showWa) {
-      waThreads.forEach(function (t) {
-        if (isThreadUnread(t)) unreadCount += 1;
-      });
+
+    var prevScroll = document.getElementById("portalPnlogThreadScroll");
+    if (fromRefresh && prevScroll) {
+      state.stickToBottom = isNearBottom(prevScroll);
     }
+    if (!fromRefresh) captureComposerDraft();
+
+    var threads = (state.threads || []).filter(threadMatches);
+    var unreadCount = 0;
+    threads.forEach(function (t) {
+      if (isThreadUnread(t)) unreadCount += 1;
+    });
+
     if (countEl) {
-      var parts = [];
-      if (showWa) parts.push(waThreads.length + " WhatsApp");
-      if (showEm) parts.push(emThreads.length + " email");
       countEl.textContent =
-        parts.join(" · ") + " conversation" +
-        ((showWa ? waThreads.length : 0) + (showEm ? emThreads.length : 0) === 1 ? "" : "s") +
+        threads.length +
+        " WhatsApp conversation" +
+        (threads.length === 1 ? "" : "s") +
         (unreadCount ? " · " + unreadCount + " unread" : "") +
-        " · grouped by family, newest first";
+        " · newest first";
       countEl.classList.toggle("portal-pnlog-count--has-unread", unreadCount > 0);
     }
-    if ((!showWa || !waThreads.length) && (!showEm || !emThreads.length)) {
-      host.innerHTML =
-        '<p class="muted portal-pnlog-empty">No conversations match your filters. Outbound sends appear after <strong>Send now</strong>. WhatsApp replies appear here once the Meta webhook is connected.</p>';
+
+    if (state.selectedKey && !findThread(state.selectedKey)) {
+      // Keep selection if filtered out of list but still in full threads.
+      var still = null;
+      for (var i = 0; i < (state.threads || []).length; i++) {
+        if (state.threads[i].key === state.selectedKey) {
+          still = state.threads[i];
+          break;
+        }
+      }
+      if (!still) {
+        state.selectedKey = "";
+        state.mobileShowThread = false;
+      }
+    }
+
+    var selected = state.selectedKey ? findThread(state.selectedKey) : null;
+    var listHtml = threads.length
+      ? threads.map(renderConvListItem).join("")
+      : '<p class="muted portal-pnlog-empty">No WhatsApp conversations match your filters. Outbound sends and inbound replies to the API number appear here.</p>';
+
+    var shellCls =
+      "portal-pnlog-chat" +
+      (state.mobileShowThread && state.selectedKey ? " portal-pnlog-chat--thread" : "");
+
+    host.innerHTML =
+      '<div class="' +
+      shellCls +
+      '">' +
+      '<aside class="portal-pnlog-chat__list" aria-label="Conversations">' +
+      '<div class="portal-pnlog-chat__list-inner">' +
+      listHtml +
+      "</div></aside>" +
+      '<section class="portal-pnlog-chat__pane" aria-label="Thread">' +
+      renderThreadPane(selected) +
+      "</section></div>";
+
+    bindChatInteractions();
+    if (selected) {
+      global.requestAnimationFrame(function () {
+        scrollThreadToBottom(!!fromRefresh ? state.stickToBottom : true);
+      });
+    }
+  }
+
+  function sendComposerReply() {
+    if (state.sending) return;
+    var t = findThread(state.selectedKey);
+    if (!t || !t.phone) return;
+    var ta = document.getElementById("portalPnlogComposerInput");
+    var statusEl = document.getElementById("portalPnlogComposerStatus");
+    var btn = document.getElementById("portalPnlogComposerSend");
+    var msgBody = ta ? String(ta.value || "").trim() : "";
+    if (!msgBody) {
+      if (statusEl) statusEl.textContent = "Message is empty.";
       return;
     }
-    var cols = "";
-    if (showWa) cols += renderColumn("WhatsApp", "whatsapp", waThreads);
-    if (showEm) cols += renderColumn("Email", "email", emThreads);
-    host.innerHTML = '<div class="portal-pnlog-cols">' + cols + "</div>";
-    bindReplyActions();
-    bindThreadToggles(host);
-  }
-
-  // <details> "toggle" events do not bubble, so bind each freshly-rendered row.
-  // Opening a thread marks it read (clears the unread alert) and keeps it open
-  // across the auto-refresh; closing forgets the open state.
-  function bindThreadToggles(host) {
-    var rows = host.querySelectorAll("details.portal-pnlog-row[data-thread-key]");
-    rows.forEach(function (row) {
-      row.addEventListener("toggle", function () {
-        var key = row.getAttribute("data-thread-key") || "";
-        if (!key) return;
-        if (row.open) {
-          state.openKeys[key] = true;
-          markThreadSeen(key, row.getAttribute("data-last-inbound-at") || "");
-          if (row.classList.contains("portal-pnlog-row--unread")) {
-            row.classList.remove("portal-pnlog-row--unread");
-            var chip = row.querySelector(".portal-pnlog-chip--unread");
-            if (chip) chip.remove();
-          }
-        } else {
-          delete state.openKeys[key];
-        }
-      });
-    });
-  }
-
-  function findInboundRow(id) {
-    var want = String(id || "").trim();
-    if (!want) return null;
-    for (var i = 0; i < (state.timeline || []).length; i++) {
-      var item = state.timeline[i];
-      if (item.direction !== "in") continue;
-      if (String(item.row.id || "") === want) return item.row;
+    if (!ensureParentNotifySendConfigured()) {
+      if (statusEl) statusEl.textContent = "Send module not loaded — refresh the page.";
+      return;
     }
-    return null;
-  }
+    var ctx = threadContextForPhone(t.phone);
+    var contextWaId = "";
+    if (t.lastInboundId) {
+      for (var i = t.events.length - 1; i >= 0; i--) {
+        if (t.events[i].dir === "in" && t.events[i].row) {
+          contextWaId = String(
+            t.events[i].row.wa_message_id || t.events[i].row.context_wa_id || ""
+          ).trim();
+          break;
+        }
+      }
+    }
+    state.sending = true;
+    state.draftByKey[t.key] = msgBody;
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Sending…";
+    }
+    if (ta) ta.disabled = true;
+    if (statusEl) statusEl.textContent = "";
 
-  function bindReplyActions() {
-    var list = document.getElementById("portalParentNotifyLogList");
-    if (!list || list.getAttribute("data-reply-bound") === "1") return;
-    list.setAttribute("data-reply-bound", "1");
-    list.addEventListener("mousedown", function (e) {
-      if (e.target.closest(".portal-pnlog-reply-btn")) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    });
-    list.addEventListener("click", function (e) {
-      var btn = e.target.closest(".portal-pnlog-reply-btn");
-      if (!btn) return;
-      e.preventDefault();
-      e.stopPropagation();
-      var ownerRow = btn.closest("details.portal-pnlog-row[data-thread-key]");
-      if (ownerRow) {
-        var okey = ownerRow.getAttribute("data-thread-key") || "";
-        markThreadSeen(okey, ownerRow.getAttribute("data-last-inbound-at") || "");
-        ownerRow.classList.remove("portal-pnlog-row--unread");
-      }
-      var id = btn.getAttribute("data-inbound-id");
-      if (id) {
-        var row = findInboundRow(id);
-        if (row) {
-          openReplyModal(row);
+    void global.PortalParentNotifySend.send({
+      kind: "custom",
+      channel: "whatsapp",
+      parentName: ctx.parentName || t.name || "",
+      parentWhatsapp: t.phone,
+      subject: replySubject(ctx.clientDisplay || t.client, ctx.parentName || t.name),
+      body: msgBody,
+      clientDisplay: ctx.clientDisplay || t.client || null,
+      sessionDate: ctx.sessionDate || null,
+      venue: ctx.venue || null,
+      contextWaId: contextWaId || null,
+    })
+      .then(function (res) {
+        state.sending = false;
+        if (!res || !res.ok) {
+          var err = formatSendError(res && res.error, res && res.data);
+          if (statusEl) statusEl.textContent = err;
+          else cfg.toast(err, "err");
+          renderChat(true);
           return;
         }
+        state.draftByKey[t.key] = "";
+        var msg =
+          global.PortalParentNotifySend && typeof global.PortalParentNotifySend.formatSendResult === "function"
+            ? global.PortalParentNotifySend.formatSendResult(res.data)
+            : "Sent.";
+        cfg.toast(msg, "ok");
+        state.stickToBottom = true;
+        void loadRows(true);
+      })
+      .catch(function () {
+        state.sending = false;
+        if (statusEl) statusEl.textContent = "Send failed — check your connection.";
+        else cfg.toast("Send failed", "err");
+        renderChat(true);
+      });
+  }
+
+  function bindChatInteractions() {
+    var host = document.getElementById("portalParentNotifyLogList");
+    if (!host || host.getAttribute("data-chat-bound") === "1") return;
+    host.setAttribute("data-chat-bound", "1");
+
+    host.addEventListener("click", function (e) {
+      var back = e.target.closest("#portalPnlogBack");
+      if (back) {
+        e.preventDefault();
+        state.mobileShowThread = false;
+        captureComposerDraft();
+        renderChat(false);
+        return;
       }
-      var phone = btn.getAttribute("data-thread-phone");
-      if (phone) {
-        openReplyModal({ from_phone: phone, contact_name: "", body_text: "", context_wa_id: null });
+      var sendBtn = e.target.closest("#portalPnlogComposerSend");
+      if (sendBtn) {
+        e.preventDefault();
+        sendComposerReply();
+        return;
+      }
+      var conv = e.target.closest(".portal-pnlog-conv[data-thread-key]");
+      if (conv) {
+        e.preventDefault();
+        selectThread(conv.getAttribute("data-thread-key") || "");
       }
     });
+
+    host.addEventListener("input", function (e) {
+      if (e.target && e.target.id === "portalPnlogComposerInput" && state.selectedKey) {
+        state.draftByKey[state.selectedKey] = e.target.value;
+        var statusEl = document.getElementById("portalPnlogComposerStatus");
+        if (statusEl) statusEl.textContent = "";
+      }
+    });
+
+    host.addEventListener("keydown", function (e) {
+      if (!e.target || e.target.id !== "portalPnlogComposerInput") return;
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendComposerReply();
+      }
+    });
+
+    host.addEventListener(
+      "scroll",
+      function (e) {
+        if (e.target && e.target.id === "portalPnlogThreadScroll") {
+          state.stickToBottom = isNearBottom(e.target);
+        }
+      },
+      true
+    );
   }
 
   function bindFilters() {
     var search = document.getElementById("portalParentNotifyLogSearch");
-    var channel = document.getElementById("portalParentNotifyLogChannel");
     var outcome = document.getElementById("portalParentNotifyLogOutcome");
     var refresh = document.getElementById("portalParentNotifyLogRefresh");
     function apply() {
+      captureComposerDraft();
       state.query = search ? search.value : "";
-      state.channel = channel ? channel.value : "all";
       state.outcome = outcome ? outcome.value : "all";
-      renderList(state.timeline);
+      renderChat(false);
     }
     if (search && !search.getAttribute("data-bound")) {
       search.setAttribute("data-bound", "1");
       search.addEventListener("input", apply);
-    }
-    if (channel && !channel.getAttribute("data-bound")) {
-      channel.setAttribute("data-bound", "1");
-      channel.addEventListener("change", apply);
     }
     if (outcome && !outcome.getAttribute("data-bound")) {
       outcome.setAttribute("data-bound", "1");
@@ -858,7 +841,7 @@
       return;
     }
     state.loading = true;
-    if (statusEl) {
+    if (statusEl && !force) {
       statusEl.textContent = "Loading…";
       statusEl.className = "portal-forms-status";
     }
@@ -894,30 +877,29 @@
       }
 
       state.timeline = mergeTimeline(outboundRes.data || [], inbound);
+      state.threads = buildWhatsAppThreads(state.timeline);
       if (statusEl) {
-        var note = state.timeline.length >= FETCH_LIMIT
-          ? "Showing latest " + FETCH_LIMIT + " messages."
-          : "";
+        var note = state.timeline.length >= FETCH_LIMIT ? "Showing latest " + FETCH_LIMIT + " messages." : "";
         if (!state.inboundAvailable) {
-          note = (note ? note + " " : "") +
+          note =
+            (note ? note + " " : "") +
             "Inbound replies not available yet — apply DB migration and connect Meta webhook.";
         }
         statusEl.textContent = note;
         statusEl.className = "portal-forms-status";
       }
-      renderList(state.timeline);
+      renderChat(true);
     } catch (e) {
       console.error("[parent-notify-log]", e);
       state.timeline = [];
+      state.threads = [];
       if (statusEl) {
         statusEl.textContent =
-          (e && e.message) ||
-          "Could not load messages — check you are signed in as admin.";
+          (e && e.message) || "Could not load messages — check you are signed in as admin.";
         statusEl.className = "portal-forms-status is-error";
       }
       if (listEl) {
-        listEl.innerHTML =
-          '<p class="muted portal-pnlog-empty">Could not load the message log.</p>';
+        listEl.innerHTML = '<p class="muted portal-pnlog-empty">Could not load the message log.</p>';
       }
     } finally {
       state.loading = false;
@@ -928,20 +910,15 @@
     return (
       '<div id="portalParentNotifyLogRoot" class="portal-day-ops-embed portal-pnlog-root">' +
       '<h1 class="page-title">Family messages</h1>' +
-      '<p class="page-intro">Conversations grouped by family — <strong>WhatsApp</strong> on the left, <strong>Email</strong> on the right. Each card is the full thread (our sends + their replies) with delivery ticks (Sent → Delivered → Read). Use <strong>Reply</strong> to respond in the same thread. Refreshes automatically every 15s.</p>' +
+      '<p class="page-intro">WhatsApp conversations via the Business API — pick a family on the left, read the thread, and reply in the box below (no email on this screen). Delivery ticks: Sent → Delivered → Read. Refreshes every 15s.</p>' +
       '<div class="portal-pnlog-toolbar">' +
       '<input type="search" id="portalParentNotifyLogSearch" class="inp portal-pnlog-toolbar__search" placeholder="Search participant, phone, text…" autocomplete="off" />' +
-      '<select id="portalParentNotifyLogChannel" class="sel portal-pnlog-toolbar__sel" aria-label="Channel filter">' +
-      '<option value="all">All channels</option>' +
-      '<option value="whatsapp">WhatsApp</option>' +
-      '<option value="email">Email</option>' +
-      '<option value="both">Both</option>' +
-      "</select>" +
-      '<select id="portalParentNotifyLogOutcome" class="sel portal-pnlog-toolbar__sel" aria-label="Outcome filter">' +
+      '<select id="portalParentNotifyLogOutcome" class="sel portal-pnlog-toolbar__sel" aria-label="Filter">' +
       '<option value="all">All</option>' +
+      '<option value="unread">Unread</option>' +
+      '<option value="replies">Has replies</option>' +
       '<option value="sent">Sent OK</option>' +
       '<option value="failed">Failed</option>' +
-      '<option value="replies">Replies only</option>' +
       "</select>" +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParentNotifyLogRefresh">Refresh</button>' +
       "</div>" +
@@ -1005,10 +982,6 @@
     void loadRows(false);
   }
 
-  // Lightweight unread badge count for the topbar button: how many WhatsApp
-  // family threads have an inbound reply newer than what the admin last opened.
-  // Uses the SAME per-phone key + localStorage "seen" map as the list, so the
-  // badge and the "N unread" line stay in sync without loading the full view.
   async function fetchUnreadCount(client) {
     client = client || (cfg.getClient && cfg.getClient());
     if (!client || typeof client.from !== "function") return 0;
