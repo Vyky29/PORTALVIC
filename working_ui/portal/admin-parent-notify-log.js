@@ -606,9 +606,12 @@
     var countEl = document.getElementById("portalParentNotifyLogCount");
     if (!host) return;
 
-    var prevScroll = document.getElementById("portalPnlogThreadScroll");
-    if (fromRefresh && prevScroll) {
-      state.stickToBottom = isNearBottom(prevScroll);
+    var prevThreadScroll = document.getElementById("portalPnlogThreadScroll");
+    var prevListScroll = host.querySelector(".portal-pnlog-chat__list-inner");
+    var savedListTop = prevListScroll ? prevListScroll.scrollTop : 0;
+    var savedThreadTop = prevThreadScroll ? prevThreadScroll.scrollTop : 0;
+    if (fromRefresh && prevThreadScroll) {
+      state.stickToBottom = isNearBottom(prevThreadScroll);
     }
     if (!fromRefresh) captureComposerDraft();
 
@@ -665,11 +668,23 @@
       "</section></div>";
 
     bindChatInteractions();
-    if (selected) {
-      global.requestAnimationFrame(function () {
-        scrollThreadToBottom(!!fromRefresh ? state.stickToBottom : true);
-      });
-    }
+
+    // Poll/realtime rebuilds the DOM — restore list + thread scroll so browsing
+    // older conversations is not yanked back to the newest.
+    global.requestAnimationFrame(function () {
+      var listEl = host.querySelector(".portal-pnlog-chat__list-inner");
+      if (listEl && fromRefresh) {
+        listEl.scrollTop = savedListTop;
+      }
+      if (selected) {
+        if (fromRefresh && !state.stickToBottom) {
+          var threadEl = document.getElementById("portalPnlogThreadScroll");
+          if (threadEl) threadEl.scrollTop = savedThreadTop;
+        } else {
+          scrollThreadToBottom(!fromRefresh || state.stickToBottom);
+        }
+      }
+    });
   }
 
   function sendComposerReply() {
