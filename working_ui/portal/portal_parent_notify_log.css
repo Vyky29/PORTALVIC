@@ -94,10 +94,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #eef6fb;
-  background-image:
-    radial-gradient(circle at 12% 18%, rgba(245, 197, 24, 0.14), transparent 42%),
-    radial-gradient(circle at 88% 78%, rgba(45, 132, 179, 0.1), transparent 46%);
+  background: #fff;
 }
 
 .portal-pnlog-conv {
@@ -187,8 +184,8 @@
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  background: linear-gradient(90deg, #e8f3f9 0%, #fff8e1 100%);
-  border-bottom: 1px solid rgba(45, 132, 179, 0.18);
+  background: #fff;
+  border-bottom: 1px solid rgba(45, 132, 179, 0.2);
   min-width: 0;
   flex: 0 0 auto;
 }
@@ -245,17 +242,32 @@
   gap: 4px;
 }
 
+/* Parent / inbound — corporate yellow family */
 .portal-pnlog-bubble--in {
   align-self: flex-start;
-  background: #fff;
+  background: #fff3c4;
+  border-color: rgba(245, 197, 24, 0.65);
   border-bottom-left-radius: 4px;
+  color: #5c4a00;
 }
 
+.portal-pnlog-bubble--in .portal-pnlog-bubble__meta,
+.portal-pnlog-bubble--in .portal-pnlog-bubble__time {
+  color: #8a7000;
+}
+
+/* Admin / outbound — corporate blue family */
 .portal-pnlog-bubble--out {
   align-self: flex-end;
-  background: #fff3c4;
-  border-color: rgba(245, 197, 24, 0.55);
+  background: #d7ebf5;
+  border-color: rgba(45, 132, 179, 0.45);
   border-bottom-right-radius: 4px;
+  color: #0f3d54;
+}
+
+.portal-pnlog-bubble--out .portal-pnlog-bubble__meta,
+.portal-pnlog-bubble--out .portal-pnlog-bubble__time {
+  color: #1a5f82;
 }
 
 .portal-pnlog-bubble__text {
