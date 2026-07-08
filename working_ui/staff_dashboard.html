@@ -12,6 +12,59 @@
     Edge Functions: portal-push-subscribe · portal-push-dispatch-schedule-override · webhook DB en schedule_overrides + header x-portal-webhook-secret.
     Secret Edge PORTAL_PUSH_OPEN_URL: URL HTTPS pública de este dashboard (sin barra final), p. ej. …/staff_dashboard.html en producción.
   -->
+  <script>
+    /* Zombie service-worker purge (runs inline so a stale cache-first SW cannot
+       intercept it). A legacy build (Jun 2026) registered /portal/staff-app-sw.js
+       which cached JS in `clubsensational-staff-static-*`. On installed PWAs (esp.
+       iOS) that SW + its caches survive removing the home-screen icon, so workers
+       kept seeing old roster/icons while Chrome/Safari (separate storage) were
+       fine. Delete every non-push cache + unregister every non-push SW, then
+       reload once (guarded by a session flag so it can never loop). */
+    (function () {
+      var FLAG = "portalPwaFreshV1";
+      var KEEP = "clubsensational-portal-sw";
+      try {
+        if (sessionStorage.getItem(FLAG)) return;
+      } catch (e) { return; }
+      var jobs = [];
+      var foundStale = false;
+      try {
+        if ("caches" in window) {
+          jobs.push(
+            caches.keys().then(function (keys) {
+              var bad = (keys || []).filter(function (k) {
+                return String(k).indexOf("portal-push-icons") < 0;
+              });
+              if (bad.length) foundStale = true;
+              return Promise.all(bad.map(function (k) { return caches.delete(k); }));
+            }).catch(function () {})
+          );
+        }
+      } catch (e) {}
+      try {
+        if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+          jobs.push(
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+              var bad = (regs || []).filter(function (r) {
+                var s = (r.active && r.active.scriptURL) ||
+                        (r.waiting && r.waiting.scriptURL) ||
+                        (r.installing && r.installing.scriptURL) || "";
+                return String(s).indexOf(KEEP) < 0;
+              });
+              if (bad.length) foundStale = true;
+              return Promise.all(bad.map(function (r) { return r.unregister(); }));
+            }).catch(function () {})
+          );
+        }
+      } catch (e) {}
+      Promise.all(jobs).then(function () {
+        try { sessionStorage.setItem(FLAG, "1"); } catch (e) {}
+        if (foundStale) {
+          try { window.location.reload(); } catch (e) {}
+        }
+      });
+    })();
+  </script>
   <script src="/portal/portal_hide_chat_ui.js?v=20260614-hide-chat"></script>
   <script src="/portal/staff-app-boot.js?v=20260707-cache-fresh"></script>
   <script src="/portal/portal_auth_page_gate.js?v=20260609-auth-gate"></script>
