@@ -490,6 +490,9 @@
       return !!(item && item.portalShadowingHostAlert && Array.isArray(item.portalShadowingHostLabels) && item.portalShadowingHostLabels.length);
     }
     function portalTodayItemUsesAdminShiftCardStyle(item){
+      // Combined Day Centre cards (Ikram / Emmanuel / Fadi) are the normal recurring
+      // roster, never an admin change: no yellow style even if the roster time moved.
+      if(portalTodayItemIsSpecialSegmentedCard(item)) return false;
       if(portalTodayItemShowsShadowingHostAlert(item)) return false;
       if(portalTodayItemShowsAdminShiftBadge(item)) return true;
       if(typeof portalSessionItemRosterTimeUpdated === 'function' && portalSessionItemRosterTimeUpdated(item)) return true;
@@ -505,6 +508,9 @@
     }
     function portalTodaySessionOverrideCardClass(item){
       const t = String(item && item.portalOverrideCardTone || '').trim().toLowerCase();
+      // Special segmented Day Centre cards must stay plain white — never the yellow
+      // "updated" tone, since the combined layout is their normal recurring roster.
+      if(t === 'yellow' && portalTodayItemIsSpecialSegmentedCard(item)) return '';
       if(t === 'green') return ' session-card--ov-green';
       if(t === 'yellow') return ' session-card--ov-yellow';
       if(t === 'training') return ' session-card--ov-training';
@@ -1275,7 +1281,7 @@
         push('<span class="portal-session-slot-chip portal-session-slot-chip--plain" aria-label="' + tx + '"><span>' + tx + '</span></span>');
       }
 
-      if(!isMakeUpOrTrialItem && item.kind === 'client' && item.sessionKey && !item.noSessionFeedbackRequired && !item.portalOverrideSuppressReviewOrange){
+      if(!isMakeUpOrTrialItem && !portalTodayItemIsSpecialSegmentedCard(item) && item.kind === 'client' && item.sessionKey && !item.noSessionFeedbackRequired && !item.portalOverrideSuppressReviewOrange){
         const ended = isSessionEndedForFeedback(item);
         const started = isSessionStartedForItem(item);
         const timeUpdated = portalSessionItemRosterTimeUpdated(item);
