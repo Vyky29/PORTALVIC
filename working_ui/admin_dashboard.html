@@ -23282,7 +23282,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var p = byId[String(id)];
             if(!p){ tr.style.display = 'none'; return; }
             var ok = true;
-            if(bk !== 'all' && !paxContactsMatchesBookingStatus(p, bk)) ok = false;
+            /* When searching, ignore the Booking status filter so anyone (old,
+               trial, waiting list, in sessions) can be found by name/contact. */
+            if(!q && bk !== 'all' && !paxContactsMatchesBookingStatus(p, bk)) ok = false;
             if(qv !== 'all' && !paxContactsRegQuestionHasAnswer(p, qv)) ok = false;
             if(q){
               var blob = (
