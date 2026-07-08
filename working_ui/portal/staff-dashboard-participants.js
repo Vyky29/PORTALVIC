@@ -476,7 +476,14 @@
       const sel = portalSelectedViewCalendarIsoYmd();
       return !!iso && !!sel && iso === sel;
     }
+    /** Combined Day Centre cards (Ikram / Emmanuel / Fadi) render as multi-segment
+     *  cards; they are the normal recurring roster, not an admin change, so they must
+     *  never carry the yellow "Updated by admin" style or chip. */
+    function portalTodayItemIsSpecialSegmentedCard(item){
+      return !!(item && Array.isArray(item.segments) && item.segments.length);
+    }
     function portalTodayItemShowsAdminShiftBadge(item){
+      if(portalTodayItemIsSpecialSegmentedCard(item)) return false;
       return !!(item && item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge);
     }
     function portalTodayItemShowsShadowingHostAlert(item){
@@ -1277,7 +1284,7 @@
         }
       }
 
-      if(!isMakeUpOrTrialItem && !chips.length && item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge){
+      if(!isMakeUpOrTrialItem && !chips.length && item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge && !portalTodayItemIsSpecialSegmentedCard(item)){
         push(portalSessionUpdatedChipHtml());
       }
       return chips.join('');
