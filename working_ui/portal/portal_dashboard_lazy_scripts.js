@@ -9,7 +9,7 @@
     "/portal/teflon_guide_demo_data.js?v=20260604-guide-roster",
     "/portal/teflon_guide_demo_merge.js?v=20260604-guide-roster",
     "/portal/portal_participant_achievements.js?v=20260708-camera-inapp",
-    "/portal/portal_client_sessions_overview.js?v=20260607-no-opt-labels",
+    "/portal/portal_client_sessions_overview.js?v=20260709-overview-by-service",
     "/portal/portal_induction.js?v=20260614-induction-canonical",
     "/portal/portal_induction_bind.js?v=20260604-induction-persist",
     "/portal/portal_guide_ack.js?v=20260614-no-menu-guide",

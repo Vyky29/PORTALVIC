@@ -709,6 +709,133 @@
     );
   }
 
+  /** Prefer a stable programme order so Aquatic / Climbing stay side-by-side for multi-service kids. */
+  var SERVICE_GROUP_ORDER = [
+    "Aquatic Activity",
+    "Climbing Activity",
+    "Multi-Activity",
+    "Physical Activity",
+    "Bespoke Programme",
+    "Day centre",
+  ];
+
+  function serviceGroupSortKey(label) {
+    var i = SERVICE_GROUP_ORDER.indexOf(label);
+    return i >= 0 ? i : 100;
+  }
+
+  /**
+   * Split feedback by programme. Mixing Climbing “full support” with Aquatic
+   * independence pulls the % down and misrepresents each activity.
+   */
+  function groupFeedbackByService(list) {
+    var map = Object.create(null);
+    (list || []).forEach(function (r) {
+      var label = displayProgrammeName(r && r.service);
+      if (!map[label]) map[label] = [];
+      map[label].push(r);
+    });
+    return Object.keys(map)
+      .sort(function (a, b) {
+        var da = serviceGroupSortKey(a) - serviceGroupSortKey(b);
+        if (da !== 0) return da;
+        return a.localeCompare(b);
+      })
+      .map(function (label) {
+        return { label: label, rows: map[label] };
+      });
+  }
+
+  function serviceToneClass(label) {
+    var s = String(label || "").toLowerCase();
+    if (/aquatic|swim/.test(s)) return "aquatic";
+    if (/climb/.test(s)) return "climbing";
+    if (/multi/.test(s)) return "multi";
+    if (/physical|fitness/.test(s)) return "physical";
+    if (/bespoke/.test(s)) return "bespoke";
+    if (/day\s*centre|daycentre/.test(s)) return "daycentre";
+    return "default";
+  }
+
+  function serviceOverviewBlockHtml(group, termLabel, opts) {
+    var label = group.label;
+    var rows = group.rows || [];
+    var term = clean(termLabel || TERM_LABEL);
+    var includeTable = !!(opts && opts.includeTable);
+    var tableHtml = "";
+    if (includeTable) {
+      tableHtml =
+        opts && opts.parentTable
+          ? parentFeedbackTableHtml(rows)
+          : feedbackTableHtml(rows, (opts && opts.incMap) || Object.create(null));
+    }
+    /* Per-service attendance must come from this group's rows — never the
+       whole-child attendance_summary (that mixes programmes). */
+    var kpiOpts = {
+      includeAttendance: !!(opts && opts.includeAttendance),
+      attendanceSummary: null,
+    };
+    return (
+      '<section class="pcso-service-block pcso-service-block--' +
+      esc(serviceToneClass(label)) +
+      '" aria-label="' +
+      esc(label) +
+      ' overview">' +
+      '<header class="pcso-service-block__head">' +
+      '<h4 class="pcso-service-block__title">' +
+      esc(label) +
+      "</h4>" +
+      '<p class="pcso-service-block__meta">' +
+      esc(term) +
+      " · " +
+      rows.length +
+      (rows.length === 1 ? " session" : " sessions") +
+      "</p></header>" +
+      kpiSlabHtml(rows, term, kpiOpts) +
+      (includeTable
+        ? '<div class="pcso-service-block__table">' + tableHtml + "</div>"
+        : "") +
+      "</section>"
+    );
+  }
+
+  /**
+   * One KPI slab when a single programme; otherwise one block per service so
+   * independence / engagement % stay honest (e.g. Rodin Climbing vs Aquatic).
+   */
+  function overviewByServiceHtml(feedback, termLabel, opts) {
+    var groups = groupFeedbackByService(feedback);
+    if (!groups.length) {
+      return kpiSlabHtml(feedback, termLabel, opts);
+    }
+    if (groups.length === 1) {
+      var only = groups[0];
+      var single =
+        kpiSlabHtml(only.rows, termLabel, opts) +
+        (opts && opts.includeTable
+          ? '<section class="pcso-feed-section">' +
+            '<div class="pcso-feed-head"><h4 class="pcso-section__title">' +
+            esc((opts && opts.tableTitle) || "Session feedback") +
+            "</h4></div>" +
+            (opts.parentTable
+              ? parentFeedbackTableHtml(only.rows)
+              : feedbackTableHtml(only.rows, (opts && opts.incMap) || Object.create(null))) +
+            "</section>"
+          : "");
+      return single;
+    }
+    var note =
+      '<p class="pcso-service-split-note" role="note">Stats are shown <strong>per activity</strong> — mixing programmes (e.g. Climbing + Aquatic) would distort independence and engagement.</p>';
+    return (
+      note +
+      groups
+        .map(function (g) {
+          return serviceOverviewBlockHtml(g, termLabel, opts);
+        })
+        .join("")
+    );
+  }
+
   function incidentLookup(incidents) {
     const map = Object.create(null);
     incidents.forEach(function (inc) {
@@ -844,11 +971,12 @@
     const incMap = incidentLookup(incidents);
 
     hostEl.innerHTML =
-      kpiSlabHtml(feedback) +
-      '<section class="pcso-feed-section">' +
-      '<div class="pcso-feed-head"><h4 class="pcso-section__title">All feedbacks</h4></div>' +
-      feedbackTableHtml(feedback, incMap) +
-      "</section>" +
+      overviewByServiceHtml(feedback, TERM_LABEL, {
+        includeTable: true,
+        parentTable: false,
+        tableTitle: "All feedbacks",
+        incMap: incMap,
+      }) +
       incidentsSectionHtml(incidents);
   }
 
@@ -1031,12 +1159,18 @@
     var hideAchievements = !!(opts && opts.hideAchievements);
     var term = clean((opts && opts.term_label) || TERM_LABEL);
     var feedback = sessions.map(mapParentSessionRow);
+    var groups = groupFeedbackByService(feedback);
+    var multi = groups.length > 1;
+    /* Whole-child attendance_summary only when a single programme — otherwise
+       each service block counts attendance from its own rows. */
     hostEl.innerHTML =
-      kpiSlabHtml(feedback, term, { includeAttendance: true, attendanceSummary: opts && opts.attendance_summary }) +
-      '<section class="pcso-feed-section">' +
-      '<div class="pcso-feed-head"><h4 class="pcso-section__title">Session feedback</h4></div>' +
-      parentFeedbackTableHtml(feedback) +
-      "</section>" +
+      overviewByServiceHtml(feedback, term, {
+        includeAttendance: true,
+        attendanceSummary: multi ? null : opts && opts.attendance_summary,
+        includeTable: true,
+        parentTable: true,
+        tableTitle: "Session feedback",
+      }) +
       (hideAchievements
         ? ""
         : '<section class="pcso-feed-section pp-ach-section">' +

@@ -296,6 +296,79 @@ body.portal-sessions-overview-open{
   flex-shrink:0;
 }
 
+/* Multi-service kids: one KPI + table block per programme (no mixed %). */
+.pcso-service-split-note{
+  margin:0 0 10px;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid rgba(45,132,179,.22);
+  background:#f0f9ff;
+  color:#0c4a6e;
+  font-size:12px;
+  line-height:1.45;
+  overflow-wrap:break-word;
+  min-width:0;
+}
+.pcso-service-block{
+  margin:0 0 14px;
+  padding:12px;
+  border:1px solid rgba(23,50,71,.1);
+  border-radius:14px;
+  background:#fff;
+  box-shadow:0 2px 10px rgba(23,50,71,.04);
+  min-width:0;
+  overflow:hidden;
+}
+.pcso-service-block__head{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:6px 12px;
+  margin:0 0 10px;
+  min-width:0;
+  padding-bottom:8px;
+  border-bottom:1px solid rgba(23,50,71,.08);
+}
+.pcso-service-block__title{
+  margin:0;
+  font-size:15px;
+  font-weight:800;
+  color:var(--ink);
+  min-width:0;
+  overflow-wrap:break-word;
+}
+.pcso-service-block__meta{
+  margin:0;
+  font-size:11px;
+  color:var(--muted);
+  min-width:0;
+  overflow-wrap:break-word;
+}
+.pcso-service-block--aquatic{ border-top:3px solid #0d9488; }
+.pcso-service-block--climbing{ border-top:3px solid #2d84b3; }
+.pcso-service-block--multi{ border-top:3px solid #15803d; }
+.pcso-service-block--physical{ border-top:3px solid #0369a1; }
+.pcso-service-block--bespoke{ border-top:3px solid #7c4dbf; }
+.pcso-service-block--daycentre{ border-top:3px solid #b45309; }
+.pcso-service-block--default{ border-top:3px solid #64748b; }
+.pcso-service-block .pcso-kpi-grid{ margin-bottom:0; }
+.pcso-service-block__table{
+  margin-top:12px;
+  min-width:0;
+  overflow:hidden;
+}
+.pcso-service-block__table .pcso-table-wrap{
+  border:1px solid rgba(23,50,71,.08);
+  border-radius:10px;
+}
+.pp-participant-body .pcso-service-split-note{
+  font-size:12px;
+}
+.pp-participant-body .pcso-service-block{
+  padding:12px;
+}
+
 /* Feedback table — fit full width on mobile (no horizontal scroll) */
 .pcso-feed-section{
   border:1px solid rgba(23,50,71,.1);
