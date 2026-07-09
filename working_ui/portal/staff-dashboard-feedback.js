@@ -1141,7 +1141,12 @@
       const aliases = typeof portalCollectItemSessionReviewKeyAliases === 'function'
         ? portalCollectItemSessionReviewKeyAliases(item, iso, dayWord)
         : [String(item.sessionKey || '').trim()].filter(Boolean);
+      /* Server quick-mark wins. Local-only absent must NOT resolve green for today+ —
+         phone offline / failed sync used to paint green while Supabase had nothing. */
       if(portalReviewAbsentFromServerQuickMarkKeys(aliases)) return true;
+      const today = typeof portalLondonTodayIso === 'function' ? portalLondonTodayIso() : '';
+      const requireServer = !!(iso && today && iso >= today);
+      if(requireServer) return false;
       if(portalReviewAbsentInMemoryForAliases(aliases)) return true;
       const direct = getSessionReviewRecord(item);
       return !!(direct && direct.absent);
@@ -1194,7 +1199,11 @@
           });
         }catch(_absFk){}
       }
-      if(!absent && portalReviewAbsentInMemoryForAliases(aliases)) absent = true;
+      /* Do not promote local-only absent to green on today+ — wait for server keys. */
+      if(!absent && !serverSynced && portalReviewAbsentInMemoryForAliases(aliases)){
+        const todaySrv = typeof portalLondonTodayIso === 'function' ? portalLondonTodayIso() : '';
+        if(!(iso && todaySrv && iso >= todaySrv)) absent = true;
+      }
       if(item.noSessionFeedbackRequired){
         const pill = String(item.portalOverrideAlertPill || '').trim().toUpperCase();
         if(pill === 'ABSENT') absent = true;

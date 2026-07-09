@@ -613,12 +613,13 @@
         const baseSrv = portalReviewSessionForItem(item);
         if(baseSrv && typeof portalGetMergedSessionReviewRecordForRoster === 'function'){
           const memSrv = portalGetMergedSessionReviewRecordForRoster(baseSrv, dayWordSrv, iso);
-          if(memSrv.absent || memSrv.cancelled){
+          /* Cancelled can stay local (admin/UI). Absent on today+ must be server-confirmed. */
+          if(memSrv.cancelled){
             return {
               feedbackDone: false,
               incident: !!(serverRec.incident || memSrv.incident),
-              absent: !!(serverRec.absent || memSrv.absent),
-              cancelled: !!(serverRec.cancelled || memSrv.cancelled)
+              absent: !!serverRec.absent,
+              cancelled: true
             };
           }
         }
@@ -717,10 +718,10 @@
     function portalTrySyncSessionQuickMarkToServer(item, prev, next){
       try{
         const iso = portalSessionDateIsoFromItemSessionKey(item);
-        if(!item || !item.sessionKey || !iso) return;
+        if(!item || !item.sessionKey || !iso) return Promise.resolve({ ok: false, error: 'missing_session' });
         const box = window.__PORTAL_SUPABASE__;
         const uid = box && box.session && box.session.user && box.session.user.id ? String(box.session.user.id).trim() : '';
-        if(!box || !box.client || !uid) return;
+        if(!box || !box.client || !uid) return Promise.resolve({ ok: false, error: 'not_signed_in' });
         const sk = String(item.sessionKey || '').trim();
         const tasks = [];
         if(next.absent && !prev.absent){
@@ -735,7 +736,7 @@
           absentKeys.forEach(function(markKey){
             tasks.push(
               import(PORTAL_SUPABASE_CLIENT_MODULE).then(function(mod){
-                if(!mod.portalUpsertStaffSessionQuickMark) return;
+                if(!mod.portalUpsertStaffSessionQuickMark) throw new Error('upsert_unavailable');
                 return mod.portalUpsertStaffSessionQuickMark(box.client, {
                   staff_user_id: uid,
                   portal_session_key: markKey,
@@ -749,7 +750,7 @@
         if(next.feedbackDone && !prev.feedbackDone){
           tasks.push(
             import(PORTAL_SUPABASE_CLIENT_MODULE).then(function(mod){
-              if(!mod.portalUpsertStaffSessionQuickMark) return;
+              if(!mod.portalUpsertStaffSessionQuickMark) throw new Error('upsert_unavailable');
               return mod.portalUpsertStaffSessionQuickMark(box.client, {
                 staff_user_id: uid,
                 portal_session_key: sk,
@@ -759,12 +760,31 @@
             })
           );
         }
-        if(!tasks.length) return;
-        Promise.all(tasks).catch(function(e){
+        if(!tasks.length) return Promise.resolve({ ok: true, skipped: true });
+        return Promise.all(tasks).then(function(){
+          try{
+            if(dashboardData && next.absent && !prev.absent){
+              if(!dashboardData.portalServerAbsentQuickMarkKeys){
+                dashboardData.portalServerAbsentQuickMarkKeys = new Set();
+              }
+              dashboardData.portalServerAbsentQuickMarkKeys.add(sk);
+              if(typeof portalCollectItemSessionReviewKeyAliases === 'function'){
+                const dayWordSync = new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+                portalCollectItemSessionReviewKeyAliases(item, iso, dayWordSync).forEach(function(k){
+                  k = String(k || '').trim();
+                  if(k) dashboardData.portalServerAbsentQuickMarkKeys.add(k);
+                });
+              }
+            }
+          }catch(_keys){}
+          return { ok: true };
+        }).catch(function(e){
           console.warn('[portal] quick mark server sync failed', e);
+          return { ok: false, error: e };
         });
       }catch(e){
         console.warn('[portal] quick mark server sync skipped', e);
+        return Promise.resolve({ ok: false, error: e });
       }
     }
     function mergeSessionReview(item, updater){
@@ -779,7 +799,10 @@
       sessionReviewMapMemory[item.sessionKey] = next;
       sessionReviewActivityTs[item.sessionKey] = Date.now();
       persistSessionReviewMap();
-      portalTrySyncSessionQuickMarkToServer(item, prev, next);
+      /* Fire-and-forget for non-absent paths; absent uses await path in executeClientQuickAbsence. */
+      if(!(next.absent && !prev.absent)){
+        portalTrySyncSessionQuickMarkToServer(item, prev, next);
+      }
       if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
       if(next.absent && !prev.absent){
         if(typeof renderToday === 'function') renderToday();
@@ -787,6 +810,66 @@
       if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
       if(typeof renderLists === 'function') renderLists();
     }
+
+    /** Mark absent only after Supabase confirms — local-only must not turn the card green. */
+    async function portalCommitClientQuickAbsence(item){
+      if(!item || !item.sessionKey) return { ok: false, error: 'missing_session' };
+      const prev = sessionReviewMapMemory[item.sessionKey] || {
+        feedbackDone: false,
+        incident: false,
+        absent: false,
+        cancelled: false
+      };
+      if(prev.absent || prev.cancelled) return { ok: true, already: true };
+      sessionReviewMapMemory[item.sessionKey] = {
+        ...prev,
+        feedbackDone: false,
+        absent: false,
+        absentSyncPending: true,
+        cancelled: !!prev.cancelled,
+        incident: !!prev.incident
+      };
+      sessionReviewActivityTs[item.sessionKey] = Date.now();
+      persistSessionReviewMap();
+      if(typeof updateClientQuickActions === 'function') updateClientQuickActions();
+      if(typeof renderToday === 'function') renderToday();
+      if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
+
+      const sync = await portalTrySyncSessionQuickMarkToServer(item, prev, {
+        ...prev,
+        absent: true,
+        feedbackDone: false
+      });
+      if(!sync || !sync.ok){
+        sessionReviewMapMemory[item.sessionKey] = {
+          ...prev,
+          absent: false,
+          absentSyncPending: false,
+          feedbackDone: false
+        };
+        persistSessionReviewMap();
+        if(typeof updateClientQuickActions === 'function') updateClientQuickActions();
+        if(typeof renderToday === 'function') renderToday();
+        if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
+        return { ok: false, error: (sync && sync.error) || 'sync_failed' };
+      }
+      sessionReviewMapMemory[item.sessionKey] = {
+        ...prev,
+        absent: true,
+        absentSyncPending: false,
+        feedbackDone: false
+      };
+      sessionReviewActivityTs[item.sessionKey] = Date.now();
+      persistSessionReviewMap();
+      if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
+      if(typeof updateClientQuickActions === 'function') updateClientQuickActions();
+      if(typeof portalApplyAfterInSheetQuickAbsence === 'function') portalApplyAfterInSheetQuickAbsence(item);
+      else if(typeof renderToday === 'function') renderToday();
+      if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
+      if(typeof renderLists === 'function') renderLists();
+      return { ok: true };
+    }
+    window.portalCommitClientQuickAbsence = portalCommitClientQuickAbsence;
 
     function getLocalDateKey(){
       const d = new Date();

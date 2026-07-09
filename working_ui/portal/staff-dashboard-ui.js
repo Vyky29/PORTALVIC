@@ -3720,11 +3720,36 @@
         : getSessionReviewRecord(item)) || {};
       if(rec.cancelled || rec.absent || rec.feedbackDone) return;
       if(!portalStaffIsDemoAccount() && !isSessionEndedForFeedback(item)) return;
-      if(!confirm('Mark this session as absent? Feedback will no longer be required.')) return;
-      mergeSessionReview(item, prev => ({ ...prev, absent: true, feedbackDone: false }));
-      updateClientQuickActions();
-      if(typeof portalApplyAfterInSheetQuickAbsence === 'function') portalApplyAfterInSheetQuickAbsence(item);
-      else renderToday();
+      if(!confirm('Mark this session as absent? Feedback will no longer be required.\n\nThis only counts when it saves to the club server — not only on this phone.')) return;
+      const absBtn = document.getElementById('clientQuickAbsence');
+      if(absBtn){
+        absBtn.disabled = true;
+        absBtn.setAttribute('aria-busy', 'true');
+      }
+      const commit = typeof portalCommitClientQuickAbsence === 'function'
+        ? portalCommitClientQuickAbsence
+        : null;
+      if(!commit){
+        alert('Could not save absence — please refresh and try again.');
+        if(absBtn){
+          absBtn.disabled = false;
+          absBtn.removeAttribute('aria-busy');
+        }
+        return;
+      }
+      void commit(item).then(function(res){
+        if(absBtn) absBtn.removeAttribute('aria-busy');
+        if(!res || !res.ok){
+          alert('Absence did not save to the club server. Check your connection and try again — the session stays open until it saves.');
+          if(typeof updateClientQuickActions === 'function') updateClientQuickActions();
+          return;
+        }
+        if(typeof updateClientQuickActions === 'function') updateClientQuickActions();
+      }).catch(function(){
+        if(absBtn) absBtn.removeAttribute('aria-busy');
+        alert('Absence did not save to the club server. Check your connection and try again.');
+        if(typeof updateClientQuickActions === 'function') updateClientQuickActions();
+      });
     }
     function handleClientQuickAbsence(){
       const item = currentOpenClientItem;

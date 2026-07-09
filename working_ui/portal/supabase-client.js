@@ -1497,7 +1497,19 @@ export function portalReconcileReviewMemoryWithServer(memory, rosterKeys, packs,
     if (assumeThroughOk && iso <= assumeThrough) continue;
     if (resolved.has(rosterKey)) continue;
     const prev = memory[rosterKey] || portalReviewMemoryBase();
-    if (prev.absent || prev.cancelled) continue;
+    /* Local-only absent/cancelled must not survive server truth — otherwise the phone
+       stays green after a failed sync while Supabase has no mark. */
+    if (prev.absent || prev.cancelled) {
+      memory[rosterKey] = {
+        ...prev,
+        absent: false,
+        cancelled: false,
+        absentSyncPending: false,
+        feedbackDone: false,
+      };
+      changed = true;
+      continue;
+    }
     if (prev.feedbackDone) {
       memory[rosterKey] = { ...prev, feedbackDone: false };
       changed = true;
