@@ -926,7 +926,15 @@
     return iso >= from && iso <= to;
   }
 
-  function isClubClosedIso(iso) {
+  /** Hub / Absent use 2026/27 closed dates only after the family has submitted Booking 2026/27. */
+  function familyAcceptedNextYear(data) {
+    var r = (data && data.reenrolment) || {};
+    return !!r.submitted;
+  }
+
+  function isClubClosedIso(iso, data) {
+    // Until Booking 2026/27 is submitted, keep the current-year roster pattern (no Sep-2026 gate).
+    if (!familyAcceptedNextYear(data)) return false;
     var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
     if (!cal) return false;
     if (cal.openFrom && iso < cal.openFrom) return true;
@@ -964,7 +972,7 @@
     }
   }
 
-  /** Next booked session from services_detail (weekday pattern + club closed dates). */
+  /** Next booked session from current roster services_detail (weekday pattern). */
   function findNextSessions(data, limit) {
     var detail =
       data && data.general && Array.isArray(data.general.services_detail)
@@ -989,7 +997,7 @@
     for (var offset = 0; offset < 28 && out.length < max; offset++) {
       var d = addDaysLocal(today, offset);
       var iso = isoDateLocal(d);
-      if (isClubClosedIso(iso)) continue;
+      if (isClubClosedIso(iso, data)) continue;
       // JS: Sun=0 … Sat=6 → calendar Mon=0 … Sun=6
       var jsDow = d.getDay();
       var col = jsDow === 0 ? 6 : jsDow - 1;
@@ -1034,18 +1042,28 @@
   }
 
   function hubOpsCardHtml(data) {
+    var hasServices = !!(
+      data &&
+      data.general &&
+      Array.isArray(data.general.services_detail) &&
+      data.general.services_detail.length
+    );
     var nextList = findNextSessions(data, 2);
     var next = nextList[0] || null;
     var more = nextList.slice(1);
     var nextBody;
-    if (!next) {
+    if (!hasServices) {
       nextBody =
-        '<p class="pp-muted pp-hub-ops__empty">Booked sessions will appear here once the term roster is confirmed.</p>';
+        '<p class="pp-muted pp-hub-ops__empty">Booked sessions will appear here once services are on the current roster.</p>';
+    } else if (!next) {
+      nextBody =
+        '<p class="pp-muted pp-hub-ops__empty">No session in the next few weeks for the current roster pattern.</p>';
     } else {
       nextBody =
         '<div class="pp-hub-ops__next">' +
         '<span class="pp-hub-ops__eyebrow">' +
         (next.isToday ? "Today" : "Next session") +
+        (familyAcceptedNextYear(data) ? "" : " · current year") +
         "</span>" +
         '<strong class="pp-hub-ops__when">' +
         esc(next.dayLabel) +
@@ -1074,9 +1092,8 @@
       "</div>" +
       '<div class="pp-hub-ops__actions">' +
       '<button type="button" class="pp-btn pp-btn--ghost pp-hub-ops__absence" data-pp-open="absence"' +
-      (next ? "" : " disabled") +
+      (hasServices ? "" : " disabled") +
       ">Report absent</button>" +
-      '<button type="button" class="pp-btn pp-btn--ghost pp-hub-ops__msgs" data-pp-open="messages">Open messages</button>' +
       "</div>" +
       '<div id="ppHubAlerts" class="pp-hub-alerts" hidden></div>' +
       "</section>"
@@ -1177,11 +1194,12 @@
   function renderHub(host, data, opts) {
     ensureGeneralFields(data, { allowPlaceholders: true });
     setParticipantPageTitle(hubBackLabel(data).text);
+    // Services once: chips beside the name. No second "Booked services" block.
+    // Messages only in the info buttons row (not again under next session).
     host.innerHTML =
       '<div class="pp-pax-shell" data-pp-view="hub">' +
       hubHeroHtml(data) +
       hubOpsCardHtml(data) +
-      servicesCardHtml(data) +
       infoButtonsHtml(data, opts) +
       '<p class="pp-muted pp-pax-hub-note">Parent sections above · sessions and reviews below — same layout instructors use when they tap your child&apos;s name.</p>' +
       "</div>";
