@@ -36,7 +36,25 @@ function slotLabel(slot: SlotSnapshot): string {
     .replace(/\bAQUATIC ACTIVITY\b/i, "Aquatic Activity")
     .replace(/\bCLIMBING ACTIVITY\b/i, "Climbing Activity")
     .replace(/\bSW\b/i, "Aquatic Activity");
-  const time = slot.timeSlot ? ` - ${clean(slot.timeSlot, 40)}` : "";
+  const sessionDate = clean((slot as { sessionDate?: string }).sessionDate, 20);
+  let dateBit = "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(sessionDate)) {
+    const [y, m, d] = sessionDate.split("-").map(Number);
+    dateBit = new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+  }
+  const timeRaw = clean(slot.timeSlot, 40);
+  const time = timeRaw
+    ? dateBit
+      ? ` - ${dateBit}, ${timeRaw}`
+      : ` - ${timeRaw}`
+    : dateBit
+      ? ` - ${dateBit}`
+      : "";
   const dayRaw = clean(slot.day, 20);
   const day = dayRaw ? `, ${dayRaw}${dayRaw.endsWith("s") ? "" : "s"}` : "";
   const venue = slot.venue ? ` (${clean(slot.venue, 40)})` : "";

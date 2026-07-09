@@ -273,7 +273,9 @@ Deno.serve(async (req) => {
         termTotals: { autumn: 50, spring: 0, summer: 0, annual: 50 },
         venue: "Acton Centre",
         timeSlot: "19:00–19:30",
-        displayLabel: "30' Aquatic Activity · Tuesday 19:00–19:30 · Acton Centre",
+        // One-off demo session: include calendar date next to time (same weight as the clock).
+        displayLabel:
+          "30' Aquatic Activity · Tuesday 14 Jul 2026, 19:00–19:30 · Acton Centre",
       },
     ];
     dayCentreSlots = [];
