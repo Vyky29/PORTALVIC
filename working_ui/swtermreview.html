@@ -879,6 +879,39 @@
       border-bottom:1px solid rgba(11,18,32,0.06);
       background:rgba(109,92,174,0.16);
     }
+    .coreMark{
+      flex:0 0 auto;
+      width:52px;
+      height:48px;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+    }
+    .coreMark img{
+      width:auto;
+      height:48px;
+      max-width:52px;
+      object-fit:contain;
+      display:block;
+      filter:drop-shadow(0 4px 8px rgba(11,18,32,.12));
+    }
+    .coreMark--profile{
+      width:44px;
+      height:40px;
+    }
+    .coreMark--profile img{
+      height:40px;
+      max-width:44px;
+    }
+    .devProfileDomainHead{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin:0 0 8px;
+    }
+    .devProfileDomainHead .devProfileDomainTitle{
+      margin:0;
+    }
 
     .coreTitle{
       margin:0;
@@ -2033,6 +2066,7 @@
         <!-- Engagement -->
         <div class="coreSection" data-domain="engagement">
           <div class="coreSectionHead">
+            <span class="coreMark" aria-hidden="true"><img src="portal/assets/core-areas/core-engagement-wave.png" alt="" width="52" height="48" loading="lazy" decoding="async" /></span>
             <p class="coreTitle">Engagement</p>
             <span class="coreSectionMeta">Observation checklist</span>
           </div>
@@ -2116,6 +2150,7 @@
         <!-- Independence -->
         <div class="coreSection" data-domain="independence">
           <div class="coreSectionHead">
+            <span class="coreMark" aria-hidden="true"><img src="portal/assets/core-areas/core-independence-rocket.png" alt="" width="52" height="48" loading="lazy" decoding="async" /></span>
             <p class="coreTitle">Independence</p>
             <span class="coreSectionMeta">Observation checklist</span>
           </div>
@@ -2198,6 +2233,7 @@
         <!-- Regulation -->
         <div class="coreSection" data-domain="regulation">
           <div class="coreSectionHead">
+            <span class="coreMark" aria-hidden="true"><img src="portal/assets/core-areas/core-regulation-brain.png" alt="" width="52" height="48" loading="lazy" decoding="async" /></span>
             <p class="coreTitle">Regulation</p>
             <span class="coreSectionMeta">Observation checklist</span>
           </div>
@@ -2285,19 +2321,28 @@
       <div class="devProfilePanel" id="devProfilePanel" aria-live="polite">
         <div class="devProfileGrid">
           <div class="devProfileDomain" data-dev-domain="regulation">
-            <p class="devProfileDomainTitle">Regulation</p>
+            <div class="devProfileDomainHead">
+              <span class="coreMark coreMark--profile" aria-hidden="true"><img src="portal/assets/core-areas/core-regulation-brain.png" alt="" width="44" height="40" loading="lazy" decoding="async" /></span>
+              <p class="devProfileDomainTitle">Regulation</p>
+            </div>
             <p class="devProfileDomainStatus" id="devProfileRegStatus">Not set</p>
             <p class="devProfileDomainPct" id="devProfileRegPct">—</p>
             <div class="devProfileMeter" aria-hidden="true"><div class="devProfileMeterFill" id="devProfileRegMeter"></div></div>
           </div>
           <div class="devProfileDomain" data-dev-domain="independence">
-            <p class="devProfileDomainTitle">Independence</p>
+            <div class="devProfileDomainHead">
+              <span class="coreMark coreMark--profile" aria-hidden="true"><img src="portal/assets/core-areas/core-independence-rocket.png" alt="" width="44" height="40" loading="lazy" decoding="async" /></span>
+              <p class="devProfileDomainTitle">Independence</p>
+            </div>
             <p class="devProfileDomainStatus" id="devProfileIndStatus">Not set</p>
             <p class="devProfileDomainPct" id="devProfileIndPct">—</p>
             <div class="devProfileMeter" aria-hidden="true"><div class="devProfileMeterFill" id="devProfileIndMeter"></div></div>
           </div>
           <div class="devProfileDomain" data-dev-domain="engagement">
-            <p class="devProfileDomainTitle">Engagement</p>
+            <div class="devProfileDomainHead">
+              <span class="coreMark coreMark--profile" aria-hidden="true"><img src="portal/assets/core-areas/core-engagement-wave.png" alt="" width="44" height="40" loading="lazy" decoding="async" /></span>
+              <p class="devProfileDomainTitle">Engagement</p>
+            </div>
             <p class="devProfileDomainStatus" id="devProfileEngStatus">Not set</p>
             <p class="devProfileDomainPct" id="devProfileEngPct">—</p>
             <div class="devProfileMeter" aria-hidden="true"><div class="devProfileMeterFill" id="devProfileEngMeter"></div></div>
