@@ -34,7 +34,7 @@
       --dangerSoft: #fff1f1;
       --success: #157347;
       --successSoft: #e8f7ef;
-      --max: 460px;
+      --max: 560px;
       --max-wide: min(1280px, 96vw);
       --tap: 48px;
     }
@@ -1513,11 +1513,27 @@
     }
     .pp-pax-dob { margin: 4px 0 8px; font-size: 12px; }
     .pp-pax-info-buttons { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; min-width: 0; }
+    .pp-pax-info-section-label {
+      margin: 6px 0 0;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .pp-pax-info-section-label:first-child { margin-top: 0; }
     .pp-pax-info-row {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
       min-width: 0;
+    }
+    @media (min-width: 560px) {
+      .pp-pax-info-row--week,
+      .pp-pax-info-row--paper { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .pp-pax-info-row--progress { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
     .pp-pax-info-btn {
       width: 100%;
@@ -1594,42 +1610,9 @@
     }
     .pp-booking-card .pp-btn { margin-top: 4px; }
     .pp-pax-info-btn--messages .pp-pax-info-icon { color: var(--blue); }
-    /* Second-row buttons: corporate-yellow icon, black caption, white card. */
+    /* Progress-row buttons: corporate-yellow icon, black caption, white card. */
     .pp-pax-info-btn--accent .pp-pax-info-icon { color: #f4b740; }
     .pp-pax-info-btn--accent .pp-pax-info-caption { color: var(--ink); }
-    /* Bottom row: Team, Sessions, Achievements, Swim. */
-    .pp-pax-info-row--sessions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    /* Top row: Messages + Absent + Booking + Calendar. */
-    .pp-pax-info-row--parents {
-      display: flex;
-      justify-content: center;
-      align-items: stretch;
-      flex-wrap: wrap;
-      gap: 10px;
-      width: 100%;
-      min-width: 0;
-    }
-    .pp-pax-info-row--parents .pp-pax-info-btn {
-      flex: 1 1 calc((100% - 30px) / 4);
-      width: calc((100% - 30px) / 4);
-      max-width: calc((100% - 30px) / 4);
-      min-width: 0;
-    }
-    @media (max-width: 520px) {
-      .pp-pax-info-row--parents .pp-pax-info-btn {
-        flex: 1 1 calc((100% - 10px) / 2);
-        width: calc((100% - 10px) / 2);
-        max-width: calc((100% - 10px) / 2);
-      }
-    }
-    @media (min-width: 560px) {
-      .pp-pax-info-row--sessions { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-      .pp-pax-info-row--parents .pp-pax-info-btn {
-        flex: 0 1 calc((100% - 30px) / 4);
-        width: calc((100% - 30px) / 4);
-        max-width: calc((100% - 30px) / 4);
-      }
-    }
     .pp-pax-info-btn--calendar .pp-pax-info-icon { color: var(--blue); }
     .pp-cal-legend {
       list-style: none;
@@ -1709,11 +1692,12 @@
     .pp-team-backbar { padding-bottom: 6px; margin-bottom: 4px; }
     .pp-team-intro { margin: 0 0 14px; font-size: 13px; line-height: 1.45; }
     .pp-hub-hero {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 16px;
-      align-items: start;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      align-items: stretch;
       margin-bottom: 14px;
+      min-width: 0;
     }
     .pp-hub-hero__id {
       display: flex;
@@ -1732,7 +1716,7 @@
     .pp-hub-hero .pp-pax-photo--init { font-size: 28px; }
     .pp-hub-hero__name {
       margin: 0;
-      font-size: 20px;
+      font-size: 22px;
       font-weight: 800;
       color: var(--ink);
       overflow-wrap: break-word;
@@ -1756,6 +1740,10 @@
       max-width: 100%;
       margin-top: 4px;
     }
+    .pp-hub-hero__status {
+      justify-content: center;
+      margin-top: 2px;
+    }
     .pp-pax-meta {
       margin: 0;
       font-size: 12px;
@@ -1763,22 +1751,80 @@
       overflow-wrap: break-word;
     }
     .pp-pax-meta + .pp-pax-meta { margin-top: 2px; }
-    .pp-hub-hero__info { min-width: 0; }
+    .pp-hub-profile {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      overflow: hidden;
+    }
+    .pp-hub-profile__summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+      cursor: pointer;
+      list-style: none;
+      min-width: 0;
+      user-select: none;
+    }
+    .pp-hub-profile__summary::-webkit-details-marker { display: none; }
+    .pp-hub-profile__summary-main {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+    }
+    .pp-hub-profile__summary-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .pp-hub-profile__summary-text strong {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
+    .pp-hub-profile__summary-text .pp-muted {
+      font-size: 12px;
+      line-height: 1.35;
+      overflow-wrap: break-word;
+    }
+    .pp-hub-profile__chev {
+      flex: none;
+      width: 10px;
+      height: 10px;
+      border-right: 2px solid var(--muted);
+      border-bottom: 2px solid var(--muted);
+      transform: rotate(45deg);
+      margin-top: -4px;
+      transition: transform 0.15s ease;
+    }
+    .pp-hub-profile[open] .pp-hub-profile__chev {
+      transform: rotate(225deg);
+      margin-top: 4px;
+    }
+    .pp-hub-profile__body {
+      padding: 0 14px 14px;
+      border-top: 1px solid var(--line);
+      min-width: 0;
+    }
+    .pp-hub-profile__hint {
+      margin: 0;
+      font-size: 12px;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
     .pp-hub-hero__info-head {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
-      margin-bottom: 10px;
-    }
-    .pp-hub-hero__info-title {
-      margin: 0;
-      font-size: 14px;
-      font-weight: 800;
-      color: var(--ink);
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
+      margin: 12px 0 10px;
       min-width: 0;
     }
     .pp-hub-hero__info-ico {
@@ -1795,12 +1841,11 @@
       font-weight: 700;
       flex-shrink: 0;
     }
-    @media (min-width: 640px) {
-      .pp-hub-hero {
-        grid-template-columns: auto minmax(0, 1fr);
-        gap: 22px;
-      }
-      .pp-hub-hero__id { padding-right: 6px; }
+    .pp-hub-hero__info-fields {
+      min-width: 0;
+      max-height: min(42vh, 320px);
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .pp-team-grid {
       display: grid;
@@ -2566,7 +2611,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260709-overview-by-service"></script>
   <script src="/portal/parent_portal_team.js?v=20260709-msg-photo-team"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260709-my-cal-polish"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260709-overview-by-service"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260709-hub-clean"></script>
   <script src="/portal/parent_portal_app.js?v=20260709-invoice-bank"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

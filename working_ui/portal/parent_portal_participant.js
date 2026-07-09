@@ -651,6 +651,7 @@
 
   function hubHeroHtml(data, opts) {
     var p = data.participant || {};
+    var status = statusChips(p);
     return (
       hubSiblingsHtml(data, opts) +
       '<header class="pp-hub-hero">' +
@@ -661,15 +662,26 @@
       "</h3>" +
       participantIdentityMetaHtml(p) +
       enrolledServiceChipsHtml(data) +
+      (status ? '<div class="pp-chip-row pp-hub-hero__status">' + status + "</div>" : "") +
       "</div>" +
-      '<div class="pp-hub-hero__info">' +
+      '<details class="pp-hub-profile">' +
+      '<summary class="pp-hub-profile__summary">' +
+      '<span class="pp-hub-profile__summary-main">' +
+      '<svg class="pp-hub-hero__info-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg>' +
+      '<span class="pp-hub-profile__summary-text">' +
+      "<strong>General information</strong>" +
+      '<span class="pp-muted">Medical, communication &amp; support notes</span>' +
+      "</span></span>" +
+      '<span class="pp-hub-profile__chev" aria-hidden="true"></span>' +
+      "</summary>" +
+      '<div class="pp-hub-profile__body">' +
       '<div class="pp-hub-hero__info-head">' +
-      '<h4 class="pp-hub-hero__info-title"><svg class="pp-hub-hero__info-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg><span>General information</span></h4>' +
+      '<p class="pp-muted pp-hub-profile__hint">Shared with instructors and admin.</p>' +
       '<button type="button" class="pp-btn pp-btn--ghost pp-hub-edit-btn" data-pp-open-edit="general">Edit info</button>' +
       "</div>" +
       '<div class="pp-hub-hero__info-fields">' +
       generalProfileReadHtml(data) +
-      "</div></div></header>"
+      "</div></div></details></header>"
     );
   }
 
@@ -795,9 +807,14 @@
     var invoiceIcon =
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2h16v20l-2-1.5L16 22l-2-1.5L12 22l-2-1.5L8 22l-2-1.5L4 22V2z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>';
     var teamCaption = firstNameOf(data) + "'s Team";
+    var calIcon =
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="8" cy="15" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg>';
+    var bookingIcon =
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>';
     return (
       '<div class="pp-pax-info-buttons">' +
-      '<div class="pp-pax-info-row pp-pax-info-row--parents">' +
+      '<p class="pp-pax-info-section-label">This week</p>' +
+      '<div class="pp-pax-info-row pp-pax-info-row--week">' +
       infoBtnHtml("messages", "Messages", msgIcon, {
         extraClass:
           " pp-pax-info-btn--messages" +
@@ -809,10 +826,17 @@
         subtitle: hasServices ? "Missed / note" : "No sessions yet",
         disabled: !hasServices,
       }) +
-      infoBtnHtml("balance", "Credits & refunds", balanceIcon, {
-        extraClass: " pp-pax-info-btn--balance",
-        subtitle: "Family ledger",
+      infoBtnHtml("calendar", "My Calendar", calIcon, {
+        extraClass: " pp-pax-info-btn--calendar",
+        subtitle: "Term dates",
       }) +
+      infoBtnHtml("team", teamCaption, '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>', {
+        extraClass: " pp-pax-info-btn--accent pp-pax-info-btn--team",
+        subtitle: "Instructors",
+      }) +
+      "</div>" +
+      '<p class="pp-pax-info-section-label">Paperwork</p>' +
+      '<div class="pp-pax-info-row pp-pax-info-row--paper">' +
       infoBtnHtml("invoices", "Invoices", invoiceIcon, {
         extraClass: " pp-pax-info-btn--invoices",
         subtitle: "Statements & PDFs",
@@ -821,31 +845,21 @@
         extraClass: " pp-pax-info-btn--documents",
         subtitle: "Registration forms",
       }) +
-      infoBtnHtml(
-        "booking",
-        "Booking 2026/27",
-        '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>',
-        { subtitle: booking.hint },
-      ) +
-      infoBtnHtml(
-        "calendar",
-        "My Calendar",
-        '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="8" cy="15" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg>',
-        { extraClass: " pp-pax-info-btn--calendar" },
-      ) +
+      infoBtnHtml("balance", "Credits & refunds", balanceIcon, {
+        extraClass: " pp-pax-info-btn--balance",
+        subtitle: "Family ledger",
+      }) +
+      infoBtnHtml("booking", "Booking 2026/27", bookingIcon, {
+        subtitle: booking.hint,
+      }) +
       "</div>" +
-      '<div class="pp-pax-info-row pp-pax-info-row--sessions">' +
-      infoBtnHtml(
-        "team",
-        teamCaption,
-        '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
-        { extraClass: " pp-pax-info-btn--accent pp-pax-info-btn--team" },
-      ) +
+      '<p class="pp-pax-info-section-label">Progress</p>' +
+      '<div class="pp-pax-info-row pp-pax-info-row--progress">' +
       infoBtnHtml(
         "sessions",
         "Sessions Overview",
         '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
-        { extraClass: " pp-pax-info-btn--accent" },
+        { extraClass: " pp-pax-info-btn--accent", subtitle: "By activity" },
       ) +
       infoBtnHtml(
         "achievements",
@@ -1527,7 +1541,6 @@
       hubHeroHtml(data, opts) +
       hubOpsCardHtml(data) +
       infoButtonsHtml(data, opts) +
-      '<p class="pp-muted pp-pax-hub-note">Parent sections above · sessions and reviews below — same layout instructors use when they tap your child&apos;s name.</p>' +
       "</div>";
     bindHub(host, data, opts);
     var messagesPromise = mountHubAlerts(host, data, opts);
