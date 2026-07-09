@@ -983,22 +983,38 @@
     return Object.prototype.hasOwnProperty.call(map, s) ? map[s] : null;
   }
 
-  /** Weekday colours from booked services (same idea as re-enrolment preview). */
+  /**
+   * Per weekday: one colour, or an array when several services share the day
+   * (half/half or pie thirds in the calendar cell).
+   */
   function buildMyCalendarDayColors(data) {
     var detail =
       data && data.general && Array.isArray(data.general.services_detail)
         ? data.general.services_detail
         : [];
-    var colMap = {};
+    var byCol = Object.create(null);
+    var serviceTone = Object.create(null);
     var toneIdx = 0;
     detail.forEach(function (s) {
       var col = dayNameToCalCol(s && s.day);
       if (col == null) return;
-      if (colMap[col] != null) return;
-      colMap[col] = PP_CAL_SERVICE_TONES[toneIdx % PP_CAL_SERVICE_TONES.length];
-      toneIdx += 1;
+      var label = String((s && s.label) || "Service").trim() || "Service";
+      var toneKey = label.toLowerCase();
+      if (!serviceTone[toneKey]) {
+        serviceTone[toneKey] = PP_CAL_SERVICE_TONES[toneIdx % PP_CAL_SERVICE_TONES.length];
+        toneIdx += 1;
+      }
+      if (!byCol[col]) byCol[col] = [];
+      if (byCol[col].indexOf(serviceTone[toneKey]) < 0) {
+        byCol[col].push(serviceTone[toneKey]);
+      }
     });
-    return colMap;
+    var colMap = {};
+    Object.keys(byCol).forEach(function (k) {
+      var colors = byCol[k];
+      colMap[k] = colors.length === 1 ? colors[0] : colors;
+    });
+    return { colMap: colMap, serviceTone: serviceTone };
   }
 
   function myCalendarLegendHtml(data) {
@@ -1009,15 +1025,15 @@
     if (!detail.length) {
       return '<p class="pp-muted pp-cal-legend-empty">Booked weekdays will highlight here once services are confirmed on the roster.</p>';
     }
+    var built = buildMyCalendarDayColors(data);
     var seen = Object.create(null);
     var items = [];
     detail.forEach(function (s) {
-      var col = dayNameToCalCol(s && s.day);
-      if (col == null) return;
-      var key = String(col);
+      var label = String((s && s.label) || "Service").trim() || "Service";
+      var key = label.toLowerCase();
       if (seen[key]) return;
       seen[key] = true;
-      var tone = PP_CAL_SERVICE_TONES[items.length % PP_CAL_SERVICE_TONES.length];
+      var tone = (built.serviceTone && built.serviceTone[key]) || PP_CAL_SERVICE_TONES[0];
       var when = [s.day, s.time].filter(Boolean).join(" · ");
       items.push(
         '<li class="pp-cal-legend__item">' +
@@ -1025,7 +1041,7 @@
           esc(tone) +
           '" aria-hidden="true"></span>' +
           '<span class="pp-cal-legend__text">' +
-          esc(s.label || "Service") +
+          esc(label) +
           (when ? ' <span class="pp-muted">(' + esc(when) + ")</span>" : "") +
           "</span></li>",
       );
@@ -1041,54 +1057,27 @@
   }
 
   function mountMyCalendar(host, data) {
-    var previewHost = host.querySelector("#ppCalAutumnHost");
-    var fullHost = host.querySelector("#ppCalFullHost");
-    var dayColors = buildMyCalendarDayColors(data);
-    var hasColors = Object.keys(dayColors).length > 0;
-
-    function markMine(root) {
-      if (!hasColors || !root) return;
-      try {
-        if (typeof global.portalMarkPreviewSessionDays === "function") {
-          global.portalMarkPreviewSessionDays(root, dayColors);
-        }
-      } catch (_e) {}
-    }
-
-    if (previewHost && typeof global.portalBuildCalendar202627AutumnPreview === "function") {
-      previewHost.innerHTML = '<p class="pp-muted">Loading calendar…</p>';
+    var calHost = host.querySelector("#ppCalYearHost");
+    if (!calHost) return;
+    var built = buildMyCalendarDayColors(data);
+    var dayColors = built.colMap || {};
+    if (typeof global.portalLoadSessionsCalendar202627Into === "function") {
+      calHost.innerHTML = '<p class="pp-muted">Loading calendar…</p>';
       void global
-        .portalBuildCalendar202627AutumnPreview({ dayColors: dayColors })
-        .then(function (node) {
-          if (!previewHost.isConnected) return;
-          previewHost.textContent = "";
-          previewHost.appendChild(node);
+        .portalLoadSessionsCalendar202627Into(calHost, {
+          dayColors: dayColors,
+          circles: true,
         })
         .catch(function () {
-          if (previewHost.isConnected) {
-            previewHost.innerHTML =
-              '<p class="pp-muted">Could not load the Autumn term preview.</p>';
+          if (calHost.isConnected) {
+            calHost.innerHTML =
+              '<p class="pp-muted">Could not load the sessions calendar.</p>';
           }
         });
+      return;
     }
-
-    if (fullHost && typeof global.portalLoadCalendar202627Into === "function") {
-      void global
-        .portalLoadCalendar202627Into(fullHost)
-        .then(function () {
-          if (!fullHost.isConnected) return;
-          markMine(fullHost);
-        })
-        .catch(function () {
-          if (fullHost.isConnected) {
-            fullHost.innerHTML =
-              '<p class="pp-muted">Could not load the full year calendar.</p>';
-          }
-        });
-    } else if (fullHost) {
-      fullHost.innerHTML =
-        '<p class="pp-muted">Calendar script is not available. Please refresh the page.</p>';
-    }
+    calHost.innerHTML =
+      '<p class="pp-muted">Calendar script is not available. Please refresh the page.</p>';
   }
 
   function renderCalendar(host, data, opts) {
@@ -1096,17 +1085,12 @@
       (data && data.participant && data.participant.display_name) || "your child";
     var body =
       '<h3 class="pp-pax-subview-title">My Calendar</h3>' +
-      '<p class="pp-muted pp-pax-subview-note">ClubSENsational term dates for 2026/27. Coloured days are ' +
+      '<p class="pp-muted pp-pax-subview-note">ClubSENsational sessions calendar 2026/27. Coloured circles are ' +
       esc(pName) +
-      "&apos;s usual session weekdays (same highlighting as re-enrolment).</p>" +
+      "&apos;s usual session weekdays. Two services on the same day split the circle in half; three services use three slices.</p>" +
       myCalendarLegendHtml(data) +
       '<div class="pp-cal-block">' +
-      '<h4 class="pp-cal-block__title">Autumn term preview</h4>' +
-      '<div id="ppCalAutumnHost" class="pp-cal-host pp-cal-host--preview" role="region" aria-label="Autumn term preview"></div>' +
-      "</div>" +
-      '<div class="pp-cal-block">' +
-      '<h4 class="pp-cal-block__title">Full year 2026/27</h4>' +
-      '<div id="ppCalFullHost" class="pp-cal-host pp-cal-host--full" role="region" aria-label="Full year calendar"></div>' +
+      '<div id="ppCalYearHost" class="pp-cal-host pp-cal-host--year" role="region" aria-label="Sessions calendar 2026/27"></div>' +
       "</div>";
     host.innerHTML = subviewShell(data, "calendar", body);
     bindBack(host, data, opts);

@@ -945,12 +945,6 @@
     .pp-cal-legend__text { min-width: 0; overflow-wrap: break-word; }
     .pp-cal-legend-empty { margin: 0 0 12px; font-size: 13px; }
     .pp-cal-block { margin: 0 0 18px; min-width: 0; }
-    .pp-cal-block__title {
-      margin: 0 0 8px;
-      font-size: 15px;
-      font-weight: 800;
-      color: var(--ink);
-    }
     .pp-cal-host {
       min-width: 0;
       overflow-x: auto;
@@ -960,18 +954,29 @@
       background: #fff;
       padding: 8px;
     }
-    .pp-cal-host--preview .dc-cal--preview { padding: 4px; }
-    .pp-cal-host--preview .dc-cal-weekdays { display: none; }
-    .pp-cal-host--preview .dc-cal-cell--open {
+    .pp-cal-host--year .dc-cal {
+      max-width: 100%;
+    }
+    /* My Calendar: circular day chips; multi-service = pie slices */
+    .pp-cal-host--year .dc-cal--mine-circles .dc-cal-cell--green,
+    .pp-cal-host--year .dc-cal--mine-circles .dc-cal-cell--red,
+    .pp-cal-host--year .dc-cal--mine-circles .dc-cal-cell--mine,
+    .pp-cal-host--year .dc-cal--mine-circles .dc-cal-cell--open {
+      border-radius: 999px;
+    }
+    .pp-cal-host--year .dc-cal--mine-circles .dc-cal-cell--open {
       background: transparent !important;
     }
-    .pp-cal-host--preview .dc-cal-cell--mine .dc-cal-day,
-    .pp-cal-host--full .dc-cal-cell--mine .dc-cal-day {
+    .pp-cal-host--year .dc-cal--mine-circles .dc-cal-cell--mine .dc-cal-day {
       color: #fff;
       font-weight: 800;
+      position: relative;
+      z-index: 1;
+      text-shadow: 0 0 2px rgba(0, 0, 0, 0.35);
     }
-    .pp-cal-host--full .dc-cal {
-      max-width: 100%;
+    .pp-cal-host--year .dc-cal--sessions-only .dc-cal-tabs,
+    .pp-cal-host--year .dc-cal--sessions-only [data-dc-cal-summary] {
+      display: none !important;
     }
     /* Participant's Team cards. */
     .pp-team-backbar { padding-bottom: 6px; margin-bottom: 4px; }
@@ -1723,8 +1728,8 @@
   <script src="/portal/portal_participant_photos.js?v=20260703-perf"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260705-team-photos-only"></script>
   <script src="/portal/parent_portal_team.js?v=20260705-feedback-team-live"></script>
-  <script src="/portal/portal_calendar_2026_27.js?v=20260709-parent-my-cal"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260709-my-calendar"></script>
+  <script src="/portal/portal_calendar_2026_27.js?v=20260709-my-cal-split"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260709-my-cal-split"></script>
   <script src="/portal/parent_portal_app.js?v=20260705-dob-age"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

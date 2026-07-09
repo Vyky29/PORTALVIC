@@ -167,11 +167,34 @@
       return wrap;
     };
 
+  /** One colour, half/half, or pie thirds for multi-service weekdays. */
+  function sessionDayBackground(colors) {
+    var list = Array.isArray(colors) ? colors.filter(Boolean) : colors ? [colors] : [];
+    if (!list.length) return "";
+    if (list.length === 1) return list[0];
+    if (list.length === 2) {
+      return (
+        "conic-gradient(" +
+        list[0] +
+        " 0deg 180deg, " +
+        list[1] +
+        " 180deg 360deg)"
+      );
+    }
+    var n = Math.min(list.length, 4);
+    var step = 360 / n;
+    var parts = [];
+    for (var i = 0; i < n; i++) {
+      parts.push(list[i] + " " + i * step + "deg " + (i + 1) * step + "deg");
+    }
+    return "conic-gradient(" + parts.join(", ") + ")";
+  }
+
   /**
-   * Preview-only: recolour session cells for a single participant.
-   * dayColors maps a Monday-based weekday index (Mon=0 … Sun=6) to a CSS colour.
-   * Green (running) cells on a booked weekday get that colour; other green cells
-   * lose their background; red (closed / half-term) cells are untouched.
+   * Preview / parent My Calendar: recolour session cells for a participant.
+   * dayColors maps Mon=0 … Sun=6 → CSS colour or array of colours
+   * (2 = half/half pie, 3+ = equal pie slices). Other green cells lose fill;
+   * red (closed / half-term) cells are untouched.
    */
   global.portalMarkPreviewSessionDays = function portalMarkPreviewSessionDays(root, dayColors) {
     if (!root || !root.querySelectorAll) return;
@@ -184,15 +207,73 @@
         if (!cell.classList.contains("dc-cal-cell--green")) continue;
         var col = i % 7;
         var bg = dayColors[col];
-        if (bg) {
+        var fill = sessionDayBackground(bg);
+        if (fill) {
           cell.classList.add("dc-cal-cell--mine");
-          cell.style.background = bg;
+          if (Array.isArray(bg) && bg.length > 1) {
+            cell.classList.add("dc-cal-cell--mine-split");
+            cell.classList.add("dc-cal-cell--mine-n" + Math.min(bg.length, 4));
+          }
+          cell.style.background = fill;
         } else {
           cell.classList.remove("dc-cal-cell--green");
           cell.classList.add("dc-cal-cell--open");
         }
       }
     });
+  };
+
+  /** Parent My Calendar: Sessions panel only (full year), no Day Centre / crash tabs. */
+  global.portalLoadSessionsCalendar202627Into = async function portalLoadSessionsCalendar202627Into(
+    host,
+    opts,
+  ) {
+    if (!host) return;
+    opts = opts || {};
+    host.textContent = "";
+    host.setAttribute("role", "region");
+    host.setAttribute("aria-label", "ClubSENsational sessions calendar 2026/27");
+    host.classList.add("portal-calendar-2026-27-preview--loading");
+    try {
+      var node = await buildCalendarSectionNode();
+      node.classList.add("dc-cal--sessions-only");
+      if (opts.circles) node.classList.add("dc-cal--mine-circles");
+      var tabs = node.querySelector(".dc-cal-tabs");
+      if (tabs) tabs.remove();
+      node.querySelectorAll("[data-dc-cal-summary]").forEach(function (el) {
+        el.remove();
+      });
+      var dayCentre = node.querySelector("#dcCalDayCentrePanel");
+      if (dayCentre) dayCentre.remove();
+      var crash = node.querySelector("#dcCalCrashPanel");
+      if (crash) crash.remove();
+      var sessions = node.querySelector("#dcCalSessionsPanel");
+      if (sessions) {
+        sessions.hidden = false;
+        sessions.querySelectorAll(".dc-cal-term__info, .dc-cal-term__weeks").forEach(function (el) {
+          el.remove();
+        });
+      }
+      var legend = node.querySelector("#dcCalLegendSessions");
+      if (legend) legend.remove();
+      host.appendChild(node);
+      try {
+        global.portalMarkCalendar202627Highlights(node);
+      } catch (_mark) {}
+      if (opts.dayColors) {
+        try {
+          global.portalMarkPreviewSessionDays(node, opts.dayColors);
+        } catch (_mine) {}
+      }
+    } catch (e) {
+      try {
+        console.warn("[calendar-2026-27] sessions calendar inject failed", e);
+      } catch (_) {}
+      host.innerHTML =
+        '<p class="alerts-sheet-placeholder" style="margin:0;padding:12px;">Could not load calendar. Please try again.</p>';
+    } finally {
+      host.classList.remove("portal-calendar-2026-27-preview--loading");
+    }
   };
 
   async function importDocumentsModule() {
