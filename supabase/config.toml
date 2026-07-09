@@ -550,6 +550,9 @@ verify_jwt = false
 [functions.parent-portal-consents-save]
 verify_jwt = false
 
+[functions.portal-admin-parent-consents-list]
+verify_jwt = false
+
 # Parent-facing shared client invoices (PDF + status).
 [functions.parent-portal-invoices-list]
 verify_jwt = false
