@@ -187,10 +187,12 @@ Deno.serve(async (req) => {
   const origin = safeReturnOrigin(body.return_origin);
   const returnPath = parentPortalReturnPath(origin);
   const successUrl =
-    `${origin}${returnPath}?invoice_paid=1&contact=${encodeURIComponent(contactId)}` +
+    `${origin}${returnPath}?invoice_paid=1&view=invoices` +
+    `&contact=${encodeURIComponent(contactId)}` +
     `&invoice=${encodeURIComponent(invoiceId)}`;
   const cancelUrl =
-    `${origin}${returnPath}?invoice_cancel=1&contact=${encodeURIComponent(contactId)}` +
+    `${origin}${returnPath}?invoice_cancel=1&view=invoices` +
+    `&contact=${encodeURIComponent(contactId)}` +
     `&invoice=${encodeURIComponent(invoiceId)}`;
 
   const created = await stripeCreateCheckoutSession({

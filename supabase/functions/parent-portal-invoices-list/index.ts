@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
   const { data: shares, error } = await supabase
     .from("portal_parent_invoice_share")
     .select(
-      "id, document_id, contact_id, invoice_number, amount_gbp, due_date, payment_status, share_status, ready_at, notes, created_at, updated_at, payment_method_hint, gocardless_url, payment_link_url, payment_link_surcharge_note, parent_reported_paid_at, parent_reported_ref, parent_reported_method",
+      "id, document_id, contact_id, invoice_number, amount_gbp, due_date, payment_status, share_status, ready_at, notes, created_at, updated_at, payment_method_hint, gocardless_url, payment_link_url, payment_link_surcharge_note, parent_reported_paid_at, parent_reported_ref, parent_reported_method, paid_at, paid_via",
     )
     .eq("contact_id", contactId)
     .eq("share_status", "ready")
@@ -168,6 +168,8 @@ Deno.serve(async (req) => {
       payment_link_surcharge_note: clean(share.payment_link_surcharge_note, 200) || null,
       parent_reported_paid_at: share.parent_reported_paid_at || null,
       parent_reported_ref: share.parent_reported_ref || null,
+      paid_at: share.paid_at || null,
+      paid_via: share.paid_via || null,
       suggested_reference: suggestedRef,
       bank_transfer: openForPay || status === "pending_confirmation"
         ? {

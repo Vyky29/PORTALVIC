@@ -1581,14 +1581,26 @@
   function maybeOpenParticipantFromUrl() {
     var params = readParticipantDeepLink();
     var contactId = params.get("contact_id") || params.get("contact") || "";
+    var invoicePaid = params.get("invoice_paid") === "1";
+    var invoiceCancel = params.get("invoice_cancel") === "1";
+    var invoiceId = params.get("invoice") || "";
+    if (invoicePaid && invoiceId) {
+      try {
+        sessionStorage.setItem("pp_invoice_paid_flash", String(invoiceId));
+      } catch (_eFlash) {}
+    }
     if (!contactId) return;
     var view = params.get("view") || "";
+    if ((invoicePaid || invoiceCancel) && !view) view = "invoices";
     void loadParticipantDetail(contactId, view || "");
     try {
       var clean = new URL(global.location.href);
       clean.searchParams.delete("contact_id");
       clean.searchParams.delete("contact");
       clean.searchParams.delete("view");
+      clean.searchParams.delete("invoice_paid");
+      clean.searchParams.delete("invoice_cancel");
+      clean.searchParams.delete("invoice");
       global.history.replaceState({}, "", clean.pathname + clean.search + clean.hash);
     } catch (_e2) {}
   }

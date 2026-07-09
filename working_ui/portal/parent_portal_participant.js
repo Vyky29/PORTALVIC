@@ -3626,6 +3626,13 @@
             : "") +
           ".</p>"
         : "";
+    var paidNote =
+      status === "paid"
+        ? '<p class="pp-invoice-card__meta">Paid' +
+          (inv.paid_via ? " via " + esc(String(inv.paid_via)) : "") +
+          (inv.paid_at ? " · " + esc(formatDocWhen(inv.paid_at)) : "") +
+          ". Keep the PDF for your records.</p>"
+        : "";
     var cardFeeNote =
       canPay && card && cardFee
         ? '<p class="pp-muted pp-invoice-pay__note">Card / Apple Pay total <strong>' +
@@ -3695,13 +3702,18 @@
         : "") +
       (due ? '<p class="pp-invoice-card__meta muted">Due ' + esc(due) + "</p>" : "") +
       pendingNote +
+      paidNote +
       invoiceBankPanelHtml(inv) +
       creditHtml +
       '<div class="pp-invoice-card__acts">' +
       (pdf
-        ? '<a class="pp-btn pp-btn--ghost" href="' +
+        ? '<a class="pp-btn ' +
+          (status === "paid" ? "pp-btn--primary" : "pp-btn--ghost") +
+          '" href="' +
           esc(pdf) +
-          '" target="_blank" rel="noopener noreferrer">Open PDF</a>'
+          '" target="_blank" rel="noopener noreferrer">' +
+          (status === "paid" ? "Download invoice PDF" : "Open PDF") +
+          "</a>"
         : '<p class="pp-muted">PDF not available yet.</p>') +
       (gc
         ? '<a class="pp-btn pp-btn--primary" href="' +
@@ -3785,6 +3797,31 @@
         }
         listHost.innerHTML = invoices.map(invoiceCardHtml).join("");
         wireInvoiceActions();
+        try {
+          var flash = sessionStorage.getItem("pp_invoice_paid_flash");
+          if (flash) {
+            sessionStorage.removeItem("pp_invoice_paid_flash");
+            var paidInv = invoices.find(function (inv) {
+              return String(inv.id) === String(flash);
+            });
+            showNotice(
+              "success",
+              paidInv
+                ? "Payment received — " +
+                    (paidInv.invoice_number
+                      ? "invoice " + paidInv.invoice_number
+                      : "invoice") +
+                    " is marked paid. Open the PDF below."
+                : "Payment received — your invoice is marked paid. Open the PDF below.",
+            );
+            var card = listHost.querySelector(
+              '[data-invoice-id="' + String(flash).replace(/"/g, "") + '"]',
+            );
+            if (card && typeof card.scrollIntoView === "function") {
+              card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
+          }
+        } catch (_eFlash) {}
       });
     }
 
