@@ -1427,6 +1427,8 @@
       align-items: center;
       text-align: center;
       gap: 8px;
+      min-width: 0;
+      width: 100%;
     }
     .pp-hub-hero .pp-pax-photo {
       width: 96px;
@@ -1441,7 +1443,24 @@
       color: var(--ink);
       overflow-wrap: break-word;
       min-width: 0;
-      flex: 0 1 auto;
+      max-width: 100%;
+      text-align: center;
+    }
+    .pp-hub-hero__id .pp-pax-meta {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.35;
+      overflow-wrap: break-word;
+      text-align: center;
+      max-width: 100%;
+    }
+    .pp-hub-hero__id .pp-pax-meta + .pp-pax-meta { margin-top: 2px; }
+    .pp-hub-hero__id .pp-svc-chips {
+      justify-content: center;
+      flex: 0 0 auto;
+      width: 100%;
+      max-width: 100%;
+      margin-top: 4px;
     }
     .pp-pax-meta {
       margin: 0;
@@ -1812,8 +1831,29 @@
     .pp-pax-sticky-hero .pp-pax-hero { margin-bottom: 0; }
     .pp-pax-subview-body { min-width: 0; }
     .pp-pax-back { margin: 0 0 10px; padding-left: 0; width: auto; min-height: 36px; }
-    .pp-back-home { font-weight: 800; }
-    .pp-back-home,
+    .pp-back-home {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      min-width: 0;
+      width: auto;
+      margin: 0 0 8px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(23, 50, 71, 0.05);
+      font-weight: 800;
+      font-size: 12px;
+      line-height: 1.2;
+      color: var(--blue);
+    }
+    .pp-back-home .pp-nav-ico {
+      width: 20px;
+      height: 20px;
+    }
     .pp-pax-back {
       display: inline-flex;
       align-items: center;
@@ -1824,6 +1864,13 @@
       width: 16px;
       height: 16px;
       flex: 0 0 auto;
+    }
+    .pp-participant-title {
+      margin: 0;
+      min-width: 0;
+    }
+    .pp-participant-title .pp-title-inner {
+      justify-content: flex-start;
     }
     .pp-pax-back { font-weight: 700; color: var(--muted); font-size: .88rem; }
     .pp-pax-back:hover,
@@ -2173,8 +2220,15 @@
     <section id="ppStepParticipant" hidden>
       <div class="pp-participant-head">
         <div style="min-width:0">
-          <button id="ppBackToHome" class="pp-btn pp-btn--ghost pp-back-home" type="button" style="margin:0;padding-left:0" aria-label="Back to family portal home menu"><svg class="pp-nav-ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>Home (Menu)</span></button>
-          <h2 id="ppParticipantTitle">Participant</h2>
+          <button id="ppBackToHome" class="pp-btn pp-btn--ghost pp-back-home" type="button" aria-label="Back to family portal home menu"><svg class="pp-nav-ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span>Home (Menu)</span></button>
+          <h2 id="ppParticipantTitle" class="pp-participant-title">
+            <span class="pp-title-inner">
+              <span class="pp-title-ico" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.25"/><path d="M5.5 19.5c1.2-3.2 3.5-4.75 6.5-4.75s5.3 1.55 6.5 4.75"/></svg>
+              </span>
+              <span>Participant</span>
+            </span>
+          </h2>
         </div>
         <button id="ppParticipantRefresh" class="pp-icon-btn" type="button" data-contact-id="">Refresh</button>
       </div>
@@ -2195,7 +2249,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260705-team-photos-only"></script>
   <script src="/portal/parent_portal_team.js?v=20260705-feedback-team-live"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260709-my-cal-polish"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260709-term-date-chips"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260709-hub-layout"></script>
   <script src="/portal/parent_portal_app.js?v=20260709-makeup-grants"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
