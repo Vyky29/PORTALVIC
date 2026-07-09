@@ -1390,6 +1390,18 @@
     .pp-pax-subview-body { min-width: 0; }
     .pp-pax-back { margin: 0 0 10px; padding-left: 0; width: auto; min-height: 36px; }
     .pp-back-home { font-weight: 800; }
+    .pp-back-home,
+    .pp-pax-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    .pp-nav-ico {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 auto;
+    }
     .pp-pax-back { font-weight: 700; color: var(--muted); font-size: .88rem; }
     .pp-pax-back:hover,
     .pp-pax-back:focus-visible { color: var(--blue); }
@@ -1719,7 +1731,7 @@
     <section id="ppStepParticipant" hidden>
       <div class="pp-participant-head">
         <div style="min-width:0">
-          <button id="ppBackToHome" class="pp-btn pp-btn--ghost pp-back-home" type="button" style="margin:0;padding-left:0" aria-label="Back to family portal home menu">← Home (Menu)</button>
+          <button id="ppBackToHome" class="pp-btn pp-btn--ghost pp-back-home" type="button" style="margin:0;padding-left:0" aria-label="Back to family portal home menu"><svg class="pp-nav-ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>Home (Menu)</span></button>
           <h2 id="ppParticipantTitle">Participant</h2>
         </div>
         <button id="ppParticipantRefresh" class="pp-icon-btn" type="button" data-contact-id="">Refresh</button>
@@ -1741,8 +1753,8 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260705-team-photos-only"></script>
   <script src="/portal/parent_portal_team.js?v=20260705-feedback-team-live"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260709-my-cal-polish"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260709-my-cal-polish"></script>
-  <script src="/portal/parent_portal_app.js?v=20260705-dob-age"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260709-hub-nav-icons"></script>
+  <script src="/portal/parent_portal_app.js?v=20260709-hub-nav-icons"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {

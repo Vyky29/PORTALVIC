@@ -578,6 +578,13 @@
         "</svg>"
       );
     }
+    if (kind === "hub") {
+      return (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">' +
+        '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>' +
+        "</svg>"
+      );
+    }
     return (
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">' +
       '<path d="M21 15a4 4 0 01-4 4H8l-5 3V7a4 4 0 014-4h10a4 4 0 014 4z"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="13" y2="14"/>' +
@@ -612,14 +619,21 @@
   function childSessionsBtnHtml(c) {
     var childUnread = unreadCountForContact(c.contact_id);
     var sub = childUnread > 0 ? childUnread + " new message" + (childUnread === 1 ? "" : "s") : "";
+    var fullName = String((c && (c.display_name || c.name)) || "Participant").trim() || "Participant";
+    var first = fullName.split(/\s+/)[0] || "Participant";
+    var label = "Participant's hub (" + first + "'s Hub)";
     return (
       '<button type="button" class="pp-child-action-btn pp-child-sessions-btn" data-contact-id="' +
       esc(String(c.contact_id || "")) +
+      '" aria-label="' +
+      esc(label) +
       '">' +
       '<span class="pp-child-action-ico" aria-hidden="true">' +
-      ppChildActionIcon("messages") +
+      ppChildActionIcon("hub") +
       "</span>" +
-      '<span class="pp-child-action-label">Messages, general info, sessions overview</span>' +
+      '<span class="pp-child-action-label">' +
+      esc(label) +
+      "</span>" +
       (sub ? '<span class="pp-child-action-sub">' + esc(sub) + "</span>" : "") +
       "</button>"
     );

@@ -772,19 +772,53 @@
     );
   }
 
-  function subviewShell(data, viewName, innerHtml) {
+  function navIconSvg(kind) {
+    if (kind === "home") {
+      return (
+        '<svg class="pp-nav-ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path d="M3 10.5L12 3l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>' +
+        "</svg>"
+      );
+    }
+    // hub / grid
+    return (
+      '<svg class="pp-nav-ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>' +
+      "</svg>"
+    );
+  }
+
+  function hubBackLabel(data) {
     var pName =
-      (data.participant && data.participant.display_name) || "Participant";
+      (data && data.participant && data.participant.display_name) || "Participant";
+    var first = firstNameOf(data) || pName.split(/\s+/)[0] || "Participant";
+    return {
+      full: pName,
+      first: first,
+      text: "Participant's hub (" + first + "'s Hub)",
+    };
+  }
+
+  function hubBackButtonHtml(data) {
+    var hub = hubBackLabel(data);
+    return (
+      '<button type="button" class="pp-btn pp-btn--ghost pp-pax-back" data-pp-back="hub" aria-label="Back to ' +
+      esc(hub.text) +
+      '">' +
+      navIconSvg("hub") +
+      '<span>' +
+      esc(hub.text) +
+      "</span></button>"
+    );
+  }
+
+  function subviewShell(data, viewName, innerHtml) {
     return (
       '<div class="pp-pax-shell" data-pp-view="' +
       esc(viewName) +
       '">' +
       '<div class="pp-pax-sticky-hero">' +
-      '<button type="button" class="pp-btn pp-btn--ghost pp-pax-back" data-pp-back="hub" aria-label="Back to hub for ' +
-      esc(pName) +
-      '">← ' +
-      esc(pName) +
-      "&apos;s Hub</button>" +
+      hubBackButtonHtml(data) +
       heroHtml(data) +
       "</div>" +
       '<div class="pp-pax-subview-body">' +
@@ -795,10 +829,7 @@
 
   function renderHub(host, data, opts) {
     ensureGeneralFields(data, { allowPlaceholders: true });
-    setParticipantPageTitle(
-      ((data && data.participant && data.participant.display_name) ||
-        "Participant") + "\u2019s Hub",
-    );
+    setParticipantPageTitle(hubBackLabel(data).text);
     host.innerHTML =
       '<div class="pp-pax-shell" data-pp-view="hub">' +
       hubHeroHtml(data) +
@@ -1289,11 +1320,7 @@
     host.innerHTML =
       '<div class="pp-pax-shell" data-pp-view="team">' +
       '<div class="pp-pax-sticky-hero pp-team-backbar">' +
-      '<button type="button" class="pp-btn pp-btn--ghost pp-pax-back" data-pp-back="hub" aria-label="Back to hub for ' +
-      esc(pName) +
-      '">← ' +
-      esc(pName) +
-      "&apos;s Hub</button>" +
+      hubBackButtonHtml(data) +
       "</div>" +
       '<div class="pp-pax-subview-body">' +
       '<p class="pp-muted pp-team-intro">Instructors who have submitted session feedback since 1 June 2026.</p>' +
