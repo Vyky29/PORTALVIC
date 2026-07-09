@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
       canPayCard && amount != null ? stripeGrossUpFromGbp(amount) : null;
     const applicableCredits =
       openForPay && amount != null && Number.isFinite(amount) && amount > 0
-        ? usableCredits.filter((c) => c.amount_gbp + 1e-9 >= amount)
+        ? usableCredits
         : [];
     out.push({
       id: share.id,

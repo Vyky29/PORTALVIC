@@ -5,6 +5,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { stripeVerifyAndParseEvent } from "../_shared/stripe_checkout.ts";
+import { xeroSyncPaidInvoiceShare } from "../_shared/xero_payments.ts";
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -86,7 +87,11 @@ Deno.serve(async (req) => {
     q = q.eq("stripe_checkout_session_id", sessionId);
   }
 
-  const { data, error } = await q.select("id, payment_status").maybeSingle();
+  const { data, error } = await q
+    .select(
+      "id, payment_status, amount_gbp, invoice_number, paid_via, xero_invoice_id, xero_payment_id",
+    )
+    .maybeSingle();
   if (error) {
     console.error("[parent-portal-stripe-webhook]", error.message);
     return json(500, { ok: false, error: "update_failed" });
@@ -96,5 +101,11 @@ Deno.serve(async (req) => {
     return json(200, { ok: true, skipped: "invoice_not_found" });
   }
 
-  return json(200, { ok: true, invoice_id: data.id, payment_status: data.payment_status });
+  const xero = await xeroSyncPaidInvoiceShare(supabase, data);
+  return json(200, {
+    ok: true,
+    invoice_id: data.id,
+    payment_status: data.payment_status,
+    xero,
+  });
 });

@@ -3636,15 +3636,28 @@
         : "";
     var credits = (inv && inv.applicable_credits) || [];
     var creditHtml = "";
-    if (credits.length) {
+    if (credits.length && (status === "unpaid" || status === "partial")) {
       creditHtml =
         '<div class="pp-invoice-credit">' +
         '<p class="pp-invoice-pay__title">Pay with credit on file</p>' +
         credits
           .map(function (c) {
             var cAmt = formatInvoiceMoney(c.amount_gbp);
+            var invAmtN = Number(inv.amount_gbp);
+            var credN = Number(c.amount_gbp);
+            var covers =
+              Number.isFinite(invAmtN) && Number.isFinite(credN) && credN + 1e-9 >= invAmtN;
             var label =
               (c.service_label ? String(c.service_label) + " · " : "") + (cAmt || "Credit");
+            var sub = covers
+              ? "Pays this invoice in full"
+              : "Applies " +
+                (cAmt || "") +
+                "; £" +
+                (Number.isFinite(invAmtN) && Number.isFinite(credN)
+                  ? (invAmtN - credN).toFixed(2)
+                  : "?") +
+                " still due";
             return (
               '<button type="button" class="pp-btn pp-btn--primary" data-pp-apply-credit="' +
               esc(inv.id) +
@@ -3652,11 +3665,13 @@
               esc(c.id) +
               '">Use ' +
               esc(label) +
-              "</button>"
+              "</button>" +
+              '<p class="pp-muted pp-invoice-pay__note" style="margin:0">' +
+              esc(sub) +
+              "</p>"
             );
           })
           .join("") +
-        '<p class="pp-muted pp-invoice-pay__note">Applies the credit and marks this invoice paid (no card fee).</p>' +
         "</div>";
     }
     return (
@@ -3813,7 +3828,7 @@
           if (!invId || !creditId || typeof opts.applyCreditToInvoice !== "function") return;
           if (
             !global.confirm(
-              "Apply this credit to the invoice? The invoice will be marked paid and the credit closed.",
+              "Apply this credit to the invoice? If the credit is less than the invoice, the rest stays due (bank transfer or card).",
             )
           ) {
             return;
@@ -3822,8 +3837,19 @@
           btn.setAttribute("aria-busy", "true");
           void opts
             .applyCreditToInvoice(invId, creditId)
-            .then(function () {
-              showNotice("success", "Credit applied — invoice marked paid.");
+            .then(function (j) {
+              if (j && j.partial) {
+                showNotice(
+                  "success",
+                  "Credit applied (£" +
+                    Number(j.applied_gbp).toFixed(2) +
+                    "). £" +
+                    Number(j.remaining_gbp).toFixed(2) +
+                    " still due.",
+                );
+              } else {
+                showNotice("success", "Credit applied — invoice marked paid.");
+              }
               return refreshList();
             })
             .catch(function (err) {
@@ -3832,11 +3858,9 @@
               var code = err && err.code ? String(err.code) : "";
               var msg =
                 (err && err.messageText) ||
-                (code === "credit_insufficient"
-                  ? "This credit is less than the invoice amount. Contact the office."
-                  : code === "already_paid"
-                    ? "This invoice is already paid."
-                    : "Could not apply credit — please try again or contact the office.");
+                (code === "already_paid"
+                  ? "This invoice is already paid."
+                  : "Could not apply credit — please try again or contact the office.");
               showNotice("error", msg);
             });
         });

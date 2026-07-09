@@ -161,6 +161,13 @@
       '<div class="muted" style="font-size:12px">' +
       esc(inv.title || '') +
       '</div>' +
+      (inv.xero_invoice_id
+        ? '<div class="muted" style="font-size:11px">Xero ' +
+          esc(String(inv.xero_invoice_id).slice(0, 8)) +
+          '…' +
+          (inv.xero_payment_id ? ' · paid in Xero' : '') +
+          '</div>'
+        : '') +
       (linkBits.length
         ? '<div class="muted" style="font-size:11px">' + esc(linkBits.join(' · ')) + '</div>'
         : '') +
@@ -381,6 +388,7 @@
       var due = global.document.getElementById('portalParentInvoiceDue');
       var title = global.document.getElementById('portalParentInvoiceTitle');
       var notes = global.document.getElementById('portalParentInvoiceNotes');
+      var xeroId = global.document.getElementById('portalParentInvoiceXeroId');
       var gcUrl = global.document.getElementById('portalParentInvoiceGcUrl');
       var plUrl = global.document.getElementById('portalParentInvoicePlUrl');
       var plNote = global.document.getElementById('portalParentInvoicePlNote');
@@ -389,6 +397,7 @@
       if (due && due.value) fd.append('due_date', due.value);
       if (title && title.value) fd.append('title', title.value);
       if (notes && notes.value) fd.append('notes', notes.value);
+      if (xeroId && xeroId.value) fd.append('xero_invoice_id', xeroId.value);
       if (gcUrl && gcUrl.value) fd.append('gocardless_url', gcUrl.value);
       if (plUrl && plUrl.value) fd.append('payment_link_url', plUrl.value);
       if (plNote && plNote.value) fd.append('payment_link_surcharge_note', plNote.value);
@@ -421,7 +430,7 @@
       '<div class="card-h"><h3>Family invoices</h3>' +
       '<span class="chip chip--pend" id="portalParentInvoicesMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Upload a client invoice PDF and share it to the parent hub. Families see <strong>Tide bank transfer</strong> details by default. Add a GoCardless URL when needed; Payment Link only when a family/LA insists (note any surcharge).</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Upload a Xero invoice PDF and share it to the parent hub. Paste the Xero <strong>Invoice ID</strong> (GUID) so when the family pays (card / bank confirm / credit), Portal can mark it paid in Xero. Families see <strong>Tide bank transfer</strong> by default; Card / Apple Pay adds the Stripe fee. Add GoCardless only when needed.</p>' +
       '<form id="portalParentInvoiceUploadForm" class="toolbar" style="flex-direction:column;align-items:stretch;gap:10px;margin-bottom:14px">' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end">' +
       '<label style="flex:1 1 200px;min-width:0">Search participant' +
@@ -437,6 +446,7 @@
       '<label style="flex:1 1 100px;min-width:0">Amount £<input class="inp" id="portalParentInvoiceAmount" type="number" min="0" step="0.01" style="width:100%" /></label>' +
       '<label style="flex:1 1 140px;min-width:0">Due date<input class="inp" id="portalParentInvoiceDue" type="date" style="width:100%" /></label>' +
       '</div>' +
+      '<label style="min-width:0">Xero Invoice ID (GUID, for payment sync)<input class="inp" id="portalParentInvoiceXeroId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" style="width:100%;max-width:28rem" /></label>' +
       '<label style="min-width:0">Title (optional)<input class="inp" id="portalParentInvoiceTitle" style="width:100%;max-width:28rem" /></label>' +
       '<label style="min-width:0">Notes (optional)<input class="inp" id="portalParentInvoiceNotes" style="width:100%;max-width:28rem" /></label>' +
       '<label style="min-width:0">GoCardless URL (optional)<input class="inp" id="portalParentInvoiceGcUrl" type="url" placeholder="https://…" style="width:100%;max-width:28rem" /></label>' +

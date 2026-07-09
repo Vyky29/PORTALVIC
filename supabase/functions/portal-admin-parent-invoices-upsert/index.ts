@@ -9,6 +9,7 @@ import {
   portalAdminJson,
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
+import { xeroSyncPaidInvoiceShare } from "../_shared/xero_payments.ts";
 
 const BUCKET = "documents";
 const MAX_BYTES = 12 * 1024 * 1024;
@@ -115,6 +116,8 @@ Deno.serve(async (req) => {
       "gocardless_url",
       "payment_link_url",
       "payment_link_surcharge_note",
+      "xero_invoice_id",
+      "paid_via",
     ]) {
       if (form.has(key)) fields[key] = form.get(key);
     }
@@ -202,6 +205,7 @@ Deno.serve(async (req) => {
       return portalAdminJson(500, { ok: false, error: "document_insert_failed" });
     }
 
+    const xeroInvoiceId = clean(fields.xero_invoice_id, 80) || null;
     const shareRow = {
       document_id: doc.id,
       contact_id: contactId,
@@ -217,6 +221,7 @@ Deno.serve(async (req) => {
       gocardless_url: parseHttpUrl(fields.gocardless_url),
       payment_link_url: parseHttpUrl(fields.payment_link_url),
       payment_link_surcharge_note: clean(fields.payment_link_surcharge_note, 200) || null,
+      xero_invoice_id: xeroInvoiceId,
       updated_at: now,
     };
 
@@ -273,6 +278,9 @@ Deno.serve(async (req) => {
     if (fields.payment_link_surcharge_note !== undefined) {
       patch.payment_link_surcharge_note = clean(fields.payment_link_surcharge_note, 200) || null;
     }
+    if (fields.xero_invoice_id !== undefined) {
+      patch.xero_invoice_id = clean(fields.xero_invoice_id, 80) || null;
+    }
     const pay = parsePaymentStatus(fields.payment_status);
     if (pay) {
       patch.payment_status = pay;
@@ -287,6 +295,8 @@ Deno.serve(async (req) => {
         patch.parent_reported_ref = null;
         patch.parent_reported_method = null;
         patch.parent_reported_notes = null;
+        patch.xero_payment_id = null;
+        patch.xero_synced_at = null;
       }
     }
     const share = parseShareStatus(fields.share_status);
@@ -309,6 +319,11 @@ Deno.serve(async (req) => {
       return portalAdminJson(500, { ok: false, error: "update_failed" });
     }
 
+    let xero = null;
+    if (updated.payment_status === "paid") {
+      xero = await xeroSyncPaidInvoiceShare(admin, updated);
+    }
+
     const title = clean(fields.title, 200);
     if (title || fields.due_date !== undefined) {
       const docPatch: Record<string, unknown> = {};
@@ -319,7 +334,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return portalAdminJson(200, { ok: true, invoice: updated });
+    return portalAdminJson(200, { ok: true, invoice: updated, xero });
   }
 
   return portalAdminJson(400, { ok: false, error: "action_required" });

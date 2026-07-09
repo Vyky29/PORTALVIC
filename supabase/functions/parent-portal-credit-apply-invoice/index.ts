@@ -1,15 +1,20 @@
 // @ts-nocheck — Edge Function (Deno).
 //
 // parent-portal-credit-apply-invoice
-// Apply an open family credit (with £ amount) against an unpaid shared invoice.
-// Full cover only: credit amount must be >= invoice amount.
+// Apply an open family credit against an unpaid/partial shared invoice.
+// Full cover → invoice paid. Partial → invoice amount reduced, status partial.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
 import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
+import { xeroCreateInvoicePayment, xeroConfigured } from "../_shared/xero_payments.ts";
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function money(n: number): number {
+  return Math.round(n * 100) / 100;
 }
 
 function json(status: number, body: Record<string, unknown>) {
@@ -66,7 +71,9 @@ Deno.serve(async (req) => {
 
   const { data: inv, error: invErr } = await supabase
     .from("portal_parent_invoice_share")
-    .select("id, contact_id, amount_gbp, payment_status, share_status, invoice_number")
+    .select(
+      "id, contact_id, amount_gbp, payment_status, share_status, invoice_number, xero_invoice_id, xero_payment_id",
+    )
     .eq("id", invoiceId)
     .eq("contact_id", contactId)
     .maybeSingle();
@@ -82,7 +89,7 @@ Deno.serve(async (req) => {
     return json(409, { ok: false, error: "invoice_not_open" });
   }
 
-  const invoiceAmount = Number(inv.amount_gbp);
+  const invoiceAmount = money(Number(inv.amount_gbp));
   if (!Number.isFinite(invoiceAmount) || invoiceAmount <= 0) {
     return json(400, {
       ok: false,
@@ -107,7 +114,7 @@ Deno.serve(async (req) => {
     return json(409, { ok: false, error: "credit_not_open" });
   }
 
-  const creditAmount = Number(credit.amount_gbp);
+  const creditAmount = money(Number(credit.amount_gbp));
   if (!Number.isFinite(creditAmount) || creditAmount <= 0) {
     return json(400, {
       ok: false,
@@ -116,23 +123,27 @@ Deno.serve(async (req) => {
     });
   }
 
-  if (creditAmount + 1e-9 < invoiceAmount) {
-    return json(409, {
-      ok: false,
-      error: "credit_insufficient",
-      message:
-        "This credit (£" +
-        creditAmount.toFixed(2) +
-        ") is less than the invoice (£" +
-        invoiceAmount.toFixed(2) +
-        "). Contact the office for a partial apply.",
-      credit_gbp: creditAmount,
-      invoice_gbp: invoiceAmount,
-    });
-  }
-
+  const appliedGbp = money(Math.min(creditAmount, invoiceAmount));
+  const remainingGbp = money(invoiceAmount - appliedGbp);
+  const fullyPaid = remainingGbp <= 0;
   const now = new Date().toISOString();
   const invNo = clean(inv.invoice_number, 40);
+
+  const creditCloseNotes = fullyPaid
+    ? "Applied to invoice" +
+      (invNo ? " " + invNo : "") +
+      " (£" +
+      appliedGbp.toFixed(2) +
+      ") by parent portal — paid in full"
+    : "Partial apply to invoice" +
+      (invNo ? " " + invNo : "") +
+      " (£" +
+      appliedGbp.toFixed(2) +
+      " of £" +
+      invoiceAmount.toFixed(2) +
+      "); £" +
+      remainingGbp.toFixed(2) +
+      " still due";
 
   const { error: creditUpErr } = await supabase
     .from("portal_parent_family_credits")
@@ -140,12 +151,7 @@ Deno.serve(async (req) => {
       status: "applied",
       applied_invoice_share_id: invoiceId,
       closed_at: now,
-      close_notes:
-        "Applied to invoice" +
-        (invNo ? " " + invNo : "") +
-        " (£" +
-        invoiceAmount.toFixed(2) +
-        ") by parent portal",
+      close_notes: creditCloseNotes,
       updated_at: now,
     })
     .eq("id", creditId)
@@ -156,20 +162,29 @@ Deno.serve(async (req) => {
     return parentPortalJsonInvalid(500);
   }
 
+  const invPatch: Record<string, unknown> = {
+    updated_at: now,
+  };
+  if (fullyPaid) {
+    invPatch.payment_status = "paid";
+    invPatch.paid_at = now;
+    invPatch.paid_via = "credit";
+    invPatch.amount_gbp = invoiceAmount;
+  } else {
+    invPatch.payment_status = "partial";
+    invPatch.amount_gbp = remainingGbp;
+    invPatch.paid_at = null;
+    invPatch.paid_via = null;
+  }
+
   const { error: invUpErr } = await supabase
     .from("portal_parent_invoice_share")
-    .update({
-      payment_status: "paid",
-      paid_at: now,
-      paid_via: "credit",
-      updated_at: now,
-    })
+    .update(invPatch)
     .eq("id", invoiceId)
     .in("payment_status", ["unpaid", "partial"]);
 
   if (invUpErr) {
     console.error("[parent-portal-credit-apply-invoice] invoice", invUpErr.message);
-    // Best-effort rollback credit
     await supabase
       .from("portal_parent_family_credits")
       .update({
@@ -183,13 +198,45 @@ Deno.serve(async (req) => {
     return parentPortalJsonInvalid(500);
   }
 
+  // Xero: post payment for the credit amount applied (full or partial).
+  let xero: Record<string, unknown> | null = null;
+  const xeroId = clean(inv.xero_invoice_id, 80);
+  if (xeroId && xeroConfigured()) {
+    const created = await xeroCreateInvoicePayment({
+      xeroInvoiceId: xeroId,
+      amountGbp: appliedGbp,
+      reference: invNo
+        ? `Portal credit · ${invNo}`
+        : "Portal credit",
+    });
+    if (created.ok) {
+      const stamp: Record<string, unknown> = {
+        xero_payment_id: created.payment_id,
+        xero_synced_at: now,
+        updated_at: now,
+      };
+      await supabase.from("portal_parent_invoice_share").update(stamp).eq("id", invoiceId);
+      xero = { synced: true, payment_id: created.payment_id, amount_gbp: appliedGbp };
+    } else {
+      xero = { synced: false, error: created.error, detail: created.detail };
+    }
+  } else if (!xeroId) {
+    xero = { synced: false, skipped: "no_xero_invoice_id" };
+  } else {
+    xero = { synced: false, skipped: "xero_not_configured" };
+  }
+
   return json(200, {
     ok: true,
     invoice_id: invoiceId,
     credit_id: creditId,
-    payment_status: "paid",
-    paid_via: "credit",
-    invoice_gbp: invoiceAmount,
+    payment_status: fullyPaid ? "paid" : "partial",
+    paid_via: fullyPaid ? "credit" : null,
+    invoice_gbp_before: invoiceAmount,
     credit_gbp: creditAmount,
+    applied_gbp: appliedGbp,
+    remaining_gbp: fullyPaid ? 0 : remainingGbp,
+    partial: !fullyPaid,
+    xero,
   });
 });
