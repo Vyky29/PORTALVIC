@@ -535,99 +535,219 @@
     }
     .badge .swatch{ width:10px; height:10px; border-radius:999px; background:var(--blueDeep); }
 
-    .focusGrid{ display:grid; grid-template-columns:1fr; gap:10px; }
-    @media (min-width:900px){ .focusGrid{ grid-template-columns:1fr 1fr; } }
+    .focusGrid{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
 
     .focusSection{
       border:1px solid rgba(11,18,32,0.12);
-      border-radius:16px;
-      padding:12px;
+      border-radius:18px;
       background:#fff;
       overflow:hidden;
+      box-shadow:0 8px 20px rgba(11,18,32,0.05);
+      transition:box-shadow .2s ease, border-color .2s ease;
     }
-    .focusHead{
+    .focusSection.is-open{
+      box-shadow:0 12px 28px rgba(11,18,32,0.08);
+    }
+    .focusSection.lvl12{ border-left:4px solid var(--green); }
+    .focusSection.lvl34{ border-left:4px solid var(--orange); }
+    .focusSection.lvl56{ border-left:4px solid var(--blue); }
+    .focusSection.is-complete{
+      border-color:rgba(22,138,74,0.24);
+    }
+
+    .focusSectionHead{
+      width:100%;
       display:flex;
       align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-bottom:10px;
+      gap:12px;
+      padding:14px 16px;
+      border:none;
+      background:linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,251,253,0.92));
+      cursor:pointer;
+      text-align:left;
+      font-family:inherit;
+      transition:background .15s ease;
     }
+    .focusSectionHead:hover{
+      background:linear-gradient(180deg, #fff, rgba(241,248,252,0.95));
+    }
+    .focusSectionHead:focus-visible{
+      outline:none;
+      box-shadow:var(--focus);
+    }
+
     .focusTitle{
       margin:0;
+      flex:1;
+      min-width:0;
       font-size:13px;
       font-weight:900;
       text-transform:uppercase;
-      letter-spacing:0.2px;
-      color:rgba(11,18,32,0.80);
+      letter-spacing:0.25px;
+      color:rgba(11,18,32,0.82);
+      line-height:1.25;
+    }
+
+    .focusSectionMeta{
+      flex:0 0 auto;
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:0.15px;
+      text-transform:uppercase;
+      color:var(--muted);
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(11,18,32,0.10);
+      background:#fff;
+    }
+    .focusSection.is-complete .focusSectionMeta{
+      color:var(--green);
+      border-color:rgba(22,138,74,0.22);
+      background:rgba(22,138,74,0.08);
+    }
+
+    .focusSectionChevron{
+      flex:0 0 auto;
+      width:10px;
+      height:10px;
+      border-right:2px solid rgba(45,132,179,0.75);
+      border-bottom:2px solid rgba(45,132,179,0.75);
+      transform:rotate(45deg);
+      transition:transform .22s ease;
+      margin-top:-4px;
+    }
+    .focusSection.is-open .focusSectionChevron{
+      transform:rotate(-135deg);
+      margin-top:4px;
+    }
+
+    .focusSectionBody{
+      display:grid;
+      grid-template-rows:0fr;
+      transition:grid-template-rows .28s ease;
+    }
+    .focusSection.is-open .focusSectionBody{
+      grid-template-rows:1fr;
+    }
+    .focusSectionBodyInner{
+      overflow:hidden;
+      border-top:1px solid rgba(11,18,32,0.08);
+      padding:4px 0;
     }
 
     .focusItem{
-      border:1px solid rgba(11,18,32,0.10);
-      border-radius:14px;
-      padding:10px;
-      margin-bottom:10px;
-      background:#fff;
-      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      padding:14px 16px;
+      border-bottom:1px solid rgba(11,18,32,0.06);
+      background:transparent;
+      align-items:stretch;
     }
-    .focusItem:last-child{ margin-bottom:0; }
+    .focusItem:last-child{ border-bottom:none; }
 
-    .focusItem.lvl12{ background:rgba(22,138,74,0.12); border-color:rgba(22,138,74,0.22); }
-    .focusItem.lvl34{ background:rgba(244,183,64,0.20); border-color:rgba(244,183,64,0.30); }
-    .focusItem.lvl56{ background:rgba(45,132,179,0.14); border-color:rgba(45,132,179,0.26); }
+    .focusItem.lvl12,
+    .focusItem.lvl34,
+    .focusItem.lvl56{ background:transparent; }
 
     .focusLine{
-      font-size:13px;
-      font-weight:900;
-      margin:0 0 10px 0;
+      flex:1;
+      min-width:0;
+      font-size:14px;
+      font-weight:600;
+      margin:0;
       color:rgba(11,18,32,0.92);
+      line-height:1.5;
+    }
+    .focusLineNum{
+      font-weight:800;
+      color:var(--blueDeep);
+      margin-right:6px;
+    }
+
+    @media (min-width:640px){
+      .focusItem{
+        flex-direction:row;
+        align-items:center;
+        gap:20px;
+        padding:14px 20px;
+      }
     }
 
     .triGrid{
-      display:grid;
-      grid-template-columns:repeat(3, minmax(0,1fr));
-      gap:8px;
+      display:inline-flex;
+      flex-shrink:0;
+      align-self:stretch;
+      width:100%;
+      padding:3px;
+      gap:2px;
+      background:rgba(11,18,32,0.04);
+      border:1px solid rgba(11,18,32,0.08);
+      border-radius:12px;
     }
+    @media (min-width:640px){
+      .triGrid{
+        align-self:center;
+        width:auto;
+        min-width:340px;
+        max-width:380px;
+      }
+    }
+
     .triBtn{
       display:flex;
       align-items:center;
       justify-content:center;
+      flex:1;
+      min-width:0;
       text-align:center;
-      padding:8px 8px;
-      border-radius:14px;
-      border:1px solid rgba(11,18,32,0.14);
-      background:#fff;
+      padding:8px 10px;
+      border:none;
+      border-radius:9px;
+      background:transparent;
       cursor:pointer;
       user-select:none;
-      font-weight:900;
-      font-size:10px; /* smaller as requested */
-      text-transform:uppercase;
-      letter-spacing:0.2px;
-      transition:box-shadow .15s ease, border-color .15s ease, background .15s ease, transform .06s ease;
-      min-height:38px;
-      line-height:1.12;
-      white-space:normal;
+      font-weight:700;
+      font-size:11px;
+      text-transform:none;
+      letter-spacing:0;
+      color:var(--muted);
+      transition:background .15s ease, color .15s ease, box-shadow .15s ease, transform .06s ease;
+      min-height:36px;
+      line-height:1.2;
+      white-space:nowrap;
     }
     .triBtn input{ display:none; }
+    .triBtn:hover{
+      background:rgba(255,255,255,0.85);
+      color:var(--text);
+    }
     .triBtn:active{ transform:translateY(1px); }
     .triBtn.active{
-      border-color:rgba(45,132,179,0.45);
-      background:rgba(45,132,179,0.10);
-      box-shadow:0 10px 18px rgba(11,18,32,0.08);
+      background:var(--blueDeep);
+      color:#fff;
+      box-shadow:0 2px 10px rgba(45,132,179,0.32);
     }
     .triBtn.independence{ white-space:nowrap; }
 
-    /* Mobile: fit labels, Independence one line, others can wrap */
-    @media (max-width:560px){
-      .triGrid{ gap:6px; }
+    @media (max-width:639px){
+      .triGrid{ gap:2px; padding:3px; }
       .triBtn{
-        font-size:8px;
-        letter-spacing:0.10px;
-        padding:7px 5px;
-        min-height:32px;
-        line-height:1.05;
+        font-size:10px;
+        padding:8px 6px;
+        min-height:34px;
       }
-      .triBtn.independence{ font-size:8px; } /* keep one line */
+    }
+    @media (max-width:400px){
+      .triBtn{
+        font-size:9px;
+        padding:7px 4px;
+        letter-spacing:-0.01em;
+      }
     }
 
     /* ===== Core Development Areas ===== */
@@ -1370,7 +1490,7 @@
     <!-- 3 Level Confirmation -->
     <div class="card" id="cardLevelConf">
       <h2>3. Level confirmation</h2>
-      <p class="note">Rate each focus area using Fully supported, Partially supported, or Independent.</p>
+      <p class="note">Work through each category in order. One category opens at a time; when every outcome in it is rated, the next category opens automatically. Tap a category header to review or change earlier ratings.</p>
 
       <div class="levelBox" id="levelBox">
         <div class="progressWrap">
@@ -1674,7 +1794,7 @@
   <!-- swtermreview_app.js — portal/ then portal-shared-js/ on Vercel. -->
   <script>
     (function () {
-      var v = "20260602-back-dashboard";
+      var v = "20260612-focus-accordion";
       var file = "swtermreview_app.js";
       var bases = [];
       try {

@@ -29,8 +29,8 @@ const LEVEL_DATA = {
           { id:"l1_9", text:"Use exhalation to create movement in the water or towards a floating object, such as moving a floating toy across the water surface." },
         ]},
         { title: "Water Safety I", items: [
-          { id:"l1_10", text:"Enter the water safely." },
-          { id:"l1_11", text:"Exit the water safely." },
+          { id:"l1_10", text:"Enter the water safely using an appropriate method." },
+          { id:"l1_11", text:"Exit the water safely using an appropriate method." },
           { id:"l1_12", text:"Move towards and reach a point of safety, such as the poolside, wall, steps, ladder or appropriate support equipment." },
         ]},
       ],
@@ -51,7 +51,7 @@ const LEVEL_DATA = {
           { id:"l2_9", text:"Submerge below the water surface to reach or retrieve an object." },
         ]},
         { title: "Water Safety II", items: [
-          { id:"l2_10", text:"Enter and exit the water using a range of access points, such as the poolside, steps, ladder, ramp or hoist." },
+          { id:"l2_10", text:"Move between different areas of the aquatic environment, such as the shower, poolside and shallow water, entering and exiting the water safely when required." },
           { id:"l2_11", text:"Travel away from and return to a point of safety, such as the poolside, wall, steps, ladder or appropriate support equipment." },
           { id:"l2_12", text:"Recover to a standing position following loss of balance." },
         ]},
@@ -71,10 +71,10 @@ const LEVEL_DATA = {
           { id:"l3_8", text:"Perform a rotation from a front position to a back position using an open shape, such as a star shape." },
         ]},
         { title: "Propulsion I", items: [
-          { id:"l3_9", text:"Use leg actions to create propulsion through the water in a front position, such as flutter kicking, breaststroke kicking or other recognised leg actions." },
-          { id:"l3_10", text:"Use leg actions to create propulsion through the water in a back position, such as flutter kicking, breaststroke kicking or other recognised leg actions." },
+          { id:"l3_9", text:"Use leg actions to create propulsion through the water in a front position, such as flutter kicking, froggy legs or undulating movements." },
+          { id:"l3_10", text:"Use leg actions to create propulsion through the water in a back position, such as flutter kicking, froggy legs or undulating movements." },
           { id:"l3_11", text:"Use arm actions to create propulsion through the water, such as paddling or scooping actions." },
-          { id:"l3_12", text:"Combine arm and leg actions to create continuous propulsion through the water." },
+          { id:"l3_12", text:"Combine arm and leg actions to create continuous propulsion through the water, such as paddling and flutter kicking." },
         ]},
         { title: "Water Safety III", items: [
           { id:"l3_13", text:"Perform jump entries into the water from the poolside." },
@@ -85,10 +85,10 @@ const LEVEL_DATA = {
 
       4: [
         { title: "Floating & Balance II", items: [
-          { id:"l4_1", text:"Maintain a back floating position using a narrow shape with the arms extended above the head, such as a pencil shape." },
-          { id:"l4_2", text:"Maintain a front floating position using a narrow shape with the arms extended above the head, such as a pencil shape." },
+          { id:"l4_1", text:"Maintain a back floating position using a narrow shape with the arms extended above the head, such as a rocket shape." },
+          { id:"l4_2", text:"Maintain a front floating position using a narrow shape with the arms extended above the head, such as a rocket shape." },
           { id:"l4_3", text:"Maintain a floating position using a tuck shape, such as a mushroom float." },
-          { id:"l4_4", text:"Move between different floating shapes whilst maintaining a floating position, such as star, soldier, pencil or tuck shapes." },
+          { id:"l4_4", text:"Move between different floating shapes whilst maintaining a floating position, such as star, soldier, rocket or mushroom shapes." },
         ]},
         { title: "Streamlining & Rotation II", items: [
           { id:"l4_5", text:"Push off and glide on the back whilst maintaining a narrow body shape, such as a soldier shape." },
@@ -97,56 +97,51 @@ const LEVEL_DATA = {
           { id:"l4_8", text:"Combine gliding and rotational movements within the same action, such as rotating from front to back or back to front whilst gliding." },
         ]},
         { title: "Propulsion II", items: [
-          { id:"l4_9", text:"Refine front crawl kicking actions and combine them with front crawl arm actions (catch up)." },
-          { id:"l4_10", text:"Refine backstroke kicking actions and combine them with backstroke double arm actions." },
+          { id:"l4_9", text:"Perform recognised front crawl kicking actions and combine them with front crawl arm actions (catch up)." },
+          { id:"l4_10", text:"Perform recognised backstroke kicking actions and combine them with backstroke double arm actions." },
           { id:"l4_11", text:"Perform breaststroke propulsion patterns (kick-glide) on the front and back." },
-          { id:"l4_12", text:"Perform dolphin kick with arms on the side." },
+          { id:"l4_12", text:"Perform and maintain dolphin kick on the front and back, using a rocket glide position or with the arms on the side." },
         ]},
         { title: "Water Safety IV", items: [
-          { id:"l4_13", text:"Perform a controlled dive entry into the water." },
+          { id:"l4_13", text:"Perform a sitting dive entry into the water." },
           { id:"l4_14", text:"Move into a back floating position following immersion and maintain the float." },
-          { id:"l4_15", text:"Complete a Swim-Float-Kick sequence, moving through the water, rolling onto the back to float and breathe, rolling onto the front and continuing movement." },
+          { id:"l4_15", text:"Complete a Swim-Float-Kick sequence by moving through the water, rolling onto the back to float and breathe, rolling onto the front and continuing to move through the water." },
         ]},
       ],
 
       5: [
         { title: "Streamlining & Rotation III", items: [
-          { id:"l5_1", text:"Push off and glide on the back using a pencil shape and roll onto the front." },
-          { id:"l5_2", text:"Push off and glide on the front using a pencil shape and roll onto the back." },
-          { id:"l5_3", text:"Push off and glide whilst combining front to back and back to front rotations using a pencil shape." },
+          { id:"l5_1", text:"Push off and glide on the back using a rocket shape and roll onto the front." },
+          { id:"l5_2", text:"Push off and glide on the front using a rocket shape and roll onto the back." },
+          { id:"l5_3", text:"Push off and glide whilst combining front to back and back to front rotations using a rocket shape." },
           { id:"l5_4", text:"Push off and glide underwater and perform rotational movements using any body shape." },
         ]},
-        { title: "Propulsion III", items: [
-          { id:"l5_5", text:"Combine front crawl arm actions with a roll onto the back to breathe and continue movement through the water." },
-          { id:"l5_6", text:"Combine backstroke kicking actions with single arm backstroke actions." },
-          { id:"l5_7", text:"Combine recognised breaststroke arm actions with a refined kick-glide sequence." },
-          { id:"l5_8", text:"Combine recognised butterfly arm actions with refined dolphin kick actions from a rocket glide position." },
+        { title: "Swimming Strokes I", items: [
+          { id:"l5_5", text:"Perform front crawl single arm actions with lateral breathing and continuous leg actions." },
+          { id:"l5_6", text:"Perform recognised backstroke alternating arm actions from an arms on the side position with continuous leg actions." },
+          { id:"l5_7", text:"Combine recognised breaststroke arm and leg actions using a 1 pull-breathe and 2 kick-glide sequence." },
+          { id:"l5_8", text:"Perform dolphin kick from a rocket glide position on the front and back." },
         ]},
         { title: "Dives, Starts & Turns I", items: [
           { id:"l5_9", text:"Perform a controlled kneeling dive entry into a glide followed by propulsion." },
           { id:"l5_10", text:"Perform a head first dive and retrieve an object from the water." },
           { id:"l5_11", text:"Perform basic turning actions in the water, such as a somersault." },
-          { id:"l5_12", text:"Perform a tumble turn next to the wall." },
+          { id:"l5_12", text:"Perform a tumble turn, including a somersault, push off and glide." },
         ]},
         { title: "Integrated Water Safety & Recovery", items: [
           { id:"l5_13", text:"Maintain treading water whilst signalling or shouting for help." },
-          { id:"l5_14", text:"Apply Swim-Float-Kick over a full pool length." },
+          { id:"l5_14", text:"Apply Swim-Float-Kick over a full pool length, using front crawl or butterfly as the swimming phase." },
           { id:"l5_15", text:"Reach for and hold a rescue aid whilst remaining afloat." },
         ]},
       ],
 
       6: [
-        { title: "Swimming Strokes", items: [
-          { id:"l6_1", text:"Perform front crawl single arm actions with lateral breathing and continuous leg actions." },
-          { id:"l6_2", text:"Perform recognised backstroke alternating arm actions from an arms on the side position with continuous leg actions." },
-          { id:"l6_3", text:"Combine recognised breaststroke arm and leg actions using a 1 pull-breathe and 2 kick-glide sequence." },
-          { id:"l6_4", text:"Combine recognised butterfly arm actions with two dolphin kick actions between arm cycles." },
-        ]},
-        { title: "Timing & Coordination", items: [
-          { id:"l6_5", text:"Coordinate front crawl arm actions and breathing to maintain continuous swimming." },
-          { id:"l6_6", text:"Coordinate backstroke windmill arm timing, maintaining a continuous rhythm between both arms." },
-          { id:"l6_7", text:"Coordinate breaststroke pull-breathe-kick-glide timing." },
-          { id:"l6_8", text:"Coordinate butterfly breathing timing with arm actions, breathing every 2 arm cycles." },
+        { title: "Swimming Strokes II", items: [
+          { id:"l6_1", text:"Swim front crawl using continuous arm and leg actions with lateral or bilateral breathing." },
+          { id:"l6_2", text:"Swim backstroke using continuous windmill arm actions and continuous leg actions." },
+          { id:"l6_3", text:"Swim breaststroke using coordinated pull-breathe-kick-glide timing." },
+          { id:"l6_4", text:"Swim butterfly using coordinated arm actions, dolphin kick actions and breathing every 2 arm cycles." },
+          { id:"l6_5", text:"Maintain continuous swimming whilst changing between recognised swimming strokes, such as front crawl to backstroke or backstroke to breaststroke." },
         ]},
         { title: "Distance & Endurance", items: [
           { id:"l6_9", text:"Swim front crawl continuously for at least one pool length or 10 arm cycles, using lateral or bilateral breathing whilst maintaining rhythm and control." },
@@ -229,6 +224,65 @@ const LEVEL_DATA = {
     /* =========================
        Level Confirmation render
        ========================= */
+    function focusSectionProgress(section){
+      const items = Array.from(section.querySelectorAll(".focusItem"));
+      const total = items.length;
+      const rated = items.filter(it => it.querySelector('.triGrid input[type="radio"]:checked')).length;
+      return { total, rated, complete: total > 0 && rated === total };
+    }
+
+    function syncFocusSections(options){
+      const wrap = $("#focusWrap");
+      if(!wrap) return;
+      const sections = $$(".focusSection", wrap);
+      let firstIncomplete = -1;
+
+      sections.forEach((sec, idx) => {
+        const prog = focusSectionProgress(sec);
+        const meta = sec.querySelector(".focusSectionMeta");
+        if(meta) meta.textContent = prog.rated + " / " + prog.total;
+        sec.classList.toggle("is-complete", prog.complete);
+        if(!prog.complete && firstIncomplete === -1) firstIncomplete = idx;
+      });
+
+      if(options && options.toggleSection){
+        const sec = options.toggleSection;
+        const willOpen = !sec.classList.contains("is-open");
+        if(willOpen){
+          sections.forEach(s => s.classList.remove("is-open"));
+          sec.classList.add("is-open");
+        }else{
+          sec.classList.remove("is-open");
+          if(firstIncomplete >= 0 && !sections.some(s => s.classList.contains("is-open"))){
+            sections[firstIncomplete].classList.add("is-open");
+          }
+        }
+      }else if(options && options.autoAdvanceFrom){
+        const idx = sections.indexOf(options.autoAdvanceFrom);
+        const prog = focusSectionProgress(options.autoAdvanceFrom);
+        if(prog.complete){
+          options.autoAdvanceFrom.classList.remove("is-open");
+          const next = sections[idx + 1];
+          if(next){
+            sections.forEach(s => s.classList.remove("is-open"));
+            next.classList.add("is-open");
+          }
+        }
+      }else{
+        const anyOpen = sections.some(s => s.classList.contains("is-open"));
+        if(!anyOpen && firstIncomplete >= 0){
+          sections[firstIncomplete].classList.add("is-open");
+        }else if(!anyOpen && sections.length){
+          sections[sections.length - 1].classList.add("is-open");
+        }
+      }
+
+      sections.forEach(sec => {
+        const head = sec.querySelector(".focusSectionHead");
+        if(head) head.setAttribute("aria-expanded", sec.classList.contains("is-open") ? "true" : "false");
+      });
+    }
+
     function buildTriBtn(name, value, labelHtml, extraClass){
       const lbl = document.createElement("label");
       lbl.className = `triBtn ${extraClass || ""}`.trim();
@@ -240,6 +294,9 @@ const LEVEL_DATA = {
         lbl.classList.add("active");
         updateLevelConfirmationProgress();
         autoSetTermDecision();
+        const section = lbl.closest(".focusSection");
+        if(section) syncFocusSections({ autoAdvanceFrom: section });
+        generateTermSummary();
       });
       return lbl;
     }
@@ -260,14 +317,30 @@ const LEVEL_DATA = {
       const groupCls = levelGroupClass(levelNumber);
       const blocks = LEVEL_DATA[levelNumber];
 
-      blocks.forEach(block => {
+      blocks.forEach((block, blockIdx) => {
+        const itemCount = (block.items || []).length;
         const sec = document.createElement("div");
-        sec.className = "focusSection";
+        sec.className = `focusSection ${groupCls}`;
+        if(blockIdx === 0) sec.classList.add("is-open");
 
-        const head = document.createElement("div");
-        head.className = "focusHead";
-        head.innerHTML = `<p class="focusTitle">${String(block.title || "").toUpperCase()}</p>`;
+        const head = document.createElement("button");
+        head.type = "button";
+        head.className = "focusSectionHead";
+        head.setAttribute("aria-expanded", blockIdx === 0 ? "true" : "false");
+        head.innerHTML =
+          `<p class="focusTitle">${String(block.title || "")}</p>` +
+          `<span class="focusSectionMeta">0 / ${itemCount}</span>` +
+          `<span class="focusSectionChevron" aria-hidden="true"></span>`;
+        head.addEventListener("click", () => {
+          syncFocusSections({ toggleSection: sec });
+          head.setAttribute("aria-expanded", sec.classList.contains("is-open") ? "true" : "false");
+        });
         sec.appendChild(head);
+
+        const body = document.createElement("div");
+        body.className = "focusSectionBody";
+        const bodyInner = document.createElement("div");
+        bodyInner.className = "focusSectionBodyInner";
 
         (block.items || []).forEach((it, idx) => {
           const item = document.createElement("div");
@@ -275,7 +348,7 @@ const LEVEL_DATA = {
 
           const p = document.createElement("p");
           p.className = "focusLine";
-          p.textContent = `${idx + 1}. ${it.text || ""}`;
+          p.innerHTML = `<span class="focusLineNum">${idx + 1}.</span>${it.text || ""}`;
           item.appendChild(p);
 
           const grid = document.createElement("div");
@@ -283,21 +356,24 @@ const LEVEL_DATA = {
 
           const rName = `lvl_${levelNumber}_${it.id || (block.title + "_" + idx)}`;
 
-          const b1 = buildTriBtn(rName, "Fully supported", "Fully<br>supported", "");
-          const b2 = buildTriBtn(rName, "Partially supported", "Partially<br>supported", "");
-          const b3 = buildTriBtn(rName, "Independent", "Independent", "Independent");
+          const b1 = buildTriBtn(rName, "Fully supported", "Fully Supported", "");
+          const b2 = buildTriBtn(rName, "Partially supported", "Partially Supported", "");
+          const b3 = buildTriBtn(rName, "Independent", "Independent", "independence");
 
           grid.appendChild(b1);
           grid.appendChild(b2);
           grid.appendChild(b3);
 
           item.appendChild(grid);
-          sec.appendChild(item);
+          bodyInner.appendChild(item);
         });
 
+        body.appendChild(bodyInner);
+        sec.appendChild(body);
         wrap.appendChild(sec);
       });
 
+      syncFocusSections();
       updateLevelConfirmationProgress();
       autoSetTermDecision();
       generateTermSummary();
