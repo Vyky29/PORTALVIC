@@ -50,7 +50,7 @@
     var html = "";
     if (dobText) {
       html +=
-        '<p class="pp-muted pp-pax-meta">Date of birth: ' + esc(dobText) + "</p>";
+        '<p class="pp-muted pp-pax-meta">D.O.B: ' + esc(dobText) + "</p>";
     }
     if (age != null) {
       html += '<p class="pp-muted pp-pax-meta">Age: ' + esc(String(age)) + "</p>";

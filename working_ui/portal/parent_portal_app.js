@@ -477,7 +477,7 @@
     if (!c || !c.dob_iso) return "";
     var age = ageFromDobIso(c.dob_iso);
     return (
-      '<p class="pp-muted pp-child-dob">Date of birth: ' +
+      '<p class="pp-muted pp-child-dob">D.O.B: ' +
       esc(formatDob(c.dob_iso)) +
       "</p>" +
       (age != null ? '<p class="pp-muted pp-child-age">Age: ' + esc(String(age)) + "</p>" : "")
