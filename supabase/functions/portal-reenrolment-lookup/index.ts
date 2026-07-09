@@ -262,7 +262,7 @@ Deno.serve(async (req) => {
     weeklySlots = [
       {
         id: "demo-elia-50",
-        raw: "30' SW (Tuesday) · demo £50 one session",
+        raw: "30' SW (Tuesday)",
         serviceType: "AQUATIC ACTIVITY",
         durationMin: 30,
         day: "Tuesday",
@@ -271,9 +271,9 @@ Deno.serve(async (req) => {
         pricePerSession: 50,
         sessions: demoSessions,
         termTotals: { autumn: 50, spring: 0, summer: 0, annual: 50 },
-        venue: "Acton",
+        venue: "Acton Centre",
         timeSlot: "19:00–19:30",
-        displayLabel: "Aquatic Activity · Tuesday · 30' · £50 (demo one session)",
+        displayLabel: "30' Aquatic Activity · Tuesday 19:00–19:30 · Acton Centre",
       },
     ];
     dayCentreSlots = [];
@@ -284,7 +284,7 @@ Deno.serve(async (req) => {
     participantName: participantDisplayName,
     dobIso: participantRow.dob_iso ? String(participantRow.dob_iso) : null,
     serviceRaw: isEliaDemo
-      ? "30' SW (Tuesday) · demo £50 one session"
+      ? "30' Aquatic Activity (Tuesday) · Acton Centre"
       : paymentCtx?.serviceRaw || null,
     weeklySlots,
     dayCentreSlots,
