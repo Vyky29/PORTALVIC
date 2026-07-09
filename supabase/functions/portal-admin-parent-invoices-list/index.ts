@@ -53,13 +53,13 @@ Deno.serve(async (req) => {
   let q = admin
     .from("portal_parent_invoice_share")
     .select(
-      "id, document_id, contact_id, invoice_number, amount_gbp, due_date, payment_status, share_status, ready_at, ready_by, notes, created_at, updated_at",
+      "id, document_id, contact_id, invoice_number, amount_gbp, due_date, payment_status, share_status, ready_at, ready_by, notes, created_at, updated_at, payment_method_hint, gocardless_url, payment_link_url, payment_link_surcharge_note, parent_reported_paid_at, parent_reported_ref, parent_reported_method, parent_reported_notes, paid_at, paid_via",
     )
     .order("updated_at", { ascending: false })
     .limit(limit);
 
   if (shareFilter === "ready" || shareFilter === "hidden") q = q.eq("share_status", shareFilter);
-  if (["unpaid", "paid", "partial", "void"].includes(payFilter)) {
+  if (["unpaid", "paid", "partial", "void", "pending_confirmation"].includes(payFilter)) {
     q = q.eq("payment_status", payFilter);
   }
   if (contactId) q = q.eq("contact_id", contactId);
@@ -126,9 +126,18 @@ Deno.serve(async (req) => {
     .eq("share_status", "ready")
     .eq("payment_status", "unpaid");
 
+  const { count: pendingConfirm } = await admin
+    .from("portal_parent_invoice_share")
+    .select("id", { count: "exact", head: true })
+    .eq("share_status", "ready")
+    .eq("payment_status", "pending_confirmation");
+
   return portalAdminJson(200, {
     ok: true,
     invoices,
-    meta: { ready_unpaid: readyUnpaid || 0 },
+    meta: {
+      ready_unpaid: readyUnpaid || 0,
+      pending_confirmation: pendingConfirm || 0,
+    },
   });
 });

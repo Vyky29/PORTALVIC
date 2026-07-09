@@ -109,11 +109,12 @@
     if (pay === 'paid') tone = 'ok';
     else if (pay === 'void') tone = 'warn';
     else if (pay === 'partial') tone = 'info';
+    else if (pay === 'pending_confirmation') tone = 'pend';
     return (
       '<span class="chip chip--' +
       tone +
       '">' +
-      esc(pay) +
+      esc(pay.replace(/_/g, ' ')) +
       '</span> ' +
       '<span class="chip chip--' +
       (sh === 'ready' ? 'ok' : 'warn') +
@@ -125,6 +126,27 @@
 
   function rowHtml(inv) {
     var id = esc(inv.id);
+    var reportBits = [];
+    if (inv.parent_reported_paid_at) {
+      reportBits.push('Reported ' + formatDate(inv.parent_reported_paid_at));
+    }
+    if (inv.parent_reported_ref) reportBits.push('ref ' + inv.parent_reported_ref);
+    if (inv.parent_reported_method) reportBits.push(inv.parent_reported_method);
+    var linkBits = [];
+    if (inv.gocardless_url) linkBits.push('GoCardless');
+    if (inv.payment_link_url) linkBits.push('Payment link');
+    var confirmBtn =
+      inv.payment_status === 'pending_confirmation'
+        ? '<button type="button" class="btn btn--sm btn--primary" data-inv-act="paid" data-inv-id="' +
+          id +
+          '">Confirm paid</button> '
+        : inv.payment_status !== 'paid'
+          ? '<button type="button" class="btn btn--sm btn--sec" data-inv-act="paid" data-inv-id="' +
+            id +
+            '">Mark paid</button> '
+          : '<button type="button" class="btn btn--sm btn--ghost" data-inv-act="unpaid" data-inv-id="' +
+            id +
+            '">Mark unpaid</button> ';
     return (
       '<tr data-invoice-id="' +
       id +
@@ -138,7 +160,16 @@
       esc(inv.invoice_number || '—') +
       '<div class="muted" style="font-size:12px">' +
       esc(inv.title || '') +
-      '</div></td>' +
+      '</div>' +
+      (linkBits.length
+        ? '<div class="muted" style="font-size:11px">' + esc(linkBits.join(' · ')) + '</div>'
+        : '') +
+      (reportBits.length
+        ? '<div class="muted" style="font-size:11px;color:#92400e">' +
+          esc(reportBits.join(' · ')) +
+          '</div>'
+        : '') +
+      '</td>' +
       '<td>' +
       esc(formatMoney(inv.amount_gbp)) +
       '</td>' +
@@ -161,13 +192,7 @@
         : '<button type="button" class="btn btn--sm btn--primary" data-inv-act="share" data-inv-id="' +
           id +
           '">Share</button> ') +
-      (inv.payment_status !== 'paid'
-        ? '<button type="button" class="btn btn--sm btn--sec" data-inv-act="paid" data-inv-id="' +
-          id +
-          '">Mark paid</button>'
-        : '<button type="button" class="btn btn--sm btn--ghost" data-inv-act="unpaid" data-inv-id="' +
-          id +
-          '">Mark unpaid</button>') +
+      confirmBtn +
       '</td></tr>'
     );
   }
@@ -181,6 +206,10 @@
       body.share_status = 'ready';
       body.payment_status = 'unpaid';
     }
+    if (state.filter === 'pending') {
+      body.share_status = 'ready';
+      body.payment_status = 'pending_confirmation';
+    }
     var r = await api('portal-admin-parent-invoices-list', body);
     if (r.error) {
       host.innerHTML = '<p class="muted">Could not load invoices (' + esc(r.error) + ').</p>';
@@ -190,7 +219,12 @@
     state.meta = r.meta || {};
     var metaEl = global.document.getElementById('portalParentInvoicesMetaEmbed');
     if (metaEl) {
-      metaEl.textContent = String(state.meta.ready_unpaid || 0) + ' ready unpaid';
+      var parts = [];
+      parts.push(String(state.meta.ready_unpaid || 0) + ' unpaid');
+      if (state.meta.pending_confirmation) {
+        parts.push(String(state.meta.pending_confirmation) + ' pending');
+      }
+      metaEl.textContent = parts.join(' · ');
     }
     if (!state.invoices.length) {
       host.innerHTML = '<p class="muted">No invoices yet. Upload a PDF below to share with a family.</p>';
@@ -215,7 +249,10 @@
         var body = { action: 'update', invoice_id: id };
         if (act === 'share') body.share_status = 'ready';
         else if (act === 'hide') body.share_status = 'hidden';
-        else if (act === 'paid') body.payment_status = 'paid';
+        else if (act === 'paid') {
+          body.payment_status = 'paid';
+          body.paid_via = 'admin';
+        }
         else if (act === 'unpaid') body.payment_status = 'unpaid';
         else {
           btn.disabled = false;
@@ -344,11 +381,18 @@
       var due = global.document.getElementById('portalParentInvoiceDue');
       var title = global.document.getElementById('portalParentInvoiceTitle');
       var notes = global.document.getElementById('portalParentInvoiceNotes');
+      var gcUrl = global.document.getElementById('portalParentInvoiceGcUrl');
+      var plUrl = global.document.getElementById('portalParentInvoicePlUrl');
+      var plNote = global.document.getElementById('portalParentInvoicePlNote');
       if (invNo && invNo.value) fd.append('invoice_number', invNo.value);
       if (amount && amount.value) fd.append('amount_gbp', amount.value);
       if (due && due.value) fd.append('due_date', due.value);
       if (title && title.value) fd.append('title', title.value);
       if (notes && notes.value) fd.append('notes', notes.value);
+      if (gcUrl && gcUrl.value) fd.append('gocardless_url', gcUrl.value);
+      if (plUrl && plUrl.value) fd.append('payment_link_url', plUrl.value);
+      if (plNote && plNote.value) fd.append('payment_link_surcharge_note', plNote.value);
+      fd.append('payment_method_hint', 'bank_transfer');
       fd.append('share_status', 'ready');
       fd.append('payment_status', 'unpaid');
 
@@ -377,7 +421,7 @@
       '<div class="card-h"><h3>Family invoices</h3>' +
       '<span class="chip chip--pend" id="portalParentInvoicesMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Upload a client invoice PDF and share it to the parent hub. Families can open the PDF and see unpaid/paid status. Card payment (Stripe) comes later.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Upload a client invoice PDF and share it to the parent hub. Families see <strong>Tide bank transfer</strong> details by default. Add a GoCardless URL when needed; Payment Link only when a family/LA insists (note any surcharge).</p>' +
       '<form id="portalParentInvoiceUploadForm" class="toolbar" style="flex-direction:column;align-items:stretch;gap:10px;margin-bottom:14px">' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end">' +
       '<label style="flex:1 1 200px;min-width:0">Search participant' +
@@ -395,6 +439,9 @@
       '</div>' +
       '<label style="min-width:0">Title (optional)<input class="inp" id="portalParentInvoiceTitle" style="width:100%;max-width:28rem" /></label>' +
       '<label style="min-width:0">Notes (optional)<input class="inp" id="portalParentInvoiceNotes" style="width:100%;max-width:28rem" /></label>' +
+      '<label style="min-width:0">GoCardless URL (optional)<input class="inp" id="portalParentInvoiceGcUrl" type="url" placeholder="https://…" style="width:100%;max-width:28rem" /></label>' +
+      '<label style="min-width:0">Payment Link URL (rare)<input class="inp" id="portalParentInvoicePlUrl" type="url" placeholder="https://…" style="width:100%;max-width:28rem" /></label>' +
+      '<label style="min-width:0">Payment Link surcharge note<input class="inp" id="portalParentInvoicePlNote" placeholder="e.g. +2.5% card fee" style="width:100%;max-width:28rem" /></label>' +
       '<label style="min-width:0">PDF<input class="inp" id="portalParentInvoiceFile" type="file" accept="application/pdf,.pdf" style="width:100%;max-width:28rem" /></label>' +
       '<div><button type="submit" class="btn btn--primary btn--sm">Upload &amp; share</button></div>' +
       '</form>' +
@@ -402,6 +449,7 @@
       '<button type="button" class="btn btn--sm" data-inv-filter="all">All</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="ready">Shared</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="unpaid">Ready unpaid</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="pending">Pending confirmation</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="hidden">Hidden</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParentInvoicesRefreshEmbed">Refresh</button>' +
       '</div>' +

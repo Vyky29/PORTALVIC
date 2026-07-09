@@ -547,6 +547,16 @@ verify_jwt = false
 [functions.parent-portal-invoices-list]
 verify_jwt = false
 
+[functions.parent-portal-invoice-checkout]
+verify_jwt = false
+
+[functions.parent-portal-stripe-webhook]
+verify_jwt = false
+
+# Parent reports bank transfer paid (office confirms).
+[functions.parent-portal-invoice-report-paid]
+verify_jwt = false
+
 [functions.portal-admin-parent-invoices-list]
 verify_jwt = false
 

@@ -1108,6 +1108,7 @@
     .pp-invoice-chip--paid { background: #ecfdf5; color: #047857; }
     .pp-invoice-chip--partial { background: #eff6ff; color: #1d4ed8; }
     .pp-invoice-chip--void { background: #f1f5f9; color: #475569; }
+    .pp-invoice-chip--pending_confirmation { background: #fef3c7; color: #92400e; }
     .pp-invoice-card__amount {
       margin: 8px 0 0;
       font-size: 22px;
@@ -1121,6 +1122,81 @@
       flex-wrap: wrap;
       gap: 8px;
       margin-top: 12px;
+      min-width: 0;
+    }
+    .pp-invoice-pay {
+      margin: 12px 0 0;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #fde68a;
+      background: #fffbeb;
+      min-width: 0;
+    }
+    .pp-invoice-pay__title {
+      margin: 0 0 8px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #92400e;
+    }
+    .pp-invoice-pay__dl {
+      margin: 0;
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+    .pp-invoice-pay__dl > div {
+      display: grid;
+      grid-template-columns: 88px minmax(0, 1fr);
+      gap: 8px;
+      align-items: baseline;
+      min-width: 0;
+    }
+    .pp-invoice-pay__dl dt {
+      margin: 0;
+      font-size: 11px;
+      font-weight: 700;
+      color: #78716c;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+    .pp-invoice-pay__dl dd {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink);
+      overflow-wrap: break-word;
+      min-width: 0;
+      font-variant-numeric: tabular-nums;
+    }
+    .pp-invoice-pay__note {
+      margin: 8px 0 0;
+      font-size: 12px;
+      line-height: 1.4;
+      overflow-wrap: break-word;
+    }
+    .pp-invoice-report {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+    .pp-invoice-report__label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink);
+      min-width: 0;
+    }
+    .pp-invoice-report__input {
+      display: block;
+      width: 100%;
+      margin-top: 4px;
+      padding: 10px 12px;
+      border: 1px solid var(--line, #e2e8f0);
+      border-radius: 10px;
+      font: inherit;
+      box-sizing: border-box;
       min-width: 0;
     }
     .pp-hub-siblings {
@@ -2490,8 +2566,8 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260705-team-photos-only"></script>
   <script src="/portal/parent_portal_team.js?v=20260709-msg-photo-team"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260709-my-cal-polish"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260709-hub-ops-chips"></script>
-  <script src="/portal/parent_portal_app.js?v=20260709-parent-invoices"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260709-invoice-bank"></script>
+  <script src="/portal/parent_portal_app.js?v=20260709-invoice-bank"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {

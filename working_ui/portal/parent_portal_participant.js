@@ -2849,7 +2849,45 @@
     if (s === "paid") return "Paid";
     if (s === "partial") return "Partial";
     if (s === "void") return "Void";
+    if (s === "pending_confirmation") return "Pending confirmation";
     return "Unpaid";
+  }
+
+  function invoiceBankPanelHtml(inv) {
+    var bank = inv && inv.bank_transfer;
+    if (!bank) return "";
+    var status = String((inv && inv.payment_status) || "").toLowerCase();
+    if (status === "paid" || status === "void") return "";
+    var ref = String((inv && inv.suggested_reference) || bank.reference_hint || "").trim();
+    if (!bank.available) {
+      return (
+        '<div class="pp-invoice-pay">' +
+        '<p class="pp-invoice-pay__title">Pay by bank transfer</p>' +
+        '<p class="pp-muted pp-invoice-pay__note">' +
+        esc(bank.message || "Contact the office for bank transfer details.") +
+        "</p></div>"
+      );
+    }
+    return (
+      '<div class="pp-invoice-pay">' +
+      '<p class="pp-invoice-pay__title">Pay by bank transfer (Tide)</p>' +
+      '<dl class="pp-invoice-pay__dl">' +
+      "<div><dt>Payee</dt><dd>" +
+      esc(bank.payee_name) +
+      "</dd></div>" +
+      "<div><dt>Sort code</dt><dd>" +
+      esc(bank.sort_code) +
+      "</dd></div>" +
+      "<div><dt>Account</dt><dd>" +
+      esc(bank.account_number) +
+      "</dd></div>" +
+      (ref
+        ? "<div><dt>Reference</dt><dd>" + esc(ref) + "</dd></div>"
+        : "") +
+      "</dl>" +
+      '<p class="pp-muted pp-invoice-pay__note">Use the reference so we can match your payment. Prefer bank transfer — no card fee.</p>' +
+      "</div>"
+    );
   }
 
   function invoiceCardHtml(inv) {
@@ -2859,9 +2897,25 @@
     var due = formatDocWhen(inv && inv.due_date);
     var status = String((inv && inv.payment_status) || "unpaid").toLowerCase();
     var pdf = (inv && inv.pdf_url) || "";
+    var canReport = !!(inv && inv.can_report_paid);
+    var canPay = !!(inv && inv.can_pay);
+    var gc = String((inv && inv.gocardless_url) || "").trim();
+    var pl = String((inv && inv.payment_link_url) || "").trim();
+    var surcharge = String((inv && inv.payment_link_surcharge_note) || "").trim();
+    var suggestedRef = String((inv && inv.suggested_reference) || "").trim();
+    var pendingNote =
+      status === "pending_confirmation"
+        ? '<p class="pp-invoice-card__meta">Thanks — we will confirm when the payment appears' +
+          (inv.parent_reported_ref
+            ? " (ref " + esc(inv.parent_reported_ref) + ")"
+            : "") +
+          ".</p>"
+        : "";
     return (
       '<article class="pp-invoice-card pp-invoice-card--' +
       esc(status) +
+      '" data-invoice-id="' +
+      esc(inv.id) +
       '">' +
       '<div class="pp-invoice-card__head">' +
       "<strong>" +
@@ -2877,13 +2931,49 @@
         ? '<p class="pp-invoice-card__amount">' + esc(amount) + "</p>"
         : "") +
       (due ? '<p class="pp-invoice-card__meta muted">Due ' + esc(due) + "</p>" : "") +
+      pendingNote +
+      invoiceBankPanelHtml(inv) +
       '<div class="pp-invoice-card__acts">' +
       (pdf
-        ? '<a class="pp-btn pp-btn--primary" href="' +
+        ? '<a class="pp-btn pp-btn--ghost" href="' +
           esc(pdf) +
           '" target="_blank" rel="noopener noreferrer">Open PDF</a>'
         : '<p class="pp-muted">PDF not available yet.</p>') +
-      "</div></article>"
+      (gc
+        ? '<a class="pp-btn pp-btn--primary" href="' +
+          esc(gc) +
+          '" target="_blank" rel="noopener noreferrer">Pay with GoCardless</a>'
+        : "") +
+      (pl
+        ? '<a class="pp-btn pp-btn--ghost" href="' +
+          esc(pl) +
+          '" target="_blank" rel="noopener noreferrer">Card / Apple Pay link</a>'
+        : "") +
+      (canPay
+        ? '<button type="button" class="pp-btn pp-btn--ghost" data-pp-pay-invoice="' +
+          esc(inv.id) +
+          '">Card checkout</button>'
+        : "") +
+      "</div>" +
+      (pl
+        ? '<p class="pp-muted pp-invoice-pay__note">Card / Payment Link may include a surcharge' +
+          (surcharge ? ": " + esc(surcharge) : " to cover fees") +
+          ". Bank transfer is preferred.</p>"
+        : "") +
+      (canReport
+        ? '<div class="pp-invoice-report">' +
+          '<label class="pp-invoice-report__label">Transfer reference (optional)' +
+          '<input class="pp-invoice-report__input" type="text" data-pp-pay-ref="' +
+          esc(inv.id) +
+          '" value="' +
+          esc(suggestedRef) +
+          '" maxlength="120" autocomplete="off" /></label>' +
+          '<button type="button" class="pp-btn pp-btn--primary" data-pp-report-paid="' +
+          esc(inv.id) +
+          '">I&apos;ve paid by bank transfer</button>' +
+          "</div>"
+        : "") +
+      "</article>"
     );
   }
 
@@ -2894,7 +2984,7 @@
       '<h3 class="pp-pax-subview-title">Invoices</h3>' +
         '<p class="pp-muted pp-pax-subview-note">Statements shared by the office for ' +
         esc(firstNameOf(data)) +
-        ". Open a PDF to view or download. Online card payment will follow later.</p>" +
+        ". Prefer <strong>bank transfer</strong> to our Tide account. GoCardless or a card link appear only when the office adds them.</p>" +
         '<div id="ppInvoicesNotice" class="pp-notice" hidden></div>' +
         '<div id="ppInvoicesListHost"><p class="pp-muted">Loading…</p></div>',
     );
@@ -2918,9 +3008,8 @@
       return;
     }
 
-    void opts
-      .listInvoices()
-      .then(function (j) {
+    function refreshList() {
+      return opts.listInvoices().then(function (j) {
         var invoices = (j && j.invoices) || [];
         if (!invoices.length) {
           listHost.innerHTML =
@@ -2928,11 +3017,81 @@
           return;
         }
         listHost.innerHTML = invoices.map(invoiceCardHtml).join("");
-      })
-      .catch(function () {
-        showNotice("error", "Could not load invoices — please try again.");
-        listHost.innerHTML = "";
+        wireInvoiceActions();
       });
+    }
+
+    function wireInvoiceActions() {
+      listHost.querySelectorAll("[data-pp-pay-invoice]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var id = btn.getAttribute("data-pp-pay-invoice");
+          if (!id || typeof opts.startInvoiceCheckout !== "function") return;
+          btn.disabled = true;
+          btn.setAttribute("aria-busy", "true");
+          showNotice("info", "Opening secure card payment…");
+          void opts
+            .startInvoiceCheckout(id)
+            .then(function (j) {
+              var url = j && j.checkout_url;
+              if (!url) throw new Error("no_url");
+              global.location.href = url;
+            })
+            .catch(function (err) {
+              btn.disabled = false;
+              btn.removeAttribute("aria-busy");
+              var code = err && err.code ? String(err.code) : "";
+              var msg =
+                (err && err.messageText) ||
+                (code === "stripe_not_configured"
+                  ? "Card checkout is not available. Use bank transfer or contact the office."
+                  : code === "already_paid"
+                    ? "This invoice is already marked paid."
+                    : code === "amount_required"
+                      ? "This invoice has no amount for card payment. Contact the office."
+                      : "Could not start card payment — please try bank transfer or contact the office.");
+              showNotice("error", msg);
+            });
+        });
+      });
+
+      listHost.querySelectorAll("[data-pp-report-paid]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var id = btn.getAttribute("data-pp-report-paid");
+          if (!id || typeof opts.reportInvoicePaid !== "function") return;
+          var refInput = listHost.querySelector('[data-pp-pay-ref="' + id + '"]');
+          var ref = refInput ? String(refInput.value || "").trim() : "";
+          btn.disabled = true;
+          btn.setAttribute("aria-busy", "true");
+          void opts
+            .reportInvoicePaid(id, { payment_ref: ref, method: "bank_transfer" })
+            .then(function (j) {
+              showNotice(
+                "info",
+                (j && j.message) ||
+                  "Thanks — the office will confirm when the payment appears.",
+              );
+              return refreshList();
+            })
+            .catch(function (err) {
+              btn.disabled = false;
+              btn.removeAttribute("aria-busy");
+              var code = err && err.code ? String(err.code) : "";
+              showNotice(
+                "error",
+                (err && err.messageText) ||
+                  (code === "already_paid"
+                    ? "This invoice is already marked paid."
+                    : "Could not save — please try again."),
+              );
+            });
+        });
+      });
+    }
+
+    void refreshList().catch(function () {
+      showNotice("error", "Could not load invoices — please try again.");
+      listHost.innerHTML = "";
+    });
   }
 
   function bindBalance(host, data, opts) {

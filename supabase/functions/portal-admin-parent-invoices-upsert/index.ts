@@ -33,7 +33,7 @@ function parseDate(v: unknown): string | null {
 
 function parsePaymentStatus(v: unknown): string | null {
   const s = clean(v, 20).toLowerCase();
-  if (["unpaid", "paid", "partial", "void"].includes(s)) return s;
+  if (["unpaid", "paid", "partial", "void", "pending_confirmation"].includes(s)) return s;
   return null;
 }
 
@@ -41,6 +41,24 @@ function parseShareStatus(v: unknown): string | null {
   const s = clean(v, 20).toLowerCase();
   if (s === "ready" || s === "hidden") return s;
   return null;
+}
+
+function parseMethodHint(v: unknown): string | null {
+  const s = clean(v, 40).toLowerCase();
+  if (["bank_transfer", "gocardless", "payment_link", "other"].includes(s)) return s;
+  return null;
+}
+
+function parseHttpUrl(v: unknown, max = 500): string | null {
+  const s = clean(v, max);
+  if (!s) return null;
+  try {
+    const u = new URL(s);
+    if (u.protocol !== "https:" && u.protocol !== "http:") return null;
+    return u.toString().slice(0, max);
+  } catch {
+    return null;
+  }
 }
 
 Deno.serve(async (req) => {
@@ -93,6 +111,10 @@ Deno.serve(async (req) => {
       "share_status",
       "notes",
       "related_client",
+      "payment_method_hint",
+      "gocardless_url",
+      "payment_link_url",
+      "payment_link_surcharge_note",
     ]) {
       if (form.has(key)) fields[key] = form.get(key);
     }
@@ -191,6 +213,10 @@ Deno.serve(async (req) => {
       ready_at: shareStatus === "ready" ? now : null,
       ready_by: shareStatus === "ready" ? readyBy : null,
       notes,
+      payment_method_hint: parseMethodHint(fields.payment_method_hint) || "bank_transfer",
+      gocardless_url: parseHttpUrl(fields.gocardless_url),
+      payment_link_url: parseHttpUrl(fields.payment_link_url),
+      payment_link_surcharge_note: clean(fields.payment_link_surcharge_note, 200) || null,
       updated_at: now,
     };
 
@@ -235,17 +261,40 @@ Deno.serve(async (req) => {
     if (fields.notes !== undefined) {
       patch.notes = clean(fields.notes, 800) || null;
     }
+    if (fields.payment_method_hint !== undefined) {
+      patch.payment_method_hint = parseMethodHint(fields.payment_method_hint);
+    }
+    if (fields.gocardless_url !== undefined) {
+      patch.gocardless_url = parseHttpUrl(fields.gocardless_url);
+    }
+    if (fields.payment_link_url !== undefined) {
+      patch.payment_link_url = parseHttpUrl(fields.payment_link_url);
+    }
+    if (fields.payment_link_surcharge_note !== undefined) {
+      patch.payment_link_surcharge_note = clean(fields.payment_link_surcharge_note, 200) || null;
+    }
     const pay = parsePaymentStatus(fields.payment_status);
-    if (pay) patch.payment_status = pay;
+    if (pay) {
+      patch.payment_status = pay;
+      if (pay === "paid") {
+        patch.paid_at = now;
+        patch.paid_via = clean(fields.paid_via, 40) || "admin";
+      }
+      if (pay === "unpaid") {
+        patch.paid_at = null;
+        patch.paid_via = null;
+        patch.parent_reported_paid_at = null;
+        patch.parent_reported_ref = null;
+        patch.parent_reported_method = null;
+        patch.parent_reported_notes = null;
+      }
+    }
     const share = parseShareStatus(fields.share_status);
     if (share) {
       patch.share_status = share;
       if (share === "ready" && existing.share_status !== "ready") {
         patch.ready_at = now;
         patch.ready_by = readyBy;
-      }
-      if (share === "hidden") {
-        // keep ready_at history
       }
     }
 

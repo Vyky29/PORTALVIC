@@ -357,6 +357,61 @@
           });
         });
       },
+      reportInvoicePaid: function (invoiceId, payload) {
+        payload = payload && typeof payload === "object" ? payload : {};
+        return fetch(fn("parent-portal-invoice-report-paid"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey(),
+            Authorization: "Bearer " + anonKey(),
+            "x-parent-portal-session": state.session.token,
+          },
+          body: JSON.stringify({
+            contact_id: contactId,
+            invoice_id: invoiceId,
+            payment_ref: payload.payment_ref || "",
+            method: payload.method || "bank_transfer",
+            notes: payload.notes || "",
+          }),
+        }).then(function (res) {
+          return res.json().then(function (j) {
+            if (!res.ok || !j.ok) {
+              var err = new Error("report_paid_failed");
+              err.code = (j && j.error) || "report_paid_failed";
+              err.messageText = (j && j.message) || "";
+              throw err;
+            }
+            return j;
+          });
+        });
+      },
+      startInvoiceCheckout: function (invoiceId) {
+        return fetch(fn("parent-portal-invoice-checkout"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey(),
+            Authorization: "Bearer " + anonKey(),
+            "x-parent-portal-session": state.session.token,
+          },
+          body: JSON.stringify({
+            contact_id: contactId,
+            invoice_id: invoiceId,
+            return_origin: global.location && global.location.origin ? global.location.origin : "",
+          }),
+        }).then(function (res) {
+          return res.json().then(function (j) {
+            if (!res.ok || !j.ok) {
+              var err = new Error("checkout_failed");
+              err.code = (j && j.error) || "checkout_failed";
+              err.messageText = (j && j.message) || "";
+              throw err;
+            }
+            return j;
+          });
+        });
+      },
       respondMakeup: function (offerId, action, declineReason) {
         return fetch(fn("parent-portal-makeup-respond"), {
           method: "POST",
