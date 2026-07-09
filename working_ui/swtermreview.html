@@ -1081,10 +1081,110 @@
       min-height:72px;
     }
 
-    /* ===== Term decision ===== */
-    #cardDecision h2::before{
+    #cardLevelProgression h2::before{
       background:linear-gradient(180deg, var(--blueDeep) 0%, #5a9fc4 100%);
     }
+    #cardFinalNotes h2::before{
+      background:linear-gradient(180deg, var(--blueDeep) 0%, #5a9fc4 100%);
+    }
+
+    .termRecommendMeta{
+      margin:0 0 8px;
+      font-size:13px;
+      font-weight:800;
+      color:rgba(11,18,32,0.82);
+      line-height:1.45;
+    }
+
+    .devProfilePanel{
+      margin-top:22px;
+      padding:20px;
+      border-radius:18px;
+      border:1px solid rgba(109,92,174,0.16);
+      background:linear-gradient(180deg, rgba(109,92,174,0.06) 0%, #fff 55%);
+      box-shadow:0 8px 20px rgba(11,18,32,0.04);
+    }
+    .devProfileTitle{
+      margin:0 0 6px;
+      font-size:16px;
+      font-weight:900;
+      color:rgba(11,18,32,0.94);
+    }
+    .devProfileIntro{
+      margin:0 0 16px;
+      font-size:13px;
+      font-weight:600;
+      line-height:1.55;
+      color:var(--muted);
+      max-width:72ch;
+    }
+    .devProfileGrid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:12px;
+      margin-bottom:18px;
+    }
+    @media (min-width:760px){
+      .devProfileGrid{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
+    }
+    .devProfileDomain{
+      padding:14px;
+      border-radius:14px;
+      border:1px solid rgba(11,18,32,0.08);
+      background:#fff;
+    }
+    .devProfileDomainTitle{
+      margin:0 0 8px;
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:0.12px;
+      text-transform:uppercase;
+      color:var(--purple, #6d5cae);
+    }
+    .devProfileDomainStatus{
+      margin:0 0 4px;
+      font-size:18px;
+      font-weight:900;
+      color:rgba(11,18,32,0.92);
+    }
+    .devProfileDomainPct{
+      margin:0;
+      font-size:12px;
+      font-weight:700;
+      color:var(--muted);
+    }
+    .devProfileSummaryText{
+      margin:0 0 16px;
+      font-size:14px;
+      font-weight:600;
+      line-height:1.6;
+      color:var(--text, rgba(11,18,32,0.88));
+    }
+    .devProfileColumns{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:16px;
+    }
+    @media (min-width:760px){
+      .devProfileColumns{ grid-template-columns:1fr 1fr; }
+    }
+    .devProfileColumns h4{
+      margin:0 0 8px;
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:0.1px;
+      text-transform:uppercase;
+      color:var(--blueDeep);
+    }
+    .devProfileColumns ul{
+      margin:0;
+      padding-left:1.1em;
+      font-size:13px;
+      font-weight:600;
+      line-height:1.55;
+      color:rgba(11,18,32,0.86);
+    }
+    .devProfileColumns li{ margin-bottom:6px; }
 
     .termRecommendCard{
       border:1px solid rgba(11,18,32,0.12);
@@ -1778,9 +1878,52 @@
       </div>
     </div>
 
-    <!-- 4 Core Development Areas -->
+    <!-- 4 Level progression decision -->
+    <div class="card" id="cardLevelProgression">
+      <h2>4. Level progression decision</h2>
+      <p class="note">Based on Section 3 learning outcomes only. Should the participant consolidate the current level or progress to the next level?</p>
+
+      <div class="termRecommendCard" id="levelProgressRecommendCard">
+        <div class="termRecommendIcon" aria-hidden="true">↗</div>
+        <p class="termRecommendEyebrow">Recommended level progression</p>
+        <h3 class="termRecommendDecision" id="levelProgressDecisionText">Consolidate Current Level</h3>
+        <p class="termRecommendMeta" id="levelProgressScore">Level score: Not set</p>
+        <p class="termRecommendMeta" id="levelProgressLearningSummary">Learning outcome summary: Complete level confirmation to generate a recommendation.</p>
+        <p class="termRecommendExplain" id="levelProgressExplain">Complete all learning outcome ratings in Section 3 to generate a level progression recommendation.</p>
+        <div class="termRecommendReadiness">
+          <div class="termRecommendReadinessTop">
+            <span class="termRecommendReadinessLabel">Progression readiness</span>
+            <span class="termRecommendConfidence" id="levelProgressConfidence">Preliminary</span>
+          </div>
+          <div class="termRecommendMeter" aria-hidden="true">
+            <div class="termRecommendMeterFill" id="levelProgressMeterFill"></div>
+          </div>
+        </div>
+        <div class="termRecommendActions">
+          <button type="button" class="termBtn termBtnPrimary" id="btnAcceptLevelProgress">Accept Recommendation</button>
+          <button type="button" class="termBtn termBtnSecondary" id="btnOverrideLevelProgress">Override Decision</button>
+        </div>
+        <p class="termRecommendAccepted" id="levelProgressAccepted" hidden>Recommendation accepted. You can still override if needed.</p>
+      </div>
+
+      <div class="termDecisionOverride" id="levelProgressOverride" hidden>
+        <p class="termDecisionOverrideTitle">Manual level progression decision</p>
+        <div class="termDecision" id="levelProgressDecisionRadios">
+          <div class="termOption termOption--consolidate">
+            <input type="radio" name="levelProgressDecision" id="lpd_consolidate" value="Consolidate Current Level">
+            <label for="lpd_consolidate">Consolidate Current Level</label>
+          </div>
+          <div class="termOption termOption--transition">
+            <input type="radio" name="levelProgressDecision" id="lpd_progress" value="Progress to Next Level">
+            <label for="lpd_progress">Progress to Next Level</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 Core Development Areas -->
     <div class="card" id="cardAreas">
-      <h2>4. Core development areas</h2>
+      <h2>5. Core development areas</h2>
       <p class="note">Rate each observation as Rarely, Sometimes, or Always across all three domains. Progress updates automatically as you complete the ratings.</p>
 
       <div class="corePanel">
@@ -2031,59 +2174,57 @@
           </div>
         </div>
       </div>
+
+      <div class="devProfilePanel" id="devProfilePanel" aria-live="polite">
+        <h3 class="devProfileTitle">Overall development profile</h3>
+        <p class="devProfileIntro">A positive overview of regulation, independence, and engagement this term. This describes the participant’s developmental profile — it is not a level progression decision.</p>
+
+        <div class="devProfileGrid">
+          <div class="devProfileDomain" data-dev-domain="regulation">
+            <p class="devProfileDomainTitle">Regulation</p>
+            <p class="devProfileDomainStatus" id="devProfileRegStatus">Not set</p>
+            <p class="devProfileDomainPct" id="devProfileRegPct">—</p>
+          </div>
+          <div class="devProfileDomain" data-dev-domain="independence">
+            <p class="devProfileDomainTitle">Independence</p>
+            <p class="devProfileDomainStatus" id="devProfileIndStatus">Not set</p>
+            <p class="devProfileDomainPct" id="devProfileIndPct">—</p>
+          </div>
+          <div class="devProfileDomain" data-dev-domain="engagement">
+            <p class="devProfileDomainTitle">Engagement</p>
+            <p class="devProfileDomainStatus" id="devProfileEngStatus">Not set</p>
+            <p class="devProfileDomainPct" id="devProfileEngPct">—</p>
+          </div>
+        </div>
+
+        <p class="devProfileSummaryText" id="devProfileSummaryText">Complete the core development area ratings to generate an overall developmental summary.</p>
+
+        <div class="devProfileColumns">
+          <div>
+            <h4>Strengths</h4>
+            <ul id="devProfileStrengths"><li>Complete ratings to identify strengths.</li></ul>
+          </div>
+          <div>
+            <h4>Areas to continue supporting next term</h4>
+            <ul id="devProfileSupport"><li>Complete ratings to identify supportive focus areas.</li></ul>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- 5 Term Decision -->
-    <div class="card" id="cardDecision">
-      <h2>5. Term decision</h2>
-      <p class="note">Review the recommended decision based on level confirmation and core development areas. Accept the recommendation or override if needed.</p>
-
-      <div class="termRecommendCard" id="termRecommendCard">
-        <div class="termRecommendIcon" aria-hidden="true">✦</div>
-        <p class="termRecommendEyebrow">Recommended term decision</p>
-        <h3 class="termRecommendDecision" id="termRecommendDecision">Consolidate Current Level</h3>
-        <p class="termRecommendExplain" id="termRecommendExplain">Complete level confirmation and core development ratings to generate a recommendation.</p>
-        <div class="termRecommendReadiness">
-          <div class="termRecommendReadinessTop">
-            <span class="termRecommendReadinessLabel">Readiness indicator</span>
-            <span class="termRecommendConfidence" id="termRecommendConfidence">Preliminary</span>
-          </div>
-          <div class="termRecommendMeter" aria-hidden="true">
-            <div class="termRecommendMeterFill" id="termRecommendMeterFill"></div>
-          </div>
-        </div>
-        <div class="termRecommendActions">
-          <button type="button" class="termBtn termBtnPrimary" id="btnAcceptRecommendation">Accept Recommendation</button>
-          <button type="button" class="termBtn termBtnSecondary" id="btnOverrideDecision">Override Decision</button>
-        </div>
-        <p class="termRecommendAccepted" id="termRecommendAccepted" hidden>Recommendation accepted. You can still override if needed.</p>
-      </div>
-
-      <div class="termDecisionOverride" id="termDecisionOverride" hidden>
-        <p class="termDecisionOverrideTitle">Manual term decision</p>
-        <div class="termDecision" id="termDecision">
-          <div class="termOption termOption--consolidate">
-            <input type="radio" name="termDecision" id="td_consolidate" value="Consolidate Current Level">
-            <label for="td_consolidate">Consolidate Current Level</label>
-          </div>
-
-          <div class="termOption termOption--transition">
-            <input type="radio" name="termDecision" id="td_transition" value="Transition to Next Stage">
-            <label for="td_transition">Transition to Next Stage</label>
-          </div>
-        </div>
-      </div>
-
-      <div class="divider"></div>
+    <!-- 6 Final review notes -->
+    <div class="card" id="cardFinalNotes">
+      <h2>6. Final review notes</h2>
+      <p class="note">Optional teacher notes, final comments, or anything important to carry forward for next term. Level progression is recorded in Section 4.</p>
 
       <label>
-        Decision notes
-        <textarea id="decisionNotes" placeholder="Add any key notes for internal tracking or parent communication"></textarea>
+        Final review notes
+        <textarea id="decisionNotes" placeholder="Add any key notes for internal tracking or parent communication (optional)"></textarea>
       </label>
 
       <div class="summary-box">
         <h3>Term Review Summary</h3>
-        <div class="summary-output" id="termSummaryOutput">Complete the term review to generate a summary of details, stage and level, level confirmation, core development areas, and term decision. The PDF mirrors this summary with corporate branding.</div>
+        <div class="summary-output" id="termSummaryOutput">Complete the term review to generate a summary of details, stage and level, level confirmation, level progression decision, core development areas, overall development profile, and final review notes. The PDF mirrors this summary with corporate branding.</div>
         <p class="summary-hint">The summary updates as you complete the form. Submit saves the professional Term Review PDF and a family-friendly Term Celebration Certificate to <strong>My Documents</strong>; open them there to download or print.</p>
         <div class="summary-actions">
           <button type="button" class="btn" id="btnSwtermSubmit">Submit</button>
@@ -2104,7 +2245,7 @@
   <!-- swtermreview_app.js — portal/ then portal-shared-js/ on Vercel. -->
   <script>
     (function () {
-      var v = "20260709-term-recommend-celebration";
+      var v = "20260709-level-progression-split";
       var file = "swtermreview_app.js";
       var bases = [];
       try {

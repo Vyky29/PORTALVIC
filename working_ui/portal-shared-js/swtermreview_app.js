@@ -293,7 +293,7 @@ const LEVEL_DATA = {
         grid.querySelectorAll(".triBtn").forEach(b => b.classList.remove("active"));
         lbl.classList.add("active");
         updateLevelConfirmationProgress();
-        autoSetTermDecision();
+        updateLevelProgressionUI();
         const section = lbl.closest(".focusSection");
         if(section) syncFocusSections({ autoAdvanceFrom: section });
         generateTermSummary();
@@ -375,7 +375,7 @@ const LEVEL_DATA = {
 
       syncFocusSections();
       updateLevelConfirmationProgress();
-      autoSetTermDecision();
+      updateLevelProgressionUI();
       generateTermSummary();
     }
 
@@ -510,6 +510,7 @@ const LEVEL_DATA = {
 
       swatch.style.background = levelGroupColour(selectedLevel);
       badgeTxt.textContent = info.label;
+      updateLevelProgressionUI();
     }
 
     function isLevelSecure100(){
@@ -520,10 +521,11 @@ const LEVEL_DATA = {
       return allAnswered && allIndependence;
     }
 
-    function setTermDecision(value){
+    function setLevelProgressDecision(value){
       const map = {
-        "Transition to Next Stage": "td_transition",
-        "Consolidate Current Level": "td_consolidate",
+        "Progress to Next Level": "lpd_progress",
+        "Consolidate Current Level": "lpd_consolidate",
+        "Transition to Next Stage": "lpd_progress",
       };
       const id = map[value];
       if(!id) return;
@@ -532,116 +534,137 @@ const LEVEL_DATA = {
       el.checked = true;
     }
 
-    function computeTermRecommendation(){
-      const levelInfo = computeLevelProgressLabel(getAllLevelRatings());
-      const domains = ["regulation", "independence", "engagement"].map(key => ({
-        key,
-        ...computeDomainResult(key),
-      }));
-      const domainsRated = domains.filter(d => d.answered > 0);
-      const domainAvgPct = domainsRated.length
-        ? Math.round(domainsRated.reduce((acc, d) => acc + d.pct, 0) / domainsRated.length)
-        : 0;
-      const allDomainsAnswered = domains.every(d => d.totalItems > 0 && d.answered === d.totalItems);
-      const allDomainsSecure = domainsRated.length === 3 && domainsRated.every(d => d.label === "Secure");
-      const allDomainsProgressingOrSecure = domainsRated.length === 3 &&
-        domainsRated.every(d => d.label === "Progressing" || d.label === "Secure");
+    function getLevelProgressionDecisionValue(){
+      const checked = document.querySelector('#levelProgressDecisionRadios input[type="radio"]:checked');
+      if(checked) return checked.value;
+      return computeLevelProgressionRecommendation().decision;
+    }
+
+    function isProgressToNextLevel(decision){
+      return decision === "Progress to Next Level" || decision === "Transition to Next Stage";
+    }
+
+    function buildLearningOutcomeSummary(levelInfo, ratings){
+      if(!selectedLevel || !levelInfo.total){
+        return "Select a level and complete learning outcome ratings to generate a summary.";
+      }
+      if(levelInfo.answered === 0){
+        return "Learning outcomes not yet rated for this level.";
+      }
+      const counts = { full: 0, partial: 0, ind: 0 };
+      ratings.forEach(v => {
+        if(v === "Fully supported") counts.full++;
+        else if(v === "Partially supported") counts.partial++;
+        else if(v === "Independent") counts.ind++;
+      });
+      const parts = [];
+      if(counts.ind) parts.push(counts.ind + " independent");
+      if(counts.partial) parts.push(counts.partial + " partially supported");
+      if(counts.full) parts.push(counts.full + " fully supported");
+      return (
+        levelInfo.answered + " of " + levelInfo.total + " outcomes rated · " +
+        levelInfo.label + " (" + levelInfo.pct + "%)" +
+        (parts.length ? " · " + parts.join(", ") : "")
+      );
+    }
+
+    function buildLevelProgressionExplanation(decision, levelInfo){
+      const levelPart = !selectedLevel || levelInfo.answered === 0
+        ? "Level confirmation is not yet complete"
+        : `learning outcomes are ${levelInfo.label.toLowerCase()} (${levelInfo.pct}%)`;
+
+      if(isProgressToNextLevel(decision)){
+        return `Based on ${levelPart}, the participant appears ready to progress to the next level. Continued confidence, safety, and familiar routines remain priorities as new skills are introduced.`;
+      }
+      return `Based on ${levelPart}, the participant is showing positive progress and would benefit from consolidating the current level before moving forward. This supports confidence, routine, and steady skill development in the water.`;
+    }
+
+    function computeLevelProgressionRecommendation(){
+      const ratings = getAllLevelRatings();
+      const levelInfo = computeLevelProgressLabel(ratings);
 
       let decision = "Consolidate Current Level";
       let confidence = "Preliminary";
       let readinessPct = 40;
 
       if(selectedLevel && isLevelSecure100()){
-        decision = "Transition to Next Stage";
+        decision = "Progress to Next Level";
         confidence = "High";
         readinessPct = 96;
       }else if((selectedLevel === 2 || selectedLevel === 4) && levelInfo.label === "Secure"){
-        decision = "Transition to Next Stage";
+        decision = "Progress to Next Level";
         confidence = "High";
         readinessPct = 88;
-      }else if(levelInfo.label === "Secure" && levelInfo.pct >= 80 && allDomainsSecure){
-        decision = "Transition to Next Stage";
+      }else if(levelInfo.label === "Secure" && levelInfo.pct >= 80){
+        decision = "Progress to Next Level";
         confidence = "High";
         readinessPct = 86;
-      }else if(levelInfo.label === "Secure" && allDomainsProgressingOrSecure && domainAvgPct >= 72){
-        decision = "Transition to Next Stage";
+      }else if(levelInfo.label === "Secure"){
+        decision = "Progress to Next Level";
         confidence = "Good";
-        readinessPct = 80;
-      }else if(levelInfo.label === "Progressing" && levelInfo.pct >= 70 && domainAvgPct >= 60){
+        readinessPct = 78;
+      }else if(levelInfo.label === "Progressing" && levelInfo.pct >= 70){
         decision = "Consolidate Current Level";
         confidence = "Good";
-        readinessPct = 68;
-      }else if(levelInfo.answered > 0 || domainsRated.length){
+        readinessPct = 65;
+      }else if(levelInfo.answered > 0){
         decision = "Consolidate Current Level";
-        confidence = allDomainsAnswered && levelInfo.answered === levelInfo.total ? "Moderate" : "Preliminary";
-        readinessPct = Math.max(35, Math.min(72, Math.round((levelInfo.pct + domainAvgPct) / 2)));
+        confidence = levelInfo.answered === levelInfo.total ? "Moderate" : "Preliminary";
+        readinessPct = Math.max(35, Math.min(72, levelInfo.pct));
       }
 
       return {
         decision,
         confidence,
         readinessPct,
-        explanation: buildRecommendationExplanation(decision, levelInfo, domains, domainAvgPct),
+        explanation: buildLevelProgressionExplanation(decision, levelInfo),
         levelInfo,
-        domains,
+        learningSummary: buildLearningOutcomeSummary(levelInfo, ratings),
       };
     }
 
-    function buildRecommendationExplanation(decision, levelInfo, domains, domainAvgPct){
-      const levelPart = !selectedLevel || levelInfo.answered === 0
-        ? "Level confirmation is not yet complete"
-        : `level confirmation is ${levelInfo.label.toLowerCase()} (${levelInfo.pct}%)`;
-      const domainParts = domains
-        .filter(d => d.answered > 0)
-        .map(d => `${d.key} is ${d.label.toLowerCase()}`);
-      const domainPart = domainParts.length
-        ? `core development areas show ${domainParts.join(", ")}`
-        : "core development areas are not yet fully rated";
-
-      if(decision === "Transition to Next Stage"){
-        return `Based on ${levelPart} and the fact that ${domainPart}, the participant appears ready for the next stage. Continued confidence and safety remain priorities as new challenges are introduced.`;
-      }
-      return `Based on ${levelPart} and the fact that ${domainPart}, the participant is showing positive progress and would benefit from further consolidation before moving forward. This supports confidence, routine, and steady skill development in the water.`;
-    }
-
-    function updateTermRecommendationUI(){
-      const rec = computeTermRecommendation();
-      const decEl = $("#termRecommendDecision");
-      const expEl = $("#termRecommendExplain");
-      const confEl = $("#termRecommendConfidence");
-      const fillEl = $("#termRecommendMeterFill");
+    function updateLevelProgressionUI(){
+      const rec = computeLevelProgressionRecommendation();
+      const decEl = $("#levelProgressDecisionText");
+      const scoreEl = $("#levelProgressScore");
+      const summaryEl = $("#levelProgressLearningSummary");
+      const expEl = $("#levelProgressExplain");
+      const confEl = $("#levelProgressConfidence");
+      const fillEl = $("#levelProgressMeterFill");
       if(decEl) decEl.textContent = rec.decision;
+      if(scoreEl){
+        scoreEl.textContent = selectedLevel && rec.levelInfo.answered > 0
+          ? "Level score: " + rec.levelInfo.label + " (" + rec.levelInfo.pct + "%)"
+          : "Level score: Not set";
+      }
+      if(summaryEl) summaryEl.textContent = "Learning outcome summary: " + rec.learningSummary;
       if(expEl) expEl.textContent = rec.explanation;
       if(confEl) confEl.textContent = rec.confidence;
       if(fillEl) fillEl.style.width = `${rec.readinessPct}%`;
 
-      const overridePanel = $("#termDecisionOverride");
+      const overridePanel = $("#levelProgressOverride");
       const overrideActive = overridePanel && !overridePanel.hidden && overridePanel.classList.contains("is-visible");
       if(!overrideActive){
-        setTermDecision(rec.decision);
+        setLevelProgressDecision(rec.decision);
       }
     }
 
-    function autoSetTermDecision(){
-      updateTermRecommendationUI();
-    }
-
-    function wireTermDecisionUI(){
-      const acceptBtn = $("#btnAcceptRecommendation");
-      const overrideBtn = $("#btnOverrideDecision");
-      const overridePanel = $("#termDecisionOverride");
-      const acceptedNote = $("#termRecommendAccepted");
+    function wireLevelProgressionUI(){
+      const acceptBtn = $("#btnAcceptLevelProgress");
+      const overrideBtn = $("#btnOverrideLevelProgress");
+      const overridePanel = $("#levelProgressOverride");
+      const acceptedNote = $("#levelProgressAccepted");
 
       if(acceptBtn){
         acceptBtn.addEventListener("click", () => {
-          const rec = computeTermRecommendation();
-          setTermDecision(rec.decision);
+          const rec = computeLevelProgressionRecommendation();
+          setLevelProgressDecision(rec.decision);
           if(overridePanel){
             overridePanel.hidden = true;
             overridePanel.classList.remove("is-visible");
           }
           if(acceptedNote) acceptedNote.hidden = false;
-          showToast("Recommendation accepted");
+          showToast("Level progression recommendation accepted");
           generateTermSummary();
         });
       }
@@ -652,8 +675,104 @@ const LEVEL_DATA = {
             overridePanel.classList.add("is-visible");
           }
           if(acceptedNote) acceptedNote.hidden = true;
-          showToast("Choose a manual decision");
+          showToast("Choose a manual level progression decision");
         });
+      }
+    }
+
+    function computeOverallDevelopmentProfile(){
+      const domainKeys = ["regulation", "independence", "engagement"];
+      const domains = domainKeys.map(key => ({
+        key,
+        title: key.charAt(0).toUpperCase() + key.slice(1),
+        ...computeDomainResult(key),
+      }));
+      const rated = domains.filter(d => d.answered > 0);
+      const strengths = [];
+      const supportAreas = [];
+
+      const strengthLines = {
+        regulation: "Shows growing comfort and regulation in the pool environment",
+        independence: "Demonstrates useful independence with routines and equipment",
+        engagement: "Participates positively and responds well during activities",
+      };
+      const secureLines = {
+        regulation: "Maintains steady regulation and calm across sessions",
+        independence: "Shows confident independence with familiar routines and equipment",
+        engagement: "Engages consistently and responds well to instruction",
+      };
+      const supportLines = {
+        regulation: "Continue supporting calm transitions, sensory comfort, and recovery in the water",
+        independence: "Continue building independence through familiar routines and gentle challenge",
+        engagement: "Continue nurturing participation, responsiveness, and sustained engagement",
+      };
+
+      domains.forEach(d => {
+        if(d.answered === 0) return;
+        if(d.label === "Secure"){
+          strengths.push(secureLines[d.key] || (d.title + " appears secure this term"));
+        }else if(d.label === "Progressing"){
+          strengths.push(strengthLines[d.key] || (d.title + " is progressing positively this term"));
+        }else{
+          supportAreas.push(supportLines[d.key] || ("Continue supporting " + d.title.toLowerCase() + " with calm, structured sessions"));
+        }
+      });
+
+      if(!rated.length){
+        return {
+          domains,
+          overallSummary: "Complete the core development area ratings to generate an overall developmental summary.",
+          strengths: ["Complete ratings to identify strengths."],
+          supportAreas: ["Complete ratings to identify supportive focus areas."],
+        };
+      }
+
+      const summaryParts = rated.map(d => d.title.toLowerCase() + " is " + d.label.toLowerCase() + " (" + d.pct + "%)");
+      let overallSummary =
+        "This term, the participant’s developmental profile shows " + summaryParts.join(", ") + ". ";
+      if(strengths.length && !supportAreas.length){
+        overallSummary += "Overall, the profile reflects steady development across sessions with familiar structure and positive participation.";
+      }else if(strengths.length && supportAreas.length){
+        overallSummary += "There are clear strengths to celebrate, alongside areas where continued supportive practice will help confidence grow.";
+      }else{
+        overallSummary += "Continued familiar routines, calm pacing, and positive reinforcement will help these areas develop steadily.";
+      }
+
+      if(!strengths.length){
+        strengths.push("Shows effort, courage, and willingness to participate in swimming sessions");
+      }
+      if(!supportAreas.length){
+        supportAreas.push("Continue familiar routines and positive reinforcement to maintain confidence next term");
+      }
+
+      return { domains, overallSummary, strengths, supportAreas };
+    }
+
+    function updateDevelopmentProfileUI(){
+      const profile = computeOverallDevelopmentProfile();
+      const map = {
+        regulation: { status: "#devProfileRegStatus", pct: "#devProfileRegPct" },
+        independence: { status: "#devProfileIndStatus", pct: "#devProfileIndPct" },
+        engagement: { status: "#devProfileEngStatus", pct: "#devProfileEngPct" },
+      };
+      profile.domains.forEach(d => {
+        const ids = map[d.key];
+        if(!ids) return;
+        const statusEl = $(ids.status);
+        const pctEl = $(ids.pct);
+        if(statusEl) statusEl.textContent = d.answered === 0 ? "Not set" : d.label;
+        if(pctEl) pctEl.textContent = d.answered === 0 ? "—" : d.pct + "% completion";
+      });
+
+      const summaryEl = $("#devProfileSummaryText");
+      const strengthsEl = $("#devProfileStrengths");
+      const supportEl = $("#devProfileSupport");
+      if(summaryEl) summaryEl.textContent = profile.overallSummary;
+      if(strengthsEl){
+        strengthsEl.innerHTML = profile.strengths.map(s => "<li>" + escapeHtmlTerm(s) + "</li>").join("");
+      }
+      if(supportEl){
+        supportEl.innerHTML = profile.supportAreas.map(s => "<li>" + escapeHtmlTerm(s) + "</li>").join("");
       }
     }
 
@@ -785,7 +904,7 @@ const LEVEL_DATA = {
 
           const domain = grid.getAttribute("data-rsi-domain");
           updateDomainUI(domain);
-          updateTermRecommendationUI();
+          updateDevelopmentProfileUI();
           generateTermSummary();
         });
       });
@@ -1250,7 +1369,7 @@ const LEVEL_DATA = {
         }else{
           const paras = (s.body || "").split(/\n\n+/).map(p => p.trim()).filter(Boolean);
           inner = "<div class=\"report-block-body\">" + paras.map((p, idx) => {
-            if(s.title === "1. Term review details" || s.title === "2. Stage and level" || s.title === "5. Term decision"){
+            if(s.title === "1. Term review details" || s.title === "2. Stage and level" || s.title === "4. Level progression decision" || s.title === "7. Final review notes"){
               return "<p>" + p.split("\n").map(line => formatBulletLineHtmlTerm(line)).join("<br>") + "</p>";
             }
             if(s.title === "3. Level confirmation"){
@@ -1270,7 +1389,7 @@ const LEVEL_DATA = {
       if(fieldValTerm("instructorName")) return true;
       if(selectedStage) return true;
       if(selectedLevel) return true;
-      if(document.querySelector("#termDecision input[type=\"radio\"]:checked")) return true;
+      if(document.querySelector("#levelProgressDecisionRadios input[type=\"radio\"]:checked")) return true;
       if(fieldValTerm("decisionNotes")) return true;
       if(fieldValTerm("eviRegulation") || fieldValTerm("eviIndependence") || fieldValTerm("eviEngagement")) return true;
       if(document.querySelector(".rsiGrid input[type=\"radio\"]:checked")) return true;
@@ -1372,7 +1491,25 @@ const LEVEL_DATA = {
         });
       }
 
-      // 4. Core development areas (Engagement, Independence, Regulation)
+      const lpd = document.querySelector('#levelProgressDecisionRadios input[type="radio"]:checked');
+      const lpdRec = computeLevelProgressionRecommendation();
+      const lpdVal = lpd ? lpd.value : "";
+      let lpdBody = "";
+      if(lpdVal){
+        lpdBody += "Decision: " + lpdVal;
+      }else{
+        lpdBody += "Decision: Not selected (recommended: " + lpdRec.decision + ")";
+      }
+      lpdBody += "\n\nLevel score: " + (
+        selectedLevel && lpdRec.levelInfo.answered > 0
+          ? lpdRec.levelInfo.label + " (" + lpdRec.levelInfo.pct + "%)"
+          : "Not set"
+      );
+      lpdBody += "\n\nLearning outcome summary: " + lpdRec.learningSummary;
+      lpdBody += "\n\n" + lpdRec.explanation;
+      sections.push({ type: "paragraph", title: "4. Level progression decision", body: lpdBody });
+
+      // 5. Core development areas (Engagement, Independence, Regulation)
       const coreBlocks = [];
       ["engagement", "independence", "regulation"].forEach(domain => {
         const res = computeDomainResult(domain);
@@ -1410,15 +1547,48 @@ const LEVEL_DATA = {
           },
         });
       });
-      sections.push({ type: "coreDevelopment", title: "4. Core development areas", blocks: coreBlocks });
-      const td = document.querySelector('#termDecision input[type="radio"]:checked');
-      const decVal = td ? td.value : "";
+      sections.push({ type: "coreDevelopment", title: "5. Core development areas", blocks: coreBlocks });
+
+      const profile = computeOverallDevelopmentProfile();
+      const profileLines = profile.domains.map(d => {
+        if(d.answered === 0) return d.title + ": Not set";
+        return d.title + ": " + d.label + " (" + d.pct + "%)";
+      });
+      profileLines.push("");
+      profileLines.push(profile.overallSummary);
+      if(profile.strengths.length){
+        profileLines.push("");
+        profileLines.push("Strengths:");
+        profile.strengths.forEach(s => profileLines.push("• " + s));
+      }
+      if(profile.supportAreas.length){
+        profileLines.push("");
+        profileLines.push("Areas to continue supporting next term:");
+        profile.supportAreas.forEach(s => profileLines.push("• " + s));
+      }
+      sections.push({ type: "paragraph", title: "6. Overall development profile", body: profileLines.join("\n") });
+
+      const lpd = document.querySelector('#levelProgressDecisionRadios input[type="radio"]:checked');
+      const lpdRec = computeLevelProgressionRecommendation();
+      const lpdVal = lpd ? lpd.value : "";
+      let lpdBody = "";
+      if(lpdVal){
+        lpdBody += "Decision: " + lpdVal;
+      }else{
+        lpdBody += "Decision: Not selected (recommended: " + lpdRec.decision + ")";
+      }
+      lpdBody += "\n\nLevel score: " + (
+        selectedLevel && lpdRec.levelInfo.answered > 0
+          ? lpdRec.levelInfo.label + " (" + lpdRec.levelInfo.pct + "%)"
+          : "Not set"
+      );
+      lpdBody += "\n\nLearning outcome summary: " + lpdRec.learningSummary;
+      lpdBody += "\n\n" + lpdRec.explanation;
+      sections.splice(3, 0, { type: "paragraph", title: "4. Level progression decision", body: lpdBody });
+
       const notes = fieldValTerm("decisionNotes");
-      let decBody = "";
-      if(decVal) decBody += "Decision: " + decVal;
-      if(notes) decBody += (decBody ? "\n\n" : "") + "Notes:\n" + notes;
-      if(!decBody) decBody = "No term decision selected yet.";
-      sections.push({ type: "paragraph", title: "5. Term decision", body: decBody });
+      let notesBody = notes ? notes : "No final review notes added.";
+      sections.push({ type: "paragraph", title: "7. Final review notes", body: notesBody });
       return sections;
     }
 
@@ -1431,7 +1601,7 @@ const LEVEL_DATA = {
       if(!hasAnyTermReviewContent()){
         lastTermSummarySections = [];
         out.classList.remove("summary-rich");
-        out.innerHTML = "<p class=\"summary-placeholder\">Complete the term review to generate a summary of details, stage and level, level confirmation, core development areas, and term decision. The PDF mirrors this summary with corporate branding.</p>";
+        out.innerHTML = "<p class=\"summary-placeholder\">Complete the term review to generate a summary of details, stage and level, level confirmation, level progression decision, core development areas, overall development profile, and final review notes. The PDF mirrors this summary with corporate branding.</p>";
         return;
       }
       lastTermSummarySections = buildTermReviewSummarySections();
@@ -1681,9 +1851,8 @@ const LEVEL_DATA = {
     }
 
     function buildCelebrationNextSteps(){
-      const checked = document.querySelector('#termDecision input[type="radio"]:checked');
-      const decision = checked ? checked.value : computeTermRecommendation().decision;
-      if(decision === "Transition to Next Stage"){
+      const decision = getLevelProgressionDecisionValue();
+      if(isProgressToNextLevel(decision)){
         return "Next term we will celebrate your progress and gently introduce new challenges as you continue your swimming journey.";
       }
       return "Next term we will continue building confidence, strengthening key aquatic skills, and celebrating every step forward.";
@@ -2347,18 +2516,19 @@ const LEVEL_DATA = {
         initSwtermDetailsPanel();
         wireStageLevel();
         wireRSIButtons();
-        wireTermDecisionUI();
+        wireLevelProgressionUI();
 
         selectedStage = "";
         applyStageRules();
         renderFocusAreasForLevel(0);
 
         ["regulation","independence","engagement"].forEach(d => updateDomainUI(d));
-        updateTermRecommendationUI();
+        updateLevelProgressionUI();
+        updateDevelopmentProfileUI();
 
-        $$('#termDecision input[type="radio"]').forEach(r => {
+        $$('#levelProgressDecisionRadios input[type="radio"]').forEach(r => {
           r.addEventListener("change", () => {
-            showToast("Term decision updated");
+            showToast("Level progression decision updated");
             generateTermSummary();
           });
         });
