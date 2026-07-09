@@ -356,9 +356,9 @@ const LEVEL_DATA = {
       wrap.innerHTML = "";
       if(!levelNumber || !LEVEL_DATA[levelNumber]){
         $("#countTxt").textContent = "Select a level to start";
-        $("#badgeTxt").textContent = "Level progress not set";
+        $("#badgeTxt").textContent = "Not set";
         $("#meterFill").style.width = "0%";
-        $("#percentTxt").textContent = "Completion 0 percent";
+        $("#percentTxt").textContent = "0% complete";
         generateTermSummary();
         return;
       }
@@ -549,16 +549,16 @@ const LEVEL_DATA = {
 
       countTxt.textContent = `${info.answered} of ${info.total} rated`;
       meterFill.style.width = `${info.pct}%`;
-      percentTxt.textContent = `Completion ${info.pct} percent`;
+      percentTxt.textContent = `${info.pct}% complete`;
 
       if(!selectedLevel){
         swatch.style.background = "var(--blueDeep)";
-        badgeTxt.textContent = "Level progress not set";
+        badgeTxt.textContent = "Not set";
         return;
       }
 
       swatch.style.background = levelGroupColour(selectedLevel);
-      badgeTxt.textContent = info.label;
+      badgeTxt.textContent = info.answered === 0 ? "Not set" : info.label;
       updateLevelProgressionUI();
     }
 
@@ -617,15 +617,18 @@ const LEVEL_DATA = {
       );
     }
 
-    function buildLevelProgressionExplanation(decision, levelInfo){
-      const levelPart = !selectedLevel || levelInfo.answered === 0
-        ? "Level confirmation is not yet complete"
-        : `learning outcomes are ${levelInfo.label.toLowerCase()} (${levelInfo.pct}%)`;
-
-      if(isProgressToNextLevel(decision)){
-        return `Based on ${levelPart}, the participant appears ready to progress to the next level. Continued confidence, safety, and familiar routines remain priorities as new skills are introduced.`;
+    function buildLevelProgressionReason(decision, levelInfo){
+      if(!selectedLevel || !levelInfo.total || levelInfo.answered === 0){
+        return "Complete learning outcomes to generate a recommendation.";
       }
-      return `Based on ${levelPart}, the participant is showing positive progress and would benefit from consolidating the current level before moving forward. This supports confidence, routine, and steady skill development in the water.`;
+      if(isProgressToNextLevel(decision)){
+        return `Outcomes are ${levelInfo.label.toLowerCase()} (${levelInfo.pct}%) — ready for the next level with familiar routines and safety.`;
+      }
+      return `Outcomes are ${levelInfo.label.toLowerCase()} (${levelInfo.pct}%) — consolidating this level will strengthen confidence and skills.`;
+    }
+
+    function buildLevelProgressionExplanation(decision, levelInfo){
+      return buildLevelProgressionReason(decision, levelInfo);
     }
 
     function computeLevelProgressionRecommendation(){
@@ -676,18 +679,22 @@ const LEVEL_DATA = {
       const rec = computeLevelProgressionRecommendation();
       const decEl = $("#levelProgressDecisionText");
       const scoreEl = $("#levelProgressScore");
-      const summaryEl = $("#levelProgressLearningSummary");
-      const expEl = $("#levelProgressExplain");
+      const completionEl = $("#levelProgressCompletion");
+      const reasonEl = $("#levelProgressReason");
       const confEl = $("#levelProgressConfidence");
       const fillEl = $("#levelProgressMeterFill");
       if(decEl) decEl.textContent = rec.decision;
       if(scoreEl){
         scoreEl.textContent = selectedLevel && rec.levelInfo.answered > 0
-          ? "Level score: " + rec.levelInfo.label + " (" + rec.levelInfo.pct + "%)"
-          : "Level score: Not set";
+          ? rec.levelInfo.label + " (" + rec.levelInfo.pct + "%)"
+          : "Not set";
       }
-      if(summaryEl) summaryEl.textContent = "Learning outcome summary: " + rec.learningSummary;
-      if(expEl) expEl.textContent = rec.explanation;
+      if(completionEl){
+        completionEl.textContent = selectedLevel && rec.levelInfo.total
+          ? rec.levelInfo.answered + " of " + rec.levelInfo.total + " outcomes rated"
+          : "—";
+      }
+      if(reasonEl) reasonEl.textContent = buildLevelProgressionReason(rec.decision, rec.levelInfo);
       if(confEl) confEl.textContent = rec.confidence;
       if(fillEl) fillEl.style.width = `${rec.readinessPct}%`;
 
@@ -702,7 +709,6 @@ const LEVEL_DATA = {
       const acceptBtn = $("#btnAcceptLevelProgress");
       const overrideBtn = $("#btnOverrideLevelProgress");
       const overridePanel = $("#levelProgressOverride");
-      const acceptedNote = $("#levelProgressAccepted");
 
       if(acceptBtn){
         acceptBtn.addEventListener("click", () => {
@@ -712,8 +718,7 @@ const LEVEL_DATA = {
             overridePanel.hidden = true;
             overridePanel.classList.remove("is-visible");
           }
-          if(acceptedNote) acceptedNote.hidden = false;
-          showToast("Level progression recommendation accepted");
+          showToast("Recommendation accepted");
           generateTermSummary();
         });
       }
@@ -723,8 +728,8 @@ const LEVEL_DATA = {
             overridePanel.hidden = false;
             overridePanel.classList.add("is-visible");
           }
-          if(acceptedNote) acceptedNote.hidden = true;
-          showToast("Choose a manual level progression decision");
+          showToast("Choose a manual decision");
+          generateTermSummary();
         });
       }
     }
@@ -770,28 +775,27 @@ const LEVEL_DATA = {
       if(!rated.length){
         return {
           domains,
-          overallSummary: "Complete the core development area ratings to generate an overall developmental summary.",
-          strengths: ["Complete ratings to identify strengths."],
-          supportAreas: ["Complete ratings to identify supportive focus areas."],
+          overallSummary: "Complete core development ratings to generate a profile summary.",
+          strengths: ["—"],
+          supportAreas: ["—"],
         };
       }
 
       const summaryParts = rated.map(d => d.title.toLowerCase() + " is " + d.label.toLowerCase() + " (" + d.pct + "%)");
-      let overallSummary =
-        "This term, the participant’s developmental profile shows " + summaryParts.join(", ") + ". ";
+      let overallSummary = "This term, " + summaryParts.join(", ") + ".";
       if(strengths.length && !supportAreas.length){
-        overallSummary += "Overall, the profile reflects steady development across sessions with familiar structure and positive participation.";
+        overallSummary += " The profile reflects steady development across sessions.";
       }else if(strengths.length && supportAreas.length){
-        overallSummary += "There are clear strengths to celebrate, alongside areas where continued supportive practice will help confidence grow.";
+        overallSummary += " Clear strengths are evident alongside areas for continued supportive practice.";
       }else{
-        overallSummary += "Continued familiar routines, calm pacing, and positive reinforcement will help these areas develop steadily.";
+        overallSummary += " Continued familiar routines and calm pacing will support steady development.";
       }
 
       if(!strengths.length){
-        strengths.push("Shows effort, courage, and willingness to participate in swimming sessions");
+        strengths.push("Shows effort and willingness to participate in swimming sessions");
       }
       if(!supportAreas.length){
-        supportAreas.push("Continue familiar routines and positive reinforcement to maintain confidence next term");
+        supportAreas.push("Continue familiar routines and positive reinforcement next term");
       }
 
       return { domains, overallSummary, strengths, supportAreas };
@@ -800,17 +804,19 @@ const LEVEL_DATA = {
     function updateDevelopmentProfileUI(){
       const profile = computeOverallDevelopmentProfile();
       const map = {
-        regulation: { status: "#devProfileRegStatus", pct: "#devProfileRegPct" },
-        independence: { status: "#devProfileIndStatus", pct: "#devProfileIndPct" },
-        engagement: { status: "#devProfileEngStatus", pct: "#devProfileEngPct" },
+        regulation: { status: "#devProfileRegStatus", pct: "#devProfileRegPct", meter: "#devProfileRegMeter" },
+        independence: { status: "#devProfileIndStatus", pct: "#devProfileIndPct", meter: "#devProfileIndMeter" },
+        engagement: { status: "#devProfileEngStatus", pct: "#devProfileEngPct", meter: "#devProfileEngMeter" },
       };
       profile.domains.forEach(d => {
         const ids = map[d.key];
         if(!ids) return;
         const statusEl = $(ids.status);
         const pctEl = $(ids.pct);
+        const meterEl = $(ids.meter);
         if(statusEl) statusEl.textContent = d.answered === 0 ? "Not set" : d.label;
-        if(pctEl) pctEl.textContent = d.answered === 0 ? "—" : d.pct + "% completion";
+        if(pctEl) pctEl.textContent = d.answered === 0 ? "—" : d.pct + "%";
+        if(meterEl) meterEl.style.width = d.answered === 0 ? "0%" : d.pct + "%";
       });
 
       const summaryEl = $("#devProfileSummaryText");
@@ -1424,16 +1430,21 @@ const LEVEL_DATA = {
             "<p>" + p.split("\n").map(line => formatBulletLineHtmlTerm(line)).join("<br>") + "</p>"
           ).join("");
           inner = "<div class=\"report-block-body summary-stage-level\">" + mascotHtml + "<div class=\"summary-stage-level-copy\">" + bodyHtml + "</div></div>";
+        }else if(s.type === "executiveSummary"){
+          const paras = (s.body || "").split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+          inner = "<div class=\"report-block-body executive-overview\">" +
+            paras.map(p => "<p>" + escapeHtmlTerm(p) + "</p>").join("") +
+            "</div>";
         }else if(s.type === "bullets"){
           inner = "<div class=\"report-block-body\"><ul>" + s.lines.map(l => "<li>" + bulletLineHtmlTerm(l) + "</li>").join("") + "</ul></div>";
         }else{
           const paras = (s.body || "").split(/\n\n+/).map(p => p.trim()).filter(Boolean);
           inner = "<div class=\"report-block-body\">" + paras.map((p, idx) => {
-            if(s.title === "1. Term review details" || s.title === "4. Level progression decision" || s.title === "7. Final review notes"){
+            if(s.title === "Participant details" || s.title === "Level progression decision" || s.title === "Final review notes"){
               return "<p>" + p.split("\n").map(line => formatBulletLineHtmlTerm(line)).join("<br>") + "</p>";
             }
-            if(s.title === "3. Level confirmation"){
-              if(idx === 0) return "<p>" + formatBulletLineHtmlTerm(p) + "</p>";
+            if(s.title === "Learning outcomes summary"){
+              if(idx === 0) return "<p>" + p.split("\n").map(line => formatBulletLineHtmlTerm(line)).join("<br>") + "</p>";
               return "<p class=\"lc-outcome-narrative\">" + escapeHtmlTerm(p).replace(/\n/g, "<br>") + "</p>";
             }
             return "<p>" + escapeHtmlTerm(p).replace(/\n/g, "<br>") + "</p>";
@@ -1456,6 +1467,126 @@ const LEVEL_DATA = {
       if(document.querySelector("#focusWrap input[type=\"radio\"]:checked")) return true;
       return false;
     }
+    function buildLearningOutcomesSummaryBody(){
+      const levelOutcome = getLevelOutcomeForSummary();
+      const lpdRec = computeLevelProgressionRecommendation();
+      const levelMascot = selectedLevel ? getSwimmingLevelMascot(selectedLevel) : null;
+      const lines = [];
+      if(selectedStage){
+        lines.push("Stage: " + (STAGE_DISPLAY[selectedStage] || selectedStage));
+      }
+      if(selectedLevel){
+        lines.push("Level: " + selectedLevel + (levelMascot ? " · " + levelMascot.animal : ""));
+      }
+      if(levelOutcome.info && levelOutcome.info.answered > 0){
+        lines.push("Outcome: " + levelOutcome.info.label + " (" + levelOutcome.info.pct + "%)");
+        lines.push("Rated: " + levelOutcome.info.answered + " of " + levelOutcome.info.total + " outcomes");
+        lines.push(lpdRec.learningSummary);
+        if(levelOutcome.narrative){
+          return lines.join("\n") + "\n\n" + levelOutcome.narrative;
+        }
+      }else{
+        lines.push("Learning outcomes not yet rated for this level.");
+      }
+      return lines.join("\n");
+    }
+
+    function buildCoreDevelopmentSummaryBody(){
+      const lines = [];
+      ["regulation", "independence", "engagement"].forEach(domain => {
+        const res = computeDomainResult(domain);
+        const title = domain.charAt(0).toUpperCase() + domain.slice(1);
+        if(res.answered === 0){
+          lines.push(title + ": Not set");
+        }else{
+          lines.push(title + ": " + res.label + " (" + res.pct + "%)");
+        }
+        const evKey = { regulation: "eviRegulation", independence: "eviIndependence", engagement: "eviEngagement" }[domain];
+        const ev = (fieldValTerm(evKey) || "").trim();
+        if(ev) lines.push("Note: " + ev);
+      });
+      return lines.join("\n");
+    }
+
+    function buildDevelopmentProfileSummaryBody(){
+      const profile = computeOverallDevelopmentProfile();
+      const lines = profile.domains.map(d => {
+        if(d.answered === 0) return d.title + ": Not set";
+        return d.title + ": " + d.label + " (" + d.pct + "%)";
+      });
+      lines.push("");
+      lines.push(profile.overallSummary);
+      if(profile.strengths.length){
+        lines.push("");
+        lines.push("Strengths:");
+        profile.strengths.forEach(s => lines.push("• " + s));
+      }
+      if(profile.supportAreas.length){
+        lines.push("");
+        lines.push("Continue supporting:");
+        profile.supportAreas.forEach(s => lines.push("• " + s));
+      }
+      return lines.join("\n");
+    }
+
+    function buildExecutiveTermReviewSummary(){
+      const swimmer = fieldValTerm("swimmerName").replace(/\s+/g, " ").trim();
+      const firstName = swimmer.split(/\s+/)[0] || "The participant";
+      const term = fieldValTerm("termSelect").trim();
+      const stageLabel = selectedStage ? (STAGE_DISPLAY[selectedStage] || selectedStage) : "";
+      const levelMascot = selectedLevel ? getSwimmingLevelMascot(selectedLevel) : null;
+      const levelText = selectedLevel
+        ? ("Level " + selectedLevel + (levelMascot ? " (" + levelMascot.animal + ")" : ""))
+        : "";
+      const levelOutcome = getLevelOutcomeForSummary();
+      const lpdRec = computeLevelProgressionRecommendation();
+      const decision = getLevelProgressionDecisionValue();
+      const profile = computeOverallDevelopmentProfile();
+      const paragraphs = [];
+
+      if(swimmer || selectedLevel || selectedStage){
+        let p1 = firstName + " completed " + (term || "this term");
+        if(stageLabel && levelText) p1 += " at " + stageLabel + ", " + levelText + ".";
+        else if(stageLabel) p1 += " within " + stageLabel + ".";
+        else p1 += ".";
+        if(levelOutcome.info && levelOutcome.info.answered > 0){
+          p1 += " Learning outcomes are " + levelOutcome.info.label.toLowerCase() + " (" + levelOutcome.info.pct + "% complete).";
+        }
+        paragraphs.push(p1);
+      }
+
+      if(selectedLevel){
+        const decPhrase = isProgressToNextLevel(decision)
+          ? "The recommendation is to progress to the next level"
+          : "The recommendation is to consolidate the current level";
+        paragraphs.push(
+          decPhrase + ". " + buildLevelProgressionReason(decision, lpdRec.levelInfo)
+        );
+      }
+
+      const ratedDomains = profile.domains.filter(d => d.answered > 0);
+      if(ratedDomains.length){
+        const domText = ratedDomains.map(d => d.title.toLowerCase() + " (" + d.label.toLowerCase() + ", " + d.pct + "%)").join(", ");
+        paragraphs.push("Across regulation, independence, and engagement, the developmental profile shows " + domText + ". " + profile.overallSummary);
+      }
+
+      let nextP = "Next term, ";
+      if(isProgressToNextLevel(decision)){
+        nextP += "introduce new challenges gradually while maintaining familiar routines, safety, and positive participation.";
+      }else{
+        nextP += "continue consolidating skills with calm pacing, structure, and positive reinforcement.";
+      }
+      if(profile.strengths[0] && profile.strengths[0] !== "—"){
+        nextP += " Strengths to build on include " + profile.strengths.slice(0, 2).join("; ").toLowerCase() + ".";
+      }
+      if(profile.supportAreas[0] && profile.supportAreas[0] !== "—"){
+        nextP += " " + profile.supportAreas[0];
+      }
+      paragraphs.push(nextP);
+
+      return paragraphs.filter(Boolean).join("\n\n");
+    }
+
     function buildTermReviewSummarySections(){
       const sections = [];
       const stageLabel = selectedStage ? (STAGE_DISPLAY[selectedStage] || selectedStage) : "—";
@@ -1464,180 +1595,78 @@ const LEVEL_DATA = {
         ? ("Level " + selectedLevel + (levelMascot ? " · " + levelMascot.animal : ""))
         : "—";
 
-      const stageBlurb = (() => {
-        if(!selectedStage) return "";
-        const tile = document.querySelector(`#stageTiles .tile.stage[data-stage="${CSS.escape(selectedStage)}"]`);
-        const blurbEl = tile ? tile.querySelector(".desc.stageBlurb") : null;
-        return blurbEl ? blurbEl.textContent.replace(/\s+/g, " ").trim() : "";
-      })();
-
-      const levelBlurb = (() => {
-        if(!selectedLevel) return "";
-        const tile = document.querySelector(`#levelTiles .tile.level[data-level="${selectedLevel}"]`);
-        if(!tile) return "";
-        const lines = Array.from(tile.querySelectorAll(".levelSub"))
-          .map(el => (el.textContent || "").replace(/\s+/g, " ").trim())
-          .filter(Boolean)
-          .map(t => t.replace(/^\-\s*/, "")); // remove leading "- "
-        return lines.join(" ");
-      })();
-
       const reviewIsoDetail = fieldValTerm("reviewDate");
       const dateOfReviewDisplay = reviewIsoDetail
         ? formatReviewDateLongEn(reviewIsoDetail)
         : "—";
       sections.push({
         type: "paragraph",
-        title: "1. Term review details",
+        title: "Participant details",
         body: [
           "Participant: " + (fieldValTerm("swimmerName") || "—"),
           "Date of review: " + dateOfReviewDisplay,
           "Term: " + (fieldValTerm("termSelect") || "—"),
-          "Name: " + (fieldValTerm("instructorName") || "—"),
+          "Instructor: " + (fieldValTerm("instructorName") || "—"),
         ].join("\n"),
       });
       sections.push({
         type: "stageLevel",
-        title: "2. Stage and level",
+        title: "Stage & level",
         mascotSrc: levelMascot ? resolveSwimmingMascotSrc(levelMascot.file) : "",
         mascotAlt: levelMascot ? (levelMascot.animal + " mascot") : "",
         body:
-          "Stage:\n" +
-          stageLabel + (stageBlurb ? " (" + stageBlurb + ")" : "") +
-          "\n\n" +
-          "Current level:\n" +
-          levelLabel +
-          (levelMascot ? " (" + levelMascot.badge + ")" : "") +
-          (levelBlurb ? "\n" + levelBlurb : ""),
+          "Stage: " + stageLabel +
+          (levelMascot ? "\nLevel: " + levelLabel + " (" + levelMascot.badge + ")" : "\nLevel: " + levelLabel),
       });
-      const levelOutcome = getLevelOutcomeForSummary();
-      const focusWrap = document.getElementById("focusWrap");
-      const lcLines = [];
-      if(focusWrap && selectedLevel){
-        focusWrap.querySelectorAll(".focusSection").forEach(sec => {
-          const titleEl = sec.querySelector(".focusTitle");
-          let secTitle = titleEl ? titleEl.textContent.replace(/\s+/g, " ").trim() : "";
-          // Summary: roman numerals in section headings are not needed (I, II, III, IV, V, VI...)
-          secTitle = secTitle.replace(/\s+\b[IVX]+\b$/i, "").trim();
-          const items = Array.from(sec.querySelectorAll(".focusItem"));
-          if(secTitle && items.length) lcLines.push(secTitle);
-
-          items.forEach(item => {
-            const lineEl = item.querySelector(".focusLine");
-            const checked = item.querySelector(".triGrid input[type=\"radio\"]:checked");
-            const raw = lineEl ? lineEl.textContent.replace(/\s+/g, " ").trim() : "";
-            const text = focusLineShort(raw);
-            const r = checked ? checked.value : "(not rated)";
-            if(text) lcLines.push(text + ": " + r);
-          });
-        });
-      }
-      if(lcLines.length){
-        // Group by section heading and render without bullets
-        const blocks = [];
-        let current = null;
-        lcLines.forEach(line => {
-          const isHeading = !line.includes(":");
-          if(isHeading){
-            current = { title: line, lines: [] };
-            blocks.push(current);
-          }else{
-            if(!current){
-              current = { title: "Level focus", lines: [] };
-              blocks.push(current);
-            }
-            current.lines.push(line);
-          }
-        });
-        sections.push({ type: "levelConfirmation", title: "3. Level confirmation", outcome: levelOutcome, blocks });
-      }else{
-        sections.push({
-          type: "paragraph",
-          title: "3. Level confirmation",
-          body: levelOutcome.headline + "\n\n" + levelOutcome.narrative,
-        });
-      }
+      sections.push({
+        type: "paragraph",
+        title: "Learning outcomes summary",
+        body: buildLearningOutcomesSummaryBody(),
+      });
 
       const lpd = document.querySelector('#levelProgressDecisionRadios input[type="radio"]:checked');
       const lpdRec = computeLevelProgressionRecommendation();
       const lpdVal = lpd ? lpd.value : "";
-      let lpdBody = "";
-      if(lpdVal){
-        lpdBody += "Decision: " + lpdVal;
-      }else{
-        lpdBody += "Decision: Not selected (recommended: " + lpdRec.decision + ")";
-      }
-      lpdBody += "\n\nLevel score: " + (
-        selectedLevel && lpdRec.levelInfo.answered > 0
-          ? lpdRec.levelInfo.label + " (" + lpdRec.levelInfo.pct + "%)"
-          : "Not set"
-      );
-      lpdBody += "\n\nLearning outcome summary: " + lpdRec.learningSummary;
-      lpdBody += "\n\n" + lpdRec.explanation;
-      sections.push({ type: "paragraph", title: "4. Level progression decision", body: lpdBody });
+      const lpdBody = [
+        "Recommendation: " + (lpdVal || lpdRec.decision),
+        "Level score: " + (
+          selectedLevel && lpdRec.levelInfo.answered > 0
+            ? lpdRec.levelInfo.label + " (" + lpdRec.levelInfo.pct + "%)"
+            : "Not set"
+        ),
+        "Learning outcome completion: " + (
+          selectedLevel && lpdRec.levelInfo.total
+            ? lpdRec.levelInfo.answered + " of " + lpdRec.levelInfo.total
+            : "—"
+        ),
+        buildLevelProgressionReason(lpdVal || lpdRec.decision, lpdRec.levelInfo),
+      ].join("\n");
+      sections.push({ type: "paragraph", title: "Level progression decision", body: lpdBody });
 
-      // 5. Core development areas (Engagement, Independence, Regulation)
-      const coreBlocks = [];
-      ["engagement", "independence", "regulation"].forEach(domain => {
-        const res = computeDomainResult(domain);
-        const dTitle = domain.charAt(0).toUpperCase() + domain.slice(1);
-        const lines = [];
-        document.querySelectorAll('.rsiGrid[data-rsi-domain="' + domain + '"]').forEach(grid => {
-          const row = grid.closest(".obsRow");
-          const titleLine = row ? row.querySelector(".obsTitleLine") : null;
-          const title = titleLine ? titleLine.textContent.replace(/\s+/g, " ").trim() : "Observation item";
-          const ck = grid.querySelector('input[type="radio"]:checked');
-          lines.push(title + ": " + (ck ? ck.value : "(not rated)"));
-        });
-
-        // Evidence shown inside each category block (not as a separate section)
-        const evidenceMap = {
-          regulation: fieldValTerm("eviRegulation"),
-          independence: fieldValTerm("eviIndependence"),
-          engagement: fieldValTerm("eviEngagement"),
-        };
-        const ev = (evidenceMap[domain] || "").trim();
-        if(ev){
-          lines.push("Optional evidence:\n" + ev);
-        }
-
-        const summaryHeadline =
-          res.answered === 0
-            ? dTitle + " summary: Not set"
-            : dTitle + " summary: " + res.label + " (" + res.pct + "%)";
-        coreBlocks.push({
-          title: dTitle,
-          lines,
-          summaryOutcome: {
-            headline: summaryHeadline,
-            narrative: buildCoreDomainSummaryNarrative(domain, res),
-          },
-        });
+      sections.push({
+        type: "paragraph",
+        title: "Core development areas summary",
+        body: buildCoreDevelopmentSummaryBody(),
       });
-      sections.push({ type: "coreDevelopment", title: "5. Core development areas", blocks: coreBlocks });
 
-      const profile = computeOverallDevelopmentProfile();
-      const profileLines = profile.domains.map(d => {
-        if(d.answered === 0) return d.title + ": Not set";
-        return d.title + ": " + d.label + " (" + d.pct + "%)";
+      sections.push({
+        type: "paragraph",
+        title: "Overall development profile",
+        body: buildDevelopmentProfileSummaryBody(),
       });
-      profileLines.push("");
-      profileLines.push(profile.overallSummary);
-      if(profile.strengths.length){
-        profileLines.push("");
-        profileLines.push("Strengths:");
-        profile.strengths.forEach(s => profileLines.push("• " + s));
-      }
-      if(profile.supportAreas.length){
-        profileLines.push("");
-        profileLines.push("Areas to continue supporting next term:");
-        profile.supportAreas.forEach(s => profileLines.push("• " + s));
-      }
-      sections.push({ type: "paragraph", title: "6. Overall development profile", body: profileLines.join("\n") });
 
-      const notes = fieldValTerm("decisionNotes");
-      let notesBody = notes ? notes : "No final review notes added.";
-      sections.push({ type: "paragraph", title: "7. Final review notes", body: notesBody });
+      const notes = fieldValTerm("decisionNotes").trim();
+      sections.push({
+        type: "paragraph",
+        title: "Final review notes",
+        body: notes || "No notes added.",
+      });
+
+      sections.push({
+        type: "executiveSummary",
+        title: "Executive term review summary",
+        body: buildExecutiveTermReviewSummary(),
+      });
       return sections;
     }
 
@@ -1650,12 +1679,15 @@ const LEVEL_DATA = {
       if(!hasAnyTermReviewContent()){
         lastTermSummarySections = [];
         out.classList.remove("summary-rich");
-        out.innerHTML = "<p class=\"summary-placeholder\">Complete the term review to generate a summary of details, stage and level, level confirmation, level progression decision, core development areas, overall development profile, and final review notes. The PDF mirrors this summary with corporate branding.</p>";
+        out.innerHTML = "<p class=\"summary-placeholder\">Complete the review to generate an executive summary.</p>";
         return;
       }
       lastTermSummarySections = buildTermReviewSummarySections();
+      const executive = buildExecutiveTermReviewSummary();
       out.classList.add("summary-rich");
-      out.innerHTML = renderTermReportHtml(lastTermSummarySections);
+      out.innerHTML = "<div class=\"executive-overview\">" +
+        executive.split(/\n\n+/).map(p => "<p>" + escapeHtmlTerm(p) + "</p>").join("") +
+        "</div>";
     }
 
     const PDF_HEADER_LOGO_URL = "portal/Logo-CS-azul.png";
@@ -2168,12 +2200,12 @@ const LEVEL_DATA = {
       function drawParagraphMirror(s){
         const paras = (s.body || "").split(/\n\n+/).map(p => p.trim()).filter(Boolean);
         const useColonBold =
-          s.title === "1. Term review details" ||
-          s.title === "2. Stage and level" ||
-          s.title === "5. Term decision";
+          s.title === "Participant details" ||
+          s.title === "Stage & level" ||
+          s.title === "Level progression decision";
         paras.forEach((p, idx) => {
           const lines = p.split("\n");
-          if(s.title === "3. Level confirmation"){
+          if(s.title === "Learning outcomes summary"){
             if(idx === 0){
               lines.forEach(raw => {
                 const line = raw.trim();
@@ -2194,6 +2226,23 @@ const LEVEL_DATA = {
                 });
               });
             }
+            return;
+          }
+          if(s.title === "Executive term review summary"){
+            lines.forEach(raw => {
+              const line = raw.trim();
+              if(!line) return;
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(bodyPt + 0.5);
+              doc.setTextColor(ink[0], ink[1], ink[2]);
+              const wrapped = doc.splitTextToSize(line, maxW - 11);
+              ensureSpace(wrapped.length * (lineBody + 0.4) + 4);
+              wrapped.forEach(w => {
+                doc.text(w, textIndent, y);
+                y += lineBody + 0.4;
+              });
+              y += 2;
+            });
             return;
           }
           if(useColonBold){
@@ -2450,7 +2499,7 @@ const LEVEL_DATA = {
           drawParagraphMirror(s);
         }
 
-        if(s.title === "2. Stage and level"){
+        if(s.title === "Stage & level"){
           const progSrc = programmeDataUrl && String(programmeDataUrl).indexOf("base64,") !== -1 ? programmeDataUrl : null;
           if(progSrc){
             try{
