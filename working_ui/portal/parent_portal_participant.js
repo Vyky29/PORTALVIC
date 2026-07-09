@@ -1079,6 +1079,20 @@
     }
   }
 
+  function hubOpsSessionSlotHtml(s) {
+    var tone = serviceChipToneClass(s.rawLabel || s.label || "");
+    return (
+      '<li class="pp-hub-ops__slot pp-hub-ops__slot--' +
+      esc(tone) +
+      '">' +
+      '<span class="pp-hub-ops__slot-name">' +
+      esc(s.label || "Service") +
+      "</span>" +
+      (s.time ? '<span class="pp-hub-ops__slot-time">' + esc(s.time) + "</span>" : "") +
+      "</li>"
+    );
+  }
+
   function hubOpsCardHtml(data) {
     var hasServices = !!(
       data &&
@@ -1086,53 +1100,68 @@
       Array.isArray(data.general.services_detail) &&
       data.general.services_detail.length
     );
-    var nextList = findNextSessions(data, 2);
+    var nextList = findNextSessions(data, 4);
     var next = nextList[0] || null;
-    var more = nextList.slice(1);
+    // Same calendar day as the next session (e.g. Rodin Climbing + Aquatic on Sunday).
+    var sameDay = next
+      ? nextList.filter(function (x) {
+          return x.iso === next.iso;
+        })
+      : [];
+    var calIco =
+      '<svg class="pp-hub-ops__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
+    var absentIco =
+      '<svg class="pp-hub-ops__absence-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-3.5 4.2-5 8-5s6.5 1.5 8 5"/><path d="M16 4l4 4M20 4l-4 4"/></svg>';
     var nextBody;
     if (!hasServices) {
       nextBody =
-        '<p class="pp-muted pp-hub-ops__empty">Booked sessions will appear here once services are on the current roster.</p>';
+        '<div class="pp-hub-ops__empty-wrap">' +
+        calIco +
+        '<p class="pp-muted pp-hub-ops__empty">Booked sessions will appear here once services are on the current roster.</p>' +
+        "</div>";
     } else if (!next) {
       nextBody =
-        '<p class="pp-muted pp-hub-ops__empty">No more sessions left this year (through 17 Jul). Book 2026/27 when you are ready.</p>';
+        '<div class="pp-hub-ops__empty-wrap">' +
+        calIco +
+        '<p class="pp-muted pp-hub-ops__empty">No more sessions left this year (through 17 Jul). Book 2026/27 when you are ready.</p>' +
+        "</div>";
     } else {
       nextBody =
         '<div class="pp-hub-ops__next">' +
-        '<span class="pp-hub-ops__eyebrow">' +
-        (next.isToday ? "Today" : "Next session") +
-        (familyAcceptedNextYear(data) ? "" : " · until 17 Jul") +
-        "</span>" +
+        '<div class="pp-hub-ops__badge-row">' +
+        '<span class="pp-hub-ops__badge">' +
+        calIco +
+        "<span>" +
+        esc(next.isToday ? "Today" : "Next session") +
+        "</span></span>" +
+        (familyAcceptedNextYear(data)
+          ? ""
+          : '<span class="pp-hub-ops__term">Until 17 Jul</span>') +
+        "</div>" +
         '<strong class="pp-hub-ops__when">' +
         esc(next.dayLabel) +
         "</strong>" +
-        '<span class="pp-hub-ops__svc">' +
-        esc(next.label) +
-        (next.time ? " · " + esc(next.time) : "") +
-        "</span>" +
-        (more.length
-          ? '<span class="pp-hub-ops__more muted">Also: ' +
-            esc(
-              more
-                .map(function (x) {
-                  return x.label + (x.time ? " " + x.time : "");
-                })
-                .join(" · "),
-            ) +
-            "</span>"
-          : "") +
-        "</div>";
+        '<ul class="pp-hub-ops__slots">' +
+        sameDay.map(hubOpsSessionSlotHtml).join("") +
+        "</ul></div>";
     }
     return (
       '<section class="pp-hub-ops" aria-label="Upcoming session">' +
+      '<div class="pp-hub-ops__panel">' +
       '<div class="pp-hub-ops__main">' +
       nextBody +
       "</div>" +
       '<div class="pp-hub-ops__actions">' +
-      '<button type="button" class="pp-btn pp-btn--ghost pp-hub-ops__absence" data-pp-open="absence"' +
+      '<button type="button" class="pp-hub-ops__absence" data-pp-open="absence"' +
       (hasServices ? "" : " disabled") +
-      ">Report absent</button>" +
-      "</div>" +
+      ">" +
+      absentIco +
+      '<span class="pp-hub-ops__absence-text">' +
+      "<strong>Report absent</strong>" +
+      "<small>Missed session or note for the office</small>" +
+      "</span>" +
+      '<span class="pp-hub-ops__absence-chev" aria-hidden="true">›</span>' +
+      "</button></div></div>" +
       '<div id="ppHubAlerts" class="pp-hub-alerts" hidden></div>' +
       "</section>"
     );
