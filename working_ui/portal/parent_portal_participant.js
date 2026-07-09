@@ -792,6 +792,8 @@
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20"/><path d="M6 14h.01M10 14h4"/></svg>';
     var docsIcon =
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h6"/></svg>';
+    var invoiceIcon =
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2h16v20l-2-1.5L16 22l-2-1.5L12 22l-2-1.5L8 22l-2-1.5L4 22V2z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>';
     var teamCaption = firstNameOf(data) + "'s Team";
     return (
       '<div class="pp-pax-info-buttons">' +
@@ -810,6 +812,10 @@
       infoBtnHtml("balance", "Credits & refunds", balanceIcon, {
         extraClass: " pp-pax-info-btn--balance",
         subtitle: "Family ledger",
+      }) +
+      infoBtnHtml("invoices", "Invoices", invoiceIcon, {
+        extraClass: " pp-pax-info-btn--invoices",
+        subtitle: "Statements & PDFs",
       }) +
       infoBtnHtml("documents", "Documents", docsIcon, {
         extraClass: " pp-pax-info-btn--documents",
@@ -2831,6 +2837,104 @@
       });
   }
 
+  function formatInvoiceMoney(n) {
+    if (n == null || n === "") return "";
+    var v = Number(n);
+    if (!isFinite(v)) return "";
+    return "£" + v.toFixed(2);
+  }
+
+  function invoiceStatusLabel(status) {
+    var s = String(status || "unpaid").toLowerCase();
+    if (s === "paid") return "Paid";
+    if (s === "partial") return "Partial";
+    if (s === "void") return "Void";
+    return "Unpaid";
+  }
+
+  function invoiceCardHtml(inv) {
+    var title = String((inv && inv.title) || "Invoice").trim();
+    var num = String((inv && inv.invoice_number) || "").trim();
+    var amount = formatInvoiceMoney(inv && inv.amount_gbp);
+    var due = formatDocWhen(inv && inv.due_date);
+    var status = String((inv && inv.payment_status) || "unpaid").toLowerCase();
+    var pdf = (inv && inv.pdf_url) || "";
+    return (
+      '<article class="pp-invoice-card pp-invoice-card--' +
+      esc(status) +
+      '">' +
+      '<div class="pp-invoice-card__head">' +
+      "<strong>" +
+      esc(title) +
+      "</strong>" +
+      '<span class="pp-invoice-chip pp-invoice-chip--' +
+      esc(status) +
+      '">' +
+      esc(invoiceStatusLabel(status)) +
+      "</span></div>" +
+      (num ? '<p class="pp-invoice-card__meta">Invoice ' + esc(num) + "</p>" : "") +
+      (amount
+        ? '<p class="pp-invoice-card__amount">' + esc(amount) + "</p>"
+        : "") +
+      (due ? '<p class="pp-invoice-card__meta muted">Due ' + esc(due) + "</p>" : "") +
+      '<div class="pp-invoice-card__acts">' +
+      (pdf
+        ? '<a class="pp-btn pp-btn--primary" href="' +
+          esc(pdf) +
+          '" target="_blank" rel="noopener noreferrer">Open PDF</a>'
+        : '<p class="pp-muted">PDF not available yet.</p>') +
+      "</div></article>"
+    );
+  }
+
+  function renderInvoices(host, data, opts) {
+    host.innerHTML = subviewShell(
+      data,
+      "invoices",
+      '<h3 class="pp-pax-subview-title">Invoices</h3>' +
+        '<p class="pp-muted pp-pax-subview-note">Statements shared by the office for ' +
+        esc(firstNameOf(data)) +
+        ". Open a PDF to view or download. Online card payment will follow later.</p>" +
+        '<div id="ppInvoicesNotice" class="pp-notice" hidden></div>' +
+        '<div id="ppInvoicesListHost"><p class="pp-muted">Loading…</p></div>',
+    );
+    bindBack(host, data, opts);
+    bindInvoices(host, data, opts);
+  }
+
+  function bindInvoices(host, data, opts) {
+    var listHost = host.querySelector("#ppInvoicesListHost");
+    var notice = host.querySelector("#ppInvoicesNotice");
+
+    function showNotice(kind, text) {
+      if (!notice) return;
+      notice.hidden = !text;
+      notice.className = "pp-notice" + (kind ? " pp-notice--" + kind : "");
+      notice.textContent = text || "";
+    }
+
+    if (!listHost || typeof opts.listInvoices !== "function") {
+      if (listHost) listHost.innerHTML = '<p class="pp-muted">Invoices are not available right now.</p>';
+      return;
+    }
+
+    void opts
+      .listInvoices()
+      .then(function (j) {
+        var invoices = (j && j.invoices) || [];
+        if (!invoices.length) {
+          listHost.innerHTML =
+            '<p class="pp-muted">No invoices shared yet for this participant.</p>';
+          return;
+        }
+        listHost.innerHTML = invoices.map(invoiceCardHtml).join("");
+      })
+      .catch(function () {
+        showNotice("error", "Could not load invoices — please try again.");
+        listHost.innerHTML = "";
+      });
+  }
+
   function bindBalance(host, data, opts) {
     var listHost = host.querySelector("#ppBalanceListHost");
     var summary = host.querySelector("#ppBalanceSummary");
@@ -3269,6 +3373,7 @@
     else if (view === "calendar") renderCalendar(host, data, opts);
     else if (view === "absence") renderAbsence(host, data, opts);
     else if (view === "balance") renderBalance(host, data, opts);
+    else if (view === "invoices") renderInvoices(host, data, opts);
     else if (view === "documents") renderDocuments(host, data, opts);
     else if (view === "messages") {
       var msgOpts = opts || {};

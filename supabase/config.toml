@@ -542,3 +542,13 @@ verify_jwt = false
 # Parent-facing registration PDFs for a linked child.
 [functions.parent-portal-documents-list]
 verify_jwt = false
+
+# Parent-facing shared client invoices (PDF + status).
+[functions.parent-portal-invoices-list]
+verify_jwt = false
+
+[functions.portal-admin-parent-invoices-list]
+verify_jwt = false
+
+[functions.portal-admin-parent-invoices-upsert]
+verify_jwt = false

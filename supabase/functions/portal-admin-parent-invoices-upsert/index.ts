@@ -1,0 +1,277 @@
+// @ts-nocheck — Edge Function (Deno).
+//
+// portal-admin-parent-invoices-upsert
+// create (multipart PDF) | update metadata | set share/payment status.
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import {
+  portalAdminCorsHeaders,
+  portalAdminJson,
+  verifyPortalAdminAccessToken,
+} from "../_shared/portal_admin_auth.ts";
+
+const BUCKET = "documents";
+const MAX_BYTES = 12 * 1024 * 1024;
+
+function clean(v: unknown, max = 500): string {
+  return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function parseAmount(v: unknown): number | null {
+  if (v == null || v === "") return null;
+  const n = Number(v);
+  if (!Number.isFinite(n) || n < 0) return null;
+  return Math.round(n * 100) / 100;
+}
+
+function parseDate(v: unknown): string | null {
+  const s = clean(v, 20);
+  if (!s) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  return null;
+}
+
+function parsePaymentStatus(v: unknown): string | null {
+  const s = clean(v, 20).toLowerCase();
+  if (["unpaid", "paid", "partial", "void"].includes(s)) return s;
+  return null;
+}
+
+function parseShareStatus(v: unknown): string | null {
+  const s = clean(v, 20).toLowerCase();
+  if (s === "ready" || s === "hidden") return s;
+  return null;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: portalAdminCorsHeaders() });
+  if (req.method !== "POST") {
+    return portalAdminJson(405, { ok: false, error: "method_not_allowed" });
+  }
+
+  const verified = await verifyPortalAdminAccessToken(req.headers.get("Authorization"));
+  if (!verified.ok) {
+    return portalAdminJson(verified.status, { ok: false, error: verified.error });
+  }
+
+  const baseUrl = (Deno.env.get("SUPABASE_URL") ?? "").trim();
+  const serviceRole = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "").trim();
+  if (!baseUrl || !serviceRole) {
+    return portalAdminJson(500, { ok: false, error: "server_misconfigured" });
+  }
+
+  const admin = createClient(baseUrl, serviceRole, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const now = new Date().toISOString();
+  const userId = verified.userId || null;
+  const readyBy = clean(verified.email || userId || "admin", 120);
+
+  const contentType = String(req.headers.get("content-type") || "").toLowerCase();
+  const isMultipart = contentType.includes("multipart/form-data");
+
+  let action = "";
+  let fields: Record<string, unknown> = {};
+  let file: File | null = null;
+
+  if (isMultipart) {
+    let form: FormData;
+    try {
+      form = await req.formData();
+    } catch {
+      return portalAdminJson(400, { ok: false, error: "bad_form" });
+    }
+    action = clean(form.get("action"), 30).toLowerCase() || "create";
+    for (const key of [
+      "invoice_id",
+      "contact_id",
+      "title",
+      "invoice_number",
+      "amount_gbp",
+      "due_date",
+      "payment_status",
+      "share_status",
+      "notes",
+      "related_client",
+    ]) {
+      if (form.has(key)) fields[key] = form.get(key);
+    }
+    const f = form.get("file");
+    if (f && typeof f === "object" && typeof (f as File).arrayBuffer === "function") {
+      file = f as File;
+    }
+  } else {
+    try {
+      fields = await req.json();
+    } catch {
+      fields = {};
+    }
+    action = clean(fields.action, 30).toLowerCase();
+  }
+
+  if (action === "create") {
+    const contactId = clean(fields.contact_id, 120);
+    if (!contactId) return portalAdminJson(400, { ok: false, error: "contact_id_required" });
+    if (!file) return portalAdminJson(400, { ok: false, error: "file_required" });
+    if (file.size <= 0 || file.size > MAX_BYTES) {
+      return portalAdminJson(400, { ok: false, error: "file_too_large" });
+    }
+    const mime = clean(file.type || "application/pdf", 80).toLowerCase();
+    if (!mime.includes("pdf") && !String(file.name || "").toLowerCase().endsWith(".pdf")) {
+      return portalAdminJson(400, { ok: false, error: "pdf_required" });
+    }
+
+    const { data: participant } = await admin
+      .from("portal_participants")
+      .select("contact_id, display_name, first_name, last_name")
+      .eq("contact_id", contactId)
+      .maybeSingle();
+    if (!participant) {
+      return portalAdminJson(404, { ok: false, error: "participant_not_found" });
+    }
+    const displayName =
+      clean(participant.display_name, 120) ||
+      [participant.first_name, participant.last_name].filter(Boolean).join(" ").trim() ||
+      contactId;
+
+    const invoiceNumber = clean(fields.invoice_number, 80) || null;
+    const amount = parseAmount(fields.amount_gbp);
+    const dueDate = parseDate(fields.due_date);
+    const paymentStatus = parsePaymentStatus(fields.payment_status) || "unpaid";
+    const shareStatus = parseShareStatus(fields.share_status) || "ready";
+    const notes = clean(fields.notes, 800) || null;
+    const title =
+      clean(fields.title, 200) ||
+      (invoiceNumber ? `Invoice ${invoiceNumber}` : `Invoice — ${displayName}`);
+
+    const ownerId = userId;
+    if (!ownerId) {
+      return portalAdminJson(401, { ok: false, error: "admin_user_required" });
+    }
+    const stamp = Date.now();
+    const storagePath = `${ownerId}/billing/client_invoice_${contactId}_${stamp}.pdf`;
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const { error: upErr } = await admin.storage.from(BUCKET).upload(storagePath, bytes, {
+      contentType: "application/pdf",
+      upsert: false,
+    });
+    if (upErr) {
+      console.error("[portal-admin-parent-invoices-upsert] upload", upErr.message);
+      return portalAdminJson(500, { ok: false, error: "upload_failed" });
+    }
+
+    const { data: doc, error: docErr } = await admin
+      .from("documents")
+      .insert({
+        user_id: ownerId,
+        document_type: "client_invoice",
+        category: "billing",
+        title,
+        related_date: dueDate,
+        related_client: displayName,
+        file_url: storagePath,
+        source_page: "admin_parent_invoices",
+      })
+      .select("id, title, file_url, related_client, related_date, created_at")
+      .maybeSingle();
+    if (docErr || !doc) {
+      console.error("[portal-admin-parent-invoices-upsert] doc", docErr?.message);
+      await admin.storage.from(BUCKET).remove([storagePath]);
+      return portalAdminJson(500, { ok: false, error: "document_insert_failed" });
+    }
+
+    const shareRow = {
+      document_id: doc.id,
+      contact_id: contactId,
+      invoice_number: invoiceNumber,
+      amount_gbp: amount,
+      due_date: dueDate,
+      payment_status: paymentStatus,
+      share_status: shareStatus,
+      ready_at: shareStatus === "ready" ? now : null,
+      ready_by: shareStatus === "ready" ? readyBy : null,
+      notes,
+      updated_at: now,
+    };
+
+    const { data: share, error: shareErr } = await admin
+      .from("portal_parent_invoice_share")
+      .insert(shareRow)
+      .select("*")
+      .maybeSingle();
+    if (shareErr || !share) {
+      console.error("[portal-admin-parent-invoices-upsert] share", shareErr?.message);
+      await admin.from("documents").delete().eq("id", doc.id);
+      await admin.storage.from(BUCKET).remove([storagePath]);
+      return portalAdminJson(500, { ok: false, error: "share_insert_failed" });
+    }
+
+    return portalAdminJson(200, { ok: true, invoice: { ...share, title: doc.title } });
+  }
+
+  if (action === "update") {
+    const invoiceId = clean(fields.invoice_id, 60);
+    if (!invoiceId) return portalAdminJson(400, { ok: false, error: "invoice_id_required" });
+
+    const { data: existing, error: loadErr } = await admin
+      .from("portal_parent_invoice_share")
+      .select("*")
+      .eq("id", invoiceId)
+      .maybeSingle();
+    if (loadErr || !existing) {
+      return portalAdminJson(404, { ok: false, error: "not_found" });
+    }
+
+    const patch: Record<string, unknown> = { updated_at: now };
+    if (fields.invoice_number !== undefined) {
+      patch.invoice_number = clean(fields.invoice_number, 80) || null;
+    }
+    if (fields.amount_gbp !== undefined) {
+      patch.amount_gbp = parseAmount(fields.amount_gbp);
+    }
+    if (fields.due_date !== undefined) {
+      patch.due_date = parseDate(fields.due_date);
+    }
+    if (fields.notes !== undefined) {
+      patch.notes = clean(fields.notes, 800) || null;
+    }
+    const pay = parsePaymentStatus(fields.payment_status);
+    if (pay) patch.payment_status = pay;
+    const share = parseShareStatus(fields.share_status);
+    if (share) {
+      patch.share_status = share;
+      if (share === "ready" && existing.share_status !== "ready") {
+        patch.ready_at = now;
+        patch.ready_by = readyBy;
+      }
+      if (share === "hidden") {
+        // keep ready_at history
+      }
+    }
+
+    const { data: updated, error: updErr } = await admin
+      .from("portal_parent_invoice_share")
+      .update(patch)
+      .eq("id", invoiceId)
+      .select("*")
+      .maybeSingle();
+    if (updErr || !updated) {
+      console.error("[portal-admin-parent-invoices-upsert] update", updErr?.message);
+      return portalAdminJson(500, { ok: false, error: "update_failed" });
+    }
+
+    const title = clean(fields.title, 200);
+    if (title || fields.due_date !== undefined) {
+      const docPatch: Record<string, unknown> = {};
+      if (title) docPatch.title = title;
+      if (fields.due_date !== undefined) docPatch.related_date = parseDate(fields.due_date);
+      if (Object.keys(docPatch).length) {
+        await admin.from("documents").update(docPatch).eq("id", existing.document_id);
+      }
+    }
+
+    return portalAdminJson(200, { ok: true, invoice: updated });
+  }
+
+  return portalAdminJson(400, { ok: false, error: "action_required" });
+});

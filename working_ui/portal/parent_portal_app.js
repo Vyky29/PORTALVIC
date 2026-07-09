@@ -340,6 +340,23 @@
           });
         });
       },
+      listInvoices: function () {
+        return fetch(fn("parent-portal-invoices-list"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey(),
+            Authorization: "Bearer " + anonKey(),
+            "x-parent-portal-session": state.session.token,
+          },
+          body: JSON.stringify({ contact_id: contactId }),
+        }).then(function (res) {
+          return res.json().then(function (j) {
+            if (!res.ok || !j.ok) throw new Error("invoices_list_failed");
+            return j;
+          });
+        });
+      },
       respondMakeup: function (offerId, action, declineReason) {
         return fetch(fn("parent-portal-makeup-respond"), {
           method: "POST",

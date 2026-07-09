@@ -37,6 +37,7 @@
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260709-family-credits"></script>
   <script src="/portal/admin-portal-parent-credits.js?v=20260709-family-credits"></script>
+  <script src="/portal/admin-portal-parent-invoices.js?v=20260709-parent-invoices"></script>
   <script src="/portal/admin-portal-parent-makeups.js?v=20260709-makeup-roster"></script>
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
   <script src="/portal/admin-portal-pins.js?v=20260530-portal-pins-db"></script>
@@ -20970,6 +20971,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       });
     }
+    function portalParentInvoicesConfigureOnce(){
+      if(window.__portalParentInvoicesConfigured || !window.PortalParentInvoices) return;
+      window.__portalParentInvoicesConfigured = true;
+      window.PortalParentInvoices.configure({
+        esc: esc,
+        toast: portalAdminToast,
+        getClient: getSchedSupabaseClient,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        }
+      });
+    }
     function portalDocumentsConfigureOnce(){
       if(window.__portalDocumentsConfigured || !window.PortalDocuments) return;
       window.__portalDocumentsConfigured = true;
@@ -21339,8 +21356,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function viewReenrolPayments(){
       // Live, editable client re-enrolment payments (powered by public.client_payments).
       // Rendered by /portal/admin-payments.js into #payModuleRoot (see bindView).
+      portalParentInvoicesConfigureOnce();
+      var invoicesEmbed =
+        window.PortalParentInvoices && typeof window.PortalParentInvoices.embedHtml === 'function'
+          ? window.PortalParentInvoices.embedHtml()
+          : '';
       return '<h1 class="page-title" style="display:flex;align-items:center;gap:10px"><span aria-hidden="true" style="display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#eff6ff;color:#2d84b3"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="none"><text x="12" y="17" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor" font-family="system-ui,Segoe UI,sans-serif">\u00a3</text></svg></span><span>Programme payments</span></h1>'+
         '<p class="page-intro">Track client payments — totals, who has paid vs outstanding, split by private (parents) and local-authority groups. Tap a client to open the full record and edit status, amount, service and any field.</p>'+
+        invoicesEmbed+
         '<div id="payModuleRoot"></div>';
     }
     function viewLogs(){
@@ -23199,6 +23222,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
 
       if(id==='reenrol_payments'){
+        portalParentInvoicesConfigureOnce();
+        if(window.PortalParentInvoices && typeof window.PortalParentInvoices.bindEmbed === 'function'){
+          window.PortalParentInvoices.bindEmbed();
+        }
         if(window.AdminPayments && $('payModuleRoot')){
           window.AdminPayments.configure({
             getClient: getSchedSupabaseClient,

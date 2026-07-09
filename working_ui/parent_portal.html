@@ -1068,6 +1068,54 @@
     .pp-pax-info-btn--balance .pp-pax-info-caption { color: var(--ink); }
     .pp-pax-info-btn--documents .pp-pax-info-icon { color: #1d4ed8; }
     .pp-pax-info-btn--documents .pp-pax-info-caption { color: var(--ink); }
+    .pp-pax-info-btn--invoices .pp-pax-info-icon { color: #b45309; }
+    .pp-pax-info-btn--invoices .pp-pax-info-caption { color: var(--ink); }
+    .pp-invoice-card {
+      margin: 0 0 12px;
+      padding: 14px;
+      border: 1px solid var(--line, #e2e8f0);
+      border-radius: 14px;
+      background: #fff;
+      min-width: 0;
+    }
+    .pp-invoice-card__head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+    }
+    .pp-invoice-card__head strong {
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .pp-invoice-chip {
+      flex-shrink: 0;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #fff7ed;
+      color: #9a3412;
+    }
+    .pp-invoice-chip--paid { background: #ecfdf5; color: #047857; }
+    .pp-invoice-chip--partial { background: #eff6ff; color: #1d4ed8; }
+    .pp-invoice-chip--void { background: #f1f5f9; color: #475569; }
+    .pp-invoice-card__amount {
+      margin: 8px 0 0;
+      font-size: 22px;
+      font-weight: 800;
+      color: #92400e;
+      overflow-wrap: break-word;
+    }
+    .pp-invoice-card__meta { margin: 6px 0 0; font-size: 12px; overflow-wrap: break-word; }
+    .pp-invoice-card__acts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+      min-width: 0;
+    }
     .pp-hub-siblings {
       display: flex;
       flex-wrap: wrap;
@@ -2435,8 +2483,8 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260705-team-photos-only"></script>
   <script src="/portal/parent_portal_team.js?v=20260709-msg-photo-team"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260709-my-cal-polish"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260709-hub-siblings-docs"></script>
-  <script src="/portal/parent_portal_app.js?v=20260709-hub-siblings-docs"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260709-parent-invoices"></script>
+  <script src="/portal/parent_portal_app.js?v=20260709-parent-invoices"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {
