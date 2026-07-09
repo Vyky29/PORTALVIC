@@ -895,17 +895,295 @@
     );
   }
 
+  function isoDateLocal(d) {
+    var y = d.getFullYear();
+    var m = d.getMonth() + 1;
+    var day = d.getDate();
+    return y + "-" + (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day;
+  }
+
+  function addDaysLocal(d, n) {
+    var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    x.setDate(x.getDate() + n);
+    return x;
+  }
+
+  function parseServiceStartMinutes(time) {
+    var s = String(time || "").trim();
+    var m = s.match(/(\d{1,2})(?:[.:](\d{2}))?\s*(am|pm)?/i);
+    if (!m) return 9999;
+    var hh = parseInt(m[1], 10) || 0;
+    var mm = parseInt(m[2] || "0", 10) || 0;
+    var mer = String(m[3] || "").toLowerCase();
+    if (mer === "pm" && hh < 12) hh += 12;
+    if (mer === "am" && hh === 12) hh = 0;
+    if (!mer && hh < 7) hh += 12;
+    return hh * 60 + mm;
+  }
+
+  function isoInRange(iso, from, to) {
+    if (!iso || !from || !to) return false;
+    return iso >= from && iso <= to;
+  }
+
+  function isClubClosedIso(iso) {
+    var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
+    if (!cal) return false;
+    if (cal.openFrom && iso < cal.openFrom) return true;
+    if (cal.openTo && iso > cal.openTo) return true;
+    var terms = Array.isArray(cal.terms) ? cal.terms : [];
+    for (var i = 0; i < terms.length; i++) {
+      var t = terms[i] || {};
+      if (t.christmasClosed && isoInRange(iso, t.christmasClosed.from, t.christmasClosed.to)) {
+        return true;
+      }
+      if (t.easterClosed && isoInRange(iso, t.easterClosed.from, t.easterClosed.to)) {
+        return true;
+      }
+    }
+    var closures = Array.isArray(cal.weekendClosures) ? cal.weekendClosures : [];
+    for (var j = 0; j < closures.length; j++) {
+      if (isoInRange(iso, closures[j].from, closures[j].to)) return true;
+    }
+    return false;
+  }
+
+  function formatHubDateLabel(iso) {
+    try {
+      var p = String(iso || "").split("-");
+      if (p.length !== 3) return iso;
+      var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+      return d.toLocaleDateString("en-GB", {
+        weekday: "long",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    } catch (_e) {
+      return String(iso || "");
+    }
+  }
+
+  /** Next booked session from services_detail (weekday pattern + club closed dates). */
+  function findNextSessions(data, limit) {
+    var detail =
+      data && data.general && Array.isArray(data.general.services_detail)
+        ? data.general.services_detail
+        : [];
+    if (!detail.length) return [];
+    var byCol = Object.create(null);
+    detail.forEach(function (s) {
+      var col = dayNameToCalCol(s && s.day);
+      if (col == null) return;
+      if (!byCol[col]) byCol[col] = [];
+      byCol[col].push(s);
+    });
+    Object.keys(byCol).forEach(function (k) {
+      byCol[k].sort(function (a, b) {
+        return parseServiceStartMinutes(a.time) - parseServiceStartMinutes(b.time);
+      });
+    });
+    var today = new Date();
+    var out = [];
+    var max = Math.max(1, limit || 3);
+    for (var offset = 0; offset < 28 && out.length < max; offset++) {
+      var d = addDaysLocal(today, offset);
+      var iso = isoDateLocal(d);
+      if (isClubClosedIso(iso)) continue;
+      // JS: Sun=0 … Sat=6 → calendar Mon=0 … Sun=6
+      var jsDow = d.getDay();
+      var col = jsDow === 0 ? 6 : jsDow - 1;
+      var slots = byCol[col];
+      if (!slots || !slots.length) continue;
+      slots.forEach(function (s) {
+        if (out.length >= max) return;
+        out.push({
+          iso: iso,
+          dayLabel: formatHubDateLabel(iso),
+          label: shortServiceChipLabel(s.label || "Service") || s.label || "Service",
+          rawLabel: s.label || "Service",
+          day: s.day || "",
+          time: s.time || "",
+          isToday: offset === 0,
+        });
+      });
+    }
+    return out;
+  }
+
+  function absencePrefillText(data, next) {
+    var p = (data && data.participant) || {};
+    var name = p.display_name || "our child";
+    var when = next
+      ? next.dayLabel +
+        (next.rawLabel ? " · " + next.rawLabel : "") +
+        (next.time ? " · " + next.time : "")
+      : "an upcoming session";
+    return (
+      "Absence report for " +
+      name +
+      "\n\n" +
+      name +
+      " will not be able to attend:\n" +
+      when +
+      "\n\nReason: "
+    );
+  }
+
+  function hubOpsCardHtml(data) {
+    var nextList = findNextSessions(data, 2);
+    var next = nextList[0] || null;
+    var more = nextList.slice(1);
+    var nextBody;
+    if (!next) {
+      nextBody =
+        '<p class="pp-muted pp-hub-ops__empty">Booked sessions will appear here once the term roster is confirmed.</p>';
+    } else {
+      nextBody =
+        '<div class="pp-hub-ops__next">' +
+        '<span class="pp-hub-ops__eyebrow">' +
+        (next.isToday ? "Today" : "Next session") +
+        "</span>" +
+        '<strong class="pp-hub-ops__when">' +
+        esc(next.dayLabel) +
+        "</strong>" +
+        '<span class="pp-hub-ops__svc">' +
+        esc(next.label) +
+        (next.time ? " · " + esc(next.time) : "") +
+        "</span>" +
+        (more.length
+          ? '<span class="pp-hub-ops__more muted">Also: ' +
+            esc(
+              more
+                .map(function (x) {
+                  return x.label + (x.time ? " " + x.time : "");
+                })
+                .join(" · "),
+            ) +
+            "</span>"
+          : "") +
+        "</div>";
+    }
+    return (
+      '<section class="pp-hub-ops" aria-label="Upcoming session">' +
+      '<div class="pp-hub-ops__main">' +
+      nextBody +
+      "</div>" +
+      '<div class="pp-hub-ops__actions">' +
+      '<button type="button" class="pp-btn pp-btn--ghost pp-hub-ops__absence" data-pp-absence="1"' +
+      (next ? "" : " disabled") +
+      ">Report absence</button>" +
+      '<button type="button" class="pp-btn pp-btn--ghost pp-hub-ops__msgs" data-pp-open="messages">Open messages</button>' +
+      "</div>" +
+      '<div id="ppHubAlerts" class="pp-hub-alerts" hidden></div>' +
+      "</section>"
+    );
+  }
+
+  function hubAlertKindLabel(kind) {
+    var k = String(kind || "").toLowerCase();
+    if (k === "instructor_change" || k === "instructor_reassign") return "Instructor update";
+    if (k === "session_cancelled") return "Session cancelled";
+    if (k === "absence_announced") return "Absence noted";
+    return k.replace(/_/g, " ") || "Club update";
+  }
+
+  function messageMatchesParticipant(m, data) {
+    var p = (data && data.participant) || {};
+    var want = String(p.display_name || "").trim().toLowerCase();
+    if (!want) return true;
+    var got = String((m && m.client_display) || "").trim().toLowerCase();
+    if (!got) return true;
+    if (got === want) return true;
+    var w0 = want.split(/\s+/)[0];
+    var g0 = got.split(/\s+/)[0];
+    return !!(w0 && g0 && (w0 === g0 || want.indexOf(g0) === 0 || got.indexOf(w0) === 0));
+  }
+
+  function filterHubAlerts(messages, data) {
+    var ALERT = {
+      instructor_change: 1,
+      instructor_reassign: 1,
+      session_cancelled: 1,
+      absence_announced: 1,
+    };
+    var cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000;
+    return (messages || [])
+      .filter(function (m) {
+        if (!m || m.direction !== "out") return false;
+        if (!ALERT[String(m.kind || "").toLowerCase()]) return false;
+        if (!messageMatchesParticipant(m, data)) return false;
+        var t = Date.parse(m.created_at || "");
+        if (Number.isFinite(t) && t < cutoff) return false;
+        return true;
+      })
+      .slice(0, 3);
+  }
+
+  function renderHubAlertsInto(host, alerts) {
+    var el = host.querySelector("#ppHubAlerts");
+    if (!el) return;
+    if (!alerts || !alerts.length) {
+      el.hidden = true;
+      el.innerHTML = "";
+      return;
+    }
+    el.hidden = false;
+    el.innerHTML =
+      '<h4 class="pp-hub-alerts__title">Recent club updates</h4>' +
+      '<ul class="pp-hub-alerts__list">' +
+      alerts
+        .map(function (m) {
+          var preview = String(m.body_text || m.subject || "").trim().replace(/\s+/g, " ");
+          if (preview.length > 110) preview = preview.slice(0, 107) + "…";
+          return (
+            '<li class="pp-hub-alerts__item">' +
+            '<button type="button" class="pp-hub-alerts__btn" data-pp-open="messages">' +
+            '<span class="pp-hub-alerts__kind">' +
+            esc(hubAlertKindLabel(m.kind)) +
+            "</span>" +
+            '<span class="pp-hub-alerts__when muted">' +
+            esc(formatMessageWhen(m.created_at)) +
+            "</span>" +
+            (preview
+              ? '<span class="pp-hub-alerts__preview">' + esc(preview) + "</span>"
+              : "") +
+            "</button></li>"
+          );
+        })
+        .join("") +
+      "</ul>";
+  }
+
+  function mountHubAlerts(host, data, opts) {
+    if (!host || typeof opts.loadMessages !== "function") return;
+    void opts
+      .loadMessages({ markRead: false })
+      .then(function (payload) {
+        if (!host.isConnected) return;
+        renderHubAlertsInto(host, filterHubAlerts((payload && payload.messages) || [], data));
+        host.querySelectorAll("#ppHubAlerts [data-pp-open]").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            openSubview(host, data, opts, btn.getAttribute("data-pp-open") || "messages");
+          });
+        });
+      })
+      .catch(function () {});
+  }
+
   function renderHub(host, data, opts) {
     ensureGeneralFields(data, { allowPlaceholders: true });
     setParticipantPageTitle(hubBackLabel(data).text);
     host.innerHTML =
       '<div class="pp-pax-shell" data-pp-view="hub">' +
       hubHeroHtml(data) +
+      hubOpsCardHtml(data) +
       servicesCardHtml(data) +
       infoButtonsHtml(data, opts) +
       '<p class="pp-muted pp-pax-hub-note">Parent sections above · sessions and reviews below — same layout instructors use when they tap your child&apos;s name.</p>' +
       "</div>";
     bindHub(host, data, opts);
+    mountHubAlerts(host, data, opts);
     void ensureGeneralFieldsAsync(data).then(function () {
       var fieldsHost = host.querySelector(".pp-hub-hero__info-fields");
       if (fieldsHost) {
@@ -1420,6 +1698,8 @@
     var k = String(m.kind || "").trim();
     if (k === "custom" || k === "reply") return "Club message";
     if (k === "instructor_change" || k === "instructor_reassign") return "Instructor update";
+    if (k === "session_cancelled") return "Session cancelled";
+    if (k === "absence_announced") return "Absence noted";
     if (!k) return "Club message";
     return k.replace(/_/g, " ");
   }
@@ -1587,7 +1867,9 @@
   }
 
   function renderMessages(host, data, opts) {
+    opts = opts || {};
     var state = { messages: [], waBiz: null, filter: "whatsapp" };
+    var prefill = String(opts.prefillMessage || "").trim();
     var body =
       '<h3 class="pp-pax-subview-title">Messages</h3>' +
       '<p class="pp-muted pp-pax-subview-note">Club updates by WhatsApp and email. Use the buttons to see each channel on its own.</p>' +
@@ -1596,6 +1878,16 @@
       messagesComposeHtml(null);
     host.innerHTML = subviewShell(data, "messages", body);
     bindBack(host, data, opts);
+    if (prefill) {
+      var input0 = host.querySelector("#ppMsgsInput");
+      if (input0) {
+        input0.value = prefill;
+        try {
+          input0.focus();
+          input0.setSelectionRange(prefill.length, prefill.length);
+        } catch (_e) {}
+      }
+    }
 
     function renderThread(keepScroll) {
       var threadHost = host.querySelector("#ppMsgsThreadHost");
@@ -1725,7 +2017,8 @@
     });
   }
 
-  function openSubview(host, data, opts, view) {
+  function openSubview(host, data, opts, view, viewOpts) {
+    viewOpts = viewOpts || {};
     if (view === "general") {
       void ensureGeneralFieldsAsync(data).then(function () {
         renderGeneral(host, data, opts);
@@ -1736,7 +2029,13 @@
     else if (view === "team") renderTeam(host, data, opts);
     else if (view === "booking") renderBooking(host, data, opts);
     else if (view === "calendar") renderCalendar(host, data, opts);
-    else if (view === "messages") renderMessages(host, data, opts);
+    else if (view === "messages") {
+      var msgOpts = opts || {};
+      if (viewOpts.prefillMessage) {
+        msgOpts = Object.assign({}, opts, { prefillMessage: viewOpts.prefillMessage });
+      }
+      renderMessages(host, data, msgOpts);
+    }
   }
 
   function bindHub(host, data, opts) {
@@ -1751,6 +2050,16 @@
         navigateToRegistrationEdit(data, opts);
       });
     });
+    var absenceBtn = host.querySelector("[data-pp-absence]");
+    if (absenceBtn) {
+      absenceBtn.addEventListener("click", function () {
+        if (absenceBtn.disabled) return;
+        var next = findNextSessions(data, 1)[0] || null;
+        openSubview(host, data, opts, "messages", {
+          prefillMessage: absencePrefillText(data, next),
+        });
+      });
+    }
     host.querySelectorAll("[data-pp-open]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         if (btn.disabled) return;
