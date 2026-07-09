@@ -528,3 +528,13 @@ verify_jwt = false
 
 [functions.parent-portal-makeup-respond]
 verify_jwt = false
+
+# Family credits / refunds ledger (visible to parents).
+[functions.parent-portal-credits-list]
+verify_jwt = false
+
+[functions.portal-admin-parent-credits-list]
+verify_jwt = false
+
+[functions.portal-admin-parent-credits-update]
+verify_jwt = false

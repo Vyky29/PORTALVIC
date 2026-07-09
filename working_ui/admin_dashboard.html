@@ -35,7 +35,8 @@
   <script src="/portal/admin-portal-day-ops.js?v=20260704-admin-504-stagger"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
-  <script src="/portal/admin-portal-parent-absences.js?v=20260709-makeup-grants"></script>
+  <script src="/portal/admin-portal-parent-absences.js?v=20260709-family-credits"></script>
+  <script src="/portal/admin-portal-parent-credits.js?v=20260709-family-credits"></script>
   <script src="/portal/admin-portal-parent-makeups.js?v=20260709-makeup-grants"></script>
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
   <script src="/portal/admin-portal-pins.js?v=20260530-portal-pins-db"></script>
@@ -20143,6 +20144,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalParentMakeupsConfigureOnce();
         parentQueue += window.PortalParentMakeups.embedHtml();
       }
+      if(window.PortalParentCredits && typeof window.PortalParentCredits.embedHtml === 'function'){
+        portalParentCreditsConfigureOnce();
+        parentQueue += window.PortalParentCredits.embedHtml();
+      }
       return '<h1 class="page-title">Absents, refunds &amp; credits</h1>'+
         '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Work through missed sessions, refunds, credits, and what was agreed with each family. '+metaLine+'</p>'+
         '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--sec" data-view-target="dashboard">Day operations</button> <button type="button" class="btn btn--sec" data-view-target="bookings">Bookings</button> <button type="button" class="btn btn--ghost" data-view-target="communications">Comms log</button></div>'+
@@ -20928,11 +20933,31 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(window.PortalParentMakeups && typeof window.PortalParentMakeups.bindEmbed === 'function'){
         window.PortalParentMakeups.bindEmbed();
       }
+      portalParentCreditsConfigureOnce();
+      if(window.PortalParentCredits && typeof window.PortalParentCredits.bindEmbed === 'function'){
+        window.PortalParentCredits.bindEmbed();
+      }
     }
     function portalParentMakeupsConfigureOnce(){
       if(window.__portalParentMakeupsConfigured || !window.PortalParentMakeups) return;
       window.__portalParentMakeupsConfigured = true;
       window.PortalParentMakeups.configure({
+        esc: esc,
+        toast: portalAdminToast,
+        getClient: getSchedSupabaseClient,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        }
+      });
+    }
+    function portalParentCreditsConfigureOnce(){
+      if(window.__portalParentCreditsConfigured || !window.PortalParentCredits) return;
+      window.__portalParentCreditsConfigured = true;
+      window.PortalParentCredits.configure({
         esc: esc,
         toast: portalAdminToast,
         getClient: getSchedSupabaseClient,

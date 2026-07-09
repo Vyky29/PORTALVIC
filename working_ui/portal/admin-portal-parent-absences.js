@@ -105,9 +105,19 @@
     return { reports: j.reports || [], meta: j.meta || {} };
   }
 
-  async function decide(reportId, action, outcome, notes, preferredVenue) {
+  async function decide(reportId, action, outcome, notes, preferredVenue, amountGbp) {
     var token = await portalAuthToken();
     if (!token) return { error: 'session_expired' };
+    var body = {
+      report_id: reportId,
+      action: action,
+      outcome: outcome || 'none',
+      notes: notes || '',
+      preferred_venue: preferredVenue || ''
+    };
+    if (amountGbp != null && amountGbp !== '' && isFinite(Number(amountGbp))) {
+      body.amount_gbp = Number(amountGbp);
+    }
     var res = await fetch(supabaseBase() + '/functions/v1/portal-admin-parent-absence-decide', {
       method: 'POST',
       headers: {
@@ -115,13 +125,7 @@
         Authorization: 'Bearer ' + token,
         apikey: cfg.getAnonKey()
       },
-      body: JSON.stringify({
-        report_id: reportId,
-        action: action,
-        outcome: outcome || 'none',
-        notes: notes || '',
-        preferred_venue: preferredVenue || ''
-      })
+      body: JSON.stringify(body)
     });
     var j = null;
     try {
@@ -132,7 +136,7 @@
     if (!res.ok || !j || !j.ok) {
       return { error: (j && j.error) || 'request_failed', message: (j && j.message) || '' };
     }
-    return { report: j.report, grant: j.grant };
+    return { report: j.report, grant: j.grant, credit: j.credit };
   }
 
   function rowHtml(r) {
@@ -278,6 +282,7 @@
         var outcome = sel ? sel.value : 'none';
         var notes = global.prompt('Optional notes for the family / file:', '') || '';
         var venue = '';
+        var amount = null;
         if (outcome === 'makeup') {
           venue = global.prompt('Preferred venue for makeup offers (required):', '') || '';
           if (!String(venue).trim()) {
@@ -285,14 +290,29 @@
             return;
           }
         }
+        if (outcome === 'credit' || outcome === 'refund') {
+          var amountRaw =
+            global.prompt(
+              '£ amount for the family ledger (optional — leave blank for session credit without cash figure):',
+              ''
+            ) || '';
+          if (String(amountRaw).trim()) {
+            amount = Number(amountRaw);
+            if (!isFinite(amount) || amount < 0) {
+              cfg.toast('Invalid amount', 'error');
+              return;
+            }
+          }
+        }
         btn.disabled = true;
-        void decide(id, 'approve', outcome, notes, venue).then(function (r) {
+        void decide(id, 'approve', outcome, notes, venue, amount).then(function (r) {
           if (r.error) {
             cfg.toast(r.message || r.error || 'Approve failed', 'error');
             btn.disabled = false;
             return;
           }
-          cfg.toast('Excused — outcome: ' + outcome, 'ok');
+          var extra = r.credit ? ' · ledger row created' : '';
+          cfg.toast('Excused — outcome: ' + outcome + extra, 'ok');
           void renderHost(global.document.getElementById('portalParentAbsenceHost'));
         });
       });

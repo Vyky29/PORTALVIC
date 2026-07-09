@@ -753,6 +753,8 @@
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
     var absentIcon =
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-3.5 4.2-5 8-5s6.5 1.5 8 5"/><path d="M16 4l4 4M20 4l-4 4"/></svg>';
+    var balanceIcon =
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20"/><path d="M6 14h.01M10 14h4"/></svg>';
     var teamCaption = firstNameOf(data) + "'s Team";
     return (
       '<div class="pp-pax-info-buttons">' +
@@ -767,6 +769,10 @@
         extraClass: " pp-pax-info-btn--absence",
         subtitle: hasServices ? "Missed / note" : "No sessions yet",
         disabled: !hasServices,
+      }) +
+      infoBtnHtml("balance", "Credits & refunds", balanceIcon, {
+        extraClass: " pp-pax-info-btn--balance",
+        subtitle: "Family ledger",
       }) +
       infoBtnHtml(
         "booking",
@@ -2262,8 +2268,17 @@
       actions =
         '<p class="pp-notice pp-notice--error pp-absence-expired" role="status">The 2-week window to upload proof has passed. Please contact the office/admin — uploads are no longer available here.</p>';
     } else if (status === "excused") {
-      actions =
-        '<p class="pp-notice pp-notice--info" role="status">Validated by admin. Credit / refund / makeup (if offered) is handled by the office.</p>';
+      var outcomeKind = String(r.outcome || "").toLowerCase();
+      if (outcomeKind === "credit" || outcomeKind === "refund") {
+        actions =
+          '<p class="pp-notice pp-notice--ok" role="status">Validated. Open <strong>Credits &amp; refunds</strong> on the hub to see your balance.</p>';
+      } else if (outcomeKind === "makeup") {
+        actions =
+          '<p class="pp-notice pp-notice--info" role="status">Validated. A makeup grant may appear below when the office offers a slot.</p>';
+      } else {
+        actions =
+          '<p class="pp-notice pp-notice--info" role="status">Validated by admin.</p>';
+      }
     } else if (status === "missed") {
       actions =
         '<p class="pp-muted pp-absence-card__hint">Missed session — no proof on file yet. If you can still upload within 2 weeks of the session date, use Upload proof above when available.</p>';
@@ -2353,6 +2368,136 @@
     );
     bindBack(host, data, opts);
     bindAbsence(host, data, opts);
+  }
+
+  function formatCreditMoney(n) {
+    if (n == null || n === "") return null;
+    var v = Number(n);
+    if (!isFinite(v)) return null;
+    return "£" + v.toFixed(2);
+  }
+
+  function creditStatusLabel(status) {
+    var s = String(status || "");
+    if (s === "open") return "Open";
+    if (s === "applied") return "Applied";
+    if (s === "refunded") return "Refunded";
+    if (s === "cancelled") return "Cancelled";
+    return s || "—";
+  }
+
+  function creditEntryCardHtml(e) {
+    var kind = String(e.kind || "");
+    var money = formatCreditMoney(e.amount_gbp);
+    var title = kind === "refund" ? "Refund" : "Credit";
+    return (
+      '<article class="pp-absence-card pp-credit-card" data-status="' +
+      esc(e.status) +
+      '">' +
+      '<div class="pp-absence-card__head">' +
+      "<strong>" +
+      esc(title) +
+      "</strong>" +
+      '<span class="pp-absence-chip">' +
+      esc(creditStatusLabel(e.status)) +
+      "</span></div>" +
+      (money
+        ? '<p class="pp-credit-card__amount">' + esc(money) + "</p>"
+        : '<p class="pp-muted pp-absence-card__hint">Session credit on file (amount set by the office if needed).</p>') +
+      '<p class="pp-absence-card__svc">' +
+      esc(e.service_label || "Session") +
+      (e.session_date
+        ? " · " + esc(formatHubDateLabel(e.session_date) || e.session_date)
+        : "") +
+      "</p>" +
+      (e.notes ? '<p class="pp-absence-card__reason">' + esc(e.notes) + "</p>" : "") +
+      (e.close_notes && e.status !== "open"
+        ? '<p class="pp-absence-card__meta muted">' + esc(e.close_notes) + "</p>"
+        : "") +
+      "</article>"
+    );
+  }
+
+  function renderBalance(host, data, opts) {
+    host.innerHTML = subviewShell(
+      data,
+      "balance",
+      '<h3 class="pp-pax-subview-title">Credits &amp; refunds</h3>' +
+        '<p class="pp-muted pp-pax-subview-note">Balances appear here after the office validates an excused absence as a credit or refund. Refunds stay open until the office marks them paid.</p>' +
+        '<div id="ppBalanceSummary" class="pp-balance-summary" hidden></div>' +
+        '<div id="ppBalanceNotice" class="pp-notice" hidden></div>' +
+        '<div id="ppBalanceListHost"><p class="pp-muted">Loading…</p></div>',
+    );
+    bindBack(host, data, opts);
+    bindBalance(host, data, opts);
+  }
+
+  function bindBalance(host, data, opts) {
+    var listHost = host.querySelector("#ppBalanceListHost");
+    var summary = host.querySelector("#ppBalanceSummary");
+    var notice = host.querySelector("#ppBalanceNotice");
+
+    function showNotice(kind, text) {
+      if (!notice) return;
+      notice.hidden = !text;
+      notice.className = "pp-notice" + (kind ? " pp-notice--" + kind : "");
+      notice.textContent = text || "";
+    }
+
+    if (!listHost || typeof opts.listCredits !== "function") {
+      if (listHost) listHost.innerHTML = '<p class="pp-muted">Balance is not available right now.</p>';
+      return;
+    }
+
+    void opts
+      .listCredits()
+      .then(function (j) {
+        var entries = (j && j.entries) || [];
+        var s = (j && j.summary) || {};
+        if (summary) {
+          var parts = [];
+          if (s.open_credit_count > 0) {
+            parts.push(
+              String(s.open_credit_count) +
+                " open credit" +
+                (s.open_credit_count === 1 ? "" : "s") +
+                (formatCreditMoney(s.open_credit_gbp)
+                  ? " (" + formatCreditMoney(s.open_credit_gbp) + ")"
+                  : ""),
+            );
+          }
+          if (s.open_refund_count > 0) {
+            parts.push(
+              String(s.open_refund_count) +
+                " open refund" +
+                (s.open_refund_count === 1 ? "" : "s") +
+                (formatCreditMoney(s.open_refund_gbp)
+                  ? " (" + formatCreditMoney(s.open_refund_gbp) + ")"
+                  : ""),
+            );
+          }
+          if (parts.length) {
+            summary.hidden = false;
+            summary.innerHTML =
+              '<p class="pp-balance-summary__line"><strong>' +
+              esc(parts.join(" · ")) +
+              "</strong></p>";
+          } else {
+            summary.hidden = true;
+            summary.innerHTML = "";
+          }
+        }
+        if (!entries.length) {
+          listHost.innerHTML =
+            '<p class="pp-muted">No credits or refunds on file yet for this participant.</p>';
+          return;
+        }
+        listHost.innerHTML = entries.map(creditEntryCardHtml).join("");
+      })
+      .catch(function () {
+        showNotice("error", "Could not load balance — please try again.");
+        listHost.innerHTML = "";
+      });
   }
 
   function makeupGrantCardHtml(g) {
@@ -2709,6 +2854,7 @@
     else if (view === "booking") renderBooking(host, data, opts);
     else if (view === "calendar") renderCalendar(host, data, opts);
     else if (view === "absence") renderAbsence(host, data, opts);
+    else if (view === "balance") renderBalance(host, data, opts);
     else if (view === "messages") {
       var msgOpts = opts || {};
       if (viewOpts.prefillMessage) {

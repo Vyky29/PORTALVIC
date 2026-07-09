@@ -40,6 +40,7 @@ Deno.serve(async (req) => {
     outcome?: string;
     notes?: string;
     preferred_venue?: string;
+    amount_gbp?: number | string | null;
   } = {};
   try {
     body = await req.json();
@@ -52,6 +53,14 @@ Deno.serve(async (req) => {
   const outcome = clean(body.outcome, 20).toLowerCase() || "none";
   const notes = clean(body.notes, 800);
   const preferredVenue = clean(body.preferred_venue, 80);
+  let amountGbp: number | null = null;
+  if (body.amount_gbp != null && body.amount_gbp !== "") {
+    const n = Number(body.amount_gbp);
+    if (!Number.isFinite(n) || n < 0) {
+      return portalAdminJson(400, { ok: false, error: "amount_invalid" });
+    }
+    amountGbp = Math.round(n * 100) / 100;
+  }
 
   if (!reportId) return portalAdminJson(400, { ok: false, error: "report_id_required" });
   if (!["approve", "reject", "grant_makeup"].includes(action)) {
@@ -204,5 +213,44 @@ Deno.serve(async (req) => {
     grant = g;
   }
 
-  return portalAdminJson(200, { ok: true, report: updated, grant });
+  // Credit / refund → family-visible ledger row (phase 1: internal, no Stripe).
+  let credit = null;
+  if (action === "approve" && (outcome === "credit" || outcome === "refund")) {
+    const { data: existingCredit } = await admin
+      .from("portal_parent_family_credits")
+      .select("id, kind, status, amount_gbp")
+      .eq("absence_report_id", reportId)
+      .eq("kind", outcome)
+      .maybeSingle();
+    if (existingCredit) {
+      credit = existingCredit;
+    } else {
+      const { data: c, error: cErr } = await admin
+        .from("portal_parent_family_credits")
+        .insert({
+          parent_person_id: updated.parent_person_id,
+          contact_id: updated.contact_id,
+          participant_display: updated.participant_display || "",
+          absence_report_id: reportId,
+          kind: outcome,
+          status: "open",
+          amount_gbp: amountGbp,
+          service_label: updated.service_label || "",
+          session_date: updated.session_date || null,
+          notes: notes || null,
+          source: "excused_absence",
+          created_by: verified.userId || null,
+          updated_at: now,
+        })
+        .select("*")
+        .maybeSingle();
+      if (cErr) {
+        console.error("[portal-admin-parent-absence-decide] credit", cErr.message);
+      } else {
+        credit = c;
+      }
+    }
+  }
+
+  return portalAdminJson(200, { ok: true, report: updated, grant, credit });
 });
