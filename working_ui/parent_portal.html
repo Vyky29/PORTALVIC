@@ -35,7 +35,7 @@
       --success: #157347;
       --successSoft: #e8f7ef;
       --max: 460px;
-      --max-wide: min(1120px, 96vw);
+      --max-wide: min(1280px, 96vw);
       --tap: 48px;
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -1553,13 +1553,15 @@
         margin-right: auto;
         width: 100%;
       }
-      #ppStepHome {
+      /* Home + participant hub use the full page width (was capped at 560px). */
+      #ppStepHome,
+      #ppStepParticipant {
         display: flex;
         flex-direction: column;
         gap: 16px;
-        max-width: 560px;
-        margin-left: auto;
-        margin-right: auto;
+        max-width: none;
+        margin-left: 0;
+        margin-right: 0;
         width: 100%;
       }
       #ppStepHome > .pp-card,
@@ -1571,7 +1573,7 @@
         grid-template-columns: 1fr;
       }
       .pp-child-card { padding: 18px; }
-      .pp-child-layout { grid-template-columns: 112px minmax(0, 1fr); gap: 14px; }
+      .pp-child-layout { grid-template-columns: 120px minmax(0, 1fr); gap: 16px; }
       .pp-child-name { font-size: 18px; }
       .pp-child-photo { width: 96px; height: 96px; }
       .pp-child-photo--init { font-size: 26px; }
@@ -1613,6 +1615,23 @@
         padding-left: max(32px, env(safe-area-inset-left));
         padding-right: max(32px, env(safe-area-inset-right));
       }
+      #ppChildList {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+        gap: 14px;
+      }
+      #ppStepHome {
+        display: grid;
+        grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.65fr);
+        grid-template-areas:
+          "head head"
+          "kids contact";
+        align-items: start;
+        gap: 16px;
+      }
+      #ppStepHome > .pp-home-head { grid-area: head; }
+      #ppStepHome > .pp-card:not(#ppContactBlock) { grid-area: kids; }
+      #ppStepHome > #ppContactBlock { grid-area: contact; }
     }
   </style>
 </head>
