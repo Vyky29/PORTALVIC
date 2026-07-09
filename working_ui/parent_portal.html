@@ -1418,6 +1418,10 @@
       border-color: #99f6e4;
       background: linear-gradient(180deg, #f0fdfa 0%, #fff 48%);
     }
+    .pp-consent-card--emergency {
+      border-color: #fecaca;
+      background: linear-gradient(180deg, #fff1f2 0%, #fff 48%);
+    }
     .pp-consent-card__head {
       display: flex;
       align-items: flex-start;
@@ -1449,6 +1453,10 @@
     .pp-consent-ico-wrap--med {
       background: rgba(15, 118, 110, 0.12);
       color: #0f766e;
+    }
+    .pp-consent-ico-wrap--emergency {
+      background: rgba(220, 38, 38, 0.12);
+      color: #b91c1c;
     }
     .pp-consent-ico {
       width: 20px;
@@ -1605,6 +1613,16 @@
       border: 1px solid var(--line);
       border-radius: 10px;
       min-width: 0;
+    }
+    .pp-consent-emergency-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      min-width: 0;
+      margin: 0 0 8px;
+    }
+    @media (max-width: 520px) {
+      .pp-consent-emergency-fields { grid-template-columns: 1fr; }
     }
     @media (max-width: 420px) {
       .pp-consent-uses { grid-template-columns: 1fr; }
@@ -2958,8 +2976,8 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260709-overview-by-service"></script>
   <script src="/portal/parent_portal_team.js?v=20260709-msg-photo-team"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260709-my-cal-polish"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260709-consent-ui"></script>
-  <script src="/portal/parent_portal_app.js?v=20260709-consents"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260709-emergency-consent"></script>
+  <script src="/portal/parent_portal_app.js?v=20260709-emergency-consent"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {

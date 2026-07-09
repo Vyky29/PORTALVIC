@@ -1,7 +1,7 @@
 // @ts-nocheck — Edge Function (Deno).
 //
 // portal-admin-parent-consents-list
-// Admin: photo marketing + medication-at-centre consents per participant.
+// Admin: photo marketing + medication + emergency consents per participant.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
@@ -23,6 +23,11 @@ type ConsentRow = {
   medication_at_centre_details: string;
   medication_at_centre_signed_at: string | null;
   medication_at_centre_signed_by_name: string;
+  emergency_treatment_consent?: string;
+  emergency_treatment_signed_at?: string | null;
+  emergency_treatment_signed_by_name?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
   updated_at: string | null;
 };
 
@@ -72,7 +77,7 @@ Deno.serve(async (req) => {
   const { data: consentRows, error: cErr } = await admin
     .from("portal_participant_parent_consents")
     .select(
-      "contact_id, photo_consent, photo_consent_signed_at, photo_consent_signed_by_name, medication_at_centre_needed, medication_at_centre_details, medication_at_centre_signed_at, medication_at_centre_signed_by_name, updated_at",
+      "contact_id, photo_consent, photo_consent_signed_at, photo_consent_signed_by_name, medication_at_centre_needed, medication_at_centre_details, medication_at_centre_signed_at, medication_at_centre_signed_by_name, emergency_treatment_consent, emergency_treatment_signed_at, emergency_treatment_signed_by_name, emergency_contact_name, emergency_contact_phone, updated_at",
     );
 
   if (cErr) {
@@ -115,14 +120,25 @@ Deno.serve(async (req) => {
   let medPending = 0;
   let medYes = 0;
   let medNo = 0;
+  let emergencyPending = 0;
+  let emergencyYes = 0;
+  let emergencyNo = 0;
 
   const entries = (participants || []).map((p) => {
     const contactId = clean(p.contact_id, 120);
     const c = byContact.get(contactId);
     const photo = clean(c?.photo_consent, 40) || "unknown";
     const med = clean(c?.medication_at_centre_needed, 40) || "unknown";
+    const emergency = clean(c?.emergency_treatment_consent, 40) || "unknown";
+    const emergencyName = clean(c?.emergency_contact_name, 120);
+    const emergencyPhone = clean(c?.emergency_contact_phone, 40);
     const photoDone = photo !== "unknown" && !!c?.photo_consent_signed_at;
     const medDone = med !== "unknown" && !!c?.medication_at_centre_signed_at;
+    const emergencyDone =
+      emergency !== "unknown" &&
+      !!c?.emergency_treatment_signed_at &&
+      !!emergencyName &&
+      !!emergencyPhone;
 
     if (!photoDone) photoPending += 1;
     else if (photo === "yes") photoYes += 1;
@@ -131,6 +147,10 @@ Deno.serve(async (req) => {
     if (!medDone) medPending += 1;
     else if (med === "yes") medYes += 1;
     else medNo += 1;
+
+    if (!emergencyDone) emergencyPending += 1;
+    else if (emergency === "yes") emergencyYes += 1;
+    else emergencyNo += 1;
 
     const display =
       clean(p.display_name, 120) ||
@@ -152,7 +172,13 @@ Deno.serve(async (req) => {
       medication_at_centre_signed_at: c?.medication_at_centre_signed_at || null,
       medication_at_centre_signed_by_name: clean(c?.medication_at_centre_signed_by_name, 120),
       medication_done: medDone,
-      pending_count: (photoDone ? 0 : 1) + (medDone ? 0 : 1),
+      emergency_treatment_consent: emergency,
+      emergency_treatment_signed_at: c?.emergency_treatment_signed_at || null,
+      emergency_treatment_signed_by_name: clean(c?.emergency_treatment_signed_by_name, 120),
+      emergency_contact_name: emergencyName,
+      emergency_contact_phone: emergencyPhone,
+      emergency_done: emergencyDone,
+      pending_count: (photoDone ? 0 : 1) + (medDone ? 0 : 1) + (emergencyDone ? 0 : 1),
       updated_at: c?.updated_at || null,
     };
   });
@@ -166,6 +192,8 @@ Deno.serve(async (req) => {
     filtered = entries.filter((e) => e.photo_done && e.photo_consent === "no");
   } else if (filter === "med_yes") {
     filtered = entries.filter((e) => e.medication_done && e.medication_at_centre_needed === "yes");
+  } else if (filter === "emergency_pending") {
+    filtered = entries.filter((e) => !e.emergency_done);
   } else if (filter === "complete") {
     filtered = entries.filter((e) => e.pending_count === 0);
   }
@@ -181,7 +209,11 @@ Deno.serve(async (req) => {
         " " +
         e.photo_consent_signed_by_name +
         " " +
-        e.medication_at_centre_signed_by_name
+        e.medication_at_centre_signed_by_name +
+        " " +
+        e.emergency_contact_name +
+        " " +
+        e.emergency_contact_phone
       ).toLowerCase();
       return hay.indexOf(q) >= 0;
     });
@@ -203,6 +235,9 @@ Deno.serve(async (req) => {
       medication_pending: medPending,
       medication_yes: medYes,
       medication_no: medNo,
+      emergency_pending: emergencyPending,
+      emergency_yes: emergencyYes,
+      emergency_no: emergencyNo,
       filter,
     },
   });

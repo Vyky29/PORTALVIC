@@ -1,7 +1,7 @@
 // @ts-nocheck — Edge Function (Deno).
 //
 // parent-portal-consents-load
-// Load photo + medication-at-centre consents for a linked participant.
+// Load photo + medication + emergency consents for a linked participant.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
@@ -26,8 +26,30 @@ const EMPTY = {
   medication_at_centre_details: "",
   medication_at_centre_signed_at: null as string | null,
   medication_at_centre_signed_by_name: "",
+  emergency_treatment_consent: "unknown",
+  emergency_treatment_signed_at: null as string | null,
+  emergency_treatment_signed_by_name: "",
+  emergency_contact_name: "",
+  emergency_contact_phone: "",
   updated_at: null as string | null,
 };
+
+function summarize(c: typeof EMPTY) {
+  const photoDone = c.photo_consent !== "unknown" && !!c.photo_consent_signed_at;
+  const medDone =
+    c.medication_at_centre_needed !== "unknown" && !!c.medication_at_centre_signed_at;
+  const emergencyDone =
+    c.emergency_treatment_consent !== "unknown" &&
+    !!c.emergency_treatment_signed_at &&
+    !!clean(c.emergency_contact_name, 120) &&
+    !!clean(c.emergency_contact_phone, 40);
+  return {
+    photo_done: photoDone,
+    medication_done: medDone,
+    emergency_done: emergencyDone,
+    pending_count: (photoDone ? 0 : 1) + (medDone ? 0 : 1) + (emergencyDone ? 0 : 1),
+  };
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: parentPortalCorsHeaders });
@@ -73,7 +95,7 @@ Deno.serve(async (req) => {
   const { data: row, error } = await supabase
     .from("portal_participant_parent_consents")
     .select(
-      "photo_consent, photo_consent_signed_at, photo_consent_signed_by_name, medication_at_centre_needed, medication_at_centre_details, medication_at_centre_signed_at, medication_at_centre_signed_by_name, updated_at",
+      "photo_consent, photo_consent_signed_at, photo_consent_signed_by_name, medication_at_centre_needed, medication_at_centre_details, medication_at_centre_signed_at, medication_at_centre_signed_by_name, emergency_treatment_consent, emergency_treatment_signed_at, emergency_treatment_signed_by_name, emergency_contact_name, emergency_contact_phone, updated_at",
     )
     .eq("contact_id", contactId)
     .maybeSingle();
@@ -96,22 +118,20 @@ Deno.serve(async (req) => {
           ? String(row.medication_at_centre_signed_at)
           : null,
         medication_at_centre_signed_by_name: clean(row.medication_at_centre_signed_by_name, 120),
+        emergency_treatment_consent: clean(row.emergency_treatment_consent, 40) || "unknown",
+        emergency_treatment_signed_at: row.emergency_treatment_signed_at
+          ? String(row.emergency_treatment_signed_at)
+          : null,
+        emergency_treatment_signed_by_name: clean(row.emergency_treatment_signed_by_name, 120),
+        emergency_contact_name: clean(row.emergency_contact_name, 120),
+        emergency_contact_phone: clean(row.emergency_contact_phone, 40),
         updated_at: row.updated_at ? String(row.updated_at) : null,
       }
     : { ...EMPTY };
 
-  const photoDone = consents.photo_consent !== "unknown" && !!consents.photo_consent_signed_at;
-  const medDone =
-    consents.medication_at_centre_needed !== "unknown" &&
-    !!consents.medication_at_centre_signed_at;
-
   return json(200, {
     ok: true,
     consents,
-    summary: {
-      photo_done: photoDone,
-      medication_done: medDone,
-      pending_count: (photoDone ? 0 : 1) + (medDone ? 0 : 1),
-    },
+    summary: summarize(consents),
   });
 });

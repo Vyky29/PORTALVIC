@@ -96,13 +96,27 @@
     return { text: 'No meds', tone: 'ok' };
   }
 
+  function emergencyLabel(e) {
+    if (!e.emergency_done) return { text: 'Pending', tone: 'pend' };
+    if (e.emergency_treatment_consent === 'yes') return { text: 'Treat OK', tone: 'ok' };
+    return { text: 'Wait for carer', tone: 'info' };
+  }
+
   function rowHtml(e) {
     var photo = photoLabel(e);
     var med = medLabel(e);
+    var emergency = emergencyLabel(e);
     var medDetails =
       e.medication_at_centre_needed === 'yes' && e.medication_at_centre_details
         ? '<div class="muted" style="margin-top:4px;font-size:12px;max-width:18rem;overflow-wrap:break-word">' +
           esc(e.medication_at_centre_details) +
+          '</div>'
+        : '';
+    var emergencyContact =
+      e.emergency_done && (e.emergency_contact_name || e.emergency_contact_phone)
+        ? '<div class="muted" style="margin-top:4px;font-size:12px;max-width:16rem;overflow-wrap:break-word">' +
+          esc(e.emergency_contact_name || '') +
+          (e.emergency_contact_phone ? ' · ' + esc(e.emergency_contact_phone) : '') +
           '</div>'
         : '';
     return (
@@ -143,6 +157,18 @@
           '</div>'
         : '') +
       '</td>' +
+      '<td><span class="chip chip--' +
+      emergency.tone +
+      '">' +
+      esc(emergency.text) +
+      '</span>' +
+      emergencyContact +
+      (e.emergency_done
+        ? '<div class="muted" style="margin-top:4px;font-size:12px;white-space:nowrap">' +
+          esc(formatDate(e.emergency_treatment_signed_at)) +
+          '</div>'
+        : '') +
+      '</td>' +
       '<td class="muted" style="white-space:nowrap">' +
       esc(formatDate(e.updated_at)) +
       '</td>' +
@@ -156,7 +182,7 @@
     }
     return (
       '<div style="overflow:auto"><table class="tbl tbl--center tbl--dense"><thead><tr>' +
-      '<th>Participant</th><th>Photo / marketing</th><th>Medication at centre</th><th>Updated</th>' +
+      '<th>Participant</th><th>Photo / marketing</th><th>Medication</th><th>Emergency</th><th>Updated</th>' +
       '</tr></thead><tbody>' +
       entries.map(rowHtml).join('') +
       '</tbody></table></div>'
@@ -185,9 +211,11 @@
     if (metaEl) {
       metaEl.textContent =
         String(state.meta.photo_pending || 0) +
-        ' photo pending · ' +
+        ' photo · ' +
         String(state.meta.medication_pending || 0) +
-        ' meds pending · ' +
+        ' meds · ' +
+        String(state.meta.emergency_pending || 0) +
+        ' emergency pending · ' +
         String(state.meta.photo_yes || 0) +
         ' marketing OK';
     }
@@ -197,7 +225,7 @@
   function viewHtml() {
     return (
       '<h1 class="page-title">Parent consents</h1>' +
-      '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Photo consent is for <strong>website / marketing / training / research</strong> only — portal progress photos do not need this. Medication shows who left meds at the centre.</p>' +
+      '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Photo consent is for <strong>website / marketing / training / research</strong> only — portal progress photos do not need this. Also tracks medication at the centre and emergency treatment / contacts.</p>' +
       '<div class="card" style="margin-bottom:14px">' +
       '<div class="card-h"><h3>Consent status</h3>' +
       '<span class="chip chip--pend" id="portalParentConsentsMeta">…</span></div>' +
@@ -207,6 +235,7 @@
       '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="photo_yes">Marketing OK</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="photo_no">Family only</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="med_yes">Meds at centre</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="emergency_pending">Emergency pending</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="complete">Complete</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="all">All</button>' +
       '<input id="portalParentConsentsSearch" type="search" placeholder="Search name…" style="min-width:10rem;max-width:100%;flex:1 1 12rem;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit" />' +

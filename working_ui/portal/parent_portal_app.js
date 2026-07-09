@@ -385,6 +385,10 @@
             medication_at_centre_needed: payload.medication_at_centre_needed,
             medication_at_centre_details: payload.medication_at_centre_details,
             medication_at_centre_signed_by_name: payload.medication_at_centre_signed_by_name,
+            emergency_treatment_consent: payload.emergency_treatment_consent,
+            emergency_treatment_signed_by_name: payload.emergency_treatment_signed_by_name,
+            emergency_contact_name: payload.emergency_contact_name,
+            emergency_contact_phone: payload.emergency_contact_phone,
           }),
         }).then(function (res) {
           return res.json().then(function (j) {
@@ -396,6 +400,13 @@
             return j;
           });
         });
+      },
+      consentsPendingCount: function () {
+        return Number(state.participant && state.participant.consentsPending) || 0;
+      },
+      setConsentsPendingCount: function (n) {
+        if (!state.participant) state.participant = { contactId: contactId, data: null, loaded: {} };
+        state.participant.consentsPending = Math.max(0, Number(n) || 0);
       },
       parentDisplayName: function () {
         var parent = (state.home && state.home.parent) || {};

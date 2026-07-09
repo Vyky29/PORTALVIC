@@ -833,6 +833,12 @@
       opts && typeof opts.unreadBadgeHtml === "function" && msgUnread > 0
         ? opts.unreadBadgeHtml(msgUnread, "Unread messages")
         : "";
+    var consentPending =
+      opts && typeof opts.consentsPendingCount === "function" ? opts.consentsPendingCount() : 0;
+    var consentBadge =
+      opts && typeof opts.unreadBadgeHtml === "function" && consentPending > 0
+        ? opts.unreadBadgeHtml(consentPending, "Pending consents")
+        : "";
     var booking = bookingSummary(data);
     var swimAvailable = !!data.swim_term_review_available;
     var hasServices = !!(
@@ -893,8 +899,11 @@
         subtitle: "Registration forms",
       }) +
       infoBtnHtml("consents", "Consents", consentIcon, {
-        extraClass: " pp-pax-info-btn--consents",
-        subtitle: "Marketing photos & meds",
+        extraClass:
+          " pp-pax-info-btn--consents" +
+          (consentPending > 0 ? " pp-pax-info-btn--has-unread" : ""),
+        subtitle: consentPending > 0 ? consentPending + " pending" : "Photos, meds & emergency",
+        unreadBadge: consentBadge,
       }) +
       infoBtnHtml("balance", "Credits & refunds", balanceIcon, {
         extraClass: " pp-pax-info-btn--balance",
@@ -1608,6 +1617,28 @@
         fieldsHost.innerHTML = generalProfileReadHtml(data);
       }
     });
+    void refreshConsentsHubBadge(host, data, opts);
+  }
+
+  function refreshConsentsHubBadge(host, data, opts) {
+    if (!host || !opts || typeof opts.loadConsents !== "function") return;
+    void opts
+      .loadConsents()
+      .then(function (j) {
+        var pending = (j && j.summary && j.summary.pending_count) || 0;
+        if (typeof opts.setConsentsPendingCount === "function") {
+          opts.setConsentsPendingCount(pending);
+        }
+        var old = host.querySelector(".pp-pax-info-buttons");
+        if (!old) return;
+        var wrap = document.createElement("div");
+        wrap.innerHTML = infoButtonsHtml(data, opts);
+        var neu = wrap.firstChild;
+        if (!neu) return;
+        old.replaceWith(neu);
+        bindHubOpenButtons(host, data, opts);
+      })
+      .catch(function () {});
   }
 
   function renderGeneral(host, data, opts) {
@@ -2983,6 +3014,16 @@
         '<svg class="pp-consent-choice__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/><rect x="4" y="4" width="16" height="16" rx="4"/></svg>'
       );
     }
+    if (kind === "emergency") {
+      return (
+        '<svg class="pp-consent-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>'
+      );
+    }
+    if (kind === "phone") {
+      return (
+        '<svg class="pp-consent-choice__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.77.62 2.6a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.48-1.19a2 2 0 0 1 2.11-.45c.83.29 1.7.5 2.6.62A2 2 0 0 1 22 16.92z"/></svg>'
+      );
+    }
     return "";
   }
 
@@ -3017,7 +3058,7 @@
       data,
       "consents",
       '<h3 class="pp-pax-subview-title">Consents</h3>' +
-        '<p class="pp-muted pp-pax-subview-note">Marketing / resources photo use, and medication left at the centre for ' +
+        '<p class="pp-muted pp-pax-subview-note">Marketing photos, medication at the centre, and emergency treatment for ' +
         esc(firstNameOf(data)) +
         ".</p>" +
         '<div id="ppConsentsNotice" class="pp-notice" hidden></div>' +
@@ -3055,8 +3096,20 @@
       var medSigner = String(consents.medication_at_centre_signed_by_name || parentName || "");
       var photoWhen = formatConsentWhen(consents.photo_consent_signed_at);
       var medWhen = formatConsentWhen(consents.medication_at_centre_signed_at);
+      var emergencyRaw = String(consents.emergency_treatment_consent || "unknown");
+      var emergency = emergencyRaw === "yes" || emergencyRaw === "no" ? emergencyRaw : "";
+      var emergencySigner = String(
+        consents.emergency_treatment_signed_by_name || parentName || "",
+      );
+      var emergencyWhen = formatConsentWhen(consents.emergency_treatment_signed_at);
+      var emergencyName = String(consents.emergency_contact_name || "");
+      var emergencyPhone = String(consents.emergency_contact_phone || "");
       var photoDone = !!summary.photo_done;
       var medDone = !!summary.medication_done;
+      var emergencyDone = !!summary.emergency_done;
+      if (typeof opts.setConsentsPendingCount === "function") {
+        opts.setConsentsPendingCount(summary.pending_count || 0);
+      }
 
       formHost.innerHTML =
         '<form class="pp-consent-form" id="ppConsentForm" novalidate>' +
@@ -3154,6 +3207,53 @@
         '"></div>' +
         (medWhen ? '<p class="pp-muted pp-consent-signed">Last signed ' + esc(medWhen) + "</p>" : "") +
         "</section>" +
+        '<section class="pp-consent-card pp-consent-card--emergency" aria-labelledby="ppConsentEmergencyTitle">' +
+        '<div class="pp-consent-card__head">' +
+        '<div class="pp-consent-card__title-row">' +
+        '<span class="pp-consent-ico-wrap pp-consent-ico-wrap--emergency" aria-hidden="true">' +
+        consentSvg("emergency") +
+        "</span>" +
+        '<h4 id="ppConsentEmergencyTitle" class="pp-consent-card__title">Emergency treatment</h4>' +
+        "</div>" +
+        consentStatusChip(emergencyDone) +
+        "</div>" +
+        '<p class="pp-muted pp-consent-card__hint">If we cannot reach you quickly, may staff arrange urgent first aid / medical treatment and call the emergency contact below?</p>' +
+        '<fieldset class="pp-consent-choices">' +
+        '<legend class="pp-sr-only">Emergency treatment consent</legend>' +
+        consentChoiceHtml(
+          "emergency_treatment_consent",
+          "yes",
+          emergency === "yes",
+          "check",
+          "Yes — act in an emergency",
+          "First aid and urgent medical help if needed",
+        ) +
+        consentChoiceHtml(
+          "emergency_treatment_consent",
+          "no",
+          emergency === "no",
+          "block",
+          "No — wait for carer only",
+          "Staff will still call emergency services if life is at risk",
+        ) +
+        "</fieldset>" +
+        '<div class="pp-consent-emergency-fields">' +
+        '<div class="pp-field"><label for="ppConsentEmergencyName">Emergency contact name</label>' +
+        '<input id="ppConsentEmergencyName" name="emergency_contact_name" type="text" autocomplete="name" required value="' +
+        esc(emergencyName) +
+        '"></div>' +
+        '<div class="pp-field"><label for="ppConsentEmergencyPhone">Emergency contact phone</label>' +
+        '<input id="ppConsentEmergencyPhone" name="emergency_contact_phone" type="tel" autocomplete="tel" required value="' +
+        esc(emergencyPhone) +
+        '"></div></div>' +
+        '<div class="pp-field"><label for="ppConsentEmergencySigner">Signed by</label>' +
+        '<input id="ppConsentEmergencySigner" name="emergency_treatment_signed_by_name" type="text" autocomplete="name" required value="' +
+        esc(emergencySigner) +
+        '"></div>' +
+        (emergencyWhen
+          ? '<p class="pp-muted pp-consent-signed">Last signed ' + esc(emergencyWhen) + "</p>"
+          : "") +
+        "</section>" +
         '<button type="submit" class="pp-btn pp-btn--primary" id="ppConsentSaveBtn">Save &amp; sign consents</button>' +
         "</form>";
 
@@ -3189,9 +3289,19 @@
           }
           var photoEl = form.querySelector('input[name="photo_consent"]:checked');
           var medEl = form.querySelector('input[name="medication_at_centre_needed"]:checked');
+          var emergencyEl = form.querySelector('input[name="emergency_treatment_consent"]:checked');
           var photoName = String((form.querySelector("#ppConsentPhotoSigner") || {}).value || "").trim();
           var medName = String((form.querySelector("#ppConsentMedSigner") || {}).value || "").trim();
           var medText = String((form.querySelector("#ppConsentMedDetails") || {}).value || "").trim();
+          var emergencyNameVal = String(
+            (form.querySelector("#ppConsentEmergencyName") || {}).value || "",
+          ).trim();
+          var emergencyPhoneVal = String(
+            (form.querySelector("#ppConsentEmergencyPhone") || {}).value || "",
+          ).trim();
+          var emergencySignerVal = String(
+            (form.querySelector("#ppConsentEmergencySigner") || {}).value || "",
+          ).trim();
           if (!photoEl) {
             showNotice("error", "Choose a photo consent option.");
             return;
@@ -3200,12 +3310,20 @@
             showNotice("error", "Choose whether medication is left at the centre.");
             return;
           }
-          if (!photoName || !medName) {
+          if (!emergencyEl) {
+            showNotice("error", "Choose an emergency treatment option.");
+            return;
+          }
+          if (!photoName || !medName || !emergencySignerVal) {
             showNotice("error", "Enter the name of the person signing.");
             return;
           }
           if (medEl.value === "yes" && !medText) {
             showNotice("error", "Add medication details (name, dose, when).");
+            return;
+          }
+          if (!emergencyNameVal || !emergencyPhoneVal) {
+            showNotice("error", "Add an emergency contact name and phone.");
             return;
           }
           var btn = form.querySelector("#ppConsentSaveBtn");
@@ -3220,16 +3338,30 @@
               medication_at_centre_needed: medEl.value,
               medication_at_centre_details: medText,
               medication_at_centre_signed_by_name: medName,
+              emergency_treatment_consent: emergencyEl.value,
+              emergency_treatment_signed_by_name: emergencySignerVal,
+              emergency_contact_name: emergencyNameVal,
+              emergency_contact_phone: emergencyPhoneVal,
             })
             .then(function (j) {
               showNotice("success", "Consents saved. Thank you.");
-              paint(j.consents || {}, j.summary || { photo_done: true, medication_done: true });
+              if (typeof opts.setConsentsPendingCount === "function") {
+                opts.setConsentsPendingCount((j.summary && j.summary.pending_count) || 0);
+              }
+              paint(
+                j.consents || {},
+                j.summary || { photo_done: true, medication_done: true, emergency_done: true },
+              );
             })
             .catch(function (err) {
               var code = err && err.code ? String(err.code) : "";
               var msg = "Could not save — please try again.";
               if (code === "medication_details_required") msg = "Add medication details before saving.";
               if (code === "photo_consent_required") msg = "Choose a photo consent option.";
+              if (code === "emergency_consent_required") msg = "Choose an emergency treatment option.";
+              if (code === "emergency_contact_name_required" || code === "emergency_contact_phone_required") {
+                msg = "Add an emergency contact name and phone.";
+              }
               showNotice("error", msg);
             })
             .finally(function () {
@@ -3245,6 +3377,9 @@
     void opts
       .loadConsents()
       .then(function (j) {
+        if (typeof opts.setConsentsPendingCount === "function") {
+          opts.setConsentsPendingCount((j && j.summary && j.summary.pending_count) || 0);
+        }
         paint((j && j.consents) || {}, (j && j.summary) || {});
       })
       .catch(function () {
@@ -3960,31 +4095,15 @@
     }
   }
 
-  function bindHub(host, data, opts) {
+  function bindHubOpenButtons(host, data, opts) {
     var sectionByView = {
       sessions: "sessions",
       achievements: "achievements",
       swim: "swim",
     };
-    host.querySelectorAll("[data-pp-switch-child]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        if (btn.classList.contains("is-active")) return;
-        var nextId = btn.getAttribute("data-pp-switch-child");
-        if (nextId && typeof opts.switchChild === "function") opts.switchChild(nextId);
-      });
-    });
-    host.querySelectorAll("[data-pp-open-edit]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        if (btn.getAttribute("data-pp-open-edit") !== "general") return;
-        navigateToRegistrationEdit(data, opts);
-      });
-    });
-    host.querySelectorAll("[data-pp-open-contact]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        if (opts && typeof opts.openContactDetails === "function") opts.openContactDetails();
-      });
-    });
     host.querySelectorAll("[data-pp-open]").forEach(function (btn) {
+      if (btn.__ppBoundOpen) return;
+      btn.__ppBoundOpen = true;
       btn.addEventListener("click", function () {
         if (btn.disabled) return;
         var view = btn.getAttribute("data-pp-open");
@@ -4015,6 +4134,28 @@
         openSubview(host, data, opts, view);
       });
     });
+  }
+
+  function bindHub(host, data, opts) {
+    host.querySelectorAll("[data-pp-switch-child]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (btn.classList.contains("is-active")) return;
+        var nextId = btn.getAttribute("data-pp-switch-child");
+        if (nextId && typeof opts.switchChild === "function") opts.switchChild(nextId);
+      });
+    });
+    host.querySelectorAll("[data-pp-open-edit]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (btn.getAttribute("data-pp-open-edit") !== "general") return;
+        navigateToRegistrationEdit(data, opts);
+      });
+    });
+    host.querySelectorAll("[data-pp-open-contact]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (opts && typeof opts.openContactDetails === "function") opts.openContactDetails();
+      });
+    });
+    bindHubOpenButtons(host, data, opts);
   }
 
   function bindGeneral(host, data, opts) {

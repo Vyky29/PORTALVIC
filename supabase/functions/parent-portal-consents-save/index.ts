@@ -1,7 +1,7 @@
 // @ts-nocheck — Edge Function (Deno).
 //
 // parent-portal-consents-save
-// Upsert photo + medication-at-centre consents; append audit log.
+// Upsert photo + medication + emergency consents; append audit log.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
@@ -20,6 +20,7 @@ function json(status: number, body: Record<string, unknown>) {
 
 const PHOTO_OK = new Set(["yes", "no"]);
 const MED_OK = new Set(["yes", "no"]);
+const EMERGENCY_OK = new Set(["yes", "no"]);
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: parentPortalCorsHeaders });
@@ -43,6 +44,10 @@ Deno.serve(async (req) => {
     medication_at_centre_needed?: string;
     medication_at_centre_details?: string;
     medication_at_centre_signed_by_name?: string;
+    emergency_treatment_consent?: string;
+    emergency_treatment_signed_by_name?: string;
+    emergency_contact_name?: string;
+    emergency_contact_phone?: string;
   } = {};
   try {
     body = await req.json();
@@ -71,9 +76,13 @@ Deno.serve(async (req) => {
 
   const photoConsent = clean(body.photo_consent, 40).toLowerCase();
   const medNeeded = clean(body.medication_at_centre_needed, 40).toLowerCase();
+  const emergencyConsent = clean(body.emergency_treatment_consent, 40).toLowerCase();
   const photoSigner = clean(body.photo_consent_signed_by_name, 120);
   const medSigner = clean(body.medication_at_centre_signed_by_name, 120);
+  const emergencySigner = clean(body.emergency_treatment_signed_by_name, 120);
   let medDetails = clean(body.medication_at_centre_details, 2000);
+  const emergencyContactName = clean(body.emergency_contact_name, 120);
+  const emergencyContactPhone = clean(body.emergency_contact_phone, 40);
 
   if (!PHOTO_OK.has(photoConsent)) {
     return json(400, { ok: false, error: "photo_consent_required" });
@@ -92,6 +101,19 @@ Deno.serve(async (req) => {
   }
   if (medNeeded === "no") medDetails = "";
 
+  if (!EMERGENCY_OK.has(emergencyConsent)) {
+    return json(400, { ok: false, error: "emergency_consent_required" });
+  }
+  if (!emergencySigner) {
+    return json(400, { ok: false, error: "emergency_signer_required" });
+  }
+  if (!emergencyContactName) {
+    return json(400, { ok: false, error: "emergency_contact_name_required" });
+  }
+  if (!emergencyContactPhone) {
+    return json(400, { ok: false, error: "emergency_contact_phone_required" });
+  }
+
   const now = new Date().toISOString();
   const row = {
     contact_id: contactId,
@@ -102,6 +124,11 @@ Deno.serve(async (req) => {
     medication_at_centre_details: medDetails,
     medication_at_centre_signed_at: now,
     medication_at_centre_signed_by_name: medSigner,
+    emergency_treatment_consent: emergencyConsent,
+    emergency_treatment_signed_at: now,
+    emergency_treatment_signed_by_name: emergencySigner,
+    emergency_contact_name: emergencyContactName,
+    emergency_contact_phone: emergencyContactPhone,
     updated_at: now,
     updated_by_parent_person_id: session.parent_person_id,
   };
@@ -125,6 +152,11 @@ Deno.serve(async (req) => {
     medication_at_centre_details: medDetails,
     medication_at_centre_signed_at: now,
     medication_at_centre_signed_by_name: medSigner,
+    emergency_treatment_consent: emergencyConsent,
+    emergency_treatment_signed_at: now,
+    emergency_treatment_signed_by_name: emergencySigner,
+    emergency_contact_name: emergencyContactName,
+    emergency_contact_phone: emergencyContactPhone,
   });
 
   return json(200, {
@@ -137,11 +169,17 @@ Deno.serve(async (req) => {
       medication_at_centre_details: medDetails,
       medication_at_centre_signed_at: now,
       medication_at_centre_signed_by_name: medSigner,
+      emergency_treatment_consent: emergencyConsent,
+      emergency_treatment_signed_at: now,
+      emergency_treatment_signed_by_name: emergencySigner,
+      emergency_contact_name: emergencyContactName,
+      emergency_contact_phone: emergencyContactPhone,
       updated_at: now,
     },
     summary: {
       photo_done: true,
       medication_done: true,
+      emergency_done: true,
       pending_count: 0,
     },
   });
