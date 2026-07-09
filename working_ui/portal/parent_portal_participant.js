@@ -926,6 +926,9 @@
     return iso >= from && iso <= to;
   }
 
+  /** Current academic year (2025/26) last open day — matches roster termTo. */
+  var CURRENT_YEAR_TERM_TO = "2026-07-17";
+
   /** Hub / Absent use 2026/27 closed dates only after the family has submitted Booking 2026/27. */
   function familyAcceptedNextYear(data) {
     var r = (data && data.reenrolment) || {};
@@ -933,8 +936,10 @@
   }
 
   function isClubClosedIso(iso, data) {
-    // Until Booking 2026/27 is submitted, keep the current-year roster pattern (no Sep-2026 gate).
-    if (!familyAcceptedNextYear(data)) return false;
+    // Until Booking 2026/27 is submitted: current-year roster only, through 17 Jul 2026.
+    if (!familyAcceptedNextYear(data)) {
+      return !iso || iso > CURRENT_YEAR_TERM_TO;
+    }
     var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
     if (!cal) return false;
     if (cal.openFrom && iso < cal.openFrom) return true;
@@ -994,9 +999,12 @@
     var today = new Date();
     var out = [];
     var max = Math.max(1, limit || 3);
-    for (var offset = 0; offset < 28 && out.length < max; offset++) {
+    var horizon = familyAcceptedNextYear(data) ? 28 : 14;
+    for (var offset = 0; offset < horizon && out.length < max; offset++) {
       var d = addDaysLocal(today, offset);
       var iso = isoDateLocal(d);
+      // Stop scanning past current-year end (e.g. Rodin Sundays → only 12 Jul left before 17 Jul).
+      if (!familyAcceptedNextYear(data) && iso > CURRENT_YEAR_TERM_TO) break;
       if (isClubClosedIso(iso, data)) continue;
       // JS: Sun=0 … Sat=6 → calendar Mon=0 … Sun=6
       var jsDow = d.getDay();
@@ -1057,13 +1065,13 @@
         '<p class="pp-muted pp-hub-ops__empty">Booked sessions will appear here once services are on the current roster.</p>';
     } else if (!next) {
       nextBody =
-        '<p class="pp-muted pp-hub-ops__empty">No session in the next few weeks for the current roster pattern.</p>';
+        '<p class="pp-muted pp-hub-ops__empty">No more sessions left this year (through 17 Jul). Book 2026/27 when you are ready.</p>';
     } else {
       nextBody =
         '<div class="pp-hub-ops__next">' +
         '<span class="pp-hub-ops__eyebrow">' +
         (next.isToday ? "Today" : "Next session") +
-        (familyAcceptedNextYear(data) ? "" : " · current year") +
+        (familyAcceptedNextYear(data) ? "" : " · until 17 Jul") +
         "</span>" +
         '<strong class="pp-hub-ops__when">' +
         esc(next.dayLabel) +
