@@ -664,6 +664,13 @@
       enrolledServiceChipsHtml(data) +
       (status ? '<div class="pp-chip-row pp-hub-hero__status">' + status + "</div>" : "") +
       "</div>" +
+      "</header>" +
+      reenrolBannerHtml(data)
+    );
+  }
+
+  function hubGeneralInfoHtml(data) {
+    return (
       '<details class="pp-hub-profile">' +
       '<summary class="pp-hub-profile__summary">' +
       '<span class="pp-hub-profile__summary-main">' +
@@ -681,7 +688,7 @@
       "</div>" +
       '<div class="pp-hub-hero__info-fields">' +
       generalProfileReadHtml(data) +
-      "</div></div></details></header>"
+      "</div></div></details>"
     );
   }
 
@@ -750,6 +757,44 @@
       hint: String(r.summary_hint || "").trim() || "Not submitted yet",
       items: Array.isArray(r.items) ? r.items : [],
     };
+  }
+
+  function reenrolBannerHtml(data) {
+    var booking = bookingSummary(data);
+    if (booking.submitted) {
+      return (
+        '<p class="pp-hub-reenrolled" role="status">' +
+        '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
+        " Re-enrolled for 2026/27" +
+        "</p>"
+      );
+    }
+    var p = data.participant || {};
+    var contactId = p.contact_id || "";
+    var href =
+      "/parent/re-enrolment?from=portal&contact_id=" + encodeURIComponent(String(contactId));
+    return (
+      '<aside class="pp-hub-reenrol" aria-label="Re-enrolment 2026/27">' +
+      '<div class="pp-hub-reenrol__copy">' +
+      "<strong>Re-enrol 2026/27</strong>" +
+      '<span class="pp-muted">Confirm places for next year</span>' +
+      "</div>" +
+      '<a class="pp-btn pp-btn--primary pp-hub-reenrol__cta" href="' +
+      esc(href) +
+      '">Start re-enrolment</a>' +
+      "</aside>"
+    );
+  }
+
+  function contactLinkHtml(opts) {
+    if (!opts || typeof opts.openContactDetails !== "function") return "";
+    return (
+      '<p class="pp-hub-contact-link">' +
+      '<button type="button" class="pp-hub-contact-link__btn" data-pp-open-contact>' +
+      "Contact details on file" +
+      "</button>" +
+      "</p>"
+    );
   }
 
   function infoBtnHtml(view, caption, iconSvg, opts) {
@@ -849,9 +894,12 @@
         extraClass: " pp-pax-info-btn--balance",
         subtitle: "Family ledger",
       }) +
-      infoBtnHtml("booking", "Booking 2026/27", bookingIcon, {
-        subtitle: booking.hint,
-      }) +
+      (booking.submitted
+        ? infoBtnHtml("booking", "My booking", bookingIcon, {
+            subtitle: booking.hint || "2026/27 choices",
+            extraClass: " pp-pax-info-btn--booking",
+          })
+        : "") +
       "</div>" +
       '<p class="pp-pax-info-section-label">Progress</p>' +
       '<div class="pp-pax-info-row pp-pax-info-row--progress">' +
@@ -1541,6 +1589,8 @@
       hubHeroHtml(data, opts) +
       hubOpsCardHtml(data) +
       infoButtonsHtml(data, opts) +
+      hubGeneralInfoHtml(data) +
+      contactLinkHtml(opts) +
       "</div>";
     bindHub(host, data, opts);
     var messagesPromise = mountHubAlerts(host, data, opts);
@@ -1887,7 +1937,7 @@
     host.innerHTML = subviewShell(
       data,
       "booking",
-      '<h3 class="pp-pax-subview-title">Booking 2026/27</h3>' +
+      '<h3 class="pp-pax-subview-title">My booking</h3>' +
         '<p class="pp-muted pp-pax-subview-note">Your selections for the next academic year.</p>' +
         '<div class="pp-card pp-booking-card">' +
         body +
@@ -3573,6 +3623,11 @@
       btn.addEventListener("click", function () {
         if (btn.getAttribute("data-pp-open-edit") !== "general") return;
         navigateToRegistrationEdit(data, opts);
+      });
+    });
+    host.querySelectorAll("[data-pp-open-contact]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (opts && typeof opts.openContactDetails === "function") opts.openContactDetails();
       });
     });
     host.querySelectorAll("[data-pp-open]").forEach(function (btn) {

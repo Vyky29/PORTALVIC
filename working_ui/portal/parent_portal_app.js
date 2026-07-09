@@ -107,6 +107,17 @@
         if (!id || id === String(contactId)) return;
         void loadParticipantDetail(id);
       },
+      openContactDetails: function () {
+        void loadHome({ skipAutoHub: true }).then(function () {
+          var contactCard = $("ppContactBlock");
+          if (!contactCard) return;
+          try {
+            contactCard.scrollIntoView({ behavior: "smooth", block: "start" });
+          } catch (_e) {
+            contactCard.scrollIntoView();
+          }
+        });
+      },
       saveGeneralInfo: function (fields) {
         return fetch(fn("parent-portal-general-info-save"), {
           method: "POST",
@@ -927,7 +938,6 @@
               "</div>" +
               '<div class="pp-child-actions">' +
               childSessionsBtnHtml(c) +
-              childReenrolBtnHtml(c) +
               "</div></div>" +
               (photoMissing ? childPhotoMissingNoticeHtml() : "") +
               "</article>"
@@ -966,6 +976,7 @@
       var body = await fetchParticipantSections(contactId, ["general"]);
       state.participant.data = body;
       state.participant.loaded.general = true;
+      rememberContactId(contactId);
 
       var p = body.participant || {};
       if (p.avatar_url && typeof global.portalRegisterParticipantStorageAvatar === "function") {
@@ -974,6 +985,7 @@
       if (title) title.textContent = (p.display_name || "Participant") + "\u2019s Hub";
       var refreshBtn = $("ppParticipantRefresh");
       if (refreshBtn) refreshBtn.setAttribute("data-contact-id", contactId);
+      updateParticipantChrome(contactId);
 
       if (
         openView &&
@@ -1274,7 +1286,50 @@
     });
   }
 
-  async function loadHome() {
+  function preferredContactId(children) {
+    children = Array.isArray(children) ? children : [];
+    if (!children.length) return "";
+    try {
+      var last = String(localStorage.getItem("pp_last_contact_id") || "").trim();
+      if (last) {
+        for (var i = 0; i < children.length; i++) {
+          if (String(children[i].contact_id || "") === last) return last;
+        }
+      }
+    } catch (_e) {}
+    return String(children[0].contact_id || "").trim();
+  }
+
+  function rememberContactId(contactId) {
+    var id = String(contactId || "").trim();
+    if (!id) return;
+    try {
+      localStorage.setItem("pp_last_contact_id", id);
+    } catch (_e) {}
+  }
+
+  function updateParticipantChrome(contactId) {
+    var children = (state.home && state.home.children) || [];
+    var multi = children.length > 1;
+    var back = $("ppBackToHome");
+    if (back) {
+      if (multi) {
+        back.hidden = false;
+        back.setAttribute("aria-label", "All children");
+        var label = back.querySelector("span");
+        if (label) label.textContent = "All children";
+      } else {
+        /* Single child: no family landing — Sign out lives on the hub chrome. */
+        back.hidden = true;
+      }
+    }
+    var signOutOnHub = $("ppParticipantSignOut");
+    if (signOutOnHub) signOutOnHub.hidden = multi;
+  }
+
+  async function loadHome(opts) {
+    opts = opts || {};
+    var skipAutoHub = !!opts.skipAutoHub;
     var res = await fetch(fn("parent-portal-home-load"), {
       method: "POST",
       headers: {
@@ -1299,8 +1354,17 @@
       saveSession();
     }
     renderHome(body);
-    setStep("home");
     hideNotice($("ppNotice"));
+
+    var children = (body && body.children) || [];
+    if (!skipAutoHub && children.length) {
+      var openId = preferredContactId(children);
+      if (openId) {
+        await loadParticipantDetail(openId);
+        return true;
+      }
+    }
+    setStep("home");
     return true;
   }
 
@@ -1376,11 +1440,15 @@
       el.value = normalizeDobInput(el.value).slice(0, 8);
     });
 
-    $("ppSignOut").addEventListener("click", function () {
+    function doSignOut() {
       clearSession();
       setStep("identify");
       hideNotice($("ppNotice"));
-    });
+      hideNotice($("ppParticipantNotice"));
+    }
+    $("ppSignOut").addEventListener("click", doSignOut);
+    var hubSignOut = $("ppParticipantSignOut");
+    if (hubSignOut) hubSignOut.addEventListener("click", doSignOut);
 
     $("ppRefresh").addEventListener("click", function () {
       void loadHome();
@@ -1390,15 +1458,8 @@
     if (back) {
       back.addEventListener("click", function () {
         hideNotice($("ppParticipantNotice"));
-        setStep("home");
-        if (state.home) {
-          renderHome(
-            Object.assign({}, state.home, {
-              unread_messages_count: state.messaging.unreadTotal,
-              unread_by_contact_id: Object.assign({}, state.messaging.unreadByContact),
-            }),
-          );
-        }
+        /* Multi-child: family list without auto-opening a hub again. */
+        void loadHome({ skipAutoHub: true });
       });
     }
 
@@ -1447,7 +1508,9 @@
     bindChildCards();
     bindChildPhotoHandlers();
     if (loadStoredSession()) {
-      var ok = await loadHome();
+      var params = readParticipantDeepLink();
+      var deepId = params.get("contact_id") || params.get("contact") || "";
+      var ok = await loadHome(deepId ? { skipAutoHub: true } : {});
       if (!ok) setStep("identify");
       else maybeOpenParticipantFromUrl();
     } else {
