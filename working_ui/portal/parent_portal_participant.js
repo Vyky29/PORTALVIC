@@ -3707,11 +3707,15 @@
       creditHtml +
       '<div class="pp-invoice-card__acts">' +
       (pdf
-        ? '<a class="pp-btn ' +
+        ? '<button type="button" class="pp-btn ' +
           (status === "paid" ? "pp-btn--primary" : "pp-btn--ghost") +
-          '" href="' +
+          '" data-pp-preview-invoice="' +
+          esc(inv.id) +
+          '" data-pp-pdf-url="' +
           esc(pdf) +
-          '" target="_blank" rel="noopener noreferrer">Preview PDF</a>' +
+          '" data-pp-pdf-title="' +
+          esc(num ? "Invoice " + num : title || "Invoice") +
+          '">Preview</button>' +
           '<a class="pp-btn pp-btn--ghost" href="' +
           esc(pdf) +
           '" download="' +
@@ -3828,7 +3832,73 @@
       });
     }
 
+    function openInvoicePreview(url, title) {
+      closeInvoicePreview();
+      var overlay = global.document.createElement("div");
+      overlay.id = "ppInvoicePreviewOverlay";
+      overlay.className = "pp-invoice-preview";
+      overlay.setAttribute("role", "dialog");
+      overlay.setAttribute("aria-modal", "true");
+      overlay.setAttribute("aria-label", title || "Invoice preview");
+      overlay.innerHTML =
+        '<div class="pp-invoice-preview__sheet">' +
+        '<div class="pp-invoice-preview__bar">' +
+        "<strong>" +
+        esc(title || "Invoice") +
+        "</strong>" +
+        '<button type="button" class="pp-btn pp-btn--ghost pp-invoice-preview__close" data-pp-preview-close="1">Close</button>' +
+        "</div>" +
+        '<div class="pp-invoice-preview__frame-wrap">' +
+        '<iframe class="pp-invoice-preview__frame" title="' +
+        esc(title || "Invoice PDF") +
+        '" src="' +
+        esc(url) +
+        '"></iframe>' +
+        "</div>" +
+        '<div class="pp-invoice-preview__foot">' +
+        '<a class="pp-btn pp-btn--primary" href="' +
+        esc(url) +
+        '" download target="_blank" rel="noopener noreferrer">Download</a>' +
+        '<button type="button" class="pp-btn pp-btn--ghost" data-pp-preview-close="1">Close</button>' +
+        "</div></div>";
+      global.document.body.appendChild(overlay);
+      try {
+        global.document.body.classList.add("pp-invoice-preview-open");
+      } catch (_e) {}
+      overlay.addEventListener("click", function (ev) {
+        if (ev.target === overlay || (ev.target && ev.target.getAttribute && ev.target.getAttribute("data-pp-preview-close"))) {
+          closeInvoicePreview();
+        }
+      });
+      var onKey = function (ev) {
+        if (ev.key === "Escape") closeInvoicePreview();
+      };
+      overlay._ppKeyHandler = onKey;
+      global.document.addEventListener("keydown", onKey);
+    }
+
+    function closeInvoicePreview() {
+      var overlay = global.document.getElementById("ppInvoicePreviewOverlay");
+      if (!overlay) return;
+      if (overlay._ppKeyHandler) {
+        global.document.removeEventListener("keydown", overlay._ppKeyHandler);
+      }
+      try {
+        global.document.body.classList.remove("pp-invoice-preview-open");
+      } catch (_e2) {}
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    }
+
     function wireInvoiceActions() {
+      listHost.querySelectorAll("[data-pp-preview-invoice]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var url = btn.getAttribute("data-pp-pdf-url") || "";
+          var title = btn.getAttribute("data-pp-pdf-title") || "Invoice";
+          if (!url) return;
+          openInvoicePreview(url, title);
+        });
+      });
+
       listHost.querySelectorAll("[data-pp-pay-invoice]").forEach(function (btn) {
         btn.addEventListener("click", function () {
           var id = btn.getAttribute("data-pp-pay-invoice");
