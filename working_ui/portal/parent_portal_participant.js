@@ -939,7 +939,8 @@
     return iso >= from && iso <= to;
   }
 
-  /** Current academic year (2025/26) last open day — matches roster termTo. */
+  /** Current academic year (2025/26) — matches roster termFrom / termTo. */
+  var CURRENT_YEAR_TERM_FROM = "2026-06-01";
   var CURRENT_YEAR_TERM_TO = "2026-07-17";
 
   /** Hub / Absent use 2026/27 closed dates only after the family has submitted Booking 2026/27. */
@@ -1040,6 +1041,93 @@
     return out;
   }
 
+  /** All session dates this term for the child's booked weekdays (unique calendar days). */
+  function findTermSessionDates(data) {
+    var detail =
+      data && data.general && Array.isArray(data.general.services_detail)
+        ? data.general.services_detail
+        : [];
+    if (!detail.length) return [];
+    var cols = Object.create(null);
+    detail.forEach(function (s) {
+      var col = dayNameToCalCol(s && s.day);
+      if (col != null) cols[col] = true;
+    });
+    if (!Object.keys(cols).length) return [];
+
+    var fromIso = CURRENT_YEAR_TERM_FROM;
+    var toIso = CURRENT_YEAR_TERM_TO;
+    if (familyAcceptedNextYear(data)) {
+      var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
+      if (cal && cal.openFrom) fromIso = cal.openFrom;
+      if (cal && cal.openTo) toIso = cal.openTo;
+    }
+
+    var todayIso = isoDateLocal(new Date());
+    var startParts = fromIso.split("-");
+    var cursor = new Date(Number(startParts[0]), Number(startParts[1]) - 1, Number(startParts[2]));
+    var out = [];
+    var guard = 0;
+    while (guard < 400) {
+      guard++;
+      var iso = isoDateLocal(cursor);
+      if (iso > toIso) break;
+      if (!isClubClosedIso(iso, data)) {
+        var jsDow = cursor.getDay();
+        var col = jsDow === 0 ? 6 : jsDow - 1;
+        if (cols[col]) {
+          out.push({
+            iso: iso,
+            shortLabel: formatTermChipLabel(iso),
+            past: iso < todayIso,
+            isToday: iso === todayIso,
+          });
+        }
+      }
+      cursor = addDaysLocal(cursor, 1);
+    }
+    return out;
+  }
+
+  function formatTermChipLabel(iso) {
+    try {
+      var p = String(iso || "").split("-");
+      if (p.length !== 3) return iso;
+      var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+      return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+    } catch (_e) {
+      return String(iso || "");
+    }
+  }
+
+  function termSessionDateChipsHtml(data) {
+    var dates = findTermSessionDates(data);
+    if (!dates.length) return "";
+    return (
+      '<div class="pp-hub-ops__date-chips" role="list" aria-label="Session dates this term">' +
+      dates
+        .map(function (d) {
+          var tone = d.past ? "past" : d.isToday ? "today" : "upcoming";
+          var title = d.past
+            ? "Past session — " + d.iso
+            : d.isToday
+              ? "Today — " + d.iso
+              : "Upcoming — " + d.iso;
+          return (
+            '<span class="pp-hub-ops__date-chip pp-hub-ops__date-chip--' +
+            tone +
+            '" role="listitem" title="' +
+            esc(title) +
+            '">' +
+            esc(d.shortLabel) +
+            "</span>"
+          );
+        })
+        .join("") +
+      "</div>"
+    );
+  }
+
   function absenceStatusLabel(status) {
     var s = String(status || "").toLowerCase();
     if (s === "noted") return "Noted";
@@ -1131,9 +1219,18 @@
         '<p class="pp-muted pp-hub-ops__empty">Booked sessions will appear here once services are on the current roster.</p>' +
         "</div>";
     } else if (!next) {
+      var pastChips = termSessionDateChipsHtml(data);
       nextBody =
-        '<div class="pp-hub-ops__empty-wrap">' +
+        '<div class="pp-hub-ops__next">' +
+        '<div class="pp-hub-ops__badge-row">' +
+        '<span class="pp-hub-ops__badge">' +
         calIco +
+        "<span>Term sessions</span></span>" +
+        pastChips +
+        (familyAcceptedNextYear(data)
+          ? ""
+          : '<span class="pp-hub-ops__term">Until 17 Jul</span>') +
+        "</div>" +
         '<p class="pp-muted pp-hub-ops__empty">No more sessions left this year (through 17 Jul). Book 2026/27 when you are ready.</p>' +
         "</div>";
     } else {
@@ -1145,6 +1242,7 @@
         "<span>" +
         esc(next.isToday ? "Today" : "Next session") +
         "</span></span>" +
+        termSessionDateChipsHtml(data) +
         (familyAcceptedNextYear(data)
           ? ""
           : '<span class="pp-hub-ops__term">Until 17 Jul</span>') +

@@ -904,6 +904,41 @@
       margin-bottom: 10px;
       min-width: 0;
     }
+    .pp-hub-ops__date-chips {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .pp-hub-ops__date-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.2;
+      white-space: nowrap;
+      max-width: 100%;
+    }
+    .pp-hub-ops__date-chip--past {
+      background: rgba(220, 38, 38, 0.12);
+      color: #b91c1c;
+      border: 1px solid rgba(185, 28, 28, 0.28);
+    }
+    .pp-hub-ops__date-chip--upcoming {
+      background: rgba(22, 163, 74, 0.14);
+      color: #15803d;
+      border: 1px solid rgba(21, 128, 61, 0.28);
+    }
+    .pp-hub-ops__date-chip--today {
+      background: rgba(37, 99, 235, 0.14);
+      color: var(--blue);
+      border: 1px solid rgba(37, 99, 235, 0.35);
+    }
     .pp-hub-ops__badge {
       display: inline-flex;
       align-items: center;
@@ -2160,7 +2195,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260705-team-photos-only"></script>
   <script src="/portal/parent_portal_team.js?v=20260705-feedback-team-live"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260709-my-cal-polish"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260709-makeup-grants"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260709-term-date-chips"></script>
   <script src="/portal/parent_portal_app.js?v=20260709-makeup-grants"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
