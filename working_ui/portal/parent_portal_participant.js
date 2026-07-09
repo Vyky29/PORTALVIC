@@ -943,9 +943,12 @@
     return iso >= from && iso <= to;
   }
 
-  /** Current academic year (2025/26) — matches roster termFrom / termTo. */
-  var CURRENT_YEAR_TERM_FROM = "2026-06-01";
+  /** Current year sessions for hub chips: Spring/Summer 2026 from April through 17 Jul. */
+  var CURRENT_YEAR_TERM_FROM = "2026-04-13";
   var CURRENT_YEAR_TERM_TO = "2026-07-17";
+  var CURRENT_YEAR_TERM_BREAK_FROM = "2026-05-23";
+  var CURRENT_YEAR_TERM_BREAK_TO = "2026-05-31";
+  var CURRENT_YEAR_TERM_CLOSED = { "2026-05-04": true };
 
   /** Hub / Absent use 2026/27 closed dates only after the family has submitted Booking 2026/27. */
   function familyAcceptedNextYear(data) {
@@ -956,7 +959,10 @@
   function isClubClosedIso(iso, data) {
     // Until Booking 2026/27 is submitted: current-year roster only, through 17 Jul 2026.
     if (!familyAcceptedNextYear(data)) {
-      return !iso || iso > CURRENT_YEAR_TERM_TO;
+      if (!iso || iso < CURRENT_YEAR_TERM_FROM || iso > CURRENT_YEAR_TERM_TO) return true;
+      if (CURRENT_YEAR_TERM_CLOSED[iso]) return true;
+      if (isoInRange(iso, CURRENT_YEAR_TERM_BREAK_FROM, CURRENT_YEAR_TERM_BREAK_TO)) return true;
+      return false;
     }
     var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
     if (!cal) return false;
@@ -1335,9 +1341,6 @@
       nextBody =
         '<div class="pp-hub-ops__next">' +
         '<div class="pp-hub-ops__badge-row">' +
-        '<span class="pp-hub-ops__badge">' +
-        calIco +
-        "<span>Term sessions</span></span>" +
         termSessionDateChipsHtml(data) +
         "</div>" +
         '<p class="pp-muted pp-hub-ops__empty">No more sessions left this year. Book 2026/27 when you are ready.</p>' +
@@ -1346,16 +1349,15 @@
       nextBody =
         '<div class="pp-hub-ops__next">' +
         '<div class="pp-hub-ops__badge-row">' +
-        '<span class="pp-hub-ops__badge">' +
-        calIco +
-        "<span>" +
-        esc(next.isToday ? "Today" : "Next session") +
-        "</span></span>" +
         termSessionDateChipsHtml(data) +
         "</div>" +
+        '<div class="pp-hub-ops__when-row">' +
+        '<span class="pp-hub-ops__when-label">' +
+        esc(next.isToday ? "Today" : "Next session") +
+        "</span>" +
         '<strong class="pp-hub-ops__when">' +
         esc(next.dayLabel) +
-        "</strong>" +
+        "</strong></div>" +
         '<ul class="pp-hub-ops__slots">' +
         sameDay.map(hubOpsSessionSlotHtml).join("") +
         "</ul></div>";

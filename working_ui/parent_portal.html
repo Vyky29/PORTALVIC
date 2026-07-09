@@ -973,6 +973,23 @@
       display: block;
     }
     .pp-hub-ops__term { display: none; }
+    .pp-hub-ops__when-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 8px 10px;
+      min-width: 0;
+      margin-bottom: 12px;
+    }
+    .pp-hub-ops__when-label {
+      flex: 0 0 auto;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--blue);
+      line-height: 1.2;
+    }
     .pp-hub-ops__badge {
       display: inline-flex;
       align-items: center;
@@ -994,20 +1011,16 @@
       flex: none;
     }
     .pp-hub-ops__ico { width: 18px; height: 18px; display: block; }
-    .pp-hub-ops__term {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--muted);
-      overflow-wrap: break-word;
-    }
     .pp-hub-ops__when {
       display: block;
+      margin: 0;
       font-size: 18px;
       line-height: 1.25;
       font-weight: 800;
       color: var(--ink);
       overflow-wrap: break-word;
-      margin-bottom: 12px;
+      min-width: 0;
+      flex: 1 1 auto;
     }
     .pp-hub-ops__slots {
       list-style: none;
@@ -2307,7 +2320,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260705-team-photos-only"></script>
   <script src="/portal/parent_portal_team.js?v=20260705-feedback-team-live"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260709-my-cal-polish"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260709-dob-label"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260709-spring-term-chips"></script>
   <script src="/portal/parent_portal_app.js?v=20260709-dob-label"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
