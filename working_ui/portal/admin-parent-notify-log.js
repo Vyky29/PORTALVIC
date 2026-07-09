@@ -213,7 +213,7 @@
     var cls = "portal-pnlog-chip";
     if (s === "read") cls += " portal-pnlog-chip--read";
     else if (s === "delivered") cls += " portal-pnlog-chip--delivered";
-    else if (s === "sent" || s === "sent_sms") cls += " portal-pnlog-chip--ok";
+    else if (s === "sent" || s === "sent_sms") cls += " portal-pnlog-chip--sent";
     else if (s === "reply") cls += " portal-pnlog-chip--in";
     else if (s === "failed") cls += " portal-pnlog-chip--bad";
     else cls += " portal-pnlog-chip--muted";
@@ -822,7 +822,9 @@
       metaBits.push(statusChip(ev.status, ev.channel));
       if (ev.sentBy) metaBits.push(esc(ev.sentBy));
     } else if (ev.fromApp) {
-      metaBits.push('<span class="portal-pnlog-chip portal-pnlog-chip--muted">Parent app</span>');
+      metaBits.push('<span class="portal-pnlog-chip portal-pnlog-chip--parent-app">Parent app</span>');
+    } else {
+      metaBits.push('<span class="portal-pnlog-chip portal-pnlog-chip--phone">Phone</span>');
     }
     metaBits.push('<span class="portal-pnlog-bubble__time">' + esc(formatLondon(ev.when)) + "</span>");
     var mediaHtml = ev.dir === "in" ? renderMedia(ev) : "";

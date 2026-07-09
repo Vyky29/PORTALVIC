@@ -416,6 +416,11 @@
   color: #1a5f82;
 }
 
+.portal-pnlog-chip--sent {
+  background: #1a5f82;
+  color: #fff;
+}
+
 .portal-pnlog-chip--bad {
   background: rgba(220, 38, 38, 0.12);
   color: #b91c1c;
@@ -445,6 +450,16 @@
 .portal-pnlog-chip--muted {
   background: rgba(100, 116, 139, 0.12);
   color: #475569;
+}
+
+.portal-pnlog-chip--parent-app {
+  background: rgba(124, 58, 237, 0.14);
+  color: #6d28d9;
+}
+
+.portal-pnlog-chip--phone {
+  background: rgba(245, 197, 24, 0.28);
+  color: #8a6a00;
 }
 
 .portal-pnlog-chip--unread {
