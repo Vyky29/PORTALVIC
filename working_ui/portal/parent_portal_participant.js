@@ -1952,35 +1952,86 @@
   function renderTeam(host, data, opts) {
     var p = (data && data.participant) || {};
     var pName = p.display_name || "Participant";
-    var members = teamMembers(data);
-    var colClass =
-      members.length >= 4
-        ? " pp-team-grid--2"
-        : members.length >= 3
-          ? " pp-team-grid--3"
-          : members.length === 2
-            ? " pp-team-grid--2"
-            : " pp-team-grid--1";
-    var sinceLabel =
-      typeof global.PortalParentTeam !== "undefined" && global.PortalParentTeam.TEAM_FEEDBACK_SINCE
-        ? global.PortalParentTeam.TEAM_FEEDBACK_SINCE
-        : "2026-06-01";
-    var bodyHtml = members.length
-      ? '<div class="pp-team-grid' + colClass + '">' + members.map(teamMemberCardHtml).join("") + "</div>"
-      : '<p class="pp-muted">No instructors on file yet for sessions since ' +
-        esc(sinceLabel.slice(0, 10).split("-").reverse().join("/")) +
-        ".</p>";
-    host.innerHTML =
-      '<div class="pp-pax-shell" data-pp-view="team">' +
-      '<div class="pp-pax-sticky-hero pp-team-backbar">' +
-      hubBackButtonHtml(data) +
-      "</div>" +
-      '<div class="pp-pax-subview-body">' +
-      '<p class="pp-muted pp-team-intro">Instructors who have submitted session feedback since 1 June 2026.</p>' +
-      bodyHtml +
-      "</div></div>";
     setParticipantPageTitle(pName + "\u2019s Team");
-    bindBack(host, data, opts);
+
+    function paint(members) {
+      var colClass =
+        members.length >= 4
+          ? " pp-team-grid--2"
+          : members.length >= 3
+            ? " pp-team-grid--3"
+            : members.length === 2
+              ? " pp-team-grid--2"
+              : " pp-team-grid--1";
+      var sinceLabel =
+        typeof global.PortalParentTeam !== "undefined" && global.PortalParentTeam.TEAM_FEEDBACK_SINCE
+          ? global.PortalParentTeam.TEAM_FEEDBACK_SINCE
+          : "2026-06-01";
+      var bodyHtml = members.length
+        ? '<div class="pp-team-grid' + colClass + '">' + members.map(teamMemberCardHtml).join("") + "</div>"
+        : '<p class="pp-muted">No instructors on file yet for sessions since ' +
+          esc(sinceLabel.slice(0, 10).split("-").reverse().join("/")) +
+          ".</p>";
+      host.innerHTML =
+        '<div class="pp-pax-shell" data-pp-view="team">' +
+        '<div class="pp-pax-sticky-hero pp-team-backbar">' +
+        hubBackButtonHtml(data) +
+        "</div>" +
+        '<div class="pp-pax-subview-body">' +
+        '<p class="pp-muted pp-team-intro">Instructors from recent sessions, plus anyone covering after an instructor change — open this anytime to show your child who to expect.</p>' +
+        bodyHtml +
+        "</div></div>";
+      bindBack(host, data, opts);
+    }
+
+    var base = teamMembers(data);
+    paint(base);
+
+    if (!opts || typeof opts.loadMessages !== "function") return;
+    void opts
+      .loadMessages({ markRead: false })
+      .then(function (payload) {
+        if (!host.isConnected) return;
+        var covers = coverInstructorsFromMessages((payload && payload.messages) || []);
+        if (!covers.length) return;
+        var seen = Object.create(null);
+        var merged = [];
+        base.forEach(function (m) {
+          var k = String((m && (m.staff_key || m.key || m.username || m.name)) || "")
+            .trim()
+            .toLowerCase()
+            .split(/\s+/)[0];
+          if (k) seen[k] = true;
+          merged.push(m);
+        });
+        covers.forEach(function (c) {
+          if (seen[c.key]) return;
+          var card = null;
+          if (
+            global.PortalParentTeam &&
+            typeof global.PortalParentTeam.catalogMember === "function"
+          ) {
+            card = global.PortalParentTeam.catalogMember(c.key);
+          }
+          if (!card) {
+            card = {
+              name: c.name,
+              avatar_url: "/portal/staff_photos/" + c.key + ".png",
+              bio: "Covering instructor for a recent session change.",
+            };
+          } else {
+            card = Object.assign({}, card, {
+              bio:
+                (card.bio ? card.bio + " " : "") +
+                "Also covering after a recent instructor change.",
+            });
+          }
+          seen[c.key] = true;
+          merged.push(card);
+        });
+        if (merged.length !== base.length) paint(merged);
+      })
+      .catch(function () {});
   }
 
   function formatMessageWhen(iso) {
@@ -2009,6 +2060,108 @@
     if (k === "absence_announced") return "Absence noted";
     if (!k) return "Club message";
     return k.replace(/_/g, " ");
+  }
+
+  /**
+   * Render club message body for the in-app thread: embed staff dashboard photos
+   * instead of showing the raw /portal/staff_photos/… URL.
+   */
+  function formatMessageBodyHtml(raw) {
+    var text = String(raw || "").trim();
+    if (!text) return "";
+    if (text.length > 1200) text = text.slice(0, 1197) + "…";
+
+    var photoBlocks = [];
+    // "Photo of Youssef (your instructor): https://…/portal/staff_photos/youssef.png"
+    text = text.replace(
+      /\n*\s*Photo of\s+([^\n(]+?)\s*\((?:your )?instructor\)\s*:\s*(https?:\/\/[^\s]+|\/portal\/staff_photos\/[^\s]+)\s*/gi,
+      function (_m, name, url) {
+        var idx = photoBlocks.length;
+        photoBlocks.push({
+          name: String(name || "").trim(),
+          url: String(url || "").trim().replace(/[),.;]+$/, ""),
+        });
+        return "\n\n__PP_PHOTO_" + idx + "__\n\n";
+      },
+    );
+    // Fallback: bare staff photo URL on its own line
+    text = text.replace(
+      /(^|\n)\s*(https?:\/\/[^\s]*\/portal\/staff_photos\/[a-z0-9_-]+\.(?:png|jpe?g|webp)|\/portal\/staff_photos\/[a-z0-9_-]+\.(?:png|jpe?g|webp))\s*(?=\n|$)/gi,
+      function (_m, lead, url) {
+        var idx = photoBlocks.length;
+        photoBlocks.push({ name: "", url: String(url || "").trim() });
+        return lead + "__PP_PHOTO_" + idx + "__";
+      },
+    );
+
+    var parts = text.split(/(__PP_PHOTO_\d+__)/);
+    var html = "";
+    parts.forEach(function (part) {
+      var pm = String(part || "").match(/^__PP_PHOTO_(\d+)__$/);
+      if (pm) {
+        var block = photoBlocks[Number(pm[1])];
+        if (!block || !block.url) return;
+        html +=
+          '<figure class="pp-pax-msg__photo">' +
+          '<img src="' +
+          esc(block.url) +
+          '" alt="' +
+          esc(block.name ? "Photo of " + block.name : "Instructor photo") +
+          '" loading="lazy" decoding="async" />' +
+          (block.name
+            ? '<figcaption class="pp-pax-msg__photo-cap">' +
+              esc(block.name) +
+              " — your instructor</figcaption>"
+            : "") +
+          "</figure>";
+        return;
+      }
+      if (!part) return;
+      html +=
+        '<span class="pp-pax-msg__text">' +
+        esc(part).replace(/\n/g, "<br>") +
+        "</span>";
+    });
+    return html;
+  }
+
+  /** Cover / new instructors mentioned in club messages → Team catalog keys. */
+  function coverInstructorsFromMessages(messages) {
+    var out = [];
+    var seen = Object.create(null);
+    (messages || []).forEach(function (m) {
+      if (!m || m.direction !== "out") return;
+      var k = String(m.kind || "").toLowerCase();
+      if (k !== "instructor_change" && k !== "instructor_reassign" && k !== "makeup_scheduled") {
+        return;
+      }
+      var body = String(m.body_text || "");
+      var names = [];
+      var photoName = body.match(/Photo of\s+([^\n(]+?)\s*\((?:your )?instructor\)/i);
+      if (photoName) names.push(photoName[1]);
+      var withName = body.match(
+        /(?:now be with|will be with|session will now be with)\s+([A-Za-z][A-Za-z' -]{1,40}?)(?:\s*\(|\.|,|\n|$)/i,
+      );
+      if (withName) names.push(withName[1]);
+      names.forEach(function (raw) {
+        var name = String(raw || "").trim();
+        if (!name) return;
+        var key = "";
+        if (
+          global.PortalParentTeam &&
+          typeof global.PortalParentTeam.staffKeyFromFeedbackName === "function"
+        ) {
+          key = global.PortalParentTeam.staffKeyFromFeedbackName(name);
+        }
+        if (!key) {
+          key = name.toLowerCase().split(/\s+/)[0].replace(/[^a-z]/g, "");
+        }
+        if (!key || seen[key]) return;
+        seen[key] = true;
+        out.push({ key: key, name: name, role: "cover" });
+      });
+    });
+    return out;
   }
 
   function messageDeliveryChannel(m) {
@@ -2105,7 +2258,7 @@
             '<span class="pp-pax-msg__when pp-muted">' +
             esc(formatMessageWhen(m.created_at)) +
             "</span></div>" +
-            (preview ? '<p class="pp-pax-msg__body">' + esc(preview) + "</p>" : "") +
+            (preview ? '<div class="pp-pax-msg__body">' + formatMessageBodyHtml(preview) + "</div>" : "") +
             '<p class="pp-pax-msg__meta pp-muted">' +
             channelTag +
             esc(messageKindLabel(m)) +

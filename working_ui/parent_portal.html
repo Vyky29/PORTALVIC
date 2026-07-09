@@ -1802,7 +1802,30 @@
       font-size: 14px;
       line-height: 1.45;
       overflow-wrap: break-word;
-      white-space: pre-wrap;
+      min-width: 0;
+    }
+    .pp-pax-msg__text { display: block; min-width: 0; }
+    .pp-pax-msg__photo {
+      margin: 10px 0 0;
+      padding: 0;
+      min-width: 0;
+      max-width: 100%;
+    }
+    .pp-pax-msg__photo img {
+      display: block;
+      width: 112px;
+      height: 112px;
+      object-fit: cover;
+      border-radius: 16px;
+      border: 2px solid rgba(37, 99, 235, 0.25);
+      background: #e8f1f8;
+    }
+    .pp-pax-msg__photo-cap {
+      margin: 6px 0 0;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink);
+      overflow-wrap: break-word;
     }
     .pp-pax-msg__meta { margin: 6px 0 0; font-size: 11px; }
     .pp-pax-msgs-compose textarea {

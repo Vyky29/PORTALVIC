@@ -95,13 +95,8 @@
     var n = String(name || "").trim();
     var url = String(photoUrl || "").trim();
     if (!n || !url) return "";
-    return (
-      "\n\nPhoto of " +
-      n +
-      " (your instructor): " +
-      url +
-      "\n"
-    );
+    // Keep this exact shape — parent Messages embeds the image from the URL.
+    return "\n\nPhoto of " + n + " (your instructor): " + url + "\n";
   }
 
   function participantLabel(slot, ov, effectiveFn) {
