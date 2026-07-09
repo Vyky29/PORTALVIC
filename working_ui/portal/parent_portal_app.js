@@ -389,6 +389,10 @@
             emergency_treatment_signed_by_name: payload.emergency_treatment_signed_by_name,
             emergency_contact_name: payload.emergency_contact_name,
             emergency_contact_phone: payload.emergency_contact_phone,
+            community_walk_consent: payload.community_walk_consent,
+            public_transport_consent: payload.public_transport_consent,
+            taxi_home_transport_consent: payload.taxi_home_transport_consent,
+            offsite_transport_signed_by_name: payload.offsite_transport_signed_by_name,
           }),
         }).then(function (res) {
           return res.json().then(function (j) {

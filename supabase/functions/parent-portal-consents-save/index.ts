@@ -1,7 +1,7 @@
 // @ts-nocheck — Edge Function (Deno).
 //
 // parent-portal-consents-save
-// Upsert photo + medication + emergency consents; append audit log.
+// Upsert photo + medication + emergency + off-site/transport; append audit log.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
@@ -18,9 +18,7 @@ function json(status: number, body: Record<string, unknown>) {
   });
 }
 
-const PHOTO_OK = new Set(["yes", "no"]);
-const MED_OK = new Set(["yes", "no"]);
-const EMERGENCY_OK = new Set(["yes", "no"]);
+const YES_NO = new Set(["yes", "no"]);
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: parentPortalCorsHeaders });
@@ -48,6 +46,10 @@ Deno.serve(async (req) => {
     emergency_treatment_signed_by_name?: string;
     emergency_contact_name?: string;
     emergency_contact_phone?: string;
+    community_walk_consent?: string;
+    public_transport_consent?: string;
+    taxi_home_transport_consent?: string;
+    offsite_transport_signed_by_name?: string;
   } = {};
   try {
     body = await req.json();
@@ -77,20 +79,24 @@ Deno.serve(async (req) => {
   const photoConsent = clean(body.photo_consent, 40).toLowerCase();
   const medNeeded = clean(body.medication_at_centre_needed, 40).toLowerCase();
   const emergencyConsent = clean(body.emergency_treatment_consent, 40).toLowerCase();
+  const walkConsent = clean(body.community_walk_consent, 40).toLowerCase();
+  const publicTransportConsent = clean(body.public_transport_consent, 40).toLowerCase();
+  const taxiConsent = clean(body.taxi_home_transport_consent, 40).toLowerCase();
   const photoSigner = clean(body.photo_consent_signed_by_name, 120);
   const medSigner = clean(body.medication_at_centre_signed_by_name, 120);
   const emergencySigner = clean(body.emergency_treatment_signed_by_name, 120);
+  const offsiteSigner = clean(body.offsite_transport_signed_by_name, 120);
   let medDetails = clean(body.medication_at_centre_details, 2000);
   const emergencyContactName = clean(body.emergency_contact_name, 120);
   const emergencyContactPhone = clean(body.emergency_contact_phone, 40);
 
-  if (!PHOTO_OK.has(photoConsent)) {
+  if (!YES_NO.has(photoConsent)) {
     return json(400, { ok: false, error: "photo_consent_required" });
   }
   if (!photoSigner) {
     return json(400, { ok: false, error: "photo_signer_required" });
   }
-  if (!MED_OK.has(medNeeded)) {
+  if (!YES_NO.has(medNeeded)) {
     return json(400, { ok: false, error: "medication_choice_required" });
   }
   if (!medSigner) {
@@ -101,7 +107,7 @@ Deno.serve(async (req) => {
   }
   if (medNeeded === "no") medDetails = "";
 
-  if (!EMERGENCY_OK.has(emergencyConsent)) {
+  if (!YES_NO.has(emergencyConsent)) {
     return json(400, { ok: false, error: "emergency_consent_required" });
   }
   if (!emergencySigner) {
@@ -112,6 +118,19 @@ Deno.serve(async (req) => {
   }
   if (!emergencyContactPhone) {
     return json(400, { ok: false, error: "emergency_contact_phone_required" });
+  }
+
+  if (!YES_NO.has(walkConsent)) {
+    return json(400, { ok: false, error: "community_walk_consent_required" });
+  }
+  if (!YES_NO.has(publicTransportConsent)) {
+    return json(400, { ok: false, error: "public_transport_consent_required" });
+  }
+  if (!YES_NO.has(taxiConsent)) {
+    return json(400, { ok: false, error: "taxi_home_transport_consent_required" });
+  }
+  if (!offsiteSigner) {
+    return json(400, { ok: false, error: "offsite_signer_required" });
   }
 
   const now = new Date().toISOString();
@@ -129,6 +148,11 @@ Deno.serve(async (req) => {
     emergency_treatment_signed_by_name: emergencySigner,
     emergency_contact_name: emergencyContactName,
     emergency_contact_phone: emergencyContactPhone,
+    community_walk_consent: walkConsent,
+    public_transport_consent: publicTransportConsent,
+    taxi_home_transport_consent: taxiConsent,
+    offsite_transport_signed_at: now,
+    offsite_transport_signed_by_name: offsiteSigner,
     updated_at: now,
     updated_by_parent_person_id: session.parent_person_id,
   };
@@ -157,7 +181,14 @@ Deno.serve(async (req) => {
     emergency_treatment_signed_by_name: emergencySigner,
     emergency_contact_name: emergencyContactName,
     emergency_contact_phone: emergencyContactPhone,
+    community_walk_consent: walkConsent,
+    public_transport_consent: publicTransportConsent,
+    taxi_home_transport_consent: taxiConsent,
+    offsite_transport_signed_at: now,
+    offsite_transport_signed_by_name: offsiteSigner,
   });
+
+  const validUntil = new Date(Date.parse(now) + 365 * 24 * 60 * 60 * 1000).toISOString();
 
   return json(200, {
     ok: true,
@@ -174,13 +205,22 @@ Deno.serve(async (req) => {
       emergency_treatment_signed_by_name: emergencySigner,
       emergency_contact_name: emergencyContactName,
       emergency_contact_phone: emergencyContactPhone,
+      community_walk_consent: walkConsent,
+      public_transport_consent: publicTransportConsent,
+      taxi_home_transport_consent: taxiConsent,
+      offsite_transport_signed_at: now,
+      offsite_transport_signed_by_name: offsiteSigner,
       updated_at: now,
     },
     summary: {
       photo_done: true,
       medication_done: true,
       emergency_done: true,
+      offsite_done: true,
       pending_count: 0,
+      renewal_needed: false,
+      valid_until: validUntil,
+      validity_days: 365,
     },
   });
 });
