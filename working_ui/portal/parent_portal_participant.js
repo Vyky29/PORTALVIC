@@ -1400,7 +1400,7 @@
         "</div>" +
         '<div class="pp-hub-ops__when-row">' +
         '<span class="pp-hub-ops__when-label">' +
-        esc(next.isToday ? "Today" : "Next session") +
+        esc(next.isToday ? "Today:" : "Next session:") +
         "</span>" +
         '<strong class="pp-hub-ops__when">' +
         esc(next.dayLabel) +

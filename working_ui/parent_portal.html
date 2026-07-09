@@ -898,34 +898,40 @@
     .pp-hub-ops__empty { margin: 0; font-size: 13px; overflow-wrap: break-word; }
     .pp-hub-ops__badge-row {
       display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 8px;
+      flex-wrap: nowrap;
+      align-items: stretch;
+      gap: 0;
       margin-bottom: 10px;
       min-width: 0;
+      width: 100%;
     }
     .pp-hub-ops__date-chips {
       display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 6px;
+      flex-wrap: nowrap;
+      align-items: stretch;
+      gap: 4px;
       min-width: 0;
-      flex: 1 1 auto;
+      width: 100%;
+      flex: 1 1 100%;
     }
     .pp-hub-ops__date-chip {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 3px;
+      gap: 2px;
       position: relative;
-      padding: 4px 8px;
+      flex: 1 1 0;
+      padding: 5px 2px;
       border-radius: 999px;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 800;
-      line-height: 1.2;
+      line-height: 1.15;
       white-space: nowrap;
-      max-width: 100%;
+      max-width: none;
       min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-sizing: border-box;
     }
     /* Completed sessions */
     .pp-hub-ops__date-chip--done {
@@ -977,18 +983,19 @@
       display: flex;
       flex-wrap: wrap;
       align-items: baseline;
-      gap: 8px 10px;
+      gap: 6px 8px;
       min-width: 0;
       margin-bottom: 12px;
     }
     .pp-hub-ops__when-label {
       flex: 0 0 auto;
-      font-size: 12px;
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.25;
       font-weight: 800;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      color: var(--blue);
-      line-height: 1.2;
+      letter-spacing: normal;
+      text-transform: none;
+      color: var(--ink);
     }
     .pp-hub-ops__badge {
       display: inline-flex;
@@ -2483,7 +2490,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260705-team-photos-only"></script>
   <script src="/portal/parent_portal_team.js?v=20260709-msg-photo-team"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260709-my-cal-polish"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260709-parent-invoices"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260709-hub-ops-chips"></script>
   <script src="/portal/parent_portal_app.js?v=20260709-parent-invoices"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
