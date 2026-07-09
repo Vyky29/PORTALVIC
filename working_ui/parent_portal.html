@@ -1075,6 +1075,8 @@
     .pp-pax-info-btn--balance .pp-pax-info-caption { color: var(--ink); }
     .pp-pax-info-btn--documents .pp-pax-info-icon { color: #1d4ed8; }
     .pp-pax-info-btn--documents .pp-pax-info-caption { color: var(--ink); }
+    .pp-pax-info-btn--consents .pp-pax-info-icon { color: #7c3aed; }
+    .pp-pax-info-btn--consents .pp-pax-info-caption { color: var(--ink); }
     .pp-pax-info-btn--invoices .pp-pax-info-icon { color: #b45309; }
     .pp-pax-info-btn--invoices .pp-pax-info-caption { color: var(--ink); }
     .pp-invoice-card {
@@ -1386,6 +1388,124 @@
       gap: 8px;
       margin-top: 12px;
       min-width: 0;
+    }
+    .pp-docs-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      min-width: 0;
+    }
+    .pp-docs-empty .pp-muted { margin: 0; overflow-wrap: break-word; }
+    .pp-consent-form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-width: 0;
+    }
+    .pp-consent-card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      padding: 14px;
+      min-width: 0;
+    }
+    .pp-consent-card__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 0 0 8px;
+      min-width: 0;
+    }
+    .pp-consent-card__title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--ink);
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .pp-consent-card__hint {
+      margin: 0 0 10px;
+      font-size: 13px;
+      line-height: 1.4;
+      overflow-wrap: break-word;
+    }
+    .pp-consent-options {
+      border: 0;
+      margin: 0 0 12px;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+    .pp-consent-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 14px;
+      line-height: 1.35;
+      color: var(--ink);
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .pp-consent-option input {
+      margin-top: 3px;
+      flex: 0 0 auto;
+    }
+    .pp-consent-chip {
+      flex: 0 0 auto;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .pp-consent-chip--pending {
+      background: rgba(249, 191, 46, 0.2);
+      color: #92400e;
+    }
+    .pp-consent-chip--done {
+      background: rgba(22, 163, 74, 0.12);
+      color: #166534;
+    }
+    .pp-consent-signed {
+      margin: 8px 0 0;
+      font-size: 12px;
+    }
+    .pp-consent-form .pp-field {
+      margin: 0 0 8px;
+      min-width: 0;
+    }
+    .pp-consent-form .pp-field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .pp-consent-form .pp-field input,
+    .pp-consent-form .pp-field textarea {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      font: inherit;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      min-width: 0;
+    }
+    .pp-sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
     }
     .pp-balance-summary {
       margin: 0 0 12px;
@@ -2713,8 +2833,8 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260709-overview-by-service"></script>
   <script src="/portal/parent_portal_team.js?v=20260709-msg-photo-team"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260709-my-cal-polish"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260709-hub-first"></script>
-  <script src="/portal/parent_portal_app.js?v=20260709-hub-first"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260709-consents"></script>
+  <script src="/portal/parent_portal_app.js?v=20260709-consents"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {

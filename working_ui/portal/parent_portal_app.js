@@ -351,6 +351,56 @@
           });
         });
       },
+      loadConsents: function () {
+        return fetch(fn("parent-portal-consents-load"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey(),
+            Authorization: "Bearer " + anonKey(),
+            "x-parent-portal-session": state.session.token,
+          },
+          body: JSON.stringify({ contact_id: contactId }),
+        }).then(function (res) {
+          return res.json().then(function (j) {
+            if (!res.ok || !j.ok) throw new Error("consents_load_failed");
+            return j;
+          });
+        });
+      },
+      saveConsents: function (payload) {
+        payload = payload && typeof payload === "object" ? payload : {};
+        return fetch(fn("parent-portal-consents-save"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey(),
+            Authorization: "Bearer " + anonKey(),
+            "x-parent-portal-session": state.session.token,
+          },
+          body: JSON.stringify({
+            contact_id: contactId,
+            photo_consent: payload.photo_consent,
+            photo_consent_signed_by_name: payload.photo_consent_signed_by_name,
+            medication_at_centre_needed: payload.medication_at_centre_needed,
+            medication_at_centre_details: payload.medication_at_centre_details,
+            medication_at_centre_signed_by_name: payload.medication_at_centre_signed_by_name,
+          }),
+        }).then(function (res) {
+          return res.json().then(function (j) {
+            if (!res.ok || !j.ok) {
+              var err = new Error("consents_save_failed");
+              err.code = (j && j.error) || "save_failed";
+              throw err;
+            }
+            return j;
+          });
+        });
+      },
+      parentDisplayName: function () {
+        var parent = (state.home && state.home.parent) || {};
+        return String(parent.display_name || "").trim();
+      },
       listInvoices: function () {
         return fetch(fn("parent-portal-invoices-list"), {
           method: "POST",

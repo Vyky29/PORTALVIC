@@ -543,6 +543,13 @@ verify_jwt = false
 [functions.parent-portal-documents-list]
 verify_jwt = false
 
+# Parent-signed photo + medication-at-centre consents.
+[functions.parent-portal-consents-load]
+verify_jwt = false
+
+[functions.parent-portal-consents-save]
+verify_jwt = false
+
 # Parent-facing shared client invoices (PDF + status).
 [functions.parent-portal-invoices-list]
 verify_jwt = false

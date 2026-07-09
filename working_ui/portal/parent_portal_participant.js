@@ -851,6 +851,8 @@
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h6"/></svg>';
     var invoiceIcon =
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2h16v20l-2-1.5L16 22l-2-1.5L12 22l-2-1.5L8 22l-2-1.5L4 22V2z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>';
+    var consentIcon =
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>';
     var teamCaption = firstNameOf(data) + "'s Team";
     var calIcon =
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="8" cy="15" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg>';
@@ -889,6 +891,10 @@
       infoBtnHtml("documents", "Documents", docsIcon, {
         extraClass: " pp-pax-info-btn--documents",
         subtitle: "Registration forms",
+      }) +
+      infoBtnHtml("consents", "Consents", consentIcon, {
+        extraClass: " pp-pax-info-btn--consents",
+        subtitle: "Photos & medication",
       }) +
       infoBtnHtml("balance", "Credits & refunds", balanceIcon, {
         extraClass: " pp-pax-info-btn--balance",
@@ -2889,7 +2895,16 @@
         var docs = (j && j.documents) || [];
         if (!docs.length) {
           listHost.innerHTML =
-            '<p class="pp-muted">No registration documents on file yet for this participant.</p>';
+            '<div class="pp-docs-empty">' +
+            '<p class="pp-muted">No registration PDFs on file yet for this participant.</p>' +
+            '<p class="pp-muted">Photo and medication permissions are under <strong>Consents</strong>.</p>' +
+            '<button type="button" class="pp-btn pp-btn--primary" data-pp-open="consents">Complete consents</button>' +
+            "</div>";
+          listHost.querySelectorAll('[data-pp-open="consents"]').forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              openSubview(host, data, opts, "consents");
+            });
+          });
           return;
         }
         listHost.innerHTML = docs.map(documentCardHtml).join("");
@@ -2897,6 +2912,214 @@
       .catch(function () {
         showNotice("error", "Could not load documents — please try again.");
         listHost.innerHTML = "";
+      });
+  }
+
+  function formatConsentWhen(iso) {
+    if (!iso) return "";
+    try {
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return "";
+      return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+    } catch (_e) {
+      return "";
+    }
+  }
+
+  function consentStatusChip(done, label) {
+    return (
+      '<span class="pp-consent-chip' +
+      (done ? " pp-consent-chip--done" : " pp-consent-chip--pending") +
+      '">' +
+      esc(done ? label || "Signed" : "Pending") +
+      "</span>"
+    );
+  }
+
+  function renderConsents(host, data, opts) {
+    var parentName =
+      opts && typeof opts.parentDisplayName === "function" ? opts.parentDisplayName() : "";
+    host.innerHTML = subviewShell(
+      data,
+      "consents",
+      '<h3 class="pp-pax-subview-title">Consents</h3>' +
+        '<p class="pp-muted pp-pax-subview-note">Photo permissions and medication left at the centre for ' +
+        esc(firstNameOf(data)) +
+        ".</p>" +
+        '<div id="ppConsentsNotice" class="pp-notice" hidden></div>' +
+        '<div id="ppConsentsHost"><p class="pp-muted">Loading…</p></div>',
+    );
+    bindBack(host, data, opts);
+    bindConsents(host, data, opts, parentName);
+  }
+
+  function bindConsents(host, data, opts, parentName) {
+    var formHost = host.querySelector("#ppConsentsHost");
+    var notice = host.querySelector("#ppConsentsNotice");
+
+    function showNotice(kind, text) {
+      if (!notice) return;
+      notice.hidden = !text;
+      notice.className = "pp-notice" + (kind ? " pp-notice--" + kind : "");
+      notice.textContent = text || "";
+    }
+
+    if (!formHost || typeof opts.loadConsents !== "function") {
+      if (formHost) formHost.innerHTML = '<p class="pp-muted">Consents are not available right now.</p>';
+      return;
+    }
+
+    function paint(consents, summary) {
+      consents = consents || {};
+      summary = summary || {};
+      var photo = String(consents.photo_consent || "unknown");
+      var med = String(consents.medication_at_centre_needed || "unknown");
+      var details = String(consents.medication_at_centre_details || "");
+      var photoSigner = String(consents.photo_consent_signed_by_name || parentName || "");
+      var medSigner = String(consents.medication_at_centre_signed_by_name || parentName || "");
+      var photoWhen = formatConsentWhen(consents.photo_consent_signed_at);
+      var medWhen = formatConsentWhen(consents.medication_at_centre_signed_at);
+      var photoDone = !!summary.photo_done;
+      var medDone = !!summary.medication_done;
+
+      formHost.innerHTML =
+        '<form class="pp-consent-form" id="ppConsentForm" novalidate>' +
+        '<section class="pp-consent-card" aria-labelledby="ppConsentPhotoTitle">' +
+        '<div class="pp-consent-card__head">' +
+        '<h4 id="ppConsentPhotoTitle" class="pp-consent-card__title">Photo &amp; media</h4>' +
+        consentStatusChip(photoDone) +
+        "</div>" +
+        '<p class="pp-muted pp-consent-card__hint">May we take and use photos of your child for club records and achievement updates shared with you?</p>' +
+        '<fieldset class="pp-consent-options">' +
+        '<legend class="pp-sr-only">Photo consent</legend>' +
+        '<label class="pp-consent-option"><input type="radio" name="photo_consent" value="yes"' +
+        (photo === "yes" ? " checked" : "") +
+        "> Yes — club use &amp; family updates</label>" +
+        '<label class="pp-consent-option"><input type="radio" name="photo_consent" value="internal_only"' +
+        (photo === "internal_only" ? " checked" : "") +
+        "> Internal only (staff records, not social)</label>" +
+        '<label class="pp-consent-option"><input type="radio" name="photo_consent" value="no"' +
+        (photo === "no" ? " checked" : "") +
+        "> No photos</label>" +
+        "</fieldset>" +
+        '<div class="pp-field"><label for="ppConsentPhotoSigner">Signed by</label>' +
+        '<input id="ppConsentPhotoSigner" name="photo_consent_signed_by_name" type="text" autocomplete="name" required value="' +
+        esc(photoSigner) +
+        '"></div>' +
+        (photoWhen
+          ? '<p class="pp-muted pp-consent-signed">Last signed ' + esc(photoWhen) + "</p>"
+          : "") +
+        "</section>" +
+        '<section class="pp-consent-card" aria-labelledby="ppConsentMedTitle">' +
+        '<div class="pp-consent-card__head">' +
+        '<h4 id="ppConsentMedTitle" class="pp-consent-card__title">Medication at the centre</h4>' +
+        consentStatusChip(medDone) +
+        "</div>" +
+        '<p class="pp-muted pp-consent-card__hint">Does staff need to hold or help with medication during sessions?</p>' +
+        '<fieldset class="pp-consent-options">' +
+        '<legend class="pp-sr-only">Medication at centre</legend>' +
+        '<label class="pp-consent-option"><input type="radio" name="medication_at_centre_needed" value="no"' +
+        (med === "no" ? " checked" : "") +
+        "> No medication left at the centre</label>" +
+        '<label class="pp-consent-option"><input type="radio" name="medication_at_centre_needed" value="yes"' +
+        (med === "yes" ? " checked" : "") +
+        "> Yes — staff may hold / assist as described</label>" +
+        "</fieldset>" +
+        '<div class="pp-field pp-consent-med-details"' +
+        (med === "yes" ? "" : " hidden") +
+        '><label for="ppConsentMedDetails">Medication details (name, dose, when, storage)</label>' +
+        '<textarea id="ppConsentMedDetails" name="medication_at_centre_details" rows="3">' +
+        esc(details) +
+        "</textarea></div>" +
+        '<div class="pp-field"><label for="ppConsentMedSigner">Signed by</label>' +
+        '<input id="ppConsentMedSigner" name="medication_at_centre_signed_by_name" type="text" autocomplete="name" required value="' +
+        esc(medSigner) +
+        '"></div>' +
+        (medWhen ? '<p class="pp-muted pp-consent-signed">Last signed ' + esc(medWhen) + "</p>" : "") +
+        "</section>" +
+        '<button type="submit" class="pp-btn pp-btn--primary" id="ppConsentSaveBtn">Save &amp; sign consents</button>' +
+        "</form>";
+
+      var form = formHost.querySelector("#ppConsentForm");
+      var medDetailsWrap = formHost.querySelector(".pp-consent-med-details");
+      formHost.querySelectorAll('input[name="medication_at_centre_needed"]').forEach(function (r) {
+        r.addEventListener("change", function () {
+          var checked = formHost.querySelector('input[name="medication_at_centre_needed"]:checked');
+          if (medDetailsWrap) medDetailsWrap.hidden = !(checked && checked.value === "yes");
+        });
+      });
+
+      if (form) {
+        form.addEventListener("submit", function (e) {
+          e.preventDefault();
+          showNotice("", "");
+          if (typeof opts.saveConsents !== "function") {
+            showNotice("error", "Saving is not available right now.");
+            return;
+          }
+          var photoEl = form.querySelector('input[name="photo_consent"]:checked');
+          var medEl = form.querySelector('input[name="medication_at_centre_needed"]:checked');
+          var photoName = String((form.querySelector("#ppConsentPhotoSigner") || {}).value || "").trim();
+          var medName = String((form.querySelector("#ppConsentMedSigner") || {}).value || "").trim();
+          var medText = String((form.querySelector("#ppConsentMedDetails") || {}).value || "").trim();
+          if (!photoEl) {
+            showNotice("error", "Choose a photo consent option.");
+            return;
+          }
+          if (!medEl) {
+            showNotice("error", "Choose whether medication is left at the centre.");
+            return;
+          }
+          if (!photoName || !medName) {
+            showNotice("error", "Enter the name of the person signing.");
+            return;
+          }
+          if (medEl.value === "yes" && !medText) {
+            showNotice("error", "Add medication details (name, dose, when).");
+            return;
+          }
+          var btn = form.querySelector("#ppConsentSaveBtn");
+          if (btn) {
+            btn.disabled = true;
+            btn.setAttribute("aria-busy", "true");
+          }
+          void opts
+            .saveConsents({
+              photo_consent: photoEl.value,
+              photo_consent_signed_by_name: photoName,
+              medication_at_centre_needed: medEl.value,
+              medication_at_centre_details: medText,
+              medication_at_centre_signed_by_name: medName,
+            })
+            .then(function (j) {
+              showNotice("success", "Consents saved. Thank you.");
+              paint(j.consents || {}, j.summary || { photo_done: true, medication_done: true });
+            })
+            .catch(function (err) {
+              var code = err && err.code ? String(err.code) : "";
+              var msg = "Could not save — please try again.";
+              if (code === "medication_details_required") msg = "Add medication details before saving.";
+              if (code === "photo_consent_required") msg = "Choose a photo consent option.";
+              showNotice("error", msg);
+            })
+            .finally(function () {
+              if (btn) {
+                btn.disabled = false;
+                btn.removeAttribute("aria-busy");
+              }
+            });
+        });
+      }
+    }
+
+    void opts
+      .loadConsents()
+      .then(function (j) {
+        paint((j && j.consents) || {}, (j && j.summary) || {});
+      })
+      .catch(function () {
+        showNotice("error", "Could not load consents — please try again.");
+        formHost.innerHTML = "";
       });
   }
 
@@ -3597,6 +3820,7 @@
     else if (view === "balance") renderBalance(host, data, opts);
     else if (view === "invoices") renderInvoices(host, data, opts);
     else if (view === "documents") renderDocuments(host, data, opts);
+    else if (view === "consents") renderConsents(host, data, opts);
     else if (view === "messages") {
       var msgOpts = opts || {};
       if (viewOpts.prefillMessage) {
