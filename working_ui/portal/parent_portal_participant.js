@@ -1206,16 +1206,36 @@
   }
 
   function messageBubbleClass(m) {
+    // Club → parent: corporate blue so it is obvious we wrote it.
+    // Parent → club: keep WhatsApp green / app grey.
+    if (m && m.direction === "out") {
+      var chOut = messageDeliveryChannel(m);
+      if (chOut === "email") return "pp-pax-msg--email";
+      return "pp-pax-msg--club";
+    }
     var ch = messageDeliveryChannel(m);
     if (ch === "whatsapp" || ch === "whatsapp_in") return "pp-pax-msg--wa";
-    if (ch === "email") return "pp-pax-msg--email";
     if (ch === "app_in") return "pp-pax-msg--app-in";
-    return m.direction === "in" ? "pp-pax-msg--app-in" : "pp-pax-msg--other";
+    return "pp-pax-msg--app-in";
+  }
+
+  /** Parent/carer display names from WhatsApp are often all-lowercase. */
+  function titleCasePersonName(raw) {
+    var s = String(raw || "").trim().replace(/\s+/g, " ");
+    if (!s) return "";
+    return s
+      .split(" ")
+      .map(function (part) {
+        if (!part) return part;
+        // Keep short particles lowercase when mid-name (de, da, van…) except first token.
+        return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+      })
+      .join(" ");
   }
 
   function messagesThreadHtml(messages, waBiz) {
     if (!messages || !messages.length) {
-      return '<p class="pp-muted pp-pax-msgs-empty">No messages yet. Club updates by WhatsApp and email appear here when we send them. Green = WhatsApp, blue = email.</p>';
+      return '<p class="pp-muted pp-pax-msgs-empty">No messages yet. Club updates by WhatsApp and email appear here when we send them. Blue = ClubSENsational, green = your WhatsApp.</p>';
     }
     return (
       '<div class="pp-pax-msgs-thread" role="log" aria-live="polite">' +
@@ -1228,7 +1248,7 @@
           var channelTag =
             channel === "whatsapp" || channel === "email"
               ? '<span class="pp-pax-msg__channel pp-pax-msg__channel--' +
-                (channel === "email" ? "email" : "wa") +
+                (channel === "email" ? "email" : isOut ? "club" : "wa") +
                 '">' +
                 esc(messageChannelLabel(channel)) +
                 "</span>"
@@ -1236,6 +1256,9 @@
           var unreadMark = m.is_unread
             ? '<span class="pp-pax-msg__unread-dot" aria-hidden="true"></span>'
             : "";
+          var whoLabel = isOut
+            ? "CLUBSENSATIONAL"
+            : titleCasePersonName(m.sender_name) || "You";
           return (
             '<article class="pp-pax-msg' +
             (isOut ? " pp-pax-msg--out" : " pp-pax-msg--in") +
@@ -1246,7 +1269,7 @@
             '<div class="pp-pax-msg__head">' +
             '<span class="pp-pax-msg__who">' +
             unreadMark +
-            esc(isOut ? "CLUBSENSATIONAL" : m.sender_name || "You") +
+            esc(whoLabel) +
             "</span>" +
             '<span class="pp-pax-msg__when pp-muted">' +
             esc(formatMessageWhen(m.created_at)) +
