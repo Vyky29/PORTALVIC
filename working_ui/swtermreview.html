@@ -401,8 +401,37 @@
     .tile.level{
       align-items:center; /* centre contents in the tile */
       min-height:auto;
+      gap:8px;
+      padding:10px 8px 12px;
     }
-    .tile.level .dot{ margin-top:0; }
+    .tile.level .dot{ display:none; }
+    .tile.level .levelMascot{
+      width:56px;
+      height:56px;
+      flex:0 0 auto;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:16px;
+      background:#fff;
+      box-shadow:0 6px 16px rgba(11,18,32,.08), inset 0 0 0 1px rgba(11,18,32,.06);
+      overflow:hidden;
+    }
+    .tile.level .levelMascot img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+    }
+    .tile.level .levelBadge{
+      font-weight:800;
+      font-size:clamp(8px,1.05vw,9.5px);
+      letter-spacing:.04em;
+      text-transform:uppercase;
+      color:rgba(78,91,103,.88);
+      margin-top:2px;
+    }
+    .tile.level.active .levelBadge{ color:rgba(255,255,255,.92); }
     .tile.level .txt{
       text-align:center;
       align-items:center;
@@ -477,6 +506,9 @@
     .tile.level.active[data-level="5"], .tile.level.active[data-level="6"]{ background:var(--blue); }
     .tile.level.active .title{ color:#fff; }
     .tile.level.active .levelSub{ color:#fff; }
+    .tile.level.active .levelMascot{
+      box-shadow:0 0 0 2px rgba(255,255,255,.88), 0 8px 18px rgba(11,18,32,.12);
+    }
 
     .errMsg{
       display:none;
@@ -504,6 +536,50 @@
       justify-content:space-between;
       flex-wrap:wrap;
       margin-bottom:10px;
+    }
+    .levelMascotSpot{
+      display:none;
+      align-items:center;
+      gap:14px;
+      width:100%;
+      margin:0 0 12px;
+      padding:12px 14px;
+      border-radius:16px;
+      background:linear-gradient(135deg, rgba(237,246,252,.96), rgba(255,255,255,.98));
+      border:1px solid rgba(45,132,179,.12);
+      box-shadow:0 8px 20px rgba(11,18,32,.04);
+    }
+    .levelMascotSpot.is-visible{ display:flex; }
+    .levelMascotSpot img{
+      width:72px;
+      height:72px;
+      object-fit:contain;
+      flex:0 0 auto;
+      filter:drop-shadow(0 6px 12px rgba(11,18,32,.08));
+    }
+    .levelMascotSpotCopy{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      min-width:0;
+    }
+    .levelMascotSpotCopy .kicker{
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+    .levelMascotSpotCopy .headline{
+      font-size:clamp(15px,2vw,17px);
+      font-weight:900;
+      line-height:1.2;
+      color:var(--ink);
+    }
+    .levelMascotSpotCopy .sub{
+      font-size:12px;
+      font-weight:700;
+      color:rgba(78,91,103,.92);
     }
     .meter{
       position:relative;
@@ -1498,6 +1574,30 @@
     .summary-output .report-block-body ul{ margin:0; padding-left:1.2em; }
     .summary-output .report-block-body li{ margin-bottom:6px; }
     .summary-output .report-block-body.lc-wrap{ text-align:left; }
+    .summary-output .summary-stage-level{
+      display:flex;
+      align-items:flex-start;
+      gap:16px;
+    }
+    .summary-output .summary-level-mascot{
+      flex:0 0 84px;
+      width:84px;
+      height:84px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:18px;
+      background:linear-gradient(180deg,#f8fbfd,#eef4f8);
+      box-shadow:inset 0 0 0 1px rgba(11,18,32,.06);
+      overflow:hidden;
+    }
+    .summary-output .summary-level-mascot img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+    }
+    .summary-output .summary-stage-level-copy{ flex:1; min-width:0; }
     .summary-output .lc-block{ margin:0 0 12px; }
     .summary-output .lc-block:last-child{ margin-bottom:0; }
     .summary-output .lc-outcome-wrap{
@@ -1786,9 +1886,10 @@
       <div class="tileGroup cols6" id="levelTiles">
         <label class="tile level" data-group="level" data-value="Level 1" data-level="1">
           <input type="radio" name="level" value="Level 1" />
-          <div class="dot"></div>
+          <div class="levelMascot" aria-hidden="true"><img src="portal/assets/swimming-mascots/level-1-turtle.png" alt="" loading="lazy" decoding="async" /></div>
           <div class="txt">
-            <div class="title">LEVEL 1</div>
+            <div class="title">Level 1</div>
+            <div class="levelBadge">Turtle</div>
             <div class="levelSub">- Building early confidence in the water</div>
             <div class="levelSub">- Staying calm and safe with support</div>
           </div>
@@ -1796,9 +1897,10 @@
 
         <label class="tile level" data-group="level" data-value="Level 2" data-level="2">
           <input type="radio" name="level" value="Level 2" />
-          <div class="dot"></div>
+          <div class="levelMascot" aria-hidden="true"><img src="portal/assets/swimming-mascots/level-2-starfish.png" alt="" loading="lazy" decoding="async" /></div>
           <div class="txt">
-            <div class="title">LEVEL 2</div>
+            <div class="title">Level 2</div>
+            <div class="levelBadge">Starfish</div>
             <div class="levelSub">- Progressing with reduced hesitation</div>
             <div class="levelSub">- Improving breathing with less help</div>
           </div>
@@ -1806,9 +1908,10 @@
 
         <label class="tile level" data-group="level" data-value="Level 3" data-level="3">
           <input type="radio" name="level" value="Level 3" />
-          <div class="dot"></div>
+          <div class="levelMascot" aria-hidden="true"><img src="portal/assets/swimming-mascots/level-3-jellyfish.png" alt="" loading="lazy" decoding="async" /></div>
           <div class="txt">
-            <div class="title">LEVEL 3</div>
+            <div class="title">Level 3</div>
+            <div class="levelBadge">Jellyfish</div>
             <div class="levelSub">- Developing balance and body position</div>
             <div class="levelSub">- Moving forward with guidance and control</div>
           </div>
@@ -1816,9 +1919,10 @@
 
         <label class="tile level" data-group="level" data-value="Level 4" data-level="4">
           <input type="radio" name="level" value="Level 4" />
-          <div class="dot"></div>
+          <div class="levelMascot" aria-hidden="true"><img src="portal/assets/swimming-mascots/level-4-ray.png" alt="" loading="lazy" decoding="async" /></div>
           <div class="txt">
-            <div class="title">LEVEL 4</div>
+            <div class="title">Level 4</div>
+            <div class="levelBadge">Ray</div>
             <div class="levelSub">- More control and coordination in movement</div>
             <div class="levelSub">- Improving rotation, propulsion and direction</div>
           </div>
@@ -1826,9 +1930,10 @@
 
         <label class="tile level" data-group="level" data-value="Level 5" data-level="5">
           <input type="radio" name="level" value="Level 5" />
-          <div class="dot"></div>
+          <div class="levelMascot" aria-hidden="true"><img src="portal/assets/swimming-mascots/level-5-dolphin.png" alt="" loading="lazy" decoding="async" /></div>
           <div class="txt">
-            <div class="title">LEVEL 5</div>
+            <div class="title">Level 5</div>
+            <div class="levelBadge">Dolphin</div>
             <div class="levelSub">- Refining technique with stronger safety awareness</div>
             <div class="levelSub">- Longer sequences with increasing independence</div>
           </div>
@@ -1836,9 +1941,10 @@
 
         <label class="tile level" data-group="level" data-value="Level 6" data-level="6">
           <input type="radio" name="level" value="Level 6" />
-          <div class="dot"></div>
+          <div class="levelMascot" aria-hidden="true"><img src="portal/assets/swimming-mascots/level-6-whale.png" alt="" loading="lazy" decoding="async" /></div>
           <div class="txt">
-            <div class="title">LEVEL 6</div>
+            <div class="title">Level 6</div>
+            <div class="levelBadge">Whale</div>
             <div class="levelSub">- Efficiency, rhythm and endurance</div>
             <div class="levelSub">- Sustaining control and safety throughout sessions</div>
           </div>
@@ -1854,6 +1960,14 @@
       <p class="note">Work through each category in order. One category opens at a time; when every outcome in it is rated, the next category opens automatically. Tap a category header to review or change earlier ratings.</p>
 
       <div class="levelBox" id="levelBox">
+        <div class="levelMascotSpot" id="levelMascotSpot" hidden>
+          <img id="levelMascotSpotImg" src="" alt="" />
+          <div class="levelMascotSpotCopy">
+            <span class="kicker" id="levelMascotSpotKicker">Current level</span>
+            <span class="headline" id="levelMascotSpotHeadline">—</span>
+            <span class="sub" id="levelMascotSpotSub">—</span>
+          </div>
+        </div>
         <div class="progressWrap">
           <div style="display:flex;flex-direction:column;gap:6px;min-width:240px;">
             <div style="font-weight:900;font-size:13px;text-transform:uppercase;letter-spacing:0.2px;">Focus areas achieved</div>
@@ -2245,7 +2359,7 @@
   <!-- swtermreview_app.js — portal/ then portal-shared-js/ on Vercel. -->
   <script>
     (function () {
-      var v = "20260709-level-progression-split";
+      var v = "20260709-swimming-mascots";
       var file = "swtermreview_app.js";
       var bases = [];
       try {

@@ -170,6 +170,16 @@ const LEVEL_DATA = {
       "Swim Structured": "Stage 3 – Swim Structured",
     };
 
+    const SWIMMING_LEVEL_MASCOTS = {
+      1: { animal: "Turtle", badge: "First Splash", file: "level-1-turtle.png" },
+      2: { animal: "Starfish", badge: "Water Explorer", file: "level-2-starfish.png" },
+      3: { animal: "Jellyfish", badge: "Floating Friend", file: "level-3-jellyfish.png" },
+      4: { animal: "Ray", badge: "Ocean Navigator", file: "level-4-ray.png" },
+      5: { animal: "Dolphin", badge: "Independent Swimmer", file: "level-5-dolphin.png" },
+      6: { animal: "Whale", badge: "Ocean Master", file: "level-6-whale.png" },
+    };
+    const SWIMMING_MASCOT_BASE = "portal/assets/swimming-mascots/";
+
     let selectedStage = "";
     let selectedLevel = 0;
 
@@ -197,6 +207,44 @@ const LEVEL_DATA = {
       if(level === 1 || level === 2) return getComputedStyle(document.documentElement).getPropertyValue("--green").trim();
       if(level === 3 || level === 4) return getComputedStyle(document.documentElement).getPropertyValue("--orange").trim();
       return getComputedStyle(document.documentElement).getPropertyValue("--blue").trim();
+    }
+
+    function getSwimmingLevelMascot(level){
+      return SWIMMING_LEVEL_MASCOTS[Number(level)] || null;
+    }
+
+    function resolveSwimmingMascotSrc(file){
+      if(!file) return "";
+      const rel = SWIMMING_MASCOT_BASE + file;
+      try{
+        if(typeof location !== "undefined" && location.href){
+          return new URL(rel, location.href).href;
+        }
+      }catch(_){}
+      return rel;
+    }
+
+    function updateLevelMascotSpot(levelNumber){
+      const spot = $("#levelMascotSpot");
+      const img = $("#levelMascotSpotImg");
+      const kicker = $("#levelMascotSpotKicker");
+      const headline = $("#levelMascotSpotHeadline");
+      const sub = $("#levelMascotSpotSub");
+      if(!spot || !img) return;
+      const mascot = getSwimmingLevelMascot(levelNumber);
+      if(!mascot){
+        spot.hidden = true;
+        spot.classList.remove("is-visible");
+        img.removeAttribute("src");
+        return;
+      }
+      img.src = resolveSwimmingMascotSrc(mascot.file);
+      img.alt = mascot.animal + " mascot";
+      if(kicker) kicker.textContent = "Current level";
+      if(headline) headline.textContent = "Level " + levelNumber + " · " + mascot.animal;
+      if(sub) sub.textContent = mascot.badge;
+      spot.hidden = false;
+      spot.classList.add("is-visible");
     }
 
     function clearActives(groupSelector){
@@ -304,6 +352,7 @@ const LEVEL_DATA = {
     function renderFocusAreasForLevel(levelNumber){
       const wrap = $("#focusWrap");
       if(!wrap) return;
+      updateLevelMascotSpot(levelNumber);
       wrap.innerHTML = "";
       if(!levelNumber || !LEVEL_DATA[levelNumber]){
         $("#countTxt").textContent = "Select a level to start";
@@ -1364,12 +1413,23 @@ const LEVEL_DATA = {
             return "<div class=\"lc-block\"><div class=\"lc-title\">" + title + "</div>" + list + summaryHtml + "</div>";
           }).join("");
           inner = "<div class=\"report-block-body lc-wrap\">" + html + "</div>";
+        }else if(s.type === "stageLevel"){
+          const mascotSrc = s.mascotSrc ? escapeHtmlTerm(s.mascotSrc) : "";
+          const mascotAlt = escapeHtmlTerm(s.mascotAlt || "Level mascot");
+          const mascotHtml = mascotSrc
+            ? "<div class=\"summary-level-mascot\"><img src=\"" + mascotSrc + "\" alt=\"" + mascotAlt + "\" loading=\"lazy\" decoding=\"async\" /></div>"
+            : "";
+          const bodyParas = (s.body || "").split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+          const bodyHtml = bodyParas.map(p =>
+            "<p>" + p.split("\n").map(line => formatBulletLineHtmlTerm(line)).join("<br>") + "</p>"
+          ).join("");
+          inner = "<div class=\"report-block-body summary-stage-level\">" + mascotHtml + "<div class=\"summary-stage-level-copy\">" + bodyHtml + "</div></div>";
         }else if(s.type === "bullets"){
           inner = "<div class=\"report-block-body\"><ul>" + s.lines.map(l => "<li>" + bulletLineHtmlTerm(l) + "</li>").join("") + "</ul></div>";
         }else{
           const paras = (s.body || "").split(/\n\n+/).map(p => p.trim()).filter(Boolean);
           inner = "<div class=\"report-block-body\">" + paras.map((p, idx) => {
-            if(s.title === "1. Term review details" || s.title === "2. Stage and level" || s.title === "4. Level progression decision" || s.title === "7. Final review notes"){
+            if(s.title === "1. Term review details" || s.title === "4. Level progression decision" || s.title === "7. Final review notes"){
               return "<p>" + p.split("\n").map(line => formatBulletLineHtmlTerm(line)).join("<br>") + "</p>";
             }
             if(s.title === "3. Level confirmation"){
@@ -1399,7 +1459,10 @@ const LEVEL_DATA = {
     function buildTermReviewSummarySections(){
       const sections = [];
       const stageLabel = selectedStage ? (STAGE_DISPLAY[selectedStage] || selectedStage) : "—";
-      const levelLabel = selectedLevel ? ("Level " + selectedLevel) : "—";
+      const levelMascot = selectedLevel ? getSwimmingLevelMascot(selectedLevel) : null;
+      const levelLabel = selectedLevel
+        ? ("Level " + selectedLevel + (levelMascot ? " · " + levelMascot.animal : ""))
+        : "—";
 
       const stageBlurb = (() => {
         if(!selectedStage) return "";
@@ -1434,14 +1497,18 @@ const LEVEL_DATA = {
         ].join("\n"),
       });
       sections.push({
-        type: "paragraph",
+        type: "stageLevel",
         title: "2. Stage and level",
+        mascotSrc: levelMascot ? resolveSwimmingMascotSrc(levelMascot.file) : "",
+        mascotAlt: levelMascot ? (levelMascot.animal + " mascot") : "",
         body:
           "Stage:\n" +
           stageLabel + (stageBlurb ? " (" + stageBlurb + ")" : "") +
           "\n\n" +
           "Current level:\n" +
-          levelLabel + (levelBlurb ? " (" + levelBlurb + ")" : ""),
+          levelLabel +
+          (levelMascot ? " (" + levelMascot.badge + ")" : "") +
+          (levelBlurb ? "\n" + levelBlurb : ""),
       });
       const levelOutcome = getLevelOutcomeForSummary();
       const focusWrap = document.getElementById("focusWrap");
@@ -1846,7 +1913,10 @@ const LEVEL_DATA = {
       const reviewIso = fieldValTerm("reviewDate");
       const instructor = fieldValTerm("instructorName").replace(/\s+/g, " ").trim();
       const stageLabel = selectedStage ? (STAGE_DISPLAY[selectedStage] || selectedStage) : "";
-      const levelLabel = selectedLevel ? ("Level " + selectedLevel) : "";
+      const levelMascot = selectedLevel ? getSwimmingLevelMascot(selectedLevel) : null;
+      const levelLabel = selectedLevel
+        ? ("Level " + selectedLevel + (levelMascot ? " · " + levelMascot.animal : ""))
+        : "";
       const firstName = swimmer.split(/\s+/)[0] || swimmer || "Swimmer";
       return {
         swimmer,
