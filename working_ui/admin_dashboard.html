@@ -39,7 +39,7 @@
   <script src="/portal/admin-portal-parent-credits.js?v=20260709-family-credits"></script>
   <script src="/portal/admin-portal-parent-invoices.js?v=20260709-invoice-bank"></script>
   <script src="/portal/admin-portal-parent-makeups.js?v=20260709-makeup-roster"></script>
-  <script src="/portal/admin-portal-parent-consents.js?v=20260709-emergency-consent"></script>
+  <script src="/portal/admin-portal-parent-consents.js?v=20260709-offsite-annual"></script>
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
   <script src="/portal/admin-portal-pins.js?v=20260530-portal-pins-db"></script>
   <script src="/portal/admin-portal-activity.js?v=20260604-visit-activity"></script>
@@ -403,7 +403,7 @@
       { id:'g_operator', label:'Operator', children:['dashboard','__h:Sessions','c4k_sessions','session_disruptions','operations_admin','operator'] },
       { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','__h:Participants','clients','portal_nav_client_services','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops','portal_parent_notify_log','portal_parent_broadcast'] },
       { id:'g_zoho', label:'H&R', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
-      { id:'g_supabase', label:'Documents', children:['portal_payslips','portal_participant_documents','portal_parent_consents','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
+      { id:'g_supabase', label:'Documents', children:['__h:Participants','portal_participant_documents','portal_parent_consents','__h:Workers','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance (Xero)', children:['reenrol_payments','invoices'] },
       { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','portal_device_notifications','logs','portal_nav_alerts','__h:Monitoring','portal_activity','portal_training_progress','portal_push_devices','staff_live_map','staff_ghost_teleport','__h:Other portals','portal_nav_staff','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
     ];
@@ -20480,11 +20480,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         id:'documents',
         icon:'📄',
         title:'Documents & Compliance',
-        description:'Access operational documents, payslips, timesheets, expenses, certificates, passports, checklists and first aid records.',
-        preview:['Payslips','Timesheets','Expenses','Certificates','Passports and checklists','First aid records'],
-        status:'Use this area to find generated PDFs, staff documents and compliance records.',
-        primary:['portal_documents','portal_participant_documents','portal_parent_consents','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_certificate'],
-        secondary:['portal_docs_portalpin','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid','policies']
+        description:'Participant files and consents, plus worker payslips, timesheets, expenses and compliance uploads.',
+        preview:['Participant documents','Parent consents','Payslips','Timesheets','Expenses','Certificates'],
+        status:'Use this area to find participant records and worker documents.',
+        primary:['portal_participant_documents','portal_parent_consents','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_certificate'],
+        secondary:['portal_documents','portal_docs_portalpin','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid','policies']
       },
       {
         id:'finance',

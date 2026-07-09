@@ -1,5 +1,6 @@
 /**
- * Admin — parent photo/marketing + medication-at-centre consents.
+ * Admin — parent photo/marketing, medication, emergency, off-site/transport consents.
+ * Annual renewal: signed answers older than 365 days count as pending.
  */
 (function (global) {
   'use strict';
@@ -85,27 +86,56 @@
   }
 
   function photoLabel(e) {
-    if (!e.photo_done) return { text: 'Pending', tone: 'pend' };
+    if (!e.photo_done) {
+      return { text: e.renewal_needed ? 'Renew' : 'Pending', tone: 'pend' };
+    }
     if (e.photo_consent === 'yes') return { text: 'Marketing OK', tone: 'ok' };
     return { text: 'Family only', tone: 'info' };
   }
 
   function medLabel(e) {
-    if (!e.medication_done) return { text: 'Pending', tone: 'pend' };
+    if (!e.medication_done) {
+      return { text: e.renewal_needed ? 'Renew' : 'Pending', tone: 'pend' };
+    }
     if (e.medication_at_centre_needed === 'yes') return { text: 'Meds at centre', tone: 'warn' };
     return { text: 'No meds', tone: 'ok' };
   }
 
   function emergencyLabel(e) {
-    if (!e.emergency_done) return { text: 'Pending', tone: 'pend' };
+    if (!e.emergency_done) {
+      return { text: e.renewal_needed ? 'Renew' : 'Pending', tone: 'pend' };
+    }
     if (e.emergency_treatment_consent === 'yes') return { text: 'Treat OK', tone: 'ok' };
     return { text: 'Wait for carer', tone: 'info' };
+  }
+
+  function yn(v) {
+    if (v === 'yes') return 'Yes';
+    if (v === 'no') return 'No';
+    return '—';
+  }
+
+  function offsiteLabel(e) {
+    if (!e.offsite_done) {
+      return { text: e.renewal_needed ? 'Renew' : 'Pending', tone: 'pend' };
+    }
+    return {
+      text:
+        'Walk ' +
+        yn(e.community_walk_consent) +
+        ' · PT ' +
+        yn(e.public_transport_consent) +
+        ' · Taxi ' +
+        yn(e.taxi_home_transport_consent),
+      tone: 'ok'
+    };
   }
 
   function rowHtml(e) {
     var photo = photoLabel(e);
     var med = medLabel(e);
     var emergency = emergencyLabel(e);
+    var offsite = offsiteLabel(e);
     var medDetails =
       e.medication_at_centre_needed === 'yes' && e.medication_at_centre_details
         ? '<div class="muted" style="margin-top:4px;font-size:12px;max-width:18rem;overflow-wrap:break-word">' +
@@ -129,13 +159,16 @@
           esc(e.parent_display) +
           '</div>'
         : '') +
+      (e.renewal_needed
+        ? '<div style="margin-top:4px"><span class="chip chip--pend">Annual renewal</span></div>'
+        : '') +
       '</td>' +
       '<td><span class="chip chip--' +
       photo.tone +
       '">' +
       esc(photo.text) +
       '</span>' +
-      (e.photo_done
+      (e.photo_consent_signed_at
         ? '<div class="muted" style="margin-top:4px;font-size:12px;white-space:nowrap">' +
           esc(formatDate(e.photo_consent_signed_at)) +
           (e.photo_consent_signed_by_name ? ' · ' + esc(e.photo_consent_signed_by_name) : '') +
@@ -148,7 +181,7 @@
       esc(med.text) +
       '</span>' +
       medDetails +
-      (e.medication_done
+      (e.medication_at_centre_signed_at
         ? '<div class="muted" style="margin-top:4px;font-size:12px;white-space:nowrap">' +
           esc(formatDate(e.medication_at_centre_signed_at)) +
           (e.medication_at_centre_signed_by_name
@@ -163,9 +196,20 @@
       esc(emergency.text) +
       '</span>' +
       emergencyContact +
-      (e.emergency_done
+      (e.emergency_treatment_signed_at
         ? '<div class="muted" style="margin-top:4px;font-size:12px;white-space:nowrap">' +
           esc(formatDate(e.emergency_treatment_signed_at)) +
+          '</div>'
+        : '') +
+      '</td>' +
+      '<td><span class="chip chip--' +
+      offsite.tone +
+      '" style="max-width:14rem;overflow-wrap:break-word;white-space:normal">' +
+      esc(offsite.text) +
+      '</span>' +
+      (e.offsite_transport_signed_at
+        ? '<div class="muted" style="margin-top:4px;font-size:12px;white-space:nowrap">' +
+          esc(formatDate(e.offsite_transport_signed_at)) +
           '</div>'
         : '') +
       '</td>' +
@@ -182,7 +226,7 @@
     }
     return (
       '<div style="overflow:auto"><table class="tbl tbl--center tbl--dense"><thead><tr>' +
-      '<th>Participant</th><th>Photo / marketing</th><th>Medication</th><th>Emergency</th><th>Updated</th>' +
+      '<th>Participant</th><th>Photo / marketing</th><th>Medication</th><th>Emergency</th><th>Travel</th><th>Updated</th>' +
       '</tr></thead><tbody>' +
       entries.map(rowHtml).join('') +
       '</tbody></table></div>'
@@ -215,9 +259,11 @@
         String(state.meta.medication_pending || 0) +
         ' meds · ' +
         String(state.meta.emergency_pending || 0) +
-        ' emergency pending · ' +
-        String(state.meta.photo_yes || 0) +
-        ' marketing OK';
+        ' emergency · ' +
+        String(state.meta.offsite_pending || 0) +
+        ' travel pending · ' +
+        String(state.meta.renewal_needed || 0) +
+        ' renew';
     }
     hostEl.innerHTML = tableHtml(state.entries);
   }
@@ -225,17 +271,19 @@
   function viewHtml() {
     return (
       '<h1 class="page-title">Parent consents</h1>' +
-      '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Photo consent is for <strong>website / marketing / training / research</strong> only — portal progress photos do not need this. Also tracks medication at the centre and emergency treatment / contacts.</p>' +
+      '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Photo consent is for <strong>website / marketing / training / research</strong> only — portal progress photos do not need this. Also tracks medication, emergency treatment, and off-site travel (walk / public transport / taxi with PA). Consents expire after <strong>12 months</strong>.</p>' +
       '<div class="card" style="margin-bottom:14px">' +
       '<div class="card-h"><h3>Consent status</h3>' +
       '<span class="chip chip--pend" id="portalParentConsentsMeta">…</span></div>' +
       '<div class="card-pad">' +
       '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sm" data-consents-filter="pending">Pending</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="renewal">Annual renewal</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="photo_yes">Marketing OK</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="photo_no">Family only</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="med_yes">Meds at centre</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="emergency_pending">Emergency pending</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="offsite_pending">Travel pending</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="complete">Complete</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-consents-filter="all">All</button>' +
       '<input id="portalParentConsentsSearch" type="search" placeholder="Search name…" style="min-width:10rem;max-width:100%;flex:1 1 12rem;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit" />' +

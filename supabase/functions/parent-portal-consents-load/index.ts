@@ -1,7 +1,8 @@
 // @ts-nocheck — Edge Function (Deno).
 //
 // parent-portal-consents-load
-// Load photo + medication + emergency consents for a linked participant.
+// Load photo + medication + emergency + off-site/transport consents.
+// Annual renewal: signed answers older than 365 days count as pending.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
@@ -18,6 +19,23 @@ function json(status: number, body: Record<string, unknown>) {
   });
 }
 
+/** Consents must be re-signed at least once per year. */
+const CONSENT_VALID_MS = 365 * 24 * 60 * 60 * 1000;
+
+function isFresh(signedAt: string | null | undefined): boolean {
+  if (!signedAt) return false;
+  const t = Date.parse(String(signedAt));
+  if (!Number.isFinite(t)) return false;
+  return Date.now() - t < CONSENT_VALID_MS;
+}
+
+function expiresAtIso(signedAt: string | null | undefined): string | null {
+  if (!signedAt) return null;
+  const t = Date.parse(String(signedAt));
+  if (!Number.isFinite(t)) return null;
+  return new Date(t + CONSENT_VALID_MS).toISOString();
+}
+
 const EMPTY = {
   photo_consent: "unknown",
   photo_consent_signed_at: null as string | null,
@@ -31,23 +49,68 @@ const EMPTY = {
   emergency_treatment_signed_by_name: "",
   emergency_contact_name: "",
   emergency_contact_phone: "",
+  community_walk_consent: "unknown",
+  public_transport_consent: "unknown",
+  taxi_home_transport_consent: "unknown",
+  offsite_transport_signed_at: null as string | null,
+  offsite_transport_signed_by_name: "",
   updated_at: null as string | null,
 };
 
 function summarize(c: typeof EMPTY) {
-  const photoDone = c.photo_consent !== "unknown" && !!c.photo_consent_signed_at;
+  const photoDone = c.photo_consent !== "unknown" && isFresh(c.photo_consent_signed_at);
   const medDone =
-    c.medication_at_centre_needed !== "unknown" && !!c.medication_at_centre_signed_at;
+    c.medication_at_centre_needed !== "unknown" && isFresh(c.medication_at_centre_signed_at);
   const emergencyDone =
     c.emergency_treatment_consent !== "unknown" &&
-    !!c.emergency_treatment_signed_at &&
+    isFresh(c.emergency_treatment_signed_at) &&
     !!clean(c.emergency_contact_name, 120) &&
     !!clean(c.emergency_contact_phone, 40);
+  const offsiteDone =
+    c.community_walk_consent !== "unknown" &&
+    c.public_transport_consent !== "unknown" &&
+    c.taxi_home_transport_consent !== "unknown" &&
+    isFresh(c.offsite_transport_signed_at);
+
+  const photoHadAnswer = c.photo_consent !== "unknown" && !!c.photo_consent_signed_at;
+  const medHadAnswer =
+    c.medication_at_centre_needed !== "unknown" && !!c.medication_at_centre_signed_at;
+  const emergencyHadAnswer =
+    c.emergency_treatment_consent !== "unknown" && !!c.emergency_treatment_signed_at;
+  const offsiteHadAnswer =
+    c.community_walk_consent !== "unknown" &&
+    c.public_transport_consent !== "unknown" &&
+    c.taxi_home_transport_consent !== "unknown" &&
+    !!c.offsite_transport_signed_at;
+
+  const renewalNeeded =
+    (photoHadAnswer && !photoDone) ||
+    (medHadAnswer && !medDone) ||
+    (emergencyHadAnswer && !emergencyDone) ||
+    (offsiteHadAnswer && !offsiteDone);
+
+  const expiryCandidates = [
+    expiresAtIso(c.photo_consent_signed_at),
+    expiresAtIso(c.medication_at_centre_signed_at),
+    expiresAtIso(c.emergency_treatment_signed_at),
+    expiresAtIso(c.offsite_transport_signed_at),
+  ].filter(Boolean) as string[];
+  expiryCandidates.sort();
+  const earliestExpiry = expiryCandidates.length ? expiryCandidates[0] : null;
+
   return {
     photo_done: photoDone,
     medication_done: medDone,
     emergency_done: emergencyDone,
-    pending_count: (photoDone ? 0 : 1) + (medDone ? 0 : 1) + (emergencyDone ? 0 : 1),
+    offsite_done: offsiteDone,
+    pending_count:
+      (photoDone ? 0 : 1) +
+      (medDone ? 0 : 1) +
+      (emergencyDone ? 0 : 1) +
+      (offsiteDone ? 0 : 1),
+    renewal_needed: renewalNeeded,
+    valid_until: earliestExpiry,
+    validity_days: 365,
   };
 }
 
@@ -95,7 +158,7 @@ Deno.serve(async (req) => {
   const { data: row, error } = await supabase
     .from("portal_participant_parent_consents")
     .select(
-      "photo_consent, photo_consent_signed_at, photo_consent_signed_by_name, medication_at_centre_needed, medication_at_centre_details, medication_at_centre_signed_at, medication_at_centre_signed_by_name, emergency_treatment_consent, emergency_treatment_signed_at, emergency_treatment_signed_by_name, emergency_contact_name, emergency_contact_phone, updated_at",
+      "photo_consent, photo_consent_signed_at, photo_consent_signed_by_name, medication_at_centre_needed, medication_at_centre_details, medication_at_centre_signed_at, medication_at_centre_signed_by_name, emergency_treatment_consent, emergency_treatment_signed_at, emergency_treatment_signed_by_name, emergency_contact_name, emergency_contact_phone, community_walk_consent, public_transport_consent, taxi_home_transport_consent, offsite_transport_signed_at, offsite_transport_signed_by_name, updated_at",
     )
     .eq("contact_id", contactId)
     .maybeSingle();
@@ -125,6 +188,13 @@ Deno.serve(async (req) => {
         emergency_treatment_signed_by_name: clean(row.emergency_treatment_signed_by_name, 120),
         emergency_contact_name: clean(row.emergency_contact_name, 120),
         emergency_contact_phone: clean(row.emergency_contact_phone, 40),
+        community_walk_consent: clean(row.community_walk_consent, 40) || "unknown",
+        public_transport_consent: clean(row.public_transport_consent, 40) || "unknown",
+        taxi_home_transport_consent: clean(row.taxi_home_transport_consent, 40) || "unknown",
+        offsite_transport_signed_at: row.offsite_transport_signed_at
+          ? String(row.offsite_transport_signed_at)
+          : null,
+        offsite_transport_signed_by_name: clean(row.offsite_transport_signed_by_name, 120),
         updated_at: row.updated_at ? String(row.updated_at) : null,
       }
     : { ...EMPTY };

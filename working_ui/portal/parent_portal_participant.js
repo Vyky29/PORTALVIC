@@ -902,7 +902,8 @@
         extraClass:
           " pp-pax-info-btn--consents" +
           (consentPending > 0 ? " pp-pax-info-btn--has-unread" : ""),
-        subtitle: consentPending > 0 ? consentPending + " pending" : "Photos, meds & emergency",
+        subtitle:
+          consentPending > 0 ? consentPending + " pending" : "Photos, meds, emergency & travel",
         unreadBadge: consentBadge,
       }) +
       infoBtnHtml("balance", "Credits & refunds", balanceIcon, {
@@ -3019,6 +3020,26 @@
         '<svg class="pp-consent-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>'
       );
     }
+    if (kind === "travel") {
+      return (
+        '<svg class="pp-consent-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z"/></svg>'
+      );
+    }
+    if (kind === "walk") {
+      return (
+        '<svg class="pp-consent-use__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="2"/><path d="M10 22l2-7 2 7"/><path d="M8 10l4 2 4-2"/><path d="M9 14l-2 3"/><path d="M15 14l2 3"/></svg>'
+      );
+    }
+    if (kind === "bus") {
+      return (
+        '<svg class="pp-consent-use__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="14" rx="2"/><path d="M4 10h16"/><path d="M8 17v2"/><path d="M16 17v2"/><circle cx="8" cy="14" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="14" r="1" fill="currentColor" stroke="none"/></svg>'
+      );
+    }
+    if (kind === "taxi") {
+      return (
+        '<svg class="pp-consent-use__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13l2-5a2 2 0 0 1 2-1h10a2 2 0 0 1 2 1l2 5"/><path d="M5 13v4"/><path d="M19 13v4"/><path d="M3 17h18"/><circle cx="7.5" cy="17" r="1.5"/><circle cx="16.5" cy="17" r="1.5"/><path d="M10 7h4"/></svg>'
+      );
+    }
     if (kind === "phone") {
       return (
         '<svg class="pp-consent-choice__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.77.62 2.6a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.48-1.19a2 2 0 0 1 2.11-.45c.83.29 1.7.5 2.6.62A2 2 0 0 1 22 16.92z"/></svg>'
@@ -3058,9 +3079,9 @@
       data,
       "consents",
       '<h3 class="pp-pax-subview-title">Consents</h3>' +
-        '<p class="pp-muted pp-pax-subview-note">Marketing photos, medication at the centre, and emergency treatment for ' +
+        '<p class="pp-muted pp-pax-subview-note">Marketing photos, medication, emergency treatment, and travel for ' +
         esc(firstNameOf(data)) +
-        ".</p>" +
+        ". Consents are reviewed every year.</p>" +
         '<div id="ppConsentsNotice" class="pp-notice" hidden></div>' +
         '<div id="ppConsentsHost"><p class="pp-muted">Loading…</p></div>',
     );
@@ -3104,14 +3125,34 @@
       var emergencyWhen = formatConsentWhen(consents.emergency_treatment_signed_at);
       var emergencyName = String(consents.emergency_contact_name || "");
       var emergencyPhone = String(consents.emergency_contact_phone || "");
+      var walkRaw = String(consents.community_walk_consent || "unknown");
+      var walk = walkRaw === "yes" || walkRaw === "no" ? walkRaw : "";
+      var publicRaw = String(consents.public_transport_consent || "unknown");
+      var publicTransport = publicRaw === "yes" || publicRaw === "no" ? publicRaw : "";
+      var taxiRaw = String(consents.taxi_home_transport_consent || "unknown");
+      var taxi = taxiRaw === "yes" || taxiRaw === "no" ? taxiRaw : "";
+      var offsiteSigner = String(consents.offsite_transport_signed_by_name || parentName || "");
+      var offsiteWhen = formatConsentWhen(consents.offsite_transport_signed_at);
       var photoDone = !!summary.photo_done;
       var medDone = !!summary.medication_done;
       var emergencyDone = !!summary.emergency_done;
+      var offsiteDone = !!summary.offsite_done;
+      var renewalNeeded = !!summary.renewal_needed;
+      var validUntil = formatConsentWhen(summary.valid_until);
       if (typeof opts.setConsentsPendingCount === "function") {
         opts.setConsentsPendingCount(summary.pending_count || 0);
       }
 
+      var renewalBanner = renewalNeeded
+        ? '<div class="pp-consent-renewal" role="status">Annual renewal needed — please review and re-sign the consents below.</div>'
+        : validUntil
+          ? '<p class="pp-muted pp-consent-valid-until">Current consents valid until ' +
+            esc(validUntil) +
+            " (renew each year).</p>"
+          : "";
+
       formHost.innerHTML =
+        renewalBanner +
         '<form class="pp-consent-form" id="ppConsentForm" novalidate>' +
         '<section class="pp-consent-card pp-consent-card--photo" aria-labelledby="ppConsentPhotoTitle">' +
         '<div class="pp-consent-card__head">' +
@@ -3254,6 +3295,100 @@
           ? '<p class="pp-muted pp-consent-signed">Last signed ' + esc(emergencyWhen) + "</p>"
           : "") +
         "</section>" +
+        '<section class="pp-consent-card pp-consent-card--travel" aria-labelledby="ppConsentTravelTitle">' +
+        '<div class="pp-consent-card__head">' +
+        '<div class="pp-consent-card__title-row">' +
+        '<span class="pp-consent-ico-wrap pp-consent-ico-wrap--travel" aria-hidden="true">' +
+        consentSvg("travel") +
+        "</span>" +
+        '<h4 id="ppConsentTravelTitle" class="pp-consent-card__title">Off-site &amp; transport</h4>' +
+        "</div>" +
+        consentStatusChip(offsiteDone) +
+        "</div>" +
+        '<p class="pp-muted pp-consent-card__hint">Answer each option. Staff only use the types you allow for community activities and travel.</p>' +
+        '<ul class="pp-consent-uses pp-consent-uses--travel" aria-hidden="true">' +
+        '<li class="pp-consent-use">' +
+        consentSvg("walk") +
+        "<span>Community walk</span></li>" +
+        '<li class="pp-consent-use">' +
+        consentSvg("bus") +
+        "<span>Train / metro / bus</span></li>" +
+        '<li class="pp-consent-use">' +
+        consentSvg("taxi") +
+        "<span>Taxi with PA</span></li>" +
+        "</ul>" +
+        '<div class="pp-consent-travel-block">' +
+        '<p class="pp-consent-travel-label">Community walk (on foot)</p>' +
+        '<fieldset class="pp-consent-choices">' +
+        '<legend class="pp-sr-only">Community walk consent</legend>' +
+        consentChoiceHtml(
+          "community_walk_consent",
+          "yes",
+          walk === "yes",
+          "check",
+          "Yes — walking outings",
+          "Short community trips on foot with staff",
+        ) +
+        consentChoiceHtml(
+          "community_walk_consent",
+          "no",
+          walk === "no",
+          "block",
+          "No walks",
+          "Stay at the centre for community activities",
+        ) +
+        "</fieldset></div>" +
+        '<div class="pp-consent-travel-block">' +
+        '<p class="pp-consent-travel-label">Public transport (train, metro, bus)</p>' +
+        '<fieldset class="pp-consent-choices">' +
+        '<legend class="pp-sr-only">Public transport consent</legend>' +
+        consentChoiceHtml(
+          "public_transport_consent",
+          "yes",
+          publicTransport === "yes",
+          "check",
+          "Yes — public transport",
+          "Accompanied trips by train, metro or bus",
+        ) +
+        consentChoiceHtml(
+          "public_transport_consent",
+          "no",
+          publicTransport === "no",
+          "block",
+          "No public transport",
+          "Do not use train, metro or bus",
+        ) +
+        "</fieldset></div>" +
+        '<div class="pp-consent-travel-block">' +
+        '<p class="pp-consent-travel-label">Taxi home ↔ centre (with their PA)</p>' +
+        '<p class="pp-muted pp-consent-card__hint" style="margin-top:0">Taxi booked for travel between home and the centre with their personal assistant (not our staff).</p>' +
+        '<fieldset class="pp-consent-choices">' +
+        '<legend class="pp-sr-only">Taxi home transport consent</legend>' +
+        consentChoiceHtml(
+          "taxi_home_transport_consent",
+          "yes",
+          taxi === "yes",
+          "check",
+          "Yes — taxi with PA",
+          "Home to centre (and return) by taxi with their assistant",
+        ) +
+        consentChoiceHtml(
+          "taxi_home_transport_consent",
+          "no",
+          taxi === "no",
+          "block",
+          "No taxi arrangement",
+          "Do not arrange taxi travel with their PA",
+        ) +
+        "</fieldset></div>" +
+        '<div class="pp-field"><label for="ppConsentOffsiteSigner">Signed by</label>' +
+        '<input id="ppConsentOffsiteSigner" name="offsite_transport_signed_by_name" type="text" autocomplete="name" required value="' +
+        esc(offsiteSigner) +
+        '"></div>' +
+        (offsiteWhen
+          ? '<p class="pp-muted pp-consent-signed">Last signed ' + esc(offsiteWhen) + "</p>"
+          : "") +
+        "</section>" +
         '<button type="submit" class="pp-btn pp-btn--primary" id="ppConsentSaveBtn">Save &amp; sign consents</button>' +
         "</form>";
 
@@ -3290,6 +3425,9 @@
           var photoEl = form.querySelector('input[name="photo_consent"]:checked');
           var medEl = form.querySelector('input[name="medication_at_centre_needed"]:checked');
           var emergencyEl = form.querySelector('input[name="emergency_treatment_consent"]:checked');
+          var walkEl = form.querySelector('input[name="community_walk_consent"]:checked');
+          var publicEl = form.querySelector('input[name="public_transport_consent"]:checked');
+          var taxiEl = form.querySelector('input[name="taxi_home_transport_consent"]:checked');
           var photoName = String((form.querySelector("#ppConsentPhotoSigner") || {}).value || "").trim();
           var medName = String((form.querySelector("#ppConsentMedSigner") || {}).value || "").trim();
           var medText = String((form.querySelector("#ppConsentMedDetails") || {}).value || "").trim();
@@ -3301,6 +3439,9 @@
           ).trim();
           var emergencySignerVal = String(
             (form.querySelector("#ppConsentEmergencySigner") || {}).value || "",
+          ).trim();
+          var offsiteSignerVal = String(
+            (form.querySelector("#ppConsentOffsiteSigner") || {}).value || "",
           ).trim();
           if (!photoEl) {
             showNotice("error", "Choose a photo consent option.");
@@ -3314,7 +3455,11 @@
             showNotice("error", "Choose an emergency treatment option.");
             return;
           }
-          if (!photoName || !medName || !emergencySignerVal) {
+          if (!walkEl || !publicEl || !taxiEl) {
+            showNotice("error", "Answer each off-site / transport option.");
+            return;
+          }
+          if (!photoName || !medName || !emergencySignerVal || !offsiteSignerVal) {
             showNotice("error", "Enter the name of the person signing.");
             return;
           }
@@ -3342,15 +3487,24 @@
               emergency_treatment_signed_by_name: emergencySignerVal,
               emergency_contact_name: emergencyNameVal,
               emergency_contact_phone: emergencyPhoneVal,
+              community_walk_consent: walkEl.value,
+              public_transport_consent: publicEl.value,
+              taxi_home_transport_consent: taxiEl.value,
+              offsite_transport_signed_by_name: offsiteSignerVal,
             })
             .then(function (j) {
-              showNotice("success", "Consents saved. Thank you.");
+              showNotice("success", "Consents saved. Thank you — valid for one year.");
               if (typeof opts.setConsentsPendingCount === "function") {
                 opts.setConsentsPendingCount((j.summary && j.summary.pending_count) || 0);
               }
               paint(
                 j.consents || {},
-                j.summary || { photo_done: true, medication_done: true, emergency_done: true },
+                j.summary || {
+                  photo_done: true,
+                  medication_done: true,
+                  emergency_done: true,
+                  offsite_done: true,
+                },
               );
             })
             .catch(function (err) {
@@ -3361,6 +3515,13 @@
               if (code === "emergency_consent_required") msg = "Choose an emergency treatment option.";
               if (code === "emergency_contact_name_required" || code === "emergency_contact_phone_required") {
                 msg = "Add an emergency contact name and phone.";
+              }
+              if (
+                code === "community_walk_consent_required" ||
+                code === "public_transport_consent_required" ||
+                code === "taxi_home_transport_consent_required"
+              ) {
+                msg = "Answer each off-site / transport option.";
               }
               showNotice("error", msg);
             })

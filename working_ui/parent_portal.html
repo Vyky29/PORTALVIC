@@ -1422,6 +1422,45 @@
       border-color: #fecaca;
       background: linear-gradient(180deg, #fff1f2 0%, #fff 48%);
     }
+    .pp-consent-card--travel {
+      border-color: #93c5fd;
+      background: linear-gradient(180deg, #eff6ff 0%, #fff 48%);
+    }
+    .pp-consent-renewal {
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #fcd34d;
+      background: #fffbeb;
+      color: #92400e;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.4;
+      overflow-wrap: break-word;
+    }
+    .pp-consent-valid-until {
+      margin: 0 0 12px;
+      font-size: 12px;
+    }
+    .pp-consent-travel-block {
+      margin: 0 0 12px;
+      min-width: 0;
+    }
+    .pp-consent-travel-label {
+      margin: 0 0 6px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
+    .pp-consent-uses--travel {
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 420px) {
+      .pp-consent-uses--travel {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+    }
     .pp-consent-card__head {
       display: flex;
       align-items: flex-start;
@@ -1457,6 +1496,10 @@
     .pp-consent-ico-wrap--emergency {
       background: rgba(220, 38, 38, 0.12);
       color: #b91c1c;
+    }
+    .pp-consent-ico-wrap--travel {
+      background: rgba(37, 99, 235, 0.12);
+      color: #1d4ed8;
     }
     .pp-consent-ico {
       width: 20px;
@@ -2976,8 +3019,8 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260709-overview-by-service"></script>
   <script src="/portal/parent_portal_team.js?v=20260709-msg-photo-team"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260709-my-cal-polish"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260709-emergency-consent"></script>
-  <script src="/portal/parent_portal_app.js?v=20260709-emergency-consent"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260709-offsite-annual"></script>
+  <script src="/portal/parent_portal_app.js?v=20260709-offsite-annual"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {

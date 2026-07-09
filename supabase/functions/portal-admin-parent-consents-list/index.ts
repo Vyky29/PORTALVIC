@@ -1,7 +1,7 @@
 // @ts-nocheck — Edge Function (Deno).
 //
 // portal-admin-parent-consents-list
-// Admin: photo marketing + medication + emergency consents per participant.
+// Admin: photo, medication, emergency, off-site/transport; annual freshness.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
@@ -12,6 +12,15 @@ import {
 
 function clean(v: unknown, max = 200): string {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+const CONSENT_VALID_MS = 365 * 24 * 60 * 60 * 1000;
+
+function isFresh(signedAt: string | null | undefined): boolean {
+  if (!signedAt) return false;
+  const t = Date.parse(String(signedAt));
+  if (!Number.isFinite(t)) return false;
+  return Date.now() - t < CONSENT_VALID_MS;
 }
 
 type ConsentRow = {
@@ -28,6 +37,11 @@ type ConsentRow = {
   emergency_treatment_signed_by_name?: string;
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
+  community_walk_consent?: string;
+  public_transport_consent?: string;
+  taxi_home_transport_consent?: string;
+  offsite_transport_signed_at?: string | null;
+  offsite_transport_signed_by_name?: string;
   updated_at: string | null;
 };
 
@@ -77,7 +91,7 @@ Deno.serve(async (req) => {
   const { data: consentRows, error: cErr } = await admin
     .from("portal_participant_parent_consents")
     .select(
-      "contact_id, photo_consent, photo_consent_signed_at, photo_consent_signed_by_name, medication_at_centre_needed, medication_at_centre_details, medication_at_centre_signed_at, medication_at_centre_signed_by_name, emergency_treatment_consent, emergency_treatment_signed_at, emergency_treatment_signed_by_name, emergency_contact_name, emergency_contact_phone, updated_at",
+      "contact_id, photo_consent, photo_consent_signed_at, photo_consent_signed_by_name, medication_at_centre_needed, medication_at_centre_details, medication_at_centre_signed_at, medication_at_centre_signed_by_name, emergency_treatment_consent, emergency_treatment_signed_at, emergency_treatment_signed_by_name, emergency_contact_name, emergency_contact_phone, community_walk_consent, public_transport_consent, taxi_home_transport_consent, offsite_transport_signed_at, offsite_transport_signed_by_name, updated_at",
     );
 
   if (cErr) {
@@ -123,6 +137,8 @@ Deno.serve(async (req) => {
   let emergencyPending = 0;
   let emergencyYes = 0;
   let emergencyNo = 0;
+  let offsitePending = 0;
+  let renewalNeeded = 0;
 
   const entries = (participants || []).map((p) => {
     const contactId = clean(p.contact_id, 120);
@@ -130,15 +146,35 @@ Deno.serve(async (req) => {
     const photo = clean(c?.photo_consent, 40) || "unknown";
     const med = clean(c?.medication_at_centre_needed, 40) || "unknown";
     const emergency = clean(c?.emergency_treatment_consent, 40) || "unknown";
+    const walk = clean(c?.community_walk_consent, 40) || "unknown";
+    const publicTransport = clean(c?.public_transport_consent, 40) || "unknown";
+    const taxi = clean(c?.taxi_home_transport_consent, 40) || "unknown";
     const emergencyName = clean(c?.emergency_contact_name, 120);
     const emergencyPhone = clean(c?.emergency_contact_phone, 40);
-    const photoDone = photo !== "unknown" && !!c?.photo_consent_signed_at;
-    const medDone = med !== "unknown" && !!c?.medication_at_centre_signed_at;
+
+    const photoHad = photo !== "unknown" && !!c?.photo_consent_signed_at;
+    const medHad = med !== "unknown" && !!c?.medication_at_centre_signed_at;
+    const emergencyHad = emergency !== "unknown" && !!c?.emergency_treatment_signed_at;
+    const offsiteHad =
+      walk !== "unknown" &&
+      publicTransport !== "unknown" &&
+      taxi !== "unknown" &&
+      !!c?.offsite_transport_signed_at;
+
+    const photoDone = photoHad && isFresh(c?.photo_consent_signed_at);
+    const medDone = medHad && isFresh(c?.medication_at_centre_signed_at);
     const emergencyDone =
-      emergency !== "unknown" &&
-      !!c?.emergency_treatment_signed_at &&
+      emergencyHad &&
+      isFresh(c?.emergency_treatment_signed_at) &&
       !!emergencyName &&
       !!emergencyPhone;
+    const offsiteDone = offsiteHad && isFresh(c?.offsite_transport_signed_at);
+
+    const needsRenewal =
+      (photoHad && !photoDone) ||
+      (medHad && !medDone) ||
+      (emergencyHad && !emergencyDone) ||
+      (offsiteHad && !offsiteDone);
 
     if (!photoDone) photoPending += 1;
     else if (photo === "yes") photoYes += 1;
@@ -151,6 +187,9 @@ Deno.serve(async (req) => {
     if (!emergencyDone) emergencyPending += 1;
     else if (emergency === "yes") emergencyYes += 1;
     else emergencyNo += 1;
+
+    if (!offsiteDone) offsitePending += 1;
+    if (needsRenewal) renewalNeeded += 1;
 
     const display =
       clean(p.display_name, 120) ||
@@ -178,7 +217,18 @@ Deno.serve(async (req) => {
       emergency_contact_name: emergencyName,
       emergency_contact_phone: emergencyPhone,
       emergency_done: emergencyDone,
-      pending_count: (photoDone ? 0 : 1) + (medDone ? 0 : 1) + (emergencyDone ? 0 : 1),
+      community_walk_consent: walk,
+      public_transport_consent: publicTransport,
+      taxi_home_transport_consent: taxi,
+      offsite_transport_signed_at: c?.offsite_transport_signed_at || null,
+      offsite_transport_signed_by_name: clean(c?.offsite_transport_signed_by_name, 120),
+      offsite_done: offsiteDone,
+      renewal_needed: needsRenewal,
+      pending_count:
+        (photoDone ? 0 : 1) +
+        (medDone ? 0 : 1) +
+        (emergencyDone ? 0 : 1) +
+        (offsiteDone ? 0 : 1),
       updated_at: c?.updated_at || null,
     };
   });
@@ -194,6 +244,10 @@ Deno.serve(async (req) => {
     filtered = entries.filter((e) => e.medication_done && e.medication_at_centre_needed === "yes");
   } else if (filter === "emergency_pending") {
     filtered = entries.filter((e) => !e.emergency_done);
+  } else if (filter === "offsite_pending") {
+    filtered = entries.filter((e) => !e.offsite_done);
+  } else if (filter === "renewal") {
+    filtered = entries.filter((e) => e.renewal_needed);
   } else if (filter === "complete") {
     filtered = entries.filter((e) => e.pending_count === 0);
   }
@@ -238,7 +292,10 @@ Deno.serve(async (req) => {
       emergency_pending: emergencyPending,
       emergency_yes: emergencyYes,
       emergency_no: emergencyNo,
+      offsite_pending: offsitePending,
+      renewal_needed: renewalNeeded,
       filter,
+      validity_days: 365,
     },
   });
 });
