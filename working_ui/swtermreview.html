@@ -71,6 +71,8 @@
       --green:#168a4a;
       --orange:#f4b740;
       --gold:#f4b740;
+      --purple:#6d5cae;
+      --purpleDeep:#5a4891;
     }
 
     *{ box-sizing:border-box; }
@@ -792,231 +794,291 @@
       }
     }
 
+    #cardAreas h2::before{
+      background:linear-gradient(180deg, var(--purpleDeep) 0%, var(--purple) 100%);
+    }
+
     /* ===== Core Development Areas ===== */
-    .areasGrid{
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-    }
-    .area[data-domain="engagement"]{ order:1; }
-    .area[data-domain="independence"]{ order:2; }
-    .area[data-domain="regulation"]{ order:3; }
-
-    .area{
+    .corePanel{
       border:1px solid rgba(11,18,32,0.12);
+      border-left:4px solid var(--purple);
       border-radius:18px;
-      padding:12px;
-      background:#fff;
       overflow:hidden;
-      text-align:center;
-      display:flex;
-      flex-wrap:wrap;
-      justify-content:center;
-      gap:12px;
-      align-items:start;
-    }
-    .areaHead,
-    .domainProgress,
-    .area > label{
-      flex:0 0 100%; /* keep header/progress/evidence full width */
-    }
-    .area > label{
-      text-align:left;
-      align-items:flex-start;
-    }
-    .areaHead{ margin-bottom:0; }
-    .areaName{
-      font-weight:900;
-      font-size:14px;
-      margin:0;
-      text-transform:uppercase;
-      letter-spacing:0.2px;
-      text-align:center;
-    }
-    .areaDesc{
-      color:var(--muted);
-      font-size:13px;
-      margin:6px 0 0 0;
-      font-weight:800;
-      line-height:1.25;
-      text-align:center;
+      background:#fff;
+      box-shadow:0 8px 20px rgba(11,18,32,0.05);
     }
 
-    .domainProgress{
-      border:1px solid rgba(11,18,32,0.12);
-      border-radius:16px;
-      padding:12px;
-      background:rgba(255,255,255,0.92);
-      margin:0;
+    .coreSection{
+      border-bottom:1px solid rgba(11,18,32,0.07);
     }
+    .coreSection:last-child{ border-bottom:none; }
+
+    .coreSectionHead{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:14px 20px;
+      border-bottom:1px solid rgba(11,18,32,0.06);
+      background:rgba(109,92,174,0.16);
+    }
+
+    .coreTitle{
+      margin:0;
+      flex:1;
+      min-width:0;
+      font-size:13px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:0.25px;
+      color:rgba(11,18,32,0.88);
+      line-height:1.25;
+    }
+
+    .coreSectionMeta{
+      flex:0 0 auto;
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:0.15px;
+      text-transform:uppercase;
+      color:var(--purpleDeep);
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(109,92,174,0.22);
+      background:rgba(255,255,255,0.72);
+    }
+
+    .coreDomainProgress{
+      padding:14px 20px;
+      border-bottom:1px solid rgba(11,18,32,0.06);
+      background:rgba(109,92,174,0.06);
+    }
+
     .domainTop{
       display:flex;
-      gap:10px;
+      gap:12px;
       flex-wrap:wrap;
       align-items:center;
-      justify-content:center;
-      margin-bottom:8px;
+      justify-content:space-between;
+      margin-bottom:10px;
     }
     .domainTitle{
-      font-weight:900;
+      font-weight:800;
       font-size:12px;
       text-transform:uppercase;
       letter-spacing:0.2px;
-      color:rgba(11,18,32,0.78);
+      color:var(--purpleDeep);
     }
     .domainCount{
       font-size:12px;
       color:var(--muted);
-      font-weight:800;
+      font-weight:700;
       margin-top:4px;
     }
     .domainBadge{
       display:inline-flex;
       align-items:center;
       gap:10px;
-      border:1px solid rgba(11,18,32,0.12);
+      border:1px solid rgba(109,92,174,0.18);
       border-radius:999px;
-      padding:7px 10px;
+      padding:7px 12px;
       background:#fff;
-      font-weight:900;
+      font-weight:800;
       font-size:12px;
-      min-width:270px;
+      min-width:220px;
       justify-content:center;
       text-align:center;
     }
     .domainBadge .stars{
       letter-spacing:1px;
       font-size:12px;
-      color:var(--gold);
+      color:var(--purple);
     }
     .domainBar{
       position:relative;
-      height:14px;
+      height:12px;
       border-radius:999px;
       overflow:hidden;
       background:#f2f4f7;
-      border:1px solid rgba(11,18,32,0.12);
+      border:1px solid rgba(11,18,32,0.10);
     }
     .domainFill{
       position:absolute;
       left:0; top:0;
       height:100%;
       width:0%;
-      background:linear-gradient(90deg, rgba(137,181,193,0.35), rgba(45,132,179,0.95));
+      background:linear-gradient(90deg, rgba(109,92,174,0.35), rgba(109,92,174,0.95));
       transition:width .18s ease;
     }
 
-    .obsRow{
-      border:1px solid rgba(11,18,32,0.10);
-      border-radius:14px;
-      padding:10px 12px;
+    .coreItems{
+      padding:4px 0;
       background:#fff;
-      margin-bottom:0;
-      display:flex;
-      flex-direction:row;
-      align-items:center;
-      justify-content:flex-start;
-      gap:12px 16px;
-      flex-wrap:nowrap;
-      flex:1 1 100%;
-      width:100%;
-      max-width:100%;
-      min-width:0;
-      text-align:left;
     }
 
-    /* Stronger outer border per domain (neutral colour) */
-    .area[data-domain="engagement"],
-    .area[data-domain="independence"],
-    .area[data-domain="regulation"]{
-      border-width:2px;
-      border-color:rgba(11,18,32,0.12);
+    .obsRow{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      padding:14px 16px;
+      border-bottom:1px solid rgba(11,18,32,0.06);
+      background:transparent;
+      align-items:stretch;
+      margin:0;
+      border-radius:0;
+      border-left:none;
+      border-right:none;
+      border-top:none;
     }
-    .obsRow:last-child{ margin-bottom:0; }
+    .obsRow:last-child{ border-bottom:none; }
 
     .obsTitleLine{
-      flex:1 1 auto;
+      flex:1;
       min-width:0;
       margin:0;
-      font-size:13px;
-      font-weight:900;
+      font-size:14px;
+      font-weight:600;
       color:rgba(11,18,32,0.92);
-      line-height:1.35;
+      line-height:1.5;
       text-align:left;
     }
     .obsTitleLine span{
-      font-weight:600;
-      color:rgba(78,91,103,0.95);
+      font-weight:500;
+      color:var(--muted);
       display:inline;
       margin:0;
     }
 
+    @media (min-width:640px){
+      .obsRow{
+        flex-direction:row;
+        align-items:center;
+        gap:20px;
+        padding:14px 20px;
+      }
+    }
+
     .rsiGrid{
       display:flex;
-      flex-direction:row;
-      flex-wrap:nowrap;
-      align-items:stretch;
+      flex-shrink:0;
+      flex-wrap:wrap;
+      align-self:stretch;
+      width:100%;
       gap:8px;
-      flex:0 0 auto;
-      margin-left:auto;
     }
+    @media (min-width:640px){
+      .rsiGrid{
+        align-self:center;
+        flex-wrap:nowrap;
+        width:auto;
+        min-width:280px;
+        max-width:320px;
+        justify-content:flex-end;
+      }
+    }
+
     .rsiBtn{
       display:flex;
       align-items:center;
       justify-content:center;
+      flex:1 1 calc(33.333% - 6px);
+      min-width:0;
       text-align:center;
-      padding:8px 12px;
-      border-radius:14px;
+      padding:9px 12px;
       border:1px solid rgba(11,18,32,0.14);
+      border-radius:12px;
       background:#fff;
       cursor:pointer;
       user-select:none;
-      font-weight:900;
+      font-weight:700;
       font-size:11px;
-      text-transform:uppercase;
-      letter-spacing:0.2px;
-      transition:box-shadow .15s ease, border-color .15s ease, background .15s ease, transform .06s ease;
+      text-transform:none;
+      letter-spacing:0;
+      color:var(--muted);
+      box-shadow:0 1px 3px rgba(11,18,32,0.04);
+      transition:background .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .06s ease;
       min-height:38px;
-      flex:0 0 auto;
+      line-height:1.2;
       white-space:nowrap;
     }
-
-    /* Layout for obsRow: full-width rows; stack area column on narrow viewports */
-    @media (max-width:900px){
-      .area{
-        flex-direction:column;
-        flex-wrap:nowrap;
-        align-items:stretch;
-      }
-      .area .obsRow{
-        flex:0 0 auto;
-        width:100%;
-      }
-    }
-    @media (max-width:720px){
-      .obsRow{
-        flex-wrap:wrap;
-        align-items:flex-start;
-      }
-      .obsRow .rsiGrid{
-        margin-left:0;
-        width:100%;
-        justify-content:space-between;
-      }
-      .obsRow .rsiBtn{
-        flex:1 1 0;
-        min-width:0;
-        padding:8px 6px;
-        font-size:9px;
-        letter-spacing:0.06px;
-      }
-    }
     .rsiBtn input{ display:none; }
+    .rsiBtn:hover{
+      border-color:rgba(109,92,174,0.28);
+      color:var(--text);
+      box-shadow:0 4px 10px rgba(11,18,32,0.06);
+    }
     .rsiBtn:active{ transform:translateY(1px); }
     .rsiBtn.active{
-      border-color:rgba(45,132,179,0.45);
-      background:rgba(45,132,179,0.10);
-      box-shadow:0 10px 18px rgba(11,18,32,0.08);
+      border-color:var(--purpleDeep);
+      background:var(--purpleDeep);
+      color:#fff;
+      box-shadow:0 4px 12px rgba(109,92,174,0.28);
+    }
+
+    @media (max-width:639px){
+      .rsiGrid{ gap:8px; }
+      .rsiBtn{
+        flex:1 1 calc(33.333% - 6px);
+        font-size:10px;
+        padding:8px 6px;
+        min-height:36px;
+      }
+    }
+    @media (max-width:400px){
+      .rsiBtn{
+        font-size:9px;
+        padding:7px 4px;
+      }
+    }
+
+    .coreEvidence{
+      padding:16px 20px 18px;
+      border-top:1px dashed rgba(109,92,174,0.22);
+      background:rgba(109,92,174,0.04);
+    }
+    .coreEvidenceLabel{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      margin:0;
+      font-weight:700;
+    }
+    .coreEvidenceTitleRow{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .coreEvidenceTitle{
+      font-size:13px;
+      font-weight:800;
+      color:rgba(11,18,32,0.88);
+      text-transform:none;
+      letter-spacing:0;
+    }
+    .coreEvidenceOptionalTag{
+      display:inline-flex;
+      align-items:center;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:10px;
+      font-weight:800;
+      letter-spacing:0.12px;
+      text-transform:uppercase;
+      color:var(--purpleDeep);
+      background:rgba(255,255,255,0.85);
+      border:1px solid rgba(109,92,174,0.20);
+    }
+    .coreEvidenceHint{
+      margin:0;
+      font-size:12px;
+      font-weight:600;
+      font-style:italic;
+      color:var(--muted);
+      line-height:1.45;
+    }
+    .coreEvidence textarea{
+      background:#fff;
+      min-height:72px;
     }
 
     /* ===== Term decision ===== */
@@ -1562,165 +1624,17 @@
     <!-- 4 Core Development Areas -->
     <div class="card" id="cardAreas">
       <h2>4. Core development areas</h2>
-      <p class="note">Rate each item as Rarely, Sometimes, or Always. Progress fills automatically as you rate items.</p>
+      <p class="note">Rate each observation as Rarely, Sometimes, or Always across all three domains. Progress updates automatically as you complete the ratings.</p>
 
-      <div class="areasGrid">
-        <!-- Regulation -->
-        <div class="area" data-domain="regulation">
-          <div class="areaHead">
-            <p class="areaName">Regulation</p>
-            <p class="areaDesc">Observation Checklist. Tick what you observed this term.</p>
-          </div>
-
-          <div class="domainProgress" data-domain-progress="regulation">
-            <div class="domainTop">
-              <div>
-                <div class="domainTitle">Regulation progress</div>
-                <div class="domainCount" data-domain-count="regulation">0 of 5 rated</div>
-              </div>
-              <div class="domainBadge">
-                <span data-domain-label="regulation">Not set</span>
-                <span class="stars" data-domain-stars="regulation">☆☆☆☆☆</span>
-              </div>
-            </div>
-            <div class="domainBar" aria-label="Regulation progress bar">
-              <div class="domainFill" data-domain-fill="regulation"></div>
-            </div>
-          </div>
-
-          <div class="obsRow">
-            <p class="obsTitleLine">Emotional stability <span>(remains calm and able to continue the activity when faced with challenges)</span></p>
-            <div class="rsiGrid" data-rsi-domain="regulation">
-              <label class="rsiBtn"><input type="radio" name="reg_emotional" value="Rarely">Rarely</label>
-              <label class="rsiBtn"><input type="radio" name="reg_emotional" value="Sometimes">Sometimes</label>
-              <label class="rsiBtn"><input type="radio" name="reg_emotional" value="Always">Always</label>
-            </div>
-          </div>
-
-          <div class="obsRow">
-            <p class="obsTitleLine">Sensory tolerance <span>(tolerates water contact, movement, noise, or environmental changes)</span></p>
-            <div class="rsiGrid" data-rsi-domain="regulation">
-              <label class="rsiBtn"><input type="radio" name="reg_sensory" value="Rarely">Rarely</label>
-              <label class="rsiBtn"><input type="radio" name="reg_sensory" value="Sometimes">Sometimes</label>
-              <label class="rsiBtn"><input type="radio" name="reg_sensory" value="Always">Always</label>
-            </div>
-          </div>
-
-          <div class="obsRow">
-            <p class="obsTitleLine">Breath regulation <span>(manages breathing after effort, submersion, or sensory input)</span></p>
-            <div class="rsiGrid" data-rsi-domain="regulation">
-              <label class="rsiBtn"><input type="radio" name="reg_breath" value="Rarely">Rarely</label>
-              <label class="rsiBtn"><input type="radio" name="reg_breath" value="Sometimes">Sometimes</label>
-              <label class="rsiBtn"><input type="radio" name="reg_breath" value="Always">Always</label>
-            </div>
-          </div>
-
-          <div class="obsRow">
-            <p class="obsTitleLine">Recovery speed <span>(returns to participation after moments of hesitation or difficulty)</span></p>
-            <div class="rsiGrid" data-rsi-domain="regulation">
-              <label class="rsiBtn"><input type="radio" name="reg_recovery" value="Rarely">Rarely</label>
-              <label class="rsiBtn"><input type="radio" name="reg_recovery" value="Sometimes">Sometimes</label>
-              <label class="rsiBtn"><input type="radio" name="reg_recovery" value="Always">Always</label>
-            </div>
-          </div>
-
-          <div class="obsRow">
-            <p class="obsTitleLine">Consistency across session <span>(maintains regulation throughout different activities in the session)</span></p>
-            <div class="rsiGrid" data-rsi-domain="regulation">
-              <label class="rsiBtn"><input type="radio" name="reg_consistency" value="Rarely">Rarely</label>
-              <label class="rsiBtn"><input type="radio" name="reg_consistency" value="Sometimes">Sometimes</label>
-              <label class="rsiBtn"><input type="radio" name="reg_consistency" value="Always">Always</label>
-            </div>
-          </div>
-
-          <label style="margin-top:10px;">
-            Evidence this term
-            <textarea id="eviRegulation" placeholder="One or two lines, suitable for families"></textarea>
-          </label>
-        </div>
-
-        <!-- Independence -->
-        <div class="area" data-domain="independence">
-          <div class="areaHead">
-            <p class="areaName">Independence</p>
-            <p class="areaDesc">Observation Checklist. Tick what you observed this term.</p>
-          </div>
-
-          <div class="domainProgress" data-domain-progress="independence">
-            <div class="domainTop">
-              <div>
-                <div class="domainTitle">Independence progress</div>
-                <div class="domainCount" data-domain-count="independence">0 of 5 rated</div>
-              </div>
-              <div class="domainBadge">
-                <span data-domain-label="independence">Not set</span>
-                <span class="stars" data-domain-stars="independence">☆☆☆☆☆</span>
-              </div>
-            </div>
-            <div class="domainBar" aria-label="Independence progress bar">
-              <div class="domainFill" data-domain-fill="independence"></div>
-            </div>
-          </div>
-
-          <div class="obsRow">
-            <p class="obsTitleLine">Routine management <span>(follows the structure of the session or familiar routines)</span></p>
-            <div class="rsiGrid" data-rsi-domain="independence">
-              <label class="rsiBtn"><input type="radio" name="ind_routine" value="Rarely">Rarely</label>
-              <label class="rsiBtn"><input type="radio" name="ind_routine" value="Sometimes">Sometimes</label>
-              <label class="rsiBtn"><input type="radio" name="ind_routine" value="Always">Always</label>
-            </div>
-          </div>
-
-          <div class="obsRow">
-            <p class="obsTitleLine">Task initiation <span>(begins activities after instruction or demonstration)</span></p>
-            <div class="rsiGrid" data-rsi-domain="independence">
-              <label class="rsiBtn"><input type="radio" name="ind_initiation" value="Rarely">Rarely</label>
-              <label class="rsiBtn"><input type="radio" name="ind_initiation" value="Sometimes">Sometimes</label>
-              <label class="rsiBtn"><input type="radio" name="ind_initiation" value="Always">Always</label>
-            </div>
-          </div>
-
-          <div class="obsRow">
-            <p class="obsTitleLine">Support required <span>(participates with decreasing levels of assistance)</span></p>
-            <div class="rsiGrid" data-rsi-domain="independence">
-              <label class="rsiBtn"><input type="radio" name="ind_support" value="Rarely">Rarely</label>
-              <label class="rsiBtn"><input type="radio" name="ind_support" value="Sometimes">Sometimes</label>
-              <label class="rsiBtn"><input type="radio" name="ind_support" value="Always">Always</label>
-            </div>
-          </div>
-
-          <div class="obsRow">
-            <p class="obsTitleLine">Equipment management <span>(handles or uses equipment appropriately within the activity)</span></p>
-            <div class="rsiGrid" data-rsi-domain="independence">
-              <label class="rsiBtn"><input type="radio" name="ind_equipment" value="Rarely">Rarely</label>
-              <label class="rsiBtn"><input type="radio" name="ind_equipment" value="Sometimes">Sometimes</label>
-              <label class="rsiBtn"><input type="radio" name="ind_equipment" value="Always">Always</label>
-            </div>
-          </div>
-
-          <div class="obsRow">
-            <p class="obsTitleLine">Transfer across activities <span>(moves between activities with growing independence)</span></p>
-            <div class="rsiGrid" data-rsi-domain="independence">
-              <label class="rsiBtn"><input type="radio" name="ind_transfer" value="Rarely">Rarely</label>
-              <label class="rsiBtn"><input type="radio" name="ind_transfer" value="Sometimes">Sometimes</label>
-              <label class="rsiBtn"><input type="radio" name="ind_transfer" value="Always">Always</label>
-            </div>
-          </div>
-
-          <label style="margin-top:10px;">
-            Evidence this term
-            <textarea id="eviIndependence" placeholder="One or two lines, suitable for families"></textarea>
-          </label>
-        </div>
-
+      <div class="corePanel">
         <!-- Engagement -->
-        <div class="area" data-domain="engagement">
-          <div class="areaHead">
-            <p class="areaName">Engagement</p>
-            <p class="areaDesc">Observation Checklist. Tick what you observed this term.</p>
+        <div class="coreSection" data-domain="engagement">
+          <div class="coreSectionHead">
+            <p class="coreTitle">Engagement</p>
+            <span class="coreSectionMeta">Observation checklist</span>
           </div>
 
-          <div class="domainProgress" data-domain-progress="engagement">
+          <div class="coreDomainProgress domainProgress" data-domain-progress="engagement">
             <div class="domainTop">
               <div>
                 <div class="domainTitle">Engagement progress</div>
@@ -1736,6 +1650,7 @@
             </div>
           </div>
 
+          <div class="coreItems">
           <div class="obsRow">
             <p class="obsTitleLine">Availability for instruction <span>(shows readiness to listen, watch, or follow guidance)</span></p>
             <div class="rsiGrid" data-rsi-domain="engagement">
@@ -1781,10 +1696,182 @@
             </div>
           </div>
 
-          <label style="margin-top:10px;">
-            Evidence this term
-            <textarea id="eviEngagement" placeholder="One or two lines, suitable for families"></textarea>
-          </label>
+          </div>
+
+          <div class="coreEvidence">
+            <label class="coreEvidenceLabel" for="eviEngagement">
+              <span class="coreEvidenceTitleRow">
+                <span class="coreEvidenceTitle">Optional evidence (if applicable)</span>
+                <span class="coreEvidenceOptionalTag">Optional</span>
+              </span>
+              <p class="coreEvidenceHint">Only complete this section if there is particularly important information that is not already captured by the ratings above.</p>
+              <textarea id="eviEngagement" placeholder="Brief notes only if needed — voice input is available (optional)"></textarea>
+            </label>
+          </div>
+        </div>
+
+        <!-- Independence -->
+        <div class="coreSection" data-domain="independence">
+          <div class="coreSectionHead">
+            <p class="coreTitle">Independence</p>
+            <span class="coreSectionMeta">Observation checklist</span>
+          </div>
+
+          <div class="coreDomainProgress domainProgress" data-domain-progress="independence">
+            <div class="domainTop">
+              <div>
+                <div class="domainTitle">Independence progress</div>
+                <div class="domainCount" data-domain-count="independence">0 of 5 rated</div>
+              </div>
+              <div class="domainBadge">
+                <span data-domain-label="independence">Not set</span>
+                <span class="stars" data-domain-stars="independence">☆☆☆☆☆</span>
+              </div>
+            </div>
+            <div class="domainBar" aria-label="Independence progress bar">
+              <div class="domainFill" data-domain-fill="independence"></div>
+            </div>
+          </div>
+
+          <div class="coreItems">
+          <div class="obsRow">
+            <p class="obsTitleLine">Routine management <span>(follows the structure of the session or familiar routines)</span></p>
+            <div class="rsiGrid" data-rsi-domain="independence">
+              <label class="rsiBtn"><input type="radio" name="ind_routine" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="ind_routine" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="ind_routine" value="Always">Always</label>
+            </div>
+          </div>
+
+          <div class="obsRow">
+            <p class="obsTitleLine">Task initiation <span>(begins activities after instruction or demonstration)</span></p>
+            <div class="rsiGrid" data-rsi-domain="independence">
+              <label class="rsiBtn"><input type="radio" name="ind_initiation" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="ind_initiation" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="ind_initiation" value="Always">Always</label>
+            </div>
+          </div>
+
+          <div class="obsRow">
+            <p class="obsTitleLine">Support required <span>(participates with decreasing levels of assistance)</span></p>
+            <div class="rsiGrid" data-rsi-domain="independence">
+              <label class="rsiBtn"><input type="radio" name="ind_support" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="ind_support" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="ind_support" value="Always">Always</label>
+            </div>
+          </div>
+
+          <div class="obsRow">
+            <p class="obsTitleLine">Equipment management <span>(handles or uses equipment appropriately within the activity)</span></p>
+            <div class="rsiGrid" data-rsi-domain="independence">
+              <label class="rsiBtn"><input type="radio" name="ind_equipment" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="ind_equipment" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="ind_equipment" value="Always">Always</label>
+            </div>
+          </div>
+
+          <div class="obsRow">
+            <p class="obsTitleLine">Transfer across activities <span>(moves between activities with growing independence)</span></p>
+            <div class="rsiGrid" data-rsi-domain="independence">
+              <label class="rsiBtn"><input type="radio" name="ind_transfer" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="ind_transfer" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="ind_transfer" value="Always">Always</label>
+            </div>
+          </div>
+          </div>
+
+          <div class="coreEvidence">
+            <label class="coreEvidenceLabel" for="eviIndependence">
+              <span class="coreEvidenceTitleRow">
+                <span class="coreEvidenceTitle">Optional evidence (if applicable)</span>
+                <span class="coreEvidenceOptionalTag">Optional</span>
+              </span>
+              <p class="coreEvidenceHint">Only complete this section if there is particularly important information that is not already captured by the ratings above.</p>
+              <textarea id="eviIndependence" placeholder="Brief notes only if needed — voice input is available (optional)"></textarea>
+            </label>
+          </div>
+        </div>
+
+        <!-- Regulation -->
+        <div class="coreSection" data-domain="regulation">
+          <div class="coreSectionHead">
+            <p class="coreTitle">Regulation</p>
+            <span class="coreSectionMeta">Observation checklist</span>
+          </div>
+
+          <div class="coreDomainProgress domainProgress" data-domain-progress="regulation">
+            <div class="domainTop">
+              <div>
+                <div class="domainTitle">Regulation progress</div>
+                <div class="domainCount" data-domain-count="regulation">0 of 5 rated</div>
+              </div>
+              <div class="domainBadge">
+                <span data-domain-label="regulation">Not set</span>
+                <span class="stars" data-domain-stars="regulation">☆☆☆☆☆</span>
+              </div>
+            </div>
+            <div class="domainBar" aria-label="Regulation progress bar">
+              <div class="domainFill" data-domain-fill="regulation"></div>
+            </div>
+          </div>
+
+          <div class="coreItems">
+          <div class="obsRow">
+            <p class="obsTitleLine">Emotional stability <span>(remains calm and able to continue the activity when faced with challenges)</span></p>
+            <div class="rsiGrid" data-rsi-domain="regulation">
+              <label class="rsiBtn"><input type="radio" name="reg_emotional" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="reg_emotional" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="reg_emotional" value="Always">Always</label>
+            </div>
+          </div>
+
+          <div class="obsRow">
+            <p class="obsTitleLine">Sensory tolerance <span>(tolerates water contact, movement, noise, or environmental changes)</span></p>
+            <div class="rsiGrid" data-rsi-domain="regulation">
+              <label class="rsiBtn"><input type="radio" name="reg_sensory" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="reg_sensory" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="reg_sensory" value="Always">Always</label>
+            </div>
+          </div>
+
+          <div class="obsRow">
+            <p class="obsTitleLine">Breath regulation <span>(manages breathing after effort, submersion, or sensory input)</span></p>
+            <div class="rsiGrid" data-rsi-domain="regulation">
+              <label class="rsiBtn"><input type="radio" name="reg_breath" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="reg_breath" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="reg_breath" value="Always">Always</label>
+            </div>
+          </div>
+
+          <div class="obsRow">
+            <p class="obsTitleLine">Recovery speed <span>(returns to participation after moments of hesitation or difficulty)</span></p>
+            <div class="rsiGrid" data-rsi-domain="regulation">
+              <label class="rsiBtn"><input type="radio" name="reg_recovery" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="reg_recovery" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="reg_recovery" value="Always">Always</label>
+            </div>
+          </div>
+
+          <div class="obsRow">
+            <p class="obsTitleLine">Consistency across session <span>(maintains regulation throughout different activities in the session)</span></p>
+            <div class="rsiGrid" data-rsi-domain="regulation">
+              <label class="rsiBtn"><input type="radio" name="reg_consistency" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="reg_consistency" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="reg_consistency" value="Always">Always</label>
+            </div>
+          </div>
+          </div>
+
+          <div class="coreEvidence">
+            <label class="coreEvidenceLabel" for="eviRegulation">
+              <span class="coreEvidenceTitleRow">
+                <span class="coreEvidenceTitle">Optional evidence (if applicable)</span>
+                <span class="coreEvidenceOptionalTag">Optional</span>
+              </span>
+              <p class="coreEvidenceHint">Only complete this section if there is particularly important information that is not already captured by the ratings above.</p>
+              <textarea id="eviRegulation" placeholder="Brief notes only if needed — voice input is available (optional)"></textarea>
+            </label>
+          </div>
         </div>
       </div>
     </div>

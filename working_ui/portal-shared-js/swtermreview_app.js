@@ -1284,7 +1284,7 @@ const LEVEL_DATA = {
         };
         const ev = (evidenceMap[domain] || "").trim();
         if(ev){
-          lines.push("Evidence:\n" + ev);
+          lines.push("Optional evidence:\n" + ev);
         }
 
         const summaryHeadline =
