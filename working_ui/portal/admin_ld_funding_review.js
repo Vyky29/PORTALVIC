@@ -744,12 +744,6 @@
     return el ? String(el.value || "") : "";
   }
 
-  function generatedLetterText(screen, app) {
-    var L = lettersApi();
-    if (!L) return "";
-    return L.buildEmailBody(readFormApp(screen, app));
-  }
-
   function persistLetterText(client, app, text, onDone) {
     if (!client || !app || !app.id) {
       if (typeof onDone === "function") onDone(null);
@@ -852,7 +846,6 @@
       '<textarea id="ldfLetterEditor" class="ldf-letter-editor" spellcheck="true">' +
       esc(letterBody) +
       '</textarea><div class="ldf-letter-actions">' +
-      '<button type="button" class="btn btn--sm" id="ldfRegenerateLetter">Regenerate from form</button>' +
       '<button type="button" class="btn btn--sm btn--pri" id="ldfSendToEmployee">Send to employee</button>' +
       "</div>" +
       '<p class="ldf-msg" id="ldfLetterMsg" role="status" aria-live="polite"></p></div></div>'
@@ -921,16 +914,6 @@
       if (!msg) return;
       msg.textContent = text || "";
       msg.className = "ldf-msg" + (kind === "err" ? " is-err" : kind === "ok" ? " is-ok" : "");
-    }
-
-    var regenBtn = screen.querySelector("#ldfRegenerateLetter");
-    if (regenBtn) {
-      regenBtn.addEventListener("click", function () {
-        var editor = screen.querySelector("#ldfLetterEditor");
-        if (!editor) return;
-        editor.value = generatedLetterText(screen, app);
-        setLetterMsg("Draft regenerated from the form.", "ok");
-      });
     }
 
     var sendBtn = screen.querySelector("#ldfSendToEmployee");
