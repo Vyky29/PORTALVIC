@@ -538,3 +538,7 @@ verify_jwt = false
 
 [functions.portal-admin-parent-credits-update]
 verify_jwt = false
+
+# Parent-facing registration PDFs for a linked child.
+[functions.parent-portal-documents-list]
+verify_jwt = false

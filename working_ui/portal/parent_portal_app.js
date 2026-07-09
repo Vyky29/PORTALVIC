@@ -20,6 +20,7 @@
     if (!base) return patch;
     if (Array.isArray(patch.sessions)) base.sessions = patch.sessions;
     if (Array.isArray(patch.achievements)) base.achievements = patch.achievements;
+    if (Array.isArray(patch.team)) base.team = patch.team;
     if (Array.isArray(patch.swim_term_reviews)) {
       base.swim_term_reviews = patch.swim_term_reviews;
       if (patch.swim_term_reviews.length) base.swim_term_review_available = true;
@@ -29,6 +30,7 @@
     }
     if (patch.reenrolment) base.reenrolment = patch.reenrolment;
     if (patch.pending_review_count != null) base.pending_review_count = patch.pending_review_count;
+    if (patch.attendance_summary) base.attendance_summary = patch.attendance_summary;
     if (patch.general && base.general) {
       Object.assign(base.general, patch.general);
     }
@@ -97,6 +99,14 @@
   function participantRenderOpts(contactId) {
     return {
       contactId: contactId,
+      siblings: function () {
+        return ((state.home && state.home.children) || []).slice();
+      },
+      switchChild: function (nextId) {
+        var id = String(nextId || "").trim();
+        if (!id || id === String(contactId)) return;
+        void loadParticipantDetail(id);
+      },
       saveGeneralInfo: function (fields) {
         return fetch(fn("parent-portal-general-info-save"), {
           method: "POST",
@@ -309,6 +319,23 @@
         }).then(function (res) {
           return res.json().then(function (j) {
             if (!res.ok || !j.ok) throw new Error("credits_list_failed");
+            return j;
+          });
+        });
+      },
+      listDocuments: function () {
+        return fetch(fn("parent-portal-documents-list"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey(),
+            Authorization: "Bearer " + anonKey(),
+            "x-parent-portal-session": state.session.token,
+          },
+          body: JSON.stringify({ contact_id: contactId }),
+        }).then(function (res) {
+          return res.json().then(function (j) {
+            if (!res.ok || !j.ok) throw new Error("documents_list_failed");
             return j;
           });
         });

@@ -62,6 +62,122 @@ function parseSections(raw: unknown): Set<DetailSection> {
   return out.size ? out : all;
 }
 
+const TEAM_FEEDBACK_SINCE = "2026-06-01";
+
+function staffKeyFromName(raw: string): string {
+  let k = String(raw || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .split(/\s+/)[0] || "";
+  if (k === "yousef" || k === "yusef") k = "youssef";
+  if (k === "lulia") k = "luliya";
+  return k;
+}
+
+function upsertTeamMember(
+  map: Map<string, Record<string, unknown>>,
+  key: string,
+  patch: Record<string, unknown>,
+) {
+  const k = String(key || "").trim().toLowerCase();
+  if (!k) return;
+  const prev = map.get(k) || {
+    staff_key: k,
+    name: "",
+    avatar_url: "/portal/staff_photos/" + k + ".png",
+    role: "instructor",
+  };
+  const name =
+    clean(patch.name, 80) || clean(prev.name, 80) || k.charAt(0).toUpperCase() + k.slice(1);
+  map.set(k, {
+    ...prev,
+    ...patch,
+    staff_key: k,
+    name,
+    avatar_url:
+      clean(patch.avatar_url, 200) ||
+      clean(prev.avatar_url, 200) ||
+      "/portal/staff_photos/" + k + ".png",
+  });
+}
+
+/** Instructors from feedback + covering staff from schedule_overrides. */
+async function buildParentTeam(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  clientSlugs: string[],
+  feedbackRows: Record<string, unknown>[],
+): Promise<Record<string, unknown>[]> {
+  const map = new Map<string, Record<string, unknown>>();
+
+  for (const row of feedbackRows || []) {
+    const date = isoFromAny(row.session_date);
+    if (!date || date < TEAM_FEEDBACK_SINCE) continue;
+    const name = clean(row.completed_by_name, 120);
+    const key = staffKeyFromName(name);
+    if (!key) continue;
+    upsertTeamMember(map, key, {
+      name: feedbackAuthorFirstName(name) || name,
+      role: "instructor",
+    });
+  }
+
+  const slugSet = new Set(clientSlugs.map((s) => String(s || "").toLowerCase()).filter(Boolean));
+
+  if (slugSet.size) {
+    const { data: ovRows, error } = await supabase
+      .from("schedule_overrides")
+      .select("session_date, override_type, status, payload, anchor_staff_id, anchor_client_id")
+      .eq("status", "active")
+      .in("override_type", ["instructor_reassign", "client_replace_in_slot"])
+      .gte("session_date", PARENT_SESSION_TERM_START_ISO)
+      .limit(300);
+    if (error) {
+      console.error("[parent-portal-participant-detail] team overrides", error.message);
+    }
+    for (const ov of ovRows || []) {
+      const pl = (ov && ov.payload && typeof ov.payload === "object" ? ov.payload : {}) as Record<
+        string,
+        unknown
+      >;
+      const ot = clean(ov.override_type, 40);
+      const anchorClient = clean(ov.anchor_client_id, 80).toLowerCase();
+      const toClient = clean(pl.to_client_id || pl.replacement_client_id, 80).toLowerCase();
+      const forThisChild =
+        (anchorClient && slugSet.has(anchorClient)) || (toClient && slugSet.has(toClient));
+      if (!forThisChild) continue;
+
+      if (ot === "instructor_reassign") {
+        const slug =
+          clean(pl.covering_staff_id, 80) || staffKeyFromName(clean(pl.covering_staff_name, 120));
+        const name = clean(pl.covering_staff_name, 120) || clean(pl.to_staff_name, 120);
+        if (slug) {
+          upsertTeamMember(map, staffKeyFromName(slug) || slug.toLowerCase(), {
+            name: name || slug,
+            role: "cover",
+          });
+        }
+      } else if (ot === "client_replace_in_slot") {
+        const staffSlug = clean(ov.anchor_staff_id, 80);
+        if (staffSlug && (pl.open_slot_makeup || pl.parent_portal_makeup || toClient)) {
+          upsertTeamMember(map, staffKeyFromName(staffSlug) || staffSlug.toLowerCase(), {
+            name: staffSlug,
+            role: "cover",
+          });
+        }
+      }
+    }
+  }
+
+  return [...map.values()].sort((a, b) =>
+    String(a.name || "").localeCompare(String(b.name || "")),
+  );
+}
+
 async function detectHasAquatics(
   supabase: ReturnType<typeof createClient>,
   clientSlugs: string[],
@@ -755,6 +871,23 @@ Deno.serve(async (req) => {
     }
   }
 
+  let teamOut: Record<string, unknown>[] = [];
+  if (wantGeneral || wantSessions) {
+    // Prefer feedback already loaded for sessions; otherwise a light pull for hub/team.
+    let fbForTeam = rawFeedback;
+    if (!fbForTeam.length && clientSlugs.length) {
+      const { data: fbLite } = await supabase
+        .from("session_feedback")
+        .select("session_date, completed_by_name, client_id")
+        .in("client_id", clientSlugs)
+        .gte("session_date", TEAM_FEEDBACK_SINCE)
+        .order("session_date", { ascending: false })
+        .limit(80);
+      fbForTeam = fbLite || [];
+    }
+    teamOut = await buildParentTeam(supabase, clientSlugs, fbForTeam);
+  }
+
   return new Response(
     JSON.stringify({
       ok: true,
@@ -785,6 +918,7 @@ Deno.serve(async (req) => {
         updated_at: generalUpdatedAt,
         editable: true,
       },
+      team: teamOut,
       sessions: sessionsOut,
       attendance_summary: attendanceSummary,
       achievements,

@@ -615,9 +615,44 @@
     );
   }
 
-  function hubHeroHtml(data) {
+  function hubSiblingsHtml(data, opts) {
+    var siblings =
+      opts && typeof opts.siblings === "function" ? opts.siblings() : opts && opts.siblings;
+    if (!Array.isArray(siblings) || siblings.length < 2) return "";
+    var currentId = String(
+      (data && data.participant && data.participant.contact_id) ||
+        (opts && opts.contactId) ||
+        "",
+    );
+    return (
+      '<nav class="pp-hub-siblings" aria-label="Switch child">' +
+      siblings
+        .map(function (ch) {
+          var id = String((ch && ch.contact_id) || "");
+          var name = String((ch && (ch.display_name || ch.first_name)) || "Child").trim();
+          var first = name.split(/\s+/)[0] || name;
+          var active = id && id === currentId;
+          return (
+            '<button type="button" class="pp-hub-sibling' +
+            (active ? " is-active" : "") +
+            '" data-pp-switch-child="' +
+            esc(id) +
+            '"' +
+            (active ? ' aria-current="page"' : "") +
+            ">" +
+            esc(first) +
+            "</button>"
+          );
+        })
+        .join("") +
+      "</nav>"
+    );
+  }
+
+  function hubHeroHtml(data, opts) {
     var p = data.participant || {};
     return (
+      hubSiblingsHtml(data, opts) +
       '<header class="pp-hub-hero">' +
       '<div class="pp-hub-hero__id">' +
       participantPhotoHtml(p) +
@@ -755,6 +790,8 @@
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-3.5 4.2-5 8-5s6.5 1.5 8 5"/><path d="M16 4l4 4M20 4l-4 4"/></svg>';
     var balanceIcon =
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20"/><path d="M6 14h.01M10 14h4"/></svg>';
+    var docsIcon =
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h6"/></svg>';
     var teamCaption = firstNameOf(data) + "'s Team";
     return (
       '<div class="pp-pax-info-buttons">' +
@@ -773,6 +810,10 @@
       infoBtnHtml("balance", "Credits & refunds", balanceIcon, {
         extraClass: " pp-pax-info-btn--balance",
         subtitle: "Family ledger",
+      }) +
+      infoBtnHtml("documents", "Documents", docsIcon, {
+        extraClass: " pp-pax-info-btn--documents",
+        subtitle: "Registration forms",
       }) +
       infoBtnHtml(
         "booking",
@@ -1423,7 +1464,10 @@
     }
     el.hidden = false;
     el.innerHTML =
+      '<div class="pp-hub-alerts__head">' +
       '<h4 class="pp-hub-alerts__title">Recent club updates</h4>' +
+      '<button type="button" class="pp-hub-alerts__all" data-pp-open="messages">All messages</button>' +
+      "</div>" +
       '<ul class="pp-hub-alerts__list">' +
       alerts
         .map(function (m) {
@@ -1474,7 +1518,7 @@
     // Messages only in the info buttons row (not again under next session).
     host.innerHTML =
       '<div class="pp-pax-shell" data-pp-view="hub">' +
-      hubHeroHtml(data) +
+      hubHeroHtml(data, opts) +
       hubOpsCardHtml(data) +
       infoButtonsHtml(data, opts) +
       '<p class="pp-muted pp-pax-hub-note">Parent sections above · sessions and reviews below — same layout instructors use when they tap your child&apos;s name.</p>' +
@@ -2693,6 +2737,100 @@
     bindBalance(host, data, opts);
   }
 
+  function formatDocWhen(iso) {
+    if (!iso) return "";
+    var d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return String(iso).slice(0, 10);
+    try {
+      return d.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    } catch (e) {
+      return String(iso).slice(0, 10);
+    }
+  }
+
+  function documentCardHtml(doc) {
+    var title = String((doc && doc.title) || doc.form_type || "Document").trim();
+    var when = formatDocWhen(doc && doc.submitted_at);
+    var status = String((doc && doc.status) || "").trim();
+    var pdf = (doc && doc.pdf_url) || "";
+    var photo = (doc && doc.photo_url) || "";
+    return (
+      '<article class="pp-doc-card">' +
+      '<div class="pp-doc-card__head">' +
+      "<strong>" +
+      esc(title) +
+      "</strong>" +
+      (status ? '<span class="pp-doc-chip">' + esc(status) + "</span>" : "") +
+      "</div>" +
+      (when ? '<p class="pp-doc-card__when muted">Submitted ' + esc(when) + "</p>" : "") +
+      '<div class="pp-doc-card__acts">' +
+      (pdf
+        ? '<a class="pp-btn pp-btn--primary" href="' +
+          esc(pdf) +
+          '" target="_blank" rel="noopener noreferrer">Open PDF</a>'
+        : "") +
+      (photo
+        ? '<a class="pp-btn pp-btn--ghost" href="' +
+          esc(photo) +
+          '" target="_blank" rel="noopener noreferrer">Photo</a>'
+        : "") +
+      (!pdf && !photo ? '<p class="pp-muted">File not available yet.</p>' : "") +
+      "</div></article>"
+    );
+  }
+
+  function renderDocuments(host, data, opts) {
+    host.innerHTML = subviewShell(
+      data,
+      "documents",
+      '<h3 class="pp-pax-subview-title">Documents</h3>' +
+        '<p class="pp-muted pp-pax-subview-note">Registration forms submitted for ' +
+        esc(firstNameOf(data)) +
+        ". Open a PDF to view or download.</p>" +
+        '<div id="ppDocsNotice" class="pp-notice" hidden></div>' +
+        '<div id="ppDocsListHost"><p class="pp-muted">Loading…</p></div>',
+    );
+    bindBack(host, data, opts);
+    bindDocuments(host, data, opts);
+  }
+
+  function bindDocuments(host, data, opts) {
+    var listHost = host.querySelector("#ppDocsListHost");
+    var notice = host.querySelector("#ppDocsNotice");
+
+    function showNotice(kind, text) {
+      if (!notice) return;
+      notice.hidden = !text;
+      notice.className = "pp-notice" + (kind ? " pp-notice--" + kind : "");
+      notice.textContent = text || "";
+    }
+
+    if (!listHost || typeof opts.listDocuments !== "function") {
+      if (listHost) listHost.innerHTML = '<p class="pp-muted">Documents are not available right now.</p>';
+      return;
+    }
+
+    void opts
+      .listDocuments()
+      .then(function (j) {
+        var docs = (j && j.documents) || [];
+        if (!docs.length) {
+          listHost.innerHTML =
+            '<p class="pp-muted">No registration documents on file yet for this participant.</p>';
+          return;
+        }
+        listHost.innerHTML = docs.map(documentCardHtml).join("");
+      })
+      .catch(function () {
+        showNotice("error", "Could not load documents — please try again.");
+        listHost.innerHTML = "";
+      });
+  }
+
   function bindBalance(host, data, opts) {
     var listHost = host.querySelector("#ppBalanceListHost");
     var summary = host.querySelector("#ppBalanceSummary");
@@ -3131,6 +3269,7 @@
     else if (view === "calendar") renderCalendar(host, data, opts);
     else if (view === "absence") renderAbsence(host, data, opts);
     else if (view === "balance") renderBalance(host, data, opts);
+    else if (view === "documents") renderDocuments(host, data, opts);
     else if (view === "messages") {
       var msgOpts = opts || {};
       if (viewOpts.prefillMessage) {
@@ -3146,6 +3285,13 @@
       achievements: "achievements",
       swim: "swim",
     };
+    host.querySelectorAll("[data-pp-switch-child]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (btn.classList.contains("is-active")) return;
+        var nextId = btn.getAttribute("data-pp-switch-child");
+        if (nextId && typeof opts.switchChild === "function") opts.switchChild(nextId);
+      });
+    });
     host.querySelectorAll("[data-pp-open-edit]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         if (btn.getAttribute("data-pp-open-edit") !== "general") return;
