@@ -553,15 +553,80 @@
     return chips.join("");
   }
 
+  function shortServiceChipLabel(rawLabel) {
+    var s = String(rawLabel || "").trim();
+    if (!s) return "";
+    var dur = "";
+    var m = s.match(/^(\d+)\s*'\s*(.+)$/);
+    if (m) {
+      var mins = parseInt(m[1], 10) || 0;
+      if (mins > 90) {
+        var h = Math.round((mins / 60) * 10) / 10;
+        dur = h + "h ";
+      } else if (mins) {
+        dur = mins + "' ";
+      }
+      s = m[2];
+    }
+    if (/^bespoke\b/i.test(s)) return dur + "Bespoke";
+    if (/multi[- ]?activity/i.test(s)) return dur + "Multi-Activity";
+    if (/^aquatic\b/i.test(s)) return dur + "Aquatic";
+    if (/climb/i.test(s)) return dur + "Climbing";
+    if (/day\s*centre/i.test(s)) return dur + "Day centre";
+    return (dur + s.replace(/\bProgramme\b/gi, "").replace(/\bActivity\b/gi, "").replace(/\s{2,}/g, " ").trim()).trim();
+  }
+
+  function serviceChipToneClass(label) {
+    var s = String(label || "").toLowerCase();
+    if (/aquatic|swim/.test(s)) return "aquatic";
+    if (/climb/.test(s)) return "climb";
+    if (/multi/.test(s)) return "multi";
+    if (/bespoke/.test(s)) return "bespoke";
+    if (/day\s*centre|daycentre/.test(s)) return "daycentre";
+    return "other";
+  }
+
+  /** Same idea as admin Family messages enrolled chips — hover shows day / time. */
+  function enrolledServiceChipsHtml(data) {
+    var detail =
+      data && data.general && Array.isArray(data.general.services_detail)
+        ? data.general.services_detail
+        : [];
+    if (!detail.length) return "";
+    return (
+      '<div class="pp-svc-chips" aria-label="Booked services">' +
+      detail
+        .map(function (s) {
+          var label = shortServiceChipLabel(s.label || "Service");
+          var tip = [s.day, s.time].filter(Boolean).join(" / ");
+          var tone = serviceChipToneClass(s.label || label);
+          return (
+            '<span class="pp-svc-chip pp-svc-chip--' +
+            esc(tone) +
+            '"' +
+            (tip ? ' title="' + esc(tip) + '"' : "") +
+            ">" +
+            esc(label) +
+            "</span>"
+          );
+        })
+        .join("") +
+      "</div>"
+    );
+  }
+
   function hubHeroHtml(data) {
     var p = data.participant || {};
     return (
       '<header class="pp-hub-hero">' +
       '<div class="pp-hub-hero__id">' +
       participantPhotoHtml(p) +
+      '<div class="pp-hub-hero__name-row">' +
       '<h3 class="pp-hub-hero__name">' +
       esc(p.display_name || "Participant") +
       "</h3>" +
+      enrolledServiceChipsHtml(data) +
+      "</div>" +
       participantIdentityMetaHtml(p) +
       "</div>" +
       '<div class="pp-hub-hero__info">' +
@@ -619,9 +684,12 @@
       '<header class="pp-pax-hero">' +
       participantPhotoHtml(p) +
       '<div class="pp-pax-hero-copy">' +
+      '<div class="pp-pax-name-row">' +
       '<h3 class="pp-pax-name">' +
       esc(p.display_name || "Participant") +
       "</h3>" +
+      enrolledServiceChipsHtml(data) +
+      "</div>" +
       participantIdentityMetaHtml(p) +
       '<div class="pp-chip-row">' +
       statusChips(p) +
