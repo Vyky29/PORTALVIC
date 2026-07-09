@@ -745,8 +745,16 @@
         : "";
     var booking = bookingSummary(data);
     var swimAvailable = !!data.swim_term_review_available;
+    var hasServices = !!(
+      data &&
+      data.general &&
+      Array.isArray(data.general.services_detail) &&
+      data.general.services_detail.length
+    );
     var msgIcon =
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+    var absentIcon =
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-3.5 4.2-5 8-5s6.5 1.5 8 5"/><path d="M16 4l4 4M20 4l-4 4"/></svg>';
     var teamCaption = firstNameOf(data) + "'s Team";
     return (
       '<div class="pp-pax-info-buttons">' +
@@ -756,6 +764,11 @@
           " pp-pax-info-btn--messages" +
           (msgUnread > 0 ? " pp-pax-info-btn--has-unread" : ""),
         unreadBadge: msgBadge,
+      }) +
+      infoBtnHtml("absence", "Report absent", absentIcon, {
+        extraClass: " pp-pax-info-btn--absence",
+        subtitle: hasServices ? "Missed / note" : "No sessions yet",
+        disabled: !hasServices,
       }) +
       infoBtnHtml(
         "booking",
@@ -1110,8 +1123,6 @@
       : [];
     var calIco =
       '<svg class="pp-hub-ops__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
-    var absentIco =
-      '<svg class="pp-hub-ops__absence-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-3.5 4.2-5 8-5s6.5 1.5 8 5"/><path d="M16 4l4 4M20 4l-4 4"/></svg>';
     var nextBody;
     if (!hasServices) {
       nextBody =
@@ -1150,18 +1161,7 @@
       '<div class="pp-hub-ops__panel">' +
       '<div class="pp-hub-ops__main">' +
       nextBody +
-      "</div>" +
-      '<div class="pp-hub-ops__actions">' +
-      '<button type="button" class="pp-hub-ops__absence" data-pp-open="absence"' +
-      (hasServices ? "" : " disabled") +
-      ">" +
-      absentIco +
-      '<span class="pp-hub-ops__absence-text">' +
-      "<strong>Report absent</strong>" +
-      "<small>Missed session or note for the office</small>" +
-      "</span>" +
-      '<span class="pp-hub-ops__absence-chev" aria-hidden="true">›</span>' +
-      "</button></div></div>" +
+      "</div></div>" +
       '<div id="ppHubAlerts" class="pp-hub-alerts" hidden></div>' +
       "</section>"
     );
