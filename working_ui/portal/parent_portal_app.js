@@ -488,6 +488,32 @@
           });
         });
       },
+      applyCreditToInvoice: function (invoiceId, creditId) {
+        return fetch(fn("parent-portal-credit-apply-invoice"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey(),
+            Authorization: "Bearer " + anonKey(),
+            "x-parent-portal-session": state.session.token,
+          },
+          body: JSON.stringify({
+            contact_id: contactId,
+            invoice_id: invoiceId,
+            credit_id: creditId,
+          }),
+        }).then(function (res) {
+          return res.json().then(function (j) {
+            if (!res.ok || !j.ok) {
+              var err = new Error("credit_apply_failed");
+              err.code = (j && j.error) || "credit_apply_failed";
+              err.messageText = (j && j.message) || "";
+              throw err;
+            }
+            return j;
+          });
+        });
+      },
       respondMakeup: function (offerId, action, declineReason) {
         return fetch(fn("parent-portal-makeup-respond"), {
           method: "POST",

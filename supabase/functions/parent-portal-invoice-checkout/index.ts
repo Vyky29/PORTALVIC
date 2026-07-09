@@ -6,7 +6,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
 import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
-import { stripeConfigured, stripeCreateCheckoutSession } from "../_shared/stripe_checkout.ts";
+import { stripeConfigured, stripeCreateCheckoutSession, stripeGrossUpFromGbp } from "../_shared/stripe_checkout.ts";
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -142,6 +142,13 @@ Deno.serve(async (req) => {
     return json(400, { ok: false, error: "amount_too_small" });
   }
 
+  // Parent pays invoice + Stripe fee so the club nets the exact service amount.
+  const gross = stripeGrossUpFromGbp(amount);
+  const chargePence = gross.charge_pence;
+  if (chargePence < 30) {
+    return json(400, { ok: false, error: "amount_too_small" });
+  }
+
   const { data: doc } = await supabase
     .from("documents")
     .select("title")
@@ -156,6 +163,10 @@ Deno.serve(async (req) => {
   const productName =
     clean(doc?.title, 120) ||
     (invNo ? `Invoice ${invNo}` : `Invoice — ${displayName}`);
+  const productNameWithFee =
+    gross.fee_pence > 0
+      ? `${productName} (incl. £${gross.fee_gbp.toFixed(2)} card fee)`
+      : productName;
 
   const origin = safeReturnOrigin(body.return_origin);
   const successUrl =
@@ -166,9 +177,9 @@ Deno.serve(async (req) => {
     `&invoice=${encodeURIComponent(invoiceId)}`;
 
   const created = await stripeCreateCheckoutSession({
-    amountPence,
+    amountPence: chargePence,
     currency: "gbp",
-    productName,
+    productName: productNameWithFee,
     successUrl,
     cancelUrl,
     clientReferenceId: invoiceId,
@@ -177,6 +188,9 @@ Deno.serve(async (req) => {
       contact_id: contactId,
       parent_person_id: String(session.parent_person_id || ""),
       invoice_number: invNo || "",
+      invoice_net_pence: String(gross.net_pence),
+      stripe_fee_pence: String(gross.fee_pence),
+      charge_pence: String(gross.charge_pence),
     },
   });
 
@@ -200,5 +214,8 @@ Deno.serve(async (req) => {
     ok: true,
     checkout_url: created.url,
     session_id: created.id,
+    amount_gbp: gross.net_gbp,
+    charge_gbp: gross.charge_gbp,
+    fee_gbp: gross.fee_gbp,
   });
 });

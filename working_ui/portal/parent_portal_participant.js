@@ -2836,7 +2836,7 @@
       data,
       "balance",
       '<h3 class="pp-pax-subview-title">Credits &amp; refunds</h3>' +
-        '<p class="pp-muted pp-pax-subview-note">Balances appear here after the office validates an excused absence as a credit or refund. Refunds stay open until the office marks them paid.</p>' +
+        '<p class="pp-muted pp-pax-subview-note">Balances appear here after the office validates an excused absence as a credit or refund. Open credits with a £ amount can be applied to an unpaid invoice under Invoices. Refunds stay open until the office marks them paid.</p>' +
         '<div id="ppBalanceSummary" class="pp-balance-summary" hidden></div>' +
         '<div id="ppBalanceNotice" class="pp-notice" hidden></div>' +
         '<div id="ppBalanceListHost"><p class="pp-muted">Loading…</p></div>',
@@ -3611,6 +3611,9 @@
     var pdf = (inv && inv.pdf_url) || "";
     var canReport = !!(inv && inv.can_report_paid);
     var canPay = !!(inv && inv.can_pay);
+    var card = inv && inv.card_checkout;
+    var cardCharge = card ? formatInvoiceMoney(card.charge_gbp) : "";
+    var cardFee = card ? formatInvoiceMoney(card.fee_gbp) : "";
     var gc = String((inv && inv.gocardless_url) || "").trim();
     var pl = String((inv && inv.payment_link_url) || "").trim();
     var surcharge = String((inv && inv.payment_link_surcharge_note) || "").trim();
@@ -3623,6 +3626,39 @@
             : "") +
           ".</p>"
         : "";
+    var cardFeeNote =
+      canPay && card && cardFee
+        ? '<p class="pp-muted pp-invoice-pay__note">Card / Apple Pay total <strong>' +
+          esc(cardCharge) +
+          "</strong> (includes " +
+          esc(cardFee) +
+          " processing fee so we receive the invoice amount in full). Bank transfer has no fee.</p>"
+        : "";
+    var credits = (inv && inv.applicable_credits) || [];
+    var creditHtml = "";
+    if (credits.length) {
+      creditHtml =
+        '<div class="pp-invoice-credit">' +
+        '<p class="pp-invoice-pay__title">Pay with credit on file</p>' +
+        credits
+          .map(function (c) {
+            var cAmt = formatInvoiceMoney(c.amount_gbp);
+            var label =
+              (c.service_label ? String(c.service_label) + " · " : "") + (cAmt || "Credit");
+            return (
+              '<button type="button" class="pp-btn pp-btn--primary" data-pp-apply-credit="' +
+              esc(inv.id) +
+              '" data-pp-credit-id="' +
+              esc(c.id) +
+              '">Use ' +
+              esc(label) +
+              "</button>"
+            );
+          })
+          .join("") +
+        '<p class="pp-muted pp-invoice-pay__note">Applies the credit and marks this invoice paid (no card fee).</p>' +
+        "</div>";
+    }
     return (
       '<article class="pp-invoice-card pp-invoice-card--' +
       esc(status) +
@@ -3645,6 +3681,7 @@
       (due ? '<p class="pp-invoice-card__meta muted">Due ' + esc(due) + "</p>" : "") +
       pendingNote +
       invoiceBankPanelHtml(inv) +
+      creditHtml +
       '<div class="pp-invoice-card__acts">' +
       (pdf
         ? '<a class="pp-btn pp-btn--ghost" href="' +
@@ -3664,13 +3701,16 @@
       (canPay
         ? '<button type="button" class="pp-btn pp-btn--ghost" data-pp-pay-invoice="' +
           esc(inv.id) +
-          '">Card checkout</button>'
+          '">Card / Apple Pay' +
+          (cardCharge ? " · " + esc(cardCharge) : "") +
+          "</button>"
         : "") +
       "</div>" +
+      cardFeeNote +
       (pl
-        ? '<p class="pp-muted pp-invoice-pay__note">Card / Payment Link may include a surcharge' +
-          (surcharge ? ": " + esc(surcharge) : " to cover fees") +
-          ". Bank transfer is preferred.</p>"
+        ? '<p class="pp-muted pp-invoice-pay__note">External card link may include a surcharge' +
+          (surcharge ? ": " + esc(surcharge) : "") +
+          ". Bank transfer is preferred (no fee).</p>"
         : "") +
       (canReport
         ? '<div class="pp-invoice-report">' +
@@ -3696,7 +3736,7 @@
       '<h3 class="pp-pax-subview-title">Invoices</h3>' +
         '<p class="pp-muted pp-pax-subview-note">Statements shared by the office for ' +
         esc(firstNameOf(data)) +
-        ". Prefer <strong>bank transfer</strong> to our Tide account. GoCardless or a card link appear only when the office adds them.</p>" +
+        ". Prefer <strong>bank transfer</strong> (no fee). Card / Apple Pay adds a small processing fee so we receive the invoice amount in full. Invoices are prepared in Xero.</p>" +
         '<div id="ppInvoicesNotice" class="pp-notice" hidden></div>' +
         '<div id="ppInvoicesListHost"><p class="pp-muted">Loading…</p></div>',
     );
@@ -3761,6 +3801,42 @@
                     : code === "amount_required"
                       ? "This invoice has no amount for card payment. Contact the office."
                       : "Could not start card payment — please try bank transfer or contact the office.");
+              showNotice("error", msg);
+            });
+        });
+      });
+
+      listHost.querySelectorAll("[data-pp-apply-credit]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var invId = btn.getAttribute("data-pp-apply-credit");
+          var creditId = btn.getAttribute("data-pp-credit-id");
+          if (!invId || !creditId || typeof opts.applyCreditToInvoice !== "function") return;
+          if (
+            !global.confirm(
+              "Apply this credit to the invoice? The invoice will be marked paid and the credit closed.",
+            )
+          ) {
+            return;
+          }
+          btn.disabled = true;
+          btn.setAttribute("aria-busy", "true");
+          void opts
+            .applyCreditToInvoice(invId, creditId)
+            .then(function () {
+              showNotice("success", "Credit applied — invoice marked paid.");
+              return refreshList();
+            })
+            .catch(function (err) {
+              btn.disabled = false;
+              btn.removeAttribute("aria-busy");
+              var code = err && err.code ? String(err.code) : "";
+              var msg =
+                (err && err.messageText) ||
+                (code === "credit_insufficient"
+                  ? "This credit is less than the invoice amount. Contact the office."
+                  : code === "already_paid"
+                    ? "This invoice is already paid."
+                    : "Could not apply credit — please try again or contact the office.");
               showNotice("error", msg);
             });
         });

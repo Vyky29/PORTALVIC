@@ -2,6 +2,10 @@
 
 const STRIPE_API = "https://api.stripe.com/v1";
 
+/** Default UK domestic card rate (Stripe standard). Override via env if needed. */
+const DEFAULT_FEE_PERCENT = 1.5;
+const DEFAULT_FEE_FIXED_PENCE = 20;
+
 export function stripeSecretKey(): string {
   return String(Deno.env.get("STRIPE_SECRET_KEY") || "").trim();
 }
@@ -12,6 +16,66 @@ export function stripeWebhookSecret(): string {
 
 export function stripeConfigured(): boolean {
   return !!stripeSecretKey();
+}
+
+/** Percent fee charged by Stripe (e.g. 1.5). Env: STRIPE_FEE_PERCENT */
+export function stripeFeePercent(): number {
+  const raw = Number(Deno.env.get("STRIPE_FEE_PERCENT"));
+  if (Number.isFinite(raw) && raw >= 0 && raw < 50) return raw;
+  return DEFAULT_FEE_PERCENT;
+}
+
+/** Fixed fee in pence (e.g. 20 = £0.20). Env: STRIPE_FEE_FIXED_PENCE */
+export function stripeFeeFixedPence(): number {
+  const raw = Number(Deno.env.get("STRIPE_FEE_FIXED_PENCE"));
+  if (Number.isFinite(raw) && raw >= 0 && raw < 10000) return Math.round(raw);
+  return DEFAULT_FEE_FIXED_PENCE;
+}
+
+/**
+ * Gross-up so after Stripe's % + fixed fee, the club nets `netPence`.
+ * charge ≈ ceil((net + fixed) / (1 - rate))
+ */
+export function stripeGrossUpPence(netPence: number): {
+  net_pence: number;
+  charge_pence: number;
+  fee_pence: number;
+  fee_percent: number;
+  fee_fixed_pence: number;
+} {
+  const net = Math.max(0, Math.round(Number(netPence) || 0));
+  const feePercent = stripeFeePercent();
+  const feeFixed = stripeFeeFixedPence();
+  const rate = feePercent / 100;
+  if (rate <= 0) {
+    const charge = net + feeFixed;
+    return {
+      net_pence: net,
+      charge_pence: charge,
+      fee_pence: charge - net,
+      fee_percent: feePercent,
+      fee_fixed_pence: feeFixed,
+    };
+  }
+  const charge = Math.ceil((net + feeFixed) / (1 - rate));
+  return {
+    net_pence: net,
+    charge_pence: charge,
+    fee_pence: Math.max(0, charge - net),
+    fee_percent: feePercent,
+    fee_fixed_pence: feeFixed,
+  };
+}
+
+export function stripeGrossUpFromGbp(amountGbp: number) {
+  const netPence = Math.round(Number(amountGbp) * 100);
+  const g = stripeGrossUpPence(netPence);
+  return {
+    ...g,
+    net_gbp: g.net_pence / 100,
+    charge_gbp: g.charge_pence / 100,
+    fee_gbp: g.fee_pence / 100,
+  };
 }
 
 function toFormBody(params: Record<string, string | number | undefined | null>): string {

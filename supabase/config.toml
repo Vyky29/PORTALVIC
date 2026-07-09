@@ -567,6 +567,10 @@ verify_jwt = false
 [functions.parent-portal-invoice-report-paid]
 verify_jwt = false
 
+# Apply open family credit against an unpaid shared invoice.
+[functions.parent-portal-credit-apply-invoice]
+verify_jwt = false
+
 [functions.portal-admin-parent-invoices-list]
 verify_jwt = false
 

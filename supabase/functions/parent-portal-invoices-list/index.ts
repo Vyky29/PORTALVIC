@@ -7,7 +7,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
 import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
-import { stripeConfigured } from "../_shared/stripe_checkout.ts";
+import { stripeConfigured, stripeGrossUpFromGbp } from "../_shared/stripe_checkout.ts";
 import {
   suggestedTransferReference,
   tideBankDetailsFromEnv,
@@ -103,6 +103,30 @@ Deno.serve(async (req) => {
 
   const tide = tideBankDetailsFromEnv();
   const cardCheckoutAvailable = stripeConfigured();
+
+  const { data: openCredits } = await supabase
+    .from("portal_parent_family_credits")
+    .select("id, amount_gbp, service_label, session_date, kind, status")
+    .eq("parent_person_id", session.parent_person_id)
+    .eq("contact_id", contactId)
+    .eq("kind", "credit")
+    .eq("status", "open")
+    .order("created_at", { ascending: true })
+    .limit(20);
+
+  const usableCredits = (openCredits || [])
+    .map((c) => {
+      const amt = c.amount_gbp != null ? Number(c.amount_gbp) : null;
+      if (amt == null || !Number.isFinite(amt) || amt <= 0) return null;
+      return {
+        id: c.id,
+        amount_gbp: Math.round(amt * 100) / 100,
+        service_label: clean(c.service_label, 120) || null,
+        session_date: c.session_date || null,
+      };
+    })
+    .filter(Boolean);
+
   const out = [];
   for (const share of shares || []) {
     const doc = docsById.get(String(share.document_id));
@@ -120,6 +144,12 @@ Deno.serve(async (req) => {
       amount != null &&
       Number.isFinite(amount) &&
       amount > 0;
+    const cardPricing =
+      canPayCard && amount != null ? stripeGrossUpFromGbp(amount) : null;
+    const applicableCredits =
+      openForPay && amount != null && Number.isFinite(amount) && amount > 0
+        ? usableCredits.filter((c) => c.amount_gbp + 1e-9 >= amount)
+        : [];
     out.push({
       id: share.id,
       document_id: share.document_id,
@@ -153,6 +183,19 @@ Deno.serve(async (req) => {
         : null,
       can_report_paid: openForPay,
       can_pay: canPayCard,
+      card_checkout: cardPricing
+        ? {
+            available: true,
+            invoice_gbp: cardPricing.net_gbp,
+            charge_gbp: cardPricing.charge_gbp,
+            fee_gbp: cardPricing.fee_gbp,
+            fee_percent: cardPricing.fee_percent,
+            fee_fixed_gbp: cardPricing.fee_fixed_pence / 100,
+            note:
+              "Card / Apple Pay includes a processing fee so we receive the invoice amount in full. Bank transfer has no fee.",
+          }
+        : null,
+      applicable_credits: applicableCredits,
     });
   }
 
