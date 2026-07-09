@@ -2709,7 +2709,8 @@
       day_centre: data.day_centre,
       annual_weekly_total: data.annual_weekly_total,
       choices: collectChoices(),
-      declarations: { accurate: true },
+      // One confirmation checkbox covers accuracy + terms (edge requires both).
+      declarations: { accurate: true, terms: true },
       contact_email: (data.parent && data.parent.email) || null,
       contact_phone: null,
       submitted_from: String(global.location.href || "").slice(0, 500),

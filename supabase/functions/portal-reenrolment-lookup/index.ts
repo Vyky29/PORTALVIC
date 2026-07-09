@@ -252,11 +252,40 @@ Deno.serve(async (req) => {
       console.error("[portal-reenrolment-lookup] roster merge", err);
     }
   }
+  // Demo family (Elia): flat £50 one-off session so parents can test pay/credit
+  // without the full-year multi-slot programme total (~£7k).
+  const isEliaDemo =
+    String(participantRow.contact_id || "") === "elia-matilla-demo" ||
+    String(paymentCtx?.clientKey || "") === "elia-matilla-2526";
+  if (isEliaDemo) {
+    const demoSessions = { autumn: 1, spring: 0, summer: 0, annual: 1 };
+    weeklySlots = [
+      {
+        id: "demo-elia-50",
+        raw: "30' SW (Tuesday) · demo £50 one session",
+        serviceType: "AQUATIC ACTIVITY",
+        durationMin: 30,
+        day: "Tuesday",
+        isWeekend: false,
+        isDayCentre: false,
+        pricePerSession: 50,
+        sessions: demoSessions,
+        termTotals: { autumn: 50, spring: 0, summer: 0, annual: 50 },
+        venue: "Acton",
+        timeSlot: "19:00–19:30",
+        displayLabel: "Aquatic Activity · Tuesday · 30' · £50 (demo one session)",
+      },
+    ];
+    dayCentreSlots = [];
+  }
+
   const annualWeeklyTotal = annualTotalForWeekly(weeklySlots);
   const currentArrangements2526 = buildCurrentArrangements2526({
     participantName: participantDisplayName,
     dobIso: participantRow.dob_iso ? String(participantRow.dob_iso) : null,
-    serviceRaw: paymentCtx?.serviceRaw || null,
+    serviceRaw: isEliaDemo
+      ? "30' SW (Tuesday) · demo £50 one session"
+      : paymentCtx?.serviceRaw || null,
     weeklySlots,
     dayCentreSlots,
     rosterRows,
