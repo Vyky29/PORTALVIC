@@ -22,7 +22,7 @@ function json(status: number, body: Record<string, unknown>) {
 function defaultPortalOrigin(): string {
   return (
     clean(Deno.env.get("PARENT_PORTAL_PUBLIC_ORIGIN"), 200) ||
-    "https://portalvic.vercel.app"
+    "https://www.clubsensational.org"
   ).replace(/\/$/, "");
 }
 
@@ -47,6 +47,22 @@ function safeReturnOrigin(raw: unknown): string {
     /* fall through */
   }
   return defaultPortalOrigin();
+}
+
+/** Path parents land on after Stripe (WordPress proxy uses /parent, not .html). */
+function parentPortalReturnPath(origin: string): string {
+  try {
+    const host = new URL(origin).hostname.toLowerCase();
+    if (host === "www.clubsensational.org" || host === "clubsensational.org") {
+      return "/parent";
+    }
+    if (host === "family.clubsensational.org") {
+      return "/parent";
+    }
+  } catch {
+    /* fall through */
+  }
+  return "/parent_portal.html";
 }
 
 Deno.serve(async (req) => {
@@ -169,11 +185,12 @@ Deno.serve(async (req) => {
       : productName;
 
   const origin = safeReturnOrigin(body.return_origin);
+  const returnPath = parentPortalReturnPath(origin);
   const successUrl =
-    `${origin}/parent_portal.html?invoice_paid=1&contact=${encodeURIComponent(contactId)}` +
+    `${origin}${returnPath}?invoice_paid=1&contact=${encodeURIComponent(contactId)}` +
     `&invoice=${encodeURIComponent(invoiceId)}`;
   const cancelUrl =
-    `${origin}/parent_portal.html?invoice_cancel=1&contact=${encodeURIComponent(contactId)}` +
+    `${origin}${returnPath}?invoice_cancel=1&contact=${encodeURIComponent(contactId)}` +
     `&invoice=${encodeURIComponent(invoiceId)}`;
 
   const created = await stripeCreateCheckoutSession({

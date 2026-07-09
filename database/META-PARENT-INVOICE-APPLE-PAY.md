@@ -4,14 +4,32 @@ Parent **Card / Apple Pay** uses **Stripe Checkout**. Apple Pay / Google Pay app
 automatically when Stripe and the device allow them — no separate Apple Pay SDK
 in this repo.
 
+## Live family portal URL
+
+Families use:
+
+- **https://www.clubsensational.org/parents** (also **/parent** — same portal)
+- Technical host: **https://family.clubsensational.org/parent** (Vercel)
+
+Apple Pay verifies the **hostname**, not the `/parents` path.
+
 ## Checklist (Stripe Dashboard)
 
 1. **Settings → Payment methods** — enable **Apple Pay** (and Google Pay if wanted).
-2. **Settings → Apple Pay / domain verification** — add your live domain
-   (e.g. `portalvic.vercel.app` and any custom club domain). Stripe hosts the
-   verification file for Checkout.
-3. Use **HTTPS** production URLs (`PARENT_PORTAL_PUBLIC_ORIGIN`).
-4. Test on Safari / iPhone with a card in Wallet.
+2. **Settings → Payment methods → Apple Pay → Add domain** — verify these hosts:
+   - `www.clubsensational.org` ← **required** (what parents see)
+   - `family.clubsensational.org` ← if Checkout can open on that host
+   - `portalvic.vercel.app` ← optional (admin/dev / direct Vercel)
+3. Stripe hosts the Apple domain association file for Checkout once the domain is verified.
+4. Set Edge Function secret (recommended):
+
+   ```bash
+   PARENT_PORTAL_PUBLIC_ORIGIN=https://www.clubsensational.org
+   ```
+
+   After card pay, parents return to `/parent` on that origin (works with the WordPress proxy).
+5. Test on Safari / iPhone with a card in Wallet, starting from
+   **https://www.clubsensational.org/parents** (or `/parent`).
 
 ## Fees
 
