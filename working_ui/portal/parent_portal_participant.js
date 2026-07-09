@@ -795,7 +795,7 @@
     return {
       full: pName,
       first: first,
-      text: "Participant's hub (" + first + "'s Hub)",
+      text: first + "'s Hub",
     };
   }
 

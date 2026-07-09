@@ -621,7 +621,7 @@
     var sub = childUnread > 0 ? childUnread + " new message" + (childUnread === 1 ? "" : "s") : "";
     var fullName = String((c && (c.display_name || c.name)) || "Participant").trim() || "Participant";
     var first = fullName.split(/\s+/)[0] || "Participant";
-    var label = "Participant's hub (" + first + "'s Hub)";
+    var label = first + "'s Hub";
     return (
       '<button type="button" class="pp-child-action-btn pp-child-sessions-btn" data-contact-id="' +
       esc(String(c.contact_id || "")) +
