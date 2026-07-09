@@ -237,14 +237,41 @@
       declineOtherWrap.classList.toggle("is-hidden", !declineOtherCheck.checked);
     }
 
+    function syncLetterDraftFromForm() {
+      var editor = screen.querySelector("#ldfLetterEditor");
+      var L = lettersApi();
+      if (!editor || !L) return;
+      var draftApp = readFormApp(screen, app);
+      // Drop sticky saved letter so Declined/Approved drafts match the form.
+      draftApp.decision_letter_text = null;
+      editor.value = L.buildEmailBody(draftApp);
+      app.decision_letter_text = null;
+      var msg = screen.querySelector("#ldfLetterMsg");
+      if (msg) {
+        msg.textContent = "Letter updated from decision.";
+        msg.className = "ldf-msg is-ok";
+      }
+    }
+
     if (statusSel) {
       statusSel.addEventListener("change", function () {
         syncDecisionSections();
         syncFundingPreview();
+        syncLetterDraftFromForm();
       });
     }
     if (declineOtherCheck) {
-      declineOtherCheck.addEventListener("change", syncDeclineOther);
+      declineOtherCheck.addEventListener("change", function () {
+        syncDeclineOther();
+        syncLetterDraftFromForm();
+      });
+    }
+    screen.querySelectorAll('input[name="ldfDeclineReason"]').forEach(function (el) {
+      el.addEventListener("change", syncLetterDraftFromForm);
+    });
+    var declineOtherText = screen.querySelector("#ldfDeclineOtherText");
+    if (declineOtherText) {
+      declineOtherText.addEventListener("input", syncLetterDraftFromForm);
     }
     syncDecisionSections();
     syncDeclineOther();
@@ -688,9 +715,27 @@
     return html;
   }
 
+  function letterLooksWrongForStatus(text, status) {
+    var body = String(text || "");
+    var st = clean(status).toLowerCase();
+    if (!body) return true;
+    if (st === "declined") {
+      return (
+        /pleased to confirm (conditional )?approval/i.test(body) ||
+        /Approved funding amount:/i.test(body) ||
+        /Reimbursement schedule:/i.test(body)
+      );
+    }
+    if (st === "approved" || st === "approved_conditional") {
+      return /unable to approve funding/i.test(body);
+    }
+    return false;
+  }
+
   function initialLetterText(app) {
-    if (clean(app && app.decision_letter_text)) return app.decision_letter_text;
+    var saved = clean(app && app.decision_letter_text);
     var L = lettersApi();
+    if (saved && !letterLooksWrongForStatus(saved, app && app.status)) return saved;
     return L ? L.buildEmailBody(app) : "";
   }
 
@@ -819,6 +864,16 @@
     var fields = readDecisionFields(screen, a);
     if (fields.error) {
       a.status = clean((screen.querySelector("#ldfStatus") || {}).value) || a.status;
+      // Still pull decline reasons for live letter drafts even if Save would fail.
+      if (clean(a.status).toLowerCase() === "declined") {
+        var decline = declineReasonsFromForm(screen);
+        a.decline_reason_codes = decline.codes.length ? decline.codes : null;
+        a.decline_reason_other = decline.other;
+        a.funding_amount_gbp = null;
+        a.reimbursement_schedule = null;
+        a.exceptional_funding_arrangement = null;
+        a.additional_conditions = null;
+      }
       return a;
     }
     a.status = fields.status;
@@ -1020,13 +1075,19 @@
           review_notes: fields.review_notes,
           reviewed_at: new Date().toISOString(),
         };
+        var liveForLetter = Object.assign({}, app, fields);
+        liveForLetter.decision_letter_text = null;
+        var generatedLetter = lettersApi()
+          ? lettersApi().buildEmailBody(liveForLetter)
+          : "";
         var editedLetter = clean(letterEditorText(screen));
-        if (editedLetter) {
+        if (
+          editedLetter &&
+          !letterLooksWrongForStatus(editedLetter, fields.status)
+        ) {
           payload.decision_letter_text = editedLetter;
-        } else if (lettersApi()) {
-          payload.decision_letter_text = lettersApi().buildEmailBody(
-            Object.assign({}, app, fields)
-          );
+        } else {
+          payload.decision_letter_text = generatedLetter || editedLetter || null;
         }
         var uid = null;
         try {
