@@ -965,14 +965,25 @@
     global.location.href = registrationEditUrl(data, opts, returnView);
   }
 
+  /** Prefer stable colours by service type; never use closed-day red. */
   var PP_CAL_SERVICE_TONES = [
     "#2d84b3",
-    "#c2410c",
-    "#15803d",
+    "#0d9488",
     "#7c4dbf",
+    "#15803d",
     "#b45309",
-    "#0e7490",
+    "#0369a1",
   ];
+
+  function toneForServiceLabel(label, fallbackIdx) {
+    var s = String(label || "").toLowerCase();
+    if (/aquatic|swim/.test(s)) return "#0d9488"; // teal — not closed red
+    if (/climb/.test(s)) return "#2d84b3";
+    if (/multi/.test(s)) return "#15803d";
+    if (/bespoke/.test(s)) return "#7c4dbf";
+    if (/day\s*centre|daycentre/.test(s)) return "#b45309";
+    return PP_CAL_SERVICE_TONES[fallbackIdx % PP_CAL_SERVICE_TONES.length];
+  }
 
   function dayNameToCalCol(day) {
     var s = String(day || "")
@@ -1001,7 +1012,7 @@
       var label = String((s && s.label) || "Service").trim() || "Service";
       var toneKey = label.toLowerCase();
       if (!serviceTone[toneKey]) {
-        serviceTone[toneKey] = PP_CAL_SERVICE_TONES[toneIdx % PP_CAL_SERVICE_TONES.length];
+        serviceTone[toneKey] = toneForServiceLabel(label, toneIdx);
         toneIdx += 1;
       }
       if (!byCol[col]) byCol[col] = [];

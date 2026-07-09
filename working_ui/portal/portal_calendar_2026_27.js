@@ -250,16 +250,23 @@
       var sessions = node.querySelector("#dcCalSessionsPanel");
       if (sessions) {
         sessions.hidden = false;
-        sessions.querySelectorAll(".dc-cal-term__info, .dc-cal-term__weeks").forEach(function (el) {
-          el.remove();
-        });
+        sessions
+          .querySelectorAll(".dc-cal-term__info, .dc-cal-term__weeks, .dc-cal-panel__intro")
+          .forEach(function (el) {
+            el.remove();
+          });
       }
       var legend = node.querySelector("#dcCalLegendSessions");
       if (legend) legend.remove();
+      // Participant view: no term-edge blink / crash-week chrome — only their days + closures.
+      if (!opts.markTermEdges) {
+        node.classList.add("dc-cal--no-term-edges");
+      } else {
+        try {
+          global.portalMarkCalendar202627Highlights(node);
+        } catch (_mark) {}
+      }
       host.appendChild(node);
-      try {
-        global.portalMarkCalendar202627Highlights(node);
-      } catch (_mark) {}
       if (opts.dayColors) {
         try {
           global.portalMarkPreviewSessionDays(node, opts.dayColors);

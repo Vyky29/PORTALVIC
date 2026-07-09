@@ -975,8 +975,20 @@
       text-shadow: 0 0 2px rgba(0, 0, 0, 0.35);
     }
     .pp-cal-host--year .dc-cal--sessions-only .dc-cal-tabs,
-    .pp-cal-host--year .dc-cal--sessions-only [data-dc-cal-summary] {
+    .pp-cal-host--year .dc-cal--sessions-only [data-dc-cal-summary],
+    .pp-cal-host--year .dc-cal--sessions-only .dc-cal-panel__intro {
       display: none !important;
+    }
+    /* No green term-start blink on parent My Calendar */
+    .pp-cal-host--year .dc-cal--no-term-edges .dc-cal-cell--term-edge,
+    .pp-cal-host--year .dc-cal--no-term-edges .dc-cal-cell--term-edge::after {
+      animation: none !important;
+      box-shadow: none !important;
+      outline: none !important;
+    }
+    .pp-cal-host--year .dc-cal--no-term-edges .dc-cal-cell--term-edge:not(.dc-cal-cell--mine):not(.dc-cal-cell--red) {
+      background: transparent !important;
+      border-radius: 999px;
     }
     /* Participant's Team cards. */
     .pp-team-backbar { padding-bottom: 6px; margin-bottom: 4px; }
@@ -1728,8 +1740,8 @@
   <script src="/portal/portal_participant_photos.js?v=20260703-perf"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260705-team-photos-only"></script>
   <script src="/portal/parent_portal_team.js?v=20260705-feedback-team-live"></script>
-  <script src="/portal/portal_calendar_2026_27.js?v=20260709-my-cal-split"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260709-my-cal-split"></script>
+  <script src="/portal/portal_calendar_2026_27.js?v=20260709-my-cal-polish"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260709-my-cal-polish"></script>
   <script src="/portal/parent_portal_app.js?v=20260705-dob-age"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
