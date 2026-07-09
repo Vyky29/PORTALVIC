@@ -1405,18 +1405,55 @@
     }
     .pp-consent-card {
       border: 1px solid var(--line);
-      border-radius: 14px;
+      border-radius: 16px;
       background: #fff;
       padding: 14px;
       min-width: 0;
     }
+    .pp-consent-card--photo {
+      border-color: #c4b5fd;
+      background: linear-gradient(180deg, #faf5ff 0%, #fff 48%);
+    }
+    .pp-consent-card--med {
+      border-color: #99f6e4;
+      background: linear-gradient(180deg, #f0fdfa 0%, #fff 48%);
+    }
     .pp-consent-card__head {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
       gap: 10px;
       margin: 0 0 8px;
       min-width: 0;
+    }
+    .pp-consent-card__title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+    }
+    .pp-consent-ico-wrap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      flex: 0 0 auto;
+    }
+    .pp-consent-ico-wrap--photo {
+      background: rgba(124, 58, 237, 0.12);
+      color: #7c3aed;
+    }
+    .pp-consent-ico-wrap--med {
+      background: rgba(15, 118, 110, 0.12);
+      color: #0f766e;
+    }
+    .pp-consent-ico {
+      width: 20px;
+      height: 20px;
+      display: block;
     }
     .pp-consent-card__title {
       margin: 0;
@@ -1429,10 +1466,39 @@
     .pp-consent-card__hint {
       margin: 0 0 10px;
       font-size: 13px;
-      line-height: 1.4;
+      line-height: 1.45;
       overflow-wrap: break-word;
     }
-    .pp-consent-options {
+    .pp-consent-uses {
+      list-style: none;
+      margin: 0 0 12px;
+      padding: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      min-width: 0;
+    }
+    .pp-consent-use {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(124, 58, 237, 0.14);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
+    .pp-consent-use__ico {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 auto;
+      color: #7c3aed;
+    }
+    .pp-consent-choices {
       border: 0;
       margin: 0 0 12px;
       padding: 0;
@@ -1441,19 +1507,63 @@
       gap: 8px;
       min-width: 0;
     }
-    .pp-consent-option {
+    .pp-consent-choice {
       display: flex;
       align-items: flex-start;
-      gap: 8px;
-      font-size: 14px;
-      line-height: 1.35;
-      color: var(--ink);
+      gap: 10px;
       min-width: 0;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      cursor: pointer;
+    }
+    .pp-consent-choice input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .pp-consent-choice__mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: #f1f5f9;
+      color: #64748b;
+      flex: 0 0 auto;
+    }
+    .pp-consent-choice__ico {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+    .pp-consent-choice__copy {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+      flex: 1;
+    }
+    .pp-consent-choice__copy strong {
+      font-size: 14px;
+      color: var(--ink);
       overflow-wrap: break-word;
     }
-    .pp-consent-option input {
-      margin-top: 3px;
-      flex: 0 0 auto;
+    .pp-consent-choice__copy .pp-muted {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.35;
+      overflow-wrap: break-word;
+    }
+    .pp-consent-choice.is-selected {
+      border-color: #0b2a5b;
+      box-shadow: 0 0 0 2px rgba(11, 42, 91, 0.12);
+    }
+    .pp-consent-choice.is-selected .pp-consent-choice__mark {
+      background: rgba(11, 42, 91, 0.1);
+      color: #0b2a5b;
     }
     .pp-consent-chip {
       flex: 0 0 auto;
@@ -1495,6 +1605,9 @@
       border: 1px solid var(--line);
       border-radius: 10px;
       min-width: 0;
+    }
+    @media (max-width: 420px) {
+      .pp-consent-uses { grid-template-columns: 1fr; }
     }
     .pp-sr-only {
       position: absolute;
@@ -2845,7 +2958,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260709-overview-by-service"></script>
   <script src="/portal/parent_portal_team.js?v=20260709-msg-photo-team"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260709-my-cal-polish"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260709-back-btn"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260709-consent-ui"></script>
   <script src="/portal/parent_portal_app.js?v=20260709-consents"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

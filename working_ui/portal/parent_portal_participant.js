@@ -894,7 +894,7 @@
       }) +
       infoBtnHtml("consents", "Consents", consentIcon, {
         extraClass: " pp-pax-info-btn--consents",
-        subtitle: "Photos & medication",
+        subtitle: "Marketing photos & meds",
       }) +
       infoBtnHtml("balance", "Credits & refunds", balanceIcon, {
         extraClass: " pp-pax-info-btn--balance",
@@ -2937,6 +2937,79 @@
     );
   }
 
+  function consentSvg(kind) {
+    if (kind === "camera") {
+      return (
+        '<svg class="pp-consent-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>'
+      );
+    }
+    if (kind === "web") {
+      return (
+        '<svg class="pp-consent-use__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20"/><path d="M12 2a15 15 0 0 0 0 20"/></svg>'
+      );
+    }
+    if (kind === "megaphone") {
+      return (
+        '<svg class="pp-consent-use__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11v2a4 4 0 0 0 4 4h1"/><path d="M11 5l10 4v6l-10 4V5z"/><path d="M7 15v4"/></svg>'
+      );
+    }
+    if (kind === "training") {
+      return (
+        '<svg class="pp-consent-use__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 3 3 6 3s6-2 6-3v-5"/></svg>'
+      );
+    }
+    if (kind === "research") {
+      return (
+        '<svg class="pp-consent-use__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>'
+      );
+    }
+    if (kind === "pill") {
+      return (
+        '<svg class="pp-consent-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="8" rx="4"/><path d="M12 8v8"/><path d="M7 12h.01"/></svg>'
+      );
+    }
+    if (kind === "check") {
+      return (
+        '<svg class="pp-consent-choice__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>'
+      );
+    }
+    if (kind === "block") {
+      return (
+        '<svg class="pp-consent-choice__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>'
+      );
+    }
+    if (kind === "med-yes") {
+      return (
+        '<svg class="pp-consent-choice__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/><rect x="4" y="4" width="16" height="16" rx="4"/></svg>'
+      );
+    }
+    return "";
+  }
+
+  function consentChoiceHtml(name, value, selected, ico, title, sub) {
+    return (
+      '<label class="pp-consent-choice' +
+      (selected ? " is-selected" : "") +
+      '">' +
+      '<input type="radio" name="' +
+      esc(name) +
+      '" value="' +
+      esc(value) +
+      '"' +
+      (selected ? " checked" : "") +
+      ">" +
+      '<span class="pp-consent-choice__mark" aria-hidden="true">' +
+      consentSvg(ico) +
+      "</span>" +
+      '<span class="pp-consent-choice__copy">' +
+      "<strong>" +
+      esc(title) +
+      "</strong>" +
+      (sub ? '<span class="pp-muted">' + esc(sub) + "</span>" : "") +
+      "</span></label>"
+    );
+  }
+
   function renderConsents(host, data, opts) {
     var parentName =
       opts && typeof opts.parentDisplayName === "function" ? opts.parentDisplayName() : "";
@@ -2944,7 +3017,7 @@
       data,
       "consents",
       '<h3 class="pp-pax-subview-title">Consents</h3>' +
-        '<p class="pp-muted pp-pax-subview-note">Photo permissions and medication left at the centre for ' +
+        '<p class="pp-muted pp-pax-subview-note">Marketing / resources photo use, and medication left at the centre for ' +
         esc(firstNameOf(data)) +
         ".</p>" +
         '<div id="ppConsentsNotice" class="pp-notice" hidden></div>' +
@@ -2973,7 +3046,9 @@
     function paint(consents, summary) {
       consents = consents || {};
       summary = summary || {};
-      var photo = String(consents.photo_consent || "unknown");
+      var photoRaw = String(consents.photo_consent || "unknown");
+      /* Progress / family portal photos do not need this consent. Map legacy internal_only → no. */
+      var photo = photoRaw === "yes" ? "yes" : photoRaw === "no" || photoRaw === "internal_only" ? "no" : "";
       var med = String(consents.medication_at_centre_needed || "unknown");
       var details = String(consents.medication_at_centre_details || "");
       var photoSigner = String(consents.photo_consent_signed_by_name || parentName || "");
@@ -2985,23 +3060,49 @@
 
       formHost.innerHTML =
         '<form class="pp-consent-form" id="ppConsentForm" novalidate>' +
-        '<section class="pp-consent-card" aria-labelledby="ppConsentPhotoTitle">' +
+        '<section class="pp-consent-card pp-consent-card--photo" aria-labelledby="ppConsentPhotoTitle">' +
         '<div class="pp-consent-card__head">' +
-        '<h4 id="ppConsentPhotoTitle" class="pp-consent-card__title">Photo &amp; media</h4>' +
+        '<div class="pp-consent-card__title-row">' +
+        '<span class="pp-consent-ico-wrap pp-consent-ico-wrap--photo" aria-hidden="true">' +
+        consentSvg("camera") +
+        "</span>" +
+        '<h4 id="ppConsentPhotoTitle" class="pp-consent-card__title">Photo &amp; media for marketing</h4>' +
+        "</div>" +
         consentStatusChip(photoDone) +
         "</div>" +
-        '<p class="pp-muted pp-consent-card__hint">May we take and use photos of your child for club records and achievement updates shared with you?</p>' +
-        '<fieldset class="pp-consent-options">' +
-        '<legend class="pp-sr-only">Photo consent</legend>' +
-        '<label class="pp-consent-option"><input type="radio" name="photo_consent" value="yes"' +
-        (photo === "yes" ? " checked" : "") +
-        "> Yes — club use &amp; family updates</label>" +
-        '<label class="pp-consent-option"><input type="radio" name="photo_consent" value="internal_only"' +
-        (photo === "internal_only" ? " checked" : "") +
-        "> Internal only (staff records, not social)</label>" +
-        '<label class="pp-consent-option"><input type="radio" name="photo_consent" value="no"' +
-        (photo === "no" ? " checked" : "") +
-        "> No photos</label>" +
+        '<p class="pp-muted pp-consent-card__hint">Achievement photos in the portal (progress shared with you) already happen. This consent is only for wider use:</p>' +
+        '<ul class="pp-consent-uses" aria-label="Wider photo uses">' +
+        '<li class="pp-consent-use">' +
+        consentSvg("web") +
+        "<span>Website</span></li>" +
+        '<li class="pp-consent-use">' +
+        consentSvg("megaphone") +
+        "<span>Marketing</span></li>" +
+        '<li class="pp-consent-use">' +
+        consentSvg("training") +
+        "<span>Staff training</span></li>" +
+        '<li class="pp-consent-use">' +
+        consentSvg("research") +
+        "<span>Research / resources</span></li>" +
+        "</ul>" +
+        '<fieldset class="pp-consent-choices">' +
+        '<legend class="pp-sr-only">Photo consent for marketing and resources</legend>' +
+        consentChoiceHtml(
+          "photo_consent",
+          "yes",
+          photo === "yes",
+          "check",
+          "Yes — allow wider use",
+          "Website, marketing, training materials and research resources",
+        ) +
+        consentChoiceHtml(
+          "photo_consent",
+          "no",
+          photo === "no",
+          "block",
+          "No — progress & family only",
+          "Keep photos for the portal and updates to you; not for public or marketing use",
+        ) +
         "</fieldset>" +
         '<div class="pp-field"><label for="ppConsentPhotoSigner">Signed by</label>' +
         '<input id="ppConsentPhotoSigner" name="photo_consent_signed_by_name" type="text" autocomplete="name" required value="' +
@@ -3011,25 +3112,40 @@
           ? '<p class="pp-muted pp-consent-signed">Last signed ' + esc(photoWhen) + "</p>"
           : "") +
         "</section>" +
-        '<section class="pp-consent-card" aria-labelledby="ppConsentMedTitle">' +
+        '<section class="pp-consent-card pp-consent-card--med" aria-labelledby="ppConsentMedTitle">' +
         '<div class="pp-consent-card__head">' +
+        '<div class="pp-consent-card__title-row">' +
+        '<span class="pp-consent-ico-wrap pp-consent-ico-wrap--med" aria-hidden="true">' +
+        consentSvg("pill") +
+        "</span>" +
         '<h4 id="ppConsentMedTitle" class="pp-consent-card__title">Medication at the centre</h4>' +
+        "</div>" +
         consentStatusChip(medDone) +
         "</div>" +
-        '<p class="pp-muted pp-consent-card__hint">Does staff need to hold or help with medication during sessions?</p>' +
-        '<fieldset class="pp-consent-options">' +
+        '<p class="pp-muted pp-consent-card__hint">Only if staff need to hold or help with medication during sessions (name, dose, when, storage).</p>' +
+        '<fieldset class="pp-consent-choices">' +
         '<legend class="pp-sr-only">Medication at centre</legend>' +
-        '<label class="pp-consent-option"><input type="radio" name="medication_at_centre_needed" value="no"' +
-        (med === "no" ? " checked" : "") +
-        "> No medication left at the centre</label>" +
-        '<label class="pp-consent-option"><input type="radio" name="medication_at_centre_needed" value="yes"' +
-        (med === "yes" ? " checked" : "") +
-        "> Yes — staff may hold / assist as described</label>" +
+        consentChoiceHtml(
+          "medication_at_centre_needed",
+          "no",
+          med === "no",
+          "block",
+          "No medication at the centre",
+          "Nothing left with staff for sessions",
+        ) +
+        consentChoiceHtml(
+          "medication_at_centre_needed",
+          "yes",
+          med === "yes",
+          "med-yes",
+          "Yes — staff may hold / assist",
+          "Describe the medication below",
+        ) +
         "</fieldset>" +
         '<div class="pp-field pp-consent-med-details"' +
         (med === "yes" ? "" : " hidden") +
         '><label for="ppConsentMedDetails">Medication details (name, dose, when, storage)</label>' +
-        '<textarea id="ppConsentMedDetails" name="medication_at_centre_details" rows="3">' +
+        '<textarea id="ppConsentMedDetails" name="medication_at_centre_details" rows="3" placeholder="e.g. Salbutamol inhaler — 2 puffs if wheezy; kept in labelled pouch">' +
         esc(details) +
         "</textarea></div>" +
         '<div class="pp-field"><label for="ppConsentMedSigner">Signed by</label>' +
@@ -3043,10 +3159,23 @@
 
       var form = formHost.querySelector("#ppConsentForm");
       var medDetailsWrap = formHost.querySelector(".pp-consent-med-details");
-      formHost.querySelectorAll('input[name="medication_at_centre_needed"]').forEach(function (r) {
+
+      function syncChoiceStyles() {
+        formHost.querySelectorAll(".pp-consent-choice").forEach(function (lab) {
+          var input = lab.querySelector('input[type="radio"]');
+          lab.classList.toggle("is-selected", !!(input && input.checked));
+        });
+      }
+
+      formHost.querySelectorAll(".pp-consent-choice input").forEach(function (r) {
         r.addEventListener("change", function () {
-          var checked = formHost.querySelector('input[name="medication_at_centre_needed"]:checked');
-          if (medDetailsWrap) medDetailsWrap.hidden = !(checked && checked.value === "yes");
+          syncChoiceStyles();
+          if (r.name === "medication_at_centre_needed" && medDetailsWrap) {
+            var checked = formHost.querySelector(
+              'input[name="medication_at_centre_needed"]:checked',
+            );
+            medDetailsWrap.hidden = !(checked && checked.value === "yes");
+          }
         });
       });
 

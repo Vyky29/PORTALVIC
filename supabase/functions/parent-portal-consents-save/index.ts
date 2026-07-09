@@ -18,7 +18,7 @@ function json(status: number, body: Record<string, unknown>) {
   });
 }
 
-const PHOTO_OK = new Set(["yes", "no", "internal_only"]);
+const PHOTO_OK = new Set(["yes", "no"]);
 const MED_OK = new Set(["yes", "no"]);
 
 Deno.serve(async (req) => {
