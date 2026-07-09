@@ -6,9 +6,8 @@
  *
  * UX:
  *  - Filter every category by Active (default) / All / Inactive + free-text search.
- *  - Basics table: Name · Role · Shifts (click a person -> full editable card).
- *  - Category boxes (Docs, Emergency, Health, Trainings, …) open that category as a
- *    table; clicking a row opens the same person card.
+ *  - Staff first: people table, then category boxes nested under Staff (open one
+ *    category individually, or browse the group). Then annual profile + L&D cards.
  *  - Person card: edit any field across every category, set Active, and Save — all
  *    persisted to Supabase. No code change needed for the admin to update data.
  *
@@ -119,6 +118,11 @@
       ".hr-card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid #eef2f7}",
       ".hr-card-h h3{margin:0;font-size:15px;color:#0f172a;display:flex;align-items:center;gap:8px}",
       ".hr-card-h h3 .hr-ico{flex:0 0 auto;color:#2d84b3}",
+      ".hr-staff-cats{padding:14px 16px 16px;border-top:1px solid #eef2f7;min-width:0}",
+      ".hr-staff-cats__head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 10px;min-width:0}",
+      ".hr-staff-cats__title{margin:0;font-size:13px;font-weight:800;color:#0f172a;display:flex;align-items:center;gap:8px;min-width:0;overflow-wrap:break-word}",
+      ".hr-staff-cats__title .hr-ico{flex:0 0 auto;color:#2d84b3}",
+      ".hr-staff-cats__hint{margin:0;font-size:12px;color:#64748b;min-width:0;overflow-wrap:break-word}",
       ".hr-ico{display:block}",
       ".hr-tbl-wrap{overflow-x:auto;min-width:0}",
       ".hr-tbl{width:100%;border-collapse:collapse;font-size:14px}",
@@ -761,12 +765,7 @@
       + '<input type="search" class="hr-search" id="hrSearch" placeholder="Search people & all categories…" value="' + esc(state.query) + '" />'
       + '</div>';
 
-    html += renderAnnualProfileCard();
-    if (global.AdminLDFundingReview && typeof global.AdminLDFundingReview.renderCard === "function") {
-      html += global.AdminLDFundingReview.renderCard(state.ldFundingApps, state.ldFundingFilter);
-    }
-
-    // People table (basics)
+    // Staff first (people + nested category boxes), then annual profile / L&D.
     html += '<div class="hr-card"><div class="hr-card-h"><h3>' + icon("staff", 17) + 'Staff</h3><span class="hr-multi">' + peopleRows.length + ' shown</span></div>';
     html += '<div class="hr-tbl-wrap"><table class="hr-tbl hr-tbl--center"><thead><tr><th>Name</th><th>Role</th><th>Shifts</th><th>Services booked for</th><th>Days on rota</th><th>Venues</th><th>Status</th></tr></thead><tbody>';
     if (!peopleRows.length) {
@@ -798,10 +797,14 @@
           + '<td>' + pill + offChip + '</td></tr>';
       });
     }
-    html += '</tbody></table></div></div>';
+    html += '</tbody></table></div>';
 
-    // Category boxes
-    html += '<div class="hr-card"><div class="hr-card-h"><h3>' + icon("grid", 17) + 'Categories</h3></div><div style="padding:14px"><div class="hr-boxes">';
+    // Categories live under Staff: open one box for an individual sheet, or use the group.
+    html += '<div class="hr-staff-cats">'
+      + '<div class="hr-staff-cats__head">'
+      + '<h4 class="hr-staff-cats__title">' + icon("grid", 15) + 'Categories</h4>'
+      + '<p class="hr-staff-cats__hint">Open one category, or browse the group below</p>'
+      + '</div><div class="hr-boxes">';
     CATEGORY_ORDER.forEach(function (sheet) {
       var present = state.rows.some(function (r) { return r.sheet === sheet; });
       if (!present) return;
@@ -811,6 +814,11 @@
         + '</button>';
     });
     html += '</div></div></div>';
+
+    html += renderAnnualProfileCard();
+    if (global.AdminLDFundingReview && typeof global.AdminLDFundingReview.renderCard === "function") {
+      html += global.AdminLDFundingReview.renderCard(state.ldFundingApps, state.ldFundingFilter);
+    }
     html += '</div>';
 
     root.innerHTML = html;
