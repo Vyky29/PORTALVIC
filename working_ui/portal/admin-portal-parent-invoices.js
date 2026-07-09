@@ -349,13 +349,77 @@
   }
 
   function bindUploadForm() {
+    var createForm = global.document.getElementById('portalParentInvoiceCreateForm');
     var form = global.document.getElementById('portalParentInvoiceUploadForm');
-    if (!form || form.getAttribute('data-bound') === '1') return;
-    form.setAttribute('data-bound', '1');
+    if (createForm && createForm.getAttribute('data-bound') !== '1') {
+      createForm.setAttribute('data-bound', '1');
+      createForm.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var contactId = String(
+          (global.document.getElementById('portalParentInvoiceContactId') || {}).value || ''
+        ).trim();
+        if (!contactId) {
+          cfg.toast('Pick a participant first', 'error');
+          return;
+        }
+        var amountEl = global.document.getElementById('portalParentInvoiceAmount');
+        var amount = amountEl && amountEl.value ? Number(amountEl.value) : NaN;
+        if (!isFinite(amount) || amount <= 0) {
+          cfg.toast('Enter amount £', 'error');
+          return;
+        }
+        var vatEl = global.document.getElementById('portalParentInvoiceVatMode');
+        var qtyEl = global.document.getElementById('portalParentInvoiceQty');
+        var dueEl = global.document.getElementById('portalParentInvoiceDue');
+        var descEl = global.document.getElementById('portalParentInvoiceDesc');
+        var refEl = global.document.getElementById('portalParentInvoiceRef');
+        var invNo = global.document.getElementById('portalParentInvoiceNumber');
+        var notes = global.document.getElementById('portalParentInvoiceNotes');
+        var body = {
+          action: 'create_portal',
+          contact_id: contactId,
+          amount_gbp: amount,
+          vat_mode: vatEl && vatEl.value === 'exempt' ? 'exempt' : 'vat_20',
+          quantity: qtyEl && qtyEl.value ? Number(qtyEl.value) : 1,
+          due_date: dueEl && dueEl.value ? dueEl.value : null,
+          line_description:
+            (descEl && descEl.value) ||
+            'Structured activity support delivered for a SEND participant.',
+          reference: refEl && refEl.value ? refEl.value : null,
+          invoice_number: invNo && invNo.value ? invNo.value : null,
+          notes: notes && notes.value ? notes.value : null,
+          share_status: 'ready',
+          payment_method_hint: 'bank_transfer'
+        };
+        var submitBtn = createForm.querySelector('[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+        void api('portal-admin-parent-invoices-upsert', body, false).then(function (r) {
+          if (submitBtn) submitBtn.disabled = false;
+          if (r.error) {
+            cfg.toast(r.message || r.error || 'Create failed', 'error');
+            return;
+          }
+          var num =
+            r.invoice && r.invoice.invoice_number
+              ? String(r.invoice.invoice_number)
+              : 'Invoice';
+          cfg.toast(num + ' created & shared', 'ok');
+          createForm.reset();
+          var qtyReset = global.document.getElementById('portalParentInvoiceQty');
+          if (qtyReset) qtyReset.value = '1';
+          var nameEl = global.document.getElementById('portalParentInvoiceParticipantLabel');
+          if (nameEl) nameEl.textContent = 'No participant selected';
+          var idEl = global.document.getElementById('portalParentInvoiceContactId');
+          if (idEl) idEl.value = '';
+          void renderHost(global.document.getElementById('portalParentInvoicesHost'));
+        });
+      });
+    }
 
     var search = global.document.getElementById('portalParentInvoiceSearch');
     var searchTimer = null;
-    if (search) {
+    if (search && search.getAttribute('data-bound') !== '1') {
+      search.setAttribute('data-bound', '1');
       search.addEventListener('input', function () {
         clearTimeout(searchTimer);
         searchTimer = setTimeout(function () {
@@ -363,6 +427,9 @@
         }, 280);
       });
     }
+
+    if (!form || form.getAttribute('data-bound') === '1') return;
+    form.setAttribute('data-bound', '1');
 
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
@@ -430,8 +497,9 @@
       '<div class="card-h"><h3>Family invoices</h3>' +
       '<span class="chip chip--pend" id="portalParentInvoicesMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Upload a Xero invoice PDF and share it to the parent hub. Paste the Xero <strong>Invoice ID</strong> (GUID) so when the family pays (card / bank confirm / credit), Portal can mark it paid in Xero. Families see <strong>Tide bank transfer</strong> by default; Card / Apple Pay adds the Stripe fee. Add GoCardless only when needed.</p>' +
-      '<form id="portalParentInvoiceUploadForm" class="toolbar" style="flex-direction:column;align-items:stretch;gap:10px;margin-bottom:14px">' +
+      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word"><strong>Create in Portal</strong> generates a TAX INVOICE PDF (Exempt or VAT 20%) and shares it with the family — no Xero needed. Optional: still upload a Xero PDF below if you prefer. Families pay by Tide bank transfer or Card / Apple Pay.</p>' +
+      '<form id="portalParentInvoiceCreateForm" class="toolbar" style="flex-direction:column;align-items:stretch;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--line,#e5e7eb)">' +
+      '<div style="font-weight:700">Create invoice in Portal</div>' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end">' +
       '<label style="flex:1 1 200px;min-width:0">Search participant' +
       '<input class="inp" id="portalParentInvoiceSearch" type="search" placeholder="Name or contact id" autocomplete="off" style="width:100%" />' +
@@ -442,19 +510,32 @@
       '</div></div>' +
       '<div id="portalParentInvoicesSearchHits" hidden style="margin-top:-4px"></div>' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
-      '<label style="flex:1 1 120px;min-width:0">Invoice #<input class="inp" id="portalParentInvoiceNumber" style="width:100%" /></label>' +
-      '<label style="flex:1 1 100px;min-width:0">Amount £<input class="inp" id="portalParentInvoiceAmount" type="number" min="0" step="0.01" style="width:100%" /></label>' +
+      '<label style="flex:1 1 140px;min-width:0">VAT' +
+      '<select class="inp" id="portalParentInvoiceVatMode" style="width:100%">' +
+      '<option value="vat_20">Private · VAT 20%</option>' +
+      '<option value="exempt">LA / NHS · Exempt</option>' +
+      '</select></label>' +
+      '<label style="flex:1 1 100px;min-width:0">Amount £ (total)<input class="inp" id="portalParentInvoiceAmount" type="number" min="0.01" step="0.01" required style="width:100%" /></label>' +
+      '<label style="flex:1 1 80px;min-width:0">Qty<input class="inp" id="portalParentInvoiceQty" type="number" min="0.01" step="0.01" value="1" style="width:100%" /></label>' +
       '<label style="flex:1 1 140px;min-width:0">Due date<input class="inp" id="portalParentInvoiceDue" type="date" style="width:100%" /></label>' +
       '</div>' +
-      '<label style="min-width:0">Xero Invoice ID (GUID, for payment sync)<input class="inp" id="portalParentInvoiceXeroId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" style="width:100%;max-width:28rem" /></label>' +
-      '<label style="min-width:0">Title (optional)<input class="inp" id="portalParentInvoiceTitle" style="width:100%;max-width:28rem" /></label>' +
+      '<label style="min-width:0">Description<textarea class="inp" id="portalParentInvoiceDesc" rows="3" placeholder="Structured activity support…" style="width:100%;max-width:36rem;min-height:4.5rem"></textarea></label>' +
+      '<label style="min-width:0">Reference (optional)<input class="inp" id="portalParentInvoiceRef" placeholder="e.g. Summer Term 26/27" style="width:100%;max-width:28rem" /></label>' +
+      '<label style="min-width:0">Invoice # (optional — auto INV-P-####)<input class="inp" id="portalParentInvoiceNumber" style="width:100%;max-width:16rem" /></label>' +
       '<label style="min-width:0">Notes (optional)<input class="inp" id="portalParentInvoiceNotes" style="width:100%;max-width:28rem" /></label>' +
+      '<div><button type="submit" class="btn btn--primary btn--sm">Create &amp; share</button></div>' +
+      '</form>' +
+      '<details style="margin-bottom:14px">' +
+      '<summary class="muted" style="cursor:pointer;font-weight:600">Or upload a Xero / office PDF</summary>' +
+      '<form id="portalParentInvoiceUploadForm" class="toolbar" style="flex-direction:column;align-items:stretch;gap:10px;margin-top:10px">' +
+      '<label style="min-width:0">Xero Invoice ID (GUID, optional sync)<input class="inp" id="portalParentInvoiceXeroId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" style="width:100%;max-width:28rem" /></label>' +
+      '<label style="min-width:0">Title (optional)<input class="inp" id="portalParentInvoiceTitle" style="width:100%;max-width:28rem" /></label>' +
       '<label style="min-width:0">GoCardless URL (optional)<input class="inp" id="portalParentInvoiceGcUrl" type="url" placeholder="https://…" style="width:100%;max-width:28rem" /></label>' +
       '<label style="min-width:0">Payment Link URL (rare)<input class="inp" id="portalParentInvoicePlUrl" type="url" placeholder="https://…" style="width:100%;max-width:28rem" /></label>' +
       '<label style="min-width:0">Payment Link surcharge note<input class="inp" id="portalParentInvoicePlNote" placeholder="e.g. +2.5% card fee" style="width:100%;max-width:28rem" /></label>' +
       '<label style="min-width:0">PDF<input class="inp" id="portalParentInvoiceFile" type="file" accept="application/pdf,.pdf" style="width:100%;max-width:28rem" /></label>' +
-      '<div><button type="submit" class="btn btn--primary btn--sm">Upload &amp; share</button></div>' +
-      '</form>' +
+      '<div><button type="submit" class="btn btn--sec btn--sm">Upload &amp; share PDF</button></div>' +
+      '</form></details>' +
       '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sm" data-inv-filter="all">All</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="ready">Shared</button>' +
