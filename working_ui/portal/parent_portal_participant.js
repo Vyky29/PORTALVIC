@@ -2643,13 +2643,25 @@
         "</div></article>"
       );
     }
+    var acceptedOffer = (g.offers || []).find(function (o) {
+      return o && o.status === "accepted";
+    });
     var hint =
       status === "open"
         ? "You have a makeup grant for " +
           (g.preferred_venue || "your centre") +
           ". The office will offer a slot when one is available at that venue."
         : status === "consumed"
-          ? "Makeup accepted — the office will confirm on the roster."
+          ? acceptedOffer && acceptedOffer.roster_override_id
+            ? "Makeup accepted and placed on the club roster" +
+              (acceptedOffer.session_date
+                ? " (" +
+                  (formatHubDateLabel(acceptedOffer.session_date) || acceptedOffer.session_date) +
+                  (acceptedOffer.session_time ? " · " + acceptedOffer.session_time : "") +
+                  ")"
+                : "") +
+              "."
+            : "Makeup accepted — roster confirmation is in progress."
           : status === "forfeited"
             ? "Makeup forfeited after a declined offer."
             : "Status: " + status;
@@ -2759,8 +2771,11 @@
                   showNotice("info", (r && r.message) || "Accepted.");
                   refreshMakeupList();
                 })
-                .catch(function () {
-                  showNotice("error", "Could not accept — try again.");
+                .catch(function (err) {
+                  showNotice(
+                    "error",
+                    (err && err.messageText) || "Could not accept — try again or contact the office.",
+                  );
                   btn.disabled = false;
                 });
             });

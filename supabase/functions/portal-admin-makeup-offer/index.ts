@@ -10,6 +10,10 @@ import {
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
 import { normalizeParentPhoneE164 } from "../_shared/portal_parent_messaging.ts";
+import {
+  normalizeStaffRosterKey,
+  parseMakeupSessionTime,
+} from "../_shared/parent_portal_makeup_roster.ts";
 
 function clean(v: unknown, max = 500): string {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
@@ -17,6 +21,10 @@ function clean(v: unknown, max = 500): string {
 
 function isIsoDate(s: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(s);
+}
+
+function isPgTime(s: string): boolean {
+  return /^\d{2}:\d{2}(:\d{2})?$/.test(s);
 }
 
 Deno.serve(async (req) => {
@@ -47,6 +55,9 @@ Deno.serve(async (req) => {
     instructor_name?: string;
     area?: string;
     offer_notes?: string;
+    anchor_staff_id?: string;
+    anchor_start?: string;
+    anchor_end?: string;
   } = {};
   try {
     body = await req.json();
@@ -92,11 +103,35 @@ Deno.serve(async (req) => {
   const instructorName = clean(body.instructor_name, 120);
   const area = clean(body.area, 80);
   const offerNotes = clean(body.offer_notes, 800);
+  const staffFromBody = normalizeStaffRosterKey(clean(body.anchor_staff_id, 80));
+  const staffFromName = normalizeStaffRosterKey(instructorName);
+  const anchorStaffId = staffFromBody || staffFromName;
+  const parsedTime = parseMakeupSessionTime(sessionTime, sessionDate);
+  let anchorStart = clean(body.anchor_start, 12);
+  let anchorEnd = clean(body.anchor_end, 12);
+  if (anchorStart && !isPgTime(anchorStart)) anchorStart = "";
+  if (anchorEnd && !isPgTime(anchorEnd)) anchorEnd = "";
+  if (!anchorStart && parsedTime) anchorStart = parsedTime.start;
+  if (!anchorEnd && parsedTime) anchorEnd = parsedTime.end;
 
   if (!grantId) return portalAdminJson(400, { ok: false, error: "grant_id_required" });
   if (!venue) return portalAdminJson(400, { ok: false, error: "venue_required" });
   if (!isIsoDate(sessionDate)) {
     return portalAdminJson(400, { ok: false, error: "session_date_required" });
+  }
+  if (!anchorStaffId) {
+    return portalAdminJson(400, {
+      ok: false,
+      error: "instructor_required",
+      message: "Instructor is required so Accept can place the makeup on the roster.",
+    });
+  }
+  if (!sessionTime) {
+    return portalAdminJson(400, {
+      ok: false,
+      error: "session_time_required",
+      message: "Time slot is required (e.g. 5 to 5.30).",
+    });
   }
 
   const { data: grant, error: gErr } = await admin
@@ -140,6 +175,9 @@ Deno.serve(async (req) => {
       instructor_name: instructorName,
       area,
       offer_notes: offerNotes || null,
+      anchor_staff_id: anchorStaffId,
+      anchor_start: anchorStart || null,
+      anchor_end: anchorEnd || null,
       status: "pending",
       offered_by: verified.userId || null,
       offered_at: now,

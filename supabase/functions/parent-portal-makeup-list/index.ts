@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
     const { data: offerRows } = await supabase
       .from("portal_parent_makeup_offers")
       .select(
-        "id, grant_id, venue, session_date, session_time, service_label, instructor_name, area, offer_notes, status, decline_reason, offered_at, responded_at",
+        "id, grant_id, venue, session_date, session_time, service_label, instructor_name, area, offer_notes, status, decline_reason, offered_at, responded_at, roster_override_id, roster_applied_at",
       )
       .in("grant_id", grantIds)
       .order("offered_at", { ascending: false });

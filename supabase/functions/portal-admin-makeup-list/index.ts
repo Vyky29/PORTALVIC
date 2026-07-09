@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
     const { data: offerRows, error: oErr } = await admin
       .from("portal_parent_makeup_offers")
       .select(
-        "id, grant_id, venue, session_date, session_time, service_label, instructor_name, area, offer_notes, status, decline_reason, offered_at, responded_at",
+        "id, grant_id, venue, session_date, session_time, service_label, instructor_name, area, offer_notes, status, decline_reason, offered_at, responded_at, roster_override_id, roster_applied_at, anchor_staff_id",
       )
       .in("grant_id", grantIds)
       .order("offered_at", { ascending: false });

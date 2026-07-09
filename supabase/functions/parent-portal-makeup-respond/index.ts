@@ -1,11 +1,14 @@
 // @ts-nocheck — Edge Function (Deno).
 //
 // parent-portal-makeup-respond
-// Parent Accept → grant consumed. Decline → grant FORFEITED (slot goes to next family).
+// Parent Accept → grant consumed + schedule_overrides MakeUp on open slot.
+// Decline → grant FORFEITED (slot goes to next family).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
 import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
+import { applyAcceptedMakeupToRoster } from "../_shared/parent_portal_makeup_roster.ts";
+import { normalizeParentPhoneE164 } from "../_shared/portal_parent_messaging.ts";
 
 function clean(v: unknown, max = 500): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -64,6 +67,36 @@ Deno.serve(async (req) => {
   const now = new Date().toISOString();
 
   if (action === "accept") {
+    const { data: grant } = await supabase
+      .from("portal_parent_makeup_grants")
+      .select("id, participant_display, contact_id, preferred_venue, service_label, status")
+      .eq("id", offer.grant_id)
+      .maybeSingle();
+
+    const roster = await applyAcceptedMakeupToRoster(
+      supabase,
+      offer,
+      grant || {
+        participant_display: "",
+        contact_id: offer.contact_id,
+        preferred_venue: offer.venue,
+        service_label: offer.service_label,
+      },
+      null,
+    );
+
+    if (!roster.override_id) {
+      return json(500, {
+        ok: false,
+        error: "roster_apply_failed",
+        detail: roster.error || "unknown",
+        message:
+          roster.error === "staff_required" || roster.error === "time_required"
+            ? "This offer is missing instructor or time — ask the office to re-offer the slot."
+            : "Could not place this makeup on the roster. Please contact the office.",
+      });
+    }
+
     const { data: updated, error } = await supabase
       .from("portal_parent_makeup_offers")
       .update({ status: "accepted", responded_at: now, updated_at: now })
@@ -78,11 +111,51 @@ Deno.serve(async (req) => {
       .from("portal_parent_makeup_grants")
       .update({ status: "consumed", closed_at: now, updated_at: now })
       .eq("id", offer.grant_id);
+
+    // Soft notify parent inbox that makeup is on the roster.
+    try {
+      const { data: parentMeta } = await supabase
+        .from("portal_parent_contacts")
+        .select("parent_display, mobile")
+        .eq("parent_person_id", session.parent_person_id)
+        .limit(1)
+        .maybeSingle();
+      const phone = normalizeParentPhoneE164(String(parentMeta?.mobile || "").trim());
+      if (phone) {
+        const who = clean(grant?.participant_display, 120) || "participant";
+        const bodyText =
+          `Makeup confirmed for ${who}` +
+          `\n${clean(offer.venue, 80)} · ${clean(offer.session_date, 12)}` +
+          (offer.session_time ? ` · ${clean(offer.session_time, 40)}` : "") +
+          (offer.instructor_name ? `\nInstructor: ${clean(offer.instructor_name, 120)}` : "") +
+          `\n\nThis session is now on the club roster.`;
+        await supabase.from("portal_parent_whatsapp_inbound").insert({
+          wa_message_id: `app:makeup-accepted:${offerId}`,
+          from_phone: phone,
+          contact_name: clean(parentMeta?.parent_display, 120) || "Parent",
+          message_type: "text",
+          body_text: bodyText,
+          context_wa_id: null,
+          created_at: now,
+          meta: {
+            source: "parent_portal_makeup_accepted",
+            parent_person_id: session.parent_person_id,
+            contact_id: offer.contact_id,
+            offer_id: offerId,
+            roster_override_id: roster.override_id,
+            direction_hint: "club_to_parent",
+          },
+        });
+      }
+    } catch (e) {
+      console.error("[parent-portal-makeup-respond] notify", e);
+    }
+
     return json(200, {
       ok: true,
       offer: updated,
-      message:
-        "Accepted. The office will confirm this makeup on the roster. Thank you.",
+      roster_override_id: roster.override_id,
+      message: "Accepted. This makeup is now on the club roster.",
     });
   }
 

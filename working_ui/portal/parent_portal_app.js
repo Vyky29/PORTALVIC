@@ -332,6 +332,7 @@
             if (!res.ok || !j.ok) {
               var err = new Error("makeup_respond_failed");
               err.code = (j && j.error) || "respond_failed";
+              err.messageText = (j && j.message) || "";
               throw err;
             }
             return j;

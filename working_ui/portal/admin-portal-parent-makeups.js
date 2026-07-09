@@ -114,6 +114,19 @@
         '<button type="button" class="btn btn--sm btn--ghost" data-makeup-withdraw="' +
         esc(pending.id) +
         '">Withdraw offer</button>';
+    } else if (g.status === 'consumed') {
+      var accepted = (g.offers || []).find(function (o) {
+        return o && o.status === 'accepted';
+      });
+      actions =
+        '<span class="muted" style="overflow-wrap:break-word">On roster' +
+        (accepted && accepted.roster_override_id ? ' ✓' : ' (pending link)') +
+        (accepted
+          ? '<br>' +
+            esc(formatDate(accepted.session_date)) +
+            (accepted.session_time ? ' · ' + esc(accepted.session_time) : '')
+          : '') +
+        '</span>';
     } else {
       actions = '<span class="muted">' + esc(g.status) + '</span>';
     }
@@ -166,7 +179,7 @@
       '<div class="card-h"><h3>Makeup grants (by venue)</h3>' +
       '<span class="chip chip--pend" id="portalMakeupMeta">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Waiting-list style: offer a concrete slot at the family&apos;s <strong>preferred venue</strong>. If they decline, they <strong>forfeit</strong> the grant and the slot can go to the next family. Instructor / exact time may differ — we offer what is available.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Waiting-list style: offer a concrete slot at the family&apos;s <strong>preferred venue</strong> (instructor + time required). If they <strong>Accept</strong>, MakeUp is written to the roster automatically. If they <strong>Decline</strong>, they forfeit the grant and the slot can go to the next family.</p>' +
       '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sm" data-makeup-filter="open">Open</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-makeup-filter="offered">Offered</button>' +
@@ -218,8 +231,16 @@
           cfg.toast('Need a valid date YYYY-MM-DD', 'error');
           return;
         }
-        var sessionTime = global.prompt('Time slot (e.g. 1 to 2):', '') || '';
-        var instructor = global.prompt('Instructor (may differ from usual):', '') || '';
+        var sessionTime = global.prompt('Time slot (e.g. 5 to 5.30) — required:', '') || '';
+        if (!String(sessionTime).trim()) {
+          cfg.toast('Time slot required', 'error');
+          return;
+        }
+        var instructor = global.prompt('Instructor (required — used for roster):', '') || '';
+        if (!String(instructor).trim()) {
+          cfg.toast('Instructor required so Accept can place MakeUp on the roster', 'error');
+          return;
+        }
         var notes = global.prompt('Note to family (optional):', '') || '';
         btn.disabled = true;
         void api('portal-admin-makeup-offer', {
@@ -236,7 +257,7 @@
             btn.disabled = false;
             return;
           }
-          cfg.toast('Offer sent — decline will forfeit their grant', 'ok');
+          cfg.toast('Offer sent — Accept places MakeUp on roster; Decline forfeits', 'ok');
           void renderHost(global.document.getElementById('portalMakeupHost'));
         });
       });
