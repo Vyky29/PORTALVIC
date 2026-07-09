@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
   let query = admin
     .from("portal_parent_absence_reports")
     .select(
-      "id, parent_person_id, contact_id, participant_display, session_date, service_label, session_time, status, reason_text, proof_storage_path, proof_file_name, proof_mime, proof_uploaded_at, proof_deadline, reviewed_at, review_notes, outcome, outcome_notes, created_at, updated_at",
+      "id, parent_person_id, contact_id, participant_display, session_date, service_label, session_time, status, reason_code, reason_text, proof_storage_path, proof_file_name, proof_mime, proof_uploaded_at, proof_deadline, reviewed_at, review_notes, outcome, outcome_notes, created_at, updated_at",
     )
     .order("created_at", { ascending: false })
     .limit(limit);

@@ -240,11 +240,17 @@
             session_date: payload.session_date,
             service_label: payload.service_label,
             session_time: payload.session_time || "",
+            reason_code: payload.reason_code || "",
             reason_text: payload.reason_text || "",
+            can_prove: !!payload.can_prove,
           }),
         }).then(function (res) {
           return res.json().then(function (j) {
-            if (!res.ok || !j.ok) throw new Error("absence_submit_failed");
+            if (!res.ok || !j.ok) {
+              var err = new Error("absence_submit_failed");
+              err.code = (j && j.error) || "save_failed";
+              throw err;
+            }
             return j;
           });
         });

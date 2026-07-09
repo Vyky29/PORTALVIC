@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  if (report.status === "excused" || report.status === "expired") {
+  if (report.status === "excused" || report.status === "expired" || report.status === "noted") {
     return json(403, { ok: false, error: "upload_not_allowed" });
   }
 

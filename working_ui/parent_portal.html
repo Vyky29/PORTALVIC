@@ -947,6 +947,70 @@
       font: inherit;
       min-width: 0;
     }
+    .pp-absence-reasons,
+    .pp-absence-prove {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-width: 0;
+    }
+    .pp-absence-reason-chip,
+    .pp-absence-prove-chip {
+      display: inline-flex;
+      align-items: center;
+      min-width: 0;
+      max-width: 100%;
+      cursor: pointer;
+    }
+    .pp-absence-reason-chip input,
+    .pp-absence-prove-chip input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .pp-absence-reason-chip span,
+    .pp-absence-prove-chip span {
+      display: inline-block;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink);
+      overflow-wrap: break-word;
+      max-width: 100%;
+    }
+    .pp-absence-reason-chip input:checked + span,
+    .pp-absence-prove-chip input:checked + span {
+      border-color: var(--blue);
+      background: rgba(37, 99, 235, 0.1);
+      color: var(--blue);
+    }
+    .pp-absence-unwell {
+      margin: 0 0 12px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #f8fafc;
+      min-width: 0;
+    }
+    .pp-absence-unwell__q {
+      margin: 0 0 10px;
+      font-size: 13px;
+      font-weight: 700;
+      overflow-wrap: break-word;
+    }
+    .pp-absence-upload-block {
+      margin-top: 12px;
+      min-width: 0;
+    }
+    .pp-absence-upload-btn {
+      display: inline-flex;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+    }
     .pp-absence-list-title {
       margin: 8px 0 10px;
       font-size: 14px;
@@ -2029,8 +2093,8 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260705-team-photos-only"></script>
   <script src="/portal/parent_portal_team.js?v=20260705-feedback-team-live"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260709-my-cal-polish"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260709-term-to-17jul"></script>
-  <script src="/portal/parent_portal_app.js?v=20260709-absence-proof"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260709-absence-reasons"></script>
+  <script src="/portal/parent_portal_app.js?v=20260709-absence-reasons"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {

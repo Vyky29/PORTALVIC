@@ -77,6 +77,7 @@
     else if (s === 'excused') tone = 'ok';
     else if (s === 'rejected' || s === 'expired') tone = 'warn';
     else if (s === 'missed') tone = 'info';
+    else if (s === 'noted') tone = 'ok';
     return '<span class="chip chip--' + tone + '">' + esc(s.replace(/_/g, ' ')) + '</span>';
   }
 
@@ -324,6 +325,7 @@
       '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sm" data-absence-filter="pending_review">Pending proof</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="missed">Missed</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="noted">Noted</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="all">All</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParentAbsenceRefreshEmbed">Refresh</button>' +
       '</div>' +

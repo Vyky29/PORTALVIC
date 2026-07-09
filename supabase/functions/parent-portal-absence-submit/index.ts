@@ -1,12 +1,32 @@
 // @ts-nocheck — Edge Function (Deno).
 //
 // parent-portal-absence-submit
-// Parent reports Absent for a session → starts as Missed (proof optional within 14 days).
+// Parent reports Absent:
+// - other_commitments / party / holidays / travel / birthday → status "noted" (NOT Missed)
+// - unwell + can_prove=false → "missed"
+// - unwell + can_prove=true (proof uploaded separately) → usually created as "missed" then proof upload → pending_review
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
 import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
 import { normalizeParentPhoneE164 } from "../_shared/portal_parent_messaging.ts";
+
+const REASON_LABELS: Record<string, string> = {
+  other_commitments: "Other commitments",
+  party: "Party",
+  holidays: "Holidays",
+  travel: "Travel",
+  birthday: "Birthday",
+  unwell: "Unwell",
+};
+
+const NON_MISSED = new Set([
+  "other_commitments",
+  "party",
+  "holidays",
+  "travel",
+  "birthday",
+]);
 
 function clean(v: unknown, max = 500): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -39,6 +59,12 @@ function json(status: number, body: Record<string, unknown>) {
   });
 }
 
+function resolveStatus(reasonCode: string, canProve: boolean): string {
+  if (NON_MISSED.has(reasonCode)) return "noted";
+  if (reasonCode === "unwell") return "missed";
+  return "missed";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: parentPortalCorsHeaders });
   if (req.method !== "POST") return json(405, { ok: false, error: "method_not_allowed" });
@@ -59,7 +85,9 @@ Deno.serve(async (req) => {
     session_date?: string;
     service_label?: string;
     session_time?: string;
+    reason_code?: string;
     reason_text?: string;
+    can_prove?: boolean;
   } = {};
   try {
     body = await req.json();
@@ -71,14 +99,21 @@ Deno.serve(async (req) => {
   const sessionDate = clean(body.session_date, 12);
   const serviceLabel = clean(body.service_label, 160);
   const sessionTime = clean(body.session_time, 40);
-  const reasonText = clean(body.reason_text, 800);
+  const reasonCode = clean(body.reason_code, 40).toLowerCase().replace(/\s+/g, "_");
+  const reasonNote = clean(body.reason_text, 800);
+  const canProve = !!body.can_prove;
 
   if (!contactId) return json(400, { ok: false, error: "contact_id_required" });
   if (!isIsoDate(sessionDate)) return json(400, { ok: false, error: "session_date_required" });
   if (!serviceLabel) return json(400, { ok: false, error: "service_label_required" });
+  if (!REASON_LABELS[reasonCode]) {
+    return json(400, { ok: false, error: "reason_code_required" });
+  }
+  if (reasonCode === "unwell" && canProve === undefined) {
+    /* can_prove optional; default false → missed */
+  }
 
   const today = todayIsoLondon();
-  // Allow reporting for today / past / near future (next 21 days) — not far future.
   const maxFuture = addDaysIso(today, 21);
   if (sessionDate > maxFuture) {
     return json(400, { ok: false, error: "session_date_too_far" });
@@ -105,13 +140,18 @@ Deno.serve(async (req) => {
     participantDisplay = clean(fallback.data.child_display, 160);
   }
 
+  const status = resolveStatus(reasonCode, canProve);
   const proofDeadline = addDaysIso(sessionDate, 14);
   const now = new Date().toISOString();
+  const reasonLabel = REASON_LABELS[reasonCode];
+  const reasonText = reasonNote
+    ? `${reasonLabel} — ${reasonNote}`
+    : reasonLabel;
 
   const { data: existing } = await supabase
     .from("portal_parent_absence_reports")
     .select(
-      "id, contact_id, participant_display, session_date, service_label, session_time, status, reason_text, proof_deadline, created_at",
+      "id, contact_id, participant_display, session_date, service_label, session_time, status, reason_code, reason_text, proof_deadline, created_at",
     )
     .eq("contact_id", contactId)
     .eq("session_date", sessionDate)
@@ -121,7 +161,12 @@ Deno.serve(async (req) => {
   if (existing && (existing.status === "excused" || existing.status === "pending_review")) {
     return json(200, {
       ok: true,
-      report: { ...existing, can_upload_proof: String(existing.proof_deadline || "") >= today },
+      report: {
+        ...existing,
+        can_upload_proof:
+          existing.status === "pending_review" &&
+          String(existing.proof_deadline || "") >= today,
+      },
       already_reported: true,
     });
   }
@@ -136,19 +181,31 @@ Deno.serve(async (req) => {
     });
   }
 
+  const payloadExtra = {
+    reason_code: reasonCode,
+    can_prove: reasonCode === "unwell" ? canProve : false,
+    expects_proof: reasonCode === "unwell" && canProve,
+  };
+
   let inserted = existing;
-  if (existing && (existing.status === "missed" || existing.status === "rejected")) {
+  const rowFields = {
+    reason_code: reasonCode,
+    reason_text: reasonText,
+    status,
+    session_time: sessionTime || existing?.session_time || "",
+    participant_display: participantDisplay || existing?.participant_display || "",
+    proof_deadline: proofDeadline,
+    payload: payloadExtra,
+    updated_at: now,
+  };
+
+  if (existing && ["noted", "missed", "rejected"].includes(String(existing.status))) {
     const { data: updated, error: updErr } = await supabase
       .from("portal_parent_absence_reports")
-      .update({
-        reason_text: reasonText || existing.reason_text,
-        session_time: sessionTime || existing.session_time,
-        participant_display: participantDisplay || existing.participant_display,
-        updated_at: now,
-      })
+      .update(rowFields)
       .eq("id", existing.id)
       .select(
-        "id, contact_id, participant_display, session_date, service_label, session_time, status, reason_text, proof_deadline, created_at",
+        "id, contact_id, participant_display, session_date, service_label, session_time, status, reason_code, reason_text, proof_deadline, created_at",
       )
       .maybeSingle();
     if (updErr) {
@@ -166,13 +223,10 @@ Deno.serve(async (req) => {
         session_date: sessionDate,
         service_label: serviceLabel,
         session_time: sessionTime,
-        status: "missed",
-        reason_text: reasonText,
-        proof_deadline: proofDeadline,
-        updated_at: now,
+        ...rowFields,
       })
       .select(
-        "id, contact_id, participant_display, session_date, service_label, session_time, status, reason_text, proof_deadline, created_at",
+        "id, contact_id, participant_display, session_date, service_label, session_time, status, reason_code, reason_text, proof_deadline, created_at",
       )
       .maybeSingle();
 
@@ -183,7 +237,6 @@ Deno.serve(async (req) => {
     inserted = created;
   }
 
-  // Soft notify admin inbox (same channel as portal messages) — not a free-text absence flow.
   try {
     const { data: parentMeta } = await supabase
       .from("portal_parent_contacts")
@@ -194,13 +247,20 @@ Deno.serve(async (req) => {
     const phone = normalizeParentPhoneE164(String(parentMeta?.mobile || "").trim());
     if (phone) {
       const parentName = clean(parentMeta?.parent_display, 120) || "Parent";
+      const statusLine =
+        status === "noted"
+          ? "Noted (not a Missed session)"
+          : status === "missed"
+          ? "Missed session"
+          : status;
       const bodyText =
         `Absent report: ${participantDisplay || "participant"} — ${sessionDate}` +
         (serviceLabel ? ` · ${serviceLabel}` : "") +
         (sessionTime ? ` · ${sessionTime}` : "") +
-        `\nStatus: Missed session` +
-        `\nProof deadline: ${proofDeadline}` +
-        (reasonText ? `\nNote: ${reasonText}` : "");
+        `\nReason: ${reasonText}` +
+        `\nStatus: ${statusLine}` +
+        (status === "missed" ? `\nProof deadline: ${proofDeadline}` : "") +
+        (canProve && reasonCode === "unwell" ? "\nParent will upload proof." : "");
       await supabase.from("portal_parent_whatsapp_inbound").insert({
         wa_message_id: `app:absence:${inserted?.id || crypto.randomUUID()}`,
         from_phone: phone,
@@ -215,6 +275,8 @@ Deno.serve(async (req) => {
           contact_id: contactId,
           participant_display: participantDisplay,
           absence_report_id: inserted?.id || null,
+          reason_code: reasonCode,
+          status,
         },
       });
     }
@@ -226,7 +288,8 @@ Deno.serve(async (req) => {
     ok: true,
     report: {
       ...inserted,
-      can_upload_proof: proofDeadline >= today,
+      can_upload_proof: status === "missed" && canProve && proofDeadline >= today,
+      expects_proof: reasonCode === "unwell" && canProve,
     },
   });
 });

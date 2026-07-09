@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
   const { data: rows, error } = await supabase
     .from("portal_parent_absence_reports")
     .select(
-      "id, contact_id, participant_display, session_date, service_label, session_time, status, reason_text, proof_file_name, proof_uploaded_at, proof_deadline, reviewed_at, review_notes, outcome, outcome_notes, created_at",
+      "id, contact_id, participant_display, session_date, service_label, session_time, status, reason_code, reason_text, proof_file_name, proof_uploaded_at, proof_deadline, reviewed_at, review_notes, outcome, outcome_notes, created_at",
     )
     .eq("parent_person_id", session.parent_person_id)
     .eq("contact_id", contactId)
@@ -97,13 +97,17 @@ Deno.serve(async (req) => {
 
   const reports = (rows || []).map((r) => {
     const deadline = String(r.proof_deadline || "");
+    const isUnwellTrack = r.status === "missed" || r.status === "pending_review" || r.status === "rejected";
     const canUpload =
+      isUnwellTrack &&
       (r.status === "missed" || r.status === "pending_review" || r.status === "rejected") &&
       deadline >= today;
     return {
       ...r,
       can_upload_proof: canUpload,
-      proof_window_closed: !canUpload && (r.status === "missed" || r.status === "expired" || r.status === "rejected"),
+      proof_window_closed:
+        !canUpload &&
+        (r.status === "missed" || r.status === "expired" || r.status === "rejected"),
     };
   });
 

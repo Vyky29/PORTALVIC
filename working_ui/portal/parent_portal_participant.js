@@ -1029,12 +1029,42 @@
 
   function absenceStatusLabel(status) {
     var s = String(status || "").toLowerCase();
+    if (s === "noted") return "Noted";
     if (s === "missed") return "Missed session";
     if (s === "pending_review") return "Proof with admin";
     if (s === "excused") return "Excused (validated)";
     if (s === "rejected") return "Proof not accepted";
     if (s === "expired") return "Proof window closed";
     return s || "—";
+  }
+
+  var ABSENCE_REASON_OPTIONS = [
+    { code: "other_commitments", label: "Other commitments" },
+    { code: "party", label: "Party" },
+    { code: "holidays", label: "Holidays" },
+    { code: "travel", label: "Travel" },
+    { code: "birthday", label: "Birthday" },
+    { code: "unwell", label: "Unwell" },
+  ];
+
+  function absenceReasonChipsHtml() {
+    return (
+      '<div class="pp-absence-reasons" role="group" aria-label="Reason">' +
+      ABSENCE_REASON_OPTIONS.map(function (r, i) {
+        return (
+          '<label class="pp-absence-reason-chip">' +
+          '<input type="radio" name="ppAbsenceReasonCode" value="' +
+          esc(r.code) +
+          '"' +
+          (i === 0 ? " checked" : "") +
+          " />" +
+          "<span>" +
+          esc(r.label) +
+          "</span></label>"
+        );
+      }).join("") +
+      "</div>"
+    );
   }
 
   function formatProofDeadline(iso) {
@@ -2065,7 +2095,10 @@
       ? '<p class="pp-absence-card__meta muted">Proof on file: ' + esc(r.proof_file_name) + "</p>"
       : "";
     var actions = "";
-    if (canUpload) {
+    if (status === "noted") {
+      actions =
+        '<p class="pp-muted pp-absence-card__hint">Logged for the office — not a Missed session (no credit / refund / makeup path).</p>';
+    } else if (canUpload) {
       var uploadLabel = status === "pending_review" || r.proof_file_name ? "Replace proof" : "Upload proof";
       var hint =
         status === "pending_review"
@@ -2077,7 +2110,7 @@
             ".";
       actions =
         '<div class="pp-absence-card__upload">' +
-        '<label class="pp-btn pp-btn--ghost pp-absence-upload-btn">' +
+        '<label class="pp-btn pp-btn--primary pp-absence-upload-btn">' +
         esc(uploadLabel) +
         '<input type="file" accept="image/*,application/pdf" hidden data-pp-absence-proof="' +
         esc(r.id) +
@@ -2097,6 +2130,9 @@
     } else if (status === "excused") {
       actions =
         '<p class="pp-notice pp-notice--info" role="status">Validated by admin. Credit / refund / makeup (if offered) is handled by the office.</p>';
+    } else if (status === "missed") {
+      actions =
+        '<p class="pp-muted pp-absence-card__hint">Missed session — no proof on file yet. If you can still upload within 2 weeks of the session date, use Upload proof above when available.</p>';
     }
     return (
       '<article class="pp-absence-card" data-status="' +
@@ -2142,7 +2178,7 @@
       data,
       "absence",
       '<h3 class="pp-pax-subview-title">Report absent</h3>' +
-        '<p class="pp-muted pp-pax-subview-note">This marks a <strong>Missed session</strong> — it does not cancel the place. You have <strong>2 weeks</strong> from the session date to upload proof. Admin always validates before any credit, refund, or makeup.</p>' +
+        '<p class="pp-muted pp-pax-subview-note">Choose a reason first. Only <strong>Unwell</strong> can become a Missed session (with optional proof for admin). Other reasons are noted for the office — they do not open credit / refund / makeup.</p>' +
         '<div class="pp-card pp-absence-form-card">' +
         '<form id="ppAbsenceForm" class="pp-absence-form">' +
         '<label class="pp-field"><span>Session</span>' +
@@ -2150,12 +2186,29 @@
           ? '<select id="ppAbsenceSession" name="session" required>' + optionsHtml + "</select>"
           : '<p class="pp-muted">No upcoming sessions found.</p>') +
         "</label>" +
+        '<div class="pp-field"><span>Reason</span>' +
+        absenceReasonChipsHtml() +
+        "</div>" +
+        '<div id="ppAbsenceUnwellBlock" class="pp-absence-unwell" hidden>' +
+        '<p class="pp-absence-unwell__q">Can you prove it? (medical note, prescription in the participant&apos;s name, school note…)</p>' +
+        '<div class="pp-absence-prove" role="group" aria-label="Can you prove it">' +
+        '<label class="pp-absence-prove-chip"><input type="radio" name="ppAbsenceCanProve" value="yes" /><span>Yes — I will upload proof</span></label>' +
+        '<label class="pp-absence-prove-chip"><input type="radio" name="ppAbsenceCanProve" value="no" checked /><span>No — Missed session</span></label>' +
+        "</div>" +
+        '<div id="ppAbsenceUploadBlock" class="pp-absence-upload-block" hidden>' +
+        '<label class="pp-btn pp-btn--primary pp-absence-upload-btn" id="ppAbsenceUploadLabel">' +
+        "Upload proof" +
+        '<input type="file" id="ppAbsenceProofFile" accept="image/*,application/pdf" hidden />' +
+        "</label>" +
+        '<p class="pp-muted pp-absence-card__hint" id="ppAbsenceProofName"></p>' +
+        '<p class="pp-muted pp-absence-card__hint">PDF or photo. Admin must always validate. You have 2 weeks from the session date.</p>' +
+        "</div></div>" +
         '<label class="pp-field"><span>Note (optional)</span>' +
-        '<textarea id="ppAbsenceReason" name="reason" rows="3" maxlength="800" placeholder="e.g. unwell / appointment"></textarea>' +
+        '<textarea id="ppAbsenceReason" name="reason" rows="2" maxlength="800" placeholder="Extra detail for the office"></textarea>' +
         "</label>" +
         '<button type="submit" class="pp-btn pp-btn--primary" id="ppAbsenceSubmit"' +
         (sessions.length ? "" : " disabled") +
-        ">Mark as missed</button>" +
+        ">Submit absence</button>" +
         "</form>" +
         '<div id="ppAbsenceNotice" class="pp-notice" hidden></div>' +
         "</div>" +
@@ -2169,6 +2222,10 @@
   function bindAbsence(host, data, opts) {
     var notice = host.querySelector("#ppAbsenceNotice");
     var listHost = host.querySelector("#ppAbsenceListHost");
+    var unwellBlock = host.querySelector("#ppAbsenceUnwellBlock");
+    var uploadBlock = host.querySelector("#ppAbsenceUploadBlock");
+    var proofInput = host.querySelector("#ppAbsenceProofFile");
+    var proofName = host.querySelector("#ppAbsenceProofName");
 
     function showNotice(kind, text) {
       if (!notice) return;
@@ -2176,6 +2233,48 @@
       notice.className = "pp-notice" + (kind ? " pp-notice--" + kind : "");
       notice.textContent = text || "";
     }
+
+    function selectedReasonCode() {
+      var el = host.querySelector('input[name="ppAbsenceReasonCode"]:checked');
+      return el ? String(el.value || "") : "";
+    }
+
+    function canProveYes() {
+      var el = host.querySelector('input[name="ppAbsenceCanProve"]:checked');
+      return el && String(el.value) === "yes";
+    }
+
+    function syncUnwellUi() {
+      var code = selectedReasonCode();
+      var isUnwell = code === "unwell";
+      if (unwellBlock) unwellBlock.hidden = !isUnwell;
+      var showUpload = isUnwell && canProveYes();
+      if (uploadBlock) uploadBlock.hidden = !showUpload;
+      if (!showUpload && proofInput) {
+        proofInput.value = "";
+        if (proofName) proofName.textContent = "";
+      }
+      var btn = host.querySelector("#ppAbsenceSubmit");
+      if (btn) {
+        if (!isUnwell) btn.textContent = "Submit absence";
+        else if (canProveYes()) btn.textContent = "Submit & send proof";
+        else btn.textContent = "Mark as missed";
+      }
+    }
+
+    host.querySelectorAll('input[name="ppAbsenceReasonCode"]').forEach(function (inp) {
+      inp.addEventListener("change", syncUnwellUi);
+    });
+    host.querySelectorAll('input[name="ppAbsenceCanProve"]').forEach(function (inp) {
+      inp.addEventListener("change", syncUnwellUi);
+    });
+    if (proofInput) {
+      proofInput.addEventListener("change", function () {
+        var f = proofInput.files && proofInput.files[0];
+        if (proofName) proofName.textContent = f ? "Selected: " + f.name : "";
+      });
+    }
+    syncUnwellUi();
 
     function refreshList() {
       if (!listHost || typeof opts.listAbsences !== "function") {
@@ -2237,8 +2336,19 @@
         var btn = host.querySelector("#ppAbsenceSubmit");
         var raw = sel ? String(sel.value || "") : "";
         var parts = raw.split("|");
+        var reasonCode = selectedReasonCode();
         if (parts.length < 2 || !parts[0] || !parts[1]) {
           showNotice("error", "Choose a session.");
+          return;
+        }
+        if (!reasonCode) {
+          showNotice("error", "Choose a reason.");
+          return;
+        }
+        var wantsProof = reasonCode === "unwell" && canProveYes();
+        var file = proofInput && proofInput.files && proofInput.files[0];
+        if (wantsProof && !file) {
+          showNotice("error", "Choose a proof file to upload, or select No.");
           return;
         }
         if (btn) {
@@ -2251,18 +2361,53 @@
             session_date: parts[0],
             service_label: parts[1],
             session_time: parts[2] || "",
+            reason_code: reasonCode,
             reason_text: reasonEl ? String(reasonEl.value || "").trim() : "",
+            can_prove: wantsProof,
           })
-          .then(function () {
-            showNotice(
-              "info",
-              "Marked as Missed session. You have 2 weeks from the session date to upload proof for admin validation.",
-            );
+          .then(function (payload) {
+            var report = payload && payload.report;
+            if (wantsProof && file && report && report.id && typeof opts.uploadAbsenceProof === "function") {
+              showNotice("info", "Uploading proof…");
+              return opts.uploadAbsenceProof(report.id, file).then(function () {
+                return { kind: "proof" };
+              });
+            }
+            return { kind: report && report.status === "noted" ? "noted" : "missed" };
+          })
+          .then(function (result) {
+            if (result && result.kind === "proof") {
+              showNotice(
+                "info",
+                "Submitted with proof. Admin must validate before any credit, refund, or makeup.",
+              );
+            } else if (result && result.kind === "noted") {
+              showNotice(
+                "info",
+                "Absence noted for the office. This is not a Missed session.",
+              );
+            } else {
+              showNotice(
+                "info",
+                "Marked as Missed session. Without proof there is no credit / refund / makeup path unless admin decides otherwise.",
+              );
+            }
             if (reasonEl) reasonEl.value = "";
+            if (proofInput) proofInput.value = "";
+            if (proofName) proofName.textContent = "";
+            syncUnwellUi();
             refreshList();
           })
-          .catch(function () {
-            showNotice("error", "Could not save — please try again.");
+          .catch(function (err) {
+            var code = err && err.code ? String(err.code) : "";
+            if (code === "proof_window_closed") {
+              showNotice(
+                "error",
+                "The 2-week window has passed. Please contact the office/admin.",
+              );
+            } else {
+              showNotice("error", "Could not save — please try again.");
+            }
           })
           .finally(function () {
             if (btn) {
