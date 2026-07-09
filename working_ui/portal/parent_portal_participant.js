@@ -1246,14 +1246,11 @@
             '<div class="pp-pax-msg__head">' +
             '<span class="pp-pax-msg__who">' +
             unreadMark +
-            esc(isOut ? "Club" : m.sender_name || "You") +
+            esc(isOut ? "CLUBSENSATIONAL" : m.sender_name || "You") +
             "</span>" +
             '<span class="pp-pax-msg__when pp-muted">' +
             esc(formatMessageWhen(m.created_at)) +
             "</span></div>" +
-            (m.client_display && isOut
-              ? '<p class="pp-pax-msg__child pp-muted">' + esc(m.client_display) + "</p>"
-              : "") +
             (preview ? '<p class="pp-pax-msg__body">' + esc(preview) + "</p>" : "") +
             '<p class="pp-pax-msg__meta pp-muted">' +
             channelTag +
