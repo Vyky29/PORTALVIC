@@ -916,6 +916,8 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      gap: 3px;
+      position: relative;
       padding: 4px 8px;
       border-radius: 999px;
       font-size: 11px;
@@ -923,22 +925,54 @@
       line-height: 1.2;
       white-space: nowrap;
       max-width: 100%;
+      min-width: 0;
     }
-    .pp-hub-ops__date-chip--past {
-      background: rgba(220, 38, 38, 0.12);
-      color: #b91c1c;
-      border: 1px solid rgba(185, 28, 28, 0.28);
-    }
-    .pp-hub-ops__date-chip--upcoming {
+    /* Completed sessions */
+    .pp-hub-ops__date-chip--done {
       background: rgba(22, 163, 74, 0.14);
       color: #15803d;
       border: 1px solid rgba(21, 128, 61, 0.28);
     }
-    .pp-hub-ops__date-chip--today {
+    /* Future dates (not the next one) */
+    .pp-hub-ops__date-chip--upcoming {
+      background: rgba(234, 88, 12, 0.14);
+      color: #c2410c;
+      border: 1px solid rgba(194, 65, 12, 0.3);
+    }
+    /* Next session — same blue as NEXT SESSION badge */
+    .pp-hub-ops__date-chip--next {
       background: rgba(37, 99, 235, 0.14);
       color: var(--blue);
       border: 1px solid rgba(37, 99, 235, 0.35);
     }
+    /* Parent-reported absent */
+    .pp-hub-ops__date-chip--absent {
+      background: rgba(220, 38, 38, 0.14);
+      color: #b91c1c;
+      border: 1px solid rgba(185, 28, 28, 0.32);
+      text-decoration: line-through;
+      text-decoration-thickness: 1.5px;
+    }
+    .pp-hub-ops__date-chip__x {
+      width: 10px;
+      height: 10px;
+      flex: 0 0 auto;
+      display: block;
+    }
+    /* Club/admin cancelled early — credit/refund path */
+    .pp-hub-ops__date-chip--cancelled {
+      background: rgba(124, 58, 237, 0.12);
+      color: #6d28d9;
+      border: 1px dashed rgba(109, 40, 217, 0.45);
+    }
+    .pp-hub-ops__date-chip__£,
+    .pp-hub-ops__date-chip__mark {
+      width: 10px;
+      height: 10px;
+      flex: 0 0 auto;
+      display: block;
+    }
+    .pp-hub-ops__term { display: none; }
     .pp-hub-ops__badge {
       display: inline-flex;
       align-items: center;
@@ -2273,7 +2307,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260705-team-photos-only"></script>
   <script src="/portal/parent_portal_team.js?v=20260705-feedback-team-live"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260709-my-cal-polish"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260709-family-credits"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260709-term-chip-states"></script>
   <script src="/portal/parent_portal_app.js?v=20260709-family-credits"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

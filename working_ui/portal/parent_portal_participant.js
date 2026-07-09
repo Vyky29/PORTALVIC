@@ -1068,6 +1068,8 @@
     }
 
     var todayIso = isoDateLocal(new Date());
+    var nextList = findNextSessions(data, 1);
+    var nextIso = nextList[0] ? nextList[0].iso : "";
     var startParts = fromIso.split("-");
     var cursor = new Date(Number(startParts[0]), Number(startParts[1]) - 1, Number(startParts[2]));
     var out = [];
@@ -1085,6 +1087,7 @@
             shortLabel: formatTermChipLabel(iso),
             past: iso < todayIso,
             isToday: iso === todayIso,
+            isNext: !!nextIso && iso === nextIso,
           });
         }
       }
@@ -1104,32 +1107,138 @@
     }
   }
 
-  function termSessionDateChipsHtml(data) {
+  var CHIP_X_SVG =
+    '<svg class="pp-hub-ops__date-chip__x" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3 3l6 6M9 3L3 9"/></svg>';
+  var CHIP_CREDIT_SVG =
+    '<svg class="pp-hub-ops__date-chip__mark" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="4.5"/><path d="M7.2 4.4c-.3-.4-.8-.6-1.3-.6-.9 0-1.5.5-1.5 1.2 0 1.4 2.8.8 2.8 2.4 0 .7-.6 1.2-1.5 1.2-.5 0-1-.2-1.3-.6"/><path d="M6 3.2v.8M6 8v.8"/></svg>';
+
+  function termChipToneMeta(d, statusByIso) {
+    statusByIso = statusByIso || {};
+    var st = statusByIso[d.iso] || "";
+    if (st === "absent") {
+      return {
+        tone: "absent",
+        title: "Absent — " + d.iso,
+        icon: CHIP_X_SVG,
+      };
+    }
+    if (st === "cancelled") {
+      return {
+        tone: "cancelled",
+        title: "Club cancelled — credit / refund may apply — " + d.iso,
+        icon: CHIP_CREDIT_SVG,
+      };
+    }
+    if (d.isNext) {
+      return { tone: "next", title: "Next session — " + d.iso, icon: "" };
+    }
+    if (d.past) {
+      return { tone: "done", title: "Completed — " + d.iso, icon: "" };
+    }
+    return { tone: "upcoming", title: "Upcoming — " + d.iso, icon: "" };
+  }
+
+  function termSessionDateChipsHtml(data, statusByIso) {
     var dates = findTermSessionDates(data);
     if (!dates.length) return "";
     return (
       '<div class="pp-hub-ops__date-chips" role="list" aria-label="Session dates this term">' +
       dates
         .map(function (d) {
-          var tone = d.past ? "past" : d.isToday ? "today" : "upcoming";
-          var title = d.past
-            ? "Past session — " + d.iso
-            : d.isToday
-              ? "Today — " + d.iso
-              : "Upcoming — " + d.iso;
+          var meta = termChipToneMeta(d, statusByIso);
           return (
             '<span class="pp-hub-ops__date-chip pp-hub-ops__date-chip--' +
-            tone +
-            '" role="listitem" title="' +
-            esc(title) +
+            meta.tone +
+            '" role="listitem" data-pp-term-iso="' +
+            esc(d.iso) +
+            '" title="' +
+            esc(meta.title) +
             '">' +
+            meta.icon +
+            "<span>" +
             esc(d.shortLabel) +
-            "</span>"
+            "</span></span>"
           );
         })
         .join("") +
       "</div>"
     );
+  }
+
+  function applyTermDateChipStatuses(host, data, statusByIso) {
+    if (!host) return;
+    var wrap = host.querySelector(".pp-hub-ops__date-chips");
+    if (!wrap) return;
+    wrap.outerHTML = termSessionDateChipsHtml(data, statusByIso);
+  }
+
+  function mountTermDateChipStatuses(host, data, opts, messagesPromise) {
+    if (!host) return;
+    var statusByIso = Object.create(null);
+
+    function mergeAndPaint() {
+      if (!host.isConnected) return;
+      applyTermDateChipStatuses(host, data, statusByIso);
+    }
+
+    function applyCancelledFromMessages(payload) {
+      ((payload && payload.messages) || []).forEach(function (m) {
+        if (!m || String(m.kind || "").toLowerCase() !== "session_cancelled") return;
+        if (!messageMatchesParticipant(m, data)) return;
+        var iso = String(m.session_date || "").slice(0, 10);
+        if (!iso) return;
+        // Absent (parent) wins over club cancel on the same day.
+        if (statusByIso[iso] !== "absent") statusByIso[iso] = "cancelled";
+      });
+    }
+
+    var tasks = [];
+    if (typeof opts.listAbsences === "function") {
+      tasks.push(
+        opts.listAbsences().then(function (j) {
+          ((j && j.reports) || []).forEach(function (r) {
+            var iso = String((r && r.session_date) || "").slice(0, 10);
+            if (!iso) return;
+            // Any parent Absent report for that day marks the chip red.
+            statusByIso[iso] = "absent";
+          });
+        }),
+      );
+    }
+    if (messagesPromise && typeof messagesPromise.then === "function") {
+      tasks.push(
+        messagesPromise.then(function (payload) {
+          applyCancelledFromMessages(payload);
+        }),
+      );
+    } else if (typeof opts.loadMessages === "function") {
+      tasks.push(
+        opts.loadMessages({ markRead: false }).then(function (payload) {
+          applyCancelledFromMessages(payload);
+        }),
+      );
+    }
+    if (typeof opts.listCredits === "function") {
+      tasks.push(
+        opts.listCredits().then(function (j) {
+          ((j && j.entries) || []).forEach(function (e) {
+            var iso = String((e && e.session_date) || "").slice(0, 10);
+            if (!iso) return;
+            var src = String((e && e.source) || "");
+            if (src !== "club_cancellation") return;
+            if (statusByIso[iso] === "absent") return;
+            // Club-cancelled session with credit/refund on the ledger.
+            statusByIso[iso] = "cancelled";
+          });
+        }),
+      );
+    }
+    if (!tasks.length) return;
+    void Promise.all(
+      tasks.map(function (p) {
+        return p.catch(function () {});
+      }),
+    ).then(mergeAndPaint);
   }
 
   function absenceStatusLabel(status) {
@@ -1223,19 +1332,15 @@
         '<p class="pp-muted pp-hub-ops__empty">Booked sessions will appear here once services are on the current roster.</p>' +
         "</div>";
     } else if (!next) {
-      var pastChips = termSessionDateChipsHtml(data);
       nextBody =
         '<div class="pp-hub-ops__next">' +
         '<div class="pp-hub-ops__badge-row">' +
         '<span class="pp-hub-ops__badge">' +
         calIco +
         "<span>Term sessions</span></span>" +
-        pastChips +
-        (familyAcceptedNextYear(data)
-          ? ""
-          : '<span class="pp-hub-ops__term">Until 17 Jul</span>') +
+        termSessionDateChipsHtml(data) +
         "</div>" +
-        '<p class="pp-muted pp-hub-ops__empty">No more sessions left this year (through 17 Jul). Book 2026/27 when you are ready.</p>' +
+        '<p class="pp-muted pp-hub-ops__empty">No more sessions left this year. Book 2026/27 when you are ready.</p>' +
         "</div>";
     } else {
       nextBody =
@@ -1247,9 +1352,6 @@
         esc(next.isToday ? "Today" : "Next session") +
         "</span></span>" +
         termSessionDateChipsHtml(data) +
-        (familyAcceptedNextYear(data)
-          ? ""
-          : '<span class="pp-hub-ops__term">Until 17 Jul</span>') +
         "</div>" +
         '<strong class="pp-hub-ops__when">' +
         esc(next.dayLabel) +
@@ -1346,18 +1448,21 @@
 
   function mountHubAlerts(host, data, opts) {
     if (!host || typeof opts.loadMessages !== "function") return;
-    void opts
+    return opts
       .loadMessages({ markRead: false })
       .then(function (payload) {
-        if (!host.isConnected) return;
+        if (!host.isConnected) return payload;
         renderHubAlertsInto(host, filterHubAlerts((payload && payload.messages) || [], data));
         host.querySelectorAll("#ppHubAlerts [data-pp-open]").forEach(function (btn) {
           btn.addEventListener("click", function () {
             openSubview(host, data, opts, btn.getAttribute("data-pp-open") || "messages");
           });
         });
+        return payload;
       })
-      .catch(function () {});
+      .catch(function () {
+        return null;
+      });
   }
 
   function renderHub(host, data, opts) {
@@ -1373,7 +1478,8 @@
       '<p class="pp-muted pp-pax-hub-note">Parent sections above · sessions and reviews below — same layout instructors use when they tap your child&apos;s name.</p>' +
       "</div>";
     bindHub(host, data, opts);
-    mountHubAlerts(host, data, opts);
+    var messagesPromise = mountHubAlerts(host, data, opts);
+    mountTermDateChipStatuses(host, data, opts, messagesPromise);
     void ensureGeneralFieldsAsync(data).then(function () {
       var fieldsHost = host.querySelector(".pp-hub-hero__info-fields");
       if (fieldsHost) {
