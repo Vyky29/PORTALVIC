@@ -1001,13 +1001,14 @@
 
   function hubBackButtonHtml(data) {
     var hub = hubBackLabel(data);
+    var label = "Back to " + hub.text;
     return (
-      '<button type="button" class="pp-btn pp-btn--ghost pp-pax-back" data-pp-back="hub" aria-label="Back to ' +
-      esc(hub.text) +
+      '<button type="button" class="pp-btn pp-btn--ghost pp-pax-back" data-pp-back="hub" aria-label="' +
+      esc(label) +
       '">' +
-      navIconSvg("hub") +
-      '<span>' +
-      esc(hub.text) +
+      '<svg class="pp-nav-ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>' +
+      "<span>" +
+      esc(label) +
       "</span></button>"
     );
   }
