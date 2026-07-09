@@ -532,20 +532,128 @@ const LEVEL_DATA = {
       el.checked = true;
     }
 
-    function autoSetTermDecision(){
-      // Rule 1: if Level is Secure at 100 percent -> Transition to Next Stage
+    function computeTermRecommendation(){
+      const levelInfo = computeLevelProgressLabel(getAllLevelRatings());
+      const domains = ["regulation", "independence", "engagement"].map(key => ({
+        key,
+        ...computeDomainResult(key),
+      }));
+      const domainsRated = domains.filter(d => d.answered > 0);
+      const domainAvgPct = domainsRated.length
+        ? Math.round(domainsRated.reduce((acc, d) => acc + d.pct, 0) / domainsRated.length)
+        : 0;
+      const allDomainsAnswered = domains.every(d => d.totalItems > 0 && d.answered === d.totalItems);
+      const allDomainsSecure = domainsRated.length === 3 && domainsRated.every(d => d.label === "Secure");
+      const allDomainsProgressingOrSecure = domainsRated.length === 3 &&
+        domainsRated.every(d => d.label === "Progressing" || d.label === "Secure");
+
+      let decision = "Consolidate Current Level";
+      let confidence = "Preliminary";
+      let readinessPct = 40;
+
       if(selectedLevel && isLevelSecure100()){
-        setTermDecision("Transition to Next Stage");
-        return;
+        decision = "Transition to Next Stage";
+        confidence = "High";
+        readinessPct = 96;
+      }else if((selectedLevel === 2 || selectedLevel === 4) && levelInfo.label === "Secure"){
+        decision = "Transition to Next Stage";
+        confidence = "High";
+        readinessPct = 88;
+      }else if(levelInfo.label === "Secure" && levelInfo.pct >= 80 && allDomainsSecure){
+        decision = "Transition to Next Stage";
+        confidence = "High";
+        readinessPct = 86;
+      }else if(levelInfo.label === "Secure" && allDomainsProgressingOrSecure && domainAvgPct >= 72){
+        decision = "Transition to Next Stage";
+        confidence = "Good";
+        readinessPct = 80;
+      }else if(levelInfo.label === "Progressing" && levelInfo.pct >= 70 && domainAvgPct >= 60){
+        decision = "Consolidate Current Level";
+        confidence = "Good";
+        readinessPct = 68;
+      }else if(levelInfo.answered > 0 || domainsRated.length){
+        decision = "Consolidate Current Level";
+        confidence = allDomainsAnswered && levelInfo.answered === levelInfo.total ? "Moderate" : "Preliminary";
+        readinessPct = Math.max(35, Math.min(72, Math.round((levelInfo.pct + domainAvgPct) / 2)));
       }
 
-      // Rule 2: if current level is 2 or 4 and there is clear progress, mark Transition to Next Stage
-      // Clear progress: at least 80 percent overall from the Level Confirmation score model
-      if(selectedLevel === 2 || selectedLevel === 4){
-        const info = computeLevelProgressLabel(getAllLevelRatings());
-        if(info.label === "Secure"){
-          setTermDecision("Transition to Next Stage");
-        }
+      return {
+        decision,
+        confidence,
+        readinessPct,
+        explanation: buildRecommendationExplanation(decision, levelInfo, domains, domainAvgPct),
+        levelInfo,
+        domains,
+      };
+    }
+
+    function buildRecommendationExplanation(decision, levelInfo, domains, domainAvgPct){
+      const levelPart = !selectedLevel || levelInfo.answered === 0
+        ? "Level confirmation is not yet complete"
+        : `level confirmation is ${levelInfo.label.toLowerCase()} (${levelInfo.pct}%)`;
+      const domainParts = domains
+        .filter(d => d.answered > 0)
+        .map(d => `${d.key} is ${d.label.toLowerCase()}`);
+      const domainPart = domainParts.length
+        ? `core development areas show ${domainParts.join(", ")}`
+        : "core development areas are not yet fully rated";
+
+      if(decision === "Transition to Next Stage"){
+        return `Based on ${levelPart} and the fact that ${domainPart}, the participant appears ready for the next stage. Continued confidence and safety remain priorities as new challenges are introduced.`;
+      }
+      return `Based on ${levelPart} and the fact that ${domainPart}, the participant is showing positive progress and would benefit from further consolidation before moving forward. This supports confidence, routine, and steady skill development in the water.`;
+    }
+
+    function updateTermRecommendationUI(){
+      const rec = computeTermRecommendation();
+      const decEl = $("#termRecommendDecision");
+      const expEl = $("#termRecommendExplain");
+      const confEl = $("#termRecommendConfidence");
+      const fillEl = $("#termRecommendMeterFill");
+      if(decEl) decEl.textContent = rec.decision;
+      if(expEl) expEl.textContent = rec.explanation;
+      if(confEl) confEl.textContent = rec.confidence;
+      if(fillEl) fillEl.style.width = `${rec.readinessPct}%`;
+
+      const overridePanel = $("#termDecisionOverride");
+      const overrideActive = overridePanel && !overridePanel.hidden && overridePanel.classList.contains("is-visible");
+      if(!overrideActive){
+        setTermDecision(rec.decision);
+      }
+    }
+
+    function autoSetTermDecision(){
+      updateTermRecommendationUI();
+    }
+
+    function wireTermDecisionUI(){
+      const acceptBtn = $("#btnAcceptRecommendation");
+      const overrideBtn = $("#btnOverrideDecision");
+      const overridePanel = $("#termDecisionOverride");
+      const acceptedNote = $("#termRecommendAccepted");
+
+      if(acceptBtn){
+        acceptBtn.addEventListener("click", () => {
+          const rec = computeTermRecommendation();
+          setTermDecision(rec.decision);
+          if(overridePanel){
+            overridePanel.hidden = true;
+            overridePanel.classList.remove("is-visible");
+          }
+          if(acceptedNote) acceptedNote.hidden = false;
+          showToast("Recommendation accepted");
+          generateTermSummary();
+        });
+      }
+      if(overrideBtn){
+        overrideBtn.addEventListener("click", () => {
+          if(overridePanel){
+            overridePanel.hidden = false;
+            overridePanel.classList.add("is-visible");
+          }
+          if(acceptedNote) acceptedNote.hidden = true;
+          showToast("Choose a manual decision");
+        });
       }
     }
 
@@ -677,6 +785,8 @@ const LEVEL_DATA = {
 
           const domain = grid.getAttribute("data-rsi-domain");
           updateDomainUI(domain);
+          updateTermRecommendationUI();
+          generateTermSummary();
         });
       });
     }
@@ -1330,6 +1440,7 @@ const LEVEL_DATA = {
     }
 
     const PDF_HEADER_LOGO_URL = "portal/Logo-CS-azul.png";
+    const PDF_CELEBRATION_LOGO_URL = "portal/Logo-CS-brand.png";
     /** Landscape “Three stages · six levels” graphic for PDF under section 2 (no rotation). */
     const PDF_PROGRAMME_SW_URL_WWW = "portal/SWProgramme.png";
     const PDF_PROGRAMME_SW_URL_APEX = "portal/SWProgramme.png";
@@ -1489,6 +1600,276 @@ const LEVEL_DATA = {
         .replace(/\s+/g, " ")
         .trim()
         .slice(0, 180);
+    }
+
+    function loadPdfCelebrationLogo(){
+      return fetchLogoAsDataUrl(PDF_CELEBRATION_LOGO_URL).catch(() => loadPdfHeaderLogo());
+    }
+
+    function buildCelebrationHighlights(){
+      const highlights = [];
+      const levelInfo = computeLevelProgressLabel(getAllLevelRatings());
+      const domains = {
+        engagement: computeDomainResult("engagement"),
+        independence: computeDomainResult("independence"),
+        regulation: computeDomainResult("regulation"),
+      };
+
+      if(selectedLevel){
+        highlights.push("Continuing to develop skills at Swimming Level " + selectedLevel);
+      }
+      if(selectedStage){
+        highlights.push("Building confidence within " + (STAGE_DISPLAY[selectedStage] || selectedStage));
+      }
+      if(domains.regulation.answered > 0){
+        highlights.push(
+          domains.regulation.label === "Secure"
+            ? "Growing comfort and regulation in the pool environment"
+            : "Building comfort and calm during swimming sessions",
+        );
+      }
+      if(domains.engagement.answered > 0){
+        highlights.push(
+          domains.engagement.label === "Secure"
+            ? "Strong engagement and participation during activities"
+            : "Positive engagement and responsiveness in lessons",
+        );
+      }
+      if(domains.independence.answered > 0){
+        highlights.push(
+          domains.independence.label === "Secure"
+            ? "Growing independence with routines and equipment"
+            : "Building independence with supportive guidance",
+        );
+      }
+      if(levelInfo.label === "Secure" || levelInfo.label === "Progressing"){
+        highlights.push("Making progress across level confirmation skills in the water");
+      }
+
+      const uniq = [];
+      highlights.forEach(h => {
+        if(h && !uniq.includes(h)) uniq.push(h);
+      });
+      const fallbacks = [
+        "Showing effort, courage, and participation in the water",
+        "Building trust and routine in swimming sessions",
+        "Celebrating every step forward with pride",
+      ];
+      fallbacks.forEach(f => {
+        if(uniq.length < 3 && !uniq.includes(f)) uniq.push(f);
+      });
+      return uniq.slice(0, 5);
+    }
+
+    function buildCelebrationParagraph(termLabel){
+      const levelInfo = computeLevelProgressLabel(getAllLevelRatings());
+      const term = termLabel || "this term";
+      let progressLine =
+        "You have continued to build confidence, participation, and familiarity in your swimming sessions.";
+      if(levelInfo.label === "Secure"){
+        progressLine =
+          "You have shown wonderful progress in the water and are building secure foundations in your swimming skills.";
+      }else if(levelInfo.label === "Progressing"){
+        progressLine =
+          "You are making steady progress in the water and growing in confidence with each session.";
+      }
+      return (
+        "You have worked really hard during the " + term + " and we are very proud of the effort you have shown. " +
+        progressLine +
+        " Every session matters, and your commitment is truly celebrated."
+      );
+    }
+
+    function buildCelebrationNextSteps(){
+      const checked = document.querySelector('#termDecision input[type="radio"]:checked');
+      const decision = checked ? checked.value : computeTermRecommendation().decision;
+      if(decision === "Transition to Next Stage"){
+        return "Next term we will celebrate your progress and gently introduce new challenges as you continue your swimming journey.";
+      }
+      return "Next term we will continue building confidence, strengthening key aquatic skills, and celebrating every step forward.";
+    }
+
+    function buildCelebrationCertificateContent(){
+      const swimmer = fieldValTerm("swimmerName").replace(/\s+/g, " ").trim();
+      const term = fieldValTerm("termSelect").trim();
+      const reviewIso = fieldValTerm("reviewDate");
+      const instructor = fieldValTerm("instructorName").replace(/\s+/g, " ").trim();
+      const stageLabel = selectedStage ? (STAGE_DISPLAY[selectedStage] || selectedStage) : "";
+      const levelLabel = selectedLevel ? ("Level " + selectedLevel) : "";
+      const firstName = swimmer.split(/\s+/)[0] || swimmer || "Swimmer";
+      return {
+        swimmer,
+        firstName,
+        term,
+        dateDisplay: formatReviewDateLongEn(reviewIso),
+        instructor,
+        stageLabel,
+        levelLabel,
+        headline: swimmer ? ("Congratulations, " + firstName + "!") : "Congratulations!",
+        paragraph: buildCelebrationParagraph(term),
+        highlights: buildCelebrationHighlights(),
+        nextSteps: buildCelebrationNextSteps(),
+      };
+    }
+
+    function buildCelebrationCertificatePdf(logoDataUrl){
+      const { jsPDF } = window.jspdf;
+      if(!jsPDF) return null;
+      const content = buildCelebrationCertificateContent();
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const margin = 16;
+      const maxW = pageW - margin * 2;
+      const swimBlue = [45, 132, 179];
+      const swimBlueSoft = [233, 243, 247];
+      const swimGold = [244, 183, 64];
+      const ink = [15, 23, 42];
+      const muted = [91, 100, 115];
+      let y = 0;
+
+      doc.setFillColor(swimBlueSoft[0], swimBlueSoft[1], swimBlueSoft[2]);
+      doc.rect(0, 0, pageW, 52, "F");
+      doc.setFillColor(swimBlue[0], swimBlue[1], swimBlue[2]);
+      doc.rect(0, 48, pageW, 4, "F");
+      doc.setDrawColor(255, 255, 255);
+      doc.setLineWidth(0.8);
+      for(let i = 0; i < 3; i++){
+        const waveY = 42 + i * 2.2;
+        doc.line(margin, waveY, pageW - margin, waveY);
+      }
+
+      y = 10;
+      if(logoDataUrl){
+        try{
+          const fmt = logoDataUrl.includes("jpeg") || logoDataUrl.includes("JPEG") ? "JPEG" : "PNG";
+          const props = doc.getImageProperties(logoDataUrl);
+          const iw = props.width || 1;
+          const ih = props.height || 1;
+          const logoW = 52;
+          const logoH = (ih / iw) * logoW;
+          doc.addImage(logoDataUrl, fmt, (pageW - logoW) / 2, y, logoW, logoH);
+          y += logoH + 6;
+        }catch(_e){
+          y += 4;
+        }
+      }
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
+      doc.text("TERM CELEBRATION CERTIFICATE", pageW / 2, y, { align: "center" });
+      y += 8;
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(22);
+      doc.setTextColor(ink[0], ink[1], ink[2]);
+      const headlineLines = doc.splitTextToSize(content.headline, maxW - 10);
+      headlineLines.forEach(line => {
+        doc.text(line, pageW / 2, y, { align: "center" });
+        y += 9;
+      });
+      y += 2;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10.5);
+      doc.setTextColor(muted[0], muted[1], muted[2]);
+      const metaParts = [];
+      if(content.swimmer) metaParts.push(content.swimmer);
+      if(content.term) metaParts.push(content.term);
+      if(content.dateDisplay) metaParts.push(content.dateDisplay);
+      if(metaParts.length){
+        doc.text(metaParts.join("  ·  "), pageW / 2, y, { align: "center" });
+        y += 6;
+      }
+      const levelStage = [content.stageLabel, content.levelLabel].filter(Boolean).join("  ·  ");
+      if(levelStage){
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
+        doc.text(levelStage, pageW / 2, y, { align: "center" });
+        y += 8;
+      }else{
+        y += 4;
+      }
+
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.35);
+      const paraBoxY = y;
+      const paraLines = doc.splitTextToSize(content.paragraph, maxW - 24);
+      const paraBoxH = paraLines.length * 5.8 + 14;
+      doc.roundedRect(margin, paraBoxY, maxW, paraBoxH, 5, 5, "FD");
+      doc.setFillColor(swimGold[0], swimGold[1], swimGold[2]);
+      doc.roundedRect(margin, paraBoxY, 3.5, paraBoxH, 1.5, 1.5, "F");
+      y = paraBoxY + 10;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      doc.setTextColor(ink[0], ink[1], ink[2]);
+      paraLines.forEach(line => {
+        doc.text(line, margin + 10, y);
+        y += 5.8;
+      });
+      y = paraBoxY + paraBoxH + 10;
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
+      doc.text("This term we celebrated:", margin + 2, y);
+      y += 8;
+
+      content.highlights.forEach(item => {
+        doc.setFillColor(swimBlueSoft[0], swimBlueSoft[1], swimBlueSoft[2]);
+        doc.setDrawColor(200, 225, 235);
+        const lines = doc.splitTextToSize(item, maxW - 22);
+        const rowH = Math.max(10, lines.length * 5.2 + 5);
+        doc.roundedRect(margin, y - 4, maxW, rowH, 3, 3, "FD");
+        doc.setFillColor(swimGold[0], swimGold[1], swimGold[2]);
+        doc.circle(margin + 6, y + 1.5, 1.6, "F");
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10.5);
+        doc.setTextColor(ink[0], ink[1], ink[2]);
+        lines.forEach((line, idx) => {
+          doc.text(line, margin + 11, y + idx * 5.2);
+        });
+        y += rowH + 3;
+      });
+
+      y += 4;
+      doc.setFillColor(248, 250, 252);
+      const nextLines = doc.splitTextToSize(content.nextSteps, maxW - 24);
+      const nextBoxH = nextLines.length * 5.6 + 16;
+      doc.roundedRect(margin, y, maxW, nextBoxH, 5, 5, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
+      doc.text("Next step", margin + 10, y + 8);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10.5);
+      doc.setTextColor(muted[0], muted[1], muted[2]);
+      let ny = y + 14;
+      nextLines.forEach(line => {
+        doc.text(line, margin + 10, ny);
+        ny += 5.6;
+      });
+      y += nextBoxH + 12;
+
+      if(content.instructor){
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(ink[0], ink[1], ink[2]);
+        doc.text("Reviewed by: " + content.instructor, pageW / 2, Math.min(y, pageH - 24), { align: "center" });
+        y += 6;
+      }
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(muted[0], muted[1], muted[2]);
+      doc.text("clubSENsational · Autism Consultancy Services · Swimming Programme", pageW / 2, pageH - 12, { align: "center" });
+
+      const saveStem = content.swimmer
+        ? pdfSafeFilenameStem(content.swimmer + " Term Celebration Certificate")
+        : pdfSafeFilenameStem("Term Celebration Certificate");
+      return { doc, filename: (saveStem || "Term Celebration Certificate") + ".pdf" };
     }
 
     function buildTermReviewPdf(logoDataUrl, programmeDataUrl){
@@ -1966,15 +2347,20 @@ const LEVEL_DATA = {
         initSwtermDetailsPanel();
         wireStageLevel();
         wireRSIButtons();
+        wireTermDecisionUI();
 
         selectedStage = "";
         applyStageRules();
         renderFocusAreasForLevel(0);
 
         ["regulation","independence","engagement"].forEach(d => updateDomainUI(d));
+        updateTermRecommendationUI();
 
         $$('#termDecision input[type="radio"]').forEach(r => {
-          r.addEventListener("change", () => showToast("Term decision updated"));
+          r.addEventListener("change", () => {
+            showToast("Term decision updated");
+            generateTermSummary();
+          });
         });
 
         bindTermSummaryRefresh();
@@ -1989,35 +2375,61 @@ const LEVEL_DATA = {
               const pdfPromise = Promise.all([
                 loadPdfHeaderLogo(),
                 loadPdfProgrammePng(),
+                loadPdfCelebrationLogo(),
               ])
-                .then(([logoDataUrl, programmeDataUrl]) => buildTermReviewPdf(logoDataUrl, programmeDataUrl))
-                .catch(() => buildTermReviewPdf(null, null));
+                .then(([logoDataUrl, programmeDataUrl, celebrationLogoDataUrl]) => ({
+                  review: buildTermReviewPdf(logoDataUrl, programmeDataUrl),
+                  celebration: buildCelebrationCertificatePdf(celebrationLogoDataUrl),
+                }))
+                .catch(async () => ({
+                  review: buildTermReviewPdf(null, null),
+                  celebration: buildCelebrationCertificatePdf(null),
+                }));
               const [docsMod, built] = await Promise.all([
                 importPortalDocumentsModuleSwterm(),
                 pdfPromise,
               ]);
-              if(!built || !built.doc){
+              if(!built || !built.review || !built.review.doc){
                 alert("PDF library not loaded. Please refresh the page and try again.");
                 return;
               }
-              const pdfBytes = built.doc.output("arraybuffer");
-              const pdfBlob = new Blob([pdfBytes], { type: "application/pdf" });
+              const reviewBytes = built.review.doc.output("arraybuffer");
+              const reviewBlob = new Blob([reviewBytes], { type: "application/pdf" });
               const auth = await docsMod.portalRequireUser();
               const reviewIso = fieldValTerm("reviewDate") || new Date().toISOString().slice(0, 10);
               const swimmer = fieldValTerm("swimmerName").replace(/\s+/g, " ").trim();
               const poss = englishPossessive(swimmer);
-              const title = poss ? poss + " Swimming Term Review" : "Swimming Term Review";
+              const reviewTitle = poss ? poss + " Swimming Term Review" : "Swimming Term Review";
               await docsMod.portalUploadPdfAndCreateDocument({
-                blob: pdfBlob,
+                blob: reviewBlob,
                 document_type: "swim_term_review",
                 category: "reports",
-                title,
+                title: reviewTitle,
                 related_date: String(reviewIso).trim().slice(0, 10),
                 related_client: swimmer || null,
                 source_page: "swtermreview",
                 reuseAuth: auth,
               });
-              alert("Term review submitted successfully. Open My Documents to download or print the PDF.");
+
+              if(built.celebration && built.celebration.doc){
+                const certBytes = built.celebration.doc.output("arraybuffer");
+                const certBlob = new Blob([certBytes], { type: "application/pdf" });
+                const certTitle = poss
+                  ? poss + " Term Celebration Certificate"
+                  : "Term Celebration Certificate";
+                await docsMod.portalUploadPdfAndCreateDocument({
+                  blob: certBlob,
+                  document_type: "swim_celebration_certificate",
+                  category: "reports",
+                  title: certTitle,
+                  related_date: String(reviewIso).trim().slice(0, 10),
+                  related_client: swimmer || null,
+                  source_page: "swtermreview",
+                  reuseAuth: auth,
+                });
+              }
+
+              alert("Term review submitted successfully. Open My Documents to download or print the Term Review PDF and Term Celebration Certificate.");
               closeOrReturnSwterm();
             }catch(err){
               const msg = err && err.message ? String(err.message) : "Unknown error";

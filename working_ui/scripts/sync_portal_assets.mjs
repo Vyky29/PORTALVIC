@@ -38,6 +38,7 @@ const RASTER_FILES = [
   "F-02-1.png",
   "F-06-1.png",
   "Logo-CS-azul.png",
+  "Logo-CS-brand.png",
   "SWProgramme.png",
   "Programme.png",
   "logoPDF.jpg",

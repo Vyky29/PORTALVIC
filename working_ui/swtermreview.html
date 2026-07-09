@@ -1082,11 +1082,164 @@
     }
 
     /* ===== Term decision ===== */
+    #cardDecision h2::before{
+      background:linear-gradient(180deg, var(--blueDeep) 0%, #5a9fc4 100%);
+    }
+
+    .termRecommendCard{
+      border:1px solid rgba(11,18,32,0.12);
+      border-left:4px solid var(--blueDeep);
+      border-radius:18px;
+      background:linear-gradient(180deg, rgba(233,243,245,0.55) 0%, #fff 42%);
+      box-shadow:0 10px 24px rgba(11,18,32,0.06);
+      padding:20px;
+      margin-top:8px;
+    }
+
+    .termRecommendIcon{
+      width:42px;
+      height:42px;
+      border-radius:999px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:linear-gradient(135deg, rgba(244,183,64,0.95), rgba(244,183,64,0.72));
+      color:#fff;
+      font-size:20px;
+      font-weight:900;
+      box-shadow:0 6px 16px rgba(244,183,64,0.28);
+      margin-bottom:12px;
+    }
+
+    .termRecommendEyebrow{
+      margin:0 0 6px;
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:0.18px;
+      text-transform:uppercase;
+      color:var(--blueDeep);
+    }
+
+    .termRecommendDecision{
+      margin:0 0 10px;
+      font-size:clamp(20px, 3vw, 26px);
+      font-weight:900;
+      line-height:1.2;
+      color:rgba(11,18,32,0.94);
+    }
+
+    .termRecommendExplain{
+      margin:0 0 16px;
+      font-size:14px;
+      font-weight:600;
+      line-height:1.55;
+      color:var(--muted);
+      max-width:72ch;
+    }
+
+    .termRecommendReadiness{
+      margin-bottom:16px;
+    }
+    .termRecommendReadinessTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:8px;
+    }
+    .termRecommendReadinessLabel{
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:0.12px;
+      text-transform:uppercase;
+      color:rgba(11,18,32,0.72);
+    }
+    .termRecommendConfidence{
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:0.12px;
+      text-transform:uppercase;
+      color:var(--blueDeep);
+      padding:5px 10px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.85);
+      border:1px solid rgba(45,132,179,0.18);
+    }
+    .termRecommendMeter{
+      position:relative;
+      height:12px;
+      border-radius:999px;
+      overflow:hidden;
+      background:#eef2f7;
+      border:1px solid rgba(11,18,32,0.10);
+    }
+    .termRecommendMeterFill{
+      position:absolute;
+      left:0;
+      top:0;
+      height:100%;
+      width:40%;
+      background:linear-gradient(90deg, rgba(137,181,193,0.45), rgba(45,132,179,0.95));
+      transition:width .2s ease;
+    }
+
+    .termRecommendActions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+    .termBtn{
+      flex:1 1 180px;
+      border-radius:14px;
+      padding:12px 16px;
+      font-family:inherit;
+      font-weight:800;
+      font-size:13px;
+      cursor:pointer;
+      min-height:48px;
+      transition:transform .06s ease, box-shadow .15s ease, background .15s ease;
+    }
+    .termBtn:active{ transform:translateY(1px); }
+    .termBtnPrimary{
+      border:none;
+      color:#fff;
+      background:linear-gradient(135deg, rgba(45,132,179,0.98), rgba(45,132,179,0.84));
+      box-shadow:0 8px 18px rgba(45,132,179,0.22);
+    }
+    .termBtnSecondary{
+      border:1px solid rgba(11,18,32,0.14);
+      background:#fff;
+      color:rgba(11,18,32,0.82);
+    }
+
+    .termRecommendAccepted{
+      margin:12px 0 0;
+      font-size:12px;
+      font-weight:700;
+      color:var(--green);
+    }
+
+    .termDecisionOverride{
+      margin-top:16px;
+      padding:16px;
+      border:1px dashed rgba(11,18,32,0.14);
+      border-radius:16px;
+      background:rgba(248,250,252,0.8);
+    }
+    .termDecisionOverride[hidden]{ display:none !important; }
+    .termDecisionOverrideTitle{
+      margin:0 0 10px;
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:0.12px;
+      text-transform:uppercase;
+      color:rgba(11,18,32,0.72);
+    }
+
     .termDecision{
       display:grid;
       grid-template-columns:1fr;
       gap:10px;
-      margin-top:10px;
     }
     @media (min-width:720px){
       .termDecision{ grid-template-columns:1fr 1fr; }
@@ -1100,7 +1253,7 @@
       align-items:center;
       justify-content:center;
       gap:10px;
-      padding:12px 14px;
+      padding:14px 16px;
       border-radius:14px;
       border:1px solid rgba(11,18,32,.12);
       background:#fff;
@@ -1108,6 +1261,8 @@
       font-weight:800;
       font-size:13px;
       text-align:center;
+      min-height:72px;
+      transition:border-color .15s ease, background .15s ease, box-shadow .15s ease;
     }
     .termOption label::before{
       content:"";
@@ -1125,22 +1280,24 @@
     }
     .termOption--transition input:checked + label{
       border-color:#1a7f37;
-      background:rgba(26,127,55,0.14);
+      background:rgba(26,127,55,0.10);
+      box-shadow:0 8px 18px rgba(26,127,55,0.10);
     }
     .termOption--transition input:checked + label::before{
       background:#1a7f37;
       border-color:#1a7f37;
     }
     .termOption--consolidate label::before{
-      border-color:#c62828;
+      border-color:var(--blueDeep);
     }
     .termOption--consolidate input:checked + label{
-      border-color:#c62828;
-      background:rgba(198,40,40,0.10);
+      border-color:var(--blueDeep);
+      background:rgba(45,132,179,0.10);
+      box-shadow:0 8px 18px rgba(45,132,179,0.10);
     }
     .termOption--consolidate input:checked + label::before{
-      background:#c62828;
-      border-color:#c62828;
+      background:var(--blueDeep);
+      border-color:var(--blueDeep);
     }
     .btn{
       width:100%;
@@ -1879,17 +2036,41 @@
     <!-- 5 Term Decision -->
     <div class="card" id="cardDecision">
       <h2>5. Term decision</h2>
-      <p class="note">Select the most appropriate decision. This can be auto selected when Level Confirmation is Secure at 100 percent.</p>
+      <p class="note">Review the recommended decision based on level confirmation and core development areas. Accept the recommendation or override if needed.</p>
 
-      <div class="termDecision" id="termDecision">
-        <div class="termOption termOption--consolidate">
-          <input type="radio" name="termDecision" id="td_consolidate" value="Consolidate Current Level">
-          <label for="td_consolidate">Consolidate Current Level</label>
+      <div class="termRecommendCard" id="termRecommendCard">
+        <div class="termRecommendIcon" aria-hidden="true">✦</div>
+        <p class="termRecommendEyebrow">Recommended term decision</p>
+        <h3 class="termRecommendDecision" id="termRecommendDecision">Consolidate Current Level</h3>
+        <p class="termRecommendExplain" id="termRecommendExplain">Complete level confirmation and core development ratings to generate a recommendation.</p>
+        <div class="termRecommendReadiness">
+          <div class="termRecommendReadinessTop">
+            <span class="termRecommendReadinessLabel">Readiness indicator</span>
+            <span class="termRecommendConfidence" id="termRecommendConfidence">Preliminary</span>
+          </div>
+          <div class="termRecommendMeter" aria-hidden="true">
+            <div class="termRecommendMeterFill" id="termRecommendMeterFill"></div>
+          </div>
         </div>
+        <div class="termRecommendActions">
+          <button type="button" class="termBtn termBtnPrimary" id="btnAcceptRecommendation">Accept Recommendation</button>
+          <button type="button" class="termBtn termBtnSecondary" id="btnOverrideDecision">Override Decision</button>
+        </div>
+        <p class="termRecommendAccepted" id="termRecommendAccepted" hidden>Recommendation accepted. You can still override if needed.</p>
+      </div>
 
-        <div class="termOption termOption--transition">
-          <input type="radio" name="termDecision" id="td_transition" value="Transition to Next Stage">
-          <label for="td_transition">Transition to Next Stage</label>
+      <div class="termDecisionOverride" id="termDecisionOverride" hidden>
+        <p class="termDecisionOverrideTitle">Manual term decision</p>
+        <div class="termDecision" id="termDecision">
+          <div class="termOption termOption--consolidate">
+            <input type="radio" name="termDecision" id="td_consolidate" value="Consolidate Current Level">
+            <label for="td_consolidate">Consolidate Current Level</label>
+          </div>
+
+          <div class="termOption termOption--transition">
+            <input type="radio" name="termDecision" id="td_transition" value="Transition to Next Stage">
+            <label for="td_transition">Transition to Next Stage</label>
+          </div>
         </div>
       </div>
 
@@ -1903,7 +2084,7 @@
       <div class="summary-box">
         <h3>Term Review Summary</h3>
         <div class="summary-output" id="termSummaryOutput">Complete the term review to generate a summary of details, stage and level, level confirmation, core development areas, and term decision. The PDF mirrors this summary with corporate branding.</div>
-        <p class="summary-hint">The summary updates as you complete the form. Submit saves a PDF to <strong>My Documents</strong> (same as timesheet and expenses); open it there to download or print.</p>
+        <p class="summary-hint">The summary updates as you complete the form. Submit saves the professional Term Review PDF and a family-friendly Term Celebration Certificate to <strong>My Documents</strong>; open them there to download or print.</p>
         <div class="summary-actions">
           <button type="button" class="btn" id="btnSwtermSubmit">Submit</button>
         </div>
@@ -1923,7 +2104,7 @@
   <!-- swtermreview_app.js — portal/ then portal-shared-js/ on Vercel. -->
   <script>
     (function () {
-      var v = "20260612-focus-accordion";
+      var v = "20260709-term-recommend-celebration";
       var file = "swtermreview_app.js";
       var bases = [];
       try {
