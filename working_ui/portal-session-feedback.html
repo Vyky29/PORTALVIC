@@ -28,11 +28,15 @@
 <title>Session Feedback (Staff)</title>
 <link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260519-form-context" />
 <link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260519-form-context" />
-<link rel="stylesheet" href="/portal/portal_achievements.css?v=20260703-achievements-unlimited" />
-<script src="/portal/portal_participant_achievements.js?v=20260703-achievements-unlimited"></script>
-<script src="/portal/portal_feedback_voice_input.js?v=20260703-narrative-v1"></script>
+<link rel="stylesheet" href="/portal/portal_achievements.css?v=20260703-ios-gallery-upload-fix" />
+<script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
+<script src="/portal/portal_participant_achievements.js?v=20260708-camera-inapp"></script>
+<script src="/portal/portal_feedback_voice_input.js?v=20260705c-voice-ai-down-message"></script>
 <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
-<script src="/portal/portal_feedback_narrative.js?v=20260703-live-filter-only"></script>
+<script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
+<script>window.PORTAL_FEEDBACK_ADMIN_FILTERS = true;</script>
+<script src="/portal/portal_feedback_narrative.js?v=20260707-notes-optional-io"></script>
+<script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
 <style>
 :root{
   /* Corporate gold — warmer yellow field tints (logo pulse / #ffcc33 family) */
@@ -920,6 +924,82 @@ button{
   margin-top:12px;
   min-width:0;
 }
+.btnValidateNarrative{
+  background:#fff;
+  color:var(--blue, #2d84b3);
+  border:2px solid rgba(45, 132, 179, 0.45);
+  box-shadow:0 4px 12px rgba(45, 132, 179, 0.12);
+  padding:12px 18px;
+  border-radius:12px;
+  font-weight:800;
+  font-size:14px;
+  cursor:pointer;
+  font-family:inherit;
+  width:100%;
+  max-width:320px;
+}
+.btnValidateNarrative:hover:not(:disabled){ transform:translateY(-1px); }
+.btnValidateNarrative:disabled{
+  opacity:0.55;
+  cursor:not-allowed;
+  transform:none;
+}
+.fb-narrative-mode-note{
+  min-width:0;
+  overflow-wrap:break-word;
+}
+.fb-validate-panel{
+  margin:10px 0 0;
+  padding:10px 12px;
+  border-radius:10px;
+  border:1px solid rgba(45, 132, 179, 0.28);
+  background:rgba(239, 246, 255, 0.75);
+  min-width:0;
+}
+.fb-validate-panel[hidden]{
+  display:none!important;
+}
+.fb-validate-list{
+  margin:0;
+  padding:0;
+  list-style:none;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-width:0;
+}
+.fb-validate-item{
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  font-size:13px;
+  line-height:1.4;
+  min-width:0;
+  overflow-wrap:break-word;
+}
+.fb-validate-item__icon{
+  flex:0 0 auto;
+  width:20px;
+  height:20px;
+  border-radius:999px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:800;
+  font-size:12px;
+}
+.fb-validate-item--ok .fb-validate-item__icon{
+  background:#dcfce7;
+  color:#166534;
+}
+.fb-validate-item--miss .fb-validate-item__icon{
+  background:#fef3c7;
+  color:#92400e;
+}
+.fb-validate-item__copy{
+  min-width:0;
+  flex:1 1 auto;
+}
 .btnFilterAi{
   background:linear-gradient(135deg,#f0c04a,#d69820);
   color:#1a1004;
@@ -943,6 +1023,20 @@ button{
   min-width:0;
   overflow-wrap:break-word;
 }
+.fb-manual-entry-row{ overflow-wrap:break-word; }
+.fb-manual-entry-btn{
+  background:none;
+  border:none;
+  padding:0;
+  margin:0;
+  color:#1d4ed8;
+  font-weight:700;
+  font-size:inherit;
+  font-family:inherit;
+  text-decoration:underline;
+  cursor:pointer;
+}
+.fb-manual-entry-btn:hover{ color:#153bb0; }
 .fb-ai-output{
   margin-top:4px;
 }
@@ -1129,31 +1223,62 @@ button{
           </div>
         </div>
 
-        <div class="field field--session-narrative">
-          <label for="fbSessionNarrative"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span> Session narrative <span class="req">*</span></label>
-          <p class="small field-note" style="margin-top:0">Cover <strong>Reception</strong>, <strong>Session</strong> and <strong>Handover</strong>. Speak in English, Spanish or Italian — text here is always saved in <strong>English</strong>.</p>
+        <div class="field fb-io-choice" id="fbInputChoice" hidden>
+          <label>How do you want to give this feedback?</label>
+          <p class="small field-note" style="margin:0 0 10px">Both save the same session narrative — <strong>Voice</strong> adds a microphone, <strong>Written</strong> is typed.</p>
+          <div class="fb-io-choice-row" role="group" aria-label="Feedback input method" style="display:flex;gap:12px;flex-wrap:wrap">
+            <button type="button" class="fb-io-btn" id="fbIoVoice" data-fb-io="voice" aria-pressed="false" style="flex:1 1 140px;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:14px 16px;border-radius:14px;border:1px solid var(--line,#d9dee5);background:#fff;cursor:pointer;text-align:center">
+              <span aria-hidden="true" style="font-size:26px;line-height:1">🎤</span>
+              <span style="display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0"><span style="font-weight:800">Voice</span><span class="small" style="color:var(--muted,#6b7280)">Speak it, we transcribe</span></span>
+            </button>
+            <button type="button" class="fb-io-btn" id="fbIoWritten" data-fb-io="written" aria-pressed="false" style="flex:1 1 140px;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:14px 16px;border-radius:14px;border:1px solid var(--line,#d9dee5);background:#fff;cursor:pointer;text-align:center">
+              <span aria-hidden="true" style="font-size:26px;line-height:1">⌨️</span>
+              <span style="display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0"><span style="font-weight:800">Written</span><span class="small" style="color:var(--muted,#6b7280)">Type it yourself</span></span>
+            </button>
+          </div>
+        </div>
+
+        <div class="field field--session-narrative" id="fbNarrativeField">
+          <label for="fbSessionNarrative"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span> Session feedback <span class="req">*</span></label>
+          <p class="small field-note" style="margin-top:0">Cover <strong>Reception</strong>, <strong>Session</strong> and <strong>Handover</strong> — everything, good <em>and</em> less good, that <strong>can be shared with the family</strong>. Speak in English, Spanish or Italian — always saved in <strong>English</strong>. Anything you can't share with parents goes in <strong>Notes</strong> below.</p>
           <ul class="fb-narrative-guide">
             <li><strong>Reception</strong> — arrival, parent handover.</li>
             <li><strong>Session</strong> — plan, strategies, challenges, what worked.</li>
             <li><strong>Handover</strong> — what you told the family.</li>
           </ul>
-          <p class="small field-note" style="margin:0 0 8px">Voice (mic): aim ~1 minute, max 2 minutes — reminder at 1½ min. Or type below in English.</p>
+          <p class="small field-note" id="fbVoiceMicHint" style="margin:0 0 8px" hidden>Voice (mic): aim ~1 minute, max 2 minutes — reminder at 1½ min. Or type below in English.</p>
+          <p class="small field-note fb-narrative-mode-note" id="fbNarrativeModeNote" style="margin:0 0 8px"></p>
           <textarea id="fbSessionNarrative" name="sessionNarrative" rows="10" required placeholder="Reception: how they arrived…&#10;&#10;Session: plan, strategies, challenges, what worked…&#10;&#10;Handover: what you told the family…"></textarea>
+          <div id="fbNarrativeValidatePanel" class="fb-validate-panel" hidden>
+            <p class="small field-note" style="margin:0 0 6px;font-weight:600">Narrative check (Reception · Session · Handover)</p>
+            <ul id="fbNarrativeValidateList" class="fb-validate-list"></ul>
+          </div>
           <div class="fb-filter-row">
+            <button type="button" class="btnValidateNarrative" id="btnValidateFeedbackNarrative" disabled>Check narrative</button>
             <button type="button" class="btnFilterAi" id="btnFilterFeedbackAi" disabled>Filter with AI</button>
             <p id="filterAiStatus" class="small field-note fb-filter-status" role="status" aria-live="polite"></p>
           </div>
+          <p class="small field-note fb-manual-entry-row" style="margin:8px 0 0">
+            AI not working?
+            <button type="button" class="btnLink fb-manual-entry-btn" id="btnManualFeedbackEntry">Enter Positive & Relevant manually</button>
+          </p>
+        </div>
+
+        <div class="field field--session-notes" id="fbSessionNotesField" hidden>
+          <label for="fbSessionNotes"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Notes <span class="fb-optional-tag" style="font-weight:600;color:var(--muted,#6b7280)">(optional)</span></label>
+          <p class="small field-note" style="margin-top:0">For anything you <strong>can't share with parents</strong> — concerns, incidents, follow-ups for the office. Optional. Stays <strong>internal</strong>: goes to the admin <strong>Notes</strong> tab (no AI, never the parent portal), where it can be emailed/WhatsApped to directors or posted to staff announcements.</p>
+          <textarea id="fbSessionNotes" name="sessionNotes" rows="4" placeholder="Optional — e.g. parent asked to be called, equipment issue, follow-up for next session…"></textarea>
         </div>
 
         <div id="fbAiOutputSection" class="fb-ai-output" hidden>
-          <p class="small field-note" style="margin:0 0 12px;font-weight:600">Review what AI wrote — edit Positive or Relevant if you need to, then Submit. If you edit the narrative, run Filter again.</p>
+          <p class="small field-note" style="margin:0 0 12px;font-weight:600">Review what AI wrote — edit Positive or Relevant if you need to, then Submit. If you edit the narrative, check and filter again.</p>
           <div class="field field--ai-positive">
-            <label for="fbPositiveFeedback"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span> Positive feedback <span class="req">*</span></label>
+            <label for="fbPositiveFeedback"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span> Session Feedback <span class="req">*</span></label>
             <textarea id="fbPositiveFeedback" name="positiveFeedback" rows="5" placeholder="Filled by Filter with AI — you can edit this"></textarea>
             <p class="small field-note">Goes to the <strong>family app</strong> when you submit — no admin rewrite.</p>
           </div>
           <div class="field field--ai-relevant">
-            <label for="fbRelevantInformation"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Relevant information <span class="req">*</span></label>
+            <label for="fbRelevantInformation"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Notes (Relevant information) <span class="req">*</span></label>
             <textarea id="fbRelevantInformation" name="relevantInformation" rows="5" placeholder="Filled by Filter with AI — you can edit this"></textarea>
             <p class="small field-note">Internal only — admin tables, not shown to families as session feedback.</p>
           </div>
@@ -1193,12 +1318,12 @@ button{
     return __portalSharedBase() + "/" + file;
   }
   const PORTAL_AUTH_MODULE = __portalJs("auth-handler.js?v=20260515-participant-service-filter");
-  const PORTAL_SUPABASE_MODULE = __portalJs("supabase-client.js?v=20260622-timesheet-sync");
+  const PORTAL_SUPABASE_MODULE = __portalJs("supabase-client.js?v=20260703-canonical-keys");
   /** Injected by scripts/inject-portal-env.mjs (same secret as staff.html / lead.html). */
   var STAFF_PROFILE_PORTAL_BRIDGE_SECRET = "%%PB6%%";
   const PORTAL_SESSION_REVIEW_MAP_STORAGE = "portalSessionReviewMap_v1";
   const PORTAL_CLIENTS_INFO_SCRIPT = __portalJs("clients_info_embed.js?v=20260517-roster-clients");
-  const PORTAL_SPREADSHEET_BUNDLE_SCRIPT = __portalJs("staff_dashboard_spreadsheet_bundle.js?v=20260520-hazem-angel-aurora");
+  const PORTAL_SPREADSHEET_BUNDLE_SCRIPT = __portalJs("staff_dashboard_spreadsheet_bundle.js?v=roster-6ef2321573");
   const PORTAL_SPREADSHEET_ADAPTER_SCRIPT = __portalJs("staff_dashboard_spreadsheet_adapter.js?v=20260616-worker-display-names");
   const PORTAL_PARTICIPANT_SERVICES_SCRIPT = __portalJs("participant_services.js?v=20260616-worker-display-names");
   const PORTAL_FIELD_AUTOCOMPLETE_SCRIPT = __portalJs("portal_field_autocomplete.js?v=20260609-autofill");
@@ -2059,6 +2184,41 @@ button{
     });
   }
 
+  function logFeedbackNarrativeAudit(ctx2, row, formFields, feedbackId){
+    if(!window.PortalSessionFeedbackNarrativeAudit ||
+      typeof window.PortalSessionFeedbackNarrativeAudit.logSubmitAudit !== "function"){
+      return Promise.resolve();
+    }
+    var narrative = clean(formFields && formFields.sessionNarrative);
+    if(!narrative) return Promise.resolve();
+    var gender = "";
+    try{
+      if(window.PortalFeedbackNarrative &&
+        typeof window.PortalFeedbackNarrative.participantGender === "function"){
+        gender = window.PortalFeedbackNarrative.participantGender(ctx2.client_name);
+      }
+    }catch(_){}
+    var auditMeta = {};
+    try{
+      if(window.PortalFeedbackNarrative &&
+        typeof window.PortalFeedbackNarrative.getSubmitAuditMeta === "function"){
+        auditMeta = window.PortalFeedbackNarrative.getSubmitAuditMeta() || {};
+      }
+    }catch(_){}
+    return window.PortalSessionFeedbackNarrativeAudit.logSubmitAudit({
+      narrative_en: narrative,
+      participant_name: ctx2.client_name,
+      participant_gender: gender,
+      session_date: ctx2.session_date,
+      service: ctx2.service,
+      portal_session_key: row && row.portal_session_key ? row.portal_session_key : null,
+      session_feedback_id: feedbackId || null,
+      filter_positive: formFields.positiveFeedback || null,
+      filter_relevant: formFields.relevantInformation || null,
+      meta: auditMeta,
+    }).catch(function(){ return null; });
+  }
+
   /** Fallback instructor name from URL only if signed-in profile did not supply one. */
   function resolveInstructorFromUrl(){
     if(clean(instructorDisplayName)) return;
@@ -2095,6 +2255,22 @@ button{
       if(ar){
         instructorAppRole = ar.charAt(0).toUpperCase() + ar.slice(1).toLowerCase();
       }
+      try{
+        if(prof){
+          window.__PORTAL_SUPABASE__ = window.__PORTAL_SUPABASE__ || {};
+          window.__PORTAL_SUPABASE__.staff_profile = {
+            nationality: clean(prof.nationality),
+            full_name: clean(prof.full_name),
+            username: clean(prof.username),
+          };
+          if(window.PortalFeedbackVoiceInput &&
+             typeof window.PortalFeedbackVoiceInput.setStaffProfile === "function"){
+            window.PortalFeedbackVoiceInput.setStaffProfile(
+              window.__PORTAL_SUPABASE__.staff_profile
+            );
+          }
+        }
+      }catch(_){}
     }catch(_){}
     if(clean(instructorDisplayName)) return;
     try{
@@ -2478,7 +2654,7 @@ button{
   async function lookupStaffProfileForAuth(supabase, authUser) {
     const profileResp = await supabase
       .from("staff_profiles")
-      .select("id, app_role, full_name, username")
+      .select("id, app_role, full_name, username, nationality")
       .eq("id", authUser.id)
       .maybeSingle();
     if (profileResp.error) throw profileResp.error;
@@ -2493,7 +2669,7 @@ button{
     const token = (guess.split(" ")[0] || guess).replace(/,/g, "");
     const alt = await supabase
       .from("staff_profiles")
-      .select("id, app_role, full_name, username, is_active")
+      .select("id, app_role, full_name, username, is_active, nationality")
       .eq("is_active", true)
       .or("username.ilike." + token + ",full_name.ilike.%" + token + "%")
       .limit(12);
@@ -2575,11 +2751,22 @@ button{
     return "";
   }
 
+  function normalizeSubmitSessionKey(key){
+    const raw = clean(key);
+    if(!raw) return null;
+    try{
+      if(window.PortalSessionKey && typeof window.PortalSessionKey.normalizePortalSessionKey === "function"){
+        return window.PortalSessionKey.normalizePortalSessionKey(raw) || raw;
+      }
+    }catch(_){}
+    return raw;
+  }
+
   function buildFeedbackRow(submittedByUserId, feedbackRole, completedByName, sessionKeyForSubmit, ctx, fields){
     return {
       submitted_by_user_id: submittedByUserId,
       feedback_role: feedbackRole,
-      portal_session_key: sessionKeyForSubmit || null,
+      portal_session_key: normalizeSubmitSessionKey(sessionKeyForSubmit),
       client_id: ctx.client_id,
       client_name:
         typeof window.portalFeedbackSubmitClientName === "function"
@@ -2842,13 +3029,33 @@ button{
     }
     let positiveFeedback = (data.get("positiveFeedback") || "").toString();
     let relevantInformation = (data.get("relevantInformation") || "").toString();
-    if(!clean(positiveFeedback)){
-      alert("Please run Filter with AI to fill Positive feedback.");
-      return;
+    let aiFilterPending = false;
+    let unifiedParentFeedback = false;
+    if(typeof window.PortalFeedbackNarrative !== "undefined" &&
+        typeof window.PortalFeedbackNarrative.getSubmitAuditMeta === "function"){
+      const auditMeta = window.PortalFeedbackNarrative.getSubmitAuditMeta() || {};
+      aiFilterPending = !!(auditMeta.ai_filter_pending || auditMeta.ai_unavailable);
+      unifiedParentFeedback = !!auditMeta.unified_parent_feedback;
     }
-    if(!clean(relevantInformation)){
-      alert("Please run Filter with AI to fill Relevant information.");
-      return;
+    if(!aiFilterPending){
+      if(!clean(positiveFeedback)){
+        alert("Please run Filter with AI to fill Positive feedback.");
+        return;
+      }
+      if(unifiedParentFeedback){
+        // From 7 Jul 2026: one parent message from AI; optional Notes are staff-typed.
+        relevantInformation = clean((data.get("sessionNotes") || "").toString());
+      } else if(!clean(relevantInformation)){
+        alert("Please run Filter with AI to fill Relevant information.");
+        return;
+      }
+    } else {
+      // Admin-filters flow: the office turns the raw narrative into the
+      // family-facing feedback later, so there's no instructor Positive here.
+      // The optional Notes the instructor typed ARE the raw relevant_information
+      // that lands on the admin Notes tab (empty when nothing was added).
+      positiveFeedback = "";
+      relevantInformation = clean((data.get("sessionNotes") || "").toString());
     }
     const engagementRatingRaw = (data.get("engagementRating") || "").toString();
     const engagementRatingParsed = parseInt(engagementRatingRaw, 10);
@@ -2931,6 +3138,7 @@ button{
 
       let row = null;
       let profileRow = null;
+      let savedFeedbackId = null;
 
       if (authUser && authUser.id) {
         profileRow = await lookupStaffProfileForAuth(supabase, authUser);
@@ -2964,6 +3172,7 @@ button{
         sessionKeyForSubmit = effectiveFeedbackSessionKey(ctx2, completedByName);
         row = buildFeedbackRow(submittedByUserId, feedbackRole, completedByName, sessionKeyForSubmit, ctx2, formFields);
         var feedbackId = await insertFeedbackViaSupabase(supabase, row);
+        savedFeedbackId = feedbackId;
         await portalFinalizeAchievementPhotosAfterSubmit({
           feedbackId: feedbackId,
           clientId: ctx2.client_id,
@@ -2997,6 +3206,7 @@ button{
           full_name: row.completed_by_name,
           username: pinName,
         };
+        savedFeedbackId = pinResult && pinResult.feedback_id ? String(pinResult.feedback_id) : null;
         await portalFinalizeAchievementPhotosAfterSubmit({
           feedbackId: pinResult && pinResult.feedback_id ? String(pinResult.feedback_id) : null,
           clientId: ctx2.client_id,
@@ -3020,6 +3230,7 @@ button{
         row,
       );
       await postSessionFeedbackWebhook(webhookPayload);
+      void logFeedbackNarrativeAudit(ctx2, row, formFields, savedFeedbackId);
 
       try {
         if (typeof window.portalRecordFormSubmit === "function") {
@@ -3210,6 +3421,13 @@ button{
         getAnonKey: getSupabaseAnonKey,
         getForm: function(){ return form; },
       });
+      if(window.PortalSessionFeedbackNarrativeAudit){
+        window.PortalSessionFeedbackNarrativeAudit.configure({
+          getClient: function(){ return getSupabaseClient(); },
+          getSupabaseUrl: getSupabaseUrl,
+          getAnonKey: getSupabaseAnonKey,
+        });
+      }
     }catch(_){}
     window.PortalFeedbackNarrative.init({
       getForm: function(){ return form; },

@@ -19,12 +19,18 @@ export function plainTextToHtml(
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
-  const bodyEsc = String(text || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  // Build real <p> paragraphs (blank lines -> paragraph gap, single \n -> <br>).
+  // Outlook / Hotmail ignore white-space:pre-wrap, so rely on <p> margins + <br>.
+  const normalized = String(text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const paragraphs = normalized.split(/\n{2,}/);
+  const bodyHtml = paragraphs
+    .map((para) => {
+      const inner = esc(para).replace(/\n/g, "<br>");
+      return `<p style="margin:0 0 14px 0">${inner || "&nbsp;"}</p>`;
+    })
+    .join("");
   let html =
-    `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:15px;line-height:1.5;color:#0f172a;white-space:pre-wrap">${bodyEsc}</div>`;
+    `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:15px;line-height:1.5;color:#0f172a">${bodyHtml}</div>`;
   const photo = normalizePublicPhotoUrl(String(opts?.instructorPhotoUrl || "").trim());
   if (photo) {
     const alt = esc(String(opts?.instructorPhotoName || "Instructor").trim() || "Instructor");

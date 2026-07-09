@@ -3175,6 +3175,7 @@
       padding-bottom:16px;
       margin-bottom:4px;
     }
+    #portalQuickMenuNoticesGrid.menu-grid--portal-announcements-split .portal-quickmenu-announcement-sub--reference{order:0}
     #portalQuickMenuNoticesGrid.menu-grid--portal-announcements-split .portal-quickmenu-announcement-sub--pending{order:1}
     #portalQuickMenuNoticesGrid.menu-grid--portal-announcements-split .portal-quickmenu-announcement-sub--signed{order:2}
     .portal-quickmenu-announcement-sub{
@@ -3797,6 +3798,18 @@
     .section-card--today .session-card.session-card--admin-adjusted.session-card--review-needed:hover,
     .section-card--today .session-card.session-card--admin-adjusted.session-card--review-incident:hover{
       border-color:rgba(200,110,45,.52);
+    }
+    /* Make-up wins over the yellow "admin-adjusted" tint: a make-up session is
+       inherently an admin change, so the whole card stays pink (never yellow)
+       until feedback review states take over. */
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-pink:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done){
+      background:linear-gradient(180deg,#fde3ee 0%,#fbcfe0 100%);
+      border-color:#c2185b;
+      box-shadow:0 1px 6px rgba(194,24,91,.16);
+    }
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-pink:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done):hover{
+      border-color:#a01047;
+      box-shadow:0 4px 14px rgba(194,24,91,.22);
     }
     .session-card--ov-green{
       background:var(--reviewGreenBg);
@@ -4594,6 +4607,14 @@
       border:2px solid rgba(185,28,28,.55);
       background:linear-gradient(180deg,#fff5f5 0%,#ffe8e8 100%);
       box-shadow:0 0 0 1px rgba(217,83,79,.32),0 4px 12px rgba(217,83,79,.14);
+      animation:todayOffRequestedPulse 1.4s ease-in-out infinite;
+    }
+    @keyframes todayOffRequestedPulse{
+      0%,100%{border-color:rgba(185,28,28,.5);box-shadow:0 0 0 1px rgba(217,83,79,.3),0 4px 12px rgba(217,83,79,.14)}
+      50%{border-color:rgba(220,38,38,.95);box-shadow:0 0 0 3px rgba(220,38,38,.55),0 8px 22px rgba(220,38,38,.32)}
+    }
+    @media (prefers-reduced-motion:reduce){
+      .today-day-panel--off-requested{animation:none}
     }
     .today-day-panel--loading{
       align-items:center;
@@ -4947,14 +4968,16 @@
       background:linear-gradient(180deg,#fff1f1 0%,#ffcaca 100%);
       box-shadow:0 1px 6px rgba(150,28,28,.2);
     }
+    /* No Participant = open slot awaiting a booking → yellow card (matches the
+       "changed by admin" yellow), no chip. Distinct from Closed (red). */
     .section-card--today .session-card.session-card--available{
-      border-color:rgba(45,132,179,.34);
-      background:linear-gradient(180deg,#ffffff 0%,#f9fcff 100%);
-      box-shadow:0 1px 4px rgba(23,50,71,.07);
+      border-color:rgba(200,165,45,.5);
+      background:linear-gradient(180deg,#fffef6 0%,#fff3bf 100%);
+      box-shadow:0 1px 6px rgba(200,165,45,.12);
     }
     .section-card--today .session-card.session-card--available:hover{
-      border-color:rgba(45,132,179,.48);
-      box-shadow:0 4px 14px rgba(23,50,71,.1);
+      border-color:rgba(150,110,20,.62);
+      box-shadow:0 4px 14px rgba(180,140,30,.2);
     }
     .section-card--today .session-card.session-card--available .session-meta-name{
       color:#b91c1c;
@@ -4962,13 +4985,106 @@
     .section-card--today .session-card .session-card-body{
       flex:1 1 auto;
       display:grid;
-      grid-template-columns:minmax(64px, 76px) minmax(0,1fr) var(--today-symbol-col-max,72px);
-      align-items:stretch;
-      align-content:stretch;
-      column-gap:4px;
+      grid-template-columns:minmax(58px, 72px) minmax(0, 1fr) minmax(48px, var(--today-symbol-col-max, 56px));
+      align-items:center;
+      align-content:center;
+      column-gap:6px;
       width:100%;
       min-height:100%;
       min-width:0;
+    }
+    /* Combined "Day Centre + pool" card: participant name on the far left, then a
+       time / note mini-table (e.g. Emmanuel — 11 to 12 Day Centre / 12 to 1 Big Pool).
+       Still ONE session (feedback / pay unchanged); this is a display grouping only. */
+    .section-card--today .session-card.session-card--segments{
+      border-left:4px solid #6d5ae0;
+    }
+    .section-card--today .session-card.session-card--segments .session-card-body.session-card-body--segments,
+    .section-card--today .session-card.session-card--segments .session-card-body--segments{
+      display:flex;
+      flex-direction:row;
+      align-items:center;
+      grid-template-columns:none;
+      column-gap:12px;
+      padding:2px 2px 2px 2px;
+    }
+    .section-card--today .session-card--segments .session-line--name-lead{
+      flex:0 0 30%;
+      max-width:32%;
+      align-self:stretch;
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      text-align:left;
+      padding-right:10px;
+      border-right:1px solid rgba(23,50,71,.14);
+      min-width:0;
+    }
+    .section-card--today .session-card--segments .session-line--name-lead .session-name-stack{
+      align-items:flex-start;
+      text-align:left;
+      min-width:0;
+    }
+    .section-card--today .session-card--segments .session-seg-list{
+      flex:1 1 auto;
+      min-width:0;
+      /* Each segment is its own centred column (icon → title → time). The three
+         columns sit side by side on ONE row (no wrap) so the card reads like a
+         4-column table: name | seg | seg | seg. */
+      display:flex;
+      flex-wrap:nowrap;
+      justify-content:space-around;
+      align-items:flex-start;
+      gap:4px 8px;
+      padding-left:2px;
+    }
+    .section-card--today .session-card--segments .session-seg-row{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start;
+      text-align:center;
+      gap:3px;
+      min-width:0;
+      flex:1 1 0;
+    }
+    .section-card--today .session-card--segments .session-seg-time{
+      font-weight:800;
+      color:#000;
+      font-size:12.5px;
+      line-height:1.15;
+      white-space:nowrap;
+      text-align:center;
+    }
+    .section-card--today .session-card--segments .session-seg-note{
+      font-weight:600;
+      color:#334155;
+      font-size:12.5px;
+      line-height:1.15;
+      min-width:0;
+      overflow-wrap:break-word;
+      text-align:center;
+    }
+    .section-card--today .session-card--segments .session-seg-note-text{
+      display:inline-block;
+      min-width:0;
+      overflow-wrap:break-word;
+    }
+    /* Venue icon + title inside a segment row: compact stack matching single-session cards. */
+    .section-card--today .session-card--segments .session-seg-note .session-area-note-stack{
+      display:inline-flex;
+      flex-direction:column;
+      align-items:center;
+      gap:2px;
+      min-width:0;
+    }
+    .section-card--today .session-card--segments .session-seg-note .session-area-note-label{
+      font-size:9px;
+      line-height:1.1;
+      font-weight:700;
+      color:var(--area-note-accent, #334155);
+      text-align:center;
+      overflow-wrap:break-word;
     }
     .section-card--today .session-line--time{
       align-self:stretch;
@@ -4998,35 +5114,41 @@
       gap:2px;
       min-width:0;
       container-type:inline-size;
-      overflow:hidden;
+      overflow:visible;
     }
     .section-card--today .session-line--time-stack .session-slot-time{
       display:block;
       width:100%;
       max-width:100%;
-      font-size:clamp(7px, 17cqi, var(--today-time-fs, 13px));
+      font-size:var(--today-time-fs, 13px);
       font-weight:700;
       line-height:1.1;
       color:#000;
+      /* Time must stay on ONE line: portalFitTodayTimeLabels() auto-shrinks the
+         font so long labels ("12 to 12.30") fit; ellipsis is only a safety net. */
       white-space:nowrap;
       overflow:hidden;
+      overflow-wrap:normal;
       text-overflow:ellipsis;
       min-width:0;
+      text-align:center;
     }
     .section-card--today .session-line--time-stack .session-line-venue{
       display:block;
       width:100%;
       max-width:100%;
       min-width:0;
-      font-size:clamp(9px, 14cqi, 12px);
+      font-size:12px;
       font-weight:600;
       letter-spacing:.01em;
       text-transform:capitalize;
       color:var(--muted);
       line-height:1.1;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      white-space:normal;
+      overflow:visible;
+      overflow-wrap:anywhere;
+      text-overflow:unset;
+      text-align:center;
     }
     .section-card--today .session-line--name{
       align-self:stretch;
@@ -5362,18 +5484,19 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      align-self:stretch;
+      align-self:center;
       justify-self:stretch;
       line-height:0;
       min-height:0;
       min-width:0;
-      height:100%;
+      height:auto;
       width:100%;
-      max-width:var(--today-symbol-col-max,72px);
+      max-width:var(--today-symbol-col-max, 56px);
       margin:0 0 0 auto;
       padding:0;
       box-sizing:border-box;
       color:var(--blue);
+      overflow:visible;
     }
     .section-card--today .session-card .session-card-body.session-card-body--today-ov-split .session-line--symbol{
       padding:0;
@@ -5608,19 +5731,15 @@
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      gap:6px;
       min-width:0;
       max-width:100%;
     }
-    .session-card.session-card--home .session-meta-name--home .session-home-name-icon{
-      flex:0 0 auto;
-    }
     .session-card.session-card--home .session-meta-name--home > span{
       min-width:0;
-      overflow-wrap:break-word;
+      white-space:nowrap;
     }
     .session-card.session-card--home .session-line--time-stack{
-      display:none;
+      display:flex;
     }
     .session-card.session-card--home .session-line--name{
       justify-content:center;
@@ -6345,6 +6464,29 @@
       background:linear-gradient(180deg,#ffecec 0%,#ffd4d4 100%);
       border-color:rgba(197,48,48,.32);
       box-shadow:0 4px 16px rgba(180,40,40,.1);
+    }
+    .calendar-day.calendar-day--week-row--off-requested{
+      background:linear-gradient(180deg,#fff5f5 0%,#ffe3e3 100%);
+      border:2px solid rgba(185,28,28,.55);
+      box-shadow:0 0 0 1px rgba(217,83,79,.3),0 2px 10px rgba(184,50,50,.18);
+      animation:weekRowOffRequestedPulse 1.4s ease-in-out infinite;
+    }
+    .calendar-day.calendar-day--week-row--off-requested:hover{
+      border-color:rgba(220,38,38,.85);
+      box-shadow:0 0 0 2px rgba(220,38,38,.4),0 6px 18px rgba(184,50,50,.22);
+    }
+    .calendar-day--week-row--off-requested .week-day-icon{
+      background:linear-gradient(180deg,#e04545,#b83232);
+      color:#fff;
+      box-shadow:0 0 0 1px rgba(130,30,30,.4),0 2px 10px rgba(184,50,50,.22);
+    }
+    .calendar-day--week-row--off-requested .week-venue-seg--empty{color:rgba(140,36,36,.92)}
+    @keyframes weekRowOffRequestedPulse{
+      0%,100%{border-color:rgba(185,28,28,.5);box-shadow:0 0 0 1px rgba(217,83,79,.28),0 2px 10px rgba(184,50,50,.16)}
+      50%{border-color:rgba(220,38,38,.95);box-shadow:0 0 0 3px rgba(220,38,38,.5),0 8px 20px rgba(220,38,38,.28)}
+    }
+    @media (prefers-reduced-motion:reduce){
+      .calendar-day.calendar-day--week-row--off-requested{animation:none}
     }
     .calendar-day--week-row .week-day-icon{
       width:44px;
@@ -7217,9 +7359,11 @@
     .term-cal-day.term-cal-day--ov-pulse-both{
       animation:termOvPulseBothCell 2.2s ease-in-out infinite;
     }
-    .term-cal-day.term-cal-day--ov-pulse-outstanding,
-    .term-cal-day.term-cal-day--ov-pulse-day-off{
+    .term-cal-day.term-cal-day--ov-pulse-outstanding{
       animation:none;
+    }
+    .term-cal-day.term-cal-day--ov-pulse-day-off{
+      animation:termOvPulseDayOffCell 1.6s ease-in-out infinite;
     }
     .term-cal-day.term-cal-day--ov-pulse-shift-removed{
       animation:termOvPulseShiftRemovedCell 1.35s ease-in-out infinite;

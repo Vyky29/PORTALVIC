@@ -6,15 +6,15 @@
 
   var SETS = {
     roster: [
-      "/portal/term_from_timetable.js?v=20260629-29jun-roster",
-      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260629-29jun-roster",
-      "/portal/clients_info_embed.js?v=20260608-anas-ismail",
+      "/portal/term_from_timetable.js?v=20260703-bundle-iife",
+      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260707-roberto-venues",
+      "/portal/clients_info_embed.js?v=20260707-social-workers",
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260628-eddie-mc-alias",
-      "/portal/portal_participant_catalog.js?v=20260628-home-manager-exclude",
-      "/portal/portal-roster-rows-merge.js?v=20260622-canonical-roster",
-      "/portal/portal_madre_fold.js?v=20260614-madre-dedupe",
+      "/portal/portal_participant_catalog.js?v=20260707-acat-keep-q6-exclude",
+      "/portal/portal-roster-rows-merge.js?v=20260704-roster-504",
+      "/portal/portal_madre_fold.js?v=20260706-madre-no-store-fix",
       "/portal/portal_roster_canonical.js?v=20260614-madre-dedupe",
-      "/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster",
+      "/portal/staff_dashboard_portal_roster_source.js?v=20260704-roster-seq",
     ],
     feedback: [
       "/portal/cancellations_portal_data.js?v=20260528-timi-cancel",
@@ -24,7 +24,7 @@
     ],
     payments: ["/portal/clients_payments_portal_data.js?v=20260507-portalfix"],
     absentees: ["/portal/absentees_credits_portal_data.js?v=20260530-abs"],
-    participants: ["/portal/participants_parents_portal_data.js?v=20260608-anas-ismail"],
+    participants: ["/portal/participants_parents_portal_data.js?v=20260707-emani-dedupe"],
     oldpax: ["/portal/old_participants_portal_data.js?v=20260430-oldpax-export"],
     waitlist: ["/portal/waiting_list_portal_data.js?v=20260430-waitlist"],
     spreadsheet_ref: ["/portal/spreadsheet_reference_data.js?v=20260602-weekend"],

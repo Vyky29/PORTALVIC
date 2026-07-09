@@ -13,26 +13,37 @@ import {
   resolveParentPortalSession,
 } from "../_shared/parent_portal_session.ts";
 import {
-  feedbackSourceFingerprint,
-  sanitizeFeedbackForParents,
-  parentSummaryModelNeedsRefresh,
-} from "../_shared/parent_feedback_sanitize.ts";
+  feedbackAuthorFirstName,
+  resolveFeedbackAuthorRole,
+} from "../_shared/parent_feedback_author_role.ts";
+import { enforceParticipantFirstNameInText } from "../_shared/participant_feedback_name.ts";
 import { resolveParticipantAvatarUrls } from "../_shared/participant_avatar.ts";
 import {
   lookupClientsInfoSheetForParticipant,
   parseGeneralInfoSheet,
 } from "../_shared/participant_general_info.ts";
 import {
+  expandParticipantClientSlugs,
   participantIdentityMatches,
   resolveParticipantClientSlugs,
   resolveParticipantLookupNames,
+  slugifyParticipantKey,
 } from "../_shared/participant_identity.ts";
+import {
+  buildParentAttendanceSummary,
+  PARENT_SESSION_TERM_START_ISO,
+} from "../_shared/parent_attendance_summary.ts";
+import { REENROL_ACADEMIC_YEAR } from "../_shared/reenrolment_catalog.ts";
+import { buildReenrolmentParentSummary } from "../_shared/reenrolment_parent_summary.ts";
 
 const ACH_BUCKET = "participant-achievements";
 const DOC_BUCKET = "documents";
-/** Max uncached feedback rows to review per parent page load (parallel batches). */
-const SANITIZE_BATCH = 30;
-const SANITIZE_CONCURRENCY = 5;
+/** Same folder rows as admin participant gallery (exclude lead inbox). */
+const PARENT_ACH_STATUSES = ["draft", "attached", "archived_unused", "downloaded"] as const;
+const LEAD_INBOX_CLIENT_ID = "_inbox";
+/** Max achievement rows returned per parent page load. */
+const PARENT_ACH_QUERY_LIMIT = 500;
+/** Max feedback rows returned per parent page load. */
 const PARENT_FEEDBACK_LIMIT = 60;
 const TERM_LABEL = "Summer Term 2026";
 
@@ -49,6 +60,122 @@ function parseSections(raw: unknown): Set<DetailSection> {
     }
   }
   return out.size ? out : all;
+}
+
+const TEAM_FEEDBACK_SINCE = "2026-06-01";
+
+function staffKeyFromName(raw: string): string {
+  let k = String(raw || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .split(/\s+/)[0] || "";
+  if (k === "yousef" || k === "yusef") k = "youssef";
+  if (k === "lulia") k = "luliya";
+  return k;
+}
+
+function upsertTeamMember(
+  map: Map<string, Record<string, unknown>>,
+  key: string,
+  patch: Record<string, unknown>,
+) {
+  const k = String(key || "").trim().toLowerCase();
+  if (!k) return;
+  const prev = map.get(k) || {
+    staff_key: k,
+    name: "",
+    avatar_url: "/portal/staff_photos/" + k + ".png",
+    role: "instructor",
+  };
+  const name =
+    clean(patch.name, 80) || clean(prev.name, 80) || k.charAt(0).toUpperCase() + k.slice(1);
+  map.set(k, {
+    ...prev,
+    ...patch,
+    staff_key: k,
+    name,
+    avatar_url:
+      clean(patch.avatar_url, 200) ||
+      clean(prev.avatar_url, 200) ||
+      "/portal/staff_photos/" + k + ".png",
+  });
+}
+
+/** Instructors from feedback + covering staff from schedule_overrides. */
+async function buildParentTeam(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  clientSlugs: string[],
+  feedbackRows: Record<string, unknown>[],
+): Promise<Record<string, unknown>[]> {
+  const map = new Map<string, Record<string, unknown>>();
+
+  for (const row of feedbackRows || []) {
+    const date = isoFromAny(row.session_date);
+    if (!date || date < TEAM_FEEDBACK_SINCE) continue;
+    const name = clean(row.completed_by_name, 120);
+    const key = staffKeyFromName(name);
+    if (!key) continue;
+    upsertTeamMember(map, key, {
+      name: feedbackAuthorFirstName(name) || name,
+      role: "instructor",
+    });
+  }
+
+  const slugSet = new Set(clientSlugs.map((s) => String(s || "").toLowerCase()).filter(Boolean));
+
+  if (slugSet.size) {
+    const { data: ovRows, error } = await supabase
+      .from("schedule_overrides")
+      .select("session_date, override_type, status, payload, anchor_staff_id, anchor_client_id")
+      .eq("status", "active")
+      .in("override_type", ["instructor_reassign", "client_replace_in_slot"])
+      .gte("session_date", PARENT_SESSION_TERM_START_ISO)
+      .limit(300);
+    if (error) {
+      console.error("[parent-portal-participant-detail] team overrides", error.message);
+    }
+    for (const ov of ovRows || []) {
+      const pl = (ov && ov.payload && typeof ov.payload === "object" ? ov.payload : {}) as Record<
+        string,
+        unknown
+      >;
+      const ot = clean(ov.override_type, 40);
+      const anchorClient = clean(ov.anchor_client_id, 80).toLowerCase();
+      const toClient = clean(pl.to_client_id || pl.replacement_client_id, 80).toLowerCase();
+      const forThisChild =
+        (anchorClient && slugSet.has(anchorClient)) || (toClient && slugSet.has(toClient));
+      if (!forThisChild) continue;
+
+      if (ot === "instructor_reassign") {
+        const slug =
+          clean(pl.covering_staff_id, 80) || staffKeyFromName(clean(pl.covering_staff_name, 120));
+        const name = clean(pl.covering_staff_name, 120) || clean(pl.to_staff_name, 120);
+        if (slug) {
+          upsertTeamMember(map, staffKeyFromName(slug) || slug.toLowerCase(), {
+            name: name || slug,
+            role: "cover",
+          });
+        }
+      } else if (ot === "client_replace_in_slot") {
+        const staffSlug = clean(ov.anchor_staff_id, 80);
+        if (staffSlug && (pl.open_slot_makeup || pl.parent_portal_makeup || toClient)) {
+          upsertTeamMember(map, staffKeyFromName(staffSlug) || staffSlug.toLowerCase(), {
+            name: staffSlug,
+            role: "cover",
+          });
+        }
+      }
+    }
+  }
+
+  return [...map.values()].sort((a, b) =>
+    String(a.name || "").localeCompare(String(b.name || "")),
+  );
 }
 
 async function detectHasAquatics(
@@ -143,6 +270,151 @@ function canonicalProgrammeName(raw: unknown): string {
   return t.length > 48 ? t.slice(0, 45) + "…" : t;
 }
 
+const DAY_ORDER: Record<string, number> = {
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6,
+  sunday: 7,
+};
+
+/**
+ * Roster convention: afternoon times are written 12h without am/pm ("1.30" = 13:30).
+ * Mirror of portal-roster-rows-merge.js hourTo24 so absolute minutes are correct.
+ */
+function hourTo24(hour: number, day: string): number {
+  const isSunday = String(day || "").toLowerCase() === "sunday";
+  if (!isSunday && hour < 8) return hour + 12;
+  if (isSunday && hour >= 1 && hour <= 7) return hour + 12;
+  return hour;
+}
+
+/** Parse a "12.30 to 3" / "4.30-5.15" slot into start/end tokens + day-aware minutes. */
+function parseSlotTokens(
+  raw: unknown,
+  day: string,
+): { startTok: string; endTok: string; start: number | null; end: number | null } | null {
+  const parts = clean(raw, 40).split(/to|-|—/i);
+  if (parts.length !== 2) return null;
+  const startTok = parts[0].trim();
+  const endTok = parts[1].trim();
+  const toMin = (t: string): number | null => {
+    const m = t.match(/^(\d{1,2})(?:[.:](\d{1,2}))?$/);
+    if (!m) return null;
+    return hourTo24(parseInt(m[1], 10), day) * 60 + (m[2] ? parseInt(m[2], 10) : 0);
+  };
+  return { startTok, endTok, start: toMin(startTok), end: toMin(endTok) };
+}
+
+/**
+ * Parent-safe services list from the roster-review snapshot.
+ *
+ * Collapses to ONE entry per (programme + weekday): the roster splits a single
+ * booked service into staff/cover lines (e.g. Day Centre 12.30–3 stored as 3 rows,
+ * or a 90-min Multi-Activity as two 45-min teaching slots). Parents and accounting
+ * see the same service once per day, spanning the outer time bounds
+ * (e.g. "150' Day Centre · Monday · 12.30 to 3"). Instructor/venue/area omitted.
+ */
+function buildServicesDetail(sessions: unknown): Array<{ label: string; day: string; time: string }> {
+  const list = Array.isArray(sessions) ? sessions : [];
+  type Group = {
+    svc: string;
+    day: string;
+    startTok: string;
+    endTok: string;
+    startMin: number | null;
+    endMin: number | null;
+    rawTime: string;
+  };
+  const groups = new Map<string, Group>();
+
+  for (const raw of list) {
+    const s = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+    const svc = canonicalProgrammeName(s.service) || clean(s.service, 80) || "Service";
+    const day = clean(s.day, 20);
+    const key = (svc + "|" + day).toLowerCase();
+    let g = groups.get(key);
+    if (!g) {
+      g = { svc, day, startTok: "", endTok: "", startMin: null, endMin: null, rawTime: clean(s.timeSlot, 40) };
+      groups.set(key, g);
+    }
+    const tok = parseSlotTokens(s.timeSlot, day);
+    if (tok) {
+      if (tok.start != null && (g.startMin == null || tok.start < g.startMin)) {
+        g.startMin = tok.start;
+        g.startTok = tok.startTok;
+      }
+      if (tok.end != null && (g.endMin == null || tok.end > g.endMin)) {
+        g.endMin = tok.end;
+        g.endTok = tok.endTok;
+      }
+      if (!g.startTok && tok.startTok) g.startTok = tok.startTok;
+      if (!g.endTok && tok.endTok) g.endTok = tok.endTok;
+    }
+  }
+
+  return [...groups.values()]
+    .map((g) => {
+      const spanDur = g.startMin != null && g.endMin != null && g.endMin > g.startMin
+        ? g.endMin - g.startMin
+        : null;
+      // Multi-Activity is a single 90' service billed per day, even when the
+      // roster splits it into two 45' halves — always show it as 90'.
+      const dur = g.svc === "Multi-Activity" ? 90 : spanDur;
+      const label = dur ? `${dur}' ${g.svc}` : g.svc;
+      const time = g.startTok && g.endTok ? `${g.startTok} to ${g.endTok}` : g.rawTime;
+      return { label, day: g.day, time, _order: DAY_ORDER[g.day.toLowerCase()] || 8, _start: g.startMin ?? 9999 };
+    })
+    .sort((a, b) => (a._order !== b._order ? a._order - b._order : a._start - b._start))
+    .map(({ label, day, time }) => ({ label, day, time }));
+}
+
+/**
+ * Look up the child's roster-review service snapshot. Keyed by the same canonical
+ * participant slug used across the portal (participant_identity.ts) so spelling
+ * variants (e.g. "Aadam Ahmed" ↔ roster "Adaam Ah") still resolve.
+ */
+async function fetchRosterServiceLines(
+  supabase: ReturnType<typeof createClient>,
+  identityInput: {
+    contactId?: string;
+    displayName?: string;
+    firstName?: string;
+    lastName?: string;
+  },
+): Promise<{ count: number; detail: Array<{ label: string; day: string; time: string }> } | null> {
+  const slugs = [
+    ...new Set(
+      resolveParticipantClientSlugs(identityInput)
+        .map((s) => slugifyParticipantKey(s))
+        .filter(Boolean),
+    ),
+  ];
+  if (!slugs.length) return null;
+
+  const { data, error } = await supabase
+    .from("portal_participant_service_lines")
+    .select("client_name, sessions, services_count")
+    .in("client_key", slugs)
+    .limit(6);
+
+  if (error) {
+    console.error("[parent-portal-participant-detail] service lines error", error);
+    return null;
+  }
+
+  let best: Record<string, unknown> | null = null;
+  for (const row of data || []) {
+    if (!best || Number(row.services_count || 0) > Number(best.services_count || 0)) best = row;
+  }
+  if (!best) return null;
+
+  const detail = buildServicesDetail(best.sessions);
+  return { count: detail.length || Number(best.services_count || 0), detail };
+}
+
 function formatDobDisplay(iso: unknown): string {
   const s = isoFromAny(iso);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
@@ -177,28 +449,23 @@ function independenceLabel(raw: unknown): string {
   return clean(raw, 400);
 }
 
-async function sanitizeFeedbackBatch(
-  items: Array<{
-    id: string;
-    contactId: string;
-    fingerprint: string;
-    input: Parameters<typeof sanitizeFeedbackForParents>[0];
-  }>,
-  limit: number,
-): Promise<Map<string, Awaited<ReturnType<typeof sanitizeFeedbackForParents>>>> {
-  const out = new Map<string, Awaited<ReturnType<typeof sanitizeFeedbackForParents>>>();
-  const queue = items.slice(0, limit);
-  for (let i = 0; i < queue.length; i += SANITIZE_CONCURRENCY) {
-    const chunk = queue.slice(i, i + SANITIZE_CONCURRENCY);
-    const results = await Promise.all(
-      chunk.map(async (item) => {
-        const reviewed = await sanitizeFeedbackForParents(item.input);
-        return { id: item.id, reviewed };
-      }),
-    );
-    for (const row of results) out.set(row.id, row.reviewed);
+function parentCommentFromRow(
+  positiveText: string,
+  cache: Record<string, unknown> | undefined,
+): { comment: string | null; pending: boolean } {
+  const status = cache ? String(cache.share_status || "") : "";
+  // Admin-released text (parent_message) is the source of truth when a share
+  // row exists. Falls back to positive_feedback for older rows with no share.
+  const adminMsg = cache ? clean(cache.parent_message, 2500) : "";
+  if (status === "hidden") return { comment: null, pending: false };
+  if (status === "pending") return { comment: null, pending: true };
+  if (status === "approved") {
+    const text = adminMsg || positiveText;
+    return { comment: text || null, pending: false };
   }
-  return out;
+  // No share row yet: legacy passthrough on positive_feedback.
+  if (!positiveText) return { comment: null, pending: false };
+  return { comment: positiveText, pending: false };
 }
 
 Deno.serve(async (req) => {
@@ -362,142 +629,33 @@ Deno.serve(async (req) => {
       }
     }
 
-    let sanitizeBudget = SANITIZE_BATCH;
-    const pendingSanitize: Array<{
-      id: string;
-      contactId: string;
-      fingerprint: string;
-      input: Parameters<typeof sanitizeFeedbackForParents>[0];
-      row: Record<string, unknown>;
-      patterns: unknown;
-    }> = [];
-
     for (const row of rawFeedback) {
       const id = String(row.id);
       const patterns = row.engagement_patterns;
-      const sanitizeInput = {
-        clientName: displayName,
-        sessionDate: isoFromAny(row.session_date),
-        service: clean(row.service, 200),
-        positiveFeedback: clean(row.positive_feedback, 2500),
-        relevantInformation: clean(row.relevant_information, 2500),
-        engagementRating:
-          row.engagement_rating != null && row.engagement_rating !== ""
-            ? Number(row.engagement_rating)
-            : null,
-        clientEmotions: clean(row.client_emotions, 200),
-        independenceLabel: independenceLabel(patterns),
-      };
-
-      const fingerprint = await feedbackSourceFingerprint(sanitizeInput);
+      const positiveText = enforceParticipantFirstNameInText(
+        clean(row.positive_feedback, 2500),
+        clean(row.client_name, 200),
+      );
+      const service = clean(row.service, 200);
+      const staffName = clean(row.completed_by_name, 120);
       const cache = cacheById.get(id);
+      const commentPack = parentCommentFromRow(positiveText, cache);
 
-      const adminEdited = !!(cache && cache.admin_edited_at);
-      const wasStaleSummary = parentSummaryModelNeedsRefresh(cache?.review_model);
-      if (
-        cache &&
-        (adminEdited ||
-          (cache.source_fingerprint === fingerprint &&
-            cache.share_status !== "pending" &&
-            !wasStaleSummary))
-      ) {
-        const shareStatus = String(cache.share_status || "hidden");
-        const parentMessage = cache.parent_message ? String(cache.parent_message) : null;
-        sessionsOut.push({
-          id,
-          session_date: isoFromAny(row.session_date),
-          service: clean(row.service, 200),
-          session_time: clean(row.session_time, 80),
-          attendance: clean(row.attendance, 40),
-          engagement_rating: row.engagement_rating,
-          client_emotions: clean(row.client_emotions, 200),
-          independence: independenceLabel(patterns),
-          parent_message: shareStatus === "approved" ? parentMessage : null,
-          message_pending: false,
-        });
-      } else if (sanitizeBudget > 0) {
-        sanitizeBudget--;
-        pendingSanitize.push({
-          id,
-          contactId,
-          fingerprint,
-          input: sanitizeInput,
-          row,
-          patterns,
-        });
-      } else if (cache) {
-        const shareStatus = String(cache.share_status || "hidden");
-        const parentMessage = cache.parent_message ? String(cache.parent_message) : null;
-        sessionsOut.push({
-          id,
-          session_date: isoFromAny(row.session_date),
-          service: clean(row.service, 200),
-          session_time: clean(row.session_time, 80),
-          attendance: clean(row.attendance, 40),
-          engagement_rating: row.engagement_rating,
-          client_emotions: clean(row.client_emotions, 200),
-          independence: independenceLabel(patterns),
-          parent_message: shareStatus === "approved" ? parentMessage : null,
-          message_pending: false,
-        });
-      } else {
-        sessionsOut.push({
-          id,
-          session_date: isoFromAny(row.session_date),
-          service: clean(row.service, 200),
-          session_time: clean(row.session_time, 80),
-          attendance: clean(row.attendance, 40),
-          engagement_rating: row.engagement_rating,
-          client_emotions: clean(row.client_emotions, 200),
-          independence: independenceLabel(patterns),
-          parent_message: null,
-          message_pending: true,
-        });
-      }
-    }
-
-    if (pendingSanitize.length) {
-      const reviewedMap = await sanitizeFeedbackBatch(pendingSanitize, pendingSanitize.length);
-      for (const item of pendingSanitize) {
-        const row = item.row;
-        const patterns = item.patterns;
-        const reviewed = reviewedMap.get(item.id) || {
-          share_status: "hidden" as const,
-          parent_message: "",
-          review_model: "missing",
-        };
-        const shareStatus = reviewed.share_status;
-        const parentMessage = reviewed.parent_message || null;
-
-        const upsertRow = {
-          session_feedback_id: item.id,
-          contact_id: item.contactId,
-          source_fingerprint: item.fingerprint,
-          parent_message: parentMessage,
-          share_status: shareStatus,
-          review_model: reviewed.review_model,
-          reviewed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
-        const { error: upsertErr } = await supabase
-          .from("portal_parent_feedback_share")
-          .upsert(upsertRow, { onConflict: "session_feedback_id" });
-        if (upsertErr) console.warn("[parent-portal-participant-detail] cache upsert", upsertErr);
-
-        sessionsOut.push({
-          id: item.id,
-          session_date: isoFromAny(row.session_date),
-          service: clean(row.service, 200),
-          session_time: clean(row.session_time, 80),
-          attendance: clean(row.attendance, 40),
-          engagement_rating: row.engagement_rating,
-          client_emotions: clean(row.client_emotions, 200),
-          independence: independenceLabel(patterns),
-          parent_message: shareStatus === "approved" ? parentMessage : null,
-          message_pending: false,
-        });
-      }
+      sessionsOut.push({
+        id,
+        session_date: isoFromAny(row.session_date),
+        service,
+        session_time: clean(row.session_time, 80),
+        attendance: clean(row.attendance, 40),
+        engagement_rating: row.engagement_rating,
+        client_emotions: clean(row.client_emotions, 200),
+        independence: independenceLabel(patterns),
+        feedback_by_name: feedbackAuthorFirstName(staffName),
+        feedback_by_role: staffName ? resolveFeedbackAuthorRole(staffName, service) : "",
+        comment: commentPack.comment,
+        parent_message: commentPack.comment,
+        message_pending: commentPack.pending,
+      });
     }
 
     sessionsOut.sort((a, b) => {
@@ -508,63 +666,110 @@ Deno.serve(async (req) => {
     });
   }
 
+  let attendanceSummary = { attended: 0, absent: 0, total: 0, makeup_absent: 0 };
+  if (wantSessions && clientSlugs.length) {
+    const { data: overrideRows, error: ovErr } = await supabase
+      .from("schedule_overrides")
+      .select("session_date, anchor_start, anchor_client_id, override_type, status, payload")
+      .eq("status", "active")
+      .in("override_type", ["client_replace_in_slot", "client_absence_announced"])
+      .gte("session_date", PARENT_SESSION_TERM_START_ISO)
+      .in("anchor_client_id", clientSlugs);
+    if (ovErr) {
+      console.error("[parent-portal-participant-detail] schedule_overrides error", ovErr);
+    }
+    attendanceSummary = buildParentAttendanceSummary(
+      rawFeedback,
+      overrideRows || [],
+      clientSlugs,
+      PARENT_SESSION_TERM_START_ISO,
+    );
+  } else if (wantSessions && rawFeedback.length) {
+    attendanceSummary = buildParentAttendanceSummary(
+      rawFeedback,
+      [],
+      clientSlugs,
+      PARENT_SESSION_TERM_START_ISO,
+    );
+  }
+
   let achievements: Record<string, unknown>[] = [];
 
   if (wantAchievements) {
-    const PARENT_ACH_STATUSES = ["attached", "downloaded"] as const;
-    const achQueries = [];
-    if (clientSlugs.length) {
-      achQueries.push(
-        supabase
-          .from("portal_participant_achievement_photos")
-          .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status, parent_downloaded_at")
-          .in("status", [...PARENT_ACH_STATUSES])
-          .in("client_id", clientSlugs)
-          .order("session_date", { ascending: false })
-          .limit(60),
-      );
-    }
-    for (const nm of lookupNames.slice(0, 4)) {
-      achQueries.push(
-        supabase
-          .from("portal_participant_achievement_photos")
-          .select("id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status, parent_downloaded_at")
-          .in("status", [...PARENT_ACH_STATUSES])
-          .ilike("client_name", nm)
-          .order("session_date", { ascending: false })
-          .limit(60),
-      );
-    }
-
+    const achSelect =
+      "id, session_date, storage_path, client_name, client_id, attached_at, session_feedback_id, status, parent_downloaded_at, width, height, media_type";
+    const expandedSlugs = expandParticipantClientSlugs(clientSlugs);
     const achRows: Record<string, unknown>[] = [];
     const seenAch = new Set<string>();
-    const achResults = await Promise.all(achQueries);
-    for (const { data } of achResults) {
-      for (const row of data || []) {
-        if (!row || !participantIdentityMatches(identityInput, String(row.client_name || ""), String(row.client_id || ""))) continue;
-        const aid = String(row.id || "");
+
+    const mergeAchievementRows = (rows: unknown[] | null | undefined) => {
+      for (const row of rows || []) {
+        if (!row || typeof row !== "object") continue;
+        const rec = row as Record<string, unknown>;
+        if (!participantIdentityMatches(
+          identityInput,
+          String(rec.client_name || ""),
+          String(rec.client_id || ""),
+        )) continue;
+        if (clean(rec.client_id, 80).toLowerCase() === LEAD_INBOX_CLIENT_ID) continue;
+        const aid = String(rec.id || "");
         if (!aid || seenAch.has(aid)) continue;
         seenAch.add(aid);
-        achRows.push(row);
+        achRows.push(rec);
       }
+    };
+
+    if (expandedSlugs.length) {
+      const { data, error } = await supabase
+        .from("portal_participant_achievement_photos")
+        .select(achSelect)
+        .in("status", [...PARENT_ACH_STATUSES])
+        .in("client_id", expandedSlugs)
+        .order("session_date", { ascending: false })
+        .limit(PARENT_ACH_QUERY_LIMIT);
+      if (error) {
+        console.error("[parent-portal-participant-detail] achievements by client_id error", error);
+      }
+      mergeAchievementRows(data);
+    }
+
+    for (const nm of lookupNames.slice(0, 6)) {
+      const { data, error } = await supabase
+        .from("portal_participant_achievement_photos")
+        .select(achSelect)
+        .in("status", [...PARENT_ACH_STATUSES])
+        .ilike("client_name", nm)
+        .order("session_date", { ascending: false })
+        .limit(PARENT_ACH_QUERY_LIMIT);
+      if (error) {
+        console.error("[parent-portal-participant-detail] achievements by client_name error", error);
+        continue;
+      }
+      mergeAchievementRows(data);
     }
 
     achRows.sort((a, b) => String(b.session_date || "").localeCompare(String(a.session_date || "")));
 
     const signedRows = await Promise.all(
-      achRows.slice(0, 40).map(async (row) => {
+      achRows.map(async (row) => {
         const path = clean(row.storage_path, 500);
         if (!path) return null;
         const { data: signed, error: signErr } = await supabase.storage
           .from(ACH_BUCKET)
           .createSignedUrl(path, 3600);
-        if (signErr || !signed?.signedUrl) return null;
+        if (signErr || !signed?.signedUrl) {
+          console.error("[parent-portal-participant-detail] achievement sign error", signErr, path);
+          return null;
+        }
         return {
           id: row.id,
           session_date: row.session_date,
           session_feedback_id: row.session_feedback_id,
           status: clean(row.status, 40),
           downloaded_at: row.parent_downloaded_at ? String(row.parent_downloaded_at) : null,
+          width: Number(row.width) > 0 ? Number(row.width) : null,
+          height: Number(row.height) > 0 ? Number(row.height) : null,
+          media_type: clean(row.media_type, 20) || "photo",
           url: signed.signedUrl,
         };
       }),
@@ -586,8 +791,47 @@ Deno.serve(async (req) => {
 
   const aquaticOnlyNoPhotos = await detectAquaticOnlyNoPhotos(supabase, identityInput, lookupNames);
 
+  // Roster-review service snapshot: the parent-facing "number of services" must match the
+  // roster (admin roster review), not what happens to have feedback. Loaded for the hub (general).
+  let rosterServicesCount = 0;
+  let rosterServicesDetail: Array<{ label: string; day: string; time: string }> = [];
+  if (wantGeneral) {
+    const lines = await fetchRosterServiceLines(supabase, identityInput);
+    if (lines) {
+      rosterServicesCount = lines.count;
+      rosterServicesDetail = lines.detail;
+    }
+  }
+
+  let reenrolmentSummary = buildReenrolmentParentSummary(null, null);
+  if (wantGeneral) {
+    const { data: reenrolRow } = await supabase
+      .from("portal_re_enrolment_submissions")
+      .select("submitted_at, payload")
+      .eq("academic_year", REENROL_ACADEMIC_YEAR)
+      .eq("participant_contact_id", contactId)
+      .order("submitted_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const submittedAt = reenrolRow?.submitted_at ? String(reenrolRow.submitted_at) : null;
+    const payload = reenrolRow?.payload && typeof reenrolRow.payload === "object"
+      ? (reenrolRow.payload as Record<string, unknown>)
+      : null;
+    reenrolmentSummary = buildReenrolmentParentSummary(payload, submittedAt);
+  }
+
+  let swimTermReviewAvailable = false;
+  if (wantGeneral) {
+    const { count: swimShareCount } = await supabase
+      .from("portal_parent_swim_term_share")
+      .select("document_id", { count: "exact", head: true })
+      .eq("contact_id", contactId)
+      .eq("share_status", "ready");
+    swimTermReviewAvailable = (swimShareCount || 0) > 0;
+  }
+
   const swimTermReviews: Record<string, unknown>[] = [];
-  if (wantSwim && hasAquatics) {
+  if (wantSwim && (hasAquatics || swimTermReviewAvailable)) {
     const { data: shares } = await supabase
       .from("portal_parent_swim_term_share")
       .select("document_id, ready_at")
@@ -627,6 +871,23 @@ Deno.serve(async (req) => {
     }
   }
 
+  let teamOut: Record<string, unknown>[] = [];
+  if (wantGeneral || wantSessions) {
+    // Prefer feedback already loaded for sessions; otherwise a light pull for hub/team.
+    let fbForTeam = rawFeedback;
+    if (!fbForTeam.length && clientSlugs.length) {
+      const { data: fbLite } = await supabase
+        .from("session_feedback")
+        .select("session_date, completed_by_name, client_id")
+        .in("client_id", clientSlugs)
+        .gte("session_date", TEAM_FEEDBACK_SINCE)
+        .order("session_date", { ascending: false })
+        .limit(80);
+      fbForTeam = fbLite || [];
+    }
+    teamOut = await buildParentTeam(supabase, clientSlugs, fbForTeam);
+  }
+
   return new Response(
     JSON.stringify({
       ok: true,
@@ -647,6 +908,8 @@ Deno.serve(async (req) => {
       },
       general: {
         services,
+        services_count: rosterServicesCount,
+        services_detail: rosterServicesDetail,
         has_aquatics: hasAquatics,
         aquatic_only_no_photos: aquaticOnlyNoPhotos,
         term_label: TERM_LABEL,
@@ -655,9 +918,13 @@ Deno.serve(async (req) => {
         updated_at: generalUpdatedAt,
         editable: true,
       },
+      team: teamOut,
       sessions: sessionsOut,
+      attendance_summary: attendanceSummary,
       achievements,
       swim_term_reviews: swimTermReviews,
+      swim_term_review_available: swimTermReviewAvailable,
+      reenrolment: reenrolmentSummary,
       pending_review_count: sessionsOut.filter((s) => s.message_pending).length,
     }),
     { status: 200, headers: { ...parentPortalCorsHeaders, "Content-Type": "application/json" } },

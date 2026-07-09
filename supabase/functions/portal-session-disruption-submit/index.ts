@@ -49,15 +49,6 @@ function isoDate(v: unknown): string {
   return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : "";
 }
 
-function nameKeyFromText(name: string): string {
-  return String(name || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "")
-    .trim();
-}
-
 function isOpsAdminProfile(profile: {
   username?: string | null;
   app_role?: string | null;
@@ -65,37 +56,6 @@ function isOpsAdminProfile(profile: {
   const role = clean(profile.app_role).toLowerCase();
   const user = clean(profile.username).toLowerCase();
   return role === "admin" && (user === "sevitha" || user === "info");
-}
-
-function normalizeOpsAdminNameKey(key: string): string {
-  const k = clean(key).toLowerCase();
-  if (k === "info") return "sevitha";
-  return k;
-}
-
-async function resolveNameKey(
-  admin: ReturnType<typeof createClient>,
-  userId: string,
-  fullName: string,
-): Promise<string> {
-  const { data: hrRow } = await admin
-    .from("hr_records")
-    .select("name_key")
-    .eq("staff_id", userId)
-    .not("name_key", "is", null)
-    .limit(1)
-    .maybeSingle();
-  if (hrRow?.name_key) return String(hrRow.name_key);
-
-  const { data: prof } = await admin
-    .from("staff_profiles")
-    .select("full_name, username")
-    .eq("id", userId)
-    .maybeSingle();
-  const name = clean(prof?.full_name || fullName || prof?.username || "", 120);
-  const key = normalizeOpsAdminNameKey(nameKeyFromText(name));
-  if (key) return key;
-  return normalizeOpsAdminNameKey(nameKeyFromText(clean(prof?.username || "", 80)));
 }
 
 Deno.serve(async (req) => {
@@ -213,38 +173,14 @@ Deno.serve(async (req) => {
     return json(500, { ok: false, error: "save_failed" });
   }
 
-  let dayOffRecorded = false;
-  const nameKey = await resolveNameKey(admin, userId, submittedByName);
-  if (nameKey) {
-    const offReason = [
-      "Time off requested",
-      disruptionType,
-      reasonCategory,
-    ].join(" — ");
-    const { error: offErr } = await admin.from("staff_unavailability").upsert(
-      {
-        name_key: nameKey,
-        staff_name: submittedByName,
-        staff_id: userId,
-        off_date: sessionDate,
-        reason: offReason.slice(0, 500),
-      },
-      { onConflict: "name_key,off_date" },
-    );
-    if (!offErr) {
-      dayOffRecorded = true;
-      await admin
-        .from("session_disruption_reports")
-        .update({ day_off_recorded: true })
-        .eq("id", inserted.id);
-    } else {
-      console.error("[portal-session-disruption-submit] day_off", offErr);
-    }
-  }
-
+  // Day off is GATED on admin validation: we do NOT upsert staff_unavailability
+  // here anymore. The report stays pending until an admin validates it
+  // (portal-admin-session-disruption-validate), which then records the day off
+  // so the staff dashboard shows "Day off (Time Off Requested)" for that date.
   return json(200, {
     ok: true,
     report_id: inserted.id,
-    day_off_recorded: dayOffRecorded,
+    day_off_recorded: false,
+    pending_validation: true,
   });
 });

@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260703-v17-incident-view-fix';
+  var PORTAL_DAY_OPS_BUILD = '20260708-v20-unified-parent-feedback';
   function portalHubBuildToken() {
     return String(global.PORTAL_ADMIN_HUB_BUILD || PORTAL_DAY_OPS_BUILD || '').trim();
   }
@@ -481,26 +481,44 @@
       );
     }
     if (cfg.fetchCancellations) {
-      tasks.push(
-        cfg.fetchCancellations().then(function (rows) {
+      tasks.push({ seq: true, run: function () {
+        return cfg.fetchCancellations().then(function (rows) {
           out.cancellation_reports = rows || [];
-        })
-      );
+        });
+      }});
     }
     if (cfg.fetchAbsents) {
-      tasks.push(
-        cfg.fetchAbsents().then(function (rows) {
+      tasks.push({ seq: true, run: function () {
+        return cfg.fetchAbsents().then(function (rows) {
           out.session_quick_marks = rows || [];
-        })
-      );
+        });
+      }});
     }
+    var parallel = [];
+    var sequential = [];
+    tasks.forEach(function (t) {
+      if (t && t.seq) sequential.push(t.run);
+      else parallel.push(typeof t === 'function' ? t : t);
+    });
     await Promise.all(
-      tasks.map(function (p) {
-        return p.catch(function (taskErr) {
+      parallel.map(function (p) {
+        return Promise.resolve(typeof p === 'function' ? p() : p).catch(function (taskErr) {
           console.error('[PortalDayOps] overview enrich task failed', taskErr);
         });
       })
     );
+    for (var si = 0; si < sequential.length; si++) {
+      try {
+        await sequential[si]();
+      } catch (taskErr) {
+        console.error('[PortalDayOps] overview enrich task failed', taskErr);
+      }
+      if (si < sequential.length - 1) {
+        await new Promise(function (r) {
+          setTimeout(r, 250);
+        });
+      }
+    }
     await fetchParentFeedbackSharesInto(out);
     try {
       if ((!out.schedule_overrides || !out.schedule_overrides.length) && global.__PORTAL_SCHEDULE_OVERRIDES__) {
@@ -525,14 +543,14 @@
     var sinceIso = since.toISOString().slice(0, 10);
     var tasks = [];
     if (cfg.fetchIncidentReports) {
-      tasks.push(
-        cfg.fetchIncidentReports().then(function (rows) {
+      tasks.push(function () {
+        return cfg.fetchIncidentReports().then(function (rows) {
           out.incident_reports = rows || [];
-        })
-      );
+        });
+      });
     } else if (client) {
-      tasks.push(
-        client
+      tasks.push(function () {
+        return client
           .from('incident_reports')
           .select('*')
           .gte('created_at', sinceIso)
@@ -540,18 +558,18 @@
           .limit(400)
           .then(function (inc) {
             if (!inc.error) out.incident_reports = inc.data || [];
-          })
-      );
+          });
+      });
     }
     if (cfg.fetchLeadReports) {
-      tasks.push(
-        cfg.fetchLeadReports().then(function (rows) {
+      tasks.push(function () {
+        return cfg.fetchLeadReports().then(function (rows) {
           out.lead_session_reports = rows || [];
-        })
-      );
-    } else {
-      tasks.push(
-        client
+        });
+      });
+    } else if (client) {
+      tasks.push(function () {
+        return client
           .from('lead_session_reports')
           .select('*')
           .gte('session_date', sinceIso)
@@ -559,26 +577,33 @@
           .limit(500)
           .then(function (lead) {
             if (!lead.error) out.lead_session_reports = lead.data || [];
-          })
-      );
+          });
+      });
     }
-    tasks.push(
-      client
-        .from('venue_reviews')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(400)
-        .then(function (ven) {
-          if (!ven.error) out.venue_reviews = ven.data || [];
-        })
-    );
-    await Promise.all(
-      tasks.map(function (p) {
-        return p.catch(function (deferErr) {
-          console.error('[PortalDayOps] deferred enrich task failed', deferErr);
+    if (client) {
+      tasks.push(function () {
+        return client
+          .from('venue_reviews')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(400)
+          .then(function (ven) {
+            if (!ven.error) out.venue_reviews = ven.data || [];
+          });
+      });
+    }
+    for (var di = 0; di < tasks.length; di++) {
+      try {
+        await tasks[di]();
+      } catch (deferErr) {
+        console.error('[PortalDayOps] deferred enrich task failed', deferErr);
+      }
+      if (di < tasks.length - 1) {
+        await new Promise(function (r) {
+          setTimeout(r, 300);
         });
-      })
-    );
+      }
+    }
     console.log('[PortalDayOps] incident_reports live rows:', (out.incident_reports || []).length);
     return out;
   }
@@ -871,8 +896,8 @@
   function applyPendingFeedbackNav(hub) {
     if (!hub || pendingFeedbackNoteFilter === undefined) return;
     var nf = pendingFeedbackNoteFilter;
-    hub.tab = nf === 'positive' ? 'positive' : nf === 'relevant' ? 'relevant' : 'feedback';
-    hub.feedbackNoteFilter = nf === 'positive' || nf === 'relevant' ? nf : '';
+    // "positive" tab = Feedback (filtered) — all submitted narratives, not positive_feedback notes.
+    hub.feedbackNoteFilter = nf === 'relevant' ? 'relevant' : '';
     pendingFeedbackNoteFilter = undefined;
     if (hub.tab === 'positive' || hub.tab === 'relevant') {
       if (typeof hub.syncWeekPickerToCurrentWeek === 'function') hub.syncWeekPickerToCurrentWeek();
@@ -888,7 +913,7 @@
   }
 
   function feedbackSetupForC4k(tabId) {
-    if (tabId === 'positive') return { tab: 'positive', filter: 'positive' };
+    if (tabId === 'positive') return { tab: 'positive', filter: '' };
     if (tabId === 'relevant') return { tab: 'relevant', filter: 'relevant' };
     return { tab: 'feedback', filter: '' };
   }

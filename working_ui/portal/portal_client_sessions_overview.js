@@ -350,6 +350,159 @@
     return "other";
   }
 
+  function attendanceIsAbsent(raw) {
+    var p = String(raw == null ? "" : raw).trim().toLowerCase();
+    if (!p) return false;
+    return (
+      p.charAt(0) === "n" ||
+      p.indexOf("absent") >= 0 ||
+      p.indexOf("did not") >= 0 ||
+      p === "dna" ||
+      /\b(no[\s-]?show|noshow|absence|cancel)/.test(p) ||
+      /\b(make[\s-]?up|makeup|replaced|slot.?given)\b/.test(p)
+    );
+  }
+
+  function attendanceKpiHtml(list, summary) {
+    if (summary && Number(summary.total) > 0) {
+      var present = Number(summary.attended) || 0;
+      var absent = Number(summary.absent) || 0;
+      var total = Number(summary.total) || present + absent;
+      var pctPresent = total ? Math.round((present / total) * 100) : 0;
+      var pctAbsent = Math.max(0, 100 - pctPresent);
+      return (
+        '<div class="pcso-att-kpi" role="img" aria-label="' +
+        present +
+        " attended, " +
+        absent +
+        " absent, " +
+        total +
+        ' sessions">' +
+        '<div class="pcso-att-bar">' +
+        (present > 0
+          ? '<span class="pcso-att-bar__seg pcso-att-bar__seg--present" style="width:' + pctPresent + '%"></span>'
+          : "") +
+        (absent > 0
+          ? '<span class="pcso-att-bar__seg pcso-att-bar__seg--absent" style="width:' + pctAbsent + '%"></span>'
+          : "") +
+        "</div>" +
+        '<div class="pcso-att-legend">' +
+        '<span class="pcso-att-legend__item pcso-att-legend__item--present"><strong>' +
+        present +
+        "</strong> attended</span>" +
+        '<span class="pcso-att-legend__item pcso-att-legend__item--absent"><strong>' +
+        absent +
+        "</strong> absent</span>" +
+        "</div>" +
+        '<div class="pcso-att-foot">' +
+        pctPresent +
+        "% · " +
+        total +
+        " sessions</div></div>"
+      );
+    }
+    var total = list.length;
+    if (!total) return '<p class="pcso-kpi-empty">No sessions yet.</p>';
+    var absent = 0;
+    list.forEach(function (r) {
+      if (attendanceIsAbsent(r.attendance)) absent++;
+    });
+    var present = total - absent;
+    var pctPresent = Math.round((present / total) * 100);
+    var pctAbsent = Math.max(0, 100 - pctPresent);
+    return (
+      '<div class="pcso-att-kpi" role="img" aria-label="' +
+      present +
+      " attended, " +
+      absent +
+      " absent, " +
+      total +
+      ' sessions">' +
+      '<div class="pcso-att-bar">' +
+      (present > 0
+        ? '<span class="pcso-att-bar__seg pcso-att-bar__seg--present" style="width:' + pctPresent + '%"></span>'
+        : "") +
+      (absent > 0
+        ? '<span class="pcso-att-bar__seg pcso-att-bar__seg--absent" style="width:' + pctAbsent + '%"></span>'
+        : "") +
+      "</div>" +
+      '<div class="pcso-att-legend">' +
+      '<span class="pcso-att-legend__item pcso-att-legend__item--present"><strong>' +
+      present +
+      "</strong> attended</span>" +
+      '<span class="pcso-att-legend__item pcso-att-legend__item--absent"><strong>' +
+      absent +
+      "</strong> absent</span>" +
+      "</div>" +
+      '<div class="pcso-att-foot">' +
+      pctPresent +
+      "% · " +
+      total +
+      " sessions</div></div>"
+    );
+  }
+
+  function gaugeValueColor(pct) {
+    var p = Number(pct) || 0;
+    if (p >= 75) return "#15803d";
+    if (p >= 50) return "#65a30d";
+    if (p >= 25) return "#ea580c";
+    return "#dc2626";
+  }
+
+  function polarGauge(cx, cy, r, deg) {
+    var rad = (deg * Math.PI) / 180;
+    return { x: cx + r * Math.cos(rad), y: cy - r * Math.sin(rad) };
+  }
+
+  function gaugeArc(cx, cy, r, degStart, degEnd) {
+    var s = polarGauge(cx, cy, r, degStart);
+    var e = polarGauge(cx, cy, r, degEnd);
+    var large = Math.abs(degEnd - degStart) > 180 ? 1 : 0;
+    return (
+      "M " +
+      s.x.toFixed(2) +
+      " " +
+      s.y.toFixed(2) +
+      " A " +
+      r +
+      " " +
+      r +
+      " 0 " +
+      large +
+      " 1 " +
+      e.x.toFixed(2) +
+      " " +
+      e.y.toFixed(2)
+    );
+  }
+
+  function gaugeTickLabels(cx, cy, labelR) {
+    var specs = [
+      { tick: 0, deg: 180, anchor: "end", dy: 5 },
+      { tick: 25, deg: 135, anchor: "middle", dy: -5 },
+      { tick: 50, deg: 90, anchor: "middle", dy: -9 },
+      { tick: 75, deg: 45, anchor: "middle", dy: -5 },
+      { tick: 100, deg: 0, anchor: "start", dy: 5 },
+    ];
+    var out = "";
+    for (var ti = 0; ti < specs.length; ti++) {
+      var spec = specs[ti];
+      var lp = polarGauge(cx, cy, labelR, spec.deg);
+      out +=
+        '<text x="' +
+        lp.x.toFixed(1) +
+        '" y="' +
+        (lp.y + spec.dy).toFixed(1) +
+        '" text-anchor="' +
+        spec.anchor +
+        '" class="pcso-gauge__tick">' +
+        spec.tick +
+        "%</text>";
+    }
+    return out;
+  }
+
   function engagementGaugeHtml(list) {
     const vals = [];
     list.forEach(function (r) {
@@ -361,66 +514,128 @@
     }
     const avg = vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
     const pctInt = Math.min(100, Math.max(0, Math.round((avg / 5) * 100)));
-    const ang = Math.PI - (pctInt / 100) * Math.PI;
-    const cx = 100, cy = 94, r = 70;
-    const nx = cx + r * Math.cos(ang);
-    const ny = cy - r * Math.sin(ang);
-    const tier = pctInt >= 75 ? "g" : pctInt >= 50 ? "y" : pctInt >= 25 ? "o" : "r";
+    const avgText = avg.toFixed(1);
+    const cx = 120;
+    const cy = 118;
+    const r = 76;
+    const strokeW = 22;
+    const labelR = r + 28;
+    const needleDeg = 180 - (pctInt / 100) * 180;
+    const needleReach = r - 6;
+    const tip = polarGauge(cx, cy, needleReach, needleDeg);
+    const valCol = gaugeValueColor(pctInt);
+    const tickLabels = gaugeTickLabels(cx, cy, labelR);
+    const segColors = ["#e85d5d", "#f59e0b", "#a3e635", "#16a34a"];
+    const segEnds = [
+      [180, 135],
+      [135, 90],
+      [90, 45],
+      [45, 0],
+    ];
+    var arcPaths = "";
+    for (var si = 0; si < segEnds.length; si++) {
+      arcPaths +=
+        '<path d="' +
+        gaugeArc(cx, cy, r, segEnds[si][0], segEnds[si][1]) +
+        '" fill="none" stroke="' +
+        segColors[si] +
+        '" stroke-width="' +
+        strokeW +
+        '" stroke-linecap="round"/>';
+    }
     return (
-      '<div class="pcso-gauge">' +
-      '<svg class="pcso-gauge__svg" viewBox="0 0 200 100" role="img" aria-label="Engagement ' + pctInt + ' percent">' +
-      '<path class="pcso-gauge__seg pcso-gauge__seg--r" d="M 30 94 A 70 70 0 0 1 58.8 30.6"/>' +
-      '<path class="pcso-gauge__seg pcso-gauge__seg--o" d="M 58.8 30.6 A 70 70 0 0 1 100 24"/>' +
-      '<path class="pcso-gauge__seg pcso-gauge__seg--y" d="M 100 24 A 70 70 0 0 1 141.2 30.6"/>' +
-      '<path class="pcso-gauge__seg pcso-gauge__seg--g" d="M 141.2 30.6 A 70 70 0 0 1 170 94"/>' +
-      '<line class="pcso-gauge__needle" x1="' + cx + '" y1="' + cy + '" x2="' + nx.toFixed(1) + '" y2="' + ny.toFixed(1) + '"/>' +
-      '<circle class="pcso-gauge__hub" cx="' + cx + '" cy="' + cy + '" r="5"/>' +
+      '<div class="pcso-gauge pcso-gauge--modern" role="img" aria-label="Engagement ' +
+      esc(String(pctInt)) +
+      " percent, average " +
+      esc(avgText) +
+      ' out of 5">' +
+      '<svg class="pcso-gauge__svg" viewBox="0 0 240 152" aria-hidden="true">' +
+      arcPaths +
+      tickLabels +
+      '<line x1="' +
+      cx +
+      '" y1="' +
+      cy +
+      '" x2="' +
+      tip.x.toFixed(2) +
+      '" y2="' +
+      tip.y.toFixed(2) +
+      '" class="pcso-gauge__needle"/>' +
+      '<circle cx="' +
+      cx +
+      '" cy="' +
+      cy +
+      '" r="10" class="pcso-gauge__hub"/>' +
+      '<circle cx="' +
+      cx +
+      '" cy="' +
+      cy +
+      '" r="3.5" class="pcso-gauge__hub-dot"/>' +
       "</svg>" +
-      '<div class="pcso-gauge__stats">' +
-      '<span class="pcso-gauge__pct pcso-gauge__pct--' + tier + '">' + pctInt + "%</span>" +
-      '<span class="pcso-gauge__avg">' + avg.toFixed(1) + " / 5 avg</span>" +
-      '<span class="pcso-gauge__foot">' + vals.length + " sessions with scores</span>" +
-      "</div></div>"
+      '<p class="pcso-gauge__pct" style="color:' +
+      valCol +
+      '">' +
+      esc(String(pctInt)) +
+      '%</p><p class="pcso-gauge__avg">' +
+      esc(avgText) +
+      " / 5 avg</p></div>"
     );
   }
 
   function emotionKpiHtml(list) {
-    const counts = {};
+    const buckets = { happy: 0, anxious: 0, withdrawn: 0, outcontrol: 0 };
     let total = 0;
     list.forEach(function (r) {
       const em = clean(r.client_emotions);
       if (!em || em === "—") return;
       em.split(/[,;]+/).map(clean).filter(Boolean).forEach(function (tok) {
-        counts[tok] = (counts[tok] || 0) + 1;
-        total++;
+        const pal = emotionPalette(tok);
+        if (pal === "happy" || pal === "anxious" || pal === "withdrawn" || pal === "outcontrol") {
+          buckets[pal]++;
+          total++;
+        }
       });
     });
-    const keys = Object.keys(counts).sort(function (a, b) {
-      return counts[b] - counts[a];
-    });
-    if (!keys.length) return '<p class="pcso-kpi-empty">No emotion tags yet.</p>';
-    const top = keys[0];
-    const pct = total ? Math.round((counts[top] / total) * 100) : 0;
-    const pal = emotionPalette(top);
-    const colors = {
-      happy: { hi: "#4ade80", lo: "#15803d", track: "#ecfdf5" },
-      anxious: { hi: "#fde047", lo: "#ca8a04", track: "#fffbeb" },
-      withdrawn: { hi: "#60a5fa", lo: "#1d4ed8", track: "#eff6ff" },
-      outcontrol: { hi: "#fb7185", lo: "#b91c1c", track: "#fff1f2" },
-      default: { hi: "#94a3b8", lo: "#475569", track: "#f1f5f9" },
-    };
-    const c = colors[pal] || colors.default;
-    const deg = Math.min(359.98, Math.round(pct * 3.6 * 10) / 10);
-    const bg =
-      deg <= 0.05
-        ? c.track
-        : "conic-gradient(from -90deg, " + c.lo + " 0deg, " + c.hi + " " + deg + "deg, " + c.track + " " + deg + "deg 360deg)";
+    const order = [
+      { key: "happy", label: "Happy", colors: { hi: "#4ade80", lo: "#15803d", track: "#ecfdf5" } },
+      { key: "anxious", label: "Anxious", colors: { hi: "#fde047", lo: "#ca8a04", track: "#fffbeb" } },
+      { key: "withdrawn", label: "Withdrawn", colors: { hi: "#60a5fa", lo: "#1d4ed8", track: "#eff6ff" } },
+      { key: "outcontrol", label: "Out of ctrl", colors: { hi: "#fb7185", lo: "#b91c1c", track: "#fff1f2" } },
+    ];
+    const items = order
+      .map(function (o) {
+        const n = buckets[o.key] || 0;
+        const pct = total ? Math.round((n / total) * 100) : 0;
+        const c = o.colors;
+        const deg = n > 0 ? Math.min(359.98, Math.round(pct * 3.6 * 10) / 10) : 0;
+        const bg =
+          deg <= 0.05
+            ? c.track
+            : "conic-gradient(from -90deg, " + c.lo + " 0deg, " + c.hi + " " + deg + "deg, " + c.track + " " + deg + "deg 360deg)";
+        return (
+          '<div class="pcso-emo-grid__item">' +
+          '<div class="pcso-emo-grid__face">' +
+          emotionFaceSvg(o.key) +
+          "</div>" +
+          '<div class="pcso-emo-donut pcso-emo-donut--sm" style="background:' +
+          bg +
+          '">' +
+          '<div class="pcso-emo-donut__inner pcso-emo-donut__inner--sm">' +
+          pct +
+          "%</div></div>" +
+          '<span class="pcso-emo-grid__lbl">' +
+          esc(o.label) +
+          "</span></div>"
+        );
+      })
+      .join("");
     return (
-      '<div class="pcso-emo-kpi">' +
-      '<div class="pcso-emo-donut" style="background:' + bg + '">' +
-      '<div class="pcso-emo-donut__inner">' + pct + "%</div></div>" +
-      '<div class="pcso-emo-kpi__lbl">' + esc(top) + "</div>" +
-      '<div class="pcso-emo-kpi__sub">' + counts[top] + " tags</div></div>"
+      '<div class="pcso-emo-grid" role="img" aria-label="Regulation and emotions">' +
+      items +
+      "</div>" +
+      '<div class="pcso-emo-grid__foot">' +
+      (total ? total + " tags total" : "No emotion tags yet") +
+      "</div>"
     );
   }
 
@@ -440,7 +655,7 @@
       { key: "independent", label: "Independent", color: "#ddd6fe" },
       { key: "prompts", label: "With prompts", color: "#c4b5fd" },
       { key: "regular", label: "Regular support", color: "#a78bfa" },
-      { key: "full", label: "Full support", color: "#7c3aed" },
+      { key: "full", label: "Full support", labelLines: ["Full", "Support"], color: "#7c3aed" },
     ];
     return (
       '<div class="pcso-ind-bars" role="img" aria-label="Independence distribution">' +
@@ -449,12 +664,19 @@
           const n = buckets[o.key] || 0;
           const pct = (n / total) * 100;
           const h = n > 0 ? Math.max(10, Math.round(pct)) : 0;
+          const lbl =
+            o.labelLines && o.labelLines.length
+              ? '<span class="pcso-ind-bar__lbl">' +
+                o.labelLines.map(function (line) { return esc(line); }).join("<br>") +
+                "</span>"
+              : '<span class="pcso-ind-bar__lbl">' + esc(o.label) + "</span>";
           return (
             '<div class="pcso-ind-bar">' +
             '<span class="pcso-ind-bar__pct">' + Math.round(pct) + "%</span>" +
             '<div class="pcso-ind-bar__track" title="' + esc(o.label + ": " + n) + '">' +
             '<div class="pcso-ind-bar__fill" style="height:' + h + "%;background:" + o.color + '"></div></div>' +
-            '<span class="pcso-ind-bar__lbl">' + esc(o.label) + "</span></div>"
+            lbl +
+            "</div>"
           );
         })
         .join("") +
@@ -462,19 +684,155 @@
     );
   }
 
-  function kpiSlabHtml(feedback, termLabel) {
+  function kpiSlabHtml(feedback, termLabel, opts) {
     var term = clean(termLabel || TERM_LABEL);
+    var includeAttendance = !!(opts && opts.includeAttendance);
+    var attendanceCard = includeAttendance
+      ? '<article class="pcso-kpi-card pcso-kpi-card--att"><header class="pcso-kpi-card__head"><h4>Attendance</h4><p>(' + esc(term) + ")</p></header>" +
+        attendanceKpiHtml(feedback, opts && opts.attendanceSummary) +
+        "</article>"
+      : "";
     return (
-      '<div class="pcso-kpi-grid" role="region" aria-label="Session summary">' +
-      '<article class="pcso-kpi-card"><header class="pcso-kpi-card__head"><h4>Engagement</h4><p>(' + esc(term) + ")</p></header>" +
+      '<div class="pcso-kpi-grid' +
+      (includeAttendance ? " pcso-kpi-grid--4" : "") +
+      '" role="region" aria-label="Session summary">' +
+      attendanceCard +
+      '<article class="pcso-kpi-card pcso-kpi-card--eng"><header class="pcso-kpi-card__head"><h4>Engagement</h4><p>(' + esc(term) + ")</p></header>" +
       engagementGaugeHtml(feedback) +
       "</article>" +
-      '<article class="pcso-kpi-card"><header class="pcso-kpi-card__head"><h4>Regulation / emotions</h4><p>(' + esc(term) + ")</p></header>" +
+      '<article class="pcso-kpi-card pcso-kpi-card--emo"><header class="pcso-kpi-card__head"><h4>Regulation / emotions</h4><p>(' + esc(term) + ")</p></header>" +
       emotionKpiHtml(feedback) +
       "</article>" +
-      '<article class="pcso-kpi-card"><header class="pcso-kpi-card__head"><h4>Independence</h4><p>(' + esc(term) + ")</p></header>" +
+      '<article class="pcso-kpi-card pcso-kpi-card--indep"><header class="pcso-kpi-card__head"><h4>Independence</h4><p>(' + esc(term) + ")</p></header>" +
       independenceKpiHtml(feedback) +
       "</article></div>"
+    );
+  }
+
+  /** Prefer a stable programme order so Aquatic / Climbing stay side-by-side for multi-service kids. */
+  var SERVICE_GROUP_ORDER = [
+    "Aquatic Activity",
+    "Climbing Activity",
+    "Multi-Activity",
+    "Physical Activity",
+    "Bespoke Programme",
+    "Day centre",
+  ];
+
+  function serviceGroupSortKey(label) {
+    var i = SERVICE_GROUP_ORDER.indexOf(label);
+    return i >= 0 ? i : 100;
+  }
+
+  /**
+   * Split feedback by programme. Mixing Climbing “full support” with Aquatic
+   * independence pulls the % down and misrepresents each activity.
+   */
+  function groupFeedbackByService(list) {
+    var map = Object.create(null);
+    (list || []).forEach(function (r) {
+      var label = displayProgrammeName(r && r.service);
+      if (!map[label]) map[label] = [];
+      map[label].push(r);
+    });
+    return Object.keys(map)
+      .sort(function (a, b) {
+        var da = serviceGroupSortKey(a) - serviceGroupSortKey(b);
+        if (da !== 0) return da;
+        return a.localeCompare(b);
+      })
+      .map(function (label) {
+        return { label: label, rows: map[label] };
+      });
+  }
+
+  function serviceToneClass(label) {
+    var s = String(label || "").toLowerCase();
+    if (/aquatic|swim/.test(s)) return "aquatic";
+    if (/climb/.test(s)) return "climbing";
+    if (/multi/.test(s)) return "multi";
+    if (/physical|fitness/.test(s)) return "physical";
+    if (/bespoke/.test(s)) return "bespoke";
+    if (/day\s*centre|daycentre/.test(s)) return "daycentre";
+    return "default";
+  }
+
+  function serviceOverviewBlockHtml(group, termLabel, opts) {
+    var label = group.label;
+    var rows = group.rows || [];
+    var term = clean(termLabel || TERM_LABEL);
+    var includeTable = !!(opts && opts.includeTable);
+    var tableHtml = "";
+    if (includeTable) {
+      tableHtml =
+        opts && opts.parentTable
+          ? parentFeedbackTableHtml(rows)
+          : feedbackTableHtml(rows, (opts && opts.incMap) || Object.create(null));
+    }
+    /* Per-service attendance must come from this group's rows — never the
+       whole-child attendance_summary (that mixes programmes). */
+    var kpiOpts = {
+      includeAttendance: !!(opts && opts.includeAttendance),
+      attendanceSummary: null,
+    };
+    return (
+      '<section class="pcso-service-block pcso-service-block--' +
+      esc(serviceToneClass(label)) +
+      '" aria-label="' +
+      esc(label) +
+      ' overview">' +
+      '<header class="pcso-service-block__head">' +
+      '<h4 class="pcso-service-block__title">' +
+      esc(label) +
+      "</h4>" +
+      '<p class="pcso-service-block__meta">' +
+      esc(term) +
+      " · " +
+      rows.length +
+      (rows.length === 1 ? " session" : " sessions") +
+      "</p></header>" +
+      kpiSlabHtml(rows, term, kpiOpts) +
+      (includeTable
+        ? '<div class="pcso-service-block__table">' + tableHtml + "</div>"
+        : "") +
+      "</section>"
+    );
+  }
+
+  /**
+   * One KPI slab when a single programme; otherwise one block per service so
+   * independence / engagement % stay honest (e.g. Rodin Climbing vs Aquatic).
+   */
+  function overviewByServiceHtml(feedback, termLabel, opts) {
+    var groups = groupFeedbackByService(feedback);
+    if (!groups.length) {
+      return kpiSlabHtml(feedback, termLabel, opts);
+    }
+    if (groups.length === 1) {
+      var only = groups[0];
+      var single =
+        kpiSlabHtml(only.rows, termLabel, opts) +
+        (opts && opts.includeTable
+          ? '<section class="pcso-feed-section">' +
+            '<div class="pcso-feed-head"><h4 class="pcso-section__title">' +
+            esc((opts && opts.tableTitle) || "Session feedback") +
+            "</h4></div>" +
+            (opts.parentTable
+              ? parentFeedbackTableHtml(only.rows)
+              : feedbackTableHtml(only.rows, (opts && opts.incMap) || Object.create(null))) +
+            "</section>"
+          : "");
+      return single;
+    }
+    var note =
+      '<p class="pcso-service-split-note" role="note">Stats are shown <strong>per activity</strong> — mixing programmes (e.g. Climbing + Aquatic) would distort independence and engagement.</p>';
+    return (
+      note +
+      groups
+        .map(function (g) {
+          return serviceOverviewBlockHtml(g, termLabel, opts);
+        })
+        .join("")
     );
   }
 
@@ -613,44 +971,70 @@
     const incMap = incidentLookup(incidents);
 
     hostEl.innerHTML =
-      kpiSlabHtml(feedback) +
-      '<section class="pcso-feed-section">' +
-      '<div class="pcso-feed-head"><h4 class="pcso-section__title">All feedbacks</h4></div>' +
-      feedbackTableHtml(feedback, incMap) +
-      "</section>" +
+      overviewByServiceHtml(feedback, TERM_LABEL, {
+        includeTable: true,
+        parentTable: false,
+        tableTitle: "All feedbacks",
+        incMap: incMap,
+      }) +
       incidentsSectionHtml(incidents);
+  }
+
+  function parentEngagementCell(row) {
+    if (row.engagement_rating == null || row.engagement_rating === "") {
+      return '<span class="muted">—</span>';
+    }
+    var n = esc(String(row.engagement_rating));
+    return (
+      '<span class="pcso-eng-score">' +
+      n +
+      ' <span class="pcso-th-star pcso-eng-star" aria-hidden="true">' +
+      '<svg viewBox="0 0 24 24" width="13" height="13" focusable="false">' +
+      '<path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>' +
+      "</svg></span></span>"
+    );
+  }
+
+  function parentCommentsCell(row) {
+    if (row.message_pending) {
+      return '<span class="pcso-pending">Preparing…</span>';
+    }
+    var text = clean(row.comment || row.parent_message);
+    if (!text || text === "—") return '<span class="muted">—</span>';
+    return '<span class="pcso-comment-text" title="' + esc(text) + '">' + esc(text) + "</span>";
+  }
+
+  function parentAuthorCell(row) {
+    var name = clean(row.feedback_by_name);
+    var role = clean(row.feedback_by_role);
+    if (!name && !role) return '<span class="muted">—</span>';
+    return (
+      '<div class="pcso-author-stack">' +
+      (name ? '<div class="pcso-tbl__author-name">' + esc(name) + "</div>" : "") +
+      (role ? '<div class="pcso-tbl__author-role">' + esc(role) + "</div>" : "") +
+      "</div>"
+    );
   }
 
   function parentFeedbackTableRow(row) {
     const dateLine = formatDateLong(row.session_date);
     const svc = displayProgrammeName(row.service);
     const timeLine = formatServiceTime(row.session_time);
-    const eng =
-      row.engagement_rating != null && row.engagement_rating !== ""
-        ? esc(String(row.engagement_rating))
-        : '<span class="muted">—</span>';
-    var msg = clean(row.parent_message);
-    var msgCell;
-    if (row.message_pending) {
-      msgCell = '<span class="pcso-pending" title="Review in progress">Preparing summary…</span>';
-    } else if (msg) {
-      msgCell = '<p class="pcso-parent-msg">' + esc(msg) + "</p>";
-    } else {
-      msgCell = '<span class="muted">—</span>';
-    }
+    const indep = esc(clean(row.engagement_patterns) || "—");
     return (
       "<tr>" +
       '<td class="pcso-tbl__date">' +
       '<div class="pcso-tbl__date-main">' + esc(dateLine) + "</div>" +
-      (timeLine ? '<div class="pcso-tbl__sub">' + esc(timeLine) + "</div>" : "") +
       "</td>" +
       '<td class="pcso-tbl__svc">' +
       '<div class="pcso-tbl__svc-main">' + esc(svc) + "</div>" +
+      (timeLine ? '<div class="pcso-tbl__sub">' + esc(timeLine) + "</div>" : "") +
       "</td>" +
-      '<td class="pcso-tbl__eng">' + eng + "</td>" +
+      '<td class="pcso-tbl__eng">' + parentEngagementCell(row) + "</td>" +
       '<td class="pcso-tbl__emo">' + emotionIconsCell(row.client_emotions) + "</td>" +
-      '<td class="pcso-tbl__indep">' + esc(clean(row.engagement_patterns) || "—") + "</td>" +
-      '<td class="pcso-tbl__parent-msg">' + msgCell + "</td>" +
+      '<td class="pcso-tbl__indep"><span class="pcso-indep-text" title="' + indep + '">' + indep + "</span></td>" +
+      '<td class="pcso-tbl__comments">' + parentCommentsCell(row) + "</td>" +
+      '<td class="pcso-tbl__author">' + parentAuthorCell(row) + "</td>" +
       "</tr>"
     );
   }
@@ -664,15 +1048,23 @@
       '<table class="pcso-table pcso-table--parent">' +
       "<thead><tr>" +
       '<th scope="col" class="pcso-tbl__date">Date</th>' +
-      '<th scope="col" class="pcso-tbl__svc">Service</th>' +
-      '<th scope="col" class="pcso-tbl__eng" title="Engagement (1–5)">' + starHeaderHtml() + "</th>" +
-      '<th scope="col" class="pcso-tbl__emo" aria-label="Regulation and emotions">' + emotionHeaderHtml() + "</th>" +
+      '<th scope="col" class="pcso-tbl__svc">Service &amp; time</th>' +
+      '<th scope="col" class="pcso-tbl__eng">Engagement</th>' +
+      '<th scope="col" class="pcso-tbl__emo">Regulation</th>' +
       '<th scope="col" class="pcso-tbl__indep">Independence</th>' +
-      '<th scope="col" class="pcso-tbl__parent-msg">Session summary</th>' +
+      '<th scope="col" class="pcso-tbl__comments">Comments</th>' +
+      '<th scope="col" class="pcso-tbl__author">Written by</th>' +
       "</tr></thead><tbody>" +
       feedback.map(function (r) { return parentFeedbackTableRow(r); }).join("") +
       "</tbody></table></div>"
     );
+  }
+
+  function achievementPhotoAspect(a) {
+    var w = Number(a && a.width) || 0;
+    var h = Number(a && a.height) || 0;
+    if (w > 0 && h > 0) return { w: w, h: h, landscape: w >= h };
+    return null;
   }
 
   function achievementsGalleryHtml(items, opts) {
@@ -689,6 +1081,16 @@
           var photoId = clean(a.id);
           var isDownloaded = String(a.status || "").toLowerCase() === "downloaded";
           var dlLabel = isDownloaded ? "Saved" : "Download";
+          var aspect = achievementPhotoAspect(a);
+          var itemClass =
+            "pp-ach-item" +
+            (aspect ? (aspect.landscape ? " pp-ach-item--landscape" : " pp-ach-item--portrait") : "");
+          var linkStyle = aspect
+            ? ' style="aspect-ratio:' + aspect.w + " / " + aspect.h + ';"'
+            : "";
+          var imgDims = aspect
+            ? ' width="' + aspect.w + '" height="' + aspect.h + '"'
+            : ' width="160" height="120"';
           var dlBtn = parentDownloads && photoId
             ? '<button type="button" class="pp-ach-dl-btn' +
               (isDownloaded ? " pp-ach-dl-btn--saved" : "") +
@@ -701,11 +1103,26 @@
               "</button>"
             : "";
           return (
-            '<figure class="pp-ach-item" role="listitem">' +
-            '<a href="' + esc(a.url || "#") + '" target="_blank" rel="noopener noreferrer">' +
-            '<img src="' + esc(a.url || "") + '" alt="Achievement photo, ' + esc(when) + '" loading="lazy" width="160" height="160" />' +
+            '<figure class="' +
+            itemClass +
+            '" role="listitem">' +
+            '<a href="' +
+            esc(a.url || "#") +
+            '" target="_blank" rel="noopener noreferrer"' +
+            linkStyle +
+            ">" +
+            '<img src="' +
+            esc(a.url || "") +
+            '" alt="Achievement photo, ' +
+            esc(when) +
+            '" loading="lazy"' +
+            imgDims +
+            ' />' +
             "</a>" +
-            '<figcaption class="pp-ach-cap">' + esc(when) + dlBtn + "</figcaption></figure>"
+            '<figcaption class="pp-ach-cap">' +
+            esc(when) +
+            dlBtn +
+            "</figcaption></figure>"
           );
         })
         .join("") +
@@ -720,11 +1137,15 @@
       client_name: "",
       service: clean(r.service),
       session_time: clean(r.session_time),
-      completed_by_name: "",
+      completed_by_name: clean(r.feedback_by_name || r.completed_by_name),
+      attendance: clean(r.attendance),
       engagement_rating: r.engagement_rating,
       client_emotions: clean(r.client_emotions),
       engagement_patterns: clean(r.independence),
-      parent_message: clean(r.parent_message),
+      feedback_by_name: clean(r.feedback_by_name),
+      feedback_by_role: clean(r.feedback_by_role),
+      comment: clean(r.comment || r.parent_message),
+      parent_message: clean(r.comment || r.parent_message),
       message_pending: !!r.message_pending,
       positive_feedback: "",
       relevant_information: "",
@@ -738,13 +1159,18 @@
     var hideAchievements = !!(opts && opts.hideAchievements);
     var term = clean((opts && opts.term_label) || TERM_LABEL);
     var feedback = sessions.map(mapParentSessionRow);
+    var groups = groupFeedbackByService(feedback);
+    var multi = groups.length > 1;
+    /* Whole-child attendance_summary only when a single programme — otherwise
+       each service block counts attendance from its own rows. */
     hostEl.innerHTML =
-      kpiSlabHtml(feedback, term) +
-      '<section class="pcso-feed-section">' +
-      '<div class="pcso-feed-head"><h4 class="pcso-section__title">Session feedback</h4>' +
-      '<p class="pcso-feed-note">Summaries are prepared for families — internal staff notes are not shown.</p></div>' +
-      parentFeedbackTableHtml(feedback) +
-      "</section>" +
+      overviewByServiceHtml(feedback, term, {
+        includeAttendance: true,
+        attendanceSummary: multi ? null : opts && opts.attendance_summary,
+        includeTable: true,
+        parentTable: true,
+        tableTitle: "Session feedback",
+      }) +
       (hideAchievements
         ? ""
         : '<section class="pcso-feed-section pp-ach-section">' +

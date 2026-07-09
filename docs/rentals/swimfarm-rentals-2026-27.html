@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SwimFarm — Rentals 2026/27</title>
+<style>
+  :root {
+    --ink: #0f2733;
+    --muted: #5b7280;
+    --line: #d7e2e8;
+    --teal: #0e7c86;
+    --teal-soft: #e6f3f4;
+    --amber: #e8912d;
+    --amber-soft: #fdf1e2;
+    --pool: #0e7c86;
+    --lane: #2f6fb0;
+    --room: #b45a1e;
+    --zebra: #f5f9fa;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    color: var(--ink);
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 16mm 16mm 14mm;
+    margin: 0 auto;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+  }
+  .page + .page { page-break-before: always; }
+
+  /* Header */
+  .doc-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-bottom: 3px solid var(--teal);
+    padding-bottom: 12px;
+  }
+  .brand-mark {
+    width: 46px;
+    height: 46px;
+    flex: 0 0 auto;
+  }
+  .brand-logo {
+    height: 62px;
+    width: auto;
+    flex: 0 0 auto;
+    display: block;
+  }
+  .brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+  .brand-name { font-size: 18px; font-weight: 800; letter-spacing: .2px; }
+  .brand-name .sen { color: var(--amber); }
+  .brand-sub { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.4px; }
+
+  .doc-meta { margin-left: auto; text-align: right; }
+  .doc-year { font-size: 15px; font-weight: 800; color: var(--teal); }
+  .doc-tag {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    color: #fff;
+    background: var(--amber);
+    padding: 3px 9px;
+    border-radius: 999px;
+  }
+
+  /* Title band */
+  .title-band { margin-top: 18px; }
+  .doc-title { font-size: 24px; font-weight: 800; margin: 0; }
+  .venue-line {
+    margin-top: 4px;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .venue-line strong { color: var(--ink); }
+
+  .purpose {
+    margin-top: 12px;
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--teal-soft);
+    border-left: 4px solid var(--teal);
+    padding: 8px 12px;
+    border-radius: 0 8px 8px 0;
+  }
+
+  /* Schedule table */
+  table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+  thead th {
+    background: var(--teal);
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    text-align: left;
+    padding: 9px 12px;
+    border-right: 1px solid rgba(255,255,255,.18);
+  }
+  thead th:last-child { border-right: none; }
+  thead th.center, tbody td.center { text-align: center; }
+
+  tbody td {
+    padding: 11px 12px;
+    font-size: 12px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: middle;
+  }
+  tbody tr:nth-child(even) { background: var(--zebra); }
+  tbody td.day { font-weight: 700; }
+  tbody td.time { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.dash { color: #b4c4cc; text-align: center; }
+
+  .pill {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .pill--pool { background: var(--teal-soft); color: var(--pool); }
+  .pill--lane { background: #e8f0fa; color: var(--lane); }
+  .pill--room { background: var(--amber-soft); color: var(--room); }
+
+  /* Summary cards */
+  .summary { margin-top: 20px; }
+  .summary h2 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin: 0 0 10px;
+  }
+  .cards { display: flex; gap: 12px; }
+  .card {
+    flex: 1;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 14px;
+    background: #fff;
+  }
+  .card .k {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .card .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .dot--pool { background: var(--pool); }
+  .dot--lane { background: var(--lane); }
+  .dot--room { background: var(--room); }
+  .card .v { font-size: 22px; font-weight: 800; margin-top: 6px; }
+  .card .v small { font-size: 12px; font-weight: 600; color: var(--muted); }
+  .card .d { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+
+  .notes {
+    margin-top: 18px;
+    font-size: 10.5px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .notes strong { color: var(--ink); }
+
+  .foot {
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    font-size: 9.5px;
+    color: var(--muted);
+  }
+
+  /* Term-dates pages */
+  .doc-title .cont { font-size: 14px; font-weight: 600; color: var(--muted); }
+  .term-block { margin-top: 16px; }
+  .term-block + .term-block { margin-top: 18px; }
+  .term-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--teal);
+    color: #fff;
+    border-radius: 8px 8px 0 0;
+    padding: 8px 12px;
+  }
+  .term-name { font-size: 13px; font-weight: 800; letter-spacing: .3px; }
+  .term-span { font-size: 10.5px; opacity: .92; font-variant-numeric: tabular-nums; }
+  table.dates { margin-top: 0; border: 1px solid var(--line); border-top: none; table-layout: fixed; }
+  table.dates thead th {
+    background: #12525a;
+    font-size: 9.5px;
+    padding: 7px 10px;
+    text-align: center;
+  }
+  table.dates tbody td { padding: 8px 10px; font-size: 10.5px; vertical-align: middle; text-align: center; }
+  table.dates td.day { font-weight: 700; font-size: 11px; }
+  table.dates td.time { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.dates td.count {
+    font-weight: 800;
+    color: var(--teal);
+    font-variant-numeric: tabular-nums;
+  }
+  table.dates td.list {
+    font-variant-numeric: tabular-nums;
+    line-height: 1.55;
+    overflow-wrap: break-word;
+    word-break: normal;
+    min-width: 0;
+  }
+  table.dates td.res { line-height: 1.6; }
+  table.dates td.res .res-line {
+    display: block;
+    white-space: nowrap;
+    margin-bottom: 3px;
+  }
+  table.dates td.res .res-line:last-child { margin-bottom: 0; }
+  table.dates td.res .pill {
+    font-size: 9.5px;
+    padding: 2px 7px;
+  }
+  table.dates td.res .res-t {
+    font-size: 9px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    margin-left: 4px;
+  }
+
+  @page { size: A4; margin: 0; }
+  @media print { .page { margin: 0; } }
+</style>
+<style>
+  table.dates tfoot td { padding: 8px 10px; font-size: 10.5px; border-top: 2px solid var(--teal); background: var(--teal-soft); }
+  table.dates tfoot .tfoot-label { font-weight: 700; color: var(--ink); }
+  table.dates tfoot .tfoot-val { font-weight: 800; color: var(--teal); font-variant-numeric: tabular-nums; }
+  table.dates tfoot td.center { text-align: center; }
+  .doc-title .cont { font-size: 14px; font-weight: 600; color: var(--muted); }
+</style>
+</head>
+<body>
+  <section class="page">
+  <header class="doc-head">
+    <img class="brand-logo" src="clubsensational-logo.png" alt="clubSENsational — Autism Consultancy Services" />
+    <div class="doc-meta">
+      <div class="doc-year">Academic Year 2026 / 27</div>
+      <span class="doc-tag">Rental Reference</span>
+    </div>
+  </header>
+
+  <div class="title-band">
+    <h1 class="doc-title">Pool &amp; Room Rentals — SwimFarm</h1>
+    <p class="venue-line"><strong>Venue:</strong> SwimFarm &nbsp;·&nbsp; HubRoom · Sunday pool hire · Day Centre pool hire</p>
+  </div>
+
+  <div class="term-block">
+    <div class="term-head"><span class="term-name">1 · HubRoom rental</span><span class="term-span">3 terms · £4,800.00 per term</span></div>
+    <table class="dates">
+      <thead><tr><th style="width:34%">Term</th><th>Period</th><th style="width:20%" class="center">Cost / term</th></tr></thead>
+      <tbody>
+        <tr><td class="day">Autumn Term 2026</td><td class="time">1 Sep 2026 – 18 Dec 2026</td><td class="center count">£4,800.00</td></tr>
+        <tr><td class="day">Spring Term 2027</td><td class="time">4 Jan 2027 – 25 Mar 2027</td><td class="center count">£4,800.00</td></tr>
+        <tr><td class="day">Summer Term 2027</td><td class="time">12 Apr – 16 Jul 2027 (+ summer provision 19–30 Jul)</td><td class="center count">£4,800.00</td></tr>
+      </tbody>
+      <tfoot><tr><td colspan="2" class="tfoot-label">Total HubRoom (3 terms)</td><td class="center tfoot-val">£14,400.00</td></tr></tfoot>
+    </table>
+  </div>
+
+
+  <div class="term-block">
+    <div class="term-head"><span class="term-name">2 · Pool hire · Sundays 9:00 am – 3:00 pm</span><span class="term-span">£275.00 net per Sunday</span></div>
+    <table class="dates">
+      <thead><tr><th style="width:24%">Term</th><th style="width:8%" class="center">Sun</th><th style="width:16%" class="center">Net</th><th>Dates to pay</th></tr></thead>
+      <tbody>
+        <tr><td class="day">Autumn Term 2026</td><td class="center count">13</td><td class="center">£3,575.00</td><td class="list">6 Sep · 13 Sep · 20 Sep · 27 Sep · 4 Oct · 11 Oct · 18 Oct · 8 Nov · 15 Nov · 22 Nov · 29 Nov · 6 Dec · 13 Dec</td></tr>
+        <tr><td class="day">Spring Term 2027</td><td class="center count">9</td><td class="center">£2,475.00</td><td class="list">10 Jan · 17 Jan · 24 Jan · 31 Jan · 7 Feb · 28 Feb · 7 Mar · 14 Mar · 21 Mar</td></tr>
+        <tr><td class="day">Summer Term 2027</td><td class="center count">12</td><td class="center">£3,300.00</td><td class="list">18 Apr · 25 Apr · 2 May · 9 May · 16 May · 23 May · 13 Jun · 20 Jun · 27 Jun · 4 Jul · 11 Jul · 18 Jul</td></tr>
+      </tbody>
+      <tfoot>
+        <tr><td class="tfoot-label">Total net</td><td class="center count">34</td><td class="center tfoot-val">£9,350.00</td><td></td></tr>
+        <tr><td class="tfoot-label">VAT (20%)</td><td></td><td class="center tfoot-val">£1,870.00</td><td></td></tr>
+        <tr><td class="tfoot-label">Total incl. VAT</td><td></td><td class="center tfoot-val">£11,220.00</td><td></td></tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <footer class="foot">
+    <span>clubSENsational · Rental Reference</span>
+    <span>SwimFarm — Page 1 of 2</span>
+  </footer>
+  </section>
+  <section class="page page--cont">
+  <header class="doc-head">
+    <img class="brand-logo" src="clubsensational-logo.png" alt="clubSENsational — Autism Consultancy Services" />
+    <div class="doc-meta">
+      <div class="doc-year">Academic Year 2026 / 27</div>
+      <span class="doc-tag">Rental Reference</span>
+    </div>
+  </header>
+
+  <div class="title-band">
+    <h1 class="doc-title">Pool &amp; Room Rentals — SwimFarm <span class="cont">(continued)</span></h1>
+    <p class="venue-line"><strong>Section 3:</strong> Day Centre pool hire · Monday, Wednesday &amp; Friday · 12:00–1:00 pm</p>
+  </div>
+  <p class="purpose">All Day Centre open days for 2026/27 (the Day Centre runs through half terms). <strong>Excluded:</strong> Christmas, Easter and bank holidays (e.g. Mon 3 May 2027). Summer provision (19–30 Jul 2027) is included.</p>
+
+  <div class="term-block">
+    <div class="term-head"><span class="term-name">3 · Day Centre pool hire · Mon / Wed / Fri 12:00 – 1:00 pm</span><span class="term-span">2026/27 · all open Day Centre days</span></div>
+    <table class="dates">
+      <thead><tr><th style="width:20%">Term</th><th style="width:22%">Period</th><th style="width:8%" class="center">Days</th><th>Dates to book</th></tr></thead>
+      <tbody>
+        <tr><td class="day">Autumn Term 2026</td><td class="time">1 Sep 2026 – 18 Dec 2026</td><td class="center count">47</td><td class="list">2 Sep · 4 Sep · 7 Sep · 9 Sep · 11 Sep · 14 Sep · 16 Sep · 18 Sep · 21 Sep · 23 Sep · 25 Sep · 28 Sep · 30 Sep · 2 Oct · 5 Oct · 7 Oct · 9 Oct · 12 Oct · 14 Oct · 16 Oct · 19 Oct · 21 Oct · 23 Oct · 26 Oct · 28 Oct · 30 Oct · 2 Nov · 4 Nov · 6 Nov · 9 Nov · 11 Nov · 13 Nov · 16 Nov · 18 Nov · 20 Nov · 23 Nov · 25 Nov · 27 Nov · 30 Nov · 2 Dec · 4 Dec · 7 Dec · 9 Dec · 11 Dec · 14 Dec · 16 Dec · 18 Dec</td></tr>
+        <tr><td class="day">Spring Term 2027</td><td class="time">4 Jan 2027 – 25 Mar 2027</td><td class="center count">35</td><td class="list">4 Jan · 6 Jan · 8 Jan · 11 Jan · 13 Jan · 15 Jan · 18 Jan · 20 Jan · 22 Jan · 25 Jan · 27 Jan · 29 Jan · 1 Feb · 3 Feb · 5 Feb · 8 Feb · 10 Feb · 12 Feb · 15 Feb · 17 Feb · 19 Feb · 22 Feb · 24 Feb · 26 Feb · 1 Mar · 3 Mar · 5 Mar · 8 Mar · 10 Mar · 12 Mar · 15 Mar · 17 Mar · 19 Mar · 22 Mar · 24 Mar</td></tr>
+        <tr><td class="day">Summer Term 2027</td><td class="time">12 Apr – 30 Jul 2027</td><td class="center count">46</td><td class="list">12 Apr · 14 Apr · 16 Apr · 19 Apr · 21 Apr · 23 Apr · 26 Apr · 28 Apr · 30 Apr · 5 May · 7 May · 10 May · 12 May · 14 May · 17 May · 19 May · 21 May · 24 May · 26 May · 28 May · 2 Jun · 4 Jun · 7 Jun · 9 Jun · 11 Jun · 14 Jun · 16 Jun · 18 Jun · 21 Jun · 23 Jun · 25 Jun · 28 Jun · 30 Jun · 2 Jul · 5 Jul · 7 Jul · 9 Jul · 12 Jul · 14 Jul · 16 Jul · 19 Jul · 21 Jul · 23 Jul · 26 Jul · 28 Jul · 30 Jul</td></tr>
+      </tbody>
+      <tfoot><tr><td colspan="2" class="tfoot-label">Total Day Centre days (Mon/Wed/Fri)</td><td class="center tfoot-val">128</td><td></td></tr></tfoot>
+    </table>
+  </div>
+
+  <footer class="foot">
+    <span>clubSENsational · Rental Reference</span>
+    <span>SwimFarm — Page 2 of 2</span>
+  </footer>
+  </section>
+
+</body>
+</html>

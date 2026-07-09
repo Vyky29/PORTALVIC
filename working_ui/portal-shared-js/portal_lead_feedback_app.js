@@ -5,7 +5,7 @@ const PORTAL_AUTH_MODULE = "/portal/auth-handler.js?v=20260616-lead-report-shell
 const PORTAL_CLIENTS_SCRIPT = "/portal/clients_info_embed.js?v=20260609-autofill";
 const PORTAL_AUTOCOMPLETE_SCRIPT = "/portal-shared-js/portal_field_autocomplete.js?v=20260609-autofill";
 const PORTAL_CATALOG_SCRIPT = "/portal-shared-js/participant_services.js?v=20260609-autofill";
-const PORTAL_ROSTER_BUNDLE = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260629-29jun-roster";
+const PORTAL_ROSTER_BUNDLE = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260707-roberto-venues";
 const PORTAL_LEAD_SCOPE_MODULE = "/portal/portal_lead_session_scope.js?v=20260610-lead-report";
 
 const LEAD_SERVICES = [
@@ -531,6 +531,53 @@ function exitAfterSuccessWithDelay() {
   setTimeout(exitAfterSuccess, delayMs);
 }
 
+// Lead feedback is internal (no admin AI filter). The lead only chooses how to
+// enter the free-text notes: Written (typed) or Voice (mic). Default Written —
+// the mic bars stay hidden until Voice is picked.
+let leadInputMode = "written";
+
+function setLeadVoiceBarsVisible(on) {
+  try {
+    document.querySelectorAll(".portal-fb-voice-bar").forEach(function (bar) {
+      bar.style.display = on ? "" : "none";
+    });
+    if (!on) {
+      document.querySelectorAll(".portal-fb-voice-timer").forEach(function (t) {
+        t.hidden = true;
+      });
+    }
+  } catch (_e) {}
+}
+
+function markLeadIoButtons(mode) {
+  document.querySelectorAll("[data-lr-io]").forEach(function (btn) {
+    const on = btn.getAttribute("data-lr-io") === mode;
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.style.borderColor = on ? "#2d84b3" : "var(--line,#d9dee5)";
+    btn.style.background = on ? "rgba(45,132,179,.08)" : "#fff";
+    btn.style.boxShadow = on ? "0 0 0 3px rgba(45,132,179,.12)" : "none";
+  });
+}
+
+function chooseLeadInputMode(mode) {
+  leadInputMode = mode === "voice" ? "voice" : "written";
+  markLeadIoButtons(leadInputMode);
+  setLeadVoiceBarsVisible(leadInputMode === "voice");
+}
+
+function wireLeadInputChoice() {
+  const btns = Array.prototype.slice.call(document.querySelectorAll("[data-lr-io]"));
+  if (!btns.length) return;
+  btns.forEach(function (btn) {
+    if (btn.dataset.lrIoWired === "1") return;
+    btn.dataset.lrIoWired = "1";
+    btn.addEventListener("click", function () {
+      chooseLeadInputMode(btn.getAttribute("data-lr-io"));
+    });
+  });
+  chooseLeadInputMode(leadInputMode);
+}
+
 async function initVoiceInput(staffName) {
   if (typeof window.PortalFeedbackVoiceInput === "undefined") return;
   try {
@@ -544,6 +591,9 @@ async function initVoiceInput(staffName) {
   } catch (voiceErr) {
     console.warn("[lead-report] voice input", voiceErr);
   }
+  // Newly wrapped textareas add fresh mic bars — re-apply the current choice so
+  // they stay hidden while the lead is in Written mode.
+  setLeadVoiceBarsVisible(leadInputMode === "voice");
 }
 
 export async function bootPortalLeadFeedback() {
@@ -620,6 +670,13 @@ export async function bootPortalLeadFeedback() {
     if (label === ctx.service) opt.selected = true;
     serviceEl.appendChild(opt);
   });
+
+  // The service list is static and does not depend on the roster/scope load,
+  // so make the dropdown usable right away. This guarantees a lead (e.g. John)
+  // can always pick a service even if a later step (auth, roster, scope) is
+  // slow or throws before the finally-block re-enable runs.
+  serviceEl.disabled = false;
+  serviceEl.removeAttribute("aria-busy");
 
   if (venueInput && ctx.venue) venueInput.value = ctx.venue;
   if (timeInput && ctx.sessionTime) timeInput.value = ctx.sessionTime;
@@ -963,6 +1020,7 @@ export async function bootPortalLeadFeedback() {
 
   applyServiceContext({ keepVenue: !!ctx.venue });
   await initVoiceInput(ctx.submittedByName);
+  wireLeadInputChoice();
 
   clearBtn.addEventListener("click", () => {
     form.reset();
@@ -1043,12 +1101,12 @@ export async function bootPortalLeadFeedback() {
         return;
       }
       brief = clean(document.getElementById("lrPositiveFeedback")?.value || "");
-      const rel = clean(document.getElementById("lrRelevantInformation")?.value || "");
-      if (!brief || !rel) {
-        alert("Please complete positive feedback and relevant information.");
+      if (!brief) {
+        alert("Please complete positive feedback.");
         return;
       }
-      other = rel;
+      // Relevant information is optional — never block a lead on it. Empty = "None".
+      other = clean(document.getElementById("lrRelevantInformation")?.value || "") || "None";
     } else if (isDayCentreService(svc)) {
       const names = collectDayCentreNames();
       if (!names.length) {

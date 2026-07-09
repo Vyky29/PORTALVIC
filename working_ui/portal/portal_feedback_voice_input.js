@@ -31,6 +31,9 @@
  raul: 1,
  carlos: 1,
  andres: 1,
+ berta: 1,
+ teflon: 1,
+ palankas: 1,
  };
 
  var activeRec = null;
@@ -59,8 +62,31 @@
  var ui = {
  staffGroup: "english",
  staffName: "",
+ staffNationality: "",
  resolvedLang: "en-GB",
  };
+
+ function groupFromNationality(nationality) {
+ var nat = String(nationality || "").trim().toLowerCase();
+ if (!nat) return "";
+ if (
+ /^(uk|u\.k\.|united kingdom|british|britain|great britain|english|england|scottish|scotland|welsh|wales|northern ireland|irish|ireland)$/.test(
+ nat
+ ) ||
+ nat.indexOf("british") >= 0 ||
+ nat.indexOf("united kingdom") >= 0 ||
+ nat.indexOf("english") >= 0
+ ) {
+ return "english";
+ }
+ if (nat.indexOf("spanish") >= 0 || nat.indexOf("spain") >= 0 || nat.indexOf("espa") >= 0) {
+ return "spanish";
+ }
+ if (nat.indexOf("italian") >= 0 || nat.indexOf("italy") >= 0 || nat.indexOf("italia") >= 0) {
+ return "italian";
+ }
+ return "";
+ }
 
  function getSpeechRecognition() {
  return global.SpeechRecognition || global.webkitSpeechRecognition || null;
@@ -141,27 +167,13 @@
 
  function resolveStaffVoiceGroup(staffName) {
   var tokens = nameTokens(staffName);
+  var fromNat = groupFromNationality(ui.staffNationality);
+  if (fromNat) return fromNat;
   try {
     var prof = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile;
     if (prof && prof.nationality) {
-      var nat = String(prof.nationality || "")
-        .trim()
-        .toLowerCase();
-      if (
-        /^(uk|u\.k\.|united kingdom|british|britain|great britain|english|england|scottish|scotland|welsh|wales|northern ireland)$/.test(
-          nat
-        ) ||
-        nat.includes("british") ||
-        nat.includes("united kingdom")
-      ) {
-        return "english";
-      }
-      if (nat.includes("spanish") || nat.includes("spain") || nat.includes("espa")) {
-        return "spanish";
-      }
-      if (nat.includes("italian") || nat.includes("italy") || nat.includes("italia")) {
-        return "italian";
-      }
+      var g = groupFromNationality(prof.nationality);
+      if (g) return g;
     }
     if (prof) {
       tokens = tokens.concat(nameTokens(prof.full_name || prof.username || ""));
@@ -199,6 +211,87 @@
  ui.staffName = String(staffName || "");
  ui.staffGroup = resolveStaffVoiceGroup(ui.staffName);
  ui.resolvedLang = defaultLangForGroup(ui.staffGroup);
+ }
+
+ function applyStaffProfile(profile) {
+ if (!profile) return;
+ ui.staffNationality = String(profile.nationality || "");
+ var nm = String(profile.full_name || profile.username || ui.staffName || "");
+ ui.staffName = nm;
+ ui.staffGroup = resolveStaffVoiceGroup(ui.staffName);
+ ui.resolvedLang = defaultLangForGroup(ui.staffGroup);
+ }
+
+ var nationalityFetchStarted = false;
+
+ function resolveSharedClientForProfile() {
+ try {
+ var boot = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.client;
+ if (boot && boot.auth) return Promise.resolve(boot);
+ } catch (_) {}
+ var bases = [];
+ var sharedBase =
+ global.PORTAL_SHARED_JS_BASE ||
+ (typeof location !== "undefined" ? location.origin + "/portal-shared-js" : "/portal-shared-js");
+ bases.push("/portal/supabase-client.js");
+ bases.push(String(sharedBase).replace(/\/$/, "") + "/supabase-client.js");
+ function tryImport(i) {
+ if (i >= bases.length) return Promise.resolve(null);
+ return import(bases[i])
+ .then(function (mod) {
+ var client =
+ (mod.getSharedSupabaseClient && mod.getSharedSupabaseClient()) ||
+ (mod.getSupabaseClient && mod.getSupabaseClient());
+ return client || tryImport(i + 1);
+ })
+ .catch(function () {
+ return tryImport(i + 1);
+ });
+ }
+ return tryImport(0);
+ }
+
+ /** Best-effort: read the signed-in staff nationality so the transcriber language
+  * is correct on every portal form without per-form wiring. Safe no-op if signed out. */
+ function ensureStaffNationalityFromDb() {
+ if (nationalityFetchStarted) return Promise.resolve();
+ if (ui.staffNationality) {
+ nationalityFetchStarted = true;
+ return Promise.resolve();
+ }
+ nationalityFetchStarted = true;
+ return resolveSharedClientForProfile()
+ .then(function (client) {
+ if (!client || !client.auth) return;
+ return client.auth.getUser().then(function (res) {
+ var user = res && res.data && res.data.user;
+ if (!user || !user.id) return;
+ return client
+ .from("staff_profiles")
+ .select("nationality, full_name, username")
+ .eq("id", user.id)
+ .maybeSingle()
+ .then(function (r) {
+ var prof = r && r.data;
+ if (!prof) return;
+ if (!prof.nationality && !prof.full_name && !prof.username) return;
+ try {
+ global.__PORTAL_SUPABASE__ = global.__PORTAL_SUPABASE__ || {};
+ global.__PORTAL_SUPABASE__.staff_profile = {
+ nationality: String(prof.nationality || ""),
+ full_name: String(prof.full_name || ""),
+ username: String(prof.username || ""),
+ };
+ } catch (_) {}
+ applyStaffProfile({
+ nationality: String(prof.nationality || ""),
+ full_name: String(prof.full_name || ""),
+ username: String(prof.username || ""),
+ });
+ });
+ });
+ })
+ .catch(function () {});
  }
 
  function supabaseFnUrl() {
@@ -297,10 +390,15 @@
  }).then(function (res) {
  return res.json().then(function (data) {
  if (res.status === 401 || res.status === 403) {
- throw new Error("webspeech_fallback");
+ throw new Error("not_signed_in");
  }
- if (data && data.fallback === "webspeech") {
- throw new Error("webspeech_fallback");
+ var errCode = data && data.error ? String(data.error) : "";
+ // OpenAI/Whisper unreachable (missing key, quota exhausted, upstream failure).
+ if (errCode === "no_openai" || errCode === "transcribe_failed" || res.status === 503 || res.status === 502) {
+ throw new Error("ai_unavailable");
+ }
+ if (errCode === "empty_transcript") {
+ throw new Error("empty_transcript");
  }
  if (!res.ok || !data || !data.ok) throw new Error("transcribe_failed");
  return String(data.english || "").trim();
@@ -526,6 +624,17 @@
  return finals || interim;
  }
 
+ function notifyVoiceTranscriptDone(textarea) {
+ if (!isLongNarrativeField(textarea)) return;
+ try {
+ global.dispatchEvent(
+ new CustomEvent("portal:feedback-voice-transcript-done", {
+ detail: { fieldId: textarea.id || textarea.name || "" },
+ })
+ );
+ } catch (_ev) {}
+ }
+
  function setLiveTextarea(s, liveEnglish) {
  if (!s || !s.textarea) return;
  s.textarea.value = composePrefix(s.prefix, liveEnglish);
@@ -708,8 +817,11 @@
  setVoiceStatus(s.statusEl, "No speech detected - tap mic and try again.", {
  autoClearMs: VOICE_ERROR_CLEAR_MS,
  });
- } else if (s.statusEl) {
- setVoiceStatus(s.statusEl, "Done - edit if needed before submit.");
+ } else {
+ if (s.textarea) notifyVoiceTranscriptDone(s.textarea);
+ if (s.statusEl) {
+ setVoiceStatus(s.statusEl, "Done - filtering for parent-friendly text…");
+ }
  }
  }
 
@@ -755,7 +867,8 @@
  : "No audio recorded — check mic permission, speak clearly, then tap mic again.",
  { autoClearMs: VOICE_ERROR_CLEAR_MS }
  );
- if (preferWebSpeechCapture() && !tooSoon) {
+ // ES/IT staff must not fall to live Spanish dictation (it stays untranslated).
+ if (preferWebSpeechCapture() && !tooSoon && !s.needsTranslate) {
  startWebSpeechCapture(s.textarea, s.btn, s.statusEl);
  }
  return;
@@ -771,13 +884,15 @@
  if (english) {
  setLiveTextarea(s, english);
  cleanupSessionUi(s);
+ if (s.textarea) notifyVoiceTranscriptDone(s.textarea);
  if (s.statusEl) {
- s.statusEl.textContent = "Done - edit if needed before submit.";
+ s.statusEl.textContent = "Done - filtering for parent-friendly text…";
  }
  return;
  }
- if (preferWebSpeechCapture()) {
  cleanupSessionUi(s);
+ // English staff can dictate live; ES/IT need Whisper translation, so ask to retry.
+ if (preferWebSpeechCapture() && !s.needsTranslate) {
  if (s.statusEl) {
  s.statusEl.textContent =
  "Live dictation - speak now, then tap mic again to finish.";
@@ -785,21 +900,36 @@
  startWebSpeechCapture(s.textarea, s.btn, s.statusEl);
  return;
  }
- cleanupSessionUi(s);
  setVoiceStatus(s.statusEl, "No speech detected - tap mic and try again.", {
  autoClearMs: VOICE_ERROR_CLEAR_MS,
  });
  })
  .catch(function (err) {
  cleanupSessionUi(s);
- if (
- preferWebSpeechCapture() &&
- err &&
- (err.message === "not_signed_in" ||
- err.message === "webspeech_fallback" ||
- err.message === "no_openai" ||
- err.message === "transcribe_failed")
- ) {
+ if (s.textarea) s.textarea.value = s.prefix;
+ var reason = (err && err.message) || "transcribe_failed";
+
+ if (reason === "not_signed_in") {
+ setVoiceStatus(
+ s.statusEl,
+ "Sign in to the portal to use voice — or type your feedback in English below.",
+ { autoClearMs: VOICE_ERROR_CLEAR_MS }
+ );
+ return;
+ }
+
+ // OpenAI/Whisper down or out of quota: do NOT drop ES/IT staff into
+ // untranslated Spanish dictation — tell them to type in English.
+ if (reason === "ai_unavailable") {
+ if (s.needsTranslate) {
+ setVoiceStatus(
+ s.statusEl,
+ "Voice transcription is temporarily unavailable — type your session narrative in English (80+ characters), then Submit. Admin will release to parents later.",
+ { autoClearMs: VOICE_ERROR_CLEAR_MS }
+ );
+ return;
+ }
+ if (preferWebSpeechCapture()) {
  if (s.statusEl) {
  s.statusEl.textContent =
  "Live dictation - speak now, then tap mic again to finish.";
@@ -807,9 +937,30 @@
  startWebSpeechCapture(s.textarea, s.btn, s.statusEl);
  return;
  }
- if (s.textarea) s.textarea.value = s.prefix;
- var msg = "Could not transcribe - type feedback below or try again.";
- if (s.statusEl) s.statusEl.textContent = msg;
+ setVoiceStatus(
+ s.statusEl,
+ "Voice transcription is temporarily unavailable — type your session narrative below (80+ characters), then Submit without Filter with AI.",
+ { autoClearMs: VOICE_ERROR_CLEAR_MS }
+ );
+ return;
+ }
+
+ // Empty/other: English staff can dictate live; ES/IT retry Whisper.
+ if (preferWebSpeechCapture() && !s.needsTranslate) {
+ if (s.statusEl) {
+ s.statusEl.textContent =
+ "Live dictation - speak now, then tap mic again to finish.";
+ }
+ startWebSpeechCapture(s.textarea, s.btn, s.statusEl);
+ return;
+ }
+ setVoiceStatus(
+ s.statusEl,
+ reason === "empty_transcript"
+ ? "No speech detected - tap mic and try again."
+ : "Could not transcribe - type feedback in English below or try again.",
+ { autoClearMs: VOICE_ERROR_CLEAR_MS }
+ );
  });
  }
 
@@ -900,7 +1051,16 @@
  startMediaRecorderCapture(textarea, btn, statusEl);
  return;
  }
- if (translate && webSpeechFallback()) return;
+ // ES/IT need Whisper translation (signed in). Without a session, live
+ // dictation would leave untranslated Spanish, so ask to sign in / type EN.
+ if (translate) {
+ if (statusEl) {
+ statusEl.textContent =
+ "Sign in to the portal to use voice — or type your feedback in English below.";
+ }
+ return;
+ }
+ if (webSpeechFallback()) return;
  if (statusEl) {
  statusEl.textContent = "Sign in to the portal to use voice input.";
  }
@@ -925,11 +1085,10 @@
  probeWhisperAvailability();
  }
 
- if (!whisperProbeDone) {
- probeWhisperAvailability().then(runCapture);
- return;
- }
- runCapture();
+ var probeReady = whisperProbeDone
+ ? Promise.resolve()
+ : probeWhisperAvailability();
+ Promise.all([probeReady, ensureStaffNationalityFromDb()]).then(runCapture);
  }
 
  function startMediaRecorderCapture(textarea, btn, statusEl) {
@@ -1301,6 +1460,7 @@
  initDone = true;
  }
  applyStaffLanguages(opts.staffName || "");
+ ensureStaffNationalityFromDb();
  var targets = [];
  if (opts.auto || opts.fields === "auto") {
  targets = collectLongTextareas(opts.root || global.document);
@@ -1327,13 +1487,18 @@
  applyStaffLanguages(staffName || "");
  }
 
+ function setStaffProfile(profile) {
+ applyStaffProfile(profile);
+ }
+
  global.PortalFeedbackVoiceInput = {
  init: init,
  attach: attachVoiceFields,
  rescan: rescan,
  setStaffName: setStaffName,
+ setStaffProfile: setStaffProfile,
  prefetch: probeWhisperAvailability,
  collectLongTextareas: collectLongTextareas,
- captureVersion: "voice-record-fix-empty-chunks-v2",
+ captureVersion: "voice-ai-down-message-v5",
  };
 })(typeof window !== "undefined" ? window : this);

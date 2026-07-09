@@ -1,6 +1,60 @@
 {
   "buildCommand": "node scripts/vercel-build.mjs",
   "outputDirectory": "dist/deploy",
+  "redirects": [
+    {
+      "source": "/parents",
+      "destination": "/parent",
+      "permanent": true
+    },
+    {
+      "source": "/parents/:path*",
+      "destination": "/parent/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/parents",
+      "has": [{ "type": "host", "value": "clubsensational-staff.vercel.app" }],
+      "destination": "https://www.clubsensational.org/parent",
+      "permanent": false
+    },
+    {
+      "source": "/parents/:path*",
+      "has": [{ "type": "host", "value": "clubsensational-staff.vercel.app" }],
+      "destination": "https://www.clubsensational.org/parent/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/parent",
+      "has": [{ "type": "host", "value": "clubsensational-staff.vercel.app" }],
+      "destination": "https://www.clubsensational.org/parent",
+      "permanent": false
+    },
+    {
+      "source": "/parent/:path*",
+      "has": [{ "type": "host", "value": "clubsensational-staff.vercel.app" }],
+      "destination": "https://www.clubsensational.org/parent/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/re-enrolment",
+      "has": [{ "type": "host", "value": "clubsensational-staff.vercel.app" }],
+      "destination": "https://www.clubsensational.org/parent/re-enrolment",
+      "permanent": false
+    },
+    {
+      "source": "/registration-form",
+      "has": [{ "type": "host", "value": "clubsensational-staff.vercel.app" }],
+      "destination": "https://www.clubsensational.org/parent/registration",
+      "permanent": false
+    },
+    {
+      "source": "/climbing-registration",
+      "has": [{ "type": "host", "value": "clubsensational-staff.vercel.app" }],
+      "destination": "https://www.clubsensational.org/parent/climbing-registration",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     { "source": "/favicon.ico", "destination": "/portal/app-icon/icon-192.png" },
     { "source": "/lead_dashboard.html", "destination": "/staff_dashboard.html" },
@@ -39,6 +93,9 @@
     { "source": "/sw-term-review", "destination": "/swtermreview.html" },
     { "source": "/sw-term-review/", "destination": "/swtermreview.html" },
     { "source": "/parent/climbing-registration", "destination": "/climbing_registration.html" },
+    { "source": "/parent/re-enrolment", "destination": "/parent_reenrolment.html" },
+    { "source": "/parent/re-enrol", "destination": "/parent_reenrolment.html" },
+    { "source": "/re-enrolment", "destination": "/parent_reenrolment.html" },
     { "source": "/parent/registration", "destination": "/parent_registration.html" },
     { "source": "/parent/app", "destination": "/parent_portal.html" },
     { "source": "/parent/login", "destination": "/parent_portal.html" },
@@ -52,11 +109,19 @@
   "headers": [
     {
       "source": "/portal/(.*\\.js)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }]
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
     },
     {
       "source": "/portal/(.*\\.css)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }]
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
+    },
+    {
+      "source": "/portal-shared-js/(.*\\.js)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
+    },
+    {
+      "source": "/portal-static-bootstrap.js",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
     },
     {
       "source": "/login.html",
@@ -72,6 +137,12 @@
     },
     {
       "source": "/staff_dashboard.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/lead_dashboard.html",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
       ]

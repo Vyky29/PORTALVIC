@@ -1248,11 +1248,11 @@
                 </label>
               </div>
               <div class="conditional" id="addressChangeFields" data-conditional-for="addressChange" data-show-when="changed">
-                <div class="field"><label for="editAddr1">Address line 1</label><input id="editAddr1" type="text" autocomplete="address-line1" maxlength="120" data-edit-input="address_line1" /></div>
+                <div class="field" data-edit-field="address_line1"><label for="editAddr1">Address line 1</label><input id="editAddr1" type="text" autocomplete="address-line1" maxlength="120" data-edit-input="address_line1" /><span class="field-error">Enter address line 1.</span></div>
                 <div class="field"><label for="editAddr2">Address line 2 <span style="color:var(--mutedSoft);font-weight:500;">(optional)</span></label><input id="editAddr2" type="text" autocomplete="address-line2" maxlength="120" data-edit-input="address_line2" /></div>
                 <div class="field-grid field-grid--2">
-                  <div class="field"><label for="editCity">Town / city</label><input id="editCity" type="text" autocomplete="address-level2" maxlength="80" data-edit-input="address_city" /></div>
-                  <div class="field"><label for="editPostcode">Postcode</label><input id="editPostcode" type="text" autocomplete="postal-code" maxlength="16" data-edit-input="address_postcode" /></div>
+                  <div class="field" data-edit-field="address_city"><label for="editCity">Town / city</label><input id="editCity" type="text" autocomplete="address-level2" maxlength="80" data-edit-input="address_city" /><span class="field-error">Enter your town / city.</span></div>
+                  <div class="field" data-edit-field="address_postcode"><label for="editPostcode">Postcode</label><input id="editPostcode" type="text" autocomplete="postal-code" maxlength="16" data-edit-input="address_postcode" /><span class="field-error">Enter your postcode.</span></div>
                 </div>
               </div>
             </form>
@@ -2378,6 +2378,19 @@
       sec.setAttribute('aria-expanded', 'true');
       setSectionStatus(sec, 'editing');
       state.currentlyEditing = sec.id;
+      // Address: if the address on file is incomplete, jump straight to the
+      // editable fields (preselect "My address has changed") so the user can
+      // actually complete/change it instead of being stuck on a disabled Confirm.
+      if (sec.id === 'sectionAddress' && !sectionProfileHasRequiredData(sec)) {
+        const changedRadio = sec.querySelector('input[name="addressChange"][value="changed"]');
+        if (changedRadio) {
+          changedRadio.checked = true;
+          sec.querySelectorAll('[data-conditional-for]').forEach(refreshConditional);
+          // Immediately flag the empty required fields (e.g. blank Town / city)
+          // in red and focus the first one so the missing bit is obvious.
+          validateSectionEdits(sec, collectSectionEdits(sec));
+        }
+      }
       // Toggle action buttons
       sec.querySelectorAll('[data-action]').forEach((btn) => {
         const a = btn.dataset.action;
@@ -2518,6 +2531,26 @@
           phoneField?.classList.add('has-error');
           ok = false;
         }
+      } else if (sec.id === 'sectionAddress') {
+        const changed = sec.querySelector('input[name="addressChange"]:checked')?.value;
+        if (changed === 'changed') {
+          let firstEmpty = null;
+          [
+            ['address_line1', edits.address_line1],
+            ['address_city', edits.address_city],
+            ['address_postcode', edits.address_postcode],
+          ].forEach(([key, val]) => {
+            if (!(val || '').trim()) {
+              const f = sec.querySelector(`[data-edit-field="${key}"]`);
+              f?.classList.add('has-error');
+              if (!firstEmpty) firstEmpty = f;
+              ok = false;
+            }
+          });
+          if (firstEmpty) {
+            try { firstEmpty.querySelector('input')?.focus(); } catch (_e) {}
+          }
+        }
       }
       return ok;
     }
@@ -2569,8 +2602,12 @@
           if (!(edits.address_line1 || '').trim()) return 'Enter address line 1.';
           if (!(edits.address_city || '').trim()) return 'Enter town / city.';
           if (!(edits.address_postcode || '').trim()) return 'Enter postcode.';
-        } else if (!fmtAddress(state.profile)) {
-          return 'No address on file — choose "My address has changed" and enter your address.';
+        } else {
+          // "Unchanged" is only valid when the address on file is complete.
+          const p = state.profile;
+          if (!(isNonEmpty(p.address?.line1) && isNonEmpty(p.address?.city) && isNonEmpty(p.address?.postcode))) {
+            return 'The address on file is incomplete. Choose "My address has changed" and enter address line 1, town / city and postcode.';
+          }
         }
       }
       if (sec.id === 'sectionEmergency') {
@@ -2748,7 +2785,12 @@
       for (const id of REQUIRED_SECTIONS) {
         const sec = $(id);
         if (!sec || sectionProfileHasRequiredData(sec)) continue;
-        show(profileNotice, 'error', 'One or more required sections are missing answers. Open each section, tap Edit, and confirm again.');
+        const title = (sec.querySelector('.ps-title')?.textContent || 'a required section').trim();
+        show(profileNotice, 'error', `Please complete “${title}” — tap Edit, fill in the fields, then Confirm.`);
+        // Open the incomplete section in edit mode and take the user to it.
+        sec.setAttribute('aria-expanded', 'true');
+        unlockSection(sec);
+        try { sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {}
         updateConfirmedSummary();
         return;
       }

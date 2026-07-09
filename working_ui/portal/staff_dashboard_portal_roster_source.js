@@ -32,20 +32,36 @@
 
   window.portalRefreshStaffDashboardSourceFromPortal = refreshStaffDashboardSourceFromPortal;
 
+  var REFRESH_INFLIGHT = null;
+
   function refreshPortalRosterRowsFromSupabase(client) {
+    if (REFRESH_INFLIGHT) {
+      return REFRESH_INFLIGHT;
+    }
     var madreP =
       window.PortalMadreFold && typeof window.PortalMadreFold.loadLiveMadre === "function"
         ? window.PortalMadreFold.loadLiveMadre(client, true)
         : Promise.resolve(null);
-    var rowsP =
-      window.PortalRosterRowsMerge &&
-      typeof window.PortalRosterRowsMerge.loadAndCache === "function"
-        ? window.PortalRosterRowsMerge.loadAndCache(client)
-        : Promise.resolve([]);
-    return Promise.all([madreP, rowsP]).then(function (parts) {
-      refreshStaffDashboardSourceFromPortal();
-      return parts[1];
-    });
+    REFRESH_INFLIGHT = madreP
+      .then(function () {
+        return new Promise(function (r) {
+          setTimeout(r, 250);
+        });
+      })
+      .then(function () {
+        return window.PortalRosterRowsMerge &&
+          typeof window.PortalRosterRowsMerge.loadAndCache === "function"
+          ? window.PortalRosterRowsMerge.loadAndCache(client)
+          : Promise.resolve([]);
+      })
+      .then(function (rows) {
+        refreshStaffDashboardSourceFromPortal();
+        return rows;
+      })
+      .finally(function () {
+        REFRESH_INFLIGHT = null;
+      });
+    return REFRESH_INFLIGHT;
   }
 
   window.portalRefreshPortalRosterRowsFromSupabase = refreshPortalRosterRowsFromSupabase;
@@ -76,4 +92,46 @@
     tick();
   }
   bootstrapLiveMadreWhenReady();
+
+  // Keep already-open staff dashboards in sync with the live MADRE without a
+  // manual reload or logout. The refresh forces loadLiveMadre(), so tabs that
+  // stayed open pick up newer portal_madre_document revisions on tab focus and
+  // on a slow periodic backstop. A 60s min-gap avoids network spam.
+  function setupLiveMadreAutoRefresh() {
+    if (typeof document === "undefined") return;
+    var MIN_GAP_MS = 60 * 1000;
+    var PERIODIC_MS = 8 * 60 * 1000;
+    var lastAt = 0;
+    function supaClient() {
+      return (
+        (window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client) || null
+      );
+    }
+    function maybeRefresh(force) {
+      try {
+        if (document.visibilityState !== "visible") return;
+        var client = supaClient();
+        if (!client) return;
+        var now = Date.now();
+        if (!force && now - lastAt < MIN_GAP_MS) return;
+        lastAt = now;
+        Promise.resolve(refreshPortalRosterRowsFromSupabase(client)).catch(
+          function () {}
+        );
+      } catch (_) {}
+    }
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") maybeRefresh(false);
+    });
+    window.addEventListener("focus", function () {
+      maybeRefresh(false);
+    });
+    window.addEventListener("pageshow", function (ev) {
+      if (ev && ev.persisted) maybeRefresh(true);
+    });
+    setInterval(function () {
+      maybeRefresh(false);
+    }, PERIODIC_MS);
+  }
+  setupLiveMadreAutoRefresh();
 })();

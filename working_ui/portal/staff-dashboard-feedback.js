@@ -12,7 +12,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260705-day-centre-peer';
+    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260709-absent-server-green';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -1141,7 +1141,12 @@
       const aliases = typeof portalCollectItemSessionReviewKeyAliases === 'function'
         ? portalCollectItemSessionReviewKeyAliases(item, iso, dayWord)
         : [String(item.sessionKey || '').trim()].filter(Boolean);
+      /* Server quick-mark wins. Local-only absent must NOT resolve green for today+ —
+         phone offline / failed sync used to paint green while Supabase had nothing. */
       if(portalReviewAbsentFromServerQuickMarkKeys(aliases)) return true;
+      const today = typeof portalLondonTodayIso === 'function' ? portalLondonTodayIso() : '';
+      const requireServer = !!(iso && today && iso >= today);
+      if(requireServer) return false;
       if(portalReviewAbsentInMemoryForAliases(aliases)) return true;
       const direct = getSessionReviewRecord(item);
       return !!(direct && direct.absent);
@@ -1194,7 +1199,11 @@
           });
         }catch(_absFk){}
       }
-      if(!absent && portalReviewAbsentInMemoryForAliases(aliases)) absent = true;
+      /* Do not promote local-only absent to green on today+ — wait for server keys. */
+      if(!absent && !serverSynced && portalReviewAbsentInMemoryForAliases(aliases)){
+        const todaySrv = typeof portalLondonTodayIso === 'function' ? portalLondonTodayIso() : '';
+        if(!(iso && todaySrv && iso >= todaySrv)) absent = true;
+      }
       if(item.noSessionFeedbackRequired){
         const pill = String(item.portalOverrideAlertPill || '').trim().toUpperCase();
         if(pill === 'ABSENT') absent = true;
@@ -1518,6 +1527,10 @@
             (keys.absentKeys || []).map(function(k){ return String(k || '').trim(); }).filter(Boolean)
           );
         }
+        /* Peer absent/feedback keys just changed — bust the reminder + outstanding caches so the
+           term calendar colour, halo and "Outstanding feedbacks" count recompute against them
+           (otherwise a co-instructor's Absent stays orange until an unrelated cache miss). */
+        if(typeof portalInvalidateReminderStateCache === 'function') portalInvalidateReminderStateCache();
         if(typeof mod.portalBuildServerResolvedRosterKeySets === 'function' && dashboardData){
           dashboardData.portalServerResolvedRosterKeys = mod.portalBuildServerResolvedRosterKeySets(rosterKeys, keys, mergeFanOutOpts);
         }

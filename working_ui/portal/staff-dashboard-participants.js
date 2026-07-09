@@ -476,13 +476,23 @@
       const sel = portalSelectedViewCalendarIsoYmd();
       return !!iso && !!sel && iso === sel;
     }
+    /** Combined Day Centre cards (Ikram / Emmanuel / Fadi) render as multi-segment
+     *  cards; they are the normal recurring roster, not an admin change, so they must
+     *  never carry the yellow "Updated by admin" style or chip. */
+    function portalTodayItemIsSpecialSegmentedCard(item){
+      return !!(item && Array.isArray(item.segments) && item.segments.length);
+    }
     function portalTodayItemShowsAdminShiftBadge(item){
+      if(portalTodayItemIsSpecialSegmentedCard(item)) return false;
       return !!(item && item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge);
     }
     function portalTodayItemShowsShadowingHostAlert(item){
       return !!(item && item.portalShadowingHostAlert && Array.isArray(item.portalShadowingHostLabels) && item.portalShadowingHostLabels.length);
     }
     function portalTodayItemUsesAdminShiftCardStyle(item){
+      // Combined Day Centre cards (Ikram / Emmanuel / Fadi) are the normal recurring
+      // roster, never an admin change: no yellow style even if the roster time moved.
+      if(portalTodayItemIsSpecialSegmentedCard(item)) return false;
       if(portalTodayItemShowsShadowingHostAlert(item)) return false;
       if(portalTodayItemShowsAdminShiftBadge(item)) return true;
       if(typeof portalSessionItemRosterTimeUpdated === 'function' && portalSessionItemRosterTimeUpdated(item)) return true;
@@ -498,6 +508,9 @@
     }
     function portalTodaySessionOverrideCardClass(item){
       const t = String(item && item.portalOverrideCardTone || '').trim().toLowerCase();
+      // Special segmented Day Centre cards must stay plain white — never the yellow
+      // "updated" tone, since the combined layout is their normal recurring roster.
+      if(t === 'yellow' && portalTodayItemIsSpecialSegmentedCard(item)) return '';
       if(t === 'green') return ' session-card--ov-green';
       if(t === 'yellow') return ' session-card--ov-yellow';
       if(t === 'training') return ' session-card--ov-training';
@@ -915,7 +928,87 @@
       const bEndMin = be == null ? bs : be;
       return as < bEndMin && bs < aEndMin;
     }
-    function portalShadowingObserverChipsForHost(sessionDateIso, staffId, staffDisplayName, startHm, endHm){
+    function portalShadowingVenuesMatch(ovVenue, sessionVenue){
+      const o = String(ovVenue || '').trim().toLowerCase();
+      const s = String(sessionVenue || '').trim().toLowerCase();
+      if(!o || !s) return true;
+      return o === s;
+    }
+    function portalShadowingRowAppliesToHostSession(row, staffId, staffDisplayName, sessionStart, sessionEnd, sessionVenue){
+      if(!row || String(row.status || 'active') !== 'active') return false;
+      if(String(row.override_type || '').trim() !== 'session_add') return false;
+      let pl = row.payload;
+      try{ if(typeof pl === 'string') pl = JSON.parse(pl); }catch(_){ pl = row.payload; }
+      if(String(pl && pl.kind || '').trim().toLowerCase() !== 'shadowing') return false;
+      const trainer = String(pl && pl.trainer || '').trim();
+      const hosts = portalSessionAddSplitNames(trainer);
+      const hostMatch = hosts.length
+        ? hosts.some(function(h){ return portalStaffNameMatchesShadowHost(h, staffId, staffDisplayName); })
+        : portalStaffNameMatchesShadowHost(trainer, staffId, staffDisplayName);
+      if(!hostMatch) return false;
+      if(!portalShadowingVenuesMatch(row.anchor_venue, sessionVenue)) return false;
+      const ovStart = portalHmFromDbTime(row.anchor_start) || '';
+      const ovEnd = portalHmFromDbTime(row.anchor_end) || ovStart;
+      if(sessionStart && ovStart && !portalHmRangeOverlaps(sessionStart, sessionEnd, ovStart, ovEnd)) return false;
+      return true;
+    }
+    function portalShadowingHostAlertTimeSlotLabel(row, staffId, staffDisplayName){
+      const sid = String(staffId || '').trim().toLowerCase();
+      const iso = normaliseIsoDate(row && row.session_date);
+      if(!sid || !iso) return '';
+      const dayWord = typeof portalWeekdayLongEnGB === 'function'
+        ? portalWeekdayLongEnGB(new Date(iso + 'T12:00:00'))
+        : '';
+      if(!dayWord) return '';
+      const baseReal = typeof window.__portalIsRealClientSession === 'function' ? window.__portalIsRealClientSession : null;
+      const isReal = function(s){
+        if(baseReal) return baseReal(s, iso);
+        const st = String(s && s.status || '').toLowerCase();
+        if(st === 'closed' || st === 'available') return false;
+        const cid = String(s && s.clientId || '').toLowerCase();
+        return Boolean(cid && cid !== 'closed' && cid !== 'available');
+      };
+      const sessions = typeof portalBaseClientSessionsForCalendarDate === 'function'
+        ? portalBaseClientSessionsForCalendarDate(dayWord, iso, sid, isReal)
+        : [];
+      const ovStart = portalHmFromDbTime(row && row.anchor_start) || '';
+      const ovEnd = portalHmFromDbTime(row && row.anchor_end) || ovStart;
+      const ovLo = portalHmToMinutes(ovStart);
+      const ovHi = portalHmToMinutes(ovEnd || ovStart);
+      let minBand = Infinity;
+      let maxBand = -Infinity;
+      for(let i = 0; i < sessions.length; i++){
+        const s = sessions[i];
+        if(!s) continue;
+        const base = s.__portalBaseSession || s;
+        const start = String(base.start || s.start || '').trim();
+        const end = String(base.end || s.end || start).trim();
+        const venue = String(base.sessionVenue || s.sessionVenue || base.venue || s.venue || '').trim();
+        if(!start) continue;
+        if(!portalShadowingRowAppliesToHostSession(row, sid, staffDisplayName, start, end, venue)) continue;
+        const sLo = portalHmToMinutes(start);
+        const sHi = portalHmToMinutes(end || start);
+        if(!Number.isFinite(sLo) || !Number.isFinite(sHi)) continue;
+        const bandLo = Number.isFinite(ovLo) ? Math.max(sLo, ovLo) : sLo;
+        const bandHi = Number.isFinite(ovHi) ? Math.min(sHi, ovHi) : sHi;
+        if(bandLo > bandHi) continue;
+        if(bandLo < minBand) minBand = bandLo;
+        if(bandHi > maxBand) maxBand = bandHi;
+      }
+      if(Number.isFinite(minBand) && Number.isFinite(maxBand) && maxBand >= minBand){
+        const pad = function(n){ return String(n).padStart(2, '0'); };
+        const hm = function(total){
+          const m = Math.max(0, Math.round(total));
+          return pad(Math.floor(m / 60)) + ':' + pad(m % 60);
+        };
+        return portalFormatRosterBandLabel(hm(minBand), hm(maxBand));
+      }
+      if(typeof rosterSlotTimeLabel === 'function'){
+        return rosterSlotTimeLabel({ start: ovStart, end: ovEnd });
+      }
+      return ovStart && ovEnd ? (ovStart + ' to ' + ovEnd) : (ovStart || ovEnd || '');
+    }
+    function portalShadowingObserverChipsForHost(sessionDateIso, staffId, staffDisplayName, startHm, endHm, sessionVenue){
       const iso = normaliseIsoDate(sessionDateIso);
       if(!iso || !staffId) return [];
       const out = [];
@@ -934,6 +1027,7 @@
           ? hosts.some(function(h){ return portalStaffNameMatchesShadowHost(h, staffId, staffDisplayName); })
           : portalStaffNameMatchesShadowHost(trainer, staffId, staffDisplayName);
         if(!hostMatch) return;
+        if(!portalShadowingVenuesMatch(ov.anchor_venue, sessionVenue)) return;
         const ovStart = portalHmFromDbTime(ov.anchor_start) || '';
         const ovEnd = portalHmFromDbTime(ov.anchor_end) || ovStart;
         if(startHm && ovStart && !portalHmRangeOverlaps(startHm, endHm, ovStart, ovEnd)) return;
@@ -973,8 +1067,9 @@
         const base = s.__portalBaseSession || s;
         const start = String(base.start || s.start || '').trim();
         const end = String(base.end || s.end || start).trim();
+        const venue = String(base.sessionVenue || s.sessionVenue || base.venue || s.venue || '').trim();
         if(!start) continue;
-        const labels = portalShadowingObserverChipsForHost(iso, sid, dn, start, end);
+        const labels = portalShadowingObserverChipsForHost(iso, sid, dn, start, end, venue);
         for(let j = 0; j < labels.length; j++){
           const lab = labels[j];
           if(!lab || seen[lab]) continue;
@@ -1021,6 +1116,7 @@
     function portalShadowingHostQuickMenuCard(row, staffId, staffDisplayName){
       const iso = normaliseIsoDate(row && row.session_date);
       if(!iso) return null;
+      const sid = portalNormKeyStr(staffId);
       const shadowerName = typeof portalStaffProfileFirstName === 'function'
         ? portalStaffProfileFirstName(row.anchor_staff_id)
         : String(row.anchor_staff_id || '').trim();
@@ -1029,9 +1125,18 @@
         : '';
       const subParts = [];
       if(shadowerName) subParts.push(shadowerName + ' shadowing you');
-      const slotSub = typeof portalSessionAddQuickMenuSub === 'function' ? portalSessionAddQuickMenuSub(row) : '';
-      if(slotSub) subParts.push(slotSub);
-      const sid = portalNormKeyStr(staffId);
+      const timeLabel = portalShadowingHostAlertTimeSlotLabel(row, sid, staffDisplayName);
+      if(timeLabel) subParts.push(timeLabel);
+      let pl = null;
+      try{
+        pl = row && row.payload && typeof row.payload === 'object' ? row.payload : JSON.parse(String(row && row.payload || ''));
+      }catch(_){ pl = null; }
+      const locRaw = String(pl && pl.location || '').trim().toLowerCase();
+      const locLabel = locRaw === 'both' ? 'Room & Pool'
+        : (locRaw === 'pool' ? 'Pool' : (locRaw === 'room' ? 'Room' : ''));
+      if(locLabel) subParts.push(locLabel);
+      const host = portalShadowingTrainerDisplayName(pl && pl.trainer);
+      if(host) subParts.push(host);
       return {
         id: portalShadowingHostOverrideDismissKey(row, sid),
         iso: iso,
@@ -1077,7 +1182,14 @@
         const cid = String(it.clientId || '').trim().toLowerCase();
         if(skipIds[cid]) return it;
         const base = it.__portalBaseSession || {};
-        const labels = portalShadowingObserverChipsForHost(sessionDateIso, sid, dn, base.start, base.end);
+        const labels = portalShadowingObserverChipsForHost(
+          sessionDateIso,
+          sid,
+          dn,
+          base.start,
+          base.end,
+          base.sessionVenue || it.sessionVenue || base.venue || it.venue
+        );
         if(!labels.length) return it;
         return Object.assign({}, it, {
           portalShadowingHostAlert: true,
@@ -1131,6 +1243,10 @@
       const symNorm = sym.toLowerCase().replace(/\s+/g, ' ').trim();
       const isMakeUpSym = symNorm === 'make up session' || symNorm === 'make up';
       const isTrialSym = symNorm === 'trial';
+      // Make-up / trial cards carry their own pink/purple identity and must NOT also
+      // show the yellow "Updated by admin" chip — that chip is reserved for a plain
+      // move-slot admin change.
+      const isMakeUpOrTrialItem = isMakeUpSym || isTrialSym || !!item.portalOverrideMakeUpTag || !!item.portalOverrideTrialTag;
       const chips = [];
       const push = function(html){ if(html) chips.push(html); };
 
@@ -1158,12 +1274,14 @@
       } else if(pillText && pillNorm !== 'UPDATED'){
         const display = escapeHtml(pillText).replace(/\n/g, ' ');
         push('<span class="portal-session-slot-chip" aria-label="' + display + '"><span>' + display + '</span></span>');
-      } else if(sym && !isMakeUpSym){
+      } else if(sym && !isMakeUpSym && symNorm !== 'no participant'){
+        // "No Participant" open slots show their yellow card + big red name only —
+        // the redundant grey chip is suppressed.
         const tx = escapeHtml(sym);
         push('<span class="portal-session-slot-chip portal-session-slot-chip--plain" aria-label="' + tx + '"><span>' + tx + '</span></span>');
       }
 
-      if(item.kind === 'client' && item.sessionKey && !item.noSessionFeedbackRequired && !item.portalOverrideSuppressReviewOrange){
+      if(!isMakeUpOrTrialItem && !portalTodayItemIsSpecialSegmentedCard(item) && item.kind === 'client' && item.sessionKey && !item.noSessionFeedbackRequired && !item.portalOverrideSuppressReviewOrange){
         const ended = isSessionEndedForFeedback(item);
         const started = isSessionStartedForItem(item);
         const timeUpdated = portalSessionItemRosterTimeUpdated(item);
@@ -1172,7 +1290,7 @@
         }
       }
 
-      if(!chips.length && item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge){
+      if(!isMakeUpOrTrialItem && !chips.length && item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge && !portalTodayItemIsSpecialSegmentedCard(item)){
         push(portalSessionUpdatedChipHtml());
       }
       return chips.join('');
@@ -1234,7 +1352,7 @@
 
     function portalManagerDutyAreaLabel(item){
       if(!item || item.kind !== 'manager') return '';
-      return 'Hub Room';
+      return 'Day Centre';
     }
     /** Pool/room details column — always visible on the right. */
     function todaySessionThirdRowInnerHtml(item){
@@ -1288,19 +1406,54 @@
       }
       return '<span class="session-pool-na" aria-hidden="true">—</span>';
     }
+    function todaySessionSegmentRowsHtml(item){
+      return (item.segments || []).map(function(seg){
+        const tRaw = String((seg && (seg.time_slot || seg.time)) || '').trim();
+        const t = escapeHtml(typeof stripMeridiemFromSlotLabel === 'function' ? stripMeridiemFromSlotLabel(tRaw) : tRaw);
+        const noteRaw = String((seg && (seg.label || seg.note || seg.area)) || '').trim();
+        // Show the venue/area as the same PNG-icon + title used by single-session
+        // cards (e.g. Day Centre, Big Pool) instead of a plain text label. Fall back
+        // to text when the label has no matching area-note icon.
+        let noteHtml = '';
+        if(noteRaw && typeof portalAreaNoteTodayColumnHtml === 'function'){
+          noteHtml = portalAreaNoteTodayColumnHtml(noteRaw) || '';
+        }
+        if(!noteHtml){
+          noteHtml = '<span class="session-seg-note-text">' + escapeHtml(noteRaw) + '</span>';
+        }
+        return '<div class="session-seg-row"><span class="session-seg-note">' + noteHtml + '</span><span class="session-seg-time">' + t + '</span></div>';
+      }).join('');
+    }
+    /** Combined card: participant name on the far left, then a time / note mini-table
+     *  (e.g. Emmanuel — 11 to 12 Day Centre / 12 to 1 Big Pool). One session for feedback. */
+    function todaySessionSegmentedCardInnerHtml(item){
+      const nameCore = `<span class="session-meta-name">${escapeHtml(item.name)}</span>`;
+      const meetingChipsRow = todaySessionStackedPeopleChipsRowHtml(item);
+      const chip = meetingChipsRow ? '' : todaySessionChipBelowNameHtml(item);
+      const chipParts = chip ? (chip.match(/portal-session-slot-chip|portal-sched-ov-badge/g) || []).length : 0;
+      const chipsWrapCls = chipParts > 1 ? ' session-chips-below-name--wrap' : '';
+      const chipsRow = meetingChipsRow || (chip ? '<div class="session-chips-below-name' + chipsWrapCls + '">' + chip + '</div>' : '');
+      const namePart = `<span class="session-name-stack">${nameCore}${chipsRow}</span>`;
+      return `<div class="session-card-body session-card-body--segments">`
+        + `<div class="session-line session-line--name session-line--name-lead">${namePart}</div>`
+        + `<div class="session-seg-list">${todaySessionSegmentRowsHtml(item)}</div>`
+        + `</div>`;
+    }
     function todaySessionCardInnerHtml(item){
+      if(item && Array.isArray(item.segments) && item.segments.length){
+        return todaySessionSegmentedCardInnerHtml(item);
+      }
       const timeRaw = String(item.time || '').trim();
       const time = escapeHtml(typeof stripMeridiemFromSlotLabel === 'function' ? stripMeridiemFromSlotLabel(timeRaw) : timeRaw);
-      const venueLine = escapeHtml(portalTodaySessionVenueLabel(item));
-      const timeStack = `<div class="session-line session-line--time session-line--time-stack"><span class="session-slot-time">${time}</span><span class="session-line-venue">${venueLine}</span></div>`;
+      const hideDutyVenue = item && (item.kind === 'home' || item.kind === 'manager' || item.kind === 'admin');
+      const venueLine = hideDutyVenue ? '' : escapeHtml(portalTodaySessionVenueLabel(item));
+      const timeStack = hideDutyVenue
+        ? `<div class="session-line session-line--time session-line--time-stack session-line--time-duty"><span class="session-slot-time">${time}</span></div>`
+        : `<div class="session-line session-line--time session-line--time-stack"><span class="session-slot-time">${time}</span><span class="session-line-venue">${venueLine}</span></div>`;
       const nameCore = item.kind === 'closed'
         ? '<span class="session-meta-name">Closed</span>'
         : (item.kind === 'home'
-          ? '<span class="session-meta-name session-meta-name--home">' +
-            (typeof portalAreaNoteIconHtml === 'function'
-              ? portalAreaNoteIconHtml('Home', { showLabel: false, size: 'sm', className: 'session-home-name-icon' })
-              : '') +
-            `<span>${escapeHtml(item.name)}</span></span>`
+          ? `<span class="session-meta-name session-meta-name--home"><span>${escapeHtml(item.name)}</span></span>`
           : `<span class="session-meta-name">${escapeHtml(item.name)}</span>`);
       const meetingChipsRow = todaySessionStackedPeopleChipsRowHtml(item);
       const chip = meetingChipsRow ? '' : todaySessionChipBelowNameHtml(item);
@@ -2486,29 +2639,18 @@
           ? portalOverrideCardDateParenLabel(isoNav)
           : '';
         if(kind === 'new_shift'){
-          const isCover = portalOverrideIsInstructorCoverForLoggedInStaff(row);
-          if(isCover){
-            const nm = portalClientFirstNameTokenForOverride(row);
-            title = nm
-              ? ('Schedule change - ' + nm + (datePart ? (' ' + datePart) : ''))
-              : ('Schedule change' + (datePart ? (' ' + datePart) : ''));
-            sub = typeof portalOverrideQuickMenuDetailSub === 'function'
-              ? portalOverrideQuickMenuDetailSub(row, { includeService: false, includeVenue: true, includeNote: true })
-              : '';
-          }else{
-            title = 'NEW SHIFT' + (venue ? (' - ' + venue) : '') + (datePart ? (' ' + datePart) : '');
-            sub = typeof portalOverrideQuickMenuDetailSub === 'function'
-              ? portalOverrideQuickMenuDetailSub(row, { includeService: true, includeVenue: false, includeNote: false })
-              : '';
-            if(typeof window.portalStaffPayrollShiftBandLabel === 'function'){
-              const staffForBand = String(row && row.anchor_staff_id || (typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '') || '').trim();
-              const band = window.portalStaffPayrollShiftBandLabel(staffForBand, isoNav, venue);
-              if(band){
-                const svc = typeof portalOverrideQuickMenuServiceLabel === 'function' ? portalOverrideQuickMenuServiceLabel(row) : '';
-                sub = [svc, band].filter(Boolean).join(' · ');
-              }
-            }
-          }
+          // Both a brand-new shift AND a cover (this instructor stepping into someone
+          // else's slot) render as a plain NEW SHIFT alert: time + venue + day only, with
+          // NO participant names. Covers on the same day/venue collapse into ONE card
+          // (portalCollapseNewShiftOverrideQuickMenuItems). The halo button navigates to
+          // that day where the covered clients (e.g. Scott, Stephanie) are shown.
+          title = 'NEW SHIFT' + (venue ? (' - ' + venue) : '') + (datePart ? (' ' + datePart) : '');
+          // Show the time of the shift that was actually added (this override's own
+          // slot, e.g. 4.30 to 6.30) — NOT the whole day's merged payroll band, which
+          // widened a partial new shift to the full 11–6.30 window.
+          sub = typeof portalOverrideQuickMenuDetailSub === 'function'
+            ? portalOverrideQuickMenuDetailSub(row, { includeService: true, includeVenue: false, includeNote: false })
+            : '';
         }else{
           title = 'Schedule change' + (datePart ? (' ' + datePart) : '');
           sub = typeof portalOverrideQuickMenuDetailSub === 'function'
@@ -2759,6 +2901,14 @@
     }
     function portalRefreshNewShiftOverrideCardSub(item){
       if(!item || !item.iso) return item;
+      // The card already carries the added shift's own time slot (e.g. 4.30 to 6.30).
+      // Only fill in a time if it is missing — never replace it with the full-day
+      // merged payroll band, which would widen a partial new shift to 11–6.30.
+      const subHasTime = String(item.sub || '').split(' · ').some(function(p){
+        const bit = String(p || '').trim();
+        return /\d/.test(bit) && /\bto\b/i.test(bit);
+      });
+      if(subHasTime) return item;
       const iso = String(item.iso || '').trim();
       const staffId = typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '';
       let slot = '';

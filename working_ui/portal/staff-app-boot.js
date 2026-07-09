@@ -55,7 +55,7 @@
   }
 
   if (isStaffDashboard) {
-    preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260702-sun-5jul-bismark");
+    preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260707-roberto-venues");
     preloadScript("/portal/staff-dashboard-dock-boot.js?v=20260625-lead-day-cards-nav");
     preloadScript("/portal/staff-dashboard-topbar.js?v=20260625-lead-day-cards-nav");
     preloadScript("/portal/staff-dashboard-feedback.js?v=20260705-day-centre-peer");
@@ -138,7 +138,7 @@
     "/portal/portal_participant_identity.js?v=20260703-desktop",
     "/portal/portal_participant_general_hydrate.js?v=20260703-desktop",
     "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",
-    "/portal/portal_swimming_instructor_menus.js?v=20260622-sandra-visual-vic",
+    "/portal/portal_swimming_instructor_menus.js?v=20260708c-topbar-plan-fix",
     "/portal/portal_staff_photos.js?v=20260624-rt-debug",
   ];
 
@@ -241,7 +241,7 @@
       loadCss("/portal/portal_ghost_view.css?v=20260624-ghost-handoff");
       loadScript("/portal/portal-ghost-view.js?v=20260624-ghost-handoff");
       loadScript("/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off");
-      loadCss("/portal/portal_achievements.css?v=20260702-lead-gallery-upload");
+      loadCss("/portal/portal_achievements.css?v=20260703-session-photos-back");
     };
     scheduleIdle(run, isHandheld ? 6000 : 2500);
   }

@@ -140,6 +140,28 @@
     return true;
   }
 
+  function isYoussefBandKey(v) {
+    var n = normKey(v);
+    return n === "youssef" || n === "yousef" || n === "yusef";
+  }
+
+  /** Youssef's Acton weekday afternoon shift is a flat 4:30–6:30 band (no ±15
+   *  buffer, No-Participant gaps stay inside), paid as 2h Swimming. */
+  function rowsAreYoussefActonAfternoonBand(rows, iso) {
+    var dayName = dayNameFromIso(iso);
+    if (!dayName || dayName === "Sunday" || dayName === "Saturday") return false;
+    var list = Array.isArray(rows) ? rows : [];
+    if (!list.length) return false;
+    for (var i = 0; i < list.length; i++) {
+      var r = list[i];
+      if (!isYoussefBandKey(r && r.anchor_staff_id)) return false;
+      if (normKey(r && r.anchor_venue).indexOf("acton") < 0) return false;
+      var range = rowAnchorHmRange(r);
+      if (!range || range.start < 16 * 60) return false;
+    }
+    return true;
+  }
+
   function rowAnchorHmRange(row) {
     var t0 =
       typeof global.portalHmFromDbTime === "function"
@@ -168,6 +190,9 @@
     var list = Array.isArray(rows) ? rows : [];
     if (!list.length) return "";
     var isoNorm = normIso(iso);
+    if (rowsAreYoussefActonAfternoonBand(list, isoNorm)) {
+      return formatBandLabel("16:30", "18:30");
+    }
     if (rowsAreWeekdayMaBespokeBand(list, isoNorm)) {
       return formatBandLabel("16:15", "18:15");
     }

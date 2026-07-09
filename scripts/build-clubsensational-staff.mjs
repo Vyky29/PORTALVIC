@@ -30,6 +30,9 @@ const STAFF_ORIGIN = String(
 const ADMIN_ORIGIN = String(
   process.env.PORTAL_ADMIN_ORIGIN || "https://portalvic.vercel.app",
 ).replace(/\/$/, "");
+const FAMILY_ORIGIN = String(
+  process.env.PORTAL_FAMILY_ORIGIN || process.env.CLUBSENSATIONAL_FAMILY_ORIGIN || "https://family.clubsensational.org",
+).replace(/\/$/, "");
 
 const EXCLUDE_FILES = new Set([
   "admin_dashboard.html",
@@ -38,6 +41,10 @@ const EXCLUDE_FILES = new Set([
   "office_portal.html",
   "portal_choose.html",
   "roster_term_master_review.html",
+  "parent_portal.html",
+  "parent_reenrolment.html",
+  "parent_registration.html",
+  "climbing_registration.html",
 ]);
 
 const EXCLUDE_DIRS = new Set(["archive", "OTROS", "scripts"]);
@@ -101,6 +108,14 @@ function writeStaffAppConfig(destDir) {
   global.PORTAL_STAFF_APP = true;
   global.PORTAL_PRODUCT_NAME = "clubSENsational Staff";
   global.PORTAL_CANONICAL_ORIGIN = global.PORTAL_CANONICAL_ORIGIN || "${STAFF_ORIGIN}";
+  global.PORTAL_FAMILY_ORIGIN = global.PORTAL_FAMILY_ORIGIN || "${FAMILY_ORIGIN}";
+  global.portalFamilyPortalUrl = function (path) {
+    path = String(path || "").replace(/^\\//, "");
+    var base = String(global.PORTAL_FAMILY_ORIGIN || "${FAMILY_ORIGIN}").replace(/\\/$/, "");
+    if (!path || path === "parent") return base + "/parent";
+    if (/^parent(?:\\/|$)/.test(path)) return base + "/" + path;
+    return base + "/parent/" + path;
+  };
   global.PORTAL_ADMIN_PORTAL_ORIGIN = "${ADMIN_ORIGIN}";
   var adminOrigin = String(global.PORTAL_ADMIN_PORTAL_ORIGIN || "").replace(/\\/$/, "");
   if (adminOrigin) {
@@ -147,6 +162,22 @@ function injectStaffConfigScript(htmlPath) {
   writeFileSync(htmlPath, src, "utf8");
 }
 
+function writeRedirectStub(destDir, page, target, title) {
+  writeFileSync(
+    join(destDir, page),
+    "<!DOCTYPE html>\n<html lang=\"en-GB\">\n<head>\n<meta charset=\"UTF-8\" />\n<meta http-equiv=\"refresh\" content=\"0;url=" +
+      target +
+      "\" />\n<title>" +
+      title +
+      "</title>\n<script>location.replace(" +
+      JSON.stringify(target) +
+      ");</script>\n</head>\n<body><p><a href=\"" +
+      target +
+      "\">Continue</a></p></body>\n</html>\n",
+    "utf8",
+  );
+}
+
 function writeAdminRedirectStubs(destDir) {
   var pages = [
     "admin_dashboard.html",
@@ -155,31 +186,45 @@ function writeAdminRedirectStubs(destDir) {
     "portal_choose.html",
   ];
   pages.forEach(function (page) {
-    var target = ADMIN_ORIGIN + "/" + page;
-    writeFileSync(
-      join(destDir, page),
-      "<!DOCTYPE html>\n<html lang=\"en-GB\">\n<head>\n<meta charset=\"UTF-8\" />\n<meta http-equiv=\"refresh\" content=\"0;url=" +
-        target +
-        "\" />\n<title>clubSENsational — Admin portal</title>\n<script>location.replace(" +
-        JSON.stringify(target) +
-        ");</script>\n</head>\n<body><p>Admin tools live on the operations portal. <a href=\"" +
-        target +
-        "\">Continue</a></p></body>\n</html>\n",
-      "utf8",
-    );
+    writeRedirectStub(destDir, page, ADMIN_ORIGIN + "/" + page, "clubSENsational — Admin portal");
   });
+}
+
+function writeFamilyPortalRedirectStubs(destDir) {
+  var familyParent = FAMILY_ORIGIN + "/parent";
+  writeRedirectStub(destDir, "parent_portal.html", familyParent, "clubSENsational — Family portal");
+  writeRedirectStub(
+    destDir,
+    "parent_reenrolment.html",
+    familyParent + "/re-enrolment",
+    "clubSENsational — Re-enrolment",
+  );
+  writeRedirectStub(
+    destDir,
+    "parent_registration.html",
+    familyParent + "/registration",
+    "clubSENsational — Registration",
+  );
+  writeRedirectStub(
+    destDir,
+    "climbing_registration.html",
+    familyParent + "/climbing-registration",
+    "clubSENsational — Climbing registration",
+  );
 }
 
 console.log("[build-clubsensational-staff] Source:", SOURCE);
 console.log("[build-clubsensational-staff] Output:", OUT);
 console.log("[build-clubsensational-staff] Staff origin:", STAFF_ORIGIN);
 console.log("[build-clubsensational-staff] Admin portal:", ADMIN_ORIGIN);
+console.log("[build-clubsensational-staff] Family portal:", FAMILY_ORIGIN + "/parent");
 
 if (existsSync(OUT)) rmSync(OUT, { recursive: true, force: true });
 copyTree(SOURCE, OUT);
 
 writeStaffAppConfig(OUT);
 writeAdminRedirectStubs(OUT);
+writeFamilyPortalRedirectStubs(OUT);
 injectStaffConfigScript(join(OUT, "login.html"));
 injectStaffConfigScript(join(OUT, "staff_dashboard.html"));
 
@@ -197,7 +242,9 @@ patchHtml(join(OUT, "login.html"), [
   ['<h1 class="login-portal-text" id="loginBrandTitle">Portal</h1>', '<h1 class="login-portal-text" id="loginBrandTitle">Staff</h1>'],
   [
     '<p id="login-updated-msg" class="login-updated-msg"',
-    '<p id="login-staff-admin-hint" class="login-updated-msg" style="margin-bottom:12px">Operations admin? Open <a href="https://portalvic.vercel.app/login.html">portalvic.vercel.app</a>.</p>\n      <p id="login-updated-msg" class="login-updated-msg"',
+    '<p id="login-staff-admin-hint" class="login-updated-msg" style="margin-bottom:12px">Operations admin? Open <a href="https://portalvic.vercel.app/login.html">portalvic.vercel.app</a>. Parents &amp; carers: <a href="' +
+      FAMILY_ORIGIN +
+      '/parent">Family portal</a>.</p>\n      <p id="login-updated-msg" class="login-updated-msg"',
   ],
 ]);
 

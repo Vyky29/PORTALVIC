@@ -7,7 +7,19 @@
   var TERM_KEY = "summer-2026";
   var CACHE = null;
   var CACHE_AT = 0;
-  var CACHE_MS = 45000;
+  var CACHE_MS = 120000;
+  var LOAD_INFLIGHT = null;
+
+  function isRetryableSupabaseError(err) {
+    var msg = String((err && err.message) || err || "");
+    return /504|502|503|timeout|57014|gateway|fetch failed/i.test(msg);
+  }
+
+  function delay(ms) {
+    return new Promise(function (resolve) {
+      setTimeout(resolve, ms);
+    });
+  }
 
   function normIso(v) {
     var s = String(v || "").trim().slice(0, 10);
@@ -88,24 +100,33 @@
             var area = String(s.pool_note || s.area || "").trim();
             var cn = normalizeMadreDashboardClient(s.client_name, area);
             var up = cn.toUpperCase();
+            // "NO PARTICIPANT" is a STANDING OPEN SLOT: the instructor works that block
+            // but nobody is booked. Emit it as an empty-client roster row so the roster
+            // merge + dashboard render the yellow "No Participant" card (and an override
+            // can later fill it, e.g. a make-up). CLOSED / NO CLIENT are genuine
+            // non-slots and stay dropped.
+            var isNoParticipant = up === "NO PARTICIPANT";
             if (
               !cn ||
               up === "CLOSED" ||
               up === "NO CLIENT" ||
-              up === "NO PARTICIPANT" ||
               up === "NO_CLIENT"
             ) {
               return;
             }
             rows.push({
-              client_name: cn,
+              client_name: isNoParticipant ? "" : cn,
               day: d.weekday,
               instructors: staffName,
               service: String(s.service || "").trim(),
-              area: cn === "HOME" ? "HOME" : area,
+              area: !isNoParticipant && cn === "HOME" ? "HOME" : area,
               time_slot: String(s.time_slot || "").trim(),
               venue: String(s.venue || "SwimFarm").trim(),
               session_date: d.sessionDate,
+              // Optional per-slot breakdown (e.g. Day Centre morning + Big Pool hour).
+              // Display-only: the slot stays ONE session for feedback / pay.
+              segments:
+                Array.isArray(s.segments) && s.segments.length ? s.segments : undefined,
             });
           });
         });
@@ -121,36 +142,79 @@
     if (!client || typeof client.from !== "function") {
       return Promise.resolve(null);
     }
-    return client
-      .from("portal_madre_document")
-      .select("document, revision, updated_at")
-      .eq("term_key", TERM_KEY)
-      .maybeSingle()
-      .then(function (res) {
-        if (res.error) {
-          console.warn("[portal_madre_document]", res.error);
-          return null;
-        }
-        if (!res.data || !res.data.document) return null;
-        CACHE = {
-          document: res.data.document,
-          revision: res.data.revision,
-          updated_at: res.data.updated_at,
-          rows: madreToAdapterRows(res.data.document),
-        };
-        CACHE_AT = Date.now();
-        global.PORTAL_MADRE_LIVE = CACHE;
-        return CACHE;
-      })
-      .catch(function (err) {
-        console.warn("[portal_madre_document]", err);
-        return null;
+    if (LOAD_INFLIGHT && !force) {
+      return LOAD_INFLIGHT;
+    }
+    // Raw REST GET with cache:"no-store" + no-cache request headers. The Supabase
+    // JS client's .select() is subject to browser HTTP caching, which could serve a
+    // stale portal_madre_document revision — the roster would briefly show correct
+    // (bundle) then flip to an old cached MADRE. no-store guarantees the freshest row.
+    function fetchDocRow() {
+      var base = String(supabaseUrl() || "").replace(/\/+$/, "");
+      if (!base) return Promise.resolve(null);
+      return authHeaders(client).then(function (h) {
+        // Bust the browser HTTP cache with request headers only. Do NOT append a
+        // query param (e.g. _ts): PostgREST treats unknown params as column filters
+        // and returns HTTP 400 ("column _ts does not exist"), which would make the
+        // live MADRE fetch fail and silently fall back to the stale bundle.
+        var headers = Object.assign({}, h, {
+          Accept: "application/vnd.pgrst.object+json",
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        });
+        var url =
+          base +
+          "/rest/v1/portal_madre_document?select=document,revision,updated_at&term_key=eq." +
+          encodeURIComponent(TERM_KEY);
+        return fetch(url, {
+          method: "GET",
+          cache: "no-store",
+          headers: headers,
+        }).then(function (resp) {
+          if (resp.status === 406) return null; // no row for single-object accept
+          if (!resp.ok) {
+            var e = new Error("HTTP " + resp.status);
+            e.httpStatus = resp.status;
+            throw e;
+          }
+          return resp.json();
+        });
       });
+    }
+    function fetchOnce(retried) {
+      return fetchDocRow()
+        .then(function (row) {
+          if (!row || !row.document) return null;
+          CACHE = {
+            document: row.document,
+            revision: row.revision,
+            updated_at: row.updated_at,
+            rows: madreToAdapterRows(row.document),
+          };
+          CACHE_AT = Date.now();
+          global.PORTAL_MADRE_LIVE = CACHE;
+          return CACHE;
+        })
+        .catch(function (err) {
+          if (!retried && isRetryableSupabaseError(err)) {
+            return delay(1200).then(function () {
+              return fetchOnce(true);
+            });
+          }
+          console.warn("[portal_madre_document]", err);
+          return null;
+        });
+    }
+    LOAD_INFLIGHT = fetchOnce(false).finally(function () {
+      LOAD_INFLIGHT = null;
+    });
+    return LOAD_INFLIGHT;
   }
 
   function invalidateLiveMadreCache() {
     CACHE = null;
     CACHE_AT = 0;
+    LOAD_INFLIGHT = null;
     global.PORTAL_MADRE_LIVE = null;
   }
 

@@ -28,6 +28,7 @@
 
   var CLIENT_INFO_SLUG_ALIASES = {
     adam_a: "adam_ab",
+    adam_abed: "adam_ab",
     abodi: "abodi_pa",
     junaid: "junaid_f",
     khalid_ab: "khalid",

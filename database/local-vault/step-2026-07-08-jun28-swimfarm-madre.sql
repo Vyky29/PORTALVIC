@@ -1,0 +1,17 @@
+-- Audit: domingo 2026-06-28 SwimFarm — corrección MADRE (28 jun realidad vs roster).
+-- Aplicado en repo: patch_roster_20260708_jun28_swimfarm.py + sync_roster_madre_to_portal.py
+--
+-- Cambios:
+--   dan (9 slots) → youssef / YOUSSEF (Dan no trabajó)
+--   javier (8 slots) → lulia / LULIYA (Javier no trabajó; Luliya cubrió piscina)
+--   9:30–10:15 Big Pool: Samer (Luliya), Yusuf Ah (Roberto 9–10:15), Adam Ab (Youssef)
+--   9:30–10:15 Hub: Jack W (John), Jack S + Zaid (Giuseppe)
+--   Eliminado Bismark Samer 9:30 Hub (no se impartió)
+--
+-- Feedback pendiente de alinear (si el portal sigue pidiendo mal):
+--   Jack S 9:30 hub → Giuseppe (portal_session_key: 2026-06-28|09:30|jack_s|hub_room)
+--   Samer 9:30 big_pool → Luliya (ya enviado bajo Aida Luliya)
+--   Bismark slot_clear Samer hub: ver step-2026-07-08-bismark-jun28-samer.sql
+--
+-- Live MADRE: tras push, ejecutar reconcile si hace falta:
+--   python3 database/roster_review/reconcile_live_madre_from_local.py --write

@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en-GB">
 <head>
-  <script src="/portal-static-bootstrap.js?v=20260605-form-redirect"></script>
+  <script src="/portal-static-bootstrap.js?v=20260705-handover-both-phases"></script>
   <link rel="stylesheet" href="/portal-shared-js/portal_subpage_mobile_vertical.css?v=20260609-venue-pickup-mobile" />
   <link rel="stylesheet" href="/portal-shared-js/portal_form_typography.css?v=20260609-form-type" />
   <script src="/portal-shared-js/portal_subpage_mobile_vertical.js?v=20260609-venue-pickup-mobile"></script>
@@ -372,6 +372,15 @@
     .pickup-roster-chip:hover{
       background:var(--goldSoft);
       border-color:rgba(124,58,237,.5);
+    }
+    .pickup-roster-chip--pickup{
+      border-color:rgba(21,128,61,.45);
+      background:#f0fdf4;
+      color:#166534;
+    }
+    .pickup-roster-chip--pickup:hover{
+      background:#dcfce7;
+      border-color:rgba(21,128,61,.6);
     }
     body.pickup-has-roster #pickupParticipantSearchBlock{
       display:none;
@@ -1265,9 +1274,17 @@
       const SUPABASE_URL = (window.SUPABASE_URL || 'https://cklpnwhlqsulpmkipmqb.supabase.co');
       const SUPABASE_KEY = (window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrbHBud2hscXN1bHBta2lwbXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMDg4NzIsImV4cCI6MjA5MTc4NDg3Mn0.-T7rVyDHQbzMqEKOVz6fi3OlZdB_gPH2i5p-ZPveopE');
       const TABLE = 'daily_handover_logs';
-      const client = window.supabase && window.supabase.createClient
-        ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
-        : null;
+      function resolvePickupClient(){
+        try{
+          const box = window.__PORTAL_SUPABASE__;
+          if(box && box.client) return box.client;
+        }catch(_){}
+        if(window.supabase && window.supabase.createClient){
+          return window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        }
+        return null;
+      }
+      const client = resolvePickupClient();
 
       const SOLO_MODE = document.documentElement.classList.contains('handover-solo');
 
@@ -1361,17 +1378,129 @@
       let remoteTableMissing = false;
       let handoverStaffContext = { userId: '', fullName: '' };
 
+      async function portalResolveAuthUserFromClient(sb){
+        if(!sb || !sb.auth) return { user: null, error: null };
+        let authUser = null;
+        try{
+          const { data: wrap0 } = await sb.auth.getSession();
+          const s0 = wrap0 && wrap0.session;
+          if(s0 && s0.user && s0.user.id) authUser = s0.user;
+          else{
+            try{ await sb.auth.refreshSession(); }catch(_e){}
+            const { data: wrap1 } = await sb.auth.getSession();
+            const s1 = wrap1 && wrap1.session;
+            if(s1 && s1.user && s1.user.id) authUser = s1.user;
+          }
+        }catch(_){}
+        if(!authUser){
+          try{
+            const { data: authData, error: authErr } = await sb.auth.getUser();
+            if(authErr) return { user: null, error: authErr };
+            authUser = authData && authData.user;
+          }catch(err){
+            return { user: null, error: err };
+          }
+        }
+        return { user: authUser, error: null };
+      }
+
+      function readBridgeSecretFromWindowOrHash(){
+        try{
+          if(typeof window.portalReadBridgeSecret === 'function'){
+            const shared = window.portalReadBridgeSecret();
+            if(shared) return shared;
+          }
+        }catch(_){}
+        try{
+          const raw = String(window.location.hash || '').replace(/^#/, '');
+          if(!raw) return '';
+          const sp = new URLSearchParams(raw.includes('=') ? raw : 'portal_bridge=' + raw);
+          const fromHash = String(sp.get('portal_bridge') || '').trim();
+          if(fromHash && fromHash !== '%%PB6%%' && fromHash.length >= 16) return fromHash;
+        }catch(_){}
+        try{
+          const stored = sessionStorage.getItem('clubsens_portal_bridge_v1') || localStorage.getItem('clubsens_portal_bridge_v1') || '';
+          const t = String(stored).trim();
+          if(t && t !== '%%PB6%%' && t.length >= 16) return t;
+        }catch(_){}
+        return '';
+      }
+
+      function readPinNameForHandover(){
+        try{
+          if(typeof window.portalReadPinDisplayName === 'function'){
+            const pn = String(window.portalReadPinDisplayName() || '').trim();
+            if(pn) return pn;
+          }
+        }catch(_){}
+        try{
+          const pin = window.__PORTAL_PIN_IDENTITY__;
+          if(pin && String(pin.displayName || '').trim()) return String(pin.displayName).trim();
+        }catch(_){}
+        const keys = ['clubsens_staff_session_v2', 'clubsens_lead_session_v2'];
+        for(let i = 0; i < keys.length; i++){
+          try{
+            const raw = localStorage.getItem(keys[i]);
+            if(!raw) continue;
+            const o = JSON.parse(raw);
+            if(o && String(o.displayName || '').trim()) return String(o.displayName).trim();
+          }catch(_){}
+        }
+        return String(handoverStaffContext.fullName || '').trim();
+      }
+
+      async function submitHandoverViaPinBridge(fullName, row){
+        const secret = readBridgeSecretFromWindowOrHash();
+        if(!secret || secret.length < 16) throw new Error('portal_bridge_missing');
+        const mod = await import('/portal/supabase-client.js?v=20260705-handover');
+        const endpoint = mod.getSupabaseFunctionUrl('portal-handover-submit');
+        const anonKey = mod.getSupabaseAnonKey();
+        if(!endpoint || !anonKey) throw new Error('supabase_not_configured');
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: anonKey,
+            Authorization: 'Bearer ' + anonKey,
+          },
+          body: JSON.stringify({
+            full_name: fullName,
+            portal_bridge_secret: secret,
+            handover: row,
+          }),
+        });
+        const body = await res.json().catch(function(){ return {}; });
+        if(!res.ok || !body || !body.ok){
+          const err = String((body && body.error) || '');
+          if(err === 'unknown_staff'){
+            throw new Error('Your name is not linked in staff_profiles yet. Ask an admin to add your profile, then try again.');
+          }
+          if(err === 'invalid_bridge_secret' || err === 'bridge_not_configured'){
+            throw new Error('portal_bridge_missing');
+          }
+          throw new Error(err || 'handover_submit_failed');
+        }
+        return body;
+      }
+
       async function resolveHandoverStaffContext(){
         let fullName = '';
         let userId = '';
         try{
-          const sp = new URLSearchParams(String(location.search || '').replace(/^\?/, ''));
-          fullName = String(sp.get('staff') || sp.get('completedBy') || '').trim();
+          const box = window.__PORTAL_SUPABASE__;
+          if(box && box.staff_profile){
+            userId = String(box.staff_profile.id || '').trim();
+            fullName = String(box.staff_profile.full_name || box.staff_profile.username || '').trim();
+          }
         }catch(_){}
-        if(client && client.auth && typeof client.auth.getUser === 'function'){
+        try{
+          const sp = new URLSearchParams(String(location.search || '').replace(/^\?/, ''));
+          if(!fullName) fullName = String(sp.get('staff') || sp.get('completedBy') || '').trim();
+        }catch(_){}
+        if(client && client.auth){
           try{
-            const { data: authData } = await client.auth.getUser();
-            const uid = authData && authData.user && authData.user.id;
+            const { user: authUser } = await portalResolveAuthUserFromClient(client);
+            const uid = authUser && authUser.id;
             if(uid){
               userId = uid;
               if(!fullName){
@@ -1383,6 +1512,7 @@
             }
           }catch(_){}
         }
+        if(!fullName) fullName = readPinNameForHandover();
         handoverStaffContext = { userId: userId, fullName: fullName };
         return handoverStaffContext;
       }
@@ -1511,7 +1641,7 @@
         try{
           await new Promise(function(resolve, reject){
             var s = document.createElement('script');
-            s.src = '/portal/staff_dashboard_spreadsheet_bundle.js?v=20260621-pickup-lead-roster';
+            s.src = '/portal/staff_dashboard_spreadsheet_bundle.js?v=roster-6ef2321573';
             s.onload = function(){ resolve(); };
             s.onerror = function(){ reject(new Error('roster bundle')); };
             document.head.appendChild(s);
@@ -1582,33 +1712,51 @@
         renderStaffHandoverLog();
       }
 
+      function normalizePickupTime(raw){
+        const t = String(raw == null ? '' : raw).trim();
+        const m = t.match(/^(\d{1,2}):(\d{2})/);
+        if(!m) return '';
+        let h = parseInt(m[1], 10);
+        let min = parseInt(m[2], 10);
+        if(Number.isNaN(h) || Number.isNaN(min)) return '';
+        if(h > 23) h = 23;
+        if(min > 59) min = 59;
+        return String(h).padStart(2, '0') + ':' + String(min).padStart(2, '0');
+      }
+
+      function findOpenHandoverForName(name){
+        const q = String(name || '').trim().toLowerCase();
+        if(!q) return null;
+        return read().find(function(r){
+          return isTodaySession(r.sessionDate) && isActiveHandover(r) &&
+            String(r.participantName || '').trim().toLowerCase() === q;
+        }) || null;
+      }
+
       function renderRosterTodayChips(){
         const wrap = document.getElementById('pickupRosterTodayWrap');
         const listEl = document.getElementById('pickupRosterTodayList');
         if(!wrap || !listEl) return;
-        const openHandoverKeys = new Set();
-        read().filter(function(r){
-          return isTodaySession(r.sessionDate) && isActiveHandover(r);
-        }).forEach(function(r){
-          openHandoverKeys.add(String(r.participantName || '').trim().toLowerCase());
-        });
-        const chips = rosterTodayNames.filter(function(nm){
-          return nm && !openHandoverKeys.has(nm.toLowerCase());
-        });
-        if(!chips.length){
+        if(!rosterTodayNames.length){
           wrap.hidden = true;
           listEl.innerHTML = '';
           return;
         }
         wrap.hidden = false;
         listEl.innerHTML = '';
-        chips.forEach(function(name){
+        rosterTodayNames.forEach(function(name){
+          const existing = findOpenHandoverForName(name);
+          const dropSaved = existing && isDropOffSaved(existing.values || {});
           const btn = document.createElement('button');
           btn.type = 'button';
-          btn.className = 'pickup-roster-chip';
+          btn.className = 'pickup-roster-chip' + (dropSaved ? ' pickup-roster-chip--pickup' : '');
           btn.setAttribute('role', 'listitem');
-          btn.textContent = name;
+          btn.textContent = dropSaved ? (name + ' · pick up') : (existing ? (name + ' · open') : name);
           btn.addEventListener('click', function(){
+            if(existing){
+              loadById(existing.id);
+              return;
+            }
             addNewParticipantFromInput(name);
           });
           listEl.appendChild(btn);
@@ -1644,7 +1792,7 @@
         var shared = (window.PORTAL_SHARED_JS_BASE || '/portal-shared-js').replace(/\/$/, '');
         try{
           await loadScript(shared + '/clients_info_embed.js?v=20260609-autofill');
-          await loadScript('/portal/staff_dashboard_spreadsheet_bundle.js?v=20260609-autofill');
+          await loadScript('/portal/staff_dashboard_spreadsheet_bundle.js?v=roster-6ef2321573');
           await loadScript(shared + '/participant_services.js?v=20260609-autofill');
           await loadScript(shared + '/portal_field_autocomplete.js?v=20260609-autofill');
           if(typeof window.portalWireFieldSuggest !== 'function') return;
@@ -2375,9 +2523,34 @@
       }
 
       async function upsertSupabaseRow(row){
-        if(!client || remoteTableMissing) return;
-        const upsertOpts = { onConflict: 'id' };
+        if(remoteTableMissing) return;
+        let usedBridge = false;
         try{
+          if(client){
+            const { user: authUser } = await portalResolveAuthUserFromClient(client);
+            if(!authUser || !authUser.id){
+              const pinName = readPinNameForHandover();
+              const secret = readBridgeSecretFromWindowOrHash();
+              if(pinName && secret){
+                await submitHandoverViaPinBridge(pinName, row);
+                usedBridge = true;
+              }
+            }
+          }else{
+            const pinName = readPinNameForHandover();
+            const secret = readBridgeSecretFromWindowOrHash();
+            if(pinName && secret){
+              await submitHandoverViaPinBridge(pinName, row);
+              usedBridge = true;
+            }
+          }
+          if(usedBridge){
+            setTimeout(function(){ pullTodayFromSupabase(); }, 300);
+            setTimeout(function(){ pullTodayFromSupabase(); }, 1500);
+            return;
+          }
+          if(!client) return;
+          const upsertOpts = { onConflict: 'id' };
           let error = null;
           let lastData = null;
           if(schemaMode === 'snake'){
@@ -2429,15 +2602,26 @@
               if(!error) schemaMode = 'snake';
             }
           }
-          if(error) throw error;
-          if(!lastData || !lastData.length){
+          if(error){
+            const pinName = readPinNameForHandover();
+            const secret = readBridgeSecretFromWindowOrHash();
+            if(pinName && secret){
+              await submitHandoverViaPinBridge(pinName, row);
+            }else{
+              throw error;
+            }
+          }else if(!lastData || !lastData.length){
             console.warn('Supabase upsert returned no row; check RLS SELECT after INSERT');
           }
           setTimeout(function(){ pullTodayFromSupabase(); }, 300);
           setTimeout(function(){ pullTodayFromSupabase(); }, 1500);
         } catch(err){
           if(isHandoverTableMissingError(err)) noteRemoteTableMissing(err);
-          else status.textContent = `Saved locally (${err.message || 'sync pending'})`;
+          else if(String(err && err.message || '') === 'portal_bridge_missing'){
+            status.textContent = 'Saved locally — open Pick up / Drop off from the staff hub after PIN login to sync.';
+          }else{
+            status.textContent = 'Saved locally (' + (err.message || 'sync pending') + ')';
+          }
         }
       }
 
@@ -2611,10 +2795,13 @@
             return false;
           }
         } else {
-          if(!String(o.pickupTime || '').trim()){
+          const pickTime = normalizePickupTime(o.pickupTime);
+          if(!pickTime){
             alert('Please enter the pick up time.');
             return false;
           }
+          get('pickupTime').value = pickTime;
+          o.pickupTime = pickTime;
           if(!String(o.pickupName || '').trim()){
             alert('Please enter Collected By.');
             return false;
@@ -2877,6 +3064,10 @@
 
       form.addEventListener('input', function(){
         syncNameRules();
+        const pn = get('participantName');
+        if(pn && document.activeElement === pn){
+          searchInput.value = val('participantName');
+        }
       });
 
       document.addEventListener('click', function(e){

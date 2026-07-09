@@ -13,6 +13,7 @@ import {
   sha256Hex,
 } from "../_shared/parent_portal_auth.ts";
 import { resolveParticipantAvatarUrls } from "../_shared/participant_avatar.ts";
+import { REENROL_ACADEMIC_YEAR } from "../_shared/reenrolment_catalog.ts";
 import {
   applyUnreadFlagsToMessages,
   countUnreadOutboundMessages,
@@ -133,6 +134,36 @@ Deno.serve(async (req) => {
     }),
   );
 
+  const contactIds = childrenOut
+    .map((c) => String(c.contact_id || "").trim())
+    .filter(Boolean);
+  const reenrolLatestByContact = new Map<string, string>();
+  if (contactIds.length) {
+    const { data: reenrolRows } = await supabase
+      .from("portal_re_enrolment_submissions")
+      .select("participant_contact_id, submitted_at")
+      .eq("academic_year", REENROL_ACADEMIC_YEAR)
+      .in("participant_contact_id", contactIds)
+      .order("submitted_at", { ascending: false });
+    for (const row of reenrolRows || []) {
+      const cid = String(row.participant_contact_id || "").trim();
+      if (cid && !reenrolLatestByContact.has(cid)) {
+        reenrolLatestByContact.set(cid, String(row.submitted_at || ""));
+      }
+    }
+  }
+  const childrenWithReenrol = childrenOut.map((c) => {
+    const cid = String(c.contact_id || "").trim();
+    const submittedAt = reenrolLatestByContact.get(cid) || null;
+    return {
+      ...c,
+      reenrolment: {
+        submitted: !!submittedAt,
+        submitted_at: submittedAt,
+      },
+    };
+  });
+
   const readAt = await getParentMessageReadAt(supabase, parentPersonId);
   const unread_messages_count = countUnreadOutboundMessages(outbound, readAt);
   const unread_by_contact_id = unreadOutboundCountByContact(
@@ -157,7 +188,7 @@ Deno.serve(async (req) => {
           postcode: parentMeta?.postcode ?? null,
         },
       },
-      children: childrenOut,
+      children: childrenWithReenrol,
       messages,
       unread_messages_count,
       unread_by_contact_id,

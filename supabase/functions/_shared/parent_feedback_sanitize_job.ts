@@ -57,9 +57,7 @@ function feedbackAttendanceIsAbsent(attendance: unknown): boolean {
 }
 
 function hasReviewableNotes(row: SessionFeedbackRow): boolean {
-  const pos = clean(row.positive_feedback, 2500);
-  const rel = clean(row.relevant_information, 2500);
-  return pos.length > 0 || rel.length > 0;
+  return clean(row.positive_feedback, 2500).length > 0;
 }
 
 export type ParticipantLite = {

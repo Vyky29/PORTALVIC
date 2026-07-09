@@ -8,6 +8,7 @@ Keeps May dated rows (session_date < 2026-06-01) from the bundle; replaces summe
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import subprocess
@@ -82,8 +83,6 @@ _SUNDAY_MA_REVERSE: dict[str, str] = {
     "12.15 to 1": "12.30 to 1.15",
     "1 to 2.15": "1.15 to 2",
 }
-SUNDAY_MA_LEADER_KEYS = frozenset({"berta", "john"})
-SUNDAY_MA_LEADER_LAST_END = "2.45"
 # Roberto last aquatic block 2.30–3.30 (6.5h Sunday) from this date; before that 2.30–3 (6h).
 ROBERTO_SUNDAY_EXTENDED_FROM = "2026-06-28"
 ROBERTO_SUNDAY_AQUATIC_LAST_END = "3.30"
@@ -112,7 +111,7 @@ def dedupe_adapter_rows(rows: list[dict]) -> list[dict]:
 
 
 def patch_term_session_time_slots(seed: dict) -> int:
-    """MWF Bespoke/Multi 4.15–6.15; Sunday MA support 9.15–14.15 (5h); Berta/John lead +15' → 2.45 end."""
+    """MWF Bespoke/Multi 4.15–6.15; Sunday MA support blocks use participant-facing slots (last 1.15–2)."""
     n = 0
     for w in seed.get("weeks", []):
         for st in w.get("staff", []):
@@ -133,21 +132,6 @@ def patch_term_session_time_slots(seed: dict) -> int:
                         n += 1
                 if wd != "Sunday":
                     continue
-                if staff_key in SUNDAY_MA_LEADER_KEYS:
-                    ma_slots = [
-                        s
-                        for s in slots
-                        if is_multi(s.get("service"))
-                        and clean(s.get("time_slot")).endswith(" to 2.15")
-                    ]
-                    if ma_slots:
-                        last = max(
-                            ma_slots, key=lambda x: parse_start_minutes(x.get("time_slot", ""))
-                        )
-                        ts = clean(last.get("time_slot"))
-                        if ts.endswith(" to 2.15"):
-                            last["time_slot"] = ts[: -len("2.15")] + SUNDAY_MA_LEADER_LAST_END
-                            n += 1
                 if staff_key == "roberto":
                     for s in slots:
                         if clean(s.get("time_slot")) == "2.30 to 3":
@@ -356,6 +340,49 @@ def patch_bundles(seed: dict, adapter_rows: list[dict], merges: list[dict], omit
         print(f"Patched bundle {path.relative_to(ROOT)} ({len(obj['rows'])} rows)")
 
 
+# Roster/shift data files that ship to the browser. Their `?v=` in the HTML that
+# loads them must change whenever the content changes, or phones keep serving a
+# stale cached roster (staff see the old timetable until the next full reset).
+CACHE_BUST_DATA_FILES = [
+    ROOT / "working_ui" / "portal" / "staff_dashboard_spreadsheet_bundle.js",
+    ROOT / "working_ui" / "portal" / "term_from_timetable.js",
+]
+CACHE_BUST_SCRIPT_NAMES = [
+    "staff_dashboard_spreadsheet_bundle.js",
+    "term_from_timetable.js",
+]
+CACHE_BUST_HTML_ROOT = ROOT / "working_ui"
+# Never rewrite read-only / archived copies.
+CACHE_BUST_SKIP_DIRS = ("backup_ui", "pre_split_backup", "archive")
+
+
+def bump_roster_cache_version() -> None:
+    """Content-hash the generated roster data and stamp it onto every
+    `?v=` that loads those files across working_ui HTML. Deterministic:
+    the token only changes when the roster content changes, so devices
+    fetch the fresh roster on next load without any sign-out."""
+    h = hashlib.md5()
+    for path in CACHE_BUST_DATA_FILES:
+        if path.exists():
+            h.update(path.read_bytes())
+    token = "roster-" + h.hexdigest()[:10]
+
+    name_re = "|".join(re.escape(n) for n in CACHE_BUST_SCRIPT_NAMES)
+    pattern = re.compile(r"((?:" + name_re + r")\?v=)[^\"'\s)&#]+")
+
+    changed = 0
+    for html in CACHE_BUST_HTML_ROOT.rglob("*.html"):
+        rel_parts = html.relative_to(ROOT).parts
+        if any(skip in rel_parts for skip in CACHE_BUST_SKIP_DIRS):
+            continue
+        text = html.read_text(encoding="utf-8")
+        new_text = pattern.sub(lambda m: m.group(1) + token, text)
+        if new_text != text:
+            html.write_text(new_text, encoding="utf-8")
+            changed += 1
+    print(f"Roster cache-bust token {token} → updated {changed} HTML file(s)")
+
+
 def main() -> None:
     if not MADRE.exists():
         raise SystemExit(f"Missing MADRE file: {MADRE}")
@@ -376,6 +403,8 @@ def main() -> None:
 
     subprocess.run([sys.executable, str(BOOT)], cwd=str(ROOT), check=True)
     subprocess.run(["node", str(BUILD_JS)], cwd=str(ROOT), check=True)
+
+    bump_roster_cache_version()
     print("Done. Commit + push → Vercel redeploy.")
 
 

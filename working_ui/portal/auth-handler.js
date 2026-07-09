@@ -37,7 +37,7 @@ import {
   mergeStaffLoginEmailMap,
   PORTAL_EXECUTIVE_AUTH_EMAILS,
   PORTAL_STAFF_CODE_TO_ROSTER_KEY,
-} from "./auth-map.js?v=20260707-login-cache";
+} from "./auth-map.js?v=20260708-aida-login-alias";
 
 function portalLoginPromiseTimeout(promise, ms, message) {
   const waitMs = Math.max(1000, Number(ms) || 15000);
@@ -106,7 +106,7 @@ export {
 } from "./supabase-client.js?v=20260707-login-cache";
 
 /** Bump to force a one-time sign-out + fresh login after a published portal build. */
-export const APP_VERSION = "2026-06-08-global-refresh-feedback-cache";
+export const APP_VERSION = "2026-07-05-live-madre-logout-all";
 export const PORTAL_APP_VERSION = APP_VERSION;
 const PORTAL_APP_VERSION_STORAGE_KEY = "cs_portal_app_version";
 const PORTAL_AUTH_VERSION_KEYS = [
@@ -750,12 +750,23 @@ export function enforceAppVersion() {
   if (!(window.location.pathname || "").toLowerCase().includes("login")) {
     let dest = "login.html?updated=1";
     try {
+      // Hubs re-route by role after login, so a `next` back to them is pointless.
+      // Standalone forms/subpages (venue report, feedback, cancellation, …) should
+      // send the user back to where they were before the one-time version reset.
+      const here = window.location.href;
+      const path = (window.location.pathname || "").toLowerCase();
+      const isHubDashboard =
+        /(?:^|\/)(?:staff_dashboard|admin_dashboard|ceo_dashboard|office_portal|portal_choose)\.html$/i.test(
+          path
+        ) ||
+        path === "/" ||
+        path === "";
       if (
-        portalUrlIsCsCliqPage(window.location.href) ||
-        portalUrlIsOnboardingFormPage(window.location.href)
+        portalUrlIsCsCliqPage(here) ||
+        portalUrlIsOnboardingFormPage(here) ||
+        !isHubDashboard
       ) {
-        dest = portalLoginUrlWithReturn(window.location.href);
-        const login = new URL(dest, window.location.href);
+        const login = new URL(portalLoginUrlWithReturn(here), here);
         login.searchParams.set("updated", "1");
         dest = login.href;
       }

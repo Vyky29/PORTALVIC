@@ -15,7 +15,18 @@ alwaysApply: false
 | **Multi-Activity / Climbing** | **No** — per instructor + area | separate unit keys |
 | **Yusuf / Cyrus** Aquatic + MA same instructor | **Yes** (merge group) | `feedbackMergeGroup` in status export |
 | **Aquatic** 2×30 min different instructors | **No** — two feedbacks | per slot/instructor |
+| **Sunday SwimFarm 90′ MA** — 45′ **Hub Room** (support) + 45′ **pool** (swimming instructor) | **No** — one feedback **per half / per instructor** | separate unit keys; absent is **per half**, not whole day unless admin confirms full no-show |
 | **Admin overrides** | Per override flow | admin sessions hub |
+
+## Split 90′ hub + pool (Sunday MA) — absence rule (confirmed Jul 2026)
+
+Typical layout: support worker **45′ Hub Room** with the client, then swimming instructor **45′ in the pool** (same 90′ roster block, two staff).
+
+1. **Each instructor owes their own feedback** for their half — present or absent. One marking absent does **not** auto-close the other half.
+2. **Per-half absent** — support marks absent for hub 45′; client may still arrive for pool 45′ (swimming instructor submits present). Or the reverse. Admin may mark absent on first half, second half, or both if they know the client truly did not attend at all.
+3. **Do not** convert a colleague’s pool feedback into another instructor’s present row (e.g. never reassign Luliya pool → Bismark hub absent case).
+4. **Quick marks + `session_feedback` attendance No** both resolve a half; conflicting present + absent for the same half is a data bug — fix, don’t count as pending.
+5. **Reference:** Jack S **2026-06-28** — absent (Bismark hub, Roberto pool marks); Samer same day taught (Luliya pool 9:30, Giuseppe hub 10:15).
 
 **Scope locked:** Bespoke shared is **automatic** for SwimFarm Hub + 2+ instructors — **not** a Tinashe-only hardcode (Tinashe slug is fallback only when roster lacks instructor list).
 

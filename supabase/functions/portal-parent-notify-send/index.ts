@@ -55,6 +55,7 @@ type NotifyBody = {
   parentWhatsapp?: unknown;
   subject?: unknown;
   body?: unknown;
+  whatsappBody?: unknown;
   clientDisplay?: unknown;
   sessionDate?: unknown;
   slotId?: unknown;
@@ -103,6 +104,8 @@ Deno.serve(async (req) => {
   const channel = parseChannel(payload.channel);
   const subject = str(payload.subject, 500);
   const bodyText = str(payload.body, 12000);
+  // Optional separate WhatsApp text (short) — falls back to the email body.
+  const whatsappBodyText = str(payload.whatsappBody, 4096) || bodyText;
   const parentEmail = str(payload.parentEmail, 320).toLowerCase();
   const parentPhoneRaw = str(payload.parentWhatsapp, 40);
   const parentPhone = normalizeParentPhoneE164(parentPhoneRaw);
@@ -169,7 +172,7 @@ Deno.serve(async (req) => {
         instructorPhotoName: instructorPhotoName || undefined,
         contextWaId: contextWaId || undefined,
       };
-    const sent = await sendParentMobileMessage(parentPhone!, bodyText, waOpts);
+    const sent = await sendParentMobileMessage(parentPhone!, whatsappBodyText, waOpts);
     if (sent.ok) {
       whatsappStatus = sent.channel === "sms" ? "sent_sms" : "sent";
       whatsappMessageId = sent.id;

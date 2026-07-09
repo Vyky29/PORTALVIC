@@ -330,7 +330,10 @@
       const svgAnn = noticeIconSvg('announcement');
       function appendAnnouncementSubcategory(subtitle, btn, variant){
         const wrap = document.createElement('div');
-        wrap.className = 'portal-quickmenu-announcement-sub portal-quickmenu-announcement-sub--' + (variant === 'pending' ? 'pending' : 'signed');
+        const variantClass = variant === 'pending'
+          ? 'pending'
+          : (variant === 'reference' ? 'reference' : 'signed');
+        wrap.className = 'portal-quickmenu-announcement-sub portal-quickmenu-announcement-sub--' + variantClass;
         const st = document.createElement('p');
         st.className = 'portal-quickmenu-announcement-subtitle';
         st.textContent = subtitle;
@@ -353,6 +356,21 @@
       const calendarItem = typeof portalCalendar202627NoticeItem === 'function'
         ? portalCalendar202627NoticeItem()
         : null;
+      // Reference (Calendar 2026/27) sits ABOVE the signature/announcement
+      // blocks so the always-there term calendar is the first thing in the
+      // Alerts/Notifications sheet, before any pending "Need your signature".
+      if(calendarItem){
+        appendAnnouncementSubcategory(
+          'Reference',
+          buildAnnouncementQuickRow(
+            'portalOpenCalendar202627',
+            'Calendar 2026/27',
+            'Term dates — Day Centre, after-schools & crash courses',
+            'menu-btn--calendar-ref'
+          ),
+          'reference'
+        );
+      }
       if(activeAnnouncementCount > 0){
         appendAnnouncementSubcategory(
           'Need your signature',
@@ -363,18 +381,6 @@
             'menu-btn--announcement-attention'
           ),
           'pending'
-        );
-      }
-      if(calendarItem){
-        appendAnnouncementSubcategory(
-          'Reference',
-          buildAnnouncementQuickRow(
-            'portalOpenCalendar202627',
-            'Calendar 2026/27',
-            'Term dates — Day Centre, after-schools & crash courses',
-            'menu-btn--calendar-ref'
-          ),
-          'signed'
         );
       }
       const signedHistoryRows = typeof portalSignedMessageHistoryRows === 'function'
@@ -702,6 +708,7 @@
       grid.style.setProperty('--today-name-fs', nameFs + 'px');
       grid.style.setProperty('--today-icon', iconPx + 'px');
       grid.style.setProperty('--today-area-icon', areaIconPx + 'px');
+      grid.style.setProperty('--today-note-size', areaIconPx + 'px');
       grid.style.setProperty('--today-area-label-fs', areaM.labelFs + 'px');
       grid.style.setProperty('--today-area-stack-gap', (areaM.stackGap != null ? areaM.stackGap : 0) + 'px');
       grid.style.setProperty('--today-area-label-block', (areaM.labelBlock != null ? areaM.labelBlock : 0) + 'px');
@@ -731,10 +738,9 @@
           if(todayDateLine) todayDateLine.textContent = '';
         }
       }
-      let count = Math.min(9, dashboardData.today.length || 0);
-      if(!count && typeof portalStaffLiveTodayAwaitingInitialSchedule === 'function' && portalStaffLiveTodayAwaitingInitialSchedule()){
-        count = 0;
-      }
+      const awaitingInitialToday = typeof portalStaffLiveTodayAwaitingInitialSchedule === 'function'
+        && portalStaffLiveTodayAwaitingInitialSchedule();
+      let count = awaitingInitialToday ? 0 : Math.min(9, dashboardData.today.length || 0);
       grid.className = 'today-grid';
       grid.setAttribute('data-session-count', String(count));
       if(!count){
@@ -835,7 +841,8 @@
         const card = document.createElement('button');
         card.type = 'button';
         const reviewCls = sessionReviewRowClass(item);
-        card.className = 'session-card' + (item.kind === 'available' ? ' session-card--available' : '') + ovTone + adminAdjCls + (ovTypeCls ? ' ' + ovTypeCls : '') + (reviewCls ? ' ' + reviewCls : '');
+        const segCls = (Array.isArray(item.segments) && item.segments.length) ? ' session-card--segments' : '';
+        card.className = 'session-card' + (item.kind === 'available' ? ' session-card--available' : '') + ovTone + adminAdjCls + (ovTypeCls ? ' ' + ovTypeCls : '') + (reviewCls ? ' ' + reviewCls : '') + segCls;
         card.setAttribute('role', 'listitem');
         if(item.sessionKey) card.setAttribute('data-session-key', String(item.sessionKey));
         const poolAria = (item.areaLabel && String(item.areaLabel).trim())
@@ -1491,11 +1498,19 @@
       const cell = calendarDateForWeekListDay(item.day);
       const iso = cell ? portalIsoYmdFromDate(cell) : '';
       const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+      const offRequested = iso && typeof portalStaffDayOffIsTimeOffRequested === 'function'
+        && portalStaffDayOffIsTimeOffRequested(iso, sid);
       if(typeof portalWeekListDayIsOff === 'function' && portalWeekListDayIsOff(item.day, sid)){
-        return 'off';
+        return offRequested ? 'off-requested' : 'off';
       }
       const dayFlags = portalDayOverrideBadgeFlags(item.day, iso);
-      if(weekRowTotalClients(item) <= 0) return 'off';
+      if(weekRowTotalClients(item) <= 0){
+        // Paid cancellation: the client's session was cancelled by admin but the staff
+        // is still paid (and rostered). Show a green "worked" row + the Cancelled chip
+        // instead of a red day off. A genuine unavailability day already returned above.
+        if(dayFlags.hasCancelled) return rel === 'past' ? 'work-done' : 'work';
+        return offRequested ? 'off-requested' : 'off';
+      }
       if(weekListHasPendingFeedbackForDay(item.day)) return 'work-feedback';
       if(dayFlags.hasMakeUp) return 'work-ov-pink';
       if(rel === 'past') return 'work-done';
@@ -1537,12 +1552,21 @@
       const ariaBits = [];
       const cell = calendarDateForWeekListDay(day);
       const iso = cell ? portalIsoYmdFromDate(cell) : '';
+      const weekRowSid = String(
+        (typeof portalAuthStaffRosterId === 'function' ? portalAuthStaffRosterId() : '')
+        || STAFF_DASHBOARD_ID
+        || ''
+      ).trim().toLowerCase();
+      const isOffRequested = iso && typeof portalStaffDayOffIsTimeOffRequested === 'function'
+        && portalStaffDayOffIsTimeOffRequested(iso, weekRowSid);
+      const offEmptyLabel = isOffRequested ? 'Off · requested' : 'Off';
+      const offAriaLabel = isOffRequested ? 'off, time off requested' : 'off';
       const dayFlags = portalDayOverrideBadgeFlags(day, iso);
       segments.forEach((seg, i) => {
         if(seg.count <= 0){
           if(i === 0 && segments.length === 1){
-            parts.push('<span class="week-venue-seg week-venue-seg--empty">Off</span>');
-            ariaBits.push('off');
+            parts.push('<span class="week-venue-seg week-venue-seg--empty">' + offEmptyLabel + '</span>');
+            ariaBits.push(offAriaLabel);
           }
           return;
         }
@@ -1557,8 +1581,8 @@
         ariaBits.push(`${seg.count} ${ariaPhrase} ${ariaVenue}`);
       });
       if(!parts.length){
-        parts.push('<span class="week-venue-seg week-venue-seg--empty">Off</span>');
-        ariaBits.push('off');
+        parts.push('<span class="week-venue-seg week-venue-seg--empty">' + offEmptyLabel + '</span>');
+        ariaBits.push(offAriaLabel);
       }
       const tone = weekRowVisualKind(item);
       const weekStaffId = String(
@@ -1885,6 +1909,28 @@
           if(iso && !seen[iso]){ seen[iso] = true; out.push(iso); }
         });
       });
+      // Union validated staff-requested days off from staff_unavailability
+      // (self-read via RLS; populated when admin validates a Session Disruption
+      // report). Only applies to the logged-in owner's own card so a lead viewing
+      // a teammate never inherits the viewer's days off.
+      try{
+        const dbDates = window.__PORTAL_STAFF_AWAY_DATES_DB__;
+        if(Array.isArray(dbDates) && dbDates.length){
+          const ownerId = String(window.__PORTAL_STAFF_AWAY_OWNER_ID__ || '').trim().toLowerCase();
+          const ownerKeys = ownerId
+            ? (typeof portalTermStaffProfileLookupKeys === 'function'
+                ? portalTermStaffProfileLookupKeys(ownerId)
+                : [ownerId])
+            : [];
+          const isOwner = ownerKeys.some(function(k){ return keys.indexOf(k) >= 0; });
+          if(isOwner){
+            dbDates.forEach(function(d){
+              const iso = String(d || '').trim().slice(0, 10);
+              if(iso && !seen[iso]){ seen[iso] = true; out.push(iso); }
+            });
+          }
+        }
+      }catch(_dbAway){}
       return out.sort();
     }
     /** Day off / time off requested by staff (term timetable away list only — not admin overrides). */
@@ -2294,7 +2340,21 @@
         const item = list[i];
         if(!item || !item.sessionKey) continue;
         if(item.kind === 'closed' || item.kind === 'available' || item.kind === 'home' || item.kind === 'manager' || item.kind === 'admin') continue;
-        if(item.noSessionFeedbackRequired) continue;
+        /* A client session known Absent/Cancelled (e.g. Bespoke shared Tinashe resolved by a
+           co-instructor) is flagged noSessionFeedbackRequired. It is a RESOLVED accountable
+           session — count it as handled instead of skipping, otherwise an all-absent day has
+           accountable=0 → "not all resolved" → the term cell stays orange while the halo (which
+           only checks the pending count) is already green. */
+        if(item.noSessionFeedbackRequired){
+          const rr = typeof getEffectiveSessionReviewRecord === 'function'
+            ? (getEffectiveSessionReviewRecord(item) || {})
+            : {};
+          const pill = String(item.portalOverrideAlertPill || '').trim().toUpperCase();
+          if(rr.absent || rr.cancelled || rr.feedbackDone || pill === 'ABSENT' || pill === 'CANCELLED'){
+            accountable++;
+          }
+          continue;
+        }
         const started = typeof isSessionStartedForItem === 'function' && isSessionStartedForItem(item);
         const ended = typeof isSessionEndedForFeedback === 'function' && isSessionEndedForFeedback(item);
         if(!started && !ended) continue;
@@ -2375,6 +2435,12 @@
         if(dashboardData && dashboardData.portalFeedbackServerSynced) srvPart = '1';
         const srv = dashboardData && dashboardData.portalServerResolvedRosterKeys;
         if(srv && srv.feedback) srvPart += ':' + srv.feedback.size;
+        /* Co-instructor ABSENT quick marks (e.g. Bespoke shared Tinashe) resolve a day even when
+           no feedback row / own memory changed. Without them here the rebuild is skipped and the
+           term cell stays orange after the peer absent sync arrives. */
+        if(srv && srv.absent) srvPart += ':a' + srv.absent.size;
+        const apk = dashboardData && dashboardData.portalServerAbsentQuickMarkKeys;
+        if(apk && typeof apk.size === 'number') srvPart += ':q' + apk.size;
       }catch(_){}
       let ovHydrated = '0';
       try{
@@ -3654,11 +3720,36 @@
         : getSessionReviewRecord(item)) || {};
       if(rec.cancelled || rec.absent || rec.feedbackDone) return;
       if(!portalStaffIsDemoAccount() && !isSessionEndedForFeedback(item)) return;
-      if(!confirm('Mark this session as absent? Feedback will no longer be required.')) return;
-      mergeSessionReview(item, prev => ({ ...prev, absent: true, feedbackDone: false }));
-      updateClientQuickActions();
-      if(typeof portalApplyAfterInSheetQuickAbsence === 'function') portalApplyAfterInSheetQuickAbsence(item);
-      else renderToday();
+      if(!confirm('Mark this session as absent? Feedback will no longer be required.\n\nThis only counts when it saves to the club server — not only on this phone.')) return;
+      const absBtn = document.getElementById('clientQuickAbsence');
+      if(absBtn){
+        absBtn.disabled = true;
+        absBtn.setAttribute('aria-busy', 'true');
+      }
+      const commit = typeof portalCommitClientQuickAbsence === 'function'
+        ? portalCommitClientQuickAbsence
+        : null;
+      if(!commit){
+        alert('Could not save absence — please refresh and try again.');
+        if(absBtn){
+          absBtn.disabled = false;
+          absBtn.removeAttribute('aria-busy');
+        }
+        return;
+      }
+      void commit(item).then(function(res){
+        if(absBtn) absBtn.removeAttribute('aria-busy');
+        if(!res || !res.ok){
+          alert('Absence did not save to the club server. Check your connection and try again — the session stays open until it saves.');
+          if(typeof updateClientQuickActions === 'function') updateClientQuickActions();
+          return;
+        }
+        if(typeof updateClientQuickActions === 'function') updateClientQuickActions();
+      }).catch(function(){
+        if(absBtn) absBtn.removeAttribute('aria-busy');
+        alert('Absence did not save to the club server. Check your connection and try again.');
+        if(typeof updateClientQuickActions === 'function') updateClientQuickActions();
+      });
     }
     function handleClientQuickAbsence(){
       const item = currentOpenClientItem;
@@ -4261,11 +4352,20 @@
       }
       const signBtn = e.target && e.target.closest ? e.target.closest('#announcementSignBtn') : null;
       if(signBtn){
+        e.preventDefault();
+        const chk = document.getElementById('announcementReadConfirm');
+        if(chk && !chk.checked) return;
         const key = String(signBtn.getAttribute('data-announcement-sign-key') || '').trim();
         if(!key) return;
         const pending = portalAnnouncementPendingItem();
         const expected = pending ? portalSignableSignatureKey(pending) : '';
-        if(!pending || key !== expected) return;
+        if(!pending || key !== expected){
+          try{ console.warn('[portal] announcement sign key mismatch', { key: key, expected: expected }); }catch(_){}
+          return;
+        }
+        const isProfileCampaign =
+          typeof portalSignableItemIsAnnualProfileCampaign === 'function' &&
+          portalSignableItemIsAnnualProfileCampaign(pending);
         if(typeof portalActivatePermissionsFromSignableItem === 'function'){
           void portalActivatePermissionsFromSignableItem(pending);
         }
@@ -4279,6 +4379,16 @@
             portalAdminReminderId: pending.portalAdminReminderId || ''
           };
           portalReminderAckMapSave(remAck);
+          if(isProfileCampaign && typeof portalAckAllAnnualProfileCampaignReminders === 'function'){
+            portalAckAllAnnualProfileCampaignReminders(
+              portalReminderAckMapLoad,
+              portalReminderAckMapSave,
+              dashboardData && dashboardData.portalRemindersFromAdmin,
+              typeof portalPersistReminderAckToSupabase === 'function'
+                ? portalPersistReminderAckToSupabase
+                : null
+            );
+          }
           if(typeof portalPersistReminderAckToSupabase === 'function'){
             void portalPersistReminderAckToSupabase(pending);
           }
@@ -4307,6 +4417,14 @@
         renderAnnouncementsSheetContent();
         if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
         if(typeof renderHeader === 'function') renderHeader();
+        if(isProfileCampaign){
+          if(typeof portalOpenAnnualProfileUpdate === 'function'){
+            void portalOpenAnnualProfileUpdate('staff_profile_update.html');
+          }else{
+            window.location.href = 'staff_profile_update.html';
+          }
+          return;
+        }
         var hideMs = isReminder ? null : portalAnnouncementHideDelayMs(pending);
         if(hideMs && hideMs > 0 && hideMs < 7 * 24 * 60 * 60 * 1000){
           setTimeout(function(){
@@ -4706,8 +4824,42 @@
         window.__PORTAL_STAFF_HIDDEN_AT__ = Date.now();
       }catch(_){}
     }
+    /* Installed PWAs (esp. iOS) resume the last in-memory page instead of doing a
+       fresh network load like a browser tab, so schedule edits/new deploys never
+       reach the worker. When the app is brought back to the foreground after being
+       backgrounded a while, do a real reload (HTML is no-store → fresh boot + roster
+       + live data). Guarded so we never interrupt an open sheet or active typing. */
+    var PORTAL_STAFF_RESUME_RELOAD_MS = 4 * 60 * 1000;
+    function portalStaffIsStandalonePwa(){
+      try{
+        if(window.navigator && window.navigator.standalone === true) return true;
+        if(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return true;
+        if(window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches) return true;
+        if(window.matchMedia && window.matchMedia('(display-mode: minimal-ui)').matches) return true;
+      }catch(_){}
+      return false;
+    }
+    function portalStaffShouldReloadOnResume(){
+      try{
+        if(!portalStaffIsStandalonePwa()) return false;
+        var tHid = Number(window.__PORTAL_STAFF_HIDDEN_AT__ || 0);
+        if(!(tHid > 0)) return false;
+        if(Date.now() - tHid < PORTAL_STAFF_RESUME_RELOAD_MS) return false;
+        if(document.querySelector('.sheet.open')) return false;
+        var ae = document.activeElement;
+        if(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(String(ae.tagName || ''))) return false;
+        if(ae && ae.isContentEditable) return false;
+        return true;
+      }catch(_){ return false; }
+    }
     document.addEventListener('visibilitychange', function(){
       if(document.visibilityState === 'visible'){
+        try{
+          if(portalStaffShouldReloadOnResume()){
+            window.location.reload();
+            return;
+          }
+        }catch(_){}
         try{
           if(typeof Notification !== 'undefined' && Notification.permission === 'granted' && typeof window.portalEnsureWebPushSubscription === 'function'){
             void window.portalEnsureWebPushSubscription();

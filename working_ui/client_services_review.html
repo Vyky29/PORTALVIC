@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Revisión de clientes y servicios</title>
+<!-- Admin-only gate: bridge auto-runs bootstrapDashboardSupabase({page:"admin"}),
+     which redirects to login (with return) for no session and to the role home
+     for non-admins. Content stays hidden until an admin session is confirmed. -->
+<style id="csr-auth-gate">
+  html:not(.portal-auth-ready) body > *:not(#csr-gate-loader){visibility:hidden!important}
+  html:not(.portal-auth-ready) body{background:#edf4fb!important}
+  #csr-gate-loader{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:14px;background:#edf4fb;
+    font:600 14px/1.35 system-ui,-apple-system,Segoe UI,sans-serif;color:#1e3a5f}
+  html.portal-auth-ready #csr-gate-loader{display:none!important}
+  #csr-gate-loader .sp{width:36px;height:36px;border:3px solid #c5d9ea;border-top-color:#2563eb;
+    border-radius:50%;animation:csrSpin .75s linear infinite}
+  @keyframes csrSpin{to{transform:rotate(360deg)}}
+</style>
+<script src="/portal/portal-admin-supabase-bridge.js?v=20260707-login-cache"></script>
+<script>
+  (function(){
+    function ready(){ document.documentElement.classList.add('portal-auth-ready'); }
+    window.addEventListener('portal:supabase-ready', ready, { once:true });
+    /* Safety: never leave a blank screen if bootstrap stalls on a slow network. */
+    setTimeout(ready, 12000);
+  })();
+</script>
+<style>
+  :root{
+    --bg:#0f1720; --panel:#ffffff; --ink:#0f1c2e; --muted:#64748b; --line:#e2e8f0;
+    --brand:#0ea5a4; --brand-ink:#0b7a79; --accent:#6366f1;
+    --ok:#16a34a; --ok-bg:#dcfce7; --warn:#d97706; --warn-bg:#fef3c7;
+    --edit:#4338ca; --edit-bg:#e0e7ff; --danger:#dc2626; --danger-bg:#fee2e2;
+    --shadow:0 1px 2px rgba(15,28,46,.06),0 8px 24px rgba(15,28,46,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:linear-gradient(180deg,#f1f5f9,#e2e8f0 40%,#eef2f7);
+    color:var(--ink); -webkit-font-smoothing:antialiased; padding:0 0 80px;
+  }
+  header.top{
+    position:sticky; top:0; z-index:20; background:rgba(255,255,255,.92);
+    backdrop-filter:saturate(1.4) blur(8px); border-bottom:1px solid var(--line);
+    box-shadow:var(--shadow);
+  }
+  .top-inner{max-width:1200px;margin:0 auto;padding:14px 18px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .title{display:flex;flex-direction:column;min-width:0;margin-right:auto}
+  .title h1{font-size:18px;margin:0;letter-spacing:-.2px}
+  .title p{margin:2px 0 0;font-size:12px;color:var(--muted)}
+  .stat{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);white-space:nowrap}
+  .stat b{color:var(--ink)}
+  .search{position:relative}
+  .search input{
+    width:230px;max-width:52vw;padding:9px 12px 9px 34px;border:1px solid var(--line);
+    border-radius:10px;font-size:14px;background:#fff;color:var(--ink)
+  }
+  .search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.45}
+  .btn{
+    border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;
+    padding:9px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;
+    transition:transform .04s ease, box-shadow .15s ease, background .15s ease
+  }
+  .btn:hover{box-shadow:var(--shadow)}
+  .btn:active{transform:translateY(1px)}
+  .btn.brand{background:var(--brand);border-color:var(--brand);color:#fff}
+  .btn.ghost{background:transparent}
+  .btn.sm{padding:6px 10px;font-size:12px;border-radius:9px}
+  .wrap{max-width:1200px;margin:18px auto 0;padding:0 18px}
+  table{width:100%;border-collapse:separate;border-spacing:0 10px}
+  thead th{
+    text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+    padding:0 14px 4px;position:sticky;top:64px;background:transparent;z-index:5
+  }
+  tbody tr.client{background:var(--panel);box-shadow:var(--shadow)}
+  tbody tr.client>td{padding:14px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);vertical-align:top}
+  tbody tr.client>td:first-child{border-left:1px solid var(--line);border-radius:14px 0 0 14px}
+  tbody tr.client>td:last-child{border-right:1px solid var(--line);border-radius:0 14px 14px 0}
+  tr.client.validated>td{background:var(--ok-bg)}
+  tr.client.dirty>td{box-shadow:inset 3px 0 0 var(--edit)}
+  .cell-name{width:190px;min-width:150px}
+  .name{font-weight:750;font-size:15px;word-break:break-word;overflow-wrap:anywhere;min-width:0}
+  .name-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px}
+  .chip.ok{background:var(--ok-bg);color:var(--ok)}
+  .chip.warn{background:var(--warn-bg);color:var(--warn)}
+  .chip.count{background:#eef2ff;color:var(--accent)}
+  .cell-actions{width:150px;min-width:130px}
+  .actions{display:flex;flex-direction:column;gap:8px}
+
+  .svc-list{display:flex;flex-direction:column;gap:10px;min-width:0}
+  .svc{
+    border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fbfdff;min-width:0;
+    display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:start
+  }
+  .svc .svc-main{min-width:0}
+  .svc-name{font-weight:750;font-size:14.5px;color:var(--brand-ink);word-break:break-word;overflow-wrap:anywhere}
+  .svc-when{margin-top:3px;font-size:13px;color:var(--ink)}
+  .svc-when .day{font-weight:650}
+  .svc-when .slot{color:var(--muted)}
+  .svc-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:650;padding:3px 8px;border-radius:8px;background:#eef2f7;color:#334155;max-width:100%;min-width:0}
+  .pill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px}
+  .pill.i{background:#e0e7ff;color:#3730a3}
+  .pill.v{background:#dcfce7;color:#166534}
+  .pill.a{background:#fef3c7;color:#92400e}
+  .svc-del{align-self:start}
+
+  /* edit mode */
+  .svc.editing{grid-template-columns:1fr;background:#fff;border-color:var(--edit-bg);box-shadow:inset 0 0 0 1px var(--edit-bg)}
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .field{display:flex;flex-direction:column;gap:3px;min-width:0}
+  .field label{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700}
+  .field input,.field select{
+    width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:#fff;color:var(--ink);min-width:0
+  }
+  .field.full{grid-column:1 / -1}
+  .dur-preview{font-size:12px;color:var(--brand-ink);font-weight:700}
+  .add-row{margin-top:2px}
+  .muted{color:var(--muted);font-size:12px}
+  .empty{padding:30px;text-align:center;color:var(--muted)}
+  #csr-toast{
+    position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);
+    max-width:min(560px,92vw);z-index:99998;opacity:0;pointer-events:none;
+    background:#0f1c2e;color:#fff;border-radius:12px;padding:12px 16px;font-size:13.5px;font-weight:600;
+    box-shadow:0 10px 30px rgba(15,28,46,.28);transition:opacity .2s ease,transform .2s ease;
+    overflow-wrap:anywhere
+  }
+  #csr-toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+  #csr-toast.err{background:#7f1d1d}
+  #csr-toast.ok{background:#14532d}
+  @media (max-width:720px){
+    thead{display:none}
+    tbody tr.client{display:block;margin-bottom:14px}
+    tbody tr.client>td{display:block;width:auto;border:none!important;border-radius:0!important}
+    tbody tr.client>td:first-child{border-radius:14px 14px 0 0!important}
+    tbody tr.client>td:last-child{border-radius:0 0 14px 14px!important}
+    .cell-name,.cell-actions{width:auto}
+    .actions{flex-direction:row;flex-wrap:wrap}
+  }
+</style>
+</head>
+<body>
+<div id="csr-gate-loader" role="status" aria-live="polite" aria-busy="true">
+  <div class="sp" aria-hidden="true"></div>
+  <span>Comprobando acceso…</span>
+</div>
+<div id="csr-toast" role="status" aria-live="polite"></div>
+<header class="top">
+  <div class="top-inner">
+    <div class="title">
+      <h1>Revisión de clientes y servicios</h1>
+      <p id="sub"></p>
+    </div>
+    <div class="stat">Validados <b><span id="nVal">0</span>/<span id="nTot">0</span></b></div>
+    <div class="search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input id="q" type="search" placeholder="Buscar cliente, servicio, instructor…" />
+    </div>
+    <button class="btn ghost sm" id="expandAll">Editar todo</button>
+    <button class="btn ghost sm" id="collapseAll">Cerrar edición</button>
+    <button class="btn sm" id="importBtn">Importar</button>
+    <button class="btn sm" id="csvBtn">Exportar CSV</button>
+    <button class="btn sm" id="jsonBtn">Exportar JSON</button>
+    <button class="btn brand sm" id="publishBtn" title="Guarda estos servicios en Supabase para que los padres vean el número correcto">↑ Publicar al portal</button>
+    <input id="importFile" type="file" accept="application/json" style="display:none" />
+  </div>
+</header>
+
+<main class="wrap">
+  <table>
+    <thead>
+      <tr>
+        <th class="cell-name">Nombre</th>
+        <th>Servicios</th>
+        <th class="cell-actions">Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <div id="empty" class="empty" hidden>Sin resultados.</div>
+</main>
+
+<script id="seed" type="application/json">{"generatedAt":"2026-07-05T21:51:01.868Z","range":{"from":"2026-06-15","to":"2026-07-05"},"options":{"services":["Aquatic Activity","Bespoke Programme","Climbing Activity","Day Centre","Multi-Activity","Physical Activity"],"venues":["Acton","Northolt","SwimFarm","Westway"],"areas":["Big Pool","Climbing Wall","Gym","HOME","Hub Room","Hub · Manager","Lane","Lane (DE)","Lane (DE)/(SE)","Lane (SE)","Pools","Room 2","Small Pool","Swallow End","Teaching Pool","Wall"],"days":["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],"instructors":["ALEX","ANGEL","AURORA","BERTA","BISMARK","CARLOS","DAN","GIUSEPPE","GODSWAY","JAVI","JAVIER","JOHN","LULIYA","MICHELLE","RAUL","ROBERTO","SANDRA","SIMON","VICTOR","YOUSSEF"]},"clients":[{"name":"Abodi Pa","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"5.30 to 6.30","durationMin":60,"instructor":"YOUSSEF","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"ACAT","validated":false,"sessions":[{"service":"Day Centre","day":"Monday","timeSlot":"11 to 12","durationMin":60,"instructor":"ROBERTO","venue":"SwimFarm","area":"Hub Room","weeks":3}]},{"name":"Adaam Ah","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"6 to 6.30","durationMin":30,"instructor":"DAN","venue":"Northolt","area":"Teaching Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"12.30 to 1.15","durationMin":45,"instructor":"GODSWAY","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"1.15 to 2","durationMin":45,"instructor":"ROBERTO","venue":"SwimFarm","area":"Big Pool","weeks":3}]},{"name":"Adam Ab","validated":false,"sessions":[{"service":"Multi-Activity","day":"Wednesday","timeSlot":"4.30 to 5.15","durationMin":45,"instructor":"GIUSEPPE","venue":"Acton","area":"Room 2","weeks":3},{"service":"Multi-Activity","day":"Wednesday","timeSlot":"5.15 to 6","durationMin":45,"instructor":"JAVIER","venue":"Acton","area":"Teaching Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"9.30 to 10.15","durationMin":45,"instructor":"DAN","venue":"SwimFarm","area":"Small Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"10.15 to 11","durationMin":45,"instructor":"JOHN","venue":"SwimFarm","area":"Hub Room","weeks":3}]},{"name":"Adam Me","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"4.30 to 5","durationMin":30,"instructor":"JAVIER","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Adam P","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"4 to 5.30","durationMin":90,"instructor":"ANGEL","venue":"Acton","area":"Teaching Pool","weeks":3},{"service":"Aquatic Activity","day":"Friday","timeSlot":"4 to 5.30","durationMin":90,"instructor":"ROBERTO","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Amaar Ah","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Friday","timeSlot":"5.30 to 6","durationMin":30,"instructor":"ROBERTO","venue":"Acton","area":"Teaching Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"12.30 to 1.15","durationMin":45,"instructor":"ROBERTO","venue":"SwimFarm","area":"Big Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"1.15 to 2","durationMin":45,"instructor":"GODSWAY","venue":"SwimFarm","area":"Hub Room","weeks":3}]},{"name":"Amar Rai","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"5 to 6","durationMin":60,"instructor":"ROBERTO","venue":"Northolt","area":"Teaching Pool","weeks":3},{"service":"Aquatic Activity","day":"Wednesday","timeSlot":"5 to 6","durationMin":60,"instructor":"ROBERTO","venue":"Northolt","area":"Teaching Pool","weeks":3}]},{"name":"Amber","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Wednesday","timeSlot":"6 to 6.30","durationMin":30,"instructor":"ROBERTO","venue":"Northolt","area":"Teaching Pool","weeks":3}]},{"name":"Amir","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"5 to 5.30","durationMin":30,"instructor":"ANGEL","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Aqsa","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Thursday","timeSlot":"4.30 to 5.30","durationMin":60,"instructor":"AURORA","venue":"Acton","area":"Lane (DE)","weeks":3}]},{"name":"Arthur Ma","validated":false,"sessions":[{"service":"Multi-Activity","day":"Sunday","timeSlot":"11 to 11.45","durationMin":45,"instructor":"DAN","venue":"SwimFarm","area":"Small Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"11.45 to 12.30","durationMin":45,"instructor":"JOHN","venue":"SwimFarm","area":"Hub Room","weeks":3}]},{"name":"Arthur Mo","validated":false,"sessions":[{"service":"Multi-Activity","day":"Sunday","timeSlot":"11 to 11.45","durationMin":45,"instructor":"GODSWAY","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"11.45 to 12.30","durationMin":45,"instructor":"ROBERTO","venue":"SwimFarm","area":"Big Pool","weeks":3}]},{"name":"Ayaan","validated":false,"sessions":[{"service":"Physical Activity","day":"Monday","timeSlot":"4 to 5","durationMin":60,"instructor":"SANDRA","venue":"Westway","area":"Gym","weeks":3}]},{"name":"Aydaan Ah","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"5.30 to 6","durationMin":30,"instructor":"AURORA","venue":"Acton","area":"Lane (SE)","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"12.30 to 1.15","durationMin":45,"instructor":"DAN","venue":"SwimFarm","area":"Big Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"1.15 to 2","durationMin":45,"instructor":"JOHN","venue":"SwimFarm","area":"Hub Room","weeks":3}]},{"name":"Ayden W","validated":false,"sessions":[{"service":"Climbing Activity","day":"Sunday","timeSlot":"2 to 3","durationMin":60,"instructor":"ALEX","venue":"Westway","area":"Wall","weeks":3}]},{"name":"Ayman","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"4 to 4.30","durationMin":30,"instructor":"JAVIER","venue":"Acton","area":"Lane (DE)","weeks":3},{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"4.30 to 5","durationMin":30,"instructor":"YOUSSEF","venue":"Acton","area":"Lane (DE)","weeks":3},{"service":"Aquatic Activity","day":"Thursday","timeSlot":"4 to 5","durationMin":60,"instructor":"JAVIER","venue":"Acton","area":"Lane (DE)/(SE)","weeks":3}]},{"name":"Bediako","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"4.30 to 5","durationMin":30,"instructor":"AURORA","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Cayra","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"4.30 to 5","durationMin":30,"instructor":"ANGEL","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Cyrus","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Wednesday","timeSlot":"4 to 4.30","durationMin":30,"instructor":"JAVIER","venue":"Acton","area":"Teaching Pool","weeks":3},{"service":"Multi-Activity","day":"Wednesday","timeSlot":"4.30 to 5.15","durationMin":45,"instructor":"JAVIER","venue":"Acton","area":"Teaching Pool","weeks":3},{"service":"Multi-Activity","day":"Wednesday","timeSlot":"5.15 to 6","durationMin":45,"instructor":"GIUSEPPE","venue":"Acton","area":"Room 2","weeks":3},{"service":"Bespoke Programme","day":"Thursday","timeSlot":"3.30 to 5","durationMin":90,"instructor":"VICTOR","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"11 to 11.45","durationMin":45,"instructor":"JOHN","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"11.45 to 12.30","durationMin":45,"instructor":"DAN","venue":"SwimFarm","area":"Small Pool","weeks":3}]},{"name":"Eddie","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"4.30 to 5","durationMin":30,"instructor":"YOUSSEF","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Eiji","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"5.30 to 6","durationMin":30,"instructor":"JAVIER","venue":"Acton","area":"Lane (DE)","weeks":3},{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"6 to 6.30","durationMin":30,"instructor":"ROBERTO","venue":"Acton","area":"Lane (DE)","weeks":3},{"service":"Aquatic Activity","day":"Thursday","timeSlot":"5.30 to 6.30","durationMin":60,"instructor":"SIMON","venue":"Acton","area":"Lane (DE)","weeks":3},{"service":"Climbing Activity","day":"Sunday","timeSlot":"10 to 11","durationMin":60,"instructor":"ALEX","venue":"Westway","area":"Wall","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"11 to 11.45","durationMin":45,"instructor":"GIUSEPPE","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"11.45 to 12.30","durationMin":45,"instructor":"JAVIER","venue":"SwimFarm","area":"Big Pool","weeks":3}]},{"name":"Elijah","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Thursday","timeSlot":"4 to 4.30","durationMin":30,"instructor":"AURORA","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Emani","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Saturday","timeSlot":"10.30 to 11","durationMin":30,"instructor":"YOUSSEF","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Emmanuel","validated":false,"sessions":[{"service":"Day Centre","day":"Monday","timeSlot":"11 to 12.30","durationMin":90,"instructor":"MICHELLE","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Day Centre","day":"Monday","timeSlot":"12.30 to 1.30","durationMin":60,"instructor":"YOUSSEF","venue":"SwimFarm","area":"Big Pool","weeks":1},{"service":"Day Centre","day":"Monday","timeSlot":"12.30 to 4","durationMin":210,"instructor":"RAUL","venue":"SwimFarm","area":"Hub · Manager","weeks":1},{"service":"Day Centre","day":"Monday","timeSlot":"1.30 to 4","durationMin":150,"instructor":"RAUL","venue":"SwimFarm","area":"Hub Room","weeks":2},{"service":"Day Centre","day":"Monday","timeSlot":"12,30 to 1.20","durationMin":null,"instructor":"YOUSSEF","venue":"SwimFarm","area":"Big Pool","weeks":2},{"service":"Day Centre","day":"Wednesday","timeSlot":"11 to 4","durationMin":300,"instructor":"MICHELLE","venue":"SwimFarm","area":"Hub Room","weeks":2},{"service":"Day Centre","day":"Wednesday","timeSlot":"11 to 12.30","durationMin":90,"instructor":"VICTOR","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Wednesday","timeSlot":"12.30 to 1.30","durationMin":60,"instructor":"YOUSSEF","venue":"SwimFarm","area":"Big Pool","weeks":1},{"service":"Day Centre","day":"Wednesday","timeSlot":"1.30 to 2","durationMin":30,"instructor":"VICTOR","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Wednesday","timeSlot":"2 to 4","durationMin":120,"instructor":"RAUL","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Friday","timeSlot":"11 to 4","durationMin":300,"instructor":"MICHELLE","venue":"SwimFarm","area":"Hub Room","weeks":2},{"service":"Day Centre","day":"Friday","timeSlot":"11 to 12.30","durationMin":90,"instructor":"MICHELLE","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Friday","timeSlot":"12.30 to 1.30","durationMin":60,"instructor":"YOUSSEF","venue":"SwimFarm","area":"Big Pool","weeks":1},{"service":"Day Centre","day":"Friday","timeSlot":"3 to 4","durationMin":60,"instructor":"VICTOR","venue":"SwimFarm","area":"Hub Room","weeks":2}]},{"name":"Erik","validated":false,"sessions":[{"service":"Multi-Activity","day":"Sunday","timeSlot":"12.30 to 1.15","durationMin":45,"instructor":"JOHN","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"1.15 to 2","durationMin":45,"instructor":"DAN","venue":"SwimFarm","area":"Big Pool","weeks":3}]},{"name":"Fadi","validated":false,"sessions":[{"service":"Day Centre","day":"Monday","timeSlot":"12.30 to 3","durationMin":150,"instructor":"ROBERTO","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Day Centre","day":"Monday","timeSlot":"12.30 to 1,30","durationMin":null,"instructor":"RAUL","venue":"SwimFarm","area":"Hub · Manager","weeks":1},{"service":"Day Centre","day":"Monday","timeSlot":"1.30 to 3","durationMin":90,"instructor":"YOUSSEF","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Day Centre","day":"Tuesday","timeSlot":"12.30 to 3","durationMin":150,"instructor":"ROBERTO","venue":"SwimFarm","area":"Hub Room","weeks":6},{"service":"Day Centre","day":"Wednesday","timeSlot":"12.30 to 3","durationMin":150,"instructor":"ROBERTO","venue":"SwimFarm","area":"Hub Room","weeks":5},{"service":"Day Centre","day":"Wednesday","timeSlot":"12.30 to 1.30","durationMin":60,"instructor":"VICTOR","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Wednesday","timeSlot":"1.30 to 3","durationMin":90,"instructor":"YOUSSEF","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Thursday","timeSlot":"12.30 to 3","durationMin":150,"instructor":"RAUL","venue":"SwimFarm","area":"Hub Room","weeks":6},{"service":"Day Centre","day":"Friday","timeSlot":"12.30 to 3","durationMin":150,"instructor":"ROBERTO","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Day Centre","day":"Friday","timeSlot":"1 to 3","durationMin":120,"instructor":"VICTOR","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Friday","timeSlot":"1.30 to 3","durationMin":90,"instructor":"YOUSSEF","venue":"SwimFarm","area":"Hub Room","weeks":1}]},{"name":"Faris","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Sunday","timeSlot":"2.30 to 3","durationMin":30,"instructor":"DAN","venue":"SwimFarm","area":"Big Pool","weeks":3}]},{"name":"Gabriel","validated":false,"sessions":[{"service":"Multi-Activity","day":"Sunday","timeSlot":"11 to 11.45","durationMin":45,"instructor":"ROBERTO","venue":"SwimFarm","area":"Big Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"11.45 to 12.30","durationMin":45,"instructor":"GODSWAY","venue":"SwimFarm","area":"Hub Room","weeks":3}]},{"name":"Gemma","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"5 to 5.30","durationMin":30,"instructor":"DAN","venue":"Northolt","area":"Teaching Pool","weeks":3}]},{"name":"Haneef","validated":false,"sessions":[{"service":"Multi-Activity","day":"Sunday","timeSlot":"12.30 to 1.15","durationMin":45,"instructor":"GIUSEPPE","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"1.15 to 2","durationMin":45,"instructor":"JAVIER","venue":"SwimFarm","area":"Small Pool","weeks":3}]},{"name":"Hazem","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"5.30 to 6","durationMin":30,"instructor":"ROBERTO","venue":"Acton","area":"Lane (DE)","weeks":3},{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"6 to 6.30","durationMin":30,"instructor":"AURORA","venue":"Acton","area":"Lane (DE)","weeks":3},{"service":"Aquatic Activity","day":"Thursday","timeSlot":"5.30 to 6","durationMin":30,"instructor":"AURORA","venue":"Acton","area":"Lane (DE)","weeks":3},{"service":"Aquatic Activity","day":"Thursday","timeSlot":"6 to 6.30","durationMin":30,"instructor":"JAVIER","venue":"Acton","area":"Lane (DE)","weeks":3},{"service":"Climbing Activity","day":"Sunday","timeSlot":"10 to 11","durationMin":60,"instructor":"JAVIER","venue":"Westway","area":"Wall","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"11 to 11.45","durationMin":45,"instructor":"JAVIER","venue":"SwimFarm","area":"Big Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"11.45 to 12.30","durationMin":45,"instructor":"GIUSEPPE","venue":"SwimFarm","area":"Hub Room","weeks":3}]},{"name":"Ikram","validated":false,"sessions":[{"service":"Day Centre","day":"Monday","timeSlot":"11 to 12.30","durationMin":90,"instructor":"YOUSSEF","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Day Centre","day":"Monday","timeSlot":"11 to 4","durationMin":300,"instructor":"LULIYA","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Day Centre","day":"Monday","timeSlot":"12.30 to 4","durationMin":210,"instructor":"MICHELLE","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Day Centre","day":"Tuesday","timeSlot":"11 to 4","durationMin":300,"instructor":"LULIYA","venue":"SwimFarm","area":"Hub Room","weeks":6},{"service":"Day Centre","day":"Wednesday","timeSlot":"11 to 4","durationMin":300,"instructor":"LULIYA","venue":"SwimFarm","area":"Hub Room","weeks":5},{"service":"Day Centre","day":"Wednesday","timeSlot":"11 to 12.30","durationMin":90,"instructor":"YOUSSEF","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Wednesday","timeSlot":"12.30 to 4","durationMin":210,"instructor":"RAUL","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Wednesday","timeSlot":"2 to 4","durationMin":120,"instructor":"VICTOR","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Friday","timeSlot":"11 to 4","durationMin":300,"instructor":"LULIYA","venue":"SwimFarm","area":"Hub Room","weeks":5},{"service":"Day Centre","day":"Friday","timeSlot":"11 to 12.30","durationMin":90,"instructor":"YOUSSEF","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Friday","timeSlot":"12.30 to 4","durationMin":210,"instructor":"MICHELLE","venue":"SwimFarm","area":"Hub Room","weeks":1}]},{"name":"Jack S","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"11 to 12","durationMin":60,"instructor":"ROBERTO","venue":"SwimFarm","area":"ACAT","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"9.30 to 10.15","durationMin":45,"instructor":"JAVIER","venue":"SwimFarm","area":"Big Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"10.15 to 11","durationMin":45,"instructor":"GIUSEPPE","venue":"SwimFarm","area":"Hub Room","weeks":3}]},{"name":"Jack W","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"11 to 12","durationMin":60,"instructor":"ROBERTO","venue":"SwimFarm","area":"ACAT","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"9.30 to 10.15","durationMin":45,"instructor":"JOHN","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"10.15 to 11","durationMin":45,"instructor":"DAN","venue":"SwimFarm","area":"Big Pool","weeks":3}]},{"name":"Jad","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"4 to 4.30","durationMin":30,"instructor":"ROBERTO","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Junaid","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"5 to 5.30","durationMin":30,"instructor":"AURORA","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Kareena","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"6 to 6.30","durationMin":30,"instructor":"JAVIER","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Karo","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Thursday","timeSlot":"5.30 to 6","durationMin":30,"instructor":"JAVIER","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Kayden","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Wednesday","timeSlot":"6 to 6.30","durationMin":30,"instructor":"JAVIER","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Khalid Ab","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Thursday","timeSlot":"5 to 5.30","durationMin":30,"instructor":"JAVIER","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Linda","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"5 to 5.30","durationMin":30,"instructor":"JAVIER","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Logan","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"5 to 5.30","durationMin":30,"instructor":"YOUSSEF","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Maiyar","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Thursday","timeSlot":"6 to 6.30","durationMin":30,"instructor":"AURORA","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Mario","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"6 to 6.30","durationMin":30,"instructor":"ANGEL","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Matthias","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Saturday","timeSlot":"11 to 12","durationMin":60,"instructor":"YOUSSEF","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Max","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Sunday","timeSlot":"2 to 2.30","durationMin":30,"instructor":"JAVIER","venue":"SwimFarm","area":"Small Pool","weeks":3}]},{"name":"Mia","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Wednesday","timeSlot":"5.30 to 6.30","durationMin":60,"instructor":"DAN","venue":"Northolt","area":"Teaching Pool","weeks":3}]},{"name":"Mohammed","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Thursday","timeSlot":"5.30 to 6.30","durationMin":60,"instructor":"ROBERTO","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Patrick","validated":false,"sessions":[{"service":"Climbing Activity","day":"Sunday","timeSlot":"2 to 3","durationMin":60,"instructor":"JAVIER","venue":"Westway","area":"Wall","weeks":3}]},{"name":"Rayan Ta","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"5.30 to 6","durationMin":30,"instructor":"ANGEL","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Rayyan Fi","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"5.30 to 6.30","durationMin":60,"instructor":"YOUSSEF","venue":"Acton","area":"Lane (SE)","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"12.30 to 1.15","durationMin":45,"instructor":"JAVIER","venue":"SwimFarm","area":"Small Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"1.15 to 2","durationMin":45,"instructor":"GIUSEPPE","venue":"SwimFarm","area":"Hub Room","weeks":3}]},{"name":"Richard","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"6 to 6.30","durationMin":30,"instructor":"ANGEL","venue":"Acton","area":"Lane (DE)","weeks":3}]},{"name":"Rodin","validated":false,"sessions":[{"service":"Climbing Activity","day":"Sunday","timeSlot":"1 to 2","durationMin":60,"instructor":"ALEX","venue":"Westway","area":"Wall","weeks":3},{"service":"Aquatic Activity","day":"Sunday","timeSlot":"2 to 2.30","durationMin":30,"instructor":"ROBERTO","venue":"SwimFarm","area":"Big Pool","weeks":3}]},{"name":"Ruben","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Wednesday","timeSlot":"5 to 5.30","durationMin":30,"instructor":"DAN","venue":"Northolt","area":"Teaching Pool","weeks":3}]},{"name":"Saaib","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Saturday","timeSlot":"12 to 12.30","durationMin":30,"instructor":"YOUSSEF","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Samer","validated":false,"sessions":[{"service":"Multi-Activity","day":"Sunday","timeSlot":"9.30 to 10.15","durationMin":45,"instructor":"GODSWAY","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"10.15 to 11","durationMin":45,"instructor":"ROBERTO","venue":"SwimFarm","area":"Big Pool","weeks":3}]},{"name":"Scott","validated":false,"sessions":[{"service":"Multi-Activity","day":"Wednesday","timeSlot":"4.30 to 5.15","durationMin":45,"instructor":"BERTA","venue":"Acton","area":"Room 2","weeks":3},{"service":"Multi-Activity","day":"Wednesday","timeSlot":"5.15 to 6","durationMin":45,"instructor":"YOUSSEF","venue":"Acton","area":"Teaching Pool","weeks":3},{"service":"Climbing Activity","day":"Sunday","timeSlot":"12 to 1","durationMin":60,"instructor":"ALEX","venue":"Westway","area":"Wall","weeks":3}]},{"name":"Serine","validated":false,"sessions":[{"service":"Physical Activity","day":"Monday","timeSlot":"5 to 6","durationMin":60,"instructor":"SANDRA","venue":"Westway","area":"Gym","weeks":3},{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"4.30 to 5.30","durationMin":60,"instructor":"ROBERTO","venue":"Acton","area":"Lane (DE)","weeks":3},{"service":"Climbing Activity","day":"Sunday","timeSlot":"12 to 1","durationMin":60,"instructor":"JAVIER","venue":"Westway","area":"Wall","weeks":3}]},{"name":"Shaan","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Sunday","timeSlot":"2.30 to 3","durationMin":30,"instructor":"JAVIER","venue":"SwimFarm","area":"Small Pool","weeks":3}]},{"name":"Shire","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Sunday","timeSlot":"9 to 9.30","durationMin":30,"instructor":"JAVIER","venue":"SwimFarm","area":"Small Pool","weeks":3}]},{"name":"Simon","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Sunday","timeSlot":"9 to 9.30","durationMin":30,"instructor":"DAN","venue":"SwimFarm","area":"Small Pool","weeks":3}]},{"name":"Stephanie","validated":false,"sessions":[{"service":"Multi-Activity","day":"Wednesday","timeSlot":"4.30 to 5.15","durationMin":45,"instructor":"YOUSSEF","venue":"Acton","area":"Teaching Pool","weeks":3},{"service":"Multi-Activity","day":"Wednesday","timeSlot":"5.15 to 6","durationMin":45,"instructor":"BERTA","venue":"Acton","area":"Room 2","weeks":3}]},{"name":"Steven","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"5.30 to 6","durationMin":30,"instructor":"ANGEL","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Thushyan","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Thursday","timeSlot":"4.30 to 5","durationMin":30,"instructor":"SIMON","venue":"Acton","area":"Lane (DE)","weeks":3}]},{"name":"Timi","validated":false,"sessions":[{"service":"Day Centre","day":"Monday","timeSlot":"11 to 1","durationMin":120,"instructor":"RAUL","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Monday","timeSlot":"12 to 12.30","durationMin":30,"instructor":"ROBERTO","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Monday","timeSlot":"1 to 3","durationMin":120,"instructor":"RAUL","venue":"SwimFarm","area":"Hub Room","weeks":2},{"service":"Day Centre","day":"Friday","timeSlot":"11 to 1","durationMin":120,"instructor":"VICTOR","venue":"SwimFarm","area":"Hub Room","weeks":2},{"service":"Day Centre","day":"Friday","timeSlot":"1 to 3","durationMin":120,"instructor":"RAUL","venue":"SwimFarm","area":"Hub Room","weeks":2}]},{"name":"Tinashe","validated":false,"sessions":[{"service":"Bespoke Programme","day":"Monday","timeSlot":"4.30 to 6","durationMin":90,"instructor":"BISMARK","venue":"SwimFarm","area":"Hub Room","weeks":9},{"service":"Bespoke Programme","day":"Wednesday","timeSlot":"4.30 to 6","durationMin":90,"instructor":"BISMARK","venue":"SwimFarm","area":"Hub Room","weeks":9},{"service":"Bespoke Programme","day":"Friday","timeSlot":"4.30 to 6","durationMin":90,"instructor":"BISMARK","venue":"SwimFarm","area":"Hub Room","weeks":9}]},{"name":"Tom","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Thursday","timeSlot":"4 to 4.30","durationMin":30,"instructor":"ROBERTO","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Tyson","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Wednesday","timeSlot":"4.30 to 5","durationMin":30,"instructor":"DAN","venue":"Northolt","area":"Teaching Pool","weeks":3}]},{"name":"Vithura","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Wednesday","timeSlot":"4.30 to 5","durationMin":30,"instructor":"ROBERTO","venue":"Northolt","area":"Teaching Pool","weeks":3}]},{"name":"Yamik","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"6 to 6.30","durationMin":30,"instructor":"ROBERTO","venue":"Northolt","area":"Teaching Pool","weeks":3}]},{"name":"Yassir","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Thursday","timeSlot":"4.30 to 5","durationMin":30,"instructor":"ROBERTO","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Yoan","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Sunday","timeSlot":"2.30 to 3.30","durationMin":60,"instructor":"ROBERTO","venue":"SwimFarm","area":"Big Pool","weeks":3}]},{"name":"Yossi","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Thursday","timeSlot":"5 to 5.30","durationMin":30,"instructor":"ROBERTO","venue":"Acton","area":"Lane (DE)","weeks":3}]},{"name":"Yunis","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"4.30 to 5","durationMin":30,"instructor":"ROBERTO","venue":"Northolt","area":"Teaching Pool","weeks":3}]},{"name":"Yuri","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Thursday","timeSlot":"5 to 5.30","durationMin":30,"instructor":"SIMON","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Yusuf Ah","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Sunday","timeSlot":"9 to 9.30","durationMin":30,"instructor":"ROBERTO","venue":"SwimFarm","area":"Small Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"9.30 to 10.15","durationMin":45,"instructor":"ROBERTO","venue":"SwimFarm","area":"Big Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"10.15 to 11","durationMin":45,"instructor":"GODSWAY","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Climbing Activity","day":"Sunday","timeSlot":"11 to 12","durationMin":60,"instructor":"ALEX","venue":"Westway","area":"Wall","weeks":3}]},{"name":"Zaid","validated":false,"sessions":[{"service":"Multi-Activity","day":"Sunday","timeSlot":"9.30 to 10.15","durationMin":45,"instructor":"GIUSEPPE","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"10.15 to 11","durationMin":45,"instructor":"JAVIER","venue":"SwimFarm","area":"Small Pool","weeks":3},{"service":"Climbing Activity","day":"Sunday","timeSlot":"11 to 12","durationMin":60,"instructor":"JAVIER","venue":"Westway","area":"Wall","weeks":3}]},{"name":"Zakariya","validated":false,"sessions":[{"service":"Climbing Activity","day":"Sunday","timeSlot":"1 to 2","durationMin":60,"instructor":"JAVIER","venue":"Westway","area":"Wall","weeks":3},{"service":"Aquatic Activity","day":"Sunday","timeSlot":"2 to 2.30","durationMin":30,"instructor":"DAN","venue":"SwimFarm","area":"Big Pool","weeks":3}]},{"name":"Zayana","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"5.30 to 6","durationMin":30,"instructor":"DAN","venue":"Northolt","area":"Teaching Pool","weeks":3}]}]}</script>
+<script>
+(function(){
+  "use strict";
+  var SEED = JSON.parse(document.getElementById('seed').textContent);
+  var LS_KEY = 'portal_client_services_review_v1';
+  var OPTS = SEED.options;
+
+  function loadState(){
+    try{
+      var raw = localStorage.getItem(LS_KEY);
+      if(raw){
+        var s = JSON.parse(raw);
+        if(s && Array.isArray(s.clients)) return s;
+      }
+    }catch(_){}
+    return JSON.parse(JSON.stringify(SEED));
+  }
+  var STATE = loadState();
+  var editing = Object.create(null); // clientIdx -> Set of sessionIdx being edited (or 'all')
+
+  function save(){
+    try{ localStorage.setItem(LS_KEY, JSON.stringify(STATE)); }catch(_){}
+  }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+  function slotMinutes(slot){
+    var m = String(slot||'').split(/to|-|—/i);
+    if(m.length!==2) return null;
+    function p(x){ var mm=String(x||'').trim().match(/^(\d{1,2})(?:[.:](\d{1,2}))?$/); if(!mm) return null; return parseInt(mm[1],10)*60 + (mm[2]?parseInt(mm[2],10):0); }
+    var a=p(m[0]), b=p(m[1]); if(a==null||b==null) return null; if(b<=a) b+=720; return b-a;
+  }
+  function svcTitle(sess){
+    var d = slotMinutes(sess.timeSlot);
+    var pre = (d!=null? d+"' " : '');
+    return pre + (sess.service||'—');
+  }
+
+  /** Canonical programme name for billing grouping (mirror of the Edge Function). */
+  function canonProg(raw){
+    var t = String(raw||'').trim();
+    var p = t.toLowerCase().replace(/\s+/g,' ');
+    if(/multi[\s_-]*activity|splash[\s&+]+connect/.test(p)) return 'Multi-Activity';
+    if(/\bfitness\b|physical\s+act/.test(p)) return 'Physical Activity';
+    if(/\bclimb(ing)?\b/.test(p)) return 'Climbing Activity';
+    if(/\baquatic|swim|pool/.test(p)) return 'Aquatic Activity';
+    return t;
+  }
+  /** Billable services = distinct (programme + weekday); staff/cover splits collapse to one. */
+  function billableCount(sessions){
+    var set = Object.create(null);
+    (sessions||[]).forEach(function(s){
+      if(!s || !String(s.service||'').trim()) return;
+      set[(canonProg(s.service)+'|'+String(s.day||'')).toLowerCase()] = true;
+    });
+    return Object.keys(set).length;
+  }
+
+  function optionsHtml(list, current){
+    var out = '<option value=""></option>';
+    var found=false;
+    list.forEach(function(o){
+      var sel = String(o)===String(current) ? ' selected':''; if(sel) found=true;
+      out += '<option value="'+esc(o)+'"'+sel+'>'+esc(o)+'</option>';
+    });
+    if(current && !found) out += '<option value="'+esc(current)+'" selected>'+esc(current)+' (actual)</option>';
+    return out;
+  }
+
+  function sessionViewHtml(ci, si, sess){
+    return ''+
+      '<div class="svc-main">'+
+        '<div class="svc-name">'+esc(svcTitle(sess))+'</div>'+
+        '<div class="svc-when"><span class="day">'+esc(sess.day||'—')+'</span> · <span class="slot">'+esc(sess.timeSlot||'—')+'</span></div>'+
+        '<div class="svc-meta">'+
+          '<span class="pill i" title="Instructor">👤 <span>'+esc(sess.instructor||'—')+'</span></span>'+
+          '<span class="pill v" title="Venue">📍 <span>'+esc(sess.venue||'—')+'</span></span>'+
+          '<span class="pill a" title="Nota / área">📝 <span>'+esc(sess.area||'—')+'</span></span>'+
+        '</div>'+
+      '</div>'+
+      '<div class="svc-del"><button class="btn ghost sm" data-act="editSvc" data-ci="'+ci+'" data-si="'+si+'">Editar</button></div>';
+  }
+  function sessionEditHtml(ci, si, sess){
+    var d = slotMinutes(sess.timeSlot);
+    return ''+
+      '<div class="grid">'+
+        '<div class="field full"><label>Servicio</label><select data-f="service" data-ci="'+ci+'" data-si="'+si+'">'+optionsHtml(OPTS.services, sess.service)+'</select></div>'+
+        '<div class="field"><label>Día de la semana</label><select data-f="day" data-ci="'+ci+'" data-si="'+si+'">'+optionsHtml(OPTS.days, sess.day)+'</select></div>'+
+        '<div class="field"><label>Time slot <span class="dur-preview" data-dur="'+ci+'-'+si+'">'+(d!=null?("· "+d+"'"):"")+'</span></label><input data-f="timeSlot" data-ci="'+ci+'" data-si="'+si+'" value="'+esc(sess.timeSlot)+'" placeholder="4.30 to 5.15" /></div>'+
+        '<div class="field"><label>Instructor</label><select data-f="instructor" data-ci="'+ci+'" data-si="'+si+'">'+optionsHtml(OPTS.instructors, sess.instructor)+'</select></div>'+
+        '<div class="field"><label>Venue</label><select data-f="venue" data-ci="'+ci+'" data-si="'+si+'">'+optionsHtml(OPTS.venues, sess.venue)+'</select></div>'+
+        '<div class="field full"><label>Nota / área</label><select data-f="area" data-ci="'+ci+'" data-si="'+si+'">'+optionsHtml(OPTS.areas, sess.area)+'</select></div>'+
+      '</div>'+
+      '<div class="svc-meta" style="margin-top:10px;justify-content:flex-end;gap:8px">'+
+        '<button class="btn ghost sm" data-act="delSvc" data-ci="'+ci+'" data-si="'+si+'" style="color:var(--danger)">Eliminar</button>'+
+        '<button class="btn brand sm" data-act="doneSvc" data-ci="'+ci+'" data-si="'+si+'">Hecho</button>'+
+      '</div>';
+  }
+
+  function isEditing(ci, si){
+    var e = editing[ci];
+    return e === 'all' || (e && e.has && e.has(si));
+  }
+
+  function clientRowHtml(client, ci){
+    var val = !!client.validated;
+    var dirty = !!client._dirty;
+    var svc = (client.sessions||[]).map(function(sess, si){
+      var ed = isEditing(ci, si);
+      return '<div class="svc'+(ed?' editing':'')+'">'+ (ed? sessionEditHtml(ci,si,sess) : sessionViewHtml(ci,si,sess)) +'</div>';
+    }).join('');
+    if(!svc) svc = '<div class="muted">Sin servicios — añade uno.</div>';
+    var rawLines = client.sessions?client.sessions.length:0;
+    var bill = billableCount(client.sessions);
+    var badges = ''+
+      (val? '<span class="chip ok">✓ Validado</span>' : '<span class="chip warn">Pendiente</span>')+
+      '<span class="chip count" title="'+rawLines+' líneas de rota (turnos/covers)">'+bill+' servicio(s)'+
+        (rawLines!==bill? ' · '+rawLines+' líneas' : '')+'</span>';
+    return ''+
+      '<tr class="client'+(val?' validated':'')+(dirty?' dirty':'')+'" data-ci="'+ci+'">'+
+        '<td class="cell-name">'+
+          '<div class="name">'+esc(client.name)+'</div>'+
+          '<div class="name-badges">'+badges+'</div>'+
+        '</td>'+
+        '<td>'+
+          '<div class="svc-list">'+svc+'</div>'+
+          '<div class="add-row"><button class="btn ghost sm" data-act="addSvc" data-ci="'+ci+'">+ Añadir servicio</button></div>'+
+        '</td>'+
+        '<td class="cell-actions"><div class="actions">'+
+          (val
+            ? '<button class="btn sm" data-act="unvalidate" data-ci="'+ci+'">Quitar validación</button>'
+            : '<button class="btn brand sm" data-act="validate" data-ci="'+ci+'">Validar</button>')+
+          '<button class="btn ghost sm" data-act="editAll" data-ci="'+ci+'">'+(editing[ci]==='all'?'Cerrar edición':'Editar todo')+'</button>'+
+        '</div></td>'+
+      '</tr>';
+  }
+
+  var rowsEl = document.getElementById('rows');
+  var emptyEl = document.getElementById('empty');
+  function currentFilter(){ return String(document.getElementById('q').value||'').trim().toLowerCase(); }
+  function matches(client, q){
+    if(!q) return true;
+    if(client.name.toLowerCase().indexOf(q)>=0) return true;
+    return (client.sessions||[]).some(function(s){
+      return [s.service,s.day,s.timeSlot,s.instructor,s.venue,s.area].join(' ').toLowerCase().indexOf(q)>=0;
+    });
+  }
+  function render(){
+    var q = currentFilter();
+    var html = '';
+    var shown = 0;
+    STATE.clients.forEach(function(c, ci){
+      if(!matches(c,q)) return;
+      shown++;
+      html += clientRowHtml(c, ci);
+    });
+    rowsEl.innerHTML = html;
+    emptyEl.hidden = shown>0;
+    var nVal = STATE.clients.filter(function(c){return c.validated;}).length;
+    document.getElementById('nVal').textContent = nVal;
+    document.getElementById('nTot').textContent = STATE.clients.length;
+    document.getElementById('sub').textContent = 'Rota '+SEED.range.from+' → '+SEED.range.to+' · '+STATE.clients.length+' clientes · edita día, slot, instructor, venue y nota';
+  }
+
+  // event delegation
+  rowsEl.addEventListener('click', function(ev){
+    var b = ev.target.closest('button[data-act]');
+    if(!b) return;
+    var ci = parseInt(b.getAttribute('data-ci'),10);
+    var si = b.hasAttribute('data-si') ? parseInt(b.getAttribute('data-si'),10) : null;
+    var act = b.getAttribute('data-act');
+    var c = STATE.clients[ci]; if(!c) return;
+    if(act==='validate'){ c.validated=true; c._dirty=false; delete editing[ci]; save(); render(); }
+    else if(act==='unvalidate'){ c.validated=false; save(); render(); }
+    else if(act==='editAll'){ editing[ci] = (editing[ci]==='all') ? undefined : 'all'; render(); }
+    else if(act==='editSvc'){ if(editing[ci]==='all'){/*noop*/} else { editing[ci]=editing[ci]||new Set(); editing[ci].add(si);} render(); }
+    else if(act==='doneSvc'){ if(editing[ci] && editing[ci].delete) editing[ci].delete(si); save(); render(); }
+    else if(act==='addSvc'){
+      c.sessions = c.sessions||[];
+      c.sessions.push({service:'',day:'',timeSlot:'',instructor:'',venue:'',area:'',weeks:0});
+      c._dirty=true; c.validated=false;
+      editing[ci]=editing[ci]==='all'?'all':(editing[ci]||new Set());
+      if(editing[ci]!=='all') editing[ci].add(c.sessions.length-1);
+      save(); render();
+    }
+    else if(act==='delSvc'){
+      if(c.sessions && c.sessions.length>si){ c.sessions.splice(si,1); c._dirty=true; c.validated=false; }
+      if(editing[ci] && editing[ci].delete) editing[ci].delete(si);
+      save(); render();
+    }
+  });
+
+  rowsEl.addEventListener('input', function(ev){
+    var el = ev.target.closest('[data-f]');
+    if(!el) return;
+    var ci = parseInt(el.getAttribute('data-ci'),10);
+    var si = parseInt(el.getAttribute('data-si'),10);
+    var f = el.getAttribute('data-f');
+    var c = STATE.clients[ci]; if(!c||!c.sessions||!c.sessions[si]) return;
+    c.sessions[si][f] = el.value;
+    c._dirty = true; c.validated = false;
+    if(f==='timeSlot'){
+      var dur = slotMinutes(el.value);
+      var lbl = rowsEl.querySelector('[data-dur="'+ci+'-'+si+'"]');
+      if(lbl) lbl.textContent = dur!=null ? ("· "+dur+"'") : '';
+    }
+    save();
+  });
+
+  document.getElementById('q').addEventListener('input', render);
+  document.getElementById('expandAll').addEventListener('click', function(){
+    STATE.clients.forEach(function(_,ci){ editing[ci]='all'; }); render();
+  });
+  document.getElementById('collapseAll').addEventListener('click', function(){
+    editing = Object.create(null); render();
+  });
+
+  function download(name, text, type){
+    var blob = new Blob([text], {type:type||'text/plain'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 100);
+  }
+  document.getElementById('jsonBtn').addEventListener('click', function(){
+    var clean = JSON.parse(JSON.stringify(STATE));
+    clean.clients.forEach(function(c){ delete c._dirty; c.sessions.forEach(function(s){ s.durationMin = slotMinutes(s.timeSlot); }); });
+    download('clientes_servicios_revisado.json', JSON.stringify(clean,null,2), 'application/json');
+  });
+  document.getElementById('csvBtn').addEventListener('click', function(){
+    var rows = [['Cliente','Validado','Servicio','Duracion_min','Dia','Time_slot','Instructor','Venue','Nota_area','Semanas']];
+    STATE.clients.forEach(function(c){
+      if(!c.sessions.length){ rows.push([c.name, c.validated?'SI':'NO','','','','','','','','']); return; }
+      c.sessions.forEach(function(s){
+        rows.push([c.name, c.validated?'SI':'NO', s.service, (slotMinutes(s.timeSlot)||''), s.day, s.timeSlot, s.instructor, s.venue, s.area, (s.weeks||'')]);
+      });
+    });
+    var csv = rows.map(function(r){ return r.map(function(x){ var v=String(x==null?'':x); return /[",\n]/.test(v)?('"'+v.replace(/"/g,'""')+'"'):v; }).join(','); }).join('\n');
+    download('clientes_servicios_revisado.csv', '\ufeff'+csv, 'text/csv');
+  });
+  // ---- Publish to parent portal (Supabase upsert with the admin session) ----
+  var toastTimer = null;
+  function showToast(msg, kind){
+    var el = document.getElementById('csr-toast');
+    if(!el) return;
+    el.textContent = msg;
+    el.className = 'show ' + (kind==='err'?'err':(kind==='ok'?'ok':''));
+    if(toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ el.className = el.className.replace('show','').trim(); }, kind==='err'?7000:4500);
+  }
+  function slugKey(name){
+    return String(name||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+  }
+  function normName(name){
+    return String(name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
+  }
+  function getAdminClient(){
+    try{ return (window.portalAdminGetSupabaseClient && window.portalAdminGetSupabaseClient()) || null; }catch(_){ return null; }
+  }
+  function buildPublishPayload(){
+    var seen = Object.create(null);
+    return STATE.clients.map(function(c){
+      var name = String(c.name||'').trim();
+      if(!name) return null;
+      var key = slugKey(name);
+      if(!key || seen[key]) return null; // avoid duplicate client_key in the same batch
+      seen[key] = true;
+      var sessions = (c.sessions||[]).map(function(s){
+        return {
+          service:String(s.service||'').trim(), day:String(s.day||'').trim(),
+          timeSlot:String(s.timeSlot||'').trim(), durationMin:slotMinutes(s.timeSlot),
+          instructor:String(s.instructor||'').trim(), venue:String(s.venue||'').trim(),
+          area:String(s.area||'').trim(), weeks:(s.weeks!=null?s.weeks:null)
+        };
+      });
+      return {
+        client_key:key, client_name:name, client_name_norm:normName(name),
+        sessions:sessions, services_count:sessions.length, source:'roster_review',
+        term_label:'Summer Term 2026',
+        range_from:(SEED.range&&SEED.range.from)||null, range_to:(SEED.range&&SEED.range.to)||null,
+        validated:!!c.validated
+      };
+    }).filter(function(r){ return r && r.client_key; });
+  }
+  document.getElementById('publishBtn').addEventListener('click', function(){
+    var client = getAdminClient();
+    if(!client || typeof client.from !== 'function'){
+      showToast('Sesión admin no lista todavía. Espera unos segundos y reintenta.', 'err');
+      return;
+    }
+    var payload = buildPublishPayload();
+    if(!payload.length){ showToast('No hay clientes para publicar.', 'err'); return; }
+    if(!confirm('¿Publicar '+payload.length+' clientes al portal de padres?\n\nEsto actualiza el número de servicios que ven los padres.')) return;
+    var btn = this; var prev = btn.textContent; btn.disabled = true; btn.textContent = 'Publicando…';
+    client.from('portal_participant_service_lines').upsert(payload, { onConflict:'client_key' })
+      .then(function(res){
+        if(res.error) throw res.error;
+        showToast('Publicado: '+payload.length+' clientes actualizados en el portal.', 'ok');
+      })
+      .catch(function(err){
+        console.error('[publish]', err);
+        showToast('Error al publicar: '+((err&&err.message)||'desconocido'), 'err');
+      })
+      .then(function(){ btn.disabled = false; btn.textContent = prev; });
+  });
+
+  document.getElementById('importBtn').addEventListener('click', function(){ document.getElementById('importFile').click(); });
+  document.getElementById('importFile').addEventListener('change', function(ev){
+    var f = ev.target.files && ev.target.files[0]; if(!f) return;
+    var r = new FileReader();
+    r.onload = function(){ try{ var s=JSON.parse(r.result); if(s&&Array.isArray(s.clients)){ STATE=s; save(); editing=Object.create(null); render(); } }catch(e){ alert('JSON inválido'); } };
+    r.readAsText(f);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

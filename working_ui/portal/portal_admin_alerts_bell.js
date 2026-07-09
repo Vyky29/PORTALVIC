@@ -1,6 +1,7 @@
 /**
- * Admin topbar bell — incidents, cancellations, late approvals, wellbeing.
+ * Admin topbar bell — incidents, cancellations, expenses, wellbeing, late approvals.
  * Chat unread uses the Chat button badge in the header only (never this bell).
+ * Absent quick marks are excluded from this bell.
  */
 (function (global) {
   "use strict";
@@ -8,7 +9,7 @@
   var ALLOWED = {
     incident: true,
     cancellation: true,
-    absent: true,
+    absent: false,
     chat: false,
     late_approval: true,
     wellbeing: true,

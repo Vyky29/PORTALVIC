@@ -34,11 +34,6 @@
     return false;
   }
 
-  /** iPhone/iPad home-screen app: in-browser camera preview is often blocked — use native picker. */
-  function preferNativeCameraOnDevice() {
-    return deviceIsIos() && deviceIsStandalonePwa();
-  }
-
   var cfg = {
     esc: function (s) {
       return String(s == null ? "" : s);
@@ -95,6 +90,29 @@
   var signedUrlCache = Object.create(null);
   var footerThumbObjectUrl = "";
   var cameraTapLockUntil = 0;
+  /** iOS: snapshot participant when opening gallery picker (page may suspend while picker is open). */
+  var pendingGalleryUploadParticipant = null;
+
+  function styleOffscreenFileInput(inp) {
+    if (!inp) return;
+    inp.className = "portal-achievements-file-input-offscreen";
+    inp.setAttribute("tabindex", "-1");
+    inp.setAttribute("aria-hidden", "true");
+  }
+
+  /** FileList is live — copy before clearing input.value (iOS Safari clears the list). */
+  function copyInputFiles(inp) {
+    return Array.prototype.slice.call((inp && inp.files) || []);
+  }
+
+  function resolveGalleryUploadParticipant() {
+    if (state.participant && state.participant.clientId) return state.participant;
+    if (pendingGalleryUploadParticipant && pendingGalleryUploadParticipant.clientId) {
+      state.participant = pendingGalleryUploadParticipant;
+      return state.participant;
+    }
+    return null;
+  }
 
   function guardCameraTap(fn) {
     return function (ev) {
@@ -670,44 +688,73 @@
     return global.innerWidth > global.innerHeight;
   }
 
+  function deviceOrientationAngle() {
+    try {
+      if (
+        global.screen &&
+        global.screen.orientation &&
+        typeof global.screen.orientation.angle === "number"
+      ) {
+        return ((global.screen.orientation.angle % 360) + 360) % 360;
+      }
+    } catch (_e) {}
+    if (typeof global.orientation === "number" && !isNaN(global.orientation)) {
+      return ((global.orientation % 360) + 360) % 360;
+    }
+    return null;
+  }
+
+  /** Draw video frame upright — matches preview, including iOS landscape capture. */
+  function drawVideoFrameToCanvas(video, vw, vh, rotDeg, mirrorFront) {
+    rotDeg = ((Math.round(Number(rotDeg) || 0) % 360) + 360) % 360;
+    var canvas = document.createElement("canvas");
+    var ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    if (rotDeg === 90 || rotDeg === 270) {
+      canvas.width = vh;
+      canvas.height = vw;
+    } else {
+      canvas.width = vw;
+      canvas.height = vh;
+    }
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate((rotDeg * Math.PI) / 180);
+    if (mirrorFront) ctx.scale(-1, 1);
+    ctx.drawImage(video, -vw / 2, -vh / 2, vw, vh);
+    return canvas;
+  }
+
+  function captureRotationDegrees(video) {
+    var vw = video.videoWidth;
+    var vh = video.videoHeight;
+    if (!vw || !vh) return 0;
+
+    var videoLandscape = vw > vh;
+    var screenLandscape = deviceIsLandscape();
+    var angle = deviceOrientationAngle();
+
+    if (deviceIsIos()) {
+      if (angle === 0) return videoLandscape ? 270 : 0;
+      if (angle === 90) return videoLandscape ? 90 : 0;
+      if (angle === 180) return videoLandscape ? 90 : 180;
+      if (angle === 270) return videoLandscape ? 270 : 0;
+      if (videoLandscape && !screenLandscape) return 270;
+      if (!videoLandscape && screenLandscape) return 90;
+      return 0;
+    }
+
+    if (screenLandscape && !videoLandscape) return 90;
+    if (!screenLandscape && videoLandscape) return 270;
+    return 0;
+  }
+
   /** Draw video frame respecting how the user is holding the phone. */
   function captureCanvasFromVideo(video) {
     var vw = video.videoWidth;
     var vh = video.videoHeight;
     if (!vw || !vh) return null;
-
-    var canvas = document.createElement("canvas");
-    var ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-
-    var videoLandscape = vw > vh;
-    var wantLandscape = deviceIsLandscape();
     var front = state.facingMode === "user";
-
-    if (wantLandscape && !videoLandscape) {
-      canvas.width = vh;
-      canvas.height = vw;
-      ctx.translate(canvas.width / 2, canvas.height / 2);
-      ctx.rotate(Math.PI / 2);
-      if (front) ctx.scale(-1, 1);
-      ctx.drawImage(video, -vw / 2, -vh / 2, vw, vh);
-    } else if (!wantLandscape && videoLandscape) {
-      canvas.width = vh;
-      canvas.height = vw;
-      ctx.translate(canvas.width / 2, canvas.height / 2);
-      ctx.rotate(-Math.PI / 2);
-      if (front) ctx.scale(-1, 1);
-      ctx.drawImage(video, -vw / 2, -vh / 2, vw, vh);
-    } else {
-      canvas.width = vw;
-      canvas.height = vh;
-      if (front) {
-        ctx.translate(canvas.width, 0);
-        ctx.scale(-1, 1);
-      }
-      ctx.drawImage(video, 0, 0, vw, vh);
-    }
-    return canvas;
+    return drawVideoFrameToCanvas(video, vw, vh, captureRotationDegrees(video), front);
   }
 
   function triggerSnapFlash() {
@@ -895,56 +942,83 @@
     el.innerHTML = html || "";
   }
 
+  function handleNativePhotoInputSelected(files) {
+    var file = files && files[0];
+    if (!file) return;
+    var participant = resolveGalleryUploadParticipant();
+    if (!participant) {
+      setStatus("Session expired — close and reopen Session photos, then try again.", true);
+      return;
+    }
+    setStatus("Saving…");
+    void uploadGalleryFile(file)
+      .then(function () {
+        return loadGalleryPhotos();
+      })
+      .then(function () {
+        pendingGalleryUploadParticipant = null;
+        setStatus("Photo saved.");
+        syncGalleryUiAfterPhotosChanged();
+      })
+      .catch(function (e) {
+        setStatus(esc(uploadErrorMessage(e)), true);
+      });
+  }
+
+  function handleGalleryUploadInputSelected(files) {
+    if (!files || !files.length) return;
+    if (!canUploadFromDeviceGalleryResolved()) {
+      setStatus("Only leaders can upload from your photo gallery.", true);
+      return;
+    }
+    var participant = resolveGalleryUploadParticipant();
+    if (!participant) {
+      setStatus("Session expired — close and reopen Session photos, then try Upload again.", true);
+      return;
+    }
+    setStatus("Uploading 1 of " + files.length + "…");
+    void uploadGalleryFiles(files).finally(function () {
+      pendingGalleryUploadParticipant = null;
+    });
+  }
+
+  function bindFileInputChange(inp, onSelected) {
+    if (!inp || inp.getAttribute("data-portal-file-bound") === "1") return;
+    inp.setAttribute("data-portal-file-bound", "1");
+    inp.addEventListener("change", function () {
+      var files = copyInputFiles(inp);
+      inp.value = "";
+      onSelected(files);
+    });
+  }
+
   function ensureNativePhotoInput() {
     var inp = document.getElementById("portalAchievementsNativePhotoInput");
-    if (inp) return inp;
-    inp = document.createElement("input");
-    inp.type = "file";
-    inp.accept = "image/*";
-    inp.setAttribute("capture", "environment");
-    inp.id = "portalAchievementsNativePhotoInput";
-    inp.hidden = true;
-    inp.addEventListener("change", function () {
-      var file = inp.files && inp.files[0];
-      inp.value = "";
-      if (!file || !state.participant) return;
-      setStatus("Saving…");
-      void uploadGalleryFile(file)
-        .then(function () {
-          return loadGalleryPhotos();
-        })
-        .then(function () {
-          setStatus("Photo saved.");
-          syncGalleryUiAfterPhotosChanged();
-        })
-        .catch(function (e) {
-          setStatus(esc(uploadErrorMessage(e)), true);
-        });
-    });
-    document.body.appendChild(inp);
+    if (!inp) {
+      inp = document.createElement("input");
+      inp.type = "file";
+      inp.accept = "image/*";
+      inp.setAttribute("capture", "environment");
+      inp.id = "portalAchievementsNativePhotoInput";
+      document.body.appendChild(inp);
+    }
+    styleOffscreenFileInput(inp);
+    bindFileInputChange(inp, handleNativePhotoInputSelected);
     return inp;
   }
 
   function ensureGalleryUploadInput() {
     var inp = document.getElementById("portalAchievementsGalleryUploadInput");
-    if (inp) return inp;
-    inp = document.createElement("input");
-    inp.type = "file";
-    inp.accept = "image/*,video/*,.heic,.heif";
-    inp.multiple = true;
-    inp.id = "portalAchievementsGalleryUploadInput";
-    inp.hidden = true;
-    inp.addEventListener("change", function () {
-      var files = inp.files;
-      inp.value = "";
-      if (!files || !files.length || !state.participant) return;
-      if (!canUploadFromDeviceGalleryResolved()) {
-        setStatus("Only leaders can upload from your photo gallery.", true);
-        return;
-      }
-      void uploadGalleryFiles(files);
-    });
-    document.body.appendChild(inp);
+    if (!inp) {
+      inp = document.createElement("input");
+      inp.type = "file";
+      inp.accept = "image/*,video/*,.heic,.heif";
+      inp.multiple = true;
+      inp.id = "portalAchievementsGalleryUploadInput";
+      document.body.appendChild(inp);
+    }
+    styleOffscreenFileInput(inp);
+    bindFileInputChange(inp, handleGalleryUploadInputSelected);
     return inp;
   }
 
@@ -961,6 +1035,11 @@
       setStatus(photoLimitMessage(), true);
       return;
     }
+    pendingGalleryUploadParticipant = {
+      clientId: state.participant.clientId,
+      clientName: state.participant.clientName,
+      portalSessionKey: state.participant.portalSessionKey || null,
+    };
     ensureGalleryUploadInput().click();
   }
 
@@ -1057,6 +1136,11 @@
       setStatus(photoLimitMessage(), true);
       return;
     }
+    pendingGalleryUploadParticipant = {
+      clientId: state.participant.clientId,
+      clientName: state.participant.clientName,
+      portalSessionKey: state.participant.portalSessionKey || null,
+    };
     ensureNativePhotoInput().click();
   }
 
@@ -1122,45 +1206,44 @@
     return encodeCanvasToJpeg(canvas);
   }
 
-  function resizeBlobToJpeg(blob) {
+  function loadOrientedImageSource(blob) {
     if (typeof createImageBitmap === "function") {
-      return createImageBitmap(blob)
-        .then(function (bitmap) {
-          return drawSourceToJpegCanvas(bitmap, bitmap.width, bitmap.height).finally(function () {
-            try {
-              bitmap.close();
-            } catch (_close) {}
-          });
+      return createImageBitmap(blob, { imageOrientation: "from-image" })
+        .catch(function () {
+          return createImageBitmap(blob);
         })
         .catch(function () {
-          return resizeBlobToJpegViaImage(blob);
+          return resizeBlobToJpegViaImageElement(blob);
         });
     }
-    return resizeBlobToJpegViaImage(blob);
+    return resizeBlobToJpegViaImageElement(blob);
   }
 
-  function resizeBlobToJpegViaImage(blob) {
+  function resizeBlobToJpegViaImageElement(blob) {
     return new Promise(function (resolve, reject) {
       var img = new Image();
       var url = URL.createObjectURL(blob);
       img.onload = function () {
-        try {
-          drawSourceToJpegCanvas(img, img.naturalWidth || img.width, img.naturalHeight || img.height)
-            .then(resolve)
-            .catch(reject)
-            .finally(function () {
-              URL.revokeObjectURL(url);
-            });
-        } catch (err) {
-          URL.revokeObjectURL(url);
-          reject(err);
-        }
+        resolve(img);
+        URL.revokeObjectURL(url);
       };
       img.onerror = function () {
         URL.revokeObjectURL(url);
         reject(new Error("image_load_failed"));
       };
       img.src = url;
+    });
+  }
+
+  function resizeBlobToJpeg(blob) {
+    return loadOrientedImageSource(blob).then(function (source) {
+      var w = Number(source.width || source.naturalWidth) || 0;
+      var h = Number(source.height || source.naturalHeight) || 0;
+      return drawSourceToJpegCanvas(source, w, h).finally(function () {
+        try {
+          if (source && typeof source.close === "function") source.close();
+        } catch (_close) {}
+      });
     });
   }
 
@@ -1171,10 +1254,6 @@
     }
     if (isAtPhotoLimit()) {
       setStatus(photoLimitMessage(), true);
-      return;
-    }
-    if (preferNativeCameraOnDevice()) {
-      openNativePhotoPicker();
       return;
     }
     var video = document.getElementById("portalAchievementsCameraVideo");
@@ -2193,7 +2272,85 @@
     syncAchievementScreenshotGuard();
   }
 
+  function closeAchievementsSheet() {
+    if (state.feedbackGalleryReview) {
+      closeFeedbackGalleryReview();
+      return;
+    }
+    if (isAchievementGalleryViewerOpen()) {
+      closeGalleryViewer();
+      return;
+    }
+    if (isAchievementCameraOpen()) {
+      exitCameraToHub();
+      return;
+    }
+    closeGalleryViewer();
+    closeCameraFullscreen();
+    stopCamera();
+    state.participant = null;
+    state.photos = [];
+    state.captureMode = "hub";
+    pendingGalleryUploadParticipant = null;
+    setStatus("");
+    if (typeof global.closeSheet === "function") {
+      global.closeSheet({ bypassAnnouncementLock: true });
+      return;
+    }
+    var sheet = global.document.getElementById("achievementsSheet");
+    if (sheet) sheet.classList.remove("open");
+    var backdrop = global.document.getElementById("backdrop");
+    if (backdrop) backdrop.classList.remove("open");
+    global.document.body.style.overflow = "";
+  }
+
+  function ensureSheetChrome() {
+    var root = document.getElementById("achievementsSheet");
+    if (!root) return;
+    var head = root.querySelector(".portal-achievements-sheet-head");
+    if (!head) return;
+    if (!head.querySelector(".sheet-handle")) {
+      var handle = document.createElement("div");
+      handle.className = "sheet-handle";
+      handle.setAttribute("role", "button");
+      handle.setAttribute("tabindex", "0");
+      handle.setAttribute("aria-label", "Close session photos");
+      var title = head.querySelector("h3");
+      if (title) head.insertBefore(handle, title);
+      else head.appendChild(handle);
+    }
+    var backBtn = document.getElementById("portalAchievementsSheetBack");
+    if (!backBtn) {
+      backBtn = document.createElement("button");
+      backBtn.type = "button";
+      backBtn.className = "portal-achievements-sheet-back";
+      backBtn.id = "portalAchievementsSheetBack";
+      backBtn.setAttribute("aria-label", "Back to dashboard");
+      backBtn.textContent = "← Back";
+      head.insertBefore(backBtn, head.firstChild);
+    }
+    if (backBtn.getAttribute("data-portal-back-bound") !== "1") {
+      backBtn.setAttribute("data-portal-back-bound", "1");
+      backBtn.addEventListener("click", function () {
+        closeAchievementsSheet();
+      });
+    }
+  }
+
+  function syncAchievementsSheetBackLabel() {
+    var backBtn = document.getElementById("portalAchievementsSheetBack");
+    if (!backBtn) return;
+    if (state.feedbackGalleryReview) {
+      backBtn.textContent = "← Done";
+      backBtn.setAttribute("aria-label", "Done reviewing photos");
+      return;
+    }
+    backBtn.textContent = "← Back";
+    backBtn.setAttribute("aria-label", "Back to dashboard");
+  }
+
   function bindSheet() {
+    ensureSheetChrome();
     var root = document.getElementById("achievementsSheet");
     if (!root || root.getAttribute("data-portal-achievements-bound") === "1") return;
     root.setAttribute("data-portal-achievements-bound", "1");
@@ -2364,6 +2521,8 @@
   function openSheet(opts) {
     opts = opts || {};
     bindSheet();
+    ensureSheetChrome();
+    syncAchievementsSheetBackLabel();
     closeGalleryViewer();
     closeCameraFullscreen();
     state.participant = null;
@@ -2395,6 +2554,8 @@
     return (
       '<section class="sheet sheet--fullscreen sheet--mobile-frame" id="achievementsSheet" aria-labelledby="achievementsSheetTitle">' +
       '<div class="sheet-head portal-achievements-sheet-head">' +
+      '<button type="button" class="portal-achievements-sheet-back" id="portalAchievementsSheetBack" aria-label="Back to dashboard">← Back</button>' +
+      '<div class="sheet-handle" role="button" tabindex="0" aria-label="Close session photos"></div>' +
       '<h3 id="achievementsSheetTitle">Participant achievements</h3>' +
       "</div>" +
       '<div class="sheet-body portal-achievements-sheet-body">' +
@@ -2643,6 +2804,7 @@
     var backBtn = global.document.getElementById("portalAchievementsBackParticipants");
     if (iconActions) iconActions.hidden = review;
     if (backBtn) backBtn.textContent = review ? "Done" : isLeadSessionPhotosMode() ? "Change" : "Participants";
+    syncAchievementsSheetBackLabel();
   }
 
   function ensureAchievementsSheetMounted() {

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-portal-ui-build="20260703-announcement-picker-fix" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
+<html lang="en-GB" data-portal-ui-build="20260706-global-search-live" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
 <head>
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <!-- Web Push: window.__PORTAL_VAPID_PUBLIC_KEY__ must match Supabase VAPID_PUBLIC_KEY (see portal-vapid-public.js). -->
@@ -20,18 +20,26 @@
   <script src="/portal/portal_alerts_notifications_ui.js?v=20260628-test-btn-fix"></script>
   <script src="/portal/portal-admin-alerts-sheet.js?v=20260615-admin-alerts-perf"></script>
 <script src="/portal/portal_brand.js?v=20260520-brand"></script>
-  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260703-v9-missing-feedback" />
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260706-v26-sessions-hub-rework" />
   <script src="/portal/portal_staff_display_names.js?v=20260630-staff-display-names"></script>
+  <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260614-changelog" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260703-v17-incident-view-fix" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260703-v10-ops-alerts" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260709-ops-hub-fullwidth" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260702-permanent-part-time" />
   <script src="/portal/hr-contract-embed-html.js?v=20260702-permanent-part-time"></script>
-  <script src="/portal/admin-portal-form-record-modal.js?v=20260703-incident-notify"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260703-v17-incident-view-fix"></script>
+  <script src="/portal/admin-portal-form-record-modal.js?v=20260703-narrative-audit"></script>
+  <script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
+  <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260704-admin-504-stagger"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
+  <script src="/portal/admin-portal-parent-absences.js?v=20260709-family-credits"></script>
+  <script src="/portal/admin-portal-parent-credits.js?v=20260709-family-credits"></script>
+  <script src="/portal/admin-portal-parent-invoices.js?v=20260709-invoice-bank"></script>
+  <script src="/portal/admin-portal-parent-makeups.js?v=20260709-makeup-roster"></script>
+  <script src="/portal/admin-portal-parent-consents.js?v=20260709-emergency-consent"></script>
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
   <script src="/portal/admin-portal-pins.js?v=20260530-portal-pins-db"></script>
   <script src="/portal/admin-portal-activity.js?v=20260604-visit-activity"></script>
@@ -43,7 +51,7 @@
   <script src="/portal/portal_staff_photos.js?v=20260616-warn-rate-limit"></script>
   <script src="/portal/admin-portal-achievements.js?v=20260702-delete-stay-in-folder"></script>
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
-  <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260703-achievements-unlimited" />
+  <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260703-ios-gallery-upload-fix" />
   <script src="/portal/admin-portal-staff-map.js?v=20260610-live-map-all"></script>
 <script src="/portal/portal_ops_admin_display.js?v=20260630-sevitha-admin-fix"></script>
 <script src="/portal/portal_admin_topbar.js?v=20260707-login-cache"></script>
@@ -51,9 +59,9 @@
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260622-ghost-view" />
   <script src="/portal/admin-portal-ghost-teleport.js?v=20260622-ghost-lead"></script>
   <script src="/portal/portal-change-log.js?v=20260601-changelog-merge"></script>
-  <script src="/portal/portal_ld_funding_letters.js?v=20260703-ld-funding-editable"></script>
-  <script src="/portal/admin_ld_funding_review.js?v=20260703-ld-funding-send"></script>
-  <script src="/portal/admin-hr.js?v=20260703-ld-funding-phase3"></script>
+  <script src="/portal/portal_ld_funding_letters.js?v=20260709-ld-no-regen"></script>
+  <script src="/portal/admin_ld_funding_review.js?v=20260709-ld-no-regen"></script>
+  <script src="/portal/admin-hr.js?v=20260709-staff-first-cats"></script>
   <script src="/portal/admin-payments.js?v=20260531-la-column"></script>
   <script src="/portal/portal-comms-order-payments.js?v=20260617-cfk-order-enrich"></script>
   <script src="/portal/portal-admin-settings-hub.js?v=20260703-settings-timeout-fix"></script>
@@ -66,19 +74,20 @@
   <script src="/portal/admin-parent-notify-send.js?v=20260619-wa-errors"></script>
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/portal_incident_parent_notify.js?v=20260703-incident-notify"></script>
-  <script src="/portal/admin-parent-notify-log.js?v=20260624-wa-inbound-live"></script>
-  <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260620-reply-modal" />
-  <script src="/portal/portal-parent-notify-templates.js?v=20260614-instructor-photo-v2"></script>
+  <script src="/portal/admin-parent-notify-log.js?v=20260709-wa-source-chips"></script>
+  <script src="/portal/admin-parent-broadcast.js?v=20260706-family-broadcast-5"></script>
+  <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260709-wa-source-chips" />
+  <script src="/portal/portal-parent-notify-templates.js?v=20260707-cancel-reason-policy"></script>
   <script src="/portal/cfk-app.js?v=20260614-cfk-services"></script>
-  <script src="/portal/portal-admin-search-combo.js?v=20260704-search-combo"></script>
+  <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
   <script src="/portal/admin-scheduling-module.js?v=20260704-search-combo"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
-  <script src="/portal/portal-roster-rows-merge.js?v=20260622-canonical-roster"></script>
+  <script src="/portal/portal-roster-rows-merge.js?v=20260704-roster-504"></script>
   <script src="/portal/portal_roster_canonical.js?v=20260614-madre-dedupe"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
-  <script src="/portal/portal_madre_fold.js?v=20260614-madre-dedupe"></script>
+  <script src="/portal/portal_madre_fold.js?v=20260706-madre-no-store-fix"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
   <script src="/portal-shared-js/portal_field_autocomplete.js?v=20260609-term-slot-autofill"></script>
   <script src="/portal/admin-portal-term-slot.js?v=20260610-aquatic-half-hour-b"></script>
@@ -90,7 +99,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260704-search-combo" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260704-admin-alerts-pop" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
@@ -187,6 +196,10 @@
         <div id="portalLivePresenceBar" class="portal-live-presence admin-topbar-presence" hidden aria-live="polite"></div>
         <div class="admin-topbar-meta">
           <span class="admin-date" id="topDate"></span>
+          <button type="button" class="admin-icon-btn" id="btnFamilyMsgs" aria-label="Family messages &amp; replies" title="Family messages &amp; replies">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:20px;height:20px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span class="admin-badge is-empty" id="familyMsgBadge">0</span>
+          </button>
           <button type="button" class="admin-icon-btn" id="btnAlerts" aria-label="Alerts" title="Alerts">
             🔔
             <span class="admin-badge" id="alertBadge">0</span>
@@ -289,11 +302,11 @@
   })();
   </script>
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
-  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260629-29jun-roster"></script>
+  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260704-admin-504"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
-  <script src="/portal/portal_admin_alerts_bell.js?v=20260610-admin-chat-sound"></script>
+  <script src="/portal/portal_admin_alerts_bell.js?v=20260704-admin-alerts-no-absents"></script>
   <script type="module">
-    import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20260707-admin-online-fix";
+    import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20260704-presence-504";
     window.portalAdminMountLivePresenceBarFn = function portalAdminMountLivePresenceBarFn(){
       try{
         mountPortalLivePresenceBar("portalLivePresenceBar");
@@ -336,11 +349,14 @@
       { id:'comms_bookings', label:'Staff & shift notices' },
       { id:'comms_ops', label:'Ops comms & log' },
       { id:'portal_parent_notify_log', label:'Family messages' },
+      { id:'portal_parent_broadcast', label:'Family broadcast' },
       { id:'clients', label:'Participants' },
+      { id:'portal_nav_client_services', label:'Client services review', externalUrl:'/client_services_review.html', skipBottomNav:true },
       { id:'c4k_payments', label:'Programme payments (operations)', hubLabel:'Ops payments' },
       { id:'reenrol_payments', label:'Programme payments', hubLabel:'Payments' },
       { id:'invoices', label:'Xero / finance', hubLabel:'Create invoice' },
       { id:'c4k_sessions', label:'Sessions overview' },
+      { id:'session_disruptions', label:'Session disruptions' },
       { id:'c4k_waitlist', label:'Waiting list' },
       { id:'c4k_reviews', label:'Reviews' },
       { id:'c4k_reports', label:'Report requests' },
@@ -365,6 +381,7 @@
       { id:'portal_docs_checklist', label:'Checklists' },
       { id:'portal_docs_firstaid', label:'First aids' },
       { id:'portal_participant_documents', label:'Participant documents', hubLabel:'Participant docs' },
+      { id:'portal_parent_consents', label:'Parent consents', hubLabel:'Parent consents' },
       { id:'policies', label:'Documents & compliance' },
       { id:'settings', label:'Settings' },
       { id:'portal_device_notifications', label:'Device notifications', navAction:'device_notifications', skipBottomNav:true },
@@ -383,10 +400,10 @@
     var ADMIN_MOBILE_MAX_WIDTH = 899;
     var MOBILE_BOTTOM_NAV_IDS = ['nav_hub', 'dashboard', 'operations_admin', 'nav_all_menu'];
     var NAV_GROUPS = [
-      { id:'g_operator', label:'Operator', children:['dashboard','__h:Sessions','c4k_sessions','operations_admin','operator'] },
-      { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','__h:Participants','clients','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops','portal_parent_notify_log'] },
+      { id:'g_operator', label:'Operator', children:['dashboard','__h:Sessions','c4k_sessions','session_disruptions','operations_admin','operator'] },
+      { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','__h:Participants','clients','portal_nav_client_services','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops','portal_parent_notify_log','portal_parent_broadcast'] },
       { id:'g_zoho', label:'H&R', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
-      { id:'g_supabase', label:'Documents', children:['portal_payslips','portal_participant_documents','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
+      { id:'g_supabase', label:'Documents', children:['portal_payslips','portal_participant_documents','portal_parent_consents','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance (Xero)', children:['reenrol_payments','invoices'] },
       { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','portal_device_notifications','logs','portal_nav_alerts','__h:Monitoring','portal_activity','portal_training_progress','portal_push_devices','staff_live_map','staff_ghost_teleport','__h:Other portals','portal_nav_staff','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
     ];
@@ -400,8 +417,10 @@
       communications:'<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>',
       leads:'<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
       clients:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>',
+      portal_nav_client_services:'<path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/>',
       c4k_services:'<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
       c4k_sessions:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+      session_disruptions:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="13" x2="12" y2="16"/><line x1="12" y1="18.5" x2="12" y2="18.5"/>',
       scheduling:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="15" r="1" fill="currentColor" stroke="none"/>',
       term_roster_edit:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M12 14v4"/><path d="M10 16h4"/>',
       roster_spreadsheets:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>',
@@ -419,6 +438,7 @@
       comms_bookings:'<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>',
       comms_ops:'<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>',
       portal_parent_notify_log:'<path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>',
+      portal_parent_broadcast:'<path d="M3 11l18-8-8 18-2-8-8-2z"/>',
       staffhr:'<path d="M9 5H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/><line x1="9" y1="20" x2="13" y2="20"/>',
       onboarding:'<path d="M2 3h6a4 4 0 014 4v14a4 4 0 00-4-4H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a4 4 0 014-4h6z"/>',
       staffhr_contracts:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>',
@@ -462,6 +482,7 @@
       portal_nav_logout:'<path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
       g_compliance:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
       absents_refunds:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9" y1="15" x2="15" y2="21"/><line x1="15" y1="15" x2="9" y2="21"/>',
+      portal_parent_consents:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
       announcements:'<path d="M3 11v3a1 1 0 001 1h2"/><path d="M11 4L6 3H3v12h3l5-1"/><path d="M15.5 6.5L21 11l-5.5 4.5"/>',
       reminders:'<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>',
       new_participant:'<path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>',
@@ -3279,7 +3300,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         adminC4kEmotionHeaderLegendHtml() +
         '</th>' +
         '<th scope="col" class="c4k-sf-col-indep">Independence</th>' +
-        '<th scope="col" class="c4k-sf-col-pos" title="Positive feedback">Positive</th>' +
+        '<th scope="col" class="c4k-sf-col-pos" title="Filtered feedback for parent portal">Filtered feedback</th>' +
         '<th scope="col" class="c4k-sf-col-rel" title="Relevant information">Relevant</th>' +
         '<th scope="col" class="c4k-sf-col-inst" title="Staff who submitted feedback and when">Reviewed by</th>' +
         '</tr></thead>'
@@ -6878,15 +6899,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminSessionReviewKeyFromSlot(slot, sessionDateIso){
       var iso = String(sessionDateIso || '').trim();
-      var slug = String(slot.clientSlug || '').trim().toLowerCase();
+      var slug = adminCanonicalClientSlug(String(slot.clientSlug || slot.clientDisplay || '').trim());
       if(!iso || !slug || slug === 'available' || slug === 'closed' || slug === 'noclient') return '';
       var startRaw = String(slot.rosterStartRaw || '').trim();
       if(!startRaw){
-        var pg = String(slot.anchorStart || '');
-        var m = pg.match(/^(\d{1,2}):(\d{2})/);
-        startRaw = m ? (String(parseInt(m[1], 10)) + ':' + m[2]) : normTimeShort(slot.anchorStart);
+        startRaw = normTimeShort(slot.anchorStart || slot.parentAnchorStart || '');
       }
-      return iso + '|' + startRaw + '|' + slug;
+      var key = iso + '|' + startRaw + '|' + slug;
+      if(window.PortalSessionKey && typeof window.PortalSessionKey.normalizePortalSessionKey === 'function'){
+        return window.PortalSessionKey.normalizePortalSessionKey(key) || key;
+      }
+      return key;
     }
     async function registerHydrateFeedbackMirrorFromServer(slot, dates, st){
       var client = getSchedSupabaseClient();
@@ -9096,12 +9119,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       });
     }
-    function notifyParentTemplateOpts(){
-      return {
+    function notifyParentTemplateOpts(extra){
+      var o = {
         effectiveParticipantLabel: bookingEffectiveParticipantLabel,
         bookingMoney: bookingMoney,
         isTrialOverride: typeof schedOverrideIsTrial === 'function' ? schedOverrideIsTrial : null
       };
+      if(extra && typeof extra === 'object'){
+        for(var k in extra){ if(Object.prototype.hasOwnProperty.call(extra, k)) o[k] = extra[k]; }
+      }
+      return o;
     }
     function notifyParentCoverInstructorFromDrawer(){
       var name = '';
@@ -9218,10 +9245,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return 'Hi,\n\nTrial session update for '+String(slot.clientDisplay || 'participant')+'.';
     }
-    function notifyParentMessageCancelled(slot, ov, meta){
+    function notifyParentMessageCancelled(slot, ov, meta, cancelPolicy){
       var T = window.PortalParentNotifyTemplates;
       if(T && typeof T.cancelled === 'function'){
-        return T.cancelled(slot, ov, meta, notifyParentTemplateOpts());
+        return T.cancelled(slot, ov, meta, notifyParentTemplateOpts(cancelPolicy ? { cancelPolicy: cancelPolicy } : null));
       }
       return 'Hi,\n\nSession cancelled for '+String(slot.clientDisplay || 'participant')+'.';
     }
@@ -9391,6 +9418,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var defaultChannel = (opts && opts.defaultChannel) ? String(opts.defaultChannel) : 'email';
       if(defaultChannel !== 'email' && defaultChannel !== 'whatsapp' && defaultChannel !== 'both') defaultChannel = 'email';
       var hideSaveContact = !!(opts && opts.hideSaveContact);
+      var isCancelKind = (kind === 'session_cancelled');
+      var inferredCancelBucket = '';
+      if(isCancelKind){
+        try{
+          var Tcb = window.PortalParentNotifyTemplates;
+          if(Tcb && typeof Tcb.cancelPolicyBucket === 'function'){
+            inferredCancelBucket = Tcb.cancelPolicyBucket(pack.ov, {}) || '';
+          }
+        }catch(_cb){}
+      }
+      var cancelPolicyFieldset = isCancelKind
+        ? '<fieldset id="pnCancelPolicyWrap" style="margin:12px 0 0;padding:0;border:0;min-width:0">'+
+          '<legend class="muted" style="margin-bottom:6px">Cancellation policy wording</legend>'+
+          '<div style="display:flex;flex-direction:column;gap:8px;min-width:0">'+
+          '<label style="display:inline-flex;align-items:flex-start;gap:6px;min-width:0"><input type="radio" name="pnCancelPolicy" value="" checked /> <span>Auto — from reason'+(inferredCancelBucket ? ' (detected: '+esc(inferredCancelBucket)+')' : '')+'</span></label>'+
+          '<label style="display:inline-flex;align-items:flex-start;gap:6px;min-width:0"><input type="radio" name="pnCancelPolicy" value="facility" /> <span>Pool / venue cause — offer refund, credit or make-up</span></label>'+
+          '<label style="display:inline-flex;align-items:flex-start;gap:6px;min-width:0"><input type="radio" name="pnCancelPolicy" value="illness" /> <span>Illness / not ready — charged as usual (refund with a doctor&#39;s note)</span></label>'+
+          '<label style="display:inline-flex;align-items:flex-start;gap:6px;min-width:0"><input type="radio" name="pnCancelPolicy" value="neutral" /> <span>Neutral — confirm options, no financial promise</span></label>'+
+          '</div>'+
+          '<p class="muted" style="margin:6px 0 0;font-size:12px;overflow-wrap:break-word">Changing this rewrites the draft below. You can still edit the text before sending.</p>'+
+          '</fieldset>'
+        : '';
       portalParentNotifyConfigureOnce();
       function pnFormatErr(err, data){
         if(window.PortalParentNotifySend && typeof window.PortalParentNotifySend.formatNotifyError === 'function'){
@@ -9430,6 +9479,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<label style="display:inline-flex;align-items:center;gap:6px;min-width:0"><input type="radio" name="pnChannel" id="pnChannelWa" value="whatsapp"'+(defaultChannel==='whatsapp'?' checked':'')+' /> <span>WhatsApp</span></label>'+
         '<label style="display:inline-flex;align-items:center;gap:6px;min-width:0"><input type="radio" name="pnChannel" id="pnChannelBoth" value="both"'+(defaultChannel==='both'?' checked':'')+' /> <span>Both</span></label>'+
         '</div></fieldset>'+
+        cancelPolicyFieldset+
         '<label class="muted" for="pnBody" style="display:block;margin-top:12px">Message</label>'+
         '<textarea class="txa" id="pnBody" style="min-height:200px;max-width:100%">'+esc(pack.body)+'</textarea>'+
         '<p class="muted" id="pnSendStatus" style="margin:8px 0 0;min-width:0;overflow-wrap:break-word;display:none" role="status"></p>'+
@@ -9489,6 +9539,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       document.querySelectorAll('input[name="pnChannel"]').forEach(function(el){
         el.addEventListener('change', pnUpdateChannelButtons);
       });
+      if(isCancelKind){
+        document.querySelectorAll('input[name="pnCancelPolicy"]').forEach(function(el){
+          el.addEventListener('change', function(){
+            var picked = document.querySelector('input[name="pnCancelPolicy"]:checked');
+            var sel = picked && picked.value ? String(picked.value) : '';
+            var ta = $('pnBody');
+            if(ta){
+              ta.value = notifyParentMessageCancelled(slot, pack.ov, meta, sel);
+              pnUpdateChannelButtons();
+            }
+          });
+        });
+      }
       pnUpdateChannelButtons();
       $('pnSend').onclick = function(){
         if(!window.PortalParentNotifySend || typeof window.PortalParentNotifySend.send !== 'function'){
@@ -9582,6 +9645,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     window.adminParentNotifyPrefillFromDirectory = adminParentNotifyPrefillFromDirectory;
     window.portalParentNotifyConfigureOnce = portalParentNotifyConfigureOnce;
     window.portalIncidentParentNotifyConfigureOnce = portalIncidentParentNotifyConfigureOnce;
+    function portalSessionFeedbackNarrativeAuditConfigureOnce(){
+      if(window.__portalSessionFeedbackNarrativeAuditConfigured || !window.PortalSessionFeedbackNarrativeAudit) return;
+      window.__portalSessionFeedbackNarrativeAuditConfigured = true;
+      window.PortalSessionFeedbackNarrativeAudit.configure({
+        getClient: getSchedSupabaseClient,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        }
+      });
+    }
+    window.portalSessionFeedbackNarrativeAuditConfigureOnce = portalSessionFeedbackNarrativeAuditConfigureOnce;
     function applyBookingTableFilters(){
       var v = ($('bookingVenueFilter') && $('bookingVenueFilter').value) || '';
       var st = ($('bookingStaffFilter') && $('bookingStaffFilter').value) || '';
@@ -11470,7 +11548,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         finish(false);
       }, 12000);
       try{
-        client.from('client_payments').select('*').then(function(res){
+        (async function(){
+          var res = await adminSupabaseWithRetry(function(){
+            return client.from('client_payments').select('*');
+          });
           clearTimeout(payLoadTimer);
           if(res && res.error){ console.warn('[orders] client_payments load failed:', res.error.message); finish(false); return; }
           var rows = (res && res.data) || [];
@@ -11482,7 +11563,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           try{ __portalEmailToParentDisplay = null; }catch(_e){}
           __portalLivePaySource.loaded = true;
           finish(true);
-        }, function(err){ clearTimeout(payLoadTimer); console.warn('[orders] client_payments load error:', err); finish(false); });
+        })().catch(function(err){
+          clearTimeout(payLoadTimer);
+          console.warn('[orders] client_payments load error:', err);
+          finish(false);
+        });
       }catch(e){ clearTimeout(payLoadTimer); console.warn('[orders] client_payments load threw:', e); finish(false); }
     }
     function closeSchedDrawer(){
@@ -12123,7 +12208,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var payload = {};
       if(ovTypeRaw === 'client_cancelled'){
         payload.cancelled_by_admin = true;
+        payload.feedback_resolution = 'cancelled';
       }
+      if(ovType === 'client_absence_announced'){
+        payload.feedback_resolution = 'absent';
+      } else if(ovType === 'slot_close'){
+        payload.feedback_resolution = 'cancelled';
+      }
+      var schedReviewKey = portalAdminSessionReviewKeyFromSlot(slot, slot.sessionDate);
+      if(schedReviewKey) payload.portal_session_key = schedReviewKey;
       if(repSlug){
         payload.replacement_client_id = repSlug;
         payload.to_client_id = repSlug;
@@ -14760,6 +14853,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         // Empty/offerable slots are not participants — they belong in capacity
         // (Available), never the participant directory.
         if(!cn || cnL === 'closed' || cnL === 'available' || cnL === 'no client' || cnL === 'noclient' || cnL === 'no participant' || cnL === 'open' || cnL === 'open slot' || cnL === '—') return;
+        // Non-participant roster rows: HOME/MANAGER are director dashboard cards,
+        // Q6 College is an outreach booking that ended and did not renew. ACAT is
+        // an active booking and intentionally kept.
+        if(cnL === 'home' || cnL === 'manager' || cnL === 'q6 college' || cnL === 'q6college') return;
         var norm = adminPortalNormalizedPersonName(cn);
         if(!norm) return;
         var iso = String(sessionIso || '').trim().slice(0, 10);
@@ -14799,6 +14896,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(byNorm[nk]) continue;
         touchClient(rn, String(r.session_date || '').trim().slice(0, 10));
       }
+
+      // Roster/sessions are the source of truth for "who is a participant". Any
+      // client on the Mon–Sun schedule (canonical merged model — the same source
+      // the Schedule view uses) must appear here as "In Sessions", even when they
+      // are only a first-name entry on the sheet (e.g. "Jad") and are absent from
+      // the feedback export, the raw bundle rows, or the parents export. This walks
+      // every staff profile and expands all instructors, so it is richer than the
+      // STAFF_DASHBOARD_SOURCE.rows loop above.
+      try{
+        var mergedPack = adminMergeSpreadsheetSessions();
+        var mNotes = (mergedPack && mergedPack.notes) || {};
+        var mSessions = (mergedPack && mergedPack.sessions) || [];
+        for(i = 0; i < mSessions.length; i++){
+          var ms = mSessions[i];
+          if(String(ms.status || '').trim().toLowerCase() !== 'scheduled') continue;
+          var cidM = String(ms.clientId || '').trim();
+          if(!cidM) continue;
+          var nmM = (mNotes[cidM] && mNotes[cidM].name) ? String(mNotes[cidM].name).trim() : '';
+          if(!nmM) continue;
+          touchClient(nmM, '');
+        }
+      }catch(_eMergeCat){}
 
       function rowForEntry(ent){
         var nm = ent.displayName;
@@ -15425,7 +15544,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div data-c4k-panel="ses" class="c4k-panel">'+
         '<div class="card card-pad"><p class="muted" style="margin:0;max-width:52rem;min-width:0;overflow-wrap:break-word">Session export rows matched to this participant (same name rules as roster). <strong>Booked services</strong> and timetable lines stay under <strong>Services</strong>.</p></div>'+
         paxSesKpiHtml+
-        '<div class="card" style="margin-top:12px"><div class="card-h"><h3>All feedbacks</h3><button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_registers">Open full grid</button></div><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center tbl--dense"><thead><tr><th>Date</th><th title="Feedback completed by (sheet)">Instructor</th><th scope="col" class="c4k-sf-col-svc" title="Service and session time (second line)">Service</th><th>Engagement</th><th scope="col" class="c4k-sf-col-emo" title="Emotions / regulation (icons)" aria-label="Emotions and regulation">' + adminC4kEmotionHeaderLegendHtml() + '</th><th scope="col" class="c4k-sf-col-indep">Independence</th><th scope="col" title="Workbook attendance column">Attendance</th><th scope="col" title="Incidents / notes">Incidents</th><th scope="col" class="c4k-sf-col-pos" title="Click the cell when there is text to open review and notify">Positive</th><th scope="col" class="c4k-sf-col-rel" title="Click the cell when there is text to open review actions">Relevant</th></tr></thead><tbody>'+dregRows+'</tbody></table></div></div>'+
+        '<div class="card" style="margin-top:12px"><div class="card-h"><h3>All feedbacks</h3><button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_registers">Open full grid</button></div><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center tbl--dense"><thead><tr><th>Date</th><th title="Feedback completed by (sheet)">Instructor</th><th scope="col" class="c4k-sf-col-svc" title="Service and session time (second line)">Service</th><th>Engagement</th><th scope="col" class="c4k-sf-col-emo" title="Emotions / regulation (icons)" aria-label="Emotions and regulation">' + adminC4kEmotionHeaderLegendHtml() + '</th><th scope="col" class="c4k-sf-col-indep">Independence</th><th scope="col" title="Workbook attendance column">Attendance</th><th scope="col" title="Incidents / notes">Incidents</th><th scope="col" class="c4k-sf-col-pos" title="Filtered feedback for parent portal">Filtered feedback</th><th scope="col" class="c4k-sf-col-rel" title="Click the cell when there is text to open review actions">Relevant</th></tr></thead><tbody>'+dregRows+'</tbody></table></div></div>'+
         '</div>'+
         '<div data-c4k-panel="att" class="c4k-panel">'+paxAttPanel+'</div>'+
         '<div data-c4k-panel="bill" class="c4k-panel">'+paxBillPanel+'</div>'+
@@ -15530,6 +15649,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(age < 0 || age > 130) return null;
       return age;
     }
+    /** Booking-status pill meta (label + colours) for the participants list. */
+    function paxContactsBookingStatusMeta(st){
+      switch(String(st || '')){
+        case 'programme_in': case 'in_class': case 'in_camp':
+          return { label: 'In sessions', bg: '#dcfce7', fg: '#166534' };
+        case 'trial':
+          return { label: 'On a trial', bg: '#e0f2fe', fg: '#075985' };
+        case 'waiting_list':
+          return { label: 'Waiting list', bg: '#fef9c3', fg: '#854d0e' };
+        case 'old_participants': case 'not_in_programme':
+          return { label: 'Old participant', bg: '#f1f5f9', fg: '#475569' };
+        default:
+          return null;
+      }
+    }
     function paxContactsListRowsHtml(){
       var rows = paxContactsUnifiedList();
       return rows.map(function(p){
@@ -15548,9 +15682,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(phRaw && phRaw !== '—') emPhoneParts.push('<div style="white-space:nowrap">'+esc(phRaw)+'</div>');
         var emPhone = emPhoneParts.length ? emPhoneParts.join('') : '<span class="muted">—</span>';
         var cells = paxContactsServiceSlotCells(p);
+        var bkMeta = paxContactsBookingStatusMeta(p.bookingStatus);
+        var bkChip = bkMeta
+          ? '<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;background:'+bkMeta.bg+';color:'+bkMeta.fg+'">'+esc(bkMeta.label)+'</span>'
+          : '';
+        var ratio = adminParticipantSupportRatio(p.name);
+        var ratioHi = ratio && ratio !== '1:1';
+        var ratioChip = ratio
+          ? '<span title="Support ratio" style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;background:'+(ratioHi?'#fee2e2':'#eef2ff')+';color:'+(ratioHi?'#991b1b':'#3730a3')+'">'+esc(ratio)+'</span>'
+          : '';
+        var fundInfo = adminParticipantFundingInfo(p);
+        var fundingChip = fundInfo.source
+          ? '<span title="Funding source" style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;background:'+(fundInfo.isLA?'#ecfeff':'#f0fdf4')+';color:'+(fundInfo.isLA?'#155e75':'#166534')+';max-width:100%;overflow-wrap:break-word">'+esc(fundInfo.source)+'</span>'
+          : '';
+        var methodChip = fundInfo.method
+          ? '<span title="Payment method" style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.3;background:#f1f5f9;color:#334155;max-width:100%;overflow-wrap:break-word">'+esc(fundInfo.method)+'</span>'
+          : '';
+        var chipsRow = (bkChip || ratioChip || fundingChip || methodChip)
+          ? '<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;min-width:0">'+bkChip+ratioChip+fundingChip+methodChip+'</div>'
+          : '';
         return (
           '<tr data-pax-id="'+esc(p.id)+'" data-pax-bk="'+esc(p.bookingStatus || '')+'">'+
-          '<td style="min-width:0"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong>'+dobLine+'</button></td>'+
+          '<td style="min-width:0"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong>'+dobLine+'</button>'+chipsRow+'</td>'+
           '<td style="white-space:nowrap">'+ageCell+'</td>'+
           '<td class="pax-contacts-contact" style="min-width:0;max-width:14rem">'+cells.svc+'</td>'+
           '<td class="pax-contacts-contact" style="min-width:0;max-width:16rem">'+cells.slot+'</td>'+
@@ -16702,10 +16855,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
 
     var C4K_SESSIONS_HUB_TABS = [
-      { id:'overview', label:'Overview', iconId:'c4k_sessions', mode:'panel' },
-      { id:'feedback', label:'Feedback', iconId:'c4k_registers', mode:'panel' },
-      { id:'positive', label:'Positive', iconId:'c4k_reviews', mode:'panel' },
-      { id:'relevant', label:'Relevant', iconId:'c4k_relevant', mode:'panel' },
+      { id:'overview', label:'Sessions overview', iconId:'c4k_sessions', mode:'panel' },
+      { id:'feedback', label:'Register', iconId:'c4k_registers', mode:'panel' },
+      { id:'positive', label:'Feedback (filtered)', iconId:'c4k_reviews', mode:'panel' },
+      { id:'relevant', label:'Notes', iconId:'c4k_relevant', mode:'panel' },
       { id:'incidents', label:'Incidents', iconId:'analytics', mode:'panel' },
       { id:'cancellations', label:'Cancellations', iconId:'absents_refunds', mode:'panel' },
       { id:'absents', label:'Absents', iconId:'absents', mode:'panel' },
@@ -16714,10 +16867,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       { id:'pickup', label:'Pick up', iconId:'scheduling', mode:'panelPickup' }
     ];
     var SESSIONS_HUB_HEAD_META = {
-      overview:{ iconId:'c4k_sessions', tone:'sessions', title:'SESSIONS OVERVIEW', sub:'Weekly roster, session status, and feedback by day.' },
-      feedback:{ iconId:'c4k_registers', tone:'feedback', title:'SESSION FEEDBACKS', sub:'All instructor session feedback, ratings, and notes.' },
-      positive:{ iconId:'c4k_reviews', tone:'positive', title:'POSITIVE FEEDBACK', sub:'Highlights and strengths recorded for attended sessions.' },
-      relevant:{ iconId:'c4k_relevant', tone:'relevant', title:'RELEVANT INFORMATION', sub:'Important context and relevant notes to review.' },
+      overview:{ iconId:'c4k_sessions', tone:'sessions', title:'SESSIONS OVERVIEW', sub:'All sessions per day and their status (awaiting feedback, submitted…).' },
+      feedback:{ iconId:'c4k_registers', tone:'feedback', title:'REGISTER', sub:'Raw session feedback as staff submitted it — engagement, emotions, independence, narrative and notes.' },
+      positive:{ iconId:'c4k_reviews', tone:'positive', title:'FEEDBACK (FILTERED)', sub:'Raw session feedback next to the parent-safe filtered version generated on review.' },
+      relevant:{ iconId:'c4k_relevant', tone:'relevant', title:'NOTES', sub:'Internal notes — informational only, with an option to email CEOs or other staff.' },
       absents:{ iconId:'absents', tone:'absents', title:'ABSENTS', sub:'Clients marked absent by staff for the selected day.' },
       cancellations:{ iconId:'absents_refunds', tone:'cancellations', title:'CANCELLATIONS', sub:'Cancellation reports by session week and day.' },
       incidents:{ iconId:'analytics', tone:'incidents', title:'INCIDENT REPORTS', sub:'Submitted incident reports with session and outcome detail.' },
@@ -17131,12 +17284,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       try{
         var since = new Date();
         since.setDate(since.getDate() - 120);
-        var res = await auth.client
-          .from('cancellation_reports')
-          .select('id,created_at,session_date,session_time,client_name,service,cancellation_timing,reason_category,submitted_by_name,portal_session_key')
-          .gte('session_date', since.toISOString().slice(0, 10))
-          .order('session_date', { ascending: false })
-          .limit(400);
+        var res = await adminSupabaseWithRetry(function(){
+          return auth.client
+            .from('cancellation_reports')
+            .select('id,created_at,session_date,session_time,client_name,service,cancellation_timing,reason_category,submitted_by_name,portal_session_key')
+            .gte('session_date', since.toISOString().slice(0, 10))
+            .order('session_date', { ascending: false })
+            .limit(400);
+        });
         var dbRows = res.error ? [] : (res.data || []);
         window.__PORTAL_CANCELLATION_REPORTS__ = adminMergeCancellationReports(dbRows, portalRows);
         adminRecordLiveLoad('cancellation_reports', {
@@ -17262,13 +17417,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return [];
       }
       try{
-        var res = await auth.client
-          .from('schedule_overrides')
-          .select('id,created_at,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,reason,status,payload')
-          .gte('session_date', sinceIso)
-          .eq('status', 'active')
-          .order('created_at', { ascending: false })
-          .limit(600);
+        var res = await adminSupabaseWithRetry(function(){
+          return auth.client
+            .from('schedule_overrides')
+            .select('id,created_at,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,reason,status,payload')
+            .gte('session_date', sinceIso)
+            .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .limit(600);
+        });
         if(res.error){
           var ovErr = res.error.message || String(res.error);
           console.warn('[admin] schedule_overrides:', ovErr);
@@ -17300,12 +17457,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       try{
         var since = new Date();
         since.setDate(since.getDate() - 120);
-        var res = await auth.client
-          .from('lead_session_reports')
-          .select('*')
-          .gte('session_date', since.toISOString().slice(0, 10))
-          .order('session_date', { ascending: false })
-          .limit(500);
+        var res = await adminSupabaseWithRetry(function(){
+          return auth.client
+            .from('lead_session_reports')
+            .select('*')
+            .gte('session_date', since.toISOString().slice(0, 10))
+            .order('session_date', { ascending: false })
+            .limit(500);
+        });
         if(res.error){
           adminRecordLiveLoad('lead_session_reports', { count: 0, error: res.error.message || String(res.error) });
           window.__PORTAL_LEAD_SESSION_REPORTS__ = [];
@@ -17334,7 +17493,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         since.setDate(since.getDate() - 120);
         var sinceIso = since.toISOString().slice(0, 10);
         var rows = [];
-        var rpc = await client.rpc('portal_admin_fetch_absent_quick_marks', { p_since: sinceIso });
+        var rpc = await adminSupabaseWithRetry(function(){
+          return client.rpc('portal_admin_fetch_absent_quick_marks', { p_since: sinceIso });
+        });
         if(!rpc.error && Array.isArray(rpc.data)){
           rows = rpc.data;
         }else{
@@ -17900,7 +18061,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260703-v17-incident-view-fix';
+    var PORTAL_ADMIN_HUB_BUILD = '20260708-v20-unified-parent-feedback';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
@@ -18118,6 +18279,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         engagement_patterns: adminSfStr(r.independence) || null,
         positive_feedback: adminSfStr(r.positive) || '',
         relevant_information: adminSfStr(r.relevantParent) || '',
+        session_narrative: adminSfStr(r.sessionNarrative) || adminSfStr(r.session_narrative) || '',
         completed_by_name: adminSfStr(r.instructor) || adminSfStr(r.completedBy) || '—',
         session_time: adminSfStr(r.sessionTime) || adminSfStr(r.time) || '',
         created_at: adminSfStr(r.submittedAt) || adminSfStr(r.created_at) || null,
@@ -18166,6 +18328,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           : adminSfStr(patterns) || null,
         positive_feedback: adminSfStr(row.positive_feedback) || '',
         relevant_information: adminSfStr(row.relevant_information) || '',
+        session_narrative: adminSfStr(row.session_narrative) || '',
         completed_by_name: adminSfStr(row.completed_by_name) || '—',
         session_time: st,
         created_at: row.created_at || null,
@@ -18225,6 +18388,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         box[key] = Object.assign({ at: new Date().toISOString() }, meta || {});
         window.__PORTAL_ADMIN_LIVE_LOAD__ = box;
       }catch(_rec){}
+    }
+    function adminIsRetryableSupabaseErr(err){
+      var msg = String((err && err.message) || err || '');
+      return /504|502|503|timeout|57014|gateway|fetch failed/i.test(msg);
+    }
+    async function adminSupabaseWithRetry(run){
+      var res;
+      try{
+        res = await run();
+      }catch(e){
+        if(!adminIsRetryableSupabaseErr(e)) throw e;
+        await new Promise(function(r){ setTimeout(r, 900); });
+        return await run();
+      }
+      if(res && res.error && adminIsRetryableSupabaseErr(res.error)){
+        await new Promise(function(r){ setTimeout(r, 900); });
+        return await run();
+      }
+      return res;
     }
     async function adminFetchSessionFeedbackViaEdge(sinceIso){
       var edge = await adminEdgePost('portal-admin-session-feedback-list', { since: sinceIso });
@@ -18477,7 +18659,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var base = typeof window.SUPABASE_URL === 'string' ? String(window.SUPABASE_URL).replace(/\/$/, '') : 'https://cklpnwhlqsulpmkipmqb.supabase.co';
       var anon = adminPortalAnonKey();
       var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-      var timer = ctrl ? setTimeout(function(){ try{ ctrl.abort(); }catch(_ab){} }, 25000) : null;
+      var timer = ctrl ? setTimeout(function(){ try{ ctrl.abort(); }catch(_ab){} }, 35000) : null;
       var res;
       try{
         res = await fetch(base + '/functions/v1/' + path, {
@@ -18493,6 +18675,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }catch(fetchErr){
         if(timer) clearTimeout(timer);
         var fetchMsg = String(fetchErr && fetchErr.name === 'AbortError' ? 'request_timeout' : (fetchErr && fetchErr.message ? fetchErr.message : fetchErr));
+        if(!retried && fetchMsg === 'request_timeout'){
+          await new Promise(function(r){ setTimeout(r, 800); });
+          return adminEdgePost(path, body, true);
+        }
         return { error: fetchMsg };
       }
       if(timer) clearTimeout(timer);
@@ -18541,6 +18727,44 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       if(edge.error) return { ok: false, error: edge.error };
       return { ok: true, share: edge.data && edge.data.share };
+    };
+    window.portalAdminFilterFeedbackNarrative = async function(feedbackId, participantName){
+      var id = String(feedbackId || '').trim();
+      if(!id) return { ok: false, error: 'missing_id' };
+      var narrative = '';
+      var pname = String(participantName || '').trim();
+      var sessionDate = '';
+      try{
+        var client = await adminEnsureSupabaseClient();
+        if(client){
+          var sel = await client.from('session_feedback')
+            .select('session_narrative, client_name, session_date')
+            .eq('id', id)
+            .maybeSingle();
+          if(sel && sel.data){
+            narrative = String(sel.data.session_narrative || '').trim();
+            if(!pname) pname = String(sel.data.client_name || '').trim();
+            sessionDate = String(sel.data.session_date || '').trim().substring(0, 10);
+          }
+        }
+      }catch(_e){ return { ok: false, error: 'narrative_lookup_failed' }; }
+      if(narrative.length < 40) return { ok: false, error: 'no_narrative' };
+      var edge = await adminEdgePost('portal-feedback-narrative-filter', {
+        narrative_en: narrative,
+        participant_name: pname,
+        session_date: sessionDate
+      });
+      if(edge.error) return { ok: false, error: edge.error };
+      var d = edge.data || {};
+      if(!d.ok) return { ok: false, error: d.error || 'filter_failed' };
+      var relevantOut = String(d.relevant_information || '').trim();
+      if(/^none$/i.test(relevantOut) || d.unified_parent_feedback) relevantOut = '';
+      return {
+        ok: true,
+        positive: String(d.positive_feedback || ''),
+        relevant: relevantOut,
+        unified: !!d.unified_parent_feedback
+      };
     };
     window.portalAdminGenerateParentFeedbackShares = async function(feedbackIds){
       var ids = (feedbackIds || []).map(function(x){ return String(x || '').trim(); }).filter(Boolean);
@@ -19210,6 +19434,198 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       );
     }
 
+    /* ---- Session Disruption reports (POL-048): admin review + validate ---- */
+    function portalSdEsc(v){ return esc(String(v == null ? '' : v)); }
+    function portalSdFmtDate(iso){
+      var s = String(iso || '').slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return portalSdEsc(iso || '—');
+      try{
+        return new Date(s + 'T12:00:00').toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+      }catch(_){ return portalSdEsc(s); }
+    }
+    function portalSdFmtDateTime(iso){
+      var s = String(iso || '');
+      if(!s) return '—';
+      try{
+        return new Date(s).toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+      }catch(_){ return portalSdEsc(s.slice(0,16)); }
+    }
+    function viewSessionDisruptions(){
+      return ''+
+        '<section class="card card-pad">'+
+          '<div class="card-h" style="align-items:flex-start"><div style="min-width:0">'+
+            '<h2 style="margin:0">Session disruptions</h2>'+
+            '<p class="muted" style="margin:6px 0 0;max-width:52rem;overflow-wrap:break-word">Staff absence / disruption reports (POL-048). Review each one and <strong>Validate</strong> the day — the worker\u2019s dashboard then shows <em>Day off (Time Off Requested)</em> in place of that shift. Undo removes the day off again.</p>'+
+          '</div><button type="button" class="btn btn--ghost btn--sm" id="sdRefreshBtn">Refresh</button></div>'+
+          '<div id="sdReportsRoot" class="card-pad" style="padding:12px 0 0"><p class="muted" style="margin:0">Loading reports\u2026</p></div>'+
+        '</section>';
+    }
+    function portalSdRenderRows(rows){
+      var root = document.getElementById('sdReportsRoot');
+      if(!root) return;
+      if(!rows || !rows.length){
+        root.innerHTML = '<p class="muted" style="margin:0">No session disruption reports in the last 120 days.</p>';
+        return;
+      }
+      var pending = rows.filter(function(r){ return !r.validated_at; }).length;
+      var body = rows.map(function(r){
+        var validated = !!r.validated_at;
+        var reason = portalSdEsc(r.reason_category || '');
+        if(r.reason_description) reason += '<div class="muted" style="font-size:12px;overflow-wrap:break-word">'+portalSdEsc(r.reason_description)+'</div>';
+        var ret = portalSdEsc(r.expected_return || '');
+        if(r.return_date) ret += ' \u00b7 '+portalSdFmtDate(r.return_date);
+        var status = validated
+          ? '<span class="chip chip--ok" title="Validated by '+portalSdEsc(r.validated_by_name || '')+' on '+portalSdFmtDateTime(r.validated_at)+'">Validated</span>'
+          : '<span class="chip chip--urg">Pending</span>';
+        var viewBtn = '<button type="button" class="btn btn--ghost btn--sm" data-sd-view="'+portalSdEsc(r.id)+'">View</button>';
+        var action = viewBtn+' '+(validated
+          ? '<button type="button" class="btn btn--ghost btn--sm" data-sd-undo="'+portalSdEsc(r.id)+'">Undo</button>'
+          : '<button type="button" class="btn btn--pri btn--sm" data-sd-validate="'+portalSdEsc(r.id)+'">Validate day</button>');
+        return '<tr>'+
+          '<td style="white-space:nowrap">'+portalSdFmtDate(r.session_date)+'</td>'+
+          '<td style="min-width:0;overflow-wrap:break-word"><strong>'+portalSdEsc(r.submitted_by_name || '')+'</strong>'+(r.role_label ? '<div class="muted" style="font-size:12px">'+portalSdEsc(r.role_label)+'</div>' : '')+'</td>'+
+          '<td style="white-space:nowrap">'+portalSdEsc(r.disruption_type || '')+'</td>'+
+          '<td style="min-width:0;overflow-wrap:break-word">'+portalSdEsc(r.venue || '')+'</td>'+
+          '<td style="min-width:0;overflow-wrap:break-word">'+reason+'</td>'+
+          '<td style="min-width:0;overflow-wrap:break-word">'+ret+'</td>'+
+          '<td style="white-space:nowrap">'+status+'</td>'+
+          '<td class="toolbar" style="white-space:nowrap">'+action+'</td>'+
+        '</tr>';
+      }).join('');
+      root.innerHTML = ''+
+        '<p class="muted" style="margin:0 0 8px">'+rows.length+' report'+(rows.length===1?'':'s')+' \u00b7 '+pending+' pending validation.</p>'+
+        '<div style="overflow:auto"><table class="tbl tbl--center tbl--dense"><thead><tr>'+
+          '<th>Absence date</th><th>Staff</th><th>Type</th><th>Venue</th><th>Reason</th><th>Expected return</th><th>Status</th><th>Action</th>'+
+        '</tr></thead><tbody>'+body+'</tbody></table></div>';
+      portalSdBindRowActions();
+    }
+    async function portalSdLoad(){
+      var root = document.getElementById('sdReportsRoot');
+      try{
+        var res = await adminEdgePost('portal-admin-session-disruption-list', {});
+        if(res.error || !res.data || !res.data.ok){
+          if(root) root.innerHTML = '<p class="muted" style="margin:0;color:var(--danger,#b00)">Could not load reports'+(res.error ? ' ('+portalSdEsc(res.error)+')' : '')+'.</p>';
+          return;
+        }
+        window.__PORTAL_SESSION_DISRUPTION_REPORTS__ = res.data.rows || [];
+        portalSdRenderRows(window.__PORTAL_SESSION_DISRUPTION_REPORTS__);
+      }catch(e){
+        if(root) root.innerHTML = '<p class="muted" style="margin:0;color:var(--danger,#b00)">Could not load reports.</p>';
+      }
+    }
+    function portalSdBindRowActions(){
+      var root = document.getElementById('sdReportsRoot');
+      if(!root) return;
+      root.querySelectorAll('[data-sd-validate]').forEach(function(b){
+        b.addEventListener('click', function(){ portalSdValidate(b.getAttribute('data-sd-validate'), 'validate', b); });
+      });
+      root.querySelectorAll('[data-sd-undo]').forEach(function(b){
+        b.addEventListener('click', function(){ portalSdValidate(b.getAttribute('data-sd-undo'), 'undo', b); });
+      });
+      root.querySelectorAll('[data-sd-view]').forEach(function(b){
+        b.addEventListener('click', function(){ portalSdOpenDetail(b.getAttribute('data-sd-view')); });
+      });
+    }
+    async function portalSdValidate(reportId, action, btn){
+      if(!reportId) return false;
+      if(action === 'undo' && !window.confirm('Remove the validated day off for this report?')) return false;
+      var prev = btn ? btn.textContent : '';
+      if(btn){ btn.disabled = true; btn.textContent = action === 'undo' ? 'Removing\u2026' : 'Validating\u2026'; }
+      try{
+        var res = await adminEdgePost('portal-admin-session-disruption-validate', { report_id: reportId, action: action });
+        if(res.error || !res.data || !res.data.ok){
+          if(btn){ btn.disabled = false; btn.textContent = prev; }
+          window.alert('Action failed'+(res.error ? ': '+res.error : (res.data && res.data.error ? ': '+res.data.error : '.')));
+          return false;
+        }
+        await portalSdLoad();
+        return true;
+      }catch(e){
+        if(btn){ btn.disabled = false; btn.textContent = prev; }
+        window.alert('Action failed. Please try again.');
+        return false;
+      }
+    }
+    function portalSdFindReport(reportId){
+      var list = window.__PORTAL_SESSION_DISRUPTION_REPORTS__ || [];
+      for(var i=0;i<list.length;i++){ if(String(list[i].id) === String(reportId)) return list[i]; }
+      return null;
+    }
+    function portalSdDetailFieldHtml(label, value){
+      var v = String(value == null ? '' : value).trim();
+      var shown = v ? portalSdEsc(v) : '<span class="muted">—</span>';
+      return ''+
+        '<div style="min-width:0;padding:10px 0;border-bottom:1px solid var(--line)">'+
+          '<div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;margin:0 0 3px">'+portalSdEsc(label)+'</div>'+
+          '<div style="min-width:0;overflow-wrap:break-word;white-space:pre-wrap">'+shown+'</div>'+
+        '</div>';
+    }
+    function portalSdDetailSectionHtml(title, fieldsHtml){
+      return ''+
+        '<div style="margin:0 0 4px"><h3 style="margin:16px 0 2px;font-size:14px;min-width:0;overflow-wrap:break-word">'+portalSdEsc(title)+'</h3>'+fieldsHtml+'</div>';
+    }
+    function portalSdOpenDetail(reportId){
+      var r = portalSdFindReport(reportId);
+      if(!r){ try{ window.alert('Report data is not available. Refresh and try again.'); }catch(_e){} return; }
+      var validated = !!r.validated_at;
+      var ret = String(r.expected_return || '');
+      if(r.return_date) ret += ' \u00b7 '+portalSdFmtDate(r.return_date).replace(/<[^>]*>/g,'');
+      var statusLine = validated
+        ? 'Validated by '+(r.validated_by_name || '—')+' on '+portalSdFmtDateTime(r.validated_at)
+        : 'Pending validation';
+
+      var reporter = portalSdDetailFieldHtml('Submitted by', r.submitted_by_name)+
+        portalSdDetailFieldHtml('Role', r.role_label)+
+        portalSdDetailFieldHtml('Submitted', portalSdFmtDateTime(r.created_at));
+      var session = portalSdDetailFieldHtml('Type of disruption', r.disruption_type)+
+        portalSdDetailFieldHtml('Date of affected session(s)', portalSdFmtDate(r.session_date).replace(/<[^>]*>/g,''))+
+        portalSdDetailFieldHtml('Venue', r.venue);
+      var reason = portalSdDetailFieldHtml('Reason', r.reason_category)+
+        portalSdDetailFieldHtml('Brief description', r.reason_description);
+      var ret2 = portalSdDetailFieldHtml('Expected return', ret);
+      var reflect = portalSdDetailFieldHtml('Could this reasonably have been prevented?', r.could_prevent)+
+        portalSdDetailFieldHtml('Prevention details', r.prevention_details);
+      var comments = portalSdDetailFieldHtml('Additional comments', r.additional_comments);
+
+      var actionBtn = validated
+        ? '<button type="button" class="btn btn--ghost" id="sdDetailUndo">Undo day off</button>'
+        : '<button type="button" class="btn btn--pri" id="sdDetailValidate">Validate day</button>';
+
+      openModal(
+        '<div class="modal-h"><h2 id="modalTitle" style="min-width:0;overflow-wrap:break-word">Session disruption report</h2>'+
+        '<p class="muted" style="margin:6px 0 0;font-size:12px;min-width:0;overflow-wrap:break-word">POL-048 \u00b7 '+portalSdEsc(statusLine)+'</p></div>'+
+        '<div class="modal-b" style="min-width:0;max-height:min(72vh,660px);overflow:auto">'+
+          portalSdDetailSectionHtml('1. Reporter', reporter)+
+          portalSdDetailSectionHtml('2. Session details', session)+
+          portalSdDetailSectionHtml('3. Reason for absence', reason)+
+          portalSdDetailSectionHtml('4. Expected return to work', ret2)+
+          portalSdDetailSectionHtml('5. Reflection', reflect)+
+          portalSdDetailSectionHtml('6. Additional comments', comments)+
+        '</div>'+
+        '<div class="modal-f" style="gap:8px"><button type="button" class="btn btn--ghost" id="sdDetailClose">Close</button>'+actionBtn+'</div>',
+        {}
+      );
+      var bClose = $('sdDetailClose');
+      if(bClose) bClose.onclick = closeModal;
+      var bd = $('modalBackdrop');
+      if(bd) bd.onclick = function(e){ if(e.target === bd) closeModal(); };
+      var bVal = $('sdDetailValidate');
+      if(bVal) bVal.onclick = async function(){
+        var ok = await portalSdValidate(reportId, 'validate', bVal);
+        if(ok) closeModal();
+      };
+      var bUndo = $('sdDetailUndo');
+      if(bUndo) bUndo.onclick = async function(){
+        var ok = await portalSdValidate(reportId, 'undo', bUndo);
+        if(ok) closeModal();
+      };
+    }
+    function portalSessionDisruptionsBind(){
+      var btn = document.getElementById('sdRefreshBtn');
+      if(btn) btn.addEventListener('click', portalSdLoad);
+      portalSdLoad();
+    }
+
     function renderView(id){
       var html;
       if(id==='nav_hub') return viewNavHubDashboard();
@@ -19220,6 +19636,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else if(id==='c4k_services') html = viewC4kServices();
       else if(id==='c4k_sessions') html = viewC4kSessions();
       else if(id==='c4k_late_submissions') html = viewC4kLateSubmissions();
+      else if(id==='session_disruptions') html = viewSessionDisruptions();
       else if(id==='c4k_payments') html = viewC4kPaymentsView();
       else if(id==='reenrol_payments') html = viewReenrolPayments();
       else if(id==='logs') html = viewLogs();
@@ -19242,6 +19659,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         html = viewPortalDocuments();
       }else if(id==='portal_payslips') html = viewPortalPayslips();
       else if(id==='portal_participant_documents') html = viewPortalParticipantDocuments();
+      else if(id==='portal_parent_consents') html = viewPortalParentConsents();
       else if(id==='portal_docs_portalpin') html = viewPortalPins();
       else if(id.indexOf('portal_docs_')===0){
         window.__portalDocsPresetFilter = id.slice('portal_docs_'.length);
@@ -19259,6 +19677,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else if(id==='comms_bookings') html = viewCommsBookings();
       else if(id==='comms_ops') html = viewCommsOps();
       else if(id==='portal_parent_notify_log') html = viewPortalParentNotifyLog();
+      else if(id==='portal_parent_broadcast') html = viewPortalParentBroadcast();
       else if(id==='comms_ops_order') html = viewCommsOpsOrderDetail();
       else if(id==='receptionist') html = viewReceptionist();
       else if(id==='operator') html = viewOperator();
@@ -19721,10 +20140,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var rows = cases.map(absentsCreditsCaseRowHtml).join('');
       if(!rows) rows = '<tr><td colspan="10" class="muted">No cases in the demo list.</td></tr>';
       var srcChip = usePortal ? 'workbook' : 'demo';
+      var parentQueue = '';
+      if(window.PortalParentAbsences && typeof window.PortalParentAbsences.embedHtml === 'function'){
+        portalParentAbsencesConfigureOnce();
+        parentQueue = window.PortalParentAbsences.embedHtml();
+      }
+      if(window.PortalParentMakeups && typeof window.PortalParentMakeups.embedHtml === 'function'){
+        portalParentMakeupsConfigureOnce();
+        parentQueue += window.PortalParentMakeups.embedHtml();
+      }
+      if(window.PortalParentCredits && typeof window.PortalParentCredits.embedHtml === 'function'){
+        portalParentCreditsConfigureOnce();
+        parentQueue += window.PortalParentCredits.embedHtml();
+      }
       return '<h1 class="page-title">Absents, refunds &amp; credits</h1>'+
         '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Work through missed sessions, refunds, credits, and what was agreed with each family. '+metaLine+'</p>'+
         '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--sec" data-view-target="dashboard">Day operations</button> <button type="button" class="btn btn--sec" data-view-target="bookings">Bookings</button> <button type="button" class="btn btn--ghost" data-view-target="communications">Comms log</button></div>'+
-        '<div class="card" style="margin-bottom:14px"><div class="card-h"><h3>Queue</h3><span class="chip '+(pend?'chip--pend':'chip--ok')+'">'+esc(String(pend))+' pending · '+esc(String(total))+' rows ('+srcChip+')</span></div>'+
+        parentQueue+
+        '<div class="card" style="margin-bottom:14px"><div class="card-h"><h3>Workbook / legacy queue</h3><span class="chip '+(pend?'chip--pend':'chip--ok')+'">'+esc(String(pend))+' pending · '+esc(String(total))+' rows ('+srcChip+')</span></div>'+
         '<div class="card-pad" style="overflow:auto"><table class="tbl tbl--center"><thead><tr><th>Participant</th><th>Time / value</th><th>Date</th><th>Service</th><th>Reason</th><th>Notice</th><th>Policy</th><th>Resolution</th><th>Status</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'+
         '<p class="muted" style="margin:0;font-size:12px;line-height:1.5;max-width:48rem;overflow-wrap:break-word"><strong>Note:</strong> '+
         (usePortal
@@ -19950,6 +20383,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         orders_all:'Every booking and order — slot state, funding route and waiting-list links. Use Outstanding only on the Orders page to filter balances.',
         comms_ops:'Programme comms log · staff notices',
         portal_parent_notify_log:'Outbound sends and inbound WhatsApp replies to the API number.',
+        portal_parent_broadcast:'Send one message (email + optional WhatsApp) to many families at once — review, select, preview and send in batch.',
         staffhr:'Staff roster — open any person for full profile, HR notes and availability.',
         onboarding:'New-hire onboarding pipeline — forms, tasks and worker progress.',
         staffhr_contracts:'Employment contracts (zero-hours, fixed-term and permanent part-time term-time) — create, send and track staff signatures.',
@@ -20049,7 +20483,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         description:'Access operational documents, payslips, timesheets, expenses, certificates, passports, checklists and first aid records.',
         preview:['Payslips','Timesheets','Expenses','Certificates','Passports and checklists','First aid records'],
         status:'Use this area to find generated PDFs, staff documents and compliance records.',
-        primary:['portal_documents','portal_participant_documents','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_certificate'],
+        primary:['portal_documents','portal_participant_documents','portal_parent_consents','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_certificate'],
         secondary:['portal_docs_portalpin','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid','policies']
       },
       {
@@ -20168,110 +20602,34 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return '\u2014';
     }
 
-    function opsHubAlertsAsideInnerHtml(){
-      var list = typeof window.portalAdminBellPrepareForRender === 'function'
-        ? window.portalAdminBellPrepareForRender()
-        : (window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ || []);
-      if(!list.length){
-        return '<p class="muted ops-hub-aside-empty">No incidents, cancellations, absents, or approval requests right now.</p>';
-      }
-      return list.slice(0, 14).map(function(a, idx){
-        var jump = a.view ? ' data-alert-view="'+esc(a.view)+'"' : '';
-        var meta = '';
-        if(a.recordId) meta += ' data-alert-record-id="'+esc(a.recordId)+'"';
-        if(a.clientName) meta += ' data-alert-client="'+esc(a.clientName)+'"';
-        if(a.sessionDate) meta += ' data-alert-date="'+esc(a.sessionDate)+'"';
-        return (
-          '<button type="button" class="ops-hub-alert-row portal-admin-activity-alert" data-ops-hub-alert-idx="'+idx+'"'+jump+meta+'>'+
-            '<span class="ops-hub-alert-row__main"><strong>'+esc(a.title || 'Alert')+'</strong>'+
-            '<span class="muted">'+esc(a.sub || '')+'</span></span>'+
-            '<span class="chip chip--info">'+esc(a.t || portalAdminAlertTimeLabel(a.created_at))+'</span>'+
-          '</button>'
-        );
-      }).join('');
-    }
-
-    function opsHubConnectedAsideInnerHtml(){
-      var list = opsHubConnectedStaffList();
-      if(!list.length){
-        return '<p class="muted ops-hub-aside-empty">Nobody else online right now. Names appear when staff have the portal open (visit heartbeat).</p>';
-      }
-      return (
-        '<div class="ops-hub-connected-list">'+
-        list.map(function(p){
-          return '<span class="ops-hub-connected-pill" title="Online now">'+esc(p.name || 'Staff')+'</span>';
-        }).join('')+
-        '</div>'
-      );
-    }
-
-    function opsHubAsideHtml(){
-      return (
-        '<aside class="ops-hub__aside" aria-label="Live alerts and connected staff">'+
-          '<div class="ops-hub-aside-card">'+
-            '<div class="ops-hub-aside-card__head">'+
-              '<h3 class="ops-hub-aside-card__title">Alerts</h3>'+
-              '<span class="ops-hub-aside-card__count" id="opsHubAlertsCount">0</span>'+
-            '</div>'+
-            '<div class="ops-hub-aside-card__body" id="opsHubAlertsHost">'+opsHubAlertsAsideInnerHtml()+'</div>'+
-          '</div>'+
-          '<div class="ops-hub-aside-card ops-hub-aside-card--connected">'+
-            '<div class="ops-hub-aside-card__head">'+
-              '<h3 class="ops-hub-aside-card__title">Gente conectada</h3>'+
-              '<span class="ops-hub-aside-card__count" id="opsHubConnectedCount">0</span>'+
-            '</div>'+
-            '<div class="ops-hub-aside-card__body" id="opsHubConnectedHost">'+opsHubConnectedAsideInnerHtml()+'</div>'+
-          '</div>'+
-        '</aside>'
-      );
-    }
-
     function opsHubPatchLiveAside(){
-      if(state.view !== 'nav_hub' || state.navHubGroup) return;
-      var alertsHost = $('opsHubAlertsHost');
-      if(alertsHost) alertsHost.innerHTML = opsHubAlertsAsideInnerHtml();
-      var countEl = $('opsHubAlertsCount');
-      if(countEl) countEl.textContent = String(opsHubGlanceValueAlerts());
-      var connHost = $('opsHubConnectedHost');
-      if(connHost) connHost.innerHTML = opsHubConnectedAsideInnerHtml();
-      var connCount = $('opsHubConnectedCount');
-      if(connCount){
-        var n = opsHubConnectedStaffList().length;
-        connCount.textContent = String(n);
-        connCount.hidden = n < 1;
-      }
-      var todayOnline = document.querySelector('.ops-hub__today-item .ops-hub__today-v');
-      /* glance strip refreshed on full rerender only */
+      /* Ops hub sidebar removed — online staff shown in header presence bar + glance strip only. */
     }
     window.opsHubPatchLiveAside = opsHubPatchLiveAside;
 
-    function bindOpsHubAsideAlerts(){
-      document.querySelectorAll('[data-ops-hub-alert-idx]').forEach(function(btn){
-        if(btn.dataset.opsHubAlertBound === '1') return;
-        btn.dataset.opsHubAlertBound = '1';
-        btn.addEventListener('click', function(){
-          var idx = parseInt(btn.getAttribute('data-ops-hub-alert-idx'), 10);
-          var acts = typeof window.portalAdminBellPrepareForRender === 'function'
-            ? window.portalAdminBellPrepareForRender()
-            : (window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ || []);
-          var a = acts[idx];
-          if(!a || !a.view) return;
-          portalAdminOpenActivityAlert({
-            view: a.view,
-            recordId: a.recordId || '',
-            clientName: a.clientName || '',
-            sessionDate: a.sessionDate || ''
-          });
-        });
-      });
-    }
-
     function bindNavHubLive(){
-      bindOpsHubAsideAlerts();
       portalAdminMountLivePresenceBar();
+      var alertsGlance = $('opsHubAlertsGlance');
+      if(alertsGlance && !alertsGlance.dataset.bound){
+        alertsGlance.dataset.bound = '1';
+        function openAlertsFromGlance(ev){
+          if(ev) ev.preventDefault();
+          var ap = $('alertsPop');
+          if(ap && !ap.classList.contains('open') && typeof toggleAlerts === 'function'){
+            toggleAlerts();
+          }else if(ap && typeof toggleAlerts === 'function'){
+            toggleAlerts();
+          }
+        }
+        alertsGlance.addEventListener('click', openAlertsFromGlance);
+        alertsGlance.addEventListener('keydown', function(ev){
+          if(ev.key === 'Enter' || ev.key === ' '){
+            openAlertsFromGlance(ev);
+          }
+        });
+      }
       void portalAdminBootstrapActivityAlerts().finally(function(){
         opsHubPatchLiveAside();
-        bindOpsHubAsideAlerts();
       });
     }
     function opsHubGlanceHtml(){
@@ -20287,8 +20645,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         '<div class="ops-hub__today" role="region" aria-label="Today at a glance">' +
         '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Today</span><span class="ops-hub__today-v">'+esc(weekday)+'</span><span class="ops-hub__today-s">'+esc(dateStr)+'</span></div>' +
-        '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Alerts</span><span class="ops-hub__today-v'+(alertsN > 0 ? ' ops-hub__today-v--alert' : '')+'">'+esc(String(alertsN))+'</span><span class="ops-hub__today-s">Unread items</span></div>' +
-        '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Online users</span><span class="ops-hub__today-v">'+esc(String(onlineN))+'</span><span class="ops-hub__today-s">Gente conectada ahora</span></div>' +
+        '<div class="ops-hub__today-item ops-hub__today-item--alerts" id="opsHubAlertsGlance" role="button" tabindex="0" aria-label="Open alerts">' +
+        '<span class="ops-hub__today-k">Alerts</span><span class="ops-hub__today-v'+(alertsN > 0 ? ' ops-hub__today-v--alert' : '')+'">'+esc(String(alertsN))+'</span><span class="ops-hub__today-s">Incidents, cancellations, expenses &amp; wellbeing</span></div>' +
+        '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Online users</span><span class="ops-hub__today-v">'+esc(String(onlineN))+'</span><span class="ops-hub__today-s">Staff connected now</span></div>' +
         '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Pending actions</span><span class="ops-hub__today-v'+(pendingN > 0 ? ' ops-hub__today-v--warn' : '')+'">'+esc(String(pendingN))+'</span><span class="ops-hub__today-s">Late forms &amp; absents</span></div>' +
         '</div>'
       );
@@ -20362,7 +20721,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="ops-hub__main">' +
         '<div class="ops-hub__grid admin-dashboard-grid">'+cards+'</div>' +
         '</div>' +
-        opsHubAsideHtml() +
         '</div>' +
         '</div>'
       );
@@ -20371,9 +20729,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var sessionsRow1 =
         portalDashTileHtml('c4k_sessions', '', 'c4k_sessions', 'Sessions overview', 'Live grid & feedback', false, 'sessions', 'sessions_hub_overview')+
         portalDashTileHtml('participant_achievements', '', 'clients', 'Achievement photos', 'Session photos after feedback', false, 'feedback')+
-        portalDashTileHtml('c4k_sessions', '', 'c4k_registers', 'Feedbacks', 'Registers & session notes', false, 'feedback', 'sessions_hub_feedback')+
-        portalDashTileHtml('c4k_late_submissions', '', 'c4k_late_submissions', 'Late submissions', 'Approve past-session forms', state.portalLatePendingCount > 0, 'feedback')+
-        portalDashTileHtml('c4k_sessions', '', 'c4k_relevant', 'Relevant info', 'Relevant notes to review', false, 'analytics', 'sessions_hub_relevant')+
+        portalDashTileHtml('c4k_sessions', '', 'c4k_registers', 'Register', 'Raw session feedback', false, 'feedback', 'sessions_hub_feedback')+
+        portalDashTileHtml('c4k_sessions', '', 'c4k_reviews', 'Feedback (filtered)', 'Raw + parent-safe filtered', false, 'feedback', 'sessions_hub_positive')+
+        portalDashTileHtml('c4k_sessions', '', 'c4k_relevant', 'Notes', 'Optional notes — share to CEOs/staff', false, 'analytics', 'sessions_hub_relevant')+
         portalDashTileHtml('c4k_sessions', '', 'absents', 'Absents', 'Quick marks by day', false, 'absents', 'sessions_hub_absents');
       var sessionsRow2 =
         portalDashTileHtml('c4k_sessions', '', 'portal_nav_lead', 'Lead report', 'Lead session reports', false, 'feedback', 'sessions_hub_lead')+
@@ -20453,7 +20811,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDashTileHtml('portal_documents', '', 'portal_documents', 'Documents', 'Timesheets, expenses &amp; uploads', false, 'scheduling')+
         portalDashTileHtml('portal_payslips', '', 'portal_payslips', 'Payslips', 'Upload worker payslip PDFs', false, 'payments')+
         portalDashTileHtml('', '', 'invoices', 'Payroll report', 'Monthly PDF · preview &amp; send', false, 'payments', '', '', '/payroll-report.html')+
-        portalDashTileHtml('', '', 'c4k_payments', 'Pay rates', 'Hourly rates by role &amp; scale', false, 'payments', '', '', '/pay-rates.html');
+        portalDashTileHtml('', '', 'c4k_payments', 'Pay rates', 'Hourly rates by role &amp; scale', false, 'payments', '', '', '/pay-rates.html')+
+        portalDashTileHtml('c4k_late_submissions', '', 'c4k_late_submissions', 'Late submissions', 'Approve past-session forms', state.portalLatePendingCount > 0, 'feedback');
       function opsAdminGridHtml(row1, row2, gridCls, row2ExtraCls){
         var cls = gridCls || 'dash-hub__grid--3';
         var html =
@@ -20551,6 +20910,112 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(window.PortalParticipantDocuments && typeof window.PortalParticipantDocuments.bindModule === 'function'){
         window.PortalParticipantDocuments.bindModule();
       }
+    }
+    function portalParentConsentsConfigureOnce(){
+      if(window.__portalParentConsentsConfigured || !window.PortalParentConsents) return;
+      window.__portalParentConsentsConfigured = true;
+      window.PortalParentConsents.configure({
+        esc: esc,
+        toast: portalAdminToast,
+        getClient: getSchedSupabaseClient,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        }
+      });
+    }
+    function viewPortalParentConsents(){
+      portalParentConsentsConfigureOnce();
+      return window.PortalParentConsents ? window.PortalParentConsents.viewHtml() : '<p class="page-intro">Parent consents module failed to load.</p>';
+    }
+    function bindPortalParentConsentsModule(){
+      portalParentConsentsConfigureOnce();
+      if(window.PortalParentConsents && typeof window.PortalParentConsents.bindModule === 'function'){
+        window.PortalParentConsents.bindModule();
+      }
+    }
+    function portalParentAbsencesConfigureOnce(){
+      if(window.__portalParentAbsencesConfigured || !window.PortalParentAbsences) return;
+      window.__portalParentAbsencesConfigured = true;
+      window.PortalParentAbsences.configure({
+        esc: esc,
+        toast: portalAdminToast,
+        getClient: getSchedSupabaseClient,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        }
+      });
+    }
+    function bindPortalParentAbsencesModule(){
+      portalParentAbsencesConfigureOnce();
+      if(window.PortalParentAbsences && typeof window.PortalParentAbsences.bindEmbed === 'function'){
+        window.PortalParentAbsences.bindEmbed();
+      } else if(window.PortalParentAbsences && typeof window.PortalParentAbsences.bindModule === 'function'){
+        window.PortalParentAbsences.bindModule();
+      }
+      portalParentMakeupsConfigureOnce();
+      if(window.PortalParentMakeups && typeof window.PortalParentMakeups.bindEmbed === 'function'){
+        window.PortalParentMakeups.bindEmbed();
+      }
+      portalParentCreditsConfigureOnce();
+      if(window.PortalParentCredits && typeof window.PortalParentCredits.bindEmbed === 'function'){
+        window.PortalParentCredits.bindEmbed();
+      }
+    }
+    function portalParentMakeupsConfigureOnce(){
+      if(window.__portalParentMakeupsConfigured || !window.PortalParentMakeups) return;
+      window.__portalParentMakeupsConfigured = true;
+      window.PortalParentMakeups.configure({
+        esc: esc,
+        toast: portalAdminToast,
+        getClient: getSchedSupabaseClient,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        }
+      });
+    }
+    function portalParentCreditsConfigureOnce(){
+      if(window.__portalParentCreditsConfigured || !window.PortalParentCredits) return;
+      window.__portalParentCreditsConfigured = true;
+      window.PortalParentCredits.configure({
+        esc: esc,
+        toast: portalAdminToast,
+        getClient: getSchedSupabaseClient,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        }
+      });
+    }
+    function portalParentInvoicesConfigureOnce(){
+      if(window.__portalParentInvoicesConfigured || !window.PortalParentInvoices) return;
+      window.__portalParentInvoicesConfigured = true;
+      window.PortalParentInvoices.configure({
+        esc: esc,
+        toast: portalAdminToast,
+        getClient: getSchedSupabaseClient,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        }
+      });
     }
     function portalDocumentsConfigureOnce(){
       if(window.__portalDocumentsConfigured || !window.PortalDocuments) return;
@@ -20695,6 +21160,33 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function viewPortalParentNotifyLog(){
       portalParentNotifyLogConfigureOnce();
       return window.PortalParentNotifyLog ? window.PortalParentNotifyLog.viewHtml() : '<p class="page-intro">Family messages module failed to load.</p>';
+    }
+    function portalParentBroadcastConfigureOnce(){
+      portalParentNotifyConfigureOnce();
+      if(window.__portalParentBroadcastConfigured || !window.PortalParentBroadcast) return;
+      window.__portalParentBroadcastConfigured = true;
+      window.PortalParentBroadcast.configure({
+        esc: esc,
+        getClient: getSchedSupabaseClient,
+        toast: portalAdminToast,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        }
+      });
+    }
+    function viewPortalParentBroadcast(){
+      portalParentBroadcastConfigureOnce();
+      return window.PortalParentBroadcast ? window.PortalParentBroadcast.viewHtml() : '<p class="page-intro">Family broadcast module failed to load.</p>';
+    }
+    function bindPortalParentBroadcastModule(){
+      portalParentBroadcastConfigureOnce();
+      if(window.PortalParentBroadcast && typeof window.PortalParentBroadcast.bindModule === 'function'){
+        window.PortalParentBroadcast.bindModule();
+      }
     }
     function bindPortalParentNotifyLogModule(){
       portalParentNotifyLogConfigureOnce();
@@ -20894,8 +21386,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function viewReenrolPayments(){
       // Live, editable client re-enrolment payments (powered by public.client_payments).
       // Rendered by /portal/admin-payments.js into #payModuleRoot (see bindView).
+      portalParentInvoicesConfigureOnce();
+      var invoicesEmbed =
+        window.PortalParentInvoices && typeof window.PortalParentInvoices.embedHtml === 'function'
+          ? window.PortalParentInvoices.embedHtml()
+          : '';
       return '<h1 class="page-title" style="display:flex;align-items:center;gap:10px"><span aria-hidden="true" style="display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#eff6ff;color:#2d84b3"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="none"><text x="12" y="17" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor" font-family="system-ui,Segoe UI,sans-serif">\u00a3</text></svg></span><span>Programme payments</span></h1>'+
         '<p class="page-intro">Track client payments — totals, who has paid vs outstanding, split by private (parents) and local-authority groups. Tap a client to open the full record and edit status, amount, service and any field.</p>'+
+        invoicesEmbed+
         '<div id="payModuleRoot"></div>';
     }
     function viewLogs(){
@@ -22542,7 +23040,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.querySelectorAll('[data-act]').forEach(function(b){
         b.addEventListener('click', function(){
           var v = b.getAttribute('data-act');
-          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='portal_participant_documents'||v==='portal_payslips'||v==='portal_activity'||v==='portal_training_progress'||v==='portal_push_devices'||v==='participant_achievements'||v==='portal_parent_notify_log'||v==='staff_live_map'||v==='staff_ghost_teleport'||v==='cs_cliq'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
+          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='portal_participant_documents'||v==='portal_parent_consents'||v==='portal_payslips'||v==='portal_activity'||v==='portal_training_progress'||v==='portal_push_devices'||v==='participant_achievements'||v==='portal_parent_notify_log'||v==='portal_parent_broadcast'||v==='staff_live_map'||v==='staff_ghost_teleport'||v==='cs_cliq'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
           closeSidebarMob();
         });
       });
@@ -22754,6 +23252,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
 
       if(id==='reenrol_payments'){
+        portalParentInvoicesConfigureOnce();
+        if(window.PortalParentInvoices && typeof window.PortalParentInvoices.bindEmbed === 'function'){
+          window.PortalParentInvoices.bindEmbed();
+        }
         if(window.AdminPayments && $('payModuleRoot')){
           window.AdminPayments.configure({
             getClient: getSchedSupabaseClient,
@@ -22880,10 +23382,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else if(id==='portal_payslips') bindPortalPayslipsModule();
       else if(id==='portal_documents' || id.indexOf('portal_docs_')===0) bindPortalDocumentsModule();
       else if(id==='portal_participant_documents') bindPortalParticipantDocumentsModule();
+      else if(id==='portal_parent_consents') bindPortalParentConsentsModule();
+      if(id==='absents_refunds') bindPortalParentAbsencesModule();
       if(id==='portal_activity') bindPortalActivityModule();
+      if(id==='session_disruptions') portalSessionDisruptionsBind();
       if(id==='portal_training_progress') bindPortalTrainingProgressModule();
       if(id==='portal_push_devices') bindPortalPushDevicesModule();
       if(id==='portal_parent_notify_log') bindPortalParentNotifyLogModule();
+      if(id==='portal_parent_broadcast') bindPortalParentBroadcastModule();
       if(id==='participant_achievements') bindParticipantAchievementsModule();
       if(id==='staff_live_map') bindStaffLiveMapModule();
       if(id==='staff_ghost_teleport') bindStaffGhostTeleportModule();
@@ -22909,13 +23415,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             ansTh.hidden = !showAns;
             if(showAns) ansTh.textContent = paxContactsRegQuestionLabel(qv);
           }
+          /* Build the unified list ONCE per refresh and index by id. Previously each
+             row called paxContactsFindById() -> paxContactsUnifiedList(), rebuilding
+             the whole (heavy) list ~N times per keystroke (O(n^2)), which froze the
+             search input so only the first character registered. */
+          var byId = {};
+          var L = paxContactsUnifiedList();
+          for(var li = 0; li < L.length; li++){ byId[String(L[li].id)] = L[li]; }
           var n = 0;
           root2.querySelectorAll('#paxContactsTbl tbody tr').forEach(function(tr){
             var id = tr.getAttribute('data-pax-id');
-            var p = paxContactsFindById(id);
+            var p = byId[String(id)];
             if(!p){ tr.style.display = 'none'; return; }
             var ok = true;
-            if(bk !== 'all' && !paxContactsMatchesBookingStatus(p, bk)) ok = false;
+            /* When searching, ignore the Booking status filter so anyone (old,
+               trial, waiting list, in sessions) can be found by name/contact. */
+            if(!q && bk !== 'all' && !paxContactsMatchesBookingStatus(p, bk)) ok = false;
             if(qv !== 'all' && !paxContactsRegQuestionHasAnswer(p, qv)) ok = false;
             if(q){
               var blob = (
@@ -23240,7 +23755,26 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       // participant and all three services show (single-token "Yusuf" otherwise fails
       // the booked-services matcher and the Aquatic segment goes missing).
       'yusef': 'yusuf ahmed',
-      'yusuf': 'yusuf ahmed'
+      'yusuf': 'yusuf ahmed',
+      // Confirmed same-person spelling variants: roster/short names pinned to the full
+      // registration name so they merge with their contact record instead of duplicating.
+      // (Adaam Ah is the "Aadam Ahmed" brother — kept distinct from Amaar/Aydaan Ah.)
+      'adaam ah': 'aadam ahmed',
+      'abodi p': 'aboodi patel',
+      'abodi pa': 'aboodi patel',
+      'amar ra': 'amar rai singh',
+      'amar rai': 'amar rai singh',
+      'tom': 'thomas (tom) eriksson',
+      'mohammed': 'mohamed mohamud',
+      'ayden w': 'ayden wong',
+      'emmanuel': 'emanuel dodson',
+      'logan': 'logan hibbitts',
+      'saaib': 'saaib abdullah',
+      'timi': 'timi dairo',
+      'yamik': 'yamik limbu',
+      'yamik (trial 18/05)': 'yamik limbu',
+      'tinashe': 'tinashe nekati',
+      'ikram': 'ikram omar'
     };
     function adminPortalNormalizedPersonName(s){
       var n = String(s || '')
@@ -23251,6 +23785,69 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return Object.prototype.hasOwnProperty.call(ADMIN_PARTICIPANT_NAME_ALIASES, n)
         ? ADMIN_PARTICIPANT_NAME_ALIASES[n]
         : n;
+    }
+    /* Support ratio per participant (default 1:1). Keys are display names and are
+       normalised through adminPortalNormalizedPersonName so roster short names,
+       aliases and full names all resolve to the same participant. */
+    var ADMIN_PARTICIPANT_SUPPORT_RATIO_RAW = {
+      'Tinashe Nekati': '3:1',
+      'Timi Dairo': '2:1',
+      'Fadi Abu daud': '2:1',
+      'Ikram Omar': '2:1'
+    };
+    /* Funding source per participant (only where known). Empty → no chip shown. */
+    var ADMIN_PARTICIPANT_FUNDING_RAW = {
+      'Tinashe Nekati': 'LA (Mon/Wed) · NHS (Fri) · Exempt',
+      'Saaib Abdullah': 'LA · Exempt',
+      'Timi Dairo': 'NHS · Exempt'
+    };
+    var __adminRatioByNorm = null;
+    var __adminFundingByNorm = null;
+    function adminBuildNormLookup(raw){
+      var out = Object.create(null);
+      for(var k in raw){
+        if(!Object.prototype.hasOwnProperty.call(raw, k)) continue;
+        var nk = adminPortalNormalizedPersonName(k);
+        if(nk) out[nk] = raw[k];
+      }
+      return out;
+    }
+    /** Support ratio label for a participant name — always returns a value (default 1:1). */
+    function adminParticipantSupportRatio(name){
+      if(!__adminRatioByNorm) __adminRatioByNorm = adminBuildNormLookup(ADMIN_PARTICIPANT_SUPPORT_RATIO_RAW);
+      var n = adminPortalNormalizedPersonName(name);
+      return (n && __adminRatioByNorm[n]) ? __adminRatioByNorm[n] : '1:1';
+    }
+    /** Funding label for a participant name — empty string when unknown. */
+    function adminParticipantFunding(name){
+      if(!__adminFundingByNorm) __adminFundingByNorm = adminBuildNormLookup(ADMIN_PARTICIPANT_FUNDING_RAW);
+      var n = adminPortalNormalizedPersonName(name);
+      return (n && __adminFundingByNorm[n]) ? __adminFundingByNorm[n] : '';
+    }
+    /**
+     * Funding source + payment method for a participant, read live from
+     * CLIENTS_PAYMENTS_PORTAL_SOURCE (Clients Payments export) by matching child
+     * name + carer. Falls back to the curated ADMIN_PARTICIPANT_FUNDING_RAW map
+     * when no payment row matches. Returns { source, method, isLA }.
+     */
+    function adminParticipantFundingInfo(p){
+      var info = null;
+      try{
+        info = (typeof adminClientsPaymentsPortalFundingForParticipant === 'function')
+          ? adminClientsPaymentsPortalFundingForParticipant(p) : null;
+      }catch(_e){ info = null; }
+      if(info && (info.fund || info.payMethod)){
+        var blob = ((info.fund||'')+' '+(info.payMethod||'')+' '+(info.next||'')).toLowerCase();
+        var isLA = /nhs|local authority|direct payment|remittance|invoice|\bpo\b|\bila\b|\bsbs\b|\bcwd\b|funder/.test(blob);
+        var method = String(info.payMethod||'').replace(/^\s*\d+\s*[-\u2013]\s*/, '').trim();
+        return { source: isLA ? 'LA/NHS funds' : 'Private funds', method: method, isLA: isLA };
+      }
+      var manual = adminParticipantFunding(p && p.name);
+      if(manual){
+        var manualLA = /nhs|\bla\b|local authority|exempt/i.test(manual) && !/private|bank/i.test(manual);
+        return { source: manual, method: '', isLA: manualLA };
+      }
+      return { source: '', method: '', isLA: false };
     }
     /** Collapse runs of the same letter so instructor typos line up (aadam→adam, haneff→hanef, sammer→samer). */
     function adminPortalCollapseRepeats(t){
@@ -24982,6 +25579,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       portalBindComposeSendHandler({ needTitle:true, typ:kind, editId:editId });
     }
+    // Exposed so other modules (e.g. the sessions hub "Notes" tab) can prefill a
+    // staff dashboard announcement from a relevant-information note.
+    window.openComposeModalAnnouncementOrReminder = openComposeModalAnnouncementOrReminder;
     function openComposeModal(preset){
       var p0 = String(preset || '').trim().toLowerCase();
       if(p0 === 'announcement' || p0 === 'reminder'){
@@ -25334,16 +25934,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var col = $('adminSidebarCollapse');
       if(!col) return;
       if(!adminIsDesktopShell()){
-        col.textContent = 'Minimizar menú';
-        col.setAttribute('aria-label', 'Minimizar menú lateral');
+        col.textContent = 'Collapse sidebar';
+        col.setAttribute('aria-label', 'Collapse sidebar');
         return;
       }
       if(document.body.classList.contains('sidebar-desktop-pinned')){
-        col.textContent = 'Minimizar menú';
-        col.setAttribute('aria-label', 'Minimizar menú lateral');
+        col.textContent = 'Collapse sidebar';
+        col.setAttribute('aria-label', 'Collapse sidebar');
       } else {
-        col.textContent = 'Fijar menú ancho';
-        col.setAttribute('aria-label', 'Fijar menú lateral a ancho completo');
+        col.textContent = 'Pin full width';
+        col.setAttribute('aria-label', 'Pin sidebar to full width');
       }
     }
     function adminApplyDesktopSidebarFromStorage(){
@@ -25499,7 +26099,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var host = document.getElementById('portalLivePresenceBar');
       if(!host) return;
       window.__portalAdminPresenceBarMounted = true;
-      import('/portal/portal_live_presence.js?v=20260707-admin-online-fix')
+      import('/portal/portal_live_presence.js?v=20260704-presence-504')
         .then(function(mod){
           if(!mod || typeof mod.mountPortalLivePresenceBar !== 'function') return;
           mod.mountPortalLivePresenceBar('portalLivePresenceBar');
@@ -25661,7 +26261,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         return;
       }
-      if(tab.indexOf('portal_docs_') === 0 || tab === 'portal_documents' || tab === 'portal_payslips' || tab === 'portal_participant_documents'){
+      if(tab === 'c4k_late_submissions'){
+        setView('c4k_late_submissions');
+        return;
+      }
+      if(tab === 'absents'){
+        return;
+      }
+      if(tab.indexOf('portal_docs_') === 0 || tab === 'portal_documents' || tab === 'portal_payslips' || tab === 'portal_participant_documents' || tab === 'portal_parent_consents'){
         if(tab.indexOf('portal_docs_') === 0){
           window.__portalDocsPresetFilter = tab.slice('portal_docs_'.length);
         }else if(tab === 'portal_documents'){
@@ -25873,23 +26480,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               window.portalAdminPushActivityAlert(a, { silent: true });
             }
           });
-          var absentRows = bundle.absents || [];
-          if(absentRows.length){
-            var absentStaffIds = [];
-            var absentStaffSeen = {};
-            absentRows.forEach(function(r){
-              var sid = r && r.staff_user_id ? String(r.staff_user_id) : '';
-              if(sid && !absentStaffSeen[sid]){ absentStaffSeen[sid] = true; absentStaffIds.push(sid); }
-            });
-            var absentNameByStaff = await portalAdminStaffNamesById(client, absentStaffIds);
-            absentRows.forEach(function(r){
-              var uid = r && r.staff_user_id ? String(r.staff_user_id) : '';
-              var a = portalAdminActivityFromAbsentMark(r, uid && absentNameByStaff[uid] ? absentNameByStaff[uid] : '');
-              if(a && typeof window.portalAdminPushActivityAlert === 'function'){
-                window.portalAdminPushActivityAlert(a, { silent: true });
-              }
-            });
-          }
           if(bundle.late_requests && bundle.late_requests.length){
             bundle.late_requests.forEach(function(r){
               if(String(r.status || '').toLowerCase() !== 'pending') return;
@@ -25927,7 +26517,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(typeof window.__portalAdminRenderAlerts === 'function'){
           window.__portalAdminRenderAlerts();
         }
-        try{ opsHubPatchLiveAside(); bindOpsHubAsideAlerts(); }catch(_opsHub){}
+        try{ opsHubPatchLiveAside(); }catch(_opsHub){}
       }catch(err){ console.warn('[admin] activity alerts bootstrap', err); }
     }
 
@@ -25989,25 +26579,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               window.portalAdminPushActivityAlert(a);
             }
           })
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'portal_staff_session_quick_marks' }, function(payload){
-            var row = payload && payload.new;
-            if(!row || String(row.mark_type || '').trim() !== 'absent') return;
-            void (async function(){
-              var staffName = '';
-              try{
-                if(row.staff_user_id && client){
-                  var spRes = await client.from('staff_profiles').select('full_name,username').eq('id', row.staff_user_id).maybeSingle();
-                  if(!spRes.error && spRes.data){
-                    staffName = String(spRes.data.full_name || spRes.data.username || '').trim();
-                  }
-                }
-              }catch(_sp){}
-              var a = portalAdminActivityFromAbsentMark(row, staffName);
-              if(a && typeof window.portalAdminPushActivityAlert === 'function'){
-                window.portalAdminPushActivityAlert(a);
-              }
-            })();
-          })
           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'portal_wellbeing_admin_notifications' }, function(payload){
             var row = payload && payload.new;
             if(typeof window.portalAdminBellOnWellbeingNotificationInsert === 'function'){
@@ -26060,7 +26631,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>';
       }).join('');
       var emptyHtml = !activityHtml
-        ? '<p class="muted" style="margin:12px 16px">No incidents, cancellations, absents, or approval requests right now.</p>'
+        ? '<p class="muted" style="margin:12px 16px">No incidents, cancellations, expenses, or wellbeing requests right now.</p>'
         : '';
       var clearWellbeingBtn = wellbeingN > 0
         ? '<button type="button" class="btn btn--ghost btn--sm" id="portalAdminClearWellbeingAlerts" style="margin-left:auto;font-size:12px">Clear wellbeing ('+wellbeingN+')</button>'
@@ -26080,7 +26651,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       try{
         portalAdminDeferDayOpsBadgesRefresh();
       }catch(_badgeBell){}
-      try{ opsHubPatchLiveAside(); bindOpsHubAsideAlerts(); }catch(_opsHubBell){}
+      try{ opsHubPatchLiveAside(); }catch(_opsHubBell){}
     }
     try{ window.__portalAdminRenderAlerts = renderAlerts; }catch(e){}
 
@@ -26198,6 +26769,94 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       /* Legacy narrow-preview toggle removed — portal switch lives in admin topbar. */
     }
 
+    /** All live participant names from the roster directory + session feedback (static export + live payload). */
+    function adminAllLiveParticipantNames(){
+      var seen = {}; var out = [];
+      function add(n){
+        var s = String(n||'').trim();
+        if(!s) return;
+        var low = s.toLowerCase();
+        if(low==='closed'||low==='available'||low==='no participant'||low==='no client'||low==='noclient'||low==='no_client') return;
+        if(seen[low]) return;
+        seen[low]=1; out.push(s);
+      }
+      try{
+        var pack = adminMergeSpreadsheetSessionsForSlotLookup();
+        var notes = (pack && pack.notes) || {};
+        Object.keys(notes).forEach(function(cid){ add(notes[cid] && notes[cid].name); });
+      }catch(_e1){}
+      try{ adminSessionFeedbackPortalRows().forEach(function(r){ add(r.clientName); }); }catch(_e2){}
+      try{
+        var ops = window.PortalDayOps;
+        var p = ops && typeof ops.getPayload==='function' ? ops.getPayload() : null;
+        if(p && Array.isArray(p.session_feedback)) p.session_feedback.forEach(function(r){ add(r.client_name); });
+      }catch(_e3){}
+      return out;
+    }
+    /** Best live-participant name match: exact → starts-with (any word) → contains. */
+    function adminFindLiveParticipantName(q){
+      var qq = String(q||'').trim().toLowerCase();
+      if(!qq) return '';
+      var names = adminAllLiveParticipantNames();
+      var starts=null, incl=null;
+      for(var i=0;i<names.length;i++){
+        var nl = names[i].toLowerCase();
+        if(nl === qq) return names[i];
+        if(!starts){
+          if(nl.indexOf(qq)===0) starts=names[i];
+          else{
+            var words = nl.split(/\s+/);
+            for(var w=0;w<words.length;w++){ if(words[w].indexOf(qq)===0){ starts=names[i]; break; } }
+          }
+        }
+        if(!incl && nl.indexOf(qq)>=0) incl=names[i];
+      }
+      return starts || incl || '';
+    }
+    /** Open a live roster participant by display name: mock drawer when linked, else synthetic (feedback-backed) drawer. */
+    function adminOpenLiveParticipantByName(name){
+      var disp = String(name||'').trim();
+      if(!disp) return false;
+      var cid = '';
+      try{ cid = resolveAdminClientDrawerIdFromDisplayName(disp) || ''; }catch(_e){}
+      if(cid && MOCK.clientsById && MOCK.clientsById[cid]){
+        state.drawerIsSynthetic = false;
+        setView('clients');
+        setTimeout(function(){ openClientDrawer(cid); }, 0);
+        return true;
+      }
+      var syn = null;
+      try{ syn = buildSyntheticClientFromPortalRosterSlot(disp, {}); }catch(_e2){ syn = null; }
+      if(!syn){
+        syn = { name: disp, sub: 'Roster participant', sessionsAttended:0, attendancePct:0, cancellations:0, incidents:0, emotional:[], engagement:[], positives:[], notes:[], pattern:'', attendanceTerm:{ booked:0, attended:0, late:0, cancelled:0 }, recentSessions:[], activitiesWorked:[], lastEngagementLabel:'', lastEmotionalLabel:'', incidentHistory:[], recommendedNext:'' };
+      }
+      state.drawerIsSynthetic = true;
+      try{ openClientDrawerBody(syn, null, {}); }catch(_e3){ return false; }
+      return true;
+    }
+    /** Best live-staff match from the roster staff profiles → { rosterId, name }. */
+    function adminFindLiveStaff(q){
+      var qq = String(q||'').trim().toLowerCase();
+      if(!qq) return null;
+      try{
+        var src = window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.staffProfiles;
+        if(src){
+          var keys = Object.keys(src);
+          var starts=null, incl=null;
+          for(var i=0;i<keys.length;i++){
+            if(String(keys[i]||'').trim().toLowerCase()==='teflon') continue;
+            var nm = String((src[keys[i]]||{}).staffName||'').trim();
+            var nl = nm.toLowerCase();
+            if(!nl) continue;
+            if(nl===qq) return { rosterId: keys[i], name: nm };
+            if(!starts && (nl.indexOf(qq)===0 || nl.split(/\s+/).some(function(w){ return w.indexOf(qq)===0; }))) starts={ rosterId: keys[i], name: nm };
+            if(!incl && nl.indexOf(qq)>=0) incl={ rosterId: keys[i], name: nm };
+          }
+          return starts || incl || null;
+        }
+      }catch(_e){}
+      return null;
+    }
     function globalSearch(){
       var q = ($('globalSearch').value||'').trim().toLowerCase();
       if(!q) return;
@@ -26205,8 +26864,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(hit){ setView('clients'); setTimeout(function(){ openClientDrawer(hit); }, 0); return; }
       var st = MOCK.staff.find(function(s){ return s.name.toLowerCase().indexOf(q)>=0; });
       if(st){ setView('staffhr'); setTimeout(function(){ openStaffDrawer(st.id); }, 0); return; }
-      setView('dashboard');
-      alert('Demo: no exact match — try a participant or staff name from mock data.');
+      var liveName = adminFindLiveParticipantName(q);
+      if(liveName && adminOpenLiveParticipantByName(liveName)) return;
+      var liveStaff = adminFindLiveStaff(q);
+      if(liveStaff){
+        try{ openStaffDrawerByRosterKey(liveStaff.rosterId, { label: liveStaff.name }); return; }catch(_eStaff){}
+      }
+      alert('No match for "'+q+'" — try a participant or staff name from your roster or directory.');
     }
 
     function initOpWorkflowMock(){
@@ -26600,6 +27264,37 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         e.stopPropagation();
         toggleAlerts();
       });
+      var btnFamilyMsgsEl = $('btnFamilyMsgs');
+      if(btnFamilyMsgsEl) btnFamilyMsgsEl.addEventListener('click', function(e){
+        e.stopPropagation();
+        setView('portal_parent_notify_log');
+        closeSidebarMob();
+      });
+      if(!window.__portalAdminFamilyMsgBadgeBound){
+        window.__portalAdminFamilyMsgBadgeBound = true;
+        window.portalAdminRefreshFamilyMsgBadge = function portalAdminRefreshFamilyMsgBadge(){
+          var badge = $('familyMsgBadge');
+          if(!badge) return;
+          var client = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
+          if(!client || !window.PortalParentNotifyLog || typeof window.PortalParentNotifyLog.unreadCount !== 'function') return;
+          Promise.resolve(window.PortalParentNotifyLog.unreadCount(client)).then(function(n){
+            n = (typeof n === 'number' && n > 0) ? n : 0;
+            badge.textContent = n > 99 ? '99+' : String(n);
+            badge.classList.toggle('is-empty', n < 1);
+            var btn = $('btnFamilyMsgs');
+            if(btn) btn.classList.toggle('admin-icon-btn--has-alerts', n > 0);
+          }).catch(function(){});
+        };
+        window.addEventListener('portal:supabase-ready', function(){ window.portalAdminRefreshFamilyMsgBadge(); });
+        window.addEventListener('portal:family-msg-seen', function(){ window.portalAdminRefreshFamilyMsgBadge(); });
+        document.addEventListener('visibilitychange', function(){
+          if(document.visibilityState === 'visible') window.portalAdminRefreshFamilyMsgBadge();
+        });
+        setInterval(function(){
+          if(document.visibilityState === 'visible') window.portalAdminRefreshFamilyMsgBadge();
+        }, 30000);
+        setTimeout(function(){ window.portalAdminRefreshFamilyMsgBadge(); }, 1500);
+      }
       var alertsPopEl = $('alertsPop');
       if(alertsPopEl && !alertsPopEl.dataset.activityJumpBound){
         alertsPopEl.dataset.activityJumpBound = '1';
@@ -26627,6 +27322,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
           var btn = ev.target && ev.target.closest ? ev.target.closest('[data-alert-view]') : null;
           if(!btn || !alertsPopEl.contains(btn)) return;
+          ev.preventDefault();
+          ev.stopPropagation();
           var v = String(btn.getAttribute('data-alert-view') || '').trim();
           if(!v) return;
           alertsPopEl.classList.remove('open');
@@ -26641,9 +27338,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           });
         });
       }
-      document.addEventListener('click', function(){
+      document.addEventListener('click', function(ev){
         var ap = $('alertsPop');
-        if(ap) ap.classList.remove('open');
+        if(!ap || !ap.classList.contains('open')) return;
+        if(ev.target && ev.target.closest && (ev.target.closest('#btnAlerts') || ev.target.closest('#alertsPop') || ev.target.closest('#opsHubAlertsGlance'))) return;
+        ap.classList.remove('open');
       });
       var apEl = $('alertsPop');
       if(apEl) apEl.addEventListener('click', function(e){ e.stopPropagation(); });

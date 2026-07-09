@@ -438,7 +438,7 @@ function bindLogin() {
           "Restore the shared test password: run database/provision_staff_auth_users.py with SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (default 990099; Supabase often requires min 6 characters). " +
           "Or reset each user in Supabase → Authentication → Users. " +
           "Email provider minimum password length must allow the bootstrap password (default 990099 = 6 chars). " +
-          "ES: si no entra nadie, vuelve a ejecutar provision_staff_auth_users.py o supabase_update_test_passwords.sql (contraseña de prueba 990099 en stf*@staff.import.pending)."
+          "If nobody can sign in, re-run provision_staff_auth_users.py or supabase_update_test_passwords.sql (test password 990099 on stf*@staff.import.pending)."
       );
       return;
     }

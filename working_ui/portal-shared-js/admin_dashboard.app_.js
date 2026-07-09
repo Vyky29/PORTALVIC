@@ -16033,16 +16033,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var col = $('adminSidebarCollapse');
       if(!col) return;
       if(!adminIsDesktopShell()){
-        col.textContent = 'Minimizar menú';
-        col.setAttribute('aria-label', 'Minimizar menú lateral');
+        col.textContent = 'Collapse sidebar';
+        col.setAttribute('aria-label', 'Collapse sidebar');
         return;
       }
       if(document.body.classList.contains('sidebar-desktop-pinned')){
-        col.textContent = 'Minimizar menú';
-        col.setAttribute('aria-label', 'Minimizar menú lateral');
+        col.textContent = 'Collapse sidebar';
+        col.setAttribute('aria-label', 'Collapse sidebar');
       } else {
-        col.textContent = 'Fijar menú ancho';
-        col.setAttribute('aria-label', 'Fijar menú lateral a ancho completo');
+        col.textContent = 'Pin full width';
+        col.setAttribute('aria-label', 'Pin sidebar to full width');
       }
     }
     function adminApplyDesktopSidebarFromStorage(){

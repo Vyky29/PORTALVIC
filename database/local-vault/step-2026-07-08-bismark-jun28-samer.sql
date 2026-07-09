@@ -1,0 +1,2 @@
+-- SUPERSEDED 2026-07-08 — wrong narrative (Big Pool vs hub; Jack S was absent).
+-- Use step-2026-07-08-jack-s-jun28-absent-fix.sql instead.

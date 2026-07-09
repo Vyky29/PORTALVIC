@@ -59,16 +59,16 @@
       photo: true,
       swReview: false,
       leadReview: false,
-      venue: false,
+      venue: true,
       pickup: true,
-      planner: false,
+      planner: true,
       sixIcon: false,
     },
     andres: {
       photo: true,
       swReview: false,
       leadReview: false,
-      venue: false,
+      venue: true,
       pickup: true,
       planner: false,
       sixIcon: false,
@@ -105,7 +105,7 @@
       photo: true,
       swReview: false,
       leadReview: false,
-      venue: false,
+      venue: true,
       pickup: true,
       planner: false,
       sixIcon: false,
@@ -114,9 +114,9 @@
       photo: true,
       swReview: false,
       leadReview: false,
-      venue: false,
+      venue: true,
       pickup: true,
-      planner: false,
+      planner: true,
       sixIcon: false,
     },
     dan: {
@@ -187,18 +187,18 @@
       photo: true,
       swReview: false,
       leadReview: false,
-      venue: false,
+      venue: true,
       pickup: true,
       planner: true,
       sixIcon: false,
     },
     sevitha: {
-      photo: false,
-      swReview: false,
+      photo: true,
+      swReview: true,
       leadReview: false,
-      venue: false,
-      pickup: false,
-      planner: false,
+      venue: true,
+      pickup: true,
+      planner: true,
       sixIcon: false,
       leadExtras: false,
     },
@@ -213,12 +213,12 @@
     },
     youssef: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: false,
-      venue: false,
+      venue: true,
       pickup: true,
       planner: true,
-      sixIcon: true,
+      sixIcon: false,
     },
     roberto: {
       photo: true,
@@ -311,8 +311,20 @@
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]+/g, "");
     if (!k) return "";
+    // Prefer the authoritative resolver (auth-map.js) which knows the full
+    // staff-code map (stf001..stf022 -> roster keys, e.g. stf005 -> youssef).
+    // STAFF_DASHBOARD_ID is often a staff code, so without this the topbar
+    // profile lookup fell back to DEFAULT for anyone whose code wasn't hard
+    // coded below (e.g. Youssef = stf005 -> only Photo/Venue/PickUp showed).
+    try {
+      if (typeof global.portalCanonicalStaffRosterKey === "function") {
+        var canon = global.portalCanonicalStaffRosterKey(k);
+        if (canon) return canon;
+      }
+    } catch (_) {}
     if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
-    if (k === "yousef" || k === "yousseff" || k === "yusef") return "youssef";
+    if (k === "yousef" || k === "yousseff" || k === "yusef" || k === "stf005") return "youssef";
+    if (k.indexOf("youssef") === 0 || k.indexOf("yousef") === 0) return "youssef";
     if (k === "stf006") return "john";
     if (k === "stf012") return "berta";
     if (k === "michelleemmacaleb" || k.indexOf("michelle") === 0) return "michelle";
@@ -341,7 +353,48 @@
     return "";
   }
 
+  /* Remember the last non-empty key we resolved. Several topbar re-syncs fire on
+     frequent events (avatar/orbit refresh, source-updated, identity-resolved) and
+     STAFF_DASHBOARD_ID can be momentarily "" during those passes; without this,
+     one empty pass would re-apply the DEFAULT icon set (Photo/Venue/PickUp) over
+     the staff's real profile (e.g. Youssef's Photo/Review/PickUp/Plan). */
+  var __portalLastGoodStaffKey = "";
+
   function resolveCurrentStaffKey() {
+    var resolved = resolveCurrentStaffKeyRaw();
+    if (resolved) {
+      __portalLastGoodStaffKey = resolved;
+      return resolved;
+    }
+    return __portalLastGoodStaffKey;
+  }
+
+  /* Anti-downgrade guard. Several async passes (identity-resolved, source-updated,
+     avatar refresh) each re-resolve + re-apply the topbar profile. If one pass
+     transiently resolves to DEFAULT for a staff who actually has an explicit
+     profile (e.g. Youssef = Photo/Venue/PickUp/Plan), it would drop the 4th icon
+     back to the 3-icon default. Remember the last explicit (non-default) profile
+     per staff key and reuse it when a later pass fails to resolve for the SAME
+     staff (or before identity is known). A genuine switch to a different known
+     staff (e.g. admin ghost teleport) still gets its own profile. */
+  var __portalLastExplicitProfile = null;
+  var __portalLastExplicitKey = "";
+
+  function resolveTopbarProfileForStaffGuarded(staffKey) {
+    var canon = canonicalStaffRosterKey(staffKey);
+    var profile = resolveTopbarProfileForStaff(staffKey);
+    if (profile && profile !== DEFAULT_TOPBAR_PROFILE) {
+      __portalLastExplicitKey = canon;
+      __portalLastExplicitProfile = profile;
+      return profile;
+    }
+    if (__portalLastExplicitProfile && (!canon || canon === __portalLastExplicitKey)) {
+      return __portalLastExplicitProfile;
+    }
+    return profile;
+  }
+
+  function resolveCurrentStaffKeyRaw() {
     try {
       var sid = global.STAFF_DASHBOARD_ID;
       if (sid) {
@@ -452,7 +505,10 @@
 
   function applyTopbarProfile(profile) {
     profile = profile || DEFAULT_TOPBAR_PROFILE;
-    var venueOn = !!profile.venue && portalStaffVenueReportToolsAllowed();
+    /* Venue tool is now self-initiated (staff do a venue review only if a venue isn't
+       right), so it follows the header profile flag alone and is no longer gated by the
+       scheduled opening/closing duty windows. */
+    var venueOn = !!profile.venue;
     setIdsVisible(SWIMMING_ACHIEVEMENT_IDS, portalTopbarPhotoVisibleForProfile(profile));
     setIdsVisible(SWIMMING_TERM_REVIEW_IDS, !!profile.swReview);
     setIdsVisible(LEAD_TERM_REVIEW_IDS, !!profile.leadReview);
@@ -488,21 +544,51 @@
 
   global.portalSyncCeoFullTopbarTools = applyCeoStaffTopbarTools;
 
+  /**
+   * Resolve the topbar profile for a staff key robustly. The stored key can be a
+   * full-name variant (e.g. "yousseflastname") depending on how the roster hit was
+   * matched, so fall back to the displayed staff name (first token) and a prefix
+   * match against the known profiles before defaulting.
+   */
   function resolveTopbarProfileForStaff(staffKey) {
-    if (EXPLICIT_TOPBAR_PROFILES[staffKey]) {
-      return EXPLICIT_TOPBAR_PROFILES[staffKey];
+    var key = canonicalStaffRosterKey(staffKey);
+    var matched = key && EXPLICIT_TOPBAR_PROFILES[key] ? EXPLICIT_TOPBAR_PROFILES[key] : null;
+
+    if (!matched) {
+      try {
+        var nm = (global.dashboardData && global.dashboardData.staffName) || "";
+        var nameKey = canonicalStaffRosterKey(String(nm).split(/\s+/)[0]);
+        if (nameKey && EXPLICIT_TOPBAR_PROFILES[nameKey]) {
+          matched = EXPLICIT_TOPBAR_PROFILES[nameKey];
+        }
+      } catch (_) {}
     }
-    var leadKey = resolveProgrammeLeadStaffKeyFromAuth();
-    if (leadKey && EXPLICIT_TOPBAR_PROFILES[leadKey]) {
-      return EXPLICIT_TOPBAR_PROFILES[leadKey];
+
+    if (!matched && key) {
+      var profileKeys = Object.keys(EXPLICIT_TOPBAR_PROFILES);
+      for (var i = 0; i < profileKeys.length; i += 1) {
+        var pk = profileKeys[i];
+        if (pk.length >= 5 && key.indexOf(pk) === 0) {
+          matched = EXPLICIT_TOPBAR_PROFILES[pk];
+          break;
+        }
+      }
     }
-    return DEFAULT_TOPBAR_PROFILE;
+
+    if (!matched) {
+      var leadKey = resolveProgrammeLeadStaffKeyFromAuth();
+      if (leadKey && EXPLICIT_TOPBAR_PROFILES[leadKey]) {
+        matched = EXPLICIT_TOPBAR_PROFILES[leadKey];
+      }
+    }
+
+    return matched || DEFAULT_TOPBAR_PROFILE;
   }
 
   function portalResyncPlannerToolsAfterIdentity() {
     var staffKey = resolveCurrentStaffKey();
     if (!staffKey) staffKey = resolveProgrammeLeadStaffKeyFromAuth();
-    applyTopbarProfile(resolveTopbarProfileForStaff(staffKey));
+    applyTopbarProfile(resolveTopbarProfileForStaffGuarded(staffKey));
     try {
       if (typeof global.portalSyncTopbarRoleTools === "function") {
         global.portalSyncTopbarRoleTools({ isLead: !!global.__PORTAL_TOPBAR_IS_LEAD__ });
@@ -523,7 +609,7 @@
     }
 
     var staffKey = resolveCurrentStaffKey();
-    applyTopbarProfile(resolveTopbarProfileForStaff(staffKey));
+    applyTopbarProfile(resolveTopbarProfileForStaffGuarded(staffKey));
 
     try {
       if (typeof global.applySetupRoleTrainingRow === "function") {
@@ -651,5 +737,27 @@
         portalResyncPlannerToolsAfterIdentity();
       } catch (_) {}
     });
+    /* Safety net: if `portal:staff-identity-resolved` fired before this module
+       attached its listener (e.g. a cache-bump refetches one script while others
+       load from cache, reordering boot), the topbar can stay stuck on the default
+       profile (3 icons) and drop a worker's own tools (e.g. Youssef's "Plan").
+       Re-apply once the page settles — but only when a staff key resolves, so this
+       never downgrades an already-correct topbar to the default. */
+    var portalLateTopbarResync = function () {
+      try {
+        var k =
+          (typeof resolveCurrentStaffKey === "function" && resolveCurrentStaffKey()) ||
+          (typeof resolveProgrammeLeadStaffKeyFromAuth === "function" &&
+            resolveProgrammeLeadStaffKeyFromAuth());
+        if (k) portalResyncPlannerToolsAfterIdentity();
+      } catch (_) {}
+    };
+    if (global.document && global.document.readyState === "complete") {
+      setTimeout(portalLateTopbarResync, 0);
+    } else {
+      global.addEventListener("load", function () {
+        setTimeout(portalLateTopbarResync, 300);
+      });
+    }
   }
 })(typeof window !== "undefined" ? window : globalThis);

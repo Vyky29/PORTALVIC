@@ -364,6 +364,66 @@
     .dc-cal-crash-day--off {
       background: var(--dc-red);
     }
+    .dc-cal__swatch--edge { background: var(--dc-green); box-shadow: inset 0 0 0 3px #14520a; }
+    .dc-cal__swatch--crash { background: var(--dc-red); box-shadow: inset 0 0 0 3px #ffffff; }
+    @keyframes dcCalEdgePulse {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 1; }
+    }
+    @keyframes dcCalCrashPulse {
+      0%, 100% { opacity: 0.25; }
+      50% { opacity: 1; }
+    }
+    /* First / last day of each term — thick blinking dark-green ring (high contrast on light green). */
+    #dcCalSessionsPanel .dc-cal-cell--term-edge {
+      position: relative;
+      background: #a9d65a;
+    }
+    #dcCalSessionsPanel .dc-cal-cell--term-edge .dc-cal-day {
+      font-weight: 800;
+    }
+    #dcCalSessionsPanel .dc-cal-cell--term-edge::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 5px;
+      border: 3px solid #14520a;
+      box-shadow: 0 0 0 1px #14520a inset;
+      animation: dcCalEdgePulse 1.05s ease-in-out infinite;
+      pointer-events: none;
+    }
+    /* Crash-course-week days — red, tappable, with a thick blinking WHITE ring (stands out on red). */
+    #dcCalSessionsPanel .dc-cal-cell--crash {
+      position: relative;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    #dcCalSessionsPanel .dc-cal-cell--crash .dc-cal-day {
+      font-weight: 800;
+      color: #ffffff;
+    }
+    #dcCalSessionsPanel .dc-cal-cell--crash::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 5px;
+      border: 3px solid #ffffff;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25) inset;
+      animation: dcCalCrashPulse 0.8s ease-in-out infinite;
+      pointer-events: none;
+    }
+    #dcCalSessionsPanel .dc-cal-cell--crash:focus-visible {
+      outline: 2px solid var(--dc-navy);
+      outline-offset: 1px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #dcCalSessionsPanel .dc-cal-cell--term-edge::after,
+      #dcCalSessionsPanel .dc-cal-cell--crash::after {
+        animation: none;
+        opacity: 1;
+      }
+    }
     @media (min-width: 720px) {
       .dc-cal { padding: 20px 18px 28px; }
       .dc-cal-term { padding: 18px 16px 20px; }
@@ -380,23 +440,23 @@
   </header>
 
   <div class="dc-cal-tabs" role="tablist" aria-label="Calendar type">
-    <button type="button" class="dc-cal-tab dc-cal-tab--stack" id="dcCalSessionsTab" role="tab" aria-selected="false" aria-controls="dcCalSessionsPanel" data-dc-cal-target="dcCalSessionsPanel" aria-label="After-Schools and Weekends — Swimming, Climbing, Fitness, Bespoke and Multi-Activity"><span class="dc-cal-tab__head">After-Schools<br>&amp;<br>Weekends</span><span class="dc-cal-tab__sub">Swimming, Climbing, Fitness</span><span class="dc-cal-tab__sub">Bespoke &amp; Multi-Activity</span></button>
-    <button type="button" class="dc-cal-tab dc-cal-tab--stack" id="dcCalDayCentreTab" role="tab" aria-selected="true" aria-controls="dcCalDayCentrePanel" data-dc-cal-target="dcCalDayCentrePanel"><span class="dc-cal-tab__head">Day<br>Centre</span><span class="dc-cal-tab__sub">Mon–Fri only</span></button>
+    <button type="button" class="dc-cal-tab dc-cal-tab--stack" id="dcCalSessionsTab" role="tab" aria-selected="true" aria-controls="dcCalSessionsPanel" data-dc-cal-target="dcCalSessionsPanel" aria-label="After-Schools and Weekends — Swimming, Climbing, Fitness, Bespoke and Multi-Activity"><span class="dc-cal-tab__head">After-Schools<br>&amp;<br>Weekends</span><span class="dc-cal-tab__sub">Swimming, Climbing, Fitness</span><span class="dc-cal-tab__sub">Bespoke &amp; Multi-Activity</span></button>
+    <button type="button" class="dc-cal-tab dc-cal-tab--stack" id="dcCalDayCentreTab" role="tab" aria-selected="false" aria-controls="dcCalDayCentrePanel" data-dc-cal-target="dcCalDayCentrePanel"><span class="dc-cal-tab__head">Day<br>Centre</span><span class="dc-cal-tab__sub">Mon–Fri only</span></button>
     <button type="button" class="dc-cal-tab dc-cal-tab--stack" id="dcCalCrashTab" role="tab" aria-selected="false" aria-controls="dcCalCrashPanel" data-dc-cal-target="dcCalCrashPanel"><span class="dc-cal-tab__head">Crash<br>Courses</span><span class="dc-cal-tab__sub">Half Terms</span></button>
   </div>
 
-  <div class="dc-cal__summary" id="dcCalSummaryDayCentre" data-dc-cal-summary="dcCalDayCentrePanel" aria-label="Day Centre weeks summary">
+  <div class="dc-cal__summary" id="dcCalSummaryDayCentre" data-dc-cal-summary="dcCalDayCentrePanel" aria-label="Day Centre weeks summary" hidden>
     <span>Day Centre open <strong>43</strong> weeks/year</span>
   </div>
-  <div class="dc-cal__summary" id="dcCalSummarySessions" data-dc-cal-summary="dcCalSessionsPanel" aria-label="Sessions weeks summary" hidden>
-    <span><strong>38</strong> week sessions</span>
-    <span><strong>33</strong> weekend sessions</span>
+  <div class="dc-cal__summary" id="dcCalSummarySessions" data-dc-cal-summary="dcCalSessionsPanel" aria-label="Sessions weeks summary">
+    <span><strong>39</strong> week sessions</span>
+    <span><strong>34</strong> weekend sessions</span>
   </div>
   <div class="dc-cal__summary" id="dcCalSummaryCrash" data-dc-cal-summary="dcCalCrashPanel" aria-label="Crash courses summary" hidden>
     <span><strong>12</strong> crash course days · 3 half terms</span>
   </div>
 
-  <div class="dc-cal-panel" id="dcCalDayCentrePanel" role="tabpanel" aria-labelledby="dcCalDayCentreTab">
+  <div class="dc-cal-panel" id="dcCalDayCentrePanel" role="tabpanel" aria-labelledby="dcCalDayCentreTab" hidden>
     <ul class="dc-cal__legend" id="dcCalLegendDayCentre" aria-label="Day Centre colour key">
       <li><span class="dc-cal__swatch dc-cal__swatch--green" aria-hidden="true"></span> Green = Open</li>
       <li><span class="dc-cal__swatch dc-cal__swatch--red" aria-hidden="true"></span> Red = Closed</li>
@@ -786,10 +846,12 @@
     </article>
   </div>
 
-  <div class="dc-cal-panel" id="dcCalSessionsPanel" role="tabpanel" aria-labelledby="dcCalSessionsTab" hidden>
+  <div class="dc-cal-panel" id="dcCalSessionsPanel" role="tabpanel" aria-labelledby="dcCalSessionsTab">
     <ul class="dc-cal__legend" id="dcCalLegendSessions" aria-label="Sessions colour key">
       <li><span class="dc-cal__swatch dc-cal__swatch--green" aria-hidden="true"></span> Green = Sessions running (Mon–Sun)</li>
       <li><span class="dc-cal__swatch dc-cal__swatch--red" aria-hidden="true"></span> Red = Closed / no sessions</li>
+      <li><span class="dc-cal__swatch dc-cal__swatch--edge" aria-hidden="true"></span> Blinking green line = first &amp; last day of term</li>
+      <li><span class="dc-cal__swatch dc-cal__swatch--crash" aria-hidden="true"></span> Blinking red = crash course week (tap for timetable)</li>
     </ul>
     <p class="dc-cal-panel__intro">Weekly and weekend sessions (aquatic, climbing, multi-activity and other programmes). Includes Saturdays and Sundays when sessions run.</p>
     <article class="dc-cal-term" aria-labelledby="dcCalSessionsPanel-term-autumn">
@@ -797,6 +859,7 @@
         <h3 class="dc-cal-term__title" id="dcCalSessionsPanel-term-autumn"><span class="dc-cal-term__icon" aria-hidden="true">🍂</span> Autumn Term 2026</h3>
         <ul class="dc-cal-term__info">
           <li>Term starts: Saturday 5 September 2026</li>
+          <li>Term ends: Friday 18 December 2026</li>
           <li>Half Term: Monday 26 October – Friday 30 October 2026</li>
           <li>Weekend closures: 24–25 October and 31 October–1 November</li>
           <li>Christmas closure: Saturday 19 December 2026 – Sunday 3 January 2027</li>
@@ -970,6 +1033,7 @@
         <h3 class="dc-cal-term__title" id="dcCalSessionsPanel-term-spring"><span class="dc-cal-term__icon" aria-hidden="true">🌸</span> Spring Term 2027</h3>
         <ul class="dc-cal-term__info">
           <li>Term starts: Monday 4 January 2027</li>
+          <li>Term ends: Thursday 25 March 2027</li>
           <li>Half Term: Monday 15 February – Friday 19 February 2027</li>
           <li>Weekend closures: 13–14 February and 20–21 February</li>
           <li>Easter closure: Friday 26 March – Sunday 11 April 2027</li>
@@ -1098,12 +1162,12 @@
         <h3 class="dc-cal-term__title" id="dcCalSessionsPanel-term-summer"><span class="dc-cal-term__icon" aria-hidden="true">☀️</span> Summer Term 2027</h3>
         <ul class="dc-cal-term__info">
           <li>Term starts: Monday 12 April 2027</li>
+          <li>Term ends: Thursday 22 July 2027</li>
           <li>Half Term: Monday 31 May – Friday 4 June 2027</li>
           <li>Weekend closures: 29–30 May and 5–6 June</li>
-          <li>Last sessions day: Friday 16 July 2027</li>
         </ul>
         <div class="dc-cal-term__weeks">
-          <p><strong>School Services:</strong> 13 weeks</p>
+          <p><strong>School Services:</strong> 14 weeks</p>
         </div>
       </header>
       <div class="dc-cal-term__months">
@@ -1248,12 +1312,12 @@
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">14</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">15</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">16</span></span>
-            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">17</span></span>
-            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">18</span></span>
-            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">19</span></span>
-            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">20</span></span>
-            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">21</span></span>
-            <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">22</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">17</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">18</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">19</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">20</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">21</span></span>
+            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">22</span></span>
             <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">23</span></span>
             <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">24</span></span>
             <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">25</span></span>
@@ -1342,7 +1406,7 @@
           showPanel(tab.getAttribute("data-dc-cal-target"));
         });
       });
-      showPanel("dcCalDayCentrePanel");
+      showPanel("dcCalSessionsPanel");
     })();
   </script>
 </section>

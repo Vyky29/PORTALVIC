@@ -11,6 +11,7 @@ import { cpSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { execSync } from "node:child_process";
 import { patchStaffAppPerf } from "./staff-app-perf-patch.mjs";
+import { stampCacheBust, resolveDeployVersion } from "./stamp-cache-bust.mjs";
 
 const ROOT = join(import.meta.dirname, "..");
 const DEPLOY = join(ROOT, "dist", "deploy");
@@ -46,5 +47,19 @@ if (isStaff) {
     injectStaffBoot: true,
   });
 }
+
+// Rewrite every asset cache-bust token (…?v=…) to this deploy's version so a
+// new deploy always invalidates JS/CSS/image caches — no reinstall needed.
+const deployVersion = resolveDeployVersion();
+const stamp = stampCacheBust(DEPLOY, deployVersion);
+console.log(
+  "[vercel-build] cache-bust stamp:",
+  stamp.version,
+  "→",
+  stamp.replacements,
+  "refs in",
+  stamp.files,
+  "files",
+);
 
 console.log("[vercel-build] Ready:", DEPLOY);

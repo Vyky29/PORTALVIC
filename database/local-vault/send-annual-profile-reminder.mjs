@@ -17,7 +17,7 @@ const root = path.resolve(__dirname, "../..");
 
 const CALENDAR_ANN_ID = "a0270001-0001-4000-8000-0000000a2701";
 const PROFILE_ANN_ID = "a0260001-0001-4000-8000-0000000a2601";
-const CAMPAIGN_START = "2026-01-01T00:00:00Z";
+const CAMPAIGN_START = "2026-07-03T00:00:00Z";
 const CAMPAIGN_START_MS = Date.parse(CAMPAIGN_START);
 
 const CALENDAR_BODY = `Term dates and calendar for the 2026/27 academic year.
@@ -30,9 +30,13 @@ Download PDF to My Documents is optional whenever you want a copy for your recor
 
 const PROFILE_ANN_BODY = `Before the new academic year, we need every team member to confirm their contact details on file.
 
-Open Quick Menu → Annual profile check-in (you are already signed in to the portal). Check your home address, mobile number, emergency contact, and whether you want the same shifts as last year or something different.
+Some staff completed this form before 3 July — if your details did not save properly, you need to do it again.
 
-The notice will disappear from your dashboard once you submit the form.`;
+Open Quick Menu → Annual profile check-in (you are already signed in to the portal). Fields marked in red must be filled in — tap Edit, complete them, then Confirm each section before Submit.
+
+When we ask about next-year availability, use Calendar 2026/27 (Quick menu → Reference) to see term dates before you answer.
+
+The notice will disappear from your dashboard once you submit the form correctly.`;
 
 const REMINDER_TITLE = "Reminder: annual profile check-in";
 const REMINDER_BODY = `Please confirm your contact details for the new academic year.
@@ -232,7 +236,7 @@ async function main() {
       target_staff_role: null,
       target_user_id: prof.id,
       reminder_category: "notes",
-      on_ack_action: null,
+      on_ack_action: "annual_profile",
     };
 
     const { data: inserted, error: insErr } = await admin

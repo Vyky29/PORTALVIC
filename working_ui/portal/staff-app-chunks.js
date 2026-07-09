@@ -6,19 +6,19 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260702-duty-hub-dedupe";
+  var VER = "20260707-dayoff-noflicker";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260702-feedback-jun25",
     "/portal/term_calendar_dashboard_shared.js?v=20260702-feedback-jun25",
-    "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260702-sun-5jul-bismark",
-    "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260614-aurora-dedupe",
+    "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260707-roberto-venues",
+    "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260707-fadi-ikram-segments",
     "/portal/portal_staff_feedback_data_loader.js?v=20260702-feedback-jun25",
     "/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open",
     "/portal/portal-roster-rows-merge.js?v=20260622-canonical-roster",
     "/portal/portal_roster_canonical.js?v=20260614-madre-dedupe",
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",
-    "/portal/portal_madre_fold.js?v=20260614-madre-dedupe",
+    "/portal/portal_madre_fold.js?v=20260706-madre-no-store-fix",
     "/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster",
     "/portal/clients_info_embed.js?v=20260608-anas-ismail",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
@@ -34,9 +34,9 @@
     "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",
     "/portal/portal_dashboard_ui_coalesce.js?v=20260630-term-idle-rAF",
     "/portal/portal_participant_photos.js?v=20260628-timi-smile",
-    "/portal/portal_topbar_header.js?v=20260705-ceo-gallery-topbar",
+    "/portal/portal_topbar_header.js?v=20260707-topbar-guard",
     "/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category",
-    "/portal/portal_swimming_instructor_menus.js?v=20260622-sandra-visual-vic",
+    "/portal/portal_swimming_instructor_menus.js?v=20260708c-topbar-plan-fix",
     "/portal/portal_area_note_icons.js?v=20260702-home-icon",
     "/portal/portal_today_next_chips.js?v=20260609-photo-fallback",
     "/portal/portal_staff_photos.js?v=20260624-rt-debug",
@@ -121,7 +121,7 @@
     var run = function () {
       loadParallel(TIER_IDLE, false);
       loadCss("/portal/portal_ghost_view.css?v=20260624-ghost-handoff");
-      loadCss("/portal/portal_achievements.css?v=20260702-lead-gallery-upload");
+      loadCss("/portal/portal_achievements.css?v=20260703-session-photos-back");
       if (typeof global.portalStaffDeferWebPush === "function") {
         global.portalStaffDeferWebPush();
       }

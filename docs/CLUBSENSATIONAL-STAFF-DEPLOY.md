@@ -18,7 +18,7 @@ Mismo repo GitHub **PORTALVIC**, dos proyectos Vercel.
 | **Instructores / leads** | `clubsensational-staff.vercel.app` | **Móvil e iPad** | App dedicada (`PORTAL_STAFF_APP`). Carga ligera en handheld; en escritorio (p. ej. en casa) usa el mismo build con scripts en paralelo. |
 | **Admin / CEO / office** | `portalvic.vercel.app` | **Escritorio** (también móvil/iPad) | `admin_dashboard.html`, `ceo_dashboard.html`, etc. |
 | **Staff en casa (opcional)** | `portalvic.vercel.app/staff_dashboard.html` | Escritorio | Mismo HTML que producción histórica, **sin** parches móviles de la app staff. |
-| **Familias** | `portalvic.vercel.app/parent_portal.html` | **Cualquiera** | Teléfono, tablet y ordenador; layout ancho desde 720px. |
+| **Familias** | `https://www.clubsensational.org/parent` (técnico: `portalvic.vercel.app/parent`) | **Cualquiera** | Teléfono, tablet y ordenador; layout ancho desde 720px. **No** usar `clubsensational-staff.vercel.app/parent`. |
 
 La detección handheld en la app staff incluye **iPad** (también cuando Safari reporta “Macintosh” con touch).
 
@@ -35,6 +35,7 @@ La detección handheld en la app staff incluye **iPad** (también cuando Safari 
    | `STAFF_PROFILE_PORTAL_BRIDGE_SECRET` | Igual que en portalvic |
    | `CLUBSENSATIONAL_STAFF_ORIGIN` | `https://clubsensational-staff.vercel.app` |
    | `PORTAL_ADMIN_ORIGIN` | `https://portalvic.vercel.app` |
+   | `PORTAL_FAMILY_ORIGIN` | `https://www.clubsensational.org` |
 
 6. Deploy.
 

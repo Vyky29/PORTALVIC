@@ -1782,6 +1782,17 @@ body:has(#workspace .dash-hub--ops-hub) .admin-main{
   box-sizing:border-box;
   text-align:center;
 }
+.ops-hub__today-item--alerts{
+  cursor:pointer;
+  transition:border-color .15s,box-shadow .15s,background .15s;
+}
+.ops-hub__today-item--alerts:hover,
+.ops-hub__today-item--alerts:focus-visible{
+  border-color:#93c5fd;
+  background:#f8fafc;
+  box-shadow:0 0 0 1px rgba(45,132,179,.12);
+  outline:none;
+}
 .ops-hub__today-k{
   font-size:10px;
   font-weight:800;
@@ -1815,13 +1826,16 @@ body:has(#workspace .dash-hub--ops-hub) .admin-main{
   min-height:0;
   min-width:0;
   display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(220px,280px);
+  /* Single column: aside was removed from the hub markup; a 2-col track left a blank strip on the right. */
+  grid-template-columns:minmax(0,1fr);
   gap:clamp(8px,1vw,12px);
   overflow:hidden;
 }
 .ops-hub__main{
   min-width:0;
   min-height:0;
+  width:100%;
+  max-width:100%;
   overflow:auto;
   -webkit-overflow-scrolling:touch;
 }

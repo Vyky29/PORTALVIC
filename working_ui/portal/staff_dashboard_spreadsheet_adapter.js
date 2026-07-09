@@ -7,6 +7,119 @@
       .replace(/^_+|_+$/g, "");
   }
 
+  /**
+   * Display-only breakdown for combined Day Centre slots (pool hour + centre),
+   * e.g. Fadi: Big Pool 12.30–1 + Day Centre 1–3; Ikram: Day Centre + Big Pool +
+   * Day Centre across 11–4. The static bundle carries `segments`, but the live
+   * MADRE document may omit them, which made the card render combined on first
+   * paint then revert to a single block after the live roster refresh.
+   * Synthesizing the same breakdown here keeps the combined card stable from ANY
+   * source. Strictly cosmetic: the slot stays ONE session for feedback / pay.
+   * Keyed by participant + normalized time slot (spaces stripped, lowercased).
+   */
+  var PORTAL_COMBINED_DAY_CENTRE_SEGMENTS = {
+    "fadi|12.30to3": [
+      { time_slot: "12.30 to 1", area: "Big Pool" },
+      { time_slot: "1 to 3", area: "Day Centre" },
+    ],
+    "ikram|11to4": [
+      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "12 to 1", area: "Big Pool" },
+      { time_slot: "1 to 4", area: "Day Centre" },
+    ],
+    // Cover split (e.g. Wed 8 Jul): Luliya/Youssef take 11-3, Victor takes 3-4.
+    "ikram|11to3": [
+      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "12 to 1", area: "Big Pool" },
+      { time_slot: "1 to 3", area: "Day Centre" },
+    ],
+    // Emmanuel Day Centre block (Mon/Wed/Fri): Day Centre + Big Pool hour + Day Centre.
+    "emmanuel|11to4": [
+      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "12 to 1", area: "Big Pool" },
+      { time_slot: "1 to 4", area: "Day Centre" },
+    ],
+    "emmanuel|11to3": [
+      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "12 to 1", area: "Big Pool" },
+      { time_slot: "1 to 3", area: "Day Centre" },
+    ],
+    "emmanuel|11to1": [
+      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "12 to 1", area: "Big Pool" },
+    ],
+  };
+  // Days on which a participant's combined Day Centre block should NOT be split
+  // into the Big Pool segments (it stays a single plain "Day Centre" card).
+  // Ikram only goes to the Big Pool on Mon/Wed; Tuesday is Day Centre only.
+  var PORTAL_COMBINED_SEGMENTS_SKIP_DAYS = {
+    "ikram|11to4": ["tuesday"],
+    // Fadi swims (Big Pool) only Mon/Wed/Fri; Tue/Thu are plain Day Centre 12.30-3.
+    "fadi|12.30to3": ["tuesday", "thursday"],
+  };
+  function portalSynthesizeCombinedSegments(nameLower, service, timeSlot, day) {
+    const svc = String(service || "").trim().toLowerCase();
+    if (svc !== "day centre") return null;
+    const slot = String(timeSlot || "").replace(/\s+/g, "").toLowerCase();
+    const name = String(nameLower || "").trim().toLowerCase();
+    const key = name + "|" + slot;
+    const skipDays = PORTAL_COMBINED_SEGMENTS_SKIP_DAYS[key];
+    if (skipDays && skipDays.indexOf(String(day || "").trim().toLowerCase()) !== -1) return null;
+    const hit = PORTAL_COMBINED_DAY_CENTRE_SEGMENTS[key];
+    return hit ? hit.map(function (s) { return { time_slot: s.time_slot, area: s.area }; }) : null;
+  }
+
+  /**
+   * Display-only merge of a participant's TWO same-day Day Centre blocks into ONE
+   * segmented card. Emmanuel on Friday is split 11–1 + 3–4 (with Fadi 1–3 in between);
+   * the user wants a single Ikram-style card: name | 11 to 12 | 12 to 1 Big Pool | 3 to 4.
+   * Pay is driven by the continuous shift band, so collapsing the two blocks for display
+   * does not change hours; the merged slot is one feedback session (like other combined
+   * Day Centre cards). Keyed by canonical clientId + weekday.
+   */
+  var PORTAL_COMBINED_MULTIBLOCK = {
+    "emmanuel|friday": {
+      blockStarts: ["11:00", "15:00"],
+      merged: { time_slot: "11 to 4", start: "11:00", end: "16:00" },
+      segments: [
+        { time_slot: "11 to 12", area: "Day Centre" },
+        { time_slot: "12 to 1", area: "Big Pool" },
+        { time_slot: "3 to 4", area: "Day Centre" },
+      ],
+    },
+  };
+  function portalMergeMultiBlockSessions(sessions) {
+    if (!Array.isArray(sessions) || !sessions.length) return sessions;
+    const groups = Object.create(null);
+    sessions.forEach(function (s) {
+      if (!s) return;
+      if (String(s.rosterService || "").trim().toLowerCase() !== "day centre") return;
+      const mapKey =
+        String(s.clientId || "").trim().toLowerCase() + "|" + String(s.day || "").trim().toLowerCase();
+      if (!PORTAL_COMBINED_MULTIBLOCK[mapKey]) return;
+      const gk = mapKey + "|" + String(s.staffId || "").toLowerCase() + "|" + String(s.session_date || "").slice(0, 10);
+      (groups[gk] = groups[gk] || []).push(s);
+    });
+    const drop = [];
+    Object.keys(groups).forEach(function (gk) {
+      const arr = groups[gk];
+      const mapKey = gk.split("|").slice(0, 2).join("|");
+      const cfg = PORTAL_COMBINED_MULTIBLOCK[mapKey];
+      if (!cfg || arr.length < 2) return;
+      const haveStarts = arr.map(function (s) { return String(s.start || "").slice(0, 5); });
+      if (!cfg.blockStarts.every(function (st) { return haveStarts.indexOf(st) !== -1; })) return;
+      arr.sort(function (a, b) { return String(a.start || "").localeCompare(String(b.start || "")); });
+      const keep = arr[0];
+      keep.start = cfg.merged.start;
+      keep.end = cfg.merged.end;
+      keep.timeSlotLabel = cfg.merged.time_slot;
+      keep.segments = cfg.segments.map(function (sg) { return { time_slot: sg.time_slot, area: sg.area }; });
+      for (let i = 1; i < arr.length; i++) drop.push(arr[i]);
+    });
+    if (!drop.length) return sessions;
+    return sessions.filter(function (s) { return drop.indexOf(s) === -1; });
+  }
+
   function parseHm(token) {
     const t = String(token || "").trim();
     if (!t) return { h: 0, m: 0 };
@@ -598,6 +711,18 @@
         rosterArea,
         timeSlotLabel,
       };
+      if (Array.isArray(row.segments) && row.segments.length) {
+        baseSession.segments = row.segments;
+      } else {
+        // The live MADRE document may omit the per-slot `segments` breakdown that
+        // the static bundle carries, which made combined Day Centre cards (e.g.
+        // Fadi: Big Pool 12.30–1 + Day Centre 1–3) render correctly on first paint
+        // and then revert to a single block after the live roster refresh.
+        // Synthesize the same display-only breakdown so the combined card is stable
+        // regardless of source. The slot stays ONE session for feedback / pay.
+        const synthSegments = portalSynthesizeCombinedSegments(nameLower, rosterService, timeSlotLabel, day);
+        if (synthSegments) baseSession.segments = synthSegments;
+      }
       const instructorsRaw = String(row.instructors || "").trim();
       if (
         instructorsRaw &&
@@ -708,14 +833,16 @@
       });
     }
 
-    sessionsModel.sort((a, b) => {
+    const mergedSessions = portalMergeMultiBlockSessions(sessionsModel);
+
+    mergedSessions.sort((a, b) => {
       if (a.day !== b.day) return a.day.localeCompare(b.day);
       return a.start.localeCompare(b.start);
     });
 
     const seenSessions = Object.create(null);
     const dedupedSessions = [];
-    sessionsModel.forEach((sess) => {
+    mergedSessions.forEach((sess) => {
       const sd = String(sess.session_date || "").trim().slice(0, 10);
       const key = [
         sd,

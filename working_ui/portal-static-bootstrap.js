@@ -22,6 +22,21 @@
   /** Canonical Portal host — induction/My documents 404 on www.clubsensational.org. */
   window.PORTAL_CANONICAL_ORIGIN =
     window.PORTAL_CANONICAL_ORIGIN || "https://portalvic.vercel.app";
+  /** Family portal (parents) — not the staff app host. */
+  window.PORTAL_FAMILY_ORIGIN =
+    window.PORTAL_FAMILY_ORIGIN || "https://family.clubsensational.org";
+  window.portalFamilyPortalUrl = function portalFamilyPortalUrl(path) {
+    path = String(path || "").replace(/^\//, "");
+    if (path === "parents") path = "parent";
+    if (/^parents\//.test(path)) path = path.replace(/^parents\//, "parent/");
+    var base = String(window.PORTAL_FAMILY_ORIGIN || "https://family.clubsensational.org").replace(
+      /\/$/,
+      ""
+    );
+    if (!path || path === "parent") return base + "/parent";
+    if (/^parent(?:\/|$)/.test(path)) return base + "/" + path;
+    return base + "/parent/" + path;
+  };
   /** visualVIC Routines Planner (prod). */
   window.ROUTINES_PLANNER_URL =
     window.ROUTINES_PLANNER_URL || "https://visual-vic.vercel.app/planner";
@@ -58,12 +73,44 @@
       var host = String(window.location.hostname || "").toLowerCase();
       if (!host || host === "localhost" || host === "127.0.0.1") return false;
       if (/portalvic\.vercel\.app$/i.test(host)) return false;
+      if (/clubsensational-staff\.vercel\.app$/i.test(host)) return false;
       if (/vercel\.app$/i.test(host)) return false;
+      if (/clubsensational\.org$/i.test(host)) return false;
       return true;
     } catch (_) {
       return false;
     }
   };
+
+  /** Staff app must not host the family portal — send parents to clubsensational.org/parent. */
+  (function portalRedirectFamilyOffStaffHost() {
+    try {
+      var host = String(window.location.hostname || "").toLowerCase();
+      if (!/clubsensational-staff\.vercel\.app$/i.test(host)) return;
+      var path = String(window.location.pathname || "").toLowerCase();
+      if (
+        path === "/parent" ||
+        path === "/parents" ||
+        path.indexOf("/parent/") === 0 ||
+        path.indexOf("/parents/") === 0 ||
+        path.indexOf("/parent_") === 0 ||
+        path.indexOf("parent_portal") >= 0 ||
+        path.indexOf("parent_reenrolment") >= 0 ||
+        path.indexOf("parent_registration") >= 0 ||
+        path.indexOf("climbing_registration") >= 0 ||
+        path === "/re-enrolment"
+      ) {
+        var suffix =
+          path.replace(/^\//, "") +
+          String(window.location.search || "") +
+          String(window.location.hash || "");
+        if (/^parents(?:\/|$)/.test(suffix)) {
+          suffix = suffix.replace(/^parents/, "parent");
+        }
+        window.location.replace(window.portalFamilyPortalUrl(suffix));
+      }
+    } catch (_) {}
+  })();
 
   (function portalRedirectGeneralInductionOffWrongHost() {
     try {
@@ -249,7 +296,8 @@
     };
 
   /** Annual profile check-in campaign — hide hub menu once confirmed on/after this date (UTC). */
-  window.PORTAL_ANNUAL_PROFILE_CAMPAIGN_START = "2026-01-01";
+  /** Annual profile check-in — valid completion only on/after red-field fix (3 Jul 2026 UTC). */
+  window.PORTAL_ANNUAL_PROFILE_CAMPAIGN_START = "2026-07-03";
   /** Fixed announcement row id (portal_staff_announcements) for the 2026 annual profile campaign. */
   window.PORTAL_ANNUAL_PROFILE_2026_ANNOUNCEMENT_ID = "a0260001-0001-4000-8000-0000000a2601";
   /** Day Centre Calendar 2026/27 — sign saves PDF to My Documents. */

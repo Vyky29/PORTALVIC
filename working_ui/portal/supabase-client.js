@@ -5,6 +5,7 @@
  */
 
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/+esm";
+import { normalizePortalSessionKey } from "./portal_session_key.js";
 
 const DEFAULT_SUPABASE_URL = "https://cklpnwhlqsulpmkipmqb.supabase.co";
 const DEFAULT_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrbHBud2hscXN1bHBta2lwbXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMDg4NzIsImV4cCI6MjA5MTc4NDg3Mn0.-T7rVyDHQbzMqEKOVz6fi3OlZdB_gPH2i5p-ZPveopE";
@@ -656,11 +657,15 @@ function portalHydrateLiveSessionFeedbackCache(dbRowBatches) {
 export async function portalUpsertStaffSessionQuickMark(supabase, row) {
   if (!supabase || !row) throw new Error("portalUpsertStaffSessionQuickMark: missing supabase or row");
   const staff_user_id = String(row.staff_user_id || "").trim();
-  const portal_session_key = String(row.portal_session_key || "").trim();
-  const session_date = String(row.session_date || "").trim();
+  const rawKey = String(row.portal_session_key || "").trim();
+  const portal_session_key = normalizePortalSessionKey(rawKey) || rawKey;
+  const session_date = String(row.session_date || "").trim().slice(0, 10);
   const mark_type = String(row.mark_type || "").trim();
   if (!staff_user_id || !portal_session_key || !session_date || !mark_type) {
     throw new Error("portalUpsertStaffSessionQuickMark: invalid row");
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(session_date)) {
+    throw new Error("portalUpsertStaffSessionQuickMark: invalid session_date");
   }
   const payload = { staff_user_id, portal_session_key, session_date, mark_type };
   const { error } = await supabase.from("portal_staff_session_quick_marks").upsert(payload, {
@@ -1492,7 +1497,19 @@ export function portalReconcileReviewMemoryWithServer(memory, rosterKeys, packs,
     if (assumeThroughOk && iso <= assumeThrough) continue;
     if (resolved.has(rosterKey)) continue;
     const prev = memory[rosterKey] || portalReviewMemoryBase();
-    if (prev.absent || prev.cancelled) continue;
+    /* Local-only absent/cancelled must not survive server truth — otherwise the phone
+       stays green after a failed sync while Supabase has no mark. */
+    if (prev.absent || prev.cancelled) {
+      memory[rosterKey] = {
+        ...prev,
+        absent: false,
+        cancelled: false,
+        absentSyncPending: false,
+        feedbackDone: false,
+      };
+      changed = true;
+      continue;
+    }
     if (prev.feedbackDone) {
       memory[rosterKey] = { ...prev, feedbackDone: false };
       changed = true;
@@ -1664,3 +1681,5 @@ export async function portalLogout() {
     return { error: null };
   }
 }
+
+export { normalizePortalSessionKey } from "./portal_session_key.js";

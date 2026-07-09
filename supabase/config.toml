@@ -422,6 +422,9 @@ verify_jwt = false
 [functions.portal-incident-parent-notify-draft]
 verify_jwt = false
 
+[functions.portal-feedback-narrative-audit]
+verify_jwt = false
+
 # DB triggers (pg_net / http_request) send x-portal-webhook-secret only — no Supabase JWT.
 [functions.portal-push-dispatch-admin-alert]
 verify_jwt = false
@@ -492,4 +495,80 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.portal-admin-session-feedback-list]
+verify_jwt = false
+
+# Parent Absent → Missed / proof (session header auth inside function).
+[functions.parent-portal-absence-list]
+verify_jwt = false
+
+[functions.parent-portal-absence-submit]
+verify_jwt = false
+
+[functions.parent-portal-absence-proof-upload]
+verify_jwt = false
+
+[functions.portal-admin-parent-absence-list]
+verify_jwt = false
+
+[functions.portal-admin-parent-absence-decide]
+verify_jwt = false
+
+# Makeup grants — venue waiting list; decline forfeits.
+[functions.portal-admin-makeup-list]
+verify_jwt = false
+
+[functions.portal-admin-makeup-grant]
+verify_jwt = false
+
+[functions.portal-admin-makeup-offer]
+verify_jwt = false
+
+[functions.parent-portal-makeup-list]
+verify_jwt = false
+
+[functions.parent-portal-makeup-respond]
+verify_jwt = false
+
+# Family credits / refunds ledger (visible to parents).
+[functions.parent-portal-credits-list]
+verify_jwt = false
+
+[functions.portal-admin-parent-credits-list]
+verify_jwt = false
+
+[functions.portal-admin-parent-credits-update]
+verify_jwt = false
+
+# Parent-facing registration PDFs for a linked child.
+[functions.parent-portal-documents-list]
+verify_jwt = false
+
+# Parent-signed photo + medication-at-centre consents.
+[functions.parent-portal-consents-load]
+verify_jwt = false
+
+[functions.parent-portal-consents-save]
+verify_jwt = false
+
+[functions.portal-admin-parent-consents-list]
+verify_jwt = false
+
+# Parent-facing shared client invoices (PDF + status).
+[functions.parent-portal-invoices-list]
+verify_jwt = false
+
+[functions.parent-portal-invoice-checkout]
+verify_jwt = false
+
+[functions.parent-portal-stripe-webhook]
+verify_jwt = false
+
+# Parent reports bank transfer paid (office confirms).
+[functions.parent-portal-invoice-report-paid]
+verify_jwt = false
+
+[functions.portal-admin-parent-invoices-list]
+verify_jwt = false
+
+[functions.portal-admin-parent-invoices-upsert]
 verify_jwt = false

@@ -6,6 +6,9 @@
 database/local-vault/*.local.sql
 working_ui/onboarding_portal_config.js
 
+# Private finance docs — never commit, never share
+database/local-vault/private/
+
 # Local password vault (data + copies — never commit, never deploy)
 # Prefer _local/secrets/ (see bootstrap-local-data.ps1). Junction local-secrets/ is OK.
 local-secrets/

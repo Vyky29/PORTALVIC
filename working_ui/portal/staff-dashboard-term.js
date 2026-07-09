@@ -341,6 +341,14 @@
       }
       if(stillRunning) return 'pending';
 
+      // HOME / MANAGER / Admin duty days (and days with no participant sessions) have
+      // nothing to review, so they count complete from the moment the day starts (never
+      // held orange until the shift end time).
+      const hasRealClientForDay = (typeof portalTermRosterHasRealClientSessions === 'function')
+        ? portalTermRosterHasRealClientSessions(relFb.length ? relFb : relAll, key)
+        : true;
+      if(!hasRealClientForDay) return 'complete';
+
       if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(key, staffId)) return 'complete';
       if(typeof portalTermTodayListClientFeedbackAllResolved === 'function'
         && portalTermTodayListClientFeedbackAllResolved(key, dw, allowRebuild ? { allowDuringRebuild: true } : undefined)){
@@ -1135,6 +1143,18 @@
           dismissedSig = String(portalQuickMenuLoadDismissedOverrideKeys().length);
         }
       }catch(_){}
+      /* Peer resolution (co-instructor absent quick marks + shared feedback keys) arrives
+         asynchronously after first paint. It must be part of the cache key or the term
+         calendar / outstanding count / halo keep a stale ORANGE for a session a co-instructor
+         already resolved as Absent (e.g. Bespoke shared Tinashe). */
+      var absentPeerSig = '0';
+      var sharedFbSig = '0';
+      try{
+        var apk = dashboardData && dashboardData.portalServerAbsentQuickMarkKeys;
+        absentPeerSig = String(apk && typeof apk.size === 'number' ? apk.size : 0);
+        var sfk = dashboardData && dashboardData.portalServerSubmittedFeedbackPortalKeys;
+        sharedFbSig = String(sfk && typeof sfk.size === 'number' ? sfk.size : 0);
+      }catch(_){}
       return [
         dashboardData && dashboardData.portalIdentityResolved ? '1' : '0',
         dashboardData && dashboardData.portalFeedbackPipelineReady ? '1' : '0',
@@ -1143,6 +1163,8 @@
         String(fbKeys),
         String(dashboardData && dashboardData.portalFeedbackServerSynced ? '1' : '0'),
         dismissedSig,
+        absentPeerSig,
+        sharedFbSig,
       ].join('|');
     }
     function portalInvalidateReminderStateCache(){
@@ -1390,24 +1412,13 @@
         termIncomplete = false;
         termLate = false;
       }
-      const venueScope = portalVenueReportScopeApplies();
       const shift = portalTodayShiftSessions();
+      /* Venue reminders disabled (Jul 2026): the venue review is now only done ad-hoc
+         when a venue isn't right, so staff are no longer nagged about opening/closing
+         checks. The venue tool stays available for anyone whose header profile includes
+         it (portal_swimming_instructor_menus.js). */
       let venueOpenNeed = false;
       let venueCloseNeed = false;
-      if(venueScope && portalVenueClockAppliesToCurrentView()){
-        const openDone = portalVenueFlagIsDone('open');
-        const closeDone = portalVenueFlagIsDone('close');
-        const w = portalVenueTimeWindowsForUser();
-        const m = portalMinutesNow();
-        if(w){
-          if(w.openEnd != null) venueOpenNeed = !openDone && m > w.openEnd;
-          if(typeof portalPoolStaffSkipVenueOpeningRow === 'function' && portalPoolStaffSkipVenueOpeningRow()) venueOpenNeed = false;
-          if(w.closeEnd != null) venueCloseNeed = !closeDone && m > w.closeEnd;
-          if(typeof portalPoolStaffSkipVenueClosingRow === 'function' && portalPoolStaffSkipVenueClosingRow()) venueCloseNeed = false;
-          if(!w.opening) venueOpenNeed = false;
-          if(!w.closing) venueCloseNeed = false;
-        }
-      }
       const rosterAttention = typeof portalStaffRosterOverrideAttentionState === 'function'
         ? portalStaffRosterOverrideAttentionState()
         : { need: false, primaryIso: '', count: 0, rosterOverrideDayGroups: [] };
