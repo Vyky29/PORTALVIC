@@ -3711,9 +3711,12 @@
           (status === "paid" ? "pp-btn--primary" : "pp-btn--ghost") +
           '" href="' +
           esc(pdf) +
-          '" target="_blank" rel="noopener noreferrer">' +
-          (status === "paid" ? "Download invoice PDF" : "Open PDF") +
-          "</a>"
+          '" target="_blank" rel="noopener noreferrer">Preview PDF</a>' +
+          '<a class="pp-btn pp-btn--ghost" href="' +
+          esc(pdf) +
+          '" download="' +
+          esc((num || "invoice").replace(/[^\w.-]+/g, "_") + ".pdf") +
+          '" target="_blank" rel="noopener noreferrer">Download</a>'
         : '<p class="pp-muted">PDF not available yet.</p>') +
       (gc
         ? '<a class="pp-btn pp-btn--primary" href="' +
