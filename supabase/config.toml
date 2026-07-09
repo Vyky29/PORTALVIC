@@ -512,3 +512,19 @@ verify_jwt = false
 
 [functions.portal-admin-parent-absence-decide]
 verify_jwt = false
+
+# Makeup grants — venue waiting list; decline forfeits.
+[functions.portal-admin-makeup-list]
+verify_jwt = false
+
+[functions.portal-admin-makeup-grant]
+verify_jwt = false
+
+[functions.portal-admin-makeup-offer]
+verify_jwt = false
+
+[functions.parent-portal-makeup-list]
+verify_jwt = false
+
+[functions.parent-portal-makeup-respond]
+verify_jwt = false

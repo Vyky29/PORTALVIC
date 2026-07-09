@@ -279,6 +279,48 @@
           });
         });
       },
+      listMakeups: function () {
+        return fetch(fn("parent-portal-makeup-list"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey(),
+            Authorization: "Bearer " + anonKey(),
+            "x-parent-portal-session": state.session.token,
+          },
+          body: JSON.stringify({ contact_id: contactId }),
+        }).then(function (res) {
+          return res.json().then(function (j) {
+            if (!res.ok || !j.ok) throw new Error("makeup_list_failed");
+            return j;
+          });
+        });
+      },
+      respondMakeup: function (offerId, action, declineReason) {
+        return fetch(fn("parent-portal-makeup-respond"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey(),
+            Authorization: "Bearer " + anonKey(),
+            "x-parent-portal-session": state.session.token,
+          },
+          body: JSON.stringify({
+            offer_id: offerId,
+            action: action,
+            decline_reason: declineReason || "",
+          }),
+        }).then(function (res) {
+          return res.json().then(function (j) {
+            if (!res.ok || !j.ok) {
+              var err = new Error("makeup_respond_failed");
+              err.code = (j && j.error) || "respond_failed";
+              throw err;
+            }
+            return j;
+          });
+        });
+      },
     };
   }
 

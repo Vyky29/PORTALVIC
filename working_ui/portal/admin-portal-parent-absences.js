@@ -105,7 +105,7 @@
     return { reports: j.reports || [], meta: j.meta || {} };
   }
 
-  async function decide(reportId, action, outcome, notes) {
+  async function decide(reportId, action, outcome, notes, preferredVenue) {
     var token = await portalAuthToken();
     if (!token) return { error: 'session_expired' };
     var res = await fetch(supabaseBase() + '/functions/v1/portal-admin-parent-absence-decide', {
@@ -119,7 +119,8 @@
         report_id: reportId,
         action: action,
         outcome: outcome || 'none',
-        notes: notes || ''
+        notes: notes || '',
+        preferred_venue: preferredVenue || ''
       })
     });
     var j = null;
@@ -131,7 +132,7 @@
     if (!res.ok || !j || !j.ok) {
       return { error: (j && j.error) || 'request_failed', message: (j && j.message) || '' };
     }
-    return { report: j.report };
+    return { report: j.report, grant: j.grant };
   }
 
   function rowHtml(r) {
@@ -139,8 +140,12 @@
       ? '<a href="' + esc(r.proof_signed_url) + '" target="_blank" rel="noopener">Open proof</a>'
       : '<span class="muted">No proof</span>';
     var canDecide = r.status === 'pending_review' || (r.status === 'missed' && r.proof_storage_path);
-    var actions = canDecide
-      ? '<div class="pp-admin-absence-acts" style="display:flex;flex-wrap:wrap;gap:6px;min-width:0">' +
+    var canGrantMakeup =
+      (r.status === 'missed' || r.status === 'expired' || r.status === 'rejected') && !r.proof_storage_path;
+    var actions = '';
+    if (canDecide) {
+      actions =
+        '<div class="pp-admin-absence-acts" style="display:flex;flex-wrap:wrap;gap:6px;min-width:0">' +
         '<select data-absence-outcome="' +
         esc(r.id) +
         '" aria-label="Outcome">' +
@@ -155,10 +160,19 @@
         '<button type="button" class="btn btn--sm btn--ghost" data-absence-reject="' +
         esc(r.id) +
         '">Reject</button>' +
-        '</div>'
-      : '<span class="muted">' +
+        '</div>';
+    } else if (canGrantMakeup) {
+      actions =
+        '<button type="button" class="btn btn--sm btn--sec" data-absence-grant-makeup="' +
+        esc(r.id) +
+        '">Grant makeup</button>' +
+        '<span class="muted" style="display:block;margin-top:4px;font-size:11px;overflow-wrap:break-word">No valid proof — venue-scoped waiting list</span>';
+    } else {
+      actions =
+        '<span class="muted">' +
         esc(r.outcome ? 'Outcome: ' + r.outcome : r.review_notes || '—') +
         '</span>';
+    }
     return (
       '<tr>' +
       '<td style="min-width:0;overflow-wrap:break-word"><strong>' +
@@ -263,8 +277,16 @@
         var sel = hostEl.querySelector('[data-absence-outcome="' + id + '"]');
         var outcome = sel ? sel.value : 'none';
         var notes = global.prompt('Optional notes for the family / file:', '') || '';
+        var venue = '';
+        if (outcome === 'makeup') {
+          venue = global.prompt('Preferred venue for makeup offers (required):', '') || '';
+          if (!String(venue).trim()) {
+            cfg.toast('Venue required for makeup grants', 'error');
+            return;
+          }
+        }
         btn.disabled = true;
-        void decide(id, 'approve', outcome, notes).then(function (r) {
+        void decide(id, 'approve', outcome, notes, venue).then(function (r) {
           if (r.error) {
             cfg.toast(r.message || r.error || 'Approve failed', 'error');
             btn.disabled = false;
@@ -287,6 +309,27 @@
             return;
           }
           cfg.toast('Rejected', 'ok');
+          void renderHost(global.document.getElementById('portalParentAbsenceHost'));
+        });
+      });
+    });
+    hostEl.querySelectorAll('[data-absence-grant-makeup]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-absence-grant-makeup');
+        var venue = global.prompt('Preferred venue (offers stay at this centre):', '') || '';
+        if (!String(venue).trim()) {
+          cfg.toast('Venue required', 'error');
+          return;
+        }
+        var notes = global.prompt('Optional notes:', '') || '';
+        btn.disabled = true;
+        void decide(id, 'grant_makeup', 'makeup', notes, venue).then(function (r) {
+          if (r.error) {
+            cfg.toast(r.message || r.error || 'Grant failed', 'error');
+            btn.disabled = false;
+            return;
+          }
+          cfg.toast(r.already ? 'Makeup grant already exists' : 'Makeup grant added to venue waiting list', 'ok');
           void renderHost(global.document.getElementById('portalParentAbsenceHost'));
         });
       });

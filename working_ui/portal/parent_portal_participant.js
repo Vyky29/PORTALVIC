@@ -2241,6 +2241,8 @@
         "</form>" +
         '<div id="ppAbsenceNotice" class="pp-notice" hidden></div>' +
         "</div>" +
+        '<h4 class="pp-absence-list-title">Makeup offers</h4>' +
+        '<div id="ppMakeupListHost"><p class="pp-muted">Loading…</p></div>' +
         '<h4 class="pp-absence-list-title">Your absence reports</h4>' +
         '<div id="ppAbsenceListHost"><p class="pp-muted">Loading…</p></div>',
     );
@@ -2248,9 +2250,76 @@
     bindAbsence(host, data, opts);
   }
 
+  function makeupGrantCardHtml(g) {
+    var pending = g.pending_offer;
+    var status = String(g.status || "");
+    if (pending) {
+      return (
+        '<article class="pp-absence-card pp-makeup-card" data-status="offered">' +
+        '<div class="pp-absence-card__head">' +
+        "<strong>Makeup offer</strong>" +
+        '<span class="pp-absence-chip">Respond now</span></div>' +
+        '<p class="pp-absence-card__svc">' +
+        esc(pending.venue || g.preferred_venue || "") +
+        " · " +
+        esc(formatHubDateLabel(pending.session_date) || pending.session_date) +
+        (pending.session_time ? " · " + esc(pending.session_time) : "") +
+        "</p>" +
+        (pending.service_label
+          ? '<p class="pp-absence-card__meta">' + esc(pending.service_label) + "</p>"
+          : "") +
+        (pending.instructor_name
+          ? '<p class="pp-absence-card__meta muted">Instructor: ' +
+            esc(pending.instructor_name) +
+            " (may differ from usual)</p>"
+          : '<p class="pp-absence-card__meta muted">Instructor may differ from your usual one.</p>') +
+        (pending.offer_notes
+          ? '<p class="pp-absence-card__reason">' + esc(pending.offer_notes) + "</p>"
+          : "") +
+        '<p class="pp-notice pp-notice--error" role="status">If you decline, you forfeit this makeup — the slot may go to another family.</p>' +
+        '<div class="pp-makeup-acts">' +
+        '<button type="button" class="pp-btn pp-btn--primary" data-pp-makeup-accept="' +
+        esc(pending.id) +
+        '">Accept</button>' +
+        '<button type="button" class="pp-btn pp-btn--ghost" data-pp-makeup-decline="' +
+        esc(pending.id) +
+        '">Decline</button>' +
+        "</div></article>"
+      );
+    }
+    var hint =
+      status === "open"
+        ? "You have a makeup grant for " +
+          (g.preferred_venue || "your centre") +
+          ". The office will offer a slot when one is available at that venue."
+        : status === "consumed"
+          ? "Makeup accepted — the office will confirm on the roster."
+          : status === "forfeited"
+            ? "Makeup forfeited after a declined offer."
+            : "Status: " + status;
+    return (
+      '<article class="pp-absence-card" data-status="' +
+      esc(status) +
+      '">' +
+      '<div class="pp-absence-card__head">' +
+      "<strong>Makeup grant</strong>" +
+      '<span class="pp-absence-chip">' +
+      esc(status) +
+      "</span></div>" +
+      '<p class="pp-absence-card__svc">' +
+      esc(g.preferred_venue || "") +
+      (g.service_label ? " · " + esc(g.service_label) : "") +
+      "</p>" +
+      '<p class="pp-muted pp-absence-card__hint">' +
+      esc(hint) +
+      "</p></article>"
+    );
+  }
+
   function bindAbsence(host, data, opts) {
     var notice = host.querySelector("#ppAbsenceNotice");
     var listHost = host.querySelector("#ppAbsenceListHost");
+    var makeupHost = host.querySelector("#ppMakeupListHost");
     var unwellBlock = host.querySelector("#ppAbsenceUnwellBlock");
     var uploadBlock = host.querySelector("#ppAbsenceUploadBlock");
     var proofInput = host.querySelector("#ppAbsenceProofFile");
@@ -2304,6 +2373,77 @@
       });
     }
     syncUnwellUi();
+
+    function refreshMakeupList() {
+      if (!makeupHost || typeof opts.listMakeups !== "function") {
+        if (makeupHost) makeupHost.innerHTML = "";
+        return;
+      }
+      makeupHost.innerHTML = '<p class="pp-muted">Loading…</p>';
+      void opts
+        .listMakeups()
+        .then(function (payload) {
+          var grants = (payload && payload.grants) || [];
+          if (!grants.length) {
+            makeupHost.innerHTML =
+              '<p class="pp-muted">No makeup grants yet. If the office issues one after a missed session without proof, it will appear here.</p>';
+            return;
+          }
+          makeupHost.innerHTML =
+            '<div class="pp-absence-list">' + grants.map(makeupGrantCardHtml).join("") + "</div>";
+          makeupHost.querySelectorAll("[data-pp-makeup-accept]").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              var offerId = btn.getAttribute("data-pp-makeup-accept");
+              if (!offerId || typeof opts.respondMakeup !== "function") return;
+              btn.disabled = true;
+              showNotice("info", "Accepting…");
+              void opts
+                .respondMakeup(offerId, "accept")
+                .then(function (r) {
+                  showNotice("info", (r && r.message) || "Accepted.");
+                  refreshMakeupList();
+                })
+                .catch(function () {
+                  showNotice("error", "Could not accept — try again.");
+                  btn.disabled = false;
+                });
+            });
+          });
+          makeupHost.querySelectorAll("[data-pp-makeup-decline]").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              var offerId = btn.getAttribute("data-pp-makeup-decline");
+              if (!offerId || typeof opts.respondMakeup !== "function") return;
+              var reason =
+                global.prompt(
+                  "Optional reason (e.g. want same instructor). Declining forfeits this makeup:",
+                  "",
+                ) || "";
+              if (
+                !global.confirm(
+                  "Decline this offer? You will forfeit the makeup grant and the slot may go to another family.",
+                )
+              ) {
+                return;
+              }
+              btn.disabled = true;
+              showNotice("info", "Declining…");
+              void opts
+                .respondMakeup(offerId, "decline", reason)
+                .then(function (r) {
+                  showNotice("info", (r && r.message) || "Declined — grant forfeited.");
+                  refreshMakeupList();
+                })
+                .catch(function () {
+                  showNotice("error", "Could not decline — try again.");
+                  btn.disabled = false;
+                });
+            });
+          });
+        })
+        .catch(function () {
+          makeupHost.innerHTML = '<p class="pp-muted">Could not load makeup offers.</p>';
+        });
+    }
 
     function refreshList() {
       if (!listHost || typeof opts.listAbsences !== "function") {
@@ -2426,6 +2566,7 @@
             if (proofName) proofName.textContent = "";
             syncUnwellUi();
             refreshList();
+            refreshMakeupList();
           })
           .catch(function (err) {
             var code = err && err.code ? String(err.code) : "";
@@ -2447,6 +2588,7 @@
       });
     }
     refreshList();
+    refreshMakeupList();
   }
 
   function openSubview(host, data, opts, view, viewOpts) {
