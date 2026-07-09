@@ -695,6 +695,12 @@
         '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>',
         { subtitle: booking.hint },
       ) +
+      infoBtnHtml(
+        "calendar",
+        "My Calendar",
+        '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="8" cy="15" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg>',
+        { extraClass: " pp-pax-info-btn--calendar" },
+      ) +
       "</div>" +
       '<div class="pp-pax-info-row pp-pax-info-row--sessions">' +
       infoBtnHtml(
@@ -957,6 +963,154 @@
 
   function navigateToRegistrationEdit(data, opts, returnView) {
     global.location.href = registrationEditUrl(data, opts, returnView);
+  }
+
+  var PP_CAL_SERVICE_TONES = [
+    "#2d84b3",
+    "#c2410c",
+    "#15803d",
+    "#7c4dbf",
+    "#b45309",
+    "#0e7490",
+  ];
+
+  function dayNameToCalCol(day) {
+    var s = String(day || "")
+      .trim()
+      .toLowerCase()
+      .slice(0, 3);
+    var map = { mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6 };
+    return Object.prototype.hasOwnProperty.call(map, s) ? map[s] : null;
+  }
+
+  /** Weekday colours from booked services (same idea as re-enrolment preview). */
+  function buildMyCalendarDayColors(data) {
+    var detail =
+      data && data.general && Array.isArray(data.general.services_detail)
+        ? data.general.services_detail
+        : [];
+    var colMap = {};
+    var toneIdx = 0;
+    detail.forEach(function (s) {
+      var col = dayNameToCalCol(s && s.day);
+      if (col == null) return;
+      if (colMap[col] != null) return;
+      colMap[col] = PP_CAL_SERVICE_TONES[toneIdx % PP_CAL_SERVICE_TONES.length];
+      toneIdx += 1;
+    });
+    return colMap;
+  }
+
+  function myCalendarLegendHtml(data) {
+    var detail =
+      data && data.general && Array.isArray(data.general.services_detail)
+        ? data.general.services_detail
+        : [];
+    if (!detail.length) {
+      return '<p class="pp-muted pp-cal-legend-empty">Booked weekdays will highlight here once services are confirmed on the roster.</p>';
+    }
+    var seen = Object.create(null);
+    var items = [];
+    detail.forEach(function (s) {
+      var col = dayNameToCalCol(s && s.day);
+      if (col == null) return;
+      var key = String(col);
+      if (seen[key]) return;
+      seen[key] = true;
+      var tone = PP_CAL_SERVICE_TONES[items.length % PP_CAL_SERVICE_TONES.length];
+      var when = [s.day, s.time].filter(Boolean).join(" · ");
+      items.push(
+        '<li class="pp-cal-legend__item">' +
+          '<span class="pp-cal-legend__swatch" style="background:' +
+          esc(tone) +
+          '" aria-hidden="true"></span>' +
+          '<span class="pp-cal-legend__text">' +
+          esc(s.label || "Service") +
+          (when ? ' <span class="pp-muted">(' + esc(when) + ")</span>" : "") +
+          "</span></li>",
+      );
+    });
+    return (
+      '<ul class="pp-cal-legend" aria-label="Your session days">' +
+      items.join("") +
+      '<li class="pp-cal-legend__item pp-cal-legend__item--note">' +
+      '<span class="pp-cal-legend__swatch pp-cal-legend__swatch--red" aria-hidden="true"></span>' +
+      '<span class="pp-cal-legend__text">Red = closed / half-term (no sessions)</span></li>' +
+      "</ul>"
+    );
+  }
+
+  function mountMyCalendar(host, data) {
+    var previewHost = host.querySelector("#ppCalAutumnHost");
+    var fullHost = host.querySelector("#ppCalFullHost");
+    var dayColors = buildMyCalendarDayColors(data);
+    var hasColors = Object.keys(dayColors).length > 0;
+
+    function markMine(root) {
+      if (!hasColors || !root) return;
+      try {
+        if (typeof global.portalMarkPreviewSessionDays === "function") {
+          global.portalMarkPreviewSessionDays(root, dayColors);
+        }
+      } catch (_e) {}
+    }
+
+    if (previewHost && typeof global.portalBuildCalendar202627AutumnPreview === "function") {
+      previewHost.innerHTML = '<p class="pp-muted">Loading calendar…</p>';
+      void global
+        .portalBuildCalendar202627AutumnPreview({ dayColors: dayColors })
+        .then(function (node) {
+          if (!previewHost.isConnected) return;
+          previewHost.textContent = "";
+          previewHost.appendChild(node);
+        })
+        .catch(function () {
+          if (previewHost.isConnected) {
+            previewHost.innerHTML =
+              '<p class="pp-muted">Could not load the Autumn term preview.</p>';
+          }
+        });
+    }
+
+    if (fullHost && typeof global.portalLoadCalendar202627Into === "function") {
+      void global
+        .portalLoadCalendar202627Into(fullHost)
+        .then(function () {
+          if (!fullHost.isConnected) return;
+          markMine(fullHost);
+        })
+        .catch(function () {
+          if (fullHost.isConnected) {
+            fullHost.innerHTML =
+              '<p class="pp-muted">Could not load the full year calendar.</p>';
+          }
+        });
+    } else if (fullHost) {
+      fullHost.innerHTML =
+        '<p class="pp-muted">Calendar script is not available. Please refresh the page.</p>';
+    }
+  }
+
+  function renderCalendar(host, data, opts) {
+    var pName =
+      (data && data.participant && data.participant.display_name) || "your child";
+    var body =
+      '<h3 class="pp-pax-subview-title">My Calendar</h3>' +
+      '<p class="pp-muted pp-pax-subview-note">ClubSENsational term dates for 2026/27. Coloured days are ' +
+      esc(pName) +
+      "&apos;s usual session weekdays (same highlighting as re-enrolment).</p>" +
+      myCalendarLegendHtml(data) +
+      '<div class="pp-cal-block">' +
+      '<h4 class="pp-cal-block__title">Autumn term preview</h4>' +
+      '<div id="ppCalAutumnHost" class="pp-cal-host pp-cal-host--preview" role="region" aria-label="Autumn term preview"></div>' +
+      "</div>" +
+      '<div class="pp-cal-block">' +
+      '<h4 class="pp-cal-block__title">Full year 2026/27</h4>' +
+      '<div id="ppCalFullHost" class="pp-cal-host pp-cal-host--full" role="region" aria-label="Full year calendar"></div>' +
+      "</div>";
+    host.innerHTML = subviewShell(data, "calendar", body);
+    bindBack(host, data, opts);
+    mountMyCalendar(host, data);
   }
 
   function renderBooking(host, data, opts) {
@@ -1491,6 +1645,7 @@
     else if (view === "swim") renderSwim(host, data, opts);
     else if (view === "team") renderTeam(host, data, opts);
     else if (view === "booking") renderBooking(host, data, opts);
+    else if (view === "calendar") renderCalendar(host, data, opts);
     else if (view === "messages") renderMessages(host, data, opts);
   }
 
