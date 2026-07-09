@@ -1826,13 +1826,16 @@ body:has(#workspace .dash-hub--ops-hub) .admin-main{
   min-height:0;
   min-width:0;
   display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(220px,280px);
+  /* Single column: aside was removed from the hub markup; a 2-col track left a blank strip on the right. */
+  grid-template-columns:minmax(0,1fr);
   gap:clamp(8px,1vw,12px);
   overflow:hidden;
 }
 .ops-hub__main{
   min-width:0;
   min-height:0;
+  width:100%;
+  max-width:100%;
   overflow:auto;
   -webkit-overflow-scrolling:touch;
 }
