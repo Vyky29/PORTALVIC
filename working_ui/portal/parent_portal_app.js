@@ -208,6 +208,71 @@
           });
         });
       },
+      listAbsences: function () {
+        return fetch(fn("parent-portal-absence-list"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey(),
+            Authorization: "Bearer " + anonKey(),
+            "x-parent-portal-session": state.session.token,
+          },
+          body: JSON.stringify({ contact_id: contactId }),
+        }).then(function (res) {
+          return res.json().then(function (j) {
+            if (!res.ok || !j.ok) throw new Error("absence_list_failed");
+            return j;
+          });
+        });
+      },
+      submitAbsence: function (payload) {
+        payload = payload || {};
+        return fetch(fn("parent-portal-absence-submit"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey(),
+            Authorization: "Bearer " + anonKey(),
+            "x-parent-portal-session": state.session.token,
+          },
+          body: JSON.stringify({
+            contact_id: contactId,
+            session_date: payload.session_date,
+            service_label: payload.service_label,
+            session_time: payload.session_time || "",
+            reason_text: payload.reason_text || "",
+          }),
+        }).then(function (res) {
+          return res.json().then(function (j) {
+            if (!res.ok || !j.ok) throw new Error("absence_submit_failed");
+            return j;
+          });
+        });
+      },
+      uploadAbsenceProof: function (reportId, file) {
+        var fd = new FormData();
+        fd.append("report_id", String(reportId || ""));
+        fd.append("file", file);
+        return fetch(fn("parent-portal-absence-proof-upload"), {
+          method: "POST",
+          headers: {
+            apikey: anonKey(),
+            Authorization: "Bearer " + anonKey(),
+            "x-parent-portal-session": state.session.token,
+          },
+          body: fd,
+        }).then(function (res) {
+          return res.json().then(function (j) {
+            if (!res.ok || !j.ok) {
+              var err = new Error("absence_proof_failed");
+              err.code = (j && j.error) || "upload_failed";
+              err.messageText = (j && j.message) || "";
+              throw err;
+            }
+            return j;
+          });
+        });
+      },
     };
   }
 

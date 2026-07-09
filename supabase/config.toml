@@ -496,3 +496,19 @@ verify_jwt = false
 
 [functions.portal-admin-session-feedback-list]
 verify_jwt = false
+
+# Parent Absent → Missed / proof (session header auth inside function).
+[functions.parent-portal-absence-list]
+verify_jwt = false
+
+[functions.parent-portal-absence-submit]
+verify_jwt = false
+
+[functions.parent-portal-absence-proof-upload]
+verify_jwt = false
+
+[functions.portal-admin-parent-absence-list]
+verify_jwt = false
+
+[functions.portal-admin-parent-absence-decide]
+verify_jwt = false

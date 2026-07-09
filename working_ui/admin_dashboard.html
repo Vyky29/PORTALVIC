@@ -35,6 +35,7 @@
   <script src="/portal/admin-portal-day-ops.js?v=20260704-admin-504-stagger"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
+  <script src="/portal/admin-portal-parent-absences.js?v=20260709-absence-proof"></script>
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
   <script src="/portal/admin-portal-pins.js?v=20260530-portal-pins-db"></script>
   <script src="/portal/admin-portal-activity.js?v=20260604-visit-activity"></script>
@@ -20132,10 +20133,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var rows = cases.map(absentsCreditsCaseRowHtml).join('');
       if(!rows) rows = '<tr><td colspan="10" class="muted">No cases in the demo list.</td></tr>';
       var srcChip = usePortal ? 'workbook' : 'demo';
+      var parentQueue = '';
+      if(window.PortalParentAbsences && typeof window.PortalParentAbsences.embedHtml === 'function'){
+        portalParentAbsencesConfigureOnce();
+        parentQueue = window.PortalParentAbsences.embedHtml();
+      }
       return '<h1 class="page-title">Absents, refunds &amp; credits</h1>'+
         '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Work through missed sessions, refunds, credits, and what was agreed with each family. '+metaLine+'</p>'+
         '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--sec" data-view-target="dashboard">Day operations</button> <button type="button" class="btn btn--sec" data-view-target="bookings">Bookings</button> <button type="button" class="btn btn--ghost" data-view-target="communications">Comms log</button></div>'+
-        '<div class="card" style="margin-bottom:14px"><div class="card-h"><h3>Queue</h3><span class="chip '+(pend?'chip--pend':'chip--ok')+'">'+esc(String(pend))+' pending · '+esc(String(total))+' rows ('+srcChip+')</span></div>'+
+        parentQueue+
+        '<div class="card" style="margin-bottom:14px"><div class="card-h"><h3>Workbook / legacy queue</h3><span class="chip '+(pend?'chip--pend':'chip--ok')+'">'+esc(String(pend))+' pending · '+esc(String(total))+' rows ('+srcChip+')</span></div>'+
         '<div class="card-pad" style="overflow:auto"><table class="tbl tbl--center"><thead><tr><th>Participant</th><th>Time / value</th><th>Date</th><th>Service</th><th>Reason</th><th>Notice</th><th>Policy</th><th>Resolution</th><th>Status</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'+
         '<p class="muted" style="margin:0;font-size:12px;line-height:1.5;max-width:48rem;overflow-wrap:break-word"><strong>Note:</strong> '+
         (usePortal
@@ -20887,6 +20894,30 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       portalParticipantDocumentsConfigureOnce();
       if(window.PortalParticipantDocuments && typeof window.PortalParticipantDocuments.bindModule === 'function'){
         window.PortalParticipantDocuments.bindModule();
+      }
+    }
+    function portalParentAbsencesConfigureOnce(){
+      if(window.__portalParentAbsencesConfigured || !window.PortalParentAbsences) return;
+      window.__portalParentAbsencesConfigured = true;
+      window.PortalParentAbsences.configure({
+        esc: esc,
+        toast: portalAdminToast,
+        getClient: getSchedSupabaseClient,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        }
+      });
+    }
+    function bindPortalParentAbsencesModule(){
+      portalParentAbsencesConfigureOnce();
+      if(window.PortalParentAbsences && typeof window.PortalParentAbsences.bindEmbed === 'function'){
+        window.PortalParentAbsences.bindEmbed();
+      } else if(window.PortalParentAbsences && typeof window.PortalParentAbsences.bindModule === 'function'){
+        window.PortalParentAbsences.bindModule();
       }
     }
     function portalDocumentsConfigureOnce(){
@@ -23244,6 +23275,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else if(id==='portal_payslips') bindPortalPayslipsModule();
       else if(id==='portal_documents' || id.indexOf('portal_docs_')===0) bindPortalDocumentsModule();
       else if(id==='portal_participant_documents') bindPortalParticipantDocumentsModule();
+      if(id==='absents_refunds') bindPortalParentAbsencesModule();
       if(id==='portal_activity') bindPortalActivityModule();
       if(id==='session_disruptions') portalSessionDisruptionsBind();
       if(id==='portal_training_progress') bindPortalTrainingProgressModule();

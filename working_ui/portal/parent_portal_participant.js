@@ -1011,23 +1011,26 @@
     return out;
   }
 
-  function absencePrefillText(data, next) {
-    var p = (data && data.participant) || {};
-    var name = p.display_name || "our child";
-    var when = next
-      ? next.dayLabel +
-        (next.rawLabel ? " · " + next.rawLabel : "") +
-        (next.time ? " · " + next.time : "")
-      : "an upcoming session";
-    return (
-      "Absence report for " +
-      name +
-      "\n\n" +
-      name +
-      " will not be able to attend:\n" +
-      when +
-      "\n\nReason: "
-    );
+  function absenceStatusLabel(status) {
+    var s = String(status || "").toLowerCase();
+    if (s === "missed") return "Missed session";
+    if (s === "pending_review") return "Proof with admin";
+    if (s === "excused") return "Excused (validated)";
+    if (s === "rejected") return "Proof not accepted";
+    if (s === "expired") return "Proof window closed";
+    return s || "—";
+  }
+
+  function formatProofDeadline(iso) {
+    if (!iso) return "";
+    try {
+      var p = String(iso).split("-");
+      if (p.length !== 3) return String(iso);
+      var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+      return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+    } catch (_e) {
+      return String(iso);
+    }
   }
 
   function hubOpsCardHtml(data) {
@@ -1070,9 +1073,9 @@
       nextBody +
       "</div>" +
       '<div class="pp-hub-ops__actions">' +
-      '<button type="button" class="pp-btn pp-btn--ghost pp-hub-ops__absence" data-pp-absence="1"' +
+      '<button type="button" class="pp-btn pp-btn--ghost pp-hub-ops__absence" data-pp-open="absence"' +
       (next ? "" : " disabled") +
-      ">Report absence</button>" +
+      ">Report absent</button>" +
       '<button type="button" class="pp-btn pp-btn--ghost pp-hub-ops__msgs" data-pp-open="messages">Open messages</button>' +
       "</div>" +
       '<div id="ppHubAlerts" class="pp-hub-alerts" hidden></div>' +
@@ -2017,6 +2020,235 @@
     });
   }
 
+  function absenceReportCardHtml(r) {
+    var canUpload = !!r.can_upload_proof;
+    var status = String(r.status || "");
+    var outcome =
+      status === "excused" && r.outcome
+        ? '<p class="pp-absence-card__meta">Outcome: <strong>' +
+          esc(String(r.outcome)) +
+          "</strong>" +
+          (r.outcome_notes ? " — " + esc(r.outcome_notes) : "") +
+          "</p>"
+        : "";
+    var review =
+      r.review_notes && (status === "rejected" || status === "excused")
+        ? '<p class="pp-absence-card__meta muted">Admin: ' + esc(r.review_notes) + "</p>"
+        : "";
+    var proofLine = r.proof_file_name
+      ? '<p class="pp-absence-card__meta muted">Proof on file: ' + esc(r.proof_file_name) + "</p>"
+      : "";
+    var actions = "";
+    if (canUpload) {
+      var uploadLabel = status === "pending_review" || r.proof_file_name ? "Replace proof" : "Upload proof";
+      var hint =
+        status === "pending_review"
+          ? "Waiting for admin validation. You can replace the file until " +
+            formatProofDeadline(r.proof_deadline) +
+            "."
+          : "Medical note, prescription (participant name), school note, etc. Admin must validate. Deadline: " +
+            formatProofDeadline(r.proof_deadline) +
+            ".";
+      actions =
+        '<div class="pp-absence-card__upload">' +
+        '<label class="pp-btn pp-btn--ghost pp-absence-upload-btn">' +
+        esc(uploadLabel) +
+        '<input type="file" accept="image/*,application/pdf" hidden data-pp-absence-proof="' +
+        esc(r.id) +
+        '" />' +
+        "</label>" +
+        '<p class="pp-muted pp-absence-card__hint">' +
+        esc(hint) +
+        "</p>" +
+        "</div>";
+    } else if (
+      status === "expired" ||
+      (status === "missed" && r.proof_window_closed) ||
+      (status === "rejected" && !canUpload)
+    ) {
+      actions =
+        '<p class="pp-notice pp-notice--error pp-absence-expired" role="status">The 2-week window to upload proof has passed. Please contact the office/admin — uploads are no longer available here.</p>';
+    } else if (status === "excused") {
+      actions =
+        '<p class="pp-notice pp-notice--info" role="status">Validated by admin. Credit / refund / makeup (if offered) is handled by the office.</p>';
+    }
+    return (
+      '<article class="pp-absence-card" data-status="' +
+      esc(status) +
+      '">' +
+      '<div class="pp-absence-card__head">' +
+      "<strong>" +
+      esc(formatHubDateLabel(r.session_date) || r.session_date) +
+      "</strong>" +
+      '<span class="pp-absence-chip">' +
+      esc(absenceStatusLabel(status)) +
+      "</span></div>" +
+      '<p class="pp-absence-card__svc">' +
+      esc(r.service_label || "Session") +
+      (r.session_time ? " · " + esc(r.session_time) : "") +
+      "</p>" +
+      (r.reason_text ? '<p class="pp-absence-card__reason">' + esc(r.reason_text) + "</p>" : "") +
+      proofLine +
+      outcome +
+      review +
+      actions +
+      "</article>"
+    );
+  }
+
+  function renderAbsence(host, data, opts) {
+    var sessions = findNextSessions(data, 8);
+    var optionsHtml = sessions
+      .map(function (s, i) {
+        var val = s.iso + "|" + (s.rawLabel || s.label || "") + "|" + (s.time || "");
+        return (
+          '<option value="' +
+          esc(val) +
+          '"' +
+          (i === 0 ? " selected" : "") +
+          ">" +
+          esc(s.dayLabel + (s.label ? " · " + s.label : "") + (s.time ? " · " + s.time : "")) +
+          "</option>"
+        );
+      })
+      .join("");
+    host.innerHTML = subviewShell(
+      data,
+      "absence",
+      '<h3 class="pp-pax-subview-title">Report absent</h3>' +
+        '<p class="pp-muted pp-pax-subview-note">This marks a <strong>Missed session</strong> — it does not cancel the place. You have <strong>2 weeks</strong> from the session date to upload proof. Admin always validates before any credit, refund, or makeup.</p>' +
+        '<div class="pp-card pp-absence-form-card">' +
+        '<form id="ppAbsenceForm" class="pp-absence-form">' +
+        '<label class="pp-field"><span>Session</span>' +
+        (sessions.length
+          ? '<select id="ppAbsenceSession" name="session" required>' + optionsHtml + "</select>"
+          : '<p class="pp-muted">No upcoming sessions found.</p>') +
+        "</label>" +
+        '<label class="pp-field"><span>Note (optional)</span>' +
+        '<textarea id="ppAbsenceReason" name="reason" rows="3" maxlength="800" placeholder="e.g. unwell / appointment"></textarea>' +
+        "</label>" +
+        '<button type="submit" class="pp-btn pp-btn--primary" id="ppAbsenceSubmit"' +
+        (sessions.length ? "" : " disabled") +
+        ">Mark as missed</button>" +
+        "</form>" +
+        '<div id="ppAbsenceNotice" class="pp-notice" hidden></div>' +
+        "</div>" +
+        '<h4 class="pp-absence-list-title">Your absence reports</h4>' +
+        '<div id="ppAbsenceListHost"><p class="pp-muted">Loading…</p></div>',
+    );
+    bindBack(host, data, opts);
+    bindAbsence(host, data, opts);
+  }
+
+  function bindAbsence(host, data, opts) {
+    var notice = host.querySelector("#ppAbsenceNotice");
+    var listHost = host.querySelector("#ppAbsenceListHost");
+
+    function showNotice(kind, text) {
+      if (!notice) return;
+      notice.hidden = !text;
+      notice.className = "pp-notice" + (kind ? " pp-notice--" + kind : "");
+      notice.textContent = text || "";
+    }
+
+    function refreshList() {
+      if (!listHost || typeof opts.listAbsences !== "function") {
+        if (listHost) listHost.innerHTML = '<p class="pp-muted">Absence list unavailable.</p>';
+        return;
+      }
+      listHost.innerHTML = '<p class="pp-muted">Loading…</p>';
+      void opts
+        .listAbsences()
+        .then(function (payload) {
+          var reports = (payload && payload.reports) || [];
+          if (!reports.length) {
+            listHost.innerHTML = '<p class="pp-muted">No absence reports yet.</p>';
+            return;
+          }
+          listHost.innerHTML =
+            '<div class="pp-absence-list">' + reports.map(absenceReportCardHtml).join("") + "</div>";
+          listHost.querySelectorAll("[data-pp-absence-proof]").forEach(function (input) {
+            input.addEventListener("change", function () {
+              var file = input.files && input.files[0];
+              var reportId = input.getAttribute("data-pp-absence-proof");
+              if (!file || !reportId || typeof opts.uploadAbsenceProof !== "function") return;
+              showNotice("info", "Uploading proof…");
+              void opts
+                .uploadAbsenceProof(reportId, file)
+                .then(function () {
+                  showNotice(
+                    "info",
+                    "Proof uploaded. Admin must validate it — you will hear from the office.",
+                  );
+                  refreshList();
+                })
+                .catch(function (err) {
+                  var code = err && err.code ? String(err.code) : "";
+                  if (code === "proof_window_closed") {
+                    showNotice(
+                      "error",
+                      "The 2-week window has passed. Please contact the office/admin — uploads are closed.",
+                    );
+                  } else {
+                    showNotice("error", "Could not upload proof — try again or contact the office.");
+                  }
+                  refreshList();
+                });
+            });
+          });
+        })
+        .catch(function () {
+          listHost.innerHTML = '<p class="pp-muted">Could not load reports — try again later.</p>';
+        });
+    }
+
+    var form = host.querySelector("#ppAbsenceForm");
+    if (form && typeof opts.submitAbsence === "function") {
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var sel = host.querySelector("#ppAbsenceSession");
+        var reasonEl = host.querySelector("#ppAbsenceReason");
+        var btn = host.querySelector("#ppAbsenceSubmit");
+        var raw = sel ? String(sel.value || "") : "";
+        var parts = raw.split("|");
+        if (parts.length < 2 || !parts[0] || !parts[1]) {
+          showNotice("error", "Choose a session.");
+          return;
+        }
+        if (btn) {
+          btn.disabled = true;
+          btn.setAttribute("aria-busy", "true");
+        }
+        showNotice("info", "Saving…");
+        void opts
+          .submitAbsence({
+            session_date: parts[0],
+            service_label: parts[1],
+            session_time: parts[2] || "",
+            reason_text: reasonEl ? String(reasonEl.value || "").trim() : "",
+          })
+          .then(function () {
+            showNotice(
+              "info",
+              "Marked as Missed session. You have 2 weeks from the session date to upload proof for admin validation.",
+            );
+            if (reasonEl) reasonEl.value = "";
+            refreshList();
+          })
+          .catch(function () {
+            showNotice("error", "Could not save — please try again.");
+          })
+          .finally(function () {
+            if (btn) {
+              btn.disabled = false;
+              btn.removeAttribute("aria-busy");
+            }
+          });
+      });
+    }
+    refreshList();
+  }
+
   function openSubview(host, data, opts, view, viewOpts) {
     viewOpts = viewOpts || {};
     if (view === "general") {
@@ -2029,6 +2261,7 @@
     else if (view === "team") renderTeam(host, data, opts);
     else if (view === "booking") renderBooking(host, data, opts);
     else if (view === "calendar") renderCalendar(host, data, opts);
+    else if (view === "absence") renderAbsence(host, data, opts);
     else if (view === "messages") {
       var msgOpts = opts || {};
       if (viewOpts.prefillMessage) {
@@ -2050,16 +2283,6 @@
         navigateToRegistrationEdit(data, opts);
       });
     });
-    var absenceBtn = host.querySelector("[data-pp-absence]");
-    if (absenceBtn) {
-      absenceBtn.addEventListener("click", function () {
-        if (absenceBtn.disabled) return;
-        var next = findNextSessions(data, 1)[0] || null;
-        openSubview(host, data, opts, "messages", {
-          prefillMessage: absencePrefillText(data, next),
-        });
-      });
-    }
     host.querySelectorAll("[data-pp-open]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         if (btn.disabled) return;
