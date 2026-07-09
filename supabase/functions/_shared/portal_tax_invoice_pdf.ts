@@ -3,7 +3,7 @@
  * Templates mirror INV-0270 (Exempt) and INV-0353 (VAT 20%).
  */
 import { PDFDocument, StandardFonts, rgb } from "https://esm.sh/pdf-lib@1.17.1";
-import { CLUBSENSATIONAL_LOGO_JPEG_B64 } from "./clubsensational_logo_b64.ts";
+import { CLUBSENSATIONAL_LOGO_PNG_B64 } from "./clubsensational_logo_b64.ts";
 
 export type PortalInvoiceVatMode = "exempt" | "vat_20";
 
@@ -91,8 +91,8 @@ export async function buildPortalTaxInvoicePdf(
 
   let logoH = 0;
   try {
-    const logo = await pdf.embedJpg(b64ToBytes(CLUBSENSATIONAL_LOGO_JPEG_B64));
-    const logoW = 72;
+    const logo = await pdf.embedPng(b64ToBytes(CLUBSENSATIONAL_LOGO_PNG_B64));
+    const logoW = 88;
     logoH = (logo.height / logo.width) * logoW;
     page.drawImage(logo, {
       x: right - logoW,
