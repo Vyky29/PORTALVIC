@@ -145,6 +145,16 @@ export function buildReenrolmentParentSummary(
     if (funding2627.admin_fee_applies && Number(funding2627.admin_fee_total) > 0) {
       bits.push("Admin fee £" + Number(funding2627.admin_fee_total).toFixed(2));
     }
+    if (
+      funding2627.payment_method_code === "own_way_flexible" &&
+      Number(funding2627.advance_buffer_gbp) > 0
+    ) {
+      bits.push(
+        "Min prepaid £" +
+          Number(funding2627.advance_buffer_gbp).toFixed(2) +
+          " (2 sessions × service)",
+      );
+    }
     if (bits.length) {
       items.push({
         label: "Funding & payment 2026/27",

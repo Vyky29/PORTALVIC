@@ -613,11 +613,8 @@
   }
 
   function paymentPreviewNote(payCode, schedCode) {
-    if (payCode === "own_way_flexible" && schedCode === "own_year") {
-      return "You confirm the whole year. Pay by bank transfer, Card or Apple Pay when you can — not on our fixed due dates. Programme total stays the same, plus one £50 admin fee for the year. We will not ask you to re-confirm each term.";
-    }
     if (payCode === "own_way_flexible" && schedCode === "own_term") {
-      return "You continue term by term on your own payment timing (bank transfer, Card or Apple Pay). Programme total stays the same, plus a £50 admin fee each term. Paying the full amount on or before a due date by Card / Apple Pay / bank transfer on a standard plan has no admin fee.";
+      return "Term by term on your own payment timing (bank transfer, Card or Apple Pay) — not our fixed due dates. Programme total stays the same, plus a £50 admin fee each term. You must keep at least two sessions paid in advance for every service you attend; if the balance falls below that, we may pause sessions or move you to a standard payment plan.";
     }
     if (payCode === "gocardless" && schedCode === "monthly_term") {
       return "Same programme total — one direct payment per month of each term (Autumn 4, Spring 3, Summer 4 = 11). We set up your GoCardless agreement in July; GoCardless collects the first payment on 1 September and it reaches us around 5–6 September, then on the 1st of each month.";
@@ -655,31 +652,26 @@
       return money(n);
     }
     if (payCode === "own_way_flexible") {
+      var buffer = ownArrangementAdvanceBuffer(data);
       var ownRows = [];
-      if (schedCode === "own_year") {
+      ["Autumn", "Spring", "Summer"].forEach(function (label, i) {
+        var termKey = i === 0 ? "autumn" : i === 1 ? "spring" : "summer";
         ownRows.push({
-          label: "Programme total (year)",
+          label: label + " term · programme",
           due: "Your own timing",
-          amount: money(annual),
+          amount: money(termProgrammeTotal(data, termKey)),
         });
         ownRows.push({
-          label: "Admin fee (own arrangement · year)",
-          due: "With first payment",
+          label: label + " term · admin fee",
+          due: "Each term",
           amount: money(RE_ADMIN_FEE_OWN),
         });
-      } else {
-        ["Autumn", "Spring", "Summer"].forEach(function (label, i) {
-          var termKey = i === 0 ? "autumn" : i === 1 ? "spring" : "summer";
-          ownRows.push({
-            label: label + " term · programme",
-            due: "Your own timing",
-            amount: money(termProgrammeTotal(data, termKey)),
-          });
-          ownRows.push({
-            label: label + " term · admin fee",
-            due: "Each term",
-            amount: money(RE_ADMIN_FEE_OWN),
-          });
+      });
+      if (buffer.total > 0) {
+        ownRows.push({
+          label: "Minimum credit on account (2 sessions × each service)",
+          due: "Always in advance",
+          amount: money(buffer.total),
         });
       }
       return (
@@ -1270,8 +1262,10 @@
 
   /** GoCardless / Direct Payment: small per-instalment fee. */
   var RE_ADMIN_FEE_GC_PER_INSTALLMENT = 1.5;
-  /** Own arrangement: only when the family cannot meet fixed due dates / full amount on time. */
+  /** Own arrangement: £50 per term only (no year option). */
   var RE_ADMIN_FEE_OWN = 50;
+  /** Own arrangement: always keep 2 sessions paid in advance per service. */
+  var RE_OWN_ADVANCE_SESSIONS = 2;
 
   function installmentCountForSchedule(scheduleCode) {
     if (scheduleCode === "monthly_term") return 11;
@@ -1279,7 +1273,6 @@
     if (scheduleCode === "term_flexi") return 6;
     if (scheduleCode === "term_3") return 3;
     if (scheduleCode === "yearly_1off") return 1;
-    if (scheduleCode === "own_year") return 1;
     if (scheduleCode === "own_term") return 3;
     return 1;
   }
@@ -1287,16 +1280,34 @@
   function adminFeeTotalForSchedule(payCode, scheduleCode) {
     if (!adminFeeApplies(payCode)) return 0;
     if (payCode === "own_way_flexible") {
-      if (scheduleCode === "own_year") return RE_ADMIN_FEE_OWN;
-      if (scheduleCode === "own_term") return RE_ADMIN_FEE_OWN * 3;
-      return RE_ADMIN_FEE_OWN;
+      return RE_ADMIN_FEE_OWN * 3;
     }
     return RE_ADMIN_FEE_GC_PER_INSTALLMENT * installmentCountForSchedule(scheduleCode);
   }
 
   function isAutoContinueSchedule(payCode, scheduleCode) {
-    if (payCode === "own_way_flexible" && scheduleCode === "own_year") return true;
+    if (payCode === "own_way_flexible") return false;
     return isAllYearScheduleCode(scheduleCode);
+  }
+
+  /** Minimum prepaid balance: 2 × pricePerSession for each kept service (summed). */
+  function ownArrangementAdvanceBuffer(data) {
+    var slots = keptWeeklySlots(data);
+    var lines = [];
+    var total = 0;
+    slots.forEach(function (slot) {
+      var price = Number(slot && slot.pricePerSession);
+      if (!Number.isFinite(price) || price <= 0) return;
+      var line = price * RE_OWN_ADVANCE_SESSIONS;
+      total += line;
+      lines.push({
+        label: slotLabel(slot) || "Service",
+        sessions: RE_OWN_ADVANCE_SESSIONS,
+        price_per_session: price,
+        amount: line,
+      });
+    });
+    return { total: Math.round(total * 100) / 100, lines: lines };
   }
 
   function initBilling2627State(data) {
@@ -1333,11 +1344,9 @@
       "Direct Payment (GoCardless) adds " +
       money(RE_ADMIN_FEE_GC_PER_INSTALLMENT) +
       " per instalment. " +
-      "<strong>Own arrangement</strong> (cannot meet our payment dates or pay the full amount on time) adds " +
+      "<strong>Own arrangement</strong> (cannot meet our payment dates) is term-only and adds " +
       money(RE_ADMIN_FEE_OWN) +
-      " once for the year, or " +
-      money(RE_ADMIN_FEE_OWN) +
-      " each term." +
+      " each term, plus a minimum prepaid balance of two sessions per service." +
       "</p>";
     return (
       '<div class="re-funding-current">' +
@@ -1494,9 +1503,12 @@
       (payCode === "own_way_flexible" ? "" : " hidden") +
       ">" +
       "<strong>Own arrangement</strong>" +
-      "Only if you cannot pay the full amount on our published due dates (or do not have funds ready then). " +
-      "Paying on time by bank transfer, Card or Apple Pay on a standard plan has <strong>no</strong> £50 fee. " +
-      "Overpayments are kept as credit." +
+      "Only if you cannot pay the full amount on our published due dates. " +
+      "Term by term only (+ " +
+      money(RE_ADMIN_FEE_OWN) +
+      " each term). You must always keep at least <strong>two sessions paid in advance for each service</strong> " +
+      "(e.g. two services → two sessions of each). If the balance falls below that, we may pause sessions or move you to a standard plan. " +
+      "Paying on time on Bank Transfer / Card / Apple Pay has <strong>no</strong> £50 fee. Overpayments are kept as credit." +
       "</div>" +
       '<div id="reDirectPayFailNote" class="re-funding-fee re-funding-fee--fail"' +
       (payCode === "gocardless" ? "" : " hidden") +
@@ -1536,7 +1548,7 @@
     { code: "gocardless", label: "Direct Payment (GoCardless · monthly)" },
     {
       code: "own_way_flexible",
-      label: "Own arrangement — cannot meet payment dates (+ £50)",
+      label: "Own arrangement — cannot meet payment dates (+ £50 / term)",
     },
   ];
 
@@ -1562,10 +1574,6 @@
     ],
     own_way_flexible: [
       {
-        code: "own_year",
-        label: "Whole year — own payment timing (+ £50 once)",
-      },
-      {
         code: "own_term",
         label: "Term by term — own payment timing (+ £50 each term)",
       },
@@ -1573,11 +1581,8 @@
   };
 
   function scheduleOptionHint(code, payCode) {
-    if (code === "own_year") {
-      return "For families who cannot pay the full amount on our fixed due dates. Confirm the year once; pay by bank transfer, Card or Apple Pay when you can. One £50 admin fee for the year. We will not ask you to re-confirm each term.";
-    }
     if (code === "own_term") {
-      return "For families who cannot meet our due dates. Continue term by term on your own timing (bank / Card / Apple Pay). £50 admin fee each term. If you can pay the full amount on time on a standard plan, choose Bank Transfer or GoCardless instead — no £50 fee.";
+      return "Only if you cannot meet our fixed due dates. Term by term on your own timing (bank / Card / Apple Pay). £50 admin fee each term. Keep at least two sessions paid in advance for every service; below that we may pause sessions or move you to a standard plan. If you can pay on time, choose Bank Transfer or GoCardless instead — no £50 fee.";
     }
     if (code === "yearly_1off") {
       return "Confirm the full academic year in one step. One bank transfer due by 15 August 2026, same programme total. We treat you as continuing each term automatically — no re-confirmation unless you tell us otherwise. Paying on time (or by Card / Apple Pay when offered) has no admin fee.";
@@ -1617,18 +1622,13 @@
 
   function defaultScheduleForPay(payCode) {
     if (payCode === "gocardless") return "monthly_term";
-    if (payCode === "own_way_flexible") return "own_year";
+    if (payCode === "own_way_flexible") return "own_term";
     if (payCode === "bank_transfer") return "term_flexi";
     return "term_3";
   }
 
   function isAllYearScheduleCode(code) {
-    return (
-      code === "monthly_term" ||
-      code === "monthly_10" ||
-      code === "yearly_1off" ||
-      code === "own_year"
-    );
+    return code === "monthly_term" || code === "monthly_10" || code === "yearly_1off";
   }
 
   function mapScheduleCode(rawPay, fundingRaw) {
@@ -1691,7 +1691,7 @@
       var checked = o.code === defaultCode ? " checked" : "";
       var hint =
         o.code === "own_way_flexible"
-          ? "Only if you cannot pay the full amount on our due dates. On-time Card / Apple Pay / bank transfer on a standard plan = no £50 fee."
+          ? "Term only (+ £50 each term). Keep 2 sessions prepaid per service. On-time Card / Apple Pay / bank on a standard plan = no £50 fee."
           : o.code === "bank_transfer"
             ? "Fixed due dates. Pay on time by bank transfer (or Card / Apple Pay when offered) — no admin fee."
             : "Monthly Direct Debit. Small per-instalment fee.";
@@ -1858,20 +1858,18 @@
       var schedCode = schedEl ? schedEl.value : defaultScheduleForPay(payCode);
       var feeTotal = adminFeeTotalForSchedule(payCode, schedCode);
       if (payCode === "own_way_flexible") {
+        var buffer = ownArrangementAdvanceBuffer(state.lookup);
         feeAmt.textContent =
-          schedCode === "own_term"
-            ? " — " +
-              money(RE_ADMIN_FEE_OWN) +
-              " × 3 terms = " +
-              money(feeTotal) +
-              " (indicative total " +
-              money(annual + feeTotal) +
-              ")"
-            : " — " +
-              money(RE_ADMIN_FEE_OWN) +
-              " once for the year (indicative total " +
-              money(annual + feeTotal) +
-              ")";
+          " — " +
+          money(RE_ADMIN_FEE_OWN) +
+          " × 3 terms = " +
+          money(feeTotal) +
+          " (indicative total " +
+          money(annual + feeTotal) +
+          ")" +
+          (buffer.total > 0
+            ? "; keep at least " + money(buffer.total) + " prepaid (2 sessions × each service)"
+            : "");
       } else {
         var n = installmentCountForSchedule(schedCode);
         feeAmt.textContent =
@@ -2019,6 +2017,8 @@
     var fee = adminFeeApplies(payCode);
     var feeTotal = fee ? adminFeeTotalForSchedule(payCode, scheduleCode) : 0;
     var autoContinue = isAutoContinueSchedule(payCode, scheduleCode);
+    var advanceBuffer =
+      payCode === "own_way_flexible" ? ownArrangementAdvanceBuffer(data) : { total: 0, lines: [] };
     return {
       current_2526: cur,
       choices_2627: {
@@ -2035,7 +2035,7 @@
         admin_fee_total: feeTotal,
         admin_fee_reason:
           payCode === "own_way_flexible"
-            ? "own_arrangement_cannot_meet_due_dates"
+            ? "own_arrangement_per_term"
             : payCode === "gocardless"
               ? "gocardless_instalment"
               : null,
@@ -2043,11 +2043,19 @@
         auto_continue_note: autoContinue
           ? "We will treat this place as continuing each term with the same arrangement unless you tell us otherwise."
           : null,
+        advance_buffer_sessions_per_service:
+          payCode === "own_way_flexible" ? RE_OWN_ADVANCE_SESSIONS : null,
+        advance_buffer_gbp: payCode === "own_way_flexible" ? advanceBuffer.total : null,
+        advance_buffer_lines: payCode === "own_way_flexible" ? advanceBuffer.lines : null,
+        advance_buffer_note:
+          payCode === "own_way_flexible"
+            ? "Must keep at least two sessions paid in advance for each service. Below that, sessions may be paused or moved to a standard payment plan."
+            : null,
         estimated_annual_total: annualTotal,
         estimated_total_with_admin_fee:
           fee && annualTotal > 0 ? annualTotal + feeTotal : null,
         billing_schedule:
-          scheduleCode === "yearly_1off" || scheduleCode === "own_year"
+          scheduleCode === "yearly_1off"
             ? "yearly"
             : scheduleCode === "monthly_term" || scheduleCode === "monthly_10"
               ? "monthly"
