@@ -491,18 +491,20 @@ export async function buildPortalConsentsPdf(
       color: rgb(0.985, 0.985, 0.99),
     });
 
-    // Section icon above title — left-aligned with the detail rows.
+    // Section icon + title centred; title uses the section accent colour.
     let cy = y - 14 - sectionIconR;
-    drawSectionIcon(page, block.icon, boxInnerLeft, cy, block.iconColor, sectionIconR);
+    const iconX = left + (right - left) / 2 - sectionIconR;
+    drawSectionIcon(page, block.icon, iconX, cy, block.iconColor, sectionIconR);
     cy -= sectionIconR + 7;
 
+    const titleW = fontBold.widthOfTextAtSize(block.title, titleSizeBlock);
+    const titleX = left + Math.max(0, (right - left - titleW) / 2);
     page.drawText(block.title, {
-      x: boxInnerLeft,
+      x: titleX,
       y: cy - 2,
       size: titleSizeBlock,
       font: fontBold,
-      color: ink,
-      maxWidth: right - boxInnerLeft - boxPadX,
+      color: block.iconColor,
     });
     cy -= titleSizeBlock + 12;
 
