@@ -33,7 +33,7 @@
   var TIER_UI = [
     "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",
     "/portal/portal_dashboard_ui_coalesce.js?v=20260630-term-idle-rAF",
-    "/portal/portal_participant_photos.js?v=20260628-timi-smile",
+    "/portal/portal_participant_photos.js?v=20260710-eiji-hazem-photos",
     "/portal/portal_topbar_header.js?v=20260707-topbar-guard",
     "/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category",
     "/portal/portal_swimming_instructor_menus.js?v=20260708c-topbar-plan-fix",
