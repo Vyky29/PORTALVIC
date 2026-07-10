@@ -2862,15 +2862,35 @@
     var status = String((doc && doc.status) || "").trim();
     var pdf = (doc && doc.pdf_url) || "";
     var photo = (doc && doc.photo_url) || "";
+    var formType = String((doc && doc.form_type) || "").trim();
+    var isConsent = formType === "annual_consents";
+    var ico = isConsent
+      ? '<span class="pp-doc-card__ico pp-doc-card__ico--consent" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>'
+      : '<span class="pp-doc-card__ico pp-doc-card__ico--form" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h6"/></svg></span>';
+    var statusLabel = isConsent
+      ? status === "reviewed"
+        ? "On file"
+        : "Signed PDF"
+      : status || "";
     return (
-      '<article class="pp-doc-card">' +
+      '<article class="pp-doc-card' +
+      (isConsent ? " pp-doc-card--consent" : "") +
+      '">' +
       '<div class="pp-doc-card__head">' +
+      '<div class="pp-doc-card__title-row">' +
+      ico +
       "<strong>" +
       esc(title) +
       "</strong>" +
-      (status ? '<span class="pp-doc-chip">' + esc(status) + "</span>" : "") +
       "</div>" +
-      (when ? '<p class="pp-doc-card__when muted">Submitted ' + esc(when) + "</p>" : "") +
+      (statusLabel ? '<span class="pp-doc-chip">' + esc(statusLabel) + "</span>" : "") +
+      "</div>" +
+      (when
+        ? '<p class="pp-doc-card__when muted">' +
+          (isConsent ? "Signed " : "Submitted ") +
+          esc(when) +
+          "</p>"
+        : "") +
       '<div class="pp-doc-card__acts">' +
       (pdf
         ? '<a class="pp-btn pp-btn--primary" href="' +
@@ -2892,7 +2912,7 @@
     if (!listHost) return;
 
     if (typeof opts.listDocuments !== "function") {
-      listHost.innerHTML = '<p class="pp-muted">Registration forms are not available right now.</p>';
+      listHost.innerHTML = '<p class="pp-muted">Forms &amp; PDFs are not available right now.</p>';
       return;
     }
 
@@ -2903,7 +2923,7 @@
         if (!docs.length) {
           listHost.innerHTML =
             '<div class="pp-docs-empty">' +
-            '<p class="pp-muted">No registration PDFs on file yet for this participant.</p>' +
+            '<p class="pp-muted">No PDFs on file yet. After you save &amp; sign consents above, a signed PDF with the club logo and your answers appears here.</p>' +
             "</div>";
           return;
         }
@@ -2911,7 +2931,7 @@
       })
       .catch(function () {
         listHost.innerHTML =
-          '<p class="pp-muted">Could not load registration forms — please try again.</p>';
+          '<p class="pp-muted">Could not load forms — please try again.</p>';
       });
   }
 
@@ -3048,12 +3068,16 @@
       '<h3 class="pp-pax-subview-title">Consents &amp; forms</h3>' +
         '<p class="pp-muted pp-pax-subview-note">Sign permissions for ' +
         esc(firstNameOf(data)) +
-        " (photos, medication, emergency, travel — renewed each year), and open any registration PDFs on file.</p>" +
-        '<div id="ppConsentsNotice" class="pp-notice" hidden></div>' +
+        " (photos, medication, emergency, travel — renewed each year). When you save, a signed PDF with the club logo and your answers is added under <strong>Signed PDFs</strong> below.</p>" +
         '<div id="ppConsentsHost"><p class="pp-muted">Loading…</p></div>' +
+        '<div id="ppConsentsNotice" class="pp-notice" hidden></div>' +
         '<section class="pp-consent-docs" aria-labelledby="ppConsentDocsTitle">' +
-        '<h4 id="ppConsentDocsTitle" class="pp-consent-docs__title">Registration forms</h4>' +
-        '<p class="pp-muted pp-consent-docs__note">Submitted PDFs for this participant.</p>' +
+        '<div class="pp-consent-docs__head">' +
+        '<span class="pp-consent-docs__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg></span>' +
+        '<div class="pp-consent-docs__copy" style="min-width:0">' +
+        '<h4 id="ppConsentDocsTitle" class="pp-consent-docs__title">Signed PDFs &amp; registration forms</h4>' +
+        '<p class="pp-muted pp-consent-docs__note">Annual consents PDF (after you sign) plus any registration forms on file.</p>' +
+        "</div></div>" +
         '<div id="ppDocsListHost"><p class="pp-muted">Loading…</p></div>' +
         "</section>",
     );
@@ -3071,6 +3095,11 @@
       notice.hidden = !text;
       notice.className = "pp-notice" + (kind ? " pp-notice--" + kind : "");
       notice.textContent = text || "";
+      if (text && (kind === "success" || kind === "error")) {
+        try {
+          notice.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        } catch (_e) {}
+      }
     }
 
     if (!formHost || typeof opts.loadConsents !== "function") {
@@ -3466,7 +3495,6 @@
               offsite_transport_signed_by_name: offsiteSignerVal,
             })
             .then(function (j) {
-              showNotice("success", "Consents saved. Thank you — valid for one year.");
               if (typeof opts.setConsentsPendingCount === "function") {
                 opts.setConsentsPendingCount((j.summary && j.summary.pending_count) || 0);
               }
@@ -3479,6 +3507,14 @@
                   offsite_done: true,
                 },
               );
+              bindRegistrationDocs(host, data, opts);
+              var okMsg = "Consents saved. Thank you — valid for one year.";
+              if (j && j.document && j.document.pdf_url) {
+                okMsg += " Your signed PDF is ready below.";
+              } else {
+                okMsg += " Your signed PDF will appear under Signed PDFs below.";
+              }
+              showNotice("success", okMsg);
             })
             .catch(function (err) {
               var code = err && err.code ? String(err.code) : "";

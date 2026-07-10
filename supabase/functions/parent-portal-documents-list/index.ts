@@ -16,6 +16,7 @@ const BUCKET = "participant-documents";
 const FORM_LABELS: Record<string, string> = {
   climbing_registration: "Climbing registration",
   client_registration: "Client registration",
+  annual_consents: "Annual consents",
 };
 
 function clean(v: unknown, max = 200): string {

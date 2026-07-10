@@ -266,6 +266,7 @@
     }
     .pp-notice--error { background: var(--dangerSoft); color: #8a2725; }
     .pp-notice--info { background: var(--blueSoft); color: var(--ink); }
+    .pp-notice--success { background: var(--successSoft); color: var(--success); font-weight: 600; }
     #ppStepHome,
     #ppStepParticipant {
       flex: 1;
@@ -1505,6 +1506,24 @@
       border-top: 1px solid color-mix(in srgb, var(--line, #d6d3d1) 85%, transparent);
       min-width: 0;
     }
+    .pp-consent-docs__head {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 12px;
+      min-width: 0;
+    }
+    .pp-consent-docs__ico {
+      flex: 0 0 auto;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+    .pp-consent-docs__ico svg { width: 18px; height: 18px; }
     .pp-consent-docs__title {
       margin: 0 0 4px;
       font-size: 1.05rem;
@@ -1513,9 +1532,44 @@
       overflow-wrap: break-word;
     }
     .pp-consent-docs__note {
-      margin: 0 0 12px;
+      margin: 0;
       font-size: 13px;
       overflow-wrap: break-word;
+    }
+    #ppConsentsNotice {
+      margin-top: 14px;
+      margin-bottom: 4px;
+    }
+    .pp-doc-card__title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .pp-doc-card__title-row strong {
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .pp-doc-card__ico {
+      flex: 0 0 auto;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+    }
+    .pp-doc-card__ico svg { width: 15px; height: 15px; }
+    .pp-doc-card__ico--consent {
+      background: #f3e8ff;
+      color: #7c3aed;
+    }
+    .pp-doc-card__ico--form {
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+    .pp-doc-card--consent {
+      border-color: color-mix(in srgb, #7c3aed 28%, var(--line, #e5e7eb));
     }
     .pp-consent-form {
       display: flex;
