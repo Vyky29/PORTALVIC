@@ -3422,6 +3422,7 @@
       if(!sheet || !sheet.classList.contains('open')) return;
       sheet.classList.remove('open');
       sheet.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('portal-client-support-plan-open');
       document.getElementById('clientBtnSupportPlan')?.setAttribute('aria-expanded', 'false');
       const stillOpen = document.querySelectorAll('.sheet.open').length;
       if(stillOpen === 0 && backdropEl){

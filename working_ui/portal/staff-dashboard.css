@@ -9114,6 +9114,32 @@
       min-height:0;
       overflow-y:auto;
     }
+    /* Individual Support Plan: full screen, no footer dock */
+    #clientSupportPlanSheet.open{
+      z-index:110;
+    }
+    body.portal-client-support-plan-open .dock-bar{
+      display:none !important;
+    }
+    body.portal-client-support-plan-open{
+      --fab-reserved-bottom:max(8px, env(safe-area-inset-bottom, 0px));
+    }
+    #clientSupportPlanSheet.sheet--fullscreen.open{
+      padding-bottom:env(safe-area-inset-bottom, 0px);
+    }
+    #clientSupportPlanSheet.sheet--fullscreen.open .sheet-body{
+      flex:1;
+      min-height:0;
+      overflow-y:auto;
+    }
+    #clientSupportPlanSheet.sheet--fullscreen .sheet-body{
+      padding-top:4px;
+      scrollbar-width:none;
+      -ms-overflow-style:none;
+    }
+    #clientSupportPlanSheet.sheet--fullscreen .sheet-body::-webkit-scrollbar{
+      display:none;
+    }
     .client-general-sheet-head .client-general-back{
       display:block;
       width:100%;
