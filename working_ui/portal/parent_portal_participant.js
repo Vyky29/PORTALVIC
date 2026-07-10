@@ -3603,8 +3603,14 @@
   }
 
   function invoiceCardHtml(inv) {
-    var title = String((inv && inv.title) || "Invoice").trim();
     var num = String((inv && inv.invoice_number) || "").trim();
+    // Parent-facing title stays simple — VAT / paid status live on the PDF & chips.
+    var title = num
+      ? "Invoice " + num
+      : String((inv && inv.title) || "Invoice")
+          .replace(/\s*[·•|]\s*VAT\s*(?:20%|Exempt)?/gi, "")
+          .replace(/\s*[·•|]\s*PAID\b/gi, "")
+          .trim() || "Invoice";
     var amount = formatInvoiceMoney(inv && inv.amount_gbp);
     var due = formatDocWhen(inv && inv.due_date);
     var status = String((inv && inv.payment_status) || "unpaid").toLowerCase();
