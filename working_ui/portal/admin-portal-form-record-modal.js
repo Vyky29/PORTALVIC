@@ -482,6 +482,15 @@
     bindModalEvents(kind, row);
     var closeBtn = backdropEl.querySelector(".pfrm-modal__close");
     if (closeBtn) closeBtn.focus();
+    if (kind === "incident") {
+      if (typeof global.portalIncidentFollowupConfigureOnce === "function") {
+        global.portalIncidentFollowupConfigureOnce();
+      }
+      var fu = global.PortalIncidentFollowup;
+      if (fu && typeof fu.mountIntoModal === "function") {
+        void fu.mountIntoModal(backdropEl, row);
+      }
+    }
     if (kind === "feedback" && !clean(row.session_narrative)) {
       injectRecoveredNarrativeAudit(row);
     }

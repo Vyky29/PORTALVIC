@@ -3417,6 +3417,114 @@
       }
       syncDockNavContext();
     }
+    function closeClientSupportPlanSheet(){
+      const sheet = document.getElementById('clientSupportPlanSheet');
+      if(!sheet || !sheet.classList.contains('open')) return;
+      sheet.classList.remove('open');
+      sheet.setAttribute('aria-hidden', 'true');
+      document.getElementById('clientBtnSupportPlan')?.setAttribute('aria-expanded', 'false');
+      const stillOpen = document.querySelectorAll('.sheet.open').length;
+      if(stillOpen === 0 && backdropEl){
+        backdropEl.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+      syncDockNavContext();
+    }
+    function supportPlanRiskChip(level){
+      const lv = String(level || 'medium').toLowerCase();
+      const label = lv === 'high' ? 'High' : lv === 'low' ? 'Low' : 'Medium';
+      const cls = lv === 'high' ? 'isp-risk--high' : lv === 'low' ? 'isp-risk--low' : 'isp-risk--med';
+      return `<span class="isp-risk ${cls}">${label}</span>`;
+    }
+    function formatIspWhen(iso){
+      if(!iso) return '—';
+      try{
+        return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      }catch(_e){
+        return String(iso).slice(0, 10);
+      }
+    }
+    async function loadActiveSupportPlan(clientName, clientId){
+      const box = window.__PORTAL_SUPABASE__;
+      const client = box && box.client ? box.client : null;
+      if(!client || !client.from) return { plan: null, items: [], error: 'not_connected' };
+      if(clientId){
+        const byId = await client.from('portal_support_plans').select('*').eq('status', 'active').eq('participant_contact_id', clientId).limit(1).maybeSingle();
+        if(byId && byId.data) {
+          const itemsRes = await client.from('portal_support_plan_items').select('*').eq('plan_id', byId.data.id).order('sort_order', { ascending: true });
+          return { plan: byId.data, items: (itemsRes && itemsRes.data) || [], error: null };
+        }
+      }
+      if(clientName){
+        const byName = await client.from('portal_support_plans').select('*').eq('status', 'active').ilike('participant_name', clientName).limit(1).maybeSingle();
+        if(byName && byName.data){
+          const itemsRes = await client.from('portal_support_plan_items').select('*').eq('plan_id', byName.data.id).order('sort_order', { ascending: true });
+          return { plan: byName.data, items: (itemsRes && itemsRes.data) || [], error: null };
+        }
+      }
+      return { plan: null, items: [], error: null };
+    }
+    function renderSupportPlanHost(host, payload){
+      if(!host) return;
+      if(payload && payload.error === 'not_connected'){
+        host.innerHTML = '<p class="pcso-empty" role="status">Sign in to view the support plan.</p>';
+        return;
+      }
+      const plan = payload && payload.plan;
+      const items = (payload && payload.items) || [];
+      if(!plan){
+        host.innerHTML = '<p class="pcso-empty" role="status">No active Individual Support Plan yet. Plans appear here after an admin completes an incident follow-up and updates the profile.</p>';
+        return;
+      }
+      const rows = items.map(it => {
+        const risk = escapeHtml(it.risk_behaviour || '—');
+        const strat = escapeHtml(it.strategy_in_place || '—');
+        const meta = [
+          it.source_incident_id ? 'Source incident' : null,
+          'Updated ' + formatIspWhen(it.last_updated_at || plan.activated_at),
+          it.updated_by_name ? ('By ' + escapeHtml(it.updated_by_name)) : null,
+          it.item_status ? String(it.item_status).replace(/_/g, ' ') : null
+        ].filter(Boolean).join(' · ');
+        return `<article class="isp-card"><div class="isp-card__top"><strong class="isp-card__risk">${risk}</strong>${supportPlanRiskChip(it.risk_level)}</div><p class="isp-card__strat">${strat}</p><p class="isp-card__meta muted">${meta}</p></article>`;
+      }).join('');
+      host.innerHTML =
+        `<div class="isp-wrap"><p class="isp-lead muted">Active support plan · last updated ${escapeHtml(formatIspWhen(plan.activated_at || plan.updated_at))}</p>${rows || '<p class="pcso-empty">Plan has no strategy rows yet.</p>'}</div>`;
+    }
+    async function openClientSupportPlanFullscreen(){
+      const sheet = document.getElementById('clientSupportPlanSheet');
+      const host = document.getElementById('clientSupportPlanHost');
+      if(!sheet || !host) return;
+      const item = currentOpenClientItem;
+      const nameEl = document.getElementById('clientTitle');
+      const timeEl = document.getElementById('clientTime');
+      const ht = document.getElementById('clientSupportPlanSheetTitle');
+      const sub = document.getElementById('clientSupportPlanSheetSub');
+      const clientName = item && item.name ? String(item.name).trim() : (nameEl ? nameEl.textContent.trim() : '');
+      const clientId = item && item.clientId ? String(item.clientId).trim() : '';
+      if(ht) ht.textContent = 'Individual Support Plan';
+      if(sub) sub.textContent = clientName || (timeEl ? timeEl.textContent.trim() : '');
+      closeClientGeneralSheet();
+      closeClientSessionsOverviewSheet();
+      const ps = document.getElementById('clientPanelSpecialty');
+      if(ps) ps.hidden = true;
+      document.getElementById('clientBtnGeneral')?.setAttribute('aria-expanded', 'false');
+      document.getElementById('clientBtnSessionsOverview')?.setAttribute('aria-expanded', 'false');
+      document.querySelectorAll('#clientServiceButtonsRow .client-info-btn--service').forEach(b => b.setAttribute('aria-expanded', 'false'));
+      host.innerHTML = '<p class="pcso-empty" role="status">Loading…</p>';
+      sheet.classList.add('open');
+      sheet.setAttribute('aria-hidden', 'false');
+      if(backdropEl) backdropEl.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      document.getElementById('clientBtnSupportPlan')?.setAttribute('aria-expanded', 'true');
+      syncDockNavContext();
+      try{
+        const payload = await loadActiveSupportPlan(clientName, clientId);
+        renderSupportPlanHost(host, payload);
+      }catch(e){
+        host.innerHTML = '<p class="pcso-empty" role="status">Could not load support plan. Try again.</p>';
+        console.warn('[portal] support plan', e);
+      }
+    }
     async function openClientSessionsOverviewFullscreen(){
       const sheet = document.getElementById('clientSessionsOverviewSheet');
       const host = document.getElementById('clientSessionsOverviewHost');
@@ -3431,9 +3539,11 @@
       if(ht) ht.textContent = clientName || 'Sessions Overview';
       if(sub) sub.textContent = timeEl ? timeEl.textContent.trim() : '';
       closeClientGeneralSheet();
+      closeClientSupportPlanSheet();
       const ps = document.getElementById('clientPanelSpecialty');
       if(ps) ps.hidden = true;
       document.getElementById('clientBtnGeneral')?.setAttribute('aria-expanded', 'false');
+      document.getElementById('clientBtnSupportPlan')?.setAttribute('aria-expanded', 'false');
       document.querySelectorAll('#clientServiceButtonsRow .client-info-btn--service').forEach(b => b.setAttribute('aria-expanded', 'false'));
       sheet.classList.add('open');
       sheet.setAttribute('aria-hidden', 'false');
@@ -3471,6 +3581,7 @@
       const sheet = document.getElementById('clientGeneralSheet');
       if(!sheet) return;
       closeClientSessionsOverviewSheet();
+      closeClientSupportPlanSheet();
       const item = currentOpenClientItem;
       const nameEl = document.getElementById('clientTitle');
       const timeEl = document.getElementById('clientTime');
@@ -3491,11 +3602,14 @@
       const ps = document.getElementById('clientPanelSpecialty');
       const bg = document.getElementById('clientBtnGeneral');
       const so = document.getElementById('clientBtnSessionsOverview');
+      const sp = document.getElementById('clientBtnSupportPlan');
       closeClientGeneralSheet();
       closeClientSessionsOverviewSheet();
+      closeClientSupportPlanSheet();
       if(ps) ps.hidden = true;
       if(bg) bg.setAttribute('aria-expanded', 'false');
       if(so) so.setAttribute('aria-expanded', 'false');
+      if(sp) sp.setAttribute('aria-expanded', 'false');
       document.querySelectorAll('#clientServiceButtonsRow .client-info-btn--service').forEach(b => b.setAttribute('aria-expanded', 'false'));
     }
     function resolveClientServiceActivities(item){
@@ -3930,6 +4044,18 @@
           return;
         }
         openClientSessionsOverviewFullscreen();
+      });
+    }
+    document.getElementById('clientSupportPlanSheetBack')?.addEventListener('click', closeClientSupportPlanSheet);
+    const clientBtnSupportPlan = document.getElementById('clientBtnSupportPlan');
+    if(clientBtnSupportPlan){
+      clientBtnSupportPlan.addEventListener('click', () => {
+        const sheet = document.getElementById('clientSupportPlanSheet');
+        if(sheet && sheet.classList.contains('open')){
+          closeClientSupportPlanSheet();
+          return;
+        }
+        openClientSupportPlanFullscreen();
       });
     }
     document.getElementById('clientServiceButtonsRow')?.addEventListener('click', e => {
