@@ -3749,7 +3749,7 @@
       '<h3 class="pp-pax-subview-title">Invoices</h3>' +
         '<p class="pp-muted pp-pax-subview-note">Statements shared by the office for ' +
         esc(firstNameOf(data)) +
-        ". Prefer <strong>bank transfer</strong> (no fee). Card / Apple Pay adds a small processing fee so we receive the invoice amount in full. Invoices are prepared in Xero.</p>" +
+        ". Prefer <strong>bank transfer</strong> (no fee). Card / Apple Pay adds a small processing fee so we receive the invoice amount in full.</p>" +
         '<div id="ppInvoicesNotice" class="pp-notice" hidden></div>' +
         '<div id="ppInvoicesListHost"><p class="pp-muted">Loading…</p></div>',
     );
