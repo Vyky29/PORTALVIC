@@ -226,7 +226,6 @@
     return {
       immediate_findings: val("[data-pfu-findings]"),
       root_cause: val("[data-pfu-root]"),
-      parent_communication: val("[data-pfu-parent]"),
       staff_discussion: val("[data-pfu-staff]"),
       lessons_learned: val("[data-pfu-lessons]"),
       follow_up_summary: val("[data-pfu-summary]"),
@@ -353,7 +352,6 @@
       '<label class="pfu-label">Meeting type<select class="pfu-input" data-pfu-mtype>' +
       [
         ["internal_review", "Internal Review"],
-        ["parent_meeting", "Parent Meeting"],
         ["staff_follow_up", "Staff Follow-up"],
         ["multi_disciplinary", "Multi-disciplinary Review"],
       ]
@@ -450,15 +448,13 @@
     return (
       '<div class="pfu-form">' +
       "<h4>Follow-up form</h4>" +
+      '<p class="pfu-muted">Internal staff notes only. To tell a parent informally, use <strong>Notify parent</strong> on the incident (WhatsApp / email) — not this form.</p>' +
       '<p class="pfu-sec">Section 1</p>' +
       '<label class="pfu-label">Immediate Findings<textarea class="pfu-textarea" data-pfu-findings rows="3">' +
       esc(f.immediate_findings || "") +
       "</textarea></label>" +
       '<label class="pfu-label">Root Cause / Observations<textarea class="pfu-textarea" data-pfu-root rows="3">' +
       esc(f.root_cause || "") +
-      "</textarea></label>" +
-      '<label class="pfu-label">Parent Communication<textarea class="pfu-textarea" data-pfu-parent rows="2">' +
-      esc(f.parent_communication || "") +
       "</textarea></label>" +
       '<label class="pfu-label">Staff Discussion<textarea class="pfu-textarea" data-pfu-staff rows="2">' +
       esc(f.staff_discussion || "") +

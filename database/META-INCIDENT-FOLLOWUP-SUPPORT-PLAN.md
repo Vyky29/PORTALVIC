@@ -23,8 +23,11 @@ Triage, follow-up form, Support Plan Update (Update Profile / Edit / Cancel), st
 - Staff actions: `ensure_support_plan`, `list_library`, `add_plan_item`, `update_plan_item`
 
 ## Later polish
-- Parent WhatsApp/email for meeting invites
 - Cron review reminders (Step 12)
 - Deep-link from announcements sheet
 - Broader service detection (day-centre outing flags beyond schedule activity labels)
+
+## Parent contact
+- Follow-up form / meetings are **internal staff only** (no parent fields in the follow-up panel).
+- Informal parent WhatsApp/email stays on the existing incident **Notify parent** flow (`portal_incident_parent_notify.js`).
 
