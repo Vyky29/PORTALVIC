@@ -82,6 +82,8 @@
       new: "New incident",
       triaged: "Triaged",
       follow_up_in_progress: "Follow-up in progress",
+      meeting_scheduled: "Meeting scheduled",
+      meeting_confirmed: "Meeting confirmed",
       follow_up_complete: "Follow-up complete",
       awaiting_instructor: "Awaiting instructor",
       closed: "Closed",
@@ -197,6 +199,174 @@
     );
   }
 
+
+  function toLocalInputValue(iso) {
+    if (!iso) return "";
+    try {
+      var d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return "";
+      var pad = function (n) { return String(n).padStart(2, "0"); };
+      return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "T" + pad(d.getHours()) + ":" + pad(d.getMinutes());
+    } catch (_e) {
+      return "";
+    }
+  }
+
+  function meetingHtml(bundle, incident) {
+    var m = (bundle && bundle.meeting) || {};
+    var inv = (bundle && bundle.invitees) || [];
+    var sug = (bundle && bundle.suggested_participants) || {};
+    var owners = sug.owners || [];
+    var submitter = sug.submitter || null;
+    var checkedIds = {};
+    inv.forEach(function (i) {
+      if (i.user_id) checkedIds[i.user_id] = true;
+    });
+    if (!inv.length) {
+      if (submitter && submitter.id) checkedIds[submitter.id] = true;
+      owners.forEach(function (o) { if (o.id) checkedIds[o.id] = true; });
+    }
+    function personRow(role, person, forced) {
+      if (!person || !person.id) return "";
+      var name = person.full_name || person.username || person.email || "Staff";
+      var on = !!checkedIds[person.id] || forced;
+      return (
+        '<label class="pfu-check"><input type="checkbox" data-pfu-inv data-role="' +
+        esc(role) +
+        '" data-user-id="' +
+        esc(person.id) +
+        '" data-name="' +
+        esc(name) +
+        '" data-email="' +
+        esc(person.email || "") +
+        '"' +
+        (on ? " checked" : "") +
+        "> " +
+        esc(name) +
+        " <span class=\"pfu-muted\">(" +
+        esc(role.replace(/_/g, " ")) +
+        ")</span></label>"
+      );
+    }
+    var people =
+      personRow("submitter", submitter, true) +
+      owners.map(function (o) { return personRow("primary_instructor", o, true); }).join("");
+    var respRows = inv
+      .map(function (i) {
+        var mark =
+          i.response === "available"
+            ? "✔"
+            : i.response === "unable"
+              ? "❌"
+              : i.response === "suggest_time"
+                ? "💬"
+                : "…";
+        return (
+          "<li>" +
+          esc(mark + " " + (i.display_name || "—") + " · " + (i.response || "pending")) +
+          "</li>"
+        );
+      })
+      .join("");
+    var mStatus = m.status || "draft";
+    return (
+      '<div class="pfu-meeting" data-pfu-meeting>' +
+      "<h4>Follow-up meeting</h4>" +
+      '<p class="pfu-muted">Status: <strong>' +
+      esc(mStatus.replace(/_/g, " ")) +
+      "</strong></p>" +
+      '<p class="pfu-sec">Participants</p>' +
+      '<div class="pfu-people">' +
+      (people || '<p class="pfu-muted">No staff auto-detected — add names after save if needed.</p>') +
+      "</div>" +
+      '<p class="pfu-sec">Schedule</p>' +
+      '<label class="pfu-label">Meeting type<select class="pfu-input" data-pfu-mtype>' +
+      [
+        ["internal_review", "Internal Review"],
+        ["parent_meeting", "Parent Meeting"],
+        ["staff_follow_up", "Staff Follow-up"],
+        ["multi_disciplinary", "Multi-disciplinary Review"],
+      ]
+        .map(function (opt) {
+          return (
+            '<option value="' +
+            opt[0] +
+            '"' +
+            ((m.meeting_type || "internal_review") === opt[0] ? " selected" : "") +
+            ">" +
+            opt[1] +
+            "</option>"
+          );
+        })
+        .join("") +
+      "</select></label>" +
+      '<label class="pfu-label">Proposed date & time<input type="datetime-local" class="pfu-input" data-pfu-mwhen value="' +
+      esc(toLocalInputValue(m.proposed_at)) +
+      '"></label>' +
+      '<label class="pfu-label">Location<select class="pfu-input" data-pfu-mloc>' +
+      [
+        ["teams", "Microsoft Teams"],
+        ["in_person", "In person"],
+        ["phone", "Phone"],
+        ["other", "Other"],
+      ]
+        .map(function (opt) {
+          return (
+            '<option value="' +
+            opt[0] +
+            '"' +
+            ((m.location_mode || "teams") === opt[0] ? " selected" : "") +
+            ">" +
+            opt[1] +
+            "</option>"
+          );
+        })
+        .join("") +
+      "</select></label>" +
+      '<label class="pfu-label">Location detail<input type="text" class="pfu-input" data-pfu-mdetail placeholder="Room / Teams link" value="' +
+      esc(m.location_detail || "") +
+      '"></label>' +
+      '<div class="pfu-form-acts">' +
+      '<button type="button" class="pfu-btn" data-pfu-save-meeting>Save meeting</button>' +
+      '<button type="button" class="pfu-btn pfu-btn--pri" data-pfu-send-avail>Send availability requests</button>' +
+      '<button type="button" class="pfu-btn pfu-btn--ok" data-pfu-confirm-meeting>Confirm meeting</button>' +
+      "</div>" +
+      (respRows
+        ? '<p class="pfu-sec">Responses</p><ul class="pfu-resp">' + respRows + "</ul>"
+        : "") +
+      '<p class="pfu-sec">After the meeting</p>' +
+      '<button type="button" class="pfu-btn pfu-btn--ghost" data-pfu-show-form>Open follow-up form</button>' +
+      "</div>"
+    );
+  }
+
+  function readMeeting(host) {
+    function val(sel) {
+      var el = host.querySelector(sel);
+      return el ? String(el.value || "") : "";
+    }
+    var invitees = [];
+    host.querySelectorAll("[data-pfu-inv]:checked").forEach(function (el) {
+      invitees.push({
+        role: el.getAttribute("data-role") || "other_staff",
+        user_id: el.getAttribute("data-user-id") || null,
+        display_name: el.getAttribute("data-name") || "Staff",
+        email: el.getAttribute("data-email") || null,
+        required: true,
+      });
+    });
+    var whenLocal = val("[data-pfu-mwhen]");
+    var proposedAt = whenLocal ? new Date(whenLocal).toISOString() : null;
+    return {
+      meeting_type: val("[data-pfu-mtype]") || "internal_review",
+      location_mode: val("[data-pfu-mloc]") || "teams",
+      location_detail: val("[data-pfu-mdetail]"),
+      proposed_at: proposedAt,
+      invitees: invitees,
+    };
+  }
+
+
   function formHtml(bundle) {
     var f = (bundle && bundle.followup) || {};
     var strategies = (bundle && bundle.strategies) || [];
@@ -251,7 +421,7 @@
       '<p class="pfu-muted">Choose how to handle this incident before follow-up.</p>' +
       '<button type="button" class="pfu-btn pfu-btn--block" data-pfu-triage="no_follow_up">No follow-up required → Archive</button>' +
       '<button type="button" class="pfu-btn pfu-btn--block pfu-btn--pri" data-pfu-triage="manager_review_only">Admin review only → Follow-up form</button>' +
-      '<button type="button" class="pfu-btn pfu-btn--block" data-pfu-triage="formal_meeting">Formal follow-up meeting (form now; scheduling Phase B)</button>' +
+      '<button type="button" class="pfu-btn pfu-btn--block" data-pfu-triage="formal_meeting">Formal follow-up meeting → schedule + form</button>' +
       "</div>"
     );
   }
@@ -297,7 +467,7 @@
       ".pfu-btn--block{display:flex;width:100%;justify-content:flex-start;margin:0 0 8px}" +
       ".pfu-form-acts,.pfu-preview-acts{display:flex;flex-wrap:wrap;gap:4px;margin-top:12px}" +
       ".pfu-msg{margin:8px 0 0;font-size:13px;color:#b91c1c}" +
-      ".pfu-msg--ok{color:#15803d}";
+      ".pfu-msg--ok{color:#15803d}" +".pfu-check{display:block;margin:0 0 6px;font-size:13px;font-weight:600}" +".pfu-people{margin:0 0 10px}" +".pfu-resp{margin:0;padding-left:18px;font-size:13px}";
     document.head.appendChild(style);
   }
 
@@ -320,8 +490,9 @@
     var st = (incident && incident.workflow_status) || "new";
     var chip = host.querySelector(".pfu-chip");
     if (chip) chip.textContent = statusLabel(st);
+    var forceForm = !!host.__pfuForceForm;
 
-    if (st === "new" || (!incident.triage && st !== "archived" && st !== "closed" && st !== "follow_up_complete" && st !== "follow_up_in_progress")) {
+    if (st === "new" || (!incident.triage && st !== "archived" && st !== "closed" && st !== "follow_up_complete" && st !== "follow_up_in_progress" && st !== "meeting_scheduled" && st !== "meeting_confirmed" && st !== "awaiting_instructor")) {
       if (st === "new" || !incident.triage) {
         body.innerHTML = triageHtml();
         return;
@@ -336,12 +507,29 @@
         '<p class="pfu-muted">Closed. Support plan was applied to the participant profile (Individual Support Plan).</p>';
       return;
     }
-    if (st === "follow_up_complete" && bundle && bundle.update && bundle.update.status === "draft") {
+    if (st === "awaiting_instructor") {
+      body.innerHTML =
+        '<p class="pfu-muted">Awaiting primary instructor review of the Support Plan Update. They can Approve or Reject from the participant Individual Support Plan sheet.</p>' +
+        '<button type="button" class="pfu-btn" data-pfu-force-apply>Force Update Profile (skip instructor)</button>';
+      return;
+    }
+    if (st === "follow_up_complete" && bundle && bundle.update && (bundle.update.status === "draft" || bundle.update.status === "pending_instructor")) {
       body.innerHTML = previewHtml(bundle.update, incident);
       return;
     }
-    if (st === "follow_up_in_progress" || st === "follow_up_complete") {
+    var wantsMeeting =
+      !forceForm &&
+      (incident.triage === "formal_meeting" ||
+        st === "meeting_scheduled" ||
+        st === "meeting_confirmed") &&
+      st !== "follow_up_complete";
+    if (wantsMeeting && (st === "follow_up_in_progress" || st === "meeting_scheduled" || st === "meeting_confirmed")) {
+      body.innerHTML = meetingHtml(bundle, incident);
+      return;
+    }
+    if (st === "follow_up_in_progress" || st === "follow_up_complete" || st === "meeting_confirmed" || forceForm) {
       body.innerHTML = formHtml(bundle);
+      host.__pfuForceForm = false;
       return;
     }
     body.innerHTML = triageHtml();
@@ -370,7 +558,7 @@
       var t =
         ev.target && ev.target.closest
           ? ev.target.closest(
-              "[data-pfu-triage],[data-pfu-add-row],[data-pfu-del-row],[data-pfu-save],[data-pfu-complete],[data-pfu-apply],[data-pfu-edit-again],[data-pfu-cancel-update]",
+              "[data-pfu-triage],[data-pfu-add-row],[data-pfu-del-row],[data-pfu-save],[data-pfu-complete],[data-pfu-apply],[data-pfu-edit-again],[data-pfu-cancel-update],[data-pfu-save-meeting],[data-pfu-send-avail],[data-pfu-confirm-meeting],[data-pfu-show-form],[data-pfu-force-apply]",
             )
           : null;
       if (!t || !host.contains(t)) return;
@@ -431,10 +619,47 @@
         cfg.toast("Follow-up complete — review Support Plan Update", "ok");
         return;
       }
-      if (t.hasAttribute("data-pfu-apply")) {
-        await api({ action: "apply_support_plan", incident_id: incidentId });
+
+      if (t.hasAttribute("data-pfu-save-meeting")) {
+        await api(Object.assign({ action: "save_meeting", incident_id: incidentId }, readMeeting(host)));
+        cfg.toast("Meeting saved", "ok");
         await refresh(host, incidentId);
-        cfg.toast("Participant support plan updated", "ok");
+        return;
+      }
+      if (t.hasAttribute("data-pfu-send-avail")) {
+        await api(Object.assign({ action: "save_meeting", incident_id: incidentId }, readMeeting(host)));
+        var sj = await api({ action: "send_availability", incident_id: incidentId });
+        cfg.toast("Availability requests sent (" + (sj.invited || 0) + ")", "ok");
+        await refresh(host, incidentId);
+        return;
+      }
+      if (t.hasAttribute("data-pfu-confirm-meeting")) {
+        await api({ action: "confirm_meeting", incident_id: incidentId });
+        cfg.toast("Meeting confirmed", "ok");
+        await refresh(host, incidentId);
+        return;
+      }
+      if (t.hasAttribute("data-pfu-show-form")) {
+        host.__pfuForceForm = true;
+        renderBody(host, host.__pfuIncident || {}, host.__pfuBundle || {});
+        return;
+      }
+      if (t.hasAttribute("data-pfu-force-apply")) {
+        await api({ action: "apply_support_plan", incident_id: incidentId, force_apply: true });
+        await refresh(host, incidentId);
+        cfg.toast("Support plan applied", "ok");
+        return;
+      }
+
+      if (t.hasAttribute("data-pfu-apply")) {
+        var aj = await api({ action: "apply_support_plan", incident_id: incidentId });
+        await refresh(host, incidentId);
+        cfg.toast(
+          aj.pending_instructor
+            ? "Sent to primary instructor for review"
+            : "Participant support plan updated",
+          "ok",
+        );
         return;
       }
       if (t.hasAttribute("data-pfu-edit-again")) {

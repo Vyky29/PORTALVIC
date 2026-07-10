@@ -9,6 +9,12 @@ import {
   portalAdminJson,
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
+import {
+  loadStaffProfiles,
+  meetingTypeLabel,
+  notifyUsersAboutIncident,
+  resolveOwnerUserIds,
+} from "../_shared/portal_incident_followup_ops.ts";
 
 type StrategyIn = {
   risk_behaviour?: string;
@@ -113,7 +119,56 @@ Deno.serve(async (req) => {
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    return { followup: followup || null, strategies, update: update || null };
+
+    const { data: meeting } = await admin
+      .from("portal_incident_followup_meetings")
+      .select("*")
+      .eq("incident_id", incId)
+      .in("status", ["draft", "awaiting_responses", "confirmed"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    let invitees: unknown[] = [];
+    if (meeting?.id) {
+      const { data: inv } = await admin
+        .from("portal_incident_followup_invitees")
+        .select("*")
+        .eq("meeting_id", meeting.id)
+        .order("created_at", { ascending: true });
+      invitees = inv || [];
+    }
+
+    const incidentRow = await loadIncident();
+    const ownerIds = incidentRow
+      ? await resolveOwnerUserIds(
+        admin,
+        incidentRow.client_id || null,
+        incidentRow.client_name || null,
+      )
+      : [];
+    const ownerProfiles = await loadStaffProfiles(admin, ownerIds);
+    let submitterProfile = null;
+    if (incidentRow?.submitted_by_user_id) {
+      const rows = await loadStaffProfiles(admin, [incidentRow.submitted_by_user_id]);
+      submitterProfile = rows[0] || {
+        id: incidentRow.submitted_by_user_id,
+        full_name: incidentRow.submitted_by_name,
+        email: null,
+        username: null,
+      };
+    }
+
+    return {
+      followup: followup || null,
+      strategies,
+      update: update || null,
+      meeting: meeting || null,
+      invitees,
+      suggested_participants: {
+        submitter: submitterProfile,
+        owners: ownerProfiles,
+      },
+    };
   }
 
   try {
@@ -390,8 +445,47 @@ Deno.serve(async (req) => {
 
       const participantName = clean(update.participant_name, 200) || clean(incident.client_name, 200);
       const items = Array.isArray(update.payload_json) ? update.payload_json : [];
+      const forceApply = body.force_apply === true || body.skip_instructor_review === true;
 
-      // Supersede previous active plan for this name
+      const ownerIds = await resolveOwnerUserIds(
+        admin,
+        incident.client_id || null,
+        incident.client_name || null,
+      );
+      const needsInstructor =
+        !forceApply &&
+        ownerIds.length > 0 &&
+        userId &&
+        !ownerIds.includes(userId);
+
+      if (needsInstructor && update.status !== "pending_instructor") {
+        await admin
+          .from("portal_support_plan_updates")
+          .update({ status: "pending_instructor", updated_at: now })
+          .eq("id", update.id);
+        await admin
+          .from("incident_reports")
+          .update({ workflow_status: "awaiting_instructor" })
+          .eq("id", incidentId);
+        await notifyUsersAboutIncident(admin, {
+          userIds: ownerIds,
+          title: "Support Plan Update Pending",
+          body:
+            `Please review the proposed support plan changes for ${participantName} (from an incident follow-up). Open Individual Support Plan on their card to Approve or Reject.`,
+          messageType: "support_plan_pending",
+          incidentId,
+          createdBy: userId,
+          dedupeKey: "pending",
+        });
+        return portalAdminJson(200, {
+          ok: true,
+          workflow_status: "awaiting_instructor",
+          pending_instructor: true,
+          owner_user_ids: ownerIds,
+        });
+      }
+
+      // Activate plan (admin is owner, force apply, or already approved path)
       await admin
         .from("portal_support_plans")
         .update({ status: "superseded", updated_at: now })
@@ -450,6 +544,24 @@ Deno.serve(async (req) => {
         })
         .eq("id", incidentId);
 
+      const notifyIds = Array.from(
+        new Set([
+          ...ownerIds,
+          incident.submitted_by_user_id,
+        ].filter(Boolean).map(String)),
+      ).filter((id) => id !== userId);
+
+      await notifyUsersAboutIncident(admin, {
+        userIds: notifyIds,
+        title: "Support Plan Updated",
+        body:
+          `${participantName}'s Support Plan has been updated. Please review the latest strategies before the next session (Individual Support Plan on their card).`,
+        messageType: "support_plan_updated",
+        incidentId,
+        createdBy: userId,
+        dedupeKey: "updated",
+      });
+
       const { data: planItems } = await admin
         .from("portal_support_plan_items")
         .select("*")
@@ -461,6 +573,7 @@ Deno.serve(async (req) => {
         workflow_status: "closed",
         plan,
         items: planItems || [],
+        notified: notifyIds.length,
       });
     }
 
@@ -507,6 +620,200 @@ Deno.serve(async (req) => {
         ok: true,
         workflow_status: "follow_up_in_progress",
         ...bundle,
+      });
+    }
+
+    if (action === "save_meeting") {
+      const incident = await loadIncident();
+      if (!incident) return portalAdminJson(404, { ok: false, error: "incident_not_found" });
+
+      const meetingType = clean(body.meeting_type, 40) || "internal_review";
+      const locationMode = clean(body.location_mode, 20) || "teams";
+      const locationDetail = clean(body.location_detail, 300);
+      const proposedAt = clean(body.proposed_at, 40);
+      const notes = clean(body.notes, 2000);
+      const inviteeInputs = Array.isArray(body.invitees) ? body.invitees : [];
+
+      let { data: followup } = await admin
+        .from("portal_incident_followups")
+        .select("id")
+        .eq("incident_id", incidentId)
+        .maybeSingle();
+      if (!followup) {
+        const { data: created } = await admin
+          .from("portal_incident_followups")
+          .insert({ incident_id: incidentId, status: "in_progress", created_by: userId })
+          .select("id")
+          .maybeSingle();
+        followup = created;
+      }
+
+      let { data: meeting } = await admin
+        .from("portal_incident_followup_meetings")
+        .select("*")
+        .eq("incident_id", incidentId)
+        .in("status", ["draft", "awaiting_responses", "confirmed"])
+        .maybeSingle();
+
+      const meetingPatch = {
+        meeting_type: meetingType,
+        location_mode: locationMode,
+        location_detail: locationDetail || null,
+        proposed_at: proposedAt || null,
+        notes: notes || null,
+        followup_id: followup?.id || null,
+        updated_at: now,
+      };
+
+      if (!meeting) {
+        const { data: created, error: mErr } = await admin
+          .from("portal_incident_followup_meetings")
+          .insert({
+            incident_id: incidentId,
+            status: "draft",
+            created_by: userId,
+            ...meetingPatch,
+          })
+          .select("*")
+          .maybeSingle();
+        if (mErr) throw new Error(mErr.message);
+        meeting = created;
+      } else {
+        const { data: updated, error: uErr } = await admin
+          .from("portal_incident_followup_meetings")
+          .update(meetingPatch)
+          .eq("id", meeting.id)
+          .select("*")
+          .maybeSingle();
+        if (uErr) throw new Error(uErr.message);
+        meeting = updated;
+      }
+
+      await admin.from("portal_incident_followup_invitees").delete().eq("meeting_id", meeting.id);
+
+      const rows = inviteeInputs.slice(0, 30).map((inv: Record<string, unknown>) => ({
+        meeting_id: meeting.id,
+        role: clean(inv.role, 40) || "other_staff",
+        user_id: clean(inv.user_id, 80) || null,
+        display_name: clean(inv.display_name, 120) || "Participant",
+        email: clean(inv.email, 160) || null,
+        phone: clean(inv.phone, 40) || null,
+        required: inv.required !== false,
+        response: "pending",
+      }));
+      if (rows.length) {
+        const { error: iErr } = await admin.from("portal_incident_followup_invitees").insert(rows);
+        if (iErr) throw new Error(iErr.message);
+      }
+
+      const bundle = await loadFollowupBundle(incidentId);
+      return portalAdminJson(200, { ok: true, saved: true, ...bundle });
+    }
+
+    if (action === "send_availability") {
+      const incident = await loadIncident();
+      if (!incident) return portalAdminJson(404, { ok: false, error: "incident_not_found" });
+      const bundle = await loadFollowupBundle(incidentId);
+      const meeting = bundle.meeting;
+      if (!meeting) return portalAdminJson(400, { ok: false, error: "meeting_required" });
+
+      await admin
+        .from("portal_incident_followup_meetings")
+        .update({ status: "awaiting_responses", updated_at: now })
+        .eq("id", meeting.id);
+      await admin
+        .from("incident_reports")
+        .update({ workflow_status: "meeting_scheduled" })
+        .eq("id", incidentId);
+
+      const whenLabel = meeting.proposed_at
+        ? new Date(meeting.proposed_at).toLocaleString("en-GB", {
+          timeZone: "Europe/London",
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+        : "TBC";
+      const staffInvitees = (bundle.invitees || []).filter((i: { user_id?: string }) => i.user_id);
+      const userIds = staffInvitees.map((i: { user_id: string }) => i.user_id);
+      await notifyUsersAboutIncident(admin, {
+        userIds,
+        title: "Follow-up Meeting Invitation",
+        body:
+          `A follow-up meeting has been requested regarding an incident for ${clean(incident.client_name, 80)}.\n` +
+          `Type: ${meetingTypeLabel(meeting.meeting_type)}\n` +
+          `Proposed: ${whenLabel}\n` +
+          `Location: ${meeting.location_mode}${meeting.location_detail ? " — " + meeting.location_detail : ""}\n\n` +
+          `Please confirm availability in the portal (Announcements / Individual Support Plan).`,
+        messageType: "followup_meeting_invite",
+        incidentId,
+        createdBy: userId,
+        dedupeKey: "invite",
+      });
+
+      const out = await loadFollowupBundle(incidentId);
+      return portalAdminJson(200, {
+        ok: true,
+        workflow_status: "meeting_scheduled",
+        invited: userIds.length,
+        ...out,
+      });
+    }
+
+    if (action === "confirm_meeting") {
+      const incident = await loadIncident();
+      if (!incident) return portalAdminJson(404, { ok: false, error: "incident_not_found" });
+      const bundle = await loadFollowupBundle(incidentId);
+      const meeting = bundle.meeting;
+      if (!meeting) return portalAdminJson(400, { ok: false, error: "meeting_required" });
+
+      await admin
+        .from("portal_incident_followup_meetings")
+        .update({
+          status: "confirmed",
+          confirmed_at: now,
+          confirmed_by: userId,
+          updated_at: now,
+        })
+        .eq("id", meeting.id);
+      await admin
+        .from("incident_reports")
+        .update({ workflow_status: "meeting_confirmed" })
+        .eq("id", incidentId);
+
+      const whenLabel = meeting.proposed_at
+        ? new Date(meeting.proposed_at).toLocaleString("en-GB", {
+          timeZone: "Europe/London",
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+        : "TBC";
+      const userIds = (bundle.invitees || [])
+        .map((i: { user_id?: string }) => i.user_id)
+        .filter(Boolean);
+      await notifyUsersAboutIncident(admin, {
+        userIds,
+        title: "Follow-up Meeting Confirmed",
+        body:
+          `Your follow-up meeting for ${clean(incident.client_name, 80)} is confirmed.\n` +
+          `Date/time: ${whenLabel}\n` +
+          `Location: ${meeting.location_mode}${meeting.location_detail ? " — " + meeting.location_detail : ""}`,
+        messageType: "followup_meeting_confirmed",
+        incidentId,
+        createdBy: userId,
+        dedupeKey: "confirmed",
+      });
+
+      const out = await loadFollowupBundle(incidentId);
+      return portalAdminJson(200, {
+        ok: true,
+        workflow_status: "meeting_confirmed",
+        ...out,
       });
     }
 

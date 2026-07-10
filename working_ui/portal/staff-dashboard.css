@@ -9034,6 +9034,14 @@
     .isp-risk--high{background:#fee2e2;color:#991b1b}
     .isp-risk--med{background:#fef3c7;color:#92400e}
     .isp-risk--low{background:#dcfce7;color:#166534}
+    .isp-h{margin:0 0 8px;font-size:15px}
+    .isp-pending{margin:0 0 16px;padding:12px;border:1px solid #ddd6fe;border-radius:12px;background:#f5f3ff;min-width:0}
+    .isp-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .isp-btn{border:1px solid #cbd5e1;background:#fff;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
+    .isp-btn--ok{background:#15803d;color:#fff;border-color:#15803d}
+    .isp-btn--danger{color:#b91c1c;border-color:#fecaca}
+    .isp-table{width:100%;border-collapse:collapse;font-size:13px;background:#fff}
+    .isp-table th,.isp-table td{border:1px solid #cbd5e1;padding:6px;min-width:0;overflow-wrap:anywhere}
     .client-info-btn--icon[aria-expanded="true"] .client-info-btn-caption{color:var(--ink)}
     .client-info-icon{width:30px;height:30px;display:block;flex-shrink:0;color:var(--blue)}
     .client-info-btn--icon[aria-expanded="true"] .client-info-icon{color:var(--ink)}
