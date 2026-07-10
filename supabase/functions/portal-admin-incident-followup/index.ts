@@ -15,11 +15,20 @@ import {
   notifyUsersAboutIncident,
   resolveOwnerUserIds,
 } from "../_shared/portal_incident_followup_ops.ts";
+import {
+  activitiesToServiceTags,
+  ensureParticipantSupportPlan,
+  libraryMatchesServices,
+  upsertBehaviourLibraryFork,
+  upsertStrategyLibraryFork,
+} from "../_shared/portal_isp_library.ts";
 
 type StrategyIn = {
   risk_behaviour?: string;
   strategy_in_place?: string;
   risk_level?: string;
+  behaviour_library_id?: string;
+  strategy_library_id?: string;
 };
 
 function clean(v: unknown, max = 4000): string {
@@ -37,6 +46,8 @@ function normalizeStrategies(raw: unknown): Array<{
   strategy_in_place: string;
   risk_level: "high" | "medium" | "low";
   sort_order: number;
+  behaviour_library_id: string | null;
+  strategy_library_id: string | null;
 }> {
   const arr = Array.isArray(raw) ? raw : [];
   return arr.slice(0, 40).map((row: StrategyIn, i: number) => ({
@@ -44,7 +55,61 @@ function normalizeStrategies(raw: unknown): Array<{
     strategy_in_place: clean(row?.strategy_in_place, 2000),
     risk_level: riskLevel(row?.risk_level),
     sort_order: i,
+    behaviour_library_id: clean(row?.behaviour_library_id, 80) || null,
+    strategy_library_id: clean(row?.strategy_library_id, 80) || null,
   }));
+}
+
+async function persistStrategiesWithLibraryFork(
+  admin: ReturnType<typeof createClient>,
+  followupId: string,
+  raw: unknown,
+  userId: string | null,
+) {
+  const strategies = normalizeStrategies(raw);
+  await admin
+    .from("portal_incident_followup_strategies")
+    .delete()
+    .eq("followup_id", followupId);
+  if (!strategies.length) return [];
+  const rows = [];
+  for (const s of strategies) {
+    if (!s.risk_behaviour && !s.strategy_in_place) continue;
+    const behLib = s.risk_behaviour
+      ? await upsertBehaviourLibraryFork(admin, {
+        libraryId: s.behaviour_library_id,
+        label: s.risk_behaviour,
+        riskLevel: s.risk_level,
+        scope: "individual",
+        userId,
+      })
+      : null;
+    const stratLib = s.strategy_in_place
+      ? await upsertStrategyLibraryFork(admin, {
+        libraryId: s.strategy_library_id,
+        body: s.strategy_in_place,
+        behaviourCodes: behLib?.code ? [behLib.code] : [],
+        scope: "individual",
+        userId,
+      })
+      : null;
+    rows.push({
+      followup_id: followupId,
+      risk_behaviour: s.risk_behaviour,
+      strategy_in_place: s.strategy_in_place,
+      risk_level: s.risk_level,
+      sort_order: s.sort_order,
+      behaviour_library_id: behLib?.id || null,
+      strategy_library_id: stratLib?.id || null,
+    });
+  }
+  if (rows.length) {
+    const { error: sErr } = await admin
+      .from("portal_incident_followup_strategies")
+      .insert(rows);
+    if (sErr) throw new Error(sErr.message);
+  }
+  return rows;
 }
 
 Deno.serve(async (req) => {
@@ -85,22 +150,36 @@ Deno.serve(async (req) => {
 
   if (action === "list_library") {
     try {
+      const services = body.services;
+      const tags = activitiesToServiceTags(services);
+      const filterByService = Array.isArray(services) || !!clean(services, 200);
       const { data: behaviours, error: bErr } = await admin
         .from("portal_isp_behaviour_library")
-        .select("id, code, label, category, default_risk_level, sort_order")
+        .select(
+          "id, code, label, category, default_risk_level, sort_order, scope, service_tags, forked_from_id",
+        )
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
       if (bErr) throw new Error(bErr.message);
       const { data: strategies, error: sErr } = await admin
         .from("portal_isp_strategy_library")
-        .select("id, code, label, body, category, behaviour_codes, sort_order")
+        .select(
+          "id, code, label, body, category, behaviour_codes, sort_order, scope, service_tags, forked_from_id",
+        )
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
       if (sErr) throw new Error(sErr.message);
       return portalAdminJson(200, {
         ok: true,
-        behaviours: behaviours || [],
-        strategies: strategies || [],
+        service_tags: tags,
+        behaviours: (behaviours || []).filter((b) =>
+          !filterByService || b.scope === "individual" ||
+          libraryMatchesServices(b.service_tags, tags)
+        ),
+        strategies: (strategies || []).filter((s) =>
+          !filterByService || s.scope === "individual" ||
+          libraryMatchesServices(s.service_tags, tags)
+        ),
       });
     } catch (e) {
       console.error("[portal-admin-incident-followup] list_library", e);
@@ -324,22 +403,12 @@ Deno.serve(async (req) => {
       if (pErr) throw new Error(pErr.message);
 
       if (Array.isArray(body.strategies)) {
-        const strategies = normalizeStrategies(body.strategies);
-        await admin
-          .from("portal_incident_followup_strategies")
-          .delete()
-          .eq("followup_id", followup.id);
-        if (strategies.length) {
-          const { error: sErr } = await admin
-            .from("portal_incident_followup_strategies")
-            .insert(
-              strategies.map((s) => ({
-                followup_id: followup.id,
-                ...s,
-              })),
-            );
-          if (sErr) throw new Error(sErr.message);
-        }
+        await persistStrategiesWithLibraryFork(
+          admin,
+          followup.id,
+          body.strategies,
+          userId,
+        );
       }
 
       const bundle = await loadFollowupBundle(incidentId);
@@ -389,17 +458,22 @@ Deno.serve(async (req) => {
           .eq("id", followup.id);
         if (pErr) throw new Error(pErr.message);
 
-        const strategies = normalizeStrategies(body.strategies);
-        await admin
-          .from("portal_incident_followup_strategies")
-          .delete()
-          .eq("followup_id", followup.id);
-        if (strategies.length) {
-          const { error: sErr } = await admin
-            .from("portal_incident_followup_strategies")
-            .insert(strategies.map((s) => ({ followup_id: followup.id, ...s })));
-          if (sErr) throw new Error(sErr.message);
-        }
+        const strategyRows = Array.isArray(body.strategies)
+          ? await persistStrategiesWithLibraryFork(
+            admin,
+            followup.id,
+            body.strategies,
+            userId,
+          )
+          : [];
+        const strategies = strategyRows.map((s, i) => ({
+          risk_behaviour: s.risk_behaviour,
+          strategy_in_place: s.strategy_in_place,
+          risk_level: s.risk_level,
+          sort_order: i,
+          behaviour_library_id: s.behaviour_library_id,
+          strategy_library_id: s.strategy_library_id,
+        }));
 
         await admin
           .from("incident_reports")
@@ -514,19 +588,19 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Activate plan (admin is owner, force apply, or already approved path)
-      await admin
-        .from("portal_support_plans")
-        .update({ status: "superseded", updated_at: now })
-        .eq("status", "active")
-        .ilike("participant_name", participantName);
-
+      // Merge into existing active plan (create if needed) — keep generals
       const byName = clean(verified.email, 120) || "Admin";
-      const isAdminRole = true; // this edge is admin-only
-      const planInsert: Record<string, unknown> = {
-        participant_name: participantName,
-        participant_contact_id: update.participant_contact_id || clean(incident.client_id, 120) || null,
-        status: "active",
+      const ensured = await ensureParticipantSupportPlan(admin, {
+        participantName,
+        participantContactId: update.participant_contact_id || clean(incident.client_id, 120) || null,
+        services: body.services || incident.activity || [],
+        userId,
+        userName: byName,
+      });
+      const plan = ensured.plan;
+      if (!plan?.id) throw new Error("plan_missing");
+
+      const planPatch: Record<string, unknown> = {
         source_incident_id: incidentId,
         source_followup_id: update.followup_id,
         activated_at: now,
@@ -534,35 +608,60 @@ Deno.serve(async (req) => {
         approved_by: userId,
         approved_by_name: byName,
         approved_at: now,
+        updated_at: now,
       };
-      // If admin is also an owner, mark reviewed too
       if (userId && ownerIds.includes(userId)) {
-        planInsert.reviewed_by = userId;
-        planInsert.reviewed_by_name = byName;
-        planInsert.reviewed_at = now;
+        planPatch.reviewed_by = userId;
+        planPatch.reviewed_by_name = byName;
+        planPatch.reviewed_at = now;
       }
+      await admin.from("portal_support_plans").update(planPatch).eq("id", plan.id);
 
-      const { data: plan, error: planErr } = await admin
-        .from("portal_support_plans")
-        .insert(planInsert)
-        .select("*")
-        .maybeSingle();
-      if (planErr) throw new Error(planErr.message);
-      if (items.length && plan?.id) {
-        const rows = items.map((row: StrategyIn, i: number) => ({
-          plan_id: plan.id,
-          sort_order: i,
-          risk_behaviour: clean(row?.risk_behaviour, 500),
-          strategy_in_place: clean(row?.strategy_in_place, 2000),
-          risk_level: riskLevel(row?.risk_level),
-          source_incident_id: incidentId,
-          last_updated_at: now,
-          updated_by: userId,
-          updated_by_name: byName,
-          item_status: "active",
-        }));
-        const { error: iErr } = await admin.from("portal_support_plan_items").insert(rows);
-        if (iErr) throw new Error(iErr.message);
+      if (items.length) {
+        const { data: maxRow } = await admin
+          .from("portal_support_plan_items")
+          .select("sort_order")
+          .eq("plan_id", plan.id)
+          .order("sort_order", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        let sort = (maxRow?.sort_order ?? -1) + 1;
+        for (const row of items as StrategyIn[]) {
+          const riskBeh = clean(row?.risk_behaviour, 500);
+          const stratBody = clean(row?.strategy_in_place, 2000);
+          if (!riskBeh) continue;
+          const behLib = await upsertBehaviourLibraryFork(admin, {
+            libraryId: clean(row?.behaviour_library_id, 80) || null,
+            label: riskBeh,
+            riskLevel: row?.risk_level,
+            scope: "individual",
+            userId,
+          });
+          const stratLib = await upsertStrategyLibraryFork(admin, {
+            libraryId: clean(row?.strategy_library_id, 80) || null,
+            body: stratBody || riskBeh,
+            behaviourCodes: behLib?.code ? [behLib.code] : [],
+            scope: "individual",
+            userId,
+          });
+          const { error: iErr } = await admin.from("portal_support_plan_items").insert({
+            plan_id: plan.id,
+            sort_order: sort++,
+            risk_behaviour: riskBeh,
+            strategy_in_place: stratBody,
+            risk_level: riskLevel(row?.risk_level),
+            behaviour_library_id: behLib?.id || null,
+            strategy_library_id: stratLib?.id || null,
+            source_incident_id: incidentId,
+            last_updated_at: now,
+            updated_by: userId,
+            updated_by_name: byName,
+            item_status: "active",
+            item_scope: "individual",
+            is_customized: true,
+          });
+          if (iErr) throw new Error(iErr.message);
+        }
       }
 
       await admin

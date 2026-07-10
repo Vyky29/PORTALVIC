@@ -205,10 +205,14 @@
   function readStrategies(host) {
     var rows = [];
     host.querySelectorAll(".pfu-strat-row").forEach(function (tr) {
+      var behLib = tr.querySelector("[data-pfu-beh-lib]");
+      var stratLib = tr.querySelector("[data-pfu-strat-lib]");
       rows.push({
         risk_behaviour: (tr.querySelector("[data-pfu-risk-beh]") || {}).value || "",
         strategy_in_place: (tr.querySelector("[data-pfu-strat]") || {}).value || "",
         risk_level: (tr.querySelector("[data-pfu-risk]") || {}).value || "medium",
+        behaviour_library_id: behLib && behLib.value ? behLib.value : "",
+        strategy_library_id: stratLib && stratLib.value ? stratLib.value : "",
       });
     });
     return rows;

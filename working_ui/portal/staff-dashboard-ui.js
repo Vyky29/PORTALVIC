@@ -3467,49 +3467,70 @@
       if(!res.ok || !j || !j.ok) throw new Error((j && (j.error || j.message)) || 'Request failed');
       return j;
     }
-    async function loadActiveSupportPlan(clientName, clientId){
-      const box = window.__PORTAL_SUPABASE__;
-      const client = box && box.client ? box.client : null;
-      if(!client || !client.from) return { plan: null, items: [], pending: null, invites: [], error: 'not_connected' };
-      let plan = null;
-      let items = [];
-      if(clientId){
-        const byId = await client.from('portal_support_plans').select('*').eq('status', 'active').eq('participant_contact_id', clientId).limit(1).maybeSingle();
-        if(byId && byId.data) plan = byId.data;
-      }
-      if(!plan && clientName){
-        const byName = await client.from('portal_support_plans').select('*').eq('status', 'active').ilike('participant_name', clientName).limit(1).maybeSingle();
-        if(byName && byName.data) plan = byName.data;
-      }
-      if(plan){
-        const itemsRes = await client.from('portal_support_plan_items').select('*').eq('plan_id', plan.id).order('sort_order', { ascending: true });
-        items = (itemsRes && itemsRes.data) || [];
-      }
-      let pending = null;
-      let invites = [];
+    async function loadActiveSupportPlan(clientName, clientId, services){
       try{
-        if(clientName){
-          const pj = await staffFollowupApi({ action: 'pending_plan_for_participant', participant_name: clientName });
-          pending = pj.update || null;
-        }
-        const ij = await staffFollowupApi({ action: 'my_invites' });
-        invites = (ij.invitees || []).filter(function(row){
-          const m = row.meeting || {};
-          return m && ['draft','awaiting_responses','confirmed'].indexOf(String(m.status||'')) >= 0;
-        }).slice(0, 5);
-      }catch(_e){ /* optional */ }
-      return { plan, items, pending, invites, error: null };
+        const j = await staffFollowupApi({
+          action: 'ensure_support_plan',
+          participant_name: clientName,
+          participant_contact_id: clientId || null,
+          services: services || []
+        });
+        return {
+          plan: j.plan || null,
+          items: j.items || [],
+          pending: j.pending || null,
+          invites: j.invites || [],
+          service_tags: j.service_tags || [],
+          error: null
+        };
+      }catch(e){
+        return {
+          plan: null,
+          items: [],
+          pending: null,
+          invites: [],
+          service_tags: [],
+          error: e && e.message ? e.message : 'load_failed'
+        };
+      }
     }
-    function renderSupportPlanHost(host, payload){
+    function supportPlanItemCard(it, opts){
+      opts = opts || {};
+      const risk = escapeHtml(it.risk_behaviour || '—');
+      const strat = escapeHtml(it.strategy_in_place || '—');
+      const scope = String(it.item_scope || 'individual');
+      const scopeLabel = scope === 'general' ? 'General' : 'Individual';
+      const meta = [
+        scopeLabel,
+        it.is_customized ? 'Customised' : null,
+        it.source_incident_id ? 'Source incident' : null,
+        'Updated ' + formatIspWhen(it.last_updated_at),
+        it.updated_by_name ? ('By ' + escapeHtml(it.updated_by_name)) : null,
+        it.item_status && it.item_status !== 'active' ? String(it.item_status).replace(/_/g, ' ') : null
+      ].filter(Boolean).join(' · ');
+      const editBtn = opts.editable
+        ? `<button type="button" class="isp-btn" data-isp-edit="${escapeHtml(it.id)}">Edit</button>`
+        : '';
+      return `<article class="isp-card" data-isp-item="${escapeHtml(it.id)}" data-scope="${escapeHtml(scope)}"><div class="isp-card__top"><strong class="isp-card__risk">${risk}</strong>${supportPlanRiskChip(it.risk_level)}</div><p class="isp-card__strat">${strat}</p><p class="isp-card__meta muted">${meta}</p>${editBtn ? `<div class="isp-acts">${editBtn}</div>` : ''}</article>`;
+    }
+    function renderSupportPlanHost(host, payload, ctx){
       if(!host) return;
+      ctx = ctx || {};
+      if(payload && payload.error && payload.error !== 'not_connected' && !payload.plan){
+        host.innerHTML = `<p class="pcso-empty" role="status">Could not load support plan: ${escapeHtml(payload.error)}</p>`;
+        return;
+      }
       if(payload && payload.error === 'not_connected'){
         host.innerHTML = '<p class="pcso-empty" role="status">Sign in to view the support plan.</p>';
         return;
       }
       const plan = payload && payload.plan;
-      const items = (payload && payload.items) || [];
+      const items = ((payload && payload.items) || []).filter(function(it){
+        return String(it.item_status || 'active') !== 'no_longer_required';
+      });
       const pending = payload && payload.pending;
       const invites = (payload && payload.invites) || [];
+      const tags = (payload && payload.service_tags) || [];
       let html = '<div class="isp-wrap">';
       if(invites.length){
         html += '<div class="isp-pending"><h4 class="isp-h">Meeting invitations</h4>';
@@ -3538,26 +3559,81 @@
           `<button type="button" class="isp-btn isp-btn--danger" data-isp-reject="${escapeHtml(pending.id)}">Reject</button></div></div>`;
       }
       if(!plan){
-        html += '<p class="pcso-empty" role="status">No active Individual Support Plan yet. Plans appear here after an admin completes an incident follow-up and updates the profile.</p></div>';
+        html += '<p class="pcso-empty" role="status">Unable to open an Individual Support Plan for this participant.</p></div>';
         host.innerHTML = html;
         return;
       }
-      const rows = items.map(it => {
-        const risk = escapeHtml(it.risk_behaviour || '—');
-        const strat = escapeHtml(it.strategy_in_place || '—');
-        const meta = [
-          it.source_incident_id ? 'Source incident' : null,
-          'Updated ' + formatIspWhen(it.last_updated_at || plan.activated_at),
-          it.updated_by_name ? ('By ' + escapeHtml(it.updated_by_name)) : null,
-          it.item_status ? String(it.item_status).replace(/_/g, ' ') : null
-        ].filter(Boolean).join(' · ');
-        return `<article class="isp-card"><div class="isp-card__top"><strong class="isp-card__risk">${risk}</strong>${supportPlanRiskChip(it.risk_level)}</div><p class="isp-card__strat">${strat}</p><p class="isp-card__meta muted">${meta}</p></article>`;
-      }).join('');
-      html += `<p class="isp-lead muted">Active support plan · last updated ${escapeHtml(formatIspWhen(plan.activated_at || plan.updated_at))}` +
+      const generals = items.filter(function(it){ return String(it.item_scope||'') === 'general'; });
+      const individuals = items.filter(function(it){ return String(it.item_scope||'') !== 'general'; });
+      const tagLine = tags.length
+        ? `Services considered: ${escapeHtml(tags.join(', '))}`
+        : 'No service tags yet — showing general (all-service) risks only. Outing / pool / climbing risks appear when those services are on the schedule.';
+      html += `<p class="isp-lead muted">Individual Support Plan · last updated ${escapeHtml(formatIspWhen(plan.activated_at || plan.updated_at))}` +
         (plan.reviewed_by_name ? ` · Reviewed by ${escapeHtml(plan.reviewed_by_name)}` : '') +
         (plan.approved_by_name ? ` · Approved by ${escapeHtml(plan.approved_by_name)}` : '') +
-        `</p>${rows || '<p class="pcso-empty">Plan has no strategy rows yet.</p>'}</div>`;
+        `</p><p class="isp-lead muted">${tagLine}</p>`;
+
+      html += '<div class="isp-section"><div class="isp-section__head"><h4 class="isp-h">General (by services)</h4></div>';
+      html += generals.length
+        ? generals.map(function(it){ return supportPlanItemCard(it, { editable: true }); }).join('')
+        : '<p class="pcso-empty">No general risks for the current services.</p>';
+      html += '</div>';
+
+      html += '<div class="isp-section"><div class="isp-section__head"><h4 class="isp-h">Individual behaviours</h4>' +
+        '<button type="button" class="isp-btn isp-btn--ok" data-isp-add>Add behaviour</button></div>';
+      html += individuals.length
+        ? individuals.map(function(it){ return supportPlanItemCard(it, { editable: true }); }).join('')
+        : '<p class="pcso-empty">No individual behaviours yet. Add ones that are specific to this participant.</p>';
+      html += '</div>';
+
+      html += `<div class="isp-add" id="ispAddPanel" hidden>
+        <h4 class="isp-h">Add / edit behaviour</h4>
+        <p class="isp-lead muted">Pick from the library, then edit the text if needed. The original library entry stays; your edited version is saved as a new library item.</p>
+        <label class="isp-label">From library
+          <select class="isp-input" id="ispLibBeh"><option value="">— Select or type below —</option></select>
+        </label>
+        <label class="isp-label">Risk / behaviour
+          <input type="text" class="isp-input" id="ispRiskBeh" placeholder="Behaviour">
+        </label>
+        <label class="isp-label">Strategy library
+          <select class="isp-input" id="ispLibStrat"><option value="">— Select or type below —</option></select>
+        </label>
+        <label class="isp-label">Strategy in place
+          <textarea class="isp-input" id="ispStrat" rows="3" placeholder="Strategy"></textarea>
+        </label>
+        <label class="isp-label">Risk level
+          <select class="isp-input" id="ispRisk"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select>
+        </label>
+        <input type="hidden" id="ispEditItemId" value="">
+        <input type="hidden" id="ispBehLibId" value="">
+        <input type="hidden" id="ispStratLibId" value="">
+        <div class="isp-acts">
+          <button type="button" class="isp-btn isp-btn--ok" data-isp-save-item>Save to plan + library</button>
+          <button type="button" class="isp-btn" data-isp-cancel-add>Cancel</button>
+        </div>
+      </div></div>`;
       host.innerHTML = html;
+      host.__ispCtx = ctx;
+      host.__ispLastPlanId = plan.id;
+      host.__ispItems = items;
+      void populateIspLibrarySelects(host, ctx.services || []);
+    }
+    async function populateIspLibrarySelects(host, services){
+      const behSel = host.querySelector('#ispLibBeh');
+      const stratSel = host.querySelector('#ispLibStrat');
+      if(!behSel || !stratSel) return;
+      try{
+        const j = await staffFollowupApi({ action: 'list_library', services: services || [] });
+        host.__ispLibrary = j;
+        behSel.innerHTML = '<option value="">— Select or type below —</option>' +
+          (j.behaviours || []).map(function(b){
+            return `<option value="${escapeHtml(b.id)}" data-label="${escapeHtml(b.label)}" data-risk="${escapeHtml(b.default_risk_level||'medium')}" data-scope="${escapeHtml(b.scope||'')}">${escapeHtml(b.label)}${b.scope === 'individual' ? ' (custom)' : ''}</option>`;
+          }).join('');
+        stratSel.innerHTML = '<option value="">— Select or type below —</option>' +
+          (j.strategies || []).map(function(s){
+            return `<option value="${escapeHtml(s.id)}" data-body="${escapeHtml(s.body)}" data-label="${escapeHtml(s.label)}">${escapeHtml(s.label)}${s.scope === 'individual' ? ' (custom)' : ''}</option>`;
+          }).join('');
+      }catch(_e){ /* optional */ }
     }
     async function openClientSupportPlanFullscreen(){
       const sheet = document.getElementById('clientSupportPlanSheet');
@@ -3570,6 +3646,9 @@
       const sub = document.getElementById('clientSupportPlanSheetSub');
       const clientName = item && item.name ? String(item.name).trim() : (nameEl ? nameEl.textContent.trim() : '');
       const clientId = item && item.clientId ? String(item.clientId).trim() : '';
+      const services = (typeof getDistinctScheduledActivitiesForClient === 'function' && clientId)
+        ? getDistinctScheduledActivitiesForClient(clientId)
+        : (item && item.activity ? [item.activity] : []);
       if(ht) ht.textContent = 'Individual Support Plan';
       if(sub) sub.textContent = clientName || (timeEl ? timeEl.textContent.trim() : '');
       closeClientGeneralSheet();
@@ -3586,19 +3665,111 @@
       document.body.style.overflow = 'hidden';
       document.getElementById('clientBtnSupportPlan')?.setAttribute('aria-expanded', 'true');
       syncDockNavContext();
+      const ispCtx = { clientName, clientId, services };
+      async function reloadIsp(){
+        const payload = await loadActiveSupportPlan(clientName, clientId, services);
+        renderSupportPlanHost(host, payload, ispCtx);
+      }
       try{
-        const payload = await loadActiveSupportPlan(clientName, clientId);
-        renderSupportPlanHost(host, payload);
+        await reloadIsp();
         if(!host.__ispBound){
           host.__ispBound = true;
+          host.addEventListener('change', function(ev){
+            const t = ev.target;
+            if(!t) return;
+            if(t.id === 'ispLibBeh'){
+              const opt = t.options[t.selectedIndex];
+              if(opt && opt.value){
+                const risk = document.getElementById('ispRiskBeh');
+                const riskLv = document.getElementById('ispRisk');
+                const hid = document.getElementById('ispBehLibId');
+                if(risk) risk.value = opt.getAttribute('data-label') || opt.textContent || '';
+                if(riskLv && opt.getAttribute('data-risk')) riskLv.value = opt.getAttribute('data-risk');
+                if(hid) hid.value = opt.value;
+              }
+            }
+            if(t.id === 'ispLibStrat'){
+              const opt = t.options[t.selectedIndex];
+              if(opt && opt.value){
+                const strat = document.getElementById('ispStrat');
+                const hid = document.getElementById('ispStratLibId');
+                if(strat) strat.value = opt.getAttribute('data-body') || '';
+                if(hid) hid.value = opt.value;
+              }
+            }
+          });
           host.addEventListener('click', function(ev){
             const avail = ev.target && ev.target.closest ? ev.target.closest('[data-isp-avail]') : null;
             const approve = ev.target && ev.target.closest ? ev.target.closest('[data-isp-approve]') : null;
             const reject = ev.target && ev.target.closest ? ev.target.closest('[data-isp-reject]') : null;
-            if(!avail && !approve && !reject) return;
+            const addBtn = ev.target && ev.target.closest ? ev.target.closest('[data-isp-add]') : null;
+            const cancelAdd = ev.target && ev.target.closest ? ev.target.closest('[data-isp-cancel-add]') : null;
+            const saveItem = ev.target && ev.target.closest ? ev.target.closest('[data-isp-save-item]') : null;
+            const editBtn = ev.target && ev.target.closest ? ev.target.closest('[data-isp-edit]') : null;
+            if(!avail && !approve && !reject && !addBtn && !cancelAdd && !saveItem && !editBtn) return;
             ev.preventDefault();
             void (async function(){
               try{
+                const ctx = host.__ispCtx || ispCtx;
+                if(addBtn){
+                  const panel = document.getElementById('ispAddPanel');
+                  if(panel) panel.hidden = false;
+                  const editId = document.getElementById('ispEditItemId');
+                  if(editId) editId.value = '';
+                  return;
+                }
+                if(cancelAdd){
+                  const panel = document.getElementById('ispAddPanel');
+                  if(panel) panel.hidden = true;
+                  return;
+                }
+                if(editBtn){
+                  const itemId = editBtn.getAttribute('data-isp-edit');
+                  const items = host.__ispItems || [];
+                  const row = items.find(function(it){ return String(it.id) === String(itemId); });
+                  const panel = document.getElementById('ispAddPanel');
+                  if(panel) panel.hidden = false;
+                  const editId = document.getElementById('ispEditItemId');
+                  if(editId) editId.value = itemId || '';
+                  const risk = document.getElementById('ispRiskBeh');
+                  const strat = document.getElementById('ispStrat');
+                  const riskLv = document.getElementById('ispRisk');
+                  const behHid = document.getElementById('ispBehLibId');
+                  const stratHid = document.getElementById('ispStratLibId');
+                  if(row){
+                    if(risk) risk.value = row.risk_behaviour || '';
+                    if(strat) strat.value = row.strategy_in_place || '';
+                    if(riskLv) riskLv.value = row.risk_level || 'medium';
+                    if(behHid) behHid.value = row.behaviour_library_id || '';
+                    if(stratHid) stratHid.value = row.strategy_library_id || '';
+                    const behSel = document.getElementById('ispLibBeh');
+                    const stratSel = document.getElementById('ispLibStrat');
+                    if(behSel && row.behaviour_library_id) behSel.value = row.behaviour_library_id;
+                    if(stratSel && row.strategy_library_id) stratSel.value = row.strategy_library_id;
+                  }
+                  return;
+                }
+                if(saveItem){
+                  const planId = (host.__ispLastPlanId) || null;
+                  const payloadNow = await loadActiveSupportPlan(ctx.clientName, ctx.clientId, ctx.services);
+                  const plan = payloadNow.plan;
+                  if(!plan || !plan.id) throw new Error('No plan');
+                  const editId = (document.getElementById('ispEditItemId') || {}).value || '';
+                  const body = {
+                    action: editId ? 'update_plan_item' : 'add_plan_item',
+                    plan_id: plan.id,
+                    item_id: editId || undefined,
+                    risk_behaviour: (document.getElementById('ispRiskBeh') || {}).value || '',
+                    strategy_in_place: (document.getElementById('ispStrat') || {}).value || '',
+                    risk_level: (document.getElementById('ispRisk') || {}).value || 'medium',
+                    behaviour_library_id: (document.getElementById('ispBehLibId') || {}).value || '',
+                    strategy_library_id: (document.getElementById('ispStratLibId') || {}).value || '',
+                    service_tags: payloadNow.service_tags || []
+                  };
+                  await staffFollowupApi(body);
+                  await reloadIsp();
+                  return;
+                }
                 if(avail){
                   const id = avail.getAttribute('data-isp-avail');
                   const r = avail.getAttribute('data-r');
@@ -3608,20 +3779,21 @@
                     if(raw) suggested_at = new Date(raw).toISOString();
                   }
                   await staffFollowupApi({ action: 'respond_availability', invitee_id: id, response: r, suggested_at });
-                  const payload2 = await loadActiveSupportPlan(clientName, clientId);
-                  renderSupportPlanHost(host, payload2);
+                  await reloadIsp();
                   return;
                 }
                 if(approve){
-                  await staffFollowupApi({ action: 'approve_support_plan', update_id: approve.getAttribute('data-isp-approve') });
-                  const payload2 = await loadActiveSupportPlan(clientName, clientId);
-                  renderSupportPlanHost(host, payload2);
+                  await staffFollowupApi({
+                    action: 'approve_support_plan',
+                    update_id: approve.getAttribute('data-isp-approve'),
+                    services: ctx.services || []
+                  });
+                  await reloadIsp();
                   return;
                 }
                 if(reject){
                   await staffFollowupApi({ action: 'reject_support_plan', update_id: reject.getAttribute('data-isp-reject') });
-                  const payload2 = await loadActiveSupportPlan(clientName, clientId);
-                  renderSupportPlanHost(host, payload2);
+                  await reloadIsp();
                 }
               }catch(err){
                 window.alert((err && err.message) || 'Action failed');
