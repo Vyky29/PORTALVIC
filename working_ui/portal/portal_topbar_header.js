@@ -731,6 +731,11 @@
 
   function portalResyncTopbarAfterIdentity() {
     try {
+      if (typeof global.portalResyncPlannerToolsAfterIdentity === "function") {
+        global.portalResyncPlannerToolsAfterIdentity();
+      }
+    } catch (_) {}
+    try {
       if (typeof global.portalSyncTopbarRoleTools === "function") {
         global.portalSyncTopbarRoleTools({ isLead: !!global.__PORTAL_TOPBAR_IS_LEAD__ });
       }

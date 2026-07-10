@@ -759,5 +759,21 @@
         setTimeout(portalLateTopbarResync, 300);
       });
     }
+    global.addEventListener("portal:staff-deferred-dashboard-ready", function () {
+      try {
+        portalResyncPlannerToolsAfterIdentity();
+      } catch (_) {}
+      try {
+        if (typeof global.portalSyncTodaySectionDisplay === "function") {
+          global.portalSyncTodaySectionDisplay();
+        } else if (typeof portalSyncTodaySectionDisplay === "function") {
+          portalSyncTodaySectionDisplay();
+        }
+      } catch (_) {}
+      try {
+        if (typeof global.renderToday === "function") global.renderToday();
+        else if (typeof renderToday === "function") renderToday();
+      } catch (_) {}
+    });
   }
 })(typeof window !== "undefined" ? window : globalThis);

@@ -135,10 +135,8 @@
     "/portal/clients_info_embed.js?v=20260608-anas-ismail",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
       "/portal/portal_staff_lead_aquatic_slots.js?v=20260704-cover-merge-feedback",
-    "/portal/portal_participant_identity.js?v=20260703-desktop",
     "/portal/portal_participant_general_hydrate.js?v=20260703-desktop",
     "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",
-    "/portal/portal_swimming_instructor_menus.js?v=20260708c-topbar-plan-fix",
     "/portal/portal_staff_photos.js?v=20260624-rt-debug",
   ];
 

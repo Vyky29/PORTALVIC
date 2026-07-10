@@ -21,7 +21,7 @@
        fine. Delete every non-push cache + unregister every non-push SW, then
        reload once (guarded by a session flag so it can never loop). */
     (function () {
-      var FLAG = "portalPwaFreshV1";
+      var FLAG = "portalPwaFreshV2";
       var KEEP = "clubsensational-portal-sw";
       try {
         if (sessionStorage.getItem(FLAG)) return;
@@ -66,7 +66,7 @@
     })();
   </script>
   <script src="/portal/portal_hide_chat_ui.js?v=20260614-hide-chat"></script>
-  <script src="/portal/staff-app-boot.js?v=20260707-cache-fresh"></script>
+  <script src="/portal/staff-app-boot.js?v=20260710-pwa-sync-menus"></script>
   <script src="/portal/portal_auth_page_gate.js?v=20260609-auth-gate"></script>
   <script src="/portal/portal-vapid-public.js?v=20260619-vapid-load-fix"></script>
   <script defer src="/portal/portal_web_push_support.js?v=20260628-test-sw-ready"></script>
@@ -975,7 +975,9 @@
   <script src="/portal/portal_dashboard_ui_coalesce.js?v=20260630-term-idle-rAF"></script>
   <script src="/portal/portal_participant_photos.js?v=20260628-timi-smile"></script>
   <script src="/portal/portal_participant_avatars_hydrate.js?v=20260702-avatar-shared"></script>
-  <script src="/portal/portal_topbar_header.js?v=20260707-topbar-guard"></script>
+  <script src="/portal/portal_participant_identity.js?v=20260710-pwa-sync"></script>
+  <script src="/portal/portal_swimming_instructor_menus.js?v=20260710-pwa-topbar"></script>
+  <script src="/portal/portal_topbar_header.js?v=20260710-pwa-resync"></script>
   <script src="/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category"></script>
   <script src="/portal/portal_area_note_icons.js?v=20260704-area-note-fixed"></script>
   <script src="/portal/portal_today_next_chips.js?v=20260609-photo-fallback"></script>
@@ -989,11 +991,11 @@
   <script src="/portal/staff-dashboard-term.js?v=20260705-peer-absent-cache"></script>
   <script src="/portal/staff-dashboard-participants.js?v=20260708b-special-no-yellow"></script>
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
-  <script src="/portal/staff-dashboard-today.js?v=20260708-cover-cache-past"></script>
+  <script src="/portal/staff-dashboard-today.js?v=20260710-pwa-dedupe"></script>
   <script src="/portal/staff-dashboard-ui.js?v=20260709-absent-server-green"></script>
   <script src="/portal/portal_today_time_fit.js?v=20260706-time-one-line"></script>
   <script src="/portal/staff-dashboard-auth-bridge.js?v=20260625-lead-day-cards-nav"></script>
-  <script src="/portal/staff-dashboard-rehydrate.js?v=20260708-today-sync-settle"></script>
+  <script src="/portal/staff-dashboard-rehydrate.js?v=20260710-pwa-today-resync"></script>
   <script src="/portal/portal-logout-bind.js"></script>
   <script type="module" src="/portal/staff-dashboard-auth-supabase.js?v=20260707-login-cache"></script>
   <script src="/portal/staff-dashboard-achievements-boot.js?v=20260705-ceo-gallery-topbar"></script>
