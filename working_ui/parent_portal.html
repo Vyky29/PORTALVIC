@@ -1106,11 +1106,29 @@
       border-radius: 999px;
       background: #fff7ed;
       color: #9a3412;
+      line-height: 1.2;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
     }
-    .pp-invoice-chip--paid { background: #ecfdf5; color: #047857; }
+    .pp-invoice-chip--paid {
+      background: #059669;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 800;
+      padding: 8px 14px;
+      border-radius: 12px;
+      letter-spacing: 0.04em;
+      box-shadow: 0 1px 0 rgba(4, 120, 87, 0.25);
+    }
     .pp-invoice-chip--partial { background: #eff6ff; color: #1d4ed8; }
     .pp-invoice-chip--void { background: #f1f5f9; color: #475569; }
     .pp-invoice-chip--pending_confirmation { background: #fef3c7; color: #92400e; }
+    .pp-invoice-card--paid .pp-invoice-card__head {
+      align-items: center;
+    }
+    .pp-invoice-card--paid .pp-invoice-card__amount {
+      color: #047857;
+    }
     .pp-invoice-card__amount {
       margin: 8px 0 0;
       font-size: 22px;
@@ -3103,7 +3121,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260709-overview-by-service"></script>
   <script src="/portal/parent_portal_team.js?v=20260709-msg-photo-team"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260709-my-cal-polish"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260710-invoice-title-clean"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260710-paid-badge-big"></script>
   <script src="/portal/parent_portal_app.js?v=20260709-invoice-paid-return"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
