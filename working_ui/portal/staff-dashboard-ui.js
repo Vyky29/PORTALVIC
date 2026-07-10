@@ -3484,14 +3484,45 @@
           error: null
         };
       }catch(e){
-        return {
-          plan: null,
-          items: [],
-          pending: null,
-          invites: [],
-          service_tags: [],
-          error: e && e.message ? e.message : 'load_failed'
-        };
+        const msg = e && e.message ? String(e.message) : 'load_failed';
+        // Fallback: read plan via RLS if edge auth resolution fails (legacy id mismatch).
+        try{
+          const box = window.__PORTAL_SUPABASE__;
+          const client = box && box.client ? box.client : null;
+          if(!client || !client.from) throw e;
+          let plan = null;
+          let items = [];
+          if(clientId){
+            const byId = await client.from('portal_support_plans').select('*').eq('status', 'active').eq('participant_contact_id', clientId).limit(1).maybeSingle();
+            if(byId && byId.data) plan = byId.data;
+          }
+          if(!plan && clientName){
+            const byName = await client.from('portal_support_plans').select('*').eq('status', 'active').ilike('participant_name', clientName).limit(1).maybeSingle();
+            if(byName && byName.data) plan = byName.data;
+          }
+          if(plan){
+            const itemsRes = await client.from('portal_support_plan_items').select('*').eq('plan_id', plan.id).order('sort_order', { ascending: true });
+            items = (itemsRes && itemsRes.data) || [];
+          }
+          return {
+            plan,
+            items,
+            pending: null,
+            invites: [],
+            service_tags: [],
+            error: plan ? null : msg,
+            fallback: true
+          };
+        }catch(_e2){
+          return {
+            plan: null,
+            items: [],
+            pending: null,
+            invites: [],
+            service_tags: [],
+            error: msg
+          };
+        }
       }
     }
     function supportPlanItemCard(it, opts){

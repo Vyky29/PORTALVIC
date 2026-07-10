@@ -17,6 +17,7 @@ import {
   upsertBehaviourLibraryFork,
   upsertStrategyLibraryFork,
 } from "../_shared/portal_isp_library.ts";
+import { verifyPortalStaff } from "../_shared/portal_staff_auth.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -45,37 +46,27 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json(405, { ok: false, error: "method_not_allowed" });
 
   const baseUrl = (Deno.env.get("SUPABASE_URL") ?? "").trim();
-  const anon = (Deno.env.get("SUPABASE_ANON_KEY") ?? "").trim();
   const serviceRole = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "").trim();
-  if (!baseUrl || !anon || !serviceRole) {
+  if (!baseUrl || !serviceRole) {
     return json(500, { ok: false, error: "server_misconfigured" });
   }
 
-  const authHeader = req.headers.get("Authorization") || "";
-  if (!/^Bearer\s+\S+/i.test(authHeader)) {
-    return json(401, { ok: false, error: "missing_authorization" });
+  const verified = await verifyPortalStaff(req);
+  if (!verified.ok) {
+    return json(verified.status, { ok: false, error: verified.error });
   }
-
-  const userRes = await fetch(`${baseUrl}/auth/v1/user`, {
-    headers: { Authorization: authHeader, apikey: anon },
-  });
-  if (!userRes.ok) return json(401, { ok: false, error: "invalid_session" });
-  const userBody = await userRes.json();
-  const userId = String(userBody?.id || "");
-  if (!userId) return json(401, { ok: false, error: "invalid_session" });
+  const userId = verified.userId;
+  const profile = {
+    id: verified.profileId,
+    app_role: verified.appRole,
+    full_name: verified.fullName,
+    email: verified.email,
+    is_active: true,
+  };
 
   const admin = createClient(baseUrl, serviceRole, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-
-  const { data: profile } = await admin
-    .from("staff_profiles")
-    .select("id, app_role, full_name, email, is_active")
-    .eq("id", userId)
-    .maybeSingle();
-  if (!profile || profile.is_active === false) {
-    return json(403, { ok: false, error: "not_staff" });
-  }
 
   let body: Record<string, unknown> = {};
   try {
