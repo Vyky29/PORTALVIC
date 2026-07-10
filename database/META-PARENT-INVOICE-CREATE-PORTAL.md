@@ -23,6 +23,12 @@ Separate from Xero `INV-####` so both can coexist.
 - Exempt ≈ INV-0270 layout
 - VAT 20% ≈ INV-0353 layout (amount entered is **gross** incl. VAT)
 
+## Auto from re-enrolment
+
+On **first** re-enrolment submit (parent-pays plans only), Portal creates the INV-P instalment schedule from the chosen payment plan (same dates/amounts as the parent preview). Funder-invoice families are skipped. Resubmits do not create duplicates — office adjusts in Family invoices.
+
+`created_via = reenrolment` on those share rows.
+
 ## Later
 
 Batch export / push to Xero for bookkeeping — not required for day-to-day parent billing.

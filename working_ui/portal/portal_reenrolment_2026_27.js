@@ -2882,6 +2882,12 @@
     var btn = $("reSubmitBtn");
     if (btn) btn.disabled = true;
 
+    var termTotalsPayload = {
+      autumn: termProgrammeTotal(data, "autumn"),
+      spring: termProgrammeTotal(data, "spring"),
+      summer: termProgrammeTotal(data, "summer"),
+      annual: resolveAnnualWeeklyTotal(data),
+    };
     var payload = {
       source: state.fromPortal ? "parent_portal" : "link",
       parent_first_name: (data.parent && data.parent.first_name) || $("reParentFirst").value || "",
@@ -2896,6 +2902,7 @@
       weekly_slots: data.weekly_slots,
       day_centre: data.day_centre,
       annual_weekly_total: data.annual_weekly_total,
+      term_totals: termTotalsPayload,
       choices: collectChoices(),
       // One confirmation checkbox covers accuracy + terms (edge requires both).
       declarations: { accurate: true, terms: true },
