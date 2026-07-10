@@ -1,7 +1,7 @@
 /**
  * Annual parent consents PDF (logo + signed answers) for parent hub / admin docs.
  */
-import { PDFDocument, StandardFonts, rgb } from "https://esm.sh/pdf-lib@1.17.1";
+import { PDFDocument, StandardFonts, rgb, PDFPage, PDFFont, RGB } from "https://esm.sh/pdf-lib@1.17.1";
 import { CLUBSENSATIONAL_LOGO_PNG_B64 } from "./clubsensational_logo_b64.ts";
 
 export type PortalConsentsPdfInput = {
@@ -64,6 +64,105 @@ function yn(v: "yes" | "no"): string {
   return v === "yes" ? "YES" : "NO";
 }
 
+function wrapLines(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
+  const words = String(text || "").split(/\s+/).filter(Boolean);
+  if (!words.length) return [""];
+  const lines: string[] = [];
+  let cur = "";
+  for (const w of words) {
+    const next = cur ? cur + " " + w : w;
+    if (font.widthOfTextAtSize(next, size) <= maxWidth) {
+      cur = next;
+    } else {
+      if (cur) lines.push(cur);
+      cur = w;
+    }
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+
+type IconKind = "camera" | "pill" | "emergency" | "travel";
+
+function drawSectionIcon(
+  page: PDFPage,
+  kind: IconKind,
+  x: number,
+  yCenter: number,
+  fill: RGB,
+): void {
+  const r = 10;
+  page.drawCircle({
+    x: x + r,
+    y: yCenter,
+    size: r,
+    color: fill,
+  });
+  const white = rgb(1, 1, 1);
+  // Simple white glyphs inside the circle (paths relative to icon centre).
+  if (kind === "camera") {
+    page.drawRectangle({
+      x: x + 5,
+      y: yCenter - 4,
+      width: 10,
+      height: 7,
+      borderColor: white,
+      borderWidth: 1.2,
+      color: fill,
+    });
+    page.drawCircle({
+      x: x + r,
+      y: yCenter - 0.5,
+      size: 2.2,
+      borderColor: white,
+      borderWidth: 1.1,
+      color: fill,
+    });
+  } else if (kind === "pill") {
+    page.drawRectangle({
+      x: x + 6,
+      y: yCenter - 5,
+      width: 8,
+      height: 10,
+      borderColor: white,
+      borderWidth: 1.2,
+      color: fill,
+    });
+  } else if (kind === "emergency") {
+    page.drawRectangle({
+      x: x + r - 1.2,
+      y: yCenter - 5,
+      width: 2.4,
+      height: 10,
+      color: white,
+    });
+    page.drawRectangle({
+      x: x + 5,
+      y: yCenter - 1.2,
+      width: 10,
+      height: 2.4,
+      color: white,
+    });
+  } else {
+    // travel / map pin-ish
+    page.drawCircle({
+      x: x + r,
+      y: yCenter + 1.5,
+      size: 3.2,
+      borderColor: white,
+      borderWidth: 1.2,
+      color: fill,
+    });
+    page.drawRectangle({
+      x: x + r - 1,
+      y: yCenter - 6,
+      width: 2,
+      height: 5,
+      color: white,
+    });
+  }
+}
+
 export async function buildPortalConsentsPdf(
   input: PortalConsentsPdfInput,
 ): Promise<Uint8Array> {
@@ -78,46 +177,61 @@ export async function buildPortalConsentsPdf(
   const { width, height } = page.getSize();
   const left = 48;
   const right = width - 48;
-  let y = height - 42;
 
+  // Header: logo top-right in a reserved square (never overlaps title).
+  const logoBox = 64;
+  let logoBottom = height - 36;
   try {
     const logo = await pdf.embedPng(b64ToBytes(CLUBSENSATIONAL_LOGO_PNG_B64));
-    const logoW = 72;
-    const logoH = (logo.height / logo.width) * logoW;
+    const natW = logo.width || 1;
+    const natH = logo.height || 1;
+    const scale = Math.min(logoBox / natW, logoBox / natH);
+    const drawW = natW * scale;
+    const drawH = natH * scale;
+    const logoX = right - drawW;
+    const logoY = height - 28 - drawH;
     page.drawImage(logo, {
-      x: right - logoW,
-      y: y - logoH + 8,
-      width: logoW,
-      height: logoH,
+      x: logoX,
+      y: logoY,
+      width: drawW,
+      height: drawH,
     });
+    logoBottom = logoY;
   } catch {
     /* logo optional */
   }
 
+  const titleMaxX = right - logoBox - 16;
+  let y = height - 40;
   page.drawText("ClubSENsational", {
     x: left,
     y,
-    size: 16,
+    size: 18,
     font: fontBold,
     color: ink,
+    maxWidth: titleMaxX - left,
   });
-  y -= 18;
+  y -= 20;
   page.drawText("Annual consents form", {
     x: left,
     y,
-    size: 12,
+    size: 13,
     font: fontBold,
     color: accent,
+    maxWidth: titleMaxX - left,
   });
-  y -= 14;
+  y -= 15;
   page.drawText("Parent / carer permissions — valid for one year from signing.", {
     x: left,
     y,
     size: 9,
     font,
     color: muted,
+    maxWidth: titleMaxX - left,
   });
-  y -= 22;
+
+  // Content starts below both title block and logo.
+  y = Math.min(y - 18, logoBottom - 16);
 
   page.drawLine({
     start: { x: left, y },
@@ -125,7 +239,7 @@ export async function buildPortalConsentsPdf(
     thickness: 1,
     color: rgb(0.85, 0.86, 0.88),
   });
-  y -= 20;
+  y -= 18;
 
   const meta: Array<[string, string]> = [
     ["Participant", input.participantName || "—"],
@@ -133,21 +247,28 @@ export async function buildPortalConsentsPdf(
     ["Signed at", formatUkDateTime(input.signedAtIso) || "—"],
     ["Valid until", formatUkDate(input.validUntilIso) || "—"],
   ];
+  if (input.parentName) meta.splice(2, 0, ["Parent / carer", input.parentName]);
   for (const [label, value] of meta) {
     page.drawText(label, { x: left, y, size: 8, font, color: muted });
     page.drawText(value, {
-      x: left + 88,
+      x: left + 92,
       y,
       size: 10,
       font: fontBold,
       color: ink,
-      maxWidth: right - left - 88,
+      maxWidth: right - left - 92,
     });
-    y -= 16;
+    y -= 15;
   }
-  y -= 8;
+  y -= 10;
 
-  type Block = { title: string; lines: string[] };
+  type Block = {
+    icon: IconKind;
+    iconColor: RGB;
+    title: string;
+    lines: string[];
+  };
+
   const photoLine =
     input.photoConsent === "yes"
       ? "YES — allow wider use (website, marketing, staff training, research / resources)."
@@ -163,21 +284,21 @@ export async function buildPortalConsentsPdf(
 
   const blocks: Block[] = [
     {
-      title: "1. Photo & media for marketing",
-      lines: [
-        photoLine,
-        `Signed by: ${input.photoSigner || "—"}`,
-      ],
+      icon: "camera",
+      iconColor: rgb(0.49, 0.23, 0.93),
+      title: "Photo & media for marketing",
+      lines: [photoLine, `Signed by: ${input.photoSigner || "—"}`],
     },
     {
-      title: "2. Medication at the centre",
-      lines: [
-        medLine,
-        `Signed by: ${input.medicationSigner || "—"}`,
-      ],
+      icon: "pill",
+      iconColor: rgb(0.06, 0.46, 0.43),
+      title: "Medication at the centre",
+      lines: [medLine, `Signed by: ${input.medicationSigner || "—"}`],
     },
     {
-      title: "3. Emergency treatment",
+      icon: "emergency",
+      iconColor: rgb(0.73, 0.11, 0.11),
+      title: "Emergency treatment",
       lines: [
         emergencyLine,
         `Emergency contact: ${input.emergencyContactName || "—"} · ${input.emergencyContactPhone || "—"}`,
@@ -185,7 +306,9 @@ export async function buildPortalConsentsPdf(
       ],
     },
     {
-      title: "4. Off-site / transport",
+      icon: "travel",
+      iconColor: rgb(0.11, 0.39, 0.85),
+      title: "Off-site & transport",
       lines: [
         `Community walk: ${yn(input.communityWalk)}`,
         `Public transport: ${yn(input.publicTransport)}`,
@@ -195,41 +318,53 @@ export async function buildPortalConsentsPdf(
     },
   ];
 
+  const contentWidth = right - left - 12;
   for (const block of blocks) {
-    if (y < 120) break;
+    const wrapped: string[] = [];
+    for (const line of block.lines) {
+      wrapped.push(...wrapLines(line, font, 9, contentWidth - 8));
+    }
+    const bodyH = wrapped.length * 12;
+    const boxH = 28 + bodyH + 12;
+    if (y - boxH < 48) break;
+
+    const boxBottom = y - boxH;
     page.drawRectangle({
-      x: left - 4,
-      y: y - 6 - block.lines.length * 13 - 10,
-      width: right - left + 8,
-      height: 18 + block.lines.length * 13 + 12,
+      x: left - 2,
+      y: boxBottom,
+      width: right - left + 4,
+      height: boxH,
       borderColor: rgb(0.88, 0.89, 0.92),
       borderWidth: 1,
-      color: rgb(0.98, 0.98, 0.99),
+      color: rgb(0.985, 0.985, 0.99),
     });
+
+    const titleY = y - 18;
+    drawSectionIcon(page, block.icon, left + 6, titleY + 3, block.iconColor);
     page.drawText(block.title, {
-      x: left,
-      y,
+      x: left + 32,
+      y: titleY,
       size: 11,
       font: fontBold,
       color: ink,
+      maxWidth: contentWidth - 28,
     });
-    y -= 16;
-    for (const line of block.lines) {
-      const text = line.length > 95 ? line.slice(0, 92) + "…" : line;
-      page.drawText(text, {
-        x: left,
-        y,
+
+    let ly = titleY - 16;
+    for (const line of wrapped) {
+      page.drawText(line, {
+        x: left + 8,
+        y: ly,
         size: 9,
         font,
         color: ink,
-        maxWidth: right - left,
+        maxWidth: contentWidth,
       });
-      y -= 13;
+      ly -= 12;
     }
-    y -= 14;
+    y = boxBottom - 10;
   }
 
-  y -= 6;
   page.drawText("Record generated by ClubSENsational Parent Portal.", {
     x: left,
     y: Math.max(36, y),

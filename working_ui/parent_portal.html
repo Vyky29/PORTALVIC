@@ -1581,8 +1581,69 @@
       border: 1px solid var(--line);
       border-radius: 16px;
       background: #fff;
+      padding: 0;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .pp-consent-card__summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
       padding: 14px;
       min-width: 0;
+      user-select: none;
+    }
+    .pp-consent-card__summary::-webkit-details-marker { display: none; }
+    .pp-consent-card__summary-main {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .pp-consent-card__title-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .pp-consent-card__preview {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      line-height: 1.35;
+      overflow-wrap: break-word;
+    }
+    .pp-consent-card[open] .pp-consent-card__preview {
+      display: none;
+    }
+    .pp-consent-card__body {
+      padding: 0 14px 14px;
+      min-width: 0;
+      border-top: 1px solid color-mix(in srgb, var(--line, #e5e7eb) 80%, transparent);
+    }
+    .pp-consent-card__chev {
+      flex: 0 0 auto;
+      width: 22px;
+      height: 22px;
+      margin-top: 6px;
+      border-radius: 999px;
+      background:
+        linear-gradient(currentColor, currentColor) center / 10px 2px no-repeat,
+        linear-gradient(currentColor, currentColor) center / 2px 10px no-repeat;
+      background-color: color-mix(in srgb, var(--line, #e5e7eb) 55%, #fff);
+      color: var(--muted);
+      opacity: 0.9;
+    }
+    .pp-consent-card[open] .pp-consent-card__chev {
+      background:
+        linear-gradient(currentColor, currentColor) center / 10px 2px no-repeat;
+      background-color: color-mix(in srgb, var(--line, #e5e7eb) 55%, #fff);
     }
     .pp-consent-card--photo {
       border-color: #c4b5fd;
@@ -1645,7 +1706,7 @@
     }
     .pp-consent-card__title-row {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 10px;
       min-width: 0;
       flex: 1;
@@ -1654,8 +1715,8 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 36px;
-      height: 36px;
+      width: 40px;
+      height: 40px;
       border-radius: 12px;
       flex: 0 0 auto;
     }
@@ -1685,11 +1746,12 @@
       font-size: 15px;
       font-weight: 800;
       color: var(--ink);
+      line-height: 1.25;
       min-width: 0;
       overflow-wrap: break-word;
     }
     .pp-consent-card__hint {
-      margin: 0 0 10px;
+      margin: 10px 0 10px;
       font-size: 13px;
       line-height: 1.45;
       overflow-wrap: break-word;
@@ -3193,7 +3255,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260709-overview-by-service"></script>
   <script src="/portal/parent_portal_team.js?v=20260709-msg-photo-team"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260709-my-cal-polish"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260710-paid-badge-big"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260710-consent-accordion"></script>
   <script src="/portal/parent_portal_app.js?v=20260709-invoice-paid-return"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

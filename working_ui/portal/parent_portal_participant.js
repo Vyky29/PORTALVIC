@@ -3153,19 +3153,81 @@
             " (renew each year).</p>"
           : "";
 
+      var photoSummary =
+        photo === "yes" ? "Yes — wider use" : photo === "no" ? "No — family only" : "Not answered yet";
+      var medSummary =
+        med === "yes"
+          ? "Yes — medication at centre"
+          : med === "no"
+            ? "No medication at the centre"
+            : "Not answered yet";
+      var emergencySummary =
+        emergency === "yes"
+          ? "Yes — act in an emergency"
+          : emergency === "no"
+            ? "No — wait for carer"
+            : "Not answered yet";
+      var travelSummary =
+        walk && publicTransport && taxi
+          ? "Walk " +
+            walk.toUpperCase() +
+            " · Public " +
+            publicTransport.toUpperCase() +
+            " · Taxi " +
+            taxi.toUpperCase()
+          : "Not answered yet";
+
+      function consentAccordionStart(optsAcc) {
+        var openAttr = optsAcc.open ? " open" : "";
+        return (
+          '<details class="pp-consent-card pp-consent-card--' +
+          esc(optsAcc.kind) +
+          '"' +
+          openAttr +
+          ">" +
+          '<summary class="pp-consent-card__summary">' +
+          '<div class="pp-consent-card__summary-main">' +
+          '<div class="pp-consent-card__title-row">' +
+          '<span class="pp-consent-ico-wrap pp-consent-ico-wrap--' +
+          esc(optsAcc.kind === "travel" ? "travel" : optsAcc.kind) +
+          '" aria-hidden="true">' +
+          consentSvg(optsAcc.icon) +
+          "</span>" +
+          '<span class="pp-consent-card__title-stack">' +
+          '<h4 id="' +
+          esc(optsAcc.titleId) +
+          '" class="pp-consent-card__title">' +
+          optsAcc.titleHtml +
+          "</h4>" +
+          '<span class="pp-consent-card__preview">' +
+          esc(optsAcc.preview) +
+          "</span>" +
+          "</span></div>" +
+          consentStatusChip(optsAcc.done) +
+          "</div>" +
+          '<span class="pp-consent-card__chev" aria-hidden="true"></span>' +
+          "</summary>" +
+          '<div class="pp-consent-card__body">'
+        );
+      }
+
+      var openPhoto = !photoDone;
+      var openMed = photoDone && !medDone;
+      var openEmergency = photoDone && medDone && !emergencyDone;
+      var openTravel = photoDone && medDone && emergencyDone && !offsiteDone;
+
       formHost.innerHTML =
         renewalBanner +
         '<form class="pp-consent-form" id="ppConsentForm" novalidate>' +
-        '<section class="pp-consent-card pp-consent-card--photo" aria-labelledby="ppConsentPhotoTitle">' +
-        '<div class="pp-consent-card__head">' +
-        '<div class="pp-consent-card__title-row">' +
-        '<span class="pp-consent-ico-wrap pp-consent-ico-wrap--photo" aria-hidden="true">' +
-        consentSvg("camera") +
-        "</span>" +
-        '<h4 id="ppConsentPhotoTitle" class="pp-consent-card__title">Photo &amp; media for marketing</h4>' +
-        "</div>" +
-        consentStatusChip(photoDone) +
-        "</div>" +
+        consentAccordionStart({
+          kind: "photo",
+          icon: "camera",
+          titleId: "ppConsentPhotoTitle",
+          titleHtml: "Photo &amp; media for marketing",
+          preview: photoSummary,
+          done: photoDone,
+          open: openPhoto,
+        }) +
         '<p class="pp-muted pp-consent-card__hint">Achievement photos in the portal (progress shared with you) already happen. This consent is only for wider use:</p>' +
         '<ul class="pp-consent-uses" aria-label="Wider photo uses">' +
         '<li class="pp-consent-use">' +
@@ -3207,17 +3269,16 @@
         (photoWhen
           ? '<p class="pp-muted pp-consent-signed">Last signed ' + esc(photoWhen) + "</p>"
           : "") +
-        "</section>" +
-        '<section class="pp-consent-card pp-consent-card--med" aria-labelledby="ppConsentMedTitle">' +
-        '<div class="pp-consent-card__head">' +
-        '<div class="pp-consent-card__title-row">' +
-        '<span class="pp-consent-ico-wrap pp-consent-ico-wrap--med" aria-hidden="true">' +
-        consentSvg("pill") +
-        "</span>" +
-        '<h4 id="ppConsentMedTitle" class="pp-consent-card__title">Medication at the centre</h4>' +
-        "</div>" +
-        consentStatusChip(medDone) +
-        "</div>" +
+        "</div></details>" +
+        consentAccordionStart({
+          kind: "med",
+          icon: "pill",
+          titleId: "ppConsentMedTitle",
+          titleHtml: "Medication at the centre",
+          preview: medSummary,
+          done: medDone,
+          open: openMed,
+        }) +
         '<p class="pp-muted pp-consent-card__hint">Only if staff need to hold or help with medication during sessions (name, dose, when, storage).</p>' +
         '<fieldset class="pp-consent-choices">' +
         '<legend class="pp-sr-only">Medication at centre</legend>' +
@@ -3249,17 +3310,16 @@
         esc(medSigner) +
         '"></div>' +
         (medWhen ? '<p class="pp-muted pp-consent-signed">Last signed ' + esc(medWhen) + "</p>" : "") +
-        "</section>" +
-        '<section class="pp-consent-card pp-consent-card--emergency" aria-labelledby="ppConsentEmergencyTitle">' +
-        '<div class="pp-consent-card__head">' +
-        '<div class="pp-consent-card__title-row">' +
-        '<span class="pp-consent-ico-wrap pp-consent-ico-wrap--emergency" aria-hidden="true">' +
-        consentSvg("emergency") +
-        "</span>" +
-        '<h4 id="ppConsentEmergencyTitle" class="pp-consent-card__title">Emergency treatment</h4>' +
-        "</div>" +
-        consentStatusChip(emergencyDone) +
-        "</div>" +
+        "</div></details>" +
+        consentAccordionStart({
+          kind: "emergency",
+          icon: "emergency",
+          titleId: "ppConsentEmergencyTitle",
+          titleHtml: "Emergency treatment",
+          preview: emergencySummary,
+          done: emergencyDone,
+          open: openEmergency,
+        }) +
         '<p class="pp-muted pp-consent-card__hint">If we cannot reach you quickly, may staff arrange urgent first aid / medical treatment and call the emergency contact below?</p>' +
         '<fieldset class="pp-consent-choices">' +
         '<legend class="pp-sr-only">Emergency treatment consent</legend>' +
@@ -3296,17 +3356,16 @@
         (emergencyWhen
           ? '<p class="pp-muted pp-consent-signed">Last signed ' + esc(emergencyWhen) + "</p>"
           : "") +
-        "</section>" +
-        '<section class="pp-consent-card pp-consent-card--travel" aria-labelledby="ppConsentTravelTitle">' +
-        '<div class="pp-consent-card__head">' +
-        '<div class="pp-consent-card__title-row">' +
-        '<span class="pp-consent-ico-wrap pp-consent-ico-wrap--travel" aria-hidden="true">' +
-        consentSvg("travel") +
-        "</span>" +
-        '<h4 id="ppConsentTravelTitle" class="pp-consent-card__title">Off-site &amp; transport</h4>' +
-        "</div>" +
-        consentStatusChip(offsiteDone) +
-        "</div>" +
+        "</div></details>" +
+        consentAccordionStart({
+          kind: "travel",
+          icon: "travel",
+          titleId: "ppConsentTravelTitle",
+          titleHtml: "Off-site &amp; transport",
+          preview: travelSummary,
+          done: offsiteDone,
+          open: openTravel,
+        }) +
         '<p class="pp-muted pp-consent-card__hint">Answer each option. Staff only use the types you allow for community activities and travel.</p>' +
         '<ul class="pp-consent-uses pp-consent-uses--travel" aria-hidden="true">' +
         '<li class="pp-consent-use">' +
@@ -3390,7 +3449,7 @@
         (offsiteWhen
           ? '<p class="pp-muted pp-consent-signed">Last signed ' + esc(offsiteWhen) + "</p>"
           : "") +
-        "</section>" +
+        "</div></details>" +
         '<button type="submit" class="pp-btn pp-btn--primary" id="ppConsentSaveBtn">Save &amp; sign consents</button>' +
         "</form>";
 
