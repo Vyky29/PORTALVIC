@@ -132,7 +132,55 @@
     return String(name || "")
       .trim()
       .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
       .replace(/\s+/g, " ");
+  }
+
+  /** Lookup keys for roster PNGs — full name, cleaned tokens, first name (Eiji/Hazem style). */
+  function rosterPhotoLookupKeys(name) {
+    var key = photoKey(name);
+    var keys = [];
+    function add(k) {
+      k = String(k || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (!k) return;
+      if (keys.indexOf(k) === -1) keys.push(k);
+      var compact = k.replace(/\s+/g, " ");
+      if (compact && keys.indexOf(compact) === -1) keys.push(compact);
+      var slug = k.replace(/\s+/g, "_");
+      if (slug && keys.indexOf(slug) === -1) keys.push(slug);
+      var hyphen = k.replace(/\s+/g, "-");
+      if (hyphen && keys.indexOf(hyphen) === -1) keys.push(hyphen);
+    }
+    add(key);
+    var cleaned = key.replace(/[^a-z0-9\s]+/g, " ").replace(/\s+/g, " ").trim();
+    add(cleaned);
+    var parts = cleaned.split(/\s+/).filter(Boolean);
+    if (parts.length) {
+      add(parts[0]);
+      if (parts.length > 1) add(parts[0] + " " + parts[1].slice(0, 2));
+      if (/^eiji/.test(parts[0])) add("eiji");
+      if (/^hazem/.test(parts[0])) add("hazem");
+      if (/^elia/.test(parts[0])) add("elia");
+      if (/^fadi/.test(parts[0])) add("fadi");
+    }
+    return keys;
+  }
+
+  function mappedRosterPhotoRelative(name) {
+    var keys = rosterPhotoLookupKeys(name);
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i];
+      if (Object.prototype.hasOwnProperty.call(PARTICIPANT_PHOTOS, k)) {
+        return PARTICIPANT_PHOTOS[k];
+      }
+    }
+    return "";
   }
 
   function normalizePhotoUrl(url) {
@@ -207,6 +255,20 @@
       var p = participantPhotoPathOnDisk(raw);
       if (p) add(p);
     }
+    function addStaticRoster() {
+      var mapped = mappedRosterPhotoRelative(name);
+      if (mapped) addIfOnDisk(mapped);
+      var keys = rosterPhotoLookupKeys(name);
+      for (var i = 0; i < keys.length; i++) {
+        var k = keys[i];
+        var hyphenSlug = k.replace(/\s+/g, "-").replace(/_/g, "-");
+        addIfOnDisk("portal/participants/" + hyphenSlug + ".png");
+        addIfOnDisk("portal/participants/" + hyphenSlug + ".jpg");
+      }
+    }
+
+    /* Always resolve roster PNGs (first-name aware). Parent/storage URL still wins via unshift. */
+    addStaticRoster();
 
     var storageUrl = portalParticipantStorageAvatarUrl(contactId, name);
     if (storageUrl) addRemote(storageUrl);
@@ -229,26 +291,12 @@
         addIfOnDisk(avatarOverride);
       }
     }
-    var mapped = Object.prototype.hasOwnProperty.call(PARTICIPANT_PHOTOS, key)
-      ? PARTICIPANT_PHOTOS[key]
-      : "";
-    if (mapped) {
-      addIfOnDisk(mapped);
-    }
-    if (key) {
+
+    /* Extra hyphen guesses for unmapped names */
+    if (key && !mappedRosterPhotoRelative(name)) {
       var hyphenSlug = key.replace(/\s+/g, "-");
       addIfOnDisk("portal/participants/" + hyphenSlug + ".png");
       addIfOnDisk("portal/participants/" + hyphenSlug + ".jpg");
-      if (key.indexOf(" ") >= 0) {
-        addIfOnDisk("portal/participants/" + key.replace(/\s+/g, "-") + ".png");
-        addIfOnDisk("portal/participants/" + key.replace(/\s+/g, "-") + ".jpg");
-      }
-      if (!mapped) {
-        var parts = key.split(/\s+/).filter(Boolean);
-        if (parts.length > 1 && Object.prototype.hasOwnProperty.call(PARTICIPANT_PHOTOS, parts[0])) {
-          addIfOnDisk(PARTICIPANT_PHOTOS[parts[0]]);
-        }
-      }
     }
     return out;
   }
@@ -267,6 +315,20 @@
       })
       .filter(Boolean);
     if (!rest.length) {
+      try {
+        var wrap =
+          img.closest &&
+          img.closest(".pp-child-photo, .pp-pax-photo, .pp-team-photo, .client-photo, .portal-roster-avatar");
+        if (wrap) {
+          img.remove();
+          wrap.classList.remove(
+            "pp-child-photo--has-img",
+            "pp-pax-photo--img",
+            "pp-team-photo--img",
+          );
+          return;
+        }
+      } catch (_) {}
       if (typeof global.portalParticipantCalendarAvatarFallback === "function") {
         global.portalParticipantCalendarAvatarFallback(img);
       } else if (typeof global.portalClientPhotoSlotFallback === "function") {

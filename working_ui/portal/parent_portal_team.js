@@ -669,8 +669,15 @@
 
   function catalogMember(key) {
     var k = String(key || "").trim().toLowerCase();
+    if (k === "javi") k = "javier";
+    if (k === "lulia") k = "luliya";
+    if (k === "yousef" || k === "yusef") k = "youssef";
     if (!k || !STAFF_CATALOG[k]) return null;
-    return Object.assign({}, STAFF_CATALOG[k]);
+    var card = Object.assign({ staff_key: k }, STAFF_CATALOG[k]);
+    if (card.avatar_url && card.avatar_url.indexOf("?") === -1) {
+      card.avatar_url = card.avatar_url + "?v=20260710-team-photos";
+    }
+    return card;
   }
 
   function mergeTeamMember(base, patch) {
