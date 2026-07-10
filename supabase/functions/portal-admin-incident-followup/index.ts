@@ -76,15 +76,44 @@ Deno.serve(async (req) => {
   const action = clean(body.action, 60);
   const incidentId = clean(body.incident_id, 80);
   if (!action) return portalAdminJson(400, { ok: false, error: "action_required" });
-  if (!incidentId && action !== "get_plan_by_name") {
-    return portalAdminJson(400, { ok: false, error: "incident_id_required" });
-  }
 
   const admin = createClient(baseUrl, serviceRole, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const userId = verified.userId || null;
   const now = new Date().toISOString();
+
+  if (action === "list_library") {
+    try {
+      const { data: behaviours, error: bErr } = await admin
+        .from("portal_isp_behaviour_library")
+        .select("id, code, label, category, default_risk_level, sort_order")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (bErr) throw new Error(bErr.message);
+      const { data: strategies, error: sErr } = await admin
+        .from("portal_isp_strategy_library")
+        .select("id, code, label, body, category, behaviour_codes, sort_order")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (sErr) throw new Error(sErr.message);
+      return portalAdminJson(200, {
+        ok: true,
+        behaviours: behaviours || [],
+        strategies: strategies || [],
+      });
+    } catch (e) {
+      console.error("[portal-admin-incident-followup] list_library", e);
+      return portalAdminJson(500, {
+        ok: false,
+        error: e instanceof Error ? e.message : "server_error",
+      });
+    }
+  }
+
+  if (!incidentId && action !== "get_plan_by_name") {
+    return portalAdminJson(400, { ok: false, error: "incident_id_required" });
+  }
 
   async function loadIncident() {
     const { data, error } = await admin
@@ -492,22 +521,33 @@ Deno.serve(async (req) => {
         .eq("status", "active")
         .ilike("participant_name", participantName);
 
+      const byName = clean(verified.email, 120) || "Admin";
+      const isAdminRole = true; // this edge is admin-only
+      const planInsert: Record<string, unknown> = {
+        participant_name: participantName,
+        participant_contact_id: update.participant_contact_id || clean(incident.client_id, 120) || null,
+        status: "active",
+        source_incident_id: incidentId,
+        source_followup_id: update.followup_id,
+        activated_at: now,
+        activated_by: userId,
+        approved_by: userId,
+        approved_by_name: byName,
+        approved_at: now,
+      };
+      // If admin is also an owner, mark reviewed too
+      if (userId && ownerIds.includes(userId)) {
+        planInsert.reviewed_by = userId;
+        planInsert.reviewed_by_name = byName;
+        planInsert.reviewed_at = now;
+      }
+
       const { data: plan, error: planErr } = await admin
         .from("portal_support_plans")
-        .insert({
-          participant_name: participantName,
-          participant_contact_id: update.participant_contact_id || clean(incident.client_id, 120) || null,
-          status: "active",
-          source_incident_id: incidentId,
-          source_followup_id: update.followup_id,
-          activated_at: now,
-          activated_by: userId,
-        })
+        .insert(planInsert)
         .select("*")
         .maybeSingle();
       if (planErr) throw new Error(planErr.message);
-
-      const byName = clean(verified.email, 120) || "Admin";
       if (items.length && plan?.id) {
         const rows = items.map((row: StrategyIn, i: number) => ({
           plan_id: plan.id,

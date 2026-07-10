@@ -7,6 +7,8 @@
 
   var FN = "portal-admin-incident-followup";
 
+  var libraryCache = { behaviours: [], strategies: [], loaded: false };
+
   var cfg = {
     getClient: function () {
       return null;
@@ -92,6 +94,62 @@
     return map[s] || s;
   }
 
+
+  async function ensureLibrary() {
+    if (libraryCache.loaded) return libraryCache;
+    var j = await api({ action: "list_library" });
+    libraryCache.behaviours = j.behaviours || [];
+    libraryCache.strategies = j.strategies || [];
+    libraryCache.loaded = true;
+    return libraryCache;
+  }
+
+  function behaviourOptionsHtml(selectedLabel) {
+    var sel = String(selectedLabel || "").trim().toLowerCase();
+    var opts = ['<option value="">— Behaviour library —</option>'];
+    (libraryCache.behaviours || []).forEach(function (b) {
+      var on = sel && sel === String(b.label || "").toLowerCase();
+      opts.push(
+        '<option value="' +
+          esc(b.id) +
+          '" data-label="' +
+          esc(b.label) +
+          '" data-risk="' +
+          esc(b.default_risk_level || "medium") +
+          '"' +
+          (on ? " selected" : "") +
+          ">" +
+          esc(b.label) +
+          " (" +
+          esc(b.default_risk_level) +
+          ")</option>"
+      );
+    });
+    return opts.join("");
+  }
+
+  function strategyOptionsHtml(behaviourCodeOrBlank, selectedBody) {
+    var sel = String(selectedBody || "").trim();
+    var opts = ['<option value="">— Strategy library —</option>'];
+    (libraryCache.strategies || []).forEach(function (s) {
+      var on = sel && sel === String(s.body || "").trim();
+      opts.push(
+        '<option value="' +
+          esc(s.id) +
+          '" data-body="' +
+          esc(s.body) +
+          '" data-label="' +
+          esc(s.label) +
+          '"' +
+          (on ? " selected" : "") +
+          ">" +
+          esc(s.label) +
+          "</option>"
+      );
+    });
+    return opts.join("");
+  }
+
   function riskSelect(val, idx) {
     var v = String(val || "medium").toLowerCase();
     return (
@@ -122,10 +180,18 @@
       '<tr class="pfu-strat-row" data-i="' +
       idx +
       '">' +
-      '<td><input type="text" class="pfu-input" data-pfu-risk-beh placeholder="e.g. Leaving pool area" value="' +
+      "<td>" +
+      '<select class="pfu-input pfu-lib" data-pfu-beh-lib>' +
+      behaviourOptionsHtml(row.risk_behaviour) +
+      "</select>" +
+      '<input type="text" class="pfu-input" data-pfu-risk-beh placeholder="Or type a behaviour" value="' +
       esc(row.risk_behaviour || "") +
       '"></td>' +
-      '<td><textarea class="pfu-textarea pfu-textarea--sm" data-pfu-strat rows="2" placeholder="Strategy in place">' +
+      "<td>" +
+      '<select class="pfu-input pfu-lib" data-pfu-strat-lib>' +
+      strategyOptionsHtml(null, row.strategy_in_place) +
+      "</select>" +
+      '<textarea class="pfu-textarea pfu-textarea--sm" data-pfu-strat rows="2" placeholder="Or type a strategy">' +
       esc(row.strategy_in_place || "") +
       "</textarea></td>" +
       "<td>" +
@@ -397,6 +463,7 @@
       esc(f.lessons_learned || "") +
       "</textarea></label>" +
       '<p class="pfu-sec">Section 2 — Strategies for future sessions</p>' +
+      '<p class="pfu-muted">Pick from the behaviour / strategy library, or type custom text.</p>' +
       '<div class="pfu-table-wrap"><table class="pfu-table pfu-table--edit">' +
       "<thead><tr><th>Individual Risk / Behaviour</th><th>Strategy in Place</th><th>Risk Level</th><th></th></tr></thead>" +
       '<tbody data-pfu-strat-body>' +
@@ -554,6 +621,28 @@
     var host = wrap.firstChild;
     body.appendChild(host);
 
+    host.addEventListener("change", function (ev) {
+      var t = ev.target;
+      if (!t || !host.contains(t)) return;
+      if (t.matches && t.matches("[data-pfu-beh-lib]")) {
+        var opt = t.options[t.selectedIndex];
+        if (!opt || !opt.value) return;
+        var tr = t.closest(".pfu-strat-row");
+        if (!tr) return;
+        var beh = tr.querySelector("[data-pfu-risk-beh]");
+        var risk = tr.querySelector("[data-pfu-risk]");
+        if (beh) beh.value = opt.getAttribute("data-label") || "";
+        if (risk) risk.value = opt.getAttribute("data-risk") || "medium";
+      }
+      if (t.matches && t.matches("[data-pfu-strat-lib]")) {
+        var opt2 = t.options[t.selectedIndex];
+        if (!opt2 || !opt2.value) return;
+        var tr2 = t.closest(".pfu-strat-row");
+        if (!tr2) return;
+        var strat = tr2.querySelector("[data-pfu-strat]");
+        if (strat) strat.value = opt2.getAttribute("data-body") || "";
+      }
+    });
     host.addEventListener("click", function (ev) {
       var t =
         ev.target && ev.target.closest
@@ -567,6 +656,7 @@
     });
 
     try {
+      await ensureLibrary();
       await refresh(host, incidentRow.id);
     } catch (err) {
       setMsg(host, err && err.message ? err.message : "Could not load follow-up");

@@ -207,10 +207,31 @@ Deno.serve(async (req) => {
           source_followup_id: update.followup_id,
           activated_at: now,
           activated_by: userId,
+          reviewed_by: userId,
+          reviewed_by_name: profile.full_name || profile.email || "Instructor",
+          reviewed_at: now,
+          approved_by: update.created_by || null,
+          approved_by_name: null,
+          approved_at: update.created_by ? now : null,
         })
         .select("*")
         .maybeSingle();
       if (planErr) throw new Error(planErr.message);
+
+      // Resolve admin approver name if we have created_by
+      if (plan?.id && update.created_by) {
+        const { data: approver } = await admin
+          .from("staff_profiles")
+          .select("full_name, email")
+          .eq("id", update.created_by)
+          .maybeSingle();
+        await admin
+          .from("portal_support_plans")
+          .update({
+            approved_by_name: approver?.full_name || approver?.email || "Admin",
+          })
+          .eq("id", plan.id);
+      }
 
       if (items.length && plan?.id) {
         await admin.from("portal_support_plan_items").insert(

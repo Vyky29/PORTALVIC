@@ -3553,7 +3553,10 @@
         ].filter(Boolean).join(' · ');
         return `<article class="isp-card"><div class="isp-card__top"><strong class="isp-card__risk">${risk}</strong>${supportPlanRiskChip(it.risk_level)}</div><p class="isp-card__strat">${strat}</p><p class="isp-card__meta muted">${meta}</p></article>`;
       }).join('');
-      html += `<p class="isp-lead muted">Active support plan · last updated ${escapeHtml(formatIspWhen(plan.activated_at || plan.updated_at))}</p>${rows || '<p class="pcso-empty">Plan has no strategy rows yet.</p>'}</div>`;
+      html += `<p class="isp-lead muted">Active support plan · last updated ${escapeHtml(formatIspWhen(plan.activated_at || plan.updated_at))}` +
+        (plan.reviewed_by_name ? ` · Reviewed by ${escapeHtml(plan.reviewed_by_name)}` : '') +
+        (plan.approved_by_name ? ` · Approved by ${escapeHtml(plan.approved_by_name)}` : '') +
+        `</p>${rows || '<p class="pcso-empty">Plan has no strategy rows yet.</p>'}</div>`;
       host.innerHTML = html;
     }
     async function openClientSupportPlanFullscreen(){
