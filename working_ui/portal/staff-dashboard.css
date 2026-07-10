@@ -9114,14 +9114,22 @@
       min-height:0;
       overflow-y:auto;
     }
-    /* Individual Support Plan: full screen, no footer dock */
-    #clientSupportPlanSheet.open{
-      z-index:110;
+    /* Individual Support Plan: above dock (125), no footer — portrait + landscape */
+    #clientSupportPlanSheet.open,
+    #clientSupportPlanSheet.sheet--fullscreen.sheet--mobile-frame.open{
+      z-index:140;
     }
-    body.portal-client-support-plan-open .dock-bar{
+    body.portal-client-support-plan-open .dock-bar,
+    body:has(#clientSupportPlanSheet.open) .dock-bar{
       display:none !important;
+      visibility:hidden !important;
+      pointer-events:none !important;
+      height:0 !important;
+      max-height:0 !important;
+      overflow:hidden !important;
     }
-    body.portal-client-support-plan-open{
+    body.portal-client-support-plan-open,
+    body:has(#clientSupportPlanSheet.open){
       --fab-reserved-bottom:max(8px, env(safe-area-inset-bottom, 0px));
     }
     #clientSupportPlanSheet.sheet--fullscreen.open{
@@ -9139,6 +9147,30 @@
     }
     #clientSupportPlanSheet.sheet--fullscreen .sheet-body::-webkit-scrollbar{
       display:none;
+    }
+    /* Landscape: break out of 390px mobile frame — full viewport width */
+    @media (orientation: landscape){
+      #clientSupportPlanSheet.sheet--fullscreen.sheet--mobile-frame{
+        left:0;
+        right:0;
+        width:100%;
+        max-width:100%;
+        margin:0;
+        transform:translateY(100%);
+        border-left:none;
+        border-right:none;
+        box-shadow:none;
+      }
+      #clientSupportPlanSheet.sheet--fullscreen.sheet--mobile-frame.open{
+        transform:translateY(0);
+      }
+      #clientSupportPlanSheet .client-general-sheet-prose{
+        max-width:none;
+        width:100%;
+        box-sizing:border-box;
+        padding-left:max(8px, env(safe-area-inset-left, 0px));
+        padding-right:max(8px, env(safe-area-inset-right, 0px));
+      }
     }
     .client-general-sheet-head .client-general-back{
       display:block;
@@ -9330,6 +9362,15 @@
       pointer-events:none;
       transform:translateZ(0);
       isolation:isolate;
+    }
+    /* Re-assert after .dock-bar so ISP / General never leave the footer on top of the form */
+    body.portal-client-support-plan-open .dock-bar,
+    body:has(#clientSupportPlanSheet.open) .dock-bar,
+    body.portal-client-general-open .dock-bar,
+    body:has(#clientGeneralSheet.open) .dock-bar{
+      display:none !important;
+      visibility:hidden !important;
+      pointer-events:none !important;
     }
     .dock-bar__nav{
       position:relative;

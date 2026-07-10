@@ -3709,6 +3709,7 @@
       host.innerHTML = '<p class="pcso-empty" role="status">Loading…</p>';
       sheet.classList.add('open');
       sheet.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('portal-client-support-plan-open');
       if(backdropEl) backdropEl.classList.add('open');
       document.body.style.overflow = 'hidden';
       document.getElementById('clientBtnSupportPlan')?.setAttribute('aria-expanded', 'true');
