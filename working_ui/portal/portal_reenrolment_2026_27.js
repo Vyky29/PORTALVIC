@@ -613,6 +613,12 @@
   }
 
   function paymentPreviewNote(payCode, schedCode) {
+    if (payCode === "own_way_flexible" && schedCode === "own_year") {
+      return "You confirm the whole year. Pay by bank transfer, Card or Apple Pay when you can — not on our fixed due dates. Programme total stays the same, plus one £50 admin fee for the year. We will not ask you to re-confirm each term.";
+    }
+    if (payCode === "own_way_flexible" && schedCode === "own_term") {
+      return "You continue term by term on your own payment timing (bank transfer, Card or Apple Pay). Programme total stays the same, plus a £50 admin fee each term. Paying the full amount on or before a due date by Card / Apple Pay / bank transfer on a standard plan has no admin fee.";
+    }
     if (payCode === "gocardless" && schedCode === "monthly_term") {
       return "Same programme total — one direct payment per month of each term (Autumn 4, Spring 3, Summer 4 = 11). We set up your GoCardless agreement in July; GoCardless collects the first payment on 1 September and it reaches us around 5–6 September, then on the 1st of each month.";
     }
@@ -620,7 +626,7 @@
       return "Same programme total — the first payment is due by 15 August 2026, then two bank transfers per term: one before half term starts, one during half-term week before the second half. The office confirms your final invoice plan.";
     }
     if (payCode === "bank_transfer") {
-      return "Same programme total — the first payment (term, one-off or full year) is due by 15 August 2026 so it reaches us before term; later payments follow each term. The office confirms your final invoice plan.";
+      return "Same programme total — the first payment (term, one-off or full year) is due by 15 August 2026 so it reaches us before term; later payments follow each term. Paying on or before each due date (including Card / Apple Pay when offered) has no admin fee.";
     }
     return "Same programme total — compare due dates below. The office confirms your final invoice plan before term starts.";
   }
@@ -633,14 +639,77 @@
     if (!isParentPaysPanel(fundCode)) return "";
     var payCode = payEl ? payEl.value : "bank_transfer";
     var schedCode = schedEl ? schedEl.value : null;
-    if (payCode !== "bank_transfer" && payCode !== "gocardless") return "";
+    if (payCode !== "bank_transfer" && payCode !== "gocardless" && payCode !== "own_way_flexible") {
+      return "";
+    }
     if (!schedCode) return "";
     var annual = resolveAnnualWeeklyTotal(data);
     var fee = adminFeeApplies(payCode);
+    var feeTotal = adminFeeTotalForSchedule(payCode, schedCode);
     function amt(base) {
       var n = Number(base);
       if (!Number.isFinite(n) || n <= 0) return "—";
-      return money(fee ? n + RE_ADMIN_FEE_PER_INSTALLMENT : n);
+      if (payCode === "gocardless" && fee) {
+        return money(n + RE_ADMIN_FEE_GC_PER_INSTALLMENT);
+      }
+      return money(n);
+    }
+    if (payCode === "own_way_flexible") {
+      var ownRows = [];
+      if (schedCode === "own_year") {
+        ownRows.push({
+          label: "Programme total (year)",
+          due: "Your own timing",
+          amount: money(annual),
+        });
+        ownRows.push({
+          label: "Admin fee (own arrangement · year)",
+          due: "With first payment",
+          amount: money(RE_ADMIN_FEE_OWN),
+        });
+      } else {
+        ["Autumn", "Spring", "Summer"].forEach(function (label, i) {
+          var termKey = i === 0 ? "autumn" : i === 1 ? "spring" : "summer";
+          ownRows.push({
+            label: label + " term · programme",
+            due: "Your own timing",
+            amount: money(termProgrammeTotal(data, termKey)),
+          });
+          ownRows.push({
+            label: label + " term · admin fee",
+            due: "Each term",
+            amount: money(RE_ADMIN_FEE_OWN),
+          });
+        });
+      }
+      return (
+        '<div class="re-pay-preview">' +
+        '<h4 class="re-pay-preview__title">Indicative totals</h4>' +
+        '<p class="re-muted re-pay-preview__note">' +
+        esc(paymentPreviewNote(payCode, schedCode)) +
+        (feeTotal > 0
+          ? " Admin fees add " + money(feeTotal) + " over the year (indicative total " + money(annual + feeTotal) + ")."
+          : "") +
+        "</p>" +
+        '<ul class="re-pay-preview-list">' +
+        ownRows
+          .map(function (r) {
+            return (
+              '<li class="re-pay-preview-list__row">' +
+              '<span class="re-pay-preview-list__label">' +
+              esc(r.label) +
+              "</span>" +
+              '<span class="re-pay-preview-list__due">' +
+              esc(r.due) +
+              "</span>" +
+              '<span class="re-pay-preview-list__amt">' +
+              esc(r.amount) +
+              "</span></li>"
+            );
+          })
+          .join("") +
+        "</ul></div>"
+      );
     }
     var bankFirstDue =
       payCode === "bank_transfer" ? RE_BANK_FIRST_DUE : dueOnFirst("September 2026");
@@ -726,9 +795,9 @@
       '<h4 class="re-pay-preview__title">Indicative payment schedule</h4>' +
       '<p class="re-muted re-pay-preview__note">' +
       esc(paymentPreviewNote(payCode, schedCode)) +
-      (fee
+      (fee && payCode === "gocardless"
         ? " Each payment shown includes the " +
-          money(RE_ADMIN_FEE_PER_INSTALLMENT) +
+          money(RE_ADMIN_FEE_GC_PER_INSTALLMENT) +
           " Direct Payment admin fee."
         : "") +
       "</p>" +
@@ -1199,7 +1268,10 @@
     return payCode === "gocardless" || payCode === "own_way_flexible";
   }
 
-  var RE_ADMIN_FEE_PER_INSTALLMENT = 1.5;
+  /** GoCardless / Direct Payment: small per-instalment fee. */
+  var RE_ADMIN_FEE_GC_PER_INSTALLMENT = 1.5;
+  /** Own arrangement: only when the family cannot meet fixed due dates / full amount on time. */
+  var RE_ADMIN_FEE_OWN = 50;
 
   function installmentCountForSchedule(scheduleCode) {
     if (scheduleCode === "monthly_term") return 11;
@@ -1207,12 +1279,24 @@
     if (scheduleCode === "term_flexi") return 6;
     if (scheduleCode === "term_3") return 3;
     if (scheduleCode === "yearly_1off") return 1;
+    if (scheduleCode === "own_year") return 1;
+    if (scheduleCode === "own_term") return 3;
     return 1;
   }
 
   function adminFeeTotalForSchedule(payCode, scheduleCode) {
     if (!adminFeeApplies(payCode)) return 0;
-    return RE_ADMIN_FEE_PER_INSTALLMENT * installmentCountForSchedule(scheduleCode);
+    if (payCode === "own_way_flexible") {
+      if (scheduleCode === "own_year") return RE_ADMIN_FEE_OWN;
+      if (scheduleCode === "own_term") return RE_ADMIN_FEE_OWN * 3;
+      return RE_ADMIN_FEE_OWN;
+    }
+    return RE_ADMIN_FEE_GC_PER_INSTALLMENT * installmentCountForSchedule(scheduleCode);
+  }
+
+  function isAutoContinueSchedule(payCode, scheduleCode) {
+    if (payCode === "own_way_flexible" && scheduleCode === "own_year") return true;
+    return isAllYearScheduleCode(scheduleCode);
   }
 
   function initBilling2627State(data) {
@@ -1245,9 +1329,15 @@
     var payText = formatCurrentPaymentMethodLabel(cur.payment_method) || "—";
     var feeNote =
       '<p class="re-billing-ref-note re-billing-ref-fee">' +
-      "<strong>Fees:</strong> for 2026/27, if you continue with Direct Payment (GoCardless), each installment adds a " +
-      money(RE_ADMIN_FEE_PER_INSTALLMENT) +
-      " fee to cover costs. Bank transfer has no fee." +
+      "<strong>Fees:</strong> standard plans (bank transfer or Card / Apple Pay on or before due dates) have <strong>no admin fee</strong>. " +
+      "Direct Payment (GoCardless) adds " +
+      money(RE_ADMIN_FEE_GC_PER_INSTALLMENT) +
+      " per instalment. " +
+      "<strong>Own arrangement</strong> (cannot meet our payment dates or pay the full amount on time) adds " +
+      money(RE_ADMIN_FEE_OWN) +
+      " once for the year, or " +
+      money(RE_ADMIN_FEE_OWN) +
+      " each term." +
       "</p>";
     return (
       '<div class="re-funding-current">' +
@@ -1387,13 +1477,27 @@
       '<div id="reBillingPaySection"' +
       (b.editing ? " hidden" : "") +
       ">" +
-      '<p class="re-muted re-billing-plan-intro">The total above covers your confirmed sessions for the year. Choose how you would like invoices timed — the programme total stays the same.</p>' +
-      '<p class="re-billing-plan-newnote"><strong>New for 2026/27:</strong> you can now confirm the <strong>whole year</strong> in one go. Most families are used to paying each term — that option is still here — but settling the year up front means nothing to re-confirm next term, which saves time for you and for our office.</p>' +
+      '<p class="re-muted re-billing-plan-intro">The total above covers your confirmed sessions for the year. Choose a <strong>standard plan</strong> with fixed due dates (no admin fee if you pay on time — including Card / Apple Pay), or <strong>Own arrangement</strong> only if you cannot meet those dates or pay the full amount when due (+ £50).</p>' +
+      '<p class="re-billing-plan-newnote"><strong>New for 2026/27:</strong> you can confirm the <strong>whole year</strong> in one go. We then treat you as continuing each term automatically — we will not ask again unless you tell us otherwise. Term-by-term options are still available.</p>' +
       '<div id="rePanelPrivate" class="re-funding-panel">' +
       '<div id="rePayScheduleWrap" class="re-pay-schedule-wrap">' +
       renderPayScheduleFieldset(payCode, scheduleDefault) +
       "</div>" +
       '<div id="rePaySchedulePreview" class="re-pay-preview-host" hidden></div>' +
+      '<div id="reAdminFeeNote" class="re-funding-fee"' +
+      (adminFeeApplies(payCode) ? "" : " hidden") +
+      ">" +
+      "<strong>Admin fee</strong>" +
+      '<span id="reAdminFeeAmount"></span>' +
+      "</div>" +
+      '<div id="reOwnWayNote" class="re-funding-fee re-funding-fee--own"' +
+      (payCode === "own_way_flexible" ? "" : " hidden") +
+      ">" +
+      "<strong>Own arrangement</strong>" +
+      "Only if you cannot pay the full amount on our published due dates (or do not have funds ready then). " +
+      "Paying on time by bank transfer, Card or Apple Pay on a standard plan has <strong>no</strong> £50 fee. " +
+      "Overpayments are kept as credit." +
+      "</div>" +
       '<div id="reDirectPayFailNote" class="re-funding-fee re-funding-fee--fail"' +
       (payCode === "gocardless" ? "" : " hidden") +
       ">" +
@@ -1418,7 +1522,9 @@
   }
 
   function normalizePayMethodChoice(code) {
-    return code === "gocardless" ? "gocardless" : "bank_transfer";
+    if (code === "gocardless") return "gocardless";
+    if (code === "own_way_flexible") return "own_way_flexible";
+    return "bank_transfer";
   }
 
   function vatLabelForFunding(fundCode) {
@@ -1426,8 +1532,12 @@
   }
 
   var RE_PRIVATE_PAY_METHODS = [
-    { code: "bank_transfer", label: "Bank Transfer" },
-    { code: "gocardless", label: "Direct Payment (GoCardless)" },
+    { code: "bank_transfer", label: "Bank Transfer (fixed due dates)" },
+    { code: "gocardless", label: "Direct Payment (GoCardless · monthly)" },
+    {
+      code: "own_way_flexible",
+      label: "Own arrangement — cannot meet payment dates (+ £50)",
+    },
   ];
 
   var RE_FUNDING_OPTIONS = [
@@ -1450,26 +1560,42 @@
         label: "Monthly by term — 11 payments across the year",
       },
     ],
+    own_way_flexible: [
+      {
+        code: "own_year",
+        label: "Whole year — own payment timing (+ £50 once)",
+      },
+      {
+        code: "own_term",
+        label: "Term by term — own payment timing (+ £50 each term)",
+      },
+    ],
   };
 
   function scheduleOptionHint(code, payCode) {
+    if (code === "own_year") {
+      return "For families who cannot pay the full amount on our fixed due dates. Confirm the year once; pay by bank transfer, Card or Apple Pay when you can. One £50 admin fee for the year. We will not ask you to re-confirm each term.";
+    }
+    if (code === "own_term") {
+      return "For families who cannot meet our due dates. Continue term by term on your own timing (bank / Card / Apple Pay). £50 admin fee each term. If you can pay the full amount on time on a standard plan, choose Bank Transfer or GoCardless instead — no £50 fee.";
+    }
     if (code === "yearly_1off") {
-      return "New this year — confirm the full academic year in one step. One bank transfer due by 15 August 2026, same programme total, nothing to re-confirm each term.";
+      return "Confirm the full academic year in one step. One bank transfer due by 15 August 2026, same programme total. We treat you as continuing each term automatically — no re-confirmation unless you tell us otherwise. Paying on time (or by Card / Apple Pay when offered) has no admin fee.";
     }
     if (code === "monthly_term") {
-      return "One direct payment per month of each term — Autumn 4, Spring 3, Summer 4 (11 across the year). We set up your GoCardless agreement in July; GoCardless collects the first payment on 1 September and it reaches us around 5–6 September, then on the 1st of each month. Same programme total, nothing to re-confirm each term.";
+      return "One direct payment per month of each term — Autumn 4, Spring 3, Summer 4 (11 across the year). We set up your GoCardless agreement in July; GoCardless collects the first payment on 1 September and it reaches us around 5–6 September, then on the 1st of each month. Same programme total; we will not ask you to re-confirm each term.";
     }
     if (code === "monthly_10") {
       return "New this year — one year agreement with 10 payments on the 1st of each month, September–June, by direct payment. Same programme total, and no termly re-confirmation.";
     }
     if (code === "term_flexi") {
-      return "Six bank transfers over the year — the first due by 15 August 2026, then two per term: before half term starts, and during half-term week before the second half. Same programme total.";
+      return "Six bank transfers over the year — the first due by 15 August 2026, then two per term: before half term starts, and during half-term week before the second half. Same programme total. Pay each amount on or before the due date (Card / Apple Pay when offered) — no admin fee.";
     }
     if (code === "term_3" && payCode === "gocardless") {
       return "Three term payments on 1 September, 1 December and 1 March by direct payment — same programme total over the year.";
     }
     if (code === "term_3") {
-      return "Three bank transfers — the first due by 15 August 2026, then 1 December and 1 March — one invoice per term, same programme total over the year.";
+      return "Three bank transfers — the first due by 15 August 2026, then 1 December and 1 March — one invoice per term, same programme total over the year. On-time payment (including Card / Apple Pay when offered) has no admin fee.";
     }
     return "";
   }
@@ -1491,12 +1617,18 @@
 
   function defaultScheduleForPay(payCode) {
     if (payCode === "gocardless") return "monthly_term";
+    if (payCode === "own_way_flexible") return "own_year";
     if (payCode === "bank_transfer") return "term_flexi";
     return "term_3";
   }
 
   function isAllYearScheduleCode(code) {
-    return code === "monthly_term" || code === "monthly_10" || code === "yearly_1off";
+    return (
+      code === "monthly_term" ||
+      code === "monthly_10" ||
+      code === "yearly_1off" ||
+      code === "own_year"
+    );
   }
 
   function mapScheduleCode(rawPay, fundingRaw) {
@@ -1544,7 +1676,10 @@
   }
 
   function scheduleLabel(code) {
-    var all = (RE_SCHEDULE_OPTIONS.bank_transfer || []).concat(RE_SCHEDULE_OPTIONS.gocardless || []);
+    var all = []
+      .concat(RE_SCHEDULE_OPTIONS.bank_transfer || [])
+      .concat(RE_SCHEDULE_OPTIONS.gocardless || [])
+      .concat(RE_SCHEDULE_OPTIONS.own_way_flexible || []);
     for (var i = 0; i < all.length; i++) {
       if (all[i].code === code) return all[i].label;
     }
@@ -1554,14 +1689,26 @@
   function renderPrivatePayMethodRadios(defaultCode) {
     return RE_PRIVATE_PAY_METHODS.map(function (o) {
       var checked = o.code === defaultCode ? " checked" : "";
+      var hint =
+        o.code === "own_way_flexible"
+          ? "Only if you cannot pay the full amount on our due dates. On-time Card / Apple Pay / bank transfer on a standard plan = no £50 fee."
+          : o.code === "bank_transfer"
+            ? "Fixed due dates. Pay on time by bank transfer (or Card / Apple Pay when offered) — no admin fee."
+            : "Monthly Direct Debit. Small per-instalment fee.";
       return (
-        '<label class="re-radio"><input type="radio" name="re_pay_2627" value="' +
+        '<label class="re-radio re-radio--pay-method">' +
+        '<input type="radio" name="re_pay_2627" value="' +
         esc(o.code) +
         '"' +
         checked +
-        " /> " +
+        " />" +
+        '<span class="re-radio--schedule__body">' +
+        '<span class="re-radio--schedule__title">' +
         esc(o.label) +
-        "</label>"
+        "</span>" +
+        '<span class="re-radio--schedule__hint">' +
+        esc(hint) +
+        "</span></span></label>"
       );
     }).join("");
   }
@@ -1673,9 +1820,16 @@
     if (schedWrap) {
       var prev = document.querySelector('input[name="re_pay_schedule_2627"]:checked');
       var prevVal = prev ? prev.value : null;
-      if (payCode === "bank_transfer" || payCode === "gocardless") {
-        var fallbackSched = payCode === "gocardless" ? "monthly_term" : "term_3";
-        schedWrap.innerHTML = renderPayScheduleFieldset(payCode, prevVal || fallbackSched);
+      if (payCode === "bank_transfer" || payCode === "gocardless" || payCode === "own_way_flexible") {
+        var fallbackSched = defaultScheduleForPay(payCode);
+        var opts = RE_SCHEDULE_OPTIONS[payCode] || [];
+        var keepPrev = opts.some(function (o) {
+          return o.code === prevVal;
+        });
+        schedWrap.innerHTML = renderPayScheduleFieldset(
+          payCode,
+          keepPrev ? prevVal : fallbackSched,
+        );
         schedWrap.hidden = false;
       } else {
         schedWrap.innerHTML = "";
@@ -1685,6 +1839,8 @@
     updateAdminFeeAmount();
     var failNote = $("reDirectPayFailNote");
     if (failNote) failNote.hidden = payCode !== "gocardless";
+    var ownNote = $("reOwnWayNote");
+    if (ownNote) ownNote.hidden = payCode !== "own_way_flexible";
     syncPaymentSchedulePreview();
   }
 
@@ -1699,23 +1855,36 @@
     if (!feeAmt) return;
     if (adminFeeApplies(payCode) && annual > 0) {
       var schedEl = document.querySelector('input[name="re_pay_schedule_2627"]:checked');
-      var schedCode = schedEl
-        ? schedEl.value
-        : payCode === "gocardless"
-          ? "monthly_term"
-          : "term_3";
-      var n = installmentCountForSchedule(schedCode);
+      var schedCode = schedEl ? schedEl.value : defaultScheduleForPay(payCode);
       var feeTotal = adminFeeTotalForSchedule(payCode, schedCode);
-      feeAmt.textContent =
-        " — " +
-        money(RE_ADMIN_FEE_PER_INSTALLMENT) +
-        " × " +
-        n +
-        " = " +
-        money(feeTotal) +
-        " per year (indicative total " +
-        money(annual + feeTotal) +
-        ")";
+      if (payCode === "own_way_flexible") {
+        feeAmt.textContent =
+          schedCode === "own_term"
+            ? " — " +
+              money(RE_ADMIN_FEE_OWN) +
+              " × 3 terms = " +
+              money(feeTotal) +
+              " (indicative total " +
+              money(annual + feeTotal) +
+              ")"
+            : " — " +
+              money(RE_ADMIN_FEE_OWN) +
+              " once for the year (indicative total " +
+              money(annual + feeTotal) +
+              ")";
+      } else {
+        var n = installmentCountForSchedule(schedCode);
+        feeAmt.textContent =
+          " — " +
+          money(RE_ADMIN_FEE_GC_PER_INSTALLMENT) +
+          " × " +
+          n +
+          " = " +
+          money(feeTotal) +
+          " per year (indicative total " +
+          money(annual + feeTotal) +
+          ")";
+      }
     } else {
       feeAmt.textContent = "";
     }
@@ -1840,15 +2009,16 @@
     );
     var schedEl = document.querySelector('input[name="re_pay_schedule_2627"]:checked');
     var scheduleCode =
-      schedEl && (payCode === "bank_transfer" || payCode === "gocardless")
+      schedEl &&
+      (payCode === "bank_transfer" ||
+        payCode === "gocardless" ||
+        payCode === "own_way_flexible")
         ? schedEl.value
-        : payCode === "gocardless"
-          ? "monthly_term"
-          : payCode === "bank_transfer"
-            ? "term_3"
-            : null;
+        : defaultScheduleForPay(payCode);
     var vatCode = isDirectPayments(fundCode) ? "exempt" : "vat_included";
     var fee = adminFeeApplies(payCode);
+    var feeTotal = fee ? adminFeeTotalForSchedule(payCode, scheduleCode) : 0;
+    var autoContinue = isAutoContinueSchedule(payCode, scheduleCode);
     return {
       current_2526: cur,
       choices_2627: {
@@ -1862,20 +2032,30 @@
         invoice_type_code: vatCode,
         invoice_type_label: vatLabelForFunding(fundCode),
         admin_fee_applies: fee,
-        admin_fee_total: fee ? adminFeeTotalForSchedule(payCode, scheduleCode) : 0,
+        admin_fee_total: feeTotal,
+        admin_fee_reason:
+          payCode === "own_way_flexible"
+            ? "own_arrangement_cannot_meet_due_dates"
+            : payCode === "gocardless"
+              ? "gocardless_instalment"
+              : null,
+        auto_continue: autoContinue,
+        auto_continue_note: autoContinue
+          ? "We will treat this place as continuing each term with the same arrangement unless you tell us otherwise."
+          : null,
         estimated_annual_total: annualTotal,
         estimated_total_with_admin_fee:
-          fee && annualTotal > 0
-            ? annualTotal + adminFeeTotalForSchedule(payCode, scheduleCode)
-            : null,
+          fee && annualTotal > 0 ? annualTotal + feeTotal : null,
         billing_schedule:
-          scheduleCode === "yearly_1off"
+          scheduleCode === "yearly_1off" || scheduleCode === "own_year"
             ? "yearly"
             : scheduleCode === "monthly_term" || scheduleCode === "monthly_10"
               ? "monthly"
               : scheduleCode === "term_flexi"
                 ? "term_flexi"
-                : "term",
+                : scheduleCode === "own_term"
+                  ? "own_term"
+                  : "term",
       },
     };
   }

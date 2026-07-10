@@ -141,6 +141,10 @@ export function buildReenrolmentParentSummary(
     const pay = clean(funding2627.payment_method_label, 80);
     const sched = clean(funding2627.payment_schedule_label, 80);
     const bits = [fund, pay, sched].filter(Boolean);
+    if (funding2627.auto_continue) bits.push("Auto-continue each term");
+    if (funding2627.admin_fee_applies && Number(funding2627.admin_fee_total) > 0) {
+      bits.push("Admin fee £" + Number(funding2627.admin_fee_total).toFixed(2));
+    }
     if (bits.length) {
       items.push({
         label: "Funding & payment 2026/27",
