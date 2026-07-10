@@ -82,16 +82,18 @@ function wrapLines(text: string, font: PDFFont, size: number, maxWidth: number):
   return lines;
 }
 
-type IconKind = "camera" | "pill" | "emergency" | "travel";
+type SectionIconKind = "camera" | "pill" | "emergency" | "travel";
+type RowIconKind = "check" | "cross" | "sign" | "contact" | "walk" | "bus" | "taxi" | "answer";
 
 function drawSectionIcon(
   page: PDFPage,
-  kind: IconKind,
+  kind: SectionIconKind,
   x: number,
   yCenter: number,
   fill: RGB,
+  radius = 11,
 ): void {
-  const r = 10;
+  const r = radius;
   page.drawCircle({
     x: x + r,
     y: yCenter,
@@ -99,69 +101,173 @@ function drawSectionIcon(
     color: fill,
   });
   const white = rgb(1, 1, 1);
-  // Simple white glyphs inside the circle (paths relative to icon centre).
   if (kind === "camera") {
     page.drawRectangle({
       x: x + 5,
       y: yCenter - 4,
-      width: 10,
-      height: 7,
+      width: 12,
+      height: 8,
       borderColor: white,
       borderWidth: 1.2,
       color: fill,
     });
     page.drawCircle({
       x: x + r,
-      y: yCenter - 0.5,
-      size: 2.2,
+      y: yCenter - 0.2,
+      size: 2.4,
       borderColor: white,
       borderWidth: 1.1,
       color: fill,
     });
   } else if (kind === "pill") {
     page.drawRectangle({
-      x: x + 6,
-      y: yCenter - 5,
+      x: x + 7,
+      y: yCenter - 5.5,
       width: 8,
-      height: 10,
+      height: 11,
       borderColor: white,
       borderWidth: 1.2,
       color: fill,
     });
   } else if (kind === "emergency") {
     page.drawRectangle({
-      x: x + r - 1.2,
-      y: yCenter - 5,
-      width: 2.4,
-      height: 10,
+      x: x + r - 1.3,
+      y: yCenter - 5.5,
+      width: 2.6,
+      height: 11,
       color: white,
     });
     page.drawRectangle({
-      x: x + 5,
-      y: yCenter - 1.2,
-      width: 10,
-      height: 2.4,
+      x: x + 5.5,
+      y: yCenter - 1.3,
+      width: 11,
+      height: 2.6,
       color: white,
     });
   } else {
-    // travel / map pin-ish
     page.drawCircle({
       x: x + r,
-      y: yCenter + 1.5,
-      size: 3.2,
+      y: yCenter + 1.8,
+      size: 3.4,
       borderColor: white,
       borderWidth: 1.2,
       color: fill,
     });
     page.drawRectangle({
-      x: x + r - 1,
-      y: yCenter - 6,
-      width: 2,
-      height: 5,
+      x: x + r - 1.1,
+      y: yCenter - 6.5,
+      width: 2.2,
+      height: 5.5,
       color: white,
     });
   }
 }
+
+function drawRowIcon(
+  page: PDFPage,
+  kind: RowIconKind,
+  x: number,
+  yCenter: number,
+  accent: RGB,
+): void {
+  const r = 6.5;
+  const soft = rgb(
+    Math.min(1, accent.red + 0.55),
+    Math.min(1, accent.green + 0.55),
+    Math.min(1, accent.blue + 0.55),
+  );
+  page.drawCircle({
+    x: x + r,
+    y: yCenter,
+    size: r,
+    color: soft,
+  });
+  const ink = accent;
+  if (kind === "check") {
+    page.drawRectangle({ x: x + 4, y: yCenter - 1, width: 3, height: 1.4, color: ink });
+    page.drawRectangle({ x: x + 6.2, y: yCenter - 2.5, width: 1.4, height: 6, color: ink });
+  } else if (kind === "cross") {
+    page.drawRectangle({ x: x + r - 0.7, y: yCenter - 3.5, width: 1.4, height: 7, color: ink });
+    page.drawRectangle({ x: x + 3.5, y: yCenter - 0.7, width: 7, height: 1.4, color: ink });
+  } else if (kind === "sign") {
+    page.drawRectangle({
+      x: x + 4,
+      y: yCenter - 3.5,
+      width: 5.5,
+      height: 7,
+      borderColor: ink,
+      borderWidth: 1,
+      color: soft,
+    });
+    page.drawRectangle({ x: x + 5, y: yCenter + 1.5, width: 3.5, height: 1, color: ink });
+    page.drawRectangle({ x: x + 5, y: yCenter - 0.5, width: 3.5, height: 1, color: ink });
+  } else if (kind === "contact") {
+    page.drawCircle({
+      x: x + r,
+      y: yCenter + 1.8,
+      size: 2,
+      color: ink,
+    });
+    page.drawRectangle({
+      x: x + 4.2,
+      y: yCenter - 4,
+      width: 4.6,
+      height: 3.2,
+      color: ink,
+    });
+  } else if (kind === "walk") {
+    page.drawCircle({ x: x + r, y: yCenter + 2.4, size: 1.6, color: ink });
+    page.drawRectangle({ x: x + r - 0.7, y: yCenter - 2.5, width: 1.4, height: 4.2, color: ink });
+    page.drawRectangle({ x: x + 3.8, y: yCenter - 0.2, width: 5.5, height: 1.2, color: ink });
+  } else if (kind === "bus") {
+    page.drawRectangle({
+      x: x + 3.5,
+      y: yCenter - 3.2,
+      width: 6.5,
+      height: 6.2,
+      borderColor: ink,
+      borderWidth: 1,
+      color: soft,
+    });
+    page.drawRectangle({ x: x + 4.5, y: yCenter + 0.5, width: 1.8, height: 1.5, color: ink });
+    page.drawRectangle({ x: x + 7, y: yCenter + 0.5, width: 1.8, height: 1.5, color: ink });
+  } else if (kind === "taxi") {
+    page.drawRectangle({
+      x: x + 3.2,
+      y: yCenter - 2.2,
+      width: 7,
+      height: 3.8,
+      borderColor: ink,
+      borderWidth: 1,
+      color: soft,
+    });
+    page.drawRectangle({ x: x + 4.5, y: yCenter + 1.4, width: 4.4, height: 1.6, color: ink });
+  } else {
+    // answer / generic
+    page.drawRectangle({
+      x: x + 4,
+      y: yCenter - 3,
+      width: 5.5,
+      height: 6,
+      borderColor: ink,
+      borderWidth: 1,
+      color: soft,
+    });
+  }
+}
+
+type DetailRow = {
+  icon: RowIconKind;
+  label: string;
+  value: string;
+};
+
+type Block = {
+  icon: SectionIconKind;
+  iconColor: RGB;
+  title: string;
+  rows: DetailRow[];
+};
 
 export async function buildPortalConsentsPdf(
   input: PortalConsentsPdfInput,
@@ -245,7 +351,6 @@ export async function buildPortalConsentsPdf(
     ["Valid until", formatUkDate(input.validUntilIso) || "—"],
   ];
   if (input.parentName) meta.splice(2, 0, ["Parent / carer", input.parentName]);
-  // Meta values must stay smaller than the document title (titleSize).
   const metaLabelSize = 8;
   const metaValueSize = 9;
   for (const [label, value] of meta) {
@@ -260,24 +365,17 @@ export async function buildPortalConsentsPdf(
     });
     y -= 13;
   }
-  y -= 10;
+  y -= 14;
 
-  type Block = {
-    icon: IconKind;
-    iconColor: RGB;
-    title: string;
-    lines: string[];
-  };
-
-  const photoLine =
+  const photoValue =
     input.photoConsent === "yes"
       ? "YES — allow wider use (website, marketing, staff training, research / resources)."
       : "NO — progress & family portal only (no wider marketing use).";
-  const medLine =
+  const medValue =
     input.medicationNeeded === "yes"
       ? `YES — medication left at the centre. Details: ${input.medicationDetails || "—"}`
       : "NO — no medication left at the centre.";
-  const emergencyLine =
+  const emergencyValue =
     input.emergencyConsent === "yes"
       ? "YES — emergency treatment may be arranged if needed."
       : "NO — do not arrange emergency treatment without further contact.";
@@ -287,46 +385,88 @@ export async function buildPortalConsentsPdf(
       icon: "camera",
       iconColor: rgb(0.49, 0.23, 0.93),
       title: "Photo & media for marketing",
-      lines: [photoLine, `Signed by: ${input.photoSigner || "—"}`],
+      rows: [
+        {
+          icon: input.photoConsent === "yes" ? "check" : "cross",
+          label: "Consent:",
+          value: photoValue,
+        },
+        { icon: "sign", label: "Signed by:", value: input.photoSigner || "—" },
+      ],
     },
     {
       icon: "pill",
       iconColor: rgb(0.06, 0.46, 0.43),
       title: "Medication at the centre",
-      lines: [medLine, `Signed by: ${input.medicationSigner || "—"}`],
+      rows: [
+        {
+          icon: input.medicationNeeded === "yes" ? "check" : "cross",
+          label: "Medication:",
+          value: medValue,
+        },
+        { icon: "sign", label: "Signed by:", value: input.medicationSigner || "—" },
+      ],
     },
     {
       icon: "emergency",
       iconColor: rgb(0.73, 0.11, 0.11),
       title: "Emergency treatment",
-      lines: [
-        emergencyLine,
-        `Emergency contact: ${input.emergencyContactName || "—"} · ${input.emergencyContactPhone || "—"}`,
-        `Signed by: ${input.emergencySigner || "—"}`,
+      rows: [
+        {
+          icon: input.emergencyConsent === "yes" ? "check" : "cross",
+          label: "Consent:",
+          value: emergencyValue,
+        },
+        {
+          icon: "contact",
+          label: "Emergency contact:",
+          value: `${input.emergencyContactName || "—"} · ${input.emergencyContactPhone || "—"}`,
+        },
+        { icon: "sign", label: "Signed by:", value: input.emergencySigner || "—" },
       ],
     },
     {
       icon: "travel",
       iconColor: rgb(0.11, 0.39, 0.85),
       title: "Off-site & transport",
-      lines: [
-        `Community walk: ${yn(input.communityWalk)}`,
-        `Public transport: ${yn(input.publicTransport)}`,
-        `Taxi home with PA: ${yn(input.taxiHome)}`,
-        `Signed by: ${input.offsiteSigner || "—"}`,
+      rows: [
+        { icon: "walk", label: "Community walk:", value: yn(input.communityWalk) },
+        { icon: "bus", label: "Public transport:", value: yn(input.publicTransport) },
+        { icon: "taxi", label: "Taxi home with PA:", value: yn(input.taxiHome) },
+        { icon: "sign", label: "Signed by:", value: input.offsiteSigner || "—" },
       ],
     },
   ];
 
-  const contentWidth = right - left - 12;
+  const boxPadX = 12;
+  const boxInnerLeft = left + boxPadX;
+  const rowIconW = 18;
+  const labelGap = 6;
+  const valueSize = 9;
+  const labelSize = 9;
+  const titleSizeBlock = 11;
+  const sectionIconR = 11;
+  const gapBetweenBoxes = 16;
+
   for (const block of blocks) {
-    const wrapped: string[] = [];
-    for (const line of block.lines) {
-      wrapped.push(...wrapLines(line, font, 9, contentWidth - 8));
+    // Measure rows (label bold + value wrapped).
+    const measured: Array<{
+      row: DetailRow;
+      valueLines: string[];
+      labelW: number;
+    }> = [];
+    let rowsH = 0;
+    for (const row of block.rows) {
+      const labelW = fontBold.widthOfTextAtSize(row.label, labelSize);
+      const valueMax = right - boxInnerLeft - rowIconW - labelGap - labelW - labelGap - boxPadX;
+      const valueLines = wrapLines(row.value, font, valueSize, Math.max(40, valueMax));
+      measured.push({ row, valueLines, labelW });
+      rowsH += Math.max(14, valueLines.length * 12) + 4;
     }
-    const bodyH = wrapped.length * 12;
-    const boxH = 28 + bodyH + 12;
-    if (y - boxH < 48) break;
+
+    const headerH = sectionIconR * 2 + 8 + titleSizeBlock + 10;
+    const boxH = 14 + headerH + rowsH + 10;
+    if (y - boxH < 52) break;
 
     const boxBottom = y - boxH;
     page.drawRectangle({
@@ -339,30 +479,64 @@ export async function buildPortalConsentsPdf(
       color: rgb(0.985, 0.985, 0.99),
     });
 
-    const titleY = y - 18;
-    drawSectionIcon(page, block.icon, left + 6, titleY + 3, block.iconColor);
+    // Section icon centred above the big title.
+    let cy = y - 14 - sectionIconR;
+    const iconX = left + (right - left) / 2 - sectionIconR;
+    drawSectionIcon(page, block.icon, iconX, cy, block.iconColor, sectionIconR);
+    cy -= sectionIconR + 8;
+
+    const titleW = fontBold.widthOfTextAtSize(block.title, titleSizeBlock);
+    const titleX = left + Math.max(0, (right - left - titleW) / 2);
     page.drawText(block.title, {
-      x: left + 32,
-      y: titleY,
-      size: 11,
+      x: titleX,
+      y: cy - 2,
+      size: titleSizeBlock,
       font: fontBold,
       color: ink,
-      maxWidth: contentWidth - 28,
     });
+    cy -= titleSizeBlock + 12;
 
-    let ly = titleY - 16;
-    for (const line of wrapped) {
-      page.drawText(line, {
-        x: left + 8,
-        y: ly,
-        size: 9,
-        font,
+    for (const m of measured) {
+      const rowH = Math.max(14, m.valueLines.length * 12);
+      const rowMid = cy - 3;
+      drawRowIcon(page, m.row.icon, boxInnerLeft, rowMid, block.iconColor);
+
+      const textX = boxInnerLeft + rowIconW;
+      page.drawText(m.row.label, {
+        x: textX,
+        y: cy - 2,
+        size: labelSize,
+        font: fontBold,
         color: ink,
-        maxWidth: contentWidth,
       });
-      ly -= 12;
+
+      let vx = textX + m.labelW + labelGap;
+      let vy = cy - 2;
+      for (let i = 0; i < m.valueLines.length; i++) {
+        if (i === 0) {
+          page.drawText(m.valueLines[i], {
+            x: vx,
+            y: vy,
+            size: valueSize,
+            font,
+            color: ink,
+          });
+        } else {
+          page.drawText(m.valueLines[i], {
+            x: textX,
+            y: vy,
+            size: valueSize,
+            font,
+            color: ink,
+            maxWidth: right - textX - boxPadX,
+          });
+        }
+        vy -= 12;
+      }
+      cy -= rowH + 4;
     }
-    y = boxBottom - 10;
+
+    y = boxBottom - gapBetweenBoxes;
   }
 
   page.drawText("Record generated by ClubSENsational Parent Portal.", {
