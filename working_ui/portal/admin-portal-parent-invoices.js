@@ -150,6 +150,23 @@
     var hold = inv.payment_hold || null;
     var holdChip = '';
     var holdBtns = '';
+    var buf = inv.buffer_status || null;
+    var bufferChip = '';
+    if (buf && buf.is_low) {
+      bufferChip =
+        '<div class="chip chip--pend" style="margin-top:4px;font-size:11px;background:#fef3c7;color:#92400e">' +
+        'Buffer low · £' +
+        esc(Number(buf.shortfall_gbp || 0).toFixed(2)) +
+        ' short</div>';
+    } else if (buf && buf.is_own_arrangement !== false && Number(buf.required_gbp) > 0) {
+      bufferChip =
+        '<div class="chip" style="margin-top:4px;font-size:11px;background:#ecfdf5;color:#065f46">' +
+        'Buffer OK · £' +
+        esc(Number(buf.available_gbp || 0).toFixed(2)) +
+        ' / £' +
+        esc(Number(buf.required_gbp || 0).toFixed(2)) +
+        '</div>';
+    }
     if (hold && (hold.status === 'soft_hold' || hold.status === 'session_held' || hold.status === 'hard_cut')) {
       var holdLabel =
         hold.status === 'session_held'
@@ -187,6 +204,15 @@
         id +
         '">Soft hold</button> ';
     }
+    var xeroChip = inv.xero_invoice_id
+      ? '<div class="muted" style="font-size:11px">Xero ' +
+        esc(String(inv.xero_invoice_id).slice(0, 8)) +
+        '…' +
+        (inv.xero_payment_id ? ' · paid in Xero' : '') +
+        '</div>'
+      : inv.created_via === 'portal' || inv.created_via === 'reenrolment'
+        ? '<div class="muted" style="font-size:11px;color:#92400e">Not in Xero</div>'
+        : '';
     return (
       '<tr data-invoice-id="' +
       id +
@@ -196,6 +222,7 @@
       '</strong><div class="muted" style="font-size:12px">' +
       esc(inv.contact_id) +
       '</div>' +
+      bufferChip +
       holdChip +
       '</td>' +
       '<td style="min-width:0;overflow-wrap:break-word">' +
@@ -203,13 +230,7 @@
       '<div class="muted" style="font-size:12px">' +
       esc(inv.title || '') +
       '</div>' +
-      (inv.xero_invoice_id
-        ? '<div class="muted" style="font-size:11px">Xero ' +
-          esc(String(inv.xero_invoice_id).slice(0, 8)) +
-          '…' +
-          (inv.xero_payment_id ? ' · paid in Xero' : '') +
-          '</div>'
-        : '') +
+      xeroChip +
       (linkBits.length
         ? '<div class="muted" style="font-size:11px">' + esc(linkBits.join(' · ')) + '</div>'
         : '') +
@@ -247,6 +268,79 @@
     );
   }
 
+  function csvEscape(v) {
+    var s = String(v == null ? '' : v);
+    if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+
+  function downloadXeroCsv(rows) {
+    var header = [
+      'ContactName',
+      'InvoiceNumber',
+      'InvoiceDate',
+      'DueDate',
+      'Description',
+      'Quantity',
+      'UnitAmount',
+      'TaxType',
+      'Reference',
+      'PONumber',
+    ];
+    var lines = [header.join(',')];
+    rows.forEach(function (inv) {
+      var qty = Number(inv.quantity);
+      if (!Number.isFinite(qty) || qty <= 0) qty = 1;
+      var amount = Number(inv.amount_gbp) || 0;
+      var unit = Number(inv.unit_price_gbp);
+      if (!Number.isFinite(unit) || unit <= 0) unit = amount / qty;
+      var tax = inv.vat_mode === 'exempt' ? 'EXEMPT' : 'OUTPUT2';
+      var invDate = inv.document_created_at
+        ? String(inv.document_created_at).slice(0, 10)
+        : new Date().toISOString().slice(0, 10);
+      var contactName =
+        inv.parent_display || inv.participant_display || inv.related_client || inv.contact_id || '';
+      lines.push(
+        [
+          csvEscape(contactName),
+          csvEscape(inv.invoice_number || ''),
+          csvEscape(invDate),
+          csvEscape(inv.due_date || ''),
+          csvEscape(inv.line_description || inv.title || 'Structured activity support'),
+          csvEscape(String(qty)),
+          csvEscape(unit.toFixed(4)),
+          csvEscape(tax),
+          csvEscape(inv.reference_text || inv.invoice_number || ''),
+          '',
+        ].join(','),
+      );
+    });
+    var blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    var a = global.document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'portal_family_invoices_xero_' + new Date().toISOString().slice(0, 10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  async function exportUnsyncedXeroCsv() {
+    var r = await api('portal-admin-parent-invoices-list', {
+      limit: 200,
+      filter: 'xero_unsynced',
+    });
+    if (r.error) {
+      cfg.toast(r.message || r.error || 'Export failed', 'error');
+      return;
+    }
+    var rows = r.invoices || [];
+    if (!rows.length) {
+      cfg.toast('No unsynced Portal invoices to export', 'ok');
+      return;
+    }
+    downloadXeroCsv(rows);
+    cfg.toast('Exported ' + rows.length + ' invoice' + (rows.length === 1 ? '' : 's') + ' for Xero', 'ok');
+  }
+
   async function renderHost(host) {
     if (!host) return;
     host.innerHTML = '<p class="muted">Loading…</p>';
@@ -259,6 +353,9 @@
     if (state.filter === 'pending') {
       body.share_status = 'ready';
       body.payment_status = 'pending_confirmation';
+    }
+    if (state.filter === 'buffer_low' || state.filter === 'xero_unsynced') {
+      body.filter = state.filter;
     }
     var r = await api('portal-admin-parent-invoices-list', body);
     if (r.error) {
@@ -276,6 +373,12 @@
       }
       if (state.meta.payment_holds_open) {
         parts.push(String(state.meta.payment_holds_open) + ' holds');
+      }
+      if (state.meta.buffer_low_contacts) {
+        parts.push(String(state.meta.buffer_low_contacts) + ' buffer low');
+      }
+      if (state.meta.xero_unsynced) {
+        parts.push(String(state.meta.xero_unsynced) + ' not in Xero');
       }
       metaEl.textContent = parts.join(' · ');
     }
@@ -576,7 +679,7 @@
       '<div class="card-h"><h3>Family invoices</h3>' +
       '<span class="chip chip--pend" id="portalParentInvoicesMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word"><strong>Create in Portal</strong> generates a TAX INVOICE PDF (Exempt or VAT 20%) and shares it with the family — no Xero needed. Optional: still upload a Xero PDF below if you prefer. Families pay by Tide bank transfer or Card / Apple Pay. For own-arrangement / overdue: <strong>Soft hold</strong> → reminders → <strong>Hold 1 session</strong> (recoverable) → pay restores; hard cut stays manual.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word"><strong>Create in Portal</strong> generates a TAX INVOICE PDF (Exempt or VAT 20%) and shares it with the family — no Xero needed for day-to-day. Use <strong>Export to Xero CSV</strong> for bookkeeping. Own arrangement: nightly buffer check soft-holds families below the 2-session prepaid minimum; then <strong>Remind</strong> → <strong>Hold 1 session</strong> → pay restores; hard cut stays manual.</p>' +
       '<form id="portalParentInvoiceCreateForm" class="toolbar" style="flex-direction:column;align-items:stretch;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--line,#e5e7eb)">' +
       '<div style="font-weight:700">Create invoice in Portal</div>' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end">' +
@@ -620,8 +723,11 @@
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="ready">Shared</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="unpaid">Ready unpaid</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="pending">Pending confirmation</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="buffer_low">Buffer low</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="xero_unsynced">Not in Xero</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="hidden">Hidden</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParentInvoicesRefreshEmbed">Refresh</button>' +
+      '<button type="button" class="btn btn--sm" id="portalParentInvoicesExportXero">Export to Xero CSV</button>' +
       '</div>' +
       '<div id="portalParentInvoicesHost"><p class="muted">Loading…</p></div>' +
       '</div></div>'
@@ -636,6 +742,12 @@
     if (refresh) {
       refresh.addEventListener('click', function () {
         void renderHost(host);
+      });
+    }
+    var exportBtn = global.document.getElementById('portalParentInvoicesExportXero');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', function () {
+        void exportUnsyncedXeroCsv();
       });
     }
     global.document.querySelectorAll('[data-inv-filter]').forEach(function (btn) {

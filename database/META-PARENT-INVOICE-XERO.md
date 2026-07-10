@@ -4,6 +4,19 @@ When a family invoice is marked **paid** in the portal (Stripe Checkout, admin
 Confirm paid, or credit apply), Portal can post a matching **Payment** in Xero
 if the share row has a `xero_invoice_id`.
 
+## Batch export (bookkeeping)
+
+Finance → **Family invoices** → **Export to Xero CSV** downloads Portal-created invoices
+(`created_via` portal/reenrolment) that do not yet have `xero_invoice_id`.
+
+Columns match the legacy Xero import layout: ContactName, InvoiceNumber, InvoiceDate,
+DueDate, Description, Quantity, UnitAmount, TaxType (`EXEMPT` / `OUTPUT2`), Reference.
+
+After import in Xero, paste the Xero Invoice GUID back on the share row (upload form) so
+payment write-back can post `POST /Payments`.
+
+API batch push (`POST /Invoices`) is optional later — CSV is enough for day-to-day bookkeeping.
+
 ## Secrets (Supabase Edge Functions)
 
 ```bash

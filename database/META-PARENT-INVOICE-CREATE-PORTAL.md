@@ -31,4 +31,4 @@ On **first** re-enrolment submit (parent-pays plans only), Portal creates the IN
 
 ## Later
 
-Batch export / push to Xero for bookkeeping — not required for day-to-day parent billing.
+Optional API batch push of INV-P into Xero (`POST /Invoices`) — CSV export from Family invoices covers bookkeeping for now.

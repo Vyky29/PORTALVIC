@@ -22,10 +22,19 @@ function parseTimeSlotBounds(timeSlot: string): { start: string; end: string } {
   return { start: one ? one[1] : "00:00", end: one ? one[1] : "00:00" };
 }
 
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
 export async function loadOwnArrangementBuffer(
   supabase: SupabaseClient,
   contactId: string,
-): Promise<{ buffer_gbp: number; lines: unknown[]; parent_person_id: string | null }> {
+): Promise<{
+  is_own_arrangement: boolean;
+  buffer_gbp: number;
+  lines: unknown[];
+  parent_person_id: string | null;
+}> {
   const { data: sub } = await supabase
     .from("portal_re_enrolment_submissions")
     .select("payload, parent_person_id")
@@ -45,17 +54,147 @@ export async function loadOwnArrangementBuffer(
     ? funding.choices_2627
     : {}) as Record<string, unknown>;
 
+  const parentPersonId = sub?.parent_person_id ? String(sub.parent_person_id) : null;
   if (clean(c2627.payment_method_code, 40) !== "own_way_flexible") {
-    return { buffer_gbp: 0, lines: [], parent_person_id: sub?.parent_person_id ? String(sub.parent_person_id) : null };
+    return {
+      is_own_arrangement: false,
+      buffer_gbp: 0,
+      lines: [],
+      parent_person_id: parentPersonId,
+    };
   }
 
   const buffer = Number(c2627.advance_buffer_gbp) || 0;
   const lines = Array.isArray(c2627.advance_buffer_lines) ? c2627.advance_buffer_lines : [];
   return {
+    is_own_arrangement: true,
     buffer_gbp: buffer,
     lines,
-    parent_person_id: sub?.parent_person_id ? String(sub.parent_person_id) : null,
+    parent_person_id: parentPersonId,
   };
+}
+
+export type BufferEvaluation = {
+  is_own_arrangement: boolean;
+  required_gbp: number;
+  available_gbp: number;
+  shortfall_gbp: number;
+  is_low: boolean;
+  open_credits_gbp: number;
+  overdue_unpaid_gbp: number;
+  lines: unknown[];
+  parent_person_id: string | null;
+};
+
+/**
+ * Prepaid buffer proxy (v1): open family credits minus overdue unpaid invoices.
+ * Session-consumption accounting comes later.
+ */
+export async function evaluateOwnArrangementBuffer(
+  supabase: SupabaseClient,
+  contactId: string,
+): Promise<BufferEvaluation> {
+  const buf = await loadOwnArrangementBuffer(supabase, contactId);
+  const empty: BufferEvaluation = {
+    is_own_arrangement: false,
+    required_gbp: 0,
+    available_gbp: 0,
+    shortfall_gbp: 0,
+    is_low: false,
+    open_credits_gbp: 0,
+    overdue_unpaid_gbp: 0,
+    lines: [],
+    parent_person_id: buf.parent_person_id,
+  };
+  if (!buf.is_own_arrangement || buf.buffer_gbp <= 0) {
+    return { ...empty, parent_person_id: buf.parent_person_id };
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { data: credits } = await supabase
+    .from("portal_parent_family_credits")
+    .select("amount_gbp")
+    .eq("contact_id", contactId)
+    .eq("kind", "credit")
+    .eq("status", "open");
+
+  let openCredits = 0;
+  for (const c of credits || []) {
+    const n = Number(c.amount_gbp);
+    if (Number.isFinite(n) && n > 0) openCredits += n;
+  }
+  openCredits = round2(openCredits);
+
+  const { data: overdue } = await supabase
+    .from("portal_parent_invoice_share")
+    .select("amount_gbp")
+    .eq("contact_id", contactId)
+    .eq("share_status", "ready")
+    .in("payment_status", ["unpaid", "partial"])
+    .lt("due_date", today);
+
+  let overdueUnpaid = 0;
+  for (const inv of overdue || []) {
+    const n = Number(inv.amount_gbp);
+    if (Number.isFinite(n) && n > 0) overdueUnpaid += n;
+  }
+  overdueUnpaid = round2(overdueUnpaid);
+
+  const available = round2(Math.max(0, openCredits - overdueUnpaid));
+  const required = round2(buf.buffer_gbp);
+  const shortfall = round2(Math.max(0, required - available));
+
+  return {
+    is_own_arrangement: true,
+    required_gbp: required,
+    available_gbp: available,
+    shortfall_gbp: shortfall,
+    is_low: shortfall > 0.009,
+    open_credits_gbp: openCredits,
+    overdue_unpaid_gbp: overdueUnpaid,
+    lines: buf.lines,
+    parent_person_id: buf.parent_person_id,
+  };
+}
+
+/** Soft-hold when buffer low; clear soft_hold only when restored. Never auto hold_session/hard_cut. */
+export async function refreshBufferHoldState(
+  supabase: SupabaseClient,
+  contactId: string,
+  actorUserId?: string | null,
+): Promise<{
+  evaluation: BufferEvaluation;
+  action: "none" | "soft_hold" | "cleared" | "skipped_session_held";
+}> {
+  const evaluation = await evaluateOwnArrangementBuffer(supabase, contactId);
+  if (!evaluation.is_own_arrangement) {
+    return { evaluation, action: "none" };
+  }
+
+  const open = await getOpenPaymentHold(supabase, contactId);
+
+  if (evaluation.is_low) {
+    if (open && (open.status === "session_held" || open.status === "hard_cut")) {
+      return { evaluation, action: "skipped_session_held" };
+    }
+    await upsertSoftHold(supabase, {
+      contactId,
+      parentPersonId: evaluation.parent_person_id,
+      bufferGbp: evaluation.required_gbp,
+      bufferLines: evaluation.lines,
+      notes: `Auto: prepaid below minimum (need £${evaluation.required_gbp.toFixed(2)}, have £${evaluation.available_gbp.toFixed(2)})`,
+      actorUserId: actorUserId || null,
+    });
+    return { evaluation, action: "soft_hold" };
+  }
+
+  if (open && open.status === "soft_hold" && clean(open.reason, 40) === "own_arrangement_buffer") {
+    await clearPaymentHoldForContact(supabase, contactId, "buffer_restored", actorUserId || null);
+    return { evaluation, action: "cleared" };
+  }
+
+  return { evaluation, action: "none" };
 }
 
 export async function getOpenPaymentHold(

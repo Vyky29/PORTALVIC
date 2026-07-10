@@ -576,3 +576,6 @@ verify_jwt = false
 
 [functions.portal-admin-parent-invoices-upsert]
 verify_jwt = false
+
+[functions.portal-cron-own-arrangement-buffer-check]
+verify_jwt = false

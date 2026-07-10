@@ -9,6 +9,7 @@ import {
   portalAdminJson,
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
+import { evaluateOwnArrangementBuffer } from "../_shared/portal_payment_holds.ts";
 
 const BUCKET = "documents";
 
@@ -33,8 +34,13 @@ Deno.serve(async (req) => {
     return portalAdminJson(500, { ok: false, error: "server_misconfigured" });
   }
 
-  let body: { share_status?: string; payment_status?: string; contact_id?: string; limit?: number } =
-    {};
+  let body: {
+    share_status?: string;
+    payment_status?: string;
+    contact_id?: string;
+    limit?: number;
+    filter?: string;
+  } = {};
   try {
     body = await req.json();
   } catch {
@@ -43,6 +49,7 @@ Deno.serve(async (req) => {
 
   const shareFilter = clean(body.share_status, 20).toLowerCase() || "all";
   const payFilter = clean(body.payment_status, 20).toLowerCase() || "all";
+  const listFilter = clean(body.filter, 40).toLowerCase();
   const contactId = clean(body.contact_id, 120);
   const limit = Math.min(Math.max(Number(body.limit) || 100, 1), 200);
 
@@ -53,7 +60,7 @@ Deno.serve(async (req) => {
   let q = admin
     .from("portal_parent_invoice_share")
     .select(
-      "id, document_id, contact_id, invoice_number, amount_gbp, due_date, payment_status, share_status, ready_at, ready_by, notes, created_at, updated_at, payment_method_hint, gocardless_url, payment_link_url, payment_link_surcharge_note, parent_reported_paid_at, parent_reported_ref, parent_reported_method, parent_reported_notes, paid_at, paid_via, xero_invoice_id, xero_payment_id, xero_synced_at",
+      "id, document_id, contact_id, invoice_number, amount_gbp, due_date, payment_status, share_status, ready_at, ready_by, notes, created_at, updated_at, payment_method_hint, gocardless_url, payment_link_url, payment_link_surcharge_note, parent_reported_paid_at, parent_reported_ref, parent_reported_method, parent_reported_notes, paid_at, paid_via, xero_invoice_id, xero_payment_id, xero_synced_at, created_via, vat_mode, line_description, quantity, unit_price_gbp, reference_text",
     )
     .order("updated_at", { ascending: false })
     .limit(limit);
@@ -63,6 +70,9 @@ Deno.serve(async (req) => {
     q = q.eq("payment_status", payFilter);
   }
   if (contactId) q = q.eq("contact_id", contactId);
+  if (listFilter === "xero_unsynced") {
+    q = q.is("xero_invoice_id", null).in("created_via", ["portal", "reenrolment"]);
+  }
 
   const { data: shares, error } = await q;
   if (error) {
@@ -84,6 +94,7 @@ Deno.serve(async (req) => {
 
   const contactIds = [...new Set((shares || []).map((s) => clean(s.contact_id, 120)).filter(Boolean))];
   const nameByContact = new Map<string, string>();
+  const parentByContact = new Map<string, string>();
   if (contactIds.length) {
     const { data: pax } = await admin
       .from("portal_participants")
@@ -95,6 +106,17 @@ Deno.serve(async (req) => {
         clean(p.display_name, 120) ||
         [p.first_name, p.last_name].filter(Boolean).join(" ").trim();
       if (id && name) nameByContact.set(id, name);
+    }
+    const { data: parents } = await admin
+      .from("portal_parent_contacts")
+      .select("contact_id, parent_display, parent_first_name, parent_last_name")
+      .in("contact_id", contactIds);
+    for (const p of parents || []) {
+      const id = clean(p.contact_id, 120);
+      const name =
+        clean(p.parent_display, 120) ||
+        [p.parent_first_name, p.parent_last_name].filter(Boolean).join(" ").trim();
+      if (id && name) parentByContact.set(id, name);
     }
   }
 
@@ -114,7 +136,24 @@ Deno.serve(async (req) => {
     }
   }
 
-  const invoices = [];
+  const bufferByContact = new Map<string, Record<string, unknown>>();
+  for (const cid of contactIds) {
+    try {
+      const ev = await evaluateOwnArrangementBuffer(admin, cid);
+      if (ev.is_own_arrangement) {
+        bufferByContact.set(cid, {
+          required_gbp: ev.required_gbp,
+          available_gbp: ev.available_gbp,
+          shortfall_gbp: ev.shortfall_gbp,
+          is_low: ev.is_low,
+        });
+      }
+    } catch (err) {
+      console.error("[portal-admin-parent-invoices-list] buffer", cid, err);
+    }
+  }
+
+  let invoices = [];
   for (const share of shares || []) {
     const doc = docsById.get(String(share.document_id)) || {};
     let pdfUrl: string | null = null;
@@ -130,11 +169,17 @@ Deno.serve(async (req) => {
       title: clean(doc.title, 200) || "Invoice",
       related_client: clean(doc.related_client, 120) || nameByContact.get(cid) || "",
       participant_display: nameByContact.get(cid) || clean(doc.related_client, 120) || cid,
+      parent_display: parentByContact.get(cid) || "",
       file_url: doc.file_url || null,
       pdf_url: pdfUrl,
       document_created_at: doc.created_at || null,
       payment_hold: holdByContact.get(cid) || null,
+      buffer_status: bufferByContact.get(cid) || null,
     });
+  }
+
+  if (listFilter === "buffer_low") {
+    invoices = invoices.filter((inv) => inv.buffer_status && inv.buffer_status.is_low);
   }
 
   const { count: readyUnpaid } = await admin
@@ -154,6 +199,14 @@ Deno.serve(async (req) => {
     .select("id", { count: "exact", head: true })
     .in("status", ["soft_hold", "session_held"]);
 
+  const { count: xeroUnsynced } = await admin
+    .from("portal_parent_invoice_share")
+    .select("id", { count: "exact", head: true })
+    .is("xero_invoice_id", null)
+    .in("created_via", ["portal", "reenrolment"]);
+
+  const bufferLowContacts = [...bufferByContact.values()].filter((b) => b.is_low).length;
+
   return portalAdminJson(200, {
     ok: true,
     invoices,
@@ -161,6 +214,8 @@ Deno.serve(async (req) => {
       ready_unpaid: readyUnpaid || 0,
       pending_confirmation: pendingConfirm || 0,
       payment_holds_open: openHolds || 0,
+      buffer_low_contacts: bufferLowContacts,
+      xero_unsynced: xeroUnsynced || 0,
     },
   });
 });

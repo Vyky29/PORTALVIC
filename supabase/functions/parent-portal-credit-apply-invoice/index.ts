@@ -8,6 +8,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
 import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
 import { xeroCreateInvoicePayment, xeroConfigured } from "../_shared/xero_payments.ts";
+import {
+  clearPaymentHoldForContact,
+  refreshBufferHoldState,
+} from "../_shared/portal_payment_holds.ts";
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -226,6 +230,20 @@ Deno.serve(async (req) => {
     xero = { synced: false, skipped: "xero_not_configured" };
   }
 
+  let hold: Record<string, unknown> | null = null;
+  if (fullyPaid) {
+    try {
+      hold = await clearPaymentHoldForContact(supabase, contactId, "credit");
+    } catch (err) {
+      console.error("[parent-portal-credit-apply-invoice] clear hold", err);
+    }
+  }
+  try {
+    await refreshBufferHoldState(supabase, contactId, null);
+  } catch (err) {
+    console.error("[parent-portal-credit-apply-invoice] buffer", err);
+  }
+
   return json(200, {
     ok: true,
     invoice_id: invoiceId,
@@ -237,6 +255,7 @@ Deno.serve(async (req) => {
     applied_gbp: appliedGbp,
     remaining_gbp: fullyPaid ? 0 : remainingGbp,
     partial: !fullyPaid,
+    hold,
     xero,
   });
 });
