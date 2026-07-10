@@ -438,7 +438,7 @@ export async function buildPortalConsentsPdf(
     },
   ];
 
-  const boxPadX = 12;
+  const boxPadX = 14;
   const boxInnerLeft = left + boxPadX;
   const rowIconW = 18;
   const labelGap = 6;
@@ -446,26 +446,26 @@ export async function buildPortalConsentsPdf(
   const labelSize = 9;
   const titleSizeBlock = 11;
   const sectionIconR = 11;
-  const gapBetweenBoxes = 16;
+  const gapBetweenBoxes = 18;
+  // Fixed label column so values line up under each other.
+  const labelColW = 118;
 
   for (const block of blocks) {
-    // Measure rows (label bold + value wrapped).
     const measured: Array<{
       row: DetailRow;
       valueLines: string[];
-      labelW: number;
     }> = [];
     let rowsH = 0;
+    const valueMax =
+      right - boxInnerLeft - rowIconW - labelGap - labelColW - labelGap - boxPadX;
     for (const row of block.rows) {
-      const labelW = fontBold.widthOfTextAtSize(row.label, labelSize);
-      const valueMax = right - boxInnerLeft - rowIconW - labelGap - labelW - labelGap - boxPadX;
       const valueLines = wrapLines(row.value, font, valueSize, Math.max(40, valueMax));
-      measured.push({ row, valueLines, labelW });
-      rowsH += Math.max(14, valueLines.length * 12) + 4;
+      measured.push({ row, valueLines });
+      rowsH += Math.max(14, valueLines.length * 12) + 5;
     }
 
-    const headerH = sectionIconR * 2 + 8 + titleSizeBlock + 10;
-    const boxH = 14 + headerH + rowsH + 10;
+    const headerH = sectionIconR * 2 + 6 + titleSizeBlock + 12;
+    const boxH = 14 + headerH + rowsH + 12;
     if (y - boxH < 52) break;
 
     const boxBottom = y - boxH;
@@ -479,20 +479,18 @@ export async function buildPortalConsentsPdf(
       color: rgb(0.985, 0.985, 0.99),
     });
 
-    // Section icon centred above the big title.
+    // Section icon above title — left-aligned with the detail rows.
     let cy = y - 14 - sectionIconR;
-    const iconX = left + (right - left) / 2 - sectionIconR;
-    drawSectionIcon(page, block.icon, iconX, cy, block.iconColor, sectionIconR);
-    cy -= sectionIconR + 8;
+    drawSectionIcon(page, block.icon, boxInnerLeft, cy, block.iconColor, sectionIconR);
+    cy -= sectionIconR + 7;
 
-    const titleW = fontBold.widthOfTextAtSize(block.title, titleSizeBlock);
-    const titleX = left + Math.max(0, (right - left - titleW) / 2);
     page.drawText(block.title, {
-      x: titleX,
+      x: boxInnerLeft,
       y: cy - 2,
       size: titleSizeBlock,
       font: fontBold,
       color: ink,
+      maxWidth: right - boxInnerLeft - boxPadX,
     });
     cy -= titleSizeBlock + 12;
 
@@ -501,39 +499,29 @@ export async function buildPortalConsentsPdf(
       const rowMid = cy - 3;
       drawRowIcon(page, m.row.icon, boxInnerLeft, rowMid, block.iconColor);
 
-      const textX = boxInnerLeft + rowIconW;
+      const labelX = boxInnerLeft + rowIconW;
       page.drawText(m.row.label, {
-        x: textX,
+        x: labelX,
         y: cy - 2,
         size: labelSize,
         font: fontBold,
         color: ink,
       });
 
-      let vx = textX + m.labelW + labelGap;
+      const valueX = labelX + labelColW;
       let vy = cy - 2;
       for (let i = 0; i < m.valueLines.length; i++) {
-        if (i === 0) {
-          page.drawText(m.valueLines[i], {
-            x: vx,
-            y: vy,
-            size: valueSize,
-            font,
-            color: ink,
-          });
-        } else {
-          page.drawText(m.valueLines[i], {
-            x: textX,
-            y: vy,
-            size: valueSize,
-            font,
-            color: ink,
-            maxWidth: right - textX - boxPadX,
-          });
-        }
+        page.drawText(m.valueLines[i], {
+          x: valueX,
+          y: vy,
+          size: valueSize,
+          font,
+          color: ink,
+          maxWidth: right - valueX - boxPadX,
+        });
         vy -= 12;
       }
-      cy -= rowH + 4;
+      cy -= rowH + 5;
     }
 
     y = boxBottom - gapBetweenBoxes;
