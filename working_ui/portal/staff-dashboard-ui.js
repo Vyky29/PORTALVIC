@@ -372,12 +372,18 @@
         );
       }
       if(activeAnnouncementCount > 0){
+        const annLabel = activeAnnouncementCount > 1
+          ? ('New Announcement/Reminder x' + String(activeAnnouncementCount))
+          : 'New Announcement/Reminder';
+        const annAria = activeAnnouncementCount > 1
+          ? (String(activeAnnouncementCount) + ' new announcements or reminders — open to read and sign before continuing')
+          : 'New announcement or reminder — open to read and sign before continuing';
         appendAnnouncementSubcategory(
           'Need your signature',
           buildAnnouncementQuickRow(
             'announcementNewNotice',
-            'New Announcement/Reminder',
-            'New announcement or reminder — open to read and sign before continuing',
+            annLabel,
+            annAria,
             'menu-btn--announcement-attention'
           ),
           'pending'
