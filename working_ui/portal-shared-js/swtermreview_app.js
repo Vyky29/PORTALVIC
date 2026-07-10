@@ -1681,14 +1681,63 @@ const LEVEL_DATA = {
       if(!hasAnyTermReviewContent()){
         lastTermSummarySections = [];
         out.classList.remove("summary-rich");
-        out.innerHTML = "<p class=\"summary-placeholder\">Complete the review to generate an executive summary.</p>";
+        out.innerHTML = "<p class=\"summary-placeholder\">Complete the review to generate a visual term summary.</p>";
         return;
       }
       lastTermSummarySections = buildTermReviewSummarySections();
       const executive = buildExecutiveTermReviewSummary();
+      const swimmer = fieldValTerm("swimmerName").replace(/\s+/g, " ").trim();
+      const term = fieldValTerm("termSelect").trim();
+      const reviewIso = fieldValTerm("reviewDate");
+      const stageLabel = selectedStage ? (STAGE_DISPLAY[selectedStage] || selectedStage) : "—";
+      const levelMascot = selectedLevel ? getSwimmingLevelMascot(selectedLevel) : null;
+      const levelText = selectedLevel
+        ? ("Level " + selectedLevel + (levelMascot ? " · " + levelMascot.animal : ""))
+        : "—";
+      const decision = getLevelProgressionDecisionValue() || "Not set";
+      const levelOutcome = getLevelOutcomeForSummary();
+      const outcomeText = (levelOutcome.info && levelOutcome.info.answered > 0)
+        ? (levelOutcome.info.label + " (" + levelOutcome.info.pct + "%)")
+        : "Not rated yet";
+      const domains = [
+        { key: "regulation", title: "Regulation", img: "portal/assets/core-areas/core-regulation-brain.png" },
+        { key: "independence", title: "Independence", img: "portal/assets/core-areas/core-independence-rocket.png" },
+        { key: "engagement", title: "Engagement", img: "portal/assets/core-areas/core-engagement-wave.png" },
+      ];
+      const mascotHtml = levelMascot
+        ? "<div class=\"term-summary-mascot\"><img src=\"" + escapeHtmlTerm(resolveSwimmingMascotSrc(levelMascot.file)) + "\" alt=\"" + escapeHtmlTerm(levelMascot.animal) + "\" width=\"72\" height=\"64\" loading=\"lazy\" decoding=\"async\" /></div>"
+        : "<div class=\"term-summary-mascot\" aria-hidden=\"true\"></div>";
+      const domainHtml = domains.map(d => {
+        const res = computeDomainResult(d.key);
+        const status = res.answered > 0 ? (res.label + " · " + res.pct + "%") : "Not set";
+        return "<div class=\"term-summary-domain\">" +
+          "<img src=\"" + escapeHtmlTerm(d.img) + "\" alt=\"\" width=\"48\" height=\"42\" loading=\"lazy\" decoding=\"async\" />" +
+          "<p class=\"term-summary-domain-title\">" + escapeHtmlTerm(d.title) + "</p>" +
+          "<p class=\"term-summary-domain-status\">" + escapeHtmlTerm(status) + "</p>" +
+          "</div>";
+      }).join("");
+      const metaBits = [term, reviewIso ? formatReviewDateLongEn(reviewIso) : ""].filter(Boolean).join(" · ");
       out.classList.add("summary-rich");
-      out.innerHTML = "<div class=\"executive-overview\">" +
-        executive.split(/\n\n+/).map(p => "<p>" + escapeHtmlTerm(p) + "</p>").join("") +
+      out.innerHTML =
+        "<div class=\"term-summary-hero\">" + mascotHtml +
+          "<div class=\"term-summary-hero-copy\">" +
+            "<p class=\"term-summary-kicker\">Term journey</p>" +
+            "<h3 class=\"term-summary-name\">" + escapeHtmlTerm(swimmer || "Participant") + "</h3>" +
+            "<p class=\"term-summary-meta\">" + escapeHtmlTerm(metaBits || "Complete details above") + "</p>" +
+          "</div>" +
+        "</div>" +
+        "<div class=\"term-summary-grid\">" +
+          "<div class=\"term-summary-tile\"><p class=\"term-summary-tile-label\">Stage</p><p class=\"term-summary-tile-value\">" + escapeHtmlTerm(stageLabel) + "</p></div>" +
+          "<div class=\"term-summary-tile\"><p class=\"term-summary-tile-label\">Level</p><p class=\"term-summary-tile-value\">" + escapeHtmlTerm(levelText) + "</p></div>" +
+          "<div class=\"term-summary-tile\"><p class=\"term-summary-tile-label\">Decision</p><p class=\"term-summary-tile-value\">" + escapeHtmlTerm(decision) + "</p></div>" +
+        "</div>" +
+        "<div class=\"term-summary-grid\">" +
+          "<div class=\"term-summary-tile\"><p class=\"term-summary-tile-label\">Level outcomes</p><p class=\"term-summary-tile-value\">" + escapeHtmlTerm(outcomeText) + "</p></div>" +
+          "<div class=\"term-summary-tile\" style=\"grid-column:span 2\"><p class=\"term-summary-tile-label\">Badge</p><p class=\"term-summary-tile-value\">" + escapeHtmlTerm(levelMascot ? levelMascot.badge : "—") + "</p></div>" +
+        "</div>" +
+        "<div class=\"term-summary-domains\">" + domainHtml + "</div>" +
+        "<div class=\"term-summary-exec\">" +
+          executive.split(/\n\n+/).map(p => "<p>" + escapeHtmlTerm(p) + "</p>").join("") +
         "</div>";
     }
 
@@ -1859,6 +1908,24 @@ const LEVEL_DATA = {
       return fetchLogoAsDataUrl(PDF_CELEBRATION_LOGO_URL).catch(() => loadPdfHeaderLogo());
     }
 
+    function fetchImageAsDataUrl(url){
+      if(!url) return Promise.resolve(null);
+      return fetchLogoAsDataUrl(url).catch(() => null);
+    }
+
+    async function loadCelebrationVisualAssets(){
+      const levelMascot = selectedLevel ? getSwimmingLevelMascot(selectedLevel) : null;
+      const mascotUrl = levelMascot ? resolveSwimmingMascotSrc(levelMascot.file) : "";
+      const [logo, mascot, regulation, independence, engagement] = await Promise.all([
+        loadPdfCelebrationLogo().catch(() => null),
+        fetchImageAsDataUrl(mascotUrl),
+        fetchImageAsDataUrl("portal/assets/core-areas/core-regulation-brain.png"),
+        fetchImageAsDataUrl("portal/assets/core-areas/core-independence-rocket.png"),
+        fetchImageAsDataUrl("portal/assets/core-areas/core-engagement-wave.png"),
+      ]);
+      return { logo, mascot, regulation, independence, engagement };
+    }
+
     function buildCelebrationHighlights(){
       const highlights = [];
       const levelInfo = computeLevelProgressLabel(getAllLevelRatings());
@@ -1967,10 +2034,12 @@ const LEVEL_DATA = {
       };
     }
 
-    function buildCelebrationCertificatePdf(logoDataUrl){
+    function buildCelebrationCertificatePdf(assets){
       const { jsPDF } = window.jspdf;
       if(!jsPDF) return null;
       const content = buildCelebrationCertificateContent();
+      const visuals = assets || {};
+      const logoDataUrl = visuals.logo || null;
       const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const pageW = doc.internal.pageSize.getWidth();
       const pageH = doc.internal.pageSize.getHeight();
@@ -1981,39 +2050,69 @@ const LEVEL_DATA = {
       const swimGold = [244, 183, 64];
       const ink = [15, 23, 42];
       const muted = [91, 100, 115];
-      let y = 0;
+      const companyLine = "clubSENsational Ltd · 71-75 Shelton Street, Covent Garden, WC2H 9JQ, London";
 
-      doc.setFillColor(swimBlueSoft[0], swimBlueSoft[1], swimBlueSoft[2]);
-      doc.rect(0, 0, pageW, 52, "F");
-      doc.setFillColor(swimBlue[0], swimBlue[1], swimBlue[2]);
-      doc.rect(0, 48, pageW, 4, "F");
-      doc.setDrawColor(255, 255, 255);
-      doc.setLineWidth(0.8);
-      for(let i = 0; i < 3; i++){
-        const waveY = 42 + i * 2.2;
-        doc.line(margin, waveY, pageW - margin, waveY);
-      }
-
-      y = 10;
-      if(logoDataUrl){
-        try{
-          const fmt = logoDataUrl.includes("jpeg") || logoDataUrl.includes("JPEG") ? "JPEG" : "PNG";
-          const props = doc.getImageProperties(logoDataUrl);
-          const iw = props.width || 1;
-          const ih = props.height || 1;
-          const logoW = 52;
-          const logoH = (ih / iw) * logoW;
-          doc.addImage(logoDataUrl, fmt, (pageW - logoW) / 2, y, logoW, logoH);
-          y += logoH + 6;
-        }catch(_e){
-          y += 4;
+      function drawWaveHeader(fillSoft){
+        doc.setFillColor(fillSoft[0], fillSoft[1], fillSoft[2]);
+        doc.rect(0, 0, pageW, 52, "F");
+        doc.setFillColor(swimBlue[0], swimBlue[1], swimBlue[2]);
+        doc.rect(0, 48, pageW, 4, "F");
+        doc.setDrawColor(255, 255, 255);
+        doc.setLineWidth(0.8);
+        for(let i = 0; i < 3; i++){
+          const waveY = 42 + i * 2.2;
+          doc.line(margin, waveY, pageW - margin, waveY);
         }
       }
+      function addImageCentered(dataUrl, y, maxLogoW, maxLogoH){
+        if(!dataUrl) return y;
+        try{
+          const fmt = dataUrl.includes("jpeg") || dataUrl.includes("JPEG") ? "JPEG" : "PNG";
+          const props = doc.getImageProperties(dataUrl);
+          const iw = props.width || 1;
+          const ih = props.height || 1;
+          let logoW = maxLogoW;
+          let logoH = (ih / iw) * logoW;
+          if(logoH > maxLogoH){
+            logoH = maxLogoH;
+            logoW = (iw / ih) * logoH;
+          }
+          doc.addImage(dataUrl, fmt, (pageW - logoW) / 2, y, logoW, logoH);
+          return y + logoH + 5;
+        }catch(_e){
+          return y;
+        }
+      }
+      function addImageAt(dataUrl, x, y, maxWImg, maxHImg){
+        if(!dataUrl) return false;
+        try{
+          const fmt = dataUrl.includes("jpeg") || dataUrl.includes("JPEG") ? "JPEG" : "PNG";
+          const props = doc.getImageProperties(dataUrl);
+          const iw = props.width || 1;
+          const ih = props.height || 1;
+          let wImg = maxWImg;
+          let hImg = (ih / iw) * wImg;
+          if(hImg > maxHImg){
+            hImg = maxHImg;
+            wImg = (iw / ih) * hImg;
+          }
+          doc.addImage(dataUrl, fmt, x, y, wImg, hImg);
+          return true;
+        }catch(_e){
+          return false;
+        }
+      }
+
+      /* ===== PAGE 1 — Certificate ===== */
+      drawWaveHeader(swimBlueSoft);
+      let y = 10;
+      y = addImageCentered(logoDataUrl, y, 52, 22);
+      if(y < 18) y = 18;
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
       doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
-      doc.text("TERM CELEBRATION CERTIFICATE", pageW / 2, y, { align: "center" });
+      doc.text("SWIMMING TERM CELEBRATION CERTIFICATE", pageW / 2, y, { align: "center" });
       y += 8;
 
       doc.setFont("helvetica", "bold");
@@ -2024,7 +2123,14 @@ const LEVEL_DATA = {
         doc.text(line, pageW / 2, y, { align: "center" });
         y += 9;
       });
-      y += 2;
+      y += 1;
+
+      if(visuals.mascot){
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect((pageW - 42) / 2, y, 42, 36, 8, 8, "F");
+        addImageAt(visuals.mascot, (pageW - 30) / 2, y + 3, 30, 28);
+        y += 40;
+      }
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10.5);
@@ -2093,33 +2199,177 @@ const LEVEL_DATA = {
       doc.setFillColor(248, 250, 252);
       const nextLines = doc.splitTextToSize(content.nextSteps, maxW - 24);
       const nextBoxH = nextLines.length * 5.6 + 16;
-      doc.roundedRect(margin, y, maxW, nextBoxH, 5, 5, "F");
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
-      doc.text("Next step", margin + 10, y + 8);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10.5);
-      doc.setTextColor(muted[0], muted[1], muted[2]);
-      let ny = y + 14;
-      nextLines.forEach(line => {
-        doc.text(line, margin + 10, ny);
-        ny += 5.6;
-      });
-      y += nextBoxH + 12;
+      if(y + nextBoxH < pageH - 28){
+        doc.roundedRect(margin, y, maxW, nextBoxH, 5, 5, "F");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
+        doc.text("Looking ahead", margin + 10, y + 8);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10.5);
+        doc.setTextColor(muted[0], muted[1], muted[2]);
+        let ny = y + 14;
+        nextLines.forEach(line => {
+          doc.text(line, margin + 10, ny);
+          ny += 5.6;
+        });
+        y += nextBoxH + 10;
+      }
 
       if(content.instructor){
         doc.setFont("helvetica", "bold");
         doc.setFontSize(10);
         doc.setTextColor(ink[0], ink[1], ink[2]);
-        doc.text("Reviewed by: " + content.instructor, pageW / 2, Math.min(y, pageH - 24), { align: "center" });
-        y += 6;
+        doc.text("Reviewed by: " + content.instructor, pageW / 2, Math.min(y, pageH - 22), { align: "center" });
+      }
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(muted[0], muted[1], muted[2]);
+      doc.text(companyLine, pageW / 2, pageH - 10, { align: "center" });
+
+      /* ===== PAGE 2 — Term journey summary ===== */
+      doc.addPage();
+      drawWaveHeader([248, 250, 252]);
+      y = 12;
+      y = addImageCentered(logoDataUrl, y, 44, 18);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
+      doc.text("YOUR SWIMMING JOURNEY THIS TERM", pageW / 2, y, { align: "center" });
+      y += 8;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.setTextColor(ink[0], ink[1], ink[2]);
+      doc.text(content.swimmer || "Swimmer", pageW / 2, y, { align: "center" });
+      y += 7;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(muted[0], muted[1], muted[2]);
+      doc.text([content.term, content.dateDisplay].filter(Boolean).join("  ·  ") || "Term review", pageW / 2, y, { align: "center" });
+      y += 10;
+
+      /* Stage + level card with mascot */
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(200, 225, 235);
+      doc.roundedRect(margin, y, maxW, 42, 6, 6, "FD");
+      if(visuals.mascot){
+        addImageAt(visuals.mascot, margin + 8, y + 5, 28, 32);
+      }
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
+      doc.text("Pathway", margin + 42, y + 12);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(ink[0], ink[1], ink[2]);
+      doc.text(content.stageLabel || "Stage to be confirmed", margin + 42, y + 20);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      doc.setTextColor(muted[0], muted[1], muted[2]);
+      const levelBadge = content.levelLabel || "Level to be confirmed";
+      const levelMascot = selectedLevel ? getSwimmingLevelMascot(selectedLevel) : null;
+      doc.text(levelBadge + (levelMascot ? "  ·  " + levelMascot.badge : ""), margin + 42, y + 28);
+      const decision = getLevelProgressionDecisionValue();
+      if(decision){
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
+        doc.text("Decision: " + decision, margin + 42, y + 36);
+      }
+      y += 50;
+
+      /* Core development strip */
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
+      doc.text("Development this term", margin + 2, y);
+      y += 6;
+      const domainCards = [
+        { title: "Regulation", res: computeDomainResult("regulation"), img: visuals.regulation },
+        { title: "Independence", res: computeDomainResult("independence"), img: visuals.independence },
+        { title: "Engagement", res: computeDomainResult("engagement"), img: visuals.engagement },
+      ];
+      const cardW = (maxW - 8) / 3;
+      domainCards.forEach((d, i) => {
+        const x = margin + i * (cardW + 4);
+        doc.setFillColor(250, 247, 252);
+        doc.setDrawColor(226, 214, 240);
+        doc.roundedRect(x, y, cardW, 38, 4, 4, "FD");
+        if(d.img) addImageAt(d.img, x + (cardW - 16) / 2, y + 3, 16, 14);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(91, 45, 122);
+        doc.text(d.title, x + cardW / 2, y + 22, { align: "center" });
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(ink[0], ink[1], ink[2]);
+        const status = d.res.answered > 0 ? d.res.label : "Growing";
+        doc.text(status, x + cardW / 2, y + 30, { align: "center" });
+      });
+      y += 46;
+
+      /* What we celebrated */
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
+      doc.text("What we celebrated in the water", margin + 2, y);
+      y += 7;
+      content.highlights.slice(0, 4).forEach(item => {
+        const lines = doc.splitTextToSize("•  " + item, maxW - 6);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(ink[0], ink[1], ink[2]);
+        lines.forEach(line => {
+          doc.text(line, margin + 2, y);
+          y += 5.2;
+        });
+        y += 1.5;
+      });
+      y += 4;
+
+      /* Educational note */
+      doc.setFillColor(swimBlueSoft[0], swimBlueSoft[1], swimBlueSoft[2]);
+      const edu = "Our swimming programme grows through three stages and six adaptive levels. Progress is individual — celebrating regulation, independence and engagement alongside aquatic skills.";
+      const eduLines = doc.splitTextToSize(edu, maxW - 16);
+      const eduH = eduLines.length * 5.2 + 14;
+      doc.roundedRect(margin, y, maxW, eduH, 5, 5, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
+      doc.text("About the clubSENsational Swimming Journey", margin + 8, y + 8);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      doc.setTextColor(muted[0], muted[1], muted[2]);
+      let ey = y + 14;
+      eduLines.forEach(line => {
+        doc.text(line, margin + 8, ey);
+        ey += 5.2;
+      });
+      y += eduH + 10;
+
+      doc.setFillColor(255, 248, 230);
+      const next2 = doc.splitTextToSize(content.nextSteps, maxW - 16);
+      const next2H = next2.length * 5.2 + 14;
+      if(y + next2H < pageH - 20){
+        doc.roundedRect(margin, y, maxW, next2H, 5, 5, "F");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(154, 107, 18);
+        doc.text("Next term", margin + 8, y + 8);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9.5);
+        doc.setTextColor(ink[0], ink[1], ink[2]);
+        let ny2 = y + 14;
+        next2.forEach(line => {
+          doc.text(line, margin + 8, ny2);
+          ny2 += 5.2;
+        });
       }
 
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(8.5);
+      doc.setFontSize(8);
       doc.setTextColor(muted[0], muted[1], muted[2]);
-      doc.text("clubSENsational · Autism Consultancy Services · Swimming Programme", pageW / 2, pageH - 12, { align: "center" });
+      doc.text(companyLine + " · www.clubsensational.org", pageW / 2, pageH - 10, { align: "center" });
 
       const saveStem = content.swimmer
         ? pdfSafeFilenameStem(content.swimmer + " Term Celebration Certificate")
@@ -2648,15 +2898,12 @@ const LEVEL_DATA = {
               const pdfPromise = Promise.all([
                 loadPdfHeaderLogo(),
                 loadPdfProgrammePng(),
-                loadPdfCelebrationLogo(),
               ])
-                .then(([logoDataUrl, programmeDataUrl, celebrationLogoDataUrl]) => ({
+                .then(([logoDataUrl, programmeDataUrl]) => ({
                   review: buildTermReviewPdf(logoDataUrl, programmeDataUrl),
-                  celebration: buildCelebrationCertificatePdf(celebrationLogoDataUrl),
                 }))
                 .catch(async () => ({
                   review: buildTermReviewPdf(null, null),
-                  celebration: buildCelebrationCertificatePdf(null),
                 }));
               const [docsMod, built] = await Promise.all([
                 importPortalDocumentsModuleSwterm(),
@@ -2684,30 +2931,64 @@ const LEVEL_DATA = {
                 reuseAuth: auth,
               });
 
-              if(built.celebration && built.celebration.doc){
-                const certBytes = built.celebration.doc.output("arraybuffer");
-                const certBlob = new Blob([certBytes], { type: "application/pdf" });
-                const certTitle = poss
-                  ? poss + " Term Celebration Certificate"
-                  : "Term Celebration Certificate";
-                await docsMod.portalUploadPdfAndCreateDocument({
-                  blob: certBlob,
-                  document_type: "swim_celebration_certificate",
-                  category: "reports",
-                  title: certTitle,
-                  related_date: String(reviewIso).trim().slice(0, 10),
-                  related_client: swimmer || null,
-                  source_page: "swtermreview",
-                  reuseAuth: auth,
-                });
-              }
-
-              alert("Term review submitted successfully. Open My Documents to download or print the Term Review PDF and Term Celebration Certificate.");
+              alert("Term review submitted successfully. Open My Documents to download or print the Term Review PDF. You can also generate the family Celebration Certificate from the button below.");
               closeOrReturnSwterm();
             }catch(err){
               const msg = err && err.message ? String(err.message) : "Unknown error";
               console.error("[swtermreview] submit failed:", err);
               alert("Could not submit term review. " + msg);
+            }finally{
+              btn.disabled = false;
+            }
+          });
+        }
+
+        const certBtn = $("#btnGenerateCertificate");
+        if(certBtn){
+          certBtn.addEventListener("click", async function(){
+            const btn = this;
+            const swimmer = fieldValTerm("swimmerName").replace(/\s+/g, " ").trim();
+            if(!swimmer){
+              alert("Please enter the participant's name before generating the certificate.");
+              return;
+            }
+            btn.disabled = true;
+            generateTermSummary();
+            try{
+              const visuals = await loadCelebrationVisualAssets();
+              const built = buildCelebrationCertificatePdf(visuals);
+              if(!built || !built.doc){
+                alert("PDF library not loaded. Please refresh the page and try again.");
+                return;
+              }
+              const certBytes = built.doc.output("arraybuffer");
+              const certBlob = new Blob([certBytes], { type: "application/pdf" });
+              const docsMod = await importPortalDocumentsModuleSwterm();
+              const auth = await docsMod.portalRequireUser();
+              const reviewIso = fieldValTerm("reviewDate") || new Date().toISOString().slice(0, 10);
+              const poss = englishPossessive(swimmer);
+              const certTitle = poss
+                ? poss + " Term Celebration Certificate"
+                : "Term Celebration Certificate";
+              await docsMod.portalUploadPdfAndCreateDocument({
+                blob: certBlob,
+                document_type: "swim_celebration_certificate",
+                category: "reports",
+                title: certTitle,
+                related_date: String(reviewIso).trim().slice(0, 10),
+                related_client: swimmer || null,
+                source_page: "swtermreview",
+                reuseAuth: auth,
+              });
+              try{
+                built.doc.save(built.filename || "Term Celebration Certificate.pdf");
+              }catch(_e){}
+              showToast("Celebration certificate saved to My Documents");
+              alert("Celebration certificate ready (2 pages: certificate + term journey). Saved to My Documents and downloaded.");
+            }catch(err){
+              const msg = err && err.message ? String(err.message) : "Unknown error";
+              console.error("[swtermreview] certificate failed:", err);
+              alert("Could not generate certificate. " + msg);
             }finally{
               btn.disabled = false;
             }

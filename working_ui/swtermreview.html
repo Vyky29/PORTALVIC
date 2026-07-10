@@ -1804,6 +1804,214 @@
       line-height:1.55;
       color:var(--muted);
     }
+
+    /* Review part banners + section intros */
+    .review-part{
+      margin:28px 0 14px;
+      padding:16px 18px;
+      border-radius:18px;
+      border:1px solid rgba(45,132,179,.16);
+      background:linear-gradient(135deg, rgba(233,243,247,.95) 0%, rgba(255,255,255,.98) 55%);
+      box-shadow:0 8px 22px rgba(18,50,71,.06);
+    }
+    .review-part--pathway{
+      border-color:rgba(45,132,179,.2);
+      background:linear-gradient(135deg, rgba(233,243,247,.98) 0%, #fff 60%);
+    }
+    .review-part--development{
+      border-color:rgba(138,63,176,.2);
+      background:linear-gradient(135deg, rgba(244,236,250,.95) 0%, #fff 60%);
+    }
+    .review-part--summary{
+      border-color:rgba(244,183,64,.35);
+      background:linear-gradient(135deg, rgba(255,248,230,.95) 0%, #fff 60%);
+    }
+    .review-part-kicker{
+      margin:0 0 4px;
+      font-size:.68rem;
+      font-weight:800;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:var(--blueDeep);
+    }
+    .review-part--development .review-part-kicker{ color:#7b2fa1; }
+    .review-part--summary .review-part-kicker{ color:#9a6b12; }
+    .review-part-title{
+      margin:0 0 6px;
+      font-size:1.15rem;
+      font-weight:900;
+      color:var(--ink);
+      letter-spacing:.01em;
+    }
+    .review-part-text{
+      margin:0;
+      font-size:.92rem;
+      line-height:1.5;
+      color:var(--muted);
+      font-weight:600;
+      max-width:62ch;
+    }
+    .section-intro{
+      margin:0 0 14px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(45,132,179,.12);
+      background:rgba(233,243,247,.45);
+      font-size:.9rem;
+      line-height:1.5;
+      color:#334155;
+      font-weight:600;
+    }
+    .section-intro strong{ color:var(--blueDeep); font-weight:800; }
+    #cardAreas .section-intro,
+    #cardDevProfile .section-intro{
+      border-color:rgba(138,63,176,.14);
+      background:rgba(244,236,250,.5);
+    }
+    #cardAreas .section-intro strong,
+    #cardDevProfile .section-intro strong{ color:#7b2fa1; }
+
+    .term-summary-hero{
+      display:flex;
+      flex-wrap:wrap;
+      gap:16px;
+      align-items:center;
+      padding:16px;
+      border-radius:18px;
+      background:linear-gradient(135deg, #e9f3f7 0%, #fff 55%, #fff8e6 100%);
+      border:1px solid rgba(45,132,179,.14);
+      margin-bottom:16px;
+    }
+    .term-summary-mascot{
+      width:88px;
+      height:88px;
+      border-radius:22px;
+      background:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:0 10px 24px rgba(18,50,71,.1);
+      flex:0 0 auto;
+    }
+    .term-summary-mascot img{
+      width:72px;
+      height:auto;
+      object-fit:contain;
+      display:block;
+    }
+    .term-summary-hero-copy{ flex:1; min-width:200px; }
+    .term-summary-kicker{
+      margin:0 0 4px;
+      font-size:.68rem;
+      font-weight:800;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:var(--blueDeep);
+    }
+    .term-summary-name{
+      margin:0 0 6px;
+      font-size:1.35rem;
+      font-weight:900;
+      color:var(--ink);
+      line-height:1.2;
+    }
+    .term-summary-meta{
+      margin:0;
+      font-size:.9rem;
+      color:var(--muted);
+      font-weight:700;
+    }
+    .term-summary-grid{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:12px;
+      margin-bottom:16px;
+    }
+    @media (max-width:760px){
+      .term-summary-grid{ grid-template-columns:1fr; }
+    }
+    .term-summary-tile{
+      border-radius:16px;
+      border:1px solid rgba(11,18,32,.08);
+      background:#fff;
+      padding:14px;
+      box-shadow:0 6px 16px rgba(18,50,71,.05);
+    }
+    .term-summary-tile-label{
+      margin:0 0 6px;
+      font-size:.66rem;
+      font-weight:800;
+      letter-spacing:.1em;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+    .term-summary-tile-value{
+      margin:0;
+      font-size:.98rem;
+      font-weight:800;
+      color:var(--ink);
+      line-height:1.35;
+    }
+    .term-summary-domains{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:12px;
+      margin-bottom:16px;
+    }
+    @media (max-width:760px){
+      .term-summary-domains{ grid-template-columns:1fr; }
+    }
+    .term-summary-domain{
+      border-radius:16px;
+      border:1px solid rgba(138,63,176,.14);
+      background:linear-gradient(180deg,#faf7fc 0%,#fff 100%);
+      padding:12px;
+      text-align:center;
+    }
+    .term-summary-domain img{
+      width:48px;
+      height:42px;
+      object-fit:contain;
+      display:block;
+      margin:0 auto 8px;
+    }
+    .term-summary-domain-title{
+      margin:0 0 4px;
+      font-size:.78rem;
+      font-weight:800;
+      color:#5b2d7a;
+    }
+    .term-summary-domain-status{
+      margin:0;
+      font-size:.92rem;
+      font-weight:800;
+      color:var(--ink);
+    }
+    .term-summary-exec{
+      border-radius:16px;
+      border:1px solid rgba(45,132,179,.14);
+      background:#fff;
+      padding:14px 16px;
+    }
+    .term-summary-exec p{
+      margin:0 0 10px;
+      font-size:.92rem;
+      line-height:1.6;
+      color:#0b1220;
+      font-weight:600;
+    }
+    .term-summary-exec p:last-child{ margin-bottom:0; }
+    .btn-cert{
+      background:linear-gradient(135deg, #2d84b3 0%, #1f6f96 100%) !important;
+      color:#fff !important;
+      border:0 !important;
+    }
+    .btn-secondary-outline{
+      background:#fff !important;
+      color:#0b2a5b !important;
+      border:1.5px solid rgba(45,132,179,.35) !important;
+    }
+
     /* Submit: mismo criterio visual que timesheet / expenses (#submitBtn) */
     .summary-actions{
       display:flex;
@@ -1974,9 +2182,10 @@
       </div>
     </header>
 
-    <!-- 1 Details: solo participante editable + autocompletado clientes; fecha / término / nombre staff lectura -->
+    <!-- 1 Details -->
     <div class="card" id="cardDetails">
       <h2>1. Details</h2>
+      <p class="section-intro">Confirm who this review is for. Term, date and instructor are filled automatically from your session.</p>
 
       <div class="swterm-details-stack">
         <div class="detail-combo">
@@ -2020,9 +2229,16 @@
       <div class="errMsg" id="errDetails">Please complete all required fields.</div>
     </div>
 
+    <div class="review-part review-part--pathway" role="region" aria-label="Pathway: profile, level and decision">
+      <p class="review-part-kicker">Part A · Pathway</p>
+      <h3 class="review-part-title">Profile, level &amp; decision</h3>
+      <p class="review-part-text">Confirm stage and level, rate learning outcomes, then accept or adjust the progression recommendation for next term.</p>
+    </div>
+
     <!-- 2 Profile Review -->
     <div class="card" id="cardProfile">
-      <h2>2. Profile review</h2>
+      <h2>2. Profile</h2>
+      <p class="section-intro">Choose the swimmer’s <strong>current stage</strong> and <strong>level</strong>. This sets the learning outcomes and the journey context for the term.</p>
 
       <div class="divider"></div>
 
@@ -2130,9 +2346,10 @@
       <div class="errMsg" id="errProfile">Please select Stage and Level.</div>
     </div>
 
-    <!-- 3 Learning Outcomes -->
+    <!-- 3 Learning Outcomes / Level -->
     <div class="card" id="cardLearningOutcomes">
-      <h2>3. Learning outcomes</h2>
+      <h2>3. Level</h2>
+      <p class="section-intro">Rate each learning outcome for the selected level. Use what you observed across the term — this drives the progression recommendation below.</p>
       <p class="note-compact">Rate each outcome for the selected level.</p>
 
       <div class="levelBox" id="levelBox">
@@ -2170,8 +2387,9 @@
 
     <!-- 4 Level progression decision -->
     <div class="card" id="cardLevelProgression">
-      <h2>4. Level progression decision</h2>
-      <p class="note-compact">Automatically generated from the Learning Outcomes.</p>
+      <h2>4. Decision</h2>
+      <p class="section-intro">We suggest whether to <strong>consolidate</strong> or <strong>progress</strong> based on the level outcomes. Accept the recommendation or override it.</p>
+      <p class="note-compact">Automatically generated from the Level outcomes.</p>
 
       <div class="termRecommendCard" id="levelProgressRecommendCard">
         <p class="termRecommendEyebrow">Recommended level progression</p>
@@ -2208,9 +2426,16 @@
       </div>
     </div>
 
+    <div class="review-part review-part--development" role="region" aria-label="Development: core areas and overall profile">
+      <p class="review-part-kicker">Part B · Development</p>
+      <h3 class="review-part-title">Development areas &amp; overall profile</h3>
+      <p class="review-part-text">Rate Engagement, Independence and Regulation across the term, then review the overall development snapshot.</p>
+    </div>
+
     <!-- 5 Core Development Areas -->
     <div class="card" id="cardAreas">
-      <h2>5. Core development areas</h2>
+      <h2>5. Development areas</h2>
+      <p class="section-intro">These three lenses run through every stage and level. Rate what you typically saw this term — not a single session.</p>
 
       <div class="corePanel">
         <!-- Engagement -->
@@ -2467,7 +2692,8 @@
 
     <!-- 6 Overall development profile -->
     <div class="card" id="cardDevProfile">
-      <h2>6. Overall development profile</h2>
+      <h2>6. Overall</h2>
+      <p class="section-intro">A live snapshot of strengths and support needs from the development ratings above. Use it to check the story of the term before you submit.</p>
       <div class="devProfilePanel" id="devProfilePanel" aria-live="polite">
         <div class="devProfileGrid">
           <div class="devProfileDomain" data-dev-domain="regulation">
@@ -2516,21 +2742,30 @@
 
     <!-- 7 Final review notes -->
     <div class="card" id="cardFinalNotes">
-      <h2>7. Final review notes</h2>
+      <h2>7. Final notes</h2>
+      <p class="section-intro">Optional notes for next term — anything useful for the next instructor or for families that is not already covered above.</p>
       <div class="finalNotesWrap">
         <label for="decisionNotes">Final review notes <span style="font-weight:600;color:var(--muted);">(optional)</span></label>
         <textarea id="decisionNotes" placeholder="Optional notes for next term"></textarea>
       </div>
     </div>
 
+    <div class="review-part review-part--summary" role="region" aria-label="Term summary and certificates">
+      <p class="review-part-kicker">Part C · Finish</p>
+      <h3 class="review-part-title">Summary &amp; certificates</h3>
+      <p class="review-part-text">Review the visual term summary, submit the professional PDF, or generate a family celebration certificate (certificate + term journey page).</p>
+    </div>
+
     <!-- 8 Term review summary -->
     <div class="card" id="cardSummary">
-      <h2>8. Term review summary</h2>
+      <h2>8. Term summary</h2>
+      <p class="section-intro">A clear overview of this term’s pathway and development story — ready to submit or share as a celebration certificate.</p>
       <div class="summary-box">
         <div class="summary-output" id="termSummaryOutput">Complete the review to generate an executive summary.</div>
-        <p class="summary-hint">Submit saves the professional Term Review PDF and family Celebration Certificate to <strong>My Documents</strong>.</p>
+        <p class="summary-hint"><strong>Submit</strong> saves the professional Term Review PDF to <strong>My Documents</strong>. Use <strong>Generate certificate</strong> for the family-facing 2-page celebration PDF (certificate + term journey).</p>
         <div class="summary-actions">
-          <button type="button" class="btn" id="btnSwtermSubmit">Submit</button>
+          <button type="button" class="btn" id="btnSwtermSubmit">Submit term review</button>
+          <button type="button" class="btn btn-cert" id="btnGenerateCertificate">Generate certificate</button>
         </div>
       </div>
     </div>
@@ -2547,7 +2782,7 @@
   <!-- swtermreview_app.js — portal/ then portal-shared-js/ on Vercel. -->
   <script>
     (function () {
-      var v = "20260710-level-spot-colour";
+      var v = "20260710-term-summary-cert";
       var file = "swtermreview_app.js";
       var bases = [];
       try {
