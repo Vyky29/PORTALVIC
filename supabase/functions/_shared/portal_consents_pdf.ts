@@ -25,6 +25,45 @@ export type PortalConsentsPdfInput = {
   offsiteSigner: string;
 };
 
+function drawAnnualConsentsHeaderIcon(
+  page: PDFPage,
+  x: number,
+  yCenter: number,
+  fill: RGB,
+): void {
+  const r = 8;
+  page.drawCircle({
+    x: x + r,
+    y: yCenter,
+    size: r,
+    color: fill,
+  });
+  const white = rgb(1, 1, 1);
+  // Shield body
+  page.drawRectangle({
+    x: x + 5,
+    y: yCenter - 2.5,
+    width: 6,
+    height: 6.5,
+    borderColor: white,
+    borderWidth: 1.15,
+    color: fill,
+  });
+  // Shield point
+  page.drawRectangle({
+    x: x + 6.5,
+    y: yCenter - 5.5,
+    width: 3,
+    height: 3.5,
+    borderColor: white,
+    borderWidth: 1,
+    color: fill,
+  });
+  // Check mark
+  page.drawRectangle({ x: x + 6, y: yCenter + 0.2, width: 2, height: 1.15, color: white });
+  page.drawRectangle({ x: x + 7.4, y: yCenter - 1.6, width: 1.15, height: 4.2, color: white });
+}
+
 function b64ToBytes(b64: string): Uint8Array {
   const bin = atob(b64);
   const out = new Uint8Array(bin.length);
@@ -310,7 +349,7 @@ export async function buildPortalConsentsPdf(
   }
 
   const titleSize = 16;
-  page.drawText("ClubSENsational", {
+  page.drawText("ClubSENsational Services", {
     x: left,
     y,
     size: titleSize,
@@ -318,14 +357,23 @@ export async function buildPortalConsentsPdf(
     color: ink,
     maxWidth: right - left,
   });
-  y -= 18;
-  page.drawText("Annual consents form", {
-    x: left,
+  y -= 20;
+  const subtitleSize = 11;
+  const headerIconGap = 6;
+  const headerIconW = 16;
+  drawAnnualConsentsHeaderIcon(
+    page,
+    left,
+    y + subtitleSize * 0.35,
+    accent,
+  );
+  page.drawText("Annual Consents Form", {
+    x: left + headerIconW + headerIconGap,
     y,
-    size: 11,
+    size: subtitleSize,
     font: fontBold,
-    color: accent,
-    maxWidth: right - left,
+    color: ink,
+    maxWidth: right - left - headerIconW - headerIconGap,
   });
   y -= 14;
   page.drawText("Parent / carer permissions — valid for one year from signing.", {
