@@ -209,8 +209,6 @@
       font-weight:600;
       color:var(--muted);
     }
-    .tile.stage .stageBlurb,
-    .tile.level .levelSub{ display:none; }
     .divider{ height:1px; background:rgba(11,18,32,0.10); margin:12px 0; }
 
     .row{ display:grid; grid-template-columns:1fr; gap:10px; }
@@ -405,27 +403,21 @@
       color:rgba(255,255,255,0.92);
     }
 
-    /* Level tiles — mascot + label on level colour */
+    /* Level tiles — mascot + brief explanation */
     .tile.level{
       align-items:center;
       justify-content:center;
-      min-height:108px;
-      gap:10px;
-      padding:14px 8px 12px;
+      min-height:auto;
+      gap:8px;
+      padding:10px 8px 12px;
       border-width:1px;
-      transition:transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+      transition:transform .15s ease, box-shadow .15s ease, opacity .15s ease, background .15s ease;
     }
     .tile.level .dot{ display:none; }
-    .tile.level .txt{ display:none; }
-    .tile.level .levelLabel{
-      margin:0;
-      font-size:clamp(11px,1.35vw,13px);
-      font-weight:900;
-      letter-spacing:0.04em;
-      text-transform:uppercase;
-      color:#fff;
+    .tile.level .txt{
       text-align:center;
-      line-height:1.1;
+      align-items:center;
+      gap:2px;
     }
     .tile.level .levelMascot{
       width:52px;
@@ -446,23 +438,76 @@
       display:block;
       filter:drop-shadow(0 4px 8px rgba(11,18,32,.18));
     }
+    .tile.level .levelBadge{
+      font-weight:800;
+      font-size:clamp(8px,1.05vw,9.5px);
+      letter-spacing:.04em;
+      text-transform:uppercase;
+      color:rgba(78,91,103,.88);
+      margin-top:2px;
+    }
+    .tile.level .levelSub{
+      font-weight:600;
+      font-size:clamp(8px,1.15vw,10px);
+      line-height:1.12;
+      color:rgba(78,91,103,0.95);
+      text-transform:none;
+      margin:0;
+      word-break:break-word;
+    }
 
-    .tile.level:not(.disabled)[data-level="1"],
-    .tile.level:not(.disabled)[data-level="2"]{
-      background:var(--green);
-      border-color:rgba(11,18,32,0.12);
+    /* Soft level colours when enabled but not selected */
+    .tile.level:not(.active):not(.disabled)[data-level="1"],
+    .tile.level:not(.active):not(.disabled)[data-level="2"]{
+      background:rgba(22,138,74,0.12);
+      border-color:rgba(11,18,32,0.10);
     }
-    .tile.level:not(.disabled)[data-level="3"],
-    .tile.level:not(.disabled)[data-level="4"]{
-      background:var(--orange);
-      border-color:rgba(11,18,32,0.12);
+    .tile.level:not(.active):not(.disabled)[data-level="1"] .title,
+    .tile.level:not(.active):not(.disabled)[data-level="2"] .title{
+      color:rgba(22,138,74,0.95);
     }
-    .tile.level:not(.disabled)[data-level="5"],
-    .tile.level:not(.disabled)[data-level="6"]{
-      background:var(--blue);
-      border-color:rgba(11,18,32,0.12);
+    .tile.level:not(.active):not(.disabled)[data-level="1"] .levelSub,
+    .tile.level:not(.active):not(.disabled)[data-level="2"] .levelSub{
+      color:rgba(22,138,74,0.92);
     }
 
+    .tile.level:not(.active):not(.disabled)[data-level="3"],
+    .tile.level:not(.active):not(.disabled)[data-level="4"]{
+      background:rgba(244,183,64,0.20);
+      border-color:rgba(11,18,32,0.10);
+    }
+    .tile.level:not(.active):not(.disabled)[data-level="3"] .title,
+    .tile.level:not(.active):not(.disabled)[data-level="4"] .title{
+      color:rgba(170,105,0,0.95);
+    }
+    .tile.level:not(.active):not(.disabled)[data-level="3"] .levelSub,
+    .tile.level:not(.active):not(.disabled)[data-level="4"] .levelSub{
+      color:rgba(170,105,0,0.92);
+    }
+
+    .tile.level:not(.active):not(.disabled)[data-level="5"],
+    .tile.level:not(.active):not(.disabled)[data-level="6"]{
+      background:rgba(45,132,179,0.12);
+      border-color:rgba(11,18,32,0.10);
+    }
+    .tile.level:not(.active):not(.disabled)[data-level="5"] .title,
+    .tile.level:not(.active):not(.disabled)[data-level="6"] .title{
+      color:rgba(45,132,179,0.95);
+    }
+    .tile.level:not(.active):not(.disabled)[data-level="5"] .levelSub,
+    .tile.level:not(.active):not(.disabled)[data-level="6"] .levelSub{
+      color:rgba(45,132,179,0.92);
+    }
+
+    .tile.level.active[data-level="1"],
+    .tile.level.active[data-level="2"]{ background:var(--green); }
+    .tile.level.active[data-level="3"],
+    .tile.level.active[data-level="4"]{ background:var(--orange); }
+    .tile.level.active[data-level="5"],
+    .tile.level.active[data-level="6"]{ background:var(--blue); }
+    .tile.level.active .title{ color:#fff; }
+    .tile.level.active .levelBadge{ color:rgba(255,255,255,.92); }
+    .tile.level.active .levelSub{ color:#fff; }
     .tile.level.active{
       transform:translateY(-2px);
       box-shadow:0 10px 22px rgba(11,18,32,.14);
@@ -486,7 +531,9 @@
       opacity:.55;
       cursor:not-allowed;
     }
-    .tile.level.disabled .levelLabel{ color:rgba(78,91,103,.75); }
+    .tile.level.disabled .title,
+    .tile.level.disabled .levelBadge,
+    .tile.level.disabled .levelSub{ color:rgba(78,91,103,.75); }
     .tile.level.disabled .levelMascot img{
       filter:grayscale(.35) drop-shadow(0 2px 4px rgba(11,18,32,.08));
     }
@@ -1943,37 +1990,67 @@
         <label class="tile level" data-group="level" data-value="Level 1" data-level="1" aria-label="Level 1 Turtle">
           <input type="radio" name="level" value="Level 1" />
           <div class="levelMascot" aria-hidden="true"><img src="portal/assets/swimming-mascots/level-1-turtle.png" alt="" loading="lazy" decoding="async" /></div>
-          <p class="levelLabel">Level 1</p>
+          <div class="txt">
+            <div class="title">Level 1</div>
+            <div class="levelBadge">Turtle</div>
+            <div class="levelSub">- Building early confidence in the water</div>
+            <div class="levelSub">- Staying calm and safe with support</div>
+          </div>
         </label>
 
         <label class="tile level" data-group="level" data-value="Level 2" data-level="2" aria-label="Level 2 Starfish">
           <input type="radio" name="level" value="Level 2" />
           <div class="levelMascot" aria-hidden="true"><img src="portal/assets/swimming-mascots/level-2-starfish.png" alt="" loading="lazy" decoding="async" /></div>
-          <p class="levelLabel">Level 2</p>
+          <div class="txt">
+            <div class="title">Level 2</div>
+            <div class="levelBadge">Starfish</div>
+            <div class="levelSub">- Progressing with reduced hesitation</div>
+            <div class="levelSub">- Improving breathing with less help</div>
+          </div>
         </label>
 
         <label class="tile level" data-group="level" data-value="Level 3" data-level="3" aria-label="Level 3 Jellyfish">
           <input type="radio" name="level" value="Level 3" />
           <div class="levelMascot" aria-hidden="true"><img src="portal/assets/swimming-mascots/level-3-jellyfish.png" alt="" loading="lazy" decoding="async" /></div>
-          <p class="levelLabel">Level 3</p>
+          <div class="txt">
+            <div class="title">Level 3</div>
+            <div class="levelBadge">Jellyfish</div>
+            <div class="levelSub">- Developing balance and body position</div>
+            <div class="levelSub">- Moving forward with guidance and control</div>
+          </div>
         </label>
 
         <label class="tile level" data-group="level" data-value="Level 4" data-level="4" aria-label="Level 4 Ray">
           <input type="radio" name="level" value="Level 4" />
           <div class="levelMascot" aria-hidden="true"><img src="portal/assets/swimming-mascots/level-4-ray.png" alt="" loading="lazy" decoding="async" /></div>
-          <p class="levelLabel">Level 4</p>
+          <div class="txt">
+            <div class="title">Level 4</div>
+            <div class="levelBadge">Ray</div>
+            <div class="levelSub">- More control and coordination in movement</div>
+            <div class="levelSub">- Improving rotation, propulsion and direction</div>
+          </div>
         </label>
 
         <label class="tile level" data-group="level" data-value="Level 5" data-level="5" aria-label="Level 5 Dolphin">
           <input type="radio" name="level" value="Level 5" />
           <div class="levelMascot" aria-hidden="true"><img src="portal/assets/swimming-mascots/level-5-dolphin.png" alt="" loading="lazy" decoding="async" /></div>
-          <p class="levelLabel">Level 5</p>
+          <div class="txt">
+            <div class="title">Level 5</div>
+            <div class="levelBadge">Dolphin</div>
+            <div class="levelSub">- Refining technique with stronger safety awareness</div>
+            <div class="levelSub">- Longer sequences with increasing independence</div>
+          </div>
         </label>
 
         <label class="tile level" data-group="level" data-value="Level 6" data-level="6" aria-label="Level 6 Whale">
           <input type="radio" name="level" value="Level 6" />
           <div class="levelMascot" aria-hidden="true"><img src="portal/assets/swimming-mascots/level-6-whale.png" alt="" loading="lazy" decoding="async" /></div>
-          <p class="levelLabel">Level 6</p>
+          <div class="txt">
+            <div class="title">Level 6</div>
+            <div class="levelBadge">Whale</div>
+            <div class="levelSub">- Efficiency, rhythm and endurance</div>
+            <div class="levelSub">- Sustaining control and safety throughout sessions</div>
+          </div>
         </label>
       </div>
 
@@ -2397,7 +2474,7 @@
   <!-- swtermreview_app.js — portal/ then portal-shared-js/ on Vercel. -->
   <script>
     (function () {
-      var v = "20260709-term-review-refine";
+      var v = "20260710-restore-blurbs";
       var file = "swtermreview_app.js";
       var bases = [];
       try {
