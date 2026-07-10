@@ -853,8 +853,6 @@
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-3.5 4.2-5 8-5s6.5 1.5 8 5"/><path d="M16 4l4 4M20 4l-4 4"/></svg>';
     var balanceIcon =
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20"/><path d="M6 14h.01M10 14h4"/></svg>';
-    var docsIcon =
-      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h6"/></svg>';
     var invoiceIcon =
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2h16v20l-2-1.5L16 22l-2-1.5L12 22l-2-1.5L8 22l-2-1.5L4 22V2z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>';
     var consentIcon =
@@ -894,16 +892,14 @@
         extraClass: " pp-pax-info-btn--invoices",
         subtitle: "Statements & PDFs",
       }) +
-      infoBtnHtml("documents", "Documents", docsIcon, {
-        extraClass: " pp-pax-info-btn--documents",
-        subtitle: "Registration forms",
-      }) +
-      infoBtnHtml("consents", "Consents", consentIcon, {
+      infoBtnHtml("consents", "Consents & forms", consentIcon, {
         extraClass:
           " pp-pax-info-btn--consents" +
           (consentPending > 0 ? " pp-pax-info-btn--has-unread" : ""),
         subtitle:
-          consentPending > 0 ? consentPending + " pending" : "Photos, meds, emergency & travel",
+          consentPending > 0
+            ? consentPending + " pending"
+            : "Permissions & registration PDFs",
         unreadBadge: consentBadge,
       }) +
       infoBtnHtml("balance", "Credits & refunds", balanceIcon, {
@@ -2891,34 +2887,12 @@
     );
   }
 
-  function renderDocuments(host, data, opts) {
-    host.innerHTML = subviewShell(
-      data,
-      "documents",
-      '<h3 class="pp-pax-subview-title">Documents</h3>' +
-        '<p class="pp-muted pp-pax-subview-note">Registration forms submitted for ' +
-        esc(firstNameOf(data)) +
-        ". Open a PDF to view or download.</p>" +
-        '<div id="ppDocsNotice" class="pp-notice" hidden></div>' +
-        '<div id="ppDocsListHost"><p class="pp-muted">Loading…</p></div>',
-    );
-    bindBack(host, data, opts);
-    bindDocuments(host, data, opts);
-  }
-
-  function bindDocuments(host, data, opts) {
+  function bindRegistrationDocs(host, data, opts) {
     var listHost = host.querySelector("#ppDocsListHost");
-    var notice = host.querySelector("#ppDocsNotice");
+    if (!listHost) return;
 
-    function showNotice(kind, text) {
-      if (!notice) return;
-      notice.hidden = !text;
-      notice.className = "pp-notice" + (kind ? " pp-notice--" + kind : "");
-      notice.textContent = text || "";
-    }
-
-    if (!listHost || typeof opts.listDocuments !== "function") {
-      if (listHost) listHost.innerHTML = '<p class="pp-muted">Documents are not available right now.</p>';
+    if (typeof opts.listDocuments !== "function") {
+      listHost.innerHTML = '<p class="pp-muted">Registration forms are not available right now.</p>';
       return;
     }
 
@@ -2930,21 +2904,14 @@
           listHost.innerHTML =
             '<div class="pp-docs-empty">' +
             '<p class="pp-muted">No registration PDFs on file yet for this participant.</p>' +
-            '<p class="pp-muted">Photo and medication permissions are under <strong>Consents</strong>.</p>' +
-            '<button type="button" class="pp-btn pp-btn--primary" data-pp-open="consents">Complete consents</button>' +
             "</div>";
-          listHost.querySelectorAll('[data-pp-open="consents"]').forEach(function (btn) {
-            btn.addEventListener("click", function () {
-              openSubview(host, data, opts, "consents");
-            });
-          });
           return;
         }
         listHost.innerHTML = docs.map(documentCardHtml).join("");
       })
       .catch(function () {
-        showNotice("error", "Could not load documents — please try again.");
-        listHost.innerHTML = "";
+        listHost.innerHTML =
+          '<p class="pp-muted">Could not load registration forms — please try again.</p>';
       });
   }
 
@@ -3078,15 +3045,21 @@
     host.innerHTML = subviewShell(
       data,
       "consents",
-      '<h3 class="pp-pax-subview-title">Consents</h3>' +
-        '<p class="pp-muted pp-pax-subview-note">Marketing photos, medication, emergency treatment, and travel for ' +
+      '<h3 class="pp-pax-subview-title">Consents &amp; forms</h3>' +
+        '<p class="pp-muted pp-pax-subview-note">Sign permissions for ' +
         esc(firstNameOf(data)) +
-        ". Consents are reviewed every year.</p>" +
+        " (photos, medication, emergency, travel — renewed each year), and open any registration PDFs on file.</p>" +
         '<div id="ppConsentsNotice" class="pp-notice" hidden></div>' +
-        '<div id="ppConsentsHost"><p class="pp-muted">Loading…</p></div>',
+        '<div id="ppConsentsHost"><p class="pp-muted">Loading…</p></div>' +
+        '<section class="pp-consent-docs" aria-labelledby="ppConsentDocsTitle">' +
+        '<h4 id="ppConsentDocsTitle" class="pp-consent-docs__title">Registration forms</h4>' +
+        '<p class="pp-muted pp-consent-docs__note">Submitted PDFs for this participant.</p>' +
+        '<div id="ppDocsListHost"><p class="pp-muted">Loading…</p></div>' +
+        "</section>",
     );
     bindBack(host, data, opts);
     bindConsents(host, data, opts, parentName);
+    bindRegistrationDocs(host, data, opts);
   }
 
   function bindConsents(host, data, opts, parentName) {
@@ -4461,8 +4434,7 @@
     else if (view === "absence") renderAbsence(host, data, opts);
     else if (view === "balance") renderBalance(host, data, opts);
     else if (view === "invoices") renderInvoices(host, data, opts);
-    else if (view === "documents") renderDocuments(host, data, opts);
-    else if (view === "consents") renderConsents(host, data, opts);
+    else if (view === "documents" || view === "consents") renderConsents(host, data, opts);
     else if (view === "messages") {
       var msgOpts = opts || {};
       if (viewOpts.prefillMessage) {
