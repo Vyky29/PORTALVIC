@@ -456,20 +456,23 @@ export async function buildPortalConsentsPdf(
   const titleSizeBlock = 11;
   const sectionIconR = 11;
   const gapBetweenBoxes = 18;
-  // Fixed label column so values line up under each other.
-  const labelColW = 118;
+  // Optical mid of Helvetica caps ≈ 0.35 × size above baseline.
+  const textMidOffset = (size: number) => size * 0.35;
 
   for (const block of blocks) {
+    // Measure rows: value flows immediately after the label (no fixed column).
     const measured: Array<{
       row: DetailRow;
       valueLines: string[];
+      labelW: number;
     }> = [];
     let rowsH = 0;
-    const valueMax =
-      right - boxInnerLeft - rowIconW - labelGap - labelColW - labelGap - boxPadX;
     for (const row of block.rows) {
+      const labelW = fontBold.widthOfTextAtSize(row.label, labelSize);
+      const valueMax =
+        right - boxInnerLeft - rowIconW - labelGap - labelW - labelGap - boxPadX;
       const valueLines = wrapLines(row.value, font, valueSize, Math.max(40, valueMax));
-      measured.push({ row, valueLines });
+      measured.push({ row, valueLines, labelW });
       rowsH += Math.max(14, valueLines.length * 12) + 5;
     }
 
@@ -505,29 +508,47 @@ export async function buildPortalConsentsPdf(
 
     for (const m of measured) {
       const rowH = Math.max(14, m.valueLines.length * 12);
-      const rowMid = cy - 3;
-      drawRowIcon(page, m.row.icon, boxInnerLeft, rowMid, block.iconColor);
+      const textY = cy - 2;
+      // Centre the row icon on the first text line (same mid as label + value).
+      drawRowIcon(
+        page,
+        m.row.icon,
+        boxInnerLeft,
+        textY + textMidOffset(labelSize),
+        block.iconColor,
+      );
 
       const labelX = boxInnerLeft + rowIconW;
       page.drawText(m.row.label, {
         x: labelX,
-        y: cy - 2,
+        y: textY,
         size: labelSize,
         font: fontBold,
         color: ink,
       });
 
-      const valueX = labelX + labelColW;
-      let vy = cy - 2;
+      // Value continues right after the label; wrapped lines indent under the label.
+      let vx = labelX + m.labelW + labelGap;
+      let vy = textY;
       for (let i = 0; i < m.valueLines.length; i++) {
-        page.drawText(m.valueLines[i], {
-          x: valueX,
-          y: vy,
-          size: valueSize,
-          font,
-          color: ink,
-          maxWidth: right - valueX - boxPadX,
-        });
+        if (i === 0) {
+          page.drawText(m.valueLines[i], {
+            x: vx,
+            y: vy,
+            size: valueSize,
+            font,
+            color: ink,
+          });
+        } else {
+          page.drawText(m.valueLines[i], {
+            x: labelX,
+            y: vy,
+            size: valueSize,
+            font,
+            color: ink,
+            maxWidth: right - labelX - boxPadX,
+          });
+        }
         vy -= 12;
       }
       cy -= rowH + 5;
