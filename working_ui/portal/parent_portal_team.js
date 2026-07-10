@@ -320,6 +320,28 @@
   "eddie": [
     "youssef"
   ],
+  "elia": [
+    "alex",
+    "andres",
+    "angel",
+    "aurora",
+    "berta",
+    "bismark",
+    "carlos",
+    "dan",
+    "giuseppe",
+    "godsway",
+    "javier",
+    "john",
+    "luliya",
+    "michelle",
+    "raul",
+    "roberto",
+    "sandra",
+    "simon",
+    "victor",
+    "youssef"
+  ],
   "eiji": [
     "alex",
     "andres",
@@ -579,6 +601,12 @@
     if (cid === "105" || /amaar/i.test(String(p.display_name || ""))) return "amaar_ah";
     if (cid === "125" || /aydaan/i.test(String(p.display_name || ""))) return "aydaan_ah";
     if (cid === "124" || /aadam/i.test(String(p.display_name || ""))) return "adaam_ah";
+    if (
+      cid === "elia-matilla-demo" ||
+      /^elia\b/i.test(String(p.display_name || "").trim())
+    ) {
+      return "elia";
+    }
     var name = p.display_name || p.first_name || "";
     if (
       typeof global.PortalParticipantIdentity !== "undefined" &&
@@ -591,6 +619,7 @@
     if (slug === "aydaan_ahmed") return "aydaan_ah";
     if (slug === "aadam_ahmed") return "adaam_ah";
     if (slug === "adam_abed") return "adam_ab";
+    if (slug === "elia_matilla" || slug.indexOf("elia") === 0) return "elia";
     return slug;
   }
 
