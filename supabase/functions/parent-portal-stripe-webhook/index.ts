@@ -6,6 +6,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { stripeVerifyAndParseEvent } from "../_shared/stripe_checkout.ts";
 import { xeroSyncPaidInvoiceShare } from "../_shared/xero_payments.ts";
+import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -102,10 +103,26 @@ Deno.serve(async (req) => {
   }
 
   const xero = await xeroSyncPaidInvoiceShare(supabase, data);
+  let hold = null;
+  try {
+    const { data: shareRow } = await supabase
+      .from("portal_parent_invoice_share")
+      .select("contact_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    const cid = String(shareRow?.contact_id || "").trim();
+    if (cid) hold = await clearPaymentHoldForContact(supabase, cid, "stripe");
+  } catch (e) {
+    console.error(
+      "[parent-portal-stripe-webhook] hold clear",
+      e instanceof Error ? e.message : String(e),
+    );
+  }
   return json(200, {
     ok: true,
     invoice_id: data.id,
     payment_status: data.payment_status,
     xero,
+    hold,
   });
 });

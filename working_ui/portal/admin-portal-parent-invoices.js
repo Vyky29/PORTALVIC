@@ -147,6 +147,46 @@
           : '<button type="button" class="btn btn--sm btn--ghost" data-inv-act="unpaid" data-inv-id="' +
             id +
             '">Mark unpaid</button> ';
+    var hold = inv.payment_hold || null;
+    var holdChip = '';
+    var holdBtns = '';
+    if (hold && (hold.status === 'soft_hold' || hold.status === 'session_held' || hold.status === 'hard_cut')) {
+      var holdLabel =
+        hold.status === 'session_held'
+          ? 'Session held'
+          : hold.status === 'hard_cut'
+            ? 'Hard cut'
+            : 'Soft hold';
+      holdChip =
+        '<div class="chip chip--pend" style="margin-top:4px;font-size:11px">' +
+        esc(holdLabel) +
+        (hold.reminder_count ? ' · ' + esc(String(hold.reminder_count)) + ' reminders' : '') +
+        (hold.held_session_label ? ' · ' + esc(String(hold.held_session_label).slice(0, 48)) : '') +
+        '</div>';
+      if (hold.status !== 'hard_cut') {
+        holdBtns =
+          '<button type="button" class="btn btn--sm btn--ghost" data-hold-act="remind" data-hold-contact="' +
+          esc(inv.contact_id) +
+          '" data-inv-id="' +
+          id +
+          '">Remind</button> ' +
+          (hold.status === 'soft_hold'
+            ? '<button type="button" class="btn btn--sm btn--sec" data-hold-act="hold_session" data-hold-contact="' +
+              esc(inv.contact_id) +
+              '">Hold 1 session</button> '
+            : '') +
+          '<button type="button" class="btn btn--sm btn--ghost" data-hold-act="clear" data-hold-contact="' +
+          esc(inv.contact_id) +
+          '">Release hold</button> ';
+      }
+    } else if (inv.payment_status !== 'paid') {
+      holdBtns =
+        '<button type="button" class="btn btn--sm btn--ghost" data-hold-act="soft_hold" data-hold-contact="' +
+        esc(inv.contact_id) +
+        '" data-inv-id="' +
+        id +
+        '">Soft hold</button> ';
+    }
     return (
       '<tr data-invoice-id="' +
       id +
@@ -155,7 +195,9 @@
       esc(inv.participant_display || inv.related_client || inv.contact_id) +
       '</strong><div class="muted" style="font-size:12px">' +
       esc(inv.contact_id) +
-      '</div></td>' +
+      '</div>' +
+      holdChip +
+      '</td>' +
       '<td style="min-width:0;overflow-wrap:break-word">' +
       esc(inv.invoice_number || '—') +
       '<div class="muted" style="font-size:12px">' +
@@ -200,6 +242,7 @@
           id +
           '">Share</button> ') +
       confirmBtn +
+      holdBtns +
       '</td></tr>'
     );
   }
@@ -230,6 +273,9 @@
       parts.push(String(state.meta.ready_unpaid || 0) + ' unpaid');
       if (state.meta.pending_confirmation) {
         parts.push(String(state.meta.pending_confirmation) + ' pending');
+      }
+      if (state.meta.payment_holds_open) {
+        parts.push(String(state.meta.payment_holds_open) + ' holds');
       }
       metaEl.textContent = parts.join(' · ');
     }
@@ -271,7 +317,40 @@
             btn.disabled = false;
             return;
           }
-          cfg.toast('Invoice updated', 'ok');
+          cfg.toast(
+            r.hold && r.hold.restored
+              ? 'Invoice paid — held session restored'
+              : 'Invoice updated',
+            'ok',
+          );
+          void renderHost(global.document.getElementById('portalParentInvoicesHost'));
+        });
+      });
+    });
+    host.querySelectorAll('[data-hold-act]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var act = btn.getAttribute('data-hold-act');
+        var contactId = btn.getAttribute('data-hold-contact');
+        var invId = btn.getAttribute('data-inv-id');
+        if (!act || !contactId) return;
+        if (
+          act === 'hold_session' &&
+          !global.confirm(
+            'Cancel their next upcoming session (recoverable)? They can pay to restore it before a hard cut.',
+          )
+        ) {
+          return;
+        }
+        btn.disabled = true;
+        var body = { action: act, contact_id: contactId };
+        if (invId) body.invoice_share_id = invId;
+        void api('portal-admin-payment-hold-action', body).then(function (r) {
+          if (r.error) {
+            cfg.toast(r.message || r.error || 'Hold action failed', 'error');
+            btn.disabled = false;
+            return;
+          }
+          cfg.toast(r.message || 'Hold updated', 'ok');
           void renderHost(global.document.getElementById('portalParentInvoicesHost'));
         });
       });
@@ -497,7 +576,7 @@
       '<div class="card-h"><h3>Family invoices</h3>' +
       '<span class="chip chip--pend" id="portalParentInvoicesMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word"><strong>Create in Portal</strong> generates a TAX INVOICE PDF (Exempt or VAT 20%) and shares it with the family — no Xero needed. Optional: still upload a Xero PDF below if you prefer. Families pay by Tide bank transfer or Card / Apple Pay.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word"><strong>Create in Portal</strong> generates a TAX INVOICE PDF (Exempt or VAT 20%) and shares it with the family — no Xero needed. Optional: still upload a Xero PDF below if you prefer. Families pay by Tide bank transfer or Card / Apple Pay. For own-arrangement / overdue: <strong>Soft hold</strong> → reminders → <strong>Hold 1 session</strong> (recoverable) → pay restores; hard cut stays manual.</p>' +
       '<form id="portalParentInvoiceCreateForm" class="toolbar" style="flex-direction:column;align-items:stretch;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--line,#e5e7eb)">' +
       '<div style="font-weight:700">Create invoice in Portal</div>' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end">' +

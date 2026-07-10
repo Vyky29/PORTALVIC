@@ -10,6 +10,7 @@ import {
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
 import { xeroSyncPaidInvoiceShare } from "../_shared/xero_payments.ts";
+import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
 import {
   buildPortalTaxInvoicePdf,
   type PortalInvoiceVatMode,
@@ -514,8 +515,18 @@ Deno.serve(async (req) => {
     }
 
     let xero = null;
+    let hold = null;
     if (updated.payment_status === "paid") {
       xero = await xeroSyncPaidInvoiceShare(admin, updated);
+      try {
+        const cid = clean(updated.contact_id, 120);
+        if (cid) hold = await clearPaymentHoldForContact(admin, cid, "admin", verified.userId || null);
+      } catch (e) {
+        console.error(
+          "[portal-admin-parent-invoices-upsert] hold clear",
+          e instanceof Error ? e.message : String(e),
+        );
+      }
     }
 
     const title = clean(fields.title, 200);
@@ -528,7 +539,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return portalAdminJson(200, { ok: true, invoice: updated, xero });
+    return portalAdminJson(200, { ok: true, invoice: updated, xero, hold });
   }
 
   return portalAdminJson(400, { ok: false, error: "action_required" });

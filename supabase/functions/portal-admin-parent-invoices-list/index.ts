@@ -98,6 +98,22 @@ Deno.serve(async (req) => {
     }
   }
 
+  const holdByContact = new Map<string, Record<string, unknown>>();
+  if (contactIds.length) {
+    const { data: holds } = await admin
+      .from("portal_family_payment_holds")
+      .select(
+        "id, contact_id, status, reminder_count, held_session_date, held_session_label, advance_buffer_gbp, updated_at",
+      )
+      .in("contact_id", contactIds)
+      .in("status", ["soft_hold", "session_held", "hard_cut"])
+      .order("updated_at", { ascending: false });
+    for (const h of holds || []) {
+      const cid = clean(h.contact_id, 120);
+      if (cid && !holdByContact.has(cid)) holdByContact.set(cid, h);
+    }
+  }
+
   const invoices = [];
   for (const share of shares || []) {
     const doc = docsById.get(String(share.document_id)) || {};
@@ -117,6 +133,7 @@ Deno.serve(async (req) => {
       file_url: doc.file_url || null,
       pdf_url: pdfUrl,
       document_created_at: doc.created_at || null,
+      payment_hold: holdByContact.get(cid) || null,
     });
   }
 
@@ -132,12 +149,18 @@ Deno.serve(async (req) => {
     .eq("share_status", "ready")
     .eq("payment_status", "pending_confirmation");
 
+  const { count: openHolds } = await admin
+    .from("portal_family_payment_holds")
+    .select("id", { count: "exact", head: true })
+    .in("status", ["soft_hold", "session_held"]);
+
   return portalAdminJson(200, {
     ok: true,
     invoices,
     meta: {
       ready_unpaid: readyUnpaid || 0,
       pending_confirmation: pendingConfirm || 0,
+      payment_holds_open: openHolds || 0,
     },
   });
 });
