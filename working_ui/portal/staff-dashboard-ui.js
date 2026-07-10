@@ -3525,24 +3525,40 @@
         }
       }
     }
-    function supportPlanItemCard(it, opts){
+    function supportPlanItemRow(it, opts){
       opts = opts || {};
       const risk = escapeHtml(it.risk_behaviour || '—');
       const strat = escapeHtml(it.strategy_in_place || '—');
       const scope = String(it.item_scope || 'individual');
-      const scopeLabel = scope === 'general' ? 'General' : 'Individual';
-      const meta = [
-        scopeLabel,
+      const metaBits = [
         it.is_customized ? 'Customised' : null,
-        it.source_incident_id ? 'Source incident' : null,
-        'Updated ' + formatIspWhen(it.last_updated_at),
-        it.updated_by_name ? ('By ' + escapeHtml(it.updated_by_name)) : null,
-        it.item_status && it.item_status !== 'active' ? String(it.item_status).replace(/_/g, ' ') : null
-      ].filter(Boolean).join(' · ');
-      const editBtn = opts.editable
-        ? `<button type="button" class="isp-btn" data-isp-edit="${escapeHtml(it.id)}">Edit</button>`
+        it.source_incident_id ? 'From incident' : null,
+        it.updated_by_name ? ('By ' + escapeHtml(it.updated_by_name)) : null
+      ].filter(Boolean);
+      const meta = metaBits.length
+        ? `<div class="isp-table__meta muted">${metaBits.join(' · ')}</div>`
         : '';
-      return `<article class="isp-card" data-isp-item="${escapeHtml(it.id)}" data-scope="${escapeHtml(scope)}"><div class="isp-card__top"><strong class="isp-card__risk">${risk}</strong>${supportPlanRiskChip(it.risk_level)}</div><p class="isp-card__strat">${strat}</p><p class="isp-card__meta muted">${meta}</p>${editBtn ? `<div class="isp-acts">${editBtn}</div>` : ''}</article>`;
+      const editBtn = opts.editable
+        ? `<button type="button" class="isp-btn isp-btn--sm" data-isp-edit="${escapeHtml(it.id)}">Edit</button>`
+        : '';
+      return `<tr class="isp-row" data-isp-item="${escapeHtml(it.id)}" data-scope="${escapeHtml(scope)}">` +
+        `<td class="isp-td isp-td--risk"><strong class="isp-card__risk">${risk}</strong>${meta}</td>` +
+        `<td class="isp-td isp-td--strat"><div class="isp-card__strat">${strat}</div></td>` +
+        `<td class="isp-td isp-td--level">${supportPlanRiskChip(it.risk_level)}${editBtn ? `<div class="isp-acts isp-acts--tight">${editBtn}</div>` : ''}</td>` +
+        `</tr>`;
+    }
+    function supportPlanItemsTable(items, opts){
+      if(!items || !items.length) return '';
+      const rows = items.map(function(it){ return supportPlanItemRow(it, opts); }).join('');
+      return `<div class="isp-table-wrap">` +
+        `<table class="isp-table isp-table--plan">` +
+        `<thead><tr>` +
+        `<th class="isp-th isp-th--risk">Individual Risk / Behaviour</th>` +
+        `<th class="isp-th isp-th--strat">Strategy in Place</th>` +
+        `<th class="isp-th isp-th--level">Risk</th>` +
+        `</tr></thead>` +
+        `<tbody>${rows}</tbody>` +
+        `</table></div>`;
     }
     function renderSupportPlanHost(host, payload, ctx){
       if(!host) return;
@@ -3606,14 +3622,14 @@
 
       html += '<div class="isp-section"><div class="isp-section__head"><h4 class="isp-h">General (by services)</h4></div>';
       html += generals.length
-        ? generals.map(function(it){ return supportPlanItemCard(it, { editable: true }); }).join('')
+        ? supportPlanItemsTable(generals, { editable: true })
         : '<p class="pcso-empty">No general risks for the current services.</p>';
       html += '</div>';
 
       html += '<div class="isp-section"><div class="isp-section__head"><h4 class="isp-h">Individual behaviours</h4>' +
         '<button type="button" class="isp-btn isp-btn--ok" data-isp-add>Add behaviour</button></div>';
       html += individuals.length
-        ? individuals.map(function(it){ return supportPlanItemCard(it, { editable: true }); }).join('')
+        ? supportPlanItemsTable(individuals, { editable: true })
         : '<p class="pcso-empty">No individual behaviours yet. Add ones that are specific to this participant.</p>';
       html += '</div>';
 
