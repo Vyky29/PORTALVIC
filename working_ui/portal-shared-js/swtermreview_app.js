@@ -235,6 +235,7 @@ const LEVEL_DATA = {
       if(!mascot){
         spot.hidden = true;
         spot.classList.remove("is-visible");
+        spot.removeAttribute("data-level");
         img.removeAttribute("src");
         return;
       }
@@ -243,6 +244,7 @@ const LEVEL_DATA = {
       if(kicker) kicker.textContent = "Current level";
       if(headline) headline.textContent = "Level " + levelNumber + " · " + mascot.animal;
       if(sub) sub.textContent = mascot.badge;
+      spot.setAttribute("data-level", String(levelNumber));
       spot.hidden = false;
       spot.classList.add("is-visible");
     }

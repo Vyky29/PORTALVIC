@@ -600,8 +600,57 @@
       background:linear-gradient(135deg, rgba(237,246,252,.96), rgba(255,255,255,.98));
       border:1px solid rgba(45,132,179,.12);
       box-shadow:0 8px 20px rgba(11,18,32,.04);
+      transition:background .15s ease, border-color .15s ease, box-shadow .15s ease;
     }
     .levelMascotSpot.is-visible{ display:flex; }
+    .levelMascotSpot[data-level="1"],
+    .levelMascotSpot[data-level="2"]{
+      background:linear-gradient(135deg, rgba(22,138,74,.16), rgba(255,255,255,.98));
+      border-color:rgba(22,138,74,.28);
+      box-shadow:0 8px 20px rgba(22,138,74,.10);
+    }
+    .levelMascotSpot[data-level="1"] .kicker,
+    .levelMascotSpot[data-level="2"] .kicker,
+    .levelMascotSpot[data-level="1"] .sub,
+    .levelMascotSpot[data-level="2"] .sub{
+      color:rgba(22,138,74,.88);
+    }
+    .levelMascotSpot[data-level="1"] .headline,
+    .levelMascotSpot[data-level="2"] .headline{
+      color:var(--green);
+    }
+    .levelMascotSpot[data-level="3"],
+    .levelMascotSpot[data-level="4"]{
+      background:linear-gradient(135deg, rgba(244,183,64,.22), rgba(255,255,255,.98));
+      border-color:rgba(201,120,10,.28);
+      box-shadow:0 8px 20px rgba(244,183,64,.14);
+    }
+    .levelMascotSpot[data-level="3"] .kicker,
+    .levelMascotSpot[data-level="4"] .kicker,
+    .levelMascotSpot[data-level="3"] .sub,
+    .levelMascotSpot[data-level="4"] .sub{
+      color:rgba(170,105,0,.88);
+    }
+    .levelMascotSpot[data-level="3"] .headline,
+    .levelMascotSpot[data-level="4"] .headline{
+      color:rgba(170,105,0,.95);
+    }
+    .levelMascotSpot[data-level="5"],
+    .levelMascotSpot[data-level="6"]{
+      background:linear-gradient(135deg, rgba(45,132,179,.16), rgba(255,255,255,.98));
+      border-color:rgba(45,132,179,.28);
+      box-shadow:0 8px 20px rgba(45,132,179,.10);
+    }
+    .levelMascotSpot[data-level="5"] .kicker,
+    .levelMascotSpot[data-level="6"] .kicker,
+    .levelMascotSpot[data-level="5"] .sub,
+    .levelMascotSpot[data-level="6"] .sub{
+      color:rgba(45,132,179,.88);
+    }
+    .levelMascotSpot[data-level="5"] .headline,
+    .levelMascotSpot[data-level="6"] .headline{
+      color:var(--blue);
+    }
     .levelMascotSpot img{
       width:auto;
       height:56px;
@@ -2498,7 +2547,7 @@
   <!-- swtermreview_app.js — portal/ then portal-shared-js/ on Vercel. -->
   <script>
     (function () {
-      var v = "20260710-restore-blurbs";
+      var v = "20260710-level-spot-colour";
       var file = "swtermreview_app.js";
       var bases = [];
       try {
