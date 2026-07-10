@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PORTAL — What’s new (last 48h)</title>
+  <link rel="icon" href="/portal/F-02-1.png" />
+  <style>
+    :root {
+      --ink: #14212b;
+      --muted: #5b6b76;
+      --line: #d7e0e7;
+      --paper: #f7fafc;
+      --card: #ffffff;
+      --brand: #0f6f8c;
+      --brand-deep: #0a4f64;
+      --amber: #e8a317;
+      --amber-soft: #fff6e0;
+      --ok: #0f7a4c;
+      --ok-soft: #e8f7ef;
+      --warn: #9a5b00;
+      --danger: #b42318;
+      --shadow: 0 10px 30px rgba(20, 33, 43, 0.06);
+      --radius: 16px;
+      --max: 980px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 500px at 10% -10%, #dff3f8 0%, transparent 55%),
+        radial-gradient(900px 400px at 100% 0%, #fff1d0 0%, transparent 50%),
+        var(--paper);
+      line-height: 1.5;
+    }
+    a { color: var(--brand-deep); }
+    .wrap { max-width: var(--max); margin: 0 auto; padding: 28px 18px 80px; }
+    header.hero {
+      display: grid;
+      gap: 14px;
+      margin-bottom: 28px;
+      padding: 22px 22px 20px;
+      border: 1px solid var(--line);
+      border-radius: calc(var(--radius) + 4px);
+      background: linear-gradient(180deg, #fff, #f3f9fb);
+      box-shadow: var(--shadow);
+    }
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+    .brand-row img {
+      width: 56px;
+      height: 56px;
+      object-fit: contain;
+      flex: 0 0 auto;
+    }
+    .brand-row h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 3vw, 1.9rem);
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      overflow-wrap: break-word;
+    }
+    .brand-row p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #fff;
+      font-size: 12px;
+      font-weight: 650;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .chip--new { background: var(--amber-soft); border-color: #f0d28a; color: var(--warn); }
+    .chip--ok { background: var(--ok-soft); border-color: #b7e4cb; color: var(--ok); }
+    nav.toc {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 8px;
+      margin: 8px 0 0;
+    }
+    nav.toc a {
+      text-decoration: none;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 650;
+      color: var(--ink);
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    nav.toc a:hover { border-color: #9ec9d8; background: #f3fafc; }
+    section {
+      margin: 28px 0;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: var(--shadow);
+      min-width: 0;
+    }
+    section h2 {
+      margin: 0 0 8px;
+      font-size: 1.25rem;
+      letter-spacing: -0.01em;
+    }
+    section h3 {
+      margin: 18px 0 8px;
+      font-size: 1.02rem;
+    }
+    section p, section li { color: var(--ink); }
+    .lead { color: var(--muted); margin: 0 0 14px; }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+    }
+    .cardish {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      background: #fbfdfe;
+      min-width: 0;
+    }
+    .cardish h4 {
+      margin: 0 0 6px;
+      font-size: 0.95rem;
+    }
+    .cardish p, .cardish li { margin: 0; font-size: 0.92rem; color: var(--muted); }
+    .cardish ul { margin: 6px 0 0; padding-left: 1.1rem; }
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin: 10px 0 4px;
+    }
+    .flow span, .flow strong {
+      display: inline-block;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #fff;
+      font-size: 12px;
+      font-weight: 650;
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+    .flow .arrow { border: 0; background: transparent; color: var(--muted); padding: 0 2px; }
+    .flow .hl { background: var(--amber-soft); border-color: #efd08a; }
+    .flow .ok { background: var(--ok-soft); border-color: #b7e4cb; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    th, td {
+      text-align: left;
+      vertical-align: top;
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--line);
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+    th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    .table-wrap { overflow-x: auto; min-width: 0; }
+    .note {
+      margin: 12px 0 0;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: var(--amber-soft);
+      border: 1px solid #efd08a;
+      color: var(--warn);
+      font-size: 0.92rem;
+    }
+    .note strong { color: var(--ink); }
+    .map {
+      display: grid;
+      gap: 10px;
+    }
+    .map-row {
+      display: grid;
+      grid-template-columns: 1.1fr 0.2fr 1.4fr;
+      gap: 8px;
+      align-items: stretch;
+    }
+    @media (max-width: 720px) {
+      .map-row { grid-template-columns: 1fr; }
+      .map-row .arrow-cell { display: none; }
+    }
+    .map-box {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      background: #fff;
+      min-width: 0;
+    }
+    .map-box strong { display: block; margin-bottom: 4px; }
+    .map-box span { color: var(--muted); font-size: 0.88rem; }
+    .arrow-cell {
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    footer {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-align: center;
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.86em;
+      background: #eef3f6;
+      padding: 1px 5px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <div class="brand-row">
+        <img src="/portal/F-02-1.png" alt="ClubSENsational" />
+        <div style="min-width:0">
+          <h1>PORTAL — what’s new (last 48 hours)</h1>
+          <p>Internal briefing: how the new pieces work and what links to what. 9–10 Jul 2026.</p>
+        </div>
+      </div>
+      <div class="chips">
+        <span class="chip chip--new">Parent hub</span>
+        <span class="chip chip--new">Payments / INV-P</span>
+        <span class="chip chip--new">Re-enrol 2026/27</span>
+        <span class="chip chip--new">Consents PDF</span>
+        <span class="chip chip--ok">Course funding (L&amp;D)</span>
+        <span class="chip chip--ok">Swimming term review</span>
+        <span class="chip">Xero bookkeeping</span>
+      </div>
+      <nav class="toc" aria-label="Sections">
+        <a href="#map">1. Big picture map</a>
+        <a href="#parent">2. Parent portal</a>
+        <a href="#pay">3. Payments &amp; invoices</a>
+        <a href="#reenrol">4. Re-enrolment</a>
+        <a href="#holds">5. Buffer &amp; holds</a>
+        <a href="#consents">6. Consents &amp; forms</a>
+        <a href="#absence">7. Absent / makeup / credit</a>
+        <a href="#funding">8. Course funding</a>
+        <a href="#swim">9. Swimming term review</a>
+        <a href="#admin">10. Admin surfaces</a>
+        <a href="#links">11. Link table</a>
+      </nav>
+    </header>
+
+    <section id="map">
+      <h2>1. Big picture map</h2>
+      <p class="lead">Three worlds talk to each other through Portal Supabase. Parents never see admin screens; admin never needs Xero for day-to-day create.</p>
+      <div class="map">
+        <div class="map-row">
+          <div class="map-box">
+            <strong>Parent portal</strong>
+            <span><code>parent_portal.html</code> · hub per child · pay, consents, absent, makeup, re-enrol</span>
+          </div>
+          <div class="arrow-cell">↔</div>
+          <div class="map-box">
+            <strong>Supabase Edge + DB</strong>
+            <span>OTP/session · invoices · credits · holds · consents PDF · re-enrol submit · Stripe/Xero hooks</span>
+          </div>
+        </div>
+        <div class="map-row">
+          <div class="map-box">
+            <strong>Admin dashboard</strong>
+            <span>Family invoices · holds · L&amp;D funding review · swimming term review · absents/credits</span>
+          </div>
+          <div class="arrow-cell">↔</div>
+          <div class="map-box">
+            <strong>Outside money systems</strong>
+            <span>Tide (bank details) · Stripe (Card/Apple Pay) · Xero (bookkeeping push + payment write-back)</span>
+          </div>
+        </div>
+      </div>
+      <p class="note"><strong>Path A:</strong> Portal creates and shares family invoices (<code>INV-P-####</code>). Xero is for accounts, not for creating the parent-facing invoice.</p>
+    </section>
+
+    <section id="parent">
+      <h2>2. Parent portal hub</h2>
+      <p class="lead">After login, parents land on the <strong>Hub</strong> for the selected child (siblings switcher). Profile is collapsed; actions are grouped.</p>
+      <div class="grid-2">
+        <div class="cardish">
+          <h4>Always on the hub</h4>
+          <ul>
+            <li>Next session + term date chips</li>
+            <li>Service chips beside the name</li>
+            <li>Re-enrol CTA (while open)</li>
+            <li>Messages / Team / Report absent</li>
+          </ul>
+        </div>
+        <div class="cardish">
+          <h4>Money &amp; paperwork tiles</h4>
+          <ul>
+            <li><strong>Invoices</strong> — pay Tide / Card / Apple Pay / credit</li>
+            <li><strong>Credits &amp; refunds</strong> — family ledger</li>
+            <li><strong>Consents &amp; forms</strong> — merged with Documents</li>
+            <li>Makeup offers when admin grants them</li>
+          </ul>
+        </div>
+      </div>
+      <h3>Key pages</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>URL / file</th><th>Job</th></tr></thead>
+          <tbody>
+            <tr><td><code>parent_portal.html</code></td><td>Family hub + all parent subviews</td></tr>
+            <tr><td><code>parent_reenrolment.html</code> + <code>portal_reenrolment_2026_27.js</code></td><td>2026/27 re-enrol choices + payment plan</td></tr>
+            <tr><td><code>staff_profile_update.html</code></td><td>Separate annual staff self-service (not parent)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="pay">
+      <h2>3. Payments &amp; family invoices</h2>
+      <p class="lead">One admin surface: <strong>Finance → Family invoices</strong>. Parents see shared invoices in the hub.</p>
+
+      <div class="flow">
+        <strong class="hl">Create INV-P in Portal</strong>
+        <span class="arrow">→</span>
+        <span>PDF + share row</span>
+        <span class="arrow">→</span>
+        <span>Parent hub</span>
+        <span class="arrow">→</span>
+        <span>Tide / Stripe / credit</span>
+        <span class="arrow">→</span>
+        <strong class="ok">Paid</strong>
+        <span class="arrow">→</span>
+        <span>Optional Xero payment</span>
+      </div>
+
+      <div class="grid-2" style="margin-top:14px">
+        <div class="cardish">
+          <h4>Create (admin)</h4>
+          <ul>
+            <li><strong>Create invoice in Portal</strong> — VAT 20% or Exempt</li>
+            <li>Auto number <code>INV-P-####</code></li>
+            <li>Or upload a Xero/office PDF</li>
+            <li>Share / Hide / Mark paid</li>
+          </ul>
+        </div>
+        <div class="cardish">
+          <h4>Pay (parent)</h4>
+          <ul>
+            <li>Bank transfer (Tide details) + “I’ve paid”</li>
+            <li>Card / Apple Pay (Stripe Checkout, fee gross-up)</li>
+            <li>Apply open family credit</li>
+            <li>Inline PDF preview before download</li>
+          </ul>
+        </div>
+        <div class="cardish">
+          <h4>Xero (bookkeeping)</h4>
+          <ul>
+            <li><strong>Push to Xero</strong> — creates ACCREC, stamps GUID</li>
+            <li><strong>Export CSV</strong> — fallback import</li>
+            <li>When paid in Portal → write-back <code>POST /Payments</code> if GUID present</li>
+          </ul>
+        </div>
+        <div class="cardish">
+          <h4>What is NOT an admin screen</h4>
+          <ul>
+            <li>Tide credentials (secrets only)</li>
+            <li>Stripe keys (secrets + webhook)</li>
+            <li>Old “Xero / finance” builder → redirects here</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Main tables / functions</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Piece</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td><code>portal_parent_invoice_share</code></td><td>Shared invoice + pay status + Xero IDs</td></tr>
+            <tr><td><code>documents</code> (billing)</td><td>PDF storage for INV-P</td></tr>
+            <tr><td><code>portal_parent_family_credits</code></td><td>Open credits / applied / refunds</td></tr>
+            <tr><td><code>portal-admin-parent-invoices-*</code></td><td>Admin list / create / update</td></tr>
+            <tr><td><code>portal-admin-xero-batch-push</code></td><td>Push INV-P → Xero</td></tr>
+            <tr><td><code>parent-portal-invoice-checkout</code> + Stripe webhook</td><td>Card / Apple Pay</td></tr>
+            <tr><td><code>parent-portal-credit-apply-invoice</code></td><td>Apply credit; clears hold if fully paid</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="reenrol">
+      <h2>4. Re-enrolment 2026/27</h2>
+      <p class="lead">Parents confirm slots + funding/payment plan. On <strong>first</strong> submit (parent-pays), Portal auto-creates the INV-P instalment schedule.</p>
+      <div class="flow">
+        <span>Lookup child</span>
+        <span class="arrow">→</span>
+        <span>Keep / change / withdraw slots</span>
+        <span class="arrow">→</span>
+        <strong class="hl">Choose pay plan</strong>
+        <span class="arrow">→</span>
+        <span>Submit</span>
+        <span class="arrow">→</span>
+        <strong class="ok">INV-P schedule</strong>
+      </div>
+      <div class="grid-2" style="margin-top:14px">
+        <div class="cardish">
+          <h4>Payment plans (parent-pays)</h4>
+          <ul>
+            <li>Bank transfer — term / flexi / year (no admin fee if on time)</li>
+            <li>GoCardless — monthly-by-term · <strong>£1.50 / instalment</strong></li>
+            <li>Own arrangement — only if they cannot meet fixed dates · <strong>£50 / term</strong> + 2-session prepaid buffer</li>
+            <li><code>auto_continue</code> on year-long standard plans</li>
+          </ul>
+        </div>
+        <div class="cardish">
+          <h4>Funder-paid (LA / NHS invoice)</h4>
+          <ul>
+            <li>No parent payment schedule</li>
+            <li>No auto INV-P on submit</li>
+            <li>Office invoices the funder separately</li>
+          </ul>
+        </div>
+      </div>
+      <p class="note">Resubmits do <strong>not</strong> recreate invoices — office adjusts in Family invoices.</p>
+    </section>
+
+    <section id="holds">
+      <h2>5. Prepaid buffer &amp; payment holds</h2>
+      <p class="lead">Own-arrangement families must keep ~2 sessions prepaid per service. Pressure is staged; hard cut stays manual.</p>
+      <div class="flow">
+        <span>Nightly buffer check</span>
+        <span class="arrow">→</span>
+        <strong class="hl">Soft hold</strong>
+        <span class="arrow">→</span>
+        <span>Remind</span>
+        <span class="arrow">→</span>
+        <span>Hold 1 session</span>
+        <span class="arrow">→</span>
+        <strong class="ok">Pay unlocks</strong>
+      </div>
+      <ul>
+        <li><strong>Available (v1):</strong> open credits − overdue unpaid invoices</li>
+        <li><strong>Cron:</strong> ~06:00 London · auto soft-hold / clear soft-hold only</li>
+        <li><strong>Never auto:</strong> hold session or hard cut</li>
+        <li>Admin chips: Buffer low · Soft hold · Session held</li>
+      </ul>
+    </section>
+
+    <section id="consents">
+      <h2>6. Consents &amp; forms</h2>
+      <p class="lead">One hub button: <strong>Consents &amp; forms</strong> (Documents deep-links here). Annual pack + signed PDF.</p>
+      <div class="grid-2">
+        <div class="cardish">
+          <h4>Parent fills</h4>
+          <ul>
+            <li>Photo (marketing)</li>
+            <li>Medication at centre</li>
+            <li>Emergency treatment</li>
+            <li>Off-site / transport</li>
+          </ul>
+        </div>
+        <div class="cardish">
+          <h4>After save</h4>
+          <ul>
+            <li>Accordion shows answers</li>
+            <li>Signed PDF with logo → participant documents</li>
+            <li>Valid ~1 year</li>
+            <li>Admin consents queue for review</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="absence">
+      <h2>7. Absent → makeup → credit</h2>
+      <p class="lead">Parent reports absence from the hub; admin validates; outcomes feed credits / makeups / roster.</p>
+      <div class="flow">
+        <span>Report absent</span>
+        <span class="arrow">→</span>
+        <span>Proof if Unwell</span>
+        <span class="arrow">→</span>
+        <span>Admin decide</span>
+        <span class="arrow">→</span>
+        <span>Makeup offer / credit / noted</span>
+      </div>
+      <ul>
+        <li>Date chips show absent / cancelled / done / next</li>
+        <li>Makeup grant → parent accepts venue/slot → roster MakeUp</li>
+        <li>Decline can forfeit; club cancel early can create credit/refund path</li>
+        <li>Credits appear in family ledger and can pay an invoice</li>
+      </ul>
+    </section>
+
+    <section id="funding">
+      <h2>8. Course funding (L&amp;D)</h2>
+      <p class="lead">Staff learning &amp; development funding applications — separate from family invoices. Lives in admin L&amp;D review + letter PDFs.</p>
+      <div class="grid-2">
+        <div class="cardish">
+          <h4>What it is</h4>
+          <ul>
+            <li>Staff apply for course funding</li>
+            <li>Admin reviews / decides (Approved / Declined)</li>
+            <li>Decision letter PDF saved to applicant documents</li>
+          </ul>
+        </div>
+        <div class="cardish">
+          <h4>Linked to</h4>
+          <ul>
+            <li><code>portal_ld_funding_*</code> + letter helpers</li>
+            <li><code>documents</code> (training letters)</li>
+            <li><strong>Not</strong> Family invoices / parent hub money</li>
+          </ul>
+        </div>
+      </div>
+      <p class="note">If someone says “funding” in a parent context they usually mean <strong>LA/NHS / Direct Payments</strong> on re-enrol — different from staff Course funding (L&amp;D).</p>
+    </section>
+
+    <section id="swim">
+      <h2>9. Swimming term review</h2>
+      <p class="lead">Instructor/admin end-of-term swimming progression — levels, outcomes, mascots, certificate. Not a payment flow.</p>
+      <div class="grid-2">
+        <div class="cardish">
+          <h4>What was refined</h4>
+          <ul>
+            <li>Progression decision split from developmental profile</li>
+            <li>Level confirmation tiles + learning outcomes</li>
+            <li>Core development areas + mascot thumbnails</li>
+            <li>Celebration certificate PDF</li>
+          </ul>
+        </div>
+        <div class="cardish">
+          <h4>Linked to</h4>
+          <ul>
+            <li>Session / swimming programme data</li>
+            <li>Parent-facing summary / certificate when shared</li>
+            <li><strong>Not</strong> INV-P creation (unless office invoices separately)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="admin">
+      <h2>10. Admin surfaces (where to click)</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nav</th><th>Use for</th></tr></thead>
+          <tbody>
+            <tr><td>Finance → <strong>Family invoices</strong></td><td>Create/share INV-P, holds, Push/Export Xero, mark paid</td></tr>
+            <tr><td>Parent consents queue</td><td>Photo / medication / emergency / transport reviews</td></tr>
+            <tr><td>Absents / credits</td><td>Validate absences, credits, makeup grants</td></tr>
+            <tr><td>L&amp;D / Course funding review</td><td>Staff course decisions + letters</td></tr>
+            <tr><td>Swimming term review</td><td>Levels, outcomes, certificates</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="links">
+      <h2>11. “What is linked to what?”</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>If you touch…</th><th>It also affects…</th></tr></thead>
+          <tbody>
+            <tr><td>Re-enrol submit (parent-pays)</td><td>Creates INV-P rows → parent Invoices tile → optional Xero push</td></tr>
+            <tr><td>Mark invoice paid / Stripe / credit</td><td>Clears payment hold; may write Xero Payment</td></tr>
+            <tr><td>Own-arrangement buffer low</td><td>Soft hold badge → Remind → Hold 1 session → pay restores</td></tr>
+            <tr><td>Report absent</td><td>Admin decision → makeup and/or credit ledger</td></tr>
+            <tr><td>Apply credit to invoice</td><td>Closes credit; can fully pay invoice + clear hold</td></tr>
+            <tr><td>Consents save</td><td>Signed PDF in Consents &amp; forms + admin queue</td></tr>
+            <tr><td>Push to Xero</td><td>Stamps <code>xero_invoice_id</code> so later payments sync</td></tr>
+            <tr><td>Course funding decision</td><td>Staff letter PDF only (not family billing)</td></tr>
+            <tr><td>Swimming term review</td><td>Progression / certificate (not family billing)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Quick glossary</h3>
+      <div class="grid-2">
+        <div class="cardish">
+          <h4>INV-P</h4>
+          <p>Portal-generated family tax invoice number series (separate from Xero INV-).</p>
+        </div>
+        <div class="cardish">
+          <h4>Own arrangement</h4>
+          <p>Flexible pay timing + £50/term fee + must keep 2 sessions prepaid.</p>
+        </div>
+        <div class="cardish">
+          <h4>Funder invoice</h4>
+          <p>LA/NHS pays the club — parent does not get a payment plan.</p>
+        </div>
+        <div class="cardish">
+          <h4>Direct Payments</h4>
+          <p>Parent receives LA money and pays the club (often GoCardless / bank).</p>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      Generated for ClubSENsational PORTAL · briefing of work shipped ~9–10 Jul 2026 ·
+      open this file on the portal host as <code>/portal_whats_new_48h.html</code>
+    </footer>
+  </div>
+</body>
+</html>
