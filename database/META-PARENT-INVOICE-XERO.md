@@ -55,6 +55,17 @@ https://login.xero.com/identity/connect/authorize?response_type=code&client_id=Y
 After the first refresh, if logs warn about a new refresh token, update
 `XERO_REFRESH_TOKEN` in secrets.
 
+## Re-consent (needed for Push to Xero)
+
+Current payment-only tokens lack `accounting.invoices` / `accounting.contacts`.
+Run locally (redirect URI `http://localhost:8787/xero-callback` must be on the Xero app):
+
+```bash
+node database/local-vault/xero-reconsent.mjs
+```
+
+Authorize in the browser, then run the printed `npx supabase secrets set …` command.
+
 ## Admin usage
 
 - Prefer **Push to Xero** for Portal-generated invoices.
