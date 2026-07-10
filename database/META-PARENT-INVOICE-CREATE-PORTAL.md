@@ -1,6 +1,9 @@
 # Create family invoices in Portal (path A)
 
-Admin can create a TAX INVOICE without opening Xero:
+**One admin surface:** Finance → **Family invoices** (`reenrol_payments`).
+Legacy **Xero / finance** (CSV draft builder) redirects here — day-to-day parent billing does not use that screen.
+
+Tide bank details and Stripe Checkout are **not** admin screens: secrets + Edge Functions + parent hub + webhooks. Admins create/share invoices and mark paid / confirm paid here.
 
 1. Admin → Family invoices → **Create invoice in Portal**
 2. Pick participant, VAT mode (**Private · 20%** or **LA/NHS · Exempt**), amount, due date, description
