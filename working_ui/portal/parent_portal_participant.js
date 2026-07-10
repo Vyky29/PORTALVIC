@@ -2878,11 +2878,15 @@
     var ico = isConsent
       ? '<span class="pp-doc-card__ico pp-doc-card__ico--consent" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>'
       : '<span class="pp-doc-card__ico pp-doc-card__ico--form" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h6"/></svg></span>';
-    var statusLabel = isConsent
-      ? status === "reviewed"
-        ? "On file"
-        : "Signed PDF"
-      : status || "";
+    var statusChip = "";
+    if (isConsent) {
+      statusChip =
+        status === "reviewed"
+          ? '<span class="pp-consent-chip pp-consent-chip--done">On file</span>'
+          : '<span class="pp-consent-chip pp-consent-chip--done">Signed</span>';
+    } else if (status) {
+      statusChip = '<span class="pp-doc-chip">' + esc(status) + "</span>";
+    }
     return (
       '<article class="pp-doc-card' +
       (isConsent ? " pp-doc-card--consent" : "") +
@@ -2894,7 +2898,7 @@
       esc(title) +
       "</strong>" +
       "</div>" +
-      (statusLabel ? '<span class="pp-doc-chip">' + esc(statusLabel) + "</span>" : "") +
+      statusChip +
       "</div>" +
       (when
         ? '<p class="pp-doc-card__when muted">' +
@@ -3082,9 +3086,11 @@
         '<p class="pp-muted pp-pax-subview-note">Sign permissions for ' +
         esc(firstNameOf(data)) +
         " (photos, medication, emergency, travel — renewed each year). When you save, a signed PDF with the club logo and your answers is added under <strong>Signed PDFs</strong> below.</p>" +
+        '<div class="pp-card pp-consent-form-card">' +
         '<div id="ppConsentsHost"><p class="pp-muted">Loading…</p></div>' +
         '<div id="ppConsentsNotice" class="pp-notice" hidden></div>' +
-        '<section class="pp-consent-docs" aria-labelledby="ppConsentDocsTitle">' +
+        "</div>" +
+        '<section class="pp-card pp-consent-docs-card" aria-labelledby="ppConsentDocsTitle">' +
         '<div class="pp-consent-docs__head">' +
         '<span class="pp-consent-docs__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg></span>' +
         '<div class="pp-consent-docs__copy" style="min-width:0">' +
@@ -3463,7 +3469,7 @@
           ? '<p class="pp-muted pp-consent-signed">Last signed ' + esc(offsiteWhen) + "</p>"
           : "") +
         "</div></details>" +
-        '<button type="submit" class="pp-btn pp-btn--primary" id="ppConsentSaveBtn">Save &amp; sign consents</button>' +
+        '<button type="submit" class="pp-btn pp-btn--primary pp-consent-save-btn" id="ppConsentSaveBtn">Save &amp; sign consents</button>' +
         "</form>";
 
       var form = formHost.querySelector("#ppConsentForm");
