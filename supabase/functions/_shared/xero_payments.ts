@@ -1,49 +1,14 @@
 /** Xero Accounting API helpers — payment write-back for parent invoices (Deno). */
 
-const XERO_TOKEN_URL = "https://identity.xero.com/connect/token";
-const XERO_API = "https://api.xero.com/api.xro/2.0";
+import {
+  XERO_API,
+  cleanXero as clean,
+  xeroAccessToken,
+  xeroAuthHeaders,
+  xeroConfigured,
+} from "./xero_auth.ts";
 
-function clean(v: unknown, max = 200): string {
-  return String(v ?? "").trim().slice(0, max);
-}
-
-export function xeroConfigured(): boolean {
-  return !!(
-    clean(Deno.env.get("XERO_CLIENT_ID"), 120) &&
-    clean(Deno.env.get("XERO_CLIENT_SECRET"), 200) &&
-    clean(Deno.env.get("XERO_REFRESH_TOKEN"), 500) &&
-    clean(Deno.env.get("XERO_TENANT_ID"), 80)
-  );
-}
-
-async function xeroAccessToken(): Promise<string | null> {
-  const clientId = clean(Deno.env.get("XERO_CLIENT_ID"), 120);
-  const clientSecret = clean(Deno.env.get("XERO_CLIENT_SECRET"), 200);
-  const refreshToken = clean(Deno.env.get("XERO_REFRESH_TOKEN"), 500);
-  if (!clientId || !clientSecret || !refreshToken) return null;
-
-  const basic = btoa(`${clientId}:${clientSecret}`);
-  const res = await fetch(XERO_TOKEN_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${basic}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: "grant_type=refresh_token&refresh_token=" + encodeURIComponent(refreshToken),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok || !json?.access_token) {
-    console.error("[xeroAccessToken]", json?.error || res.status, json?.error_description || "");
-    return null;
-  }
-  // Note: Xero rotates refresh tokens. Store the new refresh_token in secrets when you rotate.
-  if (json.refresh_token && String(json.refresh_token) !== refreshToken) {
-    console.warn(
-      "[xeroAccessToken] Xero returned a new refresh_token — update XERO_REFRESH_TOKEN secret.",
-    );
-  }
-  return String(json.access_token);
-}
+export { xeroConfigured };
 
 function todayIsoDate(): string {
   return new Date().toISOString().slice(0, 10);
@@ -69,7 +34,6 @@ export async function xeroCreateInvoicePayment(input: {
   const token = await xeroAccessToken();
   if (!token) return { ok: false, error: "xero_auth_failed" };
 
-  const tenantId = clean(Deno.env.get("XERO_TENANT_ID"), 80);
   const accountCode = clean(Deno.env.get("XERO_BANK_ACCOUNT_CODE"), 40) || "090";
   const reference = clean(input.reference, 200) || "Portal payment";
   const date = clean(input.dateIso, 20) || todayIsoDate();
@@ -84,12 +48,7 @@ export async function xeroCreateInvoicePayment(input: {
 
   const res = await fetch(`${XERO_API}/Payments`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Xero-tenant-id": tenantId,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
+    headers: xeroAuthHeaders(token),
     body: JSON.stringify(body),
   });
   const json = await res.json().catch(() => ({}));

@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
   let q = admin
     .from("portal_parent_invoice_share")
     .select(
-      "id, document_id, contact_id, invoice_number, amount_gbp, due_date, payment_status, share_status, ready_at, ready_by, notes, created_at, updated_at, payment_method_hint, gocardless_url, payment_link_url, payment_link_surcharge_note, parent_reported_paid_at, parent_reported_ref, parent_reported_method, parent_reported_notes, paid_at, paid_via, xero_invoice_id, xero_payment_id, xero_synced_at, created_via, vat_mode, line_description, quantity, unit_price_gbp, reference_text",
+      "id, document_id, contact_id, invoice_number, amount_gbp, due_date, payment_status, share_status, ready_at, ready_by, notes, created_at, updated_at, payment_method_hint, gocardless_url, payment_link_url, payment_link_surcharge_note, parent_reported_paid_at, parent_reported_ref, parent_reported_method, parent_reported_notes, paid_at, paid_via, xero_invoice_id, xero_payment_id, xero_synced_at, xero_push_status, xero_push_error, created_via, vat_mode, line_description, quantity, unit_price_gbp, reference_text",
     )
     .order("updated_at", { ascending: false })
     .limit(limit);

@@ -210,9 +210,15 @@
         '…' +
         (inv.xero_payment_id ? ' · paid in Xero' : '') +
         '</div>'
-      : inv.created_via === 'portal' || inv.created_via === 'reenrolment'
-        ? '<div class="muted" style="font-size:11px;color:#92400e">Not in Xero</div>'
-        : '';
+      : inv.xero_push_status === 'failed'
+        ? '<div class="muted" style="font-size:11px;color:#b91c1c">Xero push failed' +
+          (inv.xero_push_error
+            ? ': ' + esc(String(inv.xero_push_error).slice(0, 60))
+            : '') +
+          '</div>'
+        : inv.created_via === 'portal' || inv.created_via === 'reenrolment'
+          ? '<div class="muted" style="font-size:11px;color:#92400e">Not in Xero</div>'
+          : '';
     return (
       '<tr data-invoice-id="' +
       id +
@@ -321,6 +327,22 @@
     a.download = 'portal_family_invoices_xero_' + new Date().toISOString().slice(0, 10) + '.csv';
     a.click();
     URL.revokeObjectURL(a.href);
+  }
+
+  async function pushUnsyncedToXero() {
+    var btn = global.document.getElementById('portalParentInvoicesPushXero');
+    if (btn) btn.disabled = true;
+    var r = await api('portal-admin-xero-batch-push', { limit: 40 });
+    if (btn) btn.disabled = false;
+    if (r.error) {
+      cfg.toast(r.message || r.error || 'Xero push failed', 'error');
+      return;
+    }
+    var msg =
+      r.message ||
+      'Pushed ' + String(r.pushed || 0) + (r.failed ? ', ' + r.failed + ' failed' : '');
+    cfg.toast(msg, r.failed ? 'error' : 'ok');
+    void renderHost(global.document.getElementById('portalParentInvoicesHost'));
   }
 
   async function exportUnsyncedXeroCsv() {
@@ -679,7 +701,7 @@
       '<div class="card-h"><h3>Family invoices</h3>' +
       '<span class="chip chip--pend" id="portalParentInvoicesMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word"><strong>Create in Portal</strong> generates a TAX INVOICE PDF (Exempt or VAT 20%) and shares it with the family — no Xero needed for day-to-day. Use <strong>Export to Xero CSV</strong> for bookkeeping. Own arrangement: nightly buffer check soft-holds families below the 2-session prepaid minimum; then <strong>Remind</strong> → <strong>Hold 1 session</strong> → pay restores; hard cut stays manual.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word"><strong>Create in Portal</strong> generates a TAX INVOICE PDF and shares it with the family. For bookkeeping: <strong>Push to Xero</strong> creates ACCREC invoices (or use CSV export). Own arrangement: nightly buffer check soft-holds families below the 2-session prepaid minimum; then <strong>Remind</strong> → <strong>Hold 1 session</strong> → pay restores; hard cut stays manual.</p>' +
       '<form id="portalParentInvoiceCreateForm" class="toolbar" style="flex-direction:column;align-items:stretch;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--line,#e5e7eb)">' +
       '<div style="font-weight:700">Create invoice in Portal</div>' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end">' +
@@ -727,6 +749,7 @@
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="xero_unsynced">Not in Xero</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="hidden">Hidden</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParentInvoicesRefreshEmbed">Refresh</button>' +
+      '<button type="button" class="btn btn--sm btn--primary" id="portalParentInvoicesPushXero">Push to Xero</button>' +
       '<button type="button" class="btn btn--sm" id="portalParentInvoicesExportXero">Export to Xero CSV</button>' +
       '</div>' +
       '<div id="portalParentInvoicesHost"><p class="muted">Loading…</p></div>' +
@@ -748,6 +771,12 @@
     if (exportBtn) {
       exportBtn.addEventListener('click', function () {
         void exportUnsyncedXeroCsv();
+      });
+    }
+    var pushBtn = global.document.getElementById('portalParentInvoicesPushXero');
+    if (pushBtn) {
+      pushBtn.addEventListener('click', function () {
+        void pushUnsyncedToXero();
       });
     }
     global.document.querySelectorAll('[data-inv-filter]').forEach(function (btn) {

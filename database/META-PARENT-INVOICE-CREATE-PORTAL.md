@@ -31,4 +31,5 @@ On **first** re-enrolment submit (parent-pays plans only), Portal creates the IN
 
 ## Later
 
-Optional API batch push of INV-P into Xero (`POST /Invoices`) — CSV export from Family invoices covers bookkeeping for now.
+Xero sales account code can be overridden with `XERO_SALES_ACCOUNT_CODE` (default `200`).
+Re-consent OAuth with `accounting.invoices` + `accounting.contacts` if push returns auth errors.
