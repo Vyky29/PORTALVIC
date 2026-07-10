@@ -178,9 +178,9 @@ export async function buildPortalConsentsPdf(
   const left = 48;
   const right = width - 48;
 
-  // Header: logo top-right in a reserved square (never overlaps title).
-  const logoBox = 64;
-  let logoBottom = height - 36;
+  // Header: logo centred above the title (no side overlap).
+  const logoBox = 56;
+  let y = height - 36;
   try {
     const logo = await pdf.embedPng(b64ToBytes(CLUBSENSATIONAL_LOGO_PNG_B64));
     const natW = logo.width || 1;
@@ -188,50 +188,47 @@ export async function buildPortalConsentsPdf(
     const scale = Math.min(logoBox / natW, logoBox / natH);
     const drawW = natW * scale;
     const drawH = natH * scale;
-    const logoX = right - drawW;
-    const logoY = height - 28 - drawH;
+    const logoX = left + (right - left - drawW) / 2;
+    const logoY = y - drawH;
     page.drawImage(logo, {
       x: logoX,
       y: logoY,
       width: drawW,
       height: drawH,
     });
-    logoBottom = logoY;
+    y = logoY - 14;
   } catch {
     /* logo optional */
   }
 
-  const titleMaxX = right - logoBox - 16;
-  let y = height - 40;
+  const titleSize = 16;
   page.drawText("ClubSENsational", {
     x: left,
     y,
-    size: 18,
+    size: titleSize,
     font: fontBold,
     color: ink,
-    maxWidth: titleMaxX - left,
+    maxWidth: right - left,
   });
-  y -= 20;
+  y -= 18;
   page.drawText("Annual consents form", {
     x: left,
     y,
-    size: 13,
+    size: 11,
     font: fontBold,
     color: accent,
-    maxWidth: titleMaxX - left,
+    maxWidth: right - left,
   });
-  y -= 15;
+  y -= 14;
   page.drawText("Parent / carer permissions — valid for one year from signing.", {
     x: left,
     y,
-    size: 9,
+    size: 8,
     font,
     color: muted,
-    maxWidth: titleMaxX - left,
+    maxWidth: right - left,
   });
-
-  // Content starts below both title block and logo.
-  y = Math.min(y - 18, logoBottom - 16);
+  y -= 16;
 
   page.drawLine({
     start: { x: left, y },
@@ -239,7 +236,7 @@ export async function buildPortalConsentsPdf(
     thickness: 1,
     color: rgb(0.85, 0.86, 0.88),
   });
-  y -= 18;
+  y -= 16;
 
   const meta: Array<[string, string]> = [
     ["Participant", input.participantName || "—"],
@@ -248,17 +245,20 @@ export async function buildPortalConsentsPdf(
     ["Valid until", formatUkDate(input.validUntilIso) || "—"],
   ];
   if (input.parentName) meta.splice(2, 0, ["Parent / carer", input.parentName]);
+  // Meta values must stay smaller than the document title (titleSize).
+  const metaLabelSize = 8;
+  const metaValueSize = 9;
   for (const [label, value] of meta) {
-    page.drawText(label, { x: left, y, size: 8, font, color: muted });
+    page.drawText(label, { x: left, y, size: metaLabelSize, font, color: muted });
     page.drawText(value, {
       x: left + 92,
       y,
-      size: 10,
-      font: fontBold,
+      size: metaValueSize,
+      font,
       color: ink,
       maxWidth: right - left - 92,
     });
-    y -= 15;
+    y -= 13;
   }
   y -= 10;
 
