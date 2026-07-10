@@ -344,7 +344,7 @@
   ],
   "eiji": [
     "alex",
-    "andres",
+    "bismark",
     "giuseppe",
     "javier",
     "roberto",
@@ -598,28 +598,30 @@
   function participantSlug(data) {
     var p = (data && data.participant) || {};
     var cid = String(p.contact_id || "").trim();
-    if (cid === "105" || /amaar/i.test(String(p.display_name || ""))) return "amaar_ah";
-    if (cid === "125" || /aydaan/i.test(String(p.display_name || ""))) return "aydaan_ah";
-    if (cid === "124" || /aadam/i.test(String(p.display_name || ""))) return "adaam_ah";
-    if (
-      cid === "elia-matilla-demo" ||
-      /^elia\b/i.test(String(p.display_name || "").trim())
-    ) {
-      return "elia";
-    }
-    var name = p.display_name || p.first_name || "";
+    var display = String(p.display_name || p.first_name || "").trim();
+    if (cid === "105" || /amaar/i.test(display)) return "amaar_ah";
+    if (cid === "125" || /aydaan/i.test(display)) return "aydaan_ah";
+    if (cid === "124" || /aadam/i.test(display)) return "adaam_ah";
+    if (cid === "elia-matilla-demo" || /^elia\b/i.test(display)) return "elia";
+    if (/^eiji\b/i.test(display)) return "eiji";
+    if (/^hazem\b/i.test(display)) return "hazem";
+    var name = display;
+    var slug = "";
     if (
       typeof global.PortalParticipantIdentity !== "undefined" &&
       typeof global.PortalParticipantIdentity.canonicalClientId === "function"
     ) {
-      return global.PortalParticipantIdentity.canonicalClientId(name);
+      slug = global.PortalParticipantIdentity.canonicalClientId(name);
+    } else {
+      slug = slugifyParticipantName(name);
     }
-    var slug = slugifyParticipantName(name);
     if (slug === "amaar_ahmed") return "amaar_ah";
     if (slug === "aydaan_ahmed") return "aydaan_ah";
     if (slug === "aadam_ahmed") return "adaam_ah";
     if (slug === "adam_abed") return "adam_ab";
-    if (slug === "elia_matilla" || slug.indexOf("elia") === 0) return "elia";
+    if (slug === "elia_matilla" || slug.indexOf("elia_") === 0) return "elia";
+    if (slug === "eiji" || slug.indexOf("eiji_") === 0) return "eiji";
+    if (slug === "hazem" || slug.indexOf("hazem_") === 0) return "hazem";
     return slug;
   }
 
@@ -634,6 +636,7 @@
     k = k.split(/\s+/)[0] || "";
     if (k === "yousef" || k === "yusef") k = "youssef";
     if (k === "lulia") k = "luliya";
+    if (k === "javi") k = "javier";
     return k;
   }
 
@@ -672,7 +675,20 @@
 
   function mergeTeamMember(base, patch) {
     var out = Object.assign({}, base || {}, patch || {});
-    if (Array.isArray(patch && patch.speaks)) out.speaks = patch.speaks.slice();
+    if (Array.isArray(patch && patch.speaks) && patch.speaks.length) {
+      out.speaks = patch.speaks.slice();
+    } else if (base && Array.isArray(base.speaks)) {
+      out.speaks = base.speaks.slice();
+    }
+    /* Catalog is source of truth for photos / bio / nationality when present */
+    if (base) {
+      if (base.avatar_url) out.avatar_url = base.avatar_url;
+      if (base.bio) out.bio = base.bio;
+      if (base.nationality) out.nationality = base.nationality;
+      if (base.flag) out.flag = base.flag;
+      if (base.name) out.name = base.name;
+      if (base.staff_key) out.staff_key = base.staff_key;
+    }
     return out;
   }
 
@@ -683,23 +699,37 @@
   }
 
   function resolveTeam(data) {
-    if (data && Array.isArray(data.team) && data.team.length) {
-      return data.team.map(function (m) {
-        return mergeTeamMember(catalogMember(m.staff_key || m.key || m.username), m);
-      }).filter(Boolean);
-    }
-    var fromSessions = teamFromSessions(data);
-    if (fromSessions.length) return fromSessions;
-    var keys = demoKeysForParticipant(data);
     var seen = {};
     var out = [];
-    keys.forEach(function (key) {
-      var k = String(key || "").trim().toLowerCase();
-      if (!k || seen[k]) return;
-      var card = catalogMember(k);
+    function addCard(card) {
       if (!card) return;
+      var k = String(card.staff_key || staffKeyFromFeedbackName(card.name) || "")
+        .trim()
+        .toLowerCase();
+      if (!k) return;
+      if (seen[k]) return;
       seen[k] = true;
       out.push(card);
+    }
+
+    if (data && Array.isArray(data.team)) {
+      data.team.forEach(function (m) {
+        if (!m) return;
+        var key = staffKeyFromFeedbackName(
+          m.staff_key || m.key || m.username || m.name || "",
+        );
+        addCard(mergeTeamMember(catalogMember(key), Object.assign({ staff_key: key }, m)));
+      });
+    }
+    if (!out.length) {
+      teamFromSessions(data).forEach(addCard);
+    }
+    /* Roster demo map fills gaps (and covers empty live team) for known children */
+    demoKeysForParticipant(data).forEach(function (key) {
+      addCard(catalogMember(key));
+    });
+    out.sort(function (a, b) {
+      return String(a.name || "").localeCompare(String(b.name || ""));
     });
     return out;
   }

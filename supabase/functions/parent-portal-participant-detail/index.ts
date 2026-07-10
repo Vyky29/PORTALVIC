@@ -75,6 +75,7 @@ function staffKeyFromName(raw: string): string {
     .split(/\s+/)[0] || "";
   if (k === "yousef" || k === "yusef") k = "youssef";
   if (k === "lulia") k = "luliya";
+  if (k === "javi") k = "javier";
   return k;
 }
 
