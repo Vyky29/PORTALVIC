@@ -42,6 +42,8 @@ function formatUkDateTime(iso: string | null | undefined): string {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    hour12: false,
+    timeZone: "Europe/London",
   });
 }
 
@@ -351,19 +353,26 @@ export async function buildPortalConsentsPdf(
     ["Valid until", formatUkDate(input.validUntilIso) || "—"],
   ];
   if (input.parentName) meta.splice(2, 0, ["Parent / carer", input.parentName]);
-  const metaLabelSize = 8;
-  const metaValueSize = 9;
+  const metaLabelSize = 10;
+  const metaValueSize = 11;
+  const metaLabelCol = 118;
   for (const [label, value] of meta) {
-    page.drawText(label, { x: left, y, size: metaLabelSize, font, color: muted });
+    page.drawText(label, {
+      x: left,
+      y,
+      size: metaLabelSize,
+      font: fontBold,
+      color: ink,
+    });
     page.drawText(value, {
-      x: left + 92,
+      x: left + metaLabelCol,
       y,
       size: metaValueSize,
       font,
       color: ink,
-      maxWidth: right - left - 92,
+      maxWidth: right - left - metaLabelCol,
     });
-    y -= 13;
+    y -= 15;
   }
   y -= 14;
 
