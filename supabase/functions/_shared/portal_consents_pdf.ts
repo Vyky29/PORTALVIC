@@ -29,39 +29,45 @@ function drawAnnualConsentsHeaderIcon(
   page: PDFPage,
   x: number,
   yCenter: number,
-  fill: RGB,
 ): void {
-  const r = 8;
-  page.drawCircle({
-    x: x + r,
-    y: yCenter,
-    size: r,
-    color: fill,
-  });
-  const white = rgb(1, 1, 1);
-  // Shield body
+  // Multi-colour document badge — distinct from solid category circles.
+  const yellow = rgb(0.95, 0.75, 0.12);
+  const navy = rgb(0.08, 0.18, 0.42);
+  const teal = rgb(0.06, 0.46, 0.43);
+  const purple = rgb(0.49, 0.23, 0.93);
+  const paper = rgb(0.98, 0.98, 0.99);
+  const ink = rgb(0.18, 0.2, 0.24);
+
+  // Paper body
   page.drawRectangle({
-    x: x + 5,
-    y: yCenter - 2.5,
-    width: 6,
-    height: 6.5,
-    borderColor: white,
-    borderWidth: 1.15,
-    color: fill,
+    x: x + 1,
+    y: yCenter - 7.5,
+    width: 14,
+    height: 15,
+    borderColor: ink,
+    borderWidth: 1.1,
+    color: paper,
   });
-  // Shield point
+  // Folded corner
   page.drawRectangle({
-    x: x + 6.5,
-    y: yCenter - 5.5,
-    width: 3,
-    height: 3.5,
-    borderColor: white,
-    borderWidth: 1,
-    color: fill,
+    x: x + 10,
+    y: yCenter + 3.5,
+    width: 5,
+    height: 4,
+    color: rgb(0.9, 0.91, 0.93),
+    borderColor: ink,
+    borderWidth: 0.8,
   });
-  // Check mark
-  page.drawRectangle({ x: x + 6, y: yCenter + 0.2, width: 2, height: 1.15, color: white });
-  page.drawRectangle({ x: x + 7.4, y: yCenter - 1.6, width: 1.15, height: 4.2, color: white });
+  // Colour stripe (club + section accents) — marks this as the form header, not a category.
+  page.drawRectangle({ x: x + 3, y: yCenter + 1.2, width: 3.2, height: 2.2, color: yellow });
+  page.drawRectangle({ x: x + 6.4, y: yCenter + 1.2, width: 3.2, height: 2.2, color: navy });
+  page.drawRectangle({ x: x + 9.8, y: yCenter + 1.2, width: 3.2, height: 2.2, color: teal });
+  // Lines
+  page.drawRectangle({ x: x + 3.2, y: yCenter - 1.6, width: 8.5, height: 1.1, color: rgb(0.72, 0.74, 0.78) });
+  page.drawRectangle({ x: x + 3.2, y: yCenter - 4, width: 7, height: 1.1, color: rgb(0.72, 0.74, 0.78) });
+  // Purple check (consent signed)
+  page.drawRectangle({ x: x + 4.2, y: yCenter - 6.2, width: 2.2, height: 1.15, color: purple });
+  page.drawRectangle({ x: x + 5.8, y: yCenter - 6.8, width: 1.15, height: 4, color: purple });
 }
 
 function b64ToBytes(b64: string): Uint8Array {
@@ -325,7 +331,7 @@ export async function buildPortalConsentsPdf(
   const left = 48;
   const right = width - 48;
 
-  // Header: logo centred above the title (no side overlap).
+  // Header: logo centred, brand title directly under it.
   const logoBox = 56;
   let y = height - 36;
   try {
@@ -343,30 +349,26 @@ export async function buildPortalConsentsPdf(
       width: drawW,
       height: drawH,
     });
-    y = logoY - 14;
+    y = logoY - 12;
   } catch {
     /* logo optional */
   }
 
-  const titleSize = 16;
-  page.drawText("ClubSENsational Services", {
-    x: left,
+  const titleSize = 15;
+  const brand = "ClubSENsational Services";
+  const brandW = fontBold.widthOfTextAtSize(brand, titleSize);
+  page.drawText(brand, {
+    x: left + Math.max(0, (right - left - brandW) / 2),
     y,
     size: titleSize,
     font: fontBold,
     color: ink,
-    maxWidth: right - left,
   });
   y -= 20;
   const subtitleSize = 11;
-  const headerIconGap = 6;
+  const headerIconGap = 7;
   const headerIconW = 16;
-  drawAnnualConsentsHeaderIcon(
-    page,
-    left,
-    y + subtitleSize * 0.35,
-    accent,
-  );
+  drawAnnualConsentsHeaderIcon(page, left, y + subtitleSize * 0.35);
   page.drawText("Annual Consents Form", {
     x: left + headerIconW + headerIconGap,
     y,
@@ -401,9 +403,10 @@ export async function buildPortalConsentsPdf(
     ["Valid until", formatUkDate(input.validUntilIso) || "—"],
   ];
   if (input.parentName) meta.splice(2, 0, ["Parent / carer", input.parentName]);
-  const metaLabelSize = 10;
-  const metaValueSize = 11;
-  const metaLabelCol = 118;
+  // Labels larger than values; value sits just after the label (tight gap).
+  const metaLabelSize = 11;
+  const metaValueSize = 9;
+  const metaGap = 8;
   for (const [label, value] of meta) {
     page.drawText(label, {
       x: left,
@@ -412,13 +415,14 @@ export async function buildPortalConsentsPdf(
       font: fontBold,
       color: ink,
     });
+    const labelW = fontBold.widthOfTextAtSize(label, metaLabelSize);
     page.drawText(value, {
-      x: left + metaLabelCol,
-      y,
+      x: left + labelW + metaGap,
+      y: y + (metaLabelSize - metaValueSize) * 0.35,
       size: metaValueSize,
       font,
       color: ink,
-      maxWidth: right - left - metaLabelCol,
+      maxWidth: right - left - labelW - metaGap,
     });
     y -= 15;
   }
