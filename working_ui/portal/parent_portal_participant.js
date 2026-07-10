@@ -2841,11 +2841,22 @@
     bindBalance(host, data, opts);
   }
 
-  function formatDocWhen(iso) {
+  function formatDocWhen(iso, withTime) {
     if (!iso) return "";
     var d = new Date(iso);
     if (Number.isNaN(d.getTime())) return String(iso).slice(0, 10);
     try {
+      if (withTime) {
+        return d.toLocaleString("en-GB", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+          timeZone: "Europe/London",
+        });
+      }
       return d.toLocaleDateString("en-GB", {
         day: "numeric",
         month: "short",
@@ -2858,7 +2869,7 @@
 
   function documentCardHtml(doc) {
     var title = String((doc && doc.title) || doc.form_type || "Document").trim();
-    var when = formatDocWhen(doc && doc.submitted_at);
+    var when = formatDocWhen(doc && doc.submitted_at, true);
     var status = String((doc && doc.status) || "").trim();
     var pdf = (doc && doc.pdf_url) || "";
     var photo = (doc && doc.photo_url) || "";
