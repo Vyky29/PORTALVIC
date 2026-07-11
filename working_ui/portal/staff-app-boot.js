@@ -63,8 +63,17 @@
 
   if ("serviceWorker" in global.navigator) {
     try {
+      /* Keep the portal push SW; only drop stale unrelated registrations. */
       global.navigator.serviceWorker.getRegistrations().then(function (regs) {
         regs.forEach(function (reg) {
+          var scriptUrl = "";
+          try {
+            scriptUrl = String((reg && reg.active && reg.active.scriptURL) ||
+              (reg && reg.installing && reg.installing.scriptURL) ||
+              (reg && reg.waiting && reg.waiting.scriptURL) ||
+              "");
+          } catch (_u) {}
+          if (/clubsensational-portal-sw/i.test(scriptUrl)) return;
           reg.unregister().catch(function () {});
         });
       });

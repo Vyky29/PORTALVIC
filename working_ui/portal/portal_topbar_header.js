@@ -607,6 +607,7 @@
 
   global.portalStaffIsProgrammeLeadTopbar = portalStaffIsProgrammeLeadTopbar;
   global.portalSyncTopbarProfileCard = portalSyncTopbarProfileCard;
+  global.resolveTopbarStaffKey = resolveTopbarStaffKey;
 
   var STAFF_PHOTO_CHANGE_MSG =
     "This photo is visible to participants and their families.\n\n" +

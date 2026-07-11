@@ -325,6 +325,7 @@
       // Show the test notification first so the button always does something,
       // even if the background push (re)registration is slow on iOS.
       sendTestNotification(statusEl).then(function () {
+        var testMsg = statusEl ? String(statusEl.textContent || "") : "";
         var reg =
           typeof global.portalRegisterPushAfterGrant === "function"
             ? global.portalRegisterPushAfterGrant(statusEl)
@@ -332,12 +333,16 @@
               ? global.portalEnsureWebPushSubscription()
               : Promise.resolve();
         void reg.then(function (wp) {
+          // Do not call refresh() here — it wiped the test result and made the
+          // button feel broken ("nothing happens").
           if (wp && !wp.ok && statusEl && typeof global.portalSubscribeFailureMessage === "function") {
             statusEl.textContent =
-              "Test sent. Background push still needs: " +
+              (testMsg || "Test sent.") +
+              " Background push still needs: " +
               global.portalSubscribeFailureMessage(wp);
+            return;
           }
-          refresh();
+          if (statusEl && testMsg) statusEl.textContent = testMsg;
         });
       });
       return;

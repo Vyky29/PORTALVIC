@@ -88,7 +88,10 @@ Deno.serve(async (req) => {
   const wantUser = normalizeStaffUsernameKey(str(payload.staffUsername || payload.staffKey, 64));
   const directoryOnly = payload.directory === true || payload.directory === "true";
 
-  if (isAdmin && (directoryOnly || !wantUser)) {
+  // Directory listing only when admin explicitly asks (admin UI sidebar).
+  // Admin leaders (Victor/Raúl/Javi) opening their own staff thread send {} —
+  // fall through to the own-thread branch instead of returning an empty directory.
+  if (isAdmin && directoryOnly) {
     const leaders = await fetchStaffWhatsappLeaders(admin);
     const directory = leaders.map((l) => ({
       id: l.id,

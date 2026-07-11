@@ -155,6 +155,15 @@
       return;
     }
     try {
+      var staffKey = "";
+      try {
+        if (typeof global.resolveTopbarStaffKey === "function") {
+          staffKey = normalizeKey(global.resolveTopbarStaffKey() || "");
+        }
+        if (!staffKey && global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile) {
+          staffKey = normalizeKey(global.__PORTAL_SUPABASE__.staff_profile.username || "");
+        }
+      } catch (_k) {}
       var res = await fetch(url + "/functions/v1/portal-staff-messages-list", {
         method: "POST",
         headers: {
@@ -162,7 +171,7 @@
           apikey: key,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify(staffKey ? { staffUsername: staffKey } : {}),
       });
       var data = await res.json().catch(function () {
         return {};
@@ -180,6 +189,13 @@
             hint.textContent =
               "Your WhatsApp number is missing on your staff profile. Update it in staff profile self-service.";
           }
+        }
+        return;
+      }
+      if (data.directory && !data.messages) {
+        if (host) {
+          host.innerHTML =
+            '<p class="portal-staff-wa-sheet__empty">Could not open your thread. Close and try again.</p>';
         }
         return;
       }

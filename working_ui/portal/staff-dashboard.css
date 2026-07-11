@@ -1285,7 +1285,14 @@
     .portal-alerts-block{margin:0 0 20px;min-width:0}
     .portal-alerts-status{margin:0 0 10px;font-size:14px;font-weight:700;color:var(--blue);min-width:0;overflow-wrap:break-word}
     .portal-alerts-section-title{margin:0 0 8px;font-size:15px;font-weight:700;color:var(--ink)}
-    .portal-alerts-action-btn{display:block;width:100%;max-width:20rem;margin:0 0 8px}
+    .portal-alerts-action-btn{
+      display:block;
+      width:100%;
+      max-width:20rem;
+      margin:0 0 8px;
+      touch-action:manipulation;
+      -webkit-tap-highlight-color:transparent;
+    }
     .portal-alerts-action-btn--ghost{font-weight:600}
     .portal-alerts-footnote{margin:4px 0 0;font-size:12px;line-height:1.4;overflow-wrap:break-word}
     .portal-alerts-block--primary{margin-bottom:10px;padding-bottom:0;border-bottom:none}
@@ -7501,9 +7508,10 @@
     .sheet.sheet--fullscreen.sheet--mobile-frame.open{
       z-index:100;
     }
-    /* Pending announcement / safeguarding: mandatory sheets above dashboard; dock stays tappable for Quick menu / sign out. */
+    /* Pending announcement / safeguarding / alerts: above dashboard; dock stays tappable. */
     #announcementsSheet.sheet--fullscreen.sheet--mobile-frame.open,
-    #safeguardingFeedbackPolicySheet.sheet--fullscreen.sheet--mobile-frame.open{
+    #safeguardingFeedbackPolicySheet.sheet--fullscreen.sheet--mobile-frame.open,
+    #alertsNotificationsSheet.sheet--fullscreen.sheet--mobile-frame.open{
       z-index:130;
     }
     body.dock-context-announcement-lock .dock-bar,
