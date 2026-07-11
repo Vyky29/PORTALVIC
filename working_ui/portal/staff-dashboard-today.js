@@ -3647,7 +3647,7 @@
       if(typeof window === 'undefined' || window.__PORTAL_TODAY_SYNC_RETRY__) return;
       window.__PORTAL_TODAY_SYNC_RETRY__ = true;
       var tries = 0;
-      var maxTries = 12;
+      var maxTries = 8;
       var timer = setInterval(function(){
         tries += 1;
         var sid = String(
@@ -3667,20 +3667,31 @@
           }
           return;
         }
-        var mode = typeof portalStaffLiveTodayEmptyPanelMode === 'function'
-          ? portalStaffLiveTodayEmptyPanelMode(sid, { loading: !!(dashboardData && dashboardData.portalIdentityResolved === false) })
-          : '';
-        if(mode !== 'sync'){
-          clearInterval(timer);
-          window.__PORTAL_TODAY_SYNC_RETRY__ = false;
-          return;
-        }
+        /* Stop early before expensive mode/day-view work when Today is already usable. */
         if(dashboardData && (
           portalNextSessionPreviewHasParticipants(dashboardData.portalTodayNextSessionPreview)
           || dashboardData.portalTodayEmptyPanelMode === 'off'
           || dashboardData.portalTodayEmptyPanelMode === 'off_time_requested'
           || dashboardData.portalTodayEmptyPanelMode === 'complete'
+          || dashboardData.portalTodayEmptyPanelMode === 'shift'
         )){
+          clearInterval(timer);
+          window.__PORTAL_TODAY_SYNC_RETRY__ = false;
+          return;
+        }
+        if(typeof portalStaffTodayBlockIsOff === 'function' && portalStaffTodayBlockIsOff(sid)){
+          clearInterval(timer);
+          window.__PORTAL_TODAY_SYNC_RETRY__ = false;
+          portalStaffMarkInitialTodayScheduleSettled();
+          try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
+          if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
+          if(typeof renderToday === 'function') renderToday();
+          return;
+        }
+        var mode = typeof portalStaffLiveTodayEmptyPanelMode === 'function'
+          ? portalStaffLiveTodayEmptyPanelMode(sid, { loading: !!(dashboardData && dashboardData.portalIdentityResolved === false) })
+          : '';
+        if(mode !== 'sync'){
           clearInterval(timer);
           window.__PORTAL_TODAY_SYNC_RETRY__ = false;
           return;
@@ -3718,7 +3729,7 @@
         }
         if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
         if(typeof renderToday === 'function') renderToday();
-      }, 2000);
+      }, 2500);
     }
     try{ window.portalStaffScheduleTodaySyncRetry = portalStaffScheduleTodaySyncRetry; }catch(_){}
     try{

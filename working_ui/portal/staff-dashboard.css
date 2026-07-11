@@ -4889,10 +4889,16 @@
       display:block;
     }
     .today-participant-chip--home .today-participant-chip__name{
-      font-size:12px;
+      font-size:13px;
       font-weight:800;
       color:#158747;
-      max-width:11em;
+      width:auto;
+      max-width:100%;
+      white-space:normal;
+      overflow:visible;
+      text-overflow:unset;
+      overflow-wrap:break-word;
+      line-height:1.2;
     }
     .today-participant-chip__med{
       position:absolute;

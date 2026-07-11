@@ -163,9 +163,11 @@
     chips.forEach(function (p, chipIdx) {
       var chipCol = portalTodayNextChipColumnStyle(chipIdx, chips.length);
       if (isHomeDutyChip(p)) {
+        var homeCol =
+          chips.length === 1 ? "grid-column:1 / -1" : chipCol || "grid-column:1 / -1";
         html +=
           '<div class="today-participant-chip today-participant-chip--home"' +
-          (chipCol ? ' style="' + chipCol + '"' : "") +
+          (homeCol ? ' style="' + homeCol + '"' : "") +
           ' data-next-session-home="1" aria-label="Working from Home" role="listitem">';
         html += '<span class="today-participant-chip__avatar-wrap">';
         html +=
