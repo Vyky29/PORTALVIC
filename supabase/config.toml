@@ -582,3 +582,10 @@ verify_jwt = false
 
 [functions.portal-cron-own-arrangement-buffer-check]
 verify_jwt = false
+
+# Staff / leader WhatsApp (JWT checked inside function).
+[functions.portal-staff-notify-send]
+verify_jwt = false
+
+[functions.portal-staff-messages-list]
+verify_jwt = false

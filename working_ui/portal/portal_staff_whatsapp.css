@@ -1,0 +1,157 @@
+/* Leader WhatsApp — button under staff photo + thread sheet */
+
+.topbar-staff-wa-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  width:100%;
+  max-width:100%;
+  margin:6px 0 0;
+  padding:7px 10px;
+  border:1px solid rgba(37,211,102,.35);
+  border-radius:10px;
+  background:linear-gradient(180deg,#25d366,#1da851);
+  color:#fff;
+  font:inherit;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.02em;
+  cursor:pointer;
+  box-shadow:0 1px 4px rgba(29,168,81,.28);
+  -webkit-tap-highlight-color:transparent;
+  min-width:0;
+}
+.topbar-staff-wa-btn__ico{
+  width:16px;
+  height:16px;
+  flex-shrink:0;
+  display:inline-flex;
+}
+.topbar-staff-wa-btn__ico svg{
+  width:16px;
+  height:16px;
+  display:block;
+}
+.topbar-staff-wa-btn__label{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.portal-staff-wa-sheet{
+  position:fixed;
+  inset:0;
+  z-index:12000;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+}
+.portal-staff-wa-sheet[hidden]{ display:none !important; }
+.portal-staff-wa-sheet__backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(15,23,42,.45);
+}
+.portal-staff-wa-sheet__panel{
+  position:relative;
+  z-index:1;
+  width:min(520px,100%);
+  max-height:min(78vh,640px);
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+  background:#f7faf8;
+  border-radius:18px 18px 0 0;
+  box-shadow:0 -8px 32px rgba(15,23,42,.2);
+  padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));
+}
+.portal-staff-wa-sheet__head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  min-width:0;
+}
+.portal-staff-wa-sheet__head h2{
+  margin:0;
+  font-size:17px;
+  font-weight:800;
+  color:#0f172a;
+  min-width:0;
+  overflow-wrap:break-word;
+}
+.portal-staff-wa-sheet__close{
+  flex-shrink:0;
+  width:36px;
+  height:36px;
+  border:0;
+  border-radius:10px;
+  background:rgba(15,23,42,.06);
+  font-size:22px;
+  line-height:1;
+  cursor:pointer;
+  color:#0f172a;
+}
+.portal-staff-wa-sheet__sub,
+.portal-staff-wa-sheet__hint{
+  margin:6px 0 0;
+  font-size:12px;
+  color:#64748b;
+  line-height:1.35;
+  overflow-wrap:break-word;
+}
+.portal-staff-wa-sheet__thread{
+  margin-top:12px;
+  flex:1 1 auto;
+  min-height:180px;
+  max-height:48vh;
+  overflow:auto;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  padding:8px;
+  border-radius:12px;
+  background:#fff;
+  border:1px solid rgba(15,23,42,.08);
+}
+.portal-staff-wa-sheet__empty{
+  margin:auto;
+  text-align:center;
+  color:#64748b;
+  font-size:13px;
+  padding:16px;
+}
+.portal-staff-wa-bubble{
+  max-width:88%;
+  min-width:0;
+  padding:8px 10px;
+  border-radius:12px;
+  overflow-wrap:break-word;
+}
+.portal-staff-wa-bubble--out{
+  align-self:flex-start;
+  background:#e8f5e9;
+  border:1px solid rgba(37,211,102,.25);
+}
+.portal-staff-wa-bubble--in{
+  align-self:flex-end;
+  background:#e3f2fd;
+  border:1px solid rgba(45,132,179,.22);
+}
+.portal-staff-wa-bubble__meta{
+  font-size:10px;
+  font-weight:700;
+  color:#64748b;
+  margin-bottom:3px;
+}
+.portal-staff-wa-bubble__body{
+  font-size:13px;
+  line-height:1.35;
+  color:#0f172a;
+  white-space:pre-wrap;
+}
+body.portal-staff-wa-open{
+  overflow:hidden;
+}

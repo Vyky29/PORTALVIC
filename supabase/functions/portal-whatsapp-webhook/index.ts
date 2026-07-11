@@ -16,6 +16,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { normalizeParentPhoneE164 } from "../_shared/portal_parent_messaging.ts";
+import { findStaffLeaderByPhone } from "../_shared/portal_staff_whatsapp.ts";
 
 type MetaWebhookBody = {
   object?: string;
@@ -289,6 +290,38 @@ async function storeInboundMessages(
       }
     }
 
+    const staffLeader = await findStaffLeaderByPhone(admin, phone);
+    if (staffLeader) {
+      const staffRow = {
+        wa_message_id: waMessageId,
+        from_phone: phone,
+        staff_profile_id: staffLeader.id,
+        staff_username: String(staffLeader.username || "").trim().toLowerCase() || null,
+        contact_name: contactName,
+        message_type: str(msg.type, 32).toLowerCase() || "text",
+        body_text: bodyText || null,
+        context_wa_id: str(msg.context?.id, 200) || null,
+        media_path: mediaPath,
+        media_mime: mediaMime,
+        created_at: messageCreatedAt(msg),
+        meta: {
+          phone_number_id: metaPhoneId || null,
+          display_phone_number: str(value.metadata?.display_phone_number, 40) || null,
+          routed: "staff",
+        },
+        raw_payload: msg as Record<string, unknown>,
+      };
+      const { error: staffErr } = await admin
+        .from("portal_staff_whatsapp_inbound")
+        .upsert(staffRow, { onConflict: "wa_message_id", ignoreDuplicates: true });
+      if (staffErr) {
+        console.warn("[portal-whatsapp-webhook] staff insert failed", waMessageId, staffErr.message);
+        continue;
+      }
+      inserted += 1;
+      continue;
+    }
+
     const row = {
       wa_message_id: waMessageId,
       from_phone: phone,
@@ -361,6 +394,15 @@ async function storeStatusUpdates(value: MetaChangeValue): Promise<number> {
       } else {
         console.warn("[portal-whatsapp-webhook] read update failed", msgId, error.message);
       }
+      await admin
+        .from("portal_staff_notify_log")
+        .update({ whatsapp_status: "read", whatsapp_read_at: at })
+        .eq("whatsapp_message_id", msgId);
+      await admin
+        .from("portal_staff_notify_log")
+        .update({ whatsapp_delivered_at: at })
+        .eq("whatsapp_message_id", msgId)
+        .is("whatsapp_delivered_at", null);
     } else if (status === "delivered") {
       const { error } = await admin
         .from("portal_parent_notify_log")
@@ -369,6 +411,11 @@ async function storeStatusUpdates(value: MetaChangeValue): Promise<number> {
         .neq("whatsapp_status", "read");
       if (!error) updated += 1;
       else console.warn("[portal-whatsapp-webhook] delivered update failed", msgId, error.message);
+      await admin
+        .from("portal_staff_notify_log")
+        .update({ whatsapp_status: "delivered", whatsapp_delivered_at: at })
+        .eq("whatsapp_message_id", msgId)
+        .neq("whatsapp_status", "read");
     } else if (status === "failed") {
       const errText = (st.errors || [])
         .map((e) => `${e.code ?? ""} ${e.title ?? ""} ${e.message ?? ""}`.trim())
@@ -382,6 +429,11 @@ async function storeStatusUpdates(value: MetaChangeValue): Promise<number> {
         .in("whatsapp_status", ["sent", "pending", "delivered"]);
       if (!error) updated += 1;
       else console.warn("[portal-whatsapp-webhook] failed update failed", msgId, error.message);
+      await admin
+        .from("portal_staff_notify_log")
+        .update({ whatsapp_status: "failed", error_detail: errText })
+        .eq("whatsapp_message_id", msgId)
+        .in("whatsapp_status", ["sent", "pending", "delivered"]);
     }
     // status === "sent" is already recorded at send time; ignore.
   }

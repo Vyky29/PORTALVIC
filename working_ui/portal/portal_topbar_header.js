@@ -246,6 +246,11 @@
     var key = resolveTopbarStaffKey();
     if (key) card.setAttribute("data-staff-key", key);
     else card.removeAttribute("data-staff-key");
+    try {
+      if (typeof global.portalStaffWaSyncTopbar === "function") {
+        global.portalStaffWaSyncTopbar(key || "");
+      }
+    } catch (_wa) {}
   }
 
   function staffFirstName(name) {

@@ -76,8 +76,10 @@
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/portal_incident_parent_notify.js?v=20260703-incident-notify"></script>
   <script src="/portal/admin-parent-notify-log.js?v=20260709-wa-source-chips"></script>
+  <script src="/portal/admin-staff-whatsapp.js?v=20260711-leaders-wa"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260706-family-broadcast-5"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260709-wa-source-chips" />
+  <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260711-leaders-wa" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260707-cancel-reason-policy"></script>
   <script src="/portal/cfk-app.js?v=20260614-cfk-services"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
@@ -350,6 +352,7 @@
       { id:'comms_bookings', label:'Staff & shift notices' },
       { id:'comms_ops', label:'Ops comms & log' },
       { id:'portal_parent_notify_log', label:'Family messages' },
+      { id:'portal_staff_whatsapp', label:'Leader WhatsApp' },
       { id:'portal_parent_broadcast', label:'Family broadcast' },
       { id:'clients', label:'Participants' },
       { id:'portal_nav_client_services', label:'Client services review', externalUrl:'/client_services_review.html', skipBottomNav:true },
@@ -402,7 +405,7 @@
     var MOBILE_BOTTOM_NAV_IDS = ['nav_hub', 'dashboard', 'operations_admin', 'nav_all_menu'];
     var NAV_GROUPS = [
       { id:'g_operator', label:'Operator', children:['dashboard','__h:Sessions','c4k_sessions','session_disruptions','operations_admin','operator'] },
-      { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','__h:Participants','clients','portal_nav_client_services','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops','portal_parent_notify_log','portal_parent_broadcast'] },
+      { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','__h:Participants','clients','portal_nav_client_services','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops','portal_parent_notify_log','portal_staff_whatsapp','portal_parent_broadcast'] },
       { id:'g_zoho', label:'H&R', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
       { id:'g_supabase', label:'Documents', children:['__h:Participants','portal_participant_documents','portal_parent_consents','__h:Workers','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance', children:['reenrol_payments'] },
@@ -439,6 +442,7 @@
       comms_bookings:'<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>',
       comms_ops:'<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>',
       portal_parent_notify_log:'<path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>',
+      portal_staff_whatsapp:'<path d="M17.5 14.4c-.3-.1-1.6-.8-1.8-.9-.2-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.1-.3.2-.6.1-.3-.1-1.2-.4-2.3-1.4-.8-.7-1.4-1.6-1.6-1.9-.2-.3 0-.4.1-.6.1-.1.3-.3.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5 0-.1-.6-1.5-.8-2-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1s.9 2.4 1 2.6c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.1.7 2.8.6.4-.1 1.4-.6 1.6-1.1.2-.5.2-1 .1-1.1-.1-.1-.3-.2-.6-.3z"/><path d="M12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.4 1.3 4.9L2 22l5.3-1.4C8.7 21.5 10.3 22 12 22c5.5 0 10-4.5 10-10S17.5 2 12 2z"/>',
       portal_parent_broadcast:'<path d="M3 11l18-8-8 18-2-8-8-2z"/>',
       staffhr:'<path d="M9 5H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/><line x1="9" y1="20" x2="13" y2="20"/>',
       onboarding:'<path d="M2 3h6a4 4 0 014 4v14a4 4 0 00-4-4H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a4 4 0 014-4h6z"/>',
@@ -19695,6 +19699,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else if(id==='comms_bookings') html = viewCommsBookings();
       else if(id==='comms_ops') html = viewCommsOps();
       else if(id==='portal_parent_notify_log') html = viewPortalParentNotifyLog();
+      else if(id==='portal_staff_whatsapp') html = viewPortalStaffWhatsapp();
       else if(id==='portal_parent_broadcast') html = viewPortalParentBroadcast();
       else if(id==='comms_ops_order') html = viewCommsOpsOrderDetail();
       else if(id==='receptionist') html = viewReceptionist();
@@ -20401,6 +20406,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         orders_all:'Every booking and order — slot state, funding route and waiting-list links. Use Outstanding only on the Orders page to filter balances.',
         comms_ops:'Programme comms log · staff notices',
         portal_parent_notify_log:'Outbound sends and inbound WhatsApp replies to the API number.',
+        portal_staff_whatsapp:'WhatsApp threads with programme leaders (portal + phone).',
         portal_parent_broadcast:'Send one message (email + optional WhatsApp) to many families at once — review, select, preview and send in batch.',
         staffhr:'Staff roster — open any person for full profile, HR notes and availability.',
         onboarding:'New-hire onboarding pipeline — forms, tasks and worker progress.',
@@ -21175,6 +21181,34 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function viewPortalParentNotifyLog(){
       portalParentNotifyLogConfigureOnce();
       return window.PortalParentNotifyLog ? window.PortalParentNotifyLog.viewHtml() : '<p class="page-intro">Family messages module failed to load.</p>';
+    }
+    function portalStaffWhatsappConfigureOnce(){
+      if(window.__portalStaffWhatsappConfigured || !window.PortalStaffWhatsappAdmin) return;
+      window.__portalStaffWhatsappConfigured = true;
+      window.PortalStaffWhatsappAdmin.configure({
+        esc: esc,
+        getClient: getSchedSupabaseClient,
+        toast: portalAdminToast,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        }
+      });
+    }
+    function viewPortalStaffWhatsapp(){
+      portalStaffWhatsappConfigureOnce();
+      return window.PortalStaffWhatsappAdmin
+        ? window.PortalStaffWhatsappAdmin.viewHtml()
+        : '<p class="page-intro">Leader WhatsApp module failed to load.</p>';
+    }
+    function bindPortalStaffWhatsappModule(){
+      portalStaffWhatsappConfigureOnce();
+      if(window.PortalStaffWhatsappAdmin && typeof window.PortalStaffWhatsappAdmin.bind === 'function'){
+        window.PortalStaffWhatsappAdmin.bind();
+      }
     }
     function portalParentBroadcastConfigureOnce(){
       portalParentNotifyConfigureOnce();
@@ -23055,7 +23089,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.querySelectorAll('[data-act]').forEach(function(b){
         b.addEventListener('click', function(){
           var v = b.getAttribute('data-act');
-          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='portal_participant_documents'||v==='portal_parent_consents'||v==='portal_payslips'||v==='portal_activity'||v==='portal_training_progress'||v==='portal_push_devices'||v==='participant_achievements'||v==='portal_parent_notify_log'||v==='portal_parent_broadcast'||v==='staff_live_map'||v==='staff_ghost_teleport'||v==='cs_cliq'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
+          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='portal_participant_documents'||v==='portal_parent_consents'||v==='portal_payslips'||v==='portal_activity'||v==='portal_training_progress'||v==='portal_push_devices'||v==='participant_achievements'||v==='portal_parent_notify_log'||v==='portal_staff_whatsapp'||v==='portal_parent_broadcast'||v==='staff_live_map'||v==='staff_ghost_teleport'||v==='cs_cliq'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
           closeSidebarMob();
         });
       });
@@ -23403,6 +23437,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='portal_training_progress') bindPortalTrainingProgressModule();
       if(id==='portal_push_devices') bindPortalPushDevicesModule();
       if(id==='portal_parent_notify_log') bindPortalParentNotifyLogModule();
+      if(id==='portal_staff_whatsapp') bindPortalStaffWhatsappModule();
       if(id==='portal_parent_broadcast') bindPortalParentBroadcastModule();
       if(id==='participant_achievements') bindParticipantAchievementsModule();
       if(id==='staff_live_map') bindStaffLiveMapModule();
