@@ -788,13 +788,9 @@
       else if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
     }
     function portalStaffFeedbackReviewUiReady(iso){
-      try{
-        const key = String(iso || '').trim().slice(0, 10);
-        const today = typeof portalLondonTodayIso === 'function' ? portalLondonTodayIso() : '';
-        if(key && today && /^\d{4}-\d{2}-\d{2}$/.test(key) && key < today){
-          return true;
-        }
-      }catch(_){}
+      /* Always wait for the feedback pipeline (exports + server merge). Past days used to
+         return true immediately, which flashed orange Pending → green Submitted on Day Centre
+         / shared slots while portalServerResolvedRosterKeys was still loading. */
       return portalStaffFeedbackPipelineReady();
     }
     function portalApplyGrandfatheredSessionReviewComplete(rec, iso, staffId){

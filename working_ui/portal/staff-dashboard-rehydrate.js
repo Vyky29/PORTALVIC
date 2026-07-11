@@ -662,19 +662,10 @@
         if(typeof portalEnrichClientNotesFromPortalFeedback === "function"){
           portalEnrichClientNotesFromPortalFeedback();
         }
-        if(
-          typeof window !== "undefined" && window.PORTAL_STAFF_APP
-          && typeof portalStaffFinishFeedbackPipelineReady === "function"
-          && typeof portalStaffFeedbackPipelineReady === "function"
-          && !portalStaffFeedbackPipelineReady()
-          // Only reveal feedback chips early when the export bundle is already loaded
-          // (warm cache). Otherwise stay neutral ("Checking feedback…") and let the
-          // heavy rehydrate task reveal after exports + server sync, so completed
-          // sessions never flash orange (Pending) before turning green.
-          && window.__PORTAL_STAFF_FEEDBACK_DATA_READY__ === true
-        ){
-          portalStaffFinishFeedbackPipelineReady({ serverSynced: false });
-        }
+        /* Do not finish the feedback pipeline here on warm export cache alone.
+           Day Centre / shared slots need portalMergeServerReviewStateForDashboard
+           (portalServerResolvedRosterKeys) before Pending/Submitted colours are safe —
+           otherwise Emmanuel-style cards flash orange then turn green late. */
         portalSyncTodaySectionDisplay(sessionsModel);
         if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
         if(typeof portalRefreshNextSessionPreview === 'function') portalRefreshNextSessionPreview(staffId);
@@ -937,9 +928,12 @@
               portalMarkFeedbackReconciledFromExports(true);
             }
             if(typeof portalMergeServerReviewStateForDashboard === "function"){
+              /* Wait for the real merge (not a short race) so Day Centre shared keys
+                 land before Pending/Submitted colours unlock. Hard-cap at 12s. */
+              var mergeP = portalMergeServerReviewStateForDashboard({ skipRender: true });
               await Promise.race([
-                portalMergeServerReviewStateForDashboard({ skipRender: true }),
-                new Promise(function(r){ setTimeout(r, 4500); })
+                mergeP,
+                new Promise(function(r){ setTimeout(r, 12000); })
               ]);
             }
           }catch(_preUiMerge){}

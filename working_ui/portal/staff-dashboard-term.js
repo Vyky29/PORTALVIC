@@ -2026,15 +2026,22 @@
       if(!item || item.kind !== 'client' || !item.sessionKey) return '';
       if(item.noSessionFeedbackRequired) return '';
       if(item.portalOverrideSuppressReviewOrange) return '';
+      if(typeof portalStaffFeedbackPipelineReady === 'function' && !portalStaffFeedbackPipelineReady()){
+        return '';
+      }
       const isoGate = portalSessionDateIsoFromItemSessionKey(item);
       if(isoGate && typeof portalStaffFeedbackReviewUiReady === 'function' && !portalStaffFeedbackReviewUiReady(isoGate)){
-        const endedEarly = typeof isSessionEndedForFeedback === 'function' && isSessionEndedForFeedback(item);
-        if(!endedEarly) return '';
+        return '';
       }
       const r = getEffectiveSessionReviewRecord(item) || {};
       if(r.absent) return 'session-card--review-done';
       if(r.cancelled) return 'session-card--review-done';
       if(r.feedbackDone) return 'session-card--review-done';
+      /* Hold Pending/orange until Supabase review merge finished — Day Centre shared keys
+         arrive with portalServerResolvedRosterKeys and otherwise flip orange→green late. */
+      try{
+        if(dashboardData && !dashboardData.portalFeedbackServerSynced) return '';
+      }catch(_){}
       if(r.incident) return 'session-card--review-incident';
       const ended = typeof isSessionEndedForFeedback === 'function' && isSessionEndedForFeedback(item);
       if(ended && !r.feedbackDone && !r.absent && !r.cancelled) return 'session-card--review-needed';

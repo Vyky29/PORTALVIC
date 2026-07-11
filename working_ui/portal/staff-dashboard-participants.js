@@ -1230,6 +1230,9 @@
       if(r.feedbackDone){
         return '<span class="portal-session-slot-chip portal-session-slot-chip--submitted" aria-label="Feedback submitted"><span>Submitted</span></span>';
       }
+      try{
+        if(dashboardData && !dashboardData.portalFeedbackServerSynced) return '';
+      }catch(_){}
       if(isSessionStartedForItem(item)){
         return '<span class="portal-session-slot-chip portal-session-slot-chip--pending" aria-label="Feedback pending"><span>Pending</span></span>';
       }
