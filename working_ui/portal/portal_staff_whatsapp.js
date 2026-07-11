@@ -67,9 +67,16 @@
     return "";
   }
 
+  var sending = false;
+
   function ensureSheet() {
     var existing = document.getElementById("portalStaffWaSheet");
-    if (existing) return existing;
+    if (existing) {
+      if (!document.getElementById("portalStaffWaForm")) {
+        injectComposer(existing);
+      }
+      return existing;
+    }
     var sheet = document.createElement("div");
     sheet.id = "portalStaffWaSheet";
     sheet.className = "portal-staff-wa-sheet";
@@ -81,9 +88,10 @@
       '<h2 id="portalStaffWaTitle">Portal WhatsApp</h2>' +
       '<button type="button" class="portal-staff-wa-sheet__close" data-staff-wa-close="1" aria-label="Close">×</button>' +
       "</header>" +
-      '<p class="portal-staff-wa-sheet__sub">Messages with the club also arrive on your WhatsApp number on file.</p>' +
+      '<p class="portal-staff-wa-sheet__sub">Messages with the club also arrive on your WhatsApp number on file. Reply here or on WhatsApp.</p>' +
       '<div class="portal-staff-wa-sheet__thread" id="portalStaffWaThread" role="log" aria-live="polite"></div>' +
       '<p class="portal-staff-wa-sheet__hint" id="portalStaffWaHint"></p>' +
+      composerHtml() +
       "</div>";
     document.body.appendChild(sheet);
     sheet.addEventListener("click", function (ev) {
@@ -92,7 +100,97 @@
         closeSheet();
       }
     });
+    bindComposer(sheet);
     return sheet;
+  }
+
+  function composerHtml() {
+    return (
+      '<form class="portal-staff-wa-sheet__composer" id="portalStaffWaForm">' +
+      '<label class="topbar-sr-only" for="portalStaffWaDraft">Your reply</label>' +
+      '<textarea id="portalStaffWaDraft" name="message" rows="2" maxlength="4000" placeholder="Type a reply…" enterkeyhint="send" autocomplete="off"></textarea>' +
+      '<button type="submit" class="portal-staff-wa-sheet__send" id="portalStaffWaSend">Send</button>' +
+      "</form>"
+    );
+  }
+
+  function injectComposer(sheet) {
+    var panel = sheet.querySelector(".portal-staff-wa-sheet__panel");
+    if (!panel || document.getElementById("portalStaffWaForm")) return;
+    panel.insertAdjacentHTML("beforeend", composerHtml());
+    bindComposer(sheet);
+  }
+
+  function bindComposer(sheet) {
+    var form = sheet.querySelector("#portalStaffWaForm");
+    if (!form || form.getAttribute("data-bound") === "1") return;
+    form.setAttribute("data-bound", "1");
+    form.addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      void sendReply();
+    });
+    var draft = sheet.querySelector("#portalStaffWaDraft");
+    if (draft) {
+      draft.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter" && !ev.shiftKey) {
+          ev.preventDefault();
+          void sendReply();
+        }
+      });
+    }
+  }
+
+  async function sendReply() {
+    if (sending) return;
+    var draft = document.getElementById("portalStaffWaDraft");
+    var hint = document.getElementById("portalStaffWaHint");
+    var sendBtn = document.getElementById("portalStaffWaSend");
+    var body = draft ? String(draft.value || "").trim() : "";
+    if (!body) {
+      if (hint) hint.textContent = "Type a message first.";
+      if (draft) draft.focus();
+      return;
+    }
+    var url = supabaseUrl();
+    var key = anonKey();
+    var token = await accessToken();
+    if (!url || !key || !token) {
+      if (hint) hint.textContent = "Sign in again to send.";
+      return;
+    }
+    sending = true;
+    if (sendBtn) sendBtn.disabled = true;
+    if (hint) hint.textContent = "Sending…";
+    try {
+      var res = await fetch(url + "/functions/v1/portal-staff-message-send", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + token,
+          apikey: key,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: body }),
+      });
+      var data = await res.json().catch(function () {
+        return {};
+      });
+      if (!res.ok || !data.ok) {
+        if (hint) {
+          hint.textContent =
+            "Could not send (" + esc((data && data.error) || res.status) + ").";
+        }
+        return;
+      }
+      if (draft) draft.value = "";
+      if (hint) hint.textContent = "Sent — admin can see it in Leader WhatsApp.";
+      await loadThread();
+      if (draft) draft.focus();
+    } catch (_e) {
+      if (hint) hint.textContent = "Network error — try again.";
+    } finally {
+      sending = false;
+      if (sendBtn) sendBtn.disabled = false;
+    }
   }
 
   function formatTime(iso) {
@@ -213,7 +311,14 @@
     var sheet = ensureSheet();
     sheet.hidden = false;
     document.body.classList.add("portal-staff-wa-open");
-    void loadThread();
+    void loadThread().then(function () {
+      var draft = document.getElementById("portalStaffWaDraft");
+      if (draft) {
+        try {
+          draft.focus();
+        } catch (_f) {}
+      }
+    });
   }
 
   function closeSheet() {

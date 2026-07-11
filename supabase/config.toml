@@ -589,3 +589,6 @@ verify_jwt = false
 
 [functions.portal-staff-messages-list]
 verify_jwt = false
+
+[functions.portal-staff-message-send]
+verify_jwt = false
