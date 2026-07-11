@@ -87,6 +87,8 @@ Deno.serve(async (req) => {
 
   const wantUser = normalizeStaffUsernameKey(str(payload.staffUsername || payload.staffKey, 64));
   const directoryOnly = payload.directory === true || payload.directory === "true";
+  const markRead = payload.mark_read === true || payload.mark_read === "true";
+  const unreadOnly = payload.unread_only === true || payload.unread_only === "true";
 
   // Directory listing only when admin explicitly asks (admin UI sidebar).
   // Admin leaders (Victor/Raúl/Javi) opening their own staff thread send {} —
@@ -199,6 +201,57 @@ Deno.serve(async (req) => {
   });
   messages.sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
 
+  const READ_EPOCH = "1970-01-01T00:00:00.000Z";
+  let readAt = READ_EPOCH;
+  const { data: readRow } = await admin
+    .from("portal_staff_whatsapp_read")
+    .select("read_at")
+    .eq("staff_profile_id", leader.id)
+    .maybeSingle();
+  if (readRow?.read_at) readAt = String(readRow.read_at);
+
+  // Only the leader themselves advance their unread cursor (admin peeking another
+  // thread must not clear that leader's unread count).
+  const canMarkOwn = String(leader.id) === userId;
+  if (markRead && canMarkOwn) {
+    const { data: marked } = await admin.rpc("portal_staff_whatsapp_mark_read", {
+      p_staff_profile_id: leader.id,
+      p_read_at: new Date().toISOString(),
+    });
+    if (marked) readAt = String(marked);
+    else readAt = new Date().toISOString();
+  }
+
+  const readMs = new Date(readAt).getTime();
+  let unread_messages_count = 0;
+  (outboundRows || []).forEach((r) => {
+    const createdMs = new Date(String(r.created_at || 0)).getTime();
+    if (createdMs > readMs) unread_messages_count += 1;
+  });
+  if (markRead) unread_messages_count = 0;
+
+  const messagesWithFlags = messages.map((m) => ({
+    ...m,
+    is_unread:
+      m.direction === "outbound" &&
+      new Date(String(m.created_at || 0)).getTime() > readMs,
+  }));
+
+  if (unreadOnly) {
+    return portalAdminJson(200, {
+      ok: true,
+      staff: {
+        id: leader.id,
+        username: normalizeStaffUsernameKey(leader.username),
+        displayName: leader.full_name || leader.username,
+        hasPhone: !!normalizeParentPhoneE164(String(leader.phone_e164 || "")),
+      },
+      unread_messages_count,
+      messages_read_at: readAt,
+      isAdmin,
+    });
+  }
+
   return portalAdminJson(200, {
     ok: true,
     staff: {
@@ -207,7 +260,9 @@ Deno.serve(async (req) => {
       displayName: leader.full_name || leader.username,
       hasPhone: !!normalizeParentPhoneE164(String(leader.phone_e164 || "")),
     },
-    messages,
+    messages: messagesWithFlags,
+    unread_messages_count,
+    messages_read_at: readAt,
     isAdmin,
   });
 });

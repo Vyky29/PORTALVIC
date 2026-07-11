@@ -68,6 +68,123 @@
   }
 
   var sending = false;
+  var lastUnreadCount = 0;
+
+  function currentStaffKey() {
+    try {
+      if (typeof global.resolveTopbarStaffKey === "function") {
+        var k = normalizeKey(global.resolveTopbarStaffKey() || "");
+        if (k) return k;
+      }
+      if (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile) {
+        return normalizeKey(global.__PORTAL_SUPABASE__.staff_profile.username || "");
+      }
+    } catch (_e) {}
+    return "";
+  }
+
+  async function fetchMessagesPayload(opts) {
+    opts = opts || {};
+    var url = supabaseUrl();
+    var key = anonKey();
+    var token = await accessToken();
+    if (!url || !key || !token) return null;
+    var staffKey = currentStaffKey();
+    var body = {};
+    if (staffKey) body.staffUsername = staffKey;
+    if (opts.markRead) body.mark_read = true;
+    if (opts.unreadOnly) body.unread_only = true;
+    var res = await fetch(url + "/functions/v1/portal-staff-messages-list", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + token,
+        apikey: key,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    var data = await res.json().catch(function () {
+      return {};
+    });
+    if (!res.ok || !data.ok) return null;
+    return data;
+  }
+
+  function applyUnreadBadge(count) {
+    lastUnreadCount = Math.max(0, Number(count) || 0);
+    var btn = document.getElementById("topbarStaffWaBtn");
+    if (btn) {
+      btn.classList.toggle("topbar-staff-wa-btn--unread", lastUnreadCount > 0);
+      var badge = btn.querySelector(".topbar-staff-wa-btn__badge");
+      if (lastUnreadCount > 0) {
+        if (!badge) {
+          badge = document.createElement("span");
+          badge.className = "topbar-staff-wa-btn__badge";
+          badge.setAttribute("aria-hidden", "true");
+          btn.appendChild(badge);
+        }
+        badge.textContent = lastUnreadCount > 9 ? "9+" : String(lastUnreadCount);
+      } else if (badge) {
+        badge.remove();
+      }
+      btn.setAttribute(
+        "aria-label",
+        lastUnreadCount > 0
+          ? "Open Portal WhatsApp messages, " + lastUnreadCount + " unread"
+          : "Open Portal WhatsApp messages"
+      );
+    }
+    var alertsBlock = document.getElementById("portalStaffWaAlertsBlock");
+    var alertsStatus = document.getElementById("portalStaffWaAlertsStatus");
+    var alertsBtn = document.getElementById("portalStaffWaAlertsOpenBtn");
+    var staffKey = currentStaffKey();
+    if (alertsBlock) {
+      if (!isLeaderKey(staffKey)) {
+        alertsBlock.hidden = true;
+      } else {
+        alertsBlock.hidden = false;
+        alertsBlock.classList.toggle("portal-alerts-block--wa-unread", lastUnreadCount > 0);
+        if (alertsStatus) {
+          alertsStatus.textContent =
+            lastUnreadCount > 0
+              ? lastUnreadCount === 1
+                ? "1 unread message from the club"
+                : lastUnreadCount + " unread messages from the club"
+              : "No unread messages";
+        }
+        if (alertsBtn) {
+          alertsBtn.textContent =
+            lastUnreadCount > 0 ? "Open unread WhatsApp" : "Open WhatsApp messages";
+        }
+      }
+    }
+    var qm = document.getElementById("quickMenuAlerts");
+    if (qm) {
+      qm.classList.toggle("menu-btn--settings-alerts-wa-unread", lastUnreadCount > 0);
+      var sub = qm.querySelector(".menu-btn-sub");
+      if (sub && lastUnreadCount > 0) {
+        sub.setAttribute("data-wa-unread", String(lastUnreadCount));
+      }
+    }
+  }
+
+  async function refreshUnread() {
+    var staffKey = currentStaffKey();
+    if (!isLeaderKey(staffKey)) {
+      applyUnreadBadge(0);
+      var block = document.getElementById("portalStaffWaAlertsBlock");
+      if (block) block.hidden = true;
+      return 0;
+    }
+    try {
+      var data = await fetchMessagesPayload({ unreadOnly: true });
+      if (!data) return lastUnreadCount;
+      applyUnreadBadge(data.unread_messages_count || 0);
+      return lastUnreadCount;
+    } catch (_e) {
+      return lastUnreadCount;
+    }
+  }
 
   function ensureSheet() {
     var existing = document.getElementById("portalStaffWaSheet");
@@ -245,48 +362,12 @@
     var host = document.getElementById("portalStaffWaThread");
     if (host) host.innerHTML = '<p class="portal-staff-wa-sheet__empty">Loading…</p>';
     if (hint) hint.textContent = "";
-    var url = supabaseUrl();
-    var key = anonKey();
-    var token = await accessToken();
-    if (!url || !key || !token) {
-      if (host) host.innerHTML = '<p class="portal-staff-wa-sheet__empty">Sign in again to view messages.</p>';
-      return;
-    }
     try {
-      var staffKey = "";
-      try {
-        if (typeof global.resolveTopbarStaffKey === "function") {
-          staffKey = normalizeKey(global.resolveTopbarStaffKey() || "");
-        }
-        if (!staffKey && global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile) {
-          staffKey = normalizeKey(global.__PORTAL_SUPABASE__.staff_profile.username || "");
-        }
-      } catch (_k) {}
-      var res = await fetch(url + "/functions/v1/portal-staff-messages-list", {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + token,
-          apikey: key,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(staffKey ? { staffUsername: staffKey } : {}),
-      });
-      var data = await res.json().catch(function () {
-        return {};
-      });
-      if (!res.ok || !data.ok) {
-        var err = (data && data.error) || "load_failed";
+      var data = await fetchMessagesPayload({ markRead: true });
+      if (!data) {
         if (host) {
           host.innerHTML =
-            '<p class="portal-staff-wa-sheet__empty">Could not load messages (' +
-            esc(err) +
-            ").</p>";
-        }
-        if (err === "missing_staff_phone" || (data.staff && data.staff.hasPhone === false)) {
-          if (hint) {
-            hint.textContent =
-              "Your WhatsApp number is missing on your staff profile. Update it in staff profile self-service.";
-          }
+            '<p class="portal-staff-wa-sheet__empty">Sign in again to view messages.</p>';
         }
         return;
       }
@@ -302,6 +383,7 @@
           "Add your mobile on your staff profile so WhatsApp and the portal stay in sync.";
       }
       renderMessages(data.messages || []);
+      applyUnreadBadge(0);
     } catch (_e) {
       if (host) host.innerHTML = '<p class="portal-staff-wa-sheet__empty">Network error loading messages.</p>';
     }
@@ -357,17 +439,21 @@
     } else {
       card.appendChild(btn);
     }
+    void refreshUnread();
     return btn;
   }
 
   function syncForStaffKey(staffKey) {
     ensureButton(staffKey);
+    if (isLeaderKey(staffKey)) void refreshUnread();
+    else applyUnreadBadge(0);
   }
 
   global.portalStaffWaSyncTopbar = syncForStaffKey;
   global.portalStaffWaOpen = openSheet;
   global.portalStaffWaClose = closeSheet;
   global.portalStaffIsWhatsappLeaderKey = isLeaderKey;
+  global.portalStaffWaRefreshUnread = refreshUnread;
 
   function boot() {
     try {
@@ -389,5 +475,17 @@
   }
   try {
     global.addEventListener("portal:staff-profile-ready", boot);
+    global.addEventListener("portal:supabase-ready", function () {
+      boot();
+      void refreshUnread();
+    });
   } catch (_e2) {}
+  if (!global.__PORTAL_STAFF_WA_UNREAD_POLL__) {
+    global.__PORTAL_STAFF_WA_UNREAD_POLL__ = true;
+    global.setInterval(function () {
+      try {
+        if (document.visibilityState === "visible") void refreshUnread();
+      } catch (_p) {}
+    }, 45000);
+  }
 })(typeof window !== "undefined" ? window : globalThis);

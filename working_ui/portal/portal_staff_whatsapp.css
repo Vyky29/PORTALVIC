@@ -39,6 +39,28 @@
   text-overflow:ellipsis;
   white-space:nowrap;
 }
+.topbar-staff-wa-btn{
+  position:relative;
+}
+.topbar-staff-wa-btn--unread{
+  box-shadow:0 0 0 2px rgba(220,38,38,.45),0 1px 4px rgba(29,168,81,.28);
+}
+.topbar-staff-wa-btn__badge{
+  position:absolute;
+  top:-6px;
+  right:-4px;
+  min-width:18px;
+  height:18px;
+  padding:0 5px;
+  border-radius:999px;
+  background:#dc2626;
+  color:#fff;
+  font-size:10px;
+  font-weight:800;
+  line-height:18px;
+  text-align:center;
+  box-shadow:0 1px 3px rgba(0,0,0,.25);
+}
 
 .portal-staff-wa-sheet{
   position:fixed;

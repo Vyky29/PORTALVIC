@@ -3,6 +3,7 @@
  * v20260612-bg-push-fix
  * v20260608-incoming-call-dismiss
  * v20260609-sw-syntax-fix (restore after chat cleanup script broke ternary)
+ * v20260711-always-os-banner (foreground skip broke alerts after chat UI removal)
  */
 var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
 
@@ -90,7 +91,27 @@ function portalHasVisiblePortalClient() {
 
 self.addEventListener('message', function (event) {
   var d = event.data;
-  if (!d || d.type !== 'portal-incoming-call-dismiss') return;
+  if (!d || !d.type) return;
+  if (d.type === 'portal-show-local-test') {
+    var title = String(d.title || 'Test: portal notification');
+    var body = String(d.body || 'If you see this banner, notifications are working on this device.');
+    var icon = portalPushIconUrl();
+    event.waitUntil(
+      self.registration.showNotification(title, {
+        body: body,
+        icon: icon,
+        badge: icon,
+        tag: 'portal-local-test-' + Date.now(),
+        renotify: true,
+        requireInteraction: true,
+        silent: false,
+        vibrate: PORTAL_ALERT_VIBRATE,
+        data: { url: self.registration.scope || '/', portalOpen: 'alerts' },
+      })
+    );
+    return;
+  }
+  if (d.type !== 'portal-incoming-call-dismiss') return;
   var tags = Array.isArray(d.tags) ? d.tags : [];
   event.waitUntil(
     self.registration.getNotifications().then(function (list) {
@@ -160,20 +181,16 @@ self.addEventListener('push', function (event) {
   };
   if (vibrate) notifyOpts.vibrate = vibrate;
   event.waitUntil(
-    portalHasVisiblePortalClient().then(function (hasVisibleClient) {
-      var tasks = [
-        portalNotifyOpenClients(title, body, portalOpen, callData, chatData, {
-          senderUserId: senderUserId,
-          targetUserId: targetUserId,
-        }),
-      ];
-      /* Foreground: page plays sound/vibration + halo/badges — no OS heads-up banner.
-         Background/locked: OS notification (SMS-style at top of phone). */
-      if (!hasVisibleClient) {
-        tasks.unshift(self.registration.showNotification(title, notifyOpts));
-      }
-      return Promise.all(tasks);
-    })
+    Promise.all([
+      /* Always show the OS banner (app open, background, or sleeping). Skipping
+         when a portal tab was visible broke alerts after the in-app handlers
+         were removed with the old chat UI. */
+      self.registration.showNotification(title, notifyOpts),
+      portalNotifyOpenClients(title, body, portalOpen, callData, chatData, {
+        senderUserId: senderUserId,
+        targetUserId: targetUserId,
+      }),
+    ])
   );
 });
 

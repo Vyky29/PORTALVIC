@@ -212,17 +212,24 @@
   global.portalStaffDeferWebPush = function portalStaffDeferWebPush() {
     if (global.__PORTAL_STAFF_PUSH_DEFERRED__) return;
     global.__PORTAL_STAFF_PUSH_DEFERRED__ = true;
+    /* Skip if staff_dashboard already loaded push scripts (avoid clobbering with stale copies). */
+    if (
+      typeof global.portalSendLocalTestNotification === "function" &&
+      typeof global.portalRefreshAlertsNotifyUi === "function"
+    ) {
+      return;
+    }
     var urls = [
-      "/portal/portal_web_push_support.js?v=20260628-test-sw-ready",
+      "/portal/portal_web_push_support.js?v=20260711-test-sw-fix",
       "/portal/portal_ensure_web_push.js?v=20260619-inflight-fix",
-      "/portal/portal_alerts_notifications_ui.js?v=20260705-ios-taps",
+      "/portal/portal_alerts_notifications_ui.js?v=20260711-wa-unread-push",
     ];
     var i = 0;
     function next() {
       if (i >= urls.length) return;
       loadScript(urls[i++]).then(next);
     }
-    scheduleIdle(next, isHandheld ? 8000 : 4000);
+    scheduleIdle(next, isHandheld ? 1500 : 800);
   };
 
   function portalStaffDeferHeadExtras() {

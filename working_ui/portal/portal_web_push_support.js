@@ -210,7 +210,11 @@
       tag: "portal-local-test-" + Date.now(),
       renotify: true,
       requireInteraction: true,
+      silent: false,
+      vibrate: [120, 55, 120, 55, 160],
+      data: { portalOpen: "alerts" },
     };
+    var lastSwError = null;
 
     // Prefer the service worker on every platform: iOS PWA does not support the
     // Notification constructor, and showNotification needs an ACTIVE worker, so
@@ -219,20 +223,40 @@
       try {
         var reg = null;
         if (typeof portalAwaitServiceWorkerReady === "function") {
-          reg = await portalAwaitServiceWorkerReady(8000);
+          reg = await portalAwaitServiceWorkerReady(12000);
         } else {
           reg = await portalRegisterPortalServiceWorker();
         }
-        if (reg && typeof reg.showNotification === "function") {
-          await reg.showNotification(title, notifyOpts);
-          if (global.navigator && global.navigator.vibrate) {
+        if (reg) {
+          try {
+            await reg.update();
+          } catch (_u) {}
+          var active = reg.active || null;
+          if (active && typeof active.postMessage === "function") {
             try {
-              global.navigator.vibrate([100, 50, 100]);
-            } catch (_v) {}
+              active.postMessage({
+                type: "portal-show-local-test",
+                title: title,
+                body: body,
+              });
+            } catch (_pm) {}
           }
-          return { ok: true, via: "sw", env: env };
+          if (typeof reg.showNotification === "function") {
+            await reg.showNotification(title, notifyOpts);
+            if (global.navigator && global.navigator.vibrate) {
+              try {
+                global.navigator.vibrate([100, 50, 100]);
+              } catch (_v) {}
+            }
+            return { ok: true, via: "sw", env: env };
+          }
         }
-      } catch (_sw) {}
+      } catch (swErr) {
+        lastSwError = swErr;
+        try {
+          console.warn("[portal] local test notification via SW", swErr);
+        } catch (_c) {}
+      }
     }
 
     // Desktop browsers without a ready SW: constructor is fine (not iOS).
@@ -249,7 +273,12 @@
         return { ok: false, reason: "exception", error: e, env: env };
       }
     }
-    return { ok: false, reason: "no-sw", env: env };
+    return {
+      ok: false,
+      reason: lastSwError ? "sw-error" : "no-sw",
+      error: lastSwError || null,
+      env: env,
+    };
   }
 
   function portalTestNotificationStatusMessage(result) {
@@ -261,6 +290,12 @@
       }
       if (result.reason === "unsupported") {
         return "Not supported on this browser." + portalNotifyEnvironmentHint(env);
+      }
+      if (result.reason === "sw-error" || result.reason === "no-sw") {
+        return (
+          "Could not show test — service worker not ready. Close the app fully, reopen, allow notifications, then try again." +
+          portalNotifyEnvironmentHint(env, result.reason)
+        );
       }
       return (
         "Could not show test notification." +

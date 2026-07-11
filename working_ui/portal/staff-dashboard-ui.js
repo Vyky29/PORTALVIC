@@ -4926,8 +4926,10 @@
     }
     /**
      * Registers PushManager + POSTs subscription to Edge `portal-push-subscribe` so roster Web Push can arrive when this app is not open.
+     * Prefer portal_ensure_web_push.js when already loaded (do not clobber a fresher implementation).
      * @returns {Promise<{ok?:boolean,reason?:string}>}
      */
+    if(typeof window.portalEnsureWebPushSubscription !== 'function'){
     window.portalEnsureWebPushSubscription = async function portalEnsureWebPushSubscription(){
       if(window.__PORTAL_WPS_IN_FLIGHT_PROMISE) return window.__PORTAL_WPS_IN_FLIGHT_PROMISE;
       window.__PORTAL_WPS_IN_FLIGHT_PROMISE = (async function(){
@@ -5000,6 +5002,7 @@
         window.__PORTAL_WPS_IN_FLIGHT_PROMISE = null;
       }
     };
+    }
 
     window.addEventListener('portal:supabase-ready', function(){
       try{

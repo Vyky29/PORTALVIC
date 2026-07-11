@@ -1,10 +1,13 @@
 /**
  * Staff / lead Settings sheet — notifications, location, voice typing (adapted from admin).
+ * Also surfaces unread Portal WhatsApp (club → leader) like admin Family messages unread.
  */
 (function (global) {
   "use strict";
 
   var bound = false;
+  var testLockUntil = 0;
+  var lastTestStatus = "";
 
   function alertsSheetEl() {
     return document.getElementById("alertsNotificationsSheet");
@@ -25,6 +28,14 @@
     return "";
   }
 
+  function lockTestStatus(ms) {
+    testLockUntil = Date.now() + Math.max(1500, Number(ms) || 8000);
+  }
+
+  function testStatusLocked() {
+    return Date.now() < testLockUntil;
+  }
+
   function silentPushRegister() {
     if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
     if (typeof global.portalEnsureWebPushSubscription === "function") {
@@ -34,12 +45,38 @@
 
   function applyWebPushStatus(statusEl, wp) {
     if (!statusEl || !wp) return;
+    if (testStatusLocked()) return;
     if (typeof global.portalApplyWebPushStatus === "function") {
       global.portalApplyWebPushStatus(statusEl, wp, {
         registeredMessage:
           "Registered for background alerts. Send test checks this tab only — close the app to verify real push.",
       });
     }
+  }
+
+  function flashInSheetBanner(ok, text) {
+    var panel = document.querySelector("#alertsNotificationsSheet .portal-alerts-panel");
+    if (!panel) return;
+    var el = document.getElementById("portalNotifyTestFlash");
+    if (!el) {
+      el = document.createElement("p");
+      el.id = "portalNotifyTestFlash";
+      el.className = "portal-alerts-test-flash";
+      el.setAttribute("role", "status");
+      el.setAttribute("aria-live", "assertive");
+      var pushBlock = document.getElementById("portalPushNotifyBlock");
+      if (pushBlock) pushBlock.insertBefore(el, pushBlock.firstChild);
+      else panel.insertBefore(el, panel.firstChild);
+    }
+    el.hidden = false;
+    el.classList.toggle("portal-alerts-test-flash--ok", !!ok);
+    el.classList.toggle("portal-alerts-test-flash--bad", !ok);
+    el.textContent = String(text || "");
+    global.setTimeout(function () {
+      try {
+        el.hidden = true;
+      } catch (_e) {}
+    }, 10000);
   }
 
   function syncTestButton(testBtn, permission, opts) {
@@ -92,18 +129,28 @@
     syncVapidHint();
     syncDeniedHelp(false);
     if (typeof Notification === "undefined") {
-      statusEl.textContent = "Not supported on this browser." + ctx;
+      if (!testStatusLocked()) {
+        statusEl.textContent = "Not supported on this browser." + ctx;
+      }
       if (btn) btn.disabled = true;
       syncTestButton(testBtn, "unsupported");
       return;
     }
     var p = Notification.permission;
     if (p === "granted") {
-      statusEl.textContent =
-        "Notifications on — Send test checks this tab only.";
+      if (!testStatusLocked()) {
+        statusEl.textContent =
+          "Notifications on — Send test checks this tab only.";
+      } else if (lastTestStatus) {
+        statusEl.textContent = lastTestStatus;
+      }
       syncTestButton(testBtn, p);
       if (typeof global.portalEnsureWebPushSubscription === "function") {
         global.portalEnsureWebPushSubscription().then(function (wp) {
+          if (testStatusLocked()) {
+            if (statusEl && lastTestStatus) statusEl.textContent = lastTestStatus;
+            return;
+          }
           applyWebPushStatus(statusEl, wp);
           if (wp && wp.ok) {
             statusEl.textContent =
@@ -131,8 +178,10 @@
       } else {
         syncDeniedHelp(true);
       }
-      statusEl.textContent =
-        "Blocked — allow notifications for this site in browser settings." + ctx;
+      if (!testStatusLocked()) {
+        statusEl.textContent =
+          "Blocked — allow notifications for this site in browser settings." + ctx;
+      }
       if (btn) {
         btn.textContent = "Check browser settings";
         btn.disabled = false;
@@ -143,10 +192,12 @@
           ? global.portalNotifyEnvironment()
           : null;
       syncTestButton(testBtn, p);
-      statusEl.textContent =
-        "Off — tap Turn on notifications and choose Allow in the browser prompt." +
-        (env && env.desktop ? " Use Chrome or Edge on desktop for best results." : "") +
-        ctx;
+      if (!testStatusLocked()) {
+        statusEl.textContent =
+          "Off — tap Turn on notifications and choose Allow in the browser prompt." +
+          (env && env.desktop ? " Use Chrome or Edge on desktop for best results." : "") +
+          ctx;
+      }
       if (btn) {
         btn.textContent = "Turn on notifications";
         btn.disabled = false;
@@ -167,6 +218,9 @@
     }
     if (typeof global.portalRefreshMicrophoneUi === "function") {
       global.portalRefreshMicrophoneUi();
+    }
+    if (typeof global.portalStaffWaRefreshUnread === "function") {
+      void global.portalStaffWaRefreshUnread();
     }
     silentPushRegister();
   }
@@ -259,6 +313,7 @@
   }
 
   function sendTestNotification(statusEl) {
+    lockTestStatus(10000);
     if (typeof global.portalSendLocalTestNotification === "function") {
       return global.portalSendLocalTestNotification({
         title: "Test: portal notification",
@@ -270,7 +325,10 @@
             : result && result.ok
               ? "Test sent — if you saw the banner, this device is ready."
               : "Could not show test notification.";
+        lastTestStatus = msg;
         if (statusEl) statusEl.textContent = msg;
+        flashInSheetBanner(!!(result && result.ok), msg);
+        return result;
       });
     }
     try {
@@ -280,16 +338,16 @@
         badge: "/portal/app-icon/icon-192.png?v=20260624-push-icon",
       });
       if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-      if (statusEl) {
-        statusEl.textContent = "Test sent — if you saw the banner, this device is ready.";
-      }
+      lastTestStatus = "Test sent — if you saw the banner, this device is ready.";
+      if (statusEl) statusEl.textContent = lastTestStatus;
+      flashInSheetBanner(true, lastTestStatus);
     } catch (e) {
-      if (statusEl) {
-        statusEl.textContent =
-          "Could not show test notification: " +
-          (e && e.message ? e.message : String(e)) +
-          notifyContextHint();
-      }
+      lastTestStatus =
+        "Could not show test notification: " +
+        (e && e.message ? e.message : String(e)) +
+        notifyContextHint();
+      if (statusEl) statusEl.textContent = lastTestStatus;
+      flashInSheetBanner(false, lastTestStatus);
     }
     return Promise.resolve();
   }
@@ -312,8 +370,10 @@
           }
         })
         .then(function () {
+          if (Notification.permission === "granted") {
+            return sendTestNotification(statusEl);
+          }
           refresh();
-          if (Notification.permission === "granted") sendTestNotification(statusEl);
         })
         .catch(function () {
           refresh();
@@ -322,10 +382,13 @@
     }
     if (Notification.permission === "granted") {
       if (statusEl) statusEl.textContent = "Sending test…";
+      lastTestStatus = "Sending test…";
+      lockTestStatus(12000);
       // Show the test notification first so the button always does something,
       // even if the background push (re)registration is slow on iOS.
       sendTestNotification(statusEl).then(function () {
         var testMsg = statusEl ? String(statusEl.textContent || "") : "";
+        lastTestStatus = testMsg || lastTestStatus;
         var reg =
           typeof global.portalRegisterPushAfterGrant === "function"
             ? global.portalRegisterPushAfterGrant(statusEl)
@@ -336,13 +399,17 @@
           // Do not call refresh() here — it wiped the test result and made the
           // button feel broken ("nothing happens").
           if (wp && !wp.ok && statusEl && typeof global.portalSubscribeFailureMessage === "function") {
-            statusEl.textContent =
+            var combined =
               (testMsg || "Test sent.") +
               " Background push still needs: " +
               global.portalSubscribeFailureMessage(wp);
+            lastTestStatus = combined;
+            lockTestStatus(10000);
+            statusEl.textContent = combined;
+            flashInSheetBanner(false, combined);
             return;
           }
-          if (statusEl && testMsg) statusEl.textContent = testMsg;
+          if (statusEl && lastTestStatus) statusEl.textContent = lastTestStatus;
         });
       });
       return;
@@ -416,6 +483,12 @@
       if (typeof global.portalRequestMicrophonePermission === "function") {
         void global.portalRequestMicrophonePermission();
       }
+    } else if (t.id === "portalStaffWaAlertsOpenBtn") {
+      e.preventDefault();
+      flashAlertsButton(t);
+      if (typeof global.portalStaffWaOpen === "function") {
+        global.portalStaffWaOpen();
+      }
     }
   }
 
@@ -446,13 +519,41 @@
   if (!global.__PORTAL_NOTIFY_FOCUS_BOUND__) {
     global.__PORTAL_NOTIFY_FOCUS_BOUND__ = true;
     global.addEventListener("focus", function () {
+      if (testStatusLocked()) return;
       if (typeof Notification !== "undefined" && Notification.permission !== "denied") {
         refresh();
       }
     });
     global.addEventListener("visibilitychange", function () {
       if (!global.document || global.document.visibilityState !== "visible") return;
+      if (testStatusLocked()) return;
       if (typeof Notification !== "undefined") refresh();
     });
+  }
+
+  if (!global.__PORTAL_PUSH_RECEIVED_TOAST_BOUND__ && global.navigator && global.navigator.serviceWorker) {
+    global.__PORTAL_PUSH_RECEIVED_TOAST_BOUND__ = true;
+    try {
+      global.navigator.serviceWorker.addEventListener("message", function (ev) {
+        var d = ev && ev.data;
+        if (!d || d.type !== "portal-push-received") return;
+        if (d.portalOpen === "incoming_call") return;
+        var title = String(d.title || "Portal alert");
+        var body = String(d.body || "");
+        var statusEl = qNotify("portalNotifyStatus");
+        var line = title + (body ? " — " + body : "");
+        if (statusEl) {
+          lastTestStatus = line;
+          lockTestStatus(6000);
+          statusEl.textContent = line;
+        }
+        flashInSheetBanner(true, line);
+        if (global.navigator.vibrate) {
+          try {
+            global.navigator.vibrate([120, 55, 120]);
+          } catch (_v) {}
+        }
+      });
+    } catch (_m) {}
   }
 })(typeof window !== "undefined" ? window : globalThis);
