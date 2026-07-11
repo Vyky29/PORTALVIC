@@ -579,8 +579,11 @@
         html += '<div class="today-day-panel__next">';
         html += '<button type="button" class="today-day-panel__next-open" data-open-next-session="1" aria-label="' + escapeHtml(aria.trim()) + '">';
         html += '<div class="today-day-panel__next-head">';
-        html += '<span class="today-day-panel__next-kicker">Next session</span>';
-        html += '<span class="today-day-panel__next-date">' + escapeHtml(preview.weekday || '') + ' · ' + escapeHtml(preview.dateLabel || '') + '</span></div>';
+        html += '<span class="today-day-panel__next-line">Next session: ' +
+          escapeHtml(preview.weekday || '') +
+          (preview.weekday && preview.dateLabel ? ', ' : '') +
+          escapeHtml(preview.dateLabel || '') +
+          '</span></div>';
         html += '</button>';
         if(chips.length){
           html += typeof portalTodayNextParticipantChipsHtml === 'function'

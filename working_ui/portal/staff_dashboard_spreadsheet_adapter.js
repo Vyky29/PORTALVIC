@@ -277,15 +277,34 @@
     if (!t) return false;
     const m = t.match(/Medical\s*:?\s*([\s\S]*?)(?:\s*\d+\s*[.)]\s|$)/i);
     if (!m) return false;
-    const seg = String(m[1] || "").trim().toLowerCase();
+    const seg = String(m[1] || "").trim();
     if (!seg) return false;
+    const low = seg.toLowerCase().replace(/\s+/g, " ");
+    // Clear whole-segment "none" only — do not treat "No chronic… Medication: …" as empty.
     if (
-      /^(none|nil|n\/?a|no\b|not\s|unknown|no known|no medical|no current)/.test(
-        seg
+      /^(none|nil|n\/?a|unknown)([.\s]|$)/.test(low) ||
+      /^(none known|no known( medical)? conditions?|no medical conditions?|no relevant medical conditions?|no current( medical)? conditions?)([.\s]|$)/.test(
+        low
       )
     ) {
       return false;
     }
+    if (
+      /^(no diagnosed conditions?|no chronic conditions?)([.\s]|$)/.test(low) &&
+      !/\b(medication|allerg|epilep|asthma|emergency|health\/?\s*emergency\s*plan|diagnos)/i.test(low)
+    ) {
+      return false;
+    }
+    // Any concrete medical signal → alert cross on participant tiles.
+    if (
+      /\b(medication|medications|epilep|asthma|allerg|emergency|health\/?\s*emergency\s*plan|condition|conditions|diagnos|diazepam|insulin|seizure)/i.test(
+        low
+      )
+    ) {
+      return true;
+    }
+    // Remaining non-empty medical copy that is not a clear "no…" denial.
+    if (/^(no|not)\b/.test(low)) return false;
     return true;
   }
 
@@ -552,9 +571,8 @@
       const infoText = t || note.generalInfoSheet || "";
       const ovGender = genderOverrideFor(k, note.name);
       note.gender = ovGender || deriveGenderFromInfo(infoText) || note.gender || "";
-      if (!note.hasMedicalAlert) {
-        note.hasMedicalAlert = deriveMedicalAlertFromInfo(infoText);
-      }
+      // Always re-derive from current general info (do not keep a stale false).
+      note.hasMedicalAlert = deriveMedicalAlertFromInfo(infoText);
     });
   }
 
@@ -576,6 +594,9 @@
         }
         if (!String(to.generalInfoSheet || "").trim() && String(from.generalInfoSheet || "").trim()) {
           to.generalInfoSheet = from.generalInfoSheet;
+        }
+        if (!to.hasMedicalAlert && from.hasMedicalAlert) {
+          to.hasMedicalAlert = true;
         }
       }
       delete clientNotesById[alias];
@@ -913,5 +934,7 @@
     resetWorkerDisplayNameCache: resetWorkerDisplayNameCache,
     isParticipantCatalogExcludedName: isParticipantCatalogExcludedName,
     parseTimeSlot: parseTimeSlot,
+    deriveMedicalAlertFromInfo: deriveMedicalAlertFromInfo,
   };
+  window.portalDeriveMedicalAlertFromInfo = deriveMedicalAlertFromInfo;
 })();

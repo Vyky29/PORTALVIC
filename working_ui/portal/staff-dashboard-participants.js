@@ -104,12 +104,24 @@
       return ids;
     }
     /** Shared row: avatar + name; medical icon anchored bottom-right of the tile. */
+    function clientsParticipantHasMedicalAlert(c){
+      if(!c) return false;
+      if(c.hasMedicalAlert) return true;
+      const info = String(c.generalInfoSheet || c.generalLead || '').trim();
+      if(!info) return false;
+      if(typeof window.portalDeriveMedicalAlertFromInfo === 'function'){
+        return !!window.portalDeriveMedicalAlertFromInfo(info);
+      }
+      return false;
+    }
     function clientsParticipantRowInnerHtml(clientId, c, scheduleIso, scheduleLabelOpts){
       const name = escapeHtml(c.name);
       const avatar = '<span class="clients-grid-avatar" aria-hidden="true">' + clientAvatarInner(c.name, clientId) + '</span>';
-      const medInner = c.hasMedicalAlert ? clientsGridMedicalIconSvg() : '';
+      const hasMed = clientsParticipantHasMedicalAlert(c);
+      if(hasMed && c && !c.hasMedicalAlert) c.hasMedicalAlert = true;
+      const medInner = hasMed ? clientsGridMedicalIconSvg() : '';
       const medSlot = '<span class="clients-grid-med' + (medInner ? '' : ' clients-grid-med--empty') + '"' + (medInner ? '' : ' aria-hidden="true"') + '>' + medInner + '</span>';
-      const medSr = c.hasMedicalAlert ? '<span class="topbar-sr-only">Medical information on file.</span>' : '';
+      const medSr = hasMed ? '<span class="topbar-sr-only">Medical information on file.</span>' : '';
       let schedHtml = '';
       const P = window.PortalParticipantsSheet;
       if(scheduleIso && P && typeof P.formatScheduleLabel === 'function'){

@@ -49,6 +49,13 @@
       if (!note) return;
       var sheet = portalParticipantGeneralInfoText(cid, note.name || cid);
       if (sheet) note.generalInfoSheet = sheet;
+      var infoText = String(note.generalInfoSheet || "").trim();
+      if (infoText && typeof global.portalDeriveMedicalAlertFromInfo === "function") {
+        note.hasMedicalAlert = !!global.portalDeriveMedicalAlertFromInfo(infoText);
+      } else if (infoText && typeof global.StaffDashboardSpreadsheetAdapter === "object"
+        && typeof global.StaffDashboardSpreadsheetAdapter.deriveMedicalAlertFromInfo === "function") {
+        note.hasMedicalAlert = !!global.StaffDashboardSpreadsheetAdapter.deriveMedicalAlertFromInfo(infoText);
+      }
     });
     Object.keys(STORE.byName).forEach(function (nk) {
       Object.keys(clientNotesById).forEach(function (cid) {
@@ -56,6 +63,10 @@
         if (!note) return;
         if (normName(note.name || cid) === nk) {
           note.generalInfoSheet = STORE.byName[nk];
+          var infoText = String(note.generalInfoSheet || "").trim();
+          if (infoText && typeof global.portalDeriveMedicalAlertFromInfo === "function") {
+            note.hasMedicalAlert = !!global.portalDeriveMedicalAlertFromInfo(infoText);
+          }
         }
       });
     });
