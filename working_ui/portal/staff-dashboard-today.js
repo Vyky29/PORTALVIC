@@ -3362,6 +3362,7 @@
             const participantsRaw = nsRows.map(function(r){
               const name = String(r && r.name || '').trim() || '—';
               const clientId = String(r && r.clientId || '').trim();
+              const kind = String(r && r.kind || '').trim().toLowerCase();
               let photoUrl = String(r && r.avatarFile || '').trim();
               if(!photoUrl && typeof resolveParticipantPhotoUrl === 'function'){
                 photoUrl = resolveParticipantPhotoUrl(name, clientId) || '';
@@ -3370,6 +3371,7 @@
               return {
                 name: name,
                 clientId: clientId,
+                kind: kind,
                 photoUrl: photoUrl,
                 preloadUrls: photoUrl ? [photoUrl] : [],
                 hasMedicalAlert: portalParticipantHasMedicalAlert(clientId, name),
@@ -3405,6 +3407,7 @@
       const participantsRaw = rows.map(function(r){
         const name = String(r && r.name || '').trim() || '—';
         const clientId = String(r && r.clientId || '').trim();
+        const kind = String(r && r.kind || '').trim().toLowerCase();
         let photoUrl = typeof resolveParticipantPhotoUrl === 'function'
           ? resolveParticipantPhotoUrl(name, clientId)
           : '';
@@ -3415,6 +3418,7 @@
         return {
           name: name,
           clientId: clientId,
+          kind: kind,
           photoUrl: photoUrl,
           preloadUrls: preloadUrls,
           hasMedicalAlert: portalParticipantHasMedicalAlert(clientId, name)

@@ -82,6 +82,28 @@
     return String(name || "?").slice(0, 2).toUpperCase();
   }
 
+  function isHomeDutyChip(p) {
+    var kind = String((p && p.kind) || "").trim().toLowerCase();
+    if (kind === "home") return true;
+    var cid = String((p && p.clientId) || "").trim().toLowerCase();
+    if (cid === "home") return true;
+    var name = String((p && p.name) || "").trim().toUpperCase();
+    return name === "HOME" || name === "CASA";
+  }
+
+  var TODAY_HOME_CHIP_SVG =
+    '<svg class="today-participant-chip__home-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" fill="none">' +
+    '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/>' +
+    '<path d="M9 22V12h6v10" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></svg>';
+
+  function homeChipIconHtml() {
+    if (typeof global.portalAreaNoteIconHtml === "function") {
+      var icon = global.portalAreaNoteIconHtml("Home", { showLabel: false });
+      if (icon) return icon;
+    }
+    return TODAY_HOME_CHIP_SVG;
+  }
+
   function portalTodayNextChipPhotoTryFallback(img) {
     if (!img) return;
     var rest = String(img.getAttribute("data-photo-fallbacks") || "")
@@ -139,6 +161,21 @@
       chips.length +
       '" role="list">';
     chips.forEach(function (p, chipIdx) {
+      var chipCol = portalTodayNextChipColumnStyle(chipIdx, chips.length);
+      if (isHomeDutyChip(p)) {
+        html +=
+          '<div class="today-participant-chip today-participant-chip--home"' +
+          (chipCol ? ' style="' + chipCol + '"' : "") +
+          ' data-next-session-home="1" aria-label="Working from Home" role="listitem">';
+        html += '<span class="today-participant-chip__avatar-wrap">';
+        html +=
+          '<span class="today-participant-chip__avatar today-participant-chip__avatar--home">' +
+          homeChipIconHtml() +
+          "</span></span>";
+        html +=
+          '<span class="today-participant-chip__name">Working from Home</span></div>';
+        return;
+      }
       var rawName = String((p && p.name) || "—").trim();
       var name = esc(rawName);
       var rawId = String((p && p.clientId) || "").trim();
@@ -162,7 +199,6 @@
           (photoFallbacks ? ' data-photo-fallbacks="' + esc(photoFallbacks) + '"' : "") +
           ' onerror="if(window.portalTodayNextChipPhotoTryFallback){window.portalTodayNextChipPhotoTryFallback(this);}" />';
       }
-      var chipCol = portalTodayNextChipColumnStyle(chipIdx, chips.length);
       html +=
         '<button type="button" class="today-participant-chip"' +
         (chipCol ? ' style="' + chipCol + '"' : "") +
