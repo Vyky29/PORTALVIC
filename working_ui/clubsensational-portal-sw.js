@@ -164,6 +164,7 @@ self.addEventListener('push', function (event) {
     portalOpen === 'alerts' ||
     portalOpen === 'chat' ||
     portalOpen === 'portal_staff_whatsapp' ||
+    portalOpen === 'staff_whatsapp' ||
     portalOpen === 'incoming_call'
   ) {
     requireInteraction = true;

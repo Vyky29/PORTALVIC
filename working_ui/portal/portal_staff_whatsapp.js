@@ -69,6 +69,35 @@
 
   var sending = false;
   var lastUnreadCount = 0;
+  var knownUnreadBaseline = false;
+
+  function showStaffWaToast(msg, opts) {
+    opts = opts || {};
+    var text = String(msg || "").trim();
+    if (!text) return;
+    var el = document.getElementById("portalStaffWaToast");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "portalStaffWaToast";
+      el.className = "portal-staff-wa-toast";
+      el.setAttribute("role", "status");
+      el.setAttribute("aria-live", "polite");
+      document.body.appendChild(el);
+      el.addEventListener("click", function () {
+        el.classList.remove("is-on");
+        openSheet();
+      });
+    }
+    el.textContent = text;
+    el.classList.add("is-on");
+    if (opts.playCue !== false && typeof global.portalPlayAlertCue === "function") {
+      global.portalPlayAlertCue();
+    }
+    clearTimeout(showStaffWaToast._tm);
+    showStaffWaToast._tm = global.setTimeout(function () {
+      el.classList.remove("is-on");
+    }, opts.ms || 5000);
+  }
 
   function currentStaffKey() {
     try {
@@ -168,7 +197,8 @@
     }
   }
 
-  async function refreshUnread() {
+  async function refreshUnread(opts) {
+    opts = opts || {};
     var staffKey = currentStaffKey();
     if (!isLeaderKey(staffKey)) {
       applyUnreadBadge(0);
@@ -177,9 +207,25 @@
       return 0;
     }
     try {
+      var prev = lastUnreadCount;
       var data = await fetchMessagesPayload({ unreadOnly: true });
       if (!data) return lastUnreadCount;
-      applyUnreadBadge(data.unread_messages_count || 0);
+      var next = Math.max(0, Number(data.unread_messages_count) || 0);
+      applyUnreadBadge(next);
+      if (knownUnreadBaseline && next > prev) {
+        var nNew = next - prev;
+        showStaffWaToast(
+          nNew === 1
+            ? "New Portal WhatsApp from the club — tap to open"
+            : nNew + " new Portal WhatsApp messages — tap to open"
+        );
+        try {
+          global.dispatchEvent(
+            new CustomEvent("portal:staff-wa-unread", { detail: { count: next } })
+          );
+        } catch (_e) {}
+      }
+      knownUnreadBaseline = true;
       return lastUnreadCount;
     } catch (_e) {
       return lastUnreadCount;
@@ -486,6 +532,39 @@
       try {
         if (document.visibilityState === "visible") void refreshUnread();
       } catch (_p) {}
-    }, 45000);
+    }, 6000);
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") void refreshUnread();
+    });
   }
+
+  if (!global.__PORTAL_STAFF_WA_PUSH_MSG__ && global.navigator && global.navigator.serviceWorker) {
+    global.__PORTAL_STAFF_WA_PUSH_MSG__ = true;
+    try {
+      global.navigator.serviceWorker.addEventListener("message", function (ev) {
+        var d = ev && ev.data;
+        if (!d) return;
+        var open = String(d.portalOpen || "");
+        if (d.type === "portal-push-received" && (open === "staff_whatsapp" || open === "portal_staff_whatsapp")) {
+          showStaffWaToast(
+            String(d.body || d.title || "New Portal WhatsApp from the club — tap to open")
+          );
+          void refreshUnread({ fromPush: true });
+          return;
+        }
+        if (d.type === "portal-notification-click" && (open === "staff_whatsapp" || open === "portal_staff_whatsapp")) {
+          openSheet();
+        }
+      });
+    } catch (_m) {}
+  }
+
+  try {
+    var q = new URLSearchParams(String(global.location && global.location.search || ""));
+    if (q.get("portalOpen") === "staff_whatsapp" || q.get("portalOpen") === "portal_staff_whatsapp") {
+      global.setTimeout(function () {
+        openSheet();
+      }, 600);
+    }
+  } catch (_q) {}
 })(typeof window !== "undefined" ? window : globalThis);

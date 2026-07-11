@@ -62,6 +62,36 @@
   box-shadow:0 1px 3px rgba(0,0,0,.25);
 }
 
+.portal-staff-wa-toast{
+  position:fixed;
+  left:50%;
+  bottom:max(72px, calc(16px + env(safe-area-inset-bottom, 0px)));
+  transform:translateX(-50%) translateY(120%);
+  z-index:12500;
+  max-width:min(92vw, 380px);
+  min-width:0;
+  padding:12px 16px;
+  border-radius:12px;
+  background:#0f172a;
+  color:#f8fafc;
+  font:inherit;
+  font-size:13px;
+  font-weight:700;
+  line-height:1.35;
+  text-align:center;
+  overflow-wrap:break-word;
+  box-shadow:0 12px 32px rgba(15,23,42,.28);
+  opacity:0;
+  transition:transform .25s ease, opacity .2s ease;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  pointer-events:auto;
+}
+.portal-staff-wa-toast.is-on{
+  transform:translateX(-50%) translateY(0);
+  opacity:1;
+}
+
 .portal-staff-wa-sheet{
   position:fixed;
   inset:0;

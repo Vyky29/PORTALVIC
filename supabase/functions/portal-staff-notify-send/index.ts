@@ -28,6 +28,7 @@ import {
   isPortalStaffWhatsappLeaderKey,
   normalizeStaffUsernameKey,
 } from "../_shared/portal_staff_whatsapp.ts";
+import { pushStaffLeaderWhatsappMessage } from "../_shared/portal_staff_whatsapp_staff_push.ts";
 
 function str(v: unknown, max = 8000): string {
   return String(v ?? "").trim().slice(0, max);
@@ -148,6 +149,14 @@ Deno.serve(async (req) => {
       whatsapp: { status: whatsappStatus },
     });
   }
+
+  // Instant portal alert for the leader (same idea as admin toast on reply).
+  await pushStaffLeaderWhatsappMessage(admin, {
+    staffProfileId: leader.id,
+    staffUsername: normalizeStaffUsernameKey(leader.username),
+    bodyText,
+    logId: inserted?.id || null,
+  });
 
   return portalAdminJson(200, {
     ok: true,
