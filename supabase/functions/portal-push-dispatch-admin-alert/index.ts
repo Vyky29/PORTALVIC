@@ -55,6 +55,7 @@ const ALLOWED_TABLES = new Set([
   "incident_reports",
   "portal_staff_dm_messages",
   "portal_ceo_group_message",
+  "portal_staff_whatsapp_inbound",
 ]);
 
 /** Chat tables: DM recipients resolved per thread; groups still broadcast to admin/ceo. */
@@ -126,6 +127,15 @@ function buildChatNotifyUrl(
     return `${root}?portal_open=internal_chat&portal_chat_group=${encodeURIComponent(groupId)}`;
   }
   return `${root}?portal_open=internal_chat`;
+}
+
+function buildLeaderWhatsappUrl(base: string, staffUsername: string): string {
+  const root = String(base || "").replace(/\/$/, "");
+  const u = staffUsername ? encodeURIComponent(staffUsername) : "";
+  if (/admin_dashboard\.html/i.test(root)) {
+    return `${root}?portal_open=portal_staff_whatsapp${u ? `&staff=${u}` : ""}`;
+  }
+  return `${root}?portal_open=portal_staff_whatsapp${u ? `&staff=${u}` : ""}`;
 }
 
 function buildAdminAlertsUrl(base: string): string {
@@ -258,6 +268,18 @@ function buildAlert(
     };
   }
 
+  if (table === "portal_staff_whatsapp_inbound") {
+    const who =
+      String(record.staff_username ?? authorName ?? "Leader").trim() || "Leader";
+    const preview = clampPushBody(String(record.body_text ?? ""), 120) ||
+      "New WhatsApp reply";
+    return {
+      sourceId: id,
+      title: `Leader WhatsApp · ${who}`,
+      body: preview,
+    };
+  }
+
   return null;
 }
 
@@ -333,11 +355,25 @@ Deno.serve(async (req) => {
 
   const admin = createClient(supabaseUrl, serviceKey);
 
-  const authorId = String(record.author_id ?? "").trim();
+  const authorId = String(
+    record.author_id ?? record.staff_profile_id ?? "",
+  ).trim();
   let authorName = "";
   let groupTitle = "";
 
-  if (CHAT_TABLES.has(table)) {
+  if (CHAT_TABLES.has(table) || table === "portal_staff_whatsapp_inbound") {
+    if (table === "portal_staff_whatsapp_inbound") {
+      authorName = String(record.staff_username ?? "").trim();
+      if (!authorName && authorId) {
+        const { data: authorProf } = await admin
+          .from("staff_profiles")
+          .select("full_name, username")
+          .eq("id", authorId)
+          .maybeSingle();
+        authorName = String(authorProf?.full_name ?? authorProf?.username ?? "")
+          .trim();
+      }
+    } else {
     if (!authorId) {
       return jsonPushResponse({ skipped: true, reason: "no author" });
     }
@@ -368,6 +404,7 @@ Deno.serve(async (req) => {
         return jsonPushResponse({ error: grpErr.message }, 500);
       }
       groupTitle = String(grp?.title ?? grp?.slug ?? "CEO chat").trim();
+    }
     }
   }
 
@@ -475,11 +512,17 @@ Deno.serve(async (req) => {
   const groupId = table === "portal_ceo_group_message"
     ? String(record.group_id ?? "").trim()
     : "";
+  const staffUsername = table === "portal_staff_whatsapp_inbound"
+    ? String(record.staff_username ?? authorName ?? "").trim().toLowerCase()
+    : "";
   let notifyUrl = buildAdminAlertsUrl(openBase);
   let portalOpen = "alerts";
   if (CHAT_TABLES.has(table)) {
     portalOpen = "chat";
     notifyUrl = buildChatNotifyUrl(openBase, threadId, groupId);
+  } else if (table === "portal_staff_whatsapp_inbound") {
+    portalOpen = "portal_staff_whatsapp";
+    notifyUrl = buildLeaderWhatsappUrl(openBase, staffUsername);
   }
 
   const { data: profRows } = await admin
@@ -518,6 +561,8 @@ Deno.serve(async (req) => {
         : openBase;
       const userUrl = CHAT_TABLES.has(table)
         ? buildChatNotifyUrl(userBase, threadId, groupId)
+        : table === "portal_staff_whatsapp_inbound"
+        ? buildLeaderWhatsappUrl(userBase, staffUsername)
         : buildAdminAlertsUrl(userBase);
       const pushPayload = JSON.stringify({
         ...pushPayloadBase,

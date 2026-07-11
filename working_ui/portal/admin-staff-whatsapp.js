@@ -1,9 +1,12 @@
 /**
  * Admin — Leader WhatsApp threads (staff leaders only).
  * Parallel to Family messages; uses portal_staff_* tables.
+ * Unread = inbound from leader newer than localStorage seen cursor (per username).
  */
 (function (global) {
   "use strict";
+
+  var SEEN_STORE_KEY = "portalStaffWaAdminSeenV1";
 
   var state = {
     directory: [],
@@ -12,6 +15,7 @@
     loading: false,
     sending: false,
     draft: "",
+    pollTimer: null,
   };
 
   var cfg = {
@@ -36,6 +40,50 @@
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
+  }
+
+  function readSeenMap() {
+    try {
+      var raw = global.localStorage && global.localStorage.getItem(SEEN_STORE_KEY);
+      var parsed = raw ? JSON.parse(raw) : {};
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch (_e) {
+      return {};
+    }
+  }
+
+  function markThreadSeen(username, iso) {
+    var key = String(username || "").trim().toLowerCase();
+    if (!key) return;
+    try {
+      var map = readSeenMap();
+      var prev = map[key] || "";
+      var next = String(iso || "");
+      if (!next || next > prev) {
+        map[key] = next || prev || new Date().toISOString();
+        if (global.localStorage) {
+          global.localStorage.setItem(SEEN_STORE_KEY, JSON.stringify(map));
+        }
+        try {
+          global.dispatchEvent(new CustomEvent("portal:staff-wa-seen"));
+        } catch (_ev) {}
+      }
+    } catch (_e) {}
+  }
+
+  function isLeaderUnread(l) {
+    if (!l || !l.lastInboundAt) return false;
+    var key = String(l.username || "").trim().toLowerCase();
+    var seen = readSeenMap()[key] || "";
+    return String(l.lastInboundAt) > String(seen);
+  }
+
+  function unreadLeadersCount(directory) {
+    var n = 0;
+    (directory || state.directory || []).forEach(function (l) {
+      if (isLeaderUnread(l)) n += 1;
+    });
+    return n;
   }
 
   async function authHeaders() {
@@ -71,6 +119,7 @@
     return (
       '<div class="portal-staff-wa-admin" id="portalStaffWaAdmin">' +
       '<p class="page-intro">WhatsApp with programme leaders (Berta, John, Michelle, Raúl, Victor, Javi). Messages also appear on their staff dashboard.</p>' +
+      '<p class="portal-staff-wa-admin__count muted" id="portalStaffWaCount"></p>' +
       '<div class="portal-staff-wa-admin__layout">' +
       '<aside class="portal-staff-wa-admin__list" id="portalStaffWaDir"></aside>' +
       '<section class="portal-staff-wa-admin__chat">' +
@@ -86,33 +135,72 @@
     );
   }
 
+  function renderCount() {
+    var el = document.getElementById("portalStaffWaCount");
+    if (!el) return;
+    var unread = unreadLeadersCount();
+    var total = state.directory.length;
+    el.textContent =
+      total +
+      " leader" +
+      (total === 1 ? "" : "s") +
+      (unread ? " · " + unread + " unread" : "");
+    el.classList.toggle("portal-staff-wa-admin__count--has-unread", unread > 0);
+  }
+
   function renderDirectory() {
     var host = document.getElementById("portalStaffWaDir");
     if (!host) return;
     if (!state.directory.length) {
       host.innerHTML = '<p class="muted">No leaders found.</p>';
+      renderCount();
       return;
     }
-    host.innerHTML = state.directory
+    // Unread first, then name.
+    var sorted = state.directory.slice().sort(function (a, b) {
+      var ua = isLeaderUnread(a) ? 1 : 0;
+      var ub = isLeaderUnread(b) ? 1 : 0;
+      if (ua !== ub) return ub - ua;
+      return String(a.displayName || a.username).localeCompare(
+        String(b.displayName || b.username),
+        undefined,
+        { sensitivity: "base" }
+      );
+    });
+    host.innerHTML = sorted
       .map(function (l) {
         var active = state.selected === l.username ? " is-active" : "";
+        var unread = isLeaderUnread(l);
         var phone = l.hasPhone
           ? '<span class="muted">WhatsApp on file</span>'
           : '<span class="portal-staff-wa-admin__warn">No phone</span>';
+        var preview = unread && l.lastInboundPreview
+          ? '<span class="portal-staff-wa-admin__preview">' +
+            esc(l.lastInboundPreview) +
+            "</span>"
+          : "";
         return (
           '<button type="button" class="portal-staff-wa-admin__person' +
           active +
+          (unread ? " portal-staff-wa-admin__person--unread" : "") +
           '" data-staff-wa-user="' +
           esc(l.username) +
           '">' +
+          '<span class="portal-staff-wa-admin__person-row">' +
           "<strong>" +
           esc(l.displayName || l.username) +
           "</strong>" +
+          (unread
+            ? '<span class="portal-staff-wa-admin__unread-chip">Unread</span>'
+            : "") +
+          "</span>" +
           phone +
+          preview +
           "</button>"
         );
       })
       .join("");
+    renderCount();
   }
 
   function formatTime(iso) {
@@ -128,6 +216,16 @@
     } catch (_e) {
       return "";
     }
+  }
+
+  function latestInboundAt(messages) {
+    var max = "";
+    (messages || []).forEach(function (m) {
+      if (m && m.direction === "inbound" && String(m.created_at || "") > max) {
+        max = String(m.created_at);
+      }
+    });
+    return max;
   }
 
   function renderMessages() {
@@ -178,30 +276,76 @@
     host.scrollTop = host.scrollHeight;
   }
 
-  async function loadDirectory() {
+  async function loadDirectory(opts) {
+    opts = opts || {};
+    var prevUnread = unreadLeadersCount();
     var res = await api("portal-staff-messages-list", { directory: true });
     if (!res.ok) {
-      cfg.toast("Could not load leaders: " + ((res.data && res.data.error) || res.status));
+      if (!opts.silent) {
+        cfg.toast("Could not load leaders: " + ((res.data && res.data.error) || res.status));
+      }
       return;
     }
     state.directory = Array.isArray(res.data.directory) ? res.data.directory : [];
+    // If the open thread is selected, keep it marked seen up to latest known inbound.
+    if (state.selected) {
+      var open = state.directory.find(function (l) {
+        return l.username === state.selected;
+      });
+      if (open && open.lastInboundAt) {
+        markThreadSeen(state.selected, open.lastInboundAt);
+      }
+    }
     renderDirectory();
+    var nextUnread = unreadLeadersCount();
+    if (opts.notifyNew && nextUnread > prevUnread) {
+      var names = state.directory
+        .filter(isLeaderUnread)
+        .map(function (l) {
+          return l.displayName || l.username;
+        })
+        .slice(0, 3);
+      cfg.toast(
+        "New Leader WhatsApp" +
+          (names.length ? ": " + names.join(", ") : "")
+      );
+      try {
+        global.dispatchEvent(
+          new CustomEvent("portal:staff-wa-unread", { detail: { count: nextUnread } })
+        );
+      } catch (_e) {}
+    }
   }
 
-  async function loadThread(username) {
+  async function loadThread(username, opts) {
+    opts = opts || {};
     state.selected = String(username || "");
-    state.loading = true;
-    renderDirectory();
-    renderMessages();
+    if (!opts.keepLoadingQuiet) {
+      state.loading = true;
+      renderDirectory();
+      renderMessages();
+    }
     var res = await api("portal-staff-messages-list", { staffUsername: state.selected });
     state.loading = false;
     if (!res.ok) {
-      cfg.toast("Could not load thread: " + ((res.data && res.data.error) || res.status));
+      if (!opts.silent) {
+        cfg.toast("Could not load thread: " + ((res.data && res.data.error) || res.status));
+      }
       state.messages = [];
       renderMessages();
       return;
     }
     state.messages = Array.isArray(res.data.messages) ? res.data.messages : [];
+    var lastIn = latestInboundAt(state.messages);
+    if (lastIn) markThreadSeen(state.selected, lastIn);
+    // Keep directory lastInboundAt in sync for the open thread.
+    state.directory = state.directory.map(function (l) {
+      if (l.username !== state.selected) return l;
+      return Object.assign({}, l, {
+        lastInboundAt: lastIn || l.lastInboundAt || null,
+      });
+    });
+    renderDirectory();
     renderMessages();
   }
 
@@ -240,6 +384,29 @@
     await loadThread(state.selected);
   }
 
+  function startLiveRefresh() {
+    stopLiveRefresh();
+    state.pollTimer = global.setInterval(function () {
+      if (!document.getElementById("portalStaffWaAdmin")) {
+        stopLiveRefresh();
+        return;
+      }
+      if (document.visibilityState && document.visibilityState !== "visible") return;
+      void loadDirectory({ silent: true, notifyNew: true }).then(function () {
+        if (state.selected) {
+          void loadThread(state.selected, { silent: true, keepLoadingQuiet: true });
+        }
+      });
+    }, 12000);
+  }
+
+  function stopLiveRefresh() {
+    if (state.pollTimer) {
+      global.clearInterval(state.pollTimer);
+      state.pollTimer = null;
+    }
+  }
+
   function bind() {
     var root = document.getElementById("portalStaffWaAdmin");
     if (!root || root.getAttribute("data-bound") === "1") return;
@@ -251,7 +418,9 @@
     });
     var form = document.getElementById("portalStaffWaForm");
     if (form) form.addEventListener("submit", sendMessage);
-    void loadDirectory();
+    void loadDirectory().then(function () {
+      startLiveRefresh();
+    });
   }
 
   function configure(opts) {
@@ -263,10 +432,31 @@
     if (typeof opts.getAnonKey === "function") cfg.getAnonKey = opts.getAnonKey;
   }
 
+  async function fetchUnreadCount() {
+    try {
+      var res = await api("portal-staff-messages-list", { directory: true });
+      if (!res.ok) return 0;
+      var dir = Array.isArray(res.data.directory) ? res.data.directory : [];
+      return unreadLeadersCount(dir);
+    } catch (_e) {
+      return 0;
+    }
+  }
+
   global.PortalStaffWhatsappAdmin = {
     configure: configure,
     viewHtml: viewHtml,
     bind: bind,
-    refresh: loadDirectory,
+    refresh: function () {
+      return loadDirectory({ silent: true, notifyNew: false });
+    },
+    openStaff: function (username) {
+      if (!username) return loadDirectory();
+      return loadDirectory().then(function () {
+        return loadThread(String(username).toLowerCase());
+      });
+    },
+    unreadCount: fetchUnreadCount,
+    stopLiveRefresh: stopLiveRefresh,
   };
 })(typeof window !== "undefined" ? window : globalThis);

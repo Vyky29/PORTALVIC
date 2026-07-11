@@ -76,10 +76,10 @@
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/portal_incident_parent_notify.js?v=20260703-incident-notify"></script>
   <script src="/portal/admin-parent-notify-log.js?v=20260709-wa-source-chips"></script>
-  <script src="/portal/admin-staff-whatsapp.js?v=20260711-leaders-wa"></script>
+  <script src="/portal/admin-staff-whatsapp.js?v=20260711-admin-unread"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260706-family-broadcast-5"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260709-wa-source-chips" />
-  <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260711-leaders-wa" />
+  <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260711-admin-unread" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260707-cancel-reason-policy"></script>
   <script src="/portal/cfk-app.js?v=20260614-cfk-services"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
@@ -27456,6 +27456,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       try{
         var portalOpenParams = new URLSearchParams(String(location.search || ''));
+        if(portalOpenParams.get('portal_open') === 'portal_staff_whatsapp'){
+          try{
+            setView('portal_staff_whatsapp');
+            var staffWaOpen = String(portalOpenParams.get('staff') || '').trim().toLowerCase();
+            setTimeout(function(){
+              if(window.PortalStaffWhatsappAdmin && typeof window.PortalStaffWhatsappAdmin.openStaff === 'function'){
+                void window.PortalStaffWhatsappAdmin.openStaff(staffWaOpen);
+              }
+            }, 400);
+          }catch(_staffWaOpen){}
+        }
         if(portalOpenParams.get('portal_open') === 'cs_cliq' || portalOpenParams.get('portal_open') === 'new_chat' || portalOpenParams.get('portal_chat_thread') || portalOpenParams.get('portal_chat_group')){
           var portalCliqChannel = portalOpenParams.get('portal_cliq_channel');
           var portalChatThread = portalOpenParams.get('portal_chat_thread');

@@ -95,15 +95,41 @@ Deno.serve(async (req) => {
   // fall through to the own-thread branch instead of returning an empty directory.
   if (isAdmin && directoryOnly) {
     const leaders = await fetchStaffWhatsappLeaders(admin);
-    const directory = leaders.map((l) => ({
-      id: l.id,
-      username: normalizeStaffUsernameKey(l.username),
-      displayName: l.full_name || l.username,
-      hasPhone: !!normalizeParentPhoneE164(String(l.phone_e164 || "")),
-      phoneMasked: l.phone_e164
-        ? String(l.phone_e164).replace(/\d(?=\d{4})/g, "•")
-        : null,
-    }));
+    const ids = leaders.map((l) => l.id).filter(Boolean);
+    const lastInboundByStaff: Record<
+      string,
+      { at: string; preview: string }
+    > = {};
+    if (ids.length) {
+      const { data: inboundRows } = await admin
+        .from("portal_staff_whatsapp_inbound")
+        .select("staff_profile_id, created_at, body_text")
+        .in("staff_profile_id", ids)
+        .order("created_at", { ascending: false })
+        .limit(300);
+      (inboundRows || []).forEach((r) => {
+        const sid = String(r.staff_profile_id || "");
+        if (!sid || lastInboundByStaff[sid]) return;
+        lastInboundByStaff[sid] = {
+          at: String(r.created_at || ""),
+          preview: String(r.body_text || "").trim().slice(0, 80),
+        };
+      });
+    }
+    const directory = leaders.map((l) => {
+      const inbound = lastInboundByStaff[l.id] || null;
+      return {
+        id: l.id,
+        username: normalizeStaffUsernameKey(l.username),
+        displayName: l.full_name || l.username,
+        hasPhone: !!normalizeParentPhoneE164(String(l.phone_e164 || "")),
+        phoneMasked: l.phone_e164
+          ? String(l.phone_e164).replace(/\d(?=\d{4})/g, "•")
+          : null,
+        lastInboundAt: inbound ? inbound.at : null,
+        lastInboundPreview: inbound ? inbound.preview : null,
+      };
+    });
     return portalAdminJson(200, { ok: true, directory });
   }
 

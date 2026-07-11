@@ -18,6 +18,44 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { normalizeParentPhoneE164 } from "../_shared/portal_parent_messaging.ts";
 import { findStaffLeaderByPhone } from "../_shared/portal_staff_whatsapp.ts";
 
+async function notifyAdminsStaffWhatsappReply(
+  _admin: ReturnType<typeof createClient>,
+  record: {
+    id: string;
+    staff_profile_id: string;
+    staff_username: string;
+    body_text: string;
+    created_at: string;
+  },
+): Promise<void> {
+  try {
+    const baseUrl = (Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
+    const secret = (Deno.env.get("PORTAL_PUSH_WEBHOOK_SECRET") || "").trim();
+    if (!baseUrl || !secret) {
+      console.warn("[portal-whatsapp-webhook] skip staff push — missing push secret/url");
+      return;
+    }
+    const res = await fetch(`${baseUrl}/functions/v1/portal-push-dispatch-admin-alert`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-portal-webhook-secret": secret,
+      },
+      body: JSON.stringify({
+        type: "INSERT",
+        table: "portal_staff_whatsapp_inbound",
+        record,
+      }),
+    });
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      console.warn("[portal-whatsapp-webhook] staff push failed", res.status, t.slice(0, 200));
+    }
+  } catch (e) {
+    console.warn("[portal-whatsapp-webhook] staff push error", e);
+  }
+}
+
 type MetaWebhookBody = {
   object?: string;
   entry?: Array<{
@@ -311,14 +349,27 @@ async function storeInboundMessages(
         },
         raw_payload: msg as Record<string, unknown>,
       };
-      const { error: staffErr } = await admin
+      const { data: staffInserted, error: staffErr } = await admin
         .from("portal_staff_whatsapp_inbound")
-        .upsert(staffRow, { onConflict: "wa_message_id", ignoreDuplicates: true });
+        .upsert(staffRow, { onConflict: "wa_message_id", ignoreDuplicates: true })
+        .select("id, staff_profile_id, staff_username, body_text, created_at")
+        .maybeSingle();
       if (staffErr) {
         console.warn("[portal-whatsapp-webhook] staff insert failed", waMessageId, staffErr.message);
         continue;
       }
-      inserted += 1;
+      if (staffInserted?.id) {
+        inserted += 1;
+        void notifyAdminsStaffWhatsappReply(admin, {
+          id: String(staffInserted.id),
+          staff_profile_id: String(staffInserted.staff_profile_id || staffLeader.id),
+          staff_username: String(
+            staffInserted.staff_username || staffLeader.username || "",
+          ).toLowerCase(),
+          body_text: String(staffInserted.body_text || bodyText || ""),
+          created_at: String(staffInserted.created_at || new Date().toISOString()),
+        });
+      }
       continue;
     }
 
