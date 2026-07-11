@@ -446,7 +446,13 @@
       if(!out.length) add(portalIsoYmdFromDate(new Date()));
       return out;
     }
-    window.portalRefreshScheduleOverridesCache = async function portalRefreshScheduleOverridesCache(opts){
+    window.portalRefreshScheduleOverridesCache = function portalRefreshScheduleOverridesCache(opts){
+      /* Coalesce concurrent refresh calls (identity resolve + kick + settle) into one fetch.
+         Two parallel loads were re-painting Today twice → “first one thing, then it changes”. */
+      if(window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__){
+        return window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__;
+      }
+      window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__ = (async function(){
       try{
         const box = window.__PORTAL_SUPABASE__;
         if(!box || !box.client){
@@ -595,10 +601,18 @@
         if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
         if(typeof portalRefreshScheduleOverrideDayChrome === 'function') portalRefreshScheduleOverrideDayChrome({ forceTerm: true });
       }catch(_syncOv){}
+      }finally{
+        try{ window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__ = null; }catch(_){}
+      }
+      })();
+      return window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__;
     };
     /** Kick async schedule_overrides fetch so Today does not stay on “syncing” after identity resolves. */
     function portalStaffKickScheduleOverridesHydrate(opts){
       opts = opts || {};
+      if(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__){
+        return window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__;
+      }
       if(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__) return Promise.resolve();
       var fn = typeof window !== 'undefined' ? window.portalRefreshScheduleOverridesCache : null;
       if(typeof fn !== 'function'){
