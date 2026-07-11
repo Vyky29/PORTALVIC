@@ -243,6 +243,14 @@
           }
           if (typeof reg.showNotification === "function") {
             await reg.showNotification(title, notifyOpts);
+            // Desktop: also fire the window Notification API — macOS Chrome often
+            // suppresses the SW banner while this tab is focused; the constructor
+            // still lands in Notification Center and sometimes shows a banner.
+            if (!env.isIOS) {
+              try {
+                new global.Notification(title, notifyOpts);
+              } catch (_n) {}
+            }
             if (global.navigator && global.navigator.vibrate) {
               try {
                 global.navigator.vibrate([100, 50, 100]);
@@ -311,7 +319,11 @@
     if (env.mobile) {
       return "Test sent — if you did not see a banner, switch away from the portal and try again.";
     }
-    return "Test sent — if you saw the banner, this device is ready.";
+    return (
+      "Test sent. If no banner appeared: check macOS Focus / Do Not Disturb is off, " +
+      "and look in Notification Center (top-right). Chrome often hides banners while this tab is focused — " +
+      "the green box below confirms the test ran."
+    );
   }
 
   function portalUrlBase64ToUint8Array(base64String) {

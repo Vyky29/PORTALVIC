@@ -15,10 +15,28 @@
     bootstrapDashboardSupabase({ page: "admin" });
   </script>
   <script src="/portal/portal-vapid-public.js?v=20260610-vapid-v4"></script>
-  <script src="/portal/portal_web_push_support.js?v=20260628-test-sw-ready"></script>
+  <script src="/portal/portal_web_push_support.js?v=20260711-admin-test-banner"></script>
   <script src="/portal/portal_ensure_web_push.js?v=20260619-denied-help"></script>
-  <script src="/portal/portal_alerts_notifications_ui.js?v=20260628-test-btn-fix"></script>
+  <script src="/portal/portal_alerts_notifications_ui.js?v=20260711-wa-unread-push"></script>
   <script src="/portal/portal-admin-alerts-sheet.js?v=20260615-admin-alerts-perf"></script>
+  <script>
+    /* Register push SW on admin so Send test alert / background push work. */
+    (function () {
+      if (!("serviceWorker" in navigator)) return;
+      try {
+        var swUrl = new URL("clubsensational-portal-sw.js", location.href).href;
+        var scopeBase = new URL("./", location.href).href;
+        navigator.serviceWorker.register(swUrl, { scope: scopeBase }).then(function (reg) {
+          window.__PORTAL_SW_REG__ = reg;
+          try { reg.update(); } catch (_u) {}
+        }).catch(function (e) {
+          console.warn("[portal] admin SW register", e);
+        });
+      } catch (e) {
+        console.warn("[portal] admin SW", e);
+      }
+    })();
+  </script>
 <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260706-v26-sessions-hub-rework" />
   <script src="/portal/portal_staff_display_names.js?v=20260630-staff-display-names"></script>
@@ -102,7 +120,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260704-admin-alerts-pop" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260711-admin-test-flash" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
