@@ -1,5 +1,6 @@
 /**
  * Victor, Raúl, Javi — switch Staff / Lead / Admin from Quick menu (or admin nav).
+ * Lead = staff_dashboard with lead tools (same shell as Michelle, John, Berta).
  */
 import { portalInferStaffKey } from "./auth-handler.js";
 
@@ -40,13 +41,16 @@ export function portalExecWorkspaceSwitchTargets(currentMode) {
       mode: "staff",
       label: "Staff portal",
       sub: "Your shifts, sessions, feedback and daily roster",
-      url: publishedUrl("staff_dashboard.html", "PORTAL_STAFF_DASHBOARD_URL"),
+      url: publishedUrl("staff_dashboard.html?portalStayWorker=1", "PORTAL_STAFF_DASHBOARD_URL"),
     },
     {
       mode: "lead",
       label: "Lead portal",
-      sub: "Team overview, lead reports and support workflows",
-      url: publishedUrl("staff_dashboard.html", "PORTAL_LEAD_DASHBOARD_URL"),
+      sub: "Lead report and team tools — same as Michelle, John and Berta",
+      url: publishedUrl(
+        "staff_dashboard.html?portalStayWorker=1&portalLeadHome=1",
+        "PORTAL_LEAD_DASHBOARD_URL"
+      ),
     },
     {
       mode: "admin",
@@ -55,6 +59,9 @@ export function portalExecWorkspaceSwitchTargets(currentMode) {
       url: publishedUrl("admin_dashboard.html", "PORTAL_ADMIN_DASHBOARD_URL"),
     },
   ];
+  if (mode === "staff" || mode === "lead") {
+    return all.filter((t) => t.mode !== "staff" && t.mode !== "lead");
+  }
   return all.filter((t) => t.mode !== mode);
 }
 

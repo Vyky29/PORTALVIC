@@ -1868,7 +1868,9 @@
           window.portalOpenAnnualProfileUpdate(target);
           return;
         }
-        window.open(target, '_blank', 'noopener,noreferrer');
+        // Same-window navigation keeps the Supabase session (critical on iOS PWA:
+        // window.open → Safari has separate storage, so CEOs bounce to admin after re-login).
+        window.location.href = target;
       }catch(_){
         window.location.href = target;
       }

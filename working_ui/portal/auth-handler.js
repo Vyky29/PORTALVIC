@@ -1783,8 +1783,13 @@ export async function bootstrapDashboardSupabase(_opts) {
           "./portal_lead_session_scope.js"
         );
         if (!portalCanAccessLeadSessionOverview(profile, authEmailGate)) {
+          // Executives without a programme scope stay on staff (lead tools), not admin.
           const hubUrl =
-            resolveDashboardRedirect(inferDashboardRoute(profile, authEmailGate)) || leadHubUrl;
+            portalIsAdminHomeExecutiveUser(profile, authEmailGate) ||
+            portalCanAccessAdminDashboard(profile, authEmailGate)
+              ? portalPublishedStaffUrl()
+              : resolveDashboardRedirect(inferDashboardRoute(profile, authEmailGate)) ||
+                leadHubUrl;
           try {
             window.location.replace(hubUrl);
           } catch {
@@ -1795,7 +1800,11 @@ export async function bootstrapDashboardSupabase(_opts) {
       } catch (scopeErr) {
         console.warn("[portal] lead_overview scope check", scopeErr);
         const hubUrl =
-          resolveDashboardRedirect(inferDashboardRoute(profile, authEmailGate)) || leadHubUrl;
+          portalIsAdminHomeExecutiveUser(profile, authEmailGate) ||
+          portalCanAccessAdminDashboard(profile, authEmailGate)
+            ? portalPublishedStaffUrl()
+            : resolveDashboardRedirect(inferDashboardRoute(profile, authEmailGate)) ||
+              leadHubUrl;
         try {
           window.location.replace(hubUrl);
         } catch {

@@ -398,8 +398,11 @@
       {
         mode: "lead",
         label: "Lead portal",
-        title: "Open lead dashboard",
-        url: publishedUrl("staff_dashboard.html", "PORTAL_LEAD_DASHBOARD_URL"),
+        title: "Open lead tools on staff dashboard (same as Michelle, John, Berta)",
+        url: publishedUrl(
+          "staff_dashboard.html?portalStayWorker=1&portalLeadHome=1",
+          "PORTAL_LEAD_DASHBOARD_URL"
+        ),
       },
       {
         mode: "admin",

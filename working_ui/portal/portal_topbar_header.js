@@ -505,10 +505,21 @@
     var u = String(url || "").trim();
     if (!u) return false;
     try {
-      var w = global.open(u, "_blank", "noopener,noreferrer");
-      return !!w;
+      // Prefer in-app navigation so PWA / standalone keeps the signed-in session.
+      // (window.open on iOS opens Safari with empty storage → login → admin for CEOs.)
+      if (typeof global.portalQuickMenuNavigate === "function") {
+        global.portalQuickMenuNavigate(u);
+        return true;
+      }
+      global.location.href = new URL(u, global.location.href).href;
+      return true;
     } catch (_) {
-      return false;
+      try {
+        global.location.href = u;
+        return true;
+      } catch (__ ) {
+        return false;
+      }
     }
   }
 

@@ -51,6 +51,15 @@ export function portalExecWorkspaceSwitchTargets(currentMode, profile, authEmail
       url: publishedUrl("staff_dashboard.html?portalStayWorker=1", "PORTAL_STAFF_DASHBOARD_URL"),
     },
     {
+      mode: "lead",
+      label: "Lead Portal",
+      sub: "Lead report, team tools — same as Michelle, John and Berta",
+      url: publishedUrl(
+        "staff_dashboard.html?portalStayWorker=1&portalLeadHome=1",
+        "PORTAL_LEAD_DASHBOARD_URL"
+      ),
+    },
+    {
       mode: "admin",
       label: "Admin Portal",
       sub: "Day operations, roster, feedback and admin tools",
@@ -64,7 +73,11 @@ export function portalExecWorkspaceSwitchTargets(currentMode, profile, authEmail
     },
   ];
   if (opsAdmin) {
-    return all.filter((t) => t.mode !== mode && t.mode !== "ceo");
+    return all.filter((t) => t.mode !== mode && t.mode !== "ceo" && t.mode !== "lead");
+  }
+  // On staff shell, "Lead" and "Staff" are the same page — only show Lead when not already there.
+  if (mode === "staff" || mode === "lead") {
+    return all.filter((t) => t.mode !== "staff" && t.mode !== "lead");
   }
   return all.filter((t) => t.mode !== mode);
 }
