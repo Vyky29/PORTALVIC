@@ -17,6 +17,7 @@ import {
   isPortalStaffWhatsappLeaderKey,
   normalizeStaffUsernameKey,
 } from "../_shared/portal_staff_whatsapp.ts";
+import { notifyAdminsStaffWhatsappReply } from "../_shared/portal_staff_whatsapp_admin_push.ts";
 
 function str(v: unknown, max = 4000): string {
   return String(v ?? "").trim().slice(0, max);
@@ -112,6 +113,16 @@ Deno.serve(async (req) => {
   if (error) {
     console.error("[portal-staff-message-send] insert failed", error.message);
     return portalAdminJson(500, { ok: false, error: "insert_failed" });
+  }
+
+  if (inserted?.id) {
+    await notifyAdminsStaffWhatsappReply({
+      id: String(inserted.id),
+      staff_profile_id: String(me.id),
+      staff_username: normalizeStaffUsernameKey(String(me.username || "")),
+      body_text: String(inserted.body_text || message),
+      created_at: String(inserted.created_at || now),
+    });
   }
 
   return portalAdminJson(200, {

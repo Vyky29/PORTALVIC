@@ -547,7 +547,7 @@ Deno.serve(async (req) => {
       ? `portal-chat-${alert.sourceId}`
       : `admin-${table}-${alert.sourceId}`,
     requireInteraction: true,
-    vibrate: [120, 55, 120, 55, 160],
+    vibrate: [200, 80, 200, 80, 280, 100, 200],
     chat: threadId ? { threadId } : groupId ? { groupId } : null,
   };
 

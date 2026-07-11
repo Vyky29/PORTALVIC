@@ -17,44 +17,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { normalizeParentPhoneE164 } from "../_shared/portal_parent_messaging.ts";
 import { findStaffLeaderByPhone } from "../_shared/portal_staff_whatsapp.ts";
-
-async function notifyAdminsStaffWhatsappReply(
-  _admin: ReturnType<typeof createClient>,
-  record: {
-    id: string;
-    staff_profile_id: string;
-    staff_username: string;
-    body_text: string;
-    created_at: string;
-  },
-): Promise<void> {
-  try {
-    const baseUrl = (Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
-    const secret = (Deno.env.get("PORTAL_PUSH_WEBHOOK_SECRET") || "").trim();
-    if (!baseUrl || !secret) {
-      console.warn("[portal-whatsapp-webhook] skip staff push — missing push secret/url");
-      return;
-    }
-    const res = await fetch(`${baseUrl}/functions/v1/portal-push-dispatch-admin-alert`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-portal-webhook-secret": secret,
-      },
-      body: JSON.stringify({
-        type: "INSERT",
-        table: "portal_staff_whatsapp_inbound",
-        record,
-      }),
-    });
-    if (!res.ok) {
-      const t = await res.text().catch(() => "");
-      console.warn("[portal-whatsapp-webhook] staff push failed", res.status, t.slice(0, 200));
-    }
-  } catch (e) {
-    console.warn("[portal-whatsapp-webhook] staff push error", e);
-  }
-}
+import { notifyAdminsStaffWhatsappReply } from "../_shared/portal_staff_whatsapp_admin_push.ts";
 
 type MetaWebhookBody = {
   object?: string;
@@ -360,7 +323,8 @@ async function storeInboundMessages(
       }
       if (staffInserted?.id) {
         inserted += 1;
-        void notifyAdminsStaffWhatsappReply(admin, {
+        // Await push so Meta gets the reply after admins are notified (faster felt delivery).
+        await notifyAdminsStaffWhatsappReply({
           id: String(staffInserted.id),
           staff_profile_id: String(staffInserted.staff_profile_id || staffLeader.id),
           staff_username: String(

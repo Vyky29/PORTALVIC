@@ -188,6 +188,43 @@
   global.portalPersistGet = global.portalPersistGet || persistGet;
   global.portalPersistSet = global.portalPersistSet || persistSet;
   global.portalIsStandalonePwa = portalIsStandalonePwa;
+
+  /** Short beep + vibrate so the user gets feedback even when the OS silences banners. */
+  function portalPlayAlertCue(opts) {
+    opts = opts || {};
+    var pattern = opts.vibrate || [200, 80, 200, 80, 280];
+    try {
+      if (global.navigator && global.navigator.vibrate) {
+        global.navigator.vibrate(pattern);
+      }
+    } catch (_v) {}
+    try {
+      var AC = global.AudioContext || global.webkitAudioContext;
+      if (!AC) return;
+      var ctx = global.__PORTAL_ALERT_AUDIO_CTX__ || new AC();
+      global.__PORTAL_ALERT_AUDIO_CTX__ = ctx;
+      if (ctx.state === "suspended") {
+        void ctx.resume();
+      }
+      var now = ctx.currentTime;
+      function beep(at, freq, dur) {
+        var o = ctx.createOscillator();
+        var g = ctx.createGain();
+        o.type = "sine";
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(0.0001, at);
+        g.gain.exponentialRampToValueAtTime(0.18, at + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+        o.connect(g);
+        g.connect(ctx.destination);
+        o.start(at);
+        o.stop(at + dur + 0.02);
+      }
+      beep(now, 880, 0.12);
+      beep(now + 0.16, 1175, 0.14);
+    } catch (_a) {}
+  }
+  global.portalPlayAlertCue = portalPlayAlertCue;
   async function portalSendLocalTestNotification(opts) {
     opts = opts || {};
     var title = String(opts.title || "Test: portal notification").trim();
@@ -251,7 +288,9 @@
                 new global.Notification(title, notifyOpts);
               } catch (_n) {}
             }
-            if (global.navigator && global.navigator.vibrate) {
+            if (typeof portalPlayAlertCue === "function") {
+              portalPlayAlertCue();
+            } else if (global.navigator && global.navigator.vibrate) {
               try {
                 global.navigator.vibrate([100, 50, 100]);
               } catch (_v) {}

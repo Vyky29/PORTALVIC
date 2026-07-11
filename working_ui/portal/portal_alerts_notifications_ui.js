@@ -548,9 +548,11 @@
           statusEl.textContent = line;
         }
         flashInSheetBanner(true, line);
-        if (global.navigator.vibrate) {
+        if (typeof global.portalPlayAlertCue === "function") {
+          global.portalPlayAlertCue();
+        } else if (global.navigator.vibrate) {
           try {
-            global.navigator.vibrate([120, 55, 120]);
+            global.navigator.vibrate([200, 80, 200]);
           } catch (_v) {}
         }
       });

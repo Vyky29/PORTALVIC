@@ -309,6 +309,9 @@
         "New Leader WhatsApp" +
           (names.length ? ": " + names.join(", ") : "")
       );
+      if (typeof global.portalPlayAlertCue === "function") {
+        global.portalPlayAlertCue();
+      }
       try {
         global.dispatchEvent(
           new CustomEvent("portal:staff-wa-unread", { detail: { count: nextUnread } })
@@ -397,7 +400,7 @@
           void loadThread(state.selected, { silent: true, keepLoadingQuiet: true });
         }
       });
-    }, 12000);
+    }, 5000);
   }
 
   function stopLiveRefresh() {

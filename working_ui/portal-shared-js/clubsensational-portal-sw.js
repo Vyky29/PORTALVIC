@@ -24,7 +24,7 @@ self.addEventListener('activate', function (event) {
   event.waitUntil(self.clients.claim());
 });
 
-var PORTAL_ALERT_VIBRATE = [120, 55, 120, 55, 160];
+var PORTAL_ALERT_VIBRATE = [200, 80, 200, 80, 280, 100, 200];
 var PORTAL_CALL_VIBRATE = [500, 180, 500, 180, 700, 180, 500];
 
 function portalAppendQueryParam(absUrl, key, value) {
@@ -160,13 +160,16 @@ self.addEventListener('push', function (event) {
       if (t) body = t.slice(0, 200);
     } catch (e2) {}
   }
-  if (portalOpen === 'alerts' || portalOpen === 'chat') {
+  if (
+    portalOpen === 'alerts' ||
+    portalOpen === 'chat' ||
+    portalOpen === 'portal_staff_whatsapp' ||
+    portalOpen === 'incoming_call'
+  ) {
     requireInteraction = true;
-    if (!vibrate) vibrate = PORTAL_ALERT_VIBRATE;
-  }
-  if (portalOpen === 'incoming_call') {
-    requireInteraction = true;
-    if (!vibrate) vibrate = PORTAL_CALL_VIBRATE;
+    if (!vibrate) {
+      vibrate = portalOpen === 'incoming_call' ? PORTAL_CALL_VIBRATE : PORTAL_ALERT_VIBRATE;
+    }
   }
   var icon = portalPushIconUrl();
   var notifyOpts = {
