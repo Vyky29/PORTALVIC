@@ -454,6 +454,7 @@
       }
       window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__ = (async function(){
       try{
+      try{
         const box = window.__PORTAL_SUPABASE__;
         if(!box || !box.client){
           try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
@@ -2721,6 +2722,11 @@
     function portalStaffMarkRosterHydrated(){
       try{ window.__PORTAL_STAFF_ROSTER_HYDRATED__ = true; }catch(_){}
     }
+    try{
+      window.portalStaffMarkInitialTodayScheduleUnsettled = portalStaffMarkInitialTodayScheduleUnsettled;
+      window.portalStaffMarkInitialTodayScheduleSettled = portalStaffMarkInitialTodayScheduleSettled;
+      window.portalStaffMarkRosterHydrated = portalStaffMarkRosterHydrated;
+    }catch(_){}
     function portalStaffEnsureInitialTodayScheduleSettledSoon(delayMs){
       try{
         var wait = Number(delayMs) > 0 ? Number(delayMs) : 5000;
