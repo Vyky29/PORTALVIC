@@ -333,7 +333,7 @@
   function viewHtml() {
     return (
       '<div class="portal-staff-wa-admin" id="portalStaffWaAdmin">' +
-      '<p class="page-intro">CS WhatsApp with staff. Outbound shows WhatsApp delivery/read and whether they opened the portal chat. Staff replies are labelled <strong>Via portal CS WhatsApp</strong> or <strong>Via WhatsApp app</strong>.</p>' +
+      '<p class="page-intro">CS WhatsApp with staff — same delivery ticks as Family messages: <strong>Sent → Delivered → Read</strong>. Also shows if they opened the chat in the portal. Staff replies: <strong>Via portal CS WhatsApp</strong> or <strong>Via WhatsApp app</strong>.</p>' +
       '<p class="portal-staff-wa-admin__count muted" id="portalStaffWaCount"></p>' +
       '<div class="portal-staff-wa-admin__layout">' +
       '<aside class="portal-staff-wa-admin__list" id="portalStaffWaDir"></aside>' +
@@ -586,6 +586,49 @@
     });
   }
 
+  /** Match Family messages: Sent / Delivered ✓✓ / Read ✓✓ */
+  function waDeliveryChip(m) {
+    var st = String((m && m.whatsapp_status) || "").toLowerCase();
+    var label = String((m && m.delivery_label) || "").trim();
+    if (!label) {
+      if (st === "read") label = "Read";
+      else if (st === "delivered") label = "Delivered";
+      else if (st === "failed") label = "Failed";
+      else if (st === "pending") label = "Sending…";
+      else label = "Sent";
+    }
+    // Normalise legacy API label
+    if (/^read on whatsapp$/i.test(label)) label = "Read";
+    var ticks = "";
+    var cls = "portal-staff-wa-admin__chip";
+    if (st === "read") {
+      cls += " is-read";
+      ticks = '<span class="portal-staff-wa-admin__ticks" aria-hidden="true">✓✓</span>';
+    } else if (st === "delivered") {
+      cls += " is-delivered";
+      ticks = '<span class="portal-staff-wa-admin__ticks" aria-hidden="true">✓✓</span>';
+    } else if (st === "failed") {
+      cls += " is-failed";
+    } else if (st === "sent" || st === "pending" || !st) {
+      cls += " is-sent";
+    } else {
+      cls += " is-muted";
+    }
+    var titleBits = [];
+    if (m && m.whatsapp_delivered_at) titleBits.push("Delivered " + formatTime(m.whatsapp_delivered_at));
+    if (m && m.whatsapp_read_at) titleBits.push("Read " + formatTime(m.whatsapp_read_at));
+    return (
+      '<span class="' +
+      cls +
+      '"' +
+      (titleBits.length ? ' title="' + esc(titleBits.join(" · ")) + '"' : "") +
+      ">" +
+      esc(label) +
+      (ticks ? " " + ticks : "") +
+      "</span>"
+    );
+  }
+
   function closeMobileThread() {
     state.mobileShowThread = false;
     syncMobileLayout();
@@ -639,32 +682,12 @@
             : "";
         var chips = [];
         if (dir === "out") {
-          var deliv = String(m.delivery_label || "").trim();
-          if (!deliv && m.whatsapp_status) deliv = String(m.whatsapp_status);
-          if (deliv) {
-            var st = String(m.whatsapp_status || "").toLowerCase();
-            var delivCls =
-              st === "read"
-                ? " is-read"
-                : st === "failed"
-                  ? " is-failed"
-                  : st === "delivered"
-                    ? " is-delivered"
-                    : "";
-            chips.push(
-              '<span class="portal-staff-wa-admin__chip' +
-                delivCls +
-                '">' +
-                esc(deliv) +
-                "</span>"
-            );
-          }
+          chips.push(waDeliveryChip(m));
           if (m.seen_in_portal) {
             chips.push(
-              '<span class="portal-staff-wa-admin__chip is-portal">Seen in portal</span>'
+              '<span class="portal-staff-wa-admin__chip is-portal" title="Opened CS WhatsApp in the staff portal">Opened in portal</span>'
             );
           } else if (
-            deliv &&
             String(m.whatsapp_status || "").toLowerCase() !== "failed" &&
             String(m.whatsapp_status || "").toLowerCase() !== "read"
           ) {
@@ -688,6 +711,8 @@
           '<div class="portal-staff-wa-admin__bubble portal-staff-wa-admin__bubble--' +
           dir +
           '">' +
+          mediaHtml +
+          bodyHtml +
           '<div class="portal-staff-wa-admin__meta">' +
           esc(who) +
           " · " +
@@ -696,8 +721,6 @@
           (chips.length
             ? '<div class="portal-staff-wa-admin__chips">' + chips.join("") + "</div>"
             : "") +
-          mediaHtml +
-          bodyHtml +
           "</div>"
         );
       })

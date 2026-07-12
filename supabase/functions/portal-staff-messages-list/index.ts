@@ -44,6 +44,8 @@ type ThreadMessage = {
   /** outbound: staff opened CS WhatsApp in the portal after this message */
   seen_in_portal?: boolean;
   delivery_label?: string | null;
+  whatsapp_delivered_at?: string | null;
+  whatsapp_read_at?: string | null;
 };
 
 function resolveInboundReplySource(
@@ -62,9 +64,10 @@ function resolveInboundReplySource(
   return "whatsapp";
 }
 
+/** Same labels as Family messages (parent notify log): Sent → Delivered → Read. */
 function outboundDeliveryLabel(status: string | null | undefined): string {
   const st = String(status || "").trim().toLowerCase();
-  if (st === "read") return "Read on WhatsApp";
+  if (st === "read") return "Read";
   if (st === "delivered") return "Delivered";
   if (st === "sent") return "Sent";
   if (st === "failed") return "Failed";
@@ -277,7 +280,7 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
   const { data: outboundRows } = await admin
     .from("portal_staff_notify_log")
     .select(
-      "id, created_at, body_text, whatsapp_status, whatsapp_message_id, staff_profile_id, staff_phone, message_type, media_path, media_mime",
+      "id, created_at, body_text, whatsapp_status, whatsapp_message_id, whatsapp_delivered_at, whatsapp_read_at, staff_profile_id, staff_phone, message_type, media_path, media_mime",
     )
     .eq("staff_profile_id", leader.id)
     .order("created_at", { ascending: true })
@@ -323,6 +326,9 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
       whatsapp_status: status,
       delivery_label: outboundDeliveryLabel(status),
       read_on_whatsapp: String(status || "").toLowerCase() === "read",
+      whatsapp_delivered_at:
+        r.whatsapp_delivered_at != null ? String(r.whatsapp_delivered_at) : null,
+      whatsapp_read_at: r.whatsapp_read_at != null ? String(r.whatsapp_read_at) : null,
       message_type: r.message_type != null ? String(r.message_type) : "text",
       media_path: r.media_path != null ? String(r.media_path) : null,
       media_mime: r.media_mime != null ? String(r.media_mime) : null,
