@@ -3,6 +3,7 @@
  * v20260612-bg-push-fix
  * v20260608-incoming-call-dismiss
  * v20260609-sw-syntax-fix (restore after chat cleanup script broke ternary)
+ * v20260712-cs-portal-wa (Leader WhatsApp deep-link + CS Portal branding)
  * v20260711-always-os-banner (foreground skip broke alerts after chat UI removal)
  */
 var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
@@ -219,9 +220,6 @@ self.addEventListener('notificationclick', function (event) {
   var data = (event.notification && event.notification.data) || {};
   var u = data.url || self.registration.scope || '/';
   var portalOpen = String(data.portalOpen || '');
-  var openAlerts = portalOpen === 'alerts';
-  var openCall = portalOpen === 'incoming_call';
-  var openChat = portalOpen === 'chat';
   var callData = data.call || null;
   var chatData = data.chat || null;
   event.waitUntil(
@@ -231,15 +229,18 @@ self.addEventListener('notificationclick', function (event) {
           try {
             list[i].postMessage({
               type: 'portal-notification-click',
-              portalOpen: openAlerts ? 'alerts' : (openCall ? 'incoming_call' : (openChat ? 'chat' : '')),
+              portalOpen: portalOpen,
               call: callData,
               chat: chatData,
               url: u,
             });
           } catch (e) {}
-          if (openCall && u && typeof list[i].navigate === 'function') {
+          /* Deep-link into Leader WhatsApp / alerts / chat when a URL was provided. */
+          if (u && typeof list[i].navigate === 'function') {
             try {
-              return list[i].navigate(u);
+              return list[i].navigate(u).then(function () {
+                return list[i].focus();
+              });
             } catch (eNav) {}
           }
           return list[i].focus();

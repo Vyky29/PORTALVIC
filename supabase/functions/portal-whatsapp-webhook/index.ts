@@ -330,6 +330,9 @@ async function storeInboundMessages(
           staff_username: String(
             staffInserted.staff_username || staffLeader.username || "",
           ).toLowerCase(),
+          contact_name: String(
+            staffLeader.full_name || staffLeader.username || contactName || "",
+          ).trim(),
           body_text: String(staffInserted.body_text || bodyText || ""),
           created_at: String(staffInserted.created_at || new Date().toISOString()),
         });

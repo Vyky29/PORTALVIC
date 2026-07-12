@@ -1,13 +1,13 @@
 {
-  "name": "clubSENsational Portal",
-  "short_name": "Sign in",
+  "name": "CS Portal",
+  "short_name": "CS Portal",
   "id": "clubsensational-portal-login",
   "start_url": "./login.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f4f8fb",
   "theme_color": "#f4f8fb",
-  "description": "Portal sign in",
+  "description": "clubSENsational CS Portal",
   "icons": [
     {
       "src": "/portal/app-icon/icon-192.png",

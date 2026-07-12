@@ -164,6 +164,7 @@ Deno.serve(async (req) => {
       id: String(inserted.id),
       staff_profile_id: String(me.id),
       staff_username: normalizeStaffUsernameKey(String(me.username || "")),
+      contact_name: display,
       body_text: String(inserted.body_text || bodyText),
       created_at: String(inserted.created_at || now),
     });

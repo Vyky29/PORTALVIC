@@ -7,6 +7,7 @@ export async function notifyAdminsStaffWhatsappReply(record: {
   staff_profile_id: string;
   staff_username: string;
   body_text: string;
+  contact_name?: string;
   created_at?: string;
 }): Promise<{ ok: boolean; status?: number; detail?: string }> {
   const baseUrl = (Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
@@ -31,6 +32,7 @@ export async function notifyAdminsStaffWhatsappReply(record: {
           id: String(record.id),
           staff_profile_id: String(record.staff_profile_id || ""),
           staff_username: String(record.staff_username || "").toLowerCase(),
+          contact_name: String(record.contact_name || "").trim() || null,
           body_text: String(record.body_text || ""),
           created_at: String(record.created_at || new Date().toISOString()),
         },

@@ -269,14 +269,18 @@ function buildAlert(
   }
 
   if (table === "portal_staff_whatsapp_inbound") {
-    const who =
-      String(record.staff_username ?? authorName ?? "Leader").trim() || "Leader";
-    const preview = clampPushBody(String(record.body_text ?? ""), 120) ||
-      "New WhatsApp reply";
+    const rawWho = String(
+      record.contact_name ?? record.staff_display_name ?? authorName ??
+        record.staff_username ?? "Leader"
+    ).trim() || "Leader";
+    // Prefer first name for lock-screen title (e.g. "Berta" not "berta" / full long name).
+    const first = rawWho.split(/\s+/)[0] || rawWho;
+    const who = first.charAt(0).toUpperCase() + first.slice(1);
     return {
       sourceId: id,
-      title: `Leader WhatsApp · ${who}`,
-      body: preview,
+      // iOS lock banner: app name (CS Portal) + this title; body shows on expand/tap.
+      title: "Notification",
+      body: `Leader WhatsApp - ${who}`,
     };
   }
 

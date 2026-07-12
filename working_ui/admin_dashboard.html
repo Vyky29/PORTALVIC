@@ -24,7 +24,7 @@
     (function () {
       if (!("serviceWorker" in navigator)) return;
       try {
-        var swUrl = new URL("clubsensational-portal-sw.js?v=20260712-no-self-wa-push", location.href).href;
+        var swUrl = new URL("clubsensational-portal-sw.js?v=20260712-cs-portal-wa", location.href).href;
         var scopeBase = new URL("./", location.href).href;
         navigator.serviceWorker.register(swUrl, { scope: scopeBase }).then(function (reg) {
           window.__PORTAL_SW_REG__ = reg;
@@ -35,6 +35,29 @@
       } catch (e) {
         console.warn("[portal] admin SW", e);
       }
+      try {
+        navigator.serviceWorker.addEventListener("message", function (ev) {
+          var d = ev && ev.data;
+          if (!d || d.type !== "portal-notification-click") return;
+          var open = String(d.portalOpen || "");
+          if (open !== "portal_staff_whatsapp" && open !== "staff_whatsapp") return;
+          var staff = "";
+          try {
+            var u = new URL(String(d.url || location.href), location.href);
+            staff = String(u.searchParams.get("staff") || "").trim().toLowerCase();
+          } catch (_u) {}
+          try {
+            if (typeof setView === "function") setView("portal_staff_whatsapp");
+          } catch (_sv) {}
+          setTimeout(function () {
+            try {
+              if (window.PortalStaffWhatsappAdmin && typeof window.PortalStaffWhatsappAdmin.openStaff === "function") {
+                void window.PortalStaffWhatsappAdmin.openStaff(staff);
+              }
+            } catch (_open) {}
+          }, 350);
+        });
+      } catch (_msg) {}
     })();
   </script>
 <script src="/portal/portal_brand.js?v=20260520-brand"></script>
