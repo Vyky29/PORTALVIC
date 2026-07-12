@@ -80,6 +80,12 @@
     if (closeBtn) {
       closeBtn.addEventListener("click", function () {
         try {
+          if (global.parent && global.parent !== global) {
+            global.parent.postMessage({ type: "portal-ghost-view-close" }, "*");
+            return;
+          }
+        } catch (_eParent) {}
+        try {
           global.close();
         } catch (_e2) {
           global.location.href = "admin_dashboard.html";

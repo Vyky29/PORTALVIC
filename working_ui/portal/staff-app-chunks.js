@@ -50,7 +50,7 @@
 
   var TIER_IDLE = [
     "/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off",
-    "/portal/portal-ghost-view.js?v=20260624-ghost-handoff",
+    "/portal/portal-ghost-view.js?v=20260712-ghost-inapp",
   ];
 
   var EXTRACTED_BEFORE_AUTH = [
@@ -120,7 +120,7 @@
   function scheduleIdle() {
     var run = function () {
       loadParallel(TIER_IDLE, false);
-      loadCss("/portal/portal_ghost_view.css?v=20260624-ghost-handoff");
+      loadCss("/portal/portal_ghost_view.css?v=20260712-ghost-inapp");
       loadCss("/portal/portal_achievements.css?v=20260703-session-photos-back");
       if (typeof global.portalStaffDeferWebPush === "function") {
         global.portalStaffDeferWebPush();

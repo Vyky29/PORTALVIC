@@ -202,6 +202,84 @@
     });
   }
 
+  function ensureViewerShell() {
+    var existing = document.getElementById("portalGhostTeleportViewer");
+    if (existing) return existing;
+
+    var shell = document.createElement("div");
+    shell.id = "portalGhostTeleportViewer";
+    shell.className = "portal-ghost-teleport-viewer";
+    shell.hidden = true;
+    shell.setAttribute("aria-hidden", "true");
+    shell.innerHTML =
+      '<div class="portal-ghost-teleport-viewer__bar">' +
+      '<div class="portal-ghost-teleport-viewer__title-wrap">' +
+      '<p class="portal-ghost-teleport-viewer__eyebrow">Ghost view</p>' +
+      '<p class="portal-ghost-teleport-viewer__title" id="portalGhostTeleportViewerTitle">Staff dashboard</p>' +
+      "</div>" +
+      '<button type="button" class="btn btn--sec btn--sm portal-ghost-teleport-viewer__close" id="portalGhostTeleportViewerClose">Close</button>' +
+      "</div>" +
+      '<iframe class="portal-ghost-teleport-viewer__frame" id="portalGhostTeleportViewerFrame" title="Staff ghost dashboard"></iframe>';
+    document.body.appendChild(shell);
+
+    var closeBtn = document.getElementById("portalGhostTeleportViewerClose");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", function () {
+        closeGhostViewer();
+      });
+    }
+
+    if (!global.__PORTAL_GHOST_TELEPORT_MSG_BOUND__) {
+      global.__PORTAL_GHOST_TELEPORT_MSG_BOUND__ = true;
+      global.addEventListener("message", function (ev) {
+        try {
+          if (!ev || !ev.data || ev.data.type !== "portal-ghost-view-close") return;
+          closeGhostViewer();
+        } catch (_e) {}
+      });
+    }
+
+    return shell;
+  }
+
+  function closeGhostViewer() {
+    var shell = document.getElementById("portalGhostTeleportViewer");
+    var frame = document.getElementById("portalGhostTeleportViewerFrame");
+    if (frame) {
+      try {
+        frame.src = "about:blank";
+      } catch (_e) {}
+    }
+    if (shell) {
+      shell.hidden = true;
+      shell.setAttribute("aria-hidden", "true");
+      shell.classList.remove("is-open");
+    }
+    try {
+      document.documentElement.classList.remove("portal-ghost-teleport-viewer-open");
+      document.body.classList.remove("portal-ghost-teleport-viewer-open");
+    } catch (_e2) {}
+  }
+
+  function openGhostViewer(href, displayName) {
+    var shell = ensureViewerShell();
+    var frame = document.getElementById("portalGhostTeleportViewerFrame");
+    var title = document.getElementById("portalGhostTeleportViewerTitle");
+    if (title) {
+      title.textContent = displayName || "Staff dashboard";
+    }
+    if (frame) {
+      frame.src = href;
+    }
+    shell.hidden = false;
+    shell.setAttribute("aria-hidden", "false");
+    shell.classList.add("is-open");
+    try {
+      document.documentElement.classList.add("portal-ghost-teleport-viewer-open");
+      document.body.classList.add("portal-ghost-teleport-viewer-open");
+    } catch (_e) {}
+  }
+
   async function openGhostDashboard(targetStaffUserId, surface, btn) {
     var token = await authToken();
     if (!token) {
@@ -236,8 +314,15 @@
         dashboardHref(surface) +
         "?ghostToken=" +
         encodeURIComponent(j.ghostToken);
-      global.open(href, "_blank", "noopener,noreferrer");
-      cfg.toast("Ghost view opened in new tab.", "ok");
+      var displayName = "";
+      try {
+        var row = (state.rows || []).find(function (r) {
+          return String(r.id) === String(targetStaffUserId);
+        });
+        displayName = row && (row.full_name || row.username) ? String(row.full_name || row.username) : "";
+      } catch (_eName) {}
+      openGhostViewer(href, displayName);
+      cfg.toast("Ghost view opened.", "ok");
     } catch (err) {
       cfg.toast("Ghost view failed.", "error");
       console.warn("[ghost-teleport]", err);
@@ -324,6 +409,7 @@
 
   function destroyModule() {
     stopPolling();
+    closeGhostViewer();
   }
 
   function viewHtml() {
@@ -338,7 +424,7 @@
       '<button type="button" class="btn btn--ghost btn--sm" data-view-target="staff_live_map">Staff live map</button>' +
       '<button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_activity">Portal activity</button>' +
       "</div></div>" +
-      '<p class="page-intro">Open a worker dashboard in <strong>read-only ghost view</strong> — same roster and TODAY data, without their PIN and without logging them out. Online status and current page come from visit sessions.</p>' +
+      '<p class="page-intro">Open a worker dashboard in <strong>read-only ghost view</strong> on this same screen — same roster and TODAY data, without their PIN and without logging them out. Use <strong>Close</strong> to return to the list.</p>' +
       "</div>" +
       '<div id="portalGhostTeleportStatus" class="portal-forms-status" role="status"></div>' +
       '<p class="muted" id="portalGhostTeleportCount">Loading…</p>' +

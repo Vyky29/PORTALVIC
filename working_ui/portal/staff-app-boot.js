@@ -252,8 +252,8 @@
     global.__PORTAL_STAFF_EXTRAS_DEFERRED__ = true;
     if (!isStaffDashboard) return;
     var run = function () {
-      loadCss("/portal/portal_ghost_view.css?v=20260624-ghost-handoff");
-      loadScript("/portal/portal-ghost-view.js?v=20260624-ghost-handoff");
+      loadCss("/portal/portal_ghost_view.css?v=20260712-ghost-inapp");
+      loadScript("/portal/portal-ghost-view.js?v=20260712-ghost-inapp");
       loadScript("/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off");
       loadCss("/portal/portal_achievements.css?v=20260703-session-photos-back");
     };
