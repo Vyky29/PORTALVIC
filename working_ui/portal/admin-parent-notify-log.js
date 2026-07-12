@@ -790,21 +790,29 @@
     if (!ev || !ev.mediaUrl) return "";
     var url = esc(ev.mediaUrl);
     var mime = String(ev.mediaMime || "").toLowerCase();
-    if (mime.indexOf("image") === 0) {
+    var type = String(ev.messageType || "").toLowerCase();
+    var asImage =
+      mime.indexOf("image") === 0 ||
+      type === "image" ||
+      type === "sticker" ||
+      /\.(webp|png|jpe?g|gif)(\?|$)/i.test(String(ev.mediaUrl || ""));
+    if (asImage) {
       return (
         '<a href="' +
         url +
-        '" target="_blank" rel="noopener"><img class="portal-pnlog-bubble__img" src="' +
+        '" target="_blank" rel="noopener"><img class="portal-pnlog-bubble__img' +
+        (type === "sticker" ? " portal-pnlog-bubble__img--sticker" : "") +
+        '" src="' +
         url +
         '" alt="' +
-        esc(ev.messageType || "image") +
+        esc(type === "sticker" ? "Sticker" : ev.messageType || "image") +
         '" loading="lazy" /></a>'
       );
     }
-    if (mime.indexOf("video") === 0) {
+    if (mime.indexOf("video") === 0 || type === "video") {
       return '<video class="portal-pnlog-bubble__img" src="' + url + '" controls playsinline></video>';
     }
-    if (mime.indexOf("audio") === 0) {
+    if (mime.indexOf("audio") === 0 || type === "audio") {
       return '<audio class="portal-pnlog-bubble__audio" src="' + url + '" controls></audio>';
     }
     return (
@@ -830,11 +838,23 @@
     var mediaHtml = ev.dir === "in" ? renderMedia(ev) : "";
     var bodyStr = String(ev.body || "");
     var isReaction = ev.messageType === "reaction";
+    var type = String(ev.messageType || "").toLowerCase();
     var isMediaPlaceholder =
-      ev.mediaUrl && /^\[(sticker|image|video|audio|document)\]$/i.test(bodyStr.trim());
+      /^\[(sticker|image|video|audio|document)\]$/i.test(bodyStr.trim());
     var contentHtml = "";
     if (isReaction) {
       contentHtml = '<div class="portal-pnlog-bubble__reaction">' + esc(bodyStr) + "</div>";
+    } else if (mediaHtml && isMediaPlaceholder) {
+      contentHtml = "";
+    } else if (!mediaHtml && isMediaPlaceholder) {
+      contentHtml =
+        '<div class="portal-pnlog-bubble__text portal-pnlog-bubble__text--muted">' +
+        (type === "sticker"
+          ? "Sticker (file not saved)"
+          : bodyStr.replace(/^\[|\]$/g, "").replace(/^\w/, function (c) {
+              return c.toUpperCase();
+            }) + " (file not saved)") +
+        "</div>";
     } else if (bodyStr && !isMediaPlaceholder) {
       contentHtml = '<div class="portal-pnlog-bubble__text">' + esc(bodyStr) + "</div>";
     }
