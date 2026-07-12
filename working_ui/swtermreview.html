@@ -427,13 +427,13 @@
       color:rgba(255,255,255,0.92);
     }
 
-    /* Level tiles — mascot + brief explanation */
+    /* Level tiles — mascot + level + animal only */
     .tile.level{
       align-items:center;
       justify-content:center;
       min-height:auto;
-      gap:8px;
-      padding:10px 8px 12px;
+      gap:6px;
+      padding:12px 8px 14px;
       border-width:1px;
       transition:transform .15s ease, box-shadow .15s ease, opacity .15s ease, background .15s ease;
     }
@@ -441,11 +441,11 @@
     .tile.level .txt{
       text-align:center;
       align-items:center;
-      gap:2px;
+      gap:3px;
     }
     .tile.level .levelMascot{
-      width:52px;
-      height:46px;
+      width:58px;
+      height:52px;
       flex:0 0 auto;
       display:flex;
       align-items:flex-end;
@@ -456,28 +456,23 @@
     }
     .tile.level .levelMascot img{
       width:auto;
-      height:46px;
-      max-width:52px;
+      height:52px;
+      max-width:58px;
       object-fit:contain;
       display:block;
       filter:drop-shadow(0 4px 8px rgba(11,18,32,.18));
     }
+    .tile.level .title{
+      font-size:clamp(11px,1.35vw,13px);
+      letter-spacing:.02em;
+    }
     .tile.level .levelBadge{
       font-weight:800;
-      font-size:clamp(8px,1.05vw,9.5px);
-      letter-spacing:.04em;
+      font-size:clamp(9px,1.15vw,10.5px);
+      letter-spacing:.06em;
       text-transform:uppercase;
       color:rgba(78,91,103,.88);
-      margin-top:2px;
-    }
-    .tile.level .levelSub{
-      font-weight:600;
-      font-size:clamp(8px,1.15vw,10px);
-      line-height:1.12;
-      color:rgba(78,91,103,0.95);
-      text-transform:none;
-      margin:0;
-      word-break:break-word;
+      margin-top:0;
     }
 
     /* Soft level colours when enabled but not selected */
@@ -490,10 +485,6 @@
     .tile.level:not(.active):not(.disabled)[data-level="2"] .title{
       color:rgba(22,138,74,0.95);
     }
-    .tile.level:not(.active):not(.disabled)[data-level="1"] .levelSub,
-    .tile.level:not(.active):not(.disabled)[data-level="2"] .levelSub{
-      color:rgba(22,138,74,0.92);
-    }
 
     .tile.level:not(.active):not(.disabled)[data-level="3"],
     .tile.level:not(.active):not(.disabled)[data-level="4"]{
@@ -503,10 +494,6 @@
     .tile.level:not(.active):not(.disabled)[data-level="3"] .title,
     .tile.level:not(.active):not(.disabled)[data-level="4"] .title{
       color:rgba(170,105,0,0.95);
-    }
-    .tile.level:not(.active):not(.disabled)[data-level="3"] .levelSub,
-    .tile.level:not(.active):not(.disabled)[data-level="4"] .levelSub{
-      color:rgba(170,105,0,0.92);
     }
 
     .tile.level:not(.active):not(.disabled)[data-level="5"],
@@ -518,10 +505,6 @@
     .tile.level:not(.active):not(.disabled)[data-level="6"] .title{
       color:rgba(45,132,179,0.95);
     }
-    .tile.level:not(.active):not(.disabled)[data-level="5"] .levelSub,
-    .tile.level:not(.active):not(.disabled)[data-level="6"] .levelSub{
-      color:rgba(45,132,179,0.92);
-    }
 
     .tile.level.active[data-level="1"],
     .tile.level.active[data-level="2"]{ background:var(--green); }
@@ -531,7 +514,6 @@
     .tile.level.active[data-level="6"]{ background:var(--blue); }
     .tile.level.active .title{ color:#fff; }
     .tile.level.active .levelBadge{ color:rgba(255,255,255,.92); }
-    .tile.level.active .levelSub{ color:#fff; }
     .tile.level.active{
       transform:translateY(-2px);
       box-shadow:0 10px 22px rgba(11,18,32,.14);
@@ -556,8 +538,7 @@
       cursor:not-allowed;
     }
     .tile.level.disabled .title,
-    .tile.level.disabled .levelBadge,
-    .tile.level.disabled .levelSub{ color:rgba(78,91,103,.75); }
+    .tile.level.disabled .levelBadge{ color:rgba(78,91,103,.75); }
     .tile.level.disabled .levelMascot img{
       filter:grayscale(.35) drop-shadow(0 2px 4px rgba(11,18,32,.08));
     }
@@ -591,97 +572,183 @@
     }
     .levelMascotSpot{
       display:none;
-      align-items:center;
-      gap:14px;
+      align-items:stretch;
+      flex-wrap:wrap;
+      gap:16px 20px;
       width:100%;
-      margin:0 0 12px;
-      padding:12px 14px;
-      border-radius:16px;
+      margin:0 0 14px;
+      padding:16px 18px;
+      border-radius:18px;
       background:linear-gradient(135deg, rgba(237,246,252,.96), rgba(255,255,255,.98));
       border:1px solid rgba(45,132,179,.12);
-      box-shadow:0 8px 20px rgba(11,18,32,.04);
+      box-shadow:0 10px 28px rgba(11,18,32,.05);
       transition:background .15s ease, border-color .15s ease, box-shadow .15s ease;
     }
     .levelMascotSpot.is-visible{ display:flex; }
     .levelMascotSpot[data-level="1"],
     .levelMascotSpot[data-level="2"]{
-      background:linear-gradient(135deg, rgba(22,138,74,.16), rgba(255,255,255,.98));
-      border-color:rgba(22,138,74,.28);
-      box-shadow:0 8px 20px rgba(22,138,74,.10);
+      background:linear-gradient(135deg, rgba(22,138,74,.14), rgba(255,255,255,.99) 48%, #fff);
+      border-color:rgba(22,138,74,.26);
+      box-shadow:0 10px 28px rgba(22,138,74,.10);
     }
     .levelMascotSpot[data-level="1"] .kicker,
     .levelMascotSpot[data-level="2"] .kicker,
     .levelMascotSpot[data-level="1"] .sub,
-    .levelMascotSpot[data-level="2"] .sub{
+    .levelMascotSpot[data-level="2"] .sub,
+    .levelMascotSpot[data-level="1"] .levelFocusLabel,
+    .levelMascotSpot[data-level="2"] .levelFocusLabel{
       color:rgba(22,138,74,.88);
     }
     .levelMascotSpot[data-level="1"] .headline,
     .levelMascotSpot[data-level="2"] .headline{
       color:var(--green);
     }
+    .levelMascotSpot[data-level="1"] .levelFocusPanel,
+    .levelMascotSpot[data-level="2"] .levelFocusPanel{
+      border-color:rgba(22,138,74,.18);
+      background:rgba(255,255,255,.72);
+    }
+    .levelMascotSpot[data-level="1"] .levelFocusList li::before,
+    .levelMascotSpot[data-level="2"] .levelFocusList li::before{
+      background:linear-gradient(180deg,#168a4a,#4ade80);
+    }
     .levelMascotSpot[data-level="3"],
     .levelMascotSpot[data-level="4"]{
-      background:linear-gradient(135deg, rgba(244,183,64,.22), rgba(255,255,255,.98));
-      border-color:rgba(201,120,10,.28);
-      box-shadow:0 8px 20px rgba(244,183,64,.14);
+      background:linear-gradient(135deg, rgba(244,183,64,.20), rgba(255,255,255,.99) 48%, #fff);
+      border-color:rgba(201,120,10,.26);
+      box-shadow:0 10px 28px rgba(244,183,64,.12);
     }
     .levelMascotSpot[data-level="3"] .kicker,
     .levelMascotSpot[data-level="4"] .kicker,
     .levelMascotSpot[data-level="3"] .sub,
-    .levelMascotSpot[data-level="4"] .sub{
+    .levelMascotSpot[data-level="4"] .sub,
+    .levelMascotSpot[data-level="3"] .levelFocusLabel,
+    .levelMascotSpot[data-level="4"] .levelFocusLabel{
       color:rgba(170,105,0,.88);
     }
     .levelMascotSpot[data-level="3"] .headline,
     .levelMascotSpot[data-level="4"] .headline{
       color:rgba(170,105,0,.95);
     }
+    .levelMascotSpot[data-level="3"] .levelFocusPanel,
+    .levelMascotSpot[data-level="4"] .levelFocusPanel{
+      border-color:rgba(201,120,10,.18);
+      background:rgba(255,255,255,.72);
+    }
+    .levelMascotSpot[data-level="3"] .levelFocusList li::before,
+    .levelMascotSpot[data-level="4"] .levelFocusList li::before{
+      background:linear-gradient(180deg,#c9780a,#f4b740);
+    }
     .levelMascotSpot[data-level="5"],
     .levelMascotSpot[data-level="6"]{
-      background:linear-gradient(135deg, rgba(45,132,179,.16), rgba(255,255,255,.98));
-      border-color:rgba(45,132,179,.28);
-      box-shadow:0 8px 20px rgba(45,132,179,.10);
+      background:linear-gradient(135deg, rgba(45,132,179,.14), rgba(255,255,255,.99) 48%, #fff);
+      border-color:rgba(45,132,179,.26);
+      box-shadow:0 10px 28px rgba(45,132,179,.10);
     }
     .levelMascotSpot[data-level="5"] .kicker,
     .levelMascotSpot[data-level="6"] .kicker,
     .levelMascotSpot[data-level="5"] .sub,
-    .levelMascotSpot[data-level="6"] .sub{
+    .levelMascotSpot[data-level="6"] .sub,
+    .levelMascotSpot[data-level="5"] .levelFocusLabel,
+    .levelMascotSpot[data-level="6"] .levelFocusLabel{
       color:rgba(45,132,179,.88);
     }
     .levelMascotSpot[data-level="5"] .headline,
     .levelMascotSpot[data-level="6"] .headline{
       color:var(--blue);
     }
+    .levelMascotSpot[data-level="5"] .levelFocusPanel,
+    .levelMascotSpot[data-level="6"] .levelFocusPanel{
+      border-color:rgba(45,132,179,.18);
+      background:rgba(255,255,255,.72);
+    }
+    .levelMascotSpot[data-level="5"] .levelFocusList li::before,
+    .levelMascotSpot[data-level="6"] .levelFocusList li::before{
+      background:linear-gradient(180deg,#1d4ed8,#2d84b3);
+    }
+    .levelMascotSpotIdentity{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      min-width:min(100%, 220px);
+      flex:0 1 260px;
+    }
     .levelMascotSpot img{
       width:auto;
-      height:56px;
-      max-width:64px;
+      height:64px;
+      max-width:72px;
       object-fit:contain;
       flex:0 0 auto;
-      filter:drop-shadow(0 4px 8px rgba(11,18,32,.10));
+      filter:drop-shadow(0 6px 12px rgba(11,18,32,.12));
     }
     .levelMascotSpotCopy{
       display:flex;
       flex-direction:column;
-      gap:4px;
+      gap:3px;
       min-width:0;
     }
     .levelMascotSpotCopy .kicker{
       font-size:11px;
       font-weight:800;
-      letter-spacing:.08em;
+      letter-spacing:.1em;
       text-transform:uppercase;
       color:var(--muted);
     }
     .levelMascotSpotCopy .headline{
-      font-size:clamp(15px,2vw,17px);
+      font-size:clamp(16px,2.1vw,18px);
       font-weight:900;
-      line-height:1.2;
+      line-height:1.15;
       color:var(--ink);
     }
     .levelMascotSpotCopy .sub{
       font-size:12px;
       font-weight:700;
       color:rgba(78,91,103,.92);
+    }
+    .levelFocusPanel{
+      flex:1 1 240px;
+      min-width:min(100%, 220px);
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(15,23,42,.08);
+      background:rgba(255,255,255,.65);
+      backdrop-filter:blur(6px);
+    }
+    .levelFocusLabel{
+      display:block;
+      margin:0 0 8px;
+      font-size:10px;
+      font-weight:800;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+    .levelFocusList{
+      list-style:none;
+      margin:0;
+      padding:0;
+      display:flex;
+      flex-direction:column;
+      gap:7px;
+    }
+    .levelFocusList li{
+      position:relative;
+      margin:0;
+      padding:0 0 0 14px;
+      font-size:13px;
+      line-height:1.35;
+      font-weight:600;
+      color:rgba(15,23,42,.88);
+    }
+    .levelFocusList li::before{
+      content:"";
+      position:absolute;
+      left:0;
+      top:.55em;
+      width:6px;
+      height:6px;
+      border-radius:99px;
+      background:linear-gradient(180deg, var(--blueDeep), var(--blueMid));
     }
     .meter{
       position:relative;
@@ -1832,10 +1899,111 @@
     }
     .review-part--summary::before{ background:linear-gradient(180deg,#b45309,#f4b740); }
 
+    /* Guided accordion — one open part at a time */
     .review-part-head{
+      width:100%;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      text-align:left;
+      cursor:pointer;
+      background:transparent;
+      border:0;
+      font:inherit;
+      color:inherit;
       padding:2px 8px 14px 12px;
       border-bottom:1px solid rgba(15,23,42,.06);
       margin:0 4px 4px;
+      border-radius:12px;
+      transition:background .15s ease;
+    }
+    .review-part-head:hover{ background:rgba(255,255,255,.45); }
+    .review-part-head:focus-visible{
+      outline:2px solid rgba(45,132,179,.45);
+      outline-offset:2px;
+    }
+    .review-part-head-main{ min-width:0; flex:1; }
+    .review-part-head-meta{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex:0 0 auto;
+      padding-top:2px;
+    }
+    .review-part-status{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:5px 10px;
+      border-radius:999px;
+      font-size:.68rem;
+      font-weight:800;
+      letter-spacing:.06em;
+      text-transform:uppercase;
+      border:1px solid rgba(15,23,42,.08);
+      background:rgba(255,255,255,.75);
+      color:rgba(78,91,103,.92);
+      white-space:nowrap;
+    }
+    .review-part-status[data-state="not_started"]{
+      color:rgba(100,116,139,.95);
+      background:rgba(248,250,252,.9);
+    }
+    .review-part-status[data-state="in_progress"]{
+      color:#1d4ed8;
+      background:rgba(219,234,254,.85);
+      border-color:rgba(37,99,235,.2);
+    }
+    .review-part-status[data-state="complete"],
+    .review-part-status[data-state="ready"]{
+      color:#047857;
+      background:rgba(209,250,229,.9);
+      border-color:rgba(16,185,129,.28);
+    }
+    .review-part-status[data-state="complete"]::before,
+    .review-part-status[data-state="ready"]::before{
+      content:"";
+      width:7px;
+      height:7px;
+      border-radius:99px;
+      background:#10b981;
+      box-shadow:0 0 0 3px rgba(16,185,129,.2);
+    }
+    .review-part-chevron{
+      width:28px;
+      height:28px;
+      border-radius:999px;
+      border:1px solid rgba(15,23,42,.08);
+      background:rgba(255,255,255,.8);
+      position:relative;
+      flex:0 0 auto;
+      transition:transform .2s ease, background .15s ease;
+    }
+    .review-part-chevron::before{
+      content:"";
+      position:absolute;
+      left:50%; top:46%;
+      width:7px; height:7px;
+      border-right:2px solid rgba(15,23,42,.55);
+      border-bottom:2px solid rgba(15,23,42,.55);
+      transform:translate(-50%,-60%) rotate(45deg);
+    }
+    .review-part.is-open .review-part-chevron{
+      transform:rotate(180deg);
+      background:#fff;
+    }
+    .review-part:not(.is-open){ padding-bottom:12px; }
+    .review-part:not(.is-open) .review-part-head{
+      border-bottom-color:transparent;
+      margin-bottom:0;
+      padding-bottom:4px;
+    }
+    .review-part:not(.is-open) .review-part-text{ display:none; }
+    .review-part-body{ display:none; padding-top:2px; }
+    .review-part.is-open .review-part-body{ display:block; }
+    .review-part.is-complete:not(.is-open){
+      box-shadow:0 8px 22px rgba(18,50,71,.05);
     }
     .review-part-kicker{
       margin:0 0 4px;
@@ -1865,13 +2033,13 @@
     }
 
     /* Nested section cards inside a part — one clear box family */
-    .review-part > .card{
+    .review-part-body > .card{
       margin-top:12px;
       box-shadow:0 4px 16px rgba(18,50,71,.04);
       background:rgba(255,255,255,.94);
       border-color:rgba(15,23,42,.07);
     }
-    .review-part > .card:first-of-type{ margin-top:14px; }
+    .review-part-body > .card:first-of-type{ margin-top:14px; }
 
     .section-intro{
       margin:0 0 14px;
@@ -2235,13 +2403,20 @@
     </header>
 
     <!-- Details -->
-    <div class="review-part review-part--details" role="region" aria-label="Session details">
-      <div class="review-part-head">
-        <p class="review-part-kicker">Start · Details</p>
-        <h3 class="review-part-title">Who &amp; when</h3>
-        <p class="review-part-text">Confirm the participant and the term context before you begin the review.</p>
-      </div>
-      <div class="card" id="cardDetails">
+    <div class="review-part review-part--details is-open" data-part="details" id="reviewPart-details" role="region" aria-label="Session details">
+      <button type="button" class="review-part-head" aria-expanded="true" aria-controls="reviewPartDetailsBody">
+        <div class="review-part-head-main">
+          <p class="review-part-kicker">Start · Details</p>
+          <h3 class="review-part-title">Who &amp; when</h3>
+          <p class="review-part-text">Confirm the participant and the term context before you begin the review.</p>
+        </div>
+        <div class="review-part-head-meta">
+          <span class="review-part-status" data-part-status data-state="not_started">Not started</span>
+          <span class="review-part-chevron" aria-hidden="true"></span>
+        </div>
+      </button>
+      <div class="review-part-body" id="reviewPartDetailsBody">
+<div class="card" id="cardDetails">
       <h2>Details</h2>
       <p class="section-intro">Choose the participant from the portal list (type a letter to search). Term, date and instructor fill automatically.</p>
 
@@ -2286,16 +2461,23 @@
 
       <div class="errMsg" id="errDetails">Please complete all required fields.</div>
     </div>
+      </div>
     </div>
 
-    <div class="review-part review-part--pathway" role="region" aria-label="Pathway: profile, level and decision">
-      <div class="review-part-head">
-        <p class="review-part-kicker">Part A · Pathway</p>
-        <h3 class="review-part-title">Profile, level &amp; decision</h3>
-        <p class="review-part-text">Confirm stage and level, rate learning outcomes, then accept or adjust the progression recommendation for next term.</p>
-      </div>
-
-    <!-- Profile Review -->
+    <div class="review-part review-part--pathway" data-part="pathway" id="reviewPart-pathway" role="region" aria-label="Pathway: profile, level and decision">
+      <button type="button" class="review-part-head" aria-expanded="false" aria-controls="reviewPartPathwayBody">
+        <div class="review-part-head-main">
+          <p class="review-part-kicker">Part A · Pathway</p>
+          <h3 class="review-part-title">Profile, level &amp; decision</h3>
+          <p class="review-part-text">Confirm stage and level, rate learning outcomes, then accept or adjust the progression recommendation for next term.</p>
+        </div>
+        <div class="review-part-head-meta">
+          <span class="review-part-status" data-part-status data-state="not_started">Not started</span>
+          <span class="review-part-chevron" aria-hidden="true"></span>
+        </div>
+      </button>
+      <div class="review-part-body" id="reviewPartPathwayBody">
+<!-- Profile Review -->
     <div class="card" id="cardProfile">
       <h2>Profile</h2>
       <p class="section-intro">Choose the swimmer’s <strong>current stage</strong> and <strong>level</strong>. This sets the learning outcomes and the journey context for the term.</p>
@@ -2342,8 +2524,6 @@
           <div class="txt">
             <div class="title">Level 1</div>
             <div class="levelBadge">Turtle</div>
-            <div class="levelSub">- Building early confidence in the water</div>
-            <div class="levelSub">- Staying calm and safe with support</div>
           </div>
         </label>
 
@@ -2353,8 +2533,6 @@
           <div class="txt">
             <div class="title">Level 2</div>
             <div class="levelBadge">Starfish</div>
-            <div class="levelSub">- Progressing with reduced hesitation</div>
-            <div class="levelSub">- Improving breathing with less help</div>
           </div>
         </label>
 
@@ -2364,8 +2542,6 @@
           <div class="txt">
             <div class="title">Level 3</div>
             <div class="levelBadge">Jellyfish</div>
-            <div class="levelSub">- Developing balance and body position</div>
-            <div class="levelSub">- Moving forward with guidance and control</div>
           </div>
         </label>
 
@@ -2375,8 +2551,6 @@
           <div class="txt">
             <div class="title">Level 4</div>
             <div class="levelBadge">Ray</div>
-            <div class="levelSub">- More control and coordination in movement</div>
-            <div class="levelSub">- Improving rotation, propulsion and direction</div>
           </div>
         </label>
 
@@ -2386,8 +2560,6 @@
           <div class="txt">
             <div class="title">Level 5</div>
             <div class="levelBadge">Dolphin</div>
-            <div class="levelSub">- Refining technique with stronger safety awareness</div>
-            <div class="levelSub">- Longer sequences with increasing independence</div>
           </div>
         </label>
 
@@ -2397,8 +2569,6 @@
           <div class="txt">
             <div class="title">Level 6</div>
             <div class="levelBadge">Whale</div>
-            <div class="levelSub">- Efficiency, rhythm and endurance</div>
-            <div class="levelSub">- Sustaining control and safety throughout sessions</div>
           </div>
         </label>
       </div>
@@ -2414,11 +2584,17 @@
 
       <div class="levelBox" id="levelBox">
         <div class="levelMascotSpot" id="levelMascotSpot" hidden>
-          <img id="levelMascotSpotImg" src="" alt="" />
-          <div class="levelMascotSpotCopy">
-            <span class="kicker" id="levelMascotSpotKicker">Current level</span>
-            <span class="headline" id="levelMascotSpotHeadline">—</span>
-            <span class="sub" id="levelMascotSpotSub">—</span>
+          <div class="levelMascotSpotIdentity">
+            <img id="levelMascotSpotImg" src="" alt="" />
+            <div class="levelMascotSpotCopy">
+              <span class="kicker" id="levelMascotSpotKicker">Current level</span>
+              <span class="headline" id="levelMascotSpotHeadline">—</span>
+              <span class="sub" id="levelMascotSpotSub">—</span>
+            </div>
+          </div>
+          <div class="levelFocusPanel" id="levelFocusPanel" hidden>
+            <span class="levelFocusLabel">Level focus</span>
+            <ul class="levelFocusList" id="levelFocusList"></ul>
           </div>
         </div>
         <div class="progressWrap">
@@ -2485,16 +2661,23 @@
         </div>
       </div>
     </div>
+      </div>
     </div>
 
-    <div class="review-part review-part--development" role="region" aria-label="Development: core areas and overall profile">
-      <div class="review-part-head">
-        <p class="review-part-kicker">Part B · Development</p>
-        <h3 class="review-part-title">Development areas &amp; overall profile</h3>
-        <p class="review-part-text">Rate Engagement, Independence and Regulation across the term, then review the overall development snapshot.</p>
-      </div>
-
-    <!-- Core Development Areas -->
+    <div class="review-part review-part--development" data-part="development" id="reviewPart-development" role="region" aria-label="Development: core areas and overall profile">
+      <button type="button" class="review-part-head" aria-expanded="false" aria-controls="reviewPartDevelopmentBody">
+        <div class="review-part-head-main">
+          <p class="review-part-kicker">Part B · Development</p>
+          <h3 class="review-part-title">Development areas &amp; overall profile</h3>
+          <p class="review-part-text">Rate Engagement, Independence and Regulation across the term, then review the overall development snapshot.</p>
+        </div>
+        <div class="review-part-head-meta">
+          <span class="review-part-status" data-part-status data-state="not_started">Not started</span>
+          <span class="review-part-chevron" aria-hidden="true"></span>
+        </div>
+      </button>
+      <div class="review-part-body" id="reviewPartDevelopmentBody">
+<!-- Core Development Areas -->
     <div class="card" id="cardAreas">
       <h2>Development areas</h2>
       <p class="section-intro">These three lenses run through every stage and level. Rate what you typically saw this term — not a single session.</p>
@@ -2811,16 +2994,23 @@
         <textarea id="decisionNotes" placeholder="Optional notes for next term"></textarea>
       </div>
     </div>
+      </div>
     </div>
 
-    <div class="review-part review-part--summary" role="region" aria-label="Term summary and certificates">
-      <div class="review-part-head">
-        <p class="review-part-kicker">Part C · Finish</p>
-        <h3 class="review-part-title">Summary &amp; certificates</h3>
-        <p class="review-part-text">Review the visual term summary, submit the professional PDF, or generate a family celebration certificate (certificate + term journey page).</p>
-      </div>
-
-    <!-- Term review summary -->
+    <div class="review-part review-part--summary" data-part="summary" id="reviewPart-summary" role="region" aria-label="Term summary and certificates">
+      <button type="button" class="review-part-head" aria-expanded="false" aria-controls="reviewPartSummaryBody">
+        <div class="review-part-head-main">
+          <p class="review-part-kicker">Part C · Finish</p>
+          <h3 class="review-part-title">Summary &amp; certificates</h3>
+          <p class="review-part-text">Review the visual term summary, submit the professional PDF, or generate a family celebration certificate (certificate + term journey page).</p>
+        </div>
+        <div class="review-part-head-meta">
+          <span class="review-part-status" data-part-status data-state="not_started">Not started</span>
+          <span class="review-part-chevron" aria-hidden="true"></span>
+        </div>
+      </button>
+      <div class="review-part-body" id="reviewPartSummaryBody">
+<!-- Term review summary -->
     <div class="card" id="cardSummary">
       <h2>Term summary</h2>
       <p class="section-intro">A clear overview of this term’s pathway and development story — ready to submit or share as a celebration certificate.</p>
@@ -2833,6 +3023,7 @@
         </div>
       </div>
     </div>
+      </div>
     </div>
 
     <div class="toast" id="toast"></div>
@@ -2847,7 +3038,7 @@
   <!-- swtermreview_app.js — portal/ then portal-shared-js/ on Vercel. -->
   <script>
     (function () {
-      var v = "20260712-form-parts";
+      var v = "20260712-accordion";
       var file = "swtermreview_app.js";
       var bases = [];
       try {

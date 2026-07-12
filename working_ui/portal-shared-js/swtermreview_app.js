@@ -171,12 +171,60 @@ const LEVEL_DATA = {
     };
 
     const SWIMMING_LEVEL_MASCOTS = {
-      1: { animal: "Turtle", badge: "First Splash", file: "level-1-turtle.png" },
-      2: { animal: "Starfish", badge: "Water Explorer", file: "level-2-starfish.png" },
-      3: { animal: "Jellyfish", badge: "Floating Friend", file: "level-3-jellyfish.png" },
-      4: { animal: "Ray", badge: "Ocean Navigator", file: "level-4-ray.png" },
-      5: { animal: "Dolphin", badge: "Independent Swimmer", file: "level-5-dolphin.png" },
-      6: { animal: "Whale", badge: "Ocean Master", file: "level-6-whale.png" },
+      1: {
+        animal: "Turtle",
+        badge: "First Splash",
+        file: "level-1-turtle.png",
+        focus: [
+          "Building early confidence in the water",
+          "Staying calm and safe with support",
+        ],
+      },
+      2: {
+        animal: "Starfish",
+        badge: "Water Explorer",
+        file: "level-2-starfish.png",
+        focus: [
+          "Progressing with reduced hesitation",
+          "Improving breathing with less help",
+        ],
+      },
+      3: {
+        animal: "Jellyfish",
+        badge: "Floating Friend",
+        file: "level-3-jellyfish.png",
+        focus: [
+          "Developing balance and body position",
+          "Moving forward with guidance and control",
+        ],
+      },
+      4: {
+        animal: "Ray",
+        badge: "Ocean Navigator",
+        file: "level-4-ray.png",
+        focus: [
+          "More control and coordination in movement",
+          "Improving rotation, propulsion and direction",
+        ],
+      },
+      5: {
+        animal: "Dolphin",
+        badge: "Independent Swimmer",
+        file: "level-5-dolphin.png",
+        focus: [
+          "Refining technique with stronger safety awareness",
+          "Longer sequences with increasing independence",
+        ],
+      },
+      6: {
+        animal: "Whale",
+        badge: "Ocean Master",
+        file: "level-6-whale.png",
+        focus: [
+          "Efficiency, rhythm and endurance",
+          "Sustaining control and safety throughout sessions",
+        ],
+      },
     };
     const SWIMMING_MASCOT_BASE = "portal/assets/swimming-mascots/";
     const SWIMMING_STAGE_BG = {
@@ -235,6 +283,8 @@ const LEVEL_DATA = {
       const kicker = $("#levelMascotSpotKicker");
       const headline = $("#levelMascotSpotHeadline");
       const sub = $("#levelMascotSpotSub");
+      const focusPanel = $("#levelFocusPanel");
+      const focusList = $("#levelFocusList");
       if(!spot || !img) return;
       const mascot = getSwimmingLevelMascot(levelNumber);
       if(!mascot){
@@ -242,6 +292,8 @@ const LEVEL_DATA = {
         spot.classList.remove("is-visible");
         spot.removeAttribute("data-level");
         img.removeAttribute("src");
+        if(focusPanel) focusPanel.hidden = true;
+        if(focusList) focusList.innerHTML = "";
         return;
       }
       img.src = resolveSwimmingMascotSrc(mascot.file);
@@ -249,6 +301,13 @@ const LEVEL_DATA = {
       if(kicker) kicker.textContent = "Current level";
       if(headline) headline.textContent = "Level " + levelNumber + " · " + mascot.animal;
       if(sub) sub.textContent = mascot.badge;
+      if(focusList){
+        const lines = Array.isArray(mascot.focus) ? mascot.focus : [];
+        focusList.innerHTML = lines.map(function(line){
+          return "<li>" + String(line).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;") + "</li>";
+        }).join("");
+        if(focusPanel) focusPanel.hidden = lines.length === 0;
+      }
       spot.setAttribute("data-level", String(levelNumber));
       spot.hidden = false;
       spot.classList.add("is-visible");
@@ -1734,13 +1793,187 @@ const LEVEL_DATA = {
     function focusLineShort(raw){
       return String(raw || "").replace(/^\d+\.\s*/, "").replace(/\s+/g, " ").trim();
     }
+
+    /* =========================
+       Guided accordion (parts)
+       ========================= */
+    const REVIEW_PART_ORDER = ["details", "pathway", "development", "summary"];
+    const REVIEW_PART_STATUS_LABEL = {
+      not_started: "Not started",
+      in_progress: "In progress",
+      complete: "Complete",
+      ready: "Ready",
+    };
+    let openReviewPart = "details";
+    const reviewPartAutoAdvanced = {
+      details: false,
+      pathway: false,
+      development: false,
+    };
+    let reviewPartsWired = false;
+
+    function isDetailsPartComplete(){
+      const swimmer = (fieldValTerm("swimmerName") || "").replace(/\s+/g, " ").trim();
+      const term = fieldValTerm("termSelect").trim();
+      return !!(swimmer && term);
+    }
+
+    function isDetailsPartStarted(){
+      const swimmer = (fieldValTerm("swimmerName") || "").replace(/\s+/g, " ").trim();
+      const term = fieldValTerm("termSelect").trim();
+      return !!(swimmer || term);
+    }
+
+    function isPathwayPartComplete(){
+      if(!selectedStage || !selectedLevel) return false;
+      const ratings = getAllLevelRatings();
+      const info = computeLevelProgressLabel(ratings);
+      if(!info.total || info.answered < info.total) return false;
+      return !!document.querySelector('#levelProgressDecisionRadios input[type="radio"]:checked');
+    }
+
+    function isPathwayPartStarted(){
+      if(selectedStage || selectedLevel) return true;
+      const ratings = getAllLevelRatings();
+      return ratings.some(Boolean);
+    }
+
+    function isDevelopmentPartComplete(){
+      return ["engagement", "independence", "regulation"].every(function(domain){
+        const res = computeDomainResult(domain);
+        return res.totalItems > 0 && res.answered >= res.totalItems;
+      });
+    }
+
+    function isDevelopmentPartStarted(){
+      return ["engagement", "independence", "regulation"].some(function(domain){
+        return computeDomainResult(domain).answered > 0;
+      });
+    }
+
+    function getReviewPartState(key){
+      if(key === "details"){
+        if(isDetailsPartComplete()) return "complete";
+        if(isDetailsPartStarted()) return "in_progress";
+        return "not_started";
+      }
+      if(key === "pathway"){
+        if(isPathwayPartComplete()) return "complete";
+        if(isPathwayPartStarted()) return "in_progress";
+        return "not_started";
+      }
+      if(key === "development"){
+        if(isDevelopmentPartComplete()) return "complete";
+        if(isDevelopmentPartStarted()) return "in_progress";
+        return "not_started";
+      }
+      if(key === "summary"){
+        if(isDevelopmentPartComplete()) return "ready";
+        if(isPathwayPartComplete() || isDetailsPartComplete()) return "in_progress";
+        return "not_started";
+      }
+      return "not_started";
+    }
+
+    function setOpenReviewPart(key, opts){
+      const options = opts || {};
+      if(REVIEW_PART_ORDER.indexOf(key) < 0) return;
+      openReviewPart = key;
+      $$(".review-part[data-part]").forEach(function(part){
+        const partKey = part.getAttribute("data-part");
+        const isOpen = partKey === key;
+        part.classList.toggle("is-open", isOpen);
+        const btn = part.querySelector(".review-part-head");
+        if(btn) btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+      });
+      if(options.scroll){
+        const el = document.getElementById("reviewPart-" + key);
+        if(el && typeof el.scrollIntoView === "function"){
+          try{
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
+          }catch(_){
+            el.scrollIntoView(true);
+          }
+        }
+      }
+    }
+
+    function refreshReviewPartsFlow(opts){
+      const options = opts || {};
+      const states = {};
+      REVIEW_PART_ORDER.forEach(function(key){
+        states[key] = getReviewPartState(key);
+        if(states[key] !== "complete" && key !== "summary"){
+          reviewPartAutoAdvanced[key] = false;
+        }
+      });
+
+      $$(".review-part[data-part]").forEach(function(part){
+        const key = part.getAttribute("data-part");
+        const state = states[key] || "not_started";
+        part.classList.toggle("is-complete", state === "complete" || state === "ready");
+        const statusEl = part.querySelector("[data-part-status]");
+        if(statusEl){
+          statusEl.setAttribute("data-state", state);
+          statusEl.textContent = REVIEW_PART_STATUS_LABEL[state] || "Not started";
+        }
+      });
+
+      if(!options.skipAutoAdvance){
+        const current = openReviewPart;
+        const canAdvance = (
+          (current === "details" || current === "pathway" || current === "development") &&
+          states[current] === "complete" &&
+          !reviewPartAutoAdvanced[current]
+        );
+        if(canAdvance){
+          reviewPartAutoAdvanced[current] = true;
+          const idx = REVIEW_PART_ORDER.indexOf(current);
+          const next = REVIEW_PART_ORDER[idx + 1];
+          if(next){
+            setOpenReviewPart(next, { scroll: true });
+            return;
+          }
+        }
+      }
+
+      setOpenReviewPart(openReviewPart, { scroll: false });
+    }
+
+    function wireReviewPartsAccordion(){
+      if(reviewPartsWired) return;
+      reviewPartsWired = true;
+      $$(".review-part[data-part]").forEach(function(part){
+        const btn = part.querySelector(".review-part-head");
+        if(!btn) return;
+        btn.addEventListener("click", function(){
+          const key = part.getAttribute("data-part");
+          if(!key) return;
+          if(openReviewPart === key){
+            // Keep one part open — re-click focuses current section.
+            setOpenReviewPart(key, { scroll: true });
+            return;
+          }
+          setOpenReviewPart(key, { scroll: true });
+          refreshReviewPartsFlow({ skipAutoAdvance: true });
+        });
+      });
+      const openEl = document.querySelector(".review-part.is-open[data-part]");
+      openReviewPart = (openEl && openEl.getAttribute("data-part")) || "details";
+      refreshReviewPartsFlow({ skipAutoAdvance: true });
+    }
+
     function generateTermSummary(){
       const out = document.getElementById("termSummaryOutput");
-      if(!out) return;
+      if(!out){
+        refreshReviewPartsFlow();
+        return;
+      }
       if(!hasAnyTermReviewContent()){
         lastTermSummarySections = [];
         out.classList.remove("summary-rich");
         out.innerHTML = "<p class=\"summary-placeholder\">Complete the review to generate a visual term summary.</p>";
+        refreshReviewPartsFlow();
         return;
       }
       lastTermSummarySections = buildTermReviewSummarySections();
@@ -1789,15 +2022,13 @@ const LEVEL_DATA = {
           "<div class=\"term-summary-tile\"><p class=\"term-summary-tile-label\">Stage</p><p class=\"term-summary-tile-value\">" + escapeHtmlTerm(stageLabel) + "</p></div>" +
           "<div class=\"term-summary-tile\"><p class=\"term-summary-tile-label\">Level</p><p class=\"term-summary-tile-value\">" + escapeHtmlTerm(levelText) + "</p></div>" +
           "<div class=\"term-summary-tile\"><p class=\"term-summary-tile-label\">Decision</p><p class=\"term-summary-tile-value\">" + escapeHtmlTerm(decision) + "</p></div>" +
-        "</div>" +
-        "<div class=\"term-summary-grid\">" +
           "<div class=\"term-summary-tile\"><p class=\"term-summary-tile-label\">Level outcomes</p><p class=\"term-summary-tile-value\">" + escapeHtmlTerm(outcomeText) + "</p></div>" +
-          "<div class=\"term-summary-tile\" style=\"grid-column:span 2\"><p class=\"term-summary-tile-label\">Badge</p><p class=\"term-summary-tile-value\">" + escapeHtmlTerm(levelMascot ? levelMascot.badge : "—") + "</p></div>" +
         "</div>" +
         "<div class=\"term-summary-domains\">" + domainHtml + "</div>" +
         "<div class=\"term-summary-exec\">" +
           executive.split(/\n\n+/).map(p => "<p>" + escapeHtmlTerm(p) + "</p>").join("") +
         "</div>";
+      refreshReviewPartsFlow();
     }
 
     const PDF_HEADER_LOGO_URL = "portal/Logo-CS-azul.png";
@@ -3000,6 +3231,7 @@ const LEVEL_DATA = {
         wireStageLevel();
         wireRSIButtons();
         wireLevelProgressionUI();
+        wireReviewPartsAccordion();
 
         selectedStage = "";
         applyStageRules();
@@ -3079,6 +3311,8 @@ const LEVEL_DATA = {
             const btn = this;
             const swimmer = ensureParticipantNameInField();
             if(!swimmer){
+              setOpenReviewPart("details", { scroll: true });
+              refreshReviewPartsFlow({ skipAutoAdvance: true });
               const swimEl = document.getElementById("swimmerName");
               const card = document.getElementById("cardDetails");
               if(card && typeof card.scrollIntoView === "function"){
