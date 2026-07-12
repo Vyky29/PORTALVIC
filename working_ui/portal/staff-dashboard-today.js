@@ -4115,8 +4115,11 @@
     let portalAnnouncementLockRequired = false;
     /** 'signedLog' | 'newNotice' (signable pending or informational calendar). */
     let portalAnnouncementsSheetEntry = '';
+    /** When multiple pending, staff pick which to sign first (signature key). */
+    let portalAnnouncementsSelectedKey = '';
     function portalOpenAnnouncementsSheet(entry){
       portalAnnouncementsSheetEntry = entry === 'signedLog' ? 'signedLog' : 'newNotice';
+      portalAnnouncementsSelectedKey = '';
       openSheet('announcementsSheet');
     }
     function portalAnnouncementAckMapLoad(){
@@ -4732,10 +4735,43 @@
     }
     function portalAnnouncementPendingItem(){
       const list = portalActiveAnnouncementItems();
-      return list.length ? list[0] : null;
+      if(!list.length) return null;
+      const selectedKey = String(portalAnnouncementsSelectedKey || '').trim();
+      if(selectedKey){
+        for(let i = 0; i < list.length; i++){
+          const k = typeof portalSignableSignatureKey === 'function'
+            ? portalSignableSignatureKey(list[i])
+            : portalAnnouncementSignatureKey(list[i]);
+          if(String(k || '') === selectedKey) return list[i];
+        }
+        portalAnnouncementsSelectedKey = '';
+      }
+      return list[0];
+    }
+    function portalAnnouncementNeedsPicker(){
+      if(portalAnnouncementsSheetEntry === 'signedLog') return false;
+      const list = portalActiveAnnouncementItems();
+      if(list.length < 2) return false;
+      const selectedKey = String(portalAnnouncementsSelectedKey || '').trim();
+      if(!selectedKey) return true;
+      for(let i = 0; i < list.length; i++){
+        const k = typeof portalSignableSignatureKey === 'function'
+          ? portalSignableSignatureKey(list[i])
+          : portalAnnouncementSignatureKey(list[i]);
+        if(String(k || '') === selectedKey) return false;
+      }
+      portalAnnouncementsSelectedKey = '';
+      return true;
     }
     window.portalActiveAnnouncementItems = portalActiveAnnouncementItems;
     window.portalAnnouncementPendingItem = portalAnnouncementPendingItem;
+    window.portalAnnouncementNeedsPicker = portalAnnouncementNeedsPicker;
+    window.portalSetAnnouncementsSelectedKey = function(key){
+      portalAnnouncementsSelectedKey = String(key || '').trim();
+    };
+    window.portalGetAnnouncementsSelectedKey = function(){
+      return String(portalAnnouncementsSelectedKey || '').trim();
+    };
     window.portalMountCalendar202627AnnouncementCard = portalMountCalendar202627AnnouncementCard;
     function portalAnnouncementLockActive(){
       const annOpen = !!document.getElementById('announcementsSheet')?.classList.contains('open');
@@ -4895,6 +4931,66 @@
       const hostHistory = document.getElementById('announcementHistoryHost');
       if(!hostPending || !hostHistory) return;
       const signedLogView = portalAnnouncementsSheetEntry === 'signedLog';
+      if(!signedLogView && portalAnnouncementNeedsPicker()){
+        const list = portalActiveAnnouncementItems();
+        portalAnnouncementLockRequired = false;
+        hostHistory.innerHTML = '';
+        hostHistory.hidden = true;
+        hostHistory.setAttribute('aria-hidden', 'true');
+        hostPending.innerHTML =
+          '<article class="announcement-picker-card">' +
+            '<p class="announcement-picker-head">Choose which to do first</p>' +
+            '<p class="announcement-picker-sub muted">You have ' + String(list.length) +
+            ' to read and sign. Tap one to open it.</p>' +
+            '<div class="announcement-picker-list" role="list">' +
+            list.map(function(item, i){
+              const isReminder = typeof portalSignableItemIsReminder === 'function'
+                && portalSignableItemIsReminder(item);
+              const kind = String(item && item.type || '') === 'contract'
+                ? 'contract'
+                : (isReminder ? 'reminder' : 'announcement');
+              const kindLabel = kind === 'contract'
+                ? 'Contract'
+                : (kind === 'reminder' ? 'Reminder' : 'Announcement');
+              const t = portalFixMojibakeText(String(item && item.title || kindLabel).trim() || kindLabel);
+              const lines = typeof portalAnnouncementHistoryHeadingLines === 'function'
+                ? portalAnnouncementHistoryHeadingLines(t)
+                : { line1: t, line2: '' };
+              const signKey = typeof portalSignableSignatureKey === 'function'
+                ? portalSignableSignatureKey(item)
+                : portalAnnouncementSignatureKey(item);
+              const dt = item && item.created_at
+                ? (typeof portalAnnouncementHistoryDateLabel === 'function'
+                  ? portalAnnouncementHistoryDateLabel(Date.parse(item.created_at) || item.created_at)
+                  : '')
+                : '';
+              return (
+                '<button type="button" class="announcement-picker-item announcement-picker-item--' +
+                kind +
+                '" role="listitem" data-announcement-pick-key="' +
+                escapeHtml(String(signKey || '')) +
+                '" aria-label="Open ' + escapeHtml(kindLabel) + ': ' + escapeHtml(t) + '">' +
+                '<span class="announcement-picker-item__main">' +
+                '<span class="announcement-history-kind">' + escapeHtml(kindLabel) + '</span>' +
+                '<span class="announcement-history-title-line">' + escapeHtml(lines.line1 || t) + '</span>' +
+                (lines.line2
+                  ? '<span class="announcement-history-title-line">' + escapeHtml(lines.line2) + '</span>'
+                  : '') +
+                (dt ? '<span class="announcement-picker-item__when muted">' + escapeHtml(dt) + '</span>' : '') +
+                '</span>' +
+                '<span class="announcement-picker-item__chev" aria-hidden="true">›</span>' +
+                '</button>'
+              );
+            }).join('') +
+            '</div></article>';
+        try{
+          const bodyEl = document.getElementById('announcementsSheetBody');
+          if(bodyEl) bodyEl.scrollTop = 0;
+        }catch(_){}
+        syncAnnouncementsSheetBackBtn();
+        if(typeof syncDockNavContext === 'function') syncDockNavContext();
+        return;
+      }
       const pending = signedLogView ? null : portalAnnouncementPendingItem();
       if(signedLogView){
         hostPending.innerHTML = '';
@@ -4941,10 +5037,15 @@
         const bodyHtml = typeof portalFormatSignableMessageHtml === 'function'
           ? portalFormatSignableMessageHtml(txt)
           : ('<p class="announcement-message-p">' + escapeHtml(txt) + '</p>');
+        const pendingCount = portalActiveAnnouncementItems().length;
+        const chooseAnother = pendingCount > 1
+          ? '<button type="button" class="announcement-choose-another btn btn--ghost btn--sm" id="announcementChooseAnother">← Choose another</button>'
+          : '';
         if(String(pending.type || '') === 'contract' && pending.portalContractId){
           const signHref = 'contract_sign.html?contract_id=' + encodeURIComponent(String(pending.portalContractId));
           hostPending.innerHTML =
             '<article class="announcement-lock-card">' +
+              chooseAnother +
               '<div class="announcement-lock-head"><strong>' + escapeHtml(t) + '</strong></div>' +
               '<p class="announcement-message-p">Review your employment contract below, then sign to save a PDF in My Documents.</p>' +
               '<div id="contractAnnPreview" class="contract-preview-shell" style="margin:0.75rem 0;"></div>' +
@@ -4959,6 +5060,7 @@
         ){
           hostPending.innerHTML =
             '<article class="announcement-lock-card announcement-lock-card--annual-profile">' +
+              chooseAnother +
               '<div class="announcement-lock-head"><strong>' + escapeHtml(t) + '</strong>' +
               '<span class="announcement-lock-badge announcement-lock-badge--announcement">Profile</span></div>' +
               '<div class="announcement-lock-copy announcement-message-block">' + bodyHtml + '</div>' +
@@ -4970,6 +5072,7 @@
         }else{
         hostPending.innerHTML =
           '<article class="announcement-lock-card announcement-lock-card--' + (isReminder ? 'reminder' : 'announcement') + '">' +
+            chooseAnother +
             '<div class="announcement-lock-head"><strong>' + escapeHtml(t) + '</strong>' +
             '<span class="announcement-lock-badge announcement-lock-badge--' + (isReminder ? 'reminder' : 'announcement') + '">' + escapeHtml(kindLabel) + '</span></div>' +
             '<div class="announcement-lock-copy announcement-message-block">' + bodyHtml + '</div>' +

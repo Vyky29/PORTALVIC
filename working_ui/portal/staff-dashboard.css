@@ -1701,6 +1701,84 @@
       letter-spacing:.03em;
       text-transform:uppercase;
     }
+    .announcement-picker-card{
+      margin:0;
+      padding:14px 14px 16px;
+      border-radius:14px;
+      border:1px solid rgba(15,23,42,.1);
+      background:#fff;
+      min-width:0;
+      box-sizing:border-box;
+    }
+    .announcement-picker-head{
+      margin:0 0 4px;
+      font-size:16px;
+      font-weight:800;
+      color:var(--ink,#173247);
+      overflow-wrap:break-word;
+    }
+    .announcement-picker-sub{
+      margin:0 0 12px;
+      font-size:13px;
+      line-height:1.35;
+      overflow-wrap:break-word;
+    }
+    .announcement-picker-list{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      min-width:0;
+    }
+    .announcement-picker-item{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      width:100%;
+      min-width:0;
+      text-align:left;
+      padding:12px 12px;
+      border-radius:12px;
+      border:1px solid rgba(185,28,28,.45);
+      background:linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%);
+      font:inherit;
+      cursor:pointer;
+      box-sizing:border-box;
+      -webkit-tap-highlight-color:transparent;
+      touch-action:manipulation;
+    }
+    .announcement-picker-item--reminder{
+      border-color:rgba(251,113,133,.45);
+      background:linear-gradient(180deg,#fff7ed 0%,#ffedd5 100%);
+    }
+    .announcement-picker-item--contract{
+      border-color:rgba(37,99,235,.35);
+      background:linear-gradient(180deg,#eff6ff 0%,#dbeafe 100%);
+    }
+    .announcement-picker-item__main{
+      flex:1 1 auto;
+      min-width:0;
+      overflow-wrap:break-word;
+    }
+    .announcement-picker-item__when{
+      display:block;
+      margin-top:4px;
+      font-size:11px;
+      font-weight:700;
+    }
+    .announcement-picker-item__chev{
+      flex:0 0 auto;
+      font-size:18px;
+      font-weight:700;
+      color:rgba(15,23,42,.45);
+    }
+    .announcement-choose-another{
+      display:inline-flex;
+      align-items:center;
+      margin:0 0 10px;
+      min-width:0;
+      max-width:100%;
+    }
     .announcement-history-item{
       border:1px solid rgba(248,113,113,.45);
       border-radius:12px;

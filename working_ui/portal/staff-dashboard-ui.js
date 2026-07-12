@@ -3276,7 +3276,10 @@
       if(!currentSheet) return;
       if(id === 'announcementsSheet' && typeof renderAnnouncementsSheetContent === 'function'){
         renderAnnouncementsSheetContent();
-        const pendingAnn = portalAnnouncementPendingItem();
+        const needsPicker = typeof portalAnnouncementNeedsPicker === 'function' && portalAnnouncementNeedsPicker();
+        const pendingAnn = !needsPicker && typeof portalAnnouncementPendingItem === 'function'
+          ? portalAnnouncementPendingItem()
+          : null;
         if(pendingAnn && typeof portalActivatePermissionsFromSignableItem === 'function'){
           void portalActivatePermissionsFromSignableItem(pendingAnn);
         }
@@ -4835,6 +4838,31 @@
         return;
       }
       const signBtn = e.target && e.target.closest ? e.target.closest('#announcementSignBtn') : null;
+      const pickBtn = e.target && e.target.closest ? e.target.closest('[data-announcement-pick-key]') : null;
+      if(pickBtn){
+        e.preventDefault();
+        e.stopPropagation();
+        const pickKey = String(pickBtn.getAttribute('data-announcement-pick-key') || '').trim();
+        if(!pickKey) return;
+        if(typeof portalSetAnnouncementsSelectedKey === 'function') portalSetAnnouncementsSelectedKey(pickKey);
+        if(typeof renderAnnouncementsSheetContent === 'function') renderAnnouncementsSheetContent();
+        const pendingPick = typeof portalAnnouncementPendingItem === 'function'
+          ? portalAnnouncementPendingItem()
+          : null;
+        if(pendingPick && typeof portalActivatePermissionsFromSignableItem === 'function'){
+          void portalActivatePermissionsFromSignableItem(pendingPick);
+        }
+        return;
+      }
+      const chooseAnother = e.target && e.target.closest ? e.target.closest('#announcementChooseAnother') : null;
+      if(chooseAnother){
+        e.preventDefault();
+        e.stopPropagation();
+        if(typeof portalSetAnnouncementsSelectedKey === 'function') portalSetAnnouncementsSelectedKey('');
+        portalAnnouncementLockRequired = false;
+        if(typeof renderAnnouncementsSheetContent === 'function') renderAnnouncementsSheetContent();
+        return;
+      }
       if(signBtn){
         e.preventDefault();
         const chk = document.getElementById('announcementReadConfirm');
@@ -4897,6 +4925,7 @@
           sysDone[key] = Date.now();
           sessionStorage.setItem('portalAnnSystemNotified_v1', JSON.stringify(sysDone));
         }catch(_sysAnn){}
+        if(typeof portalSetAnnouncementsSelectedKey === 'function') portalSetAnnouncementsSelectedKey('');
         portalAnnouncementLockRequired = false;
         renderAnnouncementsSheetContent();
         if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
