@@ -3674,6 +3674,12 @@
           }
           return;
         }
+        /* Stop as soon as TODAY has cards — do not keep refetching/rebooting. */
+        if(dashboardData && Array.isArray(dashboardData.today) && dashboardData.today.length){
+          clearInterval(timer);
+          window.__PORTAL_TODAY_SYNC_RETRY__ = false;
+          return;
+        }
         /* Stop early before expensive mode/day-view work when Today is already usable. */
         if(dashboardData && (
           portalNextSessionPreviewHasParticipants(dashboardData.portalTodayNextSessionPreview)
