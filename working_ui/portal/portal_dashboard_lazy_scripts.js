@@ -8,7 +8,7 @@
   var STAFF_LAZY_SCRIPTS = [
     "/portal/teflon_guide_demo_data.js?v=20260604-guide-roster",
     "/portal/teflon_guide_demo_merge.js?v=20260604-guide-roster",
-    "/portal/portal_participant_achievements.js?v=20260708-camera-inapp",
+    "/portal/portal_participant_achievements.js?v=20260712-delete-own-draft",
     "/portal/portal_client_sessions_overview.js?v=20260709-overview-by-service",
     "/portal/portal_induction.js?v=20260712-induction-loop",
     "/portal/portal_induction_bind.js?v=20260712-induction-loop",

@@ -85,6 +85,7 @@
     recordingTimer: null,
     feedbackGalleryReview: false,
     feedbackSessionDate: null,
+    authUserId: "",
   };
 
   var signedUrlCache = Object.create(null);
@@ -1757,6 +1758,7 @@
       state.photos = [];
       return;
     }
+    await refreshAuthUserId();
     try {
       state.photos = await fetchDraftPhotosForParticipant(
         state.participant,
@@ -2074,8 +2076,60 @@
   function updateViewerNavButtons() {
     var prev = document.getElementById("portalAchievementsViewerPrev");
     var next = document.getElementById("portalAchievementsViewerNext");
+    var del = document.getElementById("portalAchievementsViewerDelete");
     if (prev) prev.disabled = state.viewerIndex <= 0;
     if (next) next.disabled = state.viewerIndex >= state.photos.length - 1;
+    if (del) {
+      var row =
+        state.viewerIndex >= 0 && state.photos[state.viewerIndex]
+          ? state.photos[state.viewerIndex]
+          : null;
+      var canDel = !!(row && photoOwnedByCurrentUser(row));
+      del.hidden = !canDel;
+      del.disabled = !canDel;
+      del.setAttribute("aria-hidden", canDel ? "false" : "true");
+    }
+  }
+
+  function photoOwnedByCurrentUser(row) {
+    var uid = String(state.authUserId || "").trim();
+    if (!uid || !row) return false;
+    return String(row.staff_user_id || "").trim() === uid;
+  }
+
+  function friendlyDeleteError(err) {
+    var msg = String((err && err.message) || err || "").trim();
+    var low = msg.toLowerCase();
+    if (low.indexOf("not_draft") >= 0) {
+      return "Only draft photos can be deleted. Ask an admin if this one is already attached.";
+    }
+    if (low.indexOf("forbidden") >= 0 || low.indexOf("not authorized") >= 0) {
+      return "You can only delete photos you took.";
+    }
+    if (low.indexOf("not_found") >= 0) {
+      return "Photo already removed.";
+    }
+    if (low.indexOf("not_authenticated") >= 0) {
+      return "Sign in again, then try deleting.";
+    }
+    return msg || "Could not delete photo";
+  }
+
+  async function refreshAuthUserId() {
+    try {
+      var client = cfg.getClient();
+      if (!client) {
+        state.authUserId = "";
+        return "";
+      }
+      var userRes = await client.auth.getUser();
+      state.authUserId =
+        (userRes.data && userRes.data.user && userRes.data.user.id) || "";
+      return state.authUserId;
+    } catch (_e) {
+      state.authUserId = "";
+      return "";
+    }
   }
 
   async function openGalleryViewer(index) {
@@ -2152,11 +2206,19 @@
       setStatus("Sign in required.", true);
       return false;
     }
+    if (!state.authUserId) await refreshAuthUserId();
+    if (!photoOwnedByCurrentUser(row)) {
+      setStatus("You can only delete photos you took.", true);
+      return false;
+    }
     try {
       if (!opts.quiet) setStatus("Deleting…");
       if (row.storage_path) {
         var rm = await client.storage.from(BUCKET).remove([row.storage_path]);
-        if (rm.error) throw rm.error;
+        // Match admin: Storage RLS hiccups must not block deleting the draft row.
+        if (rm.error && !/not found|object not found/i.test(String(rm.error.message || ""))) {
+          console.warn("[achievements] storage remove", rm.error);
+        }
       }
       var rpc = await client.rpc("portal_delete_achievement_draft", { p_photo_id: row.id });
       if (rpc.error) {
@@ -2174,7 +2236,7 @@
       return true;
     } catch (e) {
       console.error(e);
-      setStatus(esc(e.message || "Could not delete photo"), true);
+      setStatus(esc(friendlyDeleteError(e)), true);
       return false;
     }
   }
@@ -2246,20 +2308,22 @@
               state.photos.length
           );
           appendMediaThumb(cell, url, row);
-          var delBtn = document.createElement("button");
-          delBtn.type = "button";
-          delBtn.className = "portal-achievements-thumb__delete";
-          delBtn.setAttribute("aria-label", "Delete photo " + (index + 1));
-          delBtn.textContent = "×";
           wrap.appendChild(cell);
-          wrap.appendChild(delBtn);
+          if (photoOwnedByCurrentUser(row)) {
+            var delBtn = document.createElement("button");
+            delBtn.type = "button";
+            delBtn.className = "portal-achievements-thumb__delete";
+            delBtn.setAttribute("aria-label", "Delete photo " + (index + 1));
+            delBtn.textContent = "×";
+            wrap.appendChild(delBtn);
+            delBtn.addEventListener("click", function (ev) {
+              ev.preventDefault();
+              ev.stopPropagation();
+              void deletePhotoById(row);
+            });
+          }
           cell.addEventListener("click", function () {
             void openGalleryViewer(index);
-          });
-          delBtn.addEventListener("click", function (ev) {
-            ev.preventDefault();
-            ev.stopPropagation();
-            void deletePhotoById(row);
           });
           grid.appendChild(wrap);
         });
