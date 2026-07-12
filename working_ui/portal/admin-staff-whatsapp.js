@@ -912,6 +912,7 @@
     },
     openStaff: function (username) {
       if (!username) return loadDirectory();
+      state.mobileShowThread = true;
       return loadDirectory().then(function () {
         return loadThread(String(username).toLowerCase());
       });
