@@ -2741,7 +2741,18 @@
         window.__PORTAL_STAFF_INITIAL_TODAY_SETTLE_TIMER__ = setTimeout(function(){
           window.__PORTAL_STAFF_INITIAL_TODAY_SETTLE_TIMER__ = null;
           if(window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__) return;
-          if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__) return;
+          /* Never leave TODAY on “syncing” forever if overrides lag — force the gate open. */
+          if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__){
+            try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
+          }
+          if(!window.__PORTAL_STAFF_ROSTER_HYDRATED__){
+            try{
+              if(typeof window.portalRebootstrapSessionsForPinnedStaff === 'function'){
+                window.portalRebootstrapSessionsForPinnedStaff();
+              }
+            }catch(_){}
+            try{ window.__PORTAL_STAFF_ROSTER_HYDRATED__ = true; }catch(_){}
+          }
           portalStaffMarkInitialTodayScheduleSettled();
           try{ if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay(); }catch(_){}
           try{ if(typeof renderToday === 'function') renderToday(); }catch(_){}
@@ -3670,6 +3681,12 @@
           if(tries > maxTries){
             window.__PORTAL_TODAY_SYNC_RETRY_GAVE_UP__ = true;
             try{ window.__PORTAL_STAFF_SESSIONS_GUARD_MODEL__ = null; }catch(_){}
+            try{
+              if(typeof window.portalRebootstrapSessionsForPinnedStaff === 'function'){
+                window.portalRebootstrapSessionsForPinnedStaff();
+              }
+            }catch(_){}
+            try{ window.__PORTAL_STAFF_ROSTER_HYDRATED__ = true; }catch(_){}
             portalStaffMarkInitialTodayScheduleSettled();
             try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
             if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();

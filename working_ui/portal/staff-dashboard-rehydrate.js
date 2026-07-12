@@ -965,6 +965,11 @@
                 new Promise(function(r){ setTimeout(r, 4000); })
               ]);
               if(runId !== _rehydrateRun) return;
+              try{
+                if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__){
+                  window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true;
+                }
+              }catch(_){}
               _portalStaffRebuildAfterOverridesFetch(staffId);
             }else{
               try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
@@ -1005,6 +1010,11 @@
                 new Promise(function(r){ setTimeout(r, 4000); })
               ]);
               if(runId !== _rehydrateRun) return;
+              try{
+                if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__){
+                  window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true;
+                }
+              }catch(_){}
               _portalStaffRebuildAfterOverridesFetch(staffId);
             }else{
               try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
