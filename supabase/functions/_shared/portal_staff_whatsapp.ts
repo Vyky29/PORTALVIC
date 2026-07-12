@@ -1,8 +1,9 @@
-/** Staff / leader WhatsApp helpers (admin ↔ leaders). Separate from parent tables. */
+/** Staff WhatsApp helpers (admin ↔ any active staff). Separate from parent tables. */
 
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { normalizeParentPhoneE164 } from "./portal_parent_messaging.ts";
 
+/** @deprecated Kept for rollback; WhatsApp is open to all active staff. */
 export const PORTAL_STAFF_WHATSAPP_LEADER_KEYS = new Set([
   "berta",
   "john",
@@ -21,11 +22,9 @@ export function normalizeStaffUsernameKey(raw: string): string {
     .replace(/[^a-z0-9]+/g, "");
 }
 
+/** Any non-empty staff username may use CS WhatsApp (was leader-only). */
 export function isPortalStaffWhatsappLeaderKey(raw: string): boolean {
-  const k = normalizeStaffUsernameKey(raw);
-  if (PORTAL_STAFF_WHATSAPP_LEADER_KEYS.has(k)) return true;
-  // Historical alias: some rows use "javier" for Palankas — keep out of instructor Javier.
-  return false;
+  return !!normalizeStaffUsernameKey(raw);
 }
 
 export function phoneLast10(raw: string): string {
@@ -42,23 +41,32 @@ export type StaffWhatsappProfile = {
   phone_lookup: string | null;
 };
 
+function mapStaffRow(r: Record<string, unknown>): StaffWhatsappProfile | null {
+  const id = String(r.id || "");
+  const username = String(r.username || "");
+  if (!id || !username) return null;
+  return {
+    id,
+    username,
+    full_name: r.full_name != null ? String(r.full_name) : null,
+    phone_e164: r.phone_e164 != null ? String(r.phone_e164) : null,
+    phone_lookup: r.phone_lookup != null ? String(r.phone_lookup) : null,
+  };
+}
+
+/** Active staff directory for CS WhatsApp (name kept for call-site compatibility). */
 export async function fetchStaffWhatsappLeaders(
   admin: SupabaseClient,
 ): Promise<StaffWhatsappProfile[]> {
   const { data, error } = await admin
     .from("staff_profiles")
     .select("id, username, full_name, phone_e164, phone_lookup")
-    .eq("is_active", true);
+    .eq("is_active", true)
+    .order("full_name", { ascending: true });
   if (error || !Array.isArray(data)) return [];
   return data
-    .map((r) => ({
-      id: String(r.id || ""),
-      username: String(r.username || ""),
-      full_name: r.full_name != null ? String(r.full_name) : null,
-      phone_e164: r.phone_e164 != null ? String(r.phone_e164) : null,
-      phone_lookup: r.phone_lookup != null ? String(r.phone_lookup) : null,
-    }))
-    .filter((r) => r.id && isPortalStaffWhatsappLeaderKey(r.username));
+    .map((r) => mapStaffRow(r as Record<string, unknown>))
+    .filter((r): r is StaffWhatsappProfile => !!r);
 }
 
 export async function findStaffLeaderByUsername(
@@ -66,9 +74,21 @@ export async function findStaffLeaderByUsername(
   username: string,
 ): Promise<StaffWhatsappProfile | null> {
   const want = normalizeStaffUsernameKey(username);
-  if (!isPortalStaffWhatsappLeaderKey(want)) return null;
-  const leaders = await fetchStaffWhatsappLeaders(admin);
-  return leaders.find((l) => normalizeStaffUsernameKey(l.username) === want) || null;
+  if (!want) return null;
+  const { data, error } = await admin
+    .from("staff_profiles")
+    .select("id, username, full_name, phone_e164, phone_lookup")
+    .eq("is_active", true)
+    .ilike("username", want)
+    .limit(8);
+  if (error || !Array.isArray(data) || !data.length) {
+    // Fallback: case/format variants via full directory scan
+    const all = await fetchStaffWhatsappLeaders(admin);
+    return all.find((l) => normalizeStaffUsernameKey(l.username) === want) || null;
+  }
+  const exact =
+    data.find((r) => normalizeStaffUsernameKey(String(r.username || "")) === want) || data[0];
+  return mapStaffRow(exact as Record<string, unknown>);
 }
 
 export async function findStaffLeaderByPhone(
@@ -78,8 +98,8 @@ export async function findStaffLeaderByPhone(
   const e164 = normalizeParentPhoneE164(phoneRaw) || "";
   const last10 = phoneLast10(e164 || phoneRaw);
   if (!last10) return null;
-  const leaders = await fetchStaffWhatsappLeaders(admin);
-  for (const l of leaders) {
+  const staff = await fetchStaffWhatsappLeaders(admin);
+  for (const l of staff) {
     const lookup = String(l.phone_lookup || phoneLast10(l.phone_e164 || "")).replace(/\D/g, "");
     if (lookup && (lookup === last10 || lookup.endsWith(last10) || last10.endsWith(lookup))) {
       return l;

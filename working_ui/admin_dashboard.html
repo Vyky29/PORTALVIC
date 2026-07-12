@@ -117,7 +117,7 @@
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/portal_incident_parent_notify.js?v=20260703-incident-notify"></script>
   <script src="/portal/admin-parent-notify-log.js?v=20260709-wa-source-chips"></script>
-  <script src="/portal/admin-staff-whatsapp.js?v=20260712-wa-icons"></script>
+  <script src="/portal/admin-staff-whatsapp.js?v=20260712-cs-wa-all"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260706-family-broadcast-5"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260709-wa-source-chips" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260712-wa-icons" />
@@ -393,7 +393,7 @@
       { id:'comms_bookings', label:'Staff & shift notices' },
       { id:'comms_ops', label:'Ops comms & log' },
       { id:'portal_parent_notify_log', label:'Family messages' },
-      { id:'portal_staff_whatsapp', label:'Leader WhatsApp' },
+      { id:'portal_staff_whatsapp', label:'CS WhatsApp' },
       { id:'portal_parent_broadcast', label:'Family broadcast' },
       { id:'clients', label:'Participants' },
       { id:'portal_nav_client_services', label:'Client services review', externalUrl:'/client_services_review.html', skipBottomNav:true },
@@ -20447,7 +20447,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         orders_all:'Every booking and order — slot state, funding route and waiting-list links. Use Outstanding only on the Orders page to filter balances.',
         comms_ops:'Programme comms log · staff notices',
         portal_parent_notify_log:'Outbound sends and inbound WhatsApp replies to the API number.',
-        portal_staff_whatsapp:'WhatsApp threads with programme leaders (portal + phone).',
+        portal_staff_whatsapp:'CS WhatsApp threads with staff (portal + phone).',
         portal_parent_broadcast:'Send one message (email + optional WhatsApp) to many families at once — review, select, preview and send in batch.',
         staffhr:'Staff roster — open any person for full profile, HR notes and availability.',
         onboarding:'New-hire onboarding pipeline — forms, tasks and worker progress.',
@@ -21243,7 +21243,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       portalStaffWhatsappConfigureOnce();
       return window.PortalStaffWhatsappAdmin
         ? window.PortalStaffWhatsappAdmin.viewHtml()
-        : '<p class="page-intro">Leader WhatsApp module failed to load.</p>';
+        : '<p class="page-intro">CS WhatsApp module failed to load.</p>';
     }
     function bindPortalStaffWhatsappModule(){
       portalStaffWhatsappConfigureOnce();

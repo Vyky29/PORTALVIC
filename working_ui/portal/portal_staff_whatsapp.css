@@ -1,4 +1,4 @@
-/* Leader WhatsApp — button under staff photo + thread sheet */
+/* CS WhatsApp — button under staff name + thread sheet */
 
 .topbar-staff-wa-btn{
   display:inline-flex;
@@ -10,17 +10,17 @@
   max-width:100%;
   margin:6px 0 0;
   padding:6px 8px;
-  border:1px solid rgba(37,211,102,.35);
+  border:1px solid rgba(217,154,31,.45);
   border-radius:10px;
-  background:linear-gradient(180deg,#25d366,#1da851);
-  color:#fff;
+  background:linear-gradient(180deg,#f4b740,#d99a1f);
+  color:#173247;
   font:inherit;
   font-size:11px;
   font-weight:800;
   letter-spacing:.01em;
   line-height:1.15;
   cursor:pointer;
-  box-shadow:0 1px 4px rgba(29,168,81,.28);
+  box-shadow:0 1px 4px rgba(217,154,31,.28);
   -webkit-tap-highlight-color:transparent;
   min-width:0;
 }
@@ -48,7 +48,7 @@
   position:relative;
 }
 .topbar-staff-wa-btn--unread{
-  box-shadow:0 0 0 2px rgba(220,38,38,.45),0 1px 4px rgba(29,168,81,.28);
+  box-shadow:0 0 0 2px rgba(220,38,38,.45),0 1px 4px rgba(217,154,31,.28);
 }
 .topbar-staff-wa-btn__badge{
   position:absolute;

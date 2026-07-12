@@ -1,7 +1,7 @@
 /**
- * Admin — Leader WhatsApp threads (staff leaders only).
+ * Admin — CS WhatsApp threads (all active staff).
  * Parallel to Family messages; uses portal_staff_* tables.
- * Unread = inbound from leader newer than localStorage seen cursor (per username).
+ * Unread = inbound from staff newer than localStorage seen cursor (per username).
  * Supports photo / file / voice attachments (Meta WhatsApp).
  */
 (function (global) {
@@ -211,7 +211,7 @@
   function viewHtml() {
     return (
       '<div class="portal-staff-wa-admin" id="portalStaffWaAdmin">' +
-      '<p class="page-intro">WhatsApp with programme leaders (Berta, John, Michelle, Raúl, Victor, Javi). Messages also appear on their staff dashboard.</p>' +
+      '<p class="page-intro">CS WhatsApp with staff. Messages also appear on their staff dashboard under their name.</p>' +
       '<p class="portal-staff-wa-admin__count muted" id="portalStaffWaCount"></p>' +
       '<div class="portal-staff-wa-admin__layout">' +
       '<aside class="portal-staff-wa-admin__list" id="portalStaffWaDir"></aside>' +
@@ -447,7 +447,7 @@
         })
         .slice(0, 3);
       cfg.toast(
-        "New Leader WhatsApp" +
+        "New CS WhatsApp" +
           (names.length ? ": " + names.join(", ") : "")
       );
       if (typeof global.portalPlayAlertCue === "function") {
