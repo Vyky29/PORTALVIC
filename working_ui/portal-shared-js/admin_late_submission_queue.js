@@ -272,24 +272,6 @@
     }
   }
 
-  function daysBackFromFilter(filter) {
-    var f = String(filter || "7d").toLowerCase();
-    if (f === "today") return 0;
-    if (f === "30d") return 30;
-    if (f === "90d") return 90;
-    return 7;
-  }
-
-  function createdAtFloorIso(daysBack) {
-    var now = new Date();
-    var londonToday = londonIsoDay(now.toISOString()) || portalFallbackToday();
-    var parts = londonToday.split("-").map(Number);
-    var start = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], 0, 0, 0));
-    // Pull a bit earlier than London midnight to cover UTC offset
-    start.setUTCDate(start.getUTCDate() - Math.max(0, daysBack) - 1);
-    return start.toISOString();
-  }
-
   function portalFallbackToday() {
     var d = new Date();
     return (
@@ -306,6 +288,122 @@
     var doneDay = londonIsoDay(row.created_at);
     if (!doneDay) return false;
     return doneDay > String(row.session_date).slice(0, 10);
+  }
+
+  var DOW_LONG = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+  ];
+  var DAY_COLORS = [
+    "#3b82f6",
+    "#8b5cf6",
+    "#06b6d4",
+    "#10b981",
+    "#f59e0b",
+    "#ec4899",
+    "#6366f1",
+  ];
+  var DAY_SOFT = [
+    "rgba(59,130,246,.15)",
+    "rgba(139,92,246,.15)",
+    "rgba(6,182,212,.15)",
+    "rgba(16,185,129,.15)",
+    "rgba(245,158,11,.15)",
+    "rgba(236,72,153,.15)",
+    "rgba(99,102,241,.15)",
+  ];
+
+  function parseIsoDayParts(iso) {
+    var s = String(iso || "").slice(0, 10);
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+    if (!m) return null;
+    return { y: +m[1], mo: +m[2], d: +m[3] };
+  }
+
+  function addDaysIso(iso, delta) {
+    var p = parseIsoDayParts(iso);
+    if (!p) return "";
+    var dt = new Date(Date.UTC(p.y, p.mo - 1, p.d));
+    dt.setUTCDate(dt.getUTCDate() + delta);
+    return dt.toISOString().slice(0, 10);
+  }
+
+  function mondayOfWeekIso(iso) {
+    var p = parseIsoDayParts(iso);
+    if (!p) return "";
+    var dt = new Date(Date.UTC(p.y, p.mo - 1, p.d));
+    var dow = dt.getUTCDay(); // 0 Sun … 6 Sat
+    var toMon = dow === 0 ? -6 : 1 - dow;
+    dt.setUTCDate(dt.getUTCDate() + toMon);
+    return dt.toISOString().slice(0, 10);
+  }
+
+  function weekDaysMonSun(mondayIso) {
+    var mon = mondayOfWeekIso(mondayIso);
+    var out = [];
+    for (var i = 0; i < 7; i++) out.push(addDaysIso(mon, i));
+    return out;
+  }
+
+  function formatDdMm(iso) {
+    var p = parseIsoDayParts(iso);
+    if (!p) return "—";
+    return (
+      String(p.d).padStart(2, "0") + "/" + String(p.mo).padStart(2, "0")
+    );
+  }
+
+  function weekRangeLabel(mondayIso) {
+    var days = weekDaysMonSun(mondayIso);
+    if (days.length < 7) return "—";
+    return formatDdMm(days[0]) + " – " + formatDdMm(days[6]);
+  }
+
+  function utcFloorForLondonDay(isoDay) {
+    // London midnight is UTC 23:00 previous day in BST, or 00:00 in GMT.
+    // Pull from noon UTC of previous calendar day to be safe.
+    return addDaysIso(isoDay, -1) + "T12:00:00.000Z";
+  }
+
+  function utcCeilForLondonDay(isoDay) {
+    return addDaysIso(isoDay, 2) + "T12:00:00.000Z";
+  }
+
+  var _weekState = {
+    monday: "",
+    selectedDay: "",
+    weekRows: [],
+  };
+
+  function enrichLateRow(r) {
+    r._completed_day = londonIsoDay(r.created_at);
+    r._completed_when = formatWhen(r.created_at);
+    r._session_time = timeFromKeyOrField(r.session_time, r.portal_session_key);
+    r._staff_name = String(r.completed_by_name || "").trim() || "Staff";
+    return r;
+  }
+
+  function countsByCompletedDay(rows) {
+    var map = Object.create(null);
+    (rows || []).forEach(function (r) {
+      var d = r._completed_day || londonIsoDay(r.created_at);
+      if (!d) return;
+      map[d] = (map[d] || 0) + 1;
+    });
+    return map;
+  }
+
+  function pickDefaultSelectedDay(days, counts, londonToday) {
+    if (londonToday && days.indexOf(londonToday) >= 0) return londonToday;
+    for (var i = days.length - 1; i >= 0; i--) {
+      if ((counts[days[i]] || 0) > 0) return days[i];
+    }
+    return days[days.length - 1] || londonToday || "";
   }
 
   window.PortalAdminLateSubmissions = {
@@ -327,7 +425,6 @@
           .eq("status", "pending")
           .neq("submission_type", "feedback");
         if (res.error) {
-          // Fallback if neq unsupported / older schema
           var res2 = await c
             .from(TABLE)
             .select("id", { count: "exact", head: true })
@@ -341,19 +438,24 @@
       }
     },
 
-    fetchLateFeedback: async function (rangeFilter) {
+    fetchLateFeedbackForWeek: async function (mondayIso) {
       var c = await waitForClient();
       if (!c) {
         return {
           ok: false,
           error:
-            'Not signed in to Portal. Open login.html, sign in as admin, open Admin again, then tap Refresh.',
+            "Not signed in to Portal. Open login.html, sign in as admin, open Admin again, then tap Refresh.",
           rows: [],
+          days: [],
+          counts: {},
         };
       }
-      var daysBack = daysBackFromFilter(rangeFilter);
-      var floor = createdAtFloorIso(daysBack);
-      var londonToday = londonIsoDay(new Date().toISOString()) || portalFallbackToday();
+      var londonToday =
+        londonIsoDay(new Date().toISOString()) || portalFallbackToday();
+      var monday = mondayOfWeekIso(mondayIso || londonToday);
+      var days = weekDaysMonSun(monday);
+      var floor = utcFloorForLondonDay(days[0]);
+      var ceil = utcCeilForLondonDay(days[6]);
       try {
         var res = await c
           .from(FEEDBACK_TABLE)
@@ -361,6 +463,7 @@
             "id,created_at,session_date,session_time,client_name,service,completed_by_name,submitted_by_user_id,portal_session_key,attendance"
           )
           .gte("created_at", floor)
+          .lt("created_at", ceil)
           .order("created_at", { ascending: false })
           .limit(800);
         if (res.error) {
@@ -368,39 +471,40 @@
             ok: false,
             error: res.error.message || "fetch_failed",
             rows: [],
+            days: days,
+            counts: {},
           };
         }
-        var rows = (res.data || []).filter(isLateFeedbackRow);
-        if (daysBack === 0) {
-          rows = rows.filter(function (r) {
-            return londonIsoDay(r.created_at) === londonToday;
+        var rows = (res.data || [])
+          .filter(isLateFeedbackRow)
+          .map(enrichLateRow)
+          .filter(function (r) {
+            return days.indexOf(r._completed_day) >= 0;
           });
-        } else {
-          var windowStart = new Date(londonToday + "T12:00:00Z");
-          windowStart.setUTCDate(windowStart.getUTCDate() - daysBack);
-          var windowStartIso = windowStart.toISOString().slice(0, 10);
-          rows = rows.filter(function (r) {
-            var day = londonIsoDay(r.created_at);
-            return day >= windowStartIso && day <= londonToday;
-          });
-        }
-        rows.forEach(function (r) {
-          r._completed_day = londonIsoDay(r.created_at);
-          r._completed_when = formatWhen(r.created_at);
-          r._session_time = timeFromKeyOrField(
-            r.session_time,
-            r.portal_session_key
-          );
-          r._staff_name = String(r.completed_by_name || "").trim() || "Staff";
-        });
-        return { ok: true, rows: rows, londonToday: londonToday };
+        return {
+          ok: true,
+          rows: rows,
+          days: days,
+          monday: monday,
+          counts: countsByCompletedDay(rows),
+          londonToday: londonToday,
+        };
       } catch (e) {
         return {
           ok: false,
           error: String(e && e.message ? e.message : e),
           rows: [],
+          days: days,
+          counts: {},
         };
       }
+    },
+
+    /** @deprecated prefer fetchLateFeedbackForWeek */
+    fetchLateFeedback: async function () {
+      var today =
+        londonIsoDay(new Date().toISOString()) || portalFallbackToday();
+      return this.fetchLateFeedbackForWeek(mondayOfWeekIso(today));
     },
 
     fetchRequests: async function (statusFilter) {
@@ -409,7 +513,7 @@
         return {
           ok: false,
           error:
-            'Not signed in to Portal. Open login.html, sign in as admin, open Admin again, then tap Refresh.',
+            "Not signed in to Portal. Open login.html, sign in as admin, open Admin again, then tap Refresh.",
           rows: [],
         };
       }
@@ -484,12 +588,59 @@
       }
     },
 
-    renderLateFeedbackTableHtml: function (rows) {
+    renderDayStripHtml: function (days, counts, selectedDay) {
+      var cards = (days || [])
+        .map(function (iso, idx) {
+          var n = (counts && counts[iso]) || 0;
+          var isSel = iso === selectedDay;
+          var col = DAY_COLORS[idx % DAY_COLORS.length];
+          var soft = DAY_SOFT[idx % DAY_SOFT.length];
+          var dayLong = DOW_LONG[idx] || "";
+          return (
+            '<button type="button" class="c4k-hub-sess-card' +
+            (isSel ? " is-selected" : "") +
+            (n > 0 ? " portal-late-day--has" : "") +
+            '" data-late-day="' +
+            _escAttr(iso) +
+            '" title="' +
+            _escAttr(String(n) + " late delivered") +
+            '" style="--cap-soft:' +
+            soft +
+            ";--cap-border:" +
+            col +
+            ";border-color:" +
+            (isSel ? col : "var(--line)") +
+            '">' +
+            '<div class="c4k-hub-sess-card__day" style="color:' +
+            col +
+            '">' +
+            _esc(dayLong) +
+            "</div>" +
+            '<div class="c4k-hub-sess-card__date">' +
+            _esc(formatDdMm(iso)) +
+            "</div>" +
+            '<div class="c4k-hub-sess-card__rule" style="background:' +
+            col +
+            '"></div>' +
+            '<div class="c4k-hub-sess-card__count">' +
+            _esc(String(n)) +
+            "</div>" +
+            '<div class="c4k-hub-sess-card__lbl">LATE</div>' +
+            "</button>"
+          );
+        })
+        .join("");
+      return cards;
+    },
+
+    renderLateFeedbackTableHtml: function (rows, selectedDay) {
       if (!rows || !rows.length) {
         return (
           '<div class="portal-late-admin-msg">' +
-          "<strong>No late feedback in this range</strong>" +
-          "<p style=\"margin:8px 0 0\">Late = completed on a London calendar day <em>after</em> the session date (e.g. Sunday submitting Friday/Saturday). Try a wider Show range.</p></div>"
+          "<strong>No late feedback on " +
+          _esc(formatSessionDate(selectedDay) || "this day") +
+          "</strong>" +
+          "<p style=\"margin:8px 0 0\">Late = completed on a London calendar day <em>after</em> the session date. Pick another day above, or another week.</p></div>"
         );
       }
       var body = rows
@@ -528,10 +679,10 @@
         '<div class="portal-late-fb-wrap">' +
         '<table class="tbl portal-late-fb-tbl">' +
         "<thead><tr>" +
-        "<th scope=\"col\">Staff</th>" +
-        "<th scope=\"col\">Service / Date / Time</th>" +
-        "<th scope=\"col\">Participant</th>" +
-        "<th scope=\"col\">Completed feedback</th>" +
+        '<th scope="col">Staff</th>' +
+        '<th scope="col">Service / Date / Time</th>' +
+        '<th scope="col">Participant</th>' +
+        '<th scope="col">Completed feedback</th>' +
         "</tr></thead><tbody>" +
         body +
         "</tbody></table></div>"
@@ -608,11 +759,53 @@
       opts = opts || {};
       var root = rootEl || document.getElementById("portalLateAdminList");
       if (!root) return;
-      var filterEl = document.getElementById("portalLateAdminFilter");
+      var stripEl = document.getElementById("portalLateDayStrip");
+      var rangeEl = document.getElementById("portalLateWeekRange");
       var refreshBtn = document.getElementById("portalLateAdminRefresh");
+      var prevBtn = document.getElementById("portalLateWeekPrev");
+      var nextBtn = document.getElementById("portalLateWeekNext");
+      var thisBtn = document.getElementById("portalLateWeekThis");
       var approvalFilterEl = document.getElementById("portalLateApprovalFilter");
       var approvalList = document.getElementById("portalLateApprovalList");
       var self = window.PortalAdminLateSubmissions;
+
+      function paintDayView() {
+        var day = _weekState.selectedDay;
+        var dayRows = (_weekState.weekRows || []).filter(function (r) {
+          return r._completed_day === day;
+        });
+        if (stripEl) {
+          stripEl.innerHTML = self.renderDayStripHtml(
+            _weekState.days || [],
+            _weekState.counts || {},
+            day
+          );
+        }
+        if (rangeEl) {
+          rangeEl.textContent = weekRangeLabel(_weekState.monday);
+        }
+        var n = dayRows.length;
+        var hint = roleHint();
+        var staffSet = {};
+        dayRows.forEach(function (r) {
+          var nm = String(r._staff_name || "").trim();
+          if (nm) staffSet[nm] = true;
+        });
+        var staffN = Object.keys(staffSet).length;
+        var weekTotal = (_weekState.weekRows || []).length;
+        setStatus(
+          (hint ? hint + " — " : "") +
+            n +
+            " late on " +
+            formatSessionDate(day) +
+            (staffN ? " · " + staffN + " staff" : "") +
+            " · " +
+            weekTotal +
+            " late this week",
+          false
+        );
+        root.innerHTML = self.renderLateFeedbackTableHtml(dayRows, day);
+      }
 
       async function reloadApprovals() {
         if (!approvalList) return;
@@ -635,12 +828,15 @@
         }
       }
 
-      async function reload() {
+      async function reloadWeek(mondayIso, preferSelected) {
         root.innerHTML =
           '<div class="portal-late-admin-msg"><strong>Loading…</strong></div>';
         setStatus("Loading late feedback…", false);
-        var filter = filterEl ? filterEl.value : "7d";
-        var res = await self.fetchLateFeedback(filter);
+        if (stripEl) {
+          stripEl.innerHTML =
+            '<div class="portal-late-admin-msg" style="grid-column:1/-1;padding:8px 0"><strong>Loading week…</strong></div>';
+        }
+        var res = await self.fetchLateFeedbackForWeek(mondayIso);
         if (!res.ok) {
           root.innerHTML =
             '<div class="portal-late-admin-msg is-error"><strong>Could not load</strong><p style="margin:8px 0 0">' +
@@ -649,46 +845,72 @@
           setStatus(_esc(res.error || "error"), true);
           return;
         }
-        var n = (res.rows && res.rows.length) || 0;
-        var hint = roleHint();
-        var staffSet = {};
-        (res.rows || []).forEach(function (r) {
-          var nm = String(r._staff_name || "").trim();
-          if (nm) staffSet[nm] = true;
-        });
-        var staffN = Object.keys(staffSet).length;
-        setStatus(
-          (hint ? hint + " — " : "") +
-            n +
-            " late feedback" +
-            (n === 1 ? "" : "s") +
-            " from " +
-            staffN +
-            " staff (range: " +
-            filter +
-            "). Same-day submissions after the session are not listed here — only next-day or later.",
-          false
-        );
-        root.innerHTML = self.renderLateFeedbackTableHtml(res.rows);
+        var keep =
+          preferSelected &&
+          res.days &&
+          res.days.indexOf(preferSelected) >= 0
+            ? preferSelected
+            : pickDefaultSelectedDay(
+                res.days,
+                res.counts,
+                res.londonToday
+              );
+        _weekState.monday = res.monday;
+        _weekState.days = res.days;
+        _weekState.counts = res.counts;
+        _weekState.weekRows = res.rows;
+        _weekState.selectedDay = keep;
+        paintDayView();
         await reloadApprovals();
       }
 
-      if (filterEl && !filterEl._portalLateBound) {
-        filterEl._portalLateBound = true;
-        filterEl.addEventListener("change", reload);
-      }
       if (approvalFilterEl && !approvalFilterEl._portalLateBound) {
         approvalFilterEl._portalLateBound = true;
         approvalFilterEl.addEventListener("change", reloadApprovals);
       }
       if (refreshBtn && !refreshBtn._portalLateBound) {
         refreshBtn._portalLateBound = true;
-        refreshBtn.addEventListener("click", reload);
+        refreshBtn.addEventListener("click", function () {
+          void reloadWeek(_weekState.monday, _weekState.selectedDay);
+        });
       }
-      var clickRoot = document.getElementById("portalLateAdminRoot") || root.parentElement || root;
+      if (prevBtn && !prevBtn._portalLateBound) {
+        prevBtn._portalLateBound = true;
+        prevBtn.addEventListener("click", function () {
+          void reloadWeek(addDaysIso(_weekState.monday || mondayOfWeekIso(portalFallbackToday()), -7));
+        });
+      }
+      if (nextBtn && !nextBtn._portalLateBound) {
+        nextBtn._portalLateBound = true;
+        nextBtn.addEventListener("click", function () {
+          void reloadWeek(addDaysIso(_weekState.monday || mondayOfWeekIso(portalFallbackToday()), 7));
+        });
+      }
+      if (thisBtn && !thisBtn._portalLateBound) {
+        thisBtn._portalLateBound = true;
+        thisBtn.addEventListener("click", function () {
+          var today =
+            londonIsoDay(new Date().toISOString()) || portalFallbackToday();
+          void reloadWeek(mondayOfWeekIso(today), today);
+        });
+      }
+
+      var clickRoot =
+        document.getElementById("portalLateAdminRoot") ||
+        root.parentElement ||
+        root;
       if (clickRoot && !clickRoot._portalLateClickBound) {
         clickRoot._portalLateClickBound = true;
         clickRoot.addEventListener("click", async function (ev) {
+          var dayBtn = ev.target.closest("[data-late-day]");
+          if (dayBtn && clickRoot.contains(dayBtn)) {
+            var day = dayBtn.getAttribute("data-late-day");
+            if (day && day !== _weekState.selectedDay) {
+              _weekState.selectedDay = day;
+              paintDayView();
+            }
+            return;
+          }
           var approveBtn = ev.target.closest("[data-late-approve]");
           var rejectBtn = ev.target.closest("[data-late-reject]");
           var btn = approveBtn || rejectBtn;
@@ -726,8 +948,12 @@
           await reloadApprovals();
         });
       }
+
       function startReload() {
-        return reload();
+        var today =
+          londonIsoDay(new Date().toISOString()) || portalFallbackToday();
+        var mon = _weekState.monday || mondayOfWeekIso(today);
+        return reloadWeek(mon, _weekState.selectedDay || today);
       }
       if (!client()) {
         root.innerHTML =
