@@ -1056,7 +1056,7 @@
       "session_date": "2026-05-17"
     },
     {
-      "client_name": "Rayyan Fi",
+      "client_name": "Rayyan F",
       "day": "Sunday",
       "instructors": "GIUSEPPE",
       "service": "Multi-Activity",
@@ -1066,7 +1066,7 @@
       "session_date": "2026-05-17"
     },
     {
-      "client_name": "Rayyan Fi",
+      "client_name": "Rayyan F",
       "day": "Sunday",
       "instructors": "JAVIER",
       "service": "Multi-Activity",
@@ -1666,7 +1666,7 @@
       "session_date": "2026-05-19"
     },
     {
-      "client_name": "Rayyan Fi",
+      "client_name": "Rayyan F",
       "day": "Tuesday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -1676,7 +1676,7 @@
       "session_date": "2026-05-19"
     },
     {
-      "client_name": "Rayyan Fi",
+      "client_name": "Rayyan F",
       "day": "Tuesday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -2556,7 +2556,7 @@
       "session_date": "2026-06-02"
     },
     {
-      "client_name": "Rayyan Fi",
+      "client_name": "Rayyan F",
       "day": "Tuesday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -3186,7 +3186,7 @@
       "session_date": "2026-06-07"
     },
     {
-      "client_name": "Rayyan Fi",
+      "client_name": "Rayyan F",
       "day": "Sunday",
       "instructors": "GIUSEPPE",
       "service": "Multi-Activity",
@@ -3496,7 +3496,7 @@
       "session_date": "2026-06-07"
     },
     {
-      "client_name": "Rayyan Fi",
+      "client_name": "Rayyan F",
       "day": "Sunday",
       "instructors": "JAVIER",
       "service": "Multi-Activity",
@@ -4106,7 +4106,7 @@
       "session_date": "2026-06-09"
     },
     {
-      "client_name": "Rayyan Fi",
+      "client_name": "Rayyan F",
       "day": "Tuesday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -4746,7 +4746,7 @@
       "session_date": "2026-06-14"
     },
     {
-      "client_name": "Rayyan Fi",
+      "client_name": "Rayyan F",
       "day": "Sunday",
       "instructors": "GIUSEPPE",
       "service": "Multi-Activity",
@@ -5056,7 +5056,7 @@
       "session_date": "2026-06-14"
     },
     {
-      "client_name": "Rayyan Fi",
+      "client_name": "Rayyan F",
       "day": "Sunday",
       "instructors": "JAVIER",
       "service": "Multi-Activity",
@@ -5706,7 +5706,7 @@
       "session_date": "2026-06-16"
     },
     {
-      "client_name": "Rayyan Fi",
+      "client_name": "Rayyan F",
       "day": "Tuesday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -6366,7 +6366,7 @@
       "session_date": "2026-06-21"
     },
     {
-      "client_name": "Rayyan Fi",
+      "client_name": "Rayyan F",
       "day": "Sunday",
       "instructors": "GIUSEPPE",
       "service": "Multi-Activity",
@@ -6686,7 +6686,7 @@
       "session_date": "2026-06-21"
     },
     {
-      "client_name": "Rayyan Fi",
+      "client_name": "Rayyan F",
       "day": "Sunday",
       "instructors": "JAVIER",
       "service": "Multi-Activity",
@@ -7366,7 +7366,7 @@
       "session_date": "2026-06-23"
     },
     {
-      "client_name": "Rayyan Fi",
+      "client_name": "Rayyan F",
       "day": "Tuesday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -8136,7 +8136,7 @@
       "session_date": "2026-06-28"
     },
     {
-      "client_name": "Rayyan Fi",
+      "client_name": "Rayyan F",
       "day": "Sunday",
       "instructors": "GIUSEPPE",
       "service": "Multi-Activity",
@@ -8218,9 +8218,9 @@
     {
       "client_name": "Jack S",
       "day": "Sunday",
-      "instructors": "ROBERTO",
+      "instructors": "GIUSEPPE",
       "service": "Multi-Activity",
-      "area": "Big Pool",
+      "area": "Hub Room",
       "time_slot": "10.15 to 11",
       "venue": "SwimFarm",
       "session_date": "2026-06-28"
@@ -8248,9 +8248,9 @@
     {
       "client_name": "Samer",
       "day": "Sunday",
-      "instructors": "GIUSEPPE",
+      "instructors": "ROBERTO",
       "service": "Multi-Activity",
-      "area": "Hub Room",
+      "area": "Big Pool",
       "time_slot": "10.15 to 11",
       "venue": "SwimFarm",
       "session_date": "2026-06-28"
@@ -8456,7 +8456,7 @@
       "session_date": "2026-06-28"
     },
     {
-      "client_name": "Rayyan Fi",
+      "client_name": "Rayyan F",
       "day": "Sunday",
       "instructors": "LULIYA",
       "service": "Multi-Activity",
@@ -8608,7 +8608,7 @@
     {
       "client_name": "Jack S",
       "day": "Sunday",
-      "instructors": "BISMARK",
+      "instructors": "GIUSEPPE",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "9.30 to 10.15",
@@ -9126,7 +9126,7 @@
       "session_date": "2026-06-30"
     },
     {
-      "client_name": "Rayyan Fi",
+      "client_name": "Rayyan F",
       "day": "Tuesday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -9786,7 +9786,7 @@
       "session_date": "2026-07-05"
     },
     {
-      "client_name": "Rayyan Fi",
+      "client_name": "Rayyan F",
       "day": "Sunday",
       "instructors": "GIUSEPPE",
       "service": "Multi-Activity",
@@ -10106,7 +10106,7 @@
       "session_date": "2026-07-05"
     },
     {
-      "client_name": "Rayyan Fi",
+      "client_name": "Rayyan F",
       "day": "Sunday",
       "instructors": "JAVIER",
       "service": "Multi-Activity",
@@ -10756,7 +10756,7 @@
       "session_date": "2026-07-07"
     },
     {
-      "client_name": "Rayyan Fi",
+      "client_name": "Rayyan F",
       "day": "Tuesday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -11282,16 +11282,6 @@
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 1",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-10"
-    },
-    {
-      "client_name": "Emmanuel",
-      "day": "Friday",
-      "instructors": "VICTOR",
-      "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "1 to 3",
       "venue": "SwimFarm",
       "session_date": "2026-07-10"
     },
@@ -11486,7 +11476,7 @@
       "session_date": "2026-07-12"
     },
     {
-      "client_name": "Rayyan Fi",
+      "client_name": "Rayyan F",
       "day": "Sunday",
       "instructors": "GIUSEPPE",
       "service": "Multi-Activity",
@@ -11796,7 +11786,7 @@
       "session_date": "2026-07-12"
     },
     {
-      "client_name": "Rayyan Fi",
+      "client_name": "Rayyan F",
       "day": "Sunday",
       "instructors": "JAVIER",
       "service": "Multi-Activity",
@@ -12436,7 +12426,7 @@
       "session_date": "2026-07-14"
     },
     {
-      "client_name": "Rayyan Fi",
+      "client_name": "Rayyan F",
       "day": "Tuesday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
@@ -13725,7 +13715,7 @@
     }
   ],
   "meta": {
-    "rosterMadreSyncedAt": "2026-07-08T16:15:39Z",
+    "rosterMadreSyncedAt": "2026-07-12T20:42:28Z",
     "rosterMadreSource": "roster_term_master.json"
   }
 };

@@ -349,6 +349,7 @@
     yusef: "yusuf_ah",
     // Worker display label is "Eddie Mc"; collapse its slug back to the roster id "eddie".
     eddie_mc: "eddie",
+    rayyan_fi: "rayyan_f",
   };
 
   /** Roster participant id slug aliases (not clients_info sheet; not Ah brothers). */
@@ -393,6 +394,8 @@
     put("aadam_ah", "Adaam Ah");
     put("eddie_mc", "Eddie Mc");
     put("eddie", "Eddie Mc");
+    put("rayyan_f", "Rayyan F");
+    put("rayyan_fi", "Rayyan F");
     try {
       const rows =
         typeof window !== "undefined" && Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS)

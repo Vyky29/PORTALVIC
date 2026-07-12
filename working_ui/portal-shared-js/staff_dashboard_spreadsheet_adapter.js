@@ -258,6 +258,8 @@
     }
     put("aadam_ah", "Adaam Ah");
     put("eddie", "Eddie Mc");
+    put("rayyan_f", "Rayyan F");
+    put("rayyan_fi", "Rayyan F");
     try {
       const rows =
         typeof window !== "undefined" && Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS)

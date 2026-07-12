@@ -132,7 +132,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-02": [
         "ayman",
         "logan",
-        "rayyan_fi"
+        "rayyan_f"
       ],
       "2026-06-03": [
         "stephanie",
@@ -170,7 +170,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-16": [
         "ayman",
         "logan",
-        "rayyan_fi"
+        "rayyan_f"
       ],
       "2026-06-17": [
         "ikram",
@@ -422,7 +422,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "zaid",
         "hazem",
         "eiji",
-        "rayyan_fi",
+        "rayyan_f",
         "max",
         "shaan",
         "shire",
@@ -446,7 +446,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "zaid",
         "hazem",
         "eiji",
-        "rayyan_fi",
+        "rayyan_f",
         "max",
         "shaan",
         "shire",
@@ -477,7 +477,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "zaid",
         "eiji",
         "serine",
-        "rayyan_fi",
+        "rayyan_f",
         "max",
         "patrick",
         "shaan",

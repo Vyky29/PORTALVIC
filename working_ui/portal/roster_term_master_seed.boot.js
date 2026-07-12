@@ -892,7 +892,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "1.15 to 2",
-                  "client_name": "Rayyan Fi",
+                  "client_name": "Rayyan F",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -1221,7 +1221,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "12.30 to 1.15",
-                  "client_name": "Rayyan Fi",
+                  "client_name": "Rayyan F",
                   "service": "Multi-Activity",
                   "area": "Small Pool",
                   "pool_note": "Small Pool",
@@ -2175,7 +2175,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5.30 to 6.30",
-                  "client_name": "Rayyan Fi",
+                  "client_name": "Rayyan F",
                   "service": "Aquatic Activity",
                   "area": "Lane (SE)",
                   "pool_note": "Lane (SE)",
@@ -3138,7 +3138,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "1.15 to 2",
-                  "client_name": "Rayyan Fi",
+                  "client_name": "Rayyan F",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -3467,7 +3467,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "12.30 to 1.15",
-                  "client_name": "Rayyan Fi",
+                  "client_name": "Rayyan F",
                   "service": "Multi-Activity",
                   "area": "Small Pool",
                   "pool_note": "Small Pool",
@@ -4323,7 +4323,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5.30 to 6.30",
-                  "client_name": "Rayyan Fi",
+                  "client_name": "Rayyan F",
                   "service": "Aquatic Activity",
                   "area": "Lane (SE)",
                   "pool_note": "Lane (SE)",
@@ -5101,7 +5101,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "1.15 to 2",
-                  "client_name": "Rayyan Fi",
+                  "client_name": "Rayyan F",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -5497,7 +5497,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "12.30 to 1.15",
-                  "client_name": "Rayyan Fi",
+                  "client_name": "Rayyan F",
                   "service": "Multi-Activity",
                   "area": "Small Pool",
                   "pool_note": "Small Pool",
@@ -6593,7 +6593,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5.30 to 6.30",
-                  "client_name": "Rayyan Fi",
+                  "client_name": "Rayyan F",
                   "service": "Aquatic Activity",
                   "area": "Lane (SE)",
                   "pool_note": "Lane (SE)",
@@ -7370,7 +7370,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "1.15 to 2",
-                  "client_name": "Rayyan Fi",
+                  "client_name": "Rayyan F",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -7895,7 +7895,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "12.30 to 1.15",
-                  "client_name": "Rayyan Fi",
+                  "client_name": "Rayyan F",
                   "service": "Multi-Activity",
                   "area": "Small Pool",
                   "pool_note": "Small Pool",
@@ -8855,7 +8855,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5.30 to 6.30",
-                  "client_name": "Rayyan Fi",
+                  "client_name": "Rayyan F",
                   "service": "Aquatic Activity",
                   "area": "Lane (SE)",
                   "pool_note": "Lane (SE)",
@@ -9845,7 +9845,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "1.15 to 2",
-                  "client_name": "Rayyan Fi",
+                  "client_name": "Rayyan F",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -10240,7 +10240,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "12.30 to 1.15",
-                  "client_name": "Rayyan Fi",
+                  "client_name": "Rayyan F",
                   "service": "Multi-Activity",
                   "area": "Small Pool",
                   "pool_note": "Small Pool",
@@ -11296,7 +11296,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5.30 to 6.30",
-                  "client_name": "Rayyan Fi",
+                  "client_name": "Rayyan F",
                   "service": "Aquatic Activity",
                   "area": "Lane (SE)",
                   "pool_note": "Lane (SE)",
@@ -12280,7 +12280,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "1.15 to 2",
-                  "client_name": "Rayyan Fi",
+                  "client_name": "Rayyan F",
                   "service": "Multi-Activity",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -12609,7 +12609,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "12.30 to 1.15",
-                  "client_name": "Rayyan Fi",
+                  "client_name": "Rayyan F",
                   "service": "Multi-Activity",
                   "area": "Small Pool",
                   "pool_note": "Small Pool",
@@ -13589,7 +13589,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5.30 to 6.30",
-                  "client_name": "Rayyan Fi",
+                  "client_name": "Rayyan F",
                   "service": "Aquatic Activity",
                   "area": "Lane (SE)",
                   "pool_note": "Lane (SE)",
@@ -15293,7 +15293,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "5.30 to 6.30",
-                  "client_name": "Rayyan Fi",
+                  "client_name": "Rayyan F",
                   "service": "Aquatic Activity",
                   "area": "Lane (SE)",
                   "pool_note": "Lane (SE)",
