@@ -66,6 +66,8 @@
   var mediaRecorder = null;
   var recordChunks = [];
   var MAX_ATTACH_BYTES = 4 * 1024 * 1024;
+  var fetchFailUntil = 0;
+  var fetchInFlight = null;
 
   function showStaffWaToast(msg, opts) {
     opts = opts || {};
@@ -110,6 +112,7 @@
 
   async function fetchMessagesPayload(opts) {
     opts = opts || {};
+    if (Date.now() < fetchFailUntil) return null;
     var url = supabaseUrl();
     var key = anonKey();
     var token = await accessToken();
@@ -119,20 +122,30 @@
     if (staffKey) body.staffUsername = staffKey;
     if (opts.markRead) body.mark_read = true;
     if (opts.unreadOnly) body.unread_only = true;
-    var res = await fetch(url + "/functions/v1/portal-staff-messages-list", {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer " + token,
-        apikey: key,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
-    var data = await res.json().catch(function () {
-      return {};
-    });
-    if (!res.ok || !data.ok) return null;
-    return data;
+    try {
+      var res = await fetch(url + "/functions/v1/portal-staff-messages-list", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + token,
+          apikey: key,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+      var data = await res.json().catch(function () {
+        return {};
+      });
+      if (!res.ok || !data.ok) {
+        if (res.status >= 500 || res.status === 0) fetchFailUntil = Date.now() + 30000;
+        return null;
+      }
+      fetchFailUntil = 0;
+      return data;
+    } catch (_err) {
+      /* Network/CORS failures — back off so the console is not spammed every 6s. */
+      fetchFailUntil = Date.now() + 45000;
+      return null;
+    }
   }
 
   function applyUnreadBadge(count) {
@@ -202,30 +215,36 @@
       if (block) block.hidden = true;
       return 0;
     }
-    try {
-      var prev = lastUnreadCount;
-      var data = await fetchMessagesPayload({ unreadOnly: true });
-      if (!data) return lastUnreadCount;
-      var next = Math.max(0, Number(data.unread_messages_count) || 0);
-      applyUnreadBadge(next);
-      if (knownUnreadBaseline && next > prev) {
-        var nNew = next - prev;
-        showStaffWaToast(
-          nNew === 1
-            ? "New Portal WhatsApp from the club — tap to open"
-            : nNew + " new Portal WhatsApp messages — tap to open"
-        );
-        try {
-          global.dispatchEvent(
-            new CustomEvent("portal:staff-wa-unread", { detail: { count: next } })
+    if (fetchInFlight) return fetchInFlight;
+    fetchInFlight = (async function () {
+      try {
+        var prev = lastUnreadCount;
+        var data = await fetchMessagesPayload({ unreadOnly: true });
+        if (!data) return lastUnreadCount;
+        var next = Math.max(0, Number(data.unread_messages_count) || 0);
+        applyUnreadBadge(next);
+        if (knownUnreadBaseline && next > prev) {
+          var nNew = next - prev;
+          showStaffWaToast(
+            nNew === 1
+              ? "New Portal WhatsApp from the club — tap to open"
+              : nNew + " new Portal WhatsApp messages — tap to open"
           );
-        } catch (_e) {}
+          try {
+            global.dispatchEvent(
+              new CustomEvent("portal:staff-wa-unread", { detail: { count: next } })
+            );
+          } catch (_e) {}
+        }
+        knownUnreadBaseline = true;
+        return lastUnreadCount;
+      } catch (_e) {
+        return lastUnreadCount;
+      } finally {
+        fetchInFlight = null;
       }
-      knownUnreadBaseline = true;
-      return lastUnreadCount;
-    } catch (_e) {
-      return lastUnreadCount;
-    }
+    })();
+    return fetchInFlight;
   }
 
   function ensureSheet() {

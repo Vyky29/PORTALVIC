@@ -89,6 +89,15 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: portalAdminCorsHeaders() });
   }
+  try {
+    return await handlePortalStaffMessagesList(req);
+  } catch (e) {
+    console.error("[portal-staff-messages-list] unhandled", String(e));
+    return portalAdminJson(500, { ok: false, error: "server_error" });
+  }
+});
+
+async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
   if (req.method !== "POST") {
     return portalAdminJson(405, { ok: false, error: "method_not_allowed" });
   }
@@ -362,4 +371,4 @@ Deno.serve(async (req) => {
     messages_read_at: readAt,
     isAdmin,
   });
-});
+}

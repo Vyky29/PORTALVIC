@@ -4150,6 +4150,30 @@
       const h = String(item.href || '').trim().toLowerCase();
       return [t, x, h].join('||');
     }
+    /** Collapse DB twin rows (same title/body, different ids) in history + pending. */
+    function portalAnnouncementContentFingerprint(title, text, whenMs, kind){
+      return [
+        String(kind || 'announcement') === 'reminder' ? 'reminder' : 'announcement',
+        String(title || '').trim().toLowerCase(),
+        String(text || '').trim().toLowerCase()
+      ].join('|');
+    }
+    function portalAnnouncementAckContentFingerprints(ackMap){
+      const set = {};
+      const map = ackMap && typeof ackMap === 'object' ? ackMap : {};
+      Object.keys(map).forEach(function(k){
+        const rec = map[k];
+        if(!rec || typeof rec !== 'object') return;
+        const fp = portalAnnouncementContentFingerprint(
+          rec.title,
+          rec.text,
+          rec.signedAt,
+          String(k || '').indexOf('portal-rem:') === 0 ? 'reminder' : 'announcement'
+        );
+        if(fp) set[fp] = true;
+      });
+      return set;
+    }
     function portalAnnouncementHideDelayMs(src){
       if(!src || typeof src !== 'object') return null;
       var amt = parseInt(String(src.hideAfterAckAmount != null ? src.hideAfterAckAmount : src.hide_after_ack_amount || ''), 10);
@@ -4280,6 +4304,8 @@
         const annInjected = [];
         const remList = [];
         const remSeen = {};
+        const injectContentSeen = {};
+        const ackContentSeen = portalAnnouncementAckContentFingerprints(portalAnnouncementAckMapLoad());
         /* Club notices archive for Announcements / Reminders — same rules for staff and CEO/admin:
            everyone + role broadcasts, plus single-user only when addressed to this viewer.
            Do NOT list other people's personal/incident copies (that flooded CEO lists). */
@@ -4322,8 +4348,11 @@
           if(/portal test/i.test(title)) return;
           const createdMs = Date.parse(row.created_at || '');
           const day = String(row.created_at || '').slice(0, 10);
-          const dedupeKey = [
-            typ === 'reminder' ? 'reminder' : 'announcement',
+          const body = String(row.body || '').trim();
+          const kind = typ === 'reminder' ? 'reminder' : 'announcement';
+          const contentFp = portalAnnouncementContentFingerprint(title, body, createdMs, kind);
+          const dedupeKey = contentFp || [
+            kind,
             title.toLowerCase(),
             day,
             delivery,
@@ -4333,9 +4362,9 @@
           archiveSeenTitleDay[dedupeKey] = true;
           dashboardData.portalAnnouncementArchive.push({
             id: id,
-            kind: typ === 'reminder' ? 'reminder' : 'announcement',
-            title: title || (typ === 'reminder' ? 'Reminder' : 'Announcement'),
-            text: String(row.body || '').trim(),
+            kind: kind,
+            title: title || (kind === 'reminder' ? 'Reminder' : 'Announcement'),
+            text: body,
             createdAt: Number.isFinite(createdMs) ? createdMs : 0
           });
         });
@@ -4436,11 +4465,25 @@
               return;
             }
           }
+          const injTitle = String(row.title || 'Announcement').trim() || 'Announcement';
+          const injText = String(row.body || '').trim();
+          const injCreatedMs = Date.parse(row.created_at || '');
+          const injFp = portalAnnouncementContentFingerprint(
+            injTitle,
+            injText,
+            Number.isFinite(injCreatedMs) ? injCreatedMs : 0,
+            'announcement'
+          );
+          if(injFp && (injectContentSeen[injFp] || ackContentSeen[injFp])){
+            existing[id] = true;
+            return;
+          }
+          if(injFp) injectContentSeen[injFp] = true;
           existing[id] = true;
           annInjected.push({
             type: 'announcement',
-            title: String(row.title || 'Announcement').trim() || 'Announcement',
-            text: String(row.body || '').trim(),
+            title: injTitle,
+            text: injText,
             href: '#portal-ann-' + id,
             portalAnnouncementId: id,
             hideAfterAckAmount: row.hide_after_ack_amount,
@@ -4726,6 +4769,8 @@
       if(dashboardData && !dashboardData.portalIdentityResolved) return [];
       const annAck = portalAnnouncementAckMapLoad();
       const remAck = portalReminderAckMapLoad();
+      const ackContentSeen = portalAnnouncementAckContentFingerprints(annAck);
+      const pendingContentSeen = {};
       const items = [];
       portalAnnouncementItemsFromNotices().forEach(function(n){
         if(n && n.requiresSignature === false) return;
@@ -4737,8 +4782,17 @@
         }
         const k = portalAnnouncementSignatureKey(n);
         const contractKey = n && n.portalContractId ? ('portal-ann:contract:' + String(n.portalContractId)) : '';
-        const acked = (!!k && !!annAck[k]) || (!!contractKey && !!annAck[contractKey]);
+        const createdMs = Date.parse(n && n.created_at || '') || Number(n && n.signedAt || 0) || 0;
+        const fp = portalAnnouncementContentFingerprint(
+          n && n.title,
+          n && n.text,
+          createdMs,
+          'announcement'
+        );
+        const acked = (!!k && !!annAck[k]) || (!!contractKey && !!annAck[contractKey]) || (!!fp && !!ackContentSeen[fp]);
         if(!acked){
+          if(fp && pendingContentSeen[fp]) return;
+          if(fp) pendingContentSeen[fp] = true;
           if(
             typeof portalSignableItemIsAnnualProfile === 'function' &&
             portalSignableItemIsAnnualProfile(n)
@@ -4932,7 +4986,31 @@
           fromArchive: true
         };
       });
-      return Object.keys(byKey).map(function(k){ return byKey[k]; }).sort(function(a, b){
+      /* Twin announcement rows (same title/body/day, different ids) collapse to one card. */
+      const byContent = {};
+      Object.keys(byKey).forEach(function(k){
+        const r = byKey[k];
+        if(!r) return;
+        const fp = portalAnnouncementContentFingerprint(r.title, r.text, r.signedAt, r.kind);
+        if(!fp){
+          byContent[k] = r;
+          return;
+        }
+        const prev = byContent[fp];
+        if(!prev){
+          byContent[fp] = r;
+          return;
+        }
+        const preferNew = (!r.fromArchive && prev.fromArchive) ||
+          (Number(r.signedAt || 0) > Number(prev.signedAt || 0) && !(!prev.fromArchive && r.fromArchive));
+        if(preferNew){
+          if(!r.text && prev.text) r.text = prev.text;
+          byContent[fp] = r;
+        }else if(!prev.text && r.text){
+          prev.text = r.text;
+        }
+      });
+      return Object.keys(byContent).map(function(k){ return byContent[k]; }).sort(function(a, b){
         return Number(b.signedAt || 0) - Number(a.signedAt || 0);
       });
     }

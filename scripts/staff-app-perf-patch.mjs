@@ -6,7 +6,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const VER = "20260712-ann-archive2";
+const VER = "20260712-cyrus-dedupe";
 
 const STAFF_DASHBOARD_CORE_SCRIPTS = [
   "staff-dashboard-topbar.js",
