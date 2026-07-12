@@ -1462,7 +1462,17 @@
       const skipRender = !!opts.skipRender;
       try{
         const box = window.__PORTAL_SUPABASE__;
-        const uid = box && box.session && box.session.user && box.session.user.id ? String(box.session.user.id).trim() : '';
+        const sessionUid = box && box.session && box.session.user && box.session.user.id
+          ? String(box.session.user.id).trim()
+          : '';
+        // Ghost teleport keeps the admin session — fetch the SUBJECT worker's feedback, not admin's.
+        let uid = sessionUid;
+        try{
+          const ghost = window.__PORTAL_GHOST_VIEW__;
+          if(ghost && ghost.active && ghost.staffUserId){
+            uid = String(ghost.staffUserId).trim() || sessionUid;
+          }
+        }catch(_gUid){}
         if(!box || !box.client || !uid) return;
         const mod = await import(PORTAL_SUPABASE_CLIENT_MODULE);
         if(!mod.portalFetchSubmittedReviewSessionKeys || !mod.portalMergeReviewKeysIntoMemoryMap) return;
