@@ -328,7 +328,15 @@
         if (typeof renderToday === "function") renderToday();
         if (typeof renderMiniCounts === "function") renderMiniCounts();
         if (typeof renderLists === "function") renderLists();
-        if (typeof window.portalInductionSyncQuickMenu === "function") {
+        if (typeof window.portalInductionRefreshDashboard === "function") {
+          if (typeof window.portalEnsureDashboardLazyScripts === "function") {
+            void window.portalEnsureDashboardLazyScripts().then(function () {
+              void window.portalInductionRefreshDashboard();
+            });
+          } else {
+            void window.portalInductionRefreshDashboard();
+          }
+        } else if (typeof window.portalInductionSyncQuickMenu === "function") {
           if (typeof window.portalEnsureDashboardLazyScripts === "function") {
             void window.portalEnsureDashboardLazyScripts().then(function () {
               window.portalInductionSyncQuickMenu();

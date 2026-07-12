@@ -77,6 +77,7 @@
     function portalFinishWeekDayReviewFlow(day, isoOpt, usedDateLock, termJudgementAllowed){
       try{ window.__PORTAL_TERM_JUDGEMENT_ALLOWED = termJudgementAllowed; }catch(_){}
       try{ window.__PORTAL_TODAY_SYNC_RETRY__ = false; }catch(_){}
+      try{ window.__PORTAL_TODAY_SYNC_RETRY_GAVE_UP__ = false; }catch(_){}
       DEMO_VIEW_DAY = day;
       if(typeof getDemoDateLabel === 'function') dashboardData.dateLabel = getDemoDateLabel(DEMO_VIEW_DAY);
       if(typeof getDemoDateTopbar === 'function') dashboardData.dateTopbar = getDemoDateTopbar(DEMO_VIEW_DAY);

@@ -3651,7 +3651,9 @@
     }
     /** While Today shows roster sync, retry Supabase merge + rebootstrap until sessions appear. */
     function portalStaffScheduleTodaySyncRetry(){
-      if(typeof window === 'undefined' || window.__PORTAL_TODAY_SYNC_RETRY__) return;
+      if(typeof window === 'undefined') return;
+      if(window.__PORTAL_TODAY_SYNC_RETRY_GAVE_UP__) return;
+      if(window.__PORTAL_TODAY_SYNC_RETRY__) return;
       window.__PORTAL_TODAY_SYNC_RETRY__ = true;
       var tries = 0;
       var maxTries = 8;
@@ -3666,6 +3668,7 @@
           clearInterval(timer);
           window.__PORTAL_TODAY_SYNC_RETRY__ = false;
           if(tries > maxTries){
+            window.__PORTAL_TODAY_SYNC_RETRY_GAVE_UP__ = true;
             try{ window.__PORTAL_STAFF_SESSIONS_GUARD_MODEL__ = null; }catch(_){}
             portalStaffMarkInitialTodayScheduleSettled();
             try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
@@ -3678,6 +3681,7 @@
         if(dashboardData && Array.isArray(dashboardData.today) && dashboardData.today.length){
           clearInterval(timer);
           window.__PORTAL_TODAY_SYNC_RETRY__ = false;
+          window.__PORTAL_TODAY_SYNC_RETRY_GAVE_UP__ = false;
           return;
         }
         /* Stop early before expensive mode/day-view work when Today is already usable. */
@@ -3687,6 +3691,7 @@
           || dashboardData.portalTodayEmptyPanelMode === 'off_time_requested'
           || dashboardData.portalTodayEmptyPanelMode === 'complete'
           || dashboardData.portalTodayEmptyPanelMode === 'shift'
+          || dashboardData.portalTodayEmptyPanelMode === 'empty'
         )){
           clearInterval(timer);
           window.__PORTAL_TODAY_SYNC_RETRY__ = false;

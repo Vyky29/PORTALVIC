@@ -28,32 +28,58 @@
     sheet.addEventListener("click", onInductionClick, true);
   }
 
-  async function sync() {
+  var syncInflight = null;
+  var lastSyncAt = 0;
+  var MIN_SYNC_GAP_MS = 4000;
+
+  async function refreshDashboard(opts) {
+    opts = opts || {};
     bindMenuSheet();
-    if (typeof global.portalInductionBindDashboard === "function") {
-      global.portalInductionBindDashboard({ profile: profile(), authEmail: authEmail() });
-    }
-    if (typeof global.portalHydrateInductionProgressFromSupabase === "function") {
-      await global.portalHydrateInductionProgressFromSupabase();
-      if (typeof global.provisionalRefreshPathway === "function") {
-        global.provisionalRefreshPathway();
+    var now = Date.now();
+    if (!opts.force && syncInflight) return syncInflight;
+    if (!opts.force && now - lastSyncAt < MIN_SYNC_GAP_MS) return syncInflight;
+    lastSyncAt = now;
+    syncInflight = (async function () {
+      try {
+        if (typeof global.portalInductionBindDashboard === "function") {
+          global.portalInductionBindDashboard({ profile: profile(), authEmail: authEmail() });
+        }
+        if (typeof global.portalHydrateInductionProgressFromSupabase === "function") {
+          await global.portalHydrateInductionProgressFromSupabase();
+          if (typeof global.provisionalRefreshPathway === "function") {
+            global.provisionalRefreshPathway();
+          }
+        }
+        if (typeof global.portalSyncTrainingProgressToSupabase === "function") {
+          void global.portalSyncTrainingProgressToSupabase();
+        }
+      } finally {
+        syncInflight = null;
       }
-    }
-    if (typeof global.portalSyncTrainingProgressToSupabase === "function") {
-      void global.portalSyncTrainingProgressToSupabase();
-    }
+    })();
+    return syncInflight;
   }
 
   if (global.document.readyState === "loading") {
-    global.document.addEventListener("DOMContentLoaded", sync, { once: true });
+    global.document.addEventListener(
+      "DOMContentLoaded",
+      function () {
+        void refreshDashboard({ force: true });
+      },
+      { once: true }
+    );
   } else {
-    sync();
+    void refreshDashboard({ force: true });
   }
 
   if (global.addEventListener) {
-    global.addEventListener("portal:induction-cert-downloaded", sync);
-    global.addEventListener("portal:supabase-ready", sync);
+    global.addEventListener("portal:induction-cert-downloaded", function () {
+      void refreshDashboard({ force: true });
+    });
+    global.addEventListener("portal:supabase-ready", function () {
+      void refreshDashboard({ force: true });
+    });
   }
 
-  global.portalInductionSyncQuickMenu = sync;
+  global.portalInductionRefreshDashboard = refreshDashboard;
 })(typeof window !== "undefined" ? window : globalThis);

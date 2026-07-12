@@ -296,6 +296,7 @@
     );
   }
 
+  var _inductionPdfProbeInflight = null;
   function portalInductionBindDashboard(opts) {
     var profile = (opts && opts.profile) || (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile);
     var email = (opts && opts.authEmail) || "";
@@ -306,9 +307,18 @@
     portalInductionClearGrandfatherStateForRequired(profile, email);
     portalInductionApplyGrandfather(profile, email);
     portalInductionSyncQuickMenu(global.document.getElementById("quickMenuInduction"), profile, email);
-    void portalInductionTryMarkPdfFromDocuments().then(function () {
-      portalInductionSyncQuickMenu(global.document.getElementById("quickMenuInduction"), profile, email);
-    });
+    /* Only refresh the Quick-menu button after the documents probe — never call the
+       full dashboard sync helper (portal_induction_bind overwrites that name and
+       would re-enter BindDashboard forever → thousands of GETs). */
+    if (_inductionPdfProbeInflight) return;
+    _inductionPdfProbeInflight = portalInductionTryMarkPdfFromDocuments()
+      .catch(function () {})
+      .then(function () {
+        portalInductionSyncQuickMenu(global.document.getElementById("quickMenuInduction"), profile, email);
+      })
+      .finally(function () {
+        _inductionPdfProbeInflight = null;
+      });
   }
 
   function portalInductionGetCertificateMeta(profile, authEmail) {
@@ -347,4 +357,6 @@
   global.portalInductionMarkCertificatePdfDownloaded = portalInductionMarkCertificatePdfDownloaded;
   global.portalInductionNeedsCertificateDownload = portalInductionNeedsCertificateDownload;
   global.portalInductionTryMarkPdfFromDocuments = portalInductionTryMarkPdfFromDocuments;
+  global.portalInductionSyncQuickMenu = portalInductionSyncQuickMenu;
+  global.portalInductionSyncQuickMenuBtn = portalInductionSyncQuickMenu;
 })(typeof window !== "undefined" ? window : globalThis);
