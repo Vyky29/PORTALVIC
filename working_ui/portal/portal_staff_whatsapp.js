@@ -159,8 +159,8 @@
       btn.setAttribute(
         "aria-label",
         lastUnreadCount > 0
-          ? "Open Portal WhatsApp messages, " + lastUnreadCount + " unread"
-          : "Open Portal WhatsApp messages"
+          ? "Open Messages, " + lastUnreadCount + " unread"
+          : "Open Messages"
       );
     }
     var alertsBlock = document.getElementById("portalStaffWaAlertsBlock");
@@ -468,12 +468,12 @@
     btn.type = "button";
     btn.id = "topbarStaffWaBtn";
     btn.className = "topbar-staff-wa-btn";
-    btn.setAttribute("aria-label", "Open Portal WhatsApp messages");
+    btn.setAttribute("aria-label", "Open Messages");
     btn.innerHTML =
       '<span class="topbar-staff-wa-btn__ico" aria-hidden="true">' +
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.6-.8-1.8-.9-.2-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.1-.3.2-.6.1-.3-.1-1.2-.4-2.3-1.4-.8-.7-1.4-1.6-1.6-1.9-.2-.3 0-.4.1-.6.1-.1.3-.3.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5 0-.1-.6-1.5-.8-2-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1s.9 2.4 1 2.6c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.1.7 2.8.6.4-.1 1.4-.6 1.6-1.1.2-.5.2-1 .1-1.1-.1-.1-.3-.2-.6-.3z"/><path d="M12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.4 1.3 4.9L2 22l5.3-1.4C8.7 21.5 10.3 22 12 22c5.5 0 10-4.5 10-10S17.5 2 12 2zm0 18c-1.5 0-2.9-.4-4.1-1.1l-.3-.2-3.1.8.8-3-.2-.3C4.4 15 4 13.5 4 12 4 7.6 7.6 4 12 4s8 3.6 8 8-3.6 8-8 8z"/></svg>' +
       "</span>" +
-      '<span class="topbar-staff-wa-btn__label">WhatsApp</span>';
+      '<span class="topbar-staff-wa-btn__label">Messages</span>';
     btn.addEventListener("click", function (ev) {
       ev.preventDefault();
       ev.stopPropagation();

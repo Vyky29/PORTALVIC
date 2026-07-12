@@ -4,40 +4,45 @@
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  gap:6px;
+  gap:5px;
+  box-sizing:border-box;
   width:100%;
   max-width:100%;
   margin:6px 0 0;
-  padding:7px 10px;
+  padding:6px 8px;
   border:1px solid rgba(37,211,102,.35);
   border-radius:10px;
   background:linear-gradient(180deg,#25d366,#1da851);
   color:#fff;
   font:inherit;
-  font-size:12px;
+  font-size:11px;
   font-weight:800;
-  letter-spacing:.02em;
+  letter-spacing:.01em;
+  line-height:1.15;
   cursor:pointer;
   box-shadow:0 1px 4px rgba(29,168,81,.28);
   -webkit-tap-highlight-color:transparent;
   min-width:0;
 }
 .topbar-staff-wa-btn__ico{
-  width:16px;
-  height:16px;
+  width:14px;
+  height:14px;
   flex-shrink:0;
   display:inline-flex;
 }
 .topbar-staff-wa-btn__ico svg{
-  width:16px;
-  height:16px;
+  width:14px;
+  height:14px;
   display:block;
 }
 .topbar-staff-wa-btn__label{
+  flex:0 1 auto;
   min-width:0;
+  max-width:100%;
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
+  overflow-wrap:normal;
 }
 .topbar-staff-wa-btn{
   position:relative;
