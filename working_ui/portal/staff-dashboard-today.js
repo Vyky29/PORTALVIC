@@ -4280,45 +4280,64 @@
         const annInjected = [];
         const remList = [];
         const remSeen = {};
-        /* Full published archive for Signed Announcements/Reminders — same list for every role. */
+        /* Club notices archive for Announcements / Reminders — same rules for staff and CEO/admin:
+           everyone + role broadcasts, plus single-user only when addressed to this viewer.
+           Do NOT list other people's personal/incident copies (that flooded CEO lists). */
         dashboardData.portalAnnouncementArchive = [];
+        const archiveSeenTitleDay = {};
         visible.forEach(function(row){
           const id = String(row.id || '');
           if(!id) return;
           const typ = String(row.message_type || '').toLowerCase().trim();
-          const title = String(row.title || '').trim();
-          const body = String(row.body || '').trim();
-          const createdMs = Date.parse(row.created_at || '');
-          if(typ === 'reminder'){
-            dashboardData.portalAnnouncementArchive.push({
-              id: id,
-              kind: 'reminder',
-              title: title || 'Reminder',
-              text: body,
-              createdAt: Number.isFinite(createdMs) ? createdMs : 0
-            });
+          if(
+            typ !== 'announcement' &&
+            typ !== 'reminder' &&
+            typ !== 'urgent' &&
+            typ !== 'incident_team' &&
+            typ !== 'incident_encounter'
+          ){
             return;
           }
           if(
-            typ === 'announcement' ||
-            typ === 'incident_team' ||
-            typ === 'incident_encounter' ||
-            typ === 'urgent'
+            typeof portalAnnouncementRowIsCalendar202627 === 'function' &&
+            portalAnnouncementRowIsCalendar202627(row)
           ){
-            if(
-              typeof portalAnnouncementRowIsCalendar202627 === 'function' &&
-              portalAnnouncementRowIsCalendar202627(row)
-            ){
-              return;
-            }
-            dashboardData.portalAnnouncementArchive.push({
-              id: id,
-              kind: 'announcement',
-              title: title || 'Announcement',
-              text: body,
-              createdAt: Number.isFinite(createdMs) ? createdMs : 0
-            });
+            return;
           }
+          const delivery = String(row.delivery_scope || 'everyone').trim();
+          const audience = String(row.audience_scope || 'all_staff').trim();
+          const targetUser = String(row.target_user_id || '').trim();
+          const targetRole = String(row.target_staff_role || '').trim();
+          const uid = String(workerInboxCtx.authUserId || '').trim();
+          let include = false;
+          if(delivery === 'everyone' && (audience === 'all_staff' || audience === 'leads') && !targetUser){
+            include = true;
+          }else if(delivery === 'staff_role' && audience === 'all_staff' && targetRole){
+            include = true;
+          }else if(delivery === 'single_user' && uid && targetUser === uid){
+            include = true;
+          }
+          if(!include) return;
+          const title = String(row.title || '').trim();
+          if(/portal test/i.test(title)) return;
+          const createdMs = Date.parse(row.created_at || '');
+          const day = String(row.created_at || '').slice(0, 10);
+          const dedupeKey = [
+            typ === 'reminder' ? 'reminder' : 'announcement',
+            title.toLowerCase(),
+            day,
+            delivery,
+            targetRole || ''
+          ].join('|');
+          if(archiveSeenTitleDay[dedupeKey]) return;
+          archiveSeenTitleDay[dedupeKey] = true;
+          dashboardData.portalAnnouncementArchive.push({
+            id: id,
+            kind: typ === 'reminder' ? 'reminder' : 'announcement',
+            title: title || (typ === 'reminder' ? 'Reminder' : 'Announcement'),
+            text: String(row.body || '').trim(),
+            createdAt: Number.isFinite(createdMs) ? createdMs : 0
+          });
         });
         visible.forEach(function(row){
           const id = String(row.id || '');
@@ -4406,8 +4425,8 @@
           var mustSign = typeof portalStaffAnnouncementRowRequiresSignature === 'function'
             ? !!portalStaffAnnouncementRowRequiresSignature(row, workerInboxCtx)
             : true;
-          /* Role-targeted rows stay out of the CEO/admin sign lock (RLS cannot ack them),
-             but they are kept in portalAnnouncementArchive so leadership still sees the full list. */
+          /* Role-targeted rows stay out of the CEO/admin sign lock (RLS cannot ack them);
+             club role broadcasts still appear in the shared announcements archive. */
           if(!mustSign) return;
           if(String(row.on_ack_action || '').trim() === 'annual_profile'){
             if(
