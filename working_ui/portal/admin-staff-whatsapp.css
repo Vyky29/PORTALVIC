@@ -185,7 +185,33 @@
   gap:6px;
   min-width:0;
 }
-.portal-staff-wa-admin__tools .btn.is-recording{
+.portal-staff-wa-admin__tool{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  min-width:0;
+}
+.portal-staff-wa-admin__tool-ico{
+  display:inline-flex;
+  flex-shrink:0;
+  width:14px;
+  height:14px;
+  align-items:center;
+  justify-content:center;
+}
+.portal-staff-wa-admin__tool-ico svg{
+  display:block;
+  width:14px;
+  height:14px;
+}
+.portal-staff-wa-admin__tool-label{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.portal-staff-wa-admin__tools .btn.is-recording,
+.portal-staff-wa-admin__tool.is-recording{
   border-color:#dc2626;
   color:#b91c1c;
 }

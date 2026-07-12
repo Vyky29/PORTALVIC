@@ -165,6 +165,49 @@
     });
   }
 
+  function toolBtnHtml(id, label, iconSvg, hidden) {
+    return (
+      '<button type="button" class="btn btn--ghost btn--sm portal-staff-wa-admin__tool" id="' +
+      id +
+      '"' +
+      (hidden ? " hidden" : "") +
+      ' aria-label="' +
+      esc(label) +
+      '">' +
+      '<span class="portal-staff-wa-admin__tool-ico" aria-hidden="true">' +
+      iconSvg +
+      "</span>" +
+      '<span class="portal-staff-wa-admin__tool-label">' +
+      esc(label) +
+      "</span>" +
+      "</button>"
+    );
+  }
+
+  var ICO_PHOTO =
+    '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
+  var ICO_FILE =
+    '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+  var ICO_VOICE =
+    '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>';
+  var ICO_CLEAR =
+    '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  var ICO_STOP =
+    '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+
+  function setRecordBtnLabel(btn, recording) {
+    if (!btn) return;
+    btn.innerHTML =
+      '<span class="portal-staff-wa-admin__tool-ico" aria-hidden="true">' +
+      (recording ? ICO_STOP : ICO_VOICE) +
+      "</span>" +
+      '<span class="portal-staff-wa-admin__tool-label">' +
+      (recording ? "Stop" : "Voice") +
+      "</span>";
+    btn.setAttribute("aria-label", recording ? "Stop" : "Voice");
+    btn.classList.toggle("is-recording", !!recording);
+  }
+
   function viewHtml() {
     return (
       '<div class="portal-staff-wa-admin" id="portalStaffWaAdmin">' +
@@ -178,10 +221,10 @@
       '<form class="portal-staff-wa-admin__composer" id="portalStaffWaForm">' +
       '<div class="portal-staff-wa-admin__tools">' +
       '<input type="file" id="portalStaffWaFile" accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" hidden />' +
-      '<button type="button" class="btn btn--ghost btn--sm" id="portalStaffWaAttachPhoto">Photo</button>' +
-      '<button type="button" class="btn btn--ghost btn--sm" id="portalStaffWaAttachDoc">File</button>' +
-      '<button type="button" class="btn btn--ghost btn--sm" id="portalStaffWaRecord">Voice</button>' +
-      '<button type="button" class="btn btn--ghost btn--sm" id="portalStaffWaClearAttach" hidden>Clear</button>' +
+      toolBtnHtml("portalStaffWaAttachPhoto", "Photo", ICO_PHOTO, false) +
+      toolBtnHtml("portalStaffWaAttachDoc", "File", ICO_FILE, false) +
+      toolBtnHtml("portalStaffWaRecord", "Voice", ICO_VOICE, false) +
+      toolBtnHtml("portalStaffWaClearAttach", "Clear", ICO_CLEAR, true) +
       '<span class="portal-staff-wa-admin__attach-preview muted" id="portalStaffWaAttachPreview"></span>' +
       "</div>" +
       '<textarea id="portalStaffWaDraft" rows="3" placeholder="Message…" maxlength="4000"></textarea>' +
@@ -524,19 +567,13 @@
         ? new MediaRecorder(stream, { mimeType: mime })
         : new MediaRecorder(stream);
       state.recording = true;
-      if (recBtn) {
-        recBtn.textContent = "Stop";
-        recBtn.classList.add("is-recording");
-      }
+      setRecordBtnLabel(recBtn, true);
       state.mediaRecorder.ondataavailable = function (ev) {
         if (ev.data && ev.data.size) state.recordChunks.push(ev.data);
       };
       state.mediaRecorder.onstop = function () {
         state.recording = false;
-        if (recBtn) {
-          recBtn.textContent = "Voice";
-          recBtn.classList.remove("is-recording");
-        }
+        setRecordBtnLabel(recBtn, false);
         try {
           stream.getTracks().forEach(function (t) {
             t.stop();
@@ -554,10 +591,7 @@
     } catch (_e) {
       cfg.toast("Microphone permission needed for voice notes");
       state.recording = false;
-      if (recBtn) {
-        recBtn.textContent = "Voice";
-        recBtn.classList.remove("is-recording");
-      }
+      setRecordBtnLabel(recBtn, false);
     }
   }
 
