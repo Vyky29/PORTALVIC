@@ -21,6 +21,8 @@ export async function pushStaffLeaderWhatsappMessage(
     staffUsername?: string;
     bodyText: string;
     logId?: string | null;
+    /** Admin who sent — clients/SW ignore the alert for this user (don't notify the sender). */
+    senderUserId?: string | null;
   },
 ): Promise<{ ok: boolean; sent?: number; detail?: string }> {
   const staffId = String(opts.staffProfileId || "").trim();
@@ -37,6 +39,7 @@ export async function pushStaffLeaderWhatsappMessage(
 
   const preview = clamp(opts.bodyText || "New message from the club", 120);
   const sourceId = String(opts.logId || Date.now());
+  const senderUserId = String(opts.senderUserId || "").trim();
   const payload = JSON.stringify({
     title: "Portal WhatsApp",
     body: preview,
@@ -46,6 +49,7 @@ export async function pushStaffLeaderWhatsappMessage(
     requireInteraction: true,
     vibrate: [200, 80, 200, 80, 280, 100, 200],
     targetUserId: staffId,
+    senderUserId: senderUserId || undefined,
   });
 
   try {

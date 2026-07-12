@@ -26,6 +26,8 @@ self.addEventListener('activate', function (event) {
 
 var PORTAL_ALERT_VIBRATE = [200, 80, 200, 80, 280, 100, 200];
 var PORTAL_CALL_VIBRATE = [500, 180, 500, 180, 700, 180, 500];
+/** Auth user id stamped by the page after login — used to drop pushes meant for someone else. */
+var portalPushUserId = '';
 
 function portalAppendQueryParam(absUrl, key, value) {
   try {
@@ -92,6 +94,10 @@ function portalHasVisiblePortalClient() {
 self.addEventListener('message', function (event) {
   var d = event.data;
   if (!d || !d.type) return;
+  if (d.type === 'portal-push-set-user') {
+    portalPushUserId = String(d.userId || '').trim();
+    return;
+  }
   if (d.type === 'portal-show-local-test') {
     var title = String(d.title || 'Test: portal notification');
     var body = String(d.body || 'If you see this banner, notifications are working on this device.');
@@ -159,6 +165,16 @@ self.addEventListener('push', function (event) {
       var t = event.data && event.data.text();
       if (t) body = t.slice(0, 200);
     } catch (e2) {}
+  }
+  /* Same browser/PWA can hold one push endpoint registered under several logins.
+     Never show an alert for another user, or for a message this user just sent. */
+  if (portalPushUserId) {
+    if (senderUserId && senderUserId === portalPushUserId) {
+      return;
+    }
+    if (targetUserId && targetUserId !== portalPushUserId) {
+      return;
+    }
   }
   if (
     portalOpen === 'alerts' ||

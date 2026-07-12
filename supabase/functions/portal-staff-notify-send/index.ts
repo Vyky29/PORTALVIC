@@ -150,12 +150,13 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Instant portal alert for the leader (same idea as admin toast on reply).
+  // Instant portal alert for the leader only (not the sending admin).
   await pushStaffLeaderWhatsappMessage(admin, {
     staffProfileId: leader.id,
     staffUsername: normalizeStaffUsernameKey(leader.username),
     bodyText,
     logId: inserted?.id || null,
+    senderUserId: verified.userId,
   });
 
   return portalAdminJson(200, {

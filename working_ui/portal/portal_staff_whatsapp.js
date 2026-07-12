@@ -546,6 +546,11 @@
         if (!d) return;
         var open = String(d.portalOpen || "");
         if (d.type === "portal-push-received" && (open === "staff_whatsapp" || open === "portal_staff_whatsapp")) {
+          if (typeof global.portalPushIsForCurrentUser === "function" && !global.portalPushIsForCurrentUser(d)) {
+            return;
+          }
+          /* Admin inbound open is for admin dashboard — not the leader chip toast. */
+          if (open === "portal_staff_whatsapp") return;
           showStaffWaToast(
             String(d.body || d.title || "New Portal WhatsApp from the club — tap to open")
           );

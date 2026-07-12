@@ -137,7 +137,7 @@
     }
     global.__PORTAL_SW_REG_PROMISE__ = (async function () {
       try {
-        var swUrl = new URL("clubsensational-portal-sw.js", global.location.href).href;
+        var swUrl = new URL("clubsensational-portal-sw.js?v=20260712-no-self-wa-push", global.location.href).href;
         var scopeBase = new URL("./", global.location.href).href;
         var reg = await global.navigator.serviceWorker.register(swUrl, { scope: scopeBase });
         global.__PORTAL_SW_REG__ = reg;
@@ -225,6 +225,54 @@
     } catch (_a) {}
   }
   global.portalPlayAlertCue = portalPlayAlertCue;
+
+  function portalCurrentPushAuthUserId() {
+    try {
+      var box = global.__PORTAL_SUPABASE__;
+      var id = box && box.session && box.session.user && box.session.user.id;
+      if (id) return String(id).trim();
+    } catch (_e) {}
+    return "";
+  }
+
+  /** Tell the shared SW who is logged in so it can drop pushes meant for another account. */
+  function portalPushSyncAuthUserToServiceWorker(userId) {
+    var id = String(userId || portalCurrentPushAuthUserId() || "").trim();
+    try {
+      if (!global.navigator || !global.navigator.serviceWorker) return;
+      var send = function (sw) {
+        if (!sw || typeof sw.postMessage !== "function") return;
+        try {
+          sw.postMessage({ type: "portal-push-set-user", userId: id });
+        } catch (_p) {}
+      };
+      if (global.navigator.serviceWorker.controller) {
+        send(global.navigator.serviceWorker.controller);
+      }
+      global.navigator.serviceWorker.ready
+        .then(function (reg) {
+          send(reg && reg.active);
+        })
+        .catch(function () {});
+    } catch (_e2) {}
+  }
+
+  /** True when this push is for the signed-in user (and not a message they just sent). */
+  function portalPushIsForCurrentUser(data) {
+    var me = portalCurrentPushAuthUserId();
+    if (!me) return true;
+    var d = data || {};
+    var sender = String(d.senderUserId || "").trim();
+    var target = String(d.targetUserId || "").trim();
+    if (sender && sender === me) return false;
+    if (target && target !== me) return false;
+    return true;
+  }
+
+  global.portalPushSyncAuthUserToServiceWorker = portalPushSyncAuthUserToServiceWorker;
+  global.portalPushIsForCurrentUser = portalPushIsForCurrentUser;
+  global.portalCurrentPushAuthUserId = portalCurrentPushAuthUserId;
+
   async function portalSendLocalTestNotification(opts) {
     opts = opts || {};
     var title = String(opts.title || "Test: portal notification").trim();
@@ -629,6 +677,7 @@
     }
     var wp = await global.portalEnsureWebPushSubscription();
     if (wp && wp.ok) {
+      portalPushSyncAuthUserToServiceWorker();
       return wp;
     }
     return wp || { ok: false, reason: "unknown" };
@@ -778,4 +827,20 @@
   global.portalShowNotificationDeniedHelp = portalShowNotificationDeniedHelp;
   global.portalBuildNotificationDeniedHelpHtml = portalBuildNotificationDeniedHelpHtml;
   global.portalShowBackgroundChatNotification = portalShowBackgroundChatNotification;
+
+  try {
+    global.addEventListener("portal:supabase-ready", function () {
+      portalPushSyncAuthUserToServiceWorker();
+    });
+    global.addEventListener("portal:staff-profile-ready", function () {
+      portalPushSyncAuthUserToServiceWorker();
+    });
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", function () {
+        portalPushSyncAuthUserToServiceWorker();
+      });
+    } else {
+      portalPushSyncAuthUserToServiceWorker();
+    }
+  } catch (_bootSync) {}
 })(typeof window !== "undefined" ? window : globalThis);
