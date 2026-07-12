@@ -5213,6 +5213,27 @@
             portalQuickMenuNavigate(target);
             return;
           }
+          if(extBtn.id === 'quickMenuStaffTermReview' || String(u || '').indexOf('swtermreview') !== -1){
+            let target = u;
+            try{
+              const item = typeof currentOpenClientItem !== 'undefined' ? currentOpenClientItem : null;
+              const nm = item && item.name ? String(item.name).trim() : '';
+              const cid = item && item.clientId ? String(item.clientId).trim() : '';
+              const tu = new URL(String(target || ''), window.location.href);
+              if(nm){
+                tu.searchParams.set('clientName', nm);
+                tu.searchParams.set('name', nm);
+                try{ sessionStorage.setItem('__portal_swterm_client_name_v1', nm); }catch(_){}
+              }
+              if(cid && cid !== 'available' && cid !== 'closed'){
+                tu.searchParams.set('clientId', cid);
+                try{ sessionStorage.setItem('__portal_swterm_client_id_v1', cid); }catch(_){}
+              }
+              target = tu.pathname + tu.search + tu.hash;
+            }catch(_){}
+            portalQuickMenuNavigate(target);
+            return;
+          }
           portalQuickMenuNavigate(u);
         }
         return;

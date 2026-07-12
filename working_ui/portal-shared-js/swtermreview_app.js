@@ -179,6 +179,11 @@ const LEVEL_DATA = {
       6: { animal: "Whale", badge: "Ocean Master", file: "level-6-whale.png" },
     };
     const SWIMMING_MASCOT_BASE = "portal/assets/swimming-mascots/";
+    const SWIMMING_STAGE_BG = {
+      "Swim Confidence": "portal/assets/swimming-stages/stage-1-world-bg.jpg",
+      "Swim Basic": "portal/assets/swimming-stages/stage-2-world-bg.jpg",
+      "Swim Structured": "portal/assets/swimming-stages/stage-3-world-bg.jpg",
+    };
 
     let selectedStage = "";
     let selectedLevel = 0;
@@ -1062,10 +1067,58 @@ const LEVEL_DATA = {
       const qs = new URLSearchParams(typeof location !== "undefined" && location.search ? location.search : "");
       return {
         name: decodeQsTerm(qs.get("name") || qs.get("clientName") || qs.get("client") || qs.get("swimmer") || ""),
+        clientId: decodeQsTerm(qs.get("clientId") || qs.get("client_id") || ""),
         date: decodeQsTerm(qs.get("date") || qs.get("reviewDate") || ""),
         term: decodeQsTerm(qs.get("term") || ""),
         instructor: decodeQsTerm(qs.get("instructor") || qs.get("instructorName") || ""),
       };
+    }
+
+    const SWTERM_CLIENT_NAME_KEY = "__portal_swterm_client_name_v1";
+    const SWTERM_CLIENT_ID_KEY = "__portal_swterm_client_id_v1";
+
+    function rememberSwtermParticipant(name, clientId){
+      const nm = String(name || "").replace(/\s+/g, " ").trim();
+      const cid = String(clientId || "").trim();
+      try{
+        if(nm) sessionStorage.setItem(SWTERM_CLIENT_NAME_KEY, nm);
+        if(cid) sessionStorage.setItem(SWTERM_CLIENT_ID_KEY, cid);
+      }catch(_){}
+    }
+
+    function readRememberedSwtermParticipant(){
+      try{
+        return {
+          name: String(sessionStorage.getItem(SWTERM_CLIENT_NAME_KEY) || "").replace(/\s+/g, " ").trim(),
+          clientId: String(sessionStorage.getItem(SWTERM_CLIENT_ID_KEY) || "").trim(),
+        };
+      }catch(_){
+        return { name: "", clientId: "" };
+      }
+    }
+
+    /** Participant name from the form, portal URL, or last portal client hand-off. */
+    function resolveParticipantName(){
+      const swimEl = document.getElementById("swimmerName");
+      const fromInput = swimEl ? String(swimEl.value || "").replace(/\s+/g, " ").trim() : "";
+      if(fromInput) return fromInput;
+      const fromUrl = parseDetailsFromUrl().name;
+      if(fromUrl) return fromUrl;
+      const remembered = readRememberedSwtermParticipant().name;
+      if(remembered) return remembered;
+      return "";
+    }
+
+    function ensureParticipantNameInField(){
+      const name = resolveParticipantName();
+      const swimEl = document.getElementById("swimmerName");
+      if(name && swimEl && !String(swimEl.value || "").trim()){
+        swimEl.value = name;
+        try{ swimEl.dispatchEvent(new Event("input", { bubbles: true })); }catch(_){}
+        try{ swimEl.dispatchEvent(new Event("change", { bubbles: true })); }catch(_){}
+      }
+      if(name) rememberSwtermParticipant(name, parseDetailsFromUrl().clientId || readRememberedSwtermParticipant().clientId);
+      return name;
     }
 
     function todayIsoSwterm(){
@@ -1109,6 +1162,7 @@ const LEVEL_DATA = {
 
     function applyDetailsFromUrlAndDefaults(){
       const p = parseDetailsFromUrl();
+      const remembered = readRememberedSwtermParticipant();
       const dateEl = document.getElementById("reviewDate");
       const termEl = document.getElementById("termSelect");
       const instEl = document.getElementById("instructorName");
@@ -1127,7 +1181,11 @@ const LEVEL_DATA = {
         }
       }
       if(instEl) instEl.value = (p.instructor || "").trim();
-      if(swimEl && p.name) swimEl.value = p.name;
+      const portalName = (p.name || remembered.name || "").trim();
+      if(swimEl && portalName && !String(swimEl.value || "").trim()){
+        swimEl.value = portalName;
+      }
+      if(portalName) rememberSwtermParticipant(portalName, p.clientId || remembered.clientId);
     }
 
     function syncDetailsReadonlyDisplay(){
@@ -1270,6 +1328,7 @@ const LEVEL_DATA = {
 
       function pickName(name){
         input.value = name;
+        rememberSwtermParticipant(name, "");
         closeList();
         try{ input.dispatchEvent(new Event("input", { bubbles: true })); }catch(_){}
         try{ input.dispatchEvent(new Event("change", { bubbles: true })); }catch(_){}
@@ -1532,7 +1591,7 @@ const LEVEL_DATA = {
     }
 
     function buildExecutiveTermReviewSummary(){
-      const swimmer = fieldValTerm("swimmerName").replace(/\s+/g, " ").trim();
+      const swimmer = ensureParticipantNameInField() || fieldValTerm("swimmerName").replace(/\s+/g, " ").trim();
       const firstName = swimmer.split(/\s+/)[0] || "The participant";
       const term = fieldValTerm("termSelect").trim();
       const stageLabel = selectedStage ? (STAGE_DISPLAY[selectedStage] || selectedStage) : "";
@@ -1686,7 +1745,7 @@ const LEVEL_DATA = {
       }
       lastTermSummarySections = buildTermReviewSummarySections();
       const executive = buildExecutiveTermReviewSummary();
-      const swimmer = fieldValTerm("swimmerName").replace(/\s+/g, " ").trim();
+      const swimmer = ensureParticipantNameInField() || fieldValTerm("swimmerName").replace(/\s+/g, " ").trim();
       const term = fieldValTerm("termSelect").trim();
       const reviewIso = fieldValTerm("reviewDate");
       const stageLabel = selectedStage ? (STAGE_DISPLAY[selectedStage] || selectedStage) : "—";
@@ -1742,7 +1801,8 @@ const LEVEL_DATA = {
     }
 
     const PDF_HEADER_LOGO_URL = "portal/Logo-CS-azul.png";
-    const PDF_CELEBRATION_LOGO_URL = "portal/Logo-CS-brand.png";
+    const PDF_CELEBRATION_LOGO_URL = "portal/Logo-CS-brand-tight.png";
+    const PDF_CELEBRATION_LOGO_FALLBACK = "portal/Logo-CS-azul.png";
     /** Landscape “Three stages · six levels” graphic for PDF under section 2 (no rotation). */
     const PDF_PROGRAMME_SW_URL_WWW = "portal/SWProgramme.png";
     const PDF_PROGRAMME_SW_URL_APEX = "portal/SWProgramme.png";
@@ -1905,7 +1965,11 @@ const LEVEL_DATA = {
     }
 
     function loadPdfCelebrationLogo(){
-      return fetchLogoAsDataUrl(PDF_CELEBRATION_LOGO_URL).catch(() => loadPdfHeaderLogo());
+      // Always prefer transparent PNG logos — never JPEG (JPEG has no alpha).
+      return fetchLogoAsDataUrl(PDF_CELEBRATION_LOGO_URL)
+        .catch(() => fetchLogoAsDataUrl(PDF_CELEBRATION_LOGO_FALLBACK))
+        .catch(() => fetchLogoAsDataUrl("portal/Logo-CS-brand.png"))
+        .catch(() => null);
     }
 
     function fetchImageAsDataUrl(url){
@@ -1916,14 +1980,32 @@ const LEVEL_DATA = {
     async function loadCelebrationVisualAssets(){
       const levelMascot = selectedLevel ? getSwimmingLevelMascot(selectedLevel) : null;
       const mascotUrl = levelMascot ? resolveSwimmingMascotSrc(levelMascot.file) : "";
-      const [logo, mascot, regulation, independence, engagement] = await Promise.all([
+      const stageBgUrl = selectedStage && SWIMMING_STAGE_BG[selectedStage]
+        ? SWIMMING_STAGE_BG[selectedStage]
+        : SWIMMING_STAGE_BG["Swim Confidence"];
+      const [
+        logo,
+        mascot,
+        stageBg,
+        regulation,
+        independence,
+        engagement,
+      ] = await Promise.all([
         loadPdfCelebrationLogo().catch(() => null),
         fetchImageAsDataUrl(mascotUrl),
+        fetchImageAsDataUrl(stageBgUrl),
         fetchImageAsDataUrl("portal/assets/core-areas/core-regulation-brain.png"),
         fetchImageAsDataUrl("portal/assets/core-areas/core-independence-rocket.png"),
         fetchImageAsDataUrl("portal/assets/core-areas/core-engagement-wave.png"),
       ]);
-      return { logo, mascot, regulation, independence, engagement };
+      return {
+        logo,
+        mascot,
+        stageBg,
+        regulation,
+        independence,
+        engagement,
+      };
     }
 
     function buildCelebrationHighlights(){
@@ -2009,7 +2091,7 @@ const LEVEL_DATA = {
     }
 
     function buildCelebrationCertificateContent(){
-      const swimmer = fieldValTerm("swimmerName").replace(/\s+/g, " ").trim();
+      const swimmer = ensureParticipantNameInField() || fieldValTerm("swimmerName").replace(/\s+/g, " ").trim();
       const term = fieldValTerm("termSelect").trim();
       const reviewIso = fieldValTerm("reviewDate");
       const instructor = fieldValTerm("instructorName").replace(/\s+/g, " ").trim();
@@ -2040,53 +2122,31 @@ const LEVEL_DATA = {
       const content = buildCelebrationCertificateContent();
       const visuals = assets || {};
       const logoDataUrl = visuals.logo || null;
-      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
       const pageW = doc.internal.pageSize.getWidth();
       const pageH = doc.internal.pageSize.getHeight();
-      const margin = 16;
+      const margin = 12;
       const maxW = pageW - margin * 2;
       const swimBlue = [45, 132, 179];
+      const swimBlueDeep = [18, 69, 107];
       const swimBlueSoft = [233, 243, 247];
       const swimGold = [244, 183, 64];
       const ink = [15, 23, 42];
       const muted = [91, 100, 115];
       const companyLine = "clubSENsational Ltd · 71-75 Shelton Street, Covent Garden, WC2H 9JQ, London";
+      const levelMascotMeta = selectedLevel ? getSwimmingLevelMascot(selectedLevel) : null;
+      const decision = getLevelProgressionDecisionValue();
+      const animalName = levelMascotMeta ? levelMascotMeta.animal : "";
+      const badgeName = levelMascotMeta ? levelMascotMeta.badge : "";
 
-      function drawWaveHeader(fillSoft){
-        doc.setFillColor(fillSoft[0], fillSoft[1], fillSoft[2]);
-        doc.rect(0, 0, pageW, 52, "F");
-        doc.setFillColor(swimBlue[0], swimBlue[1], swimBlue[2]);
-        doc.rect(0, 48, pageW, 4, "F");
-        doc.setDrawColor(255, 255, 255);
-        doc.setLineWidth(0.8);
-        for(let i = 0; i < 3; i++){
-          const waveY = 42 + i * 2.2;
-          doc.line(margin, waveY, pageW - margin, waveY);
-        }
-      }
-      function addImageCentered(dataUrl, y, maxLogoW, maxLogoH){
-        if(!dataUrl) return y;
-        try{
-          const fmt = dataUrl.includes("jpeg") || dataUrl.includes("JPEG") ? "JPEG" : "PNG";
-          const props = doc.getImageProperties(dataUrl);
-          const iw = props.width || 1;
-          const ih = props.height || 1;
-          let logoW = maxLogoW;
-          let logoH = (ih / iw) * logoW;
-          if(logoH > maxLogoH){
-            logoH = maxLogoH;
-            logoW = (iw / ih) * logoH;
-          }
-          doc.addImage(dataUrl, fmt, (pageW - logoW) / 2, y, logoW, logoH);
-          return y + logoH + 5;
-        }catch(_e){
-          return y;
-        }
+      function pngFmt(dataUrl){
+        if(!dataUrl) return "PNG";
+        return (dataUrl.includes("jpeg") || dataUrl.includes("JPEG") || dataUrl.includes("jpg")) ? "JPEG" : "PNG";
       }
       function addImageAt(dataUrl, x, y, maxWImg, maxHImg){
-        if(!dataUrl) return false;
+        if(!dataUrl) return { w: 0, h: 0 };
         try{
-          const fmt = dataUrl.includes("jpeg") || dataUrl.includes("JPEG") ? "JPEG" : "PNG";
+          const fmt = pngFmt(dataUrl);
           const props = doc.getImageProperties(dataUrl);
           const iw = props.width || 1;
           const ih = props.height || 1;
@@ -2097,279 +2157,349 @@ const LEVEL_DATA = {
             wImg = (iw / ih) * hImg;
           }
           doc.addImage(dataUrl, fmt, x, y, wImg, hImg);
-          return true;
+          return { w: wImg, h: hImg };
         }catch(_e){
-          return false;
+          return { w: 0, h: 0 };
         }
       }
+      function addCoverBackground(dataUrl){
+        if(!dataUrl){
+          doc.setFillColor(swimBlueSoft[0], swimBlueSoft[1], swimBlueSoft[2]);
+          doc.rect(0, 0, pageW, pageH, "F");
+          return;
+        }
+        try{
+          const fmt = pngFmt(dataUrl);
+          const props = doc.getImageProperties(dataUrl);
+          const iw = props.width || 1;
+          const ih = props.height || 1;
+          const scale = Math.max(pageW / iw, pageH / ih);
+          const wImg = iw * scale;
+          const hImg = ih * scale;
+          doc.addImage(dataUrl, fmt, (pageW - wImg) / 2, (pageH - hImg) / 2, wImg, hImg);
+        }catch(_e){
+          doc.setFillColor(swimBlueSoft[0], swimBlueSoft[1], swimBlueSoft[2]);
+          doc.rect(0, 0, pageW, pageH, "F");
+        }
+      }
+      function trySetOpacity(opacity){
+        try{
+          if(typeof doc.GState === "function"){
+            doc.setGState(new doc.GState({ opacity: opacity }));
+            return true;
+          }
+        }catch(_e){ /* ignore */ }
+        return false;
+      }
+      function resetOpacity(){
+        trySetOpacity(1);
+      }
 
-      /* ===== PAGE 1 — Certificate ===== */
-      drawWaveHeader(swimBlueSoft);
-      let y = 10;
-      y = addImageCentered(logoDataUrl, y, 52, 22);
-      if(y < 18) y = 18;
+      /* ===== PAGE 1 — Glass diploma over stage world ===== */
+      addCoverBackground(visuals.stageBg);
 
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
-      doc.text("SWIMMING TERM CELEBRATION CERTIFICATE", pageW / 2, y, { align: "center" });
-      y += 8;
+      if(trySetOpacity(0.16)){
+        doc.setFillColor(6, 28, 52);
+        doc.rect(0, 0, pageW, pageH, "F");
+        resetOpacity();
+      }
+
+      doc.setDrawColor(swimGold[0], swimGold[1], swimGold[2]);
+      doc.setLineWidth(2.2);
+      doc.roundedRect(5, 5, pageW - 10, pageH - 10, 7, 7, "S");
+      doc.setDrawColor(255, 255, 255);
+      doc.setLineWidth(0.9);
+      doc.roundedRect(8, 8, pageW - 16, pageH - 16, 5, 5, "S");
+
+      const cx = pageW / 2;
+      const displayName = content.swimmer || content.firstName || "Swimmer";
+      const metaParts = [];
+      if(content.stageLabel) metaParts.push(content.stageLabel);
+      if(content.term) metaParts.push(content.term);
+      else if(content.dateDisplay) metaParts.push(content.dateDisplay);
+      const metaLine = metaParts.join("  ·  ") || "Swimming journey";
+
+      const cardW = 168;
+      const cardH = 168;
+      const cardX = cx - cardW / 2;
+      const cardY = 14;
+      if(trySetOpacity(0.72)){
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(cardX, cardY, cardW, cardH, 12, 12, "F");
+        resetOpacity();
+      }else{
+        doc.setFillColor(248, 252, 255);
+        doc.roundedRect(cardX, cardY, cardW, cardH, 12, 12, "F");
+      }
+      doc.setDrawColor(swimGold[0], swimGold[1], swimGold[2]);
+      doc.setLineWidth(1.8);
+      doc.roundedRect(cardX + 3, cardY + 3, cardW - 6, cardH - 6, 10, 10, "S");
+      doc.setDrawColor(swimBlue[0], swimBlue[1], swimBlue[2]);
+      doc.setLineWidth(0.55);
+      doc.roundedRect(cardX + 6.5, cardY + 6.5, cardW - 13, cardH - 13, 8, 8, "S");
+
+      let y = cardY + 10;
+
+      if(logoDataUrl){
+        const logoBox = addImageAt(logoDataUrl, cx - 42, y, 84, 32);
+        y += Math.max(logoBox.h, 28) + 4;
+      }else{
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18);
+        doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
+        doc.text("clubSENsational", cx, y + 10, { align: "center" });
+        y += 18;
+      }
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(22);
-      doc.setTextColor(ink[0], ink[1], ink[2]);
-      const headlineLines = doc.splitTextToSize(content.headline, maxW - 10);
-      headlineLines.forEach(line => {
-        doc.text(line, pageW / 2, y, { align: "center" });
-        y += 9;
-      });
-      y += 1;
+      doc.setTextColor(swimBlueDeep[0], swimBlueDeep[1], swimBlueDeep[2]);
+      doc.text("Congratulations!", cx, y + 2, { align: "center" });
+      y += 9;
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(10);
+      doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
+      doc.text("for your effort and progress this term", cx, y, { align: "center" });
+      y += 6;
 
-      if(visuals.mascot){
-        doc.setFillColor(255, 255, 255);
-        doc.roundedRect((pageW - 42) / 2, y, 42, 36, 8, 8, "F");
-        addImageAt(visuals.mascot, (pageW - 30) / 2, y + 3, 30, 28);
-        y += 40;
-      }
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10.5);
-      doc.setTextColor(muted[0], muted[1], muted[2]);
-      const metaParts = [];
-      if(content.swimmer) metaParts.push(content.swimmer);
-      if(content.term) metaParts.push(content.term);
-      if(content.dateDisplay) metaParts.push(content.dateDisplay);
-      if(metaParts.length){
-        doc.text(metaParts.join("  ·  "), pageW / 2, y, { align: "center" });
-        y += 6;
-      }
-      const levelStage = [content.stageLabel, content.levelLabel].filter(Boolean).join("  ·  ");
-      if(levelStage){
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
-        doc.text(levelStage, pageW / 2, y, { align: "center" });
-        y += 8;
-      }else{
-        y += 4;
-      }
-
-      doc.setFillColor(255, 255, 255);
-      doc.setDrawColor(226, 232, 240);
-      doc.setLineWidth(0.35);
-      const paraBoxY = y;
-      const paraLines = doc.splitTextToSize(content.paragraph, maxW - 24);
-      const paraBoxH = paraLines.length * 5.8 + 14;
-      doc.roundedRect(margin, paraBoxY, maxW, paraBoxH, 5, 5, "FD");
-      doc.setFillColor(swimGold[0], swimGold[1], swimGold[2]);
-      doc.roundedRect(margin, paraBoxY, 3.5, paraBoxH, 1.5, 1.5, "F");
-      y = paraBoxY + 10;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(11);
-      doc.setTextColor(ink[0], ink[1], ink[2]);
-      paraLines.forEach(line => {
-        doc.text(line, margin + 10, y);
-        y += 5.8;
-      });
-      y = paraBoxY + paraBoxH + 10;
+      doc.setDrawColor(swimGold[0], swimGold[1], swimGold[2]);
+      doc.setLineWidth(1.1);
+      doc.line(cx - 34, y, cx + 34, y);
+      y += 9;
 
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
-      doc.text("This term we celebrated:", margin + 2, y);
-      y += 8;
-
-      content.highlights.forEach(item => {
-        doc.setFillColor(swimBlueSoft[0], swimBlueSoft[1], swimBlueSoft[2]);
-        doc.setDrawColor(200, 225, 235);
-        const lines = doc.splitTextToSize(item, maxW - 22);
-        const rowH = Math.max(10, lines.length * 5.2 + 5);
-        doc.roundedRect(margin, y - 4, maxW, rowH, 3, 3, "FD");
-        doc.setFillColor(swimGold[0], swimGold[1], swimGold[2]);
-        doc.circle(margin + 6, y + 1.5, 1.6, "F");
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(10.5);
-        doc.setTextColor(ink[0], ink[1], ink[2]);
-        lines.forEach((line, idx) => {
-          doc.text(line, margin + 11, y + idx * 5.2);
-        });
-        y += rowH + 3;
+      doc.setFontSize(displayName.length > 20 ? 14 : 18);
+      doc.setTextColor(ink[0], ink[1], ink[2]);
+      const nameLines = doc.splitTextToSize(displayName, cardW - 24);
+      nameLines.slice(0, 2).forEach(function(line){
+        doc.text(line, cx, y, { align: "center" });
+        y += displayName.length > 20 ? 6.5 : 8;
       });
+      y += 2;
 
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
+      const stageLines = doc.splitTextToSize(metaLine, cardW - 22);
+      stageLines.slice(0, 2).forEach(function(line){
+        doc.text(line, cx, y, { align: "center" });
+        y += 5;
+      });
       y += 4;
-      doc.setFillColor(248, 250, 252);
-      const nextLines = doc.splitTextToSize(content.nextSteps, maxW - 24);
-      const nextBoxH = nextLines.length * 5.6 + 16;
-      if(y + nextBoxH < pageH - 28){
-        doc.roundedRect(margin, y, maxW, nextBoxH, 5, 5, "F");
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(11);
-        doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
-        doc.text("Looking ahead", margin + 10, y + 8);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(10.5);
-        doc.setTextColor(muted[0], muted[1], muted[2]);
-        let ny = y + 14;
-        nextLines.forEach(line => {
-          doc.text(line, margin + 10, ny);
-          ny += 5.6;
-        });
-        y += nextBoxH + 10;
-      }
 
-      if(content.instructor){
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(10);
-        doc.setTextColor(ink[0], ink[1], ink[2]);
-        doc.text("Reviewed by: " + content.instructor, pageW / 2, Math.min(y, pageH - 22), { align: "center" });
+      const heroMax = 52;
+      const framePad = 5;
+      const frameW = heroMax + framePad * 2;
+      const frameH = heroMax + framePad * 2;
+      const frameX = cx - frameW / 2;
+      const frameY = y;
+      doc.setFillColor(248, 251, 253);
+      doc.roundedRect(frameX, frameY, frameW, frameH, 8, 8, "F");
+      doc.setDrawColor(swimGold[0], swimGold[1], swimGold[2]);
+      doc.setLineWidth(2.2);
+      doc.roundedRect(frameX, frameY, frameW, frameH, 8, 8, "S");
+      doc.setDrawColor(244, 170, 40);
+      doc.setLineWidth(0.6);
+      doc.roundedRect(frameX + 2.5, frameY + 2.5, frameW - 5, frameH - 5, 6, 6, "S");
+      if(visuals.mascot){
+        addImageAt(visuals.mascot, cx - heroMax / 2, frameY + framePad, heroMax, heroMax);
       }
-      doc.setFont("helvetica", "normal");
+      y = frameY + frameH + 7;
+
+      doc.setDrawColor(swimGold[0], swimGold[1], swimGold[2]);
+      doc.setLineWidth(0.7);
+      doc.line(cx - 26, y, cx + 26, y);
+      y += 5;
+      doc.setFont("helvetica", "italic");
       doc.setFontSize(8);
       doc.setTextColor(muted[0], muted[1], muted[2]);
-      doc.text(companyLine, pageW / 2, pageH - 10, { align: "center" });
+      doc.text("Signed with pride", cx, y, { align: "center" });
+      y += 5;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
+      doc.text("clubSENsational Team", cx, y, { align: "center" });
 
-      /* ===== PAGE 2 — Term journey summary ===== */
+      /* ===== PAGE 2 — Full term story ===== */
       doc.addPage();
-      drawWaveHeader([248, 250, 252]);
-      y = 12;
-      y = addImageCentered(logoDataUrl, y, 44, 18);
+      doc.setFillColor(248, 251, 253);
+      doc.rect(0, 0, pageW, pageH, "F");
+
+      // Header band
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, pageW, 32, "F");
+      doc.setFillColor(swimBlue[0], swimBlue[1], swimBlue[2]);
+      doc.rect(0, 30, pageW, 3.5, "F");
+      doc.setFillColor(swimGold[0], swimGold[1], swimGold[2]);
+      doc.rect(0, 33.5, pageW, 1.2, "F");
+
+      if(logoDataUrl) addImageAt(logoDataUrl, margin, 6, 38, 16);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.setTextColor(swimBlueDeep[0], swimBlueDeep[1], swimBlueDeep[2]);
+      doc.text("Your swimming journey this term", pageW / 2, 15, { align: "center" });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      doc.setTextColor(muted[0], muted[1], muted[2]);
+      doc.text([content.swimmer, content.term, content.dateDisplay].filter(Boolean).join("  ·  "), pageW / 2, 23, { align: "center" });
+
+      y = 42;
+      const colGap = 10;
+      const leftW = (maxW - colGap) * 0.54;
+      const rightW = (maxW - colGap) * 0.46;
+      const leftX = margin;
+      const rightX = margin + leftW + colGap;
+
+      // Pathway card
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(200, 225, 235);
+      doc.setLineWidth(0.5);
+      doc.roundedRect(leftX, y, leftW, 46, 7, 7, "FD");
+      if(visuals.mascot) addImageAt(visuals.mascot, leftX + 8, y + 6, 34, 34);
+      const pathTextX = leftX + (visuals.mascot ? 48 : 10);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
       doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
-      doc.text("YOUR SWIMMING JOURNEY THIS TERM", pageW / 2, y, { align: "center" });
-      y += 8;
+      doc.text("PATHWAY", pathTextX, y + 12);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(16);
+      doc.setFontSize(13);
       doc.setTextColor(ink[0], ink[1], ink[2]);
-      doc.text(content.swimmer || "Swimmer", pageW / 2, y, { align: "center" });
-      y += 7;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.setTextColor(muted[0], muted[1], muted[2]);
-      doc.text([content.term, content.dateDisplay].filter(Boolean).join("  ·  ") || "Term review", pageW / 2, y, { align: "center" });
-      y += 10;
-
-      /* Stage + level card with mascot */
-      doc.setFillColor(255, 255, 255);
-      doc.setDrawColor(200, 225, 235);
-      doc.roundedRect(margin, y, maxW, 42, 6, 6, "FD");
-      if(visuals.mascot){
-        addImageAt(visuals.mascot, margin + 8, y + 5, 28, 32);
-      }
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
-      doc.text("Pathway", margin + 42, y + 12);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.setTextColor(ink[0], ink[1], ink[2]);
-      doc.text(content.stageLabel || "Stage to be confirmed", margin + 42, y + 20);
+      doc.text(content.stageLabel || "Stage to be confirmed", pathTextX, y + 22);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(11);
       doc.setTextColor(muted[0], muted[1], muted[2]);
-      const levelBadge = content.levelLabel || "Level to be confirmed";
-      const levelMascot = selectedLevel ? getSwimmingLevelMascot(selectedLevel) : null;
-      doc.text(levelBadge + (levelMascot ? "  ·  " + levelMascot.badge : ""), margin + 42, y + 28);
-      const decision = getLevelProgressionDecisionValue();
+      doc.text(
+        ("Level " + (selectedLevel || "—") + (animalName ? " · " + animalName : "") + (badgeName ? " · " + badgeName : "")),
+        pathTextX,
+        y + 31,
+      );
       if(decision){
         doc.setFont("helvetica", "bold");
         doc.setFontSize(10);
         doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
-        doc.text("Decision: " + decision, margin + 42, y + 36);
+        doc.text("Decision: " + decision, pathTextX, y + 40);
       }
-      y += 50;
 
-      /* Core development strip */
+      let ly = y + 54;
+      const paraLines = doc.splitTextToSize(content.paragraph, leftW - 18);
+      const paraH = paraLines.length * 5.2 + 16;
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(leftX, ly, leftW, paraH, 7, 7, "FD");
+      doc.setFillColor(swimGold[0], swimGold[1], swimGold[2]);
+      doc.roundedRect(leftX, ly, 4, paraH, 1.5, 1.5, "F");
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10.5);
+      doc.setTextColor(ink[0], ink[1], ink[2]);
+      let py = ly + 10;
+      paraLines.forEach(function(line){
+        doc.text(line, leftX + 10, py);
+        py += 5.2;
+      });
+      ly += paraH + 8;
+
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
+      doc.setFontSize(12);
       doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
-      doc.text("Development this term", margin + 2, y);
-      y += 6;
+      doc.text("This term we celebrated", leftX + 1, ly);
+      ly += 6;
+      content.highlights.slice(0, 5).forEach(function(item){
+        const lines = doc.splitTextToSize(item, leftW - 16);
+        const rowH = Math.max(11, lines.length * 4.6 + 6);
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(210, 230, 238);
+        doc.roundedRect(leftX, ly, leftW, rowH, 5, 5, "FD");
+        doc.setFillColor(swimGold[0], swimGold[1], swimGold[2]);
+        doc.circle(leftX + 7, ly + rowH / 2, 1.6, "F");
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9.5);
+        doc.setTextColor(ink[0], ink[1], ink[2]);
+        lines.forEach(function(line, idx){
+          doc.text(line, leftX + 12, ly + 5.5 + idx * 4.6);
+        });
+        ly += rowH + 3.5;
+      });
+
+      // Right column
+      let ry = y;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
+      doc.text("Development this term", rightX + 1, ry);
+      ry += 6;
       const domainCards = [
         { title: "Regulation", res: computeDomainResult("regulation"), img: visuals.regulation },
         { title: "Independence", res: computeDomainResult("independence"), img: visuals.independence },
         { title: "Engagement", res: computeDomainResult("engagement"), img: visuals.engagement },
       ];
-      const cardW = (maxW - 8) / 3;
-      domainCards.forEach((d, i) => {
-        const x = margin + i * (cardW + 4);
-        doc.setFillColor(250, 247, 252);
+      const dW = (rightW - 8) / 3;
+      domainCards.forEach(function(d, i){
+        const x = rightX + i * (dW + 4);
+        doc.setFillColor(255, 255, 255);
         doc.setDrawColor(226, 214, 240);
-        doc.roundedRect(x, y, cardW, 38, 4, 4, "FD");
-        if(d.img) addImageAt(d.img, x + (cardW - 16) / 2, y + 3, 16, 14);
+        doc.roundedRect(x, ry, dW, 48, 6, 6, "FD");
+        if(d.img) addImageAt(d.img, x + (dW - 18) / 2, ry + 4, 18, 16);
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(9);
+        doc.setFontSize(8.5);
         doc.setTextColor(91, 45, 122);
-        doc.text(d.title, x + cardW / 2, y + 22, { align: "center" });
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-        doc.setTextColor(ink[0], ink[1], ink[2]);
-        const status = d.res.answered > 0 ? d.res.label : "Growing";
-        doc.text(status, x + cardW / 2, y + 30, { align: "center" });
-      });
-      y += 46;
-
-      /* What we celebrated */
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
-      doc.text("What we celebrated in the water", margin + 2, y);
-      y += 7;
-      content.highlights.slice(0, 4).forEach(item => {
-        const lines = doc.splitTextToSize("•  " + item, maxW - 6);
-        doc.setFont("helvetica", "normal");
+        doc.text(d.title, x + dW / 2, ry + 28, { align: "center" });
+        doc.setFont("helvetica", "bold");
         doc.setFontSize(10);
         doc.setTextColor(ink[0], ink[1], ink[2]);
-        lines.forEach(line => {
-          doc.text(line, margin + 2, y);
-          y += 5.2;
-        });
-        y += 1.5;
+        doc.text(d.res.answered > 0 ? d.res.label : "Growing", x + dW / 2, ry + 38, { align: "center" });
       });
-      y += 4;
+      ry += 56;
 
-      /* Educational note */
-      doc.setFillColor(swimBlueSoft[0], swimBlueSoft[1], swimBlueSoft[2]);
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(200, 225, 235);
       const edu = "Our swimming programme grows through three stages and six adaptive levels. Progress is individual — celebrating regulation, independence and engagement alongside aquatic skills.";
-      const eduLines = doc.splitTextToSize(edu, maxW - 16);
-      const eduH = eduLines.length * 5.2 + 14;
-      doc.roundedRect(margin, y, maxW, eduH, 5, 5, "F");
+      const eduLines = doc.splitTextToSize(edu, rightW - 16);
+      const eduH = eduLines.length * 5 + 20;
+      doc.roundedRect(rightX, ry, rightW, eduH, 7, 7, "FD");
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
+      doc.setFontSize(10.5);
       doc.setTextColor(swimBlue[0], swimBlue[1], swimBlue[2]);
-      doc.text("About the clubSENsational Swimming Journey", margin + 8, y + 8);
+      doc.text("About the clubSENsational Swimming Journey", rightX + 8, ry + 10);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9.5);
       doc.setTextColor(muted[0], muted[1], muted[2]);
-      let ey = y + 14;
-      eduLines.forEach(line => {
-        doc.text(line, margin + 8, ey);
-        ey += 5.2;
+      let ey = ry + 18;
+      eduLines.forEach(function(line){
+        doc.text(line, rightX + 8, ey);
+        ey += 5;
       });
-      y += eduH + 10;
+      ry += eduH + 8;
 
       doc.setFillColor(255, 248, 230);
-      const next2 = doc.splitTextToSize(content.nextSteps, maxW - 16);
-      const next2H = next2.length * 5.2 + 14;
-      if(y + next2H < pageH - 20){
-        doc.roundedRect(margin, y, maxW, next2H, 5, 5, "F");
+      doc.setDrawColor(244, 183, 64);
+      const nextLines = doc.splitTextToSize(content.nextSteps, rightW - 16);
+      const nextH = nextLines.length * 5 + 22;
+      doc.roundedRect(rightX, ry, rightW, nextH, 7, 7, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10.5);
+      doc.setTextColor(154, 107, 18);
+      doc.text("Looking ahead / Next term", rightX + 8, ry + 10);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      doc.setTextColor(ink[0], ink[1], ink[2]);
+      let ny = ry + 18;
+      nextLines.forEach(function(line){
+        doc.text(line, rightX + 8, ny);
+        ny += 5;
+      });
+      ry += nextH + 10;
+
+      if(content.instructor){
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(10);
-        doc.setTextColor(154, 107, 18);
-        doc.text("Next term", margin + 8, y + 8);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9.5);
+        doc.setFontSize(10.5);
         doc.setTextColor(ink[0], ink[1], ink[2]);
-        let ny2 = y + 14;
-        next2.forEach(line => {
-          doc.text(line, margin + 8, ny2);
-          ny2 += 5.2;
-        });
+        doc.text("Reviewed by: " + content.instructor, rightX + 1, Math.min(ry + 2, pageH - 16));
       }
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
       doc.setTextColor(muted[0], muted[1], muted[2]);
-      doc.text(companyLine + " · www.clubsensational.org", pageW / 2, pageH - 10, { align: "center" });
+      doc.text(companyLine + " · www.clubsensational.org", pageW / 2, pageH - 7, { align: "center" });
 
       const saveStem = content.swimmer
         ? pdfSafeFilenameStem(content.swimmer + " Term Celebration Certificate")
@@ -2917,7 +3047,7 @@ const LEVEL_DATA = {
               const reviewBlob = new Blob([reviewBytes], { type: "application/pdf" });
               const auth = await docsMod.portalRequireUser();
               const reviewIso = fieldValTerm("reviewDate") || new Date().toISOString().slice(0, 10);
-              const swimmer = fieldValTerm("swimmerName").replace(/\s+/g, " ").trim();
+              const swimmer = ensureParticipantNameInField() || fieldValTerm("swimmerName").replace(/\s+/g, " ").trim();
               const poss = englishPossessive(swimmer);
               const reviewTitle = poss ? poss + " Swimming Term Review" : "Swimming Term Review";
               await docsMod.portalUploadPdfAndCreateDocument({
@@ -2947,9 +3077,17 @@ const LEVEL_DATA = {
         if(certBtn){
           certBtn.addEventListener("click", async function(){
             const btn = this;
-            const swimmer = fieldValTerm("swimmerName").replace(/\s+/g, " ").trim();
+            const swimmer = ensureParticipantNameInField();
             if(!swimmer){
-              alert("Please enter the participant's name before generating the certificate.");
+              const swimEl = document.getElementById("swimmerName");
+              const card = document.getElementById("cardDetails");
+              if(card && typeof card.scrollIntoView === "function"){
+                card.scrollIntoView({ behavior: "smooth", block: "start" });
+              }
+              if(swimEl){
+                try{ swimEl.focus(); }catch(_){}
+              }
+              alert("Select the participant at the top first — type a letter to search the portal list, then generate the certificate.");
               return;
             }
             btn.disabled = true;
