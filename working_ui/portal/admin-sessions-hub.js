@@ -5,7 +5,7 @@
 (function (global) {
   "use strict";
 
-  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260707-roberto-venues";
+  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260712-emmanuel-victor";
   // Optional "Notes" (relevant_information) only became a genuinely separate,
   // worker-written optional field on 7 Jul 2026. Before that date,
   // relevant_information was the AI "internal relevant" split of the feedback and
@@ -3596,7 +3596,10 @@
         var endPart = b.indexOf(" to ") >= 0 ? b.split(" to ").pop() : b;
         merged.time_slot = startPart + " to " + endPart;
         var pt = parseTimeSlot(merged.time_slot, rep.day);
-        merged.time_start = pt.start;
+        if (pt) {
+          if (pt.start) merged.time_start = pt.start;
+          if (pt.end) merged.time_end = pt.end;
+        }
       }
     }
     var allInst = mergeSlotInstructorLabels(slots);
@@ -6624,7 +6627,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         continue;
       }
       if (!hub.feedbackUnitResolved(unit)) {
-        out.push({ _ashAwaitingSlot: true, slot: rep });
+        var awaitRep =
+          typeof pickOverviewRepresentativeSlot === "function"
+            ? pickOverviewRepresentativeSlot(hub, { key: unit.key, slots: slots })
+            : pickRepresentativeSlotForUnit({ key: unit.key, slots: slots });
+        out.push({ _ashAwaitingSlot: true, slot: awaitRep || rep });
       }
     }
 

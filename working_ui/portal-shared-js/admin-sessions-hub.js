@@ -2771,7 +2771,10 @@
       var endPart = b.indexOf(" to ") >= 0 ? b.split(" to ").pop() : b;
       merged.time_slot = startPart + " to " + endPart;
       var pt = parseTimeSlot(merged.time_slot, rep.day);
-      merged.time_start = pt.start;
+      if (pt) {
+        if (pt.start) merged.time_start = pt.start;
+        if (pt.end) merged.time_end = pt.end;
+      }
     }
     return merged;
   }

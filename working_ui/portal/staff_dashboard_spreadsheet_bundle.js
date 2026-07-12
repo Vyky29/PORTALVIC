@@ -11286,6 +11286,16 @@
       "session_date": "2026-07-10"
     },
     {
+      "client_name": "Emmanuel",
+      "day": "Friday",
+      "instructors": "VICTOR",
+      "service": "Day Centre",
+      "area": "Hub Room",
+      "time_slot": "1 to 3",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-10"
+    },
+    {
       "client_name": "Ikram",
       "day": "Friday",
       "instructors": "LULIYA",
