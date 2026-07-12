@@ -1,6 +1,6 @@
 .portal-staff-wa-admin__layout{
   display:grid;
-  grid-template-columns:minmax(160px,220px) minmax(0,1fr);
+  grid-template-columns:minmax(200px,280px) minmax(0,1fr);
   gap:12px;
   min-height:420px;
   min-width:0;
@@ -21,8 +21,8 @@
 .portal-staff-wa-admin__person{
   display:flex;
   flex-direction:column;
-  align-items:flex-start;
-  gap:2px;
+  align-items:stretch;
+  gap:4px;
   width:100%;
   min-width:0;
   text-align:left;
@@ -32,14 +32,16 @@
   background:#fff;
   cursor:pointer;
   font:inherit;
+  box-sizing:border-box;
 }
 .portal-staff-wa-admin__person strong{
   font-size:13px;
   overflow-wrap:break-word;
+  min-width:0;
 }
 .portal-staff-wa-admin__person.is-active{
-  border-color:rgba(37,211,102,.55);
-  background:#f0fdf4;
+  border-color:rgba(244,183,64,.65);
+  background:#fff8e6;
 }
 .portal-staff-wa-admin__warn{ color:#b45309; font-size:11px; font-weight:700; }
 .portal-staff-wa-admin__count{
@@ -51,28 +53,81 @@
   font-weight:700;
 }
 .portal-staff-wa-admin__person--unread{
-  border-color:rgba(22,163,74,.55);
-  border-left:4px solid #16a34a;
-  background:rgba(220,252,231,.55);
+  border-color:rgba(244,183,64,.55);
+  border-left:4px solid #f4b740;
+  background:rgba(255,248,230,.75);
 }
 .portal-staff-wa-admin__person-row{
   display:flex;
-  align-items:center;
+  align-items:flex-start;
   justify-content:space-between;
-  gap:8px;
+  gap:10px;
   width:100%;
   min-width:0;
 }
-.portal-staff-wa-admin__person-row strong{
+.portal-staff-wa-admin__person-main{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:4px;
   min-width:0;
+  flex:1 1 auto;
+}
+.portal-staff-wa-admin__person-main strong{
+  min-width:0;
+  overflow-wrap:break-word;
+}
+.portal-staff-wa-admin__avatar{
+  flex:0 0 auto;
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  overflow:hidden;
+  background:#eef2f7;
+  border:1px solid rgba(15,23,42,.08);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.portal-staff-wa-admin__avatar img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+.portal-staff-wa-admin__avatar-fallback{
+  font-size:12px;
+  font-weight:800;
+  color:#334155;
+  letter-spacing:.02em;
+}
+.portal-staff-wa-admin__roles{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:3px;
+  width:100%;
+  min-width:0;
+}
+.portal-staff-wa-admin__role-chip{
+  display:inline-flex;
+  max-width:100%;
+  padding:2px 8px;
+  border-radius:999px;
+  background:#eaf5fb;
+  color:#1e3a5f;
+  border:1px solid rgba(45,132,179,.22);
+  font-size:10px;
+  font-weight:700;
+  line-height:1.25;
   overflow-wrap:break-word;
 }
 .portal-staff-wa-admin__unread-chip{
   flex-shrink:0;
   padding:2px 7px;
   border-radius:999px;
-  background:#16a34a;
-  color:#fff;
+  background:#f4b740;
+  color:#173247;
   font-size:10px;
   font-weight:800;
   letter-spacing:.02em;

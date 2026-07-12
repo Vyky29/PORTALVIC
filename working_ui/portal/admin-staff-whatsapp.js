@@ -208,6 +208,99 @@
     btn.classList.toggle("is-recording", !!recording);
   }
 
+  function staffProfileForUsername(username) {
+    var key = String(username || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "");
+    var src =
+      (typeof global !== "undefined" &&
+        global.STAFF_DASHBOARD_SOURCE &&
+        global.STAFF_DASHBOARD_SOURCE.staffProfiles) ||
+      {};
+    if (src[key]) return { key: key, profile: src[key] };
+    if (key === "luliya" && src.lulia) return { key: "lulia", profile: src.lulia };
+    if (key === "lulia" && src.luliya) return { key: "luliya", profile: src.luliya };
+    return { key: key, profile: null };
+  }
+
+  function displayNameForStaff(l) {
+    var key = String((l && l.username) || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "");
+    if (key === "berta") return "Berta Trapero";
+    var raw = String((l && (l.displayName || l.username)) || "").trim();
+    if (key === "berta" || /berta\s+trapero/i.test(raw)) {
+      return "Berta Trapero";
+    }
+    return raw || String((l && l.username) || "");
+  }
+
+  function roleChipsForStaff(l) {
+    var info = staffProfileForUsername(l && l.username);
+    var prof = info.profile || {};
+    var tracks = [];
+    if (Array.isArray(prof.staffRoleTracks) && prof.staffRoleTracks.length) {
+      tracks = prof.staffRoleTracks.slice();
+    } else if (prof.staffRoleTrack) {
+      tracks = [prof.staffRoleTrack];
+    }
+    var hasSupport = false;
+    var hasSwim = false;
+    var hasLead = false;
+    tracks.forEach(function (t) {
+      var k = String(t || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[\s_-]+/g, "");
+      if (k === "support" || k === "supportlead") hasSupport = true;
+      if (k === "supportlead") hasLead = true;
+      if (k === "swimming" || k === "swim") hasSwim = true;
+    });
+    if (
+      info.key === "john" ||
+      info.key === "berta" ||
+      info.key === "michelle" ||
+      info.key === "victor" ||
+      info.key === "raul" ||
+      info.key === "javi"
+    ) {
+      hasLead = true;
+    }
+    if (hasLead && !hasSupport && (info.key === "john" || info.key === "berta" || info.key === "michelle")) {
+      hasSupport = true;
+    }
+    var chips = [];
+    if (hasSupport) chips.push("Support Worker");
+    if (hasLead) chips.push("Leader");
+    if (hasSwim) chips.push("Swimming Instructor");
+    return chips;
+  }
+
+  function photoUrlForStaff(l) {
+    var info = staffProfileForUsername(l && l.username);
+    var file = info.profile && info.profile.avatarFile;
+    if (file) {
+      var path = String(file).replace(/^\//, "");
+      return "/" + path;
+    }
+    var key = info.key || "staff";
+    return "/portal/staff_photos/" + key + ".png";
+  }
+
+  function initialsForStaff(name) {
+    var parts = String(name || "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (!parts.length) return "?";
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  }
+
   function viewHtml() {
     return (
       '<div class="portal-staff-wa-admin" id="portalStaffWaAdmin">' +
@@ -216,7 +309,7 @@
       '<div class="portal-staff-wa-admin__layout">' +
       '<aside class="portal-staff-wa-admin__list" id="portalStaffWaDir"></aside>' +
       '<section class="portal-staff-wa-admin__chat">' +
-      '<div class="portal-staff-wa-admin__chat-head" id="portalStaffWaHead">Select a leader</div>' +
+      '<div class="portal-staff-wa-admin__chat-head" id="portalStaffWaHead">Select a staff member</div>' +
       '<div class="portal-staff-wa-admin__thread" id="portalStaffWaMsgs"></div>' +
       '<form class="portal-staff-wa-admin__composer" id="portalStaffWaForm">' +
       '<div class="portal-staff-wa-admin__tools">' +
@@ -243,8 +336,7 @@
     var total = state.directory.length;
     el.textContent =
       total +
-      " leader" +
-      (total === 1 ? "" : "s") +
+      " staff" +
       (unread ? " · " + unread + " unread" : "");
     el.classList.toggle("portal-staff-wa-admin__count--has-unread", unread > 0);
   }
@@ -253,7 +345,7 @@
     var host = document.getElementById("portalStaffWaDir");
     if (!host) return;
     if (!state.directory.length) {
-      host.innerHTML = '<p class="muted">No leaders found.</p>';
+      host.innerHTML = '<p class="muted">No staff found.</p>';
       renderCount();
       return;
     }
@@ -261,16 +353,15 @@
       var ua = isLeaderUnread(a) ? 1 : 0;
       var ub = isLeaderUnread(b) ? 1 : 0;
       if (ua !== ub) return ub - ua;
-      return String(a.displayName || a.username).localeCompare(
-        String(b.displayName || b.username),
-        undefined,
-        { sensitivity: "base" }
-      );
+      return displayNameForStaff(a).localeCompare(displayNameForStaff(b), undefined, {
+        sensitivity: "base",
+      });
     });
     host.innerHTML = sorted
       .map(function (l) {
         var active = state.selected === l.username ? " is-active" : "";
         var unread = isLeaderUnread(l);
+        var name = displayNameForStaff(l);
         var phone = l.hasPhone
           ? '<span class="muted">WhatsApp on file</span>'
           : '<span class="portal-staff-wa-admin__warn">No phone</span>';
@@ -279,6 +370,20 @@
             esc(l.lastInboundPreview) +
             "</span>"
           : "";
+        var roles = roleChipsForStaff(l);
+        var rolesHtml = roles.length
+          ? '<span class="portal-staff-wa-admin__roles">' +
+            roles
+              .map(function (r) {
+                return (
+                  '<span class="portal-staff-wa-admin__role-chip">' + esc(r) + "</span>"
+                );
+              })
+              .join("") +
+            "</span>"
+          : "";
+        var photo = photoUrlForStaff(l);
+        var initials = initialsForStaff(name);
         return (
           '<button type="button" class="portal-staff-wa-admin__person' +
           active +
@@ -287,12 +392,23 @@
           esc(l.username) +
           '">' +
           '<span class="portal-staff-wa-admin__person-row">' +
+          '<span class="portal-staff-wa-admin__person-main">' +
           "<strong>" +
-          esc(l.displayName || l.username) +
+          esc(name) +
           "</strong>" +
           (unread
             ? '<span class="portal-staff-wa-admin__unread-chip">Unread</span>'
             : "") +
+          rolesHtml +
+          "</span>" +
+          '<span class="portal-staff-wa-admin__avatar" aria-hidden="true">' +
+          '<img src="' +
+          esc(photo) +
+          '" alt="" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false" />' +
+          '<span class="portal-staff-wa-admin__avatar-fallback" hidden>' +
+          esc(initials) +
+          "</span>" +
+          "</span>" +
           "</span>" +
           phone +
           preview +
@@ -371,12 +487,12 @@
         return l.username === state.selected;
       });
       head.textContent = lead
-        ? (lead.displayName || lead.username) + (lead.hasPhone ? "" : " — add phone_e164 first")
-        : "Select a leader";
+        ? displayNameForStaff(lead) + (lead.hasPhone ? "" : " — add phone_e164 first")
+        : "Select a staff member";
     }
     if (!host) return;
     if (!state.selected) {
-      host.innerHTML = '<p class="muted">Choose a leader on the left.</p>';
+      host.innerHTML = '<p class="muted">Choose a staff member on the left.</p>';
       return;
     }
     if (state.loading) {
@@ -390,7 +506,7 @@
     host.innerHTML = state.messages
       .map(function (m) {
         var dir = m.direction === "inbound" ? "in" : "out";
-        var who = dir === "in" ? "Leader" : "Admin";
+        var who = dir === "in" ? "Staff" : "Admin";
         var bodyStr = String(m.body_text || "");
         var isPlaceholder =
           !!m.media_url && /^\[(sticker|image|video|audio|document)\]$/i.test(bodyStr.trim());
@@ -424,7 +540,7 @@
     var res = await api("portal-staff-messages-list", { directory: true });
     if (!res.ok) {
       if (!opts.silent) {
-        cfg.toast("Could not load leaders: " + ((res.data && res.data.error) || res.status));
+        cfg.toast("Could not load staff: " + ((res.data && res.data.error) || res.status));
       }
       return;
     }
@@ -443,7 +559,7 @@
       var names = state.directory
         .filter(isLeaderUnread)
         .map(function (l) {
-          return l.displayName || l.username;
+          return displayNameForStaff(l);
         })
         .slice(0, 3);
       cfg.toast(
