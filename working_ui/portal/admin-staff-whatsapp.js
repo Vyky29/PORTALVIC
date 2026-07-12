@@ -333,7 +333,7 @@
   function viewHtml() {
     return (
       '<div class="portal-staff-wa-admin" id="portalStaffWaAdmin">' +
-      '<p class="page-intro">CS WhatsApp with staff. Messages also appear on their staff dashboard under their name.</p>' +
+      '<p class="page-intro">CS WhatsApp with staff. Outbound shows WhatsApp delivery/read and whether they opened the portal chat. Staff replies are labelled <strong>Via portal CS WhatsApp</strong> or <strong>Via WhatsApp app</strong>.</p>' +
       '<p class="portal-staff-wa-admin__count muted" id="portalStaffWaCount"></p>' +
       '<div class="portal-staff-wa-admin__layout">' +
       '<aside class="portal-staff-wa-admin__list" id="portalStaffWaDir"></aside>' +
@@ -637,6 +637,53 @@
           bodyStr && !isPlaceholder
             ? '<div class="portal-staff-wa-admin__body">' + esc(bodyStr) + "</div>"
             : "";
+        var chips = [];
+        if (dir === "out") {
+          var deliv = String(m.delivery_label || "").trim();
+          if (!deliv && m.whatsapp_status) deliv = String(m.whatsapp_status);
+          if (deliv) {
+            var st = String(m.whatsapp_status || "").toLowerCase();
+            var delivCls =
+              st === "read"
+                ? " is-read"
+                : st === "failed"
+                  ? " is-failed"
+                  : st === "delivered"
+                    ? " is-delivered"
+                    : "";
+            chips.push(
+              '<span class="portal-staff-wa-admin__chip' +
+                delivCls +
+                '">' +
+                esc(deliv) +
+                "</span>"
+            );
+          }
+          if (m.seen_in_portal) {
+            chips.push(
+              '<span class="portal-staff-wa-admin__chip is-portal">Seen in portal</span>'
+            );
+          } else if (
+            deliv &&
+            String(m.whatsapp_status || "").toLowerCase() !== "failed" &&
+            String(m.whatsapp_status || "").toLowerCase() !== "read"
+          ) {
+            chips.push(
+              '<span class="portal-staff-wa-admin__chip is-muted">Not opened in portal</span>'
+            );
+          }
+        } else {
+          var src = String(m.reply_source || "").toLowerCase();
+          if (src === "portal") {
+            chips.push(
+              '<span class="portal-staff-wa-admin__chip is-portal">Via portal CS WhatsApp</span>'
+            );
+          } else {
+            chips.push(
+              '<span class="portal-staff-wa-admin__chip is-wa">Via WhatsApp app</span>'
+            );
+          }
+        }
         return (
           '<div class="portal-staff-wa-admin__bubble portal-staff-wa-admin__bubble--' +
           dir +
@@ -645,8 +692,10 @@
           esc(who) +
           " · " +
           esc(formatTime(m.created_at)) +
-          (m.whatsapp_status ? " · " + esc(m.whatsapp_status) : "") +
           "</div>" +
+          (chips.length
+            ? '<div class="portal-staff-wa-admin__chips">' + chips.join("") + "</div>"
+            : "") +
           mediaHtml +
           bodyHtml +
           "</div>"

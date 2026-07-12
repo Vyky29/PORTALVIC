@@ -635,6 +635,13 @@
           esc(label) +
           " · " +
           esc(formatTime(m.created_at)) +
+          (dir === "in"
+            ? String(m.reply_source || "").toLowerCase() === "whatsapp"
+              ? " · via WhatsApp app"
+              : " · via portal"
+            : m.delivery_label
+              ? " · " + esc(m.delivery_label)
+              : "") +
           "</div>" +
           mediaHtml +
           bodyHtml +

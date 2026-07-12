@@ -37,7 +37,41 @@ type ThreadMessage = {
   media_mime?: string | null;
   media_url?: string | null;
   wa_message_id?: string | null;
+  /** inbound: where the staff replied from */
+  reply_source?: "portal" | "whatsapp" | null;
+  /** outbound: Meta WhatsApp read receipt */
+  read_on_whatsapp?: boolean;
+  /** outbound: staff opened CS WhatsApp in the portal after this message */
+  seen_in_portal?: boolean;
+  delivery_label?: string | null;
 };
+
+function resolveInboundReplySource(
+  meta: unknown,
+  waMessageId: string | null | undefined,
+): "portal" | "whatsapp" {
+  const m =
+    meta && typeof meta === "object" && !Array.isArray(meta)
+      ? (meta as Record<string, unknown>)
+      : {};
+  const src = String(m.source || "").trim().toLowerCase();
+  if (src === "staff_portal" || src === "portal") return "portal";
+  if (src === "whatsapp") return "whatsapp";
+  const wa = String(waMessageId || "");
+  if (wa.startsWith("app:staff:")) return "portal";
+  return "whatsapp";
+}
+
+function outboundDeliveryLabel(status: string | null | undefined): string {
+  const st = String(status || "").trim().toLowerCase();
+  if (st === "read") return "Read on WhatsApp";
+  if (st === "delivered") return "Delivered";
+  if (st === "sent") return "Sent";
+  if (st === "failed") return "Failed";
+  if (st === "pending") return "Sending…";
+  if (!st) return "Sent";
+  return st;
+}
 
 const MEDIA_BUCKET = "wa-inbound-media";
 const MEDIA_SIGNED_TTL = 3600;
@@ -252,7 +286,7 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
   let inboundQuery = admin
     .from("portal_staff_whatsapp_inbound")
     .select(
-      "id, created_at, body_text, message_type, media_path, media_mime, wa_message_id, from_phone, staff_profile_id",
+      "id, created_at, body_text, message_type, media_path, media_mime, wa_message_id, from_phone, staff_profile_id, meta",
     )
     .order("created_at", { ascending: true })
     .limit(limit);
@@ -264,7 +298,7 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
     const { data: inboundByPhone } = await admin
       .from("portal_staff_whatsapp_inbound")
       .select(
-        "id, created_at, body_text, message_type, media_path, media_mime, wa_message_id, from_phone, staff_profile_id",
+        "id, created_at, body_text, message_type, media_path, media_mime, wa_message_id, from_phone, staff_profile_id, meta",
       )
       .ilike("from_phone", `%${phone10}`)
       .order("created_at", { ascending: true })
@@ -280,12 +314,15 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
 
   const messages: ThreadMessage[] = [];
   (outboundRows || []).forEach((r) => {
+    const status = r.whatsapp_status != null ? String(r.whatsapp_status) : null;
     messages.push({
       id: `out:${r.id}`,
       direction: "outbound",
       created_at: String(r.created_at || ""),
       body_text: String(r.body_text || ""),
-      whatsapp_status: r.whatsapp_status != null ? String(r.whatsapp_status) : null,
+      whatsapp_status: status,
+      delivery_label: outboundDeliveryLabel(status),
+      read_on_whatsapp: String(status || "").toLowerCase() === "read",
       message_type: r.message_type != null ? String(r.message_type) : "text",
       media_path: r.media_path != null ? String(r.media_path) : null,
       media_mime: r.media_mime != null ? String(r.media_mime) : null,
@@ -293,6 +330,7 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
     });
   });
   inboundRows.forEach((r) => {
+    const waId = r.wa_message_id != null ? String(r.wa_message_id) : null;
     messages.push({
       id: `in:${r.id}`,
       direction: "inbound",
@@ -301,7 +339,8 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
       message_type: r.message_type != null ? String(r.message_type) : "text",
       media_path: r.media_path != null ? String(r.media_path) : null,
       media_mime: r.media_mime != null ? String(r.media_mime) : null,
-      wa_message_id: r.wa_message_id != null ? String(r.wa_message_id) : null,
+      wa_message_id: waId,
+      reply_source: resolveInboundReplySource(r.meta, waId),
     });
   });
   messages.sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
@@ -336,12 +375,23 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
   });
   if (markRead) unread_messages_count = 0;
 
-  const messagesWithFlags = messages.map((m) => ({
-    ...m,
-    is_unread:
+  const messagesWithFlags = messages.map((m) => {
+    const createdMs = new Date(String(m.created_at || 0)).getTime();
+    const seenInPortal =
       m.direction === "outbound" &&
-      new Date(String(m.created_at || 0)).getTime() > readMs,
-  }));
+      Number.isFinite(createdMs) &&
+      Number.isFinite(readMs) &&
+      readMs > new Date(READ_EPOCH).getTime() &&
+      createdMs <= readMs &&
+      String(m.whatsapp_status || "").toLowerCase() !== "failed";
+    return {
+      ...m,
+      seen_in_portal: m.direction === "outbound" ? seenInPortal : undefined,
+      is_unread:
+        m.direction === "outbound" &&
+        createdMs > readMs,
+    };
+  });
 
   if (unreadOnly) {
     return portalAdminJson(200, {

@@ -1,17 +1,59 @@
+/* CS WhatsApp admin — fill remaining viewport under topbar (match left rail to bottom). */
+body:has(#portalStaffWaAdmin) .admin-main{
+  min-height:0;
+  height:100%;
+  overflow:hidden;
+}
+body:has(#portalStaffWaAdmin) .admin-workspace{
+  display:flex !important;
+  flex-direction:column;
+  flex:1 1 0 !important;
+  min-height:0 !important;
+  height:0; /* take leftover space under topbar inside .admin-main */
+  max-height:none;
+  overflow:hidden !important;
+  padding:12px 20px 10px !important;
+  box-sizing:border-box;
+}
+#workspace:has(#portalStaffWaAdmin) > .admin-page-head{
+  flex:0 0 auto;
+  margin-bottom:8px;
+}
+.portal-staff-wa-admin{
+  flex:1 1 0;
+  min-height:0;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.portal-staff-wa-admin > .page-intro,
+.portal-staff-wa-admin > .portal-staff-wa-admin__count{
+  flex:0 0 auto;
+}
 .portal-staff-wa-admin__layout{
   display:grid;
   grid-template-columns:minmax(200px,280px) minmax(0,1fr);
+  grid-template-rows:minmax(0,1fr);
+  align-items:stretch;
   gap:12px;
-  min-height:420px;
+  flex:1 1 0;
+  min-height:0;
   min-width:0;
+  /* Fallback if flex chain fails: pin to viewport bottom under topbar + page head */
+  min-height:calc(100dvh - var(--topH, 56px) - 7rem);
 }
 .portal-staff-wa-admin__list{
   display:flex;
   flex-direction:column;
   gap:6px;
   min-width:0;
-  max-height:60vh;
+  min-height:0;
+  height:auto;
+  max-height:none;
   overflow:auto;
+  -webkit-overflow-scrolling:touch;
+  align-self:stretch;
 }
 .portal-staff-wa-admin__person{
   display:flex;
@@ -161,6 +203,8 @@
   flex-direction:column;
   min-width:0;
   min-height:0;
+  height:auto;
+  align-self:stretch;
   border:1px solid rgba(15,23,42,.1);
   border-radius:12px;
   background:#fff;
@@ -176,6 +220,7 @@
   display:flex;
   align-items:center;
   gap:8px;
+  flex:0 0 auto;
 }
 .portal-staff-wa-admin__head-title{
   min-width:0;
@@ -187,9 +232,9 @@
   flex:0 0 auto;
 }
 .portal-staff-wa-admin__thread{
-  flex:1 1 auto;
-  min-height:240px;
-  max-height:50vh;
+  flex:1 1 0;
+  min-height:0;
+  max-height:none;
   overflow:auto;
   padding:12px;
   display:flex;
@@ -200,23 +245,21 @@
 @media (max-width:720px){
   .portal-staff-wa-admin__layout{
     grid-template-columns:1fr;
-    min-height:min(78vh, 680px);
-    height:min(78vh, 680px);
+    min-height:calc(100dvh - var(--topH, 56px) - 6.5rem);
   }
   .portal-staff-wa-admin__list{
     max-height:none;
-    height:100%;
     overflow:auto;
     -webkit-overflow-scrolling:touch;
   }
   .portal-staff-wa-admin__chat{
     display:none;
-    height:100%;
     min-height:0;
   }
   .portal-staff-wa-admin__thread{
     max-height:none;
-    flex:1 1 auto;
+    flex:1 1 0;
+    min-height:0;
   }
   .portal-staff-wa-admin--thread .portal-staff-wa-admin__list{
     display:none;
@@ -253,6 +296,50 @@
   color:#64748b;
   font-weight:700;
   margin-bottom:3px;
+}
+.portal-staff-wa-admin__chips{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+  margin:0 0 6px;
+  min-width:0;
+}
+.portal-staff-wa-admin__chip{
+  display:inline-block;
+  max-width:100%;
+  font-size:10px;
+  font-weight:700;
+  line-height:1.2;
+  padding:2px 6px;
+  border-radius:999px;
+  background:rgba(15,23,42,.06);
+  color:#334155;
+  overflow-wrap:anywhere;
+}
+.portal-staff-wa-admin__chip.is-read{
+  background:rgba(22,163,74,.14);
+  color:#166534;
+}
+.portal-staff-wa-admin__chip.is-delivered{
+  background:rgba(2,132,199,.12);
+  color:#0369a1;
+}
+.portal-staff-wa-admin__chip.is-failed{
+  background:rgba(220,38,38,.12);
+  color:#b91c1c;
+}
+.portal-staff-wa-admin__chip.is-portal{
+  background:rgba(79,70,229,.12);
+  color:#3730a3;
+}
+.portal-staff-wa-admin__chip.is-wa{
+  background:rgba(37,211,102,.16);
+  color:#166534;
+}
+.portal-staff-wa-admin__chip.is-muted{
+  background:rgba(148,163,184,.18);
+  color:#64748b;
+  font-weight:600;
 }
 .portal-staff-wa-admin__body{
   font-size:13px;
@@ -291,6 +378,7 @@
   padding:10px 12px;
   border-top:1px solid rgba(15,23,42,.08);
   min-width:0;
+  flex:0 0 auto;
 }
 .portal-staff-wa-admin__tools{
   display:flex;

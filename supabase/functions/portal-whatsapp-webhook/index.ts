@@ -306,6 +306,7 @@ async function storeInboundMessages(
         media_mime: mediaMime,
         created_at: messageCreatedAt(msg),
         meta: {
+          source: "whatsapp",
           phone_number_id: metaPhoneId || null,
           display_phone_number: str(value.metadata?.display_phone_number, 40) || null,
           routed: "staff",
