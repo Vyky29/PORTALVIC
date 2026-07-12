@@ -394,11 +394,11 @@
         : (typeof portalAnnouncementHistoryRows === 'function' ? portalAnnouncementHistoryRows() : []);
       if(signedHistoryRows.length > 0){
         appendAnnouncementSubcategory(
-          'Previously signed',
+          'Announcements',
           buildAnnouncementQuickRow(
             'announcementSignedLog',
-            'Signed Announcements/Reminders',
-            'Signed announcements and reminders — open log to read',
+            'Announcements / Reminders',
+            'Open the full announcements and reminders list',
             'menu-btn--announcement-signed'
           ),
           'signed'

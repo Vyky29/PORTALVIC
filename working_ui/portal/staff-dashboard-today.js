@@ -4181,7 +4181,7 @@
           .from('portal_staff_announcements')
           .select('id,title,body,message_type,priority,audience_scope,delivery_scope,target_user_id,target_staff_role,created_at,ends_at,reminder_category,hide_after_ack_amount,hide_after_ack_unit,on_ack_action')
           .order('created_at', { ascending: false })
-          .limit(50);
+          .limit(100);
         if(res.error){
           try{ console.warn('[portal] portal_staff_announcements', res.error); }catch(_){}
           return;
@@ -4280,6 +4280,46 @@
         const annInjected = [];
         const remList = [];
         const remSeen = {};
+        /* Full published archive for Signed Announcements/Reminders — same list for every role. */
+        dashboardData.portalAnnouncementArchive = [];
+        visible.forEach(function(row){
+          const id = String(row.id || '');
+          if(!id) return;
+          const typ = String(row.message_type || '').toLowerCase().trim();
+          const title = String(row.title || '').trim();
+          const body = String(row.body || '').trim();
+          const createdMs = Date.parse(row.created_at || '');
+          if(typ === 'reminder'){
+            dashboardData.portalAnnouncementArchive.push({
+              id: id,
+              kind: 'reminder',
+              title: title || 'Reminder',
+              text: body,
+              createdAt: Number.isFinite(createdMs) ? createdMs : 0
+            });
+            return;
+          }
+          if(
+            typ === 'announcement' ||
+            typ === 'incident_team' ||
+            typ === 'incident_encounter' ||
+            typ === 'urgent'
+          ){
+            if(
+              typeof portalAnnouncementRowIsCalendar202627 === 'function' &&
+              portalAnnouncementRowIsCalendar202627(row)
+            ){
+              return;
+            }
+            dashboardData.portalAnnouncementArchive.push({
+              id: id,
+              kind: 'announcement',
+              title: title || 'Announcement',
+              text: body,
+              createdAt: Number.isFinite(createdMs) ? createdMs : 0
+            });
+          }
+        });
         visible.forEach(function(row){
           const id = String(row.id || '');
           if(!id) return;
@@ -4363,12 +4403,12 @@
             annInjected.push(calNotice);
             return;
           }
-          if(
-            typeof portalStaffAnnouncementRowRequiresSignature === 'function' &&
-            !portalStaffAnnouncementRowRequiresSignature(row, workerInboxCtx)
-          ){
-            return;
-          }
+          var mustSign = typeof portalStaffAnnouncementRowRequiresSignature === 'function'
+            ? !!portalStaffAnnouncementRowRequiresSignature(row, workerInboxCtx)
+            : true;
+          /* Role-targeted rows stay out of the CEO/admin sign lock (RLS cannot ack them),
+             but they are kept in portalAnnouncementArchive so leadership still sees the full list. */
+          if(!mustSign) return;
           if(String(row.on_ack_action || '').trim() === 'annual_profile'){
             if(
               typeof portalAnnualProfileCampaignComplete === 'function' &&
@@ -4386,7 +4426,8 @@
             portalAnnouncementId: id,
             hideAfterAckAmount: row.hide_after_ack_amount,
             hideAfterAckUnit: row.hide_after_ack_unit,
-            onAckAction: String(row.on_ack_action || '').trim()
+            onAckAction: String(row.on_ack_action || '').trim(),
+            created_at: row.created_at
           });
         });
         if(!Array.isArray(dashboardData.portalRemindersFromAdmin)) dashboardData.portalRemindersFromAdmin = [];
@@ -4827,8 +4868,8 @@
         let text = String(rec.text || '').trim();
         let title = String(rec.title || 'Reminder').trim() || 'Reminder';
         if(!text || title === 'Reminder'){
-          const remId = String(rec.portalAdminReminderId || k.slice('portal-rem:'.length) || '').trim();
-          const live = remLive.find(function(r){ return String(r && r.portalAdminReminderId || '') === remId; });
+          const remId2 = String(rec.portalAdminReminderId || k.slice('portal-rem:'.length) || '').trim();
+          const live = remLive.find(function(r){ return String(r && r.portalAdminReminderId || '') === remId2; });
           if(live){
             if(!text) text = String(live.body || live.text || '').trim();
             if(title === 'Reminder') title = String(live.title || title).trim() || title;
@@ -4842,7 +4883,39 @@
           signedAt: Number(rec.signedAt || 0)
         });
       });
-      return ann.concat(rem).sort(function(a, b){ return b.signedAt - a.signedAt; });
+      const byKey = {};
+      ann.concat(rem).forEach(function(r){
+        if(!r || !r.key) return;
+        byKey[String(r.key)] = r;
+      });
+      /* Same published archive for every staff role (incl. CEO) — not only personally signed rows. */
+      const archive = dashboardData && Array.isArray(dashboardData.portalAnnouncementArchive)
+        ? dashboardData.portalAnnouncementArchive
+        : [];
+      archive.forEach(function(a){
+        if(!a || !a.id) return;
+        const kind = String(a.kind || 'announcement') === 'reminder' ? 'reminder' : 'announcement';
+        const key = kind === 'reminder' ? ('portal-rem:' + a.id) : ('portal-ann:' + a.id);
+        if(byKey[key]){
+          if(!byKey[key].text && a.text) byKey[key].text = String(a.text || '');
+          if(byKey[key].title === 'Announcement' || byKey[key].title === 'Reminder'){
+            byKey[key].title = String(a.title || byKey[key].title).trim() || byKey[key].title;
+          }
+          return;
+        }
+        byKey[key] = {
+          key: key,
+          kind: kind,
+          title: String(a.title || (kind === 'reminder' ? 'Reminder' : 'Announcement')).trim() ||
+            (kind === 'reminder' ? 'Reminder' : 'Announcement'),
+          text: String(a.text || '').trim(),
+          signedAt: Number(a.createdAt || 0),
+          fromArchive: true
+        };
+      });
+      return Object.keys(byKey).map(function(k){ return byKey[k]; }).sort(function(a, b){
+        return Number(b.signedAt || 0) - Number(a.signedAt || 0);
+      });
     }
     function portalAnnouncementHistoryDateLabel(ms){
       if(!Number.isFinite(ms) || ms <= 0) return '';
@@ -5003,7 +5076,7 @@
         }else{
           hostHistory.innerHTML =
             '<article class="announcement-history-card">' +
-              '<p class="announcement-history-head">Signed Announcements/Reminders</p>' +
+              '<p class="announcement-history-head">Announcements / Reminders</p>' +
               rows.map(function(r, i){
                 const dt = portalAnnouncementHistoryDateLabel(r.signedAt);
                 const lines = portalAnnouncementHistoryHeadingLines(r.title);
@@ -5096,7 +5169,7 @@
         }else{
           hostHistory.innerHTML =
             '<article class="announcement-history-card">' +
-              '<p class="announcement-history-head">Signed Announcements/Reminders</p>' +
+              '<p class="announcement-history-head">Announcements / Reminders</p>' +
               rows.map(function(r, i){
                 const dt = portalAnnouncementHistoryDateLabel(r.signedAt);
                 const lines = portalAnnouncementHistoryHeadingLines(r.title);
