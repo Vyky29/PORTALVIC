@@ -2103,10 +2103,8 @@
           const iso = termCalendarDateKey(y, monthIndex, day);
           if(ptd && typeof ptd.staffDateInView === 'function' && !ptd.staffDateInView(iso, sid)) continue;
           if(portalTermStaffAwayDatesFor(sid).indexOf(iso) >= 0){
-            const hadBaseline = ptd && typeof ptd.staffHadBaselineShiftOnDate === 'function'
-              && ptd.staffHadBaselineShiftOnDate(iso, sid);
-            if(hadBaseline) out.baselineRemoved = true;
-            else out.dayOff = true;
+            out.baselineRemoved = true;
+            out.dayOff = true;
           }
           const fb = getTermFeedbackStateForDay(y, monthIndex, day);
           if(fb === 'late' && iso <= todayKey) out.outstanding = true;
@@ -2848,19 +2846,11 @@
           const adminScheduleAdjusted = termStaffId
             && typeof portalStaffTermAdminScheduleAdjustedOnDate === 'function'
             && portalStaffTermAdminScheduleAdjustedOnDate(isoKey, termStaffId);
-          const hadBaselineShift = termStaffId && typeof window.PortalTermCalendarDashboard !== 'undefined'
-            && window.PortalTermCalendarDashboard
-            && typeof window.PortalTermCalendarDashboard.staffHadBaselineShiftOnDate === 'function'
-            && window.PortalTermCalendarDashboard.staffHadBaselineShiftOnDate(isoKey, termStaffId);
           if(staffRequestedAway && worked.includes(w)){
-            cls += ' half-term';
-            if(hadBaselineShift){
-              cls += ' term-cal-day--ov-pulse-shift-removed';
-              label = `${day}, shift removed (time off requested)`;
-            }else{
-              cls += ' term-cal-day--ov-pulse-day-off';
-              label = `${day}, day off (time off requested)`;
-            }
+            /* Same pulse for every validated/requested day off on a work weekday —
+               do not split baseline vs non-baseline (looked inconsistent, e.g. Berta 24 Jun vs 8 Jul). */
+            cls += ' half-term term-cal-day--ov-pulse-shift-removed';
+            label = `${day}, day off (time off requested)`;
             parts.push(`<div class="${cls}" role="gridcell" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);
             continue;
           }
