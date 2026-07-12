@@ -173,6 +173,8 @@ Deno.serve(async (req) => {
         id: l.id,
         username: normalizeStaffUsernameKey(l.username),
         displayName: l.full_name || l.username,
+        staffRole: l.staff_role || null,
+        appRole: l.app_role || null,
         hasPhone: !!normalizeParentPhoneE164(String(l.phone_e164 || "")),
         phoneMasked: l.phone_e164
           ? String(l.phone_e164).replace(/\d(?=\d{4})/g, "•")

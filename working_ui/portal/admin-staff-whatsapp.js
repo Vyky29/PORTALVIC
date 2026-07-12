@@ -248,18 +248,37 @@
     } else if (prof.staffRoleTrack) {
       tracks = [prof.staffRoleTrack];
     }
+    var dbRole = String((l && (l.staffRole || l.staff_role)) || "").trim().toLowerCase();
+    var dbApp = String((l && (l.appRole || l.app_role)) || "").trim().toLowerCase();
+    if (dbRole && tracks.indexOf(dbRole) < 0) tracks.push(dbRole);
+    if (dbApp === "lead" && tracks.indexOf("support_lead") < 0 && tracks.indexOf("lead") < 0) {
+      tracks.push("support_lead");
+    }
+
     var hasSupport = false;
     var hasSwim = false;
+    var hasClimb = false;
+    var hasFitness = false;
     var hasLead = false;
+    var hasAdmin = false;
+    var hasManager = false;
+
     tracks.forEach(function (t) {
       var k = String(t || "")
         .trim()
         .toLowerCase()
         .replace(/[\s_-]+/g, "");
       if (k === "support" || k === "supportlead") hasSupport = true;
-      if (k === "supportlead") hasLead = true;
+      if (k === "supportlead" || k === "lead" || k === "programmelead") hasLead = true;
       if (k === "swimming" || k === "swim") hasSwim = true;
+      if (k === "climbing" || k === "climb") hasClimb = true;
+      if (k === "fitness" || k === "physical" || k === "physicalactivity") hasFitness = true;
+      if (k === "admin" || k === "administrator") hasAdmin = true;
+      if (k === "manager" || k === "ceo") hasManager = true;
     });
+
+    if (dbApp === "lead" || dbApp === "ceo") hasLead = true;
+    if (dbApp === "admin") hasAdmin = true;
     if (
       info.key === "john" ||
       info.key === "berta" ||
@@ -270,13 +289,22 @@
     ) {
       hasLead = true;
     }
-    if (hasLead && !hasSupport && (info.key === "john" || info.key === "berta" || info.key === "michelle")) {
+    if (hasLead && (info.key === "john" || info.key === "berta" || info.key === "michelle")) {
       hasSupport = true;
     }
+
+    // Prefer dual tracks from roster when present (e.g. support + swimming).
     var chips = [];
     if (hasSupport) chips.push("Support Worker");
     if (hasLead) chips.push("Leader");
     if (hasSwim) chips.push("Swimming Instructor");
+    if (hasClimb) chips.push("Climbing Instructor");
+    if (hasFitness) chips.push("Fitness Instructor");
+    if (hasManager && !hasLead) chips.push("Manager");
+    if (hasAdmin) chips.push("Admin");
+    if (!chips.length && dbRole) {
+      chips.push(dbRole.replace(/\b\w/g, function (c) { return c.toUpperCase(); }));
+    }
     return chips;
   }
 

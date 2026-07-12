@@ -39,6 +39,8 @@ export type StaffWhatsappProfile = {
   full_name: string | null;
   phone_e164: string | null;
   phone_lookup: string | null;
+  staff_role: string | null;
+  app_role: string | null;
 };
 
 function mapStaffRow(r: Record<string, unknown>): StaffWhatsappProfile | null {
@@ -51,6 +53,8 @@ function mapStaffRow(r: Record<string, unknown>): StaffWhatsappProfile | null {
     full_name: r.full_name != null ? String(r.full_name) : null,
     phone_e164: r.phone_e164 != null ? String(r.phone_e164) : null,
     phone_lookup: r.phone_lookup != null ? String(r.phone_lookup) : null,
+    staff_role: r.staff_role != null ? String(r.staff_role) : null,
+    app_role: r.app_role != null ? String(r.app_role) : null,
   };
 }
 
@@ -60,7 +64,7 @@ export async function fetchStaffWhatsappLeaders(
 ): Promise<StaffWhatsappProfile[]> {
   const { data, error } = await admin
     .from("staff_profiles")
-    .select("id, username, full_name, phone_e164, phone_lookup")
+    .select("id, username, full_name, phone_e164, phone_lookup, staff_role, app_role")
     .eq("is_active", true)
     .order("full_name", { ascending: true });
   if (error || !Array.isArray(data)) return [];
@@ -77,7 +81,7 @@ export async function findStaffLeaderByUsername(
   if (!want) return null;
   const { data, error } = await admin
     .from("staff_profiles")
-    .select("id, username, full_name, phone_e164, phone_lookup")
+    .select("id, username, full_name, phone_e164, phone_lookup, staff_role, app_role")
     .eq("is_active", true)
     .ilike("username", want)
     .limit(8);
