@@ -972,10 +972,6 @@
       }
     }
 
-    #cardAreas h2::before{
-      background:linear-gradient(180deg, var(--blueDeep) 0%, var(--blueMid) 100%);
-    }
-
     /* ===== Core Development Areas ===== */
     .corePanel{
       border:1px solid rgba(11,18,32,0.12);
@@ -1280,13 +1276,6 @@
     .coreEvidence textarea{
       background:#fff;
       min-height:72px;
-    }
-
-    #cardLevelProgression h2::before{
-      background:linear-gradient(180deg, var(--blueDeep) 0%, #5a9fc4 100%);
-    }
-    #cardFinalNotes h2::before{
-      background:linear-gradient(180deg, var(--blueDeep) 0%, #5a9fc4 100%);
     }
 
     .termRecommendMeta{
@@ -1805,52 +1794,85 @@
       color:var(--muted);
     }
 
-    /* Review part banners + section intros */
+    /* Review parts — one premium coloured shell per journey block */
     .review-part{
-      margin:28px 0 14px;
-      padding:16px 18px;
-      border-radius:18px;
-      border:1px solid rgba(45,132,179,.16);
-      background:linear-gradient(135deg, rgba(233,243,247,.95) 0%, rgba(255,255,255,.98) 55%);
-      box-shadow:0 8px 22px rgba(18,50,71,.06);
+      margin:22px 0 18px;
+      padding:18px 16px 16px;
+      border-radius:22px;
+      border:1px solid transparent;
+      box-shadow:0 12px 32px rgba(18,50,71,.07);
+      position:relative;
+      overflow:hidden;
     }
+    .review-part::before{
+      content:"";
+      position:absolute;
+      left:0; top:0; bottom:0;
+      width:5px;
+      border-radius:22px 0 0 22px;
+    }
+    .review-part--details{
+      border-color:rgba(14,116,144,.18);
+      background:linear-gradient(165deg, rgba(236,254,255,.96) 0%, rgba(255,255,255,.98) 42%, #fff 100%);
+    }
+    .review-part--details::before{ background:linear-gradient(180deg,#0e7490,#22d3ee); }
     .review-part--pathway{
       border-color:rgba(45,132,179,.2);
-      background:linear-gradient(135deg, rgba(233,243,247,.98) 0%, #fff 60%);
+      background:linear-gradient(165deg, rgba(233,243,247,.98) 0%, rgba(255,255,255,.98) 40%, #fff 100%);
     }
+    .review-part--pathway::before{ background:linear-gradient(180deg,#1d4ed8,#2d84b3); }
     .review-part--development{
       border-color:rgba(138,63,176,.2);
-      background:linear-gradient(135deg, rgba(244,236,250,.95) 0%, #fff 60%);
+      background:linear-gradient(165deg, rgba(244,236,250,.96) 0%, rgba(255,255,255,.98) 40%, #fff 100%);
     }
+    .review-part--development::before{ background:linear-gradient(180deg,#7b2fa1,#a855f7); }
     .review-part--summary{
       border-color:rgba(244,183,64,.35);
-      background:linear-gradient(135deg, rgba(255,248,230,.95) 0%, #fff 60%);
+      background:linear-gradient(165deg, rgba(255,248,230,.96) 0%, rgba(255,255,255,.98) 40%, #fff 100%);
+    }
+    .review-part--summary::before{ background:linear-gradient(180deg,#b45309,#f4b740); }
+
+    .review-part-head{
+      padding:2px 8px 14px 12px;
+      border-bottom:1px solid rgba(15,23,42,.06);
+      margin:0 4px 4px;
     }
     .review-part-kicker{
       margin:0 0 4px;
       font-size:.68rem;
       font-weight:800;
-      letter-spacing:.12em;
+      letter-spacing:.14em;
       text-transform:uppercase;
-      color:var(--blueDeep);
     }
+    .review-part--details .review-part-kicker{ color:#0e7490; }
+    .review-part--pathway .review-part-kicker{ color:#1d4ed8; }
     .review-part--development .review-part-kicker{ color:#7b2fa1; }
     .review-part--summary .review-part-kicker{ color:#9a6b12; }
     .review-part-title{
       margin:0 0 6px;
-      font-size:1.15rem;
+      font-size:1.18rem;
       font-weight:900;
       color:var(--ink);
       letter-spacing:.01em;
     }
     .review-part-text{
       margin:0;
-      font-size:.92rem;
+      font-size:.9rem;
       line-height:1.5;
       color:var(--muted);
       font-weight:600;
       max-width:62ch;
     }
+
+    /* Nested section cards inside a part — one clear box family */
+    .review-part > .card{
+      margin-top:12px;
+      box-shadow:0 4px 16px rgba(18,50,71,.04);
+      background:rgba(255,255,255,.94);
+      border-color:rgba(15,23,42,.07);
+    }
+    .review-part > .card:first-of-type{ margin-top:14px; }
+
     .section-intro{
       margin:0 0 14px;
       padding:12px 14px;
@@ -1863,13 +1885,43 @@
       font-weight:600;
     }
     .section-intro strong{ color:var(--blueDeep); font-weight:800; }
-    #cardAreas .section-intro,
-    #cardDevProfile .section-intro{
+    .review-part--details .section-intro{
+      border-color:rgba(14,116,144,.14);
+      background:rgba(207,250,254,.4);
+    }
+    .review-part--details .section-intro strong{ color:#0e7490; }
+    .review-part--pathway .section-intro{
+      border-color:rgba(45,132,179,.14);
+      background:rgba(233,243,247,.5);
+    }
+    .review-part--development .section-intro{
       border-color:rgba(138,63,176,.14);
       background:rgba(244,236,250,.5);
     }
-    #cardAreas .section-intro strong,
-    #cardDevProfile .section-intro strong{ color:#7b2fa1; }
+    .review-part--development .section-intro strong{ color:#7b2fa1; }
+    .review-part--summary .section-intro{
+      border-color:rgba(244,183,64,.25);
+      background:rgba(255,248,230,.55);
+    }
+    .review-part--summary .section-intro strong{ color:#9a6b12; }
+
+    /* Section titles — colour-coded, no numbers */
+    #cardDetails h2{ color:#0e7490; }
+    #cardDetails h2::before{ background:linear-gradient(180deg,#0e7490,#22d3ee); }
+    #cardProfile h2{ color:#1d4ed8; }
+    #cardProfile h2::before{ background:linear-gradient(180deg,#1d4ed8,#60a5fa); }
+    #cardLearningOutcomes h2{ color:#0369a1; }
+    #cardLearningOutcomes h2::before{ background:linear-gradient(180deg,#0369a1,#38bdf8); }
+    #cardLevelProgression h2{ color:#1e40af; }
+    #cardLevelProgression h2::before{ background:linear-gradient(180deg,#1e40af,#60a5fa); }
+    #cardAreas h2{ color:#7b2fa1; }
+    #cardAreas h2::before{ background:linear-gradient(180deg,#7b2fa1,#a855f7); }
+    #cardDevProfile h2{ color:#6b21a8; }
+    #cardDevProfile h2::before{ background:linear-gradient(180deg,#6b21a8,#a855f7); }
+    #cardFinalNotes h2{ color:#86198f; }
+    #cardFinalNotes h2::before{ background:linear-gradient(180deg,#86198f,#d946ef); }
+    #cardSummary h2{ color:#9a6b12; }
+    #cardSummary h2::before{ background:linear-gradient(180deg,#b45309,#f4b740); }
 
     .term-summary-hero{
       display:flex;
@@ -2182,9 +2234,15 @@
       </div>
     </header>
 
-    <!-- 1 Details -->
-    <div class="card" id="cardDetails">
-      <h2>1. Details</h2>
+    <!-- Details -->
+    <div class="review-part review-part--details" role="region" aria-label="Session details">
+      <div class="review-part-head">
+        <p class="review-part-kicker">Start · Details</p>
+        <h3 class="review-part-title">Who &amp; when</h3>
+        <p class="review-part-text">Confirm the participant and the term context before you begin the review.</p>
+      </div>
+      <div class="card" id="cardDetails">
+      <h2>Details</h2>
       <p class="section-intro">Choose the participant from the portal list (type a letter to search). Term, date and instructor fill automatically.</p>
 
       <div class="swterm-details-stack">
@@ -2228,16 +2286,18 @@
 
       <div class="errMsg" id="errDetails">Please complete all required fields.</div>
     </div>
-
-    <div class="review-part review-part--pathway" role="region" aria-label="Pathway: profile, level and decision">
-      <p class="review-part-kicker">Part A · Pathway</p>
-      <h3 class="review-part-title">Profile, level &amp; decision</h3>
-      <p class="review-part-text">Confirm stage and level, rate learning outcomes, then accept or adjust the progression recommendation for next term.</p>
     </div>
 
-    <!-- 2 Profile Review -->
+    <div class="review-part review-part--pathway" role="region" aria-label="Pathway: profile, level and decision">
+      <div class="review-part-head">
+        <p class="review-part-kicker">Part A · Pathway</p>
+        <h3 class="review-part-title">Profile, level &amp; decision</h3>
+        <p class="review-part-text">Confirm stage and level, rate learning outcomes, then accept or adjust the progression recommendation for next term.</p>
+      </div>
+
+    <!-- Profile Review -->
     <div class="card" id="cardProfile">
-      <h2>2. Profile</h2>
+      <h2>Profile</h2>
       <p class="section-intro">Choose the swimmer’s <strong>current stage</strong> and <strong>level</strong>. This sets the learning outcomes and the journey context for the term.</p>
 
       <div class="divider"></div>
@@ -2348,7 +2408,7 @@
 
     <!-- 3 Learning Outcomes / Level -->
     <div class="card" id="cardLearningOutcomes">
-      <h2>3. Level</h2>
+      <h2>Level</h2>
       <p class="section-intro">Rate each learning outcome for the selected level. Use what you observed across the term — this drives the progression recommendation below.</p>
       <p class="note-compact">Rate each outcome for the selected level.</p>
 
@@ -2387,7 +2447,7 @@
 
     <!-- 4 Level progression decision -->
     <div class="card" id="cardLevelProgression">
-      <h2>4. Decision</h2>
+      <h2>Decision</h2>
       <p class="section-intro">We suggest whether to <strong>consolidate</strong> or <strong>progress</strong> based on the level outcomes. Accept the recommendation or override it.</p>
       <p class="note-compact">Automatically generated from the Level outcomes.</p>
 
@@ -2425,16 +2485,18 @@
         </div>
       </div>
     </div>
-
-    <div class="review-part review-part--development" role="region" aria-label="Development: core areas and overall profile">
-      <p class="review-part-kicker">Part B · Development</p>
-      <h3 class="review-part-title">Development areas &amp; overall profile</h3>
-      <p class="review-part-text">Rate Engagement, Independence and Regulation across the term, then review the overall development snapshot.</p>
     </div>
 
-    <!-- 5 Core Development Areas -->
+    <div class="review-part review-part--development" role="region" aria-label="Development: core areas and overall profile">
+      <div class="review-part-head">
+        <p class="review-part-kicker">Part B · Development</p>
+        <h3 class="review-part-title">Development areas &amp; overall profile</h3>
+        <p class="review-part-text">Rate Engagement, Independence and Regulation across the term, then review the overall development snapshot.</p>
+      </div>
+
+    <!-- Core Development Areas -->
     <div class="card" id="cardAreas">
-      <h2>5. Development areas</h2>
+      <h2>Development areas</h2>
       <p class="section-intro">These three lenses run through every stage and level. Rate what you typically saw this term — not a single session.</p>
 
       <div class="corePanel">
@@ -2692,7 +2754,7 @@
 
     <!-- 6 Overall development profile -->
     <div class="card" id="cardDevProfile">
-      <h2>6. Overall</h2>
+      <h2>Overall</h2>
       <p class="section-intro">A live snapshot of strengths and support needs from the development ratings above. Use it to check the story of the term before you submit.</p>
       <div class="devProfilePanel" id="devProfilePanel" aria-live="polite">
         <div class="devProfileGrid">
@@ -2742,23 +2804,25 @@
 
     <!-- 7 Final review notes -->
     <div class="card" id="cardFinalNotes">
-      <h2>7. Final notes</h2>
+      <h2>Final notes</h2>
       <p class="section-intro">Optional notes for next term — anything useful for the next instructor or for families that is not already covered above.</p>
       <div class="finalNotesWrap">
         <label for="decisionNotes">Final review notes <span style="font-weight:600;color:var(--muted);">(optional)</span></label>
         <textarea id="decisionNotes" placeholder="Optional notes for next term"></textarea>
       </div>
     </div>
-
-    <div class="review-part review-part--summary" role="region" aria-label="Term summary and certificates">
-      <p class="review-part-kicker">Part C · Finish</p>
-      <h3 class="review-part-title">Summary &amp; certificates</h3>
-      <p class="review-part-text">Review the visual term summary, submit the professional PDF, or generate a family celebration certificate (certificate + term journey page).</p>
     </div>
 
-    <!-- 8 Term review summary -->
+    <div class="review-part review-part--summary" role="region" aria-label="Term summary and certificates">
+      <div class="review-part-head">
+        <p class="review-part-kicker">Part C · Finish</p>
+        <h3 class="review-part-title">Summary &amp; certificates</h3>
+        <p class="review-part-text">Review the visual term summary, submit the professional PDF, or generate a family celebration certificate (certificate + term journey page).</p>
+      </div>
+
+    <!-- Term review summary -->
     <div class="card" id="cardSummary">
-      <h2>8. Term summary</h2>
+      <h2>Term summary</h2>
       <p class="section-intro">A clear overview of this term’s pathway and development story — ready to submit or share as a celebration certificate.</p>
       <div class="summary-box">
         <div class="summary-output" id="termSummaryOutput">Complete the review to generate an executive summary.</div>
@@ -2768,6 +2832,7 @@
           <button type="button" class="btn btn-cert" id="btnGenerateCertificate">Generate certificate</button>
         </div>
       </div>
+    </div>
     </div>
 
     <div class="toast" id="toast"></div>
@@ -2782,7 +2847,7 @@
   <!-- swtermreview_app.js — portal/ then portal-shared-js/ on Vercel. -->
   <script>
     (function () {
-      var v = "20260712-cert-glass-restore";
+      var v = "20260712-form-parts";
       var file = "swtermreview_app.js";
       var bases = [];
       try {
