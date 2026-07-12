@@ -668,6 +668,7 @@
           hasSent: false,
           lastInboundId: "",
           lastInboundAt: "",
+          lastOutboundAt: "",
           lastInboundWaId: "",
         };
       }
@@ -720,6 +721,8 @@
         channel: "whatsapp",
         row: row,
       });
+      var outAt = String(row.created_at || "");
+      if (outAt > wt.lastOutboundAt) wt.lastOutboundAt = outAt;
       var pname = String(row.parent_name || "").trim();
       var cname = String(row.client_display || "").trim();
       // Prefer a parent_name that is not just a copy of the participant name.
@@ -756,9 +759,45 @@
         t.name = parent || t.client || "+" + t.phone;
         return t;
       })
-      .sort(function (a, b) {
-        return String(b.lastAt || "").localeCompare(String(a.lastAt || ""));
-      });
+      .sort(compareAdminWaThreads);
+  }
+
+  /** Unread → top (inbound date). Replied → last answered. Read no reply → inbound day. */
+  function hasAdminReplyAfterInbound(t) {
+    if (!t) return false;
+    var out = String(t.lastOutboundAt || "");
+    if (!out) return false;
+    var inn = String(t.lastInboundAt || "");
+    if (!inn) return true;
+    return out > inn;
+  }
+
+  function adminWaThreadTier(t) {
+    if (isThreadUnread(t)) return 0;
+    if (hasAdminReplyAfterInbound(t)) return 1;
+    return 2;
+  }
+
+  function adminWaThreadSortKey(t) {
+    var tier = adminWaThreadTier(t);
+    if (tier === 0) return String(t.lastInboundAt || t.lastAt || "");
+    if (tier === 1) return String(t.lastOutboundAt || t.lastAt || "");
+    return String(t.lastInboundAt || t.lastAt || "");
+  }
+
+  function adminWaThreadListWhen(t) {
+    if (isThreadUnread(t)) return t.lastInboundAt || t.lastAt || "";
+    if (hasAdminReplyAfterInbound(t)) return t.lastOutboundAt || t.lastAt || "";
+    return t.lastInboundAt || t.lastAt || "";
+  }
+
+  function compareAdminWaThreads(a, b) {
+    var ta = adminWaThreadTier(a);
+    var tb = adminWaThreadTier(b);
+    if (ta !== tb) return ta - tb;
+    return String(adminWaThreadSortKey(b) || "").localeCompare(
+      String(adminWaThreadSortKey(a) || "")
+    );
   }
 
   function threadMatches(t) {
@@ -937,7 +976,7 @@
       esc(headName) +
       "</span>" +
       '<span class="portal-pnlog-conv__when muted">' +
-      esc(formatLondonShort(t.lastAt)) +
+      esc(formatLondonShort(adminWaThreadListWhen(t))) +
       "</span></span>" +
       '<span class="portal-pnlog-conv__sub muted">' +
       esc(subline) +
@@ -1031,7 +1070,7 @@
     }
     if (!fromRefresh) captureComposerDraft();
 
-    var threads = (state.threads || []).filter(threadMatches);
+    var threads = (state.threads || []).filter(threadMatches).sort(compareAdminWaThreads);
     var unreadCount = 0;
     threads.forEach(function (t) {
       if (isThreadUnread(t)) unreadCount += 1;
@@ -1043,7 +1082,7 @@
         " WhatsApp conversation" +
         (threads.length === 1 ? "" : "s") +
         (unreadCount ? " · " + unreadCount + " unread" : "") +
-        " · newest first";
+        " · unread first";
       countEl.classList.toggle("portal-pnlog-count--has-unread", unreadCount > 0);
     }
 

@@ -358,6 +358,45 @@
     );
   }
 
+  function hasAdminReplyAfterInbound(l) {
+    if (!l) return false;
+    var out = String(l.lastOutboundAt || "");
+    if (!out) return false;
+    var inn = String(l.lastInboundAt || "");
+    if (!inn) return true;
+    return out > inn;
+  }
+
+  function staffWaTier(l) {
+    if (isLeaderUnread(l)) return 0;
+    if (hasAdminReplyAfterInbound(l)) return 1;
+    return 2;
+  }
+
+  function staffWaSortKey(l) {
+    var tier = staffWaTier(l);
+    if (tier === 0) return String(l.lastInboundAt || "");
+    if (tier === 1) return String(l.lastOutboundAt || l.lastInboundAt || "");
+    return String(l.lastInboundAt || l.lastOutboundAt || "");
+  }
+
+  function staffWaListWhen(l) {
+    if (isLeaderUnread(l)) return l.lastInboundAt || "";
+    if (hasAdminReplyAfterInbound(l)) return l.lastOutboundAt || "";
+    return l.lastInboundAt || l.lastOutboundAt || "";
+  }
+
+  function compareStaffWaDirectory(a, b) {
+    var ta = staffWaTier(a);
+    var tb = staffWaTier(b);
+    if (ta !== tb) return ta - tb;
+    var cmp = String(staffWaSortKey(b) || "").localeCompare(String(staffWaSortKey(a) || ""));
+    if (cmp) return cmp;
+    return displayNameForStaff(a).localeCompare(displayNameForStaff(b), undefined, {
+      sensitivity: "base",
+    });
+  }
+
   function renderCount() {
     var el = document.getElementById("portalStaffWaCount");
     if (!el) return;
@@ -366,7 +405,8 @@
     el.textContent =
       total +
       " staff" +
-      (unread ? " · " + unread + " unread" : "");
+      (unread ? " · " + unread + " unread" : "") +
+      " · unread first";
     el.classList.toggle("portal-staff-wa-admin__count--has-unread", unread > 0);
   }
 
@@ -378,19 +418,18 @@
       renderCount();
       return;
     }
-    var sorted = state.directory.slice().sort(function (a, b) {
-      var ua = isLeaderUnread(a) ? 1 : 0;
-      var ub = isLeaderUnread(b) ? 1 : 0;
-      if (ua !== ub) return ub - ua;
-      return displayNameForStaff(a).localeCompare(displayNameForStaff(b), undefined, {
-        sensitivity: "base",
-      });
-    });
+    var sorted = state.directory.slice().sort(compareStaffWaDirectory);
     host.innerHTML = sorted
       .map(function (l) {
         var active = state.selected === l.username ? " is-active" : "";
         var unread = isLeaderUnread(l);
         var name = displayNameForStaff(l);
+        var when = staffWaListWhen(l);
+        var whenHtml = when
+          ? '<span class="portal-staff-wa-admin__when muted">' +
+            esc(formatTime(when)) +
+            "</span>"
+          : "";
         var phone = l.hasPhone
           ? '<span class="muted">WhatsApp on file</span>'
           : '<span class="portal-staff-wa-admin__warn">No phone</span>';
@@ -422,9 +461,12 @@
           '">' +
           '<span class="portal-staff-wa-admin__person-row">' +
           '<span class="portal-staff-wa-admin__person-main">' +
+          '<span class="portal-staff-wa-admin__person-top">' +
           "<strong>" +
           esc(name) +
           "</strong>" +
+          whenHtml +
+          "</span>" +
           (unread
             ? '<span class="portal-staff-wa-admin__unread-chip">Unread</span>'
             : "") +
@@ -683,11 +725,19 @@
     }
     state.messages = Array.isArray(res.data.messages) ? res.data.messages : [];
     var lastIn = latestInboundAt(state.messages);
+    var lastOut = "";
+    state.messages.forEach(function (m) {
+      if (m && m.direction === "outbound" && m.created_at) {
+        var at = String(m.created_at);
+        if (at > lastOut) lastOut = at;
+      }
+    });
     if (lastIn) markThreadSeen(state.selected, lastIn);
     state.directory = state.directory.map(function (l) {
       if (l.username !== state.selected) return l;
       return Object.assign({}, l, {
         lastInboundAt: lastIn || l.lastInboundAt || null,
+        lastOutboundAt: lastOut || l.lastOutboundAt || null,
       });
     });
     renderDirectory();

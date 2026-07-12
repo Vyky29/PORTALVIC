@@ -147,6 +147,7 @@ Deno.serve(async (req) => {
       string,
       { at: string; preview: string }
     > = {};
+    const lastOutboundByStaff: Record<string, string> = {};
     if (ids.length) {
       const { data: inboundRows } = await admin
         .from("portal_staff_whatsapp_inbound")
@@ -166,9 +167,21 @@ Deno.serve(async (req) => {
           ),
         };
       });
+      const { data: outboundRows } = await admin
+        .from("portal_staff_notify_log")
+        .select("staff_profile_id, created_at")
+        .in("staff_profile_id", ids)
+        .order("created_at", { ascending: false })
+        .limit(300);
+      (outboundRows || []).forEach((r) => {
+        const sid = String(r.staff_profile_id || "");
+        if (!sid || lastOutboundByStaff[sid]) return;
+        lastOutboundByStaff[sid] = String(r.created_at || "");
+      });
     }
     const directory = leaders.map((l) => {
       const inbound = lastInboundByStaff[l.id] || null;
+      const lastOutboundAt = lastOutboundByStaff[l.id] || null;
       return {
         id: l.id,
         username: normalizeStaffUsernameKey(l.username),
@@ -181,6 +194,7 @@ Deno.serve(async (req) => {
           : null,
         lastInboundAt: inbound ? inbound.at : null,
         lastInboundPreview: inbound ? inbound.preview : null,
+        lastOutboundAt,
       };
     });
     return portalAdminJson(200, { ok: true, directory });
