@@ -54,6 +54,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/induction-assets/water-orbit-branding.css?v=20260713" />
 
   <style>
     :root{
@@ -118,53 +119,79 @@
 
     .pageHeader{
       display:flex;
-      align-items:center;
+      align-items:stretch;
       justify-content:center;
-      gap:16px;
-      flex-wrap:wrap;
-      text-align:center;
-      margin-bottom:14px;
-      padding:20px 18px;
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
+      margin-bottom:18px;
+      padding:22px 20px 24px;
+      background:
+        radial-gradient(ellipse 90% 120% at 8% 0%, rgba(233,243,247,.95), transparent 58%),
+        radial-gradient(ellipse 70% 90% at 100% 100%, rgba(255,248,230,.55), transparent 52%),
+        #fff;
+      border:1px solid rgba(45,132,179,.14);
+      border-radius:calc(var(--radius) + 4px);
+      box-shadow:0 14px 36px rgba(18,50,71,.08);
+      overflow:hidden;
     }
     .pageHeader-inner{
       display:flex;
       flex-direction:column;
       align-items:center;
-      gap:12px;
-      max-width:100%;
+      gap:18px;
+      width:100%;
+      max-width:920px;
     }
-    @media (min-width:640px){
+    @media (min-width:720px){
       .pageHeader-inner{
         flex-direction:row;
-        text-align:left;
         align-items:center;
+        gap:22px;
       }
       .pageHeader-text{ text-align:left; }
     }
-    .pageHeader-logo{
-      width:112px;
+    .pageHeader-logo-wrap{
+      flex:0 0 auto;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-width:min(100%, 200px);
+    }
+    .pageHeader-orbit.water-orbit--hero{
+      --hero-orbit-1:min(132px,30vw);
+      --hero-orbit-2:min(104px,24vw);
+      --hero-orbit-3:min(78px,19vw);
+      margin:0;
+    }
+    .pageHeader-orbit .water-orbit__logo{
+      width:min(128px,26vw);
       height:auto;
-      max-height:64px;
-      object-fit:contain;
-      display:block;
-      filter:drop-shadow(0 6px 14px rgba(11,18,32,0.08));
+      max-width:128px;
+    }
+    .pageHeader-text{
+      flex:1;
+      min-width:0;
+      text-align:center;
     }
     .pageHeader-text h1{
       margin:0;
-      font-size:clamp(1.1rem,2.8vw,1.45rem);
-      font-weight:800;
+      font-size:clamp(1.28rem,3vw,1.72rem);
+      font-weight:900;
       color:var(--blue);
-      letter-spacing:0.02em;
-      line-height:1.2;
+      letter-spacing:.01em;
+      line-height:1.15;
     }
     .pageHeader-tagline{
-      margin:6px 0 0;
+      margin:8px 0 0;
       font-size:13px;
       color:var(--muted);
+      font-weight:700;
+      letter-spacing:.02em;
+    }
+    .pageHeader-intro{
+      margin:12px 0 0;
+      max-width:56ch;
+      font-size:clamp(.88rem,1.6vw,.95rem);
+      line-height:1.55;
+      color:#334155;
       font-weight:600;
     }
 
@@ -2386,18 +2413,50 @@
     </div>
     <header class="pageHeader" aria-label="clubSENsational Swimming Term Review header">
       <div class="pageHeader-inner">
-        <img
-          class="pageHeader-logo"
-          src="portal/Logo-CS-azul.png"
-          width="200"
-          height="80"
-          alt="clubSENsational — Autism Consultancy Services"
-          decoding="async"
-          onerror="this.onerror=null;this.src='Logo%20CS%20azul.png';"
-        />
+        <div class="pageHeader-logo-wrap">
+          <div class="water-orbit water-orbit--hero pageHeader-orbit" role="presentation">
+            <div class="water-orbit__flow" aria-hidden="true">
+              <div class="water-orbit__swell water-orbit__swell--1"></div>
+              <div class="water-orbit__swell water-orbit__swell--2"></div>
+            </div>
+            <span class="water-orbit__ring water-orbit__ring--a" aria-hidden="true"></span>
+            <span class="water-orbit__ring water-orbit__ring--b" aria-hidden="true"></span>
+            <span class="water-orbit__ring water-orbit__ring--c" aria-hidden="true"></span>
+            <span class="water-orbit__ring water-orbit__ring--d" aria-hidden="true"></span>
+            <span class="water-orbit__lump water-orbit__lump--1" aria-hidden="true"></span>
+            <span class="water-orbit__lump water-orbit__lump--2" aria-hidden="true"></span>
+            <span class="water-orbit__lump water-orbit__lump--3" aria-hidden="true"></span>
+            <span class="water-orbit__bubble water-orbit__bubble--h1" aria-hidden="true"></span>
+            <span class="water-orbit__bubble water-orbit__bubble--h2" aria-hidden="true"></span>
+            <span class="water-orbit__bubble water-orbit__bubble--h3" aria-hidden="true"></span>
+            <span class="water-orbit__bubble water-orbit__bubble--h4" aria-hidden="true"></span>
+            <span class="water-orbit__bubble water-orbit__bubble--h5" aria-hidden="true"></span>
+            <span class="water-orbit__bubble water-orbit__bubble--h6" aria-hidden="true"></span>
+            <span class="water-orbit__bubble water-orbit__bubble--h7" aria-hidden="true"></span>
+            <span class="water-orbit__bubble water-orbit__bubble--h8" aria-hidden="true"></span>
+            <span class="water-orbit__bubble water-orbit__bubble--h9" aria-hidden="true"></span>
+            <span class="water-orbit__bubble water-orbit__bubble--h10" aria-hidden="true"></span>
+            <span class="water-orbit__bubble water-orbit__bubble--h11" aria-hidden="true"></span>
+            <span class="water-orbit__bubble water-orbit__bubble--h12" aria-hidden="true"></span>
+            <span class="water-orbit__bubble water-orbit__bubble--h13" aria-hidden="true"></span>
+            <span class="water-orbit__bubble water-orbit__bubble--h14" aria-hidden="true"></span>
+            <span class="water-orbit__bubble water-orbit__bubble--h15" aria-hidden="true"></span>
+            <span class="water-orbit__bubble water-orbit__bubble--h16" aria-hidden="true"></span>
+            <img
+              class="water-orbit__logo"
+              src="portal/Logo-CS-azul.png"
+              width="128"
+              height="128"
+              alt="clubSENsational — Autism Consultancy Services"
+              decoding="async"
+              onerror="this.onerror=null;this.src='Logo%20CS%20azul.png';"
+            />
+          </div>
+        </div>
         <div class="pageHeader-text">
           <h1>Swimming term review</h1>
           <p class="pageHeader-tagline">clubSENsational · Autism Consultancy Services</p>
+          <p class="pageHeader-intro">Capture each swimmer’s stage, level and development across the term, confirm the progression decision, then submit the professional review or generate a family celebration certificate.</p>
         </div>
       </div>
     </header>
@@ -3038,7 +3097,7 @@
   <!-- swtermreview_app.js — portal/ then portal-shared-js/ on Vercel. -->
   <script>
     (function () {
-      var v = "20260712-accordion";
+      var v = "20260713-header-orbit";
       var file = "swtermreview_app.js";
       var bases = [];
       try {
