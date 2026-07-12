@@ -121,10 +121,10 @@ export function portalSyncStaffAppPilotBanner(opts) {
     host.setAttribute("role", "status");
     host.innerHTML =
       '<div class="portal-staff-app-pilot-banner__inner">' +
-      '<p class="portal-staff-app-pilot-banner__copy"><strong>Staff app.</strong> Use clubSENsational Staff on your phone — same login.</p>' +
+      '<p class="portal-staff-app-pilot-banner__copy"><strong>You are in the wrong app.</strong> Please check your Cliq messages and open <span style="overflow-wrap:anywhere">clubsensational-staff.vercel.app</span> — same login.</p>' +
       '<div class="portal-staff-app-pilot-banner__actions">' +
-      '<a class="portal-staff-app-pilot-banner__btn portal-staff-app-pilot-banner__btn--pri" id="portalStaffAppPilotOpen" href="#">Open staff app</a>' +
-      '<button type="button" class="portal-staff-app-pilot-banner__btn portal-staff-app-pilot-banner__btn--ghost" id="portalStaffAppPilotDismiss">Stay here</button>' +
+      '<a class="portal-staff-app-pilot-banner__btn portal-staff-app-pilot-banner__btn--pri" id="portalStaffAppPilotOpen" href="#">Open clubsensational-staff</a>' +
+      '<button type="button" class="portal-staff-app-pilot-banner__btn portal-staff-app-pilot-banner__btn--ghost" id="portalStaffAppPilotDismiss">Dismiss</button>' +
       "</div></div>";
     const app = document.querySelector(".app");
     if (app && app.parentNode) app.parentNode.insertBefore(host, app);
