@@ -48,16 +48,6 @@
     return !!(key && INDUCTION_REQUIRED_KEYS[key]);
   }
 
-  function demoHash(id, salt) {
-    var s = String(id || "") + String(salt || "");
-    var h = 0;
-    var i;
-    for (i = 0; i < s.length; i++) {
-      h = (h * 31 + s.charCodeAt(i)) >>> 0;
-    }
-    return h;
-  }
-
   function defaultGrandfatheredInductionTrack() {
     var mods = {};
     var i;
@@ -158,7 +148,16 @@
   }
 
   function swimmingRequired(row) {
-    return !!row.tracks.swimming_training;
+    var swim = row.tracks && row.tracks.swimming_training;
+    if (!swim) return false;
+    // Ignore auto-synced empty stubs (every device used to upload "Not started" @ 0%).
+    if (trackIsComplete(swim) || trackIsInProgress(swim)) return true;
+    if (trackProgressPct(swim) > 0) return true;
+    var phase = String(swim.phase_label || "")
+      .trim()
+      .toLowerCase();
+    if (phase && phase !== "not started" && phase.indexOf("not launched") < 0) return true;
+    return false;
   }
 
   function swimmingStatus(row) {
@@ -170,24 +169,13 @@
     return "not_started";
   }
 
-  function demoComplianceField(row, field) {
-    var h = demoHash(row.id, field);
-    if (field === "wellbeing") {
-      if (h % 5 === 0) return "not_due";
-      if (h % 7 === 0 || h % 11 === 3) return "outstanding";
-      return "complete";
-    }
-    if (h % 6 === 0 || h % 9 === 2) return "outstanding";
-    return "complete";
+  /** Live compliance feeds are not wired yet — do not invent status. */
+  function complianceField(_row, _field) {
+    return "not_tracked";
   }
 
-  function safeguardingStatus(row) {
-    var h = demoHash(row.id, "safeguarding");
-    if (!row.setup || !row.setup.last_seen_at) return "missing";
-    if (inductionStatus(row) !== "complete") return "missing";
-    if (h % 13 === 0) return "expired";
-    if (h % 8 === 0) return "missing";
-    return "complete";
+  function safeguardingStatus(_row) {
+    return "not_tracked";
   }
 
   /** All active staff with a shift must grant location during portal setup. */
@@ -309,38 +297,65 @@
     return !!(row.permissionsSetupAck && row.permissionsSetupAck.signed_at);
   }
 
-  function webOnlyApproved(row) {
-    return false;
+  function setupClientMeta(row) {
+    var s = row && row.setup;
+    return (s && s.client_meta && typeof s.client_meta === "object" ? s.client_meta : {}) || {};
   }
 
-  function deviceRegistered(row) {
-    var s = row.setup;
-    if (!s) return false;
-    return !!s.is_pwa;
+  /** staff_app | portalvic | other | unknown */
+  function accessChannel(row) {
+    var meta = setupClientMeta(row);
+    var channel = String(meta.channel || "")
+      .trim()
+      .toLowerCase();
+    if (channel === "staff_app" || channel === "portalvic" || channel === "other") return channel;
+    var host = String(meta.host || meta.hostname || "")
+      .trim()
+      .toLowerCase();
+    if (!host && meta.origin) {
+      try {
+        host = String(new URL(String(meta.origin)).hostname || "").toLowerCase();
+      } catch (_) {}
+    }
+    if (/clubsensational-staff/.test(host)) return "staff_app";
+    if (/portalvic/.test(host)) return "portalvic";
+    if (host) return "other";
+    if (meta.staff_app_build === true || meta.staff_app_flag === true) return "staff_app";
+    return "unknown";
+  }
+
+  function accessShell(row) {
+    var s = row.setup || {};
+    if (!s || !s.last_seen_at) return "unknown";
+    if (s.is_pwa || s.last_shell === "pwa") return "installed";
+    return "browser";
+  }
+
+  /** Preferred: clubsensational-staff installed app. */
+  function accessIsPreferred(row) {
+    return accessChannel(row) === "staff_app" && accessShell(row) === "installed";
   }
 
   function portalAccess(row) {
-    var s = row.setup;
-    if (!s || !s.last_seen_at) return "unknown";
-    if (s.is_pwa) return "app";
+    var shell = accessShell(row);
+    if (shell === "unknown") return "unknown";
+    if (shell === "installed") return "app";
     return "web";
   }
 
+  function deviceRegistered(row) {
+    return accessShell(row) === "installed";
+  }
+
   function trainingReady(row) {
-    var ind = inductionStatus(row);
-    if (ind !== "complete") return false;
+    if (inductionStatus(row) !== "complete") return false;
     var swim = swimmingStatus(row);
     if (swim !== "na" && swim !== "complete") return false;
-    if (safeguardingStatus(row) !== "complete") return false;
     return true;
   }
 
-  function complianceReady(row) {
-    if (demoComplianceField(row, "policies") !== "complete") return false;
-    if (demoComplianceField(row, "risk") !== "complete") return false;
-    if (demoComplianceField(row, "announcements") !== "complete") return false;
-    var wb = demoComplianceField(row, "wellbeing");
-    if (wb === "outstanding") return false;
+  function complianceReady(_row) {
+    // Placeholders removed — compliance is not scored until live feeds exist.
     return true;
   }
 
@@ -349,7 +364,7 @@
   }
 
   function overallReady(row) {
-    return trainingReady(row) && complianceReady(row) && appReady(row);
+    return trainingReady(row) && appReady(row);
   }
 
   function enrichRow(row) {
@@ -357,13 +372,15 @@
       induction: inductionStatus(row),
       swimming: swimmingStatus(row),
       safeguarding: safeguardingStatus(row),
-      policies: demoComplianceField(row, "policies"),
-      riskAssessments: demoComplianceField(row, "risk"),
-      announcements: demoComplianceField(row, "announcements"),
-      wellbeing: demoComplianceField(row, "wellbeing"),
+      policies: complianceField(row, "policies"),
+      riskAssessments: complianceField(row, "risk"),
+      announcements: complianceField(row, "announcements"),
+      wellbeing: complianceField(row, "wellbeing"),
+      accessChannel: accessChannel(row),
+      accessShell: accessShell(row),
       portalAccess: portalAccess(row),
       deviceRegistered: deviceRegistered(row),
-      webOnlyApproved: webOnlyApproved(row),
+      accessPreferred: accessIsPreferred(row),
       locationRequired: locationRequiredForRow(row),
       microphoneOptional: true,
       portalFeaturesComplete: portalFeaturesComplete(row),
@@ -377,21 +394,9 @@
   }
 
   function overallComplianceStatus(row) {
-    var r = row.readiness;
-    var hasRed =
-      r.safeguarding === "missing" ||
-      r.safeguarding === "expired" ||
-      r.induction === "not_started" ||
-      (r.swimming !== "na" && r.swimming === "not_started");
-    if (hasRed) return "non_compliant";
-    var hasAmber =
-      !r.trainingReady ||
-      !r.complianceReady ||
-      r.policies === "outstanding" ||
-      r.riskAssessments === "outstanding" ||
-      r.announcements === "outstanding" ||
-      r.wellbeing === "outstanding";
-    if (hasAmber) return "follow_up";
+    if (row.readiness.overallReady) return "ready";
+    if (!row.readiness.trainingReady) return "follow_up";
+    if (!row.readiness.appReady) return "follow_up";
     return "ready";
   }
 
@@ -408,12 +413,6 @@
     if (r.swimming === "not_started" || r.swimming === "in_progress") {
       items.push("Missing swimming training");
     }
-    if (r.safeguarding === "missing") items.push("Missing safeguarding");
-    if (r.safeguarding === "expired") items.push("Safeguarding expired");
-    if (r.policies === "outstanding") items.push("Policies not signed");
-    if (r.riskAssessments === "outstanding") items.push("Risk assessments outstanding");
-    if (r.announcements === "outstanding") items.push("Announcements not signed");
-    if (r.wellbeing === "outstanding") items.push("Wellbeing review outstanding");
     var s = row.setup || {};
     if (!portalFeaturesComplete(row)) items.push("Portal features not activated");
     if (state.permissionsAnnouncementIds.length && !permissionsAnnouncementSigned(row)) {
@@ -421,8 +420,6 @@
     }
     if (!s.push_enabled) items.push("Alerts disabled");
     if (!s.camera_granted) items.push("Camera disabled");
-    if (r.portalAccess === "web" && !r.webOnlyApproved) items.push("Using web only");
-    if (!r.deviceRegistered) items.push("App not installed");
     if (r.locationRequired && !s.location_granted) items.push("Location disabled");
     if (r.locationRequired && s.location_granted && (!row.liveLocation || !row.liveLocation.updated_at)) {
       items.push("No GPS from their device yet");
@@ -435,7 +432,19 @@
     ) {
       items.push("GPS stale — portal must stay open during shift");
     }
-    if (!s.microphone_granted) items.push("Microphone off (optional voice-to-text)");
+    if (r.accessChannel === "portalvic") {
+      items.push(
+        r.accessShell === "installed"
+          ? "Still on portalvic app — move to clubsensational-staff"
+          : "Still on portalvic web — open clubsensational-staff"
+      );
+    } else if (r.accessShell === "browser") {
+      items.push(
+        r.accessChannel === "staff_app"
+          ? "Using browser on staff app host — Add to Home Screen"
+          : "Using browser only — install clubsensational-staff app"
+      );
+    }
     if (deviceSetupIsShared(row)) {
       items.push("Portal setup done on someone else's phone — not their device");
     }
@@ -446,14 +455,13 @@
     var items = missingItems(row);
     if (!items.length) return "low";
     var r = row.readiness;
-    if (
-      r.safeguarding !== "complete" ||
-      !push_enabledCheck(row) ||
-      (r.portalAccess === "web" && !r.webOnlyApproved)
-    ) {
-      return "high";
+    if (!push_enabledCheck(row) || !r.trainingReady) return "high";
+    if (items.some(function (x) {
+      return /someone else|portalvic|browser/i.test(x);
+    })) {
+      return "medium";
     }
-    if (!r.trainingReady || !r.complianceReady) return "medium";
+    if (!r.appReady) return "medium";
     return "low";
   }
 
@@ -464,11 +472,11 @@
   function suggestedAction(row) {
     var items = missingItems(row);
     if (!items.length) return "No action required";
-    if (items.indexOf("Missing safeguarding") >= 0 || items.indexOf("Safeguarding expired") >= 0) {
-      return "Chase safeguarding completion before rostering";
-    }
     if (items.indexOf("Missing induction modules") >= 0) {
       return "Send induction reminder and book check-in";
+    }
+    if (items.indexOf("Missing swimming training") >= 0) {
+      return "Confirm swimming training path with worker";
     }
     if (items.indexOf("Portal features not activated") >= 0) {
       return "Ask worker to tap Turn on portal features in Settings";
@@ -488,11 +496,10 @@
     if (items.indexOf("Alerts disabled") >= 0) {
       return "Ask worker to enable alerts in app settings";
     }
-    if (items.indexOf("Using web only") >= 0) {
-      return "Guide install of portal app or approve web-only";
-    }
-    if (items.indexOf("Policies not signed") >= 0) {
-      return "Send policy sign-off link from Documents";
+    if (items.some(function (x) {
+      return /portalvic|browser|clubsensational-staff/i.test(x);
+    })) {
+      return "Guide worker to clubsensational-staff.vercel.app and Add to Home Screen";
     }
     return "Review outstanding items with worker";
   }
@@ -505,8 +512,8 @@
     return !row.readiness.trainingReady;
   }
 
-  function rowComplianceMissing(row) {
-    return !row.readiness.complianceReady;
+  function rowComplianceMissing(_row) {
+    return false;
   }
 
   function rowAppSetupMissing(row) {
@@ -514,7 +521,11 @@
   }
 
   function rowWebOnly(row) {
-    return row.readiness.portalAccess === "web";
+    return row.readiness.accessShell === "browser";
+  }
+
+  function rowOnPortalvic(row) {
+    return row.readiness.accessChannel === "portalvic";
   }
 
   function mergeRows(profiles, progressRows, setupRows, permissionAcksByStaff) {
@@ -577,9 +588,9 @@
     if (f === "all") return rows;
     if (f === "attention") return rows.filter(rowNeedsAttention);
     if (f === "training_incomplete") return rows.filter(rowTrainingIncomplete);
-    if (f === "compliance_missing") return rows.filter(rowComplianceMissing);
     if (f === "app_setup_missing") return rows.filter(rowAppSetupMissing);
     if (f === "browser_only") return rows.filter(rowWebOnly);
+    if (f === "portalvic") return rows.filter(rowOnPortalvic);
     return rows;
   }
 
@@ -615,28 +626,50 @@
     na: { kind: "muted", label: "N/A" },
   };
 
-  var SG_LABELS = {
-    complete: { kind: "ok", label: "Complete" },
-    expired: { kind: "warn", label: "Expired" },
-    missing: { kind: "bad", label: "Missing" },
-  };
-
-  var OUTSTANDING_LABELS = {
-    complete: { kind: "ok", label: "Complete" },
-    outstanding: { kind: "warn", label: "Outstanding" },
-  };
-
-  var WELLBEING_LABELS = {
-    complete: { kind: "ok", label: "Complete" },
-    outstanding: { kind: "warn", label: "Outstanding" },
-    not_due: { kind: "muted", label: "Not Due" },
-  };
-
   var OVERALL_LABELS = {
     ready: { kind: "ok", label: "Ready" },
-    follow_up: { kind: "warn", label: "Follow-Up Required" },
-    non_compliant: { kind: "bad", label: "Non-Compliant" },
+    follow_up: { kind: "warn", label: "Follow up" },
+    non_compliant: { kind: "bad", label: "Needs work" },
   };
+
+  function accessChannelCell(row) {
+    var r = row.readiness || {};
+    var channel = r.accessChannel || "unknown";
+    var shell = r.accessShell || "unknown";
+    var label;
+    var kind;
+    if (channel === "staff_app" && shell === "installed") {
+      label = "Staff app";
+      kind = "ok";
+    } else if (channel === "staff_app" && shell === "browser") {
+      label = "Staff app · browser";
+      kind = "warn";
+    } else if (channel === "portalvic" && shell === "installed") {
+      label = "portalvic app";
+      kind = "warn";
+    } else if (channel === "portalvic") {
+      label = "portalvic · web";
+      kind = "warn";
+    } else if (shell === "installed") {
+      label = "Installed app";
+      kind = "muted";
+    } else if (shell === "browser") {
+      label = "Web browser";
+      kind = "warn";
+    } else {
+      label = "Unknown";
+      kind = "muted";
+    }
+    var html = statusBadge(kind, label);
+    if (channel === "unknown" && shell !== "unknown") {
+      html +=
+        '<span class="muted portal-sready-subdate">Host unknown until they reopen after update</span>';
+    } else if (channel === "portalvic") {
+      html +=
+        '<span class="muted portal-sready-subdate">Move to clubsensational-staff.vercel.app</span>';
+    }
+    return html;
+  }
 
   function moduleChip(n, mod) {
     var done = mod && mod.quizPass;
@@ -677,9 +710,9 @@
   function rowHighlightClass(row) {
     var r = row.readiness;
     var cls = [];
-    if (r.safeguarding !== "complete") cls.push("portal-sready-row--sg");
-    if (!r.complianceReady) cls.push("portal-sready-row--compliance");
+    if (!r.trainingReady) cls.push("portal-sready-row--sg");
     if (!r.appReady) cls.push("portal-sready-row--app");
+    if (!r.accessPreferred) cls.push("portal-sready-row--compliance");
     return cls.join(" ");
   }
 
@@ -730,32 +763,17 @@
     return statusBadge("bad", "Not set up");
   }
 
-  function permissionsAnnouncementCell(row) {
-    var ack = row.permissionsSetupAck;
-    if (ack && ack.signed_at) {
-      return (
-        statusBadge("ok", "Signed") +
-        '<span class="muted portal-sready-subdate">' +
-        esc(formatLondon(ack.signed_at)) +
-        "</span>"
-      );
-    }
-    if (!state.permissionsAnnouncementIds.length) {
-      return statusBadge("muted", "No active notice");
-    }
-    return statusBadge("bad", "Not signed");
-  }
-
   function renderKpis(rows) {
     var el = document.getElementById("portalStaffReadinessKpis");
     if (!el) return;
     var total = rows.length;
     var fully = rows.filter(function (r) {
-      return r.readiness.overallReady;
+      return r.readiness.overallReady && r.readiness.accessPreferred;
     }).length;
     var trainInc = rows.filter(rowTrainingIncomplete).length;
-    var compMiss = rows.filter(rowComplianceMissing).length;
+    var onPortalvic = rows.filter(rowOnPortalvic).length;
     var appMiss = rows.filter(rowAppSetupMissing).length;
+    var browserOnly = rows.filter(rowWebOnly).length;
     el.innerHTML =
       '<div class="grid-kpi portal-sready-kpis">' +
       '<div class="kpi card--premium portal-sready-kpi portal-sready-kpi--ok">' +
@@ -765,21 +783,25 @@
       " / " +
       esc(String(total)) +
       "</div>" +
-      '<div class="kpi-s muted">Training + compliance + app</div></div>' +
+      '<div class="kpi-s muted">Training + features + staff app</div></div>' +
       '<div class="kpi card--premium portal-sready-kpi">' +
       '<div class="kpi-l">Training incomplete</div>' +
       '<div class="kpi-v">' +
       esc(String(trainInc)) +
       "</div>" +
-      '<div class="kpi-s muted">Induction, swim or safeguarding</div></div>' +
+      '<div class="kpi-s muted">Induction or swimming in progress</div></div>' +
       '<div class="kpi card--premium portal-sready-kpi' +
-      (compMiss ? " kpi--alert" : "") +
+      (onPortalvic || browserOnly ? " kpi--alert" : "") +
       '">' +
-      '<div class="kpi-l">Compliance missing</div>' +
+      '<div class="kpi-l">Wrong / web access</div>' +
       '<div class="kpi-v">' +
-      esc(String(compMiss)) +
+      esc(String(onPortalvic + browserOnly)) +
       "</div>" +
-      '<div class="kpi-s muted">Policies, RA, announcements, wellbeing</div></div>' +
+      '<div class="kpi-s muted">' +
+      esc(String(onPortalvic)) +
+      " portalvic · " +
+      esc(String(browserOnly)) +
+      " browser</div></div>" +
       '<div class="kpi card--premium portal-sready-kpi' +
       (appMiss ? " kpi--alert" : "") +
       '">' +
@@ -787,7 +809,7 @@
       '<div class="kpi-v">' +
       esc(String(appMiss)) +
       "</div>" +
-      '<div class="kpi-s muted">Alerts, device or install</div></div>' +
+      '<div class="kpi-s muted">Alerts, location or features</div></div>' +
       "</div>";
   }
 
@@ -810,20 +832,8 @@
           "<td>" +
           labelBadge(SWIM_LABELS, r.swimming) +
           "</td>" +
-          "<td>" +
-          labelBadge(SG_LABELS, r.safeguarding) +
-          "</td>" +
-          "<td>" +
-          labelBadge(OUTSTANDING_LABELS, r.policies) +
-          "</td>" +
-          "<td>" +
-          labelBadge(OUTSTANDING_LABELS, r.riskAssessments) +
-          "</td>" +
-          "<td>" +
-          labelBadge(OUTSTANDING_LABELS, r.announcements) +
-          "</td>" +
-          "<td>" +
-          labelBadge(WELLBEING_LABELS, r.wellbeing) +
+          '<td class="portal-sready-cell">' +
+          accessChannelCell(row) +
           "</td>" +
           "<td>" +
           labelBadge(OVERALL_LABELS, overall) +
@@ -839,12 +849,8 @@
       "<th>Staff</th>" +
       "<th>Induction</th>" +
       "<th>Swimming training</th>" +
-      "<th>Safeguarding</th>" +
-      "<th>Policies</th>" +
-      "<th>Risk assessments</th>" +
-      "<th>Signed announcements</th>" +
-      "<th>Staff wellbeing review</th>" +
-      "<th>Overall compliance</th>" +
+      "<th>Access</th>" +
+      "<th>Overall</th>" +
       "</tr></thead><tbody>" +
       body +
       "</tbody></table></div>"
@@ -855,13 +861,6 @@
     var body = rows
       .map(function (row) {
         var s = row.setup || {};
-        var r = row.readiness;
-        var accessLabel =
-          r.portalAccess === "app"
-            ? statusBadge("ok", "App")
-            : r.portalAccess === "web"
-              ? statusBadge("warn", "Web")
-              : statusBadge("muted", "Unknown");
         return (
           '<tr class="' +
           esc(rowHighlightClass(row)) +
@@ -869,29 +868,20 @@
           '<td class="portal-tprog-name"><strong>' +
           esc(row.name) +
           "</strong></td>" +
-          "<td>" +
-          accessLabel +
-          "</td>" +
-          "<td>" +
-          (r.deviceRegistered ? statusBadge("ok", "Yes") : statusBadge("bad", "No")) +
+          '<td class="portal-sready-cell">' +
+          accessChannelCell(row) +
           "</td>" +
           '<td class="portal-sready-cell">' +
           portalFeaturesCell(row) +
-          "</td>" +
-          '<td class="portal-sready-cell">' +
-          permissionsAnnouncementCell(row) +
           "</td>" +
           "<td>" +
           permissionCell(row, "alerts") +
           "</td>" +
           "<td>" +
-          permissionCell(row, "camera") +
-          "</td>" +
-          "<td>" +
           permissionCell(row, "location") +
           "</td>" +
           "<td>" +
-          permissionCell(row, "microphone") +
+          permissionCell(row, "camera") +
           "</td>" +
           '<td class="portal-sready-cell">' +
           deviceAttributionCell(row) +
@@ -913,14 +903,11 @@
       '<table class="tbl portal-tprog-table portal-sready-table">' +
       "<thead><tr>" +
       "<th>Staff</th>" +
-      "<th>Portal access</th>" +
-      "<th>Device registered</th>" +
+      "<th>Access (portalvic / staff app / web)</th>" +
       "<th>Portal features</th>" +
-      "<th>Setup announcement</th>" +
       "<th>Alerts</th>" +
-      "<th>Camera</th>" +
       "<th>Location</th>" +
-      "<th>Microphone</th>" +
+      "<th>Camera</th>" +
       "<th>Setup on whose phone?</th>" +
       "<th>Last seen</th>" +
       "<th>Device status</th>" +
@@ -1189,8 +1176,8 @@
     return (
       '<div id="portalTrainingProgressRoot" class="portal-activity-embed portal-day-ops-embed portal-tprog-embed portal-sready-embed" data-portal-tprog-bound="0">' +
       '<h1 class="page-title">Staff Readiness</h1>' +
-      '<p class="page-desc">Training, compliance and app setup overview</p>' +
-      '<p class="page-intro portal-activity-intro">Operational view of induction, swimming training, safeguarding, compliance sign-offs, and portal device setup. Induction module detail (M1–M6) still syncs from each device. Policies, risk assessments, announcements and wellbeing use demo placeholders until live data is connected.</p>' +
+      '<p class="page-desc">Training and device access — portalvic, clubsensational-staff, or web</p>' +
+      '<p class="page-intro portal-activity-intro">Shows real induction progress and how each person last opened the portal: <strong>Staff app</strong> (clubsensational-staff), <strong>portalvic</strong>, or <strong>web browser</strong>. Preferred: installed Staff app. Host is recorded when they open the portal after this update; until then Access may say host unknown.</p>' +
       '<div id="portalStaffReadinessKpis" class="portal-sready-kpis-wrap" aria-live="polite"></div>' +
       '<div id="portalTrainingProgressStatus" class="portal-forms-status" role="status"></div>' +
       '<div class="portal-activity-toolbar">' +
@@ -1199,16 +1186,16 @@
       '<option value="all">All Staff</option>' +
       '<option value="attention">Needs Follow-Up</option>' +
       '<option value="training_incomplete">Training Incomplete</option>' +
-      '<option value="compliance_missing">Compliance Missing</option>' +
       '<option value="app_setup_missing">App Setup Missing</option>' +
-      '<option value="browser_only">Web Only Users</option>' +
+      '<option value="portalvic">On portalvic</option>' +
+      '<option value="browser_only">Browser only</option>' +
       "</select></label>" +
       '<button type="button" class="btn btn--sec btn--sm" id="portalTrainingProgressRefresh">Refresh</button>' +
       '<button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr">Staff &amp; HR</button>' +
       "</div>" +
       '<div class="ash-tabs portal-sready-tabs" role="tablist" aria-label="Staff readiness views">' +
-      '<button type="button" class="ash-tab is-active" role="tab" data-portal-sready-tab="training_compliance" aria-selected="true">Training &amp; Compliance</button>' +
-      '<button type="button" class="ash-tab" role="tab" data-portal-sready-tab="app_device" aria-selected="false">App &amp; Device Readiness</button>' +
+      '<button type="button" class="ash-tab is-active" role="tab" data-portal-sready-tab="training_compliance" aria-selected="true">Training &amp; Access</button>' +
+      '<button type="button" class="ash-tab" role="tab" data-portal-sready-tab="app_device" aria-selected="false">App &amp; Device</button>' +
       '<button type="button" class="ash-tab" role="tab" data-portal-sready-tab="follow_up" aria-selected="false">Needs Follow-Up</button>' +
       "</div>" +
       '<p class="portal-activity-count" id="portalTrainingProgressCount">Loading…</p>' +

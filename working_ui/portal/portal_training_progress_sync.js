@@ -208,6 +208,50 @@
     return false;
   }
 
+  /** Which staff host this device is on: staff_app | portalvic | other | unknown */
+  function detectClientAppChannel() {
+    var host = "";
+    var origin = "";
+    try {
+      host = String((global.location && global.location.hostname) || "")
+        .trim()
+        .toLowerCase();
+      origin = String((global.location && global.location.origin) || "").trim();
+    } catch (_) {}
+    var channel = "other";
+    if (!host) channel = "unknown";
+    else if (/clubsensational-staff/.test(host)) channel = "staff_app";
+    else if (/portalvic/.test(host)) channel = "portalvic";
+    return {
+      host: host,
+      origin: origin,
+      channel: channel,
+      staff_app_build: !!global.PORTAL_STAFF_APP,
+    };
+  }
+
+  function localStorageHasMeaningfulProgress(key) {
+    try {
+      var raw = global.localStorage.getItem(key);
+      if (!raw) return false;
+      var data = JSON.parse(raw);
+      if (!data || typeof data !== "object") return false;
+      if (Number(data.progress_pct) > 0) return true;
+      if (data.completed_at) return true;
+      var phase = String(data.phase_label || data.phase || "")
+        .trim()
+        .toLowerCase();
+      if (phase && phase !== "not started" && phase.indexOf("not launched") < 0) return true;
+      var mods = data.module_states || data.modules || {};
+      return Object.keys(mods).some(function (k) {
+        var m = mods[k];
+        return m && (m.video || m.journey || m.quizPass || m.completed);
+      });
+    } catch (_) {
+      return false;
+    }
+  }
+
   function readSetupStatus(profile, authEmail) {
     var email = String(authEmail || "").trim();
     var display =
@@ -269,9 +313,16 @@
       portal_features_completed_at: featuresCompletedAt,
       last_shell: isPwaShell() ? "pwa" : "browser",
       last_seen_at: new Date().toISOString(),
-      client_meta: {
-        ua: String((global.navigator && global.navigator.userAgent) || "").slice(0, 240),
-      },
+      client_meta: (function () {
+        var ch = detectClientAppChannel();
+        return {
+          ua: String((global.navigator && global.navigator.userAgent) || "").slice(0, 240),
+          host: ch.host,
+          origin: ch.origin,
+          channel: ch.channel,
+          staff_app_build: ch.staff_app_build,
+        };
+      })(),
     };
   }
 
@@ -388,17 +439,23 @@
     var profile = opts.profile;
     var email = opts.authEmail || "";
     var rows = [readInductionProgress(profile, email)];
-    rows.push(
-      readJsonProgress(SWIMMING_TRAINING_KEY, "swimming_training", {
-        modules_total: 2,
-        phase: "Not started",
-      })
-    );
-    rows.push(
-      readJsonProgress(SWIMMING_TERM_KEY, "swimming_term_review", {
-        phase: "Not launched / not started",
-      })
-    );
+    // Only sync swimming tracks when the device has real local progress — empty
+    // "Not started" stubs were making Staff Readiness look like everyone is behind.
+    if (localStorageHasMeaningfulProgress(SWIMMING_TRAINING_KEY)) {
+      rows.push(
+        readJsonProgress(SWIMMING_TRAINING_KEY, "swimming_training", {
+          modules_total: 2,
+          phase: "Not started",
+        })
+      );
+    }
+    if (localStorageHasMeaningfulProgress(SWIMMING_TERM_KEY)) {
+      rows.push(
+        readJsonProgress(SWIMMING_TERM_KEY, "swimming_term_review", {
+          phase: "Not launched / not started",
+        })
+      );
+    }
     var pathHint = inferTrackFromPath();
     if (pathHint && !pathHint.touchOnly) {
       var existing = rows.find(function (r) {
