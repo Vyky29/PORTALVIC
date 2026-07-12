@@ -141,9 +141,7 @@
     var topbarBtn = document.getElementById("topbarStaffSignOut");
     if (topbarBtn && topbarBtn.getAttribute("data-portal-logout-wired") !== "1") {
       topbarBtn.setAttribute("data-portal-logout-wired", "1");
-      if (window.PORTAL_STAFF_APP === true) {
-        topbarBtn.hidden = false;
-      }
+      topbarBtn.hidden = true;
       topbarBtn.addEventListener(
         "click",
         function (e) {

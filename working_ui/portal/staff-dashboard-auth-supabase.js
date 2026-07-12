@@ -122,8 +122,8 @@ if (typeof window.portalEnsureStaffDashboardDockBindings === "function") {
       });
     }
     const topbarOut = document.getElementById("topbarStaffSignOut");
-    if (topbarOut && window.PORTAL_STAFF_APP === true) {
-      topbarOut.hidden = false;
+    if (topbarOut) {
+      topbarOut.hidden = true;
     }
   }
   portalEnsureStaffDashboardDockBindingsFallback();

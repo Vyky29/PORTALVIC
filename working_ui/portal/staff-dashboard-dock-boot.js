@@ -63,8 +63,8 @@
 
     var topbarOut =
       global.document && global.document.getElementById("topbarStaffSignOut");
-    if (topbarOut && global.PORTAL_STAFF_APP === true) {
-      topbarOut.hidden = false;
+    if (topbarOut) {
+      topbarOut.hidden = true;
     }
   }
 
