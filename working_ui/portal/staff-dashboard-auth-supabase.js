@@ -3,7 +3,7 @@ import { portalSyncExecWorkspaceSwitchSlot } from "/portal/portal_exec_workspace
 import {
   portalEnforceStaffAppPilotGate,
   portalSyncStaffAppPilotBanner,
-} from "/portal/portal_staff_app_pilot.js?v=20260624-staff-pilot";
+} from "/portal/portal_staff_app_pilot.js?v=20260712-staff-open";
 
 window.__PORTAL_LOGOUT_FN__ = portalLogout;
 window.portalInferStaffKey = portalInferStaffKey;

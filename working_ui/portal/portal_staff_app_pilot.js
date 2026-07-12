@@ -1,10 +1,16 @@
 /**
- * clubSENsational Staff app — phased rollout allowlist.
- * Pilot users use clubsensational-staff; everyone else stays on portalvic staff_dashboard.
+ * clubSENsational Staff app — rollout gate + portalvic migrate banner.
+ * Open to all staff (pilot allowlist kept only as historical reference).
  */
 import { portalInferStaffKey } from "./auth-handler.js";
 
-/** Normalised roster keys on the new staff app (clubsensational-staff). */
+/** When true, anyone signed in may use clubsensational-staff; portalvic shows migrate banner. */
+export const PORTAL_STAFF_APP_OPEN_TO_ALL = true;
+
+/**
+ * Legacy pilot roster (unused while OPEN_TO_ALL). Kept for reference / rollback.
+ * @deprecated
+ */
 export const PORTAL_STAFF_APP_PILOT_ROSTER_KEYS = new Set([
   "michelle",
   "raul",
@@ -48,15 +54,19 @@ export function portalStaffAppMainPortalLoginUrl() {
   return portalStaffAppMainPortalOrigin() + "/login.html";
 }
 
+/** True if this user may use clubsensational-staff (and see the migrate banner on portalvic). */
 export function portalStaffAppPilotUser(profile, authEmail) {
+  if (PORTAL_STAFF_APP_OPEN_TO_ALL) return true;
   const key = portalInferStaffKey(profile, authEmail);
   return !!(key && PORTAL_STAFF_APP_PILOT_ROSTER_KEYS.has(key));
 }
 
-/** clubsensational-staff: sign out and send non-pilot users to portalvic. */
+/** clubsensational-staff: sign out and send non-allowlisted users to portalvic (no-op when open to all). */
 export async function portalEnforceStaffAppPilotGate(opts) {
   opts = opts || {};
   if (typeof window === "undefined" || !window.PORTAL_STAFF_APP) return;
+  if (PORTAL_STAFF_APP_OPEN_TO_ALL) return;
+
   const box = window.__PORTAL_SUPABASE__ || {};
   const profile = opts.profile || box.staff_profile;
   const email =
@@ -88,7 +98,7 @@ export async function portalEnforceStaffAppPilotGate(opts) {
   }
 }
 
-/** portalvic: banner for pilot users — open the new staff app. */
+/** portalvic: banner for staff — open the new staff app. */
 export function portalSyncStaffAppPilotBanner(opts) {
   opts = opts || {};
   if (typeof window === "undefined" || window.PORTAL_STAFF_APP) return;
@@ -111,9 +121,9 @@ export function portalSyncStaffAppPilotBanner(opts) {
     host.setAttribute("role", "status");
     host.innerHTML =
       '<div class="portal-staff-app-pilot-banner__inner">' +
-      '<p class="portal-staff-app-pilot-banner__copy"><strong>New staff app.</strong> Use clubSENsational Staff on your phone — same login.</p>' +
+      '<p class="portal-staff-app-pilot-banner__copy"><strong>Staff app.</strong> Use clubSENsational Staff on your phone — same login.</p>' +
       '<div class="portal-staff-app-pilot-banner__actions">' +
-      '<a class="portal-staff-app-pilot-banner__btn portal-staff-app-pilot-banner__btn--pri" id="portalStaffAppPilotOpen" href="#">Open new app</a>' +
+      '<a class="portal-staff-app-pilot-banner__btn portal-staff-app-pilot-banner__btn--pri" id="portalStaffAppPilotOpen" href="#">Open staff app</a>' +
       '<button type="button" class="portal-staff-app-pilot-banner__btn portal-staff-app-pilot-banner__btn--ghost" id="portalStaffAppPilotDismiss">Stay here</button>' +
       "</div></div>";
     const app = document.querySelector(".app");
