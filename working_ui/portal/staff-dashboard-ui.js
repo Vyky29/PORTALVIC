@@ -1925,13 +1925,27 @@
       try{
         const dbDates = window.__PORTAL_STAFF_AWAY_DATES_DB__;
         if(Array.isArray(dbDates) && dbDates.length){
-          const ownerId = String(window.__PORTAL_STAFF_AWAY_OWNER_ID__ || '').trim().toLowerCase();
-          const ownerKeys = ownerId
-            ? (typeof portalTermStaffProfileLookupKeys === 'function'
-                ? portalTermStaffProfileLookupKeys(ownerId)
-                : [ownerId])
-            : [];
-          const isOwner = ownerKeys.some(function(k){ return keys.indexOf(k) >= 0; });
+          const ownerCandidates = [];
+          function addOwnerCandidate(id){
+            const raw = String(id || '').trim().toLowerCase();
+            if(!raw) return;
+            const more = typeof portalTermStaffProfileLookupKeys === 'function'
+              ? portalTermStaffProfileLookupKeys(raw)
+              : [raw];
+            more.forEach(function(k){
+              if(k && ownerCandidates.indexOf(k) < 0) ownerCandidates.push(k);
+            });
+          }
+          addOwnerCandidate(window.__PORTAL_STAFF_AWAY_OWNER_ID__);
+          try{
+            if(typeof portalAuthStaffRosterId === 'function') addOwnerCandidate(portalAuthStaffRosterId());
+          }catch(_authAway){}
+          try{
+            addOwnerCandidate(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '');
+          }catch(_dashAway){}
+          // DB rows were fetched for auth.uid() only. Apply when this card is that person
+          // (owner stamp may be empty on early hydrate before roster id resolves).
+          const isOwner = ownerCandidates.some(function(k){ return keys.indexOf(k) >= 0; });
           if(isOwner){
             dbDates.forEach(function(d){
               const iso = String(d || '').trim().slice(0, 10);
@@ -2187,8 +2201,9 @@
         return 'pending';
       }
       if(explicit === 'complete') return 'complete';
+      /* Validated / requested day off — never nag for session feedback on that date. */
       if(staffId && typeof portalStaffHasRequestedTimeOffOnDate === 'function'
-        && portalStaffHasRequestedTimeOffOnDate(key, staffId)) return 'pending';
+        && portalStaffHasRequestedTimeOffOnDate(key, staffId)) return 'complete';
       if(explicit === 'cancelled') return 'cancelled';
       if(explicit === 'late') return 'late';
       const dayWord = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });

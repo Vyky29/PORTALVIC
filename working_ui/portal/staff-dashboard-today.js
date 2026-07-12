@@ -526,10 +526,14 @@
             // the first load. Admin "Undo" removals apply on the next page load.
             if(nextAway.length || !Array.isArray(prevAway) || !prevAway.length){
               window.__PORTAL_STAFF_AWAY_DATES_DB__ = nextAway;
-              const ownerId = typeof portalAuthStaffRosterId === 'function'
-                ? portalAuthStaffRosterId()
-                : String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
-              window.__PORTAL_STAFF_AWAY_OWNER_ID__ = String(ownerId || '').trim().toLowerCase();
+            }
+            // Always refresh the owner stamp when identity is known — early hydrates
+            // can store dates before STAFF_DASHBOARD_ID / auth roster id resolve.
+            const ownerId = (typeof portalAuthStaffRosterId === 'function'
+              ? portalAuthStaffRosterId()
+              : '') || String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+            if(ownerId){
+              window.__PORTAL_STAFF_AWAY_OWNER_ID__ = String(ownerId).trim().toLowerCase();
             }
           }
         }catch(_offDates){}
@@ -3490,9 +3494,12 @@
         portalApplyTodayVenueMeta();
         return [];
       }
-      const todayOff = id && liveToday
+      const awayOff = !!(id && selectedIso
+        && typeof portalTermStaffAwayOnDate === 'function'
+        && portalTermStaffAwayOnDate(selectedIso, id));
+      const todayOff = awayOff || !!(id && liveToday
         && typeof portalStaffTodayBlockIsOff === 'function'
-        && portalStaffTodayBlockIsOff(id);
+        && portalStaffTodayBlockIsOff(id));
       const emptyPanelMode = typeof portalStaffLiveTodayEmptyPanelMode === 'function'
         ? portalStaffLiveTodayEmptyPanelMode(id, { loading: dashboardData.portalIdentityResolved === false })
         : (todayOff ? 'off' : 'empty');

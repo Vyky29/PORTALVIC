@@ -209,6 +209,16 @@
       const dw = String(dayWord || '').trim();
       if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !PORTAL_WEEK_REVIEW_VALID_DAYS.has(dw)) return [];
       if(!opts.allowDuringRebuild && typeof window !== 'undefined' && window.__PORTAL_TERM_REBUILD_IN_PROGRESS__) return [];
+      try{
+        const sid = String(
+          (typeof portalAuthStaffRosterId === 'function' ? portalAuthStaffRosterId() : '')
+          || (typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '')
+          || ''
+        ).trim().toLowerCase();
+        if(sid && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(iso, sid)){
+          return [];
+        }
+      }catch(_awayList){}
       if(typeof buildSelectedDayViewFromLauraModel !== 'function') return [];
       const prevDateLock = String(typeof __PORTAL_REVIEW_DATE_URL_LOCK !== 'undefined' ? __PORTAL_REVIEW_DATE_URL_LOCK : (typeof window !== 'undefined' && window.__PORTAL_REVIEW_DATE_URL_LOCK) || '');
       const prevDayLock = String(typeof __PORTAL_REVIEW_DAY_URL_LOCK !== 'undefined' ? __PORTAL_REVIEW_DAY_URL_LOCK : (typeof window !== 'undefined' && window.__PORTAL_REVIEW_DAY_URL_LOCK) || '');
@@ -1216,6 +1226,10 @@
           }
           if(typeof portalTermFeedbackAssumeComplete === 'function'
             && portalTermFeedbackAssumeComplete(key, staffId)){
+            cur.setDate(cur.getDate() + 1);
+            continue;
+          }
+          if(typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(key, staffId)){
             cur.setDate(cur.getDate() + 1);
             continue;
           }

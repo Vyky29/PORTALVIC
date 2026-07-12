@@ -50,6 +50,10 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     ],
     "lulia": [
       "2026-06-29"
+    ],
+    "berta": [
+      "2026-06-24",
+      "2026-07-08"
     ]
   },
   "termStaffOffWeekdaysRangeByProfileKey": {
