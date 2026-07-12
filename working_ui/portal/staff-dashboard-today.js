@@ -2706,6 +2706,31 @@
       if(typeof portalIsViewingLiveCalendarToday !== 'function' || !portalIsViewingLiveCalendarToday()) return false;
       try{
         if(dashboardData && dashboardData.portalIdentityResolved === false) return true;
+        if(!window.__PORTAL_TODAY_AWAIT_SINCE__){
+          try{ window.__PORTAL_TODAY_AWAIT_SINCE__ = Date.now(); }catch(_){}
+        }
+        var waitedMs = 0;
+        try{ waitedMs = Date.now() - Number(window.__PORTAL_TODAY_AWAIT_SINCE__ || Date.now()); }catch(_){ waitedMs = 0; }
+        /* Hard cap: never leave TODAY on “Loading sessions…” for more than a few seconds.
+           Overrides/settle flags can flap during rehydrate; after the cap, force the gates open
+           so session cards (e.g. Alex Sunday climbing) can paint. */
+        if(waitedMs > 3500){
+          if(!window.__PORTAL_STAFF_ROSTER_HYDRATED__){
+            try{
+              if(typeof window.portalRebootstrapSessionsForPinnedStaff === 'function'){
+                window.portalRebootstrapSessionsForPinnedStaff();
+              }
+            }catch(_){}
+            try{ window.__PORTAL_STAFF_ROSTER_HYDRATED__ = true; }catch(_){}
+          }
+          if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__){
+            try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
+          }
+          if(!window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__){
+            portalStaffMarkInitialTodayScheduleSettled();
+          }
+          return false;
+        }
         if(!window.__PORTAL_STAFF_ROSTER_HYDRATED__) return true;
         /* Keep the Today cards on the brief "syncing" panel until schedule overrides have
            hydrated as well. Releasing on roster-only made staff with an instructor reassignment
@@ -2719,6 +2744,8 @@
     }
     function portalStaffMarkInitialTodayScheduleUnsettled(){
       try{ window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__ = false; }catch(_){}
+      try{ window.__PORTAL_TODAY_AWAIT_SINCE__ = Date.now(); }catch(_){}
+      try{ portalStaffEnsureInitialTodayScheduleSettledSoon(3500); }catch(_){}
     }
     function portalStaffMarkInitialTodayScheduleSettled(){
       try{ window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__ = true; }catch(_){}

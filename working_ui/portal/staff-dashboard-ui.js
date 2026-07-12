@@ -747,8 +747,19 @@
           if(todayDateLine) todayDateLine.textContent = '';
         }
       }
-      const awaitingInitialToday = typeof portalStaffLiveTodayAwaitingInitialSchedule === 'function'
+      let awaitingInitialToday = typeof portalStaffLiveTodayAwaitingInitialSchedule === 'function'
         && portalStaffLiveTodayAwaitingInitialSchedule();
+      /* If the await gate just opened (or timed out) but today is still empty / stuck on sync,
+         rebuild once so cards appear without waiting for another async rehydrate tick. */
+      if(!awaitingInitialToday
+        && dashboardData
+        && (!dashboardData.today || !dashboardData.today.length)
+        && String(dashboardData.portalTodayEmptyPanelMode || '') === 'sync'
+        && typeof portalSyncTodaySectionDisplay === 'function'){
+        try{ portalSyncTodaySectionDisplay(); }catch(_){}
+        awaitingInitialToday = typeof portalStaffLiveTodayAwaitingInitialSchedule === 'function'
+          && portalStaffLiveTodayAwaitingInitialSchedule();
+      }
       let count = awaitingInitialToday ? 0 : Math.min(9, dashboardData.today.length || 0);
       grid.className = 'today-grid';
       grid.setAttribute('data-session-count', String(count));
@@ -777,13 +788,16 @@
           })
           : '';
         if(dayOffSig && grid.getAttribute('data-day-off-sig') === dayOffSig && grid.querySelector('.today-day-panel')){
-          grid.classList.add('today-grid--day-off');
-          if(typeof portalRefreshTodayNextParticipantPhotos === 'function'){
-            portalRefreshTodayNextParticipantPhotos(grid);
+          /* Do not freeze a stuck “syncing” panel — keep retrying until cards/empty paint. */
+          if(panelMode !== 'sync'){
+            grid.classList.add('today-grid--day-off');
+            if(typeof portalRefreshTodayNextParticipantPhotos === 'function'){
+              portalRefreshTodayNextParticipantPhotos(grid);
+            }
+            if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+            if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
+            return;
           }
-          if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
-          if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
-          return;
         }
         const fb = document.getElementById('todayGridFallback');
         if(fb) fb.remove();
