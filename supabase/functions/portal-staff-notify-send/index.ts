@@ -6,9 +6,12 @@
 // POST JSON:
 // {
 //   staffUsername: "victor" | "berta" | ...,
-//   body: string,
+//   body?: string,
 //   kind?: string,
-//   contextWaId?: string
+//   contextWaId?: string,
+//   mediaBase64?: string,
+//   mediaMime?: string,
+//   mediaFilename?: string
 // }
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -23,6 +26,15 @@ import {
   normalizeParentPhoneE164,
   sendParentMobileMessage,
 } from "../_shared/portal_parent_messaging.ts";
+import {
+  classifyWhatsappMediaMime,
+  decodeBase64Payload,
+  extForMime,
+  mediaPlaceholderBody,
+  sendWhatsappMediaById,
+  uploadWhatsappMediaBinary,
+  WHATSAPP_MEDIA_MAX_BYTES,
+} from "../_shared/portal_whatsapp_media.ts";
 import {
   findStaffLeaderByUsername,
   isPortalStaffWhatsappLeaderKey,
@@ -64,11 +76,16 @@ Deno.serve(async (req) => {
   const bodyText = str(payload.body || payload.whatsappBody, 4096);
   const kind = str(payload.kind, 64).toLowerCase() || "staff_message";
   const contextWaId = str(payload.contextWaId, 200);
+  const mediaMime = str(payload.mediaMime || payload.mime, 120).toLowerCase();
+  const mediaFilename = str(payload.mediaFilename || payload.filename, 180);
+  const mediaB64 = str(payload.mediaBase64 || payload.media, 8_000_000);
 
   if (!isPortalStaffWhatsappLeaderKey(staffUsername)) {
     return portalAdminJson(400, { ok: false, error: "not_a_leader", staffUsername });
   }
-  if (!bodyText) {
+
+  const hasMedia = !!mediaB64 && !!mediaMime;
+  if (!bodyText && !hasMedia) {
     return portalAdminJson(400, { ok: false, error: "empty_body" });
   }
 
@@ -91,25 +108,68 @@ Deno.serve(async (req) => {
     });
   }
 
-  const waOpts = kind === "whatsapp_test"
-    ? { templateName: "hello_world", templateLang: "en_US" }
-    : {
-      kind,
-      contextWaId: contextWaId || undefined,
-    };
+  let messageType = "text";
+  let mediaPath: string | null = null;
+  let storedMime: string | null = null;
+  let sent: { ok: boolean; id?: string; channel?: string; error?: string };
 
-  const sent = await sendParentMobileMessage(phone, bodyText, waOpts);
+  if (hasMedia) {
+    const bytes = decodeBase64Payload(mediaB64);
+    if (!bytes || !bytes.length) {
+      return portalAdminJson(400, { ok: false, error: "invalid_media" });
+    }
+    if (bytes.length > WHATSAPP_MEDIA_MAX_BYTES) {
+      return portalAdminJson(400, { ok: false, error: "media_too_large", maxBytes: WHATSAPP_MEDIA_MAX_BYTES });
+    }
+    const waKind = classifyWhatsappMediaMime(mediaMime);
+    messageType = waKind;
+    storedMime = mediaMime.split(";")[0] || mediaMime;
+    const ext = extForMime(storedMime, waKind);
+    const safeName = (mediaFilename || `file.${ext}`).replace(/[^\w.\-]+/g, "_").slice(0, 120);
+    mediaPath = `staff-out/${crypto.randomUUID()}.${ext}`;
+
+    const up = await admin.storage.from("wa-inbound-media").upload(mediaPath, bytes, {
+      contentType: storedMime,
+      upsert: false,
+    });
+    if (up.error) {
+      console.error("[portal-staff-notify-send] storage upload failed", up.error.message);
+      return portalAdminJson(500, { ok: false, error: "media_store_failed" });
+    }
+
+    const uploaded = await uploadWhatsappMediaBinary(bytes, storedMime, safeName);
+    if (!uploaded.ok) {
+      return portalAdminJson(502, { ok: false, error: uploaded.error });
+    }
+    sent = await sendWhatsappMediaById(phone, waKind, uploaded.id, {
+      caption: bodyText || undefined,
+      filename: safeName,
+      contextWaId: contextWaId || undefined,
+    });
+  } else {
+    const waOpts = kind === "whatsapp_test"
+      ? { templateName: "hello_world", templateLang: "en_US" }
+      : {
+        kind,
+        contextWaId: contextWaId || undefined,
+      };
+    sent = await sendParentMobileMessage(phone, bodyText, waOpts);
+  }
+
   let whatsappStatus = "pending";
   let whatsappMessageId = "";
   let errorDetail: string | null = null;
 
   if (sent.ok) {
     whatsappStatus = sent.channel === "sms" ? "sent_sms" : "sent";
-    whatsappMessageId = sent.id;
+    whatsappMessageId = sent.id || "";
   } else {
     whatsappStatus = "failed";
-    errorDetail = sent.error;
+    errorDetail = sent.error || "send_failed";
   }
+
+  const logBody = bodyText ||
+    (hasMedia ? mediaPlaceholderBody(classifyWhatsappMediaMime(mediaMime)) : "");
 
   const logRow = {
     sent_by_user_id: verified.userId,
@@ -121,13 +181,17 @@ Deno.serve(async (req) => {
     staff_display_name: leader.full_name || leader.username,
     staff_phone: phone,
     subject: null,
-    body_text: bodyText,
+    body_text: logBody,
+    message_type: messageType,
+    media_path: mediaPath,
+    media_mime: storedMime,
     whatsapp_status: whatsappStatus,
     whatsapp_message_id: whatsappMessageId || null,
     error_detail: errorDetail,
     meta: {
       staff_phone_masked: maskPhoneForLog(phone),
       context_wa_id: contextWaId || null,
+      media_filename: mediaFilename || null,
     },
   };
 
@@ -150,11 +214,10 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Instant portal alert for the leader only (not the sending admin).
   await pushStaffLeaderWhatsappMessage(admin, {
     staffProfileId: leader.id,
     staffUsername: normalizeStaffUsernameKey(leader.username),
-    bodyText,
+    bodyText: logBody,
     logId: inserted?.id || null,
     senderUserId: verified.userId,
   });

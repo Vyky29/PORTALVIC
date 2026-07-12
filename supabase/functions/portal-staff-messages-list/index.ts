@@ -35,8 +35,55 @@ type ThreadMessage = {
   message_type?: string | null;
   media_path?: string | null;
   media_mime?: string | null;
+  media_url?: string | null;
   wa_message_id?: string | null;
 };
+
+const MEDIA_BUCKET = "wa-inbound-media";
+const MEDIA_SIGNED_TTL = 3600;
+
+function previewLabel(body: string, messageType?: string | null, mediaPath?: string | null): string {
+  const t = String(body || "").trim();
+  const mt = String(messageType || "").toLowerCase();
+  if (mediaPath || /^\[(sticker|image|video|audio|document)\]$/i.test(t)) {
+    if (mt === "image" || t === "[image]" || t === "[sticker]") return "📷 Photo";
+    if (mt === "audio" || t === "[audio]") return "🎤 Voice message";
+    if (mt === "video" || t === "[video]") return "🎬 Video";
+    if (mt === "document" || t === "[document]") return "📎 Document";
+    return "📎 Attachment";
+  }
+  return t.slice(0, 80);
+}
+
+async function attachSignedMediaUrls(
+  admin: ReturnType<typeof createClient>,
+  messages: ThreadMessage[],
+): Promise<void> {
+  const need: string[] = [];
+  const seen = new Set<string>();
+  messages.forEach((m) => {
+    const path = m.media_path ? String(m.media_path) : "";
+    if (!path || seen.has(path)) return;
+    seen.add(path);
+    need.push(path);
+  });
+  if (!need.length) return;
+  try {
+    const { data } = await admin.storage.from(MEDIA_BUCKET).createSignedUrls(need, MEDIA_SIGNED_TTL);
+    const map: Record<string, string> = {};
+    (data || []).forEach((item) => {
+      if (item && item.path && item.signedUrl && !item.error) {
+        map[String(item.path)] = String(item.signedUrl);
+      }
+    });
+    messages.forEach((m) => {
+      const path = m.media_path ? String(m.media_path) : "";
+      if (path && map[path]) m.media_url = map[path];
+    });
+  } catch (e) {
+    console.warn("[portal-staff-messages-list] signed urls failed", String(e));
+  }
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -103,7 +150,7 @@ Deno.serve(async (req) => {
     if (ids.length) {
       const { data: inboundRows } = await admin
         .from("portal_staff_whatsapp_inbound")
-        .select("staff_profile_id, created_at, body_text")
+        .select("staff_profile_id, created_at, body_text, message_type, media_path")
         .in("staff_profile_id", ids)
         .order("created_at", { ascending: false })
         .limit(300);
@@ -112,7 +159,11 @@ Deno.serve(async (req) => {
         if (!sid || lastInboundByStaff[sid]) return;
         lastInboundByStaff[sid] = {
           at: String(r.created_at || ""),
-          preview: String(r.body_text || "").trim().slice(0, 80),
+          preview: previewLabel(
+            String(r.body_text || ""),
+            r.message_type != null ? String(r.message_type) : null,
+            r.media_path != null ? String(r.media_path) : null,
+          ),
         };
       });
     }
@@ -167,7 +218,7 @@ Deno.serve(async (req) => {
   const { data: outboundRows } = await admin
     .from("portal_staff_notify_log")
     .select(
-      "id, created_at, body_text, whatsapp_status, whatsapp_message_id, staff_profile_id, staff_phone",
+      "id, created_at, body_text, whatsapp_status, whatsapp_message_id, staff_profile_id, staff_phone, message_type, media_path, media_mime",
     )
     .eq("staff_profile_id", leader.id)
     .order("created_at", { ascending: true })
@@ -210,6 +261,9 @@ Deno.serve(async (req) => {
       created_at: String(r.created_at || ""),
       body_text: String(r.body_text || ""),
       whatsapp_status: r.whatsapp_status != null ? String(r.whatsapp_status) : null,
+      message_type: r.message_type != null ? String(r.message_type) : "text",
+      media_path: r.media_path != null ? String(r.media_path) : null,
+      media_mime: r.media_mime != null ? String(r.media_mime) : null,
       wa_message_id: r.whatsapp_message_id != null ? String(r.whatsapp_message_id) : null,
     });
   });
@@ -226,6 +280,7 @@ Deno.serve(async (req) => {
     });
   });
   messages.sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+  await attachSignedMediaUrls(admin, messages);
 
   const READ_EPOCH = "1970-01-01T00:00:00.000Z";
   let readAt = READ_EPOCH;

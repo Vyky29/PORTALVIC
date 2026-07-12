@@ -4,7 +4,7 @@
 // (same thread admin sees in Leader WhatsApp). Does not require Meta outbound.
 //
 // Auth: Bearer staff JWT (leader allowlist).
-// Body: { message: string }
+// Body: { message?: string, mediaBase64?: string, mediaMime?: string, mediaFilename?: string }
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -13,6 +13,13 @@ import {
   portalAdminJson,
 } from "../_shared/portal_admin_auth.ts";
 import { normalizeParentPhoneE164 } from "../_shared/portal_parent_messaging.ts";
+import {
+  classifyWhatsappMediaMime,
+  decodeBase64Payload,
+  extForMime,
+  mediaPlaceholderBody,
+  WHATSAPP_MEDIA_MAX_BYTES,
+} from "../_shared/portal_whatsapp_media.ts";
 import {
   isPortalStaffWhatsappLeaderKey,
   normalizeStaffUsernameKey,
@@ -64,7 +71,12 @@ Deno.serve(async (req) => {
   }
 
   const message = str(payload.message || payload.body, 4000);
-  if (!message) {
+  const mediaMime = str(payload.mediaMime || payload.mime, 120).toLowerCase();
+  const mediaFilename = str(payload.mediaFilename || payload.filename, 180);
+  const mediaB64 = str(payload.mediaBase64 || payload.media, 8_000_000);
+  const hasMedia = !!mediaB64 && !!mediaMime;
+
+  if (!message && !hasMedia) {
     return portalAdminJson(400, { ok: false, error: "empty_body" });
   }
 
@@ -88,19 +100,51 @@ Deno.serve(async (req) => {
   const waMessageId = `app:staff:${crypto.randomUUID()}`;
   const now = new Date().toISOString();
 
+  let messageType = "text";
+  let mediaPath: string | null = null;
+  let storedMime: string | null = null;
+  let bodyText = message;
+
+  if (hasMedia) {
+    const bytes = decodeBase64Payload(mediaB64);
+    if (!bytes || !bytes.length) {
+      return portalAdminJson(400, { ok: false, error: "invalid_media" });
+    }
+    if (bytes.length > WHATSAPP_MEDIA_MAX_BYTES) {
+      return portalAdminJson(400, { ok: false, error: "media_too_large" });
+    }
+    const waKind = classifyWhatsappMediaMime(mediaMime);
+    messageType = waKind;
+    storedMime = mediaMime.split(";")[0] || mediaMime;
+    const ext = extForMime(storedMime, waKind);
+    mediaPath = `staff-in/${crypto.randomUUID()}.${ext}`;
+    const up = await admin.storage.from("wa-inbound-media").upload(mediaPath, bytes, {
+      contentType: storedMime,
+      upsert: false,
+    });
+    if (up.error) {
+      console.error("[portal-staff-message-send] storage upload failed", up.error.message);
+      return portalAdminJson(500, { ok: false, error: "media_store_failed" });
+    }
+    if (!bodyText) bodyText = mediaPlaceholderBody(waKind);
+  }
+
   const row = {
     wa_message_id: waMessageId,
     from_phone: phone,
     staff_profile_id: me.id,
     staff_username: normalizeStaffUsernameKey(String(me.username || "")),
     contact_name: display,
-    message_type: "text",
-    body_text: message,
+    message_type: messageType,
+    body_text: bodyText,
     context_wa_id: null,
+    media_path: mediaPath,
+    media_mime: storedMime,
     created_at: now,
     meta: {
       source: "staff_portal",
       staff_profile_id: me.id,
+      media_filename: mediaFilename || null,
     },
   };
 
@@ -120,7 +164,7 @@ Deno.serve(async (req) => {
       id: String(inserted.id),
       staff_profile_id: String(me.id),
       staff_username: normalizeStaffUsernameKey(String(me.username || "")),
-      body_text: String(inserted.body_text || message),
+      body_text: String(inserted.body_text || bodyText),
       created_at: String(inserted.created_at || now),
     });
   }
@@ -131,7 +175,10 @@ Deno.serve(async (req) => {
       id: inserted?.id || null,
       direction: "inbound",
       created_at: inserted?.created_at || now,
-      body_text: inserted?.body_text || message,
+      body_text: inserted?.body_text || bodyText,
+      message_type: messageType,
+      media_path: mediaPath,
+      media_mime: storedMime,
     },
   });
 });

@@ -70,6 +70,11 @@
   var sending = false;
   var lastUnreadCount = 0;
   var knownUnreadBaseline = false;
+  var pendingAttach = null;
+  var recording = false;
+  var mediaRecorder = null;
+  var recordChunks = [];
+  var MAX_ATTACH_BYTES = 4 * 1024 * 1024;
 
   function showStaffWaToast(msg, opts) {
     opts = opts || {};
@@ -270,6 +275,14 @@
   function composerHtml() {
     return (
       '<form class="portal-staff-wa-sheet__composer" id="portalStaffWaForm">' +
+      '<div class="portal-staff-wa-sheet__tools">' +
+      '<input type="file" id="portalStaffWaFile" accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" hidden />' +
+      '<button type="button" class="portal-staff-wa-sheet__tool" id="portalStaffWaAttachPhoto">Photo</button>' +
+      '<button type="button" class="portal-staff-wa-sheet__tool" id="portalStaffWaAttachDoc">File</button>' +
+      '<button type="button" class="portal-staff-wa-sheet__tool" id="portalStaffWaRecord">Voice</button>' +
+      '<button type="button" class="portal-staff-wa-sheet__tool" id="portalStaffWaClearAttach" hidden>Clear</button>' +
+      "</div>" +
+      '<p class="portal-staff-wa-sheet__attach-preview muted" id="portalStaffWaAttachPreview"></p>' +
       '<label class="topbar-sr-only" for="portalStaffWaDraft">Your reply</label>' +
       '<textarea id="portalStaffWaDraft" name="message" rows="2" maxlength="4000" placeholder="Type a reply…" enterkeyhint="send" autocomplete="off"></textarea>' +
       '<button type="submit" class="portal-staff-wa-sheet__send" id="portalStaffWaSend">Send</button>' +
@@ -282,6 +295,49 @@
     if (!panel || document.getElementById("portalStaffWaForm")) return;
     panel.insertAdjacentHTML("beforeend", composerHtml());
     bindComposer(sheet);
+  }
+
+  function fileToBase64(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var raw = String(reader.result || "");
+        var comma = raw.indexOf(",");
+        resolve(comma >= 0 ? raw.slice(comma + 1) : raw);
+      };
+      reader.onerror = function () {
+        reject(new Error("read_failed"));
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function clearAttach() {
+    pendingAttach = null;
+    var preview = document.getElementById("portalStaffWaAttachPreview");
+    if (preview) preview.textContent = "";
+    var fileInput = document.getElementById("portalStaffWaFile");
+    if (fileInput) fileInput.value = "";
+    var clearBtn = document.getElementById("portalStaffWaClearAttach");
+    if (clearBtn) clearBtn.hidden = true;
+  }
+
+  function setAttach(fileOrBlob, filename, mime) {
+    if (!fileOrBlob) return;
+    if ((fileOrBlob.size || 0) > MAX_ATTACH_BYTES) {
+      var hint = document.getElementById("portalStaffWaHint");
+      if (hint) hint.textContent = "Attachment too large (max 4 MB).";
+      return;
+    }
+    var name = filename || fileOrBlob.name || "attachment";
+    var type = mime || fileOrBlob.type || "application/octet-stream";
+    void fileToBase64(fileOrBlob).then(function (b64) {
+      pendingAttach = { base64: b64, mime: type, filename: name };
+      var preview = document.getElementById("portalStaffWaAttachPreview");
+      if (preview) preview.textContent = "Attached: " + name;
+      var clearBtn = document.getElementById("portalStaffWaClearAttach");
+      if (clearBtn) clearBtn.hidden = false;
+    });
   }
 
   function bindComposer(sheet) {
@@ -301,6 +357,99 @@
         }
       });
     }
+    var fileInput = sheet.querySelector("#portalStaffWaFile");
+    var photoBtn = sheet.querySelector("#portalStaffWaAttachPhoto");
+    var docBtn = sheet.querySelector("#portalStaffWaAttachDoc");
+    var recBtn = sheet.querySelector("#portalStaffWaRecord");
+    var clearBtn = sheet.querySelector("#portalStaffWaClearAttach");
+    if (photoBtn && fileInput) {
+      photoBtn.addEventListener("click", function () {
+        fileInput.accept = "image/*";
+        fileInput.click();
+      });
+    }
+    if (docBtn && fileInput) {
+      docBtn.addEventListener("click", function () {
+        fileInput.accept = "image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv";
+        fileInput.click();
+      });
+    }
+    if (fileInput) {
+      fileInput.addEventListener("change", function () {
+        var f = fileInput.files && fileInput.files[0];
+        if (f) setAttach(f, f.name, f.type || "application/octet-stream");
+      });
+    }
+    if (clearBtn) {
+      clearBtn.addEventListener("click", function () {
+        clearAttach();
+      });
+    }
+    if (recBtn) {
+      recBtn.addEventListener("click", function () {
+        void toggleVoice(recBtn);
+      });
+    }
+  }
+
+  async function toggleVoice(recBtn) {
+    if (recording && mediaRecorder) {
+      try {
+        mediaRecorder.stop();
+      } catch (_e) {}
+      return;
+    }
+    if (!global.navigator || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      var hint0 = document.getElementById("portalStaffWaHint");
+      if (hint0) hint0.textContent = "Voice recording not supported on this device.";
+      return;
+    }
+    try {
+      var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      var mime = "";
+      if (typeof MediaRecorder !== "undefined") {
+        if (MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")) mime = "audio/ogg;codecs=opus";
+        else if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) mime = "audio/webm;codecs=opus";
+        else if (MediaRecorder.isTypeSupported("audio/mp4")) mime = "audio/mp4";
+      }
+      recordChunks = [];
+      mediaRecorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      recording = true;
+      if (recBtn) {
+        recBtn.textContent = "Stop";
+        recBtn.classList.add("is-recording");
+      }
+      mediaRecorder.ondataavailable = function (ev) {
+        if (ev.data && ev.data.size) recordChunks.push(ev.data);
+      };
+      mediaRecorder.onstop = function () {
+        recording = false;
+        if (recBtn) {
+          recBtn.textContent = "Voice";
+          recBtn.classList.remove("is-recording");
+        }
+        try {
+          stream.getTracks().forEach(function (t) {
+            t.stop();
+          });
+        } catch (_s) {}
+        var blobMime = (mediaRecorder && mediaRecorder.mimeType) || mime || "audio/webm";
+        var blob = new Blob(recordChunks, { type: blobMime });
+        var ext = blobMime.indexOf("ogg") >= 0 ? "ogg" : blobMime.indexOf("mp4") >= 0 ? "m4a" : "webm";
+        setAttach(blob, "voice-note." + ext, blobMime);
+        mediaRecorder = null;
+        recordChunks = [];
+      };
+      mediaRecorder.start();
+    } catch (_e) {
+      recording = false;
+      if (recBtn) {
+        recBtn.textContent = "Voice";
+        recBtn.classList.remove("is-recording");
+      }
+      var hint = document.getElementById("portalStaffWaHint");
+      if (hint) hint.textContent = "Microphone permission needed for voice notes.";
+    }
   }
 
   async function sendReply() {
@@ -309,8 +458,8 @@
     var hint = document.getElementById("portalStaffWaHint");
     var sendBtn = document.getElementById("portalStaffWaSend");
     var body = draft ? String(draft.value || "").trim() : "";
-    if (!body) {
-      if (hint) hint.textContent = "Type a message first.";
+    if (!body && !pendingAttach) {
+      if (hint) hint.textContent = "Type a message or attach a photo/file/voice note.";
       if (draft) draft.focus();
       return;
     }
@@ -325,6 +474,12 @@
     if (sendBtn) sendBtn.disabled = true;
     if (hint) hint.textContent = "Sending…";
     try {
+      var payload = { message: body };
+      if (pendingAttach) {
+        payload.mediaBase64 = pendingAttach.base64;
+        payload.mediaMime = pendingAttach.mime;
+        payload.mediaFilename = pendingAttach.filename;
+      }
       var res = await fetch(url + "/functions/v1/portal-staff-message-send", {
         method: "POST",
         headers: {
@@ -332,7 +487,7 @@
           apikey: key,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message: body }),
+        body: JSON.stringify(payload),
       });
       var data = await res.json().catch(function () {
         return {};
@@ -345,6 +500,7 @@
         return;
       }
       if (draft) draft.value = "";
+      clearAttach();
       if (hint) hint.textContent = "Sent — admin can see it in Leader WhatsApp.";
       await loadThread();
       if (draft) draft.focus();
@@ -371,6 +527,41 @@
     }
   }
 
+  function renderMedia(m) {
+    var url = m && m.media_url ? String(m.media_url) : "";
+    if (!url) return "";
+    var mime = String((m && m.media_mime) || "").toLowerCase();
+    var type = String((m && m.message_type) || "").toLowerCase();
+    if (mime.indexOf("image") === 0 || type === "image" || type === "sticker") {
+      return (
+        '<a href="' +
+        esc(url) +
+        '" target="_blank" rel="noopener"><img class="portal-staff-wa-bubble__img" src="' +
+        esc(url) +
+        '" alt="Photo" loading="lazy" /></a>'
+      );
+    }
+    if (mime.indexOf("video") === 0 || type === "video") {
+      return (
+        '<video class="portal-staff-wa-bubble__img" src="' +
+        esc(url) +
+        '" controls playsinline></video>'
+      );
+    }
+    if (mime.indexOf("audio") === 0 || type === "audio") {
+      return (
+        '<audio class="portal-staff-wa-bubble__audio" src="' +
+        esc(url) +
+        '" controls></audio>'
+      );
+    }
+    return (
+      '<a class="portal-staff-wa-bubble__file" href="' +
+      esc(url) +
+      '" target="_blank" rel="noopener">Open attachment</a>'
+    );
+  }
+
   function renderMessages(messages) {
     var host = document.getElementById("portalStaffWaThread");
     if (!host) return;
@@ -384,6 +575,14 @@
       .map(function (m) {
         var dir = m.direction === "inbound" ? "in" : "out";
         var label = dir === "in" ? "You" : "Club";
+        var bodyStr = String(m.body_text || "");
+        var isPlaceholder =
+          !!m.media_url && /^\[(sticker|image|video|audio|document)\]$/i.test(bodyStr.trim());
+        var mediaHtml = renderMedia(m);
+        var bodyHtml =
+          bodyStr && !isPlaceholder
+            ? '<div class="portal-staff-wa-bubble__body">' + esc(bodyStr) + "</div>"
+            : "";
         return (
           '<div class="portal-staff-wa-bubble portal-staff-wa-bubble--' +
           dir +
@@ -393,9 +592,8 @@
           " · " +
           esc(formatTime(m.created_at)) +
           "</div>" +
-          '<div class="portal-staff-wa-bubble__body">' +
-          esc(m.body_text || "") +
-          "</div>" +
+          mediaHtml +
+          bodyHtml +
           "</div>"
         );
       })

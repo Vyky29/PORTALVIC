@@ -145,6 +145,31 @@
   white-space:pre-wrap;
   line-height:1.35;
 }
+.portal-staff-wa-admin__img{
+  display:block;
+  max-width:min(220px,100%);
+  max-height:240px;
+  width:auto;
+  height:auto;
+  border-radius:10px;
+  object-fit:contain;
+  background:rgba(15,23,42,.03);
+  margin:4px 0;
+}
+.portal-staff-wa-admin__audio{
+  display:block;
+  max-width:100%;
+  min-width:0;
+  margin:4px 0;
+}
+.portal-staff-wa-admin__file{
+  display:inline-block;
+  font-size:13px;
+  font-weight:700;
+  color:#166534;
+  margin:4px 0;
+  overflow-wrap:anywhere;
+}
 .portal-staff-wa-admin__composer{
   display:flex;
   flex-direction:column;
@@ -152,6 +177,24 @@
   padding:10px 12px;
   border-top:1px solid rgba(15,23,42,.08);
   min-width:0;
+}
+.portal-staff-wa-admin__tools{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:6px;
+  min-width:0;
+}
+.portal-staff-wa-admin__tools .btn.is-recording{
+  border-color:#dc2626;
+  color:#b91c1c;
+}
+.portal-staff-wa-admin__attach-preview{
+  flex:1 1 100%;
+  font-size:12px;
+  min-width:0;
+  overflow-wrap:anywhere;
+  margin:0;
 }
 .portal-staff-wa-admin__composer textarea{
   width:100%;

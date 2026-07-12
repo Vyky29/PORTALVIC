@@ -2,11 +2,13 @@
  * Admin — Leader WhatsApp threads (staff leaders only).
  * Parallel to Family messages; uses portal_staff_* tables.
  * Unread = inbound from leader newer than localStorage seen cursor (per username).
+ * Supports photo / file / voice attachments (Meta WhatsApp).
  */
 (function (global) {
   "use strict";
 
   var SEEN_STORE_KEY = "portalStaffWaAdminSeenV1";
+  var MAX_ATTACH_BYTES = 4 * 1024 * 1024;
 
   var state = {
     directory: [],
@@ -16,6 +18,10 @@
     sending: false,
     draft: "",
     pollTimer: null,
+    attach: null,
+    recording: false,
+    mediaRecorder: null,
+    recordChunks: [],
   };
 
   var cfg = {
@@ -115,6 +121,50 @@
     return { ok: res.ok && !!data.ok, status: res.status, data: data };
   }
 
+  function fileToBase64(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var raw = String(reader.result || "");
+        var comma = raw.indexOf(",");
+        resolve(comma >= 0 ? raw.slice(comma + 1) : raw);
+      };
+      reader.onerror = function () {
+        reject(new Error("read_failed"));
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function clearAttach() {
+    state.attach = null;
+    var preview = document.getElementById("portalStaffWaAttachPreview");
+    if (preview) preview.textContent = "";
+    var fileInput = document.getElementById("portalStaffWaFile");
+    if (fileInput) fileInput.value = "";
+  }
+
+  function setAttach(fileOrBlob, filename, mime) {
+    if (!fileOrBlob) return;
+    var size = fileOrBlob.size || 0;
+    if (size > MAX_ATTACH_BYTES) {
+      cfg.toast("Attachment too large (max 4 MB)");
+      return;
+    }
+    var name = filename || fileOrBlob.name || "attachment";
+    var type = mime || fileOrBlob.type || "application/octet-stream";
+    void fileToBase64(fileOrBlob).then(function (b64) {
+      state.attach = { base64: b64, mime: type, filename: name };
+      var preview = document.getElementById("portalStaffWaAttachPreview");
+      if (preview) {
+        preview.textContent = "Attached: " + name;
+      }
+      syncClearAttachBtn();
+    }).catch(function () {
+      cfg.toast("Could not read file");
+    });
+  }
+
   function viewHtml() {
     return (
       '<div class="portal-staff-wa-admin" id="portalStaffWaAdmin">' +
@@ -126,6 +176,14 @@
       '<div class="portal-staff-wa-admin__chat-head" id="portalStaffWaHead">Select a leader</div>' +
       '<div class="portal-staff-wa-admin__thread" id="portalStaffWaMsgs"></div>' +
       '<form class="portal-staff-wa-admin__composer" id="portalStaffWaForm">' +
+      '<div class="portal-staff-wa-admin__tools">' +
+      '<input type="file" id="portalStaffWaFile" accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" hidden />' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="portalStaffWaAttachPhoto">Photo</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="portalStaffWaAttachDoc">File</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="portalStaffWaRecord">Voice</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="portalStaffWaClearAttach" hidden>Clear</button>' +
+      '<span class="portal-staff-wa-admin__attach-preview muted" id="portalStaffWaAttachPreview"></span>' +
+      "</div>" +
       '<textarea id="portalStaffWaDraft" rows="3" placeholder="Message…" maxlength="4000"></textarea>' +
       '<button type="submit" class="btn" id="portalStaffWaSend">Send WhatsApp</button>' +
       "</form>" +
@@ -156,7 +214,6 @@
       renderCount();
       return;
     }
-    // Unread first, then name.
     var sorted = state.directory.slice().sort(function (a, b) {
       var ua = isLeaderUnread(a) ? 1 : 0;
       var ub = isLeaderUnread(b) ? 1 : 0;
@@ -228,6 +285,41 @@
     return max;
   }
 
+  function renderMedia(m) {
+    var url = m && m.media_url ? String(m.media_url) : "";
+    if (!url) return "";
+    var mime = String((m && m.media_mime) || "").toLowerCase();
+    var type = String((m && m.message_type) || "").toLowerCase();
+    if (mime.indexOf("image") === 0 || type === "image" || type === "sticker") {
+      return (
+        '<a href="' +
+        esc(url) +
+        '" target="_blank" rel="noopener"><img class="portal-staff-wa-admin__img" src="' +
+        esc(url) +
+        '" alt="Photo" loading="lazy" /></a>'
+      );
+    }
+    if (mime.indexOf("video") === 0 || type === "video") {
+      return (
+        '<video class="portal-staff-wa-admin__img" src="' +
+        esc(url) +
+        '" controls playsinline></video>'
+      );
+    }
+    if (mime.indexOf("audio") === 0 || type === "audio") {
+      return (
+        '<audio class="portal-staff-wa-admin__audio" src="' +
+        esc(url) +
+        '" controls></audio>'
+      );
+    }
+    return (
+      '<a class="portal-staff-wa-admin__file" href="' +
+      esc(url) +
+      '" target="_blank" rel="noopener">Open attachment</a>'
+    );
+  }
+
   function renderMessages() {
     var host = document.getElementById("portalStaffWaMsgs");
     var head = document.getElementById("portalStaffWaHead");
@@ -256,6 +348,14 @@
       .map(function (m) {
         var dir = m.direction === "inbound" ? "in" : "out";
         var who = dir === "in" ? "Leader" : "Admin";
+        var bodyStr = String(m.body_text || "");
+        var isPlaceholder =
+          !!m.media_url && /^\[(sticker|image|video|audio|document)\]$/i.test(bodyStr.trim());
+        var mediaHtml = renderMedia(m);
+        var bodyHtml =
+          bodyStr && !isPlaceholder
+            ? '<div class="portal-staff-wa-admin__body">' + esc(bodyStr) + "</div>"
+            : "";
         return (
           '<div class="portal-staff-wa-admin__bubble portal-staff-wa-admin__bubble--' +
           dir +
@@ -266,9 +366,8 @@
           esc(formatTime(m.created_at)) +
           (m.whatsapp_status ? " · " + esc(m.whatsapp_status) : "") +
           "</div>" +
-          '<div class="portal-staff-wa-admin__body">' +
-          esc(m.body_text || "") +
-          "</div>" +
+          mediaHtml +
+          bodyHtml +
           "</div>"
         );
       })
@@ -287,7 +386,6 @@
       return;
     }
     state.directory = Array.isArray(res.data.directory) ? res.data.directory : [];
-    // If the open thread is selected, keep it marked seen up to latest known inbound.
     if (state.selected) {
       var open = state.directory.find(function (l) {
         return l.username === state.selected;
@@ -341,7 +439,6 @@
     state.messages = Array.isArray(res.data.messages) ? res.data.messages : [];
     var lastIn = latestInboundAt(state.messages);
     if (lastIn) markThreadSeen(state.selected, lastIn);
-    // Keep directory lastInboundAt in sync for the open thread.
     state.directory = state.directory.map(function (l) {
       if (l.username !== state.selected) return l;
       return Object.assign({}, l, {
@@ -352,13 +449,20 @@
     renderMessages();
   }
 
+  function syncClearAttachBtn() {
+    var btn = document.getElementById("portalStaffWaClearAttach");
+    var preview = document.getElementById("portalStaffWaAttachPreview");
+    if (btn) btn.hidden = !state.attach;
+    if (preview && !state.attach) preview.textContent = "";
+  }
+
   async function sendMessage(ev) {
     if (ev) ev.preventDefault();
     if (state.sending || !state.selected) return;
     var draftEl = document.getElementById("portalStaffWaDraft");
     var body = draftEl ? String(draftEl.value || "").trim() : "";
-    if (!body) {
-      cfg.toast("Write a message first");
+    if (!body && !state.attach) {
+      cfg.toast("Write a message or attach a photo/file/voice note");
       return;
     }
     var lead = state.directory.find(function (l) {
@@ -371,11 +475,17 @@
     state.sending = true;
     var btn = document.getElementById("portalStaffWaSend");
     if (btn) btn.disabled = true;
-    var res = await api("portal-staff-notify-send", {
+    var payload = {
       staffUsername: state.selected,
       body: body,
       kind: "staff_message",
-    });
+    };
+    if (state.attach) {
+      payload.mediaBase64 = state.attach.base64;
+      payload.mediaMime = state.attach.mime;
+      payload.mediaFilename = state.attach.filename;
+    }
+    var res = await api("portal-staff-notify-send", payload);
     state.sending = false;
     if (btn) btn.disabled = false;
     if (!res.ok) {
@@ -383,8 +493,72 @@
       return;
     }
     if (draftEl) draftEl.value = "";
+    clearAttach();
+    syncClearAttachBtn();
     cfg.toast("WhatsApp sent");
     await loadThread(state.selected);
+  }
+
+  async function toggleVoice() {
+    var recBtn = document.getElementById("portalStaffWaRecord");
+    if (state.recording && state.mediaRecorder) {
+      try {
+        state.mediaRecorder.stop();
+      } catch (_e) {}
+      return;
+    }
+    if (!global.navigator || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      cfg.toast("Voice recording not supported on this device");
+      return;
+    }
+    try {
+      var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      var mime = "";
+      if (typeof MediaRecorder !== "undefined") {
+        if (MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")) mime = "audio/ogg;codecs=opus";
+        else if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) mime = "audio/webm;codecs=opus";
+        else if (MediaRecorder.isTypeSupported("audio/mp4")) mime = "audio/mp4";
+      }
+      state.recordChunks = [];
+      state.mediaRecorder = mime
+        ? new MediaRecorder(stream, { mimeType: mime })
+        : new MediaRecorder(stream);
+      state.recording = true;
+      if (recBtn) {
+        recBtn.textContent = "Stop";
+        recBtn.classList.add("is-recording");
+      }
+      state.mediaRecorder.ondataavailable = function (ev) {
+        if (ev.data && ev.data.size) state.recordChunks.push(ev.data);
+      };
+      state.mediaRecorder.onstop = function () {
+        state.recording = false;
+        if (recBtn) {
+          recBtn.textContent = "Voice";
+          recBtn.classList.remove("is-recording");
+        }
+        try {
+          stream.getTracks().forEach(function (t) {
+            t.stop();
+          });
+        } catch (_s) {}
+        var blobMime = (state.mediaRecorder && state.mediaRecorder.mimeType) || mime || "audio/webm";
+        var blob = new Blob(state.recordChunks, { type: blobMime });
+        var ext = blobMime.indexOf("ogg") >= 0 ? "ogg" : blobMime.indexOf("mp4") >= 0 ? "m4a" : "webm";
+        setAttach(blob, "voice-note." + ext, blobMime);
+        syncClearAttachBtn();
+        state.mediaRecorder = null;
+        state.recordChunks = [];
+      };
+      state.mediaRecorder.start();
+    } catch (_e) {
+      cfg.toast("Microphone permission needed for voice notes");
+      state.recording = false;
+      if (recBtn) {
+        recBtn.textContent = "Voice";
+        recBtn.classList.remove("is-recording");
+      }
+    }
   }
 
   function startLiveRefresh() {
@@ -421,6 +595,46 @@
     });
     var form = document.getElementById("portalStaffWaForm");
     if (form) form.addEventListener("submit", sendMessage);
+
+    var fileInput = document.getElementById("portalStaffWaFile");
+    var photoBtn = document.getElementById("portalStaffWaAttachPhoto");
+    var docBtn = document.getElementById("portalStaffWaAttachDoc");
+    var recBtn = document.getElementById("portalStaffWaRecord");
+    var clearBtn = document.getElementById("portalStaffWaClearAttach");
+
+    if (photoBtn && fileInput) {
+      photoBtn.addEventListener("click", function () {
+        fileInput.accept = "image/*";
+        fileInput.click();
+      });
+    }
+    if (docBtn && fileInput) {
+      docBtn.addEventListener("click", function () {
+        fileInput.accept = "image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv";
+        fileInput.click();
+      });
+    }
+    if (fileInput) {
+      fileInput.addEventListener("change", function () {
+        var f = fileInput.files && fileInput.files[0];
+        if (f) {
+          setAttach(f, f.name, f.type || "application/octet-stream");
+          syncClearAttachBtn();
+        }
+      });
+    }
+    if (recBtn) {
+      recBtn.addEventListener("click", function () {
+        void toggleVoice();
+      });
+    }
+    if (clearBtn) {
+      clearBtn.addEventListener("click", function () {
+        clearAttach();
+        syncClearAttachBtn();
+      });
+    }
+
     void loadDirectory().then(function () {
       startLiveRefresh();
     });
