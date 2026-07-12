@@ -226,18 +226,90 @@
   function nk(r) { return String(r.name_key || ""); }
 
   // ---- Days off / unavailability -------------------------------------------
-  function offsFor(nameKey) {
+  // Session-disruption validate sometimes wrote slug-of-full-name (bertatraperocasado)
+  // while HR People uses a shorter key (bertatrapero) and roster uses username (berta).
+  var NAME_KEY_OFF_ALIASES = {
+    berta: ["berta", "bertatrapero", "bertatraperocasado"],
+    bertatrapero: ["berta", "bertatrapero", "bertatraperocasado"],
+    bertatraperocasado: ["berta", "bertatrapero", "bertatraperocasado"],
+    michelle: ["michelle", "michelleemmacaleb"],
+    michelleemmacaleb: ["michelle", "michelleemmacaleb"],
+    javier: ["javier", "javiermarquez", "javiermarq"],
+    javiermarquez: ["javier", "javiermarquez", "javiermarq"],
+    javiermarq: ["javier", "javiermarquez", "javiermarq"],
+    youssef: ["youssef", "youssefmoustafa"],
+    youssefmoustafa: ["youssef", "youssefmoustafa"],
+    lulia: ["lulia", "luliya", "aida", "aidaluliyajemal"],
+    luliya: ["lulia", "luliya", "aida", "aidaluliyajemal"],
+    aida: ["lulia", "luliya", "aida", "aidaluliyajemal"],
+    aidaluliyajemal: ["lulia", "luliya", "aida", "aidaluliyajemal"],
+    carlos: ["carlos", "carlosherrero"],
+    carlosherrero: ["carlos", "carlosherrero"],
+    john: ["john", "johnkyeifram"],
+    johnkyeifram: ["john", "johnkyeifram"],
+    sevitha: ["sevitha", "info"],
+    angel: ["angel", "angelfalceto"],
+    angelfalceto: ["angel", "angelfalceto"],
+    victor: ["victor", "victormatilla"],
+    victormatilla: ["victor", "victormatilla"]
+  };
+
+  function offNameKeySet(nameKey) {
+    var k = String(nameKey || "").trim().toLowerCase();
+    var set = {};
+    if (k) set[k] = true;
+    var aliases = NAME_KEY_OFF_ALIASES[k];
+    if (aliases) {
+      aliases.forEach(function (a) {
+        if (a) set[String(a).toLowerCase()] = true;
+      });
+    }
+    return set;
+  }
+
+  /** Prefer HR staff_id; else any linked row for this name_key; else profile match by username/name. */
+  function resolvePersonStaffId(nameKey, personRow) {
+    if (personRow && personRow.staff_id) return String(personRow.staff_id);
+    var k = String(nameKey || "");
+    var hit = (state.rows || []).filter(function (r) {
+      return nk(r) === k && r.staff_id;
+    })[0];
+    if (hit && hit.staff_id) return String(hit.staff_id);
+    var keys = Object.keys(offNameKeySet(nameKey));
+    var display = String((personRow && personRow.employee_name) || "").trim().toLowerCase();
+    var first = display.split(/\s+/)[0] || "";
+    var profiles = state.profileConfirmRows || [];
+    for (var i = 0; i < profiles.length; i++) {
+      var p = profiles[i];
+      var un = String(p.username || "").trim().toLowerCase();
+      var fn = String(p.full_name || "").trim().toLowerCase();
+      if (un && keys.indexOf(un) >= 0) return String(p.id);
+      if (first && un === first) return String(p.id);
+      if (display && fn && (fn === display || fn.indexOf(display) === 0 || display.indexOf(fn) === 0)) {
+        return String(p.id);
+      }
+    }
+    return "";
+  }
+
+  function offsFor(nameKey, personRow) {
+    var keySet = offNameKeySet(nameKey);
+    var sid = resolvePersonStaffId(nameKey, personRow);
     return (state.unavail || [])
-      .filter(function (u) { return String(u.name_key || "") === String(nameKey || ""); })
+      .filter(function (u) {
+        if (sid && u.staff_id && String(u.staff_id) === sid) return true;
+        var uk = String(u.name_key || "").trim().toLowerCase();
+        return !!(uk && keySet[uk]);
+      })
       .sort(function (a, b) { return String(a.off_date).localeCompare(String(b.off_date)); });
   }
   function todayIso() {
     var d = new Date();
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   }
-  function upcomingOffs(nameKey) {
+  function upcomingOffs(nameKey, personRow) {
     var t = todayIso();
-    return offsFor(nameKey).filter(function (u) { return String(u.off_date) >= t; });
+    return offsFor(nameKey, personRow).filter(function (u) { return String(u.off_date) >= t; });
   }
   function fmtDate(iso) {
     var s = String(iso || "");
@@ -776,7 +848,7 @@
         var pill = personActive(p)
           ? '<span class="hr-pill hr-pill--on">Active</span>'
           : '<span class="hr-pill hr-pill--off">Inactive</span>';
-        var up = upcomingOffs(nk(p));
+        var up = upcomingOffs(nk(p), p);
         var offChip = up.length
           ? '<span class="hr-off-chip" title="' + esc(up.map(function (u) { return fmtDate(u.off_date); }).join(", ")) + '">' + icon("cal", 12) + up.length + ' day' + (up.length === 1 ? "" : "s") + ' off</span>'
           : "";
@@ -986,7 +1058,7 @@
       return (a.row_index || 0) - (b.row_index || 0);
     });
 
-    var sections = daysOffSectionHtml(nameKey);
+    var sections = daysOffSectionHtml(nameKey, personRow);
     sections += employmentContractsSectionHtml();
     rows.forEach(function (r, idx) {
       var d = r.data || {};
@@ -1163,8 +1235,8 @@
     loadPersonEmploymentContracts(staffId, screen);
   }
 
-  function daysOffSectionHtml(nameKey) {
-    var offs = offsFor(nameKey);
+  function daysOffSectionHtml(nameKey, personRow) {
+    var offs = offsFor(nameKey, personRow);
     var listHtml;
     if (offs.length) {
       listHtml = '<div class="hr-off-list">' + offs.map(function (u) {
@@ -1213,13 +1285,13 @@
 
   function addOff(nameKey, displayName, personRow, dateStr, reason, screen) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) { setPersonMsg(screen, "Pick a valid date for the day off."); return; }
-    if (offsFor(nameKey).some(function (u) { return String(u.off_date) === dateStr; })) {
+    if (offsFor(nameKey, personRow).some(function (u) { return String(u.off_date) === dateStr; })) {
       setPersonMsg(screen, "That date is already marked as a day off."); return;
     }
     var client = deps.getClient();
     if (!client) { setPersonMsg(screen, "Supabase not connected yet — sign in as admin and retry."); return; }
-    var staffId = (personRow && personRow.staff_id) || null;
-    var row = { name_key: nameKey, staff_name: displayName, staff_id: staffId, off_date: dateStr, reason: reason || null };
+    var staffId = resolvePersonStaffId(nameKey, personRow) || (personRow && personRow.staff_id) || null;
+    var row = { name_key: nameKey, staff_name: displayName, staff_id: staffId || null, off_date: dateStr, reason: reason || null };
     setPersonMsg(screen, "Saving day off…");
     client.from("staff_unavailability").insert(row).select().then(function (res) {
       if (res.error) throw res.error;

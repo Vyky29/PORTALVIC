@@ -51,10 +51,16 @@ async function resolveNameKey(
     .select("full_name, username")
     .eq("id", userId)
     .maybeSingle();
-  const name = clean(prof?.full_name || fullName || prof?.username || "", 120);
+  // Prefer portal username (berta, michelle, javier…) so Staff & HR + timesheet
+  // match the same key instead of a full-name slug (bertatraperocasado).
+  const usernameKey = normalizeOpsAdminNameKey(
+    nameKeyFromText(clean(prof?.username || "", 80)),
+  );
+  if (usernameKey) return usernameKey;
+  const name = clean(prof?.full_name || fullName || "", 120);
   const key = normalizeOpsAdminNameKey(nameKeyFromText(name));
   if (key) return key;
-  return normalizeOpsAdminNameKey(nameKeyFromText(clean(prof?.username || "", 80)));
+  return "";
 }
 
 Deno.serve(async (req) => {

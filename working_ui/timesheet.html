@@ -79,6 +79,7 @@
     .th-mob{display:none}
     tbody tr.day-row--paid td{background:#eef9f1 !important}
     tbody tr.day-row--pending td{background:#fff5e8 !important}
+    tbody tr.day-row--off td{background:#f3f4f6 !important;color:#4b5563}
     .actions{padding:0 16px 16px}
     .btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;background:#0b2a5b;color:#fff}
     .btn-back{background:#e4edf8;color:#0b2a5b;border:1px solid #b0c7e2}
@@ -1410,29 +1411,97 @@
       return memory;
     }
 
-    function rebuildEntriesFromSessions(sessionsWithCover, dates, reviewMap, extraSessions) {
+    function rebuildEntriesFromSessions(sessionsWithCover, dates, reviewMap, extraSessions, dayOffRows) {
       state.entries = dates
         .flatMap((d) => dailyEntriesFromSessions(sessionsWithCover, d, reviewMap, state.staffRosterKey))
         .filter(Boolean);
       if (Array.isArray(extraSessions) && extraSessions.length) {
-        state.entries = state.entries.concat(extraSessions).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+        state.entries = state.entries.concat(extraSessions);
       }
+      const offDates = Object.create(null);
+      (Array.isArray(dayOffRows) ? dayOffRows : []).forEach((r) => {
+        const iso = String((r && r.date) || "").slice(0, 10);
+        if (iso) offDates[iso] = r;
+      });
+      if (Object.keys(offDates).length) {
+        // Drop roster/training rows on validated day-off dates; show a Day off line instead.
+        state.entries = state.entries.filter((e) => !offDates[String(e.date || "").slice(0, 10)]);
+        Object.keys(offDates).forEach((iso) => {
+          state.entries.push(offDates[iso]);
+        });
+      }
+      state.entries.sort((a, b) => String(a.date).localeCompare(String(b.date)));
       state.entries.forEach((e) => {
+        if (e.dayOff) {
+          e.rate = 0;
+          return;
+        }
         const flat = serviceFlatRate(e.service || e.role);
         if (e.rate == null) {
           e.rate = flat != null ? flat : rateForRole(e.role);
         }
       });
-      state.payableEntries = state.entries.filter((e) => e.completed);
-      state.pendingEntries = state.entries.filter((e) => !e.completed);
+      state.payableEntries = state.entries.filter((e) => e.completed && !e.dayOff);
+      state.pendingEntries = state.entries.filter((e) => !e.completed && !e.dayOff);
       state.totalHours = Number(state.payableEntries.reduce((acc, e) => acc + e.hours, 0).toFixed(2));
-      state.potentialHours = Number(state.entries.reduce((acc, e) => acc + e.hours, 0).toFixed(2));
+      state.potentialHours = Number(
+        state.entries.filter((e) => !e.dayOff).reduce((acc, e) => acc + e.hours, 0).toFixed(2)
+      );
       state.totalCost = Number(state.payableEntries.reduce((acc, e) => acc + e.hours * Number(e.rate || 0), 0).toFixed(2));
-      state.potentialCost = Number(state.entries.reduce((acc, e) => acc + e.hours * Number(e.rate || 0), 0).toFixed(2));
+      state.potentialCost = Number(
+        state.entries.filter((e) => !e.dayOff).reduce((acc, e) => acc + e.hours * Number(e.rate || 0), 0).toFixed(2)
+      );
       state.pendingCost = Number((state.potentialCost - state.totalCost).toFixed(2));
       state.effectiveRate = state.totalHours > 0
         ? Number((state.totalCost / state.totalHours).toFixed(2))
         : (state.primaryRate != null ? state.primaryRate : Number(state.hourlyRate || 0));
+    }
+
+    async function fetchStaffDaysOffEntries(supabase, userId, rosterKey, startIso, endIso) {
+      if (!supabase || !userId) return [];
+      try {
+        const { data, error } = await withTimeout(
+          supabase
+            .from("staff_unavailability")
+            .select("off_date, reason, name_key, staff_id")
+            .eq("staff_id", userId)
+            .gte("off_date", startIso)
+            .lte("off_date", endIso)
+            .order("off_date", { ascending: true }),
+          10000,
+          "staff_unavailability"
+        );
+        if (error || !data) return [];
+        const rk = String(rosterKey || "").trim().toLowerCase();
+        const seen = Object.create(null);
+        return data
+          .map((r) => {
+            const iso = String(r.off_date || "").slice(0, 10);
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || seen[iso]) return null;
+            seen[iso] = true;
+            const dObj = parseIsoDate(iso);
+            const reason = String(r.reason || "").trim();
+            const label = reason
+              ? (reason.toLowerCase().indexOf("time off") >= 0 ? reason : `Day off — ${reason}`)
+              : "Day off (Time Off Requested)";
+            return {
+              date: iso,
+              day: dObj ? WEEKDAY[dObj.getDay()] : "",
+              hours: 0,
+              completed: true,
+              dayOff: true,
+              service: "Day off",
+              serviceLabel: label,
+              role: "Day off",
+              rate: 0,
+              rosterKey: rk,
+            };
+          })
+          .filter(Boolean);
+      } catch (e) {
+        console.warn("[timesheet] staff_unavailability skipped", e);
+        return [];
+      }
     }
 
     function sessionIsCompleted(rec) {
@@ -2384,9 +2453,9 @@
         if (note) note.textContent = "No roster shifts detected for this period.";
       } else {
         body.innerHTML = state.entries.map((e) => {
-          const daily = e.hours * Number(e.rate != null ? e.rate : state.hourlyRate);
-          const cls = e.completed ? "day-row--paid" : "day-row--pending";
-          const statusNote = e.completed ? "completed" : "pending feedback";
+          const daily = e.dayOff ? 0 : e.hours * Number(e.rate != null ? e.rate : state.hourlyRate);
+          const cls = e.dayOff ? "day-row--off" : (e.completed ? "day-row--paid" : "day-row--pending");
+          const statusNote = e.dayOff ? "day off" : (e.completed ? "completed" : "pending feedback");
           return `<tr class="${cls}">
             <td>${esc(displayDateFancy(e.date))}</td>
             <td>${esc(e.day)} · ${statusNote}</td>
@@ -2396,9 +2465,11 @@
           </tr>`;
         }).join("");
         if (note) {
+          const offN = state.entries.filter((e) => e.dayOff).length;
+          const offBit = offN ? ` ${offN} day off(s) shown in grey (not paid).` : "";
           note.textContent = state.pendingEntries.length
-            ? `${state.pendingEntries.length} day(s) pending feedback are shown in orange and are excluded from payable total.`
-            : "All shift days are completed (green) and included in payable total.";
+            ? `${state.pendingEntries.length} day(s) pending feedback are shown in orange and are excluded from payable total.${offBit}`
+            : `All shift days are completed (green) and included in payable total.${offBit}`;
         }
       }
       document.getElementById("totalHours").textContent = money(state.totalHours);
@@ -2628,12 +2699,18 @@
       const sessionsModel = resolveRosterSessions(profile, user, ghostRosterKey);
       applyRosterPayRateFallback(state.staffRosterKey);
       // Paint roster rows first (local memory map). Heavy feedback/RPC merge runs after.
-      const scheduleOverrides = await fetchScheduleOverridesForPeriod(
-        supabase,
-        state.periodStart,
-        state.periodEnd
-      );
+      const [scheduleOverrides, dayOffRowsEarly] = await Promise.all([
+        fetchScheduleOverridesForPeriod(supabase, state.periodStart, state.periodEnd),
+        fetchStaffDaysOffEntries(
+          supabase,
+          state.userId,
+          state.staffRosterKey,
+          state.periodStart,
+          state.periodEnd
+        ),
+      ]);
       state.scheduleOverrides = Array.isArray(scheduleOverrides) ? scheduleOverrides : [];
+      state.dayOffEntries = Array.isArray(dayOffRowsEarly) ? dayOffRowsEarly : [];
       const sessionsWithCover = mergeInstructorCoverSessions(
         sessionsModel,
         scheduleOverrides,
@@ -2655,7 +2732,7 @@
       state.hourlyRate = Number(pay.hourly_rate || 0);
 
       const dates = eachDateInclusive(parseIsoDate(state.periodStart), parseIsoDate(state.periodEnd));
-      rebuildEntriesFromSessions(sessionsWithCover, dates, parseReviewMap(), []);
+      rebuildEntriesFromSessions(sessionsWithCover, dates, parseReviewMap(), [], state.dayOffEntries);
       document.getElementById("empName").textContent = state.employeeName || "-";
       state.roleLabel = formatRoleHeaderText();
       renderTable();
@@ -2674,7 +2751,13 @@
             return [];
           }),
         ]);
-        rebuildEntriesFromSessions(sessionsWithCover, dates, reviewMap, extraSessions);
+        rebuildEntriesFromSessions(
+          sessionsWithCover,
+          dates,
+          reviewMap,
+          extraSessions,
+          state.dayOffEntries
+        );
         state.roleLabel = formatRoleHeaderText();
         renderTable();
         if (state.ghostReadOnly) applyGhostReadOnlyUi();
@@ -2837,14 +2920,16 @@
       doc.setFontSize(8.5 * S);
       for (let i = 0; i < state.entries.length; i++) {
         const e = state.entries[i];
-        const daily = money(e.hours * Number(e.rate != null ? e.rate : state.hourlyRate));
+        const daily = money(e.dayOff ? 0 : e.hours * Number(e.rate != null ? e.rate : state.hourlyRate));
         const thisRowH = rowH * pdfEntryRowHeightScale(e);
         doc.rect(colX[0], y, colX[6] - colX[0], thisRowH, "S");
         const isFlat = serviceFlatRate(e.service || e.role) != null;
         const midCol = state.manual
           ? String(e.note || e.day || "").slice(0, 22)
-          : (isFlat ? String(timesheetEntryRoleLabel(e) || e.role || "Training").slice(0, 22) : e.day);
-        const statusTxt = state.manual ? "Manual" : (isFlat ? "Completed" : (e.completed ? "Completed" : "Pending feedback"));
+          : (e.dayOff ? "Day off" : (isFlat ? String(timesheetEntryRoleLabel(e) || e.role || "Training").slice(0, 22) : e.day));
+        const statusTxt = state.manual
+          ? "Manual"
+          : (e.dayOff ? "Day off" : (isFlat ? "Completed" : (e.completed ? "Completed" : "Pending feedback")));
         doc.text(displayDateFancy(e.date), (colX[0] + colX[1]) / 2, y + cellBaseline, { align: "center" });
         doc.text(midCol, (colX[1] + colX[2]) / 2, y + cellBaseline, { align: "center" });
         drawPdfServiceCell(doc, e, (colX[2] + colX[3]) / 2, y, cellBaseline, S, state.manual);
