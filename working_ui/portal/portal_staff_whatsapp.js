@@ -690,6 +690,17 @@
       var lab = existing.querySelector(".topbar-staff-wa-btn__label");
       if (lab) lab.textContent = "CS WhatsApp";
       existing.setAttribute("aria-label", "Open CS WhatsApp");
+      var leftExisting = card.closest(".topbar-left--name") || card.parentNode;
+      if (leftExisting && leftExisting !== card && existing.parentNode !== leftExisting) {
+        leftExisting.insertBefore(existing, card.nextSibling);
+      } else if (
+        leftExisting &&
+        leftExisting !== card &&
+        existing.parentNode === leftExisting &&
+        card.nextSibling !== existing
+      ) {
+        leftExisting.insertBefore(existing, card.nextSibling);
+      }
       return existing;
     }
     var btn = document.createElement("button");
@@ -708,7 +719,13 @@
       openSheet();
     });
     var nameEl = card.querySelector(".topbar-name") || card.querySelector("#staffName");
-    if (nameEl && nameEl.parentNode) {
+    var leftCol = card.closest(".topbar-left--name") || card.parentNode;
+    /* Sit under the profile card (not inside overflow:hidden) so the full label fits. */
+    if (leftCol && leftCol !== card) {
+      if (btn.parentNode !== leftCol || card.nextSibling !== btn) {
+        leftCol.insertBefore(btn, card.nextSibling);
+      }
+    } else if (nameEl && nameEl.parentNode) {
       nameEl.parentNode.insertBefore(btn, nameEl.nextSibling);
     } else {
       card.appendChild(btn);
