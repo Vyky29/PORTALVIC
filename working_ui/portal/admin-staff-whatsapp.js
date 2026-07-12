@@ -22,6 +22,7 @@
     recording: false,
     mediaRecorder: null,
     recordChunks: [],
+    mobileShowThread: false,
   };
 
   var cfg = {
@@ -507,6 +508,48 @@
     );
   }
 
+  function syncMobileLayout() {
+    var root = document.getElementById("portalStaffWaAdmin");
+    if (!root) return;
+    root.classList.toggle(
+      "portal-staff-wa-admin--thread",
+      !!(state.mobileShowThread && state.selected)
+    );
+  }
+
+  function isMobileWaLayout() {
+    try {
+      return !!(global.matchMedia && global.matchMedia("(max-width: 720px)").matches);
+    } catch (_e) {
+      return false;
+    }
+  }
+
+  function openStaffThread(username) {
+    var key = String(username || "").trim();
+    if (!key) return;
+    state.mobileShowThread = true;
+    syncMobileLayout();
+    void loadThread(key).then(function () {
+      if (!isMobileWaLayout()) {
+        var chat = document.querySelector(".portal-staff-wa-admin__chat");
+        if (chat && typeof chat.scrollIntoView === "function") {
+          try {
+            chat.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          } catch (_e) {
+            chat.scrollIntoView(true);
+          }
+        }
+      }
+    });
+  }
+
+  function closeMobileThread() {
+    state.mobileShowThread = false;
+    syncMobileLayout();
+    renderMessages();
+  }
+
   function renderMessages() {
     var host = document.getElementById("portalStaffWaMsgs");
     var head = document.getElementById("portalStaffWaHead");
@@ -514,10 +557,19 @@
       var lead = state.directory.find(function (l) {
         return l.username === state.selected;
       });
-      head.textContent = lead
-        ? displayNameForStaff(lead) + (lead.hasPhone ? "" : " — add phone_e164 first")
-        : "Select a staff member";
+      if (lead) {
+        head.innerHTML =
+          '<button type="button" class="btn btn--ghost btn--sm portal-staff-wa-admin__back" id="portalStaffWaBack" aria-label="Back to staff list">← Back</button>' +
+          '<span class="portal-staff-wa-admin__head-title">' +
+          esc(displayNameForStaff(lead)) +
+          (lead.hasPhone ? "" : " — add phone_e164 first") +
+          "</span>";
+      } else {
+        head.innerHTML =
+          '<span class="portal-staff-wa-admin__head-title">Select a staff member</span>';
+      }
     }
+    syncMobileLayout();
     if (!host) return;
     if (!state.selected) {
       host.innerHTML = '<p class="muted">Choose a staff member on the left.</p>';
@@ -608,10 +660,16 @@
   async function loadThread(username, opts) {
     opts = opts || {};
     state.selected = String(username || "");
+    // Do not force thread mode on silent poll refresh — that would reopen chat after Back.
+    if (state.selected && !opts.silent && !opts.keepLoadingQuiet) {
+      state.mobileShowThread = true;
+    }
     if (!opts.keepLoadingQuiet) {
       state.loading = true;
       renderDirectory();
       renderMessages();
+    } else {
+      syncMobileLayout();
     }
     var res = await api("portal-staff-messages-list", { staffUsername: state.selected });
     state.loading = false;
@@ -767,9 +825,16 @@
     if (!root || root.getAttribute("data-bound") === "1") return;
     root.setAttribute("data-bound", "1");
     root.addEventListener("click", function (ev) {
+      var back = ev.target && ev.target.closest ? ev.target.closest("#portalStaffWaBack") : null;
+      if (back) {
+        ev.preventDefault();
+        closeMobileThread();
+        return;
+      }
       var btn = ev.target && ev.target.closest ? ev.target.closest("[data-staff-wa-user]") : null;
       if (!btn) return;
-      void loadThread(btn.getAttribute("data-staff-wa-user"));
+      ev.preventDefault();
+      openStaffThread(btn.getAttribute("data-staff-wa-user"));
     });
     var form = document.getElementById("portalStaffWaForm");
     if (form) form.addEventListener("submit", sendMessage);
