@@ -5236,6 +5236,16 @@
         }
       });
     }
+    document.addEventListener('click', function portalLeadTeamRosterTableClick(e){
+      const leadTeam = e.target.closest('[data-action="open-lead-team-roster-table"]');
+      if(!leadTeam) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const iso = leadTeam.getAttribute('data-lead-team-iso') || '';
+      if(typeof window.portalOpenLeadTeamRosterTable === 'function'){
+        window.portalOpenLeadTeamRosterTable(iso);
+      }
+    });
     document.getElementById('menuSheet')?.addEventListener('click', function(e){
       const extBtn = e.target.closest('[data-portal-external-url]');
       if(extBtn){
@@ -5314,6 +5324,16 @@
         if(typeof closeSheet === 'function') closeSheet();
         if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
         if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
+        return;
+      }
+      const leadTeam = e.target.closest('[data-action="open-lead-team-roster-table"]');
+      if(leadTeam){
+        e.preventDefault();
+        e.stopPropagation();
+        const iso = leadTeam.getAttribute('data-lead-team-iso') || '';
+        if(typeof window.portalOpenLeadTeamRosterTable === 'function'){
+          window.portalOpenLeadTeamRosterTable(iso);
+        }
         return;
       }
       const hit = e.target.closest('[data-action="open-pending-feedback"]');

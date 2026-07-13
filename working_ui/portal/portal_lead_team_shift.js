@@ -831,16 +831,212 @@ function renderTodayStrip(team) {
       "</div></div>";
   }
   return (
-    '<div class="portal-lead-team-today" role="region" aria-label="Team on shift today">' +
+    '<button type="button" class="portal-lead-team-today" data-action="open-lead-team-roster-table" data-lead-team-iso="' +
+    escHtml(team.iso || "") +
+    '" aria-label="Team on shift today — tap to see who each instructor is with">' +
     '<div class="portal-lead-team-today__head">' +
     '<span class="portal-lead-team-today__title">Team on shift today</span>' +
+    '<span class="portal-lead-team-today__hint">Tap to view</span>' +
     "</div>" +
     '<div class="portal-lead-team-today__chips">' +
     chips +
     "</div>" +
     absentBlock +
-    "</div>"
+    "</button>"
   );
+}
+
+function parseSlotStartMinutes(timeSlot) {
+  const m = String(timeSlot || "")
+    .toLowerCase()
+    .match(/(\d{1,2})(?:[.:](\d{2}))?/);
+  if (!m) return 9999;
+  let h = +m[1];
+  const mi = m[2] ? +m[2] : 0;
+  if (h >= 1 && h <= 7) h += 12;
+  return h * 60 + mi;
+}
+
+function isDutyClientName(name) {
+  const n = normKey(name);
+  return (
+    !n ||
+    n === "home" ||
+    n === "manager" ||
+    n === "closed" ||
+    n === "available" ||
+    n === "noclient" ||
+    n === "shadowing" ||
+    n === "noparticipant"
+  );
+}
+
+/**
+ * Simple lead overview: TIME column + one column per team instructor with
+ * client · hours cells for in-scope Day Centre (or programme) slots.
+ */
+export function portalLeadTeamRosterTableModel(iso, ctx) {
+  ctx = ctx || portalLeadTeamShiftContext();
+  const team = portalLeadTeamOnShiftForIso(iso, ctx);
+  if (!team || !team.members.length) return null;
+  const src = rosterSource();
+  const rows = src && Array.isArray(src.rows) ? src.rows : [];
+  const memberKeys = team.members.map(function (m) {
+    return normKey(m.key);
+  });
+  const byStaff = Object.create(null);
+  memberKeys.forEach(function (k) {
+    byStaff[k] = [];
+  });
+
+  rows.forEach(function (row) {
+    if (!rosterRowMatchesIso(row, iso)) return;
+    const slot = rosterRowToSlot(row, iso);
+    if (!portalLeadSlotInScope(slot, ctx.scopes)) return;
+    const client = String(row.client_name || "").trim();
+    if (isDutyClientName(client)) return;
+    const time = String(row.time_slot || "").trim();
+    if (!time) return;
+    const instructors = staffKeysFromInstructorLabel(
+      resolvedInstructorsForRow(row, iso, src)
+    );
+    instructors.forEach(function (ik) {
+      const k = normKey(ik);
+      if (!byStaff[k]) return;
+      const dup = byStaff[k].some(function (x) {
+        return (
+          normKey(x.client) === normKey(client) &&
+          String(x.time).replace(/\s+/g, "") === time.replace(/\s+/g, "")
+        );
+      });
+      if (dup) return;
+      byStaff[k].push({
+        client: client,
+        time: time,
+        area: String(row.area || row.pool_note || "").trim(),
+        startMin: parseSlotStartMinutes(time),
+      });
+    });
+  });
+
+  memberKeys.forEach(function (k) {
+    byStaff[k].sort(function (a, b) {
+      return a.startMin - b.startMin || a.client.localeCompare(b.client);
+    });
+  });
+
+  const timeSet = Object.create(null);
+  const timeOrder = [];
+  memberKeys.forEach(function (k) {
+    byStaff[k].forEach(function (s) {
+      const tk = String(s.time).replace(/\s+/g, " ").trim();
+      if (!tk || timeSet[tk]) return;
+      timeSet[tk] = true;
+      timeOrder.push(tk);
+    });
+  });
+  timeOrder.sort(function (a, b) {
+    return parseSlotStartMinutes(a) - parseSlotStartMinutes(b);
+  });
+
+  return {
+    iso: team.iso,
+    programmeLabel: team.programmeLabel || "",
+    members: team.members,
+    byStaff: byStaff,
+    times: timeOrder,
+  };
+}
+
+function renderLeadTeamRosterTableHtml(model) {
+  if (!model || !model.members.length) {
+    return '<p class="portal-lead-team-roster__empty">No team roster to show for today.</p>';
+  }
+  const cols = model.members;
+  const head =
+    "<thead><tr><th scope=\"col\">Time</th>" +
+    cols
+      .map(function (m) {
+        return "<th scope=\"col\">" + escHtml(m.name || m.key) + "</th>";
+      })
+      .join("") +
+    "</tr></thead>";
+
+  const bodyRows = (model.times.length ? model.times : [""]).map(function (time) {
+    const cells = cols
+      .map(function (m) {
+        const k = normKey(m.key);
+        const hits = (model.byStaff[k] || []).filter(function (s) {
+          if (!time) return true;
+          return String(s.time).replace(/\s+/g, " ").trim() === time;
+        });
+        if (!hits.length) {
+          return '<td><span class="portal-lead-team-roster__blank">—</span></td>';
+        }
+        const inner = hits
+          .map(function (h) {
+            const area = h.area ? '<span class="portal-lead-team-roster__area">' + escHtml(h.area) + "</span>" : "";
+            return (
+              '<div class="portal-lead-team-roster__cell-item">' +
+              '<strong>' +
+              escHtml(h.client) +
+              "</strong>" +
+              area +
+              "</div>"
+            );
+          })
+          .join("");
+        return "<td>" + inner + "</td>";
+      })
+      .join("");
+    return (
+      "<tr><th scope=\"row\">" +
+      escHtml(time || "—") +
+      "</th>" +
+      cells +
+      "</tr>"
+    );
+  });
+
+  return (
+    '<div class="portal-lead-team-roster__scroll">' +
+    '<table class="portal-lead-team-roster__table">' +
+    head +
+    "<tbody>" +
+    bodyRows.join("") +
+    "</tbody></table></div>"
+  );
+}
+
+export function portalOpenLeadTeamRosterTable(iso) {
+  try {
+    if (typeof window === "undefined") return;
+    const ctx = portalLeadTeamShiftContext();
+    const day = String(iso || todayIsoYmd() || "").slice(0, 10);
+    const model = portalLeadTeamRosterTableModel(day, ctx);
+    const sheet = document.getElementById("portalLeadTeamRosterSheet");
+    const body = document.getElementById("portalLeadTeamRosterBody");
+    const title = document.getElementById("portalLeadTeamRosterTitle");
+    const sub = document.getElementById("portalLeadTeamRosterSub");
+    if (!sheet || !body) return;
+    if (title) title.textContent = "Team on shift";
+    if (sub) {
+      let label = dayCardDateLabel(day);
+      if (model && model.programmeLabel) label += " · " + model.programmeLabel;
+      sub.textContent = label;
+    }
+    body.innerHTML = renderLeadTeamRosterTableHtml(model);
+    if (typeof window.openSheet === "function") {
+      window.openSheet("portalLeadTeamRosterSheet");
+    } else {
+      sheet.classList.add("open");
+      sheet.setAttribute("aria-hidden", "false");
+    }
+  } catch (e) {
+    try {
+      console.warn("[portal] open lead team roster table", e);
+    } catch (_) {}
+  }
 }
 
 function dayCardDateLabel(iso) {
@@ -977,5 +1173,7 @@ if (typeof window !== "undefined") {
   window.portalLeadProgrammeWideTodayForStaff = portalLeadProgrammeWideTodayForStaff;
   window.portalLeadSpreadsheetSessionInScopeForLead = portalLeadSpreadsheetSessionInScopeForLead;
   window.portalLeadCollectProgrammeWideSessionsModel = portalLeadCollectProgrammeWideSessionsModel;
+  window.portalLeadTeamRosterTableModel = portalLeadTeamRosterTableModel;
+  window.portalOpenLeadTeamRosterTable = portalOpenLeadTeamRosterTable;
   try{ window.dispatchEvent(new CustomEvent('portal:lead-programme-wide-ready')); }catch(_){}
 }

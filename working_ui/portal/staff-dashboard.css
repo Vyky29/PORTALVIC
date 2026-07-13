@@ -4447,12 +4447,23 @@
     }
     .portal-lead-team-today-host[hidden]{display:none !important}
     .portal-lead-team-today{
+      display:block;
+      width:100%;
       border:1px solid rgba(45,132,179,.22);
       border-radius:14px;
       background:linear-gradient(180deg,#f8fcff 0%,#eef6fb 100%);
       padding:10px 12px;
       min-width:0;
       box-shadow:0 1px 5px rgba(23,50,71,.06);
+      text-align:left;
+      cursor:pointer;
+      font:inherit;
+      color:inherit;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .portal-lead-team-today:focus-visible{
+      outline:2px solid #2d84b3;
+      outline-offset:2px;
     }
     .portal-lead-team-today__head{
       display:flex;
@@ -4470,6 +4481,12 @@
       letter-spacing:.05em;
       text-transform:uppercase;
       color:#2d84b3;
+    }
+    .portal-lead-team-today__hint{
+      font-size:10px;
+      font-weight:600;
+      color:var(--muted);
+      letter-spacing:.02em;
     }
     .portal-lead-team-today__programme{
       flex:1 1 100%;
@@ -4556,6 +4573,76 @@
       font-size:12px;
       color:var(--muted);
       overflow-wrap:break-word;
+    }
+    .portal-lead-team-roster__scroll{
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      margin:0 -4px;
+      padding:0 4px 8px;
+      min-width:0;
+    }
+    .portal-lead-team-roster__table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      min-width:520px;
+      font-size:12px;
+    }
+    .portal-lead-team-roster__table th,
+    .portal-lead-team-roster__table td{
+      border:1px solid rgba(23,50,71,.12);
+      padding:8px 7px;
+      vertical-align:top;
+      min-width:0;
+      overflow-wrap:break-word;
+    }
+    .portal-lead-team-roster__table thead th{
+      position:sticky;
+      top:0;
+      z-index:1;
+      background:#e8f4fb;
+      color:#0c4a6e;
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.03em;
+      text-transform:uppercase;
+      text-align:left;
+    }
+    .portal-lead-team-roster__table tbody th{
+      background:#f7fafc;
+      color:#334155;
+      font-weight:700;
+      white-space:nowrap;
+      width:5.5rem;
+    }
+    .portal-lead-team-roster__cell-item{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      min-width:0;
+    }
+    .portal-lead-team-roster__cell-item + .portal-lead-team-roster__cell-item{
+      margin-top:6px;
+      padding-top:6px;
+      border-top:1px dashed rgba(23,50,71,.12);
+    }
+    .portal-lead-team-roster__cell-item strong{
+      font-size:12px;
+      color:var(--ink);
+      overflow-wrap:break-word;
+    }
+    .portal-lead-team-roster__area{
+      font-size:10px;
+      color:var(--muted);
+      overflow-wrap:break-word;
+    }
+    .portal-lead-team-roster__blank{
+      color:#94a3b8;
+    }
+    .portal-lead-team-roster__empty{
+      margin:12px 4px;
+      font-size:13px;
+      color:var(--muted);
     }
 
     .section-head h2{margin:0;font-size:19px;color:var(--ink)}

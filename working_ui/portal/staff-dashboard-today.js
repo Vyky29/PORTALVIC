@@ -1736,6 +1736,76 @@
       });
       return out;
     }
+    /** Day Centre / own-client lead views: same participant same day → keep the widest window
+     *  (e.g. drop Emmanuel 11–12.30 + Ikram 12.30–4 when Ikram 11–4 also exists from flatten). */
+    function portalDedupeTodayDayCentreWidestClientWindow(items){
+      if(!Array.isArray(items) || items.length < 2) return items || [];
+      function isDayCentreItem(it){
+        if(!it || it.kind !== 'client') return false;
+        const base = it.__portalBaseSession || {};
+        const svc = String(it.activity || base.rosterService || base.activity || base.service || '').toLowerCase();
+        return /day\s*centre/.test(svc);
+      }
+      function winMinutes(it){
+        const base = it && it.__portalBaseSession ? it.__portalBaseSession : {};
+        const start = typeof portalCanonicalHmToken === 'function'
+          ? portalCanonicalHmToken(base.start || '')
+          : String(base.start || '').trim();
+        const end = typeof portalCanonicalHmToken === 'function'
+          ? portalCanonicalHmToken(base.end || '')
+          : String(base.end || '').trim();
+        function toMin(hm){
+          const m = String(hm || '').match(/^(\d{1,2}):(\d{2})$/);
+          if(!m) return NaN;
+          return (+m[1]) * 60 + (+m[2]);
+        }
+        const a = toMin(start);
+        const b = toMin(end);
+        if(!Number.isFinite(a) || !Number.isFinite(b) || b <= a) return 0;
+        return b - a;
+      }
+      function covers(outer, inner){
+        const ob = outer && outer.__portalBaseSession ? outer.__portalBaseSession : {};
+        const ib = inner && inner.__portalBaseSession ? inner.__portalBaseSession : {};
+        function toMin(hm){
+          const m = String(hm || '').match(/^(\d{1,2}):(\d{2})$/);
+          if(!m) return NaN;
+          return (+m[1]) * 60 + (+m[2]);
+        }
+        const os = toMin(typeof portalCanonicalHmToken === 'function' ? portalCanonicalHmToken(ob.start || '') : ob.start);
+        const oe = toMin(typeof portalCanonicalHmToken === 'function' ? portalCanonicalHmToken(ob.end || '') : ob.end);
+        const is = toMin(typeof portalCanonicalHmToken === 'function' ? portalCanonicalHmToken(ib.start || '') : ib.start);
+        const ie = toMin(typeof portalCanonicalHmToken === 'function' ? portalCanonicalHmToken(ib.end || '') : ib.end);
+        if(![os, oe, is, ie].every(Number.isFinite)) return false;
+        return os <= is && oe >= ie && (oe - os) > (ie - is);
+      }
+      const byClient = Object.create(null);
+      items.forEach(function(it, idx){
+        if(!isDayCentreItem(it)) return;
+        const cid = portalCanonicalTodayClientKey(
+          it.clientId || (it.__portalBaseSession && it.__portalBaseSession.clientId),
+          it.name
+        );
+        if(!cid || cid === 'home' || cid === 'manager') return;
+        if(!byClient[cid]) byClient[cid] = [];
+        byClient[cid].push(idx);
+      });
+      const drop = Object.create(null);
+      Object.keys(byClient).forEach(function(cid){
+        const idxs = byClient[cid];
+        if(idxs.length < 2) return;
+        idxs.sort(function(a, b){ return winMinutes(items[b]) - winMinutes(items[a]); });
+        const keepIdx = idxs[0];
+        for(let i = 1; i < idxs.length; i++){
+          const other = idxs[i];
+          if(covers(items[keepIdx], items[other]) || winMinutes(items[keepIdx]) >= winMinutes(items[other])){
+            drop[other] = true;
+          }
+        }
+      });
+      if(!Object.keys(drop).length) return items;
+      return items.filter(function(_it, idx){ return !drop[idx]; });
+    }
 
     /** Selected-day session list (overview “Today” block): anchor = `getViewAnchorCalendarDate(DEMO_VIEW_DAY)` — live calendar or Week/Term URL date lock. Optional `calendarIsoOverride` (YYYY-MM-DD) pins an exact day (next-session preview). */
     function buildSelectedDayViewFromLauraModel(modelOverride, calendarIsoOverride){
@@ -2644,8 +2714,10 @@
         });
       }
       var sortedToday = portalInjectOrphanMakeupOverrideCards(
-        portalDedupeTodayScheduleViewCards(
-          portalSuppressAvailableWhenSlotFilled(primary.concat(portalDedupeInstructorCoverExtras(primary, extra)))
+        portalDedupeTodayDayCentreWidestClientWindow(
+          portalDedupeTodayScheduleViewCards(
+            portalSuppressAvailableWhenSlotFilled(primary.concat(portalDedupeInstructorCoverExtras(primary, extra)))
+          )
         ),
         sessionDateKey,
         anchorDayWord,
