@@ -1797,17 +1797,17 @@
       '<div id="reBillingPaySection"' +
       (b.editing ? " hidden" : "") +
       ">" +
-      '<p class="re-muted re-billing-plan-intro" id="reBillingPlanIntro">' +
-      (normalizeEnrolmentCadence(state.enrolmentCadence) === "term_by_term"
-        ? "The total above is for the <strong>current term only</strong> (term-by-term). Later terms are billed when you reconfirm. "
-        : "The total above covers your confirmed sessions for the year. ") +
-      "<strong>Bank Transfer / Card / Apple Pay</strong> uses fixed due dates (pay each invoice from the parent portal — no admin fee if on time). <strong>Direct Payment (GoCardless)</strong> is collected automatically once we set up your mandate. <strong>Own arrangement</strong> is only for privately funded families who cannot meet those dates (+ £50 / term) — not available with LA Direct Payments funding.</p>" +
       '<div id="rePanelPrivate" class="re-funding-panel">' +
       '<div id="rePayScheduleWrap" class="re-pay-schedule-wrap">' +
       (normalizeEnrolmentCadence(state.enrolmentCadence)
         ? renderPayScheduleFieldset(payCode, scheduleDefault)
         : '<p class="re-muted re-cadence-wait">Choose <strong>whole year</strong> or <strong>term by term</strong> above first — then your payment options will appear.</p>') +
       "</div>" +
+      '<p class="re-muted re-billing-plan-intro" id="reBillingPlanIntro">' +
+      (normalizeEnrolmentCadence(state.enrolmentCadence) === "term_by_term"
+        ? "The total above is for the <strong>current term only</strong> (term-by-term). Later terms are billed when you reconfirm. "
+        : "The total above covers your confirmed sessions for the year. ") +
+      "<strong>Bank Transfer / Card / Apple Pay</strong> uses fixed due dates (pay each invoice from the parent portal — no admin fee if on time). <strong>Direct Payment (GoCardless)</strong> is collected automatically once we set up your mandate. <strong>Own arrangement</strong> is only for privately funded families who cannot meet those dates (+ £50 / term) — not available with LA Direct Payments funding.</p>" +
       '<div id="rePaySchedulePreview" class="re-pay-preview-host" hidden></div>' +
       '<div id="reAdminFeeNote" class="re-funding-fee"' +
       (adminFeeApplies(payCode) ? "" : " hidden") +
