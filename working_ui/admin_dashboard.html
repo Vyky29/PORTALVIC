@@ -88,6 +88,7 @@
   <script src="/portal/admin-training-progress.js?v=20260608-device-attribution"></script>
   <script src="/portal/admin-push-devices.js?v=20260619-push-devices"></script>
   <script src="/portal/portal_wellbeing_admin_actions.js?v=20260604-wb-flow-refine"></script>
+  <script src="/portal/portal_announcement_media.js?v=20260713-ann-photos"></script>
   <script src="/portal/portal_participant_photos.js?v=20260609-photo-fallback"></script>
   <!-- Roster bundle lazy-loaded via admin_heavy_scripts_loader.js (c4k_sessions, scheduling, …) -->
   <script src="/portal/portal_staff_photos.js?v=20260616-warn-rate-limit"></script>
@@ -25700,8 +25701,31 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         return client.from('portal_staff_announcements').insert(payload).select('id').then(function(res){
           if(res.error) return { ok:false, skip:false, message:String(res.error.message || res.error) };
-          var row0 = Array.isArray(res.data) && res.data[0] ? res.data[0] : null;
-          return { ok:true, id:row0 && row0.id ? row0.id : null, count:(res.data || []).length };
+          var ids = (res.data || []).map(function(r){ return r && r.id ? r.id : null; }).filter(Boolean);
+          var row0 = ids.length ? { id: ids[0] } : null;
+          var photoInput = $('cmpPhotos');
+          var files = typeof portalAnnouncementCollectPhotoFiles === 'function'
+            ? portalAnnouncementCollectPhotoFiles(photoInput)
+            : [];
+          if(!files.length || typeof portalAnnouncementUploadPhotosForIds !== 'function'){
+            return { ok:true, id:row0 && row0.id ? row0.id : null, count:ids.length };
+          }
+          return portalAnnouncementUploadPhotosForIds(client, ids, files, uid).then(function(up){
+            if(up && up.ok === false){
+              return {
+                ok:true,
+                id:row0 && row0.id ? row0.id : null,
+                count:ids.length,
+                photoWarning:up.message || 'Photos could not be uploaded'
+              };
+            }
+            return {
+              ok:true,
+              id:row0 && row0.id ? row0.id : null,
+              count:ids.length,
+              photos:up && up.uploaded ? up.uploaded : 0
+            };
+          });
         });
       }
       if(!client.auth || !client.auth.getSession) return publishRows(null);
@@ -25752,9 +25776,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         savePromise.then(function(ins){
           if(btn) btn.disabled = false;
           if(ins && ins.ok){
-            finishLocal(typeof portalComposePublishSuccessMessage === 'function'
+            var baseMsg = typeof portalComposePublishSuccessMessage === 'function'
               ? portalComposePublishSuccessMessage(editId, pre)
-              : (editId ? 'Updated on staff portal. Workers see changes after refresh or realtime.' : 'Published to staff portal. Workers see it after refresh or realtime.'));
+              : (editId ? 'Updated on staff portal. Workers see changes after refresh or realtime.' : 'Published to staff portal. Workers see it after refresh or realtime.');
+            if(ins.photoWarning) baseMsg += '\n\nWarning: announcement published but photos failed — ' + ins.photoWarning;
+            else if(ins.photos) baseMsg += '\n\n' + String(ins.photos) + ' photo(s) attached.';
+            finishLocal(baseMsg);
             return;
           }
           if(ins && ins.skip){
@@ -25791,6 +25818,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<input type="hidden" id="cmpEditId" value="'+esc(editId)+'"/>'+
         '<label class="muted">Title</label><input type="text" class="inp" id="cmpTitle" maxlength="200" placeholder="'+(isReminder ? 'Reminder title…' : 'Announcement title…')+'" style="max-width:100%;min-width:0;box-sizing:border-box"/>'+
         '<label class="muted" style="display:block;margin-top:12px">Message</label><textarea class="txa" id="cmpBody" placeholder="Internal message…" style="max-width:100%;min-width:0;box-sizing:border-box;min-height:120px"></textarea>'+
+        '<label class="muted" style="display:block;margin-top:12px">Photos <span class="muted" style="font-weight:400">(optional, up to 8)</span></label>'+
+        '<input type="file" class="inp" id="cmpPhotos" accept="image/*" multiple style="max-width:100%;min-width:0;box-sizing:border-box"/>'+
+        '<p class="muted" id="cmpPhotosHint" style="margin:6px 0 0;font-size:12px;line-height:1.35">JPEG, PNG, WebP or HEIC. Workers will see them on the announcement.</p>'+
+        '<div id="cmpPhotosPreview" class="announcement-compose-photo-preview" style="display:none;margin-top:8px;gap:8px;flex-wrap:wrap"></div>'+
         remCatHtml+
         '<label class="muted" style="display:block;margin-top:12px">To</label>'+
         portalComposeToSelectHtml()+
@@ -25801,6 +25832,32 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       );
       portalWireComposeToControls();
       if(kind === 'announcement') portalWireComposeHideAfterAckControls();
+      (function portalWireComposePhotoPreview(){
+        var input = $('cmpPhotos');
+        var preview = $('cmpPhotosPreview');
+        if(!input || !preview) return;
+        input.addEventListener('change', function(){
+          var files = typeof portalAnnouncementCollectPhotoFiles === 'function'
+            ? portalAnnouncementCollectPhotoFiles(input)
+            : [];
+          preview.innerHTML = '';
+          if(!files.length){
+            preview.style.display = 'none';
+            return;
+          }
+          preview.style.display = 'flex';
+          files.forEach(function(f){
+            var url = '';
+            try{ url = URL.createObjectURL(f); }catch(_u){}
+            if(!url) return;
+            var img = document.createElement('img');
+            img.src = url;
+            img.alt = '';
+            img.style.cssText = 'width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid rgba(23,50,71,.15)';
+            preview.appendChild(img);
+          });
+        });
+      })();
       if(editRow){
         var tEl = $('cmpTitle');
         var bEl = $('cmpBody');

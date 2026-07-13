@@ -4341,6 +4341,14 @@
           return;
         }
         if(!Array.isArray(res.data)) return;
+        const mediaById =
+          typeof portalAnnouncementLoadMediaByIds === 'function'
+            ? await portalAnnouncementLoadMediaByIds(
+                client,
+                res.data.map(function(r){ return r && r.id; }).filter(Boolean)
+              )
+            : {};
+        dashboardData.portalAnnouncementMediaById = mediaById || {};
         const prof = box && box.staff_profile;
         if(prof && prof.id && client && prof.profile_last_confirmed_at === undefined){
           try{
@@ -4495,7 +4503,8 @@
             kind: kind,
             title: title || (kind === 'reminder' ? 'Reminder' : 'Announcement'),
             text: body,
-            createdAt: Number.isFinite(createdMs) ? createdMs : 0
+            createdAt: Number.isFinite(createdMs) ? createdMs : 0,
+            photos: (mediaById && mediaById[id]) || []
           });
         });
         visible.forEach(function(row){
@@ -4513,7 +4522,8 @@
               title: String(row.title || 'Reminder').trim() || 'Reminder',
               body: String(row.body || '').trim(),
               created_at: row.created_at,
-              onAckAction: String(row.on_ack_action || '').trim()
+              onAckAction: String(row.on_ack_action || '').trim(),
+              photos: (mediaById && mediaById[id]) || []
             });
             dashboardData.portalLiveReminderIdSet[id] = true;
             return;
@@ -4630,7 +4640,8 @@
             hideAfterAckAmount: row.hide_after_ack_amount,
             hideAfterAckUnit: row.hide_after_ack_unit,
             onAckAction: String(row.on_ack_action || '').trim(),
-            created_at: row.created_at
+            created_at: row.created_at,
+            photos: (mediaById && mediaById[id]) || []
           });
         });
         if(!Array.isArray(dashboardData.portalRemindersFromAdmin)) dashboardData.portalRemindersFromAdmin = [];
@@ -4863,9 +4874,11 @@
         text: String(r.body || '').trim(),
         href: '#portal-rem-' + String(r.portalAdminReminderId),
         portalAdminReminderId: String(r.portalAdminReminderId),
+        portalAnnouncementId: String(r.portalAdminReminderId),
         reminderCategory: r.category,
         created_at: r.created_at,
-        onAckAction: String(r.onAckAction || r.on_ack_action || '').trim()
+        onAckAction: String(r.onAckAction || r.on_ack_action || '').trim(),
+        photos: Array.isArray(r.photos) ? r.photos : []
       };
     }
     function portalSignableSignatureKey(item){
@@ -5132,6 +5145,9 @@
           if(byKey[key].title === 'Announcement' || byKey[key].title === 'Reminder'){
             byKey[key].title = String(a.title || byKey[key].title).trim() || byKey[key].title;
           }
+          if((!byKey[key].photos || !byKey[key].photos.length) && a.photos && a.photos.length){
+            byKey[key].photos = a.photos;
+          }
           return;
         }
         byKey[key] = {
@@ -5141,7 +5157,8 @@
             (kind === 'reminder' ? 'Reminder' : 'Announcement'),
           text: String(a.text || '').trim(),
           signedAt: Number(a.createdAt || 0),
-          fromArchive: true
+          fromArchive: true,
+          photos: Array.isArray(a.photos) ? a.photos : []
         };
       });
       /* Twin announcement rows (same title/body/day, different ids) collapse to one card. */
@@ -5340,9 +5357,12 @@
                 const histBody = typeof portalFormatSignableMessageHtml === 'function'
                   ? portalFormatSignableMessageHtml(r.text || 'No details captured.')
                   : ('<p class="announcement-message-p">' + escapeHtml(r.text || 'No details captured.') + '</p>');
+                const histPhotos = typeof portalAnnouncementPhotosHtml === 'function'
+                  ? portalAnnouncementPhotosHtml(r.photos || [])
+                  : '';
                 return '<div class="announcement-history-item announcement-history-item--' + kind + (i === 0 ? ' is-open' : '') + '">' +
                   '<button type="button" class="announcement-history-toggle" data-announcement-toggle><span class="announcement-history-title"><span class="announcement-history-kind">' + escapeHtml(kind === 'reminder' ? 'Reminder' : 'Announcement') + '</span><span class="announcement-history-title-line">' + escapeHtml(lines.line1) + '</span>' + (lines.line2 ? '<span class="announcement-history-title-line">' + escapeHtml(lines.line2) + '</span>' : '') + '</span><span class="announcement-history-date">' + escapeHtml(dt) + '</span></button>' +
-                  '<div class="announcement-history-body announcement-message-block">' + histBody + link + '</div>' +
+                  '<div class="announcement-history-body announcement-message-block">' + histBody + histPhotos + link + '</div>' +
                 '</div>';
               }).join('') +
             '</article>';
@@ -5365,6 +5385,15 @@
         const bodyHtml = typeof portalFormatSignableMessageHtml === 'function'
           ? portalFormatSignableMessageHtml(txt)
           : ('<p class="announcement-message-p">' + escapeHtml(txt) + '</p>');
+        const photoHtml = typeof portalAnnouncementPhotosHtml === 'function'
+          ? portalAnnouncementPhotosHtml(
+              pending.photos ||
+              (dashboardData.portalAnnouncementMediaById &&
+                pending.portalAnnouncementId &&
+                dashboardData.portalAnnouncementMediaById[String(pending.portalAnnouncementId)]) ||
+              []
+            )
+          : '';
         const pendingCount = portalActiveAnnouncementItems().length;
         const chooseAnother = pendingCount > 1
           ? '<button type="button" class="announcement-choose-another btn btn--ghost btn--sm" id="announcementChooseAnother">← Choose another</button>'
@@ -5403,7 +5432,7 @@
             chooseAnother +
             '<div class="announcement-lock-head"><strong>' + escapeHtml(t) + '</strong>' +
             '<span class="announcement-lock-badge announcement-lock-badge--' + (isReminder ? 'reminder' : 'announcement') + '">' + escapeHtml(kindLabel) + '</span></div>' +
-            '<div class="announcement-lock-copy announcement-message-block">' + bodyHtml + '</div>' +
+            '<div class="announcement-lock-copy announcement-message-block">' + bodyHtml + photoHtml + '</div>' +
             '<div class="announcement-lock-actions">' +
               '<label class="announcement-lock-check"><input type="checkbox" id="announcementReadConfirm" name="announcementReadConfirm"> ' + escapeHtml(confirmLabel) + '</label>' +
               '<button type="button" class="announcement-sign-btn" id="announcementSignBtn" disabled data-announcement-sign-key="' + escapeHtml(signKey) + '">' + escapeHtml(signBtnLabel) + '</button>' +
@@ -5433,9 +5462,12 @@
                 const histBody = typeof portalFormatSignableMessageHtml === 'function'
                   ? portalFormatSignableMessageHtml(r.text || 'No details captured.')
                   : ('<p class="announcement-message-p">' + escapeHtml(r.text || 'No details captured.') + '</p>');
+                const histPhotos = typeof portalAnnouncementPhotosHtml === 'function'
+                  ? portalAnnouncementPhotosHtml(r.photos || [])
+                  : '';
                 return '<div class="announcement-history-item announcement-history-item--' + kind + (i === 0 ? ' is-open' : '') + '">' +
                   '<button type="button" class="announcement-history-toggle" data-announcement-toggle><span class="announcement-history-title"><span class="announcement-history-kind">' + escapeHtml(kind === 'reminder' ? 'Reminder' : 'Announcement') + '</span><span class="announcement-history-title-line">' + escapeHtml(lines.line1) + '</span>' + (lines.line2 ? '<span class="announcement-history-title-line">' + escapeHtml(lines.line2) + '</span>' : '') + '</span><span class="announcement-history-date">' + escapeHtml(dt) + '</span></button>' +
-                  '<div class="announcement-history-body announcement-message-block">' + histBody + link + '</div>' +
+                  '<div class="announcement-history-body announcement-message-block">' + histBody + histPhotos + link + '</div>' +
                 '</div>';
               }).join('') +
             '</article>';
