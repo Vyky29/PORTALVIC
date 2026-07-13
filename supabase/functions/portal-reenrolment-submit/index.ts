@@ -143,6 +143,7 @@ Deno.serve(async (req) => {
   let gocardlessScheduled = 0;
   let gocardlessScheduleErrors: string[] = [];
   let gocardlessNeedsSetup = false;
+  let schedulePlanPhrase: string | null = null;
 
   // Auto-create INV-P schedule on first submit only (resubmits: office adjusts manually).
   if (participantContactId && !priorSubmissionAt) {
@@ -161,6 +162,7 @@ Deno.serve(async (req) => {
       participantName,
       academicYear: REENROL_ACADEMIC_YEAR,
     });
+    schedulePlanPhrase = plan.schedulePlanPhrase;
 
     if (plan.skipReason) {
       invoicesSkipped = plan.skipReason;
@@ -246,15 +248,20 @@ Deno.serve(async (req) => {
     message =
       "Thank you — your updated re-enrolment has been sent to the club office for review.";
   } else if (invoicesCreated.length) {
-    message =
-      `Thank you — your re-enrolment has been sent to the club office. ${invoicesCreated.length} invoice${
+    const planBit = schedulePlanPhrase
+      ? ` Your plan: ${schedulePlanPhrase}.`
+      : "";
+    const invBit =
+      ` ${invoicesCreated.length} invoice${
         invoicesCreated.length === 1 ? "" : "s"
-      } are ready in your parent portal.`;
+      } ${invoicesCreated.length === 1 ? "is" : "are"} ready in your parent portal.`;
+    message =
+      `Thank you — your re-enrolment has been sent to the club office.${planBit}${invBit}`;
     if (gocardlessScheduled > 0) {
       message +=
-        ` Direct Payment collections are scheduled with GoCardless (${gocardlessScheduled} instalment${
+        ` GoCardless will collect ${gocardlessScheduled} Direct Payment${
           gocardlessScheduled === 1 ? "" : "s"
-        }, starting from the first due date).`;
+        } from the first due date.`;
     } else if (gocardlessNeedsSetup) {
       message +=
         " Open Invoices in the parent portal to set up Direct Payment before the first collection.";
@@ -272,6 +279,7 @@ Deno.serve(async (req) => {
     gocardless_scheduled: gocardlessScheduled,
     gocardless_schedule_errors: gocardlessScheduleErrors,
     gocardless_needs_setup: gocardlessNeedsSetup,
+    schedule_plan: schedulePlanPhrase,
     message,
   });
 });

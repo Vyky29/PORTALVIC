@@ -214,6 +214,40 @@ function pushInstalment(
 /**
  * Returns instalments to create, or empty if funder-paid / no schedule / zero total.
  */
+/** Short plan line for parent-facing thank-you / confirmation copy. */
+export function reenrolmentSchedulePlanPhrase(args: {
+  scheduleCode: string;
+  paymentMethodHint: "bank_transfer" | "gocardless" | "payment_link" | "other";
+  instalmentCount: number;
+}): string {
+  const n = Math.max(0, Math.floor(args.instalmentCount));
+  const isGc = args.paymentMethodHint === "gocardless";
+  const unit = isGc ? "Direct Payment" : "invoice";
+  const units = isGc ? "Direct Payments" : "invoices";
+  const code = String(args.scheduleCode || "").toLowerCase();
+  if (code === "yearly_1off") {
+    return `1 ${unit} scheduled for the full academic year`;
+  }
+  if (code === "term_3") {
+    return `3 ${units} scheduled (one per term — Autumn, Spring, Summer)`;
+  }
+  if (code === "term_flexi") {
+    return `6 ${units} scheduled (two per term)`;
+  }
+  if (code === "monthly_10") {
+    return `10 ${units} scheduled (monthly Sep–Jun: Autumn 4 · Spring 3 · Summer 3)`;
+  }
+  if (code === "monthly_term") {
+    return `${n || 11} ${units} scheduled (monthly by term)`;
+  }
+  if (code === "own_term") {
+    return `${n || 6} ${units} scheduled (term by term · own timing, including admin fees)`;
+  }
+  if (n === 1) return `1 ${unit} scheduled`;
+  if (n > 1) return `${n} ${units} scheduled`;
+  return "";
+}
+
 export function buildReenrolmentInstalments(args: {
   funding: unknown;
   termTotals: ReenrolTermTotals | null;
@@ -223,6 +257,8 @@ export function buildReenrolmentInstalments(args: {
   instalments: ReenrolInstalment[];
   vatMode: PortalInvoiceVatMode;
   paymentMethodHint: "bank_transfer" | "gocardless" | "payment_link" | "other";
+  scheduleCode: string | null;
+  schedulePlanPhrase: string | null;
   skipReason: string | null;
 } {
   const academicYear = args.academicYear || "2026-27";
@@ -230,6 +266,8 @@ export function buildReenrolmentInstalments(args: {
     instalments: [] as ReenrolInstalment[],
     vatMode: "vat_20" as PortalInvoiceVatMode,
     paymentMethodHint: "bank_transfer" as const,
+    scheduleCode: null as string | null,
+    schedulePlanPhrase: null as string | null,
     skipReason: null as string | null,
   };
 
@@ -403,13 +441,29 @@ export function buildReenrolmentInstalments(args: {
       }
     }
   } else {
-    return { ...empty, vatMode, paymentMethodHint: hint, skipReason: "unknown_schedule" };
+    return {
+      ...empty,
+      vatMode,
+      paymentMethodHint: hint,
+      scheduleCode,
+      skipReason: "unknown_schedule",
+    };
   }
+
+  const schedulePlanPhrase = out.length
+    ? reenrolmentSchedulePlanPhrase({
+      scheduleCode,
+      paymentMethodHint: hint,
+      instalmentCount: out.length,
+    })
+    : null;
 
   return {
     instalments: out,
     vatMode,
     paymentMethodHint: hint,
+    scheduleCode,
+    schedulePlanPhrase,
     skipReason: out.length ? null : "no_instalments",
   };
 }
