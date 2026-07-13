@@ -6,7 +6,7 @@
   "use strict";
 
   var HTML_SECTION_URL =
-    "/portal/day-centre-calendar-2026-27-section.html?v=20260707-summer-end-22jul";
+    "/portal/day-centre-calendar-2026-27-section.html?v=20260713-cal-back-fix";
   var DOC_TITLE = "Calendar 2026/27";
   var DOC_TYPE = "calendar_2026_27";
   var DOC_CATEGORY = "documents";
@@ -238,6 +238,10 @@
       var node = await buildCalendarSectionNode();
       node.classList.add("dc-cal--sessions-only");
       if (opts.circles) node.classList.add("dc-cal--mine-circles");
+      // Parent (and other embeds) already have their own back control — never link to staff_dashboard.
+      node.querySelectorAll(".dc-cal__back-wrap, #dcCalBackDashboard").forEach(function (el) {
+        el.remove();
+      });
       var tabs = node.querySelector(".dc-cal-tabs");
       if (tabs) tabs.remove();
       node.querySelectorAll("[data-dc-cal-summary]").forEach(function (el) {

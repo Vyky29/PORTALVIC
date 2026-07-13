@@ -1381,7 +1381,17 @@
     (function () {
       try {
         var back = document.getElementById("dcCalBackDashboard");
-        if (back) back.href = new URL("../staff_dashboard.html", location.href).href;
+        if (back) {
+          var path = String((location && location.pathname) || "").toLowerCase();
+          // Parent portal embeds this section — never send families to staff_dashboard (404 on marketing host).
+          if (path.indexOf("parent_portal") >= 0 || path.indexOf("/parent/") >= 0) {
+            var wrap = back.closest(".dc-cal__back-wrap");
+            if (wrap) wrap.remove();
+            else back.remove();
+          } else {
+            back.href = new URL("../staff_dashboard.html", location.href).href;
+          }
+        }
       } catch (_) {}
       if (typeof window.portalInitCalendar202627Tabs === "function") {
         window.portalInitCalendar202627Tabs(document.getElementById("dcCal2627"));
