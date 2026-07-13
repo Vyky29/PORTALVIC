@@ -89,7 +89,9 @@
     return normIso(t.termDashboardCalendarFrom) || normIso(t.termResumeDate) || "2026-06-01";
   }
 
-  /** Staff whose Term calendar continues through Day Centre end (31 Jul), not Fri 17. */
+  /** Staff whose Term calendar continues through Day Centre end (31 Jul), not Fri 17.
+   *  Explicit allowlist only — do not infer from roster rows (covers / one-off DC
+   *  slots would wrongly extend swim instructors through 31 Jul). */
   function staffUsesDayCentreCalendar(staffId) {
     var id = String(staffId || "").trim().toLowerCase();
     if (!id) return false;
@@ -101,23 +103,6 @@
     for (var i = 0; i < lookup.length; i++) {
       if (keys.indexOf(lookup[i]) >= 0) return true;
     }
-    try {
-      var model =
-        typeof global.sessionsModel !== "undefined" && Array.isArray(global.sessionsModel)
-          ? global.sessionsModel
-          : typeof sessionsModel !== "undefined" && Array.isArray(sessionsModel)
-            ? sessionsModel
-            : null;
-      if (model && model.length) {
-        for (var j = 0; j < model.length; j++) {
-          var s = model[j];
-          if (!s) continue;
-          var sid = String(s.staffId || "").trim().toLowerCase();
-          if (lookup.indexOf(sid) < 0 && sid !== id) continue;
-          if (rosterRowIsDayCentre(s)) return true;
-        }
-      }
-    } catch (_) {}
     return false;
   }
 

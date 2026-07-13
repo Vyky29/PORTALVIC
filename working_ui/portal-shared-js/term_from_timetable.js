@@ -18,12 +18,24 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   ],
   "termDashboardCalendarFirstDom": {},
   "termDashboardCalendarFrom": "2026-06-01",
-  "termDashboardCalendarTo": "2026-07-31",
+  "termDashboardCalendarTo": "2026-07-17",
+  "termDashboardCalendarToDayCentre": "2026-07-31",
+  "termStaffDayCentreCalendarKeys": [
+    "michelle",
+    "lulia",
+    "luliya",
+    "youssef",
+    "raul",
+    "roberto",
+    "victor"
+  ],
   "firstDate": "2026-04-13",
   "lastDate": "2026-07-31",
   "termBreakFrom": "2026-05-23",
   "termBreakTo": "2026-05-31",
   "termResumeDate": "2026-06-01",
+  "termFeedbackAssumeCompleteThroughIso": "2026-06-22",
+  "termFeedbackReminderFromIso": "2026-06-25",
   "termClosedDates": [
     "2026-05-04"
   ],
@@ -33,7 +45,10 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     ],
     "javier": [
       "2026-06-18",
-      "2026-06-21"
+      "2026-06-21",
+      "2026-06-28",
+      "2026-07-01",
+      "2026-07-08"
     ],
     "alex": [
       "2026-06-21"
@@ -51,6 +66,14 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     "berta": [
       "2026-06-24",
       "2026-07-08"
+    ],
+    "michelle": [
+      "2026-06-10",
+      "2026-06-24",
+      "2026-07-08"
+    ],
+    "youssef": [
+      "2026-07-07"
     ]
   },
   "termStaffOffWeekdaysRangeByProfileKey": {
@@ -77,7 +100,9 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-05-14",
       "2026-05-17",
       "2026-05-19",
-      "2026-05-20"
+      "2026-05-20",
+      "2026-06-10",
+      "2026-06-17"
     ],
     "youssef": [
       "2026-05-06",
@@ -954,6 +979,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-23",
       "2026-06-24",
       "2026-06-26",
+      "2026-06-29",
       "2026-06-30",
       "2026-07-01",
       "2026-07-03",
@@ -991,6 +1017,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-23",
       "2026-06-24",
       "2026-06-26",
+      "2026-06-29",
       "2026-06-30",
       "2026-07-01",
       "2026-07-03",
@@ -1254,6 +1281,5 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-21",
       "2026-07-05"
     ]
-  },
-  "termFeedbackAssumeCompleteThroughIso": "2026-06-22"
+  }
 };

@@ -2859,10 +2859,20 @@
           parts.push(`<div class="${hCls}" role="columnheader">${label}</div>`);
         });
         for(let i = 0; i < startPad; i++) parts.push('<div class="term-cal-pad" aria-hidden="true"></div>');
+        const viewToIso = String(
+          (typeof portalTermCalendarToIso === 'function' && portalTermCalendarToIso())
+          || dashboardData.termDashboardCalendarTo
+          || ''
+        ).trim().slice(0, 10);
         for(let day = firstDom; day <= lastDay; day++){
           const dt = new Date(y, monthIndex, day);
           const w = dt.getDay();
           const isoKey = termCalendarDateKey(y, monthIndex, day);
+          /* After this staff's calendar end (Fri 17 for non–Day Centre): blank pads, not a red 18–31 strip. */
+          if(/^\d{4}-\d{2}-\d{2}$/.test(viewToIso) && isoKey > viewToIso){
+            parts.push('<div class="term-cal-pad" aria-hidden="true"></div>');
+            continue;
+          }
           const staffAway = termStaffId && typeof portalTermStaffAwayOnDate === 'function'
             && portalTermStaffAwayOnDate(isoKey, termStaffId);
           const half = typeof portalTermCalendarDayIsRed === 'function'
