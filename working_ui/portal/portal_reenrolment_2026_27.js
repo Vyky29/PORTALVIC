@@ -453,7 +453,12 @@
   function formatCurrentPaymentMethodLabel(raw) {
     var s = String(raw || "").toLowerCase();
     if (!s) return "";
-    if (s.includes("gocardless") || s.includes("direct debit") || s.includes("direct payment")) {
+    var compact = s.replace(/[\s_\-]+/g, "");
+    if (
+      compact.includes("gocardless") ||
+      s.includes("direct debit") ||
+      s.includes("direct payment")
+    ) {
       return "Direct Payment (GoCardless)";
     }
     if (s.includes("bank")) return "Bank Transfer";
@@ -1973,10 +1978,12 @@
   function mapPrivatePayMethodCode(raw, fundingRaw) {
     var s = String(raw || "").toLowerCase();
     if (!s) return "bank_transfer";
+    var compact = s.replace(/[\s_\-]+/g, "");
     if (
-      s.includes("gocardless") ||
+      compact.includes("gocardless") ||
       s.includes("direct debit") ||
       s.includes("direct payment") ||
+      compact.includes("directdebit") ||
       s.includes("monthly") ||
       s.includes("installment")
     ) {
