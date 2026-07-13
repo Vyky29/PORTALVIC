@@ -21,7 +21,7 @@
        fine. Delete every non-push cache + unregister every non-push SW, then
        reload once (guarded by a session flag so it can never loop). */
     (function () {
-      var FLAG = "portalPwaFreshV2";
+      var FLAG = "portalPwaFreshV3";
       var KEEP = "clubsensational-portal-sw";
       try {
         if (sessionStorage.getItem(FLAG)) return;

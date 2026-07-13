@@ -6,7 +6,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const VER = "20260712-cyrus-dedupe";
+const VER = "20260712-alert-once";
 
 const STAFF_DASHBOARD_CORE_SCRIPTS = [
   "staff-dashboard-topbar.js",
@@ -18,7 +18,9 @@ const STAFF_DASHBOARD_CORE_SCRIPTS = [
   "staff-dashboard-ui.js",
 ];
 
-/** Staff-only: loaded early in parallel via staff-app-boot.js (not blocking core). */
+/** Staff-only: loaded early in parallel via staff-app-boot.js (not blocking core).
+ *  Do NOT defer portal_swimming_instructor_menus.js — without it the topbar stays on
+ *  HTML defaults (Photo/Venue/PickUp) and swimming Review/Plan icons never appear. */
 const STAFF_DEFERRED_TIER_PATTERNS = [
   /  <script src="\/portal\/clients_info_embed\.js[^"]*"><\/script>\n/g,
   /  <script src="\/portal\/clients_gender_embed\.js[^"]*"><\/script>\n/g,
@@ -26,7 +28,6 @@ const STAFF_DEFERRED_TIER_PATTERNS = [
   /  <script src="\/portal\/portal_participant_identity\.js[^"]*"><\/script>\n/g,
   /  <script src="\/portal\/portal_participant_general_hydrate\.js[^"]*"><\/script>\n/g,
   /  <script src="\/portal\/portal_staff_gender_embed\.js[^"]*"><\/script>\n/g,
-  /  <script src="\/portal\/portal_swimming_instructor_menus\.js[^"]*"><\/script>\n/g,
   /  <script src="\/portal\/portal_staff_photos\.js[^"]*"><\/script>\n/g,
 ];
 
