@@ -856,7 +856,16 @@
     state.sending = false;
     if (btn) btn.disabled = false;
     if (!res.ok) {
-      cfg.toast("Send failed: " + ((res.data && res.data.error) || res.status));
+      var errRaw = (res.data && (res.data.error || res.data.hint)) || res.status;
+      var errMsg = String(errRaw || "send_failed");
+      if (/132005|too long/i.test(errMsg)) {
+        errMsg = "Message too long for WhatsApp template — try again (fix deployed) or shorten the text";
+      } else if (/131047|24.?hour|session/i.test(errMsg)) {
+        errMsg = "Outside the 24h WhatsApp window — staff must message first, or use a shorter opener";
+      } else if (/131026|undeliverable/i.test(errMsg)) {
+        errMsg = "WhatsApp undeliverable — check the staff phone number on file";
+      }
+      cfg.toast("Send failed: " + errMsg.slice(0, 220));
       return;
     }
     if (draftEl) draftEl.value = "";

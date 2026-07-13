@@ -456,7 +456,16 @@ export type WhatsappSendOptions = {
 export function resolveParentNotifyWhatsappTemplate(kind: string): string {
   const k = String(kind || "").trim().toLowerCase();
   // Session text (not template) — required for replies in an open WhatsApp conversation.
-  if (k === "custom" || k === "reply" || k === "whatsapp_reply") return "";
+  // Staff CS WhatsApp is always free-form chat text (not the parent notify template).
+  if (
+    k === "custom" ||
+    k === "reply" ||
+    k === "whatsapp_reply" ||
+    k === "staff_message" ||
+    k.startsWith("staff_")
+  ) {
+    return "";
+  }
   const byKind: Record<string, string> = {
     payment_due: "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_PAYMENT",
     instructor_change: "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_INSTRUCTOR",

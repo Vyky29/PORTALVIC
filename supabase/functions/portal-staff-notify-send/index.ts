@@ -147,10 +147,12 @@ Deno.serve(async (req) => {
       contextWaId: contextWaId || undefined,
     });
   } else {
+    /* Staff chat: always free-form session text (never parent notify templates —
+     * those cap {{1}} at ~1024 and break long CS WhatsApp messages). */
     const waOpts = kind === "whatsapp_test"
       ? { templateName: "hello_world", templateLang: "en_US" }
       : {
-        kind,
+        kind: "staff_message",
         contextWaId: contextWaId || undefined,
       };
     sent = await sendParentMobileMessage(phone, bodyText, waOpts);
