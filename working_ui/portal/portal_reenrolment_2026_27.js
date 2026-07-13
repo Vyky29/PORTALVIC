@@ -636,6 +636,9 @@
       }
       return "Same programme total — Direct Payment (GoCardless). The office confirms your final collection plan.";
     }
+    if (payCode === "bank_transfer" && schedCode === "monthly_10") {
+      return "Same programme total — ten invoices (Autumn 4, Spring 3, Summer 3). Pay each month from the parent portal by bank transfer or Card / Apple Pay. First due 1 September 2026.";
+    }
     if (payCode === "bank_transfer" && schedCode === "term_flexi") {
       return "Same programme total — the first payment is due by 15 August 2026, then two bank transfers per term: one before half term starts, one during half-term week before the second half. The office confirms your final invoice plan.";
     }
@@ -721,7 +724,11 @@
       );
     }
     var bankFirstDue =
-      payCode === "bank_transfer" ? RE_BANK_FIRST_DUE : dueOnFirst("September 2026");
+      payCode === "bank_transfer"
+        ? schedCode === "monthly_10"
+          ? dueOnFirst("September 2026")
+          : RE_BANK_FIRST_DUE
+        : dueOnFirst("September 2026");
     var rows = [];
     if (schedCode === "yearly_1off") {
       rows.push({
@@ -1730,6 +1737,10 @@
       { code: "yearly_1off", label: "All year — one payment" },
       { code: "term_3", label: "Pay each term — one payment" },
       { code: "term_flexi", label: "Flexi term — 2 payments per term" },
+      {
+        code: "monthly_10",
+        label: "Regular monthly — 10 payments (4 / 3 / 3 by term)",
+      },
     ],
     gocardless: [
       { code: "yearly_1off", label: "All year — one payment" },
@@ -1737,7 +1748,7 @@
       { code: "term_flexi", label: "Flexi term — 2 payments per term" },
       {
         code: "monthly_10",
-        label: "Monthly — 10 payments (4 / 3 / 3 by term)",
+        label: "Regular monthly — 10 payments (4 / 3 / 3 by term)",
       },
     ],
     own_way_flexible: [
@@ -1759,10 +1770,12 @@
         : "One payment for the full academic year — due by 15 August 2026. Pay from the parent portal by bank transfer (no fee) or Card / Apple Pay (small processing fee). Same programme total.";
     }
     if (code === "monthly_10") {
-      return "Ten Direct Payments — Autumn 4, Spring 3, Summer 3 (September–June). We set up GoCardless before the first collection; then on the 1st of each month. Same programme total; £1.50 fee per instalment.";
+      return isGc
+        ? "Regular plan: ten Direct Payments — Autumn 4, Spring 3, Summer 3 (September–June). We set up GoCardless before the first collection; then on the 1st of each month. Same programme total; £1.50 fee per instalment."
+        : "Regular plan: ten invoices — Autumn 4, Spring 3, Summer 3 (September–June). Pay each month from the parent portal by bank transfer (no fee) or Card / Apple Pay (small fee). Same programme total; no admin fee if you pay on time.";
     }
     if (code === "monthly_term") {
-      return "One direct payment per month of each term — Autumn 4, Spring 3, Summer 4 (11 across the year). We set up GoCardless before the first collection.";
+      return "One payment per month of each term — Autumn 4, Spring 3, Summer 4 (11 across the year).";
     }
     if (code === "term_flexi") {
       return isGc
