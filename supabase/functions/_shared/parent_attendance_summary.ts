@@ -1,7 +1,7 @@
 import { feedbackAttendanceIsAbsent } from "./portal_feedback_digest_match.ts";
 import { rosterParticipantSlugAlias, slugifyParticipantKey } from "./participant_identity.ts";
 
-export const PARENT_SESSION_TERM_START_ISO = "2026-04-13";
+export const PARENT_SESSION_TERM_START_ISO = "2026-05-11";
 
 export type ParentAttendanceSummary = {
   attended: number;

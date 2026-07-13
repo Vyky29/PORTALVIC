@@ -1066,7 +1066,7 @@
   }
 
   /** Current year sessions for hub chips: Spring/Summer 2026 from April through 17 Jul. */
-  var CURRENT_YEAR_TERM_FROM = "2026-04-13";
+  var CURRENT_YEAR_TERM_FROM = "2026-05-11";
   var CURRENT_YEAR_TERM_TO = "2026-07-17";
   var CURRENT_YEAR_TERM_BREAK_FROM = "2026-05-23";
   var CURRENT_YEAR_TERM_BREAK_TO = "2026-05-31";
