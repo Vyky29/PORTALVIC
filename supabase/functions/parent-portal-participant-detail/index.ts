@@ -255,7 +255,7 @@ async function detectAquaticOnlyNoPhotos(
   return rows.every((r) => isAquaticService(r.service) && isCentreAquaticVenue(r.venue));
 }
 
-/** Preferred venue per programme for Sessions Overview (from active roster slots). */
+/** Preferred venue per programme (and optional day/time) for Sessions Overview. */
 async function loadParticipantVenueByService(
   supabase: ReturnType<typeof createClient>,
   identityInput: {
@@ -267,44 +267,154 @@ async function loadParticipantVenueByService(
   lookupNames: string[],
 ): Promise<Map<string, string>> {
   const map = new Map<string, string>();
+  const put = (key: string, venue: string) => {
+    const k = clean(key, 120).toLowerCase();
+    const v = clean(venue, 80);
+    if (!k || !v || map.has(k)) return;
+    map.set(k, v);
+  };
+  const rememberSlot = (service: unknown, venue: unknown, day?: unknown, timeSlot?: unknown) => {
+    const rawSvc = clean(service, 120);
+    const canon = canonicalProgrammeName(rawSvc) || rawSvc;
+    const ven = clean(venue, 80);
+    if (!ven) return;
+    const dayKey = clean(day, 20).toLowerCase();
+    const timeKey = clean(timeSlot, 40).toLowerCase().replace(/\./g, ":").replace(/\s+/g, " ");
+    if (canon) {
+      put(canon, ven);
+      if (dayKey) put(`${canon}|${dayKey}`, ven);
+      if (dayKey && timeKey) put(`${canon}|${dayKey}|${timeKey}`, ven);
+    }
+    if (rawSvc) {
+      put(rawSvc, ven);
+      if (dayKey) put(`${rawSvc}|${dayKey}`, ven);
+      if (dayKey && timeKey) put(`${rawSvc}|${dayKey}|${timeKey}`, ven);
+    }
+  };
+
+  const slugs = [
+    ...new Set(
+      resolveParticipantClientSlugs(identityInput)
+        .map((s) => slugifyParticipantKey(s))
+        .filter(Boolean),
+    ),
+  ];
+
+  if (slugs.length) {
+    try {
+      const { data } = await supabase
+        .from("portal_participant_service_lines")
+        .select("client_key, sessions")
+        .in("client_key", slugs)
+        .limit(8);
+      for (const row of data || []) {
+        const sessions = Array.isArray(row.sessions) ? row.sessions : [];
+        for (const slot of sessions) {
+          if (!slot || typeof slot !== "object") continue;
+          const s = slot as Record<string, unknown>;
+          rememberSlot(s.service, s.venue, s.day, s.timeSlot || s.time_slot || s.time);
+        }
+      }
+    } catch (e) {
+      console.warn("[parent-portal-participant-detail] venue from service_lines", e);
+    }
+  }
+
   const names = [
     ...new Set(
-      [...lookupNames.slice(0, 5), identityInput.displayName || ""]
+      [...lookupNames.slice(0, 5), identityInput.displayName || "", identityInput.firstName || ""]
         .map((n) => clean(n, 80))
         .filter(Boolean),
     ),
   ];
-  if (!names.length) return map;
-
-  const queries = names.map((nm) =>
-    supabase
-      .from("portal_roster_rows")
-      .select("client_name, service, venue, status")
-      .eq("status", "active")
-      .ilike("client_name", nm)
-      .limit(80),
-  );
-
-  const results = await Promise.all(queries);
-  for (const { data } of results) {
-    for (const row of data || []) {
-      if (!row) continue;
-      if (!participantIdentityMatches(identityInput, String(row.client_name || ""), "")) continue;
-      const venue = clean(row.venue, 80);
-      if (!venue) continue;
-      const rawSvc = clean(row.service, 120);
-      const canon = canonicalProgrammeName(rawSvc) || rawSvc;
-      if (canon) {
-        const ck = canon.toLowerCase();
-        if (!map.has(ck)) map.set(ck, venue);
-      }
-      if (rawSvc) {
-        const rk = rawSvc.toLowerCase();
-        if (!map.has(rk)) map.set(rk, venue);
+  const queries = [];
+  for (const nm of names) {
+    queries.push(
+      supabase
+        .from("portal_roster_rows")
+        .select("client_name, service, venue, day, time_slot, status")
+        .eq("status", "active")
+        .ilike("client_name", nm)
+        .limit(80),
+    );
+    const first = nm.split(/\s+/)[0];
+    if (first && first.length >= 2 && first.toLowerCase() !== nm.toLowerCase()) {
+      queries.push(
+        supabase
+          .from("portal_roster_rows")
+          .select("client_name, service, venue, day, time_slot, status")
+          .eq("status", "active")
+          .ilike("client_name", `${first}%`)
+          .limit(80),
+      );
+    }
+  }
+  if (queries.length) {
+    const results = await Promise.all(queries);
+    for (const { data } of results) {
+      for (const row of data || []) {
+        if (!row) continue;
+        if (!participantIdentityMatches(identityInput, String(row.client_name || ""), "")) continue;
+        rememberSlot(row.service, row.venue, row.day, row.time_slot);
       }
     }
   }
+
   return map;
+}
+
+function weekdayLongFromIso(iso: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "";
+  try {
+    const [y, m, d] = iso.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString("en-GB", { weekday: "long" });
+  } catch (_) {
+    return "";
+  }
+}
+
+function normalizeParentTimeKey(raw: unknown): string {
+  return clean(raw, 40)
+    .toLowerCase()
+    .replace(/\./g, ":")
+    .replace(/\s+/g, " ")
+    .replace(/\s*-\s*/g, " to ")
+    .replace(/\s*—\s*/g, " to ");
+}
+
+function resolveVenueForSession(
+  venueByService: Map<string, string>,
+  service: string,
+  sessionDate: string,
+  sessionTime: string,
+): string {
+  const canon = canonicalProgrammeName(service) || service;
+  const day = weekdayLongFromIso(sessionDate).toLowerCase();
+  const timeKey = normalizeParentTimeKey(sessionTime);
+  const keys = [
+    canon && day && timeKey ? `${canon}|${day}|${timeKey}` : "",
+    service && day && timeKey ? `${service}|${day}|${timeKey}` : "",
+    canon && day ? `${canon}|${day}` : "",
+    service && day ? `${service}|${day}` : "",
+    canon || "",
+    service || "",
+  ]
+    .map((k) => k.toLowerCase())
+    .filter(Boolean);
+  for (const k of keys) {
+    const hit = venueByService.get(k);
+    if (hit) return hit;
+  }
+  /* Soft time match: same service+day, any stored time that shares the start token. */
+  if (canon && day && timeKey) {
+    const startTok = timeKey.split(/\s+to\s+|\s*-\s*/)[0] || "";
+    if (startTok) {
+      for (const [k, v] of venueByService.entries()) {
+        if (k.indexOf(`${canon.toLowerCase()}|${day}|`) === 0 && k.indexOf(startTok) >= 0) return v;
+      }
+    }
+  }
+  return "";
 }
 
 function isAquaticService(raw: unknown): boolean {
@@ -693,19 +803,17 @@ Deno.serve(async (req) => {
       const service = clean(row.service, 200);
       const staffName = clean(row.completed_by_name, 120);
       const instructor = feedbackAuthorFirstName(staffName);
-      const canonSvc = canonicalProgrammeName(service) || service;
-      const venue =
-        (canonSvc && venueByService.get(canonSvc.toLowerCase())) ||
-        (service && venueByService.get(service.toLowerCase())) ||
-        "";
+      const sessionDate = isoFromAny(row.session_date);
+      const sessionTime = clean(row.session_time, 80);
+      const venue = resolveVenueForSession(venueByService, service, sessionDate, sessionTime);
       const cache = cacheById.get(id);
       const commentPack = parentCommentFromRow(positiveText, cache);
 
       sessionsOut.push({
         id,
-        session_date: isoFromAny(row.session_date),
+        session_date: sessionDate,
         service,
-        session_time: clean(row.session_time, 80),
+        session_time: sessionTime,
         venue,
         instructor,
         attendance: clean(row.attendance, 40),
