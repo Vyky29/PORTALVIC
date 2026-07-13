@@ -1467,6 +1467,40 @@
       return !!(st.sessionFeedbackNeed || st.venueOpenNeed || st.venueCloseNeed || st.rosterOverrideNeed);
     }
     const PORTAL_REMINDER_NOTIFY_STORAGE = 'portalReminderLastNotify_v1';
+    const PORTAL_REMINDER_NOTIFY_TAG = 'clubsensational-portal-reminder';
+    /** Drop sticky OS banners once outstanding feedback / venue reminders are cleared. */
+    function portalClearReminderNotifications(){
+      function shouldCloseReminderNotification(n){
+        if(!n) return false;
+        const tag = String(n.tag || '');
+        const title = String(n.title || '');
+        if(tag === PORTAL_REMINDER_NOTIFY_TAG) return true;
+        if(tag === 'staff-outstanding-feedback' || tag.indexOf('staff-outstanding-feedback') === 0) return true;
+        if(/^Outstanding feedback/i.test(title)) return true;
+        if(/^Urgent: same-day register/i.test(title)) return true;
+        if(/^Action required: register/i.test(title)) return true;
+        if(/^Reminder: complete today's tasks/i.test(title)) return true;
+        if(title === 'Portal reminder') return true;
+        return false;
+      }
+      try{
+        if(typeof Notification === 'undefined') return;
+        if(typeof navigator !== 'undefined' && navigator.serviceWorker && typeof navigator.serviceWorker.getRegistration === 'function'){
+          navigator.serviceWorker.getRegistration().then(function(reg){
+            if(!reg || typeof reg.getNotifications !== 'function') return;
+            return reg.getNotifications();
+          }).then(function(list){
+            (list || []).forEach(function(n){
+              if(!shouldCloseReminderNotification(n)) return;
+              try{ n.close(); }catch(_e){}
+            });
+          }).catch(function(){});
+        }
+      }catch(_e){}
+      try{
+        localStorage.removeItem(PORTAL_REMINDER_NOTIFY_STORAGE);
+      }catch(_e){}
+    }
     function portalMinutesUntilLocalMidnight(){
       const n = new Date();
       const e = new Date(n.getFullYear(), n.getMonth(), n.getDate(), 23, 59, 59, 999);
@@ -1544,7 +1578,10 @@
         if(typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
         if(!st) return;
         if(dashboardData && !portalStaffFeedbackPipelineReady()) return;
-        if(!(st.sessionFeedbackNeed || st.venueOpenNeed || st.venueCloseNeed)) return;
+        if(!(st.sessionFeedbackNeed || st.venueOpenNeed || st.venueCloseNeed)){
+          portalClearReminderNotifications();
+          return;
+        }
         const tabVisible = typeof document !== 'undefined' && document.visibilityState === 'visible';
         const suppressFeedbackPush = tabVisible && !!st.sessionFeedbackNeed;
         if(suppressFeedbackPush && !st.venueOpenNeed && !st.venueCloseNeed) return;
@@ -1579,7 +1616,7 @@
         try{
           const n = new Notification(title, {
             body: body,
-            tag: 'clubsensational-portal-reminder',
+            tag: PORTAL_REMINDER_NOTIFY_TAG,
             renotify: true,
             requireInteraction: level >= 2,
             icon: icon,

@@ -155,6 +155,8 @@ Deno.serve(async (req) => {
       body: pushBody,
       url: notifyUrl,
       portalOpen: "alerts",
+      tag: "staff-outstanding-feedback",
+      requireInteraction: true,
     });
 
     const expandedIds = await expandPushSubscriptionUserIds(admin, [t.userId]);
