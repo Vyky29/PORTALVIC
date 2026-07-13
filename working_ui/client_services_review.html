@@ -89,9 +89,10 @@
   .chip.warn{background:var(--warn-bg);color:var(--warn)}
   .chip.count{background:#eef2ff;color:var(--accent)}
   .client-finance{
-    margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);
-    display:flex;flex-direction:column;gap:8px;min-width:0
+    display:flex;flex-direction:column;gap:8px;min-width:0;grid-column:1 / -1
   }
+  .svc.svc--finance{grid-template-columns:1fr;background:#fff}
+  .svc.svc--finance .svc-name{font-size:13px;margin-bottom:2px}
   .client-finance__row{display:flex;flex-direction:column;gap:3px;min-width:0}
   .client-finance__row label{
     font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700
@@ -552,36 +553,40 @@
   function clientFinanceHtml(client, ci){
     var isLa = String(client.fundingSource||'') === 'la_nhs';
     return ''+
-      '<div class="client-finance">'+
-        '<div class="client-finance__row">'+
-          '<label for="cf-fund-'+ci+'">Funding by</label>'+
-          '<select id="cf-fund-'+ci+'" data-cf="fundingSource" data-ci="'+ci+'">'+
-            selectOptsHtml(FUNDING_SOURCE_OPTS, client.fundingSource, '— Select funding —')+
-          '</select>'+
-        '</div>'+
-        '<div class="client-finance__row client-finance__funder"'+(isLa?'':' hidden')+'>'+
-          '<label for="cf-funder-'+ci+'">LA / NHS funder</label>'+
-          '<select id="cf-funder-'+ci+'" data-cf="funderDetail" data-ci="'+ci+'"'+(isLa?'':' disabled')+'>'+
-            selectOptsHtml(FUNDER_DETAIL_OPTS, client.funderDetail, '— Ealing / H&amp;F / NHS —')+
-          '</select>'+
-        '</div>'+
-        '<div class="client-finance__row">'+
-          '<label for="cf-pay-'+ci+'">Payment method</label>'+
-          '<select id="cf-pay-'+ci+'" data-cf="paymentMethod" data-ci="'+ci+'">'+
-            selectOptsHtml(payOptsForClient(client), client.paymentMethod, '— Select payment —')+
-          '</select>'+
-        '</div>'+
-        '<div class="client-finance__money">'+
-          '<div class="client-finance__row money-owed">'+
-            '<label for="cf-owed-'+ci+'">Money owed (£)</label>'+
-            '<input id="cf-owed-'+ci+'" data-cf="moneyOwed" data-ci="'+ci+'" inputmode="decimal" value="'+esc(moneyFieldValue(client.moneyOwed))+'" placeholder="0.00" autocomplete="off" />'+
+      '<div class="svc svc--finance">'+
+        '<div class="svc-main">'+
+          '<div class="svc-name">Funding & payment</div>'+
+          '<div class="client-finance">'+
+            '<div class="client-finance__row">'+
+              '<label for="cf-fund-'+ci+'">Funding by</label>'+
+              '<select id="cf-fund-'+ci+'" data-cf="fundingSource" data-ci="'+ci+'">'+
+                selectOptsHtml(FUNDING_SOURCE_OPTS, client.fundingSource, '— Select funding —')+
+              '</select>'+
+            '</div>'+
+            '<div class="client-finance__row client-finance__funder"'+(isLa?'':' hidden')+'>'+
+              '<label for="cf-funder-'+ci+'">LA / NHS funder</label>'+
+              '<select id="cf-funder-'+ci+'" data-cf="funderDetail" data-ci="'+ci+'"'+(isLa?'':' disabled')+'>'+
+                selectOptsHtml(FUNDER_DETAIL_OPTS, client.funderDetail, '— Ealing / H&amp;F / NHS —')+
+              '</select>'+
+            '</div>'+
+            '<div class="client-finance__row">'+
+              '<label for="cf-pay-'+ci+'">Payment method</label>'+
+              '<select id="cf-pay-'+ci+'" data-cf="paymentMethod" data-ci="'+ci+'">'+
+                selectOptsHtml(payOptsForClient(client), client.paymentMethod, '— Select payment —')+
+              '</select>'+
+            '</div>'+
+            '<div class="client-finance__money">'+
+              '<div class="client-finance__row money-owed">'+
+                '<label for="cf-owed-'+ci+'">Money owed (£)</label>'+
+                '<input id="cf-owed-'+ci+'" data-cf="moneyOwed" data-ci="'+ci+'" inputmode="decimal" value="'+esc(moneyFieldValue(client.moneyOwed))+'" placeholder="0.00" autocomplete="off" />'+
+              '</div>'+
+              '<div class="client-finance__row money-credit">'+
+                '<label for="cf-cred-'+ci+'">Credits (£)</label>'+
+                '<input id="cf-cred-'+ci+'" data-cf="creditBalance" data-ci="'+ci+'" inputmode="decimal" value="'+esc(moneyFieldValue(client.creditBalance))+'" placeholder="0.00" autocomplete="off" />'+
+              '</div>'+
+            '</div>'+
           '</div>'+
-          '<div class="client-finance__row money-credit">'+
-            '<label for="cf-cred-'+ci+'">Credits (£)</label>'+
-            '<input id="cf-cred-'+ci+'" data-cf="creditBalance" data-ci="'+ci+'" inputmode="decimal" value="'+esc(moneyFieldValue(client.creditBalance))+'" placeholder="0.00" autocomplete="off" />'+
-          '</div>'+
         '</div>'+
-        '<p class="client-finance__hint">Funding first · LA/NHS pick funder · Owed / Credits you can edit. Prefill from Clients Payments when empty.</p>'+
       '</div>';
   }
 
@@ -609,10 +614,12 @@
         '<td class="cell-name">'+
           '<div class="name">'+esc(client.name)+'</div>'+
           '<div class="name-badges">'+badges+'</div>'+
-          clientFinanceHtml(client, ci)+
         '</td>'+
         '<td>'+
-          '<div class="svc-list">'+svc+'</div>'+
+          '<div class="svc-list">'+
+            clientFinanceHtml(client, ci)+
+            svc+
+          '</div>'+
           '<div class="add-row"><button class="btn ghost sm" data-act="addSvc" data-ci="'+ci+'">+ Add service</button></div>'+
         '</td>'+
         '<td class="cell-actions"><div class="actions">'+
