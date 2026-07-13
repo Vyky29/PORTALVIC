@@ -1711,10 +1711,11 @@ const LEVEL_DATA = {
       try{
         const floor = swtermTermDateFloor();
         const res = await supabase
-          .from("portal_documents")
+          .from("documents")
           .select("related_client,related_date,title")
           .eq("document_type", "swim_term_review")
           .gte("related_date", floor)
+          .is("hidden_by_user_at", null)
           .limit(4000);
         if(res.error) throw res.error;
         (res.data || []).forEach(row => {
