@@ -1531,8 +1531,8 @@ function portalBootstrapStaffProfileUsernameCandidates(authEmail) {
   if (rosterKey) {
     names.add(rosterKey);
     if (rosterKey === "lulia") ["luliya", "lulia", "aida", "Luliya", "Aida"].forEach((n) => names.add(n));
-    else if (rosterKey === "javier") ["javier", "Javier", "javi", "Javi"].forEach((n) => names.add(n));
-    else if (rosterKey === "javi") ["javi", "Javi", "javier", "Javier"].forEach((n) => names.add(n));
+    else if (rosterKey === "javier") ["javier", "Javier", "javiermarquez", "Javier Marquez"].forEach((n) => names.add(n));
+    else if (rosterKey === "javi") ["javi", "Javi", "palankas", "Palankas", "Palankas Arranz"].forEach((n) => names.add(n));
     else if (rosterKey === "youssef") ["youssef", "Youssef", "yousef", "yusef"].forEach((n) => names.add(n));
     else names.add(rosterKey.charAt(0).toUpperCase() + rosterKey.slice(1));
   }

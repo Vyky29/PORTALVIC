@@ -326,17 +326,56 @@
         if (canon) return canon;
       }
     } catch (_) {}
+    try {
+      if (typeof global.portalProfileRosterKey === "function") {
+        var fromRoster = global.portalProfileRosterKey(k);
+        if (fromRoster) return fromRoster;
+      }
+    } catch (_) {}
     if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
     if (k === "yousef" || k === "yousseff" || k === "yusef" || k === "stf005") return "youssef";
     if (k.indexOf("youssef") === 0 || k.indexOf("yousef") === 0) return "youssef";
-    if (k === "stf006") return "john";
-    if (k === "stf012") return "berta";
-    if (k === "palankas" || k === "palankasarranz" || k === "palankasarranzescorial") return "javi";
+    if (k === "javiermarquez" || k === "stf010") return "javier";
+    if (k === "stf017" || k === "palankas" || k === "palankasarranz" || k === "palankasarranzescorial") {
+      return "javi";
+    }
     if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
+    if (k === "stf001") return "sandra";
+    if (k === "stf002") return "roberto";
+    if (k === "stf003") return "dan";
+    if (k === "stf004") return "angel";
+    if (k === "stf006") return "john";
+    if (k === "stf007") return "bismark";
+    if (k === "stf008") return "giuseppe";
+    if (k === "stf009") return "godsway";
+    if (k === "stf011") return "aurora";
+    if (k === "stf012") return "berta";
+    if (k === "stf013") return "victor";
+    if (k === "stf014") return "carlos";
+    if (k === "stf015") return "alex";
+    if (k === "stf016") return "simon";
+    if (k === "stf018") return "raul";
+    if (k === "stf019") return "sevitha";
+    if (k === "stf020") return "teflon";
+    if (k === "stf022") return "andres";
     return k;
   }
 
   function resolveTopbarStaffKey() {
+    try {
+      var sid = global.STAFF_DASHBOARD_ID;
+      if (sid) {
+        var fromDashId = canonicalTopbarStaffKey(sid);
+        if (fromDashId) return fromDashId;
+      }
+    } catch (_) {}
+    try {
+      var dd = global.dashboardData;
+      if (dd && dd.staffId) {
+        var fromDash = canonicalTopbarStaffKey(dd.staffId);
+        if (fromDash) return fromDash;
+      }
+    } catch (_) {}
     try {
       var box = global.__PORTAL_SUPABASE__ || {};
       var profile = box.staff_profile;
@@ -351,20 +390,6 @@
           global.portalInferStaffKey(profile, email),
         );
         if (inferred) return inferred;
-      }
-    } catch (_) {}
-    try {
-      var sid = global.STAFF_DASHBOARD_ID;
-      if (sid) {
-        var fromDashId = canonicalTopbarStaffKey(sid);
-        if (fromDashId) return fromDashId;
-      }
-    } catch (_) {}
-    try {
-      var dd = global.dashboardData;
-      if (dd && dd.staffId) {
-        var fromDash = canonicalTopbarStaffKey(dd.staffId);
-        if (fromDash) return fromDash;
       }
     } catch (_) {}
     try {
@@ -402,6 +427,8 @@
   function portalStaffIsCeoTopbarFullAccess() {
     try {
       var key = resolveTopbarStaffKey();
+      /* Swimming instructor Javier Marquez must never inherit CEO Javi tools. */
+      if (key === "javier") return false;
       if (CEO_TOPBAR_KEYS[key]) return true;
       var box = global.__PORTAL_SUPABASE__ || {};
       var profile = box.staff_profile;
@@ -413,13 +440,17 @@
       }
       if (typeof global.portalInferStaffKey === "function") {
         key = canonicalTopbarStaffKey(global.portalInferStaffKey(profile, email));
+        if (key === "javier") return false;
         if (CEO_TOPBAR_KEYS[key]) return true;
       }
       var em = String(email || "")
         .trim()
         .toLowerCase();
       if (em.indexOf("victor@") >= 0 || em.indexOf("raul@") >= 0) return true;
-      if (em.indexOf("javier@") >= 0 || em.indexOf("javi@") >= 0) return true;
+      /* Corporate CEO login only — not staff import emails / Javier Marquez. */
+      if (em === "javier@clubsensational.org" || em === "javi@clubsensational.org" || em === "javier@clbusensational.org") {
+        return true;
+      }
     } catch (_) {}
     return false;
   }

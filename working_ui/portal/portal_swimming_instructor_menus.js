@@ -322,14 +322,41 @@
         if (canon) return canon;
       }
     } catch (_) {}
+    // staff_roster_resolve.js loads before auth module — same stf/alias map.
+    try {
+      if (typeof global.portalProfileRosterKey === "function") {
+        var fromRoster = global.portalProfileRosterKey(k);
+        if (fromRoster) return fromRoster;
+      }
+    } catch (_) {}
     if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
     if (k === "yousef" || k === "yousseff" || k === "yusef" || k === "stf005") return "youssef";
     if (k.indexOf("youssef") === 0 || k.indexOf("yousef") === 0) return "youssef";
-    if (k === "stf006") return "john";
-    if (k === "stf012") return "berta";
-    if (k === "michelleemmacaleb" || k.indexOf("michelle") === 0) return "michelle";
-    if (k === "palankas" || k === "palankasarranz" || k === "palankasarranzescorial") return "javi";
+    if (k === "javiermarquez" || k === "stf010") return "javier";
+    /* Never collapse swimming Javier Marquez (javier) into CEO Javi (javi). */
+    if (k === "stf017" || k === "palankas" || k === "palankasarranz" || k === "palankasarranzescorial") {
+      return "javi";
+    }
     if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
+    if (k === "stf001") return "sandra";
+    if (k === "stf002") return "roberto";
+    if (k === "stf003") return "dan";
+    if (k === "stf004") return "angel";
+    if (k === "stf006") return "john";
+    if (k === "stf007") return "bismark";
+    if (k === "stf008") return "giuseppe";
+    if (k === "stf009") return "godsway";
+    if (k === "stf011") return "aurora";
+    if (k === "stf012") return "berta";
+    if (k === "stf013") return "victor";
+    if (k === "stf014") return "carlos";
+    if (k === "stf015") return "alex";
+    if (k === "stf016") return "simon";
+    if (k === "stf018") return "raul";
+    if (k === "stf019") return "sevitha";
+    if (k === "stf020") return "teflon";
+    if (k === "stf022") return "andres";
+    if (k === "michelleemmacaleb" || k.indexOf("michelle") === 0) return "michelle";
     return k;
   }
 
@@ -446,12 +473,13 @@
       var box = global.__PORTAL_SUPABASE__ || {};
       var profile = box.staff_profile;
       var email = (box.session && box.session.user && box.session.user.email) || "";
+      var staffKey = resolveCurrentStaffKey();
+      if (staffKey === "javier") return false;
       if (typeof global.portalCanAccessCeoDashboard === "function") {
         if (global.portalCanAccessCeoDashboard(profile, email)) return true;
       } else if (typeof global.__portalCanAccessCeoDashboard === "function") {
         if (global.__portalCanAccessCeoDashboard(profile, email)) return true;
       }
-      var staffKey = resolveCurrentStaffKey();
       return staffKey === "victor" || staffKey === "javi" || staffKey === "raul";
     } catch (_) {
       return false;
@@ -564,7 +592,13 @@
       try {
         var nm = (global.dashboardData && global.dashboardData.staffName) || "";
         var nameKey = canonicalStaffRosterKey(String(nm).split(/\s+/)[0]);
-        if (nameKey && EXPLICIT_TOPBAR_PROFILES[nameKey]) {
+        /* Do not let display name "Javi" steal swimming Javier's profile, or vice versa. */
+        if (
+          nameKey &&
+          EXPLICIT_TOPBAR_PROFILES[nameKey] &&
+          !(key === "javier" && nameKey === "javi") &&
+          !(key === "javi" && nameKey === "javier")
+        ) {
           matched = EXPLICIT_TOPBAR_PROFILES[nameKey];
         }
       } catch (_) {}
@@ -574,7 +608,8 @@
       var profileKeys = Object.keys(EXPLICIT_TOPBAR_PROFILES);
       for (var i = 0; i < profileKeys.length; i += 1) {
         var pk = profileKeys[i];
-        if (pk.length >= 5 && key.indexOf(pk) === 0) {
+        /* Require longer prefix so "javi" never matches "javier". */
+        if (pk.length >= 5 && key.indexOf(pk) === 0 && !(pk === "javier" && key === "javi")) {
           matched = EXPLICIT_TOPBAR_PROFILES[pk];
           break;
         }
