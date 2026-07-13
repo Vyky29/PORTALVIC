@@ -1,5 +1,5 @@
     :root{
-      --topbar-brand-visual-h:118px;
+      --topbar-brand-visual-h:110px;
       --blue:#2d84b3;
       --blueSoft:#eaf5fb;
       --gold:#f4b740;
@@ -289,9 +289,6 @@
     }
     .topbar-lead .topbar-center{
       justify-self:center;
-      overflow:hidden;
-      min-width:0;
-      max-width:100%;
     }
     .topbar-left{
       display:flex;
@@ -344,10 +341,8 @@
       justify-content:center;
       align-items:center;
       align-self:stretch;
-      overflow:hidden;
-      min-width:0;
-      max-width:100%;
-      padding:0 6px;
+      overflow:visible;
+      padding:0 10px;
       margin:0;
     }
     .topbar-right{
@@ -807,19 +802,19 @@
     }
     .avatar-wrap.avatar-wrap--portal-alert-both .avatar-orbit-layer circle:nth-child(2n+1){fill:#dc2626 !important}
     .avatar-wrap.avatar-wrap--portal-alert-both .avatar-orbit-layer circle:nth-child(2n){fill:#f97316 !important}
-    /* No pending items: hide orbit dots; grow crest to fill the center cell. */
+    /* No pending items: hide orbit dots (logo + soft circular aura only). */
     .avatar-wrap.avatar-wrap--portal-orbit-idle .avatar-orbit{opacity:0;visibility:hidden}
-    .avatar-wrap.avatar-wrap--portal-orbit-idle .avatar-aura{opacity:.55;inset:-10px}
+    .avatar-wrap.avatar-wrap--portal-orbit-idle .avatar-aura{opacity:.55}
+    /* Keep crest + circular glow; do not clip the center cell (that made a vertical “tube”). */
     .topbar-lead .avatar-wrap.avatar-wrap--portal-orbit-idle{
-      --avatar-wrap-size:min(112px, calc(var(--topbar-row-h) - 4px));
-      --avatar-core-size:min(104px, calc(var(--topbar-row-h) - 12px));
-      --avatar-orbit-outset:0px;
+      --avatar-wrap-size:78px;
+      --avatar-core-size:68px;
+      --avatar-orbit-outset:15px;
     }
-    /* With orbit balls: shrink crest so dots sit just inside the cell (no column overflow). */
     .topbar-lead .avatar-wrap:not(.avatar-wrap--portal-orbit-idle){
-      --avatar-orbit-outset:12px;
-      --avatar-wrap-size:min(66px, calc(var(--topbar-row-h) - 28px));
-      --avatar-core-size:min(52px, calc(var(--avatar-wrap-size) - 10px));
+      --avatar-orbit-outset:15px;
+      --avatar-wrap-size:78px;
+      --avatar-core-size:68px;
     }
     /* Unread internal chat only — blue orbits + logo pulse */
     .avatar-wrap.avatar-wrap--portal-alert-chat .avatar{
