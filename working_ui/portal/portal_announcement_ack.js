@@ -25,11 +25,35 @@
     return "";
   };
 
-  /** CEO / admin / Sevitha — always see staff announcements for team awareness (even role- or user-targeted). */
+  /** Ghost / handoff: mirror the worker inbox, not the admin/CEO leadership feed. */
+  global.portalIsGhostWorkerMirror = function portalIsGhostWorkerMirror() {
+    try {
+      var g = global.__PORTAL_GHOST_VIEW__;
+      return !!(g && g.active && String(g.staffUserId || "").trim());
+    } catch (_e) {
+      return false;
+    }
+  };
+
+  /** Effective staff_profiles.id for inbox + ack merges (ghost target when teleporting). */
+  global.portalEffectiveStaffViewerId = function portalEffectiveStaffViewerId(fallbackUid) {
+    try {
+      var g = global.__PORTAL_GHOST_VIEW__;
+      if (g && g.active) {
+        var ghostUid = String(g.staffUserId || "").trim();
+        if (ghostUid) return ghostUid;
+      }
+    } catch (_e2) {}
+    return String(fallbackUid || "").trim();
+  };
+
+  /** CEO / admin / Sevitha — always see staff announcements for team awareness (even role- or user-targeted).
+   *  Skipped in ghost view so Teleport matches the worker’s real pending list. */
   global.portalStaffAnnouncementLeadershipMirrorUser = function portalStaffAnnouncementLeadershipMirrorUser(
     ctx
   ) {
     ctx = ctx || {};
+    if (ctx.forceWorkerInbox || global.portalIsGhostWorkerMirror()) return false;
     var appRole = String(ctx.appRole || "")
       .trim()
       .toLowerCase();
@@ -578,7 +602,11 @@
       var box = readBox();
       var client = box && box.client;
       var session = box && box.session;
-      var uid = session && session.user && session.user.id;
+      var sessionUid = session && session.user && session.user.id;
+      var uid =
+        typeof global.portalEffectiveStaffViewerId === "function"
+          ? global.portalEffectiveStaffViewerId(sessionUid)
+          : sessionUid;
       if (!client || !uid || !client.from) return;
       var res = await client
         .from("portal_staff_announcement_acks")
@@ -637,7 +665,11 @@
       var box = readBox();
       var client = box && box.client;
       var session = box && box.session;
-      var uid = session && session.user && session.user.id;
+      var sessionUid = session && session.user && session.user.id;
+      var uid =
+        typeof global.portalEffectiveStaffViewerId === "function"
+          ? global.portalEffectiveStaffViewerId(sessionUid)
+          : sessionUid;
       if (!client || !uid || !client.from) return;
       var res = await client
         .from("portal_staff_announcement_acks")

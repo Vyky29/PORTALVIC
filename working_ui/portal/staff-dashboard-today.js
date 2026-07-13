@@ -4350,27 +4350,55 @@
             : {};
         dashboardData.portalAnnouncementMediaById = mediaById || {};
         const prof = box && box.staff_profile;
-        if(prof && prof.id && client && prof.profile_last_confirmed_at === undefined){
+        const ghost =
+          typeof window !== 'undefined' && window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active
+            ? window.__PORTAL_GHOST_VIEW__
+            : null;
+        const ghostUid = ghost ? String(ghost.staffUserId || '').trim() : '';
+        let viewerProf = prof;
+        if(ghostUid && client){
+          try{
+            const gp = await client
+              .from('staff_profiles')
+              .select('id,username,full_name,app_role,staff_role,profile_last_confirmed_at')
+              .eq('id', ghostUid)
+              .maybeSingle();
+            if(!gp.error && gp.data){
+              viewerProf = gp.data;
+            }
+          }catch(_gp){}
+        }
+        if(viewerProf && viewerProf.id && client && viewerProf.profile_last_confirmed_at === undefined){
           try{
             const pr = await client
               .from('staff_profiles')
               .select('profile_last_confirmed_at')
-              .eq('id', prof.id)
+              .eq('id', viewerProf.id)
               .maybeSingle();
             if(!pr.error && pr.data){
-              prof.profile_last_confirmed_at = pr.data.profile_last_confirmed_at;
+              viewerProf.profile_last_confirmed_at = pr.data.profile_last_confirmed_at;
             }
           }catch(_pr){}
         }
+        const sessionUid = (box.session && box.session.user && box.session.user.id) || (prof && prof.id) || '';
+        const viewerUid =
+          typeof portalEffectiveStaffViewerId === 'function'
+            ? portalEffectiveStaffViewerId(sessionUid)
+            : (ghostUid || sessionUid);
         const workerInboxCtx = {
-          authUserId: (box.session && box.session.user && box.session.user.id) || (prof && prof.id) || '',
-          appRole: prof && prof.app_role,
-          staffRole: prof && prof.staff_role,
-          staffUsername: prof && prof.username,
+          authUserId: viewerUid,
+          userId: viewerUid,
+          appRole: viewerProf && viewerProf.app_role,
+          staffRole: viewerProf && viewerProf.staff_role,
+          staffUsername: viewerProf && viewerProf.username,
           staffKey:
             typeof portalInferStaffKey === 'function'
-              ? portalInferStaffKey(prof, (box.session && box.session.user && box.session.user.email) || '')
-              : (prof && prof.username) || ''
+              ? portalInferStaffKey(
+                  viewerProf,
+                  (box.session && box.session.user && box.session.user.email) || ''
+                )
+              : (viewerProf && viewerProf.username) || (ghost && ghost.rosterKey) || '',
+          forceWorkerInbox: !!ghostUid
         };
         if(typeof portalWorkerHasPortalPushSubscription === 'function'){
           workerInboxCtx.hasPortalPushSubscription = await portalWorkerHasPortalPushSubscription(client, workerInboxCtx.authUserId);
@@ -4513,6 +4541,22 @@
           const typ = String(row.message_type || '').toLowerCase().trim();
           if(typ === 'reminder'){
             if(remSeen[id]) return;
+            /* Same audience rules as archive — do not list other people's single_user copies
+               (admin/CEO RLS + leadership mirror used to flood Ghost View). */
+            const remDelivery = String(row.delivery_scope || 'everyone').trim();
+            const remAudience = String(row.audience_scope || 'all_staff').trim();
+            const remTargetUser = String(row.target_user_id || '').trim();
+            const remTargetRole = String(row.target_staff_role || '').trim();
+            const remUid = String(workerInboxCtx.authUserId || '').trim();
+            let remInclude = false;
+            if(remDelivery === 'everyone' && (remAudience === 'all_staff' || remAudience === 'leads') && !remTargetUser){
+              remInclude = true;
+            }else if(remDelivery === 'staff_role' && remAudience === 'all_staff' && remTargetRole){
+              remInclude = String(workerInboxCtx.staffRole || '').trim() === remTargetRole;
+            }else if(remDelivery === 'single_user' && remUid && remTargetUser === remUid){
+              remInclude = true;
+            }
+            if(!remInclude) return;
             remSeen[id] = true;
             let cat = String(row.reminder_category || 'notes').toLowerCase();
             if(cat !== 'training' && cat !== 'timesheet' && cat !== 'notes') cat = 'notes';
@@ -4600,14 +4644,14 @@
           if(String(row.on_ack_action || '').trim() === 'annual_profile'){
             if(
               typeof portalAnnualProfileCampaignComplete === 'function' &&
-              portalAnnualProfileCampaignComplete(prof && prof.profile_last_confirmed_at)
+              portalAnnualProfileCampaignComplete(viewerProf && viewerProf.profile_last_confirmed_at)
             ){
               return;
             }
             // Pre–3 Jul local acks must not hide the campaign while reconfirm is still required.
             try{
               if(typeof portalClearStaleAnnualProfileLocalDone === 'function'){
-                portalClearStaleAnnualProfileLocalDone(prof && prof.profile_last_confirmed_at);
+                portalClearStaleAnnualProfileLocalDone(viewerProf && viewerProf.profile_last_confirmed_at);
               }
             }catch(_clrAnn){}
           }
@@ -4623,7 +4667,7 @@
           const isAnnualProfileRow = String(row.on_ack_action || '').trim() === 'annual_profile';
           const campaignStillOpen = isAnnualProfileRow && !(
             typeof portalAnnualProfileCampaignComplete === 'function' &&
-            portalAnnualProfileCampaignComplete(prof && prof.profile_last_confirmed_at)
+            portalAnnualProfileCampaignComplete(viewerProf && viewerProf.profile_last_confirmed_at)
           );
           if(injFp && (injectContentSeen[injFp] || ackContentSeen[injFp]) && !campaignStillOpen){
             existing[id] = true;
