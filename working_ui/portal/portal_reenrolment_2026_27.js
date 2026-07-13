@@ -598,6 +598,38 @@
     }, 0);
   }
 
+  /** Headline total under cadence: full year, or current term only when term-by-term. */
+  function estimatedBillingTotalDisplay(data) {
+    var annual = resolveAnnualWeeklyTotal(data);
+    var cadence = normalizeEnrolmentCadence(state.enrolmentCadence);
+    if (cadence === "term_by_term") {
+      var term = currentReenrolBillingTerm();
+      var amt = termProgrammeTotal(data, term);
+      var label =
+        term === "spring"
+          ? "Estimated Spring Term 2027 total"
+          : term === "summer"
+            ? "Estimated Summer Term 2027 total"
+            : "Estimated Autumn Term 2026 total";
+      return { label: label, amount: amt, annual: annual };
+    }
+    return {
+      label: "Estimated programme total 2026/27",
+      amount: annual,
+      annual: annual,
+    };
+  }
+
+  function estimatedBillingTotalHtml(data) {
+    var d = estimatedBillingTotalDisplay(data);
+    return (
+      "<strong>" +
+      esc(d.label) +
+      ":</strong> " +
+      esc(money(d.amount))
+    );
+  }
+
   function isReEnrolSubmissionOpen() {
     var end = new Date(RE_ENROL_DEADLINE_ISO + "T23:59:59");
     return Date.now() <= end.getTime();
@@ -1758,14 +1790,18 @@
       '">' +
       renderEnrolmentCadenceSection() +
       '<div id="rePayEverything">' +
-      '<p class="re-funding-total"><strong>Estimated programme total 2026/27:</strong> ' +
-      esc(money(annualTotal)) +
+      '<p class="re-funding-total">' +
+      estimatedBillingTotalHtml(data) +
       "</p>" +
       renderBillingArrangementSection(data) +
       '<div id="reBillingPaySection"' +
       (b.editing ? " hidden" : "") +
       ">" +
-      '<p class="re-muted re-billing-plan-intro">The total above covers your confirmed sessions for the year. <strong>Bank Transfer / Card / Apple Pay</strong> uses fixed due dates (pay each invoice from the parent portal — no admin fee if on time). <strong>Direct Payment (GoCardless)</strong> is collected automatically once we set up your mandate. <strong>Own arrangement</strong> is only for privately funded families who cannot meet those dates (+ £50 / term) — not available with LA Direct Payments funding.</p>' +
+      '<p class="re-muted re-billing-plan-intro" id="reBillingPlanIntro">' +
+      (normalizeEnrolmentCadence(state.enrolmentCadence) === "term_by_term"
+        ? "The total above is for the <strong>current term only</strong> (term-by-term). Later terms are billed when you reconfirm. "
+        : "The total above covers your confirmed sessions for the year. ") +
+      "<strong>Bank Transfer / Card / Apple Pay</strong> uses fixed due dates (pay each invoice from the parent portal — no admin fee if on time). <strong>Direct Payment (GoCardless)</strong> is collected automatically once we set up your mandate. <strong>Own arrangement</strong> is only for privately funded families who cannot meet those dates (+ £50 / term) — not available with LA Direct Payments funding.</p>" +
       '<div id="rePanelPrivate" class="re-funding-panel">' +
       '<div id="rePayScheduleWrap" class="re-pay-schedule-wrap">' +
       (normalizeEnrolmentCadence(state.enrolmentCadence)
@@ -2257,13 +2293,21 @@
     var data = state.lookup;
     var wrap = document.querySelector(".re-funding-2627");
     if (wrap && data) {
-      var total = resolveAnnualWeeklyTotal(data);
-      wrap.setAttribute("data-annual-total", String(total));
+      var disp = estimatedBillingTotalDisplay(data);
+      wrap.setAttribute("data-annual-total", String(disp.annual));
+      wrap.setAttribute("data-billing-total", String(disp.amount));
       var totalEl = wrap.querySelector(".re-funding-total");
       if (totalEl) {
-        totalEl.innerHTML =
-          "<strong>Estimated programme total 2026/27:</strong> " +
-          esc(money(total));
+        totalEl.innerHTML = estimatedBillingTotalHtml(data);
+      }
+      var intro = document.getElementById("reBillingPlanIntro");
+      if (intro) {
+        var cadence = normalizeEnrolmentCadence(state.enrolmentCadence);
+        intro.innerHTML =
+          (cadence === "term_by_term"
+            ? "The total above is for the <strong>current term only</strong> (term-by-term). Later terms are billed when you reconfirm. "
+            : "The total above covers your confirmed sessions for the year. ") +
+          "<strong>Bank Transfer / Card / Apple Pay</strong> uses fixed due dates (pay each invoice from the parent portal — no admin fee if on time). <strong>Direct Payment (GoCardless)</strong> is collected automatically once we set up your mandate. <strong>Own arrangement</strong> is only for privately funded families who cannot meet those dates (+ £50 / term) — not available with LA Direct Payments funding.";
       }
     }
     updateAdminFeeAmount();
@@ -2340,7 +2384,7 @@
           b.payCode = "bank_transfer";
         }
         syncPrivatePayPanels();
-        updateAdminFeeAmount();
+        refreshProgrammeTotalsFromChoices();
         return;
       }
       if (t && t.name === "re_pay_schedule_2627") {
