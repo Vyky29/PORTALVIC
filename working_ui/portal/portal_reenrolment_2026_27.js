@@ -1577,22 +1577,13 @@
     );
   }
 
-  function renderBilling2526Reference(cur) {
-    var fundText = billing2526FundingLabel(cur);
-    var payText = formatCurrentPaymentMethodLabel(cur.payment_method) || "—";
-    var feeNote =
-      '<p class="re-billing-ref-note re-billing-ref-fee">' +
-      "<strong>Fees:</strong> standard plans (bank transfer or Card / Apple Pay on or before due dates) have <strong>no admin fee</strong>. " +
-      "Direct Payment (GoCardless) adds " +
-      money(RE_ADMIN_FEE_GC_PER_INSTALLMENT) +
-      " per instalment. " +
-      "<strong>Own arrangement</strong> (cannot meet our payment dates) is term-only and adds " +
-      money(RE_ADMIN_FEE_OWN) +
-      " each term, plus a minimum prepaid balance of two sessions per service." +
-      "</p>";
+  function renderBilling2627DefaultView() {
+    var b = state.billing2627 || {};
+    var fundText = fundingLabel(b.fundCode) || "—";
+    var payText = privatePayMethodLabel(b.payCode) || "—";
     return (
       '<div class="re-funding-current">' +
-      '<h4><svg class="re-funding-current__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2.5" y="5.5" width="19" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M2.5 9.5h19" stroke="currentColor" stroke-width="1.8"/><path d="M6 14.5h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Funding &amp; payment on file (2025/26)</span></h4>' +
+      '<h4><svg class="re-funding-current__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2.5" y="5.5" width="19" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M2.5 9.5h19" stroke="currentColor" stroke-width="1.8"/><path d="M6 14.5h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Your funding &amp; payment for 2026/27</span></h4>' +
       '<ul class="re-billing-ref-list">' +
       "<li>" +
       '<span class="re-billing-ref-label">Funding</span>' +
@@ -1605,24 +1596,34 @@
       esc(payText) +
       "</span></li>" +
       "</ul>" +
-      '<p class="re-billing-ref-note re-billing-ref-note--alert">This continues for 2026/27 unless you edit below.</p>' +
-      feeNote +
-      '<button type="button" class="re-btn re-btn--billing-edit-inline" id="reBillingEditBtn">Edit for 2026/27</button>' +
+      '<p class="re-muted re-billing-ref-note">Pre-filled from your club record. Edit only if something needs to change for 2026/27.</p>' +
+      '<button type="button" class="re-btn re-btn--billing-edit-inline" id="reBillingEditBtn">Edit</button>' +
       "</div>"
     );
   }
 
-  function renderBilling2627SummaryIfChanged(data) {
-    if (!billing2627ChangedFrom2526(data)) return "";
-    var b = state.billing2627 || {};
+  function renderFeesNoticeHtml() {
     return (
-      '<div class="re-billing-2627-saved">' +
-      '<p class="re-billing-ref-label">Your choice for 2026/27</p>' +
-      '<p class="re-billing-2627-saved__value">' +
-      esc(fundingLabel(b.fundCode)) +
-      " · " +
-      esc(privatePayMethodLabel(b.payCode)) +
-      "</p></div>"
+      '<p class="re-billing-ref-note re-billing-ref-fee" id="reFeesNotice" role="note">' +
+      "<strong>Fees:</strong> standard plans (bank transfer or Card / Apple Pay on or before due dates) have <strong>no admin fee</strong>. " +
+      "Direct Payment (GoCardless) adds " +
+      money(RE_ADMIN_FEE_GC_PER_INSTALLMENT) +
+      " per instalment. " +
+      "<strong>Own arrangement</strong> (cannot meet our payment dates) is term-only and adds " +
+      money(RE_ADMIN_FEE_OWN) +
+      " each term, plus a minimum prepaid balance of two sessions per service." +
+      "</p>"
+    );
+  }
+
+  function renderCancelNoticeHtml() {
+    return (
+      '<p class="re-billing-ref-note re-billing-ref-fee re-cadence-cancel-note" id="reCancelNotice" role="note">' +
+      "<strong>Cancelling your bookings:</strong> The same rules apply to <strong>whole year (auto re-enrol)</strong> and <strong>term by term</strong>. " +
+      "If you cancel a place after we have already collected payment, we refund unused fees minus an admin charge of " +
+      "<strong>10% of the unused amount being refunded</strong> " +
+      "(minimum <strong>£25</strong>, maximum <strong>£100</strong>), so the charge stays fair for smaller and larger programmes." +
+      "</p>"
     );
   }
 
@@ -1634,13 +1635,12 @@
       '<div id="reBillingArrangementView"' +
       (editing ? " hidden" : "") +
       ">" +
-      renderBilling2526Reference(fundingCurrent2526(data)) +
-      renderBilling2627SummaryIfChanged(data) +
+      renderBilling2627DefaultView() +
       "</div>" +
       '<div id="reBillingArrangementEdit"' +
       (editing ? "" : " hidden") +
       ">" +
-      '<p class="re-muted re-billing-edit-intro">Change funding or payment method for 2026/27, then save before choosing how you would like to pay.</p>' +
+      '<p class="re-muted re-billing-edit-intro">Update funding or payment method for 2026/27, then save.</p>' +
       '<fieldset class="re-choice-fieldset re-funding-field">' +
       '<legend class="re-label">Funding 2026/27</legend>' +
       renderFundingRadios(b.fundCode) +
@@ -1650,7 +1650,7 @@
       renderPrivatePayMethodRadios(b.payCode, b.fundCode) +
       "</fieldset>" +
       '<div class="re-billing-edit-actions">' +
-      '<button type="button" class="re-btn re-btn--primary" id="reBillingSaveBtn">Save for 2026/27</button>' +
+      '<button type="button" class="re-btn re-btn--primary" id="reBillingSaveBtn">Save</button>' +
       '<button type="button" class="re-btn re-btn--ghost" id="reBillingCancelBtn">Cancel</button>' +
       "</div></div></div>"
     );
@@ -1676,7 +1676,7 @@
   }
 
   function setBillingPayExtrasHidden(hidden) {
-    ["rePayScheduleWrap", "reBillingPlanIntro", "rePaySchedulePreview", "reAdminFeeNote", "reOwnWayNote", "reDirectPayFailNote"].forEach(
+    ["rePayScheduleWrap", "reBillingPlanIntro", "rePaySchedulePreview", "reAdminFeeNote", "reOwnWayNote", "reDirectPayFailNote", "reFeesNotice", "reCancelNotice"].forEach(
       function (id) {
         var el = $(id);
         if (!el) return;
@@ -1701,9 +1701,19 @@
           el.hidden = normalizePayMethodChoice((state.billing2627 || {}).payCode) !== "gocardless";
           return;
         }
+        if (id === "reFeesNotice" || id === "reCancelNotice") {
+          el.hidden = false;
+          return;
+        }
         el.hidden = false;
       },
     );
+  }
+
+  function syncPayAfterCadenceVisibility() {
+    var el = $("rePayAfterCadence");
+    if (!el) return;
+    el.hidden = !normalizeEnrolmentCadence(state.enrolmentCadence);
   }
 
   function refreshBillingArrangementUI() {
@@ -1792,13 +1802,7 @@
           );
         })
         .join("") +
-      "</div></fieldset>" +
-      '<p class="re-billing-ref-note re-billing-ref-fee re-cadence-cancel-note" role="note">' +
-      "<strong>Cancelling your bookings:</strong> The same rules apply to <strong>whole year (auto re-enrol)</strong> and <strong>term by term</strong>. " +
-      "If you cancel a place after we have already collected payment, we refund unused fees minus an admin charge of " +
-      "<strong>10% of the unused amount being refunded</strong> " +
-      "(minimum <strong>£25</strong>, maximum <strong>£100</strong>), so the charge stays fair for smaller and larger programmes." +
-      "</p></div>"
+      "</div></fieldset></div>"
     );
   }
 
@@ -1813,12 +1817,12 @@
     var b = state.billing2627;
     var payCode = normalizePayMethodChoice(b.payCode);
     if (!payMethodCompatibleWithCadence(payCode, state.enrolmentCadence)) {
-      payCode = normalizeEnrolmentCadence(state.enrolmentCadence) === "whole_year"
-        ? "bank_transfer"
-        : "bank_transfer";
+      payCode = "bank_transfer";
       b.payCode = payCode;
     }
     var scheduleDefault = defaultScheduleForPayAndCadence(payCode, state.enrolmentCadence);
+    var hasCadence = !!normalizeEnrolmentCadence(state.enrolmentCadence);
+    var editing = !!b.editing;
 
     return (
       '<div class="re-funding-2627" data-annual-total="' +
@@ -1826,37 +1830,38 @@
       '">' +
       renderEnrolmentCadenceSection() +
       '<div id="rePayEverything">' +
+      '<div id="rePayAfterCadence"' +
+      (hasCadence ? "" : " hidden") +
+      ">" +
       '<p class="re-funding-total">' +
       estimatedBillingTotalHtml(data) +
       "</p>" +
       '<div id="reBillingPaySection">' +
       '<div id="rePanelPrivate" class="re-funding-panel">' +
-      '<div id="rePayScheduleWrap" class="re-pay-schedule-wrap"' +
-      (b.editing ? " hidden" : "") +
-      ">" +
-      (normalizeEnrolmentCadence(state.enrolmentCadence)
-        ? renderPayScheduleFieldset(payCode, scheduleDefault)
-        : '<p class="re-muted re-cadence-wait">Choose <strong>whole year</strong> or <strong>term by term</strong> above first — then your payment options will appear.</p>') +
-      "</div>" +
       renderBillingArrangementSection(data) +
+      '<div id="rePayScheduleWrap" class="re-pay-schedule-wrap"' +
+      (editing ? " hidden" : "") +
+      ">" +
+      renderPayScheduleFieldset(payCode, scheduleDefault) +
+      "</div>" +
       '<p class="re-muted re-billing-plan-intro" id="reBillingPlanIntro"' +
-      (b.editing ? " hidden" : "") +
+      (editing ? " hidden" : "") +
       ">" +
       (normalizeEnrolmentCadence(state.enrolmentCadence) === "term_by_term"
         ? "The total above is for the <strong>current term only</strong> (term-by-term). Later terms are billed when you reconfirm. "
         : "The total above covers your confirmed sessions for the year. ") +
       "<strong>Bank Transfer / Card / Apple Pay</strong> uses fixed due dates (pay each invoice from the parent portal — no admin fee if on time). <strong>Direct Payment (GoCardless)</strong> is collected automatically once we set up your mandate. <strong>Own arrangement</strong> is only for privately funded families who cannot meet those dates (+ £50 / term) — not available with LA Direct Payments funding.</p>" +
       '<div id="rePaySchedulePreview" class="re-pay-preview-host"' +
-      (b.editing ? " hidden" : "") +
+      (editing ? " hidden" : "") +
       "></div>" +
       '<div id="reAdminFeeNote" class="re-funding-fee"' +
-      (b.editing || !adminFeeApplies(payCode) ? " hidden" : "") +
+      (editing || !adminFeeApplies(payCode) ? " hidden" : "") +
       ">" +
       "<strong>Admin fee</strong>" +
       '<span id="reAdminFeeAmount"></span>' +
       "</div>" +
       '<div id="reOwnWayNote" class="re-funding-fee re-funding-fee--own"' +
-      (b.editing || payCode !== "own_way_flexible" ? " hidden" : "") +
+      (editing || payCode !== "own_way_flexible" ? " hidden" : "") +
       ">" +
       "<strong>Own arrangement</strong>" +
       "Only if you cannot pay the full amount on our published due dates. " +
@@ -1867,17 +1872,20 @@
       "Paying on time on Bank Transfer / Card / Apple Pay has <strong>no</strong> £50 fee. Overpayments are kept as credit." +
       "</div>" +
       '<div id="reDirectPayFailNote" class="re-funding-fee re-funding-fee--fail"' +
-      (b.editing || payCode !== "gocardless" ? " hidden" : "") +
+      (editing || payCode !== "gocardless" ? " hidden" : "") +
       ">" +
       "<strong>If a Direct Payment fails</strong>" +
       "If a GoCardless collection fails (for example insufficient funds or a cancelled mandate), you must pay within " +
       "<strong>7 days</strong> by bank transfer or Card / Apple Pay from the parent portal, including any GoCardless failure charge. " +
       "After <strong>two failed attempts in the same term</strong>, Direct Payment is withdrawn for the rest of the academic year — remaining instalments must be paid by bank transfer / Card / Apple Pay." +
-      "</div></div></div>" +
+      "</div>" +
+      renderFeesNoticeHtml() +
+      renderCancelNoticeHtml() +
+      "</div></div>" +
       '<p class="re-muted re-funding-foot">Re-enrolment closes ' +
       esc(RE_ENROL_DEADLINE_LABEL) +
       ". First bank / Card / Apple Pay due dates from mid-August; Direct Payment collections from September once your mandate is set up — see schedule above.</p>" +
-      "</div>" +
+      "</div></div>" +
       renderReenrolFarewellHtml(data) +
       "</div>"
     );
@@ -2425,6 +2433,7 @@
         if (!payMethodCompatibleWithCadence(b.payCode, state.enrolmentCadence)) {
           b.payCode = "bank_transfer";
         }
+        syncPayAfterCadenceVisibility();
         syncPrivatePayPanels();
         refreshProgrammeTotalsFromChoices();
         return;
