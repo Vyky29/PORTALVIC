@@ -766,6 +766,12 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   justify-self:stretch;
   align-self:stretch;
   min-width:0;
+  display:flex !important;
+  flex-direction:column;
+  align-items:stretch;
+  justify-content:flex-end;
+  padding-top:7px;
+  box-sizing:border-box;
 }
 .topbar-tools-grid > .topbar-tool-cell--staff-wa .topbar-tool-btn.topbar-tool-btn--staff-wa,
 .topbar-tools-grid--lead > .topbar-tool-cell--staff-wa .topbar-tool-btn.topbar-tool-btn--staff-wa,
@@ -781,30 +787,31 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   grid-template-columns:none !important;
   width:100% !important;
   max-width:none !important;
-  height:100% !important;
-  max-height:var(--topbar-tools-cell) !important;
+  height:26px !important;
+  max-height:26px !important;
   min-height:0 !important;
   min-width:0 !important;
+  flex:0 0 26px;
   padding:0 8px !important;
-  border:1px solid rgba(217,154,31,.45) !important;
+  border:1px solid rgba(232,196,74,.55) !important;
   border-radius:8px !important;
-  background:linear-gradient(180deg,#f4b740,#d99a1f) !important;
+  background:linear-gradient(180deg,#ffe9a3,#f5d56a) !important;
   color:#173247 !important;
-  box-shadow:0 1px 3px rgba(217,154,31,.25);
+  box-shadow:0 1px 2px rgba(232,196,74,.22);
   overflow:hidden;
   box-sizing:border-box;
 }
 .topbar-tools-grid > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-btn__ico{
-  width:13px !important;
-  height:13px !important;
-  max-width:13px !important;
-  max-height:13px !important;
+  width:12px !important;
+  height:12px !important;
+  max-width:12px !important;
+  max-height:12px !important;
   flex:0 0 auto;
   color:#173247;
 }
 .topbar-tools-grid > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-btn__ico svg{
-  width:13px;
-  height:13px;
+  width:12px;
+  height:12px;
   display:block;
 }
 .topbar-tools-grid > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-label{
@@ -814,7 +821,7 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   height:auto !important;
   min-height:0 !important;
   max-height:none !important;
-  font-size:9px !important;
+  font-size:8.5px !important;
   font-weight:800;
   line-height:1;
   letter-spacing:0;
