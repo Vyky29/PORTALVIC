@@ -49,13 +49,24 @@ export const CRASH_SWIMMING_SLOTS: CrashSlotDef[] = [
   { id: "s8", label: "18:00–18:30 · Instructor B", start: "18:00", end: "18:30" },
 ];
 
-/** Same instructor consecutive half-hours (parents may book up to 90′ = 3). */
+/**
+ * Time bands in order. Parents may book 1–4 consecutive bands and mix instructors
+ * (one place per band). Example: 60′ with A then 30′ with B is fine.
+ */
+export const CRASH_SWIM_TIME_BANDS: string[][] = [
+  ["s1", "s2"], // 16:30
+  ["s3", "s4"], // 17:00
+  ["s5", "s6"], // 17:30
+  ["s7", "s8"], // 18:00
+];
+
+/** @deprecated kept for older clients; prefer CRASH_SWIM_TIME_BANDS */
 export const CRASH_SWIM_CHAINS: Record<"A" | "B", string[]> = {
   A: ["s1", "s3", "s5", "s7"],
   B: ["s2", "s4", "s6", "s8"],
 };
 
-export const CRASH_SWIM_MAX_SLOTS = 3;
+export const CRASH_SWIM_MAX_SLOTS = 4;
 
 export const CRASH_PRICES = {
   climbing: { session: 75, weekly_pack: 300 },
@@ -99,59 +110,74 @@ export function normalizeCrashSlotIds(raw: unknown): string[] {
   return one ? [one] : [];
 }
 
-export function swimChainForSlot(slotId: string): string[] | null {
-  for (const chain of Object.values(CRASH_SWIM_CHAINS)) {
-    if (chain.includes(slotId)) return chain.slice();
+export function swimBandIndexForSlot(slotId: string): number {
+  for (let i = 0; i < CRASH_SWIM_TIME_BANDS.length; i++) {
+    if (CRASH_SWIM_TIME_BANDS[i].includes(slotId)) return i;
   }
-  return null;
+  return -1;
 }
 
-/** 1–3 consecutive half-hours with the same instructor. */
+export function swimInstructorLabel(slotId: string): string {
+  const slot = crashSlotById("swimming", slotId);
+  if (!slot) return "";
+  return slot.label.includes("Instructor B") ? "Instructor B" : "Instructor A";
+}
+
+/** 1–4 consecutive half-hour bands; one slot per band; instructors may be mixed. */
 export function swimSlotsAreValidBlock(ids: string[]): boolean {
   const uniq = normalizeCrashSlotIds(ids);
   if (!uniq.length || uniq.length > CRASH_SWIM_MAX_SLOTS) return false;
-  const chain = swimChainForSlot(uniq[0]);
-  if (!chain) return false;
-  if (!uniq.every((id) => chain.includes(id))) return false;
-  const idxs = uniq.map((id) => chain.indexOf(id)).sort((a, b) => a - b);
-  for (let i = 1; i < idxs.length; i++) {
-    if (idxs[i] !== idxs[i - 1] + 1) return false;
+  const bands = uniq.map((id) => swimBandIndexForSlot(id));
+  if (bands.some((b) => b < 0)) return false;
+  if (new Set(bands).size !== uniq.length) return false; // two slots in same band
+  const sorted = bands.slice().sort((a, b) => a - b);
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] !== sorted[i - 1] + 1) return false;
   }
   return true;
 }
 
 export function swimBlockLabel(ids: string[]): string {
-  const uniq = normalizeCrashSlotIds(ids);
-  if (!uniq.length) return "";
-  const ordered = orderSwimSlots(uniq);
+  const ordered = orderSwimSlots(ids);
+  if (!ordered.length) return "";
   const first = crashSlotById("swimming", ordered[0]);
   const last = crashSlotById("swimming", ordered[ordered.length - 1]);
   if (!first || !last) return ordered.join(", ");
   const mins = ordered.length * 30;
-  const who = first.label.includes("Instructor B") ? "Instructor B" : "Instructor A";
-  return `${first.start}–${last.end} · ${who} (${mins}′)`;
+  const mix = ordered.map((id) => {
+    const s = crashSlotById("swimming", id);
+    const who = swimInstructorLabel(id) === "Instructor B" ? "B" : "A";
+    return `${s?.start || id}(${who})`;
+  });
+  return `${first.start}–${last.end} · ${mins}′ · ${mix.join(" → ")}`;
 }
 
 export function orderSwimSlots(ids: string[]): string[] {
   const uniq = normalizeCrashSlotIds(ids);
-  const chain = swimChainForSlot(uniq[0] || "");
-  if (!chain) return uniq;
-  return chain.filter((id) => uniq.includes(id));
+  return uniq
+    .slice()
+    .sort((a, b) => swimBandIndexForSlot(a) - swimBandIndexForSlot(b));
 }
 
 /**
- * Toggle a swimming slot into a 1–3 consecutive same-instructor block.
- * Returns null if the click cannot form a valid block (caller may replace).
+ * Toggle a swimming slot into a 1–4 consecutive time-band block (instructors mixable).
+ * Clicking another instructor in the same band swaps that band's place.
  */
 export function toggleSwimSlotSelection(current: string[], clickedId: string): string[] {
-  const chain = swimChainForSlot(clickedId);
-  if (!chain) return [clickedId];
-  const cur = orderSwimSlots(current.filter((id) => chain.includes(id)));
-  if (!cur.length) return [clickedId];
-  if (cur.includes(clickedId)) {
+  const band = swimBandIndexForSlot(clickedId);
+  if (band < 0) return [clickedId];
+  const cur = orderSwimSlots(current);
+  const sameBand = cur.find((id) => swimBandIndexForSlot(id) === band);
+  if (sameBand === clickedId) {
     const next = cur.filter((id) => id !== clickedId);
-    return swimSlotsAreValidBlock(next) || next.length === 0 ? next : [clickedId];
+    return swimSlotsAreValidBlock(next) || next.length === 0 ? next : [];
   }
+  if (sameBand) {
+    const swapped = orderSwimSlots(cur.filter((id) => id !== sameBand).concat([clickedId]));
+    if (swimSlotsAreValidBlock(swapped)) return swapped;
+    return [clickedId];
+  }
+  if (!cur.length) return [clickedId];
   const trial = orderSwimSlots(cur.concat([clickedId]));
   if (swimSlotsAreValidBlock(trial)) return trial;
   return [clickedId];
@@ -323,6 +349,7 @@ export function crashCatalogPublic() {
     climbing_slots: CRASH_CLIMBING_SLOTS,
     swimming_slots: CRASH_SWIMMING_SLOTS,
     swim_max_slots: CRASH_SWIM_MAX_SLOTS,
+    swim_time_bands: CRASH_SWIM_TIME_BANDS,
     swim_chains: CRASH_SWIM_CHAINS,
     pay_in_full: true,
   };

@@ -28,7 +28,13 @@
       A: ["s1", "s3", "s5", "s7"],
       B: ["s2", "s4", "s6", "s8"],
     },
-    swim_max: 3,
+    swim_time_bands: [
+      ["s1", "s2"],
+      ["s3", "s4"],
+      ["s5", "s6"],
+      ["s7", "s8"],
+    ],
+    swim_max: 4,
     prices: {
       climbing: { session: 75, weekly_pack: 300 },
       swimming: { session: 50, weekly_pack: 200 },
@@ -110,55 +116,71 @@
     return [];
   }
 
-  function swimChainFor(slotId) {
-    var chains = CATALOG.swim_chains || {};
-    var keys = Object.keys(chains);
-    for (var i = 0; i < keys.length; i++) {
-      var chain = chains[keys[i]] || [];
-      if (chain.indexOf(slotId) >= 0) return chain.slice();
+  function swimBandIndex(slotId) {
+    var bands = CATALOG.swim_time_bands || [];
+    for (var i = 0; i < bands.length; i++) {
+      if ((bands[i] || []).indexOf(slotId) >= 0) return i;
     }
-    return null;
+    return -1;
   }
 
   function orderSwim(ids) {
-    var list = asSlotList(ids);
-    if (!list.length) return [];
-    var chain = swimChainFor(list[0]);
-    if (!chain) return list;
-    return chain.filter(function (id) {
-      return list.indexOf(id) >= 0;
-    });
+    return asSlotList(ids)
+      .slice()
+      .sort(function (a, b) {
+        return swimBandIndex(a) - swimBandIndex(b);
+      });
   }
 
   function swimBlockOk(ids) {
     var list = orderSwim(ids);
-    if (!list.length || list.length > (CATALOG.swim_max || 3)) return false;
-    var chain = swimChainFor(list[0]);
-    if (!chain) return false;
-    for (var i = 0; i < list.length; i++) {
-      if (chain.indexOf(list[i]) < 0) return false;
+    if (!list.length || list.length > (CATALOG.swim_max || 4)) return false;
+    var bands = list.map(swimBandIndex);
+    if (bands.some(function (b) {
+      return b < 0;
+    })) {
+      return false;
     }
-    for (var j = 1; j < list.length; j++) {
-      if (chain.indexOf(list[j]) !== chain.indexOf(list[j - 1]) + 1) return false;
+    var seen = {};
+    for (var i = 0; i < bands.length; i++) {
+      if (seen[bands[i]]) return false;
+      seen[bands[i]] = true;
+    }
+    for (var j = 1; j < bands.length; j++) {
+      if (bands[j] !== bands[j - 1] + 1) return false;
     }
     return true;
   }
 
   function toggleSwim(current, clickedId) {
-    var chain = swimChainFor(clickedId);
-    if (!chain) return [clickedId];
-    var cur = orderSwim(
-      asSlotList(current).filter(function (id) {
-        return chain.indexOf(id) >= 0;
-      }),
-    );
-    if (!cur.length) return [clickedId];
-    if (cur.indexOf(clickedId) >= 0) {
+    var band = swimBandIndex(clickedId);
+    if (band < 0) return [clickedId];
+    var cur = orderSwim(current);
+    var sameBand = null;
+    for (var i = 0; i < cur.length; i++) {
+      if (swimBandIndex(cur[i]) === band) {
+        sameBand = cur[i];
+        break;
+      }
+    }
+    if (sameBand === clickedId) {
       var next = cur.filter(function (id) {
         return id !== clickedId;
       });
-      return swimBlockOk(next) || !next.length ? next : [clickedId];
+      return swimBlockOk(next) || !next.length ? next : [];
     }
+    if (sameBand) {
+      var swapped = orderSwim(
+        cur
+          .filter(function (id) {
+            return id !== sameBand;
+          })
+          .concat([clickedId]),
+      );
+      if (swimBlockOk(swapped)) return swapped;
+      return [clickedId];
+    }
+    if (!cur.length) return [clickedId];
     var trial = orderSwim(cur.concat([clickedId]));
     if (swimBlockOk(trial)) return trial;
     return [clickedId];
@@ -174,14 +196,21 @@
     var first = byId[list[0]];
     var last = byId[list[list.length - 1]];
     if (!first || !last) return list.join(", ");
-    var who = String(first.label || "").indexOf("Instructor B") >= 0 ? "Instructor B" : "Instructor A";
     var start = first.start || String(first.label || "").split("–")[0];
     var end = last.end || "";
     if (!end && last.label) {
       var m = String(last.label).match(/–(\d{2}:\d{2})/);
       end = m ? m[1] : "";
     }
-    return start + "–" + end + " · " + who + " (" + list.length * 30 + "′)";
+    var mix = list
+      .map(function (id) {
+        var s = byId[id];
+        var who = String(s && s.label || "").indexOf("Instructor B") >= 0 ? "B" : "A";
+        var t = (s && s.start) || id;
+        return t + "(" + who + ")";
+      })
+      .join(" → ");
+    return start + "–" + end + " · " + list.length * 30 + "′ · " + mix;
   }
 
   function slotUnits(activity, sel) {
@@ -325,8 +354,8 @@
     if (hint) {
       hint.textContent =
         state.mode === "weekly_pack"
-          ? "Climbing: pick one 60′ slot. Swimming: pick 1–3 consecutive 30′ slots with the same instructor (up to 90′). Same times every day of the week."
-          : "Tick the days you want. Swimming allows up to 90′ (1–3 consecutive slots) per day when free.";
+          ? "Climbing: pick one 60′ slot. Swimming: pick 1–4 consecutive 30′ times (up to 120′). You may mix instructors if those places are free. Same times every day of the week."
+          : "Tick the days you want. Swimming allows up to 120′ (1–4 consecutive half-hours, instructors mixable) per day when free.";
     }
 
     var html = "";
@@ -335,7 +364,7 @@
       html += '<h3 style="margin:12px 0 6px;font-size:.95rem;color:var(--ink)">' + title + "</h3>";
       if (activity === "swimming") {
         html +=
-          '<p class="muted">Tap consecutive slots with the same instructor — 30′, 60′ or 90′. Price is £' +
+          '<p class="muted">Tap consecutive half-hours — mix instructors if free (e.g. 60′ with A then 30′ with B). Max 4 × 30′ = 120′. Price is £' +
           pricesFor("swimming").session +
           " per 30′ (weekly pack £" +
           pricesFor("swimming").weekly_pack +
@@ -525,6 +554,7 @@
           if (data.catalog.swimming_slots) CATALOG.swimming_slots = data.catalog.swimming_slots;
           if (data.catalog.prices) CATALOG.prices = data.catalog.prices;
           if (data.catalog.swim_chains) CATALOG.swim_chains = data.catalog.swim_chains;
+          if (data.catalog.swim_time_bands) CATALOG.swim_time_bands = data.catalog.swim_time_bands;
           if (data.catalog.swim_max_slots) CATALOG.swim_max = data.catalog.swim_max_slots;
         }
       }
@@ -636,7 +666,7 @@
           return;
         }
         if (activity === "swimming" && !swimBlockOk(packSel)) {
-          showNotice("error", "Swimming slots must be consecutive with the same instructor (max 90′).");
+          showNotice("error", "Swimming slots must be consecutive half-hours (max 120′). You can mix instructors.");
           return;
         }
         slots[activity] = activity === "swimming" ? asSlotList(packSel) : packSel;
@@ -652,7 +682,12 @@
         if (activity === "swimming") {
           for (var di = 0; di < dates.length; di++) {
             if (!swimBlockOk(map[dates[di]])) {
-              showNotice("error", "Swimming on " + formatDayLabel(dates[di]) + " must be consecutive (max 90′).");
+              showNotice(
+                "error",
+                "Swimming on " +
+                  formatDayLabel(dates[di]) +
+                  " must be consecutive half-hours (max 120′, instructors mixable).",
+              );
               return;
             }
           }
