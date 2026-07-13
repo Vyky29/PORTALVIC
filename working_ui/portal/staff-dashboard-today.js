@@ -5699,7 +5699,8 @@
           ).trim().slice(0, 10);
           viewTo = String(
             (typeof dashboardData !== 'undefined' && dashboardData.termDashboardCalendarTo)
-              || (window.PortalTermCalendarDashboard && PortalTermCalendarDashboard.toIso && PortalTermCalendarDashboard.toIso())
+              || (window.PortalTermCalendarDashboard && PortalTermCalendarDashboard.toIso
+                && PortalTermCalendarDashboard.toIso(STAFF_DASHBOARD_ID))
               || '2026-07-17'
           ).trim().slice(0, 10);
         }catch(_){}
@@ -5882,14 +5883,20 @@
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
       const ptd = window.PortalTermCalendarDashboard;
       if(ptd && typeof ptd.applyView === 'function'){
-        ptd.applyView(dashboardData);
+        ptd.applyView(dashboardData, id);
       } else if(t && typeof t === 'object'){
         if(t.termName) dashboardData.termName = t.termName;
         dashboardData.termCalendarYear = 2026;
         dashboardData.termCalendarMonths = [5, 6];
         dashboardData.termCalendarFirstDom = {};
         dashboardData.termDashboardCalendarFrom = '2026-06-01';
-        dashboardData.termDashboardCalendarTo = '2026-07-17';
+        const dcKeys = Array.isArray(t.termStaffDayCentreCalendarKeys) ? t.termStaffDayCentreCalendarKeys : [];
+        const isDc = dcKeys.indexOf(id) >= 0
+          || (id === 'lulia' && dcKeys.indexOf('luliya') >= 0)
+          || (id === 'luliya' && dcKeys.indexOf('lulia') >= 0);
+        dashboardData.termDashboardCalendarTo = isDc
+          ? String(t.termDashboardCalendarToDayCentre || t.lastDate || '2026-07-31').slice(0, 10)
+          : String(t.termDashboardCalendarTo || '2026-07-17').slice(0, 10);
         dashboardData.termHalfTermWeekStarts = [];
       } else {
         dashboardData.termName = 'Summer Term 2026';

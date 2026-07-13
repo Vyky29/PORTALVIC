@@ -18,7 +18,17 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   ],
   "termDashboardCalendarFirstDom": {},
   "termDashboardCalendarFrom": "2026-06-01",
-  "termDashboardCalendarTo": "2026-07-31",
+  "termDashboardCalendarTo": "2026-07-17",
+  "termDashboardCalendarToDayCentre": "2026-07-31",
+  "termStaffDayCentreCalendarKeys": [
+    "michelle",
+    "lulia",
+    "luliya",
+    "youssef",
+    "raul",
+    "roberto",
+    "victor"
+  ],
   "firstDate": "2026-04-13",
   "lastDate": "2026-07-31",
   "termBreakFrom": "2026-05-23",

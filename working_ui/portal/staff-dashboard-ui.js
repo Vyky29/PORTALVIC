@@ -2020,9 +2020,17 @@
     }
     function portalTermCalendarToIso(){
       const ptd = window.PortalTermCalendarDashboard;
+      const sid = String(
+        (typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '')
+        || (dashboardData && dashboardData.staffId)
+        || ''
+      ).trim().toLowerCase();
+      if(ptd && typeof ptd.toIso === 'function'){
+        const fromPtd = String(ptd.toIso(sid) || '').trim().slice(0, 10);
+        if(/^\d{4}-\d{2}-\d{2}$/.test(fromPtd)) return fromPtd;
+      }
       return String(
         (dashboardData && dashboardData.termDashboardCalendarTo)
-          || (ptd && typeof ptd.toIso === 'function' && ptd.toIso())
           || (window.PORTAL_TERM_FROM_TIMETABLE && window.PORTAL_TERM_FROM_TIMETABLE.termDashboardCalendarTo)
           || '2026-07-17'
       ).trim().slice(0, 10);
@@ -2540,7 +2548,8 @@
         || (window.PortalTermCalendarDashboard && PortalTermCalendarDashboard.fromIso())
         || String(t.termResumeDate || '2026-06-01').slice(0, 10);
       const viewTo = dashboardData.termDashboardCalendarTo
-        || (window.PortalTermCalendarDashboard && PortalTermCalendarDashboard.toIso())
+        || (window.PortalTermCalendarDashboard && PortalTermCalendarDashboard.toIso
+          && PortalTermCalendarDashboard.toIso(staffId))
         || String(t.lastDate || '2026-07-17').slice(0, 10);
       const cur = new Date(String(viewFrom) + 'T12:00:00');
       const last = new Date(String(viewTo) + 'T12:00:00');

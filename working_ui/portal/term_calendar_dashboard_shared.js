@@ -89,14 +89,51 @@
     return normIso(t.termDashboardCalendarFrom) || normIso(t.termResumeDate) || "2026-06-01";
   }
 
-  function toIso() {
+  /** Staff whose Term calendar continues through Day Centre end (31 Jul), not Fri 17. */
+  function staffUsesDayCentreCalendar(staffId) {
+    var id = String(staffId || "").trim().toLowerCase();
+    if (!id) return false;
     var t = termCfg();
-    return normIso(t.termDashboardCalendarTo) || normIso(t.lastDate) || "2026-07-17";
+    var keys = Array.isArray(t.termStaffDayCentreCalendarKeys)
+      ? t.termStaffDayCentreCalendarKeys
+      : [];
+    var lookup = termStaffProfileLookupKeys(id);
+    for (var i = 0; i < lookup.length; i++) {
+      if (keys.indexOf(lookup[i]) >= 0) return true;
+    }
+    try {
+      var model =
+        typeof global.sessionsModel !== "undefined" && Array.isArray(global.sessionsModel)
+          ? global.sessionsModel
+          : typeof sessionsModel !== "undefined" && Array.isArray(sessionsModel)
+            ? sessionsModel
+            : null;
+      if (model && model.length) {
+        for (var j = 0; j < model.length; j++) {
+          var s = model[j];
+          if (!s) continue;
+          var sid = String(s.staffId || "").trim().toLowerCase();
+          if (lookup.indexOf(sid) < 0 && sid !== id) continue;
+          if (rosterRowIsDayCentre(s)) return true;
+        }
+      }
+    } catch (_) {}
+    return false;
   }
 
-  function inView(iso) {
+  function toIso(staffId) {
+    var t = termCfg();
+    var standard = normIso(t.termDashboardCalendarTo) || "2026-07-17";
+    var dayCentre = normIso(t.termDashboardCalendarToDayCentre) || normIso(t.lastDate) || "2026-07-31";
+    if (staffId != null && String(staffId).trim() && staffUsesDayCentreCalendar(staffId)) {
+      return dayCentre;
+    }
+    return standard;
+  }
+
+  function inView(iso, staffId) {
     var f = fromIso();
-    var to = toIso();
+    var to = toIso(staffId);
     if (f && iso < f) return false;
     if (to && iso > to) return false;
     return true;
@@ -132,11 +169,11 @@
   }
 
   function staffDateInView(iso, staffId) {
-    if (inView(iso)) return true;
+    if (inView(iso, staffId)) return true;
     return staffExtraCalendarDates(staffId).indexOf(iso) >= 0;
   }
 
-  function applyView(dashboardData) {
+  function applyView(dashboardData, staffId) {
     var t = termCfg();
     if (!dashboardData || typeof dashboardData !== "object") return;
     if (t.termName) dashboardData.termName = t.termName;
@@ -154,7 +191,7 @@
         ? t.termDashboardCalendarFirstDom
         : {};
     dashboardData.termDashboardCalendarFrom = fromIso();
-    dashboardData.termDashboardCalendarTo = toIso();
+    dashboardData.termDashboardCalendarTo = toIso(staffId);
     if (Array.isArray(t.termHalfTermWeekStarts)) {
       dashboardData.termHalfTermWeekStarts = t.termHalfTermWeekStarts.map(String);
     }
@@ -323,6 +360,7 @@
     fromIso: fromIso,
     toIso: toIso,
     inView: inView,
+    staffUsesDayCentreCalendar: staffUsesDayCentreCalendar,
     staffExtraCalendarDates: staffExtraCalendarDates,
     staffDateInView: staffDateInView,
     feedbackReminderFromIso: feedbackReminderFromIso,
