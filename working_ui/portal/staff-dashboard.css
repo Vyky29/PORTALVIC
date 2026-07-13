@@ -1557,7 +1557,13 @@
       margin-bottom:0;
     }
     .portal-calendar-2026-27-preview .dc-cal-term__months{
-      grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));
+      /* Keep Spring (3 months) the same cell size as Autumn/Summer (4). */
+      grid-template-columns:repeat(4,minmax(0,1fr));
+    }
+    @media (max-width:720px){
+      .portal-calendar-2026-27-preview .dc-cal-term__months{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+      }
     }
     .portal-calendar-2026-27-preview .dc-cal-tabs{
       grid-template-columns:repeat(3,minmax(0,1fr));

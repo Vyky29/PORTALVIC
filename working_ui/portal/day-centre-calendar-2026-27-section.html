@@ -219,8 +219,14 @@
     .dc-cal-term__weeks p { margin: 0; }
     .dc-cal-term__months {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+      /* Always 4 tracks so Spring (3 months) matches Autumn/Summer cell size. */
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 14px;
+    }
+    @media (max-width: 720px) {
+      .dc-cal-term__months {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
     }
     .dc-cal-month {
       min-width: 0;
