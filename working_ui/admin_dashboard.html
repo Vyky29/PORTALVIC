@@ -88,6 +88,7 @@
   <script src="/portal/admin-training-progress.js?v=20260608-device-attribution"></script>
   <script src="/portal/admin-push-devices.js?v=20260619-push-devices"></script>
   <script src="/portal/portal_wellbeing_admin_actions.js?v=20260604-wb-flow-refine"></script>
+  <script src="/portal/admin-portal-parent-contact-edit.js?v=20260713-pax-edit"></script>
   <script src="/portal/portal_announcement_media.js?v=20260713-ann-photos"></script>
   <script src="/portal/portal_participant_photos.js?v=20260609-photo-fallback"></script>
   <!-- Roster bundle lazy-loaded via admin_heavy_scripts_loader.js (c4k_sessions, scheduling, …) -->
@@ -9135,6 +9136,36 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return out;
     }
+    function portalParentContactEditConfigureOnce(){
+      if(window.__portalParentContactEditConfigured || !window.AdminParentContactEdit) return;
+      window.__portalParentContactEditConfigured = true;
+      window.AdminParentContactEdit.configure({
+        esc: esc,
+        toast: portalAdminToast,
+        getClient: getSchedSupabaseClient,
+        openModal: openModal,
+        closeModal: closeModal,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        },
+        onSaved: function(){
+          try{
+            if(typeof state.reopenPaxDetail === 'function') state.reopenPaxDetail();
+            else if(state.openPaxContactId && typeof paxContactsFindById === 'function'){
+              var pp = paxContactsFindById(state.openPaxContactId);
+              if(pp && typeof paxContactsShowDetail === 'function') paxContactsShowDetail(pp);
+            }
+          }catch(_re){}
+          try{
+            if(typeof paxContactsRefreshFilters === 'function') paxContactsRefreshFilters();
+          }catch(_rf){}
+        }
+      });
+    }
     function portalParentNotifyConfigureOnce(){
       if(window.__portalParentNotifyConfigured || !window.PortalParentNotifySend) return;
       window.__portalParentNotifyConfigured = true;
@@ -14825,6 +14856,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (k && Object.prototype.hasOwnProperty.call(ADMIN_PARTICIPANT_CONTACT_OVERRIDES, k)) ? ADMIN_PARTICIPANT_CONTACT_OVERRIDES[k] : null;
     }
     function paxContactsPortalRowToPax(row, idx, forceStatus){
+      if(window.AdminParentContactEdit && typeof window.AdminParentContactEdit.applyOverrideToPortalRow === 'function'){
+        try{ row = window.AdminParentContactEdit.applyOverrideToPortalRow(row); }catch(_rowOv){}
+      }
       var cid = String(row.contactId != null ? row.contactId : idx).trim();
       var id = 'pp-' + cid;
       var inClass = String(row.inClass || '').trim().toLowerCase();
@@ -14844,7 +14878,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(contactOv.phone) phoneV = contactOv.phone;
         if(contactOv.email) emailV = contactOv.email;
       }
-      return {
+      var paxObj = {
         id: id,
         name: nm,
         parentDisplay: parentDisp,
@@ -14864,11 +14898,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           nhsTr: '—',
           assessment: '—',
           support: '—',
-          fundingRoute: '—',
+          fundingRoute: row._adminFundingLabel || '—',
           preferredService: '—',
           preferredWhen: '—',
           formReceived: String(row.createdDisplay || '').trim() || '—',
-          paymentMethod: '—',
+          paymentMethod: row._adminPaymentMethodLabel || '—',
           consent: '—',
           flags: '—'
         },
@@ -14890,6 +14924,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         mockEnrichId: null,
         _portalSource: true
       };
+      if(row._adminFundingLabel) paxObj._adminFundingLabel = row._adminFundingLabel;
+      if(row._adminPaymentMethodLabel) paxObj._adminPaymentMethodLabel = row._adminPaymentMethodLabel;
+      if(window.AdminParentContactEdit && typeof window.AdminParentContactEdit.applyOverrideToPax === 'function'){
+        try{ window.AdminParentContactEdit.applyOverrideToPax(paxObj); }catch(_ov){}
+      }
+      return paxObj;
     }
     function paxContactsPortalHasPaxName(paxName){
       var rows = adminParticipantsParentsPortalRows();
@@ -15385,8 +15425,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }).map(function(x){ return String(x).trim(); });
         if(pnr.length) payFundingNextLine = pnr.join(' — ');
       }
-      var rFundingDisp = payFundFromSheet || (r.fundingRoute != null && String(r.fundingRoute).trim() ? r.fundingRoute : '—');
-      var rPayDisp = payMethodFromSheet || (r.paymentMethod != null && String(r.paymentMethod).trim() ? r.paymentMethod : '—');
+      var rFundingDisp = (r.fundingRoute && String(r.fundingRoute).trim() && String(r.fundingRoute).trim() !== '—' && P._adminContactEdited)
+        ? String(r.fundingRoute).trim()
+        : (payFundFromSheet || (r.fundingRoute != null && String(r.fundingRoute).trim() ? r.fundingRoute : '—'));
+      var rPayDisp = (r.paymentMethod && String(r.paymentMethod).trim() && String(r.paymentMethod).trim() !== '—' && P._adminContactEdited)
+        ? String(r.paymentMethod).trim()
+        : (payMethodFromSheet || (r.paymentMethod != null && String(r.paymentMethod).trim() ? r.paymentMethod : '—'));
+      /* Prefer explicit admin funding/payment overrides when present. */
+      if(r._adminFundingLabel) rFundingDisp = r._adminFundingLabel;
+      if(r._adminPaymentMethodLabel) rPayDisp = r._adminPaymentMethodLabel;
+      if(P._adminFundingLabel) rFundingDisp = P._adminFundingLabel;
+      if(P._adminPaymentMethodLabel) rPayDisp = P._adminPaymentMethodLabel;
       var payFundingStatusHtml = payFundingNextLine
         ? ('<p class="pax-contacts-kv pax-contacts-kv--ico" style="margin-top:2px">'+
           '<span class="pax-contacts-kv__ico" aria-hidden="true">\ud83d\udccc</span>'+
@@ -15582,6 +15631,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="pax-contacts-ws-main">'+
         '<div data-c4k-panel="ov" class="c4k-panel is-on">'+
         '<div class="c4k-abc"><section>'+adminPaxWsSectionH4('\ud83d\udccb', 'Registration (summary)')+
+        '<div class="toolbar" style="margin:0 0 8px;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--sec btn--sm" data-pax-edit-registration="1">Edit client information</button></div>'+
         adminPaxWsKvIcoRowColon('\ud83d\udc64', 'Carer', esc(r.carer||'—'))+
         adminPaxWsKvIcoRowColon('\ud83d\udcde', 'Contact', esc(r.phone||'—')+' · '+esc(r.email||'—'))+
         adminPaxWsKvIcoRowColon('\ud83c\udfe0', 'Address', esc(P.addressFull||'—'))+
@@ -23622,6 +23672,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var box = $('paxContactsDetail');
           if(!box) return;
           state.openPaxContactId = p && p.id ? p.id : null;
+          state.openPaxContactObj = p || null;
           box.classList.add('is-on');
           document.documentElement.classList.add('pax-contacts-detail-open');
           document.body.classList.add('pax-contacts-detail-open');
@@ -23636,9 +23687,41 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               box.addEventListener('click', ordersPortalTableClick);
             }
           }catch(_oC){}
+          try{
+            if(!box._portalPaxEditBound){
+              box._portalPaxEditBound = true;
+              box.addEventListener('click', function(ev){
+                var btn = ev.target && ev.target.closest ? ev.target.closest('[data-pax-edit-registration]') : null;
+                if(!btn) return;
+                ev.preventDefault();
+                var cur = state.openPaxContactObj;
+                if(!cur && state.openPaxContactId) cur = paxContactsFindById(state.openPaxContactId);
+                if(!cur){
+                  if(typeof portalAdminToast === 'function') portalAdminToast('Open a participant first', 'warn');
+                  return;
+                }
+                if(!window.AdminParentContactEdit || typeof window.AdminParentContactEdit.openEditModal !== 'function'){
+                  if(typeof portalAdminToast === 'function') portalAdminToast('Edit module failed to load', 'warn');
+                  return;
+                }
+                var fundEl = null;
+                var payEl = null;
+                try{
+                  var kvs = box.querySelectorAll('.pax-contacts-kv__body');
+                  /* Funding / payment are already on cur.reg after overrides. */
+                }catch(_k){}
+                window.AdminParentContactEdit.openEditModal(
+                  cur,
+                  cur.reg && cur.reg.fundingRoute,
+                  cur.reg && cur.reg.paymentMethod
+                );
+              });
+            }
+          }catch(_editBind){}
           var bk = $('paxContactsBack');
           if(bk) bk.onclick = function(){
             state.openPaxContactId = null;
+            state.openPaxContactObj = null;
             box.classList.remove('is-on');
             box.innerHTML = '';
             document.documentElement.classList.remove('pax-contacts-detail-open');
@@ -23646,6 +23729,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           };
         }
         if(root2){
+          portalParentContactEditConfigureOnce();
           state.openPaxContactId = null;
           state.reopenPaxDetail = function(){
             if(!state.openPaxContactId) return;
