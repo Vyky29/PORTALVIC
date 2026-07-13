@@ -104,7 +104,10 @@
   }
   .client-finance__row select{cursor:pointer}
   .client-finance__money{
-    display:grid;grid-template-columns:1fr 1fr;gap:8px;min-width:0
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;min-width:0
+  }
+  @media (max-width:720px){
+    .client-finance__money{grid-template-columns:1fr 1fr}
   }
   .client-finance__money .client-finance__row input{font-weight:700}
   .client-finance__hint{margin:0;font-size:10.5px;color:var(--muted);line-height:1.35;overflow-wrap:break-word}
@@ -116,6 +119,7 @@
   .client-finance__funder[hidden]{display:none!important}
   .money-owed input{border-color:#fecaca;background:#fff7f7}
   .money-credit input{border-color:#bbf7d0;background:#f7fff9}
+  .money-makeup input{border-color:#f9a8d4;background:#fdf2f8}
   .cell-actions{width:150px;min-width:130px}
   .actions{display:flex;flex-direction:column;gap:8px}
 
@@ -797,6 +801,10 @@
                 '<label for="cf-cred-'+ci+'">Credits (£)</label>'+
                 '<input id="cf-cred-'+ci+'" data-cf="creditBalance" data-ci="'+ci+'" inputmode="decimal" value="'+esc(moneyFieldValue(client.creditBalance))+'" placeholder="0.00" autocomplete="off" />'+
               '</div>'+
+              '<div class="client-finance__row money-makeup">'+
+                '<label for="cf-mu-'+ci+'">Make-ups</label>'+
+                '<input id="cf-mu-'+ci+'" data-cf="makeupBalance" data-ci="'+ci+'" inputmode="numeric" value="'+esc(moneyFieldValue(client.makeupBalance))+'" placeholder="0" autocomplete="off" title="Open / offered makeup sessions" />'+
+              '</div>'+
             '</div>'+
           '</div>'+
         '</div>'+
@@ -957,12 +965,16 @@
       var client = STATE.clients[ciF];
       if(!client || !field) return;
       var raw = cf.value;
-      if(field === 'moneyOwed' || field === 'creditBalance'){
+      if(field === 'moneyOwed' || field === 'creditBalance' || field === 'makeupBalance'){
         var trimmed = String(raw || '').trim().replace(/£/g, '').replace(/,/g, '');
         if(trimmed === '') client[field] = '';
         else {
           var num = Number(trimmed);
-          client[field] = Number.isFinite(num) ? num : trimmed;
+          if(field === 'makeupBalance' && Number.isFinite(num)){
+            client[field] = Math.max(0, Math.round(num));
+          } else {
+            client[field] = Number.isFinite(num) ? num : trimmed;
+          }
         }
       } else {
         client[field] = raw;
@@ -1007,18 +1019,18 @@
     download('client_services_reviewed.json', JSON.stringify(clean,null,2), 'application/json');
   });
   document.getElementById('csvBtn').addEventListener('click', function(){
-    var rows = [['Client','Validated','Funding_by','Funder','Payment_method','Money_owed','Credits','Service','Duration_min','Day','Time_slot','Venue','Note_area','Weeks']];
+    var rows = [['Client','Validated','Funding_by','Funder','Payment_method','Money_owed','Credits','Makeups','Service','Duration_min','Day','Time_slot','Venue','Note_area','Weeks']];
     STATE.clients.forEach(function(c){
       var fundLabel = composeFundingBy(c) || c.fundingBy || '';
       var funder = funderDetailLabel(c.funderDetail) || '';
       if(!c.sessions.length){
-        rows.push([c.name, c.validated?'YES':'NO', fundLabel, funder, c.paymentMethod||'', moneyFieldValue(c.moneyOwed), moneyFieldValue(c.creditBalance),'','','','','','','']);
+        rows.push([c.name, c.validated?'YES':'NO', fundLabel, funder, c.paymentMethod||'', moneyFieldValue(c.moneyOwed), moneyFieldValue(c.creditBalance), moneyFieldValue(c.makeupBalance),'','','','','','','']);
         return;
       }
       c.sessions.forEach(function(s){
         rows.push([
           c.name, c.validated?'YES':'NO', fundLabel, funder, c.paymentMethod||'',
-          moneyFieldValue(c.moneyOwed), moneyFieldValue(c.creditBalance),
+          moneyFieldValue(c.moneyOwed), moneyFieldValue(c.creditBalance), moneyFieldValue(c.makeupBalance),
           s.service, (slotMinutes(s.timeSlot)||''), s.day, s.timeSlot, s.venue, s.area, (s.weeks||'')
         ]);
       });
@@ -1110,6 +1122,28 @@
         });
         Object.keys(creditSum).forEach(function(k){
           fillIfEmpty(STATE.clients[k], 'creditBalance', Math.round(creditSum[k]*100)/100);
+        });
+      }
+
+      var makeupRes = await client.from('portal_parent_makeup_grants')
+        .select('contact_id, participant_display, status')
+        .in('status', ['open', 'offered'])
+        .limit(5000);
+      if(!makeupRes.error){
+        var makeupSum = Object.create(null);
+        (makeupRes.data||[]).forEach(function(row){
+          var idx = -1;
+          if(row.contact_id){
+            for(var i=0;i<STATE.clients.length;i++){
+              if(String(STATE.clients[i].contactId||'') === String(row.contact_id)){ idx = i; break; }
+            }
+          }
+          if(idx < 0) idx = findClientIndexByDisplay(row.participant_display);
+          if(idx < 0) return;
+          makeupSum[idx] = (makeupSum[idx] || 0) + 1;
+        });
+        Object.keys(makeupSum).forEach(function(k){
+          fillIfEmpty(STATE.clients[k], 'makeupBalance', makeupSum[k]);
         });
       }
 
