@@ -1712,7 +1712,8 @@
         return a.localeCompare(b, 'en', { sensitivity: 'base' });
       });
     }
-    /** Named clients on this instructor's roster (today + spreadsheet rows) for swimming term review picker. */
+    /** Named clients on this instructor's roster (today + spreadsheet rows) for swimming term review picker.
+     *  Victor / Javi Palankas / Raúl see every Aquatic + Multi-Activity participant (programme-wide). */
     function portalCollectInstructorParticipantNamesForTermReview(){
       const out = [];
       const seen = new Set();
@@ -1737,6 +1738,40 @@
         seen.add(k);
         out.push(t);
       }
+      function isSwimmingAquaticOrMultiService(svc){
+        const s = String(svc || '').trim().toLowerCase();
+        if(!s) return false;
+        if(/day\s*cent|climbing|bespoke|fitness|gym|manager|physical\s*activity|home|admin/.test(s)) return false;
+        return /aquatic|multi|swim|pool|splash/.test(s);
+      }
+      function isExecSwimmingTermReviewer(){
+        try{
+          const sid = normKey(
+            (typeof dashboardData !== 'undefined' && dashboardData && dashboardData.staffId)
+              || window.STAFF_DASHBOARD_ID
+              || ''
+          );
+          if(sid === 'victor' || sid === 'raul' || sid === 'javi') return true;
+          if(typeof window.portalCanonicalStaffRosterKey === 'function'){
+            const c = normKey(window.portalCanonicalStaffRosterKey(sid));
+            if(c === 'victor' || c === 'raul' || c === 'javi') return true;
+          }
+          const box = window.__PORTAL_SUPABASE__ || {};
+          const prof = box.staff_profile || null;
+          const em = box.session && box.session.user && box.session.user.email
+            ? String(box.session.user.email)
+            : '';
+          if(typeof window.portalCanAccessCeoDashboard === 'function'
+            && window.portalCanAccessCeoDashboard(prof, em)){
+            return true;
+          }
+          if(typeof window.portalInferStaffKey === 'function'){
+            const ik = normKey(window.portalInferStaffKey(prof, em));
+            if(ik === 'victor' || ik === 'raul' || ik === 'javi') return true;
+          }
+        }catch(_){}
+        return false;
+      }
       try{
         portalCollectTodayParticipantNames().forEach(add);
       }catch(_){}
@@ -1748,32 +1783,40 @@
         }
       }catch(_){}
       try{
-        const staffId = String((typeof dashboardData !== 'undefined' && dashboardData && dashboardData.staffId) || window.STAFF_DASHBOARD_ID || '').trim();
-        const staffName = String((typeof dashboardData !== 'undefined' && dashboardData && dashboardData.staffName) || '').trim();
-        const want = [];
-        [staffId, staffName, staffName.split(/\s+/)[0]].forEach(function(v){
-          const n = normKey(v);
-          if(n && want.indexOf(n) < 0) want.push(n);
-        });
         const rows = (window.STAFF_DASHBOARD_SOURCE && Array.isArray(window.STAFF_DASHBOARD_SOURCE.rows))
           ? window.STAFF_DASHBOARD_SOURCE.rows
           : [];
-        if(want.length && rows.length){
+        if(isExecSwimmingTermReviewer()){
           rows.forEach(function(row){
             if(!row) return;
-            const parts = String(row.instructors || '')
-              .split(/[,&/]+/)
-              .map(function(p){ return normKey(p); })
-              .filter(Boolean);
-            if(!parts.length) return;
-            const hit = want.some(function(w){
-              return parts.some(function(p){
-                return p === w || (w.length >= 3 && (p.indexOf(w) === 0 || w.indexOf(p) === 0));
-              });
-            });
-            if(!hit) return;
+            if(!isSwimmingAquaticOrMultiService(row.service)) return;
             add(row.client_name);
           });
+        }else{
+          const staffId = String((typeof dashboardData !== 'undefined' && dashboardData && dashboardData.staffId) || window.STAFF_DASHBOARD_ID || '').trim();
+          const staffName = String((typeof dashboardData !== 'undefined' && dashboardData && dashboardData.staffName) || '').trim();
+          const want = [];
+          [staffId, staffName, staffName.split(/\s+/)[0]].forEach(function(v){
+            const n = normKey(v);
+            if(n && want.indexOf(n) < 0) want.push(n);
+          });
+          if(want.length && rows.length){
+            rows.forEach(function(row){
+              if(!row) return;
+              const parts = String(row.instructors || '')
+                .split(/[,&/]+/)
+                .map(function(p){ return normKey(p); })
+                .filter(Boolean);
+              if(!parts.length) return;
+              const hit = want.some(function(w){
+                return parts.some(function(p){
+                  return p === w || (w.length >= 3 && (p.indexOf(w) === 0 || w.indexOf(p) === 0));
+                });
+              });
+              if(!hit) return;
+              add(row.client_name);
+            });
+          }
         }
       }catch(_){}
       return out.sort(function(a, b){

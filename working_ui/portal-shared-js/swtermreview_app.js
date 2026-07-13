@@ -1390,6 +1390,7 @@ const LEVEL_DATA = {
     const SWTERM_MY_PARTICIPANTS_KEY = "__portal_swterm_my_participants_v1";
     let __swtermMyParticipants = null;
     let __swtermMyParticipantsPrefer = false;
+    let __swtermProgrammeWideList = false;
 
     function isPlaceholderSwtermClientName(nm){
       const k = String(nm || "").trim().toLowerCase().replace(/\s+/g, " ");
@@ -1432,11 +1433,143 @@ const LEVEL_DATA = {
       return staffTokens.some(tok => tok && blob.indexOf(tok) >= 0);
     }
 
+    function normSwtermStaffKey(value){
+      return String(value || "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "");
+    }
+
+    function isSwimmingAquaticOrMultiService(svc){
+      const s = String(svc || "").trim().toLowerCase();
+      if(!s) return false;
+      if(/day\s*cent|climbing|bespoke|fitness|gym|manager|physical\s*activity|home|admin/.test(s)) return false;
+      return /aquatic|multi|swim|pool|splash/.test(s);
+    }
+
+    /** Victor / Javi Palankas / Raúl — programme-wide swimming term review list. */
+    function isExecSwimmingTermReviewer(staffDisplayName, authUser, staffProfile){
+      try{
+        const sid = normSwtermStaffKey(
+          (typeof window !== "undefined" && (window.STAFF_DASHBOARD_ID || (window.dashboardData && window.dashboardData.staffId))) || ""
+        );
+        if(sid === "victor" || sid === "raul" || sid === "javi") return true;
+        if(typeof window !== "undefined" && typeof window.portalCanonicalStaffRosterKey === "function"){
+          const c = normSwtermStaffKey(window.portalCanonicalStaffRosterKey(sid || staffDisplayName));
+          if(c === "victor" || c === "raul" || c === "javi") return true;
+        }
+        const email = String((authUser && authUser.email) || "").trim().toLowerCase();
+        if(typeof window !== "undefined" && typeof window.portalCanAccessCeoDashboard === "function"){
+          if(window.portalCanAccessCeoDashboard(staffProfile || null, email)) return true;
+        }
+        if(typeof window !== "undefined" && typeof window.portalInferStaffKey === "function"){
+          const ik = normSwtermStaffKey(window.portalInferStaffKey(staffProfile || null, email));
+          if(ik === "victor" || ik === "raul" || ik === "javi") return true;
+        }
+        if(/^(victor|raul)@/i.test(email)) return true;
+        if(email === "javier@clubsensational.org" || email === "javi@clubsensational.org") return true;
+        const nk = normSwtermStaffKey(staffDisplayName);
+        if(nk === "victor" || nk === "raul" || nk === "javi" || nk.indexOf("palankas") === 0) return true;
+        if(nk.indexOf("raul") === 0 && nk.length <= 6) return true;
+      }catch(_){}
+      return false;
+    }
+
+    function collectNamesFromRosterLikeRows(rows, map, requireStaffTokens, staffTokens){
+      (rows || []).forEach(r => {
+        if(!r) return;
+        if(requireStaffTokens && !instructorsBlobMatchesStaff(r.instructors, staffTokens)) return;
+        const nm = String(r.client_name || "").replace(/\s+/g, " ").trim();
+        if(!nm || isPlaceholderSwtermClientName(nm)) return;
+        const svc = String(r.service || "");
+        if(requireStaffTokens){
+          /* Instructors: keep named clients on their column (any service). */
+        }else if(!isSwimmingAquaticOrMultiService(svc)){
+          return;
+        }
+        map.set(nm.toLowerCase(), nm);
+      });
+    }
+
+    async function loadProgrammeWideSwimmingParticipants(supabase){
+      const map = new Map();
+      try{
+        const res = await supabase
+          .from("portal_roster_rows")
+          .select("client_name,instructors,service,status")
+          .eq("status", "active")
+          .limit(8000);
+        if(!res.error) collectNamesFromRosterLikeRows(res.data, map, false, []);
+      }catch(e){
+        console.warn("[swtermreview] programme roster rows", e);
+      }
+      try{
+        const madre = await supabase
+          .from("portal_madre_document")
+          .select("document")
+          .eq("term_key", "summer-2026")
+          .limit(1)
+          .maybeSingle();
+        const weeks = madre && madre.data && madre.data.document && madre.data.document.weeks;
+        if(Array.isArray(weeks)){
+          weeks.forEach(week => {
+            (week.staff || []).forEach(st => {
+              (st.days || []).forEach(day => {
+                (day.slots || []).forEach(slot => {
+                  collectNamesFromRosterLikeRows([slot], map, false, []);
+                });
+              });
+            });
+          });
+        }
+      }catch(e){
+        console.warn("[swtermreview] programme madre", e);
+      }
+      try{
+        const since = "2026-04-01";
+        const fb = await supabase
+          .from("session_feedback")
+          .select("client_name,service")
+          .gte("session_date", since)
+          .limit(8000);
+        if(!fb.error){
+          (fb.data || []).forEach(r => {
+            if(!isSwimmingAquaticOrMultiService(r && r.service)) return;
+            const nm = String(r && r.client_name || "").replace(/\s+/g, " ").trim();
+            if(!nm || isPlaceholderSwtermClientName(nm)) return;
+            map.set(nm.toLowerCase(), nm);
+          });
+        }
+      }catch(e){
+        console.warn("[swtermreview] programme feedback clients", e);
+      }
+      return Array.from(map.values()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+    }
+
     async function loadMyParticipantsFromRosterRows(staffDisplayName){
       try{
         const mod = await tryImportPortalAuthHandler();
         const supabase = mod && typeof mod.getSupabaseClient === "function" ? mod.getSupabaseClient() : null;
         if(!supabase) return [];
+        let authUser = null;
+        let staffProfile = null;
+        try{
+          const auth = await supabase.auth.getUser();
+          authUser = auth && auth.data && auth.data.user ? auth.data.user : null;
+        }catch(_){}
+        try{
+          if(authUser && authUser.id){
+            const pr = await supabase.from("staff_profiles").select("id,full_name,username,app_role").eq("id", authUser.id).maybeSingle();
+            staffProfile = pr && pr.data ? pr.data : null;
+          }
+        }catch(_){}
+        if(isExecSwimmingTermReviewer(staffDisplayName, authUser, staffProfile)){
+          __swtermProgrammeWideList = true;
+          return loadProgrammeWideSwimmingParticipants(supabase);
+        }
+        __swtermProgrammeWideList = false;
         const tokens = staffNameTokensForRosterMatch(staffDisplayName);
         if(!tokens.length) return [];
         const res = await supabase
@@ -1446,17 +1579,7 @@ const LEVEL_DATA = {
           .limit(4000);
         if(res.error) throw res.error;
         const map = new Map();
-        (res.data || []).forEach(r => {
-          if(!instructorsBlobMatchesStaff(r && r.instructors, tokens)) return;
-          const nm = String(r && r.client_name || "").replace(/\s+/g, " ").trim();
-          if(!nm || isPlaceholderSwtermClientName(nm)) return;
-          const svc = String(r && r.service || "").toLowerCase();
-          /* Prefer aquatic / pool / MA / day centre; still keep other named clients for this instructor. */
-          if(svc && !/(aquatic|swim|pool|multi|day\s*centre|day\s*center|bespoke)/i.test(svc)){
-            /* keep — instructors sometimes only have MA/DC labels */
-          }
-          map.set(nm.toLowerCase(), nm);
-        });
+        collectNamesFromRosterLikeRows(res.data, map, true, tokens);
         return Array.from(map.values()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
       }catch(e){
         console.warn("[swtermreview] roster participants", e);
@@ -1519,7 +1642,8 @@ const LEVEL_DATA = {
       try{ generateTermSummary(); }catch(_){}
     }
 
-    function renderMyParticipantsList(names){
+    function renderMyParticipantsList(names, opts){
+      opts = opts || {};
       const wrap = document.getElementById("swimmerMyListWrap");
       const list = document.getElementById("swimmerMyList");
       const empty = document.getElementById("swimmerMyListEmpty");
@@ -1536,7 +1660,9 @@ const LEVEL_DATA = {
       if(empty) empty.hidden = true;
       if(hint){
         hint.hidden = false;
-        hint.textContent = "Your participants (" + sorted.length + ") — tap to select";
+        hint.textContent = opts.programmeWide
+          ? ("Swimming participants (" + sorted.length + ") — Aquatic & Multi-Activity")
+          : ("Your participants (" + sorted.length + ") — tap to select");
       }
       const current = String((document.getElementById("swimmerName") || {}).value || "").trim().toLowerCase();
       sorted.forEach((name, idx) => {
@@ -1572,9 +1698,12 @@ const LEVEL_DATA = {
       const staffName = instEl ? String(instEl.value || "").trim() : "";
       const fromRoster = await loadMyParticipantsFromRosterRows(staffName || fromUrl.instructor);
       if(fromRoster.length || seed.length){
-        __swtermMyParticipants = mergeParticipantNameLists(seed, fromRoster, portalName ? [portalName] : []);
+        /* For executives the programme-wide list is authoritative — drop a short instructor stash. */
+        __swtermMyParticipants = __swtermProgrammeWideList
+          ? mergeParticipantNameLists(fromRoster, portalName ? [portalName] : [])
+          : mergeParticipantNameLists(seed, fromRoster, portalName ? [portalName] : []);
         __swtermMyParticipantsPrefer = true;
-        renderMyParticipantsList(__swtermMyParticipants);
+        renderMyParticipantsList(__swtermMyParticipants, { programmeWide: __swtermProgrammeWideList });
         try{
           sessionStorage.setItem(SWTERM_MY_PARTICIPANTS_KEY, JSON.stringify(__swtermMyParticipants));
         }catch(_){}
