@@ -627,33 +627,83 @@
     return "1 " + monthYear;
   }
 
-  function paymentPreviewNote(payCode, schedCode) {
+  /** Matches backend currentReenrolBillingTerm (2026/27). */
+  function currentReenrolBillingTerm() {
+    var m = new Date().getMonth() + 1;
+    if (m >= 9 && m <= 12) return "autumn";
+    if (m >= 1 && m <= 3) return "spring";
+    if (m >= 4 && m <= 6) return "summer";
+    return "autumn";
+  }
+
+  function reenrolTermDisplayLabel(term) {
+    if (term === "spring") return "Spring";
+    if (term === "summer") return "Summer";
+    return "Autumn";
+  }
+
+  function paymentPreviewNote(payCode, schedCode, cadence) {
+    var termOnly = normalizeEnrolmentCadence(cadence) === "term_by_term";
+    var termLabel = reenrolTermDisplayLabel(currentReenrolBillingTerm());
     if (payCode === "own_way_flexible" && schedCode === "own_term") {
-      return "Term by term on your own payment timing (bank transfer, Card or Apple Pay) — not our fixed due dates. Programme total stays the same, plus a £50 admin fee each term. You must keep at least two sessions paid in advance for every service you attend; if the balance falls below that, we may pause sessions or move you to a standard payment plan.";
+      return termOnly
+        ? "Term-by-term: we invoice " +
+            termLabel +
+            " only for now (programme + £50 admin). Later terms when you reconfirm. Own payment timing — keep at least two sessions paid in advance for every service."
+        : "Term by term on your own payment timing (bank transfer, Card or Apple Pay) — not our fixed due dates. Programme total stays the same, plus a £50 admin fee each term. You must keep at least two sessions paid in advance for every service you attend; if the balance falls below that, we may pause sessions or move you to a standard payment plan.";
     }
     if (payCode === "gocardless") {
       if (schedCode === "yearly_1off") {
         return "Same programme total — one Direct Payment for the full year. We set up GoCardless in July; collection around early September.";
       }
       if (schedCode === "term_3") {
-        return "Same programme total — three Direct Payments (one per term). First collection around early September, then December and March.";
+        return termOnly
+          ? "Term-by-term: one Direct Payment for " +
+              termLabel +
+              " only. Later terms are billed when you reconfirm. Collection around the term start."
+          : "Same programme total — three Direct Payments (one per term). First collection around early September, then December and March.";
       }
       if (schedCode === "term_flexi") {
-        return "Same programme total — six Direct Payments (two per term). First collection around early September; later dates follow each half-term.";
+        return termOnly
+          ? "Term-by-term: two Direct Payments for " +
+              termLabel +
+              " only. Later terms when you reconfirm."
+          : "Same programme total — six Direct Payments (two per term). First collection around early September; later dates follow each half-term.";
       }
       if (schedCode === "monthly_10") {
-        return "Same programme total — ten Direct Payments (Autumn 4, Spring 3, Summer 3). First collection on 1 September; then on the 1st of each month through June.";
+        return termOnly
+          ? "Term-by-term: monthly Direct Payments for " +
+              termLabel +
+              " only (Autumn 4 / Spring 3 / Summer 3). Later terms when you reconfirm."
+          : "Same programme total — ten Direct Payments (Autumn 4, Spring 3, Summer 3). First collection on 1 September; then on the 1st of each month through June.";
       }
       if (schedCode === "monthly_term") {
-        return "Same programme total — one direct payment per month of each term (Autumn 4, Spring 3, Summer 4 = 11). We set up your GoCardless agreement in July; GoCardless collects the first payment on 1 September and it reaches us around 5–6 September, then on the 1st of each month.";
+        return termOnly
+          ? "Term-by-term: monthly Direct Payments for " + termLabel + " only. Later terms when you reconfirm."
+          : "Same programme total — one direct payment per month of each term (Autumn 4, Spring 3, Summer 4 = 11). We set up your GoCardless agreement in July; GoCardless collects the first payment on 1 September and it reaches us around 5–6 September, then on the 1st of each month.";
       }
       return "Same programme total — Direct Payment (GoCardless). The office confirms your final collection plan.";
     }
     if (payCode === "bank_transfer" && schedCode === "monthly_10") {
-      return "Same programme total — ten invoices (Autumn 4, Spring 3, Summer 3). Pay each month from the parent portal by bank transfer or Card / Apple Pay. First due 1 September 2026.";
+      return termOnly
+        ? "Term-by-term: monthly invoices for " +
+            termLabel +
+            " only (Autumn 4 / Spring 3 / Summer 3). Later terms when you reconfirm."
+        : "Same programme total — ten invoices (Autumn 4, Spring 3, Summer 3). Pay each month from the parent portal by bank transfer or Card / Apple Pay. First due 1 September 2026.";
     }
     if (payCode === "bank_transfer" && schedCode === "term_flexi") {
-      return "Same programme total — the first payment is due by 15 August 2026, then two bank transfers per term: one before half term starts, one during half-term week before the second half. The office confirms your final invoice plan.";
+      return termOnly
+        ? "Term-by-term: two invoices for " +
+            termLabel +
+            " only. Later terms when you reconfirm."
+        : "Same programme total — the first payment is due by 15 August 2026, then two bank transfers per term: one before half term starts, one during half-term week before the second half. The office confirms your final invoice plan.";
+    }
+    if (payCode === "bank_transfer" && schedCode === "term_3" && termOnly) {
+      return (
+        "Term-by-term: one invoice for " +
+        termLabel +
+        " only. Later terms when you reconfirm. First payment due by 15 August 2026 when billing Autumn."
+      );
     }
     if (payCode === "bank_transfer") {
       return "Same programme total — the first payment (term, one-off or full year) is due by 15 August 2026 so it reaches us before term; later payments follow each term. Paying on or before each due date (including Card / Apple Pay when offered) has no admin fee.";
@@ -673,9 +723,14 @@
       return "";
     }
     if (!schedCode) return "";
+    var cadence = normalizeEnrolmentCadence(state.enrolmentCadence);
+    var billingTerm = cadence === "term_by_term" ? currentReenrolBillingTerm() : null;
+    function includeTerm(termKey) {
+      return !billingTerm || billingTerm === termKey;
+    }
     var annual = resolveAnnualWeeklyTotal(data);
     var fee = adminFeeApplies(payCode);
-    var feeTotal = adminFeeTotalForSchedule(payCode, schedCode);
+    var feeTotal = adminFeeTotalForSchedule(payCode, schedCode, cadence);
     function amt(base) {
       var n = Number(base);
       if (!Number.isFinite(n) || n <= 0) return "—";
@@ -689,6 +744,7 @@
       var ownRows = [];
       ["Autumn", "Spring", "Summer"].forEach(function (label, i) {
         var termKey = i === 0 ? "autumn" : i === 1 ? "spring" : "summer";
+        if (!includeTerm(termKey)) return;
         ownRows.push({
           label: label + " term · programme",
           due: "Your own timing",
@@ -707,14 +763,18 @@
           amount: money(buffer.total),
         });
       }
+      var ownFeeNote =
+        feeTotal > 0
+          ? billingTerm
+            ? " Admin fee for this term: " + money(feeTotal) + "."
+            : " Admin fees add " + money(feeTotal) + " over the year (indicative total " + money(annual + feeTotal) + ")."
+          : "";
       return (
         '<div class="re-pay-preview">' +
         '<h4 class="re-pay-preview__title">Indicative totals</h4>' +
         '<p class="re-muted re-pay-preview__note">' +
-        esc(paymentPreviewNote(payCode, schedCode)) +
-        (feeTotal > 0
-          ? " Admin fees add " + money(feeTotal) + " over the year (indicative total " + money(annual + feeTotal) + ")."
-          : "") +
+        esc(paymentPreviewNote(payCode, schedCode, cadence)) +
+        ownFeeNote +
         "</p>" +
         '<ul class="re-pay-preview-list">' +
         ownRows
@@ -745,28 +805,28 @@
     var rows = [];
     if (schedCode === "yearly_1off") {
       rows.push({
+        term: null,
         label: "Full year (1 payment)",
         due: bankFirstDue,
         amount: amt(annual),
       });
     } else if (schedCode === "term_3") {
-      rows.push({
-        label: "Autumn term",
-        due: bankFirstDue,
-        amount: amt(termProgrammeTotal(data, "autumn")),
-      });
-      rows.push({
-        label: "Spring term",
-        due: dueOnFirst("December 2026"),
-        amount: amt(termProgrammeTotal(data, "spring")),
-      });
-      rows.push({
-        label: "Summer term",
-        due: dueOnFirst("March 2027"),
-        amount: amt(termProgrammeTotal(data, "summer")),
+      [
+        { term: "autumn", label: "Autumn term", due: bankFirstDue },
+        { term: "spring", label: "Spring term", due: dueOnFirst("December 2026") },
+        { term: "summer", label: "Summer term", due: dueOnFirst("March 2027") },
+      ].forEach(function (t) {
+        if (!includeTerm(t.term)) return;
+        rows.push({
+          term: t.term,
+          label: t.label,
+          due: t.due,
+          amount: amt(termProgrammeTotal(data, t.term)),
+        });
       });
     } else if (schedCode === "term_flexi") {
       RE_PAY_FLEXI_TERM.forEach(function (t, ti) {
+        if (!includeTerm(t.term)) return;
         var termTotal = termProgrammeTotal(data, t.term);
         var halfAmt = termTotal / 2;
         t.halves.forEach(function (h, hi) {
@@ -775,6 +835,7 @@
             due = dueOnFirst("September 2026");
           }
           rows.push({
+            term: t.term,
             label: t.termLabel + " · " + h.halfLabel,
             due: due,
             amount: amt(halfAmt),
@@ -789,11 +850,13 @@
       ];
       var payNo = 0;
       termPlan.forEach(function (t) {
+        if (!includeTerm(t.term)) return;
         var termTotal = termProgrammeTotal(data, t.term);
         var perMonth = termTotal / t.months.length;
         t.months.forEach(function (label) {
           payNo += 1;
           rows.push({
+            term: t.term,
             label: "Payment " + payNo + " · " + label + " (" + t.label + ")",
             due: dueOnFirst(label),
             amount: amt(perMonth),
@@ -808,11 +871,13 @@
       ];
       var payNo10 = 0;
       monthly10Plan.forEach(function (t) {
+        if (!includeTerm(t.term)) return;
         var termTotal = termProgrammeTotal(data, t.term);
         var perMonth = termTotal / t.months.length;
         t.months.forEach(function (label) {
           payNo10 += 1;
           rows.push({
+            term: t.term,
             label: "Payment " + payNo10 + " · " + label + " (" + t.label + ")",
             due: dueOnFirst(label),
             amount: amt(perMonth),
@@ -825,7 +890,7 @@
       '<div class="re-pay-preview">' +
       '<h4 class="re-pay-preview__title">Indicative payment schedule</h4>' +
       '<p class="re-muted re-pay-preview__note">' +
-      esc(paymentPreviewNote(payCode, schedCode)) +
+      esc(paymentPreviewNote(payCode, schedCode, cadence)) +
       (fee && payCode === "gocardless"
         ? " Each payment shown includes the " +
           money(RE_ADMIN_FEE_GC_PER_INSTALLMENT) +
@@ -1306,22 +1371,34 @@
   /** Own arrangement: always keep 2 sessions paid in advance per service. */
   var RE_OWN_ADVANCE_SESSIONS = 2;
 
-  function installmentCountForSchedule(scheduleCode) {
-    if (scheduleCode === "monthly_term") return 11;
-    if (scheduleCode === "monthly_10") return 10;
-    if (scheduleCode === "term_flexi") return 6;
-    if (scheduleCode === "term_3") return 3;
+  function installmentCountForSchedule(scheduleCode, cadence) {
+    var termOnly = normalizeEnrolmentCadence(cadence) === "term_by_term";
+    var term = termOnly ? currentReenrolBillingTerm() : null;
+    if (scheduleCode === "monthly_term") {
+      if (term === "autumn") return 4;
+      if (term === "spring") return 3;
+      if (term === "summer") return 4;
+      return 11;
+    }
+    if (scheduleCode === "monthly_10") {
+      if (term === "autumn") return 4;
+      if (term === "spring" || term === "summer") return 3;
+      return 10;
+    }
+    if (scheduleCode === "term_flexi") return termOnly ? 2 : 6;
+    if (scheduleCode === "term_3") return termOnly ? 1 : 3;
     if (scheduleCode === "yearly_1off") return 1;
-    if (scheduleCode === "own_term") return 3;
+    if (scheduleCode === "own_term") return termOnly ? 1 : 3;
     return 1;
   }
 
-  function adminFeeTotalForSchedule(payCode, scheduleCode) {
+  function adminFeeTotalForSchedule(payCode, scheduleCode, cadence) {
     if (!adminFeeApplies(payCode)) return 0;
     if (payCode === "own_way_flexible") {
-      return RE_ADMIN_FEE_OWN * 3;
+      var ownTerms = normalizeEnrolmentCadence(cadence) === "term_by_term" ? 1 : 3;
+      return RE_ADMIN_FEE_OWN * ownTerms;
     }
-    return RE_ADMIN_FEE_GC_PER_INSTALLMENT * installmentCountForSchedule(scheduleCode);
+    return RE_ADMIN_FEE_GC_PER_INSTALLMENT * installmentCountForSchedule(scheduleCode, cadence);
   }
 
   function isAutoContinueSchedule(payCode, scheduleCode) {
@@ -1593,7 +1670,7 @@
         code: "term_by_term",
         title: "Term by term",
         hint:
-          "Confirm term by term. We will ask you again before each term whether you want to continue.",
+          "Confirm term by term. We will ask you again before each term whether you want to continue. Invoices / Direct Payments are created for the current term only.",
       },
     ];
     return (
@@ -1779,10 +1856,16 @@
     ],
   };
 
-  function scheduleOptionHint(code, payCode) {
+  function scheduleOptionHint(code, payCode, cadence) {
     var isGc = payCode === "gocardless";
+    var termOnly = normalizeEnrolmentCadence(cadence) === "term_by_term";
+    var termLabel = reenrolTermDisplayLabel(currentReenrolBillingTerm());
     if (code === "own_term") {
-      return "Only if you cannot meet our fixed due dates. Term by term on your own timing. £50 admin fee each term. Keep at least two sessions paid in advance for every service. On the parent portal you can still pay each amount by bank transfer or Card / Apple Pay when an invoice is ready.";
+      return termOnly
+        ? "Only if you cannot meet our fixed due dates. We invoice " +
+            termLabel +
+            " only for now (programme + £50 admin); later terms when you reconfirm. Keep at least two sessions paid in advance for every service."
+        : "Only if you cannot meet our fixed due dates. Term by term on your own timing. £50 admin fee each term. Keep at least two sessions paid in advance for every service. On the parent portal you can still pay each amount by bank transfer or Card / Apple Pay when an invoice is ready.";
     }
     if (code === "yearly_1off") {
       return isGc
@@ -1790,6 +1873,15 @@
         : "One payment for the full academic year — due by 15 August 2026. Pay from the parent portal by bank transfer (no fee) or Card / Apple Pay (small processing fee). Same programme total.";
     }
     if (code === "monthly_10") {
+      if (termOnly) {
+        return isGc
+          ? "Term-by-term: monthly Direct Payments for " +
+              termLabel +
+              " only (Autumn 4 / Spring 3 / Summer 3). Later terms when you reconfirm. £1.50 fee per instalment."
+          : "Term-by-term: monthly invoices for " +
+              termLabel +
+              " only (Autumn 4 / Spring 3 / Summer 3). Later terms when you reconfirm.";
+      }
       return isGc
         ? "Regular plan: ten Direct Payments — Autumn 4, Spring 3, Summer 3 (September–June). We set up GoCardless before the first collection; then on the 1st of each month. Same programme total; £1.50 fee per instalment."
         : "Regular plan: ten invoices — Autumn 4, Spring 3, Summer 3 (September–June). Pay each month from the parent portal by bank transfer (no fee) or Card / Apple Pay (small fee). Same programme total; no admin fee if you pay on time.";
@@ -1798,11 +1890,29 @@
       return "One payment per month of each term — Autumn 4, Spring 3, Summer 4 (11 across the year).";
     }
     if (code === "term_flexi") {
+      if (termOnly) {
+        return isGc
+          ? "Term-by-term: two Direct Payments for " +
+              termLabel +
+              " only. Later terms when you reconfirm. £1.50 fee per instalment."
+          : "Term-by-term: two invoices for " +
+              termLabel +
+              " only. Later terms when you reconfirm.";
+      }
       return isGc
         ? "Six Direct Payments over the year — two per term. We set up GoCardless before the first collection. Same programme total; £1.50 fee per instalment."
         : "Six payments over the year — two per term (before half term and during half-term week). First due by 15 August 2026. Pay each invoice from the parent portal by bank transfer or Card / Apple Pay — no admin fee if you pay on time.";
     }
     if (code === "term_3") {
+      if (termOnly) {
+        return isGc
+          ? "Term-by-term: one Direct Payment for " +
+              termLabel +
+              " only. Later terms when you reconfirm. £1.50 fee on that payment."
+          : "Term-by-term: one invoice for " +
+              termLabel +
+              " only. Later terms when you reconfirm.";
+      }
       return isGc
         ? "Three Direct Payments — one per term. We set up GoCardless before the first collection. Same programme total; £1.50 fee per instalment."
         : "Three payments — one per term (first due by 15 August 2026, then December and March). Pay each invoice from the parent portal by bank transfer or Card / Apple Pay — no admin fee if you pay on time.";
@@ -1951,7 +2061,7 @@
       opts
         .map(function (o) {
           var checked = o.code === validDefault ? " checked" : "";
-          var hint = scheduleOptionHint(o.code, payCode);
+          var hint = scheduleOptionHint(o.code, payCode, cadence);
           var spotlight =
             o.code === "yearly_1off" || o.code === "monthly_10"
               ? " re-radio--schedule-spotlight"
@@ -2075,6 +2185,7 @@
   function updateAdminFeeAmount() {
     var b = state.billing2627 || {};
     var payCode = normalizePayMethodChoice(b.payCode || "bank_transfer");
+    var cadence = normalizeEnrolmentCadence(state.enrolmentCadence);
     var feeNote = $("reAdminFeeNote");
     var feeAmt = $("reAdminFeeAmount");
     var wrap = document.querySelector(".re-funding-2627");
@@ -2083,23 +2194,25 @@
     if (!feeAmt) return;
     if (adminFeeApplies(payCode) && annual > 0) {
       var schedEl = document.querySelector('input[name="re_pay_schedule_2627"]:checked');
-      var schedCode = schedEl ? schedEl.value : defaultScheduleForPayAndCadence(payCode, state.enrolmentCadence);
-      var feeTotal = adminFeeTotalForSchedule(payCode, schedCode);
+      var schedCode = schedEl ? schedEl.value : defaultScheduleForPayAndCadence(payCode, cadence);
+      var feeTotal = adminFeeTotalForSchedule(payCode, schedCode, cadence);
       if (payCode === "own_way_flexible") {
         var buffer = ownArrangementAdvanceBuffer(state.lookup);
+        var ownTerms = cadence === "term_by_term" ? 1 : 3;
         feeAmt.textContent =
           " — " +
           money(RE_ADMIN_FEE_OWN) +
-          " × 3 terms = " +
-          money(feeTotal) +
-          " (indicative total " +
-          money(annual + feeTotal) +
-          ")" +
+          (ownTerms === 1
+            ? " for " + reenrolTermDisplayLabel(currentReenrolBillingTerm()) + " = " + money(feeTotal)
+            : " × 3 terms = " + money(feeTotal)) +
+          (ownTerms === 1
+            ? " (this term)"
+            : " (indicative total " + money(annual + feeTotal) + ")") +
           (buffer.total > 0
             ? "; keep at least " + money(buffer.total) + " prepaid (2 sessions × each service)"
             : "");
       } else {
-        var n = installmentCountForSchedule(schedCode);
+        var n = installmentCountForSchedule(schedCode, cadence);
         feeAmt.textContent =
           " — " +
           money(RE_ADMIN_FEE_GC_PER_INSTALLMENT) +
@@ -2107,9 +2220,9 @@
           n +
           " = " +
           money(feeTotal) +
-          " per year (indicative total " +
-          money(annual + feeTotal) +
-          ")";
+          (cadence === "term_by_term"
+            ? " for " + reenrolTermDisplayLabel(currentReenrolBillingTerm()) + " (term-by-term)"
+            : " per year (indicative total " + money(annual + feeTotal) + ")");
       }
     } else {
       feeAmt.textContent = "";
@@ -2244,7 +2357,7 @@
           auto_continue_note: funderAuto
             ? "We will treat this place as continuing each term with the same arrangement unless you tell us otherwise."
             : cadence === "term_by_term"
-              ? "We will ask you to confirm before each term."
+              ? "We will ask you to confirm before each term. Invoices are created for the current term only."
               : null,
         },
       };
@@ -2270,7 +2383,7 @@
     }
     var vatCode = isDirectPayments(fundCode) ? "exempt" : "vat_included";
     var fee = adminFeeApplies(payCode);
-    var feeTotal = fee ? adminFeeTotalForSchedule(payCode, scheduleCode) : 0;
+    var feeTotal = fee ? adminFeeTotalForSchedule(payCode, scheduleCode, cadence) : 0;
     var autoContinue =
       cadence === "whole_year" ||
       (cadence !== "term_by_term" && isAutoContinueSchedule(payCode, scheduleCode));
@@ -2302,7 +2415,7 @@
         auto_continue_note: autoContinue
           ? "We will treat this place as continuing each term with the same arrangement unless you tell us otherwise."
           : cadence === "term_by_term"
-            ? "We will ask you to confirm before each term."
+            ? "We will ask you to confirm before each term. Invoices are created for the current term only."
             : null,
         advance_buffer_sessions_per_service:
           payCode === "own_way_flexible" ? RE_OWN_ADVANCE_SESSIONS : null,

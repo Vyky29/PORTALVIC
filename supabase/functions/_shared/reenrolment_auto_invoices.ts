@@ -211,20 +211,69 @@ function pushInstalment(
   });
 }
 
-/**
- * Returns instalments to create, or empty if funder-paid / no schedule / zero total.
- */
+export type ReenrolTermKey = "autumn" | "spring" | "summer";
+
+/** Billing term for 2026/27: Jul–Aug (re-enrol window) and Sep–Dec → Autumn. */
+export function currentReenrolBillingTerm(asOf: Date = new Date()): ReenrolTermKey {
+  const m = asOf.getMonth() + 1;
+  if (m >= 9 && m <= 12) return "autumn";
+  if (m >= 1 && m <= 3) return "spring";
+  if (m >= 4 && m <= 6) return "summer";
+  return "autumn";
+}
+
+export function reenrolTermDisplayLabel(term: ReenrolTermKey): string {
+  if (term === "spring") return "Spring";
+  if (term === "summer") return "Summer";
+  return "Autumn";
+}
+
+function monthlyCountForTerm(term: ReenrolTermKey, scheduleCode: string): number {
+  if (scheduleCode === "monthly_term") {
+    return term === "autumn" ? 4 : term === "spring" ? 3 : 4;
+  }
+  /* monthly_10: 4 / 3 / 3 */
+  return term === "autumn" ? 4 : 3;
+}
+
 /** Short plan line for parent-facing thank-you / confirmation copy. */
 export function reenrolmentSchedulePlanPhrase(args: {
   scheduleCode: string;
   paymentMethodHint: "bank_transfer" | "gocardless" | "payment_link" | "other";
   instalmentCount: number;
+  enrolmentCadence?: string | null;
+  billingTerm?: ReenrolTermKey | null;
 }): string {
   const n = Math.max(0, Math.floor(args.instalmentCount));
   const isGc = args.paymentMethodHint === "gocardless";
   const unit = isGc ? "Direct Payment" : "invoice";
   const units = isGc ? "Direct Payments" : "invoices";
   const code = String(args.scheduleCode || "").toLowerCase();
+  const termOnly =
+    String(args.enrolmentCadence || "").toLowerCase() === "term_by_term" &&
+    !!args.billingTerm;
+  const termLabel = termOnly && args.billingTerm
+    ? reenrolTermDisplayLabel(args.billingTerm)
+    : "";
+
+  if (termOnly) {
+    if (code === "term_3") {
+      return `1 ${unit} scheduled for ${termLabel} term (term-by-term — later terms when you reconfirm)`;
+    }
+    if (code === "term_flexi") {
+      return `2 ${units} scheduled for ${termLabel} term (term-by-term)`;
+    }
+    if (code === "monthly_10" || code === "monthly_term") {
+      const months = monthlyCountForTerm(args.billingTerm!, code);
+      return `${n || months} ${units} scheduled for ${termLabel} term (monthly · term-by-term)`;
+    }
+    if (code === "own_term") {
+      return `${n || 2} ${units} scheduled for ${termLabel} term (own timing · term-by-term, including admin fee)`;
+    }
+    if (n === 1) return `1 ${unit} scheduled for ${termLabel} term (term-by-term)`;
+    if (n > 1) return `${n} ${units} scheduled for ${termLabel} term (term-by-term)`;
+  }
+
   if (code === "yearly_1off") {
     return `1 ${unit} scheduled for the full academic year`;
   }
@@ -291,6 +340,12 @@ export function buildReenrolmentInstalments(args: {
     return { ...empty, skipReason: "no_schedule" };
   }
 
+  const enrolmentCadence = clean(choices.enrolment_cadence, 40).toLowerCase();
+  const billingTerm =
+    enrolmentCadence === "term_by_term" ? currentReenrolBillingTerm() : null;
+  const includeTerm = (term: ReenrolTermKey) =>
+    !billingTerm || billingTerm === term;
+
   const totals = args.termTotals;
   if (!totals || totals.annual <= 0) {
     return { ...empty, skipReason: "zero_total" };
@@ -311,12 +366,13 @@ export function buildReenrolmentInstalments(args: {
   const bankFirstDue = payCode === "bank_transfer" ? "2026-08-15" : "2026-09-01";
 
   if (payCode === "own_way_flexible" || scheduleCode === "own_term") {
-    const terms: Array<{ key: keyof Pick<ReenrolTermTotals, "autumn" | "spring" | "summer">; label: string; due: string }> = [
+    const terms: Array<{ key: ReenrolTermKey; label: string; due: string }> = [
       { key: "autumn", label: "Autumn term", due: "2026-09-01" },
       { key: "spring", label: "Spring term", due: "2027-01-01" },
       { key: "summer", label: "Summer term", due: "2027-04-01" },
     ];
     for (const t of terms) {
+      if (!includeTerm(t.key)) continue;
       pushInstalment(out, {
         label: `${t.label} · programme`,
         dueDateIso: t.due,
@@ -335,6 +391,7 @@ export function buildReenrolmentInstalments(args: {
       });
     }
   } else if (scheduleCode === "yearly_1off") {
+    /* Full-year one-off only applies to whole-year cadence. */
     pushInstalment(out, {
       label: "Full year (1 payment)",
       dueDateIso: bankFirstDue,
@@ -344,32 +401,25 @@ export function buildReenrolmentInstalments(args: {
       payLabel,
     });
   } else if (scheduleCode === "term_3") {
-    pushInstalment(out, {
-      label: "Autumn term",
-      dueDateIso: bankFirstDue,
-      amountGbp: withGcFee(totals.autumn, payCode),
-      participantName,
-      academicYear,
-      payLabel,
-    });
-    pushInstalment(out, {
-      label: "Spring term",
-      dueDateIso: "2026-12-01",
-      amountGbp: withGcFee(totals.spring, payCode),
-      participantName,
-      academicYear,
-      payLabel,
-    });
-    pushInstalment(out, {
-      label: "Summer term",
-      dueDateIso: "2027-03-01",
-      amountGbp: withGcFee(totals.summer, payCode),
-      participantName,
-      academicYear,
-      payLabel,
-    });
+    const term3: Array<{ key: ReenrolTermKey; label: string; due: string }> = [
+      { key: "autumn", label: "Autumn term", due: bankFirstDue },
+      { key: "spring", label: "Spring term", due: "2026-12-01" },
+      { key: "summer", label: "Summer term", due: "2027-03-01" },
+    ];
+    for (const t of term3) {
+      if (!includeTerm(t.key)) continue;
+      pushInstalment(out, {
+        label: t.label,
+        dueDateIso: t.due,
+        amountGbp: withGcFee(totals[t.key], payCode),
+        participantName,
+        academicYear,
+        payLabel,
+      });
+    }
   } else if (scheduleCode === "term_flexi") {
     for (const t of FLEXI_TERM) {
+      if (!includeTerm(t.term)) continue;
       const termTotal = totals[t.term];
       const halfAmt = termTotal / 2;
       for (let hi = 0; hi < t.halves.length; hi++) {
@@ -391,6 +441,7 @@ export function buildReenrolmentInstalments(args: {
   } else if (scheduleCode === "monthly_term") {
     let payNo = 0;
     for (const t of MONTHLY_TERM_PLAN) {
+      if (!includeTerm(t.term)) continue;
       const termTotal = totals[t.term];
       const perMonth = termTotal / t.months.length;
       for (const m of t.months) {
@@ -426,6 +477,7 @@ export function buildReenrolmentInstalments(args: {
     ];
     let payNo = 0;
     for (const t of plan10) {
+      if (!includeTerm(t.term)) continue;
       const termTotal = totals[t.term];
       const perMonth = termTotal / t.months.length;
       for (const m of t.months) {
@@ -455,6 +507,8 @@ export function buildReenrolmentInstalments(args: {
       scheduleCode,
       paymentMethodHint: hint,
       instalmentCount: out.length,
+      enrolmentCadence,
+      billingTerm,
     })
     : null;
 
