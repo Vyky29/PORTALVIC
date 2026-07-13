@@ -1820,8 +1820,10 @@
 
     function isSundayMaSupportPayBand(dayName, role, service, dayRows) {
       if (String(dayName || "") !== "Sunday") return false;
-      const svc = String(service || "").toLowerCase();
       const r = String(role || "").trim();
+      /* Swim instructors (incl. pool Multi-Activity at SwimFarm) use the 6h / 6.5h band — never the 5h MA split. */
+      if (r === "Swimming Instructor") return false;
+      const svc = String(service || "").toLowerCase();
       if (r === "Support Worker" || /multi[-\s]?activity/.test(svc)) {
         const rows = dayRows || [];
         if (!rows.length) return true;
@@ -1843,22 +1845,58 @@
       return SUNDAY_MA_LEAD_KEYS.has(key) ? SUNDAY_LEAD_MA_PAY_HOURS : SUNDAY_SUPPORT_MA_PAY_HOURS;
     }
 
-    /** Roberto Sunday SwimFarm pool lead: 8:45–3:15 (6.5h). Other swim instructors: 6h. */
+    /** Roberto Sunday SwimFarm pool lead: 8:45–3:15 (6.5h). Other swim instructors who give feedback: 6h. */
     const SUNDAY_SWIM_PAY_HOURS = 6;
     const SUNDAY_ROBERTO_SWIM_PAY_HOURS = 6.5;
+
+    function sundaySwimInstructorPayHours(rosterKey) {
+      const key = String(rosterKey || "").trim().toLowerCase();
+      if (key === "roberto") return SUNDAY_ROBERTO_SWIM_PAY_HOURS;
+      return SUNDAY_SWIM_PAY_HOURS;
+    }
+
+    /** Sunday SwimFarm day where this worker is paid as swimming instructor (aquatic and/or pool MA). */
+    function isSundaySwimfarmSwimInstructorDay(dayName, rosterKey, dayRows) {
+      if (String(dayName || "") !== "Sunday") return false;
+      const key = String(rosterKey != null ? rosterKey : state.staffRosterKey || "")
+        .trim()
+        .toLowerCase();
+      if (SUNDAY_MA_LEAD_KEYS.has(key)) return false;
+      const rows = dayRows || [];
+      if (!rows.length) return false;
+      let onSwimfarm = false;
+      let swimInstructor = false;
+      rows.forEach((s) => {
+        const st = String(s.status || "").toLowerCase();
+        if (st === "closed" || st === "available") return;
+        const venue = String(s.venue || "").toLowerCase();
+        if (venue.indexOf("swimfarm") >= 0) onSwimfarm = true;
+        if (sessionPayRole(s) === "Swimming Instructor") swimInstructor = true;
+      });
+      return onSwimfarm && swimInstructor;
+    }
 
     function isSundaySwimfarmAquaticBand(dayName, role, service, dayRows) {
       if (String(dayName || "") !== "Sunday") return false;
       const r = String(role || "").trim();
       const svc = String(service || "").toLowerCase();
-      if (r !== "Swimming Instructor" && !/swim|aquatic/.test(svc)) return false;
+      if (r === "Swimming Instructor") {
+        const rows = dayRows || [];
+        if (!rows.length) return true;
+        return rows.some((s) => {
+          const st = String(s.status || "").toLowerCase();
+          if (st === "closed" || st === "available") return false;
+          return String(s.venue || "").toLowerCase().indexOf("swimfarm") >= 0;
+        });
+      }
+      if (!/swim|aquatic/.test(svc)) return false;
       const rows = dayRows || [];
-      if (!rows.length) return /swim|aquatic/.test(svc);
+      if (!rows.length) return true;
       return rows.some((s) => {
         const st = String(s.status || "").toLowerCase();
         if (st === "closed" || st === "available") return false;
         const act = String(s.rosterService || s.service || s.activity || "").toLowerCase();
-        if (/climb/.test(act) || /multi|bespoke|support|hub/.test(act)) return false;
+        if (/climb/.test(act)) return false;
         const venue = String(s.venue || s.area || "").toLowerCase();
         return venue.indexOf("swimfarm") >= 0 || venue.indexOf("pool") >= 0;
       });
@@ -1866,9 +1904,7 @@
 
     function sundaySwimPayableHours(dayName, rosterKey, role, service, dateKey, computedHours, dayRows) {
       if (!isSundaySwimfarmAquaticBand(dayName, role, service, dayRows)) return computedHours;
-      const key = String(rosterKey || "").trim().toLowerCase();
-      if (key === "roberto") return SUNDAY_ROBERTO_SWIM_PAY_HOURS;
-      return SUNDAY_SWIM_PAY_HOURS;
+      return sundaySwimInstructorPayHours(rosterKey);
     }
 
     function applyRosterPayRateFallback(rosterKey) {
@@ -2347,6 +2383,25 @@
       });
       const roleCount = Object.keys(rolesSeen).length;
       const dayName = WEEKDAY[dateObj.getDay()];
+      /* Sunday SwimFarm swim instructors: one paid band (6h / Roberto 6.5) — never Aquatic 6 + Multi 5. */
+      if (isSundaySwimfarmSwimInstructorDay(dayName, rosterKey, rows)) {
+        const single = dailyHoursSingleRoleFromSessions(
+          rows,
+          dateObj,
+          reviewMap,
+          staffKey,
+          "Swimming Instructor",
+          "Aquatic Activity"
+        );
+        if (single) {
+          single.hours = sundaySwimInstructorPayHours(rosterKey);
+          single.role = "Swimming Instructor";
+          single.service = "Aquatic Activity";
+          single.serviceLabel = "Aquatic Activity (SwimFarm)";
+          single.rate = rateForRole("Swimming Instructor");
+          return [single];
+        }
+      }
       if (roleCount <= 1) {
         let dominantRole = "";
         let dominantService = "";
