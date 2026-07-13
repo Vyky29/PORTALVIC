@@ -45,7 +45,7 @@
 
   var TIER_UI_MODULES = [
     "/portal/portal_quick_menu_service_leads.js?v=20260621-pickup-lead-roster",
-    "/portal/portal_lead_team_shift.js?v=20260702-ma-lead-team-absent",
+    "/portal/portal_lead_team_shift.js?v=20260713-team-avatars",
   ];
 
   var TIER_IDLE = [

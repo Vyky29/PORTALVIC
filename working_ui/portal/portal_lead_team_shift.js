@@ -976,7 +976,9 @@ function formatLeadTeamTimeCompact(timeSlot) {
 export function portalLeadTeamRosterTableModel(iso, ctx) {
   ctx = ctx || portalLeadTeamShiftContext();
   const team = portalLeadTeamOnShiftForIso(iso, ctx);
-  if (!team || !team.members.length) return null;
+  if (!team) return null;
+  const leadKey = ctx && ctx.leadKey ? normKey(ctx.leadKey) : "";
+  if (!team.members.length && !leadKey) return null;
   const src = rosterSource();
   const rows = src && Array.isArray(src.rows) ? src.rows : [];
   const dayWord = weekdayFromIso(iso);
@@ -985,6 +987,8 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
   team.members.forEach(function (m) {
     byStaff[normKey(m.key)] = [];
   });
+  // Viewing programme lead (e.g. Michelle) — always a column, even with no clients.
+  if (leadKey && !byStaff[leadKey]) byStaff[leadKey] = [];
 
   rows.forEach(function (row) {
     if (!rosterRowMatchesIso(row, iso)) return;
@@ -1037,14 +1041,24 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
     });
   });
 
-  const members = team.members.filter(function (m) {
+  let members = team.members.filter(function (m) {
     const k = normKey(m.key);
+    if (leadKey && k === leadKey) return false;
     return (byStaff[k] || []).length > 0;
   });
 
+  if (leadKey) {
+    members.unshift({
+      key: leadKey,
+      name: staffDisplayName(leadKey),
+      chipRole: "lead",
+      isViewerLead: true,
+    });
+  }
+
   members.forEach(function (m) {
     const k = normKey(m.key);
-    byStaff[k].sort(function (a, b) {
+    (byStaff[k] || []).sort(function (a, b) {
       return a.startMin - b.startMin || a.client.localeCompare(b.client);
     });
   });
@@ -1054,7 +1068,35 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
     programmeLabel: team.programmeLabel || "",
     members: members,
     byStaff: byStaff,
+    viewerLeadKey: leadKey,
   };
+}
+
+function leadTeamStaffAvatarHtml(staffKey, displayName) {
+  try {
+    if (typeof window !== "undefined" && typeof window.portalStaffAvatarInnerHtml === "function") {
+      return window.portalStaffAvatarInnerHtml(staffKey, {
+        displayName: displayName || staffKey,
+        className:
+          "portal-roster-avatar portal-roster-avatar--staff portal-lead-team-roster__avatar",
+        esc: escHtml,
+      });
+    }
+  } catch (_) {}
+  const initials = String(displayName || staffKey || "?")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(function (p) {
+      return p.charAt(0).toUpperCase();
+    })
+    .join("");
+  return (
+    '<span class="portal-roster-avatar portal-roster-avatar--staff portal-lead-team-roster__avatar" aria-hidden="true">' +
+    escHtml(initials || "?") +
+    "</span>"
+  );
 }
 
 function renderLeadTeamRosterTableHtml(model) {
@@ -1064,6 +1106,8 @@ function renderLeadTeamRosterTableHtml(model) {
   const cols = model.members
     .map(function (m) {
       const k = normKey(m.key);
+      const name = m.name || m.key;
+      const isViewer = !!m.isViewerLead;
       const clients = (model.byStaff[k] || [])
         .map(function (h) {
           const segs =
@@ -1097,15 +1141,22 @@ function renderLeadTeamRosterTableHtml(model) {
           );
         })
         .join("");
+      const blankLabel = isViewer ? "Lead" : "—";
       return (
-        '<section class="portal-lead-team-roster__col" aria-label="' +
-        escHtml(m.name || m.key) +
+        '<section class="portal-lead-team-roster__col' +
+        (isViewer ? " portal-lead-team-roster__col--viewer" : "") +
+        '" aria-label="' +
+        escHtml(name) +
         '">' +
         '<h4 class="portal-lead-team-roster__col-head">' +
-        escHtml(m.name || m.key) +
+        leadTeamStaffAvatarHtml(k, name) +
+        '<span class="portal-lead-team-roster__col-name">' +
+        escHtml(name) +
+        "</span>" +
         "</h4>" +
         '<div class="portal-lead-team-roster__col-body">' +
-        (clients || '<p class="portal-lead-team-roster__blank">—</p>') +
+        (clients ||
+          '<p class="portal-lead-team-roster__blank">' + escHtml(blankLabel) + "</p>") +
         "</div></section>"
       );
     })
