@@ -2095,7 +2095,8 @@
     }
 
     /** Distinct pay groups within one role (e.g. Sunday Aquatic vs Multi-Activity on the same day). */
-    function timesheetDistinctServiceGroupKeys(rows, role, dayName) {
+    function timesheetDistinctServiceGroupKeys(rows, role, dayName, staffKey) {
+      const rosterKey = String(staffKey != null ? staffKey : state.staffRosterKey || "").trim().toLowerCase();
       const keys = new Set();
       (rows || []).forEach((s) => {
         if (sessionPayRole(s) !== role) return;
@@ -2322,7 +2323,7 @@
             dominantService = roleServices[role] || "";
           }
         });
-        if (dominantRole && timesheetDistinctServiceGroupKeys(rows, dominantRole, dayName).size > 1) {
+        if (dominantRole && timesheetDistinctServiceGroupKeys(rows, dominantRole, dayName, rosterKey).size > 1) {
           return dailyHoursMultiRoleFromSessions(rows, dateObj, reviewMap, staffKey, roleMinutes, roleServices);
         }
         const single = dailyHoursSingleRoleFromSessions(
