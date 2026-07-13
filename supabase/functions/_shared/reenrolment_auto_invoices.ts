@@ -363,7 +363,12 @@ export function buildReenrolmentInstalments(args: {
         : "Bank transfer");
 
   const out: ReenrolInstalment[] = [];
-  const bankFirstDue = payCode === "bank_transfer" ? "2026-08-15" : "2026-09-01";
+  /** Bank term/year one-off: mid-August. GC collects earlier than day-1 term start. */
+  const gcAutumnFirstDue = "2026-08-15";
+  const bankAutumnTermDue = "2026-08-15";
+  const bankAutumnDay1Due = "2026-09-01";
+  const autumnFirstDue =
+    payCode === "gocardless" ? gcAutumnFirstDue : bankAutumnTermDue;
 
   if (payCode === "own_way_flexible" || scheduleCode === "own_term") {
     const terms: Array<{ key: ReenrolTermKey; label: string; due: string }> = [
@@ -403,7 +408,7 @@ export function buildReenrolmentInstalments(args: {
     }
     pushInstalment(out, {
       label: "Full year (1 payment)",
-      dueDateIso: bankFirstDue,
+      dueDateIso: bankAutumnTermDue,
       amountGbp: withGcFee(totals.annual, payCode),
       participantName,
       academicYear,
@@ -411,7 +416,7 @@ export function buildReenrolmentInstalments(args: {
     });
   } else if (scheduleCode === "term_3") {
     const term3: Array<{ key: ReenrolTermKey; label: string; due: string }> = [
-      { key: "autumn", label: "Autumn term", due: bankFirstDue },
+      { key: "autumn", label: "Autumn term", due: autumnFirstDue },
       { key: "spring", label: "Spring term", due: "2026-12-01" },
       { key: "summer", label: "Summer term", due: "2027-03-01" },
     ];
@@ -433,9 +438,14 @@ export function buildReenrolmentInstalments(args: {
       const halfAmt = termTotal / 2;
       for (let hi = 0; hi < t.halves.length; hi++) {
         const h = t.halves[hi];
+        let dueIso = h.dueIso;
+        /* Direct Payment: first Autumn half earlier (15 Aug). Bank/Card stays day 1 (1 Sep). */
+        if (t.term === "autumn" && hi === 0) {
+          dueIso = payCode === "gocardless" ? gcAutumnFirstDue : bankAutumnDay1Due;
+        }
         pushInstalment(out, {
           label: `${t.termLabel} · ${h.halfLabel}`,
-          dueDateIso: h.dueIso,
+          dueDateIso: dueIso,
           amountGbp: withGcFee(halfAmt, payCode),
           participantName,
           academicYear,
@@ -449,11 +459,16 @@ export function buildReenrolmentInstalments(args: {
       if (!includeTerm(t.term)) continue;
       const termTotal = totals[t.term];
       const perMonth = termTotal / t.months.length;
-      for (const m of t.months) {
+      for (let mi = 0; mi < t.months.length; mi++) {
+        const m = t.months[mi];
         payNo += 1;
+        let dueIso = m.dueIso;
+        if (payCode === "gocardless" && t.term === "autumn" && mi === 0) {
+          dueIso = gcAutumnFirstDue;
+        }
         pushInstalment(out, {
           label: `Payment ${payNo} · ${m.label} (${t.label})`,
-          dueDateIso: m.dueIso,
+          dueDateIso: dueIso,
           amountGbp: withGcFee(perMonth, payCode),
           participantName,
           academicYear,
@@ -485,11 +500,16 @@ export function buildReenrolmentInstalments(args: {
       if (!includeTerm(t.term)) continue;
       const termTotal = totals[t.term];
       const perMonth = termTotal / t.months.length;
-      for (const m of t.months) {
+      for (let mi = 0; mi < t.months.length; mi++) {
+        const m = t.months[mi];
         payNo += 1;
+        let dueIso = m.dueIso;
+        if (payCode === "gocardless" && t.term === "autumn" && mi === 0) {
+          dueIso = gcAutumnFirstDue;
+        }
         pushInstalment(out, {
           label: `Payment ${payNo} · ${m.label} (${t.label})`,
-          dueDateIso: m.dueIso,
+          dueDateIso: dueIso,
           amountGbp: withGcFee(perMonth, payCode),
           participantName,
           academicYear,
