@@ -81,13 +81,32 @@
   tbody tr.client>td:last-child{border-right:1px solid var(--line);border-radius:0 14px 14px 0}
   tr.client.validated>td{background:var(--ok-bg)}
   tr.client.dirty>td{box-shadow:inset 3px 0 0 var(--edit)}
-  .cell-name{width:190px;min-width:150px}
+  .cell-name{width:240px;min-width:200px}
   .name{font-weight:750;font-size:15px;word-break:break-word;overflow-wrap:anywhere;min-width:0}
   .name-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
   .chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px}
   .chip.ok{background:var(--ok-bg);color:var(--ok)}
   .chip.warn{background:var(--warn-bg);color:var(--warn)}
   .chip.count{background:#eef2ff;color:var(--accent)}
+  .client-finance{
+    margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);
+    display:flex;flex-direction:column;gap:8px;min-width:0
+  }
+  .client-finance__row{display:flex;flex-direction:column;gap:3px;min-width:0}
+  .client-finance__row label{
+    font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700
+  }
+  .client-finance__row input{
+    width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:9px;font-size:12.5px;
+    background:#fff;color:var(--ink);min-width:0
+  }
+  .client-finance__money{
+    display:grid;grid-template-columns:1fr 1fr;gap:8px;min-width:0
+  }
+  .client-finance__money .client-finance__row input{font-weight:700}
+  .client-finance__hint{margin:0;font-size:10.5px;color:var(--muted);line-height:1.35;overflow-wrap:break-word}
+  .money-owed input{border-color:#fecaca;background:#fff7f7}
+  .money-credit input{border-color:#bbf7d0;background:#f7fff9}
   .cell-actions{width:150px;min-width:130px}
   .actions{display:flex;flex-direction:column;gap:8px}
 
@@ -158,7 +177,7 @@
     <div class="stat">Validated <b><span id="nVal">0</span>/<span id="nTot">0</span></b></div>
     <div class="search">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      <input id="q" type="search" placeholder="Search client, service, instructor…" />
+      <input id="q" type="search" placeholder="Search client, service, funding…" />
     </div>
     <button class="btn ghost sm" id="expandAll">Edit all</button>
     <button class="btn ghost sm" id="collapseAll">Close editing</button>
@@ -259,7 +278,6 @@
         '<div class="svc-name">'+esc(svcTitle(sess))+'</div>'+
         '<div class="svc-when"><span class="day">'+esc(sess.day||'—')+'</span> · <span class="slot">'+esc(sess.timeSlot||'—')+'</span></div>'+
         '<div class="svc-meta">'+
-          '<span class="pill i" title="Instructor">👤 <span>'+esc(sess.instructor||'—')+'</span></span>'+
           '<span class="pill v" title="Venue">📍 <span>'+esc(sess.venue||'—')+'</span></span>'+
           '<span class="pill a" title="Note / area">📝 <span>'+esc(sess.area||'—')+'</span></span>'+
         '</div>'+
@@ -273,13 +291,44 @@
         '<div class="field full"><label>Service</label><select data-f="service" data-ci="'+ci+'" data-si="'+si+'">'+optionsHtml(OPTS.services, sess.service)+'</select></div>'+
         '<div class="field"><label>Day of week</label><select data-f="day" data-ci="'+ci+'" data-si="'+si+'">'+optionsHtml(OPTS.days, sess.day)+'</select></div>'+
         '<div class="field"><label>Time slot <span class="dur-preview" data-dur="'+ci+'-'+si+'">'+(d!=null?("· "+d+"'"):"")+'</span></label><input data-f="timeSlot" data-ci="'+ci+'" data-si="'+si+'" value="'+esc(sess.timeSlot)+'" placeholder="4.30 to 5.15" /></div>'+
-        '<div class="field"><label>Instructor</label><select data-f="instructor" data-ci="'+ci+'" data-si="'+si+'">'+optionsHtml(OPTS.instructors, sess.instructor)+'</select></div>'+
         '<div class="field"><label>Venue</label><select data-f="venue" data-ci="'+ci+'" data-si="'+si+'">'+optionsHtml(OPTS.venues, sess.venue)+'</select></div>'+
         '<div class="field full"><label>Note / area</label><select data-f="area" data-ci="'+ci+'" data-si="'+si+'">'+optionsHtml(OPTS.areas, sess.area)+'</select></div>'+
       '</div>'+
       '<div class="svc-meta" style="margin-top:10px;justify-content:flex-end;gap:8px">'+
         '<button class="btn ghost sm" data-act="delSvc" data-ci="'+ci+'" data-si="'+si+'" style="color:var(--danger)">Delete</button>'+
         '<button class="btn brand sm" data-act="doneSvc" data-ci="'+ci+'" data-si="'+si+'">Done</button>'+
+      '</div>';
+  }
+
+  function moneyFieldValue(v){
+    if(v == null || v === '') return '';
+    var n = Number(v);
+    if(Number.isFinite(n)) return String(n);
+    return String(v);
+  }
+
+  function clientFinanceHtml(client, ci){
+    return ''+
+      '<div class="client-finance">'+
+        '<div class="client-finance__row">'+
+          '<label for="cf-pay-'+ci+'">Payment method</label>'+
+          '<input id="cf-pay-'+ci+'" data-cf="paymentMethod" data-ci="'+ci+'" value="'+esc(client.paymentMethod||'')+'" placeholder="e.g. Bank transfer / Direct debit" autocomplete="off" />'+
+        '</div>'+
+        '<div class="client-finance__row">'+
+          '<label for="cf-fund-'+ci+'">Funding by</label>'+
+          '<input id="cf-fund-'+ci+'" data-cf="fundingBy" data-ci="'+ci+'" value="'+esc(client.fundingBy||'')+'" placeholder="e.g. LA / NHS / Private / Exempt" autocomplete="off" />'+
+        '</div>'+
+        '<div class="client-finance__money">'+
+          '<div class="client-finance__row money-owed">'+
+            '<label for="cf-owed-'+ci+'">Money owed (£)</label>'+
+            '<input id="cf-owed-'+ci+'" data-cf="moneyOwed" data-ci="'+ci+'" inputmode="decimal" value="'+esc(moneyFieldValue(client.moneyOwed))+'" placeholder="0.00" autocomplete="off" />'+
+          '</div>'+
+          '<div class="client-finance__row money-credit">'+
+            '<label for="cf-cred-'+ci+'">Credits (£)</label>'+
+            '<input id="cf-cred-'+ci+'" data-cf="creditBalance" data-ci="'+ci+'" inputmode="decimal" value="'+esc(moneyFieldValue(client.creditBalance))+'" placeholder="0.00" autocomplete="off" />'+
+          '</div>'+
+        '</div>'+
+        '<p class="client-finance__hint">Owed = balance due · Credits = credit on file. Edits save on this device; Publish keeps services on the portal.</p>'+
       '</div>';
   }
 
@@ -307,6 +356,7 @@
         '<td class="cell-name">'+
           '<div class="name">'+esc(client.name)+'</div>'+
           '<div class="name-badges">'+badges+'</div>'+
+          clientFinanceHtml(client, ci)+
         '</td>'+
         '<td>'+
           '<div class="svc-list">'+svc+'</div>'+
@@ -327,8 +377,10 @@
   function matches(client, q){
     if(!q) return true;
     if(client.name.toLowerCase().indexOf(q)>=0) return true;
+    if(String(client.paymentMethod||'').toLowerCase().indexOf(q)>=0) return true;
+    if(String(client.fundingBy||'').toLowerCase().indexOf(q)>=0) return true;
     return (client.sessions||[]).some(function(s){
-      return [s.service,s.day,s.timeSlot,s.instructor,s.venue,s.area].join(' ').toLowerCase().indexOf(q)>=0;
+      return [s.service,s.day,s.timeSlot,s.venue,s.area].join(' ').toLowerCase().indexOf(q)>=0;
     });
   }
   function render(){
@@ -345,7 +397,7 @@
     var nVal = STATE.clients.filter(function(c){return c.validated;}).length;
     document.getElementById('nVal').textContent = nVal;
     document.getElementById('nTot').textContent = STATE.clients.length;
-    document.getElementById('sub').textContent = 'Rota '+SEED.range.from+' → '+SEED.range.to+' · '+STATE.clients.length+' clients · edit day, slot, instructor, venue and note · Summer Term 2026 (AY 2025–26)';
+    document.getElementById('sub').textContent = 'Rota '+SEED.range.from+' → '+SEED.range.to+' · '+STATE.clients.length+' clients · payment, funding, money owed / credits · Summer Term 2026 (AY 2025–26)';
   }
 
   // event delegation
@@ -377,6 +429,27 @@
   });
 
   rowsEl.addEventListener('input', function(ev){
+    var cf = ev.target.closest('[data-cf]');
+    if(cf){
+      var ciF = parseInt(cf.getAttribute('data-ci'),10);
+      var field = cf.getAttribute('data-cf');
+      var client = STATE.clients[ciF];
+      if(!client || !field) return;
+      var raw = cf.value;
+      if(field === 'moneyOwed' || field === 'creditBalance'){
+        var trimmed = String(raw || '').trim().replace(/£/g, '').replace(/,/g, '');
+        if(trimmed === '') client[field] = '';
+        else {
+          var num = Number(trimmed);
+          client[field] = Number.isFinite(num) ? num : trimmed;
+        }
+      } else {
+        client[field] = raw;
+      }
+      client._dirty = true;
+      save();
+      return;
+    }
     var el = ev.target.closest('[data-f]');
     if(!el) return;
     var ci = parseInt(el.getAttribute('data-ci'),10);
@@ -413,11 +486,18 @@
     download('client_services_reviewed.json', JSON.stringify(clean,null,2), 'application/json');
   });
   document.getElementById('csvBtn').addEventListener('click', function(){
-    var rows = [['Client','Validated','Service','Duration_min','Day','Time_slot','Instructor','Venue','Note_area','Weeks']];
+    var rows = [['Client','Validated','Payment_method','Funding_by','Money_owed','Credits','Service','Duration_min','Day','Time_slot','Venue','Note_area','Weeks']];
     STATE.clients.forEach(function(c){
-      if(!c.sessions.length){ rows.push([c.name, c.validated?'YES':'NO','','','','','','','','']); return; }
+      if(!c.sessions.length){
+        rows.push([c.name, c.validated?'YES':'NO', c.paymentMethod||'', c.fundingBy||'', moneyFieldValue(c.moneyOwed), moneyFieldValue(c.creditBalance),'','','','','','','']);
+        return;
+      }
       c.sessions.forEach(function(s){
-        rows.push([c.name, c.validated?'YES':'NO', s.service, (slotMinutes(s.timeSlot)||''), s.day, s.timeSlot, s.instructor, s.venue, s.area, (s.weeks||'')]);
+        rows.push([
+          c.name, c.validated?'YES':'NO', c.paymentMethod||'', c.fundingBy||'',
+          moneyFieldValue(c.moneyOwed), moneyFieldValue(c.creditBalance),
+          s.service, (slotMinutes(s.timeSlot)||''), s.day, s.timeSlot, s.venue, s.area, (s.weeks||'')
+        ]);
       });
     });
     var csv = rows.map(function(r){ return r.map(function(x){ var v=String(x==null?'':x); return /[",\n]/.test(v)?('"'+v.replace(/"/g,'""')+'"'):v; }).join(','); }).join('\n');
@@ -443,6 +523,115 @@
   function getAdminClient(){
     try{ return (window.portalAdminGetSupabaseClient && window.portalAdminGetSupabaseClient()) || null; }catch(_){ return null; }
   }
+
+  function nameTokens(s){
+    return normName(s).split(' ').filter(Boolean);
+  }
+  function namesRoughMatch(a, b){
+    var na = normName(a), nb = normName(b);
+    if(!na || !nb) return false;
+    if(na === nb) return true;
+    if(na.indexOf(nb) >= 0 || nb.indexOf(na) >= 0) return true;
+    var ta = nameTokens(a), tb = nameTokens(b);
+    if(!ta.length || !tb.length) return false;
+    // same first token + shared last token start (Abodi Pa ≈ Aboodi Patel)
+    if(ta[0] === tb[0] || ta[0].slice(0,4) === tb[0].slice(0,4)){
+      var la = ta[ta.length-1], lb = tb[tb.length-1];
+      if(la && lb && (la === lb || la.indexOf(lb)===0 || lb.indexOf(la)===0)) return true;
+    }
+    return false;
+  }
+  function findClientIndexByDisplay(display){
+    var i;
+    for(i=0;i<STATE.clients.length;i++){
+      if(namesRoughMatch(STATE.clients[i].name, display)) return i;
+    }
+    return -1;
+  }
+  function fillIfEmpty(obj, key, value){
+    if(value == null || value === '') return false;
+    var cur = obj[key];
+    if(cur != null && String(cur).trim() !== '') return false;
+    obj[key] = value;
+    return true;
+  }
+
+  /** Pull funding / payment / open credits / unpaid invoices into empty fields. */
+  async function enrichFinanceFromPortal(){
+    var client = getAdminClient();
+    if(!client || typeof client.from !== 'function') return;
+    try{
+      var contactsRes = await client.from('portal_parent_contacts')
+        .select('contact_id, child_display, funding_label, payment_method_label')
+        .limit(5000);
+      if(contactsRes.error) throw contactsRes.error;
+      var contactByIdx = Object.create(null);
+      (contactsRes.data||[]).forEach(function(row){
+        var idx = findClientIndexByDisplay(row.child_display);
+        if(idx < 0) return;
+        contactByIdx[idx] = row;
+        var c = STATE.clients[idx];
+        fillIfEmpty(c, 'fundingBy', row.funding_label);
+        fillIfEmpty(c, 'paymentMethod', row.payment_method_label);
+        if(row.contact_id) c.contactId = c.contactId || row.contact_id;
+      });
+
+      var creditsRes = await client.from('portal_parent_family_credits')
+        .select('contact_id, participant_display, kind, status, amount_gbp')
+        .eq('status', 'open')
+        .limit(5000);
+      if(!creditsRes.error){
+        var creditSum = Object.create(null);
+        (creditsRes.data||[]).forEach(function(row){
+          if(String(row.kind||'') !== 'credit') return;
+          var amt = Number(row.amount_gbp);
+          if(!Number.isFinite(amt) || amt <= 0) return;
+          var idx = -1;
+          if(row.contact_id){
+            for(var i=0;i<STATE.clients.length;i++){
+              if(String(STATE.clients[i].contactId||'') === String(row.contact_id)){ idx = i; break; }
+            }
+          }
+          if(idx < 0) idx = findClientIndexByDisplay(row.participant_display);
+          if(idx < 0) return;
+          creditSum[idx] = (creditSum[idx] || 0) + amt;
+        });
+        Object.keys(creditSum).forEach(function(k){
+          fillIfEmpty(STATE.clients[k], 'creditBalance', Math.round(creditSum[k]*100)/100);
+        });
+      }
+
+      var invRes = await client.from('portal_parent_invoice_share')
+        .select('contact_id, amount_gbp, payment_status')
+        .limit(5000);
+      if(!invRes.error){
+        var owedSum = Object.create(null);
+        (invRes.data||[]).forEach(function(row){
+          var st = String(row.payment_status||'').toLowerCase();
+          if(st === 'paid' || st === 'cancelled' || st === 'void' || st === 'hidden') return;
+          var amt = Number(row.amount_gbp);
+          if(!Number.isFinite(amt) || amt <= 0) return;
+          var cid = String(row.contact_id||'');
+          if(!cid) return;
+          for(var i=0;i<STATE.clients.length;i++){
+            if(String(STATE.clients[i].contactId||'') === cid){
+              owedSum[i] = (owedSum[i] || 0) + amt;
+              break;
+            }
+          }
+        });
+        Object.keys(owedSum).forEach(function(k){
+          fillIfEmpty(STATE.clients[k], 'moneyOwed', Math.round(owedSum[k]*100)/100);
+        });
+      }
+
+      save();
+      render();
+    }catch(err){
+      console.warn('[csr] finance enrich', err);
+    }
+  }
+
   function buildPublishPayload(){
     var seen = Object.create(null);
     return STATE.clients.map(function(c){
@@ -499,6 +688,11 @@
   });
 
   render();
+  function tryEnrich(){
+    enrichFinanceFromPortal();
+  }
+  window.addEventListener('portal:supabase-ready', tryEnrich, { once:true });
+  setTimeout(tryEnrich, 1500);
 })();
 </script>
 </body>
