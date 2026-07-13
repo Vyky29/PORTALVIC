@@ -9275,6 +9275,9 @@
     .client-info-btn--sessions-overview .client-info-btn-hint{margin-top:-1px}
     .client-info-btn--support-plan .client-info-icon{color:#7c3aed}
     .client-info-btn--support-plan[aria-expanded="true"] .client-info-icon{color:#5b21b6}
+    .client-info-btn--swim-term-review .client-info-icon{color:#0e7490}
+    .client-info-btn--swim-term-review:hover .client-info-icon,
+    .client-info-btn--swim-term-review:focus-visible .client-info-icon{color:#0f766e}
     .isp-wrap{min-width:0}
     .isp-section{margin:14px 0;min-width:0}
     .isp-section__head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;min-width:0}

@@ -1475,12 +1475,16 @@ const LEVEL_DATA = {
       });
     }
 
-    function pickSwimmerName(name){
+    function pickSwimmerName(name, clientId){
       const input = document.getElementById("swimmerName");
       if(!input) return;
-      input.value = name;
-      rememberSwtermParticipant(name, "");
-      syncMyParticipantPressedState(name);
+      const nm = String(name || "").replace(/\s+/g, " ").trim();
+      input.value = nm;
+      const cid = clientId != null && String(clientId).trim()
+        ? String(clientId).trim()
+        : (parseDetailsFromUrl().clientId || readRememberedSwtermParticipant().clientId || "");
+      rememberSwtermParticipant(nm, cid);
+      syncMyParticipantPressedState(nm);
       try{ input.dispatchEvent(new Event("input", { bubbles: true })); }catch(_){}
       try{ input.dispatchEvent(new Event("change", { bubbles: true })); }catch(_){}
       try{ generateTermSummary(); }catch(_){}
@@ -1520,31 +1524,40 @@ const LEVEL_DATA = {
     }
 
     async function hydrateMyParticipantsPicker(){
+      const fromUrl = parseDetailsFromUrl();
+      const portalName = String(fromUrl.name || readRememberedSwtermParticipant().name || "").replace(/\s+/g, " ").trim();
       const stashed = readStashedMyParticipants();
-      if(stashed.length){
-        __swtermMyParticipants = stashed;
+      let seed = mergeParticipantNameLists(stashed, portalName ? [portalName] : []);
+      if(seed.length){
+        __swtermMyParticipants = seed;
         __swtermMyParticipantsPrefer = true;
-        renderMyParticipantsList(stashed);
+        renderMyParticipantsList(seed);
       }else{
         renderMyParticipantsList([]);
       }
+      if(portalName){
+        ensureParticipantNameInField();
+        syncMyParticipantPressedState(portalName);
+      }
       const instEl = document.getElementById("instructorName");
       const staffName = instEl ? String(instEl.value || "").trim() : "";
-      const fromRoster = await loadMyParticipantsFromRosterRows(staffName || parseDetailsFromUrl().instructor);
-      if(fromRoster.length){
-        __swtermMyParticipants = mergeParticipantNameLists(stashed, fromRoster);
+      const fromRoster = await loadMyParticipantsFromRosterRows(staffName || fromUrl.instructor);
+      if(fromRoster.length || seed.length){
+        __swtermMyParticipants = mergeParticipantNameLists(seed, fromRoster, portalName ? [portalName] : []);
         __swtermMyParticipantsPrefer = true;
         renderMyParticipantsList(__swtermMyParticipants);
         try{
           sessionStorage.setItem(SWTERM_MY_PARTICIPANTS_KEY, JSON.stringify(__swtermMyParticipants));
         }catch(_){}
-      }else if(!stashed.length){
+      }else{
         __swtermMyParticipantsPrefer = false;
         __swtermMyParticipants = null;
         const wrap = document.getElementById("swimmerMyListWrap");
         if(wrap) wrap.hidden = false;
         renderMyParticipantsList([]);
       }
+      const locked = ensureParticipantNameInField();
+      if(locked) syncMyParticipantPressedState(locked);
     }
 
     function wireSwimmerAutocomplete(){

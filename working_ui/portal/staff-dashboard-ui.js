@@ -4401,6 +4401,7 @@
       setClientInfoFormattedBody('clientGeneral', gen, 'No general information available.');
       setClientInfoFormattedBody('clientSpecialtyBody', '', 'No information for this programme.');
       renderClientServiceButtons([]);
+      syncClientSwimTermReviewButton(item);
       openSheet('clientSheet');
       const cs = document.getElementById('clientSheet');
       if(cs) cs.classList.toggle('client-sheet--roster-entry', !!item.directoryProfile);
@@ -4434,6 +4435,99 @@
       if(fn) fn();
     });
 
+    function portalStaffHasSwimmingTermReviewTool(){
+      try{
+        const cell = document.getElementById('topbarToolCellTermReview');
+        if(cell && !cell.hidden) return true;
+        const menu = document.getElementById('quickMenuStaffTermReview');
+        if(menu && !menu.hidden) return true;
+      }catch(_){}
+      return false;
+    }
+    function clientLooksEligibleForSwimmingTermReview(item){
+      if(!item) return false;
+      const bits = [
+        item.activity,
+        item.rosterService,
+        item.service,
+        item.name,
+      ];
+      try{
+        const acts = typeof resolveClientServiceActivities === 'function'
+          ? resolveClientServiceActivities(item)
+          : [];
+        (acts || []).forEach(function(a){ bits.push(a); });
+      }catch(_){}
+      const blob = bits.filter(Boolean).join(' ').toLowerCase();
+      if(!blob) return true;
+      if(/(climb|fitness|gym)/i.test(blob) && !/(aquatic|swim|pool|multi|day\s*cent|bespoke)/i.test(blob)){
+        return false;
+      }
+      return true;
+    }
+    function syncClientSwimTermReviewButton(item){
+      const row = document.getElementById('clientSwimTermReviewRow');
+      const btn = document.getElementById('clientBtnSwimTermReview');
+      if(!row && !btn) return;
+      const show = portalStaffHasSwimmingTermReviewTool()
+        && clientLooksEligibleForSwimmingTermReview(item || currentOpenClientItem);
+      if(row){
+        row.hidden = !show;
+        row.setAttribute('aria-hidden', show ? 'false' : 'true');
+      }
+      if(btn){
+        btn.hidden = !show;
+        btn.setAttribute('aria-hidden', show ? 'false' : 'true');
+      }
+    }
+    function buildSwtermreviewUrlForClient(item){
+      const base = 'swtermreview.html';
+      try{
+        const tu = new URL(base, window.location.href);
+        const nm = item && item.name ? String(item.name).trim() : '';
+        const cid = item && item.clientId ? String(item.clientId).trim() : '';
+        if(nm){
+          tu.searchParams.set('clientName', nm);
+          tu.searchParams.set('name', nm);
+          try{ sessionStorage.setItem('__portal_swterm_client_name_v1', nm); }catch(_){}
+        }
+        if(cid && cid !== 'available' && cid !== 'closed'){
+          tu.searchParams.set('clientId', cid);
+          try{ sessionStorage.setItem('__portal_swterm_client_id_v1', cid); }catch(_){}
+        }
+        try{
+          const staffNm = String((window.dashboardData && window.dashboardData.staffName) || '').trim();
+          if(staffNm) tu.searchParams.set('instructor', staffNm);
+        }catch(_){}
+        try{
+          const myNames = typeof portalCollectInstructorParticipantNamesForTermReview === 'function'
+            ? portalCollectInstructorParticipantNamesForTermReview()
+            : (typeof portalCollectTodayParticipantNames === 'function' ? portalCollectTodayParticipantNames() : []);
+          const merged = Array.isArray(myNames) ? myNames.slice() : [];
+          if(nm && !merged.some(function(n){ return String(n || '').toLowerCase() === nm.toLowerCase(); })){
+            merged.push(nm);
+          }
+          if(merged.length){
+            sessionStorage.setItem('__portal_swterm_my_participants_v1', JSON.stringify(merged));
+          }
+        }catch(_){}
+        return tu.pathname + tu.search + tu.hash;
+      }catch(_){
+        return base;
+      }
+    }
+    function openClientSwimmingTermReview(){
+      const item = currentOpenClientItem;
+      if(!item || item.kind !== 'client') return;
+      const target = buildSwtermreviewUrlForClient(item);
+      if(typeof portalQuickMenuNavigate === 'function'){
+        portalQuickMenuNavigate(target);
+      }else{
+        window.location.assign(target);
+      }
+    }
+    try{ window.syncClientSwimTermReviewButton = syncClientSwimTermReviewButton; }catch(_){}
+
     const clientBtnGeneral = document.getElementById('clientBtnGeneral');
     if(clientBtnGeneral){
       clientBtnGeneral.addEventListener('click', () => {
@@ -4461,6 +4555,9 @@
         openClientSessionsOverviewFullscreen();
       });
     }
+    document.getElementById('clientBtnSwimTermReview')?.addEventListener('click', function(){
+      openClientSwimmingTermReview();
+    });
     document.getElementById('clientSupportPlanSheetBack')?.addEventListener('click', closeClientSupportPlanSheet);
     const clientBtnSupportPlan = document.getElementById('clientBtnSupportPlan');
     if(clientBtnSupportPlan){
@@ -5282,31 +5379,24 @@
             let target = u;
             try{
               const item = typeof currentOpenClientItem !== 'undefined' ? currentOpenClientItem : null;
-              const nm = item && item.name ? String(item.name).trim() : '';
-              const cid = item && item.clientId ? String(item.clientId).trim() : '';
-              const tu = new URL(String(target || ''), window.location.href);
-              if(nm){
-                tu.searchParams.set('clientName', nm);
-                tu.searchParams.set('name', nm);
-                try{ sessionStorage.setItem('__portal_swterm_client_name_v1', nm); }catch(_){}
+              if(item && item.kind === 'client' && typeof buildSwtermreviewUrlForClient === 'function'){
+                target = buildSwtermreviewUrlForClient(item);
+              }else{
+                const tu = new URL(String(target || ''), window.location.href);
+                try{
+                  const myNames = typeof portalCollectInstructorParticipantNamesForTermReview === 'function'
+                    ? portalCollectInstructorParticipantNamesForTermReview()
+                    : (typeof portalCollectTodayParticipantNames === 'function' ? portalCollectTodayParticipantNames() : []);
+                  if(myNames && myNames.length){
+                    sessionStorage.setItem('__portal_swterm_my_participants_v1', JSON.stringify(myNames));
+                  }
+                }catch(_){}
+                try{
+                  const staffNm = String((window.dashboardData && window.dashboardData.staffName) || '').trim();
+                  if(staffNm) tu.searchParams.set('instructor', staffNm);
+                }catch(_){}
+                target = tu.pathname + tu.search + tu.hash;
               }
-              if(cid && cid !== 'available' && cid !== 'closed'){
-                tu.searchParams.set('clientId', cid);
-                try{ sessionStorage.setItem('__portal_swterm_client_id_v1', cid); }catch(_){}
-              }
-              try{
-                const myNames = typeof portalCollectInstructorParticipantNamesForTermReview === 'function'
-                  ? portalCollectInstructorParticipantNamesForTermReview()
-                  : (typeof portalCollectTodayParticipantNames === 'function' ? portalCollectTodayParticipantNames() : []);
-                if(myNames && myNames.length){
-                  sessionStorage.setItem('__portal_swterm_my_participants_v1', JSON.stringify(myNames));
-                }
-              }catch(_){}
-              try{
-                const staffNm = String((window.dashboardData && window.dashboardData.staffName) || '').trim();
-                if(staffNm) tu.searchParams.set('instructor', staffNm);
-              }catch(_){}
-              target = tu.pathname + tu.search + tu.hash;
             }catch(_){}
             portalQuickMenuNavigate(target);
             return;

@@ -527,6 +527,12 @@
 
     global.__PORTAL_TOPBAR_SIX_ICON_GRID__ = !!profile.sixIcon;
     global.__PORTAL_TOPBAR_LEAD_EXTRAS__ = !!profile.leadExtras;
+
+    try {
+      if (typeof global.syncClientSwimTermReviewButton === "function") {
+        global.syncClientSwimTermReviewButton();
+      }
+    } catch (_) {}
   }
 
   function applyCeoStaffTopbarTools() {
