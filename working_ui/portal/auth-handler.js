@@ -55,7 +55,8 @@ function portalEmergencyRedirectUrl(loginEmail) {
   const em = resolveCorporateAuthEmail(String(loginEmail || "").trim()).toLowerCase();
   if (!em) return null;
   if (PORTAL_EXECUTIVE_AUTH_EMAILS.indexOf(em) >= 0) {
-    return portalPublishedAdminUrl();
+    /* Chooser first — Admin is one option, not the only landing. */
+    return portalPublishedChooseUrl();
   }
   if (
     em === "johnnyosti37@gmail.com" ||
@@ -488,19 +489,21 @@ export function portalIsLeadDashboardShellPage() {
 }
 
 /**
- * Admin / CEO / manager: pick Staff, Lead, or Admin after sign-in.
- * Executive trio skip chooser — land on Admin portal directly.
+ * Admin / CEO / manager: pick Staff, Admin, or CEO after sign-in.
+ * Executives (Victor / Javi / Raúl) and ops admins also see the chooser —
+ * they no longer land on Admin automatically.
+ * Programme leads without admin access stay on Staff (no chooser).
  * @param {Record<string, unknown> | null | undefined} profile
  * @param {string} authEmail
  */
 export function portalShouldShowPortalChooser(profile, authEmail) {
   if (!profile) return false;
-  if (portalIsExecutiveLeadHomeUser(profile, authEmail)) return false;
-  if (portalIsProgrammeLeadUser(profile, authEmail)) return false;
-  if (portalIsOperationsAdminUser(profile, authEmail)) return false;
+  if (portalCanAccessCeoDashboard(profile, authEmail)) return true;
+  if (portalIsAdminHomeExecutiveUser(profile, authEmail)) return true;
+  if (portalIsOperationsAdminUser(profile, authEmail)) return true;
+  if (portalCanAccessAdminDashboard(profile, authEmail)) return true;
   const eff = portalInferEffectiveRole(profile, authEmail);
   const staff = String(profile.staff_role || "").toLowerCase();
-  if (portalCanAccessAdminDashboard(profile, authEmail)) return true;
   if (eff === "ceo" || eff === "admin") return true;
   if (staff === "manager" || staff === "admin") return true;
   return false;

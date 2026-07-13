@@ -39,7 +39,6 @@ const EXCLUDE_FILES = new Set([
   "ceo_dashboard.html",
   "company_insights.html",
   "office_portal.html",
-  "portal_choose.html",
   "roster_term_master_review.html",
   "parent_portal.html",
   "parent_reenrolment.html",
@@ -122,8 +121,9 @@ function writeStaffAppConfig(destDir) {
     global.PORTAL_ADMIN_DASHBOARD_URL = adminOrigin + "/admin_dashboard.html";
     global.PORTAL_CEO_DASHBOARD_URL = adminOrigin + "/ceo_dashboard.html";
     global.PORTAL_OFFICE_DASHBOARD_URL = adminOrigin + "/office_portal.html";
-    global.PORTAL_CHOOSE_URL = adminOrigin + "/portal_choose.html";
   }
+  /* Chooser stays on this origin so Staff can open without leaving the installed app. */
+  global.PORTAL_CHOOSE_URL = "portal_choose.html";
   global.PORTAL_STAFF_DASHBOARD_URL = "staff_dashboard.html";
   global.PORTAL_LEAD_DASHBOARD_URL = "staff_dashboard.html";
   global.CLUBSENSATIONAL_STAFF_ORIGIN = "${STAFF_ORIGIN}";
@@ -142,13 +142,13 @@ function writeStaffAppConfig(destDir) {
 
 function injectStaffConfigScript(htmlPath) {
   const tag =
-    '<script src="/staff-app-config.js?v=20260614-clubsensational-staff"></script>\n  ';
+    '<script src="/staff-app-config.js?v=20260713-ceo-chooser"></script>\n  ';
   const bootTag =
     '<script src="/portal/staff-app-boot.js?v=20260624-staff-boot8"></script>\n  ';
   const hintTag =
     '<script src="/portal/staff-app-install-hint.js?v=20260624-staff-install"></script>\n  ';
   let src = readFileSync(htmlPath, "utf8");
-  if (src.includes("staff-app-config.js")) return;
+  if (/src=["']\/staff-app-config\.js/i.test(src)) return;
   const isLogin = /login\.html$/i.test(htmlPath);
   const inject = isLogin ? tag + bootTag + hintTag : tag;
   if (src.includes('portal_auth_page_gate.js')) {
@@ -183,7 +183,6 @@ function writeAdminRedirectStubs(destDir) {
     "admin_dashboard.html",
     "ceo_dashboard.html",
     "office_portal.html",
-    "portal_choose.html",
   ];
   pages.forEach(function (page) {
     writeRedirectStub(destDir, page, ADMIN_ORIGIN + "/" + page, "clubSENsational — Admin portal");
@@ -227,6 +226,7 @@ writeAdminRedirectStubs(OUT);
 writeFamilyPortalRedirectStubs(OUT);
 injectStaffConfigScript(join(OUT, "login.html"));
 injectStaffConfigScript(join(OUT, "staff_dashboard.html"));
+injectStaffConfigScript(join(OUT, "portal_choose.html"));
 
 patchHtml(join(OUT, "login.html"), [
   [
