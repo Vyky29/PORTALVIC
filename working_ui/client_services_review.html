@@ -363,6 +363,7 @@
     { value: 'hf_adult', label: 'Hammersmith & Fulham · Adult' },
     { value: 'kensington_chelsea', label: 'Kensington & Chelsea' },
     { value: 'westminster', label: 'Westminster' },
+    { value: 'brent', label: 'Brent' },
     { value: 'nhs_north_west', label: 'NHS North West' },
     { value: 'nhs_ila', label: 'NHS ILA' }
   ];
@@ -414,6 +415,12 @@
       ]
     },
     westminster: {
+      rule: 'Pays monthly in arrears. Need draft invoice for the year and the term; real invoice for the month they will pay.',
+      opts: [
+        'LA invoice (BACS) · monthly arrears · draft year + term · real monthly'
+      ]
+    },
+    brent: {
       rule: 'Pays monthly in arrears. Need draft invoice for the year and the term; real invoice for the month they will pay.',
       opts: [
         'LA invoice (BACS) · monthly arrears · draft year + term · real monthly'
@@ -582,6 +589,12 @@
         funderDetail:'westminster',
         paymentMethod: normalizeLaPayLabel(method, 'westminster')
       };
+    } else if(/\bbrent\b/i.test(fund+' '+parent)){
+      out = {
+        fundingSource:'la_nhs',
+        funderDetail:'brent',
+        paymentMethod: normalizeLaPayLabel(method, 'brent')
+      };
     } else if(/local authority\s*·\s*ealing|\bealing\b/i.test(fund+' '+parent)){
       var eAdult = age === 'adult';
       var eCode = eAdult ? 'ealing_adult' : 'ealing_children';
@@ -657,6 +670,10 @@
     else if(/westminster|webminster/.test(blob)){
       client.fundingSource='la_nhs';
       client.funderDetail = 'westminster';
+    }
+    else if(/\bbrent\b/.test(blob)){
+      client.fundingSource='la_nhs';
+      client.funderDetail = 'brent';
     }
     else if(/ealing/.test(blob)){
       client.fundingSource='la_nhs';
@@ -928,7 +945,7 @@
             '<div class="client-finance__row client-finance__funder"'+(isLa?'':' hidden')+'>'+
               '<label for="cf-funder-'+ci+'">LA / NHS funder</label>'+
               '<select id="cf-funder-'+ci+'" data-cf="funderDetail" data-ci="'+ci+'"'+(isLa?'':' disabled')+'>'+
-                selectOptsHtml(FUNDER_DETAIL_OPTS, client.funderDetail, '— Ealing / H&amp;F / RBKC / Westminster / NHS / Parent DP —')+
+                selectOptsHtml(FUNDER_DETAIL_OPTS, client.funderDetail, '— Ealing / H&amp;F / RBKC / Westminster / Brent / NHS / Parent DP —')+
               '</select>'+
             '</div>'+
             (rule ? '<p class="client-finance__rule">'+esc(rule)+'</p>' : '')+
