@@ -12,7 +12,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260709-absent-server-green';
+    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260713-late-pay-hold';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -70,7 +70,8 @@
             feedbackDone: !!v.feedbackDone,
             incident: !!v.incident,
             absent: !!v.absent,
-            cancelled: !!v.cancelled
+            cancelled: !!v.cancelled,
+            feedbackLate: !!v.feedbackLate
           };
         });
       }catch(e){}
@@ -1515,6 +1516,9 @@
           dashboardData.portalServerOwnFeedbackKeys = new Set(keys.ownFeedbackKeys || []);
           dashboardData.portalServerOwnFeedbackPortalKeys = new Set(keys.ownFeedbackPortalKeys || []);
           dashboardData.portalPerStaffOwnFeedbackOnlyKeys = new Set(perStaffOwnKeys);
+          dashboardData.portalLateFeedbackDates = new Set(keys.lateFeedbackDates || []);
+          dashboardData.portalLatePayClearedDates = new Set(keys.latePayClearedDates || []);
+          dashboardData.portalLateFeedbackKeys = new Set(keys.lateFeedbackKeys || []);
         }
         const mergeFanOutOpts = {
           rosterSessionKeys: rosterKeys,

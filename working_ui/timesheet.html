@@ -79,6 +79,8 @@
     .th-mob{display:none}
     tbody tr.day-row--paid td{background:#eef9f1 !important}
     tbody tr.day-row--pending td{background:#fff5e8 !important}
+    tbody tr.day-row--late td{background:#111 !important;color:#fff}
+    tbody tr.day-row--late td .muted{color:rgba(255,255,255,.72)}
     tbody tr.day-row--off td{background:#f3f4f6 !important;color:#4b5563}
     .actions{padding:0 16px 16px}
     .btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;background:#0b2a5b;color:#fff}
@@ -122,6 +124,7 @@
     .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid rgba(11,42,91,.12);flex-shrink:0}
     .legend .swatch-paid{background:#eef9f1}
     .legend .swatch-pending{background:#fff5e8}
+    .legend .swatch-late{background:#111;border-color:#111}
     /* Manual (part-time / extra hours) entry */
     .manual-entry{padding:4px 16px 14px}
     .manual-entry__hint{margin:0 0 10px;color:#60758a;font-size:13px;line-height:1.45}
@@ -281,6 +284,7 @@
       <div class="legend" aria-hidden="false">
         <span><i class="swatch-paid" aria-hidden="true"></i> Green — feedback complete (paid now)</span>
         <span><i class="swatch-pending" aria-hidden="true"></i> Orange — pending feedback (not in payable total yet)</span>
+        <span><i class="swatch-late" aria-hidden="true"></i> Black — feedback submitted late (held until admin validates)</span>
       </div>
       <div class="status-note" id="statusNote">Loading shifts...</div>
       <div class="manual-entry" id="manualForm" hidden>
@@ -333,6 +337,7 @@
             <tr class="sum-row"><td colspan="3" class="sum-label">Hours ready to pay now (green):</td><td class="num" id="totalHours">0.00</td><td></td></tr>
             <tr class="sum-row"><td colspan="4" class="sum-label">Ready to pay now (GBP):</td><td class="num" id="totalCost">0.00</td></tr>
             <tr class="sum-row"><td colspan="4" class="sum-label">Pending until feedback is completed (GBP):</td><td class="num" id="pendingCost">0.00</td></tr>
+            <tr class="sum-row"><td colspan="4" class="sum-label">Held — feedback submitted late (GBP):</td><td class="num" id="lateHoldCost">0.00</td></tr>
             <tr class="sum-row"><td colspan="4" class="sum-label">Total if all feedback is completed (GBP):</td><td class="num" id="potentialCost">0.00</td></tr>
           </tfoot>
         </table>
@@ -480,11 +485,14 @@
       entries: [],
       payableEntries: [],
       pendingEntries: [],
+      lateHoldEntries: [],
+      lateFeedbackDates: [],
       totalHours: 0,
       potentialHours: 0,
       totalCost: 0,
       potentialCost: 0,
       pendingCost: 0,
+      lateHoldCost: 0,
       ghostReadOnly: false,
       ghostHandoff: null
     };
@@ -1369,7 +1377,7 @@
       const memory = parseReviewMap();
       try {
         const mod = await withTimeout(
-          import("/portal/supabase-client.js?v=20260712-timesheet-period"),
+          import("/portal/supabase-client.js?v=20260713-late-pay-hold"),
           8000,
           "supabase_client_import"
         );
@@ -1401,6 +1409,9 @@
           perStaffOwnFeedbackOnlyKeys: perStaffOwnKeys,
           ownFeedbackKeys: keys.ownFeedbackKeys || [],
         });
+        state.lateFeedbackDates = Array.isArray(keys.lateFeedbackDates)
+          ? keys.lateFeedbackDates.slice()
+          : [];
         const overrides = Array.isArray(state.scheduleOverrides)
           ? state.scheduleOverrides
           : await fetchScheduleOverridesForPeriod(supabase, state.periodStart, state.periodEnd);
@@ -1431,18 +1442,27 @@
         });
       }
       state.entries.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+      const lateDateSet = new Set(
+        (Array.isArray(state.lateFeedbackDates) ? state.lateFeedbackDates : [])
+          .map((d) => String(d || "").slice(0, 10))
+          .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))
+      );
       state.entries.forEach((e) => {
         if (e.dayOff) {
           e.rate = 0;
+          e.lateHold = false;
           return;
         }
         const flat = serviceFlatRate(e.service || e.role);
         if (e.rate == null) {
           e.rate = flat != null ? flat : rateForRole(e.role);
         }
+        const iso = String(e.date || "").slice(0, 10);
+        e.lateHold = !!(e.completed && lateDateSet.has(iso));
       });
-      state.payableEntries = state.entries.filter((e) => e.completed && !e.dayOff);
+      state.payableEntries = state.entries.filter((e) => e.completed && !e.dayOff && !e.lateHold);
       state.pendingEntries = state.entries.filter((e) => !e.completed && !e.dayOff);
+      state.lateHoldEntries = state.entries.filter((e) => e.lateHold && !e.dayOff);
       state.totalHours = Number(state.payableEntries.reduce((acc, e) => acc + e.hours, 0).toFixed(2));
       state.potentialHours = Number(
         state.entries.filter((e) => !e.dayOff).reduce((acc, e) => acc + e.hours, 0).toFixed(2)
@@ -1451,7 +1471,12 @@
       state.potentialCost = Number(
         state.entries.filter((e) => !e.dayOff).reduce((acc, e) => acc + e.hours * Number(e.rate || 0), 0).toFixed(2)
       );
-      state.pendingCost = Number((state.potentialCost - state.totalCost).toFixed(2));
+      state.lateHoldCost = Number(
+        state.lateHoldEntries.reduce((acc, e) => acc + e.hours * Number(e.rate || 0), 0).toFixed(2)
+      );
+      state.pendingCost = Number(
+        (state.potentialCost - state.totalCost - state.lateHoldCost).toFixed(2)
+      );
       state.effectiveRate = state.totalHours > 0
         ? Number((state.totalCost / state.totalHours).toFixed(2))
         : (state.primaryRate != null ? state.primaryRate : Number(state.hourlyRate || 0));
@@ -2453,9 +2478,19 @@
         if (note) note.textContent = "No roster shifts detected for this period.";
       } else {
         body.innerHTML = state.entries.map((e) => {
-          const daily = e.dayOff ? 0 : e.hours * Number(e.rate != null ? e.rate : state.hourlyRate);
-          const cls = e.dayOff ? "day-row--off" : (e.completed ? "day-row--paid" : "day-row--pending");
-          const statusNote = e.dayOff ? "day off" : (e.completed ? "completed" : "pending feedback");
+          const daily = e.dayOff || e.lateHold
+            ? 0
+            : e.hours * Number(e.rate != null ? e.rate : state.hourlyRate);
+          const cls = e.dayOff
+            ? "day-row--off"
+            : (e.lateHold
+              ? "day-row--late"
+              : (e.completed ? "day-row--paid" : "day-row--pending"));
+          const statusNote = e.dayOff
+            ? "day off"
+            : (e.lateHold
+              ? "submitted late — awaiting admin"
+              : (e.completed ? "completed" : "pending feedback"));
           return `<tr class="${cls}">
             <td>${esc(displayDateFancy(e.date))}</td>
             <td>${esc(e.day)} · ${statusNote}</td>
@@ -2466,10 +2501,16 @@
         }).join("");
         if (note) {
           const offN = state.entries.filter((e) => e.dayOff).length;
+          const lateN = (state.lateHoldEntries || []).length;
           const offBit = offN ? ` ${offN} day off(s) shown in grey (not paid).` : "";
+          const lateBit = lateN
+            ? ` ${lateN} day(s) submitted late are shown in black and held from pay until an admin validates them.`
+            : "";
           note.textContent = state.pendingEntries.length
-            ? `${state.pendingEntries.length} day(s) pending feedback are shown in orange and are excluded from payable total.${offBit}`
-            : `All shift days are completed (green) and included in payable total.${offBit}`;
+            ? `${state.pendingEntries.length} day(s) pending feedback are shown in orange and are excluded from payable total.${lateBit}${offBit}`
+            : (lateN
+              ? `Feedback is complete; late days are held (black) until admin validates.${offBit}`
+              : `All shift days are completed (green) and included in payable total.${offBit}`);
         }
       }
       document.getElementById("totalHours").textContent = money(state.totalHours);
@@ -2478,6 +2519,8 @@
       document.getElementById("roleLabel").textContent = state.roleLabel;
       document.getElementById("totalCost").textContent = money(state.totalCost);
       document.getElementById("pendingCost").textContent = money(state.pendingCost);
+      const lateHoldEl = document.getElementById("lateHoldCost");
+      if (lateHoldEl) lateHoldEl.textContent = money(state.lateHoldCost || 0);
       document.getElementById("potentialCost").textContent = money(state.potentialCost);
     }
 
@@ -3028,6 +3071,8 @@
           day: e.day,
           hours: e.hours,
           completed: e.completed,
+          late_hold: !!e.lateHold,
+          feedback_late: !!e.lateHold,
           note: e.note || "",
           manual: !!state.manual,
           service: e.service || "",

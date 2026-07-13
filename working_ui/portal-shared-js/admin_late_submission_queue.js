@@ -285,10 +285,47 @@
 
   function isLateFeedbackRow(row) {
     if (!row || !row.session_date || !row.created_at) return false;
-    var doneDay = londonIsoDay(row.created_at);
-    if (!doneDay) return false;
-    return doneDay > String(row.session_date).slice(0, 10);
+    var sess = String(row.session_date).slice(0, 10);
+    var parts = null;
+    try {
+      var d = new Date(row.created_at);
+      if (isNaN(d.getTime())) return false;
+      var fmt = new Intl.DateTimeFormat("en-GB", {
+        timeZone: LONDON_TZ,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      });
+      var fp = fmt.formatToParts(d);
+      var get = function (t) {
+        for (var i = 0; i < fp.length; i++) {
+          if (fp[i].type === t) return fp[i].value;
+        }
+        return "";
+      };
+      var hour = Number(get("hour"));
+      if (hour === 24) hour = 0;
+      parts = {
+        date: get("year") + "-" + get("month") + "-" + get("day"),
+        hour: hour,
+        minute: Number(get("minute") || 0) || 0,
+        second: Number(get("second") || 0) || 0,
+      };
+    } catch (_) {
+      return false;
+    }
+    if (!parts || !parts.date) return false;
+    if (parts.date > sess) return true;
+    if (parts.date < sess) return false;
+    var mins = parts.hour * 60 + parts.minute + (parts.second > 0 ? 1 : 0);
+    return mins > 21 * 60;
   }
+
+  var CLEAR_TABLE = "portal_late_feedback_pay_clearances";
 
   var DOW_LONG = [
     "Monday",
@@ -481,6 +518,51 @@
           .filter(function (r) {
             return days.indexOf(r._completed_day) >= 0;
           });
+        var clearedMap = Object.create(null);
+        try {
+          var staffIds = [];
+          var seenStaff = Object.create(null);
+          rows.forEach(function (r) {
+            var uid = String(r.submitted_by_user_id || "").trim();
+            if (uid && !seenStaff[uid]) {
+              seenStaff[uid] = true;
+              staffIds.push(uid);
+            }
+          });
+          var sessDates = [];
+          var seenSess = Object.create(null);
+          rows.forEach(function (r) {
+            var sd = String(r.session_date || "").slice(0, 10);
+            if (/^\d{4}-\d{2}-\d{2}$/.test(sd) && !seenSess[sd]) {
+              seenSess[sd] = true;
+              sessDates.push(sd);
+            }
+          });
+          if (staffIds.length && sessDates.length) {
+            var clr = await c
+              .from(CLEAR_TABLE)
+              .select("staff_user_id,session_date,cleared_at")
+              .in("staff_user_id", staffIds)
+              .in("session_date", sessDates);
+            if (!clr.error && Array.isArray(clr.data)) {
+              clr.data.forEach(function (row) {
+                var k =
+                  String(row.staff_user_id || "").trim() +
+                  "|" +
+                  String(row.session_date || "").slice(0, 10);
+                clearedMap[k] = row;
+              });
+            }
+          }
+        } catch (_) {}
+        rows.forEach(function (r) {
+          var k =
+            String(r.submitted_by_user_id || "").trim() +
+            "|" +
+            String(r.session_date || "").slice(0, 10);
+          r._pay_cleared = !!clearedMap[k];
+          r._clear_key = k;
+        });
         return {
           ok: true,
           rows: rows,
@@ -640,7 +722,7 @@
           "<strong>No late feedback on " +
           _esc(formatSessionDate(selectedDay) || "this day") +
           "</strong>" +
-          "<p style=\"margin:8px 0 0\">Late = completed on a London calendar day <em>after</em> the session date. Pick another day above, or another week.</p></div>"
+          "<p style=\"margin:8px 0 0\">Late = completed after the session London day, or same day after 21:00. Pick another day above, or another week.</p></div>"
         );
       }
       var body = rows
@@ -648,6 +730,16 @@
           var svc = _esc(r.service || "—");
           var dateLine = _esc(formatSessionDate(r.session_date));
           var timeLine = _esc(r._session_time || "—");
+          var cleared = !!r._pay_cleared;
+          var uid = _escAttr(String(r.submitted_by_user_id || "").trim());
+          var sdate = _escAttr(String(r.session_date || "").slice(0, 10));
+          var action = cleared
+            ? '<span class="chip chip--ok">Pay released</span>'
+            : '<button type="button" class="btn btn--pri btn--sm" data-late-release-pay="' +
+              uid +
+              '" data-late-release-date="' +
+              sdate +
+              '">Release for pay</button>';
           return (
             "<tr>" +
             '<td class="portal-late-fb-staff"><div class="portal-late-fb-staff__name">' +
@@ -671,6 +763,9 @@
             '<td class="portal-late-fb-done">' +
             _esc(r._completed_when || formatWhen(r.created_at)) +
             "</td>" +
+            '<td class="portal-late-fb-pay">' +
+            action +
+            "</td>" +
             "</tr>"
           );
         })
@@ -683,10 +778,39 @@
         '<th scope="col">Service / Date / Time</th>' +
         '<th scope="col">Participant</th>' +
         '<th scope="col">Completed feedback</th>' +
+        '<th scope="col">Timesheet pay</th>' +
         "</tr></thead><tbody>" +
         body +
         "</tbody></table></div>"
       );
+    },
+
+    releaseLateDayForPay: async function (staffUserId, sessionDate, note) {
+      var c = await waitForClient();
+      if (!c) return { ok: false, error: "not_signed_in" };
+      var uid = String(staffUserId || "").trim();
+      var sdate = String(sessionDate || "").slice(0, 10);
+      if (!uid || !/^\d{4}-\d{2}-\d{2}$/.test(sdate)) {
+        return { ok: false, error: "bad_args" };
+      }
+      var adminUid = authUid() || null;
+      try {
+        var res = await c.from(CLEAR_TABLE).upsert(
+          [
+            {
+              staff_user_id: uid,
+              session_date: sdate,
+              cleared_by_user_id: adminUid,
+              note: note ? String(note).slice(0, 500) : null,
+            },
+          ],
+          { onConflict: "staff_user_id,session_date" }
+        );
+        if (res.error) return { ok: false, error: res.error.message || "upsert_failed" };
+        return { ok: true };
+      } catch (e) {
+        return { ok: false, error: String(e && e.message ? e.message : e) };
+      }
     },
 
     renderRowsHtml: function (rows) {
@@ -909,6 +1033,33 @@
               _weekState.selectedDay = day;
               paintDayView();
             }
+            return;
+          }
+          var releaseBtn = ev.target.closest("[data-late-release-pay]");
+          if (releaseBtn && clickRoot.contains(releaseBtn)) {
+            var staffUid = releaseBtn.getAttribute("data-late-release-pay");
+            var sessDate = releaseBtn.getAttribute("data-late-release-date");
+            if (!staffUid || !sessDate) return;
+            if (
+              !window.confirm(
+                "Release this late day for timesheet pay?\n\nStaff day: " +
+                  sessDate +
+                  "\n\nNo penalty will be applied. The day will turn green/payable on their timesheet."
+              )
+            ) {
+              return;
+            }
+            releaseBtn.disabled = true;
+            var released = await self.releaseLateDayForPay(staffUid, sessDate, "");
+            releaseBtn.disabled = false;
+            if (!released.ok) {
+              if (_toast) _toast("Could not release: " + (released.error || "error"));
+              else if (window.alert)
+                window.alert("Could not release: " + (released.error || "error"));
+              return;
+            }
+            if (_toast) _toast("Released for pay — timesheet can include that day.");
+            await reloadWeek(_weekState.monday, _weekState.selectedDay);
             return;
           }
           var approveBtn = ev.target.closest("[data-late-approve]");

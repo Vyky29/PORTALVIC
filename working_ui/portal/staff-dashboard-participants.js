@@ -1240,6 +1240,32 @@
         return '<span class="portal-session-slot-chip portal-session-slot-chip--cancelled" aria-label="Cancelled"><span>Cancelled</span></span>';
       }
       if(r.feedbackDone){
+        let late = !!r.feedbackLate;
+        if(!late){
+          try{
+            const mem = typeof getSessionReviewRecord === 'function' ? (getSessionReviewRecord(item) || {}) : {};
+            if(mem.feedbackLate) late = true;
+          }catch(_){}
+        }
+        if(!late){
+          try{
+            const lateKeys = dashboardData && dashboardData.portalLateFeedbackKeys;
+            if(lateKeys && lateKeys.has(String(item.sessionKey || '').trim())) late = true;
+            if(!late && lateKeys && typeof portalSessionReviewKeyAliases === 'function'){
+              const aliases = portalSessionReviewKeyAliases(item) || [];
+              for(let i = 0; i < aliases.length; i++){
+                if(lateKeys.has(String(aliases[i] || '').trim())){ late = true; break; }
+              }
+            }
+            if(!late && dashboardData && dashboardData.portalLateFeedbackDates){
+              const iso = String(item.sessionKey || '').split('|')[0].trim();
+              if(dashboardData.portalLateFeedbackDates.has(iso)) late = true;
+            }
+          }catch(_){}
+        }
+        if(late){
+          return '<span class="portal-session-slot-chip portal-session-slot-chip--submitted-late" aria-label="Feedback submitted late"><span>Submitted (Late)</span></span>';
+        }
         return '<span class="portal-session-slot-chip portal-session-slot-chip--submitted" aria-label="Feedback submitted"><span>Submitted</span></span>';
       }
       try{

@@ -254,11 +254,16 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
     cancellationKeys: [],
     absentKeys: [],
     quickFeedbackDoneKeys: [],
+    lateFeedbackKeys: [],
+    lateFeedbackDates: [],
+    latePayClearedDates: [],
   };
   if (!supabase || !userId) return empty;
   const since = new Date();
   since.setDate(since.getDate() - 150);
   const sinceStr = since.toISOString().slice(0, 10);
+  const fbSelect =
+    "portal_session_key, attendance, client_name, session_date, service, completed_by_name, created_at";
 
   const rawRoster = opts && Array.isArray(opts.rosterSessionKeys) ? opts.rosterSessionKeys : [];
   const rosterSessionKeys = portalExpandRosterKeysForSharedFeedbackLookup(
@@ -274,10 +279,11 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
   ].slice(0, 90);
   const sharedUnitKeys = portalSharedFeedbackUnitKeys(rosterSessionKeys).slice(0, 400);
 
-  const [fb, inc, can, fbPeerShared, fbSharedRpc, quickMarks, quickMarksPeer, fbCatchUp] = await Promise.all([
+  const [fb, inc, can, fbPeerShared, fbSharedRpc, quickMarks, quickMarksPeer, fbCatchUp, payClear] =
+    await Promise.all([
     supabase
       .from("session_feedback")
-      .select("portal_session_key, attendance, client_name, session_date, service, completed_by_name")
+      .select(fbSelect)
       .eq("submitted_by_user_id", userId)
       .not("portal_session_key", "is", null)
       .gte("session_date", sinceStr),
@@ -296,13 +302,13 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
     rosterSessionKeys.length && peerSessionDates.length
       ? supabase
           .from("session_feedback")
-          .select("portal_session_key, attendance, client_name, session_date, service, completed_by_name")
+          .select(fbSelect)
           .in("session_date", peerSessionDates)
           .not("portal_session_key", "is", null)
       : rosterSessionKeys.length
         ? supabase
             .from("session_feedback")
-            .select("portal_session_key, attendance, client_name, session_date, service, completed_by_name")
+            .select(fbSelect)
             .gte("session_date", sinceStr)
             .not("portal_session_key", "is", null)
         : Promise.resolve({ data: null, error: null }),
@@ -325,11 +331,16 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
     catchUpDates.length
       ? supabase
           .from("session_feedback")
-          .select("portal_session_key, attendance, client_name, session_date, service, completed_by_name")
+          .select(fbSelect)
           .eq("submitted_by_user_id", userId)
           .not("portal_session_key", "is", null)
           .in("session_date", catchUpDates)
       : Promise.resolve({ data: null, error: null }),
+    supabase
+      .from("portal_late_feedback_pay_clearances")
+      .select("session_date")
+      .eq("staff_user_id", userId)
+      .gte("session_date", sinceStr),
   ]);
 
   function portalFeedbackAttendanceIsAbsent(attendance) {
@@ -600,6 +611,52 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
     }
   }
 
+  const latePayClearedDates = [];
+  const clearedDateSet = new Set();
+  if (payClear && !payClear.error && Array.isArray(payClear.data)) {
+    for (const row of payClear.data) {
+      const d = String((row && row.session_date) || "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || clearedDateSet.has(d)) continue;
+      clearedDateSet.add(d);
+      latePayClearedDates.push(d);
+    }
+  }
+
+  const lateFeedbackKeys = [];
+  const lateFeedbackDates = [];
+  const seenLateKey = new Set();
+  const seenLateDate = new Set();
+  for (const r of ownRows) {
+    if (!r || typeof r !== "object") continue;
+    const sessDate = String(
+      /** @type {{ session_date?: string }} */ (r).session_date || ""
+    )
+      .trim()
+      .slice(0, 10);
+    if (!portalIsSessionFeedbackLate(sessDate, /** @type {{ created_at?: string }} */ (r).created_at)) {
+      continue;
+    }
+    if (clearedDateSet.has(sessDate)) continue;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(sessDate) && !seenLateDate.has(sessDate)) {
+      seenLateDate.add(sessDate);
+      lateFeedbackDates.push(sessDate);
+    }
+    const pk = String(
+      /** @type {{ portal_session_key?: string }} */ (r).portal_session_key || ""
+    ).trim();
+    if (pk && !seenLateKey.has(pk)) {
+      seenLateKey.add(pk);
+      lateFeedbackKeys.push(pk);
+    }
+    for (const rk of rosterSessionKeys) {
+      if (!portalFeedbackSubmittedKeyMatchesRosterKey(pk, rk, ownMatchOpts)) continue;
+      if (!seenLateKey.has(rk)) {
+        seenLateKey.add(rk);
+        lateFeedbackKeys.push(rk);
+      }
+    }
+  }
+
   return {
     feedbackKeys: feedbackMerged,
     ownFeedbackKeys,
@@ -609,6 +666,9 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
     cancellationKeys: dedupeKeys(can.data),
     absentKeys,
     quickFeedbackDoneKeys,
+    lateFeedbackKeys,
+    lateFeedbackDates,
+    latePayClearedDates,
   };
 }
 
@@ -1136,8 +1196,8 @@ export function portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedKeys, 
 
 /**
  * Merge server truth into the dashboard's in-memory review map (same object as localStorage mirror).
- * @param {Record<string, { feedbackDone?: boolean, incident?: boolean, absent?: boolean, cancelled?: boolean }>} memory
- * @param {{ feedbackKeys: string[], absentFeedbackKeys?: string[], incidentKeys: string[], cancellationKeys: string[], absentKeys?: string[], quickFeedbackDoneKeys?: string[] }} packs
+ * @param {Record<string, { feedbackDone?: boolean, incident?: boolean, absent?: boolean, cancelled?: boolean, feedbackLate?: boolean }>} memory
+ * @param {{ feedbackKeys: string[], absentFeedbackKeys?: string[], incidentKeys: string[], cancellationKeys: string[], absentKeys?: string[], quickFeedbackDoneKeys?: string[], lateFeedbackKeys?: string[] }} packs
  * @param {{ rosterSessionKeys?: string[], feedbackMergeRules?: unknown[] }} [opts]
  */
 export function portalMergeReviewKeysIntoMemoryMap(memory, packs, opts = {}) {
@@ -1146,6 +1206,7 @@ export function portalMergeReviewKeysIntoMemoryMap(memory, packs, opts = {}) {
     incident: false,
     absent: false,
     cancelled: false,
+    feedbackLate: false,
   });
   let changed = false;
   const absentFb = [...new Set(packs.absentFeedbackKeys || [])];
@@ -1193,6 +1254,28 @@ export function portalMergeReviewKeysIntoMemoryMap(memory, packs, opts = {}) {
     const prev = memory[k] || base();
     if (!prev.absent) {
       memory[k] = { ...prev, absent: true, feedbackDone: false };
+      changed = true;
+    }
+  }
+  const lateKeys = Array.isArray(packs.lateFeedbackKeys)
+    ? [...new Set(packs.lateFeedbackKeys)].map((k) => String(k || "").trim()).filter(Boolean)
+    : null;
+  if (lateKeys) {
+    const lateSet = new Set(lateKeys);
+    for (const k of lateKeys) {
+      const prev = memory[k] || base();
+      if (prev.absent) continue;
+      if (!prev.feedbackLate || !prev.feedbackDone) {
+        memory[k] = { ...prev, feedbackDone: true, feedbackLate: true };
+        changed = true;
+      }
+    }
+    // Clear stale late flags when admin released the day (or feedback was on time).
+    for (const k of Object.keys(memory)) {
+      const prev = memory[k];
+      if (!prev || !prev.feedbackLate) continue;
+      if (lateSet.has(k)) continue;
+      memory[k] = { ...prev, feedbackLate: false };
       changed = true;
     }
   }
@@ -1262,6 +1345,63 @@ export function portalMergeReviewKeysIntoMemoryMap(memory, packs, opts = {}) {
 function portalReviewKeyDateIso(rosterKey) {
   const d = String(rosterKey || "").split("|")[0].trim();
   return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : "";
+}
+
+/**
+ * London calendar date + clock from an ISO timestamp (feedback deadline uses Europe/London).
+ * @param {string|Date|null|undefined} isoOrDate
+ * @returns {{ date: string, hour: number, minute: number, second: number } | null}
+ */
+export function portalLondonDateTimeParts(isoOrDate) {
+  if (isoOrDate == null || isoOrDate === "") return null;
+  try {
+    const d = isoOrDate instanceof Date ? isoOrDate : new Date(isoOrDate);
+    if (isNaN(d.getTime())) return null;
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/London",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }).formatToParts(d);
+    const get = (t) => {
+      const hit = parts.find((p) => p.type === t);
+      return hit ? hit.value : "";
+    };
+    const y = get("year");
+    const m = get("month");
+    const day = get("day");
+    if (!y || !m || !day) return null;
+    let hour = Number(get("hour"));
+    if (hour === 24) hour = 0;
+    return {
+      date: `${y}-${m}-${day}`,
+      hour: Number.isFinite(hour) ? hour : 0,
+      minute: Number(get("minute") || 0) || 0,
+      second: Number(get("second") || 0) || 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Session feedback is late when completed after the session London day, or same day after 21:00.
+ * @param {string|null|undefined} sessionDate YYYY-MM-DD
+ * @param {string|Date|null|undefined} createdAt
+ */
+export function portalIsSessionFeedbackLate(sessionDate, createdAt) {
+  const sess = String(sessionDate || "").trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(sess) || createdAt == null || createdAt === "") return false;
+  const parts = portalLondonDateTimeParts(createdAt);
+  if (!parts || !parts.date) return false;
+  if (parts.date > sess) return true;
+  if (parts.date < sess) return false;
+  const mins = parts.hour * 60 + parts.minute + (parts.second > 0 ? 1 : 0);
+  return mins > 21 * 60;
 }
 
 /** London calendar date YYYY-MM-DD (staff feedback “today” boundary). */

@@ -5506,6 +5506,12 @@
       border:1px solid rgba(11,85,51,.45);
       box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 8px rgba(15,91,55,.22);
     }
+    .portal-session-slot-chip--submitted-late{
+      color:#fff;
+      background:#111;
+      border:1px solid rgba(255,255,255,.22);
+      box-shadow:0 0 0 1px rgba(255,255,255,.18) inset,0 2px 8px rgba(0,0,0,.35);
+    }
     .portal-session-slot-chip--absent{
       color:#fff;
       background:linear-gradient(145deg,#0d9488,#0f766e);
@@ -7480,6 +7486,10 @@
       0%,100%{box-shadow:0 0 0 1px rgba(217,83,79,.26),0 4px 14px rgba(217,83,79,.12);border-color:rgba(217,83,79,.4)}
       50%{box-shadow:0 0 0 2px rgba(217,83,79,.42),0 8px 20px rgba(217,83,79,.2);border-color:rgba(217,83,79,.54)}
     }
+    @keyframes termOvPulseLateSubmittedCell{
+      0%,100%{box-shadow:0 0 0 1px rgba(17,17,17,.34),0 4px 14px rgba(0,0,0,.16);border-color:rgba(17,17,17,.55)}
+      50%{box-shadow:0 0 0 2px rgba(0,0,0,.72),0 8px 22px rgba(0,0,0,.28);border-color:rgba(0,0,0,.88)}
+    }
     @keyframes termOvPulseShiftRemovedCell{
       0%,100%{box-shadow:0 0 0 2px rgba(185,28,28,.52),0 8px 22px rgba(185,28,28,.28);border-color:rgba(185,28,28,.72)}
       50%{box-shadow:0 0 0 3px rgba(220,38,38,.82),0 12px 28px rgba(220,38,38,.42);border-color:rgba(220,38,38,.92)}
@@ -7524,6 +7534,19 @@
     }
     .term-cal-day.term-cal-day--ov-pulse-day-off{
       animation:termOvPulseDayOffCell 1.6s ease-in-out infinite;
+    }
+    .term-cal-day.term-cal-day--ov-pulse-late-submitted,
+    .term-cal-day.term-feedback-complete.term-cal-day--ov-pulse-late-submitted,
+    .term-cal-day.term-cal-day--ov-pulse-makeup.term-cal-day--ov-pulse-late-submitted,
+    .term-cal-day.term-cal-day--ov-pulse-trial.term-cal-day--ov-pulse-late-submitted,
+    .term-cal-day.term-cal-day--ov-pulse-training.term-cal-day--ov-pulse-late-submitted,
+    .term-cal-day.term-cal-day--ov-pulse-shadowing.term-cal-day--ov-pulse-late-submitted,
+    .term-cal-day.term-cal-day--ov-pulse-admin-shift.term-cal-day--ov-pulse-late-submitted,
+    .term-cal-day.term-cal-day--ov-pulse-updated.term-cal-day--ov-pulse-late-submitted,
+    .term-cal-day.term-cal-day--ov-pulse-meeting.term-cal-day--ov-pulse-late-submitted,
+    .term-cal-day.term-cal-day--ov-pulse-both.term-cal-day--ov-pulse-late-submitted{
+      animation:termOvPulseLateSubmittedCell 1.55s ease-in-out infinite;
+      border-left-color:rgba(0,0,0,.75);
     }
     .term-cal-day.term-cal-day--ov-pulse-shift-removed{
       animation:termOvPulseShiftRemovedCell 1.35s ease-in-out infinite;

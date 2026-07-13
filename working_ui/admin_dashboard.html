@@ -347,7 +347,7 @@
   </script>
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260704-admin-504"></script>
-  <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260712-late-day-strip"></script>
+  <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260713-late-pay-release"></script>
   <script src="/portal/portal_admin_alerts_bell.js?v=20260704-admin-alerts-no-absents"></script>
   <script type="module">
     import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20260704-presence-504";
@@ -19014,7 +19014,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         '<div class="portal-late-admin" id="portalLateAdminRoot">' +
         '<h1 class="page-title">Late feedback</h1>' +
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Staff who submitted session feedback on a later day than the session (London time). Day buttons show how many late feedbacks were <strong>delivered that day</strong>. Same-day after the shift is fine — this list is next-day or later.</p>' +
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Late = feedback completed after the session London day, or same day after <strong>21:00</strong>. Day buttons count late deliveries that day. Use <strong>Release for pay</strong> so that staff day turns green/payable on the timesheet (no penalty yet — hold only).</p>' +
         '<div class="c4k-hub-weekbar card-pad" style="margin-top:12px">' +
           '<div class="c4k-hub-weekbar__left">' +
             '<span class="c4k-hub-weekbar__lbl">WEEK (MON–SUN)</span>' +

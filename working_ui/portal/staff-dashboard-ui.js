@@ -421,7 +421,7 @@
           : (typeof portalAnnouncementSignatureKey === 'function' ? portalAnnouncementSignatureKey(p) : '');
         if(!k) return;
         let sysDone = {};
-        try{ sysDone = JSON.parse(sessionStorage.getItem('portalAnnSystemNotified_v1') || '{}') || {}; }catch(_){ sysDone = {}; }
+        try{ sysDone = JSON.parse(localStorage.getItem('portalAnnSystemNotified_v1') || sessionStorage.getItem('portalAnnSystemNotified_v1') || '{}') || {}; }catch(_){ sysDone = {}; }
         if(sysDone[k]) return;
         const lineTitle = String(p && p.title || '').trim() || 'Open the portal to read and sign.';
         const isReminder = typeof portalSignableItemIsReminder === 'function' && portalSignableItemIsReminder(p);
@@ -429,6 +429,7 @@
         const ok = portalStaffNotifyOsWhiteTile(title, lineTitle, 'clubsensational-portal-ann-' + k);
         if(ok){
           sysDone[k] = Date.now();
+          try{ localStorage.setItem('portalAnnSystemNotified_v1', JSON.stringify(sysDone)); }catch(_){}
           try{ sessionStorage.setItem('portalAnnSystemNotified_v1', JSON.stringify(sysDone)); }catch(_){}
         }
       }catch(_){}
@@ -1285,6 +1286,29 @@
       if(fromFlags) return fromFlags;
       if(adminScheduleAdjusted) return 'term-cal-day--ov-pulse-admin-shift';
       return '';
+    }
+    /** Uncleared late-submitted feedback for this London day (timesheet pay hold). */
+    function portalTermDayHasLateSubmittedFeedback(isoKey){
+      const iso = String(isoKey || '').slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+      try{
+        if(dashboardData && dashboardData.portalLatePayClearedDates
+          && dashboardData.portalLatePayClearedDates.has(iso)) return false;
+        if(dashboardData && dashboardData.portalLateFeedbackDates
+          && dashboardData.portalLateFeedbackDates.has(iso)) return true;
+      }catch(_){}
+      try{
+        const lateKeys = dashboardData && dashboardData.portalLateFeedbackKeys;
+        if(lateKeys && typeof lateKeys.forEach === 'function'){
+          let hit = false;
+          lateKeys.forEach(function(k){
+            if(hit) return;
+            if(String(k || '').slice(0, 10) === iso) hit = true;
+          });
+          if(hit) return true;
+        }
+      }catch(_){}
+      return false;
     }
     function portalTermOverridePulseClassForNonWorkedDay(isoKey, adminScheduleAdjusted, dayWord){
       let flags = null;
@@ -2900,7 +2924,13 @@
             if(ovPulseWorked) cls += ' ' + ovPulseWorked;
             if(fb === 'complete'){
               cls += ' term-feedback-complete';
-              label = `${day}, all feedback complete`;
+              if(portalTermDayHasLateSubmittedFeedback(isoKey)){
+                cls = String(cls || '').replace(/\bterm-cal-day--ov-pulse-\S+/g, '').replace(/\s+/g, ' ').trim();
+                cls += ' term-cal-day--ov-pulse-late-submitted';
+                label = `${day}, feedback complete (submitted late — awaiting admin)`;
+              }else{
+                label = `${day}, all feedback complete`;
+              }
               parts.push(`<div class="${cls}" role="gridcell" tabindex="0" data-action="term-pending-review-day" data-term-review-date="${termReviewIsoNav}" data-term-review-weekday="${dayWordNav}" data-term-review-judgement="0" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);
               continue;
             } else if(fb === 'cancelled'){
@@ -4921,8 +4951,9 @@
         }
         }
         try{
-          const sysDone = JSON.parse(sessionStorage.getItem('portalAnnSystemNotified_v1') || '{}') || {};
+          const sysDone = JSON.parse(localStorage.getItem('portalAnnSystemNotified_v1') || sessionStorage.getItem('portalAnnSystemNotified_v1') || '{}') || {};
           sysDone[key] = Date.now();
+          localStorage.setItem('portalAnnSystemNotified_v1', JSON.stringify(sysDone));
           sessionStorage.setItem('portalAnnSystemNotified_v1', JSON.stringify(sysDone));
         }catch(_sysAnn){}
         if(typeof portalSetAnnouncementsSelectedKey === 'function') portalSetAnnouncementsSelectedKey('');

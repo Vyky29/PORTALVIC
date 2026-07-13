@@ -577,7 +577,8 @@
             feedbackDone: true,
             incident: !!(exEarly.incident || memEarly.incident),
             absent: false,
-            cancelled: false
+            cancelled: false,
+            feedbackLate: !!memEarly.feedbackLate
           };
         }
       }
@@ -604,7 +605,8 @@
           feedbackDone: true,
           incident: !!memFb.incident,
           absent: false,
-          cancelled: false
+          cancelled: false,
+          feedbackLate: !!memFb.feedbackLate
         };
       }
       if(iso && portalIsServerTruthFeedbackDay(iso)){
