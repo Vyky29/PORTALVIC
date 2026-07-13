@@ -661,7 +661,7 @@
         var n = new Notification(String(title || 'clubSENsational'), {
           body: String(body || ''),
           tag: String(tag || 'clubsensational-portal'),
-          renotify: true,
+          renotify: false,
           icon: icon,
           badge: icon
         });
@@ -4464,6 +4464,12 @@
             ){
               return;
             }
+            // Pre–3 Jul local acks must not hide the campaign while reconfirm is still required.
+            try{
+              if(typeof portalClearStaleAnnualProfileLocalDone === 'function'){
+                portalClearStaleAnnualProfileLocalDone(prof && prof.profile_last_confirmed_at);
+              }
+            }catch(_clrAnn){}
           }
           const injTitle = String(row.title || 'Announcement').trim() || 'Announcement';
           const injText = String(row.body || '').trim();
@@ -4474,7 +4480,12 @@
             Number.isFinite(injCreatedMs) ? injCreatedMs : 0,
             'announcement'
           );
-          if(injFp && (injectContentSeen[injFp] || ackContentSeen[injFp])){
+          const isAnnualProfileRow = String(row.on_ack_action || '').trim() === 'annual_profile';
+          const campaignStillOpen = isAnnualProfileRow && !(
+            typeof portalAnnualProfileCampaignComplete === 'function' &&
+            portalAnnualProfileCampaignComplete(prof && prof.profile_last_confirmed_at)
+          );
+          if(injFp && (injectContentSeen[injFp] || ackContentSeen[injFp]) && !campaignStillOpen){
             existing[id] = true;
             return;
           }
@@ -4790,24 +4801,41 @@
           'announcement'
         );
         const acked = (!!k && !!annAck[k]) || (!!contractKey && !!annAck[contractKey]) || (!!fp && !!ackContentSeen[fp]);
-        if(!acked){
-          if(fp && pendingContentSeen[fp]) return;
-          if(fp) pendingContentSeen[fp] = true;
-          if(
-            typeof portalSignableItemIsAnnualProfile === 'function' &&
-            portalSignableItemIsAnnualProfile(n)
-          ){
-            const box = typeof window !== 'undefined' ? window.__PORTAL_SUPABASE__ : null;
-            const p = box && box.staff_profile;
-            if(
-              typeof portalAnnualProfileCampaignComplete === 'function' &&
-              portalAnnualProfileCampaignComplete(p && p.profile_last_confirmed_at)
-            ){
-              return;
+        const isAnnualProfile =
+          typeof portalSignableItemIsAnnualProfile === 'function' &&
+          portalSignableItemIsAnnualProfile(n);
+        const box = typeof window !== 'undefined' ? window.__PORTAL_SUPABASE__ : null;
+        const p = box && box.staff_profile;
+        const annualCampaignDone =
+          isAnnualProfile &&
+          typeof portalAnnualProfileCampaignComplete === 'function' &&
+          portalAnnualProfileCampaignComplete(p && p.profile_last_confirmed_at);
+        if(isAnnualProfile && !annualCampaignDone){
+          try{
+            if(typeof portalClearStaleAnnualProfileLocalDone === 'function'){
+              portalClearStaleAnnualProfileLocalDone(p && p.profile_last_confirmed_at);
             }
-          }
-          items.push(Object.assign({}, n));
+            // Drop in-memory ack too (map was loaded before clear).
+            if(k && annAck[k]) delete annAck[k];
+            const fixedAnnId = String(
+              (typeof window !== 'undefined' && window.PORTAL_ANNUAL_PROFILE_2026_ANNOUNCEMENT_ID) || ''
+            ).trim();
+            if(fixedAnnId){
+              delete annAck['portal-ann:' + fixedAnnId];
+            }
+          }catch(_clrAct){}
         }
+        const stillAcked = (!!k && !!annAck[k]) || (!!contractKey && !!annAck[contractKey]) || (!!fp && !!ackContentSeen[fp]);
+        // Ignore stale local acks while the annual profile campaign is still incomplete.
+        if(stillAcked && !(isAnnualProfile && !annualCampaignDone)){
+          return;
+        }
+        if(fp && pendingContentSeen[fp]) return;
+        if(fp) pendingContentSeen[fp] = true;
+        if(isAnnualProfile && annualCampaignDone){
+          return;
+        }
+        items.push(Object.assign({}, n));
       });
       const rems = dashboardData && Array.isArray(dashboardData.portalRemindersFromAdmin) ? dashboardData.portalRemindersFromAdmin : [];
       rems.forEach(function(r){
@@ -5234,9 +5262,9 @@
               '<div class="announcement-lock-head"><strong>' + escapeHtml(t) + '</strong>' +
               '<span class="announcement-lock-badge announcement-lock-badge--announcement">Profile</span></div>' +
               '<div class="announcement-lock-copy announcement-message-block">' + bodyHtml + '</div>' +
-              '<p class="announcement-message-p" style="margin:0 0 12px;font-size:13px;color:var(--muted,#728290);">This notice clears automatically when you submit the annual profile form.</p>' +
+              '<p class="announcement-message-p" style="margin:0 0 12px;font-size:13px;color:var(--muted,#728290);">If you already submitted before 3 July, please open the form again, check the red fields, and submit once more. This notice clears when your update is saved.</p>' +
               '<div class="announcement-lock-actions">' +
-                '<button type="button" class="announcement-sign-btn" id="annualProfileAnnOpenBtn">Open annual profile</button>' +
+                '<button type="button" class="announcement-sign-btn" id="annualProfileAnnOpenBtn">Open annual profile and finish update</button>' +
               '</div>' +
             '</article>';
         }else{

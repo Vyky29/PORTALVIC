@@ -2837,7 +2837,18 @@
           : `You updated ${changedCount} ${changedCount === 1 ? 'field' : 'fields'}.`;
         stopIdleTimer();
         try {
-          localStorage.setItem('portalvic_annual_profile_checkin_v1', '1');
+          if (typeof window.portalAnnualProfileIsCompleteAt === 'function') {
+            const confirmedAt =
+              (state.profile && state.profile.profile_last_confirmed_at) ||
+              new Date().toISOString();
+            if (window.portalAnnualProfileIsCompleteAt(confirmedAt)) {
+              localStorage.setItem('portalvic_annual_profile_checkin_v1', '1');
+            } else {
+              localStorage.removeItem('portalvic_annual_profile_checkin_v1');
+            }
+          } else {
+            localStorage.setItem('portalvic_annual_profile_checkin_v1', '1');
+          }
         } catch (_) {}
         try {
           if (typeof window.portalAckAnnualProfileCampaignAnnouncement === 'function') {

@@ -324,6 +324,39 @@
     }
   };
 
+  /**
+   * Jul 1 submissions set local “done” before the 3 Jul red-field fix.
+   * Clear those flags until a confirm on/after the campaign start.
+   */
+  window.portalClearStaleAnnualProfileLocalDone = function portalClearStaleAnnualProfileLocalDone(
+    confirmedAtIso
+  ) {
+    if (portalAnnualProfileIsCompleteAt(confirmedAtIso)) return false;
+    var cleared = false;
+    try {
+      if (localStorage.getItem("portalvic_annual_profile_checkin_v1") === "1") {
+        localStorage.removeItem("portalvic_annual_profile_checkin_v1");
+        cleared = true;
+      }
+    } catch (_) {}
+    try {
+      var annId = String(window.PORTAL_ANNUAL_PROFILE_2026_ANNOUNCEMENT_ID || "").trim();
+      if (annId) {
+        var raw = localStorage.getItem("portalAnnouncementAckMap_v1");
+        var ack = raw ? JSON.parse(raw) : {};
+        if (ack && typeof ack === "object") {
+          var key = "portal-ann:" + annId;
+          if (ack[key]) {
+            delete ack[key];
+            localStorage.setItem("portalAnnouncementAckMap_v1", JSON.stringify(ack));
+            cleared = true;
+          }
+        }
+      }
+    } catch (_) {}
+    return cleared;
+  };
+
   window.portalHideAnnualProfileQuickMenu = function portalHideAnnualProfileQuickMenu() {
     try {
       var g = document.getElementById("portalAnnualProfileQuickGroup");
@@ -351,16 +384,18 @@
     try {
       if (new URLSearchParams(window.location.search).get("portalAnnualProfile") === "1") return true;
     } catch (_) {}
-    try {
-      if (localStorage.getItem("portalvic_annual_profile_checkin_v1") === "1") return false;
-    } catch (_) {}
     var profile = opts.profile;
-    if (
-      profile &&
-      portalAnnualProfileIsCompleteAt(profile.profile_last_confirmed_at)
-    ) {
-      return false;
+    var confirmed = profile && profile.profile_last_confirmed_at;
+    if (!confirmed) {
+      try {
+        var box = window.__PORTAL_SUPABASE__;
+        confirmed = box && box.staff_profile && box.staff_profile.profile_last_confirmed_at;
+      } catch (_) {}
     }
+    if (portalAnnualProfileIsCompleteAt(confirmed)) return false;
+    try {
+      portalClearStaleAnnualProfileLocalDone(confirmed);
+    } catch (_) {}
     return true;
   };
 
@@ -377,18 +412,38 @@
         return;
       }
 
-      try {
-        if (localStorage.getItem("portalvic_annual_profile_checkin_v1") === "1") {
-          portalHideAnnualProfileQuickMenu();
-          return;
-        }
-      } catch (_) {}
-
       var profile = opts.profile;
-      if (
-        profile &&
-        portalAnnualProfileIsCompleteAt(profile.profile_last_confirmed_at)
-      ) {
+      var box = window.__PORTAL_SUPABASE__;
+      var client = opts.client;
+      var userId = opts.userId || (profile && profile.id) || "";
+      if (!client || !userId) {
+        client = client || (box && box.client);
+        userId =
+          userId ||
+          (box && box.staff_profile && box.staff_profile.id) ||
+          (box && box.session && box.session.user && box.session.user.id) ||
+          "";
+        if (!profile && box && box.staff_profile) profile = box.staff_profile;
+      }
+
+      var confirmed = profile && profile.profile_last_confirmed_at;
+      if (client && userId) {
+        var res = await client
+          .from("staff_profiles")
+          .select("profile_last_confirmed_at")
+          .eq("id", userId)
+          .maybeSingle();
+        if (!res.error && res.data) {
+          confirmed = res.data.profile_last_confirmed_at;
+          try {
+            if (box && box.staff_profile) {
+              box.staff_profile.profile_last_confirmed_at = confirmed;
+            }
+          } catch (_) {}
+        }
+      }
+
+      if (portalAnnualProfileIsCompleteAt(confirmed)) {
         try {
           localStorage.setItem("portalvic_annual_profile_checkin_v1", "1");
         } catch (_) {}
@@ -396,40 +451,8 @@
         return;
       }
 
-      if (portalAnnualProfileQuickMenuShouldShow({ profile: profile })) {
-        portalShowAnnualProfileQuickMenu();
-      }
-
-      var client = opts.client;
-      var userId =
-        opts.userId ||
-        (profile && profile.id) ||
-        "";
-      if (!client || !userId) {
-        var box = window.__PORTAL_SUPABASE__;
-        client = client || (box && box.client);
-        userId =
-          userId ||
-          (box && box.staff_profile && box.staff_profile.id) ||
-          (box && box.session && box.session.user && box.session.user.id) ||
-          "";
-      }
-      if (!client || !userId) return;
-
-      var res = await client
-        .from("staff_profiles")
-        .select("profile_last_confirmed_at")
-        .eq("id", userId)
-        .maybeSingle();
-      if (res.error) return;
-      if (portalAnnualProfileIsCompleteAt(res.data && res.data.profile_last_confirmed_at)) {
-        try {
-          localStorage.setItem("portalvic_annual_profile_checkin_v1", "1");
-        } catch (_) {}
-        portalHideAnnualProfileQuickMenu();
-      } else if (portalAnnualProfileQuickMenuShouldShow()) {
-        portalShowAnnualProfileQuickMenu();
-      }
+      portalClearStaleAnnualProfileLocalDone(confirmed);
+      portalShowAnnualProfileQuickMenu();
     } catch (_) {}
   };
 
@@ -437,6 +460,16 @@
   window.portalAckAnnualProfileCampaignAnnouncement = async function portalAckAnnualProfileCampaignAnnouncement() {
     var annId = String(window.PORTAL_ANNUAL_PROFILE_2026_ANNOUNCEMENT_ID || "").trim();
     if (!annId) return { ok: false };
+    var confirmedIso = new Date().toISOString();
+    try {
+      var box0 = window.__PORTAL_SUPABASE__;
+      if (box0 && box0.staff_profile && box0.staff_profile.profile_last_confirmed_at) {
+        confirmedIso = box0.staff_profile.profile_last_confirmed_at;
+      }
+    } catch (_) {}
+    if (!portalAnnualProfileIsCompleteAt(confirmedIso)) {
+      return { ok: false, reason: "campaign_incomplete" };
+    }
     try {
       localStorage.setItem("portalvic_annual_profile_checkin_v1", "1");
     } catch (_) {}
@@ -475,7 +508,7 @@
     try {
       var box = window.__PORTAL_SUPABASE__;
       if (box && box.staff_profile) {
-        box.staff_profile.profile_last_confirmed_at = new Date().toISOString();
+        box.staff_profile.profile_last_confirmed_at = confirmedIso;
       }
     } catch (_) {}
     try {
