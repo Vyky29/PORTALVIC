@@ -1811,14 +1811,22 @@ const LEVEL_DATA = {
 
       function renderList(query){
         const q = String(query || "").trim();
+        /* Always filter the on-page name grid letter-by-letter (does not cut off typing). */
+        filterMyParticipantsGrid(q);
         list.replaceChildren();
+        /* When the tap-grid is showing, keep suggestions closed — the grid is the filter UI. */
+        const myList = document.getElementById("swimmerMyList");
+        const hasGrid = !!(myList && myList.querySelector("button[data-swimmer-name]"));
+        if(hasGrid){
+          setOpen(false);
+          return;
+        }
         if(q.length < 1){
           setOpen(false);
           return;
         }
         const all = getSwtermSearchPool();
-        const ql = q.toLowerCase();
-        const matches = all.filter(n => n.toLowerCase().includes(ql)).slice(0, 18);
+        const matches = all.filter(n => swtermNameMatchesLetterFilter(n, q)).slice(0, 18);
         if(!matches.length){
           setOpen(false);
           return;
@@ -1852,9 +1860,19 @@ const LEVEL_DATA = {
       input.addEventListener("keydown", ev => {
         if(ev.key === "Escape"){
           closeList();
+          filterMyParticipantsGrid("");
           return;
         }
         if(ev.key !== "Enter") return;
+        const myList = document.getElementById("swimmerMyList");
+        const firstVisible = myList
+          ? myList.querySelector("button[data-swimmer-name]:not([hidden])")
+          : null;
+        if(firstVisible){
+          ev.preventDefault();
+          pickName(firstVisible.getAttribute("data-swimmer-name") || firstVisible.textContent || "");
+          return;
+        }
         const first = list.querySelector("button");
         if(first && !list.hidden){
           ev.preventDefault();

@@ -2465,6 +2465,7 @@
     .swterm-my-list-grid button.is-letter-filtered-out{
       display:none !important;
     }
+    .swterm-my-list-grid button[aria-pressed="true"]{
       border-color:#0e7490;
       background:linear-gradient(180deg,#cff4fc,#a5f3fc);
       box-shadow:0 0 0 2px rgba(14,116,144,0.18);
@@ -3179,7 +3180,7 @@
   <!-- swtermreview_app.js — portal/ then portal-shared-js/ on Vercel. -->
   <script>
     (function () {
-      var v = "20260713-exec-swim-term";
+      var v = "20260713-letter-filter2";
       var file = "swtermreview_app.js";
       var bases = [];
       try {
