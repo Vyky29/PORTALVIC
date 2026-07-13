@@ -70,7 +70,7 @@
       leadReview: false,
       venue: true,
       pickup: true,
-      planner: false,
+      planner: true,
       sixIcon: false,
     },
     angel: {
