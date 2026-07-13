@@ -1598,28 +1598,39 @@
     );
   }
 
-  function renderFeesNoticeHtml() {
+  function renderRelevantInfoHtml(payCode, editing) {
+    var isGc = normalizePayMethodChoice(payCode) === "gocardless";
     return (
-      '<p class="re-billing-ref-note re-billing-ref-fee" id="reFeesNotice" role="note">' +
-      "<strong>Fees:</strong> standard plans (bank transfer or Card / Apple Pay on or before due dates) have <strong>no admin fee</strong>. " +
+      '<section id="reRelevantInfo" class="re-relevant-info"' +
+      (editing ? " hidden" : "") +
+      ' aria-label="Relevant info">' +
+      '<h4 class="re-relevant-info__title">Relevant info</h4>' +
+      '<div id="reDirectPayFailNote" class="re-funding-fee re-funding-fee--fail"' +
+      (editing || !isGc ? " hidden" : "") +
+      ">" +
+      "<strong>If a Direct Payment fails</strong>" +
+      "If a GoCardless collection fails (for example insufficient funds or a cancelled mandate), you must pay within " +
+      "<strong>7 days</strong> by bank transfer or Card / Apple Pay from the parent portal, including any GoCardless failure charge. " +
+      "After <strong>two failed attempts in the same term</strong>, Direct Payment is withdrawn for the rest of the academic year — remaining instalments must be paid by bank transfer / Card / Apple Pay." +
+      "</div>" +
+      '<div id="reFeesNotice" class="re-funding-fee re-funding-fee--fail" role="note">' +
+      "<strong>Payment fees</strong>" +
+      "Standard plans (bank transfer or Card / Apple Pay on or before due dates) have <strong>no admin fee</strong>. " +
       "Direct Payment (GoCardless) adds " +
       money(RE_ADMIN_FEE_GC_PER_INSTALLMENT) +
       " per instalment. " +
       "<strong>Own arrangement</strong> (cannot meet our payment dates) is term-only and adds " +
       money(RE_ADMIN_FEE_OWN) +
       " each term, plus a minimum prepaid balance of two sessions per service." +
-      "</p>"
-    );
-  }
-
-  function renderCancelNoticeHtml() {
-    return (
-      '<p class="re-billing-ref-note re-billing-ref-fee re-cadence-cancel-note" id="reCancelNotice" role="note">' +
-      "<strong>Cancelling your bookings:</strong> The same rules apply to <strong>whole year (auto re-enrol)</strong> and <strong>term by term</strong>. " +
+      "</div>" +
+      '<div id="reCancelNotice" class="re-funding-fee re-funding-fee--fail" role="note">' +
+      "<strong>Cancelling your booking</strong>" +
+      "The same rules apply to <strong>whole year (auto re-enrol)</strong> and <strong>term by term</strong>. " +
       "If you cancel a place after we have already collected payment, we refund unused fees minus an admin charge of " +
       "<strong>10% of the unused amount being refunded</strong> " +
       "(minimum <strong>£25</strong>, maximum <strong>£100</strong>), so the charge stays fair for smaller and larger programmes." +
-      "</p>"
+      "</div>" +
+      "</section>"
     );
   }
 
@@ -1672,7 +1683,7 @@
   }
 
   function setBillingPayExtrasHidden(hidden) {
-    ["rePayScheduleWrap", "reBillingPlanIntro", "rePaySchedulePreview", "reOwnWayNote", "reDirectPayFailNote", "reFeesNotice", "reCancelNotice"].forEach(
+    ["rePayScheduleWrap", "reBillingPlanIntro", "rePaySchedulePreview", "reOwnWayNote", "reRelevantInfo"].forEach(
       function (id) {
         var el = $(id);
         if (!el) return;
@@ -1688,12 +1699,13 @@
           el.hidden = normalizePayMethodChoice((state.billing2627 || {}).payCode) !== "own_way_flexible";
           return;
         }
-        if (id === "reDirectPayFailNote") {
-          el.hidden = normalizePayMethodChoice((state.billing2627 || {}).payCode) !== "gocardless";
-          return;
-        }
-        if (id === "reFeesNotice" || id === "reCancelNotice") {
+        if (id === "reRelevantInfo") {
           el.hidden = false;
+          var failNote = $("reDirectPayFailNote");
+          if (failNote) {
+            failNote.hidden =
+              normalizePayMethodChoice((state.billing2627 || {}).payCode) !== "gocardless";
+          }
           return;
         }
         el.hidden = false;
@@ -1856,16 +1868,7 @@
       "(e.g. two services → two sessions of each). If the balance falls below that, we may pause sessions or move you to a standard plan. " +
       "Paying on time on Bank Transfer / Card / Apple Pay has <strong>no</strong> £50 fee. Overpayments are kept as credit." +
       "</div>" +
-      '<div id="reDirectPayFailNote" class="re-funding-fee re-funding-fee--fail"' +
-      (editing || payCode !== "gocardless" ? " hidden" : "") +
-      ">" +
-      "<strong>If a Direct Payment fails</strong>" +
-      "If a GoCardless collection fails (for example insufficient funds or a cancelled mandate), you must pay within " +
-      "<strong>7 days</strong> by bank transfer or Card / Apple Pay from the parent portal, including any GoCardless failure charge. " +
-      "After <strong>two failed attempts in the same term</strong>, Direct Payment is withdrawn for the rest of the academic year — remaining instalments must be paid by bank transfer / Card / Apple Pay." +
-      "</div>" +
-      renderFeesNoticeHtml() +
-      renderCancelNoticeHtml() +
+      renderRelevantInfoHtml(payCode, editing) +
       "</div></div>" +
       '<p class="re-muted re-funding-foot">Re-enrolment closes ' +
       esc(RE_ENROL_DEADLINE_LABEL) +
