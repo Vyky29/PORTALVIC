@@ -96,15 +96,18 @@
   .client-finance__row label{
     font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700
   }
-  .client-finance__row input{
+  .client-finance__row input,
+  .client-finance__row select{
     width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:9px;font-size:12.5px;
     background:#fff;color:var(--ink);min-width:0
   }
+  .client-finance__row select{cursor:pointer}
   .client-finance__money{
     display:grid;grid-template-columns:1fr 1fr;gap:8px;min-width:0
   }
   .client-finance__money .client-finance__row input{font-weight:700}
   .client-finance__hint{margin:0;font-size:10.5px;color:var(--muted);line-height:1.35;overflow-wrap:break-word}
+  .client-finance__funder[hidden]{display:none!important}
   .money-owed input{border-color:#fecaca;background:#fff7f7}
   .money-credit input{border-color:#bbf7d0;background:#f7fff9}
   .cell-actions{width:150px;min-width:130px}
@@ -203,6 +206,7 @@
   <div id="empty" class="empty" hidden>No results.</div>
 </main>
 
+<script src="/portal/clients_payments_portal_data.js?v=20260507-portalfix"></script>
 <script id="seed" type="application/json">{"generatedAt":"2026-07-05T21:51:01.868Z","range":{"from":"2026-06-15","to":"2026-07-05"},"options":{"services":["Aquatic Activity","Bespoke Programme","Climbing Activity","Day Centre","Multi-Activity","Physical Activity"],"venues":["Acton","Northolt","SwimFarm","Westway"],"areas":["Big Pool","Climbing Wall","Gym","HOME","Hub Room","Hub · Manager","Lane","Lane (DE)","Lane (DE)/(SE)","Lane (SE)","Pools","Room 2","Small Pool","Swallow End","Teaching Pool","Wall"],"days":["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],"instructors":["ALEX","ANGEL","AURORA","BERTA","BISMARK","CARLOS","DAN","GIUSEPPE","GODSWAY","JAVI","JAVIER","JOHN","LULIYA","MICHELLE","RAUL","ROBERTO","SANDRA","SIMON","VICTOR","YOUSSEF"]},"clients":[{"name":"Abodi Pa","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"5.30 to 6.30","durationMin":60,"instructor":"YOUSSEF","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"ACAT","validated":false,"sessions":[{"service":"Day Centre","day":"Monday","timeSlot":"11 to 12","durationMin":60,"instructor":"ROBERTO","venue":"SwimFarm","area":"Hub Room","weeks":3}]},{"name":"Adaam Ah","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"6 to 6.30","durationMin":30,"instructor":"DAN","venue":"Northolt","area":"Teaching Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"12.30 to 1.15","durationMin":45,"instructor":"GODSWAY","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"1.15 to 2","durationMin":45,"instructor":"ROBERTO","venue":"SwimFarm","area":"Big Pool","weeks":3}]},{"name":"Adam Ab","validated":false,"sessions":[{"service":"Multi-Activity","day":"Wednesday","timeSlot":"4.30 to 5.15","durationMin":45,"instructor":"GIUSEPPE","venue":"Acton","area":"Room 2","weeks":3},{"service":"Multi-Activity","day":"Wednesday","timeSlot":"5.15 to 6","durationMin":45,"instructor":"JAVIER","venue":"Acton","area":"Teaching Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"9.30 to 10.15","durationMin":45,"instructor":"DAN","venue":"SwimFarm","area":"Small Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"10.15 to 11","durationMin":45,"instructor":"JOHN","venue":"SwimFarm","area":"Hub Room","weeks":3}]},{"name":"Adam Me","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"4.30 to 5","durationMin":30,"instructor":"JAVIER","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Adam P","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"4 to 5.30","durationMin":90,"instructor":"ANGEL","venue":"Acton","area":"Teaching Pool","weeks":3},{"service":"Aquatic Activity","day":"Friday","timeSlot":"4 to 5.30","durationMin":90,"instructor":"ROBERTO","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Amaar Ah","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Friday","timeSlot":"5.30 to 6","durationMin":30,"instructor":"ROBERTO","venue":"Acton","area":"Teaching Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"12.30 to 1.15","durationMin":45,"instructor":"ROBERTO","venue":"SwimFarm","area":"Big Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"1.15 to 2","durationMin":45,"instructor":"GODSWAY","venue":"SwimFarm","area":"Hub Room","weeks":3}]},{"name":"Amar Rai","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"5 to 6","durationMin":60,"instructor":"ROBERTO","venue":"Northolt","area":"Teaching Pool","weeks":3},{"service":"Aquatic Activity","day":"Wednesday","timeSlot":"5 to 6","durationMin":60,"instructor":"ROBERTO","venue":"Northolt","area":"Teaching Pool","weeks":3}]},{"name":"Amber","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Wednesday","timeSlot":"6 to 6.30","durationMin":30,"instructor":"ROBERTO","venue":"Northolt","area":"Teaching Pool","weeks":3}]},{"name":"Amir","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"5 to 5.30","durationMin":30,"instructor":"ANGEL","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Aqsa","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Thursday","timeSlot":"4.30 to 5.30","durationMin":60,"instructor":"AURORA","venue":"Acton","area":"Lane (DE)","weeks":3}]},{"name":"Arthur Ma","validated":false,"sessions":[{"service":"Multi-Activity","day":"Sunday","timeSlot":"11 to 11.45","durationMin":45,"instructor":"DAN","venue":"SwimFarm","area":"Small Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"11.45 to 12.30","durationMin":45,"instructor":"JOHN","venue":"SwimFarm","area":"Hub Room","weeks":3}]},{"name":"Arthur Mo","validated":false,"sessions":[{"service":"Multi-Activity","day":"Sunday","timeSlot":"11 to 11.45","durationMin":45,"instructor":"GODSWAY","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"11.45 to 12.30","durationMin":45,"instructor":"ROBERTO","venue":"SwimFarm","area":"Big Pool","weeks":3}]},{"name":"Ayaan","validated":false,"sessions":[{"service":"Physical Activity","day":"Monday","timeSlot":"4 to 5","durationMin":60,"instructor":"SANDRA","venue":"Westway","area":"Gym","weeks":3}]},{"name":"Aydaan Ah","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"5.30 to 6","durationMin":30,"instructor":"AURORA","venue":"Acton","area":"Lane (SE)","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"12.30 to 1.15","durationMin":45,"instructor":"DAN","venue":"SwimFarm","area":"Big Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"1.15 to 2","durationMin":45,"instructor":"JOHN","venue":"SwimFarm","area":"Hub Room","weeks":3}]},{"name":"Ayden W","validated":false,"sessions":[{"service":"Climbing Activity","day":"Sunday","timeSlot":"2 to 3","durationMin":60,"instructor":"ALEX","venue":"Westway","area":"Wall","weeks":3}]},{"name":"Ayman","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"4 to 4.30","durationMin":30,"instructor":"JAVIER","venue":"Acton","area":"Lane (DE)","weeks":3},{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"4.30 to 5","durationMin":30,"instructor":"YOUSSEF","venue":"Acton","area":"Lane (DE)","weeks":3},{"service":"Aquatic Activity","day":"Thursday","timeSlot":"4 to 5","durationMin":60,"instructor":"JAVIER","venue":"Acton","area":"Lane (DE)/(SE)","weeks":3}]},{"name":"Bediako","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"4.30 to 5","durationMin":30,"instructor":"AURORA","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Cayra","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"4.30 to 5","durationMin":30,"instructor":"ANGEL","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Cyrus","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Wednesday","timeSlot":"4 to 4.30","durationMin":30,"instructor":"JAVIER","venue":"Acton","area":"Teaching Pool","weeks":3},{"service":"Multi-Activity","day":"Wednesday","timeSlot":"4.30 to 5.15","durationMin":45,"instructor":"JAVIER","venue":"Acton","area":"Teaching Pool","weeks":3},{"service":"Multi-Activity","day":"Wednesday","timeSlot":"5.15 to 6","durationMin":45,"instructor":"GIUSEPPE","venue":"Acton","area":"Room 2","weeks":3},{"service":"Bespoke Programme","day":"Thursday","timeSlot":"3.30 to 5","durationMin":90,"instructor":"VICTOR","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"11 to 11.45","durationMin":45,"instructor":"JOHN","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"11.45 to 12.30","durationMin":45,"instructor":"DAN","venue":"SwimFarm","area":"Small Pool","weeks":3}]},{"name":"Eddie","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"4.30 to 5","durationMin":30,"instructor":"YOUSSEF","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Eiji","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"5.30 to 6","durationMin":30,"instructor":"JAVIER","venue":"Acton","area":"Lane (DE)","weeks":3},{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"6 to 6.30","durationMin":30,"instructor":"ROBERTO","venue":"Acton","area":"Lane (DE)","weeks":3},{"service":"Aquatic Activity","day":"Thursday","timeSlot":"5.30 to 6.30","durationMin":60,"instructor":"SIMON","venue":"Acton","area":"Lane (DE)","weeks":3},{"service":"Climbing Activity","day":"Sunday","timeSlot":"10 to 11","durationMin":60,"instructor":"ALEX","venue":"Westway","area":"Wall","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"11 to 11.45","durationMin":45,"instructor":"GIUSEPPE","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"11.45 to 12.30","durationMin":45,"instructor":"JAVIER","venue":"SwimFarm","area":"Big Pool","weeks":3}]},{"name":"Elijah","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Thursday","timeSlot":"4 to 4.30","durationMin":30,"instructor":"AURORA","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Emani","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Saturday","timeSlot":"10.30 to 11","durationMin":30,"instructor":"YOUSSEF","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Emmanuel","validated":false,"sessions":[{"service":"Day Centre","day":"Monday","timeSlot":"11 to 12.30","durationMin":90,"instructor":"MICHELLE","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Day Centre","day":"Monday","timeSlot":"12.30 to 1.30","durationMin":60,"instructor":"YOUSSEF","venue":"SwimFarm","area":"Big Pool","weeks":1},{"service":"Day Centre","day":"Monday","timeSlot":"12.30 to 4","durationMin":210,"instructor":"RAUL","venue":"SwimFarm","area":"Hub · Manager","weeks":1},{"service":"Day Centre","day":"Monday","timeSlot":"1.30 to 4","durationMin":150,"instructor":"RAUL","venue":"SwimFarm","area":"Hub Room","weeks":2},{"service":"Day Centre","day":"Monday","timeSlot":"12,30 to 1.20","durationMin":null,"instructor":"YOUSSEF","venue":"SwimFarm","area":"Big Pool","weeks":2},{"service":"Day Centre","day":"Wednesday","timeSlot":"11 to 4","durationMin":300,"instructor":"MICHELLE","venue":"SwimFarm","area":"Hub Room","weeks":2},{"service":"Day Centre","day":"Wednesday","timeSlot":"11 to 12.30","durationMin":90,"instructor":"VICTOR","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Wednesday","timeSlot":"12.30 to 1.30","durationMin":60,"instructor":"YOUSSEF","venue":"SwimFarm","area":"Big Pool","weeks":1},{"service":"Day Centre","day":"Wednesday","timeSlot":"1.30 to 2","durationMin":30,"instructor":"VICTOR","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Wednesday","timeSlot":"2 to 4","durationMin":120,"instructor":"RAUL","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Friday","timeSlot":"11 to 4","durationMin":300,"instructor":"MICHELLE","venue":"SwimFarm","area":"Hub Room","weeks":2},{"service":"Day Centre","day":"Friday","timeSlot":"11 to 12.30","durationMin":90,"instructor":"MICHELLE","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Friday","timeSlot":"12.30 to 1.30","durationMin":60,"instructor":"YOUSSEF","venue":"SwimFarm","area":"Big Pool","weeks":1},{"service":"Day Centre","day":"Friday","timeSlot":"3 to 4","durationMin":60,"instructor":"VICTOR","venue":"SwimFarm","area":"Hub Room","weeks":2}]},{"name":"Erik","validated":false,"sessions":[{"service":"Multi-Activity","day":"Sunday","timeSlot":"12.30 to 1.15","durationMin":45,"instructor":"JOHN","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"1.15 to 2","durationMin":45,"instructor":"DAN","venue":"SwimFarm","area":"Big Pool","weeks":3}]},{"name":"Fadi","validated":false,"sessions":[{"service":"Day Centre","day":"Monday","timeSlot":"12.30 to 3","durationMin":150,"instructor":"ROBERTO","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Day Centre","day":"Monday","timeSlot":"12.30 to 1,30","durationMin":null,"instructor":"RAUL","venue":"SwimFarm","area":"Hub · Manager","weeks":1},{"service":"Day Centre","day":"Monday","timeSlot":"1.30 to 3","durationMin":90,"instructor":"YOUSSEF","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Day Centre","day":"Tuesday","timeSlot":"12.30 to 3","durationMin":150,"instructor":"ROBERTO","venue":"SwimFarm","area":"Hub Room","weeks":6},{"service":"Day Centre","day":"Wednesday","timeSlot":"12.30 to 3","durationMin":150,"instructor":"ROBERTO","venue":"SwimFarm","area":"Hub Room","weeks":5},{"service":"Day Centre","day":"Wednesday","timeSlot":"12.30 to 1.30","durationMin":60,"instructor":"VICTOR","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Wednesday","timeSlot":"1.30 to 3","durationMin":90,"instructor":"YOUSSEF","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Thursday","timeSlot":"12.30 to 3","durationMin":150,"instructor":"RAUL","venue":"SwimFarm","area":"Hub Room","weeks":6},{"service":"Day Centre","day":"Friday","timeSlot":"12.30 to 3","durationMin":150,"instructor":"ROBERTO","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Day Centre","day":"Friday","timeSlot":"1 to 3","durationMin":120,"instructor":"VICTOR","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Friday","timeSlot":"1.30 to 3","durationMin":90,"instructor":"YOUSSEF","venue":"SwimFarm","area":"Hub Room","weeks":1}]},{"name":"Faris","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Sunday","timeSlot":"2.30 to 3","durationMin":30,"instructor":"DAN","venue":"SwimFarm","area":"Big Pool","weeks":3}]},{"name":"Gabriel","validated":false,"sessions":[{"service":"Multi-Activity","day":"Sunday","timeSlot":"11 to 11.45","durationMin":45,"instructor":"ROBERTO","venue":"SwimFarm","area":"Big Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"11.45 to 12.30","durationMin":45,"instructor":"GODSWAY","venue":"SwimFarm","area":"Hub Room","weeks":3}]},{"name":"Gemma","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"5 to 5.30","durationMin":30,"instructor":"DAN","venue":"Northolt","area":"Teaching Pool","weeks":3}]},{"name":"Haneef","validated":false,"sessions":[{"service":"Multi-Activity","day":"Sunday","timeSlot":"12.30 to 1.15","durationMin":45,"instructor":"GIUSEPPE","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"1.15 to 2","durationMin":45,"instructor":"JAVIER","venue":"SwimFarm","area":"Small Pool","weeks":3}]},{"name":"Hazem","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"5.30 to 6","durationMin":30,"instructor":"ROBERTO","venue":"Acton","area":"Lane (DE)","weeks":3},{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"6 to 6.30","durationMin":30,"instructor":"AURORA","venue":"Acton","area":"Lane (DE)","weeks":3},{"service":"Aquatic Activity","day":"Thursday","timeSlot":"5.30 to 6","durationMin":30,"instructor":"AURORA","venue":"Acton","area":"Lane (DE)","weeks":3},{"service":"Aquatic Activity","day":"Thursday","timeSlot":"6 to 6.30","durationMin":30,"instructor":"JAVIER","venue":"Acton","area":"Lane (DE)","weeks":3},{"service":"Climbing Activity","day":"Sunday","timeSlot":"10 to 11","durationMin":60,"instructor":"JAVIER","venue":"Westway","area":"Wall","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"11 to 11.45","durationMin":45,"instructor":"JAVIER","venue":"SwimFarm","area":"Big Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"11.45 to 12.30","durationMin":45,"instructor":"GIUSEPPE","venue":"SwimFarm","area":"Hub Room","weeks":3}]},{"name":"Ikram","validated":false,"sessions":[{"service":"Day Centre","day":"Monday","timeSlot":"11 to 12.30","durationMin":90,"instructor":"YOUSSEF","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Day Centre","day":"Monday","timeSlot":"11 to 4","durationMin":300,"instructor":"LULIYA","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Day Centre","day":"Monday","timeSlot":"12.30 to 4","durationMin":210,"instructor":"MICHELLE","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Day Centre","day":"Tuesday","timeSlot":"11 to 4","durationMin":300,"instructor":"LULIYA","venue":"SwimFarm","area":"Hub Room","weeks":6},{"service":"Day Centre","day":"Wednesday","timeSlot":"11 to 4","durationMin":300,"instructor":"LULIYA","venue":"SwimFarm","area":"Hub Room","weeks":5},{"service":"Day Centre","day":"Wednesday","timeSlot":"11 to 12.30","durationMin":90,"instructor":"YOUSSEF","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Wednesday","timeSlot":"12.30 to 4","durationMin":210,"instructor":"RAUL","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Wednesday","timeSlot":"2 to 4","durationMin":120,"instructor":"VICTOR","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Friday","timeSlot":"11 to 4","durationMin":300,"instructor":"LULIYA","venue":"SwimFarm","area":"Hub Room","weeks":5},{"service":"Day Centre","day":"Friday","timeSlot":"11 to 12.30","durationMin":90,"instructor":"YOUSSEF","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Friday","timeSlot":"12.30 to 4","durationMin":210,"instructor":"MICHELLE","venue":"SwimFarm","area":"Hub Room","weeks":1}]},{"name":"Jack S","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"11 to 12","durationMin":60,"instructor":"ROBERTO","venue":"SwimFarm","area":"ACAT","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"9.30 to 10.15","durationMin":45,"instructor":"JAVIER","venue":"SwimFarm","area":"Big Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"10.15 to 11","durationMin":45,"instructor":"GIUSEPPE","venue":"SwimFarm","area":"Hub Room","weeks":3}]},{"name":"Jack W","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"11 to 12","durationMin":60,"instructor":"ROBERTO","venue":"SwimFarm","area":"ACAT","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"9.30 to 10.15","durationMin":45,"instructor":"JOHN","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"10.15 to 11","durationMin":45,"instructor":"DAN","venue":"SwimFarm","area":"Big Pool","weeks":3}]},{"name":"Jad","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"4 to 4.30","durationMin":30,"instructor":"ROBERTO","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Junaid","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"5 to 5.30","durationMin":30,"instructor":"AURORA","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Kareena","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"6 to 6.30","durationMin":30,"instructor":"JAVIER","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Karo","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Thursday","timeSlot":"5.30 to 6","durationMin":30,"instructor":"JAVIER","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Kayden","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Wednesday","timeSlot":"6 to 6.30","durationMin":30,"instructor":"JAVIER","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Khalid Ab","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Thursday","timeSlot":"5 to 5.30","durationMin":30,"instructor":"JAVIER","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Linda","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"5 to 5.30","durationMin":30,"instructor":"JAVIER","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Logan","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"5 to 5.30","durationMin":30,"instructor":"YOUSSEF","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Maiyar","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Thursday","timeSlot":"6 to 6.30","durationMin":30,"instructor":"AURORA","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Mario","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"6 to 6.30","durationMin":30,"instructor":"ANGEL","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Matthias","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Saturday","timeSlot":"11 to 12","durationMin":60,"instructor":"YOUSSEF","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Max","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Sunday","timeSlot":"2 to 2.30","durationMin":30,"instructor":"JAVIER","venue":"SwimFarm","area":"Small Pool","weeks":3}]},{"name":"Mia","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Wednesday","timeSlot":"5.30 to 6.30","durationMin":60,"instructor":"DAN","venue":"Northolt","area":"Teaching Pool","weeks":3}]},{"name":"Mohammed","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Thursday","timeSlot":"5.30 to 6.30","durationMin":60,"instructor":"ROBERTO","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Patrick","validated":false,"sessions":[{"service":"Climbing Activity","day":"Sunday","timeSlot":"2 to 3","durationMin":60,"instructor":"JAVIER","venue":"Westway","area":"Wall","weeks":3}]},{"name":"Rayan Ta","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"5.30 to 6","durationMin":30,"instructor":"ANGEL","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Rayyan F","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"5.30 to 6.30","durationMin":60,"instructor":"YOUSSEF","venue":"Acton","area":"Lane (SE)","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"12.30 to 1.15","durationMin":45,"instructor":"JAVIER","venue":"SwimFarm","area":"Small Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"1.15 to 2","durationMin":45,"instructor":"GIUSEPPE","venue":"SwimFarm","area":"Hub Room","weeks":3}]},{"name":"Richard","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"6 to 6.30","durationMin":30,"instructor":"ANGEL","venue":"Acton","area":"Lane (DE)","weeks":3}]},{"name":"Rodin","validated":false,"sessions":[{"service":"Climbing Activity","day":"Sunday","timeSlot":"1 to 2","durationMin":60,"instructor":"ALEX","venue":"Westway","area":"Wall","weeks":3},{"service":"Aquatic Activity","day":"Sunday","timeSlot":"2 to 2.30","durationMin":30,"instructor":"ROBERTO","venue":"SwimFarm","area":"Big Pool","weeks":3}]},{"name":"Ruben","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Wednesday","timeSlot":"5 to 5.30","durationMin":30,"instructor":"DAN","venue":"Northolt","area":"Teaching Pool","weeks":3}]},{"name":"Saaib","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Saturday","timeSlot":"12 to 12.30","durationMin":30,"instructor":"YOUSSEF","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Samer","validated":false,"sessions":[{"service":"Multi-Activity","day":"Sunday","timeSlot":"9.30 to 10.15","durationMin":45,"instructor":"GODSWAY","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"10.15 to 11","durationMin":45,"instructor":"ROBERTO","venue":"SwimFarm","area":"Big Pool","weeks":3}]},{"name":"Scott","validated":false,"sessions":[{"service":"Multi-Activity","day":"Wednesday","timeSlot":"4.30 to 5.15","durationMin":45,"instructor":"BERTA","venue":"Acton","area":"Room 2","weeks":3},{"service":"Multi-Activity","day":"Wednesday","timeSlot":"5.15 to 6","durationMin":45,"instructor":"YOUSSEF","venue":"Acton","area":"Teaching Pool","weeks":3},{"service":"Climbing Activity","day":"Sunday","timeSlot":"12 to 1","durationMin":60,"instructor":"ALEX","venue":"Westway","area":"Wall","weeks":3}]},{"name":"Serine","validated":false,"sessions":[{"service":"Physical Activity","day":"Monday","timeSlot":"5 to 6","durationMin":60,"instructor":"SANDRA","venue":"Westway","area":"Gym","weeks":3},{"service":"Aquatic Activity","day":"Tuesday","timeSlot":"4.30 to 5.30","durationMin":60,"instructor":"ROBERTO","venue":"Acton","area":"Lane (DE)","weeks":3},{"service":"Climbing Activity","day":"Sunday","timeSlot":"12 to 1","durationMin":60,"instructor":"JAVIER","venue":"Westway","area":"Wall","weeks":3}]},{"name":"Shaan","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Sunday","timeSlot":"2.30 to 3","durationMin":30,"instructor":"JAVIER","venue":"SwimFarm","area":"Small Pool","weeks":3}]},{"name":"Shire","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Sunday","timeSlot":"9 to 9.30","durationMin":30,"instructor":"JAVIER","venue":"SwimFarm","area":"Small Pool","weeks":3}]},{"name":"Simon","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Sunday","timeSlot":"9 to 9.30","durationMin":30,"instructor":"DAN","venue":"SwimFarm","area":"Small Pool","weeks":3}]},{"name":"Stephanie","validated":false,"sessions":[{"service":"Multi-Activity","day":"Wednesday","timeSlot":"4.30 to 5.15","durationMin":45,"instructor":"YOUSSEF","venue":"Acton","area":"Teaching Pool","weeks":3},{"service":"Multi-Activity","day":"Wednesday","timeSlot":"5.15 to 6","durationMin":45,"instructor":"BERTA","venue":"Acton","area":"Room 2","weeks":3}]},{"name":"Steven","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"5.30 to 6","durationMin":30,"instructor":"ANGEL","venue":"Acton","area":"Teaching Pool","weeks":3}]},{"name":"Thushyan","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Thursday","timeSlot":"4.30 to 5","durationMin":30,"instructor":"SIMON","venue":"Acton","area":"Lane (DE)","weeks":3}]},{"name":"Timi","validated":false,"sessions":[{"service":"Day Centre","day":"Monday","timeSlot":"11 to 1","durationMin":120,"instructor":"RAUL","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Monday","timeSlot":"12 to 12.30","durationMin":30,"instructor":"ROBERTO","venue":"SwimFarm","area":"Hub Room","weeks":1},{"service":"Day Centre","day":"Monday","timeSlot":"1 to 3","durationMin":120,"instructor":"RAUL","venue":"SwimFarm","area":"Hub Room","weeks":2},{"service":"Day Centre","day":"Friday","timeSlot":"11 to 1","durationMin":120,"instructor":"VICTOR","venue":"SwimFarm","area":"Hub Room","weeks":2},{"service":"Day Centre","day":"Friday","timeSlot":"1 to 3","durationMin":120,"instructor":"RAUL","venue":"SwimFarm","area":"Hub Room","weeks":2}]},{"name":"Tinashe","validated":false,"sessions":[{"service":"Bespoke Programme","day":"Monday","timeSlot":"4.30 to 6","durationMin":90,"instructor":"BISMARK","venue":"SwimFarm","area":"Hub Room","weeks":9},{"service":"Bespoke Programme","day":"Wednesday","timeSlot":"4.30 to 6","durationMin":90,"instructor":"BISMARK","venue":"SwimFarm","area":"Hub Room","weeks":9},{"service":"Bespoke Programme","day":"Friday","timeSlot":"4.30 to 6","durationMin":90,"instructor":"BISMARK","venue":"SwimFarm","area":"Hub Room","weeks":9}]},{"name":"Tom","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Thursday","timeSlot":"4 to 4.30","durationMin":30,"instructor":"ROBERTO","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Tyson","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Wednesday","timeSlot":"4.30 to 5","durationMin":30,"instructor":"DAN","venue":"Northolt","area":"Teaching Pool","weeks":3}]},{"name":"Vithura","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Wednesday","timeSlot":"4.30 to 5","durationMin":30,"instructor":"ROBERTO","venue":"Northolt","area":"Teaching Pool","weeks":3}]},{"name":"Yamik","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"6 to 6.30","durationMin":30,"instructor":"ROBERTO","venue":"Northolt","area":"Teaching Pool","weeks":3}]},{"name":"Yassir","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Thursday","timeSlot":"4.30 to 5","durationMin":30,"instructor":"ROBERTO","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Yoan","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Sunday","timeSlot":"2.30 to 3.30","durationMin":60,"instructor":"ROBERTO","venue":"SwimFarm","area":"Big Pool","weeks":3}]},{"name":"Yossi","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Thursday","timeSlot":"5 to 5.30","durationMin":30,"instructor":"ROBERTO","venue":"Acton","area":"Lane (DE)","weeks":3}]},{"name":"Yunis","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"4.30 to 5","durationMin":30,"instructor":"ROBERTO","venue":"Northolt","area":"Teaching Pool","weeks":3}]},{"name":"Yuri","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Thursday","timeSlot":"5 to 5.30","durationMin":30,"instructor":"SIMON","venue":"Acton","area":"Lane (SE)","weeks":3}]},{"name":"Yusuf Ah","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Sunday","timeSlot":"9 to 9.30","durationMin":30,"instructor":"ROBERTO","venue":"SwimFarm","area":"Small Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"9.30 to 10.15","durationMin":45,"instructor":"ROBERTO","venue":"SwimFarm","area":"Big Pool","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"10.15 to 11","durationMin":45,"instructor":"GODSWAY","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Climbing Activity","day":"Sunday","timeSlot":"11 to 12","durationMin":60,"instructor":"ALEX","venue":"Westway","area":"Wall","weeks":3}]},{"name":"Zaid","validated":false,"sessions":[{"service":"Multi-Activity","day":"Sunday","timeSlot":"9.30 to 10.15","durationMin":45,"instructor":"GIUSEPPE","venue":"SwimFarm","area":"Hub Room","weeks":3},{"service":"Multi-Activity","day":"Sunday","timeSlot":"10.15 to 11","durationMin":45,"instructor":"JAVIER","venue":"SwimFarm","area":"Small Pool","weeks":3},{"service":"Climbing Activity","day":"Sunday","timeSlot":"11 to 12","durationMin":60,"instructor":"JAVIER","venue":"Westway","area":"Wall","weeks":3}]},{"name":"Zakariya","validated":false,"sessions":[{"service":"Climbing Activity","day":"Sunday","timeSlot":"1 to 2","durationMin":60,"instructor":"JAVIER","venue":"Westway","area":"Wall","weeks":3},{"service":"Aquatic Activity","day":"Sunday","timeSlot":"2 to 2.30","durationMin":30,"instructor":"DAN","venue":"SwimFarm","area":"Big Pool","weeks":3}]},{"name":"Zayana","validated":false,"sessions":[{"service":"Aquatic Activity","day":"Monday","timeSlot":"5.30 to 6","durationMin":30,"instructor":"DAN","venue":"Northolt","area":"Teaching Pool","weeks":3}]}]}</script>
 <script>
 (function(){
@@ -224,10 +228,248 @@
   var STATE = loadState();
   var editing = Object.create(null); // clientIdx -> Set of sessionIdx being edited (or 'all')
 
+  /* Funding by first → LA/NHS funder → payment method (private vs LA lists differ). */
+  var FUNDING_SOURCE_OPTS = [
+    { value: 'privately_funded', label: 'Using private funds' },
+    { value: 'la_nhs', label: 'Using money from LA' }
+  ];
+  var FUNDER_DETAIL_OPTS = [
+    { value: 'ealing_children', label: 'Ealing · Children' },
+    { value: 'ealing_adult', label: 'Ealing · Adult' },
+    { value: 'hf_children', label: 'Hammersmith & Fulham · Children' },
+    { value: 'hf_adult', label: 'Hammersmith & Fulham · Adult' },
+    { value: 'nhs_north_west', label: 'NHS North West' },
+    { value: 'nhs_ila', label: 'NHS ILA' }
+  ];
+  var PAY_PRIVATE_OPTS = [
+    'Bank Transfer (fixed due dates)',
+    'Direct Payment (GoCardless · monthly)',
+    'Own arrangement — cannot meet payment dates (+ £50 / term)'
+  ];
+  var PAY_LA_OPTS = [
+    'LA invoice (BACS)',
+    'Direct payment (CWD remittance)',
+    'LA invoice (Care in Finance)',
+    'NHS invoice (PO)'
+  ];
+  var DEFAULT_PAY_BY_FUNDER = {
+    ealing_children: 'Direct payment (CWD remittance)',
+    ealing_adult: 'LA invoice (Care in Finance)',
+    hf_children: 'LA invoice (BACS)',
+    hf_adult: 'LA invoice (BACS)',
+    nhs_north_west: 'NHS invoice (PO)',
+    nhs_ila: 'NHS invoice (PO)'
+  };
+
+  function fundingSourceLabel(code){
+    for(var i=0;i<FUNDING_SOURCE_OPTS.length;i++){
+      if(FUNDING_SOURCE_OPTS[i].value === code) return FUNDING_SOURCE_OPTS[i].label;
+    }
+    return '';
+  }
+  function funderDetailLabel(code){
+    for(var i=0;i<FUNDER_DETAIL_OPTS.length;i++){
+      if(FUNDER_DETAIL_OPTS[i].value === code) return FUNDER_DETAIL_OPTS[i].label;
+    }
+    return '';
+  }
+  function composeFundingBy(client){
+    var src = String(client.fundingSource||'').trim();
+    if(src === 'privately_funded') return fundingSourceLabel(src);
+    if(src === 'la_nhs'){
+      var det = funderDetailLabel(client.funderDetail);
+      return det ? ('Using money from LA · ' + det) : fundingSourceLabel(src);
+    }
+    return String(client.fundingBy||'').trim();
+  }
+  function payOptsForClient(client){
+    return String(client.fundingSource||'') === 'la_nhs' ? PAY_LA_OPTS : PAY_PRIVATE_OPTS;
+  }
+  function selectOptsHtml(opts, selected, placeholder){
+    var html = '<option value="">'+(placeholder||'— Select —')+'</option>';
+    var found = false;
+    (opts||[]).forEach(function(o){
+      var v = typeof o === 'string' ? o : o.value;
+      var lab = typeof o === 'string' ? o : o.label;
+      var sel = String(selected||'') === String(v);
+      if(sel) found = true;
+      html += '<option value="'+esc(v)+'"'+(sel?' selected':'')+'>'+esc(lab)+'</option>';
+    });
+    if(selected && !found){
+      html += '<option value="'+esc(selected)+'" selected>'+esc(selected)+' (current)</option>';
+    }
+    return html;
+  }
+  function inferAgeBand(sessions, parentHint){
+    var blob = ((parentHint||'') + ' ' + (sessions||[]).map(function(s){
+      return [s.service,s.venue,s.area].join(' ');
+    }).join(' ')).toLowerCase();
+    if(/\b(day centre|ld team|adult day|adult services)\b/.test(blob)) return 'adult';
+    return 'children';
+  }
+  function normalizePrivatePayLabel(payMethod, fund){
+    var s = (String(payMethod||'') + ' ' + String(fund||'')).toLowerCase();
+    if(/gocardless|go cardless|direct debit/.test(s)) return PAY_PRIVATE_OPTS[1];
+    if(/own way|own arrangement/.test(s)) return PAY_PRIVATE_OPTS[2];
+    if(/bank/.test(s) || /private/.test(s)) return PAY_PRIVATE_OPTS[0];
+    return '';
+  }
+  function normalizeLaPayLabel(payMethod){
+    var s = String(payMethod||'').trim();
+    if(!s || s === '—') return '';
+    for(var i=0;i<PAY_LA_OPTS.length;i++){
+      if(PAY_LA_OPTS[i].toLowerCase() === s.toLowerCase()) return PAY_LA_OPTS[i];
+    }
+    if(/nhs|po\b/.test(s.toLowerCase())) return 'NHS invoice (PO)';
+    if(/care in finance/.test(s.toLowerCase())) return 'LA invoice (Care in Finance)';
+    if(/cwd|remittance|direct payment/.test(s.toLowerCase())) return 'Direct payment (CWD remittance)';
+    if(/bacs|la invoice/.test(s.toLowerCase())) return 'LA invoice (BACS)';
+    return s;
+  }
+  function mapPaymentsRowToFinance(payRow, sessions){
+    if(!payRow) return null;
+    var fund = String(payRow.fund||'').trim();
+    var parent = String(payRow.parent||'').trim();
+    var method = String(payRow.payMethod||payRow.method||'').trim();
+    var age = inferAgeBand(sessions, parent);
+    var out = null;
+    if(/nhs\s*·\s*ila|nhs\/ila|\bila\b/i.test(fund+' '+parent)){
+      out = { fundingSource:'la_nhs', funderDetail:'nhs_ila', paymentMethod: normalizeLaPayLabel(method) || 'NHS invoice (PO)' };
+    } else if(/nhs\s*·\s*sbs|nhs\/sbs|north\s*west|\bsbs\b/i.test(fund+' '+parent)){
+      out = { fundingSource:'la_nhs', funderDetail:'nhs_north_west', paymentMethod: normalizeLaPayLabel(method) || 'NHS invoice (PO)' };
+    } else if(/local authority\s*·\s*h\s*&\s*f|hammersmith|h\s*&\s*f/i.test(fund+' '+parent)){
+      var hfAdult = age === 'adult' || /ld team/i.test(parent);
+      out = {
+        fundingSource:'la_nhs',
+        funderDetail: hfAdult ? 'hf_adult' : 'hf_children',
+        paymentMethod: normalizeLaPayLabel(method) || 'LA invoice (BACS)'
+      };
+    } else if(/local authority\s*·\s*ealing|\bealing\b/i.test(fund+' '+parent)){
+      var eAdult = age === 'adult';
+      out = {
+        fundingSource:'la_nhs',
+        funderDetail: eAdult ? 'ealing_adult' : 'ealing_children',
+        paymentMethod: normalizeLaPayLabel(method) || (eAdult ? 'LA invoice (Care in Finance)' : 'Direct payment (CWD remittance)')
+      };
+    } else if(/bank transfer|gocardless|own way|private/i.test(fund) || /bank|go cardless|own way/i.test(method)){
+      out = {
+        fundingSource:'privately_funded',
+        funderDetail:'',
+        paymentMethod: normalizePrivatePayLabel(method, fund) || PAY_PRIVATE_OPTS[0]
+      };
+    }
+    if(!out) return null;
+    if(payRow.out != null && Number.isFinite(Number(payRow.out)) && Number(payRow.out) > 0){
+      out.moneyOwed = Math.round(Number(payRow.out)*100)/100;
+    }
+    return out;
+  }
+  function findPaymentsRow(name){
+    var src = window.CLIENTS_PAYMENTS_PORTAL_SOURCE;
+    if(!src || !Array.isArray(src.rows)) return null;
+    var matches = [];
+    for(var i=0;i<src.rows.length;i++){
+      var r = src.rows[i];
+      var pax = String(r && (r.pax||r.client)||'').trim();
+      if(!pax) continue;
+      if(namesRoughMatch(name, pax) || normName(name) === normName(pax)) matches.push(r);
+    }
+    if(!matches.length) return null;
+    matches.sort(function(a,b){
+      var la = String(a.sheet||'') === 'LA' ? 0 : 1;
+      var lb = String(b.sheet||'') === 'LA' ? 0 : 1;
+      if(la !== lb) return la - lb;
+      var oa = Number(a.out)||0, ob = Number(b.out)||0;
+      return ob - oa;
+    });
+    return matches[0];
+  }
+  function migrateLegacyFunding(client){
+    if(client.fundingSource){
+      client.fundingBy = composeFundingBy(client);
+      return;
+    }
+    var raw = String(client.fundingBy||'').trim();
+    var pay = String(client.paymentMethod||'').trim();
+    if(!raw && !pay) return;
+    var blob = (raw + ' ' + pay).toLowerCase();
+    if(/nhs\s*ila|\bila\b/.test(blob)){ client.fundingSource='la_nhs'; client.funderDetail='nhs_ila'; }
+    else if(/nhs|sbs|north west/.test(blob)){ client.fundingSource='la_nhs'; client.funderDetail='nhs_north_west'; }
+    else if(/h\s*&\s*f|hammersmith|fulham/.test(blob)){
+      client.fundingSource='la_nhs';
+      client.funderDetail = /adult|ld team/.test(blob) ? 'hf_adult' : 'hf_children';
+    }
+    else if(/ealing/.test(blob)){
+      client.fundingSource='la_nhs';
+      client.funderDetail = /adult/.test(blob) ? 'ealing_adult' : 'ealing_children';
+    }
+    else if(/using money from la|local authority|\bla\b|nhs/.test(blob)){
+      client.fundingSource='la_nhs';
+    }
+    else if(/private|bank transfer|gocardless|own arrangement|own way/.test(blob)){
+      client.fundingSource='privately_funded';
+      client.funderDetail='';
+    }
+    if(client.fundingSource) client.fundingBy = composeFundingBy(client);
+  }
+  function applyFinancePatch(client, patch, onlyEmpty){
+    if(!patch) return false;
+    var changed = false;
+    function set(key, val){
+      if(val == null || val === '') return;
+      if(onlyEmpty){
+        var cur = client[key];
+        if(cur != null && String(cur).trim() !== '') return;
+      }
+      if(client[key] !== val){ client[key] = val; changed = true; }
+    }
+    set('fundingSource', patch.fundingSource);
+    if(patch.fundingSource === 'privately_funded'){
+      if(client.funderDetail){ client.funderDetail = ''; changed = true; }
+    } else {
+      set('funderDetail', patch.funderDetail);
+    }
+    set('paymentMethod', patch.paymentMethod);
+    set('moneyOwed', patch.moneyOwed);
+    if(changed || patch.fundingSource) client.fundingBy = composeFundingBy(client);
+    return changed;
+  }
+  function prefillFinanceFromPayments(){
+    var changed = false;
+    STATE.clients.forEach(function(c){
+      migrateLegacyFunding(c);
+      var row = findPaymentsRow(c.name);
+      if(applyFinancePatch(c, mapPaymentsRowToFinance(row, c.sessions), true)) changed = true;
+      else if(c.fundingSource) c.fundingBy = composeFundingBy(c);
+    });
+    if(changed) save();
+  }
+
   function save(){
     try{ localStorage.setItem(LS_KEY, JSON.stringify(STATE)); }catch(_){}
   }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+  function normName(name){
+    return String(name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
+  }
+  function nameTokens(s){
+    return normName(s).split(' ').filter(Boolean);
+  }
+  function namesRoughMatch(a, b){
+    var na = normName(a), nb = normName(b);
+    if(!na || !nb) return false;
+    if(na === nb) return true;
+    if(na.indexOf(nb) >= 0 || nb.indexOf(na) >= 0) return true;
+    var ta = nameTokens(a), tb = nameTokens(b);
+    if(!ta.length || !tb.length) return false;
+    if(ta[0] === tb[0] || ta[0].slice(0,4) === tb[0].slice(0,4)){
+      var la = ta[ta.length-1], lb = tb[tb.length-1];
+      if(la && lb && (la === lb || la.indexOf(lb)===0 || lb.indexOf(la)===0)) return true;
+    }
+    return false;
+  }
 
   function slotMinutes(slot){
     var m = String(slot||'').split(/to|-|—/i);
@@ -308,15 +550,26 @@
   }
 
   function clientFinanceHtml(client, ci){
+    var isLa = String(client.fundingSource||'') === 'la_nhs';
     return ''+
       '<div class="client-finance">'+
         '<div class="client-finance__row">'+
-          '<label for="cf-pay-'+ci+'">Payment method</label>'+
-          '<input id="cf-pay-'+ci+'" data-cf="paymentMethod" data-ci="'+ci+'" value="'+esc(client.paymentMethod||'')+'" placeholder="e.g. Bank transfer / Direct debit" autocomplete="off" />'+
+          '<label for="cf-fund-'+ci+'">Funding by</label>'+
+          '<select id="cf-fund-'+ci+'" data-cf="fundingSource" data-ci="'+ci+'">'+
+            selectOptsHtml(FUNDING_SOURCE_OPTS, client.fundingSource, '— Select funding —')+
+          '</select>'+
+        '</div>'+
+        '<div class="client-finance__row client-finance__funder"'+(isLa?'':' hidden')+'>'+
+          '<label for="cf-funder-'+ci+'">LA / NHS funder</label>'+
+          '<select id="cf-funder-'+ci+'" data-cf="funderDetail" data-ci="'+ci+'"'+(isLa?'':' disabled')+'>'+
+            selectOptsHtml(FUNDER_DETAIL_OPTS, client.funderDetail, '— Ealing / H&amp;F / NHS —')+
+          '</select>'+
         '</div>'+
         '<div class="client-finance__row">'+
-          '<label for="cf-fund-'+ci+'">Funding by</label>'+
-          '<input id="cf-fund-'+ci+'" data-cf="fundingBy" data-ci="'+ci+'" value="'+esc(client.fundingBy||'')+'" placeholder="e.g. LA / NHS / Private / Exempt" autocomplete="off" />'+
+          '<label for="cf-pay-'+ci+'">Payment method</label>'+
+          '<select id="cf-pay-'+ci+'" data-cf="paymentMethod" data-ci="'+ci+'">'+
+            selectOptsHtml(payOptsForClient(client), client.paymentMethod, '— Select payment —')+
+          '</select>'+
         '</div>'+
         '<div class="client-finance__money">'+
           '<div class="client-finance__row money-owed">'+
@@ -328,7 +581,7 @@
             '<input id="cf-cred-'+ci+'" data-cf="creditBalance" data-ci="'+ci+'" inputmode="decimal" value="'+esc(moneyFieldValue(client.creditBalance))+'" placeholder="0.00" autocomplete="off" />'+
           '</div>'+
         '</div>'+
-        '<p class="client-finance__hint">Owed = balance due · Credits = credit on file. Edits save on this device; Publish keeps services on the portal.</p>'+
+        '<p class="client-finance__hint">Funding first · LA/NHS pick funder · Owed / Credits you can edit. Prefill from Clients Payments when empty.</p>'+
       '</div>';
   }
 
@@ -379,6 +632,8 @@
     if(client.name.toLowerCase().indexOf(q)>=0) return true;
     if(String(client.paymentMethod||'').toLowerCase().indexOf(q)>=0) return true;
     if(String(client.fundingBy||'').toLowerCase().indexOf(q)>=0) return true;
+    if(String(funderDetailLabel(client.funderDetail)||'').toLowerCase().indexOf(q)>=0) return true;
+    if(String(fundingSourceLabel(client.fundingSource)||'').toLowerCase().indexOf(q)>=0) return true;
     return (client.sessions||[]).some(function(s){
       return [s.service,s.day,s.timeSlot,s.venue,s.area].join(' ').toLowerCase().indexOf(q)>=0;
     });
@@ -397,7 +652,7 @@
     var nVal = STATE.clients.filter(function(c){return c.validated;}).length;
     document.getElementById('nVal').textContent = nVal;
     document.getElementById('nTot').textContent = STATE.clients.length;
-    document.getElementById('sub').textContent = 'Rota '+SEED.range.from+' → '+SEED.range.to+' · '+STATE.clients.length+' clients · payment, funding, money owed / credits · Summer Term 2026 (AY 2025–26)';
+    document.getElementById('sub').textContent = 'Rota '+SEED.range.from+' → '+SEED.range.to+' · '+STATE.clients.length+' clients · funding → payment · owed / credits · Summer Term 2026';
   }
 
   // event delegation
@@ -428,9 +683,52 @@
     }
   });
 
+  rowsEl.addEventListener('change', function(ev){
+    var cf = ev.target.closest('[data-cf]');
+    if(!cf || cf.tagName !== 'SELECT') return;
+    var ciF = parseInt(cf.getAttribute('data-ci'),10);
+    var field = cf.getAttribute('data-cf');
+    var client = STATE.clients[ciF];
+    if(!client || !field) return;
+    var raw = cf.value;
+    if(field === 'fundingSource'){
+      client.fundingSource = raw;
+      if(raw !== 'la_nhs'){
+        client.funderDetail = '';
+        if(client.paymentMethod && PAY_LA_OPTS.indexOf(client.paymentMethod) >= 0){
+          client.paymentMethod = '';
+        }
+      } else if(client.paymentMethod && PAY_PRIVATE_OPTS.indexOf(client.paymentMethod) >= 0){
+        client.paymentMethod = '';
+      }
+      client.fundingBy = composeFundingBy(client);
+      client._dirty = true;
+      save();
+      render();
+      return;
+    }
+    if(field === 'funderDetail'){
+      client.funderDetail = raw;
+      if(raw && (!client.paymentMethod || PAY_PRIVATE_OPTS.indexOf(client.paymentMethod) >= 0)){
+        client.paymentMethod = DEFAULT_PAY_BY_FUNDER[raw] || client.paymentMethod || '';
+      }
+      client.fundingBy = composeFundingBy(client);
+      client._dirty = true;
+      save();
+      render();
+      return;
+    }
+    if(field === 'paymentMethod'){
+      client.paymentMethod = raw;
+      client._dirty = true;
+      save();
+    }
+  });
+
   rowsEl.addEventListener('input', function(ev){
     var cf = ev.target.closest('[data-cf]');
     if(cf){
+      if(cf.tagName === 'SELECT') return;
       var ciF = parseInt(cf.getAttribute('data-ci'),10);
       var field = cf.getAttribute('data-cf');
       var client = STATE.clients[ciF];
@@ -486,15 +784,17 @@
     download('client_services_reviewed.json', JSON.stringify(clean,null,2), 'application/json');
   });
   document.getElementById('csvBtn').addEventListener('click', function(){
-    var rows = [['Client','Validated','Payment_method','Funding_by','Money_owed','Credits','Service','Duration_min','Day','Time_slot','Venue','Note_area','Weeks']];
+    var rows = [['Client','Validated','Funding_by','Funder','Payment_method','Money_owed','Credits','Service','Duration_min','Day','Time_slot','Venue','Note_area','Weeks']];
     STATE.clients.forEach(function(c){
+      var fundLabel = composeFundingBy(c) || c.fundingBy || '';
+      var funder = funderDetailLabel(c.funderDetail) || '';
       if(!c.sessions.length){
-        rows.push([c.name, c.validated?'YES':'NO', c.paymentMethod||'', c.fundingBy||'', moneyFieldValue(c.moneyOwed), moneyFieldValue(c.creditBalance),'','','','','','','']);
+        rows.push([c.name, c.validated?'YES':'NO', fundLabel, funder, c.paymentMethod||'', moneyFieldValue(c.moneyOwed), moneyFieldValue(c.creditBalance),'','','','','','','']);
         return;
       }
       c.sessions.forEach(function(s){
         rows.push([
-          c.name, c.validated?'YES':'NO', c.paymentMethod||'', c.fundingBy||'',
+          c.name, c.validated?'YES':'NO', fundLabel, funder, c.paymentMethod||'',
           moneyFieldValue(c.moneyOwed), moneyFieldValue(c.creditBalance),
           s.service, (slotMinutes(s.timeSlot)||''), s.day, s.timeSlot, s.venue, s.area, (s.weeks||'')
         ]);
@@ -516,31 +816,10 @@
   function slugKey(name){
     return String(name||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
   }
-  function normName(name){
-    return String(name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-      .replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
-  }
   function getAdminClient(){
     try{ return (window.portalAdminGetSupabaseClient && window.portalAdminGetSupabaseClient()) || null; }catch(_){ return null; }
   }
 
-  function nameTokens(s){
-    return normName(s).split(' ').filter(Boolean);
-  }
-  function namesRoughMatch(a, b){
-    var na = normName(a), nb = normName(b);
-    if(!na || !nb) return false;
-    if(na === nb) return true;
-    if(na.indexOf(nb) >= 0 || nb.indexOf(na) >= 0) return true;
-    var ta = nameTokens(a), tb = nameTokens(b);
-    if(!ta.length || !tb.length) return false;
-    // same first token + shared last token start (Abodi Pa ≈ Aboodi Patel)
-    if(ta[0] === tb[0] || ta[0].slice(0,4) === tb[0].slice(0,4)){
-      var la = ta[ta.length-1], lb = tb[tb.length-1];
-      if(la && lb && (la === lb || la.indexOf(lb)===0 || lb.indexOf(la)===0)) return true;
-    }
-    return false;
-  }
   function findClientIndexByDisplay(display){
     var i;
     for(i=0;i<STATE.clients.length;i++){
@@ -571,8 +850,18 @@
         if(idx < 0) return;
         contactByIdx[idx] = row;
         var c = STATE.clients[idx];
-        fillIfEmpty(c, 'fundingBy', row.funding_label);
-        fillIfEmpty(c, 'paymentMethod', row.payment_method_label);
+        var mapped = mapPaymentsRowToFinance({
+          fund: row.funding_label,
+          parent: row.funding_label,
+          payMethod: row.payment_method_label,
+          method: row.payment_method_label
+        }, c.sessions);
+        if(mapped) applyFinancePatch(c, mapped, true);
+        else {
+          fillIfEmpty(c, 'fundingBy', row.funding_label);
+          fillIfEmpty(c, 'paymentMethod', row.payment_method_label);
+          migrateLegacyFunding(c);
+        }
         if(row.contact_id) c.contactId = c.contactId || row.contact_id;
       });
 
@@ -687,6 +976,7 @@
     r.readAsText(f);
   });
 
+  prefillFinanceFromPayments();
   render();
   function tryEnrich(){
     enrichFinanceFromPortal();
