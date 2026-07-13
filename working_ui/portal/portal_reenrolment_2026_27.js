@@ -1675,6 +1675,37 @@
     syncPaymentSchedulePreview();
   }
 
+  function setBillingPayExtrasHidden(hidden) {
+    ["rePayScheduleWrap", "reBillingPlanIntro", "rePaySchedulePreview", "reAdminFeeNote", "reOwnWayNote", "reDirectPayFailNote"].forEach(
+      function (id) {
+        var el = $(id);
+        if (!el) return;
+        if (hidden) {
+          el.hidden = true;
+          return;
+        }
+        if (id === "rePaySchedulePreview") {
+          el.hidden = !el.innerHTML;
+          return;
+        }
+        if (id === "reAdminFeeNote") {
+          var b = state.billing2627 || {};
+          el.hidden = !adminFeeApplies(normalizePayMethodChoice(b.payCode));
+          return;
+        }
+        if (id === "reOwnWayNote") {
+          el.hidden = normalizePayMethodChoice((state.billing2627 || {}).payCode) !== "own_way_flexible";
+          return;
+        }
+        if (id === "reDirectPayFailNote") {
+          el.hidden = normalizePayMethodChoice((state.billing2627 || {}).payCode) !== "gocardless";
+          return;
+        }
+        el.hidden = false;
+      },
+    );
+  }
+
   function refreshBillingArrangementUI() {
     var wrap = $("reBillingArrangementWrap");
     if (!wrap || !state.lookup) return;
@@ -1682,9 +1713,9 @@
     tmp.innerHTML = renderBillingArrangementSection(state.lookup);
     var next = tmp.firstElementChild;
     if (next) wrap.replaceWith(next);
-    var paySec = $("reBillingPaySection");
-    if (paySec) paySec.hidden = !!(state.billing2627 && state.billing2627.editing);
-    if (!state.billing2627 || !state.billing2627.editing) refreshBillingPaySection(state.lookup);
+    var editing = !!(state.billing2627 && state.billing2627.editing);
+    setBillingPayExtrasHidden(editing);
+    if (!editing) refreshBillingPaySection(state.lookup);
   }
 
   function funderShortLabel(cur) {
@@ -1798,30 +1829,34 @@
       '<p class="re-funding-total">' +
       estimatedBillingTotalHtml(data) +
       "</p>" +
-      renderBillingArrangementSection(data) +
-      '<div id="reBillingPaySection"' +
+      '<div id="reBillingPaySection">' +
+      '<div id="rePanelPrivate" class="re-funding-panel">' +
+      '<div id="rePayScheduleWrap" class="re-pay-schedule-wrap"' +
       (b.editing ? " hidden" : "") +
       ">" +
-      '<div id="rePanelPrivate" class="re-funding-panel">' +
-      '<div id="rePayScheduleWrap" class="re-pay-schedule-wrap">' +
       (normalizeEnrolmentCadence(state.enrolmentCadence)
         ? renderPayScheduleFieldset(payCode, scheduleDefault)
         : '<p class="re-muted re-cadence-wait">Choose <strong>whole year</strong> or <strong>term by term</strong> above first — then your payment options will appear.</p>') +
       "</div>" +
-      '<p class="re-muted re-billing-plan-intro" id="reBillingPlanIntro">' +
+      renderBillingArrangementSection(data) +
+      '<p class="re-muted re-billing-plan-intro" id="reBillingPlanIntro"' +
+      (b.editing ? " hidden" : "") +
+      ">" +
       (normalizeEnrolmentCadence(state.enrolmentCadence) === "term_by_term"
         ? "The total above is for the <strong>current term only</strong> (term-by-term). Later terms are billed when you reconfirm. "
         : "The total above covers your confirmed sessions for the year. ") +
       "<strong>Bank Transfer / Card / Apple Pay</strong> uses fixed due dates (pay each invoice from the parent portal — no admin fee if on time). <strong>Direct Payment (GoCardless)</strong> is collected automatically once we set up your mandate. <strong>Own arrangement</strong> is only for privately funded families who cannot meet those dates (+ £50 / term) — not available with LA Direct Payments funding.</p>" +
-      '<div id="rePaySchedulePreview" class="re-pay-preview-host" hidden></div>' +
+      '<div id="rePaySchedulePreview" class="re-pay-preview-host"' +
+      (b.editing ? " hidden" : "") +
+      "></div>" +
       '<div id="reAdminFeeNote" class="re-funding-fee"' +
-      (adminFeeApplies(payCode) ? "" : " hidden") +
+      (b.editing || !adminFeeApplies(payCode) ? " hidden" : "") +
       ">" +
       "<strong>Admin fee</strong>" +
       '<span id="reAdminFeeAmount"></span>' +
       "</div>" +
       '<div id="reOwnWayNote" class="re-funding-fee re-funding-fee--own"' +
-      (payCode === "own_way_flexible" ? "" : " hidden") +
+      (b.editing || payCode !== "own_way_flexible" ? " hidden" : "") +
       ">" +
       "<strong>Own arrangement</strong>" +
       "Only if you cannot pay the full amount on our published due dates. " +
@@ -1832,7 +1867,7 @@
       "Paying on time on Bank Transfer / Card / Apple Pay has <strong>no</strong> £50 fee. Overpayments are kept as credit." +
       "</div>" +
       '<div id="reDirectPayFailNote" class="re-funding-fee re-funding-fee--fail"' +
-      (payCode === "gocardless" ? "" : " hidden") +
+      (b.editing || payCode !== "gocardless" ? " hidden" : "") +
       ">" +
       "<strong>If a Direct Payment fails</strong>" +
       "If a GoCardless collection fails (for example insufficient funds or a cancelled mandate), you must pay within " +
