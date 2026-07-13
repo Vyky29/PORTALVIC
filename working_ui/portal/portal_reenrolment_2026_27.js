@@ -463,9 +463,9 @@
   // Palette used to tint each booked service — the same tone is shown as a
   // legend dot next to the service and on that service's days in the preview.
   var RE_SERVICE_TONES = [
-    "#1f9d63",
+    "#ca8a04",
     "#2d7fb8",
-    "#b4820b",
+    "#1f9d63",
     "#7c4dbf",
     "#c2410c",
   ];
