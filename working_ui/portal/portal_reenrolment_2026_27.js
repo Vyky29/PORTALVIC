@@ -706,9 +706,11 @@
       }
       if (schedCode === "monthly_10") {
         return termOnly
-          ? "Term-by-term: monthly Direct Payments for " +
+          ? "Term-by-term: " +
+              installmentCountForSchedule("monthly_10", cadence) +
+              " monthly Direct Payments for " +
               termLabel +
-              " only (Autumn 4 / Spring 3 / Summer 3). Later terms when you reconfirm."
+              " only. Later terms when you reconfirm."
           : "Same programme total — ten Direct Payments (Autumn 4, Spring 3, Summer 3). First collection on 1 September; then on the 1st of each month through June.";
       }
       if (schedCode === "monthly_term") {
@@ -1492,9 +1494,32 @@
     var opts = (RE_SCHEDULE_OPTIONS[payCode] || []).slice();
     var cad = normalizeEnrolmentCadence(cadence);
     if (!cad) return opts;
-    return opts.filter(function (o) {
+    opts = opts.filter(function (o) {
       return scheduleMatchesCadence(o.code, cad);
     });
+    /* Term-by-term + GoCardless: monthly first, label = N payments this term (not “10 / year”). */
+    if (cad === "term_by_term" && payCode === "gocardless") {
+      var n = installmentCountForSchedule("monthly_10", cad);
+      opts = opts
+        .map(function (o) {
+          if (o.code !== "monthly_10") return o;
+          return {
+            code: o.code,
+            label:
+              "Regular monthly — " +
+              n +
+              " Payment" +
+              (n === 1 ? "" : "s") +
+              " this Term",
+          };
+        })
+        .sort(function (a, b) {
+          if (a.code === "monthly_10") return -1;
+          if (b.code === "monthly_10") return 1;
+          return 0;
+        });
+    }
+    return opts;
   }
 
   function payMethodCompatibleWithCadence(payCode, cadence) {
@@ -1960,13 +1985,22 @@
     }
     if (code === "monthly_10") {
       if (termOnly) {
+        var nPay = installmentCountForSchedule("monthly_10", cadence);
         return isGc
-          ? "Term-by-term: monthly Direct Payments for " +
+          ? "Term-by-term: " +
+              nPay +
+              " monthly Direct Payment" +
+              (nPay === 1 ? "" : "s") +
+              " for " +
               termLabel +
-              " only (Autumn 4 / Spring 3 / Summer 3). Later terms when you reconfirm. £1.50 fee per instalment."
-          : "Term-by-term: monthly invoices for " +
+              " only. Later terms when you reconfirm. £1.50 fee per instalment."
+          : "Term-by-term: " +
+              nPay +
+              " monthly invoice" +
+              (nPay === 1 ? "" : "s") +
+              " for " +
               termLabel +
-              " only (Autumn 4 / Spring 3 / Summer 3). Later terms when you reconfirm.";
+              " only. Later terms when you reconfirm.";
       }
       return isGc
         ? "Regular plan: ten Direct Payments — Autumn 4, Spring 3, Summer 3 (September–June). We set up GoCardless before the first collection; then on the 1st of each month. Same programme total; £1.50 fee per instalment."
