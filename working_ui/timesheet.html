@@ -260,10 +260,15 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260423-1"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js?v=20260419-99"></script>
   <script src="/portal/staff_roster_resolve.js?v=20260625-simon-stf016"></script>
-  <script src="/portal/term_from_timetable.js?v=20260712-timesheet-period"></script>
+  <script src="/portal/term_from_timetable.js?v=20260713-timesheet-load"></script>
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260625-payroll-june"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260712-timesheet-period"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260712-timesheet-period"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260713-timesheet-load"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260713-timesheet-load"></script>
+  <script src="/portal/portal-roster-rows-merge.js?v=20260622-canonical-roster"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260614-madre-dedupe"></script>
+  <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
+  <script src="/portal/portal_madre_fold.js?v=20260706-madre-no-store-fix"></script>
+  <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260705-live-madre-autorefresh"></script>
   <script src="/portal/portal_staff_shift_window.js?v=20260707-youssef-acton-pm"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260630-daycentre-merge"></script>
 </head>
@@ -2379,7 +2384,11 @@
 
     function resolveRosterSessions(profile, user, ghostRosterKey) {
       if (typeof window.StaffDashboardSpreadsheetAdapter === "undefined" || !window.STAFF_DASHBOARD_SOURCE) {
-        throw new Error("Spreadsheet roster source is unavailable.");
+        console.warn("[timesheet] roster source unavailable", {
+          adapter: typeof window.StaffDashboardSpreadsheetAdapter,
+          source: !!window.STAFF_DASHBOARD_SOURCE
+        });
+        return [];
       }
       const meta = (user && user.user_metadata) || {};
       const authEmail = String((user && user.email) || "").trim();
@@ -2399,26 +2408,71 @@
       pushRosterCandidate(dedup, seen, meta.full_name);
       pushRosterCandidate(dedup, seen, emailLocal);
       for (let i = 0; i < dedup.length; i++) {
-        const boot = window.StaffDashboardSpreadsheetAdapter.bootstrap({
-          source: window.STAFF_DASHBOARD_SOURCE,
-          staffId: dedup[i]
-        });
-        if (boot && Array.isArray(boot.sessionsModel) && boot.sessionsModel.length) {
-          state.staffRosterKey = dedup[i];
-          return boot.sessionsModel;
+        try {
+          const boot = window.StaffDashboardSpreadsheetAdapter.bootstrap({
+            source: window.STAFF_DASHBOARD_SOURCE,
+            staffId: dedup[i]
+          });
+          if (boot && Array.isArray(boot.sessionsModel) && boot.sessionsModel.length) {
+            state.staffRosterKey = dedup[i];
+            return boot.sessionsModel;
+          }
+        } catch (bootErr) {
+          console.warn("[timesheet] bootstrap failed for", dedup[i], bootErr);
         }
       }
       if (fromAuth) {
-        const boot = window.StaffDashboardSpreadsheetAdapter.bootstrap({
-          source: window.STAFF_DASHBOARD_SOURCE,
-          staffId: fromAuth
-        });
-        if (boot && Array.isArray(boot.sessionsModel)) {
-          state.staffRosterKey = fromAuth;
-          return boot.sessionsModel;
+        try {
+          const boot = window.StaffDashboardSpreadsheetAdapter.bootstrap({
+            source: window.STAFF_DASHBOARD_SOURCE,
+            staffId: fromAuth
+          });
+          if (boot && Array.isArray(boot.sessionsModel)) {
+            state.staffRosterKey = fromAuth;
+            return boot.sessionsModel;
+          }
+        } catch (bootErr) {
+          console.warn("[timesheet] bootstrap fallback failed", bootErr);
         }
       }
+      if (dedup.length && !state.staffRosterKey) state.staffRosterKey = dedup[0];
       return [];
+    }
+
+    async function timesheetEnsureLiveRoster(supabase) {
+      try {
+        if (typeof window.portalRefreshPortalRosterRowsFromSupabase === "function") {
+          await withTimeout(
+            window.portalRefreshPortalRosterRowsFromSupabase(supabase),
+            10000,
+            "live_madre_roster"
+          );
+          return;
+        }
+        if (
+          window.PortalMadreFold &&
+          typeof window.PortalMadreFold.loadLiveMadre === "function"
+        ) {
+          await withTimeout(
+            window.PortalMadreFold.loadLiveMadre(supabase, true),
+            10000,
+            "live_madre"
+          );
+          if (typeof window.portalRefreshStaffDashboardSourceFromPortal === "function") {
+            window.portalRefreshStaffDashboardSourceFromPortal();
+          }
+        }
+      } catch (e) {
+        console.warn("[timesheet] live MADRE skipped; using static bundle", e);
+      }
+    }
+
+    function timesheetPaintIdentity() {
+      try {
+        document.getElementById("empName").textContent = state.employeeName || "-";
+        document.getElementById("roleLabel").textContent = state.roleLabel || "-";
+        document.getElementById("rateTop").textContent = formatRateHeaderText();
+      } catch (_) {}
     }
 
     function rosterCandidatesForUser(profile, user, ghostRosterKey) {
@@ -2701,19 +2755,24 @@
       document.getElementById("periodLabel").textContent = `Period: ${state.periodStart} to ${state.periodEnd} (25 -> 24)`;
       renderDeadlineBanner();
 
-      const [profileRes, rateRes, roleRatesRes] = await withTimeout(
-        Promise.all([
-          supabase.from("staff_profiles").select("full_name, username, role_track, role, app_role").eq("id", state.userId).maybeSingle(),
-          supabase.from("staff_pay_rates").select("hourly_rate, role_label").eq("user_id", state.userId).maybeSingle(),
-          supabase.from("staff_role_rates").select("role, scale, hourly_rate, is_primary").eq("user_id", state.userId)
-        ]),
-        12000,
-        "staff_profile_rates"
-      );
-
-      const profile = profileRes.data || {};
-      const rateRow = rateRes.data || {};
-      buildRoleRateMap(roleRatesRes && roleRatesRes.data ? roleRatesRes.data : []);
+      let profile = {};
+      let rateRow = {};
+      try {
+        const [profileRes, rateRes, roleRatesRes] = await withTimeout(
+          Promise.all([
+            supabase.from("staff_profiles").select("full_name, username, role_track, role, app_role").eq("id", state.userId).maybeSingle(),
+            supabase.from("staff_pay_rates").select("hourly_rate, role_label").eq("user_id", state.userId).maybeSingle(),
+            supabase.from("staff_role_rates").select("role, scale, hourly_rate, is_primary").eq("user_id", state.userId)
+          ]),
+          12000,
+          "staff_profile_rates"
+        );
+        profile = (profileRes && profileRes.data) || {};
+        rateRow = (rateRes && rateRes.data) || {};
+        buildRoleRateMap(roleRatesRes && roleRatesRes.data ? roleRatesRes.data : []);
+      } catch (profileErr) {
+        console.warn("[timesheet] profile/rates load failed", profileErr);
+      }
 
       const manualKey = manualRosterKeyForUser(profile, user, ghostRosterKey);
       if (manualKey) {
@@ -2727,9 +2786,7 @@
         state.roleLabel = formatRoleHeaderText();
         state.hourlyRate = state.primaryRate != null ? state.primaryRate : Number(mpay.hourly_rate || 0);
         state.effectiveRate = state.hourlyRate;
-        document.getElementById("empName").textContent = state.employeeName || "-";
-        document.getElementById("roleLabel").textContent = state.roleLabel || "-";
-        document.getElementById("rateTop").textContent = formatRateHeaderText();
+        timesheetPaintIdentity();
         setupManualMode();
         if (state.ghostReadOnly) applyGhostReadOnlyUi();
         return;
@@ -2739,45 +2796,75 @@
         window.__portalTimesheetForceVertical();
       }
 
-      const sessionsModel = resolveRosterSessions(profile, user, ghostRosterKey);
+      await timesheetEnsureLiveRoster(supabase);
+
+      let sessionsModel = [];
+      try {
+        sessionsModel = resolveRosterSessions(profile, user, ghostRosterKey) || [];
+      } catch (rosterErr) {
+        console.error("[timesheet] resolveRosterSessions failed", rosterErr);
+        sessionsModel = [];
+      }
       applyRosterPayRateFallback(state.staffRosterKey);
-      // Paint roster rows first (local memory map). Heavy feedback/RPC merge runs after.
-      const [scheduleOverrides, dayOffRowsEarly] = await Promise.all([
-        fetchScheduleOverridesForPeriod(supabase, state.periodStart, state.periodEnd),
-        fetchStaffDaysOffEntries(
-          supabase,
-          state.userId,
-          state.staffRosterKey,
-          state.periodStart,
-          state.periodEnd
-        ),
-      ]);
+
+      state.employeeName = ghostHandoff && ghostHandoff.displayName
+        ? ghostHandoff.displayName
+        : resolveEmployeeDisplayName(profile, user, state.staffRosterKey);
+      const pay = applyPayRateFromProfile(rateRow, profile, state.staffRosterKey);
+      state.roleLabel = pay.role_label || formatRoleHeaderText();
+      state.hourlyRate = Number(pay.hourly_rate || 0);
+      timesheetPaintIdentity();
+
+      let scheduleOverrides = [];
+      let dayOffRowsEarly = [];
+      try {
+        const pair = await Promise.all([
+          fetchScheduleOverridesForPeriod(supabase, state.periodStart, state.periodEnd),
+          fetchStaffDaysOffEntries(
+            supabase,
+            state.userId,
+            state.staffRosterKey,
+            state.periodStart,
+            state.periodEnd
+          ),
+        ]);
+        scheduleOverrides = pair[0];
+        dayOffRowsEarly = pair[1];
+      } catch (ovErr) {
+        console.warn("[timesheet] overrides/day-off fetch failed", ovErr);
+      }
       state.scheduleOverrides = Array.isArray(scheduleOverrides) ? scheduleOverrides : [];
       state.dayOffEntries = Array.isArray(dayOffRowsEarly) ? dayOffRowsEarly : [];
-      const sessionsWithCover = mergeInstructorCoverSessions(
-        sessionsModel,
-        scheduleOverrides,
-        state.staffRosterKey
-      );
+
+      let sessionsWithCover = sessionsModel;
+      try {
+        sessionsWithCover = mergeInstructorCoverSessions(
+          sessionsModel,
+          scheduleOverrides,
+          state.staffRosterKey
+        );
+      } catch (coverErr) {
+        console.warn("[timesheet] cover merge failed", coverErr);
+        sessionsWithCover = sessionsModel;
+      }
       if (!sessionsWithCover.length) {
         const note = document.getElementById("statusNote");
         if (note) {
           note.textContent = state.staffRosterKey
             ? `No roster shifts found for ${state.staffRosterKey} in this pay period. Check your profile username matches the rota.`
-            : "Could not match your login to a roster profile (e.g. luliya → lulia). Contact the office.";
+            : "Could not match your login to a roster profile. Pull to refresh, or contact the office.";
         }
       }
-      state.employeeName = ghostHandoff && ghostHandoff.displayName
-        ? ghostHandoff.displayName
-        : resolveEmployeeDisplayName(profile, user, state.staffRosterKey);
-      const pay = applyPayRateFromProfile(rateRow, profile, state.staffRosterKey);
-      state.roleLabel = pay.role_label;
-      state.hourlyRate = Number(pay.hourly_rate || 0);
 
       const dates = eachDateInclusive(parseIsoDate(state.periodStart), parseIsoDate(state.periodEnd));
-      rebuildEntriesFromSessions(sessionsWithCover, dates, parseReviewMap(), [], state.dayOffEntries);
-      document.getElementById("empName").textContent = state.employeeName || "-";
+      try {
+        rebuildEntriesFromSessions(sessionsWithCover, dates, parseReviewMap(), [], state.dayOffEntries);
+      } catch (rebuildErr) {
+        console.error("[timesheet] rebuildEntriesFromSessions failed", rebuildErr);
+        state.entries = [];
+      }
       state.roleLabel = formatRoleHeaderText();
+      timesheetPaintIdentity();
       renderTable();
       if (state.ghostReadOnly) applyGhostReadOnlyUi();
 
@@ -2802,6 +2889,7 @@
           state.dayOffEntries
         );
         state.roleLabel = formatRoleHeaderText();
+        timesheetPaintIdentity();
         renderTable();
         if (state.ghostReadOnly) applyGhostReadOnlyUi();
       } catch (e) {
@@ -3178,8 +3266,10 @@
       document.getElementById("statusNote").textContent =
         msg.indexOf("timeout") >= 0
           ? "Timed out loading profile/rates. Check your connection and refresh."
-          : "Could not resolve roster shifts for this account.";
-  });
+          : (msg.indexOf("authenticated") >= 0 || msg.indexOf("auth") >= 0
+            ? "Sign in again, then reopen Timesheet from Quick Menu."
+            : "Could not resolve roster shifts for this account. Pull to refresh. (" + msg.slice(0, 80) + ")");
+    });
   </script>
   <script>
     (function () {
