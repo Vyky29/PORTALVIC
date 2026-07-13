@@ -1020,6 +1020,8 @@
     const dateLine = formatDateLong(row.session_date);
     const svc = displayProgrammeName(row.service);
     const timeLine = formatServiceTime(row.session_time);
+    const venue = esc(clean(row.venue) || "—");
+    const instructor = esc(clean(row.instructor || row.feedback_by_name || row.completed_by_name) || "—");
     const indep = esc(clean(row.engagement_patterns) || "—");
     return (
       "<tr>" +
@@ -1030,11 +1032,11 @@
       '<div class="pcso-tbl__svc-main">' + esc(svc) + "</div>" +
       (timeLine ? '<div class="pcso-tbl__sub">' + esc(timeLine) + "</div>" : "") +
       "</td>" +
+      '<td class="pcso-tbl__venue"><span class="pcso-venue-text" title="' + venue + '">' + venue + "</span></td>" +
+      '<td class="pcso-tbl__instructor"><span class="pcso-inst-text" title="' + instructor + '">' + instructor + "</span></td>" +
       '<td class="pcso-tbl__eng">' + parentEngagementCell(row) + "</td>" +
       '<td class="pcso-tbl__emo">' + emotionIconsCell(row.client_emotions) + "</td>" +
       '<td class="pcso-tbl__indep"><span class="pcso-indep-text" title="' + indep + '">' + indep + "</span></td>" +
-      '<td class="pcso-tbl__comments">' + parentCommentsCell(row) + "</td>" +
-      '<td class="pcso-tbl__author">' + parentAuthorCell(row) + "</td>" +
       "</tr>"
     );
   }
@@ -1048,12 +1050,12 @@
       '<table class="pcso-table pcso-table--parent">' +
       "<thead><tr>" +
       '<th scope="col" class="pcso-tbl__date">Date</th>' +
-      '<th scope="col" class="pcso-tbl__svc">Service &amp; time</th>' +
+      '<th scope="col" class="pcso-tbl__svc">Service / time</th>' +
+      '<th scope="col" class="pcso-tbl__venue">Venue</th>' +
+      '<th scope="col" class="pcso-tbl__instructor">Instructor</th>' +
       '<th scope="col" class="pcso-tbl__eng">Engagement</th>' +
       '<th scope="col" class="pcso-tbl__emo">Regulation</th>' +
       '<th scope="col" class="pcso-tbl__indep">Independence</th>' +
-      '<th scope="col" class="pcso-tbl__comments">Comments</th>' +
-      '<th scope="col" class="pcso-tbl__author">Written by</th>' +
       "</tr></thead><tbody>" +
       feedback.map(function (r) { return parentFeedbackTableRow(r); }).join("") +
       "</tbody></table></div>"
@@ -1137,6 +1139,8 @@
       client_name: "",
       service: clean(r.service),
       session_time: clean(r.session_time),
+      venue: clean(r.venue),
+      instructor: clean(r.instructor || r.feedback_by_name || r.completed_by_name),
       completed_by_name: clean(r.feedback_by_name || r.completed_by_name),
       attendance: clean(r.attendance),
       engagement_rating: r.engagement_rating,

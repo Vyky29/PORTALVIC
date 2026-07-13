@@ -595,6 +595,8 @@ body.portal-force-landscape{
 }
 .pcso-table--parent .pcso-tbl__date,
 .pcso-table--parent .pcso-tbl__svc,
+.pcso-table--parent .pcso-tbl__venue,
+.pcso-table--parent .pcso-tbl__instructor,
 .pcso-table--parent .pcso-tbl__eng,
 .pcso-table--parent .pcso-tbl__emo{
   width:1%;
@@ -604,26 +606,19 @@ body.portal-force-landscape{
 }
 .pcso-table--parent .pcso-tbl__date{min-width:0}
 .pcso-table--parent .pcso-tbl__svc{min-width:0}
+.pcso-table--parent .pcso-tbl__venue{min-width:0}
+.pcso-table--parent .pcso-tbl__instructor{min-width:0}
 .pcso-table--parent .pcso-tbl__eng{min-width:0}
 .pcso-table--parent .pcso-tbl__emo{min-width:0}
-.pcso-table--parent .pcso-tbl__indep{width:11%;min-width:0}
-.pcso-table--parent .pcso-tbl__comments{
-  width:100%;
-  min-width:0;
-  text-align:left;
-  padding-left:6px;
-  padding-right:6px;
-}
+.pcso-table--parent .pcso-tbl__indep{width:14%;min-width:0}
+.pcso-table--parent .pcso-tbl__comments,
 .pcso-table--parent .pcso-tbl__author{
-  width:1%;
-  min-width:82px;
-  max-width:104px;
-  white-space:normal;
-  padding-left:4px;
-  padding-right:4px;
+  display:none !important;
 }
 .pcso-table--parent thead .pcso-tbl__date,
 .pcso-table--parent thead .pcso-tbl__svc,
+.pcso-table--parent thead .pcso-tbl__venue,
+.pcso-table--parent thead .pcso-tbl__instructor,
 .pcso-table--parent thead .pcso-tbl__eng,
 .pcso-table--parent thead .pcso-tbl__emo{
   font-size:clamp(6px,1.6vw,9px);
@@ -668,7 +663,9 @@ body.portal-force-landscape{
   margin-top:1px;
   color:var(--muted,#728290);
 }
-.pcso-table--parent .pcso-indep-text{
+.pcso-table--parent .pcso-indep-text,
+.pcso-table--parent .pcso-venue-text,
+.pcso-table--parent .pcso-inst-text{
   display:block;
   overflow:hidden;
   text-overflow:ellipsis;

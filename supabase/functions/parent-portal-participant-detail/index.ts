@@ -255,6 +255,58 @@ async function detectAquaticOnlyNoPhotos(
   return rows.every((r) => isAquaticService(r.service) && isCentreAquaticVenue(r.venue));
 }
 
+/** Preferred venue per programme for Sessions Overview (from active roster slots). */
+async function loadParticipantVenueByService(
+  supabase: ReturnType<typeof createClient>,
+  identityInput: {
+    contactId?: string;
+    displayName?: string;
+    firstName?: string;
+    lastName?: string;
+  },
+  lookupNames: string[],
+): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  const names = [
+    ...new Set(
+      [...lookupNames.slice(0, 5), identityInput.displayName || ""]
+        .map((n) => clean(n, 80))
+        .filter(Boolean),
+    ),
+  ];
+  if (!names.length) return map;
+
+  const queries = names.map((nm) =>
+    supabase
+      .from("portal_roster_rows")
+      .select("client_name, service, venue, status")
+      .eq("status", "active")
+      .ilike("client_name", nm)
+      .limit(80),
+  );
+
+  const results = await Promise.all(queries);
+  for (const { data } of results) {
+    for (const row of data || []) {
+      if (!row) continue;
+      if (!participantIdentityMatches(identityInput, String(row.client_name || ""), "")) continue;
+      const venue = clean(row.venue, 80);
+      if (!venue) continue;
+      const rawSvc = clean(row.service, 120);
+      const canon = canonicalProgrammeName(rawSvc) || rawSvc;
+      if (canon) {
+        const ck = canon.toLowerCase();
+        if (!map.has(ck)) map.set(ck, venue);
+      }
+      if (rawSvc) {
+        const rk = rawSvc.toLowerCase();
+        if (!map.has(rk)) map.set(rk, venue);
+      }
+    }
+  }
+  return map;
+}
+
 function isAquaticService(raw: unknown): boolean {
   const p = clean(raw, 200).toLowerCase();
   return /aquatic|swim|pool|splash/.test(p);
@@ -619,6 +671,7 @@ Deno.serve(async (req) => {
 
     const feedbackIds = rawFeedback.map((r) => String(r.id)).filter(Boolean);
     const cacheById = new Map<string, Record<string, unknown>>();
+    const venueByService = await loadParticipantVenueByService(supabase, identityInput, lookupNames);
 
     if (feedbackIds.length) {
       const { data: cached } = await supabase
@@ -639,6 +692,12 @@ Deno.serve(async (req) => {
       );
       const service = clean(row.service, 200);
       const staffName = clean(row.completed_by_name, 120);
+      const instructor = feedbackAuthorFirstName(staffName);
+      const canonSvc = canonicalProgrammeName(service) || service;
+      const venue =
+        (canonSvc && venueByService.get(canonSvc.toLowerCase())) ||
+        (service && venueByService.get(service.toLowerCase())) ||
+        "";
       const cache = cacheById.get(id);
       const commentPack = parentCommentFromRow(positiveText, cache);
 
@@ -647,11 +706,13 @@ Deno.serve(async (req) => {
         session_date: isoFromAny(row.session_date),
         service,
         session_time: clean(row.session_time, 80),
+        venue,
+        instructor,
         attendance: clean(row.attendance, 40),
         engagement_rating: row.engagement_rating,
         client_emotions: clean(row.client_emotions, 200),
         independence: independenceLabel(patterns),
-        feedback_by_name: feedbackAuthorFirstName(staffName),
+        feedback_by_name: instructor,
         feedback_by_role: staffName ? resolveFeedbackAuthorRole(staffName, service) : "",
         comment: commentPack.comment,
         parent_message: commentPack.comment,
