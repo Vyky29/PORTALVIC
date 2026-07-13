@@ -36,7 +36,7 @@
     "/portal/portal_participant_photos.js?v=20260710-eiji-hazem-photos",
     "/portal/portal_topbar_header.js?v=20260713-javier-topbar",
     "/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category",
-    "/portal/portal_swimming_instructor_menus.js?v=20260713-andres-plan",
+    "/portal/portal_swimming_instructor_menus.js?v=20260713-topbar-batch",
     "/portal/portal_area_note_icons.js?v=20260702-home-icon",
     "/portal/portal_today_next_chips.js?v=20260609-photo-fallback",
     "/portal/portal_staff_photos.js?v=20260624-rt-debug",
