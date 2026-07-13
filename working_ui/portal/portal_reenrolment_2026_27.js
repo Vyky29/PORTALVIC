@@ -1672,7 +1672,7 @@
   }
 
   function setBillingPayExtrasHidden(hidden) {
-    ["rePayScheduleWrap", "reBillingPlanIntro", "rePaySchedulePreview", "reAdminFeeNote", "reOwnWayNote", "reDirectPayFailNote", "reFeesNotice", "reCancelNotice"].forEach(
+    ["rePayScheduleWrap", "reBillingPlanIntro", "rePaySchedulePreview", "reOwnWayNote", "reDirectPayFailNote", "reFeesNotice", "reCancelNotice"].forEach(
       function (id) {
         var el = $(id);
         if (!el) return;
@@ -1682,11 +1682,6 @@
         }
         if (id === "rePaySchedulePreview") {
           el.hidden = !el.innerHTML;
-          return;
-        }
-        if (id === "reAdminFeeNote") {
-          var b = state.billing2627 || {};
-          el.hidden = !adminFeeApplies(normalizePayMethodChoice(b.payCode));
           return;
         }
         if (id === "reOwnWayNote") {
@@ -1850,12 +1845,6 @@
       '<div id="rePaySchedulePreview" class="re-pay-preview-host"' +
       (editing ? " hidden" : "") +
       "></div>" +
-      '<div id="reAdminFeeNote" class="re-funding-fee"' +
-      (editing || !adminFeeApplies(payCode) ? " hidden" : "") +
-      ">" +
-      "<strong>Admin fee</strong>" +
-      '<span id="reAdminFeeAmount"></span>' +
-      "</div>" +
       '<div id="reOwnWayNote" class="re-funding-fee re-funding-fee--own"' +
       (editing || payCode !== "own_way_flexible" ? " hidden" : "") +
       ">" +
@@ -2280,59 +2269,11 @@
         schedWrap.hidden = true;
       }
     }
-    updateAdminFeeAmount();
     var failNote = $("reDirectPayFailNote");
     if (failNote) failNote.hidden = payCode !== "gocardless";
     var ownNote = $("reOwnWayNote");
     if (ownNote) ownNote.hidden = payCode !== "own_way_flexible";
     syncPaymentSchedulePreview();
-  }
-
-  function updateAdminFeeAmount() {
-    var b = state.billing2627 || {};
-    var payCode = normalizePayMethodChoice(b.payCode || "bank_transfer");
-    var cadence = normalizeEnrolmentCadence(state.enrolmentCadence);
-    var feeNote = $("reAdminFeeNote");
-    var feeAmt = $("reAdminFeeAmount");
-    var wrap = document.querySelector(".re-funding-2627");
-    var annual = wrap ? Number(wrap.getAttribute("data-annual-total")) : 0;
-    if (feeNote) feeNote.hidden = !adminFeeApplies(payCode);
-    if (!feeAmt) return;
-    if (adminFeeApplies(payCode) && annual > 0) {
-      var schedEl = document.querySelector('input[name="re_pay_schedule_2627"]:checked');
-      var schedCode = schedEl ? schedEl.value : defaultScheduleForPayAndCadence(payCode, cadence);
-      var feeTotal = adminFeeTotalForSchedule(payCode, schedCode, cadence);
-      if (payCode === "own_way_flexible") {
-        var buffer = ownArrangementAdvanceBuffer(state.lookup);
-        var ownTerms = cadence === "term_by_term" ? 1 : 3;
-        feeAmt.textContent =
-          " — " +
-          money(RE_ADMIN_FEE_OWN) +
-          (ownTerms === 1
-            ? " for " + reenrolTermDisplayLabel(currentReenrolBillingTerm()) + " = " + money(feeTotal)
-            : " × 3 terms = " + money(feeTotal)) +
-          (ownTerms === 1
-            ? " (this term)"
-            : " (indicative total " + money(annual + feeTotal) + ")") +
-          (buffer.total > 0
-            ? "; keep at least " + money(buffer.total) + " prepaid (2 sessions × each service)"
-            : "");
-      } else {
-        var n = installmentCountForSchedule(schedCode, cadence);
-        feeAmt.textContent =
-          " — " +
-          money(RE_ADMIN_FEE_GC_PER_INSTALLMENT) +
-          " × " +
-          n +
-          " = " +
-          money(feeTotal) +
-          (cadence === "term_by_term"
-            ? " for " + reenrolTermDisplayLabel(currentReenrolBillingTerm()) + " (term-by-term)"
-            : " per year (indicative total " + money(annual + feeTotal) + ")");
-      }
-    } else {
-      feeAmt.textContent = "";
-    }
   }
 
   function refreshProgrammeTotalsFromChoices() {
@@ -2356,7 +2297,6 @@
           "<strong>Bank Transfer / Card / Apple Pay</strong> uses fixed due dates (pay each invoice from the parent portal — no admin fee if on time). <strong>Direct Payment (GoCardless)</strong> is collected automatically once we set up your mandate. <strong>Own arrangement</strong> is only for privately funded families who cannot meet those dates (+ £50 / term) — not available with LA Direct Payments funding.";
       }
     }
-    updateAdminFeeAmount();
     syncPaymentSchedulePreview();
     syncFarewellVisibility();
   }
@@ -2436,7 +2376,6 @@
       }
       if (t && t.name === "re_pay_schedule_2627") {
         syncPaymentSchedulePreview();
-        updateAdminFeeAmount();
         return;
       }
       if (t && t.name && t.name.indexOf("choice_") === 0) {
