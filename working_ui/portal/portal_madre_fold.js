@@ -87,6 +87,24 @@
     return out;
   }
 
+  /**
+   * Authoritative week only: each calendar day belongs to exactly one week block
+   * (start ≤ sessionDate ≤ end). Stale copies of the same date in other week blocks
+   * (e.g. Monday template copied forward) must not be flattened into adapter rows —
+   * otherwise staff see duplicate/conflicting Today cards (Emmanuel split + Ikram 11–4).
+   */
+  function sessionDateBelongsToWeek(iso, week) {
+    var day = String(iso || "").trim().slice(0, 10);
+    var start = String((week && week.start) || "").trim().slice(0, 10);
+    var end = String((week && week.end) || "").trim().slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return false;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) {
+      /* Weeks without a date range are treated as templates — keep them. */
+      return true;
+    }
+    return day >= start && day <= end;
+  }
+
   function madreToAdapterRows(madre) {
     var rows = [];
     var weeks = (madre && madre.weeks) || [];
@@ -96,6 +114,8 @@
           .trim()
           .toUpperCase();
         (st.days || []).forEach(function (d) {
+          var iso = String(d.sessionDate || d.session_date || "").trim().slice(0, 10);
+          if (iso && !sessionDateBelongsToWeek(iso, w)) return;
           (d.slots || []).forEach(function (s) {
             var area = String(s.pool_note || s.area || "").trim();
             var cn = normalizeMadreDashboardClient(s.client_name, area);

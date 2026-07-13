@@ -288,9 +288,21 @@ export function foldFromScheduleOverride(record: Record<string, unknown>): FoldI
 export function madreToAdapterRows(madre: MadreDoc): Record<string, unknown>[] {
   const rows: Record<string, unknown>[] = [];
   for (const w of madre.weeks ?? []) {
+    const weekStart = norm(w.start).slice(0, 10);
+    const weekEnd = norm(w.end).slice(0, 10);
     for (const st of w.staff ?? []) {
       const staffName = norm(st.staffName ?? st.staffKey).toUpperCase();
       for (const d of st.days ?? []) {
+        const iso = norm(d.sessionDate).slice(0, 10);
+        // Authoritative week only — skip stale copies parked in other week blocks.
+        if (
+          iso &&
+          weekStart &&
+          weekEnd &&
+          !(weekStart <= iso && iso <= weekEnd)
+        ) {
+          continue;
+        }
         for (const s of d.slots ?? []) {
           const cn = norm(s.client_name);
           const up = cn.toUpperCase();

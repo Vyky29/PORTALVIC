@@ -191,9 +191,21 @@ def normalize_madre_dashboard_client(cn: str, area: str) -> str:
 def seed_to_adapter_rows(seed: dict) -> list[dict]:
     rows: list[dict] = []
     for w in seed.get("weeks", []):
+        week_start = clean(w.get("start"))[:10]
+        week_end = clean(w.get("end"))[:10]
         for st in w.get("staff", []):
             staff_name = clean(st.get("staffName") or st.get("staffKey")).upper()
             for d in st.get("days", []):
+                iso = clean(d.get("sessionDate") or d.get("session_date"))[:10]
+                # Authoritative week only — skip stale copies of the same date
+                # parked in other week blocks (Monday template copies, etc.).
+                if (
+                    iso
+                    and week_start
+                    and week_end
+                    and not (week_start <= iso <= week_end)
+                ):
+                    continue
                 for s in d.get("slots") or []:
                     area = clean(s.get("pool_note") or s.get("area"))
                     cn = normalize_madre_dashboard_client(s.get("client_name"), area)

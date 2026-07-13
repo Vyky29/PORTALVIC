@@ -18,7 +18,7 @@
     "/portal/portal-roster-rows-merge.js?v=20260622-canonical-roster",
     "/portal/portal_roster_canonical.js?v=20260614-madre-dedupe",
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",
-    "/portal/portal_madre_fold.js?v=20260706-madre-no-store-fix",
+    "/portal/portal_madre_fold.js?v=20260713-authoritative-week",
     "/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster",
     "/portal/clients_info_embed.js?v=20260608-anas-ismail",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
