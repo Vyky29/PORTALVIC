@@ -2433,17 +2433,87 @@
       color:var(--muted, #5b6575);
       overflow-wrap:break-word;
     }
-    .swterm-my-list-grid{
+    .swterm-letter-accordion{
       display:flex;
-      flex-wrap:wrap;
+      flex-direction:column;
       gap:8px;
       min-width:0;
-      max-height:min(42vh, 280px);
+      max-height:min(52vh, 420px);
       overflow:auto;
       -webkit-overflow-scrolling:touch;
       padding:2px;
     }
-    .swterm-my-list-grid button{
+    .swterm-letter-block{
+      min-width:0;
+      border:1px solid rgba(14,116,144,0.22);
+      border-radius:14px;
+      background:#f8fcfd;
+      overflow:hidden;
+    }
+    .swterm-letter-btn{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      width:100%;
+      margin:0;
+      padding:11px 14px;
+      border:0;
+      background:linear-gradient(180deg,#f0fbfd,#e6f6fb);
+      color:#0b1220;
+      font:inherit;
+      font-size:14px;
+      font-weight:750;
+      text-align:left;
+      cursor:pointer;
+      min-width:0;
+    }
+    .swterm-letter-btn .swterm-letter-meta{
+      flex:0 0 auto;
+      font-size:12px;
+      font-weight:650;
+      color:#0e7490;
+      white-space:nowrap;
+    }
+    .swterm-letter-btn .swterm-letter-chevron{
+      flex:0 0 auto;
+      font-size:12px;
+      color:#5b6575;
+      transition:transform 0.15s ease;
+    }
+    .swterm-letter-btn[aria-expanded="true"] .swterm-letter-chevron{
+      transform:rotate(90deg);
+    }
+    .swterm-letter-btn.is-complete,
+    .swterm-name-btn.is-complete{
+      border-color:#15803d;
+      background:linear-gradient(180deg,#dcfce7,#bbf7d0);
+      color:#14532d;
+      box-shadow:0 0 0 1px rgba(21,128,61,0.18);
+    }
+    .swterm-letter-btn.is-complete .swterm-letter-meta{
+      color:#166534;
+    }
+    .swterm-letter-btn:hover,
+    .swterm-letter-btn:focus-visible,
+    .swterm-name-btn:hover,
+    .swterm-name-btn:focus-visible{
+      outline:none;
+      filter:brightness(0.98);
+    }
+    .swterm-letter-panel{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      min-width:0;
+      padding:10px 12px 12px;
+      border-top:1px solid rgba(14,116,144,0.14);
+      background:#fff;
+    }
+    .swterm-letter-panel[hidden]{
+      display:none !important;
+    }
+    .swterm-name-btn{
       flex:1 1 auto;
       min-width:min(100%, 140px);
       max-width:100%;
@@ -2451,7 +2521,7 @@
       padding:10px 12px;
       border:1px solid rgba(14,116,144,0.28);
       border-radius:12px;
-      background:linear-gradient(180deg,#f0fbfd,#e6f6fb);
+      background:linear-gradient(180deg,#f8fafc,#f1f5f9);
       color:#0b1220;
       font:inherit;
       font-size:13px;
@@ -2461,25 +2531,25 @@
       overflow-wrap:break-word;
       line-height:1.25;
     }
-    .swterm-my-list-grid button[hidden],
-    .swterm-my-list-grid button.is-letter-filtered-out{
-      display:none !important;
-    }
-    .swterm-my-list-grid button[aria-pressed="true"]{
+    .swterm-name-btn[aria-pressed="true"]{
       border-color:#0e7490;
       background:linear-gradient(180deg,#cff4fc,#a5f3fc);
       box-shadow:0 0 0 2px rgba(14,116,144,0.18);
     }
-    .swterm-my-list-grid button:hover,
-    .swterm-my-list-grid button:focus-visible{
-      outline:none;
-      border-color:#0e7490;
+    .swterm-name-btn.is-complete[aria-pressed="true"]{
+      border-color:#15803d;
+      background:linear-gradient(180deg,#bbf7d0,#86efac);
+      box-shadow:0 0 0 2px rgba(21,128,61,0.22);
     }
     .swterm-my-list-empty{
       margin:0;
       font-size:13px;
       color:var(--muted, #5b6575);
       overflow-wrap:break-word;
+    }
+    #swimmerName[readonly]{
+      background:#f8fafc;
+      cursor:default;
     }
   </style>
 </head>
@@ -2555,26 +2625,25 @@
       <div class="review-part-body" id="reviewPartDetailsBody">
 <div class="card" id="cardDetails">
       <h2>Details</h2>
-      <p class="section-intro">Select one of your participants below, or type a letter to search. Term, date and instructor fill automatically.</p>
+      <p class="section-intro">Open a letter to see your participants, then tap a name. Completed reviews turn green. Term, date and instructor fill automatically.</p>
 
       <div class="swterm-details-stack">
         <div class="detail-combo">
           <span class="detail-label" id="swimmerNameLabel">Participant's name:</span>
           <div id="swimmerMyListWrap" class="swterm-my-list" hidden>
-            <p class="swterm-my-list-hint" id="swimmerMyListHint">Your participants — tap to select</p>
-            <div id="swimmerMyList" class="swterm-my-list-grid" role="listbox" aria-labelledby="swimmerMyListHint"></div>
-            <p class="swterm-my-list-empty" id="swimmerMyListEmpty" hidden>No participants found on your roster yet. Type a name below to search the portal list.</p>
+            <p class="swterm-my-list-hint" id="swimmerMyListHint">Your participants — tap a letter, then a name</p>
+            <div id="swimmerMyList" class="swterm-letter-accordion" role="list" aria-labelledby="swimmerMyListHint"></div>
+            <p class="swterm-my-list-empty" id="swimmerMyListEmpty" hidden>No participants found on your roster yet.</p>
           </div>
           <div class="combo-wrap" id="swimmerComboWrap">
             <input
               id="swimmerName"
               type="text"
-              placeholder="Type a letter to search…"
+              placeholder="Select a participant from the letters above"
               autocomplete="off"
               spellcheck="false"
-              aria-autocomplete="list"
-              aria-expanded="false"
-              aria-controls="swimmerSuggest"
+              readonly
+              aria-readonly="true"
             />
             <div id="swimmerSuggest" class="swterm-suggest" role="listbox" aria-label="Matching participants" hidden></div>
           </div>
@@ -3180,7 +3249,7 @@
   <!-- swtermreview_app.js — portal/ then portal-shared-js/ on Vercel. -->
   <script>
     (function () {
-      var v = "20260713-letter-filter2";
+      var v = "20260713-letter-accordion";
       var file = "swtermreview_app.js";
       var bases = [];
       try {

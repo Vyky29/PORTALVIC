@@ -1627,7 +1627,11 @@ const LEVEL_DATA = {
       });
     }
 
-    function normalizeSwtermSearchText(value){
+    const SWTERM_DONE_NAMES_KEY = "portalvic_swterm_done_names_v1";
+    let __swtermCompletedNames = new Set();
+    let __swtermOpenLetter = "";
+
+    function normalizeSwtermNameKey(value){
       return String(value || "")
         .trim()
         .toLowerCase()
@@ -1636,58 +1640,164 @@ const LEVEL_DATA = {
         .replace(/\s+/g, " ");
     }
 
-    /** Progressive letter filter: keep names whose full string or any word starts with the typed prefix. */
-    function swtermNameMatchesLetterFilter(name, query){
-      const q = normalizeSwtermSearchText(query);
-      if(!q) return true;
-      const nm = normalizeSwtermSearchText(name);
-      if(!nm) return false;
-      if(nm.indexOf(q) === 0) return true;
-      const parts = nm.split(" ");
-      for(let i = 0; i < parts.length; i++){
-        if(parts[i] && parts[i].indexOf(q) === 0) return true;
-      }
-      return false;
+    function swtermNameLetterKey(name){
+      const nm = normalizeSwtermNameKey(name);
+      const ch = nm.charAt(0);
+      if(ch && ch >= "a" && ch <= "z") return ch.toUpperCase();
+      return "#";
     }
 
-    function filterMyParticipantsGrid(query){
-      const list = document.getElementById("swimmerMyList");
-      const hint = document.getElementById("swimmerMyListHint");
-      const empty = document.getElementById("swimmerMyListEmpty");
-      if(!list) return 0;
-      const q = String(query || "");
-      const buttons = list.querySelectorAll("button[data-swimmer-name]");
-      const total = buttons.length;
-      let visible = 0;
-      buttons.forEach(btn => {
-        const nm = String(btn.getAttribute("data-swimmer-name") || "");
-        const ok = swtermNameMatchesLetterFilter(nm, q);
-        btn.hidden = !ok;
-        btn.classList.toggle("is-letter-filtered-out", !ok);
-        if(ok) visible += 1;
+    function swtermTermDoneBucket(){
+      const termEl = document.getElementById("termSelect");
+      const term = String((termEl && termEl.value) || "Summer Term (Apr, May, Jun & Jul)").trim();
+      if(/autumn/i.test(term)) return "autumn";
+      if(/spring/i.test(term)) return "spring";
+      return "summer-2026";
+    }
+
+    function swtermTermDateFloor(){
+      const bucket = swtermTermDoneBucket();
+      if(bucket === "autumn") return "2025-09-01";
+      if(bucket === "spring") return "2026-01-01";
+      return "2026-04-01";
+    }
+
+    function readLocalCompletedSwtermNames(){
+      try{
+        const raw = localStorage.getItem(SWTERM_DONE_NAMES_KEY);
+        if(!raw) return [];
+        const data = JSON.parse(raw);
+        const bucket = swtermTermDoneBucket();
+        const names = data && data[bucket] && typeof data[bucket] === "object" ? data[bucket] : null;
+        if(!names) return [];
+        return Object.keys(names).filter(k => names[k]);
+      }catch(_){
+        return [];
+      }
+    }
+
+    function writeLocalCompletedSwtermName(name){
+      const key = normalizeSwtermNameKey(name);
+      if(!key) return;
+      let data = {};
+      try{
+        data = JSON.parse(localStorage.getItem(SWTERM_DONE_NAMES_KEY) || "{}") || {};
+      }catch(_){
+        data = {};
+      }
+      if(!data || typeof data !== "object") data = {};
+      const bucket = swtermTermDoneBucket();
+      if(!data[bucket] || typeof data[bucket] !== "object") data[bucket] = {};
+      data[bucket][key] = true;
+      try{ localStorage.setItem(SWTERM_DONE_NAMES_KEY, JSON.stringify(data)); }catch(_){}
+      __swtermCompletedNames.add(key);
+    }
+
+    function isSwtermParticipantComplete(name){
+      const key = normalizeSwtermNameKey(name);
+      return !!(key && __swtermCompletedNames.has(key));
+    }
+
+    function applyCompletedNamesToSet(names){
+      (names || []).forEach(n => {
+        const key = normalizeSwtermNameKey(n);
+        if(key) __swtermCompletedNames.add(key);
       });
-      if(empty){
-        empty.hidden = !(total > 0 && visible === 0 && normalizeSwtermSearchText(q));
-        if(!empty.hidden){
-          empty.textContent = "No participant matches “" + String(q).trim() + "”. Keep typing or clear the search.";
-        }else if(!__swtermMyParticipants || !__swtermMyParticipants.length){
-          empty.textContent = "No participants found on your roster yet. Type a name below to search the portal list.";
-        }
+    }
+
+    async function loadCompletedSwtermParticipantNames(supabase){
+      applyCompletedNamesToSet(readLocalCompletedSwtermNames());
+      if(!supabase) return;
+      try{
+        const floor = swtermTermDateFloor();
+        const res = await supabase
+          .from("portal_documents")
+          .select("related_client,related_date,title")
+          .eq("document_type", "swim_term_review")
+          .gte("related_date", floor)
+          .limit(4000);
+        if(res.error) throw res.error;
+        (res.data || []).forEach(row => {
+          const nm = String(row && row.related_client || "").replace(/\s+/g, " ").trim();
+          if(nm) __swtermCompletedNames.add(normalizeSwtermNameKey(nm));
+        });
+      }catch(e){
+        console.warn("[swtermreview] completed reviews", e);
       }
-      if(hint && total > 0){
-        hint.hidden = false;
-        const qTrim = String(q).trim();
-        if(__swtermProgrammeWideList){
-          hint.textContent = qTrim
-            ? ("Swimming participants (" + visible + " of " + total + ") — matching “" + qTrim + "”")
-            : ("Swimming participants (" + total + ") — Aquatic & Multi-Activity");
-        }else{
-          hint.textContent = qTrim
-            ? ("Your participants (" + visible + " of " + total + ") — matching “" + qTrim + "”")
-            : ("Your participants (" + total + ") — tap to select");
-        }
+    }
+
+    function groupParticipantsByLetter(names){
+      const map = new Map();
+      (names || []).forEach(name => {
+        const nm = String(name || "").replace(/\s+/g, " ").trim();
+        if(!nm) return;
+        const letter = swtermNameLetterKey(nm);
+        if(!map.has(letter)) map.set(letter, []);
+        map.get(letter).push(nm);
+      });
+      const letters = Array.from(map.keys()).sort((a, b) => {
+        if(a === "#") return 1;
+        if(b === "#") return -1;
+        return a.localeCompare(b);
+      });
+      return letters.map(letter => ({
+        letter,
+        names: map.get(letter).slice().sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" })),
+      }));
+    }
+
+    function setOpenLetterPanel(letter, forceOpen){
+      const list = document.getElementById("swimmerMyList");
+      if(!list) return;
+      const want = String(letter || "").toUpperCase();
+      let nextOpen = "";
+      if(forceOpen === false){
+        nextOpen = "";
+      }else if(forceOpen === true){
+        nextOpen = want;
+      }else{
+        nextOpen = __swtermOpenLetter === want ? "" : want;
       }
-      return visible;
+      __swtermOpenLetter = nextOpen;
+      list.querySelectorAll(".swterm-letter-block").forEach(block => {
+        const L = String(block.getAttribute("data-letter") || "").toUpperCase();
+        const btn = block.querySelector(".swterm-letter-btn");
+        const panel = block.querySelector(".swterm-letter-panel");
+        const open = !!nextOpen && L === nextOpen;
+        if(btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
+        if(panel) panel.hidden = !open;
+      });
+    }
+
+    function refreshAccordionCompleteStyles(){
+      const list = document.getElementById("swimmerMyList");
+      if(!list) return;
+      list.querySelectorAll(".swterm-letter-block").forEach(block => {
+        const nameBtns = Array.from(block.querySelectorAll("button[data-swimmer-name]"));
+        let doneCount = 0;
+        nameBtns.forEach(btn => {
+          const done = isSwtermParticipantComplete(btn.getAttribute("data-swimmer-name"));
+          btn.classList.toggle("is-complete", done);
+          if(done) doneCount += 1;
+        });
+        const total = nameBtns.length;
+        const allDone = total > 0 && doneCount === total;
+        const letterBtn = block.querySelector(".swterm-letter-btn");
+        if(letterBtn){
+          letterBtn.classList.toggle("is-complete", allDone);
+          const meta = letterBtn.querySelector(".swterm-letter-meta");
+          if(meta){
+            meta.textContent = allDone
+              ? (total + " done")
+              : (doneCount ? (doneCount + "/" + total) : String(total));
+          }
+        }
+      });
+    }
+
+    function markSwtermParticipantComplete(name){
+      writeLocalCompletedSwtermName(name);
+      refreshAccordionCompleteStyles();
     }
 
     function pickSwimmerName(name, clientId){
@@ -1700,8 +1810,7 @@ const LEVEL_DATA = {
         : (parseDetailsFromUrl().clientId || readRememberedSwtermParticipant().clientId || "");
       rememberSwtermParticipant(nm, cid);
       syncMyParticipantPressedState(nm);
-      filterMyParticipantsGrid(nm);
-      try{ input.dispatchEvent(new Event("input", { bubbles: true })); }catch(_){}
+      setOpenLetterPanel(swtermNameLetterKey(nm), true);
       try{ input.dispatchEvent(new Event("change", { bubbles: true })); }catch(_){}
       try{ generateTermSummary(); }catch(_){}
     }
@@ -1714,37 +1823,92 @@ const LEVEL_DATA = {
       const hint = document.getElementById("swimmerMyListHint");
       if(!wrap || !list) return;
       const sorted = Array.isArray(names) ? names.slice() : [];
+      const prevOpen = __swtermOpenLetter;
       list.replaceChildren();
       wrap.hidden = false;
       if(!sorted.length){
         if(empty){
           empty.hidden = false;
-          empty.textContent = "No participants found on your roster yet. Type a name below to search the portal list.";
+          empty.textContent = "No participants found on your roster yet.";
         }
         if(hint) hint.hidden = true;
         return;
       }
       if(empty) empty.hidden = true;
+      const groups = groupParticipantsByLetter(sorted);
       if(hint){
         hint.hidden = false;
         hint.textContent = opts.programmeWide
-          ? ("Swimming participants (" + sorted.length + ") — Aquatic & Multi-Activity")
-          : ("Your participants (" + sorted.length + ") — tap to select");
+          ? ("Swimming participants (" + sorted.length + ") — Aquatic & Multi-Activity · tap a letter")
+          : ("Your participants (" + sorted.length + ") — tap a letter, then a name");
       }
       const inputEl = document.getElementById("swimmerName");
       const current = String((inputEl || {}).value || "").trim().toLowerCase();
-      sorted.forEach((name, idx) => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.setAttribute("role", "option");
-        b.setAttribute("data-swimmer-name", name);
-        b.id = "swimmerMyOpt-" + idx;
-        b.textContent = name;
-        b.setAttribute("aria-pressed", current && current === name.toLowerCase() ? "true" : "false");
-        b.addEventListener("click", () => pickSwimmerName(name));
-        list.appendChild(b);
+      groups.forEach((group, gIdx) => {
+        const block = document.createElement("div");
+        block.className = "swterm-letter-block";
+        block.setAttribute("data-letter", group.letter);
+        block.setAttribute("role", "listitem");
+
+        const letterBtn = document.createElement("button");
+        letterBtn.type = "button";
+        letterBtn.className = "swterm-letter-btn";
+        letterBtn.id = "swimmerLetter-" + group.letter;
+        letterBtn.setAttribute("aria-expanded", "false");
+        letterBtn.setAttribute("aria-controls", "swimmerLetterPanel-" + group.letter);
+
+        const label = document.createElement("span");
+        label.textContent = group.letter;
+        const meta = document.createElement("span");
+        meta.className = "swterm-letter-meta";
+        const doneCount = group.names.filter(n => isSwtermParticipantComplete(n)).length;
+        meta.textContent = doneCount === group.names.length
+          ? (group.names.length + " done")
+          : (doneCount ? (doneCount + "/" + group.names.length) : String(group.names.length));
+        const chev = document.createElement("span");
+        chev.className = "swterm-letter-chevron";
+        chev.setAttribute("aria-hidden", "true");
+        chev.textContent = "›";
+        letterBtn.appendChild(label);
+        letterBtn.appendChild(meta);
+        letterBtn.appendChild(chev);
+        if(doneCount === group.names.length && group.names.length){
+          letterBtn.classList.add("is-complete");
+        }
+
+        const panel = document.createElement("div");
+        panel.className = "swterm-letter-panel";
+        panel.id = "swimmerLetterPanel-" + group.letter;
+        panel.hidden = true;
+        panel.setAttribute("role", "group");
+        panel.setAttribute("aria-label", "Participants starting with " + group.letter);
+
+        group.names.forEach((name, idx) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "swterm-name-btn";
+          b.setAttribute("data-swimmer-name", name);
+          b.id = "swimmerMyOpt-" + gIdx + "-" + idx;
+          b.textContent = name;
+          if(isSwtermParticipantComplete(name)) b.classList.add("is-complete");
+          b.setAttribute("aria-pressed", current && current === name.toLowerCase() ? "true" : "false");
+          b.addEventListener("click", () => pickSwimmerName(name));
+          panel.appendChild(b);
+        });
+
+        letterBtn.addEventListener("click", () => setOpenLetterPanel(group.letter));
+        block.appendChild(letterBtn);
+        block.appendChild(panel);
+        list.appendChild(block);
       });
-      filterMyParticipantsGrid(inputEl ? inputEl.value : "");
+
+      if(current){
+        const match = sorted.find(n => n.toLowerCase() === current);
+        if(match) setOpenLetterPanel(swtermNameLetterKey(match), true);
+        else if(prevOpen) setOpenLetterPanel(prevOpen, true);
+      }else if(prevOpen){
+        setOpenLetterPanel(prevOpen, true);
+      }
     }
 
     async function hydrateMyParticipantsPicker(){
@@ -1752,6 +1916,7 @@ const LEVEL_DATA = {
       const portalName = String(fromUrl.name || readRememberedSwtermParticipant().name || "").replace(/\s+/g, " ").trim();
       const stashed = readStashedMyParticipants();
       let seed = mergeParticipantNameLists(stashed, portalName ? [portalName] : []);
+      applyCompletedNamesToSet(readLocalCompletedSwtermNames());
       if(seed.length){
         __swtermMyParticipants = seed;
         __swtermMyParticipantsPrefer = true;
@@ -1765,7 +1930,13 @@ const LEVEL_DATA = {
       }
       const instEl = document.getElementById("instructorName");
       const staffName = instEl ? String(instEl.value || "").trim() : "";
+      let supabase = null;
+      try{
+        const mod = await tryImportPortalAuthHandler();
+        supabase = mod && typeof mod.getSupabaseClient === "function" ? mod.getSupabaseClient() : null;
+      }catch(_){}
       const fromRoster = await loadMyParticipantsFromRosterRows(staffName || fromUrl.instructor);
+      await loadCompletedSwtermParticipantNames(supabase);
       if(fromRoster.length || seed.length){
         /* For executives the programme-wide list is authoritative — drop a short instructor stash. */
         __swtermMyParticipants = __swtermProgrammeWideList
@@ -1784,123 +1955,35 @@ const LEVEL_DATA = {
         renderMyParticipantsList([]);
       }
       const locked = ensureParticipantNameInField();
-      if(locked) syncMyParticipantPressedState(locked);
+      if(locked){
+        syncMyParticipantPressedState(locked);
+        setOpenLetterPanel(swtermNameLetterKey(locked), true);
+      }
     }
 
     function wireSwimmerAutocomplete(){
       const input = document.getElementById("swimmerName");
       const list = document.getElementById("swimmerSuggest");
-      if(!input || !list) return;
-
-      let blurTimer = null;
-
-      function setOpen(open){
-        list.hidden = !open;
-        input.setAttribute("aria-expanded", open ? "true" : "false");
-      }
-
-      function closeList(){
-        setOpen(false);
+      if(!input) return;
+      if(list){
+        list.hidden = true;
         list.replaceChildren();
       }
-
-      function pickName(name){
-        pickSwimmerName(name);
-        closeList();
-      }
-
-      function renderList(query){
-        const q = String(query || "").trim();
-        /* Always filter the on-page name grid letter-by-letter (does not cut off typing). */
-        filterMyParticipantsGrid(q);
-        list.replaceChildren();
-        /* When the tap-grid is showing, keep suggestions closed — the grid is the filter UI. */
-        const myList = document.getElementById("swimmerMyList");
-        const hasGrid = !!(myList && myList.querySelector("button[data-swimmer-name]"));
-        if(hasGrid){
-          setOpen(false);
-          return;
-        }
-        if(q.length < 1){
-          setOpen(false);
-          return;
-        }
-        const all = getSwtermSearchPool();
-        const matches = all.filter(n => swtermNameMatchesLetterFilter(n, q)).slice(0, 18);
-        if(!matches.length){
-          setOpen(false);
-          return;
-        }
-        matches.forEach((name, idx) => {
-          const b = document.createElement("button");
-          b.type = "button";
-          b.role = "option";
-          b.id = "swimmerSuggestOpt-" + idx;
-          b.textContent = name;
-          b.addEventListener("mousedown", ev => {
-            ev.preventDefault();
-            pickName(name);
-          });
-          list.appendChild(b);
-        });
-        setOpen(true);
-      }
-
-      input.addEventListener("input", () => {
-        clearTimeout(blurTimer);
+      input.setAttribute("readonly", "readonly");
+      input.setAttribute("aria-readonly", "true");
+      input.removeAttribute("aria-autocomplete");
+      input.removeAttribute("aria-expanded");
+      input.removeAttribute("aria-controls");
+      input.addEventListener("change", () => {
         syncMyParticipantPressedState(input.value);
-        renderList(input.value);
         generateTermSummary();
-      });
-
-      input.addEventListener("focus", () => {
-        renderList(input.value);
-      });
-
-      input.addEventListener("keydown", ev => {
-        if(ev.key === "Escape"){
-          closeList();
-          filterMyParticipantsGrid("");
-          return;
-        }
-        if(ev.key !== "Enter") return;
-        const myList = document.getElementById("swimmerMyList");
-        const firstVisible = myList
-          ? myList.querySelector("button[data-swimmer-name]:not([hidden])")
-          : null;
-        if(firstVisible){
-          ev.preventDefault();
-          pickName(firstVisible.getAttribute("data-swimmer-name") || firstVisible.textContent || "");
-          return;
-        }
-        const first = list.querySelector("button");
-        if(first && !list.hidden){
-          ev.preventDefault();
-          pickName(first.textContent || "");
-        }
-      });
-
-      input.addEventListener("blur", () => {
-        blurTimer = setTimeout(() => closeList(), 160);
-      });
-
-      document.addEventListener("click", ev => {
-        const wrap = document.getElementById("swimmerComboWrap");
-        if(wrap && !wrap.contains(ev.target)) closeList();
       });
     }
 
     function initSwtermDetailsPanel(){
       applyDetailsFromUrlAndDefaults();
       syncDetailsReadonlyDisplay();
-      const wire = () => {
-        try{ wireSwimmerAutocomplete(); }catch(e){ console.warn("[swtermreview] autocomplete", e); }
-      };
-      if(Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS) && window.PORTAL_CLIENTS_INFO_ROWS.length){
-        wire();
-      }else{
-        loadPortalScriptOnceTerm(PORTAL_CLIENTS_INFO_SCRIPT).then(wire).catch(wire);
-      }
+      try{ wireSwimmerAutocomplete(); }catch(e){ console.warn("[swtermreview] participant field", e); }
       void hydrateLoggedInStaffDisplayName()
         .catch(() => {})
         .then(() => hydrateMyParticipantsPicker())
@@ -3749,6 +3832,8 @@ const LEVEL_DATA = {
                 reuseAuth: auth,
               });
 
+              if(swimmer) markSwtermParticipantComplete(swimmer);
+
               alert("Term review submitted successfully. Open My Documents to download or print the Term Review PDF. You can also generate the family Celebration Certificate from the button below.");
               closeOrReturnSwterm();
             }catch(err){
@@ -3777,7 +3862,7 @@ const LEVEL_DATA = {
               if(swimEl){
                 try{ swimEl.focus(); }catch(_){}
               }
-              alert("Select the participant at the top first — type a letter to search the portal list, then generate the certificate.");
+              alert("Select the participant at the top first — open a letter and tap a name, then generate the certificate.");
               return;
             }
             btn.disabled = true;
