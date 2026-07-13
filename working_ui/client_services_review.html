@@ -240,6 +240,7 @@
     { value: 'la_nhs', label: 'Using money from LA' }
   ];
   var FUNDER_DETAIL_OPTS = [
+    { value: 'parent_direct_payments', label: 'Parent · Direct Payments (LA money)' },
     { value: 'ealing_children', label: 'Ealing · Children' },
     { value: 'ealing_adult', label: 'Ealing · Adult' },
     { value: 'hf_children', label: 'Hammersmith & Fulham · Children' },
@@ -254,6 +255,14 @@
   ];
   /* Per-funder pay channel + invoice rules (all LA/NHS: monthly in arrears). */
   var FUNDER_PAY = {
+    parent_direct_payments: {
+      rule: 'Parent holds LA Direct Payments / personal budget and pays the club themselves (not an LA/NHS invoice). Same payment channels as private families.',
+      opts: [
+        'Direct Payment (GoCardless · monthly)',
+        'Bank Transfer (fixed due dates)',
+        'Own arrangement — cannot meet payment dates (+ £50 / term)'
+      ]
+    },
     ealing_children: {
       rule: 'Pays monthly in arrears. Annual service total is 38 weeks; they spread that total over 52 weekly payments. Need the real invoice for the 38 weeks.',
       opts: [
@@ -310,8 +319,11 @@
     return out;
   }
   function isLaPayMethod(label){
-    return allLaPayOpts().indexOf(String(label||'')) >= 0 ||
-      /monthly arrears|cwd|care in finance|la invoice|nhs invoice|bacs|remittance/i.test(String(label||''));
+    var s = String(label||'');
+    /* Parent DP uses the same channels as private — not LA/NHS arrears invoicing. */
+    if(PAY_PRIVATE_OPTS.indexOf(s) >= 0) return false;
+    return allLaPayOpts().indexOf(s) >= 0 ||
+      /monthly arrears|cwd|care in finance|la invoice|nhs invoice|bacs|remittance/i.test(s);
   }
   function payOptsForClient(client){
     if(String(client.fundingSource||'') !== 'la_nhs') return PAY_PRIVATE_OPTS;
@@ -326,6 +338,9 @@
   function normalizeLaPayLabel(payMethod, funderCode){
     var s = String(payMethod||'').trim();
     if(!s || s === '—') return '';
+    if(String(funderCode||'') === 'parent_direct_payments'){
+      return normalizePrivatePayLabel(s, '') || PAY_PRIVATE_OPTS[1] || s;
+    }
     var opts = funderCode ? (funderPayInfo(funderCode)||{}).opts || [] : allLaPayOpts();
     var i;
     for(i=0;i<opts.length;i++){
@@ -433,6 +448,15 @@
         funderDetail: eCode,
         paymentMethod: normalizeLaPayLabel(method, eCode)
       };
+    } else if(
+      /\bdirect payments?\b|\bpersonal budget\b|ehcp care package|parent · direct|parent pays with la|using funds from la/i.test(fund+' '+parent) &&
+      !/\bcwd\b|care in finance|la invoice|nhs invoice/i.test(method)
+    ){
+      out = {
+        fundingSource:'la_nhs',
+        funderDetail:'parent_direct_payments',
+        paymentMethod: normalizePrivatePayLabel(method, fund) || PAY_PRIVATE_OPTS[1]
+      };
     } else if(/bank transfer|gocardless|own way|private/i.test(fund) || /bank|go cardless|own way/i.test(method)){
       out = {
         fundingSource:'privately_funded',
@@ -487,6 +511,10 @@
     else if(/ealing/.test(blob)){
       client.fundingSource='la_nhs';
       client.funderDetail = /adult/.test(blob) ? 'ealing_adult' : 'ealing_children';
+    }
+    else if(/parent · direct|parent.*direct payments?|direct payments?.*parent|personal budget|ehcp care package|parents? (who )?pay.*la/i.test(blob)){
+      client.fundingSource='la_nhs';
+      client.funderDetail='parent_direct_payments';
     }
     else if(/using money from la|local authority|\bla\b|nhs/.test(blob)){
       client.fundingSource='la_nhs';
@@ -651,7 +679,7 @@
             '<div class="client-finance__row client-finance__funder"'+(isLa?'':' hidden')+'>'+
               '<label for="cf-funder-'+ci+'">LA / NHS funder</label>'+
               '<select id="cf-funder-'+ci+'" data-cf="funderDetail" data-ci="'+ci+'"'+(isLa?'':' disabled')+'>'+
-                selectOptsHtml(FUNDER_DETAIL_OPTS, client.funderDetail, '— Ealing / H&amp;F / NHS —')+
+                selectOptsHtml(FUNDER_DETAIL_OPTS, client.funderDetail, '— Ealing / H&amp;F / NHS / Parent DP —')+
               '</select>'+
             '</div>'+
             (rule ? '<p class="client-finance__rule">'+esc(rule)+'</p>' : '')+
