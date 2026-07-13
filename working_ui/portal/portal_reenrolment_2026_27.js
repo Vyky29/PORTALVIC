@@ -1725,13 +1725,12 @@
         })
         .join("") +
       "</div></fieldset>" +
-      '<div class="re-funding-fee re-cadence-cancel-note" role="note">' +
-      "<strong>Leaving or cancelling</strong>" +
-      "The same rules apply to <strong>whole year (auto re-enrol)</strong> and <strong>term by term</strong>. " +
+      '<p class="re-billing-ref-note re-billing-ref-fee re-cadence-cancel-note" role="note">' +
+      "<strong>Leaving or cancelling:</strong> The same rules apply to <strong>whole year (auto re-enrol)</strong> and <strong>term by term</strong>. " +
       "If you cancel a place after we have already collected payment, we refund unused fees minus an admin charge of " +
       "<strong>10% of the unused amount being refunded</strong> " +
       "(minimum <strong>£25</strong>, maximum <strong>£100</strong>), so the charge stays fair for smaller and larger programmes." +
-      "</div></div>"
+      "</p></div>"
     );
   }
 
