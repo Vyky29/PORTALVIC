@@ -1,5 +1,5 @@
     :root{
-      --topbar-brand-visual-h:110px;
+      --topbar-brand-visual-h:118px;
       --blue:#2d84b3;
       --blueSoft:#eaf5fb;
       --gold:#f4b740;
@@ -289,6 +289,9 @@
     }
     .topbar-lead .topbar-center{
       justify-self:center;
+      overflow:hidden;
+      min-width:0;
+      max-width:100%;
     }
     .topbar-left{
       display:flex;
@@ -341,8 +344,10 @@
       justify-content:center;
       align-items:center;
       align-self:stretch;
-      overflow:visible;
-      padding:0 10px;
+      overflow:hidden;
+      min-width:0;
+      max-width:100%;
+      padding:0 6px;
       margin:0;
     }
     .topbar-right{
@@ -355,15 +360,18 @@
     }
     /* Wrapper: same geometric centre for photo + orbiting dots (no header overflow) */
     .avatar-wrap{
+      --avatar-core-size:68px;
+      --avatar-wrap-size:78px;
+      --avatar-orbit-outset:15px;
       position:relative;
-      width:78px;
-      height:78px;
+      width:var(--avatar-wrap-size);
+      height:var(--avatar-wrap-size);
       flex-shrink:0;
       margin:0;
       display:flex;
       align-items:center;
       justify-content:center;
-      transition:transform .2s ease;
+      transition:transform .2s ease, width .28s ease, height .28s ease;
       -webkit-tap-highlight-color:transparent;
       cursor:pointer;
     }
@@ -389,6 +397,7 @@
       filter:blur(11px);
       opacity:.82;
       animation:avatar-aura-drift 7s ease-in-out infinite alternate;
+      transition:inset .28s ease, opacity .28s ease;
     }
     @keyframes avatar-aura-drift{
       from{opacity:.72;transform:scale(1)}
@@ -396,12 +405,13 @@
     }
     .avatar-orbit{
       position:absolute;
-      inset:-15px;
+      inset:calc(var(--avatar-orbit-outset) * -1);
       transform:none;
       pointer-events:none;
       z-index:2;
       overflow:visible;
       border-radius:50%;
+      transition:inset .28s ease;
     }
     .avatar-orbit-svg{
       width:100%;
@@ -446,8 +456,8 @@
     .avatar{
       position:relative;
       z-index:1;
-      width:68px;
-      height:68px;
+      width:var(--avatar-core-size);
+      height:var(--avatar-core-size);
       align-self:center;
       margin-top:0;
       border-radius:50%;
@@ -464,7 +474,7 @@
       box-shadow:
         0 0 0 1px rgba(45,132,179,.2),
         0 6px 18px rgba(45,132,179,.24);
-      transition:box-shadow .2s ease;
+      transition:box-shadow .2s ease, width .28s ease, height .28s ease;
       -webkit-tap-highlight-color:transparent;
     }
     .avatar-wrap:hover .avatar{
@@ -797,9 +807,20 @@
     }
     .avatar-wrap.avatar-wrap--portal-alert-both .avatar-orbit-layer circle:nth-child(2n+1){fill:#dc2626 !important}
     .avatar-wrap.avatar-wrap--portal-alert-both .avatar-orbit-layer circle:nth-child(2n){fill:#f97316 !important}
-    /* No pending items: hide orbit dots (logo only). */
+    /* No pending items: hide orbit dots; grow crest to fill the center cell. */
     .avatar-wrap.avatar-wrap--portal-orbit-idle .avatar-orbit{opacity:0;visibility:hidden}
-    .avatar-wrap.avatar-wrap--portal-orbit-idle .avatar-aura{opacity:.55}
+    .avatar-wrap.avatar-wrap--portal-orbit-idle .avatar-aura{opacity:.55;inset:-10px}
+    .topbar-lead .avatar-wrap.avatar-wrap--portal-orbit-idle{
+      --avatar-wrap-size:min(112px, calc(var(--topbar-row-h) - 4px));
+      --avatar-core-size:min(104px, calc(var(--topbar-row-h) - 12px));
+      --avatar-orbit-outset:0px;
+    }
+    /* With orbit balls: shrink crest so dots sit just inside the cell (no column overflow). */
+    .topbar-lead .avatar-wrap:not(.avatar-wrap--portal-orbit-idle){
+      --avatar-orbit-outset:12px;
+      --avatar-wrap-size:min(66px, calc(var(--topbar-row-h) - 28px));
+      --avatar-core-size:min(52px, calc(var(--avatar-wrap-size) - 10px));
+    }
     /* Unread internal chat only — blue orbits + logo pulse */
     .avatar-wrap.avatar-wrap--portal-alert-chat .avatar{
       animation:avatar-outline-alert-blue 1.12s ease-in-out infinite;
