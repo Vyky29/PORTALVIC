@@ -49,6 +49,14 @@ export const CRASH_SWIMMING_SLOTS: CrashSlotDef[] = [
   { id: "s8", label: "18:00–18:30 · Instructor B", start: "18:00", end: "18:30" },
 ];
 
+/** Same instructor consecutive half-hours (parents may book up to 90′ = 3). */
+export const CRASH_SWIM_CHAINS: Record<"A" | "B", string[]> = {
+  A: ["s1", "s3", "s5", "s7"],
+  B: ["s2", "s4", "s6", "s8"],
+};
+
+export const CRASH_SWIM_MAX_SLOTS = 3;
+
 export const CRASH_PRICES = {
   climbing: { session: 75, weekly_pack: 300 },
   swimming: { session: 50, weekly_pack: 200 },
@@ -78,6 +86,93 @@ export function crashSlotsFor(activity: CrashActivity): CrashSlotDef[] {
 
 export function crashSlotById(activity: CrashActivity, slotId: string): CrashSlotDef | null {
   return crashSlotsFor(activity).find((s) => s.id === slotId) || null;
+}
+
+/** Accept a single slot id or an array (swimming multi-slot). */
+export function normalizeCrashSlotIds(raw: unknown): string[] {
+  if (Array.isArray(raw)) {
+    return Array.from(
+      new Set(raw.map((x) => String(x || "").trim()).filter(Boolean)),
+    );
+  }
+  const one = String(raw == null ? "" : raw).trim();
+  return one ? [one] : [];
+}
+
+export function swimChainForSlot(slotId: string): string[] | null {
+  for (const chain of Object.values(CRASH_SWIM_CHAINS)) {
+    if (chain.includes(slotId)) return chain.slice();
+  }
+  return null;
+}
+
+/** 1–3 consecutive half-hours with the same instructor. */
+export function swimSlotsAreValidBlock(ids: string[]): boolean {
+  const uniq = normalizeCrashSlotIds(ids);
+  if (!uniq.length || uniq.length > CRASH_SWIM_MAX_SLOTS) return false;
+  const chain = swimChainForSlot(uniq[0]);
+  if (!chain) return false;
+  if (!uniq.every((id) => chain.includes(id))) return false;
+  const idxs = uniq.map((id) => chain.indexOf(id)).sort((a, b) => a - b);
+  for (let i = 1; i < idxs.length; i++) {
+    if (idxs[i] !== idxs[i - 1] + 1) return false;
+  }
+  return true;
+}
+
+export function swimBlockLabel(ids: string[]): string {
+  const uniq = normalizeCrashSlotIds(ids);
+  if (!uniq.length) return "";
+  const ordered = orderSwimSlots(uniq);
+  const first = crashSlotById("swimming", ordered[0]);
+  const last = crashSlotById("swimming", ordered[ordered.length - 1]);
+  if (!first || !last) return ordered.join(", ");
+  const mins = ordered.length * 30;
+  const who = first.label.includes("Instructor B") ? "Instructor B" : "Instructor A";
+  return `${first.start}–${last.end} · ${who} (${mins}′)`;
+}
+
+export function orderSwimSlots(ids: string[]): string[] {
+  const uniq = normalizeCrashSlotIds(ids);
+  const chain = swimChainForSlot(uniq[0] || "");
+  if (!chain) return uniq;
+  return chain.filter((id) => uniq.includes(id));
+}
+
+/**
+ * Toggle a swimming slot into a 1–3 consecutive same-instructor block.
+ * Returns null if the click cannot form a valid block (caller may replace).
+ */
+export function toggleSwimSlotSelection(current: string[], clickedId: string): string[] {
+  const chain = swimChainForSlot(clickedId);
+  if (!chain) return [clickedId];
+  const cur = orderSwimSlots(current.filter((id) => chain.includes(id)));
+  if (!cur.length) return [clickedId];
+  if (cur.includes(clickedId)) {
+    const next = cur.filter((id) => id !== clickedId);
+    return swimSlotsAreValidBlock(next) || next.length === 0 ? next : [clickedId];
+  }
+  const trial = orderSwimSlots(cur.concat([clickedId]));
+  if (swimSlotsAreValidBlock(trial)) return trial;
+  return [clickedId];
+}
+
+export function resolveActivitySlotIds(
+  activity: CrashActivity,
+  raw: unknown,
+): { ok: true; ids: string[] } | { ok: false; error: string } {
+  const ids = normalizeCrashSlotIds(raw);
+  if (!ids.length) return { ok: false, error: `slot_required_${activity}` };
+  if (activity === "climbing") {
+    if (ids.length !== 1 || !crashSlotById("climbing", ids[0])) {
+      return { ok: false, error: "slot_required_climbing" };
+    }
+    return { ok: true, ids };
+  }
+  if (!swimSlotsAreValidBlock(ids)) {
+    return { ok: false, error: "swim_slots_invalid" };
+  }
+  return { ok: true, ids: orderSwimSlots(ids) };
 }
 
 export function crashWeekDates(weekId: CrashWeekId): string[] {
@@ -120,16 +215,19 @@ function round2(n: number): number {
 
 /**
  * Validate selection and price.
- * weekly_pack: one slot_id per activity covering all 4 week days.
- * individual_days: explicit date+slot lines (unique dates per activity).
+ * weekly_pack: slot id(s) per activity covering all 4 week days
+ *   (swimming may be 1–3 consecutive 30′ slots = up to 90′).
+ * individual_days: map date → slot id or slot id[].
  */
 export function quoteCrashSummerBooking(input: {
   weekId: CrashWeekId;
   mode: CrashBookingMode;
   activities: CrashActivity[];
-  /** Per activity: slot for weekly pack, or map date→slot for individual. */
   slotByActivity: Partial<
-    Record<CrashActivity, string | Record<string, string>>
+    Record<
+      CrashActivity,
+      string | string[] | Record<string, string | string[]>
+    >
   >;
 }): CrashQuote {
   const week = CRASH_SUMMER_WEEKS[input.weekId];
@@ -149,45 +247,58 @@ export function quoteCrashSummerBooking(input: {
     const slotSel = input.slotByActivity[activity];
 
     if (input.mode === "weekly_pack") {
-      const slotId = typeof slotSel === "string" ? slotSel : "";
-      const slot = crashSlotById(activity, slotId);
-      if (!slot) return { ok: false, error: `slot_required_${activity}` };
-      amount += prices.weekly_pack;
+      const resolved = resolveActivitySlotIds(activity, slotSel);
+      if (!resolved.ok) return { ok: false, error: resolved.error };
+      const ids = resolved.ids;
+      const units = ids.length;
+      const packTotal = prices.weekly_pack * units;
+      amount += packTotal;
+      const label =
+        activity === "swimming" ? swimBlockLabel(ids) : crashSlotById(activity, ids[0])!.label;
       descParts.push(
-        `${meta.title} weekly pack (${week.label.split("·")[0].trim()}) · ${slot.label}`,
+        `${meta.title} weekly pack (${week.label.split("·")[0].trim()}) · ${label}`,
       );
       for (const date of week.dates) {
-        lines.push({
-          activity,
-          session_date: date,
-          slot_id: slot.id,
-          slot_label: slot.label,
-          unit_price_gbp: round2(prices.weekly_pack / week.dates.length),
-        });
+        for (const slotId of ids) {
+          const slot = crashSlotById(activity, slotId)!;
+          lines.push({
+            activity,
+            session_date: date,
+            slot_id: slot.id,
+            slot_label: slot.label,
+            unit_price_gbp: round2(packTotal / (week.dates.length * units)),
+          });
+        }
       }
     } else {
       const map =
         slotSel && typeof slotSel === "object" && !Array.isArray(slotSel)
-          ? (slotSel as Record<string, string>)
+          ? (slotSel as Record<string, string | string[]>)
           : {};
       const dates = Object.keys(map)
         .filter((d) => week.dates.includes(d))
         .sort();
       if (!dates.length) return { ok: false, error: `days_required_${activity}` };
+      let dayUnits = 0;
       for (const date of dates) {
-        const slot = crashSlotById(activity, String(map[date] || ""));
-        if (!slot) return { ok: false, error: `slot_required_${activity}_${date}` };
-        amount += prices.session;
-        lines.push({
-          activity,
-          session_date: date,
-          slot_id: slot.id,
-          slot_label: slot.label,
-          unit_price_gbp: prices.session,
-        });
+        const resolved = resolveActivitySlotIds(activity, map[date]);
+        if (!resolved.ok) return { ok: false, error: `${resolved.error}_${date}` };
+        const ids = resolved.ids;
+        dayUnits += ids.length;
+        amount += prices.session * ids.length;
+        for (const slotId of ids) {
+          const slot = crashSlotById(activity, slotId)!;
+          lines.push({
+            activity,
+            session_date: date,
+            slot_id: slot.id,
+            slot_label: slot.label,
+            unit_price_gbp: prices.session,
+          });
+        }
       }
       descParts.push(
-        `${meta.title} · ${dates.length} day${dates.length === 1 ? "" : "s"} @ £${prices.session}`,
+        `${meta.title} · ${dates.length} day${dates.length === 1 ? "" : "s"} · ${dayUnits} × £${prices.session}`,
       );
     }
   }
@@ -211,6 +322,8 @@ export function crashCatalogPublic() {
     meta: CRASH_META,
     climbing_slots: CRASH_CLIMBING_SLOTS,
     swimming_slots: CRASH_SWIMMING_SLOTS,
+    swim_max_slots: CRASH_SWIM_MAX_SLOTS,
+    swim_chains: CRASH_SWIM_CHAINS,
     pay_in_full: true,
   };
 }

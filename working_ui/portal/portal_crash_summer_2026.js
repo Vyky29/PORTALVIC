@@ -15,15 +15,20 @@
       { id: "c2", label: "12:00–13:00" },
     ],
     swimming_slots: [
-      { id: "s1", label: "16:30–17:00 · Instructor A" },
-      { id: "s2", label: "16:30–17:00 · Instructor B" },
-      { id: "s3", label: "17:00–17:30 · Instructor A" },
-      { id: "s4", label: "17:00–17:30 · Instructor B" },
-      { id: "s5", label: "17:30–18:00 · Instructor A" },
-      { id: "s6", label: "17:30–18:00 · Instructor B" },
-      { id: "s7", label: "18:00–18:30 · Instructor A" },
-      { id: "s8", label: "18:00–18:30 · Instructor B" },
+      { id: "s1", label: "16:30–17:00 · Instructor A", start: "16:30", end: "17:00" },
+      { id: "s2", label: "16:30–17:00 · Instructor B", start: "16:30", end: "17:00" },
+      { id: "s3", label: "17:00–17:30 · Instructor A", start: "17:00", end: "17:30" },
+      { id: "s4", label: "17:00–17:30 · Instructor B", start: "17:00", end: "17:30" },
+      { id: "s5", label: "17:30–18:00 · Instructor A", start: "17:30", end: "18:00" },
+      { id: "s6", label: "17:30–18:00 · Instructor B", start: "17:30", end: "18:00" },
+      { id: "s7", label: "18:00–18:30 · Instructor A", start: "18:00", end: "18:30" },
+      { id: "s8", label: "18:00–18:30 · Instructor B", start: "18:00", end: "18:30" },
     ],
+    swim_chains: {
+      A: ["s1", "s3", "s5", "s7"],
+      B: ["s2", "s4", "s6", "s8"],
+    },
+    swim_max: 3,
     prices: {
       climbing: { session: 75, weekly_pack: 300 },
       swimming: { session: 50, weekly_pack: 200 },
@@ -36,7 +41,7 @@
     weekId: "w1",
     mode: "weekly_pack",
     activities: { climbing: false, swimming: false },
-    packSlots: { climbing: "", swimming: "" },
+    packSlots: { climbing: "", swimming: [] },
     daySlots: { climbing: {}, swimming: {} },
     availability: null,
   };
@@ -99,6 +104,91 @@
     return CATALOG.prices[activity];
   }
 
+  function asSlotList(raw) {
+    if (Array.isArray(raw)) return raw.filter(Boolean);
+    if (raw) return [String(raw)];
+    return [];
+  }
+
+  function swimChainFor(slotId) {
+    var chains = CATALOG.swim_chains || {};
+    var keys = Object.keys(chains);
+    for (var i = 0; i < keys.length; i++) {
+      var chain = chains[keys[i]] || [];
+      if (chain.indexOf(slotId) >= 0) return chain.slice();
+    }
+    return null;
+  }
+
+  function orderSwim(ids) {
+    var list = asSlotList(ids);
+    if (!list.length) return [];
+    var chain = swimChainFor(list[0]);
+    if (!chain) return list;
+    return chain.filter(function (id) {
+      return list.indexOf(id) >= 0;
+    });
+  }
+
+  function swimBlockOk(ids) {
+    var list = orderSwim(ids);
+    if (!list.length || list.length > (CATALOG.swim_max || 3)) return false;
+    var chain = swimChainFor(list[0]);
+    if (!chain) return false;
+    for (var i = 0; i < list.length; i++) {
+      if (chain.indexOf(list[i]) < 0) return false;
+    }
+    for (var j = 1; j < list.length; j++) {
+      if (chain.indexOf(list[j]) !== chain.indexOf(list[j - 1]) + 1) return false;
+    }
+    return true;
+  }
+
+  function toggleSwim(current, clickedId) {
+    var chain = swimChainFor(clickedId);
+    if (!chain) return [clickedId];
+    var cur = orderSwim(
+      asSlotList(current).filter(function (id) {
+        return chain.indexOf(id) >= 0;
+      }),
+    );
+    if (!cur.length) return [clickedId];
+    if (cur.indexOf(clickedId) >= 0) {
+      var next = cur.filter(function (id) {
+        return id !== clickedId;
+      });
+      return swimBlockOk(next) || !next.length ? next : [clickedId];
+    }
+    var trial = orderSwim(cur.concat([clickedId]));
+    if (swimBlockOk(trial)) return trial;
+    return [clickedId];
+  }
+
+  function swimLabel(ids) {
+    var list = orderSwim(ids);
+    if (!list.length) return "";
+    var byId = {};
+    slotsFor("swimming").forEach(function (s) {
+      byId[s.id] = s;
+    });
+    var first = byId[list[0]];
+    var last = byId[list[list.length - 1]];
+    if (!first || !last) return list.join(", ");
+    var who = String(first.label || "").indexOf("Instructor B") >= 0 ? "Instructor B" : "Instructor A";
+    var start = first.start || String(first.label || "").split("–")[0];
+    var end = last.end || "";
+    if (!end && last.label) {
+      var m = String(last.label).match(/–(\d{2}:\d{2})/);
+      end = m ? m[1] : "";
+    }
+    return start + "–" + end + " · " + who + " (" + list.length * 30 + "′)";
+  }
+
+  function slotUnits(activity, sel) {
+    if (activity === "swimming") return asSlotList(sel).length;
+    return sel ? 1 : 0;
+  }
+
   function selectedActivities() {
     var out = [];
     if (state.activities.climbing) out.push("climbing");
@@ -112,17 +202,25 @@
     return !!a[activity][date][slotId];
   }
 
+  function slotsFreeOnDates(activity, dates, slotIds) {
+    return asSlotList(slotIds).every(function (slotId) {
+      return dates.every(function (d) {
+        return isSlotFree(activity, d, slotId);
+      });
+    });
+  }
+
   function computeTotal() {
     var acts = selectedActivities();
     var total = 0;
     acts.forEach(function (activity) {
       var p = pricesFor(activity);
       if (state.mode === "weekly_pack") {
-        if (state.packSlots[activity]) total += p.weekly_pack;
+        total += p.weekly_pack * slotUnits(activity, state.packSlots[activity]);
       } else {
         var map = state.daySlots[activity] || {};
         Object.keys(map).forEach(function (d) {
-          if (map[d]) total += p.session;
+          total += p.session * slotUnits(activity, map[d]);
         });
       }
     });
@@ -132,6 +230,11 @@
   function updateTotal() {
     var el = $("csTotal");
     if (el) el.textContent = "Total: £" + computeTotal();
+  }
+
+  function emptySlotState() {
+    state.packSlots = { climbing: "", swimming: [] };
+    state.daySlots = { climbing: {}, swimming: {} };
   }
 
   function renderWeeks() {
@@ -153,8 +256,7 @@
     host.querySelectorAll("[data-week]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         state.weekId = btn.getAttribute("data-week") || "w1";
-        state.packSlots = { climbing: "", swimming: "" };
-        state.daySlots = { climbing: {}, swimming: {} };
+        emptySlotState();
         renderWeeks();
         renderSlots();
         loadAvailability();
@@ -183,11 +285,12 @@
     return "";
   }
 
-  function renderSlotButtons(activity, date, selectedId, onPick) {
+  function renderSlotButtons(activity, date, selectedRaw) {
+    var selected = asSlotList(selectedRaw);
     return slotsFor(activity)
       .map(function (slot) {
         var free = isSlotFree(activity, date, slot.id);
-        var pressed = selectedId === slot.id;
+        var pressed = selected.indexOf(slot.id) >= 0;
         return (
           '<button type="button" class="slot-btn" data-act="' +
           activity +
@@ -222,27 +325,41 @@
     if (hint) {
       hint.textContent =
         state.mode === "weekly_pack"
-          ? "Pick one slot per activity for the whole week (same time each day)."
-          : "Tick the days you want and choose a free slot for each day.";
+          ? "Climbing: pick one 60′ slot. Swimming: pick 1–3 consecutive 30′ slots with the same instructor (up to 90′). Same times every day of the week."
+          : "Tick the days you want. Swimming allows up to 90′ (1–3 consecutive slots) per day when free.";
     }
 
     var html = "";
     acts.forEach(function (activity) {
       var title = activity === "climbing" ? "Climbing" : "Swimming";
-      html += "<h3 style=\"margin:12px 0 6px;font-size:.95rem;color:var(--ink)\">" + title + "</h3>";
+      html += '<h3 style="margin:12px 0 6px;font-size:.95rem;color:var(--ink)">' + title + "</h3>";
+      if (activity === "swimming") {
+        html +=
+          '<p class="muted">Tap consecutive slots with the same instructor — 30′, 60′ or 90′. Price is £' +
+          pricesFor("swimming").session +
+          " per 30′ (weekly pack £" +
+          pricesFor("swimming").weekly_pack +
+          " × half-hours).</p>";
+      }
       if (state.mode === "weekly_pack") {
         var anyDate = weekDates()[0];
+        var sel = state.packSlots[activity];
         html +=
           '<div class="slot-grid" data-pack="' +
           activity +
           '">' +
-          renderSlotButtons(activity, anyDate, state.packSlots[activity], null) +
+          renderSlotButtons(activity, anyDate, sel) +
           "</div>";
+        if (activity === "swimming" && asSlotList(sel).length) {
+          html += '<p class="muted"><strong>Selected:</strong> ' + swimLabel(sel) + "</p>";
+        }
         html +=
-          '<p class="muted">Availability checked for all four days — a slot must be free every day of the week.</p>';
+          '<p class="muted">Availability checked for all four days — every selected slot must be free each day.</p>';
       } else {
         weekDates().forEach(function (date) {
-          var sel = (state.daySlots[activity] || {})[date] || "";
+          var sel = (state.daySlots[activity] || {})[date];
+          var has = asSlotList(sel).length > 0 || !!sel;
+          if (activity === "climbing") has = !!sel;
           html +=
             '<div class="day-block" data-day-act="' +
             activity +
@@ -259,12 +376,15 @@
             '" data-date="' +
             date +
             '"' +
-            (sel ? " checked" : "") +
+            (has ? " checked" : "") +
             " /> Book this day</label>" +
-            (sel
+            (has
               ? '<div class="slot-grid">' +
-                renderSlotButtons(activity, date, sel, null) +
-                "</div>"
+                renderSlotButtons(activity, date, sel) +
+                "</div>" +
+                (activity === "swimming" && asSlotList(sel).length
+                  ? '<p class="muted"><strong>Selected:</strong> ' + swimLabel(sel) + "</p>"
+                  : "")
               : "") +
             "</div>";
         });
@@ -272,7 +392,6 @@
     });
     host.innerHTML = html;
 
-    // For weekly pack, disable slots not free on ALL days
     if (state.mode === "weekly_pack") {
       acts.forEach(function (activity) {
         host.querySelectorAll('.slot-grid[data-pack="' + activity + '"] .slot-btn').forEach(function (btn) {
@@ -282,8 +401,16 @@
           });
           if (!allFree) {
             btn.disabled = true;
-            if (btn.textContent.indexOf("full") < 0) btn.textContent += " · not free all week";
-            if (state.packSlots[activity] === slotId) state.packSlots[activity] = "";
+            if (btn.textContent.indexOf("full") < 0 && btn.textContent.indexOf("not free") < 0) {
+              btn.textContent += " · not free all week";
+            }
+            if (activity === "swimming") {
+              state.packSlots.swimming = asSlotList(state.packSlots.swimming).filter(function (id) {
+                return id !== slotId;
+              });
+            } else if (state.packSlots[activity] === slotId) {
+              state.packSlots[activity] = "";
+            }
           }
         });
       });
@@ -295,10 +422,28 @@
         var date = btn.getAttribute("data-date");
         var slotId = btn.getAttribute("data-slot");
         if (state.mode === "weekly_pack") {
-          state.packSlots[activity] = slotId;
+          if (activity === "swimming") {
+            var next = toggleSwim(state.packSlots.swimming, slotId);
+            if (!slotsFreeOnDates("swimming", weekDates(), next)) {
+              showNotice("error", "That block is not free for the whole week. Try another.");
+              return;
+            }
+            state.packSlots.swimming = next;
+          } else {
+            state.packSlots[activity] = slotId;
+          }
         } else {
           if (!state.daySlots[activity]) state.daySlots[activity] = {};
-          state.daySlots[activity][date] = slotId;
+          if (activity === "swimming") {
+            var dayNext = toggleSwim(state.daySlots.swimming[date], slotId);
+            if (!slotsFreeOnDates("swimming", [date], dayNext)) {
+              showNotice("error", "That block is not free on " + formatDayLabel(date) + ".");
+              return;
+            }
+            state.daySlots.swimming[date] = dayNext;
+          } else {
+            state.daySlots[activity][date] = slotId;
+          }
         }
         renderSlots();
       });
@@ -313,11 +458,14 @@
           var firstFree = slotsFor(activity).find(function (s) {
             return isSlotFree(activity, date, s.id);
           });
-          state.daySlots[activity][date] = firstFree ? firstFree.id : "";
           if (!firstFree) {
             cb.checked = false;
             delete state.daySlots[activity][date];
             showNotice("error", "No free slots on " + formatDayLabel(date) + ".");
+          } else if (activity === "swimming") {
+            state.daySlots.swimming[date] = [firstFree.id];
+          } else {
+            state.daySlots[activity][date] = firstFree.id;
           }
         } else {
           delete state.daySlots[activity][date];
@@ -338,8 +486,7 @@
         host.querySelectorAll("[data-mode]").forEach(function (b) {
           b.setAttribute("aria-pressed", b === btn ? "true" : "false");
         });
-        state.packSlots = { climbing: "", swimming: "" };
-        state.daySlots = { climbing: {}, swimming: {} };
+        emptySlotState();
         renderSlots();
       });
     });
@@ -377,6 +524,8 @@
           if (data.catalog.climbing_slots) CATALOG.climbing_slots = data.catalog.climbing_slots;
           if (data.catalog.swimming_slots) CATALOG.swimming_slots = data.catalog.swimming_slots;
           if (data.catalog.prices) CATALOG.prices = data.catalog.prices;
+          if (data.catalog.swim_chains) CATALOG.swim_chains = data.catalog.swim_chains;
+          if (data.catalog.swim_max_slots) CATALOG.swim_max = data.catalog.swim_max_slots;
         }
       }
     } catch (_e) {
@@ -481,19 +630,32 @@
     for (var i = 0; i < acts.length; i++) {
       var activity = acts[i];
       if (state.mode === "weekly_pack") {
-        if (!state.packSlots[activity]) {
+        var packSel = state.packSlots[activity];
+        if (!slotUnits(activity, packSel)) {
           showNotice("error", "Pick a time slot for " + activity + ".");
           return;
         }
-        slots[activity] = state.packSlots[activity];
+        if (activity === "swimming" && !swimBlockOk(packSel)) {
+          showNotice("error", "Swimming slots must be consecutive with the same instructor (max 90′).");
+          return;
+        }
+        slots[activity] = activity === "swimming" ? asSlotList(packSel) : packSel;
       } else {
         var map = state.daySlots[activity] || {};
         var dates = Object.keys(map).filter(function (d) {
-          return !!map[d];
+          return slotUnits(activity, map[d]) > 0;
         });
         if (!dates.length) {
           showNotice("error", "Pick at least one day for " + activity + ".");
           return;
+        }
+        if (activity === "swimming") {
+          for (var di = 0; di < dates.length; di++) {
+            if (!swimBlockOk(map[dates[di]])) {
+              showNotice("error", "Swimming on " + formatDayLabel(dates[di]) + " must be consecutive (max 90′).");
+              return;
+            }
+          }
         }
         slots[activity] = map;
       }

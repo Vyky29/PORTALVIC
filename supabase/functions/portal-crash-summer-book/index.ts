@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
   if (!activities.length) return json(400, { ok: false, error: "activity_required" });
 
   const slotByActivity: Partial<
-    Record<CrashActivity, string | Record<string, string>>
+    Record<CrashActivity, string | string[] | Record<string, string | string[]>>
   > = {};
   const rawSlots =
     body.slots && typeof body.slots === "object" && !Array.isArray(body.slots)
@@ -126,11 +126,20 @@ Deno.serve(async (req) => {
   for (const activity of activities) {
     const sel = rawSlots[activity];
     if (mode === "weekly_pack") {
-      slotByActivity[activity] = clean(sel, 20);
+      if (Array.isArray(sel)) {
+        slotByActivity[activity] = sel.map((x) => clean(x, 20)).filter(Boolean);
+      } else {
+        slotByActivity[activity] = clean(sel, 20);
+      }
     } else if (sel && typeof sel === "object" && !Array.isArray(sel)) {
-      const map: Record<string, string> = {};
-      for (const [date, slotId] of Object.entries(sel as Record<string, unknown>)) {
-        if (/^\d{4}-\d{2}-\d{2}$/.test(date)) map[date] = clean(slotId, 20);
+      const map: Record<string, string | string[]> = {};
+      for (const [date, slotVal] of Object.entries(sel as Record<string, unknown>)) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+        if (Array.isArray(slotVal)) {
+          map[date] = slotVal.map((x) => clean(x, 20)).filter(Boolean);
+        } else {
+          map[date] = clean(slotVal, 20);
+        }
       }
       slotByActivity[activity] = map;
     }
