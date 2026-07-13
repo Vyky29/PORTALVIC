@@ -1004,6 +1004,18 @@ function portalSessionKeyAreaTokensCompatible(submittedKey, rosterKey) {
     if (t === "aquatic" || t === "swimming") return true;
     return /pool/.test(t);
   }
+  /** Sunday SwimFarm MA roster keys often use venue `swimfarm` while feedback stores pool area. */
+  function isSwimFarmVenueArea(a) {
+    const t = String(a || "").trim().toLowerCase();
+    return t === "swimfarm" || t === "swim_farm" || t.indexOf("swimfarm") >= 0;
+  }
+  function swimFarmPoolCompatible(a, b) {
+    return (
+      (isPoolOrAquaticArea(a) && isSwimFarmVenueArea(b)) ||
+      (isSwimFarmVenueArea(a) && isPoolOrAquaticArea(b)) ||
+      (isSwimFarmVenueArea(a) && isSwimFarmVenueArea(b))
+    );
+  }
   if (!sArea && !rArea) return true;
   if (!sArea && rArea) {
     const sTime = portalSessionKeyTimeToken(submittedKey);
@@ -1013,7 +1025,11 @@ function portalSessionKeyAreaTokensCompatible(submittedKey, rosterKey) {
       return true;
     }
     /* Roster aquatic unit vs feedback without area, or pool venue on roster only. */
-    if (isPoolOrAquaticArea(rArea) || /\|aquatic(?:\||$)/i.test(String(rosterKey || ""))) {
+    if (
+      isPoolOrAquaticArea(rArea) ||
+      isSwimFarmVenueArea(rArea) ||
+      /\|aquatic(?:\||$)/i.test(String(rosterKey || ""))
+    ) {
       return true;
     }
     return false;
@@ -1021,6 +1037,7 @@ function portalSessionKeyAreaTokensCompatible(submittedKey, rosterKey) {
   if (sArea && rArea) {
     if (sArea === rArea) return true;
     if (isPoolOrAquaticArea(sArea) && isPoolOrAquaticArea(rArea)) return true;
+    if (swimFarmPoolCompatible(sArea, rArea)) return true;
     if (sArea === "bespoke_shared" || rArea === "bespoke_shared") return true;
     if (sArea === "day_centre" || rArea === "day_centre") return true;
     if (
@@ -1039,7 +1056,11 @@ function portalSessionKeyAreaTokensCompatible(submittedKey, rosterKey) {
   }
   /* Feedback has pool/venue token; roster aquatic key often has no area segment. */
   if (sArea && !rArea) {
-    if (isPoolOrAquaticArea(sArea) || /\|aquatic(?:\||$)/i.test(String(rosterKey || ""))) {
+    if (
+      isPoolOrAquaticArea(sArea) ||
+      isSwimFarmVenueArea(sArea) ||
+      /\|aquatic(?:\||$)/i.test(String(rosterKey || ""))
+    ) {
       return true;
     }
   }

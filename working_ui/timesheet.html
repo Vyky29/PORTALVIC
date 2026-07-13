@@ -977,7 +977,13 @@
       }
       let suffix = "";
       if (/multi[-\s]?activity/.test(act) || act === "bespoke" || act.indexOf("climbing") >= 0) {
-        const ak = timesheetSlugAreaKey(s.area || s.venue || "");
+        let ak = timesheetSlugAreaKey(s.area || "");
+        /* Feedback stores pool (big_pool); never treat venue SwimFarm as the area token. */
+        if (!ak || ak === "swimfarm" || ak === "swim_farm") {
+          ak = timesheetSlugAreaKey(s.poolArea || s.pool || "");
+        }
+        const venueAk = timesheetSlugAreaKey(s.venue || "");
+        if (!ak && venueAk && venueAk !== "swimfarm" && venueAk !== "swim_farm") ak = venueAk;
         if (ak) suffix = `|${ak}`;
       }
       return `${dateKey}|${String(s.start || "").trim()}|${cid}${suffix}`;
@@ -986,7 +992,25 @@
     function sessionReviewRecord(reviewMap, s, dateObj) {
       const sk = timesheetSessionReviewKey(s, dateObj);
       if (sk && reviewMap[sk]) return reviewMap[sk];
-      return null;
+      /* Same date + client may be stored under pool vs SwimFarm venue suffixes. */
+      const dateKey = isoDate(dateObj);
+      const cid = String(s.clientId || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "_");
+      if (!dateKey || !cid || !reviewMap) return null;
+      const start = String(s.start || "").trim().slice(0, 5);
+      let fallback = null;
+      Object.keys(reviewMap).forEach((k) => {
+        if (fallback) return;
+        const key = String(k || "");
+        if (!key.startsWith(dateKey + "|")) return;
+        if (key.indexOf(cid) < 0) return;
+        if (start && key.indexOf(start) < 0 && !/\|aquatic(?:\||$)/.test(key)) return;
+        const rec = reviewMap[k];
+        if (rec && (rec.feedbackDone || rec.absent || rec.cancelled)) fallback = rec;
+      });
+      return fallback;
     }
 
     function collectRosterSessionKeysForPeriod(sessionsModel, dates) {
