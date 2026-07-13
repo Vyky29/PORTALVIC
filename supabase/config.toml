@@ -563,6 +563,12 @@ verify_jwt = false
 [functions.parent-portal-stripe-webhook]
 verify_jwt = false
 
+[functions.parent-portal-gocardless-setup]
+verify_jwt = false
+
+[functions.parent-portal-gocardless-webhook]
+verify_jwt = false
+
 # Parent reports bank transfer paid (office confirms).
 [functions.parent-portal-invoice-report-paid]
 verify_jwt = false

@@ -488,6 +488,32 @@
           });
         });
       },
+      startGocardlessSetup: function (invoiceId) {
+        return fetch(fn("parent-portal-gocardless-setup"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey(),
+            Authorization: "Bearer " + anonKey(),
+            "x-parent-portal-session": state.session.token,
+          },
+          body: JSON.stringify({
+            contact_id: contactId,
+            invoice_id: invoiceId || "",
+            return_origin: global.location && global.location.origin ? global.location.origin : "",
+          }),
+        }).then(function (res) {
+          return res.json().then(function (j) {
+            if (!res.ok || !j.ok) {
+              var err = new Error("gocardless_setup_failed");
+              err.code = (j && j.error) || "gocardless_setup_failed";
+              err.messageText = (j && j.message) || "";
+              throw err;
+            }
+            return j;
+          });
+        });
+      },
       applyCreditToInvoice: function (invoiceId, creditId) {
         return fetch(fn("parent-portal-credit-apply-invoice"), {
           method: "POST",
@@ -1584,14 +1610,20 @@
     var invoicePaid = params.get("invoice_paid") === "1";
     var invoiceCancel = params.get("invoice_cancel") === "1";
     var invoiceId = params.get("invoice") || "";
+    var gcParam = params.get("gocardless") || "";
     if (invoicePaid && invoiceId) {
       try {
         sessionStorage.setItem("pp_invoice_paid_flash", String(invoiceId));
       } catch (_eFlash) {}
     }
+    if (gcParam === "1" || gcParam === "cancel") {
+      try {
+        sessionStorage.setItem("pp_gocardless_flash", String(gcParam));
+      } catch (_eGc) {}
+    }
     if (!contactId) return;
     var view = params.get("view") || "";
-    if ((invoicePaid || invoiceCancel) && !view) view = "invoices";
+    if ((invoicePaid || invoiceCancel || gcParam) && !view) view = "invoices";
     void loadParticipantDetail(contactId, view || "");
     try {
       var clean = new URL(global.location.href);
@@ -1601,6 +1633,7 @@
       clean.searchParams.delete("invoice_paid");
       clean.searchParams.delete("invoice_cancel");
       clean.searchParams.delete("invoice");
+      clean.searchParams.delete("gocardless");
       global.history.replaceState({}, "", clean.pathname + clean.search + clean.hash);
     } catch (_e2) {}
   }

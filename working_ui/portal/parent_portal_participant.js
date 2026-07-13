@@ -3708,6 +3708,8 @@
     var cardCharge = card ? formatInvoiceMoney(card.charge_gbp) : "";
     var cardFee = card ? formatInvoiceMoney(card.fee_gbp) : "";
     var gc = String((inv && inv.gocardless_url) || "").trim();
+    var canSetupGc = !!(inv && inv.can_setup_gocardless);
+    var gcPending = !!(inv && inv.gocardless_pending_collection);
     var pl = String((inv && inv.payment_link_url) || "").trim();
     var surcharge = String((inv && inv.payment_link_surcharge_note) || "").trim();
     var suggestedRef = String((inv && inv.suggested_reference) || "").trim();
@@ -3798,6 +3800,9 @@
       paidNote +
       invoiceBankPanelHtml(inv) +
       creditHtml +
+      (gcPending
+        ? '<p class="pp-muted pp-invoice-pay__note">Direct Payment scheduled with GoCardless — collection follows your due date (usually a few working days).</p>'
+        : "") +
       '<div class="pp-invoice-card__acts">' +
       (pdf
         ? '<button type="button" class="pp-btn ' +
@@ -3815,7 +3820,12 @@
           esc((num || "invoice").replace(/[^\w.-]+/g, "_") + ".pdf") +
           '" target="_blank" rel="noopener noreferrer">Download</a>'
         : '<p class="pp-muted">PDF not available yet.</p>') +
-      (gc
+      (canSetupGc
+        ? '<button type="button" class="pp-btn pp-btn--primary" data-pp-setup-gocardless="' +
+          esc(inv.id) +
+          '">Set up Direct Payment</button>'
+        : "") +
+      (!canSetupGc && gc
         ? '<a class="pp-btn pp-btn--primary" href="' +
           esc(gc) +
           '" target="_blank" rel="noopener noreferrer">Pay with GoCardless</a>'
@@ -3863,8 +3873,9 @@
       '<h3 class="pp-pax-subview-title">Invoices</h3>' +
         '<p class="pp-muted pp-pax-subview-note">Statements shared by the office for ' +
         esc(firstNameOf(data)) +
-        ". Prefer <strong>bank transfer</strong> (no fee). Card / Apple Pay adds a small processing fee so we receive the invoice amount in full.</p>" +
+        ". Prefer <strong>bank transfer</strong> (no fee). <strong>Direct Payment (GoCardless)</strong> collects automatically once set up. Card / Apple Pay adds a small processing fee.</p>" +
         '<div id="ppInvoicesNotice" class="pp-notice" hidden></div>' +
+        '<div id="ppGocardlessSetupHost" class="pp-invoice-gc-setup" hidden></div>' +
         '<div id="ppInvoicesListHost"><p class="pp-muted">Loading…</p></div>',
     );
     bindBack(host, data, opts);
@@ -3890,9 +3901,28 @@
     function refreshList() {
       return opts.listInvoices().then(function (j) {
         var invoices = (j && j.invoices) || [];
+        var gcMeta = (j && j.gocardless) || {};
+        var gcHost = host.querySelector("#ppGocardlessSetupHost");
+        if (gcHost) {
+          if (gcMeta.setup_available) {
+            gcHost.hidden = false;
+            gcHost.innerHTML =
+              '<p class="pp-invoice-pay__title">Direct Payment (GoCardless)</p>' +
+              '<p class="pp-muted pp-invoice-pay__note">Authorise once with your bank. We then collect each Direct Payment invoice on its due date.</p>' +
+              '<button type="button" class="pp-btn pp-btn--primary" data-pp-setup-gocardless="">Set up Direct Payment</button>';
+          } else if (gcMeta.mandate_active) {
+            gcHost.hidden = false;
+            gcHost.innerHTML =
+              '<p class="pp-muted pp-invoice-pay__note">Direct Payment mandate is active. Upcoming invoices are collected automatically.</p>';
+          } else {
+            gcHost.hidden = true;
+            gcHost.innerHTML = "";
+          }
+        }
         if (!invoices.length) {
           listHost.innerHTML =
             '<p class="pp-muted">No invoices shared yet for this participant.</p>';
+          wireInvoiceActions();
           return;
         }
         listHost.innerHTML = invoices.map(invoiceCardHtml).join("");
@@ -3919,6 +3949,18 @@
             );
             if (card && typeof card.scrollIntoView === "function") {
               card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
+          }
+          var gcFlash = sessionStorage.getItem("pp_gocardless_flash");
+          if (gcFlash) {
+            sessionStorage.removeItem("pp_gocardless_flash");
+            if (gcFlash === "1") {
+              showNotice(
+                "success",
+                "Thanks — if you finished bank authorisation, Direct Payment is being confirmed. Collections follow your invoice due dates.",
+              );
+            } else if (gcFlash === "cancel") {
+              showNotice("info", "GoCardless setup was cancelled. You can try again anytime.");
             }
           }
         } catch (_eFlash) {}
@@ -4023,6 +4065,57 @@
             });
         });
       });
+
+      function runGocardlessSetup(btn, invoiceId) {
+        if (typeof opts.startGocardlessSetup !== "function") return;
+        btn.disabled = true;
+        btn.setAttribute("aria-busy", "true");
+        showNotice("info", "Opening GoCardless to set up Direct Payment…");
+        void opts
+          .startGocardlessSetup(invoiceId || "")
+          .then(function (j) {
+            if (j && j.authorisation_url) {
+              global.location.href = j.authorisation_url;
+              return;
+            }
+            if (j && j.already_mandated) {
+              showNotice(
+                "success",
+                (j && j.message) ||
+                  "Direct Payment mandate is active. Collections are scheduled where needed.",
+              );
+              btn.disabled = false;
+              btn.removeAttribute("aria-busy");
+              return refreshList();
+            }
+            throw new Error("no_url");
+          })
+          .catch(function (err) {
+            btn.disabled = false;
+            btn.removeAttribute("aria-busy");
+            var code = err && err.code ? String(err.code) : "";
+            var msg =
+              (err && err.messageText) ||
+              (code === "gocardless_not_configured"
+                ? "Direct Payment is not available yet. Contact the office."
+                : "Could not start GoCardless setup — please try again or contact the office.");
+            showNotice("error", msg);
+          });
+      }
+
+      listHost.querySelectorAll("[data-pp-setup-gocardless]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          runGocardlessSetup(btn, btn.getAttribute("data-pp-setup-gocardless") || "");
+        });
+      });
+      var gcHost = host.querySelector("#ppGocardlessSetupHost");
+      if (gcHost) {
+        gcHost.querySelectorAll("[data-pp-setup-gocardless]").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            runGocardlessSetup(btn, btn.getAttribute("data-pp-setup-gocardless") || "");
+          });
+        });
+      }
 
       listHost.querySelectorAll("[data-pp-apply-credit]").forEach(function (btn) {
         btn.addEventListener("click", function () {
