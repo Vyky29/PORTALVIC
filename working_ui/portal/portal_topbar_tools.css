@@ -770,7 +770,7 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   flex-direction:column;
   align-items:stretch;
   justify-content:flex-end;
-  padding-top:7px;
+  padding-top:3px;
   box-sizing:border-box;
 }
 .topbar-tools-grid > .topbar-tool-cell--staff-wa .topbar-tool-btn.topbar-tool-btn--staff-wa,
