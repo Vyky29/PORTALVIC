@@ -2963,30 +2963,10 @@ const LEVEL_DATA = {
       /* ===== PAGE 3 — Programme family poster (Face C) ===== */
       if(visuals.familyPoster){
         doc.addPage();
-        doc.setFillColor(255, 255, 255);
-        doc.rect(0, 0, pageW, pageH, "F");
         try{
           const fmt = pngFmt(visuals.familyPoster);
-          const props = doc.getImageProperties(visuals.familyPoster);
-          const iw = props.width || 1;
-          const ih = props.height || 1;
-          const pageAspect = pageW / pageH;
-          const imgAspect = iw / ih;
-          let wImg, hImg, xImg, yImg;
-          // Match landscape A4 tightly: exact fill when aspect aligns, otherwise cover (no letterbox gaps)
-          if(Math.abs(imgAspect - pageAspect) < 0.03){
-            wImg = pageW;
-            hImg = pageH;
-            xImg = 0;
-            yImg = 0;
-          }else{
-            const scale = Math.max(pageW / iw, pageH / ih);
-            wImg = iw * scale;
-            hImg = ih * scale;
-            xImg = (pageW - wImg) / 2;
-            yImg = (pageH - hImg) / 2;
-          }
-          doc.addImage(visuals.familyPoster, fmt, xImg, yImg, wImg, hImg);
+          // Full-bleed landscape page: stretch poster edge-to-edge (no letterbox)
+          doc.addImage(visuals.familyPoster, fmt, 0, 0, pageW, pageH);
         }catch(_e){
           /* Face C optional if asset fails */
         }
