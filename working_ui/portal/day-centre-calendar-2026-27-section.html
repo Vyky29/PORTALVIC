@@ -325,6 +325,20 @@
     #dcCalCrashPanel .dc-cal-term__info li:last-child {
       margin-bottom: 0;
     }
+    .dc-cal-crash-offer {
+      margin: 12px 0 0;
+      padding: 10px 12px;
+      border: 1px solid var(--dc-border);
+      border-radius: 10px;
+      background: #fafcff;
+      min-width: 0;
+    }
+    .dc-cal-crash-offer__title {
+      margin: 0 0 6px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--dc-navy);
+    }
     .dc-cal-crash-days {
       display: flex;
       flex-wrap: wrap;
@@ -448,7 +462,7 @@
   <div class="dc-cal-tabs" role="tablist" aria-label="Calendar type">
     <button type="button" class="dc-cal-tab dc-cal-tab--stack" id="dcCalSessionsTab" role="tab" aria-selected="true" aria-controls="dcCalSessionsPanel" data-dc-cal-target="dcCalSessionsPanel" aria-label="After-Schools and Weekends — Swimming, Climbing, Fitness, Bespoke and Multi-Activity"><span class="dc-cal-tab__head">After-Schools<br>&amp;<br>Weekends</span><span class="dc-cal-tab__sub">Swimming, Climbing, Fitness</span><span class="dc-cal-tab__sub">Bespoke &amp; Multi-Activity</span></button>
     <button type="button" class="dc-cal-tab dc-cal-tab--stack" id="dcCalDayCentreTab" role="tab" aria-selected="false" aria-controls="dcCalDayCentrePanel" data-dc-cal-target="dcCalDayCentrePanel"><span class="dc-cal-tab__head">Day<br>Centre</span><span class="dc-cal-tab__sub">Mon–Fri only</span></button>
-    <button type="button" class="dc-cal-tab dc-cal-tab--stack" id="dcCalCrashTab" role="tab" aria-selected="false" aria-controls="dcCalCrashPanel" data-dc-cal-target="dcCalCrashPanel"><span class="dc-cal-tab__head">Crash<br>Courses</span><span class="dc-cal-tab__sub">Half Terms</span></button>
+    <button type="button" class="dc-cal-tab dc-cal-tab--stack" id="dcCalCrashTab" role="tab" aria-selected="false" aria-controls="dcCalCrashPanel" data-dc-cal-target="dcCalCrashPanel"><span class="dc-cal-tab__head">Crash<br>Courses</span><span class="dc-cal-tab__sub">Summer &amp; half terms</span></button>
   </div>
 
   <div class="dc-cal__summary" id="dcCalSummaryDayCentre" data-dc-cal-summary="dcCalDayCentrePanel" aria-label="Day Centre weeks summary" hidden>
@@ -459,7 +473,7 @@
     <span><strong>34</strong> weekend sessions</span>
   </div>
   <div class="dc-cal__summary" id="dcCalSummaryCrash" data-dc-cal-summary="dcCalCrashPanel" aria-label="Crash courses summary" hidden>
-    <span><strong>12</strong> crash course days · 3 half terms</span>
+    <span><strong>8</strong> summer days (Jul 2026) · <strong>12</strong> half-term days</span>
   </div>
 
   <div class="dc-cal-panel" id="dcCalDayCentrePanel" role="tabpanel" aria-labelledby="dcCalDayCentreTab" hidden>
@@ -1344,7 +1358,71 @@
       <li><span class="dc-cal__swatch dc-cal__swatch--green" aria-hidden="true"></span> Green = Crash course running</li>
       <li><span class="dc-cal__swatch dc-cal__swatch--red" aria-hidden="true"></span> Red = No crash course</li>
     </ul>
-    <p class="dc-cal-panel__intro">Crash courses run <strong>Monday to Thursday</strong> during the October, February and May half terms. Fridays are shown in red.</p>
+    <p class="dc-cal-panel__intro">
+      <strong>Summer holiday 2026 (July):</strong> Tuesday–Friday crash courses — Climbing (Westway) and Swimming (Acton).
+      Half-term intensives (Oct / Feb / May) remain Monday–Thursday.
+      Places are limited; booking requires <strong>payment in full</strong>.
+    </p>
+
+    <article class="dc-cal-term" aria-labelledby="dcCalCrashPanel-term-summer">
+      <header class="dc-cal-term__head">
+        <h3 class="dc-cal-term__title" id="dcCalCrashPanel-term-summer"><span class="dc-cal-term__icon" aria-hidden="true">☀️</span> Summer holiday crash courses · July 2026</h3>
+      </header>
+      <ul class="dc-cal-term__info">
+        <li><strong>Week 1:</strong> Tuesday 21 – Friday 24 July 2026</li>
+        <li><strong>Week 2:</strong> Tuesday 28 – Friday 31 July 2026</li>
+        <li>Book Climbing, Swimming, or both. Weekly packs have priority; individual days subject to remaining spaces.</li>
+        <li><strong>Pay in full</strong> to reserve — no place is held without payment.</li>
+        <li><a href="/parent/crash-summer" style="font-weight:800;color:var(--dc-navy)">Book summer crash courses →</a> (family portal sign-in required)</li>
+      </ul>
+      <div class="dc-cal-crash-offer">
+        <h4 class="dc-cal-crash-offer__title">Climbing</h4>
+        <ul class="dc-cal-term__info">
+          <li>Time: <strong>11:00 am – 1:00 pm</strong> · 2 × 60′ slots per day (1 instructor)</li>
+          <li>Westway Sports &amp; Fitness Centre · 1 Crowthorne Road, London W10 6RP</li>
+          <li>£75 per session · Four-day weekly pack £300</li>
+        </ul>
+        <ul class="dc-cal-crash-days" aria-label="Summer climbing week 1">
+          <li class="dc-cal-crash-day dc-cal-crash-day--off"><span class="dc-cal-crash-day__dow">Mon</span><span class="dc-cal-crash-day__num">20</span></li>
+          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Tue</span><span class="dc-cal-crash-day__num">21</span></li>
+          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Wed</span><span class="dc-cal-crash-day__num">22</span></li>
+          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Thu</span><span class="dc-cal-crash-day__num">23</span></li>
+          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Fri</span><span class="dc-cal-crash-day__num">24</span></li>
+        </ul>
+        <ul class="dc-cal-crash-days" aria-label="Summer climbing week 2" style="margin-top:8px">
+          <li class="dc-cal-crash-day dc-cal-crash-day--off"><span class="dc-cal-crash-day__dow">Mon</span><span class="dc-cal-crash-day__num">27</span></li>
+          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Tue</span><span class="dc-cal-crash-day__num">28</span></li>
+          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Wed</span><span class="dc-cal-crash-day__num">29</span></li>
+          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Thu</span><span class="dc-cal-crash-day__num">30</span></li>
+          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Fri</span><span class="dc-cal-crash-day__num">31</span></li>
+        </ul>
+      </div>
+      <div class="dc-cal-crash-offer">
+        <h4 class="dc-cal-crash-offer__title">Swimming</h4>
+        <ul class="dc-cal-term__info">
+          <li>Time: <strong>4:30 pm – 6:30 pm</strong> · 8 × 30′ slots per day (2 instructors)</li>
+          <li>Everyone Active Acton Centre · High Street, Acton, London W3 6NE</li>
+          <li>Tue &amp; Thu: Big Pool · Wed &amp; Fri: Teaching Pool</li>
+          <li>£50 per session · Four-day weekly pack £200</li>
+        </ul>
+        <ul class="dc-cal-crash-days" aria-label="Summer swimming week 1">
+          <li class="dc-cal-crash-day dc-cal-crash-day--off"><span class="dc-cal-crash-day__dow">Mon</span><span class="dc-cal-crash-day__num">20</span></li>
+          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Tue</span><span class="dc-cal-crash-day__num">21</span></li>
+          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Wed</span><span class="dc-cal-crash-day__num">22</span></li>
+          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Thu</span><span class="dc-cal-crash-day__num">23</span></li>
+          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Fri</span><span class="dc-cal-crash-day__num">24</span></li>
+        </ul>
+        <ul class="dc-cal-crash-days" aria-label="Summer swimming week 2" style="margin-top:8px">
+          <li class="dc-cal-crash-day dc-cal-crash-day--off"><span class="dc-cal-crash-day__dow">Mon</span><span class="dc-cal-crash-day__num">27</span></li>
+          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Tue</span><span class="dc-cal-crash-day__num">28</span></li>
+          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Wed</span><span class="dc-cal-crash-day__num">29</span></li>
+          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Thu</span><span class="dc-cal-crash-day__num">30</span></li>
+          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Fri</span><span class="dc-cal-crash-day__num">31</span></li>
+        </ul>
+      </div>
+    </article>
+
+    <p class="dc-cal-panel__intro" style="margin-top:18px">Half-term crash courses (Monday–Thursday; Fridays off):</p>
     <article class="dc-cal-term" aria-labelledby="dcCalCrashPanel-term-october">
       <header class="dc-cal-term__head">
         <h3 class="dc-cal-term__title" id="dcCalCrashPanel-term-october"><span class="dc-cal-term__icon" aria-hidden="true">🍂</span> October half term 2026</h3>

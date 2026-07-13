@@ -7,6 +7,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { stripeVerifyAndParseEvent } from "../_shared/stripe_checkout.ts";
 import { xeroSyncPaidInvoiceShare } from "../_shared/xero_payments.ts";
 import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
+import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -118,11 +119,24 @@ Deno.serve(async (req) => {
       e instanceof Error ? e.message : String(e),
     );
   }
+
+  // Summer crash courses: confirm slot holds only after pay-in-full.
+  let crashConfirmed = 0;
+  try {
+    crashConfirmed = await confirmCrashSummerBookingsForInvoice(supabase, String(data.id));
+  } catch (e) {
+    console.error(
+      "[parent-portal-stripe-webhook] crash confirm",
+      e instanceof Error ? e.message : String(e),
+    );
+  }
+
   return json(200, {
     ok: true,
     invoice_id: data.id,
     payment_status: data.payment_status,
     xero,
     hold,
+    crash_confirmed: crashConfirmed,
   });
 });

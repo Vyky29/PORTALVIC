@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<!--
+  PORTALVIC · Summer crash courses July 2026 — book Climbing / Swimming (pay in full).
+  URLs: /parent/crash-summer · /parent_crash_summer_2026.html
+-->
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f4f8fb" />
+  <link rel="canonical" href="https://www.clubsensational.org/parent/crash-summer" />
+  <title>Summer crash courses July 2026 — clubSENsational</title>
+  <script src="/portal-static-bootstrap.js"></script>
+  <script src="/portal/portal_brand.js?v=20260713-crash"></script>
+  <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
+  <style>
+    :root {
+      --blue: #2d84b3;
+      --blueSoft: #eaf5fb;
+      --ink: #173247;
+      --text: #314555;
+      --muted: #728290;
+      --line: rgba(23, 50, 71, .12);
+      --white: #ffffff;
+      --bg: #f4f8fb;
+      --radius: 18px;
+      --danger: #c0392b;
+      --dangerSoft: #fff1f1;
+      --success: #157347;
+      --successSoft: #e8f7ef;
+      --max: min(560px, 100%);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    [hidden] { display: none !important; }
+    html, body {
+      margin: 0;
+      min-height: 100dvh;
+      max-width: 100%;
+      overflow-x: hidden;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #f7fbff 0%, #edf4fb 100%);
+      line-height: 1.45;
+    }
+    .page {
+      width: 100%;
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: max(16px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
+      min-width: 0;
+    }
+    .brand { text-align: center; margin-bottom: 18px; }
+    .brand img { width: 72px; height: 72px; object-fit: contain; border-radius: 14px; }
+    .brand h1 { margin: 8px 0 4px; font-size: 1.12rem; color: var(--ink); font-weight: 800; }
+    .brand p { margin: 0; font-size: .88rem; color: var(--muted); }
+    .card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px 14px 16px;
+      margin: 0 0 14px;
+      min-width: 0;
+    }
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      color: var(--ink);
+      font-weight: 800;
+    }
+    .muted { color: var(--muted); font-size: .88rem; margin: 0 0 10px; }
+    .notice {
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin: 0 0 14px;
+      font-size: .9rem;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .notice--error { background: var(--dangerSoft); color: var(--danger); border: 1px solid #f0c2c2; }
+    .notice--ok { background: var(--successSoft); color: var(--success); border: 1px solid #b7e0c6; }
+    .notice--info { background: var(--blueSoft); color: var(--ink); border: 1px solid #c5e0ef; }
+    label.field {
+      display: block;
+      margin: 0 0 10px;
+      min-width: 0;
+    }
+    label.field > span {
+      display: block;
+      font-size: .78rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+    select, button.choice {
+      width: 100%;
+      min-width: 0;
+      font: inherit;
+      font-size: .95rem;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+    }
+    .choices {
+      display: grid;
+      gap: 8px;
+      margin: 0 0 12px;
+    }
+    button.choice {
+      text-align: left;
+      cursor: pointer;
+      background: #fafcff;
+    }
+    button.choice[aria-pressed="true"] {
+      border-color: var(--blue);
+      background: var(--blueSoft);
+      font-weight: 700;
+    }
+    .checks {
+      display: grid;
+      gap: 8px;
+      margin: 0 0 12px;
+    }
+    .checks label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fafcff;
+      min-width: 0;
+      cursor: pointer;
+    }
+    .checks label span {
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .slot-grid {
+      display: grid;
+      gap: 8px;
+      margin: 8px 0 12px;
+    }
+    .slot-btn {
+      text-align: left;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+      font: inherit;
+      cursor: pointer;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .slot-btn[aria-pressed="true"] {
+      border-color: var(--blue);
+      background: var(--blueSoft);
+      font-weight: 700;
+    }
+    .slot-btn:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+      text-decoration: line-through;
+    }
+    .day-block {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      margin: 0 0 10px;
+      min-width: 0;
+    }
+    .day-block h3 {
+      margin: 0 0 8px;
+      font-size: .9rem;
+      color: var(--ink);
+    }
+    .total {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--ink);
+      margin: 8px 0 0;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 48px;
+      border: none;
+      border-radius: 14px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      padding: 12px 14px;
+    }
+    .btn--primary { background: var(--blue); color: #fff; }
+    .btn--primary:disabled { opacity: .55; cursor: not-allowed; }
+    .btn--ghost {
+      background: transparent;
+      color: var(--blue);
+      border: 1px solid #b9d7e8;
+      margin-top: 8px;
+    }
+    .meta-list {
+      margin: 0;
+      padding-left: 1.1em;
+      font-size: .88rem;
+      color: var(--text);
+    }
+    .meta-list li { margin: 0 0 4px; overflow-wrap: break-word; }
+    a.link { color: var(--blue); font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="brand">
+      <img src="/portal/F-02-1.png" alt="clubSENsational" width="72" height="72" />
+      <h1>Summer crash courses · July 2026</h1>
+      <p>Climbing &amp; Swimming · pay in full to reserve</p>
+    </header>
+
+    <div id="csNotice" class="notice notice--info" hidden></div>
+
+    <section class="card" id="csGate" hidden>
+      <h2>Sign in to book</h2>
+      <p class="muted">Use your family portal login. After re-enrolment you can book from here — spaces are limited and only held once you pay in full.</p>
+      <a class="btn btn--primary" id="csLoginLink" href="/parent">Open family portal</a>
+    </section>
+
+    <form id="csForm" hidden>
+      <section class="card">
+        <h2>Your child</h2>
+        <label class="field">
+          <span>Participant</span>
+          <select id="csContact" required></select>
+        </label>
+      </section>
+
+      <section class="card">
+        <h2>Week</h2>
+        <div class="choices" id="csWeeks" role="group" aria-label="Week"></div>
+        <p class="muted">Weekly packs (Tue–Fri) have priority. Individual days are subject to remaining spaces.</p>
+      </section>
+
+      <section class="card">
+        <h2>Activities</h2>
+        <div class="checks">
+          <label><input type="checkbox" name="act" value="climbing" id="csActClimb" /><span><strong>Climbing</strong> — 11:00–13:00 · Westway · £75/session or £300 weekly pack</span></label>
+          <label><input type="checkbox" name="act" value="swimming" id="csActSwim" /><span><strong>Swimming</strong> — 16:30–18:30 · Acton · £50/session or £200 weekly pack · Tue/Thu Big Pool · Wed/Fri Teaching Pool</span></label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Booking type</h2>
+        <div class="choices" id="csModes" role="group" aria-label="Booking type">
+          <button type="button" class="choice" data-mode="weekly_pack" aria-pressed="true">Four-day weekly pack</button>
+          <button type="button" class="choice" data-mode="individual_days" aria-pressed="false">Individual days</button>
+        </div>
+      </section>
+
+      <section class="card" id="csSlotsCard">
+        <h2>Choose time slots</h2>
+        <p class="muted" id="csSlotsHint">Pick one slot per activity for the whole week (same time each day).</p>
+        <div id="csSlotsHost"></div>
+        <p class="total" id="csTotal">Total: £0</p>
+        <p class="muted">Payment must be completed in full to confirm the place. Unpaid holds expire after 2 hours.</p>
+        <button type="submit" class="btn btn--primary" id="csSubmit">Reserve &amp; pay in full</button>
+        <button type="button" class="btn btn--ghost" id="csBackPortal">Back to family portal</button>
+      </section>
+    </form>
+
+    <section class="card" id="csInfo">
+      <h2>Details</h2>
+      <ul class="meta-list">
+        <li><strong>Week 1:</strong> Tue 21 – Fri 24 July 2026</li>
+        <li><strong>Week 2:</strong> Tue 28 – Fri 31 July 2026</li>
+        <li>Climbing: 2 × 60′ places/day · Swimming: 8 × 30′ places/day</li>
+        <li>You can book Climbing, Swimming, or both</li>
+      </ul>
+    </section>
+  </div>
+  <script src="/portal/portal_crash_summer_2026.js?v=20260713-crash1"></script>
+</body>
+</html>

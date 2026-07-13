@@ -13,6 +13,7 @@ import { xeroSyncPaidInvoiceShare } from "../_shared/xero_payments.ts";
 import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
 import { type PortalInvoiceVatMode } from "../_shared/portal_tax_invoice_pdf.ts";
 import { createPortalFamilyInvoice } from "../_shared/portal_create_family_invoice.ts";
+import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
 
 const BUCKET = "documents";
 const MAX_BYTES = 12 * 1024 * 1024;
@@ -397,6 +398,14 @@ Deno.serve(async (req) => {
       } catch (e) {
         console.error(
           "[portal-admin-parent-invoices-upsert] hold clear",
+          e instanceof Error ? e.message : String(e),
+        );
+      }
+      try {
+        await confirmCrashSummerBookingsForInvoice(admin, String(updated.id));
+      } catch (e) {
+        console.error(
+          "[portal-admin-parent-invoices-upsert] crash confirm",
           e instanceof Error ? e.message : String(e),
         );
       }

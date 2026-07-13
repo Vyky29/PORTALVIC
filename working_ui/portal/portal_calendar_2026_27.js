@@ -6,7 +6,7 @@
   "use strict";
 
   var HTML_SECTION_URL =
-    "/portal/day-centre-calendar-2026-27-section.html?v=20260713-spring-cell-size";
+    "/portal/day-centre-calendar-2026-27-section.html?v=20260713-summer-crash";
   var DOC_TITLE = "Calendar 2026/27";
   var DOC_TYPE = "calendar_2026_27";
   var DOC_CATEGORY = "documents";
@@ -445,6 +445,8 @@
   };
   /** Crash-course days (Mon–Thu of each half term) — red, tappable to the crash timetable. */
   var DC_CAL_CRASH_DAYS = {
+    "2026-07-21": 1, "2026-07-22": 1, "2026-07-23": 1, "2026-07-24": 1,
+    "2026-07-28": 1, "2026-07-29": 1, "2026-07-30": 1, "2026-07-31": 1,
     "2026-10-26": 1, "2026-10-27": 1, "2026-10-28": 1, "2026-10-29": 1,
     "2027-02-15": 1, "2027-02-16": 1, "2027-02-17": 1, "2027-02-18": 1,
     "2027-05-31": 1, "2027-06-01": 1, "2027-06-02": 1, "2027-06-03": 1,

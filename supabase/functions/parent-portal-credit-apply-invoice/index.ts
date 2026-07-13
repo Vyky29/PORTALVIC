@@ -12,6 +12,7 @@ import {
   clearPaymentHoldForContact,
   refreshBufferHoldState,
 } from "../_shared/portal_payment_holds.ts";
+import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -236,6 +237,11 @@ Deno.serve(async (req) => {
       hold = await clearPaymentHoldForContact(supabase, contactId, "credit");
     } catch (err) {
       console.error("[parent-portal-credit-apply-invoice] clear hold", err);
+    }
+    try {
+      await confirmCrashSummerBookingsForInvoice(supabase, invoiceId);
+    } catch (err) {
+      console.error("[parent-portal-credit-apply-invoice] crash confirm", err);
     }
   }
   try {

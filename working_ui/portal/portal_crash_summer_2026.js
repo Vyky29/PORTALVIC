@@ -1,0 +1,611 @@
+/* Summer crash courses July 2026 — parent booking (pay in full). */
+(function () {
+  "use strict";
+
+  var SESSION_KEY = "clubsens_parent_portal_session_v1";
+  var HOLD_HINT = "Slots are held for 2 hours until you pay in full.";
+
+  var CATALOG = {
+    weeks: [
+      { id: "w1", label: "Week 1 · Tue 21 – Fri 24 July", dates: ["2026-07-21", "2026-07-22", "2026-07-23", "2026-07-24"] },
+      { id: "w2", label: "Week 2 · Tue 28 – Fri 31 July", dates: ["2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31"] },
+    ],
+    climbing_slots: [
+      { id: "c1", label: "11:00–12:00" },
+      { id: "c2", label: "12:00–13:00" },
+    ],
+    swimming_slots: [
+      { id: "s1", label: "16:30–17:00 · Instructor A" },
+      { id: "s2", label: "16:30–17:00 · Instructor B" },
+      { id: "s3", label: "17:00–17:30 · Instructor A" },
+      { id: "s4", label: "17:00–17:30 · Instructor B" },
+      { id: "s5", label: "17:30–18:00 · Instructor A" },
+      { id: "s6", label: "17:30–18:00 · Instructor B" },
+      { id: "s7", label: "18:00–18:30 · Instructor A" },
+      { id: "s8", label: "18:00–18:30 · Instructor B" },
+    ],
+    prices: {
+      climbing: { session: 75, weekly_pack: 300 },
+      swimming: { session: 50, weekly_pack: 200 },
+    },
+  };
+
+  var state = {
+    sessionToken: "",
+    children: [],
+    weekId: "w1",
+    mode: "weekly_pack",
+    activities: { climbing: false, swimming: false },
+    packSlots: { climbing: "", swimming: "" },
+    daySlots: { climbing: {}, swimming: {} },
+    availability: null,
+  };
+
+  function $(id) {
+    return document.getElementById(id);
+  }
+
+  function supabaseUrl() {
+    return String(window.SUPABASE_URL || "https://cklpnwhlqsulpmkipmqb.supabase.co").replace(
+      /\/$/,
+      "",
+    );
+  }
+
+  function anonKey() {
+    return String(window.SUPABASE_ANON_KEY || "");
+  }
+
+  function fn(name) {
+    return supabaseUrl() + "/functions/v1/" + name;
+  }
+
+  function showNotice(kind, text) {
+    var el = $("csNotice");
+    if (!el) return;
+    el.hidden = !text;
+    el.className = "notice notice--" + (kind || "info");
+    el.textContent = text || "";
+  }
+
+  function loadSession() {
+    try {
+      var raw = localStorage.getItem(SESSION_KEY);
+      if (!raw) return "";
+      var j = JSON.parse(raw);
+      if (!j || !j.token || !j.expiresAt) return "";
+      if (Number(j.expiresAt) <= Date.now()) {
+        localStorage.removeItem(SESSION_KEY);
+        return "";
+      }
+      return String(j.token);
+    } catch (_e) {
+      return "";
+    }
+  }
+
+  function weekDates() {
+    var w = CATALOG.weeks.find(function (x) {
+      return x.id === state.weekId;
+    });
+    return (w && w.dates) || [];
+  }
+
+  function slotsFor(activity) {
+    return activity === "climbing" ? CATALOG.climbing_slots : CATALOG.swimming_slots;
+  }
+
+  function pricesFor(activity) {
+    return CATALOG.prices[activity];
+  }
+
+  function selectedActivities() {
+    var out = [];
+    if (state.activities.climbing) out.push("climbing");
+    if (state.activities.swimming) out.push("swimming");
+    return out;
+  }
+
+  function isSlotFree(activity, date, slotId) {
+    var a = state.availability;
+    if (!a || !a[activity] || !a[activity][date]) return true;
+    return !!a[activity][date][slotId];
+  }
+
+  function computeTotal() {
+    var acts = selectedActivities();
+    var total = 0;
+    acts.forEach(function (activity) {
+      var p = pricesFor(activity);
+      if (state.mode === "weekly_pack") {
+        if (state.packSlots[activity]) total += p.weekly_pack;
+      } else {
+        var map = state.daySlots[activity] || {};
+        Object.keys(map).forEach(function (d) {
+          if (map[d]) total += p.session;
+        });
+      }
+    });
+    return total;
+  }
+
+  function updateTotal() {
+    var el = $("csTotal");
+    if (el) el.textContent = "Total: £" + computeTotal();
+  }
+
+  function renderWeeks() {
+    var host = $("csWeeks");
+    if (!host) return;
+    host.innerHTML = CATALOG.weeks
+      .map(function (w) {
+        return (
+          '<button type="button" class="choice" data-week="' +
+          w.id +
+          '" aria-pressed="' +
+          (state.weekId === w.id ? "true" : "false") +
+          '">' +
+          w.label +
+          "</button>"
+        );
+      })
+      .join("");
+    host.querySelectorAll("[data-week]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        state.weekId = btn.getAttribute("data-week") || "w1";
+        state.packSlots = { climbing: "", swimming: "" };
+        state.daySlots = { climbing: {}, swimming: {} };
+        renderWeeks();
+        renderSlots();
+        loadAvailability();
+      });
+    });
+  }
+
+  function formatDayLabel(iso) {
+    try {
+      var d = new Date(iso + "T12:00:00");
+      return d.toLocaleDateString("en-GB", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+      });
+    } catch (_e) {
+      return iso;
+    }
+  }
+
+  function poolNote(iso) {
+    var d = new Date(iso + "T12:00:00Z");
+    var dow = d.getUTCDay();
+    if (dow === 2 || dow === 4) return " · Big Pool";
+    if (dow === 3 || dow === 5) return " · Teaching Pool";
+    return "";
+  }
+
+  function renderSlotButtons(activity, date, selectedId, onPick) {
+    return slotsFor(activity)
+      .map(function (slot) {
+        var free = isSlotFree(activity, date, slot.id);
+        var pressed = selectedId === slot.id;
+        return (
+          '<button type="button" class="slot-btn" data-act="' +
+          activity +
+          '" data-date="' +
+          date +
+          '" data-slot="' +
+          slot.id +
+          '"' +
+          (free ? "" : " disabled") +
+          ' aria-pressed="' +
+          (pressed ? "true" : "false") +
+          '">' +
+          slot.label +
+          (free ? "" : " · full") +
+          "</button>"
+        );
+      })
+      .join("");
+  }
+
+  function renderSlots() {
+    var host = $("csSlotsHost");
+    var hint = $("csSlotsHint");
+    if (!host) return;
+    var acts = selectedActivities();
+    if (!acts.length) {
+      host.innerHTML = '<p class="muted">Select Climbing and/or Swimming above.</p>';
+      updateTotal();
+      return;
+    }
+
+    if (hint) {
+      hint.textContent =
+        state.mode === "weekly_pack"
+          ? "Pick one slot per activity for the whole week (same time each day)."
+          : "Tick the days you want and choose a free slot for each day.";
+    }
+
+    var html = "";
+    acts.forEach(function (activity) {
+      var title = activity === "climbing" ? "Climbing" : "Swimming";
+      html += "<h3 style=\"margin:12px 0 6px;font-size:.95rem;color:var(--ink)\">" + title + "</h3>";
+      if (state.mode === "weekly_pack") {
+        var anyDate = weekDates()[0];
+        html +=
+          '<div class="slot-grid" data-pack="' +
+          activity +
+          '">' +
+          renderSlotButtons(activity, anyDate, state.packSlots[activity], null) +
+          "</div>";
+        html +=
+          '<p class="muted">Availability checked for all four days — a slot must be free every day of the week.</p>';
+      } else {
+        weekDates().forEach(function (date) {
+          var sel = (state.daySlots[activity] || {})[date] || "";
+          html +=
+            '<div class="day-block" data-day-act="' +
+            activity +
+            '" data-day-date="' +
+            date +
+            '">' +
+            "<h3>" +
+            formatDayLabel(date) +
+            (activity === "swimming" ? poolNote(date) : "") +
+            "</h3>" +
+            '<label style="display:flex;gap:8px;align-items:center;margin:0 0 8px;font-size:.88rem">' +
+            '<input type="checkbox" class="day-enable" data-act="' +
+            activity +
+            '" data-date="' +
+            date +
+            '"' +
+            (sel ? " checked" : "") +
+            " /> Book this day</label>" +
+            (sel
+              ? '<div class="slot-grid">' +
+                renderSlotButtons(activity, date, sel, null) +
+                "</div>"
+              : "") +
+            "</div>";
+        });
+      }
+    });
+    host.innerHTML = html;
+
+    // For weekly pack, disable slots not free on ALL days
+    if (state.mode === "weekly_pack") {
+      acts.forEach(function (activity) {
+        host.querySelectorAll('.slot-grid[data-pack="' + activity + '"] .slot-btn').forEach(function (btn) {
+          var slotId = btn.getAttribute("data-slot");
+          var allFree = weekDates().every(function (d) {
+            return isSlotFree(activity, d, slotId);
+          });
+          if (!allFree) {
+            btn.disabled = true;
+            if (btn.textContent.indexOf("full") < 0) btn.textContent += " · not free all week";
+            if (state.packSlots[activity] === slotId) state.packSlots[activity] = "";
+          }
+        });
+      });
+    }
+
+    host.querySelectorAll(".slot-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var activity = btn.getAttribute("data-act");
+        var date = btn.getAttribute("data-date");
+        var slotId = btn.getAttribute("data-slot");
+        if (state.mode === "weekly_pack") {
+          state.packSlots[activity] = slotId;
+        } else {
+          if (!state.daySlots[activity]) state.daySlots[activity] = {};
+          state.daySlots[activity][date] = slotId;
+        }
+        renderSlots();
+      });
+    });
+
+    host.querySelectorAll(".day-enable").forEach(function (cb) {
+      cb.addEventListener("change", function () {
+        var activity = cb.getAttribute("data-act");
+        var date = cb.getAttribute("data-date");
+        if (!state.daySlots[activity]) state.daySlots[activity] = {};
+        if (cb.checked) {
+          var firstFree = slotsFor(activity).find(function (s) {
+            return isSlotFree(activity, date, s.id);
+          });
+          state.daySlots[activity][date] = firstFree ? firstFree.id : "";
+          if (!firstFree) {
+            cb.checked = false;
+            delete state.daySlots[activity][date];
+            showNotice("error", "No free slots on " + formatDayLabel(date) + ".");
+          }
+        } else {
+          delete state.daySlots[activity][date];
+        }
+        renderSlots();
+      });
+    });
+
+    updateTotal();
+  }
+
+  function bindModes() {
+    var host = $("csModes");
+    if (!host) return;
+    host.querySelectorAll("[data-mode]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        state.mode = btn.getAttribute("data-mode") || "weekly_pack";
+        host.querySelectorAll("[data-mode]").forEach(function (b) {
+          b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+        });
+        state.packSlots = { climbing: "", swimming: "" };
+        state.daySlots = { climbing: {}, swimming: {} };
+        renderSlots();
+      });
+    });
+  }
+
+  function bindActivities() {
+    ["csActClimb", "csActSwim"].forEach(function (id) {
+      var el = $(id);
+      if (!el) return;
+      el.addEventListener("change", function () {
+        state.activities.climbing = !!($("csActClimb") && $("csActClimb").checked);
+        state.activities.swimming = !!($("csActSwim") && $("csActSwim").checked);
+        renderSlots();
+      });
+    });
+  }
+
+  async function loadAvailability() {
+    try {
+      var res = await fetch(fn("portal-crash-summer-availability"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: anonKey(),
+          Authorization: "Bearer " + anonKey(),
+        },
+        body: JSON.stringify({ week_id: state.weekId }),
+      });
+      var data = await res.json().catch(function () {
+        return {};
+      });
+      if (res.ok && data.ok) {
+        state.availability = data.availability || null;
+        if (data.catalog) {
+          if (data.catalog.climbing_slots) CATALOG.climbing_slots = data.catalog.climbing_slots;
+          if (data.catalog.swimming_slots) CATALOG.swimming_slots = data.catalog.swimming_slots;
+          if (data.catalog.prices) CATALOG.prices = data.catalog.prices;
+        }
+      }
+    } catch (_e) {
+      /* keep local catalog */
+    }
+    renderSlots();
+  }
+
+  async function loadChildren() {
+    var res = await fetch(fn("parent-portal-home-load"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: anonKey(),
+        Authorization: "Bearer " + anonKey(),
+        "x-parent-portal-session": state.sessionToken,
+      },
+      body: JSON.stringify({}),
+    });
+    var data = await res.json().catch(function () {
+      return {};
+    });
+    if (!res.ok || !data.ok) {
+      throw new Error((data && data.error) || "session_invalid");
+    }
+    state.children = (data.children || []).slice();
+    var sel = $("csContact");
+    if (!sel) return;
+    if (!state.children.length) {
+      sel.innerHTML = "<option value=\"\">No linked children</option>";
+      return;
+    }
+    var last = "";
+    try {
+      last = String(localStorage.getItem("pp_last_contact_id") || "");
+    } catch (_e) {}
+    sel.innerHTML = state.children
+      .map(function (c) {
+        var id = String(c.contact_id || "");
+        var name = String(c.display_name || c.first_name || id);
+        return (
+          '<option value="' +
+          id.replace(/"/g, "") +
+          '"' +
+          (id === last ? " selected" : "") +
+          ">" +
+          name.replace(/</g, "&lt;") +
+          "</option>"
+        );
+      })
+      .join("");
+  }
+
+  async function startCheckout(invoiceId, contactId) {
+    var res = await fetch(fn("parent-portal-invoice-checkout"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: anonKey(),
+        Authorization: "Bearer " + anonKey(),
+        "x-parent-portal-session": state.sessionToken,
+      },
+      body: JSON.stringify({
+        contact_id: contactId,
+        invoice_id: invoiceId,
+        return_origin: window.location.origin || "",
+      }),
+    });
+    var data = await res.json().catch(function () {
+      return {};
+    });
+    if (!res.ok || !data.ok || !data.url) {
+      var msg =
+        (data && data.message) ||
+        "Booking reserved, but card checkout is unavailable. Open the family portal Invoices tab to pay in full.";
+      showNotice("info", msg + " " + HOLD_HINT);
+      return false;
+    }
+    window.location.href = data.url;
+    return true;
+  }
+
+  async function onSubmit(ev) {
+    if (ev) ev.preventDefault();
+    showNotice("info", "");
+    var contactId = String(($("csContact") && $("csContact").value) || "").trim();
+    var acts = selectedActivities();
+    if (!contactId) {
+      showNotice("error", "Choose a participant.");
+      return;
+    }
+    if (!acts.length) {
+      showNotice("error", "Select Climbing and/or Swimming.");
+      return;
+    }
+    if (computeTotal() <= 0) {
+      showNotice("error", "Choose your time slots before continuing.");
+      return;
+    }
+
+    var slots = {};
+    for (var i = 0; i < acts.length; i++) {
+      var activity = acts[i];
+      if (state.mode === "weekly_pack") {
+        if (!state.packSlots[activity]) {
+          showNotice("error", "Pick a time slot for " + activity + ".");
+          return;
+        }
+        slots[activity] = state.packSlots[activity];
+      } else {
+        var map = state.daySlots[activity] || {};
+        var dates = Object.keys(map).filter(function (d) {
+          return !!map[d];
+        });
+        if (!dates.length) {
+          showNotice("error", "Pick at least one day for " + activity + ".");
+          return;
+        }
+        slots[activity] = map;
+      }
+    }
+
+    var btn = $("csSubmit");
+    if (btn) btn.disabled = true;
+    showNotice("info", "Reserving slots…");
+
+    try {
+      var res = await fetch(fn("portal-crash-summer-book"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: anonKey(),
+          Authorization: "Bearer " + anonKey(),
+          "x-parent-portal-session": state.sessionToken,
+        },
+        body: JSON.stringify({
+          contact_id: contactId,
+          week_id: state.weekId,
+          booking_mode: state.mode,
+          activities: acts,
+          slots: slots,
+        }),
+      });
+      var data = await res.json().catch(function () {
+        return {};
+      });
+      if (!res.ok || !data.ok) {
+        showNotice(
+          "error",
+          (data && data.message) ||
+            (data && data.error === "slot_unavailable"
+              ? "One or more slots were just taken. Please pick another time."
+              : "Could not reserve — please try again."),
+        );
+        await loadAvailability();
+        return;
+      }
+      showNotice(
+        "ok",
+        "Reserved for £" +
+          data.amount_gbp +
+          ". " +
+          HOLD_HINT +
+          " Redirecting to payment…",
+      );
+      try {
+        localStorage.setItem("pp_last_contact_id", contactId);
+      } catch (_e) {}
+      if (data.invoice_id) {
+        await startCheckout(data.invoice_id, contactId);
+      }
+    } catch (_e) {
+      showNotice("error", "Network error — please try again.");
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function boot() {
+    renderWeeks();
+    bindModes();
+    bindActivities();
+
+    var back = $("csBackPortal");
+    if (back) {
+      back.addEventListener("click", function () {
+        window.location.href = "/parent";
+      });
+    }
+    var form = $("csForm");
+    if (form) form.addEventListener("submit", onSubmit);
+
+    state.sessionToken = loadSession();
+    if (!state.sessionToken) {
+      if ($("csGate")) $("csGate").hidden = false;
+      if ($("csForm")) $("csForm").hidden = true;
+      var login = $("csLoginLink");
+      if (login) {
+        var ret = encodeURIComponent(
+          (window.location.pathname || "/parent/crash-summer") + (window.location.search || ""),
+        );
+        login.href = "/parent?return=" + ret;
+      }
+      showNotice("info", "Sign in to the family portal to book. Payment in full is required to confirm a place.");
+      return;
+    }
+
+    if ($("csGate")) $("csGate").hidden = true;
+    if ($("csForm")) $("csForm").hidden = false;
+
+    try {
+      await loadChildren();
+      await loadAvailability();
+      showNotice("info", "Pay in full to confirm — unpaid holds are released automatically.");
+    } catch (_e) {
+      if ($("csGate")) $("csGate").hidden = false;
+      if ($("csForm")) $("csForm").hidden = true;
+      showNotice("error", "Your portal session expired. Please sign in again.");
+    }
+  }
+
+  // Prefer real anon key from bootstrap script if exposed later.
+  function waitBootstrapThenBoot() {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", boot);
+    } else {
+      boot();
+    }
+  }
+
+  waitBootstrapThenBoot();
+})();

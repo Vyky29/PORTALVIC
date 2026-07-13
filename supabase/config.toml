@@ -577,6 +577,13 @@ verify_jwt = false
 [functions.parent-portal-credit-apply-invoice]
 verify_jwt = false
 
+# Summer Jul 2026 crash courses (pay-in-full booking).
+[functions.portal-crash-summer-availability]
+verify_jwt = false
+
+[functions.portal-crash-summer-book]
+verify_jwt = false
+
 [functions.portal-admin-parent-invoices-list]
 verify_jwt = false
 

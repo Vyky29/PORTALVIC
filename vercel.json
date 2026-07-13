@@ -96,6 +96,8 @@
     { "source": "/parent/re-enrolment", "destination": "/parent_reenrolment.html" },
     { "source": "/parent/re-enrol", "destination": "/parent_reenrolment.html" },
     { "source": "/re-enrolment", "destination": "/parent_reenrolment.html" },
+    { "source": "/parent/crash-summer", "destination": "/parent_crash_summer_2026.html" },
+    { "source": "/parent/crash-courses", "destination": "/parent_crash_summer_2026.html" },
     { "source": "/parent/registration", "destination": "/parent_registration.html" },
     { "source": "/parent/app", "destination": "/parent_portal.html" },
     { "source": "/parent/login", "destination": "/parent_portal.html" },

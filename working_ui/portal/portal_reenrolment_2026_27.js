@@ -2761,9 +2761,16 @@
     }
     cards +=
       '<div class="re-offer-block">' +
-      "<h4>Intensive courses and camps</h4>" +
-      '<p class="re-muted">Intensive swimming at Acton Centre, Monday–Thursday in the half terms. Booking is a separate form (coming soon).</p>' +
-      '<button type="button" class="re-btn re-btn--secondary" id="reCrashDatesBtn">Intensive course dates</button>' +
+      "<h4>Summer crash courses · July 2026</h4>" +
+      '<p class="re-muted">Climbing (Westway) and Swimming (Acton), Tue–Fri weeks: 21–24 July and 28–31 July. Weekly packs have priority. <strong>Pay in full</strong> to reserve — places are limited (2 climbing / 8 swimming slots per day).</p>' +
+      '<div class="re-offer-actions" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">' +
+      '<a class="re-btn re-btn--primary" id="reCrashBookBtn" href="/parent/crash-summer" style="width:auto;flex:1 1 160px;min-width:0;margin-top:0;text-align:center">Book summer crash courses</a>' +
+      '<button type="button" class="re-btn re-btn--secondary" id="reCrashDatesBtn" style="flex:1 1 140px;min-width:0;margin-top:0">View dates on calendar</button>' +
+      "</div></div>";
+    cards +=
+      '<div class="re-offer-block">' +
+      "<h4>Half-term intensives</h4>" +
+      '<p class="re-muted">October, February and May half terms (Mon–Thu). Booking for those weeks opens closer to the dates.</p>' +
       "</div>";
     return (
       '<section class="re-section re-section--offer re-done-offer">' +
@@ -2831,7 +2838,7 @@
         {
           type: "half_term",
           date: "Monday 26 – Friday 30 October 2026",
-          crashIndex: 0,
+          crashIndex: 2,
         },
         {
           type: "closure",
@@ -2848,7 +2855,7 @@
         {
           type: "half_term",
           date: "Monday 15 – Friday 19 February 2027",
-          crashIndex: 1,
+          crashIndex: 3,
         },
         {
           type: "closure",
@@ -2865,7 +2872,7 @@
         {
           type: "half_term",
           date: "Monday 31 May – Friday 4 June 2027",
-          crashIndex: 2,
+          crashIndex: 4,
         },
         { type: "last_day", date: "Thursday 22 July 2027" },
       ],
@@ -2873,6 +2880,26 @@
   ];
 
   var RE_CRASH_DATES_2627 = [
+    {
+      title: "Summer holiday · Week 1 (July 2026)",
+      days: [
+        { dow: "Mon", num: "20", off: true },
+        { dow: "Tue", num: "21" },
+        { dow: "Wed", num: "22" },
+        { dow: "Thu", num: "23" },
+        { dow: "Fri", num: "24" },
+      ],
+    },
+    {
+      title: "Summer holiday · Week 2 (July 2026)",
+      days: [
+        { dow: "Mon", num: "27", off: true },
+        { dow: "Tue", num: "28" },
+        { dow: "Wed", num: "29" },
+        { dow: "Thu", num: "30" },
+        { dow: "Fri", num: "31" },
+      ],
+    },
     {
       title: "October half term 2026",
       days: [
@@ -3012,7 +3039,8 @@
   function renderCrashDatesModalBody(highlightIdx) {
     var hi = highlightIdx != null && !isNaN(Number(highlightIdx)) ? Number(highlightIdx) : -1;
     return (
-      '<p class="re-cal-summary">Intensive courses and camps run Monday to Thursday during half terms at Acton Centre. Times TBC — booking is a separate form (coming soon).</p>' +
+      '<p class="re-cal-summary">Summer Jul 2026 (Tue–Fri): Climbing at Westway and Swimming at Acton — book after signing in to the family portal; pay in full to confirm. Half-term intensives run Mon–Thu.</p>' +
+      '<p class="re-cal-summary"><a class="re-cal-offer-link" href="/parent/crash-summer" style="display:inline-flex;padding:8px 0">Book summer crash courses →</a></p>' +
       RE_CRASH_DATES_2627.map(function (block, i) {
         return (
           '<div class="re-cal-block' +

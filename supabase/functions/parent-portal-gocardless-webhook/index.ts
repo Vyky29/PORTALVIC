@@ -14,6 +14,7 @@ import {
 } from "../_shared/gocardless_portal.ts";
 import { xeroSyncPaidInvoiceShare } from "../_shared/xero_payments.ts";
 import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
+import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -71,6 +72,11 @@ async function markInvoicePaid(
     if (cid) hold = await clearPaymentHoldForContact(supabase, cid, "gocardless");
   } catch (e) {
     console.error("[gc-webhook] hold", e instanceof Error ? e.message : String(e));
+  }
+  try {
+    await confirmCrashSummerBookingsForInvoice(supabase, String(data.id));
+  } catch (e) {
+    console.error("[gc-webhook] crash confirm", e instanceof Error ? e.message : String(e));
   }
   return { ok: true as const, invoice_id: data.id, xero, hold };
 }
