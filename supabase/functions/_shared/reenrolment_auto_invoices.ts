@@ -391,7 +391,16 @@ export function buildReenrolmentInstalments(args: {
       });
     }
   } else if (scheduleCode === "yearly_1off") {
-    /* Full-year one-off only applies to whole-year cadence. */
+    /* Full-year one-off: bank transfer / Card / Apple Pay only — not GoCardless. */
+    if (payCode === "gocardless") {
+      return {
+        ...empty,
+        vatMode,
+        paymentMethodHint: hint,
+        scheduleCode,
+        skipReason: "yearly_1off_bank_only",
+      };
+    }
     pushInstalment(out, {
       label: "Full year (1 payment)",
       dueDateIso: bankFirstDue,

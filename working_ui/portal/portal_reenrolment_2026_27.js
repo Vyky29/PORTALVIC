@@ -653,9 +653,6 @@
         : "Term by term on your own payment timing (bank transfer, Card or Apple Pay) — not our fixed due dates. Programme total stays the same, plus a £50 admin fee each term. You must keep at least two sessions paid in advance for every service you attend; if the balance falls below that, we may pause sessions or move you to a standard payment plan.";
     }
     if (payCode === "gocardless") {
-      if (schedCode === "yearly_1off") {
-        return "Same programme total — one Direct Payment for the full year. We set up GoCardless in July; collection around early September.";
-      }
       if (schedCode === "term_3") {
         return termOnly
           ? "Term-by-term: one Direct Payment for " +
@@ -1861,7 +1858,6 @@
       },
     ],
     gocardless: [
-      { code: "yearly_1off", label: "All year — one payment" },
       { code: "term_3", label: "Pay each term — one payment" },
       { code: "term_flexi", label: "Flexi term — 2 payments per term" },
       {
@@ -1889,9 +1885,7 @@
         : "Only if you cannot meet our fixed due dates. Term by term on your own timing. £50 admin fee each term. Keep at least two sessions paid in advance for every service. On the parent portal you can still pay each amount by bank transfer or Card / Apple Pay when an invoice is ready.";
     }
     if (code === "yearly_1off") {
-      return isGc
-        ? "One Direct Payment for the full academic year. We set up GoCardless before the first collection (around early September). Same programme total (+ £1.50 fee on that payment)."
-        : "One payment for the full academic year — due by 15 August 2026. Pay from the parent portal by bank transfer (no fee) or Card / Apple Pay (small processing fee). Same programme total.";
+      return "One payment for the full academic year — due by 15 August 2026. Pay from the parent portal by bank transfer (no fee) or Card / Apple Pay (small processing fee). Same programme total. Not available with Direct Payment (GoCardless).";
     }
     if (code === "monthly_10") {
       if (termOnly) {
@@ -2040,7 +2034,7 @@
           ? "Term only (+ £50 each term). Keep 2 sessions prepaid per service. Prefer Bank Transfer / Card / Apple Pay on a standard plan if you can meet due dates."
           : o.code === "bank_transfer"
             ? "Fixed due dates. Pay each invoice in the parent portal by bank transfer (no fee) or Card / Apple Pay (small fee)."
-            : "Automatic Direct Debit once we set up your GoCardless mandate. Choose one-off, term, flexi or monthly below. £1.50 per instalment.";
+            : "Automatic Direct Debit once we set up your GoCardless mandate. Choose term, flexi or monthly below. £1.50 per instalment.";
       return (
         '<label class="re-radio re-radio--pay-method">' +
         '<input type="radio" name="re_pay_2627" value="' +
@@ -2433,6 +2427,10 @@
         : defaultScheduleForPayAndCadence(payCode, cadence);
     if (cadence && !scheduleMatchesCadence(scheduleCode, cadence)) {
       scheduleCode = defaultScheduleForPayAndCadence(payCode, cadence);
+    }
+    /* Whole-year one-off is bank transfer / Card / Apple Pay only. */
+    if (payCode === "gocardless" && scheduleCode === "yearly_1off") {
+      scheduleCode = defaultScheduleForPayAndCadence(payCode, cadence) || "monthly_10";
     }
     var vatCode = isDirectPayments(fundCode) ? "exempt" : "vat_included";
     var fee = adminFeeApplies(payCode);
