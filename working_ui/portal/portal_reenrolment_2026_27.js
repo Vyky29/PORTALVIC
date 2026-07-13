@@ -1360,6 +1360,20 @@
     return fundCode === "la_direct_payments";
   }
 
+  /** Own arrangement is private-pay only — not for LA Direct Payments funding. */
+  function payMethodAllowedForFunding(payCode, fundCode) {
+    if (normalizePayMethodChoice(payCode) === "own_way_flexible" && isDirectPayments(fundCode)) {
+      return false;
+    }
+    return true;
+  }
+
+  function privatePayMethodsForFunding(fundCode) {
+    return RE_PRIVATE_PAY_METHODS.filter(function (o) {
+      return payMethodAllowedForFunding(o.code, fundCode);
+    });
+  }
+
   function adminFeeApplies(payCode) {
     return payCode === "gocardless" || payCode === "own_way_flexible";
   }
@@ -1503,9 +1517,12 @@
 
   function initBilling2627State(data) {
     var cur = fundingCurrent2526(data);
+    var fundCode = normalizeFundingChoice(mapFundingCode(cur.funding));
+    var payCode = normalizePayMethodChoice(mapPrivatePayMethodCode(cur.payment_method, cur.funding));
+    if (!payMethodAllowedForFunding(payCode, fundCode)) payCode = "bank_transfer";
     state.billing2627 = {
-      fundCode: normalizeFundingChoice(mapFundingCode(cur.funding)),
-      payCode: normalizePayMethodChoice(mapPrivatePayMethodCode(cur.payment_method, cur.funding)),
+      fundCode: fundCode,
+      payCode: payCode,
       editing: false,
     };
   }
@@ -1596,7 +1613,7 @@
       "</fieldset>" +
       '<fieldset class="re-choice-fieldset re-funding-field">' +
       '<legend class="re-label">Payment method 2026/27</legend>' +
-      renderPrivatePayMethodRadios(b.payCode) +
+      renderPrivatePayMethodRadios(b.payCode, b.fundCode) +
       "</fieldset>" +
       '<div class="re-billing-edit-actions">' +
       '<button type="button" class="re-btn re-btn--primary" id="reBillingSaveBtn">Save for 2026/27</button>' +
@@ -1609,6 +1626,10 @@
     var b = state.billing2627 || {};
     if (b.editing) return;
     var payCode = normalizePayMethodChoice(b.payCode);
+    if (!payMethodAllowedForFunding(payCode, b.fundCode)) {
+      payCode = "bank_transfer";
+      b.payCode = payCode;
+    }
     if (!payMethodCompatibleWithCadence(payCode, state.enrolmentCadence)) {
       payCode = "bank_transfer";
       b.payCode = payCode;
@@ -1748,7 +1769,7 @@
       '<div id="reBillingPaySection"' +
       (b.editing ? " hidden" : "") +
       ">" +
-      '<p class="re-muted re-billing-plan-intro">The total above covers your confirmed sessions for the year. <strong>Bank Transfer / Card / Apple Pay</strong> uses fixed due dates (pay each invoice from the parent portal — no admin fee if on time). <strong>Direct Payment (GoCardless)</strong> is collected automatically once we set up your mandate. <strong>Own arrangement</strong> is only if you cannot meet those dates (+ £50 / term).</p>' +
+      '<p class="re-muted re-billing-plan-intro">The total above covers your confirmed sessions for the year. <strong>Bank Transfer / Card / Apple Pay</strong> uses fixed due dates (pay each invoice from the parent portal — no admin fee if on time). <strong>Direct Payment (GoCardless)</strong> is collected automatically once we set up your mandate. <strong>Own arrangement</strong> is only for privately funded families who cannot meet those dates (+ £50 / term) — not available with LA Direct Payments funding.</p>' +
       '<div id="rePanelPrivate" class="re-funding-panel">' +
       '<div id="rePayScheduleWrap" class="re-pay-schedule-wrap">' +
       (normalizeEnrolmentCadence(state.enrolmentCadence)
@@ -2001,9 +2022,19 @@
     return code;
   }
 
-  function renderPrivatePayMethodRadios(defaultCode) {
-    return RE_PRIVATE_PAY_METHODS.map(function (o) {
-      var checked = o.code === defaultCode ? " checked" : "";
+  function renderPrivatePayMethodRadios(defaultCode, fundCode) {
+    var methods = privatePayMethodsForFunding(fundCode);
+    var selected = normalizePayMethodChoice(defaultCode);
+    if (!payMethodAllowedForFunding(selected, fundCode)) {
+      selected = "bank_transfer";
+    }
+    if (!methods.some(function (o) {
+      return o.code === selected;
+    })) {
+      selected = methods.length ? methods[0].code : "bank_transfer";
+    }
+    return methods.map(function (o) {
+      var checked = o.code === selected ? " checked" : "";
       var hint =
         o.code === "own_way_flexible"
           ? "Term only (+ £50 each term). Keep 2 sessions prepaid per service. Prefer Bank Transfer / Card / Apple Pay on a standard plan if you can meet due dates."
@@ -2038,7 +2069,7 @@
         '<p class="re-muted re-cadence-wait">' +
         (cadence === "whole_year"
           ? "Whole-year re-enrolment works with <strong>Bank Transfer</strong> or <strong>Direct Payment (GoCardless)</strong>. Edit payment method above if needed."
-          : "Term-by-term re-enrolment works with <strong>Bank Transfer</strong> or <strong>Own arrangement</strong>. Edit payment method above if needed.") +
+          : "Term-by-term re-enrolment works with <strong>Bank Transfer</strong>, <strong>Direct Payment (GoCardless)</strong> or <strong>Own arrangement</strong> (private funding only). Edit payment method above if needed.") +
         "</p>"
       );
     }
@@ -2279,6 +2310,9 @@
         var payEl = document.querySelector('input[name="re_pay_2627"]:checked');
         if (fundEl) state.billing2627.fundCode = normalizeFundingChoice(fundEl.value);
         if (payEl) state.billing2627.payCode = normalizePayMethodChoice(payEl.value);
+        if (!payMethodAllowedForFunding(state.billing2627.payCode, state.billing2627.fundCode)) {
+          state.billing2627.payCode = "bank_transfer";
+        }
         state.billing2627.editing = false;
         refreshBillingArrangementUI();
         return;
@@ -2290,6 +2324,22 @@
     });
     host.addEventListener("change", function (ev) {
       var t = ev.target;
+      if (t && t.name === "re_fund_2627") {
+        /* Refresh payment-method radios when funding changes (hide Own arrangement for LA DP). */
+        var fundCode = normalizeFundingChoice(t.value);
+        var payEl = document.querySelector('input[name="re_pay_2627"]:checked');
+        var payCode = payEl ? normalizePayMethodChoice(payEl.value) : "bank_transfer";
+        if (!payMethodAllowedForFunding(payCode, fundCode)) payCode = "bank_transfer";
+        var payFieldsets = document.querySelectorAll("#reBillingArrangementEdit fieldset.re-funding-field");
+        var payFs = payFieldsets.length > 1 ? payFieldsets[1] : null;
+        if (payFs) {
+          var legend = payFs.querySelector("legend");
+          payFs.innerHTML =
+            (legend ? legend.outerHTML : '<legend class="re-label">Payment method 2026/27</legend>') +
+            renderPrivatePayMethodRadios(payCode, fundCode);
+        }
+        return;
+      }
       if (t && t.name === "re_enrolment_cadence") {
         state.enrolmentCadence = normalizeEnrolmentCadence(t.value);
         var b = state.billing2627 || {};
@@ -2367,6 +2417,9 @@
     var payCode = normalizePayMethodChoice(
       b.payCode || mapPrivatePayMethodCode(cur.payment_method, cur.funding),
     );
+    if (!payMethodAllowedForFunding(payCode, fundCode)) {
+      payCode = "bank_transfer";
+    }
     if (cadence && !payMethodCompatibleWithCadence(payCode, cadence)) {
       payCode = "bank_transfer";
     }
