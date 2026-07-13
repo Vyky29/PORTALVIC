@@ -2461,7 +2461,10 @@
       overflow-wrap:break-word;
       line-height:1.25;
     }
-    .swterm-my-list-grid button[aria-pressed="true"]{
+    .swterm-my-list-grid button[hidden],
+    .swterm-my-list-grid button.is-letter-filtered-out{
+      display:none !important;
+    }
       border-color:#0e7490;
       background:linear-gradient(180deg,#cff4fc,#a5f3fc);
       box-shadow:0 0 0 2px rgba(14,116,144,0.18);

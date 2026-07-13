@@ -1627,6 +1627,69 @@ const LEVEL_DATA = {
       });
     }
 
+    function normalizeSwtermSearchText(value){
+      return String(value || "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, " ");
+    }
+
+    /** Progressive letter filter: keep names whose full string or any word starts with the typed prefix. */
+    function swtermNameMatchesLetterFilter(name, query){
+      const q = normalizeSwtermSearchText(query);
+      if(!q) return true;
+      const nm = normalizeSwtermSearchText(name);
+      if(!nm) return false;
+      if(nm.indexOf(q) === 0) return true;
+      const parts = nm.split(" ");
+      for(let i = 0; i < parts.length; i++){
+        if(parts[i] && parts[i].indexOf(q) === 0) return true;
+      }
+      return false;
+    }
+
+    function filterMyParticipantsGrid(query){
+      const list = document.getElementById("swimmerMyList");
+      const hint = document.getElementById("swimmerMyListHint");
+      const empty = document.getElementById("swimmerMyListEmpty");
+      if(!list) return 0;
+      const q = String(query || "");
+      const buttons = list.querySelectorAll("button[data-swimmer-name]");
+      const total = buttons.length;
+      let visible = 0;
+      buttons.forEach(btn => {
+        const nm = String(btn.getAttribute("data-swimmer-name") || "");
+        const ok = swtermNameMatchesLetterFilter(nm, q);
+        btn.hidden = !ok;
+        btn.classList.toggle("is-letter-filtered-out", !ok);
+        if(ok) visible += 1;
+      });
+      if(empty){
+        empty.hidden = !(total > 0 && visible === 0 && normalizeSwtermSearchText(q));
+        if(!empty.hidden){
+          empty.textContent = "No participant matches “" + String(q).trim() + "”. Keep typing or clear the search.";
+        }else if(!__swtermMyParticipants || !__swtermMyParticipants.length){
+          empty.textContent = "No participants found on your roster yet. Type a name below to search the portal list.";
+        }
+      }
+      if(hint && total > 0){
+        hint.hidden = false;
+        const qTrim = String(q).trim();
+        if(__swtermProgrammeWideList){
+          hint.textContent = qTrim
+            ? ("Swimming participants (" + visible + " of " + total + ") — matching “" + qTrim + "”")
+            : ("Swimming participants (" + total + ") — Aquatic & Multi-Activity");
+        }else{
+          hint.textContent = qTrim
+            ? ("Your participants (" + visible + " of " + total + ") — matching “" + qTrim + "”")
+            : ("Your participants (" + total + ") — tap to select");
+        }
+      }
+      return visible;
+    }
+
     function pickSwimmerName(name, clientId){
       const input = document.getElementById("swimmerName");
       if(!input) return;
@@ -1637,6 +1700,7 @@ const LEVEL_DATA = {
         : (parseDetailsFromUrl().clientId || readRememberedSwtermParticipant().clientId || "");
       rememberSwtermParticipant(nm, cid);
       syncMyParticipantPressedState(nm);
+      filterMyParticipantsGrid(nm);
       try{ input.dispatchEvent(new Event("input", { bubbles: true })); }catch(_){}
       try{ input.dispatchEvent(new Event("change", { bubbles: true })); }catch(_){}
       try{ generateTermSummary(); }catch(_){}
@@ -1653,7 +1717,10 @@ const LEVEL_DATA = {
       list.replaceChildren();
       wrap.hidden = false;
       if(!sorted.length){
-        if(empty) empty.hidden = false;
+        if(empty){
+          empty.hidden = false;
+          empty.textContent = "No participants found on your roster yet. Type a name below to search the portal list.";
+        }
         if(hint) hint.hidden = true;
         return;
       }
@@ -1664,7 +1731,8 @@ const LEVEL_DATA = {
           ? ("Swimming participants (" + sorted.length + ") — Aquatic & Multi-Activity")
           : ("Your participants (" + sorted.length + ") — tap to select");
       }
-      const current = String((document.getElementById("swimmerName") || {}).value || "").trim().toLowerCase();
+      const inputEl = document.getElementById("swimmerName");
+      const current = String((inputEl || {}).value || "").trim().toLowerCase();
       sorted.forEach((name, idx) => {
         const b = document.createElement("button");
         b.type = "button";
@@ -1676,6 +1744,7 @@ const LEVEL_DATA = {
         b.addEventListener("click", () => pickSwimmerName(name));
         list.appendChild(b);
       });
+      filterMyParticipantsGrid(inputEl ? inputEl.value : "");
     }
 
     async function hydrateMyParticipantsPicker(){
