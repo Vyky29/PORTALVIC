@@ -4578,66 +4578,76 @@
       overflow-x:auto;
       -webkit-overflow-scrolling:touch;
       margin:0 -4px;
-      padding:0 4px 8px;
+      padding:0 4px 12px;
       min-width:0;
     }
-    .portal-lead-team-roster__table{
-      width:100%;
-      border-collapse:separate;
-      border-spacing:0;
-      min-width:520px;
-      font-size:12px;
+    .portal-lead-team-roster__board{
+      display:grid;
+      grid-template-columns:repeat(4, minmax(7.5rem, 1fr));
+      gap:8px;
+      min-width:min(100%, 36rem);
+      align-items:start;
     }
-    .portal-lead-team-roster__table th,
-    .portal-lead-team-roster__table td{
-      border:1px solid rgba(23,50,71,.12);
-      padding:8px 7px;
-      vertical-align:top;
+    @media (max-width:420px){
+      .portal-lead-team-roster__board{
+        grid-template-columns:repeat(2, minmax(0, 1fr));
+        min-width:0;
+      }
+    }
+    .portal-lead-team-roster__col{
       min-width:0;
-      overflow-wrap:break-word;
+      border:1px solid rgba(45,132,179,.18);
+      border-radius:12px;
+      background:#f8fcff;
+      padding:8px 7px 10px;
+      overflow:hidden;
     }
-    .portal-lead-team-roster__table thead th{
-      position:sticky;
-      top:0;
-      z-index:1;
-      background:#e8f4fb;
-      color:#0c4a6e;
+    .portal-lead-team-roster__col-head{
+      margin:0 0 8px;
       font-size:11px;
       font-weight:800;
-      letter-spacing:.03em;
+      letter-spacing:.04em;
       text-transform:uppercase;
-      text-align:left;
+      color:#0c4a6e;
+      text-align:center;
+      overflow-wrap:break-word;
     }
-    .portal-lead-team-roster__table tbody th{
-      background:#f7fafc;
-      color:#334155;
-      font-weight:700;
-      white-space:nowrap;
-      width:5.5rem;
-    }
-    .portal-lead-team-roster__cell-item{
+    .portal-lead-team-roster__col-body{
       display:flex;
       flex-direction:column;
-      gap:2px;
+      gap:10px;
       min-width:0;
     }
-    .portal-lead-team-roster__cell-item + .portal-lead-team-roster__cell-item{
-      margin-top:6px;
-      padding-top:6px;
-      border-top:1px dashed rgba(23,50,71,.12);
+    .portal-lead-team-roster__client{
+      min-width:0;
+      padding-top:8px;
+      border-top:1px dashed rgba(23,50,71,.14);
     }
-    .portal-lead-team-roster__cell-item strong{
-      font-size:12px;
+    .portal-lead-team-roster__client:first-child{
+      padding-top:0;
+      border-top:0;
+    }
+    .portal-lead-team-roster__client-name{
+      margin:0 0 3px;
+      font-size:13px;
+      font-weight:800;
       color:var(--ink);
       overflow-wrap:break-word;
+      line-height:1.2;
     }
-    .portal-lead-team-roster__area{
+    .portal-lead-team-roster__line{
       font-size:10px;
-      color:var(--muted);
-      overflow-wrap:break-word;
+      font-weight:600;
+      line-height:1.35;
+      color:#475569;
+      overflow-wrap:anywhere;
+      letter-spacing:.01em;
     }
     .portal-lead-team-roster__blank{
+      margin:0;
       color:#94a3b8;
+      text-align:center;
+      font-size:12px;
     }
     .portal-lead-team-roster__empty{
       margin:12px 4px;

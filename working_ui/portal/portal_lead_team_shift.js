@@ -857,6 +857,21 @@ function parseSlotStartMinutes(timeSlot) {
   return h * 60 + mi;
 }
 
+function parseSlotEndMinutes(timeSlot) {
+  const parts = String(timeSlot || "")
+    .toLowerCase()
+    .split(/\s+to\s+/);
+  if (parts.length < 2) return parseSlotStartMinutes(timeSlot);
+  return parseSlotStartMinutes(parts[1]);
+}
+
+function slotDurationMinutes(timeSlot) {
+  const a = parseSlotStartMinutes(timeSlot);
+  const b = parseSlotEndMinutes(timeSlot);
+  if (!Number.isFinite(a) || !Number.isFinite(b) || b <= a) return 0;
+  return b - a;
+}
+
 function isDutyClientName(name) {
   const n = normKey(name);
   return (
@@ -871,9 +886,92 @@ function isDutyClientName(name) {
   );
 }
 
+/** Display labels for lead team board (Hub Room → Day Centre, etc.). */
+function leadTeamAreaLabel(area, service, client) {
+  const a = String(area || "").trim();
+  const low = a.toLowerCase();
+  const svc = String(service || "").toLowerCase();
+  const c = normKey(client);
+  if (/big\s*pool/.test(low)) return "Big Pool";
+  if (/small\s*pool/.test(low)) return "Small Pool";
+  if (/teaching\s*pool|lane/.test(low)) return "Pools";
+  if (c === "acat" && (/hub/.test(low) || /day\s*centre/.test(svc))) return "Pools";
+  if (/hub|day\s*centre|manager/.test(low) || /day\s*centre/.test(svc)) return "Day Centre";
+  if (/pool/.test(low)) return "Pools";
+  return a || (/day\s*centre/.test(svc) ? "Day Centre" : "");
+}
+
+const LEAD_TEAM_COMBINED_SEGMENTS = {
+  "fadi|12.30to3": [
+    { time_slot: "12.30 to 1", area: "Big Pool" },
+    { time_slot: "1 to 3", area: "Day Centre" },
+  ],
+  "ikram|11to4": [
+    { time_slot: "11 to 12", area: "Day Centre" },
+    { time_slot: "12 to 1", area: "Big Pool" },
+    { time_slot: "1 to 4", area: "Day Centre" },
+  ],
+  "ikram|11to3": [
+    { time_slot: "11 to 12", area: "Day Centre" },
+    { time_slot: "12 to 1", area: "Big Pool" },
+    { time_slot: "1 to 3", area: "Day Centre" },
+  ],
+  "emmanuel|11to4": [
+    { time_slot: "11 to 12", area: "Day Centre" },
+    { time_slot: "12 to 1", area: "Big Pool" },
+    { time_slot: "1 to 4", area: "Day Centre" },
+  ],
+  "emmanuel|11to1": [
+    { time_slot: "11 to 12", area: "Day Centre" },
+    { time_slot: "12 to 1", area: "Big Pool" },
+  ],
+  "timi|11to1": [
+    { time_slot: "11 to 12", area: "Day Centre" },
+    { time_slot: "12 to 12.30", area: "Small Pool" },
+    { time_slot: "12.30 to 1", area: "Day Centre" },
+  ],
+};
+
+function leadTeamSynthesizeSegments(client, service, timeSlot, dayWord, rawSegments) {
+  if (Array.isArray(rawSegments) && rawSegments.length) {
+    return rawSegments.map(function (s) {
+      return {
+        time: String(s.time_slot || s.time || "").trim(),
+        area: leadTeamAreaLabel(s.area || s.pool_note, service, client),
+      };
+    }).filter(function (s) {
+      return s.time;
+    });
+  }
+  const svc = String(service || "").trim().toLowerCase();
+  if (svc !== "day centre") return null;
+  const slot = String(timeSlot || "").replace(/\s+/g, "").toLowerCase();
+  const name = String(client || "").trim().toLowerCase();
+  const key = name + "|" + slot;
+  if (key === "ikram|11to4" && String(dayWord || "").toLowerCase() === "tuesday") return null;
+  if (key === "fadi|12.30to3") {
+    const d = String(dayWord || "").toLowerCase();
+    if (d === "tuesday" || d === "thursday") return null;
+  }
+  const hit = LEAD_TEAM_COMBINED_SEGMENTS[key];
+  if (!hit) return null;
+  return hit.map(function (s) {
+    return {
+      time: s.time_slot,
+      area: leadTeamAreaLabel(s.area, service, client),
+    };
+  });
+}
+
+function formatLeadTeamTimeCompact(timeSlot) {
+  return String(timeSlot || "")
+    .replace(/\s+to\s+/gi, "-")
+    .replace(/\s+/g, "");
+}
+
 /**
- * Simple lead overview: TIME column + one column per team instructor with
- * client · hours cells for in-scope Day Centre (or programme) slots.
+ * One column per instructor on shift: each client stacked with time/area lines.
+ * Prefers each worker's own roster column over co-listed duplicates.
  */
 export function portalLeadTeamRosterTableModel(iso, ctx) {
   ctx = ctx || portalLeadTeamShiftContext();
@@ -881,12 +979,11 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
   if (!team || !team.members.length) return null;
   const src = rosterSource();
   const rows = src && Array.isArray(src.rows) ? src.rows : [];
-  const memberKeys = team.members.map(function (m) {
-    return normKey(m.key);
-  });
+  const dayWord = weekdayFromIso(iso);
   const byStaff = Object.create(null);
-  memberKeys.forEach(function (k) {
-    byStaff[k] = [];
+
+  team.members.forEach(function (m) {
+    byStaff[normKey(m.key)] = [];
   });
 
   rows.forEach(function (row) {
@@ -897,54 +994,66 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
     if (isDutyClientName(client)) return;
     const time = String(row.time_slot || "").trim();
     if (!time) return;
-    const instructors = staffKeysFromInstructorLabel(
+    const instructorKeys = staffKeysFromInstructorLabel(
       resolvedInstructorsForRow(row, iso, src)
     );
-    instructors.forEach(function (ik) {
+    if (!instructorKeys.length) return;
+    const ownOnly = instructorKeys.length === 1;
+    instructorKeys.forEach(function (ik) {
       const k = normKey(ik);
       if (!byStaff[k]) return;
-      const dup = byStaff[k].some(function (x) {
-        return (
-          normKey(x.client) === normKey(client) &&
-          String(x.time).replace(/\s+/g, "") === time.replace(/\s+/g, "")
-        );
-      });
-      if (dup) return;
-      byStaff[k].push({
+      const entry = {
         client: client,
         time: time,
         area: String(row.area || row.pool_note || "").trim(),
+        service: String(row.service || "").trim(),
         startMin: parseSlotStartMinutes(time),
+        duration: slotDurationMinutes(time),
+        ownOnly: ownOnly,
+        segments: leadTeamSynthesizeSegments(
+          client,
+          row.service,
+          time,
+          dayWord,
+          row.segments
+        ),
+      };
+      const existingIdx = byStaff[k].findIndex(function (x) {
+        return normKey(x.client) === normKey(client);
       });
+      if (existingIdx < 0) {
+        byStaff[k].push(entry);
+        return;
+      }
+      const prev = byStaff[k][existingIdx];
+      // Prefer the worker's own column slot over a co-listed peer row; then widest window.
+      const take =
+        (entry.ownOnly && !prev.ownOnly) ||
+        (entry.ownOnly === prev.ownOnly && entry.duration > prev.duration) ||
+        (entry.ownOnly === prev.ownOnly &&
+          entry.duration === prev.duration &&
+          entry.startMin < prev.startMin);
+      if (take) byStaff[k][existingIdx] = entry;
     });
   });
 
-  memberKeys.forEach(function (k) {
+  const members = team.members.filter(function (m) {
+    const k = normKey(m.key);
+    return (byStaff[k] || []).length > 0;
+  });
+
+  members.forEach(function (m) {
+    const k = normKey(m.key);
     byStaff[k].sort(function (a, b) {
       return a.startMin - b.startMin || a.client.localeCompare(b.client);
     });
   });
 
-  const timeSet = Object.create(null);
-  const timeOrder = [];
-  memberKeys.forEach(function (k) {
-    byStaff[k].forEach(function (s) {
-      const tk = String(s.time).replace(/\s+/g, " ").trim();
-      if (!tk || timeSet[tk]) return;
-      timeSet[tk] = true;
-      timeOrder.push(tk);
-    });
-  });
-  timeOrder.sort(function (a, b) {
-    return parseSlotStartMinutes(a) - parseSlotStartMinutes(b);
-  });
-
   return {
     iso: team.iso,
     programmeLabel: team.programmeLabel || "",
-    members: team.members,
+    members: members,
     byStaff: byStaff,
-    times: timeOrder,
   };
 }
 
@@ -952,59 +1061,58 @@ function renderLeadTeamRosterTableHtml(model) {
   if (!model || !model.members.length) {
     return '<p class="portal-lead-team-roster__empty">No team roster to show for today.</p>';
   }
-  const cols = model.members;
-  const head =
-    "<thead><tr><th scope=\"col\">Time</th>" +
-    cols
-      .map(function (m) {
-        return "<th scope=\"col\">" + escHtml(m.name || m.key) + "</th>";
-      })
-      .join("") +
-    "</tr></thead>";
-
-  const bodyRows = (model.times.length ? model.times : [""]).map(function (time) {
-    const cells = cols
-      .map(function (m) {
-        const k = normKey(m.key);
-        const hits = (model.byStaff[k] || []).filter(function (s) {
-          if (!time) return true;
-          return String(s.time).replace(/\s+/g, " ").trim() === time;
-        });
-        if (!hits.length) {
-          return '<td><span class="portal-lead-team-roster__blank">—</span></td>';
-        }
-        const inner = hits
-          .map(function (h) {
-            const area = h.area ? '<span class="portal-lead-team-roster__area">' + escHtml(h.area) + "</span>" : "";
-            return (
-              '<div class="portal-lead-team-roster__cell-item">' +
-              '<strong>' +
-              escHtml(h.client) +
-              "</strong>" +
-              area +
-              "</div>"
-            );
-          })
-          .join("");
-        return "<td>" + inner + "</td>";
-      })
-      .join("");
-    return (
-      "<tr><th scope=\"row\">" +
-      escHtml(time || "—") +
-      "</th>" +
-      cells +
-      "</tr>"
-    );
-  });
+  const cols = model.members
+    .map(function (m) {
+      const k = normKey(m.key);
+      const clients = (model.byStaff[k] || [])
+        .map(function (h) {
+          const segs =
+            Array.isArray(h.segments) && h.segments.length
+              ? h.segments
+              : [
+                  {
+                    time: h.time,
+                    area: leadTeamAreaLabel(h.area, h.service, h.client),
+                  },
+                ];
+          const lines = segs
+            .map(function (s) {
+              const t = formatLeadTeamTimeCompact(s.time);
+              const area = s.area ? " " + escHtml(String(s.area).toUpperCase()) : "";
+              return (
+                '<div class="portal-lead-team-roster__line">' +
+                escHtml(t) +
+                area +
+                "</div>"
+              );
+            })
+            .join("");
+          return (
+            '<div class="portal-lead-team-roster__client">' +
+            '<div class="portal-lead-team-roster__client-name">' +
+            escHtml(h.client) +
+            "</div>" +
+            lines +
+            "</div>"
+          );
+        })
+        .join("");
+      return (
+        '<section class="portal-lead-team-roster__col" aria-label="' +
+        escHtml(m.name || m.key) +
+        '">' +
+        '<h4 class="portal-lead-team-roster__col-head">' +
+        escHtml(m.name || m.key) +
+        "</h4>" +
+        '<div class="portal-lead-team-roster__col-body">' +
+        (clients || '<p class="portal-lead-team-roster__blank">—</p>') +
+        "</div></section>"
+      );
+    })
+    .join("");
 
   return (
-    '<div class="portal-lead-team-roster__scroll">' +
-    '<table class="portal-lead-team-roster__table">' +
-    head +
-    "<tbody>" +
-    bodyRows.join("") +
-    "</tbody></table></div>"
+    '<div class="portal-lead-team-roster__board" role="list">' + cols + "</div>"
   );
 }
 
