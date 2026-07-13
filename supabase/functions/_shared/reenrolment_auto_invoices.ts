@@ -334,10 +334,15 @@ export function buildReenrolmentInstalments(args: {
     for (const t of FLEXI_TERM) {
       const termTotal = totals[t.term];
       const halfAmt = termTotal / 2;
-      for (const h of t.halves) {
+      for (let hi = 0; hi < t.halves.length; hi++) {
+        const h = t.halves[hi];
+        let dueIso = h.dueIso;
+        if (payCode === "gocardless" && t.term === "autumn" && hi === 0) {
+          dueIso = "2026-09-01";
+        }
         pushInstalment(out, {
           label: `${t.termLabel} · ${h.halfLabel}`,
-          dueDateIso: h.dueIso,
+          dueDateIso: dueIso,
           amountGbp: withGcFee(halfAmt, payCode),
           participantName,
           academicYear,
@@ -363,17 +368,40 @@ export function buildReenrolmentInstalments(args: {
       }
     }
   } else if (scheduleCode === "monthly_10") {
-    const monthly = totals.annual / 10;
-    MONTHLY_10.forEach((m, i) => {
-      pushInstalment(out, {
-        label: `Payment ${i + 1} · ${m.label}`,
-        dueDateIso: m.dueIso,
-        amountGbp: withGcFee(monthly, payCode),
-        participantName,
-        academicYear,
-        payLabel,
-      });
-    });
+    /* Autumn 4 / Spring 3 / Summer 3 — amounts split from each term total. */
+    const plan10 = [
+      {
+        term: "autumn" as const,
+        label: "Autumn",
+        months: MONTHLY_10.slice(0, 4),
+      },
+      {
+        term: "spring" as const,
+        label: "Spring",
+        months: MONTHLY_10.slice(4, 7),
+      },
+      {
+        term: "summer" as const,
+        label: "Summer",
+        months: MONTHLY_10.slice(7, 10),
+      },
+    ];
+    let payNo = 0;
+    for (const t of plan10) {
+      const termTotal = totals[t.term];
+      const perMonth = termTotal / t.months.length;
+      for (const m of t.months) {
+        payNo += 1;
+        pushInstalment(out, {
+          label: `Payment ${payNo} · ${m.label} (${t.label})`,
+          dueDateIso: m.dueIso,
+          amountGbp: withGcFee(perMonth, payCode),
+          participantName,
+          academicYear,
+          payLabel,
+        });
+      }
+    }
   } else {
     return { ...empty, vatMode, paymentMethodHint: hint, skipReason: "unknown_schedule" };
   }

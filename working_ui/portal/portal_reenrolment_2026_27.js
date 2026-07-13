@@ -618,8 +618,23 @@
     if (payCode === "own_way_flexible" && schedCode === "own_term") {
       return "Term by term on your own payment timing (bank transfer, Card or Apple Pay) — not our fixed due dates. Programme total stays the same, plus a £50 admin fee each term. You must keep at least two sessions paid in advance for every service you attend; if the balance falls below that, we may pause sessions or move you to a standard payment plan.";
     }
-    if (payCode === "gocardless" && schedCode === "monthly_term") {
-      return "Same programme total — one direct payment per month of each term (Autumn 4, Spring 3, Summer 4 = 11). We set up your GoCardless agreement in July; GoCardless collects the first payment on 1 September and it reaches us around 5–6 September, then on the 1st of each month.";
+    if (payCode === "gocardless") {
+      if (schedCode === "yearly_1off") {
+        return "Same programme total — one Direct Payment for the full year. We set up GoCardless in July; collection around early September.";
+      }
+      if (schedCode === "term_3") {
+        return "Same programme total — three Direct Payments (one per term). First collection around early September, then December and March.";
+      }
+      if (schedCode === "term_flexi") {
+        return "Same programme total — six Direct Payments (two per term). First collection around early September; later dates follow each half-term.";
+      }
+      if (schedCode === "monthly_10") {
+        return "Same programme total — ten Direct Payments (Autumn 4, Spring 3, Summer 3). First collection on 1 September; then on the 1st of each month through June.";
+      }
+      if (schedCode === "monthly_term") {
+        return "Same programme total — one direct payment per month of each term (Autumn 4, Spring 3, Summer 4 = 11). We set up your GoCardless agreement in July; GoCardless collects the first payment on 1 September and it reaches us around 5–6 September, then on the 1st of each month.";
+      }
+      return "Same programme total — Direct Payment (GoCardless). The office confirms your final collection plan.";
     }
     if (payCode === "bank_transfer" && schedCode === "term_flexi") {
       return "Same programme total — the first payment is due by 15 August 2026, then two bank transfers per term: one before half term starts, one during half-term week before the second half. The office confirms your final invoice plan.";
@@ -731,13 +746,17 @@
         amount: amt(termProgrammeTotal(data, "summer")),
       });
     } else if (schedCode === "term_flexi") {
-      RE_PAY_FLEXI_TERM.forEach(function (t) {
+      RE_PAY_FLEXI_TERM.forEach(function (t, ti) {
         var termTotal = termProgrammeTotal(data, t.term);
         var halfAmt = termTotal / 2;
-        t.halves.forEach(function (h) {
+        t.halves.forEach(function (h, hi) {
+          var due = h.due;
+          if (payCode === "gocardless" && ti === 0 && hi === 0) {
+            due = dueOnFirst("September 2026");
+          }
           rows.push({
             label: t.termLabel + " · " + h.halfLabel,
-            due: h.due,
+            due: due,
             amount: amt(halfAmt),
           });
         });
@@ -762,24 +781,22 @@
         });
       });
     } else if (schedCode === "monthly_10") {
-      var monthly = annual / 10;
-      var months = [
-        "September 2026",
-        "October 2026",
-        "November 2026",
-        "December 2026",
-        "January 2027",
-        "February 2027",
-        "March 2027",
-        "April 2027",
-        "May 2027",
-        "June 2027",
+      var monthly10Plan = [
+        { term: "autumn", label: "Autumn", months: ["September 2026", "October 2026", "November 2026", "December 2026"] },
+        { term: "spring", label: "Spring", months: ["January 2027", "February 2027", "March 2027"] },
+        { term: "summer", label: "Summer", months: ["April 2027", "May 2027", "June 2027"] },
       ];
-      months.forEach(function (label, i) {
-        rows.push({
-          label: "Payment " + (i + 1) + " · " + label,
-          due: dueOnFirst(label),
-          amount: amt(monthly),
+      var payNo10 = 0;
+      monthly10Plan.forEach(function (t) {
+        var termTotal = termProgrammeTotal(data, t.term);
+        var perMonth = termTotal / t.months.length;
+        t.months.forEach(function (label) {
+          payNo10 += 1;
+          rows.push({
+            label: "Payment " + payNo10 + " · " + label + " (" + t.label + ")",
+            due: dueOnFirst(label),
+            amount: amt(perMonth),
+          });
         });
       });
     }
@@ -1309,8 +1326,25 @@
 
   function scheduleMatchesCadence(scheduleCode, cadence) {
     if (!cadence) return true;
-    if (cadence === "whole_year") return isAllYearScheduleCode(scheduleCode);
-    return !isAllYearScheduleCode(scheduleCode);
+    var code = String(scheduleCode || "");
+    if (cadence === "whole_year") {
+      /* Year commitment: one-off, 3 term, flexi 6, or monthly 10/11. */
+      return (
+        code === "yearly_1off" ||
+        code === "term_3" ||
+        code === "term_flexi" ||
+        code === "monthly_10" ||
+        code === "monthly_term"
+      );
+    }
+    /* Term-by-term: no full-year one-off. */
+    return (
+      code === "term_3" ||
+      code === "term_flexi" ||
+      code === "monthly_10" ||
+      code === "monthly_term" ||
+      code === "own_term"
+    );
   }
 
   function schedulesForPayAndCadence(payCode, cadence) {
@@ -1325,18 +1359,26 @@
   function payMethodCompatibleWithCadence(payCode, cadence) {
     var cad = normalizeEnrolmentCadence(cadence);
     if (!cad) return true;
-    if (cad === "whole_year") return payCode === "bank_transfer" || payCode === "gocardless";
-    return payCode === "bank_transfer" || payCode === "own_way_flexible";
+    if (cad === "whole_year") {
+      return payCode === "bank_transfer" || payCode === "gocardless";
+    }
+    /* Term by term: bank, GoCardless, or own arrangement. */
+    return (
+      payCode === "bank_transfer" ||
+      payCode === "gocardless" ||
+      payCode === "own_way_flexible"
+    );
   }
 
   function defaultScheduleForPayAndCadence(payCode, cadence) {
     var cad = normalizeEnrolmentCadence(cadence);
     if (cad === "whole_year") {
-      if (payCode === "gocardless") return "monthly_term";
+      if (payCode === "gocardless") return "monthly_10";
       return "yearly_1off";
     }
     if (cad === "term_by_term") {
       if (payCode === "own_way_flexible") return "own_term";
+      if (payCode === "gocardless") return "term_3";
       return "term_3";
     }
     return defaultScheduleForPay(payCode);
@@ -1662,7 +1704,7 @@
 
   var RE_PRIVATE_PAY_METHODS = [
     { code: "bank_transfer", label: "Bank Transfer (fixed due dates)" },
-    { code: "gocardless", label: "Direct Payment (GoCardless · monthly)" },
+    { code: "gocardless", label: "Direct Payment (GoCardless)" },
     {
       code: "own_way_flexible",
       label: "Own arrangement — cannot meet payment dates (+ £50 / term)",
@@ -1684,9 +1726,12 @@
       { code: "term_flexi", label: "Flexi term — 2 payments per term" },
     ],
     gocardless: [
+      { code: "yearly_1off", label: "All year — one payment" },
+      { code: "term_3", label: "Pay each term — one payment" },
+      { code: "term_flexi", label: "Flexi term — 2 payments per term" },
       {
-        code: "monthly_term",
-        label: "Monthly by term — 11 payments across the year",
+        code: "monthly_10",
+        label: "Monthly — 10 payments (4 / 3 / 3 by term)",
       },
     ],
     own_way_flexible: [
@@ -1698,26 +1743,30 @@
   };
 
   function scheduleOptionHint(code, payCode) {
+    var isGc = payCode === "gocardless";
     if (code === "own_term") {
       return "Only if you cannot meet our fixed due dates. Term by term on your own timing (bank / Card / Apple Pay). £50 admin fee each term. Keep at least two sessions paid in advance for every service; below that we may pause sessions or move you to a standard plan. If you can pay on time, choose Bank Transfer or GoCardless instead — no £50 fee.";
     }
     if (code === "yearly_1off") {
-      return "Confirm the full academic year in one step. One bank transfer due by 15 August 2026, same programme total. We treat you as continuing each term automatically — no re-confirmation unless you tell us otherwise. Paying on time (or by Card / Apple Pay when offered) has no admin fee.";
-    }
-    if (code === "monthly_term") {
-      return "One direct payment per month of each term — Autumn 4, Spring 3, Summer 4 (11 across the year). We set up your GoCardless agreement in July; GoCardless collects the first payment on 1 September and it reaches us around 5–6 September, then on the 1st of each month. Same programme total; we will not ask you to re-confirm each term.";
+      return isGc
+        ? "One Direct Payment for the full academic year. We set up GoCardless in July; collection around early September. Same programme total (+ £1.50 fee on that payment)."
+        : "Confirm the full academic year in one step. One bank transfer due by 15 August 2026, same programme total. Paying on time (or by Card / Apple Pay when offered) has no admin fee.";
     }
     if (code === "monthly_10") {
-      return "New this year — one year agreement with 10 payments on the 1st of each month, September–June, by direct payment. Same programme total, and no termly re-confirmation.";
+      return "Ten Direct Payments — Autumn 4, Spring 3, Summer 3 (September–June). We set up GoCardless in July; first collection on 1 September (reaches us around 5–6 September), then on the 1st of each month. Same programme total; £1.50 fee per instalment.";
+    }
+    if (code === "monthly_term") {
+      return "One direct payment per month of each term — Autumn 4, Spring 3, Summer 4 (11 across the year). We set up your GoCardless agreement in July; GoCardless collects the first payment on 1 September and it reaches us around 5–6 September, then on the 1st of each month. Same programme total.";
     }
     if (code === "term_flexi") {
-      return "Six bank transfers over the year — the first due by 15 August 2026, then two per term: before half term starts, and during half-term week before the second half. Same programme total. Pay each amount on or before the due date (Card / Apple Pay when offered) — no admin fee.";
-    }
-    if (code === "term_3" && payCode === "gocardless") {
-      return "Three term payments on 1 September, 1 December and 1 March by direct payment — same programme total over the year.";
+      return isGc
+        ? "Six Direct Payments over the year — two per term (before half term and during half-term week). First collection around early September. Same programme total; £1.50 fee per instalment."
+        : "Six bank transfers over the year — the first due by 15 August 2026, then two per term: before half term starts, and during half-term week before the second half. Same programme total. Pay each amount on or before the due date (Card / Apple Pay when offered) — no admin fee.";
     }
     if (code === "term_3") {
-      return "Three bank transfers — the first due by 15 August 2026, then 1 December and 1 March — one invoice per term, same programme total over the year. On-time payment (including Card / Apple Pay when offered) has no admin fee.";
+      return isGc
+        ? "Three Direct Payments — one per term (around 1 September, 1 December and 1 March). Same programme total; £1.50 fee per instalment."
+        : "Three bank transfers — the first due by 15 August 2026, then 1 December and 1 March — one invoice per term, same programme total over the year. On-time payment (including Card / Apple Pay when offered) has no admin fee.";
     }
     return "";
   }
@@ -1738,7 +1787,7 @@
   }
 
   function defaultScheduleForPay(payCode) {
-    if (payCode === "gocardless") return "monthly_term";
+    if (payCode === "gocardless") return "monthly_10";
     if (payCode === "own_way_flexible") return "own_term";
     if (payCode === "bank_transfer") return "term_flexi";
     return "term_3";
@@ -1811,7 +1860,7 @@
           ? "Term only (+ £50 each term). Keep 2 sessions prepaid per service. On-time Card / Apple Pay / bank on a standard plan = no £50 fee."
           : o.code === "bank_transfer"
             ? "Fixed due dates. Pay on time by bank transfer (or Card / Apple Pay when offered) — no admin fee."
-            : "Monthly Direct Debit. Small per-instalment fee.";
+            : "Monthly Direct Debit — choose one-off, term, flexi or monthly schedule below.";
       return (
         '<label class="re-radio re-radio--pay-method">' +
         '<input type="radio" name="re_pay_2627" value="' +
@@ -1864,7 +1913,10 @@
         .map(function (o) {
           var checked = o.code === validDefault ? " checked" : "";
           var hint = scheduleOptionHint(o.code, payCode);
-          var spotlight = isAllYearScheduleCode(o.code) ? " re-radio--schedule-spotlight" : "";
+          var spotlight =
+            o.code === "yearly_1off" || o.code === "monthly_10"
+              ? " re-radio--schedule-spotlight"
+              : "";
           return (
             '<label class="re-radio re-radio--schedule' +
             spotlight +
