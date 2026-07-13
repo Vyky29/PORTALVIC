@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Family celebration certificate - 3 faces preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --blue:#2d84b3;
+      --blue-deep:#12456b;
+      --gold:#f4b740;
+      --ink:#0f172a;
+      --muted:#5b6473;
+      --soft:#e9f3f7;
+      --page:#f8fbfd;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family:"Manrope",system-ui,sans-serif;
+      background:#d5e2eb;
+      color:var(--ink);
+      padding:24px 16px 48px;
+    }
+    .wrap{ max-width:1100px; margin:0 auto; }
+    .intro{
+      background:rgba(255,255,255,.9);
+      border:1px solid rgba(15,23,42,.08);
+      border-radius:16px;
+      padding:16px 18px;
+      margin-bottom:20px;
+    }
+    .intro h1{
+      margin:0 0 6px;
+      font-size:1.25rem;
+      color:var(--blue-deep);
+    }
+    .intro p{
+      margin:0;
+      color:var(--muted);
+      font-size:.9rem;
+      line-height:1.5;
+      font-weight:600;
+    }
+    .faces{ display:flex; flex-direction:column; gap:22px; }
+    .face-label{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:8px;
+    }
+    .face-label strong{
+      font-size:.78rem;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:var(--blue);
+    }
+    .face-label span{
+      font-size:.8rem;
+      color:var(--muted);
+      font-weight:600;
+    }
+    .page{
+      width:100%;
+      aspect-ratio:297 / 210;
+      border-radius:14px;
+      overflow:hidden;
+      background:#fff;
+      border:1px solid rgba(15,23,42,.1);
+      box-shadow:0 14px 36px rgba(18,50,71,.12);
+      position:relative;
+    }
+
+    /* ===== FACE A ===== */
+    .face-a{
+      background:
+        radial-gradient(70% 60% at 100% 0%, rgba(244,183,64,.18), transparent 55%),
+        radial-gradient(60% 50% at 0% 100%, rgba(45,132,179,.16), transparent 50%),
+        linear-gradient(160deg, #f4fafc, #ffffff 45%, #eef6fa);
+      display:grid;
+      place-items:center;
+      padding:3%;
+    }
+    .cert-card{
+      width:min(58%, 420px);
+      aspect-ratio:1 / 1.02;
+      background:rgba(255,255,255,.88);
+      border-radius:18px;
+      border:2.5px solid var(--gold);
+      box-shadow:inset 0 0 0 1.5px rgba(45,132,179,.45), 0 10px 28px rgba(18,50,71,.08);
+      padding:4.5% 5%;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      text-align:center;
+      gap:1.8%;
+    }
+    .cert-card img.logo{ width:42%; max-width:160px; height:auto; }
+    .cert-card h2{
+      margin:0;
+      font-size:clamp(1.15rem, 2.4vw, 1.55rem);
+      color:var(--blue-deep);
+      letter-spacing:-.02em;
+    }
+    .cert-card .sub{
+      margin:0;
+      font-size:clamp(.7rem, 1.2vw, .85rem);
+      font-style:italic;
+      color:var(--blue);
+      font-weight:600;
+    }
+    .gold-line{
+      width:38%;
+      height:2px;
+      background:var(--gold);
+      border-radius:99px;
+      margin:2px 0;
+    }
+    .cert-card .name{
+      margin:0;
+      font-size:clamp(1rem, 2.1vw, 1.35rem);
+      font-weight:800;
+      color:var(--ink);
+    }
+    .cert-card .meta{
+      margin:0;
+      font-size:clamp(.68rem, 1.1vw, .8rem);
+      font-weight:700;
+      color:var(--blue);
+    }
+    .mascot-frame{
+      width:34%;
+      aspect-ratio:1;
+      border-radius:12px;
+      border:3px solid var(--gold);
+      background:#f8fbfd;
+      display:grid;
+      place-items:center;
+      box-shadow:inset 0 0 0 1.5px #f4aa28;
+      overflow:hidden;
+      margin-top:2px;
+    }
+    .mascot-frame img{ width:88%; height:88%; object-fit:contain; }
+    .cert-card .signed{
+      margin:2px 0 0;
+      font-size:.68rem;
+      font-style:italic;
+      color:var(--muted);
+    }
+    .cert-card .team{
+      margin:0;
+      font-size:.85rem;
+      font-weight:800;
+      color:var(--blue);
+    }
+
+    /* ===== FACE B ===== */
+    .face-b{
+      background:var(--page);
+      display:flex;
+      flex-direction:column;
+    }
+    .face-b-head{
+      background:#fff;
+      padding:2.2% 3% 1.6%;
+      border-bottom:3.5px solid var(--blue);
+      position:relative;
+    }
+    .face-b-head::after{
+      content:"";
+      position:absolute;
+      left:0; right:0; bottom:-4.5px;
+      height:1.4px;
+      background:var(--gold);
+    }
+    .face-b-head-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .face-b-head img.logo{ height:28px; width:auto; }
+    .face-b-head h2{
+      margin:0;
+      flex:1;
+      text-align:center;
+      font-size:clamp(.95rem, 1.8vw, 1.2rem);
+      color:var(--blue-deep);
+    }
+    .face-b-head p{
+      margin:4px 0 0;
+      text-align:center;
+      font-size:.72rem;
+      color:var(--muted);
+      font-weight:600;
+    }
+    .face-b-body{
+      flex:1;
+      display:grid;
+      grid-template-columns:1.15fr .95fr;
+      gap:2.2%;
+      padding:2.4% 3%;
+      min-height:0;
+    }
+    .panel{
+      background:#fff;
+      border:1px solid #c8e1eb;
+      border-radius:10px;
+      padding:10px 12px;
+    }
+    .panel h3{
+      margin:0 0 6px;
+      font-size:.72rem;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:var(--blue);
+    }
+    .pathway{
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .pathway img{ width:48px; height:48px; object-fit:contain; }
+    .pathway .stage{ margin:0; font-size:.95rem; font-weight:800; }
+    .pathway .lvl{ margin:2px 0 0; font-size:.78rem; color:var(--muted); font-weight:600; }
+    .pathway .dec{ margin:4px 0 0; font-size:.75rem; font-weight:800; color:var(--blue); }
+    .story{
+      border-left:4px solid var(--gold);
+      margin-top:8px;
+      padding:8px 10px;
+      background:#fff;
+      border:1px solid #e2e8f0;
+      border-left-width:4px;
+      border-radius:8px;
+      font-size:.78rem;
+      line-height:1.45;
+      color:var(--ink);
+      font-weight:600;
+    }
+    .hl-title{
+      margin:10px 0 6px;
+      font-size:.85rem;
+      font-weight:800;
+      color:var(--blue);
+    }
+    .hl{
+      display:flex;
+      gap:8px;
+      align-items:flex-start;
+      padding:6px 8px;
+      border:1px solid #d2e6ee;
+      border-radius:7px;
+      margin-bottom:5px;
+      font-size:.72rem;
+      font-weight:600;
+      line-height:1.35;
+    }
+    .hl i{
+      width:7px; height:7px; border-radius:50%;
+      background:var(--gold); margin-top:4px; flex:0 0 auto;
+    }
+    .domains{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:6px;
+      margin-bottom:8px;
+    }
+    .domain{
+      border:1px solid #e2d6f0;
+      border-radius:8px;
+      padding:8px 4px;
+      text-align:center;
+      background:#fff;
+    }
+    .domain img{ width:28px; height:24px; object-fit:contain; }
+    .domain strong{ display:block; font-size:.65rem; color:#5b2d7a; margin-top:4px; }
+    .domain span{ display:block; font-size:.72rem; font-weight:800; margin-top:2px; }
+    .edu, .next{
+      border-radius:8px;
+      padding:8px 10px;
+      margin-top:8px;
+      font-size:.72rem;
+      line-height:1.4;
+      font-weight:600;
+    }
+    .edu{ background:#fff; border:1px solid #c8e1eb; }
+    .edu strong, .next strong{ display:block; margin-bottom:4px; font-size:.75rem; }
+    .edu strong{ color:var(--blue); }
+    .next{ background:#fff8e6; border:1px solid #f4b740; }
+    .next strong{ color:#9a6b12; }
+    .reviewed{
+      margin-top:10px;
+      font-size:.75rem;
+      font-weight:800;
+    }
+    .face-b-foot{
+      text-align:center;
+      font-size:.65rem;
+      color:var(--muted);
+      padding:0 3% 1.4%;
+      font-weight:600;
+    }
+
+    /* ===== FACE C ===== */
+    .face-c{
+      padding:0;
+      background:#fff;
+    }
+    .face-c img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      display:block;
+      background:#fff;
+    }
+
+    @media (max-width:720px){
+      .face-b-body{ grid-template-columns:1fr; }
+      .cert-card{ width:78%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="intro">
+      <h1>Celebration certificate for families - 3 faces</h1>
+      <p>
+        Landscape A4 PDF generated from Term Review ? <strong>Generate certificate</strong>.
+        Sample: <strong>Alex Rivera</strong> - Spring Term 2026 - Swim Confidence - Level 2 Starfish - Consolidate.
+      </p>
+    </div>
+
+    <div class="faces">
+      <section>
+        <div class="face-label">
+          <strong>Face A - Certificate</strong>
+          <span>Congratulations card with level mascot</span>
+        </div>
+        <div class="page face-a">
+          <div class="cert-card">
+            <img class="logo" src="../Logo-CS-brand-transparent.png" alt="clubSENsational" onerror="this.style.display='none'" />
+            <h2>Congratulations!</h2>
+            <p class="sub">for your effort and progress this term</p>
+            <div class="gold-line"></div>
+            <p class="name">Alex Rivera</p>
+            <p class="meta">Swim Confidence  -  Spring Term 2026</p>
+            <div class="mascot-frame">
+              <img src="./swimming-mascots/level-2-starfish.png" alt="Level 2 Starfish" />
+            </div>
+            <div class="gold-line"></div>
+            <p class="signed">Signed with pride</p>
+            <p class="team">clubSENsational Team</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="face-label">
+          <strong>Face B - Term journey</strong>
+          <span>Pathway, highlights, development areas, next term</span>
+        </div>
+        <div class="page face-b">
+          <div class="face-b-head">
+            <div class="face-b-head-row">
+              <img class="logo" src="../Logo-CS-brand-transparent.png" alt="" onerror="this.style.display='none'" />
+              <h2>Your swimming journey this term</h2>
+              <span style="width:70px"></span>
+            </div>
+            <p>Alex Rivera  -  Spring Term 2026  -  13 July 2026</p>
+          </div>
+          <div class="face-b-body">
+            <div>
+              <div class="panel pathway">
+                <img src="./swimming-mascots/level-2-starfish.png" alt="" />
+                <div>
+                  <h3>Pathway</h3>
+                  <p class="stage">Swim Confidence</p>
+                  <p class="lvl">Level 2 - Starfish - Water Explorer</p>
+                  <p class="dec">Decision: Consolidate current level</p>
+                </div>
+              </div>
+              <div class="story">
+                You have worked really hard during the Spring Term 2026 and we are very proud of the effort you have shown. You are making steady progress in the water and growing in confidence with each session. Every session matters, and your commitment is truly celebrated.
+              </div>
+              <p class="hl-title">This term we celebrated</p>
+              <div class="hl"><i></i><span>Continuing to develop skills at Swimming Level 2</span></div>
+              <div class="hl"><i></i><span>Building confidence within Swim Confidence</span></div>
+              <div class="hl"><i></i><span>Building comfort and calm during swimming sessions</span></div>
+              <div class="hl"><i></i><span>Positive engagement and responsiveness in lessons</span></div>
+            </div>
+            <div>
+              <p class="hl-title" style="margin-top:0">Development this term</p>
+              <div class="domains">
+                <div class="domain">
+                  <img src="./core-areas/core-regulation-brain.png" alt="" />
+                  <strong>Regulation</strong>
+                  <span>Growing</span>
+                </div>
+                <div class="domain">
+                  <img src="./core-areas/core-independence-rocket.png" alt="" />
+                  <strong>Independence</strong>
+                  <span>Progressing</span>
+                </div>
+                <div class="domain">
+                  <img src="./core-areas/core-engagement-wave.png" alt="" />
+                  <strong>Engagement</strong>
+                  <span>Secure</span>
+                </div>
+              </div>
+              <div class="edu">
+                <strong>About the clubSENsational Swimming Journey</strong>
+                Our swimming programme grows through three stages and six adaptive levels. Progress is individual - celebrating regulation, independence and engagement alongside aquatic skills.
+              </div>
+              <div class="next">
+                <strong>Looking ahead / Next term</strong>
+                Next term we will continue building confidence, strengthening key aquatic skills, and celebrating every step forward.
+              </div>
+              <p class="reviewed">Reviewed by: Jordan Lee</p>
+            </div>
+          </div>
+          <div class="face-b-foot">clubSENsational Ltd - 71-75 Shelton Street, Covent Garden, WC2H 9JQ, London - www.clubsensational.org</div>
+        </div>
+      </section>
+
+      <section>
+        <div class="face-label">
+          <strong>Face C - Programme map</strong>
+          <span>Family poster - stages, levels, core areas</span>
+        </div>
+        <div class="page face-c">
+          <img src="./programme-family-poster.png" alt="The clubSENsational Swimming Programme poster" />
+        </div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>

@@ -233,6 +233,35 @@ const LEVEL_DATA = {
       "Swim Structured": "portal/assets/swimming-stages/stage-3-world-bg.jpg",
     };
 
+    function stageKeyFromLevel(level){
+      const lvl = Number(level) || 0;
+      if(lvl >= 5) return "Swim Structured";
+      if(lvl >= 3) return "Swim Basic";
+      if(lvl >= 1) return "Swim Confidence";
+      return "";
+    }
+
+    function resolveCelebrationStageKey(){
+      const raw = String(selectedStage || "").trim();
+      if(raw && SWIMMING_STAGE_BG[raw]) return raw;
+      // Tolerate display labels / aliases from saved forms
+      const aliases = {
+        "Stage 1 – Swim Confidence": "Swim Confidence",
+        "Stage 1 - Swim Confidence": "Swim Confidence",
+        "Stage 2 – Swim Basic": "Swim Basic",
+        "Stage 2 - Swim Basic": "Swim Basic",
+        "Stage 3 – Swim Structured": "Swim Structured",
+        "Stage 3 - Swim Structured": "Swim Structured",
+        Confidence: "Swim Confidence",
+        Basic: "Swim Basic",
+        Structured: "Swim Structured",
+      };
+      if(aliases[raw] && SWIMMING_STAGE_BG[aliases[raw]]) return aliases[raw];
+      const fromLevel = stageKeyFromLevel(selectedLevel);
+      if(fromLevel) return fromLevel;
+      return "Swim Confidence";
+    }
+
     let selectedStage = "";
     let selectedLevel = 0;
 
@@ -2403,9 +2432,8 @@ const LEVEL_DATA = {
     async function loadCelebrationVisualAssets(){
       const levelMascot = selectedLevel ? getSwimmingLevelMascot(selectedLevel) : null;
       const mascotUrl = levelMascot ? resolveSwimmingMascotSrc(levelMascot.file) : "";
-      const stageBgUrl = selectedStage && SWIMMING_STAGE_BG[selectedStage]
-        ? SWIMMING_STAGE_BG[selectedStage]
-        : SWIMMING_STAGE_BG["Swim Confidence"];
+      const stageKey = resolveCelebrationStageKey();
+      const stageBgUrl = SWIMMING_STAGE_BG[stageKey] || SWIMMING_STAGE_BG["Swim Confidence"];
       const [
         logo,
         mascot,
@@ -2427,6 +2455,7 @@ const LEVEL_DATA = {
         logo,
         mascot,
         stageBg,
+        stageKey,
         regulation,
         independence,
         engagement,
@@ -2564,6 +2593,10 @@ const LEVEL_DATA = {
       const decision = getLevelProgressionDecisionValue();
       const animalName = levelMascotMeta ? levelMascotMeta.animal : "";
       const badgeName = levelMascotMeta ? levelMascotMeta.badge : "";
+      const resolvedStageKey = visuals.stageKey || resolveCelebrationStageKey();
+      if(!content.stageLabel && resolvedStageKey){
+        content.stageLabel = STAGE_DISPLAY[resolvedStageKey] || resolvedStageKey;
+      }
 
       function pngFmt(dataUrl){
         if(!dataUrl) return "PNG";
@@ -2937,10 +2970,23 @@ const LEVEL_DATA = {
           const props = doc.getImageProperties(visuals.familyPoster);
           const iw = props.width || 1;
           const ih = props.height || 1;
-          const scale = Math.min(pageW / iw, pageH / ih);
-          const wImg = iw * scale;
-          const hImg = ih * scale;
-          doc.addImage(visuals.familyPoster, fmt, (pageW - wImg) / 2, (pageH - hImg) / 2, wImg, hImg);
+          const pageAspect = pageW / pageH;
+          const imgAspect = iw / ih;
+          let wImg, hImg, xImg, yImg;
+          // Match landscape A4 tightly: exact fill when aspect aligns, otherwise cover (no letterbox gaps)
+          if(Math.abs(imgAspect - pageAspect) < 0.03){
+            wImg = pageW;
+            hImg = pageH;
+            xImg = 0;
+            yImg = 0;
+          }else{
+            const scale = Math.max(pageW / iw, pageH / ih);
+            wImg = iw * scale;
+            hImg = ih * scale;
+            xImg = (pageW - wImg) / 2;
+            yImg = (pageH - hImg) / 2;
+          }
+          doc.addImage(visuals.familyPoster, fmt, xImg, yImg, wImg, hImg);
         }catch(_e){
           /* Face C optional if asset fails */
         }
