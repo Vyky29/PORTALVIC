@@ -423,7 +423,19 @@
     return formatPhoneDisplay(t.sendPhone || t.phone);
   }
 
-  function statusChip(status, channel) {
+  function friendlyWaError(detail) {
+    var d = String(detail || "").trim();
+    if (!d) return "";
+    if (/131047|re-engagement/i.test(d)) {
+      return "Outside WhatsApp 24h window — cold message needs the approved template (portal will use it automatically on resend).";
+    }
+    if (/131026|undeliverable|not on whatsapp/i.test(d)) {
+      return "Number may not be on WhatsApp or cannot receive messages.";
+    }
+    return d.length > 160 ? d.slice(0, 157) + "…" : d;
+  }
+
+  function statusChip(status, channel, errorDetail) {
     var s = String(status || "").toLowerCase();
     var label = s;
     var ticks = "";
@@ -446,11 +458,12 @@
     else if (s === "reply") cls += " portal-pnlog-chip--in";
     else if (s === "failed") cls += " portal-pnlog-chip--bad";
     else cls += " portal-pnlog-chip--muted";
+    var tip = friendlyWaError(errorDetail) || channel || "";
     return (
       '<span class="' +
       cls +
       '" title="' +
-      esc(channel || "") +
+      esc(tip) +
       '">' +
       esc(label) +
       (ticks ? " " + ticks : "") +
@@ -947,6 +960,7 @@
         subject: row.subject,
         sentBy: row.sent_by_email,
         status: row.whatsapp_status,
+        errorDetail: row.error_detail || "",
         channel: "whatsapp",
         row: row,
       });
@@ -1093,9 +1107,11 @@
   function renderBubble(ev) {
     var side = ev.dir === "in" ? "in" : "out";
     var metaBits = [];
+    var errTip = "";
     if (ev.dir === "out") {
       if (ev.kind) metaBits.push(esc(kindLabel(ev.kind)));
-      metaBits.push(statusChip(ev.status, ev.channel));
+      errTip = ev.status === "failed" ? friendlyWaError(ev.errorDetail || (ev.row && ev.row.error_detail)) : "";
+      metaBits.push(statusChip(ev.status, ev.channel, errTip || (ev.row && ev.row.error_detail)));
       if (ev.sentBy) metaBits.push(esc(ev.sentBy));
     } else if (ev.fromApp) {
       metaBits.push('<span class="portal-pnlog-chip portal-pnlog-chip--parent-app">Parent app</span>');
@@ -1126,12 +1142,19 @@
     } else if (bodyStr && !isMediaPlaceholder) {
       contentHtml = '<div class="portal-pnlog-bubble__text">' + esc(bodyStr) + "</div>";
     }
+    var errHtml =
+      errTip
+        ? '<div class="portal-pnlog-bubble__err" style="margin-top:6px;font-size:11px;line-height:1.35;color:#b91c1c;overflow-wrap:anywhere">' +
+          esc(errTip) +
+          "</div>"
+        : "";
     return (
       '<div class="portal-pnlog-bubble portal-pnlog-bubble--' +
       side +
       '">' +
       mediaHtml +
       contentHtml +
+      errHtml +
       '<div class="portal-pnlog-bubble__meta">' +
       metaBits.join(" ") +
       "</div></div>"
@@ -1371,6 +1394,27 @@
     });
   }
 
+  function threadHasOpenWhatsappSession(t) {
+    if (!t || !Array.isArray(t.events)) return false;
+    var cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    for (var i = t.events.length - 1; i >= 0; i--) {
+      var ev = t.events[i];
+      if (!ev || ev.dir !== "in") continue;
+      var when = Date.parse(ev.when || "");
+      return Number.isFinite(when) && when >= cutoff;
+    }
+    return false;
+  }
+
+  function flattenForWhatsappTemplate(text) {
+    return String(text || "")
+      .replace(/[\r\n\t]+/g, " ")
+      .replace(/ {5,}/g, "    ")
+      .replace(/\s{2,}/g, " ")
+      .trim()
+      .slice(0, 1024);
+  }
+
   function sendComposerReply() {
     if (state.sending) return;
     var t = findThread(state.selectedKey);
@@ -1393,8 +1437,9 @@
     var ctx = threadContextForPhone(t.phone);
     if (!ctx.clientDisplay && t.client) ctx.clientDisplay = t.client;
     if (!ctx.parentName && t.name) ctx.parentName = t.name;
+    var openSession = threadHasOpenWhatsappSession(t);
     var contextWaId = "";
-    if (t.lastInboundId) {
+    if (openSession && t.lastInboundId) {
       for (var i = t.events.length - 1; i >= 0; i--) {
         if (t.events[i].dir === "in" && t.events[i].row) {
           contextWaId = String(
@@ -1404,6 +1449,9 @@
         }
       }
     }
+    /* Cold outbound (no inbound in 24h) must use an approved Meta template. */
+    var sendKind = openSession ? "custom" : "contact_update";
+    var sendBody = openSession ? msgBody : flattenForWhatsappTemplate(msgBody);
     state.sending = true;
     state.draftByKey[t.key] = msgBody;
     if (btn) {
@@ -1411,15 +1459,19 @@
       btn.textContent = "Sending…";
     }
     if (ta) ta.disabled = true;
-    if (statusEl) statusEl.textContent = "";
+    if (statusEl) {
+      statusEl.textContent = openSession
+        ? ""
+        : "No open WhatsApp session — sending via approved template…";
+    }
 
     void global.PortalParentNotifySend.send({
-      kind: "custom",
+      kind: sendKind,
       channel: "whatsapp",
       parentName: ctx.parentName || t.name || "",
       parentWhatsapp: sendDigits,
       subject: replySubject(ctx.clientDisplay || t.client, ctx.parentName || t.name),
-      body: msgBody,
+      body: sendBody,
       clientDisplay: ctx.clientDisplay || t.client || null,
       sessionDate: ctx.sessionDate || null,
       venue: ctx.venue || null,

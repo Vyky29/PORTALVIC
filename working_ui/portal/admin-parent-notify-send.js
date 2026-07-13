@@ -111,6 +111,9 @@
     if (/^whatsapp_401/i.test(code) || /authentication error/i.test(code)) {
       return 'WhatsApp token expired — generate a new token in Meta Business Suite, update META_WHATSAPP_TOKEN in Supabase secrets, then run npm run apply:whatsapp.';
     }
+    if (/131047|re-engagement/i.test(code)) {
+      return 'Outside WhatsApp 24h window — refresh and resend (portal now uses the approved template for cold messages).';
+    }
     if (/132018|newline|new-line|consecutive spaces/i.test(code)) {
       return 'WhatsApp template rejected the message format — try again (portal now strips line breaks automatically).';
     }

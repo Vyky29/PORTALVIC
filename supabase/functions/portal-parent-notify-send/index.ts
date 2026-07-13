@@ -164,15 +164,36 @@ Deno.serve(async (req) => {
 
   if (channel === "whatsapp" || channel === "both") {
     const contextWaId = str(payload.contextWaId, 200);
+    // Free-text (custom/reply) only works inside Meta's 24h session window.
+    // Cold outbound without context must use the approved default template.
+    let effectiveKind = notifyKind;
+    if (
+      (notifyKind === "custom" || notifyKind === "reply" || notifyKind === "whatsapp_reply") &&
+      !contextWaId
+    ) {
+      effectiveKind = "contact_update";
+    }
     const waOpts = notifyKind === "whatsapp_test"
       ? { templateName: "hello_world", templateLang: "en_US" }
       : {
-        kind: notifyKind,
+        kind: effectiveKind,
         instructorPhotoUrl: instructorPhotoUrl || undefined,
         instructorPhotoName: instructorPhotoName || undefined,
         contextWaId: contextWaId || undefined,
       };
-    const sent = await sendParentMobileMessage(parentPhone!, whatsappBodyText, waOpts);
+    let sent = await sendParentMobileMessage(parentPhone!, whatsappBodyText, waOpts);
+    // If free-text was rejected for re-engagement, retry once with the template.
+    if (
+      !sent.ok &&
+      (notifyKind === "custom" || notifyKind === "reply" || notifyKind === "whatsapp_reply") &&
+      /131047|re-engagement/i.test(String(sent.error || ""))
+    ) {
+      sent = await sendParentMobileMessage(parentPhone!, whatsappBodyText, {
+        kind: "contact_update",
+        instructorPhotoUrl: instructorPhotoUrl || undefined,
+        instructorPhotoName: instructorPhotoName || undefined,
+      });
+    }
     if (sent.ok) {
       whatsappStatus = sent.channel === "sms" ? "sent_sms" : "sent";
       whatsappMessageId = sent.id;
