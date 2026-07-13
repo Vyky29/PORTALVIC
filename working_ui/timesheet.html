@@ -79,9 +79,10 @@
     .th-mob{display:none}
     tbody tr.day-row--paid td{background:#eef9f1 !important}
     tbody tr.day-row--pending td{background:#fff5e8 !important}
-    tbody tr.day-row--late td{background:#111 !important;color:#fff}
-    tbody tr.day-row--late td .muted{color:rgba(255,255,255,.72)}
-    tbody tr.day-row--off td{background:#f3f4f6 !important;color:#4b5563}
+    tbody tr.day-row--late td{background:#eef9f1 !important;color:#173247}
+    tbody tr.day-row--late td .muted{color:#60758a}
+    tbody tr.day-row--off td{background:#fde8e8 !important;color:#7f1d1d}
+    tbody tr.day-row--upcoming td{background:#f7fafc !important;color:#60758a}
     .actions{padding:0 16px 16px}
     .btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;background:#0b2a5b;color:#fff}
     .btn-back{background:#e4edf8;color:#0b2a5b;border:1px solid #b0c7e2}
@@ -124,7 +125,8 @@
     .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid rgba(11,42,91,.12);flex-shrink:0}
     .legend .swatch-paid{background:#eef9f1}
     .legend .swatch-pending{background:#fff5e8}
-    .legend .swatch-late{background:#111;border-color:#111}
+    .legend .swatch-late{background:#eef9f1;border-color:#86efac}
+    .legend .swatch-off{background:#fde8e8;border-color:#f3c2c2}
     /* Manual (part-time / extra hours) entry */
     .manual-entry{padding:4px 16px 14px}
     .manual-entry__hint{margin:0 0 10px;color:#60758a;font-size:13px;line-height:1.45}
@@ -288,8 +290,9 @@
       </section>
       <div class="legend" aria-hidden="false">
         <span><i class="swatch-paid" aria-hidden="true"></i> Green — feedback complete (paid now)</span>
-        <span><i class="swatch-pending" aria-hidden="true"></i> Orange — pending feedback (not in payable total yet)</span>
-        <span><i class="swatch-late" aria-hidden="true"></i> Black — feedback submitted late (held until admin validates)</span>
+        <span><i class="swatch-late" aria-hidden="true"></i> Green + late — submitted late (£0 until admin validates)</span>
+        <span><i class="swatch-pending" aria-hidden="true"></i> Orange — pending feedback</span>
+        <span><i class="swatch-off" aria-hidden="true"></i> Red — day off (not paid)</span>
       </div>
       <div class="status-note" id="statusNote">Loading shifts...</div>
       <div class="manual-entry" id="manualForm" hidden>
@@ -1382,7 +1385,7 @@
       const memory = parseReviewMap();
       try {
         const mod = await withTimeout(
-          import("/portal/supabase-client.js?v=20260713-late-pay-hold"),
+          import("/portal/supabase-client.js?v=20260713-timesheet-pool-match"),
           8000,
           "supabase_client_import"
         );
@@ -1456,6 +1459,7 @@
         if (e.dayOff) {
           e.rate = 0;
           e.lateHold = false;
+          e.upcoming = false;
           return;
         }
         const flat = serviceFlatRate(e.service || e.role);
@@ -1463,18 +1467,25 @@
           e.rate = flat != null ? flat : rateForRole(e.role);
         }
         const iso = String(e.date || "").slice(0, 10);
+        const todayIso = isoDate(londonPayrollAnchor(new Date()));
+        e.upcoming = !!(/^\d{4}-\d{2}-\d{2}$/.test(iso) && /^\d{4}-\d{2}-\d{2}$/.test(todayIso) && iso > todayIso);
+        if (e.upcoming) {
+          e.completed = false;
+          e.lateHold = false;
+          return;
+        }
         e.lateHold = !!(e.completed && lateDateSet.has(iso));
       });
-      state.payableEntries = state.entries.filter((e) => e.completed && !e.dayOff && !e.lateHold);
-      state.pendingEntries = state.entries.filter((e) => !e.completed && !e.dayOff);
+      state.payableEntries = state.entries.filter((e) => e.completed && !e.dayOff && !e.lateHold && !e.upcoming);
+      state.pendingEntries = state.entries.filter((e) => !e.completed && !e.dayOff && !e.upcoming);
       state.lateHoldEntries = state.entries.filter((e) => e.lateHold && !e.dayOff);
       state.totalHours = Number(state.payableEntries.reduce((acc, e) => acc + e.hours, 0).toFixed(2));
       state.potentialHours = Number(
-        state.entries.filter((e) => !e.dayOff).reduce((acc, e) => acc + e.hours, 0).toFixed(2)
+        state.entries.filter((e) => !e.dayOff && !e.upcoming).reduce((acc, e) => acc + e.hours, 0).toFixed(2)
       );
       state.totalCost = Number(state.payableEntries.reduce((acc, e) => acc + e.hours * Number(e.rate || 0), 0).toFixed(2));
       state.potentialCost = Number(
-        state.entries.filter((e) => !e.dayOff).reduce((acc, e) => acc + e.hours * Number(e.rate || 0), 0).toFixed(2)
+        state.entries.filter((e) => !e.dayOff && !e.upcoming).reduce((acc, e) => acc + e.hours * Number(e.rate || 0), 0).toFixed(2)
       );
       state.lateHoldCost = Number(
         state.lateHoldEntries.reduce((acc, e) => acc + e.hours * Number(e.rate || 0), 0).toFixed(2)
@@ -2378,7 +2389,7 @@
         if (!role) role = String(fb.role_label || "").trim();
       }
       if (!role) {
-        role = String(profile.role_track || profile.role || profile.app_role || "").trim();
+        role = String(profile.staff_role || profile.app_role || "").trim();
       }
       return { hourly_rate: hourly, role_label: role };
     }
@@ -2533,19 +2544,23 @@
         if (note) note.textContent = "No roster shifts detected for this period.";
       } else {
         body.innerHTML = state.entries.map((e) => {
-          const daily = e.dayOff || e.lateHold
+          const daily = e.dayOff || e.lateHold || e.upcoming
             ? 0
             : e.hours * Number(e.rate != null ? e.rate : state.hourlyRate);
           const cls = e.dayOff
             ? "day-row--off"
-            : (e.lateHold
-              ? "day-row--late"
-              : (e.completed ? "day-row--paid" : "day-row--pending"));
+            : (e.upcoming
+              ? "day-row--upcoming"
+              : (e.lateHold
+                ? "day-row--late"
+                : (e.completed ? "day-row--paid" : "day-row--pending")));
           const statusNote = e.dayOff
             ? "day off"
-            : (e.lateHold
-              ? "submitted late — awaiting admin"
-              : (e.completed ? "completed" : "pending feedback"));
+            : (e.upcoming
+              ? "upcoming"
+              : (e.lateHold
+                ? "submitted late — awaiting admin"
+                : (e.completed ? "completed" : "pending feedback")));
           return `<tr class="${cls}">
             <td>${esc(displayDateFancy(e.date))}</td>
             <td>${esc(e.day)} · ${statusNote}</td>
@@ -2557,14 +2572,14 @@
         if (note) {
           const offN = state.entries.filter((e) => e.dayOff).length;
           const lateN = (state.lateHoldEntries || []).length;
-          const offBit = offN ? ` ${offN} day off(s) shown in grey (not paid).` : "";
+          const offBit = offN ? ` ${offN} day off(s) shown in red (not paid).` : "";
           const lateBit = lateN
-            ? ` ${lateN} day(s) submitted late are shown in black and held from pay until an admin validates them.`
+            ? ` ${lateN} day(s) submitted late are green at £0 until an admin validates them.`
             : "";
           note.textContent = state.pendingEntries.length
             ? `${state.pendingEntries.length} day(s) pending feedback are shown in orange and are excluded from payable total.${lateBit}${offBit}`
             : (lateN
-              ? `Feedback is complete; late days are held (black) until admin validates.${offBit}`
+              ? `Feedback is complete; late days stay at £0 (green) until admin validates.${offBit}`
               : `All shift days are completed (green) and included in payable total.${offBit}`);
         }
       }
@@ -2761,7 +2776,7 @@
       try {
         const [profileRes, rateRes, roleRatesRes] = await withTimeout(
           Promise.all([
-            supabase.from("staff_profiles").select("full_name, username, role_track, role, app_role").eq("id", state.userId).maybeSingle(),
+            supabase.from("staff_profiles").select("full_name, username, app_role, staff_role").eq("id", state.userId).maybeSingle(),
             supabase.from("staff_pay_rates").select("hourly_rate, role_label").eq("user_id", state.userId).maybeSingle(),
             supabase.from("staff_role_rates").select("role, scale, hourly_rate, is_primary").eq("user_id", state.userId)
           ]),

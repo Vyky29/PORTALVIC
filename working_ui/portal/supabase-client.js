@@ -998,6 +998,12 @@ function portalSessionKeyAreaToken(key) {
 function portalSessionKeyAreaTokensCompatible(submittedKey, rosterKey) {
   const sArea = portalSessionKeyAreaToken(submittedKey);
   const rArea = portalSessionKeyAreaToken(rosterKey);
+  function isPoolOrAquaticArea(a) {
+    const t = String(a || "").trim().toLowerCase();
+    if (!t) return false;
+    if (t === "aquatic" || t === "swimming") return true;
+    return /pool/.test(t);
+  }
   if (!sArea && !rArea) return true;
   if (!sArea && rArea) {
     const sTime = portalSessionKeyTimeToken(submittedKey);
@@ -1006,10 +1012,15 @@ function portalSessionKeyAreaTokensCompatible(submittedKey, rosterKey) {
     if (sTime && rTime && sTime === rTime && portalRosterKeyIsSharedFeedbackUnit(rosterKey)) {
       return true;
     }
+    /* Roster aquatic unit vs feedback without area, or pool venue on roster only. */
+    if (isPoolOrAquaticArea(rArea) || /\|aquatic(?:\||$)/i.test(String(rosterKey || ""))) {
+      return true;
+    }
     return false;
   }
   if (sArea && rArea) {
     if (sArea === rArea) return true;
+    if (isPoolOrAquaticArea(sArea) && isPoolOrAquaticArea(rArea)) return true;
     if (sArea === "bespoke_shared" || rArea === "bespoke_shared") return true;
     if (sArea === "day_centre" || rArea === "day_centre") return true;
     if (
@@ -1025,6 +1036,12 @@ function portalSessionKeyAreaTokensCompatible(submittedKey, rosterKey) {
       return true;
     }
     return false;
+  }
+  /* Feedback has pool/venue token; roster aquatic key often has no area segment. */
+  if (sArea && !rArea) {
+    if (isPoolOrAquaticArea(sArea) || /\|aquatic(?:\||$)/i.test(String(rosterKey || ""))) {
+      return true;
+    }
   }
   if (portalRosterKeyIsSharedFeedbackUnit(rosterKey)) return true;
   if (portalSubmittedKeyIsDateClientOnly(submittedKey) && portalRosterKeyIsSharedFeedbackUnit(rosterKey)) {
