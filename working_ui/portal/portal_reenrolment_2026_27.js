@@ -859,11 +859,11 @@
         });
       });
     } else if (schedCode === "term_flexi") {
-      RE_PAY_FLEXI_TERM.forEach(function (t, ti) {
+      RE_PAY_FLEXI_TERM.forEach(function (t) {
         if (!includeTerm(t.term)) return;
         var termTotal = termProgrammeTotal(data, t.term);
         var halfAmt = termTotal / 2;
-        t.halves.forEach(function (h, hi) {
+        t.halves.forEach(function (h) {
           rows.push({
             term: t.term,
             label: t.termLabel + " · " + h.halfLabel,
