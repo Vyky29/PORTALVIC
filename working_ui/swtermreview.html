@@ -890,6 +890,7 @@
       letter-spacing:0.25px;
       color:rgba(11,18,32,0.82);
       line-height:1.25;
+      overflow-wrap:anywhere;
     }
 
     .focusSectionMeta{
@@ -903,6 +904,7 @@
       border-radius:999px;
       border:1px solid rgba(11,18,32,0.10);
       background:#fff;
+      white-space:nowrap;
     }
     .focusSection.is-complete .focusSectionMeta{
       color:var(--green);
@@ -969,7 +971,7 @@
       color:var(--text);
     }
 
-    @media (min-width:640px){
+    @media (min-width:900px){
       .focusItem{
         flex-direction:row;
         align-items:center;
@@ -986,12 +988,12 @@
       width:100%;
       gap:8px;
     }
-    @media (min-width:640px){
+    @media (min-width:900px){
       .triGrid{
         align-self:center;
         flex-wrap:nowrap;
         width:auto;
-        min-width:360px;
+        min-width:min(360px, 42vw);
         max-width:420px;
         justify-content:flex-end;
       }
@@ -1018,8 +1020,11 @@
       box-shadow:0 1px 3px rgba(11,18,32,0.04);
       transition:background .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .06s ease;
       min-height:38px;
-      line-height:1.2;
-      white-space:nowrap;
+      line-height:1.25;
+      white-space:normal;
+      overflow-wrap:anywhere;
+      hyphens:auto;
+      box-sizing:border-box;
     }
     .triBtn input{ display:none; }
     .triBtn:hover{
@@ -1047,22 +1052,28 @@
       color:#fff;
       box-shadow:0 4px 12px rgba(45,132,179,0.32);
     }
-    .triBtn.independence{ white-space:nowrap; }
 
-    @media (max-width:639px){
-      .triGrid{ gap:8px; }
+    /* Phone / tablet: stack full-width rating buttons so labels never spill */
+    @media (max-width:899px){
+      .triGrid{
+        flex-direction:column;
+        gap:8px;
+      }
       .triBtn{
-        flex:1 1 calc(33.333% - 6px);
-        font-size:10px;
-        padding:8px 6px;
-        min-height:36px;
+        flex:0 0 auto;
+        width:100%;
+        max-width:none;
+        font-size:13px;
+        padding:12px 14px;
+        min-height:44px;
+        white-space:normal;
       }
     }
-    @media (max-width:400px){
+    @media (min-width:900px){
       .triBtn{
-        font-size:9px;
-        padding:7px 4px;
-        letter-spacing:-0.01em;
+        white-space:nowrap;
+        overflow-wrap:normal;
+        hyphens:manual;
       }
     }
 
@@ -1239,7 +1250,7 @@
       margin:0;
     }
 
-    @media (min-width:640px){
+    @media (min-width:900px){
       .obsRow{
         flex-direction:row;
         align-items:center;
@@ -1256,12 +1267,12 @@
       width:100%;
       gap:8px;
     }
-    @media (min-width:640px){
+    @media (min-width:900px){
       .rsiGrid{
         align-self:center;
         flex-wrap:nowrap;
         width:auto;
-        min-width:280px;
+        min-width:min(280px, 36vw);
         max-width:320px;
         justify-content:flex-end;
       }
@@ -1288,8 +1299,10 @@
       box-shadow:0 1px 3px rgba(11,18,32,0.04);
       transition:background .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .06s ease;
       min-height:38px;
-      line-height:1.2;
-      white-space:nowrap;
+      line-height:1.25;
+      white-space:normal;
+      overflow-wrap:anywhere;
+      box-sizing:border-box;
     }
     .rsiBtn input{ display:none; }
     .rsiBtn:hover{
@@ -1305,19 +1318,25 @@
       box-shadow:0 4px 12px rgba(109,92,174,0.28);
     }
 
-    @media (max-width:639px){
-      .rsiGrid{ gap:8px; }
+    @media (max-width:899px){
+      .rsiGrid{
+        flex-direction:column;
+        gap:8px;
+      }
       .rsiBtn{
-        flex:1 1 calc(33.333% - 6px);
-        font-size:10px;
-        padding:8px 6px;
-        min-height:36px;
+        flex:0 0 auto;
+        width:100%;
+        max-width:none;
+        font-size:13px;
+        padding:12px 14px;
+        min-height:44px;
+        white-space:normal;
       }
     }
-    @media (max-width:400px){
+    @media (min-width:900px){
       .rsiBtn{
-        font-size:9px;
-        padding:7px 4px;
+        white-space:nowrap;
+        overflow-wrap:normal;
       }
     }
 
