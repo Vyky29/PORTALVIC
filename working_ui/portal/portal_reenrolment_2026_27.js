@@ -460,15 +460,18 @@
     return String(raw).trim();
   }
 
-  // Palette used to tint each booked service — the same tone is shown as a
-  // legend dot next to the service and on that service's days in the preview.
+  // Legend dots next to each service (NOT calendar paint).
+  // Green/red are reserved for the calendar: green = service days, red = closures.
   var RE_SERVICE_TONES = [
     "#ca8a04",
     "#2d7fb8",
-    "#1f9d63",
     "#7c4dbf",
-    "#c2410c",
+    "#0f766e",
+    "#db2777",
   ];
+
+  /** Calendar preview only: booked weekdays → club green (closures stay red). */
+  var RE_CAL_SERVICE_GREEN = "#CFEA8B";
 
   function reDayNameToCol(day) {
     var s = String(day || "").trim().toLowerCase().slice(0, 3);
@@ -488,6 +491,16 @@
       if (col != null && colMap[col] == null) colMap[col] = tone;
     });
     return { items: items, colMap: colMap };
+  }
+
+  /** Weekday → green for autumn preview (ignore multi-service legend colours). */
+  function reBuildCalendarServiceDayColors(slots) {
+    var colMap = {};
+    (slots || []).forEach(function (slot) {
+      var col = reDayNameToCol(slot && slot.day);
+      if (col != null) colMap[col] = RE_CAL_SERVICE_GREEN;
+    });
+    return colMap;
   }
 
   function renderCurrentArrangementsRefListHtml(data) {
@@ -2902,11 +2915,11 @@
         }
       });
       if (typeof global.portalBuildCalendar202627AutumnPreview === "function") {
-        var previewTones = reBuildServiceTones(
+        var previewDayColors = reBuildCalendarServiceDayColors(
           (state.lookup && state.lookup.weekly_slots) || [],
         );
         global
-          .portalBuildCalendar202627AutumnPreview({ dayColors: previewTones.colMap })
+          .portalBuildCalendar202627AutumnPreview({ dayColors: previewDayColors })
           .then(function (node) {
             previewHost.innerHTML = "";
             previewHost.appendChild(node);
