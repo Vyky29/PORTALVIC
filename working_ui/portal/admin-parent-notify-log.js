@@ -45,6 +45,8 @@
     });
   }
 
+  var PHONE_REMAP_KEY = "portalAdminWaPhoneRemap_v1";
+
   var cfg = {
     esc: function (s) {
       return String(s == null ? "" : s);
@@ -59,6 +61,8 @@
     getAnonKey: function () {
       return "";
     },
+    /** Optional sync directory from Participants export + local overrides. */
+    getContactDirectory: null,
     openModal: null,
     closeModal: null,
   };
@@ -77,6 +81,7 @@
     sending: false,
     mobileShowThread: false,
     stickToBottom: true,
+    contactDirectory: [],
   };
 
   var SEEN_STORE_KEY = "portal_pnlog_seen_v1";
@@ -136,6 +141,7 @@
     if (options.toast) cfg.toast = options.toast;
     if (options.getSupabaseUrl) cfg.getSupabaseUrl = options.getSupabaseUrl;
     if (options.getAnonKey) cfg.getAnonKey = options.getAnonKey;
+    if (options.getContactDirectory) cfg.getContactDirectory = options.getContactDirectory;
     if (options.openModal) cfg.openModal = options.openModal;
     if (options.closeModal) cfg.closeModal = options.closeModal;
   }
@@ -192,6 +198,229 @@
 
   function phoneDigits(phone) {
     return String(phone || "").replace(/\D/g, "");
+  }
+
+  /** Canonical UK-ish WhatsApp digits (no +), mirroring server normalizeParentPhoneE164. */
+  function canonicalPhoneDigits(phone) {
+    var digits = phoneDigits(phone);
+    if (!digits || digits.length < 8) return "";
+    if (digits.indexOf("00") === 0) digits = digits.slice(2);
+    if (digits.indexOf("44") === 0 && digits.length >= 12) {
+      var national = digits.slice(2);
+      if (national.charAt(0) === "0") national = national.slice(1);
+      digits = "44" + national;
+    } else if (digits.charAt(0) === "0" && digits.length >= 10) {
+      digits = "44" + digits.slice(1);
+    }
+    if (!/^[1-9]/.test(digits)) return "";
+    return digits;
+  }
+
+  function phoneMatchKey(phone) {
+    var d = canonicalPhoneDigits(phone) || phoneDigits(phone);
+    if (!d) return "";
+    return d.length >= 10 ? d.slice(-10) : d;
+  }
+
+  function formatPhoneDisplay(phone) {
+    var d = canonicalPhoneDigits(phone) || phoneDigits(phone);
+    if (!d) return "";
+    return "+" + d;
+  }
+
+  function loadPhoneRemap() {
+    try {
+      var raw = global.localStorage.getItem(PHONE_REMAP_KEY);
+      var j = raw ? JSON.parse(raw) : {};
+      return j && typeof j === "object" ? j : {};
+    } catch (_e) {
+      return {};
+    }
+  }
+
+  function savePhoneRemap(map) {
+    try {
+      global.localStorage.setItem(PHONE_REMAP_KEY, JSON.stringify(map || {}));
+    } catch (_e) {}
+  }
+
+  /** When profile phone changes, map old WhatsApp thread digits → new send digits. */
+  function notePhoneChange(oldPhone, newPhone) {
+    var oldD = canonicalPhoneDigits(oldPhone) || phoneDigits(oldPhone);
+    var newD = canonicalPhoneDigits(newPhone) || phoneDigits(newPhone);
+    if (!oldD || !newD || oldD === newD) return;
+    var map = loadPhoneRemap();
+    map[oldD] = newD;
+    map[phoneDigits(oldPhone)] = newD;
+    var oldKey = phoneMatchKey(oldPhone);
+    if (oldKey) map[oldKey] = newD;
+    savePhoneRemap(map);
+  }
+
+  function remappedPhoneDigits(phone) {
+    var map = loadPhoneRemap();
+    var canon = canonicalPhoneDigits(phone) || phoneDigits(phone);
+    var raw = phoneDigits(phone);
+    var key = phoneMatchKey(phone);
+    var hit = (canon && map[canon]) || (raw && map[raw]) || (key && map[key]) || "";
+    return hit ? String(hit) : "";
+  }
+
+  function normalizeDirContact(row) {
+    if (!row) return null;
+    var child = String(row.child_display || row.child || row.client || "").trim();
+    var parent = String(row.parent_display || row.parent || "").trim();
+    var mobile = String(row.mobile || row.phone || "").trim();
+    var contactId = String(row.contact_id || row.contactId || "").trim();
+    if (!child && !mobile && !contactId) return null;
+    return {
+      contactId: contactId,
+      child: child,
+      parent: parent,
+      mobile: mobile,
+      matchKey: phoneMatchKey(mobile),
+      sendDigits: canonicalPhoneDigits(mobile) || phoneDigits(mobile),
+      childNorm: String(child || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim(),
+    };
+  }
+
+  function directoryFromCfg() {
+    if (typeof cfg.getContactDirectory !== "function") return [];
+    try {
+      var rows = cfg.getContactDirectory() || [];
+      return (rows || []).map(normalizeDirContact).filter(Boolean);
+    } catch (_e) {
+      return [];
+    }
+  }
+
+  async function portalAuthToken() {
+    var client = cfg.getClient();
+    if (!client || !client.auth) return null;
+    var sessResp = await client.auth.getSession();
+    var session = sessResp && sessResp.data && sessResp.data.session;
+    return session && session.access_token ? session.access_token : null;
+  }
+
+  async function fetchLiveContactDirectory() {
+    var token = await portalAuthToken();
+    var base = String(cfg.getSupabaseUrl() || "").replace(/\/$/, "");
+    var anon = String(cfg.getAnonKey() || "");
+    if (!token || !base || !anon) return [];
+    try {
+      var res = await fetch(base + "/functions/v1/portal-admin-parent-contact-update", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+          apikey: anon,
+        },
+        body: JSON.stringify({ action: "directory" }),
+      });
+      var j = null;
+      try {
+        j = await res.json();
+      } catch (_e) {
+        j = null;
+      }
+      if (!res.ok || !j || !j.ok || !Array.isArray(j.contacts)) return [];
+      return j.contacts.map(normalizeDirContact).filter(Boolean);
+    } catch (_e) {
+      return [];
+    }
+  }
+
+  function mergeContactDirectories(preferred, fallback) {
+    var byId = Object.create(null);
+    var byChild = Object.create(null);
+    var out = [];
+    function upsert(c, overwrite) {
+      if (!c) return;
+      var id = c.contactId;
+      var existing = (id && byId[id]) || (c.childNorm && byChild[c.childNorm]) || null;
+      if (existing) {
+        if (overwrite || (!existing.mobile && c.mobile)) {
+          existing.mobile = c.mobile || existing.mobile;
+          existing.matchKey = c.matchKey || existing.matchKey;
+          existing.sendDigits = c.sendDigits || existing.sendDigits;
+          existing.parent = c.parent || existing.parent;
+          existing.child = c.child || existing.child;
+          existing.childNorm = c.childNorm || existing.childNorm;
+        }
+        return;
+      }
+      out.push(c);
+      if (id) byId[id] = c;
+      if (c.childNorm) byChild[c.childNorm] = c;
+    }
+    // Live DB first; local/export overrides overwrite on conflict.
+    (fallback || []).forEach(function (c) {
+      upsert(c, false);
+    });
+    (preferred || []).forEach(function (c) {
+      upsert(c, true);
+    });
+    return out;
+  }
+
+  function findContactForThread(t, directory) {
+    var list = directory || state.contactDirectory || [];
+    if (!t || !list.length) return null;
+    var clientNorm = String(t.client || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+    var i;
+    if (clientNorm) {
+      for (i = 0; i < list.length; i++) {
+        if (list[i].childNorm && list[i].childNorm === clientNorm) return list[i];
+      }
+      for (i = 0; i < list.length; i++) {
+        var cn = list[i].childNorm;
+        if (!cn) continue;
+        if (namesRoughlySame(list[i].child, t.client)) return list[i];
+      }
+    }
+    var threadKey = phoneMatchKey(t.phone);
+    if (threadKey) {
+      for (i = 0; i < list.length; i++) {
+        if (list[i].matchKey && list[i].matchKey === threadKey) return list[i];
+      }
+    }
+    return null;
+  }
+
+  function enrichThreadsWithProfilePhones(threads) {
+    var dir = state.contactDirectory || [];
+    (threads || []).forEach(function (t) {
+      if (!t) return;
+      var contact = findContactForThread(t, dir);
+      var profileDigits =
+        (contact && contact.sendDigits) ||
+        remappedPhoneDigits(t.phone) ||
+        "";
+      var threadDigits = canonicalPhoneDigits(t.phone) || phoneDigits(t.phone);
+      if (profileDigits) {
+        t.profilePhone = profileDigits;
+        t.sendPhone = profileDigits;
+        t.phoneFromProfile = threadDigits !== profileDigits;
+      } else {
+        t.profilePhone = "";
+        t.sendPhone = threadDigits || t.phone;
+        t.phoneFromProfile = false;
+      }
+      if (contact && contact.parent && !t.parentName) t.parentName = contact.parent;
+      if (contact && contact.child && !t.client) t.client = contact.child;
+    });
+    return threads;
+  }
+
+  function threadPhoneForUi(t) {
+    if (!t) return "";
+    return formatPhoneDisplay(t.sendPhone || t.phone);
   }
 
   function statusChip(status, channel) {
@@ -808,7 +1037,7 @@
     if (outcome === "sent" && !t.hasSent) return false;
     if (outcome === "unread" && !isThreadUnread(t)) return false;
     if (!q) return true;
-    var parts = [t.name, t.phone, t.client];
+    var parts = [t.name, t.phone, t.sendPhone, t.client, t.profilePhone];
     t.events.forEach(function (e) {
       parts.push(e.body || "");
       parts.push(e.subject || "");
@@ -958,7 +1187,7 @@
     var unread = isThreadUnread(t);
     var sel = t.key === state.selectedKey ? " is-selected" : "";
     var sub = t.events.length ? bodyPreview(t.events[t.events.length - 1].body) : "";
-    var subline = "+" + t.phone + (t.client ? " · " + t.client : "");
+    var subline = threadPhoneForUi(t) + (t.client ? " · " + t.client : "");
     var headName = t.name;
     // If title still equals the participant, show a clearer label.
     if (t.client && namesRoughlySame(headName, t.client) && t.waContact && !namesRoughlySame(t.waContact, t.client)) {
@@ -999,7 +1228,7 @@
   }
 
   function renderComposer(t) {
-    if (!t || !t.phone) {
+    if (!t || !(t.sendPhone || t.phone)) {
       return (
         '<div class="portal-pnlog-composer portal-pnlog-composer--disabled">' +
         '<p class="muted" style="margin:0">No WhatsApp number for this thread.</p></div>'
@@ -1032,7 +1261,7 @@
     }
     var participant = t.client || "";
     var enrolledHtml = participant ? enrolledChipsForClient(participant) : "";
-    var subline = "+" + t.phone + (participant ? " · " + participant : "");
+    var subline = threadPhoneForUi(t) + (participant ? " · " + participant : "");
     return (
       '<div class="portal-pnlog-pane-head">' +
       '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-pane-back" id="portalPnlogBack">← Back</button>' +
@@ -1145,7 +1374,7 @@
   function sendComposerReply() {
     if (state.sending) return;
     var t = findThread(state.selectedKey);
-    if (!t || !t.phone) return;
+    if (!t || !(t.sendPhone || t.phone)) return;
     var ta = document.getElementById("portalPnlogComposerInput");
     var statusEl = document.getElementById("portalPnlogComposerStatus");
     var btn = document.getElementById("portalPnlogComposerSend");
@@ -1158,7 +1387,12 @@
       if (statusEl) statusEl.textContent = "Send module not loaded — refresh the page.";
       return;
     }
+    var sendDigits =
+      canonicalPhoneDigits(t.sendPhone || t.phone) ||
+      phoneDigits(t.sendPhone || t.phone);
     var ctx = threadContextForPhone(t.phone);
+    if (!ctx.clientDisplay && t.client) ctx.clientDisplay = t.client;
+    if (!ctx.parentName && t.name) ctx.parentName = t.name;
     var contextWaId = "";
     if (t.lastInboundId) {
       for (var i = t.events.length - 1; i >= 0; i--) {
@@ -1183,7 +1417,7 @@
       kind: "custom",
       channel: "whatsapp",
       parentName: ctx.parentName || t.name || "",
-      parentWhatsapp: t.phone,
+      parentWhatsapp: sendDigits,
       subject: replySubject(ctx.clientDisplay || t.client, ctx.parentName || t.name),
       body: msgBody,
       clientDisplay: ctx.clientDisplay || t.client || null,
@@ -1347,7 +1581,10 @@
       }
 
       state.timeline = mergeTimeline(outboundRes.data || [], inbound);
-      state.threads = buildWhatsAppThreads(state.timeline);
+      var liveDir = await fetchLiveContactDirectory();
+      var localDir = directoryFromCfg();
+      state.contactDirectory = mergeContactDirectories(localDir, liveDir);
+      state.threads = enrichThreadsWithProfilePhones(buildWhatsAppThreads(state.timeline));
       if (statusEl) {
         var note = state.timeline.length >= FETCH_LIMIT ? "Showing latest " + FETCH_LIMIT + " messages." : "";
         if (!state.inboundAvailable) {
@@ -1501,6 +1738,7 @@
     refresh: function () {
       return loadRows(true);
     },
+    notePhoneChange: notePhoneChange,
     stopLiveRefresh: stopInboundLiveRefresh,
   };
 })(typeof window !== "undefined" ? window : globalThis);

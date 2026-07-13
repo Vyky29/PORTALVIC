@@ -2,6 +2,7 @@
 //
 // portal-admin-parent-contact-update
 // Update carer / contact / address / registration / funding labels on portal_parent_contacts.
+// Also: { action: "directory" } → lightweight contact phone directory for Family Messages.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
@@ -9,6 +10,7 @@ import {
   portalAdminJson,
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
+import { normalizeParentPhoneE164 } from "../_shared/portal_parent_messaging.ts";
 
 function clean(v: unknown, max = 500): string {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
@@ -33,6 +35,13 @@ function splitParentName(display: string): { first: string; last: string } {
   if (!parts.length) return { first: "", last: "" };
   if (parts.length === 1) return { first: parts[0], last: "" };
   return { first: parts[0], last: parts.slice(1).join(" ") };
+}
+
+/** Prefer E.164 (+447…) when parseable; otherwise keep cleaned raw. */
+function normalizeMobileForStore(raw: unknown): string | null {
+  const cleaned = clean(raw, 40);
+  if (!cleaned) return null;
+  return normalizeParentPhoneE164(cleaned) || cleaned;
 }
 
 Deno.serve(async (req) => {
@@ -61,6 +70,29 @@ Deno.serve(async (req) => {
     body = {};
   }
 
+  const admin = createClient(baseUrl, serviceRole, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const action = clean(body.action, 40).toLowerCase();
+  if (action === "directory") {
+    const { data, error } = await admin
+      .from("portal_parent_contacts")
+      .select("contact_id, child_display, parent_display, mobile")
+      .limit(5000);
+    if (error) {
+      console.error("[portal-admin-parent-contact-update] directory", error.message);
+      return portalAdminJson(500, { ok: false, error: "directory_failed" });
+    }
+    const contacts = (data || []).map((row) => ({
+      contact_id: String(row.contact_id || "").trim(),
+      child_display: String(row.child_display || "").trim(),
+      parent_display: String(row.parent_display || "").trim(),
+      mobile: String(row.mobile || "").trim(),
+    })).filter((row) => row.contact_id || row.child_display);
+    return portalAdminJson(200, { ok: true, contacts });
+  }
+
   const contactId = clean(body.contact_id, 120);
   if (!contactId) {
     return portalAdminJson(400, { ok: false, error: "contact_id_required" });
@@ -80,7 +112,7 @@ Deno.serve(async (req) => {
     parent_display: parentDisplay,
     parent_first_name: names.first || null,
     parent_last_name: names.last || null,
-    mobile: clean(body.mobile, 40) || null,
+    mobile: normalizeMobileForStore(body.mobile),
     email: clean(body.email, 200) || null,
     address_line1: clean(body.address_line1, 200) || null,
     address_line2: clean(body.address_line2, 200) || null,
@@ -93,13 +125,9 @@ Deno.serve(async (req) => {
   if (registrationIso) patch.registration_date = registrationIso;
   else if (body.clear_registration_date === true) patch.registration_date = null;
 
-  const admin = createClient(baseUrl, serviceRole, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
   const { data: existing, error: loadErr } = await admin
     .from("portal_parent_contacts")
-    .select("id,contact_id")
+    .select("id,contact_id,mobile")
     .eq("contact_id", contactId)
     .maybeSingle();
   if (loadErr) {
@@ -115,7 +143,7 @@ Deno.serve(async (req) => {
     .update(patch)
     .eq("contact_id", contactId)
     .select(
-      "contact_id,parent_display,parent_first_name,parent_last_name,email,mobile,address_line1,address_line2,city,postcode,registration_date,funding_label,payment_method_label,updated_at",
+      "contact_id,parent_display,parent_first_name,parent_last_name,email,mobile,address_line1,address_line2,city,postcode,registration_date,funding_label,payment_method_label,updated_at,child_display",
     )
     .maybeSingle();
   if (upErr) {
@@ -123,5 +151,9 @@ Deno.serve(async (req) => {
     return portalAdminJson(500, { ok: false, error: "update_failed", message: upErr.message });
   }
 
-  return portalAdminJson(200, { ok: true, contact: updated });
+  return portalAdminJson(200, {
+    ok: true,
+    contact: updated,
+    previous_mobile: existing.mobile || null,
+  });
 });

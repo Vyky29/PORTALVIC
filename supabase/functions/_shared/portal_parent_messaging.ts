@@ -4,8 +4,15 @@ export function normalizeParentPhoneE164(raw: string): string | null {
   let digits = String(raw || "").replace(/\D/g, "");
   if (!digits || digits.length < 8) return null;
   if (digits.startsWith("00")) digits = digits.slice(2);
-  // UK local mobile/landline without country code
-  if (digits.startsWith("0") && digits.length >= 10) digits = "44" + digits.slice(1);
+  // "+44 07…" / "4407…" (country code + trunk 0) → "447…"
+  if (digits.startsWith("44") && digits.length >= 12) {
+    let national = digits.slice(2);
+    if (national.startsWith("0")) national = national.slice(1);
+    digits = "44" + national;
+  } else if (digits.startsWith("0") && digits.length >= 10) {
+    // UK local mobile/landline without country code
+    digits = "44" + digits.slice(1);
+  }
   if (!/^[1-9]/.test(digits)) return null;
   return "+" + digits;
 }

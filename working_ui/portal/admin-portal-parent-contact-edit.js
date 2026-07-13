@@ -193,7 +193,11 @@
         message: (j && j.message) || "",
       };
     }
-    return { ok: true, contact: j.contact };
+    return {
+      ok: true,
+      contact: j.contact,
+      previous_mobile: j.previous_mobile || null,
+    };
   }
 
   function parseAddressParts(addressFull) {
@@ -356,10 +360,18 @@
         if (remote.contact && remote.contact.registration_date) {
           fields.registrationDisplay = isoToUk(remote.contact.registration_date) || fields.registrationDisplay;
         }
+        if (remote.contact && remote.contact.mobile != null) {
+          fields.mobile = String(remote.contact.mobile || "").trim();
+        }
         setOverride(cid, fields);
         if (typeof cfg.closeModal === "function") cfg.closeModal();
         cfg.toast("Client information saved", "ok");
-        if (typeof cfg.onSaved === "function") cfg.onSaved(cid, fields);
+        if (typeof cfg.onSaved === "function") {
+          cfg.onSaved(cid, fields, {
+            previousMobile: remote.previous_mobile || null,
+            contact: remote.contact || null,
+          });
+        }
       };
     }
   }

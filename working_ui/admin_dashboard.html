@@ -88,7 +88,7 @@
   <script src="/portal/admin-training-progress.js?v=20260608-device-attribution"></script>
   <script src="/portal/admin-push-devices.js?v=20260619-push-devices"></script>
   <script src="/portal/portal_wellbeing_admin_actions.js?v=20260604-wb-flow-refine"></script>
-  <script src="/portal/admin-portal-parent-contact-edit.js?v=20260713-pax-edit"></script>
+  <script src="/portal/admin-portal-parent-contact-edit.js?v=20260713-wa-phone-sync"></script>
   <script src="/portal/portal_announcement_media.js?v=20260713-ann-photos-ceo"></script>
   <script src="/portal/portal_participant_photos.js?v=20260609-photo-fallback"></script>
   <!-- Roster bundle lazy-loaded via admin_heavy_scripts_loader.js (c4k_sessions, scheduling, …) -->
@@ -118,7 +118,7 @@
   <script src="/portal/admin-parent-notify-send.js?v=20260619-wa-errors"></script>
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/portal_incident_parent_notify.js?v=20260703-incident-notify"></script>
-  <script src="/portal/admin-parent-notify-log.js?v=20260712-unread-top"></script>
+  <script src="/portal/admin-parent-notify-log.js?v=20260713-wa-phone-sync"></script>
   <script src="/portal/admin-staff-whatsapp.js?v=20260712-wa-delivery-ticks"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260706-family-broadcast-5"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260712-unread-top" />
@@ -9125,6 +9125,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         ? adminParticipantsParentsRowForClientDisplayName(slot.clientDisplay)
         : null;
       if(!pp) return out;
+      if(window.AdminParentContactEdit && typeof window.AdminParentContactEdit.applyOverrideToPortalRow === 'function'){
+        try{ pp = window.AdminParentContactEdit.applyOverrideToPortalRow(Object.assign({}, pp)); }catch(_ov){}
+      }
       if(!String(out.parentCarerName || '').trim() && pp.parentDisplay){
         out.parentCarerName = String(pp.parentDisplay).trim();
       }
@@ -9152,7 +9155,34 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         getAnonKey: function(){
           return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
         },
-        onSaved: function(){
+        onSaved: function(cid, fields, meta){
+          try{
+            var src = typeof window !== 'undefined' ? window.PARTICIPANTS_PARENTS_PORTAL_SOURCE : null;
+            var rows = src && Array.isArray(src.rows) ? src.rows : [];
+            var i;
+            for(i = 0; i < rows.length; i++){
+              if(String(rows[i].contactId || '').trim() === String(cid || '').trim()){
+                if(fields.parentDisplay != null) rows[i].parentDisplay = fields.parentDisplay;
+                if(fields.mobile != null) rows[i].mobile = fields.mobile;
+                if(fields.email != null) rows[i].username = fields.email;
+                if(fields.addressLine1 != null) rows[i].addressLine1 = fields.addressLine1;
+                if(fields.addressLine2 != null) rows[i].addressLine2 = fields.addressLine2;
+                if(fields.city != null) rows[i].city = fields.city;
+                if(fields.postcode != null) rows[i].postcode = fields.postcode;
+                break;
+              }
+            }
+          }catch(_patch){}
+          try{
+            if(window.PortalParentNotifyLog && typeof window.PortalParentNotifyLog.notePhoneChange === 'function'){
+              var oldPhone = (meta && (meta.previousMobile || meta.previous_mobile)) || '';
+              var newPhone = fields && fields.mobile != null ? fields.mobile : '';
+              if(oldPhone || newPhone) window.PortalParentNotifyLog.notePhoneChange(oldPhone, newPhone);
+            }
+            if(window.PortalParentNotifyLog && typeof window.PortalParentNotifyLog.refresh === 'function'){
+              void window.PortalParentNotifyLog.refresh();
+            }
+          }catch(_fm){}
           try{
             if(typeof state.reopenPaxDetail === 'function') state.reopenPaxDetail();
             else if(state.openPaxContactId && typeof paxContactsFindById === 'function'){
@@ -21281,6 +21311,29 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         },
         getAnonKey: function(){
           return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        },
+        getContactDirectory: function(){
+          var rows = typeof adminParticipantsParentsPortalRows === 'function'
+            ? adminParticipantsParentsPortalRows()
+            : [];
+          var out = [];
+          var i, row, child;
+          for(i = 0; i < rows.length; i++){
+            row = rows[i];
+            if(window.AdminParentContactEdit && typeof window.AdminParentContactEdit.applyOverrideToPortalRow === 'function'){
+              try{ row = window.AdminParentContactEdit.applyOverrideToPortalRow(Object.assign({}, row)); }catch(_ov){}
+            }
+            child = typeof adminParticipantsParentsChildDisplayName === 'function'
+              ? adminParticipantsParentsChildDisplayName(row)
+              : (row && (row.childDisplay || ''));
+            out.push({
+              contact_id: row && row.contactId,
+              child_display: child,
+              parent_display: row && row.parentDisplay,
+              mobile: row && row.mobile
+            });
+          }
+          return out;
         },
         openModal: openModal,
         closeModal: closeModal
