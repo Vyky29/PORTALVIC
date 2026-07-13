@@ -79,6 +79,34 @@
     }, delayMs == null ? 48 : delayMs);
   };
 
+  /**
+   * Yield out of click/rAF handlers before heavy DOM work (term grid, week lists).
+   * Chrome logs [Violation] when a handler runs >50ms; deferring clears the click
+   * stack so the absence/save path feels instant and the console stays quieter.
+   */
+  global.portalDeferHeavyDashboardRefresh = function portalDeferHeavyDashboardRefresh(fn, delayMs) {
+    if (typeof fn !== "function") return;
+    var wait = delayMs == null ? 0 : Math.max(0, Number(delayMs) || 0);
+    var run = function () {
+      try {
+        fn();
+      } catch (e) {
+        try {
+          console.warn("[portal] deferred dashboard refresh", e);
+        } catch (_) {}
+      }
+    };
+    global.setTimeout(function () {
+      if (typeof global.requestAnimationFrame === "function") {
+        global.requestAnimationFrame(function () {
+          global.setTimeout(run, 0);
+        });
+      } else {
+        run();
+      }
+    }, wait);
+  };
+
   global.portalTodayDayOffPanelSignature = function portalTodayDayOffPanelSignature(opts) {
     opts = opts || {};
     if (opts.loading) return "loading";
@@ -259,7 +287,8 @@
       termGridIdleTimer = null;
       if (gen !== termGridIdleGen) return;
       /* Heavy term-grid DOM work must not run inside requestIdleCallback — Chrome
-         flags 50ms+ idle handlers. Yield one animation frame after the debounce. */
+         flags 50ms+ idle handlers. Debounce, then yield twice (rAF + timeout) so
+         the work is outside the click / animation-frame attribution window. */
       var run = function () {
         if (gen !== termGridIdleGen) return;
         try {
@@ -270,10 +299,22 @@
           } catch (_) {}
         }
       };
+      var kick = function () {
+        if (gen !== termGridIdleGen) return;
+        if (typeof global.portalDeferHeavyDashboardRefresh === "function") {
+          global.portalDeferHeavyDashboardRefresh(run, 0);
+        } else if (typeof global.requestAnimationFrame === "function") {
+          global.requestAnimationFrame(function () {
+            global.setTimeout(run, 0);
+          });
+        } else {
+          global.setTimeout(run, 0);
+        }
+      };
       if (typeof global.requestAnimationFrame === "function") {
-        global.requestAnimationFrame(run);
+        global.requestAnimationFrame(kick);
       } else {
-        global.setTimeout(run, 0);
+        kick();
       }
     }, delayMs == null ? 120 : delayMs);
   };

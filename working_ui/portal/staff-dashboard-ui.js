@@ -3355,7 +3355,12 @@
       }
       if(id === 'termSheet'){
         syncTermCalendarColorIntro(true);
-        if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid({ force: true });
+        if(typeof renderTermCalendarGrid === 'function'){
+          const paintTerm = function(){ renderTermCalendarGrid({ force: true }); };
+          if(typeof portalDeferHeavyDashboardRefresh === 'function') portalDeferHeavyDashboardRefresh(paintTerm, 0);
+          else if(typeof portalScheduleTermGridIdleRender === 'function') portalScheduleTermGridIdleRender(paintTerm, 0);
+          else paintTerm();
+        }
       }
       if(id === 'clientsSheet'){
         if(typeof portalParticipantsSheetRefreshTabs === 'function') portalParticipantsSheetRefreshTabs();

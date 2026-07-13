@@ -810,8 +810,16 @@
       if(next.absent && !prev.absent){
         if(typeof renderToday === 'function') renderToday();
       }
-      if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
-      if(typeof renderLists === 'function') renderLists();
+      const defer = typeof portalDeferHeavyDashboardRefresh === 'function'
+        ? portalDeferHeavyDashboardRefresh
+        : function(fn){ try{ fn(); }catch(_){} };
+      defer(function(){
+        if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
+        if(typeof renderLists === 'function') renderLists();
+        if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
+          try{ rebuildTermShiftAndFeedbackFromSessionModel(); }catch(_){}
+        }
+      });
     }
 
     /** Mark absent only after Supabase confirms — local-only must not turn the card green. */
@@ -836,7 +844,6 @@
       persistSessionReviewMap();
       if(typeof updateClientQuickActions === 'function') updateClientQuickActions();
       if(typeof renderToday === 'function') renderToday();
-      if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
 
       const sync = await portalTrySyncSessionQuickMarkToServer(item, prev, {
         ...prev,
@@ -853,7 +860,6 @@
         persistSessionReviewMap();
         if(typeof updateClientQuickActions === 'function') updateClientQuickActions();
         if(typeof renderToday === 'function') renderToday();
-        if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
         return { ok: false, error: (sync && sync.error) || 'sync_failed' };
       }
       sessionReviewMapMemory[item.sessionKey] = {
@@ -866,10 +872,22 @@
       persistSessionReviewMap();
       if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
       if(typeof updateClientQuickActions === 'function') updateClientQuickActions();
-      if(typeof portalApplyAfterInSheetQuickAbsence === 'function') portalApplyAfterInSheetQuickAbsence(item);
-      else if(typeof renderToday === 'function') renderToday();
-      if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
-      if(typeof renderLists === 'function') renderLists();
+      if(typeof portalApplyAfterInSheetQuickAbsence === 'function'){
+        /* applyAfter closes the sheet sync, then defers the heavy rebuild itself */
+        portalApplyAfterInSheetQuickAbsence(item);
+      } else {
+        if(typeof renderToday === 'function') renderToday();
+        const defer = typeof portalDeferHeavyDashboardRefresh === 'function'
+          ? portalDeferHeavyDashboardRefresh
+          : function(fn){ try{ fn(); }catch(_){} };
+        defer(function(){
+          if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
+          if(typeof renderLists === 'function') renderLists();
+          if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
+            try{ rebuildTermShiftAndFeedbackFromSessionModel(); }catch(_){}
+          }
+        });
+      }
       return { ok: true };
     }
     window.portalCommitClientQuickAbsence = portalCommitClientQuickAbsence;

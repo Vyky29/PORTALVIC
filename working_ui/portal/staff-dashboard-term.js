@@ -735,6 +735,12 @@
           if(typeof renderLists === 'function') renderLists();
           if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
         }
+        const deferHeavy = typeof portalDeferHeavyDashboardRefresh === 'function'
+          ? portalDeferHeavyDashboardRefresh
+          : function(fn){ try{ fn(); }catch(_){} };
+        /* closeSheet stays sync; full dashboard rebuild runs after yield so Chrome
+           does not attribute multi-second work to the Absence click handler. */
+        deferHeavy(function(){
         if(termWithLocks && buildTodayFn){
           try{
             portalSetReviewDateUrlLock(reviewIso);
@@ -847,6 +853,7 @@
         }
         portalSetReviewFlowOrigin('dashboard');
         try{ document.getElementById('portalTodaySection')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }catch(_){}
+        });
       }catch(_){}
     }
     try{ window.portalApplyAfterInSheetQuickAbsence = portalApplyAfterInSheetQuickAbsence; }catch(_){}
