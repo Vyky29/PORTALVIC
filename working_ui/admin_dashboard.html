@@ -25218,30 +25218,41 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalNormalizeComposeToValue(raw){
       var to = String(raw || '').trim();
-      if(to.indexOf('role:') === 0 || to === 'single_user' || to === 'specific_roles' || to === 'all_everyone' || to === 'leads_everyone' || to === 'new_staff_everyone') return to;
+      if(to.indexOf('role:') === 0 || to === 'single_user' || to === 'multi_user' || to === 'specific_roles' || to === 'all_everyone' || to === 'leads_everyone' || to === 'new_staff_everyone') return to;
       var map = {
         'all staff':'all_everyone',
         'leads':'leads_everyone',
         'new staff':'new_staff_everyone',
         'specific roles':'specific_roles',
-        'individual users':'single_user'
+        'individual users':'single_user',
+        'multiple users':'multi_user'
       };
       return map[to] || to;
+    }
+    function portalGetComposerMultiUserIds(){
+      var host = $('cmpTargetUsersList');
+      if(!host) return [];
+      var ids = [];
+      host.querySelectorAll('input.cmp-multi-user:checked').forEach(function(chk){
+        var id = String(chk && chk.value || '').trim();
+        if(id && ids.indexOf(id) === -1) ids.push(id);
+      });
+      return ids;
     }
     function portalBuildAnnouncementTargetsFromComposer(){
       var to = portalNormalizeComposeToValue($('cmpTo') && $('cmpTo').value);
       if(to === 'leads_everyone'){
-        return { ok:true, audience_scope:'leads', delivery_scope:'everyone', target_staff_role:null, target_user_id:null };
+        return { ok:true, audience_scope:'leads', delivery_scope:'everyone', target_staff_role:null, target_user_id:null, target_user_ids:null };
       }
       if(to === 'specific_roles'){
         var role = String($('cmpTargetRole') && $('cmpTargetRole').value || '').trim();
         if(!role) return { ok:false, message:'Choose a role under specific roles.' };
-        return { ok:true, audience_scope:'all_staff', delivery_scope:'staff_role', target_staff_role:role, target_user_id:null };
+        return { ok:true, audience_scope:'all_staff', delivery_scope:'staff_role', target_staff_role:role, target_user_id:null, target_user_ids:null };
       }
       if(to.indexOf('role:') === 0){
         var role2 = to.slice(5).trim();
         if(!role2) return { ok:false, message:'Invalid role target.' };
-        return { ok:true, audience_scope:'all_staff', delivery_scope:'staff_role', target_staff_role:role2, target_user_id:null };
+        return { ok:true, audience_scope:'all_staff', delivery_scope:'staff_role', target_staff_role:role2, target_user_id:null, target_user_ids:null };
       }
       if(to === 'single_user'){
         var pu = $('cmpTargetUser');
@@ -25249,9 +25260,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(!uid || (pu && pu.selectedIndex <= 0)){
           return { ok:false, message:'Choose a worker under individual users.' };
         }
-        return { ok:true, audience_scope:'all_staff', delivery_scope:'single_user', target_staff_role:null, target_user_id:uid };
+        return { ok:true, audience_scope:'all_staff', delivery_scope:'single_user', target_staff_role:null, target_user_id:uid, target_user_ids:null };
       }
-      return { ok:true, audience_scope:'all_staff', delivery_scope:'everyone', target_staff_role:null, target_user_id:null };
+      if(to === 'multi_user'){
+        var ids = portalGetComposerMultiUserIds();
+        if(!ids.length){
+          return { ok:false, message:'Select at least one worker under multiple users.' };
+        }
+        return {
+          ok:true,
+          audience_scope:'all_staff',
+          delivery_scope:'multi_user',
+          target_staff_role:null,
+          target_user_id:null,
+          target_user_ids:ids
+        };
+      }
+      return { ok:true, audience_scope:'all_staff', delivery_scope:'everyone', target_staff_role:null, target_user_id:null, target_user_ids:null };
     }
     function portalComposeToLabel(){
       var el = $('cmpTo');
@@ -25264,6 +25289,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           return base + ' · ' + String(pu.options[pu.selectedIndex].textContent || '').trim();
         }
       }
+      if(portalNormalizeComposeToValue(el.value) === 'multi_user'){
+        var ids = portalGetComposerMultiUserIds();
+        if(!ids.length) return base;
+        var names = [];
+        var host = $('cmpTargetUsersList');
+        (ids || []).forEach(function(id){
+          var chk = host && host.querySelector('input.cmp-multi-user[value="'+String(id).replace(/"/g, '')+'"]');
+          var lab = chk && chk.closest('label');
+          var span = lab && lab.querySelector('span');
+          var nm = span ? String(span.textContent || '').trim() : id.slice(0, 8);
+          if(nm) names.push(nm.split(' — ')[0] || nm);
+        });
+        if(names.length <= 3) return base + ' · ' + names.join(', ');
+        return base + ' · ' + names.slice(0, 2).join(', ') + ' +' + (names.length - 2) + ' more';
+      }
       if(portalNormalizeComposeToValue(el.value) === 'specific_roles'){
         var pr = $('cmpTargetRole');
         if(pr && pr.value) return base + ' · ' + String(pr.value);
@@ -25275,6 +25315,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!tgt || tgt.ok === false) return editId
         ? 'Updated on staff portal. Workers see changes after refresh or realtime.'
         : 'Published to staff portal. Workers see it after refresh or realtime.';
+      if(tgt.delivery_scope === 'multi_user' && tgt.target_user_ids && tgt.target_user_ids.length){
+        var n = tgt.target_user_ids.length;
+        return editId
+          ? ('Updated for ' + n + ' selected workers. They see it under Announcements after refresh or realtime.')
+          : ('Published to ' + n + ' selected workers. Each sees it under Announcements after refresh or realtime.');
+      }
       if(tgt.delivery_scope === 'single_user'){
         var pu = $('cmpTargetUser');
         var who = pu && pu.selectedIndex > 0
@@ -25316,19 +25362,69 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       sel.disabled = false;
     }
+    function portalFillComposerMultiStaffPicker(host, rows){
+      if(!host) return;
+      host.replaceChildren();
+      (rows || []).forEach(function(row){
+        if(!row || row.is_active === false) return;
+        var id = String(row.id || '').trim();
+        if(!id) return;
+        var label = (row.full_name || row.username || '').trim() || id.slice(0, 8);
+        var bits = [];
+        if(row.app_role) bits.push(row.app_role);
+        if(row.staff_role) bits.push(row.staff_role);
+        var suffix = bits.length ? ' — ' + bits.join(' · ') : '';
+        var lab = document.createElement('label');
+        lab.className = 'op-check';
+        lab.style.cssText = 'border:none;padding:6px 4px;margin:0;display:flex;align-items:flex-start;gap:8px;min-width:0';
+        var chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.className = 'cmp-multi-user';
+        chk.value = id;
+        chk.style.cssText = 'margin-top:3px;flex-shrink:0';
+        var span = document.createElement('span');
+        span.style.cssText = 'min-width:0;overflow-wrap:break-word';
+        span.textContent = label + suffix;
+        lab.appendChild(chk);
+        lab.appendChild(span);
+        host.appendChild(lab);
+      });
+      if(!host.childElementCount){
+        var empty = document.createElement('p');
+        empty.className = 'muted';
+        empty.style.cssText = 'margin:0;font-size:12px';
+        empty.textContent = 'No active staff found.';
+        host.appendChild(empty);
+      }
+    }
     function portalLoadComposerStaffPicker(){
       var sel = $('cmpTargetUser');
-      if(!sel) return Promise.resolve();
-      sel.disabled = true;
-      sel.innerHTML = '<option value="">Loading…</option>';
+      var multiHost = $('cmpTargetUsersList');
+      var needSingle = !!sel;
+      var needMulti = !!multiHost;
+      if(!needSingle && !needMulti) return Promise.resolve();
+      if(needSingle){
+        sel.disabled = true;
+        sel.innerHTML = '<option value="">Loading…</option>';
+      }
+      if(needMulti){
+        multiHost.innerHTML = '<p class="muted" style="margin:0;font-size:12px">Loading…</p>';
+      }
+      function applyRows(rows){
+        if(needSingle) portalFillComposerStaffPicker(sel, rows);
+        if(needMulti) portalFillComposerMultiStaffPicker(multiHost, rows);
+      }
       if(window.__PORTAL_COMPOSER_STAFF_CACHE__ && window.__PORTAL_COMPOSER_STAFF_CACHE__.length){
-        portalFillComposerStaffPicker(sel, window.__PORTAL_COMPOSER_STAFF_CACHE__);
+        applyRows(window.__PORTAL_COMPOSER_STAFF_CACHE__);
         return Promise.resolve();
       }
       return adminEnsureSupabaseClient().then(function(client){
         if(!client || !client.from){
-          sel.disabled = false;
-          sel.innerHTML = '<option value="">Sign in to Supabase to load staff</option>';
+          if(needSingle){
+            sel.disabled = false;
+            sel.innerHTML = '<option value="">Sign in to Supabase to load staff</option>';
+          }
+          if(needMulti) multiHost.innerHTML = '<p class="muted" style="margin:0;font-size:12px">Sign in to Supabase to load staff</p>';
           return;
         }
         return Promise.race([
@@ -25342,28 +25438,38 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           })
         ]).then(function(res){
           if(res.error){
-            sel.disabled = false;
-            sel.innerHTML = '<option value="">'+esc(String(res.error.message || res.error))+'</option>';
+            var msg = String(res.error.message || res.error);
+            if(needSingle){
+              sel.disabled = false;
+              sel.innerHTML = '<option value="">'+esc(msg)+'</option>';
+            }
+            if(needMulti) multiHost.innerHTML = '<p class="muted" style="margin:0;font-size:12px">'+esc(msg)+'</p>';
             return;
           }
           var rows = res.data || [];
           window.__PORTAL_COMPOSER_STAFF_CACHE__ = rows;
-          portalFillComposerStaffPicker(sel, rows);
+          applyRows(rows);
         });
       }).catch(function(err){
-        sel.disabled = false;
-        sel.innerHTML = '<option value="">'+esc(String(err && err.message || err || 'Could not load staff'))+'</option>';
+        var msg = String(err && err.message || err || 'Could not load staff');
+        if(needSingle){
+          sel.disabled = false;
+          sel.innerHTML = '<option value="">'+esc(msg)+'</option>';
+        }
+        if(needMulti) multiHost.innerHTML = '<p class="muted" style="margin:0;font-size:12px">'+esc(msg)+'</p>';
       });
     }
     function portalOnComposeToChange(){
       var toEl = $('cmpTo');
       var wrapUser = $('cmpUserWrap');
+      var wrapMulti = $('cmpMultiUserWrap');
       var wrapRole = $('cmpRoleWrap');
       if(!toEl) return;
       var val = portalNormalizeComposeToValue(toEl.value);
       if(wrapUser) wrapUser.hidden = val !== 'single_user';
+      if(wrapMulti) wrapMulti.hidden = val !== 'multi_user';
       if(wrapRole) wrapRole.hidden = val !== 'specific_roles';
-      if(val === 'single_user') void portalLoadComposerStaffPicker();
+      if(val === 'single_user' || val === 'multi_user') void portalLoadComposerStaffPicker();
     }
     function portalComposePortalPermissionsOnAckHtml(){
       return '<div id="cmpPortalPermissionsBlock" style="margin-top:12px;min-width:0">'+
@@ -25434,7 +25540,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         { v:'leads_everyone', l:'leads' },
         { v:'new_staff_everyone', l:'new staff' },
         { v:'specific_roles', l:'specific roles' },
-        { v:'single_user', l:'individual users' }
+        { v:'single_user', l:'individual users' },
+        { v:'multi_user', l:'multiple users' }
       ];
       var roles = ['swimming','fitness','climbing','support','manager','admin'];
       return '<select class="sel" id="cmpTo" style="max-width:100%;min-width:0;box-sizing:border-box">'+toOpts.map(function(o){
@@ -25447,7 +25554,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }).join('')+'</select></div>'+
         '<div id="cmpUserWrap" hidden style="margin-top:10px;min-width:0">'+
         '<label class="muted">Worker</label>'+
-        '<select class="sel" id="cmpTargetUser" style="max-width:100%;min-width:0;box-sizing:border-box"></select></div>';
+        '<select class="sel" id="cmpTargetUser" style="max-width:100%;min-width:0;box-sizing:border-box"></select></div>'+
+        '<div id="cmpMultiUserWrap" hidden style="margin-top:10px;min-width:0">'+
+        '<label class="muted">Workers</label>'+
+        '<p class="muted" style="margin:4px 0 8px;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">Tick each staff member who should receive this message.</p>'+
+        '<div id="cmpTargetUsersList" style="max-height:min(42vh,260px);overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line,#e2e8f0);border-radius:10px;padding:6px 8px;background:#fff;min-width:0"></div></div>';
     }
     function portalWireComposeToControls(){
       var cmpTo = $('cmpTo');
@@ -25469,6 +25580,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       title = title.length > 200 ? title.slice(0, 197) + '…' : title;
       var tgt = portalBuildAnnouncementTargetsFromComposer();
       if(!tgt.ok) return Promise.resolve({ ok:false, skip:false, message:tgt.message || 'Invalid audience' });
+      if(tgt.delivery_scope === 'multi_user'){
+        return Promise.resolve({
+          ok:false,
+          skip:false,
+          message:'Editing one message at a time. To target several workers, create a new announcement with multiple users.'
+        });
+      }
       var row = {
         title:title,
         body:body,
@@ -25518,7 +25636,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var row = {
         body:body,
         audience_scope:tgt.audience_scope,
-        delivery_scope:tgt.delivery_scope,
+        delivery_scope:tgt.delivery_scope === 'multi_user' ? 'single_user' : tgt.delivery_scope,
         target_staff_role:tgt.target_staff_role,
         target_user_id:tgt.target_user_id
       };
@@ -25554,25 +25672,43 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       row.priority = pri;
       if(row.target_staff_role === undefined || row.target_staff_role === '') row.target_staff_role = null;
       if(row.target_user_id === undefined || row.target_user_id === '') row.target_user_id = null;
-      if(row.delivery_scope === 'single_user' && !row.target_user_id){
+      if(tgt.delivery_scope === 'multi_user'){
+        if(!(tgt.target_user_ids && tgt.target_user_ids.length)){
+          return Promise.resolve({ ok:false, skip:false, message:'Select at least one worker under multiple users.' });
+        }
+      }else if(row.delivery_scope === 'single_user' && !row.target_user_id){
         return Promise.resolve({ ok:false, skip:false, message:'Choose a worker under individual users.' });
       }
       if(row.delivery_scope !== 'single_user') row.target_user_id = null;
       if(row.delivery_scope !== 'staff_role') row.target_staff_role = null;
       portalApplyOnAckActionFromComposer(row);
-      function publishRow(uid){
-        if(uid) row.created_by = uid;
-        return client.from('portal_staff_announcements').insert([row]).select('id').then(function(res){
+      function publishRows(uid){
+        var payload;
+        if(tgt.delivery_scope === 'multi_user'){
+          payload = (tgt.target_user_ids || []).map(function(userId){
+            var copy = {};
+            Object.keys(row).forEach(function(k){ copy[k] = row[k]; });
+            copy.delivery_scope = 'single_user';
+            copy.target_user_id = userId;
+            copy.target_staff_role = null;
+            if(uid) copy.created_by = uid;
+            return copy;
+          });
+        }else{
+          payload = [row];
+          if(uid) payload[0].created_by = uid;
+        }
+        return client.from('portal_staff_announcements').insert(payload).select('id').then(function(res){
           if(res.error) return { ok:false, skip:false, message:String(res.error.message || res.error) };
           var row0 = Array.isArray(res.data) && res.data[0] ? res.data[0] : null;
-          return { ok:true, id:row0 && row0.id ? row0.id : null };
+          return { ok:true, id:row0 && row0.id ? row0.id : null, count:(res.data || []).length };
         });
       }
-      if(!client.auth || !client.auth.getSession) return publishRow(null);
+      if(!client.auth || !client.auth.getSession) return publishRows(null);
       return client.auth.getSession().then(function(sess){
         var uid = sess && sess.data && sess.data.session && sess.data.session.user ? sess.data.session.user.id : null;
-        return publishRow(uid);
-      }).catch(function(){ return publishRow(null); });
+        return publishRows(uid);
+      }).catch(function(){ return publishRows(null); });
     }
     function portalBindComposeSendHandler(opts){
       opts = opts || {};
