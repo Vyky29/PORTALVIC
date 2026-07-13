@@ -12,13 +12,13 @@
   /** Bank transfer: the first payment of the year must reach us before term starts. */
   var RE_BANK_FIRST_DUE = "by 15 August 2026";
 
-  /** Bank transfer · flexi term: 2 payments per term (before half term + half-term week). */
+  /** Bank transfer · flexi term: 2 payments per term (1st on day 1 of term month + half-term week). */
   var RE_PAY_FLEXI_TERM = [
     {
       term: "autumn",
       termLabel: "Autumn term",
       halves: [
-        { halfLabel: "1st half", due: RE_BANK_FIRST_DUE },
+        { halfLabel: "1st half", due: "1 September 2026" },
         { halfLabel: "2nd half", due: "Monday 26 October 2026" },
       ],
     },
@@ -729,8 +729,8 @@
       return termOnly
         ? "Term-by-term: two invoices for " +
             termLabel +
-            " only. Later terms when you reconfirm."
-        : "Same programme total — the first payment is due by 15 August 2026, then two bank transfers per term: one before half term starts, one during half-term week before the second half. The office confirms your final invoice plan.";
+            " only. Later terms when you reconfirm. First half due on the 1st of the term month."
+        : "Same programme total — six invoices (two per term). First half of each term is due on the 1st (1 September, 1 January, 1 April); second half during half-term week. Pay from the parent portal by bank transfer or Card / Apple Pay.";
     }
     if (payCode === "bank_transfer" && schedCode === "term_3" && termOnly) {
       return (
@@ -864,14 +864,10 @@
         var termTotal = termProgrammeTotal(data, t.term);
         var halfAmt = termTotal / 2;
         t.halves.forEach(function (h, hi) {
-          var due = h.due;
-          if (payCode === "gocardless" && ti === 0 && hi === 0) {
-            due = dueOnFirst("September 2026");
-          }
           rows.push({
             term: t.term,
             label: t.termLabel + " · " + h.halfLabel,
-            due: due,
+            due: h.due,
             amount: amt(halfAmt),
           });
         });
@@ -1998,8 +1994,8 @@
               " only. Later terms when you reconfirm.";
       }
       return isGc
-        ? "Six Direct Payments over the year — two per term. We set up GoCardless before the first collection. Same programme total; £1.50 fee per instalment."
-        : "Six payments over the year — two per term (before half term and during half-term week). First due by 15 August 2026. Pay each invoice from the parent portal by bank transfer or Card / Apple Pay — no admin fee if you pay on time.";
+        ? "Six Direct Payments over the year — two per term. First half on the 1st of each term month (1 September, 1 January, 1 April); second half in half-term week. Same programme total; £1.50 fee per instalment."
+        : "Six payments over the year — two per term. First half due on the 1st (1 September, 1 January, 1 April); second half during half-term week. Pay each invoice from the parent portal by bank transfer or Card / Apple Pay — no admin fee if you pay on time.";
     }
     if (code === "term_3") {
       if (termOnly) {

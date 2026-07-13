@@ -31,7 +31,7 @@ const FLEXI_TERM: Array<{
     term: "autumn",
     termLabel: "Autumn term",
     halves: [
-      { halfLabel: "1st half", dueIso: "2026-08-15" },
+      { halfLabel: "1st half", dueIso: "2026-09-01" },
       { halfLabel: "2nd half", dueIso: "2026-10-26" },
     ],
   },
@@ -433,13 +433,9 @@ export function buildReenrolmentInstalments(args: {
       const halfAmt = termTotal / 2;
       for (let hi = 0; hi < t.halves.length; hi++) {
         const h = t.halves[hi];
-        let dueIso = h.dueIso;
-        if (payCode === "gocardless" && t.term === "autumn" && hi === 0) {
-          dueIso = "2026-09-01";
-        }
         pushInstalment(out, {
           label: `${t.termLabel} · ${h.halfLabel}`,
-          dueDateIso: dueIso,
+          dueDateIso: h.dueIso,
           amountGbp: withGcFee(halfAmt, payCode),
           participantName,
           academicYear,
