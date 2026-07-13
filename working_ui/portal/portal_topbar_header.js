@@ -271,12 +271,25 @@
     el.setAttribute("aria-hidden", visible ? "false" : "true");
   }
 
+  function isStaffWaToolCell(cell) {
+    if (!cell) return false;
+    if (cell.id === "topbarToolCellStaffWa") return true;
+    return cell.classList.contains("topbar-tool-cell--staff-wa");
+  }
+
+  /** Session tools only — CS WhatsApp double-width cell is placement-only, not a session icon. */
   function countVisibleTopbarToolCells() {
     var grid = document.getElementById("topbarToolsGrid");
     if (!grid) return 0;
+    if (typeof global.portalCountSessionTopbarTools === "function") {
+      try {
+        return global.portalCountSessionTopbarTools();
+      } catch (_e) {}
+    }
     var cells = grid.querySelectorAll(".topbar-tool-cell");
     var n = 0;
     for (var i = 0; i < cells.length; i++) {
+      if (isStaffWaToolCell(cells[i])) continue;
       if (!cells[i].hidden) n++;
     }
     return n;
@@ -302,10 +315,9 @@
     }
     if (n > 1 && n % 2 === 1) {
       for (var j = cells.length - 1; j >= 0; j--) {
-        if (!cells[j].hidden) {
-          cells[j].classList.add("topbar-tool-cell--row-last-solo");
-          break;
-        }
+        if (cells[j].hidden || isStaffWaToolCell(cells[j])) continue;
+        cells[j].classList.add("topbar-tool-cell--row-last-solo");
+        break;
       }
     }
   }
@@ -645,6 +657,11 @@
       global.portalSyncCeoFullTopbarTools();
     }
     portalSyncTopbarToolsGridLayout();
+    try {
+      if (typeof global.portalStaffWaSyncPlacement === "function") {
+        global.portalStaffWaSyncPlacement();
+      }
+    } catch (_waPlace) {}
   };
 
   global.portalStaffIsProgrammeLeadTopbar = portalStaffIsProgrammeLeadTopbar;

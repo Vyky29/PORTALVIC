@@ -1,4 +1,4 @@
-/* CS WhatsApp — button under staff name + thread sheet */
+/* CS WhatsApp — button under staff name OR double-width in tools grid */
 
 .topbar-staff-wa-btn{
   display:inline-flex;
@@ -67,6 +67,113 @@
   line-height:18px;
   text-align:center;
   box-shadow:0 1px 3px rgba(0,0,0,.25);
+}
+
+/* 5+ session icons: photo + name + WA under photo align to tools grid height */
+.topbar-left--name.topbar-left--wa-compact{
+  height:var(--topbar-row-h);
+  max-height:var(--topbar-row-h);
+  min-height:0;
+  overflow:hidden;
+  gap:0;
+}
+.topbar-left--name.topbar-left--wa-compact .topbar-profile-card{
+  flex:1 1 0;
+  min-height:0;
+  height:auto;
+  max-height:none;
+  grid-template-rows:minmax(0,1fr) var(--topbar-name-band-h);
+  align-self:stretch;
+}
+.topbar-left--name.topbar-left--wa-compact .topbar-staff-photo{
+  aspect-ratio:auto;
+  height:100%;
+  min-height:0;
+  flex:1 1 auto;
+}
+.topbar-left--name.topbar-left--wa-compact .topbar-staff-wa-btn{
+  margin:4px 0 0;
+  padding:4px 3px;
+  font-size:9px;
+  flex:0 0 auto;
+}
+.topbar-left--name.topbar-left--wa-compact .topbar-staff-wa-btn__ico,
+.topbar-left--name.topbar-left--wa-compact .topbar-staff-wa-btn__ico svg{
+  width:11px;
+  height:11px;
+}
+.topbar-left--name.topbar-left--wa-compact .topbar-staff-photo__share-note{
+  font-size:clamp(5.5px,1.4vw,6.5px);
+  padding:2px 3px 3px;
+}
+.topbar-left--name.topbar-left--wa-compact .topbar-staff-photo__edit{
+  width:24px;
+  height:24px;
+  top:4px;
+  right:4px;
+}
+
+/* Double-width CS WhatsApp in the tools grid (2–4 session icons) */
+.topbar-tool-cell--staff-wa.topbar-tool-cell--span2{
+  grid-column:1 / -1;
+  width:100%;
+  max-width:100%;
+  justify-self:stretch;
+}
+.topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa{
+  width:100%;
+  max-width:100%;
+  max-height:var(--topbar-tools-cell);
+  display:inline-flex;
+  flex-direction:row;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  grid-template-rows:none;
+  grid-template-columns:none;
+  padding:2px 6px;
+  border:1px solid rgba(217,154,31,.45);
+  border-radius:9px;
+  background:linear-gradient(180deg,#f4b740,#d99a1f) !important;
+  color:#173247 !important;
+  box-shadow:0 1px 4px rgba(217,154,31,.28);
+  overflow:hidden;
+  min-width:0;
+}
+.topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-btn__ico{
+  width:14px;
+  height:14px;
+  max-width:14px;
+  max-height:14px;
+  flex:0 0 auto;
+  color:#173247;
+}
+.topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-btn__ico svg{
+  width:14px;
+  height:14px;
+  display:block;
+}
+.topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-label{
+  flex:0 1 auto;
+  min-width:0;
+  max-width:100%;
+  height:auto;
+  min-height:0;
+  max-height:none;
+  font-size:clamp(8px,2.2vw,10px);
+  font-weight:800;
+  letter-spacing:0;
+  color:#173247;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.topbar-tool-btn--staff-wa-unread{
+  box-shadow:0 0 0 2px rgba(220,38,38,.45),0 1px 4px rgba(217,154,31,.28) !important;
+}
+.topbar-tool-btn--staff-wa .topbar-staff-wa-btn__badge{
+  top:-5px;
+  right:-2px;
 }
 
 .portal-staff-wa-toast{

@@ -152,7 +152,9 @@
     lastUnreadCount = Math.max(0, Number(count) || 0);
     var btn = document.getElementById("topbarStaffWaBtn");
     if (btn) {
-      btn.classList.toggle("topbar-staff-wa-btn--unread", lastUnreadCount > 0);
+      var inGrid = btn.classList.contains("topbar-tool-btn--staff-wa");
+      btn.classList.toggle("topbar-staff-wa-btn--unread", !inGrid && lastUnreadCount > 0);
+      btn.classList.toggle("topbar-tool-btn--staff-wa-unread", inGrid && lastUnreadCount > 0);
       var badge = btn.querySelector(".topbar-staff-wa-btn__badge");
       if (lastUnreadCount > 0) {
         if (!badge) {
@@ -704,29 +706,168 @@
     document.body.classList.remove("portal-staff-wa-open");
   }
 
+  var WA_ICO_SVG =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.6-.8-1.8-.9-.2-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.1-.3.2-.6.1-.3-.1-1.2-.4-2.3-1.4-.8-.7-1.4-1.6-1.6-1.9-.2-.3 0-.4.1-.6.1-.1.3-.3.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5 0-.1-.6-1.5-.8-2-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1s.9 2.4 1 2.6c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.1.7 2.8.6.4-.1 1.4-.6 1.6-1.1.2-.5.2-1 .1-1.1-.1-.1-.3-.2-.6-.3z"/><path d="M12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.4 1.3 4.9L2 22l5.3-1.4C8.7 21.5 10.3 22 12 22c5.5 0 10-4.5 10-10S17.5 2 12 2zm0 18c-1.5 0-2.9-.4-4.1-1.1l-.3-.2-3.1.8.8-3-.2-.3C4.4 15 4 13.5 4 12 4 7.6 7.6 4 12 4s8 3.6 8 8-3.6 8-8 8z"/></svg>';
+
+  /** Session tool icons only (excludes CS WhatsApp cell). */
+  function countSessionTopbarTools() {
+    var grid = document.getElementById("topbarToolsGrid");
+    if (!grid) return 0;
+    var cells = grid.querySelectorAll(".topbar-tool-cell");
+    var n = 0;
+    for (var i = 0; i < cells.length; i++) {
+      var cell = cells[i];
+      if (cell.id === "topbarToolCellStaffWa") continue;
+      if (cell.classList.contains("topbar-tool-cell--staff-wa")) continue;
+      if (cell.hidden) continue;
+      n++;
+    }
+    return n;
+  }
+
+  function ensureWaGridCell() {
+    var grid = document.getElementById("topbarToolsGrid");
+    if (!grid) return null;
+    var cell = document.getElementById("topbarToolCellStaffWa");
+    if (cell) return cell;
+    cell = document.createElement("div");
+    cell.id = "topbarToolCellStaffWa";
+    cell.className = "topbar-tool-cell topbar-tool-cell--staff-wa topbar-tool-cell--span2";
+    cell.hidden = true;
+    cell.setAttribute("aria-hidden", "true");
+    grid.appendChild(cell);
+    return cell;
+  }
+
+  function styleWaButtonForMode(btn, inGrid) {
+    if (!btn) return;
+    var lab = btn.querySelector(".topbar-staff-wa-btn__label, .topbar-tool-label");
+    var ico = btn.querySelector(".topbar-staff-wa-btn__ico, .topbar-tool-btn__ico");
+    if (inGrid) {
+      btn.className = "topbar-tool-btn topbar-tool-btn--staff-wa";
+      if (ico) ico.className = "topbar-tool-btn__ico";
+      if (lab) {
+        lab.className = "topbar-tool-label";
+        lab.textContent = "CS WhatsApp";
+      }
+    } else {
+      btn.className = "topbar-staff-wa-btn";
+      if (ico) ico.className = "topbar-staff-wa-btn__ico";
+      if (lab) {
+        lab.className = "topbar-staff-wa-btn__label";
+        lab.textContent = "CS WhatsApp";
+      }
+    }
+    if (lastUnreadCount > 0) {
+      btn.classList.add(inGrid ? "topbar-tool-btn--staff-wa-unread" : "topbar-staff-wa-btn--unread");
+    }
+  }
+
+  function placeWaUnderPhoto(btn, card) {
+    if (!btn || !card) return;
+    var leftCol = card.closest(".topbar-left--name") || card.parentNode;
+    styleWaButtonForMode(btn, false);
+    if (leftCol && leftCol !== card) {
+      if (btn.parentNode !== leftCol || card.nextSibling !== btn) {
+        leftCol.insertBefore(btn, card.nextSibling);
+      }
+    } else {
+      var nameEl = card.querySelector(".topbar-name") || card.querySelector("#staffName");
+      if (nameEl && nameEl.parentNode) {
+        nameEl.parentNode.insertBefore(btn, nameEl.nextSibling);
+      } else {
+        card.appendChild(btn);
+      }
+    }
+  }
+
+  function placeWaInGrid(btn) {
+    if (!btn) return;
+    var cell = ensureWaGridCell();
+    if (!cell) return;
+    styleWaButtonForMode(btn, true);
+    cell.hidden = false;
+    cell.setAttribute("aria-hidden", "false");
+    if (btn.parentNode !== cell) cell.appendChild(btn);
+  }
+
+  /**
+   * 2–4 session icons → CS WhatsApp as double-width grid cell.
+   * 5+ icons → keep under photo and shrink photo+name+WA to match grid height.
+   * 0–1 icons → under photo, normal size.
+   */
+  function syncWaTopbarPlacement() {
+    var card = document.getElementById("topbarProfileCard");
+    var btn = document.getElementById("topbarStaffWaBtn");
+    var cell = document.getElementById("topbarToolCellStaffWa");
+    var left = card && (card.closest(".topbar-left--name") || card.parentNode);
+    var lead = document.querySelector(".topbar-lead");
+    var grid = document.getElementById("topbarToolsGrid");
+    if (!btn || !card) {
+      if (left) {
+        left.classList.remove("topbar-left--wa-under", "topbar-left--wa-compact");
+      }
+      if (lead) lead.classList.remove("topbar-lead--wa-in-grid");
+      if (grid) grid.classList.remove("topbar-tools-grid--wa-extra");
+      if (cell) {
+        cell.hidden = true;
+        cell.setAttribute("aria-hidden", "true");
+      }
+      return;
+    }
+    var n = countSessionTopbarTools();
+    var inGrid = n >= 2 && n <= 4;
+    if (inGrid) {
+      placeWaInGrid(btn);
+      if (left) {
+        left.classList.remove("topbar-left--wa-under", "topbar-left--wa-compact");
+      }
+      if (lead) lead.classList.add("topbar-lead--wa-in-grid");
+      if (grid) {
+        /* Extra row when session icons already fill 2+ rows (3–4 icons). */
+        var needExtra = n >= 3;
+        var alreadyTall =
+          grid.classList.contains("topbar-tools-grid--lead") ||
+          grid.classList.contains("topbar-tools-grid--eight") ||
+          grid.classList.contains("topbar-tools-grid--ceo-full");
+        /* 4 icons already use 3-row lead grid — WA fills the spare row. */
+        if (alreadyTall && n === 4) needExtra = false;
+        if (alreadyTall && n === 3) needExtra = false;
+        grid.classList.toggle("topbar-tools-grid--wa-extra", needExtra);
+      }
+    } else {
+      if (cell) {
+        cell.hidden = true;
+        cell.setAttribute("aria-hidden", "true");
+      }
+      placeWaUnderPhoto(btn, card);
+      if (left) {
+        left.classList.add("topbar-left--wa-under");
+        left.classList.toggle("topbar-left--wa-compact", n >= 5);
+      }
+      if (lead) lead.classList.remove("topbar-lead--wa-in-grid");
+      if (grid) grid.classList.remove("topbar-tools-grid--wa-extra");
+    }
+    applyUnreadBadge(lastUnreadCount);
+  }
+
   function ensureButton(staffKey) {
     var card = document.getElementById("topbarProfileCard");
     if (!card) return;
     var existing = document.getElementById("topbarStaffWaBtn");
     if (!isStaffWhatsappUser(staffKey)) {
       if (existing) existing.remove();
+      var orphanCell = document.getElementById("topbarToolCellStaffWa");
+      if (orphanCell) {
+        orphanCell.hidden = true;
+        orphanCell.setAttribute("aria-hidden", "true");
+      }
+      syncWaTopbarPlacement();
       return;
     }
     if (existing) {
-      var lab = existing.querySelector(".topbar-staff-wa-btn__label");
-      if (lab) lab.textContent = "CS WhatsApp";
       existing.setAttribute("aria-label", "Open CS WhatsApp");
-      var leftExisting = card.closest(".topbar-left--name") || card.parentNode;
-      if (leftExisting && leftExisting !== card && existing.parentNode !== leftExisting) {
-        leftExisting.insertBefore(existing, card.nextSibling);
-      } else if (
-        leftExisting &&
-        leftExisting !== card &&
-        existing.parentNode === leftExisting &&
-        card.nextSibling !== existing
-      ) {
-        leftExisting.insertBefore(existing, card.nextSibling);
-      }
+      syncWaTopbarPlacement();
       return existing;
     }
     var btn = document.createElement("button");
@@ -736,7 +877,7 @@
     btn.setAttribute("aria-label", "Open CS WhatsApp");
     btn.innerHTML =
       '<span class="topbar-staff-wa-btn__ico" aria-hidden="true">' +
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.6-.8-1.8-.9-.2-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.1-.3.2-.6.1-.3-.1-1.2-.4-2.3-1.4-.8-.7-1.4-1.6-1.6-1.9-.2-.3 0-.4.1-.6.1-.1.3-.3.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5 0-.1-.6-1.5-.8-2-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1s.9 2.4 1 2.6c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.1.7 2.8.6.4-.1 1.4-.6 1.6-1.1.2-.5.2-1 .1-1.1-.1-.1-.3-.2-.6-.3z"/><path d="M12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.4 1.3 4.9L2 22l5.3-1.4C8.7 21.5 10.3 22 12 22c5.5 0 10-4.5 10-10S17.5 2 12 2zm0 18c-1.5 0-2.9-.4-4.1-1.1l-.3-.2-3.1.8.8-3-.2-.3C4.4 15 4 13.5 4 12 4 7.6 7.6 4 12 4s8 3.6 8 8-3.6 8-8 8z"/></svg>' +
+      WA_ICO_SVG +
       "</span>" +
       '<span class="topbar-staff-wa-btn__label">CS WhatsApp</span>';
     btn.addEventListener("click", function (ev) {
@@ -744,18 +885,8 @@
       ev.stopPropagation();
       openSheet();
     });
-    var nameEl = card.querySelector(".topbar-name") || card.querySelector("#staffName");
-    var leftCol = card.closest(".topbar-left--name") || card.parentNode;
-    /* Sit under the profile card (not inside overflow:hidden) so the full label fits. */
-    if (leftCol && leftCol !== card) {
-      if (btn.parentNode !== leftCol || card.nextSibling !== btn) {
-        leftCol.insertBefore(btn, card.nextSibling);
-      }
-    } else if (nameEl && nameEl.parentNode) {
-      nameEl.parentNode.insertBefore(btn, nameEl.nextSibling);
-    } else {
-      card.appendChild(btn);
-    }
+    placeWaUnderPhoto(btn, card);
+    syncWaTopbarPlacement();
     void refreshUnread();
     return btn;
   }
@@ -767,6 +898,8 @@
   }
 
   global.portalStaffWaSyncTopbar = syncForStaffKey;
+  global.portalStaffWaSyncPlacement = syncWaTopbarPlacement;
+  global.portalCountSessionTopbarTools = countSessionTopbarTools;
   global.portalStaffWaOpen = openSheet;
   global.portalStaffWaClose = closeSheet;
   global.portalStaffIsWhatsappLeaderKey = isStaffWhatsappUser;

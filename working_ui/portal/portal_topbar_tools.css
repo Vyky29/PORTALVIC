@@ -412,6 +412,16 @@ header.topbar .topbar-profile-card h1.topbar-name,
   height:var(--topbar-tools-grid-h);
   max-height:var(--topbar-tools-grid-h);
 }
+/* 2-row (4-icon) grid + CS WhatsApp double-width row */
+.topbar-tools-grid.topbar-tools-grid--wa-extra:not(.topbar-tools-grid--lead):not(.topbar-tools-grid--eight):not(.topbar-tools-grid--ceo-full){
+  --topbar-tools-grid-rows:3;
+  --topbar-tools-grid-h:calc(3 * var(--topbar-tools-cell) + 2 * var(--topbar-tools-gap-y));
+  height:var(--topbar-tools-grid-h);
+  max-height:var(--topbar-tools-grid-h);
+}
+.topbar-lead.topbar-lead--wa-in-grid.topbar-lead--tools-4{
+  --topbar-row-h:max(calc(3 * var(--topbar-tools-cell-4) + 2 * var(--topbar-tools-gap-y)),var(--topbar-brand-visual-h));
+}
 .topbar-right--tools:has(.topbar-tools-grid--lead),
 .topbar-right--tools:has(.topbar-tools-grid--eight),
 .topbar-right--tools:has(.topbar-tools-grid--ceo-full){
