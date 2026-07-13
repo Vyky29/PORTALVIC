@@ -1823,6 +1823,52 @@ header.topbar button.topbar-camera-btn.topbar-achievements-btn:active,
   background: rgba(15, 23, 42, 0.06);
 }
 
+.portal-achievements-thumb__video-fallback,
+.portal-ach-cam-gallery__video-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  min-height: 72px;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 10px 8px;
+  background: linear-gradient(160deg, #1e3a4c 0%, #0f172a 100%);
+  color: #fff;
+}
+.portal-achievements-thumb__video-fallback-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.portal-achievements-viewer__video-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 28rem;
+  min-width: 0;
+  margin: 0 auto;
+  padding: 24px 16px;
+  text-align: center;
+  color: #e2e8f0;
+  overflow-wrap: break-word;
+}
+.portal-achievements-viewer__video-fallback strong {
+  font-size: 16px;
+}
+.portal-achievements-viewer__video-fallback p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #94a3b8;
+}
+
 .portal-achievements-thumb__open video,
 .portal-achievements-feedback-thumb video,
 .portal-ach-cam-gallery__thumb video {

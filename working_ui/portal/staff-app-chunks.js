@@ -121,7 +121,7 @@
     var run = function () {
       loadParallel(TIER_IDLE, false);
       loadCss("/portal/portal_ghost_view.css?v=20260712-ghost-inapp");
-      loadCss("/portal/portal_achievements.css?v=20260703-session-photos-back");
+      loadCss("/portal/portal_achievements.css?v=20260713-ios-video-save");
       if (typeof global.portalStaffDeferWebPush === "function") {
         global.portalStaffDeferWebPush();
       }

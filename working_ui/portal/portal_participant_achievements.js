@@ -26,6 +26,30 @@
     return false;
   }
 
+  /** True when this browser can play the given achievement video mime/path (iPhone cannot play WebM). */
+  function deviceCanPlayAchievementVideo(mimeOrPath) {
+    var m = String(mimeOrPath || "").toLowerCase();
+    try {
+      var v = document.createElement("video");
+      if (m.indexOf("webm") >= 0 || /\.webm(\?|$)/i.test(m)) {
+        return !!(
+          v.canPlayType("video/webm") ||
+          v.canPlayType('video/webm; codecs="vp8,vorbis"') ||
+          v.canPlayType('video/webm; codecs="vp9,opus"')
+        );
+      }
+      if (
+        m.indexOf("mp4") >= 0 ||
+        m.indexOf("quicktime") >= 0 ||
+        m.indexOf("m4v") >= 0 ||
+        /\.(mp4|mov|m4v)(\?|$)/i.test(m)
+      ) {
+        return !!(v.canPlayType("video/mp4") || v.canPlayType("video/quicktime"));
+      }
+    } catch (_e) {}
+    return true;
+  }
+
   function deviceIsStandalonePwa() {
     try {
       if (global.navigator && global.navigator.standalone === true) return true;
@@ -445,12 +469,15 @@
 
   function pickVideoMime() {
     if (typeof MediaRecorder === "undefined") return "";
-    var types = [
-      "video/webm;codecs=vp9,opus",
-      "video/webm;codecs=vp8,opus",
-      "video/webm",
-      "video/mp4",
-    ];
+    /* iPhone/iPad: prefer MP4 — WebM often “saves” but never plays in Safari/PWA. */
+    var types = deviceIsIos()
+      ? ["video/mp4", "video/quicktime", "video/webm;codecs=vp8,opus", "video/webm"]
+      : [
+          "video/webm;codecs=vp9,opus",
+          "video/webm;codecs=vp8,opus",
+          "video/webm",
+          "video/mp4",
+        ];
     for (var i = 0; i < types.length; i++) {
       if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(types[i])) return types[i];
     }
@@ -867,10 +894,17 @@
     }
     btn.classList.add("has-thumb");
     if (rowMediaType(last) === "video") {
-      btn.innerHTML =
-        '<video src="' +
-        esc(url) +
-        '" muted playsinline preload="metadata" class="portal-ach-cam-gallery__thumb portal-screenshot-protected portal-achievement-protected" draggable="false"></video>';
+      if (!deviceCanPlayAchievementVideo(last.storage_path || "")) {
+        btn.innerHTML =
+          '<span class="portal-ach-cam-gallery__video-fallback" aria-hidden="true">' +
+          ICON_VIDEO +
+          "</span>";
+      } else {
+        btn.innerHTML =
+          '<video src="' +
+          esc(url) +
+          '" muted playsinline preload="metadata" class="portal-ach-cam-gallery__thumb portal-screenshot-protected portal-achievement-protected" draggable="false"></video>';
+      }
     } else {
       btn.innerHTML =
         '<img src="' + esc(url) + '" alt="" class="portal-ach-cam-gallery__thumb portal-screenshot-protected portal-achievement-protected" draggable="false" />';
@@ -1078,7 +1112,12 @@
   async function uploadGalleryFile(file) {
     if (!file) return;
     if (isGalleryUploadVideoFile(file)) {
-      var meta = await loadVideoFileMetadata(file);
+      var meta = { durationMs: 0, width: null, height: null };
+      try {
+        meta = await loadVideoFileMetadata(file);
+      } catch (_meta) {
+        /* iOS sometimes fails metadata for MOV — still upload the file. */
+      }
       var fakeEl = { videoWidth: meta.width, videoHeight: meta.height };
       await uploadVideoBlob(file, file.type || "video/mp4", meta.durationMs, fakeEl);
       return;
@@ -1126,6 +1165,63 @@
     }
     await loadGalleryPhotos();
     syncGalleryUiAfterPhotosChanged();
+  }
+
+  function ensureNativeVideoInput() {
+    var inp = document.getElementById("portalAchievementsNativeVideoInput");
+    if (!inp) {
+      inp = document.createElement("input");
+      inp.type = "file";
+      inp.accept = "video/*";
+      inp.setAttribute("capture", "environment");
+      inp.id = "portalAchievementsNativeVideoInput";
+      document.body.appendChild(inp);
+    }
+    styleOffscreenFileInput(inp);
+    bindFileInputChange(inp, handleNativeVideoInputSelected);
+    return inp;
+  }
+
+  function handleNativeVideoInputSelected(files) {
+    var file = files && files[0];
+    if (!file) return;
+    var participant = resolveGalleryUploadParticipant();
+    if (!participant) {
+      setStatus("Session expired — close and reopen Session photos, then try again.", true);
+      return;
+    }
+    setStatus("Saving video…");
+    void uploadGalleryFile(file)
+      .then(function () {
+        return loadGalleryPhotos();
+      })
+      .then(function () {
+        pendingGalleryUploadParticipant = null;
+        setStatus("Video saved to gallery.");
+        syncGalleryUiAfterPhotosChanged();
+        void updateFooterGalleryThumb();
+      })
+      .catch(function (e) {
+        console.error(e);
+        setStatus(esc(uploadErrorMessage(e)), true);
+      });
+  }
+
+  function openNativeVideoPicker() {
+    if (!state.participant) {
+      setStatus("Choose a participant first.", true);
+      return;
+    }
+    if (isAtPhotoLimit()) {
+      setStatus(photoLimitMessage(), true);
+      return;
+    }
+    pendingGalleryUploadParticipant = {
+      clientId: state.participant.clientId,
+      clientName: state.participant.clientName,
+      portalSessionKey: state.participant.portalSessionKey || null,
+    };
+    ensureNativeVideoInput().click();
   }
 
   function openNativePhotoPicker() {
@@ -1356,7 +1452,11 @@
         var videoEl = document.getElementById("portalAchievementsCameraVideo");
         setStatus("Saving…");
         await uploadVideoBlob(result.blob, result.mime, durationMs, videoEl);
-        setStatus("Video saved.");
+        setStatus(
+          deviceIsIos() && String(result.mime || "").indexOf("webm") >= 0
+            ? "Video saved to gallery (preview may be limited on iPhone)."
+            : "Video saved to gallery."
+        );
         void updateFooterGalleryThumb();
         showCameraLiveUi();
       } catch (e) {
@@ -1365,6 +1465,13 @@
       } finally {
         if (snapBtnStop) snapBtnStop.disabled = false;
       }
+      return;
+    }
+    /* iPhone: in-app MediaRecorder often writes WebM that Safari cannot play — use the
+       native camera so we get MOV/MP4 that stays visible in the portal gallery. */
+    if (deviceIsIos()) {
+      setStatus("Opening iPhone video camera…");
+      openNativeVideoPicker();
       return;
     }
     await ensureCameraStreamForMode();
@@ -1629,27 +1736,51 @@
       return;
     }
     if (rowMediaType(row) === "video") {
-      var video = document.createElement("video");
-      video.src = url;
-      video.muted = true;
-      video.playsInline = true;
-      video.setAttribute("playsinline", "");
-      video.preload = "metadata";
-      video.draggable = false;
-      video.className = "portal-screenshot-protected portal-achievement-protected";
-      video.addEventListener("error", function () {
-        while (parent.firstChild) parent.removeChild(parent.firstChild);
-        var miss = document.createElement("span");
-        miss.className = "portal-achievements-thumb__empty muted";
-        miss.textContent = "Video unavailable";
-        parent.appendChild(miss);
-      });
-      parent.appendChild(video);
-      var badge = document.createElement("span");
-      badge.className = "portal-achievements-thumb__video-badge";
-      badge.setAttribute("aria-hidden", "true");
-      badge.innerHTML = ICON_VIDEO + (row && row.duration_ms ? " " + esc(formatDurationMs(row.duration_ms)) : "");
-      parent.appendChild(badge);
+      var playable = deviceCanPlayAchievementVideo(row.storage_path || "");
+      if (!playable) {
+        var saved = document.createElement("div");
+        saved.className = "portal-achievements-thumb__video-fallback";
+        saved.innerHTML =
+          '<span class="portal-achievements-thumb__video-badge" aria-hidden="true">' +
+          ICON_VIDEO +
+          (row && row.duration_ms ? " " + esc(formatDurationMs(row.duration_ms)) : "") +
+          "</span>" +
+          '<span class="portal-achievements-thumb__video-fallback-label">Saved</span>';
+        parent.appendChild(saved);
+      } else {
+        var video = document.createElement("video");
+        video.src = url;
+        video.muted = true;
+        video.playsInline = true;
+        video.setAttribute("playsinline", "");
+        video.preload = "metadata";
+        video.draggable = false;
+        video.className = "portal-screenshot-protected portal-achievement-protected";
+        video.addEventListener("error", function () {
+          while (parent.firstChild) parent.removeChild(parent.firstChild);
+          var miss = document.createElement("div");
+          miss.className = "portal-achievements-thumb__video-fallback";
+          miss.innerHTML =
+            '<span class="portal-achievements-thumb__video-badge" aria-hidden="true">' +
+            ICON_VIDEO +
+            "</span>" +
+            '<span class="portal-achievements-thumb__video-fallback-label">Saved</span>';
+          parent.appendChild(miss);
+          if (who) {
+            var whoRetry = document.createElement("span");
+            whoRetry.className = "portal-achievements-thumb__by";
+            whoRetry.textContent = who;
+            parent.appendChild(whoRetry);
+          }
+        });
+        parent.appendChild(video);
+        var badge = document.createElement("span");
+        badge.className = "portal-achievements-thumb__video-badge";
+        badge.setAttribute("aria-hidden", "true");
+        badge.innerHTML =
+          ICON_VIDEO + (row && row.duration_ms ? " " + esc(formatDurationMs(row.duration_ms)) : "");
+        parent.appendChild(badge);
+      }
     } else {
       var img = document.createElement("img");
       img.src = url;
@@ -2145,28 +2276,55 @@
     var isVideo = rowMediaType(row) === "video";
     if (stage) {
       var vid = stage.querySelector("video.portal-achievements-viewer__video");
+      var fallback = stage.querySelector(".portal-achievements-viewer__video-fallback");
       if (isVideo) {
-        if (!vid) {
-          vid = document.createElement("video");
-          vid.className =
-            "portal-achievements-viewer__video portal-screenshot-protected portal-achievement-protected";
-          vid.controls = true;
-          vid.playsInline = true;
+        var canPlay = deviceCanPlayAchievementVideo(row.storage_path || "");
+        if (!canPlay) {
+          if (vid) {
+            try {
+              vid.pause();
+            } catch (_p0) {}
+            vid.hidden = true;
+            vid.removeAttribute("src");
+          }
+          if (img) {
+            img.hidden = true;
+            img.removeAttribute("src");
+          }
+          if (!fallback) {
+            fallback = document.createElement("div");
+            fallback.className = "portal-achievements-viewer__video-fallback";
+            stage.appendChild(fallback);
+          }
+          fallback.hidden = false;
+          fallback.innerHTML =
+            "<strong>Video saved</strong>" +
+            "<p>This clip is in the portal gallery. Preview is limited on iPhone for older WebM recordings — new videos use the phone camera (MOV/MP4) and play here.</p>";
+        } else {
+          if (fallback) fallback.hidden = true;
+          if (!vid) {
+            vid = document.createElement("video");
+            vid.className =
+              "portal-achievements-viewer__video portal-screenshot-protected portal-achievement-protected";
+            vid.controls = true;
+            vid.playsInline = true;
+            vid.muted = false;
+            vid.setAttribute("playsinline", "");
+            stage.appendChild(vid);
+          }
+          if (img) {
+            img.hidden = true;
+            img.removeAttribute("src");
+          }
+          vid.hidden = false;
           vid.muted = false;
-          vid.setAttribute("playsinline", "");
-          stage.appendChild(vid);
+          vid.src = url;
+          try {
+            vid.load();
+          } catch (_ld) {}
         }
-        if (img) {
-          img.hidden = true;
-          img.removeAttribute("src");
-        }
-        vid.hidden = false;
-        vid.muted = false;
-        vid.src = url;
-        try {
-          vid.load();
-        } catch (_ld) {}
       } else {
+        if (fallback) fallback.hidden = true;
         if (vid) {
           try {
             vid.pause();

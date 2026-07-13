@@ -255,7 +255,7 @@
       loadCss("/portal/portal_ghost_view.css?v=20260712-ghost-inapp");
       loadScript("/portal/portal-ghost-view.js?v=20260712-ghost-inapp");
       loadScript("/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off");
-      loadCss("/portal/portal_achievements.css?v=20260703-session-photos-back");
+      loadCss("/portal/portal_achievements.css?v=20260713-ios-video-save");
     };
     scheduleIdle(run, isHandheld ? 6000 : 2500);
   }
