@@ -1679,16 +1679,16 @@
     var selected = normalizeEnrolmentCadence(state.enrolmentCadence);
     var opts = [
       {
-        code: "whole_year",
-        title: "Whole year (auto re-enrol)",
-        hint:
-          "Confirm once for 2026/27. We treat you as continuing each term automatically — we will not ask again unless you tell us otherwise.",
-      },
-      {
         code: "term_by_term",
         title: "Term by term",
         hint:
           "Confirm term by term. We will ask you again before each term whether you want to continue. Invoices / Direct Payments are created for the current term only.",
+      },
+      {
+        code: "whole_year",
+        title: "Whole year (auto re-enrol)",
+        hint:
+          "Confirm once for 2026/27. We treat you as continuing each term automatically — we will not ask again unless you tell us otherwise.",
       },
     ];
     return (
