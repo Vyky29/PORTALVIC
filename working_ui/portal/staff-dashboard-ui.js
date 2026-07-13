@@ -5326,16 +5326,6 @@
         if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
         return;
       }
-      const leadTeam = e.target.closest('[data-action="open-lead-team-roster-table"]');
-      if(leadTeam){
-        e.preventDefault();
-        e.stopPropagation();
-        const iso = leadTeam.getAttribute('data-lead-team-iso') || '';
-        if(typeof window.portalOpenLeadTeamRosterTable === 'function'){
-          window.portalOpenLeadTeamRosterTable(iso);
-        }
-        return;
-      }
       const hit = e.target.closest('[data-action="open-pending-feedback"]');
       if(!hit) return;
       e.preventDefault();
