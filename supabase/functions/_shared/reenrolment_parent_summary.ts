@@ -137,6 +137,18 @@ export function buildReenrolmentParentSummary(
     ? (funding.choices_2627 as Record<string, unknown>)
     : null;
   if (funding2627) {
+    const cadence = clean(funding2627.enrolment_cadence_label, 120) ||
+      (funding2627.enrolment_cadence === "whole_year"
+        ? "Whole year — auto re-enrol each term"
+        : funding2627.enrolment_cadence === "term_by_term"
+          ? "Term by term"
+          : "");
+    if (cadence) {
+      items.push({
+        label: "Re-enrolment style",
+        choice: cadence,
+      });
+    }
     const fund = clean(funding2627.funding_label, 80);
     const pay = clean(funding2627.payment_method_label, 80);
     const sched = clean(funding2627.payment_schedule_label, 80);

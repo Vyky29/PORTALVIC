@@ -51,6 +51,8 @@
     pendingPhotoFile: null,
     pendingPreviewUrl: "",
     billing2627: { fundCode: "privately_funded", payCode: "bank_transfer", editing: false },
+    /** null until parent picks: whole_year | term_by_term */
+    enrolmentCadence: null,
   };
 
   function $(id) {
@@ -1290,6 +1292,56 @@
     return isAllYearScheduleCode(scheduleCode);
   }
 
+  function normalizeEnrolmentCadence(code) {
+    if (code === "whole_year" || code === "term_by_term") return code;
+    return "";
+  }
+
+  function enrolmentCadenceLabel(code) {
+    if (code === "whole_year") {
+      return "Whole year — confirm once; continue each term automatically";
+    }
+    if (code === "term_by_term") {
+      return "Term by term — confirm before each term";
+    }
+    return "";
+  }
+
+  function scheduleMatchesCadence(scheduleCode, cadence) {
+    if (!cadence) return true;
+    if (cadence === "whole_year") return isAllYearScheduleCode(scheduleCode);
+    return !isAllYearScheduleCode(scheduleCode);
+  }
+
+  function schedulesForPayAndCadence(payCode, cadence) {
+    var opts = (RE_SCHEDULE_OPTIONS[payCode] || []).slice();
+    var cad = normalizeEnrolmentCadence(cadence);
+    if (!cad) return opts;
+    return opts.filter(function (o) {
+      return scheduleMatchesCadence(o.code, cad);
+    });
+  }
+
+  function payMethodCompatibleWithCadence(payCode, cadence) {
+    var cad = normalizeEnrolmentCadence(cadence);
+    if (!cad) return true;
+    if (cad === "whole_year") return payCode === "bank_transfer" || payCode === "gocardless";
+    return payCode === "bank_transfer" || payCode === "own_way_flexible";
+  }
+
+  function defaultScheduleForPayAndCadence(payCode, cadence) {
+    var cad = normalizeEnrolmentCadence(cadence);
+    if (cad === "whole_year") {
+      if (payCode === "gocardless") return "monthly_term";
+      return "yearly_1off";
+    }
+    if (cad === "term_by_term") {
+      if (payCode === "own_way_flexible") return "own_term";
+      return "term_3";
+    }
+    return defaultScheduleForPay(payCode);
+  }
+
   /** Minimum prepaid balance: 2 × pricePerSession for each kept service (summed). */
   function ownArrangementAdvanceBuffer(data) {
     var slots = keptWeeklySlots(data);
@@ -1417,9 +1469,12 @@
   function refreshBillingPaySection(data) {
     var b = state.billing2627 || {};
     if (b.editing) return;
-    var cur = fundingCurrent2526(data);
     var payCode = normalizePayMethodChoice(b.payCode);
-    var scheduleDefault = defaultScheduleForPay(payCode);
+    if (!payMethodCompatibleWithCadence(payCode, state.enrolmentCadence)) {
+      payCode = "bank_transfer";
+      b.payCode = payCode;
+    }
+    var scheduleDefault = defaultScheduleForPayAndCadence(payCode, state.enrolmentCadence);
     var schedWrap = $("rePayScheduleWrap");
     if (schedWrap) schedWrap.innerHTML = renderPayScheduleFieldset(payCode, scheduleDefault);
     syncPrivatePayPanels();
@@ -1449,6 +1504,7 @@
       '<div class="re-funding-2627 re-funding-2627--funder" data-annual-total="' +
       esc(String(annualTotal)) +
       '">' +
+      renderEnrolmentCadenceSection() +
       '<div id="rePayEverything">' +
       '<div class="re-funder-paid">' +
       '<p class="re-funder-paid__lead"><strong>This place is funded by your ' +
@@ -1462,6 +1518,59 @@
     );
   }
 
+  function renderEnrolmentCadenceSection() {
+    var selected = normalizeEnrolmentCadence(state.enrolmentCadence);
+    var opts = [
+      {
+        code: "whole_year",
+        title: "Whole year (auto re-enrol)",
+        hint:
+          "Confirm once for 2026/27. We treat you as continuing each term automatically — we will not ask again unless you tell us otherwise.",
+      },
+      {
+        code: "term_by_term",
+        title: "Term by term",
+        hint:
+          "Confirm term by term. We will ask you again before each term whether you want to continue.",
+      },
+    ];
+    return (
+      '<div class="re-cadence-block" id="reCadenceBlock">' +
+      '<p class="re-billing-plan-newnote"><strong>New for 2026/27:</strong> you can confirm the <strong>whole year</strong> in one go. We then treat you as continuing each term automatically — we will not ask again unless you tell us otherwise. Term-by-term options are still available.</p>' +
+      '<fieldset class="re-choice-fieldset re-funding-field re-cadence-fieldset">' +
+      '<legend class="re-label">How would you like to re-enrol? <span class="re-req" aria-hidden="true">*</span></legend>' +
+      '<p class="re-muted re-cadence-intro">Please choose one — this tells us whether to auto re-enrol you each term or ask again term by term.</p>' +
+      '<div class="re-cadence-options" role="radiogroup" aria-label="Re-enrolment cadence">' +
+      opts
+        .map(function (o) {
+          var checked = selected === o.code ? " checked" : "";
+          var spotlight = o.code === "whole_year" ? " re-radio--schedule-spotlight" : "";
+          return (
+            '<label class="re-radio re-radio--schedule re-radio--cadence' +
+            spotlight +
+            '">' +
+            '<input type="radio" name="re_enrolment_cadence" value="' +
+            esc(o.code) +
+            '"' +
+            checked +
+            " required />" +
+            '<span class="re-radio--schedule__body">' +
+            '<span class="re-radio--schedule__title">' +
+            esc(o.title) +
+            (o.code === "whole_year"
+              ? '<span class="re-schedule-new-badge">New</span>'
+              : "") +
+            "</span>" +
+            '<span class="re-radio--schedule__hint">' +
+            esc(o.hint) +
+            "</span></span></label>"
+          );
+        })
+        .join("") +
+      "</div></fieldset></div>"
+    );
+  }
+
   function renderBilling2627Block(data) {
     initBilling2627State(data);
     var annualTotal = resolveAnnualWeeklyTotal(data);
@@ -1472,12 +1581,19 @@
     }
     var b = state.billing2627;
     var payCode = normalizePayMethodChoice(b.payCode);
-    var scheduleDefault = defaultScheduleForPay(payCode);
+    if (!payMethodCompatibleWithCadence(payCode, state.enrolmentCadence)) {
+      payCode = normalizeEnrolmentCadence(state.enrolmentCadence) === "whole_year"
+        ? "bank_transfer"
+        : "bank_transfer";
+      b.payCode = payCode;
+    }
+    var scheduleDefault = defaultScheduleForPayAndCadence(payCode, state.enrolmentCadence);
 
     return (
       '<div class="re-funding-2627" data-annual-total="' +
       esc(String(annualTotal)) +
       '">' +
+      renderEnrolmentCadenceSection() +
       '<div id="rePayEverything">' +
       '<p class="re-funding-total"><strong>Estimated programme total 2026/27:</strong> ' +
       esc(money(annualTotal)) +
@@ -1487,10 +1603,11 @@
       (b.editing ? " hidden" : "") +
       ">" +
       '<p class="re-muted re-billing-plan-intro">The total above covers your confirmed sessions for the year. Choose a <strong>standard plan</strong> with fixed due dates (no admin fee if you pay on time — including Card / Apple Pay), or <strong>Own arrangement</strong> only if you cannot meet those dates or pay the full amount when due (+ £50).</p>' +
-      '<p class="re-billing-plan-newnote"><strong>New for 2026/27:</strong> you can confirm the <strong>whole year</strong> in one go. We then treat you as continuing each term automatically — we will not ask again unless you tell us otherwise. Term-by-term options are still available.</p>' +
       '<div id="rePanelPrivate" class="re-funding-panel">' +
       '<div id="rePayScheduleWrap" class="re-pay-schedule-wrap">' +
-      renderPayScheduleFieldset(payCode, scheduleDefault) +
+      (normalizeEnrolmentCadence(state.enrolmentCadence)
+        ? renderPayScheduleFieldset(payCode, scheduleDefault)
+        : '<p class="re-muted re-cadence-wait">Choose <strong>whole year</strong> or <strong>term by term</strong> above first — then your payment options will appear.</p>') +
       "</div>" +
       '<div id="rePaySchedulePreview" class="re-pay-preview-host" hidden></div>' +
       '<div id="reAdminFeeNote" class="re-funding-fee"' +
@@ -1714,8 +1831,23 @@
   }
 
   function renderPayScheduleFieldset(payCode, scheduleDefault) {
-    var opts = RE_SCHEDULE_OPTIONS[payCode];
-    if (!opts || !opts.length) return "";
+    var cadence = normalizeEnrolmentCadence(state.enrolmentCadence);
+    if (!cadence) {
+      return '<p class="re-muted re-cadence-wait">Choose <strong>whole year</strong> or <strong>term by term</strong> above first — then your payment options will appear.</p>';
+    }
+    if (!payMethodCompatibleWithCadence(payCode, cadence)) {
+      return (
+        '<p class="re-muted re-cadence-wait">' +
+        (cadence === "whole_year"
+          ? "Whole-year re-enrolment works with <strong>Bank Transfer</strong> or <strong>Direct Payment (GoCardless)</strong>. Edit payment method above if needed."
+          : "Term-by-term re-enrolment works with <strong>Bank Transfer</strong> or <strong>Own arrangement</strong>. Edit payment method above if needed.") +
+        "</p>"
+      );
+    }
+    var opts = schedulesForPayAndCadence(payCode, cadence);
+    if (!opts || !opts.length) {
+      return '<p class="re-muted re-cadence-wait">No payment schedules match this choice — edit funding/payment method above.</p>';
+    }
     var validDefault = opts.some(function (o) {
       return o.code === scheduleDefault;
     })
@@ -1816,13 +1948,18 @@
   function syncPrivatePayPanels() {
     var b = state.billing2627 || {};
     var payCode = normalizePayMethodChoice(b.payCode || "bank_transfer");
+    var cadence = normalizeEnrolmentCadence(state.enrolmentCadence);
+    if (cadence && !payMethodCompatibleWithCadence(payCode, cadence)) {
+      payCode = "bank_transfer";
+      b.payCode = payCode;
+    }
     var schedWrap = $("rePayScheduleWrap");
     if (schedWrap) {
       var prev = document.querySelector('input[name="re_pay_schedule_2627"]:checked');
       var prevVal = prev ? prev.value : null;
       if (payCode === "bank_transfer" || payCode === "gocardless" || payCode === "own_way_flexible") {
-        var fallbackSched = defaultScheduleForPay(payCode);
-        var opts = RE_SCHEDULE_OPTIONS[payCode] || [];
+        var fallbackSched = defaultScheduleForPayAndCadence(payCode, cadence);
+        var opts = schedulesForPayAndCadence(payCode, cadence);
         var keepPrev = opts.some(function (o) {
           return o.code === prevVal;
         });
@@ -1855,7 +1992,7 @@
     if (!feeAmt) return;
     if (adminFeeApplies(payCode) && annual > 0) {
       var schedEl = document.querySelector('input[name="re_pay_schedule_2627"]:checked');
-      var schedCode = schedEl ? schedEl.value : defaultScheduleForPay(payCode);
+      var schedCode = schedEl ? schedEl.value : defaultScheduleForPayAndCadence(payCode, state.enrolmentCadence);
       var feeTotal = adminFeeTotalForSchedule(payCode, schedCode);
       if (payCode === "own_way_flexible") {
         var buffer = ownArrangementAdvanceBuffer(state.lookup);
@@ -1949,6 +2086,16 @@
     });
     host.addEventListener("change", function (ev) {
       var t = ev.target;
+      if (t && t.name === "re_enrolment_cadence") {
+        state.enrolmentCadence = normalizeEnrolmentCadence(t.value);
+        var b = state.billing2627 || {};
+        if (!payMethodCompatibleWithCadence(b.payCode, state.enrolmentCadence)) {
+          b.payCode = "bank_transfer";
+        }
+        syncPrivatePayPanels();
+        updateAdminFeeAmount();
+        return;
+      }
       if (t && t.name === "re_pay_schedule_2627") {
         syncPaymentSchedulePreview();
         updateAdminFeeAmount();
@@ -1978,8 +2125,11 @@
     var b = state.billing2627 || {};
     var rawFundCode = mapFundingCode(cur.funding);
     var annualTotal = resolveAnnualWeeklyTotal(data);
+    var cadence = normalizeEnrolmentCadence(state.enrolmentCadence);
+    var cadenceLabel = enrolmentCadenceLabel(cadence);
     if (isFunderPaid(rawFundCode)) {
       var funderPay = mapFundedPayMethodCode(cur);
+      var funderAuto = cadence === "whole_year";
       return {
         current_2526: cur,
         choices_2627: {
@@ -1997,6 +2147,14 @@
           estimated_annual_total: annualTotal,
           estimated_total_with_admin_fee: null,
           billing_schedule: "funder",
+          enrolment_cadence: cadence || null,
+          enrolment_cadence_label: cadenceLabel || null,
+          auto_continue: funderAuto,
+          auto_continue_note: funderAuto
+            ? "We will treat this place as continuing each term with the same arrangement unless you tell us otherwise."
+            : cadence === "term_by_term"
+              ? "We will ask you to confirm before each term."
+              : null,
         },
       };
     }
@@ -2005,6 +2163,9 @@
     var payCode = normalizePayMethodChoice(
       b.payCode || mapPrivatePayMethodCode(cur.payment_method, cur.funding),
     );
+    if (cadence && !payMethodCompatibleWithCadence(payCode, cadence)) {
+      payCode = "bank_transfer";
+    }
     var schedEl = document.querySelector('input[name="re_pay_schedule_2627"]:checked');
     var scheduleCode =
       schedEl &&
@@ -2012,11 +2173,16 @@
         payCode === "gocardless" ||
         payCode === "own_way_flexible")
         ? schedEl.value
-        : defaultScheduleForPay(payCode);
+        : defaultScheduleForPayAndCadence(payCode, cadence);
+    if (cadence && !scheduleMatchesCadence(scheduleCode, cadence)) {
+      scheduleCode = defaultScheduleForPayAndCadence(payCode, cadence);
+    }
     var vatCode = isDirectPayments(fundCode) ? "exempt" : "vat_included";
     var fee = adminFeeApplies(payCode);
     var feeTotal = fee ? adminFeeTotalForSchedule(payCode, scheduleCode) : 0;
-    var autoContinue = isAutoContinueSchedule(payCode, scheduleCode);
+    var autoContinue =
+      cadence === "whole_year" ||
+      (cadence !== "term_by_term" && isAutoContinueSchedule(payCode, scheduleCode));
     var advanceBuffer =
       payCode === "own_way_flexible" ? ownArrangementAdvanceBuffer(data) : { total: 0, lines: [] };
     return {
@@ -2039,10 +2205,14 @@
             : payCode === "gocardless"
               ? "gocardless_instalment"
               : null,
+        enrolment_cadence: cadence || null,
+        enrolment_cadence_label: cadenceLabel || null,
         auto_continue: autoContinue,
         auto_continue_note: autoContinue
           ? "We will treat this place as continuing each term with the same arrangement unless you tell us otherwise."
-          : null,
+          : cadence === "term_by_term"
+            ? "We will ask you to confirm before each term."
+            : null,
         advance_buffer_sessions_per_service:
           payCode === "own_way_flexible" ? RE_OWN_ADVANCE_SESSIONS : null,
         advance_buffer_gbp: payCode === "own_way_flexible" ? advanceBuffer.total : null,
@@ -2697,6 +2867,7 @@
 
     data.annual_weekly_total = resolveAnnualWeeklyTotal(data);
     state.lookup = data;
+    state.enrolmentCadence = null;
 
     state.avatarUrl = resolveAvatarUrl(data);
     state.pendingPhotoFile = null;
@@ -2762,7 +2933,12 @@
   }
 
   function collectChoices() {
-    var out = { weekly: {}, day_centre: null };
+    var out = {
+      weekly: {},
+      day_centre: null,
+      enrolment_cadence: normalizeEnrolmentCadence(state.enrolmentCadence) || null,
+      enrolment_cadence_label: enrolmentCadenceLabel(state.enrolmentCadence) || null,
+    };
     document.querySelectorAll(".re-slot-card").forEach(function (card) {
       var slotId = card.getAttribute("data-slot-id");
       var picked = card.querySelector('input[type=radio]:checked');
@@ -2873,6 +3049,18 @@
         "error",
         "Please save your funding and payment choices for 2026/27 before submitting.",
       );
+      return;
+    }
+    if (!normalizeEnrolmentCadence(state.enrolmentCadence)) {
+      showNotice(
+        $("reFormNotice"),
+        "error",
+        "Please choose whole year (auto re-enrol) or term by term.",
+      );
+      var cadenceBlock = $("reCadenceBlock");
+      if (cadenceBlock && cadenceBlock.scrollIntoView) {
+        cadenceBlock.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
       return;
     }
 
