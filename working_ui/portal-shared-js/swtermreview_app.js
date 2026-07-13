@@ -1358,14 +1358,193 @@ const LEVEL_DATA = {
       }
     }
 
+    const SWTERM_MY_PARTICIPANTS_KEY = "__portal_swterm_my_participants_v1";
+    let __swtermMyParticipants = null;
+    let __swtermMyParticipantsPrefer = false;
+
+    function isPlaceholderSwtermClientName(nm){
+      const k = String(nm || "").trim().toLowerCase().replace(/\s+/g, " ");
+      if(!k) return true;
+      return /^(no participant|no client|noclient|closed|available|open|n\/a|—|-)$/i.test(k);
+    }
+
+    function readStashedMyParticipants(){
+      try{
+        const raw = sessionStorage.getItem(SWTERM_MY_PARTICIPANTS_KEY);
+        if(!raw) return [];
+        const arr = JSON.parse(raw);
+        if(!Array.isArray(arr)) return [];
+        const map = new Map();
+        arr.forEach(n => {
+          const nm = String(n || "").replace(/\s+/g, " ").trim();
+          if(!nm || isPlaceholderSwtermClientName(nm)) return;
+          map.set(nm.toLowerCase(), nm);
+        });
+        return Array.from(map.values()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+      }catch(_){
+        return [];
+      }
+    }
+
+    function staffNameTokensForRosterMatch(displayName){
+      const raw = String(displayName || "").trim();
+      if(!raw) return [];
+      const out = [];
+      const full = raw.toLowerCase().replace(/[\s._-]+/g, " ").trim();
+      if(full) out.push(full);
+      const first = full.split(/\s+/)[0];
+      if(first && out.indexOf(first) < 0) out.push(first);
+      return out;
+    }
+
+    function instructorsBlobMatchesStaff(instructorsRaw, staffTokens){
+      const blob = String(instructorsRaw || "").toLowerCase();
+      if(!blob || !(staffTokens || []).length) return false;
+      return staffTokens.some(tok => tok && blob.indexOf(tok) >= 0);
+    }
+
+    async function loadMyParticipantsFromRosterRows(staffDisplayName){
+      try{
+        const mod = await tryImportPortalAuthHandler();
+        const supabase = mod && typeof mod.getSupabaseClient === "function" ? mod.getSupabaseClient() : null;
+        if(!supabase) return [];
+        const tokens = staffNameTokensForRosterMatch(staffDisplayName);
+        if(!tokens.length) return [];
+        const res = await supabase
+          .from("portal_roster_rows")
+          .select("client_name,instructors,service,status")
+          .eq("status", "active")
+          .limit(4000);
+        if(res.error) throw res.error;
+        const map = new Map();
+        (res.data || []).forEach(r => {
+          if(!instructorsBlobMatchesStaff(r && r.instructors, tokens)) return;
+          const nm = String(r && r.client_name || "").replace(/\s+/g, " ").trim();
+          if(!nm || isPlaceholderSwtermClientName(nm)) return;
+          const svc = String(r && r.service || "").toLowerCase();
+          /* Prefer aquatic / pool / MA / day centre; still keep other named clients for this instructor. */
+          if(svc && !/(aquatic|swim|pool|multi|day\s*centre|day\s*center|bespoke)/i.test(svc)){
+            /* keep — instructors sometimes only have MA/DC labels */
+          }
+          map.set(nm.toLowerCase(), nm);
+        });
+        return Array.from(map.values()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+      }catch(e){
+        console.warn("[swtermreview] roster participants", e);
+        return [];
+      }
+    }
+
+    function mergeParticipantNameLists(){
+      const map = new Map();
+      const lists = Array.prototype.slice.call(arguments);
+      lists.forEach(list => {
+        (list || []).forEach(n => {
+          const nm = String(n || "").replace(/\s+/g, " ").trim();
+          if(!nm || isPlaceholderSwtermClientName(nm)) return;
+          map.set(nm.toLowerCase(), nm);
+        });
+      });
+      return Array.from(map.values()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+    }
+
     function getPortalClientNamesSorted(){
       const rows = Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS) ? window.PORTAL_CLIENTS_INFO_ROWS : [];
       const map = new Map();
       rows.forEach(r => {
         const nm = String(r && r.client_name != null ? r.client_name : "").trim();
-        if(nm) map.set(nm.toLowerCase(), nm);
+        if(nm && !isPlaceholderSwtermClientName(nm)) map.set(nm.toLowerCase(), nm);
       });
       return Array.from(map.values()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+    }
+
+    function getSwtermSearchPool(){
+      if(__swtermMyParticipantsPrefer && Array.isArray(__swtermMyParticipants) && __swtermMyParticipants.length){
+        return __swtermMyParticipants;
+      }
+      return getPortalClientNamesSorted();
+    }
+
+    function syncMyParticipantPressedState(selectedName){
+      const list = document.getElementById("swimmerMyList");
+      if(!list) return;
+      const want = String(selectedName || "").trim().toLowerCase();
+      list.querySelectorAll("button[data-swimmer-name]").forEach(btn => {
+        const nm = String(btn.getAttribute("data-swimmer-name") || "").trim().toLowerCase();
+        btn.setAttribute("aria-pressed", nm && nm === want ? "true" : "false");
+      });
+    }
+
+    function pickSwimmerName(name){
+      const input = document.getElementById("swimmerName");
+      if(!input) return;
+      input.value = name;
+      rememberSwtermParticipant(name, "");
+      syncMyParticipantPressedState(name);
+      try{ input.dispatchEvent(new Event("input", { bubbles: true })); }catch(_){}
+      try{ input.dispatchEvent(new Event("change", { bubbles: true })); }catch(_){}
+      try{ generateTermSummary(); }catch(_){}
+    }
+
+    function renderMyParticipantsList(names){
+      const wrap = document.getElementById("swimmerMyListWrap");
+      const list = document.getElementById("swimmerMyList");
+      const empty = document.getElementById("swimmerMyListEmpty");
+      const hint = document.getElementById("swimmerMyListHint");
+      if(!wrap || !list) return;
+      const sorted = Array.isArray(names) ? names.slice() : [];
+      list.replaceChildren();
+      wrap.hidden = false;
+      if(!sorted.length){
+        if(empty) empty.hidden = false;
+        if(hint) hint.hidden = true;
+        return;
+      }
+      if(empty) empty.hidden = true;
+      if(hint){
+        hint.hidden = false;
+        hint.textContent = "Your participants (" + sorted.length + ") — tap to select";
+      }
+      const current = String((document.getElementById("swimmerName") || {}).value || "").trim().toLowerCase();
+      sorted.forEach((name, idx) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.setAttribute("role", "option");
+        b.setAttribute("data-swimmer-name", name);
+        b.id = "swimmerMyOpt-" + idx;
+        b.textContent = name;
+        b.setAttribute("aria-pressed", current && current === name.toLowerCase() ? "true" : "false");
+        b.addEventListener("click", () => pickSwimmerName(name));
+        list.appendChild(b);
+      });
+    }
+
+    async function hydrateMyParticipantsPicker(){
+      const stashed = readStashedMyParticipants();
+      if(stashed.length){
+        __swtermMyParticipants = stashed;
+        __swtermMyParticipantsPrefer = true;
+        renderMyParticipantsList(stashed);
+      }else{
+        renderMyParticipantsList([]);
+      }
+      const instEl = document.getElementById("instructorName");
+      const staffName = instEl ? String(instEl.value || "").trim() : "";
+      const fromRoster = await loadMyParticipantsFromRosterRows(staffName || parseDetailsFromUrl().instructor);
+      if(fromRoster.length){
+        __swtermMyParticipants = mergeParticipantNameLists(stashed, fromRoster);
+        __swtermMyParticipantsPrefer = true;
+        renderMyParticipantsList(__swtermMyParticipants);
+        try{
+          sessionStorage.setItem(SWTERM_MY_PARTICIPANTS_KEY, JSON.stringify(__swtermMyParticipants));
+        }catch(_){}
+      }else if(!stashed.length){
+        __swtermMyParticipantsPrefer = false;
+        __swtermMyParticipants = null;
+        const wrap = document.getElementById("swimmerMyListWrap");
+        if(wrap) wrap.hidden = false;
+        renderMyParticipantsList([]);
+      }
     }
 
     function wireSwimmerAutocomplete(){
@@ -1386,12 +1565,8 @@ const LEVEL_DATA = {
       }
 
       function pickName(name){
-        input.value = name;
-        rememberSwtermParticipant(name, "");
+        pickSwimmerName(name);
         closeList();
-        try{ input.dispatchEvent(new Event("input", { bubbles: true })); }catch(_){}
-        try{ input.dispatchEvent(new Event("change", { bubbles: true })); }catch(_){}
-        generateTermSummary();
       }
 
       function renderList(query){
@@ -1401,7 +1576,7 @@ const LEVEL_DATA = {
           setOpen(false);
           return;
         }
-        const all = getPortalClientNamesSorted();
+        const all = getSwtermSearchPool();
         const ql = q.toLowerCase();
         const matches = all.filter(n => n.toLowerCase().includes(ql)).slice(0, 18);
         if(!matches.length){
@@ -1425,6 +1600,7 @@ const LEVEL_DATA = {
 
       input.addEventListener("input", () => {
         clearTimeout(blurTimer);
+        syncMyParticipantPressedState(input.value);
         renderList(input.value);
         generateTermSummary();
       });
@@ -1467,7 +1643,10 @@ const LEVEL_DATA = {
       }else{
         loadPortalScriptOnceTerm(PORTAL_CLIENTS_INFO_SCRIPT).then(wire).catch(wire);
       }
-      void hydrateLoggedInStaffDisplayName().catch(() => {});
+      void hydrateLoggedInStaffDisplayName()
+        .catch(() => {})
+        .then(() => hydrateMyParticipantsPicker())
+        .catch(e => console.warn("[swtermreview] my participants", e));
     }
 
     /* =========================

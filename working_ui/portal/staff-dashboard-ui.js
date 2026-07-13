@@ -5294,6 +5294,18 @@
                 tu.searchParams.set('clientId', cid);
                 try{ sessionStorage.setItem('__portal_swterm_client_id_v1', cid); }catch(_){}
               }
+              try{
+                const myNames = typeof portalCollectInstructorParticipantNamesForTermReview === 'function'
+                  ? portalCollectInstructorParticipantNamesForTermReview()
+                  : (typeof portalCollectTodayParticipantNames === 'function' ? portalCollectTodayParticipantNames() : []);
+                if(myNames && myNames.length){
+                  sessionStorage.setItem('__portal_swterm_my_participants_v1', JSON.stringify(myNames));
+                }
+              }catch(_){}
+              try{
+                const staffNm = String((window.dashboardData && window.dashboardData.staffName) || '').trim();
+                if(staffNm) tu.searchParams.set('instructor', staffNm);
+              }catch(_){}
               target = tu.pathname + tu.search + tu.hash;
             }catch(_){}
             portalQuickMenuNavigate(target);

@@ -2403,6 +2403,61 @@
       color:#0b1220 !important;
       -webkit-text-fill-color:#0b1220 !important;
     }
+    .swterm-my-list{
+      margin:10px 0 4px;
+      min-width:0;
+    }
+    .swterm-my-list-hint{
+      margin:0 0 8px;
+      font-size:12px;
+      font-weight:600;
+      color:var(--muted, #5b6575);
+      overflow-wrap:break-word;
+    }
+    .swterm-my-list-grid{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      min-width:0;
+      max-height:min(42vh, 280px);
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
+      padding:2px;
+    }
+    .swterm-my-list-grid button{
+      flex:1 1 auto;
+      min-width:min(100%, 140px);
+      max-width:100%;
+      margin:0;
+      padding:10px 12px;
+      border:1px solid rgba(14,116,144,0.28);
+      border-radius:12px;
+      background:linear-gradient(180deg,#f0fbfd,#e6f6fb);
+      color:#0b1220;
+      font:inherit;
+      font-size:13px;
+      font-weight:650;
+      text-align:left;
+      cursor:pointer;
+      overflow-wrap:break-word;
+      line-height:1.25;
+    }
+    .swterm-my-list-grid button[aria-pressed="true"]{
+      border-color:#0e7490;
+      background:linear-gradient(180deg,#cff4fc,#a5f3fc);
+      box-shadow:0 0 0 2px rgba(14,116,144,0.18);
+    }
+    .swterm-my-list-grid button:hover,
+    .swterm-my-list-grid button:focus-visible{
+      outline:none;
+      border-color:#0e7490;
+    }
+    .swterm-my-list-empty{
+      margin:0;
+      font-size:13px;
+      color:var(--muted, #5b6575);
+      overflow-wrap:break-word;
+    }
   </style>
 </head>
 
@@ -2477,11 +2532,16 @@
       <div class="review-part-body" id="reviewPartDetailsBody">
 <div class="card" id="cardDetails">
       <h2>Details</h2>
-      <p class="section-intro">Choose the participant from the portal list (type a letter to search). Term, date and instructor fill automatically.</p>
+      <p class="section-intro">Select one of your participants below, or type a letter to search. Term, date and instructor fill automatically.</p>
 
       <div class="swterm-details-stack">
         <div class="detail-combo">
           <span class="detail-label" id="swimmerNameLabel">Participant's name:</span>
+          <div id="swimmerMyListWrap" class="swterm-my-list" hidden>
+            <p class="swterm-my-list-hint" id="swimmerMyListHint">Your participants — tap to select</p>
+            <div id="swimmerMyList" class="swterm-my-list-grid" role="listbox" aria-labelledby="swimmerMyListHint"></div>
+            <p class="swterm-my-list-empty" id="swimmerMyListEmpty" hidden>No participants found on your roster yet. Type a name below to search the portal list.</p>
+          </div>
           <div class="combo-wrap" id="swimmerComboWrap">
             <input
               id="swimmerName"
@@ -3097,7 +3157,7 @@
   <!-- swtermreview_app.js — portal/ then portal-shared-js/ on Vercel. -->
   <script>
     (function () {
-      var v = "20260713-header-orbit";
+      var v = "20260713-my-participants";
       var file = "swtermreview_app.js";
       var bases = [];
       try {

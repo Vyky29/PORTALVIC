@@ -1712,6 +1712,75 @@
         return a.localeCompare(b, 'en', { sensitivity: 'base' });
       });
     }
+    /** Named clients on this instructor's roster (today + spreadsheet rows) for swimming term review picker. */
+    function portalCollectInstructorParticipantNamesForTermReview(){
+      const out = [];
+      const seen = new Set();
+      function normKey(s){
+        return String(s || '')
+          .trim()
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z0-9]+/g, '');
+      }
+      function isPlaceholderClient(nm){
+        const k = String(nm || '').trim().toLowerCase().replace(/\s+/g, ' ');
+        if(!k) return true;
+        return /^(no participant|no client|noclient|closed|available|open|n\/a|—|-)$/i.test(k);
+      }
+      function add(nm){
+        const t = String(nm || '').trim();
+        if(!t || isPlaceholderClient(t)) return;
+        const k = t.toLowerCase();
+        if(seen.has(k)) return;
+        seen.add(k);
+        out.push(t);
+      }
+      try{
+        portalCollectTodayParticipantNames().forEach(add);
+      }catch(_){}
+      try{
+        if(typeof portalAchievementsListTodayParticipants === 'function'){
+          (portalAchievementsListTodayParticipants() || []).forEach(function(p){
+            add(p && (p.clientName || p.name));
+          });
+        }
+      }catch(_){}
+      try{
+        const staffId = String((typeof dashboardData !== 'undefined' && dashboardData && dashboardData.staffId) || window.STAFF_DASHBOARD_ID || '').trim();
+        const staffName = String((typeof dashboardData !== 'undefined' && dashboardData && dashboardData.staffName) || '').trim();
+        const want = [];
+        [staffId, staffName, staffName.split(/\s+/)[0]].forEach(function(v){
+          const n = normKey(v);
+          if(n && want.indexOf(n) < 0) want.push(n);
+        });
+        const rows = (window.STAFF_DASHBOARD_SOURCE && Array.isArray(window.STAFF_DASHBOARD_SOURCE.rows))
+          ? window.STAFF_DASHBOARD_SOURCE.rows
+          : [];
+        if(want.length && rows.length){
+          rows.forEach(function(row){
+            if(!row) return;
+            const parts = String(row.instructors || '')
+              .split(/[,&/]+/)
+              .map(function(p){ return normKey(p); })
+              .filter(Boolean);
+            if(!parts.length) return;
+            const hit = want.some(function(w){
+              return parts.some(function(p){
+                return p === w || (w.length >= 3 && (p.indexOf(w) === 0 || w.indexOf(p) === 0));
+              });
+            });
+            if(!hit) return;
+            add(row.client_name);
+          });
+        }
+      }catch(_){}
+      return out.sort(function(a, b){
+        return a.localeCompare(b, 'en', { sensitivity: 'base' });
+      });
+    }
+    try{ window.portalCollectInstructorParticipantNamesForTermReview = portalCollectInstructorParticipantNamesForTermReview; }catch(_){}
     function portalAppendStaffMobileVerticalParam(href){
       const raw = String(href || '').trim();
       if(!raw) return raw;

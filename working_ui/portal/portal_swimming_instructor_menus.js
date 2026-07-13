@@ -131,7 +131,7 @@
     },
     giuseppe: {
       photo: true,
-      swReview: false,
+      swReview: true,
       leadReview: false,
       venue: false,
       pickup: true,
@@ -140,7 +140,7 @@
     },
     godsway: {
       photo: true,
-      swReview: false,
+      swReview: true,
       leadReview: false,
       venue: false,
       pickup: true,
@@ -213,7 +213,7 @@
     },
     youssef: {
       photo: true,
-      swReview: false,
+      swReview: true,
       leadReview: false,
       venue: true,
       pickup: true,
