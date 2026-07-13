@@ -199,12 +199,13 @@
     sevitha: {
       photo: true,
       swReview: true,
-      leadReview: false,
+      leadReview: true,
       venue: true,
       pickup: true,
       planner: true,
       sixIcon: false,
-      leadExtras: false,
+      leadExtras: true,
+      stats: true,
     },
     simon: {
       photo: false,
@@ -243,7 +244,7 @@
       planner: true,
       sixIcon: false,
       leadExtras: true,
-      stats: false,
+      stats: true,
     },
     raul: {
       photo: true,
@@ -254,7 +255,7 @@
       planner: true,
       sixIcon: false,
       leadExtras: true,
-      stats: false,
+      stats: true,
     },
     javi: {
       photo: true,
@@ -265,7 +266,7 @@
       planner: true,
       sixIcon: false,
       leadExtras: true,
-      stats: false,
+      stats: true,
     },
     palankas: {
       photo: true,
@@ -276,7 +277,7 @@
       planner: true,
       sixIcon: false,
       leadExtras: true,
-      stats: false,
+      stats: true,
     },
   };
 
