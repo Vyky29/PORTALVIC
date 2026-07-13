@@ -130,7 +130,13 @@
       .in("announcement_id", ids)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true });
-    if (res.error || !Array.isArray(res.data) || !res.data.length) return map;
+    if (res.error) {
+      try {
+        console.warn("[announcement-media] select failed", res.error.message || res.error);
+      } catch (_) {}
+      return map;
+    }
+    if (!Array.isArray(res.data) || !res.data.length) return map;
     var paths = [];
     var rows = res.data;
     for (var i = 0; i < rows.length; i++) {
@@ -140,16 +146,40 @@
     var urlByPath = {};
     if (paths.length) {
       var signed = await client.storage.from(BUCKET).createSignedUrls(paths, 60 * 60 * 12);
-      if (!signed.error && Array.isArray(signed.data)) {
-        signed.data.forEach(function (s) {
-          if (s && s.path && s.signedUrl) urlByPath[s.path] = s.signedUrl;
+      if (signed.error) {
+        try {
+          console.warn("[announcement-media] signed urls failed", signed.error.message || signed.error);
+        } catch (_) {}
+      } else if (Array.isArray(signed.data)) {
+        signed.data.forEach(function (s, idx) {
+          if (!s) return;
+          var url = String(s.signedUrl || s.signedURL || "").trim();
+          if (!url) return;
+          var p = String(s.path || paths[idx] || "").trim();
+          if (p) urlByPath[p] = url;
+          // Supabase sometimes returns path with/without bucket prefix.
+          var slash = p.lastIndexOf("/");
+          if (slash > 0) urlByPath[p.slice(slash + 1)] = url;
         });
+      }
+      // Per-file fallback when batch path keys do not match storage_path.
+      for (var j = 0; j < paths.length; j++) {
+        if (urlByPath[paths[j]]) continue;
+        try {
+          var one = await client.storage.from(BUCKET).createSignedUrl(paths[j], 60 * 60 * 12);
+          var oneUrl = one && one.data && (one.data.signedUrl || one.data.signedURL);
+          if (oneUrl) urlByPath[paths[j]] = String(oneUrl);
+        } catch (_) {}
       }
     }
     rows.forEach(function (r) {
       var aid = String(r.announcement_id || "");
-      var path = String(r.storage_path || "");
+      var path = String(r.storage_path || "").trim();
       var url = urlByPath[path] || "";
+      if (!url && path) {
+        var base = path.slice(path.lastIndexOf("/") + 1);
+        url = urlByPath[base] || "";
+      }
       if (!aid || !url) return;
       if (!map[aid]) map[aid] = [];
       map[aid].push({ id: r.id, url: url, path: path });
