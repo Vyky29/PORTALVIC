@@ -2221,6 +2221,7 @@ const LEVEL_DATA = {
         regulation,
         independence,
         engagement,
+        familyPoster,
       ] = await Promise.all([
         loadPdfCelebrationLogo().catch(() => null),
         fetchImageAsDataUrl(mascotUrl),
@@ -2228,6 +2229,7 @@ const LEVEL_DATA = {
         fetchImageAsDataUrl("portal/assets/core-areas/core-regulation-brain.png"),
         fetchImageAsDataUrl("portal/assets/core-areas/core-independence-rocket.png"),
         fetchImageAsDataUrl("portal/assets/core-areas/core-engagement-wave.png"),
+        fetchImageAsDataUrl("portal/assets/programme-family-poster.png"),
       ]);
       return {
         logo,
@@ -2236,6 +2238,7 @@ const LEVEL_DATA = {
         regulation,
         independence,
         engagement,
+        familyPoster,
       };
     }
 
@@ -2731,6 +2734,25 @@ const LEVEL_DATA = {
       doc.setFontSize(8);
       doc.setTextColor(muted[0], muted[1], muted[2]);
       doc.text(companyLine + " · www.clubsensational.org", pageW / 2, pageH - 7, { align: "center" });
+
+      /* ===== PAGE 3 — Programme family poster (Face C) ===== */
+      if(visuals.familyPoster){
+        doc.addPage();
+        doc.setFillColor(255, 255, 255);
+        doc.rect(0, 0, pageW, pageH, "F");
+        try{
+          const fmt = pngFmt(visuals.familyPoster);
+          const props = doc.getImageProperties(visuals.familyPoster);
+          const iw = props.width || 1;
+          const ih = props.height || 1;
+          const scale = Math.min(pageW / iw, pageH / ih);
+          const wImg = iw * scale;
+          const hImg = ih * scale;
+          doc.addImage(visuals.familyPoster, fmt, (pageW - wImg) / 2, (pageH - hImg) / 2, wImg, hImg);
+        }catch(_e){
+          /* Face C optional if asset fails */
+        }
+      }
 
       const saveStem = content.swimmer
         ? pdfSafeFilenameStem(content.swimmer + " Term Celebration Certificate")
@@ -3356,7 +3378,7 @@ const LEVEL_DATA = {
                 built.doc.save(built.filename || "Term Celebration Certificate.pdf");
               }catch(_e){}
               showToast("Celebration certificate saved to My Documents");
-              alert("Celebration certificate ready (2 pages: certificate + term journey). Saved to My Documents and downloaded.");
+              alert("Celebration certificate ready (3 pages: certificate + term journey + programme map). Saved to My Documents and downloaded.");
             }catch(err){
               const msg = err && err.message ? String(err.message) : "Unknown error";
               console.error("[swtermreview] certificate failed:", err);
