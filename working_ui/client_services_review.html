@@ -108,6 +108,11 @@
   }
   .client-finance__money .client-finance__row input{font-weight:700}
   .client-finance__hint{margin:0;font-size:10.5px;color:var(--muted);line-height:1.35;overflow-wrap:break-word}
+  .client-finance__rule{
+    margin:0;padding:8px 10px;border-radius:9px;background:#f1f5f9;border:1px solid var(--line);
+    font-size:11.5px;color:#334155;line-height:1.4;overflow-wrap:break-word
+  }
+  .client-finance__rule[hidden]{display:none!important}
   .client-finance__funder[hidden]{display:none!important}
   .money-owed input{border-color:#fecaca;background:#fff7f7}
   .money-credit input{border-color:#bbf7d0;background:#f7fff9}
@@ -247,20 +252,109 @@
     'Direct Payment (GoCardless · monthly)',
     'Own arrangement — cannot meet payment dates (+ £50 / term)'
   ];
-  var PAY_LA_OPTS = [
-    'LA invoice (BACS)',
-    'Direct payment (CWD remittance)',
-    'LA invoice (Care in Finance)',
-    'NHS invoice (PO)'
-  ];
-  var DEFAULT_PAY_BY_FUNDER = {
-    ealing_children: 'Direct payment (CWD remittance)',
-    ealing_adult: 'LA invoice (Care in Finance)',
-    hf_children: 'LA invoice (BACS)',
-    hf_adult: 'LA invoice (BACS)',
-    nhs_north_west: 'NHS invoice (PO)',
-    nhs_ila: 'NHS invoice (PO)'
+  /* Per-funder pay channel + invoice rules (all LA/NHS: monthly in arrears). */
+  var FUNDER_PAY = {
+    ealing_children: {
+      rule: 'Pays monthly in arrears. Annual service total is 38 weeks; they spread that total over 52 weekly payments. Need the real invoice for the 38 weeks.',
+      opts: [
+        'Direct payment (CWD) · monthly arrears · real 38-wk invoice (paid over 52 wks)',
+        'Care in Finance · monthly arrears · real 38-wk invoice (paid over 52 wks)'
+      ]
+    },
+    ealing_adult: {
+      rule: 'Pays monthly in arrears. Annual service total is 38 weeks; they spread that total over 52 weekly payments. Need the real invoice for the 38 weeks.',
+      opts: [
+        'Care in Finance · monthly arrears · real 38-wk invoice (paid over 52 wks)',
+        'Direct payment (CWD) · monthly arrears · real 38-wk invoice (paid over 52 wks)'
+      ]
+    },
+    hf_children: {
+      rule: 'Pays monthly in arrears. Need draft invoice for the year and the term; real invoice for the month they will pay.',
+      opts: [
+        'LA invoice (BACS) · monthly arrears · draft year + term · real monthly'
+      ]
+    },
+    hf_adult: {
+      rule: 'Pays monthly in arrears. Need draft invoice for the year and the term; real invoice for the month they will pay.',
+      opts: [
+        'LA invoice (BACS) · monthly arrears · draft year + term · real monthly'
+      ]
+    },
+    nhs_north_west: {
+      rule: 'Pays monthly in arrears. Need draft invoice for the year and the term; original invoice for the month they will pay.',
+      opts: [
+        'NHS invoice (PO) · monthly arrears · draft year + term · original monthly'
+      ]
+    },
+    nhs_ila: {
+      rule: 'Pays monthly in arrears. Need draft invoice for the term, then original invoices each month.',
+      opts: [
+        'NHS invoice (PO) · monthly arrears · draft term · original monthly'
+      ]
+    }
   };
+  function funderPayInfo(code){
+    return FUNDER_PAY[String(code||'')] || null;
+  }
+  function defaultPayForFunder(code){
+    var info = funderPayInfo(code);
+    return info && info.opts && info.opts[0] ? info.opts[0] : '';
+  }
+  function allLaPayOpts(){
+    var out = [];
+    Object.keys(FUNDER_PAY).forEach(function(k){
+      (FUNDER_PAY[k].opts||[]).forEach(function(o){
+        if(out.indexOf(o) < 0) out.push(o);
+      });
+    });
+    return out;
+  }
+  function isLaPayMethod(label){
+    return allLaPayOpts().indexOf(String(label||'')) >= 0 ||
+      /monthly arrears|cwd|care in finance|la invoice|nhs invoice|bacs|remittance/i.test(String(label||''));
+  }
+  function payOptsForClient(client){
+    if(String(client.fundingSource||'') !== 'la_nhs') return PAY_PRIVATE_OPTS;
+    var info = funderPayInfo(client.funderDetail);
+    return info ? info.opts.slice() : allLaPayOpts();
+  }
+  function funderPayRuleText(client){
+    if(String(client.fundingSource||'') !== 'la_nhs') return '';
+    var info = funderPayInfo(client.funderDetail);
+    return info ? info.rule : '';
+  }
+  function normalizeLaPayLabel(payMethod, funderCode){
+    var s = String(payMethod||'').trim();
+    if(!s || s === '—') return '';
+    var opts = funderCode ? (funderPayInfo(funderCode)||{}).opts || [] : allLaPayOpts();
+    var i;
+    for(i=0;i<opts.length;i++){
+      if(opts[i].toLowerCase() === s.toLowerCase()) return opts[i];
+    }
+    /* Map legacy short labels from Clients Payments / contacts into funder rules. */
+    var low = s.toLowerCase();
+    var def = defaultPayForFunder(funderCode);
+    if(funderCode && funderPayInfo(funderCode)){
+      if(/cwd|remittance|direct payment/.test(low)){
+        for(i=0;i<opts.length;i++){ if(/cwd/i.test(opts[i])) return opts[i]; }
+      }
+      if(/care in finance/.test(low)){
+        for(i=0;i<opts.length;i++){ if(/care in finance/i.test(opts[i])) return opts[i]; }
+      }
+      if(/bacs|la invoice/.test(low)){
+        for(i=0;i<opts.length;i++){ if(/bacs/i.test(opts[i])) return opts[i]; }
+      }
+      if(/nhs|po\b/.test(low)){
+        for(i=0;i<opts.length;i++){ if(/nhs invoice/i.test(opts[i])) return opts[i]; }
+      }
+      return def || s;
+    }
+    if(/nhs|po\b/.test(low)) return defaultPayForFunder('nhs_north_west');
+    if(/care in finance/.test(low)) return defaultPayForFunder('ealing_adult');
+    if(/cwd|remittance|direct payment/.test(low)) return defaultPayForFunder('ealing_children');
+    if(/bacs|la invoice/.test(low)) return defaultPayForFunder('hf_children');
+    return s;
+  }
 
   function fundingSourceLabel(code){
     for(var i=0;i<FUNDING_SOURCE_OPTS.length;i++){
@@ -282,9 +376,6 @@
       return det ? ('Using money from LA · ' + det) : fundingSourceLabel(src);
     }
     return String(client.fundingBy||'').trim();
-  }
-  function payOptsForClient(client){
-    return String(client.fundingSource||'') === 'la_nhs' ? PAY_LA_OPTS : PAY_PRIVATE_OPTS;
   }
   function selectOptsHtml(opts, selected, placeholder){
     var html = '<option value="">'+(placeholder||'— Select —')+'</option>';
@@ -315,18 +406,6 @@
     if(/bank/.test(s) || /private/.test(s)) return PAY_PRIVATE_OPTS[0];
     return '';
   }
-  function normalizeLaPayLabel(payMethod){
-    var s = String(payMethod||'').trim();
-    if(!s || s === '—') return '';
-    for(var i=0;i<PAY_LA_OPTS.length;i++){
-      if(PAY_LA_OPTS[i].toLowerCase() === s.toLowerCase()) return PAY_LA_OPTS[i];
-    }
-    if(/nhs|po\b/.test(s.toLowerCase())) return 'NHS invoice (PO)';
-    if(/care in finance/.test(s.toLowerCase())) return 'LA invoice (Care in Finance)';
-    if(/cwd|remittance|direct payment/.test(s.toLowerCase())) return 'Direct payment (CWD remittance)';
-    if(/bacs|la invoice/.test(s.toLowerCase())) return 'LA invoice (BACS)';
-    return s;
-  }
   function mapPaymentsRowToFinance(payRow, sessions){
     if(!payRow) return null;
     var fund = String(payRow.fund||'').trim();
@@ -335,22 +414,24 @@
     var age = inferAgeBand(sessions, parent);
     var out = null;
     if(/nhs\s*·\s*ila|nhs\/ila|\bila\b/i.test(fund+' '+parent)){
-      out = { fundingSource:'la_nhs', funderDetail:'nhs_ila', paymentMethod: normalizeLaPayLabel(method) || 'NHS invoice (PO)' };
+      out = { fundingSource:'la_nhs', funderDetail:'nhs_ila', paymentMethod: normalizeLaPayLabel(method, 'nhs_ila') };
     } else if(/nhs\s*·\s*sbs|nhs\/sbs|north\s*west|\bsbs\b/i.test(fund+' '+parent)){
-      out = { fundingSource:'la_nhs', funderDetail:'nhs_north_west', paymentMethod: normalizeLaPayLabel(method) || 'NHS invoice (PO)' };
+      out = { fundingSource:'la_nhs', funderDetail:'nhs_north_west', paymentMethod: normalizeLaPayLabel(method, 'nhs_north_west') };
     } else if(/local authority\s*·\s*h\s*&\s*f|hammersmith|h\s*&\s*f/i.test(fund+' '+parent)){
       var hfAdult = age === 'adult' || /ld team/i.test(parent);
+      var hfCode = hfAdult ? 'hf_adult' : 'hf_children';
       out = {
         fundingSource:'la_nhs',
-        funderDetail: hfAdult ? 'hf_adult' : 'hf_children',
-        paymentMethod: normalizeLaPayLabel(method) || 'LA invoice (BACS)'
+        funderDetail: hfCode,
+        paymentMethod: normalizeLaPayLabel(method, hfCode)
       };
     } else if(/local authority\s*·\s*ealing|\bealing\b/i.test(fund+' '+parent)){
       var eAdult = age === 'adult';
+      var eCode = eAdult ? 'ealing_adult' : 'ealing_children';
       out = {
         fundingSource:'la_nhs',
-        funderDetail: eAdult ? 'ealing_adult' : 'ealing_children',
-        paymentMethod: normalizeLaPayLabel(method) || (eAdult ? 'LA invoice (Care in Finance)' : 'Direct payment (CWD remittance)')
+        funderDetail: eCode,
+        paymentMethod: normalizeLaPayLabel(method, eCode)
       };
     } else if(/bank transfer|gocardless|own way|private/i.test(fund) || /bank|go cardless|own way/i.test(method)){
       out = {
@@ -387,6 +468,9 @@
   }
   function migrateLegacyFunding(client){
     if(client.fundingSource){
+      if(client.funderDetail && client.paymentMethod){
+        client.paymentMethod = normalizeLaPayLabel(client.paymentMethod, client.funderDetail) || client.paymentMethod;
+      }
       client.fundingBy = composeFundingBy(client);
       return;
     }
@@ -552,6 +636,7 @@
 
   function clientFinanceHtml(client, ci){
     var isLa = String(client.fundingSource||'') === 'la_nhs';
+    var rule = funderPayRuleText(client);
     return ''+
       '<div class="svc svc--finance">'+
         '<div class="svc-main">'+
@@ -569,6 +654,7 @@
                 selectOptsHtml(FUNDER_DETAIL_OPTS, client.funderDetail, '— Ealing / H&amp;F / NHS —')+
               '</select>'+
             '</div>'+
+            (rule ? '<p class="client-finance__rule">'+esc(rule)+'</p>' : '')+
             '<div class="client-finance__row">'+
               '<label for="cf-pay-'+ci+'">Payment method</label>'+
               '<select id="cf-pay-'+ci+'" data-cf="paymentMethod" data-ci="'+ci+'">'+
@@ -702,7 +788,7 @@
       client.fundingSource = raw;
       if(raw !== 'la_nhs'){
         client.funderDetail = '';
-        if(client.paymentMethod && PAY_LA_OPTS.indexOf(client.paymentMethod) >= 0){
+        if(client.paymentMethod && isLaPayMethod(client.paymentMethod)){
           client.paymentMethod = '';
         }
       } else if(client.paymentMethod && PAY_PRIVATE_OPTS.indexOf(client.paymentMethod) >= 0){
@@ -716,8 +802,11 @@
     }
     if(field === 'funderDetail'){
       client.funderDetail = raw;
-      if(raw && (!client.paymentMethod || PAY_PRIVATE_OPTS.indexOf(client.paymentMethod) >= 0)){
-        client.paymentMethod = DEFAULT_PAY_BY_FUNDER[raw] || client.paymentMethod || '';
+      var opts = payOptsForClient(client);
+      if(raw){
+        if(!client.paymentMethod || PAY_PRIVATE_OPTS.indexOf(client.paymentMethod) >= 0 || opts.indexOf(client.paymentMethod) < 0){
+          client.paymentMethod = defaultPayForFunder(raw) || '';
+        }
       }
       client.fundingBy = composeFundingBy(client);
       client._dirty = true;
