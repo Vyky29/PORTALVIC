@@ -17,6 +17,11 @@ import {
   parseReenrolTermTotals,
   termTotalsFromWeeklySlots,
 } from "../_shared/reenrolment_auto_invoices.ts";
+import { gocardlessConfigured } from "../_shared/gocardless.ts";
+import {
+  mandateIsActive,
+  scheduleGocardlessPaymentsForContact,
+} from "../_shared/gocardless_portal.ts";
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -135,6 +140,9 @@ Deno.serve(async (req) => {
   let invoicesCreated: Array<{ invoice_number: string; amount_gbp: number; due_date: string | null }> =
     [];
   let invoicesSkipped: string | null = null;
+  let gocardlessScheduled = 0;
+  let gocardlessScheduleErrors: string[] = [];
+  let gocardlessNeedsSetup = false;
 
   // Auto-create INV-P schedule on first submit only (resubmits: office adjusts manually).
   if (participantContactId && !priorSubmissionAt) {
@@ -193,12 +201,64 @@ Deno.serve(async (req) => {
             due_date: inst.dueDateIso,
           });
         }
+
+        // Existing July mandates: schedule GC collections (first often 1 Sep).
+        if (
+          invoicesCreated.length &&
+          plan.paymentMethodHint === "gocardless" &&
+          gocardlessConfigured()
+        ) {
+          const { data: mandateRow } = await supabase
+            .from("portal_parent_gocardless_mandates")
+            .select("gocardless_mandate_id, mandate_status")
+            .eq("contact_id", participantContactId)
+            .maybeSingle();
+          const mandateId = String(mandateRow?.gocardless_mandate_id || "").trim();
+          if (mandateId && mandateIsActive(mandateRow?.mandate_status)) {
+            const sched = await scheduleGocardlessPaymentsForContact(supabase, {
+              contactId: participantContactId,
+              mandateId,
+              invoiceId: null,
+            });
+            gocardlessScheduled = sched.scheduled;
+            gocardlessScheduleErrors = (sched.errors || []).slice(0, 8);
+            if (sched.errors?.length) {
+              console.error(
+                "[portal-reenrolment-submit] gocardless schedule",
+                participantContactId,
+                sched.errors,
+              );
+            }
+          } else {
+            gocardlessNeedsSetup = true;
+          }
+        }
       }
     }
   } else if (priorSubmissionAt) {
     invoicesSkipped = "resubmission";
   } else if (!participantContactId) {
     invoicesSkipped = "no_contact_id";
+  }
+
+  let message = "Thank you — your re-enrolment has been sent to the club office.";
+  if (priorSubmissionAt) {
+    message =
+      "Thank you — your updated re-enrolment has been sent to the club office for review.";
+  } else if (invoicesCreated.length) {
+    message =
+      `Thank you — your re-enrolment has been sent to the club office. ${invoicesCreated.length} invoice${
+        invoicesCreated.length === 1 ? "" : "s"
+      } are ready in your parent portal.`;
+    if (gocardlessScheduled > 0) {
+      message +=
+        ` Direct Payment collections are scheduled with GoCardless (${gocardlessScheduled} instalment${
+          gocardlessScheduled === 1 ? "" : "s"
+        }, starting from the first due date).`;
+    } else if (gocardlessNeedsSetup) {
+      message +=
+        " Open Invoices in the parent portal to set up Direct Payment before the first collection.";
+    }
   }
 
   return json(200, {
@@ -209,10 +269,9 @@ Deno.serve(async (req) => {
     invoices_created: invoicesCreated.length,
     invoices: invoicesCreated,
     invoices_skipped: invoicesSkipped,
-    message: priorSubmissionAt
-      ? "Thank you — your updated re-enrolment has been sent to the club office for review."
-      : invoicesCreated.length
-        ? `Thank you — your re-enrolment has been sent to the club office. ${invoicesCreated.length} invoice${invoicesCreated.length === 1 ? "" : "s"} are ready in your parent portal.`
-        : "Thank you — your re-enrolment has been sent to the club office.",
+    gocardless_scheduled: gocardlessScheduled,
+    gocardless_schedule_errors: gocardlessScheduleErrors,
+    gocardless_needs_setup: gocardlessNeedsSetup,
+    message,
   });
 });
