@@ -590,6 +590,105 @@
     function p(x){ var mm=String(x||'').trim().match(/^(\d{1,2})(?:[.:](\d{1,2}))?$/); if(!mm) return null; return parseInt(mm[1],10)*60 + (mm[2]?parseInt(mm[2],10):0); }
     var a=p(m[0]), b=p(m[1]); if(a==null||b==null) return null; if(b<=a) b+=720; return b-a;
   }
+  function parseSlotBounds(slot){
+    var parts = String(slot||'').split(/to|-|—/i);
+    if(parts.length!==2) return null;
+    function p(x){
+      var mm=String(x||'').trim().match(/^(\d{1,2})(?:[.:](\d{1,2}))?$/);
+      if(!mm) return null;
+      return parseInt(mm[1],10)*60 + (mm[2]?parseInt(mm[2],10):0);
+    }
+    var a=p(parts[0]), b=p(parts[1]);
+    if(a==null||b==null) return null;
+    /* Rota slots are 12-hour without am/pm: 1–6 means afternoon (13:00–18:00). */
+    function clubAbs(mins){
+      var h = Math.floor(mins / 60);
+      var m = mins % 60;
+      if(h >= 1 && h <= 6) return (h + 12) * 60 + m;
+      return mins;
+    }
+    a = clubAbs(a);
+    b = clubAbs(b);
+    if(b <= a) b += 720;
+    return { start:a, end:b };
+  }
+  function formatClockFromMins(totalMins){
+    var mins = ((Number(totalMins)||0) % 1440 + 1440) % 1440;
+    var h24 = Math.floor(mins / 60);
+    var m = mins % 60;
+    var h = h24 % 12;
+    if(h === 0) h = 12;
+    if(m === 0) return String(h);
+    return h + '.' + (m < 10 ? '0' : '') + m;
+  }
+  /**
+   * Multi-Activity is one 90' service booked as two consecutive 45' rota lines
+   * (e.g. Hub Room then Big Pool). Collapse those pairs for review / publish.
+   */
+  function mergeMultiActivitySessions(sessions){
+    var list = (sessions||[]).slice();
+    list.sort(function(a, b){
+      var da = String(a && a.day || '');
+      var db = String(b && b.day || '');
+      if(da !== db) return da.localeCompare(db);
+      var pa = parseSlotBounds(a && a.timeSlot);
+      var pb = parseSlotBounds(b && b.timeSlot);
+      return ((pa && pa.start) || 0) - ((pb && pb.start) || 0);
+    });
+    var out = [];
+    var i = 0;
+    while(i < list.length){
+      var cur = list[i];
+      var nxt = list[i + 1];
+      var curIsMulti = cur && canonProg(cur.service) === 'Multi-Activity';
+      var nxtIsMulti = nxt && canonProg(nxt.service) === 'Multi-Activity';
+      if(
+        curIsMulti && nxtIsMulti &&
+        String(cur.day || '') === String(nxt.day || '') &&
+        String(cur.venue || '').trim().toLowerCase() === String(nxt.venue || '').trim().toLowerCase()
+      ){
+        var a = parseSlotBounds(cur.timeSlot);
+        var b = parseSlotBounds(nxt.timeSlot);
+        if(
+          a && b &&
+          a.end === b.start &&
+          (a.end - a.start) === 45 &&
+          (b.end - b.start) === 45
+        ){
+          var areaA = String(cur.area || '').trim();
+          var areaB = String(nxt.area || '').trim();
+          var areaJoined = areaA && areaB && areaA !== areaB
+            ? areaA + ' → ' + areaB
+            : (areaA || areaB);
+          out.push({
+            service: 'Multi-Activity',
+            day: cur.day,
+            timeSlot: formatClockFromMins(a.start) + ' to ' + formatClockFromMins(b.end),
+            durationMin: 90,
+            instructor: String(cur.instructor || nxt.instructor || '').trim(),
+            venue: cur.venue || nxt.venue || '',
+            area: areaJoined,
+            weeks: cur.weeks != null ? cur.weeks : nxt.weeks
+          });
+          i += 2;
+          continue;
+        }
+      }
+      if(cur) out.push(cur);
+      i += 1;
+    }
+    return out;
+  }
+  function applyMultiActivityMerges(){
+    var changed = false;
+    (STATE.clients||[]).forEach(function(c){
+      if(!c || !Array.isArray(c.sessions) || c.sessions.length < 2) return;
+      var before = c.sessions.length;
+      c.sessions = mergeMultiActivitySessions(c.sessions);
+      if(c.sessions.length !== before) changed = true;
+    });
+    return changed;
+  }
   function svcTitle(sess){
     var d = slotMinutes(sess.timeSlot);
     var pre = (d!=null? d+"' " : '');
@@ -1096,11 +1195,12 @@
   document.getElementById('importFile').addEventListener('change', function(ev){
     var f = ev.target.files && ev.target.files[0]; if(!f) return;
     var r = new FileReader();
-    r.onload = function(){ try{ var s=JSON.parse(r.result); if(s&&Array.isArray(s.clients)){ STATE=s; save(); editing=Object.create(null); render(); } }catch(e){ alert('Invalid JSON'); } };
+    r.onload = function(){ try{ var s=JSON.parse(r.result); if(s&&Array.isArray(s.clients)){ STATE=s; applyMultiActivityMerges(); save(); editing=Object.create(null); render(); } }catch(e){ alert('Invalid JSON'); } };
     r.readAsText(f);
   });
 
   prefillFinanceFromPayments();
+  if(applyMultiActivityMerges()) save();
   render();
   function tryEnrich(){
     enrichFinanceFromPortal();
