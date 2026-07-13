@@ -1864,7 +1864,29 @@
       if(a === b) return true;
       const startA = a.split(/\s+to\s+/)[0];
       const startB = b.split(/\s+to\s+/)[0];
-      return !!(startA && startB && startA === startB);
+      if(startA && startB && startA === startB) return true;
+      /* "16 to 17" (24h admin label) vs sheet "4 to 5" — compare parsed windows. */
+      try{
+        const dayWord = String(s && s.day || '').trim()
+          || (s && s.session_date
+            ? new Date(String(s.session_date).slice(0, 10) + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' })
+            : '');
+        const parse = (typeof StaffDashboardSpreadsheetAdapter !== 'undefined'
+          && StaffDashboardSpreadsheetAdapter
+          && typeof StaffDashboardSpreadsheetAdapter.parseTimeSlot === 'function')
+          ? StaffDashboardSpreadsheetAdapter.parseTimeSlot
+          : (typeof parseTimeSlot === 'function' ? parseTimeSlot : null);
+        if(parse && dayWord){
+          const pa = parse(lab, dayWord);
+          const pb = parse(sLab || (s.start && s.end ? (s.start + ' to ' + s.end) : ''), dayWord);
+          if(pa && pb
+            && portalTimeAnchorsMatch(pa.start, pb.start)
+            && portalTimeAnchorsMatch(pa.end, pb.end)){
+            return true;
+          }
+        }
+      }catch(_){}
+      return false;
     }
     function portalScheduleOverrideRowsAll(){ return Array.isArray(window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__) ? window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ : []; }
     /** Spreadsheet / rota row is a closed block (hidden from staff unless a matching slot_open override exists). */
@@ -3195,7 +3217,16 @@
       if(!portalOverrideAnchorStaffKeysMatch(r.anchor_staff_id, s.staffId)) return false;
       if(!portalRosterClientIdsMatch(r.anchor_client_id, s.clientId)) return false;
       if(portalScheduleOverrideAnchorTimesMatchSession(r, s, 'client_absence_announced')) return true;
-      return portalOverrideSlotLabelMatchesRow(r, s);
+      if(portalOverrideSlotLabelMatchesRow(r, s)) return true;
+      /* Admin aquatic full-band absent: same staff + client + day covers the remaining sheet slot
+         even when the override was saved against a ghost 24h label (e.g. "16 to 17" vs "4 to 5"). */
+      try{
+        const p = r.payload && typeof r.payload === 'object' ? r.payload : {};
+        if(p.aquatic_full_band_absent === true || String(p.feedback_resolution || '').trim().toLowerCase() === 'absent'){
+          return true;
+        }
+      }catch(_){}
+      return false;
     }
     function portalScheduleOverridesMatchingSession(s, sessionDateIso, overrideType){
       if(!s) return [];
@@ -3207,8 +3238,11 @@
         const rowIso = normaliseIsoDate(r.session_date);
         if(!rowIso || rowIso !== iso) return false;
         if(!portalOverrideAnchorStaffKeysMatch(r.anchor_staff_id, s.staffId)) return false;
-        if(portalNormKeyStr(r.anchor_venue) !== portalNormKeyStr(s.venue)) return false;
         const rowOvType = wantType || String(r.override_type || '').trim();
+        const isAbsence = rowOvType === 'client_absence_announced'
+          || String(r.override_type || '').trim() === 'client_absence_announced';
+        /* Absences: allow venue miss (Acton vs empty) — staff/client/time still gate the match. */
+        if(!isAbsence && portalNormKeyStr(r.anchor_venue) !== portalNormKeyStr(s.venue)) return false;
         const openMakeupAnchor = rowOvType === 'client_replace_in_slot' && portalScheduleOverrideAnchorIsOpenSlot(r.anchor_client_id);
         if(!openMakeupAnchor && !portalRosterClientIdsMatch(r.anchor_client_id, s.clientId)) return false;
         if(!portalScheduleOverrideAnchorTimesMatchSession(r, s, wantType || String(r.override_type || '').trim())) return false;
