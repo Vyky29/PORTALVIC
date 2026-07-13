@@ -1764,9 +1764,16 @@ const LEVEL_DATA = {
         const btn = block.querySelector(".swterm-letter-btn");
         const panel = block.querySelector(".swterm-letter-panel");
         const open = !!nextOpen && L === nextOpen;
+        block.classList.toggle("is-open", open);
         if(btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
         if(panel) panel.hidden = !open;
       });
+      if(nextOpen){
+        const openBlock = list.querySelector('.swterm-letter-block[data-letter="' + nextOpen + '"]');
+        if(openBlock && typeof openBlock.scrollIntoView === "function"){
+          try{ openBlock.scrollIntoView({ block: "nearest", behavior: "smooth" }); }catch(_){}
+        }
+      }
     }
 
     function refreshAccordionCompleteStyles(){
@@ -1858,6 +1865,7 @@ const LEVEL_DATA = {
         letterBtn.setAttribute("aria-controls", "swimmerLetterPanel-" + group.letter);
 
         const label = document.createElement("span");
+        label.className = "swterm-letter-label";
         label.textContent = group.letter;
         const meta = document.createElement("span");
         meta.className = "swterm-letter-meta";

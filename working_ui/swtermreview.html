@@ -2434,54 +2434,93 @@
       overflow-wrap:break-word;
     }
     .swterm-letter-accordion{
-      display:flex;
-      flex-direction:column;
+      display:grid;
+      grid-template-columns:repeat(5, minmax(0, 1fr));
       gap:8px;
       min-width:0;
-      max-height:min(52vh, 420px);
+      max-height:min(58vh, 480px);
       overflow:auto;
       -webkit-overflow-scrolling:touch;
       padding:2px;
+      align-content:start;
     }
     .swterm-letter-block{
       min-width:0;
       border:1px solid rgba(14,116,144,0.22);
-      border-radius:14px;
+      border-radius:12px;
       background:#f8fcfd;
       overflow:hidden;
     }
+    .swterm-letter-block.is-open{
+      grid-column:1 / -1;
+    }
     .swterm-letter-btn{
       display:flex;
+      flex-direction:column;
       align-items:center;
-      justify-content:space-between;
-      gap:10px;
+      justify-content:center;
+      gap:2px;
       width:100%;
       margin:0;
-      padding:11px 14px;
+      padding:10px 4px 8px;
       border:0;
       background:linear-gradient(180deg,#f0fbfd,#e6f6fb);
       color:#0b1220;
       font:inherit;
-      font-size:14px;
-      font-weight:750;
-      text-align:left;
+      font-size:16px;
+      font-weight:800;
+      text-align:center;
       cursor:pointer;
       min-width:0;
+      min-height:52px;
+      line-height:1.1;
+    }
+    .swterm-letter-btn .swterm-letter-label{
+      display:block;
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      font-size:17px;
+      font-weight:800;
+      color:#0b1220;
+      -webkit-text-fill-color:#0b1220;
     }
     .swterm-letter-btn .swterm-letter-meta{
+      display:block;
       flex:0 0 auto;
-      font-size:12px;
+      font-size:10px;
       font-weight:650;
       color:#0e7490;
+      -webkit-text-fill-color:#0e7490;
       white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:100%;
+      line-height:1.2;
     }
     .swterm-letter-btn .swterm-letter-chevron{
+      display:none;
+    }
+    .swterm-letter-block.is-open .swterm-letter-btn{
+      flex-direction:row;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:11px 14px;
+      text-align:left;
+      min-height:0;
+    }
+    .swterm-letter-block.is-open .swterm-letter-btn .swterm-letter-label{
+      font-size:15px;
+    }
+    .swterm-letter-block.is-open .swterm-letter-btn .swterm-letter-meta{
+      font-size:12px;
+    }
+    .swterm-letter-block.is-open .swterm-letter-btn .swterm-letter-chevron{
+      display:inline-block;
       flex:0 0 auto;
       font-size:12px;
       color:#5b6575;
-      transition:transform 0.15s ease;
-    }
-    .swterm-letter-btn[aria-expanded="true"] .swterm-letter-chevron{
       transform:rotate(90deg);
     }
     .swterm-letter-btn.is-complete,
@@ -2491,8 +2530,13 @@
       color:#14532d;
       box-shadow:0 0 0 1px rgba(21,128,61,0.18);
     }
+    .swterm-letter-btn.is-complete .swterm-letter-label{
+      color:#14532d;
+      -webkit-text-fill-color:#14532d;
+    }
     .swterm-letter-btn.is-complete .swterm-letter-meta{
       color:#166534;
+      -webkit-text-fill-color:#166534;
     }
     .swterm-letter-btn:hover,
     .swterm-letter-btn:focus-visible,
@@ -3249,7 +3293,7 @@
   <!-- swtermreview_app.js — portal/ then portal-shared-js/ on Vercel. -->
   <script>
     (function () {
-      var v = "20260713-letter-accordion";
+      var v = "20260713-letter-grid5";
       var file = "swtermreview_app.js";
       var bases = [];
       try {
