@@ -772,6 +772,7 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   justify-content:flex-end;
   padding-top:3px;
   box-sizing:border-box;
+  overflow:visible;
 }
 .topbar-tools-grid > .topbar-tool-cell--staff-wa .topbar-tool-btn.topbar-tool-btn--staff-wa,
 .topbar-tools-grid--lead > .topbar-tool-cell--staff-wa .topbar-tool-btn.topbar-tool-btn--staff-wa,
@@ -798,7 +799,8 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   background:linear-gradient(180deg,#ffe9a3,#f5d56a) !important;
   color:#173247 !important;
   box-shadow:0 1px 2px rgba(232,196,74,.22);
-  overflow:hidden;
+  /* visible so unread badge can sit on the top-right rim (not clipped over the label) */
+  overflow:visible !important;
   box-sizing:border-box;
 }
 .topbar-tools-grid > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-btn__ico{

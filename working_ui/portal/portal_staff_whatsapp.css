@@ -54,8 +54,9 @@
 }
 .topbar-staff-wa-btn__badge{
   position:absolute;
-  top:-6px;
-  right:-4px;
+  top:-8px;
+  right:-6px;
+  z-index:3;
   min-width:18px;
   height:18px;
   padding:0 5px;
@@ -67,6 +68,7 @@
   line-height:18px;
   text-align:center;
   box-shadow:0 1px 3px rgba(0,0,0,.25);
+  pointer-events:none;
 }
 
 /* 5+ session icons: photo + name + WA under photo align to tools grid height */
@@ -118,8 +120,9 @@
   box-shadow:0 0 0 2px rgba(220,38,38,.45),0 1px 3px rgba(217,154,31,.28) !important;
 }
 .topbar-tool-btn--staff-wa .topbar-staff-wa-btn__badge{
-  top:-5px;
-  right:2px;
+  top:-9px;
+  right:4px;
+  z-index:3;
 }
 
 .portal-staff-wa-toast{
