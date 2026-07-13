@@ -245,9 +245,11 @@
       html.portal-standalone{
         --dock-nav-logo-max-height:46px;
       }
-      /* Safari and similar: bottom bar ~50–56px is outside safe-area */
+      /* With height:100dvh the dynamic viewport already excludes mobile browser
+         chrome. The old fixed 54px Safari lift left a blank strip under the dock
+         (“pantalla más corta”). Keep lift at 0; safe-area still pads the dock. */
       html.portal-in-browser:not(.dev-mobile-preview){
-        --dock-browser-ui-lift:54px;
+        --dock-browser-ui-lift:0px;
       }
     }
     html.portal-in-browser:not(.dev-mobile-preview) .dock-bar{
