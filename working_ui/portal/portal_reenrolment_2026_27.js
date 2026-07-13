@@ -1644,7 +1644,7 @@
       '<div id="reBillingPaySection"' +
       (b.editing ? " hidden" : "") +
       ">" +
-      '<p class="re-muted re-billing-plan-intro">The total above covers your confirmed sessions for the year. Choose a <strong>standard plan</strong> with fixed due dates (no admin fee if you pay on time — including Card / Apple Pay), or <strong>Own arrangement</strong> only if you cannot meet those dates or pay the full amount when due (+ £50).</p>' +
+      '<p class="re-muted re-billing-plan-intro">The total above covers your confirmed sessions for the year. <strong>Bank Transfer / Card / Apple Pay</strong> uses fixed due dates (pay each invoice from the parent portal — no admin fee if on time). <strong>Direct Payment (GoCardless)</strong> is collected automatically once we set up your mandate. <strong>Own arrangement</strong> is only if you cannot meet those dates (+ £50 / term).</p>' +
       '<div id="rePanelPrivate" class="re-funding-panel">' +
       '<div id="rePayScheduleWrap" class="re-pay-schedule-wrap">' +
       (normalizeEnrolmentCadence(state.enrolmentCadence)
@@ -1672,14 +1672,14 @@
       '<div id="reDirectPayFailNote" class="re-funding-fee re-funding-fee--fail"' +
       (payCode === "gocardless" ? "" : " hidden") +
       ">" +
-      "<strong>If a direct debit fails</strong>" +
-      "If a payment fails (for example insufficient funds or a cancelled mandate), you must pay within " +
-      "<strong>7 days</strong> by bank transfer, including any GoCardless failure charge. " +
-      "After <strong>two failed attempts in the same term</strong>, direct payment is withdrawn for the rest of the academic year — remaining instalments must be paid by bank transfer." +
+      "<strong>If a Direct Payment fails</strong>" +
+      "If a GoCardless collection fails (for example insufficient funds or a cancelled mandate), you must pay within " +
+      "<strong>7 days</strong> by bank transfer or Card / Apple Pay from the parent portal, including any GoCardless failure charge. " +
+      "After <strong>two failed attempts in the same term</strong>, Direct Payment is withdrawn for the rest of the academic year — remaining instalments must be paid by bank transfer / Card / Apple Pay." +
       "</div></div></div>" +
       '<p class="re-muted re-funding-foot">Re-enrolment closes ' +
       esc(RE_ENROL_DEADLINE_LABEL) +
-      ". First payments from mid-August (bank transfer) or September (Direct Payment) — see schedule above.</p>" +
+      ". First bank / Card / Apple Pay due dates from mid-August; Direct Payment collections from September once your mandate is set up — see schedule above.</p>" +
       "</div>" +
       renderReenrolFarewellHtml(data) +
       "</div>"
@@ -1703,8 +1703,14 @@
   }
 
   var RE_PRIVATE_PAY_METHODS = [
-    { code: "bank_transfer", label: "Bank Transfer (fixed due dates)" },
-    { code: "gocardless", label: "Direct Payment (GoCardless)" },
+    {
+      code: "bank_transfer",
+      label: "Bank Transfer / Card / Apple Pay (fixed due dates)",
+    },
+    {
+      code: "gocardless",
+      label: "Direct Payment (GoCardless)",
+    },
     {
       code: "own_way_flexible",
       label: "Own arrangement — cannot meet payment dates (+ £50 / term)",
@@ -1745,28 +1751,28 @@
   function scheduleOptionHint(code, payCode) {
     var isGc = payCode === "gocardless";
     if (code === "own_term") {
-      return "Only if you cannot meet our fixed due dates. Term by term on your own timing (bank / Card / Apple Pay). £50 admin fee each term. Keep at least two sessions paid in advance for every service; below that we may pause sessions or move you to a standard plan. If you can pay on time, choose Bank Transfer or GoCardless instead — no £50 fee.";
+      return "Only if you cannot meet our fixed due dates. Term by term on your own timing. £50 admin fee each term. Keep at least two sessions paid in advance for every service. On the parent portal you can still pay each amount by bank transfer or Card / Apple Pay when an invoice is ready.";
     }
     if (code === "yearly_1off") {
       return isGc
-        ? "One Direct Payment for the full academic year. We set up GoCardless in July; collection around early September. Same programme total (+ £1.50 fee on that payment)."
-        : "Confirm the full academic year in one step. One bank transfer due by 15 August 2026, same programme total. Paying on time (or by Card / Apple Pay when offered) has no admin fee.";
+        ? "One Direct Payment for the full academic year. We set up GoCardless before the first collection (around early September). Same programme total (+ £1.50 fee on that payment)."
+        : "One payment for the full academic year — due by 15 August 2026. Pay from the parent portal by bank transfer (no fee) or Card / Apple Pay (small processing fee). Same programme total.";
     }
     if (code === "monthly_10") {
-      return "Ten Direct Payments — Autumn 4, Spring 3, Summer 3 (September–June). We set up GoCardless in July; first collection on 1 September (reaches us around 5–6 September), then on the 1st of each month. Same programme total; £1.50 fee per instalment.";
+      return "Ten Direct Payments — Autumn 4, Spring 3, Summer 3 (September–June). We set up GoCardless before the first collection; then on the 1st of each month. Same programme total; £1.50 fee per instalment.";
     }
     if (code === "monthly_term") {
-      return "One direct payment per month of each term — Autumn 4, Spring 3, Summer 4 (11 across the year). We set up your GoCardless agreement in July; GoCardless collects the first payment on 1 September and it reaches us around 5–6 September, then on the 1st of each month. Same programme total.";
+      return "One direct payment per month of each term — Autumn 4, Spring 3, Summer 4 (11 across the year). We set up GoCardless before the first collection.";
     }
     if (code === "term_flexi") {
       return isGc
-        ? "Six Direct Payments over the year — two per term (before half term and during half-term week). First collection around early September. Same programme total; £1.50 fee per instalment."
-        : "Six bank transfers over the year — the first due by 15 August 2026, then two per term: before half term starts, and during half-term week before the second half. Same programme total. Pay each amount on or before the due date (Card / Apple Pay when offered) — no admin fee.";
+        ? "Six Direct Payments over the year — two per term. We set up GoCardless before the first collection. Same programme total; £1.50 fee per instalment."
+        : "Six payments over the year — two per term (before half term and during half-term week). First due by 15 August 2026. Pay each invoice from the parent portal by bank transfer or Card / Apple Pay — no admin fee if you pay on time.";
     }
     if (code === "term_3") {
       return isGc
-        ? "Three Direct Payments — one per term (around 1 September, 1 December and 1 March). Same programme total; £1.50 fee per instalment."
-        : "Three bank transfers — the first due by 15 August 2026, then 1 December and 1 March — one invoice per term, same programme total over the year. On-time payment (including Card / Apple Pay when offered) has no admin fee.";
+        ? "Three Direct Payments — one per term. We set up GoCardless before the first collection. Same programme total; £1.50 fee per instalment."
+        : "Three payments — one per term (first due by 15 August 2026, then December and March). Pay each invoice from the parent portal by bank transfer or Card / Apple Pay — no admin fee if you pay on time.";
     }
     return "";
   }
@@ -1857,10 +1863,10 @@
       var checked = o.code === defaultCode ? " checked" : "";
       var hint =
         o.code === "own_way_flexible"
-          ? "Term only (+ £50 each term). Keep 2 sessions prepaid per service. On-time Card / Apple Pay / bank on a standard plan = no £50 fee."
+          ? "Term only (+ £50 each term). Keep 2 sessions prepaid per service. Prefer Bank Transfer / Card / Apple Pay on a standard plan if you can meet due dates."
           : o.code === "bank_transfer"
-            ? "Fixed due dates. Pay on time by bank transfer (or Card / Apple Pay when offered) — no admin fee."
-            : "Monthly Direct Debit — choose one-off, term, flexi or monthly schedule below.";
+            ? "Fixed due dates. Pay each invoice in the parent portal by bank transfer (no fee) or Card / Apple Pay (small fee)."
+            : "Automatic Direct Debit once we set up your GoCardless mandate. Choose one-off, term, flexi or monthly below. £1.50 per instalment.";
       return (
         '<label class="re-radio re-radio--pay-method">' +
         '<input type="radio" name="re_pay_2627" value="' +
