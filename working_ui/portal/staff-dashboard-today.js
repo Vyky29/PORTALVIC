@@ -933,6 +933,56 @@
       }
       return true;
     }
+    /** Match admin feedback_resolution keys to Day Centre / Bespoke review keys.
+     *  Cancel payloads often store timed keys (2026-07-07|11:00|ikram) while Day Centre
+     *  review uses 2026-07-07|ikram|day_centre — exact equality misses and leaves a false "owed". */
+    function portalFeedbackResolutionKeyMatchesReview(payloadKey, reviewKey){
+      let pk = String(payloadKey || '').trim().toLowerCase();
+      let sk = String(reviewKey || '').trim().toLowerCase();
+      if(!pk || !sk) return false;
+      if(typeof portalNormalizeSessionReviewKey === 'function'){
+        pk = String(portalNormalizeSessionReviewKey(pk) || pk).trim().toLowerCase();
+        sk = String(portalNormalizeSessionReviewKey(sk) || sk).trim().toLowerCase();
+      }
+      if(pk === sk) return true;
+      const pa = pk.split('|');
+      const pb = sk.split('|');
+      if(!pa[0] || pa[0] !== pb[0]) return false;
+      const NON = {
+        day_centre: 1, bespoke_shared: 1, hub_room: 1, aquatic: 1, teaching_pool: 1,
+        big_pool: 1, small_pool: 1, climbing: 1, climbing_wall: 1, multi_activity: 1,
+        'multi-activity': 1, merge: 1, wall: 1, room_2: 1, lane_de: 1, lane_se: 1
+      };
+      function clientToks(parts){
+        const out = [];
+        for(let i = 1; i < parts.length; i++){
+          let t = String(parts[i] || '').trim().toLowerCase();
+          if(!t || /^\d{1,2}:\d{2}/.test(t) || NON[t]) continue;
+          if(typeof portalCanonicalRosterClientId === 'function'){
+            t = String(portalCanonicalRosterClientId(t) || t).trim().toLowerCase();
+          }
+          if(t) out.push(t);
+        }
+        return out;
+      }
+      function timeTok(parts){
+        for(let i = 1; i < parts.length; i++){
+          const t = String(parts[i] || '').trim().toLowerCase();
+          if(/^\d{1,2}:\d{2}/.test(t)) return t.slice(0, 5);
+        }
+        return '';
+      }
+      const ca = clientToks(pa);
+      const cb = clientToks(pb);
+      if(!ca.length || !cb.length || !ca.some(function(x){ return cb.indexOf(x) >= 0; })) return false;
+      const unitA = pa.indexOf('day_centre') >= 0 || pa.indexOf('bespoke_shared') >= 0;
+      const unitB = pb.indexOf('day_centre') >= 0 || pb.indexOf('bespoke_shared') >= 0;
+      if(unitA || unitB) return true;
+      const ta = timeTok(pa);
+      const tb = timeTok(pb);
+      if(ta && tb) return ta === tb;
+      return true;
+    }
     /** Sessions that need no feedback register (absent, cancelled, closed, covered away, no client). */
     function portalOverrideFeedbackResolutionForSession(s, sessionDateIso){
       const iso = String(sessionDateIso || '').trim().slice(0, 10);
@@ -959,7 +1009,15 @@
         const res = String(p.feedback_resolution || '').trim().toLowerCase();
         if(res !== 'absent' && res !== 'cancelled') continue;
         const pk = String(p.portal_session_key || '').trim().toLowerCase();
-        if(pk && pk === skL) return res;
+        if(pk && portalFeedbackResolutionKeyMatchesReview(pk, skL)) return res;
+        /* Timed cancel without usable key: still honour same-staff Day Centre / Bespoke cancel. */
+        if(!pk && (skL.indexOf('|day_centre') >= 0 || skL.indexOf('|bespoke_shared') >= 0)
+          && typeof portalRosterClientIdsMatch === 'function'
+          && portalRosterClientIdsMatch(r.anchor_client_id, s.clientId)
+          && typeof portalStaffKeysMatch === 'function'
+          && portalStaffKeysMatch(r.anchor_staff_id, s.staffId)){
+          return res;
+        }
       }
       return '';
     }
