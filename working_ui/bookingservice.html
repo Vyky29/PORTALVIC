@@ -2,7 +2,6 @@
 <!--
   PORTALVIC · Public booking offer (Phase A mock).
   URL: /bookingservice · www.clubsensational.org/bookingservice
-  Live capacity will share the parent-portal seat helper — this page ships with mock data.
 -->
 <html lang="en-GB">
 <head>
@@ -13,7 +12,7 @@
   <link rel="canonical" href="https://www.clubsensational.org/bookingservice" />
   <title>Book a service — clubSENsational</title>
   <script src="/portal-static-bootstrap.js"></script>
-  <script src="/portal/portal_brand.js?v=20260714-booking"></script>
+  <script src="/portal/portal_brand.js?v=20260714-booking-ui2"></script>
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <style>
     :root {
@@ -21,6 +20,7 @@
       --blueDeep: #1f6a94;
       --blueSoft: #eaf5fb;
       --gold: #f4b740;
+      --sen-gold: #f9bf2e;
       --ink: #173247;
       --text: #314555;
       --muted: #728290;
@@ -32,8 +32,8 @@
       --dangerSoft: #fef3f2;
       --ok: #157347;
       --okSoft: #e8f7ef;
-      --radius: 18px;
-      --max: 920px;
+      --radius: 20px;
+      --pad-x: clamp(16px, 3.5vw, 48px);
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     [hidden] { display: none !important; }
@@ -45,104 +45,192 @@
       font-family: Arial, Helvetica, sans-serif;
       color: var(--text);
       background:
-        radial-gradient(1000px 420px at 10% -10%, rgba(45, 132, 179, 0.14), transparent 55%),
-        radial-gradient(800px 380px at 100% 0%, rgba(244, 183, 64, 0.16), transparent 50%),
+        radial-gradient(1200px 520px at 8% -8%, rgba(45, 132, 179, 0.16), transparent 55%),
+        radial-gradient(900px 420px at 100% 0%, rgba(244, 183, 64, 0.18), transparent 50%),
         linear-gradient(180deg, var(--bg0) 0%, var(--bg1) 100%);
       line-height: 1.45;
     }
+
+    /* Full-bleed page — no narrow column */
     .page {
       width: 100%;
-      max-width: var(--max);
-      margin: 0 auto;
-      padding: max(18px, env(safe-area-inset-top)) 16px max(40px, env(safe-area-inset-bottom));
+      max-width: none;
+      margin: 0;
+      padding: max(16px, env(safe-area-inset-top)) var(--pad-x) max(48px, env(safe-area-inset-bottom));
       min-width: 0;
     }
+
     .brand {
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
-      gap: 8px;
-      margin: 0 0 18px;
+      gap: 10px;
+      margin: 0 0 22px;
       min-width: 0;
+      padding: 8px 0 4px;
     }
-    .brand img {
-      width: 76px;
-      height: 76px;
-      object-fit: contain;
-      border-radius: 16px;
+    .brand-logo-stage {
+      position: relative;
+      width: min(280px, 72vw);
+      max-width: 100%;
+      aspect-ratio: 1;
+      margin: 0 auto;
+      display: grid;
+      place-items: center;
+    }
+    .brand-orbit-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: visible;
+    }
+    .orbit-layer--cw { transform-origin: 0 0; animation: orbit-cw 18s linear infinite; }
+    .orbit-layer--ccw { transform-origin: 0 0; animation: orbit-ccw 14s linear infinite; }
+    .orbit-layer--slow-ccw { transform-origin: 0 0; animation: orbit-ccw 26s linear infinite; }
+    @keyframes orbit-cw {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes orbit-ccw {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(-360deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .orbit-layer--cw, .orbit-layer--ccw, .orbit-layer--slow-ccw { animation: none; }
+    }
+    .brand-logo-shell {
+      position: relative;
+      z-index: 1;
+      width: 70%;
+      max-width: 196px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      overflow: hidden;
+      background: var(--white);
+      display: grid;
+      place-items: center;
+      box-shadow:
+        0 0 0 2px rgba(249, 191, 46, 0.5),
+        0 0 22px rgba(249, 191, 46, 0.45),
+        0 0 44px rgba(244, 183, 64, 0.32),
+        0 0 70px rgba(45, 132, 179, 0.14);
+    }
+    .brand-logo-shell img {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      object-fit: cover;
+      transform: scale(1.32);
+      transform-origin: center center;
     }
     .brand h1 {
       margin: 0;
-      font-size: clamp(1.35rem, 4vw, 1.75rem);
+      font-size: clamp(1.65rem, 4.5vw, 2.35rem);
       color: var(--ink);
       font-weight: 800;
-      letter-spacing: -0.02em;
+      letter-spacing: -0.03em;
       overflow-wrap: break-word;
     }
     .brand .lede {
       margin: 0;
-      max-width: 38rem;
+      max-width: 42rem;
+      width: 100%;
       color: var(--muted);
-      font-size: 0.95rem;
+      font-size: clamp(0.95rem, 2vw, 1.05rem);
       overflow-wrap: break-word;
     }
+
     .mock-banner {
-      margin: 0 0 14px;
-      padding: 10px 12px;
-      border-radius: 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin: 0 0 18px;
+      padding: 12px 14px;
+      border-radius: 14px;
       border: 1px dashed rgba(45, 132, 179, 0.45);
-      background: rgba(234, 245, 251, 0.85);
+      background: rgba(234, 245, 251, 0.9);
       color: var(--ink);
-      font-size: 0.86rem;
+      font-size: 0.9rem;
       overflow-wrap: break-word;
       min-width: 0;
     }
+    .mock-banner svg {
+      flex: 0 0 auto;
+      width: 22px;
+      height: 22px;
+      color: var(--blueDeep);
+      margin-top: 1px;
+    }
+    .mock-banner span { min-width: 0; overflow-wrap: break-word; }
+
     .filters {
       position: sticky;
       top: 0;
       z-index: 5;
-      background: rgba(247, 251, 255, 0.92);
-      backdrop-filter: blur(8px);
+      width: 100%;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(10px);
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      padding: 12px;
-      margin: 0 0 16px;
-      box-shadow: 0 8px 24px rgba(23, 50, 71, 0.05);
+      padding: 14px 16px 12px;
+      margin: 0 0 20px;
+      box-shadow: 0 10px 28px rgba(23, 50, 71, 0.06);
       min-width: 0;
     }
-    .filters h2 {
-      margin: 0 0 10px;
-      font-size: 0.82rem;
+    .filters__title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 12px;
+      font-size: 0.8rem;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.05em;
       color: var(--muted);
+      font-weight: 800;
     }
+    .filters__title svg { width: 18px; height: 18px; color: var(--blue); }
     .filter-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
+      gap: 10px;
+      width: 100%;
     }
-    @media (min-width: 700px) {
+    @media (min-width: 900px) {
       .filter-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     }
     label.field {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 5px;
       min-width: 0;
       font-size: 0.75rem;
       font-weight: 700;
       color: var(--ink);
     }
+    label.field .field-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    label.field .field-label svg {
+      width: 15px;
+      height: 15px;
+      color: var(--blue);
+      flex: 0 0 auto;
+    }
     label.field select {
       width: 100%;
       min-width: 0;
       font: inherit;
-      font-size: 0.92rem;
+      font-size: 0.95rem;
       font-weight: 600;
       color: var(--text);
-      padding: 10px 10px;
+      padding: 11px 12px;
       border-radius: 12px;
       border: 1px solid var(--line);
       background: var(--white);
@@ -152,14 +240,14 @@
       flex-wrap: wrap;
       align-items: center;
       gap: 10px;
-      margin-top: 10px;
+      margin-top: 12px;
       min-width: 0;
     }
     .toggle {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      font-size: 0.88rem;
+      font-size: 0.9rem;
       color: var(--ink);
       font-weight: 600;
       min-width: 0;
@@ -168,141 +256,226 @@
     .toggle input { width: 16px; height: 16px; accent-color: var(--blue); }
     .btn-ghost {
       margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       border: 0;
       background: transparent;
       color: var(--blueDeep);
       font: inherit;
       font-weight: 700;
-      font-size: 0.88rem;
+      font-size: 0.9rem;
       cursor: pointer;
       padding: 6px 4px;
     }
+    .btn-ghost svg { width: 16px; height: 16px; }
+
     .services {
       display: grid;
-      gap: 12px;
-      margin: 0 0 18px;
+      gap: 14px;
+      margin: 0 0 22px;
+      width: 100%;
     }
-    @media (min-width: 720px) {
+    @media (min-width: 760px) {
       .services { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
     .svc {
       background: var(--white);
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      padding: 14px;
+      padding: 16px;
       min-width: 0;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
+      box-shadow: 0 6px 18px rgba(23, 50, 71, 0.04);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
+    .svc:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(23, 50, 71, 0.08);
+    }
+    .svc__head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .svc__icon {
+      flex: 0 0 auto;
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: var(--blueSoft);
+      color: var(--blueDeep);
+    }
+    .svc__icon svg { width: 26px; height: 26px; }
+    .svc__icon--climb { background: #fff6e5; color: #b7791f; }
+    .svc__icon--dc { background: #eef6f2; color: #1f6b4a; }
     .svc h3 {
       margin: 0;
       color: var(--ink);
-      font-size: 1.05rem;
+      font-size: 1.12rem;
       font-weight: 800;
       overflow-wrap: break-word;
+      min-width: 0;
     }
     .svc p {
       margin: 0;
-      font-size: 0.9rem;
+      font-size: 0.92rem;
       color: var(--text);
       overflow-wrap: break-word;
       flex: 1 1 auto;
     }
     .svc-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
       margin: 0;
-      font-size: 0.8rem;
+      min-width: 0;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: #f3f7fb;
+      border: 1px solid var(--line);
+      font-size: 0.76rem;
+      font-weight: 700;
       color: var(--muted);
-      overflow-wrap: break-word;
+      max-width: 100%;
+      min-width: 0;
+      overflow-wrap: anywhere;
     }
-    .svc .btn {
-      margin-top: 4px;
-    }
+    .chip svg { width: 13px; height: 13px; flex: 0 0 auto; color: var(--blue); }
+    .svc .btn { margin-top: 2px; width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    .svc .btn svg { width: 16px; height: 16px; }
+
     .section-head {
       display: flex;
       flex-wrap: wrap;
-      align-items: baseline;
+      align-items: center;
       justify-content: space-between;
-      gap: 8px;
-      margin: 0 0 10px;
+      gap: 10px;
+      margin: 0 0 12px;
       min-width: 0;
+      width: 100%;
     }
     .section-head h2 {
       margin: 0;
-      font-size: 1.1rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: clamp(1.1rem, 2.4vw, 1.35rem);
       color: var(--ink);
       font-weight: 800;
+      min-width: 0;
+      overflow-wrap: break-word;
     }
+    .section-head h2 svg { width: 22px; height: 22px; color: var(--blue); flex: 0 0 auto; }
     .section-head .count {
-      font-size: 0.86rem;
+      font-size: 0.9rem;
       color: var(--muted);
-      font-weight: 600;
+      font-weight: 700;
     }
+
     .slots {
       display: grid;
-      gap: 10px;
+      gap: 12px;
+      width: 100%;
+    }
+    @media (min-width: 900px) {
+      .slots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (min-width: 1200px) {
+      .slots { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
     .slot {
       background: var(--white);
       border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 12px 14px;
+      border-radius: 16px;
+      padding: 14px;
       display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px 12px;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
       align-items: center;
       min-width: 0;
+      box-shadow: 0 4px 14px rgba(23, 50, 71, 0.04);
     }
     .slot--full {
       background: #fbfcfd;
       border-style: dashed;
+      opacity: 0.96;
     }
-    .slot__main {
-      min-width: 0;
+    .slot__glyph {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: var(--blueSoft);
+      color: var(--blueDeep);
+      flex: 0 0 auto;
     }
+    .slot__glyph svg { width: 22px; height: 22px; }
+    .slot__glyph--climb { background: #fff6e5; color: #b7791f; }
+    .slot__glyph--dc { background: #eef6f2; color: #1f6b4a; }
+    .slot__main { min-width: 0; }
     .slot__title {
       margin: 0;
       font-weight: 800;
       color: var(--ink);
-      font-size: 0.98rem;
+      font-size: 1rem;
       overflow-wrap: break-word;
     }
     .slot__sub {
-      margin: 2px 0 0;
-      font-size: 0.86rem;
+      margin: 4px 0 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      font-size: 0.84rem;
       color: var(--muted);
+      font-weight: 600;
+      min-width: 0;
+    }
+    .slot__sub span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
       overflow-wrap: break-word;
     }
+    .slot__sub svg { width: 14px; height: 14px; flex: 0 0 auto; color: var(--blue); }
     .slot__meta {
       display: flex;
       flex-direction: column;
-      align-items: flex-end;
-      gap: 6px;
+      align-items: stretch;
+      gap: 8px;
       min-width: 0;
     }
     .badge {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 4px 9px;
+      gap: 5px;
+      padding: 5px 10px;
       border-radius: 999px;
       font-size: 0.75rem;
       font-weight: 800;
       white-space: nowrap;
     }
-    .badge--open {
-      background: var(--okSoft);
-      color: var(--ok);
-    }
-    .badge--full {
-      background: var(--dangerSoft);
-      color: var(--danger);
-    }
+    .badge svg { width: 12px; height: 12px; }
+    .badge--open { background: var(--okSoft); color: var(--ok); }
+    .badge--full { background: var(--dangerSoft); color: var(--danger); }
     .btn {
       appearance: none;
       border: 0;
       border-radius: 12px;
-      padding: 9px 12px;
+      padding: 10px 14px;
       font: inherit;
       font-size: 0.88rem;
       font-weight: 800;
@@ -313,29 +486,33 @@
       text-decoration: none;
       min-width: 0;
       max-width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
     }
+    .btn svg { width: 15px; height: 15px; flex: 0 0 auto; }
     .btn:hover { background: var(--blueDeep); }
-    .btn--soft {
-      background: var(--blueSoft);
-      color: var(--blueDeep);
-    }
+    .btn--soft { background: var(--blueSoft); color: var(--blueDeep); }
     .btn--soft:hover { background: #dceef7; }
     .empty {
       margin: 0;
-      padding: 18px 14px;
+      padding: 22px 16px;
       border-radius: 14px;
       border: 1px dashed var(--line);
-      background: rgba(255, 255, 255, 0.65);
+      background: rgba(255, 255, 255, 0.7);
       color: var(--muted);
       text-align: center;
       overflow-wrap: break-word;
+      grid-column: 1 / -1;
     }
     .foot {
-      margin: 22px 0 0;
+      margin: 28px 0 0;
       text-align: center;
-      font-size: 0.86rem;
+      font-size: 0.9rem;
       color: var(--muted);
       overflow-wrap: break-word;
+      width: 100%;
     }
     .foot a { color: var(--blueDeep); font-weight: 700; }
     .sheet {
@@ -349,10 +526,10 @@
       padding: 16px;
     }
     .sheet__panel {
-      width: min(420px, 100%);
+      width: min(460px, 100%);
       background: var(--white);
-      border-radius: 18px 18px 14px 14px;
-      padding: 16px;
+      border-radius: 18px;
+      padding: 18px;
       border: 1px solid var(--line);
       min-width: 0;
       max-height: min(80dvh, 520px);
@@ -361,56 +538,105 @@
     .sheet__panel h3 {
       margin: 0 0 6px;
       color: var(--ink);
-      font-size: 1.05rem;
+      font-size: 1.1rem;
       overflow-wrap: break-word;
     }
     .sheet__panel p {
-      margin: 0 0 12px;
-      font-size: 0.9rem;
+      margin: 0 0 14px;
+      font-size: 0.92rem;
       overflow-wrap: break-word;
     }
-    .sheet__actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
+    .sheet__actions { display: flex; flex-wrap: wrap; gap: 8px; }
     .sheet__actions .btn { flex: 1 1 140px; }
   </style>
 </head>
 <body>
   <main class="page">
     <header class="brand">
-      <img id="bookingBrandLogo" alt="clubSENsational" width="76" height="76" />
+      <div class="brand-logo-stage" aria-hidden="false">
+        <svg class="brand-orbit-svg" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+          <defs>
+            <filter id="orb-soft" x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="b"/>
+              <feMerge>
+                <feMergeNode in="b"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+          <g transform="translate(100,100)">
+            <g class="orbit-layer orbit-layer--cw" filter="url(#orb-soft)">
+              <circle cx="0" cy="-92" r="7" fill="var(--blue)"/>
+              <circle cx="79.67" cy="-46" r="6" fill="var(--sen-gold)"/>
+              <circle cx="79.67" cy="46" r="6" fill="var(--ink)"/>
+              <circle cx="0" cy="92" r="7" fill="var(--gold)"/>
+              <circle cx="-79.67" cy="46" r="6" fill="var(--blue)"/>
+              <circle cx="-79.67" cy="-46" r="6" fill="#5a9fc4"/>
+            </g>
+            <g class="orbit-layer orbit-layer--ccw" filter="url(#orb-soft)">
+              <circle cx="0" cy="-82" r="5" fill="var(--sen-gold)"/>
+              <circle cx="71.01" cy="-41" r="5" fill="var(--blue)"/>
+              <circle cx="71.01" cy="41" r="5" fill="var(--gold)"/>
+              <circle cx="0" cy="82" r="5" fill="var(--ink)"/>
+              <circle cx="-71.01" cy="41" r="5" fill="#8ebfe0"/>
+              <circle cx="-71.01" cy="-41" r="5" fill="var(--sen-gold)"/>
+            </g>
+            <g class="orbit-layer orbit-layer--slow-ccw" filter="url(#orb-soft)">
+              <circle cx="37.27" cy="-64" r="4" fill="var(--gold)"/>
+              <circle cx="74" cy="-8" r="4" fill="var(--blue)"/>
+              <circle cx="37.27" cy="64" r="4" fill="var(--sen-gold)"/>
+              <circle cx="-37.27" cy="64" r="4" fill="var(--ink)"/>
+              <circle cx="-74" cy="-8" r="4" fill="var(--blue)"/>
+              <circle cx="-37.27" cy="-64" r="4" fill="#f4d78a"/>
+            </g>
+          </g>
+        </svg>
+        <div class="brand-logo-shell">
+          <img id="bookingBrandLogo" class="brand-logo" alt="clubSENsational" width="196" height="196" />
+        </div>
+      </div>
       <h1>clubSENsational</h1>
       <p class="lede">Browse our services and weekly times. Fully booked slots stay visible so you can see the full offer.</p>
     </header>
 
     <p class="mock-banner" role="status">
-      <strong>Preview / mock.</strong> Times and places are illustrative. Live availability will match the parent portal inventory.
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span><strong>Preview / mock.</strong> Times and places are illustrative. Live availability will match the parent portal inventory.</span>
     </p>
 
     <section class="filters" aria-label="Filters">
-      <h2>Filter</h2>
+      <h2 class="filters__title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        Filter
+      </h2>
       <div class="filter-grid">
-        <label class="field">Service
-          <select id="fService" aria-label="Filter by service">
-            <option value="">All services</option>
-          </select>
+        <label class="field">
+          <span class="field-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            Service
+          </span>
+          <select id="fService" aria-label="Filter by service"><option value="">All services</option></select>
         </label>
-        <label class="field">Venue
-          <select id="fVenue" aria-label="Filter by venue">
-            <option value="">All venues</option>
-          </select>
+        <label class="field">
+          <span class="field-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Venue
+          </span>
+          <select id="fVenue" aria-label="Filter by venue"><option value="">All venues</option></select>
         </label>
-        <label class="field">Day
-          <select id="fDay" aria-label="Filter by day">
-            <option value="">All days</option>
-          </select>
+        <label class="field">
+          <span class="field-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Day
+          </span>
+          <select id="fDay" aria-label="Filter by day"><option value="">All days</option></select>
         </label>
-        <label class="field">Time
-          <select id="fTime" aria-label="Filter by time">
-            <option value="">All times</option>
-          </select>
+        <label class="field">
+          <span class="field-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Time
+          </span>
+          <select id="fTime" aria-label="Filter by time"><option value="">All times</option></select>
         </label>
       </div>
       <div class="filter-row">
@@ -418,14 +644,20 @@
           <input type="checkbox" id="fHideFull" />
           Hide fully booked
         </label>
-        <button type="button" class="btn-ghost" id="btnClearFilters">Clear filters</button>
+        <button type="button" class="btn-ghost" id="btnClearFilters">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+          Clear filters
+        </button>
       </div>
     </section>
 
     <section class="services" id="serviceCards" aria-label="Our services"></section>
 
     <div class="section-head">
-      <h2>Weekly times</h2>
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Weekly times
+      </h2>
       <span class="count" id="slotCount"></span>
     </div>
     <section class="slots" id="slotList" aria-live="polite"></section>
@@ -448,7 +680,7 @@
     </div>
   </div>
 
-  <script src="/portal/portal_booking_offer_mock.js?v=20260714-booking-mock-v1"></script>
+  <script src="/portal/portal_booking_offer_mock.js?v=20260714-booking-ui2"></script>
   <script>
 (function () {
   "use strict";
@@ -462,12 +694,43 @@
     logo.src = "/portal/F-02-1.png";
   }
 
+  var ICONS = {
+    swim:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 16c1.5-1 3-1 4.5 0s3 1 4.5 0 3-1 4.5 0 3 1 4.5 0"/><path d="M2 20c1.5-1 3-1 4.5 0s3 1 4.5 0 3-1 4.5 0 3 1 4.5 0"/><circle cx="7" cy="8" r="2.5"/><path d="M11 9.5c1.2 1.4 2.8 2.5 5 2.5"/></svg>',
+    climb:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 7l3 3-7 7-3-3z"/><path d="M7 17l-2 2"/><path d="M17 7l2-2"/><circle cx="8.5" cy="8.5" r="1.2"/><circle cx="15.5" cy="15.5" r="1.2"/></svg>',
+    dc:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/></svg>',
+    clock:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+    pin:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+    day:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+    pound:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 7a4 4 0 0 0-7 2.5c0 3-2 3.5-2 6.5"/><path d="M8 12h6"/><path d="M7 20h10"/></svg>',
+    check:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>',
+    x:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    mail:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>',
+    arrow:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
+  };
+
   function esc(s) {
     return String(s == null ? "" : s)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
+  }
+
+  function serviceIconPack(id) {
+    if (id === "climbing") return { svg: ICONS.climb, cls: "svc__icon--climb" };
+    if (id === "day_centre") return { svg: ICONS.dc, cls: "svc__icon--dc" };
+    return { svg: ICONS.swim, cls: "" };
   }
 
   function fillSelect(sel, values, allLabel) {
@@ -497,14 +760,24 @@
   function renderServices() {
     var host = document.getElementById("serviceCards");
     host.innerHTML = mock.SERVICES.map(function (s) {
+      var pack = serviceIconPack(s.id);
+      var chips =
+        '<span class="chip">' + ICONS.clock + esc(s.durationHint) + "</span>" +
+        '<span class="chip">' + ICONS.pound + esc(s.priceHint) + "</span>" +
+        (s.venues && s.venues.length
+          ? '<span class="chip">' + ICONS.pin + esc(s.venues.join(", ")) + "</span>"
+          : "");
       return (
         '<article class="svc" data-service="' + esc(s.id) + '">' +
+        '<div class="svc__head">' +
+        '<div class="svc__icon ' + pack.cls + '">' + pack.svg + "</div>" +
         "<h3>" + esc(s.name) + "</h3>" +
+        "</div>" +
         "<p>" + esc(s.blurb) + "</p>" +
-        '<p class="svc-meta">' + esc(s.durationHint) + " · " + esc(s.priceHint) +
-        (s.venues && s.venues.length ? " · " + esc(s.venues.join(", ")) : "") +
-        "</p>" +
-        '<button type="button" class="btn btn--soft" data-filter-service="' + esc(s.id) + '">See times</button>' +
+        '<div class="svc-meta">' + chips + "</div>" +
+        '<button type="button" class="btn btn--soft" data-filter-service="' + esc(s.id) + '">' +
+        "See times " + ICONS.arrow +
+        "</button>" +
         "</article>"
       );
     }).join("");
@@ -559,6 +832,7 @@
         "\n\nChild name:\nParent name:\nPhone:\n\nThanks"
     );
     mail.href = "mailto:info@clubsensational.org?subject=" + subject + "&body=" + text;
+    mail.innerHTML = ICONS.mail + " Email the office";
     sheet.hidden = false;
   }
 
@@ -583,9 +857,16 @@
         var svc = mock.serviceById(slot.serviceId);
         var full = mock.isFull(slot);
         var left = mock.seatsLeft(slot);
+        var pack = serviceIconPack(slot.serviceId);
+        var glyphCls =
+          slot.serviceId === "climbing"
+            ? "slot__glyph--climb"
+            : slot.serviceId === "day_centre"
+              ? "slot__glyph--dc"
+              : "";
         var badge = full
-          ? '<span class="badge badge--full">Fully booked</span>'
-          : '<span class="badge badge--open">' + left + " left</span>";
+          ? '<span class="badge badge--full">' + ICONS.x + " Fully booked</span>"
+          : '<span class="badge badge--open">' + ICONS.check + " " + left + " left</span>";
         var cta = full || (svc && svc.enquireOnly) ? "Waiting list" : "Enquire";
         return (
           '<article class="slot' +
@@ -593,17 +874,29 @@
           '" data-slot-id="' +
           esc(slot.id) +
           '">' +
+          '<div class="slot__glyph ' +
+          glyphCls +
+          '">' +
+          pack.svg +
+          "</div>" +
           '<div class="slot__main">' +
           '<p class="slot__title">' +
           esc(svc ? svc.name : slot.serviceId) +
           "</p>" +
-          '<p class="slot__sub">' +
+          '<div class="slot__sub">' +
+          "<span>" +
+          ICONS.day +
           esc(slot.day) +
-          " · " +
+          "</span>" +
+          "<span>" +
+          ICONS.clock +
           esc(slot.timeLabel) +
-          " · " +
+          "</span>" +
+          "<span>" +
+          ICONS.pin +
           esc(slot.venue) +
-          "</p>" +
+          "</span>" +
+          "</div>" +
           "</div>" +
           '<div class="slot__meta">' +
           badge +
