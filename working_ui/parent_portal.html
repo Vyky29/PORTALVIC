@@ -2185,6 +2185,88 @@
       overflow-wrap: break-word;
     }
     .pp-pax-info-section-label:first-child { margin-top: 0; }
+    .pp-club-board,
+    .pp-week-note {
+      margin: 0 0 4px;
+      padding: 12px 12px 10px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      min-width: 0;
+    }
+    .pp-club-board__head,
+    .pp-week-note__head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      min-width: 0;
+      margin-bottom: 6px;
+    }
+    .pp-week-note__range {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted, #64748b);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .pp-week-note__body,
+    .pp-club-board__item-body,
+    .pp-week-notes-folder__body {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--text, #1e293b);
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+    .pp-week-note__more {
+      appearance: none;
+      border: 0;
+      background: transparent;
+      color: #1d4ed8;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 0 0;
+      cursor: pointer;
+    }
+    .pp-club-board__empty,
+    .pp-week-note__empty { margin: 0; font-size: 13px; overflow-wrap: break-word; }
+    .pp-club-board__list,
+    .pp-week-notes-folder {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+    }
+    .pp-club-board__item-title,
+    .pp-week-notes-folder__range {
+      display: block;
+      font-size: 13px;
+      overflow-wrap: break-word;
+    }
+    .pp-week-notes-folder__item {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      min-width: 0;
+    }
+    .pp-week-notes-folder__meta { margin-bottom: 6px; min-width: 0; }
+    .pp-help-sheet {
+      margin: 12px 0 0;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      min-width: 0;
+    }
+    .pp-help-sheet h3 { margin: 0 0 8px; font-size: 1.05rem; overflow-wrap: break-word; }
+    .pp-help-sheet p { margin: 0; font-size: 13px; line-height: 1.45; overflow-wrap: break-word; }
     .pp-pax-info-row {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2194,7 +2276,7 @@
     @media (min-width: 560px) {
       .pp-pax-info-row--week,
       .pp-pax-info-row--paper { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-      .pp-pax-info-row--progress { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .pp-pax-info-row--progress { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     }
     .pp-pax-info-btn {
       width: 100%;
@@ -3233,9 +3315,15 @@
           <h2 id="ppHomeGreeting">Hello</h2>
         </div>
         <div class="pp-home-actions">
+          <button id="ppHelpBtn" class="pp-icon-btn" type="button">Help</button>
           <button id="ppRefresh" class="pp-icon-btn" type="button">Refresh</button>
           <button id="ppSignOut" class="pp-icon-btn" type="button">Sign out</button>
         </div>
+      </div>
+
+      <div id="ppHelpPanel" class="pp-help-sheet" hidden>
+        <h3>Help</h3>
+        <p class="pp-muted">A short guide for new families is coming soon — how to find weekly notes, report absence, and read messages. For anything urgent, message the club from your child’s hub or email info@clubsensational.org.</p>
       </div>
 
       <div class="pp-card">

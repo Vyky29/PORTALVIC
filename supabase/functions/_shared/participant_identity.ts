@@ -44,6 +44,18 @@ const PORTAL_PARTICIPANT_SLUG_ALIASES: Record<string, string> = {
   fadi_ab: "fadi",
   cyrus_mahdavi: "cyrus",
   cyrus_ma: "cyrus",
+  // Portal spelling "Emanuel" vs roster/feedback "Emmanuel"
+  emanuel: "emmanuel",
+  emanuel_dodson: "emmanuel",
+  emanuel_do: "emmanuel",
+  gap_emanuel_dodson: "emmanuel",
+  // Portal "Timi Dairo" / Oluwatimilehin vs roster client_id "timi"
+  timi_dairo: "timi",
+  gap_timi_dairo: "timi",
+  oluwatimilehin_nathan_dairo: "timi",
+  oluwatimilehin_nathan: "timi",
+  oluwatimilehin_na: "timi",
+  oluwatimilehin: "timi",
 };
 
 const CLIENT_INFO_SHEET_ALIASES: Record<string, string> = {

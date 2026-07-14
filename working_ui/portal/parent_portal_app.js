@@ -31,6 +31,9 @@
     if (patch.reenrolment) base.reenrolment = patch.reenrolment;
     if (patch.pending_review_count != null) base.pending_review_count = patch.pending_review_count;
     if (patch.attendance_summary) base.attendance_summary = patch.attendance_summary;
+    if (Array.isArray(patch.weekly_notes)) base.weekly_notes = patch.weekly_notes;
+    if (patch.weekly_note_latest !== undefined) base.weekly_note_latest = patch.weekly_note_latest;
+    if (Array.isArray(patch.club_announcements)) base.club_announcements = patch.club_announcements;
     if (patch.general && base.general) {
       Object.assign(base.general, patch.general);
     }
@@ -1090,9 +1093,10 @@
     state.participant = { contactId: contactId, data: null, loaded: {} };
 
     try {
-      var body = await fetchParticipantSections(contactId, ["general"]);
+      var body = await fetchParticipantSections(contactId, ["general", "weekly_notes"]);
       state.participant.data = body;
       state.participant.loaded.general = true;
+      state.participant.loaded.weekly_notes = true;
       rememberContactId(contactId);
 
       var p = body.participant || {};
@@ -1570,6 +1574,17 @@
     $("ppRefresh").addEventListener("click", function () {
       void loadHome();
     });
+
+    var helpBtn = $("ppHelpBtn");
+    var helpPanel = $("ppHelpPanel");
+    if (helpBtn && helpPanel) {
+      helpBtn.addEventListener("click", function () {
+        var open = helpPanel.hasAttribute("hidden");
+        if (open) helpPanel.removeAttribute("hidden");
+        else helpPanel.setAttribute("hidden", "");
+        helpBtn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+    }
 
     var back = $("ppBackToHome");
     if (back) {

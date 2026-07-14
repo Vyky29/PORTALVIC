@@ -5,7 +5,7 @@
 // Sessions overview + parent-safe feedback + achievement photos for one linked child.
 //
 // Headers: x-parent-portal-session
-// Body: { contact_id: string, sections?: ("general"|"sessions"|"achievements"|"swim")[] }
+// Body: { contact_id: string, sections?: ("general"|"sessions"|"achievements"|"swim"|"weekly_notes")[] }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
@@ -47,15 +47,27 @@ const PARENT_ACH_QUERY_LIMIT = 500;
 const PARENT_FEEDBACK_LIMIT = 60;
 const TERM_LABEL = "Summer Term 2026";
 
-type DetailSection = "general" | "sessions" | "achievements" | "swim";
+type DetailSection = "general" | "sessions" | "achievements" | "swim" | "weekly_notes";
 
 function parseSections(raw: unknown): Set<DetailSection> {
-  const all = new Set<DetailSection>(["general", "sessions", "achievements", "swim"]);
+  const all = new Set<DetailSection>([
+    "general",
+    "sessions",
+    "achievements",
+    "swim",
+    "weekly_notes",
+  ]);
   if (!Array.isArray(raw) || !raw.length) return all;
   const out = new Set<DetailSection>();
   for (const item of raw) {
     const t = clean(item, 40).toLowerCase();
-    if (t === "general" || t === "sessions" || t === "achievements" || t === "swim") {
+    if (
+      t === "general" ||
+      t === "sessions" ||
+      t === "achievements" ||
+      t === "swim" ||
+      t === "weekly_notes"
+    ) {
       out.add(t as DetailSection);
     }
   }
@@ -663,6 +675,7 @@ Deno.serve(async (req) => {
   const wantSessions = sections.has("sessions");
   const wantAchievements = sections.has("achievements");
   const wantSwim = sections.has("swim");
+  const wantWeeklyNotes = sections.has("weekly_notes");
 
   const { data: participant, error: partErr } = await supabase
     .from("portal_participants")
@@ -1058,6 +1071,33 @@ Deno.serve(async (req) => {
     teamOut = await buildParentTeam(supabase, clientSlugs, fbForTeam);
   }
 
+  let weeklyNotes: Record<string, unknown>[] = [];
+  let weeklyNoteLatest: Record<string, unknown> | null = null;
+  if (wantWeeklyNotes) {
+    const { data: noteRows, error: noteErr } = await supabase
+      .from("portal_parent_weekly_notes")
+      .select(
+        "id, week_start, week_end, body, share_status, generated_at, generated_early, review_model",
+      )
+      .eq("contact_id", contactId)
+      .eq("share_status", "ready")
+      .order("week_start", { ascending: false })
+      .limit(16);
+    if (noteErr) {
+      console.error("[parent-portal-participant-detail] weekly_notes", noteErr);
+    } else {
+      weeklyNotes = (noteRows || []).map((n) => ({
+        id: n.id,
+        week_start: n.week_start,
+        week_end: n.week_end,
+        body: clean(n.body, 4000),
+        generated_at: n.generated_at || null,
+        generated_early: !!n.generated_early,
+      }));
+      weeklyNoteLatest = weeklyNotes[0] || null;
+    }
+  }
+
   return new Response(
     JSON.stringify({
       ok: true,
@@ -1096,6 +1136,10 @@ Deno.serve(async (req) => {
       swim_term_review_available: swimTermReviewAvailable,
       reenrolment: reenrolmentSummary,
       pending_review_count: sessionsOut.filter((s) => s.message_pending).length,
+      weekly_notes: weeklyNotes,
+      weekly_note_latest: weeklyNoteLatest,
+      // Wireframe slot — club noticeboard (not wired yet).
+      club_announcements: [],
     }),
     { status: 200, headers: { ...parentPortalCorsHeaders, "Content-Type": "application/json" } },
   );

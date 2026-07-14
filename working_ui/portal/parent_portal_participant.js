@@ -826,6 +826,75 @@
     );
   }
 
+  function weekRangeLabel(startIso, endIso) {
+    var a = formatDate(startIso);
+    var b = formatDate(endIso);
+    if (a === "—" && b === "—") return "";
+    if (a === b) return a;
+    return a + " – " + b;
+  }
+
+  function clubAnnouncementsHtml(data) {
+    var items = Array.isArray(data && data.club_announcements) ? data.club_announcements : [];
+    var list = "";
+    if (items.length) {
+      list =
+        '<ul class="pp-club-board__list">' +
+        items
+          .slice(0, 3)
+          .map(function (a) {
+            return (
+              '<li class="pp-club-board__item">' +
+              '<strong class="pp-club-board__item-title">' +
+              esc((a && a.title) || "Notice") +
+              "</strong>" +
+              (a && a.body
+                ? '<p class="pp-club-board__item-body">' + esc(String(a.body).slice(0, 220)) + "</p>"
+                : "") +
+              "</li>"
+            );
+          })
+          .join("") +
+        "</ul>";
+    } else {
+      list =
+        '<p class="pp-muted pp-club-board__empty">Club notices will appear here when something affects sessions this week.</p>';
+    }
+    return (
+      '<section class="pp-club-board" aria-label="Club announcements">' +
+      '<div class="pp-club-board__head">' +
+      '<p class="pp-pax-info-section-label" style="margin:0">Club announcements</p>' +
+      "</div>" +
+      list +
+      "</section>"
+    );
+  }
+
+  function thisWeekNoteHtml(data) {
+    var note = (data && data.weekly_note_latest) || null;
+    if (!note || !String(note.body || "").trim()) {
+      return (
+        '<section class="pp-week-note pp-week-note--empty" aria-label="This week\'s note">' +
+        '<p class="pp-pax-info-section-label" style="margin:0 0 6px">This week\'s note</p>' +
+        '<p class="pp-muted pp-week-note__empty">Your weekly summary will appear here after session feedbacks are ready.</p>' +
+        "</section>"
+      );
+    }
+    var range = weekRangeLabel(note.week_start, note.week_end);
+    return (
+      '<section class="pp-week-note" aria-label="This week\'s note">' +
+      '<div class="pp-week-note__head">' +
+      '<p class="pp-pax-info-section-label" style="margin:0">This week\'s note</p>' +
+      (range ? '<span class="pp-week-note__range">' + esc(range) + "</span>" : "") +
+      "</div>" +
+      '<p class="pp-week-note__body">' +
+      esc(String(note.body || "").trim()) +
+      "</p>" +
+      '<button type="button" class="pp-week-note__more" data-pp-open="weekly_notes">All weekly notes</button>' +
+      "</section>"
+    );
+  }
+
   function infoButtonsHtml(data, opts) {
     var msgUnread =
       opts && typeof opts.unreadMessagesTotal === "function" ? opts.unreadMessagesTotal() : 0;
@@ -841,6 +910,7 @@
         : "";
     var booking = bookingSummary(data);
     var swimAvailable = !!data.swim_term_review_available;
+    var noteCount = Array.isArray(data && data.weekly_notes) ? data.weekly_notes.length : 0;
     var hasServices = !!(
       data &&
       data.general &&
@@ -862,8 +932,12 @@
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="8" cy="15" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg>';
     var bookingIcon =
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>';
+    var notesIcon =
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>';
     return (
       '<div class="pp-pax-info-buttons">' +
+      clubAnnouncementsHtml(data) +
+      thisWeekNoteHtml(data) +
       '<p class="pp-pax-info-section-label">This week</p>' +
       '<div class="pp-pax-info-row pp-pax-info-row--week">' +
       infoBtnHtml("messages", "Messages", msgIcon, {
@@ -915,6 +989,15 @@
       "</div>" +
       '<p class="pp-pax-info-section-label">Progress</p>' +
       '<div class="pp-pax-info-row pp-pax-info-row--progress">' +
+      infoBtnHtml(
+        "weekly_notes",
+        "Weekly notes",
+        notesIcon,
+        {
+          extraClass: " pp-pax-info-btn--accent",
+          subtitle: noteCount ? noteCount + " in folder" : "From feedback",
+        },
+      ) +
       infoBtnHtml(
         "sessions",
         "Sessions Overview",
@@ -2007,6 +2090,43 @@
         "</ul>";
     }
     host.innerHTML = subviewShell(data, "swim", '<h3 class="pp-pax-subview-title">Swimming term review</h3>' + body);
+    bindBack(host, data, opts);
+  }
+
+  function renderWeeklyNotes(host, data, opts) {
+    var notes = Array.isArray(data.weekly_notes) ? data.weekly_notes : [];
+    var body;
+    if (!notes.length) {
+      body =
+        '<p class="pp-muted">Weekly notes will collect here once session feedbacks for a Saturday–Friday week are ready. Each note is a short, warm summary of the week.</p>';
+    } else {
+      body =
+        '<ul class="pp-week-notes-folder">' +
+        notes
+          .map(function (n) {
+            var range = weekRangeLabel(n.week_start, n.week_end);
+            return (
+              '<li class="pp-week-notes-folder__item">' +
+              '<div class="pp-week-notes-folder__meta">' +
+              '<strong class="pp-week-notes-folder__range">' +
+              esc(range || "Week") +
+              "</strong>" +
+              "</div>" +
+              '<p class="pp-week-notes-folder__body">' +
+              esc(String(n.body || "").trim()) +
+              "</p></li>"
+            );
+          })
+          .join("") +
+        "</ul>";
+    }
+    host.innerHTML = subviewShell(
+      data,
+      "weekly_notes",
+      '<h3 class="pp-pax-subview-title">Weekly notes</h3>' +
+        '<p class="pp-muted pp-pax-subview-note">A short celebration of the week — not a full replay of every session.</p>' +
+        body,
+    );
     bindBack(host, data, opts);
   }
 
@@ -4632,9 +4752,10 @@
       void ensureGeneralFieldsAsync(data).then(function () {
         renderGeneral(host, data, opts);
       });
-    } else if (view === "sessions") renderSessions(host, data, opts);
+    }     else if (view === "sessions") renderSessions(host, data, opts);
     else if (view === "achievements") renderAchievements(host, data, opts);
     else if (view === "swim") renderSwim(host, data, opts);
+    else if (view === "weekly_notes") renderWeeklyNotes(host, data, opts);
     else if (view === "team") renderTeam(host, data, opts);
     else if (view === "booking") renderBooking(host, data, opts);
     else if (view === "calendar") renderCalendar(host, data, opts);
@@ -4656,6 +4777,7 @@
       sessions: "sessions",
       achievements: "achievements",
       swim: "swim",
+      weekly_notes: "weekly_notes",
     };
     host.querySelectorAll("[data-pp-open]").forEach(function (btn) {
       if (btn.__ppBoundOpen) return;
