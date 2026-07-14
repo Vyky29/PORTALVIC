@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<!--
+  PORTALVIC · Public booking offer (Phase A mock).
+  URL: /bookingservice · www.clubsensational.org/bookingservice
+  Live capacity will share the parent-portal seat helper — this page ships with mock data.
+-->
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f4f8fb" />
+  <meta name="description" content="Browse clubSENsational services and weekly session times. See the full offer — including fully booked slots." />
+  <link rel="canonical" href="https://www.clubsensational.org/bookingservice" />
+  <title>Book a service — clubSENsational</title>
+  <script src="/portal-static-bootstrap.js"></script>
+  <script src="/portal/portal_brand.js?v=20260714-booking"></script>
+  <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
+  <style>
+    :root {
+      --blue: #2d84b3;
+      --blueDeep: #1f6a94;
+      --blueSoft: #eaf5fb;
+      --gold: #f4b740;
+      --ink: #173247;
+      --text: #314555;
+      --muted: #728290;
+      --line: rgba(23, 50, 71, 0.12);
+      --white: #ffffff;
+      --bg0: #f7fbff;
+      --bg1: #edf4fb;
+      --danger: #b42318;
+      --dangerSoft: #fef3f2;
+      --ok: #157347;
+      --okSoft: #e8f7ef;
+      --radius: 18px;
+      --max: 920px;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    [hidden] { display: none !important; }
+    html, body {
+      margin: 0;
+      min-height: 100dvh;
+      max-width: 100%;
+      overflow-x: hidden;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1000px 420px at 10% -10%, rgba(45, 132, 179, 0.14), transparent 55%),
+        radial-gradient(800px 380px at 100% 0%, rgba(244, 183, 64, 0.16), transparent 50%),
+        linear-gradient(180deg, var(--bg0) 0%, var(--bg1) 100%);
+      line-height: 1.45;
+    }
+    .page {
+      width: 100%;
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: max(18px, env(safe-area-inset-top)) 16px max(40px, env(safe-area-inset-bottom));
+      min-width: 0;
+    }
+    .brand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 8px;
+      margin: 0 0 18px;
+      min-width: 0;
+    }
+    .brand img {
+      width: 76px;
+      height: 76px;
+      object-fit: contain;
+      border-radius: 16px;
+    }
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 4vw, 1.75rem);
+      color: var(--ink);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      overflow-wrap: break-word;
+    }
+    .brand .lede {
+      margin: 0;
+      max-width: 38rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+      overflow-wrap: break-word;
+    }
+    .mock-banner {
+      margin: 0 0 14px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px dashed rgba(45, 132, 179, 0.45);
+      background: rgba(234, 245, 251, 0.85);
+      color: var(--ink);
+      font-size: 0.86rem;
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+    .filters {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: rgba(247, 251, 255, 0.92);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      margin: 0 0 16px;
+      box-shadow: 0 8px 24px rgba(23, 50, 71, 0.05);
+      min-width: 0;
+    }
+    .filters h2 {
+      margin: 0 0 10px;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    @media (min-width: 700px) {
+      .filter-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+    label.field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    label.field select {
+      width: 100%;
+      min-width: 0;
+      font: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text);
+      padding: 10px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--white);
+    }
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+      min-width: 0;
+    }
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.88rem;
+      color: var(--ink);
+      font-weight: 600;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .toggle input { width: 16px; height: 16px; accent-color: var(--blue); }
+    .btn-ghost {
+      margin-left: auto;
+      border: 0;
+      background: transparent;
+      color: var(--blueDeep);
+      font: inherit;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      padding: 6px 4px;
+    }
+    .services {
+      display: grid;
+      gap: 12px;
+      margin: 0 0 18px;
+    }
+    @media (min-width: 720px) {
+      .services { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    .svc {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .svc h3 {
+      margin: 0;
+      color: var(--ink);
+      font-size: 1.05rem;
+      font-weight: 800;
+      overflow-wrap: break-word;
+    }
+    .svc p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--text);
+      overflow-wrap: break-word;
+      flex: 1 1 auto;
+    }
+    .svc-meta {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--muted);
+      overflow-wrap: break-word;
+    }
+    .svc .btn {
+      margin-top: 4px;
+    }
+    .section-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 0 0 10px;
+      min-width: 0;
+    }
+    .section-head h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      color: var(--ink);
+      font-weight: 800;
+    }
+    .section-head .count {
+      font-size: 0.86rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .slots {
+      display: grid;
+      gap: 10px;
+    }
+    .slot {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px 12px;
+      align-items: center;
+      min-width: 0;
+    }
+    .slot--full {
+      background: #fbfcfd;
+      border-style: dashed;
+    }
+    .slot__main {
+      min-width: 0;
+    }
+    .slot__title {
+      margin: 0;
+      font-weight: 800;
+      color: var(--ink);
+      font-size: 0.98rem;
+      overflow-wrap: break-word;
+    }
+    .slot__sub {
+      margin: 2px 0 0;
+      font-size: 0.86rem;
+      color: var(--muted);
+      overflow-wrap: break-word;
+    }
+    .slot__meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      min-width: 0;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .badge--open {
+      background: var(--okSoft);
+      color: var(--ok);
+    }
+    .badge--full {
+      background: var(--dangerSoft);
+      color: var(--danger);
+    }
+    .btn {
+      appearance: none;
+      border: 0;
+      border-radius: 12px;
+      padding: 9px 12px;
+      font: inherit;
+      font-size: 0.88rem;
+      font-weight: 800;
+      cursor: pointer;
+      background: var(--blue);
+      color: #fff;
+      text-align: center;
+      text-decoration: none;
+      min-width: 0;
+      max-width: 100%;
+    }
+    .btn:hover { background: var(--blueDeep); }
+    .btn--soft {
+      background: var(--blueSoft);
+      color: var(--blueDeep);
+    }
+    .btn--soft:hover { background: #dceef7; }
+    .empty {
+      margin: 0;
+      padding: 18px 14px;
+      border-radius: 14px;
+      border: 1px dashed var(--line);
+      background: rgba(255, 255, 255, 0.65);
+      color: var(--muted);
+      text-align: center;
+      overflow-wrap: break-word;
+    }
+    .foot {
+      margin: 22px 0 0;
+      text-align: center;
+      font-size: 0.86rem;
+      color: var(--muted);
+      overflow-wrap: break-word;
+    }
+    .foot a { color: var(--blueDeep); font-weight: 700; }
+    .sheet {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      background: rgba(23, 50, 71, 0.35);
+      padding: 16px;
+    }
+    .sheet__panel {
+      width: min(420px, 100%);
+      background: var(--white);
+      border-radius: 18px 18px 14px 14px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      min-width: 0;
+      max-height: min(80dvh, 520px);
+      overflow: auto;
+    }
+    .sheet__panel h3 {
+      margin: 0 0 6px;
+      color: var(--ink);
+      font-size: 1.05rem;
+      overflow-wrap: break-word;
+    }
+    .sheet__panel p {
+      margin: 0 0 12px;
+      font-size: 0.9rem;
+      overflow-wrap: break-word;
+    }
+    .sheet__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .sheet__actions .btn { flex: 1 1 140px; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="brand">
+      <img id="bookingBrandLogo" alt="clubSENsational" width="76" height="76" />
+      <h1>clubSENsational</h1>
+      <p class="lede">Browse our services and weekly times. Fully booked slots stay visible so you can see the full offer.</p>
+    </header>
+
+    <p class="mock-banner" role="status">
+      <strong>Preview / mock.</strong> Times and places are illustrative. Live availability will match the parent portal inventory.
+    </p>
+
+    <section class="filters" aria-label="Filters">
+      <h2>Filter</h2>
+      <div class="filter-grid">
+        <label class="field">Service
+          <select id="fService" aria-label="Filter by service">
+            <option value="">All services</option>
+          </select>
+        </label>
+        <label class="field">Venue
+          <select id="fVenue" aria-label="Filter by venue">
+            <option value="">All venues</option>
+          </select>
+        </label>
+        <label class="field">Day
+          <select id="fDay" aria-label="Filter by day">
+            <option value="">All days</option>
+          </select>
+        </label>
+        <label class="field">Time
+          <select id="fTime" aria-label="Filter by time">
+            <option value="">All times</option>
+          </select>
+        </label>
+      </div>
+      <div class="filter-row">
+        <label class="toggle">
+          <input type="checkbox" id="fHideFull" />
+          Hide fully booked
+        </label>
+        <button type="button" class="btn-ghost" id="btnClearFilters">Clear filters</button>
+      </div>
+    </section>
+
+    <section class="services" id="serviceCards" aria-label="Our services"></section>
+
+    <div class="section-head">
+      <h2>Weekly times</h2>
+      <span class="count" id="slotCount"></span>
+    </div>
+    <section class="slots" id="slotList" aria-live="polite"></section>
+
+    <p class="foot">
+      Already with us?
+      <a href="/parent">Open the parent portal</a>
+      · Office: <a href="mailto:info@clubsensational.org">info@clubsensational.org</a>
+    </p>
+  </main>
+
+  <div class="sheet" id="actionSheet" hidden>
+    <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+      <h3 id="sheetTitle">Enquire</h3>
+      <p id="sheetBody"></p>
+      <div class="sheet__actions">
+        <a class="btn" id="sheetMail" href="mailto:info@clubsensational.org">Email the office</a>
+        <button type="button" class="btn btn--soft" id="sheetClose">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/portal/portal_booking_offer_mock.js?v=20260714-booking-mock-v1"></script>
+  <script>
+(function () {
+  "use strict";
+  var mock = window.PortalBookingOfferMock;
+  if (!mock) return;
+
+  var logo = document.getElementById("bookingBrandLogo");
+  if (logo && typeof window.portalBrandApplyLogoImg === "function") {
+    window.portalBrandApplyLogoImg(logo);
+  } else if (logo) {
+    logo.src = "/portal/F-02-1.png";
+  }
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function fillSelect(sel, values, allLabel) {
+    var keep = sel.value;
+    sel.innerHTML = '<option value="">' + esc(allLabel) + "</option>";
+    values.forEach(function (v) {
+      var o = document.createElement("option");
+      o.value = typeof v === "object" ? v.id : v;
+      o.textContent = typeof v === "object" ? v.name : v;
+      sel.appendChild(o);
+    });
+    if (keep) sel.value = keep;
+  }
+
+  var fService = document.getElementById("fService");
+  var fVenue = document.getElementById("fVenue");
+  var fDay = document.getElementById("fDay");
+  var fTime = document.getElementById("fTime");
+  var fHideFull = document.getElementById("fHideFull");
+  var opts = mock.filterOptions();
+
+  fillSelect(fService, opts.services, "All services");
+  fillSelect(fVenue, opts.venues, "All venues");
+  fillSelect(fDay, opts.days, "All days");
+  fillSelect(fTime, opts.times, "All times");
+
+  function renderServices() {
+    var host = document.getElementById("serviceCards");
+    host.innerHTML = mock.SERVICES.map(function (s) {
+      return (
+        '<article class="svc" data-service="' + esc(s.id) + '">' +
+        "<h3>" + esc(s.name) + "</h3>" +
+        "<p>" + esc(s.blurb) + "</p>" +
+        '<p class="svc-meta">' + esc(s.durationHint) + " · " + esc(s.priceHint) +
+        (s.venues && s.venues.length ? " · " + esc(s.venues.join(", ")) : "") +
+        "</p>" +
+        '<button type="button" class="btn btn--soft" data-filter-service="' + esc(s.id) + '">See times</button>' +
+        "</article>"
+      );
+    }).join("");
+  }
+
+  function currentFilters() {
+    return {
+      serviceId: fService.value || "",
+      venue: fVenue.value || "",
+      day: fDay.value || "",
+      timeLabel: fTime.value || "",
+      hideFull: !!fHideFull.checked,
+    };
+  }
+
+  function openSheet(slot) {
+    var svc = mock.serviceById(slot.serviceId);
+    var full = mock.isFull(slot);
+    var left = mock.seatsLeft(slot);
+    var sheet = document.getElementById("actionSheet");
+    var title = document.getElementById("sheetTitle");
+    var body = document.getElementById("sheetBody");
+    var mail = document.getElementById("sheetMail");
+    title.textContent = full || (svc && svc.enquireOnly) ? "Join waiting list / enquire" : "Enquire about this time";
+    body.textContent =
+      (svc ? svc.name : "Session") +
+      " · " +
+      slot.day +
+      " · " +
+      slot.timeLabel +
+      " · " +
+      slot.venue +
+      (full
+        ? " — currently fully booked. Tell us you’d like to join the waiting list."
+        : " — " + left + " place(s) shown in this preview. Live booking comes next; for now email the office.");
+    var subject = encodeURIComponent(
+      "Booking enquiry — " + (svc ? svc.name : "session") + " · " + slot.day + " " + slot.timeLabel + " · " + slot.venue
+    );
+    var text = encodeURIComponent(
+      "Hello,\n\nI’d like to enquire about:\n" +
+        (svc ? svc.name : "Session") +
+        "\n" +
+        slot.day +
+        " " +
+        slot.timeLabel +
+        " at " +
+        slot.venue +
+        "\nSlot ref: " +
+        slot.id +
+        "\nStatus: " +
+        (full ? "Fully booked / waiting list" : left + " place(s) in preview") +
+        "\n\nChild name:\nParent name:\nPhone:\n\nThanks"
+    );
+    mail.href = "mailto:info@clubsensational.org?subject=" + subject + "&body=" + text;
+    sheet.hidden = false;
+  }
+
+  function renderSlots() {
+    var list = mock.filterSlots(currentFilters());
+    var host = document.getElementById("slotList");
+    var count = document.getElementById("slotCount");
+    var openN = list.filter(function (s) {
+      return !mock.isFull(s);
+    }).length;
+    count.textContent = list.length
+      ? list.length + " shown · " + openN + " with places"
+      : "No matches";
+
+    if (!list.length) {
+      host.innerHTML = '<p class="empty">No sessions match these filters. Clear filters or choose another day/venue.</p>';
+      return;
+    }
+
+    host.innerHTML = list
+      .map(function (slot) {
+        var svc = mock.serviceById(slot.serviceId);
+        var full = mock.isFull(slot);
+        var left = mock.seatsLeft(slot);
+        var badge = full
+          ? '<span class="badge badge--full">Fully booked</span>'
+          : '<span class="badge badge--open">' + left + " left</span>";
+        var cta = full || (svc && svc.enquireOnly) ? "Waiting list" : "Enquire";
+        return (
+          '<article class="slot' +
+          (full ? " slot--full" : "") +
+          '" data-slot-id="' +
+          esc(slot.id) +
+          '">' +
+          '<div class="slot__main">' +
+          '<p class="slot__title">' +
+          esc(svc ? svc.name : slot.serviceId) +
+          "</p>" +
+          '<p class="slot__sub">' +
+          esc(slot.day) +
+          " · " +
+          esc(slot.timeLabel) +
+          " · " +
+          esc(slot.venue) +
+          "</p>" +
+          "</div>" +
+          '<div class="slot__meta">' +
+          badge +
+          '<button type="button" class="btn' +
+          (full ? " btn--soft" : "") +
+          '" data-enquire="' +
+          esc(slot.id) +
+          '">' +
+          esc(cta) +
+          "</button>" +
+          "</div>" +
+          "</article>"
+        );
+      })
+      .join("");
+  }
+
+  function refresh() {
+    renderSlots();
+  }
+
+  document.getElementById("serviceCards").addEventListener("click", function (e) {
+    var btn = e.target && e.target.closest && e.target.closest("[data-filter-service]");
+    if (!btn) return;
+    fService.value = btn.getAttribute("data-filter-service") || "";
+    refresh();
+    document.getElementById("slotList").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  document.getElementById("slotList").addEventListener("click", function (e) {
+    var btn = e.target && e.target.closest && e.target.closest("[data-enquire]");
+    if (!btn) return;
+    var id = btn.getAttribute("data-enquire");
+    var slot = mock.MOCK_SLOTS.find(function (s) {
+      return s.id === id;
+    });
+    if (slot) openSheet(slot);
+  });
+
+  document.getElementById("sheetClose").addEventListener("click", function () {
+    document.getElementById("actionSheet").hidden = true;
+  });
+  document.getElementById("actionSheet").addEventListener("click", function (e) {
+    if (e.target === e.currentTarget) e.currentTarget.hidden = true;
+  });
+
+  document.getElementById("btnClearFilters").addEventListener("click", function () {
+    fService.value = "";
+    fVenue.value = "";
+    fDay.value = "";
+    fTime.value = "";
+    fHideFull.checked = false;
+    refresh();
+  });
+
+  [fService, fVenue, fDay, fTime, fHideFull].forEach(function (el) {
+    el.addEventListener("change", refresh);
+  });
+
+  renderServices();
+  refresh();
+})();
+  </script>
+</body>
+</html>
