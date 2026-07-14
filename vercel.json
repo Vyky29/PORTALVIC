@@ -72,6 +72,7 @@
     { "source": "/lead_feedback_report.html", "destination": "/portal-lead-feedback.html" },
     { "source": "/contract-sign", "destination": "/contract_sign.html" },
     { "source": "/contract-sign/:id", "destination": "/contract_sign.html?contract_id=:id" },
+    { "source": "/training-record-sign", "destination": "/training_record_sign.html" },
     { "source": "/hr-contract", "destination": "/hr_contract.html" },
     { "source": "/hr_contract", "destination": "/hr_contract.html" },
     { "source": "/hr_contract/", "destination": "/hr_contract.html" },

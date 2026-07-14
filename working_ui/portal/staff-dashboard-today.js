@@ -4613,6 +4613,31 @@
             });
             return;
           }
+          if(typ === 'training_attendance_sign'){
+            if(existing[id]) return;
+            var trRecordId = '';
+            var trParticipantId = '';
+            try{
+              var trParsed = JSON.parse(String(row.body || '{}'));
+              trRecordId = String(trParsed.record_id || trParsed.recordId || '').trim();
+              trParticipantId = String(trParsed.participant_id || trParsed.participantId || '').trim();
+            }catch(_t){}
+            if(!trRecordId || !trParticipantId){
+              existing[id] = true;
+              return;
+            }
+            existing[id] = true;
+            annInjected.push({
+              type: 'announcement',
+              title: portalFixMojibakeText(String(row.title || 'Sign training attendance').trim() || 'Sign training attendance'),
+              text: 'Confirm attendance for this training. Your signed PDF is saved under My Documents → Certificates.',
+              href: 'training_record_sign.html?record_id=' + encodeURIComponent(trRecordId) + '&participant_id=' + encodeURIComponent(trParticipantId),
+              portalAnnouncementId: id,
+              requiresSignature: true,
+              created_at: row.created_at
+            });
+            return;
+          }
           if(existing[id]) return;
           if(
             typeof portalAnnouncementRowIsCalendar202627 === 'function' &&

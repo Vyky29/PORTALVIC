@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sign training attendance | clubSENsational Portal</title>
+  <script src="/portal/portal_brand.js?v=20260714-tr"></script>
+  <script src="/portal/contract-core.js?v=20260628-app-submit-fix"></script>
+  <style>
+    :root { --navy:#0f2744; --gold:#c9a227; --grey-100:#f7f9fb; --grey-200:#e2e8f0; --grey-500:#64748b; --radius:10px; }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--grey-100);color:#334155}
+    .header{background:#fff;border-bottom:4px solid var(--gold);padding:1rem;text-align:center}
+    .header img{max-width:120px;height:auto}
+    .wrap{max-width:720px;margin:0 auto;padding:1rem 1.25rem 2rem;min-width:0}
+    .panel{background:#fff;border-radius:var(--radius);padding:1.25rem;box-shadow:0 2px 8px rgba(15,39,68,.08);min-width:0}
+    .panel h2{margin:0 0 .75rem;font-size:1.05rem;color:var(--navy)}
+    .meta{font-size:.92rem;line-height:1.45;overflow-wrap:break-word;min-width:0}
+    .meta dt{font-weight:700;color:#475569;margin-top:.4rem}
+    .meta dd{margin:0;color:#0f2744}
+    canvas{width:100%;display:block;border:2px dashed var(--grey-200);border-radius:var(--radius);background:#f7f9fb;touch-action:none;cursor:crosshair}
+    .btn{padding:.65rem 1.2rem;border:none;border-radius:var(--radius);font-weight:600;cursor:pointer;font-size:1rem}
+    .btn-gold{background:var(--gold);color:var(--navy);width:100%}
+    .btn-gold:disabled{opacity:.5;cursor:not-allowed}
+    .btn-sec{background:var(--grey-200);color:var(--navy);margin-top:.5rem;width:100%}
+    .err{background:#fef2f2;border:1px solid #fecaca;padding:1rem;border-radius:var(--radius);color:#b91c1c}
+    .ok{background:#ecfdf5;border:1px solid #86efac;padding:1rem;border-radius:var(--radius);color:#166534}
+    .hidden{display:none!important}
+    label.ack{display:flex;gap:.5rem;align-items:flex-start;margin:1rem 0;font-size:.95rem;min-width:0}
+    input[type=text]{width:100%;padding:.6rem;border:1px solid var(--grey-200);border-radius:var(--radius);margin:.35rem 0 .5rem;min-width:0}
+    .field-hint{margin:0 0 .75rem;font-size:.82rem;color:var(--grey-500);line-height:1.4;overflow-wrap:break-word}
+  </style>
+</head>
+<body>
+  <header class="header">
+    <img src="/portal/F-02-1.png" alt="clubSENsational" width="120" height="120"
+      onerror="this.onerror=null;this.src='/portal/portal_crest.svg'" />
+    <h1 style="margin:.5rem 0 0;font-size:1.15rem;color:var(--navy)">Sign training attendance</h1>
+    <p id="subRef" style="margin:0;font-size:.9rem;color:var(--grey-500)"></p>
+  </header>
+  <div class="wrap">
+    <div id="loading"><p>Loading…</p></div>
+    <div id="errorBox" class="err hidden"></div>
+    <div id="doneBox" class="ok hidden">
+      <strong>Attendance signed.</strong>
+      <p style="margin:.5rem 0 0">A copy is in My Documents → Certificates / Training.</p>
+      <p style="margin:1rem 0 0">
+        <a href="my_documents.html?category=training&amp;from=staff">Open My Documents</a>
+        · <a href="staff_dashboard.html">Back to dashboard</a>
+      </p>
+    </div>
+    <div id="signPanel" class="panel hidden">
+      <h2 id="titleEl">Training</h2>
+      <dl class="meta" id="metaEl"></dl>
+      <label for="typedName">Typed full name</label>
+      <input type="text" id="typedName" autocomplete="name" />
+      <p class="field-hint">Type your name to confirm attendance.</p>
+      <label class="ack"><input type="checkbox" id="ack" /> <span>I confirm I attended this training (or completed the required briefing).</span></label>
+      <canvas id="sigCanvas" height="150" aria-label="Signature"></canvas>
+      <button type="button" class="btn-sec" id="clearSig">Clear signature</button>
+      <button type="button" class="btn btn-gold" id="submitBtn" disabled style="margin-top:.5rem">Sign and save</button>
+    </div>
+  </div>
+  <script type="module" src="/portal/portal_training_record_sign.js?v=20260714-tr-p1b"></script>
+</body>
+</html>

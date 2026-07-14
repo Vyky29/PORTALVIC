@@ -106,6 +106,7 @@
   <script src="/portal/portal-change-log.js?v=20260601-changelog-merge"></script>
   <script src="/portal/portal_ld_funding_letters.js?v=20260714-ld-pdf-logo"></script>
   <script src="/portal/admin_ld_funding_review.js?v=20260714-ld-docs-rls"></script>
+  <script src="/portal/admin-training-records.js?v=20260714-tr-p1b"></script>
   <script src="/portal/admin-hr.js?v=20260709-staff-first-cats"></script>
   <script src="/portal/admin-payments.js?v=20260531-la-column"></script>
   <script src="/portal/portal-comms-order-payments.js?v=20260617-cfk-order-enrich"></script>
@@ -417,6 +418,7 @@
       { id:'staffhr', label:'H&R' },
       { id:'onboarding', label:'Onboarding' },
       { id:'staffhr_contracts', label:'Employment contracts', hubLabel:'CONTRACTS' },
+      { id:'staffhr_training_records', label:'Training records', hubLabel:'TRAINING RECORDS' },
       { id:'recruitment', label:'Recruitment' },
       { id:'interviews', label:'Interviews' },
       { id:'portal_documents', label:'Documents', hubLabel:'Documents' },
@@ -450,7 +452,7 @@
     var NAV_GROUPS = [
       { id:'g_operator', label:'Operator', children:['dashboard','__h:Sessions','c4k_sessions','session_disruptions','operations_admin','operator'] },
       { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','__h:Participants','clients','portal_nav_client_services','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops','portal_parent_notify_log','portal_staff_whatsapp','portal_parent_broadcast'] },
-      { id:'g_zoho', label:'H&R', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
+      { id:'g_zoho', label:'H&R', children:['staffhr','onboarding','staffhr_contracts','staffhr_training_records','interviews'] },
       { id:'g_supabase', label:'Documents', children:['__h:Participants','portal_participant_documents','portal_parent_consents','__h:Workers','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance', children:['reenrol_payments'] },
       { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','portal_device_notifications','logs','portal_nav_alerts','__h:Monitoring','portal_activity','portal_training_progress','portal_push_devices','staff_live_map','staff_ghost_teleport','__h:Other portals','portal_nav_staff','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
@@ -491,6 +493,7 @@
       staffhr:'<path d="M9 5H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/><line x1="9" y1="20" x2="13" y2="20"/>',
       onboarding:'<path d="M2 3h6a4 4 0 014 4v14a4 4 0 00-4-4H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a4 4 0 014-4h6z"/>',
       staffhr_contracts:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>',
+      staffhr_training_records:'<path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="14" y2="11"/>',
       invoices:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
       logs:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>',
       recruitment:'<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><path d="M12 11v6"/><path d="M9 14h6"/>',
@@ -19817,6 +19820,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else if(id==='c4k_reports') html = viewC4kGlobalReportsTracker();
       else if(id==='staffhr') html = viewStaffHR();
       else if(id==='staffhr_contracts') html = viewStaffHRContracts();
+      else if(id==='staffhr_training_records') html = viewStaffHRTrainingRecords();
       else if(id==='bookings' || id==='orders_all') html = viewBookings();
       else if(id==='scheduling') html = viewScheduling();
       else if(id==='term_roster_edit') html = viewTermRosterEdit();
@@ -20557,6 +20561,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         staffhr:'Staff roster — open any person for full profile, HR notes and availability.',
         onboarding:'New-hire onboarding pipeline — forms, tasks and worker progress.',
         staffhr_contracts:'Employment contracts (zero-hours, fixed-term and permanent part-time term-time) — create, send and track staff signatures.',
+        staffhr_training_records:'Training records — fire evacuation, venue induction, shadowing, briefings: attendance, signatures and optional PDF evidence.',
         portal_documents:'Timesheets, expense claims, onboarding uploads and files in Supabase storage.',
         portal_payslips:'Upload monthly payslip PDFs for each worker — visible in My Documents on the staff app.',
         portal_activity:'Staff portal visits — login, pages, and active-tab time (UK London).',
@@ -20644,7 +20649,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         description:'Staff roster and HR — view each worker, onboarding, contracts, recruitment and interviews.',
         preview:['Staff roster','Onboarding progress','Contracts','Recruitment and interviews','Staff readiness'],
         status:'Use this area to browse staff, update profiles and run employment workflows.',
-        primary:['staffhr','onboarding',{ id:'staffhr_contracts', label:'Employment contracts / CONTRACTS' },'recruitment','interviews'],
+        primary:['staffhr','onboarding',{ id:'staffhr_contracts', label:'Employment contracts / CONTRACTS' },{ id:'staffhr_training_records', label:'Training records' },'recruitment','interviews'],
         secondary:['comms_bookings']
       },
       {
@@ -20975,6 +20980,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var staffRow1 =
         portalDashTileHtml('staffhr', '', 'staffhr', 'Staff roster', 'All staff — tap for full profile &amp; HR', false, 'sessions')+
         portalDashTileHtml('staffhr_contracts', '', 'staffhr_contracts', 'Contracts', 'Employment contracts &amp; signatures', false, 'reviews')+
+        portalDashTileHtml('staffhr_training_records', '', 'staffhr_training_records', 'Training records', 'Evacuation, induction, shadowing &amp; briefings', false, 'feedback')+
         portalDashTileHtml('portal_documents', '', 'portal_documents', 'Documents', 'Timesheets, expenses &amp; uploads', false, 'scheduling')+
         portalDashTileHtml('portal_payslips', '', 'portal_payslips', 'Payslips', 'Upload worker payslip PDFs', false, 'payments')+
         portalDashTileHtml('', '', 'invoices', 'Payroll report', 'Monthly PDF · preview &amp; send', false, 'payments', '', '', '/payroll-report.html')+
@@ -21666,8 +21672,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<p class="page-intro">Create zero-hours or fixed-term employment contracts and send them to staff. They sign on their <strong>Portal dashboard</strong> (like an announcement); the signed PDF is saved under <strong>My Documents</strong>.</p>'+
         '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr">Staff &amp; HR</button>'+
+        '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr_training_records">Training records</button>'+
         '<button type="button" class="btn btn--sec btn--sm" data-view-target="onboarding">Onboarding</button></div>'+
         embed
+      );
+    }
+
+    function viewStaffHRTrainingRecords(){
+      return (
+        '<h1 class="page-title">Training records</h1>'+
+        '<p class="page-intro">Real training events (fire evacuation, venue induction, shadowing, policy briefings, etc.). Assign staff, request attendance signatures, and keep optional PDFs in <strong>My Documents → Certificates</strong>. This is separate from Induction / swimming module progress and the HR spreadsheet matrix.</p>'+
+        '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
+        '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr">Staff &amp; HR</button>'+
+        '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr_contracts">Contracts</button>'+
+        '<button type="button" class="btn btn--sec btn--sm" data-view-target="portal_training_progress">Training &amp; readiness</button></div>'+
+        '<div id="trModuleRoot"></div>'
       );
     }
 
@@ -23258,7 +23277,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.querySelectorAll('[data-act]').forEach(function(b){
         b.addEventListener('click', function(){
           var v = b.getAttribute('data-act');
-          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='portal_participant_documents'||v==='portal_parent_consents'||v==='portal_payslips'||v==='portal_activity'||v==='portal_training_progress'||v==='portal_push_devices'||v==='participant_achievements'||v==='portal_parent_notify_log'||v==='portal_staff_whatsapp'||v==='portal_parent_broadcast'||v==='staff_live_map'||v==='staff_ghost_teleport'||v==='cs_cliq'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
+          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='staffhr_training_records'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='portal_participant_documents'||v==='portal_parent_consents'||v==='portal_payslips'||v==='portal_activity'||v==='portal_training_progress'||v==='portal_push_devices'||v==='participant_achievements'||v==='portal_parent_notify_log'||v==='portal_staff_whatsapp'||v==='portal_parent_broadcast'||v==='staff_live_map'||v==='staff_ghost_teleport'||v==='cs_cliq'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
           closeSidebarMob();
         });
       });
@@ -23572,6 +23591,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             window.HRContractApp.init();
           }
         });
+      }
+      if(id==='staffhr_training_records'){
+        if(window.AdminTrainingRecords && $('trModuleRoot')){
+          window.AdminTrainingRecords.configure({
+            getClient: getSchedSupabaseClient,
+            getProfile: function(){ var b=window.__PORTAL_SUPABASE__; return (b && b.staff_profile) || null; },
+            toast: portalAdminToast,
+            esc: esc
+          });
+          window.AdminTrainingRecords.mount($('trModuleRoot'));
+        }
       }
       if(id==='c4k_waitlist'){
         refreshBookingWaitlistPipelineTable();
