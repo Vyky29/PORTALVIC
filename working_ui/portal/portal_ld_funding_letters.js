@@ -7,9 +7,13 @@
   var JSPDF_URL =
     "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260703-ld-funding";
 
+  /** Same static crest used on timesheet / portal PDF headers. */
+  var PDF_LOGO_URLS = ["portal/F-02-1.png", "logoPDF.png", "portal/portal_crest.svg"];
+
   var ORG = "clubSENsational Ltd";
   var SCHEME = "Learning & Development Funding Scheme (POL-049)";
   var DECLINE_REASON_OTHER = "other";
+  var logoDataUrlCache = null;
 
   var DECLINE_REASONS = [
     {
@@ -304,6 +308,15 @@
     });
   }
 
+  function logoSrcForHtml() {
+    try {
+      if (global.location && global.location.href) {
+        return new URL(PDF_LOGO_URLS[0], global.location.href).href;
+      }
+    } catch (_) {}
+    return "/" + PDF_LOGO_URLS[0];
+  }
+
   function buildLetterHtml(app) {
     var paras = buildParagraphs(app);
     var body = paras
@@ -312,11 +325,18 @@
         return "<p style=\"margin:0 0 12px;line-height:1.55;color:#1f2937\">" + escHtml(p) + "</p>";
       })
       .join("");
+    var logoSrc = escHtml(logoSrcForHtml());
     return (
       '<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8">' +
       "<title>" +
       escHtml(subjectFor(app)) +
       '</title></head><body style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:720px;margin:24px auto;padding:0 16px;color:#1f2937">' +
+      '<div style="text-align:center;margin:0 0 16px">' +
+      '<img src="' +
+      logoSrc +
+      '" alt="clubSENsational" width="96" height="96" style="width:96px;height:auto;display:inline-block" ' +
+      'onerror="this.onerror=null;this.src=\'/portal/portal_crest.svg\'" />' +
+      "</div>" +
       '<div style="border-bottom:3px solid #f4b942;padding-bottom:12px;margin-bottom:20px">' +
       '<div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#9a6700;font-weight:700">' +
       escHtml(ORG) +
@@ -404,42 +424,132 @@
     });
   }
 
+  function readImageUrlAsDataUrl(url) {
+    return fetch(url, { mode: "cors" })
+      .then(function (res) {
+        if (!res.ok) return "";
+        return res.blob();
+      })
+      .then(function (blob) {
+        if (!blob) return "";
+        return new Promise(function (resolve) {
+          var r = new FileReader();
+          r.onload = function () {
+            resolve(String(r.result || ""));
+          };
+          r.onerror = function () {
+            resolve("");
+          };
+          r.readAsDataURL(blob);
+        });
+      })
+      .catch(function () {
+        return "";
+      });
+  }
+
+  function loadPdfLogoDataUrl() {
+    if (logoDataUrlCache) return Promise.resolve(logoDataUrlCache);
+    var list = [];
+    try {
+      if (global.location && global.location.href) {
+        PDF_LOGO_URLS.forEach(function (rel) {
+          try {
+            list.push(new URL(rel, global.location.href).href);
+          } catch (_) {}
+        });
+      }
+    } catch (_) {}
+    PDF_LOGO_URLS.forEach(function (rel) {
+      list.push(rel);
+      list.push("/" + rel);
+    });
+    var seen = {};
+    var chain = Promise.resolve("");
+    list.forEach(function (url) {
+      if (!url || seen[url]) return;
+      seen[url] = true;
+      chain = chain.then(function (data) {
+        if (data) return data;
+        return readImageUrlAsDataUrl(url);
+      });
+    });
+    return chain.then(function (data) {
+      if (data) logoDataUrlCache = data;
+      return data || "";
+    });
+  }
+
+  function drawPdfLogo(pdf, logoDataUrl, pageW) {
+    if (!logoDataUrl) return 18;
+    try {
+      var fmt = /^data:image\/jpe?g/i.test(logoDataUrl)
+        ? "JPEG"
+        : /^data:image\/svg/i.test(logoDataUrl)
+          ? "PNG"
+          : "PNG";
+      if (/^data:image\/svg/i.test(logoDataUrl)) {
+        /* jsPDF cannot embed SVG reliably — skip to text-only header */
+        return 18;
+      }
+      var props = pdf.getImageProperties(logoDataUrl);
+      var iw = props.width || 1;
+      var ih = props.height || 1;
+      var logoBox = 28;
+      var scale = Math.min(logoBox / iw, logoBox / ih);
+      var logoW = iw * scale;
+      var logoH = ih * scale;
+      var logoX = (pageW - logoW) / 2;
+      pdf.addImage(logoDataUrl, fmt, logoX, 12, logoW, logoH);
+      return 12 + logoH + 8;
+    } catch (_) {
+      return 18;
+    }
+  }
+
+  function writePdfLines(pdf, lines, startY, margin, boldFirstOrgLine) {
+    var y = startY;
+    var pageW = pdf.internal.pageSize.getWidth();
+    var maxW = pageW - margin * 2;
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(11);
+    lines.forEach(function (line, idx) {
+      if (boldFirstOrgLine && idx === 0) {
+        pdf.setFontSize(13);
+        pdf.setFont("helvetica", "bold");
+      } else if (boldFirstOrgLine && idx === 2) {
+        pdf.setFontSize(11);
+        pdf.setFont("helvetica", "normal");
+      }
+      if (!line) {
+        y += 4;
+        return;
+      }
+      var wrapped = pdf.splitTextToSize(line, maxW);
+      wrapped.forEach(function (wl) {
+        if (y > 280) {
+          pdf.addPage();
+          y = 18;
+        }
+        pdf.text(wl, margin, y);
+        y += 6;
+      });
+    });
+  }
+
   function buildLetterPdfBlob(app) {
-    return ensureJsPdf().then(function () {
+    return Promise.all([ensureJsPdf(), loadPdfLogoDataUrl()]).then(function (parts) {
+      var logoDataUrl = parts[1];
       var pdf = new global.jspdf.jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
         compress: true,
       });
-      var lines = buildPlainLines(app);
-      var y = 18;
+      var pageW = pdf.internal.pageSize.getWidth();
       var margin = 18;
-      var maxW = pdf.internal.pageSize.getWidth() - margin * 2;
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(11);
-      lines.forEach(function (line, idx) {
-        if (idx === 0) {
-          pdf.setFontSize(13);
-          pdf.setFont("helvetica", "bold");
-        } else if (idx === 2) {
-          pdf.setFontSize(11);
-          pdf.setFont("helvetica", "normal");
-        }
-        if (!line) {
-          y += 4;
-          return;
-        }
-        var wrapped = pdf.splitTextToSize(line, maxW);
-        wrapped.forEach(function (wl) {
-          if (y > 280) {
-            pdf.addPage();
-            y = 18;
-          }
-          pdf.text(wl, margin, y);
-          y += 6;
-        });
-      });
+      var y = drawPdfLogo(pdf, logoDataUrl, pageW);
+      writePdfLines(pdf, buildPlainLines(app), y, margin, true);
       return pdf.output("blob");
     });
   }
@@ -500,43 +610,34 @@
   }
 
   function buildLetterPdfBlobFromText(text) {
-    return ensureJsPdf().then(function () {
+    return Promise.all([ensureJsPdf(), loadPdfLogoDataUrl()]).then(function (parts) {
+      var logoDataUrl = parts[1];
       var pdf = new global.jspdf.jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
         compress: true,
       });
-      var lines = String(text || "").split(/\r?\n/);
-      var y = 18;
+      var pageW = pdf.internal.pageSize.getWidth();
       var margin = 18;
-      var maxW = pdf.internal.pageSize.getWidth() - margin * 2;
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(11);
-      lines.forEach(function (line) {
-        if (!line) {
-          y += 4;
-          return;
-        }
-        var wrapped = pdf.splitTextToSize(line, maxW);
-        wrapped.forEach(function (wl) {
-          if (y > 280) {
-            pdf.addPage();
-            y = 18;
-          }
-          pdf.text(wl, margin, y);
-          y += 6;
-        });
-      });
+      var y = drawPdfLogo(pdf, logoDataUrl, pageW);
+      writePdfLines(pdf, String(text || "").split(/\r?\n/), y, margin, false);
       return pdf.output("blob");
     });
   }
 
   function buildLetterHtmlFromText(text, subject) {
+    var logoSrc = escHtml(logoSrcForHtml());
     return (
       '<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><title>' +
       escHtml(subject || "L&D funding decision") +
       '</title></head><body style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:720px;margin:24px auto;padding:0 16px;color:#1f2937">' +
+      '<div style="text-align:center;margin:0 0 16px">' +
+      '<img src="' +
+      logoSrc +
+      '" alt="clubSENsational" width="96" height="96" style="width:96px;height:auto;display:inline-block" ' +
+      'onerror="this.onerror=null;this.src=\'/portal/portal_crest.svg\'" />' +
+      "</div>" +
       '<pre style="margin:0;font-family:inherit;font-size:14px;line-height:1.55;white-space:pre-wrap;overflow-wrap:break-word">' +
       escHtml(text || "") +
       "</pre></body></html>"
