@@ -1722,13 +1722,20 @@
     );
   }
 
+  var RE_TERMS_URL = "https://clubsensational.classforkids.io/terms-and-conditions";
+
   function renderRelevantInfoHtml(payCode, editing) {
     var isGc = normalizePayMethodChoice(payCode) === "gocardless";
     return (
       '<section id="reRelevantInfo" class="re-relevant-info"' +
       (editing ? " hidden" : "") +
       ' aria-label="Relevant info">' +
+      '<div class="re-relevant-info__head">' +
       '<h4 class="re-relevant-info__title">Relevant info</h4>' +
+      '<a class="re-btn re-btn--secondary re-relevant-info__terms" href="' +
+      esc(RE_TERMS_URL) +
+      '" target="_blank" rel="noopener noreferrer">Terms &amp; Conditions</a>' +
+      "</div>" +
       '<div id="reDirectPayFailNote" class="re-funding-fee re-funding-fee--fail"' +
       (editing || !isGc ? " hidden" : "") +
       ">" +
@@ -3348,7 +3355,7 @@
       "</div>" +
       '<section class="re-section re-declarations re-form-grid__submit">' +
       reSectionTitle("h3", "submit", "Confirm &amp; submit") +
-      '<label class="re-check"><input id="reDeclAccurate" type="checkbox" /> I confirm the choices above are correct for our family.</label>' +
+      '<label class="re-check"><input id="reDeclAccurate" type="checkbox" /> I confirm that I have read and understood the information provided and that the choices I have made are appropriate for my family.</label>' +
       '<button id="reSubmitBtn" class="re-btn re-btn--primary re-btn--submit" type="button">Submit re-enrolment</button>' +
       "</section>" +
       "</div>";

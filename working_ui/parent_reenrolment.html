@@ -1006,13 +1006,32 @@
       min-width: 0;
     }
     .re-relevant-info[hidden] { display: none !important; }
-    .re-relevant-info__title {
+    .re-relevant-info__head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px 12px;
       margin: 0 0 8px;
+      min-width: 0;
+    }
+    .re-relevant-info__title {
+      margin: 0;
       font-size: .78rem;
       font-weight: 800;
       letter-spacing: .06em;
       text-transform: uppercase;
       color: var(--ink);
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .re-relevant-info__terms {
+      flex: 0 1 auto;
+      margin-top: 0;
+      min-height: 36px;
+      padding: 0 12px;
+      font-size: .78rem;
+      white-space: nowrap;
     }
     .re-relevant-info .re-funding-fee {
       margin-top: 8px;
@@ -1508,10 +1527,9 @@
         border-top: 1px solid var(--line);
       }
       .re-form-grid__submit .re-check {
-        display: inline-flex;
-        margin-right: 20px;
-        max-width: calc(50% - 12px);
-        vertical-align: top;
+        display: flex;
+        max-width: 100%;
+        margin-right: 0;
       }
       .re-btn--submit {
         width: auto;
@@ -1608,6 +1626,6 @@
 
   <script src="/portal/portal_calendar_2026_27.js?v=20260714-w2-80pct"></script>
   <script src="/portal/portal_participant_photos.js?v=20260704-reenrol-photo"></script>
-  <script src="/portal/portal_reenrolment_2026_27.js?v=20260714-la-nhs-no-cadence"></script>
+  <script src="/portal/portal_reenrolment_2026_27.js?v=20260714-terms-confirm"></script>
 </body>
 </html>
