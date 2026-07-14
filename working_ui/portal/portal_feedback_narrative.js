@@ -984,6 +984,12 @@
     var micHint = global.document.getElementById("fbVoiceMicHint");
     var notesField = global.document.getElementById("fbSessionNotesField");
     if (!choice || !field || !voiceBtn || !writtenBtn) return;
+    if (choice.getAttribute("data-fb-io-wired") === "1") {
+      /* Already wired — keep chooser visible; do not bind again. */
+      showEl(choice);
+      return;
+    }
+    choice.setAttribute("data-fb-io-wired", "1");
 
     showEl(choice);
     // Hide the narrative (and its mic hint + optional Notes) until the
@@ -1037,7 +1043,6 @@
     }
     var hint = global.document.getElementById("fbSubmitHint");
     if (hint) hint.textContent = "Write the session narrative, then Submit.";
-    wireInputChoice();
   }
 
   function init(options) {
@@ -1108,6 +1113,8 @@
     syncValidateButton();
     syncFilterButton();
     syncSubmitGate();
+    /* Always offer Voice vs Written before the narrative box. */
+    wireInputChoice();
     if (state.adminFilters) applyAdminFiltersMode();
   }
 
