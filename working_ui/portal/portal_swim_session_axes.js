@@ -5,40 +5,42 @@
 (function (global) {
   "use strict";
 
-  /* Engagement / Regulation / Independence — same three domains as swimming term review.
-   * Session picks map to Building / Progressing / Secure via termHint + scores (no “own world” band). */
+  /* Labels for display / term suggestions (UI uses the same 1–5★ star row as non-swim). */
   var ENGAGEMENT = [
     {
-      value: 2,
-      label: "Needed lots of support",
-      otherSide: "2 stars",
+      value: 1,
+      label: "1 star",
+      otherSide: "Building",
       termHint: "Building",
-      icon:
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>',
+      icon: "",
+    },
+    {
+      value: 2,
+      label: "2 stars",
+      otherSide: "Building",
+      termHint: "Building",
+      icon: "",
     },
     {
       value: 3,
-      label: "Joined some",
-      otherSide: "3 stars",
+      label: "3 stars",
+      otherSide: "Building",
       termHint: "Building",
-      icon:
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+      icon: "",
     },
     {
       value: 4,
-      label: "Joined most",
-      otherSide: "4 stars",
+      label: "4 stars",
+      otherSide: "Progressing",
       termHint: "Progressing",
-      icon:
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+      icon: "",
     },
     {
       value: 5,
-      label: "Stayed with it well",
-      otherSide: "5 stars",
+      label: "5 stars",
+      otherSide: "Secure",
       termHint: "Secure",
-      icon:
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+      icon: "",
     },
   ];
 
@@ -126,6 +128,35 @@
 
   function engIconHtml(svg) {
     return '<span class="pill-independence-icon" aria-hidden="true">' + (svg || "") + "</span>";
+  }
+
+  var ENGAGEMENT_STAR_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+
+  /** Same 1–5★ control as the generic session form (photo-2 style). */
+  function engagementStarsHtml(inputName, dataKind) {
+    var kind = dataKind || "rating";
+    var parts = ['<div class="engagement-star-row">'];
+    for (var v = 1; v <= 5; v++) {
+      parts.push(
+        '<label class="engagement-star pill rate" data-kind="' +
+          kind +
+          '" data-value="' +
+          v +
+          '" aria-label="Engagement ' +
+          v +
+          (v === 1 ? " star" : " stars") +
+          '"><input type="radio" name="' +
+          inputName +
+          '" value="' +
+          v +
+          '"><span class="engagement-star__glyph" aria-hidden="true">' +
+          ENGAGEMENT_STAR_SVG +
+          "</span></label>",
+      );
+    }
+    parts.push("</div>");
+    return parts.join("");
   }
 
   function regFaceHtml(svg) {
@@ -465,20 +496,8 @@
       '<div class="fb-dc-swim__axes" id="fbDayCentreSwimAxes" hidden>' +
       '<div class="field fb-dc-swim__axis">' +
       "<label>Swimming engagement <span class=\"req\">*</span></label>" +
-      '<p class="small" style="margin:0 0 8px;font-weight:600;color:var(--muted)">Select all that apply.</p>' +
-      '<div class="swim-axis-row options--dc-swim-engagement" role="group" aria-label="Swimming engagement">' +
-      ENGAGEMENT.map(function (o) {
-        return (
-          '<label class="pill rate swim-axis-pill" data-kind="dc-swim-rating" data-value="' +
-          o.value +
-          '"><input type="checkbox" name="swimEngagementRating" value="' +
-          o.value +
-          '"><span class="pill-independence-inner">' +
-          engIconHtml(o.icon) +
-          optionPillTextHtml(o, true) +
-          "</span></label>"
-        );
-      }).join("") +
+      '<div class="options options--dc-swim-engagement" role="radiogroup" aria-label="Swimming engagement">' +
+      engagementStarsHtml("swimEngagementRating", "dc-swim-rating") +
       "</div></div>" +
       '<div class="field fb-dc-swim__axis">' +
       "<label>Regulation in the water <span class=\"req\">*</span></label>" +
@@ -616,6 +635,19 @@
     block.querySelectorAll(".swim-axis-pill").forEach(function (lab) {
       var inp = lab.querySelector("input");
       lab.classList.toggle("isSelected", !!(inp && inp.checked));
+    });
+    var engStarSelected = 0;
+    block.querySelectorAll(".engagement-star").forEach(function (lab) {
+      var inp = lab.querySelector('input[name="swimEngagementRating"]');
+      var v = inp ? parseInt(String(inp.value || ""), 10) : NaN;
+      if (inp && inp.checked && Number.isFinite(v)) engStarSelected = v;
+    });
+    block.querySelectorAll(".engagement-star").forEach(function (lab) {
+      var inp = lab.querySelector('input[name="swimEngagementRating"]');
+      var v = inp ? parseInt(String(inp.value || ""), 10) : NaN;
+      var on = inp && inp.checked;
+      lab.classList.toggle("isSelected", !!on);
+      lab.classList.toggle("isFilled", Number.isFinite(v) && engStarSelected > 0 && v <= engStarSelected);
     });
   }
 
@@ -813,32 +845,15 @@
       return;
     }
 
-    engHost.setAttribute("role", "group");
-    engHost.innerHTML = ENGAGEMENT.map(function (o) {
-      return (
-        '<label class="pill rate swim-axis-pill" data-kind="rating" data-value="' +
-        o.value +
-        '"><input type="checkbox" name="engagementRating" value="' +
-        o.value +
-        '"><span class="pill-independence-inner">' +
-        engIconHtml(o.icon) +
-        optionPillTextHtml(o, true) +
-        "</span></label>"
-      );
-    }).join("");
+    engHost.setAttribute("role", "radiogroup");
+    engHost.setAttribute("aria-label", "Engagement rating");
+    /* Keep the same star row as non-swim (do not replace with text pills). */
+    engHost.innerHTML = root.__portalGenericAxesHtml.eng || engagementStarsHtml("engagementRating", "rating");
 
     var engField = engHost.closest(".field");
     if (engField) {
       var eh = engField.querySelector("p.small");
-      if (!eh) {
-        eh = document.createElement("p");
-        eh.className = "small";
-        eh.style.cssText = "margin:0 0 8px;font-weight:600;color:var(--muted)";
-        var engLab = engField.querySelector(":scope > label");
-        if (engLab && engLab.nextSibling) engField.insertBefore(eh, engLab.nextSibling);
-        else engField.insertBefore(eh, engHost);
-      }
-      eh.textContent = "Select all that apply.";
+      if (eh) eh.remove();
     }
 
     var regField = regHost.closest(".field");

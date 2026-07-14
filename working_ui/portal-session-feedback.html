@@ -31,7 +31,7 @@
 <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260713-ios-video-save" />
 <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
 <script src="/portal/portal_participant_achievements.js?v=20260713-ios-video-save"></script>
-<script src="/portal/portal_swim_session_axes.js?v=20260714-no-own-world"></script>
+<script src="/portal/portal_swim_session_axes.js?v=20260714-eng-stars"></script>
 <script src="/portal/portal_feedback_voice_input.js?v=20260705c-voice-ai-down-message"></script>
 <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
 <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
@@ -792,7 +792,6 @@ input:focus, select:focus, textarea:focus{
   min-width: 0;
 }
 
-#feedbackExtendedSection[data-swim-axes="1"] .options--engagement,
 #feedbackExtendedSection[data-swim-axes="1"] .options--emotions,
 #feedbackExtendedSection[data-swim-axes="1"] .options--independence{
   display:grid;
@@ -806,7 +805,13 @@ input:focus, select:focus, textarea:focus{
   padding:0;
   overflow:visible;
 }
-#feedbackExtendedSection[data-swim-axes="1"] .options--engagement .swim-axis-pill,
+#feedbackExtendedSection[data-swim-axes="1"] .options--engagement{
+  display:block;
+  width:100%;
+  min-width:0;
+  padding:0;
+  overflow:visible;
+}
 #feedbackExtendedSection[data-swim-axes="1"] .options--emotions .swim-axis-pill,
 #feedbackExtendedSection[data-swim-axes="1"] .options--independence .swim-axis-pill{
   flex:none;
@@ -815,13 +820,14 @@ input:focus, select:focus, textarea:focus{
   min-height:92px;
   box-sizing:border-box;
 }
-#feedbackExtendedSection[data-swim-axes="1"] .options--engagement .swim-axis-pill.rate{
-  /* Match emotion/independence card size — not the compact star row. */
+.fb-dc-swim__axis .options--dc-swim-engagement{
+  display:block;
+  width:100%;
   min-width:0;
-  padding:12px 10px 14px;
 }
-.fb-dc-swim__axis .swim-axis-row,
-.fb-dc-swim__axis .options{
+.fb-dc-swim__axis .options--dc-swim-regulation,
+.fb-dc-swim__axis .options--dc-swim-independence,
+.fb-dc-swim__axis .swim-axis-row{
   display:grid;
   grid-template-columns:repeat(2, minmax(0, 1fr));
   gap:8px;
@@ -1775,10 +1781,8 @@ button{
 
   function setExtendedFieldsRequired(isRequired){
     if(!feedbackExtendedSection) return;
-    var swimMode = feedbackExtendedSection.getAttribute("data-swim-axes") === "1";
     feedbackExtendedSection.querySelectorAll('input[name="engagementRating"]').forEach(function(inp, idx){
-      // Swim axes are multi checkbox — validated in submit JS, not HTML required.
-      if(isRequired && !swimMode && idx === 0) inp.setAttribute("required", "");
+      if(isRequired && idx === 0) inp.setAttribute("required", "");
       else inp.removeAttribute("required");
     });
     feedbackExtendedSection.querySelectorAll('input[name="independenceLevel"]').forEach(function(inp){
@@ -3440,31 +3444,18 @@ button{
       relevantInformation = clean((data.get("sessionNotes") || "").toString());
     }
     const swimModeSubmit = feedbackExtendedSection && feedbackExtendedSection.getAttribute("data-swim-axes") === "1";
-    const engagementChecked = Array.from(form.querySelectorAll('input[name="engagementRating"]:checked'));
-    let engagementRating;
-    if(swimModeSubmit){
-      const engNums = engagementChecked
-        .map(function(inp){ return parseInt(String(inp.value || ""), 10); })
-        .filter(function(n){ return Number.isFinite(n); });
-      if(!engNums.length){
-        alert("Please select at least one Engagement option.");
-        return;
-      }
-      engagementRating = Math.round(engNums.reduce(function(a,b){ return a + b; }, 0) / engNums.length);
-    } else {
-      const engagementRatingRaw = (data.get("engagementRating") || "").toString();
-      const engagementRatingParsed = parseInt(engagementRatingRaw, 10);
-      if(!engagementRatingRaw || !Number.isFinite(engagementRatingParsed)){
-        alert("Please select an Engagement rating.");
-        return;
-      }
-      engagementRating = engagementRatingParsed;
+    const engagementRatingRaw = (data.get("engagementRating") || "").toString();
+    const engagementRatingParsed = parseInt(engagementRatingRaw, 10);
+    if(!engagementRatingRaw || !Number.isFinite(engagementRatingParsed)){
+      alert("Please select an Engagement rating.");
+      return;
     }
+    const engagementRating = engagementRatingParsed;
     const clientEmotionsVal = emotionChecked.map(function(inp){ return String(inp.value || "").trim(); }).filter(Boolean).join("; ");
     const independenceChecked = Array.from(form.querySelectorAll('input[name="independenceLevel"]:checked'));
     const independenceLevels = independenceChecked.map(function(inp){ return String(inp.value || "").trim(); }).filter(Boolean);
     if(!independenceLevels.length){
-      alert("Please select at least one option under Independence.");
+      alert(swimModeSubmit ? "Please select at least one option under Independence in the water." : "Please select at least one option under Independence.");
       return;
     }
     if(window.PortalSwimSessionAxes && typeof window.PortalSwimSessionAxes.validateOptionalSwimFields === "function"){
