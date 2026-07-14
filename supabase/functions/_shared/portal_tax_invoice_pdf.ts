@@ -160,8 +160,8 @@ export async function buildPortalTaxInvoicePdf(
     color: muted,
   });
 
-  // TAX INVOICE
-  page.drawText("TAX INVOICE", {
+  // Invoice title
+  page.drawText("INVOICE", {
     x: left,
     y: height - 70,
     size: 22,
