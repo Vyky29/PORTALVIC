@@ -249,6 +249,156 @@ function displayCapacity(
   return Math.max(1, instructorCount || lineCount || 1);
 }
 
+function slotId(
+  serviceId: PublicServiceId,
+  venue: string,
+  day: string,
+  sortTime: string,
+  timeLabel: string,
+): string {
+  return `live-${serviceId}-${venue}-${day}-${sortTime}-${timeLabel}`
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+/** Midpoint minutes from OfferSlot sortTime + trailing end in timeLabel ("9.30 – 11.00"). */
+function slotMidMinutes(slot: OfferSlot): number {
+  const startParts = String(slot.sortTime || "").split(":");
+  const startH = Number(startParts[0]);
+  const startM = Number(startParts[1] || 0);
+  if (!Number.isFinite(startH)) return 12 * 60;
+  const start = startH * 60 + (Number.isFinite(startM) ? startM : 0);
+  const m = String(slot.timeLabel || "").match(
+    /(\d{1,2})\.(\d{2})\s*[–—\-]\s*(\d{1,2})\.(\d{2})/,
+  );
+  if (!m) return start + 30;
+  let eh = Number(m[3]);
+  const em = Number(m[4]);
+  // 12h labels without am/pm: 1.xx after noon bands → treat as PM when start ≥ 12
+  if (start >= 12 * 60 && eh < 12) eh += 12;
+  if (start < 12 * 60 && eh < startH && eh <= 11) {
+    /* keep as morning */
+  }
+  const end = eh * 60 + em;
+  if (!Number.isFinite(end) || end <= start) return start + 30;
+  return (start + end) / 2;
+}
+
+/**
+ * Collapse Multi raw MADRE fragments into operator timetable rows
+ * (same rules as admin Services register):
+ * - Wed Acton → one 4.30–6 block, cap 4
+ * - Sun SwimFarm → three 90′ bands 9.30–11 / 11–12.30 / 12.30–2, cap 6
+ */
+function foldMultiActivityOfferSlots(slots: OfferSlot[]): OfferSlot[] {
+  const rest: OfferSlot[] = [];
+  const wedActon: OfferSlot[] = [];
+  const sunSwim: OfferSlot[] = [];
+  for (const s of slots) {
+    if (s.serviceId === "multi" && s.venue === "Acton" && s.day === "Wednesday") {
+      wedActon.push(s);
+    } else if (
+      s.serviceId === "multi" &&
+      s.venue === "SwimFarm" &&
+      s.day === "Sunday"
+    ) {
+      sunSwim.push(s);
+    } else {
+      rest.push(s);
+    }
+  }
+
+  if (wedActon.length) {
+    const cap = 4;
+    const taken = Math.min(cap, Math.max(0, ...wedActon.map((s) => s.taken)));
+    const ref =
+      wedActon.map((s) => s.referenceDate || "").filter(Boolean).sort().pop() ||
+      null;
+    rest.push({
+      id: slotId("multi", "Acton", "Wednesday", "16:30", "4.30 – 6.00"),
+      serviceId: "multi",
+      venue: "Acton",
+      day: "Wednesday",
+      timeLabel: "4.30 – 6.00",
+      sortTime: "16:30",
+      capacity: cap,
+      taken,
+      referenceDate: ref,
+    });
+  }
+
+  if (sunSwim.length) {
+    const bands: { key: string; start: string; label: string; parts: OfferSlot[] }[] =
+      [
+        { key: "b1", start: "09:30", label: "9.30 – 11.00", parts: [] },
+        { key: "b2", start: "11:00", label: "11.00 – 12.30", parts: [] },
+        { key: "b3", start: "12:30", label: "12.30 – 2.00", parts: [] },
+      ];
+    for (const s of sunSwim) {
+      const mid = slotMidMinutes(s);
+      const idx = mid < 660 ? 0 : mid < 750 ? 1 : 2;
+      bands[idx]!.parts.push(s);
+    }
+    const ref =
+      sunSwim.map((s) => s.referenceDate || "").filter(Boolean).sort().pop() ||
+      null;
+    for (const band of bands) {
+      if (!band.parts.length) continue;
+      const cap = 6;
+      const taken = Math.min(cap, Math.max(0, ...band.parts.map((s) => s.taken)));
+      rest.push({
+        id: slotId("multi", "SwimFarm", "Sunday", band.start, band.label),
+        serviceId: "multi",
+        venue: "SwimFarm",
+        day: "Sunday",
+        timeLabel: band.label,
+        sortTime: band.start,
+        capacity: cap,
+        taken,
+        referenceDate: ref,
+      });
+    }
+  }
+
+  return rest;
+}
+
+/** Ensure Sunday Westway climbing publishes the open 3–4pm band (2 places). */
+function ensureClimbingSundayOpenBand(slots: OfferSlot[]): OfferSlot[] {
+  const sunClimb = slots.filter(
+    (s) =>
+      s.serviceId === "climbing" &&
+      s.day === "Sunday" &&
+      /westway/i.test(s.venue),
+  );
+  if (!sunClimb.length) return slots;
+  const hasThreeFour = sunClimb.some((s) => {
+    const mid = slotMidMinutes(s);
+    return mid >= 15 * 60 && mid < 16 * 60;
+  });
+  if (hasThreeFour) return slots;
+  const venue = sunClimb[0]!.venue;
+  const ref =
+    sunClimb.map((s) => s.referenceDate || "").filter(Boolean).sort().pop() ||
+    null;
+  return [
+    ...slots,
+    {
+      id: slotId("climbing", venue, "Sunday", "15:00", "3.00 – 4.00"),
+      serviceId: "climbing",
+      venue,
+      day: "Sunday",
+      timeLabel: "3.00 – 4.00",
+      sortTime: "15:00",
+      capacity: 2,
+      taken: 0,
+      referenceDate: ref,
+    },
+  ];
+}
+
 type DayBucket = {
   booked: number;
   open: number;
@@ -344,13 +494,8 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
       bucket.instructors.size,
     );
     const taken = Math.min(bucket.booked, cap);
-    const id = `live-${serviceId}-${venue}-${day}-${sortTime}-${timeLabel}`
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "");
     slots.push({
-      id,
+      id: slotId(serviceId, venue, day, sortTime, timeLabel),
       serviceId,
       venue,
       day,
@@ -362,7 +507,10 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
     });
   }
 
-  slots.sort((a, b) => {
+  let folded = foldMultiActivityOfferSlots(slots);
+  folded = ensureClimbingSundayOpenBand(folded);
+
+  folded.sort((a, b) => {
     const dayOrder: Record<string, number> = {
       Monday: 1,
       Tuesday: 2,
@@ -405,7 +553,7 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
 
   return {
     services: fullServices,
-    slots,
+    slots: folded,
     termFrom,
     termTo,
     rowCount: rows.length,
