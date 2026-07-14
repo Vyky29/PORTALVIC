@@ -260,9 +260,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       5,
       6
     ],
-    "andres": [
-      0
-    ]
+    "andres": []
   },
   "termStaffWeekdayIndicesDashboardByProfileKey": {
     "alex": [
@@ -368,9 +366,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       5,
       6
     ],
-    "andres": [
-      0
-    ]
+    "andres": []
   },
   "termStaffShiftDatesByProfileKey": {
     "alex": [
@@ -836,9 +832,6 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-07-15",
       "2026-07-17"
     ],
-    "andres": [
-      "2026-06-21",
-      "2026-07-05"
-    ]
+    "andres": []
   }
 };
