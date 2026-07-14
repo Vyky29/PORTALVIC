@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
     const reference = clean(fields.reference, 120) || null;
     const service = clean(fields.service, 80) || null;
     const lineDescription =
-      clean(fields.line_description, 800) ||
+      String(fields.line_description == null ? "" : fields.line_description).trim() ||
       "Structured activity support delivered for a SEND participant.";
     const notes = clean(fields.notes, 800) || null;
     const shareStatus = parseShareStatus(fields.share_status) || "ready";
