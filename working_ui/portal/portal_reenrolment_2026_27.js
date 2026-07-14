@@ -1855,10 +1855,10 @@
     if (!editing) refreshBillingPaySection(state.lookup);
   }
 
-  function funderShortLabel(cur) {
-    var s = String((cur && cur.funding) || "").toLowerCase();
-    if (s.indexOf("nhs") >= 0) return "NHS";
-    return "Local Authority";
+  function funderPaidLeadCopy() {
+    return (
+      "Your service is funded by LA/NHS. There is nothing for you to pay us directly — we invoice your funder."
+    );
   }
 
   function renderFunderPaidBilling2627Block(data, fundCode, cur, annualTotal) {
@@ -1866,12 +1866,11 @@
       '<div class="re-funding-2627 re-funding-2627--funder" data-annual-total="' +
       esc(String(annualTotal)) +
       '">' +
-      renderEnrolmentCadenceSection() +
       '<div id="rePayEverything">' +
       '<div class="re-funder-paid">' +
-      '<p class="re-funder-paid__lead"><strong>This place is funded by your ' +
-      esc(funderShortLabel(cur)) +
-      ".</strong> There is nothing for you to pay us directly — we invoice your funder.</p>" +
+      '<p class="re-funder-paid__lead"><strong>' +
+      esc(funderPaidLeadCopy()) +
+      "</strong></p>" +
       renderFundedInvoicePanel(data, fundCode, cur, annualTotal) +
       '<p class="re-muted re-funding-foot">If your funding changes for 2026/27, contact info@clubsensational.org so we can update your record before term.</p>' +
       "</div></div>" +
@@ -2542,7 +2541,6 @@
     var cadenceLabel = enrolmentCadenceLabel(cadence);
     if (isFunderPaid(rawFundCode)) {
       var funderPay = mapFundedPayMethodCode(cur);
-      var funderAuto = cadence === "whole_year";
       return {
         current_2526: cur,
         choices_2627: {
@@ -2560,14 +2558,11 @@
           estimated_annual_total: annualTotal,
           estimated_total_with_admin_fee: null,
           billing_schedule: "funder",
-          enrolment_cadence: cadence || null,
-          enrolment_cadence_label: cadenceLabel || null,
-          auto_continue: funderAuto,
-          auto_continue_note: funderAuto
-            ? "We will treat this place as continuing each term with the same arrangement unless you tell us otherwise."
-            : cadence === "term_by_term"
-              ? "We will ask you to confirm before each term. Invoices are created for the current term only."
-              : null,
+          enrolment_cadence: null,
+          enrolment_cadence_label: null,
+          auto_continue: true,
+          auto_continue_note:
+            "LA/NHS funded place — we invoice your funder. No parent payment cadence choice.",
         },
       };
     }
@@ -3514,7 +3509,8 @@
       );
       return;
     }
-    if (!normalizeEnrolmentCadence(state.enrolmentCadence)) {
+    var fundNow = mapFundingCode(fundingCurrent2526(state.lookup || {}).funding);
+    if (!isFunderPaid(fundNow) && !normalizeEnrolmentCadence(state.enrolmentCadence)) {
       showNotice(
         $("reFormNotice"),
         "error",
