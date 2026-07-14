@@ -5,17 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="canonical" href="https://www.clubsensational.org/parent/terms" />
   <meta name="robots" content="index,follow" />
+  <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <title>Terms &amp; Conditions — clubSENsational</title>
   <style>
+
     :root {
-      --ink: #0f172a;
-      --muted: #475569;
-      --line: #e2e8f0;
+      --ink: #173247;
+      --muted: #728290;
+      --line: rgba(23, 50, 71, .12);
       --blue: #2d84b3;
-      --soft: #f0f9ff;
+      --soft: #eaf5fb;
       --green: #ecfdf5;
       --green-line: #6ee7b7;
+      --gold: #f9bf2e;
+      --sen-gold: #f4b740;
+      --white: #fff;
     }
     * { box-sizing: border-box; }
     body {
@@ -23,33 +28,137 @@
       font-family: "Segoe UI", system-ui, sans-serif;
       color: var(--ink);
       line-height: 1.55;
-      background: #f8fafc;
+      background: #f4f8fb;
     }
-    .wrap { max-width: 860px; margin: 0 auto; padding: 24px 18px 80px; }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 20px 16px 80px; min-width: 0; }
     article.tc {
-      background: #fff;
+      background: var(--white);
       border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 28px 22px 44px;
+      border-radius: 18px;
+      padding: 22px 18px 44px;
+      min-width: 0;
+      overflow-wrap: break-word;
     }
-    article.tc h1 {
-      margin: 0 0 4px;
-      font-size: 1.5rem;
+    .tc-brand {
+      text-align: center;
+      margin: 0 0 18px;
+      min-width: 0;
+    }
+    .tc-logo-stage {
+      position: relative;
+      width: min(168px, 46vw);
+      aspect-ratio: 1;
+      margin: 0 auto 10px;
+      display: grid;
+      place-items: center;
+    }
+    .tc-orbit-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: visible;
+    }
+    .tc-orbit-cw { transform-origin: 0 0; animation: tc-cw 18s linear infinite; }
+    .tc-orbit-ccw { transform-origin: 0 0; animation: tc-ccw 14s linear infinite; }
+    .tc-orbit-slow { transform-origin: 0 0; animation: tc-ccw 26s linear infinite; }
+    @keyframes tc-cw { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes tc-ccw { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      .tc-orbit-cw, .tc-orbit-ccw, .tc-orbit-slow { animation: none; }
+    }
+    .tc-logo-shell {
+      position: relative;
+      z-index: 1;
+      width: 70%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      overflow: hidden;
+      background: var(--white);
+      display: grid;
+      place-items: center;
+      box-shadow:
+        0 0 0 2px rgba(249,191,46,.45),
+        0 0 16px rgba(249,191,46,.35),
+        0 0 32px rgba(45,132,179,.12);
+    }
+    .tc-logo-shell img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .tc-brand-name {
+      margin: 0;
+      font-size: clamp(1.05rem, 2.8vw, 1.25rem);
+      font-weight: 800;
       color: var(--blue);
+      letter-spacing: .01em;
+      min-width: 0;
+      overflow-wrap: break-word;
     }
-    .sub { color: var(--muted); font-size: .9rem; margin: 0 0 16px; }
+    .tc-brand-name span { color: var(--sen-gold); }
+    article.tc > h1 {
+      margin: 8px 0 4px;
+      font-size: clamp(1.35rem, 3.5vw, 1.65rem);
+      color: var(--blue);
+      text-align: center;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: .9rem;
+      margin: 0 0 18px;
+      text-align: center;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    h2, h3 {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      min-width: 0;
+    }
     h2 {
       margin: 28px 0 10px;
-      font-size: 1.08rem;
+      font-size: 1.05rem;
       border-top: 1px solid var(--line);
       padding-top: 18px;
+      color: var(--ink);
     }
-    h2:first-of-type { border-top: 0; padding-top: 0; }
-    h3 { margin: 16px 0 6px; font-size: .95rem; }
+    article.tc > h2:first-of-type { border-top: 0; padding-top: 0; }
+    h3 { margin: 16px 0 6px; font-size: .95rem; color: #314555; }
+    .tc-h__ico {
+      flex: 0 0 auto;
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      background: var(--soft);
+      color: var(--blue);
+      display: grid;
+      place-items: center;
+      margin-top: 1px;
+    }
+    h3 .tc-h__ico {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      background: #f1f5f9;
+      color: #3d6f8f;
+    }
+    .tc-h__txt {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .tc-ico { display: block; }
     p, li { font-size: .92rem; }
     p { margin: 0 0 10px; }
     ul, ol { margin: 0 0 12px; padding-left: 1.25em; }
-    li { margin: 4px 0; }
+    li { margin: 4px 0; min-width: 0; overflow-wrap: break-word; }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -61,6 +170,8 @@
       padding: 8px 10px;
       text-align: left;
       vertical-align: top;
+      min-width: 0;
+      overflow-wrap: break-word;
     }
     th { background: #f1f5f9; }
     .note {
@@ -70,20 +181,79 @@
       padding: 10px 12px;
       font-size: .85rem;
       margin: 12px 0;
+      min-width: 0;
+      overflow-wrap: break-word;
     }
-    address { font-style: normal; margin: 0 0 12px; font-size: .92rem; }
-    @media print { body { background: #fff; } article.tc { border: 0; } }
+    address { font-style: normal; margin: 0 0 12px; font-size: .92rem; min-width: 0; overflow-wrap: break-word; }
+    @media print {
+      body { background: #fff; }
+      article.tc { border: 0; }
+      .tc-orbit-cw, .tc-orbit-ccw, .tc-orbit-slow { animation: none; }
+    }
+
   </style>
 </head>
 <body>
   <div class="wrap">
     <article class="tc">
+      <header class="tc-brand">
+        <div class="tc-logo-stage" aria-hidden="true">
+          <svg class="tc-orbit-svg" viewBox="0 0 200 200" focusable="false">
+            <defs>
+              <filter id="tc-orb-soft" x="-40%" y="-40%" width="180%" height="180%">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="b"/>
+                <feMerge>
+                  <feMergeNode in="b"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+            <g transform="translate(100,100)">
+              <g class="tc-orbit-cw" filter="url(#tc-orb-soft)">
+                <circle cx="0" cy="-92" r="7" fill="var(--blue)"/>
+                <circle cx="79.67" cy="-46" r="6" fill="var(--sen-gold)"/>
+                <circle cx="79.67" cy="46" r="6" fill="var(--ink)"/>
+                <circle cx="0" cy="92" r="7" fill="var(--gold)"/>
+                <circle cx="-79.67" cy="46" r="6" fill="var(--blue)"/>
+                <circle cx="-79.67" cy="-46" r="6" fill="#5a9fc4"/>
+              </g>
+              <g class="tc-orbit-ccw" filter="url(#tc-orb-soft)">
+                <circle cx="0" cy="-82" r="5" fill="var(--sen-gold)"/>
+                <circle cx="71.01" cy="-41" r="5" fill="var(--blue)"/>
+                <circle cx="71.01" cy="41" r="5" fill="var(--gold)"/>
+                <circle cx="0" cy="82" r="5" fill="var(--ink)"/>
+                <circle cx="-71.01" cy="41" r="5" fill="#8ebfe0"/>
+                <circle cx="-71.01" cy="-41" r="5" fill="var(--sen-gold)"/>
+              </g>
+              <g class="tc-orbit-slow" filter="url(#tc-orb-soft)">
+                <circle cx="37.27" cy="-64" r="4" fill="var(--gold)"/>
+                <circle cx="74" cy="-8" r="4" fill="var(--blue)"/>
+                <circle cx="37.27" cy="64" r="4" fill="var(--sen-gold)"/>
+                <circle cx="-37.27" cy="64" r="4" fill="var(--ink)"/>
+                <circle cx="-74" cy="-8" r="4" fill="var(--blue)"/>
+                <circle cx="-37.27" cy="-64" r="4" fill="#f4d78a"/>
+              </g>
+            </g>
+          </svg>
+          <div class="tc-logo-shell">
+            <img
+              src="/portal/F-02-1.png"
+              width="120"
+              height="120"
+              alt="clubSENsational"
+              decoding="async"
+              onerror="typeof portalBrandLogoOnError==='function'&&portalBrandLogoOnError(this)"
+            />
+          </div>
+        </div>
+        <p class="tc-brand-name">club<span>SEN</span>sational</p>
+      </header>
       <h1>Terms &amp; Conditions</h1>
       <p class="sub">
         Effective for Academic Year 2026/27 · ClubSENsational Ltd<br />Updated from the previous terms dated 20/06/2025
       </p>
 
-      <h2>INTRODUCTION &amp; AGREEMENT</h2>
+      <h2><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span class="tc-h__txt">INTRODUCTION &amp; AGREEMENT</span></h2>
       <p>
         Welcome to clubSENsational LTD. We are committed to providing high-quality, inclusive, and engaging services
         tailored to meet the needs of our participants. Our goal is to create a safe, supportive, and stimulating
@@ -104,7 +274,7 @@
         Website: <a href="https://www.clubsensational.org">www.clubsensational.org</a>
       </address>
 
-      <h3>How to contact us</h3>
+      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span class="tc-h__txt">How to contact us</span></h3>
       <table>
         <thead>
           <tr>
@@ -132,9 +302,9 @@
         </tbody>
       </table>
 
-      <h2>1. PARENT / GUARDIAN RESPONSIBILITIES</h2>
+      <h2><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="tc-h__txt">1. PARENT / GUARDIAN RESPONSIBILITIES</span></h2>
 
-      <h3>1.1 Providing Essential Information</h3>
+      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></span><span class="tc-h__txt">1.1 Providing Essential Information</span></h3>
       <ul>
         <li>Parents or guardians must ensure that all relevant medical, personal, and support needs of the participant
           are accurately provided when completing registration / portal forms.</li>
@@ -143,7 +313,7 @@
           tools where available, or by contacting the office).</li>
       </ul>
 
-      <h3>1.2 Responsibility During Sessions</h3>
+      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span><span class="tc-h__txt">1.2 Responsibility During Sessions</span></h3>
       <ul>
         <li>clubSENsational staff take responsibility for the participant only during the scheduled session. This
           responsibility begins when the instructor or staff member formally takes charge of the participant and ends
@@ -151,14 +321,14 @@
           responsible adult.</li>
       </ul>
 
-      <h3>1.3 Supervision Before and After Sessions</h3>
+      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="tc-h__txt">1.3 Supervision Before and After Sessions</span></h3>
       <ul>
         <li>Outside of scheduled sessions, the parent, guardian, or accompanying adult is fully responsible for
           supervising the participant and any other children in their care. clubSENsational is not liable for any
           incidents occurring before the session begins or after it has ended.</li>
       </ul>
 
-      <h3>1.4 Venue Rules and Safety Compliance</h3>
+      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span><span class="tc-h__txt">1.4 Venue Rules and Safety Compliance</span></h3>
       <ul>
         <li>All parents, guardians, and accompanying adults must adhere to the health and safety policies set by both
           clubSENsational and the venue where sessions take place.</li>
@@ -166,9 +336,9 @@
           information is available on our website and/or in enrolment materials.</li>
       </ul>
 
-      <h2>2. BOOKING &amp; RE-ENROLMENT</h2>
+      <h2><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span class="tc-h__txt">2. BOOKING &amp; RE-ENROLMENT</span></h2>
 
-      <h3>2.1 How to Book &amp; manage your place</h3>
+      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span><span class="tc-h__txt">2.1 How to Book &amp; manage your place</span></h3>
       <ol>
         <li><strong>Existing clients</strong> manage their place through the <strong>ClubSENsational parent portal</strong>,
           including absences, invoices, payments, re-enrolment and account messages. These self-service actions do
@@ -182,7 +352,7 @@
           (registration, booking a place, and waiting list).</li>
       </ol>
 
-      <h3>2.2 Registration Requirements</h3>
+      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></span><span class="tc-h__txt">2.2 Registration Requirements</span></h3>
       <ul>
         <li>Before you can book a place, you must first complete the required
           <strong>registration questionnaire</strong> (and any related consent forms) for the participant via Booking Service / the portal.</li>
@@ -190,7 +360,7 @@
           priority when a space opens.</li>
       </ul>
 
-      <h3>2.3 Booking Terms</h3>
+      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span><span class="tc-h__txt">2.3 Booking Terms</span></h3>
       <ul>
         <li>Places for a participant are normally booked in advance with a fixed day and time for the relevant term or academic year.</li>
         <li>If a participant joins mid-term, fees may be charged on a pro-rata basis. We do not accept bookings that are
@@ -199,7 +369,7 @@
           by the deadline published in the parent portal.</li>
       </ul>
 
-      <h3>2.4 Re-enrolment cadence (from 2026/27)</h3>
+      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span><span class="tc-h__txt">2.4 Re-enrolment cadence (from 2026/27)</span></h3>
       <p>When re-enrolling privately funded (or LA Direct Payments) families, you choose one of:</p>
       <ul>
         <li><strong>Whole year (auto re-enrol):</strong> you confirm once for the academic year; we treat you as
@@ -208,7 +378,7 @@
           Invoices / Direct Payments are created for the current term only.</li>
       </ul>
 
-      <h3>2.5 Funding routes</h3>
+      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg></span><span class="tc-h__txt">2.5 Funding routes</span></h3>
       <ul>
         <li><strong>Privately funded</strong> — you pay us directly (VAT treatment as shown on your invoices / portal).</li>
         <li><strong>LA Direct Payments (EHCP care package)</strong> — you pay us using funds from your Local Authority
@@ -218,9 +388,9 @@
           (<a href="mailto:info@clubsensational.org">info@clubsensational.org</a>).</li>
       </ul>
 
-      <h2>3. PAYMENT</h2>
+      <h2><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span><span class="tc-h__txt">3. PAYMENT</span></h2>
 
-      <h3>3.1 Payment Methods (parent portal)</h3>
+      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg></span><span class="tc-h__txt">3.1 Payment Methods (parent portal)</span></h3>
       <p>Where you pay us directly, the methods available depend on funding and the cadence you chose:</p>
       <table>
         <thead>
@@ -265,7 +435,7 @@
         <li>Paying Bank transfer / Card / Apple Pay on or before each due date has <strong>no</strong> £50 own-arrangement fee.</li>
       </ul>
 
-      <h3>3.2 Schedules &amp; typical timing</h3>
+      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span class="tc-h__txt">3.2 Schedules &amp; typical timing</span></h3>
       <p>
         Exact due dates appear on your parent-portal invoices and in re-enrolment. For Academic Year 2026/27, typical
         examples include:
@@ -278,7 +448,7 @@
       </ul>
       <p>Session counts used for programme totals exclude bank holidays where stated in the portal.</p>
 
-      <h3>3.3 Booking Confirmation &amp; Payment Timing</h3>
+      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span><span class="tc-h__txt">3.3 Booking Confirmation &amp; Payment Timing</span></h3>
       <p>Bookings / re-enrolment places are not fully confirmed until, as applicable:</p>
       <ol type="a">
         <li>Payment for the relevant period is received (in full or first instalment as required), OR</li>
@@ -286,7 +456,7 @@
         <li>For LA / NHS funder-invoiced places, we have the funding arrangement we need on file.</li>
       </ol>
 
-      <h3>3.4 If a Direct Payment fails</h3>
+      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><span class="tc-h__txt">3.4 If a Direct Payment fails</span></h3>
       <ol>
         <li>If a GoCardless collection fails (for example insufficient funds or a cancelled mandate), you must pay within
           <strong>7 days</strong> by bank transfer or Card / Apple Pay from the parent portal, including any GoCardless
@@ -295,25 +465,25 @@
           academic year. Remaining instalments must be paid by bank transfer or Card / Apple Pay.</li>
       </ol>
 
-      <h3>3.5 Payment Confirmation &amp; Agreement</h3>
+      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span><span class="tc-h__txt">3.5 Payment Confirmation &amp; Agreement</span></h3>
       <ul>
         <li>Payment / mandate confirmation will be reflected in the parent portal and/or by email.</li>
         <li>Completing a payment or mandate setup indicates that you have read and agreed to these Terms &amp; Conditions.</li>
         <li>Refunds and credits are handled under Sections 4 and 5 (not “all fees non-refundable” without those exceptions).</li>
       </ul>
 
-      <h3>3.6 Outstanding Payments &amp; Service Access</h3>
+      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></span><span class="tc-h__txt">3.6 Outstanding Payments &amp; Service Access</span></h3>
       <ul>
         <li>We reserve the right to deny access to our services if payment remains outstanding and the participant
           attempts to attend a session.</li>
       </ul>
 
-      <h3>3.7 Payment System Updates</h3>
+      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span><span class="tc-h__txt">3.7 Payment System Updates</span></h3>
       <ul>
         <li>We may update our payment systems from time to time. Clients will be notified of material changes.</li>
       </ul>
 
-      <h2>4. CANCELLING A PLACE / PROGRAMME REFUNDS</h2>
+      <h2><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></span><span class="tc-h__txt">4. CANCELLING A PLACE / PROGRAMME REFUNDS</span></h2>
       <p>These rules apply to both <strong>whole year</strong> and <strong>term by term</strong> enrolments.</p>
       <ol>
         <li>If you cancel a booked place after we have already collected payment, we refund unused fees for sessions
@@ -326,23 +496,23 @@
           treated will follow what is shown on your account when the refund is calculated.</li>
       </ol>
 
-      <h2>5. ABSENCES, MISSED SESSIONS &amp; MEDICAL CREDITS</h2>
+      <h2><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span class="tc-h__txt">5. ABSENCES, MISSED SESSIONS &amp; MEDICAL CREDITS</span></h2>
 
-      <h3>5.1 Reporting absences</h3>
+      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span class="tc-h__txt">5.1 Reporting absences</span></h3>
       <ul>
         <li>Existing clients must report absences via the <strong>parent portal</strong> as early as possible
           (self-service — no need to phone admin for a routine absence).</li>
         <li>Reporting an absence is <strong>not</strong> the same as cancelling the ongoing place (see Section 4).</li>
       </ul>
 
-      <h3>5.2 Non-medical / personal absences (“noted”)</h3>
+      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span><span class="tc-h__txt">5.2 Non-medical / personal absences (“noted”)</span></h3>
       <ul>
         <li>Absences for holidays, parties, travel, birthdays, other commitments or similar are recorded for the team.</li>
         <li>These do <strong>not</strong> normally qualify for a refund, credit or make-up session
           (same principle as the June 2025 terms for non-medical absences).</li>
       </ul>
 
-      <h3>5.3 Illness / unwell (“missed session”)</h3>
+      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span><span class="tc-h__txt">5.3 Illness / unwell (“missed session”)</span></h3>
       <ul>
         <li>For illness, notify us and follow the parent-portal absence flow.</li>
         <li>Where proof is requested, upload supporting documentation within <strong>14 days</strong> of the session
@@ -353,16 +523,16 @@
           cancellation / non-credit rules apply.</li>
       </ul>
 
-      <h3>5.4 Extended medical absence</h3>
+      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span><span class="tc-h__txt">5.4 Extended medical absence</span></h3>
       <ul>
         <li>If a longer medical break is needed, contact
           <a href="mailto:info@clubsensational.org">info@clubsensational.org</a>. We will agree in writing whether
           remaining sessions are credited/refunded, paused, or the place released for the waiting list.</li>
       </ul>
 
-      <h2>6. LESSON ARRANGEMENTS &amp; CLUB CANCELLATIONS</h2>
+      <h2><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span class="tc-h__txt">6. LESSON ARRANGEMENTS &amp; CLUB CANCELLATIONS</span></h2>
 
-      <h3>6.1 Term Schedule &amp; Calendar</h3>
+      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span class="tc-h__txt">6.1 Term Schedule &amp; Calendar</span></h3>
       <ul>
         <li>The official term schedule, including session dates and closures, is published in the parent portal and/or
           website and may also appear in booking / re-enrolment materials.</li>
@@ -370,7 +540,7 @@
           offer replacements or make-up sessions solely because of school calendar conflicts.</li>
       </ul>
 
-      <h3>6.2 Session Modifications &amp; Cancellations by clubSENsational</h3>
+      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span><span class="tc-h__txt">6.2 Session Modifications &amp; Cancellations by clubSENsational</span></h3>
       <p>We strive to run all sessions as scheduled, but we reserve the right to adjust or cancel sessions if necessary, including due to:</p>
       <ul>
         <li>The assigned Specialist/Instructor being unavailable due to illness, emergencies, or unforeseen circumstances;</li>
@@ -389,7 +559,7 @@
         a delivered session; we do not normally offer an extra free make-up solely because the specialist changed.
       </p>
 
-      <h2>7. CRASH COURSES &amp; HOLIDAY INTENSIVES</h2>
+      <h2><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span class="tc-h__txt">7. CRASH COURSES &amp; HOLIDAY INTENSIVES</span></h2>
       <ol>
         <li>Crash / intensive places are booked separately when offered in the parent portal.</li>
         <li>Payment is normally required <strong>in full</strong> to confirm the place. Unpaid holds may be released
@@ -400,7 +570,7 @@
           except where we cancel the course or where law requires otherwise.</li>
       </ol>
 
-      <h2>8. DATA PROTECTION</h2>
+      <h2><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span><span class="tc-h__txt">8. DATA PROTECTION</span></h2>
       <p>
         At clubSENsational, we take the privacy and security of your personal information seriously. Any personal data
         collected about you or your child will be handled in accordance with our Privacy Policy, which can be found on
@@ -419,7 +589,7 @@
         <a href="mailto:info@clubsensational.org">info@clubsensational.org</a>.
       </p>
 
-      <h2>9. AGREEMENT TERMINATION</h2>
+      <h2><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 20V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v14"/><path d="M2 20h20"/><path d="M14 12v.01"/></svg></span><span class="tc-h__txt">9. AGREEMENT TERMINATION</span></h2>
       <p>clubSENsational reserves the right to terminate this agreement by providing written notice if any of the following occur:</p>
       <ul>
         <li><strong>Failure to provide accurate health information</strong> — if you do not disclose important medical
@@ -436,7 +606,7 @@
         follow Section 4 where applicable; otherwise unused fees are not refunded.
       </p>
 
-      <h2>10. CHANGES TO TERMS &amp; CONDITIONS</h2>
+      <h2><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span><span class="tc-h__txt">10. CHANGES TO TERMS &amp; CONDITIONS</span></h2>
       <p>clubSENsational reserves the right to update or modify these Terms &amp; Conditions when necessary. Any changes will be communicated through either:</p>
       <ul>
         <li>An updated version of the Terms &amp; Conditions, OR</li>
@@ -448,7 +618,7 @@
         <a href="mailto:info@clubsensational.org">info@clubsensational.org</a> within 14 days of notification.
       </p>
 
-      <h2>11. GLOSSARY</h2>
+      <h2><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span class="tc-h__txt">11. GLOSSARY</span></h2>
       <ul>
         <li><strong>Specialist / Instructor</strong> — the trained professional delivering the session or programme.</li>
         <li><strong>We / Us / Our</strong> — clubSENsational LTD, including our staff, instructors, and authorised representatives.</li>
