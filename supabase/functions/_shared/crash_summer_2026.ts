@@ -33,11 +33,11 @@ export const CRASH_SUMMER_WEEKS: Record<
 };
 
 export const CRASH_CLIMBING_SLOTS: CrashSlotDef[] = [
-  { id: "c1", label: "11:00–12:00", start: "11:00", end: "12:00" },
-  { id: "c2", label: "12:00–13:00", start: "12:00", end: "13:00" },
+  { id: "c1", label: "11:00–12:00 · 1 instructor", start: "11:00", end: "12:00" },
+  { id: "c2", label: "12:00–13:00 · 1 instructor", start: "12:00", end: "13:00" },
 ];
 
-/** 8 × 30′ capacity units (2 instructors × 4 half-hours). */
+/** 8 × 30′ capacity units (2 swimming instructors × 4 half-hours). */
 export const CRASH_SWIMMING_SLOTS: CrashSlotDef[] = [
   { id: "s1", label: "16:30–17:00 · Instructor A", start: "16:30", end: "17:00" },
   { id: "s2", label: "16:30–17:00 · Instructor B", start: "16:30", end: "17:00" },

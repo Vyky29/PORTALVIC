@@ -15,8 +15,8 @@
       { id: "w2", label: "Week 2 · Tue 28 – Fri 31 July", dates: ["2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31"] },
     ],
     climbing_slots: [
-      { id: "c1", label: "11:00–12:00" },
-      { id: "c2", label: "12:00–13:00" },
+      { id: "c1", label: "11:00–12:00 · 1 instructor" },
+      { id: "c2", label: "12:00–13:00 · 1 instructor" },
     ],
     swimming_slots: [
       { id: "s1", label: "16:30–17:00 · Instructor A", start: "16:30", end: "17:00" },
