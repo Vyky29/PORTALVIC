@@ -140,6 +140,35 @@
     return out.join("; ") || "—";
   }
 
+  function isDayCentreService(service) {
+    var s = clean(service).toLowerCase();
+    return s.indexOf("day centre") !== -1 || s.indexOf("daycentre") !== -1 || s === "dc";
+  }
+
+  /** Day Centre kids who may also swim in the same block (Ikram, Emmanuel, Timi, Fadi). */
+  var DAY_CENTRE_SWIM_NAME_KEYS = ["ikram", "fadi", "timi", "emmanuel", "emanuel"];
+
+  function normalizePersonKey(name) {
+    return clean(name)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function isDayCentreSwimEligible(clientName, service) {
+    if (!isDayCentreService(service)) return false;
+    var n = normalizePersonKey(clientName);
+    if (!n) return false;
+    for (var i = 0; i < DAY_CENTRE_SWIM_NAME_KEYS.length; i++) {
+      var key = DAY_CENTRE_SWIM_NAME_KEYS[i];
+      if (n === key || n.indexOf(key + " ") === 0 || n.indexOf(" " + key + " ") !== -1 || n.slice(-(key.length + 1)) === " " + key) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   function scoreFromEngagement(rating) {
     var n = Number(rating);
     if (!Number.isFinite(n)) return null;
@@ -192,10 +221,11 @@
     var reg = [];
     var ind = [];
     (rows || []).forEach(function (r) {
-      if (!isAquaticService(r && r.service) && !(r && r.force_swim)) return;
-      var e = scoreFromEngagement(r.engagement_rating);
-      var g = scoreFromRegulation(r.client_emotions);
-      var i = scoreFromIndependence(r.engagement_patterns);
+      var pack = swimJudgmentFromFeedbackRow(r);
+      if (!pack) return;
+      var e = scoreFromEngagement(pack.engagement_rating);
+      var g = scoreFromRegulation(pack.client_emotions);
+      var i = scoreFromIndependence(pack.engagement_patterns);
       if (e != null) eng.push(e);
       if (g != null) reg.push(g);
       if (i != null) ind.push(i);
@@ -226,6 +256,219 @@
       regulation: { hint: toHint(rAvg), rsi: toRsi(rAvg), avg: rAvg, n: reg.length },
       independence: { hint: toHint(iAvg), rsi: toRsi(iAvg), avg: iAvg, n: ind.length },
     };
+  }
+
+  /** Pure aquatic row OR Day Centre row with optional swim_* judgment. */
+  function swimJudgmentFromFeedbackRow(r) {
+    if (!r) return null;
+    if (r.swim_done === true || r.swim_done === "true" || r.swim_done === 1) {
+      var has =
+        r.swim_engagement_rating != null ||
+        clean(r.swim_regulation) ||
+        clean(r.swim_independence);
+      if (!has) return null;
+      return {
+        force_swim: true,
+        service: "aquatic",
+        engagement_rating: r.swim_engagement_rating,
+        client_emotions: r.swim_regulation,
+        engagement_patterns: r.swim_independence,
+      };
+    }
+    if (isAquaticService(r.service) || r.force_swim) {
+      return {
+        service: r.service || "aquatic",
+        engagement_rating: r.engagement_rating,
+        client_emotions: r.client_emotions,
+        engagement_patterns: r.engagement_patterns,
+      };
+    }
+    return null;
+  }
+
+  function optionalSwimBlockHtml() {
+    return (
+      '<div class="field fb-dc-swim" id="fbDayCentreSwimBlock" hidden>' +
+      '<label class="fb-dc-swim__title"><span class="field-icon" aria-hidden="true">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M2 12c1.5-1 3-1 4.5 0s3 1 4.5 0 3-1 4.5 0 3 1 4.5 0"/>' +
+      '<path d="M2 16c1.5-1 3-1 4.5 0s3 1 4.5 0 3-1 4.5 0 3 1 4.5 0"/>' +
+      "</svg></span> Swimming today?</label>" +
+      '<p class="small field-note" style="margin:0 0 10px">Day Centre feedback stays as usual. If they also went in the water, add a swimming judgment <strong>before</strong> the session notes.</p>' +
+      '<div class="fb-dc-swim__toggle" role="group" aria-label="Did they swim today">' +
+      '<label class="pill fb-dc-swim-choice"><input type="radio" name="dayCentreSwimDone" value="no" checked><span>No swimming today</span></label>' +
+      '<label class="pill fb-dc-swim-choice"><input type="radio" name="dayCentreSwimDone" value="yes"><span>Yes — they swam</span></label>' +
+      "</div>" +
+      '<div class="fb-dc-swim__axes" id="fbDayCentreSwimAxes" hidden>' +
+      '<div class="field fb-dc-swim__axis">' +
+      "<label>Swimming engagement <span class=\"req\">*</span></label>" +
+      '<div class="swim-axis-row options--dc-swim-engagement" role="radiogroup" aria-label="Swimming engagement">' +
+      ENGAGEMENT.map(function (o) {
+        return (
+          '<label class="pill rate swim-axis-pill" data-kind="dc-swim-rating" data-value="' +
+          o.value +
+          '"><input type="radio" name="swimEngagementRating" value="' +
+          o.value +
+          '"><span class="swim-axis-pill__text">' +
+          esc(o.label) +
+          "</span></label>"
+        );
+      }).join("") +
+      "</div></div>" +
+      '<div class="field fb-dc-swim__axis">' +
+      "<label>Regulation in the water <span class=\"req\">*</span></label>" +
+      '<div class="options options--dc-swim-regulation swim-axis-row" role="radiogroup" aria-label="Swimming regulation">' +
+      REGULATION.map(function (o) {
+        return (
+          '<label class="pill emotion swim-axis-pill" data-kind="dc-swim-regulation" data-value="' +
+          esc(o.value) +
+          '"><input type="radio" name="swimRegulation" value="' +
+          esc(o.value) +
+          '"><span class="pill-emotion-inner"><span class="pill-emotion-label">' +
+          esc(o.label) +
+          "</span></span></label>"
+        );
+      }).join("") +
+      "</div></div>" +
+      '<div class="field fb-dc-swim__axis">' +
+      "<label>Independence in the water <span class=\"req\">*</span></label>" +
+      '<div class="options options--dc-swim-independence swim-axis-row" role="radiogroup" aria-label="Swimming independence">' +
+      INDEPENDENCE.map(function (o) {
+        return (
+          '<label class="pill independence swim-axis-pill" data-kind="dc-swim-independence" data-value="' +
+          esc(o.value) +
+          '"><input type="radio" name="swimIndependence" value="' +
+          esc(o.value) +
+          '"><span class="pill-independence-inner"><span class="pill-independence-text"><span class="pill-independence-title">' +
+          esc(o.label) +
+          '</span><span class="pill-independence-sub">' +
+          esc(o.sub || "") +
+          "</span></span></span></label>"
+        );
+      }).join("") +
+      "</div></div>" +
+      "</div></div>"
+    );
+  }
+
+  function ensureOptionalSwimBlock(root) {
+    if (!root) return null;
+    var existing = document.getElementById("fbDayCentreSwimBlock");
+    if (existing) return existing;
+    var host = document.createElement("div");
+    host.innerHTML = optionalSwimBlockHtml();
+    var block = host.firstChild;
+    var before =
+      document.getElementById("fbInputChoice") ||
+      document.getElementById("fbNarrativeField") ||
+      null;
+    if (before && before.parentNode) before.parentNode.insertBefore(block, before);
+    else root.appendChild(block);
+    return block;
+  }
+
+  function syncOptionalDayCentreSwim(root, clientName, service, opts) {
+    opts = opts || {};
+    var block = ensureOptionalSwimBlock(root);
+    if (!block) return false;
+    var aquaticFull = !!opts.aquaticFullMode;
+    var eligible = !aquaticFull && isDayCentreSwimEligible(clientName, service);
+    block.hidden = !eligible;
+    if (!eligible) {
+      var axes = document.getElementById("fbDayCentreSwimAxes");
+      if (axes) axes.hidden = true;
+      block.querySelectorAll('input[name="dayCentreSwimDone"]').forEach(function (inp) {
+        inp.checked = inp.value === "no";
+      });
+      block.querySelectorAll('input[name="swimEngagementRating"], input[name="swimRegulation"], input[name="swimIndependence"]').forEach(function (inp) {
+        inp.checked = false;
+        inp.removeAttribute("required");
+      });
+      return false;
+    }
+    wireOptionalSwimToggle(block);
+    return true;
+  }
+
+  function wireOptionalSwimToggle(block) {
+    if (!block || block.__dcSwimWired) return;
+    block.__dcSwimWired = true;
+    function refresh() {
+      var yes = block.querySelector('input[name="dayCentreSwimDone"][value="yes"]');
+      var axes = document.getElementById("fbDayCentreSwimAxes");
+      var on = !!(yes && yes.checked);
+      if (axes) axes.hidden = !on;
+      block.querySelectorAll('input[name="swimEngagementRating"], input[name="swimRegulation"], input[name="swimIndependence"]').forEach(function (inp) {
+        if (on) {
+          if (inp.name === "swimEngagementRating" && inp.value === "1") inp.setAttribute("required", "");
+          else if (inp.name !== "swimEngagementRating") {
+            /* required checked at submit */
+          }
+        } else {
+          inp.removeAttribute("required");
+          inp.checked = false;
+        }
+      });
+      block.querySelectorAll(".fb-dc-swim-choice").forEach(function (lab) {
+        var inp = lab.querySelector("input");
+        lab.classList.toggle("isSelected", !!(inp && inp.checked));
+      });
+      block.querySelectorAll(".swim-axis-pill").forEach(function (lab) {
+        var inp = lab.querySelector("input");
+        lab.classList.toggle("isSelected", !!(inp && inp.checked));
+      });
+    }
+    block.addEventListener("change", refresh);
+    refresh();
+  }
+
+  function readOptionalSwimFields(form) {
+    var block = document.getElementById("fbDayCentreSwimBlock");
+    if (!block || block.hidden) {
+      return { swim_done: false, swim_engagement_rating: null, swim_regulation: null, swim_independence: null };
+    }
+    var yes = form.querySelector('input[name="dayCentreSwimDone"][value="yes"]');
+    if (!(yes && yes.checked)) {
+      return { swim_done: false, swim_engagement_rating: null, swim_regulation: null, swim_independence: null };
+    }
+    var engRaw = (new FormData(form).get("swimEngagementRating") || "").toString();
+    var eng = parseInt(engRaw, 10);
+    var reg = clean((new FormData(form).get("swimRegulation") || "").toString());
+    var ind = clean((new FormData(form).get("swimIndependence") || "").toString());
+    return {
+      swim_done: true,
+      swim_engagement_rating: Number.isFinite(eng) ? eng : null,
+      swim_regulation: reg || null,
+      swim_independence: ind || null,
+    };
+  }
+
+  function validateOptionalSwimFields(form) {
+    var fields = readOptionalSwimFields(form);
+    if (!fields.swim_done) return null;
+    if (fields.swim_engagement_rating == null) return "Please rate swimming engagement.";
+    if (!fields.swim_regulation) return "Please choose regulation in the water.";
+    if (!fields.swim_independence) return "Please choose independence in the water.";
+    return null;
+  }
+
+  function swimAxesDisplayHtml(row, escFn) {
+    if (!(row && (row.swim_done === true || row.swim_done === "true" || row.swim_done === 1))) return "";
+    var e = engagementLabelForDisplay(row.swim_engagement_rating, "aquatic");
+    var r = regulationLabelForDisplay(row.swim_regulation, "aquatic");
+    var i = independenceLabelForDisplay(row.swim_independence, "aquatic");
+    if (e === "—" && r === "—" && i === "—") return "";
+    var esc = typeof escFn === "function" ? escFn : esc;
+    return (
+      '<div class="pcso-swim-addon" title="Swimming judgment on this Day Centre session">' +
+      "<strong>Swimming</strong> · E: " +
+      esc(e) +
+      " · R: " +
+      esc(r) +
+      " · I: " +
+      esc(i) +
+      "</div>"
+    );
   }
 
   function esc(s) {
@@ -356,10 +599,17 @@
     REGULATION: REGULATION,
     INDEPENDENCE: INDEPENDENCE,
     isAquaticService: isAquaticService,
+    isDayCentreService: isDayCentreService,
+    isDayCentreSwimEligible: isDayCentreSwimEligible,
     engagementLabelForDisplay: engagementLabelForDisplay,
     regulationLabelForDisplay: regulationLabelForDisplay,
     independenceLabelForDisplay: independenceLabelForDisplay,
     suggestTermDomainsFromSessions: suggestTermDomainsFromSessions,
+    swimJudgmentFromFeedbackRow: swimJudgmentFromFeedbackRow,
     applyFeedbackFormMode: applyFeedbackFormMode,
+    syncOptionalDayCentreSwim: syncOptionalDayCentreSwim,
+    readOptionalSwimFields: readOptionalSwimFields,
+    validateOptionalSwimFields: validateOptionalSwimFields,
+    swimAxesDisplayHtml: swimAxesDisplayHtml,
   };
 })(typeof window !== "undefined" ? window : globalThis);

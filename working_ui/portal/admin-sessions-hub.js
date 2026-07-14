@@ -6967,6 +6967,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       esc(svcLabel) +
       svcTimeSub +
       (sessionDay && !svcTimeSub ? '<div class="ash-cell-sub">' + esc(sessionDay) + "</div>" : "") +
+      (global.PortalSwimSessionAxes && typeof global.PortalSwimSessionAxes.swimAxesDisplayHtml === "function"
+        ? global.PortalSwimSessionAxes.swimAxesDisplayHtml(fb, esc).replace("pcso-swim-addon", "ash-swim-addon")
+        : "") +
       "</td>";
     var engagementCell =
       "<td>" +

@@ -31,7 +31,7 @@
 <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260713-ios-video-save" />
 <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
 <script src="/portal/portal_participant_achievements.js?v=20260713-ios-video-save"></script>
-<script src="/portal/portal_swim_session_axes.js?v=20260714-swim-axes-v1"></script>
+<script src="/portal/portal_swim_session_axes.js?v=20260714-dc-swim-addon-v1"></script>
 <script src="/portal/portal_feedback_voice_input.js?v=20260705c-voice-ai-down-message"></script>
 <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
 <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
@@ -549,6 +549,65 @@ input:focus, select:focus, textarea:focus{
   font-weight:600;
   color:var(--muted,#6b7280);
 }
+.fb-dc-swim{
+  margin: 4px 0 18px;
+  padding: 14px 14px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(14, 116, 144, 0.22);
+  background: linear-gradient(180deg, #f0f9ff 0%, #ffffff 70%);
+  min-width: 0;
+}
+.fb-dc-swim__title{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  margin: 0 0 4px;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.fb-dc-swim__toggle{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.fb-dc-swim-choice{
+  flex: 1 1 140px;
+  min-width: 0;
+  justify-content: center;
+  text-align: center;
+  overflow-wrap: break-word;
+}
+.fb-dc-swim-choice.isSelected{
+  border-color: #0e7490;
+  background: #ecfeff;
+}
+.fb-dc-swim__axes{
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.fb-dc-swim__axis{
+  margin: 0;
+  min-width: 0;
+}
+.fb-dc-swim__axis .swim-axis-row,
+.fb-dc-swim__axis .options{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pcso-swim-addon,
+.ash-swim-addon{
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #0e7490;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
 #feedbackExtendedSection[data-swim-axes="1"] .options--engagement,
 #feedbackExtendedSection[data-swim-axes="1"] .options--emotions,
 #feedbackExtendedSection[data-swim-axes="1"] .options--independence{
@@ -1577,8 +1636,19 @@ button{
     var fbSv = document.getElementById("fbService");
     if(fbSv && clean(fbSv.value)) svc = clean(fbSv.value);
     else svc = portalService.trim();
+    var clientName = "";
+    var fbCl = document.getElementById("fbClientName");
+    if(fbCl && clean(fbCl.value)) clientName = clean(fbCl.value);
+    else {
+      var ctx = typeof buildResolvedContext === "function" ? buildResolvedContext() : null;
+      clientName = clean(ctx && ctx.client_name);
+    }
     var aquatic = global.PortalSwimSessionAxes.isAquaticService(svc);
     global.PortalSwimSessionAxes.applyFeedbackFormMode(feedbackExtendedSection, aquatic);
+    // Day Centre (Ikram / Emmanuel / Timi / Fadi): keep normal axes + optional swim block.
+    global.PortalSwimSessionAxes.syncOptionalDayCentreSwim(feedbackExtendedSection, clientName, svc, {
+      aquaticFullMode: aquatic,
+    });
     syncPillSelection();
   }
 
@@ -2839,6 +2909,10 @@ button{
       incident_notification_requested: fields.notifyFlag,
       incident_notification_notes: fields.notifyNotes,
       late_session_feedback: fields.lateSessionFeedback === true,
+      swim_done: fields.swim_done === true,
+      swim_engagement_rating: fields.swim_engagement_rating != null ? fields.swim_engagement_rating : null,
+      swim_regulation: fields.swim_regulation || null,
+      swim_independence: fields.swim_independence || null,
     };
   }
 
@@ -2861,6 +2935,14 @@ button{
     if(insertErr && String(insertErr.message || "").toLowerCase().includes("session_narrative")){
       payload = Object.assign({}, payload);
       delete payload.session_narrative;
+      ({ data, error: insertErr } = await supabase.from("session_feedback").insert([payload]).select("id").maybeSingle());
+    }
+    if(insertErr && /swim_/i.test(String(insertErr.message || ""))){
+      payload = Object.assign({}, payload);
+      delete payload.swim_done;
+      delete payload.swim_engagement_rating;
+      delete payload.swim_regulation;
+      delete payload.swim_independence;
       ({ data, error: insertErr } = await supabase.from("session_feedback").insert([payload]).select("id").maybeSingle());
     }
     if(insertErr) throw insertErr;
@@ -3017,10 +3099,20 @@ button{
       const inp = p.querySelector('input[name="clientEmotions"]');
       p.classList.toggle("isSelected", !!(inp && inp.checked));
     });
+    form.querySelectorAll(".fb-dc-swim-choice, .pill[data-kind^='dc-swim']").forEach(p => {
+      const inp = p.querySelector("input");
+      p.classList.toggle("isSelected", !!(inp && inp.checked));
+    });
   }
 
   form.addEventListener("change", (e) => {
-    if(e && e.target && (e.target.id === "fbService" || e.target.name === "fbService")){
+    if(e && e.target && (
+      e.target.id === "fbService" ||
+      e.target.name === "fbService" ||
+      e.target.id === "fbClientName" ||
+      e.target.name === "fbClientName" ||
+      e.target.name === "clientName"
+    )){
       syncSwimAxesMode();
     }
     syncPillSelection();
@@ -3127,11 +3219,22 @@ button{
       alert("Please select at least one option under Independence.");
       return;
     }
+    if(global.PortalSwimSessionAxes && typeof global.PortalSwimSessionAxes.validateOptionalSwimFields === "function"){
+      const swimErr = global.PortalSwimSessionAxes.validateOptionalSwimFields(form);
+      if(swimErr){
+        alert(swimErr);
+        return;
+      }
+    }
     const notifyFlag = false;
 
     const hasPositiveFeedback = clean(positiveFeedback).length > 0;
     const hasRelevantInformation = clean(relevantInformation).length > 0;
     const notifyNotes = null;
+    const swimFields =
+      global.PortalSwimSessionAxes && typeof global.PortalSwimSessionAxes.readOptionalSwimFields === "function"
+        ? global.PortalSwimSessionAxes.readOptionalSwimFields(form)
+        : { swim_done: false, swim_engagement_rating: null, swim_regulation: null, swim_independence: null };
 
     const formFields = {
       positiveFeedback,
@@ -3150,6 +3253,10 @@ button{
       notifyFlag,
       notifyNotes,
       lateSessionFeedback: computeLateSessionFeedback(ctx2.session_date),
+      swim_done: swimFields.swim_done === true,
+      swim_engagement_rating: swimFields.swim_engagement_rating,
+      swim_regulation: swimFields.swim_regulation,
+      swim_independence: swimFields.swim_independence,
     };
 
     submitBtn.disabled = true;

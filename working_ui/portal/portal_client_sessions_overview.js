@@ -157,6 +157,10 @@
       positive_feedback: clean(r.positive_feedback),
       relevant_information: clean(r.relevant_information),
       incidents: clean(r.incidents),
+      swim_done: r.swim_done === true || r.swim_done === "true" || r.swim_done === 1,
+      swim_engagement_rating: r.swim_engagement_rating,
+      swim_regulation: clean(r.swim_regulation),
+      swim_independence: clean(r.swim_independence),
       source: "live",
     };
   }
@@ -216,7 +220,7 @@
     const name = clean(clientName);
     const id = slugify(clientId || clientName);
     const fbSel =
-      "session_date, client_name, client_id, service, session_time, attendance, engagement_rating, engagement_patterns, client_emotions, positive_feedback, relevant_information, completed_by_name, incidents, created_at";
+      "session_date, client_name, client_id, service, session_time, attendance, engagement_rating, engagement_patterns, client_emotions, positive_feedback, relevant_information, completed_by_name, incidents, created_at, swim_done, swim_engagement_rating, swim_regulation, swim_independence";
     const incSel =
       "session_date, client_name, client_id, service, session_time, incident_category, statement_during, statement_before, statement_after, location, submitted_by_name, created_at";
 
@@ -1053,10 +1057,16 @@
     const svcTime = timeLine ? (svc + " · " + timeLine) : svc;
     const venue = esc(clean(row.venue) || "—");
     const instructor = esc(clean(row.instructor || row.feedback_by_name || row.completed_by_name) || "—");
+    const swimAdd =
+      global.PortalSwimSessionAxes && typeof global.PortalSwimSessionAxes.swimAxesDisplayHtml === "function"
+        ? global.PortalSwimSessionAxes.swimAxesDisplayHtml(row, esc)
+        : "";
     return (
       "<tr>" +
       '<td class="pcso-tbl__date"><span class="pcso-tbl__date-main" title="' + esc(dateLine) + '">' + esc(dateLine) + "</span></td>" +
-      '<td class="pcso-tbl__svc"><span class="pcso-tbl__svc-main" title="' + esc(svcTime) + '">' + esc(svcTime) + "</span></td>" +
+      '<td class="pcso-tbl__svc"><span class="pcso-tbl__svc-main" title="' + esc(svcTime) + '">' + esc(svcTime) + "</span>" +
+      swimAdd +
+      "</td>" +
       '<td class="pcso-tbl__venue"><span class="pcso-venue-text" title="' + venue + '">' + venue + "</span></td>" +
       '<td class="pcso-tbl__eng">' + parentEngagementCell(row) + "</td>" +
       '<td class="pcso-tbl__emo">' + parentRegulationCell(row) + "</td>" +

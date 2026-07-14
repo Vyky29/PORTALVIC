@@ -1083,15 +1083,32 @@ const LEVEL_DATA = {
         else if(term.indexOf("spring") !== -1) since = "2026-01-01";
         const res = await supabase
           .from("session_feedback")
-          .select("session_date, service, engagement_rating, client_emotions, engagement_patterns, attendance")
+          .select("session_date, service, engagement_rating, client_emotions, engagement_patterns, attendance, swim_done, swim_engagement_rating, swim_regulation, swim_independence")
           .ilike("client_name", name)
           .gte("session_date", since)
           .order("session_date", { ascending: false })
           .limit(80);
-        if(res.error) return [];
+        if(res.error){
+          // Older schema without swim_* — fall back.
+          const res2 = await supabase
+            .from("session_feedback")
+            .select("session_date, service, engagement_rating, client_emotions, engagement_patterns, attendance")
+            .ilike("client_name", name)
+            .gte("session_date", since)
+            .order("session_date", { ascending: false })
+            .limit(80);
+          if(res2.error) return [];
+          return (res2.data || []).filter(function(r){
+            const svc = String(r.service || "").toLowerCase();
+            return svc.indexOf("aquatic") !== -1 || svc.indexOf("swim") !== -1;
+          });
+        }
         return (res.data || []).filter(function(r){
+          if(window.PortalSwimSessionAxes && typeof window.PortalSwimSessionAxes.swimJudgmentFromFeedbackRow === "function"){
+            return !!window.PortalSwimSessionAxes.swimJudgmentFromFeedbackRow(r);
+          }
           const svc = String(r.service || "").toLowerCase();
-          return svc.indexOf("aquatic") !== -1 || svc.indexOf("swim") !== -1;
+          return svc.indexOf("aquatic") !== -1 || svc.indexOf("swim") !== -1 || r.swim_done;
         });
       }catch(e){
         console.warn("[swtermreview] session axes load", e);

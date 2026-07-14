@@ -74,7 +74,7 @@
   <script src="/portal/admin-portal-incident-followup.js?v=20260710-isp-library"></script>
   <script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
-  <script src="/portal/portal_swim_session_axes.js?v=20260714-swim-axes-v1"></script>
+  <script src="/portal/portal_swim_session_axes.js?v=20260714-dc-swim-addon-v1"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260712-payload-cache"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
@@ -18207,7 +18207,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260714-swim-axes';
+    var PORTAL_ADMIN_HUB_BUILD = '20260714-dc-swim-addon';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
@@ -18478,7 +18478,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         completed_by_name: adminSfStr(row.completed_by_name) || '—',
         session_time: st,
         created_at: row.created_at || null,
-        portal_session_key: pk
+        portal_session_key: pk,
+        swim_done: row.swim_done === true || row.swim_done === 'true' || row.swim_done === 1,
+        swim_engagement_rating:
+          row.swim_engagement_rating != null && !isNaN(Number(row.swim_engagement_rating))
+            ? Number(row.swim_engagement_rating)
+            : null,
+        swim_regulation: adminSfStr(row.swim_regulation) || '',
+        swim_independence: adminSfStr(row.swim_independence) || ''
       };
     }
     async function adminAttachAuthSessionToClient(client){
