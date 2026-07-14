@@ -214,14 +214,15 @@
     for (var i = 0; i < ENGAGEMENT.length; i++) {
       if (ENGAGEMENT[i].value === n) return optionLabelWithOtherSide(ENGAGEMENT[i]);
     }
-    // Legacy ratings no longer offered as picks (old 1–4 scale / retired 4★).
-    if (n === 4) return "Joined most (4★)";
+    // Legacy ratings no longer offered as picks (retired “own world” 1★ / old 1–4 scale).
+    if (n === 1) return "Own world / little engagement (1 star) — legacy";
+    if (n === 4) return "Joined most (4 stars)";
     if (n >= 1 && n <= 4) {
       var legacy = [
-        "Needed lots of support to join in (2★)",
-        "Joined some (3★)",
-        "Joined most (4★)",
-        "Stayed with the session well (5★)",
+        "Own world / little engagement (1 star) — legacy",
+        "Needed lots of support (2 stars)",
+        "Joined some (3 stars)",
+        "Joined most (4 stars)",
       ];
       return legacy[n - 1] || String(n);
     }
