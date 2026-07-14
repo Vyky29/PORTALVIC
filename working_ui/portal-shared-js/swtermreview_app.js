@@ -1051,6 +1051,9 @@ const LEVEL_DATA = {
           if(!grid) return;
           grid.querySelectorAll(".rsiBtn").forEach(b => b.classList.remove("active"));
           btn.classList.add("active");
+          // Manual choice clears suggestion pulse on this grid.
+          grid.querySelectorAll(".rsiBtn").forEach(b => b.classList.remove("rsi-suggested"));
+          grid.classList.remove("rsi-has-suggestion");
 
           const domain = grid.getAttribute("data-rsi-domain");
           updateDomainUI(domain);
@@ -1058,6 +1061,103 @@ const LEVEL_DATA = {
           generateTermSummary();
         });
       });
+    }
+
+    function clearRsiSuggestions(){
+      $$(".rsiBtn.rsi-suggested").forEach(b => b.classList.remove("rsi-suggested"));
+      $$(".rsiGrid.rsi-has-suggestion").forEach(g => g.classList.remove("rsi-has-suggestion"));
+      const banner = document.getElementById("swtermSessionSuggestBanner");
+      if(banner) banner.hidden = true;
+    }
+
+    async function loadAquaticSessionAxesForSwimmer(swimmerName){
+      const name = String(swimmerName || "").replace(/\s+/g, " ").trim();
+      if(!name) return [];
+      try{
+        const mod = await tryImportPortalAuthHandler();
+        const supabase = mod && typeof mod.getSupabaseClient === "function" ? mod.getSupabaseClient() : null;
+        if(!supabase) return [];
+        const term = (fieldValTerm("termLabel") || "Summer Term 2026").toLowerCase();
+        let since = "2026-04-01";
+        if(term.indexOf("autumn") !== -1) since = "2025-09-01";
+        else if(term.indexOf("spring") !== -1) since = "2026-01-01";
+        const res = await supabase
+          .from("session_feedback")
+          .select("session_date, service, engagement_rating, client_emotions, engagement_patterns, attendance")
+          .ilike("client_name", name)
+          .gte("session_date", since)
+          .order("session_date", { ascending: false })
+          .limit(80);
+        if(res.error) return [];
+        return (res.data || []).filter(function(r){
+          const svc = String(r.service || "").toLowerCase();
+          return svc.indexOf("aquatic") !== -1 || svc.indexOf("swim") !== -1;
+        });
+      }catch(e){
+        console.warn("[swtermreview] session axes load", e);
+        return [];
+      }
+    }
+
+    function applyRsiSuggestionsFromSessions(suggest){
+      clearRsiSuggestions();
+      if(!suggest) return;
+      const domains = ["engagement", "regulation", "independence"];
+      let any = false;
+      domains.forEach(function(domain){
+        const pack = suggest[domain];
+        if(!pack || !pack.rsi || !pack.n) return;
+        any = true;
+        $$('.rsiGrid[data-rsi-domain="' + domain + '"]').forEach(function(grid){
+          // Only suggest if instructor has not rated this item yet.
+          const checked = grid.querySelector('input[type="radio"]:checked');
+          if(checked) return;
+          const btn = Array.from(grid.querySelectorAll(".rsiBtn")).find(function(b){
+            const inp = b.querySelector("input");
+            return inp && inp.value === pack.rsi;
+          });
+          if(!btn) return;
+          btn.classList.add("rsi-suggested");
+          grid.classList.add("rsi-has-suggestion");
+        });
+      });
+      let banner = document.getElementById("swtermSessionSuggestBanner");
+      if(!banner){
+        const panel = document.querySelector(".corePanel");
+        if(panel){
+          banner = document.createElement("div");
+          banner.id = "swtermSessionSuggestBanner";
+          banner.className = "swterm-session-suggest";
+          panel.insertBefore(banner, panel.firstChild);
+        }
+      }
+      if(banner){
+        if(!any){
+          banner.hidden = true;
+          return;
+        }
+        const bits = [];
+        domains.forEach(function(d){
+          const p = suggest[d];
+          if(p && p.hint && p.n) bits.push(d.charAt(0).toUpperCase() + d.slice(1) + ": " + p.hint + " (" + p.n + " sessions)");
+        });
+        banner.hidden = false;
+        banner.innerHTML =
+          "<strong>From session feedback this term</strong> — suggested buttons pulse. Tap to confirm or choose another." +
+          (bits.length ? "<br><span class=\"swterm-session-suggest__bits\">" + bits.join(" · ") + "</span>" : "");
+      }
+    }
+
+    async function refreshSessionAxisSuggestions(){
+      if(typeof window.PortalSwimSessionAxes === "undefined") return;
+      const swimmer = (fieldValTerm("swimmerName") || "").replace(/\s+/g, " ").trim();
+      if(!swimmer){
+        clearRsiSuggestions();
+        return;
+      }
+      const rows = await loadAquaticSessionAxesForSwimmer(swimmer);
+      const suggest = window.PortalSwimSessionAxes.suggestTermDomainsFromSessions(rows);
+      applyRsiSuggestionsFromSessions(suggest);
     }
 
     /* =========================
@@ -2415,6 +2515,9 @@ const LEVEL_DATA = {
         const btn = part.querySelector(".review-part-head");
         if(btn) btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
       });
+      if(key === "development"){
+        void refreshSessionAxisSuggestions();
+      }
       if(options.scroll){
         const el = document.getElementById("reviewPart-" + key);
         if(el && typeof el.scrollIntoView === "function"){

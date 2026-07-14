@@ -984,6 +984,17 @@
     if (row.engagement_rating == null || row.engagement_rating === "") {
       return '<span class="muted">—</span>';
     }
+    var swim = global.PortalSwimSessionAxes;
+    if (swim && swim.isAquaticService(row.service)) {
+      var lab = swim.engagementLabelForDisplay(row.engagement_rating, row.service);
+      return (
+        '<span class="pcso-eng-score pcso-eng-score--swim" title="' +
+        esc(lab) +
+        '">' +
+        esc(lab) +
+        "</span>"
+      );
+    }
     var n = esc(String(row.engagement_rating));
     return (
       '<span class="pcso-eng-score">' +
@@ -993,6 +1004,25 @@
       '<path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>' +
       "</svg></span></span>"
     );
+  }
+
+  function parentRegulationCell(row) {
+    var swim = global.PortalSwimSessionAxes;
+    if (swim && swim.isAquaticService(row.service)) {
+      var lab = swim.regulationLabelForDisplay(row.client_emotions, row.service);
+      return '<span class="pcso-reg-text" title="' + esc(lab) + '">' + esc(lab) + "</span>";
+    }
+    return emotionIconsCell(row.client_emotions);
+  }
+
+  function parentIndependenceCell(row) {
+    var swim = global.PortalSwimSessionAxes;
+    if (swim && swim.isAquaticService(row.service)) {
+      var lab = swim.independenceLabelForDisplay(row.engagement_patterns, row.service);
+      return '<span class="pcso-indep-text" title="' + esc(lab) + '">' + esc(lab) + "</span>";
+    }
+    var indep = esc(clean(row.engagement_patterns) || "—");
+    return '<span class="pcso-indep-text" title="' + indep + '">' + indep + "</span>";
   }
 
   function parentCommentsCell(row) {
@@ -1023,15 +1053,14 @@
     const svcTime = timeLine ? (svc + " · " + timeLine) : svc;
     const venue = esc(clean(row.venue) || "—");
     const instructor = esc(clean(row.instructor || row.feedback_by_name || row.completed_by_name) || "—");
-    const indep = esc(clean(row.engagement_patterns) || "—");
     return (
       "<tr>" +
       '<td class="pcso-tbl__date"><span class="pcso-tbl__date-main" title="' + esc(dateLine) + '">' + esc(dateLine) + "</span></td>" +
       '<td class="pcso-tbl__svc"><span class="pcso-tbl__svc-main" title="' + esc(svcTime) + '">' + esc(svcTime) + "</span></td>" +
       '<td class="pcso-tbl__venue"><span class="pcso-venue-text" title="' + venue + '">' + venue + "</span></td>" +
       '<td class="pcso-tbl__eng">' + parentEngagementCell(row) + "</td>" +
-      '<td class="pcso-tbl__emo">' + emotionIconsCell(row.client_emotions) + "</td>" +
-      '<td class="pcso-tbl__indep"><span class="pcso-indep-text" title="' + indep + '">' + indep + "</span></td>" +
+      '<td class="pcso-tbl__emo">' + parentRegulationCell(row) + "</td>" +
+      '<td class="pcso-tbl__indep">' + parentIndependenceCell(row) + "</td>" +
       '<td class="pcso-tbl__instructor"><span class="pcso-inst-text" title="' + instructor + '">' + instructor + "</span></td>" +
       "</tr>"
     );

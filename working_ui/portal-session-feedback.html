@@ -31,6 +31,7 @@
 <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260713-ios-video-save" />
 <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
 <script src="/portal/portal_participant_achievements.js?v=20260713-ios-video-save"></script>
+<script src="/portal/portal_swim_session_axes.js?v=20260714-swim-axes-v1"></script>
 <script src="/portal/portal_feedback_voice_input.js?v=20260705c-voice-ai-down-message"></script>
 <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
 <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
@@ -519,6 +520,41 @@ input:focus, select:focus, textarea:focus{
 }
 .engagement-star.pill.rate.isSelected .engagement-star__glyph svg{
   transform:scale(1.06);
+}
+.swim-axis-row{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  width:100%;
+  min-width:0;
+}
+.swim-axis-pill{
+  width:100%;
+  min-width:0;
+  margin:0 !important;
+  justify-content:flex-start !important;
+  text-align:left;
+  padding:10px 12px !important;
+}
+.swim-axis-pill__text,
+.swim-axis-pill .pill-emotion-label,
+.swim-axis-pill .pill-independence-title{
+  font-size:13px;
+  font-weight:700;
+  line-height:1.3;
+  overflow-wrap:break-word;
+}
+.swim-axis-pill .pill-independence-sub{
+  font-size:11px;
+  font-weight:600;
+  color:var(--muted,#6b7280);
+}
+#feedbackExtendedSection[data-swim-axes="1"] .options--engagement,
+#feedbackExtendedSection[data-swim-axes="1"] .options--emotions,
+#feedbackExtendedSection[data-swim-axes="1"] .options--independence{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
 }
 .options--attended{
   display:flex;
@@ -1535,6 +1571,17 @@ button{
     return !!(ctx.client_name && ctx.service && ctx.session_date);
   }
 
+  function syncSwimAxesMode(){
+    if(!feedbackExtendedSection || !global.PortalSwimSessionAxes) return;
+    var svc = "";
+    var fbSv = document.getElementById("fbService");
+    if(fbSv && clean(fbSv.value)) svc = clean(fbSv.value);
+    else svc = portalService.trim();
+    var aquatic = global.PortalSwimSessionAxes.isAquaticService(svc);
+    global.PortalSwimSessionAxes.applyFeedbackFormMode(feedbackExtendedSection, aquatic);
+    syncPillSelection();
+  }
+
   function applyFeedbackSessionContextUi(){
     syncFeedbackManualFields();
     if(typeof window.PortalFeedbackNarrative !== "undefined" &&
@@ -1553,6 +1600,7 @@ button{
       feedbackExtendedSection.hidden = false;
       setExtendedFieldsRequired(true);
     }
+    syncSwimAxesMode();
     syncPillSelection();
     syncFeedbackLateApprovalBanner(ctx);
   }
@@ -2950,23 +2998,31 @@ button{
     const fd = new FormData(form);
     const selected = (fd.get("engagementRating") || "").toString();
     const selectedNum = parseInt(selected, 10);
+    const swimMode = feedbackExtendedSection && feedbackExtendedSection.getAttribute("data-swim-axes") === "1";
     form.querySelectorAll('.pill[data-kind="rating"]').forEach(p => {
       const val = p.getAttribute("data-value") || "";
       const v = parseInt(val, 10);
       p.classList.toggle("isSelected", val === selected);
-      p.classList.toggle("isFilled", Number.isFinite(selectedNum) && v >= 1 && v <= selectedNum);
+      // Star fill only in generic mode.
+      p.classList.toggle(
+        "isFilled",
+        !swimMode && Number.isFinite(selectedNum) && v >= 1 && v <= selectedNum,
+      );
     });
     form.querySelectorAll('.pill[data-kind="independence"]').forEach(p => {
-      const inp = p.querySelector('input[type="checkbox"][name="independenceLevel"]');
+      const inp = p.querySelector('input[name="independenceLevel"]');
       p.classList.toggle("isSelected", !!(inp && inp.checked));
     });
     form.querySelectorAll('.pill[data-kind="emotion"]').forEach(p => {
-      const inp = p.querySelector('input[type="checkbox"][name="clientEmotions"]');
+      const inp = p.querySelector('input[name="clientEmotions"]');
       p.classList.toggle("isSelected", !!(inp && inp.checked));
     });
   }
 
-  form.addEventListener("change", () => {
+  form.addEventListener("change", (e) => {
+    if(e && e.target && (e.target.id === "fbService" || e.target.name === "fbService")){
+      syncSwimAxesMode();
+    }
     syncPillSelection();
   });
 

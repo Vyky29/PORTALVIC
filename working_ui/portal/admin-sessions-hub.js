@@ -3868,6 +3868,10 @@
   }
 
   function independenceLabel(fb) {
+    var swim = global.PortalSwimSessionAxes;
+    if (swim && swim.isAquaticService(fb && fb.service)) {
+      return swim.independenceLabelForDisplay(fb.engagement_patterns, fb.service);
+    }
     var p = fb.engagement_patterns;
     if (Array.isArray(p) && p.length) return p.join(", ");
     if (typeof p === "string" && clean(p)) return clean(p);
@@ -3941,6 +3945,18 @@
   }
 
   function emotionFacesHtml(fb, escFn) {
+    var swim = global.PortalSwimSessionAxes;
+    if (swim && swim.isAquaticService(fb && fb.service)) {
+      var lab = swim.regulationLabelForDisplay(fb.client_emotions, fb.service);
+      if (!lab || lab === "—") return "\u2014";
+      return (
+        '<span class="ash-regulation-swim" title="' +
+        escFn(lab) +
+        '">' +
+        escFn(lab) +
+        "</span>"
+      );
+    }
     var tokens = emotionTokens(fb.client_emotions);
     if (!tokens.length && clean(fb.client_emotions)) tokens = [String(fb.client_emotions)];
     if (!tokens.length) return "\u2014";

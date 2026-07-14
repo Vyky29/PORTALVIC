@@ -1317,6 +1317,34 @@
       color:#fff;
       box-shadow:0 4px 12px rgba(109,92,174,0.28);
     }
+    .rsiBtn.rsi-suggested{
+      animation: rsiSuggestPulse 1.2s ease-in-out infinite;
+      box-shadow: 0 0 0 2px rgba(109,92,174,0.45);
+      border-color: var(--purpleDeep);
+    }
+    @keyframes rsiSuggestPulse{
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.04); opacity: 0.92; }
+    }
+    .swterm-session-suggest{
+      margin: 0 0 14px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(109,92,174,0.28);
+      background: #f5f2fb;
+      color: #3b2f63;
+      font-size: 13px;
+      line-height: 1.4;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .swterm-session-suggest__bits{
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 12px;
+      color: #5c5278;
+      overflow-wrap: break-word;
+    }
 
     @media (max-width:899px){
       .rsiGrid{
@@ -3284,6 +3312,7 @@
     <div class="toast" id="toast"></div>
   </div>
 
+  <script src="/portal/portal_swim_session_axes.js?v=20260714-swim-axes-v1"></script>
   <script src="/portal/portal_feedback_voice_input.js?v=20260705c-voice-ai-down-message"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260419-99"></script>
   <script
@@ -3293,7 +3322,7 @@
   <!-- swtermreview_app.js — portal/ then portal-shared-js/ on Vercel. -->
   <script>
     (function () {
-      var v = "20260713-docs-table";
+      var v = "20260714-swim-suggest";
       var file = "swtermreview_app.js";
       var bases = [];
       try {
