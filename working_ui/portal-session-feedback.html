@@ -31,7 +31,7 @@
 <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260713-ios-video-save" />
 <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
 <script src="/portal/portal_participant_achievements.js?v=20260713-ios-video-save"></script>
-<script src="/portal/portal_swim_session_axes.js?v=20260714-multi-choice"></script>
+<script src="/portal/portal_swim_session_axes.js?v=20260714-star-equiv"></script>
 <script src="/portal/portal_feedback_voice_input.js?v=20260705c-voice-ai-down-message"></script>
 <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
 <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
@@ -591,10 +591,11 @@ input:focus, select:focus, textarea:focus{
   text-align:center;
 }
 /* Engagement + independence colors (same palette as non-swim emotions) */
-.swim-axis-pill.rate[data-value="1"] .pill-independence-icon{ color:#2563eb; }
-.swim-axis-pill.rate[data-value="2"] .pill-independence-icon{ color:#ca8a04; }
-.swim-axis-pill.rate[data-value="3"] .pill-independence-icon{ color:#0d9488; }
-.swim-axis-pill.rate[data-value="4"] .pill-independence-icon{ color:#16a34a; }
+.swim-axis-pill.rate[data-value="1"] .pill-independence-icon{ color:#64748b; }
+.swim-axis-pill.rate[data-value="2"] .pill-independence-icon{ color:#2563eb; }
+.swim-axis-pill.rate[data-value="3"] .pill-independence-icon{ color:#ca8a04; }
+.swim-axis-pill.rate[data-value="4"] .pill-independence-icon{ color:#0d9488; }
+.swim-axis-pill.rate[data-value="5"] .pill-independence-icon{ color:#16a34a; }
 .swim-axis-pill.independence[data-value="Full support in the water"] .pill-independence-icon{ color:#2563eb; }
 .swim-axis-pill.independence[data-value="Regular support / hands-on help"] .pill-independence-icon{ color:#ca8a04; }
 .swim-axis-pill.independence[data-value="Mostly with prompts"] .pill-independence-icon{ color:#0d9488; }
@@ -609,7 +610,7 @@ input:focus, select:focus, textarea:focus{
   box-shadow:inset 0 0 0 1px rgba(199,125,0,0.22);
 }
 .swim-axis-pill.emotion[data-value="Found the water hard today"].isSelected,
-.swim-axis-pill.rate[data-value="1"].isSelected,
+.swim-axis-pill.rate[data-value="2"].isSelected,
 .swim-axis-pill.independence[data-value="Full support in the water"].isSelected{
   background:rgba(37, 99, 235, 0.12);
   border-color:rgba(37, 99, 235, 0.42);
@@ -617,7 +618,7 @@ input:focus, select:focus, textarea:focus{
   box-shadow:inset 0 0 0 1px rgba(37, 99, 235, 0.18), 0 2px 10px rgba(37, 99, 235, 0.1);
 }
 .swim-axis-pill.emotion[data-value="Needed help to settle"].isSelected,
-.swim-axis-pill.rate[data-value="2"].isSelected,
+.swim-axis-pill.rate[data-value="3"].isSelected,
 .swim-axis-pill.independence[data-value="Regular support / hands-on help"].isSelected{
   background:rgba(202, 138, 4, 0.16);
   border-color:rgba(180, 120, 0, 0.48);
@@ -625,7 +626,7 @@ input:focus, select:focus, textarea:focus{
   box-shadow:inset 0 0 0 1px rgba(202, 138, 4, 0.2), 0 2px 10px rgba(202, 138, 4, 0.1);
 }
 .swim-axis-pill.emotion[data-value="Mostly calm"].isSelected,
-.swim-axis-pill.rate[data-value="3"].isSelected,
+.swim-axis-pill.rate[data-value="4"].isSelected,
 .swim-axis-pill.independence[data-value="Mostly with prompts"].isSelected{
   background:rgba(13, 148, 136, 0.12);
   border-color:rgba(13, 148, 136, 0.4);
@@ -633,12 +634,18 @@ input:focus, select:focus, textarea:focus{
   box-shadow:inset 0 0 0 1px rgba(13, 148, 136, 0.2), 0 2px 10px rgba(13, 148, 136, 0.1);
 }
 .swim-axis-pill.emotion[data-value="Calm and settled"].isSelected,
-.swim-axis-pill.rate[data-value="4"].isSelected,
+.swim-axis-pill.rate[data-value="5"].isSelected,
 .swim-axis-pill.independence[data-value="Mostly on their own"].isSelected{
   background:rgba(22, 163, 74, 0.14);
   border-color:rgba(22, 163, 74, 0.42);
   color:#0f172a;
   box-shadow:inset 0 0 0 1px rgba(22, 163, 74, 0.2), 0 2px 10px rgba(22, 163, 74, 0.1);
+}
+.swim-axis-pill.rate[data-value="1"].isSelected{
+  background:rgba(100, 116, 139, 0.12);
+  border-color:rgba(100, 116, 139, 0.42);
+  color:#0f172a;
+  box-shadow:inset 0 0 0 1px rgba(100, 116, 139, 0.2), 0 2px 10px rgba(100, 116, 139, 0.1);
 }
 #feedbackExtendedSection[data-swim-axes="1"] .options--engagement .swim-axis-pill,
 #feedbackExtendedSection[data-swim-axes="1"] .options--emotions .swim-axis-pill,

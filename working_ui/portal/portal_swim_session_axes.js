@@ -8,28 +8,40 @@
   var ENGAGEMENT = [
     {
       value: 1,
+      label: "Joined without help, stayed in their own world",
+      otherSide: "1 star",
+      termHint: "Building",
+      icon:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg>',
+    },
+    {
+      value: 2,
       label: "Needed lots of support to join in",
+      otherSide: "2 stars",
       termHint: "Building",
       icon:
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>',
     },
     {
-      value: 2,
+      value: 3,
       label: "Joined some",
+      otherSide: "3 stars",
       termHint: "Building",
       icon:
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
     },
     {
-      value: 3,
+      value: 4,
       label: "Joined most",
+      otherSide: "4 stars",
       termHint: "Progressing",
       icon:
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
     },
     {
-      value: 4,
+      value: 5,
       label: "Stayed with the session well",
+      otherSide: "5 stars",
       termHint: "Secure",
       icon:
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
@@ -40,6 +52,7 @@
     {
       value: "Found the water hard today",
       label: "Found the water hard today",
+      otherSide: "Withdrawn",
       termHint: "Building",
       score: 1,
       icon:
@@ -48,6 +61,7 @@
     {
       value: "Needed help to settle",
       label: "Needed help to settle",
+      otherSide: "Anxious",
       termHint: "Building",
       score: 2,
       icon:
@@ -56,6 +70,7 @@
     {
       value: "Mostly calm",
       label: "Mostly calm",
+      otherSide: "settling",
       termHint: "Progressing",
       score: 3,
       icon:
@@ -64,6 +79,7 @@
     {
       value: "Calm and settled",
       label: "Calm and settled",
+      otherSide: "Happy/Excited",
       termHint: "Secure",
       score: 4,
       icon:
@@ -76,6 +92,7 @@
       value: "Full support in the water",
       label: "Full support in the water",
       sub: "Hands-on throughout",
+      otherSide: "Full support",
       termHint: "Building",
       score: 1,
       icon:
@@ -85,6 +102,7 @@
       value: "Regular support / hands-on help",
       label: "Regular support / hands-on help",
       sub: "Frequent help",
+      otherSide: "Regular support",
       termHint: "Building",
       score: 2,
       icon:
@@ -94,6 +112,7 @@
       value: "Mostly with prompts",
       label: "Mostly with prompts",
       sub: "Occasional reminders",
+      otherSide: "With prompts",
       termHint: "Progressing",
       score: 3,
       icon:
@@ -103,6 +122,7 @@
       value: "Mostly on their own",
       label: "Mostly on their own",
       sub: "Independent in the water",
+      otherSide: "Independent",
       termHint: "Secure",
       score: 4,
       icon:
@@ -151,6 +171,14 @@
     return String(v == null ? "" : v).replace(/\s+/g, " ").trim();
   }
 
+  function optionLabelWithOtherSide(o) {
+    if (!o) return "";
+    var base = clean(o.label);
+    var side = clean(o.otherSide);
+    if (!side) return base;
+    return base + " (" + side + ")";
+  }
+
   function isMultiActivityService(service) {
     var s = clean(service).toLowerCase();
     return (
@@ -179,10 +207,8 @@
   function engagementLabel(rating, service) {
     var n = Number(rating);
     if (!Number.isFinite(n)) return "";
-    if (isAquaticService(service) || (n >= 1 && n <= 4 && arguments.length >= 1)) {
-      for (var i = 0; i < ENGAGEMENT.length; i++) {
-        if (ENGAGEMENT[i].value === n) return ENGAGEMENT[i].label;
-      }
+    for (var i = 0; i < ENGAGEMENT.length; i++) {
+      if (ENGAGEMENT[i].value === n) return optionLabelWithOtherSide(ENGAGEMENT[i]);
     }
     return String(n);
   }
@@ -190,12 +216,18 @@
   function engagementLabelForDisplay(rating, service) {
     var n = Number(rating);
     if (!Number.isFinite(n)) return "—";
-    if (isAquaticService(service)) {
-      // Map legacy 5-star into 4 swim levels when needed.
-      var mapped = n >= 5 ? 4 : n <= 1 ? 1 : n;
-      for (var i = 0; i < ENGAGEMENT.length; i++) {
-        if (ENGAGEMENT[i].value === mapped) return ENGAGEMENT[i].label;
-      }
+    for (var i = 0; i < ENGAGEMENT.length; i++) {
+      if (ENGAGEMENT[i].value === n) return optionLabelWithOtherSide(ENGAGEMENT[i]);
+    }
+    // Legacy swim 1–4 scale (before 1-star solo option + 5-star mapping).
+    if (n >= 1 && n <= 4) {
+      var legacy = [
+        "Needed lots of support to join in (2 stars)",
+        "Joined some (3 stars)",
+        "Joined most (4 stars)",
+        "Stayed with the session well (5 stars)",
+      ];
+      return legacy[n - 1] || String(n);
     }
     return String(n);
   }
@@ -281,6 +313,7 @@
   function scoreFromEngagement(rating) {
     var n = Number(rating);
     if (!Number.isFinite(n)) return null;
+    // Term domains use a 4-band scale: collapse 5★ → Secure (4).
     if (n >= 5) return 4;
     if (n <= 1) return 1;
     return Math.min(4, Math.max(1, Math.round(n)));
@@ -446,7 +479,7 @@
           '"><span class="pill-independence-inner">' +
           engIconHtml(o.icon) +
           '<span class="pill-independence-text"><span class="pill-independence-title">' +
-          esc(o.label) +
+          esc(optionLabelWithOtherSide(o)) +
           "</span></span></span></label>"
         );
       }).join("") +
@@ -464,7 +497,7 @@
           '"><span class="pill-emotion-inner">' +
           regFaceHtml(o.icon) +
           '<span class="pill-emotion-label">' +
-          esc(o.label) +
+          esc(optionLabelWithOtherSide(o)) +
           "</span></span></label>"
         );
       }).join("") +
@@ -482,7 +515,7 @@
           '"><span class="pill-independence-inner">' +
           indIconHtml(o.icon) +
           '<span class="pill-independence-text"><span class="pill-independence-title">' +
-          esc(o.label) +
+          esc(optionLabelWithOtherSide(o)) +
           '</span><span class="pill-independence-sub">' +
           esc(o.sub || "") +
           "</span></span></span></label>"
@@ -774,7 +807,7 @@
           '"><span class="pill-independence-inner">' +
           engIconHtml(o.icon) +
           '<span class="pill-independence-text"><span class="pill-independence-title">' +
-          esc(o.label) +
+          esc(optionLabelWithOtherSide(o)) +
           "</span></span></span></label>"
         );
       }).join("") +
@@ -815,7 +848,7 @@
         '"><span class="pill-emotion-inner">' +
         regFaceHtml(o.icon) +
         '<span class="pill-emotion-label">' +
-        esc(o.label) +
+        esc(optionLabelWithOtherSide(o)) +
         "</span></span></label>"
       );
     }).join("");
@@ -835,7 +868,7 @@
         '"><span class="pill-independence-inner">' +
         indIconHtml(o.icon) +
         '<span class="pill-independence-text"><span class="pill-independence-title">' +
-        esc(o.label) +
+        esc(optionLabelWithOtherSide(o)) +
         '</span><span class="pill-independence-sub">' +
         esc(o.sub || "") +
         "</span></span></span></label>"
