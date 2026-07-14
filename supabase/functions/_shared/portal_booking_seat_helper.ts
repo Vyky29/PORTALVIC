@@ -257,7 +257,8 @@ type DayBucket = {
 
 /**
  * Build weekly template slots from MADRE document.
- * Uses the latest session week present in the document for occupancy.
+ * Occupancy uses the latest date for each standing time template.
+ * Times that only exist as historic one-offs (older weeks) are omitted.
  */
 export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
   services: OfferService[];
@@ -274,6 +275,8 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
   // key = service|venue|day|sortTime|timeLabel → date → bucket
   const byKey = new Map<string, Map<string, DayBucket>>();
   const venueSets = new Map<PublicServiceId, Set<string>>();
+  /** Latest session date seen for service|venue|weekday (any time). */
+  const latestBySvd = new Map<string, string>();
 
   for (const row of rows) {
     const serviceId = mapServiceId(row.service);
@@ -287,6 +290,10 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
     const { sortTime, timeLabel } = parseTimeSlot(row.time_slot);
     const iso = norm(row.session_date).slice(0, 10);
     if (!iso) continue;
+
+    const svd = `${serviceId}|${venue}|${day}`;
+    const prevMax = latestBySvd.get(svd);
+    if (!prevMax || iso > prevMax) latestBySvd.set(svd, iso);
 
     const key = `${serviceId}|${venue}|${day}|${sortTime}|${timeLabel}`;
     let dateMap = byKey.get(key);
@@ -323,8 +330,10 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
     ];
     const dates = [...dateMap.keys()].sort();
     if (!dates.length) continue;
-    // Prefer latest week for live occupancy (standing roster).
     const ref = dates[dates.length - 1]!;
+    const svdLatest = latestBySvd.get(`${serviceId}|${venue}|${day}`) || ref;
+    // Drop one-off times that no longer appear on the latest roster day for this weekday.
+    if (ref < svdLatest) continue;
     const bucket = dateMap.get(ref)!;
     const lineCount = bucket.booked + bucket.open;
     const cap = displayCapacity(
