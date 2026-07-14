@@ -250,10 +250,102 @@
       var raw = localStorage.getItem(SESSION_KEY);
       if (!raw) return "";
       var j = JSON.parse(raw);
-      if (!j || !j.token || Number(j.expiresAt) <= Date.now()) return "";
+      if (!j || !j.token) return "";
+      var exp = Number(j.expiresAt || j.expires_at || 0);
+      if (exp && exp <= Date.now()) return "";
       return String(j.token);
     } catch (_e) {
       return "";
+    }
+  }
+
+  function resolveContactIdFromUrl(params) {
+    params = params || queryParams();
+    var keys = [
+      "contact_id",
+      "contact",
+      "portalcontact_id",
+      "portal_contact_id",
+      "contactId",
+      "cid",
+    ];
+    for (var i = 0; i < keys.length; i++) {
+      var v = String(params.get(keys[i]) || "").trim();
+      if (v) return v;
+    }
+    try {
+      var last = String(localStorage.getItem("pp_last_contact_id") || "").trim();
+      if (last) return last;
+    } catch (_e) {}
+    return "";
+  }
+
+  function portalReturnHref() {
+    return "/parent";
+  }
+
+  function showPublicIdentifyForm() {
+    var title = $("reIdentifyTitle");
+    var sub = $("reIdentifySub");
+    var form = $("reIdentifyForm");
+    var pick = $("rePortalPickList");
+    var gate = $("rePortalLoginGate");
+    if (title) title.textContent = "Find your record";
+    if (sub) {
+      sub.hidden = false;
+      sub.textContent = "Enter the parent/carer name and participant details we have on file.";
+    }
+    if (form) form.hidden = false;
+    if (pick) {
+      pick.hidden = true;
+      pick.innerHTML = "";
+    }
+    if (gate) {
+      gate.hidden = true;
+      gate.innerHTML = "";
+    }
+  }
+
+  /** Logged-in / portal-handoff should never fall back to the public name+age form. */
+  function showPortalLoginGate(reason) {
+    var title = $("reIdentifyTitle");
+    var sub = $("reIdentifySub");
+    var form = $("reIdentifyForm");
+    var pick = $("rePortalPickList");
+    var gate = $("rePortalLoginGate");
+    if (title) title.textContent = "Sign in to continue";
+    if (sub) {
+      sub.hidden = false;
+      sub.textContent =
+        reason ||
+        "You’re coming from the family portal — sign in again to open re-enrolment without re-entering names.";
+    }
+    if (form) form.hidden = true;
+    if (pick) {
+      pick.hidden = true;
+      pick.innerHTML = "";
+    }
+    if (!gate) {
+      gate = document.createElement("div");
+      gate.id = "rePortalLoginGate";
+      var host = $("reStepIdentify");
+      if (host) host.appendChild(gate);
+    }
+    gate.hidden = false;
+    gate.innerHTML =
+      '<a class="re-btn re-btn--primary" href="' +
+      esc(portalReturnHref()) +
+      '">Open family portal sign-in</a>' +
+      '<p class="re-muted" style="margin:12px 0 0">After you sign in, re-enrolment will open for the selected participant.</p>';
+  }
+
+  function hideIdentifyChrome() {
+    if ($("reIdentifyForm")) $("reIdentifyForm").hidden = true;
+    if ($("rePortalPickList")) $("rePortalPickList").hidden = true;
+    var gate = $("rePortalLoginGate");
+    if (gate) {
+      gate.hidden = true;
+      gate.innerHTML = "";
     }
   }
 
@@ -267,34 +359,22 @@
     }
   }
 
-  function showPublicIdentifyForm() {
-    var title = $("reIdentifyTitle");
-    var sub = $("reIdentifySub");
-    var form = $("reIdentifyForm");
-    var pick = $("rePortalPickList");
-    if (title) title.textContent = "Find your record";
-    if (sub) {
-      sub.hidden = false;
-      sub.textContent = "Enter the parent/carer name and participant details we have on file.";
-    }
-    if (form) form.hidden = false;
-    if (pick) {
-      pick.hidden = true;
-      pick.innerHTML = "";
-    }
-  }
-
   function showPortalParticipantPick(children) {
     var title = $("reIdentifyTitle");
     var sub = $("reIdentifySub");
     var form = $("reIdentifyForm");
     var pick = $("rePortalPickList");
+    var gate = $("rePortalLoginGate");
     if (title) title.textContent = "Choose participant";
     if (sub) {
       sub.hidden = false;
       sub.textContent = "Select who you are re-enrolling for 2026/27.";
     }
     if (form) form.hidden = true;
+    if (gate) {
+      gate.hidden = true;
+      gate.innerHTML = "";
+    }
     if (!pick) return;
     pick.hidden = false;
     pick.innerHTML = (children || [])
@@ -3360,7 +3440,7 @@
         return {};
       });
       if (!res.ok || !data.ok) {
-        if (state.fromPortal && state.portalSession) {
+        if (state.fromPortal || state.portalSession) {
           showNotice(
             $("reNotice"),
             "error",
@@ -3368,14 +3448,28 @@
               ? "We could not load this participant from your family portal session. Go back and try again, or contact info@clubsensational.org."
               : "Could not load your programme — please try again.",
           );
-          if (state.contactId && !queryParams().get("contact_id")) {
+          if (state.portalSession) {
             var children = await fetchPortalChildren();
             if (children.length > 1) {
               showPortalParticipantPick(children);
               return;
             }
+            if (children.length === 1 && children[0].contact_id) {
+              var onlyId = String(children[0].contact_id);
+              if (onlyId && onlyId !== String(state.contactId || "")) {
+                state.contactId = onlyId;
+                hideIdentifyChrome();
+                showNotice($("reNotice"), "info", "Loading your programme…");
+                await onLookup(null);
+                return;
+              }
+            }
+            showPortalLoginGate(
+              "Your portal session could not load this participant. Sign in again, or open the family portal and tap Re-enrolment from there.",
+            );
+            return;
           }
-          showPublicIdentifyForm();
+          showPortalLoginGate();
         } else {
           showNotice(
             $("reNotice"),
@@ -3504,12 +3598,22 @@
 
   async function tryPortalAutoLoad() {
     var params = queryParams();
-    state.contactId = params.get("contact_id") || params.get("contact") || "";
-    state.fromPortal = params.get("from") === "portal" || !!state.contactId;
+    state.contactId = resolveContactIdFromUrl(params);
+    state.fromPortal =
+      params.get("from") === "portal" ||
+      params.get("from") === "family" ||
+      !!params.get("contact_id") ||
+      !!params.get("portalcontact_id") ||
+      !!params.get("portal_contact_id") ||
+      !!state.contactId;
     state.portalSession = readPortalSession();
 
     if (!state.portalSession) {
-      showPublicIdentifyForm();
+      if (state.fromPortal) {
+        showPortalLoginGate();
+      } else {
+        showPublicIdentifyForm();
+      }
       return;
     }
 
@@ -3517,8 +3621,7 @@
     syncPortalBackUi();
 
     if (state.contactId) {
-      $("reIdentifyForm").hidden = true;
-      if ($("rePortalPickList")) $("rePortalPickList").hidden = true;
+      hideIdentifyChrome();
       showNotice($("reNotice"), "info", "Loading your programme…");
       await onLookup(null);
       return;
@@ -3526,14 +3629,15 @@
 
     var children = await fetchPortalChildren();
     if (!children.length) {
-      showPublicIdentifyForm();
+      showPortalLoginGate(
+        "We could not load participants for this sign-in. Open the family portal and try Re-enrolment again.",
+      );
       return;
     }
 
     if (children.length === 1 && children[0].contact_id) {
       state.contactId = String(children[0].contact_id);
-      $("reIdentifyForm").hidden = true;
-      if ($("rePortalPickList")) $("rePortalPickList").hidden = true;
+      hideIdentifyChrome();
       showNotice($("reNotice"), "info", "Loading your programme…");
       await onLookup(null);
       return;
@@ -3562,7 +3666,7 @@
   function init() {
     bind();
     syncPortalBackUi();
-    if (readPortalSession()) {
+    if (readPortalSession() || resolveContactIdFromUrl()) {
       if ($("reIdentifyForm")) $("reIdentifyForm").hidden = true;
       if ($("rePortalPickList")) $("rePortalPickList").hidden = true;
       showNotice($("reNotice"), "info", "Loading your programme…");
