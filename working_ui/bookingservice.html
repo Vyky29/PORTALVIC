@@ -326,21 +326,25 @@
       min-width: 0;
     }
     @media (min-width: 640px) {
-      .services__grid--core,
-      .services__grid--more { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .services__grid--core { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .services__grid--more { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (min-width: 960px) {
+      .services__grid--more { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     }
     .svc-card {
       background: var(--white);
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      padding: 18px 16px 16px;
+      padding: 20px 14px 16px;
       min-width: 0;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      align-items: center;
+      gap: 10px;
       box-shadow: 0 6px 18px rgba(23, 50, 71, 0.04);
       width: 100%;
-      text-align: left;
+      text-align: center;
       cursor: pointer;
       font: inherit;
       color: inherit;
@@ -363,19 +367,14 @@
       .svc-card { transition: none; }
       .svc-card:hover { transform: none; }
     }
-    .svc-card__head {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      min-width: 0;
-    }
     .svc__icon {
       flex: 0 0 auto;
-      width: 52px;
-      height: 52px;
+      width: 56px;
+      height: 56px;
       border-radius: 16px;
       display: grid;
       place-items: center;
+      margin: 0 auto;
       background: var(--blueSoft);
       color: var(--blueDeep);
     }
@@ -391,35 +390,44 @@
     .svc__icon--bespoke { background: #fff1e8; color: #c2410c; }
     .svc__icon--dc { background: #eef6f2; color: #1f6b4a; }
     .svc__icon--intensive { background: #fce7f3; color: #be185d; }
-    .svc-card__title-wrap { min-width: 0; flex: 1 1 auto; }
     .svc-card h3 {
       margin: 0;
       color: var(--ink);
-      font-size: clamp(1.05rem, 2.2vw, 1.25rem);
+      font-size: clamp(1.02rem, 2vw, 1.2rem);
       font-weight: 800;
       overflow-wrap: break-word;
       min-width: 0;
+      width: 100%;
+      text-align: center;
     }
     .svc-card__hint {
-      margin: 4px 0 0;
-      font-size: 0.82rem;
+      margin: 0;
+      font-size: 0.8rem;
       color: var(--muted);
       font-weight: 700;
       overflow-wrap: break-word;
+      width: 100%;
+      text-align: center;
+      line-height: 1.3;
     }
     .svc-card__blurb {
       margin: 0;
-      font-size: 0.92rem;
+      font-size: 0.9rem;
       color: var(--text);
       overflow-wrap: break-word;
       flex: 1 1 auto;
+      width: 100%;
+      text-align: center;
+      line-height: 1.4;
     }
     .svc-meta {
       display: flex;
       flex-wrap: wrap;
+      justify-content: center;
       gap: 8px;
       margin: 0;
       min-width: 0;
+      width: 100%;
     }
     .chip {
       display: inline-flex;
@@ -1038,13 +1046,11 @@
       '" aria-controls="timetable-' +
       esc(s.id) +
       '">' +
-      '<div class="svc-card__head">' +
       '<div class="svc__icon ' +
       pack.cls +
       '">' +
       pack.svg +
       "</div>" +
-      '<div class="svc-card__title-wrap">' +
       "<h3>" +
       esc(s.name) +
       "</h3>" +
@@ -1057,7 +1063,6 @@
       " with places" +
       (openN < allSlots.length ? " · fully booked shown below" : "") +
       "</p>" +
-      "</div></div>" +
       '<p class="svc-card__blurb">' +
       esc(s.blurb) +
       "</p>" +
