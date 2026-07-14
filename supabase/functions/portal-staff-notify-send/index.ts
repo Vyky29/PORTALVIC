@@ -3,6 +3,9 @@
 // Admin-only: WhatsApp (Meta Cloud API) to staff leaders.
 // Reuses Meta/Twilio helpers from portal_parent_messaging; writes portal_staff_notify_log.
 //
+// Inside Meta's 24h customer-care window (staff messaged the business number): free-form text.
+// Cold outbound: approved Utility template (PORTAL_STAFF_WHATSAPP_TEMPLATE or parent default).
+//
 // POST JSON:
 // {
 //   staffUsername: "victor" | "berta" | ...,
@@ -22,6 +25,7 @@ import {
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
 import {
+  flattenWhatsappTemplateBody,
   maskPhoneForLog,
   normalizeParentPhoneE164,
   sendParentMobileMessage,
@@ -44,6 +48,43 @@ import { pushStaffLeaderWhatsappMessage } from "../_shared/portal_staff_whatsapp
 
 function str(v: unknown, max = 8000): string {
   return String(v ?? "").trim().slice(0, max);
+}
+
+function isMetaWhatsappInbound(row: {
+  wa_message_id?: string | null;
+  meta?: unknown;
+}): boolean {
+  const wa = String(row.wa_message_id || "");
+  if (!wa || wa.startsWith("app:staff:")) return false;
+  const m =
+    row.meta && typeof row.meta === "object" && !Array.isArray(row.meta)
+      ? (row.meta as Record<string, unknown>)
+      : {};
+  const src = String(m.source || "").trim().toLowerCase();
+  if (src === "staff_portal" || src === "portal") return false;
+  return true;
+}
+
+async function latestOpenStaffWhatsappSession(
+  admin: ReturnType<typeof createClient>,
+  staffProfileId: string,
+): Promise<{ open: boolean; contextWaId: string }> {
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { data } = await admin
+    .from("portal_staff_whatsapp_inbound")
+    .select("wa_message_id, meta, created_at")
+    .eq("staff_profile_id", staffProfileId)
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(40);
+  for (const row of data || []) {
+    if (!isMetaWhatsappInbound(row)) continue;
+    return {
+      open: true,
+      contextWaId: String(row.wa_message_id || "").trim(),
+    };
+  }
+  return { open: false, contextWaId: "" };
 }
 
 Deno.serve(async (req) => {
@@ -75,7 +116,7 @@ Deno.serve(async (req) => {
   const staffUsername = normalizeStaffUsernameKey(str(payload.staffUsername || payload.staffKey, 64));
   const bodyText = str(payload.body || payload.whatsappBody, 4096);
   const kind = str(payload.kind, 64).toLowerCase() || "staff_message";
-  const contextWaId = str(payload.contextWaId, 200);
+  let contextWaId = str(payload.contextWaId, 200);
   const mediaMime = str(payload.mediaMime || payload.mime, 120).toLowerCase();
   const mediaFilename = str(payload.mediaFilename || payload.filename, 180);
   const mediaB64 = str(payload.mediaBase64 || payload.media, 8_000_000);
@@ -108,18 +149,29 @@ Deno.serve(async (req) => {
     });
   }
 
+  const session = await latestOpenStaffWhatsappSession(admin, leader.id);
+  if (!contextWaId && session.contextWaId) contextWaId = session.contextWaId;
+  const openSession = session.open;
+
   let messageType = "text";
   let mediaPath: string | null = null;
   let storedMime: string | null = null;
   let sent: { ok: boolean; id?: string; channel?: string; error?: string };
+  let usedTemplate = false;
+  let mediaSkippedOutsideSession = false;
+  let effectiveKind = kind;
 
-  if (hasMedia) {
+  if (hasMedia && openSession) {
     const bytes = decodeBase64Payload(mediaB64);
     if (!bytes || !bytes.length) {
       return portalAdminJson(400, { ok: false, error: "invalid_media" });
     }
     if (bytes.length > WHATSAPP_MEDIA_MAX_BYTES) {
-      return portalAdminJson(400, { ok: false, error: "media_too_large", maxBytes: WHATSAPP_MEDIA_MAX_BYTES });
+      return portalAdminJson(400, {
+        ok: false,
+        error: "media_too_large",
+        maxBytes: WHATSAPP_MEDIA_MAX_BYTES,
+      });
     }
     const waKind = classifyWhatsappMediaMime(mediaMime);
     messageType = waKind;
@@ -147,15 +199,72 @@ Deno.serve(async (req) => {
       contextWaId: contextWaId || undefined,
     });
   } else {
-    /* Staff chat: always free-form session text (never parent notify templates —
-     * those cap {{1}} at ~1024 and break long CS WhatsApp messages). */
-    const waOpts = kind === "whatsapp_test"
-      ? { templateName: "hello_world", templateLang: "en_US" }
-      : {
+    if (hasMedia && !openSession) {
+      mediaSkippedOutsideSession = true;
+      // Keep media in portal storage for the admin thread even when Meta cannot accept it cold.
+      const bytes = decodeBase64Payload(mediaB64);
+      if (bytes && bytes.length && bytes.length <= WHATSAPP_MEDIA_MAX_BYTES) {
+        const waKind = classifyWhatsappMediaMime(mediaMime);
+        messageType = waKind;
+        storedMime = mediaMime.split(";")[0] || mediaMime;
+        const ext = extForMime(storedMime, waKind);
+        mediaPath = `staff-out/${crypto.randomUUID()}.${ext}`;
+        const up = await admin.storage.from("wa-inbound-media").upload(mediaPath, bytes, {
+          contentType: storedMime,
+          upsert: false,
+        });
+        if (up.error) {
+          console.error("[portal-staff-notify-send] cold media store failed", up.error.message);
+          mediaPath = null;
+          storedMime = null;
+          messageType = "text";
+        }
+      }
+    }
+
+    if (kind === "whatsapp_test") {
+      sent = await sendParentMobileMessage(phone, bodyText, {
+        templateName: "hello_world",
+        templateLang: "en_US",
+      });
+      usedTemplate = true;
+    } else if (openSession) {
+      // Free-form session text (long messages OK).
+      effectiveKind = "staff_message";
+      sent = await sendParentMobileMessage(phone, bodyText, {
         kind: "staff_message",
         contextWaId: contextWaId || undefined,
-      };
-    sent = await sendParentMobileMessage(phone, bodyText, waOpts);
+      });
+      // If Meta says the window already closed, fall back to Utility template once.
+      if (!sent.ok && /131047|re-engagement/i.test(String(sent.error || ""))) {
+        const templateBody = flattenWhatsappTemplateBody(
+          bodyText ||
+            (hasMedia ? mediaPlaceholderBody(classifyWhatsappMediaMime(mediaMime)) : ""),
+        );
+        if (!templateBody) {
+          return portalAdminJson(400, { ok: false, error: "empty_body" });
+        }
+        effectiveKind = "staff_contact_update";
+        usedTemplate = true;
+        sent = await sendParentMobileMessage(phone, templateBody, {
+          kind: "staff_contact_update",
+        });
+      }
+    } else {
+      // Cold outbound: approved template (same {{1}} Utility pattern as parents).
+      const templateBody = flattenWhatsappTemplateBody(
+        bodyText ||
+          (hasMedia ? mediaPlaceholderBody(classifyWhatsappMediaMime(mediaMime)) : ""),
+      );
+      if (!templateBody) {
+        return portalAdminJson(400, { ok: false, error: "empty_body" });
+      }
+      effectiveKind = "staff_contact_update";
+      usedTemplate = true;
+      sent = await sendParentMobileMessage(phone, templateBody, {
+        kind: "staff_contact_update",
+      });
+    }
   }
 
   let whatsappStatus = "pending";
@@ -176,7 +285,7 @@ Deno.serve(async (req) => {
   const logRow = {
     sent_by_user_id: verified.userId,
     sent_by_email: verified.email,
-    kind,
+    kind: effectiveKind || kind,
     channel: "whatsapp",
     staff_profile_id: leader.id,
     staff_username: normalizeStaffUsernameKey(leader.username),
@@ -194,6 +303,9 @@ Deno.serve(async (req) => {
       staff_phone_masked: maskPhoneForLog(phone),
       context_wa_id: contextWaId || null,
       media_filename: mediaFilename || null,
+      open_session: openSession,
+      used_template: usedTemplate,
+      media_skipped_outside_session: mediaSkippedOutsideSession || null,
     },
   };
 
@@ -233,5 +345,7 @@ Deno.serve(async (req) => {
       displayName: leader.full_name || leader.username,
     },
     whatsapp: { status: whatsappStatus, id: whatsappMessageId || undefined },
+    usedTemplate,
+    mediaSkippedOutsideSession,
   });
 });

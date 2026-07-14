@@ -456,14 +456,22 @@ export type WhatsappSendOptions = {
 export function resolveParentNotifyWhatsappTemplate(kind: string): string {
   const k = String(kind || "").trim().toLowerCase();
   // Session text (not template) — required for replies in an open WhatsApp conversation.
-  // Staff CS WhatsApp is always free-form chat text (not the parent notify template).
+  // Free-form staff chat uses staff_message; cold staff outbound uses staff_contact_update.
   if (
     k === "custom" ||
     k === "reply" ||
     k === "whatsapp_reply" ||
-    k === "staff_message" ||
-    k.startsWith("staff_")
+    k === "staff_message"
   ) {
+    return "";
+  }
+  if (k === "staff_contact_update" || k === "staff_update") {
+    const staffTpl = (Deno.env.get("PORTAL_STAFF_WHATSAPP_TEMPLATE") ?? "").trim();
+    if (staffTpl) return staffTpl;
+    return (Deno.env.get("PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE") ?? "").trim();
+  }
+  // Other staff_* kinds stay free-form unless listed above.
+  if (k.startsWith("staff_")) {
     return "";
   }
   const byKind: Record<string, string> = {
@@ -483,6 +491,16 @@ export function resolveParentNotifyWhatsappTemplate(kind: string): string {
     if (specific) return specific;
   }
   return (Deno.env.get("PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE") ?? "").trim();
+}
+
+/** Flatten + cap for Meta Utility {{1}} (same rules as parent cold outbound). */
+export function flattenWhatsappTemplateBody(body: string, max = 1024): string {
+  return String(body || "")
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/ {5,}/g, "    ")
+    .replace(/\s{2,}/g, " ")
+    .trim()
+    .slice(0, max);
 }
 
 function whatsappTemplateBodyParam(body: string, template: string): string {

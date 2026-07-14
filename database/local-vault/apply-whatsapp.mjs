@@ -43,6 +43,7 @@ const WHATSAPP_KEYS = [
   "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_TRIAL",
   "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_CANCELLED",
   "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_BOOKING",
+  "PORTAL_STAFF_WHATSAPP_TEMPLATE",
   "META_WHATSAPP_TEMPLATE_NAME",
 ];
 
@@ -107,6 +108,7 @@ if (args.has("--secrets-only")) {
 
 const functions = [
   "portal-parent-notify-send",
+  "portal-staff-notify-send",
   "portal-whatsapp-webhook",
   "staff-profile-otp-request",
 ];

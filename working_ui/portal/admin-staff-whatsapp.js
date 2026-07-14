@@ -333,7 +333,7 @@
   function viewHtml() {
     return (
       '<div class="portal-staff-wa-admin" id="portalStaffWaAdmin">' +
-      '<p class="page-intro">CS WhatsApp with staff — same delivery ticks as Family messages: <strong>Sent → Delivered → Read</strong>. Also shows if they opened the chat in the portal. Staff replies: <strong>Via portal CS WhatsApp</strong> or <strong>Via WhatsApp app</strong>.</p>' +
+      '<p class="page-intro">CS WhatsApp with staff — same delivery ticks as Family messages: <strong>Sent → Delivered → Read</strong>. Also shows if they opened the chat in the portal. Cold messages (no reply in 24h) go via the approved WhatsApp template; free-form chat works after they write from the WhatsApp app. Staff replies: <strong>Via portal CS WhatsApp</strong> or <strong>Via WhatsApp app</strong>.</p>' +
       '<p class="portal-staff-wa-admin__count muted" id="portalStaffWaCount"></p>' +
       '<div class="portal-staff-wa-admin__layout">' +
       '<aside class="portal-staff-wa-admin__list" id="portalStaffWaDir"></aside>' +
@@ -823,6 +823,44 @@
     if (preview && !state.attach) preview.textContent = "";
   }
 
+  function flattenForWhatsappTemplate(text) {
+    return String(text || "")
+      .replace(/[\r\n\t]+/g, " ")
+      .replace(/ {5,}/g, "    ")
+      .replace(/\s{2,}/g, " ")
+      .trim()
+      .slice(0, 1024);
+  }
+
+  /** Meta 24h window opens only when staff writes from the WhatsApp app (not portal-only replies). */
+  function threadHasOpenWhatsappSession() {
+    var cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    for (var i = state.messages.length - 1; i >= 0; i--) {
+      var m = state.messages[i];
+      if (!m || m.direction !== "inbound") continue;
+      var src = String(m.reply_source || "").toLowerCase();
+      if (src === "portal") continue;
+      var waId = String(m.wa_message_id || "");
+      if (waId.indexOf("app:staff:") === 0) continue;
+      var when = Date.parse(m.created_at || "");
+      return Number.isFinite(when) && when >= cutoff;
+    }
+    return false;
+  }
+
+  function latestInboundContextWaId() {
+    for (var i = state.messages.length - 1; i >= 0; i--) {
+      var m = state.messages[i];
+      if (!m || m.direction !== "inbound") continue;
+      var src = String(m.reply_source || "").toLowerCase();
+      if (src === "portal") continue;
+      var waId = String(m.wa_message_id || "").trim();
+      if (!waId || waId.indexOf("app:staff:") === 0) continue;
+      return waId;
+    }
+    return "";
+  }
+
   async function sendMessage(ev) {
     if (ev) ev.preventDefault();
     if (state.sending || !state.selected) return;
@@ -839,14 +877,26 @@
       cfg.toast("This leader has no phone_e164 on staff_profiles yet");
       return;
     }
+    var openSession = threadHasOpenWhatsappSession();
+    var sendBody = openSession ? body : flattenForWhatsappTemplate(body);
+    if (!openSession && !sendBody && state.attach) {
+      sendBody = "[media]";
+    }
+    if (!openSession && body && sendBody.length < body.length) {
+      cfg.toast("No open WhatsApp session — sending via approved template (first 1024 chars)");
+    } else if (!openSession) {
+      cfg.toast("No open WhatsApp session — sending via approved template…");
+    }
     state.sending = true;
     var btn = document.getElementById("portalStaffWaSend");
     if (btn) btn.disabled = true;
     var payload = {
       staffUsername: state.selected,
-      body: body,
-      kind: "staff_message",
+      body: sendBody,
+      kind: openSession ? "staff_message" : "staff_contact_update",
     };
+    var ctxWa = latestInboundContextWaId();
+    if (openSession && ctxWa) payload.contextWaId = ctxWa;
     if (state.attach) {
       payload.mediaBase64 = state.attach.base64;
       payload.mediaMime = state.attach.mime;
@@ -859,19 +909,27 @@
       var errRaw = (res.data && (res.data.error || res.data.hint)) || res.status;
       var errMsg = String(errRaw || "send_failed");
       if (/132005|too long/i.test(errMsg)) {
-        errMsg = "Message too long for WhatsApp template — try again (fix deployed) or shorten the text";
-      } else if (/131047|24.?hour|session/i.test(errMsg)) {
-        errMsg = "Outside the 24h WhatsApp window — staff must message first, or use a shorter opener";
+        errMsg = "Message too long for WhatsApp template — shorten to under ~1024 characters";
+      } else if (/131047|24.?hour|session|re-engagement/i.test(errMsg)) {
+        errMsg =
+          "WhatsApp still blocked cold send — check Meta template portal_parent_update / PORTAL_STAFF_WHATSAPP_TEMPLATE is approved";
       } else if (/131026|undeliverable/i.test(errMsg)) {
         errMsg = "WhatsApp undeliverable — check the staff phone number on file";
       }
       cfg.toast("Send failed: " + errMsg.slice(0, 220));
+      await loadThread(state.selected);
       return;
     }
     if (draftEl) draftEl.value = "";
     clearAttach();
     syncClearAttachBtn();
-    cfg.toast("WhatsApp sent");
+    if (res.data && res.data.mediaSkippedOutsideSession) {
+      cfg.toast("Text sent via template — media only delivers after staff reply on WhatsApp");
+    } else if (res.data && res.data.usedTemplate) {
+      cfg.toast("WhatsApp sent (template)");
+    } else {
+      cfg.toast("WhatsApp sent");
+    }
     await loadThread(state.selected);
   }
 
