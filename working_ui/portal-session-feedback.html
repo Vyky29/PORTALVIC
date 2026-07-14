@@ -31,7 +31,7 @@
 <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260713-ios-video-save" />
 <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
 <script src="/portal/portal_participant_achievements.js?v=20260713-ios-video-save"></script>
-<script src="/portal/portal_swim_session_axes.js?v=20260714-swim-axis-icons-above"></script>
+<script src="/portal/portal_swim_session_axes.js?v=20260714-swim-choice-modes"></script>
 <script src="/portal/portal_feedback_voice_input.js?v=20260705c-voice-ai-down-message"></script>
 <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
 <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
@@ -700,6 +700,11 @@ input:focus, select:focus, textarea:focus{
   display: grid;
   gap: 12px;
   min-width: 0;
+}
+/* Author `display:grid` otherwise overrides the HTML [hidden] attribute. */
+.fb-dc-swim__axes[hidden],
+.fb-dc-swim[hidden]{
+  display: none !important;
 }
 .fb-dc-swim__axis{
   margin: 0;
@@ -1757,11 +1762,14 @@ button{
       clientName = clean(ctx && ctx.client_name);
     }
     var aquatic = window.PortalSwimSessionAxes.isAquaticService(svc);
-    window.PortalSwimSessionAxes.applyFeedbackFormMode(feedbackExtendedSection, aquatic);
-    // Day Centre (Ikram / Emmanuel / Timi / Fadi): keep normal axes + optional swim block.
+    // Day Centre dual (Fadi / Ikram / Emmanuel / Timi) and Multi exclusive choice
+    // decide main-form swim mode inside syncOptionalDayCentreSwim.
     window.PortalSwimSessionAxes.syncOptionalDayCentreSwim(feedbackExtendedSection, clientName, svc, {
       aquaticFullMode: aquatic,
     });
+    if(!document.getElementById("fbDayCentreSwimBlock") || document.getElementById("fbDayCentreSwimBlock").hidden){
+      window.PortalSwimSessionAxes.applyFeedbackFormMode(feedbackExtendedSection, aquatic);
+    }
     syncPillSelection();
   }
 
@@ -3228,6 +3236,9 @@ button{
     )){
       syncSwimAxesMode();
     }
+    syncPillSelection();
+  });
+  form.addEventListener("portal:swim-choice-changed", () => {
     syncPillSelection();
   });
 
