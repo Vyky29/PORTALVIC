@@ -1345,6 +1345,23 @@
       color: #5c5278;
       overflow-wrap: break-word;
     }
+    .swterm-domain-session-hint{
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(45,132,179,0.28);
+      background: #eef7fb;
+      color: #1e4a63;
+      font-size: 13px;
+      line-height: 1.4;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .swterm-domain-session-hint[hidden]{ display: none !important; }
+    .swterm-domain-session-hint__n{
+      font-weight: 600;
+      color: #4a6f82;
+    }
 
     @media (max-width:899px){
       .rsiGrid{
@@ -3312,7 +3329,7 @@
     <div class="toast" id="toast"></div>
   </div>
 
-  <script src="/portal/portal_swim_session_axes.js?v=20260714-eng-stars"></script>
+  <script src="/portal/portal_swim_session_axes.js?v=20260714-one-feedback"></script>
   <script src="/portal/portal_feedback_voice_input.js?v=20260705c-voice-ai-down-message"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260419-99"></script>
   <script
@@ -3322,7 +3339,7 @@
   <!-- swtermreview_app.js — portal/ then portal-shared-js/ on Vercel. -->
   <script>
     (function () {
-      var v = "20260714-swim-suggest";
+      var v = "20260714-session-eri";
       var file = "swtermreview_app.js";
       var bases = [];
       try {

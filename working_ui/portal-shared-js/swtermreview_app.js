@@ -1066,6 +1066,10 @@ const LEVEL_DATA = {
     function clearRsiSuggestions(){
       $$(".rsiBtn.rsi-suggested").forEach(b => b.classList.remove("rsi-suggested"));
       $$(".rsiGrid.rsi-has-suggestion").forEach(g => g.classList.remove("rsi-has-suggestion"));
+      document.querySelectorAll("[data-domain-session-hint]").forEach(function(el){
+        el.hidden = true;
+        el.textContent = "";
+      });
       const banner = document.getElementById("swtermSessionSuggestBanner");
       if(banner) banner.hidden = true;
     }
@@ -1118,6 +1122,10 @@ const LEVEL_DATA = {
 
     function applyRsiSuggestionsFromSessions(suggest){
       clearRsiSuggestions();
+      document.querySelectorAll("[data-domain-session-hint]").forEach(function(el){
+        el.hidden = true;
+        el.textContent = "";
+      });
       if(!suggest) return;
       const domains = ["engagement", "regulation", "independence"];
       let any = false;
@@ -1137,6 +1145,27 @@ const LEVEL_DATA = {
           btn.classList.add("rsi-suggested");
           grid.classList.add("rsi-has-suggestion");
         });
+        const section = document.querySelector('.coreSection[data-domain="' + domain + '"]');
+        if(section && pack.hint){
+          let hintEl = section.querySelector("[data-domain-session-hint]");
+          if(!hintEl){
+            const head = section.querySelector(".coreSectionHead");
+            hintEl = document.createElement("p");
+            hintEl.className = "swterm-domain-session-hint";
+            hintEl.setAttribute("data-domain-session-hint", domain);
+            if(head && head.parentNode) head.parentNode.insertBefore(hintEl, head.nextSibling);
+            else section.insertBefore(hintEl, section.firstChild);
+          }
+          hintEl.hidden = false;
+          hintEl.innerHTML =
+            "<strong>From sessions this term:</strong> " +
+            pack.hint +
+            " <span class=\"swterm-domain-session-hint__n\">(" +
+            pack.n +
+            " session" +
+            (pack.n === 1 ? "" : "s") +
+            ")</span>";
+        }
       });
       let banner = document.getElementById("swtermSessionSuggestBanner");
       if(!banner){
@@ -1160,7 +1189,7 @@ const LEVEL_DATA = {
         });
         banner.hidden = false;
         banner.innerHTML =
-          "<strong>From session feedback this term</strong> — suggested buttons pulse. Tap to confirm or choose another." +
+          "<strong>From session feedback this term</strong> — Engagement, Regulation and Independence below are suggested from what was recorded in sessions (Building / Progressing / Secure). The 5 questions per area are still here for now — suggested Rarely / Sometimes / Always buttons pulse; tap to confirm or choose another." +
           (bits.length ? "<br><span class=\"swterm-session-suggest__bits\">" + bits.join(" · ") + "</span>" : "");
       }
     }

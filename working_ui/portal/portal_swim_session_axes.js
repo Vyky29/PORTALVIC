@@ -577,13 +577,13 @@
         inp.checked = inp.value === "no";
       });
       clearAddonSwimInputs();
-      if (root) applyFeedbackFormMode(root, pureAquatic);
+      if (root) applyFeedbackFormMode(root, false);
       return false;
     }
 
     // Dual Day Centre (Fadi / Ikram / Emmanuel / Timi): always keep classic main axes.
-    // Exclusive Multi: start / stay on choice — refreshApplyMode from radios.
-    if (dual) applyFeedbackFormMode(root, false);
+    // Exclusive Multi: also keep classic main axes (one feedback form for everyone).
+    if (dual || exclusive) applyFeedbackFormMode(root, false);
     wireOptionalSwimToggle(block, root, dual ? "dual" : "exclusive");
     refreshSwimChoice(block, root, dual ? "dual" : "exclusive");
     return true;
@@ -623,10 +623,10 @@
         });
       }
     } else {
-      // Exclusive: No swimming → original form; Swimming → swim form only (no dual addon).
+      // Exclusive Multi: choice only records whether they swam; main form stays classic.
       setAddonAxesVisible(false);
       clearAddonSwimInputs();
-      if (root) applyFeedbackFormMode(root, on);
+      if (root) applyFeedbackFormMode(root, false);
     }
     block.querySelectorAll(".fb-dc-swim-choice").forEach(function (lab) {
       var inp = lab.querySelector("input");
