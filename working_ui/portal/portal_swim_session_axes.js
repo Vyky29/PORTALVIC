@@ -5,15 +5,9 @@
 (function (global) {
   "use strict";
 
+  /* Engagement / Regulation / Independence — same three domains as swimming term review.
+   * Session picks map to Building / Progressing / Secure via termHint + scores (no “own world” band). */
   var ENGAGEMENT = [
-    {
-      value: 1,
-      label: "Own world / little engagement",
-      otherSide: "1 star",
-      termHint: "Building",
-      icon:
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg>',
-    },
     {
       value: 2,
       label: "Needed lots of support",
