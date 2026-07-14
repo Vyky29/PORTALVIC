@@ -9,6 +9,9 @@ import {
   CRASH_HOLD_MINUTES,
   crashCatalogPublic,
   crashIndividualDaysOpen,
+  crashIndividualDaysOpenForWeek,
+  crashIndividualRulesCopy,
+  crashIndividualWindowFor,
   crashSlotsFor,
   type CrashActivity,
   type CrashWeekId,
@@ -111,14 +114,24 @@ Deno.serve(async (req) => {
     swimming_slots_per_day: crashSlotsFor("swimming").length,
   };
 
+  const w1Open = crashIndividualDaysOpenForWeek("w1");
+  const w2Open = crashIndividualDaysOpenForWeek("w2");
+  const weekFilterOpen =
+    weekFilter === "w1" ? w1Open : weekFilter === "w2" ? w2Open : w1Open || w2Open;
+
   return json(200, {
     ok: true,
     catalog,
     capacity,
     hold_minutes: CRASH_HOLD_MINUTES,
     availability,
-    individual_days_open: crashIndividualDaysOpen(),
-    individual_opens_on: "2026-07-17",
+    individual_days_open: weekFilterOpen,
+    individual_days_open_by_week: { w1: w1Open, w2: w2Open },
+    individual_windows: {
+      w1: crashIndividualWindowFor("w1"),
+      w2: crashIndividualWindowFor("w2"),
+    },
+    rules: crashIndividualRulesCopy(),
     pay_in_full_required: true,
   });
 });

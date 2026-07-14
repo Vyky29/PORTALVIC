@@ -76,13 +76,31 @@ export const CRASH_PRICES = {
 export const CRASH_HOLD_MINUTES = 120;
 
 /**
- * Weekly packs are always bookable.
- * Individual / loose hours unlock from this London calendar date onward
- * (Fri 17 Jul 2026 — leftover hours after pack priority window).
+ * Weekly packs (Tue–Fri × 4 days) are always bookable.
+ * Loose / individual hours unlock only in a Fri–Sun window before each week:
+ *   Week 1 (21–24 Jul): Fri 17 – Sun 19 July
+ *   Week 2 (28–31 Jul): Fri 24 – Sun 26 July (packs only until Thu 23)
  */
-export const CRASH_INDIVIDUAL_OPENS_ON = "2026-07-17";
-/** Messaging window before courses (Fri–Sun); packs still preferred. */
-export const CRASH_INDIVIDUAL_PRE_WINDOW_TO = "2026-07-19";
+export const CRASH_INDIVIDUAL_WINDOWS: Record<
+  CrashWeekId,
+  { from: string; to: string; label: string }
+> = {
+  w1: {
+    from: "2026-07-17",
+    to: "2026-07-19",
+    label: "Fri 17 – Sun 19 July",
+  },
+  w2: {
+    from: "2026-07-24",
+    to: "2026-07-26",
+    label: "Fri 24 – Sun 26 July",
+  },
+};
+
+/** @deprecated use CRASH_INDIVIDUAL_WINDOWS.w1.from */
+export const CRASH_INDIVIDUAL_OPENS_ON = CRASH_INDIVIDUAL_WINDOWS.w1.from;
+/** @deprecated use CRASH_INDIVIDUAL_WINDOWS.w1.to */
+export const CRASH_INDIVIDUAL_PRE_WINDOW_TO = CRASH_INDIVIDUAL_WINDOWS.w1.to;
 
 export function crashLondonDateIso(now = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", {
@@ -93,9 +111,35 @@ export function crashLondonDateIso(now = new Date()): string {
   }).format(now);
 }
 
-/** True once loose / individual-day hours may be booked (packs remain available). */
+export function crashIndividualWindowFor(weekId: CrashWeekId) {
+  return CRASH_INDIVIDUAL_WINDOWS[weekId];
+}
+
+/** True when individual hours are open for a specific crash week. */
+export function crashIndividualDaysOpenForWeek(
+  weekId: CrashWeekId,
+  now = new Date(),
+): boolean {
+  const win = CRASH_INDIVIDUAL_WINDOWS[weekId];
+  if (!win) return false;
+  const iso = crashLondonDateIso(now);
+  return iso >= win.from && iso <= win.to;
+}
+
+/** True if any week's individual window is open (for public offer messaging). */
 export function crashIndividualDaysOpen(now = new Date()): boolean {
-  return crashLondonDateIso(now) >= CRASH_INDIVIDUAL_OPENS_ON;
+  return (
+    crashIndividualDaysOpenForWeek("w1", now) ||
+    crashIndividualDaysOpenForWeek("w2", now)
+  );
+}
+
+export function crashIndividualRulesCopy(): string {
+  return (
+    "Crash courses are four-day week packs (Tue–Fri). " +
+    "Individual leftover hours: Week 1 only Fri 17 – Sun 19 July; " +
+    "Week 2 only Fri 24 – Sun 26 July (packs only until Thu 23)."
+  );
 }
 
 export const CRASH_META = {

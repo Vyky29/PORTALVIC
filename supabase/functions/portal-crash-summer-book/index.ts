@@ -16,7 +16,9 @@ import {
 } from "../_shared/portal_create_family_invoice.ts";
 import {
   CRASH_HOLD_MINUTES,
-  crashIndividualDaysOpen,
+  crashIndividualDaysOpenForWeek,
+  crashIndividualRulesCopy,
+  crashIndividualWindowFor,
   quoteCrashSummerBooking,
   type CrashActivity,
   type CrashBookingMode,
@@ -83,12 +85,16 @@ Deno.serve(async (req) => {
   if (mode !== "weekly_pack" && mode !== "individual_days") {
     return json(400, { ok: false, error: "invalid_mode" });
   }
-  if (mode === "individual_days" && !crashIndividualDaysOpen()) {
+  if (mode === "individual_days" && !crashIndividualDaysOpenForWeek(weekId)) {
+    const win = crashIndividualWindowFor(weekId);
     return json(403, {
       ok: false,
       error: "individual_days_not_open",
       message:
-        "Individual hours open from Friday 17 July. Until then only weekly packs (Tue–Fri blocks) can be booked.",
+        weekId === "w2"
+          ? `Week 2 individual hours open ${win.label}. Until Thursday 23 July only four-day weekly packs can be booked for 28–31 July.`
+          : `Week 1 individual hours open ${win.label}. Until then only four-day weekly packs (Tue–Fri) can be booked.`,
+      rules: crashIndividualRulesCopy(),
     });
   }
 

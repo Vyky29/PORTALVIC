@@ -240,7 +240,12 @@
       <section class="card">
         <h2>Week</h2>
         <div class="choices" id="csWeeks" role="group" aria-label="Week"></div>
-        <p class="muted">Two weeks only (Tue–Fri). Until Friday 17 July you can book <strong>weekly packs</strong> only. From Fri 17 – Sun 19 July, leftover individual hours also open.</p>
+        <p class="muted" id="csWeekRules">
+          Crash courses are <strong>four-day week packs (Tue–Fri)</strong>.
+          Individual leftover hours open only in short windows before each week:
+          <strong>Week 1</strong> Fri 17 – Sun 19 July ·
+          <strong>Week 2</strong> Fri 24 – Sun 26 July (packs only until Thu 23).
+        </p>
       </section>
 
       <section class="card">
@@ -257,7 +262,7 @@
           <button type="button" class="choice" data-mode="weekly_pack" aria-pressed="true">Four-day weekly pack</button>
           <button type="button" class="choice" data-mode="individual_days" aria-pressed="false" id="csModeIndividual">Individual hours</button>
         </div>
-        <p class="muted" id="csModeHint">Individual hours unlock on Friday 17 July.</p>
+        <p class="muted" id="csModeHint">Select a week above to see when individual hours unlock for that week.</p>
       </section>
 
       <section class="card" id="csSlotsCard">
@@ -274,13 +279,14 @@
     <section class="card" id="csInfo">
       <h2>Details</h2>
       <ul class="meta-list">
-        <li><strong>Week 1:</strong> Tue 21 – Fri 24 July 2026</li>
-        <li><strong>Week 2:</strong> Tue 28 – Fri 31 July 2026</li>
+        <li><strong>Week 1:</strong> Tue 21 – Fri 24 July 2026 · individual hours Fri 17 – Sun 19 only</li>
+        <li><strong>Week 2:</strong> Tue 28 – Fri 31 July 2026 · packs only until Thu 23; individual hours Fri 24 – Sun 26</li>
+        <li>Default booking: four-day weekly pack (same time Tue–Fri)</li>
         <li>Climbing: 2 × 60′ places/day · Swimming: 8 × 30′ places/day (book up to 120′ consecutive; mix instructors if free)</li>
         <li>You can book Climbing, Swimming, or both</li>
       </ul>
     </section>
   </div>
-  <script src="/portal/portal_crash_summer_2026.js?v=20260714-pack-only"></script>
+  <script src="/portal/portal_crash_summer_2026.js?v=20260714-week-windows"></script>
 </body>
 </html>

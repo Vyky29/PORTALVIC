@@ -2753,7 +2753,7 @@
     cards +=
       '<div class="re-offer-block">' +
       "<h4>Summer crash courses · July 2026</h4>" +
-      '<p class="re-muted">Climbing (Westway) and Swimming (Acton), Tue–Fri weeks: 21–24 July and 28–31 July. Weekly packs have priority. <strong>Pay in full</strong> to reserve — places are limited (2 climbing / 8 swimming slots per day).</p>' +
+      '<p class="re-muted">Climbing (Westway) and Swimming (Acton), four-day week packs Tue–Fri: <strong>21–24 July</strong> and <strong>28–31 July</strong>. Individual leftover hours only: Week 1 Fri 17–Sun 19 July; Week 2 Fri 24–Sun 26 July (packs only until Thu 23). <strong>Pay in full</strong> to reserve — places are limited (2 climbing / 8 swimming slots per day).</p>' +
       '<div class="re-offer-actions" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">' +
       '<a class="re-btn re-btn--primary" id="reCrashBookBtn" href="/parent/crash-summer" style="width:auto;flex:1 1 160px;min-width:0;margin-top:0;text-align:center">Book summer crash courses</a>' +
       '<button type="button" class="re-btn re-btn--secondary" id="reCrashDatesBtn" style="flex:1 1 140px;min-width:0;margin-top:0">View dates on calendar</button>' +

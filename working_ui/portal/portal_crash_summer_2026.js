@@ -41,7 +41,10 @@
     },
   };
 
-  var INDIVIDUAL_OPENS_ON = "2026-07-17";
+  var INDIVIDUAL_WINDOWS = {
+    w1: { from: "2026-07-17", to: "2026-07-19", label: "Fri 17 – Sun 19 July" },
+    w2: { from: "2026-07-24", to: "2026-07-26", label: "Fri 24 – Sun 26 July" },
+  };
 
   var state = {
     sessionToken: "",
@@ -53,6 +56,7 @@
     daySlots: { climbing: {}, swimming: {} },
     availability: null,
     individualDaysOpen: false,
+    individualByWeek: { w1: false, w2: false },
   };
 
   function $(id) {
@@ -518,27 +522,48 @@
     }).format(new Date());
   }
 
-  function individualOpenLocally() {
-    return londonDateIso() >= INDIVIDUAL_OPENS_ON;
+  function individualOpenLocally(weekId) {
+    var wid = weekId || state.weekId || "w1";
+    var win = INDIVIDUAL_WINDOWS[wid];
+    if (!win) return false;
+    var iso = londonDateIso();
+    return iso >= win.from && iso <= win.to;
   }
 
   function applyIndividualGate(open) {
     state.individualDaysOpen = !!open;
     var btn = $("csModeIndividual");
     var hint = $("csModeHint");
+    var win = INDIVIDUAL_WINDOWS[state.weekId] || INDIVIDUAL_WINDOWS.w1;
     if (btn) {
       btn.disabled = !state.individualDaysOpen;
       btn.setAttribute("aria-disabled", state.individualDaysOpen ? "false" : "true");
       if (!state.individualDaysOpen) {
-        btn.title = "Opens Friday 17 July 2026";
+        btn.title =
+          state.weekId === "w2"
+            ? "Week 2 individual hours: " + win.label + " (packs only until Thu 23)"
+            : "Week 1 individual hours: " + win.label;
       } else {
         btn.removeAttribute("title");
       }
     }
     if (hint) {
-      hint.textContent = state.individualDaysOpen
-        ? "Individual leftover hours are open. Weekly packs still have priority."
-        : "Until Friday 17 July you can only book four-day weekly packs. Individual hours unlock that Friday.";
+      if (state.individualDaysOpen) {
+        hint.textContent =
+          "Individual leftover hours are open for this week (" +
+          win.label +
+          "). Weekly packs still have priority.";
+      } else if (state.weekId === "w2") {
+        hint.textContent =
+          "Week 2: book a four-day weekly pack until Thursday 23 July. Individual hours for 28–31 July open " +
+          win.label +
+          ".";
+      } else {
+        hint.textContent =
+          "Week 1: book a four-day weekly pack until individual hours open " +
+          win.label +
+          ".";
+      }
     }
     if (!state.individualDaysOpen && state.mode === "individual_days") {
       state.mode = "weekly_pack";
@@ -563,9 +588,16 @@
       btn.addEventListener("click", function () {
         var next = btn.getAttribute("data-mode") || "weekly_pack";
         if (next === "individual_days" && !state.individualDaysOpen) {
+          var win = INDIVIDUAL_WINDOWS[state.weekId] || INDIVIDUAL_WINDOWS.w1;
           showNotice(
             "error",
-            "Individual hours open from Friday 17 July. Until then book a Tue–Fri weekly pack.",
+            state.weekId === "w2"
+              ? "Week 2 individual hours open " +
+                  win.label +
+                  ". Until Thu 23 July book a Tue–Fri weekly pack for 28–31 July."
+              : "Week 1 individual hours open " +
+                  win.label +
+                  ". Until then book a Tue–Fri weekly pack.",
           );
           return;
         }
@@ -607,11 +639,24 @@
       });
       if (res.ok && data.ok) {
         state.availability = data.availability || null;
-        applyIndividualGate(
-          typeof data.individual_days_open === "boolean"
-            ? data.individual_days_open
-            : individualOpenLocally(),
-        );
+        if (data.individual_windows) {
+          if (data.individual_windows.w1) INDIVIDUAL_WINDOWS.w1 = data.individual_windows.w1;
+          if (data.individual_windows.w2) INDIVIDUAL_WINDOWS.w2 = data.individual_windows.w2;
+        }
+        if (data.individual_days_open_by_week) {
+          state.individualByWeek = {
+            w1: !!data.individual_days_open_by_week.w1,
+            w2: !!data.individual_days_open_by_week.w2,
+          };
+        }
+        var openForWeek =
+          data.individual_days_open_by_week &&
+          typeof data.individual_days_open_by_week[state.weekId] === "boolean"
+            ? data.individual_days_open_by_week[state.weekId]
+            : typeof data.individual_days_open === "boolean"
+              ? data.individual_days_open
+              : individualOpenLocally(state.weekId);
+        applyIndividualGate(openForWeek);
         if (data.catalog) {
           if (data.catalog.climbing_slots) CATALOG.climbing_slots = data.catalog.climbing_slots;
           if (data.catalog.swimming_slots) CATALOG.swimming_slots = data.catalog.swimming_slots;
@@ -621,10 +666,10 @@
           if (data.catalog.swim_max_slots) CATALOG.swim_max = data.catalog.swim_max_slots;
         }
       } else {
-        applyIndividualGate(individualOpenLocally());
+        applyIndividualGate(individualOpenLocally(state.weekId));
       }
     } catch (_e) {
-      applyIndividualGate(individualOpenLocally());
+      applyIndividualGate(individualOpenLocally(state.weekId));
     }
     renderSlots();
   }
@@ -790,7 +835,8 @@
           "error",
           (data && data.message) ||
             (data && data.error === "individual_days_not_open"
-              ? "Individual hours open from Friday 17 July. Until then book a weekly pack."
+              ? data.message ||
+                "Individual hours are not open for this week yet. Book a four-day weekly pack."
               : data && data.error === "slot_unavailable"
                 ? "One or more slots were just taken. Please pick another time."
                 : "Could not reserve — please try again."),
@@ -820,7 +866,7 @@
   }
 
   async function boot() {
-    applyIndividualGate(individualOpenLocally());
+    applyIndividualGate(individualOpenLocally(state.weekId));
     renderWeeks();
     bindModes();
     bindActivities();
