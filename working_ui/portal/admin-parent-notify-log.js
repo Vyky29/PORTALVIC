@@ -1140,7 +1140,10 @@
             }) + " (file not saved)") +
         "</div>";
     } else if (bodyStr && !isMediaPlaceholder) {
-      contentHtml = '<div class="portal-pnlog-bubble__text">' + esc(bodyStr) + "</div>";
+      contentHtml =
+        '<div class="portal-pnlog-bubble__text">' +
+        esc(bodyStr).replace(/\r\n/g, "\n").replace(/\n/g, "<br>") +
+        "</div>";
     }
     var errHtml =
       errTip
@@ -1449,9 +1452,11 @@
         }
       }
     }
-    /* Cold outbound (no inbound in 24h) must use an approved Meta template. */
+    /* Cold outbound uses a Meta template that cannot keep newlines in {{1}}.
+     * Send the original body for portal/email history; the Edge Function flattens
+     * only the WhatsApp template parameter server-side. */
     var sendKind = openSession ? "custom" : "contact_update";
-    var sendBody = openSession ? msgBody : flattenForWhatsappTemplate(msgBody);
+    var sendBody = msgBody;
     state.sending = true;
     state.draftByKey[t.key] = msgBody;
     if (btn) {
@@ -1462,7 +1467,7 @@
     if (statusEl) {
       statusEl.textContent = openSession
         ? ""
-        : "No open WhatsApp session — sending via approved template…";
+        : "No open WhatsApp session — sending via approved template (paragraphs kept in portal history)…";
     }
 
     void global.PortalParentNotifySend.send({

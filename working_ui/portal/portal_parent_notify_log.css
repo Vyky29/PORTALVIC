@@ -347,7 +347,7 @@
 .portal-pnlog-bubble__text {
   font-size: 13px;
   line-height: 1.5;
-  white-space: pre-wrap;
+  white-space: normal;
   overflow-wrap: anywhere;
   min-width: 0;
   max-height: min(38vh, 320px);

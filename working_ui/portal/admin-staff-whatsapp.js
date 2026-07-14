@@ -678,7 +678,9 @@
         var mediaHtml = renderMedia(m);
         var bodyHtml =
           bodyStr && !isPlaceholder
-            ? '<div class="portal-staff-wa-admin__body">' + esc(bodyStr) + "</div>"
+            ? '<div class="portal-staff-wa-admin__body">' +
+              esc(bodyStr).replace(/\r\n/g, "\n").replace(/\n/g, "<br>") +
+              "</div>"
             : "";
         var chips = [];
         if (dir === "out") {
@@ -878,13 +880,12 @@
       return;
     }
     var openSession = threadHasOpenWhatsappSession();
-    var sendBody = openSession ? body : flattenForWhatsappTemplate(body);
+    /* Keep original newlines in stored/display body. Meta template flatten is server-side. */
+    var sendBody = body;
     if (!openSession && !sendBody && state.attach) {
       sendBody = "[media]";
     }
-    if (!openSession && body && sendBody.length < body.length) {
-      cfg.toast("No open WhatsApp session — sending via approved template (first 1024 chars)");
-    } else if (!openSession) {
+    if (!openSession) {
       cfg.toast("No open WhatsApp session — sending via approved template…");
     }
     state.sending = true;
