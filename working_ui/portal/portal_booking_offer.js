@@ -42,6 +42,7 @@
     TERM_LABEL: "",
     TERM_RANGE: "",
     TERM_CALENDAR: { start: "", end: "", closedRanges: [] },
+    TERM_CALENDAR_DAY_CENTRE: null,
     stats: null,
   };
 
@@ -70,6 +71,7 @@
       end: "",
       closedRanges: [],
     };
+    state.TERM_CALENDAR_DAY_CENTRE = data.TERM_CALENDAR_DAY_CENTRE || null;
     state.stats = data.stats || null;
   }
 
@@ -138,19 +140,28 @@
     return y + "-" + m + "-" + day;
   }
 
-  function isInClosedRange(iso) {
-    var ranges = (state.TERM_CALENDAR && state.TERM_CALENDAR.closedRanges) || [];
+  function calendarForService(serviceId) {
+    if (serviceId === "day_centre" && state.TERM_CALENDAR_DAY_CENTRE) {
+      return state.TERM_CALENDAR_DAY_CENTRE;
+    }
+    return state.TERM_CALENDAR;
+  }
+
+  function isInClosedRange(iso, calendar) {
+    var cal = calendar || state.TERM_CALENDAR;
+    var ranges = (cal && cal.closedRanges) || [];
     for (var i = 0; i < ranges.length; i++) {
       if (iso >= ranges[i].start && iso <= ranges[i].end) return true;
     }
     return false;
   }
 
-  function termDatesForWeekday(dayName, asOf) {
+  function termDatesForWeekday(dayName, asOf, serviceId) {
     var want = WEEKDAY_NUM[dayName];
     if (want == null) return [];
-    var start = parseIsoDate(state.TERM_CALENDAR.start);
-    var end = parseIsoDate(state.TERM_CALENDAR.end);
+    var cal = calendarForService(serviceId);
+    var start = parseIsoDate(cal.start);
+    var end = parseIsoDate(cal.end);
     if (!start || !end) return [];
     var today = asOf ? parseIsoDate(asOf) || asOf : new Date();
     if (!(today instanceof Date) || isNaN(today.getTime())) today = new Date();
@@ -165,7 +176,7 @@
     }
     while (cur <= end) {
       var iso = toIsoDate(cur);
-      if (!isInClosedRange(iso)) {
+      if (!isInClosedRange(iso, cal)) {
         out.push({
           iso: iso,
           label: formatChipDate(cur),
@@ -182,8 +193,8 @@
     return d.getUTCDate() + " " + months[d.getUTCMonth()];
   }
 
-  function remainingTermPrice(dayName, pricePerSession, asOf) {
-    var dates = termDatesForWeekday(dayName, asOf);
+  function remainingTermPrice(dayName, pricePerSession, asOf, serviceId) {
+    var dates = termDatesForWeekday(dayName, asOf, serviceId);
     var remaining = dates.filter(function (d) {
       return !d.past;
     });
@@ -389,6 +400,10 @@
     get TERM_CALENDAR() {
       return state.TERM_CALENDAR;
     },
+    get TERM_CALENDAR_DAY_CENTRE() {
+      return state.TERM_CALENDAR_DAY_CENTRE;
+    },
+    calendarForService: calendarForService,
     serviceById: serviceById,
     venueLabel: venueLabel,
     blockById: blockById,

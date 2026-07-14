@@ -1082,7 +1082,7 @@
     </div>
   </div>
 
-  <script src="/portal/portal_booking_offer.js?v=20260714-booking-live1"></script>
+  <script src="/portal/portal_booking_offer.js?v=20260714-booking-autumn1"></script>
   <script>
 (function () {
   "use strict";
@@ -1406,7 +1406,7 @@
     if (!/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)$/.test(dayName)) {
       return "";
     }
-    var stats = mock.remainingTermPrice(dayName, s.pricePerSession);
+    var stats = mock.remainingTermPrice(dayName, s.pricePerSession, null, s.id);
     if (!stats.dates.length) return "";
     var money = mock.formatPounds(stats.remainingTotal);
     var remLine =
@@ -1608,7 +1608,11 @@
           "</div>" +
           "</div>" +
           '<p class="timetable__range">' +
-          esc(mock.TERM_RANGE || "") +
+          esc(
+            s.id === "day_centre"
+              ? "Tue 1 September 2026 – Fri 18 December 2026"
+              : mock.TERM_RANGE || "Sat 5 September 2026 – Fri 18 December 2026"
+          ) +
           "</p></div>" +
           body +
           "</article>"

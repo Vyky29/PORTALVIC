@@ -29,52 +29,19 @@ function json(status: number, body: Record<string, unknown>) {
   });
 }
 
-function prettyIso(iso: string): string {
-  const p = String(iso || "").slice(0, 10).split("-");
-  if (p.length !== 3) return iso;
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const m = months[Number(p[1]) - 1] || p[1];
-  return `${Number(p[2])} ${m} ${p[0]}`;
-}
-
-function formatTermBadge(from: string | null, to: string | null): {
-  badge: string;
-  label: string;
-  range: string;
-} {
-  // MADRE live document is currently term_key summer-2026; badge follows meta dates.
-  if (from && to) {
-    const y = from.slice(0, 4);
-    const month = Number(from.slice(5, 7) || 0);
-    let season = "TERM";
-    if (month >= 9) season = "AUTUMN TERM";
-    else if (month >= 1 && month <= 3) season = "SPRING TERM";
-    else if (month >= 4 && month <= 8) season = "SUMMER TERM";
-    return {
-      badge: `${season} ${y}`.trim(),
-      label: `${season} ${y}`.replace("TERM", "Term"),
-      range: `${prettyIso(from)} – ${prettyIso(to)}`,
-    };
-  }
-  return {
-    badge: "SUMMER TERM 2026",
-    label: "Summer Term 2026",
-    range: "Live roster from MADRE",
-  };
-}
+/** Public weekly offer is Autumn 2026/27 — MADRE summer doc only supplies the standing roster template. */
+const AUTUMN_TERM = {
+  badge: "AUTUMN TERM 2026",
+  label: "Autumn Term 2026",
+  /** After-school + weekend weekly sessions */
+  start: "2026-09-05",
+  end: "2026-12-18",
+  /** Day Centre opens a few days earlier */
+  dayCentreStart: "2026-09-01",
+  closedRanges: [{ start: "2026-10-26", end: "2026-10-30" }],
+  range:
+    "Sat 5 September 2026 – Fri 18 December 2026 · Day Centre from Tue 1 September",
+};
 
 async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
   const weeks = [CRASH_SUMMER_WEEKS.w1, CRASH_SUMMER_WEEKS.w2];
@@ -267,14 +234,13 @@ Deno.serve(async (req) => {
 
   const weekly = buildWeeklyOfferFromMadre(madreRow.document as MadreDoc);
   const intensive = await loadCrashIntensive(supabase);
-  const term = formatTermBadge(weekly.termFrom, weekly.termTo);
 
   const intensiveService = {
     id: "intensive",
     name: "Intensive Courses & Camps",
     tier: "more",
     ageHint: "From 3 years+",
-    durationHint: "Summer + half-term blocks",
+    durationHint: "Summer crash + half-term blocks",
     priceHint: "Course packs — ask the office",
     pricePerSession: null,
     blurb:
@@ -286,17 +252,28 @@ Deno.serve(async (req) => {
   return json(200, {
     ok: true,
     source: "live",
-    term_key: madreRow.term_key || TERM_KEY,
+    /** MADRE standing roster still under summer-2026 key — weekly offer UI is Autumn. */
+    madre_term_key: madreRow.term_key || TERM_KEY,
+    offer_term: "autumn-2026",
     madre_revision: madreRow.revision ?? null,
     madre_updated_at: madreRow.updated_at ?? null,
-    term,
-    TERM_BADGE: term.badge,
-    TERM_LABEL: term.label,
-    TERM_RANGE: term.range,
+    term: {
+      badge: AUTUMN_TERM.badge,
+      label: AUTUMN_TERM.label,
+      range: AUTUMN_TERM.range,
+    },
+    TERM_BADGE: AUTUMN_TERM.badge,
+    TERM_LABEL: AUTUMN_TERM.label,
+    TERM_RANGE: AUTUMN_TERM.range,
     TERM_CALENDAR: {
-      start: weekly.termFrom || "2026-04-13",
-      end: weekly.termTo || "2026-07-18",
-      closedRanges: [],
+      start: AUTUMN_TERM.start,
+      end: AUTUMN_TERM.end,
+      closedRanges: AUTUMN_TERM.closedRanges,
+    },
+    TERM_CALENDAR_DAY_CENTRE: {
+      start: AUTUMN_TERM.dayCentreStart,
+      end: AUTUMN_TERM.end,
+      closedRanges: AUTUMN_TERM.closedRanges,
     },
     SERVICES: [...weekly.services, intensiveService],
     MOCK_SLOTS: [...weekly.slots, ...intensive.slots],
@@ -305,6 +282,8 @@ Deno.serve(async (req) => {
       madre_rows: weekly.rowCount,
       weekly_slots: weekly.slots.length,
       intensive_slots: intensive.slots.length,
+      madre_meta_from: weekly.termFrom,
+      madre_meta_to: weekly.termTo,
     },
   });
 });
