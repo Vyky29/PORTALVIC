@@ -416,7 +416,7 @@
       if (score == null) return null;
       if (score < 2.25) return "Rarely";
       if (score < 3.25) return "Sometimes";
-      return "Always";
+      return "Consistently";
     }
     var eAvg = avg(eng);
     var rAvg = avg(reg);

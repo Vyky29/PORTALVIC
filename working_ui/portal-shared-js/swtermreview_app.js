@@ -929,7 +929,7 @@ const LEVEL_DATA = {
     /* =========================
        Core Development Areas
        ========================= */
-    const RSI_VALUE = { "Rarely":1, "Sometimes":2, "Always":3 };
+    const RSI_VALUE = { "Rarely":1, "Sometimes":2, "Consistently":3, "Always":3 };
 
     function computeDomainResult(domain){
       const radios = $$(`.rsiGrid[data-rsi-domain="${domain}"] input[type="radio"]:checked`);
@@ -989,7 +989,7 @@ const LEVEL_DATA = {
       answeredVals.forEach(v => {
         if(v === "Rarely") r++;
         else if(v === "Sometimes") som++;
-        else if(v === "Always") alw++;
+        else if(v === "Consistently" || v === "Always") alw++;
       });
 
       let pattern = "";
@@ -1189,7 +1189,7 @@ const LEVEL_DATA = {
         });
         banner.hidden = false;
         banner.innerHTML =
-          "<strong>From session feedback this term</strong> — Engagement, Regulation and Independence below are suggested from what was recorded in sessions (Building / Progressing / Secure). The 5 questions per area are still here for now — suggested Rarely / Sometimes / Always buttons pulse; tap to confirm or choose another." +
+          "<strong>From session feedback this term</strong> — Engagement, Regulation and Independence below are suggested from what was recorded in sessions (Building / Progressing / Secure). The 5 questions per area are still here for now — suggested Rarely / Sometimes / Consistently buttons pulse; tap to confirm or choose another." +
           (bits.length ? "<br><span class=\"swterm-session-suggest__bits\">" + bits.join(" · ") + "</span>" : "");
       }
     }
