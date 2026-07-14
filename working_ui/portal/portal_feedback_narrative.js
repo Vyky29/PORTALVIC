@@ -997,6 +997,7 @@
     hideEl(field);
     hideEl(micHint);
     hideEl(notesField);
+    setVoiceBarVisible(false);
 
     function mark(btn, on) {
       if (!btn) return;
@@ -1060,7 +1061,7 @@
     els.validateList = global.document.getElementById("fbNarrativeValidateList");
     els.modeNote = global.document.getElementById("fbNarrativeModeNote");
 
-    if (!els.narrative || !els.filterBtn) return;
+    if (!els.narrative) return;
 
     state.adminFilters = resolveAdminFiltersFlag();
 
@@ -1076,9 +1077,11 @@
       });
     }
 
-    els.filterBtn.addEventListener("click", function () {
-      filterWithAi();
-    });
+    if (els.filterBtn) {
+      els.filterBtn.addEventListener("click", function () {
+        filterWithAi();
+      });
+    }
 
     els.manualBtn = global.document.getElementById("btnManualFeedbackEntry");
     if (els.manualBtn) {
@@ -1109,12 +1112,12 @@
     wireFormListeners(cfg.getForm());
     state.contextKey = buildContextKey();
     setAiFieldsRequired(false);
+    /* Always offer Voice vs Written before the narrative box (before other UI sync). */
+    wireInputChoice();
     syncModeNote();
     syncValidateButton();
     syncFilterButton();
     syncSubmitGate();
-    /* Always offer Voice vs Written before the narrative box. */
-    wireInputChoice();
     if (state.adminFilters) applyAdminFiltersMode();
   }
 

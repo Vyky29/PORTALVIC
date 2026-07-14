@@ -36,7 +36,7 @@
 <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
 <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
 <script>window.PORTAL_FEEDBACK_ADMIN_FILTERS = true;</script>
-<script src="/portal/portal_feedback_narrative.js?v=20260714-voice-written-choice"></script>
+<script src="/portal/portal_feedback_narrative.js?v=20260714-voice-written-choice2"></script>
 <script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
 <style>
 :root{
@@ -1631,7 +1631,7 @@ button{
   }
 
   function syncSwimAxesMode(){
-    if(!feedbackExtendedSection || !global.PortalSwimSessionAxes) return;
+    if(!feedbackExtendedSection || !window.PortalSwimSessionAxes) return;
     var svc = "";
     var fbSv = document.getElementById("fbService");
     if(fbSv && clean(fbSv.value)) svc = clean(fbSv.value);
@@ -1643,10 +1643,10 @@ button{
       var ctx = typeof buildResolvedContext === "function" ? buildResolvedContext() : null;
       clientName = clean(ctx && ctx.client_name);
     }
-    var aquatic = global.PortalSwimSessionAxes.isAquaticService(svc);
-    global.PortalSwimSessionAxes.applyFeedbackFormMode(feedbackExtendedSection, aquatic);
+    var aquatic = window.PortalSwimSessionAxes.isAquaticService(svc);
+    window.PortalSwimSessionAxes.applyFeedbackFormMode(feedbackExtendedSection, aquatic);
     // Day Centre (Ikram / Emmanuel / Timi / Fadi): keep normal axes + optional swim block.
-    global.PortalSwimSessionAxes.syncOptionalDayCentreSwim(feedbackExtendedSection, clientName, svc, {
+    window.PortalSwimSessionAxes.syncOptionalDayCentreSwim(feedbackExtendedSection, clientName, svc, {
       aquaticFullMode: aquatic,
     });
     syncPillSelection();
@@ -3219,8 +3219,9 @@ button{
       alert("Please select at least one option under Independence.");
       return;
     }
-    if(global.PortalSwimSessionAxes && typeof global.PortalSwimSessionAxes.validateOptionalSwimFields === "function"){
-      const swimErr = global.PortalSwimSessionAxes.validateOptionalSwimFields(form);
+    if(window.PortalSwimSessionAxes && typeof window.PortalSwimSessionAxes.validateOptionalSwimFields === "function"){
+      const swimErr = window.PortalSwimSessionAxes.validateOptionalSwimFields(form);
+
       if(swimErr){
         alert(swimErr);
         return;
@@ -3232,8 +3233,8 @@ button{
     const hasRelevantInformation = clean(relevantInformation).length > 0;
     const notifyNotes = null;
     const swimFields =
-      global.PortalSwimSessionAxes && typeof global.PortalSwimSessionAxes.readOptionalSwimFields === "function"
-        ? global.PortalSwimSessionAxes.readOptionalSwimFields(form)
+      window.PortalSwimSessionAxes && typeof window.PortalSwimSessionAxes.readOptionalSwimFields === "function"
+        ? window.PortalSwimSessionAxes.readOptionalSwimFields(form)
         : { swim_done: false, swim_engagement_rating: null, swim_regulation: null, swim_independence: null };
 
     const formFields = {
