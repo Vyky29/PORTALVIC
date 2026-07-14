@@ -8,7 +8,7 @@
   var ENGAGEMENT = [
     {
       value: 1,
-      label: "Joined without help, stayed in their own world",
+      label: "Own world / little engagement",
       otherSide: "1 star",
       termHint: "Building",
       icon:
@@ -16,7 +16,7 @@
     },
     {
       value: 2,
-      label: "Needed lots of support to join in",
+      label: "Needed lots of support",
       otherSide: "2 stars",
       termHint: "Building",
       icon:
@@ -40,7 +40,7 @@
     },
     {
       value: 5,
-      label: "Stayed with the session well",
+      label: "Stayed with it well",
       otherSide: "5 stars",
       termHint: "Secure",
       icon:
@@ -51,8 +51,8 @@
   var REGULATION = [
     {
       value: "Found the water hard today",
-      label: "Found the water hard today",
-      otherSide: "Withdrawn · Blue zone",
+      label: "Found water hard",
+      otherSide: "Withdrawn · Blue",
       termHint: "Building",
       score: 1,
       icon:
@@ -61,7 +61,7 @@
     {
       value: "Needed help to settle",
       label: "Needed help to settle",
-      otherSide: "Anxious · Yellow zone",
+      otherSide: "Anxious · Yellow",
       termHint: "Building",
       score: 2,
       icon:
@@ -69,8 +69,8 @@
     },
     {
       value: "Overwhelmed / out of control in the water",
-      label: "Overwhelmed / out of control in the water",
-      otherSide: "Out of control · Red zone",
+      label: "Overwhelmed in water",
+      otherSide: "Out of control · Red",
       termHint: "Building",
       score: 1,
       icon:
@@ -79,7 +79,7 @@
     {
       value: "Calm and settled",
       label: "Calm and settled",
-      otherSide: "Happy/Excited · Green zone",
+      otherSide: "Happy/Excited · Green",
       termHint: "Secure",
       score: 4,
       icon:
@@ -90,7 +90,7 @@
   var INDEPENDENCE = [
     {
       value: "Full support in the water",
-      label: "Full support in the water",
+      label: "Full support",
       sub: "Hands-on throughout",
       otherSide: "Full support",
       termHint: "Building",
@@ -100,7 +100,7 @@
     },
     {
       value: "Regular support / hands-on help",
-      label: "Regular support / hands-on help",
+      label: "Regular support",
       sub: "Frequent help",
       otherSide: "Regular support",
       termHint: "Building",
@@ -479,9 +479,8 @@
           o.value +
           '"><span class="pill-independence-inner">' +
           engIconHtml(o.icon) +
-          '<span class="pill-independence-text"><span class="pill-independence-title">' +
-          esc(optionLabelWithOtherSide(o)) +
-          "</span></span></span></label>"
+          optionPillTextHtml(o, true) +
+          "</span></label>"
         );
       }).join("") +
       "</div></div>" +
@@ -497,9 +496,8 @@
           esc(o.value) +
           '"><span class="pill-emotion-inner">' +
           regFaceHtml(o.icon) +
-          '<span class="pill-emotion-label">' +
-          esc(optionLabelWithOtherSide(o)) +
-          "</span></span></label>"
+          optionPillTextHtml(o, false) +
+          "</span></label>"
         );
       }).join("") +
       "</div></div>" +
@@ -515,11 +513,8 @@
           esc(o.value) +
           '"><span class="pill-independence-inner">' +
           indIconHtml(o.icon) +
-          '<span class="pill-independence-text"><span class="pill-independence-title">' +
-          esc(optionLabelWithOtherSide(o)) +
-          '</span><span class="pill-independence-sub">' +
-          esc(o.sub || "") +
-          "</span></span></span></label>"
+          optionPillTextHtml(o, true) +
+          "</span></label>"
         );
       }).join("") +
       "</div></div>" +
@@ -744,6 +739,31 @@
       .replace(/"/g, "&quot;");
   }
 
+  /** Compact pill copy: short title + equiv/sub on second line. */
+  function optionPillTextHtml(o, withSubSlot) {
+    var title = esc(clean(o && o.label));
+    var side = clean(o && o.otherSide);
+    var sub = clean(o && o.sub);
+    var second = side && sub ? side + " · " + sub : side || sub || "";
+    if (withSubSlot) {
+      return (
+        '<span class="pill-independence-text"><span class="pill-independence-title">' +
+        title +
+        '</span><span class="pill-independence-sub">' +
+        esc(second) +
+        "</span></span>"
+      );
+    }
+    return (
+      '<span class="pill-emotion-label">' +
+      title +
+      "</span>" +
+      (second
+        ? '<span class="pill-independence-sub swim-axis-equiv">' + esc(second) + "</span>"
+        : "")
+    );
+  }
+
   /** Rebuild E/R/I option panels inside #feedbackExtendedSection for swim or generic. */
   function applyFeedbackFormMode(root, aquatic) {
     if (!root) return;
@@ -807,9 +827,8 @@
           o.value +
           '"><span class="pill-independence-inner">' +
           engIconHtml(o.icon) +
-          '<span class="pill-independence-text"><span class="pill-independence-title">' +
-          esc(optionLabelWithOtherSide(o)) +
-          "</span></span></span></label>"
+          optionPillTextHtml(o, true) +
+          "</span></label>"
         );
       }).join("") +
       "</div>";
@@ -848,9 +867,8 @@
         esc(o.value) +
         '"><span class="pill-emotion-inner">' +
         regFaceHtml(o.icon) +
-        '<span class="pill-emotion-label">' +
-        esc(optionLabelWithOtherSide(o)) +
-        "</span></span></label>"
+        optionPillTextHtml(o, false) +
+        "</span></label>"
       );
     }).join("");
 
@@ -868,11 +886,8 @@
         esc(o.value) +
         '"><span class="pill-independence-inner">' +
         indIconHtml(o.icon) +
-        '<span class="pill-independence-text"><span class="pill-independence-title">' +
-        esc(optionLabelWithOtherSide(o)) +
-        '</span><span class="pill-independence-sub">' +
-        esc(o.sub || "") +
-        "</span></span></span></label>"
+        optionPillTextHtml(o, true) +
+        "</span></label>"
       );
     }).join("");
   }

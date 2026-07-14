@@ -31,7 +31,7 @@
 <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260713-ios-video-save" />
 <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
 <script src="/portal/portal_participant_achievements.js?v=20260713-ios-video-save"></script>
-<script src="/portal/portal_swim_session_axes.js?v=20260714-zones-reg"></script>
+<script src="/portal/portal_swim_session_axes.js?v=20260714-grid-2x2"></script>
 <script src="/portal/portal_feedback_voice_input.js?v=20260705c-voice-ai-down-message"></script>
 <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
 <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
@@ -522,8 +522,8 @@ input:focus, select:focus, textarea:focus{
   transform:scale(1.06);
 }
 .swim-axis-row{
-  display:flex;
-  flex-direction:column;
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
   gap:8px;
   width:100%;
   min-width:0;
@@ -534,11 +534,12 @@ input:focus, select:focus, textarea:focus{
   margin:0 !important;
   justify-content:center !important;
   text-align:center;
-  padding:12px 12px 14px !important;
+  padding:10px 8px 12px !important;
   flex-direction:column !important;
   align-items:center !important;
   min-height:0 !important;
   gap:0 !important;
+  height:100%;
 }
 .swim-axis-pill .pill-emotion-inner,
 .swim-axis-pill .pill-independence-inner{
@@ -548,7 +549,7 @@ input:focus, select:focus, textarea:focus{
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  gap:8px;
+  gap:6px;
   width:100%;
   min-width:0;
   text-align:center;
@@ -556,16 +557,16 @@ input:focus, select:focus, textarea:focus{
 }
 .swim-axis-pill .pill-independence-icon,
 .swim-axis-pill .pill-emotion-face{
-  width:36px;
-  height:36px;
+  width:32px;
+  height:32px;
 }
 .swim-axis-pill .pill-independence-icon svg{
-  width:20px;
-  height:20px;
+  width:18px;
+  height:18px;
 }
 .swim-axis-pill .pill-emotion-face svg{
-  width:24px;
-  height:24px;
+  width:22px;
+  height:22px;
 }
 .swim-axis-pill .pill-independence-text{
   display:flex;
@@ -573,22 +574,29 @@ input:focus, select:focus, textarea:focus{
   align-items:center;
   min-width:0;
   text-align:center;
+  width:100%;
 }
 .swim-axis-pill .pill-emotion-label,
 .swim-axis-pill .pill-independence-title{
-  font-size:13px;
+  font-size:12px;
   font-weight:700;
-  line-height:1.3;
+  line-height:1.25;
   overflow-wrap:break-word;
   text-align:center;
   min-width:0;
   width:100%;
 }
-.swim-axis-pill .pill-independence-sub{
-  font-size:11px;
+.swim-axis-pill .pill-independence-sub,
+.swim-axis-pill .swim-axis-equiv{
+  display:block;
+  font-size:10px;
   font-weight:600;
+  line-height:1.25;
   color:var(--muted,#6b7280);
   text-align:center;
+  overflow-wrap:break-word;
+  width:100%;
+  min-width:0;
 }
 /* Engagement + independence colors (same palette as non-swim emotions) */
 .swim-axis-pill.rate[data-value="1"] .pill-independence-icon{ color:#64748b; }
@@ -790,8 +798,16 @@ input:focus, select:focus, textarea:focus{
 #feedbackExtendedSection[data-swim-axes="1"] .options--engagement,
 #feedbackExtendedSection[data-swim-axes="1"] .options--emotions,
 #feedbackExtendedSection[data-swim-axes="1"] .options--independence{
-  display:flex;
-  flex-direction:column;
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:8px;
+  width:100%;
+  min-width:0;
+}
+.fb-dc-swim__axis .swim-axis-row,
+.fb-dc-swim__axis .options{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
   gap:8px;
 }
 .options--attended{
