@@ -467,6 +467,7 @@ export function resolveParentNotifyWhatsappTemplate(kind: string): string {
     return "";
   }
   const byKind: Record<string, string> = {
+    weekly_note: "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_WEEKLY_NOTE",
     payment_due: "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_PAYMENT",
     instructor_change: "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_INSTRUCTOR",
     instructor_reassign: "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_INSTRUCTOR",

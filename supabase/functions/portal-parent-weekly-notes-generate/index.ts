@@ -2,21 +2,23 @@
 //
 // portal-parent-weekly-notes-generate
 // -----------------------------------
-// Build Saturday→Friday weekly notes for the family portal from filtered (or raw) feedback.
-// Celebratory plain-language AI summary.
+// Auto Saturday→Friday weekly notes + optional WhatsApp notify.
+// Admin does NOT need to press anything — crons call this.
 //
 // Auth: x-portal-webhook-secret (PORTAL_PUSH_WEBHOOK_SECRET) or admin JWT.
 //
 // POST JSON:
 //   mode?: "cron" | "early" | "backfill" | "contact"
-//   week_start?: "YYYY-MM-DD"   // any day in week → normalised to Saturday
+//   week_start?: "YYYY-MM-DD"
 //   contact_ids?: string[]
 //   force?: boolean
-//   from_date?: "YYYY-MM-DD"    // backfill window start (inclusive)
-//   through_date?: "YYYY-MM-DD" // backfill window end (inclusive)
+//   notify?: boolean          // default true for cron/early; false for backfill
+//   force_hour?: boolean
+//   from_date? / through_date? for backfill
 //
-// Cron (Saturday London morning): summarise the week that just ended (previous Sat–Fri).
-// Early (weekday): only Mon–Wed-only attendees whose last expected day has passed.
+// Crons:
+//   - Weekday evening (London ~20:00): mode=early  → Mon–Wed-only kids once their week is done
+//   - Saturday morning (London ~09:00): mode=cron → everyone for the week that just ended
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { verifyPortalAdminAccessToken } from "../_shared/portal_admin_auth.ts";
@@ -28,6 +30,7 @@ import {
   saturdayWeekStart,
   addDaysIso,
 } from "../_shared/parent_weekly_notes.ts";
+import { notifyParentWeeklyNoteReady } from "../_shared/parent_weekly_notes_notify.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -88,6 +91,7 @@ Deno.serve(async (req) => {
       openai: Boolean(Deno.env.get("OPENAI_API_KEY")),
       model: Deno.env.get("PORTAL_OPENAI_MODEL") || "gpt-4o-mini",
       week: "saturday_friday",
+      auto: true,
     });
   }
 
@@ -113,6 +117,7 @@ Deno.serve(async (req) => {
     from_date?: string;
     through_date?: string;
     force_hour?: boolean;
+    notify?: boolean;
   } = {};
   try {
     body = await req.json();
@@ -123,6 +128,8 @@ Deno.serve(async (req) => {
   const mode = clean(body.mode, 40).toLowerCase() || "cron";
   const force = !!body.force;
   const today = londonTodayIso();
+  const notifyDefault = mode === "backfill" ? false : true;
+  const doNotify = body.notify == null ? notifyDefault : !!body.notify;
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -133,20 +140,36 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  // Saturday cron: only run around London morning unless force_hour / admin backfill.
-  if (mode === "cron" && !body.force_hour && !force) {
+  // Time gates (skipped when force / force_hour / admin contact|backfill).
+  if (!body.force_hour && !force && mode !== "backfill" && mode !== "contact") {
     const wd = londonWeekdayMon1();
     const hour = londonHour();
-    if (wd !== 6) {
-      return json(200, { ok: true, skipped: true, reason: "not_saturday", weekday: wd });
+    if (mode === "cron") {
+      if (wd !== 6) {
+        return json(200, { ok: true, skipped: true, reason: "not_saturday", weekday: wd });
+      }
+      if (hour < 7 || hour > 11) {
+        return json(200, {
+          ok: true,
+          skipped: true,
+          reason: "outside_saturday_morning",
+          london_hour: hour,
+        });
+      }
     }
-    if (hour < 8 || hour > 11) {
-      return json(200, {
-        ok: true,
-        skipped: true,
-        reason: "outside_saturday_morning",
-        london_hour: hour,
-      });
+    if (mode === "early") {
+      if (wd < 2 || wd > 5) {
+        // Tue–Fri evenings (Mon-only kids wait until Tue).
+        return json(200, { ok: true, skipped: true, reason: "not_early_weekday", weekday: wd });
+      }
+      if (hour < 18 || hour > 21) {
+        return json(200, {
+          ok: true,
+          skipped: true,
+          reason: "outside_early_evening",
+          london_hour: hour,
+        });
+      }
     }
   }
 
@@ -156,13 +179,10 @@ Deno.serve(async (req) => {
     const through = clean(body.through_date, 10) || today;
     weekStarts = listWeekStartsInclusive(from, through);
   } else if (mode === "early") {
-    // Current week — only early-eligible kids.
     weekStarts = [saturdayWeekStart(today)];
   } else if (mode === "contact" && clean(body.week_start, 10)) {
     weekStarts = [saturdayWeekStart(clean(body.week_start, 10))];
   } else {
-    // cron default: the week that ended yesterday (Fri) when run on Sat =
-    // week_start = today - 7 if today is Sat, else previous completed week.
     const wd = londonWeekdayMon1();
     if (wd === 6) {
       weekStarts = [addDaysIso(saturdayWeekStart(today), -7)];
@@ -200,17 +220,26 @@ Deno.serve(async (req) => {
     participants = (data || []) as ParticipantRow[];
   }
 
+  const displayByContact = new Map<string, string>();
+  for (const p of participants) {
+    const display =
+      clean(p.display_name, 200) ||
+      [clean(p.first_name, 80), clean(p.last_name, 80)].filter(Boolean).join(" ");
+    displayByContact.set(String(p.contact_id), display);
+  }
+
   const allowEarly = mode === "early" || mode === "backfill" || mode === "contact" || force;
   const results: Record<string, unknown>[] = [];
   let generated = 0;
   let skipped = 0;
   let failed = 0;
+  let notified = 0;
+  let notifySkipped = 0;
+  let notifyFailed = 0;
 
   for (const weekStart of weekStarts) {
     for (const p of participants) {
-      const display =
-        clean(p.display_name, 200) ||
-        [clean(p.first_name, 80), clean(p.last_name, 80)].filter(Boolean).join(" ");
+      const display = displayByContact.get(String(p.contact_id)) || "";
       const result = await generateWeeklyNoteForContact(supabase, {
         contactId: String(p.contact_id),
         identity: {
@@ -223,7 +252,6 @@ Deno.serve(async (req) => {
         weekStart,
         force: force || mode === "backfill",
         allowEarly: allowEarly || mode === "early",
-        // For backfill of completed weeks, pretend "today" is after week_end
         todayIso:
           mode === "backfill" || force
             ? addDaysIso(fridayWeekEnd(weekStart), 1)
@@ -235,12 +263,39 @@ Deno.serve(async (req) => {
         results.push(result);
         continue;
       }
-      if (result.skipped) {
-        skipped += 1;
-      } else {
-        generated += 1;
-      }
+      if (result.skipped) skipped += 1;
+      else generated += 1;
       if (results.length < 80) results.push(result);
+    }
+
+    if (!doNotify) continue;
+
+    // Notify any ready notes for this week that have not been pushed yet
+    // (covers freshly generated + previously generated-but-unsent).
+    const { data: pending } = await supabase
+      .from("portal_parent_weekly_notes")
+      .select("contact_id, week_start, week_end, body")
+      .eq("week_start", weekStart)
+      .eq("share_status", "ready")
+      .is("notified_at", null);
+
+    for (const row of pending || []) {
+      const cid = String(row.contact_id || "");
+      if (contactFilter.length && !contactFilter.includes(cid)) continue;
+      const display = displayByContact.get(cid) || cid;
+      const n = await notifyParentWeeklyNoteReady(supabase, {
+        contactId: cid,
+        weekStart: String(row.week_start),
+        weekEnd: String(row.week_end),
+        body: String(row.body || ""),
+        displayName: display,
+      });
+      if (n.ok && !n.skipped) notified += 1;
+      else if (n.skipped) notifySkipped += 1;
+      else notifyFailed += 1;
+      if (results.length < 120) {
+        results.push({ notify: true, contact_id: cid, week_start: weekStart, ...n });
+      }
     }
   }
 
@@ -252,6 +307,10 @@ Deno.serve(async (req) => {
     generated,
     skipped,
     failed,
+    notify: doNotify,
+    notified,
+    notify_skipped: notifySkipped,
+    notify_failed: notifyFailed,
     results,
   });
 });
