@@ -167,7 +167,7 @@ export async function buildPortalTaxInvoicePdf(
     color: ink,
   });
 
-  // Bill to
+  // Bill to (left)
   let y = height - 110;
   page.drawText(pdfSafeText(input.billToName || "Parent"), {
     x: left,
@@ -188,27 +188,6 @@ export async function buildPortalTaxInvoicePdf(
     y -= 12;
   }
 
-  // Meta block
-  const metaX = 280;
-  let metaY = height - 110;
-  const meta = [
-    ["Invoice Date", formatUkDate(input.invoiceDateIso)],
-    ["Invoice Number", pdfSafeText(input.invoiceNumber)],
-    ["Reference", pdfSafeText(input.reference || "").slice(0, 40) || "-"],
-    ["VAT Number", VAT_NUMBER],
-  ];
-  for (const [label, val] of meta) {
-    page.drawText(label, { x: metaX, y: metaY, size: 8, font, color: muted });
-    page.drawText(val, {
-      x: metaX + 90,
-      y: metaY,
-      size: 9,
-      font: label === "Invoice Number" ? fontBold : font,
-      color: ink,
-    });
-    metaY -= 14;
-  }
-
   // Company address (right under logo)
   let addrY = height - 48 - logoH - 14;
   for (const line of COMPANY_LINES) {
@@ -223,9 +202,28 @@ export async function buildPortalTaxInvoicePdf(
     addrY -= 11;
   }
 
-  // Table must start below bill-to, meta (date/number/ref/VAT), and company address —
-  // otherwise meta can overlap Quantity / Unit Price / Amount headers when bill-to is short.
-  y = Math.min(y, addrY, metaY) - 28;
+  // Meta (Invoice Date / Number / Reference / VAT) — under bill-to, above Description table
+  y = Math.min(y, addrY) - 18;
+  const meta = [
+    ["Invoice Date", formatUkDate(input.invoiceDateIso)],
+    ["Invoice Number", pdfSafeText(input.invoiceNumber)],
+    ["Reference", pdfSafeText(input.reference || "").slice(0, 40) || "-"],
+    ["VAT Number", VAT_NUMBER],
+  ];
+  for (const [label, val] of meta) {
+    page.drawText(label, { x: left, y, size: 8, font, color: muted });
+    page.drawText(val, {
+      x: left + 100,
+      y,
+      size: 9,
+      font: label === "Invoice Number" ? fontBold : font,
+      color: ink,
+    });
+    y -= 14;
+  }
+
+  // Table header
+  y -= 16;
   page.drawLine({
     start: { x: left, y: y + 14 },
     end: { x: right, y: y + 14 },
