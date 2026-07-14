@@ -320,8 +320,8 @@
     }
     .pp-pax-info-icon-wrap .pp-unread-badge {
       position: absolute;
-      top: -6px;
-      right: -10px;
+      top: -4px;
+      right: -6px;
       min-width: 18px;
       height: 18px;
       padding: 0 5px;
@@ -1070,16 +1070,6 @@
     .pp-hub-ops__slot--bespoke { border-left: 3px solid #7c3aed; }
     .pp-hub-ops__slot--daycentre { border-left: 3px solid #b45309; }
     .pp-hub-ops__slot--other { border-left: 3px solid #64748b; }
-    .pp-pax-info-btn--absence .pp-pax-info-icon { color: #c2410c; }
-    .pp-pax-info-btn--absence .pp-pax-info-caption { color: var(--ink); }
-    .pp-pax-info-btn--balance .pp-pax-info-icon { color: #0f766e; }
-    .pp-pax-info-btn--balance .pp-pax-info-caption { color: var(--ink); }
-    .pp-pax-info-btn--documents .pp-pax-info-icon { color: #1d4ed8; }
-    .pp-pax-info-btn--documents .pp-pax-info-caption { color: var(--ink); }
-    .pp-pax-info-btn--consents .pp-pax-info-icon { color: #7c3aed; }
-    .pp-pax-info-btn--consents .pp-pax-info-caption { color: var(--ink); }
-    .pp-pax-info-btn--invoices .pp-pax-info-icon { color: #b45309; }
-    .pp-pax-info-btn--invoices .pp-pax-info-caption { color: var(--ink); }
     .pp-invoice-card {
       margin: 0 0 12px;
       padding: 14px;
@@ -2173,18 +2163,30 @@
       line-height: 1.35;
     }
     .pp-pax-dob { margin: 4px 0 8px; font-size: 12px; }
-    .pp-pax-info-buttons { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; min-width: 0; }
+    .pp-pax-info-buttons { display: flex; flex-direction: column; gap: 14px; margin: 12px 0; min-width: 0; }
     .pp-pax-info-section-label {
-      margin: 6px 0 0;
+      margin: 4px 0 0;
+      padding: 8px 12px;
       font-size: 11px;
       font-weight: 800;
       letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: var(--muted);
+      color: var(--ink);
       min-width: 0;
       overflow-wrap: break-word;
+      border-radius: 12px;
+      background: linear-gradient(90deg, rgba(45, 132, 179, 0.12), rgba(45, 132, 179, 0.02));
+      border-left: 4px solid var(--blue);
     }
     .pp-pax-info-section-label:first-child { margin-top: 0; }
+    .pp-pax-info-section-label--paper {
+      background: linear-gradient(90deg, rgba(180, 83, 9, 0.12), rgba(180, 83, 9, 0.02));
+      border-left-color: #b45309;
+    }
+    .pp-pax-info-section-label--progress {
+      background: linear-gradient(90deg, rgba(15, 118, 110, 0.12), rgba(15, 118, 110, 0.02));
+      border-left-color: #0f766e;
+    }
     .pp-week-notes-folder__body {
       margin: 0;
       font-size: 13px;
@@ -2228,29 +2230,56 @@
     .pp-pax-info-row {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
+      gap: 12px;
       min-width: 0;
+      width: 100%;
     }
     @media (min-width: 560px) {
-      .pp-pax-info-row--week,
-      .pp-pax-info-row--paper { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-      .pp-pax-info-row--progress { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .pp-pax-info-row {
+        grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+      }
+    }
+    @media (min-width: 900px) {
+      .pp-pax-info-row {
+        grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+      }
     }
     .pp-pax-info-btn {
       width: 100%;
       border: 1px solid var(--line);
       background: #fff;
-      border-radius: 16px;
-      padding: 12px 8px;
+      border-radius: 18px;
+      padding: 16px 12px 14px;
       cursor: pointer;
       box-shadow: 0 2px 10px rgba(23,50,71,.05);
       min-width: 0;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    }
+    .pp-pax-info-btn:hover:not(:disabled):not(.pp-pax-info-btn--disabled) {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 26px rgba(23,50,71,.1);
+      border-color: rgba(45, 132, 179, 0.28);
+    }
+    .pp-pax-info-btn:active:not(:disabled):not(.pp-pax-info-btn--disabled) {
+      transform: translateY(-1px);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .pp-pax-info-btn { transition: none; }
+      .pp-pax-info-btn:hover:not(:disabled):not(.pp-pax-info-btn--disabled),
+      .pp-pax-info-btn:active:not(:disabled):not(.pp-pax-info-btn--disabled) {
+        transform: none;
+      }
     }
     .pp-pax-info-btn:disabled,
     .pp-pax-info-btn--disabled {
-      opacity: 0.48;
+      opacity: 0.55;
       cursor: not-allowed;
       box-shadow: none;
+    }
+    .pp-pax-info-btn:disabled .pp-pax-info-icon-plate,
+    .pp-pax-info-btn--disabled .pp-pax-info-icon-plate {
+      background: #eef2f6;
+      color: var(--muted);
     }
     .pp-pax-info-btn:disabled .pp-pax-info-icon,
     .pp-pax-info-btn--disabled .pp-pax-info-icon { color: var(--muted); }
@@ -2260,20 +2289,37 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       min-width: 0;
     }
-    .pp-pax-info-icon { width: 28px; height: 28px; color: var(--blue); flex-shrink: 0; }
+    .pp-pax-info-icon-plate {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      background: var(--blueSoft, #eaf5fb);
+      color: var(--blue);
+      flex-shrink: 0;
+    }
+    .pp-pax-info-icon {
+      width: 28px;
+      height: 28px;
+      color: inherit;
+      flex-shrink: 0;
+      display: block;
+    }
     .pp-pax-info-caption {
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 800;
       color: var(--ink);
       text-align: center;
       overflow-wrap: break-word;
       line-height: 1.25;
+      min-width: 0;
     }
     .pp-pax-info-subcaption {
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 600;
       color: var(--muted);
       text-align: center;
@@ -2310,11 +2356,29 @@
       overflow-wrap: break-word;
     }
     .pp-booking-card .pp-btn { margin-top: 4px; }
-    .pp-pax-info-btn--messages .pp-pax-info-icon { color: var(--blue); }
-    /* Progress-row buttons: corporate-yellow icon, black caption, white card. */
-    .pp-pax-info-btn--accent .pp-pax-info-icon { color: #f4b740; }
-    .pp-pax-info-btn--accent .pp-pax-info-caption { color: var(--ink); }
-    .pp-pax-info-btn--calendar .pp-pax-info-icon { color: var(--blue); }
+
+    /* Icon plate tones */
+    .pp-pax-info-btn--announcements .pp-pax-info-icon-plate { background: #fff4df; color: #b7791f; }
+    .pp-pax-info-btn--messages .pp-pax-info-icon-plate { background: #eaf5fb; color: #1f6a94; }
+    .pp-pax-info-btn--absence .pp-pax-info-icon-plate { background: #fff1e8; color: #c2410c; }
+    .pp-pax-info-btn--calendar .pp-pax-info-icon-plate { background: #e8f0fe; color: #1d4ed8; }
+    .pp-pax-info-btn--team .pp-pax-info-icon-plate { background: #fff6e5; color: #b7791f; }
+    .pp-pax-info-btn--invoices .pp-pax-info-icon-plate { background: #fff4e6; color: #b45309; }
+    .pp-pax-info-btn--consents .pp-pax-info-icon-plate { background: #f3e8ff; color: #7c3aed; }
+    .pp-pax-info-btn--balance .pp-pax-info-icon-plate { background: #e6f7f3; color: #0f766e; }
+    .pp-pax-info-btn--booking .pp-pax-info-icon-plate { background: #eef2ff; color: #4338ca; }
+    .pp-pax-info-btn--weekly-notes .pp-pax-info-icon-plate { background: #fff6e5; color: #b7791f; }
+    .pp-pax-info-btn--sessions .pp-pax-info-icon-plate { background: #eaf5fb; color: #1f6a94; }
+    .pp-pax-info-btn--achievements .pp-pax-info-icon-plate { background: #ecfdf5; color: #047857; }
+    .pp-pax-info-btn--swim .pp-pax-info-icon-plate { background: #e0f7fa; color: #0e7490; }
+    .pp-pax-info-btn--accent .pp-pax-info-icon-plate { background: #fff6e5; color: #b7791f; }
+    .pp-pax-info-btn--messages .pp-pax-info-caption,
+    .pp-pax-info-btn--absence .pp-pax-info-caption,
+    .pp-pax-info-btn--calendar .pp-pax-info-caption,
+    .pp-pax-info-btn--team .pp-pax-info-caption,
+    .pp-pax-info-btn--invoices .pp-pax-info-caption,
+    .pp-pax-info-btn--consents .pp-pax-info-caption,
+    .pp-pax-info-btn--balance .pp-pax-info-caption { color: var(--ink); }
     .pp-cal-legend {
       list-style: none;
       margin: 0 0 14px;
@@ -3335,7 +3399,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260714-dc-swim-addon"></script>
   <script src="/portal/parent_portal_team.js?v=20260710-eiji-hazem-photos"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260713-summer-crash"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260713-gocardless"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260714-hub-plates"></script>
   <script src="/portal/parent_portal_app.js?v=20260713-gocardless"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

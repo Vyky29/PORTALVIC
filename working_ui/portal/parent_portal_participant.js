@@ -803,6 +803,8 @@
     var subtitle = opts.subtitle ? String(opts.subtitle).trim() : "";
     var extraClass = opts.extraClass || "";
     var unreadBadge = opts.unreadBadge || "";
+    var plate =
+      '<span class="pp-pax-info-icon-plate" aria-hidden="true">' + iconSvg + "</span>";
     return (
       '<button type="button" class="pp-pax-info-btn' +
       extraClass +
@@ -816,8 +818,8 @@
       '">' +
       '<span class="pp-pax-info-btn-stack">' +
       (unreadBadge
-        ? '<span class="pp-pax-info-icon-wrap">' + iconSvg + unreadBadge + "</span>"
-        : iconSvg) +
+        ? '<span class="pp-pax-info-icon-wrap">' + plate + unreadBadge + "</span>"
+        : plate) +
       '<span class="pp-pax-info-caption">' +
       esc(caption) +
       "</span>" +
@@ -969,11 +971,11 @@
         subtitle: "Term dates",
       }) +
       infoBtnHtml("team", teamCaption, '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>', {
-        extraClass: " pp-pax-info-btn--accent pp-pax-info-btn--team",
+        extraClass: " pp-pax-info-btn--team",
         subtitle: "Instructors",
       }) +
       "</div>" +
-      '<p class="pp-pax-info-section-label">Paperwork</p>' +
+      '<p class="pp-pax-info-section-label pp-pax-info-section-label--paper">Paperwork</p>' +
       '<div class="pp-pax-info-row pp-pax-info-row--paper">' +
       infoBtnHtml("invoices", "Invoices", invoiceIcon, {
         extraClass: " pp-pax-info-btn--invoices",
@@ -1000,7 +1002,7 @@
           })
         : "") +
       "</div>" +
-      '<p class="pp-pax-info-section-label">Progress</p>' +
+      '<p class="pp-pax-info-section-label pp-pax-info-section-label--progress">Progress</p>' +
       '<div class="pp-pax-info-row pp-pax-info-row--progress">' +
       infoBtnHtml(
         "weekly_notes",
@@ -1008,7 +1010,7 @@
         notesIcon,
         {
           extraClass:
-            " pp-pax-info-btn--accent" +
+            " pp-pax-info-btn--weekly-notes" +
             (notesUnread > 0 ? " pp-pax-info-btn--has-unread" : ""),
           subtitle: noteCount ? noteCount + " in folder" : "From feedback",
           unreadBadge: notesBadge,
@@ -1018,13 +1020,13 @@
         "sessions",
         "Sessions Overview",
         '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
-        { extraClass: " pp-pax-info-btn--accent", subtitle: "By activity" },
+        { extraClass: " pp-pax-info-btn--sessions", subtitle: "By activity" },
       ) +
       infoBtnHtml(
         "achievements",
         "Achievement photos",
         '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 16l-5-5-4 4-2-2-5 5"/></svg>',
-        { extraClass: " pp-pax-info-btn--accent" },
+        { extraClass: " pp-pax-info-btn--achievements" },
       ) +
       infoBtnHtml(
         "swim",
@@ -1033,7 +1035,7 @@
         {
           disabled: !swimAvailable,
           subtitle: swimAvailable ? "" : "Not available yet",
-          extraClass: " pp-pax-info-btn--accent",
+          extraClass: " pp-pax-info-btn--swim",
         },
       ) +
       "</div></div>"
