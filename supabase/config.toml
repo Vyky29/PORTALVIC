@@ -588,6 +588,10 @@ verify_jwt = false
 [functions.portal-crash-summer-book]
 verify_jwt = false
 
+# Public booking offer page (/bookingservice) — MADRE weekly + crash seats.
+[functions.portal-booking-offer]
+verify_jwt = false
+
 [functions.portal-admin-parent-invoices-list]
 verify_jwt = false
 

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  PORTALVIC · Public booking offer (Phase A mock).
+  PORTALVIC · Public booking offer (live MADRE + crash seats).
   URL: /bookingservice · www.clubsensational.org/bookingservice
 -->
 <html lang="en-GB">
@@ -144,28 +144,34 @@
       overflow-wrap: break-word;
     }
 
-    .mock-banner {
+    .offer-banner {
       display: flex;
       align-items: flex-start;
       gap: 10px;
       margin: 0 0 18px;
       padding: 12px 14px;
       border-radius: 14px;
-      border: 1px dashed rgba(45, 132, 179, 0.45);
+      border: 1px solid rgba(45, 132, 179, 0.28);
       background: rgba(234, 245, 251, 0.9);
       color: var(--ink);
       font-size: 0.9rem;
       overflow-wrap: break-word;
       min-width: 0;
     }
-    .mock-banner svg {
+    .offer-banner--error {
+      border-color: rgba(180, 35, 24, 0.28);
+      background: var(--dangerSoft);
+      color: var(--danger);
+    }
+    .offer-banner svg {
       flex: 0 0 auto;
       width: 22px;
       height: 22px;
       color: var(--blueDeep);
       margin-top: 1px;
     }
-    .mock-banner span { min-width: 0; overflow-wrap: break-word; }
+    .offer-banner--error svg { color: var(--danger); }
+    .offer-banner span { min-width: 0; overflow-wrap: break-word; }
 
     .filters {
       position: sticky;
@@ -218,14 +224,14 @@
     .btn svg,
     .btn-ghost svg,
     .svc-card__cta svg,
-    .mock-banner svg,
+    .offer-banner svg,
     label.field .field-label svg {
       width: 16px;
       height: 16px;
       max-width: 16px;
       max-height: 16px;
     }
-    .mock-banner svg { width: 22px; height: 22px; max-width: 22px; max-height: 22px; }
+    .offer-banner svg { width: 22px; height: 22px; max-width: 22px; max-height: 22px; }
     .chip svg { width: 13px; height: 13px; max-width: 13px; max-height: 13px; color: var(--blue); }
     .badge svg { width: 12px; height: 12px; max-width: 12px; max-height: 12px; }
     .filters__title svg { color: var(--blue); }
@@ -996,9 +1002,9 @@
       <p class="lede">Browse every service we offer — including fully booked times — then open weekly slots by venue and day.</p>
     </header>
 
-    <p class="mock-banner" role="status">
+    <p class="offer-banner" id="offerBanner" role="status">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      <span><strong>Preview / mock.</strong> Times and places are illustrative. Live availability will match the parent portal inventory.</span>
+      <span id="offerBannerText">Loading live times and availability…</span>
     </p>
 
     <section class="services" id="serviceCards" aria-label="Our services"></section>
@@ -1076,11 +1082,11 @@
     </div>
   </div>
 
-  <script src="/portal/portal_booking_offer_mock.js?v=20260714-booking-chips2"></script>
+  <script src="/portal/portal_booking_offer.js?v=20260714-booking-live1"></script>
   <script>
 (function () {
   "use strict";
-  var mock = window.PortalBookingOfferMock;
+  var mock = window.PortalBookingOffer;
   if (!mock) return;
 
   var logo = document.getElementById("bookingBrandLogo");
@@ -1166,12 +1172,28 @@
   var fDay = document.getElementById("fDay");
   var fTime = document.getElementById("fTime");
   var fHideFull = document.getElementById("fHideFull");
-  var opts = mock.filterOptions();
+  var offerBanner = document.getElementById("offerBanner");
+  var offerBannerText = document.getElementById("offerBannerText");
 
-  fillSelect(fService, opts.services, "All services");
-  fillSelect(fVenue, opts.venues, "All venues");
-  fillSelect(fDay, opts.days, "All days");
-  fillSelect(fTime, opts.times, "All times");
+  function fillFilterSelects() {
+    var opts = mock.filterOptions();
+    fillSelect(fService, opts.services, "All services");
+    fillSelect(fVenue, opts.venues, "All venues");
+    fillSelect(fDay, opts.days, "All days");
+    fillSelect(fTime, opts.times, "All times");
+  }
+
+  function setBanner(kind, text) {
+    if (!offerBanner || !offerBannerText) return;
+    if (!text) {
+      offerBanner.hidden = true;
+      return;
+    }
+    offerBanner.hidden = false;
+    offerBanner.className =
+      "offer-banner" + (kind === "error" ? " offer-banner--error" : "");
+    offerBannerText.textContent = text;
+  }
 
   function currentFilters() {
     return {
@@ -1307,17 +1329,20 @@
   function slotRowHtml(slot, svc) {
     var full = mock.isFull(slot);
     var left = mock.seatsLeft(slot);
-    var badge = full
-      ? '<span class="badge badge--full">' + ICONS.x + " Fully booked</span>"
-      : '<span class="badge badge--open">' + ICONS.check + " " + left + " left</span>";
-    var cta = full ? "Join waiting list" : "Book place";
+    var enquireOnly = !!(slot.enquireOnly || (svc && svc.enquireOnly));
+    var badge = enquireOnly
+      ? '<span class="badge badge--open">' + ICONS.info + " Enquire</span>"
+      : full
+        ? '<span class="badge badge--full">' + ICONS.x + " Fully booked</span>"
+        : '<span class="badge badge--open">' + ICONS.check + " " + left + " left</span>";
+    var cta = enquireOnly ? "Enquire" : full ? "Join waiting list" : "Book place";
     var ageLabel = (svc && svc.ageHint) || "From 3 years+";
     var timeCell = slot.blockId
       ? esc(slot.timeLabel)
       : esc(dayAbbrev(slot.day)) + " " + esc(slot.timeLabel);
     return (
       '<div class="slot-row' +
-      (full ? " slot-row--full" : "") +
+      (full && !enquireOnly ? " slot-row--full" : "") +
       '">' +
       '<div class="slot-col">' +
       '<span class="slot-col__label">Time</span>' +
@@ -1341,7 +1366,7 @@
       '<div class="slot-col slot-col--action">' +
       '<span class="slot-col__label">Action</span>' +
       '<button type="button" class="btn' +
-      (full ? " btn--wait" : " btn--book") +
+      (enquireOnly ? " btn--wait" : full ? " btn--wait" : " btn--book") +
       '" data-enquire="' +
       esc(slot.id) +
       '">' +
@@ -1598,11 +1623,16 @@
     var svc = mock.serviceById(slot.serviceId);
     var full = mock.isFull(slot);
     var left = mock.seatsLeft(slot);
+    var enquireOnly = !!(slot.enquireOnly || (svc && svc.enquireOnly));
     var sheet = document.getElementById("actionSheet");
     var title = document.getElementById("sheetTitle");
     var body = document.getElementById("sheetBody");
     var mail = document.getElementById("sheetMail");
-    title.textContent = full ? "Join waiting list / enquire" : "Book this place";
+    title.textContent = enquireOnly
+      ? "Enquire about this course"
+      : full
+        ? "Join waiting list / enquire"
+        : "Book this place";
     body.textContent =
       (svc ? svc.name : "Session") +
       " · " +
@@ -1611,9 +1641,11 @@
       slot.timeLabel +
       " · " +
       mock.venueLabel(slot.venue) +
-      (full
-        ? " — currently fully booked. Tell us you’d like to join the waiting list."
-        : " — " + left + " place(s) available in this preview. Live booking comes next; for now email the office to reserve.");
+      (enquireOnly
+        ? " — email the office to register interest. Times open closer to the dates."
+        : full
+          ? " — currently fully booked. Tell us you’d like to join the waiting list."
+          : " — " + left + " place(s) available. Email the office to reserve (online checkout for weekly places comes next).");
     var subject = encodeURIComponent(
       "Booking enquiry — " +
         (svc ? svc.name : "session") +
@@ -1636,7 +1668,11 @@
         "\nSlot ref: " +
         slot.id +
         "\nStatus: " +
-        (full ? "Fully booked / waiting list" : left + " place(s) in preview") +
+        (enquireOnly
+          ? "Enquire / half-term interest"
+          : full
+            ? "Fully booked / waiting list"
+            : left + " place(s) available") +
         "\n\nChild name:\nParent name:\nPhone:\n\nThanks"
     );
     mail.href = "mailto:info@clubsensational.org?subject=" + subject + "&body=" + text;
@@ -1696,7 +1732,30 @@
     el.addEventListener("change", refresh);
   });
 
-  refresh();
+  mock
+    .load()
+    .then(function () {
+      fillFilterSelects();
+      refresh();
+      var n = (mock.MOCK_SLOTS || []).length;
+      var weekly = mock.stats && mock.stats.weekly_slots;
+      setBanner(
+        "info",
+        "Live places from the club roster" +
+          (weekly != null ? " · " + weekly + " weekly times" : n ? " · " + n + " times" : "") +
+          (mock.TERM_LABEL ? " · " + mock.TERM_LABEL : "") +
+          ". Book or join a waiting list by emailing the office."
+      );
+    })
+    .catch(function () {
+      document.getElementById("serviceCards").innerHTML = "";
+      document.getElementById("timetableHost").innerHTML =
+        '<p class="page-empty">We couldn’t load live times just now. Please refresh the page or email info@clubsensational.org.</p>';
+      setBanner(
+        "error",
+        "Couldn’t load live availability. Refresh to try again, or contact the office."
+      );
+    });
 })();
   </script>
 </body>
