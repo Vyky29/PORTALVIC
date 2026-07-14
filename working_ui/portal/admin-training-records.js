@@ -1,6 +1,6 @@
 /**
- * Admin Training Records (Phase 1+2) — H&R sibling of employment contracts.
- * Event + multi-session + participants; signatures; expiry; external PDF evidence.
+ * Admin Training Records (Phase 1–3) — H&R sibling of employment contracts.
+ * Event + multi-session + participants; signatures; expiry; compliance; external PDF.
  */
 (function (global) {
   "use strict";
@@ -58,17 +58,39 @@
     return '<span class="' + cls + '">' + esc(k) + "</span>";
   }
 
-  function expiryFlag(expiresOn) {
-    var d = clean(expiresOn).slice(0, 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return "";
+  var EXPIRY_SOON_DAYS = 45;
+
+  function todayYmd() {
     var today = new Date();
-    var ymd =
+    return (
       today.getFullYear() +
       "-" +
       String(today.getMonth() + 1).padStart(2, "0") +
       "-" +
-      String(today.getDate()).padStart(2, "0");
-    if (d < ymd) return ' <span class="hr-pill">expired</span>';
+      String(today.getDate()).padStart(2, "0")
+    );
+  }
+
+  function daysUntil(dateYmd) {
+    var d = clean(dateYmd).slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return null;
+    var a = new Date(todayYmd() + "T12:00:00");
+    var b = new Date(d + "T12:00:00");
+    return Math.round((b.getTime() - a.getTime()) / 86400000);
+  }
+
+  function expiryBucket(expiresOn) {
+    var n = daysUntil(expiresOn);
+    if (n == null) return "";
+    if (n < 0) return "expired";
+    if (n <= EXPIRY_SOON_DAYS) return "soon";
+    return "ok";
+  }
+
+  function expiryFlag(expiresOn) {
+    var b = expiryBucket(expiresOn);
+    if (b === "expired") return ' <span class="hr-pill">expired</span>';
+    if (b === "soon") return ' <span class="hr-pill hr-pill--warn">due soon</span>';
     return "";
   }
 
@@ -105,6 +127,16 @@
       ".tr-sess__head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 8px;min-width:0}",
       ".tr-sess__head strong{min-width:0;overflow-wrap:break-word}",
       ".tr-file{display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-width:0}",
+      ".tr-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}",
+      ".tr-tabs button{font:inherit;padding:7px 12px;border-radius:999px;border:1px solid #cbd5e1;background:#fff;color:#334155;cursor:pointer}",
+      ".tr-tabs button[aria-current=true]{background:#0f2744;border-color:#0f2744;color:#fff}",
+      ".tr-filters{display:grid;grid-template-columns:minmax(0,1.4fr) repeat(3,minmax(0,1fr));gap:8px;margin:0 0 12px;min-width:0}",
+      "@media(max-width:820px){.tr-filters{grid-template-columns:1fr 1fr}}",
+      "@media(max-width:520px){.tr-filters{grid-template-columns:1fr}}",
+      ".tr-filters label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;color:#64748b;min-width:0}",
+      ".tr-filters input,.tr-filters select{font:inherit;font-weight:500;padding:7px 9px;border:1px solid #cbd5e1;border-radius:10px;min-width:0}",
+      ".tr-compliance-sum{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}",
+      ".tr-compliance-sum span{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#f1f5f9;font-size:12px;font-weight:700;color:#334155;min-width:0;overflow-wrap:break-word}",
     ].join("");
     var el = document.createElement("style");
     el.id = "adminTrainingRecordsStyle";
@@ -163,42 +195,211 @@
     });
   }
 
-  function renderList(root, records) {
-    var rows = (records || [])
-      .map(function (r) {
-        return (
-          "<tr><td><strong>" +
-          esc(r.title) +
-          "</strong><div class=\"tr-muted\">" +
-          esc(typeLabel(r.training_type)) +
-          "</div></td><td>" +
-          statusPill(r.status) +
-          "</td><td>" +
-          esc(r.venue_label || "—") +
-          "</td><td>" +
-          esc(r.expires_on || "—") +
-          expiryFlag(r.expires_on) +
-          "</td><td>" +
-          esc(r.total_hours != null ? String(r.total_hours) : "—") +
-          '</td><td><button type="button" class="btn btn--sm btn--ghost" data-tr-open="' +
-          esc(r.id) +
-          '">Open</button></td></tr>'
-        );
-      })
-      .join("");
+  function filterRecords(records, filters) {
+    var q = clean(filters && filters.q).toLowerCase();
+    var status = clean(filters && filters.status).toLowerCase();
+    var type = clean(filters && filters.type);
+    var expiry = clean(filters && filters.expiry).toLowerCase();
+    return (records || []).filter(function (r) {
+      if (status && clean(r.status).toLowerCase() !== status) return false;
+      if (type && clean(r.training_type) !== type) return false;
+      if (expiry === "none" && r.expires_on) return false;
+      if (expiry === "expired" && expiryBucket(r.expires_on) !== "expired") return false;
+      if (expiry === "soon" && expiryBucket(r.expires_on) !== "soon") return false;
+      if (expiry === "set" && !r.expires_on) return false;
+      if (q) {
+        var hay = (
+          clean(r.title) +
+          " " +
+          typeLabel(r.training_type) +
+          " " +
+          clean(r.venue_label)
+        ).toLowerCase();
+        if (hay.indexOf(q) < 0) return false;
+      }
+      return true;
+    });
+  }
+
+  function complianceRowsFromRecords(records) {
+    var rows = [];
+    (records || []).forEach(function (r) {
+      if (!r.expires_on || clean(r.status) === "cancelled") return;
+      var bucket = expiryBucket(r.expires_on);
+      if (bucket !== "expired" && bucket !== "soon") return;
+      rows.push({
+        id: r.id,
+        title: r.title,
+        training_type: r.training_type,
+        status: r.status,
+        expires_on: r.expires_on,
+        venue_label: r.venue_label,
+        bucket: bucket,
+        days: daysUntil(r.expires_on),
+      });
+    });
+    rows.sort(function (a, b) {
+      return String(a.expires_on).localeCompare(String(b.expires_on));
+    });
+    return rows;
+  }
+
+  function renderList(root, state) {
+    var tab = state.listTab || "records";
+    var filters = state.filters || { q: "", status: "", type: "", expiry: "" };
+    var filtered = filterRecords(state.records, filters);
+    var compliance = complianceRowsFromRecords(state.records);
+    var expiredN = compliance.filter(function (r) {
+      return r.bucket === "expired";
+    }).length;
+    var soonN = compliance.filter(function (r) {
+      return r.bucket === "soon";
+    }).length;
+
+    var tabs =
+      '<div class="tr-tabs" role="tablist">' +
+      '<button type="button" data-tr-tab="records" aria-current="' +
+      (tab === "records" ? "true" : "false") +
+      '">All records</button>' +
+      '<button type="button" data-tr-tab="compliance" aria-current="' +
+      (tab === "compliance" ? "true" : "false") +
+      '">Expiry watch' +
+      (expiredN + soonN ? " (" + (expiredN + soonN) + ")" : "") +
+      "</button></div>";
+
+    var body = "";
+    if (tab === "compliance") {
+      var cRows = compliance
+        .map(function (r) {
+          var due =
+            r.bucket === "expired"
+              ? "Expired " + Math.abs(r.days) + "d ago"
+              : "Due in " + r.days + "d";
+          return (
+            "<tr><td><strong>" +
+            esc(r.title) +
+            '</strong><div class="tr-muted">' +
+            esc(typeLabel(r.training_type)) +
+            "</div></td><td>" +
+            statusPill(r.status) +
+            "</td><td>" +
+            esc(r.expires_on) +
+            expiryFlag(r.expires_on) +
+            '</td><td><span class="tr-muted">' +
+            esc(due) +
+            '</span></td><td><button type="button" class="btn btn--sm btn--ghost" data-tr-open="' +
+            esc(r.id) +
+            '">Open</button></td></tr>'
+          );
+        })
+        .join("");
+      body =
+        '<div class="tr-compliance-sum">' +
+        "<span>Expired: " +
+        expiredN +
+        "</span><span>Due within " +
+        EXPIRY_SOON_DAYS +
+        " days: " +
+        soonN +
+        "</span></div>" +
+        '<p class="tr-muted">Records with an expiry date that have already passed or fall in the next ' +
+        EXPIRY_SOON_DAYS +
+        " days. Cancelled records are excluded.</p>" +
+        '<div class="tr-tbl-wrap"><table class="tr-tbl"><thead><tr>' +
+        "<th>Title</th><th>Status</th><th>Expires</th><th>Watch</th><th></th>" +
+        "</tr></thead><tbody>" +
+        (cRows || '<tr><td colspan="5" class="tr-muted">Nothing expired or due soon.</td></tr>') +
+        "</tbody></table></div>";
+    } else {
+      var rows = filtered
+        .map(function (r) {
+          return (
+            "<tr><td><strong>" +
+            esc(r.title) +
+            "</strong><div class=\"tr-muted\">" +
+            esc(typeLabel(r.training_type)) +
+            "</div></td><td>" +
+            statusPill(r.status) +
+            "</td><td>" +
+            esc(r.venue_label || "—") +
+            "</td><td>" +
+            esc(r.expires_on || "—") +
+            expiryFlag(r.expires_on) +
+            "</td><td>" +
+            esc(r.total_hours != null ? String(r.total_hours) : "—") +
+            '</td><td><button type="button" class="btn btn--sm btn--ghost" data-tr-open="' +
+            esc(r.id) +
+            '">Open</button></td></tr>'
+          );
+        })
+        .join("");
+      body =
+        '<div class="tr-filters">' +
+        '<label>Search<input id="trFilterQ" type="search" placeholder="Title, type, venue" value="' +
+        esc(filters.q || "") +
+        '" /></label>' +
+        '<label>Status<select id="trFilterStatus">' +
+        '<option value="">All</option>' +
+        ["draft", "open", "completed", "cancelled"]
+          .map(function (s) {
+            return (
+              '<option value="' +
+              s +
+              '"' +
+              (filters.status === s ? " selected" : "") +
+              ">" +
+              s +
+              "</option>"
+            );
+          })
+          .join("") +
+        "</select></label>" +
+        '<label>Type<select id="trFilterType"><option value="">All</option>' +
+        TYPES.map(function (t) {
+          return (
+            '<option value="' +
+            esc(t.code) +
+            '"' +
+            (filters.type === t.code ? " selected" : "") +
+            ">" +
+            esc(t.label) +
+            "</option>"
+          );
+        }).join("") +
+        "</select></label>" +
+        '<label>Expiry<select id="trFilterExpiry">' +
+        '<option value="">All</option>' +
+        '<option value="set"' +
+        (filters.expiry === "set" ? " selected" : "") +
+        ">Has expiry</option>" +
+        '<option value="none"' +
+        (filters.expiry === "none" ? " selected" : "") +
+        ">No expiry</option>" +
+        '<option value="soon"' +
+        (filters.expiry === "soon" ? " selected" : "") +
+        ">Due soon</option>" +
+        '<option value="expired"' +
+        (filters.expiry === "expired" ? " selected" : "") +
+        ">Expired</option>" +
+        "</select></label></div>" +
+        '<div class="tr-tbl-wrap"><table class="tr-tbl"><thead><tr>' +
+        "<th>Title</th><th>Status</th><th>Venue</th><th>Expires</th><th>Hours</th><th></th>" +
+        "</tr></thead><tbody>" +
+        (rows || '<tr><td colspan="6" class="tr-muted">No matching training records.</td></tr>') +
+        "</tbody></table></div>";
+    }
+
     root.innerHTML =
       '<div class="tr-grid"><div class="tr-card">' +
       "<h3>Training records</h3>" +
       '<p class="tr-muted">Real training events: evacuation, venue induction, shadowing, briefings, external certificates. Separate from Induction / swim course progress and the HR matrix.</p>' +
+      tabs +
       '<div class="tr-actions">' +
       '<button type="button" class="btn btn--pri" id="trNewBtn">+ New training record</button>' +
       '<button type="button" class="btn btn--ghost" id="trRefreshBtn">Refresh</button>' +
       "</div>" +
-      '<div class="tr-tbl-wrap"><table class="tr-tbl"><thead><tr>' +
-      "<th>Title</th><th>Status</th><th>Venue</th><th>Expires</th><th>Hours</th><th></th>" +
-      "</tr></thead><tbody>" +
-      (rows || '<tr><td colspan="6" class="tr-muted">No training records yet.</td></tr>') +
-      "</tbody></table></div></div></div>";
+      body +
+      "</div></div>";
   }
 
   function typeOptions(selected) {
@@ -634,6 +835,20 @@
     if (upd.error) throw upd.error;
   }
 
+  async function maybeAutoCompleteIfAllSigned(sb, detail) {
+    if (!sb || !detail || !detail.record || !detail.record.id) return false;
+    var st = clean(detail.record.status).toLowerCase();
+    if (st === "completed" || st === "cancelled" || st === "draft") return false;
+    var parts = detail.participants || [];
+    if (!parts.length) return false;
+    for (var i = 0; i < parts.length; i++) {
+      if (!parts[i].signed_at) return false;
+    }
+    await markCompleted(detail.record.id);
+    detail.record.status = "completed";
+    return true;
+  }
+
   async function requestSignature(sb, record, participant, authUserId) {
     var title = "Sign training attendance — " + clean(record.title || "Training");
     var body = JSON.stringify({
@@ -698,7 +913,19 @@
   function mount(root) {
     if (!root) return;
     injectStylesOnce();
-    var state = { mode: "list", recordId: null, records: [], staff: [] };
+    var state = {
+      mode: "list",
+      listTab: "records",
+      recordId: null,
+      records: [],
+      staff: [],
+      filters: { q: "", status: "", type: "", expiry: "" },
+    };
+
+    function paintList() {
+      renderList(root, state);
+      bindList(root);
+    }
 
     function showList() {
       state.mode = "list";
@@ -713,8 +940,7 @@
         .then(function (parts) {
           state.records = parts[0];
           state.staff = parts[1];
-          renderList(root, state.records);
-          bindList(root);
+          paintList();
         })
         .catch(function (err) {
           root.innerHTML =
@@ -736,13 +962,31 @@
       Promise.all([detailP, staffP])
         .then(function (parts) {
           state.staff = parts[1];
-          renderEditor(root, parts[0], state.staff);
-          bindEditor(root);
+          var detail = parts[0];
+          if (!recordId || !detail.record) {
+            renderEditor(root, detail, state.staff);
+            bindEditor(root);
+            return null;
+          }
+          return maybeAutoCompleteIfAllSigned(sb, detail).then(function (did) {
+            if (did) toast("All signed — marked completed.", "ok");
+            renderEditor(root, detail, state.staff);
+            bindEditor(root);
+          });
         })
         .catch(function (err) {
           toast((err && err.message) || "Could not open record", "err");
           showList();
         });
+    }
+
+    function readFilters(el) {
+      state.filters = {
+        q: clean(el.querySelector("#trFilterQ") && el.querySelector("#trFilterQ").value),
+        status: clean(el.querySelector("#trFilterStatus") && el.querySelector("#trFilterStatus").value),
+        type: clean(el.querySelector("#trFilterType") && el.querySelector("#trFilterType").value),
+        expiry: clean(el.querySelector("#trFilterExpiry") && el.querySelector("#trFilterExpiry").value),
+      };
     }
 
     function bindList(el) {
@@ -754,6 +998,32 @@
       }
       var ref = el.querySelector("#trRefreshBtn");
       if (ref) ref.addEventListener("click", showList);
+      el.querySelectorAll("[data-tr-tab]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          state.listTab = btn.getAttribute("data-tr-tab") || "records";
+          paintList();
+        });
+      });
+      ["#trFilterQ", "#trFilterStatus", "#trFilterType", "#trFilterExpiry"].forEach(function (sel) {
+        var node = el.querySelector(sel);
+        if (!node) return;
+        var ev = sel === "#trFilterQ" ? "input" : "change";
+        node.addEventListener(ev, function () {
+          readFilters(el);
+          paintList();
+          var focusSel = sel;
+          var again = root.querySelector(focusSel);
+          if (again && sel === "#trFilterQ") {
+            try {
+              again.focus();
+              if (typeof again.setSelectionRange === "function") {
+                var len = again.value.length;
+                again.setSelectionRange(len, len);
+              }
+            } catch (_) {}
+          }
+        });
+      });
       el.querySelectorAll("[data-tr-open]").forEach(function (btn) {
         btn.addEventListener("click", function () {
           showEditor(btn.getAttribute("data-tr-open"));

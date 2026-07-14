@@ -1119,7 +1119,9 @@
     return '<details class="hr-sec" open data-sec="training-records">'
       + '<summary>' + icon("doc", 17) + '<span>Training records (Portal)</span>' + chev + '</summary>'
       + '<p class="hr-contract-loading" id="hrTrainingLoadMsg">Loading training records…</p>'
-      + '<div class="hr-contract-list" id="hrTrainingList" hidden></div></details>';
+      + '<div class="hr-contract-list" id="hrTrainingList" hidden></div>'
+      + '<p style="margin:10px 0 0"><button type="button" class="btn btn--ghost btn--sm" id="hrOpenTrainingRecords">Open Training records module</button></p>'
+      + '</details>';
   }
 
   function hrSupabaseUrl() {
@@ -1350,6 +1352,20 @@
   function bindTrainingRecords(screen, personRow) {
     var staffId = resolvePersonStaffId(nk(personRow), personRow) || (personRow && personRow.staff_id) || null;
     loadPersonTrainingRecords(staffId, screen);
+    var openBtn = screen && screen.querySelector("#hrOpenTrainingRecords");
+    if (openBtn) {
+      openBtn.addEventListener("click", function () {
+        closeScreen();
+        var jump = document.querySelector('[data-view-target="staffhr_training_records"]');
+        if (jump) {
+          jump.click();
+          return;
+        }
+        if (typeof global.setView === "function") {
+          try { global.setView("staffhr_training_records"); } catch (_) {}
+        }
+      });
+    }
   }
 
   function daysOffSectionHtml(nameKey, personRow) {

@@ -449,6 +449,18 @@
       if (type === "induction_certificate") {
         return "clubSENsational General Induction Certificate";
       }
+      if (type === "training_attendance_record") {
+        const t = String((doc && doc.title) || "").trim();
+        return t || "Training attendance record";
+      }
+      if (type === "training_external_certificate") {
+        const t = String((doc && doc.title) || "").trim();
+        return t || "External training certificate";
+      }
+      if (type === "ld_funding_letter") {
+        const t = String((doc && doc.title) || "").trim();
+        return t || "L&D funding letter";
+      }
       if (type === "employment_contract") {
         const t = String((doc && doc.title) || "").trim();
         return t || "Employment contract";
@@ -466,6 +478,19 @@
         type === "induction_certificate"
       ) {
         return prettyDateTime(doc.created_at);
+      }
+      if (
+        type === "training_attendance_record" ||
+        type === "training_external_certificate" ||
+        type === "ld_funding_letter"
+      ) {
+        const label =
+          type === "training_attendance_record"
+            ? "Training attendance"
+            : type === "training_external_certificate"
+              ? "External certificate"
+              : "L&D funding letter";
+        return `${label} • ${prettyDate(doc.related_date || doc.created_at)}`;
       }
       return `${String(doc.document_type || "").toLowerCase()} • ${prettyDate(doc.related_date || doc.created_at)}`;
     }
@@ -934,6 +959,7 @@
           t === "induction_certificate" ||
           t === "ld_funding_letter" ||
           t === "training_attendance_record" ||
+          t === "training_external_certificate" ||
           t.includes("train") ||
           t.includes("induction") ||
           t.includes("safeguard"))
