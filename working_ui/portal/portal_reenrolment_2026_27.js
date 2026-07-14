@@ -3585,7 +3585,9 @@
         return;
       }
       if ($("reDoneMsg")) {
-        $("reDoneMsg").textContent = out.message || "Thank you — your re-enrolment has been sent to the club office.";
+        $("reDoneMsg").textContent =
+          out.message ||
+          "Thank you — your re-enrolment has been sent to the club office for review.";
       }
       var offerHost = $("reDoneOffer");
       if (offerHost) {
