@@ -10,9 +10,14 @@ import type { MadreDoc } from "../_shared/portal_madre_fold_logic.ts";
 import { buildWeeklyOfferFromMadre } from "../_shared/portal_booking_seat_helper.ts";
 import {
   CRASH_HOLD_MINUTES,
+  CRASH_INDIVIDUAL_OPENS_ON,
+  CRASH_INDIVIDUAL_PRE_WINDOW_TO,
+  CRASH_PRICES,
   CRASH_SUMMER_WEEKS,
+  crashIndividualDaysOpen,
   crashSlotsFor,
   type CrashActivity,
+  type CrashWeekId,
 } from "../_shared/crash_summer_2026.ts";
 
 const TERM_KEY = "summer-2026";
@@ -46,6 +51,7 @@ const AUTUMN_TERM = {
 async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
   const weeks = [CRASH_SUMMER_WEEKS.w1, CRASH_SUMMER_WEEKS.w2];
   const dates = weeks.flatMap((w) => w.dates);
+  const individualOpen = crashIndividualDaysOpen();
 
   await admin
     .from("portal_crash_summer_booking_lines")
@@ -73,31 +79,76 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
   ];
 
   const intensiveSlots: Record<string, unknown>[] = [];
+
+  // Weekly packs only as the primary bookable units (2 weeks × activities).
   for (const week of weeks) {
-    for (const date of week.dates) {
-      const d = new Date(`${date}T12:00:00Z`);
-      const dow = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()];
-      const dayLabel = `${week.id === "w1" ? "Week 1" : "Week 2"} · ${dow} ${Number(date.slice(8, 10))} Jul`;
-      for (const act of activities) {
-        const defs = crashSlotsFor(act.id);
-        let booked = 0;
-        for (const slot of defs) {
-          if (taken.has(`${act.id}|${date}|${slot.id}`)) booked += 1;
+    const weekLabel =
+      week.id === "w1"
+        ? "Week 1 · Tue 21 – Fri 24 Jul"
+        : "Week 2 · Tue 28 – Fri 31 Jul";
+    for (const act of activities) {
+      const defs = crashSlotsFor(act.id);
+      let packFree = 0;
+      for (const slot of defs) {
+        const freeAllWeek = week.dates.every(
+          (date) => !taken.has(`${act.id}|${date}|${slot.id}`),
+        );
+        if (freeAllWeek) packFree += 1;
+      }
+      const start = defs[0]?.start || "10:00";
+      const end = defs[defs.length - 1]?.end || "12:00";
+      const packPrice =
+        act.id === "climbing"
+          ? CRASH_PRICES.climbing.weekly_pack
+          : CRASH_PRICES.swimming.weekly_pack;
+      intensiveSlots.push({
+        id: `crash-pack-${week.id}-${act.id}`,
+        serviceId: "intensive",
+        blockId: "summer_july",
+        weekId: week.id,
+        bookingMode: "weekly_pack",
+        venue: act.venue,
+        day: weekLabel,
+        timeLabel: `${start} – ${end} · ${act.label} · 4-day week pack`,
+        sortTime: start,
+        capacity: defs.length,
+        taken: Math.max(0, defs.length - packFree),
+        packPrice,
+        dateIso: week.dates[0],
+      });
+    }
+  }
+
+  // Loose / individual hours only once the Fri 17 Jul window opens.
+  if (individualOpen) {
+    for (const week of weeks) {
+      for (const date of week.dates) {
+        const d = new Date(`${date}T12:00:00Z`);
+        const dow = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()];
+        const dayLabel = `${week.id === "w1" ? "Week 1" : "Week 2"} · ${dow} ${Number(date.slice(8, 10))} Jul · individual`;
+        for (const act of activities) {
+          const defs = crashSlotsFor(act.id);
+          let booked = 0;
+          for (const slot of defs) {
+            if (taken.has(`${act.id}|${date}|${slot.id}`)) booked += 1;
+          }
+          const start = defs[0]?.start || "10:00";
+          const end = defs[defs.length - 1]?.end || "12:00";
+          intensiveSlots.push({
+            id: `crash-day-${act.id}-${date}`,
+            serviceId: "intensive",
+            blockId: "summer_july",
+            weekId: week.id as CrashWeekId,
+            bookingMode: "individual_days",
+            venue: act.venue,
+            day: dayLabel,
+            timeLabel: `${start} – ${end} · ${act.label} · individual hours`,
+            sortTime: `${start}-d`,
+            capacity: defs.length,
+            taken: booked,
+            dateIso: date,
+          });
         }
-        const start = defs[0]?.start || "10:00";
-        const end = defs[defs.length - 1]?.end || "12:00";
-        intensiveSlots.push({
-          id: `crash-${act.id}-${date}`,
-          serviceId: "intensive",
-          blockId: "summer_july",
-          venue: act.venue,
-          day: dayLabel,
-          timeLabel: `${start} – ${end} · ${act.label}`,
-          sortTime: start,
-          capacity: defs.length,
-          taken: booked,
-          dateIso: date,
-        });
       }
     }
   }
@@ -179,17 +230,27 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
     }
   }
 
+  const packNote = individualOpen
+    ? "Weekly packs still preferred. Individual / leftover hours are now open."
+    : `Book as a Tue–Fri week pack only until Fri ${CRASH_INDIVIDUAL_OPENS_ON.slice(8)} July. Individual hours open Fri ${CRASH_INDIVIDUAL_OPENS_ON.slice(8)} – Sun ${CRASH_INDIVIDUAL_PRE_WINDOW_TO.slice(8)} July.`;
+
   return {
     hold_minutes: CRASH_HOLD_MINUTES,
+    individual_days_open: individualOpen,
+    individual_opens_on: CRASH_INDIVIDUAL_OPENS_ON,
     slots: intensiveSlots,
     blocks: [
       {
         id: "summer_july",
         badge: "SUMMER TERM 2026",
         title: "Summer holiday crash courses",
-        range: "Week 1: Tue 21 – Fri 24 July · Week 2: Tue 28 – Fri 31 July 2026",
+        range:
+          "Week 1: Tue 21 – Fri 24 July · Week 2: Tue 28 – Fri 31 July 2026 · " +
+          packNote,
         badgeIcon: "sun",
         sort: 1,
+        bookAsWeekPack: true,
+        individualDaysOpen: individualOpen,
         dates: weeks.flatMap((w) =>
           w.dates.map((iso) => ({
             iso,

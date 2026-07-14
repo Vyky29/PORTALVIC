@@ -41,6 +41,8 @@
     },
   };
 
+  var INDIVIDUAL_OPENS_ON = "2026-07-17";
+
   var state = {
     sessionToken: "",
     children: [],
@@ -50,6 +52,7 @@
     packSlots: { climbing: "", swimming: [] },
     daySlots: { climbing: {}, swimming: {} },
     availability: null,
+    individualDaysOpen: false,
   };
 
   function $(id) {
@@ -506,12 +509,67 @@
     updateTotal();
   }
 
+  function londonDateIso() {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/London",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+  }
+
+  function individualOpenLocally() {
+    return londonDateIso() >= INDIVIDUAL_OPENS_ON;
+  }
+
+  function applyIndividualGate(open) {
+    state.individualDaysOpen = !!open;
+    var btn = $("csModeIndividual");
+    var hint = $("csModeHint");
+    if (btn) {
+      btn.disabled = !state.individualDaysOpen;
+      btn.setAttribute("aria-disabled", state.individualDaysOpen ? "false" : "true");
+      if (!state.individualDaysOpen) {
+        btn.title = "Opens Friday 17 July 2026";
+      } else {
+        btn.removeAttribute("title");
+      }
+    }
+    if (hint) {
+      hint.textContent = state.individualDaysOpen
+        ? "Individual leftover hours are open. Weekly packs still have priority."
+        : "Until Friday 17 July you can only book four-day weekly packs. Individual hours unlock that Friday.";
+    }
+    if (!state.individualDaysOpen && state.mode === "individual_days") {
+      state.mode = "weekly_pack";
+      var host = $("csModes");
+      if (host) {
+        host.querySelectorAll("[data-mode]").forEach(function (b) {
+          b.setAttribute(
+            "aria-pressed",
+            b.getAttribute("data-mode") === "weekly_pack" ? "true" : "false",
+          );
+        });
+      }
+      emptySlotState();
+      renderSlots();
+    }
+  }
+
   function bindModes() {
     var host = $("csModes");
     if (!host) return;
     host.querySelectorAll("[data-mode]").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        state.mode = btn.getAttribute("data-mode") || "weekly_pack";
+        var next = btn.getAttribute("data-mode") || "weekly_pack";
+        if (next === "individual_days" && !state.individualDaysOpen) {
+          showNotice(
+            "error",
+            "Individual hours open from Friday 17 July. Until then book a Tue–Fri weekly pack.",
+          );
+          return;
+        }
+        state.mode = next;
         host.querySelectorAll("[data-mode]").forEach(function (b) {
           b.setAttribute("aria-pressed", b === btn ? "true" : "false");
         });
@@ -549,6 +607,11 @@
       });
       if (res.ok && data.ok) {
         state.availability = data.availability || null;
+        applyIndividualGate(
+          typeof data.individual_days_open === "boolean"
+            ? data.individual_days_open
+            : individualOpenLocally(),
+        );
         if (data.catalog) {
           if (data.catalog.climbing_slots) CATALOG.climbing_slots = data.catalog.climbing_slots;
           if (data.catalog.swimming_slots) CATALOG.swimming_slots = data.catalog.swimming_slots;
@@ -557,9 +620,11 @@
           if (data.catalog.swim_time_bands) CATALOG.swim_time_bands = data.catalog.swim_time_bands;
           if (data.catalog.swim_max_slots) CATALOG.swim_max = data.catalog.swim_max_slots;
         }
+      } else {
+        applyIndividualGate(individualOpenLocally());
       }
     } catch (_e) {
-      /* keep local catalog */
+      applyIndividualGate(individualOpenLocally());
     }
     renderSlots();
   }
@@ -724,9 +789,11 @@
         showNotice(
           "error",
           (data && data.message) ||
-            (data && data.error === "slot_unavailable"
-              ? "One or more slots were just taken. Please pick another time."
-              : "Could not reserve — please try again."),
+            (data && data.error === "individual_days_not_open"
+              ? "Individual hours open from Friday 17 July. Until then book a weekly pack."
+              : data && data.error === "slot_unavailable"
+                ? "One or more slots were just taken. Please pick another time."
+                : "Could not reserve — please try again."),
         );
         await loadAvailability();
         return;
@@ -753,6 +820,7 @@
   }
 
   async function boot() {
+    applyIndividualGate(individualOpenLocally());
     renderWeeks();
     bindModes();
     bindActivities();

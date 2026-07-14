@@ -8,6 +8,7 @@ import { parentPortalCorsHeaders } from "../_shared/parent_portal_auth.ts";
 import {
   CRASH_HOLD_MINUTES,
   crashCatalogPublic,
+  crashIndividualDaysOpen,
   crashSlotsFor,
   type CrashActivity,
   type CrashWeekId,
@@ -116,6 +117,8 @@ Deno.serve(async (req) => {
     capacity,
     hold_minutes: CRASH_HOLD_MINUTES,
     availability,
+    individual_days_open: crashIndividualDaysOpen(),
+    individual_opens_on: "2026-07-17",
     pay_in_full_required: true,
   });
 });

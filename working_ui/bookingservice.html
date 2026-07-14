@@ -1108,7 +1108,7 @@
     </div>
   </div>
 
-  <script src="/portal/portal_booking_offer.js?v=20260714-booking-autumn1"></script>
+  <script src="/portal/portal_booking_offer.js?v=20260714-booking-crash-pack1"></script>
   <script>
 (function () {
   "use strict";
@@ -1361,7 +1361,15 @@
       : full
         ? '<span class="badge badge--full">' + ICONS.x + " Fully booked</span>"
         : '<span class="badge badge--open">' + ICONS.check + " " + left + " left</span>";
-    var cta = enquireOnly ? "Enquire" : full ? "Join waiting list" : "Book place";
+    var cta = enquireOnly
+      ? "Enquire"
+      : slot.bookingMode === "weekly_pack"
+        ? full
+          ? "Join waiting list"
+          : "Book week pack"
+        : full
+          ? "Join waiting list"
+          : "Book place";
     var ageLabel = (svc && svc.ageHint) || "From 3 years+";
     var timeCell = slot.blockId
       ? esc(slot.timeLabel)
@@ -1576,7 +1584,7 @@
       esc(s.name) +
       "</h3>" +
       "</div></div>" +
-      '<p class="timetable__range">Summer crash weeks first, then each half term — dates differ by block.</p>' +
+      '<p class="timetable__range">Two summer crash weeks (Tue–Fri packs). Individual leftover hours open from Fri 17 July. Then each half term.</p>' +
       "</div>" +
       body +
       "</article>"
@@ -1662,9 +1670,13 @@
     var mail = document.getElementById("sheetMail");
     title.textContent = enquireOnly
       ? "Enquire about this course"
-      : full
-        ? "Join waiting list / enquire"
-        : "Book this place";
+      : slot.bookingMode === "weekly_pack"
+        ? full
+          ? "Join waiting list / enquire"
+          : "Book this week pack"
+        : full
+          ? "Join waiting list / enquire"
+          : "Book this place";
     body.textContent =
       (svc ? svc.name : "Session") +
       " · " +
@@ -1675,9 +1687,15 @@
       mock.venueLabel(slot.venue) +
       (enquireOnly
         ? " — email the office to register interest. Times open closer to the dates."
-        : full
-          ? " — currently fully booked. Tell us you’d like to join the waiting list."
-          : " — " + left + " place(s) available. Email the office to reserve (online checkout for weekly places comes next).");
+        : slot.bookingMode === "weekly_pack"
+          ? full
+            ? " — this week pack is currently full. Ask to join the waiting list."
+            : " — four-day Tue–Fri block. Crash courses are sold as week packs; individual hours open from Fri 17 July."
+          : full
+            ? " — currently fully booked. Tell us you’d like to join the waiting list."
+            : " — " +
+              left +
+              " place(s) available (individual leftover hours). Email the office to reserve.");
     var subject = encodeURIComponent(
       "Booking enquiry — " +
         (svc ? svc.name : "session") +
@@ -1702,9 +1720,13 @@
         "\nStatus: " +
         (enquireOnly
           ? "Enquire / half-term interest"
-          : full
-            ? "Fully booked / waiting list"
-            : left + " place(s) available") +
+          : slot.bookingMode === "weekly_pack"
+            ? full
+              ? "Week pack full / waiting list"
+              : "Week pack (" + left + " place(s))"
+            : full
+              ? "Fully booked / waiting list"
+              : left + " place(s) available") +
         "\n\nChild name:\nParent name:\nPhone:\n\nThanks"
     );
     mail.href = "mailto:info@clubsensational.org?subject=" + subject + "&body=" + text;

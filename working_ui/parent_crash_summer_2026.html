@@ -240,7 +240,7 @@
       <section class="card">
         <h2>Week</h2>
         <div class="choices" id="csWeeks" role="group" aria-label="Week"></div>
-        <p class="muted">Weekly packs (Tue–Fri) have priority. Individual days are subject to remaining spaces.</p>
+        <p class="muted">Two weeks only (Tue–Fri). Until Friday 17 July you can book <strong>weekly packs</strong> only. From Fri 17 – Sun 19 July, leftover individual hours also open.</p>
       </section>
 
       <section class="card">
@@ -255,8 +255,9 @@
         <h2>Booking type</h2>
         <div class="choices" id="csModes" role="group" aria-label="Booking type">
           <button type="button" class="choice" data-mode="weekly_pack" aria-pressed="true">Four-day weekly pack</button>
-          <button type="button" class="choice" data-mode="individual_days" aria-pressed="false">Individual days</button>
+          <button type="button" class="choice" data-mode="individual_days" aria-pressed="false" id="csModeIndividual">Individual hours</button>
         </div>
+        <p class="muted" id="csModeHint">Individual hours unlock on Friday 17 July.</p>
       </section>
 
       <section class="card" id="csSlotsCard">
@@ -280,6 +281,6 @@
       </ul>
     </section>
   </div>
-  <script src="/portal/portal_crash_summer_2026.js?v=20260713-swim-mix4"></script>
+  <script src="/portal/portal_crash_summer_2026.js?v=20260714-pack-only"></script>
 </body>
 </html>

@@ -75,6 +75,29 @@ export const CRASH_PRICES = {
 
 export const CRASH_HOLD_MINUTES = 120;
 
+/**
+ * Weekly packs are always bookable.
+ * Individual / loose hours unlock from this London calendar date onward
+ * (Fri 17 Jul 2026 — leftover hours after pack priority window).
+ */
+export const CRASH_INDIVIDUAL_OPENS_ON = "2026-07-17";
+/** Messaging window before courses (Fri–Sun); packs still preferred. */
+export const CRASH_INDIVIDUAL_PRE_WINDOW_TO = "2026-07-19";
+
+export function crashLondonDateIso(now = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
+
+/** True once loose / individual-day hours may be booked (packs remain available). */
+export function crashIndividualDaysOpen(now = new Date()): boolean {
+  return crashLondonDateIso(now) >= CRASH_INDIVIDUAL_OPENS_ON;
+}
+
 export const CRASH_META = {
   climbing: {
     title: "Climbing",

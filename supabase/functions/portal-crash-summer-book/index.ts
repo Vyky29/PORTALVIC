@@ -16,6 +16,7 @@ import {
 } from "../_shared/portal_create_family_invoice.ts";
 import {
   CRASH_HOLD_MINUTES,
+  crashIndividualDaysOpen,
   quoteCrashSummerBooking,
   type CrashActivity,
   type CrashBookingMode,
@@ -81,6 +82,14 @@ Deno.serve(async (req) => {
   }
   if (mode !== "weekly_pack" && mode !== "individual_days") {
     return json(400, { ok: false, error: "invalid_mode" });
+  }
+  if (mode === "individual_days" && !crashIndividualDaysOpen()) {
+    return json(403, {
+      ok: false,
+      error: "individual_days_not_open",
+      message:
+        "Individual hours open from Friday 17 July. Until then only weekly packs (Tue–Fri blocks) can be booked.",
+    });
   }
 
   const { data: participant } = await supabase
