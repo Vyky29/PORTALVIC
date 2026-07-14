@@ -136,17 +136,26 @@ export async function buildPortalTaxInvoicePdf(
   const left = 50;
   const right = width - 50;
 
+  // Right header column: logo flush-right, company address + VAT snug underneath
+  const companyBlock = [...COMPANY_LINES, `VAT Number ${VAT_NUMBER}`];
+  let logoW = 0;
   let logoH = 0;
+  let logoBottom = height - 44;
   try {
     const logo = await pdf.embedPng(b64ToBytes(CLUBSENSATIONAL_LOGO_PNG_B64));
-    const logoW = 88;
-    logoH = (logo.height / logo.width) * logoW;
+    const natW = logo.width || 1;
+    const natH = logo.height || 1;
+    logoW = 72;
+    logoH = (natH / natW) * logoW;
+    const logoX = right - logoW;
+    const logoY = height - 44 - logoH;
     page.drawImage(logo, {
-      x: right - logoW,
-      y: height - 48 - logoH,
+      x: logoX,
+      y: logoY,
       width: logoW,
       height: logoH,
     });
+    logoBottom = logoY;
   } catch {
     /* logo optional */
   }
@@ -190,23 +199,11 @@ export async function buildPortalTaxInvoicePdf(
     y -= 12;
   }
 
-  // Company address (right under logo) + VAT under UNITED KINGDOM
-  let addrY = height - 48 - logoH - 14;
-  for (const line of COMPANY_LINES) {
+  // Company address + VAT — right-aligned, immediately under logo
+  let addrY = logoBottom - 6;
+  for (const line of companyBlock) {
     const tw = font.widthOfTextAtSize(line, 8);
     page.drawText(line, {
-      x: right - tw,
-      y: addrY,
-      size: 8,
-      font,
-      color: ink,
-    });
-    addrY -= 11;
-  }
-  {
-    const vatLine = `VAT Number ${VAT_NUMBER}`;
-    const tw = font.widthOfTextAtSize(vatLine, 8);
-    page.drawText(vatLine, {
       x: right - tw,
       y: addrY,
       size: 8,
