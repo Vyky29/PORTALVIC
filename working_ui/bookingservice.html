@@ -635,20 +635,24 @@
       list-style: none;
       cursor: pointer;
       display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 8px 10px;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
       padding: 12px 14px;
       font-weight: 800;
       color: var(--ink);
       min-width: 0;
       overflow-wrap: break-word;
       user-select: none;
+      position: relative;
+      padding-right: 28px;
     }
     .day-acc > summary::-webkit-details-marker { display: none; }
     .day-acc > summary::after {
       content: "";
-      margin-left: auto;
+      position: absolute;
+      top: 16px;
+      right: 14px;
       width: 8px;
       height: 8px;
       border-right: 2px solid var(--muted);
@@ -671,6 +675,8 @@
       gap: 6px;
       flex: 0 0 auto;
       font-weight: 800;
+      min-width: 0;
+      padding-right: 8px;
     }
     .day-acc__count {
       font-size: 0.78rem;
@@ -683,7 +689,7 @@
       gap: 5px;
       align-items: center;
       min-width: 0;
-      flex: 1 1 180px;
+      width: 100%;
     }
     .date-chip {
       display: inline-flex;
@@ -707,13 +713,13 @@
       opacity: 0.9;
     }
     .day-acc__remaining {
-      flex: 1 1 100%;
-      margin: 2px 0 0;
+      margin: 0;
       font-size: 0.78rem;
       font-weight: 700;
       color: var(--muted);
       min-width: 0;
       overflow-wrap: break-word;
+      width: 100%;
     }
     .day-acc__remaining strong {
       color: var(--ink);
