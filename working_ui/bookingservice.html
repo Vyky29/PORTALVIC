@@ -654,6 +654,7 @@
     .venue-block__title {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 8px;
       margin: 0 0 10px;
       font-size: clamp(1.15rem, 2.4vw, 1.35rem);
@@ -663,6 +664,37 @@
       overflow-wrap: break-word;
     }
     .venue-block__title svg { width: 22px; height: 22px; max-width: 22px; max-height: 22px; color: var(--blue); flex: 0 0 auto; }
+    .venue-block__activity {
+      font-size: 0.78em;
+      font-weight: 800;
+      color: var(--blueDeep);
+      background: var(--blueSoft);
+      border: 1px solid rgba(45, 132, 179, 0.22);
+      border-radius: 999px;
+      padding: 3px 10px;
+      line-height: 1.2;
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+    .slot-time__main {
+      display: block;
+      font-weight: 800;
+      color: var(--ink);
+    }
+    .slot-time__pack {
+      display: block;
+      margin-top: 2px;
+      font-size: 0.84em;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .slot-venue__activity {
+      display: block;
+      margin-top: 2px;
+      font-size: 0.86em;
+      font-weight: 700;
+      color: var(--blueDeep);
+    }
 
     .day-acc {
       border: 1px solid var(--line);
@@ -1108,7 +1140,7 @@
     </div>
   </div>
 
-  <script src="/portal/portal_booking_offer.js?v=20260714-booking-crash-pack1"></script>
+  <script src="/portal/portal_booking_offer.js?v=20260714-booking-crash-pack2"></script>
   <script>
 (function () {
   "use strict";
@@ -1371,9 +1403,27 @@
           ? "Join waiting list"
           : "Book place";
     var ageLabel = (svc && svc.ageHint) || "From 3 years+";
-    var timeCell = slot.blockId
-      ? esc(slot.timeLabel)
-      : esc(dayAbbrev(slot.day)) + " " + esc(slot.timeLabel);
+    var activityName = String(slot.activityName || "").trim();
+    var packLabel = String(slot.packLabel || "").trim();
+    var timeCell;
+    if (packLabel) {
+      timeCell =
+        '<span class="slot-time__main">' +
+        esc(slot.timeLabel) +
+        "</span>" +
+        '<span class="slot-time__pack">' +
+        esc(packLabel) +
+        "</span>";
+    } else if (slot.blockId) {
+      timeCell = esc(slot.timeLabel);
+    } else {
+      timeCell = esc(dayAbbrev(slot.day)) + " " + esc(slot.timeLabel);
+    }
+    var venueCell =
+      esc(mock.venueLabel(slot.venue)) +
+      (activityName
+        ? '<span class="slot-venue__activity">' + esc(activityName) + "</span>"
+        : "");
     return (
       '<div class="slot-row' +
       (full && !enquireOnly ? " slot-row--full" : "") +
@@ -1386,7 +1436,7 @@
       '<div class="slot-col">' +
       '<span class="slot-col__label">Venue</span>' +
       '<div class="slot-col__value">' +
-      esc(mock.venueLabel(slot.venue)) +
+      venueCell +
       "</div></div>" +
       '<div class="slot-col">' +
       '<span class="slot-col__label">Age</span>' +
@@ -1499,6 +1549,21 @@
           '<h4 class="venue-block__title">' +
           ICONS.pin +
           esc(vg.venueLabel) +
+          (function () {
+            var act = "";
+            (vg.days || []).some(function (dg) {
+              return (dg.slots || []).some(function (slot) {
+                if (slot.activityName) {
+                  act = String(slot.activityName);
+                  return true;
+                }
+                return false;
+              });
+            });
+            return act
+              ? '<span class="venue-block__activity">' + esc(act) + "</span>"
+              : "";
+          })() +
           "</h4>" +
           daysHtml +
           "</div>"

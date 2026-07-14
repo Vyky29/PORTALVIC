@@ -73,10 +73,30 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
     (lines || []).map((r) => `${r.activity}|${r.session_date}|${r.slot_id}`),
   );
 
-  const activities: { id: CrashActivity; venue: string; label: string }[] = [
-    { id: "climbing", venue: "Westway", label: "Climbing" },
-    { id: "swimming", venue: "Acton", label: "Swimming" },
+  const activities: {
+    id: CrashActivity;
+    venue: string;
+    activityName: string;
+  }[] = [
+    { id: "climbing", venue: "Westway", activityName: "Climbing Activity" },
+    { id: "swimming", venue: "Acton", activityName: "Aquatic Activity" },
   ];
+
+  function formatSessionClock(hhmm: string): string {
+    const [h, m] = String(hhmm || "00:00").split(":");
+    const hour = String(Number(h) || 0);
+    const min = String(m || "00").padStart(2, "0");
+    if (min === "00") return hour;
+    return `${hour}:${min}`;
+  }
+
+  /** First session length for display (swim 30′ / climb 60′) — not the full camp window. */
+  function sessionTimeLabel(activity: CrashActivity): string {
+    const defs = crashSlotsFor(activity);
+    const start = defs[0]?.start || "10:00";
+    const end = defs[0]?.end || "11:00";
+    return `${formatSessionClock(start)} – ${formatSessionClock(end)}`;
+  }
 
   const intensiveSlots: Record<string, unknown>[] = [];
 
@@ -95,8 +115,6 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
         );
         if (freeAllWeek) packFree += 1;
       }
-      const start = defs[0]?.start || "10:00";
-      const end = defs[defs.length - 1]?.end || "12:00";
       const packPrice =
         act.id === "climbing"
           ? CRASH_PRICES.climbing.weekly_pack
@@ -107,10 +125,13 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
         blockId: "summer_july",
         weekId: week.id,
         bookingMode: "weekly_pack",
+        crashActivity: act.id,
+        activityName: act.activityName,
         venue: act.venue,
         day: weekLabel,
-        timeLabel: `${start} – ${end} · ${act.label} · 4-day week pack`,
-        sortTime: start,
+        timeLabel: sessionTimeLabel(act.id),
+        packLabel: "4-day week pack",
+        sortTime: defs[0]?.start || "10:00",
         capacity: defs.length,
         taken: Math.max(0, defs.length - packFree),
         packPrice,
@@ -132,18 +153,19 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
           for (const slot of defs) {
             if (taken.has(`${act.id}|${date}|${slot.id}`)) booked += 1;
           }
-          const start = defs[0]?.start || "10:00";
-          const end = defs[defs.length - 1]?.end || "12:00";
           intensiveSlots.push({
             id: `crash-day-${act.id}-${date}`,
             serviceId: "intensive",
             blockId: "summer_july",
             weekId: week.id as CrashWeekId,
             bookingMode: "individual_days",
+            crashActivity: act.id,
+            activityName: act.activityName,
             venue: act.venue,
             day: dayLabel,
-            timeLabel: `${start} – ${end} · ${act.label} · individual hours`,
-            sortTime: `${start}-d`,
+            timeLabel: sessionTimeLabel(act.id),
+            packLabel: "individual hours",
+            sortTime: `${defs[0]?.start || "10:00"}-d`,
             capacity: defs.length,
             taken: booked,
             dateIso: date,
@@ -211,17 +233,17 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
   ];
 
   for (const block of halfTermBlocks) {
-    for (const venue of ["Westway", "Acton"] as const) {
+    for (const act of activities) {
       intensiveSlots.push({
-        id: `ht-${block.id}-${venue.toLowerCase()}`,
+        id: `ht-${block.id}-${act.id}`,
         serviceId: "intensive",
         blockId: block.id,
-        venue,
+        crashActivity: act.id,
+        activityName: act.activityName,
+        venue: act.venue,
         day: "Half term block",
-        timeLabel:
-          venue === "Westway"
-            ? "Climbing — course times TBC · enquire"
-            : "Swimming — course times TBC · enquire",
+        timeLabel: "Times TBC",
+        packLabel: "enquire",
         sortTime: "10:00",
         capacity: 1,
         taken: 0,
