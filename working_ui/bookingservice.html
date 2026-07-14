@@ -619,6 +619,10 @@
       padding: 10px 8px;
     }
     .slot-head__cell {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
       font-size: 0.7rem;
       font-weight: 800;
       letter-spacing: 0.05em;
@@ -627,15 +631,23 @@
       min-width: 0;
       overflow-wrap: break-word;
     }
+    .slot-head__cell svg {
+      width: 14px !important;
+      height: 14px !important;
+      max-width: 14px !important;
+      max-height: 14px !important;
+      color: var(--blue);
+      flex: 0 0 auto;
+    }
     .slot-row:last-child { border-bottom: 0; }
     @media (min-width: 760px) {
       .slot-head {
         display: grid;
-        grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 0.9fr) minmax(0, 1.4fr);
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.1fr) minmax(0, 0.95fr) minmax(0, 1fr) minmax(0, 1.15fr);
         gap: 10px 8px;
       }
       .slot-row {
-        grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 0.9fr) minmax(0, 1.4fr);
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.1fr) minmax(0, 0.95fr) minmax(0, 1fr) minmax(0, 1.15fr);
         gap: 10px 8px;
         padding: 14px 10px;
       }
@@ -665,25 +677,22 @@
     }
     .slot-col__value {
       font-size: 0.92rem;
-      font-weight: 700;
+      font-weight: 400;
       color: var(--ink);
       overflow-wrap: break-word;
       text-align: center;
     }
-    .slot-col__value strong { font-weight: 800; }
-    .slot-col--actions {
+    .slot-col__value strong {
+      font-weight: 400;
+    }
+    .slot-col--avail,
+    .slot-col--action {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 8px;
       min-width: 0;
-    }
-    @media (min-width: 900px) {
-      .slot-col--actions {
-        flex-direction: row;
-        flex-wrap: wrap;
-      }
     }
     .badge {
       display: inline-flex;
@@ -968,6 +977,8 @@
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
     info:
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+    users:
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
   };
 
   function esc(s) {
@@ -1124,10 +1135,21 @@
   function slotHeadHtml() {
     return (
       '<div class="slot-head" aria-hidden="true">' +
-      '<span class="slot-head__cell">Time</span>' +
-      '<span class="slot-head__cell">Venue</span>' +
-      '<span class="slot-head__cell">Age</span>' +
-      '<span class="slot-head__cell">Availability / action</span>' +
+      '<span class="slot-head__cell">' +
+      ICONS.clock +
+      " Time</span>" +
+      '<span class="slot-head__cell">' +
+      ICONS.pin +
+      " Venue</span>" +
+      '<span class="slot-head__cell">' +
+      ICONS.users +
+      " Age</span>" +
+      '<span class="slot-head__cell">' +
+      ICONS.check +
+      " Availability</span>" +
+      '<span class="slot-head__cell">' +
+      ICONS.arrow +
+      " Action</span>" +
       "</div>"
     );
   }
@@ -1146,9 +1168,9 @@
       '">' +
       '<div class="slot-col">' +
       '<span class="slot-col__label">Time</span>' +
-      '<div class="slot-col__value"><strong>' +
+      '<div class="slot-col__value">' +
       esc(dayAbbrev(slot.day)) +
-      "</strong> " +
+      " " +
       esc(slot.timeLabel) +
       "</div></div>" +
       '<div class="slot-col">' +
@@ -1161,9 +1183,12 @@
       '<div class="slot-col__value">' +
       esc(ageLabel) +
       "</div></div>" +
-      '<div class="slot-col slot-col--actions">' +
-      '<span class="slot-col__label">Availability / action</span>' +
+      '<div class="slot-col slot-col--avail">' +
+      '<span class="slot-col__label">Availability</span>' +
       badge +
+      "</div>" +
+      '<div class="slot-col slot-col--action">' +
+      '<span class="slot-col__label">Action</span>' +
       '<button type="button" class="btn' +
       (full ? " btn--wait" : "") +
       '" data-enquire="' +
