@@ -604,20 +604,29 @@
       display: grid;
       grid-template-columns: 1fr;
       gap: 8px;
-      padding: 12px 14px;
+      padding: 14px 12px;
       border-bottom: 1px solid var(--line);
       min-width: 0;
       align-items: center;
+      justify-items: center;
+      text-align: center;
     }
     .slot-row:last-child { border-bottom: 0; }
     @media (min-width: 760px) {
       .slot-row {
-        grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr) minmax(0, 1.2fr) auto;
-        gap: 12px 16px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px 10px;
       }
     }
     .slot-row--full { background: #fbfcfd; }
-    .slot-col { min-width: 0; }
+    .slot-col {
+      min-width: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
     .slot-col__label {
       display: block;
       font-size: 0.68rem;
@@ -626,6 +635,7 @@
       text-transform: uppercase;
       color: var(--muted);
       margin-bottom: 2px;
+      text-align: center;
     }
     @media (min-width: 760px) {
       .slot-col__label { display: none; }
@@ -635,6 +645,7 @@
       font-weight: 700;
       color: var(--ink);
       overflow-wrap: break-word;
+      text-align: center;
     }
     .slot-col__value strong { font-weight: 800; }
     .slot-col__sub {
@@ -643,6 +654,7 @@
       color: var(--muted);
       font-weight: 600;
       overflow-wrap: break-word;
+      text-align: center;
     }
     .trial-pill {
       display: inline-flex;
@@ -658,14 +670,18 @@
     }
     .slot-col--action {
       display: flex;
+      flex-direction: column;
       flex-wrap: wrap;
       align-items: center;
+      justify-content: center;
       gap: 8px;
-      justify-content: flex-start;
       min-width: 0;
     }
     @media (min-width: 760px) {
-      .slot-col--action { justify-content: flex-end; }
+      .slot-col--action {
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
     }
     .badge {
       display: inline-flex;
@@ -1106,11 +1122,11 @@
   function slotRowHtml(slot, svc) {
     var full = mock.isFull(slot);
     var left = mock.seatsLeft(slot);
-    var wait = full || (svc && svc.enquireOnly);
+    // Waiting list only when full — open places get a book CTA (mock enquire).
     var badge = full
       ? '<span class="badge badge--full">' + ICONS.x + " Fully booked</span>"
       : '<span class="badge badge--open">' + ICONS.check + " " + left + " left</span>";
-    var cta = wait ? "Join waiting list" : "Enquire";
+    var cta = full ? "Join waiting list" : "Book place";
     var classLabel = (svc ? svc.name : "Session") + (svc && svc.ageHint ? " (" + svc.ageHint + ")" : "");
     return (
       '<div class="slot-row' +
@@ -1138,7 +1154,7 @@
       '<div class="slot-col slot-col--action">' +
       badge +
       '<button type="button" class="btn' +
-      (wait ? " btn--wait" : "") +
+      (full ? " btn--wait" : "") +
       '" data-enquire="' +
       esc(slot.id) +
       '">' +
