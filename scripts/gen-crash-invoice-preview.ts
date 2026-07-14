@@ -14,7 +14,7 @@ const bytes = await buildPortalTaxInvoicePdf({
   totalGbp: 300,
   quantity: 1,
   descriptionLines: [
-    "Summer crash course Jul 2026 — Climbing · weekly pack · 4 days × £75.",
+    "Climbing Activity - Summer crash course Jul 2026 - Week 1 weekly pack (11:00-12:00)",
     "Pay in full to confirm place.",
     "",
     "Client's Name: Elia",

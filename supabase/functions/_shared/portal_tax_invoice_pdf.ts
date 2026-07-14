@@ -61,6 +61,51 @@ function formatUkDate(iso: string | null | undefined): string {
   });
 }
 
+/** Helvetica / WinAnsi cannot render £ and many punctuation chars cleanly. */
+function pdfSafeText(raw: unknown): string {
+  return String(raw ?? "")
+    .replace(/\u00a3/g, "GBP ") // £
+    .replace(/[\u2013\u2014\u2212]/g, "-") // en/em/minus dashes
+    .replace(/[\u00b7\u2022\u2219]/g, "-") // middle dots / bullets
+    .replace(/\u00d7/g, "x") // ×
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201c\u201d]/g, '"')
+    .replace(/\u2026/g, "...")
+    .replace(/[^\x09\x0a\x0d\x20-\x7e\xa0-\xff]/g, " ")
+    .replace(/ +/g, " ")
+    .trim();
+}
+
+function wrapPdfLines(text: string, maxChars = 68): string[] {
+  const clean = pdfSafeText(text);
+  if (!clean) return [];
+  if (clean.length <= maxChars) return [clean];
+  const words = clean.split(/\s+/);
+  const lines: string[] = [];
+  let cur = "";
+  for (const w of words) {
+    const next = cur ? `${cur} ${w}` : w;
+    if (next.length <= maxChars) {
+      cur = next;
+      continue;
+    }
+    if (cur) lines.push(cur);
+    if (w.length <= maxChars) {
+      cur = w;
+    } else {
+      // Hard-split very long tokens (never mid-cut a price after GBP).
+      let rest = w;
+      while (rest.length > maxChars) {
+        lines.push(rest.slice(0, maxChars));
+        rest = rest.slice(maxChars);
+      }
+      cur = rest;
+    }
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+
 function b64ToBytes(b64: string): Uint8Array {
   const bin = atob(b64);
   const out = new Uint8Array(bin.length);
@@ -124,7 +169,7 @@ export async function buildPortalTaxInvoicePdf(
 
   // Bill to
   let y = height - 110;
-  page.drawText(input.billToName || "Parent", {
+  page.drawText(pdfSafeText(input.billToName || "Parent"), {
     x: left,
     y,
     size: 10,
@@ -133,7 +178,7 @@ export async function buildPortalTaxInvoicePdf(
   });
   y -= 13;
   for (const line of input.billToLines.filter(Boolean).slice(0, 6)) {
-    page.drawText(String(line).slice(0, 60), {
+    page.drawText(pdfSafeText(line).slice(0, 60), {
       x: left,
       y,
       size: 9,
@@ -148,8 +193,8 @@ export async function buildPortalTaxInvoicePdf(
   let metaY = height - 110;
   const meta = [
     ["Invoice Date", formatUkDate(input.invoiceDateIso)],
-    ["Invoice Number", input.invoiceNumber],
-    ["Reference", (input.reference || "").slice(0, 40) || "—"],
+    ["Invoice Number", pdfSafeText(input.invoiceNumber)],
+    ["Reference", pdfSafeText(input.reference || "").slice(0, 40) || "-"],
     ["VAT Number", VAT_NUMBER],
   ];
   for (const [label, val] of meta) {
@@ -216,14 +261,25 @@ export async function buildPortalTaxInvoicePdf(
 
   y -= 22;
   const descY0 = y;
-  for (const line of input.descriptionLines.slice(0, 12)) {
-    page.drawText(String(line).slice(0, 70), {
-      x: left,
-      y,
-      size: 9,
-      font,
-      color: ink,
-    });
+  const wrappedDesc: string[] = [];
+  for (const raw of input.descriptionLines.slice(0, 12)) {
+    const t = String(raw || "").trim();
+    if (!t) {
+      wrappedDesc.push("");
+      continue;
+    }
+    wrappedDesc.push(...wrapPdfLines(t, 68));
+  }
+  for (const line of wrappedDesc.slice(0, 14)) {
+    if (line) {
+      page.drawText(line, {
+        x: left,
+        y,
+        size: 9,
+        font,
+        color: ink,
+      });
+    }
     y -= 12;
   }
 
@@ -354,10 +410,10 @@ export async function buildPortalTaxInvoicePdf(
   }
   y2 -= 20;
   const advice = [
-    ["Customer", input.billToName],
-    ["Invoice Number", input.invoiceNumber],
+    ["Customer", pdfSafeText(input.billToName)],
+    ["Invoice Number", pdfSafeText(input.invoiceNumber)],
     ["Amount Due", input.paid ? "0.00" : money(due)],
-    ["Due Date", formatUkDate(input.dueDateIso) || "—"],
+    ["Due Date", formatUkDate(input.dueDateIso) || "-"],
     ["Amount Enclosed", ""],
   ];
   for (const [label, val] of advice) {

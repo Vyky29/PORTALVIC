@@ -228,12 +228,14 @@ export function crashWeekFillSnapshot(
 export const CRASH_META = {
   climbing: {
     title: "Climbing",
+    invoiceTitle: "Climbing Activity",
     window: "11:00 am–1:00 pm",
     venue: "Westway Sports & Fitness Centre",
     address: "1 Crowthorne Road, London W10 6RP",
   },
   swimming: {
     title: "Swimming",
+    invoiceTitle: "Aquatic Activity",
     window: "4:30 pm–6:30 pm",
     venue: "Everyone Active Acton Centre",
     address: "High Street, Acton, London W3 6NE",
@@ -432,7 +434,7 @@ export function quoteCrashSummerBooking(input: {
       const label =
         activity === "swimming" ? swimBlockLabel(ids) : crashSlotById(activity, ids[0])!.label;
       descParts.push(
-        `${meta.title} weekly pack (${week.label.split("·")[0].trim()}) · ${label}`,
+        `${meta.invoiceTitle} - Summer crash course Jul 2026 - ${week.label.split("·")[0].trim()} weekly pack (${label})`,
       );
       for (const date of week.dates) {
         for (const slotId of ids) {
@@ -474,7 +476,7 @@ export function quoteCrashSummerBooking(input: {
         }
       }
       descParts.push(
-        `${meta.title} · ${dates.length} day${dates.length === 1 ? "" : "s"} · ${dayUnits} × £${prices.session}`,
+        `${meta.invoiceTitle} - Summer crash course Jul 2026 - ${dates.length} day${dates.length === 1 ? "" : "s"} (${dayUnits} session${dayUnits === 1 ? "" : "s"})`,
       );
     }
   }
@@ -484,7 +486,8 @@ export function quoteCrashSummerBooking(input: {
   return {
     ok: true,
     amountGbp: round2(amount),
-    lineDescription: `Summer crash course Jul 2026 — ${descParts.join("; ")}. Pay in full to confirm place.`,
+    lineDescription:
+      descParts.join("\n") + "\nPay in full to confirm place.",
     lines,
   };
 }
