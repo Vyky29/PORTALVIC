@@ -511,3 +511,35 @@ export function crashCatalogPublic(opts?: { openWeekIds?: CrashWeekId[] }) {
     pay_in_full: true,
   };
 }
+
+/**
+ * Bank transfer reference for crash bookings: participant + activity
+ * (e.g. "Elia Climbing", "Sam Climbing+Swimming"). Prefer this over a
+ * static Tide hint like "Invoice Number".
+ */
+export function crashBankTransferReference(
+  displayName: string,
+  activities: CrashActivity[],
+): string {
+  const name = String(displayName || "")
+    .replace(/[^a-zA-Z0-9 '&+-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 28) || "Participant";
+  const acts = Array.from(
+    new Set(
+      (activities || []).filter((a): a is CrashActivity =>
+        a === "climbing" || a === "swimming"
+      ),
+    ),
+  );
+  const service =
+    acts.length === 2
+      ? "Climbing+Swimming"
+      : acts[0] === "swimming"
+        ? "Swimming"
+        : acts[0] === "climbing"
+          ? "Climbing"
+          : "Crash";
+  return `${name} ${service}`.trim().slice(0, 40);
+}

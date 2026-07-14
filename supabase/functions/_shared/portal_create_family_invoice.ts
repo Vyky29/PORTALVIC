@@ -34,7 +34,13 @@ export type PortalFamilyInvoiceCreateInput = {
 };
 
 export type PortalFamilyInvoiceCreateResult =
-  | { ok: true; invoice: Record<string, unknown>; documentId: string; invoiceNumber: string }
+  | {
+      ok: true;
+      invoice: Record<string, unknown>;
+      documentId: string;
+      invoiceNumber: string;
+      pdfStoragePath: string;
+    }
   | { ok: false; error: string };
 
 function clean(v: unknown, max = 500): string {
@@ -249,6 +255,7 @@ export async function createPortalFamilyInvoice(
     invoice: { ...share, title: doc.title },
     documentId: String(doc.id),
     invoiceNumber,
+    pdfStoragePath: storagePath,
   };
 }
 

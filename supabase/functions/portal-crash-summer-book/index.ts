@@ -16,6 +16,7 @@ import {
 } from "../_shared/portal_create_family_invoice.ts";
 import {
   CRASH_HOLD_MINUTES,
+  crashBankTransferReference,
   crashIndividualDaysOpenForWeek,
   crashIndividualRulesCopy,
   crashIndividualWindowFor,
@@ -26,14 +27,16 @@ import {
   type CrashBookingMode,
   type CrashWeekId,
 } from "../_shared/crash_summer_2026.ts";
-import {
-  suggestedTransferReference,
-  tideBankDetailsFromEnv,
-} from "../_shared/tide_bank_details.ts";
+import { tideBankDetailsFromEnv } from "../_shared/tide_bank_details.ts";
 import {
   stripeConfigured,
   stripeGrossUpFromGbp,
 } from "../_shared/stripe_checkout.ts";
+import { pushPortalInvoiceShareToXero } from "../_shared/portal_xero_invoice_push.ts";
+import {
+  readParentNotifySmtpConfig,
+  sendEmailWithAttachmentViaSmtp,
+} from "../_shared/portal_parent_messaging.ts";
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -277,17 +280,18 @@ Deno.serve(async (req) => {
   }
 
   const dueDate = new Date().toISOString().slice(0, 10);
+  const bankRef = crashBankTransferReference(displayName, activities);
   const created = await createPortalFamilyInvoice(supabase, {
     contactId,
     amountGbp: quote.amountGbp,
     dueDateIso: dueDate,
     vatMode: "vat_20",
     lineDescription: quote.lineDescription,
-    reference: `CRASH-SUM26-${String(booking.id).slice(0, 8).toUpperCase()}`,
+    reference: bankRef,
     notes: `Summer crash course Jul 2026 · booking ${booking.id} · pay in full to confirm`,
     title: `Summer crash course — ${displayName}`,
     shareStatus: "ready",
-    paymentMethodHint: "payment_link",
+    paymentMethodHint: "bank_transfer",
     createdVia: "portal",
     ownerUserId: ownerId,
     readyBy: "crash_summer_book",
@@ -319,11 +323,93 @@ Deno.serve(async (req) => {
     })
     .eq("id", booking.id);
 
+  // Signed PDF URL for pay screen (7 days).
+  let pdfUrl: string | null = null;
+  if (created.pdfStoragePath) {
+    const { data: signed } = await supabase.storage
+      .from("documents")
+      .createSignedUrl(created.pdfStoragePath, 60 * 60 * 24 * 7);
+    pdfUrl = signed?.signedUrl || null;
+  }
+
+  // Best-effort: email invoice PDF to family.
+  let emailSent = false;
+  try {
+    const smtp = readParentNotifySmtpConfig();
+    const { data: parentRow } = await supabase
+      .from("portal_parent_contacts")
+      .select("email, parent_display, parent_first_name, parent_last_name")
+      .eq("contact_id", contactId)
+      .maybeSingle();
+    const toEmail = clean(parentRow?.email, 200);
+    if (smtp && toEmail && created.pdfStoragePath) {
+      const { data: pdfBlob, error: dlErr } = await supabase.storage
+        .from("documents")
+        .download(created.pdfStoragePath);
+      if (!dlErr && pdfBlob) {
+        const buf = new Uint8Array(await pdfBlob.arrayBuffer());
+        let binary = "";
+        for (let i = 0; i < buf.length; i++) binary += String.fromCharCode(buf[i]);
+        const contentBase64 = btoa(binary);
+        const parentLabel =
+          clean(parentRow?.parent_display, 80) ||
+          [parentRow?.parent_first_name, parentRow?.parent_last_name]
+            .filter(Boolean)
+            .join(" ")
+            .trim() ||
+          "there";
+        const html = [
+          `<p>Hi ${parentLabel},</p>`,
+          `<p>Thanks for reserving <strong>${displayName}</strong> on the Summer crash course.</p>`,
+          `<p>Invoice <strong>${created.invoiceNumber}</strong> for <strong>£${Number(quote.amountGbp).toFixed(2)}</strong> is attached.</p>`,
+          `<p>Pay in full within 2 hours to confirm the place. Use bank reference:</p>`,
+          `<p style="font-size:18px;font-weight:700">${bankRef}</p>`,
+          pdfUrl
+            ? `<p><a href="${pdfUrl}">View invoice PDF</a></p>`
+            : "",
+          `<p>ClubSENsational</p>`,
+        ]
+          .filter(Boolean)
+          .join("\n");
+        const mail = await sendEmailWithAttachmentViaSmtp({
+          config: smtp,
+          to: [toEmail],
+          subject: `Invoice ${created.invoiceNumber} — Summer crash · ${displayName}`,
+          html,
+          attachment: {
+            filename: `${created.invoiceNumber}.pdf`,
+            contentBase64,
+            mimeType: "application/pdf",
+          },
+        });
+        emailSent = !!mail.ok;
+        if (!mail.ok) {
+          console.error("[portal-crash-summer-book] email", mail.error);
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[portal-crash-summer-book] email_throw", err);
+  }
+
+  // Best-effort Xero ACCREC — booking still succeeds if Xero fails.
+  let xero: Record<string, unknown> | null = null;
+  if (invoiceId) {
+    try {
+      const pushed = await pushPortalInvoiceShareToXero(supabase, invoiceId);
+      xero = pushed.ok
+        ? { ok: true, xero_invoice_id: pushed.xero_invoice_id, skipped: !!pushed.skipped }
+        : { ok: false, error: pushed.error, detail: pushed.detail || null };
+      if (!pushed.ok) {
+        console.error("[portal-crash-summer-book] xero", pushed.error, pushed.detail);
+      }
+    } catch (err) {
+      console.error("[portal-crash-summer-book] xero_throw", err);
+      xero = { ok: false, error: "xero_throw" };
+    }
+  }
+
   const tide = tideBankDetailsFromEnv();
-  const suggestedRef = suggestedTransferReference(
-    created.invoiceNumber,
-    displayName,
-  );
   const card = stripeConfigured()
     ? (() => {
       const g = stripeGrossUpFromGbp(quote.amountGbp);
@@ -347,12 +433,16 @@ Deno.serve(async (req) => {
     hold_expires_at: holdExpires,
     status: "awaiting_payment",
     pay_in_full_required: true,
+    pdf_url: pdfUrl,
+    invoice_emailed: emailSent,
+    xero,
     bank_transfer: {
       available: tide.available,
       payee_name: tide.payee_name,
       sort_code: tide.sort_code,
       account_number: tide.account_number,
-      reference_hint: tide.reference_hint || suggestedRef,
+      // Always participant + service for crash (ignore static Tide "Invoice Number" hint).
+      reference_hint: bankRef,
       message: tide.available
         ? null
         : "Contact the office for bank transfer details.",

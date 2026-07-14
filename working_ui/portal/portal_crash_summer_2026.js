@@ -835,6 +835,32 @@
     var total = $("csPayTotal");
     if (total) total.textContent = "Total: " + money(amount);
 
+    var invBlock = $("csPayInvoice");
+    var invNoEl = $("csPayInvoiceNo");
+    var pdfBtn = $("csPayPdfBtn");
+    var emailNote = $("csPayEmailNote");
+    var pdfUrl = String((payload && payload.pdf_url) || "").trim();
+    if (invBlock) {
+      invBlock.hidden = !(invNo || pdfUrl);
+      if (invNoEl) {
+        invNoEl.textContent = invNo
+          ? "Invoice " + invNo + " — please pay before the hold expires."
+          : "Your invoice is ready.";
+      }
+      if (pdfBtn) {
+        if (pdfUrl) {
+          pdfBtn.hidden = false;
+          pdfBtn.href = pdfUrl;
+        } else {
+          pdfBtn.hidden = true;
+          pdfBtn.removeAttribute("href");
+        }
+      }
+      if (emailNote) {
+        emailNote.hidden = !(payload && payload.invoice_emailed);
+      }
+    }
+
     var bank = (payload && payload.bank_transfer) || {};
     var bankMsg = $("csPayBankMsg");
     var bankDl = $("csPayBankDl");
@@ -1093,6 +1119,8 @@
           amount_gbp: data.amount_gbp,
           bank_transfer: data.bank_transfer,
           card_checkout: data.card_checkout,
+          pdf_url: data.pdf_url || null,
+          invoice_emailed: !!data.invoice_emailed,
         });
       } else {
         showNotice(
