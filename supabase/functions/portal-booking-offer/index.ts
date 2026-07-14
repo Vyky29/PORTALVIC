@@ -246,8 +246,8 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
     },
     {
       id: "may_ht",
-      badge: "MAY HALF TERM 2027",
-      title: "May half-term intensives",
+      badge: "SUMMER HALF TERM 2027",
+      title: "Summer half-term intensives",
       range: "Mon 31 May – Thu 3 June 2027 · booking opens closer to the dates",
       badgeIcon: "leaf",
       sort: 4,

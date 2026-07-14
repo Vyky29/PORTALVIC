@@ -183,8 +183,8 @@
     },
     {
       id: "may_ht",
-      badge: "MAY HALF TERM 2027",
-      title: "May half-term intensives",
+      badge: "SUMMER HALF TERM 2027",
+      title: "Summer half-term intensives",
       range: "Mon 31 May – Thu 3 June 2027",
       badgeIcon: "leaf",
       sort: 4,
