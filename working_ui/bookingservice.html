@@ -792,11 +792,16 @@
     .btn:hover { background: var(--blueDeep); }
     .btn--soft { background: var(--blueSoft); color: var(--blueDeep); }
     .btn--soft:hover { background: #dceef7; }
-    .btn--wait {
-      background: var(--gold);
-      color: #173247;
+    .btn--book {
+      background: #157347;
+      color: #fff;
     }
-    .btn--wait:hover { background: #e5a82e; }
+    .btn--book:hover { background: #0f5c38; }
+    .btn--wait {
+      background: var(--blue);
+      color: #fff;
+    }
+    .btn--wait:hover { background: var(--blueDeep); }
     .empty {
       margin: 0;
       padding: 14px 12px;
@@ -1252,7 +1257,7 @@
       '<div class="slot-col slot-col--action">' +
       '<span class="slot-col__label">Action</span>' +
       '<button type="button" class="btn' +
-      (full ? " btn--wait" : "") +
+      (full ? " btn--wait" : " btn--book") +
       '" data-enquire="' +
       esc(slot.id) +
       '">' +
