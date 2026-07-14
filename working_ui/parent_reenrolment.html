@@ -1434,7 +1434,6 @@
     }
     .re-legal { text-align: center; font-size: .78rem; color: var(--muted); margin-top: 20px; overflow-wrap: break-word; }
     .re-legal a { color: var(--blue); }
-    .re-done-icon { font-size: 2rem; text-align: center; margin-bottom: 8px; }
     .re-pick-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; min-width: 0; }
     .re-pick-card {
       display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -1609,13 +1608,17 @@
       <div id="reFormHost" class="re-card re-form-host"></div>
     </section>
 
-    <section id="reStepDone" class="re-card" hidden>
-      <div class="re-done-icon" aria-hidden="true">✓</div>
-      <h2>Submitted</h2>
-      <p id="reDoneMsg">Thank you — your re-enrolment has been sent to the club office.</p>
-      <p class="re-muted">We will confirm places and any slot changes by email or message. Outstanding balances remain payable separately.</p>
-      <div id="reDoneOffer"></div>
-      <a class="re-btn re-btn--primary" href="/parent/app">Open family portal</a>
+    <section id="reStepDone" class="re-card re-card--done" hidden>
+      <div class="re-done-hero">
+        <div class="re-done-badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        </div>
+        <h2 class="re-done-title">Submitted</h2>
+        <p id="reDoneMsg" class="re-done-lead">Thank you — your re-enrolment has been sent to the club office for review.</p>
+        <p class="re-done-note">We will confirm places and any slot changes by email or message. Outstanding balances remain payable separately.</p>
+      </div>
+      <div id="reDoneOffer" class="re-done-offer-host"></div>
+      <a class="re-btn re-btn--primary re-btn--done-portal" href="/parent/app">Open family portal</a>
     </section>
 
     <p class="re-legal">
