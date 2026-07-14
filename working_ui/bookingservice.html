@@ -656,13 +656,13 @@
       align-items: center;
       gap: 8px;
       margin: 0 0 10px;
-      font-size: 1rem;
+      font-size: clamp(1.15rem, 2.4vw, 1.35rem);
       font-weight: 800;
       color: var(--ink);
       min-width: 0;
       overflow-wrap: break-word;
     }
-    .venue-block__title svg { width: 18px; height: 18px; color: var(--blue); flex: 0 0 auto; }
+    .venue-block__title svg { width: 22px; height: 22px; max-width: 22px; max-height: 22px; color: var(--blue); flex: 0 0 auto; }
 
     .day-acc {
       border: 1px solid var(--line);
