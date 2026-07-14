@@ -500,23 +500,39 @@
       align-items: flex-start;
       gap: 10px;
     }
-    .term-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 11px;
-      border-radius: 999px;
-      background: var(--gold);
-      color: #173247;
-      font-size: 0.72rem;
-      font-weight: 900;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      flex: 0 0 auto;
-      max-width: 100%;
+    .term-badge--summer {
+      background: #f4b740;
+    }
+    .intensive-block {
+      margin: 16px 0 0;
+      padding: 14px 12px 12px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fbfdff;
+      min-width: 0;
+    }
+    .intensive-block:first-of-type { margin-top: 12px; }
+    .intensive-block__head {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 0 0 10px;
+      min-width: 0;
+    }
+    .intensive-block__title {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--ink);
       overflow-wrap: break-word;
-      white-space: normal;
-      line-height: 1.2;
+    }
+    .intensive-block__range {
+      margin: 0;
+      font-size: 0.86rem;
+      color: var(--muted);
+      font-weight: 600;
+      overflow-wrap: break-word;
     }
     .term-badge svg {
       width: 14px !important;
@@ -995,7 +1011,7 @@
     </div>
   </div>
 
-  <script src="/portal/portal_booking_offer_mock.js?v=20260714-booking-autumn"></script>
+  <script src="/portal/portal_booking_offer_mock.js?v=20260714-booking-intensive"></script>
   <script>
 (function () {
   "use strict";
@@ -1046,6 +1062,8 @@
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
     leaf:
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 6.5-1 11"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>',
+    sun:
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>',
   };
 
   function esc(s) {
@@ -1229,6 +1247,9 @@
       : '<span class="badge badge--open">' + ICONS.check + " " + left + " left</span>";
     var cta = full ? "Join waiting list" : "Book place";
     var ageLabel = (svc && svc.ageHint) || "From 3 years+";
+    var timeCell = slot.blockId
+      ? esc(slot.timeLabel)
+      : esc(dayAbbrev(slot.day)) + " " + esc(slot.timeLabel);
     return (
       '<div class="slot-row' +
       (full ? " slot-row--full" : "") +
@@ -1236,9 +1257,7 @@
       '<div class="slot-col">' +
       '<span class="slot-col__label">Time</span>' +
       '<div class="slot-col__value">' +
-      esc(dayAbbrev(slot.day)) +
-      " " +
-      esc(slot.timeLabel) +
+      timeCell +
       "</div></div>" +
       '<div class="slot-col">' +
       '<span class="slot-col__label">Venue</span>' +
@@ -1269,6 +1288,117 @@
     );
   }
 
+  function venuesAccordionHtml(s, venues, openFirst) {
+    if (!venues.length) {
+      return '<p class="empty">No times match the filters for this block.</p>';
+    }
+    return venues
+      .map(function (vg, vi) {
+        var daysHtml = vg.days
+          .map(function (dg, di) {
+            var openAttr = openFirst && di === 0 && vi === 0 ? " open" : "";
+            return (
+              '<details class="day-acc"' +
+              openAttr +
+              ">" +
+              "<summary>" +
+              ICONS.day +
+              esc(dg.day) +
+              ' <span class="day-acc__count">(' +
+              dg.slots.length +
+              ")</span></summary>" +
+              '<div class="slot-table">' +
+              slotHeadHtml() +
+              dg.slots
+                .map(function (slot) {
+                  return slotRowHtml(slot, s);
+                })
+                .join("") +
+              "</div></details>"
+            );
+          })
+          .join("");
+        return (
+          '<div class="venue-block">' +
+          '<h4 class="venue-block__title">' +
+          ICONS.pin +
+          esc(vg.venueLabel) +
+          "</h4>" +
+          daysHtml +
+          "</div>"
+        );
+      })
+      .join("");
+  }
+
+  function renderIntensiveTimetable(s, filters, pack) {
+    var slots = mock.filterSlots({
+      serviceId: s.id,
+      venue: filters.venue,
+      day: filters.day,
+      timeLabel: filters.timeLabel,
+      hideFull: filters.hideFull,
+    });
+    var blocks = mock.groupIntensiveByBlock(slots);
+    var body;
+    if (!blocks.length) {
+      body =
+        '<p class="empty">No intensive times match the filters. Clear filters to see summer + half-term blocks.</p>';
+    } else {
+      body = blocks
+        .map(function (row, bi) {
+          var block = row.block;
+          var badgeIcon = block.badgeIcon === "sun" ? ICONS.sun : ICONS.leaf;
+          var badgeCls =
+            block.badgeIcon === "sun" ? " term-badge--summer" : "";
+          return (
+            '<section class="intensive-block" id="intensive-' +
+            esc(block.id) +
+            '">' +
+            '<div class="intensive-block__head">' +
+            '<span class="term-badge' +
+            badgeCls +
+            '">' +
+            badgeIcon +
+            " " +
+            esc(block.badge) +
+            "</span>" +
+            '<h4 class="intensive-block__title">' +
+            esc(block.title) +
+            "</h4>" +
+            '<p class="intensive-block__range">' +
+            esc(block.range) +
+            "</p>" +
+            "</div>" +
+            venuesAccordionHtml(s, row.venues, bi === 0) +
+            "</section>"
+          );
+        })
+        .join("");
+    }
+    return (
+      '<article class="timetable" id="timetable-' +
+      esc(s.id) +
+      '">' +
+      '<div class="timetable__head">' +
+      '<div class="timetable__title-row">' +
+      '<div class="timetable__title-main">' +
+      '<div class="timetable__icon ' +
+      pack.cls +
+      '" aria-hidden="true">' +
+      pack.svg +
+      "</div>" +
+      "<h3>" +
+      esc(s.name) +
+      "</h3>" +
+      "</div></div>" +
+      '<p class="timetable__range">Summer crash weeks first, then each half term — dates differ by block.</p>' +
+      "</div>" +
+      body +
+      "</article>"
+    );
+  }
+
   function renderTimetables() {
     var host = document.getElementById("timetableHost");
     var filters = currentFilters();
@@ -1283,6 +1413,10 @@
 
     var html = services
       .map(function (s) {
+        var pack = serviceIconPack(s.id);
+        if (s.intensiveBlocks) {
+          return renderIntensiveTimetable(s, filters, pack);
+        }
         var slots = mock.filterSlots({
           serviceId: s.id,
           venue: filters.venue,
@@ -1291,51 +1425,9 @@
           hideFull: filters.hideFull,
         });
         var venues = mock.groupSlotsByVenueThenDay(slots);
-        var pack = serviceIconPack(s.id);
-        var body;
-        if (!venues.length) {
-          body = '<p class="empty">No times match the filters for this service. Clear filters to see the full offer (including fully booked).</p>';
-        } else {
-          body = venues
-            .map(function (vg, vi) {
-              var daysHtml = vg.days
-                .map(function (dg, di) {
-                  var openAttr = di === 0 && vi === 0 ? " open" : "";
-                  return (
-                    "<details class=\"day-acc\"" +
-                    openAttr +
-                    ">" +
-                    "<summary>" +
-                    ICONS.day +
-                    esc(dg.day) +
-                    ' <span class="day-acc__count">(' +
-                    dg.slots.length +
-                    ")</span></summary>" +
-                    '<div class="slot-table">' +
-                    slotHeadHtml() +
-                    dg.slots.map(function (slot) {
-                      return slotRowHtml(slot, s);
-                    }).join("") +
-                    "</div></details>"
-                  );
-                })
-                .join("");
-              return (
-                '<div class="venue-block" id="venue-' +
-                esc(s.id) +
-                "-" +
-                esc(vg.venue).replace(/\s+/g, "-") +
-                '">' +
-                '<h4 class="venue-block__title">' +
-                ICONS.pin +
-                esc(vg.venueLabel) +
-                "</h4>" +
-                daysHtml +
-                "</div>"
-              );
-            })
-            .join("");
-        }
+        var body = venues.length
+          ? venuesAccordionHtml(s, venues, true)
+          : '<p class="empty">No times match the filters for this service. Clear filters to see the full offer (including fully booked).</p>';
         return (
           '<article class="timetable" id="timetable-' +
           esc(s.id) +

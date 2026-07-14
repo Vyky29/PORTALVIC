@@ -99,12 +99,51 @@
       name: "Intensive Courses & Camps",
       tier: "more",
       ageHint: "From 3 years+",
-      durationHint: "Half-term / summer blocks",
+      durationHint: "Summer + half-term blocks",
       priceHint: "Course packs — ask the office",
       blurb:
-        "Holiday intensives and camps (for example climbing and swimming crash weeks). Limited daily places — join the list early; weekly packs often have priority.",
-      venues: ["Westway", "Acton", "SwimFarm"],
-      enquireOnly: true,
+        "Holiday intensives and camps: summer crash weeks in July, then October, February and May half terms. Limited daily places — weekly packs often have priority.",
+      venues: ["Westway", "Acton"],
+      intensiveBlocks: true,
+    },
+  ];
+
+  /**
+   * Intensive / crash blocks (different date ranges — not weekly term slots).
+   * Source map: portal_reenrolment_2026_27 RE_CRASH_DATES_2627 + summer crash copy.
+   */
+  var INTENSIVE_BLOCKS = [
+    {
+      id: "summer_july",
+      badge: "SUMMER TERM 2026",
+      title: "Summer holiday crash courses",
+      range: "Week 1: Tue 21 – Fri 24 July · Week 2: Tue 28 – Fri 31 July 2026",
+      badgeIcon: "sun",
+      sort: 1,
+    },
+    {
+      id: "oct_ht",
+      badge: "OCTOBER HALF TERM 2026",
+      title: "October half-term intensives",
+      range: "Mon 26 – Thu 29 October 2026",
+      badgeIcon: "leaf",
+      sort: 2,
+    },
+    {
+      id: "feb_ht",
+      badge: "FEBRUARY HALF TERM 2027",
+      title: "February half-term intensives",
+      range: "Mon 15 – Thu 18 February 2027",
+      badgeIcon: "leaf",
+      sort: 3,
+    },
+    {
+      id: "may_ht",
+      badge: "MAY HALF TERM 2027",
+      title: "May half-term intensives",
+      range: "Mon 31 May – Thu 3 June 2027",
+      badgeIcon: "leaf",
+      sort: 4,
     },
   ];
 
@@ -148,11 +187,55 @@
     { id: "dc-sf-wed-1100", serviceId: "day_centre", venue: "SwimFarm", day: "Wednesday", timeLabel: "11.00 – 4.00", sortTime: "11:00", capacity: 4, taken: 3 },
     { id: "dc-sf-fri-1230", serviceId: "day_centre", venue: "SwimFarm", day: "Friday", timeLabel: "12.30 – 3.00", sortTime: "12:30", capacity: 3, taken: 3 },
 
-    { id: "in-ww-tue-1000", serviceId: "intensive", venue: "Westway", day: "Tuesday", timeLabel: "10.00 – 12.00 · Climb camp", sortTime: "10:00", capacity: 2, taken: 2 },
-    { id: "in-ww-wed-1000", serviceId: "intensive", venue: "Westway", day: "Wednesday", timeLabel: "10.00 – 12.00 · Climb camp", sortTime: "10:00", capacity: 2, taken: 1 },
-    { id: "in-act-thu-1000", serviceId: "intensive", venue: "Acton", day: "Thursday", timeLabel: "10.00 – 12.00 · Swim camp", sortTime: "10:00", capacity: 8, taken: 8 },
-    { id: "in-act-fri-1000", serviceId: "intensive", venue: "Acton", day: "Friday", timeLabel: "10.00 – 12.00 · Swim camp", sortTime: "10:00", capacity: 8, taken: 5 },
-    { id: "in-sf-mon-1100", serviceId: "intensive", venue: "SwimFarm", day: "Monday", timeLabel: "11.00 – 3.00 · Holiday block", sortTime: "11:00", capacity: 6, taken: 6 },
+    /* Summer crash · Week 1 (Tue–Fri 21–24 July) */
+    { id: "in-s1-ww-tue", serviceId: "intensive", blockId: "summer_july", venue: "Westway", day: "Week 1 · Tue 21 Jul", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 2 },
+    { id: "in-s1-ww-wed", serviceId: "intensive", blockId: "summer_july", venue: "Westway", day: "Week 1 · Wed 22 Jul", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 1 },
+    { id: "in-s1-ww-thu", serviceId: "intensive", blockId: "summer_july", venue: "Westway", day: "Week 1 · Thu 23 Jul", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 0 },
+    { id: "in-s1-ww-fri", serviceId: "intensive", blockId: "summer_july", venue: "Westway", day: "Week 1 · Fri 24 Jul", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 2 },
+    { id: "in-s1-act-tue", serviceId: "intensive", blockId: "summer_july", venue: "Acton", day: "Week 1 · Tue 21 Jul", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 8 },
+    { id: "in-s1-act-wed", serviceId: "intensive", blockId: "summer_july", venue: "Acton", day: "Week 1 · Wed 22 Jul", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 5 },
+    { id: "in-s1-act-thu", serviceId: "intensive", blockId: "summer_july", venue: "Acton", day: "Week 1 · Thu 23 Jul", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 3 },
+    { id: "in-s1-act-fri", serviceId: "intensive", blockId: "summer_july", venue: "Acton", day: "Week 1 · Fri 24 Jul", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 8 },
+
+    /* Summer crash · Week 2 (Tue–Fri 28–31 July) */
+    { id: "in-s2-ww-tue", serviceId: "intensive", blockId: "summer_july", venue: "Westway", day: "Week 2 · Tue 28 Jul", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 0 },
+    { id: "in-s2-ww-wed", serviceId: "intensive", blockId: "summer_july", venue: "Westway", day: "Week 2 · Wed 29 Jul", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 2 },
+    { id: "in-s2-ww-thu", serviceId: "intensive", blockId: "summer_july", venue: "Westway", day: "Week 2 · Thu 30 Jul", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 1 },
+    { id: "in-s2-ww-fri", serviceId: "intensive", blockId: "summer_july", venue: "Westway", day: "Week 2 · Fri 31 Jul", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 0 },
+    { id: "in-s2-act-tue", serviceId: "intensive", blockId: "summer_july", venue: "Acton", day: "Week 2 · Tue 28 Jul", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 4 },
+    { id: "in-s2-act-wed", serviceId: "intensive", blockId: "summer_july", venue: "Acton", day: "Week 2 · Wed 29 Jul", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 8 },
+    { id: "in-s2-act-thu", serviceId: "intensive", blockId: "summer_july", venue: "Acton", day: "Week 2 · Thu 30 Jul", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 2 },
+    { id: "in-s2-act-fri", serviceId: "intensive", blockId: "summer_july", venue: "Acton", day: "Week 2 · Fri 31 Jul", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 6 },
+
+    /* October half term 2026 Mon–Thu */
+    { id: "in-oct-ww-mon", serviceId: "intensive", blockId: "oct_ht", venue: "Westway", day: "Mon 26 Oct", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 1 },
+    { id: "in-oct-ww-tue", serviceId: "intensive", blockId: "oct_ht", venue: "Westway", day: "Tue 27 Oct", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 2 },
+    { id: "in-oct-ww-wed", serviceId: "intensive", blockId: "oct_ht", venue: "Westway", day: "Wed 28 Oct", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 0 },
+    { id: "in-oct-ww-thu", serviceId: "intensive", blockId: "oct_ht", venue: "Westway", day: "Thu 29 Oct", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 1 },
+    { id: "in-oct-act-mon", serviceId: "intensive", blockId: "oct_ht", venue: "Acton", day: "Mon 26 Oct", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 8 },
+    { id: "in-oct-act-tue", serviceId: "intensive", blockId: "oct_ht", venue: "Acton", day: "Tue 27 Oct", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 3 },
+    { id: "in-oct-act-wed", serviceId: "intensive", blockId: "oct_ht", venue: "Acton", day: "Wed 28 Oct", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 5 },
+    { id: "in-oct-act-thu", serviceId: "intensive", blockId: "oct_ht", venue: "Acton", day: "Thu 29 Oct", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 0 },
+
+    /* February half term 2027 Mon–Thu */
+    { id: "in-feb-ww-mon", serviceId: "intensive", blockId: "feb_ht", venue: "Westway", day: "Mon 15 Feb", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 0 },
+    { id: "in-feb-ww-tue", serviceId: "intensive", blockId: "feb_ht", venue: "Westway", day: "Tue 16 Feb", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 1 },
+    { id: "in-feb-ww-wed", serviceId: "intensive", blockId: "feb_ht", venue: "Westway", day: "Wed 17 Feb", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 2 },
+    { id: "in-feb-ww-thu", serviceId: "intensive", blockId: "feb_ht", venue: "Westway", day: "Thu 18 Feb", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 0 },
+    { id: "in-feb-act-mon", serviceId: "intensive", blockId: "feb_ht", venue: "Acton", day: "Mon 15 Feb", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 2 },
+    { id: "in-feb-act-tue", serviceId: "intensive", blockId: "feb_ht", venue: "Acton", day: "Tue 16 Feb", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 8 },
+    { id: "in-feb-act-wed", serviceId: "intensive", blockId: "feb_ht", venue: "Acton", day: "Wed 17 Feb", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 4 },
+    { id: "in-feb-act-thu", serviceId: "intensive", blockId: "feb_ht", venue: "Acton", day: "Thu 18 Feb", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 1 },
+
+    /* May half term 2027 Mon–Thu */
+    { id: "in-may-ww-mon", serviceId: "intensive", blockId: "may_ht", venue: "Westway", day: "Mon 31 May", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 2 },
+    { id: "in-may-ww-tue", serviceId: "intensive", blockId: "may_ht", venue: "Westway", day: "Tue 1 Jun", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 0 },
+    { id: "in-may-ww-wed", serviceId: "intensive", blockId: "may_ht", venue: "Westway", day: "Wed 2 Jun", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 1 },
+    { id: "in-may-ww-thu", serviceId: "intensive", blockId: "may_ht", venue: "Westway", day: "Thu 3 Jun", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 0 },
+    { id: "in-may-act-mon", serviceId: "intensive", blockId: "may_ht", venue: "Acton", day: "Mon 31 May", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 6 },
+    { id: "in-may-act-tue", serviceId: "intensive", blockId: "may_ht", venue: "Acton", day: "Tue 1 Jun", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 2 },
+    { id: "in-may-act-wed", serviceId: "intensive", blockId: "may_ht", venue: "Acton", day: "Wed 2 Jun", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 8 },
+    { id: "in-may-act-thu", serviceId: "intensive", blockId: "may_ht", venue: "Acton", day: "Thu 3 Jun", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 3 },
   ];
 
   var DAY_ORDER = {
@@ -185,6 +268,32 @@
     return VENUE_LABELS[k] || k;
   }
 
+  function blockById(id) {
+    for (var i = 0; i < INTENSIVE_BLOCKS.length; i++) {
+      if (INTENSIVE_BLOCKS[i].id === id) return INTENSIVE_BLOCKS[i];
+    }
+    return null;
+  }
+
+  /** Intensive slots → ordered blocks with venue→day grouping inside each. */
+  function groupIntensiveByBlock(slots) {
+    var byBlock = Object.create(null);
+    (slots || []).forEach(function (slot) {
+      var bid = String(slot.blockId || "").trim() || "other";
+      if (!byBlock[bid]) byBlock[bid] = [];
+      byBlock[bid].push(slot);
+    });
+    return INTENSIVE_BLOCKS.map(function (block) {
+      var list = byBlock[block.id] || [];
+      return {
+        block: block,
+        venues: groupSlotsByVenueThenDay(list),
+      };
+    }).filter(function (row) {
+      return row.venues.length > 0;
+    });
+  }
+
   /** Group slots: venue → day → slots[] (preserves day/time sort of filterSlots). */
   function groupSlotsByVenueThenDay(slots) {
     var byVenue = Object.create(null);
@@ -205,7 +314,8 @@
     return venueOrder.map(function (venue) {
       var daysMap = byVenue[venue];
       var dayKeys = Object.keys(daysMap).sort(function (a, b) {
-        return (DAY_ORDER[a] || 99) - (DAY_ORDER[b] || 99);
+        if (DAY_ORDER[a] && DAY_ORDER[b]) return DAY_ORDER[a] - DAY_ORDER[b];
+        return a.localeCompare(b, "en");
       });
       return {
         venue: venue,
@@ -273,8 +383,11 @@
       if (filters.hideFull && isFull(slot)) return false;
       return true;
     }).sort(function (a, b) {
-      var d = (DAY_ORDER[a.day] || 99) - (DAY_ORDER[b.day] || 99);
-      if (d) return d;
+      var da = DAY_ORDER[a.day];
+      var db = DAY_ORDER[b.day];
+      if (da && db && da !== db) return da - db;
+      var ds = String(a.day || "").localeCompare(String(b.day || ""), "en");
+      if (ds) return ds;
       var t = String(a.sortTime).localeCompare(String(b.sortTime));
       if (t) return t;
       return String(a.venue).localeCompare(String(b.venue));
@@ -284,15 +397,18 @@
   global.PortalBookingOfferMock = {
     SERVICES: SERVICES,
     MOCK_SLOTS: MOCK_SLOTS,
+    INTENSIVE_BLOCKS: INTENSIVE_BLOCKS,
     TERM_BADGE: TERM_BADGE,
     TERM_LABEL: TERM_LABEL,
     TERM_RANGE: TERM_RANGE,
     serviceById: serviceById,
     venueLabel: venueLabel,
+    blockById: blockById,
     seatsLeft: seatsLeft,
     isFull: isFull,
     filterOptions: filterOptions,
     filterSlots: filterSlots,
     groupSlotsByVenueThenDay: groupSlotsByVenueThenDay,
+    groupIntensiveByBlock: groupIntensiveByBlock,
   };
 })(typeof window !== "undefined" ? window : globalThis);
