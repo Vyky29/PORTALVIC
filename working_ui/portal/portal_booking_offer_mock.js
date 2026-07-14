@@ -142,6 +142,16 @@
       range: "Week 1: Tue 21 – Fri 24 July · Week 2: Tue 28 – Fri 31 July 2026",
       badgeIcon: "sun",
       sort: 1,
+      dates: [
+        { iso: "2026-07-21", label: "21 Jul" },
+        { iso: "2026-07-22", label: "22 Jul" },
+        { iso: "2026-07-23", label: "23 Jul" },
+        { iso: "2026-07-24", label: "24 Jul" },
+        { iso: "2026-07-28", label: "28 Jul" },
+        { iso: "2026-07-29", label: "29 Jul" },
+        { iso: "2026-07-30", label: "30 Jul" },
+        { iso: "2026-07-31", label: "31 Jul" },
+      ],
     },
     {
       id: "oct_ht",
@@ -150,6 +160,12 @@
       range: "Mon 26 – Thu 29 October 2026",
       badgeIcon: "leaf",
       sort: 2,
+      dates: [
+        { iso: "2026-10-26", label: "26 Oct" },
+        { iso: "2026-10-27", label: "27 Oct" },
+        { iso: "2026-10-28", label: "28 Oct" },
+        { iso: "2026-10-29", label: "29 Oct" },
+      ],
     },
     {
       id: "feb_ht",
@@ -158,6 +174,12 @@
       range: "Mon 15 – Thu 18 February 2027",
       badgeIcon: "leaf",
       sort: 3,
+      dates: [
+        { iso: "2027-02-15", label: "15 Feb" },
+        { iso: "2027-02-16", label: "16 Feb" },
+        { iso: "2027-02-17", label: "17 Feb" },
+        { iso: "2027-02-18", label: "18 Feb" },
+      ],
     },
     {
       id: "may_ht",
@@ -166,6 +188,12 @@
       range: "Mon 31 May – Thu 3 June 2027",
       badgeIcon: "leaf",
       sort: 4,
+      dates: [
+        { iso: "2027-05-31", label: "31 May" },
+        { iso: "2027-06-01", label: "1 Jun" },
+        { iso: "2027-06-02", label: "2 Jun" },
+        { iso: "2027-06-03", label: "3 Jun" },
+      ],
     },
   ];
 
@@ -372,6 +400,23 @@
     return "£" + n.toLocaleString("en-GB", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   }
 
+  /** Mark intensive block dates past/remaining (chips under Summer / half-term heads). */
+  function intensiveBlockDateChips(block, asOf) {
+    var dates = (block && block.dates) || [];
+    var today = asOf instanceof Date ? asOf : asOf ? parseIsoDate(asOf) : new Date();
+    if (!(today instanceof Date) || isNaN(today.getTime())) today = new Date();
+    var todayIso = toIsoDate(
+      new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()))
+    );
+    return dates.map(function (d) {
+      return {
+        iso: d.iso,
+        label: d.label,
+        past: String(d.iso) < todayIso,
+      };
+    });
+  }
+
   function venueLabel(venue) {
     var k = String(venue || "").trim();
     return VENUE_LABELS[k] || k;
@@ -523,5 +568,6 @@
     termDatesForWeekday: termDatesForWeekday,
     remainingTermPrice: remainingTermPrice,
     formatPounds: formatPounds,
+    intensiveBlockDateChips: intensiveBlockDateChips,
   };
 })(typeof window !== "undefined" ? window : globalThis);

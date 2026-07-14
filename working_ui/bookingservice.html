@@ -534,6 +534,15 @@
       font-weight: 600;
       overflow-wrap: break-word;
     }
+    .intensive-block__chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      align-items: center;
+      min-width: 0;
+      width: 100%;
+      margin-top: 2px;
+    }
     .term-badge svg {
       width: 14px !important;
       height: 14px !important;
@@ -1067,7 +1076,7 @@
     </div>
   </div>
 
-  <script src="/portal/portal_booking_offer_mock.js?v=20260714-booking-dates"></script>
+  <script src="/portal/portal_booking_offer_mock.js?v=20260714-booking-chips2"></script>
   <script>
 (function () {
   "use strict";
@@ -1344,29 +1353,36 @@
     );
   }
 
+  function dateChipsHtml(dates) {
+    if (!dates || !dates.length) return "";
+    return (
+      '<div class="day-acc__chips intensive-block__chips">' +
+      dates
+        .map(function (d) {
+          return (
+            '<span class="date-chip' +
+            (d.past ? " date-chip--past" : "") +
+            '" title="' +
+            esc(d.iso) +
+            (d.past ? " · past" : " · remaining") +
+            '">' +
+            esc(d.label) +
+            "</span>"
+          );
+        })
+        .join("") +
+      "</div>"
+    );
+  }
+
   function daySummaryExtrasHtml(s, dayName) {
     if (!s || s.intensiveBlocks) return "";
     if (!mock.remainingTermPrice) return "";
-    // Canonical weekday names only (not intensive "Week 1 · Tue…")
     if (!/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)$/.test(dayName)) {
       return "";
     }
     var stats = mock.remainingTermPrice(dayName, s.pricePerSession);
     if (!stats.dates.length) return "";
-    var chips = stats.dates
-      .map(function (d) {
-        return (
-          '<span class="date-chip' +
-          (d.past ? " date-chip--past" : "") +
-          '" title="' +
-          esc(d.iso) +
-          (d.past ? " · past" : " · remaining") +
-          '">' +
-          esc(d.label) +
-          "</span>"
-        );
-      })
-      .join("");
     var money = mock.formatPounds(stats.remainingTotal);
     var remLine =
       '<p class="day-acc__remaining">' +
@@ -1383,7 +1399,7 @@
           "/session)"
         : " · price by arrangement") +
       "</p>";
-    return '<span class="day-acc__chips">' + chips + "</span>" + remLine;
+    return dateChipsHtml(stats.dates) + remLine;
   }
 
   function venuesAccordionHtml(s, venues, openFirst) {
@@ -1452,6 +1468,12 @@
           var badgeIcon = block.badgeIcon === "sun" ? ICONS.sun : ICONS.leaf;
           var badgeCls =
             block.badgeIcon === "sun" ? " term-badge--summer" : "";
+          var blockChips = mock.intensiveBlockDateChips
+            ? mock.intensiveBlockDateChips(block)
+            : [];
+          var rem = blockChips.filter(function (d) {
+            return !d.past;
+          }).length;
           return (
             '<section class="intensive-block" id="intensive-' +
             esc(block.id) +
@@ -1470,6 +1492,14 @@
             '<p class="intensive-block__range">' +
             esc(block.range) +
             "</p>" +
+            dateChipsHtml(blockChips) +
+            (blockChips.length
+              ? '<p class="day-acc__remaining"><strong>' +
+                rem +
+                "</strong> of " +
+                blockChips.length +
+                " camp days remaining</p>"
+              : "") +
             "</div>" +
             venuesAccordionHtml(s, row.venues, bi === 0) +
             "</section>"
