@@ -665,6 +665,9 @@ input:focus, select:focus, textarea:focus{
 #feedbackExtendedSection[data-swim-axes="1"] .options--independence .swim-axis-pill{
   flex:none;
   width:100%;
+  min-width:0;
+  min-height:92px;
+  box-sizing:border-box;
 }
 .fb-io-choice-row{
   display:flex;
@@ -797,6 +800,25 @@ input:focus, select:focus, textarea:focus{
   gap:8px;
   width:100%;
   min-width:0;
+  justify-content:stretch;
+  align-items:stretch;
+  flex-wrap:unset;
+  padding:0;
+  overflow:visible;
+}
+#feedbackExtendedSection[data-swim-axes="1"] .options--engagement .swim-axis-pill,
+#feedbackExtendedSection[data-swim-axes="1"] .options--emotions .swim-axis-pill,
+#feedbackExtendedSection[data-swim-axes="1"] .options--independence .swim-axis-pill{
+  flex:none;
+  width:100%;
+  min-width:0;
+  min-height:92px;
+  box-sizing:border-box;
+}
+#feedbackExtendedSection[data-swim-axes="1"] .options--engagement .swim-axis-pill.rate{
+  /* Match emotion/independence card size — not the compact star row. */
+  min-width:0;
+  padding:12px 10px 14px;
 }
 .fb-dc-swim__axis .swim-axis-row,
 .fb-dc-swim__axis .options{
@@ -1376,6 +1398,11 @@ button{
   .pill{ flex:1 1 calc(50% - 12px); margin:3px 2px; }
   .options:not(.options--independence):not(.options--emotions):not(.options--engagement) .pill{ justify-content:center; }
   .options--engagement .pill{ flex:0 0 auto; margin:0; }
+  #feedbackExtendedSection[data-swim-axes="1"] .options--engagement .pill.swim-axis-pill{
+    flex:none;
+    width:100%;
+    margin:0;
+  }
   .options--emotions{ grid-template-columns:repeat(2,minmax(0,1fr)); }
   .options--emotions .pill{ flex:none; margin:0; }
   .patternGrid .pill{ flex:1 1 100%; }

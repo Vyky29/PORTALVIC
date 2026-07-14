@@ -811,21 +811,19 @@
       return;
     }
 
-    engHost.innerHTML =
-      '<div class="swim-axis-row" role="group" aria-label="Swimming engagement">' +
-      ENGAGEMENT.map(function (o) {
-        return (
-          '<label class="pill rate swim-axis-pill" data-kind="rating" data-value="' +
-          o.value +
-          '"><input type="checkbox" name="engagementRating" value="' +
-          o.value +
-          '"><span class="pill-independence-inner">' +
-          engIconHtml(o.icon) +
-          optionPillTextHtml(o, true) +
-          "</span></label>"
-        );
-      }).join("") +
-      "</div>";
+    engHost.setAttribute("role", "group");
+    engHost.innerHTML = ENGAGEMENT.map(function (o) {
+      return (
+        '<label class="pill rate swim-axis-pill" data-kind="rating" data-value="' +
+        o.value +
+        '"><input type="checkbox" name="engagementRating" value="' +
+        o.value +
+        '"><span class="pill-independence-inner">' +
+        engIconHtml(o.icon) +
+        optionPillTextHtml(o, true) +
+        "</span></label>"
+      );
+    }).join("");
 
     var engField = engHost.closest(".field");
     if (engField) {
