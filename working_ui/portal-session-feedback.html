@@ -31,12 +31,12 @@
 <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260713-ios-video-save" />
 <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
 <script src="/portal/portal_participant_achievements.js?v=20260713-ios-video-save"></script>
-<script src="/portal/portal_swim_session_axes.js?v=20260714-swim-choice-modes"></script>
+<script src="/portal/portal_swim_session_axes.js?v=20260714-multi-choice"></script>
 <script src="/portal/portal_feedback_voice_input.js?v=20260705c-voice-ai-down-message"></script>
 <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
 <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
 <script>window.PORTAL_FEEDBACK_ADMIN_FILTERS = true;</script>
-<script src="/portal/portal_feedback_narrative.js?v=20260714-voice-written-choice2"></script>
+<script src="/portal/portal_feedback_narrative.js?v=20260714-voice-written-gold"></script>
 <script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
 <style>
 :root{
@@ -540,9 +540,10 @@ input:focus, select:focus, textarea:focus{
   min-height:0 !important;
   gap:0 !important;
 }
-.swim-axis-pill__inner,
 .swim-axis-pill .pill-emotion-inner,
 .swim-axis-pill .pill-independence-inner{
+  position:relative;
+  z-index:0;
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -553,35 +554,18 @@ input:focus, select:focus, textarea:focus{
   text-align:center;
   pointer-events:none;
 }
-.swim-axis-pill__icon{
-  flex-shrink:0;
-  width:30px;
-  height:30px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  border-radius:50%;
-  background:rgba(255,255,255,0.88);
-  box-shadow:inset 0 0 0 1px rgba(0,0,0,0.06);
-  color:#ca8a04;
+.swim-axis-pill .pill-independence-icon,
+.swim-axis-pill .pill-emotion-face{
+  width:36px;
+  height:36px;
 }
-.swim-axis-pill__icon svg{
-  width:18px;
-  height:18px;
-  display:block;
+.swim-axis-pill .pill-independence-icon svg{
+  width:20px;
+  height:20px;
 }
-.swim-axis-pill.rate[data-value="1"] .swim-axis-pill__icon{ color:#2563eb; }
-.swim-axis-pill.rate[data-value="2"] .swim-axis-pill__icon{ color:#ca8a04; }
-.swim-axis-pill.rate[data-value="3"] .swim-axis-pill__icon{ color:#0d9488; }
-.swim-axis-pill.rate[data-value="4"] .swim-axis-pill__icon{ color:#16a34a; }
-.swim-axis-pill.isSelected .swim-axis-pill__icon,
-.swim-axis-pill.isSelected .pill-emotion-face,
-.swim-axis-pill.isSelected .pill-independence-icon{
-  background:#fff;
-  box-shadow:inset 0 0 0 1px rgba(199,125,0,0.22);
-}
-.swim-axis-pill.independence.isSelected .pill-independence-icon{
-  color:#b45309;
+.swim-axis-pill .pill-emotion-face svg{
+  width:24px;
+  height:24px;
 }
 .swim-axis-pill .pill-independence-text{
   display:flex;
@@ -590,7 +574,6 @@ input:focus, select:focus, textarea:focus{
   min-width:0;
   text-align:center;
 }
-.swim-axis-pill__text,
 .swim-axis-pill .pill-emotion-label,
 .swim-axis-pill .pill-independence-title{
   font-size:13px;
@@ -607,53 +590,54 @@ input:focus, select:focus, textarea:focus{
   color:var(--muted,#6b7280);
   text-align:center;
 }
-/* Match non-swim emotion face palette */
+/* Engagement + independence colors (same palette as non-swim emotions) */
+.swim-axis-pill.rate[data-value="1"] .pill-independence-icon{ color:#2563eb; }
+.swim-axis-pill.rate[data-value="2"] .pill-independence-icon{ color:#ca8a04; }
+.swim-axis-pill.rate[data-value="3"] .pill-independence-icon{ color:#0d9488; }
+.swim-axis-pill.rate[data-value="4"] .pill-independence-icon{ color:#16a34a; }
+.swim-axis-pill.independence[data-value="Full support in the water"] .pill-independence-icon{ color:#2563eb; }
+.swim-axis-pill.independence[data-value="Regular support / hands-on help"] .pill-independence-icon{ color:#ca8a04; }
+.swim-axis-pill.independence[data-value="Mostly with prompts"] .pill-independence-icon{ color:#0d9488; }
+.swim-axis-pill.independence[data-value="Mostly on their own"] .pill-independence-icon{ color:#16a34a; }
 .swim-axis-pill.emotion[data-value="Found the water hard today"] .pill-emotion-face{ color:#2563eb; }
 .swim-axis-pill.emotion[data-value="Needed help to settle"] .pill-emotion-face{ color:#ca8a04; }
 .swim-axis-pill.emotion[data-value="Mostly calm"] .pill-emotion-face{ color:#0d9488; }
 .swim-axis-pill.emotion[data-value="Calm and settled"] .pill-emotion-face{ color:#16a34a; }
-.swim-axis-pill.emotion[data-value="Found the water hard today"].isSelected{
-  background:rgba(37, 99, 235, 0.14);
+.swim-axis-pill.isSelected .pill-emotion-face,
+.swim-axis-pill.isSelected .pill-independence-icon{
+  background:#fff;
+  box-shadow:inset 0 0 0 1px rgba(199,125,0,0.22);
+}
+.swim-axis-pill.emotion[data-value="Found the water hard today"].isSelected,
+.swim-axis-pill.rate[data-value="1"].isSelected,
+.swim-axis-pill.independence[data-value="Full support in the water"].isSelected{
+  background:rgba(37, 99, 235, 0.12);
   border-color:rgba(37, 99, 235, 0.42);
   color:#0f172a;
-  box-shadow:inset 0 0 0 1px rgba(37, 99, 235, 0.2), 0 2px 10px rgba(37, 99, 235, 0.12);
-}
-.swim-axis-pill.emotion[data-value="Needed help to settle"].isSelected{
-  background:rgba(202, 138, 4, 0.18);
-  border-color:rgba(180, 120, 0, 0.48);
-  color:#0f172a;
-  box-shadow:inset 0 0 0 1px rgba(202, 138, 4, 0.24), 0 2px 10px rgba(202, 138, 4, 0.1);
-}
-.swim-axis-pill.emotion[data-value="Mostly calm"].isSelected{
-  background:rgba(13, 148, 136, 0.14);
-  border-color:rgba(13, 148, 136, 0.4);
-  color:#0f172a;
-  box-shadow:inset 0 0 0 1px rgba(13, 148, 136, 0.22), 0 2px 10px rgba(13, 148, 136, 0.1);
-}
-.swim-axis-pill.emotion[data-value="Calm and settled"].isSelected{
-  background:rgba(22, 163, 74, 0.16);
-  border-color:rgba(22, 163, 74, 0.4);
-  color:#0f172a;
-  box-shadow:inset 0 0 0 1px rgba(22, 163, 74, 0.22), 0 2px 10px rgba(22, 163, 74, 0.12);
-}
-.swim-axis-pill.rate[data-value="1"].isSelected{
-  background:rgba(37, 99, 235, 0.1);
-  border-color:rgba(37, 99, 235, 0.42);
   box-shadow:inset 0 0 0 1px rgba(37, 99, 235, 0.18), 0 2px 10px rgba(37, 99, 235, 0.1);
 }
-.swim-axis-pill.rate[data-value="2"].isSelected{
-  background:rgba(202, 138, 4, 0.14);
+.swim-axis-pill.emotion[data-value="Needed help to settle"].isSelected,
+.swim-axis-pill.rate[data-value="2"].isSelected,
+.swim-axis-pill.independence[data-value="Regular support / hands-on help"].isSelected{
+  background:rgba(202, 138, 4, 0.16);
   border-color:rgba(180, 120, 0, 0.48);
+  color:#0f172a;
   box-shadow:inset 0 0 0 1px rgba(202, 138, 4, 0.2), 0 2px 10px rgba(202, 138, 4, 0.1);
 }
-.swim-axis-pill.rate[data-value="3"].isSelected{
+.swim-axis-pill.emotion[data-value="Mostly calm"].isSelected,
+.swim-axis-pill.rate[data-value="3"].isSelected,
+.swim-axis-pill.independence[data-value="Mostly with prompts"].isSelected{
   background:rgba(13, 148, 136, 0.12);
   border-color:rgba(13, 148, 136, 0.4);
+  color:#0f172a;
   box-shadow:inset 0 0 0 1px rgba(13, 148, 136, 0.2), 0 2px 10px rgba(13, 148, 136, 0.1);
 }
-.swim-axis-pill.rate[data-value="4"].isSelected{
+.swim-axis-pill.emotion[data-value="Calm and settled"].isSelected,
+.swim-axis-pill.rate[data-value="4"].isSelected,
+.swim-axis-pill.independence[data-value="Mostly on their own"].isSelected{
   background:rgba(22, 163, 74, 0.14);
   border-color:rgba(22, 163, 74, 0.42);
+  color:#0f172a;
   box-shadow:inset 0 0 0 1px rgba(22, 163, 74, 0.2), 0 2px 10px rgba(22, 163, 74, 0.1);
 }
 #feedbackExtendedSection[data-swim-axes="1"] .options--engagement .swim-axis-pill,
@@ -661,6 +645,71 @@ input:focus, select:focus, textarea:focus{
 #feedbackExtendedSection[data-swim-axes="1"] .options--independence .swim-axis-pill{
   flex:none;
   width:100%;
+}
+.fb-io-choice-row{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.fb-io-btn{
+  flex:1 1 140px;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  padding:16px 16px;
+  border-radius:14px;
+  border:1px solid var(--line,#d9dee5);
+  background:#fff;
+  cursor:pointer;
+  text-align:center;
+}
+.fb-io-btn__icon{
+  width:44px;
+  height:44px;
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:rgba(255, 248, 220, 0.95);
+  border:1px solid rgba(190, 155, 85, 0.4);
+  color:#b45309;
+  box-shadow:inset 0 0 0 1px rgba(245, 176, 20, 0.15);
+}
+.fb-io-btn__icon svg{
+  width:22px;
+  height:22px;
+  display:block;
+}
+.fb-io-btn__copy{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  min-width:0;
+}
+.fb-io-btn__title{
+  font-weight:800;
+  color:var(--text);
+}
+.fb-io-btn__sub{
+  font-size:12px;
+  font-weight:600;
+  color:var(--muted,#6b7280);
+  overflow-wrap:break-word;
+}
+.fb-io-btn[aria-pressed="true"]{
+  border-color:rgba(199, 125, 0, 0.75);
+  background:rgba(255, 224, 130, 0.35);
+  box-shadow:inset 0 0 0 1px rgba(245, 176, 20, 0.35), 0 2px 10px rgba(245, 160, 15, 0.15);
+}
+.fb-io-btn[aria-pressed="true"] .fb-io-btn__icon{
+  color:#b45309;
+  background:#fff;
+  border-color:rgba(199, 125, 0, 0.45);
 }
 .fb-dc-swim{
   margin: 4px 0 18px;
@@ -1439,14 +1488,14 @@ button{
         <div class="field fb-io-choice" id="fbInputChoice" hidden>
           <label>How do you want to give this feedback?</label>
           <p class="small field-note" style="margin:0 0 10px">Both save the same session narrative — <strong>Voice</strong> adds a microphone, <strong>Written</strong> is typed.</p>
-          <div class="fb-io-choice-row" role="group" aria-label="Feedback input method" style="display:flex;gap:12px;flex-wrap:wrap">
-            <button type="button" class="fb-io-btn" id="fbIoVoice" data-fb-io="voice" aria-pressed="false" style="flex:1 1 140px;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:14px 16px;border-radius:14px;border:1px solid var(--line,#d9dee5);background:#fff;cursor:pointer;text-align:center">
-              <span aria-hidden="true" style="font-size:26px;line-height:1">🎤</span>
-              <span style="display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0"><span style="font-weight:800">Voice</span><span class="small" style="color:var(--muted,#6b7280)">Speak it, we transcribe</span></span>
+          <div class="fb-io-choice-row" role="group" aria-label="Feedback input method">
+            <button type="button" class="fb-io-btn" id="fbIoVoice" data-fb-io="voice" aria-pressed="false">
+              <span class="fb-io-btn__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></span>
+              <span class="fb-io-btn__copy"><span class="fb-io-btn__title">Voice</span><span class="fb-io-btn__sub">Speak it, we transcribe</span></span>
             </button>
-            <button type="button" class="fb-io-btn" id="fbIoWritten" data-fb-io="written" aria-pressed="false" style="flex:1 1 140px;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:14px 16px;border-radius:14px;border:1px solid var(--line,#d9dee5);background:#fff;cursor:pointer;text-align:center">
-              <span aria-hidden="true" style="font-size:26px;line-height:1">⌨️</span>
-              <span style="display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0"><span style="font-weight:800">Written</span><span class="small" style="color:var(--muted,#6b7280)">Type it yourself</span></span>
+            <button type="button" class="fb-io-btn" id="fbIoWritten" data-fb-io="written" aria-pressed="false">
+              <span class="fb-io-btn__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span>
+              <span class="fb-io-btn__copy"><span class="fb-io-btn__title">Written</span><span class="fb-io-btn__sub">Type it yourself</span></span>
             </button>
           </div>
         </div>
@@ -1677,8 +1726,10 @@ button{
 
   function setExtendedFieldsRequired(isRequired){
     if(!feedbackExtendedSection) return;
+    var swimMode = feedbackExtendedSection.getAttribute("data-swim-axes") === "1";
     feedbackExtendedSection.querySelectorAll('input[name="engagementRating"]').forEach(function(inp, idx){
-      if(isRequired && idx === 0) inp.setAttribute("required", "");
+      // Swim axes are multi checkbox — validated in submit JS, not HTML required.
+      if(isRequired && !swimMode && idx === 0) inp.setAttribute("required", "");
       else inp.removeAttribute("required");
     });
     feedbackExtendedSection.querySelectorAll('input[name="independenceLevel"]').forEach(function(inp){
@@ -1770,6 +1821,7 @@ button{
     if(!document.getElementById("fbDayCentreSwimBlock") || document.getElementById("fbDayCentreSwimBlock").hidden){
       window.PortalSwimSessionAxes.applyFeedbackFormMode(feedbackExtendedSection, aquatic);
     }
+    setExtendedFieldsRequired(true);
     syncPillSelection();
   }
 
@@ -3203,13 +3255,19 @@ button{
     const selectedNum = parseInt(selected, 10);
     const swimMode = feedbackExtendedSection && feedbackExtendedSection.getAttribute("data-swim-axes") === "1";
     form.querySelectorAll('.pill[data-kind="rating"]').forEach(p => {
+      const inp = p.querySelector('input[name="engagementRating"]');
+      if(swimMode){
+        p.classList.toggle("isSelected", !!(inp && inp.checked));
+        p.classList.remove("isFilled");
+        return;
+      }
       const val = p.getAttribute("data-value") || "";
       const v = parseInt(val, 10);
       p.classList.toggle("isSelected", val === selected);
       // Star fill only in generic mode.
       p.classList.toggle(
         "isFilled",
-        !swimMode && Number.isFinite(selectedNum) && v >= 1 && v <= selectedNum,
+        Number.isFinite(selectedNum) && v >= 1 && v <= selectedNum,
       );
     });
     form.querySelectorAll('.pill[data-kind="independence"]').forEach(p => {
@@ -3291,7 +3349,10 @@ button{
 
     const emotionChecked = Array.from(form.querySelectorAll('input[name="clientEmotions"]:checked'));
     if(!emotionChecked.length){
-      alert("Please select at least one option under Participant Emotions / Regulation.");
+      const swimModeAlert = feedbackExtendedSection && feedbackExtendedSection.getAttribute("data-swim-axes") === "1";
+      alert(swimModeAlert
+        ? "Please select at least one option under Regulation in the water."
+        : "Please select at least one option under Participant Emotions / Regulation.");
       return;
     }
     if(typeof window.PortalFeedbackNarrative !== "undefined"){
@@ -3329,13 +3390,27 @@ button{
       positiveFeedback = "";
       relevantInformation = clean((data.get("sessionNotes") || "").toString());
     }
-    const engagementRatingRaw = (data.get("engagementRating") || "").toString();
-    const engagementRatingParsed = parseInt(engagementRatingRaw, 10);
-    if(!engagementRatingRaw || !Number.isFinite(engagementRatingParsed)){
-      alert("Please select an Engagement rating.");
-      return;
+    const swimModeSubmit = feedbackExtendedSection && feedbackExtendedSection.getAttribute("data-swim-axes") === "1";
+    const engagementChecked = Array.from(form.querySelectorAll('input[name="engagementRating"]:checked'));
+    let engagementRating;
+    if(swimModeSubmit){
+      const engNums = engagementChecked
+        .map(function(inp){ return parseInt(String(inp.value || ""), 10); })
+        .filter(function(n){ return Number.isFinite(n); });
+      if(!engNums.length){
+        alert("Please select at least one Engagement option.");
+        return;
+      }
+      engagementRating = Math.round(engNums.reduce(function(a,b){ return a + b; }, 0) / engNums.length);
+    } else {
+      const engagementRatingRaw = (data.get("engagementRating") || "").toString();
+      const engagementRatingParsed = parseInt(engagementRatingRaw, 10);
+      if(!engagementRatingRaw || !Number.isFinite(engagementRatingParsed)){
+        alert("Please select an Engagement rating.");
+        return;
+      }
+      engagementRating = engagementRatingParsed;
     }
-    const engagementRating = engagementRatingParsed;
     const clientEmotionsVal = emotionChecked.map(function(inp){ return String(inp.value || "").trim(); }).filter(Boolean).join("; ");
     const independenceChecked = Array.from(form.querySelectorAll('input[name="independenceLevel"]:checked'));
     const independenceLevels = independenceChecked.map(function(inp){ return String(inp.value || "").trim(); }).filter(Boolean);

@@ -111,7 +111,7 @@
   ];
 
   function engIconHtml(svg) {
-    return '<span class="swim-axis-pill__icon" aria-hidden="true">' + (svg || "") + "</span>";
+    return '<span class="pill-independence-icon" aria-hidden="true">' + (svg || "") + "</span>";
   }
 
   function regFaceHtml(svg) {
@@ -435,29 +435,31 @@
       '<div class="fb-dc-swim__axes" id="fbDayCentreSwimAxes" hidden>' +
       '<div class="field fb-dc-swim__axis">' +
       "<label>Swimming engagement <span class=\"req\">*</span></label>" +
-      '<div class="swim-axis-row options--dc-swim-engagement" role="radiogroup" aria-label="Swimming engagement">' +
+      '<p class="small" style="margin:0 0 8px;font-weight:600;color:var(--muted)">Select all that apply.</p>' +
+      '<div class="swim-axis-row options--dc-swim-engagement" role="group" aria-label="Swimming engagement">' +
       ENGAGEMENT.map(function (o) {
         return (
           '<label class="pill rate swim-axis-pill" data-kind="dc-swim-rating" data-value="' +
           o.value +
-          '"><input type="radio" name="swimEngagementRating" value="' +
+          '"><input type="checkbox" name="swimEngagementRating" value="' +
           o.value +
-          '"><span class="swim-axis-pill__inner">' +
+          '"><span class="pill-independence-inner">' +
           engIconHtml(o.icon) +
-          '<span class="swim-axis-pill__text">' +
+          '<span class="pill-independence-text"><span class="pill-independence-title">' +
           esc(o.label) +
-          "</span></span></label>"
+          "</span></span></span></label>"
         );
       }).join("") +
       "</div></div>" +
       '<div class="field fb-dc-swim__axis">' +
       "<label>Regulation in the water <span class=\"req\">*</span></label>" +
-      '<div class="options options--dc-swim-regulation swim-axis-row" role="radiogroup" aria-label="Swimming regulation">' +
+      '<p class="small" style="margin:0 0 8px;font-weight:600;color:var(--muted)">Select all that apply.</p>' +
+      '<div class="options options--dc-swim-regulation swim-axis-row" role="group" aria-label="Swimming regulation">' +
       REGULATION.map(function (o) {
         return (
           '<label class="pill emotion swim-axis-pill" data-kind="dc-swim-regulation" data-value="' +
           esc(o.value) +
-          '"><input type="radio" name="swimRegulation" value="' +
+          '"><input type="checkbox" name="swimRegulation" value="' +
           esc(o.value) +
           '"><span class="pill-emotion-inner">' +
           regFaceHtml(o.icon) +
@@ -469,12 +471,13 @@
       "</div></div>" +
       '<div class="field fb-dc-swim__axis">' +
       "<label>Independence in the water <span class=\"req\">*</span></label>" +
-      '<div class="options options--dc-swim-independence swim-axis-row" role="radiogroup" aria-label="Swimming independence">' +
+      '<p class="small" style="margin:0 0 8px;font-weight:600;color:var(--muted)">Select all that apply.</p>' +
+      '<div class="options options--dc-swim-independence swim-axis-row" role="group" aria-label="Swimming independence">' +
       INDEPENDENCE.map(function (o) {
         return (
           '<label class="pill independence swim-axis-pill" data-kind="dc-swim-independence" data-value="' +
           esc(o.value) +
-          '"><input type="radio" name="swimIndependence" value="' +
+          '"><input type="checkbox" name="swimIndependence" value="' +
           esc(o.value) +
           '"><span class="pill-independence-inner">' +
           indIconHtml(o.icon) +
@@ -623,13 +626,40 @@
     if (mode === "exclusive") {
       return { swim_done: false, swim_engagement_rating: null, swim_regulation: null, swim_independence: null };
     }
-    var engRaw = (new FormData(form).get("swimEngagementRating") || "").toString();
-    var eng = parseInt(engRaw, 10);
-    var reg = clean((new FormData(form).get("swimRegulation") || "").toString());
-    var ind = clean((new FormData(form).get("swimIndependence") || "").toString());
+    var fd = new FormData(form);
+    var engVals = fd
+      .getAll("swimEngagementRating")
+      .map(function (v) {
+        return parseInt(String(v || ""), 10);
+      })
+      .filter(function (n) {
+        return Number.isFinite(n);
+      });
+    var eng =
+      engVals.length
+        ? Math.round(
+            engVals.reduce(function (a, b) {
+              return a + b;
+            }, 0) / engVals.length
+          )
+        : null;
+    var reg = fd
+      .getAll("swimRegulation")
+      .map(function (v) {
+        return clean(v);
+      })
+      .filter(Boolean)
+      .join("; ");
+    var ind = fd
+      .getAll("swimIndependence")
+      .map(function (v) {
+        return clean(v);
+      })
+      .filter(Boolean)
+      .join("; ");
     return {
       swim_done: true,
-      swim_engagement_rating: Number.isFinite(eng) ? eng : null,
+      swim_engagement_rating: eng,
       swim_regulation: reg || null,
       swim_independence: ind || null,
     };
@@ -647,9 +677,9 @@
     }
     var fields = readOptionalSwimFields(form);
     if (!fields.swim_done) return null;
-    if (fields.swim_engagement_rating == null) return "Please rate swimming engagement.";
-    if (!fields.swim_regulation) return "Please choose regulation in the water.";
-    if (!fields.swim_independence) return "Please choose independence in the water.";
+    if (fields.swim_engagement_rating == null) return "Please select at least one swimming engagement option.";
+    if (!fields.swim_regulation) return "Please select at least one regulation in the water option.";
+    if (!fields.swim_independence) return "Please select at least one independence in the water option.";
     return null;
   }
 
@@ -734,28 +764,40 @@
     }
 
     engHost.innerHTML =
-      '<div class="swim-axis-row" role="radiogroup" aria-label="Swimming engagement">' +
+      '<div class="swim-axis-row" role="group" aria-label="Swimming engagement">' +
       ENGAGEMENT.map(function (o) {
         return (
           '<label class="pill rate swim-axis-pill" data-kind="rating" data-value="' +
           o.value +
-          '"><input type="radio" name="engagementRating" value="' +
+          '"><input type="checkbox" name="engagementRating" value="' +
           o.value +
-          '"' +
-          (o.value === 1 ? " required" : "") +
-          '><span class="swim-axis-pill__inner">' +
+          '"><span class="pill-independence-inner">' +
           engIconHtml(o.icon) +
-          '<span class="swim-axis-pill__text">' +
+          '<span class="pill-independence-text"><span class="pill-independence-title">' +
           esc(o.label) +
-          "</span></span></label>"
+          "</span></span></span></label>"
         );
       }).join("") +
       "</div>";
 
+    var engField = engHost.closest(".field");
+    if (engField) {
+      var eh = engField.querySelector("p.small");
+      if (!eh) {
+        eh = document.createElement("p");
+        eh.className = "small";
+        eh.style.cssText = "margin:0 0 8px;font-weight:600;color:var(--muted)";
+        var engLab = engField.querySelector(":scope > label");
+        if (engLab && engLab.nextSibling) engField.insertBefore(eh, engLab.nextSibling);
+        else engField.insertBefore(eh, engHost);
+      }
+      eh.textContent = "Select all that apply.";
+    }
+
     var regField = regHost.closest(".field");
     if (regField) {
       var rh = regField.querySelector("p.small");
-      if (rh) rh.textContent = "One choice — how they regulated in the water today.";
+      if (rh) rh.textContent = "Select all that apply.";
       var rlab = regField.querySelector(":scope > label");
       if (rlab) {
         rlab.innerHTML =
@@ -763,12 +805,12 @@
           rlab.innerHTML;
       }
     }
-    regHost.setAttribute("role", "radiogroup");
+    regHost.setAttribute("role", "group");
     regHost.innerHTML = REGULATION.map(function (o) {
       return (
         '<label class="pill emotion swim-axis-pill" data-kind="emotion" data-value="' +
         esc(o.value) +
-        '"><input type="radio" name="clientEmotions" value="' +
+        '"><input type="checkbox" name="clientEmotions" value="' +
         esc(o.value) +
         '"><span class="pill-emotion-inner">' +
         regFaceHtml(o.icon) +
@@ -781,14 +823,14 @@
     var indField = indHost.closest(".field");
     if (indField) {
       var ih = indField.querySelector("p.small");
-      if (ih) ih.textContent = "One choice — support needed in the water today.";
+      if (ih) ih.textContent = "Select all that apply.";
     }
-    indHost.setAttribute("role", "radiogroup");
+    indHost.setAttribute("role", "group");
     indHost.innerHTML = INDEPENDENCE.map(function (o) {
       return (
         '<label class="pill independence swim-axis-pill" data-kind="independence" data-value="' +
         esc(o.value) +
-        '"><input type="radio" name="independenceLevel" value="' +
+        '"><input type="checkbox" name="independenceLevel" value="' +
         esc(o.value) +
         '"><span class="pill-independence-inner">' +
         indIconHtml(o.icon) +

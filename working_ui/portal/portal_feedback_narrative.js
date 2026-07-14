@@ -1002,9 +1002,6 @@
     function mark(btn, on) {
       if (!btn) return;
       btn.setAttribute("aria-pressed", on ? "true" : "false");
-      btn.style.borderColor = on ? "#2d84b3" : "var(--line,#d9dee5)";
-      btn.style.background = on ? "rgba(45,132,179,.08)" : "#fff";
-      btn.style.boxShadow = on ? "0 0 0 3px rgba(45,132,179,.12)" : "none";
     }
 
     function choose(mode) {
