@@ -1722,7 +1722,7 @@
     );
   }
 
-  var RE_TERMS_URL = "https://clubsensational.classforkids.io/terms-and-conditions";
+  var RE_TERMS_URL = "https://www.clubsensational.org/parent/terms";
 
   function renderRelevantInfoHtml(payCode, editing) {
     var isGc = normalizePayMethodChoice(payCode) === "gocardless";
