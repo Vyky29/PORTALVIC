@@ -53,6 +53,19 @@ function clean(v: unknown, max = 500): string {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
 }
 
+/** Keep line breaks for invoice description bodies (clean() would collapse them). */
+function cleanMultiline(v: unknown, max = 2400): string {
+  return String(v == null ? "" : v)
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .split("\n")
+    .map((line) => line.replace(/[ \t\u00a0]+/g, " ").trimEnd())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()
+    .slice(0, max);
+}
+
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
@@ -86,7 +99,7 @@ export async function createPortalFamilyInvoice(
   const reference = clean(input.reference, 120) || null;
   const service = clean(input.service, 80) || null;
   const lineDescription =
-    clean(input.lineDescription, 800) ||
+    cleanMultiline(input.lineDescription, 2400) ||
     "Structured activity support delivered for a SEND participant.";
   const notes = clean(input.notes, 800) || null;
   const shareStatus = input.shareStatus === "hidden" ? "hidden" : "ready";

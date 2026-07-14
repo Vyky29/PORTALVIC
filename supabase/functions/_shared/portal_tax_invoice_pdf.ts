@@ -236,7 +236,7 @@ export async function buildPortalTaxInvoicePdf(
     y -= 14;
   }
 
-  // Table header
+  // Table header — labels centred in their columns
   y -= 16;
   page.drawLine({
     start: { x: left, y: y + 14 },
@@ -244,21 +244,35 @@ export async function buildPortalTaxInvoicePdf(
     thickness: 0.6,
     color: rgb(0.8, 0.8, 0.8),
   });
-  page.drawText("Description", { x: left, y, size: 8, font: fontBold, color: ink });
-  page.drawText("Quantity", { x: left + 280, y, size: 8, font: fontBold, color: ink });
-  page.drawText("Unit Price", { x: left + 340, y, size: 8, font: fontBold, color: ink });
-  page.drawText("VAT", { x: left + 410, y, size: 8, font: fontBold, color: ink });
-  const amtLabel = "Amount GBP";
-  page.drawText(amtLabel, {
-    x: right - fontBold.widthOfTextAtSize(amtLabel, 8),
-    y,
-    size: 8,
-    font: fontBold,
-    color: ink,
-  });
+  const colDescX = left;
+  const colQtyX = left + 278;
+  const colUnitX = left + 338;
+  const colVatX = left + 408;
+  const colAmtX = left + 458;
+  const colQtyW = 58;
+  const colUnitW = 68;
+  const colVatW = 48;
+  const colAmtW = right - colAmtX;
+
+  function drawCentered(text: string, x: number, w: number, atY: number, size: number, f: typeof font) {
+    const tw = f.widthOfTextAtSize(text, size);
+    page.drawText(text, {
+      x: x + Math.max(0, (w - tw) / 2),
+      y: atY,
+      size,
+      font: f,
+      color: ink,
+    });
+  }
+
+  page.drawText("Description", { x: colDescX, y, size: 8, font: fontBold, color: ink });
+  drawCentered("Quantity", colQtyX, colQtyW, y, 8, fontBold);
+  drawCentered("Unit Price", colUnitX, colUnitW, y, 8, fontBold);
+  drawCentered("VAT", colVatX, colVatW, y, 8, fontBold);
+  drawCentered("Amount GBP", colAmtX, colAmtW, y, 8, fontBold);
   page.drawLine({
-    start: { x: left, y: y - 6 },
-    end: { x: right, y: y - 6 },
+    start: { x: left, y: y - 8 },
+    end: { x: right, y: y - 8 },
     thickness: 0.6,
     color: rgb(0.8, 0.8, 0.8),
   });
@@ -271,18 +285,20 @@ export async function buildPortalTaxInvoicePdf(
     : splitVat20(total);
   const unitNet = Math.round((split.net / qty) * 10000) / 10000;
 
-  y -= 22;
-  const descY0 = y;
+  // Air under header line before description body
+  y -= 28;
+  const descStartY = y;
   const wrappedDesc: string[] = [];
-  for (const raw of input.descriptionLines.slice(0, 12)) {
-    const t = String(raw || "").trim();
-    if (!t) {
+  for (const raw of input.descriptionLines.slice(0, 28)) {
+    const t = String(raw ?? "");
+    if (!t.trim()) {
       wrappedDesc.push("");
       continue;
     }
-    wrappedDesc.push(...wrapPdfLines(t, 72));
+    wrappedDesc.push(...wrapPdfLines(t.trim(), 72));
   }
-  for (const line of wrappedDesc.slice(0, 22)) {
+  const descLinesDraw = wrappedDesc.slice(0, 26);
+  for (const line of descLinesDraw) {
     if (line) {
       page.drawText(line, {
         x: left,
@@ -294,44 +310,26 @@ export async function buildPortalTaxInvoicePdf(
     }
     y -= 12;
   }
+  const descEndY = y;
+  const descBlockH = descStartY - descEndY;
+  // Vertically centre qty / unit / vat / amount in the description cell
+  const midY = descStartY - Math.max(0, descBlockH) / 2 - 3;
 
   const vatLabel = isExempt ? "Exempt" : "20%";
-  page.drawText(money(qty), {
-    x: left + 300 - font.widthOfTextAtSize(money(qty), 9),
-    y: descY0,
-    size: 9,
-    font,
-    color: ink,
-  });
-  page.drawText(money(unitNet), {
-    x: left + 380 - font.widthOfTextAtSize(money(unitNet), 9),
-    y: descY0,
-    size: 9,
-    font,
-    color: ink,
-  });
-  page.drawText(vatLabel, {
-    x: left + 430,
-    y: descY0,
-    size: 9,
-    font,
-    color: ink,
-  });
-  page.drawText(money(split.net), {
-    x: right - font.widthOfTextAtSize(money(split.net), 9),
-    y: descY0,
-    size: 9,
-    font,
-    color: ink,
-  });
+  drawCentered(money(qty), colQtyX, colQtyW, midY, 9, font);
+  drawCentered(money(unitNet), colUnitX, colUnitW, midY, 9, font);
+  drawCentered(vatLabel, colVatX, colVatW, midY, 9, font);
+  drawCentered(money(split.net), colAmtX, colAmtW, midY, 9, font);
 
-  y -= 10;
+  // Air above totals rule + space before Subtotal
+  y = Math.min(y, midY - 14) - 16;
   page.drawLine({
-    start: { x: left, y: y + 8 },
-    end: { x: right, y: y + 8 },
+    start: { x: left, y: y + 10 },
+    end: { x: right, y: y + 10 },
     thickness: 0.6,
     color: rgb(0.8, 0.8, 0.8),
   });
+  y -= 8;
 
   const drawTot = (label: string, val: string, bold = false) => {
     const f = bold ? fontBold : font;
