@@ -202,6 +202,37 @@
       border: 1px solid #b9d7e8;
       margin-top: 8px;
     }
+    .btn--secondary {
+      background: #fff;
+      color: var(--ink);
+      border: 1px solid #b9d7e8;
+      margin-top: 8px;
+    }
+    .pay-dl {
+      margin: 0 0 12px;
+      display: grid;
+      grid-template-columns: minmax(0, 7.5rem) minmax(0, 1fr);
+      gap: 6px 10px;
+      font-size: .9rem;
+      min-width: 0;
+    }
+    .pay-dl dt {
+      margin: 0;
+      color: var(--muted);
+      font-weight: 700;
+      min-width: 0;
+    }
+    .pay-dl dd {
+      margin: 0;
+      color: var(--ink);
+      font-weight: 700;
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+    .pay-ref {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      letter-spacing: .02em;
+    }
     .meta-list {
       margin: 0;
       padding-left: 1.1em;
@@ -275,6 +306,36 @@
       </section>
     </form>
 
+    <section class="card" id="csPay" hidden>
+      <h2>Pay to confirm your place</h2>
+      <p class="muted" id="csPaySummary">Your slots are held for 2 hours until payment is completed in full.</p>
+      <p class="total" id="csPayTotal">Total: £0</p>
+
+      <div id="csPayBank" class="day-block" style="margin-top:12px">
+        <h3>Bank transfer (no fee)</h3>
+        <p class="muted" id="csPayBankMsg" hidden></p>
+        <dl class="pay-dl" id="csPayBankDl">
+          <dt>Payee</dt><dd id="csPayPayee">—</dd>
+          <dt>Sort code</dt><dd id="csPaySort">—</dd>
+          <dt>Account</dt><dd id="csPayAccount">—</dd>
+          <dt>Reference</dt><dd id="csPayRef" class="pay-ref">—</dd>
+        </dl>
+        <label class="field" for="csPayRefInput">
+          <span>Payment reference (optional)</span>
+          <input id="csPayRefInput" type="text" maxlength="80" placeholder="If different from the reference above" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:12px;font:inherit" />
+        </label>
+        <button type="button" class="btn btn--secondary" id="csPayBankBtn">I've paid by bank transfer</button>
+      </div>
+
+      <div id="csPayCard" class="day-block">
+        <h3>Card / Apple Pay</h3>
+        <p class="muted" id="csPayCardNote">Opens a secure Stripe checkout. A small processing fee may apply.</p>
+        <button type="button" class="btn btn--primary" id="csPayCardBtn">Pay with Card / Apple Pay</button>
+      </div>
+
+      <a class="btn btn--ghost" id="csPayInvoices" href="/parent/app?view=invoices">Open invoices in family portal</a>
+    </section>
+
     <section class="card" id="csInfo">
       <h2>Details</h2>
       <ul class="meta-list">
@@ -287,6 +348,6 @@
       </ul>
     </section>
   </div>
-  <script src="/portal/portal_crash_summer_2026.js?v=20260714-w2-80pct"></script>
+  <script src="/portal/portal_crash_summer_2026.js?v=20260714-pay-methods"></script>
 </body>
 </html>

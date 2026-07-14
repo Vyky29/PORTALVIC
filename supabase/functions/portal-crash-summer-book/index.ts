@@ -26,6 +26,14 @@ import {
   type CrashBookingMode,
   type CrashWeekId,
 } from "../_shared/crash_summer_2026.ts";
+import {
+  suggestedTransferReference,
+  tideBankDetailsFromEnv,
+} from "../_shared/tide_bank_details.ts";
+import {
+  stripeConfigured,
+  stripeGrossUpFromGbp,
+} from "../_shared/stripe_checkout.ts";
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -311,6 +319,25 @@ Deno.serve(async (req) => {
     })
     .eq("id", booking.id);
 
+  const tide = tideBankDetailsFromEnv();
+  const suggestedRef = suggestedTransferReference(
+    created.invoiceNumber,
+    displayName,
+  );
+  const card = stripeConfigured()
+    ? (() => {
+      const g = stripeGrossUpFromGbp(quote.amountGbp);
+      return {
+        available: true,
+        invoice_gbp: g.net_gbp,
+        charge_gbp: g.charge_gbp,
+        fee_gbp: g.fee_gbp,
+        note:
+          "Card / Apple Pay includes a small processing fee so we receive the booking amount in full. Bank transfer has no fee.",
+      };
+    })()
+    : { available: false, note: "Card / Apple Pay is not available right now — please use bank transfer." };
+
   return json(200, {
     ok: true,
     booking_id: booking.id,
@@ -320,7 +347,18 @@ Deno.serve(async (req) => {
     hold_expires_at: holdExpires,
     status: "awaiting_payment",
     pay_in_full_required: true,
+    bank_transfer: {
+      available: tide.available,
+      payee_name: tide.payee_name,
+      sort_code: tide.sort_code,
+      account_number: tide.account_number,
+      reference_hint: tide.reference_hint || suggestedRef,
+      message: tide.available
+        ? null
+        : "Contact the office for bank transfer details.",
+    },
+    card_checkout: card,
     message:
-      "Slots held for 2 hours. Pay the invoice in full to confirm — unpaid holds are released automatically.",
+      "Slots held for 2 hours. Pay in full by bank transfer or Card / Apple Pay to confirm — unpaid holds are released automatically.",
   });
 });

@@ -63,6 +63,7 @@
     individualByWeek: { w1: false, w2: false },
     week2Open: false,
     week1FillPct: 0,
+    pendingPay: null,
   };
 
   function $(id) {
@@ -793,15 +794,190 @@
     var data = await res.json().catch(function () {
       return {};
     });
-    if (!res.ok || !data.ok || !data.url) {
-      var msg =
+    var url = (data && (data.checkout_url || data.url)) || "";
+    if (!res.ok || !data.ok || !url) {
+      var err = new Error("checkout_failed");
+      err.code = (data && data.error) || "checkout_failed";
+      err.messageText =
         (data && data.message) ||
-        "Booking reserved, but card checkout is unavailable. Open the family portal Invoices tab to pay in full.";
-      showNotice("info", msg + " " + HOLD_HINT);
-      return false;
+        "Card / Apple Pay is unavailable right now. Please pay by bank transfer.";
+      throw err;
     }
-    window.location.href = data.url;
+    window.location.href = url;
     return true;
+  }
+
+  function money(n) {
+    var x = Number(n);
+    if (!Number.isFinite(x)) return "—";
+    return "£" + x.toFixed(2);
+  }
+
+  function showPayPanel(payload) {
+    state.pendingPay = payload || null;
+    var form = $("csForm");
+    var pay = $("csPay");
+    var info = $("csInfo");
+    if (form) form.hidden = true;
+    if (info) info.hidden = true;
+    if (!pay) return;
+    pay.hidden = false;
+
+    var amount = Number(payload && payload.amount_gbp);
+    var invNo = String((payload && payload.invoice_number) || "").trim();
+    var summary = $("csPaySummary");
+    if (summary) {
+      summary.textContent =
+        "Slots held for 2 hours. Invoice " +
+        (invNo || "ready") +
+        " — pay in full to confirm the place.";
+    }
+    var total = $("csPayTotal");
+    if (total) total.textContent = "Total: " + money(amount);
+
+    var bank = (payload && payload.bank_transfer) || {};
+    var bankMsg = $("csPayBankMsg");
+    var bankDl = $("csPayBankDl");
+    var bankBtn = $("csPayBankBtn");
+    if (bank.available) {
+      if (bankMsg) bankMsg.hidden = true;
+      if (bankDl) bankDl.hidden = false;
+      if ($("csPayPayee")) $("csPayPayee").textContent = bank.payee_name || "—";
+      if ($("csPaySort")) $("csPaySort").textContent = bank.sort_code || "—";
+      if ($("csPayAccount")) $("csPayAccount").textContent = bank.account_number || "—";
+      if ($("csPayRef")) $("csPayRef").textContent = bank.reference_hint || invNo || "—";
+      if ($("csPayRefInput")) $("csPayRefInput").value = bank.reference_hint || invNo || "";
+      if (bankBtn) bankBtn.disabled = false;
+    } else {
+      if (bankMsg) {
+        bankMsg.hidden = false;
+        bankMsg.textContent =
+          bank.message || "Contact the office for bank transfer details.";
+      }
+      if (bankDl) bankDl.hidden = true;
+      if (bankBtn) bankBtn.disabled = true;
+    }
+
+    var card = (payload && payload.card_checkout) || {};
+    var cardBtn = $("csPayCardBtn");
+    var cardNote = $("csPayCardNote");
+    if (cardNote) {
+      if (card.available && Number(card.fee_gbp) > 0) {
+        cardNote.textContent =
+          "Card / Apple Pay total " +
+          money(card.charge_gbp) +
+          " (includes " +
+          money(card.fee_gbp) +
+          " processing fee). Bank transfer has no fee.";
+      } else {
+        cardNote.textContent =
+          card.note ||
+          "Opens a secure Stripe checkout. Apple Pay appears when available on your device.";
+      }
+    }
+    if (cardBtn) {
+      cardBtn.disabled = !card.available;
+      cardBtn.textContent = card.available
+        ? "Pay with Card / Apple Pay" +
+          (Number(card.charge_gbp) > 0 ? " · " + money(card.charge_gbp) : "")
+        : "Card / Apple Pay unavailable";
+    }
+
+    var invoices = $("csPayInvoices");
+    if (invoices && payload && payload.contact_id) {
+      invoices.href =
+        "/parent/app?view=invoices&contact=" + encodeURIComponent(payload.contact_id);
+    }
+
+    if (pay.scrollIntoView) pay.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  async function reportBankPaid() {
+    var p = state.pendingPay;
+    if (!p || !p.invoice_id || !p.contact_id) return;
+    var btn = $("csPayBankBtn");
+    if (btn) btn.disabled = true;
+    showNotice("info", "Recording your bank transfer…");
+    try {
+      var refInput = $("csPayRefInput");
+      var res = await fetch(fn("parent-portal-invoice-report-paid"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: anonKey(),
+          Authorization: "Bearer " + anonKey(),
+          "x-parent-portal-session": state.sessionToken,
+        },
+        body: JSON.stringify({
+          contact_id: p.contact_id,
+          invoice_id: p.invoice_id,
+          payment_ref: refInput ? String(refInput.value || "").trim() : "",
+          method: "bank_transfer",
+        }),
+      });
+      var data = await res.json().catch(function () {
+        return {};
+      });
+      if (!res.ok || !data.ok) {
+        showNotice(
+          "error",
+          (data && data.message) || "Could not record payment — please try again or contact the office.",
+        );
+        if (btn) btn.disabled = false;
+        return;
+      }
+      showNotice(
+        "ok",
+        (data && data.message) ||
+          "Thanks — payment reported. The office will confirm shortly. Your place stays held while they check the transfer.",
+      );
+      if (btn) {
+        btn.textContent = "Payment reported";
+        btn.disabled = true;
+      }
+      var cardBtn = $("csPayCardBtn");
+      if (cardBtn) cardBtn.disabled = true;
+    } catch (_e) {
+      showNotice("error", "Network error — please try again.");
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function payWithCard() {
+    var p = state.pendingPay;
+    if (!p || !p.invoice_id || !p.contact_id) return;
+    var btn = $("csPayCardBtn");
+    if (btn) {
+      btn.disabled = true;
+      btn.setAttribute("aria-busy", "true");
+    }
+    showNotice("info", "Opening secure Card / Apple Pay checkout…");
+    try {
+      await startCheckout(p.invoice_id, p.contact_id);
+    } catch (err) {
+      showNotice("error", (err && err.messageText) || "Could not start Card / Apple Pay.");
+      if (btn) {
+        btn.disabled = false;
+        btn.removeAttribute("aria-busy");
+      }
+    }
+  }
+
+  function bindPayActions() {
+    var bankBtn = $("csPayBankBtn");
+    if (bankBtn && !bankBtn.__bound) {
+      bankBtn.__bound = true;
+      bankBtn.addEventListener("click", function () {
+        void reportBankPaid();
+      });
+    }
+    var cardBtn = $("csPayCardBtn");
+    if (cardBtn && !cardBtn.__bound) {
+      cardBtn.__bound = true;
+      cardBtn.addEventListener("click", function () {
+        void payWithCard();
+      });
+    }
   }
 
   async function onSubmit(ev) {
@@ -902,17 +1078,28 @@
       }
       showNotice(
         "ok",
-        "Reserved for £" +
-          data.amount_gbp +
-          ". " +
-          HOLD_HINT +
-          " Redirecting to payment…",
+        "Reserved for " +
+          money(data.amount_gbp) +
+          ". Choose bank transfer or Card / Apple Pay below to confirm.",
       );
       try {
         localStorage.setItem("pp_last_contact_id", contactId);
       } catch (_e) {}
       if (data.invoice_id) {
-        await startCheckout(data.invoice_id, contactId);
+        showPayPanel({
+          contact_id: contactId,
+          invoice_id: data.invoice_id,
+          invoice_number: data.invoice_number,
+          amount_gbp: data.amount_gbp,
+          bank_transfer: data.bank_transfer,
+          card_checkout: data.card_checkout,
+        });
+      } else {
+        showNotice(
+          "info",
+          "Booking reserved, but no invoice was created. Open the family portal Invoices tab or contact the office. " +
+            HOLD_HINT,
+        );
       }
     } catch (_e) {
       showNotice("error", "Network error — please try again.");
@@ -926,6 +1113,7 @@
     renderWeeks();
     bindModes();
     bindActivities();
+    bindPayActions();
 
     var back = $("csBackPortal");
     if (back) {
