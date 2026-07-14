@@ -1140,7 +1140,7 @@
     </div>
   </div>
 
-  <script src="/portal/portal_booking_offer.js?v=20260714-booking-crash-bands1"></script>
+  <script src="/portal/portal_booking_offer.js?v=20260714-booking-reg1"></script>
   <script>
 (function () {
   "use strict";
@@ -1393,6 +1393,7 @@
       : full
         ? '<span class="badge badge--full">' + ICONS.x + " Fully booked</span>"
         : '<span class="badge badge--open">' + ICONS.check + " " + left + " left</span>";
+    var canBook = !enquireOnly && !full;
     var cta = enquireOnly
       ? "Enquire"
       : slot.bookingMode === "weekly_pack"
@@ -1419,7 +1420,6 @@
       timeCell = esc(dayAbbrev(slot.day)) + " " + esc(slot.timeLabel);
     }
     var venueCell = esc(mock.venueLabel(slot.venue));
-    // Activity chip lives on the venue section header for intensives.
     return (
       '<div class="slot-row' +
       (full && !enquireOnly ? " slot-row--full" : "") +
@@ -1446,8 +1446,10 @@
       '<div class="slot-col slot-col--action">' +
       '<span class="slot-col__label">Action</span>' +
       '<button type="button" class="btn' +
-      (enquireOnly ? " btn--wait" : full ? " btn--wait" : " btn--book") +
-      '" data-enquire="' +
+      (canBook ? " btn--book" : " btn--wait") +
+      '" ' +
+      (canBook ? "data-book" : "data-enquire") +
+      '="' +
       esc(slot.id) +
       '">' +
       ICONS.info +
@@ -1720,10 +1722,40 @@
     host.innerHTML = html;
   }
 
+  function registrationUrlForSlot(slot) {
+    var svc = mock.serviceById(slot.serviceId);
+    var q = new URLSearchParams();
+    q.set("from", "bookingservice");
+    if (slot.id) q.set("slot_id", slot.id);
+    if (slot.serviceId) q.set("service", slot.serviceId);
+    if (svc && svc.name) q.set("service_name", svc.name);
+    if (slot.activityName) q.set("activity", slot.activityName);
+    if (slot.crashActivity) q.set("crash_activity", slot.crashActivity);
+    if (slot.venue) q.set("venue", slot.venue);
+    if (slot.day) q.set("day", slot.day);
+    if (slot.timeLabel) q.set("time", slot.timeLabel);
+    if (slot.packLabel) q.set("pack", slot.packLabel);
+    if (slot.bookingMode) q.set("booking_mode", slot.bookingMode);
+    if (slot.weekId) q.set("week_id", slot.weekId);
+    if (slot.blockId) q.set("block_id", slot.blockId);
+    if (slot.dateIso) q.set("date", slot.dateIso);
+    // Client questionnaire / registration form (slot context travels in the query string).
+    var path = "/parent/registration";
+    if (typeof window.portalFamilyPortalUrl === "function") {
+      try {
+        var abs = window.portalFamilyPortalUrl("registration");
+        if (abs) return abs + (abs.indexOf("?") >= 0 ? "&" : "?") + q.toString();
+      } catch (_e) {}
+    }
+    return path + "?" + q.toString();
+  }
+
+  function goToRegistration(slot) {
+    window.location.href = registrationUrlForSlot(slot);
+  }
+
   function openSheet(slot) {
     var svc = mock.serviceById(slot.serviceId);
-    var full = mock.isFull(slot);
-    var left = mock.seatsLeft(slot);
     var enquireOnly = !!(slot.enquireOnly || (svc && svc.enquireOnly));
     var sheet = document.getElementById("actionSheet");
     var title = document.getElementById("sheetTitle");
@@ -1731,13 +1763,7 @@
     var mail = document.getElementById("sheetMail");
     title.textContent = enquireOnly
       ? "Enquire about this course"
-      : slot.bookingMode === "weekly_pack"
-        ? full
-          ? "Join waiting list / enquire"
-          : "Book this week pack"
-        : full
-          ? "Join waiting list / enquire"
-          : "Book this place";
+      : "Join waiting list / enquire";
     body.textContent =
       (svc ? svc.name : "Session") +
       " · " +
@@ -1748,17 +1774,9 @@
       mock.venueLabel(slot.venue) +
       (enquireOnly
         ? " — email the office to register interest. Times open closer to the dates."
-        : slot.bookingMode === "weekly_pack"
-          ? full
-            ? " — this week pack is currently full. Ask to join the waiting list."
-            : " — four-day Tue–Fri pack for this 30′/60′ time. Want more time? Book another slot as well. Individual leftover hours open from Fri 17 July."
-          : full
-            ? " — currently fully booked. Tell us you’d like to join the waiting list."
-            : " — " +
-              left +
-              " place(s) available (individual leftover hours). Email the office to reserve.");
+        : " — currently fully booked. Tell us you’d like to join the waiting list.");
     var subject = encodeURIComponent(
-      "Booking enquiry — " +
+      "Waiting list enquiry — " +
         (svc ? svc.name : "session") +
         " · " +
         slot.day +
@@ -1768,7 +1786,7 @@
         mock.venueLabel(slot.venue)
     );
     var text = encodeURIComponent(
-      "Hello,\n\nI’d like to enquire about:\n" +
+      "Hello,\n\nI’d like to join the waiting list / enquire about:\n" +
         (svc ? svc.name : "Session") +
         "\n" +
         slot.day +
@@ -1779,15 +1797,7 @@
         "\nSlot ref: " +
         slot.id +
         "\nStatus: " +
-        (enquireOnly
-          ? "Enquire / half-term interest"
-          : slot.bookingMode === "weekly_pack"
-            ? full
-              ? "Week pack full / waiting list"
-              : "Week pack (" + left + " place(s))"
-            : full
-              ? "Fully booked / waiting list"
-              : left + " place(s) available") +
+        (enquireOnly ? "Enquire / half-term interest" : "Fully booked / waiting list") +
         "\n\nChild name:\nParent name:\nPhone:\n\nThanks"
     );
     mail.href = "mailto:info@clubsensational.org?subject=" + subject + "&body=" + text;
@@ -1818,6 +1828,15 @@
   });
 
   document.getElementById("timetableHost").addEventListener("click", function (e) {
+    var bookBtn = e.target && e.target.closest && e.target.closest("[data-book]");
+    if (bookBtn) {
+      var bookId = bookBtn.getAttribute("data-book");
+      var bookSlot = mock.MOCK_SLOTS.find(function (s) {
+        return s.id === bookId;
+      });
+      if (bookSlot) goToRegistration(bookSlot);
+      return;
+    }
     var btn = e.target && e.target.closest && e.target.closest("[data-enquire]");
     if (!btn) return;
     var id = btn.getAttribute("data-enquire");
@@ -1859,7 +1878,7 @@
         "Live places from the club roster" +
           (weekly != null ? " · " + weekly + " weekly times" : n ? " · " + n + " times" : "") +
           (mock.TERM_LABEL ? " · " + mock.TERM_LABEL : "") +
-          ". Book or join a waiting list by emailing the office."
+          ". Book opens the registration questionnaire; full slots can join a waiting list by email."
       );
     })
     .catch(function () {
