@@ -492,20 +492,62 @@
       box-shadow: 0 6px 18px rgba(23, 50, 71, 0.04);
       scroll-margin-top: 100px;
     }
+    .timetable__title-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 12px;
+      min-width: 0;
+      margin: 0;
+    }
+    .timetable__title-main {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .timetable__icon {
+      flex: 0 0 auto;
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: var(--blueSoft);
+      color: var(--blueDeep);
+    }
+    .timetable__icon svg {
+      width: 24px !important;
+      height: 24px !important;
+      max-width: 24px !important;
+      max-height: 24px !important;
+    }
+    .timetable__icon.svc__icon--climb { background: #fff6e5; color: #b7791f; }
+    .timetable__icon.svc__icon--physical { background: #f3e8ff; color: #7c3aed; }
+    .timetable__icon.svc__icon--multi { background: #e8f0fe; color: #1d4ed8; }
+    .timetable__icon.svc__icon--bespoke { background: #fff1e8; color: #c2410c; }
+    .timetable__icon.svc__icon--dc { background: #eef6f2; color: #1f6b4a; }
+    .timetable__icon.svc__icon--intensive { background: #fce7f3; color: #be185d; }
     .term-badge {
       display: inline-flex;
       align-items: center;
-      padding: 4px 10px;
-      border-radius: 8px;
+      padding: 5px 11px;
+      border-radius: 999px;
       background: var(--gold);
       color: #173247;
       font-size: 0.72rem;
       font-weight: 900;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
+      flex: 0 0 auto;
+      max-width: 100%;
+      overflow-wrap: break-word;
+      white-space: normal;
+      line-height: 1.2;
     }
     .timetable__head {
-      margin: 10px 0 4px;
+      margin: 0 0 4px;
       min-width: 0;
     }
     .timetable__head h3 {
@@ -517,7 +559,7 @@
       min-width: 0;
     }
     .timetable__range {
-      margin: 6px 0 0;
+      margin: 8px 0 0;
       font-size: 0.9rem;
       color: var(--muted);
       font-weight: 600;
@@ -1224,6 +1266,7 @@
           hideFull: filters.hideFull,
         });
         var venues = mock.groupSlotsByVenueThenDay(slots);
+        var pack = serviceIconPack(s.id);
         var body;
         if (!venues.length) {
           body = '<p class="empty">No times match the filters for this service. Clear filters to see the full offer (including fully booked).</p>';
@@ -1272,15 +1315,23 @@
           '<article class="timetable" id="timetable-' +
           esc(s.id) +
           '">' +
-          '<span class="term-badge">' +
-          esc(mock.TERM_BADGE || "TERM") +
-          "</span>" +
-          '<div class="timetable__head"><h3>' +
+          '<div class="timetable__head">' +
+          '<div class="timetable__title-row">' +
+          '<div class="timetable__title-main">' +
+          '<div class="timetable__icon ' +
+          pack.cls +
+          '" aria-hidden="true">' +
+          pack.svg +
+          "</div>" +
+          "<h3>" +
           esc(s.name) +
           (filters.venue ? " (" + esc(mock.venueLabel(filters.venue)) + ")" : "") +
-          " — " +
-          esc(mock.TERM_LABEL || "Term") +
           "</h3>" +
+          "</div>" +
+          '<span class="term-badge">' +
+          esc(mock.TERM_BADGE || "AUTUMN TERM 2026") +
+          "</span>" +
+          "</div>" +
           '<p class="timetable__range">' +
           esc(mock.TERM_RANGE || "") +
           "</p></div>" +

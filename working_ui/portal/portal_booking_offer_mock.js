@@ -14,9 +14,9 @@
 (function (global) {
   "use strict";
 
-  var TERM_BADGE = "TERM";
-  var TERM_LABEL = "Summer Term 2026";
-  var TERM_RANGE = "Mon 13th April 2026 – Sat 11th July 2026";
+  var TERM_BADGE = "AUTUMN TERM 2026";
+  var TERM_LABEL = "Autumn Term 2026";
+  var TERM_RANGE = "Tue 1st September 2026 – Fri 18th December 2026";
 
   var VENUE_LABELS = {
     Acton: "Acton Centre",
