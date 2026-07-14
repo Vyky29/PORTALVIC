@@ -169,8 +169,8 @@
     },
     {
       id: "feb_ht",
-      badge: "FEBRUARY HALF TERM 2027",
-      title: "February half-term intensives",
+      badge: "SPRING HALF TERM 2027",
+      title: "Spring half-term intensives",
       range: "Mon 15 – Thu 18 February 2027",
       badgeIcon: "leaf",
       sort: 3,
