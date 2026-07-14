@@ -2753,7 +2753,7 @@
     cards +=
       '<div class="re-offer-block">' +
       "<h4>Summer crash courses · July 2026</h4>" +
-      '<p class="re-muted">Climbing (Westway) and Swimming (Acton), four-day week packs Tue–Fri: <strong>21–24 July</strong> and <strong>28–31 July</strong>. Individual leftover hours only: Week 1 Fri 17–Sun 19 July; Week 2 Fri 24–Sun 26 July (packs only until Thu 23). <strong>Pay in full</strong> to reserve — places are limited (2 climbing / 8 swimming slots per day).</p>' +
+      '<p class="re-muted">Climbing (Westway) and Swimming (Acton), four-day week packs Tue–Fri. <strong>Currently open: 21–24 July only.</strong> Week 2 (28–31 July) opens when Week 1 reaches 80% of places. Individual leftover hours for Week 1: Fri 17–Sun 19 July. <strong>Pay in full</strong> to reserve — places are limited (2 climbing / 8 swimming slots per day).</p>' +
       '<div class="re-offer-actions" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">' +
       '<a class="re-btn re-btn--primary" id="reCrashBookBtn" href="/parent/crash-summer" style="width:auto;flex:1 1 160px;min-width:0;margin-top:0;text-align:center">Book summer crash courses</a>' +
       '<button type="button" class="re-btn re-btn--secondary" id="reCrashDatesBtn" style="flex:1 1 140px;min-width:0;margin-top:0">View dates on calendar</button>' +
@@ -2872,7 +2872,7 @@
 
   var RE_CRASH_DATES_2627 = [
     {
-      title: "Summer holiday · Week 1 (July 2026)",
+      title: "Summer holiday · Week 1 (July 2026) · open now",
       days: [
         { dow: "Mon", num: "20", off: true },
         { dow: "Tue", num: "21" },
@@ -2882,13 +2882,14 @@
       ],
     },
     {
-      title: "Summer holiday · Week 2 (July 2026)",
+      title: "Summer holiday · Week 2 (July 2026) · opens when Week 1 is 80% full",
+      closedUntilNote: true,
       days: [
         { dow: "Mon", num: "27", off: true },
-        { dow: "Tue", num: "28" },
-        { dow: "Wed", num: "29" },
-        { dow: "Thu", num: "30" },
-        { dow: "Fri", num: "31" },
+        { dow: "Tue", num: "28", off: true },
+        { dow: "Wed", num: "29", off: true },
+        { dow: "Thu", num: "30", off: true },
+        { dow: "Fri", num: "31", off: true },
       ],
     },
     {
@@ -3030,7 +3031,7 @@
   function renderCrashDatesModalBody(highlightIdx) {
     var hi = highlightIdx != null && !isNaN(Number(highlightIdx)) ? Number(highlightIdx) : -1;
     return (
-      '<p class="re-cal-summary">Summer Jul 2026 (Tue–Fri): Climbing at Westway and Swimming at Acton — book after signing in to the family portal; pay in full to confirm. Half-term intensives run Mon–Thu.</p>' +
+      '<p class="re-cal-summary">Summer Jul 2026 (Tue–Fri): Climbing at Westway and Swimming at Acton — <strong>Week 1 (21–24 July) is open now</strong>; Week 2 (28–31 July) opens when Week 1 reaches 80% of places. Book after signing in; pay in full to confirm. Half-term intensives run Mon–Thu.</p>' +
       '<p class="re-cal-summary"><a class="re-cal-offer-link" href="/parent/crash-summer" style="display:inline-flex;padding:8px 0">Book summer crash courses →</a></p>' +
       RE_CRASH_DATES_2627.map(function (block, i) {
         return (

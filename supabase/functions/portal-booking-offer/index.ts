@@ -18,6 +18,7 @@ import {
   crashIndividualRulesCopy,
   crashSlotById,
   crashSlotsFor,
+  crashWeekFillSnapshot,
   type CrashActivity,
   type CrashWeekId,
 } from "../_shared/crash_summer_2026.ts";
@@ -51,11 +52,10 @@ const AUTUMN_TERM = {
 };
 
 async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
-  const weeks = [CRASH_SUMMER_WEEKS.w1, CRASH_SUMMER_WEEKS.w2];
-  const dates = weeks.flatMap((w) => w.dates);
-  const w1Open = crashIndividualDaysOpenForWeek("w1");
-  const w2Open = crashIndividualDaysOpenForWeek("w2");
-  const individualOpen = w1Open || w2Open;
+  const forceWeek2 =
+    String(Deno.env.get("CRASH_WEEK2_FORCE_OPEN") || "").trim() === "1";
+  const allWeeks = [CRASH_SUMMER_WEEKS.w1, CRASH_SUMMER_WEEKS.w2];
+  const dates = allWeeks.flatMap((w) => w.dates);
 
   await admin
     .from("portal_crash_summer_booking_lines")
@@ -72,6 +72,13 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
   if (error) {
     console.error("[portal-booking-offer] crash lines", error.message);
   }
+
+  const fill = crashWeekFillSnapshot(lines || [], forceWeek2);
+  const weeks = allWeeks.filter((w) => fill.weeks_open.includes(w.id));
+  const week2Open = fill.week2_open;
+  const w1Open = crashIndividualDaysOpenForWeek("w1");
+  const w2Open = week2Open && crashIndividualDaysOpenForWeek("w2");
+  const individualOpen = w1Open || w2Open;
 
   const taken = new Set(
     (lines || []).map((r) => `${r.activity}|${r.session_date}|${r.slot_id}`),
@@ -282,7 +289,12 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
     }
   }
 
-  const packNote = crashIndividualRulesCopy();
+  const packNote = crashIndividualRulesCopy(week2Open);
+  const summerRange = week2Open
+    ? "Week 1: Tue 21 – Fri 24 July · Week 2: Tue 28 – Fri 31 July 2026 · " +
+      packNote
+    : "Currently open: Week 1 Tue 21 – Fri 24 July 2026. Week 2 (28–31 July) opens when Week 1 reaches 80% of places. · " +
+      packNote;
 
   return {
     hold_minutes: CRASH_HOLD_MINUTES,
@@ -290,20 +302,23 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
     individual_days_open_by_week: { w1: w1Open, w2: w2Open },
     individual_windows: CRASH_INDIVIDUAL_WINDOWS,
     rules: packNote,
+    week1_fill_pct: fill.week1_fill_pct,
+    week2_open: week2Open,
+    weeks_open: fill.weeks_open,
     slots: intensiveSlots,
     blocks: [
       {
         id: "summer_july",
         badge: "Summer Holidays 2026",
         title: "Summer holiday crash courses",
-        range:
-          "Week 1: Tue 21 – Fri 24 July · Week 2: Tue 28 – Fri 31 July 2026 · " +
-          packNote,
+        range: summerRange,
         badgeIcon: "sun",
         sort: 1,
         bookAsWeekPack: true,
         individualDaysOpen: individualOpen,
         individualDaysOpenByWeek: { w1: w1Open, w2: w2Open },
+        week2Open,
+        week1FillPct: fill.week1_fill_pct,
         dates: weeks.flatMap((w) =>
           w.dates.map((iso) => ({
             iso,

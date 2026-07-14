@@ -76,10 +76,18 @@ export const CRASH_PRICES = {
 export const CRASH_HOLD_MINUTES = 120;
 
 /**
- * Weekly packs (Tue–Fri × 4 days) are always bookable.
+ * Week 2 stays closed until Week 1 reaches this fill ratio (taken ÷ capacity),
+ * across climbing + swimming slot-units for Week 1 dates.
+ * Ops can force-open with Edge env CRASH_WEEK2_FORCE_OPEN=1.
+ */
+export const CRASH_WEEK2_OPEN_AT_FILL = 0.8;
+
+/**
+ * Weekly packs (Tue–Fri × 4 days) are bookable when the week itself is open.
  * Loose / individual hours unlock only in a Fri–Sun window before each week:
  *   Week 1 (21–24 Jul): Fri 17 – Sun 19 July
  *   Week 2 (28–31 Jul): Fri 24 – Sun 26 July (packs only until Thu 23)
+ * Week 2 booking is gated by Week 1 ≥ 80% fill (see CRASH_WEEK2_OPEN_AT_FILL).
  */
 export const CRASH_INDIVIDUAL_WINDOWS: Record<
   CrashWeekId,
@@ -134,12 +142,87 @@ export function crashIndividualDaysOpen(now = new Date()): boolean {
   );
 }
 
-export function crashIndividualRulesCopy(): string {
+export function crashIndividualRulesCopy(week2Open = true): string {
+  if (!week2Open) {
+    return (
+      "Currently open: Week 1 only (Tue 21 – Fri 24 July). " +
+      "Week 2 (Tue 28 – Fri 31 July) opens when Week 1 reaches 80% of places. " +
+      "Individual leftover hours for Week 1: Fri 17 – Sun 19 July."
+    );
+  }
   return (
     "Crash courses are four-day week packs (Tue–Fri). " +
     "Individual leftover hours: Week 1 only Fri 17 – Sun 19 July; " +
     "Week 2 only Fri 24 – Sun 26 July (packs only until Thu 23)."
   );
+}
+
+export function crashWeekCapacityUnits(weekId: CrashWeekId): number {
+  const dates = crashWeekDates(weekId);
+  return (
+    dates.length * (CRASH_CLIMBING_SLOTS.length + CRASH_SWIMMING_SLOTS.length)
+  );
+}
+
+/** Count occupied slot-units (one booking line = one unit) for a week. */
+export function crashCountTakenUnits(
+  lines: Array<{ session_date?: string | null }>,
+  weekId: CrashWeekId,
+): number {
+  const dates = new Set(crashWeekDates(weekId));
+  let n = 0;
+  for (const line of lines || []) {
+    if (dates.has(String(line?.session_date || ""))) n += 1;
+  }
+  return n;
+}
+
+export function crashWeekFillRatio(takenUnits: number, weekId: CrashWeekId): number {
+  const cap = crashWeekCapacityUnits(weekId);
+  if (cap <= 0) return 0;
+  return Math.min(1, takenUnits / cap);
+}
+
+export function crashIsBookingWeekOpen(
+  weekId: CrashWeekId,
+  week1FillRatio: number,
+  forceWeek2 = false,
+): boolean {
+  if (weekId === "w1") return true;
+  if (weekId === "w2") {
+    return forceWeek2 || week1FillRatio + 1e-12 >= CRASH_WEEK2_OPEN_AT_FILL;
+  }
+  return false;
+}
+
+export function crashOpenWeekIds(
+  week1FillRatio: number,
+  forceWeek2 = false,
+): CrashWeekId[] {
+  const ids: CrashWeekId[] = ["w1"];
+  if (crashIsBookingWeekOpen("w2", week1FillRatio, forceWeek2)) ids.push("w2");
+  return ids;
+}
+
+export function crashWeekFillSnapshot(
+  lines: Array<{ session_date?: string | null }>,
+  forceWeek2 = false,
+) {
+  const taken = crashCountTakenUnits(lines, "w1");
+  const capacity = crashWeekCapacityUnits("w1");
+  const fill = crashWeekFillRatio(taken, "w1");
+  const openIds = crashOpenWeekIds(fill, forceWeek2);
+  const week2Open = openIds.includes("w2");
+  return {
+    week1_taken: taken,
+    week1_capacity: capacity,
+    week1_fill: fill,
+    week1_fill_pct: Math.round(fill * 1000) / 10,
+    week2_open_at_fill: CRASH_WEEK2_OPEN_AT_FILL,
+    week2_open: week2Open,
+    weeks_open: openIds,
+    force_week2: forceWeek2,
+  };
 }
 
 export const CRASH_META = {
@@ -406,11 +489,18 @@ export function quoteCrashSummerBooking(input: {
   };
 }
 
-export function crashCatalogPublic() {
+export function crashCatalogPublic(opts?: { openWeekIds?: CrashWeekId[] }) {
+  const openIds = opts?.openWeekIds?.length
+    ? opts.openWeekIds
+    : (Object.keys(CRASH_SUMMER_WEEKS) as CrashWeekId[]);
   return {
     year: CRASH_SUMMER_YEAR,
     hold_minutes: CRASH_HOLD_MINUTES,
-    weeks: Object.values(CRASH_SUMMER_WEEKS),
+    weeks: openIds
+      .map((id) => CRASH_SUMMER_WEEKS[id])
+      .filter(Boolean),
+    weeks_all: Object.values(CRASH_SUMMER_WEEKS),
+    week2_open_at_fill: CRASH_WEEK2_OPEN_AT_FILL,
     prices: CRASH_PRICES,
     meta: CRASH_META,
     climbing_slots: CRASH_CLIMBING_SLOTS,

@@ -8,6 +8,10 @@
   var CATALOG = {
     weeks: [
       { id: "w1", label: "Week 1 · Tue 21 – Fri 24 July", dates: ["2026-07-21", "2026-07-22", "2026-07-23", "2026-07-24"] },
+      // Week 2 only appears once API reports weeks_open includes w2 (Week 1 ≥ 80%).
+    ],
+    weeksAll: [
+      { id: "w1", label: "Week 1 · Tue 21 – Fri 24 July", dates: ["2026-07-21", "2026-07-22", "2026-07-23", "2026-07-24"] },
       { id: "w2", label: "Week 2 · Tue 28 – Fri 31 July", dates: ["2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31"] },
     ],
     climbing_slots: [
@@ -57,6 +61,8 @@
     availability: null,
     individualDaysOpen: false,
     individualByWeek: { w1: false, w2: false },
+    week2Open: false,
+    week1FillPct: 0,
   };
 
   function $(id) {
@@ -271,6 +277,55 @@
   function emptySlotState() {
     state.packSlots = { climbing: "", swimming: [] };
     state.daySlots = { climbing: {}, swimming: {} };
+  }
+
+  function applyWeekOpenGate(data) {
+    var openIds = Array.isArray(data && data.weeks_open)
+      ? data.weeks_open.map(String)
+      : data && data.week2_open
+        ? ["w1", "w2"]
+        : ["w1"];
+    if (data && data.catalog && Array.isArray(data.catalog.weeks) && data.catalog.weeks.length) {
+      CATALOG.weeks = data.catalog.weeks.slice();
+    } else {
+      CATALOG.weeks = (CATALOG.weeksAll || []).filter(function (w) {
+        return openIds.indexOf(w.id) !== -1;
+      });
+    }
+    state.week2Open = openIds.indexOf("w2") !== -1;
+    if (typeof (data && data.week1_fill_pct) === "number") {
+      state.week1FillPct = data.week1_fill_pct;
+    }
+    if (!CATALOG.weeks.some(function (w) {
+      return w.id === state.weekId;
+    })) {
+      state.weekId = (CATALOG.weeks[0] && CATALOG.weeks[0].id) || "w1";
+      emptySlotState();
+    }
+    var rules = $("csWeekRules");
+    if (rules) {
+      if (state.week2Open) {
+        rules.innerHTML =
+          "Crash courses are <strong>four-day week packs (Tue–Fri)</strong>. " +
+          "Individual leftover hours open only in short windows before each week: " +
+          "<strong>Week 1</strong> Fri 17 – Sun 19 July · " +
+          "<strong>Week 2</strong> Fri 24 – Sun 26 July (packs only until Thu 23).";
+      } else {
+        rules.innerHTML =
+          "Currently open: <strong>Week 1 only (Tue 21 – Fri 24 July)</strong>. " +
+          "Week 2 (28–31 July) opens when Week 1 reaches <strong>80%</strong> of places" +
+          (state.week1FillPct
+            ? " (now " + state.week1FillPct + "%)"
+            : "") +
+          ". Individual leftover hours for Week 1: Fri 17 – Sun 19 July.";
+      }
+    }
+    var info = $("csInfo");
+    if (info) {
+      var w2Li = info.querySelector('[data-crash-week="w2"]');
+      if (w2Li) w2Li.hidden = !state.week2Open;
+    }
+    renderWeeks();
   }
 
   function renderWeeks() {
@@ -638,6 +693,7 @@
         return {};
       });
       if (res.ok && data.ok) {
+        applyWeekOpenGate(data);
         state.availability = data.availability || null;
         if (data.individual_windows) {
           if (data.individual_windows.w1) INDIVIDUAL_WINDOWS.w1 = data.individual_windows.w1;

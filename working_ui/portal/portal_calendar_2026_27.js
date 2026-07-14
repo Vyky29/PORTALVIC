@@ -6,7 +6,7 @@
   "use strict";
 
   var HTML_SECTION_URL =
-    "/portal/day-centre-calendar-2026-27-section.html?v=20260713-summer-crash";
+    "/portal/day-centre-calendar-2026-27-section.html?v=20260714-w2-80pct";
   var DOC_TITLE = "Calendar 2026/27";
   var DOC_TYPE = "calendar_2026_27";
   var DOC_CATEGORY = "documents";
@@ -14,7 +14,7 @@
   var DOC_SESSION_KEY = "calendar-2026-27";
   var ON_ACK_ACTION = "calendar_2026_27";
   /** Bump when calendar content changes — staff must re-ack to see updates. */
-  global.PORTAL_CALENDAR_2026_27_ACK_REVISION = 3;
+  global.PORTAL_CALENDAR_2026_27_ACK_REVISION = 4;
   var CALENDAR_ANNOUNCEMENT_ID = "a0270001-0001-4000-8000-0000000a2701";
   var JSPDF_URL =
     "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260702-html-cal";
@@ -443,13 +443,15 @@
     "2027-04-12": "first",
     "2027-07-22": "last",
   };
-  /** Crash-course days (Mon–Thu of each half term) — red, tappable to the crash timetable. */
+  /** Crash-course days — Week 2 Jul dates added when Week 1 ≥ 80% (live gate). */
   var DC_CAL_CRASH_DAYS = {
     "2026-07-21": 1, "2026-07-22": 1, "2026-07-23": 1, "2026-07-24": 1,
-    "2026-07-28": 1, "2026-07-29": 1, "2026-07-30": 1, "2026-07-31": 1,
     "2026-10-26": 1, "2026-10-27": 1, "2026-10-28": 1, "2026-10-29": 1,
     "2027-02-15": 1, "2027-02-16": 1, "2027-02-17": 1, "2027-02-18": 1,
     "2027-05-31": 1, "2027-06-01": 1, "2027-06-02": 1, "2027-06-03": 1,
+  };
+  var DC_CAL_CRASH_W2_DAYS = {
+    "2026-07-28": 1, "2026-07-29": 1, "2026-07-30": 1, "2026-07-31": 1,
   };
   var DC_CAL_MONTHS = {
     january: 0, february: 1, march: 2, april: 3, may: 4, june: 5,
@@ -573,6 +575,60 @@
     try {
       global.portalMarkCalendar202627Highlights(section);
     } catch (_mark) {}
+    try {
+      global.portalApplyCrashWeek2Gate(section);
+    } catch (_gate) {}
+  };
+
+  /** Show Week 2 crash pills / July highlights only when API says Week 2 is open. */
+  global.portalApplyCrashWeek2Gate = async function portalApplyCrashWeek2Gate(root) {
+    var section = null;
+    if (root && root.querySelector) {
+      section = root.classList && root.classList.contains("dc-cal") ? root : root.querySelector(".dc-cal");
+    }
+    if (!section && global.document) section = global.document.querySelector(".dc-cal");
+    if (!section || section.__dcCalCrashW2Gate) return;
+    section.__dcCalCrashW2Gate = true;
+
+    var open = false;
+    try {
+      var base = String(global.SUPABASE_URL || "https://cklpnwhlqsulpmkipmqb.supabase.co").replace(/\/$/, "");
+      var key = String(global.SUPABASE_ANON_KEY || "");
+      if (key) {
+        var res = await fetch(base + "/functions/v1/portal-crash-summer-availability", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: key,
+            Authorization: "Bearer " + key,
+          },
+          body: "{}",
+        });
+        var data = await res.json().catch(function () {
+          return {};
+        });
+        open = !!(res.ok && data && (data.week2_open || (data.weeks_open || []).indexOf("w2") !== -1));
+      }
+    } catch (_e) {
+      open = false;
+    }
+
+    section.querySelectorAll('[data-crash-week="w2"]').forEach(function (el) {
+      el.hidden = !open;
+    });
+    section.querySelectorAll("[data-crash-w2-note]").forEach(function (el) {
+      el.hidden = !!open;
+    });
+
+    if (open) {
+      Object.keys(DC_CAL_CRASH_W2_DAYS).forEach(function (iso) {
+        DC_CAL_CRASH_DAYS[iso] = 1;
+      });
+      section.__dcCalHighlighted = false;
+      try {
+        global.portalMarkCalendar202627Highlights(section);
+      } catch (_m) {}
+    }
   };
 
   /** Inject the interactive HTML calendar into a host element (announcement modal). */

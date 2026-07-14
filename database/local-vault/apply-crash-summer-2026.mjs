@@ -26,6 +26,7 @@ console.log("[apply-crash-summer-2026] 2/2 deploy functions…");
 const fns = [
   "portal-crash-summer-availability",
   "portal-crash-summer-book",
+  "portal-booking-offer",
   "parent-portal-stripe-webhook",
   "parent-portal-gocardless-webhook",
   "parent-portal-credit-apply-invoice",

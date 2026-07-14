@@ -19,6 +19,8 @@ import {
   crashIndividualDaysOpenForWeek,
   crashIndividualRulesCopy,
   crashIndividualWindowFor,
+  crashIsBookingWeekOpen,
+  crashWeekFillSnapshot,
   quoteCrashSummerBooking,
   type CrashActivity,
   type CrashBookingMode,
@@ -85,6 +87,34 @@ Deno.serve(async (req) => {
   if (mode !== "weekly_pack" && mode !== "individual_days") {
     return json(400, { ok: false, error: "invalid_mode" });
   }
+
+  await expireStaleHolds(supabase);
+
+  const forceWeek2 =
+    String(Deno.env.get("CRASH_WEEK2_FORCE_OPEN") || "").trim() === "1";
+  const { data: w1Lines } = await supabase
+    .from("portal_crash_summer_booking_lines")
+    .select("session_date")
+    .in("session_date", [
+      "2026-07-21",
+      "2026-07-22",
+      "2026-07-23",
+      "2026-07-24",
+    ])
+    .in("status", ["awaiting_payment", "confirmed"]);
+  const fill = crashWeekFillSnapshot(w1Lines || [], forceWeek2);
+  if (!crashIsBookingWeekOpen(weekId, fill.week1_fill, forceWeek2)) {
+    return json(403, {
+      ok: false,
+      error: "week_not_open",
+      message:
+        "Week 2 opens when Week 1 reaches 80% of places. Only Week 1 (Tue 21 – Fri 24 July) is open for booking right now.",
+      week1_fill_pct: fill.week1_fill_pct,
+      week2_open_at_fill: fill.week2_open_at_fill,
+      rules: crashIndividualRulesCopy(false),
+    });
+  }
+
   if (mode === "individual_days" && !crashIndividualDaysOpenForWeek(weekId)) {
     const win = crashIndividualWindowFor(weekId);
     return json(403, {

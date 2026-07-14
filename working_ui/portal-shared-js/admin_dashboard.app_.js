@@ -405,7 +405,7 @@
         { key:'bespoke', name:'Bespoke programme', venue:'Cross-site', days:'By plan', time:'By plan', cap:6, staffReq:'Named LP', ratioOffer:'Per risk assessment', booked:4, open:2, wait:1, slots:[] },
         { key:'outreach', name:'Outreach', venue:'Schools + hubs', days:'Tue–Thu', time:'School hours', cap:20, staffReq:'Ellis + assistant', ratioOffer:'Group + 1:1 pull-outs', booked:12, open:8, wait:0, slots:[{ day:'Tue', time:'10:15 bus', venue:'St Mary\'s', inst:'Ellis R.', pax:12, open:0, rat:'OK' }] },
         { key:'ther', name:'Therapy / MDT', venue:'Hub rooms', days:'By referral', time:'10:00–12:00', cap:8, staffReq:'Clinical partner slot', ratioOffer:'N/A', booked:3, open:5, wait:1, slots:[] },
-        { key:'camps', name:'Camps / crash courses', venue:'Rotates', days:'Holidays', time:'09:00–15:00', cap:40, staffReq:'+ casual bank', ratioOffer:'1:4+', booked:0, open:0, wait:0, slots:[] }
+        { key:'camps', name:'Camps / crash courses', venue:'Rotates', days:'Holidays', time:'09:00–15:00', cap:40, staffReq:'+ casual bank', ratioOffer:'1:4+', booked:0, open:0, wait:0, slots:[], note:'Summer crash: Week 1 (21–24 Jul) open now; Week 2 (28–31 Jul) opens at 80% of Week 1' }
       ],
       c4kWaitlist:[
         { id:'w1', pax:'Riley B.', service:'1:1 swim (in-water)', pref:'Tue/Thu 17:00+', ratio:'1:1 + ear defenders', loc:'Ealing or Acton', pri:'A', match:'Thu 17:00 Ealing 1:1 (mock)', cont:'3rd chase', last:'20 Apr' },
