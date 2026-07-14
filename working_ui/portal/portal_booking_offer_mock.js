@@ -16,7 +16,24 @@
 
   var TERM_BADGE = "AUTUMN TERM 2026";
   var TERM_LABEL = "Autumn Term 2026";
-  var TERM_RANGE = "Tue 1st September 2026 – Fri 18th December 2026";
+  var TERM_RANGE = "Sat 5th September 2026 – Fri 18th December 2026";
+
+  /** Inclusive ISO dates · weekly offer calendar (closures excluded). */
+  var TERM_CALENDAR = {
+    start: "2026-09-05",
+    end: "2026-12-18",
+    closedRanges: [{ start: "2026-10-26", end: "2026-10-30" }],
+  };
+
+  var WEEKDAY_NUM = {
+    Sunday: 0,
+    Monday: 1,
+    Tuesday: 2,
+    Wednesday: 3,
+    Thursday: 4,
+    Friday: 5,
+    Saturday: 6,
+  };
 
   var VENUE_LABELS = {
     Acton: "Acton Centre",
@@ -33,6 +50,7 @@
       ageHint: "From 3 years+",
       durationHint: "Usually 30 minutes",
       priceHint: "From £50 / 30 min session",
+      pricePerSession: 50,
       blurb:
         "1:1 or small-group swimming sessions with sensory-aware instructors. We work at the child’s pace — water confidence, regulation, and independence.",
       venues: ["Acton", "Northolt", "SwimFarm"],
@@ -44,6 +62,7 @@
       ageHint: "From 3 years+",
       durationHint: "Usually 60 minutes",
       priceHint: "From £75 / 60 min session",
+      pricePerSession: 75,
       blurb:
         "Supported climbing sessions that build strength, focus, and confidence. Routes and support levels are matched to each child.",
       venues: ["Westway"],
@@ -55,6 +74,7 @@
       ageHint: "From 12 years+",
       durationHint: "Usually 60 minutes",
       priceHint: "From £75 / 60 min session",
+      pricePerSession: 75,
       blurb:
         "Active sessions focused on movement, coordination, and stamina — adapted so every child can take part safely and with clear structure.",
       venues: ["SwimFarm", "Acton"],
@@ -66,6 +86,7 @@
       ageHint: "From 3 years+",
       durationHint: "Usually 90 minutes",
       priceHint: "From £120 / 90 min session",
+      pricePerSession: 120,
       blurb:
         "Longer blocks that combine activities in one visit (for example pool plus land-based work). Ideal when families want variety in a single session.",
       venues: ["SwimFarm", "Northolt"],
@@ -77,6 +98,7 @@
       ageHint: "From 3 years+",
       durationHint: "Agreed with the office",
       priceHint: "From £125 / 60 min session",
+      pricePerSession: 125,
       blurb:
         "A tailored programme built around your child’s goals, support needs, and schedule. Planned with the family and delivery team — enquire to start.",
       venues: ["SwimFarm", "Acton", "Westway"],
@@ -263,6 +285,93 @@
     return null;
   }
 
+  function parseIsoDate(iso) {
+    var p = String(iso || "").split("-");
+    if (p.length !== 3) return null;
+    return new Date(Date.UTC(Number(p[0]), Number(p[1]) - 1, Number(p[2])));
+  }
+
+  function toIsoDate(d) {
+    var y = d.getUTCFullYear();
+    var m = String(d.getUTCMonth() + 1).padStart(2, "0");
+    var day = String(d.getUTCDate()).padStart(2, "0");
+    return y + "-" + m + "-" + day;
+  }
+
+  function isInClosedRange(iso) {
+    var ranges = TERM_CALENDAR.closedRanges || [];
+    for (var i = 0; i < ranges.length; i++) {
+      if (iso >= ranges[i].start && iso <= ranges[i].end) return true;
+    }
+    return false;
+  }
+
+  /**
+   * All remaining/past session dates for a weekday in the current term.
+   * @returns {{ iso: string, label: string, past: boolean }[]}
+   */
+  function termDatesForWeekday(dayName, asOf) {
+    var want = WEEKDAY_NUM[dayName];
+    if (want == null) return [];
+    var start = parseIsoDate(TERM_CALENDAR.start);
+    var end = parseIsoDate(TERM_CALENDAR.end);
+    if (!start || !end) return [];
+    var today = asOf ? parseIsoDate(asOf) || asOf : new Date();
+    if (!(today instanceof Date) || isNaN(today.getTime())) today = new Date();
+    var todayIso = toIsoDate(
+      new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()))
+    );
+    var out = [];
+    var cur = new Date(start.getTime());
+    while (cur.getUTCDay() !== want) {
+      cur.setUTCDate(cur.getUTCDate() + 1);
+      if (cur > end) return out;
+    }
+    while (cur <= end) {
+      var iso = toIsoDate(cur);
+      if (!isInClosedRange(iso)) {
+        out.push({
+          iso: iso,
+          label: formatChipDate(cur),
+          past: iso < todayIso,
+        });
+      }
+      cur.setUTCDate(cur.getUTCDate() + 7);
+    }
+    return out;
+  }
+
+  function formatChipDate(d) {
+    var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return d.getUTCDate() + " " + months[d.getUTCMonth()];
+  }
+
+  /** Remaining sessions + priced total (parents pay remaining only). */
+  function remainingTermPrice(dayName, pricePerSession, asOf) {
+    var dates = termDatesForWeekday(dayName, asOf);
+    var remaining = dates.filter(function (d) {
+      return !d.past;
+    });
+    var unit = pricePerSession == null ? null : Number(pricePerSession);
+    var total =
+      unit == null || !isFinite(unit)
+        ? null
+        : Math.round(unit * remaining.length * 100) / 100;
+    return {
+      dates: dates,
+      totalDates: dates.length,
+      remainingCount: remaining.length,
+      pastCount: dates.length - remaining.length,
+      pricePerSession: unit,
+      remainingTotal: total,
+    };
+  }
+
+  function formatPounds(n) {
+    if (n == null || !isFinite(n)) return null;
+    return "£" + n.toLocaleString("en-GB", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+
   function venueLabel(venue) {
     var k = String(venue || "").trim();
     return VENUE_LABELS[k] || k;
@@ -401,6 +510,7 @@
     TERM_BADGE: TERM_BADGE,
     TERM_LABEL: TERM_LABEL,
     TERM_RANGE: TERM_RANGE,
+    TERM_CALENDAR: TERM_CALENDAR,
     serviceById: serviceById,
     venueLabel: venueLabel,
     blockById: blockById,
@@ -410,5 +520,8 @@
     filterSlots: filterSlots,
     groupSlotsByVenueThenDay: groupSlotsByVenueThenDay,
     groupIntensiveByBlock: groupIntensiveByBlock,
+    termDatesForWeekday: termDatesForWeekday,
+    remainingTermPrice: remainingTermPrice,
+    formatPounds: formatPounds,
   };
 })(typeof window !== "undefined" ? window : globalThis);

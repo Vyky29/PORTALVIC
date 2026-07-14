@@ -635,8 +635,9 @@
       list-style: none;
       cursor: pointer;
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 10px;
+      gap: 8px 10px;
       padding: 12px 14px;
       font-weight: 800;
       color: var(--ink);
@@ -664,10 +665,59 @@
       max-height: 16px !important;
       color: var(--blue);
     }
+    .day-acc__label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex: 0 0 auto;
+      font-weight: 800;
+    }
     .day-acc__count {
       font-size: 0.78rem;
       font-weight: 700;
       color: var(--muted);
+    }
+    .day-acc__chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      align-items: center;
+      min-width: 0;
+      flex: 1 1 180px;
+    }
+    .date-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #eaf5fb;
+      border: 1px solid rgba(45, 132, 179, 0.25);
+      color: var(--blueDeep);
+      font-size: 0.68rem;
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    .date-chip--past {
+      background: #fef3f2;
+      border-color: rgba(180, 35, 24, 0.28);
+      color: #b42318;
+      text-decoration: line-through;
+      opacity: 0.9;
+    }
+    .day-acc__remaining {
+      flex: 1 1 100%;
+      margin: 2px 0 0;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .day-acc__remaining strong {
+      color: var(--ink);
+      font-weight: 800;
     }
     .slot-table {
       display: flex;
@@ -1011,7 +1061,7 @@
     </div>
   </div>
 
-  <script src="/portal/portal_booking_offer_mock.js?v=20260714-booking-intensive"></script>
+  <script src="/portal/portal_booking_offer_mock.js?v=20260714-booking-dates"></script>
   <script>
 (function () {
   "use strict";
@@ -1288,6 +1338,48 @@
     );
   }
 
+  function daySummaryExtrasHtml(s, dayName) {
+    if (!s || s.intensiveBlocks) return "";
+    if (!mock.remainingTermPrice) return "";
+    // Canonical weekday names only (not intensive "Week 1 · Tue…")
+    if (!/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)$/.test(dayName)) {
+      return "";
+    }
+    var stats = mock.remainingTermPrice(dayName, s.pricePerSession);
+    if (!stats.dates.length) return "";
+    var chips = stats.dates
+      .map(function (d) {
+        return (
+          '<span class="date-chip' +
+          (d.past ? " date-chip--past" : "") +
+          '" title="' +
+          esc(d.iso) +
+          (d.past ? " · past" : " · remaining") +
+          '">' +
+          esc(d.label) +
+          "</span>"
+        );
+      })
+      .join("");
+    var money = mock.formatPounds(stats.remainingTotal);
+    var remLine =
+      '<p class="day-acc__remaining">' +
+      "<strong>" +
+      stats.remainingCount +
+      "</strong> of " +
+      stats.totalDates +
+      " sessions remaining" +
+      (money
+        ? " · term due now <strong>" +
+          esc(money) +
+          "</strong> (remaining only · " +
+          esc(mock.formatPounds(stats.pricePerSession)) +
+          "/session)"
+        : " · price by arrangement") +
+      "</p>";
+    return '<span class="day-acc__chips">' + chips + "</span>" + remLine;
+  }
+
   function venuesAccordionHtml(s, venues, openFirst) {
     if (!venues.length) {
       return '<p class="empty">No times match the filters for this block.</p>';
@@ -1302,11 +1394,14 @@
               openAttr +
               ">" +
               "<summary>" +
+              '<span class="day-acc__label">' +
               ICONS.day +
               esc(dg.day) +
               ' <span class="day-acc__count">(' +
               dg.slots.length +
-              ")</span></summary>" +
+              ")</span></span>" +
+              daySummaryExtrasHtml(s, dg.day) +
+              "</summary>" +
               '<div class="slot-table">' +
               slotHeadHtml() +
               dg.slots
