@@ -155,8 +155,8 @@
     },
     {
       id: "oct_ht",
-      badge: "OCTOBER HALF TERM 2026",
-      title: "October half-term intensives",
+      badge: "AUTUMN HALF TERM 2026",
+      title: "Autumn half-term intensives",
       range: "Mon 26 – Thu 29 October 2026",
       badgeIcon: "leaf",
       sort: 2,
