@@ -552,21 +552,20 @@ export function crashInvoiceIntro(opts: {
   const hasSwim = acts.includes("swimming");
   if (opts.vatMode === "exempt") {
     if (hasClimb && hasSwim) {
-      return "Structured activity support delivered across aquatic and indoor environments for a SEND participant as part of funded provision (EHCP or local authority care package).";
+      return "Structured activity support delivered across aquatic and climbing environments for a SEND participant as part of funded provision (EHCP or local authority care package).";
     }
     if (hasClimb) {
-      // Climbing (as supplied for LA/NHS crash invoices).
-      return "Structured activity support delivered within an aquatic environment for a SEND participant as part of funded provision (EHCP or local authority care package).";
+      return "Structured activity support delivered within a climbing environment for a SEND participant as part of funded provision (EHCP or local authority care package).";
     }
     return "Structured activity support delivered within an aquatic environment for a SEND participant as part of funded provision (EHCP or local authority care package).";
   }
   if (hasClimb && !hasSwim) {
-    return "Structured activity support delivered across aquatic and indoor environments for a SEND participant.";
+    return "Structured activity support delivered across climbing and indoor environments for a SEND participant.";
   }
   if (hasSwim && !hasClimb) {
     return "Structured activity support delivered within an aquatic environment for a SEND participant.";
   }
-  return "Structured activity support delivered across aquatic and indoor environments for a SEND participant.";
+  return "Structured activity support delivered across aquatic and climbing environments for a SEND participant.";
 }
 
 /**
