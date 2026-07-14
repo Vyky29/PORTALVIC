@@ -492,6 +492,159 @@ export function quoteCrashSummerBooking(input: {
   };
 }
 
+function ordinalDay(n: number): string {
+  const v = Math.floor(n);
+  const mod100 = v % 100;
+  if (mod100 >= 11 && mod100 <= 13) return `${v}th`;
+  const mod10 = v % 10;
+  if (mod10 === 1) return `${v}st`;
+  if (mod10 === 2) return `${v}nd`;
+  if (mod10 === 3) return `${v}rd`;
+  return `${v}th`;
+}
+
+function formatUkTimeRange(start: string, end: string): string {
+  const endH = Number(String(end || "").split(":")[0]);
+  const ampm = Number.isFinite(endH) && endH >= 12 ? "pm" : "am";
+  const a = String(start || "").slice(0, 5);
+  const b = String(end || "").slice(0, 5);
+  return `${a}-${b} ${ampm}`;
+}
+
+function crashSlotMinutes(activity: CrashActivity): number {
+  return activity === "climbing" ? 60 : 30;
+}
+
+function crashVenueShort(activity: CrashActivity): string {
+  return activity === "climbing" ? "Westway" : "Acton Centre";
+}
+
+function crashActivityBullet(activity: CrashActivity, durationMin: number): string {
+  const title = CRASH_META[activity].invoiceTitle;
+  return `- ${durationMin}' 1to1 ${title}`;
+}
+
+function crashDateRangePhrase(dates: string[]): string {
+  if (!dates.length) return "";
+  const sorted = [...dates].sort();
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+  const parse = (iso: string) => {
+    const [y, m, d] = iso.split("-").map(Number);
+    return { y, m, d, dt: new Date(Date.UTC(y, m - 1, d)) };
+  };
+  const a = parse(first);
+  const b = parse(last);
+  const month = a.dt.toLocaleDateString("en-GB", { month: "long", timeZone: "UTC" });
+  if (a.m === b.m && a.y === b.y) {
+    return `${ordinalDay(a.d)} to ${ordinalDay(b.d)} ${month}`;
+  }
+  const monthB = b.dt.toLocaleDateString("en-GB", { month: "long", timeZone: "UTC" });
+  return `${ordinalDay(a.d)} ${month} to ${ordinalDay(b.d)} ${monthB}`;
+}
+
+export function crashInvoiceIntro(opts: {
+  vatMode: "exempt" | "vat_20";
+  activities: CrashActivity[];
+}): string {
+  const acts = Array.from(new Set(opts.activities || []));
+  const hasClimb = acts.includes("climbing");
+  const hasSwim = acts.includes("swimming");
+  if (opts.vatMode === "exempt") {
+    if (hasClimb && hasSwim) {
+      return "Structured activity support delivered across aquatic and indoor environments for a SEND participant as part of funded provision (EHCP or local authority care package).";
+    }
+    if (hasClimb) {
+      // Climbing (as supplied for LA/NHS crash invoices).
+      return "Structured activity support delivered within an aquatic environment for a SEND participant as part of funded provision (EHCP or local authority care package).";
+    }
+    return "Structured activity support delivered within an aquatic environment for a SEND participant as part of funded provision (EHCP or local authority care package).";
+  }
+  if (hasClimb && !hasSwim) {
+    return "Structured activity support delivered across aquatic and indoor environments for a SEND participant.";
+  }
+  if (hasSwim && !hasClimb) {
+    return "Structured activity support delivered within an aquatic environment for a SEND participant.";
+  }
+  return "Structured activity support delivered across aquatic and indoor environments for a SEND participant.";
+}
+
+/**
+ * Full crash-course invoice description (Exempt vs Private), matching office invoice wording.
+ */
+export function buildCrashSummerInvoiceDescription(opts: {
+  vatMode: "exempt" | "vat_20";
+  weekId: CrashWeekId;
+  mode: CrashBookingMode;
+  activities: CrashActivity[];
+  lines: Array<{
+    activity: CrashActivity;
+    session_date: string;
+    slot_id: string;
+    slot_label: string;
+  }>;
+  participantName: string;
+  clientId?: string | null;
+  po?: string | null;
+}): string {
+  const week = CRASH_SUMMER_WEEKS[opts.weekId];
+  const weekLabel = opts.weekId === "w1" ? "Week 1" : "Week 2";
+  const intro = crashInvoiceIntro({
+    vatMode: opts.vatMode,
+    activities: opts.activities,
+  });
+  const out: string[] = [intro, ""];
+
+  if (opts.vatMode === "exempt") {
+    out.push(`Client's Id: ${String(opts.clientId || "").trim()}`);
+    out.push(`PO: ${String(opts.po || "").trim()}`);
+  } else {
+    out.push(`Client's name: ${String(opts.participantName || "").trim()}`);
+  }
+
+  const acts = Array.from(new Set(opts.activities || [])).filter(
+    (a): a is CrashActivity => a === "climbing" || a === "swimming",
+  );
+
+  for (const activity of acts) {
+    const actLines = opts.lines.filter((l) => l.activity === activity);
+    if (!actLines.length) continue;
+    const dates = Array.from(new Set(actLines.map((l) => l.session_date))).sort();
+    const slotIds = Array.from(new Set(actLines.map((l) => l.slot_id)));
+    let durationMin = crashSlotMinutes(activity);
+    let timePhrase = "";
+    if (activity === "swimming") {
+      const starts = slotIds
+        .map((id) => crashSlotById("swimming", id))
+        .filter(Boolean) as CrashSlotDef[];
+      if (starts.length) {
+        const ordered = [...starts].sort((a, b) => a.start.localeCompare(b.start));
+        durationMin = ordered.length * 30;
+        timePhrase = formatUkTimeRange(ordered[0].start, ordered[ordered.length - 1].end);
+      }
+    } else {
+      const slot = crashSlotById("climbing", slotIds[0]);
+      if (slot) timePhrase = formatUkTimeRange(slot.start, slot.end);
+    }
+
+    const sessionCount = actLines.length;
+    const packBit =
+      opts.mode === "weekly_pack"
+        ? `Weekly pack (${crashDateRangePhrase(dates)} from ${timePhrase})`
+        : `Individual days (${crashDateRangePhrase(dates)} from ${timePhrase})`;
+
+    out.push(crashActivityBullet(activity, durationMin));
+    out.push("- Summer crash course Jul 2026");
+    out.push(`- ${crashVenueShort(activity)}`);
+    out.push("- Summer Term 2026");
+    out.push("- Dates:");
+    out.push(`${weekLabel}. ${packBit}`);
+    out.push(`${sessionCount} session${sessionCount === 1 ? "" : "s"}`);
+  }
+
+  return out.join("\n");
+}
+
 export function crashCatalogPublic(opts?: { openWeekIds?: CrashWeekId[] }) {
   const openIds = opts?.openWeekIds?.length
     ? opts.openWeekIds

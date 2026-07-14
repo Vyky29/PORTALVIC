@@ -266,9 +266,9 @@ export async function buildPortalTaxInvoicePdf(
       wrappedDesc.push("");
       continue;
     }
-    wrappedDesc.push(...wrapPdfLines(t, 68));
+    wrappedDesc.push(...wrapPdfLines(t, 72));
   }
-  for (const line of wrappedDesc.slice(0, 14)) {
+  for (const line of wrappedDesc.slice(0, 22)) {
     if (line) {
       page.drawText(line, {
         x: left,

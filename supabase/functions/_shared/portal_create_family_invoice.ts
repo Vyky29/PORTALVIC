@@ -31,6 +31,10 @@ export type PortalFamilyInvoiceCreateInput = {
   paymentLinkUrl?: string | null;
   paymentLinkSurchargeNote?: string | null;
   invoiceNumber?: string | null;
+  /** When true, use lineDescription as the full PDF body (no Client's Name / Mode / VAT footer). */
+  descriptionComplete?: boolean;
+  clientIdLabel?: string | null;
+  poLabel?: string | null;
 };
 
 export type PortalFamilyInvoiceCreateResult =
@@ -142,19 +146,21 @@ export async function createPortalFamilyInvoice(
       : paymentMethodHint === "payment_link"
         ? "Card / Apple Pay"
         : "Bank transfer / Card (parent portal)";
-  const descriptionLines = [
-    ...String(lineDescription)
-      .split(/\n/)
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .slice(0, 8),
-    "",
-    `Client's Name: ${displayName}`,
-    quantity !== 1 ? `- Quantity: ${quantity}` : null,
-    reference ? `- Reference: ${reference}` : null,
-    `- Mode: ${modeLabel}`,
-    vatMode === "exempt" ? "- VAT: Exempt" : "- VAT: 20% (private funding)",
-  ].filter((x): x is string => !!x);
+  const descriptionFromInput = String(lineDescription)
+    .split(/\n/)
+    .map((s) => s.trimEnd())
+    .filter((s, i, arr) => s || (i > 0 && i < arr.length - 1));
+  const descriptionLines = input.descriptionComplete
+    ? descriptionFromInput.slice(0, 24)
+    : [
+        ...descriptionFromInput.filter(Boolean).slice(0, 8),
+        "",
+        `Client's Name: ${displayName}`,
+        quantity !== 1 ? `- Quantity: ${quantity}` : null,
+        reference ? `- Reference: ${reference}` : null,
+        `- Mode: ${modeLabel}`,
+        vatMode === "exempt" ? "- VAT: Exempt" : "- VAT: 20% (private funding)",
+      ].filter((x): x is string => !!x);
 
   let pdfBytes: Uint8Array;
   try {

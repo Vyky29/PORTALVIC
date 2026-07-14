@@ -1,0 +1,152 @@
+/**
+ * Resolve VAT mode + Client Id / PO for family invoices from portal contact + client_payments.
+ */
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import {
+  normalizeFundingSource,
+  normalizeInvoiceType,
+  paymentClientKeyForParticipant,
+  paymentRowToContext,
+} from "./reenrolment_catalog.ts";
+import type { PortalInvoiceVatMode } from "./portal_tax_invoice_pdf.ts";
+
+function clean(v: unknown, max = 200): string {
+  return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function pickPo(data: Record<string, unknown>): string {
+  for (const key of ["PO", "po", "Po", "purchase_order", "Purchase Order", "order_no", "Order No"]) {
+    const s = clean(data[key], 80);
+    if (s) return s;
+  }
+  return "";
+}
+
+function pickClientId(data: Record<string, unknown>, fallback: string): string {
+  for (const key of [
+    "Client Id",
+    "Client ID",
+    "client_id",
+    "ClientId",
+    "CFK ID",
+    "cfk_id",
+  ]) {
+    const s = clean(data[key], 80);
+    if (s) return s;
+  }
+  return fallback;
+}
+
+export type ParticipantInvoiceFunding = {
+  vatMode: PortalInvoiceVatMode;
+  fundingLabel: string;
+  clientId: string;
+  po: string;
+  source: "funding_label" | "client_payments" | "default_private";
+};
+
+export async function resolveParticipantInvoiceFunding(
+  admin: SupabaseClient,
+  opts: { contactId: string; displayName: string },
+): Promise<ParticipantInvoiceFunding> {
+  const contactId = clean(opts.contactId, 120);
+  const displayName = clean(opts.displayName, 120);
+
+  const { data: contact } = await admin
+    .from("portal_parent_contacts")
+    .select("funding_label, contact_id")
+    .eq("contact_id", contactId)
+    .maybeSingle();
+
+  const fundingLabel = clean(contact?.funding_label, 120);
+  const fl = fundingLabel.toLowerCase();
+  if (
+    fl &&
+    (fl.includes("la") ||
+      fl.includes("nhs") ||
+      fl.includes("ehcp") ||
+      fl.includes("exempt") ||
+      fl.includes("direct payment") ||
+      fl.includes("local authority") ||
+      fl.includes("care package"))
+  ) {
+    return {
+      vatMode: "exempt",
+      fundingLabel,
+      clientId: contactId,
+      po: "",
+      source: "funding_label",
+    };
+  }
+  if (
+    fl &&
+    (fl.includes("private") || fl.includes("vat") || fl.includes("pf") || fl.includes("parent"))
+  ) {
+    return {
+      vatMode: "vat_20",
+      fundingLabel,
+      clientId: contactId,
+      po: "",
+      source: "funding_label",
+    };
+  }
+
+  const preferredKey = paymentClientKeyForParticipant(displayName);
+  let paymentRow: Record<string, unknown> | null = null;
+  if (preferredKey) {
+    const { data: keyed } = await admin
+      .from("client_payments")
+      .select("client_key, client_name, parent_name, payment_status, amount, data, sheet")
+      .eq("client_key", preferredKey)
+      .maybeSingle();
+    if (keyed) paymentRow = keyed as Record<string, unknown>;
+  }
+  if (!paymentRow && displayName) {
+    const { data: byName } = await admin
+      .from("client_payments")
+      .select("client_key, client_name, parent_name, payment_status, amount, data, sheet")
+      .ilike("client_name", displayName)
+      .order("imported_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (byName) paymentRow = byName as Record<string, unknown>;
+  }
+
+  if (paymentRow) {
+    const ctx = paymentRowToContext(paymentRow);
+    const data =
+      paymentRow.data && typeof paymentRow.data === "object"
+        ? (paymentRow.data as Record<string, unknown>)
+        : {};
+    const fundNorm = normalizeFundingSource(ctx.fundingSource);
+    const vat =
+      ctx.vatCode === "exempt" ||
+      /local authority|nhs|direct payment/i.test(fundNorm) ||
+      String(paymentRow.sheet || "").toUpperCase() === "LA"
+        ? "exempt"
+        : "vat_20";
+    // If sheet PARENTS and vat empty → private (vat_20).
+    const vatRaw = normalizeInvoiceType(String(data.vat || data.VAT || ""));
+    const finalVat: PortalInvoiceVatMode =
+      String(paymentRow.sheet || "").toUpperCase() === "LA"
+        ? "exempt"
+        : vatRaw.code === "exempt"
+          ? "exempt"
+          : vat;
+    return {
+      vatMode: finalVat,
+      fundingLabel: fundNorm || ctx.fundingSource || (finalVat === "exempt" ? "LA / NHS" : "Private"),
+      clientId: pickClientId(data, clean(paymentRow.client_key, 80) || contactId),
+      po: pickPo(data),
+      source: "client_payments",
+    };
+  }
+
+  return {
+    vatMode: "vat_20",
+    fundingLabel: fundingLabel || "Private",
+    clientId: contactId,
+    po: "",
+    source: "default_private",
+  };
+}

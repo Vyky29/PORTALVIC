@@ -16,6 +16,7 @@ import {
 } from "../_shared/portal_create_family_invoice.ts";
 import {
   CRASH_HOLD_MINUTES,
+  buildCrashSummerInvoiceDescription,
   crashBankTransferReference,
   crashIndividualDaysOpenForWeek,
   crashIndividualRulesCopy,
@@ -37,6 +38,7 @@ import {
   readParentNotifySmtpConfig,
   sendEmailWithAttachmentViaSmtp,
 } from "../_shared/portal_parent_messaging.ts";
+import { resolveParticipantInvoiceFunding } from "../_shared/portal_invoice_funding.ts";
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -281,14 +283,29 @@ Deno.serve(async (req) => {
 
   const dueDate = new Date().toISOString().slice(0, 10);
   const bankRef = crashBankTransferReference(displayName, activities);
+  const funding = await resolveParticipantInvoiceFunding(supabase, {
+    contactId,
+    displayName,
+  });
+  const lineDescription = buildCrashSummerInvoiceDescription({
+    vatMode: funding.vatMode,
+    weekId,
+    mode,
+    activities,
+    lines: quote.lines,
+    participantName: displayName,
+    clientId: funding.clientId,
+    po: funding.po,
+  });
   const created = await createPortalFamilyInvoice(supabase, {
     contactId,
     amountGbp: quote.amountGbp,
     dueDateIso: dueDate,
-    vatMode: "vat_20",
-    lineDescription: quote.lineDescription,
+    vatMode: funding.vatMode,
+    lineDescription,
+    descriptionComplete: true,
     reference: bankRef,
-    notes: `Summer crash course Jul 2026 · booking ${booking.id} · pay in full to confirm`,
+    notes: `Summer crash course Jul 2026 · booking ${booking.id} · pay in full to confirm · ${funding.fundingLabel}`,
     title: `Summer crash course — ${displayName}`,
     shareStatus: "ready",
     paymentMethodHint: "bank_transfer",
