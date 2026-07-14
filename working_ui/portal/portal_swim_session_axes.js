@@ -52,7 +52,7 @@
     {
       value: "Found the water hard today",
       label: "Found the water hard today",
-      otherSide: "Withdrawn",
+      otherSide: "Withdrawn · Blue zone",
       termHint: "Building",
       score: 1,
       icon:
@@ -61,25 +61,25 @@
     {
       value: "Needed help to settle",
       label: "Needed help to settle",
-      otherSide: "Anxious",
+      otherSide: "Anxious · Yellow zone",
       termHint: "Building",
       score: 2,
       icon:
         '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><path d="M8 8.5l2 1.5M16 8.5l-2 1.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><path d="M8.5 14.5h7" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>',
     },
     {
-      value: "Mostly calm",
-      label: "Mostly calm",
-      otherSide: "settling",
-      termHint: "Progressing",
-      score: 3,
+      value: "Overwhelmed / out of control in the water",
+      label: "Overwhelmed / out of control in the water",
+      otherSide: "Out of control · Red zone",
+      termHint: "Building",
+      score: 1,
       icon:
-        '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><circle cx="9" cy="10" r="1.25" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1.25" fill="currentColor" stroke="none"/><path d="M9 15h6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>',
+        '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><path d="M8 8.5l3 2M16 8.5l-3 2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><path d="M9 15h6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>',
     },
     {
       value: "Calm and settled",
       label: "Calm and settled",
-      otherSide: "Happy/Excited",
+      otherSide: "Happy/Excited · Green zone",
       termHint: "Secure",
       score: 4,
       icon:
@@ -155,7 +155,8 @@
   var LEGACY_REG_MAP = {
     withdrawn: REGULATION[0],
     anxious: REGULATION[1],
-    "out of control": REGULATION[0],
+    "out of control": REGULATION[2],
+    "mostly calm": REGULATION[3],
     "happy/excited": REGULATION[3],
     happy: REGULATION[3],
     excited: REGULATION[3],
@@ -241,13 +242,13 @@
     parts.forEach(function (p) {
       var hit = REG_BY_VALUE[p.toLowerCase()];
       if (hit) {
-        out.push(hit.label);
+        out.push(optionLabelWithOtherSide(hit));
         return;
       }
       if (aquatic) {
         var leg = LEGACY_REG_MAP[p.toLowerCase()];
         if (leg) {
-          out.push(leg.label);
+          out.push(optionLabelWithOtherSide(leg));
           return;
         }
       }
