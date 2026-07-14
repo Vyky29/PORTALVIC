@@ -14,7 +14,9 @@ import {
   CRASH_INDIVIDUAL_PRE_WINDOW_TO,
   CRASH_PRICES,
   CRASH_SUMMER_WEEKS,
+  CRASH_SWIM_TIME_BANDS,
   crashIndividualDaysOpen,
+  crashSlotById,
   crashSlotsFor,
   type CrashActivity,
   type CrashWeekId,
@@ -90,57 +92,82 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
     return `${hour}:${min}`;
   }
 
-  /** First session length for display (swim 30′ / climb 60′) — not the full camp window. */
-  function sessionTimeLabel(activity: CrashActivity): string {
-    const defs = crashSlotsFor(activity);
-    const start = defs[0]?.start || "10:00";
-    const end = defs[0]?.end || "11:00";
+  function bandTimeLabel(start: string, end: string): string {
     return `${formatSessionClock(start)} – ${formatSessionClock(end)}`;
+  }
+
+  /** Public pack rows: one per bookable time (swim = 30′ bands · climb = 60′ slots). */
+  function packUnitsFor(activity: CrashActivity): {
+    unitId: string;
+    slotIds: string[];
+    start: string;
+    end: string;
+  }[] {
+    if (activity === "swimming") {
+      return CRASH_SWIM_TIME_BANDS.map((band, i) => {
+        const first = crashSlotById("swimming", band[0] || "") ||
+          crashSlotsFor("swimming")[0]!;
+        return {
+          unitId: `band${i + 1}`,
+          slotIds: band.slice(),
+          start: first.start,
+          end: first.end,
+        };
+      });
+    }
+    return crashSlotsFor("climbing").map((slot) => ({
+      unitId: slot.id,
+      slotIds: [slot.id],
+      start: slot.start,
+      end: slot.end,
+    }));
   }
 
   const intensiveSlots: Record<string, unknown>[] = [];
 
-  // Weekly packs only as the primary bookable units (2 weeks × activities).
+  // Weekly packs: one row per time unit (parents book another row to add more time).
   for (const week of weeks) {
     const weekLabel =
       week.id === "w1"
         ? "Week 1 · Tue 21 – Fri 24 Jul"
         : "Week 2 · Tue 28 – Fri 31 Jul";
     for (const act of activities) {
-      const defs = crashSlotsFor(act.id);
-      let packFree = 0;
-      for (const slot of defs) {
-        const freeAllWeek = week.dates.every(
-          (date) => !taken.has(`${act.id}|${date}|${slot.id}`),
-        );
-        if (freeAllWeek) packFree += 1;
-      }
       const packPrice =
         act.id === "climbing"
           ? CRASH_PRICES.climbing.weekly_pack
           : CRASH_PRICES.swimming.weekly_pack;
-      intensiveSlots.push({
-        id: `crash-pack-${week.id}-${act.id}`,
-        serviceId: "intensive",
-        blockId: "summer_july",
-        weekId: week.id,
-        bookingMode: "weekly_pack",
-        crashActivity: act.id,
-        activityName: act.activityName,
-        venue: act.venue,
-        day: weekLabel,
-        timeLabel: sessionTimeLabel(act.id),
-        packLabel: "4-day week pack",
-        sortTime: defs[0]?.start || "10:00",
-        capacity: defs.length,
-        taken: Math.max(0, defs.length - packFree),
-        packPrice,
-        dateIso: week.dates[0],
-      });
+      for (const unit of packUnitsFor(act.id)) {
+        let packFree = 0;
+        for (const slotId of unit.slotIds) {
+          const freeAllWeek = week.dates.every(
+            (date) => !taken.has(`${act.id}|${date}|${slotId}`),
+          );
+          if (freeAllWeek) packFree += 1;
+        }
+        intensiveSlots.push({
+          id: `crash-pack-${week.id}-${act.id}-${unit.unitId}`,
+          serviceId: "intensive",
+          blockId: "summer_july",
+          weekId: week.id,
+          bookingMode: "weekly_pack",
+          crashActivity: act.id,
+          activityName: act.activityName,
+          venue: act.venue,
+          day: weekLabel,
+          timeLabel: bandTimeLabel(unit.start, unit.end),
+          packLabel: "4-day week pack",
+          sortTime: unit.start,
+          capacity: unit.slotIds.length,
+          taken: Math.max(0, unit.slotIds.length - packFree),
+          packPrice,
+          slotIds: unit.slotIds,
+          dateIso: week.dates[0],
+        });
+      }
     }
   }
 
-  // Loose / individual hours only once the Fri 17 Jul window opens.
+  // Loose / individual hours only once the Fri 17 Jul window opens — same time units per day.
   if (individualOpen) {
     for (const week of weeks) {
       for (const date of week.dates) {
@@ -148,28 +175,30 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
         const dow = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()];
         const dayLabel = `${week.id === "w1" ? "Week 1" : "Week 2"} · ${dow} ${Number(date.slice(8, 10))} Jul · individual`;
         for (const act of activities) {
-          const defs = crashSlotsFor(act.id);
-          let booked = 0;
-          for (const slot of defs) {
-            if (taken.has(`${act.id}|${date}|${slot.id}`)) booked += 1;
+          for (const unit of packUnitsFor(act.id)) {
+            let booked = 0;
+            for (const slotId of unit.slotIds) {
+              if (taken.has(`${act.id}|${date}|${slotId}`)) booked += 1;
+            }
+            intensiveSlots.push({
+              id: `crash-day-${act.id}-${date}-${unit.unitId}`,
+              serviceId: "intensive",
+              blockId: "summer_july",
+              weekId: week.id as CrashWeekId,
+              bookingMode: "individual_days",
+              crashActivity: act.id,
+              activityName: act.activityName,
+              venue: act.venue,
+              day: dayLabel,
+              timeLabel: bandTimeLabel(unit.start, unit.end),
+              packLabel: "individual hours",
+              sortTime: `${unit.start}-d`,
+              capacity: unit.slotIds.length,
+              taken: booked,
+              slotIds: unit.slotIds,
+              dateIso: date,
+            });
           }
-          intensiveSlots.push({
-            id: `crash-day-${act.id}-${date}`,
-            serviceId: "intensive",
-            blockId: "summer_july",
-            weekId: week.id as CrashWeekId,
-            bookingMode: "individual_days",
-            crashActivity: act.id,
-            activityName: act.activityName,
-            venue: act.venue,
-            day: dayLabel,
-            timeLabel: sessionTimeLabel(act.id),
-            packLabel: "individual hours",
-            sortTime: `${defs[0]?.start || "10:00"}-d`,
-            capacity: defs.length,
-            taken: booked,
-            dateIso: date,
-          });
         }
       }
     }

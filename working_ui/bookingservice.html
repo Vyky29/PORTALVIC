@@ -1140,7 +1140,7 @@
     </div>
   </div>
 
-  <script src="/portal/portal_booking_offer.js?v=20260714-booking-crash-pack2"></script>
+  <script src="/portal/portal_booking_offer.js?v=20260714-booking-crash-bands1"></script>
   <script>
 (function () {
   "use strict";
@@ -1403,7 +1403,6 @@
           ? "Join waiting list"
           : "Book place";
     var ageLabel = (svc && svc.ageHint) || "From 3 years+";
-    var activityName = String(slot.activityName || "").trim();
     var packLabel = String(slot.packLabel || "").trim();
     var timeCell;
     if (packLabel) {
@@ -1419,11 +1418,8 @@
     } else {
       timeCell = esc(dayAbbrev(slot.day)) + " " + esc(slot.timeLabel);
     }
-    var venueCell =
-      esc(mock.venueLabel(slot.venue)) +
-      (activityName
-        ? '<span class="slot-venue__activity">' + esc(activityName) + "</span>"
-        : "");
+    var venueCell = esc(mock.venueLabel(slot.venue));
+    // Activity chip lives on the venue section header for intensives.
     return (
       '<div class="slot-row' +
       (full && !enquireOnly ? " slot-row--full" : "") +
@@ -1755,7 +1751,7 @@
         : slot.bookingMode === "weekly_pack"
           ? full
             ? " — this week pack is currently full. Ask to join the waiting list."
-            : " — four-day Tue–Fri block. Crash courses are sold as week packs; individual hours open from Fri 17 July."
+            : " — four-day Tue–Fri pack for this 30′/60′ time. Want more time? Book another slot as well. Individual leftover hours open from Fri 17 July."
           : full
             ? " — currently fully booked. Tell us you’d like to join the waiting list."
             : " — " +
