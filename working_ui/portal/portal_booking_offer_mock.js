@@ -30,7 +30,7 @@
       id: "aquatic",
       name: "Aquatic Activity",
       tier: "core",
-      ageHint: "3yrs – 40yrs",
+      ageHint: "From 3 years+",
       durationHint: "Usually 30 minutes",
       priceHint: "From £50 / 30 min session",
       blurb:
@@ -41,7 +41,7 @@
       id: "climbing",
       name: "Climbing Activity",
       tier: "core",
-      ageHint: "5yrs – 18yrs",
+      ageHint: "From 3 years+",
       durationHint: "Usually 60 minutes",
       priceHint: "From £75 / 60 min session",
       blurb:
@@ -52,7 +52,7 @@
       id: "physical",
       name: "Physical Activity",
       tier: "core",
-      ageHint: "5yrs – 18yrs",
+      ageHint: "From 12 years+",
       durationHint: "Usually 60 minutes",
       priceHint: "From £75 / 60 min session",
       blurb:
@@ -63,7 +63,7 @@
       id: "multi",
       name: "Multi-Activity",
       tier: "more",
-      ageHint: "5yrs – 18yrs",
+      ageHint: "From 3 years+",
       durationHint: "Usually 90 minutes",
       priceHint: "From £120 / 90 min session",
       blurb:
@@ -74,7 +74,7 @@
       id: "bespoke",
       name: "Bespoke Programme",
       tier: "more",
-      ageHint: "Bespoke",
+      ageHint: "From 3 years+",
       durationHint: "Agreed with the office",
       priceHint: "From £125 / 60 min session",
       blurb:
@@ -86,7 +86,7 @@
       id: "day_centre",
       name: "Day Centre",
       tier: "more",
-      ageHint: "Bespoke",
+      ageHint: "From 3 years+",
       durationHint: "Multi-hour weekday blocks",
       priceHint: "Funding / bespoke quote",
       blurb:
@@ -98,7 +98,7 @@
       id: "intensive",
       name: "Intensive Courses & Camps",
       tier: "more",
-      ageHint: "Holiday packs",
+      ageHint: "From 3 years+",
       durationHint: "Half-term / summer blocks",
       priceHint: "Course packs — ask the office",
       blurb:
