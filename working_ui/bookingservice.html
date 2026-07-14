@@ -492,6 +492,40 @@
       box-shadow: 0 6px 18px rgba(23, 50, 71, 0.04);
       scroll-margin-top: 100px;
     }
+    .timetable__head {
+      margin: 0 0 4px;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .term-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 11px;
+      border-radius: 999px;
+      background: var(--gold);
+      color: #173247;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      flex: 0 0 auto;
+      max-width: 100%;
+      overflow-wrap: break-word;
+      white-space: normal;
+      line-height: 1.2;
+    }
+    .term-badge svg {
+      width: 14px !important;
+      height: 14px !important;
+      max-width: 14px !important;
+      max-height: 14px !important;
+      flex: 0 0 auto;
+      color: #173247;
+    }
     .timetable__title-row {
       display: flex;
       flex-wrap: wrap;
@@ -499,13 +533,14 @@
       gap: 10px 12px;
       min-width: 0;
       margin: 0;
+      width: 100%;
     }
     .timetable__title-main {
       display: inline-flex;
       align-items: center;
       gap: 10px;
       min-width: 0;
-      flex: 1 1 auto;
+      width: 100%;
     }
     .timetable__icon {
       flex: 0 0 auto;
@@ -529,27 +564,6 @@
     .timetable__icon.svc__icon--bespoke { background: #fff1e8; color: #c2410c; }
     .timetable__icon.svc__icon--dc { background: #eef6f2; color: #1f6b4a; }
     .timetable__icon.svc__icon--intensive { background: #fce7f3; color: #be185d; }
-    .term-badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 5px 11px;
-      border-radius: 999px;
-      background: var(--gold);
-      color: #173247;
-      font-size: 0.72rem;
-      font-weight: 900;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      flex: 0 0 auto;
-      max-width: 100%;
-      overflow-wrap: break-word;
-      white-space: normal;
-      line-height: 1.2;
-    }
-    .timetable__head {
-      margin: 0 0 4px;
-      min-width: 0;
-    }
     .timetable__head h3 {
       margin: 0;
       color: var(--ink);
@@ -559,11 +573,15 @@
       min-width: 0;
     }
     .timetable__range {
-      margin: 8px 0 0;
+      margin: 0;
       font-size: 0.9rem;
       color: var(--muted);
       font-weight: 600;
       overflow-wrap: break-word;
+      padding-left: 54px;
+    }
+    @media (max-width: 480px) {
+      .timetable__range { padding-left: 0; }
     }
     .venue-block {
       margin: 18px 0 0;
@@ -972,7 +990,7 @@
     </div>
   </div>
 
-  <script src="/portal/portal_booking_offer_mock.js?v=20260714-booking-age"></script>
+  <script src="/portal/portal_booking_offer_mock.js?v=20260714-booking-autumn"></script>
   <script>
 (function () {
   "use strict";
@@ -1021,6 +1039,8 @@
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
     users:
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+    leaf:
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 6.5-1 11"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>',
   };
 
   function esc(s) {
@@ -1316,6 +1336,11 @@
           esc(s.id) +
           '">' +
           '<div class="timetable__head">' +
+          '<span class="term-badge">' +
+          ICONS.leaf +
+          " " +
+          esc(mock.TERM_BADGE || "AUTUMN TERM 2026") +
+          "</span>" +
           '<div class="timetable__title-row">' +
           '<div class="timetable__title-main">' +
           '<div class="timetable__icon ' +
@@ -1328,9 +1353,6 @@
           (filters.venue ? " (" + esc(mock.venueLabel(filters.venue)) + ")" : "") +
           "</h3>" +
           "</div>" +
-          '<span class="term-badge">' +
-          esc(mock.TERM_BADGE || "AUTUMN TERM 2026") +
-          "</span>" +
           "</div>" +
           '<p class="timetable__range">' +
           esc(mock.TERM_RANGE || "") +
