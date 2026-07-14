@@ -293,7 +293,7 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
     blocks: [
       {
         id: "summer_july",
-        badge: "SUMMER TERM 2026",
+        badge: "Summer Holidays 2026",
         title: "Summer holiday crash courses",
         range:
           "Week 1: Tue 21 – Fri 24 July · Week 2: Tue 28 – Fri 31 July 2026 · " +
