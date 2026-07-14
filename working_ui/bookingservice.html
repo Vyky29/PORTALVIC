@@ -506,9 +506,35 @@
       align-items: flex-start;
       gap: 10px;
     }
+    .term-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 11px;
+      border-radius: 999px;
+      background: var(--gold);
+      color: #173247;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      flex: 0 0 auto;
+      max-width: 100%;
+      min-width: 0;
+      overflow-wrap: break-word;
+      white-space: normal;
+      line-height: 1.2;
+      border: 1px solid rgba(23, 50, 71, 0.08);
+    }
     .term-badge--summer {
       background: #f4b740;
     }
+    .term-badge--leaf {
+      background: #e8f4ec;
+      border-color: rgba(21, 115, 71, 0.22);
+      color: #0f5132;
+    }
+    .term-badge--leaf svg { color: #157347; }
     .intensive-block {
       margin: 16px 0 0;
       padding: 14px 12px 12px;
@@ -1492,7 +1518,9 @@
           var block = row.block;
           var badgeIcon = block.badgeIcon === "sun" ? ICONS.sun : ICONS.leaf;
           var badgeCls =
-            block.badgeIcon === "sun" ? " term-badge--summer" : "";
+            block.badgeIcon === "sun"
+              ? " term-badge--summer"
+              : " term-badge--leaf";
           var blockChips = mock.intensiveBlockDateChips
             ? mock.intensiveBlockDateChips(block)
             : [];
@@ -1589,7 +1617,7 @@
           esc(s.id) +
           '">' +
           '<div class="timetable__head">' +
-          '<span class="term-badge">' +
+          '<span class="term-badge term-badge--leaf">' +
           ICONS.leaf +
           " " +
           esc(mock.TERM_BADGE || "AUTUMN TERM 2026") +
