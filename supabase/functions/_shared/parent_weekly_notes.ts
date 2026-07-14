@@ -284,9 +284,33 @@ export async function loadHabitualWeekdays(
   return [...days].sort((a, b) => a - b);
 }
 
+export type WeeklyNoteEarlyCohort = "weekend_mon" | "tue_fri" | "any";
+
+const WEEKEND_MON_DAYS = new Set([6, 7, 1]); // Sat, Sun, Mon
+const TUE_FRI_DAYS = new Set([2, 3, 4, 5]); // Tue–Fri
+
+function habitMatchesCohort(habit: number[], cohort: WeeklyNoteEarlyCohort): boolean {
+  if (!habit.length) return false;
+  if (cohort === "any") {
+    // Legacy: finishes by Wed (no Thu/Fri habit).
+    return habit.every((d) => d >= 1 && d <= 3);
+  }
+  if (cohort === "weekend_mon") {
+    return habit.every((d) => WEEKEND_MON_DAYS.has(d));
+  }
+  if (cohort === "tue_fri") {
+    return habit.every((d) => TUE_FRI_DAYS.has(d));
+  }
+  return false;
+}
+
 /**
- * Early generate when the child only attends Mon–Wed (no Thu/Fri habit)
- * and their last expected day this week has already passed (London today).
+ * Early generate when the child's habitual days fit the cohort and their
+ * last expected day this week has already passed (London today).
+ *
+ * Cohorts (split AI load — Sunday is heaviest for Sat/Sun/Mon):
+ *   weekend_mon — only Sat / Sun / Mon
+ *   tue_fri     — only Tue–Fri
  */
 export function canGenerateWeeklyNoteEarly(opts: {
   weekStart: string;
@@ -294,8 +318,10 @@ export function canGenerateWeeklyNoteEarly(opts: {
   todayIso: string;
   daySources: WeeklyNoteDaySource[];
   habitualWeekdays: number[];
+  cohort?: WeeklyNoteEarlyCohort;
 }): { ok: boolean; reason: string } {
   const { weekStart, weekEnd, todayIso, daySources, habitualWeekdays } = opts;
+  const cohort: WeeklyNoteEarlyCohort = opts.cohort || "any";
   if (!daySources.length) return { ok: false, reason: "no_sources" };
   if (todayIso > weekEnd) return { ok: true, reason: "week_complete" };
   if (todayIso < weekStart) return { ok: false, reason: "week_not_started" };
@@ -307,23 +333,22 @@ export function canGenerateWeeklyNoteEarly(opts: {
     );
 
   if (!habit.length) return { ok: false, reason: "no_habit" };
-  if (habit.some((d) => d >= 4)) {
-    // Attends Thu or later — wait for Saturday batch after Friday.
-    return { ok: false, reason: "attends_late_week" };
+  if (!habitMatchesCohort(habit, cohort)) {
+    return { ok: false, reason: `cohort_mismatch_${cohort}` };
   }
 
-  const lastExpected = Math.max(...habit);
-  // Last calendar date in this week that matches lastExpected weekday
+  // For Mon=1 in weekend_mon, max is wrong if we use Math.max (1 < 6,7).
+  // Order within the week Sat→Fri: prefer last calendar date among habit days.
   let lastDate = "";
   for (let i = 0; i <= 6; i++) {
     const d = addDaysIso(weekStart, i);
-    if (isoWeekdayMon1(d) === lastExpected) lastDate = d;
+    const wd = isoWeekdayMon1(d);
+    if (habit.includes(wd)) lastDate = d;
   }
   if (!lastDate) return { ok: false, reason: "no_last_date" };
   if (todayIso <= lastDate) return { ok: false, reason: "waiting_last_day" };
 
-  // Prefer having at least one source on/after their typical last day, else any sources + day passed.
-  return { ok: true, reason: "early_mon_wed" };
+  return { ok: true, reason: `early_${cohort}` };
 }
 
 export async function fingerprintWeeklySources(
@@ -429,6 +454,7 @@ export async function generateWeeklyNoteForContact(
     weekStart: string;
     force?: boolean;
     allowEarly?: boolean;
+    earlyCohort?: WeeklyNoteEarlyCohort;
     todayIso?: string;
   },
 ): Promise<WeeklyNoteBuildResult> {
@@ -461,6 +487,7 @@ export async function generateWeeklyNoteForContact(
       todayIso,
       daySources: sources,
       habitualWeekdays: habitual,
+      cohort: opts.earlyCohort || "any",
     });
     if (!early.ok) {
       if (!opts.allowEarly) {
@@ -482,7 +509,7 @@ export async function generateWeeklyNoteForContact(
         week_end: weekEnd,
       };
     }
-    generatedEarly = early.reason === "early_mon_wed";
+    generatedEarly = early.reason.startsWith("early_");
   }
 
   const fingerprint = await fingerprintWeeklySources(opts.contactId, weekStart, sources);

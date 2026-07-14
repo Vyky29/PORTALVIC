@@ -1,11 +1,12 @@
--- Automated weekly notes: generate + WhatsApp notify (no admin click).
+-- Automated weekly notes → parent portal folder only (NO WhatsApp).
 -- pg_cron is UTC-only; Edge Function gates on Europe/London hour/weekday.
 --
--- Jobs:
---   1) Weekday evenings Tue–Fri ~20:00 London → early (Mon–Wed-only kids)
---   2) Saturday morning ~09:00 London → full week that just ended
+-- Split AI load (Sunday is heaviest for Sat/Sun/Mon feedbacks):
+--   1) Sun–Mon evening → early_weekend (kids who only come Sat/Sun/Mon)
+--   2) Tue–Fri evening → early_midweek (kids who only come Tue–Fri)
+--   3) Saturday morning → cron (full week catch-all after Friday)
 --
--- Replace __PORTAL_PUSH_WEBHOOK_SECRET__ before apply (see apply-parent-weekly-notes-cron.mjs).
+-- Replace __PORTAL_PUSH_WEBHOOK_SECRET__ before apply (apply-parent-weekly-notes-cron.mjs).
 
 do $ext$
 declare
@@ -39,14 +40,43 @@ begin
   end;
 
   begin
+    perform cron.unschedule('portal-parent-weekly-notes-weekend');
+  exception
+    when others then null;
+  end;
+
+  begin
+    perform cron.unschedule('portal-parent-weekly-notes-midweek');
+  exception
+    when others then null;
+  end;
+
+  begin
     perform cron.unschedule('portal-parent-weekly-notes-saturday');
   exception
     when others then null;
   end;
 
-  -- Tue–Fri 18:00 & 19:00 UTC → covers ~19–20 London (BST/GMT)
+  -- Sun+Mon 18:00 & 19:00 UTC → ~19–20 London (Sat/Sun/Mon cohort)
   perform cron.schedule(
-    'portal-parent-weekly-notes-early',
+    'portal-parent-weekly-notes-weekend',
+    '0 18,19 * * 0,1',
+    $job$
+    select net.http_post(
+      url := 'https://cklpnwhlqsulpmkipmqb.supabase.co/functions/v1/portal-parent-weekly-notes-generate',
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'x-portal-webhook-secret', '__PORTAL_PUSH_WEBHOOK_SECRET__'
+      ),
+      body := '{"mode":"early_weekend","notify":false}'::jsonb,
+      timeout_milliseconds := 120000
+    ) as request_id;
+    $job$
+  );
+
+  -- Tue–Fri 18:00 & 19:00 UTC → midweek cohort
+  perform cron.schedule(
+    'portal-parent-weekly-notes-midweek',
     '0 18,19 * * 2-5',
     $job$
     select net.http_post(
@@ -55,13 +85,13 @@ begin
         'Content-Type', 'application/json',
         'x-portal-webhook-secret', '__PORTAL_PUSH_WEBHOOK_SECRET__'
       ),
-      body := '{"mode":"early"}'::jsonb,
+      body := '{"mode":"early_midweek","notify":false}'::jsonb,
       timeout_milliseconds := 120000
     ) as request_id;
     $job$
   );
 
-  -- Saturday 07:00 & 08:00 UTC → covers ~08–09 London
+  -- Saturday 07:00 & 08:00 UTC → full week catch-all
   perform cron.schedule(
     'portal-parent-weekly-notes-saturday',
     '0 7,8 * * 6',
@@ -72,7 +102,7 @@ begin
         'Content-Type', 'application/json',
         'x-portal-webhook-secret', '__PORTAL_PUSH_WEBHOOK_SECRET__'
       ),
-      body := '{"mode":"cron"}'::jsonb,
+      body := '{"mode":"cron","notify":false}'::jsonb,
       timeout_milliseconds := 180000
     ) as request_id;
     $job$
