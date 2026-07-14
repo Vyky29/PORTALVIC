@@ -12,10 +12,9 @@
 //   week_start?, contact_ids?, force?, force_hour?
 //   notify?: boolean  // default false — portal folder only
 //
-// Crons (split AI load; Sunday is heaviest for Sat/Sun/Mon):
-//   - Sun–Mon evening: early_weekend  → kids who only come Sat/Sun/Mon
-//   - Tue–Fri evening: early_midweek  → kids who only come Tue–Fri
-//   - Saturday morning: cron         → rest / full week that just ended
+// Crons (portal only, no WhatsApp):
+//   - Tuesday evening: early_weekend → kids who only come Sat/Sun/Mon
+//   - Saturday morning: cron → Tue–Fri-only + mixed week (one note at week close)
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { verifyPortalAdminAccessToken } from "../_shared/portal_admin_auth.ts";
@@ -162,9 +161,9 @@ Deno.serve(async (req) => {
       }
     }
     if (mode === "early_weekend") {
-      // Sunday + Monday evenings (Sat/Sun done on Sun; Mon kids on Mon).
-      if (wd !== 7 && wd !== 1) {
-        return json(200, { ok: true, skipped: true, reason: "not_weekend_batch_day", weekday: wd });
+      // Tuesday evening — Sat/Sun/Mon-only kids (week done after Monday).
+      if (wd !== 2) {
+        return json(200, { ok: true, skipped: true, reason: "not_tuesday_batch", weekday: wd });
       }
       if (hour < 18 || hour > 21) {
         return json(200, {
@@ -176,6 +175,8 @@ Deno.serve(async (req) => {
       }
     }
     if (mode === "early_midweek" || mode === "early") {
+      // Deprecated as a separate schedule — midweek-only kids wait for Saturday.
+      // Kept for manual force_hour invokes.
       if (wd < 2 || wd > 5) {
         return json(200, { ok: true, skipped: true, reason: "not_midweek_batch_day", weekday: wd });
       }

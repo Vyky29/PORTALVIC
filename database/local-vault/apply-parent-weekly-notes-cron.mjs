@@ -66,5 +66,5 @@ run(
 
 console.log("[weekly-notes-cron] done.");
 console.log(
-  "Jobs: weekend (Sun–Mon eve), midweek (Tue–Fri eve), saturday (morning). Portal only — no WhatsApp.",
+  "Jobs: Tuesday eve (Sat/Sun/Mon-only), Saturday morn (Tue–Fri + mixed). Portal only — no WhatsApp.",
 );
