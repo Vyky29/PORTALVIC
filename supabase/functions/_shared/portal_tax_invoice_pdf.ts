@@ -12,6 +12,8 @@ export type PortalInvoicePdfInput = {
   invoiceDateIso: string; // YYYY-MM-DD
   dueDateIso: string | null;
   reference: string | null;
+  /** Portal programme / activity (e.g. Aquatic Activity, Climbing Activity). */
+  service?: string | null;
   vatMode: PortalInvoiceVatMode;
   /** Gross amount the parent owes (incl. VAT when vat_20). */
   totalGbp: number;
@@ -188,7 +190,7 @@ export async function buildPortalTaxInvoicePdf(
     y -= 12;
   }
 
-  // Company address (right under logo)
+  // Company address (right under logo) + VAT under UNITED KINGDOM
   let addrY = height - 48 - logoH - 14;
   for (const line of COMPANY_LINES) {
     const tw = font.widthOfTextAtSize(line, 8);
@@ -201,14 +203,26 @@ export async function buildPortalTaxInvoicePdf(
     });
     addrY -= 11;
   }
+  {
+    const vatLine = `VAT Number ${VAT_NUMBER}`;
+    const tw = font.widthOfTextAtSize(vatLine, 8);
+    page.drawText(vatLine, {
+      x: right - tw,
+      y: addrY,
+      size: 8,
+      font,
+      color: ink,
+    });
+    addrY -= 11;
+  }
 
-  // Meta (Invoice Date / Number / Reference / VAT) — under bill-to, above Description table
+  // Meta (Invoice Date / Number / Reference / Service) — under bill-to, above Description table
   y = Math.min(y, addrY) - 18;
   const meta = [
     ["Invoice Date", formatUkDate(input.invoiceDateIso)],
     ["Invoice Number", pdfSafeText(input.invoiceNumber)],
     ["Reference", pdfSafeText(input.reference || "").slice(0, 40) || "-"],
-    ["VAT Number", VAT_NUMBER],
+    ["Service", pdfSafeText(input.service || "").slice(0, 48) || "-"],
   ];
   for (const [label, val] of meta) {
     page.drawText(label, { x: left, y, size: 8, font, color: muted });
@@ -402,6 +416,7 @@ export async function buildPortalTaxInvoicePdf(
     "London",
     "WC2H 9JQ",
     "UNITED KINGDOM",
+    `VAT Number ${VAT_NUMBER}`,
   ]) {
     page2.drawText(line, { x: left, y: y2, size: 9, font, color: ink });
     y2 -= 12;

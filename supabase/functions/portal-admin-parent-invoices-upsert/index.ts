@@ -158,6 +158,7 @@ Deno.serve(async (req) => {
     const invoiceDate =
       parseDate(fields.invoice_date) || new Date().toISOString().slice(0, 10);
     const reference = clean(fields.reference, 120) || null;
+    const service = clean(fields.service, 80) || null;
     const lineDescription =
       clean(fields.line_description, 800) ||
       "Structured activity support delivered for a SEND participant.";
@@ -172,6 +173,7 @@ Deno.serve(async (req) => {
       vatMode,
       lineDescription,
       reference,
+      service,
       notes,
       title: clean(fields.title, 200) || null,
       quantity,

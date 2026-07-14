@@ -18,6 +18,7 @@ import {
   CRASH_HOLD_MINUTES,
   buildCrashSummerInvoiceDescription,
   crashBankTransferReference,
+  crashInvoiceServiceLabel,
   crashIndividualDaysOpenForWeek,
   crashIndividualRulesCopy,
   crashIndividualWindowFor,
@@ -283,6 +284,7 @@ Deno.serve(async (req) => {
 
   const dueDate = new Date().toISOString().slice(0, 10);
   const bankRef = crashBankTransferReference(displayName, activities);
+  const serviceLabel = crashInvoiceServiceLabel(activities);
   const funding = await resolveParticipantInvoiceFunding(supabase, {
     contactId,
     displayName,
@@ -305,6 +307,7 @@ Deno.serve(async (req) => {
     lineDescription,
     descriptionComplete: true,
     reference: bankRef,
+    service: serviceLabel,
     notes: `Summer crash course Jul 2026 · booking ${booking.id} · pay in full to confirm · ${funding.fundingLabel}`,
     title: `Summer crash course — ${displayName}`,
     shareStatus: "ready",

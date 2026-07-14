@@ -18,6 +18,8 @@ export type PortalFamilyInvoiceCreateInput = {
   vatMode: PortalInvoiceVatMode;
   lineDescription: string;
   reference?: string | null;
+  /** Programme / activity shown under Reference on the PDF. */
+  service?: string | null;
   notes?: string | null;
   title?: string | null;
   quantity?: number;
@@ -82,6 +84,7 @@ export async function createPortalFamilyInvoice(
       ? input.invoiceDateIso
       : null) || new Date().toISOString().slice(0, 10);
   const reference = clean(input.reference, 120) || null;
+  const service = clean(input.service, 80) || null;
   const lineDescription =
     clean(input.lineDescription, 800) ||
     "Structured activity support delivered for a SEND participant.";
@@ -169,6 +172,7 @@ export async function createPortalFamilyInvoice(
       invoiceDateIso: invoiceDate,
       dueDateIso: dueDate,
       reference,
+      service,
       vatMode,
       totalGbp: amountGbp,
       quantity,

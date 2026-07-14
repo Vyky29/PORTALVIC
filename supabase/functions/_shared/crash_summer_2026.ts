@@ -669,9 +669,22 @@ export function crashCatalogPublic(opts?: { openWeekIds?: CrashWeekId[] }) {
 
 /**
  * Bank transfer reference for crash bookings: participant + activity
- * (e.g. "Elia Climbing", "Sam Climbing+Swimming"). Prefer this over a
- * static Tide hint like "Invoice Number".
+ * (e.g. "Elia Climbing Activity"). Prefer this over a static Tide hint.
  */
+export function crashInvoiceServiceLabel(activities: CrashActivity[]): string {
+  const acts = Array.from(
+    new Set(
+      (activities || []).filter((a): a is CrashActivity =>
+        a === "climbing" || a === "swimming"
+      ),
+    ),
+  );
+  if (acts.length === 2) return "Climbing Activity + Aquatic Activity";
+  if (acts[0] === "swimming") return "Aquatic Activity";
+  if (acts[0] === "climbing") return "Climbing Activity";
+  return "Crash";
+}
+
 export function crashBankTransferReference(
   displayName: string,
   activities: CrashActivity[],
@@ -681,20 +694,6 @@ export function crashBankTransferReference(
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 28) || "Participant";
-  const acts = Array.from(
-    new Set(
-      (activities || []).filter((a): a is CrashActivity =>
-        a === "climbing" || a === "swimming"
-      ),
-    ),
-  );
-  const service =
-    acts.length === 2
-      ? "Climbing+Swimming"
-      : acts[0] === "swimming"
-        ? "Aquatic Activity"
-        : acts[0] === "climbing"
-          ? "Climbing Activity"
-          : "Crash";
-  return `${name} ${service}`.trim().slice(0, 40);
+  const service = crashInvoiceServiceLabel(activities);
+  return `${name} ${service}`.trim().slice(0, 48);
 }
