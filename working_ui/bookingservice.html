@@ -271,65 +271,90 @@
     .btn-ghost svg { width: 16px; height: 16px; }
 
     .services {
-      display: flex;
-      flex-direction: column;
-      gap: 22px;
-      margin: 0 0 8px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin: 0 0 22px;
       width: 100%;
     }
-    .svc {
+    @media (min-width: 720px) {
+      .services { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    .svc-card {
       background: var(--white);
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      padding: 16px;
+      padding: 18px 16px 16px;
       min-width: 0;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
       box-shadow: 0 6px 18px rgba(23, 50, 71, 0.04);
       width: 100%;
+      text-align: left;
+      cursor: pointer;
+      font: inherit;
+      color: inherit;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
     }
-    .svc[hidden] { display: none !important; }
-    .svc__head {
+    .svc-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 14px 28px rgba(23, 50, 71, 0.1);
+      border-color: rgba(45, 132, 179, 0.35);
+    }
+    .svc-card:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 2px;
+    }
+    .svc-card.is-active {
+      border-color: rgba(45, 132, 179, 0.55);
+      box-shadow: 0 0 0 3px rgba(45, 132, 179, 0.18);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .svc-card { transition: none; }
+      .svc-card:hover { transform: none; }
+    }
+    .svc-card__head {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
       min-width: 0;
     }
     .svc__icon {
       flex: 0 0 auto;
-      width: 56px;
-      height: 56px;
+      width: 52px;
+      height: 52px;
       border-radius: 16px;
       display: grid;
       place-items: center;
       background: var(--blueSoft);
       color: var(--blueDeep);
     }
-    .svc__icon svg { width: 30px; height: 30px; }
+    .svc__icon svg { width: 28px; height: 28px; }
     .svc__icon--climb { background: #fff6e5; color: #b7791f; }
     .svc__icon--dc { background: #eef6f2; color: #1f6b4a; }
-    .svc__title-wrap { min-width: 0; flex: 1 1 auto; }
-    .svc h3 {
+    .svc-card__title-wrap { min-width: 0; flex: 1 1 auto; }
+    .svc-card h3 {
       margin: 0;
       color: var(--ink);
-      font-size: clamp(1.15rem, 2.5vw, 1.4rem);
+      font-size: clamp(1.05rem, 2.2vw, 1.25rem);
       font-weight: 800;
       overflow-wrap: break-word;
       min-width: 0;
     }
-    .svc__count {
+    .svc-card__hint {
       margin: 4px 0 0;
-      font-size: 0.86rem;
+      font-size: 0.82rem;
       color: var(--muted);
       font-weight: 700;
+      overflow-wrap: break-word;
     }
-    .svc > p.svc__blurb {
+    .svc-card__blurb {
       margin: 0;
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       color: var(--text);
       overflow-wrap: break-word;
-      max-width: 52rem;
+      flex: 1 1 auto;
     }
     .svc-meta {
       display: flex;
@@ -354,68 +379,220 @@
       overflow-wrap: anywhere;
     }
     .chip svg { width: 13px; height: 13px; flex: 0 0 auto; color: var(--blue); }
-    .svc__times-label {
+    .svc-card__cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 2px;
+      padding: 11px 14px;
+      border-radius: 12px;
+      background: var(--blue);
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.9rem;
+      width: 100%;
+    }
+    .svc-card__cta svg { width: 16px; height: 16px; }
+    .svc-card.is-active .svc-card__cta { background: var(--blueDeep); }
+
+    .offer-block {
+      scroll-margin-top: 96px;
+      margin: 8px 0 0;
+      min-width: 0;
+      width: 100%;
+    }
+    .offer-block__title {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin: 4px 0 0;
+      margin: 0 0 14px;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      font-weight: 800;
+    }
+    .offer-block__title svg { width: 18px; height: 18px; color: var(--blue); }
+
+    .timetable {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px 16px 16px;
+      margin: 0 0 18px;
+      min-width: 0;
+      width: 100%;
+      box-shadow: 0 6px 18px rgba(23, 50, 71, 0.04);
+      scroll-margin-top: 100px;
+    }
+    .term-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 8px;
+      background: var(--gold);
+      color: #173247;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .timetable__head {
+      margin: 10px 0 4px;
+      min-width: 0;
+    }
+    .timetable__head h3 {
+      margin: 0;
+      color: var(--ink);
+      font-size: clamp(1.15rem, 2.6vw, 1.45rem);
+      font-weight: 800;
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+    .timetable__range {
+      margin: 6px 0 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+      font-weight: 600;
+      overflow-wrap: break-word;
+    }
+    .venue-block {
+      margin: 18px 0 0;
+      min-width: 0;
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+    }
+    .venue-block:first-of-type {
+      border-top: 0;
+      padding-top: 8px;
+      margin-top: 12px;
+    }
+    .venue-block__title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 10px;
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--ink);
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .venue-block__title svg { width: 18px; height: 18px; color: var(--blue); flex: 0 0 auto; }
+
+    .day-acc {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      margin: 0 0 8px;
+      background: #f8fbfd;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .day-acc > summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      font-weight: 800;
+      color: var(--ink);
+      min-width: 0;
+      overflow-wrap: break-word;
+      user-select: none;
+    }
+    .day-acc > summary::-webkit-details-marker { display: none; }
+    .day-acc > summary::after {
+      content: "";
+      margin-left: auto;
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid var(--muted);
+      border-bottom: 2px solid var(--muted);
+      transform: rotate(45deg);
+      flex: 0 0 auto;
+      transition: transform 0.15s ease;
+    }
+    .day-acc[open] > summary::after { transform: rotate(-135deg); }
+    .day-acc__count {
       font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .slot-table {
+      display: flex;
+      flex-direction: column;
+      border-top: 1px solid var(--line);
+      background: var(--white);
+      min-width: 0;
+    }
+    .slot-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      min-width: 0;
+      align-items: center;
+    }
+    .slot-row:last-child { border-bottom: 0; }
+    @media (min-width: 760px) {
+      .slot-row {
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr) minmax(0, 1.2fr) auto;
+        gap: 12px 16px;
+      }
+    }
+    .slot-row--full { background: #fbfcfd; }
+    .slot-col { min-width: 0; }
+    .slot-col__label {
+      display: block;
+      font-size: 0.68rem;
       font-weight: 800;
       letter-spacing: 0.04em;
       text-transform: uppercase;
       color: var(--muted);
+      margin-bottom: 2px;
     }
-    .svc__times-label svg { width: 16px; height: 16px; color: var(--blue); }
-    .svc__slots {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      width: 100%;
-      min-width: 0;
+    @media (min-width: 760px) {
+      .slot-col__label { display: none; }
     }
-    .slot {
-      background: #f8fbfd;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 12px 14px;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 10px 14px;
-      align-items: center;
-      min-width: 0;
-      width: 100%;
-    }
-    .slot--full {
-      background: #fbfcfd;
-      border-style: dashed;
-      opacity: 0.96;
-    }
-    .slot__main { min-width: 0; }
-    .slot__sub {
-      margin: 0;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px 14px;
-      font-size: 0.9rem;
-      color: var(--ink);
+    .slot-col__value {
+      font-size: 0.92rem;
       font-weight: 700;
-      min-width: 0;
-    }
-    .slot__sub span {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      min-width: 0;
+      color: var(--ink);
       overflow-wrap: break-word;
     }
-    .slot__sub svg { width: 15px; height: 15px; flex: 0 0 auto; color: var(--blue); }
-    .slot__meta {
+    .slot-col__value strong { font-weight: 800; }
+    .slot-col__sub {
+      margin: 4px 0 0;
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 600;
+      overflow-wrap: break-word;
+    }
+    .trial-pill {
+      display: inline-flex;
+      margin-top: 4px;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: #157347;
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .slot-col--action {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      justify-content: flex-end;
       gap: 8px;
+      justify-content: flex-start;
       min-width: 0;
+    }
+    @media (min-width: 760px) {
+      .slot-col--action { justify-content: flex-end; }
     }
     .badge {
       display: inline-flex;
@@ -455,6 +632,11 @@
     .btn:hover { background: var(--blueDeep); }
     .btn--soft { background: var(--blueSoft); color: var(--blueDeep); }
     .btn--soft:hover { background: #dceef7; }
+    .btn--wait {
+      background: var(--gold);
+      color: #173247;
+    }
+    .btn--wait:hover { background: #e5a82e; }
     .empty {
       margin: 0;
       padding: 14px 12px;
@@ -565,7 +747,7 @@
         </div>
       </div>
       <h1>clubSENsational</h1>
-      <p class="lede">One service at a time: read what it is, then see its weekly times underneath. Fully booked slots stay visible.</p>
+      <p class="lede">Browse every service we offer — including fully booked times — then open weekly slots by venue and day.</p>
     </header>
 
     <p class="mock-banner" role="status">
@@ -573,10 +755,12 @@
       <span><strong>Preview / mock.</strong> Times and places are illustrative. Live availability will match the parent portal inventory.</span>
     </p>
 
+    <section class="services" id="serviceCards" aria-label="Our services"></section>
+
     <section class="filters" aria-label="Filters">
       <h2 class="filters__title">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-        Filter
+        Filter times
       </h2>
       <div class="filter-grid">
         <label class="field">
@@ -620,7 +804,13 @@
       </div>
     </section>
 
-    <section class="services" id="serviceCards" aria-label="Our services" aria-live="polite"></section>
+    <section class="offer-block" id="offerTimes" aria-label="Weekly times">
+      <h2 class="offer-block__title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Weekly times by venue
+      </h2>
+      <div id="timetableHost" aria-live="polite"></div>
+    </section>
 
     <p class="foot">
       Already with us?
@@ -640,7 +830,7 @@
     </div>
   </div>
 
-  <script src="/portal/portal_booking_offer_mock.js?v=20260714-booking-col-v1"></script>
+  <script src="/portal/portal_booking_offer_mock.js?v=20260714-booking-acc-v1"></script>
   <script>
 (function () {
   "use strict";
@@ -677,6 +867,8 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>',
     arrow:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
+    info:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
   };
 
   function esc(s) {
@@ -717,50 +909,6 @@
   fillSelect(fDay, opts.days, "All days");
   fillSelect(fTime, opts.times, "All times");
 
-  function slotRowHtml(slot) {
-    var svc = mock.serviceById(slot.serviceId);
-    var full = mock.isFull(slot);
-    var left = mock.seatsLeft(slot);
-    var badge = full
-      ? '<span class="badge badge--full">' + ICONS.x + " Fully booked</span>"
-      : '<span class="badge badge--open">' + ICONS.check + " " + left + " left</span>";
-    var cta = full || (svc && svc.enquireOnly) ? "Waiting list" : "Enquire";
-    return (
-      '<article class="slot' +
-      (full ? " slot--full" : "") +
-      '" data-slot-id="' +
-      esc(slot.id) +
-      '">' +
-      '<div class="slot__main">' +
-      '<div class="slot__sub">' +
-      "<span>" +
-      ICONS.day +
-      esc(slot.day) +
-      "</span>" +
-      "<span>" +
-      ICONS.clock +
-      esc(slot.timeLabel) +
-      "</span>" +
-      "<span>" +
-      ICONS.pin +
-      esc(slot.venue) +
-      "</span>" +
-      "</div>" +
-      "</div>" +
-      '<div class="slot__meta">' +
-      badge +
-      '<button type="button" class="btn' +
-      (full ? " btn--soft" : "") +
-      '" data-enquire="' +
-      esc(slot.id) +
-      '">' +
-      esc(cta) +
-      "</button>" +
-      "</div>" +
-      "</article>"
-    );
-  }
-
   function currentFilters() {
     return {
       serviceId: fService.value || "",
@@ -771,8 +919,135 @@
     };
   }
 
-  function renderPage() {
+  function dayAbbrev(day) {
+    var map = {
+      Monday: "Mon",
+      Tuesday: "Tue",
+      Wednesday: "Wed",
+      Thursday: "Thu",
+      Friday: "Fri",
+      Saturday: "Sat",
+      Sunday: "Sun",
+    };
+    return map[day] || day;
+  }
+
+  function renderServiceCards() {
     var host = document.getElementById("serviceCards");
+    var active = fService.value || "";
+    host.innerHTML = mock.SERVICES.map(function (s) {
+      var pack = serviceIconPack(s.id);
+      var allSlots = mock.filterSlots({ serviceId: s.id, hideFull: false });
+      var openN = allSlots.filter(function (slot) {
+        return !mock.isFull(slot);
+      }).length;
+      var chips =
+        '<span class="chip">' +
+        ICONS.clock +
+        esc(s.durationHint) +
+        "</span>" +
+        '<span class="chip">' +
+        ICONS.pound +
+        esc(s.priceHint) +
+        "</span>" +
+        (s.venues && s.venues.length
+          ? '<span class="chip">' +
+            ICONS.pin +
+            esc(s.venues.map(mock.venueLabel).join(", ")) +
+            "</span>"
+          : "");
+      return (
+        '<button type="button" class="svc-card' +
+        (active === s.id ? " is-active" : "") +
+        '" data-jump-service="' +
+        esc(s.id) +
+        '" aria-controls="timetable-' +
+        esc(s.id) +
+        '">' +
+        '<div class="svc-card__head">' +
+        '<div class="svc__icon ' +
+        pack.cls +
+        '">' +
+        pack.svg +
+        "</div>" +
+        '<div class="svc-card__title-wrap">' +
+        "<h3>" +
+        esc(s.name) +
+        "</h3>" +
+        '<p class="svc-card__hint">' +
+        allSlots.length +
+        " weekly time" +
+        (allSlots.length === 1 ? "" : "s") +
+        " · " +
+        openN +
+        " with places" +
+        (openN < allSlots.length ? " · fully booked shown below" : "") +
+        "</p>" +
+        "</div></div>" +
+        '<p class="svc-card__blurb">' +
+        esc(s.blurb) +
+        "</p>" +
+        '<div class="svc-meta">' +
+        chips +
+        "</div>" +
+        '<span class="svc-card__cta">' +
+        "See weekly times " +
+        ICONS.arrow +
+        "</span>" +
+        "</button>"
+      );
+    }).join("");
+  }
+
+  function slotRowHtml(slot, svc) {
+    var full = mock.isFull(slot);
+    var left = mock.seatsLeft(slot);
+    var wait = full || (svc && svc.enquireOnly);
+    var badge = full
+      ? '<span class="badge badge--full">' + ICONS.x + " Fully booked</span>"
+      : '<span class="badge badge--open">' + ICONS.check + " " + left + " left</span>";
+    var cta = wait ? "Join waiting list" : "Enquire";
+    var classLabel = (svc ? svc.name : "Session") + (svc && svc.ageHint ? " (" + svc.ageHint + ")" : "");
+    return (
+      '<div class="slot-row' +
+      (full ? " slot-row--full" : "") +
+      '">' +
+      '<div class="slot-col">' +
+      '<span class="slot-col__label">Day &amp; time</span>' +
+      '<div class="slot-col__value"><strong>' +
+      esc(dayAbbrev(slot.day)) +
+      "</strong> " +
+      esc(slot.timeLabel) +
+      "</div></div>" +
+      '<div class="slot-col">' +
+      '<span class="slot-col__label">Venue</span>' +
+      '<div class="slot-col__value">' +
+      esc(mock.venueLabel(slot.venue)) +
+      "</div></div>" +
+      '<div class="slot-col">' +
+      '<span class="slot-col__label">Class</span>' +
+      '<div class="slot-col__value">' +
+      esc(classLabel) +
+      "</div>" +
+      (full ? "" : '<span class="trial-pill">Offers trial</span>') +
+      "</div>" +
+      '<div class="slot-col slot-col--action">' +
+      badge +
+      '<button type="button" class="btn' +
+      (wait ? " btn--wait" : "") +
+      '" data-enquire="' +
+      esc(slot.id) +
+      '">' +
+      ICONS.info +
+      " " +
+      esc(cta) +
+      "</button>" +
+      "</div></div>"
+    );
+  }
+
+  function renderTimetables() {
+    var host = document.getElementById("timetableHost");
     var filters = currentFilters();
     var services = mock.SERVICES.filter(function (s) {
       return !filters.serviceId || s.id === filters.serviceId;
@@ -783,9 +1058,8 @@
       return;
     }
 
-    host.innerHTML = services
+    var html = services
       .map(function (s) {
-        var pack = serviceIconPack(s.id);
         var slots = mock.filterSlots({
           serviceId: s.id,
           venue: filters.venue,
@@ -793,63 +1067,73 @@
           timeLabel: filters.timeLabel,
           hideFull: filters.hideFull,
         });
-        var openN = slots.filter(function (slot) {
-          return !mock.isFull(slot);
-        }).length;
-        var chips =
-          '<span class="chip">' +
-          ICONS.clock +
-          esc(s.durationHint) +
-          "</span>" +
-          '<span class="chip">' +
-          ICONS.pound +
-          esc(s.priceHint) +
-          "</span>" +
-          (s.venues && s.venues.length
-            ? '<span class="chip">' + ICONS.pin + esc(s.venues.join(", ")) + "</span>"
-            : "");
-        var slotsHtml = slots.length
-          ? slots.map(slotRowHtml).join("")
-          : '<p class="empty">No times match the filters for this service.</p>';
+        var venues = mock.groupSlotsByVenueThenDay(slots);
+        var body;
+        if (!venues.length) {
+          body = '<p class="empty">No times match the filters for this service. Clear filters to see the full offer (including fully booked).</p>';
+        } else {
+          body = venues
+            .map(function (vg, vi) {
+              var daysHtml = vg.days
+                .map(function (dg, di) {
+                  var openAttr = di === 0 && vi === 0 ? " open" : "";
+                  return (
+                    "<details class=\"day-acc\"" +
+                    openAttr +
+                    ">" +
+                    "<summary>" +
+                    ICONS.day +
+                    esc(dg.day) +
+                    ' <span class="day-acc__count">(' +
+                    dg.slots.length +
+                    ")</span></summary>" +
+                    '<div class="slot-table">' +
+                    dg.slots.map(function (slot) {
+                      return slotRowHtml(slot, s);
+                    }).join("") +
+                    "</div></details>"
+                  );
+                })
+                .join("");
+              return (
+                '<div class="venue-block" id="venue-' +
+                esc(s.id) +
+                "-" +
+                esc(vg.venue).replace(/\s+/g, "-") +
+                '">' +
+                '<h4 class="venue-block__title">' +
+                ICONS.pin +
+                esc(vg.venueLabel) +
+                "</h4>" +
+                daysHtml +
+                "</div>"
+              );
+            })
+            .join("");
+        }
         return (
-          '<article class="svc" data-service="' +
-          esc(s.id) +
-          '" id="svc-' +
+          '<article class="timetable" id="timetable-' +
           esc(s.id) +
           '">' +
-          '<div class="svc__head">' +
-          '<div class="svc__icon ' +
-          pack.cls +
-          '">' +
-          pack.svg +
-          "</div>" +
-          '<div class="svc__title-wrap">' +
-          "<h3>" +
+          '<span class="term-badge">' +
+          esc(mock.TERM_BADGE || "TERM") +
+          "</span>" +
+          '<div class="timetable__head"><h3>' +
           esc(s.name) +
+          (filters.venue ? " (" + esc(mock.venueLabel(filters.venue)) + ")" : "") +
+          " — " +
+          esc(mock.TERM_LABEL || "Term") +
           "</h3>" +
-          '<p class="svc__count">' +
-          (slots.length
-            ? slots.length + " time" + (slots.length === 1 ? "" : "s") + " · " + openN + " with places"
-            : "No matching times") +
-          "</p>" +
-          "</div>" +
-          "</div>" +
-          '<p class="svc__blurb">' +
-          esc(s.blurb) +
-          "</p>" +
-          '<div class="svc-meta">' +
-          chips +
-          "</div>" +
-          '<div class="svc__times-label">' +
-          ICONS.day +
-          " Weekly times</div>" +
-          '<div class="svc__slots">' +
-          slotsHtml +
-          "</div>" +
+          '<p class="timetable__range">' +
+          esc(mock.TERM_RANGE || "") +
+          "</p></div>" +
+          body +
           "</article>"
         );
       })
       .join("");
+
+    host.innerHTML = html;
   }
 
   function openSheet(slot) {
@@ -868,12 +1152,19 @@
       " · " +
       slot.timeLabel +
       " · " +
-      slot.venue +
+      mock.venueLabel(slot.venue) +
       (full
         ? " — currently fully booked. Tell us you’d like to join the waiting list."
         : " — " + left + " place(s) shown in this preview. Live booking comes next; for now email the office.");
     var subject = encodeURIComponent(
-      "Booking enquiry — " + (svc ? svc.name : "session") + " · " + slot.day + " " + slot.timeLabel + " · " + slot.venue
+      "Booking enquiry — " +
+        (svc ? svc.name : "session") +
+        " · " +
+        slot.day +
+        " " +
+        slot.timeLabel +
+        " · " +
+        mock.venueLabel(slot.venue)
     );
     var text = encodeURIComponent(
       "Hello,\n\nI’d like to enquire about:\n" +
@@ -883,7 +1174,7 @@
         " " +
         slot.timeLabel +
         " at " +
-        slot.venue +
+        mock.venueLabel(slot.venue) +
         "\nSlot ref: " +
         slot.id +
         "\nStatus: " +
@@ -896,10 +1187,28 @@
   }
 
   function refresh() {
-    renderPage();
+    renderServiceCards();
+    renderTimetables();
+  }
+
+  function jumpToService(serviceId) {
+    fService.value = serviceId || "";
+    refresh();
+    var el = document.getElementById("timetable-" + serviceId);
+    if (el && typeof el.scrollIntoView === "function") {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      document.getElementById("offerTimes").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }
 
   document.getElementById("serviceCards").addEventListener("click", function (e) {
+    var card = e.target && e.target.closest && e.target.closest("[data-jump-service]");
+    if (!card) return;
+    jumpToService(card.getAttribute("data-jump-service"));
+  });
+
+  document.getElementById("timetableHost").addEventListener("click", function (e) {
     var btn = e.target && e.target.closest && e.target.closest("[data-enquire]");
     if (!btn) return;
     var id = btn.getAttribute("data-enquire");

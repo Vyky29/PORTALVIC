@@ -14,10 +14,22 @@
 (function (global) {
   "use strict";
 
+  var TERM_BADGE = "TERM";
+  var TERM_LABEL = "Summer Term 2026";
+  var TERM_RANGE = "Mon 13th April 2026 – Sat 11th July 2026";
+
+  var VENUE_LABELS = {
+    Acton: "Acton Centre",
+    Northolt: "Northolt Centre",
+    SwimFarm: "SwimFarm Centre",
+    Westway: "Westway",
+  };
+
   var SERVICES = [
     {
       id: "aquatic",
       name: "Aquatic Activity",
+      ageHint: "3yrs – 40yrs",
       durationHint: "Usually 30 minutes",
       priceHint: "From £50 / 30 min session",
       blurb:
@@ -27,6 +39,7 @@
     {
       id: "climbing",
       name: "Climbing Activity",
+      ageHint: "5yrs – 18yrs",
       durationHint: "Usually 60 minutes",
       priceHint: "From £75 / 60 min session",
       blurb:
@@ -36,6 +49,7 @@
     {
       id: "day_centre",
       name: "Day Centre",
+      ageHint: "Bespoke",
       durationHint: "Multi-hour blocks",
       priceHint: "Funding / bespoke quote",
       blurb:
@@ -95,6 +109,43 @@
       if (SERVICES[i].id === id) return SERVICES[i];
     }
     return null;
+  }
+
+  function venueLabel(venue) {
+    var k = String(venue || "").trim();
+    return VENUE_LABELS[k] || k;
+  }
+
+  /** Group slots: venue → day → slots[] (preserves day/time sort of filterSlots). */
+  function groupSlotsByVenueThenDay(slots) {
+    var byVenue = Object.create(null);
+    var venueOrder = [];
+    (slots || []).forEach(function (slot) {
+      var v = String(slot.venue || "").trim() || "Venue";
+      if (!byVenue[v]) {
+        byVenue[v] = Object.create(null);
+        venueOrder.push(v);
+      }
+      var d = String(slot.day || "").trim() || "Day";
+      if (!byVenue[v][d]) byVenue[v][d] = [];
+      byVenue[v][d].push(slot);
+    });
+    venueOrder.sort(function (a, b) {
+      return a.localeCompare(b, "en");
+    });
+    return venueOrder.map(function (venue) {
+      var daysMap = byVenue[venue];
+      var dayKeys = Object.keys(daysMap).sort(function (a, b) {
+        return (DAY_ORDER[a] || 99) - (DAY_ORDER[b] || 99);
+      });
+      return {
+        venue: venue,
+        venueLabel: venueLabel(venue),
+        days: dayKeys.map(function (day) {
+          return { day: day, slots: daysMap[day] };
+        }),
+      };
+    });
   }
 
   function uniqueSorted(values) {
@@ -164,10 +215,15 @@
   global.PortalBookingOfferMock = {
     SERVICES: SERVICES,
     MOCK_SLOTS: MOCK_SLOTS,
+    TERM_BADGE: TERM_BADGE,
+    TERM_LABEL: TERM_LABEL,
+    TERM_RANGE: TERM_RANGE,
     serviceById: serviceById,
+    venueLabel: venueLabel,
     seatsLeft: seatsLeft,
     isFull: isFull,
     filterOptions: filterOptions,
     filterSlots: filterSlots,
+    groupSlotsByVenueThenDay: groupSlotsByVenueThenDay,
   };
 })(typeof window !== "undefined" ? window : globalThis);
