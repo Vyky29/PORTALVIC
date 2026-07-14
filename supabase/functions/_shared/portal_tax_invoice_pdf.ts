@@ -178,8 +178,9 @@ export async function buildPortalTaxInvoicePdf(
     addrY -= 11;
   }
 
-  // Table header
-  y = Math.min(y, addrY) - 24;
+  // Table must start below bill-to, meta (date/number/ref/VAT), and company address —
+  // otherwise meta can overlap Quantity / Unit Price / Amount headers when bill-to is short.
+  y = Math.min(y, addrY, metaY) - 28;
   page.drawLine({
     start: { x: left, y: y + 14 },
     end: { x: right, y: y + 14 },
