@@ -1060,6 +1060,7 @@
 
     var sections = daysOffSectionHtml(nameKey, personRow);
     sections += employmentContractsSectionHtml();
+    sections += trainingRecordsSectionHtml();
     rows.forEach(function (r, idx) {
       var d = r.data || {};
       var keys = Object.keys(d);
@@ -1102,6 +1103,7 @@
 
     bindDaysOff(screen, nameKey, displayName, personRow);
     bindEmploymentContracts(screen, personRow);
+    bindTrainingRecords(screen, personRow);
   }
 
   function employmentContractsSectionHtml() {
@@ -1110,6 +1112,14 @@
       + '<summary>' + icon("doc", 17) + '<span>Employment contracts (Portal)</span>' + chev + '</summary>'
       + '<p class="hr-contract-loading" id="hrContractLoadMsg">Loading signed contracts…</p>'
       + '<div class="hr-contract-list" id="hrContractList" hidden></div></details>';
+  }
+
+  function trainingRecordsSectionHtml() {
+    var chev = '<svg class="hr-ico hr-sec__chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>';
+    return '<details class="hr-sec" open data-sec="training-records">'
+      + '<summary>' + icon("doc", 17) + '<span>Training records (Portal)</span>' + chev + '</summary>'
+      + '<p class="hr-contract-loading" id="hrTrainingLoadMsg">Loading training records…</p>'
+      + '<div class="hr-contract-list" id="hrTrainingList" hidden></div></details>';
   }
 
   function hrSupabaseUrl() {
@@ -1233,6 +1243,113 @@
   function bindEmploymentContracts(screen, personRow) {
     var staffId = personRow && personRow.staff_id ? personRow.staff_id : null;
     loadPersonEmploymentContracts(staffId, screen);
+  }
+
+  function trainingTypeLabel(code) {
+    if (global.AdminTrainingRecords && typeof global.AdminTrainingRecords.typeLabel === "function") {
+      return global.AdminTrainingRecords.typeLabel(code);
+    }
+    return String(code || "Training");
+  }
+
+  function loadPersonTrainingRecords(staffId, screen) {
+    var listEl = screen && screen.querySelector("#hrTrainingList");
+    var msgEl = screen && screen.querySelector("#hrTrainingLoadMsg");
+    if (!listEl) return;
+    var uid = staffId ? String(staffId).trim() : "";
+    if (!uid) {
+      if (msgEl) msgEl.textContent = "No portal login linked — training records appear here once the person has a staff account.";
+      return;
+    }
+    var client = deps.getClient();
+    if (!client) {
+      if (msgEl) msgEl.textContent = "Could not load training records (not signed in).";
+      return;
+    }
+    client
+      .from("portal_training_record_participants")
+      .select("id, signed_at, attendance_status, outcome, document_id, portal_training_records(id, title, training_type, status, venue_label, expires_on, total_hours)")
+      .eq("user_id", uid)
+      .order("created_at", { ascending: false })
+      .limit(40)
+      .then(function (res) {
+        if (res.error) {
+          if (msgEl) msgEl.textContent = "Could not load training records: " + (res.error.message || res.error);
+          return null;
+        }
+        var rows = res.data || [];
+        var docIds = rows.map(function (r) { return r.document_id; }).filter(Boolean);
+        if (!docIds.length) return { rows: rows, docs: {} };
+        return client
+          .from("documents")
+          .select("id, file_url, title")
+          .in("id", docIds)
+          .then(function (dres) {
+            var docs = {};
+            (dres.data || []).forEach(function (d) { docs[d.id] = d; });
+            return { rows: rows, docs: docs };
+          });
+      })
+      .then(function (pack) {
+        if (!pack) return;
+        var rows = pack.rows || [];
+        var docs = pack.docs || {};
+        if (msgEl) msgEl.hidden = true;
+        if (!rows.length) {
+          listEl.hidden = true;
+          if (msgEl) {
+            msgEl.hidden = false;
+            msgEl.textContent = "No training records assigned yet. Create them under H&R → Training records.";
+          }
+          return;
+        }
+        listEl.hidden = false;
+        listEl.innerHTML = rows.map(function (p) {
+          var tr = p.portal_training_records && !Array.isArray(p.portal_training_records)
+            ? p.portal_training_records
+            : (Array.isArray(p.portal_training_records) ? p.portal_training_records[0] : null);
+          var title = esc((tr && tr.title) || "Training");
+          var type = esc(trainingTypeLabel(tr && tr.training_type));
+          var status = esc((tr && tr.status) || "");
+          var signed = p.signed_at ? "Signed" : (p.attendance_status || "pending");
+          var expires = tr && tr.expires_on ? "Expires " + esc(fmtDate(tr.expires_on)) : "";
+          var doc = p.document_id && docs[p.document_id] ? docs[p.document_id] : null;
+          var filePath = doc && doc.file_url ? String(doc.file_url) : "";
+          var pdfBtn = filePath
+            ? '<button type="button" class="hr-contract-pdf" data-hr-training-pdf="' + esc(filePath) + '">View PDF</button>'
+            : "";
+          return '<div class="hr-contract-row" data-hr-training-part="' + esc(p.id) + '">'
+            + '<b>' + title + '</b>'
+            + '<span class="hr-contract-meta">' + type + (status ? " · " + status : "") + "</span>"
+            + '<span class="hr-contract-meta">' + esc(signed) + (expires ? " · " + expires : "") + "</span>"
+            + pdfBtn
+            + '</div>';
+        }).join("");
+        bindTrainingRecordPdfButtons(screen);
+      });
+  }
+
+  function bindTrainingRecordPdfButtons(screen) {
+    if (!screen) return;
+    screen.querySelectorAll("[data-hr-training-pdf]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var path = btn.getAttribute("data-hr-training-pdf");
+        btn.disabled = true;
+        hrAdminSignedDocumentUrl(path).then(function (url) {
+          btn.disabled = false;
+          if (url) {
+            try { global.open(url, "_blank", "noopener,noreferrer"); } catch (_) {}
+          } else {
+            deps.toast("Could not open PDF. Try again or check admin access.");
+          }
+        });
+      });
+    });
+  }
+
+  function bindTrainingRecords(screen, personRow) {
+    var staffId = resolvePersonStaffId(nk(personRow), personRow) || (personRow && personRow.staff_id) || null;
+    loadPersonTrainingRecords(staffId, screen);
   }
 
   function daysOffSectionHtml(nameKey, personRow) {

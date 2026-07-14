@@ -90,6 +90,7 @@ function renderMeta() {
     ],
     ["Hours", record.total_hours != null ? String(record.total_hours) : "—"],
   ];
+  if (record.expires_on) bits.push(["Expires", fmtDate(record.expires_on)]);
   $("metaEl").innerHTML = bits
     .map(
       ([k, v]) =>
