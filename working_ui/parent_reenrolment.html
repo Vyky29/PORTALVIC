@@ -212,7 +212,7 @@
     .re-offer-block {
       margin: 12px 0 0;
       padding: 12px;
-      border-radius: 10px;
+      border-radius: 14px;
       border: 1px solid var(--line);
       background: #fafcff;
       min-width: 0;
@@ -224,8 +224,109 @@
       overflow-wrap: break-word;
     }
     .re-offer-block .re-muted { margin: 0 0 8px; }
-    .re-done-offer { text-align: left; margin: 18px 0 8px; }
-    .re-done-offer__title { margin: 0 0 4px; font-size: 1rem; color: var(--ink); }
+    .re-done-offer { text-align: left; margin: 0; }
+    .re-done-offer__title { margin: 0 0 4px; font-size: 1.02rem; color: var(--ink); font-weight: 800; }
+    .re-card--done {
+      padding: 22px 18px 20px;
+      overflow: hidden;
+      position: relative;
+    }
+    .re-card--done::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--blue) 0%, #5bb8e0 55%, var(--gold) 100%);
+    }
+    .re-done-hero {
+      text-align: center;
+      padding: 8px 4px 4px;
+      min-width: 0;
+      animation: reDoneIn .45s ease-out both;
+    }
+    @keyframes reDoneIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: none; }
+    }
+    .re-done-badge {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 14px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--success);
+      background: radial-gradient(circle at 35% 30%, #ffffff 0%, var(--successSoft) 70%);
+      border: 1px solid rgba(21, 115, 71, .18);
+      box-shadow: 0 8px 20px rgba(21, 115, 71, .12);
+    }
+    .re-done-badge svg { width: 28px; height: 28px; }
+    .re-done-title {
+      margin: 0 0 8px;
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+    }
+    .re-done-lead {
+      margin: 0 auto 8px;
+      max-width: 36em;
+      font-size: .98rem;
+      line-height: 1.45;
+      color: var(--text);
+      font-weight: 600;
+      overflow-wrap: break-word;
+    }
+    .re-done-note {
+      margin: 0 auto;
+      max-width: 36em;
+      font-size: .86rem;
+      line-height: 1.45;
+      color: var(--muted);
+      overflow-wrap: break-word;
+    }
+    .re-done-offer-host {
+      margin-top: 18px;
+      min-width: 0;
+      animation: reDoneIn .5s ease-out .08s both;
+    }
+    .re-done-offer__intro {
+      margin: 0 0 12px;
+      font-size: .84rem;
+      color: var(--muted);
+      overflow-wrap: break-word;
+    }
+    .re-done-offer .re-offer-block {
+      margin-top: 0;
+      background: var(--white);
+      border: 1px solid rgba(45, 132, 179, .14);
+      box-shadow: 0 4px 14px rgba(23, 50, 71, .04);
+    }
+    .re-done-offer .re-offer-block + .re-offer-block { margin-top: 10px; }
+    .re-done-offer__grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+    }
+    .re-offer-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+      min-width: 0;
+    }
+    .re-offer-actions .re-btn {
+      flex: 1 1 140px;
+      min-width: 0;
+      margin-top: 0;
+      width: auto;
+      text-align: center;
+    }
+    .re-btn--done-portal {
+      margin-top: 16px;
+      animation: reDoneIn .5s ease-out .14s both;
+    }
     .re-section--info { border-top: 1px dashed var(--line); padding-top: 12px; }
     .re-label { display: block; margin: 10px 0 4px; font-size: .88rem; font-weight: 700; color: var(--ink); }
     .re-input {
@@ -1629,6 +1730,6 @@
 
   <script src="/portal/portal_calendar_2026_27.js?v=20260714-w2-80pct"></script>
   <script src="/portal/portal_participant_photos.js?v=20260704-reenrol-photo"></script>
-  <script src="/portal/portal_reenrolment_2026_27.js?v=20260714-terms-confirm"></script>
+  <script src="/portal/portal_reenrolment_2026_27.js?v=20260714-done-pretty"></script>
 </body>
 </html>
