@@ -692,9 +692,9 @@ export function crashBankTransferReference(
     acts.length === 2
       ? "Climbing+Swimming"
       : acts[0] === "swimming"
-        ? "Swimming"
+        ? "Aquatic Activity"
         : acts[0] === "climbing"
-          ? "Climbing"
+          ? "Climbing Activity"
           : "Crash";
   return `${name} ${service}`.trim().slice(0, 40);
 }

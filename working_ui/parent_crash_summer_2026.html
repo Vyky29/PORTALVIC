@@ -233,6 +233,28 @@
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       letter-spacing: .02em;
     }
+    .pay-ref-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+      gap: 10px;
+      margin: 0 0 12px;
+      min-width: 0;
+    }
+    @media (max-width: 520px) {
+      .pay-ref-grid { grid-template-columns: 1fr; }
+    }
+    .pay-ref-grid .field { margin: 0; min-width: 0; }
+    .pay-ref-grid input,
+    .pay-ref-grid select {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      font: inherit;
+      min-width: 0;
+    }
     .meta-list {
       margin: 0;
       padding-left: 1.1em;
@@ -327,10 +349,25 @@
           <dt>Account</dt><dd id="csPayAccount">—</dd>
           <dt>Reference</dt><dd id="csPayRef" class="pay-ref">—</dd>
         </dl>
-        <label class="field" for="csPayRefInput">
-          <span>Payment reference (optional)</span>
-          <input id="csPayRefInput" type="text" maxlength="80" placeholder="If different from the reference above" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:12px;font:inherit" />
-        </label>
+        <div class="pay-ref-grid" id="csPayRefEdit">
+          <label class="field" for="csPayRefName">
+            <span>Participant name</span>
+            <input id="csPayRefName" type="text" maxlength="40" autocomplete="name" placeholder="e.g. Rodin Esmati" />
+          </label>
+          <label class="field" for="csPayRefService">
+            <span>Service</span>
+            <select id="csPayRefService">
+              <option value="">Select service</option>
+              <option value="Aquatic Activity">Aquatic Activity</option>
+              <option value="Climbing Activity">Climbing Activity</option>
+              <option value="Physical Activity">Physical Activity</option>
+              <option value="Multi-Activity">Multi-Activity</option>
+              <option value="Active Play and Movement">Active Play and Movement</option>
+              <option value="Bespoke Programme">Bespoke Programme</option>
+            </select>
+          </label>
+        </div>
+        <p class="muted" style="margin:0 0 10px;font-size:.85rem;overflow-wrap:break-word;min-width:0">Bank reference becomes <strong>name + service</strong> (shown above). Edit if needed.</p>
         <button type="button" class="btn btn--secondary" id="csPayBankBtn">I've paid by bank transfer</button>
       </div>
 
@@ -356,6 +393,6 @@
       </ul>
     </section>
   </div>
-  <script src="/portal/portal_crash_summer_2026.js?v=20260714-staffing"></script>
+  <script src="/portal/portal_crash_summer_2026.js?v=20260714-pay-ref"></script>
 </body>
 </html>
