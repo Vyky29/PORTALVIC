@@ -6,25 +6,121 @@
   "use strict";
 
   var ENGAGEMENT = [
-    { value: 1, label: "Needed lots of support to join in", termHint: "Building" },
-    { value: 2, label: "Joined some", termHint: "Building" },
-    { value: 3, label: "Joined most", termHint: "Progressing" },
-    { value: 4, label: "Stayed with the session well", termHint: "Secure" },
+    {
+      value: 1,
+      label: "Needed lots of support to join in",
+      termHint: "Building",
+      icon:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>',
+    },
+    {
+      value: 2,
+      label: "Joined some",
+      termHint: "Building",
+      icon:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+    },
+    {
+      value: 3,
+      label: "Joined most",
+      termHint: "Progressing",
+      icon:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+    },
+    {
+      value: 4,
+      label: "Stayed with the session well",
+      termHint: "Secure",
+      icon:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+    },
   ];
 
   var REGULATION = [
-    { value: "Found the water hard today", label: "Found the water hard today", termHint: "Building", score: 1 },
-    { value: "Needed help to settle", label: "Needed help to settle", termHint: "Building", score: 2 },
-    { value: "Mostly calm", label: "Mostly calm", termHint: "Progressing", score: 3 },
-    { value: "Calm and settled", label: "Calm and settled", termHint: "Secure", score: 4 },
+    {
+      value: "Found the water hard today",
+      label: "Found the water hard today",
+      termHint: "Building",
+      score: 1,
+      icon:
+        '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><circle cx="9" cy="10" r="1.25" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1.25" fill="currentColor" stroke="none"/><path d="M8 15.5Q12 12.7 16 15.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/></svg>',
+    },
+    {
+      value: "Needed help to settle",
+      label: "Needed help to settle",
+      termHint: "Building",
+      score: 2,
+      icon:
+        '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><path d="M8 8.5l2 1.5M16 8.5l-2 1.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><path d="M8.5 14.5h7" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>',
+    },
+    {
+      value: "Mostly calm",
+      label: "Mostly calm",
+      termHint: "Progressing",
+      score: 3,
+      icon:
+        '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><circle cx="9" cy="10" r="1.25" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1.25" fill="currentColor" stroke="none"/><path d="M9 15h6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>',
+    },
+    {
+      value: "Calm and settled",
+      label: "Calm and settled",
+      termHint: "Secure",
+      score: 4,
+      icon:
+        '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><circle cx="9" cy="10" r="1.25" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1.25" fill="currentColor" stroke="none"/><path d="M8 14Q12 17.2 16 14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/></svg>',
+    },
   ];
 
   var INDEPENDENCE = [
-    { value: "Full support in the water", label: "Full support in the water", sub: "Hands-on throughout", termHint: "Building", score: 1 },
-    { value: "Regular support / hands-on help", label: "Regular support / hands-on help", sub: "Frequent help", termHint: "Building", score: 2 },
-    { value: "Mostly with prompts", label: "Mostly with prompts", sub: "Occasional reminders", termHint: "Progressing", score: 3 },
-    { value: "Mostly on their own", label: "Mostly on their own", sub: "Independent in the water", termHint: "Secure", score: 4 },
+    {
+      value: "Full support in the water",
+      label: "Full support in the water",
+      sub: "Hands-on throughout",
+      termHint: "Building",
+      score: 1,
+      icon:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+    },
+    {
+      value: "Regular support / hands-on help",
+      label: "Regular support / hands-on help",
+      sub: "Frequent help",
+      termHint: "Building",
+      score: 2,
+      icon:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+    },
+    {
+      value: "Mostly with prompts",
+      label: "Mostly with prompts",
+      sub: "Occasional reminders",
+      termHint: "Progressing",
+      score: 3,
+      icon:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/></svg>',
+    },
+    {
+      value: "Mostly on their own",
+      label: "Mostly on their own",
+      sub: "Independent in the water",
+      termHint: "Secure",
+      score: 4,
+      icon:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+    },
   ];
+
+  function engIconHtml(svg) {
+    return '<span class="swim-axis-pill__icon" aria-hidden="true">' + (svg || "") + "</span>";
+  }
+
+  function regFaceHtml(svg) {
+    return '<span class="pill-emotion-face" aria-hidden="true">' + (svg || "") + "</span>";
+  }
+
+  function indIconHtml(svg) {
+    return '<span class="pill-independence-icon" aria-hidden="true">' + (svg || "") + "</span>";
+  }
 
   var REG_BY_VALUE = {};
   REGULATION.forEach(function (r) {
@@ -309,9 +405,11 @@
           o.value +
           '"><input type="radio" name="swimEngagementRating" value="' +
           o.value +
-          '"><span class="swim-axis-pill__text">' +
+          '"><span class="swim-axis-pill__inner">' +
+          engIconHtml(o.icon) +
+          '<span class="swim-axis-pill__text">' +
           esc(o.label) +
-          "</span></label>"
+          "</span></span></label>"
         );
       }).join("") +
       "</div></div>" +
@@ -324,7 +422,9 @@
           esc(o.value) +
           '"><input type="radio" name="swimRegulation" value="' +
           esc(o.value) +
-          '"><span class="pill-emotion-inner"><span class="pill-emotion-label">' +
+          '"><span class="pill-emotion-inner">' +
+          regFaceHtml(o.icon) +
+          '<span class="pill-emotion-label">' +
           esc(o.label) +
           "</span></span></label>"
         );
@@ -339,7 +439,9 @@
           esc(o.value) +
           '"><input type="radio" name="swimIndependence" value="' +
           esc(o.value) +
-          '"><span class="pill-independence-inner"><span class="pill-independence-text"><span class="pill-independence-title">' +
+          '"><span class="pill-independence-inner">' +
+          indIconHtml(o.icon) +
+          '<span class="pill-independence-text"><span class="pill-independence-title">' +
           esc(o.label) +
           '</span><span class="pill-independence-sub">' +
           esc(o.sub || "") +
@@ -542,9 +644,11 @@
           o.value +
           '"' +
           (o.value === 1 ? " required" : "") +
-          "><span class=\"swim-axis-pill__text\">" +
+          '><span class="swim-axis-pill__inner">' +
+          engIconHtml(o.icon) +
+          '<span class="swim-axis-pill__text">' +
           esc(o.label) +
-          "</span></label>"
+          "</span></span></label>"
         );
       }).join("") +
       "</div>";
@@ -567,7 +671,9 @@
         esc(o.value) +
         '"><input type="radio" name="clientEmotions" value="' +
         esc(o.value) +
-        '"><span class="pill-emotion-inner"><span class="pill-emotion-label">' +
+        '"><span class="pill-emotion-inner">' +
+        regFaceHtml(o.icon) +
+        '<span class="pill-emotion-label">' +
         esc(o.label) +
         "</span></span></label>"
       );
@@ -585,7 +691,9 @@
         esc(o.value) +
         '"><input type="radio" name="independenceLevel" value="' +
         esc(o.value) +
-        '"><span class="pill-independence-inner"><span class="pill-independence-text"><span class="pill-independence-title">' +
+        '"><span class="pill-independence-inner">' +
+        indIconHtml(o.icon) +
+        '<span class="pill-independence-text"><span class="pill-independence-title">' +
         esc(o.label) +
         '</span><span class="pill-independence-sub">' +
         esc(o.sub || "") +

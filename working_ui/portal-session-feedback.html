@@ -31,7 +31,7 @@
 <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260713-ios-video-save" />
 <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
 <script src="/portal/portal_participant_achievements.js?v=20260713-ios-video-save"></script>
-<script src="/portal/portal_swim_session_axes.js?v=20260714-dc-swim-addon-v1"></script>
+<script src="/portal/portal_swim_session_axes.js?v=20260714-swim-axis-icons"></script>
 <script src="/portal/portal_feedback_voice_input.js?v=20260705c-voice-ai-down-message"></script>
 <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
 <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
@@ -535,6 +535,56 @@ input:focus, select:focus, textarea:focus{
   justify-content:flex-start !important;
   text-align:left;
   padding:10px 12px !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  min-height:0 !important;
+}
+.swim-axis-pill__inner,
+.swim-axis-pill .pill-emotion-inner,
+.swim-axis-pill .pill-independence-inner{
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  justify-content:flex-start;
+  gap:10px;
+  width:100%;
+  min-width:0;
+  text-align:left;
+  pointer-events:none;
+}
+.swim-axis-pill__icon{
+  flex-shrink:0;
+  width:30px;
+  height:30px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:rgba(255,255,255,0.88);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,0.06);
+  color:rgba(11,18,32,0.45);
+}
+.swim-axis-pill__icon svg{
+  width:18px;
+  height:18px;
+  display:block;
+}
+.swim-axis-pill.isSelected .swim-axis-pill__icon,
+.swim-axis-pill.isSelected .pill-emotion-face,
+.swim-axis-pill.isSelected .pill-independence-icon{
+  background:#fff;
+  box-shadow:inset 0 0 0 1px rgba(199,125,0,0.22);
+}
+.swim-axis-pill.isSelected .swim-axis-pill__icon,
+.swim-axis-pill.independence.isSelected .pill-independence-icon{
+  color:#b45309;
+}
+.swim-axis-pill .pill-independence-text{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  min-width:0;
+  text-align:left;
 }
 .swim-axis-pill__text,
 .swim-axis-pill .pill-emotion-label,
@@ -543,12 +593,19 @@ input:focus, select:focus, textarea:focus{
   font-weight:700;
   line-height:1.3;
   overflow-wrap:break-word;
+  text-align:left;
+  min-width:0;
 }
 .swim-axis-pill .pill-independence-sub{
   font-size:11px;
   font-weight:600;
   color:var(--muted,#6b7280);
+  text-align:left;
 }
+.swim-axis-pill.emotion[data-value="Found the water hard today"] .pill-emotion-face{ color:#2563eb; }
+.swim-axis-pill.emotion[data-value="Needed help to settle"] .pill-emotion-face{ color:#ca8a04; }
+.swim-axis-pill.emotion[data-value="Mostly calm"] .pill-emotion-face{ color:#64748b; }
+.swim-axis-pill.emotion[data-value="Calm and settled"] .pill-emotion-face{ color:#16a34a; }
 .fb-dc-swim{
   margin: 4px 0 18px;
   padding: 14px 14px 12px;
