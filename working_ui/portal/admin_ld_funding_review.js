@@ -944,9 +944,18 @@
             var storagePath = staffId + "/training/" + filename;
             return client.storage
               .from("documents")
-              .upload(storagePath, blob, { contentType: "application/pdf", upsert: false })
+              .upload(storagePath, blob, { contentType: "application/pdf", upsert: true })
               .then(function (up) {
-                if (up.error) throw up.error;
+                if (up.error) {
+                  var e = up.error;
+                  e.message =
+                    "Storage upload failed: " +
+                    (e.message || "unknown") +
+                    " (path " +
+                    storagePath +
+                    ")";
+                  throw e;
+                }
                 var relatedDate = clean(live.reviewed_at || live.application_date).slice(0, 10) || null;
                 return client
                   .from("documents")
@@ -966,9 +975,15 @@
               })
               .then(function (ins) {
                 if (ins.error) throw ins.error;
-                return insertEmployeeAnnouncement(client, staffId, ann).then(function () {
-                  return ins;
-                });
+                // Reminder is best-effort — PDF in My Documents is the source of truth.
+                return insertEmployeeAnnouncement(client, staffId, ann)
+                  .catch(function (annErr) {
+                    console.warn("[ld-funding] announcement", annErr);
+                    return null;
+                  })
+                  .then(function () {
+                    return ins;
+                  });
               })
               .then(function (ins) {
                 var docId = ins.data && ins.data.id;
