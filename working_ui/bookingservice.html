@@ -271,14 +271,35 @@
     .btn-ghost svg { width: 16px; height: 16px; }
 
     .services {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      margin: 0 0 22px;
+      width: 100%;
+      min-width: 0;
+    }
+    .services__group { min-width: 0; width: 100%; }
+    .services__label {
+      margin: 0 0 10px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .services__grid {
       display: grid;
       grid-template-columns: 1fr;
       gap: 14px;
-      margin: 0 0 22px;
       width: 100%;
+      min-width: 0;
     }
-    @media (min-width: 720px) {
-      .services { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    @media (min-width: 640px) {
+      .services__grid--core { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .services__grid--more { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (min-width: 1024px) {
+      .services__grid--more { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     }
     .svc-card {
       background: var(--white);
@@ -332,7 +353,11 @@
     }
     .svc__icon svg { width: 28px; height: 28px; }
     .svc__icon--climb { background: #fff6e5; color: #b7791f; }
+    .svc__icon--physical { background: #f3e8ff; color: #7c3aed; }
+    .svc__icon--multi { background: #e8f0fe; color: #1d4ed8; }
+    .svc__icon--bespoke { background: #fff1e8; color: #c2410c; }
     .svc__icon--dc { background: #eef6f2; color: #1f6b4a; }
+    .svc__icon--intensive { background: #fce7f3; color: #be185d; }
     .svc-card__title-wrap { min-width: 0; flex: 1 1 auto; }
     .svc-card h3 {
       margin: 0;
@@ -830,7 +855,7 @@
     </div>
   </div>
 
-  <script src="/portal/portal_booking_offer_mock.js?v=20260714-booking-acc-v1"></script>
+  <script src="/portal/portal_booking_offer_mock.js?v=20260714-booking-7svc"></script>
   <script>
 (function () {
   "use strict";
@@ -851,6 +876,14 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 7l3 3-7 7-3-3z"/><path d="M7 17l-2 2"/><path d="M17 7l2-2"/><circle cx="8.5" cy="8.5" r="1.2"/><circle cx="15.5" cy="15.5" r="1.2"/></svg>',
     dc:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/></svg>',
+    physical:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 5a2 2 0 1 0-2.5 0"/><path d="M8.5 9.5 6 22"/><path d="M15.5 9.5 18 22"/><path d="M6.5 13h11"/><path d="M9 9.5h6l-1.5 5h-3z"/></svg>',
+    multi:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+    bespoke:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+    intensive:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>',
     clock:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
     pin:
@@ -881,7 +914,11 @@
 
   function serviceIconPack(id) {
     if (id === "climbing") return { svg: ICONS.climb, cls: "svc__icon--climb" };
+    if (id === "physical") return { svg: ICONS.physical, cls: "svc__icon--physical" };
+    if (id === "multi") return { svg: ICONS.multi, cls: "svc__icon--multi" };
+    if (id === "bespoke") return { svg: ICONS.bespoke, cls: "svc__icon--bespoke" };
     if (id === "day_centre") return { svg: ICONS.dc, cls: "svc__icon--dc" };
+    if (id === "intensive") return { svg: ICONS.intensive, cls: "svc__icon--intensive" };
     return { svg: ICONS.swim, cls: "" };
   }
 
@@ -932,71 +969,93 @@
     return map[day] || day;
   }
 
+  function serviceCardHtml(s, active) {
+    var pack = serviceIconPack(s.id);
+    var allSlots = mock.filterSlots({ serviceId: s.id, hideFull: false });
+    var openN = allSlots.filter(function (slot) {
+      return !mock.isFull(slot);
+    }).length;
+    var chips =
+      '<span class="chip">' +
+      ICONS.clock +
+      esc(s.durationHint) +
+      "</span>" +
+      '<span class="chip">' +
+      ICONS.pound +
+      esc(s.priceHint) +
+      "</span>" +
+      (s.venues && s.venues.length
+        ? '<span class="chip">' +
+          ICONS.pin +
+          esc(s.venues.map(mock.venueLabel).join(", ")) +
+          "</span>"
+        : "");
+    return (
+      '<button type="button" class="svc-card' +
+      (active === s.id ? " is-active" : "") +
+      '" data-jump-service="' +
+      esc(s.id) +
+      '" aria-controls="timetable-' +
+      esc(s.id) +
+      '">' +
+      '<div class="svc-card__head">' +
+      '<div class="svc__icon ' +
+      pack.cls +
+      '">' +
+      pack.svg +
+      "</div>" +
+      '<div class="svc-card__title-wrap">' +
+      "<h3>" +
+      esc(s.name) +
+      "</h3>" +
+      '<p class="svc-card__hint">' +
+      allSlots.length +
+      " weekly time" +
+      (allSlots.length === 1 ? "" : "s") +
+      " · " +
+      openN +
+      " with places" +
+      (openN < allSlots.length ? " · fully booked shown below" : "") +
+      "</p>" +
+      "</div></div>" +
+      '<p class="svc-card__blurb">' +
+      esc(s.blurb) +
+      "</p>" +
+      '<div class="svc-meta">' +
+      chips +
+      "</div>" +
+      '<span class="svc-card__cta">' +
+      "See weekly times " +
+      ICONS.arrow +
+      "</span>" +
+      "</button>"
+    );
+  }
+
   function renderServiceCards() {
     var host = document.getElementById("serviceCards");
     var active = fService.value || "";
-    host.innerHTML = mock.SERVICES.map(function (s) {
-      var pack = serviceIconPack(s.id);
-      var allSlots = mock.filterSlots({ serviceId: s.id, hideFull: false });
-      var openN = allSlots.filter(function (slot) {
-        return !mock.isFull(slot);
-      }).length;
-      var chips =
-        '<span class="chip">' +
-        ICONS.clock +
-        esc(s.durationHint) +
-        "</span>" +
-        '<span class="chip">' +
-        ICONS.pound +
-        esc(s.priceHint) +
-        "</span>" +
-        (s.venues && s.venues.length
-          ? '<span class="chip">' +
-            ICONS.pin +
-            esc(s.venues.map(mock.venueLabel).join(", ")) +
-            "</span>"
-          : "");
-      return (
-        '<button type="button" class="svc-card' +
-        (active === s.id ? " is-active" : "") +
-        '" data-jump-service="' +
-        esc(s.id) +
-        '" aria-controls="timetable-' +
-        esc(s.id) +
-        '">' +
-        '<div class="svc-card__head">' +
-        '<div class="svc__icon ' +
-        pack.cls +
-        '">' +
-        pack.svg +
-        "</div>" +
-        '<div class="svc-card__title-wrap">' +
-        "<h3>" +
-        esc(s.name) +
-        "</h3>" +
-        '<p class="svc-card__hint">' +
-        allSlots.length +
-        " weekly time" +
-        (allSlots.length === 1 ? "" : "s") +
-        " · " +
-        openN +
-        " with places" +
-        (openN < allSlots.length ? " · fully booked shown below" : "") +
-        "</p>" +
-        "</div></div>" +
-        '<p class="svc-card__blurb">' +
-        esc(s.blurb) +
-        "</p>" +
-        '<div class="svc-meta">' +
-        chips +
-        "</div>" +
-        '<span class="svc-card__cta">' +
-        "See weekly times " +
-        ICONS.arrow +
-        "</span>" +
-        "</button>"
-      );
-    }).join("");
+    var core = mock.SERVICES.filter(function (s) {
+      return s.tier !== "more";
+    });
+    var more = mock.SERVICES.filter(function (s) {
+      return s.tier === "more";
+    });
+    host.innerHTML =
+      '<div class="services__group">' +
+      '<p class="services__label">Core services</p>' +
+      '<div class="services__grid services__grid--core">' +
+      core.map(function (s) {
+        return serviceCardHtml(s, active);
+      }).join("") +
+      "</div></div>" +
+      '<div class="services__group">' +
+      '<p class="services__label">Programmes &amp; extras</p>' +
+      '<div class="services__grid services__grid--more">' +
+      more.map(function (s) {
+        return serviceCardHtml(s, active);
+      }).join("") +
+      "</div></div>";
   }
 
   function slotRowHtml(slot, svc) {

@@ -29,6 +29,7 @@
     {
       id: "aquatic",
       name: "Aquatic Activity",
+      tier: "core",
       ageHint: "3yrs – 40yrs",
       durationHint: "Usually 30 minutes",
       priceHint: "From £50 / 30 min session",
@@ -39,6 +40,7 @@
     {
       id: "climbing",
       name: "Climbing Activity",
+      tier: "core",
       ageHint: "5yrs – 18yrs",
       durationHint: "Usually 60 minutes",
       priceHint: "From £75 / 60 min session",
@@ -47,19 +49,66 @@
       venues: ["Westway"],
     },
     {
+      id: "physical",
+      name: "Physical Activity",
+      tier: "core",
+      ageHint: "5yrs – 18yrs",
+      durationHint: "Usually 60 minutes",
+      priceHint: "From £75 / 60 min session",
+      blurb:
+        "Active sessions focused on movement, coordination, and stamina — adapted so every child can take part safely and with clear structure.",
+      venues: ["SwimFarm", "Acton"],
+    },
+    {
+      id: "multi",
+      name: "Multi-Activity",
+      tier: "more",
+      ageHint: "5yrs – 18yrs",
+      durationHint: "Usually 90 minutes",
+      priceHint: "From £120 / 90 min session",
+      blurb:
+        "Longer blocks that combine activities in one visit (for example pool plus land-based work). Ideal when families want variety in a single session.",
+      venues: ["SwimFarm", "Northolt"],
+    },
+    {
+      id: "bespoke",
+      name: "Bespoke Programme",
+      tier: "more",
+      ageHint: "Bespoke",
+      durationHint: "Agreed with the office",
+      priceHint: "From £125 / 60 min session",
+      blurb:
+        "A tailored programme built around your child’s goals, support needs, and schedule. Planned with the family and delivery team — enquire to start.",
+      venues: ["SwimFarm", "Acton", "Westway"],
+      enquireOnly: true,
+    },
+    {
       id: "day_centre",
       name: "Day Centre",
+      tier: "more",
       ageHint: "Bespoke",
-      durationHint: "Multi-hour blocks",
+      durationHint: "Multi-hour weekday blocks",
       priceHint: "Funding / bespoke quote",
       blurb:
-        "Longer daytime blocks with pool segments on some days. Places are planned with families and the office — enquire rather than instant-book.",
+        "Longer daytime blocks at SwimFarm with pool segments on some days. Places are planned with families and the office — enquire rather than instant-book.",
       venues: ["SwimFarm"],
+      enquireOnly: true,
+    },
+    {
+      id: "intensive",
+      name: "Intensive Courses & Camps",
+      tier: "more",
+      ageHint: "Holiday packs",
+      durationHint: "Half-term / summer blocks",
+      priceHint: "Course packs — ask the office",
+      blurb:
+        "Holiday intensives and camps (for example climbing and swimming crash weeks). Limited daily places — join the list early; weekly packs often have priority.",
+      venues: ["Westway", "Acton", "SwimFarm"],
       enquireOnly: true,
     },
   ];
 
-  /** Illustrative weekly template — shapes match real MADRE-style slots. */
+  /** Illustrative weekly / holiday template — shapes match real MADRE-style slots. */
   var MOCK_SLOTS = [
     { id: "aq-act-mon-1600", serviceId: "aquatic", venue: "Acton", day: "Monday", timeLabel: "4.00 – 4.30", sortTime: "16:00", capacity: 1, taken: 1 },
     { id: "aq-act-mon-1630", serviceId: "aquatic", venue: "Acton", day: "Monday", timeLabel: "4.30 – 5.00", sortTime: "16:30", capacity: 1, taken: 0 },
@@ -81,9 +130,29 @@
     { id: "cl-ww-sat-1000", serviceId: "climbing", venue: "Westway", day: "Saturday", timeLabel: "10.00 – 11.00", sortTime: "10:00", capacity: 2, taken: 2 },
     { id: "cl-ww-sat-1100", serviceId: "climbing", venue: "Westway", day: "Saturday", timeLabel: "11.00 – 12.00", sortTime: "11:00", capacity: 2, taken: 0 },
 
+    { id: "ph-sf-tue-1400", serviceId: "physical", venue: "SwimFarm", day: "Tuesday", timeLabel: "2.00 – 3.00", sortTime: "14:00", capacity: 2, taken: 1 },
+    { id: "ph-sf-thu-1400", serviceId: "physical", venue: "SwimFarm", day: "Thursday", timeLabel: "2.00 – 3.00", sortTime: "14:00", capacity: 2, taken: 2 },
+    { id: "ph-act-sat-1100", serviceId: "physical", venue: "Acton", day: "Saturday", timeLabel: "11.00 – 12.00", sortTime: "11:00", capacity: 2, taken: 0 },
+    { id: "ph-act-sat-1200", serviceId: "physical", venue: "Acton", day: "Saturday", timeLabel: "12.00 – 1.00", sortTime: "12:00", capacity: 2, taken: 1 },
+
+    { id: "ma-sf-mon-1600", serviceId: "multi", venue: "SwimFarm", day: "Monday", timeLabel: "4.00 – 5.30", sortTime: "16:00", capacity: 2, taken: 2 },
+    { id: "ma-sf-wed-1600", serviceId: "multi", venue: "SwimFarm", day: "Wednesday", timeLabel: "4.00 – 5.30", sortTime: "16:00", capacity: 2, taken: 1 },
+    { id: "ma-nor-sat-0930", serviceId: "multi", venue: "Northolt", day: "Saturday", timeLabel: "9.30 – 11.00", sortTime: "09:30", capacity: 2, taken: 0 },
+    { id: "ma-nor-sat-1130", serviceId: "multi", venue: "Northolt", day: "Saturday", timeLabel: "11.30 – 1.00", sortTime: "11:30", capacity: 2, taken: 2 },
+
+    { id: "bs-sf-tue-1000", serviceId: "bespoke", venue: "SwimFarm", day: "Tuesday", timeLabel: "10.00 – 11.00", sortTime: "10:00", capacity: 1, taken: 1 },
+    { id: "bs-act-thu-1500", serviceId: "bespoke", venue: "Acton", day: "Thursday", timeLabel: "3.00 – 4.00", sortTime: "15:00", capacity: 1, taken: 0 },
+    { id: "bs-ww-fri-1100", serviceId: "bespoke", venue: "Westway", day: "Friday", timeLabel: "11.00 – 12.00", sortTime: "11:00", capacity: 1, taken: 1 },
+
     { id: "dc-sf-mon-1100", serviceId: "day_centre", venue: "SwimFarm", day: "Monday", timeLabel: "11.00 – 4.00", sortTime: "11:00", capacity: 4, taken: 4 },
     { id: "dc-sf-wed-1100", serviceId: "day_centre", venue: "SwimFarm", day: "Wednesday", timeLabel: "11.00 – 4.00", sortTime: "11:00", capacity: 4, taken: 3 },
     { id: "dc-sf-fri-1230", serviceId: "day_centre", venue: "SwimFarm", day: "Friday", timeLabel: "12.30 – 3.00", sortTime: "12:30", capacity: 3, taken: 3 },
+
+    { id: "in-ww-tue-1000", serviceId: "intensive", venue: "Westway", day: "Tuesday", timeLabel: "10.00 – 12.00 · Climb camp", sortTime: "10:00", capacity: 2, taken: 2 },
+    { id: "in-ww-wed-1000", serviceId: "intensive", venue: "Westway", day: "Wednesday", timeLabel: "10.00 – 12.00 · Climb camp", sortTime: "10:00", capacity: 2, taken: 1 },
+    { id: "in-act-thu-1000", serviceId: "intensive", venue: "Acton", day: "Thursday", timeLabel: "10.00 – 12.00 · Swim camp", sortTime: "10:00", capacity: 8, taken: 8 },
+    { id: "in-act-fri-1000", serviceId: "intensive", venue: "Acton", day: "Friday", timeLabel: "10.00 – 12.00 · Swim camp", sortTime: "10:00", capacity: 8, taken: 5 },
+    { id: "in-sf-mon-1100", serviceId: "intensive", venue: "SwimFarm", day: "Monday", timeLabel: "11.00 – 3.00 · Holiday block", sortTime: "11:00", capacity: 6, taken: 6 },
   ];
 
   var DAY_ORDER = {
