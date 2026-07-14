@@ -91,12 +91,18 @@ export async function gocardlessCreateBillingRequest(input: {
     links?: Record<string, string>;
   }>
 > {
+  // GoCardless allows at most 3 metadata keys per object.
   const metadata: Record<string, string> = {
-    contact_id: input.contactId,
+    contact_id: String(input.contactId),
   };
-  if (input.parentPersonId) metadata.parent_person_id = String(input.parentPersonId);
-  if (input.invoiceShareId) metadata.invoice_share_id = String(input.invoiceShareId);
-  if (input.invoiceNumber) metadata.invoice_number = String(input.invoiceNumber);
+  if (input.invoiceShareId) {
+    metadata.invoice_share_id = String(input.invoiceShareId);
+  }
+  if (input.invoiceNumber) {
+    metadata.invoice_number = String(input.invoiceNumber);
+  } else if (input.parentPersonId && Object.keys(metadata).length < 3) {
+    metadata.parent_person_id = String(input.parentPersonId);
+  }
 
   const billing_requests: Record<string, unknown> = {
     mandate_request: {
