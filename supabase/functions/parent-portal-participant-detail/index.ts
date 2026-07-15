@@ -26,11 +26,12 @@ import {
   expandParticipantClientSlugs,
   isAcatGroupClientId,
   isAcatMemberIdentity,
+  acatGroupFeedbackEligibleSlugs,
+  parentPortalSuppressSessionProgress,
   participantIdentityMatches,
   resolveParticipantClientSlugs,
   resolveParticipantLookupNames,
   slugifyParticipantKey,
-  withAcatGroupClientSlugs,
 } from "../_shared/participant_identity.ts";
 import {
   buildParentAttendanceSummary,
@@ -768,9 +769,14 @@ Deno.serve(async (req) => {
     firstName: clean(participant.first_name, 80),
     lastName: clean(participant.last_name, 80),
   };
-  const clientSlugs = withAcatGroupClientSlugs(
-    expandParticipantClientSlugs(resolveParticipantClientSlugs(identityInput)),
-  );
+  const suppressSessionProgress = parentPortalSuppressSessionProgress(identityInput);
+  const clientSlugs = suppressSessionProgress
+    ? expandParticipantClientSlugs(resolveParticipantClientSlugs(identityInput)).filter(
+      (s) => !["acat", "acat_group"].includes(slugifyParticipantKey(s)),
+    )
+    : acatGroupFeedbackEligibleSlugs(
+      expandParticipantClientSlugs(resolveParticipantClientSlugs(identityInput)),
+    );
   const lookupNames = resolveParticipantLookupNames(identityInput);
   const parentFacingClientName =
     clean(participant.first_name, 80) ||
@@ -843,7 +849,7 @@ Deno.serve(async (req) => {
     area: string;
   }> = [];
 
-  if (wantSessions) {
+  if (wantSessions && !suppressSessionProgress) {
     const fbSel =
       "id, session_date, client_name, client_id, service, session_time, attendance, engagement_rating, engagement_patterns, client_emotions, positive_feedback, relevant_information, completed_by_name, created_at";
 
@@ -968,7 +974,7 @@ Deno.serve(async (req) => {
   }
 
   let attendanceSummary = { attended: 0, absent: 0, total: 0, makeup_absent: 0 };
-  if (wantSessions && clientSlugs.length) {
+  if (wantSessions && !suppressSessionProgress && clientSlugs.length) {
     const { data: overrideRows, error: ovErr } = await supabase
       .from("schedule_overrides")
       .select("session_date, anchor_start, anchor_client_id, override_type, status, payload")
@@ -985,7 +991,7 @@ Deno.serve(async (req) => {
       clientSlugs,
       PARENT_SESSION_TERM_START_ISO,
     );
-  } else if (wantSessions && rawFeedback.length) {
+  } else if (wantSessions && !suppressSessionProgress && rawFeedback.length) {
     attendanceSummary = buildParentAttendanceSummary(
       rawFeedback,
       [],
@@ -1248,7 +1254,7 @@ Deno.serve(async (req) => {
 
   let weeklyNotes: Record<string, unknown>[] = [];
   let weeklyNoteLatest: Record<string, unknown> | null = null;
-  if (wantWeeklyNotes) {
+  if (wantWeeklyNotes && !suppressSessionProgress) {
     const { data: noteRows, error: noteErr } = await supabase
       .from("portal_parent_weekly_notes")
       .select(
@@ -1331,6 +1337,14 @@ Deno.serve(async (req) => {
       weekly_note_latest: weeklyNoteLatest,
       // Wireframe slot — club noticeboard (not wired yet).
       club_announcements: [],
+      session_progress: {
+        enabled: !suppressSessionProgress,
+        sessions_overview: !suppressSessionProgress,
+        weekly_notes: !suppressSessionProgress,
+        reason: suppressSessionProgress
+          ? "Irregular ACAT attendance — session overview and weekly notes are not shown for this participant."
+          : "",
+      },
     }),
     { status: 200, headers: { ...parentPortalCorsHeaders, "Content-Type": "application/json" } },
   );

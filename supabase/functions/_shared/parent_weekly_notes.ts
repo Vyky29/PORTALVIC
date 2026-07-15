@@ -8,7 +8,8 @@ import {
   participantIdentityMatches,
   resolveParticipantClientSlugs,
   resolveParticipantLookupNames,
-  withAcatGroupClientSlugs,
+  acatGroupFeedbackEligibleSlugs,
+  parentPortalSuppressSessionProgress,
   type ParticipantIdentityInput,
 } from "./participant_identity.ts";
 
@@ -153,7 +154,7 @@ export async function loadFeedbackForParticipantWeek(
   weekStart: string,
   weekEnd: string,
 ): Promise<FeedbackRow[]> {
-  const clientSlugs = withAcatGroupClientSlugs(resolveParticipantClientSlugs(identity));
+  const clientSlugs = acatGroupFeedbackEligibleSlugs(resolveParticipantClientSlugs(identity));
   const lookupNames = resolveParticipantLookupNames(identity);
   const fbSel =
     "id, session_date, client_name, client_id, service, attendance, positive_feedback, session_narrative, relevant_information";
@@ -501,6 +502,16 @@ export async function generateWeeklyNoteForContact(
     todayIso?: string;
   },
 ): Promise<WeeklyNoteBuildResult> {
+  if (parentPortalSuppressSessionProgress(opts.identity) || String(opts.contactId || "") === "197") {
+    return {
+      ok: true,
+      skipped: true,
+      reason: "kate_no_parent_notes",
+      contact_id: opts.contactId,
+      week_start: saturdayWeekStart(opts.weekStart) || opts.weekStart,
+    };
+  }
+
   const weekStart = saturdayWeekStart(opts.weekStart);
   const weekEnd = fridayWeekEnd(weekStart);
   if (!weekStart || !weekEnd) {

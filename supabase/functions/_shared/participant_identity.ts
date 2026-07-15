@@ -190,6 +190,33 @@ export function withAcatGroupClientSlugs(slugs: string[]): string[] {
   return [...out];
 }
 
+/**
+ * Kate Fordham — ACAT Monday member who has not attended enough sessions for a
+ * parent-facing Sessions Overview / weekly notes / group feedback rollup.
+ * Kamy + Jack W + Jack S keep progress; Jacks also have Sunday Multiactivity.
+ */
+export function parentPortalSuppressSessionProgress(
+  input: ParticipantIdentityInput,
+): boolean {
+  const contact = slugifyParticipantKey(input.contactId || "");
+  if (contact === "197") return true;
+  const slugs = expandParticipantClientSlugs(resolveParticipantClientSlugs(input));
+  return slugs.some((s) => rosterParticipantSlugAlias(s) === "kate");
+}
+
+/**
+ * ACAT group feedback rollup for parent portal — Kate excluded; Kamy / Jack W /
+ * Jack S included (Sunday Multiactivity uses their own jack_* rows).
+ */
+export function acatGroupFeedbackEligibleSlugs(slugs: string[]): string[] {
+  const base = expandParticipantClientSlugs(slugs);
+  if (base.some((s) => rosterParticipantSlugAlias(s) === "kate")) {
+    // Kate: never query / match collective ACAT feedback.
+    return base.filter((s) => !ACAT_GROUP_CLIENT_SLUGS.has(slugifyParticipantKey(s)));
+  }
+  return withAcatGroupClientSlugs(base);
+}
+
 export function resolveParticipantLookupNames(input: ParticipantIdentityInput): string[] {
   const names = new Set<string>();
   const add = (n: string) => {
@@ -219,10 +246,14 @@ export function participantIdentityMatches(
     return true;
   }
 
-  // Staff often write Monday 11–12 under collective "ACAT"; each member's parent portal should see it.
+  // Staff often write Monday 11–12 under collective "ACAT"; Kamy / Jack parents see it.
+  // Kate is excluded (irregular attendance — no parent session progress / notes).
   if (
     (isAcatGroupClientId(rowClientId) || isAcatGroupClientId(rowName)) &&
-    slugs.some((s) => ACAT_MEMBER_CLIENT_SLUGS.has(rosterParticipantSlugAlias(s)))
+    slugs.some((s) => {
+      const canon = rosterParticipantSlugAlias(s);
+      return ACAT_MEMBER_CLIENT_SLUGS.has(canon) && canon !== "kate";
+    })
   ) {
     return true;
   }

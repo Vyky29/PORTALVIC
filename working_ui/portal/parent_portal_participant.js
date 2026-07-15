@@ -1013,6 +1013,8 @@
     var booking = bookingSummary(data);
     var swimAvailable = !!data.swim_term_review_available;
     var noteCount = Array.isArray(data && data.weekly_notes) ? data.weekly_notes.length : 0;
+    var sessionProgressEnabled =
+      !(data && data.session_progress) || data.session_progress.enabled !== false;
     var hasServices = !!(
       data &&
       data.general &&
@@ -1100,24 +1102,26 @@
       "</div>" +
       '<p class="pp-pax-info-section-label pp-pax-info-section-label--progress">Progress</p>' +
       '<div class="pp-pax-info-row pp-pax-info-row--progress">' +
-      infoBtnHtml(
-        "weekly_notes",
-        "Weekly notes",
-        notesIcon,
-        {
-          extraClass:
-            " pp-pax-info-btn--weekly-notes" +
-            (notesUnread > 0 ? " pp-pax-info-btn--has-unread" : ""),
-          subtitle: noteCount ? noteCount + " in folder" : "From feedback",
-          unreadBadge: notesBadge,
-        },
-      ) +
-      infoBtnHtml(
-        "sessions",
-        "Sessions Overview",
-        '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
-        { extraClass: " pp-pax-info-btn--sessions", subtitle: "By activity" },
-      ) +
+      (sessionProgressEnabled
+        ? infoBtnHtml(
+            "weekly_notes",
+            "Weekly notes",
+            notesIcon,
+            {
+              extraClass:
+                " pp-pax-info-btn--weekly-notes" +
+                (notesUnread > 0 ? " pp-pax-info-btn--has-unread" : ""),
+              subtitle: noteCount ? noteCount + " in folder" : "From feedback",
+              unreadBadge: notesBadge,
+            },
+          ) +
+          infoBtnHtml(
+            "sessions",
+            "Sessions Overview",
+            '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
+            { extraClass: " pp-pax-info-btn--sessions", subtitle: "By activity" },
+          )
+        : "") +
       infoBtnHtml(
         "achievements",
         "Achievement photos",
@@ -2668,7 +2672,21 @@
     bindGeneral(host, data, opts);
   }
 
+  function sessionProgressEnabled(data) {
+    return !(data && data.session_progress) || data.session_progress.enabled !== false;
+  }
+
   function renderSessions(host, data, opts) {
+    if (!sessionProgressEnabled(data)) {
+      host.innerHTML = subviewShell(
+        data,
+        "sessions",
+        '<h3 class="pp-pax-subview-title">Sessions Overview</h3>' +
+          '<p class="pp-muted">Session overview and stats are not shown for this participant.</p>',
+      );
+      bindBack(host, data, opts);
+      return;
+    }
     host.innerHTML = subviewShell(
       data,
       "sessions",
@@ -3220,6 +3238,16 @@
   }
 
   function renderWeeklyNotes(host, data, opts) {
+    if (!sessionProgressEnabled(data)) {
+      host.innerHTML = subviewShell(
+        data,
+        "weekly_notes",
+        '<h3 class="pp-pax-subview-title">Weekly notes</h3>' +
+          '<p class="pp-muted">Weekly notes are not shown for this participant.</p>',
+      );
+      bindBack(host, data, opts);
+      return;
+    }
     markWeeklyNotesSeen(data, opts);
     var raw = Array.isArray(data.weekly_notes) ? data.weekly_notes : [];
     // Newest first; one card per week_start (never dump duplicate weeks).
