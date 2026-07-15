@@ -2058,7 +2058,7 @@
           if (!t || !t.starts) return;
           var termEnd = t.mainTermEnds || t.ends || t.lastDay || "";
           if (!termEnd) return;
-          var labelBase = String(t.label || t.id || "Term").replace(/\s+202[67]\s*$/, "").trim() || "Term";
+          var labelBase = String(t.name || t.id || "Term").replace(/\s+Term\s*$/i, "").trim() || "Term";
           var tFirst = [];
           var tSecond = [];
           nextDates.forEach(function (d) {
