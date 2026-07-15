@@ -7,6 +7,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
+  clientDeviceFromRequest,
   clientIp,
   newSessionToken,
   parentPortalCorsHeaders,
@@ -89,6 +90,7 @@ Deno.serve(async (req) => {
     expires_at: expiresAt,
     ip_hash: ipHash,
     user_agent_hash: uaHash,
+    client_device: clientDeviceFromRequest(req),
     ...geoFields,
   });
   if (insertErr) {

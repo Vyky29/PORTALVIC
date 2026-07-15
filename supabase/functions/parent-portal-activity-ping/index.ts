@@ -3,7 +3,12 @@
 // and appends a row to portal_parent_portal_activity (deduped ~45s same surface).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { clientIp, parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
+import {
+  clientDeviceFromRequest,
+  clientIp,
+  parentPortalCorsHeaders,
+  parentPortalJsonInvalid,
+} from "../_shared/parent_portal_auth.ts";
 import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
 import { lookupParentGeoFromRequest, parentGeoToDbFields } from "../_shared/parent_geo.ts";
 
@@ -80,7 +85,7 @@ Deno.serve(async (req) => {
     last_contact_id: contactId,
   };
 
-  // Backfill geo on first ping if missing (sessions created before geo deploy).
+  // Backfill geo / device on ping when missing (sessions created before those columns).
   if (!session.geo_bucket) {
     try {
       const geo = await lookupParentGeoFromRequest(req, clientIp(req));
@@ -89,6 +94,7 @@ Deno.serve(async (req) => {
       /* ignore geo failures */
     }
   }
+  sessionPatch.client_device = clientDeviceFromRequest(req);
 
   await supabase
     .from("portal_parent_portal_sessions")

@@ -6,6 +6,7 @@ export type ParentPortalSession = {
   parent_person_id: string;
   expires_at: string;
   geo_bucket?: string | null;
+  client_device?: string | null;
 };
 
 export async function resolveParentPortalSession(
@@ -18,7 +19,7 @@ export async function resolveParentPortalSession(
   const tokenHash = await sha256Hex(token);
   const { data: sess, error } = await supabase
     .from("portal_parent_portal_sessions")
-    .select("id, parent_person_id, expires_at, revoked_at, geo_bucket")
+    .select("id, parent_person_id, expires_at, revoked_at, geo_bucket, client_device")
     .eq("token_hash", tokenHash)
     .maybeSingle();
 
@@ -35,6 +36,7 @@ export async function resolveParentPortalSession(
     parent_person_id: String(sess.parent_person_id),
     expires_at: String(sess.expires_at),
     geo_bucket: sess.geo_bucket != null ? String(sess.geo_bucket) : null,
+    client_device: sess.client_device != null ? String(sess.client_device) : null,
   };
 }
 

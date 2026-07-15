@@ -65,6 +65,25 @@ export function clientIp(req: Request): string {
   return first || req.headers.get("cf-connecting-ip") || req.headers.get("x-real-ip") || "";
 }
 
+/** Coarse device for presence UI — never store raw User-Agent. */
+export type ParentClientDevice = "phone" | "desktop" | "tablet";
+
+export function classifyClientDevice(userAgent: string): ParentClientDevice {
+  const ua = String(userAgent || "").toLowerCase();
+  if (!ua) return "desktop";
+  if (/ipad|tablet|kindle|silk|playbook/.test(ua)) return "tablet";
+  // Android tablets often omit "mobile"; phones include it.
+  if (/android/.test(ua) && !/mobile/.test(ua)) return "tablet";
+  if (/mobi|iphone|ipod|android.*mobile|windows phone|opera mini|iemobile/.test(ua)) {
+    return "phone";
+  }
+  return "desktop";
+}
+
+export function clientDeviceFromRequest(req: Request): ParentClientDevice {
+  return classifyClientDevice(req.headers.get("user-agent") || "");
+}
+
 export function maskPhoneForLog(p: string): string {
   if (!p) return "";
   const digits = p.replace(/\D/g, "");

@@ -15,6 +15,14 @@ function clean(v: unknown, max = 120): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 }
 
+function deviceLabel(raw: unknown): string {
+  const d = clean(raw, 20).toLowerCase();
+  if (d === "phone") return "Phone";
+  if (d === "tablet") return "Tablet";
+  if (d === "desktop") return "Desktop";
+  return "";
+}
+
 function surfaceLabel(raw: string): string {
   const map: Record<string, string> = {
     home: "Home (children list)",
@@ -75,7 +83,7 @@ Deno.serve(async (req) => {
   const { data: sessions, error: sessErr } = await admin
     .from("portal_parent_portal_sessions")
     .select(
-      "id, parent_person_id, issued_at, expires_at, last_used_at, revoked_at, last_surface, last_contact_id, geo_bucket, geo_label, geo_lat, geo_lng, geo_city, geo_region, geo_country",
+      "id, parent_person_id, issued_at, expires_at, last_used_at, revoked_at, last_surface, last_contact_id, geo_bucket, geo_label, geo_lat, geo_lng, geo_city, geo_region, geo_country, client_device",
     )
     .is("revoked_at", null)
     .gt("expires_at", new Date(now).toISOString())
@@ -98,11 +106,16 @@ Deno.serve(async (req) => {
   >();
 
   if (parentIds.length) {
-    const { data: contacts } = await admin
+    const { data: contacts, error: contactErr } = await admin
       .from("portal_parent_contacts")
-      .select("parent_person_id, contact_id, display_name, parent_display, parent_first_name, parent_last_name")
+      .select(
+        "parent_person_id, contact_id, child_display, parent_display, parent_first_name, parent_last_name",
+      )
       .in("parent_person_id", parentIds)
       .limit(800);
+    if (contactErr) {
+      console.error("[portal-ceo-parent-portal-presence] contacts", contactErr.message);
+    }
     for (const c of contacts || []) {
       const pid = clean(c.parent_person_id, 80);
       if (!pid) continue;
@@ -112,7 +125,7 @@ Deno.serve(async (req) => {
         "Parent";
       const row = {
         contact_id: clean(c.contact_id, 80),
-        display_name: clean(c.display_name, 120) || "Participant",
+        display_name: clean(c.child_display, 120) || "Participant",
         parent_display: parentDisplay,
       };
       const list = contactsByParent.get(pid) || [];
@@ -146,6 +159,7 @@ Deno.serve(async (req) => {
     const geoLabel = clean(s.geo_label, 120) || null;
     const geoLat = typeof s.geo_lat === "number" ? s.geo_lat : null;
     const geoLng = typeof s.geo_lng === "number" ? s.geo_lng : null;
+    const device = clean(s.client_device, 20).toLowerCase() || null;
     const item = {
       parent_person_id: pid,
       parent_name: parentName,
@@ -157,6 +171,8 @@ Deno.serve(async (req) => {
       last_surface: clean(s.last_surface, 40) || null,
       last_surface_label: surfaceLabel(String(s.last_surface || "")),
       online: lastUsed >= now - ONLINE_MS,
+      client_device: device,
+      client_device_label: deviceLabel(device) || null,
       geo_bucket: bucket || null,
       geo_label: geoLabel,
       geo_city: clean(s.geo_city, 80) || null,
@@ -218,7 +234,9 @@ Deno.serve(async (req) => {
     if (contactsByParent.has(pid)) continue;
     const { data: more } = await admin
       .from("portal_parent_contacts")
-      .select("parent_person_id, contact_id, display_name, parent_display, parent_first_name, parent_last_name")
+      .select(
+        "parent_person_id, contact_id, child_display, parent_display, parent_first_name, parent_last_name",
+      )
       .eq("parent_person_id", pid)
       .limit(20);
     for (const c of more || []) {
@@ -229,7 +247,7 @@ Deno.serve(async (req) => {
       const list = contactsByParent.get(pid) || [];
       list.push({
         contact_id: clean(c.contact_id, 80),
-        display_name: clean(c.display_name, 120) || "Participant",
+        display_name: clean(c.child_display, 120) || "Participant",
         parent_display: parentDisplay,
       });
       contactsByParent.set(pid, list);
