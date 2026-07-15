@@ -490,9 +490,11 @@ function parseSlotTokens(
  * booked service into staff/cover lines (e.g. Day Centre 12.30–3 stored as 3 rows,
  * or a 90-min Multi-Activity as two 45-min teaching slots). Parents and accounting
  * see the same service once per day, spanning the outer time bounds
- * (e.g. "150' Day Centre · Monday · 12.30 to 3"). Instructor/venue/area omitted.
+ * (e.g. "150' Day Centre · Monday · 12.30 to 3"). Instructor omitted; venue/area kept for the hub card.
  */
-function buildServicesDetail(sessions: unknown): Array<{ label: string; day: string; time: string }> {
+function buildServicesDetail(
+  sessions: unknown,
+): Array<{ label: string; day: string; time: string; venue: string; area: string }> {
   const list = Array.isArray(sessions) ? sessions : [];
   type Group = {
     svc: string;
@@ -502,6 +504,8 @@ function buildServicesDetail(sessions: unknown): Array<{ label: string; day: str
     startMin: number | null;
     endMin: number | null;
     rawTime: string;
+    venue: string;
+    area: string;
   };
   const groups = new Map<string, Group>();
 
@@ -512,9 +516,21 @@ function buildServicesDetail(sessions: unknown): Array<{ label: string; day: str
     const key = (svc + "|" + day).toLowerCase();
     let g = groups.get(key);
     if (!g) {
-      g = { svc, day, startTok: "", endTok: "", startMin: null, endMin: null, rawTime: clean(s.timeSlot, 40) };
+      g = {
+        svc,
+        day,
+        startTok: "",
+        endTok: "",
+        startMin: null,
+        endMin: null,
+        rawTime: clean(s.timeSlot, 40),
+        venue: "",
+        area: "",
+      };
       groups.set(key, g);
     }
+    if (!g.venue) g.venue = clean(s.venue, 80);
+    if (!g.area) g.area = clean(s.area, 80);
     const tok = parseSlotTokens(s.timeSlot, day);
     if (tok) {
       if (tok.start != null && (g.startMin == null || tok.start < g.startMin)) {
@@ -540,10 +556,18 @@ function buildServicesDetail(sessions: unknown): Array<{ label: string; day: str
       const dur = g.svc === "Multi-Activity" ? 90 : spanDur;
       const label = dur ? `${dur}' ${g.svc}` : g.svc;
       const time = g.startTok && g.endTok ? `${g.startTok} to ${g.endTok}` : g.rawTime;
-      return { label, day: g.day, time, _order: DAY_ORDER[g.day.toLowerCase()] || 8, _start: g.startMin ?? 9999 };
+      return {
+        label,
+        day: g.day,
+        time,
+        venue: g.venue,
+        area: g.area,
+        _order: DAY_ORDER[g.day.toLowerCase()] || 8,
+        _start: g.startMin ?? 9999,
+      };
     })
     .sort((a, b) => (a._order !== b._order ? a._order - b._order : a._start - b._start))
-    .map(({ label, day, time }) => ({ label, day, time }));
+    .map(({ label, day, time, venue, area }) => ({ label, day, time, venue, area }));
 }
 
 /**
@@ -559,7 +583,10 @@ async function fetchRosterServiceLines(
     firstName?: string;
     lastName?: string;
   },
-): Promise<{ count: number; detail: Array<{ label: string; day: string; time: string }> } | null> {
+): Promise<{
+  count: number;
+  detail: Array<{ label: string; day: string; time: string; venue: string; area: string }>;
+} | null> {
   const slugs = [
     ...new Set(
       resolveParticipantClientSlugs(identityInput)
@@ -977,7 +1004,13 @@ Deno.serve(async (req) => {
   // Roster-review service snapshot: the parent-facing "number of services" must match the
   // roster (admin roster review), not what happens to have feedback. Loaded for the hub (general).
   let rosterServicesCount = 0;
-  let rosterServicesDetail: Array<{ label: string; day: string; time: string }> = [];
+  let rosterServicesDetail: Array<{
+    label: string;
+    day: string;
+    time: string;
+    venue: string;
+    area: string;
+  }> = [];
   if (wantGeneral) {
     const lines = await fetchRosterServiceLines(supabase, identityInput);
     if (lines) {

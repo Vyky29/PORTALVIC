@@ -1008,10 +1008,30 @@
     .pp-hub-ops__when-row {
       display: flex;
       flex-wrap: wrap;
-      align-items: baseline;
-      gap: 6px 8px;
+      align-items: center;
+      gap: 8px 10px;
       min-width: 0;
       margin-bottom: 12px;
+    }
+    .pp-hub-ops__when-pill {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      line-height: 1.2;
+      color: #1f6587;
+      background: rgba(45, 132, 179, 0.14);
+      border: 1px solid rgba(45, 132, 179, 0.22);
+    }
+    .pp-hub-ops__when-row--today .pp-hub-ops__when-pill {
+      color: #9a3412;
+      background: rgba(180, 83, 9, 0.16);
+      border-color: rgba(180, 83, 9, 0.28);
     }
     .pp-hub-ops__when-label {
       flex: 0 0 auto;
@@ -1047,7 +1067,7 @@
     .pp-hub-ops__when {
       display: block;
       margin: 0;
-      font-size: 18px;
+      font-size: 17px;
       line-height: 1.25;
       font-weight: 800;
       color: var(--ink);
@@ -1066,35 +1086,130 @@
     }
     .pp-hub-ops__slot {
       display: flex;
+      flex-wrap: nowrap;
+      align-items: flex-start;
+      gap: 12px;
+      min-width: 0;
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(23, 50, 71, 0.08);
+      background: #fff;
+      box-shadow: 0 4px 14px rgba(23, 50, 71, 0.05);
+      overflow: hidden;
+    }
+    .pp-hub-ops__slot-ico {
+      flex: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      color: #64748b;
+      background: rgba(100, 116, 139, 0.12);
+    }
+    .pp-hub-ops__slot-glyph {
+      width: 20px;
+      height: 20px;
+      display: block;
+    }
+    .pp-hub-ops__slot-body {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .pp-hub-ops__slot-top {
+      display: flex;
       flex-wrap: wrap;
       align-items: baseline;
       justify-content: space-between;
       gap: 6px 12px;
       min-width: 0;
-      padding: 10px 12px;
-      border-radius: 14px;
-      border: 1px solid var(--line);
-      background: #fff;
     }
     .pp-hub-ops__slot-name {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 800;
       color: var(--ink);
       overflow-wrap: break-word;
       min-width: 0;
     }
     .pp-hub-ops__slot-time {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
       font-size: 12px;
       font-weight: 700;
       color: var(--muted);
       white-space: nowrap;
+      min-width: 0;
     }
-    .pp-hub-ops__slot--climb { border-left: 3px solid #2563eb; }
-    .pp-hub-ops__slot--aquatic { border-left: 3px solid #0d9488; }
-    .pp-hub-ops__slot--multi { border-left: 3px solid #15803d; }
-    .pp-hub-ops__slot--bespoke { border-left: 3px solid #7c3aed; }
-    .pp-hub-ops__slot--daycentre { border-left: 3px solid #b45309; }
-    .pp-hub-ops__slot--other { border-left: 3px solid #64748b; }
+    .pp-hub-ops__slot-place {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      min-width: 0;
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      line-height: 1.35;
+      overflow-wrap: break-word;
+    }
+    .pp-hub-ops__slot-place span {
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .pp-hub-ops__meta-ico {
+      width: 13px;
+      height: 13px;
+      flex: none;
+      margin-top: 1px;
+      opacity: 0.85;
+    }
+    .pp-hub-ops__slot--climb {
+      border-color: rgba(37, 99, 235, 0.18);
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), #fff 55%);
+    }
+    .pp-hub-ops__slot--climb .pp-hub-ops__slot-ico {
+      color: #2563eb;
+      background: rgba(37, 99, 235, 0.14);
+    }
+    .pp-hub-ops__slot--aquatic {
+      border-color: rgba(13, 148, 136, 0.18);
+      background: linear-gradient(135deg, rgba(13, 148, 136, 0.08), #fff 55%);
+    }
+    .pp-hub-ops__slot--aquatic .pp-hub-ops__slot-ico {
+      color: #0d9488;
+      background: rgba(13, 148, 136, 0.14);
+    }
+    .pp-hub-ops__slot--multi {
+      border-color: rgba(21, 128, 61, 0.18);
+      background: linear-gradient(135deg, rgba(21, 128, 61, 0.08), #fff 55%);
+    }
+    .pp-hub-ops__slot--multi .pp-hub-ops__slot-ico {
+      color: #15803d;
+      background: rgba(21, 128, 61, 0.14);
+    }
+    .pp-hub-ops__slot--bespoke {
+      border-color: rgba(124, 58, 237, 0.18);
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.08), #fff 55%);
+    }
+    .pp-hub-ops__slot--bespoke .pp-hub-ops__slot-ico {
+      color: #7c3aed;
+      background: rgba(124, 58, 237, 0.14);
+    }
+    .pp-hub-ops__slot--daycentre {
+      border-color: rgba(180, 83, 9, 0.2);
+      background: linear-gradient(135deg, rgba(180, 83, 9, 0.1), #fff 55%);
+    }
+    .pp-hub-ops__slot--daycentre .pp-hub-ops__slot-ico {
+      color: #b45309;
+      background: rgba(180, 83, 9, 0.16);
+    }
+    .pp-hub-ops__slot--other {
+      border-color: rgba(100, 116, 139, 0.18);
+      background: linear-gradient(135deg, rgba(100, 116, 139, 0.08), #fff 55%);
+    }
     .pp-invoice-card {
       margin: 0 0 12px;
       padding: 14px;
@@ -3424,7 +3539,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260714-dc-swim-addon"></script>
   <script src="/portal/parent_portal_team.js?v=20260710-eiji-hazem-photos"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260714-w2-80pct"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260715-term-from-jun1"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260715-hub-slot-venue"></script>
   <script src="/portal/parent_portal_app.js?v=20260713-gocardless"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

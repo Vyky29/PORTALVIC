@@ -1296,6 +1296,8 @@
           rawLabel: s.label || "Service",
           day: s.day || "",
           time: s.time || "",
+          venue: String(s.venue || "").trim(),
+          area: String(s.area || "").trim(),
           isToday: offset === 0,
         });
       });
@@ -1664,17 +1666,54 @@
     }
   }
 
+  function hubOpsSlotGlyph(tone) {
+    var t = String(tone || "other");
+    if (t === "aquatic") {
+      return '<svg class="pp-hub-ops__slot-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12c2.5-3 5-3 7.5 0s5 3 7.5 0 5-3 7.5 0"/><path d="M2 17c2.5-3 5-3 7.5 0s5 3 7.5 0 5-3 7.5 0"/></svg>';
+    }
+    if (t === "climb") {
+      return '<svg class="pp-hub-ops__slot-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.5 5.5L20 10l-4.5 3.5L17 20l-5-3-5 3 1.5-6.5L4 10l5.5-1.5L12 3z"/></svg>';
+    }
+    if (t === "daycentre") {
+      return '<svg class="pp-hub-ops__slot-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5L12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z"/></svg>';
+    }
+    if (t === "multi") {
+      return '<svg class="pp-hub-ops__slot-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="16" r="3"/><path d="M10.5 10.5l3 3"/></svg>';
+    }
+    if (t === "bespoke") {
+      return '<svg class="pp-hub-ops__slot-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M5 8h14M7 16h10"/></svg>';
+    }
+    return '<svg class="pp-hub-ops__slot-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>';
+  }
+
   function hubOpsSessionSlotHtml(s) {
     var tone = serviceChipToneClass(s.rawLabel || s.label || "");
+    var placeBits = [s.venue, s.area].filter(Boolean);
+    var place = placeBits.join(" · ");
+    var pinIco =
+      '<svg class="pp-hub-ops__meta-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>';
+    var clockIco =
+      '<svg class="pp-hub-ops__meta-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
     return (
       '<li class="pp-hub-ops__slot pp-hub-ops__slot--' +
       esc(tone) +
       '">' +
+      '<span class="pp-hub-ops__slot-ico" aria-hidden="true">' +
+      hubOpsSlotGlyph(tone) +
+      "</span>" +
+      '<div class="pp-hub-ops__slot-body">' +
+      '<div class="pp-hub-ops__slot-top">' +
       '<span class="pp-hub-ops__slot-name">' +
       esc(s.label || "Service") +
       "</span>" +
-      (s.time ? '<span class="pp-hub-ops__slot-time">' + esc(s.time) + "</span>" : "") +
-      "</li>"
+      (s.time
+        ? '<span class="pp-hub-ops__slot-time">' + clockIco + "<span>" + esc(s.time) + "</span></span>"
+        : "") +
+      "</div>" +
+      (place
+        ? '<div class="pp-hub-ops__slot-place">' + pinIco + "<span>" + esc(place) + "</span></div>"
+        : "") +
+      "</div></li>"
     );
   }
 
@@ -1716,9 +1755,11 @@
         '<div class="pp-hub-ops__badge-row">' +
         termSessionDateChipsHtml(data) +
         "</div>" +
-        '<div class="pp-hub-ops__when-row">' +
-        '<span class="pp-hub-ops__when-label">' +
-        esc(next.isToday ? "Today:" : "Next session:") +
+        '<div class="pp-hub-ops__when-row' +
+        (next.isToday ? " pp-hub-ops__when-row--today" : "") +
+        '">' +
+        '<span class="pp-hub-ops__when-pill">' +
+        esc(next.isToday ? "Today" : "Next") +
         "</span>" +
         '<strong class="pp-hub-ops__when">' +
         esc(next.dayLabel) +
