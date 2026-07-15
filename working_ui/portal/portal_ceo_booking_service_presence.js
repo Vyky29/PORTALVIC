@@ -74,15 +74,16 @@
     map = global.L.map(el, {
       scrollWheelZoom: false,
       attributionControl: true,
-    }).setView([52.5, -1.5], 6);
+      maxBoundsViscosity: 0.85,
+    }).setView([51.5074, -0.1278], 11);
     global.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 12,
+      maxZoom: 14,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
     }).addTo(map);
     markersLayer = global.L.layerGroup().addTo(map);
     map.setMaxBounds([
-      [49.5, -6.5],
-      [56.2, 2.2],
+      [51.28, -0.55],
+      [51.7, 0.35],
     ]);
     setTimeout(function () {
       try {
@@ -94,51 +95,33 @@
     return map;
   }
 
-  function markerColor(bucket) {
-    return bucket === "london" ? "#2d84b3" : "#157347";
-  }
-
   function renderMap(data) {
     ensureMap();
     if (!map || !markersLayer) return;
     markersLayer.clearLayers();
     var points = (data && data.map && data.map.points) || [];
-    var bounds = [];
-    points.forEach(function (p) {
-      var lat = Number(p.lat);
-      var lng = Number(p.lng);
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-      var jLat = lat + (Math.random() - 0.5) * 0.04;
-      var jLng = lng + (Math.random() - 0.5) * 0.04;
-      var color = markerColor(p.bucket);
+    var n = Math.max(points.length, 1);
+    points.forEach(function (p, i) {
+      var angle = (i / n) * Math.PI * 2;
+      var jLat = 51.5074 + Math.sin(angle) * 0.012;
+      var jLng = -0.1278 + Math.cos(angle) * 0.02;
       var circle = global.L.circleMarker([jLat, jLng], {
         radius: p.online ? 9 : 7,
         color: "#fff",
         weight: 2,
-        fillColor: color,
+        fillColor: "#2d84b3",
         fillOpacity: p.online ? 0.95 : 0.7,
       });
       var popupHtml =
         "<strong>" +
         esc(p.visitor_label || "Visitor") +
         "</strong><br>" +
-        esc(p.label || p.bucket || "") +
+        esc(p.label || "London") +
         (p.online ? "<br>Online now" : "");
       circle.bindPopup(popupHtml);
       markersLayer.addLayer(circle);
-      bounds.push([jLat, jLng]);
     });
-    if (bounds.length === 1) {
-      map.setView(bounds[0], 9);
-    } else if (bounds.length > 1) {
-      try {
-        map.fitBounds(bounds, { padding: [28, 28], maxZoom: 10 });
-      } catch (_e) {
-        map.setView([52.5, -1.5], 6);
-      }
-    } else {
-      map.setView([52.5, -1.5], 6);
-    }
+    map.setView([51.5074, -0.1278], 11);
     setTimeout(function () {
       try {
         map.invalidateSize();
@@ -156,38 +139,42 @@
               return (
                 "<li><strong>" +
                 esc(o.visitor_label || "Visitor") +
-                "</strong> - " +
-                esc(o.label || "Outside England") +
-                (o.online ? " - online" : "") +
+                "</strong> — " +
+                esc(o.label || "Outside London") +
+                (o.online ? " — online" : "") +
                 "</li>"
               );
             })
             .join("")
-        : '<li class="cpp-empty" style="border:0;background:transparent;padding:4px 0">Nobody outside England in the last 24h (or location not known yet).</li>';
+        : '<li class="cpp-empty" style="border:0;background:transparent;padding:4px 0">Nobody connecting from outside London in the last 24h (or location not known yet).</li>';
     }
 
     var g = (data && data.summary && data.summary.geo) || {};
     var note = $("cbsGeoNote");
     if (note) {
       note.textContent =
-        "Approx. from connection IP | London " +
+        "Map = London only. Outside London is listed below — approx. from connection IP | London " +
         (g.london != null ? g.london : 0) +
-        " | Rest of England " +
-        (g.england != null ? g.england : 0) +
-        " | Outside " +
-        (g.outside != null ? g.outside : 0) +
+        " | Outside London " +
+        ((g.england || 0) + (g.outside || 0)) +
         " | Unknown " +
         (g.unknown != null ? g.unknown : 0) +
-        ". New sign-ins and hub opens fill location.";
+        ".";
     }
   }
 
   function visitorRowHtml(p, tone) {
     var detail = p.last_detail ? " - " + p.last_detail : "";
-    var loc =
+    var locRaw =
       p.geo_label ||
       [p.geo_city, p.geo_region, p.geo_country].filter(Boolean).join(", ") ||
       "";
+    var loc =
+      p.geo_bucket === "london"
+        ? locRaw || "London"
+        : p.geo_bucket === "england" || p.geo_bucket === "outside"
+          ? (locRaw ? "Outside London · " + locRaw : "Outside London")
+          : locRaw;
     var device = p.client_device_label || (p.client_device === "phone"
       ? "Phone"
       : p.client_device === "desktop"

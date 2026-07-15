@@ -128,28 +128,33 @@ Deno.serve(async (req) => {
     if (isOnline) online.push(item);
     else recent.push(item);
 
-    if (bucket === "london" || bucket === "england") {
-      if (bucket === "london") geoSummary.london += 1;
-      else geoSummary.england += 1;
-      const lat = typeof s.geo_lat === "number" ? s.geo_lat : null;
-      const lng = typeof s.geo_lng === "number" ? s.geo_lng : null;
-      if (lat != null && lng != null) {
-        mapPoints.push({
-          session_id: String(s.id),
-          visitor_label: item.visitor_label,
-          bucket,
-          label: geoLabel || (bucket === "london" ? "London" : "England"),
-          lat,
-          lng,
-          online: isOnline,
-        });
-      }
+    if (bucket === "london") {
+      geoSummary.london += 1;
+      mapPoints.push({
+        session_id: String(s.id),
+        visitor_label: item.visitor_label,
+        bucket: "london",
+        label: geoLabel || "London",
+        lat: 51.5074,
+        lng: -0.1278,
+        online: isOnline,
+      });
+    } else if (bucket === "england") {
+      geoSummary.england += 1;
+      outsideList.push({
+        session_id: String(s.id),
+        visitor_label: item.visitor_label,
+        label: geoLabel || "England (outside London)",
+        kind: "england",
+        online: isOnline,
+      });
     } else if (bucket === "outside") {
       geoSummary.outside += 1;
       outsideList.push({
         session_id: String(s.id),
         visitor_label: item.visitor_label,
-        label: geoLabel || "Outside England",
+        label: geoLabel || "Outside UK",
+        kind: "outside",
         online: isOnline,
       });
     } else {
@@ -199,7 +204,7 @@ Deno.serve(async (req) => {
     recent,
     activity,
     map: {
-      england_only: true,
+      london_only: true,
       points: mapPoints,
       outside: outsideList,
     },

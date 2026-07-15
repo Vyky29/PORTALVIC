@@ -183,8 +183,6 @@ Deno.serve(async (req) => {
       null;
     const bucket = clean(s.geo_bucket, 20).toLowerCase();
     const geoLabel = clean(s.geo_label, 120) || null;
-    const geoLat = typeof s.geo_lat === "number" ? s.geo_lat : null;
-    const geoLng = typeof s.geo_lng === "number" ? s.geo_lng : null;
     const device = clean(s.client_device, 20).toLowerCase() || null;
     const item = {
       parent_person_id: pid,
@@ -216,28 +214,36 @@ Deno.serve(async (req) => {
     }
 
     // One geo entry per parent (most recent session wins due to order).
+    // Map pins = London only. Everywhere else is listed as text (IP cities outside London are unreliable on an England map).
     if (!geoSeen.has(pid)) {
       geoSeen.add(pid);
-      if (bucket === "london" || bucket === "england") {
-        if (bucket === "london") geoSummary.london += 1;
-        else geoSummary.england += 1;
-        if (geoLat != null && geoLng != null) {
-          mapPoints.push({
-            parent_person_id: pid,
-            parent_name: parentName,
-            bucket,
-            label: geoLabel || (bucket === "london" ? "London" : "England"),
-            lat: geoLat,
-            lng: geoLng,
-            online: item.online,
-          });
-        }
+      if (bucket === "london") {
+        geoSummary.london += 1;
+        mapPoints.push({
+          parent_person_id: pid,
+          parent_name: parentName,
+          bucket: "london",
+          label: geoLabel || "London",
+          lat: 51.5074,
+          lng: -0.1278,
+          online: item.online,
+        });
+      } else if (bucket === "england") {
+        geoSummary.england += 1;
+        outsideList.push({
+          parent_person_id: pid,
+          parent_name: parentName,
+          label: geoLabel || "England (outside London)",
+          kind: "england",
+          online: item.online,
+        });
       } else if (bucket === "outside") {
         geoSummary.outside += 1;
         outsideList.push({
           parent_person_id: pid,
           parent_name: parentName,
-          label: geoLabel || "Outside England",
+          label: geoLabel || "Outside UK",
+          kind: "outside",
           online: item.online,
         });
       } else {
@@ -356,7 +362,7 @@ Deno.serve(async (req) => {
     activity,
     actions: actions.slice(0, 40),
     map: {
-      england_only: true,
+      london_only: true,
       points: mapPoints,
       outside: outsideList,
     },
