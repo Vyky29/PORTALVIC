@@ -24,10 +24,12 @@ import {
 } from "../_shared/participant_general_info.ts";
 import {
   expandParticipantClientSlugs,
+  isAcatGroupClientId,
   participantIdentityMatches,
   resolveParticipantClientSlugs,
   resolveParticipantLookupNames,
   slugifyParticipantKey,
+  withAcatGroupClientSlugs,
 } from "../_shared/participant_identity.ts";
 import {
   buildParentAttendanceSummary,
@@ -634,12 +636,16 @@ async function fetchRosterServiceLines(
         .filter(Boolean),
     ),
   ];
-  if (!slugs.length) return null;
+  // Prefer individual kate/kamy/jack_* keys — never fall back to collective "acat"
+  // (that row is staff-only; parents need their own Monday + Multiactivity lines).
+  const memberSlugs = slugs.filter((s) => s !== "acat" && s !== "acat_group");
+  const lookupKeys = memberSlugs.length ? memberSlugs : slugs;
+  if (!lookupKeys.length) return null;
 
   const { data, error } = await supabase
     .from("portal_participant_service_lines")
     .select("client_name, sessions, services_count")
-    .in("client_key", slugs)
+    .in("client_key", lookupKeys)
     .limit(6);
 
   if (error) {
@@ -761,8 +767,14 @@ Deno.serve(async (req) => {
     firstName: clean(participant.first_name, 80),
     lastName: clean(participant.last_name, 80),
   };
-  const clientSlugs = expandParticipantClientSlugs(resolveParticipantClientSlugs(identityInput));
+  const clientSlugs = withAcatGroupClientSlugs(
+    expandParticipantClientSlugs(resolveParticipantClientSlugs(identityInput)),
+  );
   const lookupNames = resolveParticipantLookupNames(identityInput);
+  const parentFacingClientName =
+    clean(participant.first_name, 80) ||
+    clean(displayName, 120).split(/\s+/)[0] ||
+    clean(displayName, 120);
 
   const { data: contactRow } = await supabase
     .from("portal_parent_contacts")
@@ -904,9 +916,14 @@ Deno.serve(async (req) => {
     for (const row of rawFeedback) {
       const id = String(row.id);
       const patterns = row.engagement_patterns;
+      const rowClientLabel = clean(row.client_name, 200);
+      const nameForParentText =
+        isAcatGroupClientId(String(row.client_id || "")) || isAcatGroupClientId(rowClientLabel)
+          ? parentFacingClientName
+          : rowClientLabel || parentFacingClientName;
       const positiveText = enforceParticipantFirstNameInText(
         clean(row.positive_feedback, 2500),
-        clean(row.client_name, 200),
+        nameForParentText,
       );
       const service = clean(row.service, 200);
       const staffName = clean(row.completed_by_name, 120);

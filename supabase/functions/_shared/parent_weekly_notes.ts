@@ -8,6 +8,7 @@ import {
   participantIdentityMatches,
   resolveParticipantClientSlugs,
   resolveParticipantLookupNames,
+  withAcatGroupClientSlugs,
   type ParticipantIdentityInput,
 } from "./participant_identity.ts";
 
@@ -152,7 +153,7 @@ export async function loadFeedbackForParticipantWeek(
   weekStart: string,
   weekEnd: string,
 ): Promise<FeedbackRow[]> {
-  const clientSlugs = resolveParticipantClientSlugs(identity);
+  const clientSlugs = withAcatGroupClientSlugs(resolveParticipantClientSlugs(identity));
   const lookupNames = resolveParticipantLookupNames(identity);
   const fbSel =
     "id, session_date, client_name, client_id, service, attendance, positive_feedback, session_narrative, relevant_information";

@@ -59,7 +59,26 @@ const PORTAL_PARTICIPANT_SLUG_ALIASES: Record<string, string> = {
   oluwatimilehin_nathan: "timi",
   oluwatimilehin_na: "timi",
   oluwatimilehin: "timi",
+  // ACAT Monday 11–12 members (portal full name / contact_id → roster short id)
+  kate_fordham: "kate",
+  kamy_akhavan: "kamy",
+  jack_walker: "jack_w",
+  gap_jack_walker: "jack_w",
+  jack_w_walker: "jack_w",
+  jack_stratton: "jack_s",
+  jack_s_stratton: "jack_s",
 };
+
+/** Collective roster / feedback client for Monday 11–12 ACAT aquatic. */
+export const ACAT_GROUP_CLIENT_SLUGS = new Set(["acat", "acat_group"]);
+
+/** Individual ACAT members who attend the Monday group slot. */
+export const ACAT_MEMBER_CLIENT_SLUGS = new Set(["kate", "kamy", "jack_w", "jack_s"]);
+
+export function isAcatGroupClientId(clientIdOrName: string): boolean {
+  const slug = slugifyParticipantKey(clientIdOrName);
+  return !!slug && ACAT_GROUP_CLIENT_SLUGS.has(slug);
+}
 
 const CLIENT_INFO_SHEET_ALIASES: Record<string, string> = {
   rayan_tapa: "rayan_ta",
@@ -153,6 +172,24 @@ export function resolveParticipantClientSlugs(input: ParticipantIdentityInput): 
   return [...out].filter(Boolean);
 }
 
+export function isAcatMemberIdentity(input: ParticipantIdentityInput): boolean {
+  const slugs = expandParticipantClientSlugs(resolveParticipantClientSlugs(input));
+  return slugs.some((s) => ACAT_MEMBER_CLIENT_SLUGS.has(rosterParticipantSlugAlias(s)));
+}
+
+/**
+ * When loading feedback / service lookups for an ACAT member, also query the
+ * collective `acat` group rows staff submit for Monday 11–12.
+ */
+export function withAcatGroupClientSlugs(slugs: string[]): string[] {
+  const out = new Set(slugs.map(slugifyParticipantKey).filter(Boolean));
+  const isMember = [...out].some((s) => ACAT_MEMBER_CLIENT_SLUGS.has(rosterParticipantSlugAlias(s)));
+  if (isMember) {
+    for (const g of ACAT_GROUP_CLIENT_SLUGS) out.add(g);
+  }
+  return [...out];
+}
+
 export function resolveParticipantLookupNames(input: ParticipantIdentityInput): string[] {
   const names = new Set<string>();
   const add = (n: string) => {
@@ -179,6 +216,14 @@ export function participantIdentityMatches(
   const rowSlug = slugifyParticipantKey(rowClientId);
   const canonRowSlug = rosterParticipantSlugAlias(rowSlug);
   if (rowSlug && slugs.some((s) => s === rowSlug || s === canonRowSlug || rosterParticipantSlugAlias(s) === canonRowSlug)) {
+    return true;
+  }
+
+  // Staff often write Monday 11–12 under collective "ACAT"; each member's parent portal should see it.
+  if (
+    (isAcatGroupClientId(rowClientId) || isAcatGroupClientId(rowName)) &&
+    slugs.some((s) => ACAT_MEMBER_CLIENT_SLUGS.has(rosterParticipantSlugAlias(s)))
+  ) {
     return true;
   }
 
