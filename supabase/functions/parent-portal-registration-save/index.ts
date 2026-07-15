@@ -98,6 +98,49 @@ Deno.serve(async (req) => {
     general_info_sheet: sheet,
   });
 
+  // Keep portal_parent_contacts in sync so the next "Update registration" opens prefilled.
+  const addressRaw = clean(answers.parent_address, 240);
+  const postcode = clean(answers.parent_postcode, 20);
+  const contactPatch: Record<string, unknown> = { updated_at: now };
+  if (clean(answers.parent_name, 120)) {
+    contactPatch.parent_display = clean(answers.parent_name, 120);
+  }
+  if (clean(answers.parent_email, 200)) {
+    contactPatch.email = clean(answers.parent_email, 200).toLowerCase();
+  }
+  if (clean(answers.parent_phone, 40)) {
+    contactPatch.mobile = clean(answers.parent_phone, 40);
+  }
+  if (addressRaw) {
+    const parts = addressRaw.split(",").map((s) => s.trim()).filter(Boolean);
+    contactPatch.address_line1 = parts[0] || addressRaw;
+    if (parts.length >= 2) contactPatch.city = parts[parts.length - 1];
+    if (parts.length >= 3) {
+      contactPatch.address_line2 = parts.slice(1, -1).join(", ");
+    }
+  }
+  if (postcode) contactPatch.postcode = postcode;
+
+  await supabase
+    .from("portal_parent_contacts")
+    .update(contactPatch)
+    .eq("parent_person_id", session.parent_person_id)
+    .eq("contact_id", contactId);
+
+  // Store a registration payload snapshot for robust future prefills (relationship, school, etc.).
+  await supabase.from("portal_participant_documents").insert({
+    form_type: "client_registration",
+    participant_name: clean(answers.participant_name, 120) || contactId,
+    participant_dob: dobIso || null,
+    parent_name: clean(answers.parent_name, 120) || null,
+    parent_email: clean(answers.parent_email, 200) || null,
+    parent_phone: clean(answers.parent_phone, 40) || null,
+    pdf_storage_path: `parent-portal-updates/${contactId}/${Date.now()}.json`,
+    payload_json: answers,
+    status: "parent_portal_update",
+    submitted_at: now,
+  });
+
   return new Response(
     JSON.stringify({
       ok: true,

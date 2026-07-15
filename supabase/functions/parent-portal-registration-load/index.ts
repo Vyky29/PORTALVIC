@@ -1,4 +1,6 @@
 // parent-portal-registration-load — prefill client registration form for a linked child.
+// Prefers: prior registration document → Clients Info / general sheet → portal_parent_contacts.
+// Empty strings never wipe a filled value.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
@@ -16,6 +18,11 @@ function clean(v: unknown, max = 500): string {
   return String(v ?? "").trim().slice(0, max);
 }
 
+function hasText(v: unknown): boolean {
+  const t = clean(v, 4000);
+  return !!(t && t !== "—" && t.toLowerCase() !== "null" && t.toLowerCase() !== "undefined");
+}
+
 function normName(v: string): string {
   return v.toLowerCase().replace(/\s+/g, " ").trim();
 }
@@ -28,6 +35,79 @@ function namesMatch(a: string, b: string): boolean {
   const xf = x.split(" ")[0];
   const yf = y.split(" ")[0];
   return xf === yf && (x.includes(y) || y.includes(x));
+}
+
+function emailsMatch(a: string, b: string): boolean {
+  const x = clean(a, 200).toLowerCase();
+  const y = clean(b, 200).toLowerCase();
+  return !!(x && y && x === y);
+}
+
+function phonesMatch(a: string, b: string): boolean {
+  const da = clean(a, 40).replace(/\D/g, "");
+  const db = clean(b, 40).replace(/\D/g, "");
+  if (!da || !db) return false;
+  const a10 = da.length >= 10 ? da.slice(-10) : da;
+  const b10 = db.length >= 10 ? db.slice(-10) : db;
+  return a10 === b10;
+}
+
+/** Merge `extra` into `base` without overwriting non-empty base values. */
+function mergeAnswers(
+  base: Record<string, string>,
+  extra: Record<string, string>,
+): Record<string, string> {
+  const out = { ...base };
+  for (const [k, v] of Object.entries(extra || {})) {
+    if (!hasText(v)) continue;
+    if (hasText(out[k])) continue;
+    out[k] = clean(v, 4000);
+  }
+  return out;
+}
+
+function payloadToAnswers(payload: Record<string, unknown>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(payload || {})) {
+    if (v == null) continue;
+    if (typeof v === "boolean") {
+      out[k] = v ? "Yes" : "No";
+      continue;
+    }
+    if (Array.isArray(v)) {
+      const joined = v.map((x) => clean(x, 400)).filter(Boolean).join("; ");
+      if (joined) out[k] = joined;
+      continue;
+    }
+    const c = clean(v, 4000);
+    if (c) out[k] = c;
+  }
+  return out;
+}
+
+function normalizeRelationship(raw: string): string {
+  const t = clean(raw, 80).toLowerCase();
+  if (!t) return "";
+  if (/\bmother\b|\bmum\b|\bmom\b/.test(t)) return "Mother";
+  if (/\bfather\b|\bdad\b/.test(t)) return "Father";
+  if (/guardian|carer|caregiver|foster|step-?parent|parent/.test(t)) {
+    if (/\bmother\b|\bmum\b|\bmom\b/.test(t)) return "Mother";
+    if (/\bfather\b|\bdad\b/.test(t)) return "Father";
+    return "Legal guardian";
+  }
+  return clean(raw, 80);
+}
+
+function formatAddress(row: {
+  address_line1?: string | null;
+  address_line2?: string | null;
+  city?: string | null;
+} | null | undefined): string {
+  if (!row) return "";
+  return [row.address_line1, row.address_line2, row.city]
+    .map((x) => clean(x, 120))
+    .filter((x) => x && x !== "—")
+    .join(", ");
 }
 
 Deno.serve(async (req) => {
@@ -71,14 +151,37 @@ Deno.serve(async (req) => {
   const displayName = clean(participant.display_name) ||
     [participant.first_name, participant.last_name].filter(Boolean).join(" ");
 
-  const { data: parentContact } = await supabase
+  const contactSelect =
+    "parent_display, parent_first_name, parent_last_name, email, mobile, address_line1, address_line2, city, postcode, child_display";
+
+  const { data: parentContactExact } = await supabase
     .from("portal_parent_contacts")
-    .select(
-      "parent_display, parent_first_name, parent_last_name, email, mobile, address_line1, address_line2, city, postcode",
-    )
+    .select(contactSelect)
     .eq("parent_person_id", session.parent_person_id)
     .eq("contact_id", contactId)
     .maybeSingle();
+
+  // Sibling / family fallback — same parent may have address only on another child row.
+  const { data: familyContacts } = await supabase
+    .from("portal_parent_contacts")
+    .select(contactSelect)
+    .eq("parent_person_id", session.parent_person_id)
+    .order("updated_at", { ascending: false })
+    .limit(20);
+
+  const familyRows = familyContacts || [];
+  const parentContact =
+    parentContactExact ||
+    familyRows.find((r) => hasText(r.address_line1) || hasText(r.postcode)) ||
+    familyRows[0] ||
+    null;
+
+  const addressDonor =
+    (hasText(parentContactExact?.address_line1) || hasText(parentContactExact?.postcode)
+      ? parentContactExact
+      : null) ||
+    familyRows.find((r) => hasText(r.address_line1) || hasText(r.postcode)) ||
+    parentContact;
 
   const { data: genRow } = await supabase
     .from("portal_participant_general_info")
@@ -88,21 +191,38 @@ Deno.serve(async (req) => {
 
   let answers: Record<string, string> = {};
 
+  const parentEmail = clean(parentContact?.email, 200);
+  const parentPhone = clean(parentContact?.mobile, 40);
+
   const { data: docRows } = await supabase
     .from("portal_participant_documents")
-    .select("payload_json, participant_name, participant_dob, parent_name, parent_email, parent_phone")
+    .select(
+      "payload_json, participant_name, participant_dob, parent_name, parent_email, parent_phone, submitted_at",
+    )
     .eq("form_type", "client_registration")
     .order("submitted_at", { ascending: false })
-    .limit(40);
+    .limit(80);
 
-  const docHit = (docRows || []).find((row) =>
-    namesMatch(displayName, String(row.participant_name || ""))
-  );
-  if (docHit?.payload_json && typeof docHit.payload_json === "object") {
-    const p = docHit.payload_json as Record<string, unknown>;
-    for (const [k, v] of Object.entries(p)) {
-      if (v == null) continue;
-      answers[k] = clean(v, 4000);
+  const rankedDocs = (docRows || [])
+    .map((row) => {
+      let score = 0;
+      if (namesMatch(displayName, String(row.participant_name || ""))) score += 5;
+      if (emailsMatch(parentEmail, String(row.parent_email || ""))) score += 3;
+      if (phonesMatch(parentPhone, String(row.parent_phone || ""))) score += 2;
+      const dobDoc = clean(row.participant_dob, 20).slice(0, 10);
+      const dobPax = participant.dob_iso ? String(participant.dob_iso).slice(0, 10) : "";
+      if (dobDoc && dobPax && dobDoc === dobPax) score += 4;
+      return { row, score };
+    })
+    .filter((x) => x.score >= 3)
+    .sort((a, b) => b.score - a.score);
+
+  for (const hit of rankedDocs) {
+    if (hit.row?.payload_json && typeof hit.row.payload_json === "object") {
+      answers = mergeAnswers(
+        answers,
+        payloadToAnswers(hit.row.payload_json as Record<string, unknown>),
+      );
     }
   }
 
@@ -115,40 +235,41 @@ Deno.serve(async (req) => {
     });
 
   if (infoBlob) {
-    answers = { ...answersFromClientsInfoBlob(infoBlob), ...answers };
+    // Prefer prior form answers; fill gaps from Clients Info sheet.
+    answers = mergeAnswers(answers, answersFromClientsInfoBlob(infoBlob));
   } else if (genRow?.general_info_sheet) {
     const fields = parseGeneralInfoSheet(String(genRow.general_info_sheet));
+    const fromSheet: Record<string, string> = {};
     for (const f of fields) {
       const lab = clean(f.label, 200).toLowerCase();
       const val = clean(f.value, 4000);
       if (!val) continue;
-      if (lab.includes("medical")) answers.medical_conditions = val;
-      else if (lab.includes("communication")) answers.expressive_comm = val;
-      else if (lab.includes("motivator") || lab.includes("likes")) answers.motivators = val;
-      else if (lab.includes("trigger")) answers.triggers = val;
+      if (lab.includes("medical")) fromSheet.medical_conditions = val;
+      else if (lab.includes("communication")) fromSheet.expressive_comm = val;
+      else if (lab.includes("motivator") || lab.includes("likes")) fromSheet.motivators = val;
+      else if (lab.includes("trigger")) fromSheet.triggers = val;
+      else if (lab.includes("dislike")) fromSheet.dislikes = val;
     }
+    answers = mergeAnswers(answers, fromSheet);
   }
 
-  const addressParts = [
-    parentContact?.address_line1,
-    parentContact?.address_line2,
-    parentContact?.city,
-  ].map((x) => clean(x, 120)).filter((x) => x && x !== "—");
-  const postcode = clean(parentContact?.postcode, 20);
-  const addressLine = addressParts.join(", ");
+  const addressLine = formatAddress(addressDonor);
+  const postcode = clean(addressDonor?.postcode, 20);
 
-  if (!answers.parent_name) {
-    answers.parent_name = clean(parentContact?.parent_display) ||
-      [parentContact?.parent_first_name, parentContact?.parent_last_name].filter(Boolean).join(" ");
-  }
-  if (!answers.parent_email) answers.parent_email = clean(parentContact?.email);
-  if (!answers.parent_phone) answers.parent_phone = clean(parentContact?.mobile);
-  if (!answers.parent_address && addressLine) answers.parent_address = addressLine;
-  if (!answers.parent_postcode && postcode && postcode !== "—") answers.parent_postcode = postcode;
+  const contactAnswers: Record<string, string> = {
+    parent_name: clean(parentContact?.parent_display) ||
+      [parentContact?.parent_first_name, parentContact?.parent_last_name].filter(Boolean).join(" "),
+    parent_email: parentEmail,
+    parent_phone: parentPhone,
+    parent_address: addressLine,
+    parent_postcode: postcode && postcode !== "—" ? postcode : "",
+    participant_name: displayName,
+    participant_dob: participant.dob_iso ? String(participant.dob_iso).slice(0, 10) : "",
+  };
+  answers = mergeAnswers(answers, contactAnswers);
 
-  if (!answers.participant_name) answers.participant_name = displayName;
-  if (!answers.participant_dob && participant.dob_iso) {
-    answers.participant_dob = String(participant.dob_iso).slice(0, 10);
+  if (hasText(answers.relationship)) {
+    answers.relationship = normalizeRelationship(answers.relationship) || answers.relationship;
   }
 
   const hasPhoto = !!clean(participant.avatar_storage_path, 200);

@@ -47,7 +47,7 @@
   }
 
   function setVal(form, name, value) {
-    if (value == null || value === "") return;
+    if (value == null || String(value).trim() === "") return;
     var el = form.elements[name];
     if (!el) return;
     if (el.type === "radio" || el.type === "checkbox") return;
@@ -56,30 +56,63 @@
 
   function setRadio(form, name, value) {
     if (!value) return;
-    form.querySelectorAll('[name="' + name + '"]').forEach(function (el) {
-      el.checked = String(el.value) === String(value);
-      if (el.checked) el.dispatchEvent(new Event("change", { bubbles: true }));
+    var want = String(value).trim();
+    var wantLow = want.toLowerCase();
+    var radios = form.querySelectorAll('[name="' + name + '"]');
+    var matched = false;
+    radios.forEach(function (el) {
+      if (String(el.value) === want) {
+        el.checked = true;
+        matched = true;
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    });
+    if (matched) return;
+    radios.forEach(function (el) {
+      var opt = String(el.value || "").toLowerCase();
+      if (!opt) return;
+      if (opt === wantLow || opt.indexOf(wantLow) >= 0 || wantLow.indexOf(opt) >= 0) {
+        el.checked = true;
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+      }
     });
   }
 
   function setChecks(form, name, value) {
     if (!value) return;
     var parts = String(value)
-      .split(";")
+      .split(/[;|,]/)
       .map(function (s) {
         return s.trim();
       })
       .filter(Boolean);
     if (!parts.length) return;
-    form.querySelectorAll('[name="' + name + '"]').forEach(function (el) {
-      el.checked = parts.indexOf(String(el.value)) >= 0;
+    var lowerParts = parts.map(function (p) {
+      return p.toLowerCase();
     });
+    form.querySelectorAll('[name="' + name + '"]').forEach(function (el) {
+      var opt = String(el.value || "").trim();
+      var optLow = opt.toLowerCase();
+      var hit = lowerParts.some(function (p) {
+        return p === optLow || optLow.indexOf(p) >= 0 || p.indexOf(optLow) >= 0;
+      });
+      if (hit) el.checked = true;
+    });
+  }
+
+  function normalizeRelationshipAnswer(raw) {
+    var t = String(raw || "").trim().toLowerCase();
+    if (!t) return "";
+    if (/\bmother\b|\bmum\b|\bmom\b/.test(t)) return "Mother";
+    if (/\bfather\b|\bdad\b/.test(t)) return "Father";
+    if (/guardian|carer|caregiver|foster/.test(t)) return "Legal guardian";
+    return String(raw || "").trim();
   }
 
   function applyAnswers(form, answers) {
     answers = answers || {};
     setVal(form, "parent_name", answers.parent_name);
-    setRadio(form, "relationship", answers.relationship);
+    setRadio(form, "relationship", normalizeRelationshipAnswer(answers.relationship));
     setVal(form, "parent_phone", answers.parent_phone);
     setVal(form, "parent_email", answers.parent_email);
     setVal(form, "parent_address", answers.parent_address);
@@ -113,6 +146,21 @@
     setRadio(form, "transitions", answers.transitions);
     setRadio(form, "risk_awareness", answers.risk_awareness);
     setVal(form, "anything_else", answers.anything_else);
+
+    // Free-text triggers/strategies from Clients Info that did not match checkboxes
+    // still need to be visible for review.
+    var notes = String(answers.behaviour_notes || "").trim();
+    var extras = [];
+    if (answers.triggers && !form.querySelector('[name="triggers"]:checked')) {
+      extras.push("Known triggers on file: " + String(answers.triggers).trim());
+    }
+    if (answers.strategies && !form.querySelector('[name="strategies"]:checked')) {
+      extras.push("Strategies on file: " + String(answers.strategies).trim());
+    }
+    if (extras.length) {
+      var merged = (notes ? notes + "\n\n" : "") + extras.join("\n");
+      setVal(form, "behaviour_notes", merged);
+    }
   }
 
   function collectFullPayload(form, helpers) {
@@ -221,9 +269,12 @@
     }
     if (notice) {
       notice.innerHTML =
-        "Update any answers that have changed. All sections are required unless noted. Tap Save updates when you are done.";
+        "Loading the details we already have on file…";
     }
-    if (submitBtn) submitBtn.textContent = "Save updates";
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Loading…";
+    }
 
     global.__portalRegistrationMode = {
       contactId: contactId,
@@ -270,12 +321,24 @@
               }
             }
           }
+          if (notice) {
+            notice.innerHTML =
+              "Review the details we already have on file and update anything that has changed. All sections are required unless noted. Tap Save updates when you are done.";
+          }
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Save updates";
+          }
         });
       })
       .catch(function () {
         if (notice) {
           notice.innerHTML =
             "Could not load your saved answers — you can still complete the form and submit.";
+        }
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Save updates";
         }
       });
   }
