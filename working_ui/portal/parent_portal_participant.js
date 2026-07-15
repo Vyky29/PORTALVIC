@@ -1713,6 +1713,67 @@
     return raw || "Intensive Activity";
   }
 
+  /** Parse "12:00–13:00 · …" / "16:30-17:00" style labels into {start,end} minutes. */
+  function crashParseSlotLabelMinutes(slotLabel) {
+    var head = String(slotLabel || "").split("·")[0].trim();
+    if (!head) return null;
+    var range = head.match(
+      /(\d{1,2})(?:[.:](\d{2}))?\s*(am|pm)?\s*(?:[-–—]|to)\s*(\d{1,2})(?:[.:](\d{2}))?\s*(am|pm)?/i,
+    );
+    if (!range) return null;
+    var startRaw =
+      range[1] +
+      (range[2] ? ":" + range[2] : "") +
+      (range[3] ? " " + range[3] : "");
+    var endRaw =
+      range[4] +
+      (range[5] ? ":" + range[5] : "") +
+      (range[6] ? " " + range[6] : range[3] ? " " + range[3] : "");
+    var start = parseServiceStartMinutes(startRaw);
+    var end = parseServiceStartMinutes(endRaw);
+    if (start >= 9999 || end >= 9999) return null;
+    /* If end looks earlier and neither side had am/pm, assume afternoon continuation. */
+    if (end <= start && !range[3] && !range[6] && end < 12 * 60) end += 12 * 60;
+    if (end <= start) end = start + 30;
+    return { start: start, end: end };
+  }
+
+  function crashFormatClockHour(mins) {
+    var h24 = Math.floor(mins / 60) % 24;
+    var mm = mins % 60;
+    var h12 = h24 % 12;
+    if (h12 === 0) h12 = 12;
+    var period = h24 >= 12 ? "pm" : "am";
+    if (mm === 0) return { text: String(h12), period: period };
+    return {
+      text: h12 + ":" + (mm < 10 ? "0" : "") + mm,
+      period: period,
+    };
+  }
+
+  /** e.g. "12 to 1 pm", "11 to 12 pm", "4:30 to 6:30 pm". */
+  function crashFormatTimeRangeLabel(startMins, endMins) {
+    if (startMins == null || endMins == null || endMins <= startMins) return "";
+    var a = crashFormatClockHour(startMins);
+    var b = crashFormatClockHour(endMins);
+    if (a.period === b.period) {
+      return a.text + " to " + b.text + " " + b.period;
+    }
+    return a.text + " " + a.period + " to " + b.text + " " + b.period;
+  }
+
+  function crashTimeRangeFromDates(dates) {
+    var minStart = null;
+    var maxEnd = null;
+    (dates || []).forEach(function (d) {
+      var parsed = crashParseSlotLabelMinutes(d && d.slot_label);
+      if (!parsed) return;
+      if (minStart == null || parsed.start < minStart) minStart = parsed.start;
+      if (maxEnd == null || parsed.end > maxEnd) maxEnd = parsed.end;
+    });
+    return crashFormatTimeRangeLabel(minStart, maxEnd);
+  }
+
   function crashActivityIcon(activity) {
     var key = crashActivityRowKey(activity);
     if (key === "swim") {
@@ -1746,6 +1807,10 @@
         });
       }
       groups[indexByKey[key]].dates.push(d);
+    });
+    groups.forEach(function (g) {
+      var time = crashTimeRangeFromDates(g.dates);
+      if (time) g.label = g.label + " — " + time;
     });
     return groups;
   }
