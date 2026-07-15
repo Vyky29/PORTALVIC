@@ -2224,6 +2224,14 @@
     if (up === "MANAGER") return "manager";
     if (low === "closed") return "closed";
     if (
+      low === "shadowing" ||
+      low === "training" ||
+      low === "meeting" ||
+      low === "team meeting"
+    ) {
+      return "staff_duty";
+    }
+    if (
       low === "no client" ||
       low === "no participant" ||
       low === "noclient" ||
@@ -2241,6 +2249,23 @@
 
   function isRosterClient(name) {
     return rosterSlotKind(name) === "client";
+  }
+
+  /** Shadowing / training / meeting rows never owe parent session feedback. */
+  function slotIsStaffDutyNoFeedback(slot) {
+    if (!slot) return false;
+    if (rosterSlotKind(slot.client_name) === "staff_duty") return true;
+    if (overrideIsShadowingSessionAdd(slot.__portalScheduleOverride)) return true;
+    var ov =
+      slot.__portalScheduleOverride ||
+      slot.__portalShadowingOverride ||
+      null;
+    if (ov && String(ov.override_type || "").trim() === "session_add") {
+      var p = overridePayloadObj(ov);
+      var k = String(p && p.kind || "").trim().toLowerCase();
+      if (k === "shadowing" || k === "training" || k === "meeting") return true;
+    }
+    return false;
   }
 
   function rosterOpenSlotDisplayLabel() {
@@ -2263,6 +2288,18 @@
     }
     if (kind === "closed") {
       return '<span class="ash-pill ash-pill--closed">Closed</span>';
+    }
+    if (kind === "staff_duty") {
+      var duty = clean(name) || "Staff";
+      var dutyLab =
+        duty.toLowerCase() === "shadowing"
+          ? "Shadowing"
+          : duty.toLowerCase() === "meeting" || duty.toLowerCase() === "team meeting"
+            ? "Meeting"
+            : duty.toLowerCase() === "training"
+              ? "Training"
+              : duty;
+      return '<span class="ash-pill ash-pill--muted">' + esc(dutyLab) + "</span>";
     }
     if (kind === "home") {
       var homeLab = clean(name).toUpperCase() === "CASA" ? "HOME" : clean(name) || "HOME";
@@ -5039,6 +5076,7 @@
   AdminSessionsHub.prototype.slotIncludedInDayStats = function (slot) {
     if (!slot) return false;
     if (shouldOmitOverviewSlot(this, slot) || isTeflonDemoRosterSlot(slot)) return false;
+    if (slotIsStaffDutyNoFeedback(slot)) return false;
     if (isOpenRosterSlot(slot.client_name) || rosterSlotKind(slot.client_name) === "closed") {
       return false;
     }
@@ -5165,7 +5203,12 @@
   };
 
   AdminSessionsHub.prototype.getFeedbackUnitsForDate = function (iso) {
-    return groupSlotsForFeedback(this.expandSlotsForDate(iso));
+    var hub = this;
+    return groupSlotsForFeedback(
+      this.expandSlotsForDate(iso).filter(function (s) {
+        return !slotIsStaffDutyNoFeedback(s);
+      })
+    );
   };
 
   AdminSessionsHub.prototype.mergeGroupFeedbackComplete = function (iso, groupKey) {
@@ -7894,6 +7937,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         counts.open++;
         continue;
       }
+      if (slotIsStaffDutyNoFeedback(slot)) {
+        continue;
+      }
       var makeupDisp = makeupOverrideDisplacingSlot(hub, slot);
       if (makeupDisp) {
         var mkSlot = makeupDisp.makeupSlot;
@@ -9448,6 +9494,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var isAbsent = ctx.unitAbsent[ukey] || hub.slotIsAbsent(slot);
       var isCancelled = hub.slotHasCancellation(slot);
       if (isOpenRosterSlot(slot.client_name)) continue;
+      if (slotIsStaffDutyNoFeedback(slot)) continue;
       var row = {
         client: slot.client_name,
         service: slot.service,
