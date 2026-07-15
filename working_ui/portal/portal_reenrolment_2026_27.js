@@ -3331,6 +3331,26 @@
       state.pendingPreviewUrl = "";
     }
 
+    var ui = data.parent_reenrol_ui || {};
+    if (String(ui.mode || "").toLowerCase() === "auto") {
+      var autoNote =
+        String(ui.note || "").trim() ||
+        "Your place renews with the office — nothing for you to submit.";
+      host.innerHTML =
+        '<div class="re-banner re-banner--info" role="status">' +
+        "<strong>No re-enrolment form needed</strong>" +
+        "<p>" +
+        esc(autoNote) +
+        "</p>" +
+        "<p>Your hub shows sessions still left this term, and the office manages your 2026/27 booking with your funder.</p>" +
+        "</div>" +
+        '<div class="re-form-grid">' +
+        '<div class="re-form-grid__current">' +
+        renderCurrentArrangementsSection(data) +
+        "</div></div>";
+      return;
+    }
+
     var existing = data.existing_submission
       ? '<div class="re-banner re-banner--info">You already submitted a re-enrolment for this participant. Submitting again will replace your latest choices in our records.</div>'
       : "";

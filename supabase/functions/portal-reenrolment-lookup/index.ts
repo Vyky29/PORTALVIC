@@ -29,6 +29,7 @@ import {
   resolveParticipantLookupNames,
 } from "../_shared/participant_identity.ts";
 import { resolveParticipantAvatarUrls } from "../_shared/participant_avatar.ts";
+import { buildParentReenrolUi } from "../_shared/parent_reenrol_ui.ts";
 
 const CRASH_INFO = {
   note:
@@ -296,6 +297,13 @@ Deno.serve(async (req) => {
     invoiceType: paymentCtx?.vat || null,
   });
 
+  const parentReenrolUi = buildParentReenrolUi({
+    hasDayCentre: dayCentreSlots.length > 0,
+    fundingLabel: paymentCtx?.fundingSource || null,
+    vatMode: paymentCtx?.vatCode || null,
+    paymentSheet: paymentCtx?.sheet || null,
+  });
+
   return json(200, {
     ok: true,
     academic_year: REENROL_ACADEMIC_YEAR,
@@ -339,6 +347,7 @@ Deno.serve(async (req) => {
     existing_submission: !!(prior && prior.length),
     existing_submission_at: prior?.[0]?.submitted_at ?? null,
     client_key: paymentCtx?.clientKey || null,
+    parent_reenrol_ui: parentReenrolUi,
   });
 });
 

@@ -751,11 +751,18 @@
 
   function bookingSummary(data) {
     var r = data.reenrolment || {};
+    var action = String(r.parent_action || "").toLowerCase() === "auto" ? "auto" : "required";
     return {
       submitted: !!r.submitted,
       submitted_at: r.submitted_at || null,
       hint: String(r.summary_hint || "").trim() || "Not submitted yet",
       items: Array.isArray(r.items) ? r.items : [],
+      parent_action: action,
+      parent_action_note:
+        String(r.parent_action_note || "").trim() ||
+        (action === "auto"
+          ? "Your place renews with the office — nothing for you to submit."
+          : "Confirm places for next year"),
     };
   }
 
@@ -767,6 +774,18 @@
         '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
         " Re-enrolled for 2026/27" +
         "</p>"
+      );
+    }
+    if (booking.parent_action === "auto") {
+      return (
+        '<aside class="pp-hub-reenrol pp-hub-reenrol--auto" role="status" aria-label="Booking 2026/27">' +
+        '<div class="pp-hub-reenrol__copy">' +
+        "<strong>2026/27 booking</strong>" +
+        '<span class="pp-muted">' +
+        esc(booking.parent_action_note) +
+        "</span>" +
+        "</div>" +
+        "</aside>"
       );
     }
     var p = data.participant || {};
@@ -977,8 +996,8 @@
       "</div>" +
       '<p class="pp-pax-info-section-label pp-pax-info-section-label--paper">Paperwork</p>' +
       '<div class="pp-pax-info-row pp-pax-info-row--paper">' +
-      // Summer term 25/26 invoices stay off the hub for now — payment smoke
-      // runs via July crash + 2026/27 re-enrolment, then we re-enable this tile.
+      // Invoices stay off the parent hub (admin / funder billing). Crash + private
+      // re-enrol use pay flows on those pages — not a hub Invoices tile.
       infoBtnHtml("consents", "Consents & forms", consentIcon, {
         extraClass:
           " pp-pax-info-btn--consents" +
@@ -993,9 +1012,12 @@
         extraClass: " pp-pax-info-btn--balance",
         subtitle: "Family ledger",
       }) +
-      (booking.submitted
+      (booking.submitted || booking.parent_action === "auto"
         ? infoBtnHtml("booking", "My booking", bookingIcon, {
-            subtitle: booking.hint || "2026/27 choices",
+            subtitle:
+              booking.submitted
+                ? booking.hint || "2026/27 choices"
+                : "2026/27 with the office",
             extraClass: " pp-pax-info-btn--booking",
           })
         : "") +
@@ -2219,10 +2241,20 @@
     var reenrolHref =
       "/parent/re-enrolment?from=portal&contact_id=" + encodeURIComponent(String(contactId));
     var body;
-    if (!booking.submitted || !booking.items.length) {
+    var note =
+      booking.parent_action === "auto"
+        ? "Your 2026/27 place continues with the office / funder."
+        : "Your selections for the next academic year.";
+    if (booking.parent_action === "auto" && (!booking.submitted || !booking.items.length)) {
+      body =
+        '<p class="pp-muted">' +
+        esc(booking.parent_action_note) +
+        "</p>" +
+        '<p class="pp-muted">Use Sessions Overview and your hub chips for sessions still left this term. You do not need to fill a re-enrolment form.</p>';
+    } else if (!booking.submitted || !booking.items.length) {
       body =
         '<p class="pp-muted">You have not submitted re-enrolment choices for 2026/27 yet.</p>' +
-        '<p class="pp-muted">Open the booking form to confirm weekly activities, Day Centre (if applicable), and funding for next year.</p>' +
+        '<p class="pp-muted">Open the booking form to confirm weekly activities and funding for next year.</p>' +
         '<a class="pp-btn pp-btn--primary" href="' +
         esc(reenrolHref) +
         '">Open re-enrolment form</a>';
@@ -2246,15 +2278,19 @@
           })
           .join("") +
         "</ul>" +
-        '<a class="pp-btn pp-btn--ghost" href="' +
-        esc(reenrolHref) +
-        '">Update booking choices</a>';
+        (booking.parent_action === "auto"
+          ? ""
+          : '<a class="pp-btn pp-btn--ghost" href="' +
+            esc(reenrolHref) +
+            '">Update booking choices</a>');
     }
     host.innerHTML = subviewShell(
       data,
       "booking",
       '<h3 class="pp-pax-subview-title">My booking</h3>' +
-        '<p class="pp-muted pp-pax-subview-note">Your selections for the next academic year.</p>' +
+        '<p class="pp-muted pp-pax-subview-note">' +
+        esc(note) +
+        "</p>" +
         '<div class="pp-card pp-booking-card">' +
         body +
         "</div>",

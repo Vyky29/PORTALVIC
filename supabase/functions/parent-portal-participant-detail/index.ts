@@ -35,6 +35,11 @@ import {
 } from "../_shared/parent_attendance_summary.ts";
 import { REENROL_ACADEMIC_YEAR } from "../_shared/reenrolment_catalog.ts";
 import { buildReenrolmentParentSummary } from "../_shared/reenrolment_parent_summary.ts";
+import { resolveParticipantInvoiceFunding } from "../_shared/portal_invoice_funding.ts";
+import {
+  buildParentReenrolUi,
+  servicesDetailHasDayCentre,
+} from "../_shared/parent_reenrol_ui.ts";
 
 const ACH_BUCKET = "participant-achievements";
 const DOC_BUCKET = "documents";
@@ -1076,6 +1081,7 @@ Deno.serve(async (req) => {
   }
 
   let reenrolmentSummary = buildReenrolmentParentSummary(null, null);
+  let parentReenrolUi = buildParentReenrolUi({ hasDayCentre: false });
   if (wantGeneral) {
     const { data: reenrolRow } = await supabase
       .from("portal_re_enrolment_submissions")
@@ -1090,6 +1096,19 @@ Deno.serve(async (req) => {
       ? (reenrolRow.payload as Record<string, unknown>)
       : null;
     reenrolmentSummary = buildReenrolmentParentSummary(payload, submittedAt);
+
+    const hasDayCentre = servicesDetailHasDayCentre(
+      rosterServicesDetail as Array<{ label?: string; service?: string }>,
+    );
+    const funding = await resolveParticipantInvoiceFunding(supabase, {
+      contactId,
+      displayName,
+    });
+    parentReenrolUi = buildParentReenrolUi({
+      hasDayCentre,
+      fundingLabel: funding.fundingLabel,
+      vatMode: funding.vatMode,
+    });
   }
 
   let swimTermReviewAvailable = false;
@@ -1231,7 +1250,12 @@ Deno.serve(async (req) => {
       achievements,
       swim_term_reviews: swimTermReviews,
       swim_term_review_available: swimTermReviewAvailable,
-      reenrolment: reenrolmentSummary,
+      reenrolment: {
+        ...reenrolmentSummary,
+        parent_action: parentReenrolUi.mode,
+        parent_action_reasons: parentReenrolUi.reasons,
+        parent_action_note: parentReenrolUi.note,
+      },
       pending_review_count: sessionsOut.filter((s) => s.message_pending).length,
       weekly_notes: weeklyNotes,
       weekly_note_latest: weeklyNoteLatest,
