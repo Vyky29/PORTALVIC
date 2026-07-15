@@ -113,12 +113,22 @@ export function classifyParentGeo(raw: {
   let mapLat = lat;
   let mapLng = lng;
   if (bucket === "london") {
-    // Pin London centre when bucket is London (ISP city names are often wrong).
-    mapLat = 51.5074;
-    mapLng = -0.1278;
-  } else if (bucket === "england" && (mapLat == null || mapLng == null)) {
-    mapLat = 52.5;
-    mapLng = -1.5;
+    if (mapLat != null && mapLng != null && isGreaterLondonCoords(mapLat, mapLng)) {
+      // Soften to ~300–400 m so CEO map shows the area (Latimer vs Brentford) without exact home pin.
+      mapLat = Math.round(mapLat * 300) / 300;
+      mapLng = Math.round(mapLng * 300) / 300;
+    } else {
+      mapLat = 51.5074;
+      mapLng = -0.1278;
+    }
+  } else if (bucket === "england") {
+    if (mapLat != null && mapLng != null) {
+      mapLat = Math.round(mapLat * 200) / 200;
+      mapLng = Math.round(mapLng * 200) / 200;
+    } else {
+      mapLat = 52.5;
+      mapLng = -1.5;
+    }
   } else if (bucket === "outside") {
     mapLat = null;
     mapLng = null;
@@ -249,12 +259,13 @@ async function reverseGeocode(lat: number, lng: number): Promise<{
   region: string;
   city: string;
 } | null> {
+  // zoom 17 ≈ neighbourhood / suburb (Latimer), not borough (Brentford) or whole London.
   const url =
     `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(String(lat))}` +
-    `&lon=${encodeURIComponent(String(lng))}&zoom=12&addressdetails=1`;
+    `&lon=${encodeURIComponent(String(lng))}&zoom=17&addressdetails=1`;
   try {
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 3500);
+    const t = setTimeout(() => ctrl.abort(), 4000);
     const res = await fetch(url, {
       signal: ctrl.signal,
       headers: {
@@ -268,11 +279,34 @@ async function reverseGeocode(lat: number, lng: number): Promise<{
     const addr = (j.address && typeof j.address === "object"
       ? j.address
       : {}) as Record<string, unknown>;
-    const city = clean(
-      addr.city || addr.town || addr.village || addr.municipality || addr.suburb || addr.hamlet,
+    // Prefer fine place names over borough / city ("London").
+    const fine = clean(
+      addr.neighbourhood ||
+        addr.suburb ||
+        addr.quarter ||
+        addr.residential ||
+        addr.city_district ||
+        addr.village ||
+        addr.hamlet ||
+        addr.locality,
       80,
     );
-    const region = clean(addr.state || addr.county || addr.region, 80);
+    const broad = clean(
+      addr.town || addr.municipality || addr.city || addr.borough || addr.county,
+      80,
+    );
+    let city = fine || broad;
+    if (/^london$/i.test(city) && fine) city = fine;
+    // Don't let generic "London" wipe a more specific town when no neighbourhood (keep broad).
+    const region = clean(
+      addr.borough ||
+        addr.city_district ||
+        addr.state_district ||
+        addr.county ||
+        addr.state ||
+        addr.region,
+      80,
+    );
     const countryCode = clean(addr.country_code, 8).toUpperCase();
     const countryName = clean(addr.country, 80);
     if (!city && !region && !countryCode && !countryName) return null;
@@ -282,7 +316,7 @@ async function reverseGeocode(lat: number, lng: number): Promise<{
   }
 }
 
-/** Prefer device GPS hints; reverse-geocode when coords lack a city. */
+/** Prefer device GPS hints; always reverse-geocode device coords for neighbourhood labels. */
 export async function resolveClientHint(raw: unknown): Promise<ParentGeo | null> {
   if (!raw || typeof raw !== "object") return null;
   const h = raw as Record<string, unknown>;
@@ -297,20 +331,19 @@ export async function resolveClientHint(raw: unknown): Promise<ParentGeo | null>
   let region = clean(h.region || h.regionName, 80);
   let city = clean(h.city, 80);
 
-  if (isDevice && hasCoords && (!city || !countryCode)) {
-    if (isGreaterLondonCoords(lat, lng)) {
-      city = city || "London";
+  if (isDevice && hasCoords) {
+    const rev = await reverseGeocode(lat, lng);
+    if (rev) {
+      // Device GPS wins: don't keep ISP names (Brentford) when reverse gives Latimer.
+      city = rev.city || city;
+      region = rev.region || region;
+      countryCode = rev.countryCode || countryCode || "GB";
+      countryName = rev.countryName || countryName || "United Kingdom";
+    } else if (isGreaterLondonCoords(lat, lng)) {
+      city = city && !/^london$/i.test(city) ? city : "London";
       region = region || "Greater London";
       countryCode = countryCode || "GB";
       countryName = countryName || "United Kingdom";
-    } else {
-      const rev = await reverseGeocode(lat, lng);
-      if (rev) {
-        city = city || rev.city;
-        region = region || rev.region;
-        countryCode = countryCode || rev.countryCode;
-        countryName = countryName || rev.countryName;
-      }
     }
   }
 

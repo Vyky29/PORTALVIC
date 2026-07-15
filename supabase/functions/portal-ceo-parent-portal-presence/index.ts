@@ -219,13 +219,17 @@ Deno.serve(async (req) => {
       geoSeen.add(pid);
       if (bucket === "london") {
         geoSummary.london += 1;
+        const pinLat =
+          typeof s.geo_lat === "number" && Number.isFinite(s.geo_lat) ? s.geo_lat : 51.5074;
+        const pinLng =
+          typeof s.geo_lng === "number" && Number.isFinite(s.geo_lng) ? s.geo_lng : -0.1278;
         mapPoints.push({
           parent_person_id: pid,
           parent_name: parentName,
           bucket: "london",
           label: geoLabel || "London",
-          lat: 51.5074,
-          lng: -0.1278,
+          lat: pinLat,
+          lng: pinLng,
           online: item.online,
         });
       } else if (bucket === "england") {

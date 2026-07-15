@@ -100,12 +100,15 @@
     if (!map || !markersLayer) return;
     markersLayer.clearLayers();
     var points = (data && data.map && data.map.points) || [];
-    var n = Math.max(points.length, 1);
-    points.forEach(function (p, i) {
-      var angle = (i / n) * Math.PI * 2;
-      var jLat = 51.5074 + Math.sin(angle) * 0.012;
-      var jLng = -0.1278 + Math.cos(angle) * 0.02;
-      var circle = global.L.circleMarker([jLat, jLng], {
+    var bounds = [];
+    points.forEach(function (p) {
+      var lat = Number(p.lat);
+      var lng = Number(p.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        lat = 51.5074;
+        lng = -0.1278;
+      }
+      var circle = global.L.circleMarker([lat, lng], {
         radius: p.online ? 9 : 7,
         color: "#fff",
         weight: 2,
@@ -120,8 +123,19 @@
         (p.online ? "<br>Online now" : "");
       circle.bindPopup(popupHtml);
       markersLayer.addLayer(circle);
+      bounds.push([lat, lng]);
     });
-    map.setView([51.5074, -0.1278], 11);
+    if (bounds.length === 1) {
+      map.setView(bounds[0], 13);
+    } else if (bounds.length > 1) {
+      try {
+        map.fitBounds(bounds, { padding: [36, 36], maxZoom: 13 });
+      } catch (_e) {
+        map.setView([51.5074, -0.1278], 11);
+      }
+    } else {
+      map.setView([51.5074, -0.1278], 11);
+    }
     setTimeout(function () {
       try {
         map.invalidateSize();
@@ -153,7 +167,7 @@
     var note = $("cbsGeoNote");
     if (note) {
       note.textContent =
-        "Map = London only. Outside London is listed below — approx. from connection IP | London " +
+        "Map = London areas from device location when allowed (neighbourhood-level) | London " +
         (g.london != null ? g.london : 0) +
         " | Outside London " +
         ((g.england || 0) + (g.outside || 0)) +

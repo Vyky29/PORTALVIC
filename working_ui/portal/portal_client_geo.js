@@ -6,8 +6,8 @@
 (function (global) {
   "use strict";
 
-  var CACHE_KEY = "clubsens_client_geo_hint_v2";
-  var DENIED_KEY = "clubsens_client_geo_denied_v2";
+  var CACHE_KEY = "clubsens_client_geo_hint_v3";
+  var DENIED_KEY = "clubsens_client_geo_denied_v3";
   var CACHE_MS = 30 * 60 * 1000;
   var inflight = null;
 
@@ -83,31 +83,8 @@
     };
   }
 
-  function inGreaterLondon(lat, lng) {
-    return (
-      Number.isFinite(lat) &&
-      Number.isFinite(lng) &&
-      lat >= 51.28 &&
-      lat <= 51.7 &&
-      lng >= -0.55 &&
-      lng <= 0.35
-    );
-  }
-
   function hintFromDeviceCoords(lat, lng, accuracy) {
-    if (inGreaterLondon(lat, lng)) {
-      return normalizeHint({
-        country_code: "GB",
-        country: "United Kingdom",
-        region: "Greater London",
-        city: "London",
-        latitude: lat,
-        longitude: lng,
-        accuracy_m: accuracy,
-        source: "device-geo",
-      });
-    }
-    // City filled by Edge Function reverse geocode from these coords.
+    // Leave city empty so the server reverse-geocodes neighbourhood (Latimer, not borough/IP).
     return normalizeHint({
       country_code: "",
       country: "",
