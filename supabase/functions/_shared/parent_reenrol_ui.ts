@@ -18,7 +18,7 @@ export type ParentReenrolUi = {
 
 /** Shown when Kate / Kamy / Jack W / Jack S touch Booking 2026/27. */
 export const ACAT_REENROL_CONFIRM_NOTICE =
-  "ACAT bring this participant to Club Sensational. For 2026/27, ACAT must confirm they will continue to bring them — a parent form alone does not secure the ACAT Monday place.";
+  "ACAT should approve this place — it is an ACAT-only service.";
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
