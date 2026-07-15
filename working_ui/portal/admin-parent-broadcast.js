@@ -52,10 +52,12 @@
   // ("Translated text too long") once the template footer is included.
   var WA_TEMPLATE_MAX = 700;
   var DEFAULT_WA_BODY =
-    "Following our email about our contact numbers: this is the new ClubSENsational WhatsApp number, +44 7886 292726. " +
-    "It is monitored Monday to Sunday for messages only (this number does not take calls). " +
-    "Please save it and message us here for absences, session updates and enquiries. " +
-    "For urgent matters or new bookings, please call +44 7592 558671.";
+    "Following our email about our contact numbers:\n\n" +
+    "New ClubSENsational WhatsApp: +44 7886 292726\n" +
+    "Monitored Mon–Sun for messages only (no calls). Save it for absences, updates and enquiries.\n\n" +
+    "From the Family portal you can message us too (WhatsApp or SMS sync there). For urgent calls or new bookings: +44 7592 558671.\n\n" +
+    "Family portal: https://www.clubsensational.org/parent\n" +
+    "Sign in with your parent first and last name, plus your oldest child’s date of birth as 8 digits (DDMMYYYY).";
 
   function configure(options) {
     if (!options) return;
