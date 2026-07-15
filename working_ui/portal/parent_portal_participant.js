@@ -1166,9 +1166,9 @@
     return iso >= from && iso <= to;
   }
 
-  /** Current year hub chips: aquatic / general programme through Fri 17 Jul;
-   *  Day Centre (Emanuel, Ikram, Fadi, …) continues through Fri 31 Jul. */
-  var CURRENT_YEAR_TERM_FROM = "2026-05-11";
+  /** Current year hub chips: programme from Mon 1 Jun (no May first half / crash).
+   *  Aquatic / general through Fri 17 Jul; Day Centre through Fri 31 Jul. */
+  var CURRENT_YEAR_TERM_FROM = "2026-06-01";
   var CURRENT_YEAR_TERM_TO = "2026-07-17";
   var CURRENT_YEAR_TERM_TO_DAY_CENTRE = "2026-07-31";
   var CURRENT_YEAR_TERM_BREAK_FROM = "2026-05-23";
@@ -1491,6 +1491,20 @@
       if (isFirstHalfTermDate(d.iso, data)) first.push(d);
       else second.push(d);
     });
+    function chipsOnly(list, ariaLabel) {
+      if (!list.length) return "";
+      return (
+        '<div class="pp-hub-ops__date-chips" role="list" aria-label="' +
+        esc(ariaLabel) +
+        '">' +
+        list
+          .map(function (d) {
+            return dateChipSpanHtml(d, statusByIso);
+          })
+          .join("") +
+        "</div>"
+      );
+    }
     function rowHtml(label, list) {
       if (!list.length) return "";
       return (
@@ -1498,15 +1512,18 @@
         '<div class="pp-hub-ops__date-chips-label">' +
         esc(label) +
         "</div>" +
-        '<div class="pp-hub-ops__date-chips" role="list" aria-label="' +
-        esc(label) +
-        '">' +
-        list
-          .map(function (d) {
-            return dateChipSpanHtml(d, statusByIso);
-          })
-          .join("") +
-        "</div></div>"
+        chipsOnly(list, label) +
+        "</div>"
+      );
+    }
+    // No May first-half / crash this year: one unlabeled chip row unless both
+    // halves exist (e.g. after Booking 2026/27 with Oct/Feb/May breaks).
+    if (!first.length || !second.length) {
+      var only = first.length ? first : second;
+      return (
+        '<div class="pp-hub-ops__date-chips-stack" aria-label="Session dates">' +
+        chipsOnly(only, "Session dates") +
+        "</div>"
       );
     }
     return (
