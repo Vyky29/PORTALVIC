@@ -2681,9 +2681,8 @@
     }
     if (hubSlotIsMakeup(slot)) {
       var mkInst = primaryInstructorKey(slot);
-      if (isAquaticService(slot.service)) {
-        return slot.session_date + "|" + cid + "|" + t + "|aquatic|" + mkInst;
-      }
+      // One makeup = one feedback unit (client + time + instructor). Do not branch
+      // on aquatic vs empty service — that listed makeup clients twice in awaiting.
       return slot.session_date + "|" + cid + "|" + t + "|makeup|" + mkInst;
     }
     if (isAquaticService(slot.service)) {
