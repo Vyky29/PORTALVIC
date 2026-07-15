@@ -584,6 +584,10 @@ verify_jwt = false
 [functions.parent-portal-credit-apply-invoice]
 verify_jwt = false
 
+# Parent presence / surface ping — parent session header checked inside.
+[functions.parent-portal-activity-ping]
+verify_jwt = false
+
 # Parent portal weekly notes (AI Sat→Fri summary).
 [functions.portal-parent-weekly-notes-generate]
 verify_jwt = false

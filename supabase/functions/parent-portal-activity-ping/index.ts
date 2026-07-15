@@ -43,10 +43,10 @@ function clean(v: unknown, max = 80): string {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: parentPortalCorsHeaders() });
+    return new Response(null, { status: 204, headers: parentPortalCorsHeaders });
   }
   if (req.method !== "POST") {
-    return parentPortalJsonInvalid(405, { ok: false, error: "method_not_allowed" });
+    return parentPortalJsonInvalid(405);
   }
 
   const baseUrl = (Deno.env.get("SUPABASE_URL") ?? "").trim().replace(/\/$/, "");
@@ -126,6 +126,6 @@ Deno.serve(async (req) => {
 
   return new Response(JSON.stringify({ ok: true, logged, surface }), {
     status: 200,
-    headers: { ...parentPortalCorsHeaders(), "Content-Type": "application/json" },
+    headers: { ...parentPortalCorsHeaders, "Content-Type": "application/json" },
   });
 });

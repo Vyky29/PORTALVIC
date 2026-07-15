@@ -7,7 +7,7 @@ Proxies desde `family.clubsensational.org` (Vercel):
 - `/parent`, `/parents`, `/parent/*`
 - `/bookingservice`, `/booking-service` (oferta pública de clases)
 - `/portal/*` (JS, CSS, imágenes)
-- `/portal-static-bootstrap.js`, manifest PWA, etc.
+- `/portal-static-bootstrap.js`, manifest PWA, service worker (`clubsensational-family-sw.js`), etc.
 
 ## Instalación / actualización
 

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: clubSENsational Family Portal Proxy
  * Description: Serves /parent and /bookingservice on www.clubsensational.org via reverse proxy (URL stays on your domain).
- * Version: 1.3.1
+ * Version: 1.3.2
  * Author: clubSENsational
  *
  * Proxies family portal pages and static assets from family.clubsensational.org (Vercel).
@@ -34,6 +34,7 @@ function cs_family_portal_should_proxy(string $path): bool
         '#^/portal/#',
         '#^/portal-static-bootstrap\.js$#',
         '#^/clubsensational-family\.webmanifest$#',
+        '#^/clubsensational-family-sw\.js$#',
         '#^/re-enrolment/?$#',
         '#^/climbing-registration/?$#',
         '#^/registration-form/?$#',
@@ -131,7 +132,15 @@ function cs_family_portal_early_proxy(): void
     nocache_headers();
 
     $respHeaders = wp_remote_retrieve_headers($response);
-    $forward = ['content-type', 'content-length', 'cache-control', 'etag', 'last-modified', 'content-disposition'];
+    $forward = [
+        'content-type',
+        'content-length',
+        'cache-control',
+        'etag',
+        'last-modified',
+        'content-disposition',
+        'service-worker-allowed',
+    ];
 
     foreach ($forward as $name) {
         $val = null;

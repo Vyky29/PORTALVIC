@@ -6,7 +6,7 @@
 
   var STYLE_ID = "family-push-alerts-css";
   var DISMISS_KEY = "familyPushAlertsDismissed";
-  var SW_URL = "/clubsensational-family-sw.js?v=20260715-family-push";
+  var SW_URL = "/portal/clubsensational-family-sw.js?v=20260715-family-sw-proxy";
 
   function $(id) {
     return document.getElementById(id);
@@ -112,8 +112,9 @@
     }
     try {
       var swUrl = new URL(SW_URL, global.location.href).href;
-      var scopeBase = new URL("./", global.location.href).href;
-      var reg = await global.navigator.serviceWorker.register(swUrl, { scope: scopeBase });
+      // SW lives under /portal/ (WordPress proxies that path); scope /parent needs
+      // Service-Worker-Allowed: / on the script response (vercel.json).
+      var reg = await global.navigator.serviceWorker.register(swUrl, { scope: "/parent" });
       global.__FAMILY_SW_REG__ = reg;
       try {
         await reg.update();
