@@ -668,9 +668,11 @@ export function crashCatalogPublic(opts?: { openWeekIds?: CrashWeekId[] }) {
 }
 
 /**
- * Bank transfer reference for crash bookings: participant + activity
- * (e.g. "Elia Climbing Activity"). Prefer this over a static Tide hint.
+ * Invoice / Xero Reference for crash summer 2026 (academic summer 25/26).
+ * Do not reuse this as the Tide bank pay reference — that is name-only.
  */
+export const CRASH_SUMMER_INVOICE_TERM_REFERENCE = "Summer term 25/26";
+
 export function crashInvoiceServiceLabel(activities: CrashActivity[]): string {
   const acts = Array.from(
     new Set(
@@ -685,22 +687,13 @@ export function crashInvoiceServiceLabel(activities: CrashActivity[]): string {
   return "Crash";
 }
 
-export function crashBankTransferReference(
-  displayName: string,
-  activities: CrashActivity[],
-  invoiceNumber?: string | null,
-): string {
-  const name = String(displayName || "")
-    .replace(/[^a-zA-Z0-9 '&+-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 28) || "Participant";
-  const service = crashInvoiceServiceLabel(activities);
-  const inv = String(invoiceNumber || "")
-    .replace(/\s+/g, "")
-    .trim()
-    .slice(0, 16);
-  const human = `${name} ${service}`.trim();
-  if (inv) return `${inv} ${human}`.trim().slice(0, 48);
-  return human.slice(0, 48);
+/** Tide / bank transfer reference: participant display name only. */
+export function crashBankTransferReference(displayName: string): string {
+  return (
+    String(displayName || "")
+      .replace(/[^a-zA-Z0-9 '&+-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 40) || "Participant"
+  );
 }

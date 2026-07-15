@@ -14,8 +14,20 @@ PORTAL_TIDE_ACCOUNT_NUMBER="12345678"
 Optional:
 
 ```bash
-PORTAL_TIDE_REFERENCE_HINT="Use invoice number as reference"
+PORTAL_TIDE_REFERENCE_HINT="Use participant name as reference"
 ```
+
+Optional fallback only — the parent pay hub prefers the **participant display name** as the bank reference.
+
+## Invoice Reference vs bank pay reference
+
+| Field | Value |
+|---|---|
+| PDF / Xero **Reference** (`reference_text`) | Term label, e.g. `Summer term 25/26` |
+| Tide / bank pay reference | **Participant name only** |
+| Description | Name + service / programme detail |
+
+Crash bookings set term Reference + name bank hint automatically. Tide CSV match scores **strong** on `INV-P-####` still, and **medium** on name / reported pay ref.
 
 If secrets are missing, the parent hub still shows “Contact the office for bank transfer details”
 instead of inventing account numbers.

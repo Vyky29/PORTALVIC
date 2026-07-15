@@ -17,8 +17,12 @@ export type PortalFamilyInvoiceCreateInput = {
   invoiceDateIso?: string | null;
   vatMode: PortalInvoiceVatMode;
   lineDescription: string;
+  /**
+   * Invoice / Xero Reference — prefer a term label (e.g. "Summer term 25/26").
+   * Do not put Tide bank pay text here; parents should use the participant name.
+   */
   reference?: string | null;
-  /** Programme / activity shown under Reference on the PDF. */
+  /** Programme / activity for PDF Service meta (not invoice Reference). */
   service?: string | null;
   notes?: string | null;
   title?: string | null;

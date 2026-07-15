@@ -894,7 +894,8 @@
       '<label style="flex:1 1 140px;min-width:0">Due date<input class="inp" id="portalParentInvoiceDue" type="date" style="width:100%" /></label>' +
       '</div>' +
       '<label style="min-width:0">Description<textarea class="inp" id="portalParentInvoiceDesc" rows="3" placeholder="Structured activity support…" style="width:100%;max-width:36rem;min-height:4.5rem"></textarea></label>' +
-      '<label style="min-width:0">Reference (optional)<input class="inp" id="portalParentInvoiceRef" placeholder="e.g. Summer Term 26/27" style="width:100%;max-width:28rem" /></label>' +
+      '<label style="min-width:0">Invoice Reference (term label)<input class="inp" id="portalParentInvoiceRef" placeholder="e.g. Summer term 25/26" style="width:100%;max-width:28rem" /></label>' +
+      '<p class="muted" style="margin:0 0 8px;max-width:48rem;overflow-wrap:break-word">PDF/Xero <strong>Reference</strong> = term. Parents use the <strong>participant name</strong> as the Tide bank payment reference. Put name + service in the description.</p>' +
       '<label style="min-width:0">Invoice # (optional — auto INV-P-####)<input class="inp" id="portalParentInvoiceNumber" style="width:100%;max-width:16rem" /></label>' +
       '<label style="min-width:0">Notes (optional)<input class="inp" id="portalParentInvoiceNotes" style="width:100%;max-width:28rem" /></label>' +
       '<div><button type="submit" class="btn btn--primary btn--sm">Create &amp; share</button></div>' +

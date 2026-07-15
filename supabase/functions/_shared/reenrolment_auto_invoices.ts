@@ -186,6 +186,23 @@ function vatModeFromChoices(choices: Record<string, unknown>): PortalInvoiceVatM
   return "vat_20";
 }
 
+function shortAcademicYear(academicYear: string): string {
+  const raw = clean(academicYear, 20);
+  const m = raw.match(/(\d{2})\D+(\d{2})/);
+  if (m) return `${m[1]}/${m[2]}`;
+  return raw;
+}
+
+/** Invoice / Xero Reference from instalment label + academic year (e.g. "Summer term 26/27"). */
+function instalmentInvoiceReference(label: string, academicYear: string): string {
+  const base = clean(label, 90);
+  const year = shortAcademicYear(academicYear);
+  if (!base) return year || "Re-enrolment";
+  if (!year) return base;
+  if (base.toLowerCase().includes(year.toLowerCase())) return base.slice(0, 120);
+  return `${base} ${year}`.slice(0, 120);
+}
+
 function pushInstalment(
   out: ReenrolInstalment[],
   opts: {
@@ -207,7 +224,7 @@ function pushInstalment(
       `Re-enrolment ${opts.academicYear} — ${opts.label}. ` +
       `Structured activity support for ${opts.participantName}. ` +
       `Payment plan: ${opts.payLabel}.`,
-    reference: `REENROL-${opts.academicYear}-${opts.label}`.slice(0, 120),
+    reference: instalmentInvoiceReference(opts.label, opts.academicYear),
   });
 }
 

@@ -204,7 +204,8 @@ Deno.serve(async (req) => {
             payee_name: tide.payee_name,
             sort_code: tide.sort_code,
             account_number: tide.account_number,
-            reference_hint: tide.reference_hint || suggestedRef,
+            // Prefer participant name over static env hint (term label stays on invoice Reference).
+            reference_hint: suggestedRef || tide.reference_hint,
             message: tide.available
               ? null
               : "Contact the office for bank transfer details.",

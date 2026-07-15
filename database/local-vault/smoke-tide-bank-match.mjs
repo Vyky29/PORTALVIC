@@ -204,10 +204,10 @@ async function main() {
     reference_text: null,
     display_name: "Elia",
   });
-  const s2 = scoreRow("Elia Climbing Activity", 40, {
+  const s2 = scoreRow("Elia", 40, {
     invoice_number: "INV-P-9902",
     amount_gbp: 40,
-    reference_text: "Elia Climbing Activity",
+    reference_text: "Summer term 25/26",
     display_name: "Elia",
   });
   const sNoise = scoreRow("Random unrelated", 7, {
@@ -234,8 +234,8 @@ async function main() {
   let strongShare = null;
   let mediumShare = null;
   try {
-    strongShare = await seedUnpaid("INV-P-9901", 12.5, "INV-P-9901 Elia");
-    mediumShare = await seedUnpaid("INV-P-9902", 40, "Elia Climbing Activity");
+    strongShare = await seedUnpaid("INV-P-9901", 12.5, "Summer term 25/26");
+    mediumShare = await seedUnpaid("INV-P-9902", 40, "Summer term 25/26");
     log(
       "db.seed",
       !!strongShare?.id && !!mediumShare?.id,
@@ -248,7 +248,7 @@ async function main() {
   const csv = [
     "Date,Amount,Description",
     "15/07/2026,12.50,Payment INV-P-9901 Elia",
-    "15/07/2026,40.00,Elia Climbing Activity",
+    "15/07/2026,40.00,Elia",
     "15/07/2026,-5.00,Office supplies",
     "16/07/2026,99.00,Stripe Payout 2026-07-16",
     "16/07/2026,7.00,Random unrelated",

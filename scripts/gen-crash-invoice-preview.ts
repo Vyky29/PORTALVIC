@@ -49,7 +49,7 @@ async function writeSample(
     invoiceNumber: vatMode === "exempt" ? "INV-P-SAMPLE-EX" : "INV-P-SAMPLE",
     invoiceDateIso: today,
     dueDateIso: today,
-    reference: "Elia Climbing Activity",
+    reference: "Summer term 25/26",
     service: "Climbing Activity",
     vatMode,
     totalGbp,

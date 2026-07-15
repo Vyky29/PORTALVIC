@@ -3955,7 +3955,7 @@
         ? "<div><dt>Reference</dt><dd>" + esc(ref) + "</dd></div>"
         : "") +
       "</dl>" +
-      '<p class="pp-muted pp-invoice-pay__note">Use the reference so we can match your payment. Prefer bank transfer — no card fee.</p>' +
+      '<p class="pp-muted pp-invoice-pay__note">Use the participant name as the payment reference so we can match it in Tide. Prefer bank transfer — no card fee.</p>' +
       "</div>"
     );
   }

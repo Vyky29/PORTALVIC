@@ -30,13 +30,16 @@ export function tideBankDetailsFromEnv(): TideBankDetails {
   };
 }
 
-export function suggestedTransferReference(invoiceNumber: unknown, fallback: string): string {
-  const inv = String(invoiceNumber ?? "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 40);
-  if (inv) return inv;
-  return String(fallback || "ClubSENsational")
+/**
+ * Suggested bank / Tide payment reference for family invoices.
+ * Prefer participant display name so transfers are easy to find in Tide.
+ * Invoice number belongs on the PDF; term label belongs in invoice/Xero Reference.
+ */
+export function suggestedTransferReference(
+  _invoiceNumber: unknown,
+  displayName: string,
+): string {
+  return String(displayName || "ClubSENsational")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 40);

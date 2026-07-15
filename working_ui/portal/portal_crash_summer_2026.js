@@ -813,58 +813,14 @@
     return "£" + x.toFixed(2);
   }
 
-  var PAY_REF_SERVICES = [
-    "Aquatic Activity",
-    "Climbing Activity",
-    "Physical Activity",
-    "Multi-Activity",
-    "Active Play and Movement",
-    "Bespoke Programme",
-  ];
-
-  function normalizePayRefService(raw) {
-    var s = String(raw || "").replace(/\s+/g, " ").trim();
-    if (!s) return "";
-    var lower = s.toLowerCase();
-    if (lower === "swimming" || lower === "swim" || lower.indexOf("aquatic") >= 0) {
-      return "Aquatic Activity";
-    }
-    if (lower === "climbing" || lower.indexOf("climb") >= 0) return "Climbing Activity";
-    if (lower.indexOf("physical") >= 0 || lower === "fitness") return "Physical Activity";
-    if (lower.indexOf("multi") >= 0) return "Multi-Activity";
-    if (lower.indexOf("active play") >= 0 || lower.indexOf("movement") >= 0) {
-      return "Active Play and Movement";
-    }
-    if (lower.indexOf("bespoke") >= 0) return "Bespoke Programme";
-    for (var i = 0; i < PAY_REF_SERVICES.length; i++) {
-      if (PAY_REF_SERVICES[i].toLowerCase() === lower) return PAY_REF_SERVICES[i];
-    }
-    return "";
-  }
-
-  function splitPayReference(raw) {
-    var full = String(raw || "").replace(/\s+/g, " ").trim();
-    if (!full) return { name: "", service: "" };
-    var parts = full.split(" ");
-    for (var take = Math.min(parts.length, 4); take >= 1; take--) {
-      var candidate = parts.slice(parts.length - take).join(" ");
-      var service = normalizePayRefService(candidate);
-      if (service) {
-        return {
-          name: parts.slice(0, parts.length - take).join(" ").trim(),
-          service: service,
-        };
-      }
-    }
-    return { name: full, service: "" };
-  }
-
   function composePayReference() {
     var nameEl = $("csPayRefName");
-    var serviceEl = $("csPayRefService");
-    var name = nameEl ? String(nameEl.value || "").replace(/\s+/g, " ").trim() : "";
-    var service = serviceEl ? String(serviceEl.value || "").trim() : "";
-    return [name, service].filter(Boolean).join(" ").trim().slice(0, 80);
+    return nameEl
+      ? String(nameEl.value || "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 40)
+      : "";
   }
 
   function syncPayReferencePreview() {
@@ -874,18 +830,29 @@
   }
 
   function fillPayReferenceEditors(hint) {
-    var parts = splitPayReference(hint);
     var nameEl = $("csPayRefName");
-    var serviceEl = $("csPayRefService");
-    if (nameEl) nameEl.value = parts.name || "";
-    if (serviceEl) {
-      var svc = parts.service || "";
-      serviceEl.value = svc;
-      if (svc && serviceEl.value !== svc) {
-        /* unknown option — leave select empty */
-        serviceEl.value = "";
+    var raw = String(hint || "")
+      .replace(/\s+/g, " ")
+      .trim();
+    /* Strip legacy "name + service" / INV-P prefixes so editors stay name-only. */
+    raw = raw.replace(/^INV-P-\d+\s+/i, "").trim();
+    var legacyServices = [
+      "Climbing Activity + Aquatic Activity",
+      "Aquatic Activity",
+      "Climbing Activity",
+      "Physical Activity",
+      "Multi-Activity",
+      "Active Play and Movement",
+      "Bespoke Programme",
+    ];
+    for (var i = 0; i < legacyServices.length; i++) {
+      var svc = legacyServices[i];
+      if (raw.toLowerCase().endsWith(svc.toLowerCase())) {
+        raw = raw.slice(0, raw.length - svc.length).trim();
+        break;
       }
     }
+    if (nameEl) nameEl.value = raw.slice(0, 40);
     syncPayReferencePreview();
   }
 
@@ -894,12 +861,10 @@
     if (payRefEditorsWired) return;
     payRefEditorsWired = true;
     var nameEl = $("csPayRefName");
-    var serviceEl = $("csPayRefService");
     if (nameEl) {
       nameEl.addEventListener("input", syncPayReferencePreview);
       nameEl.addEventListener("change", syncPayReferencePreview);
     }
-    if (serviceEl) serviceEl.addEventListener("change", syncPayReferencePreview);
   }
 
   function showPayPanel(payload) {

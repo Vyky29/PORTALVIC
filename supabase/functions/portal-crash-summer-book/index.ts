@@ -16,6 +16,7 @@ import {
 } from "../_shared/portal_create_family_invoice.ts";
 import {
   CRASH_HOLD_MINUTES,
+  CRASH_SUMMER_INVOICE_TERM_REFERENCE,
   buildCrashSummerInvoiceDescription,
   crashBankTransferReference,
   crashInvoiceServiceLabel,
@@ -283,7 +284,7 @@ Deno.serve(async (req) => {
   }
 
   const dueDate = new Date().toISOString().slice(0, 10);
-  const bankRef = crashBankTransferReference(displayName, activities);
+  const bankRef = crashBankTransferReference(displayName);
   const serviceLabel = crashInvoiceServiceLabel(activities);
   const funding = await resolveParticipantInvoiceFunding(supabase, {
     contactId,
@@ -306,7 +307,8 @@ Deno.serve(async (req) => {
     vatMode: funding.vatMode,
     lineDescription,
     descriptionComplete: true,
-    reference: bankRef,
+    // PDF / Xero Reference = term label; name + service live in description / Service.
+    reference: CRASH_SUMMER_INVOICE_TERM_REFERENCE,
     service: serviceLabel,
     notes: `Summer crash course Jul 2026 · booking ${booking.id} · pay in full to confirm · ${funding.fundingLabel}`,
     title: `Summer crash course — ${displayName}`,
@@ -335,11 +337,6 @@ Deno.serve(async (req) => {
   }
 
   const invoiceId = String((created.invoice as { id?: string })?.id || "");
-  const bankRefWithInv = crashBankTransferReference(
-    displayName,
-    activities,
-    created.invoiceNumber,
-  );
   await supabase
     .from("portal_crash_summer_bookings")
     .update({
@@ -347,16 +344,6 @@ Deno.serve(async (req) => {
       updated_at: new Date().toISOString(),
     })
     .eq("id", booking.id);
-
-  if (invoiceId && bankRefWithInv) {
-    await supabase
-      .from("portal_parent_invoice_share")
-      .update({
-        reference_text: bankRefWithInv,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", invoiceId);
-  }
 
   // Signed PDF URL for pay screen (7 days).
   let pdfUrl: string | null = null;
@@ -476,8 +463,8 @@ Deno.serve(async (req) => {
       payee_name: tide.payee_name,
       sort_code: tide.sort_code,
       account_number: tide.account_number,
-      // Prefer INV-P + participant/service so Tide matching can score strong.
-      reference_hint: bankRefWithInv || bankRef,
+      // Tide pay reference = participant name only (invoice Reference is the term label).
+      reference_hint: bankRef,
       message: tide.available
         ? null
         : "Contact the office for bank transfer details.",
