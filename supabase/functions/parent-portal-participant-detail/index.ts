@@ -375,6 +375,38 @@ async function loadParticipantVenueByService(
   return map;
 }
 
+function isDayCentreService(raw: unknown): boolean {
+  return /day\s*centre|daycentre/i.test(clean(raw, 120));
+}
+
+/** Booked Day Centre span by weekday from roster services_detail (e.g. Mon → "11 to 4"). */
+function dayCentreBookedTimeByWeekday(
+  detail: Array<{ label: string; day: string; time: string }>,
+): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const row of detail || []) {
+    if (!isDayCentreService(row.label)) continue;
+    const day = clean(row.day, 20).toLowerCase();
+    const time = clean(row.time, 40);
+    if (day && time) map.set(day, time);
+  }
+  return map;
+}
+
+function resolveParentFacingSessionTime(
+  service: string,
+  sessionDate: string,
+  feedbackTime: string,
+  dayCentreByDay: Map<string, string>,
+): string {
+  if (!isDayCentreService(service)) return feedbackTime;
+  const day = weekdayLongFromIso(sessionDate).toLowerCase();
+  const booked = day ? dayCentreByDay.get(day) : "";
+  // Staff often submit the hours they worked; parents should see the child's booked Day Centre span.
+  if (booked) return booked;
+  return feedbackTime;
+}
+
 function weekdayLongFromIso(iso: string): string {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "";
   try {
@@ -781,6 +813,14 @@ Deno.serve(async (req) => {
 
   let rawFeedback: Record<string, unknown>[] = [];
   let sessionsOut: Record<string, unknown>[] = [];
+  let rosterServicesCount = 0;
+  let rosterServicesDetail: Array<{
+    label: string;
+    day: string;
+    time: string;
+    venue: string;
+    area: string;
+  }> = [];
 
   if (wantSessions) {
     const fbSel =
@@ -822,6 +862,12 @@ Deno.serve(async (req) => {
     const feedbackIds = rawFeedback.map((r) => String(r.id)).filter(Boolean);
     const cacheById = new Map<string, Record<string, unknown>>();
     const venueByService = await loadParticipantVenueByService(supabase, identityInput, lookupNames);
+    const rosterForSessions = await fetchRosterServiceLines(supabase, identityInput);
+    const dayCentreBookedByDay = dayCentreBookedTimeByWeekday(rosterForSessions?.detail || []);
+    if (rosterForSessions) {
+      rosterServicesCount = rosterForSessions.count;
+      rosterServicesDetail = rosterForSessions.detail;
+    }
 
     if (feedbackIds.length) {
       const { data: cached } = await supabase
@@ -844,7 +890,12 @@ Deno.serve(async (req) => {
       const staffName = clean(row.completed_by_name, 120);
       const instructor = feedbackAuthorFirstName(staffName);
       const sessionDate = isoFromAny(row.session_date);
-      const sessionTime = clean(row.session_time, 80);
+      const sessionTime = resolveParentFacingSessionTime(
+        service,
+        sessionDate,
+        clean(row.session_time, 80),
+        dayCentreBookedByDay,
+      );
       const venue = resolveVenueForSession(venueByService, service, sessionDate, sessionTime);
       const cache = cacheById.get(id);
       const commentPack = parentCommentFromRow(positiveText, cache);
@@ -1001,17 +1052,8 @@ Deno.serve(async (req) => {
 
   const aquaticOnlyNoPhotos = await detectAquaticOnlyNoPhotos(supabase, identityInput, lookupNames);
 
-  // Roster-review service snapshot: the parent-facing "number of services" must match the
-  // roster (admin roster review), not what happens to have feedback. Loaded for the hub (general).
-  let rosterServicesCount = 0;
-  let rosterServicesDetail: Array<{
-    label: string;
-    day: string;
-    time: string;
-    venue: string;
-    area: string;
-  }> = [];
-  if (wantGeneral) {
+  // Hub service chips (if Sessions did not already load the roster snapshot).
+  if (wantGeneral && !rosterServicesDetail.length) {
     const lines = await fetchRosterServiceLines(supabase, identityInput);
     if (lines) {
       rosterServicesCount = lines.count;
