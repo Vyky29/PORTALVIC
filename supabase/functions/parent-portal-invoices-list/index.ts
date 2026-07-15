@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
   const { data: shares, error } = await supabase
     .from("portal_parent_invoice_share")
     .select(
-      "id, document_id, contact_id, invoice_number, amount_gbp, due_date, payment_status, share_status, ready_at, notes, created_at, updated_at, payment_method_hint, gocardless_url, gocardless_payment_id, gocardless_mandate_id, payment_link_url, payment_link_surcharge_note, parent_reported_paid_at, parent_reported_ref, parent_reported_method, paid_at, paid_via",
+      "id, document_id, contact_id, invoice_number, amount_gbp, due_date, payment_status, share_status, ready_at, notes, created_at, updated_at, payment_method_hint, gocardless_url, gocardless_payment_id, gocardless_mandate_id, payment_link_url, payment_link_surcharge_note, parent_reported_paid_at, parent_reported_ref, parent_reported_method, paid_at, paid_via, vat_mode",
     )
     .eq("contact_id", contactId)
     .eq("share_status", "ready")
@@ -190,6 +190,8 @@ Deno.serve(async (req) => {
       canPayCard && amount != null ? stripeGrossUpFromGbp(amount) : null;
     const hint = clean(share.payment_method_hint, 40) || "bank_transfer";
     const isGcHint = hint === "gocardless";
+    const isLaFunded =
+      hint === "la_funded" || clean(share.vat_mode, 20) === "exempt";
     const hasGcPayment = !!clean(share.gocardless_payment_id, 80);
     const canSetupGc =
       gcApiAvailable &&
@@ -198,8 +200,8 @@ Deno.serve(async (req) => {
       !gcMandateActive;
     const gcPendingCollection =
       isGcHint && openForPay && (gcMandateActive || hasGcPayment);
-    // Mandated Direct Payment invoices are collected by GoCardless — no Tide / card / "I've paid".
-    const hideManualPay = isGcHint;
+    // Mandated Direct Payment + LA funded invoices are not paid by parent card/bank UI.
+    const hideManualPay = isGcHint || isLaFunded;
     const applicableCredits =
       openForPay && amount != null && Number.isFinite(amount) && amount > 0
         ? usableCredits

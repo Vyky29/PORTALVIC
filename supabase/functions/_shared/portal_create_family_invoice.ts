@@ -28,7 +28,12 @@ export type PortalFamilyInvoiceCreateInput = {
   title?: string | null;
   quantity?: number;
   shareStatus?: "ready" | "hidden";
-  paymentMethodHint?: "bank_transfer" | "gocardless" | "payment_link" | "other";
+  paymentMethodHint?:
+    | "bank_transfer"
+    | "gocardless"
+    | "payment_link"
+    | "la_funded"
+    | "other";
   createdVia: "portal" | "reenrolment";
   /** documents.user_id + storage folder owner (auth user). */
   ownerUserId: string;
@@ -107,7 +112,11 @@ export async function createPortalFamilyInvoice(
     "Structured activity support delivered for a SEND participant.";
   const notes = clean(input.notes, 800) || null;
   const shareStatus = input.shareStatus === "hidden" ? "hidden" : "ready";
-  const paymentMethodHint = input.paymentMethodHint || "bank_transfer";
+  const paymentMethodHint =
+    input.paymentMethodHint ||
+    (vatMode === "exempt" ? "la_funded" : "bank_transfer");
+  const clientIdLabel = clean(input.clientIdLabel, 80) || contactId;
+  const poLabel = clean(input.poLabel, 80);
   const now = new Date().toISOString();
   const readyBy = clean(input.readyBy, 120) || "portal";
 
@@ -163,25 +172,39 @@ export async function createPortalFamilyInvoice(
   const modeLabel =
     paymentMethodHint === "gocardless"
       ? "Direct Payment (GoCardless)"
-      : paymentMethodHint === "payment_link"
-        ? "Card / Apple Pay"
-        : "Bank transfer / Card (parent portal)";
+      : paymentMethodHint === "la_funded" || vatMode === "exempt"
+        ? "LA funded (VAT exempt)"
+        : paymentMethodHint === "payment_link"
+          ? "Card / Apple Pay"
+          : "Bank transfer / Card (parent portal)";
   const descriptionFromInput = String(lineDescription)
     .split("\n")
     .map((s) => s.trimEnd())
     .filter((s, i, arr) => s || (i > 0 && i < arr.length - 1));
   const descriptionLines = input.descriptionComplete
     ? descriptionFromInput.slice(0, 24)
-    : [
-        // Keep blank lines from the lead (title / body spacing).
-        ...descriptionFromInput.slice(0, 12),
-        "",
-        `Client's Name: ${displayName}`,
-        quantity !== 1 ? `- Quantity: ${quantity}` : null,
-        reference ? `- Reference: ${reference}` : null,
-        `- Mode: ${modeLabel}`,
-        vatMode === "exempt" ? "- VAT: Exempt" : "- VAT: 20% (private funding)",
-      ].filter((x): x is string => !!x);
+    : vatMode === "exempt"
+      ? [
+          ...descriptionFromInput.slice(0, 12),
+          "",
+          `Client's Id: ${clientIdLabel}`,
+          `PO: ${poLabel}`,
+          quantity !== 1 ? `- Quantity: ${quantity}` : null,
+          reference ? `- Reference: ${reference}` : null,
+          `- Mode: ${modeLabel}`,
+          "- VAT: Exempt",
+        ].filter((x): x is string => !!x)
+      : [
+          // Keep blank lines from the lead (title / body spacing).
+          ...descriptionFromInput.slice(0, 12),
+          "",
+          `Client's Name: ${displayName}`,
+          quantity !== 1 ? `- Quantity: ${quantity}` : null,
+          reference ? `- Reference: ${reference}` : null,
+          `- Mode: ${modeLabel}`,
+          "- VAT: 20% (private funding)",
+        ].filter((x): x is string => !!x);
+
 
   let pdfBytes: Uint8Array;
   try {

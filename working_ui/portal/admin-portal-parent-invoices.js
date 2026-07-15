@@ -297,6 +297,10 @@
   function methodLabel(inv) {
     var hint = String(inv.payment_method_hint || '').toLowerCase();
     var via = String(inv.paid_via || '').toLowerCase();
+    var vat = String(inv.vat_mode || '').toLowerCase();
+    if (hint === 'la_funded' || vat === 'exempt') {
+      return 'LA funded';
+    }
     if (via === 'gocardless' || hint === 'gocardless' || inv.gocardless_url) {
       return 'GoCardless';
     }
@@ -313,6 +317,9 @@
 
   function methodToneClass(label) {
     var s = String(label || '').toLowerCase();
+    if (s.indexOf('la funded') >= 0 || s === 'la' || s.indexOf('exempt') >= 0) {
+      return 'pp-inv-acc__method--la';
+    }
     if (s.indexOf('gocardless') >= 0 || s.indexOf('direct payment') >= 0) {
       return 'pp-inv-acc__method--gc';
     }
@@ -655,6 +662,7 @@
       '.pp-inv-acc__methods{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0;flex:0 1 auto;max-width:100%}' +
       '.pp-inv-acc__method{font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid transparent}' +
       '.pp-inv-acc__method--gc{color:#065f46;background:#d1fae5;border-color:#a7f3d0}' +
+      '.pp-inv-acc__method--la{color:#5b21b6;background:#ede9fe;border-color:#c4b5fd}' +
       '.pp-inv-acc__method--bank{color:#9a3412;background:#ffedd5;border-color:#fdba74}' +
       '.pp-inv-acc__method--card{color:#1e3a8a;background:#dbeafe;border-color:#93c5fd}' +
       '.pp-inv-acc__method--admin{color:#334155;background:#e2e8f0;border-color:#cbd5e1}' +
@@ -944,10 +952,31 @@
         var nameEl = global.document.getElementById('portalParentInvoiceParticipantLabel');
         if (idEl) idEl.value = cid;
         if (nameEl) nameEl.textContent = name + ' (' + cid + ')';
+        var clientIdEl = global.document.getElementById('portalParentInvoiceClientId');
+        if (clientIdEl && !String(clientIdEl.value || '').trim()) clientIdEl.value = cid;
         hitsEl.hidden = true;
         hitsEl.innerHTML = '';
       });
     });
+  }
+
+  function syncLaCreateFields() {
+    var vatEl = global.document.getElementById('portalParentInvoiceVatMode');
+    var laBox = global.document.getElementById('portalParentInvoiceLaFields');
+    var laHint = global.document.getElementById('portalParentInvoiceLaHint');
+    var isLa = !!(vatEl && vatEl.value === 'exempt');
+    if (laBox) {
+      laBox.hidden = !isLa;
+      laBox.style.display = isLa ? 'flex' : 'none';
+    }
+    if (laHint) laHint.hidden = !isLa;
+    var clientIdEl = global.document.getElementById('portalParentInvoiceClientId');
+    var contactId = String(
+      (global.document.getElementById('portalParentInvoiceContactId') || {}).value || ''
+    ).trim();
+    if (isLa && clientIdEl && !String(clientIdEl.value || '').trim() && contactId) {
+      clientIdEl.value = contactId;
+    }
   }
 
   function bindUploadForm() {
@@ -955,6 +984,11 @@
     var form = global.document.getElementById('portalParentInvoiceUploadForm');
     if (createForm && createForm.getAttribute('data-bound') !== '1') {
       createForm.setAttribute('data-bound', '1');
+      var vatElBound = global.document.getElementById('portalParentInvoiceVatMode');
+      if (vatElBound) {
+        vatElBound.addEventListener('change', syncLaCreateFields);
+        syncLaCreateFields();
+      }
       createForm.addEventListener('submit', function (ev) {
         ev.preventDefault();
         var contactId = String(
@@ -977,21 +1011,33 @@
         var refEl = global.document.getElementById('portalParentInvoiceRef');
         var invNo = global.document.getElementById('portalParentInvoiceNumber');
         var notes = global.document.getElementById('portalParentInvoiceNotes');
+        var clientIdEl = global.document.getElementById('portalParentInvoiceClientId');
+        var poEl = global.document.getElementById('portalParentInvoicePo');
+        var isLa = vatEl && vatEl.value === 'exempt';
+        if (isLa && poEl && !String(poEl.value || '').trim()) {
+          cfg.toast('LA funded: enter the PO (changes per invoice)', 'error');
+          return;
+        }
         var body = {
           action: 'create_portal',
           contact_id: contactId,
           amount_gbp: amount,
-          vat_mode: vatEl && vatEl.value === 'exempt' ? 'exempt' : 'vat_20',
+          vat_mode: isLa ? 'exempt' : 'vat_20',
           quantity: qtyEl && qtyEl.value ? Number(qtyEl.value) : 1,
           due_date: dueEl && dueEl.value ? dueEl.value : null,
           line_description:
             (descEl && descEl.value) ||
-            'Structured activity support delivered for a SEND participant.',
+            (isLa
+              ? 'Structured activity support delivered for a SEND participant as part of funded provision (EHCP or local authority care package).'
+              : 'Structured activity support delivered for a SEND participant.'),
           reference: refEl && refEl.value ? refEl.value : null,
           invoice_number: invNo && invNo.value ? invNo.value : null,
           notes: notes && notes.value ? notes.value : null,
           share_status: 'ready',
-          payment_method_hint: 'bank_transfer'
+          payment_method_hint: isLa ? 'la_funded' : 'bank_transfer',
+          client_id_label:
+            (clientIdEl && String(clientIdEl.value || '').trim()) || contactId,
+          po_label: poEl && poEl.value ? String(poEl.value).trim() : ''
         };
         var submitBtn = createForm.querySelector('[type="submit"]');
         if (submitBtn) submitBtn.disabled = true;
@@ -1112,15 +1158,20 @@
       '</div></div>' +
       '<div id="portalParentInvoicesSearchHits" hidden style="margin-top:-4px"></div>' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
-      '<label style="flex:1 1 140px;min-width:0">VAT' +
+      '<label style="flex:1 1 140px;min-width:0">VAT / funding' +
       '<select class="inp" id="portalParentInvoiceVatMode" style="width:100%">' +
       '<option value="vat_20">Private · VAT 20%</option>' +
-      '<option value="exempt">LA / NHS · Exempt</option>' +
+      '<option value="exempt">LA funded · Exempt</option>' +
       '</select></label>' +
       '<label style="flex:1 1 100px;min-width:0">Amount £ (total)<input class="inp" id="portalParentInvoiceAmount" type="number" min="0.01" step="0.01" required style="width:100%" /></label>' +
       '<label style="flex:1 1 80px;min-width:0">Qty<input class="inp" id="portalParentInvoiceQty" type="number" min="0.01" step="0.01" value="1" style="width:100%" /></label>' +
       '<label style="flex:1 1 140px;min-width:0">Due date<input class="inp" id="portalParentInvoiceDue" type="date" style="width:100%" /></label>' +
       '</div>' +
+      '<div id="portalParentInvoiceLaFields" hidden style="display:none;flex-wrap:wrap;gap:8px">' +
+      '<label style="flex:1 1 140px;min-width:0">Client Id<input class="inp" id="portalParentInvoiceClientId" placeholder="Usually contact id" style="width:100%" /></label>' +
+      '<label style="flex:1 1 180px;min-width:0">PO (required for LA)<input class="inp" id="portalParentInvoicePo" placeholder="Purchase order — changes each time" style="width:100%" /></label>' +
+      '</div>' +
+      '<p class="muted" id="portalParentInvoiceLaHint" hidden style="margin:0;max-width:48rem;overflow-wrap:break-word">LA funded invoices are created <strong>manually</strong> here. Client Id stays the same; enter the <strong>PO</strong> for this invoice.</p>' +
       '<label style="min-width:0">Description<textarea class="inp" id="portalParentInvoiceDesc" rows="3" placeholder="Structured activity support…" style="width:100%;max-width:36rem;min-height:4.5rem"></textarea></label>' +
       '<label style="min-width:0">Invoice Reference (term label)<input class="inp" id="portalParentInvoiceRef" placeholder="e.g. Summer term 25/26" style="width:100%;max-width:28rem" /></label>' +
       '<p class="muted" style="margin:0 0 8px;max-width:48rem;overflow-wrap:break-word">PDF/Xero <strong>Reference</strong> = term. Parents use the <strong>participant name</strong> as the Tide bank payment reference. Put name + service in the description.</p>' +

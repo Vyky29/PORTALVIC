@@ -14,6 +14,7 @@ import {
   crashInvoiceServiceLabel,
   type CrashActivity,
 } from "../supabase/functions/_shared/crash_summer_2026.ts";
+import { resolveParticipantInvoiceFunding } from "../supabase/functions/_shared/portal_invoice_funding.ts";
 import { buildPortalTaxInvoicePdf } from "../supabase/functions/_shared/portal_tax_invoice_pdf.ts";
 
 function loadEnv(path: string): Record<string, string> {
@@ -44,8 +45,9 @@ if (!url || !service) {
 }
 
 const invoiceNumber = String(Deno.args[0] || "").trim();
+const forceLa = Deno.args.includes("--la") || Deno.args.includes("--exempt");
 if (!invoiceNumber) {
-  console.error("Pass invoice number, e.g. INV-P-CRASH-MRMCPDUG");
+  console.error("Pass invoice number, e.g. INV-P-CRASH-MRMCPDUG [--la]");
   Deno.exit(1);
 }
 
@@ -122,7 +124,14 @@ const billToLines = [
   .map((x) => String(x || "").trim())
   .filter(Boolean);
 
-const vatMode = share.vat_mode === "exempt" ? "exempt" : "vat_20";
+const funding = await resolveParticipantInvoiceFunding(admin, {
+  contactId,
+  displayName,
+});
+const vatMode =
+  forceLa || share.vat_mode === "exempt" || funding.vatMode === "exempt"
+    ? "exempt"
+    : "vat_20";
 const weekId = booking.week_id === "w2" ? "w2" : "w1";
 const mode = booking.booking_mode === "individual" ? "individual" : "weekly_pack";
 const lineDescription = buildCrashSummerInvoiceDescription({
@@ -137,6 +146,8 @@ const lineDescription = buildCrashSummerInvoiceDescription({
     slot_label: String(l.slot_label || ""),
   })),
   participantName: displayName,
+  clientId: funding.clientId || contactId,
+  po: funding.po || "",
 });
 
 const serviceLabel = crashInvoiceServiceLabel(activities);
@@ -199,13 +210,17 @@ if (docUpErr) {
 }
 
 const now = new Date().toISOString();
-const { error: shareUpErr } = await admin
+  const { error: shareUpErr } = await admin
   .from("portal_parent_invoice_share")
   .update({
+    vat_mode: vatMode,
     line_description: lineDescription,
     reference_text: CRASH_SUMMER_INVOICE_TERM_REFERENCE,
-    payment_method_hint: "bank_transfer",
-    notes: `Summer crash course Jul 2026 · booking ${booking.id} · TAX INVOICE regenerated`,
+    payment_method_hint: vatMode === "exempt" ? "la_funded" : "bank_transfer",
+    payment_link_url: null,
+    notes: `Summer crash course Jul 2026 · booking ${booking.id} · TAX INVOICE regenerated${
+      vatMode === "exempt" ? " · LA funded / VAT exempt" : ""
+    }`,
     updated_at: now,
   })
   .eq("id", share.id);

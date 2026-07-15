@@ -5008,13 +5008,16 @@
     var gcPending = !!(inv && inv.gocardless_pending_collection);
     var isGcInvoice =
       String((inv && inv.payment_method_hint) || "").toLowerCase() === "gocardless";
-    var pl = isGcInvoice
+    var isLaInvoice =
+      String((inv && inv.payment_method_hint) || "").toLowerCase() === "la_funded" ||
+      String((inv && inv.vat_mode) || "").toLowerCase() === "exempt";
+    var pl = isGcInvoice || isLaInvoice
       ? ""
       : String((inv && inv.payment_link_url) || "").trim();
     var surcharge = String((inv && inv.payment_link_surcharge_note) || "").trim();
     var suggestedRef = String((inv && inv.suggested_reference) || "").trim();
-    // Direct Payment (mandate) invoices: no Tide / card / "I've paid by bank transfer".
-    if (isGcInvoice) {
+    // Direct Payment (mandate) / LA funded: no Tide / card / "I've paid by bank transfer".
+    if (isGcInvoice || isLaInvoice) {
       canReport = false;
       canPay = false;
     }
@@ -5103,10 +5106,13 @@
       (due ? '<p class="pp-invoice-card__meta muted">Due ' + esc(due) + "</p>" : "") +
       pendingNote +
       paidNote +
-      (isGcInvoice ? "" : invoiceBankPanelHtml(inv)) +
+      (isGcInvoice || isLaInvoice ? "" : invoiceBankPanelHtml(inv)) +
       creditHtml +
       (gcPending
         ? '<p class="pp-muted pp-invoice-pay__note">Direct Payment (GoCardless) — your mandate will collect this automatically around the due date. No bank transfer or card payment needed.</p>'
+        : "") +
+      (isLaInvoice
+        ? '<p class="pp-muted pp-invoice-pay__note">LA funded (VAT exempt) — the office invoices the local authority / funded provision. No parent card or bank transfer is needed here.</p>'
         : "") +
       (canSetupGc
         ? '<p class="pp-muted pp-invoice-pay__note">Set up Direct Payment once — then invoices are collected automatically by mandate.</p>'

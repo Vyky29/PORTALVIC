@@ -50,7 +50,7 @@ function parseShareStatus(v: unknown): string | null {
 
 function parseMethodHint(v: unknown): string | null {
   const s = clean(v, 40).toLowerCase();
-  if (["bank_transfer", "gocardless", "payment_link", "other"].includes(s)) return s;
+  if (["bank_transfer", "gocardless", "payment_link", "la_funded", "other"].includes(s)) return s;
   return null;
 }
 
@@ -117,6 +117,8 @@ Deno.serve(async (req) => {
       "notes",
       "related_client",
       "payment_method_hint",
+      "client_id_label",
+      "po_label",
       "gocardless_url",
       "payment_link_url",
       "payment_link_surcharge_note",
@@ -164,6 +166,14 @@ Deno.serve(async (req) => {
       "Structured activity support delivered for a SEND participant.";
     const notes = clean(fields.notes, 800) || null;
     const shareStatus = parseShareStatus(fields.share_status) || "ready";
+    const methodHint =
+      parseMethodHint(fields.payment_method_hint) ||
+      (vatMode === "exempt" ? "la_funded" : "bank_transfer");
+    const clientIdLabel = clean(fields.client_id_label, 80) || contactId;
+    const poLabel = clean(fields.po_label, 80);
+    if (vatMode === "exempt" && !poLabel) {
+      return portalAdminJson(400, { ok: false, error: "po_required_for_la" });
+    }
 
     const created = await createPortalFamilyInvoice(admin, {
       contactId,
@@ -178,7 +188,7 @@ Deno.serve(async (req) => {
       title: clean(fields.title, 200) || null,
       quantity,
       shareStatus,
-      paymentMethodHint: parseMethodHint(fields.payment_method_hint) || "bank_transfer",
+      paymentMethodHint: methodHint,
       createdVia: "portal",
       ownerUserId: userId,
       readyBy,
@@ -186,6 +196,8 @@ Deno.serve(async (req) => {
       paymentLinkUrl: parseHttpUrl(fields.payment_link_url),
       paymentLinkSurchargeNote: clean(fields.payment_link_surcharge_note, 200) || null,
       invoiceNumber: clean(fields.invoice_number, 80) || null,
+      clientIdLabel,
+      poLabel,
     });
     if (!created.ok) {
       const status =
