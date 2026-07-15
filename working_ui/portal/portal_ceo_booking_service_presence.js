@@ -196,7 +196,7 @@
       "</span>" +
       "</div>" +
       '<div class="cpp-row__side">' +
-      '<span class="cpp-pill cpp-pill--loc" title="Connection location (approx. IP)">' +
+      '<span class="cpp-pill cpp-pill--loc" title="Connection location (device GPS when allowed)">' +
       esc(loc || "Location ?") +
       "</span>" +
       '<span class="cpp-pill cpp-pill--device">' +

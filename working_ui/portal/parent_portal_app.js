@@ -1708,6 +1708,13 @@
     bindEvents();
     bindChildCards();
     bindChildPhotoHandlers();
+    try {
+      if (window.PortalClientGeo && typeof window.PortalClientGeo.warm === "function") {
+        void window.PortalClientGeo.warm();
+      }
+    } catch (_e) {
+      /* ignore */
+    }
     if (loadStoredSession()) {
       var params = readParticipantDeepLink();
       var deepId = params.get("contact_id") || params.get("contact") || "";

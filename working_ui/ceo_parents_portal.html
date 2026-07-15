@@ -292,7 +292,7 @@
     <p class="cpp-sub">
       Live view of who has a Family portal session open, which child hub surface they last opened,
       and recent absences / portal messages. “Online” means API activity in the last 5 minutes.
-      Connection place is approximate (IP / network). The map shows <strong>London only</strong>;
+      Connection place uses <strong>device location</strong> when the parent allows it (same idea as staff live map); otherwise IP. The map shows <strong>London only</strong>;
       anyone connecting from elsewhere appears in the list under the map with the place name.
       Use the green <strong>location</strong> pill to tell your own check logins apart from real parents.
     </p>
@@ -323,7 +323,7 @@
         <ul class="cpp-outside-list" id="cppOutsideList"></ul>
       </div>
       <p class="cpp-geo-note" id="cppGeoNote">
-        Approx. from connection IP. New sign-ins and hub opens fill location; older sessions may show as unknown until parents return.
+        Uses device location when allowed (like staff live map); IP only as fallback. New sign-ins and hub opens fill location; older sessions may show as unknown until parents return.
       </p>
     </section>
 

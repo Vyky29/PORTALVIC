@@ -231,14 +231,97 @@ export function geoFromClientHint(raw: unknown): ParentGeo | null {
   const city = clean(h.city, 80);
   const lat = typeof h.latitude === "number" ? h.latitude : Number(h.latitude ?? h.lat);
   const lng = typeof h.longitude === "number" ? h.longitude : Number(h.longitude ?? h.lng);
-  if (!countryCode && !countryName && !city) return null;
+  const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
+  if (!countryCode && !countryName && !city && !hasCoords) return null;
   return classifyParentGeo({
     countryCode,
     countryName: countryName || countryCode,
     region,
     city,
-    lat: Number.isFinite(lat) ? lat : null,
-    lng: Number.isFinite(lng) ? lng : null,
+    lat: hasCoords ? lat : null,
+    lng: hasCoords ? lng : null,
+  });
+}
+
+async function reverseGeocode(lat: number, lng: number): Promise<{
+  countryCode: string;
+  countryName: string;
+  region: string;
+  city: string;
+} | null> {
+  const url =
+    `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(String(lat))}` +
+    `&lon=${encodeURIComponent(String(lng))}&zoom=12&addressdetails=1`;
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 3500);
+    const res = await fetch(url, {
+      signal: ctrl.signal,
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "ClubSensationalPortal/1.0 (parent-presence-geo)",
+      },
+    });
+    clearTimeout(t);
+    if (!res.ok) return null;
+    const j = await res.json() as Record<string, unknown>;
+    const addr = (j.address && typeof j.address === "object"
+      ? j.address
+      : {}) as Record<string, unknown>;
+    const city = clean(
+      addr.city || addr.town || addr.village || addr.municipality || addr.suburb || addr.hamlet,
+      80,
+    );
+    const region = clean(addr.state || addr.county || addr.region, 80);
+    const countryCode = clean(addr.country_code, 8).toUpperCase();
+    const countryName = clean(addr.country, 80);
+    if (!city && !region && !countryCode && !countryName) return null;
+    return { countryCode, countryName, region, city };
+  } catch {
+    return null;
+  }
+}
+
+/** Prefer device GPS hints; reverse-geocode when coords lack a city. */
+export async function resolveClientHint(raw: unknown): Promise<ParentGeo | null> {
+  if (!raw || typeof raw !== "object") return null;
+  const h = raw as Record<string, unknown>;
+  const source = clean(h.source, 40).toLowerCase();
+  const isDevice = source === "device-geo" || source === "browser-geo";
+  const lat = typeof h.latitude === "number" ? h.latitude : Number(h.latitude ?? h.lat);
+  const lng = typeof h.longitude === "number" ? h.longitude : Number(h.longitude ?? h.lng);
+  const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
+
+  let countryCode = clean(h.country_code || h.countryCode, 8);
+  let countryName = clean(h.country || h.country_name || h.countryName, 80);
+  let region = clean(h.region || h.regionName, 80);
+  let city = clean(h.city, 80);
+
+  if (isDevice && hasCoords && (!city || !countryCode)) {
+    if (isGreaterLondonCoords(lat, lng)) {
+      city = city || "London";
+      region = region || "Greater London";
+      countryCode = countryCode || "GB";
+      countryName = countryName || "United Kingdom";
+    } else {
+      const rev = await reverseGeocode(lat, lng);
+      if (rev) {
+        city = city || rev.city;
+        region = region || rev.region;
+        countryCode = countryCode || rev.countryCode;
+        countryName = countryName || rev.countryName;
+      }
+    }
+  }
+
+  if (!countryCode && !countryName && !city && !hasCoords) return null;
+  return classifyParentGeo({
+    countryCode,
+    countryName: countryName || countryCode,
+    region,
+    city,
+    lat: hasCoords ? lat : null,
+    lng: hasCoords ? lng : null,
   });
 }
 
@@ -247,7 +330,7 @@ export async function resolveParentGeo(
   ip: string,
   clientHint?: unknown,
 ): Promise<ParentGeo | null> {
-  const fromHint = geoFromClientHint(clientHint);
+  const fromHint = await resolveClientHint(clientHint);
   if (fromHint) return fromHint;
   return lookupParentGeoFromRequest(req, ip);
 }
