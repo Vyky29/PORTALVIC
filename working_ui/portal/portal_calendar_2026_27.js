@@ -287,6 +287,174 @@
     }
   };
 
+  /**
+   * Parent My Calendar: crash course panel first when the child has a booking.
+   * bookedDates: [{ iso, activity, slot_label }] — marks those day pills as "mine".
+   */
+  global.portalLoadCrashCalendar202627Into = async function portalLoadCrashCalendar202627Into(
+    host,
+    opts,
+  ) {
+    if (!host) return;
+    opts = opts || {};
+    host.textContent = "";
+    host.setAttribute("role", "region");
+    host.setAttribute("aria-label", "Crash course calendar");
+    host.classList.add("portal-calendar-2026-27-preview--loading");
+    try {
+      var node = await buildCalendarSectionNode();
+      node.classList.add("dc-cal--crash-only");
+      node.querySelectorAll(".dc-cal__back-wrap, #dcCalBackDashboard").forEach(function (el) {
+        el.remove();
+      });
+      var tabs = node.querySelector(".dc-cal-tabs");
+      if (tabs) tabs.remove();
+      node.querySelectorAll("[data-dc-cal-summary]").forEach(function (el) {
+        el.remove();
+      });
+      var sessions = node.querySelector("#dcCalSessionsPanel");
+      if (sessions) sessions.remove();
+      var dayCentre = node.querySelector("#dcCalDayCentrePanel");
+      if (dayCentre) dayCentre.remove();
+      var crash = node.querySelector("#dcCalCrashPanel");
+      if (crash) {
+        crash.hidden = false;
+        crash.removeAttribute("hidden");
+        // Booking CTA / long intros — parents already booked.
+        crash.querySelectorAll(".dc-cal-panel__intro").forEach(function (el) {
+          el.remove();
+        });
+        crash.querySelectorAll('a[href*="crash-summer"]').forEach(function (a) {
+          var li = a.closest("li");
+          if (li) li.remove();
+          else a.remove();
+        });
+      }
+      host.appendChild(node);
+      try {
+        if (typeof global.portalApplyCrashWeek2Gate === "function") {
+          void global.portalApplyCrashWeek2Gate(node);
+        }
+      } catch (_w2) {}
+      try {
+        global.portalMarkCrashBookedDays(node, opts.bookedDates || []);
+      } catch (_mark) {}
+    } catch (e) {
+      try {
+        console.warn("[calendar-2026-27] crash calendar inject failed", e);
+      } catch (_) {}
+      host.innerHTML =
+        '<p class="alerts-sheet-placeholder" style="margin:0;padding:12px;">Could not load crash calendar. Please try again.</p>';
+    } finally {
+      host.classList.remove("portal-calendar-2026-27-preview--loading");
+    }
+  };
+
+  /** Highlight day pills that match this child's crash booking lines. */
+  global.portalMarkCrashBookedDays = function portalMarkCrashBookedDays(root, bookedDates) {
+    if (!root || !root.querySelectorAll) return;
+    var rows = Array.isArray(bookedDates) ? bookedDates : [];
+    if (!rows.length) return;
+    var byKey = Object.create(null);
+    rows.forEach(function (row) {
+      var iso = String((row && row.iso) || "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+      var act = String((row && row.activity) || "").toLowerCase();
+      var kind = /swim|aquatic/.test(act) ? "swim" : /climb/.test(act) ? "climb" : "any";
+      byKey[iso + "|" + kind] = row;
+      byKey[iso + "|any"] = row;
+    });
+
+    function offerKind(offer) {
+      var t = offer && offer.querySelector(".dc-cal-crash-offer__title");
+      var label = t ? String(t.textContent || "").toLowerCase() : "";
+      if (/climb/.test(label)) return "climb";
+      if (/swim/.test(label)) return "swim";
+      return "any";
+    }
+
+    function monthFromArticle(article) {
+      var title = article && article.querySelector(".dc-cal-term__title");
+      var s = title ? String(title.textContent || "").toLowerCase() : "";
+      if (/july|summer holiday/.test(s)) return { y: 2026, m: 7 };
+      if (/october/.test(s)) return { y: 2026, m: 10 };
+      if (/february/.test(s)) return { y: 2027, m: 2 };
+      if (/may/.test(s)) return { y: 2027, m: 5 };
+      return null;
+    }
+
+    root.querySelectorAll(".dc-cal-term").forEach(function (article) {
+      var ym = monthFromArticle(article);
+      if (!ym) return;
+      article.querySelectorAll(".dc-cal-crash-offer").forEach(function (offer) {
+        var kind = offerKind(offer);
+        offer.querySelectorAll(".dc-cal-crash-day").forEach(function (li) {
+          var numEl = li.querySelector(".dc-cal-crash-day__num");
+          var subEl = li.querySelector(".dc-cal-crash-day__sub");
+          var day = Number(numEl && String(numEl.textContent || "").trim());
+          if (!Number.isFinite(day) || day < 1) return;
+          var month = ym.m;
+          var year = ym.y;
+          var sub = subEl ? String(subEl.textContent || "").trim().toLowerCase() : "";
+          if (sub.indexOf("jun") === 0) {
+            month = 6;
+            year = 2027;
+          } else if (sub.indexOf("may") === 0) {
+            month = 5;
+            year = 2027;
+          }
+          var iso =
+            year +
+            "-" +
+            String(month).padStart(2, "0") +
+            "-" +
+            String(day).padStart(2, "0");
+          var hit =
+            byKey[iso + "|" + kind] ||
+            (kind !== "any" ? byKey[iso + "|any"] : null) ||
+            byKey[iso + "|climb"] ||
+            byKey[iso + "|swim"];
+          if (!hit) return;
+          li.classList.remove("dc-cal-crash-day--off");
+          li.classList.add("dc-cal-crash-day--mine");
+          var slot = String((hit && hit.slot_label) || "").trim();
+          var tip = "Booked" + (slot ? " · " + slot : "");
+          li.setAttribute("title", tip);
+          li.setAttribute("aria-label", tip + " · " + iso);
+        });
+      });
+      // Half-term articles without climb/swim offer wrappers
+      if (!article.querySelector(".dc-cal-crash-offer")) {
+        article.querySelectorAll(".dc-cal-crash-day").forEach(function (li) {
+          var numEl = li.querySelector(".dc-cal-crash-day__num");
+          var subEl = li.querySelector(".dc-cal-crash-day__sub");
+          var day = Number(numEl && String(numEl.textContent || "").trim());
+          if (!Number.isFinite(day) || day < 1) return;
+          var month = ym.m;
+          var year = ym.y;
+          var sub = subEl ? String(subEl.textContent || "").trim().toLowerCase() : "";
+          if (sub.indexOf("jun") === 0) {
+            month = 6;
+            year = 2027;
+          } else if (sub.indexOf("may") === 0) {
+            month = 5;
+            year = 2027;
+          }
+          var iso =
+            year +
+            "-" +
+            String(month).padStart(2, "0") +
+            "-" +
+            String(day).padStart(2, "0");
+          var hit = byKey[iso + "|any"] || byKey[iso + "|climb"] || byKey[iso + "|swim"];
+          if (!hit) return;
+          li.classList.remove("dc-cal-crash-day--off");
+          li.classList.add("dc-cal-crash-day--mine");
+        });
+      }
+    });
+  };
+
   async function importDocumentsModule() {
     var v = "20260702-html-cal";
     var bases = ["/portal/portal_documents.js", "portal/portal_documents.js"];

@@ -2625,7 +2625,65 @@
     );
   }
 
+  function crashBookedDateRows(data) {
+    var crash = (data && data.crash_course) || {};
+    return Array.isArray(crash.dates) ? crash.dates : [];
+  }
+
+  function myCrashCalendarLegendHtml(data) {
+    var rows = crashBookedDateRows(data);
+    if (!rows.length) return "";
+    var acts = [];
+    var seen = Object.create(null);
+    rows.forEach(function (r) {
+      var act = String((r && r.activity) || "Crash").trim() || "Crash";
+      var key = act.toLowerCase();
+      if (seen[key]) return;
+      seen[key] = true;
+      acts.push(act);
+    });
+    return (
+      '<ul class="pp-cal-legend" aria-label="Your crash course">' +
+      acts
+        .map(function (a) {
+          return (
+            '<li class="pp-cal-legend__item">' +
+            '<span class="pp-cal-legend__swatch pp-cal-legend__swatch--crash-mine" aria-hidden="true"></span>' +
+            '<span class="pp-cal-legend__text">Booked: ' +
+            esc(a) +
+            "</span></li>"
+          );
+        })
+        .join("") +
+      '<li class="pp-cal-legend__item pp-cal-legend__item--note">' +
+      '<span class="pp-cal-legend__swatch" style="background:#86efac" aria-hidden="true"></span>' +
+      '<span class="pp-cal-legend__text">Other green days = crash course offered (not your booking)</span></li>' +
+      "</ul>"
+    );
+  }
+
   function mountMyCalendar(host, data) {
+    var crashRows = crashBookedDateRows(data);
+    var crashHost = host.querySelector("#ppCalCrashHost");
+    if (crashHost && crashRows.length) {
+      if (typeof global.portalLoadCrashCalendar202627Into === "function") {
+        crashHost.innerHTML = '<p class="pp-muted">Loading crash calendar…</p>';
+        void global
+          .portalLoadCrashCalendar202627Into(crashHost, {
+            bookedDates: crashRows,
+          })
+          .catch(function () {
+            if (crashHost.isConnected) {
+              crashHost.innerHTML =
+                '<p class="pp-muted">Could not load the crash course calendar.</p>';
+            }
+          });
+      } else {
+        crashHost.innerHTML =
+          '<p class="pp-muted">Crash calendar script is not available. Please refresh the page.</p>';
+      }
+    }
+
     var calHost = host.querySelector("#ppCalYearHost");
     if (!calHost) return;
     var built = buildMyCalendarDayColors(data);
@@ -2652,13 +2710,25 @@
   function renderCalendar(host, data, opts) {
     var pName =
       (data && data.participant && data.participant.display_name) || "your child";
+    var crashRows = crashBookedDateRows(data);
+    var hasCrash = crashRows.length > 0;
+    var crashBlock = hasCrash
+      ? '<div class="pp-cal-block pp-cal-block--crash">' +
+        '<h4 class="pp-cal-block__title">Crash course</h4>' +
+        '<p class="pp-muted pp-pax-subview-note">Your booked crash days are highlighted first.</p>' +
+        myCrashCalendarLegendHtml(data) +
+        '<div id="ppCalCrashHost" class="pp-cal-host pp-cal-host--crash" role="region" aria-label="Crash course calendar"></div>' +
+        "</div>"
+      : "";
     var body =
       '<h3 class="pp-pax-subview-title">My Calendar</h3>' +
+      crashBlock +
+      '<div class="pp-cal-block">' +
+      (hasCrash ? '<h4 class="pp-cal-block__title">2026/27 sessions</h4>' : "") +
       '<p class="pp-muted pp-pax-subview-note">ClubSENsational sessions calendar 2026/27. Coloured circles are ' +
       esc(pName) +
       "&apos;s usual session weekdays. Two services on the same day split the circle in half; three services use three slices.</p>" +
       myCalendarLegendHtml(data) +
-      '<div class="pp-cal-block">' +
       '<div id="ppCalYearHost" class="pp-cal-host pp-cal-host--year" role="region" aria-label="Sessions calendar 2026/27"></div>' +
       "</div>";
     host.innerHTML = subviewShell(data, "calendar", body);
