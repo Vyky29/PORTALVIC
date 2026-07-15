@@ -70,6 +70,37 @@ export function staffPushOpenBase(): string {
   return (Deno.env.get("PORTAL_PUSH_OPEN_URL") ?? "").replace(/\/$/, "");
 }
 
+/** Family portal open URL for parent Web Push banners. */
+export function familyPushOpenBase(): string {
+  const explicit = (Deno.env.get("PORTAL_PUSH_FAMILY_OPEN_URL") ?? "").replace(
+    /\/$/,
+    "",
+  );
+  if (explicit) return explicit;
+  const staff = staffPushOpenBase();
+  if (staff) {
+    try {
+      const u = new URL(staff);
+      return `${u.origin}/parent`;
+    } catch {
+      /* fall through */
+    }
+  }
+  return "https://www.clubsensational.org/parent";
+}
+
+/** Hub alert kinds that trigger Family Web Push (must match parent hub filter). */
+export const FAMILY_PUSH_NOTIFY_KINDS = new Set([
+  "instructor_change",
+  "instructor_reassign",
+  "session_cancelled",
+  "absence_announced",
+]);
+
+export function isFamilyPushNotifyKind(kind: unknown): boolean {
+  return FAMILY_PUSH_NOTIFY_KINDS.has(String(kind ?? "").trim().toLowerCase());
+}
+
 /**
  * Admin/CEO bell + notifications sheet. Prefer PORTAL_PUSH_ADMIN_OPEN_URL;
  * otherwise derive from PORTAL_PUSH_OPEN_URL (staff_dashboard → admin_dashboard).
@@ -767,4 +798,202 @@ export async function insertDedupeOrSkip(
   }
   console.error("[portal-webpush] dedupe", table, error);
   return "error";
+}
+
+export async function insertFamilyNotifyDedupeOrSkip(
+  admin: SupabaseClient,
+  notifyLogId: string,
+): Promise<"ok" | "duplicate" | "error"> {
+  const { error } = await admin.from("portal_family_webpush_notify_sent").insert({
+    notify_log_id: notifyLogId,
+  });
+  if (!error) return "ok";
+  const msg = error.message || "";
+  if (msg.includes("duplicate") || (error as { code?: string }).code === "23505") {
+    return "duplicate";
+  }
+  console.error("[portal-webpush] family notify dedupe", error);
+  return "error";
+}
+
+function parentPhoneLast10(raw: string): string {
+  const d = String(raw || "").replace(/\D/g, "");
+  return d.length >= 10 ? d.slice(-10) : d;
+}
+
+/** Resolve parent_person_id from a notify-log row (email / phone / child display). */
+export async function resolveParentPersonIdsForNotifyLog(
+  admin: SupabaseClient,
+  row: {
+    parent_email?: string | null;
+    parent_phone?: string | null;
+    client_display?: string | null;
+  },
+): Promise<string[]> {
+  const ids = new Set<string>();
+  const email = String(row.parent_email || "").trim().toLowerCase();
+  const phone10 = parentPhoneLast10(String(row.parent_phone || ""));
+  const clientDisplay = String(row.client_display || "").trim();
+
+  if (email) {
+    const { data } = await admin
+      .from("portal_parent_contacts")
+      .select("parent_person_id")
+      .ilike("email", email)
+      .limit(20);
+    for (const r of data || []) {
+      const id = String((r as { parent_person_id?: string }).parent_person_id || "").trim();
+      if (id) ids.add(id);
+    }
+  }
+
+  if (phone10) {
+    const { data } = await admin
+      .from("portal_parent_contacts")
+      .select("parent_person_id, mobile")
+      .like("mobile", `%${phone10}`)
+      .limit(40);
+    for (const r of data || []) {
+      const mobile10 = parentPhoneLast10(
+        String((r as { mobile?: string }).mobile || ""),
+      );
+      if (mobile10 !== phone10) continue;
+      const id = String((r as { parent_person_id?: string }).parent_person_id || "").trim();
+      if (id) ids.add(id);
+    }
+  }
+
+  if (!ids.size && clientDisplay) {
+    const { data } = await admin
+      .from("portal_participants")
+      .select("parent_person_id, display_name")
+      .ilike("display_name", `%${clientDisplay.split(/\s+/)[0] || clientDisplay}%`)
+      .limit(40);
+    const want = clientDisplay.toLowerCase();
+    for (const r of data || []) {
+      const name = String((r as { display_name?: string }).display_name || "")
+        .trim()
+        .toLowerCase();
+      if (!name) continue;
+      if (
+        name === want ||
+        name.startsWith(want) ||
+        want.startsWith(name) ||
+        name.split(/\s+/)[0] === want.split(/\s+/)[0]
+      ) {
+        const id = String((r as { parent_person_id?: string }).parent_person_id || "")
+          .trim();
+        if (id) ids.add(id);
+      }
+    }
+  }
+
+  return [...ids];
+}
+
+export async function sendPushPayloadToFamilyParentIds(
+  admin: SupabaseClient,
+  parentPersonIds: string[],
+  pushPayload: string,
+  options?: { TTL?: number; urgency?: string; topic?: string },
+): Promise<{ sent: number; targets: number; subs: number; failed: number; lastStatus?: number }> {
+  const ids = [...new Set(parentPersonIds.map((x) => String(x || "").trim()).filter(Boolean))];
+  if (!ids.length) return { sent: 0, targets: 0, subs: 0, failed: 0 };
+
+  const { data: subsRaw, error: subErr } = await admin
+    .from("portal_family_push_subscriptions")
+    .select("parent_person_id, endpoint, subscription_json, updated_at")
+    .in("parent_person_id", ids);
+
+  if (subErr) {
+    console.error("[portal-webpush] family subs", subErr);
+    throw subErr;
+  }
+
+  const rows = (subsRaw ?? []) as Array<{
+    parent_person_id?: string;
+    endpoint?: string;
+    subscription_json?: Record<string, unknown> | null;
+    updated_at?: string;
+  }>;
+
+  // Newest first; keep up to 3 endpoints per parent.
+  rows.sort((a, b) =>
+    String(b.updated_at || "").localeCompare(String(a.updated_at || ""))
+  );
+  const keepByParent = new Map<string, Set<string>>();
+  const picked: typeof rows = [];
+  for (const row of rows) {
+    const pid = String(row.parent_person_id || "").trim();
+    const ep = String(row.endpoint || row.subscription_json?.endpoint || "").trim();
+    if (!pid || !ep) continue;
+    let set = keepByParent.get(pid);
+    if (!set) {
+      set = new Set();
+      keepByParent.set(pid, set);
+    }
+    if (set.has(ep)) continue;
+    if (set.size >= 3) continue;
+    set.add(ep);
+    picked.push(row);
+  }
+
+  if (!picked.length) {
+    return { sent: 0, targets: ids.length, subs: 0, failed: 0 };
+  }
+
+  let sent = 0;
+  let failed = 0;
+  let lastStatus = 0;
+  const ttl = options?.TTL ?? 86400;
+  const urgency = options?.urgency ?? "high";
+  const topic = options?.topic ? normalizeWebPushTopic(options.topic) : "";
+  const seenEndpoints = new Set<string>();
+
+  for (const row of picked) {
+    const raw = row.subscription_json as Record<string, unknown> | null;
+    const endpoint = String(raw?.endpoint ?? row.endpoint ?? "").trim();
+    if (!endpoint || seenEndpoints.has(endpoint)) continue;
+    seenEndpoints.add(endpoint);
+    const keys = raw?.keys as Record<string, unknown> | undefined;
+    const p256dh = String(keys?.p256dh ?? "").trim();
+    const auth = String(keys?.auth ?? "").trim();
+    if (!endpoint || !p256dh || !auth) {
+      failed++;
+      continue;
+    }
+    const subscription = { endpoint, keys: { p256dh, auth } };
+    try {
+      await webpush.sendNotification(
+        subscription as unknown as webpush.PushSubscription,
+        pushPayload,
+        {
+          TTL: ttl,
+          urgency,
+          ...(topic ? { topic } : {}),
+        },
+      );
+      sent++;
+    } catch (e) {
+      failed++;
+      const st = (e as { statusCode?: number })?.statusCode;
+      if (st) lastStatus = st;
+      console.warn("[portal-webpush] family send fail", st, endpoint.slice(0, 48), e);
+      if (st === 404 || st === 410 || st === 401 || st === 403) {
+        await admin
+          .from("portal_family_push_subscriptions")
+          .delete()
+          .eq("parent_person_id", String(row.parent_person_id || ""))
+          .eq("endpoint", endpoint);
+      }
+    }
+  }
+
+  return {
+    sent,
+    targets: ids.length,
+    subs: picked.length,
+    failed,
+    lastStatus: lastStatus || undefined,
+  };
 }

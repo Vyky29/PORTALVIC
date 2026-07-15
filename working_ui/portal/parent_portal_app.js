@@ -717,6 +717,18 @@
     try {
       localStorage.removeItem(SESSION_KEY);
     } catch (_e) {}
+    if (typeof global.portalFamilyWebPushClear === "function") {
+      global.portalFamilyWebPushClear();
+    }
+  }
+
+  function syncFamilyWebPush() {
+    if (typeof global.portalFamilyWebPushOnSession !== "function") return;
+    if (!state.session.token) {
+      global.portalFamilyWebPushClear && global.portalFamilyWebPushClear();
+      return;
+    }
+    global.portalFamilyWebPushOnSession(state.session.token);
   }
 
   function formatDob(iso) {
@@ -1566,6 +1578,7 @@
     }
     renderHome(body);
     hideNotice($("ppNotice"));
+    syncFamilyWebPush();
 
     var children = (body && body.children) || [];
     if (!skipAutoHub && children.length) {
@@ -1716,6 +1729,7 @@
     var invoiceCancel = params.get("invoice_cancel") === "1";
     var invoiceId = params.get("invoice") || "";
     var gcParam = params.get("gocardless") || "";
+    var view = params.get("view") || "";
     if (invoicePaid && invoiceId) {
       try {
         sessionStorage.setItem("pp_invoice_paid_flash", String(invoiceId));
@@ -1726,8 +1740,12 @@
         sessionStorage.setItem("pp_gocardless_flash", String(gcParam));
       } catch (_eGc) {}
     }
+    if (!contactId && (view === "messages" || view === "alerts")) {
+      var kids = (state.home && state.home.children) || [];
+      contactId = preferredContactId(kids) || "";
+      if (!view) view = "messages";
+    }
     if (!contactId) return;
-    var view = params.get("view") || "";
     if ((invoicePaid || invoiceCancel || gcParam) && !view) view = "invoices";
     void loadParticipantDetail(contactId, view || "");
     try {

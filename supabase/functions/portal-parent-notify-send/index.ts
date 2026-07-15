@@ -44,6 +44,8 @@ import {
   sendParentMobileMessage,
   normalizePublicPhotoUrl,
 } from "../_shared/portal_parent_messaging.ts";
+import { notifyFamilyWebPushForParentNotify } from "../_shared/portal_family_webpush_notify.ts";
+import { isFamilyPushNotifyKind } from "../_shared/portal_webpush_util.ts";
 
 type NotifyChannel = "email" | "whatsapp" | "both";
 
@@ -248,6 +250,15 @@ Deno.serve(async (req) => {
 
   if (logErr) {
     console.error("[portal-parent-notify-send] audit insert failed", logErr.message);
+  }
+
+  // Family Web Push is additive (WhatsApp/email unchanged). Fire for hub alert kinds
+  // even when email/WhatsApp partially failed, as long as a notify log row exists.
+  if (inserted?.id && isFamilyPushNotifyKind(logRow.kind)) {
+    void notifyFamilyWebPushForParentNotify({
+      notifyLogId: String(inserted.id),
+      kind: String(logRow.kind),
+    });
   }
 
   if (allFailed) {
