@@ -1535,9 +1535,24 @@
       overflow-wrap: break-word;
     }
     .pp-hub-reenrol__cta {
-      flex: 0 0 auto;
-      white-space: nowrap;
+      flex: 1 1 100%;
+      width: 100%;
       max-width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+    .pp-hub-reenrol__cta-ico {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+    }
+    .pp-hub-reenrol__cta > span {
+      min-width: 0;
+      overflow-wrap: break-word;
     }
     .pp-hub-reenrol--auto {
       border-color: rgba(23, 50, 71, 0.12);
