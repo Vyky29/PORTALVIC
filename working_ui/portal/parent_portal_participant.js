@@ -1504,10 +1504,36 @@
     );
   }
 
-  function termSessionDateChipsHtml(data, statusByIso) {
-    var dates = findTermSessionDates(data);
-    if (!dates.length) return "";
+  /** Confirmed / held summer crash days for this child (hub chips). */
+  function findCrashCourseDates(data) {
+    var crash = (data && data.crash_course) || {};
+    var raw = Array.isArray(crash.dates) ? crash.dates : [];
+    if (!raw.length) return [];
+    var todayIso = isoDateLocal(new Date());
+    var nextIso = "";
+    for (var i = 0; i < raw.length; i++) {
+      var cand = String((raw[i] && raw[i].iso) || "").slice(0, 10);
+      if (cand && cand >= todayIso) {
+        nextIso = cand;
+        break;
+      }
+    }
+    return raw
+      .map(function (row) {
+        var iso = String((row && row.iso) || "").slice(0, 10);
+        if (!iso) return null;
+        return {
+          iso: iso,
+          shortLabel: formatTermChipLabel(iso),
+          past: iso < todayIso,
+          isToday: iso === todayIso,
+          isNext: !!nextIso && iso === nextIso,
+        };
+      })
+      .filter(Boolean);
+  }
 
+  function termSessionDateChipsHtml(data, statusByIso) {
     function chipsOnly(list, ariaLabel) {
       if (!list.length) return "";
       return (
@@ -1534,48 +1560,35 @@
       );
     }
 
-    // Current summer 2025/26: continuous window from 1 Jun — no May crash half.
-    // Split by month so every session date stays readable when chips wrap.
-    if (!familyAcceptedNextYear(data)) {
-      var june = [];
-      var july = [];
-      dates.forEach(function (d) {
-        if (String(d.iso || "").slice(0, 7) === "2026-06") june.push(d);
-        else july.push(d);
-      });
-      if (june.length && july.length) {
-        return (
-          '<div class="pp-hub-ops__date-chips-stack" aria-label="Summer term session dates">' +
-          rowHtml("June", june) +
-          rowHtml("July", july) +
-          "</div>"
-        );
-      }
-      return (
-        '<div class="pp-hub-ops__date-chips-stack" aria-label="Summer term session dates">' +
-        chipsOnly(dates, "Summer term session dates") +
-        "</div>"
-      );
+    var rows = [];
+    var crashDates = findCrashCourseDates(data);
+    if (crashDates.length) {
+      rows.push(rowHtml("Crash course", crashDates));
     }
 
-    var first = [];
-    var second = [];
-    dates.forEach(function (d) {
-      if (isFirstHalfTermDate(d.iso, data)) first.push(d);
-      else second.push(d);
-    });
-    if (!first.length || !second.length) {
-      var only = first.length ? first : second;
-      return (
-        '<div class="pp-hub-ops__date-chips-stack" aria-label="Session dates">' +
-        chipsOnly(only, "Session dates") +
-        "</div>"
-      );
+    if (familyAcceptedNextYear(data)) {
+      // After Booking 2026/27: first / second half-term rows (as before).
+      var nextDates = findTermSessionDates(data);
+      var first = [];
+      var second = [];
+      nextDates.forEach(function (d) {
+        if (isFirstHalfTermDate(d.iso, data)) first.push(d);
+        else second.push(d);
+      });
+      if (first.length) rows.push(rowHtml("First half term", first));
+      if (second.length) rows.push(rowHtml("Second half term", second));
+    } else {
+      // Still on summer 2025/26: only the second half-term window (from 1 Jun).
+      var summerDates = findTermSessionDates(data);
+      if (summerDates.length) {
+        rows.push(rowHtml("Second half term", summerDates));
+      }
     }
+
+    if (!rows.length) return "";
     return (
-      '<div class="pp-hub-ops__date-chips-stack" aria-label="Session dates by half term">' +
-      rowHtml("First half term", first) +
-      rowHtml("Second half term", second) +
+      '<div class="pp-hub-ops__date-chips-stack" aria-label="Session dates">' +
+      rows.join("") +
       "</div>"
     );
   }

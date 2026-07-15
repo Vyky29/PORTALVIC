@@ -1085,6 +1085,10 @@ Deno.serve(async (req) => {
 
   let reenrolmentSummary = buildReenrolmentParentSummary(null, null);
   let parentReenrolUi = buildParentReenrolUi({ hasDayCentre: false });
+  let crashCourse: {
+    dates: Array<{ iso: string; activity: string; slot_label: string }>;
+    week_ids: string[];
+  } = { dates: [], week_ids: [] };
   if (wantGeneral) {
     const { data: reenrolRow } = await supabase
       .from("portal_re_enrolment_submissions")
@@ -1112,6 +1116,44 @@ Deno.serve(async (req) => {
       fundingLabel: funding.fundingLabel,
       vatMode: funding.vatMode,
     });
+
+    // Confirmed / held crash weeks for this child — hub date chips (not weekly roster).
+    const { data: crashBookings } = await supabase
+      .from("portal_crash_summer_bookings")
+      .select("id, week_id, status")
+      .eq("contact_id", contactId)
+      .in("status", ["confirmed", "awaiting_payment"])
+      .limit(20);
+    const activeCrash = (crashBookings || []).filter((b) => {
+      const st = clean(b.status, 40);
+      return st === "confirmed" || st === "awaiting_payment";
+    });
+    if (activeCrash.length) {
+      const bookingIds = activeCrash.map((b) => String(b.id)).filter(Boolean);
+      const weekIds = Array.from(
+        new Set(activeCrash.map((b) => clean(b.week_id, 8)).filter(Boolean)),
+      );
+      const { data: crashLines } = await supabase
+        .from("portal_crash_summer_booking_lines")
+        .select("session_date, activity, slot_label, status")
+        .in("booking_id", bookingIds)
+        .in("status", ["confirmed", "awaiting_payment"])
+        .order("session_date", { ascending: true })
+        .limit(64);
+      const seenIso = new Set<string>();
+      const dates: Array<{ iso: string; activity: string; slot_label: string }> = [];
+      for (const line of crashLines || []) {
+        const iso = String(line.session_date || "").slice(0, 10);
+        if (!iso || seenIso.has(iso)) continue;
+        seenIso.add(iso);
+        dates.push({
+          iso,
+          activity: clean(line.activity, 40),
+          slot_label: clean(line.slot_label, 80),
+        });
+      }
+      crashCourse = { dates, week_ids: weekIds };
+    }
   }
 
   let swimTermReviewAvailable = false;
@@ -1259,6 +1301,7 @@ Deno.serve(async (req) => {
         parent_action_reasons: parentReenrolUi.reasons,
         parent_action_note: parentReenrolUi.note,
       },
+      crash_course: crashCourse,
       pending_review_count: sessionsOut.filter((s) => s.message_pending).length,
       weekly_notes: weeklyNotes,
       weekly_note_latest: weeklyNoteLatest,
