@@ -186,7 +186,13 @@
     var kids = Array.isArray(p.children) ? p.children.join(", ") : "";
     var focus = p.child_focus ? " - looking at " + p.child_focus : "";
     var geoBit = p.geo_label ? " - " + p.geo_label : "";
-    var device = p.client_device_label || "";
+    var device = p.client_device_label || (p.client_device === "phone"
+      ? "Phone"
+      : p.client_device === "desktop"
+        ? "Desktop"
+        : p.client_device === "tablet"
+          ? "Tablet"
+          : "");
     return (
       '<li class="cpp-row cpp-row--' +
       esc(tone) +
@@ -202,9 +208,9 @@
       "</span>" +
       "</div>" +
       '<div class="cpp-row__side">' +
-      (device
-        ? '<span class="cpp-pill cpp-pill--device">' + esc(device) + "</span>"
-        : "") +
+      '<span class="cpp-pill cpp-pill--device">' +
+      esc(device || "Device ?") +
+      "</span>" +
       '<span class="cpp-pill">' +
       esc(p.last_surface_label || "Signed in") +
       "</span>" +

@@ -15,6 +15,26 @@ function clean(v: unknown, max = 120): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 }
 
+function looksLikeRawId(name: string): boolean {
+  const s = clean(name, 120);
+  if (!s) return true;
+  if (/^\d{4,}$/.test(s)) return true;
+  if (/^(parent-|gap-|contact-)/i.test(s)) return true;
+  return false;
+}
+
+function parentDisplayFromContact(c: {
+  parent_display?: unknown;
+  parent_first_name?: unknown;
+  parent_last_name?: unknown;
+}): string {
+  const full =
+    clean(c.parent_display, 120) ||
+    [clean(c.parent_first_name, 60), clean(c.parent_last_name, 60)].filter(Boolean).join(" ");
+  if (full && !looksLikeRawId(full)) return full;
+  return "";
+}
+
 function deviceLabel(raw: unknown): string {
   const d = clean(raw, 20).toLowerCase();
   if (d === "phone") return "Phone";
@@ -119,10 +139,7 @@ Deno.serve(async (req) => {
     for (const c of contacts || []) {
       const pid = clean(c.parent_person_id, 80);
       if (!pid) continue;
-      const parentDisplay =
-        clean(c.parent_display, 120) ||
-        [clean(c.parent_first_name, 60), clean(c.parent_last_name, 60)].filter(Boolean).join(" ") ||
-        "Parent";
+      const parentDisplay = parentDisplayFromContact(c) || "Parent";
       const row = {
         contact_id: clean(c.contact_id, 80),
         display_name: clean(c.child_display, 120) || "Participant",
@@ -143,12 +160,21 @@ Deno.serve(async (req) => {
   const geoSummary = { london: 0, england: 0, outside: 0, unknown: 0 };
   const geoSeen = new Set<string>();
 
+  function resolveParentName(pid: string): string {
+    const kids = contactsByParent.get(pid) || [];
+    for (let i = 0; i < kids.length; i++) {
+      const n = clean(kids[i].parent_display, 120);
+      if (n && n !== "Parent" && !looksLikeRawId(n)) return n;
+    }
+    return "Parent";
+  }
+
   for (const s of sessions || []) {
     const pid = clean(s.parent_person_id, 80);
     if (!pid) continue;
     const lastUsed = s.last_used_at ? new Date(String(s.last_used_at)).getTime() : 0;
     const kids = contactsByParent.get(pid) || [];
-    const parentName = kids[0]?.parent_display || pid;
+    const parentName = resolveParentName(pid);
     const childNames = kids.map((k) => k.display_name).filter(Boolean);
     const lastContact = clean(s.last_contact_id, 80);
     const childFocus =
@@ -240,10 +266,7 @@ Deno.serve(async (req) => {
       .eq("parent_person_id", pid)
       .limit(20);
     for (const c of more || []) {
-      const parentDisplay =
-        clean(c.parent_display, 120) ||
-        [clean(c.parent_first_name, 60), clean(c.parent_last_name, 60)].filter(Boolean).join(" ") ||
-        "Parent";
+      const parentDisplay = parentDisplayFromContact(c) || "Parent";
       const list = contactsByParent.get(pid) || [];
       list.push({
         contact_id: clean(c.contact_id, 80),
@@ -265,7 +288,7 @@ Deno.serve(async (req) => {
     return {
       at: a.created_at,
       parent_person_id: pid,
-      parent_name: kids[0]?.parent_display || pid,
+      parent_name: resolveParentName(pid),
       child_name: child,
       event_type: clean(a.event_type, 40),
       event_label: surfaceLabel(String(a.event_type || "")),
