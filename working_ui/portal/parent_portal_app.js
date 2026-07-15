@@ -969,18 +969,15 @@
       if (card) card.classList.remove("pp-child-card--no-photo");
       var notice = card && card.querySelector(".pp-child-photo-missing");
       if (notice) notice.remove();
-      var hubCta = block.closest(".pp-hub-photo-cta");
-      if (hubCta) {
-        var hubNotice = hubCta.querySelector(".pp-child-photo-missing");
+      var hero = block.closest(".pp-hub-hero");
+      if (hero) {
+        hero.classList.remove("pp-hub-hero--needs-photo");
+        var hubNotice = hero.querySelector(".pp-child-photo-missing");
         if (hubNotice) hubNotice.remove();
-        var hero = hubCta.closest(".pp-hub-hero");
-        if (hero) hero.classList.remove("pp-hub-hero--needs-photo");
-        // Refresh hub avatar circle next to Add photo tools.
-        var paxHost = hero && hero.querySelector(".pp-pax-photo");
-        if (paxHost && typeof global.ParentPortalParticipant !== "undefined") {
-          void loadParticipantDetail(cid);
-          return;
-        }
+        var hubCta = hero.querySelector(".pp-hub-photo-cta");
+        if (hubCta) hubCta.remove();
+        void loadParticipantDetail(cid);
+        return;
       }
       if (typeof global.portalRegisterParticipantStorageAvatar === "function" && newUrl) {
         global.portalRegisterParticipantStorageAvatar(cid, c.display_name, newUrl);

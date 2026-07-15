@@ -659,7 +659,7 @@
     return true;
   }
 
-  function hubPhotoCtaHtml(data, opts) {
+  function hubPhotoNoticeHtml(data, opts) {
     var p = (data && data.participant) || {};
     if (!participantNeedsPhoto(p, opts)) return "";
     var photoApi = global.ParentPortalApp && global.ParentPortalApp.photo;
@@ -667,16 +667,27 @@
       photoApi && typeof photoApi.missingNoticeHtml === "function"
         ? photoApi.missingNoticeHtml()
         : '<p class="pp-child-photo-missing" role="status"><strong>No photo on file.</strong> Please add a photo so instructors can identify them at sessions.</p>';
-    var block = "";
-    if (photoApi && typeof photoApi.blockHtml === "function") {
-      block = photoApi.blockHtml({
+    return '<div class="pp-hub-photo-cta">' + notice + "</div>";
+  }
+
+  function hubHeroPhotoHtml(data, opts) {
+    var p = (data && data.participant) || {};
+    var needsPhoto = participantNeedsPhoto(p, opts);
+    var photoApi = global.ParentPortalApp && global.ParentPortalApp.photo;
+    if (
+      needsPhoto &&
+      photoApi &&
+      typeof photoApi.blockHtml === "function"
+    ) {
+      // One avatar only — Add photo sits under this circle (no second PD).
+      return photoApi.blockHtml({
         contact_id: p.contact_id,
         display_name: p.display_name,
         has_avatar: false,
         avatar_url: "",
       });
     }
-    return '<div class="pp-hub-photo-cta">' + notice + block + "</div>";
+    return participantPhotoHtml(p);
   }
 
   function hubHeroHtml(data, opts) {
@@ -689,14 +700,14 @@
       (needsPhoto ? " pp-hub-hero--needs-photo" : "") +
       '">' +
       '<div class="pp-hub-hero__id">' +
-      participantPhotoHtml(p) +
+      hubHeroPhotoHtml(data, opts) +
       '<h3 class="pp-hub-hero__name">' +
       esc(p.display_name || "Participant") +
       "</h3>" +
       participantIdentityMetaHtml(p) +
       enrolledServiceChipsHtml(data) +
       (status ? '<div class="pp-chip-row pp-hub-hero__status">' + status + "</div>" : "") +
-      hubPhotoCtaHtml(data, opts) +
+      hubPhotoNoticeHtml(data, opts) +
       "</div>" +
       "</header>" +
       reenrolBannerHtml(data)
