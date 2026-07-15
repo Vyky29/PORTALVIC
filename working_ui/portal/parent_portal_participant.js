@@ -1316,9 +1316,9 @@
     return iso >= from && iso <= to;
   }
 
-  /** Current year hub chips: programme from Mon 1 Jun (no May first half / crash).
-   *  Aquatic / general through Fri 17 Jul; Day Centre through Fri 31 Jul. */
-  var CURRENT_YEAR_TERM_FROM = "2026-06-01";
+  /** Summer Term 25/26 hub chips: Mon 12 Apr – Fri 17 Jul (Day Centre through 31 Jul).
+   *  May half-term (23–31 May) and bank holiday 4 May stay closed. */
+  var CURRENT_YEAR_TERM_FROM = "2026-04-12";
   var CURRENT_YEAR_TERM_TO = "2026-07-17";
   var CURRENT_YEAR_TERM_TO_DAY_CENTRE = "2026-07-31";
   var CURRENT_YEAR_TERM_BREAK_FROM = "2026-05-23";
@@ -1530,6 +1530,67 @@
       }
       cursor = addDaysLocal(cursor, 1);
     }
+    return out;
+  }
+
+  /**
+   * Summer Term 25/26 only (Apr–Jul), even after 2026/27 re-enrol is submitted.
+   * Used so past greens stay visible alongside crash / Autumn chips.
+   */
+  function findCurrentSummerSessionDates(data) {
+    var detail =
+      data && data.general && Array.isArray(data.general.services_detail)
+        ? data.general.services_detail
+        : [];
+    if (!detail.length) return [];
+    var cols = Object.create(null);
+    detail.forEach(function (s) {
+      var col = dayNameToCalCol(s && s.day);
+      if (col != null) cols[col] = true;
+    });
+    if (!Object.keys(cols).length) return [];
+
+    var fromIso = CURRENT_YEAR_TERM_FROM;
+    var toIso = currentYearTermToIso(data);
+    var todayIso = isoDateLocal(new Date());
+    // Prefer the next remaining summer session (not a Sept 26/27 next session).
+    var nextIso = "";
+    var startParts = fromIso.split("-");
+    var cursor = new Date(Number(startParts[0]), Number(startParts[1]) - 1, Number(startParts[2]));
+    var out = [];
+    var guard = 0;
+    while (guard < 200) {
+      guard++;
+      var iso = isoDateLocal(cursor);
+      if (iso > toIso) break;
+      var closed =
+        CURRENT_YEAR_TERM_CLOSED[iso] ||
+        isoInRange(iso, CURRENT_YEAR_TERM_BREAK_FROM, CURRENT_YEAR_TERM_BREAK_TO);
+      if (!closed) {
+        var jsDow = cursor.getDay();
+        var col = jsDow === 0 ? 6 : jsDow - 1;
+        if (cols[col]) {
+          out.push({
+            iso: iso,
+            shortLabel: formatTermChipLabel(iso),
+            past: iso < todayIso,
+            isToday: iso === todayIso,
+            isNext: false,
+          });
+        }
+      }
+      cursor = addDaysLocal(cursor, 1);
+    }
+    for (var i = 0; i < out.length; i++) {
+      if (!out[i].past) {
+        nextIso = out[i].iso;
+        break;
+      }
+    }
+    out.forEach(function (d) {
+      d.isNext = !!nextIso && d.iso === nextIso;
+      annotateChipDate(d, data);
+    });
     return out;
   }
 
@@ -1942,33 +2003,75 @@
 
     var rows = [];
     var crashDates = findCrashCourseDates(data);
-    var bookedNew = crashDates.length > 0 || familyAcceptedNextYear(data);
+    var todayIso = isoDateLocal(new Date());
+    var summerTo = currentYearTermToIso(data);
 
-    if (bookedNew) {
-      // New crash and/or 2026/27 booking: only those rows, hide completed greens.
-      if (crashDates.length) {
-        var crashGroups = groupCrashDatesByActivity(crashDates);
-        var activityRows = [];
-        crashGroups.forEach(function (g) {
-          var visible = filterChipListForDisplay(g.dates, statusByIso, true);
-          if (!visible.length) return;
-          activityRows.push(
-            rowHtml(g.label, visible, g.icon || "", "pp-hub-ops__date-chips-label--activity"),
-          );
-        });
-        if (activityRows.length) {
-          rows.push(
-            '<div class="pp-hub-ops__date-chips-section" aria-label="July Intensive Courses & Camps">' +
-              '<div class="pp-hub-ops__date-chips-section-head">' +
-              intensiveIcon +
-              "<span>July Intensive Courses &amp; Camps</span></div>" +
-              activityRows.join("") +
-              "</div>",
-          );
-        }
+    // Summer Term 25/26 (12 Apr – 17/31 Jul): past = green, next (last of this week) highlighted.
+    // Keep showing while still in / just finishing summer, including after crash / re-enrol.
+    if (todayIso <= summerTo) {
+      var summerDates = findCurrentSummerSessionDates(data);
+      var summerFirst = [];
+      var summerSecond = [];
+      summerDates.forEach(function (d) {
+        if (isFirstHalfTermDate(d.iso, data, false)) summerFirst.push(d);
+        else summerSecond.push(d);
+      });
+      // Keep completed greens visible (do not hide "done").
+      if (summerFirst.length) {
+        rows.push(rowHtml("Summer · First half term", summerFirst));
       }
-      if (familyAcceptedNextYear(data)) {
-        var nextDates = findTermSessionDates(data);
+      if (summerSecond.length) {
+        rows.push(rowHtml("Summer · Second half term", summerSecond));
+      }
+    }
+
+    if (crashDates.length) {
+      var crashGroups = groupCrashDatesByActivity(crashDates);
+      var activityRows = [];
+      crashGroups.forEach(function (g) {
+        var visible = filterChipListForDisplay(g.dates, statusByIso, true);
+        if (!visible.length) return;
+        activityRows.push(
+          rowHtml(g.label, visible, g.icon || "", "pp-hub-ops__date-chips-label--activity"),
+        );
+      });
+      if (activityRows.length) {
+        rows.push(
+          '<div class="pp-hub-ops__date-chips-section" aria-label="July Intensive Courses & Camps">' +
+            '<div class="pp-hub-ops__date-chips-section-head">' +
+            intensiveIcon +
+            "<span>July Intensive Courses &amp; Camps</span></div>" +
+            activityRows.join("") +
+            "</div>",
+        );
+      }
+    }
+
+    if (familyAcceptedNextYear(data)) {
+      var nextDates = findTermSessionDates(data).filter(function (d) {
+        return d.iso > summerTo;
+      });
+      var calNy = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
+      var termsNy = (calNy && Array.isArray(calNy.terms) ? calNy.terms : []) || [];
+      if (termsNy.length) {
+        termsNy.forEach(function (t) {
+          if (!t || !t.starts) return;
+          var termEnd = t.mainTermEnds || t.ends || t.lastDay || "";
+          if (!termEnd) return;
+          var labelBase = String(t.label || t.id || "Term").replace(/\s+202[67]\s*$/, "").trim() || "Term";
+          var tFirst = [];
+          var tSecond = [];
+          nextDates.forEach(function (d) {
+            if (d.iso < t.starts || d.iso > termEnd) return;
+            if (isFirstHalfTermDate(d.iso, data)) tFirst.push(d);
+            else tSecond.push(d);
+          });
+          tFirst = filterChipListForDisplay(tFirst, statusByIso, true);
+          tSecond = filterChipListForDisplay(tSecond, statusByIso, true);
+          if (tFirst.length) rows.push(rowHtml(labelBase + " · First half term", tFirst));
+          if (tSecond.length) rows.push(rowHtml(labelBase + " · Second half term", tSecond));
+        });
+      } else {
         var first = [];
         var second = [];
         nextDates.forEach(function (d) {
@@ -1977,23 +2080,9 @@
         });
         first = filterChipListForDisplay(first, statusByIso, true);
         second = filterChipListForDisplay(second, statusByIso, true);
-        if (first.length) rows.push(rowHtml("First half term", first));
-        if (second.length) rows.push(rowHtml("Second half term", second));
+        if (first.length) rows.push(rowHtml("Autumn · First half term", first));
+        if (second.length) rows.push(rowHtml("Autumn · Second half term", second));
       }
-    } else {
-      // Nothing booked for crash or 2026/27 → Autumn half term preview (two rows).
-      var autumnDates = findAutumnPreviewDates(data);
-      var autumnFirst = [];
-      var autumnSecond = [];
-      autumnDates.forEach(function (d) {
-        if (isFirstHalfTermDate(d.iso, data, true)) autumnFirst.push(d);
-        else autumnSecond.push(d);
-      });
-      // Preview = future calendar; still hide any green completed if somehow past.
-      autumnFirst = filterChipListForDisplay(autumnFirst, statusByIso, true);
-      autumnSecond = filterChipListForDisplay(autumnSecond, statusByIso, true);
-      if (autumnFirst.length) rows.push(rowHtml("Autumn · First half term", autumnFirst));
-      if (autumnSecond.length) rows.push(rowHtml("Autumn · Second half term", autumnSecond));
     }
 
     if (!rows.length) return "";
@@ -2358,7 +2447,7 @@
       var endNote;
       if (!hasCrash && !hasNextYear) {
         endNote =
-          "Autumn half term 2026 dates for your usual days. Book crash or re-enrol 2026/27 when you are ready.";
+          "Summer Term 25/26 session dates for your usual days. Past sessions are green; the next one is highlighted. Book crash or re-enrol 2026/27 when you are ready.";
       } else if (
         booking.parent_action === "auto"
       ) {
