@@ -732,9 +732,9 @@
    * Split feedback by programme. Mixing Climbing “full support” with Aquatic
    * independence pulls the % down and misrepresents each activity.
    *
-   * Exception: Day centre kids often also get an Aquatic / pool feedback line in
-   * the same day. Keep those in one Day centre block until Sep data collection
-   * changes — swimming is part of their day, not a separate programme card.
+   * Exception: when the child is on Day centre, mid-day Aquatic / pool feedback
+   * lines are staff-shift records (e.g. "12 to 1"). Parents only see Day centre
+   * (booked span, usually 11–4) until Sep collection changes.
    */
   function groupFeedbackByService(list) {
     var map = Object.create(null);
@@ -744,14 +744,7 @@
       map[label].push(r);
     });
     if (map["Day centre"] && map["Aquatic Activity"]) {
-      map["Day centre"] = map["Day centre"].concat(map["Aquatic Activity"]);
       delete map["Aquatic Activity"];
-      map["Day centre"].sort(function (a, b) {
-        var da = isoFromAny(a && a.session_date);
-        var db = isoFromAny(b && b.session_date);
-        if (da !== db) return db.localeCompare(da);
-        return clean(b && b.session_time).localeCompare(clean(a && a.session_time));
-      });
     }
     return Object.keys(map)
       .sort(function (a, b) {
@@ -762,6 +755,18 @@
       .map(function (label) {
         return { label: label, rows: map[label] };
       });
+  }
+
+  /** Drop staff-only Aquatic lines when the participant has Day centre booked. */
+  function parentFacingFeedbackRows(list) {
+    var rows = list || [];
+    var hasDayCentre = rows.some(function (r) {
+      return displayProgrammeName(r && r.service) === "Day centre";
+    });
+    if (!hasDayCentre) return rows.slice();
+    return rows.filter(function (r) {
+      return displayProgrammeName(r && r.service) !== "Aquatic Activity";
+    });
   }
 
   function serviceToneClass(label) {
@@ -843,7 +848,7 @@
       return single;
     }
     var note =
-      '<p class="pcso-service-split-note" role="note">Stats are shown <strong>per activity</strong> — mixing programmes (e.g. Climbing + Aquatic) would distort independence and engagement. Day centre includes pool time in the same block.</p>';
+      '<p class="pcso-service-split-note" role="note">Stats are shown <strong>per activity</strong> — mixing programmes (e.g. Climbing + Aquatic) would distort independence and engagement.</p>';
     return (
       note +
       groups
@@ -1211,15 +1216,16 @@
     var achievements = (opts && opts.achievements) || [];
     var hideAchievements = !!(opts && opts.hideAchievements);
     var term = clean((opts && opts.term_label) || TERM_LABEL);
-    var feedback = sessions.map(mapParentSessionRow);
+    var feedback = parentFacingFeedbackRows(sessions.map(mapParentSessionRow));
     var groups = groupFeedbackByService(feedback);
     var multi = groups.length > 1;
-    /* Whole-child attendance_summary only when a single programme — otherwise
-       each service block counts attendance from its own rows. */
+    var droppedStaffAquatic = sessions.length > feedback.length;
+    /* Whole-child attendance_summary only when a single programme and we did not
+       drop staff Aquatic lines — otherwise count from the visible rows. */
     hostEl.innerHTML =
       overviewByServiceHtml(feedback, term, {
         includeAttendance: true,
-        attendanceSummary: multi ? null : opts && opts.attendance_summary,
+        attendanceSummary: multi || droppedStaffAquatic ? null : opts && opts.attendance_summary,
         includeTable: true,
         parentTable: true,
         tableTitle: "Session feedback",
