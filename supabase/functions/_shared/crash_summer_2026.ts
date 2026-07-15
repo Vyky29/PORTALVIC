@@ -604,6 +604,37 @@ function crashVenueShort(activity: CrashActivity): string {
   return activity === "climbing" ? "Westway" : "Acton Centre";
 }
 
+/**
+ * Parse special / admin slot labels like "13:00–14:00 · Westway · 1 instructor"
+ * when the slot is not on the public crash catalog.
+ */
+function crashTimeVenueFromSlotLabels(
+  labels: string[],
+): { timePhrase: string; venue: string } {
+  const timeRe = /(\d{1,2}:\d{2})\s*[–\-]\s*(\d{1,2}:\d{2})/;
+  let earliest: string | null = null;
+  let latest: string | null = null;
+  let venue = "";
+  for (const raw of labels) {
+    const label = String(raw || "");
+    const m = label.match(timeRe);
+    if (m) {
+      if (!earliest || m[1] < earliest) earliest = m[1];
+      if (!latest || m[2] > latest) latest = m[2];
+    }
+    if (!venue) {
+      const low = label.toLowerCase();
+      if (low.includes("swimfarm")) venue = "SwimFarm";
+      else if (low.includes("westway")) venue = "Westway";
+      else if (low.includes("acton")) venue = "Acton Centre";
+    }
+  }
+  return {
+    timePhrase: earliest && latest ? formatUkTimeRange(earliest, latest) : "",
+    venue,
+  };
+}
+
 function crashActivityBullet(activity: CrashActivity, durationMin: number): string {
   const title = CRASH_META[activity].invoiceTitle;
   return `- ${durationMin}' 1to1 ${title}`;
@@ -697,6 +728,7 @@ export function buildCrashSummerInvoiceDescription(opts: {
     const slotIds = Array.from(new Set(actLines.map((l) => l.slot_id)));
     let durationMin = crashSlotMinutes(activity);
     let timePhrase = "";
+    let venueOverride = "";
     if (activity === "swimming") {
       const starts = slotIds
         .map((id) => crashSlotById("swimming", id))
@@ -705,21 +737,34 @@ export function buildCrashSummerInvoiceDescription(opts: {
         const ordered = [...starts].sort((a, b) => a.start.localeCompare(b.start));
         durationMin = ordered.length * 30;
         timePhrase = formatUkTimeRange(ordered[0].start, ordered[ordered.length - 1].end);
+      } else {
+        // Admin / special slots not on the public Acton evening grid (e.g. SwimFarm AM).
+        const fromLabels = crashTimeVenueFromSlotLabels(actLines.map((l) => l.slot_label));
+        if (fromLabels.timePhrase) timePhrase = fromLabels.timePhrase;
+        if (fromLabels.venue) venueOverride = fromLabels.venue;
+        durationMin = Math.max(30, slotIds.length * 30);
       }
     } else {
       const slot = crashSlotById("climbing", slotIds[0]);
-      if (slot) timePhrase = formatUkTimeRange(slot.start, slot.end);
+      if (slot) {
+        timePhrase = formatUkTimeRange(slot.start, slot.end);
+      } else {
+        const fromLabels = crashTimeVenueFromSlotLabels(actLines.map((l) => l.slot_label));
+        if (fromLabels.timePhrase) timePhrase = fromLabels.timePhrase;
+        if (fromLabels.venue) venueOverride = fromLabels.venue;
+      }
     }
 
     const sessionCount = actLines.length;
+    const fromBit = timePhrase ? ` from ${timePhrase}` : "";
     const packBit =
       opts.mode === "weekly_pack"
-        ? `Weekly pack (${crashDateRangePhrase(dates)} from ${timePhrase})`
-        : `Individual days (${crashDateRangePhrase(dates)} from ${timePhrase})`;
+        ? `Weekly pack (${crashDateRangePhrase(dates)}${fromBit})`
+        : `Individual days (${crashDateRangePhrase(dates)}${fromBit})`;
 
     out.push(crashActivityBullet(activity, durationMin));
     out.push("- Summer crash course Jul 2026");
-    out.push(`- ${crashVenueShort(activity)}`);
+    out.push(`- ${venueOverride || crashVenueShort(activity)}`);
     out.push("- Summer Term 2026");
     out.push("- Dates:");
     out.push(`${weekLabel}. ${packBit}`);
