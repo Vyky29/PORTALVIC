@@ -2639,9 +2639,24 @@
       margin-top: 2px;
     }
     .pp-cal-legend__swatch--red { background: #F25B5B; }
+    .pp-cal-legend__swatch--crash-mine { background: #2563eb; }
     .pp-cal-legend__text { min-width: 0; overflow-wrap: break-word; }
     .pp-cal-legend-empty { margin: 0 0 12px; font-size: 13px; }
     .pp-cal-block { margin: 0 0 18px; min-width: 0; }
+    .pp-cal-block__title {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--ink, #0f172a);
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .pp-cal-block--crash {
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(37, 99, 235, 0.22);
+      background: rgba(37, 99, 235, 0.05);
+    }
     .pp-cal-host {
       min-width: 0;
       overflow-x: auto;
@@ -2650,6 +2665,20 @@
       border-radius: 14px;
       background: #fff;
       padding: 8px;
+    }
+    .pp-cal-host--crash .dc-cal-crash-day--mine {
+      background: #2563eb !important;
+      border-color: rgba(37, 99, 235, 0.55) !important;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+    }
+    .pp-cal-host--crash .dc-cal-crash-day--mine .dc-cal-crash-day__dow,
+    .pp-cal-host--crash .dc-cal-crash-day--mine .dc-cal-crash-day__num,
+    .pp-cal-host--crash .dc-cal-crash-day--mine .dc-cal-crash-day__sub {
+      color: #fff !important;
+    }
+    .pp-cal-host--crash .dc-cal--crash-only .dc-cal-tabs,
+    .pp-cal-host--crash .dc-cal--crash-only [data-dc-cal-summary] {
+      display: none !important;
     }
     .pp-cal-host--year .dc-cal {
       max-width: 100%;
@@ -3632,8 +3661,8 @@
   <script src="/portal/portal_swim_session_axes.js?v=20260714-one-feedback"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260715-dc-hide-staff-aquatic"></script>
   <script src="/portal/parent_portal_team.js?v=20260710-eiji-hazem-photos"></script>
-  <script src="/portal/portal_calendar_2026_27.js?v=20260714-w2-80pct"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260715-hub-photo-autumn"></script>
+  <script src="/portal/portal_calendar_2026_27.js?v=20260715-crash-cal-first"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260715-crash-cal-first"></script>
   <script src="/portal/parent_portal_app.js?v=20260715-hub-photo-autumn"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
