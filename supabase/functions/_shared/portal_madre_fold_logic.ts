@@ -155,7 +155,7 @@ function foldParticipantCancel(madre: MadreDoc, iso: string, payload: Record<str
 
 function foldStaffUpsert(madre: MadreDoc, iso: string, payload: Record<string, unknown>): boolean {
   if (!madre.staffShifts) {
-    madre.staffShifts = { termFrom: "2026-06-01", termTo: "2026-07-17", rows: [] };
+    madre.staffShifts = { termFrom: "2026-06-01", termTo: "2026-07-31", rows: [] };
   }
   const rows = madre.staffShifts.rows ?? [];
   madre.staffShifts.rows = rows;

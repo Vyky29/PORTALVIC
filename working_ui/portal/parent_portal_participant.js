@@ -1166,12 +1166,32 @@
     return iso >= from && iso <= to;
   }
 
-  /** Current year sessions for hub chips: Spring/Summer 2026 from April through 17 Jul. */
+  /** Current year hub chips: aquatic / general programme through Fri 17 Jul;
+   *  Day Centre (Emanuel, Ikram, Fadi, …) continues through Fri 31 Jul. */
   var CURRENT_YEAR_TERM_FROM = "2026-05-11";
   var CURRENT_YEAR_TERM_TO = "2026-07-17";
+  var CURRENT_YEAR_TERM_TO_DAY_CENTRE = "2026-07-31";
   var CURRENT_YEAR_TERM_BREAK_FROM = "2026-05-23";
   var CURRENT_YEAR_TERM_BREAK_TO = "2026-05-31";
   var CURRENT_YEAR_TERM_CLOSED = { "2026-05-04": true };
+
+  function participantHasDayCentre(data) {
+    var detail =
+      data && data.general && Array.isArray(data.general.services_detail)
+        ? data.general.services_detail
+        : [];
+    for (var i = 0; i < detail.length; i++) {
+      var lab = String((detail[i] && (detail[i].label || detail[i].service)) || "");
+      if (/day\s*centre/i.test(lab)) return true;
+    }
+    return false;
+  }
+
+  function currentYearTermToIso(data) {
+    return participantHasDayCentre(data)
+      ? CURRENT_YEAR_TERM_TO_DAY_CENTRE
+      : CURRENT_YEAR_TERM_TO;
+  }
 
   /** Hub / Absent use 2026/27 closed dates only after the family has submitted Booking 2026/27. */
   function familyAcceptedNextYear(data) {
@@ -1180,9 +1200,10 @@
   }
 
   function isClubClosedIso(iso, data) {
-    // Until Booking 2026/27 is submitted: current-year roster only, through 17 Jul 2026.
+    // Until Booking 2026/27 is submitted: current-year roster only.
     if (!familyAcceptedNextYear(data)) {
-      if (!iso || iso < CURRENT_YEAR_TERM_FROM || iso > CURRENT_YEAR_TERM_TO) return true;
+      var termTo = currentYearTermToIso(data);
+      if (!iso || iso < CURRENT_YEAR_TERM_FROM || iso > termTo) return true;
       if (CURRENT_YEAR_TERM_CLOSED[iso]) return true;
       if (isoInRange(iso, CURRENT_YEAR_TERM_BREAK_FROM, CURRENT_YEAR_TERM_BREAK_TO)) return true;
       return false;
@@ -1246,12 +1267,20 @@
     var today = new Date();
     var out = [];
     var max = Math.max(1, limit || 3);
+    var termTo = currentYearTermToIso(data);
     var horizon = familyAcceptedNextYear(data) ? 28 : 14;
+    if (!familyAcceptedNextYear(data)) {
+      try {
+        var end = new Date(String(termTo) + "T12:00:00");
+        var daysLeft = Math.ceil((end.getTime() - today.getTime()) / 86400000) + 1;
+        if (daysLeft > horizon) horizon = Math.min(45, Math.max(horizon, daysLeft));
+      } catch (_e) {}
+    }
     for (var offset = 0; offset < horizon && out.length < max; offset++) {
       var d = addDaysLocal(today, offset);
       var iso = isoDateLocal(d);
-      // Stop scanning past current-year end (e.g. Rodin Sundays → only 12 Jul left before 17 Jul).
-      if (!familyAcceptedNextYear(data) && iso > CURRENT_YEAR_TERM_TO) break;
+      // Stop scanning past current-year end for this participant.
+      if (!familyAcceptedNextYear(data) && iso > termTo) break;
       if (isClubClosedIso(iso, data)) continue;
       // JS: Sun=0 … Sat=6 → calendar Mon=0 … Sun=6
       var jsDow = d.getDay();
@@ -1289,7 +1318,7 @@
     if (!Object.keys(cols).length) return [];
 
     var fromIso = CURRENT_YEAR_TERM_FROM;
-    var toIso = CURRENT_YEAR_TERM_TO;
+    var toIso = currentYearTermToIso(data);
     if (familyAcceptedNextYear(data)) {
       var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
       if (cal && cal.openFrom) fromIso = cal.openFrom;
@@ -1378,7 +1407,7 @@
           from: CURRENT_YEAR_TERM_BREAK_FROM,
           to: CURRENT_YEAR_TERM_BREAK_TO,
           termFrom: CURRENT_YEAR_TERM_FROM,
-          termTo: CURRENT_YEAR_TERM_TO,
+          termTo: currentYearTermToIso(data),
         },
       ];
     }
