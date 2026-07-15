@@ -949,12 +949,25 @@
       width: 100%;
     }
     .pp-hub-ops__date-chips-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       font-size: 11px;
       font-weight: 800;
       letter-spacing: 0.02em;
       text-transform: uppercase;
       color: var(--muted, #64748b);
       line-height: 1.2;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .pp-hub-ops__date-chips-label-ico {
+      width: 14px;
+      height: 14px;
+      flex: 0 0 auto;
+      color: var(--blue, #2563eb);
+    }
+    .pp-hub-ops__date-chips-label > span {
       min-width: 0;
       overflow-wrap: break-word;
     }
@@ -2651,10 +2664,23 @@
     .pp-cal-legend-empty { margin: 0 0 12px; font-size: 13px; }
     .pp-cal-block { margin: 0 0 18px; min-width: 0; }
     .pp-cal-block__title {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
       margin: 0 0 8px;
       font-size: 1rem;
       font-weight: 800;
       color: var(--ink, #0f172a);
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .pp-cal-block__title-ico {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+      color: var(--blue, #2563eb);
+    }
+    .pp-cal-block__title > span {
       min-width: 0;
       overflow-wrap: break-word;
     }

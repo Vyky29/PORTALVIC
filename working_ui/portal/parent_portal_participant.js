@@ -1776,17 +1776,22 @@
         "</div>"
       );
     }
-    function rowHtml(label, list) {
+    function rowHtml(label, list, iconHtml) {
       if (!list.length) return "";
       return (
         '<div class="pp-hub-ops__date-chips-row">' +
         '<div class="pp-hub-ops__date-chips-label">' +
+        (iconHtml || "") +
+        "<span>" +
         esc(label) +
-        "</div>" +
+        "</span></div>" +
         chipsOnly(list, label) +
         "</div>"
       );
     }
+
+    var intensiveIcon =
+      '<svg class="pp-hub-ops__date-chips-label-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"/></svg>';
 
     var rows = [];
     var crashDates = findCrashCourseDates(data);
@@ -1796,7 +1801,11 @@
       // New crash and/or 2026/27 booking: only those rows, hide completed greens.
       if (crashDates.length) {
         rows.push(
-          rowHtml("Crash course", filterChipListForDisplay(crashDates, statusByIso, true)),
+          rowHtml(
+            "Intensive Course & Camp",
+            filterChipListForDisplay(crashDates, statusByIso, true),
+            intensiveIcon,
+          ),
         );
       }
       if (familyAcceptedNextYear(data)) {
@@ -2725,10 +2734,12 @@
     var hasCrash = crashRows.length > 0;
     var crashBlock = hasCrash
       ? '<div class="pp-cal-block pp-cal-block--crash">' +
-        '<h4 class="pp-cal-block__title">Crash course</h4>' +
-        '<p class="pp-muted pp-pax-subview-note">Your booked crash days are highlighted first.</p>' +
+        '<h4 class="pp-cal-block__title">' +
+        '<svg class="pp-cal-block__title-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"/></svg>' +
+        "<span>Intensive Course &amp; Camp</span></h4>" +
+        '<p class="pp-muted pp-pax-subview-note">Your booked intensive days are highlighted first.</p>' +
         myCrashCalendarLegendHtml(data) +
-        '<div id="ppCalCrashHost" class="pp-cal-host pp-cal-host--crash" role="region" aria-label="Crash course calendar"></div>' +
+        '<div id="ppCalCrashHost" class="pp-cal-host pp-cal-host--crash" role="region" aria-label="Intensive Course & Camp calendar"></div>' +
         "</div>"
       : "";
     var body =
