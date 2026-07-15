@@ -209,9 +209,7 @@ function pushInstalment(
     label: string;
     dueDateIso: string | null;
     amountGbp: number;
-    participantName: string;
     academicYear: string;
-    payLabel: string;
   },
 ) {
   const amount = round2(opts.amountGbp);
@@ -220,12 +218,29 @@ function pushInstalment(
     label: opts.label,
     dueDateIso: opts.dueDateIso,
     amountGbp: amount,
-    lineDescription:
-      `Re-enrolment ${opts.academicYear} — ${opts.label}. ` +
-      `Structured activity support for ${opts.participantName}. ` +
-      `Payment plan: ${opts.payLabel}.`,
+    // Lead line stays generic (no participant name / pay plan — those belong in PDF meta).
+    lineDescription: buildReenrolmentInvoiceLeadDescription(
+      opts.academicYear,
+      opts.label,
+    ),
     reference: instalmentInvoiceReference(opts.label, opts.academicYear),
   });
+}
+
+/**
+ * Office / Xero description body (before Client's Name / Mode / VAT meta lines).
+ * Keep activity wording generic — never embed the participant name here.
+ */
+export function buildReenrolmentInvoiceLeadDescription(
+  academicYear: string,
+  instalmentLabel: string,
+): string {
+  const year = clean(academicYear, 20) || "2026-27";
+  const label = clean(instalmentLabel, 120) || "Payment";
+  return (
+    `Re-enrolment ${year} - ${label}.\n\n` +
+    "Structured activity support delivered across aquatic environments for a SEND participant."
+  );
 }
 
 export type ReenrolTermKey = "autumn" | "spring" | "summer";
@@ -370,14 +385,6 @@ export function buildReenrolmentInstalments(args: {
 
   const vatMode = vatModeFromChoices(choices);
   const hint = paymentMethodHint(payCode);
-  const participantName = clean(args.participantName, 120) || "participant";
-  const payLabel =
-    clean(choices.payment_method_label, 80) ||
-    (payCode === "gocardless"
-      ? "Direct Payment"
-      : payCode === "own_way_flexible"
-        ? "Own arrangement"
-        : "Bank transfer");
 
   const out: ReenrolInstalment[] = [];
   /** Bank term/year one-off: mid-August. GC collects earlier than day-1 term start. */
@@ -399,17 +406,13 @@ export function buildReenrolmentInstalments(args: {
         label: `${t.label} · programme`,
         dueDateIso: t.due,
         amountGbp: totals[t.key],
-        participantName,
         academicYear,
-        payLabel,
       });
       pushInstalment(out, {
         label: `${t.label} · admin fee`,
         dueDateIso: t.due,
         amountGbp: OWN_FEE,
-        participantName,
         academicYear,
-        payLabel,
       });
     }
   } else if (scheduleCode === "yearly_1off") {
@@ -427,9 +430,7 @@ export function buildReenrolmentInstalments(args: {
       label: "Full year (1 payment)",
       dueDateIso: bankAutumnTermDue,
       amountGbp: withGcFee(totals.annual, payCode),
-      participantName,
-      academicYear,
-      payLabel,
+        academicYear,
     });
   } else if (scheduleCode === "term_3") {
     const term3: Array<{ key: ReenrolTermKey; label: string; due: string }> = [
@@ -443,9 +444,7 @@ export function buildReenrolmentInstalments(args: {
         label: t.label,
         dueDateIso: t.due,
         amountGbp: withGcFee(totals[t.key], payCode),
-        participantName,
         academicYear,
-        payLabel,
       });
     }
   } else if (scheduleCode === "term_flexi") {
@@ -464,9 +463,7 @@ export function buildReenrolmentInstalments(args: {
           label: `${t.termLabel} · ${h.halfLabel}`,
           dueDateIso: dueIso,
           amountGbp: withGcFee(halfAmt, payCode),
-          participantName,
-          academicYear,
-          payLabel,
+        academicYear,
         });
       }
     }
@@ -487,9 +484,7 @@ export function buildReenrolmentInstalments(args: {
           label: `Payment ${payNo} · ${m.label} (${t.label})`,
           dueDateIso: dueIso,
           amountGbp: withGcFee(perMonth, payCode),
-          participantName,
-          academicYear,
-          payLabel,
+        academicYear,
         });
       }
     }
@@ -528,9 +523,7 @@ export function buildReenrolmentInstalments(args: {
           label: `Payment ${payNo} · ${m.label} (${t.label})`,
           dueDateIso: dueIso,
           amountGbp: withGcFee(perMonth, payCode),
-          participantName,
-          academicYear,
-          payLabel,
+        academicYear,
         });
       }
     }

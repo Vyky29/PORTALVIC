@@ -167,13 +167,14 @@ export async function createPortalFamilyInvoice(
         ? "Card / Apple Pay"
         : "Bank transfer / Card (parent portal)";
   const descriptionFromInput = String(lineDescription)
-    .split(/\n/)
+    .split("\n")
     .map((s) => s.trimEnd())
     .filter((s, i, arr) => s || (i > 0 && i < arr.length - 1));
   const descriptionLines = input.descriptionComplete
     ? descriptionFromInput.slice(0, 24)
     : [
-        ...descriptionFromInput.filter(Boolean).slice(0, 8),
+        // Keep blank lines from the lead (title / body spacing).
+        ...descriptionFromInput.slice(0, 12),
         "",
         `Client's Name: ${displayName}`,
         quantity !== 1 ? `- Quantity: ${quantity}` : null,
