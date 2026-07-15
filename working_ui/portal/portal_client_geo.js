@@ -1,13 +1,12 @@
 /**
- * Parent / booking-service presence geo — same idea as staff live map: prefer device GPS.
- * Falls back to IP only when geolocation is denied or unavailable.
- * City names for non-London GPS are filled server-side (reverse geocode).
+ * Parent / booking-service presence geo — device GPS first (like staff live map).
+ * Never send Bradford/Leeds-style ISP cities as truth; server also remaps those.
  */
 (function (global) {
   "use strict";
 
-  var CACHE_KEY = "clubsens_client_geo_hint_v3";
-  var DENIED_KEY = "clubsens_client_geo_denied_v3";
+  var CACHE_KEY = "clubsens_client_geo_hint_v4";
+  var DENIED_KEY = "clubsens_client_geo_denied_v4";
   var CACHE_MS = 30 * 60 * 1000;
   var inflight = null;
 
@@ -50,11 +49,25 @@
     }
   }
 
+  function clearDenied() {
+    try {
+      global.sessionStorage.removeItem(DENIED_KEY);
+    } catch (_e) {
+      /* ignore */
+    }
+  }
+
   function clean(v, max) {
     return String(v == null ? "" : v)
       .replace(/\s+/g, " ")
       .trim()
       .slice(0, max || 80);
+  }
+
+  function isUkIspMisleadingCity(city) {
+    return /^(bradford|leeds|halifax|huddersfield|rochdale|keighley)$/i.test(
+      String(city || "").trim(),
+    );
   }
 
   function normalizeHint(raw) {
@@ -71,6 +84,16 @@
     if (!countryCode && !country && !city && !(Number.isFinite(lat) && Number.isFinite(lng))) {
       return null;
     }
+    // Strip bad ISP cities before they ever leave the browser.
+    if (source !== "device-geo" && isUkIspMisleadingCity(city)) {
+      city = "London";
+      region = "Greater London";
+      countryCode = countryCode || "GB";
+      country = country || "United Kingdom";
+      lat = null;
+      lng = null;
+      source = "browser-ip-corrected";
+    }
     return {
       country_code: countryCode,
       country: country,
@@ -84,7 +107,6 @@
   }
 
   function hintFromDeviceCoords(lat, lng, accuracy) {
-    // Leave city empty so the server reverse-geocodes neighbourhood (Latimer, not borough/IP).
     return normalizeHint({
       country_code: "",
       country: "",
@@ -97,12 +119,19 @@
     });
   }
 
-  function getDevicePosition() {
+  function getDevicePosition(opts) {
+    opts = opts || {};
     return new Promise(function (resolve) {
-      if (!global.navigator || !global.navigator.geolocation || geoDenied()) {
+      if (!global.navigator || !global.navigator.geolocation) {
         resolve(null);
         return;
       }
+      if (geoDenied() && !opts.force) {
+        resolve(null);
+        return;
+      }
+      if (opts.force) clearDenied();
+
       var settled = false;
       function finish(pos) {
         if (settled) return;
@@ -111,7 +140,9 @@
       }
       var timer = global.setTimeout(function () {
         finish(null);
-      }, 16000);
+      }, opts.timeoutMs || 12000);
+
+      // Coarse first — high accuracy often times out indoors on phones.
       global.navigator.geolocation.getCurrentPosition(
         function (pos) {
           global.clearTimeout(timer);
@@ -135,7 +166,11 @@
           }
           finish(null);
         },
-        { enableHighAccuracy: true, timeout: 14000, maximumAge: 60000 },
+        {
+          enableHighAccuracy: !!opts.highAccuracy,
+          timeout: opts.timeoutMs || 10000,
+          maximumAge: opts.maximumAge != null ? opts.maximumAge : 120000,
+        },
       );
     });
   }
@@ -149,8 +184,7 @@
       })
       .then(function (j) {
         if (!j || j.success === false) return null;
-        var hint = normalizeHint(j);
-        if (hint) hint.source = "browser-ip";
+        var hint = normalizeHint(Object.assign({}, j, { source: "browser-ip" }));
         return hint;
       })
       .catch(function () {
@@ -165,7 +199,11 @@
       return Promise.resolve(cached);
     }
     if (inflight && !opts.force) return inflight;
-    inflight = getDevicePosition()
+    inflight = getDevicePosition({
+      force: !!opts.force,
+      highAccuracy: false,
+      timeoutMs: opts.force ? 15000 : 10000,
+    })
       .then(function (pos) {
         if (pos && Number.isFinite(pos.lat) && Number.isFinite(pos.lng)) {
           var fromDevice = hintFromDeviceCoords(pos.lat, pos.lng, pos.accuracy);
@@ -174,7 +212,7 @@
             return fromDevice;
           }
         }
-        if (cached) return cached;
+        if (cached && cached.source === "device-geo") return cached;
         return fetchIpHint().then(function (hint) {
           if (hint) writeCache(hint);
           return hint;
@@ -191,14 +229,32 @@
     return inflight;
   }
 
-  /** Warm GPS early so the browser permission prompt appears on portal open. */
   function warm() {
     return fetchHint({ force: false });
+  }
+
+  /** Call from a click/tap so iOS/Android show the permission prompt. */
+  function requestFromUserGesture() {
+    clearDenied();
+    try {
+      global.sessionStorage.removeItem(CACHE_KEY);
+    } catch (_e) {
+      /* ignore */
+    }
+    return fetchHint({ force: true });
+  }
+
+  function hasDeviceFix() {
+    var c = readCache();
+    return !!(c && c.source === "device-geo");
   }
 
   global.PortalClientGeo = {
     getHint: fetchHint,
     peekCached: readCache,
     warm: warm,
+    requestFromUserGesture: requestFromUserGesture,
+    hasDeviceFix: hasDeviceFix,
+    isDenied: geoDenied,
   };
 })(typeof window !== "undefined" ? window : globalThis);

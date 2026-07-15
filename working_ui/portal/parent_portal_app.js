@@ -632,12 +632,25 @@
     }
   }
 
+  function updateLocBar() {
+    var bar = $("ppLocBar");
+    if (!bar) return;
+    var geoApi = window.PortalClientGeo;
+    var hasDevice = geoApi && typeof geoApi.hasDeviceFix === "function" && geoApi.hasDeviceFix();
+    if (hasDevice) {
+      bar.hidden = true;
+      return;
+    }
+    bar.hidden = false;
+  }
+
   function setStep(step) {
     state.step = step;
     if ($("ppStepIdentify")) $("ppStepIdentify").hidden = step !== "identify";
     if ($("ppStepHome")) $("ppStepHome").hidden = step !== "home";
     if ($("ppStepParticipant")) $("ppStepParticipant").hidden = step !== "participant";
     if (step === "home" && state.session.token) {
+      updateLocBar();
       void pingActivity("home", null);
     }
   }
@@ -1624,6 +1637,64 @@
     $("ppRefresh").addEventListener("click", function () {
       void loadHome();
     });
+
+    var locBtn = $("ppLocShareBtn");
+    if (locBtn) {
+      locBtn.addEventListener("click", function () {
+        var geoApi = window.PortalClientGeo;
+        if (!geoApi || typeof geoApi.requestFromUserGesture !== "function") {
+          showNotice($("ppNotice"), "error", "Location is not available on this device.");
+          return;
+        }
+        locBtn.disabled = true;
+        locBtn.textContent = "Getting location…";
+        geoApi
+          .requestFromUserGesture()
+          .then(function (hint) {
+            if (!hint || hint.source !== "device-geo") {
+              showNotice(
+                $("ppNotice"),
+                "error",
+                "Could not get location. Allow location for this site in your phone settings, then try again.",
+              );
+              return;
+            }
+            // Bypass ping debounce and force a geo refresh on the session.
+            _pingLast = { surface: "", at: 0 };
+            return withGeoHint({
+              surface: "home",
+              contact_id: state.participant.contactId || null,
+              detail: "location_share",
+            }).then(function (body) {
+              return fetch(fn("parent-portal-activity-ping"), {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  apikey: anonKey(),
+                  Authorization: "Bearer " + anonKey(),
+                  "x-parent-portal-session": state.session.token,
+                },
+                body: JSON.stringify(body),
+              });
+            }).then(function () {
+              updateLocBar();
+              showNotice(
+                $("ppNotice"),
+                "success",
+                "Location shared — the club can see your area now.",
+              );
+            });
+          })
+          .catch(function () {
+            showNotice($("ppNotice"), "error", "Could not get location. Please try again.");
+          })
+          .then(function () {
+            locBtn.disabled = false;
+            locBtn.textContent = "Share location";
+            updateLocBar();
+          });
+      });
+    }
 
     var helpBtn = $("ppHelpBtn");
     var helpPanel = $("ppHelpPanel");

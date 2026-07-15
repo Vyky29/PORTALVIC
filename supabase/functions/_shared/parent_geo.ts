@@ -60,6 +60,11 @@ function isGreaterLondonCoords(lat: number | null, lng: number | null): boolean 
   return lat >= 51.28 && lat <= 51.7 && lng >= -0.55 && lng <= 0.35;
 }
 
+function isUkIspMisleadingCity(city: string): boolean {
+  // Common UK broadband GeoIP “HQ city” labels that are wrong for London parents.
+  return /^(bradford|leeds|halifax|huddersfield|rochdale|keighley)$/i.test(city.trim());
+}
+
 export function classifyParentGeo(raw: {
   countryCode?: string;
   countryName?: string;
@@ -72,18 +77,29 @@ export function classifyParentGeo(raw: {
   const countryName = clean(raw.countryName, 80) || countryCode;
   let region = clean(raw.region, 80);
   let city = clean(raw.city, 80);
-  const lat = typeof raw.lat === "number" && Number.isFinite(raw.lat) ? raw.lat : null;
-  const lng = typeof raw.lng === "number" && Number.isFinite(raw.lng) ? raw.lng : null;
+  let lat = typeof raw.lat === "number" && Number.isFinite(raw.lat) ? raw.lat : null;
+  let lng = typeof raw.lng === "number" && Number.isFinite(raw.lng) ? raw.lng : null;
 
   const uk = isUkCountry(countryCode, countryName);
   const otherUk = uk && isOtherUkNation(region);
+  let approxFromBadIp = false;
+
+  // Without real device coords, never trust Bradford/Leeds-style ISP cities for this portal.
+  if (uk && !otherUk && isUkIspMisleadingCity(city) && !isGreaterLondonCoords(lat, lng)) {
+    city = "London";
+    region = "Greater London";
+    lat = null;
+    lng = null;
+    approxFromBadIp = true;
+  }
+
   let london =
     uk &&
     !otherUk &&
-    (isLondonCity(city, region) || isGreaterLondonCoords(lat, lng));
+    (approxFromBadIp || isLondonCity(city, region) || isGreaterLondonCoords(lat, lng));
   if (london) {
     if (!city || !/\blondon\b/i.test(city)) {
-      // Keep borough name when useful, still mark London.
+      // Keep borough / neighbourhood name when useful, still mark London.
       if (city && !/^london$/i.test(city)) {
         /* keep city */
       } else {
@@ -101,8 +117,11 @@ export function classifyParentGeo(raw: {
 
   let label = "";
   if (bucket === "london") {
-    label =
-      city && !/^london$/i.test(city) ? `${city}, London` : "London, England";
+    if (approxFromBadIp) label = "London (approx)";
+    else {
+      label =
+        city && !/^london$/i.test(city) ? `${city}, London` : "London, England";
+    }
   } else if (bucket === "england") {
     label = [city, region || "England"].filter(Boolean).join(", ");
     if (!label) label = "England";
