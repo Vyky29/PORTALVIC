@@ -324,9 +324,83 @@
     return '';
   }
 
-  function accordionItemHtml(inv) {
+  function groupInvoicesByParticipant(invoices) {
+    var order = [];
+    var byId = Object.create(null);
+    (invoices || []).forEach(function (inv) {
+      var key = String(inv.contact_id || inv.participant_display || inv.id || '');
+      if (!byId[key]) {
+        byId[key] = {
+          contact_id: inv.contact_id,
+          name: inv.participant_display || inv.related_client || inv.contact_id || 'Participant',
+          invoices: []
+        };
+        order.push(key);
+      }
+      byId[key].invoices.push(inv);
+    });
+    return order.map(function (k) {
+      return byId[k];
+    });
+  }
+
+  function groupMethodSummary(invoices) {
+    var seen = Object.create(null);
+    var labels = [];
+    (invoices || []).forEach(function (inv) {
+      var m = methodLabel(inv);
+      if (!seen[m]) {
+        seen[m] = true;
+        labels.push(m);
+      }
+    });
+    return labels.length ? labels.join(' · ') : 'Bank transfer';
+  }
+
+  function groupStatusSummary(invoices) {
+    var unpaid = 0;
+    var paid = 0;
+    var pending = 0;
+    var xeroFail = 0;
+    var xeroMissing = 0;
+    (invoices || []).forEach(function (inv) {
+      var pay = String(inv.payment_status || 'unpaid');
+      if (pay === 'paid') paid += 1;
+      else if (pay === 'pending_confirmation') pending += 1;
+      else unpaid += 1;
+      if (inv.xero_invoice_id) return;
+      if (inv.xero_push_status === 'failed') xeroFail += 1;
+      else if (inv.created_via === 'portal' || inv.created_via === 'reenrolment') xeroMissing += 1;
+    });
+    var chips = [];
+    if (unpaid) {
+      chips.push('<span class="chip chip--pend">' + unpaid + ' unpaid</span>');
+    }
+    if (pending) {
+      chips.push('<span class="chip chip--pend">' + pending + ' pending</span>');
+    }
+    if (paid) {
+      chips.push('<span class="chip chip--ok">' + paid + ' paid</span>');
+    }
+    if (xeroFail) {
+      chips.push('<span class="pp-inv-acc__xero pp-inv-acc__xero--fail">Xero failed ×' + xeroFail + '</span>');
+    } else if (xeroMissing) {
+      chips.push('<span class="pp-inv-acc__xero">Not in Xero ×' + xeroMissing + '</span>');
+    }
+    return chips.join(' ');
+  }
+
+  function groupTotalGbp(invoices) {
+    return (invoices || []).reduce(function (sum, inv) {
+      var n = Number(inv.amount_gbp);
+      return sum + (Number.isFinite(n) ? n : 0);
+    }, 0);
+  }
+
+  function invoiceDetailCardHtml(inv, opts) {
+    opts = opts || {};
+    var showHoldOnce = !!opts.showHoldOnce;
     var id = esc(inv.id);
-    var name = inv.participant_display || inv.related_client || inv.contact_id || 'Participant';
     var reportBits = [];
     if (inv.parent_reported_paid_at) {
       reportBits.push('Reported ' + formatDate(inv.parent_reported_paid_at));
@@ -353,57 +427,59 @@
     var holdBtns = '';
     var buf = inv.buffer_status || null;
     var bufferChip = '';
-    if (buf && buf.is_low) {
-      bufferChip =
-        '<div class="chip chip--pend" style="margin-top:4px;font-size:11px;background:#fef3c7;color:#92400e">' +
-        'Buffer low · £' +
-        esc(Number(buf.shortfall_gbp || 0).toFixed(2)) +
-        ' short</div>';
-    } else if (buf && buf.is_own_arrangement !== false && Number(buf.required_gbp) > 0) {
-      bufferChip =
-        '<div class="chip" style="margin-top:4px;font-size:11px;background:#ecfdf5;color:#065f46">' +
-        'Buffer OK · £' +
-        esc(Number(buf.available_gbp || 0).toFixed(2)) +
-        ' / £' +
-        esc(Number(buf.required_gbp || 0).toFixed(2)) +
-        '</div>';
-    }
-    if (hold && (hold.status === 'soft_hold' || hold.status === 'session_held' || hold.status === 'hard_cut')) {
-      var holdLabel =
-        hold.status === 'session_held'
-          ? 'Session held'
-          : hold.status === 'hard_cut'
-            ? 'Hard cut'
-            : 'Soft hold';
-      holdChip =
-        '<div class="chip chip--pend" style="margin-top:4px;font-size:11px">' +
-        esc(holdLabel) +
-        (hold.reminder_count ? ' · ' + esc(String(hold.reminder_count)) + ' reminders' : '') +
-        (hold.held_session_label ? ' · ' + esc(String(hold.held_session_label).slice(0, 48)) : '') +
-        '</div>';
-      if (hold.status !== 'hard_cut') {
+    if (showHoldOnce) {
+      if (buf && buf.is_low) {
+        bufferChip =
+          '<div class="chip chip--pend" style="margin-top:4px;font-size:11px;background:#fef3c7;color:#92400e">' +
+          'Buffer low · £' +
+          esc(Number(buf.shortfall_gbp || 0).toFixed(2)) +
+          ' short</div>';
+      } else if (buf && buf.is_own_arrangement !== false && Number(buf.required_gbp) > 0) {
+        bufferChip =
+          '<div class="chip" style="margin-top:4px;font-size:11px;background:#ecfdf5;color:#065f46">' +
+          'Buffer OK · £' +
+          esc(Number(buf.available_gbp || 0).toFixed(2)) +
+          ' / £' +
+          esc(Number(buf.required_gbp || 0).toFixed(2)) +
+          '</div>';
+      }
+      if (hold && (hold.status === 'soft_hold' || hold.status === 'session_held' || hold.status === 'hard_cut')) {
+        var holdLabel =
+          hold.status === 'session_held'
+            ? 'Session held'
+            : hold.status === 'hard_cut'
+              ? 'Hard cut'
+              : 'Soft hold';
+        holdChip =
+          '<div class="chip chip--pend" style="margin-top:4px;font-size:11px">' +
+          esc(holdLabel) +
+          (hold.reminder_count ? ' · ' + esc(String(hold.reminder_count)) + ' reminders' : '') +
+          (hold.held_session_label ? ' · ' + esc(String(hold.held_session_label).slice(0, 48)) : '') +
+          '</div>';
+        if (hold.status !== 'hard_cut') {
+          holdBtns =
+            '<button type="button" class="btn btn--sm btn--ghost" data-hold-act="remind" data-hold-contact="' +
+            esc(inv.contact_id) +
+            '" data-inv-id="' +
+            id +
+            '">Remind</button> ' +
+            (hold.status === 'soft_hold'
+              ? '<button type="button" class="btn btn--sm btn--sec" data-hold-act="hold_session" data-hold-contact="' +
+                esc(inv.contact_id) +
+                '">Hold 1 session</button> '
+              : '') +
+            '<button type="button" class="btn btn--sm btn--ghost" data-hold-act="clear" data-hold-contact="' +
+            esc(inv.contact_id) +
+            '">Release hold</button> ';
+        }
+      } else if (inv.payment_status !== 'paid') {
         holdBtns =
-          '<button type="button" class="btn btn--sm btn--ghost" data-hold-act="remind" data-hold-contact="' +
+          '<button type="button" class="btn btn--sm btn--ghost" data-hold-act="soft_hold" data-hold-contact="' +
           esc(inv.contact_id) +
           '" data-inv-id="' +
           id +
-          '">Remind</button> ' +
-          (hold.status === 'soft_hold'
-            ? '<button type="button" class="btn btn--sm btn--sec" data-hold-act="hold_session" data-hold-contact="' +
-              esc(inv.contact_id) +
-              '">Hold 1 session</button> '
-            : '') +
-          '<button type="button" class="btn btn--sm btn--ghost" data-hold-act="clear" data-hold-contact="' +
-          esc(inv.contact_id) +
-          '">Release hold</button> ';
+          '">Soft hold</button> ';
       }
-    } else if (inv.payment_status !== 'paid') {
-      holdBtns =
-        '<button type="button" class="btn btn--sm btn--ghost" data-hold-act="soft_hold" data-hold-contact="' +
-        esc(inv.contact_id) +
-        '" data-inv-id="' +
-        id +
-        '">Soft hold</button> ';
     }
     var xeroChip = inv.xero_invoice_id
       ? '<div class="muted" style="font-size:11px">Xero ' +
@@ -422,39 +498,14 @@
           : '';
 
     return (
-      '<details class="pp-inv-acc__item" data-invoice-id="' +
+      '<article class="pp-inv-acc__card" data-invoice-id="' +
       id +
       '">' +
-      '<summary class="pp-inv-acc__sum">' +
-      '<span class="pp-inv-acc__chev" aria-hidden="true"></span>' +
-      '<span class="pp-inv-acc__who">' +
-      '<strong class="pp-inv-acc__name">' +
-      esc(name) +
-      '</strong>' +
-      '<span class="pp-inv-acc__num">' +
-      esc(inv.invoice_number || '—') +
-      '</span>' +
-      '</span>' +
-      '<span class="pp-inv-acc__amt">' +
-      esc(formatMoney(inv.amount_gbp)) +
-      '</span>' +
-      '<span class="pp-inv-acc__method" title="Payment method">' +
-      esc(methodLabel(inv)) +
-      '</span>' +
-      '<span class="pp-inv-acc__status">' +
-      statusChip(inv.payment_status, inv.share_status) +
-      xeroSummary(inv) +
-      '</span>' +
-      '</summary>' +
-      '<div class="pp-inv-acc__body">' +
       '<div class="pp-inv-acc__grid">' +
       '<div class="pp-inv-acc__col" style="min-width:0">' +
-      '<div class="muted" style="font-size:12px">' +
-      esc(inv.contact_id) +
-      '</div>' +
       bufferChip +
       holdChip +
-      '<div style="margin-top:6px;font-size:13px;overflow-wrap:break-word">' +
+      '<div style="font-size:13px;overflow-wrap:break-word">' +
       '<strong>' +
       esc(inv.invoice_number || '—') +
       '</strong>' +
@@ -499,7 +550,51 @@
           '">Share</button> ') +
       confirmBtn +
       holdBtns +
-      '</div></div></div></details>'
+      '</div></div></article>'
+    );
+  }
+
+  function participantAccordionHtml(group) {
+    var invoices = group.invoices || [];
+    var n = invoices.length;
+    var contactId = esc(group.contact_id || '');
+    var name = group.name || 'Participant';
+    var cards = invoices
+      .map(function (inv, idx) {
+        return invoiceDetailCardHtml(inv, { showHoldOnce: idx === 0 });
+      })
+      .join('');
+    return (
+      '<details class="pp-inv-acc__item" data-contact-id="' +
+      contactId +
+      '">' +
+      '<summary class="pp-inv-acc__sum">' +
+      '<span class="pp-inv-acc__chev" aria-hidden="true"></span>' +
+      '<span class="pp-inv-acc__who">' +
+      '<strong class="pp-inv-acc__name">' +
+      esc(name) +
+      '</strong>' +
+      '<span class="pp-inv-acc__num">' +
+      esc(String(n)) +
+      ' invoice' +
+      (n === 1 ? '' : 's') +
+      (contactId ? ' · ' + contactId : '') +
+      '</span>' +
+      '</span>' +
+      '<span class="pp-inv-acc__amt">' +
+      esc(formatMoney(groupTotalGbp(invoices))) +
+      '</span>' +
+      '<span class="pp-inv-acc__method" title="Payment method">' +
+      esc(groupMethodSummary(invoices)) +
+      '</span>' +
+      '<span class="pp-inv-acc__status">' +
+      groupStatusSummary(invoices) +
+      '</span>' +
+      '</summary>' +
+      '<div class="pp-inv-acc__body">' +
+      '<div class="pp-inv-acc__cards">' +
+      cards +
+      '</div></div></details>'
     );
   }
 
@@ -522,6 +617,8 @@
       '.pp-inv-acc__xero--ok{color:#065f46}' +
       '.pp-inv-acc__xero--fail{color:#b91c1c}' +
       '.pp-inv-acc__body{border-top:1px solid #e8eef3;padding:12px;background:#fafcfd;min-width:0}' +
+      '.pp-inv-acc__cards{display:flex;flex-direction:column;gap:10px;min-width:0}' +
+      '.pp-inv-acc__card{border:1px solid #e2eaf0;border-radius:8px;padding:10px;background:#fff;min-width:0}' +
       '.pp-inv-acc__grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.7fr) minmax(0,.9fr);gap:12px;min-width:0}' +
       '@media (max-width:820px){.pp-inv-acc__grid{grid-template-columns:1fr}}' +
       '.pp-inv-acc__actions{display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;min-width:0}' +
@@ -666,7 +763,7 @@
     host.innerHTML =
       accordionListStyles() +
       '<div class="pp-inv-acc" role="list">' +
-      state.invoices.map(accordionItemHtml).join('') +
+      groupInvoicesByParticipant(state.invoices).map(participantAccordionHtml).join('') +
       '</div>';
     bindRowActions(host);
   }
