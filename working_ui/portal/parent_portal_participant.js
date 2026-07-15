@@ -1645,30 +1645,88 @@
     var raw = Array.isArray(crash.dates) ? crash.dates : [];
     if (!raw.length) return [];
     var todayIso = isoDateLocal(new Date());
-    var nextIso = "";
-    for (var i = 0; i < raw.length; i++) {
-      var cand = String((raw[i] && raw[i].iso) || "").slice(0, 10);
-      if (cand && cand >= todayIso && !isIsoSessionFinished(cand, data)) {
-        nextIso = cand;
-        break;
-      }
-    }
-    return raw
+    var mapped = raw
       .map(function (row) {
         var iso = String((row && row.iso) || "").slice(0, 10);
         if (!iso) return null;
         return annotateChipDate(
           {
             iso: iso,
+            activity: String((row && row.activity) || "").trim(),
+            slot_label: String((row && row.slot_label) || "").trim(),
             shortLabel: formatTermChipLabel(iso),
             past: iso < todayIso,
             isToday: iso === todayIso,
-            isNext: !!nextIso && iso === nextIso,
+            isNext: false,
           },
           data,
         );
       })
       .filter(Boolean);
+    var nextByActivity = Object.create(null);
+    mapped.forEach(function (d) {
+      var key = crashActivityRowKey(d.activity);
+      if (!key) key = "other";
+      if (nextByActivity[key]) return;
+      if (!d.past) nextByActivity[key] = d.iso;
+    });
+    mapped.forEach(function (d) {
+      var key = crashActivityRowKey(d.activity) || "other";
+      d.isNext = !!nextByActivity[key] && d.iso === nextByActivity[key];
+    });
+    return mapped;
+  }
+
+  function crashActivityRowKey(activity) {
+    var a = String(activity || "").toLowerCase();
+    if (/swim|aquatic/.test(a)) return "swim";
+    if (/climb/.test(a)) return "climb";
+    return "";
+  }
+
+  function crashActivityRowLabel(activity) {
+    var key = crashActivityRowKey(activity);
+    if (key === "swim") return "Aquatic Activity";
+    if (key === "climb") return "Climbing Activity";
+    var raw = String(activity || "").trim();
+    return raw || "Intensive Activity";
+  }
+
+  function crashActivityIcon(activity) {
+    var key = crashActivityRowKey(activity);
+    if (key === "swim") {
+      return (
+        '<svg class="pp-hub-ops__date-chips-label-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 16c1.5-1 3-1 4.5 0s3 1 4.5 0 3-1 4.5 0 3 1 4.5 0"/><path d="M2 20c1.5-1 3-1 4.5 0s3 1 4.5 0 3-1 4.5 0 3 1 4.5 0"/><circle cx="7" cy="8" r="2.5"/><path d="M11 9.5c1.2 1.4 2.8 2.5 5 2.5"/></svg>'
+      );
+    }
+    if (key === "climb") {
+      return (
+        '<svg class="pp-hub-ops__date-chips-label-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 7l3 3-7 7-3-3z"/><path d="M7 17l-2 2"/><path d="M17 7l2-2"/><circle cx="8.5" cy="8.5" r="1.2"/><circle cx="15.5" cy="15.5" r="1.2"/></svg>'
+      );
+    }
+    return (
+      '<svg class="pp-hub-ops__date-chips-label-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"/></svg>'
+    );
+  }
+
+  function groupCrashDatesByActivity(dates) {
+    var groups = [];
+    var indexByKey = Object.create(null);
+    (dates || []).forEach(function (d) {
+      var key = crashActivityRowKey(d.activity) || "other:" + String(d.activity || "").toLowerCase();
+      if (indexByKey[key] == null) {
+        indexByKey[key] = groups.length;
+        groups.push({
+          key: key,
+          activity: d.activity,
+          label: crashActivityRowLabel(d.activity),
+          icon: crashActivityIcon(d.activity),
+          dates: [],
+        });
+      }
+      groups[indexByKey[key]].dates.push(d);
+    });
+    return groups;
   }
 
   function hasCrashBooking(data) {
@@ -1800,13 +1858,12 @@
     if (bookedNew) {
       // New crash and/or 2026/27 booking: only those rows, hide completed greens.
       if (crashDates.length) {
-        rows.push(
-          rowHtml(
-            "July Intensive Courses & Camps",
-            filterChipListForDisplay(crashDates, statusByIso, true),
-            intensiveIcon,
-          ),
-        );
+        var crashGroups = groupCrashDatesByActivity(crashDates);
+        crashGroups.forEach(function (g) {
+          var visible = filterChipListForDisplay(g.dates, statusByIso, true);
+          if (!visible.length) return;
+          rows.push(rowHtml(g.label, visible, g.icon || intensiveIcon));
+        });
       }
       if (familyAcceptedNextYear(data)) {
         var nextDates = findTermSessionDates(data);

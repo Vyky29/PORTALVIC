@@ -1140,15 +1140,18 @@ Deno.serve(async (req) => {
         .in("status", ["confirmed", "awaiting_payment"])
         .order("session_date", { ascending: true })
         .limit(64);
-      const seenIso = new Set<string>();
+      const seenKey = new Set<string>();
       const dates: Array<{ iso: string; activity: string; slot_label: string }> = [];
       for (const line of crashLines || []) {
         const iso = String(line.session_date || "").slice(0, 10);
-        if (!iso || seenIso.has(iso)) continue;
-        seenIso.add(iso);
+        const activity = clean(line.activity, 40);
+        if (!iso) continue;
+        const key = iso + "|" + activity.toLowerCase();
+        if (seenKey.has(key)) continue;
+        seenKey.add(key);
         dates.push({
           iso,
-          activity: clean(line.activity, 40),
+          activity,
           slot_label: clean(line.slot_label, 80),
         });
       }
