@@ -311,6 +311,47 @@
     return 'Bank transfer';
   }
 
+  function methodToneClass(label) {
+    var s = String(label || '').toLowerCase();
+    if (s.indexOf('gocardless') >= 0 || s.indexOf('direct payment') >= 0) {
+      return 'pp-inv-acc__method--gc';
+    }
+    if (s.indexOf('card') >= 0 || s.indexOf('apple') >= 0 || s.indexOf('stripe') >= 0) {
+      return 'pp-inv-acc__method--card';
+    }
+    if (s.indexOf('admin') >= 0 || s.indexOf('office') >= 0) {
+      return 'pp-inv-acc__method--admin';
+    }
+    if (s.indexOf('bank') >= 0 || s.indexOf('tide') >= 0) {
+      return 'pp-inv-acc__method--bank';
+    }
+    return 'pp-inv-acc__method--other';
+  }
+
+  function methodChipHtml(label) {
+    var text = String(label || 'Bank transfer').trim() || 'Bank transfer';
+    return (
+      '<span class="pp-inv-acc__method ' +
+      methodToneClass(text) +
+      '" title="Payment method">' +
+      esc(text) +
+      '</span>'
+    );
+  }
+
+  function groupMethodChipsHtml(invoices) {
+    var seen = Object.create(null);
+    var out = [];
+    (invoices || []).forEach(function (inv) {
+      var m = methodLabel(inv);
+      if (!seen[m]) {
+        seen[m] = true;
+        out.push(methodChipHtml(m));
+      }
+    });
+    return out.length ? out.join('') : methodChipHtml('Bank transfer');
+  }
+
   function xeroSummary(inv) {
     if (inv.xero_invoice_id) {
       return '<span class="pp-inv-acc__xero pp-inv-acc__xero--ok">In Xero</span>';
@@ -530,7 +571,7 @@
       esc(formatDate(inv.due_date)) +
       '</div>' +
       '<div style="margin-top:8px"><span class="muted">Method</span><br>' +
-      esc(methodLabel(inv)) +
+      methodChipHtml(methodLabel(inv)) +
       '</div>' +
       '<div style="margin-top:8px">' +
       statusChip(inv.payment_status, inv.share_status) +
@@ -584,8 +625,8 @@
       '<span class="pp-inv-acc__amt">' +
       esc(formatMoney(groupTotalGbp(invoices))) +
       '</span>' +
-      '<span class="pp-inv-acc__method" title="Payment method">' +
-      esc(groupMethodSummary(invoices)) +
+      '<span class="pp-inv-acc__methods">' +
+      groupMethodChipsHtml(invoices) +
       '</span>' +
       '<span class="pp-inv-acc__status">' +
       groupStatusSummary(invoices) +
@@ -611,7 +652,13 @@
       '.pp-inv-acc__name{overflow-wrap:break-word}' +
       '.pp-inv-acc__num{font-size:12px;color:#4a6578;overflow-wrap:break-word}' +
       '.pp-inv-acc__amt{font-weight:700;flex:0 0 auto}' +
-      '.pp-inv-acc__method{font-size:12px;font-weight:600;color:#1f6a94;background:#eef6fb;border-radius:999px;padding:3px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word}' +
+      '.pp-inv-acc__methods{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0;flex:0 1 auto;max-width:100%}' +
+      '.pp-inv-acc__method{font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid transparent}' +
+      '.pp-inv-acc__method--gc{color:#065f46;background:#d1fae5;border-color:#a7f3d0}' +
+      '.pp-inv-acc__method--bank{color:#9a3412;background:#ffedd5;border-color:#fdba74}' +
+      '.pp-inv-acc__method--card{color:#1e3a8a;background:#dbeafe;border-color:#93c5fd}' +
+      '.pp-inv-acc__method--admin{color:#334155;background:#e2e8f0;border-color:#cbd5e1}' +
+      '.pp-inv-acc__method--other{color:#4a6578;background:#eef2f5;border-color:#d5dee6}' +
       '.pp-inv-acc__status{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}' +
       '.pp-inv-acc__xero{font-size:11px;color:#92400e}' +
       '.pp-inv-acc__xero--ok{color:#065f46}' +
