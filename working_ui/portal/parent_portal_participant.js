@@ -1836,11 +1836,13 @@
         "</div>"
       );
     }
-    function rowHtml(label, list, iconHtml) {
+    function rowHtml(label, list, iconHtml, labelClass) {
       if (!list.length) return "";
       return (
         '<div class="pp-hub-ops__date-chips-row">' +
-        '<div class="pp-hub-ops__date-chips-label">' +
+        '<div class="pp-hub-ops__date-chips-label' +
+        (labelClass ? " " + labelClass : "") +
+        '">' +
         (iconHtml || "") +
         "<span>" +
         esc(label) +
@@ -1861,11 +1863,24 @@
       // New crash and/or 2026/27 booking: only those rows, hide completed greens.
       if (crashDates.length) {
         var crashGroups = groupCrashDatesByActivity(crashDates);
+        var activityRows = [];
         crashGroups.forEach(function (g) {
           var visible = filterChipListForDisplay(g.dates, statusByIso, true);
           if (!visible.length) return;
-          rows.push(rowHtml(g.label, visible, g.icon || intensiveIcon));
+          activityRows.push(
+            rowHtml(g.label, visible, g.icon || "", "pp-hub-ops__date-chips-label--activity"),
+          );
         });
+        if (activityRows.length) {
+          rows.push(
+            '<div class="pp-hub-ops__date-chips-section" aria-label="July Intensive Courses & Camps">' +
+              '<div class="pp-hub-ops__date-chips-section-head">' +
+              intensiveIcon +
+              "<span>July Intensive Courses &amp; Camps</span></div>" +
+              activityRows.join("") +
+              "</div>",
+          );
+        }
       }
       if (familyAcceptedNextYear(data)) {
         var nextDates = findTermSessionDates(data);
