@@ -1033,7 +1033,7 @@
           reference: refEl && refEl.value ? refEl.value : null,
           invoice_number: invNo && invNo.value ? invNo.value : null,
           notes: notes && notes.value ? notes.value : null,
-          share_status: 'ready',
+          share_status: isLa ? 'hidden' : 'ready',
           payment_method_hint: isLa ? 'la_funded' : 'bank_transfer',
           client_id_label:
             (clientIdEl && String(clientIdEl.value || '').trim()) || contactId,
