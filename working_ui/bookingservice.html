@@ -1144,6 +1144,7 @@
   </div>
 
   <script src="/portal/portal_booking_offer.js?v=20260714-booking-reg1"></script>
+  <script src="/portal/portal_booking_service_presence.js?v=20260715-bs-presence"></script>
   <script>
 (function () {
   "use strict";
@@ -1754,6 +1755,16 @@
   }
 
   function goToRegistration(slot) {
+    try {
+      if (window.PortalBookingServicePresence) {
+        var bits = [slot && slot.serviceId, slot && slot.day, slot && slot.timeLabel]
+          .filter(Boolean)
+          .join(" · ");
+        void window.PortalBookingServicePresence.ping("book_cta", bits || null);
+      }
+    } catch (_e) {
+      /* ignore */
+    }
     window.location.href = registrationUrlForSlot(slot);
   }
 
@@ -1893,6 +1904,11 @@
         "Couldn’t load live availability. Refresh to try again, or contact the office."
       );
     });
+  try {
+    if (window.PortalBookingServicePresence) window.PortalBookingServicePresence.bootOffer();
+  } catch (_e) {
+    /* ignore */
+  }
 })();
   </script>
 </body>

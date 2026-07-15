@@ -613,3 +613,13 @@ verify_jwt = false
 
 [functions.portal-staff-message-send]
 verify_jwt = false
+
+# Public Booking Service visitor presence (anonymous new clients).
+[functions.portal-booking-service-session-start]
+verify_jwt = false
+
+[functions.portal-booking-service-activity-ping]
+verify_jwt = false
+
+[functions.portal-ceo-booking-service-presence]
+verify_jwt = false

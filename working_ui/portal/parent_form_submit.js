@@ -93,6 +93,13 @@
           var err = (j && j.error) ? String(j.error) : ('HTTP ' + res.status);
           throw new Error(err);
         }
+        try {
+          if (global.PortalBookingServicePresence) {
+            void global.PortalBookingServicePresence.ping('registration_submit');
+          }
+        } catch (_e2) {
+          /* ignore */
+        }
         return j;
       });
     });

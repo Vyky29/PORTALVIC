@@ -350,6 +350,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="/portal/parent_form_submit.js"></script>
   <script src="/portal/parent_registration_portal.js?v=20260705-portal-save-fix"></script>
+  <script src="/portal/portal_booking_service_presence.js?v=20260715-bs-presence"></script>
+  <script>
+    try {
+      if (window.PortalBookingServicePresence) window.PortalBookingServicePresence.bootRegistration();
+    } catch (_e) {}
+  </script>
 </head>
 <body>
   <div class="page">
