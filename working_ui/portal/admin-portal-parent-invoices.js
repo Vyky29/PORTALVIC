@@ -294,8 +294,39 @@
     );
   }
 
-  function rowHtml(inv) {
+  function methodLabel(inv) {
+    var hint = String(inv.payment_method_hint || '').toLowerCase();
+    var via = String(inv.paid_via || '').toLowerCase();
+    if (via === 'gocardless' || hint === 'gocardless' || inv.gocardless_url) {
+      return 'GoCardless';
+    }
+    if (via === 'stripe' || hint === 'payment_link' || inv.payment_link_url) {
+      return 'Card / payment link';
+    }
+    if (via === 'tide' || via === 'bank' || hint === 'bank_transfer') {
+      return 'Bank transfer';
+    }
+    if (via === 'admin') return 'Admin / Office';
+    if (hint === 'other') return 'Other';
+    return 'Bank transfer';
+  }
+
+  function xeroSummary(inv) {
+    if (inv.xero_invoice_id) {
+      return '<span class="pp-inv-acc__xero pp-inv-acc__xero--ok">In Xero</span>';
+    }
+    if (inv.xero_push_status === 'failed') {
+      return '<span class="pp-inv-acc__xero pp-inv-acc__xero--fail">Xero failed</span>';
+    }
+    if (inv.created_via === 'portal' || inv.created_via === 'reenrolment') {
+      return '<span class="pp-inv-acc__xero">Not in Xero</span>';
+    }
+    return '';
+  }
+
+  function accordionItemHtml(inv) {
     var id = esc(inv.id);
+    var name = inv.participant_display || inv.related_client || inv.contact_id || 'Participant';
     var reportBits = [];
     if (inv.parent_reported_paid_at) {
       reportBits.push('Reported ' + formatDate(inv.parent_reported_paid_at));
@@ -389,20 +420,44 @@
         : inv.created_via === 'portal' || inv.created_via === 'reenrolment'
           ? '<div class="muted" style="font-size:11px;color:#92400e">Not in Xero</div>'
           : '';
+
     return (
-      '<tr data-invoice-id="' +
+      '<details class="pp-inv-acc__item" data-invoice-id="' +
       id +
       '">' +
-      '<td style="min-width:0;overflow-wrap:break-word"><strong>' +
-      esc(inv.participant_display || inv.related_client || inv.contact_id) +
-      '</strong><div class="muted" style="font-size:12px">' +
+      '<summary class="pp-inv-acc__sum">' +
+      '<span class="pp-inv-acc__chev" aria-hidden="true"></span>' +
+      '<span class="pp-inv-acc__who">' +
+      '<strong class="pp-inv-acc__name">' +
+      esc(name) +
+      '</strong>' +
+      '<span class="pp-inv-acc__num">' +
+      esc(inv.invoice_number || '—') +
+      '</span>' +
+      '</span>' +
+      '<span class="pp-inv-acc__amt">' +
+      esc(formatMoney(inv.amount_gbp)) +
+      '</span>' +
+      '<span class="pp-inv-acc__method" title="Payment method">' +
+      esc(methodLabel(inv)) +
+      '</span>' +
+      '<span class="pp-inv-acc__status">' +
+      statusChip(inv.payment_status, inv.share_status) +
+      xeroSummary(inv) +
+      '</span>' +
+      '</summary>' +
+      '<div class="pp-inv-acc__body">' +
+      '<div class="pp-inv-acc__grid">' +
+      '<div class="pp-inv-acc__col" style="min-width:0">' +
+      '<div class="muted" style="font-size:12px">' +
       esc(inv.contact_id) +
       '</div>' +
       bufferChip +
       holdChip +
-      '</td>' +
-      '<td style="min-width:0;overflow-wrap:break-word">' +
+      '<div style="margin-top:6px;font-size:13px;overflow-wrap:break-word">' +
+      '<strong>' +
       esc(inv.invoice_number || '—') +
+      '</strong>' +
       '<div class="muted" style="font-size:12px">' +
       esc(inv.title || '') +
       '</div>' +
@@ -415,17 +470,21 @@
           esc(reportBits.join(' · ')) +
           '</div>'
         : '') +
-      '</td>' +
-      '<td>' +
+      '</div></div>' +
+      '<div class="pp-inv-acc__col">' +
+      '<div><span class="muted">Amount</span><br><strong>' +
       esc(formatMoney(inv.amount_gbp)) +
-      '</td>' +
-      '<td>' +
+      '</strong></div>' +
+      '<div style="margin-top:8px"><span class="muted">Due</span><br>' +
       esc(formatDate(inv.due_date)) +
-      '</td>' +
-      '<td>' +
+      '</div>' +
+      '<div style="margin-top:8px"><span class="muted">Method</span><br>' +
+      esc(methodLabel(inv)) +
+      '</div>' +
+      '<div style="margin-top:8px">' +
       statusChip(inv.payment_status, inv.share_status) +
-      '</td>' +
-      '<td style="white-space:nowrap">' +
+      '</div></div>' +
+      '<div class="pp-inv-acc__col pp-inv-acc__actions">' +
       (inv.pdf_url
         ? '<a class="btn btn--ghost btn--sm" href="' +
           esc(inv.pdf_url) +
@@ -440,7 +499,33 @@
           '">Share</button> ') +
       confirmBtn +
       holdBtns +
-      '</td></tr>'
+      '</div></div></div></details>'
+    );
+  }
+
+  function accordionListStyles() {
+    return (
+      '<style id="pp-inv-acc-css">' +
+      '.pp-inv-acc{display:flex;flex-direction:column;gap:8px;min-width:0}' +
+      '.pp-inv-acc__item{border:1px solid #dbe4ec;border-radius:10px;background:#fff;min-width:0;overflow:hidden}' +
+      '.pp-inv-acc__sum{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 12px;cursor:pointer;list-style:none;min-width:0}' +
+      '.pp-inv-acc__sum::-webkit-details-marker{display:none}' +
+      '.pp-inv-acc__chev{width:0;height:0;border-left:5px solid #4a6578;border-top:4px solid transparent;border-bottom:4px solid transparent;flex:0 0 auto;transition:transform .15s ease}' +
+      '.pp-inv-acc__item[open]>.pp-inv-acc__sum .pp-inv-acc__chev{transform:rotate(90deg)}' +
+      '.pp-inv-acc__who{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 140px}' +
+      '.pp-inv-acc__name{overflow-wrap:break-word}' +
+      '.pp-inv-acc__num{font-size:12px;color:#4a6578;overflow-wrap:break-word}' +
+      '.pp-inv-acc__amt{font-weight:700;flex:0 0 auto}' +
+      '.pp-inv-acc__method{font-size:12px;font-weight:600;color:#1f6a94;background:#eef6fb;border-radius:999px;padding:3px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word}' +
+      '.pp-inv-acc__status{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}' +
+      '.pp-inv-acc__xero{font-size:11px;color:#92400e}' +
+      '.pp-inv-acc__xero--ok{color:#065f46}' +
+      '.pp-inv-acc__xero--fail{color:#b91c1c}' +
+      '.pp-inv-acc__body{border-top:1px solid #e8eef3;padding:12px;background:#fafcfd;min-width:0}' +
+      '.pp-inv-acc__grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.7fr) minmax(0,.9fr);gap:12px;min-width:0}' +
+      '@media (max-width:820px){.pp-inv-acc__grid{grid-template-columns:1fr}}' +
+      '.pp-inv-acc__actions{display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;min-width:0}' +
+      '</style>'
     );
   }
 
@@ -579,11 +664,10 @@
       return;
     }
     host.innerHTML =
-      '<div style="overflow:auto;min-width:0"><table class="tbl tbl--dense" style="min-width:720px"><thead><tr>' +
-      '<th>Participant</th><th>Invoice</th><th>Amount</th><th>Due</th><th>Status</th><th>Actions</th>' +
-      '</tr></thead><tbody>' +
-      state.invoices.map(rowHtml).join('') +
-      '</tbody></table></div>';
+      accordionListStyles() +
+      '<div class="pp-inv-acc" role="list">' +
+      state.invoices.map(accordionItemHtml).join('') +
+      '</div>';
     bindRowActions(host);
   }
 
