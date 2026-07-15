@@ -108,6 +108,7 @@ Deno.serve(async (req) => {
     )
     .eq("contact_id", contactId)
     .eq("share_status", "ready")
+    .neq("payment_method_hint", "la_funded")
     .order("due_date", { ascending: false, nullsFirst: false })
     .order("ready_at", { ascending: false, nullsFirst: false })
     .limit(50);
@@ -173,6 +174,11 @@ Deno.serve(async (req) => {
     const doc = docsById.get(String(share.document_id));
     if (!doc || !doc.file_url) continue;
     if (!parentInvoiceAllowedForShare(share, doc.title)) continue;
+    const hintEarly = clean(share.payment_method_hint, 40) || "bank_transfer";
+    const isLaFundedEarly =
+      hintEarly === "la_funded" || clean(share.vat_mode, 20) === "exempt";
+    // LA / VAT-exempt: office invoices the funder — parents only see the booking.
+    if (isLaFundedEarly) continue;
     const { data: signed } = await supabase.storage
       .from(BUCKET)
       .createSignedUrl(String(doc.file_url), 3600);
@@ -188,10 +194,9 @@ Deno.serve(async (req) => {
       amount > 0;
     const cardPricing =
       canPayCard && amount != null ? stripeGrossUpFromGbp(amount) : null;
-    const hint = clean(share.payment_method_hint, 40) || "bank_transfer";
+    const hint = hintEarly;
     const isGcHint = hint === "gocardless";
-    const isLaFunded =
-      hint === "la_funded" || clean(share.vat_mode, 20) === "exempt";
+    const isLaFunded = false;
     const hasGcPayment = !!clean(share.gocardless_payment_id, 80);
     const canSetupGc =
       gcApiAvailable &&

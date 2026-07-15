@@ -1171,7 +1171,7 @@
       '<label style="flex:1 1 140px;min-width:0">Client Id<input class="inp" id="portalParentInvoiceClientId" placeholder="Usually contact id" style="width:100%" /></label>' +
       '<label style="flex:1 1 180px;min-width:0">PO (required for LA)<input class="inp" id="portalParentInvoicePo" placeholder="Purchase order — changes each time" style="width:100%" /></label>' +
       '</div>' +
-      '<p class="muted" id="portalParentInvoiceLaHint" hidden style="margin:0;max-width:48rem;overflow-wrap:break-word">LA funded invoices are created <strong>manually</strong> here. Client Id stays the same; enter the <strong>PO</strong> for this invoice.</p>' +
+      '<p class="muted" id="portalParentInvoiceLaHint" hidden style="margin:0;max-width:48rem;overflow-wrap:break-word">LA funded invoices are created <strong>manually</strong> here (Client Id + PO). They stay <strong>office-only</strong> — parents see the booking, not the invoice (LA pays).</p>' +
       '<label style="min-width:0">Description<textarea class="inp" id="portalParentInvoiceDesc" rows="3" placeholder="Structured activity support…" style="width:100%;max-width:36rem;min-height:4.5rem"></textarea></label>' +
       '<label style="min-width:0">Invoice Reference (term label)<input class="inp" id="portalParentInvoiceRef" placeholder="e.g. Summer term 25/26" style="width:100%;max-width:28rem" /></label>' +
       '<p class="muted" style="margin:0 0 8px;max-width:48rem;overflow-wrap:break-word">PDF/Xero <strong>Reference</strong> = term. Parents use the <strong>participant name</strong> as the Tide bank payment reference. Put name + service in the description.</p>' +

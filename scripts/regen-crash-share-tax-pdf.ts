@@ -46,8 +46,16 @@ if (!url || !service) {
 
 const invoiceNumber = String(Deno.args[0] || "").trim();
 const forceLa = Deno.args.includes("--la") || Deno.args.includes("--exempt");
+function argVal(flag: string): string {
+  const hit = Deno.args.find((a) => a.startsWith(flag + "="));
+  return hit ? hit.slice(flag.length + 1).trim() : "";
+}
+const clientIdArg = argVal("--client-id");
+const poArg = argVal("--po");
 if (!invoiceNumber) {
-  console.error("Pass invoice number, e.g. INV-P-CRASH-MRMCPDUG [--la]");
+  console.error(
+    "Pass invoice number, e.g. INV-P-0001 --la --client-id=70416281 --po=FW10559270",
+  );
   Deno.exit(1);
 }
 
@@ -146,8 +154,8 @@ const lineDescription = buildCrashSummerInvoiceDescription({
     slot_label: String(l.slot_label || ""),
   })),
   participantName: displayName,
-  clientId: funding.clientId || contactId,
-  po: funding.po || "",
+  clientId: clientIdArg || funding.clientId || contactId,
+  po: poArg || funding.po || "",
 });
 
 const serviceLabel = crashInvoiceServiceLabel(activities);
@@ -210,19 +218,24 @@ if (docUpErr) {
 }
 
 const now = new Date().toISOString();
-  const { error: shareUpErr } = await admin
+  const sharePatch: Record<string, unknown> = {
+  vat_mode: vatMode,
+  line_description: lineDescription,
+  reference_text: CRASH_SUMMER_INVOICE_TERM_REFERENCE,
+  payment_method_hint: vatMode === "exempt" ? "la_funded" : "bank_transfer",
+  payment_link_url: null,
+  notes: `Summer crash course Jul 2026 · booking ${booking.id} · TAX INVOICE regenerated${
+    vatMode === "exempt" ? " · LA funded / VAT exempt · parent-hidden" : ""
+  }`,
+  updated_at: now,
+};
+if (vatMode === "exempt") {
+  sharePatch.share_status = "hidden";
+  sharePatch.ready_at = null;
+}
+const { error: shareUpErr } = await admin
   .from("portal_parent_invoice_share")
-  .update({
-    vat_mode: vatMode,
-    line_description: lineDescription,
-    reference_text: CRASH_SUMMER_INVOICE_TERM_REFERENCE,
-    payment_method_hint: vatMode === "exempt" ? "la_funded" : "bank_transfer",
-    payment_link_url: null,
-    notes: `Summer crash course Jul 2026 · booking ${booking.id} · TAX INVOICE regenerated${
-      vatMode === "exempt" ? " · LA funded / VAT exempt" : ""
-    }`,
-    updated_at: now,
-  })
+  .update(sharePatch)
   .eq("id", share.id);
 if (shareUpErr) {
   console.error("share update failed", shareUpErr.message);

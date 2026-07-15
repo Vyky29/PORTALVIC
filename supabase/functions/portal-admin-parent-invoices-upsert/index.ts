@@ -164,8 +164,6 @@ Deno.serve(async (req) => {
     const lineDescription =
       String(fields.line_description == null ? "" : fields.line_description).trim() ||
       "Structured activity support delivered for a SEND participant.";
-    const notes = clean(fields.notes, 800) || null;
-    const shareStatus = parseShareStatus(fields.share_status) || "ready";
     const methodHint =
       parseMethodHint(fields.payment_method_hint) ||
       (vatMode === "exempt" ? "la_funded" : "bank_transfer");
@@ -174,6 +172,10 @@ Deno.serve(async (req) => {
     if (vatMode === "exempt" && !poLabel) {
       return portalAdminJson(400, { ok: false, error: "po_required_for_la" });
     }
+    // LA funded: keep in Admin / Xero, hide from parent portal (LA pays, not the family).
+    const shareStatus =
+      parseShareStatus(fields.share_status) ||
+      (vatMode === "exempt" || methodHint === "la_funded" ? "hidden" : "ready");
 
     const created = await createPortalFamilyInvoice(admin, {
       contactId,
