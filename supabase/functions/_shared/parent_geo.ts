@@ -253,13 +253,35 @@ export function geoFromClientHint(raw: unknown): ParentGeo | null {
   });
 }
 
+/** Local area labels club staff recognise (stronger than generic OSM suburb names). */
+const LONDON_AREA_OVERRIDES: Array<{
+  name: string;
+  minLat: number;
+  maxLat: number;
+  minLng: number;
+  maxLng: number;
+}> = [
+  // Latimer Road / North Kensington (W10) — often mis-labelled Brentford by ISP GeoIP.
+  { name: "Latimer", minLat: 51.507, maxLat: 51.521, minLng: -0.232, maxLng: -0.205 },
+];
+
+function londonAreaOverride(lat: number, lng: number): string | null {
+  for (const a of LONDON_AREA_OVERRIDES) {
+    if (lat >= a.minLat && lat <= a.maxLat && lng >= a.minLng && lng <= a.maxLng) {
+      return a.name;
+    }
+  }
+  return null;
+}
+
 async function reverseGeocode(lat: number, lng: number): Promise<{
   countryCode: string;
   countryName: string;
   region: string;
   city: string;
 } | null> {
-  // zoom 17 ≈ neighbourhood / suburb (Latimer), not borough (Brentford) or whole London.
+  const localArea = londonAreaOverride(lat, lng);
+  // zoom 17 ≈ neighbourhood / suburb, not borough or whole London.
   const url =
     `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(String(lat))}` +
     `&lon=${encodeURIComponent(String(lng))}&zoom=17&addressdetails=1`;
@@ -274,7 +296,17 @@ async function reverseGeocode(lat: number, lng: number): Promise<{
       },
     });
     clearTimeout(t);
-    if (!res.ok) return null;
+    if (!res.ok) {
+      if (localArea) {
+        return {
+          countryCode: "GB",
+          countryName: "United Kingdom",
+          region: "Greater London",
+          city: localArea,
+        };
+      }
+      return null;
+    }
     const j = await res.json() as Record<string, unknown>;
     const addr = (j.address && typeof j.address === "object"
       ? j.address
@@ -295,8 +327,9 @@ async function reverseGeocode(lat: number, lng: number): Promise<{
       );
     }
 
-    // Prefer neighbourhood / suburb (Latimer, North Kensington) over ISP town (Brentford) or "Greater London".
+    // Prefer neighbourhood / suburb over ISP town (Brentford) or "Greater London".
     const candidates = [
+      localArea || "",
       /latimer/i.test(road) || /latimer/i.test(display) ? "Latimer" : "",
       clean(addr.neighbourhood, 80),
       clean(addr.suburb, 80),
@@ -319,7 +352,7 @@ async function reverseGeocode(lat: number, lng: number): Promise<{
         break;
       }
     }
-    if (!city) city = "London";
+    if (!city) city = localArea || "London";
 
     const region =
       [
@@ -330,11 +363,19 @@ async function reverseGeocode(lat: number, lng: number): Promise<{
         clean(addr.state, 80),
       ].find((x) => x && !isGenericLondonPlace(x) && x.toLowerCase() !== city.toLowerCase()) ||
       "Greater London";
-    const countryCode = clean(addr.country_code, 8).toUpperCase();
-    const countryName = clean(addr.country, 80);
+    const countryCode = clean(addr.country_code, 8).toUpperCase() || "GB";
+    const countryName = clean(addr.country, 80) || "United Kingdom";
     if (!city && !region && !countryCode && !countryName) return null;
     return { countryCode, countryName, region: clean(region, 80), city };
   } catch {
+    if (localArea) {
+      return {
+        countryCode: "GB",
+        countryName: "United Kingdom",
+        region: "Greater London",
+        city: localArea,
+      };
+    }
     return null;
   }
 }
