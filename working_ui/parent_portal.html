@@ -1085,10 +1085,10 @@
       min-width: 0;
     }
     .pp-hub-ops__slot {
-      display: flex;
-      flex-wrap: nowrap;
-      align-items: flex-start;
-      gap: 12px;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      column-gap: 12px;
       min-width: 0;
       padding: 12px 14px;
       border-radius: 16px;
@@ -1119,13 +1119,6 @@
       flex-direction: column;
       gap: 6px;
     }
-    .pp-hub-ops__slot-top {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(5.75rem, max-content);
-      align-items: center;
-      gap: 6px 12px;
-      min-width: 0;
-    }
     .pp-hub-ops__slot-name {
       font-size: 15px;
       font-weight: 800;
@@ -1134,10 +1127,13 @@
       min-width: 0;
     }
     .pp-hub-ops__slot-time {
+      grid-column: 3;
+      grid-row: 1;
+      align-self: center;
+      justify-self: end;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      justify-self: stretch;
       gap: 6px;
       font-size: 15px;
       line-height: 1.2;
@@ -3602,7 +3598,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260715-dc-hide-staff-aquatic"></script>
   <script src="/portal/parent_portal_team.js?v=20260710-eiji-hazem-photos"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260714-w2-80pct"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260715-hide-summer-invoices"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260715-slot-time-center"></script>
   <script src="/portal/parent_portal_app.js?v=20260713-gocardless"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

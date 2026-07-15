@@ -1700,18 +1700,17 @@
       hubOpsSlotGlyph(tone) +
       "</span>" +
       '<div class="pp-hub-ops__slot-body">' +
-      '<div class="pp-hub-ops__slot-top">' +
       '<span class="pp-hub-ops__slot-name">' +
       esc(s.label || "Service") +
       "</span>" +
-      (s.time
-        ? '<span class="pp-hub-ops__slot-time">' + clockIco + "<span>" + esc(s.time) + "</span></span>"
-        : "") +
-      "</div>" +
       (place
         ? '<div class="pp-hub-ops__slot-place">' + pinIco + "<span>" + esc(place) + "</span></div>"
         : "") +
-      "</div></li>"
+      "</div>" +
+      (s.time
+        ? '<span class="pp-hub-ops__slot-time">' + clockIco + "<span>" + esc(s.time) + "</span></span>"
+        : "") +
+      "</li>"
     );
   }
 
