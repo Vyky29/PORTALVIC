@@ -21,6 +21,33 @@ function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 }
 
+/**
+ * Parent hub currently hides Summer term 25/26 programme invoices.
+ * Keep July crash + smoke/re-enrol 26/27 payment tests visible via deep-link smoke.
+ */
+function parentInvoiceAllowedForShare(
+  share: { invoice_number?: unknown; notes?: unknown },
+  docTitle: unknown,
+): boolean {
+  const title = clean(docTitle, 240).toLowerCase();
+  const num = clean(share.invoice_number, 80).toLowerCase();
+  const notes = clean(share.notes, 240).toLowerCase();
+  const blob = `${title} ${num} ${notes}`;
+
+  if (/\bcrash\b/.test(blob)) return true;
+  if (/^smoke[-_]/.test(num) || /^test[-_]/.test(num)) return true;
+  if (/tide smoke/.test(blob)) return true;
+  if (/26\/27|2026\/27|2026-27|autumn term 26|spring term 26|summer term 26/.test(blob)) {
+    return true;
+  }
+
+  // Current programme year (Summer term 25/26) — not shown to parents yet.
+  if (/summer term 25|25\/26|inv-2526|year programme/.test(blob)) return false;
+  if (/summer term/.test(blob) && !/\bcrash\b/.test(blob)) return false;
+
+  return true;
+}
+
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
     status,
@@ -145,6 +172,7 @@ Deno.serve(async (req) => {
   for (const share of shares || []) {
     const doc = docsById.get(String(share.document_id));
     if (!doc || !doc.file_url) continue;
+    if (!parentInvoiceAllowedForShare(share, doc.title)) continue;
     const { data: signed } = await supabase.storage
       .from(BUCKET)
       .createSignedUrl(String(doc.file_url), 3600);

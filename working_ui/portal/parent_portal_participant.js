@@ -977,10 +977,8 @@
       "</div>" +
       '<p class="pp-pax-info-section-label pp-pax-info-section-label--paper">Paperwork</p>' +
       '<div class="pp-pax-info-row pp-pax-info-row--paper">' +
-      infoBtnHtml("invoices", "Invoices", invoiceIcon, {
-        extraClass: " pp-pax-info-btn--invoices",
-        subtitle: "Statements & PDFs",
-      }) +
+      // Summer term 25/26 invoices stay off the hub for now — payment smoke
+      // runs via July crash + 2026/27 re-enrolment, then we re-enable this tile.
       infoBtnHtml("consents", "Consents & forms", consentIcon, {
         extraClass:
           " pp-pax-info-btn--consents" +
