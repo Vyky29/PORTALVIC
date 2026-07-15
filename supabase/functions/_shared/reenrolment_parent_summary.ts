@@ -168,10 +168,8 @@ export function buildReenrolmentParentSummary(
       );
     }
     if (bits.length) {
-      items.push({
-        label: "Funding & payment 2026/27",
-        choice: bits.join(" · "),
-      });
+      // Funding / payment stays in the payload for office invoices — not shown to families
+      // on the Family “My booking” summary.
     }
   }
 

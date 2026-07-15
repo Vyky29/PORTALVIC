@@ -2646,22 +2646,94 @@
     }
     .pp-booking-item {
       border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 10px 12px;
+      border-radius: 14px;
+      padding: 12px 12px;
+      min-width: 0;
+      background: linear-gradient(180deg, #fbfcfe 0%, #fff 100%);
+    }
+    .pp-booking-item__row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
       min-width: 0;
     }
+    .pp-booking-item__badge {
+      flex: 0 0 auto;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #eaf5fb;
+      color: #1f6a94;
+    }
+    .pp-booking-item__type-ico {
+      width: 22px;
+      height: 22px;
+      display: block;
+    }
+    .pp-booking-item__copy {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
     .pp-booking-item__label {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 800;
       color: var(--ink);
       overflow-wrap: break-word;
+      line-height: 1.3;
+    }
+    .pp-booking-item__metas {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .pp-booking-item__meta {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      min-width: 0;
+      font-size: 12px;
+      color: #4a6578;
+      line-height: 1.35;
+    }
+    .pp-booking-item__meta > span {
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .pp-booking-item__meta-ico {
+      width: 14px;
+      height: 14px;
+      flex: 0 0 auto;
+      margin-top: 1px;
+      color: #1f6a94;
     }
     .pp-booking-item__choice {
-      margin-top: 4px;
+      margin-top: 2px;
       font-size: 12px;
       color: var(--blue);
       font-weight: 700;
       overflow-wrap: break-word;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    .pp-booking-item__choice > span {
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .pp-booking-item__choice-ico {
+      display: inline-flex;
+      flex: 0 0 auto;
+    }
+    .pp-booking-item__choice-ico .pp-booking-item__meta-ico {
+      color: #16a34a;
     }
     .pp-booking-card .pp-btn { margin-top: 4px; }
     .pp-booking-year-dates {
@@ -3770,7 +3842,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260715-dc-hide-staff-aquatic"></script>
   <script src="/portal/parent_portal_team.js?v=20260710-eiji-hazem-photos"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260715-crash-cal-first"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260715-crash-btn-deadline"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260715-booking-icons"></script>
   <script src="/portal/parent_portal_app.js?v=20260715-family-push"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

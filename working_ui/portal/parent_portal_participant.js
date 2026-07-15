@@ -2851,6 +2851,107 @@
     mountMyCalendar(host, data);
   }
 
+  function bookingItemIconSvg(label) {
+    var t = String(label || "").toLowerCase();
+    var open =
+      '<svg class="pp-booking-item__type-ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+    if (/aquatic|swim|pool/.test(t)) {
+      return (
+        open +
+        '<path d="M2 12c1.5-1.5 3.5-2 5-2s3.5.5 5 2 3.5 2 5 2 3.5-.5 5-2"/><path d="M2 17c1.5-1.5 3.5-2 5-2s3.5.5 5 2 3.5 2 5 2 3.5-.5 5-2"/><path d="M2 7c1.5-1.5 3.5-2 5-2s3.5.5 5 2 3.5 2 5 2 3.5-.5 5-2"/></svg>'
+      );
+    }
+    if (/climb|westway|physical/.test(t)) {
+      return (
+        open +
+        '<path d="M8 21l4-7 3 4 3-8 4 11"/><path d="M4 21h16"/><circle cx="10" cy="7" r="1.5"/></svg>'
+      );
+    }
+    if (/day centre|day-centre|multi/.test(t)) {
+      return (
+        open +
+        '<path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/></svg>'
+      );
+    }
+    return (
+      open +
+      '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/></svg>'
+    );
+  }
+
+  function bookingMetaIcon(kind) {
+    var open =
+      '<svg class="pp-booking-item__meta-ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+    if (kind === "when") {
+      return open + '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+    }
+    if (kind === "venue") {
+      return (
+        open +
+        '<path d="M12 21s7-5.3 7-11a7 7 0 10-14 0c0 5.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>'
+      );
+    }
+    return open + '<path d="M20 6L9 17l-5-5"/></svg>';
+  }
+
+  function isBookingActivityItem(item) {
+    var label = String((item && item.label) || "").trim().toLowerCase();
+    if (!label) return false;
+    if (label.indexOf("funding") >= 0 || label.indexOf("payment") >= 0) return false;
+    if (label.indexOf("re-enrolment style") >= 0 || label.indexOf("reenrolment style") >= 0) {
+      return false;
+    }
+    return true;
+  }
+
+  function bookingActivityItemHtml(item) {
+    var rawLabel = String((item && item.label) || "Activity").trim();
+    var choice = String((item && item.choice) || "—").trim();
+    var parts = rawLabel.split(/\s*·\s*/).map(function (s) {
+      return s.trim();
+    }).filter(Boolean);
+    var title = parts[0] || rawLabel;
+    var when = parts.length > 1 ? parts[1] : "";
+    var venue = parts.length > 2 ? parts.slice(2).join(" · ") : "";
+    var meta = "";
+    if (when) {
+      meta +=
+        '<span class="pp-booking-item__meta">' +
+        bookingMetaIcon("when") +
+        "<span>" +
+        esc(when) +
+        "</span></span>";
+    }
+    if (venue) {
+      meta +=
+        '<span class="pp-booking-item__meta">' +
+        bookingMetaIcon("venue") +
+        "<span>" +
+        esc(venue) +
+        "</span></span>";
+    }
+    return (
+      '<li class="pp-booking-item">' +
+      '<div class="pp-booking-item__row">' +
+      '<span class="pp-booking-item__badge" aria-hidden="true">' +
+      bookingItemIconSvg(title) +
+      "</span>" +
+      '<div class="pp-booking-item__copy">' +
+      '<div class="pp-booking-item__label">' +
+      esc(title) +
+      "</div>" +
+      (meta ? '<div class="pp-booking-item__metas">' + meta + "</div>" : "") +
+      '<div class="pp-booking-item__choice">' +
+      '<span class="pp-booking-item__choice-ico" aria-hidden="true">' +
+      bookingMetaIcon("ok") +
+      "</span>" +
+      "<span>" +
+      esc(choice) +
+      "</span></div>" +
+      "</div></div></li>"
+    );
+  }
+
   function renderBooking(host, data, opts) {
     var booking = bookingSummary(data);
     var p = data.participant || {};
@@ -2894,25 +2995,16 @@
         '">Book crash courses</a>' +
         "</div>";
     } else {
+      var activityItems = (booking.items || []).filter(isBookingActivityItem);
       body =
         '<p class="pp-muted">Submitted ' +
         esc(formatDate(booking.submitted_at)) +
         ". The office will review your choices.</p>" +
-        '<ul class="pp-booking-list">' +
-        booking.items
-          .map(function (item) {
-            return (
-              '<li class="pp-booking-item">' +
-              '<div class="pp-booking-item__label">' +
-              esc(item.label || "Activity") +
-              "</div>" +
-              '<div class="pp-booking-item__choice">' +
-              esc(item.choice || "—") +
-              "</div></li>"
-            );
-          })
-          .join("") +
-        "</ul>" +
+        (activityItems.length
+          ? '<ul class="pp-booking-list">' +
+            activityItems.map(bookingActivityItemHtml).join("") +
+            "</ul>"
+          : '<p class="pp-muted">No activity choices on this submission yet.</p>') +
         (booking.parent_action === "auto"
           ? bookingDayCentreYearChipsHtml(data)
           : '<a class="pp-btn pp-btn--ghost" href="' +
