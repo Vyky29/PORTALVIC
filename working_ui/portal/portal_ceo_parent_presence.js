@@ -6,6 +6,8 @@
 
   var POLL_MS = 30000;
   var timer = null;
+  var map = null;
+  var markersLayer = null;
   var cfg = {
     getClient: function () {
       return null;
@@ -65,9 +67,125 @@
     });
   }
 
+  function ensureMap() {
+    if (map || typeof global.L === "undefined") return map;
+    var el = $("cppMap");
+    if (!el) return null;
+    map = global.L.map(el, {
+      scrollWheelZoom: false,
+      attributionControl: true,
+    }).setView([52.5, -1.5], 6);
+    global.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 12,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+    }).addTo(map);
+    markersLayer = global.L.layerGroup().addTo(map);
+    map.setMaxBounds([
+      [49.5, -6.5],
+      [56.2, 2.2],
+    ]);
+    setTimeout(function () {
+      try {
+        map.invalidateSize();
+      } catch (_e) {
+        /* ignore */
+      }
+    }, 80);
+    return map;
+  }
+
+  function markerColor(bucket) {
+    return bucket === "london" ? "#2d84b3" : "#157347";
+  }
+
+  function renderMap(data) {
+    ensureMap();
+    if (!map || !markersLayer) return;
+    markersLayer.clearLayers();
+    var points = (data && data.map && data.map.points) || [];
+    var bounds = [];
+    points.forEach(function (p) {
+      var lat = Number(p.lat);
+      var lng = Number(p.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      var jLat = lat + (Math.random() - 0.5) * 0.04;
+      var jLng = lng + (Math.random() - 0.5) * 0.04;
+      var color = markerColor(p.bucket);
+      var circle = global.L.circleMarker([jLat, jLng], {
+        radius: p.online ? 9 : 7,
+        color: "#fff",
+        weight: 2,
+        fillColor: color,
+        fillOpacity: p.online ? 0.95 : 0.7,
+      });
+      circle.bindPopup(
+        "<strong>" +
+          esc(p.parent_name || "Parent") +
+          "</strong><br>" +
+          esc(p.label || p.bucket || "") +
+          (p.online ? "<br>Online now" : ""),
+      );
+      markersLayer.addLayer(circle);
+      bounds.push([jLat, jLng]);
+    });
+    if (bounds.length === 1) {
+      map.setView(bounds[0], 9);
+    } else if (bounds.length > 1) {
+      try {
+        map.fitBounds(bounds, { padding: [28, 28], maxZoom: 10 });
+      } catch (_e) {
+        map.setView([52.5, -1.5], 6);
+      }
+    } else {
+      map.setView([52.5, -1.5], 6);
+    }
+    setTimeout(function () {
+      try {
+        map.invalidateSize();
+      } catch (_e2) {
+        /* ignore */
+      }
+    }, 40);
+
+    var outside = (data && data.map && data.map.outside) || [];
+    var outHost = $("cppOutsideList");
+    if (outHost) {
+      outHost.innerHTML = outside.length
+        ? outside
+            .map(function (o) {
+              return (
+                "<li><strong>" +
+                esc(o.parent_name || "Parent") +
+                "</strong> — " +
+                esc(o.label || "Outside England") +
+                (o.online ? " · online" : "") +
+                "</li>"
+              );
+            })
+            .join("")
+        : '<li class="cpp-empty" style="border:0;background:transparent;padding:4px 0">Nobody outside England in the last 24h (or location not known yet).</li>';
+    }
+
+    var g = (data && data.summary && data.summary.geo) || {};
+    var note = $("cppGeoNote");
+    if (note) {
+      note.textContent =
+        "Approx. from connection IP · London " +
+        (g.london != null ? g.london : 0) +
+        " · Rest of England " +
+        (g.england != null ? g.england : 0) +
+        " · Outside " +
+        (g.outside != null ? g.outside : 0) +
+        " · Unknown " +
+        (g.unknown != null ? g.unknown : 0) +
+        ". New sign-ins and hub opens fill location.";
+    }
+  }
+
   function parentRowHtml(p, tone) {
     var kids = Array.isArray(p.children) ? p.children.join(", ") : "";
     var focus = p.child_focus ? " · looking at " + p.child_focus : "";
+    var geoBit = p.geo_label ? " · " + p.geo_label : "";
     return (
       '<li class="cpp-row cpp-row--' +
       esc(tone) +
@@ -79,6 +197,7 @@
       '<span class="cpp-row__meta">' +
       esc(kids || "—") +
       esc(focus) +
+      esc(geoBit) +
       "</span>" +
       "</div>" +
       '<div class="cpp-row__side">' +
@@ -109,9 +228,11 @@
     var onlineHost = $("cppOnlineList");
     if (onlineHost) {
       onlineHost.innerHTML = online.length
-        ? online.map(function (p) {
-            return parentRowHtml(p, "online");
-          }).join("")
+        ? online
+            .map(function (p) {
+              return parentRowHtml(p, "online");
+            })
+            .join("")
         : '<li class="cpp-empty">Nobody active in the last ' +
           esc(String((data && data.online_window_minutes) || 5)) +
           " minutes.</li>";
@@ -120,10 +241,12 @@
     var recentHost = $("cppRecentList");
     if (recentHost) {
       recentHost.innerHTML = recent.length
-        ? recent.map(function (p) {
-            return parentRowHtml(p, "recent");
-          }).join("")
-        : '<li class="cpp-empty">No other sessions in the last 24 hours.</li>";
+        ? recent
+            .map(function (p) {
+              return parentRowHtml(p, "recent");
+            })
+            .join("")
+        : '<li class="cpp-empty">No other sessions in the last 24 hours.</li>';
     }
 
     var actHost = $("cppActivityList");
@@ -173,11 +296,12 @@
         : '<li class="cpp-empty">No absences or portal messages in the last 24 hours.</li>';
     }
 
+    renderMap(data);
+
     var stamp = $("cppStamp");
     if (stamp) {
-      stamp.textContent = data && data.generated_at
-        ? "Updated " + ago(data.generated_at)
-        : "";
+      stamp.textContent =
+        data && data.generated_at ? "Updated " + ago(data.generated_at) : "";
     }
   }
 
@@ -205,7 +329,7 @@
       if (!res.ok || !body.ok) {
         if (status) {
           status.textContent =
-            "Could not load presence (" + esc(body.error || res.status) + ").";
+            "Could not load presence (" + String(body.error || res.status) + ").";
         }
         return;
       }
@@ -217,6 +341,7 @@
   }
 
   function start() {
+    ensureMap();
     void load();
     if (timer) clearInterval(timer);
     timer = setInterval(function () {

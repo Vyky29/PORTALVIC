@@ -15,6 +15,7 @@ import {
   parentPortalJsonInvalid,
   sha256Hex,
 } from "../_shared/parent_portal_auth.ts";
+import { lookupParentGeoFromRequest, parentGeoToDbFields } from "../_shared/parent_geo.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: parentPortalCorsHeaders });
@@ -94,12 +95,16 @@ Deno.serve(async (req) => {
     .eq("parent_person_id", matchedParentId)
     .is("revoked_at", null);
 
+  const geo = await lookupParentGeoFromRequest(req, ip);
+  const geoFields = geo ? parentGeoToDbFields(geo) : {};
+
   const { error: insertErr } = await supabase.from("portal_parent_portal_sessions").insert({
     parent_person_id: matchedParentId,
     token_hash: tokenHash,
     expires_at: expiresAt,
     ip_hash: ipHash,
     user_agent_hash: uaHash,
+    ...geoFields,
   });
   if (insertErr) {
     console.error("[parent-portal-otp-verify] session insert failed", insertErr);

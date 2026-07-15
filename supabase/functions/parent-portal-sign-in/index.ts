@@ -13,6 +13,7 @@ import {
   parentPortalJsonInvalid,
   sha256Hex,
 } from "../_shared/parent_portal_auth.ts";
+import { lookupParentGeoFromRequest, parentGeoToDbFields } from "../_shared/parent_geo.ts";
 
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24 h — no OTP re-auth
 
@@ -79,12 +80,16 @@ Deno.serve(async (req) => {
     .eq("parent_person_id", matchedParentId)
     .is("revoked_at", null);
 
+  const geo = await lookupParentGeoFromRequest(req, ip);
+  const geoFields = geo ? parentGeoToDbFields(geo) : {};
+
   const { error: insertErr } = await supabase.from("portal_parent_portal_sessions").insert({
     parent_person_id: matchedParentId,
     token_hash: tokenHash,
     expires_at: expiresAt,
     ip_hash: ipHash,
     user_agent_hash: uaHash,
+    ...geoFields,
   });
   if (insertErr) {
     console.error("[parent-portal-sign-in] session insert failed", insertErr);

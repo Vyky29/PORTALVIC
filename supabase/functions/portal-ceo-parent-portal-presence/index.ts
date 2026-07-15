@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
   const { data: sessions, error: sessErr } = await admin
     .from("portal_parent_portal_sessions")
     .select(
-      "id, parent_person_id, issued_at, expires_at, last_used_at, revoked_at, last_surface, last_contact_id",
+      "id, parent_person_id, issued_at, expires_at, last_used_at, revoked_at, last_surface, last_contact_id, geo_bucket, geo_label, geo_lat, geo_lng, geo_city, geo_region, geo_country",
     )
     .is("revoked_at", null)
     .gt("expires_at", new Date(now).toISOString())
@@ -125,6 +125,10 @@ Deno.serve(async (req) => {
   const recent: Record<string, unknown>[] = [];
   const seenOnline = new Set<string>();
   const seenRecent = new Set<string>();
+  const mapPoints: Record<string, unknown>[] = [];
+  const outsideList: Record<string, unknown>[] = [];
+  const geoSummary = { london: 0, england: 0, outside: 0, unknown: 0 };
+  const geoSeen = new Set<string>();
 
   for (const s of sessions || []) {
     const pid = clean(s.parent_person_id, 80);
@@ -138,6 +142,10 @@ Deno.serve(async (req) => {
       (lastContact && kids.find((k) => k.contact_id === lastContact)?.display_name) ||
       childNames[0] ||
       null;
+    const bucket = clean(s.geo_bucket, 20).toLowerCase();
+    const geoLabel = clean(s.geo_label, 120) || null;
+    const geoLat = typeof s.geo_lat === "number" ? s.geo_lat : null;
+    const geoLng = typeof s.geo_lng === "number" ? s.geo_lng : null;
     const item = {
       parent_person_id: pid,
       parent_name: parentName,
@@ -149,6 +157,11 @@ Deno.serve(async (req) => {
       last_surface: clean(s.last_surface, 40) || null,
       last_surface_label: surfaceLabel(String(s.last_surface || "")),
       online: lastUsed >= now - ONLINE_MS,
+      geo_bucket: bucket || null,
+      geo_label: geoLabel,
+      geo_city: clean(s.geo_city, 80) || null,
+      geo_region: clean(s.geo_region, 80) || null,
+      geo_country: clean(s.geo_country, 80) || null,
     };
     if (item.online) {
       if (!seenOnline.has(pid)) {
@@ -158,6 +171,36 @@ Deno.serve(async (req) => {
     } else if (!seenRecent.has(pid) && !seenOnline.has(pid)) {
       seenRecent.add(pid);
       recent.push(item);
+    }
+
+    // One geo entry per parent (most recent session wins due to order).
+    if (!geoSeen.has(pid)) {
+      geoSeen.add(pid);
+      if (bucket === "london" || bucket === "england") {
+        if (bucket === "london") geoSummary.london += 1;
+        else geoSummary.england += 1;
+        if (geoLat != null && geoLng != null) {
+          mapPoints.push({
+            parent_person_id: pid,
+            parent_name: parentName,
+            bucket,
+            label: geoLabel || (bucket === "london" ? "London" : "England"),
+            lat: geoLat,
+            lng: geoLng,
+            online: item.online,
+          });
+        }
+      } else if (bucket === "outside") {
+        geoSummary.outside += 1;
+        outsideList.push({
+          parent_person_id: pid,
+          parent_name: parentName,
+          label: geoLabel || "Outside England",
+          online: item.online,
+        });
+      } else {
+        geoSummary.unknown += 1;
+      }
     }
   }
 
@@ -265,10 +308,16 @@ Deno.serve(async (req) => {
       online_now: online.length,
       active_last_24h: online.length + recent.length,
       sign_ins_today: signInsToday || 0,
+      geo: geoSummary,
     },
     online,
     recent,
     activity,
     actions: actions.slice(0, 40),
+    map: {
+      england_only: true,
+      points: mapPoints,
+      outside: outsideList,
+    },
   });
 });

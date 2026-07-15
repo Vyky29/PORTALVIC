@@ -3,8 +3,9 @@
 // and appends a row to portal_parent_portal_activity (deduped ~45s same surface).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
+import { clientIp, parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
 import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
+import { lookupParentGeoFromRequest, parentGeoToDbFields } from "../_shared/parent_geo.ts";
 
 const ALLOWED = new Set([
   "home",
@@ -73,13 +74,25 @@ Deno.serve(async (req) => {
   const detail = clean(body.detail, 160) || null;
   const nowIso = new Date().toISOString();
 
+  const sessionPatch: Record<string, unknown> = {
+    last_used_at: nowIso,
+    last_surface: surface,
+    last_contact_id: contactId,
+  };
+
+  // Backfill geo on first ping if missing (sessions created before geo deploy).
+  if (!session.geo_bucket) {
+    try {
+      const geo = await lookupParentGeoFromRequest(req, clientIp(req));
+      if (geo) Object.assign(sessionPatch, parentGeoToDbFields(geo));
+    } catch {
+      /* ignore geo failures */
+    }
+  }
+
   await supabase
     .from("portal_parent_portal_sessions")
-    .update({
-      last_used_at: nowIso,
-      last_surface: surface,
-      last_contact_id: contactId,
-    })
+    .update(sessionPatch)
     .eq("id", session.id);
 
   const since = new Date(Date.now() - DEDUPE_MS).toISOString();
