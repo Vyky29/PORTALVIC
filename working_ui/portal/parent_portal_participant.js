@@ -5111,40 +5111,40 @@
       (canSetupGc
         ? '<p class="pp-muted pp-invoice-pay__note">Set up Direct Payment once — then invoices are collected automatically by mandate.</p>'
         : "") +
-      '<div class="pp-invoice-card__acts">' +
+      '<div class="pp-invoice-card__acts pp-invoice-card__acts--stack">' +
       (pdf
-        ? '<button type="button" class="pp-btn ' +
-          (status === "paid" ? "pp-btn--primary" : "pp-btn--ghost") +
-          '" data-pp-preview-invoice="' +
+        ? '<button type="button" class="pp-btn pp-btn--primary pp-invoice-card__btn-full" data-pp-preview-invoice="' +
           esc(inv.id) +
           '" data-pp-pdf-url="' +
           esc(pdf) +
           '" data-pp-pdf-title="' +
           esc(num ? "Invoice " + num : title || "Invoice") +
-          '">Preview</button>' +
-          '<a class="pp-btn pp-btn--ghost" href="' +
+          '">Preview invoice</button>' +
+          '<a class="pp-btn pp-btn--ghost pp-invoice-card__btn-full" href="' +
           esc(pdf) +
           '" download="' +
           esc((num || "invoice").replace(/[^\w.-]+/g, "_") + ".pdf") +
-          '" target="_blank" rel="noopener noreferrer">Download</a>'
+          '" target="_blank" rel="noopener noreferrer">Download PDF</a>'
         : '<p class="pp-muted">PDF not available yet.</p>') +
       (canSetupGc
-        ? '<button type="button" class="pp-btn pp-btn--primary" data-pp-setup-gocardless="' +
+        ? '<button type="button" class="pp-btn pp-btn--primary pp-invoice-card__btn-full" data-pp-setup-gocardless="' +
           esc(inv.id) +
           '">Set up Direct Payment</button>'
         : "") +
       (!canSetupGc && gc && !isGcInvoice
-        ? '<a class="pp-btn pp-btn--primary" href="' +
+        ? '<a class="pp-btn pp-btn--primary pp-invoice-card__btn-full" href="' +
           esc(gc) +
           '" target="_blank" rel="noopener noreferrer">Pay with GoCardless</a>'
         : "") +
       (pl
-        ? '<a class="pp-btn pp-btn--ghost" href="' +
+        ? '<a class="pp-btn pp-btn--ghost pp-invoice-card__btn-full" href="' +
           esc(pl) +
-          '" target="_blank" rel="noopener noreferrer">Card / Apple Pay link</a>'
+          '" target="_blank" rel="noopener noreferrer">Card / Apple Pay link' +
+          (cardCharge ? " · " + esc(cardCharge) : "") +
+          "</a>"
         : "") +
       (canPay
-        ? '<button type="button" class="pp-btn pp-btn--ghost" data-pp-pay-invoice="' +
+        ? '<button type="button" class="pp-btn pp-btn--sec pp-invoice-card__btn-full" data-pp-pay-invoice="' +
           esc(inv.id) +
           '">Card / Apple Pay' +
           (cardCharge ? " · " + esc(cardCharge) : "") +
@@ -5165,7 +5165,7 @@
           '" value="' +
           esc(suggestedRef) +
           '" maxlength="120" autocomplete="off" /></label>' +
-          '<button type="button" class="pp-btn pp-btn--primary" data-pp-report-paid="' +
+          '<button type="button" class="pp-btn pp-btn--primary pp-invoice-card__btn-full" data-pp-report-paid="' +
           esc(inv.id) +
           '">I&apos;ve paid by bank transfer</button>' +
           "</div>"
