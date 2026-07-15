@@ -42,11 +42,22 @@ function isEnglandRegion(region: string): boolean {
 
 function isLondonCity(city: string, region: string): boolean {
   const bag = `${city} ${region}`.toLowerCase();
-  return (
+  if (
     /\blondon\b/.test(bag) ||
     /greater london/.test(bag) ||
     /city of london/.test(bag)
-  );
+  ) {
+    return true;
+  }
+  // London boroughs sometimes returned as city without "London" in the string.
+  return /^(ealing|harrow|brent|barnet|enfield|haringey|hackney|islington|camden|westminster|kensington|chelsea|wandsworth|lambeth|southwark|lewisham|greenwich|bexley|havering|redbridge|walthamstow|waltham forest|newham|tower hamlets|merton|kingston|richmond|sutton|hillingdon|hounslow|bromley|croydon|city of westminster|hammersmith|fulham)$/i
+    .test(city.trim());
+}
+
+/** Approx. Greater London bounding box (WGS84). */
+function isGreaterLondonCoords(lat: number | null, lng: number | null): boolean {
+  if (lat == null || lng == null) return false;
+  return lat >= 51.28 && lat <= 51.7 && lng >= -0.55 && lng <= 0.35;
 }
 
 export function classifyParentGeo(raw: {
@@ -59,14 +70,28 @@ export function classifyParentGeo(raw: {
 }): ParentGeo {
   const countryCode = clean(raw.countryCode, 8);
   const countryName = clean(raw.countryName, 80) || countryCode;
-  const region = clean(raw.region, 80);
-  const city = clean(raw.city, 80);
+  let region = clean(raw.region, 80);
+  let city = clean(raw.city, 80);
   const lat = typeof raw.lat === "number" && Number.isFinite(raw.lat) ? raw.lat : null;
   const lng = typeof raw.lng === "number" && Number.isFinite(raw.lng) ? raw.lng : null;
 
   const uk = isUkCountry(countryCode, countryName);
   const otherUk = uk && isOtherUkNation(region);
-  const london = uk && !otherUk && isLondonCity(city, region);
+  let london =
+    uk &&
+    !otherUk &&
+    (isLondonCity(city, region) || isGreaterLondonCoords(lat, lng));
+  if (london) {
+    if (!city || !/\blondon\b/i.test(city)) {
+      // Keep borough name when useful, still mark London.
+      if (city && !/^london$/i.test(city)) {
+        /* keep city */
+      } else {
+        city = "London";
+      }
+      if (!region) region = "Greater London";
+    }
+  }
   const england =
     uk && !otherUk && (london || isEnglandRegion(region) || (!region && !city));
 
@@ -76,7 +101,8 @@ export function classifyParentGeo(raw: {
 
   let label = "";
   if (bucket === "london") {
-    label = city && !/^london$/i.test(city) ? `${city}, London` : "London, England";
+    label =
+      city && !/^london$/i.test(city) ? `${city}, London` : "London, England";
   } else if (bucket === "england") {
     label = [city, region || "England"].filter(Boolean).join(", ");
     if (!label) label = "England";
@@ -86,7 +112,8 @@ export function classifyParentGeo(raw: {
 
   let mapLat = lat;
   let mapLng = lng;
-  if (bucket === "london" && (mapLat == null || mapLng == null)) {
+  if (bucket === "london") {
+    // Pin London centre when bucket is London (ISP city names are often wrong).
     mapLat = 51.5074;
     mapLng = -0.1278;
   } else if (bucket === "england" && (mapLat == null || mapLng == null)) {
@@ -154,7 +181,7 @@ async function lookupIpGeo(ip: string): Promise<ParentGeo | null> {
   return null;
 }
 
-export async function lookupParentGeoFromRequest(req: Request, ip: string): Promise<ParentGeo | null> {
+function geoFromCfHeaders(req: Request): ParentGeo | null {
   const cfCountry = clean(req.headers.get("cf-ipcountry"), 8);
   const cfCity = clean(req.headers.get("cf-ipcity"), 80);
   const cfRegion = clean(
@@ -163,21 +190,66 @@ export async function lookupParentGeoFromRequest(req: Request, ip: string): Prom
   );
   const cfLat = Number(req.headers.get("cf-iplatitude") || "");
   const cfLng = Number(req.headers.get("cf-iplongitude") || "");
+  if (!cfCountry || cfCountry === "XX" || cfCountry === "T1") return null;
+  return classifyParentGeo({
+    countryCode: cfCountry,
+    countryName: cfCountry,
+    region: cfRegion,
+    city: cfCity,
+    lat: Number.isFinite(cfLat) ? cfLat : null,
+    lng: Number.isFinite(cfLng) ? cfLng : null,
+  });
+}
 
-  if (cfCountry && cfCountry !== "XX" && cfCountry !== "T1") {
-    return classifyParentGeo({
-      countryCode: cfCountry,
-      countryName: cfCountry,
-      region: cfRegion,
-      city: cfCity,
-      lat: Number.isFinite(cfLat) ? cfLat : null,
-      lng: Number.isFinite(cfLng) ? cfLng : null,
-    });
-  }
+/** Prefer London / richer IP city over CF — UK CF city labels are often wrong. */
+function pickBestGeo(fromCf: ParentGeo | null, fromIp: ParentGeo | null): ParentGeo | null {
+  if (!fromCf) return fromIp;
+  if (!fromIp) return fromCf;
+  if (fromIp.bucket === "london") return fromIp;
+  if (fromCf.bucket === "london") return fromCf;
+  if (fromIp.city) return fromIp;
+  return fromCf;
+}
 
+export async function lookupParentGeoFromRequest(req: Request, ip: string): Promise<ParentGeo | null> {
+  const fromCf = geoFromCfHeaders(req);
   const cleanIp = String(ip || "").trim();
-  if (!cleanIp || cleanIp === "127.0.0.1" || cleanIp === "::1") return null;
-  return lookupIpGeo(cleanIp);
+  if (!cleanIp || cleanIp === "127.0.0.1" || cleanIp === "::1") {
+    return fromCf;
+  }
+  const fromIp = await lookupIpGeo(cleanIp);
+  return pickBestGeo(fromCf, fromIp);
+}
+
+/** Accept a browser-side geo hint (preferred over server IP lookup when valid). */
+export function geoFromClientHint(raw: unknown): ParentGeo | null {
+  if (!raw || typeof raw !== "object") return null;
+  const h = raw as Record<string, unknown>;
+  const countryCode = clean(h.country_code || h.countryCode, 8);
+  const countryName = clean(h.country || h.country_name || h.countryName, 80);
+  const region = clean(h.region || h.regionName, 80);
+  const city = clean(h.city, 80);
+  const lat = typeof h.latitude === "number" ? h.latitude : Number(h.latitude ?? h.lat);
+  const lng = typeof h.longitude === "number" ? h.longitude : Number(h.longitude ?? h.lng);
+  if (!countryCode && !countryName && !city) return null;
+  return classifyParentGeo({
+    countryCode,
+    countryName: countryName || countryCode,
+    region,
+    city,
+    lat: Number.isFinite(lat) ? lat : null,
+    lng: Number.isFinite(lng) ? lng : null,
+  });
+}
+
+export async function resolveParentGeo(
+  req: Request,
+  ip: string,
+  clientHint?: unknown,
+): Promise<ParentGeo | null> {
+  const fromHint = geoFromClientHint(clientHint);
+  if (fromHint) return fromHint;
+  return lookupParentGeoFromRequest(req, ip);
 }
 
 export function parentGeoToDbFields(geo: ParentGeo): Record<string, unknown> {

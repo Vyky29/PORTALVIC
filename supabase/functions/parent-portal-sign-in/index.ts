@@ -14,7 +14,7 @@ import {
   parentPortalJsonInvalid,
   sha256Hex,
 } from "../_shared/parent_portal_auth.ts";
-import { lookupParentGeoFromRequest, parentGeoToDbFields } from "../_shared/parent_geo.ts";
+import { resolveParentGeo, parentGeoToDbFields } from "../_shared/parent_geo.ts";
 
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24 h — no OTP re-auth
 
@@ -28,7 +28,14 @@ Deno.serve(async (req) => {
     return new Response("Method Not Allowed", { status: 405, headers: parentPortalCorsHeaders });
   }
 
-  let body: { parent_first_name?: unknown; parent_last_name?: unknown; login_dob?: unknown; parent_name?: unknown; participant_dob?: unknown };
+  let body: {
+    parent_first_name?: unknown;
+    parent_last_name?: unknown;
+    login_dob?: unknown;
+    parent_name?: unknown;
+    participant_dob?: unknown;
+    geo_hint?: unknown;
+  };
   try {
     body = await req.json();
   } catch {
@@ -81,7 +88,7 @@ Deno.serve(async (req) => {
     .eq("parent_person_id", matchedParentId)
     .is("revoked_at", null);
 
-  const geo = await lookupParentGeoFromRequest(req, ip);
+  const geo = await resolveParentGeo(req, ip, body.geo_hint);
   const geoFields = geo ? parentGeoToDbFields(geo) : {};
 
   const { error: insertErr } = await supabase.from("portal_parent_portal_sessions").insert({

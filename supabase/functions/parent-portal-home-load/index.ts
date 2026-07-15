@@ -14,7 +14,7 @@ import {
   parentPortalJsonInvalid,
   sha256Hex,
 } from "../_shared/parent_portal_auth.ts";
-import { lookupParentGeoFromRequest, parentGeoToDbFields } from "../_shared/parent_geo.ts";
+import { resolveParentGeo, parentGeoToDbFields } from "../_shared/parent_geo.ts";
 import { resolveParticipantAvatarUrls } from "../_shared/participant_avatar.ts";
 import { REENROL_ACADEMIC_YEAR } from "../_shared/reenrolment_catalog.ts";
 import {
@@ -60,8 +60,14 @@ Deno.serve(async (req) => {
     last_used_at: new Date().toISOString(),
     client_device: clientDeviceFromRequest(req),
   };
+  let body: Record<string, unknown> = {};
   try {
-    const geo = await lookupParentGeoFromRequest(req, clientIp(req));
+    body = await req.json();
+  } catch {
+    body = {};
+  }
+  try {
+    const geo = await resolveParentGeo(req, clientIp(req), body.geo_hint);
     if (geo) Object.assign(sessionPatch, parentGeoToDbFields(geo));
   } catch {
     /* ignore */

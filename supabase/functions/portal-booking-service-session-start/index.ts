@@ -8,7 +8,7 @@ import {
   newSessionToken,
   sha256Hex,
 } from "../_shared/parent_portal_auth.ts";
-import { lookupParentGeoFromRequest, parentGeoToDbFields } from "../_shared/parent_geo.ts";
+import { resolveParentGeo, parentGeoToDbFields } from "../_shared/parent_geo.ts";
 
 const cors: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -43,6 +43,14 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
+  let bodyHint: unknown = null;
+  try {
+    const body = await req.json();
+    if (body && typeof body === "object") bodyHint = (body as Record<string, unknown>).geo_hint;
+  } catch {
+    bodyHint = null;
+  }
+
   // Resume existing valid token if the client already has one.
   const existing = String(req.headers.get("x-booking-service-session") || "").trim();
   if (/^[a-f0-9]{32,128}$/i.test(existing)) {
@@ -58,7 +66,7 @@ Deno.serve(async (req) => {
         client_device: clientDeviceFromRequest(req),
       };
       try {
-        const geo = await lookupParentGeoFromRequest(req, clientIp(req));
+        const geo = await resolveParentGeo(req, clientIp(req), bodyHint);
         if (geo) Object.assign(patch, parentGeoToDbFields(geo));
       } catch {
         /* ignore */
@@ -85,7 +93,7 @@ Deno.serve(async (req) => {
     last_surface: "offer",
   };
   try {
-    const geo = await lookupParentGeoFromRequest(req, ip);
+    const geo = await resolveParentGeo(req, ip, bodyHint);
     if (geo) Object.assign(row, parentGeoToDbFields(geo));
   } catch {
     /* ignore */

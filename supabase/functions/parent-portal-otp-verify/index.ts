@@ -16,7 +16,7 @@ import {
   parentPortalJsonInvalid,
   sha256Hex,
 } from "../_shared/parent_portal_auth.ts";
-import { lookupParentGeoFromRequest, parentGeoToDbFields } from "../_shared/parent_geo.ts";
+import { resolveParentGeo, parentGeoToDbFields } from "../_shared/parent_geo.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: parentPortalCorsHeaders });
@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
     .eq("parent_person_id", matchedParentId)
     .is("revoked_at", null);
 
-  const geo = await lookupParentGeoFromRequest(req, ip);
+  const geo = await resolveParentGeo(req, ip, (body as { geo_hint?: unknown }).geo_hint);
   const geoFields = geo ? parentGeoToDbFields(geo) : {};
 
   const { error: insertErr } = await supabase.from("portal_parent_portal_sessions").insert({

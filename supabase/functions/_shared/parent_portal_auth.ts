@@ -60,9 +60,14 @@ export function constantTimeEquals(a: string, b: string): boolean {
 }
 
 export function clientIp(req: Request): string {
+  // Prefer Cloudflare's client IP when present (x-forwarded-for can be mis-ordered).
+  const cf = String(req.headers.get("cf-connecting-ip") || "").trim();
+  if (cf) return cf;
+  const real = String(req.headers.get("x-real-ip") || "").trim();
+  if (real) return real;
   const fwd = req.headers.get("x-forwarded-for") || "";
   const first = fwd.split(",")[0]?.trim() || "";
-  return first || req.headers.get("cf-connecting-ip") || req.headers.get("x-real-ip") || "";
+  return first;
 }
 
 /** Coarse device for presence UI — never store raw User-Agent. */

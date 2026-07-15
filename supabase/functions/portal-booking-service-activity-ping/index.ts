@@ -7,7 +7,7 @@ import {
   clientIp,
   sha256Hex,
 } from "../_shared/parent_portal_auth.ts";
-import { lookupParentGeoFromRequest, parentGeoToDbFields } from "../_shared/parent_geo.ts";
+import { resolveParentGeo, parentGeoToDbFields } from "../_shared/parent_geo.ts";
 
 const cors: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
     client_device: clientDeviceFromRequest(req),
   };
   try {
-    const geo = await lookupParentGeoFromRequest(req, clientIp(req));
+    const geo = await resolveParentGeo(req, clientIp(req), body.geo_hint);
     if (geo) Object.assign(sessionPatch, parentGeoToDbFields(geo));
   } catch {
     /* ignore */

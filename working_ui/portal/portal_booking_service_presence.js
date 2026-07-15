@@ -45,6 +45,21 @@
     }
   }
 
+  function withGeoHint(payload) {
+    var base = payload && typeof payload === "object" ? Object.assign({}, payload) : {};
+    var geoApi = global.PortalClientGeo;
+    if (!geoApi || typeof geoApi.getHint !== "function") return Promise.resolve(base);
+    return geoApi
+      .getHint()
+      .then(function (hint) {
+        if (hint) base.geo_hint = hint;
+        return base;
+      })
+      .catch(function () {
+        return base;
+      });
+  }
+
   function ensureSession() {
     if (ready) return ready;
     ready = (async function () {
@@ -52,6 +67,7 @@
       if (!c.url || !c.anon) return "";
       var existing = loadStored();
       try {
+        var startBody = await withGeoHint({});
         var res = await fetch(c.url + "/functions/v1/portal-booking-service-session-start", {
           method: "POST",
           headers: {
@@ -60,7 +76,7 @@
             apikey: c.anon,
             "x-booking-service-session": existing || "",
           },
-          body: "{}",
+          body: JSON.stringify(startBody),
         });
         var body = await res.json().catch(function () {
           return {};
@@ -86,18 +102,20 @@
     return ensureSession().then(function (tok) {
       if (!tok) return;
       var c = cfg();
-      return fetch(c.url + "/functions/v1/portal-booking-service-activity-ping", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + c.anon,
-          apikey: c.anon,
-          "x-booking-service-session": tok,
-        },
-        body: JSON.stringify({
-          surface: s,
-          detail: detail ? String(detail).slice(0, 160) : null,
-        }),
+      return withGeoHint({
+        surface: s,
+        detail: detail ? String(detail).slice(0, 160) : null,
+      }).then(function (payload) {
+        return fetch(c.url + "/functions/v1/portal-booking-service-activity-ping", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + c.anon,
+            apikey: c.anon,
+            "x-booking-service-session": tok,
+          },
+          body: JSON.stringify(payload),
+        });
       }).catch(function () {
         /* best-effort */
       });

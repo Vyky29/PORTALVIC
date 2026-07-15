@@ -642,6 +642,20 @@
     }
   }
 
+  function withGeoHint(payload) {
+    var base = payload && typeof payload === "object" ? payload : {};
+    var geoApi = typeof window !== "undefined" ? window.PortalClientGeo : null;
+    if (!geoApi || typeof geoApi.getHint !== "function") {
+      return Promise.resolve(base);
+    }
+    return geoApi.getHint().then(function (hint) {
+      if (hint) base.geo_hint = hint;
+      return base;
+    }).catch(function () {
+      return base;
+    });
+  }
+
   var _pingLast = { surface: "", at: 0 };
   function pingActivity(surface, contactId, detail) {
     var s = String(surface || "").trim().toLowerCase();
@@ -649,19 +663,21 @@
     var now = Date.now();
     if (_pingLast.surface === s && now - _pingLast.at < 20000) return Promise.resolve();
     _pingLast = { surface: s, at: now };
-    return fetch(fn("parent-portal-activity-ping"), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: anonKey(),
-        Authorization: "Bearer " + anonKey(),
-        "x-parent-portal-session": state.session.token,
-      },
-      body: JSON.stringify({
-        surface: s,
-        contact_id: contactId || state.participant.contactId || null,
-        detail: detail || null,
-      }),
+    return withGeoHint({
+      surface: s,
+      contact_id: contactId || state.participant.contactId || null,
+      detail: detail || null,
+    }).then(function (body) {
+      return fetch(fn("parent-portal-activity-ping"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: anonKey(),
+          Authorization: "Bearer " + anonKey(),
+          "x-parent-portal-session": state.session.token,
+        },
+        body: JSON.stringify(body),
+      });
     }).catch(function () {
       /* presence ping is best-effort */
     });
@@ -1483,6 +1499,7 @@
   async function loadHome(opts) {
     opts = opts || {};
     var skipAutoHub = !!opts.skipAutoHub;
+    var homeBody = await withGeoHint({});
     var res = await fetch(fn("parent-portal-home-load"), {
       method: "POST",
       headers: {
@@ -1491,7 +1508,7 @@
         Authorization: "Bearer " + anonKey(),
         "x-parent-portal-session": state.session.token,
       },
-      body: "{}",
+      body: JSON.stringify(homeBody),
     });
     var body = await res.json().catch(function () {
       return {};
@@ -1543,6 +1560,11 @@
     btn.disabled = true;
     btn.setAttribute("aria-busy", "true");
     try {
+      var signInBody = await withGeoHint({
+        parent_first_name: parentFirstName,
+        parent_last_name: parentLastName,
+        login_dob: dobRaw,
+      });
       var res = await fetch(fn("parent-portal-sign-in"), {
         method: "POST",
         headers: {
@@ -1550,11 +1572,7 @@
           apikey: anonKey(),
           Authorization: "Bearer " + anonKey(),
         },
-        body: JSON.stringify({
-          parent_first_name: parentFirstName,
-          parent_last_name: parentLastName,
-          login_dob: dobRaw,
-        }),
+        body: JSON.stringify(signInBody),
       });
       var body = await res.json().catch(function () {
         return {};

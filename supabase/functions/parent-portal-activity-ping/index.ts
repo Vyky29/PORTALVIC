@@ -10,7 +10,7 @@ import {
   parentPortalJsonInvalid,
 } from "../_shared/parent_portal_auth.ts";
 import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
-import { lookupParentGeoFromRequest, parentGeoToDbFields } from "../_shared/parent_geo.ts";
+import { resolveParentGeo, parentGeoToDbFields } from "../_shared/parent_geo.ts";
 
 const ALLOWED = new Set([
   "home",
@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
 
   // Always refresh device + location on ping (staff checks vs real parents).
   try {
-    const geo = await lookupParentGeoFromRequest(req, clientIp(req));
+    const geo = await resolveParentGeo(req, clientIp(req), body.geo_hint);
     if (geo) Object.assign(sessionPatch, parentGeoToDbFields(geo));
   } catch {
     /* ignore geo failures */
