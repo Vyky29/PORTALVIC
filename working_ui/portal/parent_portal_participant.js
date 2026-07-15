@@ -1062,8 +1062,6 @@
       "</div>" +
       '<p class="pp-pax-info-section-label pp-pax-info-section-label--paper">Paperwork</p>' +
       '<div class="pp-pax-info-row pp-pax-info-row--paper">' +
-      // Invoices stay off the parent hub (admin / funder billing). Crash + private
-      // re-enrol use pay flows on those pages — not a hub Invoices tile.
       infoBtnHtml("consents", "Consents & forms", consentIcon, {
         extraClass:
           " pp-pax-info-btn--consents" +
@@ -1074,19 +1072,22 @@
             : "Permissions & registration PDFs",
         unreadBadge: consentBadge,
       }) +
+      infoBtnHtml("invoices", "My invoices", invoiceIcon, {
+        extraClass: " pp-pax-info-btn--invoices",
+        subtitle: "Pay crash & term invoices",
+      }) +
+      infoBtnHtml("booking", "My booking", bookingIcon, {
+        subtitle: booking.submitted
+          ? booking.hint || "2026/27 choices"
+          : booking.parent_action === "auto"
+            ? "2026/27 with the office"
+            : "Crash & 2026/27 places",
+        extraClass: " pp-pax-info-btn--booking",
+      }) +
       infoBtnHtml("balance", "Credits & refunds", balanceIcon, {
         extraClass: " pp-pax-info-btn--balance",
         subtitle: "Family ledger",
       }) +
-      (booking.submitted || booking.parent_action === "auto"
-        ? infoBtnHtml("booking", "My booking", bookingIcon, {
-            subtitle:
-              booking.submitted
-                ? booking.hint || "2026/27 choices"
-                : "2026/27 with the office",
-            extraClass: " pp-pax-info-btn--booking",
-          })
-        : "") +
       "</div>" +
       '<p class="pp-pax-info-section-label pp-pax-info-section-label--progress">Progress</p>' +
       '<div class="pp-pax-info-row pp-pax-info-row--progress">' +
