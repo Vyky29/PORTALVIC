@@ -548,7 +548,10 @@ function buildServicesDetail(
 
   for (const raw of list) {
     const s = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
-    const svc = canonicalProgrammeName(s.service) || clean(s.service, 80) || "Service";
+    const svcRaw = clean(s.service, 80);
+    // Crash / intensives are separate bookings — never drive weekly term chips.
+    if (/crash|intensiv/i.test(svcRaw)) continue;
+    const svc = canonicalProgrammeName(s.service) || svcRaw || "Service";
     const day = clean(s.day, 20);
     const key = (svc + "|" + day).toLowerCase();
     let g = groups.get(key);

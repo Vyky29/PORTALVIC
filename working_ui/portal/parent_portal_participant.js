@@ -1507,12 +1507,7 @@
   function termSessionDateChipsHtml(data, statusByIso) {
     var dates = findTermSessionDates(data);
     if (!dates.length) return "";
-    var first = [];
-    var second = [];
-    dates.forEach(function (d) {
-      if (isFirstHalfTermDate(d.iso, data)) first.push(d);
-      else second.push(d);
-    });
+
     function chipsOnly(list, ariaLabel) {
       if (!list.length) return "";
       return (
@@ -1538,8 +1533,37 @@
         "</div>"
       );
     }
-    // No May first-half / crash this year: one unlabeled chip row unless both
-    // halves exist (e.g. after Booking 2026/27 with Oct/Feb/May breaks).
+
+    // Current summer 2025/26: continuous window from 1 Jun — no May crash half.
+    // Split by month so every session date stays readable when chips wrap.
+    if (!familyAcceptedNextYear(data)) {
+      var june = [];
+      var july = [];
+      dates.forEach(function (d) {
+        if (String(d.iso || "").slice(0, 7) === "2026-06") june.push(d);
+        else july.push(d);
+      });
+      if (june.length && july.length) {
+        return (
+          '<div class="pp-hub-ops__date-chips-stack" aria-label="Summer term session dates">' +
+          rowHtml("June", june) +
+          rowHtml("July", july) +
+          "</div>"
+        );
+      }
+      return (
+        '<div class="pp-hub-ops__date-chips-stack" aria-label="Summer term session dates">' +
+        chipsOnly(dates, "Summer term session dates") +
+        "</div>"
+      );
+    }
+
+    var first = [];
+    var second = [];
+    dates.forEach(function (d) {
+      if (isFirstHalfTermDate(d.iso, data)) first.push(d);
+      else second.push(d);
+    });
     if (!first.length || !second.length) {
       var only = first.length ? first : second;
       return (
@@ -1761,12 +1785,19 @@
         '<p class="pp-muted pp-hub-ops__empty">Booked sessions will appear here once services are on the current roster.</p>' +
         "</div>";
     } else if (!next) {
+      var booking = bookingSummary(data);
+      var endNote =
+        booking.parent_action === "auto"
+          ? "No more sessions left this summer term. Your 2026/27 place continues with the office — nothing for you to submit."
+          : "No more sessions left this summer term. Book 2026/27 when you are ready.";
       nextBody =
         '<div class="pp-hub-ops__next">' +
         '<div class="pp-hub-ops__badge-row">' +
         termSessionDateChipsHtml(data) +
         "</div>" +
-        '<p class="pp-muted pp-hub-ops__empty">No more sessions left this year. Book 2026/27 when you are ready.</p>' +
+        '<p class="pp-muted pp-hub-ops__empty">' +
+        esc(endNote) +
+        "</p>" +
         "</div>";
     } else {
       nextBody =
