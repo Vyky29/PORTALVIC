@@ -3516,9 +3516,9 @@
     }
     if (hubSlotIsMakeup(slot)) {
       var mkInst = primaryInstructorKey(slot);
-      if (isAquaticService(slot.service)) {
-        return slot.session_date + "|" + cid + "|" + t + "|aquatic|" + mkInst;
-      }
+      // One makeup = one feedback unit (client + time + instructor). Do not branch
+      // on aquatic vs empty service — that listed Karo twice in "awaiting feedback"
+      // when the same MakeUp was folded onto the original row and also injected.
       return slot.session_date + "|" + cid + "|" + t + "|makeup|" + mkInst;
     }
     if (isAquaticService(slot.service)) {
@@ -7916,19 +7916,31 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var missing = [];
     var counts = { submitted: 0, absent: 0, cancelled: 0, open: 0 };
     // A single make-up override can surface twice: once folded onto the displaced
-    // slot (e.g. Amaar → Elijah) and once as its own injected synthetic slot. Both
+    // slot (e.g. Kareena → Karo) and once as its own injected synthetic slot. Both
     // resolve to the same feedback unit, so track emitted keys and never list a unit
     // twice (one make-up = one feedback owed).
     var emitted = Object.create(null);
+    var emittedSoft = Object.create(null);
     var pushMissing = function (rowSlot, meta) {
       var rowKey = clean(feedbackUnitKey(rowSlot)).toLowerCase();
+      var wd = (rowSlot && rowSlot.day) || weekdayLongFromIso(rowSlot && rowSlot.session_date);
+      var softKey = [
+        clean(rowSlot && rowSlot.session_date),
+        canonicalClientSlug(rowSlot && rowSlot.client_name),
+        clean(rowSlot && (rowSlot.time_start || normTimeKey(rowSlot && rowSlot.time_slot, wd))),
+      ]
+        .join("|")
+        .toLowerCase();
       if (rowKey && emitted[rowKey]) return false;
+      if (softKey && softKey !== "||" && emittedSoft[softKey]) return false;
       if (rowKey) emitted[rowKey] = true;
+      if (softKey && softKey !== "||") emittedSoft[softKey] = true;
       missing.push(hub.missingFeedbackRowFromSlot(rowSlot, ctx, meta));
       return true;
     };
     for (var i = 0; i < ctx.displaySlots.length; i++) {
       var slot = ctx.displaySlots[i];
+      if (makeupSlotAbsorbedByDisplacedRow(hub, slot)) continue;
       var ukey = feedbackUnitKey(slot);
       var fbDone = ctx.unitComplete[ukey] || hub.slotFeedbackComplete(slot);
       var isAbsent = ctx.unitAbsent[ukey] || hub.slotIsAbsent(slot);
