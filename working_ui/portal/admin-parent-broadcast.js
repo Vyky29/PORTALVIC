@@ -25,19 +25,35 @@
     query: "",
   };
 
-  var DEFAULT_SUBJECT = "Your Family portal is ready — re-enrol by 22 July";
+  var DEFAULT_SUBJECT = "Welcome to your Family portal — re-enrol by 22 July & crash courses are open";
   var DEFAULT_BODY =
-    "Dear Parents,\n\n" +
-    "Your Family portal is ready — you already have access.\n\n" +
-    "Open it anytime: https://www.clubsensational.org/parent\n" +
-    "Sign in with your parent first and last name, plus your oldest child’s date of birth as 8 digits (DDMMYYYY).\n\n" +
-    "You can use the website in any browser. For the best experience, we recommend adding the Family app to your phone Home Screen (iPhone: Share → Add to Home Screen; Android: browser menu → Install app). Open Family from that icon and turn on alerts — then phone notifications for session changes, club announcements, photos and other updates can reach you even when the browser is closed.\n\n" +
-    "In the portal you can already:\n" +
-    "• Re-enrol for 2026/27 — please respond by Wednesday 22 July 2026 (the last day)\n" +
-    "• Book July Intensive Courses & Camps (crash courses) first if you prefer, then complete re-enrolment afterwards\n\n" +
-    "From Thursday 23 July 2026, places that have not been confirmed will be released. Unconfirmed slots may be added to available services for new clients on our booking website.\n\n" +
-    "Thank you,\n" +
-    "The ClubSENsational Team";
+    "Dear families,\n\n" +
+    "We are delighted to welcome you to the new clubSENsational Family portal — " +
+    "a calmer, clearer home for everything about your child’s place with us.\n\n" +
+    "You already have access. There is nothing to apply for and no new password to wait for.\n\n" +
+    "Open your portal here:\n" +
+    "https://www.clubsensational.org/parent\n\n" +
+    "Sign in with:\n" +
+    "• your first name and last name (as we have them on file), and\n" +
+    "• your oldest child’s date of birth as 8 digits — DDMMYYYY (for example 05122012).\n\n" +
+    "What you can do in the Family portal\n" +
+    "• See each child’s hub — sessions, photos, weekly notes and messages from the club\n" +
+    "• Re-enrol for 2026/27 — please confirm by Wednesday 22 July 2026 (the last day to respond)\n" +
+    "• Book July Intensive Courses & Camps (crash courses) now — you can book crash first and finish re-enrolment afterwards if that suits you better\n" +
+    "• Update registration details, report absences, and keep in touch with the office\n\n" +
+    "A tip that makes a real difference on your phone\n" +
+    "You can use the portal in any browser. For the best experience, add Family to your Home Screen " +
+    "(iPhone: Share → Add to Home Screen; Android: browser menu → Install app), open it from that icon, " +
+    "and turn on alerts. Then session changes, announcements and photos can reach your phone even when " +
+    "the browser is closed.\n\n" +
+    "Important dates for places\n" +
+    "• Wednesday 22 July 2026 — last day to respond to re-enrolment\n" +
+    "• From Thursday 23 July 2026 — places that have not been confirmed may be released, and unconfirmed " +
+    "slots may be offered to new clients on our booking website\n\n" +
+    "If anything looks unclear when you sign in, just reply to this email or message us on WhatsApp — " +
+    "we are here to help.\n\n" +
+    "Warm wishes,\n" +
+    "The clubSENsational team";
 
   // Short pointer sent over WhatsApp (Meta template): keeps it to one concise
   // paragraph and refers parents to the full email. No closing sign-off here —
@@ -46,11 +62,12 @@
   // ("Translated text too long") once the template footer is included.
   var WA_TEMPLATE_MAX = 700;
   var DEFAULT_WA_BODY =
-    "Your Family portal is ready: https://www.clubsensational.org/parent\n" +
-    "Sign in with parent name + oldest child’s DOB (DDMMYYYY).\n\n" +
-    "Best: Add to Home Screen, open from that icon and turn on alerts — then changes, announcements and photos can reach your phone.\n\n" +
-    "Re-enrol 2026/27 by Wed 22 July (last day). From Thu 23 July, unconfirmed places may go to new clients. Crash courses: book from the portal too (before or after re-enrol).\n\n" +
-    "Full details are in our email.";
+    "Welcome to your Family portal — you already have access.\n" +
+    "https://www.clubsensational.org/parent\n" +
+    "Sign in with your name + oldest child’s DOB (DDMMYYYY).\n\n" +
+    "Inside you can re-enrol for 2026/27 (by Wed 22 July), book July crash courses now, see sessions, photos and messages.\n\n" +
+    "Tip: Add to Home Screen, open from that icon and turn on alerts so updates reach your phone.\n\n" +
+    "From Thu 23 July, unconfirmed places may be released. Full welcome email has all the details.";
 
   function configure(options) {
     if (!options) return;
