@@ -608,7 +608,7 @@
    * authoritative source and contributes everyone else.
    */
   var EMPTY_DIRECTORY_FALLBACK = [
-    { key: "emmanuel", clientName: "Emmanuel" },
+    { key: "emanuel", clientName: "Emanuel" },
     { key: "timi", clientName: "Timi" },
   ];
 

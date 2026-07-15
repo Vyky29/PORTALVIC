@@ -183,7 +183,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-15": [
         "fadi",
         "ikram",
-        "emmanuel",
+        "emanuel",
         "eddie",
         "abodi_pa"
       ],
@@ -208,7 +208,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-22": [
         "fadi",
         "ikram",
-        "emmanuel",
+        "emanuel",
         "eddie",
         "abodi_pa"
       ]

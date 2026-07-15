@@ -1795,7 +1795,7 @@
       return out;
     }
     /** Day Centre / own-client lead views: same participant same day → keep the widest window
-     *  (e.g. drop Emmanuel 11–12.30 + Ikram 12.30–4 when Ikram 11–4 also exists from flatten). */
+     *  (e.g. drop Emanuel 11–12.30 + Ikram 12.30–4 when Ikram 11–4 also exists from flatten). */
     function portalDedupeTodayDayCentreWidestClientWindow(items){
       if(!Array.isArray(items) || items.length < 2) return items || [];
       function isDayCentreItem(it){

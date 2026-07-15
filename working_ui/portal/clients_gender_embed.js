@@ -47,7 +47,7 @@ window.PORTAL_CLIENT_GENDER_OVERRIDES = {
   eddie: "m",
   eiji: "m",
   elijah: "m",
-  emmanuel: "m",
+  emanuel: "m",
   erik: "m",
   fadi: "m",
   faris: "m",

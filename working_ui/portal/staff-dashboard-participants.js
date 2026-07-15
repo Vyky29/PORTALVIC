@@ -488,7 +488,7 @@
       const sel = portalSelectedViewCalendarIsoYmd();
       return !!iso && !!sel && iso === sel;
     }
-    /** Combined Day Centre cards (Ikram / Emmanuel / Fadi) render as multi-segment
+    /** Combined Day Centre cards (Ikram / Emanuel / Fadi) render as multi-segment
      *  cards; they are the normal recurring roster, not an admin change, so they must
      *  never carry the yellow "Updated by admin" style or chip. */
     function portalTodayItemIsSpecialSegmentedCard(item){
@@ -502,7 +502,7 @@
       return !!(item && item.portalShadowingHostAlert && Array.isArray(item.portalShadowingHostLabels) && item.portalShadowingHostLabels.length);
     }
     function portalTodayItemUsesAdminShiftCardStyle(item){
-      // Combined Day Centre cards (Ikram / Emmanuel / Fadi) are the normal recurring
+      // Combined Day Centre cards (Ikram / Emanuel / Fadi) are the normal recurring
       // roster, never an admin change: no yellow style even if the roster time moved.
       if(portalTodayItemIsSpecialSegmentedCard(item)) return false;
       if(portalTodayItemShowsShadowingHostAlert(item)) return false;
@@ -1466,7 +1466,7 @@
       }).join('');
     }
     /** Combined card: participant name on the far left, then a time / note mini-table
-     *  (e.g. Emmanuel — 11 to 12 Day Centre / 12 to 1 Big Pool). One session for feedback. */
+     *  (e.g. Emanuel — 11 to 12 Day Centre / 12 to 1 Big Pool). One session for feedback. */
     function todaySessionSegmentedCardInnerHtml(item){
       const nameCore = `<span class="session-meta-name">${escapeHtml(item.name)}</span>`;
       const meetingChipsRow = todaySessionStackedPeopleChipsRowHtml(item);

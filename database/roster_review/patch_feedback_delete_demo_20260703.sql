@@ -1,4 +1,4 @@
--- Remove demo-template session feedback for 2026-07-03 (Emmanuel, Adam P, Elijah).
+-- Remove demo-template session feedback for 2026-07-03 (Emanuel, Adam P, Elijah).
 -- Keeps Roberto's real Fadi feedback.
 
 delete from public.session_feedback

@@ -916,12 +916,12 @@ const LEAD_TEAM_COMBINED_SEGMENTS = {
     { time_slot: "12 to 1", area: "Big Pool" },
     { time_slot: "1 to 3", area: "Day Centre" },
   ],
-  "emmanuel|11to4": [
+  "emanuel|11to4": [
     { time_slot: "11 to 12", area: "Day Centre" },
     { time_slot: "12 to 1", area: "Big Pool" },
     { time_slot: "1 to 4", area: "Day Centre" },
   ],
-  "emmanuel|11to1": [
+  "emanuel|11to1": [
     { time_slot: "11 to 12", area: "Day Centre" },
     { time_slot: "12 to 1", area: "Big Pool" },
   ],

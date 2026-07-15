@@ -5,7 +5,7 @@
 create table if not exists public.staff_participant_access (
   staff_id uuid not null references public.staff_profiles(id) on delete cascade,
   participant_slug text not null check (
-    participant_slug in ('ikram', 'serine', 'ayaan', 'emmanuel')
+    participant_slug in ('ikram', 'serine', 'ayaan', 'emanuel')
   ),
   created_at timestamptz not null default now(),
   primary key (staff_id, participant_slug)

@@ -53,7 +53,7 @@ NEW_ROWS = [
         "session_date": DATE,
     },
     {
-        "client_name": "Emmanuel",
+        "client_name": "Emanuel",
         "day": DAY,
         "instructors": "YOUSSEF",
         "service": "Aquatic Activity",
@@ -63,7 +63,7 @@ NEW_ROWS = [
         "session_date": DATE,
     },
     {
-        "client_name": "Emmanuel",
+        "client_name": "Emanuel",
         "day": DAY,
         "instructors": "VICTOR",
         "service": "Day Centre",
@@ -73,7 +73,7 @@ NEW_ROWS = [
         "session_date": DATE,
     },
     {
-        "client_name": "Emmanuel",
+        "client_name": "Emanuel",
         "day": DAY,
         "instructors": "YOUSSEF",
         "service": "Day Centre",
@@ -125,7 +125,7 @@ NEW_ROWS = [
 ]
 
 REMOVE_KEYS = {
-    (DATE, "emmanuel", "michelle", "11 to 4"),
+    (DATE, "emanuel", "michelle", "11 to 4"),
     (DATE, "ikram", "youssef", "11 to 4"),
     (DATE, "fadi", "raul", "12.30 to 3"),
     (DATE, "fadi", "roberto", "12.30 to 3"),
@@ -172,7 +172,7 @@ def patch_bundle(path: Path) -> tuple[int, int]:
             continue
         # drop other dated rows for clients we're fully replacing
         cn = norm(r.get("client_name"))
-        if cn in ("emmanuel", "ikram", "fadi", "home", "timi") and k not in {
+        if cn in ("emanuel", "ikram", "fadi", "home", "timi") and k not in {
             row_key(x) for x in NEW_ROWS
         }:
             removed += 1
@@ -205,7 +205,7 @@ def patch_csv_participants() -> None:
     header = lines[0]
     out = [header]
     skip_dates = {
-        (DATE, "emmanuel"),
+        (DATE, "emanuel"),
         (DATE, "ikram"),
         (DATE, "timi"),
         (DATE, "fadi"),
@@ -219,16 +219,16 @@ def patch_csv_participants() -> None:
             continue
         d = parts[0].strip()
         client = parts[2].strip().lower()
-        if d == DATE and client in ("emmanuel", "ikram", "timi", "fadi"):
+        if d == DATE and client in ("emanuel", "ikram", "timi", "fadi"):
             continue
         out.append(line)
     csv_rows = [
         f"{DATE},{DAY},Timi,Day Centre,11 to 1,VICTOR,SwimFarm,Hub Room",
         f"{DATE},{DAY},Ikram,Day Centre,11 to 12,YOUSSEF,SwimFarm,Hub Room",
         f"{DATE},{DAY},Ikram,Day Centre,11 to 4,LULIA,SwimFarm,Hub Room",
-        f"{DATE},{DAY},Emmanuel,Aquatic Activity,12 to 1,YOUSSEF,SwimFarm,Teaching Pool",
-        f"{DATE},{DAY},Emmanuel,Day Centre,1 to 3,VICTOR,SwimFarm,Hub Room",
-        f"{DATE},{DAY},Emmanuel,Day Centre,3 to 4,YOUSSEF,SwimFarm,Hub Room",
+        f"{DATE},{DAY},Emanuel,Aquatic Activity,12 to 1,YOUSSEF,SwimFarm,Teaching Pool",
+        f"{DATE},{DAY},Emanuel,Day Centre,1 to 3,VICTOR,SwimFarm,Hub Room",
+        f"{DATE},{DAY},Emanuel,Day Centre,3 to 4,YOUSSEF,SwimFarm,Hub Room",
         f"{DATE},{DAY},Fadi,Day Centre,1 to 3,YOUSSEF,SwimFarm,Hub Room",
         f"{DATE},{DAY},Elijah,Aquatic Activity,4 to 4.30,ROBERTO,Acton,Teaching Pool",
     ]
@@ -247,8 +247,8 @@ def patch_staff_shifts() -> None:
     out = [lines[0]] if lines else ["date,weekday,staff,venue,time_range,raw_assignment"]
     replacements = {
         "raul": f"{DATE},{DAY},Raul,HOME,11-4,Raul HOME 11-4",
-        "victor": f"{DATE},{DAY},Victor,SwimFarm,11-3,Victor 11-1 Timi; 1-3 Emmanuel",
-        "youssef": f"{DATE},{DAY},Youssef,SwimFarm,11-4,Youssef 11-12 Ikram; 12-1 Emmanuel; 1-3 Fadi; 3-4 Emmanuel",
+        "victor": f"{DATE},{DAY},Victor,SwimFarm,11-3,Victor 11-1 Timi; 1-3 Emanuel",
+        "youssef": f"{DATE},{DAY},Youssef,SwimFarm,11-4,Youssef 11-12 Ikram; 12-1 Emanuel; 1-3 Fadi; 3-4 Emanuel",
     }
     seen = set()
     for line in lines[1:]:

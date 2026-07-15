@@ -2,7 +2,7 @@
 """Fija el horario Day Centre del 6 al 31 jul (datos del cliente, 5 jul).
 
 Reglas (a partir del 6 jul):
-  - Youssef: Emmanuel 11-1, Fadi 1-3; viernes además Emmanuel 3-4.
+  - Youssef: Emanuel 11-1, Fadi 1-3; viernes además Emanuel 3-4.
     (en sus días de day centre = Lun/Mié/Vie). Se conservan las after-school >=16:00.
   - Michelle y Luliya (lulia): Ikram 11-4 siempre (todos sus días).
   - Roberto: Fadi 12.30-3 siempre; los lunes además ACAT 11-12 y Timi 12-12.30.
@@ -79,9 +79,9 @@ def main():
                 if sk == "youssef":
                     if wd not in ("monday", "wednesday", "friday"):
                         continue
-                    new = [slot("11 to 1", "Emmanuel", "YOUSSEF"), slot("1 to 3", "Fadi", "YOUSSEF")]
+                    new = [slot("11 to 1", "Emanuel", "YOUSSEF"), slot("1 to 3", "Fadi", "YOUSSEF")]
                     if wd == "friday":
-                        new.append(slot("3 to 4", "Emmanuel", "YOUSSEF"))
+                        new.append(slot("3 to 4", "Emanuel", "YOUSSEF"))
                     d["slots"] = new + after
                     counts[sk] += 1
 

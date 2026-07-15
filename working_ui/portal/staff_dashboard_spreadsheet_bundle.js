@@ -249,10 +249,10 @@
     }
   },
   "clientRosterStartDates": {
-    "Emmanuel": "2026-06-12"
+    "Emanuel": "2026-06-12"
   },
   "clientWeekdaysOnly": {
-    "Emmanuel": [
+    "Emanuel": [
       "Monday",
       "Wednesday",
       "Friday"
@@ -4586,7 +4586,7 @@
       "session_date": "2026-06-12"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Friday",
       "instructors": "MICHELLE",
       "service": "Day Centre",
@@ -5266,7 +5266,7 @@
       "session_date": "2026-06-15"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Monday",
       "instructors": "RAUL",
       "service": "Day Centre",
@@ -5286,7 +5286,7 @@
       "session_date": "2026-06-15"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Monday",
       "instructors": "MICHELLE",
       "service": "Day Centre",
@@ -5316,7 +5316,7 @@
       "session_date": "2026-06-15"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
@@ -5766,7 +5766,7 @@
       "session_date": "2026-06-17"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Wednesday",
       "instructors": "MICHELLE",
       "service": "Day Centre",
@@ -6226,7 +6226,7 @@
       "session_date": "2026-06-19"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Friday",
       "instructors": "MICHELLE",
       "service": "Day Centre",
@@ -6886,7 +6886,7 @@
       "session_date": "2026-06-22"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Monday",
       "instructors": "RAUL",
       "service": "Day Centre",
@@ -6916,7 +6916,7 @@
       "session_date": "2026-06-22"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Monday",
       "instructors": "MICHELLE",
       "service": "Day Centre",
@@ -6956,7 +6956,7 @@
       "session_date": "2026-06-22"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
@@ -7416,7 +7416,7 @@
       "session_date": "2026-06-23"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Wednesday",
       "instructors": "VICTOR",
       "service": "Day Centre",
@@ -7436,7 +7436,7 @@
       "session_date": "2026-06-24"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Wednesday",
       "instructors": "VICTOR",
       "service": "Day Centre",
@@ -7476,7 +7476,7 @@
       "session_date": "2026-06-24"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Wednesday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
@@ -7506,7 +7506,7 @@
       "session_date": "2026-06-24"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Wednesday",
       "instructors": "RAUL",
       "service": "Day Centre",
@@ -7936,7 +7936,7 @@
       "session_date": "2026-06-26"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Friday",
       "instructors": "MICHELLE",
       "service": "Day Centre",
@@ -7976,7 +7976,7 @@
       "session_date": "2026-06-26"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Friday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
@@ -8006,7 +8006,7 @@
       "session_date": "2026-06-26"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Friday",
       "instructors": "VICTOR",
       "service": "Day Centre",
@@ -8016,7 +8016,7 @@
       "session_date": "2026-06-26"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Friday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
@@ -8686,7 +8686,7 @@
       "session_date": "2026-06-29"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Monday",
       "instructors": "MICHELLE",
       "service": "Day Centre",
@@ -8726,7 +8726,7 @@
       "session_date": "2026-06-29"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
@@ -8756,7 +8756,7 @@
       "session_date": "2026-06-29"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Monday",
       "instructors": "RAUL",
       "service": "Day Centre",
@@ -9186,7 +9186,7 @@
       "session_date": "2026-07-01"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Wednesday",
       "instructors": "MICHELLE",
       "service": "Day Centre",
@@ -9636,7 +9636,7 @@
       "session_date": "2026-07-03"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Friday",
       "instructors": "MICHELLE",
       "service": "Day Centre",
@@ -10326,7 +10326,7 @@
       "session_date": "2026-07-06"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
@@ -10386,7 +10386,7 @@
       "session_date": "2026-07-06"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Monday",
       "instructors": "RAUL",
       "service": "Day Centre",
@@ -10816,7 +10816,7 @@
       "session_date": "2026-07-08"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Wednesday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
@@ -11276,7 +11276,7 @@
       "session_date": "2026-07-10"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Friday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
@@ -11336,7 +11336,7 @@
       "session_date": "2026-07-10"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Friday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
@@ -11996,7 +11996,7 @@
       "session_date": "2026-07-13"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
@@ -12056,7 +12056,7 @@
       "session_date": "2026-07-13"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Monday",
       "instructors": "RAUL",
       "service": "Day Centre",
@@ -12486,7 +12486,7 @@
       "session_date": "2026-07-15"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Wednesday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
@@ -12946,7 +12946,7 @@
       "session_date": "2026-07-17"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Friday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
@@ -12996,7 +12996,7 @@
       "session_date": "2026-07-17"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Friday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
@@ -13086,7 +13086,7 @@
       "session_date": "2026-07-20"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
@@ -13126,7 +13126,7 @@
       "session_date": "2026-07-20"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Monday",
       "instructors": "RAUL",
       "service": "Day Centre",
@@ -13196,7 +13196,7 @@
       "session_date": "2026-07-22"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Wednesday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
@@ -13316,7 +13316,7 @@
       "session_date": "2026-07-24"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Friday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
@@ -13366,7 +13366,7 @@
       "session_date": "2026-07-24"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Friday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
@@ -13406,7 +13406,7 @@
       "session_date": "2026-07-27"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Monday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
@@ -13446,7 +13446,7 @@
       "session_date": "2026-07-27"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Monday",
       "instructors": "RAUL",
       "service": "Day Centre",
@@ -13516,7 +13516,7 @@
       "session_date": "2026-07-29"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Wednesday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
@@ -13636,7 +13636,7 @@
       "session_date": "2026-07-31"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Friday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",
@@ -13686,7 +13686,7 @@
       "session_date": "2026-07-31"
     },
     {
-      "client_name": "Emmanuel",
+      "client_name": "Emanuel",
       "day": "Friday",
       "instructors": "YOUSSEF",
       "service": "Day Centre",

@@ -1,27 +1,27 @@
--- Remove Emmanuel test data (was all smoke-test). Emmanuel's real schedule starts 2026-06-12.
+-- Remove Emanuel test data (was all smoke-test). Emanuel's real schedule starts 2026-06-12.
 -- Deletes feedback + related client-keyed rows. Idempotent (safe to re-run).
 begin;
 
 delete from public.session_feedback
-where lower(trim(client_name)) = 'emmanuel'
-   or lower(coalesce(portal_session_key, '')) like '%|emmanuel';
+where lower(trim(client_name)) = 'emanuel'
+   or lower(coalesce(portal_session_key, '')) like '%|emanuel';
 
 delete from public.incident_reports
-where lower(trim(client_name)) = 'emmanuel';
+where lower(trim(client_name)) = 'emanuel';
 
 delete from public.cancellation_reports
-where lower(trim(client_name)) = 'emmanuel';
+where lower(trim(client_name)) = 'emanuel';
 
 delete from public.lead_session_reports
-where lower(trim(coalesce(client_name, ''))) = 'emmanuel'
-   or lower(coalesce(portal_session_key, '')) like '%|emmanuel';
+where lower(trim(coalesce(client_name, ''))) = 'emanuel'
+   or lower(coalesce(portal_session_key, '')) like '%|emanuel';
 
 delete from public.portal_participant_achievement_photos
-where lower(trim(coalesce(client_name, ''))) = 'emmanuel'
-   or lower(coalesce(portal_session_key, '')) like '%|emmanuel';
+where lower(trim(coalesce(client_name, ''))) = 'emanuel'
+   or lower(coalesce(portal_session_key, '')) like '%|emanuel';
 
 delete from public.portal_late_submission_requests
-where lower(trim(coalesce(client_name, ''))) = 'emmanuel'
-   or lower(coalesce(portal_session_key, '')) like '%|emmanuel';
+where lower(trim(coalesce(client_name, ''))) = 'emanuel'
+   or lower(coalesce(portal_session_key, '')) like '%|emanuel';
 
 commit;

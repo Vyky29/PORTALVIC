@@ -57,7 +57,7 @@ En [Supabase → Authentication → URL Configuration](https://supabase.com/dash
 Ejemplos de alcance (producto visualVIC):
 
 - Sandra → Physical Activity, Core, Ayaan, Serine
-- Day Centre → Day Centre, Core, Emmanuel, Fadi, Ikram, Timi + carpeta premium (shower, getting changed, …)
+- Day Centre → Day Centre, Core, Emanuel, Fadi, Ikram, Timi + carpeta premium (shower, getting changed, …)
 
 ## Staff app rollout (open to all — Jul 2026)
 

@@ -21,7 +21,7 @@ Anon key: set in Vercel env for **both** apps — do not commit to git.
 
 ## Scope v1 (confirmed)
 
-**Include:** core, shower, dress-on, dress-off, tailored (Ikram, Serine, Ayaan, Emmanuel).
+**Include:** core, shower, dress-on, dress-off, tailored (Ikram, Serine, Ayaan, Emanuel).
 
 **Exclude v1:** brushing teeth.
 
@@ -40,9 +40,9 @@ Inactive profiles (`is_active = false`) → no access.
 
 | Person | app_role | participant_slug(s) |
 |--------|----------|------------------------|
-| Luliya | staff | ikram, emmanuel |
-| Youssef | staff | ikram, emmanuel |
-| Michelle | lead | ikram, emmanuel |
+| Luliya | staff | ikram, emanuel |
+| Youssef | staff | ikram, emanuel |
+| Michelle | lead | ikram, emanuel |
 | Sandra | staff | serine, ayaan |
 | Victor, Raul, Javi | ceo | *(none — full access)* |
 

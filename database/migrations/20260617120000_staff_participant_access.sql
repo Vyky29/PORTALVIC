@@ -6,7 +6,7 @@ begin;
 create table if not exists public.staff_participant_access (
   staff_id uuid not null references public.staff_profiles(id) on delete cascade,
   participant_slug text not null check (
-    participant_slug in ('ikram', 'serine', 'ayaan', 'emmanuel')
+    participant_slug in ('ikram', 'serine', 'ayaan', 'emanuel')
   ),
   created_at timestamptz not null default now(),
   primary key (staff_id, participant_slug)
@@ -35,14 +35,14 @@ create policy staff_participant_access_select_own
     )
   );
 
--- Seed v1 assignments (brief: Luliya, Youssef, Michelle → ikram+emmanuel; Sandra → serine+ayaan).
+-- Seed v1 assignments (brief: Luliya, Youssef, Michelle → ikram+emanuel; Sandra → serine+ayaan).
 insert into public.staff_participant_access (staff_id, participant_slug)
 select sp.id, v.slug
 from public.staff_profiles sp
 cross join (
   values
     ('ikram'),
-    ('emmanuel')
+    ('emanuel')
 ) as v(slug)
 where sp.is_active = true
   and lower(trim(sp.username)) in ('luliya', 'lulia', 'youssef', 'michelle')

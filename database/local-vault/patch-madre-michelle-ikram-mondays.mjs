@@ -1,6 +1,6 @@
 /**
  * Fix Michelle Monday Day Centre across ALL MADRE week blocks.
- * Stale copies still had Emmanuel 11–12.30 + Ikram 12.30–4; live flatten
+ * Stale copies still had Emanuel 11–12.30 + Ikram 12.30–4; live flatten
  * merged those with the correct Ikram 11–4 and Michelle saw 3 Today cards.
  *
  * Target Mondays: 2026-06-29, 2026-07-06, 2026-07-13 (+ any later Mon still split).
@@ -35,10 +35,10 @@ const TARGET_ISOS = new Set([
 function isSplitMichelleMonday(slots) {
   const list = Array.isArray(slots) ? slots : [];
   const hasEm =
-    list.some((s) => /emmanuel/i.test(String(s.client_name || ""))) &&
+    list.some((s) => /emanuel/i.test(String(s.client_name || ""))) &&
     list.some((s) => {
       const t = String(s.time_slot || "").replace(/\s+/g, "").toLowerCase();
-      return /emmanuel/i.test(String(s.client_name || "")) &&
+      return /emanuel/i.test(String(s.client_name || "")) &&
         (t === "11to12.30" || t === "11to12" || t === "11to12:30");
     });
   const hasIkPartial = list.some((s) => {
@@ -134,9 +134,9 @@ if (!patch.ok) {
 console.log("OK revision", prevRev, "→", prevRev + 1, "fixed", fixed);
 console.log(notes.join("\n"));
 
-// Cancel stale dated portal_roster_rows that still assign Michelle Emmanuel/Ikram splits.
+// Cancel stale dated portal_roster_rows that still assign Michelle Emanuel/Ikram splits.
 const cancelIds = [
-  "9f9a07fd-4cbc-48e9-b5ab-8b6cfc7b3484", // Emmanuel Michelle 2026-06-29
+  "9f9a07fd-4cbc-48e9-b5ab-8b6cfc7b3484", // Emanuel Michelle 2026-06-29
   "821da18b-018e-44aa-b5de-b8fdef30363c", // Ikram Michelle 12-4 2026-06-29
 ];
 const c = await fetch(

@@ -33,18 +33,18 @@
       { time_slot: "12 to 1", area: "Big Pool" },
       { time_slot: "1 to 3", area: "Day Centre" },
     ],
-    // Emmanuel Day Centre block (Mon/Wed/Fri): Day Centre + Big Pool hour + Day Centre.
-    "emmanuel|11to4": [
+    // Emanuel Day Centre block (Mon/Wed/Fri): Day Centre + Big Pool hour + Day Centre.
+    "emanuel|11to4": [
       { time_slot: "11 to 12", area: "Day Centre" },
       { time_slot: "12 to 1", area: "Big Pool" },
       { time_slot: "1 to 4", area: "Day Centre" },
     ],
-    "emmanuel|11to3": [
+    "emanuel|11to3": [
       { time_slot: "11 to 12", area: "Day Centre" },
       { time_slot: "12 to 1", area: "Big Pool" },
       { time_slot: "1 to 3", area: "Day Centre" },
     ],
-    "emmanuel|11to1": [
+    "emanuel|11to1": [
       { time_slot: "11 to 12", area: "Day Centre" },
       { time_slot: "12 to 1", area: "Big Pool" },
     ],
@@ -71,14 +71,14 @@
 
   /**
    * Display-only merge of a participant's TWO same-day Day Centre blocks into ONE
-   * segmented card. Emmanuel on Friday is split 11–1 + 3–4 (with Fadi 1–3 in between);
+   * segmented card. Emanuel on Friday is split 11–1 + 3–4 (with Fadi 1–3 in between);
    * the user wants a single Ikram-style card: name | 11 to 12 | 12 to 1 Big Pool | 3 to 4.
    * Pay is driven by the continuous shift band, so collapsing the two blocks for display
    * does not change hours; the merged slot is one feedback session (like other combined
    * Day Centre cards). Keyed by canonical clientId + weekday.
    */
   var PORTAL_COMBINED_MULTIBLOCK = {
-    "emmanuel|friday": {
+    "emanuel|friday": {
       blockStarts: ["11:00", "15:00"],
       merged: { time_slot: "11 to 4", start: "11:00", end: "16:00" },
       segments: [

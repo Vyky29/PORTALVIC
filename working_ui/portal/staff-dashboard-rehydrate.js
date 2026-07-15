@@ -673,7 +673,7 @@
         /* Do not finish the feedback pipeline here on warm export cache alone.
            Day Centre / shared slots need portalMergeServerReviewStateForDashboard
            (portalServerResolvedRosterKeys) before Pending/Submitted colours are safe —
-           otherwise Emmanuel-style cards flash orange then turn green late. */
+           otherwise Emanuel-style cards flash orange then turn green late. */
         portalSyncTodaySectionDisplay(sessionsModel);
         if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
         if(typeof portalRefreshNextSessionPreview === 'function') portalRefreshNextSessionPreview(staffId);

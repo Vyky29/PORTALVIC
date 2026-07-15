@@ -34,7 +34,7 @@ where not exists (
     and lower(trim(r.instructors)) like '%roberto%'
 );
 
--- Fri 3 Jul: split Roberto + Youssef (Youssef also supports Ikram / Emmanuel earlier).
+-- Fri 3 Jul: split Roberto + Youssef (Youssef also supports Ikram / Emanuel earlier).
 insert into public.portal_roster_rows (
   client_name, day, time_slot, instructors, service, area, venue, session_date, status, created_by, updated_by
 )

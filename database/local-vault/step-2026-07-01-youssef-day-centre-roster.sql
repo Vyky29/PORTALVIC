@@ -1,5 +1,5 @@
 -- Wednesday 2026-07-01 Day Centre / pool access for Youssef (SwimFarm morning).
--- Split Ikram 11–12, Emmanuel 12–1 (Big Pool), Fadi 1–3 — same pattern as Mon 29 Jun.
+-- Split Ikram 11–12, Emanuel 12–1 (Big Pool), Fadi 1–3 — same pattern as Mon 29 Jun.
 -- Run: npx supabase db query --linked -f database/local-vault/step-2026-07-01-youssef-day-centre-roster.sql
 
 begin;
@@ -18,7 +18,7 @@ set
   updated_at = now(),
   updated_by = (select id from _portal_actor)
 where session_date = '2026-07-01'::date
-  and lower(trim(client_name)) in ('ikram', 'emmanuel', 'fadi')
+  and lower(trim(client_name)) in ('ikram', 'emanuel', 'fadi')
   and status = 'active'
   and exists (select 1 from _portal_actor);
 
@@ -33,7 +33,7 @@ cross join (
     ('Ikram', '11 to 4', 'LULIA, MICHELLE', 'Day Centre', 'Hub Room'),
     ('Ikram', '11 to 4', 'LULIA, YOUSSEF', 'Day Centre', 'Hub Room'),
     ('Ikram', '11 to 4', 'YOUSSEF', 'Day Centre', 'Hub Room'),
-    ('Emmanuel', '11 to 4', 'MICHELLE', 'Day Centre', 'Hub Room'),
+    ('Emanuel', '11 to 4', 'MICHELLE', 'Day Centre', 'Hub Room'),
     ('Fadi', '12.30 to 3', 'ROBERTO, YOUSSEF', 'Day Centre', 'Hub Room'),
     ('Fadi', '12.30 to 3', 'ROBERTO, VICTOR', 'Day Centre', 'Hub Room')
 ) as v(client_name, time_slot, instructors, service, area);
@@ -47,7 +47,7 @@ from _portal_actor a
 cross join (
   values
     ('Ikram', '11 to 12', 'YOUSSEF', 'Day Centre', 'Hub Room'),
-    ('Emmanuel', '12 to 1', 'YOUSSEF', 'Aquatic Activity', 'Big Pool'),
+    ('Emanuel', '12 to 1', 'YOUSSEF', 'Aquatic Activity', 'Big Pool'),
     ('Fadi', '1 to 3', 'YOUSSEF', 'Day Centre', 'Hub Room')
 ) as v(client_name, time_slot, instructors, service, area);
 
@@ -56,5 +56,5 @@ commit;
 select client_name, time_slot, instructors, service, area, status
 from public.portal_roster_rows
 where session_date = '2026-07-01'::date
-  and lower(trim(client_name)) in ('ikram', 'emmanuel', 'fadi')
+  and lower(trim(client_name)) in ('ikram', 'emanuel', 'fadi')
 order by status desc, time_slot, client_name, instructors;

@@ -183,7 +183,7 @@ Cliente | nota | Instructor | session time | venue
 Timi | Hub Room | Raul | 1 to 3 | SwimFarm
 Ikram | Hub Room | LULIA, MICHELLE | 11 to 4 | SwimFarm
 Fadi | Hub Room | ROBERTO, YOUSSEF | 12.30 to 3 | SwimFarm
-Emmanuel | Hub Room | VICTOR | 11 to 4 | SwimFarm
+Emanuel | Hub Room | VICTOR | 11 to 4 | SwimFarm
 
 ========================================================================
 SATURDAY

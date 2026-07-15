@@ -18,7 +18,7 @@ from public.staff_profiles sp
 cross join (
   values
     ('ikram'),
-    ('emmanuel')
+    ('emanuel')
 ) as v(slug)
 where sp.is_active = true
   and (

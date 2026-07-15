@@ -5320,7 +5320,7 @@
       min-width:0;
     }
     /* Combined "Day Centre + pool" card: participant name on the far left, then a
-       time / note mini-table (e.g. Emmanuel — 11 to 12 Day Centre / 12 to 1 Big Pool).
+       time / note mini-table (e.g. Emanuel — 11 to 12 Day Centre / 12 to 1 Big Pool).
        Still ONE session (feedback / pay unchanged); this is a display grouping only. */
     .section-card--today .session-card.session-card--segments{
       border-left:4px solid #6d5ae0;

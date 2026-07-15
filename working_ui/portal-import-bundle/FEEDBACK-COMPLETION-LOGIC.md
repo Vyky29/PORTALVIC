@@ -24,7 +24,7 @@ For each roster slot (after omit rules):
 
 2. Else **feedback complete** if `slotFeedbackComplete(slot)` is true:
    - **ACAT Monday 11:00–12:00**: one row for client `Acat` covers Jack W, Jack S, Kamy, Kate (individual rows hidden in overview).
-   - **Day Centre** (Emmanuel, Ikram, Fadi): **one feedback per client per calendar day** — key `YYYY-MM-DD|client_slug|day_centre`. Any block that day shares it.
+   - **Day Centre** (Emanuel, Ikram, Fadi): **one feedback per client per calendar day** — key `YYYY-MM-DD|client_slug|day_centre`. Any block that day shares it.
    - **Sunday merge groups** (`sundayFeedbackMerges` in roster bundle): e.g. Yusuf 9:00 + 9:30 with Roberto = one feedback for both slots.
    - **Sunday hub teams**: hub multi blocks for Giuseppe/John/Bismark teams — one feedback per client+team+area.
    - **Direct match**: a feedback row `feedbackFitsSlot(fb, slot)` (same date, client slug, compatible service/time/area; instructor area rules on Sunday multi).

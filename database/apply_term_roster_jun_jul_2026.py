@@ -31,19 +31,19 @@ MICHELLE_IKRAM_WEDNESDAY_OFF = frozenset({"2026-06-10", "2026-06-17"})
 MONDAY_2026_06_29_DAY_CENTRE_ROWS = (
     ("ACAT", "ROBERTO", "Aquatic Activity", "Big Pool", "11 to 12"),
     ("Ikram", "YOUSSEF, CARLOS", "Day Centre", "Hub Room", "11 to 12"),
-    ("Emmanuel", "MICHELLE", "Day Centre", "Hub Room", "11 to 12"),
+    ("Emanuel", "MICHELLE", "Day Centre", "Hub Room", "11 to 12"),
     ("Timi", "VICTOR", "Day Centre", "Hub Room", "11 to 1"),
     ("Ikram", "MICHELLE, CARLOS", "Day Centre", "Hub Room", "12 to 4"),
-    ("Emmanuel", "YOUSSEF", "Aquatic Activity", "Big Pool", "12 to 1"),
+    ("Emanuel", "YOUSSEF", "Aquatic Activity", "Big Pool", "12 to 1"),
     ("Timi", "ROBERTO", "Aquatic Activity", "Big Pool", "12 to 12.30"),
     ("Fadi", "ROBERTO", "Day Centre", "Hub Room", "12.30 to 3"),
     ("Fadi", "YOUSSEF", "Day Centre", "Hub Room", "1 to 3"),
-    ("Emmanuel", "VICTOR", "Day Centre", "Hub Room", "1 to 4"),
+    ("Emanuel", "VICTOR", "Day Centre", "Hub Room", "1 to 4"),
     ("HOME", "RAUL", "Day Centre", "HOME", "11 to 1"),
     ("MANAGER", "RAUL", "Manager", "Manager", "1 to 4"),
 )
 
-EMMANUEL_ROSTER_START = "2026-06-12"
+EMANUEL_ROSTER_START = "2026-06-12"
 TIMI_ROSTER_START = "2026-06-15"
 # Timi Day Centre Mon/Fri 11–13 with Victor (was RAUL 13–15; Victor was on HOME mornings).
 TIMI_VICTOR_MF_SLOT = "11 to 1"
@@ -110,7 +110,7 @@ def patch_day_centre_2026_06_29(rows: list[dict]) -> dict[str, int]:
     """Special Monday 29 Jun day-centre rota after pool access moved 30 min earlier."""
     kept: list[dict] = []
     removed = 0
-    managed_clients = {"acat", "ikram", "emmanuel", "timi", "fadi", "home", "manager"}
+    managed_clients = {"acat", "ikram", "emanuel", "timi", "fadi", "home", "manager"}
     for row in rows:
         sd = str(row.get("session_date") or "").strip()[:10]
         if sd == "2026-06-29" and _client_slug(row.get("client_name")) in managed_clients:
@@ -222,7 +222,7 @@ def morning_day_centre() -> list[dict]:
             r("Ikram", day, "LULIA, MICHELLE", "11 to 4", service=dc, area=hub, venue=sf)
         )
 
-    # Emmanuel is NOT a weekday template: he starts 2026-06-12 and is stored as dated
+    # Emanuel is NOT a weekday template: he starts 2026-06-12 and is stored as dated
     # session_date rows (Mon/Wed: YOUSSEF 11 to 3 + VICTOR 3 to 4; Fri: YOUSSEF 11 to 4)
     # directly in staff_clients_machine.json. Do not regenerate him here.
     for day in ("Monday", "Wednesday", "Friday"):
@@ -256,7 +256,7 @@ def morning_day_centre() -> list[dict]:
     )
 
     # Timi is NOT a weekday template: Mon/Fri 11–13 Victor, Wed 13–15 Raul — dated rows only
-    # (see patch_emmanuel_timi_roster).
+    # (see patch_emanuel_timi_roster).
 
     return rows
 
@@ -573,15 +573,15 @@ def generate_home_dated_rows() -> list[dict]:
     return out
 
 
-def generate_emmanuel_timi_dated_rows() -> list[dict]:
+def generate_emanuel_timi_dated_rows() -> list[dict]:
     """Mon/Wed/Fri day-centre dated rows from each client's real start through term end."""
     dc = "Day Centre"
     hub = "Hub Room"
     sf = "SwimFarm"
     out: list[dict] = []
     mwf = (0, 2, 4)
-    for iso, day in _iter_iso_weekdays(EMMANUEL_ROSTER_START, SUMMER_TERM_END, mwf):
-        row = r("Emmanuel", day, "YOUSSEF, VICTOR", "11 to 4", service=dc, area=hub, venue=sf)
+    for iso, day in _iter_iso_weekdays(EMANUEL_ROSTER_START, SUMMER_TERM_END, mwf):
+        row = r("Emanuel", day, "YOUSSEF, VICTOR", "11 to 4", service=dc, area=hub, venue=sf)
         row["session_date"] = iso
         out.append(row)
     for iso, day in _iter_iso_weekdays(TIMI_ROSTER_START, SUMMER_TERM_END, (0, 4)):
@@ -595,15 +595,15 @@ def generate_emmanuel_timi_dated_rows() -> list[dict]:
     return out
 
 
-def patch_emmanuel_timi_roster(rows: list[dict]) -> dict[str, int]:
-    """Drop templates / early term rows; regenerate Emmanuel + Timi from start dates."""
+def patch_emanuel_timi_roster(rows: list[dict]) -> dict[str, int]:
+    """Drop templates / early term rows; regenerate Emanuel + Timi from start dates."""
     kept: list[dict] = []
     tpl_removed = 0
     dropped = 0
     for row in rows:
         client = _client_slug(row.get("client_name"))
         sd = str(row.get("session_date") or "").strip()[:10]
-        if client == "emmanuel":
+        if client == "emanuel":
             if not sd:
                 tpl_removed += 1
                 continue
@@ -618,7 +618,7 @@ def patch_emmanuel_timi_roster(rows: list[dict]) -> dict[str, int]:
                 dropped += 1
                 continue
         kept.append(row)
-    generated = generate_emmanuel_timi_dated_rows()
+    generated = generate_emanuel_timi_dated_rows()
     kept.extend(generated)
     rows.clear()
     rows.extend(kept)
@@ -675,7 +675,7 @@ def main() -> None:
     patched = patch_tuesday_hazem_rayan_instructors(merged)
     carlos_off = patch_carlos_weekday_roster_off(merged)
     michelle_off = patch_michelle_ikram_wednesday_off(merged)
-    emmanuel_timi = patch_emmanuel_timi_roster(merged)
+    emanuel_timi = patch_emanuel_timi_roster(merged)
     home_patch = patch_home_roster(merged)
     day_centre_29 = patch_day_centre_2026_06_29(merged)
     JSON_PATH.write_text(
@@ -701,13 +701,13 @@ def main() -> None:
             f"Removed Michelle from {michelle_off} Ikram row(s) on "
             f"{', '.join(sorted(MICHELLE_IKRAM_WEDNESDAY_OFF))}"
         )
-    if emmanuel_timi["templates_removed"] or emmanuel_timi["dated_dropped"] or emmanuel_timi["dated_generated"]:
+    if emanuel_timi["templates_removed"] or emanuel_timi["dated_dropped"] or emanuel_timi["dated_generated"]:
         print(
-            "Emmanuel/Timi roster: removed "
-            f"{emmanuel_timi['templates_removed']} template row(s), dropped "
-            f"{emmanuel_timi['dated_dropped']} dated row(s), wrote "
-            f"{emmanuel_timi['dated_generated']} dated row(s) "
-            f"(Emmanuel from {EMMANUEL_ROSTER_START}, Timi Mon/Fri {TIMI_VICTOR_MF_SLOT} Victor + Wed {TIMI_WED_RAUL_SLOT} Raul from {TIMI_ROSTER_START})"
+            "Emanuel/Timi roster: removed "
+            f"{emanuel_timi['templates_removed']} template row(s), dropped "
+            f"{emanuel_timi['dated_dropped']} dated row(s), wrote "
+            f"{emanuel_timi['dated_generated']} dated row(s) "
+            f"(Emanuel from {EMANUEL_ROSTER_START}, Timi Mon/Fri {TIMI_VICTOR_MF_SLOT} Victor + Wed {TIMI_WED_RAUL_SLOT} Raul from {TIMI_ROSTER_START})"
         )
     if home_patch["dated_dropped"] or home_patch["dated_generated"]:
         print(

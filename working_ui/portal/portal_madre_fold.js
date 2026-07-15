@@ -91,7 +91,7 @@
    * Authoritative week only: each calendar day belongs to exactly one week block
    * (start ≤ sessionDate ≤ end). Stale copies of the same date in other week blocks
    * (e.g. Monday template copied forward) must not be flattened into adapter rows —
-   * otherwise staff see duplicate/conflicting Today cards (Emmanuel split + Ikram 11–4).
+   * otherwise staff see duplicate/conflicting Today cards (Emanuel split + Ikram 11–4).
    */
   function sessionDateBelongsToWeek(iso, week) {
     var day = String(iso || "").trim().slice(0, 10);

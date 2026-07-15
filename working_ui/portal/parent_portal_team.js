@@ -358,7 +358,7 @@
   "emani": [
     "youssef"
   ],
-  "emmanuel": [
+  "emanuel": [
     "michelle",
     "victor",
     "youssef"

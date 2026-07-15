@@ -406,7 +406,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-11,Thursday,Mohammed,Aquatic Activity,5.30 to 6.30,ROBERTO,Acton,Lane (SE)
 2026-06-11,Thursday,Hazem,Aquatic Activity,6 to 6.30,JAVIER,Acton,Lane (DE)
 2026-06-11,Thursday,Maiyar,Aquatic Activity,6 to 6.30,AURORA,Acton,Teaching Pool
-2026-06-12,Friday,Emmanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
+2026-06-12,Friday,Emanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
 2026-06-12,Friday,Ikram,Day Centre,11 to 4,"LULIA, YOUSSEF",SwimFarm,Hub Room
 2026-06-12,Friday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room
 2026-06-12,Friday,Adam Pi,Aquatic Activity,4 to 5.30,ROBERTO,Acton,Teaching Pool
@@ -474,7 +474,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-14,Sunday,Yusuf Ah,Multi-Activity,9.30 to 10.15,ROBERTO,SwimFarm,Big Pool
 2026-06-14,Sunday,Zaid,Multi-Activity,9.30 to 10.15,GIUSEPPE,SwimFarm,Hub Room
 2026-06-15,Monday,ACAT,Day Centre,11 to 12,ROBERTO,SwimFarm,Hub Room
-2026-06-15,Monday,Emmanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
+2026-06-15,Monday,Emanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
 2026-06-15,Monday,Ikram,Day Centre,11 to 4,"LULIA, YOUSSEF",SwimFarm,Hub Room
 2026-06-15,Monday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room
 2026-06-15,Monday,Ayaan,Physical Activity,4 to 5,SANDRA,Westway,Gym
@@ -514,7 +514,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-16,Tuesday,Hazem,Aquatic Activity,6 to 6.30,AURORA,Acton,Lane (DE)
 2026-06-16,Tuesday,Kareena,Aquatic Activity,6 to 6.30,JAVIER,Acton,Lane (SE)
 2026-06-16,Tuesday,Richard,Aquatic Activity,6 to 6.30,ANGEL,Acton,Lane (DE)
-2026-06-17,Wednesday,Emmanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
+2026-06-17,Wednesday,Emanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
 2026-06-17,Wednesday,Ikram,Day Centre,11 to 4,"LULIA, YOUSSEF",SwimFarm,Hub Room
 2026-06-17,Wednesday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room
 2026-06-17,Wednesday,Cyrus,Aquatic Activity,4 to 4.30,JAVIER,Acton,Teaching Pool
@@ -554,7 +554,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-18,Thursday,Mohammed,Aquatic Activity,5.30 to 6.30,ROBERTO,Acton,Lane (SE)
 2026-06-18,Thursday,Hazem,Aquatic Activity,6 to 6.30,JAVIER,Acton,Lane (DE)
 2026-06-18,Thursday,Maiyar,Aquatic Activity,6 to 6.30,AURORA,Acton,Teaching Pool
-2026-06-19,Friday,Emmanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
+2026-06-19,Friday,Emanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
 2026-06-19,Friday,Ikram,Day Centre,11 to 4,"LULIA, YOUSSEF",SwimFarm,Hub Room
 2026-06-19,Friday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room
 2026-06-19,Friday,Adam Pi,Aquatic Activity,4 to 5.30,ROBERTO,Acton,Teaching Pool
@@ -622,7 +622,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-21,Sunday,Yusuf Ah,Multi-Activity,9.30 to 10.15,ROBERTO,SwimFarm,Big Pool
 2026-06-21,Sunday,Zaid,Multi-Activity,9.30 to 10.15,GIUSEPPE,SwimFarm,Hub Room
 2026-06-22,Monday,ACAT,Day Centre,11 to 12,ROBERTO,SwimFarm,Hub Room
-2026-06-22,Monday,Emmanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
+2026-06-22,Monday,Emanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
 2026-06-22,Monday,Ikram,Day Centre,11 to 4,"LULIA, YOUSSEF",SwimFarm,Hub Room
 2026-06-22,Monday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room
 2026-06-22,Monday,Ayaan,Physical Activity,4 to 5,SANDRA,Westway,Gym
@@ -662,7 +662,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-23,Tuesday,Hazem,Aquatic Activity,6 to 6.30,AURORA,Acton,Lane (DE)
 2026-06-23,Tuesday,Kareena,Aquatic Activity,6 to 6.30,JAVIER,Acton,Lane (SE)
 2026-06-23,Tuesday,Richard,Aquatic Activity,6 to 6.30,ANGEL,Acton,Lane (DE)
-2026-06-24,Wednesday,Emmanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
+2026-06-24,Wednesday,Emanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
 2026-06-24,Wednesday,Ikram,Day Centre,11 to 4,"LULIA, YOUSSEF",SwimFarm,Hub Room
 2026-06-24,Wednesday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room
 2026-06-24,Wednesday,Cyrus,Aquatic Activity,4 to 4.30,JAVIER,Acton,Teaching Pool
@@ -702,7 +702,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-25,Thursday,Mohammed,Aquatic Activity,5.30 to 6.30,ROBERTO,Acton,Lane (SE)
 2026-06-25,Thursday,Hazem,Aquatic Activity,6 to 6.30,JAVIER,Acton,Lane (DE)
 2026-06-25,Thursday,Maiyar,Aquatic Activity,6 to 6.30,DAN,Acton,Teaching Pool
-2026-06-26,Friday,Emmanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
+2026-06-26,Friday,Emanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
 2026-06-26,Friday,Ikram,Day Centre,11 to 4,"LULIA, YOUSSEF",SwimFarm,Hub Room
 2026-06-26,Friday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room
 2026-06-26,Friday,Adam Pi,Aquatic Activity,4 to 5.30,ROBERTO,Acton,Teaching Pool
@@ -771,7 +771,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-28,Sunday,Yusuf Ah,Multi-Activity,9.30 to 10.15,ROBERTO,SwimFarm,Big Pool
 2026-06-28,Sunday,Zaid,Multi-Activity,9.30 to 10.15,GIUSEPPE,SwimFarm,Hub Room
 2026-06-29,Monday,ACAT,Day Centre,11 to 12,ROBERTO,SwimFarm,Hub Room
-2026-06-29,Monday,Emmanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
+2026-06-29,Monday,Emanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
 2026-06-29,Monday,Ikram,Day Centre,11 to 4,"LULIA, YOUSSEF",SwimFarm,Hub Room
 2026-06-29,Monday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room
 2026-06-29,Monday,Ayaan,Physical Activity,4 to 5,SANDRA,Westway,Gym
@@ -811,7 +811,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-30,Tuesday,Hazem,Aquatic Activity,6 to 6.30,AURORA,Acton,Lane (DE)
 2026-06-30,Tuesday,Kareena,Aquatic Activity,6 to 6.30,JAVIER,Acton,Lane (SE)
 2026-06-30,Tuesday,Richard,Aquatic Activity,6 to 6.30,ANGEL,Acton,Lane (DE)
-2026-07-01,Wednesday,Emmanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
+2026-07-01,Wednesday,Emanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
 2026-07-01,Wednesday,Ikram,Day Centre,11 to 4,"LULIA, YOUSSEF",SwimFarm,Hub Room
 2026-07-01,Wednesday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room
 2026-07-01,Wednesday,Cyrus,Aquatic Activity,4 to 4.30,JAVIER,Acton,Teaching Pool
@@ -916,7 +916,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-07-05,Sunday,Yusuf Ah,Multi-Activity,9.30 to 10.15,ROBERTO,SwimFarm,Big Pool
 2026-07-05,Sunday,Zaid,Multi-Activity,9.30 to 10.15,GIUSEPPE,SwimFarm,Hub Room
 2026-07-06,Monday,ACAT,Day Centre,11 to 12,ROBERTO,SwimFarm,Hub Room
-2026-07-06,Monday,Emmanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
+2026-07-06,Monday,Emanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
 2026-07-06,Monday,Ikram,Day Centre,11 to 4,"LULIA, YOUSSEF",SwimFarm,Hub Room
 2026-07-06,Monday,Timi,Day Centre,11 to 1,VICTOR,SwimFarm,Hub Room
 2026-07-06,Monday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room
@@ -957,7 +957,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-07-07,Tuesday,Hazem,Aquatic Activity,6 to 6.30,AURORA,Acton,Lane (DE)
 2026-07-07,Tuesday,Kareena,Aquatic Activity,6 to 6.30,JAVIER,Acton,Lane (SE)
 2026-07-07,Tuesday,Richard,Aquatic Activity,6 to 6.30,ANGEL,Acton,Lane (DE)
-2026-07-08,Wednesday,Emmanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
+2026-07-08,Wednesday,Emanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
 2026-07-08,Wednesday,Ikram,Day Centre,11 to 4,"LULIA, YOUSSEF",SwimFarm,Hub Room
 2026-07-08,Wednesday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room
 2026-07-08,Wednesday,Cyrus,Aquatic Activity,4 to 4.30,JAVIER,Acton,Teaching Pool
@@ -997,7 +997,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-07-09,Thursday,Mohammed,Aquatic Activity,5.30 to 6.30,ROBERTO,Acton,Lane (SE)
 2026-07-09,Thursday,Hazem,Aquatic Activity,6 to 6.30,JAVIER,Acton,Lane (DE)
 2026-07-09,Thursday,Maiyar,Aquatic Activity,6 to 6.30,AURORA,Acton,Teaching Pool
-2026-07-10,Friday,Emmanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
+2026-07-10,Friday,Emanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
 2026-07-10,Friday,Ikram,Day Centre,11 to 4,"LULIA, YOUSSEF",SwimFarm,Hub Room
 2026-07-10,Friday,Timi,Day Centre,11 to 1,RAUL,SwimFarm,Hub Room
 2026-07-10,Friday,Fadi,Day Centre,12.30 to 3,"ROBERTO, RAUL",SwimFarm,Hub Room
@@ -1066,7 +1066,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-07-12,Sunday,Yusuf Ah,Multi-Activity,9.30 to 10.15,ROBERTO,SwimFarm,Big Pool
 2026-07-12,Sunday,Zaid,Multi-Activity,9.30 to 10.15,GIUSEPPE,SwimFarm,Hub Room
 2026-07-13,Monday,ACAT,Day Centre,11 to 12,ROBERTO,SwimFarm,Hub Room
-2026-07-13,Monday,Emmanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
+2026-07-13,Monday,Emanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
 2026-07-13,Monday,Ikram,Day Centre,11 to 4,"LULIA, YOUSSEF",SwimFarm,Hub Room
 2026-07-13,Monday,Timi,Day Centre,11 to 1,VICTOR,SwimFarm,Hub Room
 2026-07-13,Monday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room
@@ -1108,7 +1108,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-07-14,Tuesday,Hazem,Aquatic Activity,6 to 6.30,AURORA,Acton,Lane (DE)
 2026-07-14,Tuesday,Kareena,Aquatic Activity,6 to 6.30,JAVIER,Acton,Lane (SE)
 2026-07-14,Tuesday,Richard,Aquatic Activity,6 to 6.30,ANGEL,Acton,Lane (DE)
-2026-07-15,Wednesday,Emmanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
+2026-07-15,Wednesday,Emanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
 2026-07-15,Wednesday,Ikram,Day Centre,11 to 4,"LULIA, YOUSSEF",SwimFarm,Hub Room
 2026-07-15,Wednesday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room
 2026-07-15,Wednesday,Cyrus,Aquatic Activity,4 to 4.30,JAVIER,Acton,Teaching Pool
@@ -1148,7 +1148,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-07-16,Thursday,Mohammed,Aquatic Activity,5.30 to 6.30,ROBERTO,Acton,Lane (SE)
 2026-07-16,Thursday,Hazem,Aquatic Activity,6 to 6.30,JAVIER,Acton,Lane (DE)
 2026-07-16,Thursday,Maiyar,Aquatic Activity,6 to 6.30,AURORA,Acton,Teaching Pool
-2026-07-17,Friday,Emmanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
+2026-07-17,Friday,Emanuel,Day Centre,11 to 4,MICHELLE,SwimFarm,Hub Room
 2026-07-17,Friday,Ikram,Day Centre,11 to 4,"LULIA, YOUSSEF",SwimFarm,Hub Room
 2026-07-17,Friday,Timi,Day Centre,11 to 1,RAUL,SwimFarm,Hub Room
 2026-07-17,Friday,Fadi,Day Centre,12.30 to 3,"ROBERTO, RAUL",SwimFarm,Hub Room
@@ -1321,8 +1321,8 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-07-03,Friday,Timi,Day Centre,11 to 1,VICTOR,SwimFarm,Hub Room
 2026-07-03,Friday,Ikram,Day Centre,11 to 12,YOUSSEF,SwimFarm,Hub Room
 2026-07-03,Friday,Ikram,Day Centre,11 to 4,LULIA,SwimFarm,Hub Room
-2026-07-03,Friday,Emmanuel,Aquatic Activity,12 to 1,YOUSSEF,SwimFarm,Teaching Pool
-2026-07-03,Friday,Emmanuel,Day Centre,1 to 3,VICTOR,SwimFarm,Hub Room
-2026-07-03,Friday,Emmanuel,Day Centre,3 to 4,YOUSSEF,SwimFarm,Hub Room
+2026-07-03,Friday,Emanuel,Aquatic Activity,12 to 1,YOUSSEF,SwimFarm,Teaching Pool
+2026-07-03,Friday,Emanuel,Day Centre,1 to 3,VICTOR,SwimFarm,Hub Room
+2026-07-03,Friday,Emanuel,Day Centre,3 to 4,YOUSSEF,SwimFarm,Hub Room
 2026-07-03,Friday,Fadi,Day Centre,1 to 3,YOUSSEF,SwimFarm,Hub Room
 2026-07-03,Friday,Elijah,Aquatic Activity,4 to 4.30,ROBERTO,Acton,Teaching Pool

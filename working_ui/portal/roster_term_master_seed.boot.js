@@ -6,7 +6,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
     "termTo": "2026-07-17",
     "source": "staff_dashboard_spreadsheet_bundle.js + clients_info_embed.js",
     "generatedAt": "2026-06-11T12:12:20.307Z",
-    "note": "Edit in roster_term_master_review.html. Each slot: service + pool_note (Big Pool, Small Pool, Teaching Pool, Lane\u2026). Export JSON when approved. Youssef\u2192Ikram lun/mi\u00e9/vie from 2026-06-12; Michelle\u2192Emmanuel lun/mi\u00e9/vie; Michelle\u2192Ikram martes.",
+    "note": "Edit in roster_term_master_review.html. Each slot: service + pool_note (Big Pool, Small Pool, Teaching Pool, Lane\u2026). Export JSON when approved. Youssef\u2192Ikram lun/mi\u00e9/vie from 2026-06-12; Michelle\u2192Emanuel lun/mi\u00e9/vie; Michelle\u2192Ikram martes.",
     "staffOrder": [
       "alex",
       "angel",
@@ -3654,7 +3654,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "11 to 4",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -5768,7 +5768,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "11 to 12.30",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -5810,7 +5810,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "11 to 4",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -5826,7 +5826,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "11 to 4",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -5861,7 +5861,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "1.30 to 4",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -6497,7 +6497,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "12.30 to 1.30",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Big Pool",
                   "pool_note": "Big Pool",
@@ -7930,7 +7930,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "11 to 12.30",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -7977,7 +7977,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "11 to 12.30",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -8033,7 +8033,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "1.30 to 4",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub \u00b7 Manager",
                   "pool_note": "Hub \u00b7 Manager",
@@ -8095,7 +8095,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "2 to 4",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -8631,7 +8631,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "11 to 12.30",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -8651,7 +8651,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "1.30 to 2",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -8723,7 +8723,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "3 to 4",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -8759,7 +8759,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "12,30 to 1.20",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Big pool",
                   "pool_note": "Big pool",
@@ -8881,7 +8881,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "12.30 to 1.30",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Big Pool",
                   "pool_note": "Big Pool",
@@ -8957,7 +8957,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "12.30 to 1.30",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Big Pool",
                   "pool_note": "Big Pool",
@@ -8977,7 +8977,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "3 to 4",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -10461,7 +10461,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "11 to 12.30",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -10503,7 +10503,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "11 to 4",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -10519,7 +10519,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "11 to 4",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -10554,7 +10554,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "12.30 to 4",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub \u00b7 Manager",
                   "pool_note": "Hub \u00b7 Manager",
@@ -11200,7 +11200,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "12,30 to 1.20",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Big pool",
                   "pool_note": "Big pool",
@@ -12847,7 +12847,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "12.30 to 4",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub \u00b7 Manager",
                   "pool_note": "Hub \u00b7 Manager",
@@ -13493,7 +13493,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "11 to 1",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -13605,7 +13605,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "11 to 1",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -13671,7 +13671,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "11 to 1",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -13691,7 +13691,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "3 to 4",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -14647,7 +14647,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "12.30 to 4",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub \u00b7 Manager",
                   "pool_note": "Hub \u00b7 Manager",
@@ -15197,7 +15197,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "11 to 1",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -15309,7 +15309,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "11 to 1",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -15375,7 +15375,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "11 to 1",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -15395,7 +15395,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "3 to 4",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -15591,7 +15591,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "11 to 1",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -15617,7 +15617,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "11 to 1",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -15643,7 +15643,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "11 to 1",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -15663,7 +15663,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "3 to 4",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -15870,7 +15870,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "12.30 to 4",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub \u00b7 Manager",
                   "pool_note": "Hub \u00b7 Manager",
@@ -16130,7 +16130,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "11 to 1",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -16156,7 +16156,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "11 to 1",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -16182,7 +16182,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "slots": [
                 {
                   "time_slot": "11 to 1",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -16202,7 +16202,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "3 to 4",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub Room",
                   "pool_note": "Hub Room",
@@ -16409,7 +16409,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                 },
                 {
                   "time_slot": "12.30 to 4",
-                  "client_name": "Emmanuel",
+                  "client_name": "Emanuel",
                   "service": "Day Centre",
                   "area": "Hub \u00b7 Manager",
                   "pool_note": "Hub \u00b7 Manager",
@@ -19217,7 +19217,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "staff_name": "Victor",
         "venue": "SwimFarm",
         "time_range": "11-3",
-        "raw_assignment": "Victor 11-1 Timi; 1-3 Emmanuel"
+        "raw_assignment": "Victor 11-1 Timi; 1-3 Emanuel"
       },
       {
         "session_date": "2026-07-03",

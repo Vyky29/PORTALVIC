@@ -314,8 +314,8 @@
     return s.indexOf("day centre") !== -1 || s.indexOf("daycentre") !== -1 || s === "dc";
   }
 
-  /** Day Centre kids who may also swim in the same block (Ikram, Emmanuel, Timi, Fadi). */
-  var DAY_CENTRE_SWIM_NAME_KEYS = ["ikram", "fadi", "timi", "emmanuel", "emanuel"];
+  /** Day Centre kids who may also swim in the same block (Ikram, Emanuel, Timi, Fadi). */
+  var DAY_CENTRE_SWIM_NAME_KEYS = ["ikram", "fadi", "timi", "emanuel"];
 
   function normalizePersonKey(name) {
     return clean(name)
@@ -581,7 +581,7 @@
       return false;
     }
 
-    // Dual Day Centre (Fadi / Ikram / Emmanuel / Timi): always keep classic main axes.
+    // Dual Day Centre (Fadi / Ikram / Emanuel / Timi): always keep classic main axes.
     // Exclusive Multi: also keep classic main axes (one feedback form for everyone).
     if (dual || exclusive) applyFeedbackFormMode(root, false);
     wireOptionalSwimToggle(block, root, dual ? "dual" : "exclusive");

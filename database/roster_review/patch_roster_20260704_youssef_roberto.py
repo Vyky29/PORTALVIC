@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Align MADRE + bundles: Roberto Timi Mon; Youssef Emmanuel/Fadi Jul 6/8/10."""
+"""Align MADRE + bundles: Roberto Timi Mon; Youssef Emanuel/Fadi Jul 6/8/10."""
 from __future__ import annotations
 
 import json
@@ -39,14 +39,14 @@ def find_timi_template(seed: dict) -> dict:
     raise SystemExit("Timi template slot not found in MADRE")
 
 
-def find_emmanuel_info(seed: dict) -> str:
+def find_emanuel_info(seed: dict) -> str:
     for w in seed.get("weeks", []):
         for st in w.get("staff", []):
             if st.get("staffKey") != "michelle":
                 continue
             for d in st.get("days", []):
                 for s in d.get("slots") or []:
-                    if clean(s.get("client_name")).lower() == "emmanuel":
+                    if clean(s.get("client_name")).lower() == "emanuel":
                         return clean(s.get("participant_info"))
     return ""
 
@@ -99,52 +99,52 @@ def patch_roberto_monday(slots: list[dict], timi_template: dict) -> list[dict]:
     return insert_after_client(slots, "acat", timi)
 
 
-def patch_youssef_monday(slots: list[dict], emmanuel_info: str) -> list[dict]:
+def patch_youssef_monday(slots: list[dict], emanuel_info: str) -> list[dict]:
     slots = [s for s in slots if not (slot_client(s) == "ikram" and slot_time(s).startswith("11"))]
     slots = [
         s
         for s in slots
         if not (
-            slot_client(s) == "emmanuel"
+            slot_client(s) == "emanuel"
             and ("12,30" in clean(s.get("time_slot")) or "12.30" in slot_time(s))
         )
     ]
-    emmanuel_hub = hub_slot("Emmanuel", "11 to 12", "Day Centre", "Hub Room", emmanuel_info)
-    emmanuel_swim = hub_slot("Emmanuel", "12 to 1", "Aquatic Activity", "Big pool", emmanuel_info)
-    emmanuel_swim["area"] = "Big pool"
-    emmanuel_swim["pool_note"] = "Big pool"
-    # Keep Fadi 1.30-3; prepend Emmanuel blocks before Fadi or after any remaining morning slot.
+    emanuel_hub = hub_slot("Emanuel", "11 to 12", "Day Centre", "Hub Room", emanuel_info)
+    emanuel_swim = hub_slot("Emanuel", "12 to 1", "Aquatic Activity", "Big pool", emanuel_info)
+    emanuel_swim["area"] = "Big pool"
+    emanuel_swim["pool_note"] = "Big pool"
+    # Keep Fadi 1.30-3; prepend Emanuel blocks before Fadi or after any remaining morning slot.
     out: list[dict] = []
     inserted = False
     for s in slots:
         if not inserted and slot_client(s) == "fadi":
-            out.extend([emmanuel_hub, emmanuel_swim])
+            out.extend([emanuel_hub, emanuel_swim])
             inserted = True
         out.append(s)
     if not inserted:
-        out = [emmanuel_hub, emmanuel_swim] + out
+        out = [emanuel_hub, emanuel_swim] + out
     return out
 
 
-def patch_youssef_wed_fri(slots: list[dict], emmanuel_info: str) -> list[dict]:
+def patch_youssef_wed_fri(slots: list[dict], emanuel_info: str) -> list[dict]:
     slots = [s for s in slots if not (slot_client(s) == "ikram")]
     has_fadi = any(slot_client(s) == "fadi" for s in slots)
-    emmanuel_hub = hub_slot("Emmanuel", "11 to 12", "Day Centre", "Hub Room", emmanuel_info)
-    emmanuel_swim = hub_slot("Emmanuel", "12 to 1", "Aquatic Activity", "Big pool", emmanuel_info)
-    emmanuel_swim["area"] = "Big pool"
-    emmanuel_swim["pool_note"] = "Big pool"
-    fadi = hub_slot("Fadi", "1.30 to 3", "Day Centre", "Hub Room", emmanuel_info)
+    emanuel_hub = hub_slot("Emanuel", "11 to 12", "Day Centre", "Hub Room", emanuel_info)
+    emanuel_swim = hub_slot("Emanuel", "12 to 1", "Aquatic Activity", "Big pool", emanuel_info)
+    emanuel_swim["area"] = "Big pool"
+    emanuel_swim["pool_note"] = "Big pool"
+    fadi = hub_slot("Fadi", "1.30 to 3", "Day Centre", "Hub Room", emanuel_info)
     if not has_fadi:
-        slots = [emmanuel_hub, emmanuel_swim, fadi] + slots
+        slots = [emanuel_hub, emanuel_swim, fadi] + slots
     else:
         out: list[dict] = []
         inserted = False
         for s in slots:
             if not inserted and slot_client(s) == "fadi":
-                out.extend([emmanuel_hub, emmanuel_swim])
+                out.extend([emanuel_hub, emanuel_swim])
                 inserted = True
             out.append(s)
-        slots = out if inserted else [emmanuel_hub, emmanuel_swim] + slots
+        slots = out if inserted else [emanuel_hub, emanuel_swim] + slots
     return slots
 
 
@@ -152,17 +152,17 @@ def patch_michelle_monday(slots: list[dict]) -> list[dict]:
     return [
         s
         for s in slots
-        if not (slot_client(s) == "emmanuel" and slot_time(s).startswith("11"))
+        if not (slot_client(s) == "emanuel" and slot_time(s).startswith("11"))
     ]
 
 
 def patch_michelle_wed_fri(slots: list[dict]) -> list[dict]:
-    return [s for s in slots if slot_client(s) != "emmanuel"]
+    return [s for s in slots if slot_client(s) != "emanuel"]
 
 
 def patch_madre(seed: dict) -> dict:
     timi_template = find_timi_template(seed)
-    emmanuel_info = find_emmanuel_info(seed)
+    emanuel_info = find_emanuel_info(seed)
     stats = {"roberto_monday": 0, "youssef": 0, "michelle": 0}
 
     for w in seed.get("weeks", []):
@@ -180,13 +180,13 @@ def patch_madre(seed: dict) -> dict:
                         d["slots"] = new_slots
 
                 elif key == "youssef" and date == MON:
-                    new_slots = patch_youssef_monday(slots, emmanuel_info)
+                    new_slots = patch_youssef_monday(slots, emanuel_info)
                     if new_slots != slots:
                         stats["youssef"] += 1
                         d["slots"] = new_slots
 
                 elif key == "youssef" and date in (WED, FRI):
-                    new_slots = patch_youssef_wed_fri(slots, emmanuel_info)
+                    new_slots = patch_youssef_wed_fri(slots, emanuel_info)
                     if new_slots != slots:
                         stats["youssef"] += 1
                         d["slots"] = new_slots
