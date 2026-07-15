@@ -306,7 +306,7 @@ async function loadParticipantVenueByService(
 
   const slugs = [
     ...new Set(
-      resolveParticipantClientSlugs(identityInput)
+      expandParticipantClientSlugs(resolveParticipantClientSlugs(identityInput))
         .map((s) => slugifyParticipantKey(s))
         .filter(Boolean),
     ),
@@ -621,7 +621,7 @@ async function fetchRosterServiceLines(
 } | null> {
   const slugs = [
     ...new Set(
-      resolveParticipantClientSlugs(identityInput)
+      expandParticipantClientSlugs(resolveParticipantClientSlugs(identityInput))
         .map((s) => slugifyParticipantKey(s))
         .filter(Boolean),
     ),
@@ -753,7 +753,7 @@ Deno.serve(async (req) => {
     firstName: clean(participant.first_name, 80),
     lastName: clean(participant.last_name, 80),
   };
-  const clientSlugs = resolveParticipantClientSlugs(identityInput);
+  const clientSlugs = expandParticipantClientSlugs(resolveParticipantClientSlugs(identityInput));
   const lookupNames = resolveParticipantLookupNames(identityInput);
 
   const { data: contactRow } = await supabase
@@ -828,10 +828,22 @@ Deno.serve(async (req) => {
 
     const fbQueries = [];
     if (clientSlugs.length) {
-      fbQueries.push(supabase.from("session_feedback").select(fbSel).in("client_id", clientSlugs));
+      fbQueries.push(
+        supabase
+          .from("session_feedback")
+          .select(fbSel)
+          .in("client_id", clientSlugs)
+          .gte("session_date", PARENT_SESSION_TERM_START_ISO),
+      );
     }
     for (const nm of lookupNames.slice(0, 4)) {
-      fbQueries.push(supabase.from("session_feedback").select(fbSel).ilike("client_name", nm));
+      fbQueries.push(
+        supabase
+          .from("session_feedback")
+          .select(fbSel)
+          .ilike("client_name", nm)
+          .gte("session_date", PARENT_SESSION_TERM_START_ISO),
+      );
     }
 
     const seenIds = new Set<string>();
@@ -847,6 +859,8 @@ Deno.serve(async (req) => {
         if (!row || !participantIdentityMatches(identityInput, String(row.client_name || ""), String(row.client_id || ""))) continue;
         const id = String(row.id || "");
         if (!id || seenIds.has(id)) continue;
+        const sessionDate = isoFromAny(row.session_date);
+        if (sessionDate && sessionDate < PARENT_SESSION_TERM_START_ISO) continue;
         seenIds.add(id);
         rawFeedback.push(row);
       }

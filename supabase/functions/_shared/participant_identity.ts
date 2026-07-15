@@ -175,10 +175,12 @@ export function participantIdentityMatches(
   rowName: string,
   rowClientId: string,
 ): boolean {
-  const slugs = resolveParticipantClientSlugs(input);
+  const slugs = expandParticipantClientSlugs(resolveParticipantClientSlugs(input));
   const rowSlug = slugifyParticipantKey(rowClientId);
   const canonRowSlug = rosterParticipantSlugAlias(rowSlug);
-  if (rowSlug && slugs.some((s) => s === rowSlug || s === canonRowSlug)) return true;
+  if (rowSlug && slugs.some((s) => s === rowSlug || s === canonRowSlug || rosterParticipantSlugAlias(s) === canonRowSlug)) {
+    return true;
+  }
 
   const wantNames = resolveParticipantLookupNames(input).map(normalizeParticipantLookupName);
   const gotName = normalizeParticipantLookupName(rowName);
