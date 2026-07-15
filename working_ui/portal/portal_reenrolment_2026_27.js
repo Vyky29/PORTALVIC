@@ -2836,7 +2836,7 @@
     cards +=
       '<article class="re-offer-block">' +
       "<h4>Summer crash courses · July 2026</h4>" +
-      '<p class="re-muted">Climbing (Westway) and Swimming (Acton), four-day week packs Tue–Fri. <strong>Currently open: 21–24 July only.</strong> Week 2 (28–31 July) opens when Week 1 reaches 80% of places. Individual leftover hours for Week 1: Fri 17–Sun 19 July. <strong>Pay in full</strong> to reserve — places are limited (2 climbing / 8 swimming slots per day).</p>' +
+      '<p class="re-muted">Climbing (Westway) and Swimming (Acton), four-day week packs. <strong>Currently open: Week 1 — climb Mon–Thu 20–23 July · swim Tue–Fri 21–24 July.</strong> Week 2 (28–31 July) opens when Week 1 reaches 80% of places. Individual leftover hours for Week 1: Fri 17–Sun 19 July (register interest on the crash booking page). <strong>Pay in full</strong> to reserve — places are limited.</p>' +
       '<div class="re-offer-actions">' +
       '<a class="re-btn re-btn--primary" id="reCrashBookBtn" href="/parent/crash-summer">Book summer crash courses</a>' +
       '<button type="button" class="re-btn re-btn--secondary" id="reCrashDatesBtn">View dates on calendar</button>' +
@@ -3115,7 +3115,7 @@
   function renderCrashDatesModalBody(highlightIdx) {
     var hi = highlightIdx != null && !isNaN(Number(highlightIdx)) ? Number(highlightIdx) : -1;
     return (
-      '<p class="re-cal-summary">Summer Jul 2026 (Tue–Fri): Climbing at Westway and Swimming at Acton — <strong>Week 1 (21–24 July) is open now</strong>; Week 2 (28–31 July) opens when Week 1 reaches 80% of places. Book after signing in; pay in full to confirm. Half-term intensives run Mon–Thu.</p>' +
+      '<p class="re-cal-summary">Summer Jul 2026: Climbing at Westway and Swimming at Acton — <strong>Week 1 open now (climb 20–23 July · swim 21–24 July)</strong>; Week 2 (28–31 July) opens when Week 1 reaches 80% of places. Book after signing in; pay in full to confirm. Half-term intensives run Mon–Thu.</p>' +
       '<p class="re-cal-summary"><a class="re-cal-offer-link" href="/parent/crash-summer" style="display:inline-flex;padding:8px 0">Book summer crash courses →</a></p>' +
       RE_CRASH_DATES_2627.map(function (block, i) {
         return (

@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
       ok: false,
       error: "week_not_open",
       message:
-        "Week 2 opens when Week 1 reaches 80% of places. Only Week 1 (Tue 21 – Fri 24 July) is open for booking right now.",
+        "Week 2 opens when Week 1 reaches 80% of places. Only Week 1 is open right now (climbing Mon–Thu 20–23 July; swimming Tue–Fri 21–24 July).",
       week1_fill_pct: fill.week1_fill_pct,
       week2_open_at_fill: fill.week2_open_at_fill,
       rules: crashIndividualRulesCopy(false),

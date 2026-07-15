@@ -7,16 +7,40 @@
 
   var CATALOG = {
     weeks: [
-      { id: "w1", label: "Week 1 · Tue 21 – Fri 24 July", dates: ["2026-07-21", "2026-07-22", "2026-07-23", "2026-07-24"] },
-      // Week 2 only appears once API reports weeks_open includes w2 (Week 1 ≥ 80%).
+      {
+        id: "w1",
+        label: "Week 1 · July 2026 (climb 20–23 · swim 21–24)",
+        dates: ["2026-07-20", "2026-07-21", "2026-07-22", "2026-07-23", "2026-07-24"],
+        climbing_dates: ["2026-07-20", "2026-07-21", "2026-07-22", "2026-07-23"],
+        swimming_dates: ["2026-07-21", "2026-07-22", "2026-07-23", "2026-07-24"],
+      },
     ],
     weeksAll: [
-      { id: "w1", label: "Week 1 · Tue 21 – Fri 24 July", dates: ["2026-07-21", "2026-07-22", "2026-07-23", "2026-07-24"] },
-      { id: "w2", label: "Week 2 · Tue 28 – Fri 31 July", dates: ["2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31"] },
+      {
+        id: "w1",
+        label: "Week 1 · July 2026 (climb 20–23 · swim 21–24)",
+        dates: ["2026-07-20", "2026-07-21", "2026-07-22", "2026-07-23", "2026-07-24"],
+        climbing_dates: ["2026-07-20", "2026-07-21", "2026-07-22", "2026-07-23"],
+        swimming_dates: ["2026-07-21", "2026-07-22", "2026-07-23", "2026-07-24"],
+      },
+      {
+        id: "w2",
+        label: "Week 2 · Tue 28 – Fri 31 July",
+        dates: ["2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31"],
+        climbing_dates: ["2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31"],
+        swimming_dates: ["2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31"],
+      },
     ],
     climbing_slots: [
+      { id: "c0", label: "10:00–11:00 · 1 instructor" },
       { id: "c1", label: "11:00–12:00 · 1 instructor" },
       { id: "c2", label: "12:00–13:00 · 1 instructor" },
+      {
+        id: "c3",
+        label: "14:00–15:00 · 1 instructor · waiting list",
+        bookable: false,
+        waiting_list: true,
+      },
     ],
     swimming_slots: [
       { id: "s1", label: "16:30–17:00 · Instructor A", start: "16:30", end: "17:00" },
@@ -109,15 +133,22 @@
     }
   }
 
-  function weekDates() {
+  function weekDates(activity) {
     var w = CATALOG.weeks.find(function (x) {
       return x.id === state.weekId;
     });
-    return (w && w.dates) || [];
+    if (!w) return [];
+    if (activity === "climbing" && w.climbing_dates) return w.climbing_dates.slice();
+    if (activity === "swimming" && w.swimming_dates) return w.swimming_dates.slice();
+    return (w.dates || []).slice();
   }
 
   function slotsFor(activity) {
     return activity === "climbing" ? CATALOG.climbing_slots : CATALOG.swimming_slots;
+  }
+
+  function slotBookable(slot) {
+    return !(slot && (slot.bookable === false || slot.waiting_list));
   }
 
   function pricesFor(activity) {
@@ -381,22 +412,26 @@
     var selected = asSlotList(selectedRaw);
     return slotsFor(activity)
       .map(function (slot) {
-        var free = isSlotFree(activity, date, slot.id);
+        var waiting = !slotBookable(slot);
+        var free = !waiting && isSlotFree(activity, date, slot.id);
         var pressed = selected.indexOf(slot.id) >= 0;
         return (
-          '<button type="button" class="slot-btn" data-act="' +
+          '<button type="button" class="slot-btn' +
+          (waiting ? " slot-btn--wait" : "") +
+          '" data-act="' +
           activity +
           '" data-date="' +
           date +
           '" data-slot="' +
           slot.id +
           '"' +
-          (free ? "" : " disabled") +
+          (waiting || free ? "" : " disabled") +
+          (waiting ? ' data-waiting="1"' : "") +
           ' aria-pressed="' +
           (pressed ? "true" : "false") +
           '">' +
           slot.label +
-          (free ? "" : " · full") +
+          (waiting ? " · tap to join list" : free ? "" : " · full") +
           "</button>"
         );
       })
@@ -434,7 +469,7 @@
           " × half-hours).</p>";
       }
       if (state.mode === "weekly_pack") {
-        var anyDate = weekDates()[0];
+        var anyDate = weekDates(activity)[0];
         var sel = state.packSlots[activity];
         html +=
           '<div class="slot-grid" data-pack="' +
@@ -448,7 +483,7 @@
         html +=
           '<p class="muted">Availability checked for all four days — every selected slot must be free each day.</p>';
       } else {
-        weekDates().forEach(function (date) {
+        weekDates(activity).forEach(function (date) {
           var sel = (state.daySlots[activity] || {})[date];
           var has = asSlotList(sel).length > 0 || !!sel;
           if (activity === "climbing") has = !!sel;
@@ -488,7 +523,8 @@
       acts.forEach(function (activity) {
         host.querySelectorAll('.slot-grid[data-pack="' + activity + '"] .slot-btn').forEach(function (btn) {
           var slotId = btn.getAttribute("data-slot");
-          var allFree = weekDates().every(function (d) {
+          if (btn.getAttribute("data-waiting") === "1") return;
+          var allFree = weekDates(activity).every(function (d) {
             return isSlotFree(activity, d, slotId);
           });
           if (!allFree) {
@@ -510,13 +546,17 @@
 
     host.querySelectorAll(".slot-btn").forEach(function (btn) {
       btn.addEventListener("click", function () {
+        if (btn.getAttribute("data-waiting") === "1") {
+          void registerInterest("waiting_list_slot", btn.getAttribute("data-slot"));
+          return;
+        }
         var activity = btn.getAttribute("data-act");
         var date = btn.getAttribute("data-date");
         var slotId = btn.getAttribute("data-slot");
         if (state.mode === "weekly_pack") {
           if (activity === "swimming") {
             var next = toggleSwim(state.packSlots.swimming, slotId);
-            if (!slotsFreeOnDates("swimming", weekDates(), next)) {
+            if (!slotsFreeOnDates("swimming", weekDates("swimming"), next)) {
               showNotice("error", "That block is not free for the whole week. Try another.");
               return;
             }
@@ -590,6 +630,7 @@
     state.individualDaysOpen = !!open;
     var btn = $("csModeIndividual");
     var hint = $("csModeHint");
+    var interestWrap = $("csInterestWrap");
     var win = INDIVIDUAL_WINDOWS[state.weekId] || INDIVIDUAL_WINDOWS.w1;
     if (btn) {
       btn.disabled = !state.individualDaysOpen;
@@ -603,6 +644,9 @@
         btn.removeAttribute("title");
       }
     }
+    if (interestWrap) {
+      interestWrap.hidden = !!state.individualDaysOpen;
+    }
     if (hint) {
       if (state.individualDaysOpen) {
         hint.textContent =
@@ -613,12 +657,12 @@
         hint.textContent =
           "Week 2: book a four-day weekly pack until Thursday 23 July. Individual hours for 28–31 July open " +
           win.label +
-          ".";
+          ". Tap interest below if you want leftover hours later.";
       } else {
         hint.textContent =
-          "Week 1: book a four-day weekly pack until individual hours open " +
+          "Week 1: book a four-day weekly pack now. Individual leftover hours open " +
           win.label +
-          ".";
+          " — register interest below so we know you want them.";
       }
     }
     if (!state.individualDaysOpen && state.mode === "individual_days") {
@@ -637,6 +681,59 @@
     }
   }
 
+  async function registerInterest(interestType, slotId) {
+    if (!state.sessionToken) {
+      showNotice("error", "Please sign in via the family portal first.");
+      return;
+    }
+    var contact = ($("csContact") && $("csContact").value) || "";
+    if (!contact) {
+      showNotice("error", "Choose your child first.");
+      return;
+    }
+    var btn = $("csInterestBtn");
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Sending…";
+    }
+    try {
+      var res = await fetch(supabaseUrl() + "/functions/v1/portal-crash-summer-interest", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: anonKey(),
+          Authorization: "Bearer " + anonKey(),
+          "x-parent-portal-session": state.sessionToken,
+        },
+        body: JSON.stringify({
+          contact_id: contact,
+          week_id: state.weekId || "w1",
+          interest_type: interestType || "individual_hours",
+          slot_id: slotId || null,
+        }),
+      });
+      var data = await res.json().catch(function () {
+        return {};
+      });
+      if (!res.ok || !data.ok) {
+        showNotice("error", (data && data.message) || "Could not save your interest. Try again.");
+        return;
+      }
+      showNotice(
+        "success",
+        data.message ||
+          "Thanks — we have noted your interest and will follow up.",
+      );
+    } catch (_e) {
+      showNotice("error", "Network error — please try again.");
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "I'm interested in individual hours";
+      }
+    }
+  }
+
   function bindModes() {
     var host = $("csModes");
     if (!host) return;
@@ -650,21 +747,31 @@
             state.weekId === "w2"
               ? "Week 2 individual hours open " +
                   win.label +
-                  ". Until Thu 23 July book a Tue–Fri weekly pack for 28–31 July."
+                  ". Until Thu 23 July book a weekly pack for 28–31 July. Or register interest below."
               : "Week 1 individual hours open " +
                   win.label +
-                  ". Until then book a Tue–Fri weekly pack.",
+                  ". Until then book a weekly pack — or register interest below so we follow up.",
           );
           return;
         }
         state.mode = next;
         host.querySelectorAll("[data-mode]").forEach(function (b) {
-          b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+          b.setAttribute(
+            "aria-pressed",
+            b.getAttribute("data-mode") === next ? "true" : "false",
+          );
         });
         emptySlotState();
         renderSlots();
       });
     });
+    var interestBtn = $("csInterestBtn");
+    if (interestBtn && !interestBtn.getAttribute("data-bound")) {
+      interestBtn.setAttribute("data-bound", "1");
+      interestBtn.addEventListener("click", function () {
+        void registerInterest("individual_hours", null);
+      });
+    }
   }
 
   function bindActivities() {

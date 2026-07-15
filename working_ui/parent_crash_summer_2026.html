@@ -79,6 +79,8 @@
     .notice--error { background: var(--dangerSoft); color: var(--danger); border: 1px solid #f0c2c2; }
     .notice--ok { background: var(--successSoft); color: var(--success); border: 1px solid #b7e0c6; }
     .notice--info { background: var(--blueSoft); color: var(--ink); border: 1px solid #c5e0ef; }
+    .notice--success { background: #e8f6ee; color: #146c43; border: 1px solid #b7e0c5; }
+    .slot-btn--wait { opacity: 0.92; border-style: dashed; }
     label.field {
       display: block;
       margin: 0 0 10px;
@@ -294,17 +296,17 @@
         <h2>Week</h2>
         <div class="choices" id="csWeeks" role="group" aria-label="Week"></div>
         <p class="muted" id="csWeekRules">
-          Currently open: <strong>Week 1 only (Tue 21 – Fri 24 July)</strong>.
+          Currently open: <strong>Week 1</strong> — climbing <strong>Mon 20 – Thu 23 July</strong>; swimming <strong>Tue 21 – Fri 24 July</strong>.
           Week 2 (28–31 July) opens when Week 1 reaches <strong>80%</strong> of places.
-          Individual leftover hours for Week 1: Fri 17 – Sun 19 July.
+          Individual leftover hours for Week 1: Fri 17 – Sun 19 July (register interest below).
         </p>
       </section>
 
       <section class="card">
         <h2>Activities</h2>
         <div class="checks">
-          <label><input type="checkbox" name="act" value="climbing" id="csActClimb" /><span><strong>Climbing</strong> — 11:00–13:00 · Westway · <strong>1 instructor</strong> · 2 × 60′ places/day · £75/session or £300 weekly pack</span></label>
-          <label><input type="checkbox" name="act" value="swimming" id="csActSwim" /><span><strong>Swimming</strong> — 16:30–18:30 · Acton · <strong>2 instructors</strong> · 8 × 30′ places/day · £50 per 30′ or £200 weekly pack per 30′ · up to 120′ consecutive (mix instructors if free) · Tue/Thu Big Pool · Wed/Fri Teaching Pool</span></label>
+          <label><input type="checkbox" name="act" value="climbing" id="csActClimb" /><span><strong>Climbing</strong> — 10:00–13:00 (+ 14:00 waiting list) · Westway · <strong>1 instructor</strong> · £75/session or £300 weekly pack · Week 1: Mon 20 – Thu 23 July</span></label>
+          <label><input type="checkbox" name="act" value="swimming" id="csActSwim" /><span><strong>Swimming</strong> — 16:30–18:30 · Acton · <strong>2 instructors</strong> · 8 × 30′ places/day · £50 per 30′ or £200 weekly pack per 30′ · up to 120′ consecutive (mix instructors if free) · Week 1: Tue 21 – Fri 24 July · Tue/Thu Big Pool · Wed/Fri Teaching Pool</span></label>
         </div>
       </section>
 
@@ -315,6 +317,12 @@
           <button type="button" class="choice" data-mode="individual_days" aria-pressed="false" id="csModeIndividual">Individual hours</button>
         </div>
         <p class="muted" id="csModeHint">Select a week above to see when individual hours unlock for that week.</p>
+        <div id="csInterestWrap" class="interest-wrap" style="margin-top:12px">
+          <p class="muted" style="margin:0 0 8px;overflow-wrap:break-word;min-width:0">
+            Want single leftover hours later? Register interest now so we can follow up — you do not need to remember to come back on Friday 17.
+          </p>
+          <button type="button" class="btn btn--secondary" id="csInterestBtn">I'm interested in individual hours</button>
+        </div>
       </section>
 
       <section class="card" id="csSlotsCard">
@@ -371,16 +379,17 @@
     <section class="card" id="csInfo">
       <h2>Details</h2>
       <ul class="meta-list">
-        <li><strong>Week 1:</strong> Tue 21 – Fri 24 July 2026 · individual hours Fri 17 – Sun 19 only</li>
+        <li><strong>Week 1 climbing:</strong> Mon 20 – Thu 23 July 2026 · 10:00–11:00, 11:00–12:00, 12:00–13:00 (14:00 waiting list)</li>
+        <li><strong>Week 1 swimming:</strong> Tue 21 – Fri 24 July 2026 · 16:30–18:30 · individual hours Fri 17 – Sun 19 only</li>
         <li data-crash-week="w2" hidden><strong>Week 2:</strong> Tue 28 – Fri 31 July 2026 · packs only until Thu 23; individual hours Fri 24 – Sun 26</li>
         <li>Week 2 opens automatically when Week 1 reaches 80% of places</li>
-        <li>Default booking: four-day weekly pack (same time Tue–Fri)</li>
-        <li>Climbing: <strong>1 instructor</strong> · 2 × 60′ places/day (11:00–12:00 and 12:00–13:00)</li>
+        <li>Default booking: four-day weekly pack (same time each day of the activity week)</li>
+        <li>Climbing: <strong>1 instructor</strong> · up to 3 × 60′ bookable places/day (+ 14:00 waiting list)</li>
         <li>Swimming: <strong>2 instructors</strong> · 8 × 30′ places/day (book up to 120′ consecutive; mix instructors if free)</li>
         <li>You can book Climbing, Swimming, or both</li>
       </ul>
     </section>
   </div>
-  <script src="/portal/portal_crash_summer_2026.js?v=20260715-name-ref"></script>
+  <script src="/portal/portal_crash_summer_2026.js?v=20260715-climb-20-23"></script>
 </body>
 </html>

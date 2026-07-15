@@ -138,7 +138,7 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
   for (const week of weeks) {
     const weekLabel =
       week.id === "w1"
-        ? "Week 1 · Tue 21 – Fri 24 Jul"
+        ? "Week 1 · climb 20–23 · swim 21–24 Jul"
         : "Week 2 · Tue 28 – Fri 31 Jul";
     for (const act of activities) {
       const packPrice =
@@ -291,9 +291,9 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
 
   const packNote = crashIndividualRulesCopy(week2Open);
   const summerRange = week2Open
-    ? "Week 1: Tue 21 – Fri 24 July · Week 2: Tue 28 – Fri 31 July 2026 · " +
+    ? "Week 1: climb Mon–Thu 20–23 July · swim Tue–Fri 21–24 July · Week 2: Tue 28 – Fri 31 July 2026 · " +
       packNote
-    : "Currently open: Week 1 Tue 21 – Fri 24 July 2026. Week 2 (28–31 July) opens when Week 1 reaches 80% of places. · " +
+    : "Currently open: Week 1 (climb Mon–Thu 20–23 July · swim Tue–Fri 21–24 July). Week 2 (28–31 July) opens when Week 1 reaches 80% of places. · " +
       packNote;
 
   return {

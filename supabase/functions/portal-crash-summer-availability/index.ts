@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
       ok: false,
       error: "week_not_open",
       message:
-        "Week 2 opens when Week 1 reaches 80% of places. Only Week 1 (Tue 21 – Fri 24 July) is open for booking right now.",
+        "Week 2 opens when Week 1 reaches 80% of places. Only Week 1 is open right now (climbing Mon–Thu 20–23 July; swimming Tue–Fri 21–24 July).",
       catalog,
       ...fill,
       rules: crashIndividualRulesCopy(false),
@@ -125,18 +125,28 @@ Deno.serve(async (req) => {
   const availability: Record<string, Record<string, Record<string, boolean>>> = {};
   for (const activity of activities) {
     availability[activity] = {};
-    for (const date of dates) {
-      availability[activity][date] = {};
-      for (const slot of crashSlotsFor(activity)) {
-        availability[activity][date][slot.id] = !taken.has(
-          `${activity}|${date}|${slot.id}`,
-        );
+    for (const week of weeks) {
+      const actDates =
+        activity === "climbing"
+          ? week.climbing_dates || week.dates
+          : week.swimming_dates || week.dates;
+      for (const date of actDates) {
+        availability[activity][date] = {};
+        for (const slot of crashSlotsFor(activity)) {
+          if (slot.bookable === false || slot.waiting_list) {
+            availability[activity][date][slot.id] = false;
+          } else {
+            availability[activity][date][slot.id] = !taken.has(
+              `${activity}|${date}|${slot.id}`,
+            );
+          }
+        }
       }
     }
   }
 
   const capacity = {
-    climbing_slots_per_day: crashSlotsFor("climbing").length,
+    climbing_slots_per_day: crashSlotsFor("climbing", { bookableOnly: true }).length,
     swimming_slots_per_day: crashSlotsFor("swimming").length,
   };
 

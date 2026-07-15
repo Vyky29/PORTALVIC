@@ -1,6 +1,7 @@
 /**
- * Summer holiday crash courses — July 2026 (Tue–Fri weeks).
- * Climbing: 2 × 60′ slots/day · Swimming: 8 × 30′ slots/day.
+ * Summer holiday crash courses — July 2026.
+ * Climbing Week 1: Mon 20 – Thu 23 July · Swimming Week 1: Tue 21 – Fri 24 July.
+ * Climbing: 10:00–13:00 (+ 14:00 waiting list) · Swimming: 8 × 30′ slots/day.
  */
 
 export type CrashActivity = "climbing" | "swimming";
@@ -12,30 +13,62 @@ export type CrashSlotDef = {
   label: string;
   start: string;
   end: string;
+  /** When false, parents cannot book (waiting list / not released yet). */
+  bookable?: boolean;
+  waiting_list?: boolean;
 };
 
 export const CRASH_SUMMER_YEAR = 2026;
 
-export const CRASH_SUMMER_WEEKS: Record<
-  CrashWeekId,
-  { id: CrashWeekId; label: string; dates: string[] }
-> = {
+export type CrashWeekDef = {
+  id: CrashWeekId;
+  label: string;
+  /** Union of activity dates (occupancy queries / calendar). */
+  dates: string[];
+  climbing_dates: string[];
+  swimming_dates: string[];
+};
+
+export const CRASH_SUMMER_WEEKS: Record<CrashWeekId, CrashWeekDef> = {
   w1: {
     id: "w1",
-    label: "Week 1 · Tue 21 – Fri 24 July 2026",
-    dates: ["2026-07-21", "2026-07-22", "2026-07-23", "2026-07-24"],
+    label: "Week 1 · July 2026 (climb Mon–Thu 20–23 · swim Tue–Fri 21–24)",
+    dates: [
+      "2026-07-20",
+      "2026-07-21",
+      "2026-07-22",
+      "2026-07-23",
+      "2026-07-24",
+    ],
+    climbing_dates: ["2026-07-20", "2026-07-21", "2026-07-22", "2026-07-23"],
+    swimming_dates: ["2026-07-21", "2026-07-22", "2026-07-23", "2026-07-24"],
   },
   w2: {
     id: "w2",
     label: "Week 2 · Tue 28 – Fri 31 July 2026",
     dates: ["2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31"],
+    climbing_dates: ["2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31"],
+    swimming_dates: ["2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31"],
   },
 };
 
 export const CRASH_CLIMBING_SLOTS: CrashSlotDef[] = [
+  { id: "c0", label: "10:00–11:00 · 1 instructor", start: "10:00", end: "11:00" },
   { id: "c1", label: "11:00–12:00 · 1 instructor", start: "11:00", end: "12:00" },
   { id: "c2", label: "12:00–13:00 · 1 instructor", start: "12:00", end: "13:00" },
+  {
+    id: "c3",
+    label: "14:00–15:00 · 1 instructor · waiting list",
+    start: "14:00",
+    end: "15:00",
+    bookable: false,
+    waiting_list: true,
+  },
 ];
+
+export function crashBookableClimbingSlots(): CrashSlotDef[] {
+  return CRASH_CLIMBING_SLOTS.filter((s) => s.bookable !== false);
+}
 
 /** 8 × 30′ capacity units (2 swimming instructors × 4 half-hours). */
 export const CRASH_SWIMMING_SLOTS: CrashSlotDef[] = [
@@ -83,10 +116,10 @@ export const CRASH_HOLD_MINUTES = 120;
 export const CRASH_WEEK2_OPEN_AT_FILL = 0.8;
 
 /**
- * Weekly packs (Tue–Fri × 4 days) are bookable when the week itself is open.
+ * Weekly packs are bookable when the week itself is open.
  * Loose / individual hours unlock only in a Fri–Sun window before each week:
- *   Week 1 (21–24 Jul): Fri 17 – Sun 19 July
- *   Week 2 (28–31 Jul): Fri 24 – Sun 26 July (packs only until Thu 23)
+ *   Week 1: Fri 17 – Sun 19 July (climb days 20–23 · swim days 21–24)
+ *   Week 2: Fri 24 – Sun 26 July
  * Week 2 booking is gated by Week 1 ≥ 80% fill (see CRASH_WEEK2_OPEN_AT_FILL).
  */
 export const CRASH_INDIVIDUAL_WINDOWS: Record<
@@ -145,34 +178,50 @@ export function crashIndividualDaysOpen(now = new Date()): boolean {
 export function crashIndividualRulesCopy(week2Open = true): string {
   if (!week2Open) {
     return (
-      "Currently open: Week 1 only (Tue 21 – Fri 24 July). " +
+      "Currently open: Week 1 only — climbing Mon 20 – Thu 23 July; swimming Tue 21 – Fri 24 July. " +
       "Week 2 (Tue 28 – Fri 31 July) opens when Week 1 reaches 80% of places. " +
-      "Individual leftover hours for Week 1: Fri 17 – Sun 19 July."
+      "Individual leftover hours for Week 1: Fri 17 – Sun 19 July (register interest below if you want to be reminded)."
     );
   }
   return (
-    "Crash courses are four-day week packs (Tue–Fri). " +
+    "Crash courses are four-day week packs. Week 1 climbing is Mon–Thu 20–23 July; swimming Tue–Fri 21–24 July. " +
     "Individual leftover hours: Week 1 only Fri 17 – Sun 19 July; " +
     "Week 2 only Fri 24 – Sun 26 July (packs only until Thu 23)."
   );
 }
 
 export function crashWeekCapacityUnits(weekId: CrashWeekId): number {
-  const dates = crashWeekDates(weekId);
+  const climbDates = crashWeekDates(weekId, "climbing");
+  const swimDates = crashWeekDates(weekId, "swimming");
   return (
-    dates.length * (CRASH_CLIMBING_SLOTS.length + CRASH_SWIMMING_SLOTS.length)
+    climbDates.length * crashBookableClimbingSlots().length +
+    swimDates.length * CRASH_SWIMMING_SLOTS.length
   );
 }
 
 /** Count occupied slot-units (one booking line = one unit) for a week. */
 export function crashCountTakenUnits(
-  lines: Array<{ session_date?: string | null }>,
+  lines: Array<{ session_date?: string | null; activity?: string | null; slot_id?: string | null }>,
   weekId: CrashWeekId,
 ): number {
-  const dates = new Set(crashWeekDates(weekId));
+  const climbDates = new Set(crashWeekDates(weekId, "climbing"));
+  const swimDates = new Set(crashWeekDates(weekId, "swimming"));
+  const waitlistClimb = new Set(
+    CRASH_CLIMBING_SLOTS.filter((s) => s.waiting_list || s.bookable === false).map((s) => s.id),
+  );
   let n = 0;
   for (const line of lines || []) {
-    if (dates.has(String(line?.session_date || ""))) n += 1;
+    const date = String(line?.session_date || "");
+    const act = String(line?.activity || "");
+    const slotId = String(line?.slot_id || "");
+    if (act === "climbing") {
+      if (waitlistClimb.has(slotId)) continue;
+      if (climbDates.has(date)) n += 1;
+    } else if (act === "swimming") {
+      if (swimDates.has(date)) n += 1;
+    } else if (climbDates.has(date) || swimDates.has(date)) {
+      n += 1;
+    }
   }
   return n;
 }
@@ -229,7 +278,7 @@ export const CRASH_META = {
   climbing: {
     title: "Climbing",
     invoiceTitle: "Climbing Activity",
-    window: "11:00 am–1:00 pm",
+    window: "10:00 am–1:00 pm (14:00 waiting list)",
     venue: "Westway Sports & Fitness Centre",
     address: "1 Crowthorne Road, London W10 6RP",
   },
@@ -243,12 +292,20 @@ export const CRASH_META = {
   },
 } as const;
 
-export function crashSlotsFor(activity: CrashActivity): CrashSlotDef[] {
-  return activity === "climbing" ? CRASH_CLIMBING_SLOTS : CRASH_SWIMMING_SLOTS;
+export function crashSlotsFor(activity: CrashActivity, opts?: { bookableOnly?: boolean }): CrashSlotDef[] {
+  if (activity === "swimming") return CRASH_SWIMMING_SLOTS;
+  if (opts?.bookableOnly) return crashBookableClimbingSlots();
+  return CRASH_CLIMBING_SLOTS;
 }
 
 export function crashSlotById(activity: CrashActivity, slotId: string): CrashSlotDef | null {
   return crashSlotsFor(activity).find((s) => s.id === slotId) || null;
+}
+
+export function crashSlotIsBookable(activity: CrashActivity, slotId: string): boolean {
+  const slot = crashSlotById(activity, slotId);
+  if (!slot) return false;
+  return slot.bookable !== false;
 }
 
 /** Accept a single slot id or an array (swimming multi-slot). */
@@ -345,6 +402,9 @@ export function resolveActivitySlotIds(
     if (ids.length !== 1 || !crashSlotById("climbing", ids[0])) {
       return { ok: false, error: "slot_required_climbing" };
     }
+    if (!crashSlotIsBookable("climbing", ids[0])) {
+      return { ok: false, error: "slot_waiting_list" };
+    }
     return { ok: true, ids };
   }
   if (!swimSlotsAreValidBlock(ids)) {
@@ -353,13 +413,35 @@ export function resolveActivitySlotIds(
   return { ok: true, ids: orderSwimSlots(ids) };
 }
 
-export function crashWeekDates(weekId: CrashWeekId): string[] {
-  return CRASH_SUMMER_WEEKS[weekId]?.dates?.slice() || [];
+export function crashWeekDates(
+  weekId: CrashWeekId,
+  activity?: CrashActivity,
+): string[] {
+  const week = CRASH_SUMMER_WEEKS[weekId];
+  if (!week) return [];
+  if (activity === "climbing") return week.climbing_dates.slice();
+  if (activity === "swimming") return week.swimming_dates.slice();
+  return week.dates.slice();
+}
+
+export function crashWeekLabelForActivity(
+  weekId: CrashWeekId,
+  activity: CrashActivity,
+): string {
+  const week = CRASH_SUMMER_WEEKS[weekId];
+  if (!week) return "";
+  if (weekId === "w1") {
+    return activity === "climbing"
+      ? "Week 1 · Mon 20 – Thu 23 July 2026"
+      : "Week 1 · Tue 21 – Fri 24 July 2026";
+  }
+  return week.label;
 }
 
 export function isCrashSummerDate(iso: string): boolean {
   return (
-    CRASH_SUMMER_WEEKS.w1.dates.includes(iso) || CRASH_SUMMER_WEEKS.w2.dates.includes(iso)
+    CRASH_SUMMER_WEEKS.w1.dates.includes(iso) ||
+    CRASH_SUMMER_WEEKS.w2.dates.includes(iso)
   );
 }
 
@@ -429,14 +511,16 @@ export function quoteCrashSummerBooking(input: {
       if (!resolved.ok) return { ok: false, error: resolved.error };
       const ids = resolved.ids;
       const units = ids.length;
+      const weekDates = crashWeekDates(input.weekId, activity);
+      const weekLabel = crashWeekLabelForActivity(input.weekId, activity);
       const packTotal = prices.weekly_pack * units;
       amount += packTotal;
       const label =
         activity === "swimming" ? swimBlockLabel(ids) : crashSlotById(activity, ids[0])!.label;
       descParts.push(
-        `${meta.invoiceTitle} - Summer crash course Jul 2026 - ${week.label.split("·")[0].trim()} weekly pack (${label})`,
+        `${meta.invoiceTitle} - Summer crash course Jul 2026 - ${weekLabel} weekly pack (${label})`,
       );
-      for (const date of week.dates) {
+      for (const date of weekDates) {
         for (const slotId of ids) {
           const slot = crashSlotById(activity, slotId)!;
           lines.push({
@@ -444,17 +528,18 @@ export function quoteCrashSummerBooking(input: {
             session_date: date,
             slot_id: slot.id,
             slot_label: slot.label,
-            unit_price_gbp: round2(packTotal / (week.dates.length * units)),
+            unit_price_gbp: round2(packTotal / (weekDates.length * units)),
           });
         }
       }
     } else {
+      const weekDates = new Set(crashWeekDates(input.weekId, activity));
       const map =
         slotSel && typeof slotSel === "object" && !Array.isArray(slotSel)
           ? (slotSel as Record<string, string | string[]>)
           : {};
       const dates = Object.keys(map)
-        .filter((d) => week.dates.includes(d))
+        .filter((d) => weekDates.has(d))
         .sort();
       if (!dates.length) return { ok: false, error: `days_required_${activity}` };
       let dayUnits = 0;
