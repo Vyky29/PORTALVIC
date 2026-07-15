@@ -632,38 +632,14 @@
     }
   }
 
-  function updateLocBar() {
-    var bar = $("ppLocBar");
-    if (!bar) return;
-    var loggedIn = !!state.session.token && state.step !== "identify";
-    var geoApi = window.PortalClientGeo;
-    var hasDevice = geoApi && typeof geoApi.hasDeviceFix === "function" && geoApi.hasDeviceFix();
-    bar.hidden = !loggedIn || hasDevice;
-  }
-
   function setStep(step) {
     state.step = step;
     if ($("ppStepIdentify")) $("ppStepIdentify").hidden = step !== "identify";
     if ($("ppStepHome")) $("ppStepHome").hidden = step !== "home";
     if ($("ppStepParticipant")) $("ppStepParticipant").hidden = step !== "participant";
-    updateLocBar();
     if (step === "home" && state.session.token) {
       void pingActivity("home", null);
     }
-  }
-
-  function withGeoHint(payload) {
-    var base = payload && typeof payload === "object" ? payload : {};
-    var geoApi = typeof window !== "undefined" ? window.PortalClientGeo : null;
-    if (!geoApi || typeof geoApi.getHint !== "function") {
-      return Promise.resolve(base);
-    }
-    return geoApi.getHint().then(function (hint) {
-      if (hint) base.geo_hint = hint;
-      return base;
-    }).catch(function () {
-      return base;
-    });
   }
 
   var _pingLast = { surface: "", at: 0 };
@@ -673,21 +649,19 @@
     var now = Date.now();
     if (_pingLast.surface === s && now - _pingLast.at < 20000) return Promise.resolve();
     _pingLast = { surface: s, at: now };
-    return withGeoHint({
-      surface: s,
-      contact_id: contactId || state.participant.contactId || null,
-      detail: detail || null,
-    }).then(function (body) {
-      return fetch(fn("parent-portal-activity-ping"), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: anonKey(),
-          Authorization: "Bearer " + anonKey(),
-          "x-parent-portal-session": state.session.token,
-        },
-        body: JSON.stringify(body),
-      });
+    return fetch(fn("parent-portal-activity-ping"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: anonKey(),
+        Authorization: "Bearer " + anonKey(),
+        "x-parent-portal-session": state.session.token,
+      },
+      body: JSON.stringify({
+        surface: s,
+        contact_id: contactId || state.participant.contactId || null,
+        detail: detail || null,
+      }),
     }).catch(function () {
       /* presence ping is best-effort */
     });
@@ -1509,7 +1483,6 @@
   async function loadHome(opts) {
     opts = opts || {};
     var skipAutoHub = !!opts.skipAutoHub;
-    var homeBody = await withGeoHint({});
     var res = await fetch(fn("parent-portal-home-load"), {
       method: "POST",
       headers: {
@@ -1518,7 +1491,7 @@
         Authorization: "Bearer " + anonKey(),
         "x-parent-portal-session": state.session.token,
       },
-      body: JSON.stringify(homeBody),
+      body: "{}",
     });
     var body = await res.json().catch(function () {
       return {};
@@ -1570,11 +1543,6 @@
     btn.disabled = true;
     btn.setAttribute("aria-busy", "true");
     try {
-      var signInBody = await withGeoHint({
-        parent_first_name: parentFirstName,
-        parent_last_name: parentLastName,
-        login_dob: dobRaw,
-      });
       var res = await fetch(fn("parent-portal-sign-in"), {
         method: "POST",
         headers: {
@@ -1582,7 +1550,11 @@
           apikey: anonKey(),
           Authorization: "Bearer " + anonKey(),
         },
-        body: JSON.stringify(signInBody),
+        body: JSON.stringify({
+          parent_first_name: parentFirstName,
+          parent_last_name: parentLastName,
+          login_dob: dobRaw,
+        }),
       });
       var body = await res.json().catch(function () {
         return {};
@@ -1634,64 +1606,6 @@
     $("ppRefresh").addEventListener("click", function () {
       void loadHome();
     });
-
-    var locBtn = $("ppLocShareBtn");
-    if (locBtn) {
-      locBtn.addEventListener("click", function () {
-        var geoApi = window.PortalClientGeo;
-        if (!geoApi || typeof geoApi.requestFromUserGesture !== "function") {
-          showNotice($("ppNotice"), "error", "Location is not available on this device.");
-          return;
-        }
-        locBtn.disabled = true;
-        locBtn.textContent = "Getting location…";
-        geoApi
-          .requestFromUserGesture()
-          .then(function (hint) {
-            if (!hint || hint.source !== "device-geo") {
-              showNotice(
-                $("ppNotice"),
-                "error",
-                "Could not get location. Allow location for this site in your phone settings, then try again.",
-              );
-              return;
-            }
-            // Bypass ping debounce and force a geo refresh on the session.
-            _pingLast = { surface: "", at: 0 };
-            return withGeoHint({
-              surface: "home",
-              contact_id: state.participant.contactId || null,
-              detail: "location_share",
-            }).then(function (body) {
-              return fetch(fn("parent-portal-activity-ping"), {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  apikey: anonKey(),
-                  Authorization: "Bearer " + anonKey(),
-                  "x-parent-portal-session": state.session.token,
-                },
-                body: JSON.stringify(body),
-              });
-            }).then(function () {
-              updateLocBar();
-              showNotice(
-                $("ppNotice"),
-                "success",
-                "Location shared — the club can see your area now.",
-              );
-            });
-          })
-          .catch(function () {
-            showNotice($("ppNotice"), "error", "Could not get location. Please try again.");
-          })
-          .then(function () {
-            locBtn.disabled = false;
-            locBtn.textContent = "Share location";
-            updateLocBar();
-          });
-      });
-    }
 
     var helpBtn = $("ppHelpBtn");
     var helpPanel = $("ppHelpPanel");
@@ -1776,13 +1690,6 @@
     bindEvents();
     bindChildCards();
     bindChildPhotoHandlers();
-    try {
-      if (window.PortalClientGeo && typeof window.PortalClientGeo.warm === "function") {
-        void window.PortalClientGeo.warm();
-      }
-    } catch (_e) {
-      /* ignore */
-    }
     if (loadStoredSession()) {
       var params = readParticipantDeepLink();
       var deepId = params.get("contact_id") || params.get("contact") || "";

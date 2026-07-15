@@ -1,13 +1,12 @@
 /**
- * CEO - Booking Service presence (new clients) (who's signed in + what they're opening).
+ * CEO - Booking Service presence (new clients).
+ * Connection place = server IP geo only (no browser GPS, no live map).
  */
 (function (global) {
   "use strict";
 
   var POLL_MS = 30000;
   var timer = null;
-  var map = null;
-  var markersLayer = null;
   var cfg = {
     getClient: function () {
       return null;
@@ -67,107 +66,38 @@
     });
   }
 
-  function ensureMap() {
-    if (map || typeof global.L === "undefined") return map;
-    var el = $("cbsMap");
-    if (!el) return null;
-    map = global.L.map(el, {
-      scrollWheelZoom: false,
-      attributionControl: true,
-      maxBoundsViscosity: 0.85,
-    }).setView([51.5074, -0.1278], 11);
-    global.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 14,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
-    }).addTo(map);
-    markersLayer = global.L.layerGroup().addTo(map);
-    map.setMaxBounds([
-      [51.28, -0.55],
-      [51.7, 0.35],
-    ]);
-    setTimeout(function () {
-      try {
-        map.invalidateSize();
-      } catch (_e) {
-        /* ignore */
-      }
-    }, 80);
-    return map;
+  function placeItemHtml(p) {
+    return (
+      "<li><strong>" +
+      esc(p.visitor_label || "Visitor") +
+      "</strong> — " +
+      esc(p.label || "Unknown") +
+      (p.online ? " — online" : "") +
+      "</li>"
+    );
   }
 
-  function renderMap(data) {
-    ensureMap();
-    if (!map || !markersLayer) return;
-    markersLayer.clearLayers();
+  function renderPlaces(data) {
     var points = (data && data.map && data.map.points) || [];
-    var bounds = [];
-    points.forEach(function (p) {
-      var lat = Number(p.lat);
-      var lng = Number(p.lng);
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-        lat = 51.5074;
-        lng = -0.1278;
-      }
-      var circle = global.L.circleMarker([lat, lng], {
-        radius: p.online ? 9 : 7,
-        color: "#fff",
-        weight: 2,
-        fillColor: "#2d84b3",
-        fillOpacity: p.online ? 0.95 : 0.7,
-      });
-      var popupHtml =
-        "<strong>" +
-        esc(p.visitor_label || "Visitor") +
-        "</strong><br>" +
-        esc(p.label || "London") +
-        (p.online ? "<br>Online now" : "");
-      circle.bindPopup(popupHtml);
-      markersLayer.addLayer(circle);
-      bounds.push([lat, lng]);
-    });
-    if (bounds.length === 1) {
-      map.setView(bounds[0], 13);
-    } else if (bounds.length > 1) {
-      try {
-        map.fitBounds(bounds, { padding: [36, 36], maxZoom: 13 });
-      } catch (_e) {
-        map.setView([51.5074, -0.1278], 11);
-      }
-    } else {
-      map.setView([51.5074, -0.1278], 11);
-    }
-    setTimeout(function () {
-      try {
-        map.invalidateSize();
-      } catch (_e2) {
-        /* ignore */
-      }
-    }, 40);
-
     var outside = (data && data.map && data.map.outside) || [];
+    var londonHost = $("cbsLondonList");
     var outHost = $("cbsOutsideList");
+    if (londonHost) {
+      londonHost.innerHTML = points.length
+        ? points.map(placeItemHtml).join("")
+        : '<li class="cpp-empty" style="border:0;background:transparent;padding:4px 0">Nobody connecting from London in the last 24h (or place not known yet).</li>';
+    }
     if (outHost) {
       outHost.innerHTML = outside.length
-        ? outside
-            .map(function (o) {
-              return (
-                "<li><strong>" +
-                esc(o.visitor_label || "Visitor") +
-                "</strong> — " +
-                esc(o.label || "Outside London") +
-                (o.online ? " — online" : "") +
-                "</li>"
-              );
-            })
-            .join("")
-        : '<li class="cpp-empty" style="border:0;background:transparent;padding:4px 0">Nobody connecting from outside London in the last 24h (or location not known yet).</li>';
+        ? outside.map(placeItemHtml).join("")
+        : '<li class="cpp-empty" style="border:0;background:transparent;padding:4px 0">Nobody connecting from outside London in the last 24h (or place not known yet).</li>';
     }
 
     var g = (data && data.summary && data.summary.geo) || {};
     var note = $("cbsGeoNote");
     if (note) {
       note.textContent =
-        "Map = London areas from device location when allowed (neighbourhood-level) | London " +
+        "Approx. place from connection IP (not phone GPS). London " +
         (g.london != null ? g.london : 0) +
         " | Outside London " +
         ((g.england || 0) + (g.outside || 0)) +
@@ -210,8 +140,8 @@
       "</span>" +
       "</div>" +
       '<div class="cpp-row__side">' +
-      '<span class="cpp-pill cpp-pill--loc" title="Connection location (device GPS when allowed)">' +
-      esc(loc || "Location ?") +
+      '<span class="cpp-pill cpp-pill--loc" title="Approx. place from connection IP">' +
+      esc(loc || "Place ?") +
       "</span>" +
       '<span class="cpp-pill cpp-pill--device">' +
       esc(device || "Device ?") +
@@ -235,7 +165,6 @@
     var online = (data && data.online) || [];
     var recent = (data && data.recent) || [];
     var activity = (data && data.activity) || [];
-    var actions = (data && data.actions) || [];
 
     var onlineHost = $("cbsOnlineList");
     if (onlineHost) {
@@ -291,7 +220,7 @@
         '<li class="cpp-empty">New-client Booking Service has no Family absences here — use Surfaces for browse / Book / registration.</li>';
     }
 
-    renderMap(data);
+    renderPlaces(data);
 
     var stamp = $("cbsStamp");
     if (stamp) {
@@ -336,7 +265,6 @@
   }
 
   function start() {
-    ensureMap();
     void load();
     if (timer) clearInterval(timer);
     timer = setInterval(function () {

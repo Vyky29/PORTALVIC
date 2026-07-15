@@ -354,46 +354,6 @@
       gap: 8px;
       flex-shrink: 0;
     }
-    .pp-loc-bar {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px;
-      margin: 0 0 14px;
-      padding: 12px 14px;
-      border-radius: 14px;
-      border: 1px solid #c5d9ea;
-      background: #eef6fc;
-      min-width: 0;
-    }
-    .pp-loc-bar[hidden] { display: none !important; }
-    .pp-loc-bar__text {
-      flex: 1 1 180px;
-      min-width: 0;
-      margin: 0;
-      font-size: 0.9rem;
-      color: var(--ink, #1a2b3c);
-      overflow-wrap: break-word;
-    }
-    .pp-loc-bar__btn {
-      flex: 0 0 auto;
-      border: 0;
-      border-radius: 999px;
-      padding: 10px 14px;
-      font-weight: 700;
-      font-size: 0.88rem;
-      background: #2d84b3;
-      color: #fff;
-      cursor: pointer;
-    }
-    .pp-loc-bar__btn:disabled {
-      opacity: 0.65;
-      cursor: wait;
-    }
-      display: flex;
-      gap: 8px;
-      flex-shrink: 0;
-    }
     .pp-icon-btn {
       border: 1px solid var(--line);
       background: var(--white);
@@ -3551,12 +3511,6 @@
     </header>
 
     <div id="ppNotice" class="pp-notice pp-notice--info" hidden role="status"></div>
-    <div id="ppLocBar" class="pp-loc-bar" hidden>
-      <p class="pp-loc-bar__text">
-        Share your location so the club can see the right area (e.g. Latimer) — not a wrong city from the network.
-      </p>
-      <button id="ppLocShareBtn" class="pp-loc-bar__btn" type="button">Share location</button>
-    </div>
 
     <section id="ppStepIdentify" class="pp-card">
       <h2 class="pp-section-title">
@@ -3670,8 +3624,7 @@
   <script src="/portal/parent_portal_team.js?v=20260710-eiji-hazem-photos"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260714-w2-80pct"></script>
   <script src="/portal/parent_portal_participant.js?v=20260715-booking-dc-year"></script>
-  <script src="/portal/portal_client_geo.js?v=20260715-fix-bradford"></script>
-  <script src="/portal/parent_portal_app.js?v=20260715-fix-bradford"></script>
+  <script src="/portal/parent_portal_app.js?v=20260715-no-parent-loc"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {

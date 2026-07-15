@@ -211,67 +211,45 @@
     .cpp-map-card {
       margin-bottom: 14px;
     }
-    .cpp-map-legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px 16px;
-      margin: 0 0 10px;
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
-    .cpp-map-legend span {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      min-width: 0;
-      overflow-wrap: break-word;
-    }
-    .cpp-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      flex: 0 0 auto;
-    }
-    .cpp-dot--london { background: #2d84b3; }
-    .cpp-dot--england { background: #157347; }
-    .cpp-dot--outside { background: #b36b2d; }
-    #cppMap {
-      height: 320px;
-      width: 100%;
-      border-radius: 14px;
-      border: 1px solid var(--line);
-      z-index: 0;
-      background: #e8eef3;
-    }
-    .cpp-outside {
-      margin-top: 12px;
+    .cpp-places {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
       min-width: 0;
     }
-    .cpp-outside h3 {
+    @media (max-width: 720px) {
+      .cpp-places { grid-template-columns: 1fr; }
+    }
+    .cpp-places h3 {
       margin: 0 0 8px;
       font-size: 0.88rem;
       color: var(--ink);
     }
-    .cpp-outside-list {
+    .cpp-outside-list,
+    .cpp-places-list {
       list-style: none;
       margin: 0;
       padding: 0;
       display: flex;
       flex-direction: column;
       gap: 6px;
-      max-height: 160px;
+      max-height: 220px;
       overflow: auto;
+      min-width: 0;
     }
-    .cpp-outside-list li {
+    .cpp-outside-list li,
+    .cpp-places-list li {
       font-size: 0.85rem;
       padding: 8px 10px;
       border-radius: 10px;
       border: 1px solid var(--line);
-      background: #fffaf5;
+      background: #f7fafc;
       min-width: 0;
       overflow-wrap: break-word;
     }
-    .cpp-outside-list strong { color: var(--ink); }
+    .cpp-outside-list li { background: #fffaf5; }
+    .cpp-outside-list strong,
+    .cpp-places-list strong { color: var(--ink); }
     .cpp-geo-note {
       margin: 8px 0 0;
       font-size: 0.78rem;
@@ -279,7 +257,6 @@
       overflow-wrap: break-word;
     }
   </style>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 </head>
 <body>
   <div class="cpp-wrap">
@@ -292,9 +269,8 @@
     <p class="cpp-sub">
       Live view of who has a Family portal session open, which child hub surface they last opened,
       and recent absences / portal messages. “Online” means API activity in the last 5 minutes.
-      Connection place uses <strong>device location</strong> when the parent allows it (same idea as staff live map); otherwise IP. The map shows <strong>London only</strong>;
-      anyone connecting from elsewhere appears in the list under the map with the place name.
-      Use the green <strong>location</strong> pill to tell your own check logins apart from real parents.
+      Connection place is an approximate city/area from the network (IP) — parents never see this
+      and are never asked for location. Use the green place pill to tell your own QA logins apart.
     </p>
 
     <div class="cpp-kpis" aria-label="Summary">
@@ -313,17 +289,18 @@
 
     <section class="cpp-card cpp-map-card" aria-labelledby="cppMapTitle">
       <h2 id="cppMapTitle">Where parents connect from</h2>
-      <div class="cpp-map-legend" aria-hidden="true">
-        <span><i class="cpp-dot cpp-dot--london"></i> London (on map)</span>
-        <span><i class="cpp-dot cpp-dot--outside"></i> Outside London (listed below)</span>
-      </div>
-      <div id="cppMap" role="img" aria-label="Map of parent connections in London"></div>
-      <div class="cpp-outside">
-        <h3>Outside London</h3>
-        <ul class="cpp-outside-list" id="cppOutsideList"></ul>
+      <div class="cpp-places">
+        <div>
+          <h3>London</h3>
+          <ul class="cpp-places-list" id="cppLondonList"></ul>
+        </div>
+        <div>
+          <h3>Outside London</h3>
+          <ul class="cpp-outside-list" id="cppOutsideList"></ul>
+        </div>
       </div>
       <p class="cpp-geo-note" id="cppGeoNote">
-        Uses device location when allowed (like staff live map); IP only as fallback. New sign-ins and hub opens fill location; older sessions may show as unknown until parents return.
+        Approx. place from connection IP. New sign-ins and hub opens fill place; older sessions may show as unknown until parents return.
       </p>
     </section>
 
@@ -351,8 +328,7 @@
     </div>
   </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="/portal/portal_ceo_parent_presence.js?v=20260715-area-geo"></script>
+  <script src="/portal/portal_ceo_parent_presence.js?v=20260715-no-map-ip"></script>
   <script type="module">
     import { bootstrapDashboardSupabase } from "/portal/auth-handler.js?v=20260625-exec-single-session-exempt";
     await bootstrapDashboardSupabase({ page: "ceo" });
