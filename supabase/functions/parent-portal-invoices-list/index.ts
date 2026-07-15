@@ -197,7 +197,9 @@ Deno.serve(async (req) => {
       openForPay &&
       !gcMandateActive;
     const gcPendingCollection =
-      gcMandateActive && isGcHint && openForPay && hasGcPayment;
+      isGcHint && openForPay && (gcMandateActive || hasGcPayment);
+    // Mandated Direct Payment invoices are collected by GoCardless — no Tide / card / "I've paid".
+    const hideManualPay = isGcHint;
     const applicableCredits =
       openForPay && amount != null && Number.isFinite(amount) && amount > 0
         ? usableCredits
@@ -218,41 +220,47 @@ Deno.serve(async (req) => {
       gocardless_url: clean(share.gocardless_url, 500) || null,
       gocardless_payment_id: clean(share.gocardless_payment_id, 80) || null,
       can_setup_gocardless: canSetupGc,
-      gocardless_pending_collection: gcPendingCollection,
-      payment_link_url: clean(share.payment_link_url, 500) || null,
-      payment_link_surcharge_note: clean(share.payment_link_surcharge_note, 200) || null,
+      gocardless_pending_collection: gcPendingCollection && !canSetupGc,
+      payment_link_url: hideManualPay
+        ? null
+        : clean(share.payment_link_url, 500) || null,
+      payment_link_surcharge_note: hideManualPay
+        ? null
+        : clean(share.payment_link_surcharge_note, 200) || null,
       parent_reported_paid_at: share.parent_reported_paid_at || null,
       parent_reported_ref: share.parent_reported_ref || null,
       paid_at: share.paid_at || null,
       paid_via: share.paid_via || null,
       suggested_reference: suggestedRef,
-      bank_transfer: openForPay || status === "pending_confirmation"
-        ? {
-            available: tide.available,
-            payee_name: tide.payee_name,
-            sort_code: tide.sort_code,
-            account_number: tide.account_number,
-            // Prefer participant name over static env hint (term label stays on invoice Reference).
-            reference_hint: suggestedRef || tide.reference_hint,
-            message: tide.available
-              ? null
-              : "Contact the office for bank transfer details.",
-          }
-        : null,
-      can_report_paid: openForPay,
-      can_pay: canPayCard,
-      card_checkout: cardPricing
-        ? {
-            available: true,
-            invoice_gbp: cardPricing.net_gbp,
-            charge_gbp: cardPricing.charge_gbp,
-            fee_gbp: cardPricing.fee_gbp,
-            fee_percent: cardPricing.fee_percent,
-            fee_fixed_gbp: cardPricing.fee_fixed_pence / 100,
-            note:
-              "Card / Apple Pay includes a processing fee so we receive the invoice amount in full. Bank transfer has no fee.",
-          }
-        : null,
+      bank_transfer:
+        hideManualPay || !(openForPay || status === "pending_confirmation")
+          ? null
+          : {
+              available: tide.available,
+              payee_name: tide.payee_name,
+              sort_code: tide.sort_code,
+              account_number: tide.account_number,
+              // Prefer participant name over static env hint (term label stays on invoice Reference).
+              reference_hint: suggestedRef || tide.reference_hint,
+              message: tide.available
+                ? null
+                : "Contact the office for bank transfer details.",
+            },
+      can_report_paid: hideManualPay ? false : openForPay,
+      can_pay: hideManualPay ? false : canPayCard,
+      card_checkout:
+        hideManualPay || !cardPricing
+          ? null
+          : {
+              available: true,
+              invoice_gbp: cardPricing.net_gbp,
+              charge_gbp: cardPricing.charge_gbp,
+              fee_gbp: cardPricing.fee_gbp,
+              fee_percent: cardPricing.fee_percent,
+              fee_fixed_gbp: cardPricing.fee_fixed_pence / 100,
+              note:
+                "Card / Apple Pay includes a processing fee so we receive the invoice amount in full. Bank transfer has no fee.",
+            },
       applicable_credits: applicableCredits,
     });
   }

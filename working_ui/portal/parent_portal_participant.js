@@ -4917,9 +4917,18 @@
     var gc = String((inv && inv.gocardless_url) || "").trim();
     var canSetupGc = !!(inv && inv.can_setup_gocardless);
     var gcPending = !!(inv && inv.gocardless_pending_collection);
-    var pl = String((inv && inv.payment_link_url) || "").trim();
+    var isGcInvoice =
+      String((inv && inv.payment_method_hint) || "").toLowerCase() === "gocardless";
+    var pl = isGcInvoice
+      ? ""
+      : String((inv && inv.payment_link_url) || "").trim();
     var surcharge = String((inv && inv.payment_link_surcharge_note) || "").trim();
     var suggestedRef = String((inv && inv.suggested_reference) || "").trim();
+    // Direct Payment (mandate) invoices: no Tide / card / "I've paid by bank transfer".
+    if (isGcInvoice) {
+      canReport = false;
+      canPay = false;
+    }
     var pendingNote =
       status === "pending_confirmation"
         ? '<p class="pp-invoice-card__meta">Thanks — we will confirm when the payment appears' +
@@ -5005,10 +5014,13 @@
       (due ? '<p class="pp-invoice-card__meta muted">Due ' + esc(due) + "</p>" : "") +
       pendingNote +
       paidNote +
-      invoiceBankPanelHtml(inv) +
+      (isGcInvoice ? "" : invoiceBankPanelHtml(inv)) +
       creditHtml +
       (gcPending
-        ? '<p class="pp-muted pp-invoice-pay__note">Direct Payment scheduled with GoCardless — collection follows your due date (usually a few working days).</p>'
+        ? '<p class="pp-muted pp-invoice-pay__note">Direct Payment (GoCardless) — your mandate will collect this automatically around the due date. No bank transfer or card payment needed.</p>'
+        : "") +
+      (canSetupGc
+        ? '<p class="pp-muted pp-invoice-pay__note">Set up Direct Payment once — then invoices are collected automatically by mandate.</p>'
         : "") +
       '<div class="pp-invoice-card__acts">' +
       (pdf
@@ -5032,7 +5044,7 @@
           esc(inv.id) +
           '">Set up Direct Payment</button>'
         : "") +
-      (!canSetupGc && gc
+      (!canSetupGc && gc && !isGcInvoice
         ? '<a class="pp-btn pp-btn--primary" href="' +
           esc(gc) +
           '" target="_blank" rel="noopener noreferrer">Pay with GoCardless</a>'
