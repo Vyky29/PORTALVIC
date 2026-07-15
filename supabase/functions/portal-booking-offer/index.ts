@@ -309,8 +309,8 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
     blocks: [
       {
         id: "summer_july",
-        badge: "Summer Holidays 2026",
-        title: "Summer holiday crash courses",
+        badge: "JULY 2026",
+        title: "July Intensive Courses & Camps",
         range: summerRange,
         badgeIcon: "sun",
         sort: 1,
