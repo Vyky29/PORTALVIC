@@ -1367,36 +1367,132 @@
     return { tone: "upcoming", title: "Upcoming — " + d.iso, icon: "" };
   }
 
+  /**
+   * Half-term break windows used to split chips into first / second half rows.
+   * Current year: May break. 2026/27: Oct / Feb / May weekend closures.
+   */
+  function termHalfBreakWindows(data) {
+    if (!familyAcceptedNextYear(data)) {
+      return [
+        {
+          from: CURRENT_YEAR_TERM_BREAK_FROM,
+          to: CURRENT_YEAR_TERM_BREAK_TO,
+          termFrom: CURRENT_YEAR_TERM_FROM,
+          termTo: CURRENT_YEAR_TERM_TO,
+        },
+      ];
+    }
+    var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
+    var terms = (cal && Array.isArray(cal.terms) ? cal.terms : []) || [];
+    var closures = (cal && Array.isArray(cal.weekendClosures) ? cal.weekendClosures : []) || [];
+    var windows = [];
+    terms.forEach(function (t) {
+      if (!t || !t.starts) return;
+      var termEnd = t.mainTermEnds || t.ends || t.lastDay || "";
+      if (!termEnd) return;
+      var hit = null;
+      for (var i = 0; i < closures.length; i++) {
+        var c = closures[i];
+        if (!c || !c.from || !c.to) continue;
+        if (c.from >= t.starts && c.to <= termEnd) {
+          if (!hit || c.from < hit.from) hit = { from: c.from, to: c.to };
+        }
+      }
+      // Cluster consecutive weekend closures in this term into one half-term window.
+      if (hit) {
+        for (var j = 0; j < closures.length; j++) {
+          var c2 = closures[j];
+          if (!c2 || !c2.from || !c2.to) continue;
+          if (c2.from >= t.starts && c2.to <= termEnd) {
+            if (c2.from < hit.from) hit.from = c2.from;
+            if (c2.to > hit.to) hit.to = c2.to;
+          }
+        }
+      }
+      windows.push({
+        from: hit ? hit.from : null,
+        to: hit ? hit.to : null,
+        termFrom: t.starts,
+        termTo: termEnd,
+      });
+    });
+    return windows;
+  }
+
+  /** true = first half of its term, false = second half (after half-term break). */
+  function isFirstHalfTermDate(iso, data) {
+    var windows = termHalfBreakWindows(data);
+    for (var i = 0; i < windows.length; i++) {
+      var w = windows[i];
+      if (!w.termFrom || !w.termTo) continue;
+      if (iso < w.termFrom || iso > w.termTo) continue;
+      if (!w.from || !w.to) return true;
+      if (iso < w.from) return true;
+      if (iso > w.to) return false;
+      return true; // closed break days should not appear; treat as first
+    }
+    // Before first known term → first; after last → second
+    if (windows.length && iso < windows[0].termFrom) return true;
+    return false;
+  }
+
+  function dateChipSpanHtml(d, statusByIso) {
+    var meta = termChipToneMeta(d, statusByIso);
+    return (
+      '<span class="pp-hub-ops__date-chip pp-hub-ops__date-chip--' +
+      meta.tone +
+      '" role="listitem" data-pp-term-iso="' +
+      esc(d.iso) +
+      '" title="' +
+      esc(meta.title) +
+      '">' +
+      meta.icon +
+      "<span>" +
+      esc(d.shortLabel) +
+      "</span></span>"
+    );
+  }
+
   function termSessionDateChipsHtml(data, statusByIso) {
     var dates = findTermSessionDates(data);
     if (!dates.length) return "";
+    var first = [];
+    var second = [];
+    dates.forEach(function (d) {
+      if (isFirstHalfTermDate(d.iso, data)) first.push(d);
+      else second.push(d);
+    });
+    function rowHtml(label, list) {
+      if (!list.length) return "";
+      return (
+        '<div class="pp-hub-ops__date-chips-row">' +
+        '<div class="pp-hub-ops__date-chips-label">' +
+        esc(label) +
+        "</div>" +
+        '<div class="pp-hub-ops__date-chips" role="list" aria-label="' +
+        esc(label) +
+        '">' +
+        list
+          .map(function (d) {
+            return dateChipSpanHtml(d, statusByIso);
+          })
+          .join("") +
+        "</div></div>"
+      );
+    }
     return (
-      '<div class="pp-hub-ops__date-chips" role="list" aria-label="Session dates this term">' +
-      dates
-        .map(function (d) {
-          var meta = termChipToneMeta(d, statusByIso);
-          return (
-            '<span class="pp-hub-ops__date-chip pp-hub-ops__date-chip--' +
-            meta.tone +
-            '" role="listitem" data-pp-term-iso="' +
-            esc(d.iso) +
-            '" title="' +
-            esc(meta.title) +
-            '">' +
-            meta.icon +
-            "<span>" +
-            esc(d.shortLabel) +
-            "</span></span>"
-          );
-        })
-        .join("") +
+      '<div class="pp-hub-ops__date-chips-stack" aria-label="Session dates by half term">' +
+      rowHtml("First half term", first) +
+      rowHtml("Second half term", second) +
       "</div>"
     );
   }
 
   function applyTermDateChipStatuses(host, data, statusByIso) {
     if (!host) return;
-    var wrap = host.querySelector(".pp-hub-ops__date-chips");
+    var wrap =
+      host.querySelector(".pp-hub-ops__date-chips-stack") ||
+      host.querySelector(".pp-hub-ops__date-chips");
     if (!wrap) return;
     wrap.outerHTML = termSessionDateChipsHtml(data, statusByIso);
   }
