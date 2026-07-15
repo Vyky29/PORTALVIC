@@ -11,7 +11,7 @@ import {
   type ParticipantIdentityInput,
 } from "./participant_identity.ts";
 
-export const WEEKLY_NOTE_PROMPT_VERSION = "20260714-celebrate-v1";
+export const WEEKLY_NOTE_PROMPT_VERSION = "20260715-unique-v2";
 export const DEFAULT_WEEKLY_NOTE_MODEL = "gpt-4o-mini";
 
 export type WeeklyNoteDaySource = {
@@ -387,6 +387,8 @@ async function callOpenAiWeeklyNote(
   weekStart: string,
   weekEnd: string,
   sources: WeeklyNoteDaySource[],
+  priorBodies: string[] = [],
+  varyHarder = false,
 ): Promise<{ ok: true; body: string; model: string } | { ok: false; error: string; model: string }> {
   const model = clean(Deno.env.get("PORTAL_OPENAI_MODEL"), 64) || DEFAULT_WEEKLY_NOTE_MODEL;
   const dayBlocks = sources
@@ -402,16 +404,31 @@ async function callOpenAiWeeklyNote(
     "Avoid jargon (engagement scores, regulation codes, independence levels). Prefer everyday words.",
     "If a day mentions a challenge, keep it brief and constructive; lead with what went well.",
     "Do not invent activities or feelings that are not in the day notes.",
-    `Always use the child's first name "${firstName}" (not they/them as the subject opener).`,
+    `Always use the child's first name exactly as given: "${firstName}" (spell it the same way every time; never a variant spelling).`,
     "Write 1–3 short paragraphs in English. No bullet lists. No title heading.",
+    "Each week's note must feel fresh: vary the opening line and structure. Do not reuse stock openers like \"What a wonderful week…\", \"had a fantastic week…\", or the same closing sentence as earlier notes.",
+    "Focus on what was distinctive this week (specific activities, moments, or progress from the day notes). Skip generic praise that could belong to any week.",
     "Output plain text only — no JSON, no markdown.",
   ].join("\n");
+
+  const priorBlock = priorBodies.length
+    ? [
+        "Earlier weekly notes for this child (do NOT copy openings, closings, or near-identical sentences):",
+        ...priorBodies.map((b, i) => `--- prior ${i + 1} ---\n${clean(b, 900)}`),
+      ].join("\n\n")
+    : "";
 
   const user = [
     `Week: ${weekStart} (Saturday) to ${weekEnd} (Friday).`,
     "Day notes to summarise into one weekly note for the family:",
     dayBlocks,
-  ].join("\n\n");
+    priorBlock,
+    varyHarder
+      ? "IMPORTANT: Your previous draft was too similar to an earlier weekly note. Rewrite with a different opening, different sentence shapes, and only this week's concrete moments."
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   try {
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -422,7 +439,7 @@ async function callOpenAiWeeklyNote(
       },
       body: JSON.stringify({
         model,
-        temperature: 0.4,
+        temperature: varyHarder ? 0.7 : 0.55,
         max_tokens: 500,
         messages: [
           { role: "system", content: system },
@@ -443,6 +460,31 @@ async function callOpenAiWeeklyNote(
   } catch (e) {
     return { ok: false, error: clean((e as Error)?.message || "openai-error", 200), model };
   }
+}
+
+/** Word overlap similarity — catch near-duplicate weekly notes across weeks. */
+export function weeklyNoteBodySimilarity(a: string, b: string): number {
+  const words = (t: string) =>
+    new Set(
+      clean(t, 4000)
+        .toLowerCase()
+        .replace(/[^a-z0-9\s']/g, " ")
+        .split(/\s+/)
+        .filter((w) => w.length > 3),
+    );
+  const A = words(a);
+  const B = words(b);
+  if (!A.size || !B.size) return 0;
+  let inter = 0;
+  for (const w of A) if (B.has(w)) inter += 1;
+  const union = A.size + B.size - inter;
+  return union ? inter / union : 0;
+}
+
+function tooSimilarToPriorNotes(body: string, priors: string[], threshold = 0.45): boolean {
+  const b = clean(body);
+  if (!b || !priors.length) return false;
+  return priors.some((p) => weeklyNoteBodySimilarity(b, p) >= threshold);
 }
 
 export async function generateWeeklyNoteForContact(
@@ -539,6 +581,18 @@ export async function generateWeeklyNoteForContact(
     };
   }
 
+  const { data: priorRows } = await supabase
+    .from("portal_parent_weekly_notes")
+    .select("body, week_start")
+    .eq("contact_id", opts.contactId)
+    .eq("share_status", "ready")
+    .lt("week_start", weekStart)
+    .order("week_start", { ascending: false })
+    .limit(4);
+  const priorBodies = (priorRows || [])
+    .map((r) => clean(r.body, 1200))
+    .filter((b) => b.length > 40);
+
   const firstName = firstNameOf(opts.displayName || opts.identity.firstName || "");
   const apiKey = Deno.env.get("OPENAI_API_KEY") || "";
   let body = "";
@@ -546,10 +600,35 @@ export async function generateWeeklyNoteForContact(
   let shareStatus: "ready" | "hidden" | "draft" = "ready";
 
   if (apiKey) {
-    const ai = await callOpenAiWeeklyNote(apiKey, firstName, weekStart, weekEnd, sources);
+    let ai = await callOpenAiWeeklyNote(
+      apiKey,
+      firstName,
+      weekStart,
+      weekEnd,
+      sources,
+      priorBodies,
+      false,
+    );
+    if (ai.ok && tooSimilarToPriorNotes(ai.body, priorBodies)) {
+      const retry = await callOpenAiWeeklyNote(
+        apiKey,
+        firstName,
+        weekStart,
+        weekEnd,
+        sources,
+        priorBodies,
+        true,
+      );
+      if (retry.ok) ai = retry;
+    }
     if (ai.ok) {
       body = ai.body;
-      reviewModel = ai.model;
+      reviewModel = ai.model + (tooSimilarToPriorNotes(body, priorBodies) ? "+sim-warn" : "");
+      // Last resort: keep uniqueness by appending week-specific day facts if still near-dup.
+      if (tooSimilarToPriorNotes(body, priorBodies)) {
+        body = fallbackCelebrateBody(firstName, sources);
+        reviewModel = `${ai.model}+fallback-dedupe`;
+      }
     } else {
       body = fallbackCelebrateBody(firstName, sources);
       reviewModel = `fallback:${ai.error}`;

@@ -1115,7 +1115,7 @@ Deno.serve(async (req) => {
       .eq("contact_id", contactId)
       .eq("share_status", "ready")
       .order("week_start", { ascending: false })
-      .limit(16);
+      .limit(52);
     if (noteErr) {
       console.error("[parent-portal-participant-detail] weekly_notes", noteErr);
     } else {
@@ -1127,6 +1127,14 @@ Deno.serve(async (req) => {
         generated_at: n.generated_at || null,
         generated_early: !!n.generated_early,
       }));
+      // One note per week (newest wins) — defensive if rows ever race.
+      const byWeek = new Map<string, Record<string, unknown>>();
+      for (const n of weeklyNotes) {
+        const ws = String(n.week_start || "");
+        if (!ws || byWeek.has(ws)) continue;
+        byWeek.set(ws, n);
+      }
+      weeklyNotes = Array.from(byWeek.values());
       weeklyNoteLatest = weeklyNotes[0] || null;
     }
   }

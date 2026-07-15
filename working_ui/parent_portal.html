@@ -2328,7 +2328,7 @@
       border-left-color: #0f766e;
     }
     .pp-week-notes-folder__body {
-      margin: 0;
+      margin: 8px 0 0;
       font-size: 13px;
       line-height: 1.45;
       color: var(--text, #1e293b);
@@ -2350,13 +2350,68 @@
       overflow-wrap: break-word;
     }
     .pp-week-notes-folder__item {
-      padding: 12px;
+      padding: 0;
       border: 1px solid var(--line);
       border-radius: 12px;
       background: #fff;
       min-width: 0;
+      overflow: hidden;
     }
     .pp-week-notes-folder__meta { margin-bottom: 6px; min-width: 0; }
+    .pp-week-note {
+      min-width: 0;
+      padding: 12px;
+    }
+    .pp-week-note__sum {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .pp-week-note__sum::-webkit-details-marker { display: none; }
+    .pp-week-note__sum::marker { content: ""; }
+    .pp-week-note__range {
+      display: block;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--ink);
+      overflow-wrap: break-word;
+      min-width: 0;
+      padding-right: 22px;
+      position: relative;
+    }
+    .pp-week-note__range::after {
+      content: "";
+      position: absolute;
+      right: 2px;
+      top: 0.35em;
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid #64748b;
+      border-bottom: 2px solid #64748b;
+      transform: rotate(45deg);
+      transition: transform 0.15s ease;
+    }
+    .pp-week-note[open] .pp-week-note__range::after {
+      top: 0.55em;
+      transform: rotate(-135deg);
+    }
+    .pp-week-note__teaser {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      font-size: 12px;
+      line-height: 1.4;
+      color: var(--muted, #64748b);
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+    .pp-week-note[open] .pp-week-note__teaser {
+      display: none;
+    }
     .pp-help-sheet {
       margin: 12px 0 0;
       padding: 14px;
@@ -3539,7 +3594,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260714-dc-swim-addon"></script>
   <script src="/portal/parent_portal_team.js?v=20260710-eiji-hazem-photos"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260714-w2-80pct"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260715-hub-slot-venue"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260715-week-notes-dedupe"></script>
   <script src="/portal/parent_portal_app.js?v=20260713-gocardless"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

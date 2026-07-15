@@ -2296,27 +2296,50 @@
 
   function renderWeeklyNotes(host, data, opts) {
     markWeeklyNotesSeen(data, opts);
-    var notes = Array.isArray(data.weekly_notes) ? data.weekly_notes : [];
+    var raw = Array.isArray(data.weekly_notes) ? data.weekly_notes : [];
+    // Newest first; one card per week_start (never dump duplicate weeks).
+    var seenWeek = Object.create(null);
+    var notes = [];
+    raw.forEach(function (n) {
+      var w = String((n && n.week_start) || "");
+      if (!w || seenWeek[w]) return;
+      seenWeek[w] = true;
+      notes.push(n);
+    });
+    notes.sort(function (a, b) {
+      return String(b.week_start || "").localeCompare(String(a.week_start || ""));
+    });
     var body;
     if (!notes.length) {
       body =
         '<p class="pp-muted">Weekly notes will collect here once session feedbacks for a Saturday–Friday week are ready. Each note is a short, warm summary of the week.</p>';
     } else {
       body =
-        '<ul class="pp-week-notes-folder">' +
+        '<ul class="pp-week-notes-folder" aria-label="Weekly notes by week">' +
         notes
-          .map(function (n) {
+          .map(function (n, idx) {
             var range = weekRangeLabel(n.week_start, n.week_end);
+            var full = String(n.body || "").trim();
+            var teaser = full.replace(/\s+/g, " ");
+            if (teaser.length > 100) {
+              teaser = teaser.slice(0, 98).replace(/\s+\S*$/, "") + "…";
+            }
             return (
               '<li class="pp-week-notes-folder__item">' +
-              '<div class="pp-week-notes-folder__meta">' +
-              '<strong class="pp-week-notes-folder__range">' +
+              '<details class="pp-week-note"' +
+              (idx === 0 ? " open" : "") +
+              ">" +
+              "<summary class=\"pp-week-note__sum\">" +
+              '<span class="pp-week-note__range">' +
               esc(range || "Week") +
-              "</strong>" +
-              "</div>" +
+              "</span>" +
+              (teaser
+                ? '<span class="pp-week-note__teaser">' + esc(teaser) + "</span>"
+                : "") +
+              "</summary>" +
               '<p class="pp-week-notes-folder__body">' +
-              esc(String(n.body || "").trim()) +
-              "</p></li>"
+              esc(full) +
+              "</p></details></li>"
             );
           })
           .join("") +
@@ -2326,7 +2349,7 @@
       data,
       "weekly_notes",
       '<h3 class="pp-pax-subview-title">Weekly notes</h3>' +
-        '<p class="pp-muted pp-pax-subview-note">A short celebration of the week — not a full replay of every session.</p>' +
+        '<p class="pp-muted pp-pax-subview-note">One short note per week. Open a week to read it — older notes stay collapsed so the list stays easy to scroll.</p>' +
         body,
     );
     bindBack(host, data, opts);
