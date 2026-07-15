@@ -1,5 +1,5 @@
 /**
- * CEO — Family portal presence (who's signed in + what they're opening).
+ * CEO - Family portal presence (who's signed in + what they're opening).
  */
 (function (global) {
   "use strict";
@@ -52,9 +52,9 @@
   }
 
   function ago(iso) {
-    if (!iso) return "—";
+    if (!iso) return "-";
     var t = new Date(iso).getTime();
-    if (!t) return "—";
+    if (!t) return "-";
     var sec = Math.max(0, Math.round((Date.now() - t) / 1000));
     if (sec < 60) return sec + "s ago";
     if (sec < 3600) return Math.round(sec / 60) + " min ago";
@@ -118,13 +118,13 @@
         fillColor: color,
         fillOpacity: p.online ? 0.95 : 0.7,
       });
-      circle.bindPopup(
+      var popupHtml =
         "<strong>" +
-          esc(p.parent_name || "Parent") +
-          "</strong><br>" +
-          esc(p.label || p.bucket || "") +
-          (p.online ? "<br>Online now" : ""),
-      );
+        esc(p.parent_name || "Parent") +
+        "</strong><br>" +
+        esc(p.label || p.bucket || "") +
+        (p.online ? "<br>Online now" : "");
+      circle.bindPopup(popupHtml);
       markersLayer.addLayer(circle);
       bounds.push([jLat, jLng]);
     });
@@ -156,9 +156,9 @@
               return (
                 "<li><strong>" +
                 esc(o.parent_name || "Parent") +
-                "</strong> — " +
+                "</strong> - " +
                 esc(o.label || "Outside England") +
-                (o.online ? " · online" : "") +
+                (o.online ? " - online" : "") +
                 "</li>"
               );
             })
@@ -170,13 +170,13 @@
     var note = $("cppGeoNote");
     if (note) {
       note.textContent =
-        "Approx. from connection IP · London " +
+        "Approx. from connection IP | London " +
         (g.london != null ? g.london : 0) +
-        " · Rest of England " +
+        " | Rest of England " +
         (g.england != null ? g.england : 0) +
-        " · Outside " +
+        " | Outside " +
         (g.outside != null ? g.outside : 0) +
-        " · Unknown " +
+        " | Unknown " +
         (g.unknown != null ? g.unknown : 0) +
         ". New sign-ins and hub opens fill location.";
     }
@@ -184,8 +184,8 @@
 
   function parentRowHtml(p, tone) {
     var kids = Array.isArray(p.children) ? p.children.join(", ") : "";
-    var focus = p.child_focus ? " · looking at " + p.child_focus : "";
-    var geoBit = p.geo_label ? " · " + p.geo_label : "";
+    var focus = p.child_focus ? "  - looking at " + p.child_focus : "";
+    var geoBit = p.geo_label ? "  - " + p.geo_label : "";
     return (
       '<li class="cpp-row cpp-row--' +
       esc(tone) +
@@ -195,7 +195,7 @@
       esc(p.parent_name || "Parent") +
       "</strong>" +
       '<span class="cpp-row__meta">' +
-      esc(kids || "—") +
+      esc(kids || "-") +
       esc(focus) +
       esc(geoBit) +
       "</span>" +
@@ -216,9 +216,9 @@
     var onlineEl = $("cppOnlineCount");
     var dayEl = $("cppDayCount");
     var activeEl = $("cppActiveCount");
-    if (onlineEl) onlineEl.textContent = String(sum.online_now != null ? sum.online_now : "—");
-    if (dayEl) dayEl.textContent = String(sum.sign_ins_today != null ? sum.sign_ins_today : "—");
-    if (activeEl) activeEl.textContent = String(sum.active_last_24h != null ? sum.active_last_24h : "—");
+    if (onlineEl) onlineEl.textContent = String(sum.online_now != null ? sum.online_now : "-");
+    if (dayEl) dayEl.textContent = String(sum.sign_ins_today != null ? sum.sign_ins_today : "-");
+    if (activeEl) activeEl.textContent = String(sum.active_last_24h != null ? sum.active_last_24h : "-");
 
     var online = (data && data.online) || [];
     var recent = (data && data.recent) || [];
@@ -262,15 +262,15 @@
                 "<div><strong>" +
                 esc(a.parent_name) +
                 "</strong>" +
-                (a.child_name ? " · " + esc(a.child_name) : "") +
+                (a.child_name ? "  - " + esc(a.child_name) : "") +
                 '<div class="cpp-feed__what">' +
                 esc(a.event_label) +
-                (a.detail ? " — " + esc(a.detail) : "") +
+                (a.detail ? " - " + esc(a.detail) : "") +
                 "</div></div></li>"
               );
             })
             .join("")
-        : '<li class="cpp-empty">No hub surface pings yet — parents need to open a child hub after this deploy.</li>';
+        : '<li class="cpp-empty">No hub surface pings yet - parents need to open a child hub after this deploy.</li>';
     }
 
     var actionHost = $("cppActionsList");
@@ -312,7 +312,7 @@
       if (status) status.textContent = "Sign in required.";
       return;
     }
-    if (status) status.textContent = "Refreshing…";
+    if (status) status.textContent = "Refreshing...";
     try {
       var res = await fetch(baseUrl() + "/functions/v1/portal-ceo-parent-portal-presence", {
         method: "POST",
@@ -334,9 +334,9 @@
         return;
       }
       render(body);
-      if (status) status.textContent = "Live — refreshes every 30s.";
+      if (status) status.textContent = "Live - refreshes every 30s.";
     } catch (_e) {
-      if (status) status.textContent = "Network error — retrying…";
+      if (status) status.textContent = "Network error - retrying...";
     }
   }
 
