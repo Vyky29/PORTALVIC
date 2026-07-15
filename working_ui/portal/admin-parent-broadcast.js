@@ -45,11 +45,12 @@
     "Thank you for your patience and understanding as we improve our communication system.\n\n" +
     "The ClubSENsational Team";
 
-  // Short version used ONLY for the WhatsApp channel (Meta templates cap at ~1024
-  // chars and flatten formatting, so the long email body will not send there).
   // Short pointer sent over WhatsApp (Meta template): keeps it to one concise
   // paragraph and refers parents to the full email. No closing sign-off here —
   // the approved template already appends "Thank you, ClubSENsational".
+  // Stay well under ~700 chars — Meta rejects near-limit {{1}} as #132005
+  // ("Translated text too long") once the template footer is included.
+  var WA_TEMPLATE_MAX = 700;
   var DEFAULT_WA_BODY =
     "Following our email about our contact numbers: this is the new ClubSENsational WhatsApp number, +44 7886 292726. " +
     "It is monitored Monday to Sunday for messages only (this number does not take calls). " +
@@ -222,8 +223,8 @@
     var waBody = String(($("pbcastWaBody") && $("pbcastWaBody").value) || "").trim();
     if (!body) { cfg.toast("Message body is empty", "err"); return; }
     if (!subject) { cfg.toast("Subject is required for email", "err"); return; }
-    if (channel === "both" && waBody && waBody.replace(/\s+/g, " ").length > 1024) {
-      cfg.toast("WhatsApp text is over 1024 characters — shorten it.", "err");
+    if (channel === "both" && waBody && waBody.replace(/\s+/g, " ").length > WA_TEMPLATE_MAX) {
+      cfg.toast("WhatsApp text is over " + WA_TEMPLATE_MAX + " characters — shorten it.", "err");
       return;
     }
 
@@ -314,8 +315,8 @@
     function updateWaLen() {
       if (!waBody || !waLen) return;
       var n = String(waBody.value || "").replace(/\s+/g, " ").trim().length;
-      waLen.textContent = n + " / 1024 characters" + (n > 1024 ? " — too long for WhatsApp template" : "");
-      waLen.style.color = n > 1024 ? "#b91c1c" : "";
+      waLen.textContent = n + " / " + WA_TEMPLATE_MAX + " characters" + (n > WA_TEMPLATE_MAX ? " — too long for WhatsApp template" : "");
+      waLen.style.color = n > WA_TEMPLATE_MAX ? "#b91c1c" : "";
     }
     if (waBody) { waBody.addEventListener("input", updateWaLen); updateWaLen(); }
 
@@ -369,7 +370,7 @@
       '<label class="muted" for="pbcastWaBody" style="display:block;margin-top:10px">WhatsApp text <span style="font-size:12px">(short — used only for the WhatsApp channel; the email uses the full body above)</span></label>' +
       '<textarea id="pbcastWaBody" class="txa" style="min-height:150px;max-width:100%">' + esc(DEFAULT_WA_BODY) + "</textarea>" +
       '<p id="pbcastWaLen" class="muted" style="margin:4px 0 0;font-size:12px"></p>' +
-      '<p class="muted" style="margin:8px 0 0;font-size:12px;overflow-wrap:anywhere">WhatsApp uses the approved Meta template (env <code>PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE</code>), which caps at ~1024 characters and sends as a single paragraph; if none is set it falls back to SMS. Email always sends via SMTP with full formatting.</p>' +
+      '<p class="muted" style="margin:8px 0 0;font-size:12px;overflow-wrap:anywhere">WhatsApp uses the approved Meta template (env <code>PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE</code>), which must stay under ~' + WA_TEMPLATE_MAX + ' characters (Meta #132005 if longer once translated). It sends as a single paragraph; if none is set it falls back to SMS. Email always sends the full body above via SMTP.</p>' +
       "</fieldset>" +
       "</fieldset>" +
 

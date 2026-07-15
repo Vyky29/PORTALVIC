@@ -1482,7 +1482,7 @@
       .replace(/ {5,}/g, "    ")
       .replace(/\s{2,}/g, " ")
       .trim()
-      .slice(0, 1024);
+      .slice(0, 700);
   }
 
   function sendComposerReply() {
@@ -1519,11 +1519,25 @@
         }
       }
     }
-    /* Cold outbound uses a Meta template that cannot keep newlines in {{1}}.
-     * Send the original body for portal/email history; the Edge Function flattens
-     * only the WhatsApp template parameter server-side. */
+    /* Cold outbound uses a Meta template; {{1}} must stay short (Meta #132005). */
     var sendKind = openSession ? "custom" : "contact_update";
     var sendBody = msgBody;
+    if (!openSession) {
+      var flatLen = String(msgBody || "")
+        .replace(/[\r\n\t]+/g, " ")
+        .replace(/\s{2,}/g, " ")
+        .trim().length;
+      if (flatLen > 700) {
+        var tooLong =
+          "Too long for WhatsApp template (" +
+          flatLen +
+          " chars; max ~700). Paste the short WhatsApp text, or use Family broadcast (email = full body, WhatsApp = short field).";
+        if (statusEl) statusEl.textContent = tooLong;
+        else cfg.toast(tooLong, "err");
+        return;
+      }
+      sendBody = flattenForWhatsappTemplate(msgBody);
+    }
     state.sending = true;
     state.draftByKey[t.key] = msgBody;
     if (btn) {

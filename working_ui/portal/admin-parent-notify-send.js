@@ -117,6 +117,9 @@
     if (/132018|newline|new-line|consecutive spaces/i.test(code)) {
       return 'WhatsApp template rejected the message format — try again (portal now strips line breaks automatically).';
     }
+    if (/132005|translated text too long|too long/i.test(code)) {
+      return 'Message too long for the WhatsApp template (keep under ~700 characters). For the contact-numbers update, use Family broadcast’s short WhatsApp field — not the full email body.';
+    }
     if (data && Array.isArray(data.warnings) && data.warnings.length) {
       return data.warnings.map(formatNotifyError).join('; ');
     }

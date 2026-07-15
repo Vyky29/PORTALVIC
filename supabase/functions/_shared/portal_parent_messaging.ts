@@ -493,8 +493,13 @@ export function resolveParentNotifyWhatsappTemplate(kind: string): string {
   return (Deno.env.get("PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE") ?? "").trim();
 }
 
-/** Flatten + cap for Meta Utility {{1}} (same rules as parent cold outbound). */
-export function flattenWhatsappTemplateBody(body: string, max = 1024): string {
+/** Flatten + cap for Meta Utility {{1}} (same rules as parent cold outbound).
+ * Meta error 132005 ("Translated text too long") fires when {{1}} is near 1024
+ * and the approved template already has static lines + a translated locale.
+ * Keep well under 1024 so EN→other languages still fit. */
+export const WHATSAPP_TEMPLATE_BODY_MAX = 700;
+
+export function flattenWhatsappTemplateBody(body: string, max = WHATSAPP_TEMPLATE_BODY_MAX): string {
   return String(body || "")
     .replace(/[\r\n\t]+/g, " ")
     .replace(/ {5,}/g, "    ")
@@ -509,12 +514,7 @@ function whatsappTemplateBodyParam(body: string, template: string): string {
     text = text.replace(/\n*Thank you,\s*\nClubSENsational\s*$/i, "").trim();
   }
   // Meta template {{1}} rejects newlines/tabs and 5+ consecutive spaces.
-  text = text
-    .replace(/[\r\n\t]+/g, " ")
-    .replace(/ {5,}/g, "    ")
-    .replace(/\s{2,}/g, " ")
-    .trim();
-  return text.slice(0, 1024);
+  return flattenWhatsappTemplateBody(text, WHATSAPP_TEMPLATE_BODY_MAX);
 }
 
 function whatsappTemplateLangCandidates(preferred: string): string[] {
