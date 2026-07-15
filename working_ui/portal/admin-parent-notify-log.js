@@ -1051,8 +1051,17 @@
     if (outcome === "sent" && !t.hasSent) return false;
     if (outcome === "unread" && !isThreadUnread(t)) return false;
     if (!q) return true;
-    var parts = [t.name, t.phone, t.sendPhone, t.client, t.profilePhone];
-    t.events.forEach(function (e) {
+    var parts = [
+      t.name,
+      t.parentName,
+      t.waContact,
+      t.phone,
+      t.sendPhone,
+      t.client,
+      t.profilePhone,
+      t.fromDirectory ? "directory" : "",
+    ];
+    (t.events || []).forEach(function (e) {
       parts.push(e.body || "");
       parts.push(e.subject || "");
       parts.push(e.sentBy || "");
@@ -1060,10 +1069,61 @@
     return parts.join(" ").toLowerCase().indexOf(q) >= 0;
   }
 
+  /** When searching, include enrolled families from Contacts even with no WhatsApp history yet. */
+  function directoryThreadsMatchingQuery() {
+    var q = String(state.query || "").trim().toLowerCase();
+    if (q.length < 2) return [];
+    var outcome = String(state.outcome || "all").toLowerCase();
+    if (outcome && outcome !== "all") return [];
+    var existing = Object.create(null);
+    (state.threads || []).forEach(function (t) {
+      var d = phoneDigits(t.phone || t.sendPhone || "");
+      if (d) existing[d] = true;
+      var key = phoneMatchKey(t.phone || t.sendPhone || "");
+      if (key) existing[key] = true;
+    });
+    var out = [];
+    (state.contactDirectory || []).forEach(function (c) {
+      if (!c || !c.mobile) return;
+      var digits = c.sendDigits || canonicalPhoneDigits(c.mobile) || phoneDigits(c.mobile);
+      if (!digits || existing[digits] || existing[c.matchKey]) return;
+      var hay = [c.parent, c.child, c.mobile, digits, c.contactId].join(" ").toLowerCase();
+      if (hay.indexOf(q) < 0) return;
+      out.push({
+        key: digits,
+        channel: "whatsapp",
+        name: c.parent || c.child || ("+" + digits),
+        parentName: c.parent || "",
+        waContact: c.parent || "",
+        client: c.child || "",
+        phone: digits,
+        sendPhone: digits,
+        profilePhone: digits,
+        phoneFromProfile: true,
+        events: [],
+        lastAt: "",
+        hasInbound: false,
+        hasFailed: false,
+        hasSent: false,
+        lastInboundId: "",
+        lastInboundAt: "",
+        lastOutboundAt: "",
+        lastInboundWaId: "",
+        fromDirectory: true,
+      });
+      existing[digits] = true;
+    });
+    return out;
+  }
+
   function findThread(key) {
     var want = String(key || "");
     for (var i = 0; i < (state.threads || []).length; i++) {
       if (state.threads[i].key === want) return state.threads[i];
+    }
+    var dir = directoryThreadsMatchingQuery();
+    for (var j = 0; j < dir.length; j++) {
+      if (dir[j].key === want) return dir[j];
     }
     return null;
   }
@@ -1212,7 +1272,11 @@
   function renderConvListItem(t) {
     var unread = isThreadUnread(t);
     var sel = t.key === state.selectedKey ? " is-selected" : "";
-    var sub = t.events.length ? bodyPreview(t.events[t.events.length - 1].body) : "";
+    var sub = t.events.length
+      ? bodyPreview(t.events[t.events.length - 1].body)
+      : t.fromDirectory
+        ? "No WhatsApp history yet — open to send a first message"
+        : "";
     var subline = threadPhoneForUi(t) + (t.client ? " · " + t.client : "");
     var headName = t.name;
     // If title still equals the participant, show a clearer label.
@@ -1325,7 +1389,10 @@
     }
     if (!fromRefresh) captureComposerDraft();
 
-    var threads = (state.threads || []).filter(threadMatches).sort(compareAdminWaThreads);
+    var threads = (state.threads || [])
+      .concat(directoryThreadsMatchingQuery())
+      .filter(threadMatches)
+      .sort(compareAdminWaThreads);
     var unreadCount = 0;
     threads.forEach(function (t) {
       if (isThreadUnread(t)) unreadCount += 1;
@@ -1674,9 +1741,9 @@
     return (
       '<div id="portalParentNotifyLogRoot" class="portal-day-ops-embed portal-pnlog-root">' +
       '<h1 class="page-title">Family messages</h1>' +
-      '<p class="page-intro">WhatsApp conversations via the Business API — pick a family on the left, read the thread, and reply in the box below (no email on this screen). Delivery ticks: Sent → Delivered → Read. Refreshes every 15s.</p>' +
+      '<p class="page-intro">WhatsApp conversations via the Business API — pick a family on the left, read the thread, and reply in the box below (no email on this screen). Search also finds families from Contacts even if there is no WhatsApp history yet. Delivery ticks: Sent → Delivered → Read. Refreshes every 15s.</p>' +
       '<div class="portal-pnlog-toolbar">' +
-      '<input type="search" id="portalParentNotifyLogSearch" class="inp portal-pnlog-toolbar__search" placeholder="Search participant, phone, text…" autocomplete="off" />' +
+      '<input type="search" id="portalParentNotifyLogSearch" class="inp portal-pnlog-toolbar__search" placeholder="Search parent, participant, phone…" autocomplete="off" />' +
       '<select id="portalParentNotifyLogOutcome" class="sel portal-pnlog-toolbar__sel" aria-label="Filter">' +
       '<option value="all">All</option>' +
       '<option value="unread">Unread</option>' +
