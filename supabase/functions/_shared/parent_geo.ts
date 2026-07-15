@@ -279,38 +279,61 @@ async function reverseGeocode(lat: number, lng: number): Promise<{
     const addr = (j.address && typeof j.address === "object"
       ? j.address
       : {}) as Record<string, unknown>;
-    // Prefer fine place names over borough / city ("London").
-    const fine = clean(
-      addr.neighbourhood ||
-        addr.suburb ||
-        addr.quarter ||
-        addr.residential ||
-        addr.city_district ||
-        addr.village ||
-        addr.hamlet ||
-        addr.locality,
-      80,
-    );
-    const broad = clean(
-      addr.town || addr.municipality || addr.city || addr.borough || addr.county,
-      80,
-    );
-    let city = fine || broad;
-    if (/^london$/i.test(city) && fine) city = fine;
-    // Don't let generic "London" wipe a more specific town when no neighbourhood (keep broad).
-    const region = clean(
-      addr.borough ||
-        addr.city_district ||
-        addr.state_district ||
-        addr.county ||
-        addr.state ||
-        addr.region,
-      80,
-    );
+    const road = clean(addr.road, 80);
+    const display = clean(j.display_name, 200);
+
+    function isGenericLondonPlace(name: string): boolean {
+      const n = name.toLowerCase();
+      return (
+        !n ||
+        n === "london" ||
+        n === "greater london" ||
+        /^london borough of\b/.test(n) ||
+        /^royal borough of\b/.test(n) ||
+        /^city of westminster$/.test(n) ||
+        /^city of london$/.test(n)
+      );
+    }
+
+    // Prefer neighbourhood / suburb (Latimer, North Kensington) over ISP town (Brentford) or "Greater London".
+    const candidates = [
+      /latimer/i.test(road) || /latimer/i.test(display) ? "Latimer" : "",
+      clean(addr.neighbourhood, 80),
+      clean(addr.suburb, 80),
+      clean(addr.quarter, 80),
+      clean(addr.residential, 80),
+      clean(addr.village, 80),
+      clean(addr.hamlet, 80),
+      clean(addr.locality, 80),
+      clean(addr.town, 80),
+      clean(addr.municipality, 80),
+      clean(addr.city, 80),
+      clean(addr.borough, 80),
+      clean(addr.city_district, 80),
+    ].filter(Boolean);
+
+    let city = "";
+    for (const c of candidates) {
+      if (!isGenericLondonPlace(c)) {
+        city = c;
+        break;
+      }
+    }
+    if (!city) city = "London";
+
+    const region =
+      [
+        clean(addr.suburb, 80),
+        clean(addr.city_district, 80),
+        clean(addr.borough, 80),
+        clean(addr.county, 80),
+        clean(addr.state, 80),
+      ].find((x) => x && !isGenericLondonPlace(x) && x.toLowerCase() !== city.toLowerCase()) ||
+      "Greater London";
     const countryCode = clean(addr.country_code, 8).toUpperCase();
     const countryName = clean(addr.country, 80);
     if (!city && !region && !countryCode && !countryName) return null;
-    return { countryCode, countryName, region, city };
+    return { countryCode, countryName, region: clean(region, 80), city };
   } catch {
     return null;
   }
