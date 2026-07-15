@@ -85,14 +85,12 @@ Deno.serve(async (req) => {
     last_contact_id: contactId,
   };
 
-  // Backfill geo / device on ping when missing (sessions created before those columns).
-  if (!session.geo_bucket) {
-    try {
-      const geo = await lookupParentGeoFromRequest(req, clientIp(req));
-      if (geo) Object.assign(sessionPatch, parentGeoToDbFields(geo));
-    } catch {
-      /* ignore geo failures */
-    }
+  // Always refresh device + location on ping (staff checks vs real parents).
+  try {
+    const geo = await lookupParentGeoFromRequest(req, clientIp(req));
+    if (geo) Object.assign(sessionPatch, parentGeoToDbFields(geo));
+  } catch {
+    /* ignore geo failures */
   }
   sessionPatch.client_device = clientDeviceFromRequest(req);
 

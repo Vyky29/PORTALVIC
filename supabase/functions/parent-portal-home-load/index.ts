@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
   const tokenHash = await sha256Hex(token);
   const { data: sess, error: sessErr } = await supabase
     .from("portal_parent_portal_sessions")
-    .select("id, parent_person_id, expires_at, revoked_at, geo_bucket")
+    .select("id, parent_person_id, expires_at, revoked_at")
     .eq("token_hash", tokenHash)
     .maybeSingle();
 
@@ -60,13 +60,11 @@ Deno.serve(async (req) => {
     last_used_at: new Date().toISOString(),
     client_device: clientDeviceFromRequest(req),
   };
-  if (!sess.geo_bucket) {
-    try {
-      const geo = await lookupParentGeoFromRequest(req, clientIp(req));
-      if (geo) Object.assign(sessionPatch, parentGeoToDbFields(geo));
-    } catch {
-      /* ignore */
-    }
+  try {
+    const geo = await lookupParentGeoFromRequest(req, clientIp(req));
+    if (geo) Object.assign(sessionPatch, parentGeoToDbFields(geo));
+  } catch {
+    /* ignore */
   }
   await supabase.from("portal_parent_portal_sessions").update(sessionPatch).eq("id", sess.id);
 

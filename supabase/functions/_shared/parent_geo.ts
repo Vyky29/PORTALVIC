@@ -1,6 +1,6 @@
 /**
  * Coarse GeoIP for parent portal sessions — never store raw IP.
- * Prefer Cloudflare headers when present; else ipapi.co (best-effort).
+ * Prefer Cloudflare headers when present; else ipwho.is (ipapi.co is often rate-limited).
  */
 
 export type ParentGeo = {
@@ -32,7 +32,6 @@ function isEnglandRegion(region: string): boolean {
   const r = region.toLowerCase();
   if (!r || isOtherUkNation(r)) return false;
   if (r === "england") return true;
-  // Common GeoIP region spellings for English counties / areas
   return (
     /\bengland\b/.test(r) ||
     /greater london|london|essex|kent|surrey|hertfordshire|berkshire|buckinghamshire|middlesex|hampshire|sussex|oxfordshire|cambridgeshire|bedfordshire|norfolk|suffolk|devon|cornwall|somerset|dorset|wiltshire|gloucestershire|bristol|birmingham|manchester|liverpool|leeds|sheffield|newcastle|nottingham|leicester|coventry|reading|luton|slough|croydon|ealing|harrow|brent|barnet|enfield|haringey|hackney|islington|camden|westminster|kensington|chelsea|wandsworth|lambeth|southwark|lewisham|greenwich|bexley|havering|redbridge|waltham|newham|tower hamlets|merton|kingston|richmond|sutton|hillingdon|hounslow|bromley/.test(
@@ -85,7 +84,6 @@ export function classifyParentGeo(raw: {
     label = [city, region, countryName || countryCode].filter(Boolean).join(", ") || "Unknown";
   }
 
-  // Map pins only inside England (incl. London). Approximate if coords missing.
   let mapLat = lat;
   let mapLng = lng;
   if (bucket === "london" && (mapLat == null || mapLng == null)) {
@@ -110,6 +108,52 @@ export function classifyParentGeo(raw: {
   };
 }
 
+async function fetchJson(url: string, ms = 2500): Promise<Record<string, unknown> | null> {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), ms);
+    const res = await fetch(url, {
+      signal: ctrl.signal,
+      headers: { Accept: "application/json" },
+    });
+    clearTimeout(t);
+    if (!res.ok) return null;
+    return await res.json() as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+async function lookupIpGeo(ip: string): Promise<ParentGeo | null> {
+  // Primary: ipwho.is (HTTPS, no key for light use).
+  const who = await fetchJson(`https://ipwho.is/${encodeURIComponent(ip)}`);
+  if (who && who.success !== false && !who.error) {
+    return classifyParentGeo({
+      countryCode: clean(who.country_code, 8),
+      countryName: clean(who.country, 80),
+      region: clean(who.region, 80),
+      city: clean(who.city, 80),
+      lat: typeof who.latitude === "number" ? who.latitude : Number(who.latitude),
+      lng: typeof who.longitude === "number" ? who.longitude : Number(who.longitude),
+    });
+  }
+
+  // Fallback: ipapi.co (often rate-limited from shared Edge IPs).
+  const api = await fetchJson(`https://ipapi.co/${encodeURIComponent(ip)}/json/`);
+  if (api && !api.error) {
+    return classifyParentGeo({
+      countryCode: clean(api.country_code, 8),
+      countryName: clean(api.country_name, 80),
+      region: clean(api.region, 80),
+      city: clean(api.city, 80),
+      lat: typeof api.latitude === "number" ? api.latitude : Number(api.latitude),
+      lng: typeof api.longitude === "number" ? api.longitude : Number(api.longitude),
+    });
+  }
+
+  return null;
+}
+
 export async function lookupParentGeoFromRequest(req: Request, ip: string): Promise<ParentGeo | null> {
   const cfCountry = clean(req.headers.get("cf-ipcountry"), 8);
   const cfCity = clean(req.headers.get("cf-ipcity"), 80);
@@ -117,6 +161,8 @@ export async function lookupParentGeoFromRequest(req: Request, ip: string): Prom
     req.headers.get("cf-region") || req.headers.get("cf-region-code"),
     80,
   );
+  const cfLat = Number(req.headers.get("cf-iplatitude") || "");
+  const cfLng = Number(req.headers.get("cf-iplongitude") || "");
 
   if (cfCountry && cfCountry !== "XX" && cfCountry !== "T1") {
     return classifyParentGeo({
@@ -124,34 +170,14 @@ export async function lookupParentGeoFromRequest(req: Request, ip: string): Prom
       countryName: cfCountry,
       region: cfRegion,
       city: cfCity,
+      lat: Number.isFinite(cfLat) ? cfLat : null,
+      lng: Number.isFinite(cfLng) ? cfLng : null,
     });
   }
 
   const cleanIp = String(ip || "").trim();
   if (!cleanIp || cleanIp === "127.0.0.1" || cleanIp === "::1") return null;
-
-  try {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 2500);
-    const res = await fetch(`https://ipapi.co/${encodeURIComponent(cleanIp)}/json/`, {
-      signal: ctrl.signal,
-      headers: { Accept: "application/json" },
-    });
-    clearTimeout(t);
-    if (!res.ok) return null;
-    const j = await res.json() as Record<string, unknown>;
-    if (j.error) return null;
-    return classifyParentGeo({
-      countryCode: clean(j.country_code, 8),
-      countryName: clean(j.country_name, 80),
-      region: clean(j.region, 80),
-      city: clean(j.city, 80),
-      lat: typeof j.latitude === "number" ? j.latitude : Number(j.latitude),
-      lng: typeof j.longitude === "number" ? j.longitude : Number(j.longitude),
-    });
-  } catch {
-    return null;
-  }
+  return lookupIpGeo(cleanIp);
 }
 
 export function parentGeoToDbFields(geo: ParentGeo): Record<string, unknown> {

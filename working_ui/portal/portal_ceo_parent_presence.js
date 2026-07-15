@@ -185,7 +185,10 @@
   function parentRowHtml(p, tone) {
     var kids = Array.isArray(p.children) ? p.children.join(", ") : "";
     var focus = p.child_focus ? " - looking at " + p.child_focus : "";
-    var geoBit = p.geo_label ? " - " + p.geo_label : "";
+    var loc =
+      p.geo_label ||
+      [p.geo_city, p.geo_region, p.geo_country].filter(Boolean).join(", ") ||
+      "";
     var device = p.client_device_label || (p.client_device === "phone"
       ? "Phone"
       : p.client_device === "desktop"
@@ -204,10 +207,12 @@
       '<span class="cpp-row__meta">' +
       esc(kids || "-") +
       esc(focus) +
-      esc(geoBit) +
       "</span>" +
       "</div>" +
       '<div class="cpp-row__side">' +
+      '<span class="cpp-pill cpp-pill--loc" title="Connection location (approx. IP)">' +
+      esc(loc || "Location ?") +
+      "</span>" +
       '<span class="cpp-pill cpp-pill--device">' +
       esc(device || "Device ?") +
       "</span>" +
