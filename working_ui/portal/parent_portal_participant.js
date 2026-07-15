@@ -1219,6 +1219,28 @@
     return !!r.submitted;
   }
 
+  function isNextYearClubClosedIso(iso) {
+    var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
+    if (!cal) return false;
+    if (cal.openFrom && iso < cal.openFrom) return true;
+    if (cal.openTo && iso > cal.openTo) return true;
+    var terms = Array.isArray(cal.terms) ? cal.terms : [];
+    for (var i = 0; i < terms.length; i++) {
+      var t = terms[i] || {};
+      if (t.christmasClosed && isoInRange(iso, t.christmasClosed.from, t.christmasClosed.to)) {
+        return true;
+      }
+      if (t.easterClosed && isoInRange(iso, t.easterClosed.from, t.easterClosed.to)) {
+        return true;
+      }
+    }
+    var closures = Array.isArray(cal.weekendClosures) ? cal.weekendClosures : [];
+    for (var j = 0; j < closures.length; j++) {
+      if (isoInRange(iso, closures[j].from, closures[j].to)) return true;
+    }
+    return false;
+  }
+
   function isClubClosedIso(iso, data) {
     // Until Booking 2026/27 is submitted: current-year roster only.
     if (!familyAcceptedNextYear(data)) {
@@ -1422,8 +1444,8 @@
    * Half-term break windows used to split chips into first / second half rows.
    * Current year: May break. 2026/27: Oct / Feb / May weekend closures.
    */
-  function termHalfBreakWindows(data) {
-    if (!familyAcceptedNextYear(data)) {
+  function termHalfBreakWindows(data, forceNextYear) {
+    if (!forceNextYear && !familyAcceptedNextYear(data)) {
       return [
         {
           from: CURRENT_YEAR_TERM_BREAK_FROM,
@@ -1471,8 +1493,8 @@
   }
 
   /** true = first half of its term, false = second half (after half-term break). */
-  function isFirstHalfTermDate(iso, data) {
-    var windows = termHalfBreakWindows(data);
+  function isFirstHalfTermDate(iso, data, forceNextYear) {
+    var windows = termHalfBreakWindows(data, !!forceNextYear);
     for (var i = 0; i < windows.length; i++) {
       var w = windows[i];
       if (!w.termFrom || !w.termTo) continue;
@@ -1591,6 +1613,149 @@
       rows.join("") +
       "</div>"
     );
+  }
+
+  /** Weekday columns for Day Centre services only (My booking 2026/27). */
+  function dayCentreWeekdayCols(data) {
+    var detail =
+      data && data.general && Array.isArray(data.general.services_detail)
+        ? data.general.services_detail
+        : [];
+    var cols = Object.create(null);
+    detail.forEach(function (s) {
+      var lab = String((s && (s.label || s.service)) || "");
+      if (!/day\s*centre/i.test(lab)) return;
+      var col = dayNameToCalCol(s && s.day);
+      if (col != null) cols[col] = true;
+    });
+    return cols;
+  }
+
+  function dayCentreWeekdayLabels(data) {
+    var cols = dayCentreWeekdayCols(data);
+    var names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    return names.filter(function (_n, i) {
+      return !!cols[i];
+    });
+  }
+
+  /** All Day Centre session dates for academic year 2026/27 (closed days skipped). */
+  function findDayCentreYearSessionDates(data) {
+    var cols = dayCentreWeekdayCols(data);
+    if (!Object.keys(cols).length) return [];
+    var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27 || {};
+    var fromIso = cal.openFrom || "2026-09-01";
+    var toIso = cal.openTo || "2027-07-30";
+    var todayIso = isoDateLocal(new Date());
+    var startParts = String(fromIso).split("-");
+    var cursor = new Date(Number(startParts[0]), Number(startParts[1]) - 1, Number(startParts[2]));
+    var out = [];
+    var guard = 0;
+    while (guard < 450) {
+      guard++;
+      var iso = isoDateLocal(cursor);
+      if (iso > toIso) break;
+      if (!isNextYearClubClosedIso(iso)) {
+        var jsDow = cursor.getDay();
+        var col = jsDow === 0 ? 6 : jsDow - 1;
+        if (cols[col]) {
+          out.push({
+            iso: iso,
+            shortLabel: formatTermChipLabel(iso),
+            past: iso < todayIso,
+            isToday: iso === todayIso,
+            isNext: false,
+          });
+        }
+      }
+      cursor = addDaysLocal(cursor, 1);
+    }
+    var nextIso = "";
+    for (var i = 0; i < out.length; i++) {
+      if (!out[i].past) {
+        nextIso = out[i].iso;
+        break;
+      }
+    }
+    out.forEach(function (d) {
+      d.isNext = !!nextIso && d.iso === nextIso;
+    });
+    return out;
+  }
+
+  function bookingDayCentreYearChipsHtml(data) {
+    var dates = findDayCentreYearSessionDates(data);
+    if (!dates.length) return "";
+    var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27 || {};
+    var terms = Array.isArray(cal.terms) ? cal.terms : [];
+
+    function chipsOnly(list, ariaLabel) {
+      if (!list.length) return "";
+      return (
+        '<div class="pp-hub-ops__date-chips" role="list" aria-label="' +
+        esc(ariaLabel) +
+        '">' +
+        list
+          .map(function (d) {
+            return dateChipSpanHtml(d, {});
+          })
+          .join("") +
+        "</div>"
+      );
+    }
+    function rowHtml(label, list) {
+      if (!list.length) return "";
+      return (
+        '<div class="pp-hub-ops__date-chips-row">' +
+        '<div class="pp-hub-ops__date-chips-label">' +
+        esc(label) +
+        "</div>" +
+        chipsOnly(list, label) +
+        "</div>"
+      );
+    }
+
+    var blocks = [];
+    if (!terms.length) {
+      return (
+        '<div class="pp-hub-ops__date-chips-stack" aria-label="Day Centre 2026/27">' +
+        chipsOnly(dates, "Day Centre 2026/27") +
+        "</div>"
+      );
+    }
+
+    terms.forEach(function (t) {
+      if (!t || !t.starts) return;
+      var termEnd = t.mainTermEnds || t.ends || t.lastDay || "";
+      if (!termEnd) return;
+      var inTerm = dates.filter(function (d) {
+        return d.iso >= t.starts && d.iso <= termEnd;
+      });
+      if (!inTerm.length) return;
+      var first = [];
+      var second = [];
+      inTerm.forEach(function (d) {
+        if (isFirstHalfTermDate(d.iso, data, true)) first.push(d);
+        else second.push(d);
+      });
+      var termName = String(t.name || "Term").replace(/\s+Term$/i, "");
+      var section =
+        '<div class="pp-booking-term">' +
+        '<h4 class="pp-booking-term__title">' +
+        esc(termName) +
+        "</h4>" +
+        '<div class="pp-hub-ops__date-chips-stack" aria-label="' +
+        esc(termName) +
+        ' session dates">' +
+        (first.length ? rowHtml("First half term", first) : "") +
+        (second.length ? rowHtml("Second half term", second) : "") +
+        (!first.length && !second.length ? chipsOnly(inTerm, termName) : "") +
+        "</div></div>";
+      blocks.push(section);
+    });
+
+    if (!blocks.length) return "";
+    return '<div class="pp-booking-year-dates">' + blocks.join("") + "</div>";
   }
 
   function applyTermDateChipStatuses(host, data, statusByIso) {
@@ -2287,14 +2452,24 @@
     var body;
     var note =
       booking.parent_action === "auto"
-        ? "Your 2026/27 place continues with the office / funder."
+        ? "Your 2026/27 Day Centre place continues with the office / funder."
         : "Your selections for the next academic year.";
     if (booking.parent_action === "auto" && (!booking.submitted || !booking.items.length)) {
+      var days = dayCentreWeekdayLabels(data);
+      var daysLine = days.length
+        ? "Usual days: " + days.join(", ") + "."
+        : "Your usual Day Centre weekdays from this term carry into 2026/27.";
+      var yearChips = bookingDayCentreYearChipsHtml(data);
       body =
         '<p class="pp-muted">' +
         esc(booking.parent_action_note) +
         "</p>" +
-        '<p class="pp-muted">Use Sessions Overview and your hub chips for sessions still left this term. You do not need to fill a re-enrolment form.</p>';
+        '<p class="pp-muted">' +
+        esc(daysLine) +
+        " Session dates for the full academic year below (club closed days are skipped).</p>" +
+        (yearChips
+          ? yearChips
+          : '<p class="pp-muted">Day Centre dates will appear here once your weekdays are on the current roster.</p>');
     } else if (!booking.submitted || !booking.items.length) {
       body =
         '<p class="pp-muted">You have not submitted re-enrolment choices for 2026/27 yet.</p>' +
@@ -2323,7 +2498,7 @@
           .join("") +
         "</ul>" +
         (booking.parent_action === "auto"
-          ? ""
+          ? bookingDayCentreYearChipsHtml(data)
           : '<a class="pp-btn pp-btn--ghost" href="' +
             esc(reenrolHref) +
             '">Update booking choices</a>');
