@@ -180,11 +180,12 @@ export function sortWeeklySlotsByDay(slots: ParsedSlot[]): ParsedSlot[] {
 
 function normalizeParsedSlotService(slot: ParsedSlot): ParsedSlot {
   const serviceType = canonicalizeServiceTypeToken(slot.serviceType);
+  // Multi-Activity is always a 90' day service when roster/payment under-reports duration.
+  // Do NOT clamp Aquatic 60' (e.g. ACAT Mon 11–12) down to 30' — that kept a £100
+  // catalogue price while showing a 30' label.
   const durationMin =
     serviceType.includes("MULTI") && (!slot.durationMin || slot.durationMin < 60)
       ? 90
-      : serviceType.includes("AQUATIC") && (!slot.durationMin || slot.durationMin > 45)
-      ? 30
       : slot.durationMin;
   const price = slot.pricePerSession ?? unitPriceFor(serviceType, durationMin);
   const out: ParsedSlot = {
@@ -875,6 +876,7 @@ export function slotsFromPublishedSessions(
     instructor?: string;
     venue?: string;
     area?: string;
+    feeGbp?: number;
   }>,
 ): ParsedSlot[] {
   const weekly: ParsedSlot[] = [];
@@ -915,7 +917,20 @@ export function slotsFromPublishedSessions(
     const day = normalizeDay(String(s.day || ""));
     const isWeekend = WEEKEND_DAYS.has(day);
     const counts = sessionCountsForDay(day);
-    const price = unitPriceFor(serviceType, durationMin);
+    const area = String(s.area || "").trim();
+    const timeSlot = String(s.timeSlot || "").trim();
+    const venue = String(s.venue || "").trim();
+    const feeRaw = Number(s.feeGbp);
+    const isAcatAquatic =
+      serviceType.includes("AQUATIC") &&
+      (/acat/i.test(area) ||
+        (/monday/i.test(day) && /11\s*to\s*12/i.test(timeSlot) && /swimfarm/i.test(venue)));
+    const price =
+      Number.isFinite(feeRaw) && feeRaw > 0
+        ? feeRaw
+        : isAcatAquatic
+        ? 50
+        : unitPriceFor(serviceType, durationMin);
     const slot: ParsedSlot = {
       id: `pub-${idx++}`,
       raw: `${durationMin}' ${serviceType}${day ? ` (${day})` : ""}`,
@@ -927,8 +942,8 @@ export function slotsFromPublishedSessions(
       pricePerSession: price,
       sessions: { ...counts },
       termTotals: termTotals(price, counts),
-      timeSlot: String(s.timeSlot || "").trim() || undefined,
-      venue: String(s.venue || "").trim() || undefined,
+      timeSlot: timeSlot || undefined,
+      venue: venue || undefined,
       instructor: String(s.instructor || "").trim() || undefined,
     };
     slot.displayLabel = buildSlotDisplayLabel(slot);
