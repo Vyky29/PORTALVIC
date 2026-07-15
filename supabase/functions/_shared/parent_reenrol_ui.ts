@@ -6,10 +6,19 @@ export type ParentReenrolUiMode = "required" | "auto";
 
 export type ParentReenrolUi = {
   mode: ParentReenrolUiMode;
-  /** Why the parent form is not needed (empty when mode is required). */
-  reasons: Array<"day_centre" | "la_funded">;
+  /** Why the parent form is not needed / what special path applies. */
+  reasons: Array<"day_centre" | "la_funded" | "acat_brought">;
   note: string;
+  /**
+   * Extra notice for ACAT Monday members: ACAT arrange attendance/transport and
+   * must confirm they will bring the participant next year.
+   */
+  acat_confirm_notice: string;
 };
+
+/** Shown when Kate / Kamy / Jack W / Jack S touch Booking 2026/27. */
+export const ACAT_REENROL_CONFIRM_NOTICE =
+  "ACAT bring this participant to Club Sensational. For 2026/27, ACAT must confirm they will continue to bring them — a parent form alone does not secure the ACAT Monday place.";
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -48,28 +57,42 @@ export function buildParentReenrolUi(opts: {
   fundingLabel?: string | null;
   vatMode?: string | null;
   paymentSheet?: string | null;
+  /** Kate / Kamy / Jack W / Jack S — Monday ACAT brought clients. */
+  isAcatMember?: boolean;
 }): ParentReenrolUi {
-  const reasons: Array<"day_centre" | "la_funded"> = [];
+  const isAcat = !!opts.isAcatMember;
+  const acatNotice = isAcat ? ACAT_REENROL_CONFIRM_NOTICE : "";
+  const reasons: Array<"day_centre" | "la_funded" | "acat_brought"> = [];
   if (opts.hasDayCentre) reasons.push("day_centre");
 
   const sheetLa = clean(opts.paymentSheet, 20).toUpperCase() === "LA";
   const vatExempt = clean(opts.vatMode, 20).toLowerCase() === "exempt";
   const fundLa = fundingLabelIsLaOrNhs(opts.fundingLabel);
   if (sheetLa || vatExempt || fundLa) reasons.push("la_funded");
+  if (isAcat) reasons.push("acat_brought");
 
-  if (!reasons.length) {
+  const officeAuto = reasons.includes("day_centre") || reasons.includes("la_funded");
+
+  if (!officeAuto) {
     return {
       mode: "required",
-      reasons: [],
-      note: "Confirm places for next year",
+      reasons: isAcat ? ["acat_brought"] : [],
+      note: isAcat
+        ? "Confirm your other places for next year. The ACAT Monday place still needs ACAT to confirm they will bring them."
+        : "Confirm places for next year",
+      acat_confirm_notice: acatNotice,
     };
   }
 
-  const note = reasons.includes("day_centre") && reasons.includes("la_funded")
+  const baseNote = reasons.includes("day_centre") && reasons.includes("la_funded")
     ? "Day Centre and LA / NHS places renew with the office — nothing for you to submit."
     : reasons.includes("day_centre")
       ? "Day Centre places renew with the office — nothing for you to submit."
       : "LA / NHS funded places renew with the office — nothing for you to submit.";
 
-  return { mode: "auto", reasons, note };
+  const note = isAcat
+    ? "ACAT must confirm they will bring them next year — they arrange attendance. " + baseNote
+    : baseNote;
+
+  return { mode: "auto", reasons, note, acat_confirm_notice: acatNotice };
 }

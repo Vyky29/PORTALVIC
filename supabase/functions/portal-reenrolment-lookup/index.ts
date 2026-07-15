@@ -24,6 +24,7 @@ import {
   weeklySlotsFromRosterRows,
 } from "../_shared/reenrolment_catalog.ts";
 import {
+  isAcatMemberIdentity,
   canonicalParticipantClientId,
   participantIdentityMatches,
   resolveParticipantLookupNames,
@@ -302,6 +303,12 @@ Deno.serve(async (req) => {
     fundingLabel: paymentCtx?.fundingSource || null,
     vatMode: paymentCtx?.vatCode || null,
     paymentSheet: paymentCtx?.sheet || null,
+    isAcatMember: isAcatMemberIdentity({
+      contactId: String(participantRow.contact_id || ""),
+      displayName: participantDisplayName,
+      firstName: String(participantRow.first_name || ""),
+      lastName: String(participantRow.last_name || ""),
+    }),
   });
 
   return json(200, {

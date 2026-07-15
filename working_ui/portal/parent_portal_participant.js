@@ -808,17 +808,24 @@
         (action === "auto"
           ? "Your place renews with the office — nothing for you to submit."
           : "Confirm places for next year"),
+      acat_confirm_notice: String(r.acat_confirm_notice || "").trim(),
     };
   }
 
   function reenrolBannerHtml(data) {
     var booking = bookingSummary(data);
+    var acatNotice = booking.acat_confirm_notice
+      ? '<p class="pp-muted pp-hub-reenrol__acat">' + esc(booking.acat_confirm_notice) + "</p>"
+      : "";
     if (booking.submitted) {
       return (
         '<p class="pp-hub-reenrolled" role="status">' +
         '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
         " Re-enrolled for 2026/27" +
-        "</p>"
+        "</p>" +
+        (acatNotice
+          ? '<aside class="pp-hub-reenrol pp-hub-reenrol--acat" role="note">' + acatNotice + "</aside>"
+          : "")
       );
     }
     if (booking.parent_action === "auto") {
@@ -829,6 +836,7 @@
         '<span class="pp-muted">' +
         esc(booking.parent_action_note) +
         "</span>" +
+        acatNotice +
         "</div>" +
         crashBookBtnHtml(data) +
         "</aside>"
@@ -843,6 +851,7 @@
       '<div class="pp-hub-reenrol__copy">' +
       "<strong>Re-enrol 2026/27</strong>" +
       '<span class="pp-muted">Confirm by Wed 22 July — or book crash courses first</span>' +
+      acatNotice +
       "</div>" +
       '<div class="pp-hub-reenrol__actions">' +
       '<a class="pp-btn pp-btn--primary pp-hub-reenrol__cta" href="' +

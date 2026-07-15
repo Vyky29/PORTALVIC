@@ -3348,17 +3348,23 @@
     }
 
     var ui = data.parent_reenrol_ui || {};
+    var acatBanner = String(ui.acat_confirm_notice || "").trim()
+      ? '<div class="re-banner re-banner--info" role="note"><strong>ACAT confirmation needed</strong><p>' +
+        esc(String(ui.acat_confirm_notice).trim()) +
+        "</p></div>"
+      : "";
     if (String(ui.mode || "").toLowerCase() === "auto") {
       var autoNote =
         String(ui.note || "").trim() ||
         "Your place renews with the office — nothing for you to submit.";
       host.innerHTML =
+        acatBanner +
         '<div class="re-banner re-banner--info" role="status">' +
         "<strong>No re-enrolment form needed</strong>" +
         "<p>" +
         esc(autoNote) +
         "</p>" +
-        "<p>Your hub shows sessions still left this term, and the office manages your 2026/27 booking with your funder.</p>" +
+        "<p>Your hub shows sessions still left this term, and the office manages your 2026/27 booking with your funder / ACAT.</p>" +
         "</div>" +
         '<div class="re-form-grid">' +
         '<div class="re-form-grid__current">' +
@@ -3372,6 +3378,7 @@
       : "";
 
     host.innerHTML =
+      acatBanner +
       existing +
       '<div class="re-form-grid">' +
       '<section class="re-section re-head-section re-form-grid__head">' +
