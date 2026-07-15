@@ -649,12 +649,45 @@
     );
   }
 
+  function participantNeedsPhoto(p, opts) {
+    p = p || {};
+    if (p.has_avatar === true) return false;
+    if (p.avatar_url) return false;
+    if (opts && typeof opts.childHasPhoto === "function") {
+      return !opts.childHasPhoto(p.contact_id);
+    }
+    return true;
+  }
+
+  function hubPhotoCtaHtml(data, opts) {
+    var p = (data && data.participant) || {};
+    if (!participantNeedsPhoto(p, opts)) return "";
+    var photoApi = global.ParentPortalApp && global.ParentPortalApp.photo;
+    var notice =
+      photoApi && typeof photoApi.missingNoticeHtml === "function"
+        ? photoApi.missingNoticeHtml()
+        : '<p class="pp-child-photo-missing" role="status"><strong>No photo on file.</strong> Please add a photo so instructors can identify them at sessions.</p>';
+    var block = "";
+    if (photoApi && typeof photoApi.blockHtml === "function") {
+      block = photoApi.blockHtml({
+        contact_id: p.contact_id,
+        display_name: p.display_name,
+        has_avatar: false,
+        avatar_url: "",
+      });
+    }
+    return '<div class="pp-hub-photo-cta">' + notice + block + "</div>";
+  }
+
   function hubHeroHtml(data, opts) {
     var p = data.participant || {};
     var status = statusChips(p);
+    var needsPhoto = participantNeedsPhoto(p, opts);
     return (
       hubSiblingsHtml(data, opts) +
-      '<header class="pp-hub-hero">' +
+      '<header class="pp-hub-hero' +
+      (needsPhoto ? " pp-hub-hero--needs-photo" : "") +
+      '">' +
       '<div class="pp-hub-hero__id">' +
       participantPhotoHtml(p) +
       '<h3 class="pp-hub-hero__name">' +
@@ -663,6 +696,7 @@
       participantIdentityMetaHtml(p) +
       enrolledServiceChipsHtml(data) +
       (status ? '<div class="pp-chip-row pp-hub-hero__status">' + status + "</div>" : "") +
+      hubPhotoCtaHtml(data, opts) +
       "</div>" +
       "</header>" +
       reenrolBannerHtml(data)
@@ -1181,6 +1215,69 @@
     return hh * 60 + mm;
   }
 
+  function parseServiceEndMinutes(time) {
+    var s = String(time || "").trim();
+    if (!s) return null;
+    var range = s.match(
+      /(\d{1,2})(?:[.:](\d{2}))?\s*(am|pm)?\s*(?:[-–—]|to)\s*(\d{1,2})(?:[.:](\d{2}))?\s*(am|pm)?/i,
+    );
+    if (range) {
+      var endRaw =
+        range[4] +
+        (range[5] ? ":" + range[5] : "") +
+        (range[6] ? " " + range[6] : range[3] ? " " + range[3] : "");
+      var end = parseServiceStartMinutes(endRaw);
+      return end < 9999 ? end : null;
+    }
+    var start = parseServiceStartMinutes(s);
+    if (start >= 9999) return null;
+    return start + 60;
+  }
+
+  /** True after the last slot that day has ended (or the calendar day is past). */
+  function isIsoSessionFinished(iso, data) {
+    var todayIso = isoDateLocal(new Date());
+    if (!iso) return false;
+    if (iso < todayIso) return true;
+    if (iso > todayIso) return false;
+    var ends = [];
+    var detail =
+      data && data.general && Array.isArray(data.general.services_detail)
+        ? data.general.services_detail
+        : [];
+    try {
+      var parts = String(iso).split("-");
+      var day = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      var jsDow = day.getDay();
+      var col = jsDow === 0 ? 6 : jsDow - 1;
+      detail.forEach(function (s) {
+        if (dayNameToCalCol(s && s.day) !== col) return;
+        var end = parseServiceEndMinutes(s.time);
+        if (end != null) ends.push(end);
+      });
+    } catch (_e) {}
+    var crash = (data && data.crash_course && Array.isArray(data.crash_course.dates)
+      ? data.crash_course.dates
+      : []) || [];
+    crash.forEach(function (row) {
+      if (String((row && row.iso) || "").slice(0, 10) !== iso) return;
+      var end = parseServiceEndMinutes(row.slot_label || row.time || "");
+      if (end != null) ends.push(end);
+    });
+    if (!ends.length) return false;
+    var maxEnd = Math.max.apply(null, ends);
+    var now = new Date();
+    return now.getHours() * 60 + now.getMinutes() >= maxEnd;
+  }
+
+  function annotateChipDate(d, data) {
+    if (!d || !d.iso) return d;
+    var finished = isIsoSessionFinished(d.iso, data);
+    d.past = finished;
+    if (finished) d.isNext = false;
+    return d;
+  }
+
   function isoInRange(iso, from, to) {
     if (!iso || !from || !to) return false;
     return iso >= from && iso <= to;
@@ -1384,13 +1481,18 @@
         var jsDow = cursor.getDay();
         var col = jsDow === 0 ? 6 : jsDow - 1;
         if (cols[col]) {
-          out.push({
-            iso: iso,
-            shortLabel: formatTermChipLabel(iso),
-            past: iso < todayIso,
-            isToday: iso === todayIso,
-            isNext: !!nextIso && iso === nextIso,
-          });
+          out.push(
+            annotateChipDate(
+              {
+                iso: iso,
+                shortLabel: formatTermChipLabel(iso),
+                past: iso < todayIso,
+                isToday: iso === todayIso,
+                isNext: !!nextIso && iso === nextIso,
+              },
+              data,
+            ),
+          );
         }
       }
       cursor = addDaysLocal(cursor, 1);
@@ -1427,15 +1529,15 @@
     if (st === "cancelled") {
       return {
         tone: "cancelled",
-        title: "Club cancelled — credit / refund may apply — " + d.iso,
-        icon: CHIP_CREDIT_SVG,
+        title: "Cancelled — " + d.iso,
+        icon: CHIP_X_SVG,
       };
-    }
-    if (d.isNext) {
-      return { tone: "next", title: "Next session — " + d.iso, icon: "" };
     }
     if (d.past) {
       return { tone: "done", title: "Completed — " + d.iso, icon: "" };
+    }
+    if (d.isNext || d.isToday) {
+      return { tone: "next", title: (d.isToday ? "Today — " : "Next session — ") + d.iso, icon: "" };
     }
     return { tone: "upcoming", title: "Upcoming — " + d.iso, icon: "" };
   }
@@ -1535,7 +1637,7 @@
     var nextIso = "";
     for (var i = 0; i < raw.length; i++) {
       var cand = String((raw[i] && raw[i].iso) || "").slice(0, 10);
-      if (cand && cand >= todayIso) {
+      if (cand && cand >= todayIso && !isIsoSessionFinished(cand, data)) {
         nextIso = cand;
         break;
       }
@@ -1544,15 +1646,108 @@
       .map(function (row) {
         var iso = String((row && row.iso) || "").slice(0, 10);
         if (!iso) return null;
-        return {
-          iso: iso,
-          shortLabel: formatTermChipLabel(iso),
-          past: iso < todayIso,
-          isToday: iso === todayIso,
-          isNext: !!nextIso && iso === nextIso,
-        };
+        return annotateChipDate(
+          {
+            iso: iso,
+            shortLabel: formatTermChipLabel(iso),
+            past: iso < todayIso,
+            isToday: iso === todayIso,
+            isNext: !!nextIso && iso === nextIso,
+          },
+          data,
+        );
       })
       .filter(Boolean);
+  }
+
+  function hasCrashBooking(data) {
+    return findCrashCourseDates(data).length > 0;
+  }
+
+  /** Weekday columns from current roster (for Autumn preview when nothing new booked). */
+  function rosterWeekdayCols(data) {
+    var detail =
+      data && data.general && Array.isArray(data.general.services_detail)
+        ? data.general.services_detail
+        : [];
+    var cols = Object.create(null);
+    detail.forEach(function (s) {
+      var col = dayNameToCalCol(s && s.day);
+      if (col != null) cols[col] = true;
+    });
+    return cols;
+  }
+
+  /** Autumn 2026 first / second half date chips from roster weekdays (preview only). */
+  function findAutumnPreviewDates(data) {
+    var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
+    var autumn = null;
+    var terms = (cal && Array.isArray(cal.terms) ? cal.terms : []) || [];
+    for (var t = 0; t < terms.length; t++) {
+      if (terms[t] && terms[t].id === "autumn_2026") {
+        autumn = terms[t];
+        break;
+      }
+    }
+    if (!autumn || !autumn.starts || !autumn.ends) return [];
+    var cols = rosterWeekdayCols(data);
+    if (!Object.keys(cols).length) {
+      // No roster days yet — show Mon–Fri autumn structure.
+      cols = { 0: true, 1: true, 2: true, 3: true, 4: true };
+    }
+    var todayIso = isoDateLocal(new Date());
+    var startParts = String(autumn.starts).split("-");
+    var cursor = new Date(Number(startParts[0]), Number(startParts[1]) - 1, Number(startParts[2]));
+    var out = [];
+    var guard = 0;
+    while (guard < 200) {
+      guard++;
+      var iso = isoDateLocal(cursor);
+      if (iso > autumn.ends) break;
+      if (!isNextYearClubClosedIso(iso)) {
+        var jsDow = cursor.getDay();
+        var col = jsDow === 0 ? 6 : jsDow - 1;
+        if (cols[col]) {
+          out.push(
+            annotateChipDate(
+              {
+                iso: iso,
+                shortLabel: formatTermChipLabel(iso),
+                past: iso < todayIso,
+                isToday: iso === todayIso,
+                isNext: false,
+              },
+              data,
+            ),
+          );
+        }
+      }
+      cursor = addDaysLocal(cursor, 1);
+    }
+    var nextIso = "";
+    for (var i = 0; i < out.length; i++) {
+      if (!out[i].past) {
+        nextIso = out[i].iso;
+        break;
+      }
+    }
+    if (nextIso) {
+      out.forEach(function (d) {
+        d.isNext = d.iso === nextIso;
+      });
+    }
+    return out;
+  }
+
+  function filterChipListForDisplay(list, statusByIso, hideCompleted) {
+    statusByIso = statusByIso || {};
+    if (!hideCompleted) return list || [];
+    return (list || []).filter(function (d) {
+      var st = statusByIso[d.iso] || "";
+      if (st === "absent" || st === "cancelled") return true;
+      var meta = termChipToneMeta(d, statusByIso);
+      return meta.tone !== "done";
+    });
   }
 
   function termSessionDateChipsHtml(data, statusByIso) {
@@ -1584,27 +1779,42 @@
 
     var rows = [];
     var crashDates = findCrashCourseDates(data);
-    if (crashDates.length) {
-      rows.push(rowHtml("Crash course", crashDates));
-    }
+    var bookedNew = crashDates.length > 0 || familyAcceptedNextYear(data);
 
-    if (familyAcceptedNextYear(data)) {
-      // After Booking 2026/27: first / second half-term rows (as before).
-      var nextDates = findTermSessionDates(data);
-      var first = [];
-      var second = [];
-      nextDates.forEach(function (d) {
-        if (isFirstHalfTermDate(d.iso, data)) first.push(d);
-        else second.push(d);
-      });
-      if (first.length) rows.push(rowHtml("First half term", first));
-      if (second.length) rows.push(rowHtml("Second half term", second));
-    } else {
-      // Still on summer 2025/26: only the second half-term window (from 1 Jun).
-      var summerDates = findTermSessionDates(data);
-      if (summerDates.length) {
-        rows.push(rowHtml("Second half term", summerDates));
+    if (bookedNew) {
+      // New crash and/or 2026/27 booking: only those rows, hide completed greens.
+      if (crashDates.length) {
+        rows.push(
+          rowHtml("Crash course", filterChipListForDisplay(crashDates, statusByIso, true)),
+        );
       }
+      if (familyAcceptedNextYear(data)) {
+        var nextDates = findTermSessionDates(data);
+        var first = [];
+        var second = [];
+        nextDates.forEach(function (d) {
+          if (isFirstHalfTermDate(d.iso, data)) first.push(d);
+          else second.push(d);
+        });
+        first = filterChipListForDisplay(first, statusByIso, true);
+        second = filterChipListForDisplay(second, statusByIso, true);
+        if (first.length) rows.push(rowHtml("First half term", first));
+        if (second.length) rows.push(rowHtml("Second half term", second));
+      }
+    } else {
+      // Nothing booked for crash or 2026/27 → Autumn half term preview (two rows).
+      var autumnDates = findAutumnPreviewDates(data);
+      var autumnFirst = [];
+      var autumnSecond = [];
+      autumnDates.forEach(function (d) {
+        if (isFirstHalfTermDate(d.iso, data, true)) autumnFirst.push(d);
+        else autumnSecond.push(d);
+      });
+      // Preview = future calendar; still hide any green completed if somehow past.
+      autumnFirst = filterChipListForDisplay(autumnFirst, statusByIso, true);
+      autumnSecond = filterChipListForDisplay(autumnSecond, statusByIso, true);
+      if (autumnFirst.length) rows.push(rowHtml("Autumn · First half term", autumnFirst));
+      if (autumnSecond.length) rows.push(rowHtml("Autumn · Second half term", autumnSecond));
     }
 
     if (!rows.length) return "";
@@ -1964,10 +2174,20 @@
         "</div>";
     } else if (!next) {
       var booking = bookingSummary(data);
-      var endNote =
+      var hasCrash = hasCrashBooking(data);
+      var hasNextYear = familyAcceptedNextYear(data);
+      var endNote;
+      if (!hasCrash && !hasNextYear) {
+        endNote =
+          "Autumn half term 2026 dates for your usual days. Book crash or re-enrol 2026/27 when you are ready.";
+      } else if (
         booking.parent_action === "auto"
-          ? "No more sessions left this summer term. Your 2026/27 place continues with the office — nothing for you to submit."
-          : "No more sessions left this summer term. Book 2026/27 when you are ready.";
+      ) {
+        endNote =
+          "No more sessions left this summer term. Your 2026/27 place continues with the office — nothing for you to submit.";
+      } else {
+        endNote = "No more sessions left this summer term. Book 2026/27 when you are ready.";
+      }
       nextBody =
         '<div class="pp-hub-ops__next">' +
         '<div class="pp-hub-ops__badge-row">' +
@@ -2120,6 +2340,9 @@
     bindHub(host, data, opts);
     var messagesPromise = mountHubAlerts(host, data, opts);
     mountTermDateChipStatuses(host, data, opts, messagesPromise);
+    if (global.ParentPortalApp && global.ParentPortalApp.photo && typeof global.ParentPortalApp.photo.bindOn === "function") {
+      global.ParentPortalApp.photo.bindOn(host);
+    }
     void ensureGeneralFieldsAsync(data).then(function () {
       var fieldsHost = host.querySelector(".pp-hub-hero__info-fields");
       if (fieldsHost) {

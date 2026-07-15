@@ -102,6 +102,18 @@
   function participantRenderOpts(contactId) {
     return {
       contactId: contactId,
+      childHasPhoto: function (cid) {
+        var homeChild = childFromHome(cid);
+        if (homeChild && childHasSavedPhoto(homeChild)) return true;
+        var p =
+          state.participant &&
+          state.participant.data &&
+          state.participant.data.participant;
+        if (p && String(p.contact_id) === String(cid)) {
+          if (p.has_avatar === true || p.avatar_url) return true;
+        }
+        return false;
+      },
       activityPing: function (surface, detail) {
         void pingActivity(surface, contactId, detail);
       },
@@ -898,7 +910,7 @@
     try {
       var fd = new FormData();
       fd.append("contact_id", cid);
-      fd.append("source", "parent_portal_home");
+      fd.append("source", "parent_portal");
       fd.append("photo", file, file.name || "photo.jpg");
       var res = await fetch(fn("portal-participant-avatar-save"), {
         method: "POST",
@@ -934,6 +946,15 @@
           }
         });
       }
+      if (
+        state.participant &&
+        state.participant.data &&
+        state.participant.data.participant &&
+        String(state.participant.data.participant.contact_id) === cid
+      ) {
+        state.participant.data.participant.has_avatar = true;
+        state.participant.data.participant.avatar_url = newUrl;
+      }
       if (state.childPhotoPending[cid] && state.childPhotoPending[cid].previewUrl) {
         try {
           URL.revokeObjectURL(state.childPhotoPending[cid].previewUrl);
@@ -948,6 +969,19 @@
       if (card) card.classList.remove("pp-child-card--no-photo");
       var notice = card && card.querySelector(".pp-child-photo-missing");
       if (notice) notice.remove();
+      var hubCta = block.closest(".pp-hub-photo-cta");
+      if (hubCta) {
+        var hubNotice = hubCta.querySelector(".pp-child-photo-missing");
+        if (hubNotice) hubNotice.remove();
+        var hero = hubCta.closest(".pp-hub-hero");
+        if (hero) hero.classList.remove("pp-hub-hero--needs-photo");
+        // Refresh hub avatar circle next to Add photo tools.
+        var paxHost = hero && hero.querySelector(".pp-pax-photo");
+        if (paxHost && typeof global.ParentPortalParticipant !== "undefined") {
+          void loadParticipantDetail(cid);
+          return;
+        }
+      }
       if (typeof global.portalRegisterParticipantStorageAvatar === "function" && newUrl) {
         global.portalRegisterParticipantStorageAvatar(cid, c.display_name, newUrl);
       }
@@ -1169,6 +1203,29 @@
     return null;
   }
 
+  function childRecordForPhoto(contactId) {
+    var home = childFromHome(contactId);
+    if (home) return home;
+    var p =
+      state.participant &&
+      state.participant.data &&
+      state.participant.data.participant;
+    if (p && String(p.contact_id) === String(contactId)) {
+      return {
+        contact_id: p.contact_id,
+        display_name: p.display_name,
+        has_avatar: !!p.has_avatar,
+        avatar_url: p.avatar_url || "",
+      };
+    }
+    return {
+      contact_id: contactId,
+      display_name: "Participant",
+      has_avatar: false,
+      avatar_url: "",
+    };
+  }
+
   function readFileAsDataUrl(file) {
     return new Promise(function (resolve, reject) {
       var fr = new FileReader();
@@ -1366,10 +1423,13 @@
     });
   }
 
-  function bindChildPhotoHandlers() {
-    var list = $("ppChildList");
-    if (!list) return;
-    list.addEventListener("click", function (e) {
+  var _photoHandlersBound = false;
+  function bindChildPhotoHandlers(root) {
+    // Document-level once: home cards + hub photo CTA share the same controls.
+    if (_photoHandlersBound) return;
+    _photoHandlersBound = true;
+    var scope = document;
+    scope.addEventListener("click", function (e) {
       var addBtn = e.target && e.target.closest ? e.target.closest(".pp-child-photo-add") : null;
       var editBtn = e.target && e.target.closest ? e.target.closest(".pp-child-photo-edit") : null;
       var saveBtn = e.target && e.target.closest ? e.target.closest(".pp-child-photo-save") : null;
@@ -1378,7 +1438,7 @@
       var block = (addBtn || editBtn || saveBtn).closest(".pp-child-photo-block");
       if (!block) return;
       var cid = block.getAttribute("data-contact-id") || "";
-      var c = childFromHome(cid);
+      var c = childRecordForPhoto(cid);
       if (!c) return;
       if (saveBtn) {
         var pending = state.childPhotoPending[cid];
@@ -1388,14 +1448,14 @@
       var input = block.querySelector(".pp-child-photo-input");
       if (input) input.click();
     });
-    list.addEventListener("change", function (e) {
+    scope.addEventListener("change", function (e) {
       var input =
         e.target && e.target.classList && e.target.classList.contains("pp-child-photo-input") ? e.target : null;
       if (!input) return;
       var block = input.closest(".pp-child-photo-block");
       if (!block) return;
       var cid = block.getAttribute("data-contact-id") || "";
-      var c = childFromHome(cid);
+      var c = childRecordForPhoto(cid);
       if (!c) return;
       var file = input.files && input.files[0];
       if (!file) return;
@@ -1426,6 +1486,7 @@
         }
       });
     });
+    void root;
   }
 
   function bindChildCards() {
@@ -1701,5 +1762,13 @@
     }
   }
 
-  global.ParentPortalApp = { bootstrap: bootstrap };
+  global.ParentPortalApp = {
+    bootstrap: bootstrap,
+    photo: {
+      missingNoticeHtml: childPhotoMissingNoticeHtml,
+      blockHtml: childPhotoBlockHtml,
+      bindOn: bindChildPhotoHandlers,
+      hasSaved: childHasSavedPhoto,
+    },
+  };
 })(typeof window !== "undefined" ? window : globalThis);

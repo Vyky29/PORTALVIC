@@ -1276,6 +1276,7 @@ Deno.serve(async (req) => {
         city: contactRow?.city && contactRow.city !== "—" ? contactRow.city : null,
         postcode: contactRow?.postcode && contactRow.postcode !== "—" ? contactRow.postcode : null,
         avatar_url: avatar.avatar_url,
+        has_avatar: !!(avatar.avatar_url || participant.avatar_storage_path),
       },
       general: {
         services,

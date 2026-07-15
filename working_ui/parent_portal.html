@@ -504,6 +504,26 @@
       color: var(--ink);
       font-weight: 800;
     }
+    .pp-hub-photo-cta {
+      width: 100%;
+      max-width: 100%;
+      margin: 10px 0 0;
+      min-width: 0;
+    }
+    .pp-hub-photo-cta .pp-child-photo-missing {
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+    .pp-hub-photo-cta .pp-child-photo-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .pp-hub-hero--needs-photo .pp-pax-photo--init {
+      box-shadow: inset 0 0 0 2px rgba(180, 130, 0, 0.45);
+    }
     .pp-child-card--no-photo .pp-child-photo--init {
       box-shadow: inset 0 0 0 2px rgba(180, 130, 0, 0.45);
     }
@@ -959,26 +979,22 @@
       text-overflow: ellipsis;
       box-sizing: border-box;
     }
-    /* Completed sessions */
+    /* Completed sessions (session finished) */
     .pp-hub-ops__date-chip--done {
       background: rgba(22, 163, 74, 0.14);
       color: #15803d;
       border: 1px solid rgba(21, 128, 61, 0.28);
     }
-    /* Future dates (not the next one) */
-    .pp-hub-ops__date-chip--upcoming {
-      background: rgba(234, 88, 12, 0.14);
-      color: #c2410c;
-      border: 1px solid rgba(194, 65, 12, 0.3);
-    }
-    /* Next session — same blue as NEXT SESSION badge */
+    /* Upcoming / same-day not finished — blue */
+    .pp-hub-ops__date-chip--upcoming,
     .pp-hub-ops__date-chip--next {
       background: rgba(37, 99, 235, 0.14);
       color: var(--blue);
       border: 1px solid rgba(37, 99, 235, 0.35);
     }
-    /* Parent-reported absent */
-    .pp-hub-ops__date-chip--absent {
+    /* Absent or club cancel — red */
+    .pp-hub-ops__date-chip--absent,
+    .pp-hub-ops__date-chip--cancelled {
       background: rgba(220, 38, 38, 0.14);
       color: #b91c1c;
       border: 1px solid rgba(185, 28, 28, 0.32);
@@ -990,12 +1006,6 @@
       height: 10px;
       flex: 0 0 auto;
       display: block;
-    }
-    /* Club/admin cancelled early — credit/refund path */
-    .pp-hub-ops__date-chip--cancelled {
-      background: rgba(124, 58, 237, 0.12);
-      color: #6d28d9;
-      border: 1px dashed rgba(109, 40, 217, 0.45);
     }
     .pp-hub-ops__date-chip__£,
     .pp-hub-ops__date-chip__mark {
@@ -3623,8 +3633,8 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260715-dc-hide-staff-aquatic"></script>
   <script src="/portal/parent_portal_team.js?v=20260710-eiji-hazem-photos"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260714-w2-80pct"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260715-booking-dc-year"></script>
-  <script src="/portal/parent_portal_app.js?v=20260715-no-parent-loc"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260715-hub-photo-autumn"></script>
+  <script src="/portal/parent_portal_app.js?v=20260715-hub-photo-autumn"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {
