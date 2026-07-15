@@ -635,13 +635,10 @@
   function updateLocBar() {
     var bar = $("ppLocBar");
     if (!bar) return;
+    var loggedIn = !!state.session.token && state.step !== "identify";
     var geoApi = window.PortalClientGeo;
     var hasDevice = geoApi && typeof geoApi.hasDeviceFix === "function" && geoApi.hasDeviceFix();
-    if (hasDevice) {
-      bar.hidden = true;
-      return;
-    }
-    bar.hidden = false;
+    bar.hidden = !loggedIn || hasDevice;
   }
 
   function setStep(step) {
@@ -649,8 +646,8 @@
     if ($("ppStepIdentify")) $("ppStepIdentify").hidden = step !== "identify";
     if ($("ppStepHome")) $("ppStepHome").hidden = step !== "home";
     if ($("ppStepParticipant")) $("ppStepParticipant").hidden = step !== "participant";
+    updateLocBar();
     if (step === "home" && state.session.token) {
-      updateLocBar();
       void pingActivity("home", null);
     }
   }
