@@ -226,6 +226,15 @@ export function mergeWeeklySlotsFromRosterAndPayment(
         (!p.day || !slot.day || normalizeDay(p.day) === slot.day)
       );
       if (!payMatch || payMatch.pricePerSession == null) return slot;
+      // Keep explicit published fee (e.g. ACAT £50) when payment sheet priced a 60' Aquatic at £100.
+      if (
+        slot.pricePerSession != null &&
+        payMatch.pricePerSession != null &&
+        slot.pricePerSession < payMatch.pricePerSession &&
+        /aquatic/i.test(slot.serviceType)
+      ) {
+        return slot;
+      }
       return normalizeParsedSlotService({
         ...slot,
         pricePerSession: payMatch.pricePerSession,
@@ -840,7 +849,10 @@ function collapsePublishedWeekly(weekly: ParsedSlot[]): ParsedSlot[] {
     const spanDur = minStart !== Infinity && maxEnd > minStart ? maxEnd - minStart : 0;
     const durationMin = isMulti ? 90 : (sumDur || spanDur || base.durationMin);
     const counts = sessionCountsForDay(day);
-    const price = unitPriceFor(base.serviceType, durationMin);
+    const explicitPrice = parts
+      .map((p) => (p.pricePerSession != null && Number(p.pricePerSession) > 0 ? Number(p.pricePerSession) : null))
+      .find((n) => n != null);
+    const price = explicitPrice ?? unitPriceFor(base.serviceType, durationMin);
     const timeSlot = startTok && endTok ? `${startTok} to ${endTok}` : base.timeSlot;
     const merged: ParsedSlot = {
       ...base,
