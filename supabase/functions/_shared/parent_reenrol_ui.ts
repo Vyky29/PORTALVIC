@@ -10,8 +10,8 @@ export type ParentReenrolUi = {
   reasons: Array<"day_centre" | "la_funded" | "acat_brought">;
   note: string;
   /**
-   * Extra notice for ACAT Monday members: ACAT arrange attendance/transport and
-   * must confirm they will bring the participant next year.
+   * Extra notice for ACAT Monday members: ACAT must approve the place
+   * because it is an ACAT-only service.
    */
   acat_confirm_notice: string;
 };
@@ -78,7 +78,7 @@ export function buildParentReenrolUi(opts: {
       mode: "required",
       reasons: isAcat ? ["acat_brought"] : [],
       note: isAcat
-        ? "Confirm your other places for next year. The ACAT Monday place still needs ACAT to confirm they will bring them."
+        ? "Confirm your other places for next year. The Monday ACAT slot still needs ACAT approval."
         : "Confirm places for next year",
       acat_confirm_notice: acatNotice,
     };
@@ -91,7 +91,7 @@ export function buildParentReenrolUi(opts: {
       : "LA / NHS funded places renew with the office — nothing for you to submit.";
 
   const note = isAcat
-    ? "ACAT must confirm they will bring them next year — they arrange attendance. " + baseNote
+    ? "ACAT should approve this place — it is an ACAT-only service. " + baseNote
     : baseNote;
 
   return { mode: "auto", reasons, note, acat_confirm_notice: acatNotice };
