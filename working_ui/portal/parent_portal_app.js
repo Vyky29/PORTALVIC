@@ -102,6 +102,9 @@
   function participantRenderOpts(contactId) {
     return {
       contactId: contactId,
+      activityPing: function (surface, detail) {
+        void pingActivity(surface, contactId, detail);
+      },
       siblings: function () {
         return ((state.home && state.home.children) || []).slice();
       },
@@ -575,6 +578,7 @@
   function renderParticipantView(host, body, contactId) {
     if (global.ParentPortalParticipant && typeof global.ParentPortalParticipant.render === "function") {
       global.ParentPortalParticipant.render(host, body, participantRenderOpts(contactId));
+      void pingActivity("hub", contactId);
       if (body.pending_review_count > 0) {
         showNotice(
           $("ppParticipantNotice"),
@@ -633,6 +637,34 @@
     if ($("ppStepIdentify")) $("ppStepIdentify").hidden = step !== "identify";
     if ($("ppStepHome")) $("ppStepHome").hidden = step !== "home";
     if ($("ppStepParticipant")) $("ppStepParticipant").hidden = step !== "participant";
+    if (step === "home" && state.session.token) {
+      void pingActivity("home", null);
+    }
+  }
+
+  var _pingLast = { surface: "", at: 0 };
+  function pingActivity(surface, contactId, detail) {
+    var s = String(surface || "").trim().toLowerCase();
+    if (!s || !state.session.token) return Promise.resolve();
+    var now = Date.now();
+    if (_pingLast.surface === s && now - _pingLast.at < 20000) return Promise.resolve();
+    _pingLast = { surface: s, at: now };
+    return fetch(fn("parent-portal-activity-ping"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: anonKey(),
+        Authorization: "Bearer " + anonKey(),
+        "x-parent-portal-session": state.session.token,
+      },
+      body: JSON.stringify({
+        surface: s,
+        contact_id: contactId || state.participant.contactId || null,
+        detail: detail || null,
+      }),
+    }).catch(function () {
+      /* presence ping is best-effort */
+    });
   }
 
   function saveSession() {

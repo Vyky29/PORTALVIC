@@ -5042,6 +5042,15 @@
 
   function openSubview(host, data, opts, view, viewOpts) {
     viewOpts = viewOpts || {};
+    if (opts && typeof opts.activityPing === "function") {
+      var pingView =
+        view === "documents" || view === "consents"
+          ? "consents"
+          : view === "achievements"
+            ? "photos"
+            : view || "hub";
+      opts.activityPing(pingView);
+    }
     if (view === "general") {
       void ensureGeneralFieldsAsync(data).then(function () {
         renderGeneral(host, data, opts);

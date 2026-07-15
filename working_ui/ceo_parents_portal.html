@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>clubSENsational — Parents in Family portal</title>
+  <link rel="icon" href="/portal/F-02-1.png" type="image/png" />
+  <script src="/portal-static-bootstrap.js?v=20260617-ceo-restore"></script>
+  <script src="/portal/portal_brand.js?v=20260520-brand"></script>
+  <style>
+    :root {
+      --blue: #2d84b3;
+      --blueSoft: #eaf5fb;
+      --ink: #173247;
+      --text: #314555;
+      --muted: #728290;
+      --line: rgba(23, 50, 71, 0.12);
+      --white: #fff;
+      --ok: #157347;
+      --okSoft: #e8f7ef;
+      --shadow: 0 18px 50px rgba(23, 50, 71, 0.08);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #f7fbff 0%, #edf4fb 100%);
+    }
+    .cpp-wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 22px 16px 40px;
+      min-width: 0;
+    }
+    .cpp-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .cpp-nav a {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--blue);
+      text-decoration: none;
+      border: 1px solid rgba(45, 132, 179, 0.35);
+      padding: 8px 14px;
+      border-radius: 12px;
+      background: var(--white);
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.4rem;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+    }
+    .cpp-sub {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.45;
+      max-width: 48rem;
+      overflow-wrap: break-word;
+    }
+    .cpp-kpis {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 720px) {
+      .cpp-kpis { grid-template-columns: 1fr; }
+    }
+    .cpp-kpi {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px 16px;
+      min-width: 0;
+    }
+    .cpp-kpi strong {
+      display: block;
+      font-size: 1.6rem;
+      color: var(--ink);
+      line-height: 1.1;
+    }
+    .cpp-kpi span {
+      display: block;
+      margin-top: 4px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      overflow-wrap: break-word;
+    }
+    .cpp-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      min-width: 0;
+    }
+    .cpp-toolbar button {
+      border: 0;
+      border-radius: 12px;
+      background: var(--blue);
+      color: #fff;
+      font-weight: 700;
+      padding: 10px 14px;
+      cursor: pointer;
+    }
+    .cpp-status { font-size: 0.85rem; color: var(--muted); min-width: 0; overflow-wrap: break-word; }
+    .cpp-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 14px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .cpp-grid { grid-template-columns: 1fr; }
+    }
+    .cpp-card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px 14px 10px;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .cpp-card h2 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      color: var(--ink);
+    }
+    .cpp-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 420px;
+      overflow: auto;
+    }
+    .cpp-row, .cpp-feed {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #fbfdff;
+      min-width: 0;
+    }
+    .cpp-row--online { background: var(--okSoft); border-color: rgba(21, 115, 71, 0.22); }
+    .cpp-row__main, .cpp-feed > div { min-width: 0; flex: 1 1 auto; }
+    .cpp-row__name { display: block; color: var(--ink); overflow-wrap: break-word; }
+    .cpp-row__meta, .cpp-feed__what, .cpp-row__ago {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--muted);
+      overflow-wrap: break-word;
+    }
+    .cpp-row__side {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      flex: 0 0 auto;
+      max-width: 46%;
+      min-width: 0;
+    }
+    .cpp-pill {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: var(--blueSoft);
+      color: var(--ink);
+      max-width: 100%;
+      overflow-wrap: break-word;
+      text-align: right;
+    }
+    .cpp-feed__when {
+      flex: 0 0 72px;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .cpp-empty {
+      padding: 14px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="cpp-wrap">
+    <div class="cpp-nav">
+      <a href="ceo_dashboard.html">← CEO dashboard</a>
+      <a href="admin_dashboard.html">Admin (ops)</a>
+    </div>
+    <h1>Parents in Family portal</h1>
+    <p class="cpp-sub">
+      Live view of who has a Family portal session open, which child hub surface they last opened,
+      and recent absences / portal messages. “Online” means API activity in the last 5 minutes.
+    </p>
+
+    <div class="cpp-kpis" aria-label="Summary">
+      <div class="cpp-kpi"><strong id="cppOnlineCount">—</strong><span>Online now</span></div>
+      <div class="cpp-kpi"><strong id="cppActiveCount">—</strong><span>Active last 24h</span></div>
+      <div class="cpp-kpi"><strong id="cppDayCount">—</strong><span>Sign-ins today</span></div>
+    </div>
+
+    <div class="cpp-toolbar">
+      <p class="cpp-status" id="cppStatus">Loading…</p>
+      <div>
+        <button type="button" id="cppRefresh">Refresh</button>
+        <span class="cpp-status" id="cppStamp" style="margin-left:10px"></span>
+      </div>
+    </div>
+
+    <div class="cpp-grid">
+      <div>
+        <section class="cpp-card" aria-labelledby="cppOnlineTitle">
+          <h2 id="cppOnlineTitle">Online now</h2>
+          <ul class="cpp-list" id="cppOnlineList"></ul>
+        </section>
+        <section class="cpp-card" style="margin-top:14px" aria-labelledby="cppRecentTitle">
+          <h2 id="cppRecentTitle">Signed in earlier (24h)</h2>
+          <ul class="cpp-list" id="cppRecentList"></ul>
+        </section>
+      </div>
+      <div>
+        <section class="cpp-card" aria-labelledby="cppActTitle">
+          <h2 id="cppActTitle">Surfaces opened</h2>
+          <ul class="cpp-list" id="cppActivityList"></ul>
+        </section>
+        <section class="cpp-card" style="margin-top:14px" aria-labelledby="cppActionsTitle">
+          <h2 id="cppActionsTitle">Actions (24h)</h2>
+          <ul class="cpp-list" id="cppActionsList"></ul>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="/portal/portal_ceo_parent_presence.js?v=20260715-parents-portal"></script>
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+    const cfg = window.__PORTAL_STATIC__ || {};
+    const url = cfg.supabaseUrl || window.SUPABASE_URL || "";
+    const anon = cfg.supabaseAnonKey || window.SUPABASE_ANON_KEY || "";
+    const client = createClient(url, anon, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+    });
+    window.PortalCeoParentPresence.configure({
+      getClient: function () { return client; },
+      getSupabaseUrl: function () { return url; },
+      getAnonKey: function () { return anon; },
+    });
+    const { data } = await client.auth.getSession();
+    if (!data || !data.session) {
+      location.replace("login.html?next=" + encodeURIComponent(location.pathname + location.search));
+    } else {
+      window.PortalCeoParentPresence.start();
+    }
+  </script>
+</body>
+</html>

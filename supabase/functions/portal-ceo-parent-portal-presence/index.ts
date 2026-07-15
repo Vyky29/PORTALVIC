@@ -1,0 +1,274 @@
+// portal-ceo-parent-portal-presence
+// CEO/admin: who has an active Family portal session and recent surfaces/actions.
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import {
+  portalAdminCorsHeaders,
+  portalAdminJson,
+  verifyPortalAdminAccessToken,
+} from "../_shared/portal_admin_auth.ts";
+
+const ONLINE_MS = 5 * 60 * 1000;
+const RECENT_MS = 24 * 60 * 60 * 1000;
+
+function clean(v: unknown, max = 120): string {
+  return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function surfaceLabel(raw: string): string {
+  const map: Record<string, string> = {
+    home: "Home (children list)",
+    hub: "Child hub",
+    sessions: "Sessions Overview",
+    photos: "Achievement photos",
+    achievements: "Achievement photos",
+    weekly_notes: "Weekly notes",
+    messages: "Messages",
+    absence: "Report absent",
+    consents: "Consents & forms",
+    documents: "Consents & forms",
+    booking: "My booking 2026/27",
+    calendar: "My Calendar",
+    team: "Team / instructors",
+    balance: "Credits & refunds",
+    credits: "Credits & refunds",
+    swim: "Swim term review",
+    invoices: "Invoices",
+    crash: "Crash / intensive",
+    reenrolment: "Re-enrolment",
+    general_info: "General info",
+  };
+  const k = clean(raw, 40).toLowerCase();
+  return map[k] || (k ? k.replace(/_/g, " ") : "—");
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: portalAdminCorsHeaders() });
+  }
+  if (req.method !== "POST") {
+    return portalAdminJson(405, { ok: false, error: "method_not_allowed" });
+  }
+
+  const verified = await verifyPortalAdminAccessToken(req.headers.get("Authorization"));
+  if (!verified.ok) {
+    return portalAdminJson(verified.status, { ok: false, error: verified.error });
+  }
+
+  const baseUrl = (Deno.env.get("SUPABASE_URL") ?? "").trim().replace(/\/$/, "");
+  const serviceRole = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "").trim();
+  if (!baseUrl || !serviceRole) {
+    return portalAdminJson(503, { ok: false, error: "server_misconfigured" });
+  }
+
+  const admin = createClient(baseUrl, serviceRole, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const now = Date.now();
+  const onlineSince = new Date(now - ONLINE_MS).toISOString();
+  const recentSince = new Date(now - RECENT_MS).toISOString();
+  const dayStart = new Date();
+  dayStart.setHours(0, 0, 0, 0);
+  const dayStartIso = dayStart.toISOString();
+
+  const { data: sessions, error: sessErr } = await admin
+    .from("portal_parent_portal_sessions")
+    .select(
+      "id, parent_person_id, issued_at, expires_at, last_used_at, revoked_at, last_surface, last_contact_id",
+    )
+    .is("revoked_at", null)
+    .gt("expires_at", new Date(now).toISOString())
+    .gte("last_used_at", recentSince)
+    .order("last_used_at", { ascending: false })
+    .limit(200);
+
+  if (sessErr) {
+    console.error("[portal-ceo-parent-portal-presence] sessions", sessErr.message);
+    return portalAdminJson(500, { ok: false, error: "sessions_query_failed" });
+  }
+
+  const parentIds = Array.from(
+    new Set((sessions || []).map((s) => clean(s.parent_person_id, 80)).filter(Boolean)),
+  );
+
+  const contactsByParent = new Map<
+    string,
+    Array<{ contact_id: string; display_name: string; parent_display: string }>
+  >();
+
+  if (parentIds.length) {
+    const { data: contacts } = await admin
+      .from("portal_parent_contacts")
+      .select("parent_person_id, contact_id, display_name, parent_display, parent_first_name, parent_last_name")
+      .in("parent_person_id", parentIds)
+      .limit(800);
+    for (const c of contacts || []) {
+      const pid = clean(c.parent_person_id, 80);
+      if (!pid) continue;
+      const parentDisplay =
+        clean(c.parent_display, 120) ||
+        [clean(c.parent_first_name, 60), clean(c.parent_last_name, 60)].filter(Boolean).join(" ") ||
+        "Parent";
+      const row = {
+        contact_id: clean(c.contact_id, 80),
+        display_name: clean(c.display_name, 120) || "Participant",
+        parent_display: parentDisplay,
+      };
+      const list = contactsByParent.get(pid) || [];
+      list.push(row);
+      contactsByParent.set(pid, list);
+    }
+  }
+
+  const online: Record<string, unknown>[] = [];
+  const recent: Record<string, unknown>[] = [];
+  const seenOnline = new Set<string>();
+  const seenRecent = new Set<string>();
+
+  for (const s of sessions || []) {
+    const pid = clean(s.parent_person_id, 80);
+    if (!pid) continue;
+    const lastUsed = s.last_used_at ? new Date(String(s.last_used_at)).getTime() : 0;
+    const kids = contactsByParent.get(pid) || [];
+    const parentName = kids[0]?.parent_display || pid;
+    const childNames = kids.map((k) => k.display_name).filter(Boolean);
+    const lastContact = clean(s.last_contact_id, 80);
+    const childFocus =
+      (lastContact && kids.find((k) => k.contact_id === lastContact)?.display_name) ||
+      childNames[0] ||
+      null;
+    const item = {
+      parent_person_id: pid,
+      parent_name: parentName,
+      children: childNames,
+      child_focus: childFocus,
+      last_used_at: s.last_used_at || null,
+      issued_at: s.issued_at || null,
+      expires_at: s.expires_at || null,
+      last_surface: clean(s.last_surface, 40) || null,
+      last_surface_label: surfaceLabel(String(s.last_surface || "")),
+      online: lastUsed >= now - ONLINE_MS,
+    };
+    if (item.online) {
+      if (!seenOnline.has(pid)) {
+        seenOnline.add(pid);
+        online.push(item);
+      }
+    } else if (!seenRecent.has(pid) && !seenOnline.has(pid)) {
+      seenRecent.add(pid);
+      recent.push(item);
+    }
+  }
+
+  const { data: activityRows } = await admin
+    .from("portal_parent_portal_activity")
+    .select("id, parent_person_id, contact_id, event_type, detail, created_at")
+    .gte("created_at", recentSince)
+    .order("created_at", { ascending: false })
+    .limit(80);
+
+  const activityParentIds = Array.from(
+    new Set((activityRows || []).map((a) => clean(a.parent_person_id, 80)).filter(Boolean)),
+  );
+  for (const pid of activityParentIds) {
+    if (contactsByParent.has(pid)) continue;
+    const { data: more } = await admin
+      .from("portal_parent_contacts")
+      .select("parent_person_id, contact_id, display_name, parent_display, parent_first_name, parent_last_name")
+      .eq("parent_person_id", pid)
+      .limit(20);
+    for (const c of more || []) {
+      const parentDisplay =
+        clean(c.parent_display, 120) ||
+        [clean(c.parent_first_name, 60), clean(c.parent_last_name, 60)].filter(Boolean).join(" ") ||
+        "Parent";
+      const list = contactsByParent.get(pid) || [];
+      list.push({
+        contact_id: clean(c.contact_id, 80),
+        display_name: clean(c.display_name, 120) || "Participant",
+        parent_display: parentDisplay,
+      });
+      contactsByParent.set(pid, list);
+    }
+  }
+
+  const activity = (activityRows || []).map((a) => {
+    const pid = clean(a.parent_person_id, 80);
+    const kids = contactsByParent.get(pid) || [];
+    const cid = clean(a.contact_id, 80);
+    const child =
+      (cid && kids.find((k) => k.contact_id === cid)?.display_name) ||
+      kids[0]?.display_name ||
+      null;
+    return {
+      at: a.created_at,
+      parent_person_id: pid,
+      parent_name: kids[0]?.parent_display || pid,
+      child_name: child,
+      event_type: clean(a.event_type, 40),
+      event_label: surfaceLabel(String(a.event_type || "")),
+      detail: clean(a.detail, 160) || null,
+    };
+  });
+
+  const { count: signInsToday } = await admin
+    .from("portal_parent_portal_sessions")
+    .select("id", { count: "exact", head: true })
+    .gte("issued_at", dayStartIso);
+
+  const { data: absences } = await admin
+    .from("portal_parent_absence_reports")
+    .select("id, created_at, contact_id, status, session_date")
+    .gte("created_at", recentSince)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  const actions: Record<string, unknown>[] = [];
+  for (const ab of absences || []) {
+    actions.push({
+      at: ab.created_at,
+      kind: "absence",
+      label: "Absence reported",
+      detail: clean(ab.session_date, 20) + (ab.status ? ` · ${clean(ab.status, 40)}` : ""),
+      contact_id: clean(ab.contact_id, 80) || null,
+    });
+  }
+
+  const { data: inbound } = await admin
+    .from("portal_parent_whatsapp_inbound")
+    .select("id, created_at, parent_person_id, contact_id, body_preview, meta")
+    .gte("created_at", recentSince)
+    .order("created_at", { ascending: false })
+    .limit(30);
+
+  for (const row of inbound || []) {
+    const meta = row.meta && typeof row.meta === "object" ? (row.meta as Record<string, unknown>) : {};
+    if (clean(meta.source, 40) !== "parent_portal") continue;
+    actions.push({
+      at: row.created_at,
+      kind: "message",
+      label: "Message from Family portal",
+      detail: clean(row.body_preview || meta.body || "", 120) || null,
+      parent_person_id: clean(row.parent_person_id, 80) || null,
+      contact_id: clean(row.contact_id, 80) || null,
+    });
+  }
+
+  actions.sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")));
+
+  return portalAdminJson(200, {
+    ok: true,
+    generated_at: new Date().toISOString(),
+    online_window_minutes: ONLINE_MS / 60000,
+    summary: {
+      online_now: online.length,
+      active_last_24h: online.length + recent.length,
+      sign_ins_today: signInsToday || 0,
+    },
+    online,
+    recent,
+    activity,
+    actions: actions.slice(0, 40),
+  });
+});
