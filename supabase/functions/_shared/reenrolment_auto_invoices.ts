@@ -387,12 +387,12 @@ export function buildReenrolmentInstalments(args: {
   const hint = paymentMethodHint(payCode);
 
   const out: ReenrolInstalment[] = [];
-  /** Bank term/year one-off: mid-August. GC collects earlier than day-1 term start. */
-  const gcAutumnFirstDue = "2026-08-15";
-  const bankAutumnTermDue = "2026-08-15";
-  const bankAutumnDay1Due = "2026-09-01";
+  /** Bank first Autumn payment: mid-August so funds arrive before term. */
+  const bankAutumnFirstDue = "2026-08-15";
+  /** GoCardless: always collect on the 1st — Autumn starts 1 September. */
+  const gcAutumnFirstDue = "2026-09-01";
   const autumnFirstDue =
-    payCode === "gocardless" ? gcAutumnFirstDue : bankAutumnTermDue;
+    payCode === "gocardless" ? gcAutumnFirstDue : bankAutumnFirstDue;
 
   if (payCode === "own_way_flexible" || scheduleCode === "own_term") {
     const terms: Array<{ key: ReenrolTermKey; label: string; due: string }> = [
@@ -428,7 +428,7 @@ export function buildReenrolmentInstalments(args: {
     }
     pushInstalment(out, {
       label: "Full year (1 payment)",
-      dueDateIso: bankAutumnTermDue,
+      dueDateIso: bankAutumnFirstDue,
       amountGbp: withGcFee(totals.annual, payCode),
         academicYear,
     });
@@ -455,9 +455,9 @@ export function buildReenrolmentInstalments(args: {
       for (let hi = 0; hi < t.halves.length; hi++) {
         const h = t.halves[hi];
         let dueIso = h.dueIso;
-        /* Direct Payment: first Autumn half earlier (15 Aug). Bank/Card stays day 1 (1 Sep). */
+        /* Bank: first Autumn half due 15 Aug. GoCardless stays day 1 (1 Sep). */
         if (t.term === "autumn" && hi === 0) {
-          dueIso = payCode === "gocardless" ? gcAutumnFirstDue : bankAutumnDay1Due;
+          dueIso = payCode === "gocardless" ? gcAutumnFirstDue : bankAutumnFirstDue;
         }
         pushInstalment(out, {
           label: `${t.termLabel} · ${h.halfLabel}`,
@@ -477,8 +477,9 @@ export function buildReenrolmentInstalments(args: {
         const m = t.months[mi];
         payNo += 1;
         let dueIso = m.dueIso;
-        if (payCode === "gocardless" && t.term === "autumn" && mi === 0) {
-          dueIso = gcAutumnFirstDue;
+        /* Bank first Autumn month: 15 Aug. GC keeps 1 September (and every 1st). */
+        if (payCode !== "gocardless" && t.term === "autumn" && mi === 0) {
+          dueIso = bankAutumnFirstDue;
         }
         pushInstalment(out, {
           label: `Payment ${payNo} · ${m.label} (${t.label})`,
@@ -516,8 +517,8 @@ export function buildReenrolmentInstalments(args: {
         const m = t.months[mi];
         payNo += 1;
         let dueIso = m.dueIso;
-        if (payCode === "gocardless" && t.term === "autumn" && mi === 0) {
-          dueIso = gcAutumnFirstDue;
+        if (payCode !== "gocardless" && t.term === "autumn" && mi === 0) {
+          dueIso = bankAutumnFirstDue;
         }
         pushInstalment(out, {
           label: `Payment ${payNo} · ${m.label} (${t.label})`,

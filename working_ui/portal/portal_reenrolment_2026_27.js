@@ -11,14 +11,15 @@
   var RE_ENROL_DEADLINE_LABEL = "Wednesday 22 July 2026";
   /** Day after deadline: unconfirmed places released to new-client booking. */
   var RE_ENROL_RELEASE_LABEL = "Thursday 23 July 2026";
-  /** Bank transfer: the first term/year payment must reach us before term starts. */
+  /** Bank transfer: the first Autumn payment must reach us before term starts. */
   var RE_BANK_FIRST_DUE = "by 15 August 2026";
-  /** Direct Payment (GoCardless): first Autumn collection earlier than day-1. */
-  var RE_GC_AUTUMN_FIRST_DUE = "15 August 2026";
-  /** Bank/Card flexi + monthly: day 1 of term month. */
+  var RE_BANK_FIRST_DUE_SHORT = "15 August 2026";
+  /** Direct Payment (GoCardless): always on the 1st — Autumn starts 1 September. */
+  var RE_GC_AUTUMN_FIRST_DUE = "1 September 2026";
+  /** Flexi / monthly catalogue default (day 1); bank Autumn first overrides to mid-August. */
   var RE_BANK_AUTUMN_DAY1 = "1 September 2026";
 
-  /** Bank transfer · flexi term: 2 payments per term (bank day 1; GC overrides Autumn 1st). */
+  /** Bank transfer · flexi term: 2 payments per term (GC day 1; bank Autumn first = 15 Aug). */
   var RE_PAY_FLEXI_TERM = [
     {
       term: "autumn",
@@ -785,15 +786,15 @@
         return termOnly
           ? "Term-by-term: one Direct Payment for " +
               termLabel +
-              " only. Later terms when you reconfirm. First collection 15 August when billing Autumn."
-          : "Same programme total — three Direct Payments (one per term). First collection 15 August 2026, then December and March.";
+              " only. Later terms when you reconfirm. First collection 1 September when billing Autumn."
+          : "Same programme total — three Direct Payments (one per term). First collection 1 September 2026, then December and March.";
       }
       if (schedCode === "term_flexi") {
         return termOnly
           ? "Term-by-term: two Direct Payments for " +
               termLabel +
-              " only. Later terms when you reconfirm. Autumn first half collects 15 August."
-          : "Same programme total — six Direct Payments (two per term). First collection 15 August 2026; later dates follow each half-term.";
+              " only. Later terms when you reconfirm. Autumn first half collects 1 September."
+          : "Same programme total — six Direct Payments (two per term). First collection 1 September 2026; later dates follow each half-term.";
       }
       if (schedCode === "monthly_10") {
         return termOnly
@@ -801,13 +802,15 @@
               installmentCountForSchedule("monthly_10", cadence) +
               " monthly Direct Payments for " +
               termLabel +
-              " only. Later terms when you reconfirm. First collection 15 August when billing Autumn."
-          : "Same programme total — ten Direct Payments (Autumn 4, Spring 3, Summer 3). First collection 15 August 2026; then on the 1st of each month through June.";
+              " only. Later terms when you reconfirm. First collection 1 September when billing Autumn."
+          : "Same programme total — ten Direct Payments (Autumn 4, Spring 3, Summer 3). First collection 1 September 2026; then on the 1st of each month through June.";
       }
       if (schedCode === "monthly_term") {
         return termOnly
-          ? "Term-by-term: monthly Direct Payments for " + termLabel + " only. Later terms when you reconfirm."
-          : "Same programme total — one direct payment per month of each term (Autumn 4, Spring 3, Summer 4 = 11). First collection 15 August 2026; then on the 1st of each month.";
+          ? "Term-by-term: monthly Direct Payments for " +
+              termLabel +
+              " only. Later terms when you reconfirm. Collections on the 1st (Autumn starts 1 September)."
+          : "Same programme total — one direct payment per month of each term (Autumn 4, Spring 3, Summer 4 = 11). Collections on the 1st of each month from 1 September.";
       }
       return "Same programme total — Direct Payment (GoCardless). The office confirms your final collection plan.";
     }
@@ -815,15 +818,15 @@
       return termOnly
         ? "Term-by-term: monthly invoices for " +
             termLabel +
-            " only (Autumn 4 / Spring 3 / Summer 3). Later terms when you reconfirm."
-        : "Same programme total — ten invoices (Autumn 4, Spring 3, Summer 3). Pay each month from the parent portal by bank transfer or Card / Apple Pay. First due 1 September 2026.";
+            " only (Autumn 4 / Spring 3 / Summer 3). Later terms when you reconfirm. First due by 15 August 2026 when billing Autumn."
+        : "Same programme total — ten invoices (Autumn 4, Spring 3, Summer 3). Pay each month from the parent portal by bank transfer or Card / Apple Pay. First due by 15 August 2026; then on the 1st of each month.";
     }
     if (payCode === "bank_transfer" && schedCode === "term_flexi") {
       return termOnly
         ? "Term-by-term: two invoices for " +
             termLabel +
-            " only. Later terms when you reconfirm. First half due on the 1st of the term month."
-        : "Same programme total — six invoices (two per term). First half of each term is due on the 1st (1 September, 1 January, 1 April); second half during half-term week. Pay from the parent portal by bank transfer or Card / Apple Pay.";
+            " only. Later terms when you reconfirm. Autumn first half due by 15 August 2026."
+        : "Same programme total — six invoices (two per term). Autumn first half is due by 15 August 2026; later first halves on the 1st (1 January, 1 April); second half during half-term week. Pay from the parent portal by bank transfer or Card / Apple Pay.";
     }
     if (payCode === "bank_transfer" && schedCode === "term_3" && termOnly) {
       return (
@@ -927,8 +930,8 @@
       payCode === "gocardless" ? RE_GC_AUTUMN_FIRST_DUE : RE_BANK_FIRST_DUE;
     var bankFirstDue =
       payCode === "bank_transfer"
-        ? schedCode === "monthly_10"
-          ? dueOnFirst("September 2026")
+        ? schedCode === "monthly_10" || schedCode === "monthly_term"
+          ? RE_BANK_FIRST_DUE
           : RE_BANK_FIRST_DUE
         : autumnFirstDue;
     var rows = [];
@@ -962,7 +965,9 @@
           var due = h.due;
           if (t.term === "autumn" && hi === 0) {
             due =
-              payCode === "gocardless" ? RE_GC_AUTUMN_FIRST_DUE : RE_BANK_AUTUMN_DAY1;
+              payCode === "gocardless"
+                ? RE_GC_AUTUMN_FIRST_DUE
+                : RE_BANK_FIRST_DUE_SHORT;
           }
           rows.push({
             term: t.term,
@@ -986,8 +991,8 @@
         t.months.forEach(function (label, mi) {
           payNo += 1;
           var due =
-            payCode === "gocardless" && t.term === "autumn" && mi === 0
-              ? RE_GC_AUTUMN_FIRST_DUE
+            payCode !== "gocardless" && t.term === "autumn" && mi === 0
+              ? RE_BANK_FIRST_DUE_SHORT
               : dueOnFirst(label);
           rows.push({
             term: t.term,
@@ -1011,8 +1016,8 @@
         t.months.forEach(function (label, mi) {
           payNo10 += 1;
           var due =
-            payCode === "gocardless" && t.term === "autumn" && mi === 0
-              ? RE_GC_AUTUMN_FIRST_DUE
+            payCode !== "gocardless" && t.term === "autumn" && mi === 0
+              ? RE_BANK_FIRST_DUE_SHORT
               : dueOnFirst(label);
           rows.push({
             term: t.term,
@@ -2011,7 +2016,7 @@
       esc(RE_ENROL_DEADLINE_LABEL) +
       " (last day to respond). From " +
       esc(RE_ENROL_RELEASE_LABEL) +
-      ", unconfirmed places may be released to new clients on our booking website. First bank / Card / Apple Pay due dates from mid-August (term/year) or 1 September (flexi/monthly); Direct Payment first collection 15 August once your mandate is set up — see schedule above.</p>" +
+      ", unconfirmed places may be released to new clients on our booking website. First bank / Card / Apple Pay due dates from mid-August (first Autumn payment by 15 August); Direct Payment (GoCardless) collections on the 1st from 1 September — see schedule above.</p>" +
       "</div></div>" +
       renderReenrolFarewellHtml(data) +
       "</div>"
@@ -2107,48 +2112,50 @@
               (nPay === 1 ? "" : "s") +
               " for " +
               termLabel +
-              " only. First collection 15 August when billing Autumn. Later terms when you reconfirm. £1.50 fee per instalment."
+              " only. First collection 1 September when billing Autumn. Later terms when you reconfirm. £1.50 fee per instalment."
           : "Term-by-term: " +
               nPay +
               " monthly invoice" +
               (nPay === 1 ? "" : "s") +
               " for " +
               termLabel +
-              " only. Later terms when you reconfirm.";
+              " only. First due by 15 August 2026 when billing Autumn. Later terms when you reconfirm.";
       }
       return isGc
-        ? "Regular plan: ten Direct Payments — Autumn 4, Spring 3, Summer 3. First collection 15 August 2026; then on the 1st of each month through June. Same programme total; £1.50 fee per instalment."
-        : "Regular plan: ten invoices — Autumn 4, Spring 3, Summer 3 (September–June). Pay each month from the parent portal by bank transfer (no fee) or Card / Apple Pay (small fee). Same programme total; no admin fee if you pay on time.";
+        ? "Regular plan: ten Direct Payments — Autumn 4, Spring 3, Summer 3. First collection 1 September 2026; then on the 1st of each month through June. Same programme total; £1.50 fee per instalment."
+        : "Regular plan: ten invoices — Autumn 4, Spring 3, Summer 3 (September–June). First due by 15 August 2026; then on the 1st. Pay each month from the parent portal by bank transfer (no fee) or Card / Apple Pay (small fee). Same programme total; no admin fee if you pay on time.";
     }
     if (code === "monthly_term") {
-      return "One payment per month of each term — Autumn 4, Spring 3, Summer 4 (11 across the year).";
+      return isGc
+        ? "One Direct Payment per month of each term — Autumn 4, Spring 3, Summer 4 (11 across the year). Collections on the 1st from 1 September. £1.50 fee per instalment."
+        : "One payment per month of each term — Autumn 4, Spring 3, Summer 4 (11 across the year). First due by 15 August 2026; then on the 1st.";
     }
     if (code === "term_flexi") {
       if (termOnly) {
         return isGc
           ? "Term-by-term: two Direct Payments for " +
               termLabel +
-              " only. Later terms when you reconfirm. £1.50 fee per instalment."
+              " only. First half collects 1 September when billing Autumn. Later terms when you reconfirm. £1.50 fee per instalment."
           : "Term-by-term: two invoices for " +
               termLabel +
-              " only. Later terms when you reconfirm.";
+              " only. Autumn first half due by 15 August 2026. Later terms when you reconfirm.";
       }
       return isGc
-        ? "Six Direct Payments over the year — two per term. Autumn first half collects 15 August; then half-term week, 1 January / half-term, 1 April / half-term. Same programme total; £1.50 fee per instalment."
-        : "Six payments over the year — two per term. First half due on the 1st (1 September, 1 January, 1 April); second half during half-term week. Pay each invoice from the parent portal by bank transfer or Card / Apple Pay — no admin fee if you pay on time.";
+        ? "Six Direct Payments over the year — two per term. Autumn first half collects 1 September; then half-term week, 1 January / half-term, 1 April / half-term. Same programme total; £1.50 fee per instalment."
+        : "Six payments over the year — two per term. Autumn first half due by 15 August 2026; later first halves on the 1st (1 January, 1 April); second half during half-term week. Pay each invoice from the parent portal by bank transfer or Card / Apple Pay — no admin fee if you pay on time.";
     }
     if (code === "term_3") {
       if (termOnly) {
         return isGc
           ? "Term-by-term: one Direct Payment for " +
               termLabel +
-              " only. First collection 15 August when billing Autumn. Later terms when you reconfirm. £1.50 fee on that payment."
+              " only. First collection 1 September when billing Autumn. Later terms when you reconfirm. £1.50 fee on that payment."
           : "Term-by-term: one invoice for " +
               termLabel +
-              " only. Later terms when you reconfirm.";
+              " only. First payment due by 15 August 2026 when billing Autumn. Later terms when you reconfirm.";
       }
       return isGc
-        ? "Three Direct Payments — one per term. First collection 15 August 2026, then December and March. Same programme total; £1.50 fee per instalment."
+        ? "Three Direct Payments — one per term. First collection 1 September 2026, then December and March. Same programme total; £1.50 fee per instalment."
         : "Three payments — one per term (first due by 15 August 2026, then December and March). Pay each invoice from the parent portal by bank transfer or Card / Apple Pay — no admin fee if you pay on time.";
     }
     return "";
