@@ -1565,8 +1565,9 @@
       overflow-wrap: break-word;
     }
     .pp-hub-reenrol__cta {
-      flex: 1 1 100%;
-      width: 100%;
+      flex: 1 1 auto;
+      width: auto;
+      min-width: 0;
       max-width: 100%;
       display: inline-flex;
       align-items: center;
@@ -1574,6 +1575,31 @@
       gap: 8px;
       white-space: nowrap;
       text-decoration: none;
+    }
+    .pp-hub-reenrol__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: stretch;
+      justify-content: stretch;
+      flex: 1 1 100%;
+      min-width: 0;
+      width: 100%;
+    }
+    .pp-hub-reenrol__actions .pp-hub-reenrol__cta {
+      flex: 1 1 calc(50% - 4px);
+    }
+    .pp-hub-reenrol__cta--crash {
+      background: #fff;
+      color: #173247;
+      border: 1.5px solid #173247;
+    }
+    .pp-hub-reenrol__cta--crash:hover,
+    .pp-hub-reenrol__cta--crash:focus-visible {
+      background: #f4f8fb;
+    }
+    .pp-hub-reenrol--auto .pp-hub-reenrol__cta--crash {
+      flex: 1 1 100%;
     }
     .pp-hub-reenrol__cta-ico {
       width: 18px;
@@ -1583,6 +1609,8 @@
     .pp-hub-reenrol__cta > span {
       min-width: 0;
       overflow-wrap: break-word;
+      white-space: normal;
+      text-align: center;
     }
     .pp-hub-reenrol--auto {
       border-color: rgba(23, 50, 71, 0.12);
@@ -3742,7 +3770,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260715-dc-hide-staff-aquatic"></script>
   <script src="/portal/parent_portal_team.js?v=20260710-eiji-hazem-photos"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260715-crash-cal-first"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260715-july-then-activity"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260715-crash-btn-deadline"></script>
   <script src="/portal/parent_portal_app.js?v=20260715-family-push"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

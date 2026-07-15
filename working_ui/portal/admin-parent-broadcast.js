@@ -25,24 +25,18 @@
     query: "",
   };
 
-  var DEFAULT_SUBJECT = "Important Update – ClubSENsational Contact Numbers";
+  var DEFAULT_SUBJECT = "Your Family portal is ready — re-enrol by 22 July";
   var DEFAULT_BODY =
-    "\uD83D\uDCF1 Important Update – ClubSENsational Contact Numbers\n\n" +
     "Dear Parents,\n\n" +
-    "We'd like to let you know about an update to our communication channels.\n\n" +
-    "Due to a technical issue with our original WhatsApp number, we have made some changes to ensure we continue providing a fast and reliable service.\n\n" +
-    "\u2705 Existing ClubSENsational families\n" +
-    "Please contact us via our new WhatsApp number:\n" +
-    "\uD83D\uDCF2 +44 7886 292726\n\n" +
-    "This WhatsApp number is monitored Monday to Sunday, allowing the whole ClubSENsational team to access and respond to messages promptly. It is the best way to contact us for absences, session updates, general enquiries, or any non-urgent matters.\n\n" +
-    "Please note that this number does not accept phone calls.\n\n" +
-    "\uD83D\uDCDE If you need to speak to us directly or have an urgent matter, please call our usual ClubSENsational number:\n" +
-    "+44 7592 558671\n\n" +
-    "This number will continue to be used for urgent parent calls and new bookings.\n\n" +
-    "Until the end of August, while we complete this transition, you may also receive calls from our administration number:\n" +
-    "\uD83D\uDCDE +44 1313 816434\n\n" +
-    "There is no need to save this number—if you receive a call from it, it will be from the ClubSENsational team.\n\n" +
-    "Thank you for your patience and understanding as we improve our communication system.\n\n" +
+    "Your Family portal is ready — you already have access.\n\n" +
+    "Open it anytime: https://www.clubsensational.org/parent\n" +
+    "Sign in with your parent first and last name, plus your oldest child’s date of birth as 8 digits (DDMMYYYY).\n\n" +
+    "You can use the website in any browser. For the best experience, we recommend adding the Family app to your phone Home Screen (iPhone: Share → Add to Home Screen; Android: browser menu → Install app). Open Family from that icon and turn on alerts — then phone notifications for session changes, club announcements, photos and other updates can reach you even when the browser is closed.\n\n" +
+    "In the portal you can already:\n" +
+    "• Re-enrol for 2026/27 — please respond by Wednesday 22 July 2026 (the last day)\n" +
+    "• Book July Intensive Courses & Camps (crash courses) first if you prefer, then complete re-enrolment afterwards\n\n" +
+    "From Thursday 23 July 2026, places that have not been confirmed will be released. Unconfirmed slots may be added to available services for new clients on our booking website.\n\n" +
+    "Thank you,\n" +
     "The ClubSENsational Team";
 
   // Short pointer sent over WhatsApp (Meta template): keeps it to one concise
@@ -52,12 +46,11 @@
   // ("Translated text too long") once the template footer is included.
   var WA_TEMPLATE_MAX = 700;
   var DEFAULT_WA_BODY =
-    "Following our email about our contact numbers:\n\n" +
-    "New ClubSENsational WhatsApp: +44 7886 292726\n" +
-    "Monitored Mon–Sun for messages only (no calls). Save it for absences, updates and enquiries.\n\n" +
-    "From the Family portal you can message us too (WhatsApp or SMS sync there). For urgent calls or new bookings: +44 7592 558671.\n\n" +
-    "Family portal: https://www.clubsensational.org/parent\n" +
-    "Sign in with your parent first and last name, plus your oldest child’s date of birth as 8 digits (DDMMYYYY).";
+    "Your Family portal is ready: https://www.clubsensational.org/parent\n" +
+    "Sign in with parent name + oldest child’s DOB (DDMMYYYY).\n\n" +
+    "Best: Add to Home Screen, open from that icon and turn on alerts — then changes, announcements and photos can reach your phone.\n\n" +
+    "Re-enrol 2026/27 by Wed 22 July (last day). From Thu 23 July, unconfirmed places may go to new clients. Crash courses: book from the portal too (before or after re-enrol).\n\n" +
+    "Full details are in our email.";
 
   function configure(options) {
     if (!options) return;

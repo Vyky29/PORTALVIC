@@ -7,8 +7,10 @@
 
   var ACADEMIC_YEAR = "2026-27";
   var SESSION_KEY = "clubsens_parent_portal_session_v1";
-  var RE_ENROL_DEADLINE_ISO = "2026-07-17";
-  var RE_ENROL_DEADLINE_LABEL = "Friday 17 July 2026";
+  var RE_ENROL_DEADLINE_ISO = "2026-07-22";
+  var RE_ENROL_DEADLINE_LABEL = "Wednesday 22 July 2026";
+  /** Day after deadline: unconfirmed places released to new-client booking. */
+  var RE_ENROL_RELEASE_LABEL = "Thursday 23 July 2026";
   /** Bank transfer: the first term/year payment must reach us before term starts. */
   var RE_BANK_FIRST_DUE = "by 15 August 2026";
   /** Direct Payment (GoCardless): first Autumn collection earlier than day-1. */
@@ -731,7 +733,10 @@
         "Review your current programme and confirm for September 2026. " +
         "<strong>Submit by " +
         esc(RE_ENROL_DEADLINE_LABEL) +
-        "</strong> — payments follow from mid-August (bank transfer) or September (Direct Payment)." +
+        "</strong> — the last day to respond. From " +
+        esc(RE_ENROL_RELEASE_LABEL) +
+        ", places not confirmed will be released and unconfirmed slots may be offered to new clients on our booking website. " +
+        "Payments follow from mid-August (bank transfer) or September (Direct Payment)." +
         "</div>"
       );
     }
@@ -739,7 +744,9 @@
       '<div class="re-banner re-banner--warn">' +
       "<strong>Re-enrolment closed on " +
       esc(RE_ENROL_DEADLINE_LABEL) +
-      ".</strong> Contact info@clubsensational.org if you still need to confirm 2026/27." +
+      ".</strong> From " +
+      esc(RE_ENROL_RELEASE_LABEL) +
+      ", unconfirmed places may be offered to new clients. Contact info@clubsensational.org if you still need to confirm 2026/27." +
       "</div>"
     );
   }
@@ -2002,7 +2009,9 @@
       "</div></div>" +
       '<p class="re-muted re-funding-foot">Re-enrolment closes ' +
       esc(RE_ENROL_DEADLINE_LABEL) +
-      ". First bank / Card / Apple Pay due dates from mid-August (term/year) or 1 September (flexi/monthly); Direct Payment first collection 15 August once your mandate is set up — see schedule above.</p>" +
+      " (last day to respond). From " +
+      esc(RE_ENROL_RELEASE_LABEL) +
+      ", unconfirmed places may be released to new clients on our booking website. First bank / Card / Apple Pay due dates from mid-August (term/year) or 1 September (flexi/monthly); Direct Payment first collection 15 August once your mandate is set up — see schedule above.</p>" +
       "</div></div>" +
       renderReenrolFarewellHtml(data) +
       "</div>"
@@ -3522,7 +3531,11 @@
       showNotice(
         $("reFormNotice"),
         "error",
-        "Re-enrolment closed on " + RE_ENROL_DEADLINE_LABEL + ". Email info@clubsensational.org for help.",
+        "Re-enrolment closed on " +
+          RE_ENROL_DEADLINE_LABEL +
+          ". From " +
+          RE_ENROL_RELEASE_LABEL +
+          ", unconfirmed places may be offered to new clients. Email info@clubsensational.org for help.",
       );
       return;
     }

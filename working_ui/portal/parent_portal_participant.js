@@ -830,6 +830,7 @@
         esc(booking.parent_action_note) +
         "</span>" +
         "</div>" +
+        crashBookBtnHtml(data) +
         "</aside>"
       );
     }
@@ -841,14 +842,32 @@
       '<aside class="pp-hub-reenrol" aria-label="Re-enrolment 2026/27">' +
       '<div class="pp-hub-reenrol__copy">' +
       "<strong>Re-enrol 2026/27</strong>" +
-      '<span class="pp-muted">Confirm places for next year</span>' +
+      '<span class="pp-muted">Confirm by Wed 22 July — or book crash courses first</span>' +
       "</div>" +
+      '<div class="pp-hub-reenrol__actions">' +
       '<a class="pp-btn pp-btn--primary pp-hub-reenrol__cta" href="' +
       esc(href) +
       '">' +
       '<svg class="pp-hub-reenrol__cta-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>' +
       "<span>Start re-enrolment</span></a>" +
+      crashBookBtnHtml(data) +
+      "</div>" +
       "</aside>"
+    );
+  }
+
+  function crashBookBtnHtml(data) {
+    var p = (data && data.participant) || {};
+    var contactId = String(p.contact_id || "").trim();
+    var href =
+      "/parent/crash-summer" +
+      (contactId ? "?contact_id=" + encodeURIComponent(contactId) : "");
+    return (
+      '<a class="pp-btn pp-btn--ghost pp-hub-reenrol__cta pp-hub-reenrol__cta--crash" href="' +
+      esc(href) +
+      '">' +
+      '<svg class="pp-hub-reenrol__cta-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>' +
+      "<span>Book crash courses</span></a>"
     );
   }
 
@@ -2860,12 +2879,20 @@
           ? yearChips
           : '<p class="pp-muted">Day Centre dates will appear here once your weekdays are on the current roster.</p>');
     } else if (!booking.submitted || !booking.items.length) {
+      var crashHref =
+        "/parent/crash-summer" +
+        (contactId ? "?contact_id=" + encodeURIComponent(String(contactId)) : "");
       body =
         '<p class="pp-muted">You have not submitted re-enrolment choices for 2026/27 yet.</p>' +
-        '<p class="pp-muted">Open the booking form to confirm weekly activities and funding for next year.</p>' +
+        '<p class="pp-muted">Please respond by <strong>Wednesday 22 July 2026</strong>. From Thursday 23 July, unconfirmed places may be released to new clients. You can book crash courses first if you prefer, then complete re-enrolment.</p>' +
+        '<div class="pp-hub-reenrol__actions" style="margin-top:10px">' +
         '<a class="pp-btn pp-btn--primary" href="' +
         esc(reenrolHref) +
-        '">Open re-enrolment form</a>';
+        '">Open re-enrolment form</a>' +
+        '<a class="pp-btn pp-btn--ghost" href="' +
+        esc(crashHref) +
+        '">Book crash courses</a>' +
+        "</div>";
     } else {
       body =
         '<p class="pp-muted">Submitted ' +
