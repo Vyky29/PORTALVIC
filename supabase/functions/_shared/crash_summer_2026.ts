@@ -688,6 +688,7 @@ export function crashInvoiceServiceLabel(activities: CrashActivity[]): string {
 export function crashBankTransferReference(
   displayName: string,
   activities: CrashActivity[],
+  invoiceNumber?: string | null,
 ): string {
   const name = String(displayName || "")
     .replace(/[^a-zA-Z0-9 '&+-]+/g, " ")
@@ -695,5 +696,11 @@ export function crashBankTransferReference(
     .trim()
     .slice(0, 28) || "Participant";
   const service = crashInvoiceServiceLabel(activities);
-  return `${name} ${service}`.trim().slice(0, 48);
+  const inv = String(invoiceNumber || "")
+    .replace(/\s+/g, "")
+    .trim()
+    .slice(0, 16);
+  const human = `${name} ${service}`.trim();
+  if (inv) return `${inv} ${human}`.trim().slice(0, 48);
+  return human.slice(0, 48);
 }

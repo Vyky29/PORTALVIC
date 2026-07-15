@@ -335,6 +335,11 @@ Deno.serve(async (req) => {
   }
 
   const invoiceId = String((created.invoice as { id?: string })?.id || "");
+  const bankRefWithInv = crashBankTransferReference(
+    displayName,
+    activities,
+    created.invoiceNumber,
+  );
   await supabase
     .from("portal_crash_summer_bookings")
     .update({
@@ -342,6 +347,16 @@ Deno.serve(async (req) => {
       updated_at: new Date().toISOString(),
     })
     .eq("id", booking.id);
+
+  if (invoiceId && bankRefWithInv) {
+    await supabase
+      .from("portal_parent_invoice_share")
+      .update({
+        reference_text: bankRefWithInv,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", invoiceId);
+  }
 
   // Signed PDF URL for pay screen (7 days).
   let pdfUrl: string | null = null;
@@ -461,8 +476,8 @@ Deno.serve(async (req) => {
       payee_name: tide.payee_name,
       sort_code: tide.sort_code,
       account_number: tide.account_number,
-      // Always participant + service for crash (ignore static Tide "Invoice Number" hint).
-      reference_hint: bankRef,
+      // Prefer INV-P + participant/service so Tide matching can score strong.
+      reference_hint: bankRefWithInv || bankRef,
       message: tide.available
         ? null
         : "Contact the office for bank transfer details.",

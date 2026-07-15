@@ -20,7 +20,14 @@
     }
   };
 
-  var state = { filter: 'all', invoices: [], meta: {}, searchHits: [] };
+  var state = {
+    filter: 'all',
+    invoices: [],
+    meta: {},
+    searchHits: [],
+    tideMatches: [],
+    tideMeta: {}
+  };
 
   function configure(options) {
     if (!options) return;
@@ -100,6 +107,169 @@
       return { error: (j && j.error) || 'request_failed', message: (j && j.message) || '' };
     }
     return j;
+  }
+
+  function tideScoreChip(score) {
+    var s = String(score || 'none');
+    var tone = s === 'strong' ? 'ok' : s === 'medium' ? 'pend' : 'warn';
+    return '<span class="chip chip--' + tone + '">' + esc(s) + '</span>';
+  }
+
+  function tideMatchRowHtml(m) {
+    var id = esc(m.id);
+    var inv = m.invoice || null;
+    var invLabel = inv
+      ? esc(inv.invoice_number || String(inv.id).slice(0, 8)) +
+        ' · ' +
+        esc(inv.participant_name || inv.contact_id || '—') +
+        ' · ' +
+        esc(formatMoney(inv.amount_gbp))
+      : '<span class="muted">No invoice suggested</span>';
+    var confirmDisabled = !inv || inv.payment_status === 'paid' ? ' disabled' : '';
+    return (
+      '<tr>' +
+      '<td style="min-width:0;max-width:12rem;overflow-wrap:break-word">' +
+      esc(formatDate(m.booking_date)) +
+      '</td>' +
+      '<td>' +
+      esc(formatMoney(m.amount_gbp)) +
+      '</td>' +
+      '<td style="min-width:0;max-width:18rem;overflow-wrap:break-word">' +
+      esc(m.reference_raw || '—') +
+      '</td>' +
+      '<td>' +
+      tideScoreChip(m.score) +
+      '</td>' +
+      '<td style="min-width:0;max-width:16rem;overflow-wrap:break-word">' +
+      invLabel +
+      '</td>' +
+      '<td style="white-space:nowrap">' +
+      '<button type="button" class="btn btn--sm btn--primary" data-tide-act="confirm" data-tide-id="' +
+      id +
+      '"' +
+      confirmDisabled +
+      '>Confirm</button> ' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-tide-act="ignore" data-tide-id="' +
+      id +
+      '">Ignore</button>' +
+      '</td>' +
+      '</tr>'
+    );
+  }
+
+  async function loadTideMatches() {
+    var r = await api('portal-admin-tide-match-list', { status: 'suggested', limit: 80 });
+    if (r.error) {
+      state.tideMatches = [];
+      state.tideMeta = {};
+      return r;
+    }
+    state.tideMatches = r.matches || [];
+    state.tideMeta = r.meta || {};
+    return r;
+  }
+
+  function renderTidePanel() {
+    var host = global.document.getElementById('portalTideMatchHost');
+    if (!host) return;
+    var rows = state.tideMatches || [];
+    var meta = state.tideMeta || {};
+    if (!rows.length) {
+      host.innerHTML =
+        '<p class="muted" style="margin:8px 0 0;overflow-wrap:break-word">No open Tide suggestions. Export credits from Tide and upload the CSV above.</p>';
+      return;
+    }
+    host.innerHTML =
+      '<p class="muted" style="margin:0 0 8px;overflow-wrap:break-word">' +
+      esc(String(meta.suggested || rows.length)) +
+      ' suggested (' +
+      esc(String(meta.strong || 0)) +
+      ' strong · ' +
+      esc(String(meta.medium || 0)) +
+      ' review). Confirm marks the invoice paid and posts Payment to Xero when linked — bank-feed tick in Xero stays manual.</p>' +
+      '<div style="overflow:auto;max-width:100%">' +
+      '<table class="table" style="width:100%;min-width:42rem">' +
+      '<thead><tr><th>Date</th><th>Amount</th><th>Reference</th><th>Score</th><th>Invoice</th><th>Actions</th></tr></thead>' +
+      '<tbody>' +
+      rows.map(tideMatchRowHtml).join('') +
+      '</tbody></table></div>';
+
+    host.querySelectorAll('[data-tide-act]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var act = btn.getAttribute('data-tide-act');
+        var matchId = btn.getAttribute('data-tide-id');
+        if (!act || !matchId) return;
+        btn.disabled = true;
+        void api('portal-admin-tide-match-confirm', {
+          action: act,
+          match_id: matchId
+        }).then(function (r) {
+          btn.disabled = false;
+          if (r.error) {
+            cfg.toast(r.message || r.error || 'Tide match failed', 'error');
+            return;
+          }
+          cfg.toast(
+            act === 'confirm' ? 'Tide match confirmed — invoice paid' : 'Tide row ignored',
+            'ok'
+          );
+          void refreshTideAndInvoices();
+        });
+      });
+    });
+  }
+
+  async function refreshTideAndInvoices() {
+    await loadTideMatches();
+    renderTidePanel();
+    var invHost = global.document.getElementById('portalParentInvoicesHost');
+    if (invHost) void renderHost(invHost);
+  }
+
+  function bindTideMatchPanel() {
+    var fileEl = global.document.getElementById('portalTideMatchFile');
+    var uploadBtn = global.document.getElementById('portalTideMatchUpload');
+    var refreshBtn = global.document.getElementById('portalTideMatchRefresh');
+    if (uploadBtn && fileEl) {
+      uploadBtn.addEventListener('click', function () {
+        var file = fileEl.files && fileEl.files[0];
+        if (!file) {
+          cfg.toast('Choose a Tide CSV first', 'error');
+          return;
+        }
+        var fd = new FormData();
+        fd.append('file', file);
+        uploadBtn.disabled = true;
+        void api('portal-admin-tide-match-upload', fd, true).then(function (r) {
+          uploadBtn.disabled = false;
+          if (r.error) {
+            cfg.toast(r.message || r.error || 'Upload failed', 'error');
+            return;
+          }
+          var scores = r.scores || {};
+          cfg.toast(
+            'Parsed ' +
+              (r.parsed || 0) +
+              ' · ' +
+              (scores.strong || 0) +
+              ' strong / ' +
+              (scores.medium || 0) +
+              ' review',
+            'ok'
+          );
+          fileEl.value = '';
+          void refreshTideAndInvoices();
+        });
+      });
+    }
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', function () {
+        void refreshTideAndInvoices();
+      });
+    }
+    void loadTideMatches().then(function () {
+      renderTidePanel();
+    });
   }
 
   function statusChip(payment, share) {
@@ -752,6 +922,16 @@
       '<button type="button" class="btn btn--sm btn--primary" id="portalParentInvoicesPushXero">Push to Xero</button>' +
       '<button type="button" class="btn btn--sm" id="portalParentInvoicesExportXero">Export to Xero CSV</button>' +
       '</div>' +
+      '<details style="margin:0 0 14px;padding:12px;border:1px solid var(--line,#e5e7eb);border-radius:10px;max-width:100%;min-width:0">' +
+      '<summary style="cursor:pointer;font-weight:700">Match Tide bank CSV</summary>' +
+      '<p class="muted" style="margin:8px 0 10px;max-width:48rem;overflow-wrap:break-word">Export inbound payments from Tide → upload here. Portal suggests INV-P matches by reference + amount. <strong>Confirm</strong> marks paid (and Xero Payment when linked). Xero bank-feed reconcile stays in Xero.</p>' +
+      '<div class="toolbar" style="flex-wrap:wrap;gap:8px;margin-bottom:8px">' +
+      '<input class="inp" id="portalTideMatchFile" type="file" accept=".csv,text/csv,text/plain" style="max-width:20rem;min-width:0" />' +
+      '<button type="button" class="btn btn--sm btn--primary" id="portalTideMatchUpload">Upload &amp; score</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" id="portalTideMatchRefresh">Refresh matches</button>' +
+      '</div>' +
+      '<div id="portalTideMatchHost"><p class="muted">Loading…</p></div>' +
+      '</details>' +
       '<div id="portalParentInvoicesHost"><p class="muted">Loading…</p></div>' +
       '</div></div>'
     );
@@ -760,11 +940,13 @@
   function bindEmbed() {
     state.filter = 'all';
     bindUploadForm();
+    bindTideMatchPanel();
     var host = global.document.getElementById('portalParentInvoicesHost');
     var refresh = global.document.getElementById('portalParentInvoicesRefreshEmbed');
     if (refresh) {
       refresh.addEventListener('click', function () {
         void renderHost(host);
+        void refreshTideAndInvoices();
       });
     }
     var exportBtn = global.document.getElementById('portalParentInvoicesExportXero');
