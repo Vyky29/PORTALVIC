@@ -148,11 +148,13 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
 
   // Weekly packs: one row per time unit (parents book another row to add more time).
   for (const week of weeks) {
-    const weekLabel =
-      week.id === "w1"
-        ? "Week 1 · climb 20–23 · swim 21–24 Jul"
-        : "Week 2 · Tue 28 – Fri 31 Jul";
     for (const act of activities) {
+      const weekLabel =
+        week.id === "w1"
+          ? (act.id === "climbing"
+            ? "Week 1 · Mon 20 – Thu 23 Jul"
+            : "Week 1 · Tue 21 – Fri 24 Jul")
+          : "Week 2 · Tue 28 – Fri 31 Jul";
       const packPrice =
         act.id === "climbing"
           ? CRASH_PRICES.climbing.weekly_pack
