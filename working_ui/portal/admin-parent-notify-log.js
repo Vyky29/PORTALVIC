@@ -83,6 +83,7 @@
     mobileShowThread: false,
     stickToBottom: true,
     contactDirectory: [],
+    threadRefresh: { sig: "", deferRefresh: false },
   };
 
   var SEEN_STORE_KEY = "portal_pnlog_seen_v1";
@@ -1183,7 +1184,7 @@
       return '<video class="portal-pnlog-bubble__img" src="' + url + '" controls playsinline></video>';
     }
     if (mime.indexOf("audio") === 0 || type === "audio") {
-      return '<audio class="portal-pnlog-bubble__audio" src="' + url + '" controls></audio>';
+      return '<audio class="portal-pnlog-bubble__audio" src="' + url + '" controls preload="auto"></audio>';
     }
     return (
       '<a class="portal-pnlog-bubble__file" href="' +
@@ -1305,6 +1306,24 @@
     return t.events.map(renderBubble).join("");
   }
 
+  function threadEventsSig(t) {
+    if (!t || !Array.isArray(t.events)) return "";
+    return t.events
+      .map(function (ev) {
+        return [
+          ev.id || "",
+          ev.when || "",
+          ev.dir || "",
+          ev.body || "",
+          ev.media_url || "",
+          ev.whatsapp_delivered_at || "",
+          ev.whatsapp_read_at || "",
+          ev.whatsapp_status || "",
+        ].join("\x1f");
+      })
+      .join("\n");
+  }
+
   function ensureChatShell(host) {
     var shell = host.querySelector("#portalPnlogChatShell");
     if (shell) return shell;
@@ -1362,6 +1381,7 @@
       var t = findThread(next);
       if (t) markThreadSeen(next, t.lastInboundAt || "");
       state.stickToBottom = true;
+      state.threadRefresh.sig = "";
     } else {
       state.mobileShowThread = false;
     }
@@ -1526,7 +1546,29 @@
       if (emptyEl) emptyEl.hidden = true;
       if (activeEl) activeEl.hidden = false;
       if (headEl) headEl.innerHTML = renderPaneHeadHtml(selected);
-      if (threadEl) threadEl.innerHTML = renderThreadMessagesHtml(selected);
+      if (threadEl) {
+        var threadHtml = renderThreadMessagesHtml(selected);
+        var threadSig = String(selected.key || "") + "::" + threadEventsSig(selected);
+        var maybeUpdate =
+          typeof global.portalWaMaybeUpdateThreadHost === "function"
+            ? global.portalWaMaybeUpdateThreadHost
+            : function (host, html) {
+                if (host) host.innerHTML = html;
+                return true;
+              };
+        maybeUpdate(threadEl, threadHtml, threadSig, {
+          fromRefresh: !!fromRefresh,
+          state: state.threadRefresh,
+        });
+        if (typeof global.portalWaBindThreadMediaDefer === "function") {
+          global.portalWaBindThreadMediaDefer(threadEl, function () {
+            if (state.threadRefresh.deferRefresh) {
+              state.threadRefresh.deferRefresh = false;
+              renderChat(true);
+            }
+          });
+        }
+      }
       // Keep the same textarea node while typing / on poll so Grammarly + focus stay.
       mountComposer(selected, !fromRefresh && !wasComposing);
       syncComposerSendingState();

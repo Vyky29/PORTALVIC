@@ -23,6 +23,7 @@
     mediaRecorder: null,
     recordChunks: [],
     mobileShowThread: false,
+    threadRefresh: { sig: "", deferRefresh: false },
   };
 
   var cfg = {
@@ -542,7 +543,7 @@
       return (
         '<audio class="portal-staff-wa-admin__audio" src="' +
         esc(url) +
-        '" controls></audio>'
+        '" controls preload="auto"></audio>'
       );
     }
     return (
@@ -572,6 +573,7 @@
   function openStaffThread(username) {
     var key = String(username || "").trim();
     if (!key) return;
+    state.threadRefresh.sig = "";
     state.mobileShowThread = true;
     syncMobileLayout();
     void loadThread(key).then(function () {
@@ -637,7 +639,26 @@
     renderMessages();
   }
 
-  function renderMessages() {
+  function staffMessagesSig(messages) {
+    return (messages || [])
+      .map(function (m) {
+        return [
+          m.id || "",
+          m.created_at || "",
+          m.direction || "",
+          m.body_text || "",
+          m.media_url || "",
+          m.whatsapp_status || "",
+          m.whatsapp_delivered_at || "",
+          m.whatsapp_read_at || "",
+        ].join("\x1f");
+      })
+      .join("\n");
+  }
+
+  function renderMessages(opts) {
+    opts = opts || {};
+    var fromRefresh = !!opts.fromRefresh;
     var host = document.getElementById("portalStaffWaMsgs");
     var head = document.getElementById("portalStaffWaHead");
     if (head) {
@@ -668,9 +689,11 @@
     }
     if (!state.messages.length) {
       host.innerHTML = '<p class="muted">No messages yet.</p>';
+      state.threadRefresh.sig = "";
       return;
     }
-    host.innerHTML = state.messages
+    var savedScroll = host.scrollTop;
+    var html = state.messages
       .map(function (m) {
         var dir = m.direction === "inbound" ? "in" : "out";
         var who = dir === "in" ? "Staff" : "Admin";
@@ -729,7 +752,28 @@
         );
       })
       .join("");
-    host.scrollTop = host.scrollHeight;
+    var sig = String(state.selected || "") + "::" + staffMessagesSig(state.messages);
+    var maybeUpdate =
+      typeof global.portalWaMaybeUpdateThreadHost === "function"
+        ? global.portalWaMaybeUpdateThreadHost
+        : function (h, inner) {
+            if (h) h.innerHTML = inner;
+            return true;
+          };
+    var updated = maybeUpdate(host, html, sig, {
+      fromRefresh: fromRefresh,
+      state: state.threadRefresh,
+    });
+    if (typeof global.portalWaBindThreadMediaDefer === "function") {
+      global.portalWaBindThreadMediaDefer(host, function () {
+        if (state.threadRefresh.deferRefresh) {
+          state.threadRefresh.deferRefresh = false;
+          renderMessages({ fromRefresh: true });
+        }
+      });
+    }
+    if (updated) host.scrollTop = host.scrollHeight;
+    else host.scrollTop = savedScroll;
   }
 
   async function loadDirectory(opts) {
