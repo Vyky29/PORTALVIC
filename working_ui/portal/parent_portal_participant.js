@@ -1434,12 +1434,22 @@
   }
 
   function isClubClosedIso(iso, data) {
+    var termTo = currentYearTermToIso(data);
     // Until Booking 2026/27 is submitted: current-year roster only.
     if (!familyAcceptedNextYear(data)) {
-      var termTo = currentYearTermToIso(data);
       if (!iso || iso < CURRENT_YEAR_TERM_FROM || iso > termTo) return true;
       if (CURRENT_YEAR_TERM_CLOSED[iso]) return true;
       if (isoInRange(iso, CURRENT_YEAR_TERM_BREAK_FROM, CURRENT_YEAR_TERM_BREAK_TO)) return true;
+      return false;
+    }
+    // After re-enrolment: still honour remaining Summer 25/26 sessions, then 2026/27.
+    if (
+      iso &&
+      iso >= CURRENT_YEAR_TERM_FROM &&
+      iso <= termTo &&
+      !CURRENT_YEAR_TERM_CLOSED[iso] &&
+      !isoInRange(iso, CURRENT_YEAR_TERM_BREAK_FROM, CURRENT_YEAR_TERM_BREAK_TO)
+    ) {
       return false;
     }
     var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
@@ -1502,13 +1512,25 @@
     var out = [];
     var max = Math.max(1, limit || 3);
     var termTo = currentYearTermToIso(data);
-    var horizon = familyAcceptedNextYear(data) ? 28 : 14;
-    if (!familyAcceptedNextYear(data)) {
+    var acceptedNext = familyAcceptedNextYear(data);
+    var horizon = acceptedNext ? 28 : 14;
+    if (!acceptedNext) {
       try {
         var end = new Date(String(termTo) + "T12:00:00");
         var daysLeft = Math.ceil((end.getTime() - today.getTime()) / 86400000) + 1;
         if (daysLeft > horizon) horizon = Math.min(45, Math.max(horizon, daysLeft));
       } catch (_e) {}
+    } else {
+      // After re-enrolment, first Autumn session may be weeks away (e.g. Jul → Sep).
+      try {
+        var calNy = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
+        var openFrom = calNy && calNy.openFrom ? String(calNy.openFrom) : "2026-09-01";
+        var open = new Date(openFrom + "T12:00:00");
+        var daysToOpen = Math.ceil((open.getTime() - today.getTime()) / 86400000);
+        if (Number.isFinite(daysToOpen)) {
+          horizon = Math.max(horizon, Math.min(200, Math.max(0, daysToOpen) + 28));
+        }
+      } catch (_e2) {}
     }
     for (var offset = 0; offset < horizon && out.length < max; offset++) {
       var d = addDaysLocal(today, offset);
@@ -2629,6 +2651,8 @@
       : [];
     var calIco =
       '<svg class="pp-hub-ops__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
+    var chipsHtml =
+      '<div class="pp-hub-ops__badge-row">' + termSessionDateChipsHtml(data) + "</div>";
     var nextBody;
     if (!hasServices) {
       nextBody =
@@ -2643,30 +2667,20 @@
       var endNote;
       if (!hasCrash && !hasNextYear) {
         endNote =
-          "Summer Term 25/26 session dates for your usual days. Past sessions are green; the next one is highlighted. Book crash or re-enrol 2026/27 when you are ready.";
-      } else if (
-        booking.parent_action === "auto"
-      ) {
+          "No upcoming session on the calendar yet. Past sessions are green; the next one will show here when dates open.";
+      } else if (booking.parent_action === "auto") {
         endNote =
           "No more sessions left this summer term. Your 2026/27 place continues with the office — nothing for you to submit.";
+      } else if (hasNextYear) {
+        endNote =
+          "No upcoming session found on your usual days yet. Check the term dates above for when 2026/27 starts.";
       } else {
         endNote = "No more sessions left this summer term. Book 2026/27 when you are ready.";
       }
-      nextBody =
-        '<div class="pp-hub-ops__next">' +
-        '<div class="pp-hub-ops__badge-row">' +
-        termSessionDateChipsHtml(data) +
-        "</div>" +
-        '<p class="pp-muted pp-hub-ops__empty">' +
-        esc(endNote) +
-        "</p>" +
-        "</div>";
+      nextBody = '<p class="pp-muted pp-hub-ops__empty">' + esc(endNote) + "</p>";
     } else {
       nextBody =
         '<div class="pp-hub-ops__next">' +
-        '<div class="pp-hub-ops__badge-row">' +
-        termSessionDateChipsHtml(data) +
-        "</div>" +
         '<div class="pp-hub-ops__when-row' +
         (next.isToday ? " pp-hub-ops__when-row--today" : "") +
         '">' +
@@ -2681,11 +2695,15 @@
         "</ul></div>";
     }
     return (
-      '<section class="pp-hub-ops" aria-label="Upcoming session">' +
+      '<section class="pp-hub-ops" aria-label="Sessions overview">' +
       '<div class="pp-hub-ops__panel">' +
       '<div class="pp-hub-ops__main">' +
-      nextBody +
+      chipsHtml +
       "</div></div>" +
+      '<p class="pp-pax-info-section-label pp-pax-info-section-label--next">Next session</p>' +
+      '<div class="pp-hub-ops__next-block">' +
+      nextBody +
+      "</div>" +
       '<div id="ppHubAlerts" class="pp-hub-alerts" hidden></div>' +
       "</section>"
     );
