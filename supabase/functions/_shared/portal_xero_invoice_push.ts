@@ -73,8 +73,10 @@ export async function pushPortalInvoiceShareToXero(
         : Number.isFinite(amt) && amt !== 0
           ? amt / qty
           : 0;
+      const detail = clean(ln.detail, 200);
+      const baseDesc = clean(ln.description, 800) || clean(share.line_description, 800);
       return {
-        description: clean(ln.description, 800) || clean(share.line_description, 800),
+        description: detail ? `${baseDesc} — ${detail}` : baseDesc,
         quantity: qty,
         unitAmount,
         itemCode: clean(ln.xero_item_code, 80) || null,

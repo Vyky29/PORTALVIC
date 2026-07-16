@@ -22,6 +22,7 @@ export type PortalInvoicePdfInput = {
   /** Individual invoice rows (one per service/product). */
   lineItems?: Array<{
     description: string;
+    detail?: string | null;
     quantity: number;
     unit_price_gbp: number;
     amount_gbp: number;
@@ -337,6 +338,7 @@ export async function buildPortalTaxInvoicePdf(
   const rawLineItems = (input.lineItems || [])
     .map((line) => ({
       description: pdfSafeText(line?.description || "Service"),
+      detail: pdfSafeText(line?.detail || ""),
       quantity: Number(line?.quantity),
       unit_price_gbp: Number(line?.unit_price_gbp),
       amount_gbp: Number(line?.amount_gbp),
@@ -360,6 +362,7 @@ export async function buildPortalTaxInvoicePdf(
     if (Math.abs(adjustment) >= 0.01) {
       rawLineItems.push({
         description: adjustment < 0 ? "Family credit applied" : "Invoice adjustment",
+        detail: "",
         quantity: 1,
         unit_price_gbp: adjustment,
         amount_gbp: adjustment,
@@ -375,10 +378,15 @@ export async function buildPortalTaxInvoicePdf(
         : splitVat20(line.amount_gbp);
       const rowUnitNet = round4Money(rowSplit.net / line.quantity);
       const rowDesc = wrapPdfLines(line.description, 34).slice(0, 3);
-      const rowHeight = Math.max(24, rowDesc.length * 11 + 8);
+      const rowDetail = line.detail ? wrapPdfLines(line.detail, 40).slice(0, 2) : [];
+      const rowHeight = Math.max(24, (rowDesc.length + rowDetail.length) * 11 + 8);
       const rowTop = y;
       for (const desc of rowDesc) {
         page.drawText(desc, { x: colDescX, y, size: 8.5, font, color: ink });
+        y -= 11;
+      }
+      for (const det of rowDetail) {
+        page.drawText(det, { x: colDescX, y, size: 7.5, font, color: muted });
         y -= 11;
       }
       // Keep all values on the same baseline as the service name.

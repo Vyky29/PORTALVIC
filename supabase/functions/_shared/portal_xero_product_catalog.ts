@@ -5,6 +5,7 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1
 import type { PortalInvoiceVatMode } from "./portal_tax_invoice_pdf.ts";
 import {
   formatServiceTypeLabel,
+  formatTimeSlotLabel,
   normalizeServiceType,
   type ParsedSlot,
 } from "./reenrolment_catalog.ts";
@@ -12,6 +13,8 @@ import {
 export type PortalInvoiceLineItem = {
   service_key: string;
   description: string;
+  /** Session day/time/venue shown under the description (e.g. "Sunday 2:00–2:30 · SwimFarm"). */
+  detail?: string | null;
   quantity: number;
   unit_price_gbp: number;
   amount_gbp: number;
@@ -84,6 +87,20 @@ export function lineDescriptionForSlot(
   return day ? `${mins}' ${label} — ${day}` : `${mins}' ${label}`;
 }
 
+/** "Sunday 2:00pm to 2:30pm · SwimFarm" from a weekly slot (day, time, venue). */
+export function slotSessionDetail(
+  slot: Pick<ParsedSlot, "day" | "timeSlot" | "venue">,
+): string {
+  const bits = [
+    String(slot.day || "").trim(),
+    formatTimeSlotLabel(String(slot.timeSlot || "")),
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const venue = String(slot.venue || "").trim();
+  return [bits, venue].filter(Boolean).join(" · ");
+}
+
 export async function loadProductMap(
   admin: SupabaseClient,
 ): Promise<Map<string, ProductMapRow>> {
@@ -123,7 +140,13 @@ export function buildReenrolTermLineItems(input: ReenrolLineBuildInput): PortalI
   const choices = input.weeklyChoices || {};
   const byKey = new Map<
     string,
-    { service_key: string; description: string; sessions: number; termTotal: number }
+    {
+      service_key: string;
+      description: string;
+      details: string[];
+      sessions: number;
+      termTotal: number;
+    }
   >();
 
   for (const slot of input.slots || []) {
@@ -137,16 +160,19 @@ export function buildReenrolTermLineItems(input: ReenrolLineBuildInput): PortalI
 
     const service_key = serviceKeyFromSlot(slot);
     const description = lineDescriptionForSlot(slot);
+    const detail = slotSessionDetail(slot);
     const sessions = Number(slot.sessions?.[input.term] || 0);
     const prev = byKey.get(service_key);
     if (prev) {
       prev.sessions += sessions > 0 ? sessions : 1;
       prev.termTotal = round2(prev.termTotal + termTotal);
       if (description.length > prev.description.length) prev.description = description;
+      if (detail && !prev.details.includes(detail)) prev.details.push(detail);
     } else {
       byKey.set(service_key, {
         service_key,
         description,
+        details: detail ? [detail] : [],
         sessions: sessions > 0 ? sessions : 1,
         termTotal: round2(termTotal),
       });
@@ -162,6 +188,7 @@ export function buildReenrolTermLineItems(input: ReenrolLineBuildInput): PortalI
     lines.push({
       service_key: agg.service_key,
       description: label || agg.description,
+      detail: agg.details.join(" · ") || null,
       quantity: qty,
       unit_price_gbp: unit,
       amount_gbp: agg.termTotal,
@@ -224,7 +251,10 @@ export function lineItemsToDescription(
     lead +
     "\n\n" +
     lines
-      .map((l) => `${l.description} — GBP ${l.amount_gbp.toFixed(2)}`)
+      .map((l) => {
+        const detail = String(l.detail || "").trim();
+        return `${l.description}${detail ? ` (${detail})` : ""} — GBP ${l.amount_gbp.toFixed(2)}`;
+      })
       .join("\n")
   );
 }
