@@ -75,7 +75,7 @@
   <script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260714-one-feedback"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260712-payload-cache"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260716-register-fast"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260709-family-credits"></script>
@@ -18279,7 +18279,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260716-cancel-selfserve';
+    var PORTAL_ADMIN_HUB_BUILD = '20260716-register-fast';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
@@ -18735,6 +18735,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
     }
     var __adminSessionFeedbackInflight = null;
+    var __adminSessionFeedbackCache = null;
     async function adminFetchSessionFeedbackForHub(){
       if(__adminSessionFeedbackInflight) return __adminSessionFeedbackInflight;
       __adminSessionFeedbackInflight = (async function(){
@@ -18742,34 +18743,69 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           return await adminFetchSessionFeedbackForHubInner();
         }catch(innerErr){
           console.warn('[admin] session_feedback inner failed', innerErr);
-          return [];
+          return (__adminSessionFeedbackCache && __adminSessionFeedbackCache.length)
+            ? __adminSessionFeedbackCache.slice()
+            : [];
         }finally{
           __adminSessionFeedbackInflight = null;
         }
       })();
       return __adminSessionFeedbackInflight;
     }
+    /**
+     * Register / Sessions hub: prefer RPC (fast, authenticated). Edge is legacy fallback only.
+     * Previously edge-first + 35s abort + outer 45s timeout routinely returned 0 rows before RPC ran.
+     */
     async function adminFetchSessionFeedbackForHubInner(){
       var since = new Date();
       since.setDate(since.getDate() - 150);
       var sinceIso = since.toISOString().slice(0, 10);
-      var edgeResult = await adminFetchSessionFeedbackViaEdge(sinceIso);
-      var rows = (edgeResult && edgeResult.rows) ? edgeResult.rows : [];
-      var via = (edgeResult && edgeResult.via) ? edgeResult.via : 'edge';
-      var loadErr = edgeResult && edgeResult.error ? edgeResult.error : null;
+      var rows = [];
+      var via = 'rpc';
+      var loadErr = null;
+
+      await adminWaitForSupabaseReady(8000);
+      var rpcResult = await adminFetchSessionFeedbackViaRpc(sinceIso);
+      rows = (rpcResult && rpcResult.rows) ? rpcResult.rows : [];
+      via = (rpcResult && rpcResult.via) ? rpcResult.via : 'rpc';
+      loadErr = rpcResult && rpcResult.error ? rpcResult.error : null;
+
       if(!rows.length){
-        await adminWaitForSupabaseReady(12000);
-        var rpcResult = await adminFetchSessionFeedbackViaRpc(sinceIso);
-        rows = (rpcResult && rpcResult.rows) ? rpcResult.rows : [];
-        via = (rpcResult && rpcResult.via) ? rpcResult.via : 'rpc';
-        loadErr = rpcResult && rpcResult.error ? rpcResult.error : loadErr;
+        try{
+          var edgeResult = await Promise.race([
+            adminFetchSessionFeedbackViaEdge(sinceIso),
+            new Promise(function(resolve){
+              setTimeout(function(){ resolve({ rows: [], error: 'edge_timeout', via: 'edge' }); }, 10000);
+            })
+          ]);
+          var edgeRows = (edgeResult && edgeResult.rows) ? edgeResult.rows : [];
+          if(edgeRows.length){
+            rows = edgeRows;
+            via = (edgeResult && edgeResult.via) ? edgeResult.via : 'edge';
+            loadErr = null;
+          } else if(!loadErr && edgeResult && edgeResult.error){
+            loadErr = edgeResult.error;
+          }
+        }catch(edgeErr){
+          if(!loadErr) loadErr = String(edgeErr && edgeErr.message ? edgeErr.message : edgeErr);
+        }
       }
+
+      if(!rows.length && __adminSessionFeedbackCache && __adminSessionFeedbackCache.length){
+        rows = __adminSessionFeedbackCache.slice();
+        via = 'cache';
+        loadErr = loadErr || 'using_cached_rows';
+        console.warn('[admin] session_feedback: live empty — using', rows.length, 'cached rows');
+      } else if(rows.length){
+        __adminSessionFeedbackCache = rows.slice();
+      }
+
       try{
         window.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__ = {
           at: new Date().toISOString(),
           total: rows.length,
           via: via,
-          error: rows.length ? null : loadErr
+          error: (via === 'cache') ? loadErr : (rows.length ? null : loadErr)
         };
       }catch(_meta){}
       console.log('[admin] session_feedback final:', rows.length, 'rows via', via, loadErr || '');

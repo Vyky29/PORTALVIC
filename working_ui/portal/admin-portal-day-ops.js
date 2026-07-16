@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260712-payload-cache';
+  var PORTAL_DAY_OPS_BUILD = '20260716-register-fast';
   function portalHubBuildToken() {
     return String(global.PORTAL_ADMIN_HUB_BUILD || PORTAL_DAY_OPS_BUILD || '').trim();
   }
@@ -31,7 +31,9 @@
     return '/portal/admin-sessions-hub.js?v=' + encodeURIComponent(portalHubBuildToken());
   }
   var EDGE_FETCH_MS = 12000;
-  var ENRICH_WAIT_MS = 45000;
+  /* Register tab used to block up to 45s on a slow Edge-first path; RPC-first should finish sooner. */
+  var ENRICH_WAIT_MS = 20000;
+  var SESSION_FEEDBACK_FETCH_MS = 28000;
   var SUPABASE_WAIT_MS = 22000;
 
   function dayOpsDebugEnabled() {
@@ -270,7 +272,7 @@
   async function refreshSessionFeedbackLive() {
     if (!cfg.fetchSessionFeedback) return;
     try {
-      var dbFb = (await promiseWithTimeout(cfg.fetchSessionFeedback(), 45000, [])) || [];
+      var dbFb = (await promiseWithTimeout(cfg.fetchSessionFeedback(), SESSION_FEEDBACK_FETCH_MS, [])) || [];
       payload.session_feedback = dbFb;
       payload.session_feedback_total = payload.session_feedback.length;
       await fetchParentFeedbackSharesInto(payload);
@@ -457,7 +459,7 @@
             if (!client && cfg.waitForSupabaseClient) {
               client = await cfg.waitForSupabaseClient(SUPABASE_WAIT_MS);
             }
-            live = (await promiseWithTimeout(cfg.fetchSessionFeedback(), 45000, [])) || [];
+            live = (await promiseWithTimeout(cfg.fetchSessionFeedback(), SESSION_FEEDBACK_FETCH_MS, [])) || [];
             out.session_feedback = live;
             out.session_feedback_total = out.session_feedback.length;
             if (!live.length) {
@@ -1539,22 +1541,31 @@
           pendingFeedbackNoteFilter = fs.filter;
           var fh = await initFeedbackHub();
           if (fh && trackingHub) syncHubViewFilters(trackingHub, fh);
-          try {
-            var enrichWaitFb = global.__PORTAL_DAY_OPS_ENRICH__;
-            if (enrichWaitFb) {
-              await promiseWithTimeout(enrichWaitFb, ENRICH_WAIT_MS, null);
-              if (fh && typeof fh.setPayload === 'function') {
-                fh.setPayload(payload);
-                if (typeof fh.render === 'function') fh.render();
-              }
-            }
-          } catch (_enrichWaitFb) {}
           if (fh) {
             fh.tab = fs.tab;
             fh.feedbackNoteFilter = fs.filter;
             applyPendingFeedbackNav(fh);
             reRenderHub(fh);
           }
+          function paintFeedbackHubFromPayload() {
+            if (!fh) return;
+            if (typeof fh.setPayload === 'function') fh.setPayload(payload);
+            fh.tab = fs.tab;
+            fh.feedbackNoteFilter = fs.filter;
+            applyPendingFeedbackNav(fh);
+            reRenderHub(fh);
+          }
+          try {
+            var enrichWaitFb = global.__PORTAL_DAY_OPS_ENRICH__;
+            if (enrichWaitFb) {
+              /* Short wait so Register paints quickly; late enrich still re-renders. */
+              await promiseWithTimeout(enrichWaitFb, ENRICH_WAIT_MS, null);
+              paintFeedbackHubFromPayload();
+              enrichWaitFb.then(function () {
+                paintFeedbackHubFromPayload();
+              }).catch(function () {});
+            }
+          } catch (_enrichWaitFb) {}
           return fh;
         }
         if (tabId === 'lead' || tabId === 'venue') {
