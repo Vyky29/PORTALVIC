@@ -941,6 +941,67 @@
       width: 100%;
       flex: 1 1 100%;
     }
+    .pp-hub-ops__chip-legend {
+      list-style: none;
+      margin: 0 0 4px;
+      padding: 8px 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      min-width: 0;
+      width: 100%;
+      box-sizing: border-box;
+      background: rgba(45, 132, 179, 0.06);
+      border: 1px solid rgba(45, 132, 179, 0.14);
+      border-radius: 10px;
+    }
+    .pp-hub-ops__chip-legend__item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      max-width: 100%;
+      font-size: 12px;
+      line-height: 1.35;
+      color: var(--ink, #1a2b3c);
+    }
+    .pp-hub-ops__chip-legend__swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 4px;
+      flex: 0 0 auto;
+      box-sizing: border-box;
+    }
+    .pp-hub-ops__chip-legend__swatch--blue {
+      background: rgba(37, 99, 235, 0.35);
+      border: 1px solid rgba(37, 99, 235, 0.55);
+    }
+    .pp-hub-ops__chip-legend__swatch--green {
+      background: rgba(22, 163, 74, 0.35);
+      border: 1px solid rgba(21, 128, 61, 0.45);
+    }
+    .pp-hub-ops__chip-legend__swatch--red {
+      background: rgba(220, 38, 38, 0.3);
+      border: 1px solid rgba(185, 28, 28, 0.45);
+    }
+    .pp-hub-ops__chip-legend__text {
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .pp-booking-term__title {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    .pp-booking-term__title .pp-hub-ops__date-chips-label-ico {
+      width: 16px;
+      height: 16px;
+    }
+    .pp-booking-term__title > span {
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
     .pp-hub-ops__date-chips-row {
       display: flex;
       flex-direction: column;
@@ -3855,7 +3916,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260715-dc-hide-staff-aquatic"></script>
   <script src="/portal/parent_portal_team.js?v=20260710-eiji-hazem-photos"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260715-crash-cal-first"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260716-inv-title"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260716-term-chip-legend"></script>
   <script src="/portal/parent_portal_app.js?v=20260715-family-push"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

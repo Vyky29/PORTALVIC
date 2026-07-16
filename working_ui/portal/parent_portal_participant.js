@@ -2010,6 +2010,58 @@
     });
   }
 
+  /** Icons for term half-rows (same size/style as crash activity icons). */
+  function termHalfRowIcon(label) {
+    var l = String(label || "").toLowerCase();
+    var second = /second/.test(l);
+    if (/summer/.test(l)) {
+      if (second) {
+        return (
+          '<svg class="pp-hub-ops__date-chips-label-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>'
+        );
+      }
+      return (
+        '<svg class="pp-hub-ops__date-chips-label-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>'
+      );
+    }
+    if (/autumn|fall/.test(l)) {
+      return (
+        '<svg class="pp-hub-ops__date-chips-label-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>'
+      );
+    }
+    if (/spring/.test(l)) {
+      return (
+        '<svg class="pp-hub-ops__date-chips-label-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22c4-3 6-6.5 6-10a6 6 0 1 0-12 0c0 3.5 2 7 6 10z"/><path d="M12 12v10"/></svg>'
+      );
+    }
+    // Generic first / second half
+    if (second) {
+      return (
+        '<svg class="pp-hub-ops__date-chips-label-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>'
+      );
+    }
+    return (
+      '<svg class="pp-hub-ops__date-chips-label-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>'
+    );
+  }
+
+  /** Blue / green / red key for date chips (hub + booking). */
+  function termChipColorLegendHtml() {
+    return (
+      '<ul class="pp-hub-ops__chip-legend" aria-label="Date colour key">' +
+      '<li class="pp-hub-ops__chip-legend__item">' +
+      '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--blue" aria-hidden="true"></span>' +
+      '<span class="pp-hub-ops__chip-legend__text"><strong>Blue</strong> — upcoming / next session</span></li>' +
+      '<li class="pp-hub-ops__chip-legend__item">' +
+      '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--green" aria-hidden="true"></span>' +
+      '<span class="pp-hub-ops__chip-legend__text"><strong>Green</strong> — completed</span></li>' +
+      '<li class="pp-hub-ops__chip-legend__item">' +
+      '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--red" aria-hidden="true"></span>' +
+      '<span class="pp-hub-ops__chip-legend__text"><strong>Red</strong> — absent or cancelled</span></li>' +
+      "</ul>"
+    );
+  }
+
   function termSessionDateChipsHtml(data, statusByIso) {
     function chipsOnly(list, ariaLabel) {
       if (!list.length) return "";
@@ -2027,12 +2079,13 @@
     }
     function rowHtml(label, list, iconHtml, labelClass) {
       if (!list.length) return "";
+      var ico = iconHtml != null ? iconHtml : termHalfRowIcon(label);
       return (
         '<div class="pp-hub-ops__date-chips-row">' +
         '<div class="pp-hub-ops__date-chips-label' +
         (labelClass ? " " + labelClass : "") +
         '">' +
-        (iconHtml || "") +
+        (ico || "") +
         "<span>" +
         esc(label) +
         "</span></div>" +
@@ -2131,6 +2184,7 @@
     if (!rows.length) return "";
     return (
       '<div class="pp-hub-ops__date-chips-stack" aria-label="Session dates">' +
+      termChipColorLegendHtml() +
       rows.join("") +
       "</div>"
     );
@@ -2229,8 +2283,10 @@
       return (
         '<div class="pp-hub-ops__date-chips-row">' +
         '<div class="pp-hub-ops__date-chips-label">' +
+        termHalfRowIcon(label) +
+        "<span>" +
         esc(label) +
-        "</div>" +
+        "</span></div>" +
         chipsOnly(list, label) +
         "</div>"
       );
@@ -2240,6 +2296,7 @@
     if (!terms.length) {
       return (
         '<div class="pp-hub-ops__date-chips-stack" aria-label="Day Centre 2026/27">' +
+        termChipColorLegendHtml() +
         chipsOnly(dates, "Day Centre 2026/27") +
         "</div>"
       );
@@ -2263,20 +2320,27 @@
       var section =
         '<div class="pp-booking-term">' +
         '<h4 class="pp-booking-term__title">' +
+        termHalfRowIcon(termName) +
+        "<span>" +
         esc(termName) +
-        "</h4>" +
+        "</span></h4>" +
         '<div class="pp-hub-ops__date-chips-stack" aria-label="' +
         esc(termName) +
         ' session dates">' +
-        (first.length ? rowHtml("First half term", first) : "") +
-        (second.length ? rowHtml("Second half term", second) : "") +
+        (first.length ? rowHtml(termName + " · First half term", first) : "") +
+        (second.length ? rowHtml(termName + " · Second half term", second) : "") +
         (!first.length && !second.length ? chipsOnly(inTerm, termName) : "") +
         "</div></div>";
       blocks.push(section);
     });
 
     if (!blocks.length) return "";
-    return '<div class="pp-booking-year-dates">' + blocks.join("") + "</div>";
+    return (
+      '<div class="pp-booking-year-dates">' +
+      termChipColorLegendHtml() +
+      blocks.join("") +
+      "</div>"
+    );
   }
 
   function applyTermDateChipStatuses(host, data, statusByIso) {
