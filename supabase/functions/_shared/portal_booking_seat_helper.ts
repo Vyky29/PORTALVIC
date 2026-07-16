@@ -38,6 +38,12 @@ export type OfferService = {
   blurb: string;
   venues: string[];
   intensiveBlocks?: boolean;
+  /** No public bookable slots — office/admin arranges places. */
+  enquireOnly?: boolean;
+  /** Day Centre (and similar) info panel hours line. */
+  infoHours?: string;
+  /** Day Centre activity examples shown instead of a slot grid. */
+  infoActivities?: string[];
 };
 
 const DAY_ALIASES: Record<string, string> = {
@@ -122,11 +128,23 @@ const SERVICE_META: Record<PublicServiceId, Omit<OfferService, "venues">> = {
     name: "Day Centre",
     tier: "more",
     ageHint: "From 3 years+",
-    durationHint: "Multi-hour weekday blocks",
+    durationHint: "Mon–Fri · 11am – 4pm",
     priceHint: "Funding / bespoke quote",
     pricePerSession: null,
+    enquireOnly: true,
+    infoHours: "Open Monday to Friday, 11am – 4pm at SwimFarm.",
+    infoActivities: [
+      "Table work (maths, puzzles, handwriting)",
+      "Sensory room and quiet regulation",
+      "Gym and trampoline",
+      "Swimming / pool time",
+      "Lunch and life skills",
+      "Relaxation",
+      "Music and karaoke",
+      "Community trips (cafe, park, shops) when staffing allows",
+    ],
     blurb:
-      "Longer daytime blocks at SwimFarm with pool segments on some days. Places are planned with families and the office — enquire rather than instant-book.",
+      "A weekday daytime programme at SwimFarm. We do not publish bookable slots online — places are arranged with families through the office so we can explain the day, funding, and support needs properly.",
   },
 };
 
@@ -509,6 +527,8 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
 
   let folded = foldMultiActivityOfferSlots(slots);
   folded = ensureClimbingSundayOpenBand(folded);
+  /* Day Centre is office-arranged only — never expose MADRE capacity as bookable slots. */
+  folded = folded.filter((s) => s.serviceId !== "day_centre");
 
   folded.sort((a, b) => {
     const dayOrder: Record<string, number> = {

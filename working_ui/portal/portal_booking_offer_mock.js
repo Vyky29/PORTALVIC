@@ -109,12 +109,23 @@
       name: "Day Centre",
       tier: "more",
       ageHint: "From 3 years+",
-      durationHint: "Multi-hour weekday blocks",
+      durationHint: "Mon–Fri · 11am – 4pm",
       priceHint: "Funding / bespoke quote",
       blurb:
-        "Longer daytime blocks at SwimFarm with pool segments on some days. Places are planned with families and the office — enquire rather than instant-book.",
+        "A weekday daytime programme at SwimFarm. We do not publish bookable slots online — places are arranged with families through the office so we can explain the day, funding, and support needs properly.",
       venues: ["SwimFarm"],
       enquireOnly: true,
+      infoHours: "Open Monday to Friday, 11am – 4pm at SwimFarm.",
+      infoActivities: [
+        "Table work (maths, puzzles, handwriting)",
+        "Sensory room and quiet regulation",
+        "Gym and trampoline",
+        "Swimming / pool time",
+        "Lunch and life skills",
+        "Relaxation",
+        "Music and karaoke",
+        "Community trips (cafe, park, shops) when staffing allows",
+      ],
     },
     {
       id: "intensive",
@@ -229,10 +240,6 @@
     { id: "bs-sf-tue-1000", serviceId: "bespoke", venue: "SwimFarm", day: "Tuesday", timeLabel: "10.00 – 11.00", sortTime: "10:00", capacity: 1, taken: 1 },
     { id: "bs-act-thu-1500", serviceId: "bespoke", venue: "Acton", day: "Thursday", timeLabel: "3.00 – 4.00", sortTime: "15:00", capacity: 1, taken: 0 },
     { id: "bs-ww-fri-1100", serviceId: "bespoke", venue: "Westway", day: "Friday", timeLabel: "11.00 – 12.00", sortTime: "11:00", capacity: 1, taken: 1 },
-
-    { id: "dc-sf-mon-1100", serviceId: "day_centre", venue: "SwimFarm", day: "Monday", timeLabel: "11.00 – 4.00", sortTime: "11:00", capacity: 4, taken: 4 },
-    { id: "dc-sf-wed-1100", serviceId: "day_centre", venue: "SwimFarm", day: "Wednesday", timeLabel: "11.00 – 4.00", sortTime: "11:00", capacity: 4, taken: 3 },
-    { id: "dc-sf-fri-1230", serviceId: "day_centre", venue: "SwimFarm", day: "Friday", timeLabel: "12.30 – 3.00", sortTime: "12:30", capacity: 3, taken: 3 },
 
     /* Summer crash · Week 1 (Tue–Fri 21–24 July) */
     { id: "in-s1-ww-tue", serviceId: "intensive", blockId: "summer_july", venue: "Westway", day: "Week 1 · Tue 21 Jul", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 2 },
