@@ -90,6 +90,8 @@ Deno.serve(async (req) => {
     ok: true,
     stripe_configured: !!key,
     stripe_live: !!(key && key.startsWith("sk_live_")),
+    stripe_test: !!(key && key.startsWith("sk_test_")),
+    stripe_restricted: !!(key && key.startsWith("rk_live_")),
     customers: [],
     payment_intents: [],
     charges: [],
@@ -97,6 +99,23 @@ Deno.serve(async (req) => {
   };
 
   if (!key) return json(500, { ok: false, error: "stripe_not_configured" });
+
+  const acct = await stripeGet("/account");
+  if (acct.ok) {
+    const a = acct.body as Record<string, unknown>;
+    const biz = (a.business_profile && typeof a.business_profile === "object"
+      ? a.business_profile
+      : {}) as Record<string, unknown>;
+    out.stripe_account = {
+      id: a.id,
+      email: a.email,
+      business_name: biz.name || a.settings?.dashboard?.display_name || null,
+      country: a.country,
+      default_currency: a.default_currency,
+    };
+  } else {
+    out.stripe_account_error = acct.error;
+  }
 
   if (email) {
     const r = await stripeGet("/customers/search", {
