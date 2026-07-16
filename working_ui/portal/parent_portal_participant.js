@@ -5174,16 +5174,28 @@
         title = "Invoice";
       }
     }
-    var subtitle = "";
-    var ref = String((inv && inv.reference_text) || "").trim();
-    var notes = String((inv && inv.notes) || "").trim();
-    var rawTitle = String((inv && inv.title) || "");
-    if (/crash/i.test(notes) || /crash/i.test(rawTitle) || /summer term 25\/26/i.test(ref)) {
-      subtitle = "Summer crash course Jul 2026";
-    } else if (/autumn/i.test(ref) || /re-enrol/i.test(notes) || /Autumn term/i.test(rawTitle)) {
-      subtitle = ref || "Autumn term 26/27";
-    } else if (ref && ref !== num) {
-      subtitle = ref;
+    var subtitle = String((inv && inv.subtitle) || "").trim();
+    if (!subtitle) {
+      var ref = String((inv && inv.reference_text) || "").trim();
+      var rawTitle = String((inv && inv.title) || "");
+      var lineDesc = String((inv && inv.line_description) || "").trim();
+      if (/crash/i.test(ref) || /crash/i.test(rawTitle) || /summer term 25\/26/i.test(ref)) {
+        subtitle = "Summer crash course Jul 2026";
+      } else if (
+        /autumn/i.test(ref) ||
+        /re-enrol/i.test(lineDesc) ||
+        /Autumn term/i.test(rawTitle) ||
+        /26\/27|2026-27|2026\/27/.test(ref)
+      ) {
+        subtitle = ref || "Autumn term 26/27";
+      } else if (ref && ref !== num) {
+        subtitle = ref;
+      } else if (lineDesc) {
+        var firstLine = lineDesc.split("\n")[0].trim();
+        if (firstLine && !/^structured activity support/i.test(firstLine)) {
+          subtitle = firstLine;
+        }
+      }
     }
     var amount = formatInvoiceMoney(inv && inv.amount_gbp);
     var due = formatDocWhen(inv && inv.due_date);

@@ -329,7 +329,7 @@ Deno.serve(async (req) => {
     // PDF / Xero Reference = term label; name + service live in description / Service.
     reference: CRASH_SUMMER_INVOICE_TERM_REFERENCE,
     service: serviceLabel,
-    notes: `Summer crash course Jul 2026 · booking ${booking.id} · pay in full to confirm · ${funding.fundingLabel}`,
+    notes: null,
     title: `Summer crash course — ${displayName}`,
     shareStatus: "ready",
     paymentMethodHint: "bank_transfer",

@@ -180,7 +180,7 @@ Deno.serve(async (req) => {
             vatMode: plan.vatMode,
             lineDescription: inst.lineDescription,
             reference: inst.reference,
-            notes: `Auto from re-enrolment ${REENROL_ACADEMIC_YEAR} · submission ${inserted.id} · ${inst.label}`,
+            notes: null,
             title: `Invoice — ${participantName} · ${inst.label}`,
             shareStatus: "ready",
             paymentMethodHint: plan.paymentMethodHint,

@@ -23,20 +23,21 @@ function clean(v: unknown, max = 200): string {
 
 /**
  * Parent hub currently hides Summer term 25/26 programme invoices.
- * Keep July crash + smoke/re-enrol 26/27 payment tests visible via deep-link smoke.
+ * Smoke / TEST invoice numbers are admin-only (never shown to families).
  */
 function parentInvoiceAllowedForShare(
-  share: { invoice_number?: unknown; notes?: unknown },
+  share: { invoice_number?: unknown; payment_status?: unknown },
   docTitle: unknown,
 ): boolean {
+  const status = clean(share.payment_status, 40).toLowerCase();
+  if (status === "void") return false;
+
   const title = clean(docTitle, 240).toLowerCase();
   const num = clean(share.invoice_number, 80).toLowerCase();
-  const notes = clean(share.notes, 240).toLowerCase();
-  const blob = `${title} ${num} ${notes}`;
+  const blob = `${title} ${num}`;
 
+  if (/^smoke[-_]/.test(num) || /^test[-_]/.test(num)) return false;
   if (/\bcrash\b/.test(blob)) return true;
-  if (/^smoke[-_]/.test(num) || /^test[-_]/.test(num)) return true;
-  if (/tide smoke/.test(blob)) return true;
   if (/26\/27|2026\/27|2026-27|autumn term 26|spring term 26|summer term 26/.test(blob)) {
     return true;
   }
@@ -46,6 +47,27 @@ function parentInvoiceAllowedForShare(
   if (/summer term/.test(blob) && !/\bcrash\b/.test(blob)) return false;
 
   return true;
+}
+
+function parentFacingSubtitle(
+  share: { invoice_number?: unknown; reference_text?: unknown; line_description?: unknown },
+  docTitle: unknown,
+): string | null {
+  const num = clean(share.invoice_number, 80);
+  const ref = clean(share.reference_text, 120);
+  const lineFirst = clean(String(share.line_description || "").split("\n")[0], 120);
+  const title = clean(docTitle, 200).toLowerCase();
+  const blob = `${ref} ${lineFirst} ${title}`.toLowerCase();
+
+  if (/\bcrash\b/.test(blob) || /summer term 25\/26/.test(ref.toLowerCase())) {
+    return "Summer crash course Jul 2026";
+  }
+  if (/26\/27|2026-27|2026\/27|autumn|re-enrol|spring term|summer term/.test(blob)) {
+    return ref || lineFirst || "Autumn term 26/27";
+  }
+  if (ref && ref !== num) return ref;
+  if (lineFirst && !/^structured activity support/i.test(lineFirst)) return lineFirst;
+  return null;
 }
 
 function json(status: number, body: Record<string, unknown>) {
@@ -104,7 +126,7 @@ Deno.serve(async (req) => {
   const { data: shares, error } = await supabase
     .from("portal_parent_invoice_share")
     .select(
-      "id, document_id, contact_id, invoice_number, amount_gbp, due_date, payment_status, share_status, ready_at, notes, created_at, updated_at, payment_method_hint, gocardless_url, gocardless_payment_id, gocardless_mandate_id, payment_link_url, payment_link_surcharge_note, parent_reported_paid_at, parent_reported_ref, parent_reported_method, paid_at, paid_via, vat_mode",
+      "id, document_id, contact_id, invoice_number, amount_gbp, due_date, payment_status, share_status, ready_at, created_at, updated_at, payment_method_hint, gocardless_url, gocardless_payment_id, gocardless_mandate_id, payment_link_url, payment_link_surcharge_note, parent_reported_paid_at, parent_reported_ref, parent_reported_method, paid_at, paid_via, vat_mode, reference_text, line_description",
     )
     .eq("contact_id", contactId)
     .eq("share_status", "ready")
@@ -221,7 +243,7 @@ Deno.serve(async (req) => {
       payment_status: status,
       ready_at: share.ready_at || doc.created_at || null,
       related_date: doc.related_date || null,
-      notes: share.notes || null,
+      subtitle: parentFacingSubtitle(share, doc.title),
       pdf_url: signed?.signedUrl || null,
       payment_method_hint: hint,
       gocardless_url: clean(share.gocardless_url, 500) || null,

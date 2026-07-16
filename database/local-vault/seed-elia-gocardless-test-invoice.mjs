@@ -132,7 +132,7 @@ const { data: doc, error: docErr } = await admin
     user_id: owner.id,
     document_type: "client_invoice",
     category: "billing",
-    title: "Demo £5 — Direct Payment (GoCardless)",
+    title: "Direct Payment — £5",
     related_date: dueIso,
     related_client: "Elia",
     file_url: storagePath,
@@ -158,11 +158,10 @@ const { data: share, error: shareErr } = await admin
     share_status: "ready",
     ready_at: new Date().toISOString(),
     ready_by: "seed_elia_gocardless_test",
-    notes:
-      "Demo £5 Direct Payment (GoCardless) — tap Set up Direct Payment to authorise mandate + first £5 collection.",
+    notes: null,
     payment_method_hint: "gocardless",
-    reference_text: invoiceNumber,
-    line_description: "Demo £5 — GoCardless mandate test",
+    reference_text: "Direct Payment setup",
+    line_description: "Direct Payment (GoCardless) — £5",
   })
   .select("id, invoice_number, amount_gbp, payment_method_hint, payment_status")
   .maybeSingle();

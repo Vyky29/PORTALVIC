@@ -110,7 +110,7 @@ export async function createPortalFamilyInvoice(
   const lineDescription =
     cleanMultiline(input.lineDescription, 2400) ||
     "Structured activity support delivered for a SEND participant.";
-  const notes = clean(input.notes, 800) || null;
+  const notes = clean(input.notes, 800) || null; // Admin-only — never sent to parent portal.
   const shareStatus = input.shareStatus === "hidden" ? "hidden" : "ready";
   const paymentMethodHint =
     input.paymentMethodHint ||
