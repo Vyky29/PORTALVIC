@@ -1358,11 +1358,10 @@
     return iso >= from && iso <= to;
   }
 
-  /** Summer Term 25/26 hub chips: Mon 12 Apr – Mon 20 Jul (Day Centre through 31 Jul).
-   *  Bank holiday 4 May was closed — ACAT Mon 11–12 rolls that week to Mon 20 Jul.
-   *  May half-term (23–31 May) stays closed. */
+  /** Summer Term 25/26 hub chips: afterschool & weekends through Fri 17 Jul.
+   *  Day Centre runs longer (through 31 Jul). May half-term (23–31 May) stays closed. */
   var CURRENT_YEAR_TERM_FROM = "2026-04-12";
-  var CURRENT_YEAR_TERM_TO = "2026-07-20";
+  var CURRENT_YEAR_TERM_TO = "2026-07-17";
   var CURRENT_YEAR_TERM_TO_DAY_CENTRE = "2026-07-31";
   var CURRENT_YEAR_TERM_BREAK_FROM = "2026-05-23";
   var CURRENT_YEAR_TERM_BREAK_TO = "2026-05-31";
