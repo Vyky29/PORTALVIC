@@ -244,7 +244,7 @@
               );
             })
             .join("")
-        : '<li class="cpp-empty">No absences or portal messages in the last 24 hours.</li>';
+        : '<li class="cpp-empty">No absences, portal messages, or paid invoices in the last 24 hours.</li>';
     }
 
     renderPlaces(data);

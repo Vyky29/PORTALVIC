@@ -349,6 +349,69 @@ Deno.serve(async (req) => {
     });
   }
 
+  const { data: paidInvoices } = await admin
+    .from("portal_parent_invoice_share")
+    .select(
+      "id, contact_id, invoice_number, amount_gbp, paid_at, paid_via, payment_status, updated_at",
+    )
+    .eq("payment_status", "paid")
+    .gte("paid_at", recentSince)
+    .order("paid_at", { ascending: false })
+    .limit(30);
+
+  const paidContactIds = Array.from(
+    new Set((paidInvoices || []).map((r) => clean(r.contact_id, 80)).filter(Boolean)),
+  );
+  const childByContact = new Map<string, string>();
+  if (paidContactIds.length) {
+    const { data: paidContacts } = await admin
+      .from("portal_parent_contacts")
+      .select("contact_id, child_display, parent_display, parent_first_name, parent_last_name")
+      .in("contact_id", paidContactIds)
+      .limit(100);
+    for (const c of paidContacts || []) {
+      const cid = clean(c.contact_id, 80);
+      if (!cid) continue;
+      const child = clean(c.child_display, 120) || "Participant";
+      const parent = parentDisplayFromContact(c) || "";
+      childByContact.set(cid, parent ? `${child} · ${parent}` : child);
+    }
+  }
+
+  for (const inv of paidInvoices || []) {
+    const at = inv.paid_at || inv.updated_at;
+    if (!at) continue;
+    const cid = clean(inv.contact_id, 80);
+    const invNo = clean(inv.invoice_number, 40) || "Invoice";
+    const amount =
+      inv.amount_gbp != null && Number.isFinite(Number(inv.amount_gbp))
+        ? `£${Number(inv.amount_gbp).toFixed(2)}`
+        : "";
+    const via = clean(inv.paid_via, 40);
+    const viaLabel =
+      via === "stripe"
+        ? "Card / Apple Pay"
+        : via === "bank_transfer" || via === "tide"
+          ? "Bank transfer"
+          : via === "credit"
+            ? "Credit"
+            : via === "admin" || via === "office"
+              ? "Marked paid (office)"
+              : via
+                ? via.replace(/_/g, " ")
+                : "";
+    const who = (cid && childByContact.get(cid)) || null;
+    const detailParts = [who, amount, viaLabel].filter(Boolean);
+    actions.push({
+      at,
+      kind: "invoice_paid",
+      label: `Invoice paid · ${invNo}`,
+      detail: detailParts.length ? detailParts.join(" · ") : null,
+      contact_id: cid || null,
+      invoice_id: clean(inv.id, 80) || null,
+    });
+  }
+
   actions.sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")));
 
   return portalAdminJson(200, {
