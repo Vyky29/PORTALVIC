@@ -125,8 +125,9 @@ function invoiceDescriptionLines(input: {
   if (input.descriptionComplete) {
     return descriptionFromInput.slice(0, 24);
   }
+  const firstBlank = descriptionFromInput.indexOf("");
   const descriptionBody = input.hasLineItems
-    ? ["Structured activity support delivered for a SEND participant."]
+    ? descriptionFromInput.slice(0, firstBlank >= 0 ? firstBlank : 1)
     : descriptionFromInput.slice(0, 12);
   if (input.isLaFunded) {
     return [
@@ -180,7 +181,9 @@ export async function createPortalFamilyInvoice(
   const reference = clean(input.reference, 120) || null;
   const service = clean(input.service, 80) || null;
   const lineDescription =
-    (input.lineItems?.length ? lineItemsToDescription(input.lineItems) : "") ||
+    (input.lineItems?.length
+      ? lineItemsToDescription(input.lineItems, { fundedProvision: vatMode === "exempt" })
+      : "") ||
     cleanMultiline(input.lineDescription, 2400) ||
     "Structured activity support delivered for a SEND participant.";
   const notes = clean(input.notes, 800) || null; // Admin-only — never sent to parent portal.
@@ -492,7 +495,13 @@ export async function regeneratePortalInvoiceSharePdf(
     (doc.created_at ? String(doc.created_at).slice(0, 10) : null) ||
     new Date().toISOString().slice(0, 10);
   const reference = clean(share.reference_text, 120) || null;
+  const lineItems = Array.isArray(share.line_items)
+    ? (share.line_items as PortalInvoiceLineItem[])
+    : [];
   const lineDescription =
+    (lineItems.length
+      ? lineItemsToDescription(lineItems, { fundedProvision: vatMode === "exempt" })
+      : "") ||
     cleanMultiline(share.line_description, 2400) ||
     "Structured activity support delivered for a SEND participant.";
   const paymentMethodHint = clean(share.payment_method_hint, 40) || "bank_transfer";
@@ -503,9 +512,6 @@ export async function regeneratePortalInvoiceSharePdf(
   const paymentSchedule = normalizePaymentSchedule(share.payment_schedule);
   const amountPaidGbp = round2(Number(share.amount_paid_gbp) || 0);
   const isPaid = String(share.payment_status || "").toLowerCase() === "paid";
-  const lineItems = Array.isArray(share.line_items)
-    ? (share.line_items as PortalInvoiceLineItem[])
-    : [];
   const descriptionLines = invoiceDescriptionLines({
     lineDescription,
     vatMode,
@@ -572,6 +578,9 @@ export async function regeneratePortalInvoiceSharePdf(
 
   const sharePatch: Record<string, unknown> = { updated_at: now };
   if (!clean(share.vat_mode, 20)) sharePatch.vat_mode = vatMode;
+  if (lineItems.length && cleanMultiline(share.line_description, 2400) !== lineDescription) {
+    sharePatch.line_description = lineDescription;
+  }
   await admin.from("portal_parent_invoice_share").update(sharePatch).eq("id", shareId);
 
   if (oldPath && oldPath !== storagePath) {

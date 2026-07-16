@@ -200,7 +200,9 @@ Deno.serve(async (req) => {
               : [];
           const lineDescription =
             lineItems.length > 0
-              ? lineItemsToDescription(lineItems)
+              ? lineItemsToDescription(lineItems, {
+                  fundedProvision: plan.vatMode === "exempt",
+                })
               : inv.lineDescription;
 
           const created = await createPortalFamilyInvoice(supabase, {

@@ -173,12 +173,56 @@ export function buildReenrolTermLineItems(input: ReenrolLineBuildInput): PortalI
   return lines;
 }
 
-export function lineItemsToDescription(lines: PortalInvoiceLineItem[]): string {
-  if (!lines.length) {
-    return "Structured activity support delivered across aquatic environments for a SEND participant.";
+function fundedEnvironmentForLine(line: PortalInvoiceLineItem): string {
+  const key = String(line.service_key || "").toUpperCase();
+  const desc = String(line.description || "").toLowerCase();
+  if (key.includes("AQUATIC") || /aquatic|swim/.test(desc)) return "aquatic";
+  if (key.includes("CLIMB") || /climb/.test(desc)) return "climbing";
+  if (key.includes("PHYSICAL") || /physical|movement|fitness/.test(desc)) {
+    return "physical activity";
   }
+  if (key.includes("MULTI") || /multi.?activity/.test(desc)) return "multi-activity";
+  if (key.includes("COUNSELL") || /counsell/.test(desc)) return "counselling";
+  if (key.includes("BESPOKE") || /bespoke/.test(desc)) return "bespoke activity";
+  if (key.includes("DAY_CENTRE") || /day centre/.test(desc)) return "day centre";
+  return "structured activity";
+}
+
+function naturalList(values: string[]): string {
+  if (values.length <= 1) return values[0] || "structured activity";
+  if (values.length === 2) return `${values[0]} and ${values[1]}`;
+  return `${values.slice(0, -1).join(", ")} and ${values[values.length - 1]}`;
+}
+
+export function fundedProvisionDescriptionLead(lines: PortalInvoiceLineItem[]): string {
+  const environments = Array.from(
+    new Set((lines || []).map(fundedEnvironmentForLine).filter(Boolean)),
+  );
+  const environmentPhrase =
+    environments.length === 1
+      ? `${/^[aeiou]/i.test(environments[0]) ? "an" : "a"} ${environments[0]} environment`
+      : `${naturalList(environments)} environments`;
   return (
-    "Structured activity support delivered for a SEND participant.\n\n" +
+    `Structured activity support delivered within ${environmentPhrase} for a SEND participant ` +
+    "as part of funded provision. (EHCP or local authority care package)."
+  );
+}
+
+export function lineItemsToDescription(
+  lines: PortalInvoiceLineItem[],
+  opts: { fundedProvision?: boolean } = {},
+): string {
+  if (!lines.length) {
+    return opts.fundedProvision
+      ? "Structured activity support delivered within a structured activity environment for a SEND participant as part of funded provision. (EHCP or local authority care package)."
+      : "Structured activity support delivered for a SEND participant.";
+  }
+  const lead = opts.fundedProvision
+    ? fundedProvisionDescriptionLead(lines)
+    : "Structured activity support delivered for a SEND participant.";
+  return (
+    lead +
+    "\n\n" +
     lines
       .map((l) => `${l.description} — GBP ${l.amount_gbp.toFixed(2)}`)
       .join("\n")
