@@ -46,11 +46,70 @@
 
   var SHEET_LABELS = {
     "PARENTS": "Private (parents)",
-    "LA": "Local authority",
+    "DIRECT_PAYMENTS": "Funded · Direct Payments",
+    "LA": "Local authority (invoice)",
     "No re-enroled": "Not re-enrolled",
   };
-  var SHEET_ORDER = ["PARENTS", "LA", "No re-enroled"];
+  var SHEET_ORDER = ["PARENTS", "DIRECT_PAYMENTS", "LA", "No re-enroled"];
   var STATUS_OPTIONS = ["Paid", "Outstanding", "Not paid", "Pending", "Not re-enrolled"];
+
+  /** Parent pays with LA Direct Payments / personal budget — not an LA/NHS invoice to the club. */
+  function isParentDirectPaymentsLabel(raw) {
+    var low = String(raw || "").toLowerCase();
+    if (!low) return false;
+    if (/parent\s*[·•\-]\s*direct payment|direct payments?\s*\(la money\)/.test(low)) return true;
+    if (/using money from la/.test(low) && /direct payment/.test(low)) return true;
+    if (/using funds from la/.test(low) && /direct payment/.test(low)) return true;
+    if (/la_direct_payments|parent_direct_payments/.test(low)) return true;
+    if (/direct payment/.test(low) && /ehcp|care package|personal budget/.test(low)) return true;
+    return false;
+  }
+
+  /** LA/NHS invoices the club (Care in Finance, CWD, BACS, borough / NHS PO). */
+  function isLaInvoiceFundingLabel(raw) {
+    var low = String(raw || "").toLowerCase();
+    if (!low || isParentDirectPaymentsLabel(low)) return false;
+    return /ealing|hammer|fulham|h\s*&\s*f|lbhf|kensington|rbkc|westminster|brent|nhs|care in finance|\bcwd\b|la invoice|local authority|purchase order|\bpo\b/.test(low);
+  }
+
+  function fundingHintFromPaymentData(d) {
+    d = d || {};
+    var keys = ["Funder", "Funding", "Fund", "fund", "funding", "Funding route", "funding_label"];
+    for (var i = 0; i < keys.length; i++) {
+      var v = d[keys[i]];
+      if (v != null && String(v).trim()) return String(v).trim();
+    }
+    return "";
+  }
+
+  /**
+   * Group for the Payments table:
+   *  PARENTS — private family funds
+   *  DIRECT_PAYMENTS — funded via parent-held LA Direct Payments (family still pays us)
+   *  LA — Local authority / NHS invoice (funder in charge)
+   */
+  function classifyPayGroup(opts) {
+    opts = opts || {};
+    var hint = String(opts.payment_method_hint || "").toLowerCase();
+    var vat = String(opts.vat_mode || "").toLowerCase();
+    var label = String(opts.funding_label || "").trim();
+    var sheet = String(opts.sheet || "").trim();
+    var sheetUp = sheet.toUpperCase();
+
+    if (hint === "la_funded") return "LA";
+    if (isParentDirectPaymentsLabel(label)) return "DIRECT_PAYMENTS";
+    if (isLaInvoiceFundingLabel(label)) return "LA";
+
+    /* Re-enrolment: VAT exempt without la_funded = LA Direct Payments route (not private VAT). */
+    if (opts._reenrol && vat === "exempt" && hint !== "la_funded") {
+      return "DIRECT_PAYMENTS";
+    }
+
+    if (sheetUp === "DIRECT_PAYMENTS" || sheet === "DIRECT_PAYMENTS") return "DIRECT_PAYMENTS";
+    if (sheetUp === "LA" || sheet === "LA") return "LA";
+    if (sheetUp === "NO RE-ENROLED" || sheet === "No re-enroled") return "No re-enroled";
+    return "PARENTS";
+  }
 
   var state = {
     rootEl: null,
@@ -153,6 +212,7 @@
       ".pay-grp__h{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 0 12px;min-width:0}",
       ".pay-grp__ico{flex:0 0 auto;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:#eef2f7;color:#334155}",
       ".pay-grp--priv .pay-grp__ico{background:#eff6ff;color:#2d84b3}",
+      ".pay-grp--dp .pay-grp__ico{background:#ecfdf5;color:#047857}",
       ".pay-grp--fund .pay-grp__ico{background:#f1ecfb;color:#7c3aed}",
       ".pay-grp__head-txt{min-width:0;text-align:center}",
       ".pay-grp__t{display:block;font-size:14px;font-weight:800;color:#0f172a;overflow-wrap:break-word}",
@@ -356,7 +416,11 @@
 
   function tallyRows(rows) {
     var billed = 0, paid = 0, outstanding = 0, paidN = 0, outN = 0, naN = 0;
-    var grp = { PARENTS: { billed: 0, paid: 0, out: 0, n: 0 }, LA: { billed: 0, paid: 0, out: 0, n: 0 } };
+    var grp = {
+      PARENTS: { billed: 0, paid: 0, out: 0, n: 0 },
+      DIRECT_PAYMENTS: { billed: 0, paid: 0, out: 0, n: 0 },
+      LA: { billed: 0, paid: 0, out: 0, n: 0 },
+    };
     (rows || []).forEach(function (r) {
       var a = Number(r.amount) || 0;
       var c = category(r);
@@ -384,6 +448,7 @@
     if (state.mode === "payments") {
       html += '<div class="pay-groups">'
         + grpCard("priv", "pay-grp--priv", labelFor("PARENTS"), t.grp.PARENTS)
+        + grpCard("fund", "pay-grp--dp", labelFor("DIRECT_PAYMENTS"), t.grp.DIRECT_PAYMENTS)
         + grpCard("fund", "pay-grp--fund", labelFor("LA"), t.grp.LA)
         + "</div>";
     }
@@ -467,16 +532,18 @@
 
   // Local authority / funder for the row, normalized to a short label so it can
   // be its own column and a filter (Ealing, LBHF (H&F), NHS · SBS, NHS · ILA).
-  // Private (parents) rows have no LA -> "".
+  // Private (parents) rows have no LA -> "". Direct Payments show a short tag.
   function laFor(r) {
+    if (r && r.sheet === "DIRECT_PAYMENTS") return "Direct Payments";
     var d = r.data || {};
-    var raw = String(d.Funder || "").trim();
+    var raw = String(d.Funder || r._fundingLabel || "").trim();
     if (!raw) {
       var pn = String(r.parent_name || "");
       var ix = pn.indexOf("\u00b7"); // "·"
       if (ix > 0) raw = pn.slice(0, ix).trim();
     }
     if (!raw) return "";
+    if (isParentDirectPaymentsLabel(raw)) return "Direct Payments";
     if (/hammersmith|h&f|lbhf/i.test(raw)) return "LBHF (H&F)";
     if (/ealing/i.test(raw)) return "Ealing";
     if (/nhs/i.test(raw) && /sbs/i.test(raw)) return "NHS \u00b7 SBS";
@@ -903,6 +970,94 @@
     });
   }
 
+  function loadFundingLabelsByContact(client, contactIds) {
+    var ids = (contactIds || []).filter(Boolean);
+    var uniq = [];
+    var seen = {};
+    ids.forEach(function (id) {
+      var k = String(id).trim();
+      if (!k || seen[k]) return;
+      seen[k] = true;
+      uniq.push(k);
+    });
+    if (!client) return Promise.resolve({});
+    var map = {};
+    function ingest(rows) {
+      (rows || []).forEach(function (row) {
+        if (!row || !row.contact_id) return;
+        map[String(row.contact_id)] = {
+          funding_label: String(row.funding_label || "").trim(),
+          payment_method_label: String(row.payment_method_label || "").trim(),
+          child_display: String(row.child_display || "").trim(),
+        };
+      });
+    }
+    var labeled = client
+      .from("portal_parent_contacts")
+      .select("contact_id, funding_label, payment_method_label, child_display")
+      .not("funding_label", "is", null)
+      .neq("funding_label", "")
+      .limit(500)
+      .then(function (res) {
+        if (!res.error) ingest(res.data);
+      })
+      .catch(function () {});
+
+    function page(from) {
+      var chunk = uniq.slice(from, from + 80);
+      if (!chunk.length) return Promise.resolve(map);
+      return client
+        .from("portal_parent_contacts")
+        .select("contact_id, funding_label, payment_method_label, child_display")
+        .in("contact_id", chunk)
+        .then(function (res) {
+          if (res.error) throw res.error;
+          ingest(res.data);
+          return page(from + 80);
+        });
+    }
+    return labeled.then(function () {
+      return page(0);
+    }).catch(function () { return map; });
+  }
+
+  function applyPayGroupClassification(payments, reenrol, fundingByContact) {
+    fundingByContact = fundingByContact || {};
+    var byChildName = {};
+    Object.keys(fundingByContact).forEach(function (cid) {
+      var info = fundingByContact[cid];
+      var name = String((info && info.child_display) || "").trim().toLowerCase();
+      if (name) byChildName[name] = info;
+    });
+
+    (reenrol || []).forEach(function (r) {
+      var cid = String(r._contactId || "").trim();
+      var info = cid ? fundingByContact[cid] : null;
+      var label = (info && info.funding_label) || r._fundingLabel || "";
+      r._fundingLabel = label;
+      r.sheet = classifyPayGroup({
+        sheet: r.sheet,
+        payment_method_hint: r._paymentMethodHint,
+        vat_mode: r._vatMode,
+        funding_label: label,
+        _reenrol: true,
+      });
+    });
+
+    (payments || []).forEach(function (r) {
+      var fromData = fundingHintFromPaymentData(r.data);
+      var nameKey = String(r.client_name || "").trim().toLowerCase();
+      var info = nameKey ? byChildName[nameKey] : null;
+      var label = fromData || (info && info.funding_label) || r._fundingLabel || "";
+      r._fundingLabel = label;
+      r.sheet = classifyPayGroup({
+        sheet: r.sheet,
+        funding_label: label,
+        _reenrol: false,
+      });
+    });
+  }
+
   function loadReenrolRows() {
     var base = supabaseBase();
     var key = anonKey();
@@ -928,11 +1083,18 @@
             var cid = String(inv.contact_id || "").trim();
             if (!cid) return;
             if (!agg[cid]) {
-              var isLa = inv.payment_method_hint === "la_funded" || inv.vat_mode === "exempt";
+              var hint = String(inv.payment_method_hint || "").toLowerCase();
+              var vat = String(inv.vat_mode || "").toLowerCase();
               agg[cid] = {
                 id: "reenrol-" + cid,
                 _contactId: cid,
-                sheet: isLa ? "LA" : "PARENTS",
+                _paymentMethodHint: hint,
+                _vatMode: vat,
+                sheet: classifyPayGroup({
+                  payment_method_hint: hint,
+                  vat_mode: vat,
+                  _reenrol: true,
+                }),
                 client_name: inv.participant_display || inv.related_client || cid,
                 parent_name: inv.parent_display || "",
                 payment_status: "Paid",
@@ -954,6 +1116,11 @@
             var st = String(inv.payment_status || "").toLowerCase();
             row.amount_billed += amt;
             row._invoiceIds.push(inv.id);
+            /* Prefer la_funded / exempt signals if any instalment carries them. */
+            var hint = String(inv.payment_method_hint || "").toLowerCase();
+            var vat = String(inv.vat_mode || "").toLowerCase();
+            if (hint === "la_funded") row._paymentMethodHint = hint;
+            if (vat === "exempt" && row._vatMode !== "exempt") row._vatMode = vat;
             if (st === "paid") {
               // keep Paid unless another instalment is open
             } else if (st !== "void") {
@@ -965,6 +1132,11 @@
             var row = agg[cid];
             row.amount = row.amount_out > 0 ? row.amount_out : row.amount_billed;
             if (row.amount_out <= 0 && row.amount_billed > 0) row.payment_status = "Paid";
+            row.sheet = classifyPayGroup({
+              payment_method_hint: row._paymentMethodHint,
+              vat_mode: row._vatMode,
+              _reenrol: true,
+            });
             return row;
           });
         }).catch(function () { return []; });
@@ -973,7 +1145,13 @@
 
   function loadAllData(client) {
     return Promise.all([loadAll(client), loadReenrolRows()]).then(function (res) {
-      return { payments: res[0], reenrol: res[1] };
+      var payments = res[0] || [];
+      var reenrol = res[1] || [];
+      var contactIds = reenrol.map(function (r) { return r._contactId; }).filter(Boolean);
+      return loadFundingLabelsByContact(client, contactIds).then(function (fundingByContact) {
+        applyPayGroupClassification(payments, reenrol, fundingByContact);
+        return { payments: payments, reenrol: reenrol };
+      });
     });
   }
 
