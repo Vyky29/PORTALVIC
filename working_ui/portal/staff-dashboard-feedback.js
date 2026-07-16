@@ -1150,7 +1150,7 @@
     }
     /** Today+: green when Supabase (or live feedback cache after export) confirms this session. */
     function portalServerTruthReviewRecordForItem(item, iso){
-      const base = { feedbackDone: false, incident: false, absent: false, cancelled: false };
+      const base = { feedbackDone: false, incident: false, absent: false, cancelled: false, cancelNeedsFeedback: false };
       if(!item || !iso) return base;
       const serverSynced = !!(dashboardData && dashboardData.portalFeedbackServerSynced);
       const srv = dashboardData && dashboardData.portalServerResolvedRosterKeys;
@@ -1160,6 +1160,7 @@
       let feedbackDone = false;
       let absent = false;
       let cancelled = false;
+      let cancelNeedsFeedback = false;
       if(serverSynced && srv){
         const cidForSlot = baseS && typeof portalEffectiveClientIdForReview === 'function'
           ? portalEffectiveClientIdForReview(baseS, iso)
@@ -1181,6 +1182,10 @@
           }
           if(srv.absent && srv.absent.has(k)) absent = true;
           if(srv.cancelled && srv.cancelled.has(k)) cancelled = true;
+          if(srv.cancelNeedsFeedback && srv.cancelNeedsFeedback.has(k)){
+            cancelled = true;
+            cancelNeedsFeedback = true;
+          }
         }
       }
       if(!absent && dashboardData && dashboardData.portalServerAbsentQuickMarkKeys){
@@ -1216,19 +1221,33 @@
           if(ex.feedbackDone && !ex.absent && !ex.cancelled) feedbackDone = true;
         }
       }
-      if(absent || cancelled) feedbackDone = false;
-      if(!feedbackDone && !absent && !cancelled){
+      const mem = getSessionReviewRecord(item) || {};
+      if(mem.cancelNeedsFeedback && mem.cancelled && !mem.feedbackDone){
+        cancelled = true;
+        cancelNeedsFeedback = true;
+      }
+      if(mem.cancelled && !mem.cancelNeedsFeedback){
+        cancelled = true;
+        cancelNeedsFeedback = false;
+      }
+      if(absent || (cancelled && !cancelNeedsFeedback)) feedbackDone = false;
+      if(cancelled && !cancelNeedsFeedback){
+        /* Before-start cancel counts as submitted. */
+        feedbackDone = true;
+      }
+      if(!feedbackDone && !absent && !(cancelled && !cancelNeedsFeedback)){
         const needsOwnFb = typeof portalTodayItemNeedsPerStaffOwnFeedbackOnly === 'function'
           && portalTodayItemNeedsPerStaffOwnFeedbackOnly(item, iso);
         if(portalReviewFeedbackFromServerForAliases(aliases, needsOwnFb)) feedbackDone = true;
         else if(portalReviewFeedbackInMemoryForAliases(aliases, needsOwnFb)) feedbackDone = true;
       }
-      const mem = getSessionReviewRecord(item) || {};
+      if(feedbackDone) cancelNeedsFeedback = false;
       return {
         feedbackDone: feedbackDone,
         incident: !!mem.incident,
         absent: absent,
-        cancelled: cancelled
+        cancelled: cancelled,
+        cancelNeedsFeedback: !!cancelNeedsFeedback && !feedbackDone
       };
     }
     /** Pre-fill review map from portal-import-bundle status (admin overview parity on My Term). */

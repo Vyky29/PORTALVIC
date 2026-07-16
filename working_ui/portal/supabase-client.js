@@ -252,6 +252,7 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
     absentFeedbackKeys: [],
     incidentKeys: [],
     cancellationKeys: [],
+    cancellationDuringKeys: [],
     absentKeys: [],
     quickFeedbackDoneKeys: [],
     lateFeedbackKeys: [],
@@ -295,7 +296,7 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
       .gte("session_date", sinceStr),
     supabase
       .from("cancellation_reports")
-      .select("portal_session_key")
+      .select("portal_session_key, cancellation_timing")
       .eq("submitted_by_user_id", userId)
       .not("portal_session_key", "is", null)
       .gte("session_date", sinceStr),
@@ -393,6 +394,38 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
       out.push(k);
     }
     return out;
+  }
+
+  /** Split cancellation rows: before-start (counts as submitted) vs during (still needs feedback). */
+  function splitCancellationKeysByTiming(rows) {
+    const before = [];
+    const during = [];
+    const seenB = new Set();
+    const seenD = new Set();
+    if (!Array.isArray(rows)) return { before: before, during: during };
+    for (const r of rows) {
+      if (!r || typeof r !== "object") continue;
+      const k = String(/** @type {{ portal_session_key?: string }} */ (r).portal_session_key || "").trim();
+      if (!k) continue;
+      const timing = String(
+        /** @type {{ cancellation_timing?: string }} */ (r).cancellation_timing || ""
+      );
+      const needsFb =
+        typeof globalThis !== "undefined" &&
+        typeof globalThis.portalCancellationTimingNeedsFeedback === "function"
+          ? globalThis.portalCancellationTimingNeedsFeedback(timing)
+          : /during/i.test(timing);
+      if (needsFb) {
+        if (seenD.has(k)) continue;
+        seenD.add(k);
+        during.push(k);
+      } else {
+        if (seenB.has(k)) continue;
+        seenB.add(k);
+        before.push(k);
+      }
+    }
+    return { before: before, during: during };
   }
 
   /** @param {unknown} rpcData */
@@ -657,13 +690,20 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
     }
   }
 
+  const cancelSplit = splitCancellationKeysByTiming(can.data);
+  /* If the same key appears in both (shouldn't), before wins as fully resolved. */
+  const duringOnly = cancelSplit.during.filter(function (k) {
+    return cancelSplit.before.indexOf(k) < 0;
+  });
+
   return {
     feedbackKeys: feedbackMerged,
     ownFeedbackKeys,
     ownFeedbackPortalKeys,
     absentFeedbackKeys,
     incidentKeys: dedupeKeys(inc.data),
-    cancellationKeys: dedupeKeys(can.data),
+    cancellationKeys: cancelSplit.before,
+    cancellationDuringKeys: duringOnly,
     absentKeys,
     quickFeedbackDoneKeys,
     lateFeedbackKeys,
@@ -1283,8 +1323,33 @@ export function portalMergeReviewKeysIntoMemoryMap(memory, packs, opts = {}) {
   }
   for (const k of packs.cancellationKeys || []) {
     const prev = memory[k] || base();
-    if (!prev.cancelled) {
-      memory[k] = { ...prev, cancelled: true };
+    if (!prev.cancelled || prev.cancelNeedsFeedback || !prev.feedbackDone) {
+      memory[k] = {
+        ...prev,
+        cancelled: true,
+        cancelNeedsFeedback: false,
+        feedbackDone: true,
+      };
+      changed = true;
+    }
+  }
+  for (const k of packs.cancellationDuringKeys || []) {
+    const prev = memory[k] || base();
+    if (prev.feedbackDone) {
+      /* Feedback already submitted after a during-cancel. */
+      if (!prev.cancelled || prev.cancelNeedsFeedback) {
+        memory[k] = { ...prev, cancelled: true, cancelNeedsFeedback: false };
+        changed = true;
+      }
+      continue;
+    }
+    if (!prev.cancelled || !prev.cancelNeedsFeedback) {
+      memory[k] = {
+        ...prev,
+        cancelled: true,
+        cancelNeedsFeedback: true,
+        feedbackDone: false,
+      };
       changed = true;
     }
   }
@@ -1474,7 +1539,7 @@ function portalSubmittedFeedbackKeysForMemory(packs) {
 }
 
 function portalReviewMemoryBase() {
-  return { feedbackDone: false, incident: false, absent: false, cancelled: false };
+  return { feedbackDone: false, incident: false, absent: false, cancelled: false, cancelNeedsFeedback: false };
 }
 
 /** Roster keys this staff owns via their session_feedback portal_session_key rows. */
@@ -1506,12 +1571,15 @@ export function portalBuildServerResolvedRosterKeySets(rosterKeys, packs, opts =
     ...new Set([...(packs?.absentFeedbackKeys || []), ...(packs?.absentKeys || [])]),
   ];
   const cancelledKeys = [...new Set(packs?.cancellationKeys || [])];
+  const cancelDuringKeys = [...new Set(packs?.cancellationDuringKeys || [])];
   /** @type {Set<string>} */
   const feedback = new Set();
   /** @type {Set<string>} */
   const absent = new Set();
   /** @type {Set<string>} */
   const cancelled = new Set();
+  /** @type {Set<string>} */
+  const cancelNeedsFeedback = new Set();
 
   function fanOut(keys, target) {
     for (const rk of rosterKeys || []) {
@@ -1528,6 +1596,7 @@ export function portalBuildServerResolvedRosterKeySets(rosterKeys, packs, opts =
   fanOut(submittedFb, feedback);
   fanOut(absentAll, absent);
   fanOut(cancelledKeys, cancelled);
+  fanOut(cancelDuringKeys, cancelNeedsFeedback);
   fanOut(packs?.ownFeedbackPortalKeys || [], feedback);
   function addExactKeys(keys, target) {
     for (const fk of keys || []) {
@@ -1573,7 +1642,11 @@ export function portalBuildServerResolvedRosterKeySets(rosterKeys, packs, opts =
   for (const fk of submittedFb) {
     if (portalSubmittedKeyIsMergeFeedback(fk)) feedback.add(String(fk || "").trim());
   }
-  return { feedback, absent, cancelled };
+  addExactKeys(cancelledKeys, cancelled);
+  addExactKeys(cancelDuringKeys, cancelNeedsFeedback);
+  /* Before-start cancel wins over during for the same key. */
+  for (const k of cancelled) cancelNeedsFeedback.delete(k);
+  return { feedback, absent, cancelled, cancelNeedsFeedback };
 }
 
 /**
@@ -1597,6 +1670,7 @@ export function portalReconcileReviewMemoryWithServer(memory, rosterKeys, packs,
   const submittedFb = portalSubmittedFeedbackKeysForMemory(packs);
   const absentAll = [...new Set([...absentFb, ...(packs.absentKeys || [])])];
   const cancelledKeys = [...new Set(packs.cancellationKeys || [])];
+  const cancelDuringKeys = [...new Set(packs.cancellationDuringKeys || [])];
 
   /** @type {Set<string>} */
   const resolved = new Set();
@@ -1614,6 +1688,7 @@ export function portalReconcileReviewMemoryWithServer(memory, rosterKeys, packs,
   markResolved(submittedFb);
   markResolved(absentAll);
   markResolved(cancelledKeys);
+  markResolved(cancelDuringKeys);
   markResolved(packs.ownFeedbackPortalKeys || []);
   function markPortalKeysExactResolved(keys) {
     for (const fk of keys || []) {
@@ -1625,6 +1700,7 @@ export function portalReconcileReviewMemoryWithServer(memory, rosterKeys, packs,
   markPortalKeysExactResolved(packs.ownFeedbackPortalKeys || []);
   markPortalKeysExactResolved(absentAll);
   markPortalKeysExactResolved(cancelledKeys);
+  markPortalKeysExactResolved(cancelDuringKeys);
   for (const fk of submittedFb) {
     const exact = String(fk || "").trim();
     if (exact && rosterKeys.includes(exact)) resolved.add(exact);

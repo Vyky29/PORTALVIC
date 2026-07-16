@@ -351,8 +351,9 @@
   </script>
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260704-admin-504"></script>
-  <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260713-late-pay-release"></script>
-  <script src="/portal/portal_admin_alerts_bell.js?v=20260704-admin-alerts-no-absents"></script>
+  <script src="/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve"></script>
+  <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260716-cancel-selfserve"></script>
+  <script src="/portal/portal_admin_alerts_bell.js?v=20260716-cancel-selfserve"></script>
   <script type="module">
     import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20260704-presence-504";
     window.portalAdminMountLivePresenceBarFn = function portalAdminMountLivePresenceBarFn(){
@@ -18278,7 +18279,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260715-no-shadowing-fb';
+    var PORTAL_ADMIN_HUB_BUILD = '20260716-cancel-selfserve';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
@@ -19193,8 +19194,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="portal-late-admin-msg"><strong>Loading…</strong></div>' +
         '</div>' +
         '<details class="portal-late-approval-panel" style="margin-top:28px">' +
-        '<summary class="portal-late-approval-panel__sum">Cancel / incident late approvals</summary>' +
-        '<p class="muted" style="margin:8px 0 10px;font-size:13px;max-width:52rem;overflow-wrap:break-word">Past-session cancellations and incidents still need approval. Session feedback does not.</p>' +
+        '<summary class="portal-late-approval-panel__sum">Incident late approvals</summary>' +
+        '<p class="muted" style="margin:8px 0 10px;font-size:13px;max-width:52rem;overflow-wrap:break-word">Past-session incidents still need approval. Instructor cancellations and session feedback do not — cancellations are recorded automatically (Before start = Submitted; During = still needs feedback).</p>' +
         '<div class="filter-row" style="flex-wrap:wrap;gap:8px;align-items:center">' +
         '<label class="muted" for="portalLateApprovalFilter" style="font-size:13px">Show</label>' +
         '<select class="inp" id="portalLateApprovalFilter" style="max-width:200px">' +

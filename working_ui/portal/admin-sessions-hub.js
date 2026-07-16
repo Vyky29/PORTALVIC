@@ -5103,7 +5103,15 @@
       var csd = rowDateIso(c.session_date);
       if (!csd) continue;
       var ck = csd + "|" + canonicalClientSlug(c.client_name);
-      if (ck.length > 11) can[ck] = true;
+      if (ck.length > 11) {
+        var needsFb =
+          typeof global.portalCancellationTimingNeedsFeedback === "function"
+            ? global.portalCancellationTimingNeedsFeedback(c.cancellation_timing)
+            : /during/i.test(String(c.cancellation_timing || ""));
+        /* Before-start wins if both exist. */
+        if (can[ck] && can[ck].countsAsSubmitted) continue;
+        can[ck] = { countsAsSubmitted: !needsFb, during: !!needsFb, row: c };
+      }
     }
     var listOv = this.payload.schedule_overrides || [];
     for (var k = 0; k < listOv.length; k++) {
@@ -5112,7 +5120,7 @@
       var csdOv = rowDateIso(ovCan.session_date);
       if (!csdOv) continue;
       var ckOv = csdOv + "|" + canonicalClientSlug(ovCan.client_name);
-      if (ckOv.length > 11) can[ckOv] = true;
+      if (ckOv.length > 11) can[ckOv] = { countsAsSubmitted: true, during: false, row: ovCan };
     }
     this._incidentByDateClient = inc;
     this._cancelByDateClient = can;
@@ -5130,6 +5138,23 @@
     if (ovCan) return true;
     var k = slot.session_date + "|" + canonicalClientSlug(slot.client_name);
     return !!(this._cancelByDateClient && this._cancelByDateClient[k]);
+  };
+
+  /** Before-start (or admin override) cancel counts as Submitted; during-session cancel still awaits feedback. */
+  AdminSessionsHub.prototype.slotCancellationCountsAsSubmitted = function (slot) {
+    if (hubSlotIsTrial(slot)) return false;
+    if (this.slotHasFeedbackResolution(slot, "cancelled")) return true;
+    var ovCan = this.overrideForSlotByType(slot, overrideIsCancelledType);
+    if (ovCan) return true;
+    var k = slot.session_date + "|" + canonicalClientSlug(slot.client_name);
+    var meta = this._cancelByDateClient && this._cancelByDateClient[k];
+    if (!meta) return false;
+    if (meta.countsAsSubmitted) return true;
+    /* During cancel + real feedback already submitted. */
+    if (this.findFeedbackForSlot(slot) && !isAbsentFeedbackRow(this.findFeedbackForSlot(slot))) {
+      return true;
+    }
+    return false;
   };
 
   AdminSessionsHub.prototype.findAcatGroupFeedbackForDate = function (iso) {
@@ -5567,7 +5592,7 @@
         rosterDone++;
         continue;
       }
-      if (hub.slotHasCancellation(slot)) {
+      if (hub.slotCancellationCountsAsSubmitted(slot)) {
         rosterDone++;
         continue;
       }
@@ -6586,6 +6611,15 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var can = cancels[cj].row;
       var cn = clean(can.client_name);
       if (!cn || isPortalTestClientName(cn)) continue;
+      var timingRaw = clean(can.cancellation_timing);
+      var duringCancel =
+        typeof global.portalCancellationTimingNeedsFeedback === "function"
+          ? global.portalCancellationTimingNeedsFeedback(timingRaw)
+          : /during/i.test(timingRaw);
+      if (duringCancel) {
+        /* During-session cancel still awaits real session feedback — do not mark Submitted. */
+        continue;
+      }
       var cslug = canonicalClientSlug(cn);
       for (var rm = out.length - 1; rm >= 0; rm--) {
         if (
@@ -6598,7 +6632,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         }
       }
       var reason = clean(can.reason_category) || "\u2014";
-      var timing = clean(can.cancellation_timing);
+      var timing = timingRaw;
       if (timing && reason !== "\u2014") reason = timing + " \u2014 " + reason;
       else if (timing) reason = timing;
       pushRow({
@@ -6755,8 +6789,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var slot = displaySlots[i];
       var ukey = feedbackUnitKey(slot);
       var isAbsent = unitAbsent[ukey] || hub.slotIsAbsent(slot);
-      var isCancelled = hub.slotHasCancellation(slot);
-      if (isAbsent || isCancelled) {
+      var isCancelledSubmitted = hub.slotCancellationCountsAsSubmitted(slot);
+      if (isAbsent || isCancelledSubmitted) {
         var afb =
           hub.findAbsentFeedbackForSlot(slot) || hub.syntheticAbsentDisplayRow(slot);
         if (!afb) {
@@ -6770,7 +6804,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
             }
           }
         }
-        if (!afb && isCancelled) {
+        if (!afb && isCancelledSubmitted) {
           for (var sc = 0; sc < submitted.length; sc++) {
             if (
               isCancellationFeedbackRow(submitted[sc]) &&

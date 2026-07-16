@@ -107,6 +107,9 @@
 
   function activityFromLateRequest(row) {
     if (!row || !row.id) return null;
+    /* Instructor cancels + feedback are self-serve; only late incidents need approval. */
+    var subType = String(row.submission_type || "").toLowerCase();
+    if (subType !== "incident") return null;
     var client = String(row.client_name || "Participant").trim() || "Participant";
     var typ = lateTypeLabel(row.submission_type);
     var d = String(row.session_date || "").trim().slice(0, 10);
@@ -595,6 +598,7 @@
         "id,created_at,client_name,session_date,submission_type,service_label,status"
       )
       .eq("status", "pending")
+      .eq("submission_type", "incident")
       .order("created_at", { ascending: false })
       .limit(40);
     if (res.error) {

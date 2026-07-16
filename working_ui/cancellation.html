@@ -6,7 +6,7 @@
 -->
 <script src="/portal-static-bootstrap.js?v=20260610-portal-voice-auto"></script>
 <script type="module" src="/portal-shared-js/portal_session_key.js?v=20260703-canonical-keys"></script>
-<script src="/portal-shared-js/portal_late_submission.js?v=20260520"></script>
+<script src="/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve"></script>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Cancellation Report - clubSENsational</title>
@@ -482,19 +482,24 @@ button{
 
   var PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
 
-  function persistPortalCancellationReviewState(sessionKey){
+  function persistPortalCancellationReviewState(sessionKey, timing){
     var sk = String(sessionKey || '').trim();
     if (!sk) return;
+    var needsFb = typeof window.portalCancellationTimingNeedsFeedback === 'function'
+      ? window.portalCancellationTimingNeedsFeedback(timing)
+      : /during/i.test(String(timing || ''));
     try {
       var raw = localStorage.getItem(PORTAL_SESSION_REVIEW_MAP_STORAGE) || '{}';
       var o = JSON.parse(raw);
       var base = o && typeof o === 'object' ? o : {};
       var prev = base[sk] && typeof base[sk] === 'object' ? base[sk] : {};
       base[sk] = {
-        feedbackDone: true,
+        /* Before start: cancelled = submitted. During: still owe feedback. */
+        feedbackDone: needsFb ? !!prev.feedbackDone : true,
         incident: !!prev.incident,
         absent: !!prev.absent,
-        cancelled: true
+        cancelled: true,
+        cancelNeedsFeedback: !!needsFb && !prev.feedbackDone
       };
       localStorage.setItem(PORTAL_SESSION_REVIEW_MAP_STORAGE, JSON.stringify(base));
     } catch(_){}
@@ -1077,14 +1082,11 @@ button{
       banner.textContent = '';
       return;
     }
-    var sk = clean(context.portalSessionKey);
-    var approved = typeof portalFormLateSubmissionApproved === 'function'
-      ? await portalFormLateSubmissionApproved(sk, 'cancellation')
-      : false;
     banner.hidden = false;
-    banner.textContent = approved
-      ? 'Admin approved late cancellation for this session. The report will use the original session date (' + (formatDisplayFromIso(iso) || iso) + '), not today.'
-      : 'This session is from a previous day. You need admin approval before you can submit a late cancellation. Request it from your dashboard first.';
+    banner.textContent =
+      'This session is from a previous day. You can submit the cancellation now — it will use the original session date (' +
+      (formatDisplayFromIso(iso) || iso) +
+      '), not today. No admin approval is required.';
   }
 
   async function enrichCancellationContext(){
@@ -1294,15 +1296,7 @@ button{
       return;
     }
     var submitIso = /^\d{4}-\d{2}-\d{2}$/.test(clean(context.sessionDate)) ? clean(context.sessionDate) : sessionDateIsoForSubmit();
-    if (typeof portalIsPastSessionDateIso === 'function' && portalIsPastSessionDateIso(submitIso)) {
-      var okLate = typeof portalFormLateSubmissionApproved === 'function'
-        ? await portalFormLateSubmissionApproved(clean(context.portalSessionKey), 'cancellation')
-        : false;
-      if (!okLate) {
-        alert('Admin approval is required for late cancellation on this session date. Request it from your dashboard first.');
-        return;
-      }
-    }
+    /* Instructor cancellations are self-serve (no late-approval gate). */
     submitBtn.disabled = true;
     btnLabel.innerHTML = '<span class="spinner"></span> Submitting...';
     setMessage('', '');
@@ -1368,7 +1362,7 @@ button{
         throw new Error('Please open Cancellation from the Staff or Lead portal after signing in with your PIN on this site (same browser), then try again.');
       }
 
-      persistPortalCancellationReviewState(context.portalSessionKey);
+      persistPortalCancellationReviewState(context.portalSessionKey, clean(fd.get('cancellationTiming')));
 
       if (typeof window.portalRedirectAfterSubmitSuccess === 'function') {
         window.portalRedirectAfterSubmitSuccess('Cancellation report submitted successfully.');

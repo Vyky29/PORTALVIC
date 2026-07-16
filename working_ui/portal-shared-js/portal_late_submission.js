@@ -1,11 +1,27 @@
 /**
  * Late submission gate: past session_date requires admin approval before forms open/submit.
- * Session feedback is self-serve (no approval); admins are notified when late feedback lands.
+ * Session feedback and instructor cancellations are self-serve (no approval).
+ * Incidents still need admin approval when late.
+ * Admins are notified when late feedback lands.
  */
 (function () {
   if (typeof window === "undefined") return;
 
   var TABLE = "portal_late_submission_requests";
+
+  /** True when the cancel form timing is "During the session" (still needs session feedback). */
+  window.portalCancellationTimingNeedsFeedback = function portalCancellationTimingNeedsFeedback(timing) {
+    return /during/i.test(String(timing || "").trim());
+  };
+
+  /** Cancelled counts as submitted unless it was during the session and feedback is still owed. */
+  window.portalReviewRecordIsComplete = function portalReviewRecordIsComplete(rec) {
+    if (!rec) return false;
+    if (rec.absent) return true;
+    if (rec.feedbackDone) return true;
+    if (rec.cancelled && !rec.cancelNeedsFeedback) return true;
+    return false;
+  };
 
   window.portalTodayIsoLocal = function portalTodayIsoLocal() {
     var d = new Date();
@@ -39,6 +55,11 @@
 
   function isLateSubmissionTypeFeedback(type) {
     return String(type || "").toLowerCase() === "feedback";
+  }
+
+  function isLateSubmissionTypeSelfServe(type) {
+    var t = String(type || "").toLowerCase();
+    return t === "feedback" || t === "cancellation";
   }
 
   function portalSupabaseClient() {
@@ -161,7 +182,7 @@
     if (!item || !item.sessionKey) return { allowed: false, reason: "no_session" };
     var iso = portalSessionIsoFromKey(item.sessionKey);
     if (!portalIsPastSessionDateIso(iso)) return { allowed: true, late: false };
-    if (isLateSubmissionTypeFeedback(submissionType)) {
+    if (isLateSubmissionTypeSelfServe(submissionType)) {
       return { allowed: true, late: true, selfServe: true };
     }
     if (portalLateSubmissionBypassForStaff()) {
@@ -222,7 +243,7 @@
     sessionKey,
     submissionType
   ) {
-    if (isLateSubmissionTypeFeedback(submissionType)) return true;
+    if (isLateSubmissionTypeSelfServe(submissionType)) return true;
     if (portalLateSubmissionBypassForStaff()) return true;
     var qs =
       typeof URLSearchParams !== "undefined"

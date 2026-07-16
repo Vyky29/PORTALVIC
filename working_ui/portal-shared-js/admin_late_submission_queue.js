@@ -1,6 +1,7 @@
 /**
- * Admin UI: late session feedback log + approve/reject past-session cancel/incident requests.
- * Feedback is self-serve; this screen lists submissions where London completion day > session_date.
+ * Admin UI: late session feedback log + approve/reject past-session incident requests.
+ * Feedback and instructor cancellations are self-serve; this screen lists late feedback
+ * and incidents that still need approval.
  */
 (function () {
   "use strict";
@@ -460,12 +461,14 @@
           .from(TABLE)
           .select("id", { count: "exact", head: true })
           .eq("status", "pending")
-          .neq("submission_type", "feedback");
+          .eq("submission_type", "incident");
         if (res.error) {
           var res2 = await c
             .from(TABLE)
             .select("id", { count: "exact", head: true })
-            .eq("status", "pending");
+            .eq("status", "pending")
+            .neq("submission_type", "feedback")
+            .neq("submission_type", "cancellation");
           if (res2.error) return 0;
           return typeof res2.count === "number" ? res2.count : 0;
         }
@@ -606,7 +609,7 @@
           .select(
             "id,created_at,updated_at,staff_user_id,portal_session_key,session_date,submission_type,client_name,service_label,status,admin_note,reviewed_at,reviewed_by_user_id"
           )
-          .neq("submission_type", "feedback")
+          .eq("submission_type", "incident")
           .order("created_at", { ascending: false })
           .limit(120);
         if (filter !== "all") q = q.eq("status", filter);
@@ -817,8 +820,8 @@
       if (!rows || !rows.length) {
         return (
           '<div class="portal-late-admin-msg">' +
-          "<strong>No cancel / incident requests in this filter</strong>" +
-          '<p style="margin:8px 0 0">Session feedback no longer needs approval here — it appears in the late feedback table above when submitted after the session day.</p></div>'
+          "<strong>No incident requests in this filter</strong>" +
+          '<p style="margin:8px 0 0">Instructor cancellations and session feedback do not need approval — they appear in Day operations when submitted. Late feedback is listed above when completed after the session day.</p></div>'
         );
       }
       var body = rows

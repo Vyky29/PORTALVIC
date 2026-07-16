@@ -4138,33 +4138,39 @@
         ? getEffectiveSessionReviewRecord(item)
         : getSessionReviewRecord(item)) || { feedbackDone: false, incident: false, absent: false, cancelled: false };
       const ended = isSessionEndedForFeedback(item);
-      const terminal = !!(rec.absent || rec.cancelled);
+      const cancelNeedsFb = !!(rec.cancelled && rec.cancelNeedsFeedback && !rec.feedbackDone);
+      const terminal = !!(rec.absent || (rec.cancelled && !cancelNeedsFb));
       const actionsDisabledByOverride = !!(item && item.actionsDisabled);
       const bypass = portalStaffIsDemoAccount();
-      fb.disabled = actionsDisabledByOverride || terminal || !!rec.feedbackDone || (!bypass && !ended);
+      fb.disabled = actionsDisabledByOverride || terminal || !!rec.feedbackDone || (!bypass && !ended && !cancelNeedsFb);
       fb.title = actionsDisabledByOverride
         ? 'Disabled: session already resolved by Admin as Absent'
         : terminal
-        ? (rec.absent ? 'Absence recorded (feedback not required)' : 'Cancellation recorded')
-        : (rec.feedbackDone ? 'Feedback already recorded' : ((!bypass && !ended) ? 'Available after the session ends' : 'Open session feedback form'));
-      abs.disabled = actionsDisabledByOverride || terminal || !!rec.feedbackDone || (!bypass && !ended);
+        ? (rec.absent ? 'Absence recorded (feedback not required)' : 'Cancellation recorded (before start — counts as submitted)')
+        : (rec.feedbackDone ? 'Feedback already recorded'
+          : (cancelNeedsFb && !ended ? 'Session cancelled during the session — submit feedback when the session ends'
+            : ((!bypass && !ended) ? 'Available after the session ends' : 'Open session feedback form')));
+      abs.disabled = actionsDisabledByOverride || terminal || !!rec.feedbackDone || cancelNeedsFb || (!bypass && !ended);
       abs.title = actionsDisabledByOverride
         ? 'Disabled: session already resolved by Admin as Absent'
         : terminal
         ? (rec.absent ? 'Absence recorded' : 'Cancellation already recorded')
-        : (rec.feedbackDone ? 'Feedback already recorded; absence unavailable' : ((!bypass && !ended) ? 'Available after the session ends' : 'Mark this session as absent (feedback not required)'));
+        : (cancelNeedsFb ? 'Cancellation recorded during session — submit feedback instead'
+          : (rec.feedbackDone ? 'Feedback already recorded; absence unavailable' : ((!bypass && !ended) ? 'Available after the session ends' : 'Mark this session as absent (feedback not required)')));
       inc.disabled = actionsDisabledByOverride || terminal || (!bypass && !ended);
       inc.title = actionsDisabledByOverride
         ? 'Disabled: session already resolved by Admin as Absent'
         : terminal
         ? 'Session closed (absence or cancellation)'
         : ((!bypass && !ended) ? 'Available after the session ends' : 'Record an incident (row stays orange)');
-      can.disabled = actionsDisabledByOverride || terminal || (!bypass && !ended);
+      /* Cancel available once the slot has a client — before or after start (timing chosen on the form). */
+      can.disabled = actionsDisabledByOverride || terminal || cancelNeedsFb || (!bypass && sessionModelStatus(item) === 'Available');
       can.title = actionsDisabledByOverride
         ? 'Disabled: session already resolved by Admin as Absent'
         : terminal
         ? 'Already set'
-        : ((!bypass && !ended) ? 'Available after the session ends' : 'Record absence or full cancellation for this session');
+        : (cancelNeedsFb ? 'Already cancelled — feedback still required'
+          : 'Record cancellation (Before start = submitted; During = still needs feedback)');
     }
 
     function executeClientQuickFeedback(){
@@ -4174,8 +4180,8 @@
       const rec = (typeof getEffectiveSessionReviewRecord === 'function'
         ? getEffectiveSessionReviewRecord(item)
         : getSessionReviewRecord(item)) || {};
-      if(rec.feedbackDone || rec.absent || rec.cancelled) return;
-      if(!portalStaffIsDemoAccount() && !isSessionEndedForFeedback(item)) return;
+      if(rec.feedbackDone || rec.absent || (rec.cancelled && !rec.cancelNeedsFeedback)) return;
+      if(!portalStaffIsDemoAccount() && !isSessionEndedForFeedback(item) && !rec.cancelNeedsFeedback) return;
       if(!confirm('Mark feedback as completed for this session?')) return;
       mergeSessionReview(item, prev => ({ ...prev, feedbackDone: true }));
       closeSheet();
@@ -4188,7 +4194,7 @@
       const rec = (typeof getEffectiveSessionReviewRecord === 'function'
         ? getEffectiveSessionReviewRecord(item)
         : getSessionReviewRecord(item)) || {};
-      if(rec.feedbackDone || rec.absent || rec.cancelled) return;
+      if(rec.feedbackDone || rec.absent || (rec.cancelled && !rec.cancelNeedsFeedback)) return;
       if(typeof portalEnsureLateSubmissionAllowed === 'function' && !portalStaffIsDemoAccount()){
         const gate = await portalEnsureLateSubmissionAllowed(item, 'feedback');
         if(!gate.allowed) return;
@@ -4342,8 +4348,7 @@
       const rec = (typeof getEffectiveSessionReviewRecord === 'function'
         ? getEffectiveSessionReviewRecord(item)
         : getSessionReviewRecord(item)) || {};
-      if(rec.absent || rec.cancelled) return;
-      if(!portalStaffIsDemoAccount() && !isSessionEndedForFeedback(item)) return;
+      if(rec.absent || (rec.cancelled && !rec.cancelNeedsFeedback)) return;
       if(typeof portalEnsureLateSubmissionAllowed === 'function' && !portalStaffIsDemoAccount()){
         const gate = await portalEnsureLateSubmissionAllowed(item, 'cancellation');
         if(!gate.allowed) return;
@@ -4352,6 +4357,7 @@
       let finalUrl = base;
       try{
         const u = new URL(base, window.location.href);
+        /* Self-serve late cancel — keep flag for form messaging only. */
         if(typeof portalIsPastSessionDateIso === 'function' && portalIsPastSessionDateIso(portalSessionIsoFromKey(item.sessionKey))){
           u.searchParams.set('lateApproved', '1');
         }
@@ -4369,8 +4375,7 @@
       const rec = (typeof getEffectiveSessionReviewRecord === 'function'
         ? getEffectiveSessionReviewRecord(item)
         : getSessionReviewRecord(item)) || {};
-      if(rec.absent || rec.cancelled) return;
-      if(!portalStaffIsDemoAccount() && !isSessionEndedForFeedback(item)) return;
+      if(rec.absent || (rec.cancelled && !rec.cancelNeedsFeedback)) return;
       const itemSnapshot = {
         sessionKey: item.sessionKey,
         name: item.name,

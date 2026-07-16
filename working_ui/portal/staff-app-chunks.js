@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260713-exec-swim-term";
+  var VER = "20260716-cancel-selfserve";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260702-feedback-jun25",
@@ -14,7 +14,7 @@
     "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260707-roberto-venues",
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260712-rayyan-f",
     "/portal/portal_staff_feedback_data_loader.js?v=20260702-feedback-jun25",
-    "/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open",
+    "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
     "/portal/portal-roster-rows-merge.js?v=20260622-canonical-roster",
     "/portal/portal_roster_canonical.js?v=20260614-madre-dedupe",
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",

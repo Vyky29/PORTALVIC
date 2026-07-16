@@ -1447,7 +1447,7 @@
         const r = typeof getEffectiveSessionReviewRecord === 'function'
           ? (getEffectiveSessionReviewRecord(item) || {})
           : {};
-        return !!(r.feedbackDone || r.absent || r.cancelled);
+        return !!(r.feedbackDone || r.absent || (r.cancelled && !r.cancelNeedsFeedback));
       }
       const item = typeof portalMinimalReviewItemFromRosterRow === 'function'
         ? portalMinimalReviewItemFromRosterRow(s, dw, iso, cur)
@@ -1457,7 +1457,7 @@
       const rec = typeof getEffectiveSessionReviewRecord === 'function'
         ? (getEffectiveSessionReviewRecord(item) || {})
         : {};
-      return !!(rec.feedbackDone || rec.absent || rec.cancelled);
+      return !!(rec.feedbackDone || rec.absent || (rec.cancelled && !rec.cancelNeedsFeedback));
     }
     function portalEnrichClientNotesFromPortalFeedback(){
       const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
