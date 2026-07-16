@@ -135,6 +135,19 @@
     );
   }
 
+  function reButtonContent(iconKey, label) {
+    var inner = RE_ICON_SVGS[iconKey] || RE_ICON_SVGS.services;
+    return (
+      '<span class="re-btn__icon" aria-hidden="true">' +
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+      inner +
+      "</svg></span>" +
+      '<span class="re-btn__title">' +
+      esc(label) +
+      "</span>"
+    );
+  }
+
   function reCalIconSvg(key) {
     var inner = RE_ICON_SVGS[key];
     if (!inner) return "";
@@ -2840,24 +2853,44 @@
   function renderOtherServicesInfoHtml(data) {
     var hasDc = hasDayCentreEnrolled(data);
     var canExtras = !(data && data.parent_reenrol_ui && data.parent_reenrol_ui.can_book_extras === false);
+    var hasSchoolPlacement = !!(
+      data &&
+      data.parent_reenrol_ui &&
+      data.parent_reenrol_ui.has_school_placement
+    );
+    var canViewDayCentreOffer = !hasSchoolPlacement && !(
+      data &&
+      data.parent_reenrol_ui &&
+      data.parent_reenrol_ui.can_view_day_centre_offer === false
+    );
     var cards = "";
-    if (!hasDc) {
+    if (!hasDc && canViewDayCentreOffer) {
       cards +=
         '<article class="re-offer-block">' +
         "<h4>Day Centre (SwimFarm)</h4>" +
         '<p class="re-muted">Weekday provision (Mon–Fri), separate from After-School &amp; Weekends. Contact the office if you would like to add Day Centre.</p>' +
         '<div class="re-offer-actions">' +
-        '<button type="button" class="re-btn re-btn--secondary" id="reDayCentreDatesBtn">Day Centre dates 2026/27</button>' +
+        '<button type="button" class="re-btn re-btn--secondary re-btn--icon-top" id="reDayCentreDatesBtn">' +
+        reButtonContent("daycentre", "Day Centre dates 2026/27") +
+        "</button>" +
         "</div></article>";
     }
     if (canExtras) {
       cards +=
         '<article class="re-offer-block">' +
         "<h4>Summer crash courses · July 2026</h4>" +
-        '<p class="re-muted">Climbing (Westway) and Swimming (Acton), four-day week packs. <strong>Currently open: Week 1 — climb Mon–Thu 20–23 July · swim Tue–Fri 21–24 July.</strong> Week 2 (28–31 July) opens when Week 1 reaches 80% of places. Individual leftover hours for Week 1: Fri 17–Sun 19 July (register interest on the crash booking page). <strong>Pay in full</strong> to reserve — places are limited.</p>' +
+        '<div class="re-offer-copy">' +
+        '<p class="re-muted">Climbing (Westway) and Swimming (Acton), available as four-day week packs.</p>' +
+        '<p class="re-muted"><strong>Currently open:</strong> Week 1 — Climbing Mon–Thu 20–23 July; Swimming Tue–Fri 21–24 July. Week 2 (28–31 July) opens when Week 1 reaches 80% of places.</p>' +
+        '<p class="re-muted">Individual leftover hours for Week 1 run Fri 17–Sun 19 July; register your interest on the crash booking page. <strong>Pay in full to reserve — places are limited.</strong></p>' +
+        "</div>" +
         '<div class="re-offer-actions">' +
-        '<a class="re-btn re-btn--primary" id="reCrashBookBtn" href="/parent/crash-summer">Book summer crash courses</a>' +
-        '<button type="button" class="re-btn re-btn--secondary" id="reCrashDatesBtn">View dates on calendar</button>' +
+        '<a class="re-btn re-btn--primary re-btn--icon-top" id="reCrashBookBtn" href="/parent/crash-summer">' +
+        reButtonContent("crash", "Book summer crash courses") +
+        "</a>" +
+        '<button type="button" class="re-btn re-btn--secondary re-btn--icon-top" id="reCrashDatesBtn">' +
+        reButtonContent("calendar", "View dates on calendar") +
+        "</button>" +
         "</div></article>";
     } else {
       cards +=
@@ -2866,11 +2899,13 @@
         '<p class="re-muted">Extra holiday sessions are not available for this place. Please contact the office if you need help.</p>' +
         "</article>";
     }
-    cards +=
-      '<article class="re-offer-block">' +
-      "<h4>Half-term intensives</h4>" +
-      '<p class="re-muted">October, February and May half terms (Mon–Thu). Booking for those weeks opens closer to the dates.</p>' +
-      "</article>";
+    if (!hasSchoolPlacement) {
+      cards +=
+        '<article class="re-offer-block">' +
+        "<h4>Half-term intensives</h4>" +
+        '<p class="re-muted">October, February and May half terms (Mon–Thu). Booking for those weeks opens closer to the dates.</p>' +
+        "</article>";
+    }
     return (
       '<section class="re-section re-section--offer re-done-offer">' +
       '<h3 class="re-done-offer__title">Other services you might like</h3>' +

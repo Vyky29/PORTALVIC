@@ -68,6 +68,41 @@ function parseDobInput(raw: string): string | null {
   return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
 }
 
+function schoolAnswerMeansCurrentPlacement(raw: unknown): boolean {
+  const value = String(raw ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+  if (!value) return false;
+  return !/^(?:no|none|n\/?a|not applicable|home(?:\s+educated|\s+education)?|homeschooled)$/i.test(
+    value,
+  );
+}
+
+async function participantHasSchoolPlacement(
+  supabase: ReturnType<typeof createClient>,
+  participant: Record<string, unknown>,
+): Promise<boolean> {
+  const displayName = String(participant.display_name || "").trim() ||
+    [participant.first_name, participant.last_name].filter(Boolean).join(" ").trim();
+  const dob = String(participant.dob_iso || "").slice(0, 10);
+
+  let query = supabase
+    .from("portal_participant_documents")
+    .select("participant_name, participant_dob, payload_json, submitted_at")
+    .eq("form_type", "client_registration")
+    .order("submitted_at", { ascending: false })
+    .limit(80);
+  if (dob) query = query.eq("participant_dob", dob);
+
+  const { data: documents } = await query;
+  for (const row of documents || []) {
+    if (!namesMatch(displayName, String(row.participant_name || ""))) continue;
+    const payload = row.payload_json && typeof row.payload_json === "object"
+      ? row.payload_json as Record<string, unknown>
+      : {};
+    return schoolAnswerMeansCurrentPlacement(payload.participant_school);
+  }
+  return false;
+}
+
 async function verifyParentSession(
   supabase: ReturnType<typeof createClient>,
   token: string,
@@ -305,6 +340,7 @@ Deno.serve(async (req) => {
     firstName: String(participantRow.first_name || ""),
     lastName: String(participantRow.last_name || ""),
   };
+  const hasSchoolPlacement = await participantHasSchoolPlacement(supabase, participantRow);
   const parentReenrolUi = buildParentReenrolUi({
     hasDayCentre: dayCentreSlots.length > 0,
     fundingLabel: paymentCtx?.fundingSource || null,
@@ -357,7 +393,11 @@ Deno.serve(async (req) => {
     existing_submission: !!(prior && prior.length),
     existing_submission_at: prior?.[0]?.submitted_at ?? null,
     client_key: paymentCtx?.clientKey || null,
-    parent_reenrol_ui: parentReenrolUi,
+    parent_reenrol_ui: {
+      ...parentReenrolUi,
+      has_school_placement: hasSchoolPlacement,
+      can_view_day_centre_offer: !hasSchoolPlacement,
+    },
   });
 });
 
