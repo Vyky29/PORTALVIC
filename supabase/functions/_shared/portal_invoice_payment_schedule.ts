@@ -152,6 +152,30 @@ export function applyInstalmentPayment(
   };
 }
 
+/**
+ * Reduce pending instalments by a credit amount (first pending onwards).
+ * The invoice total (amount_gbp) is reduced by the same credit elsewhere, so
+ * the schedule keeps matching the total. Fully covered instalments drop out.
+ */
+export function applyCreditToSchedule(
+  rawSchedule: unknown,
+  creditGbp: number,
+): { schedule: InvoicePaymentScheduleRow[]; next_instalment_due: string | null } {
+  const schedule = normalizePaymentSchedule(rawSchedule).map((r) => ({ ...r }));
+  let remaining = round2(creditGbp);
+  const out: InvoicePaymentScheduleRow[] = [];
+  for (const row of schedule) {
+    if (remaining > 0 && row.status !== "paid") {
+      const applied = Math.min(remaining, row.amount_gbp);
+      row.amount_gbp = round2(row.amount_gbp - applied);
+      remaining = round2(remaining - applied);
+      if (row.amount_gbp <= 0) continue;
+    }
+    out.push(row);
+  }
+  return { schedule: out, next_instalment_due: nextInstalmentDueDate(out) };
+}
+
 export function parentFacingSchedule(
   schedule: InvoicePaymentScheduleRow[],
 ): Array<{

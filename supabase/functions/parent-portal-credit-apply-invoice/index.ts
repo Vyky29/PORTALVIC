@@ -13,6 +13,11 @@ import {
   refreshBufferHoldState,
 } from "../_shared/portal_payment_holds.ts";
 import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
+import {
+  applyCreditToSchedule,
+  hasPaymentSchedule,
+} from "../_shared/portal_invoice_payment_schedule.ts";
+import { regeneratePortalInvoiceSharePdf } from "../_shared/portal_create_family_invoice.ts";
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -77,7 +82,7 @@ Deno.serve(async (req) => {
   const { data: inv, error: invErr } = await supabase
     .from("portal_parent_invoice_share")
     .select(
-      "id, contact_id, amount_gbp, payment_status, share_status, invoice_number, xero_invoice_id, xero_payment_id",
+      "id, contact_id, amount_gbp, payment_status, share_status, invoice_number, xero_invoice_id, xero_payment_id, payment_schedule",
     )
     .eq("id", invoiceId)
     .eq("contact_id", contactId)
@@ -170,11 +175,17 @@ Deno.serve(async (req) => {
   const invPatch: Record<string, unknown> = {
     updated_at: now,
   };
+  if (hasPaymentSchedule(inv.payment_schedule)) {
+    const scheduled = applyCreditToSchedule(inv.payment_schedule, appliedGbp);
+    invPatch.payment_schedule = scheduled.schedule;
+    invPatch.next_instalment_due = fullyPaid ? null : scheduled.next_instalment_due;
+  }
   if (fullyPaid) {
     invPatch.payment_status = "paid";
     invPatch.paid_at = now;
     invPatch.paid_via = "credit";
     invPatch.amount_gbp = invoiceAmount;
+    invPatch.next_instalment_due = null;
   } else {
     invPatch.payment_status = "partial";
     invPatch.amount_gbp = remainingGbp;
@@ -229,6 +240,12 @@ Deno.serve(async (req) => {
     xero = { synced: false, skipped: "no_xero_invoice_id" };
   } else {
     xero = { synced: false, skipped: "xero_not_configured" };
+  }
+
+  try {
+    await regeneratePortalInvoiceSharePdf(supabase, invoiceId);
+  } catch (err) {
+    console.error("[parent-portal-credit-apply-invoice] pdf", err);
   }
 
   let hold: Record<string, unknown> | null = null;
