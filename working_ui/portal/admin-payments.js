@@ -121,6 +121,201 @@
     ],
   };
 
+  /**
+   * Standard club services with fixed £ / session.
+   * Day Centre: hours vary (separate field) and Total (£) stays free-text / manual.
+   */
+  var SERVICE_CATALOG = [
+    { id: "aq_30", label: "30' Aquatic Activity", durationMin: 30, kind: "Aquatic Activity", costPerSession: 50 },
+    { id: "aq_60", label: "60' Aquatic Activity", durationMin: 60, kind: "Aquatic Activity", costPerSession: 100 },
+    { id: "aq_90", label: "90' Aquatic Activity", durationMin: 90, kind: "Aquatic Activity", costPerSession: 150 },
+    { id: "cl_60", label: "60' Climbing Activity", durationMin: 60, kind: "Climbing Activity", costPerSession: 70 },
+    { id: "ph_60", label: "60' Physical Activity", durationMin: 60, kind: "Physical Activity", costPerSession: 70 },
+    { id: "mu_90", label: "90' Multi-Activity", durationMin: 90, kind: "Multi-Activity", costPerSession: 120 },
+    { id: "day_centre", label: "Day Centre", durationMin: null, kind: "Day Centre", costPerSession: null, hoursSeparate: true },
+    { id: "other", label: "Other / custom…", durationMin: null, kind: null, costPerSession: null, custom: true },
+  ];
+
+  var SERVICE_DAY_OPTS = [
+    { value: "", label: "— Day (optional) —" },
+    { value: "Monday", label: "Monday" },
+    { value: "Tuesday", label: "Tuesday" },
+    { value: "Wednesday", label: "Wednesday" },
+    { value: "Thursday", label: "Thursday" },
+    { value: "Friday", label: "Friday" },
+    { value: "Saturday", label: "Saturday" },
+    { value: "Sunday", label: "Sunday" },
+  ];
+
+  function catalogById(id) {
+    for (var i = 0; i < SERVICE_CATALOG.length; i++) {
+      if (SERVICE_CATALOG[i].id === id) return SERVICE_CATALOG[i];
+    }
+    return null;
+  }
+
+  function parseServiceSelection(raw) {
+    var s = String(raw || "").trim();
+    var out = { id: "other", day: "", hours: "", custom: s };
+    if (!s) return out;
+    var low = s.toLowerCase().replace(/[’]/g, "'");
+
+    var dayHit = "";
+    SERVICE_DAY_OPTS.forEach(function (d) {
+      if (!d.value) return;
+      var short = d.value.slice(0, 2).toLowerCase();
+      var re = new RegExp("\\b" + d.value.toLowerCase() + "\\b|\\(" + short + "\\)|\\b" + short + "\\b", "i");
+      if (re.test(low) || low.indexOf(d.value.toLowerCase()) >= 0) dayHit = d.value;
+    });
+    // Compact day tokens: (Mon)/(Tu)/(Tue)/(Wed)/(Thu)/(Fri)/(Sat)/(Su)/(Sun)
+    var compact = low.match(/\((mo|mon|tu|tue|tues|we|wed|th|thu|thur|fri|fr|sa|sat|su|sun)\)/i);
+    if (compact) {
+      var t = compact[1].toLowerCase();
+      if (t.indexOf("mo") === 0) dayHit = "Monday";
+      else if (t.indexOf("tu") === 0) dayHit = "Tuesday";
+      else if (t.indexOf("we") === 0) dayHit = "Wednesday";
+      else if (t.indexOf("th") === 0) dayHit = "Thursday";
+      else if (t.indexOf("fr") === 0) dayHit = "Friday";
+      else if (t.indexOf("sa") === 0) dayHit = "Saturday";
+      else if (t.indexOf("su") === 0) dayHit = "Sunday";
+    }
+    out.day = dayHit;
+
+    if (/day\s*centre|day\s*center/.test(low)) {
+      out.id = "day_centre";
+      out.custom = "";
+      var hrs = s.match(/(\d{1,2}[:.]\d{2}\s*[–\-—to]+\s*\d{1,2}[:.]\d{2}|\d+h(?:ours?)?|\d+\s*hours?)/i);
+      if (hrs) out.hours = hrs[1].replace(/\s+/g, " ").trim();
+      return out;
+    }
+
+    var mins = null;
+    var m = low.match(/(\d+)\s*['′']?\s*(?:min|mins|minutes)?/);
+    if (m) mins = Number(m[1]);
+    if (/90/.test(low) && (mins == null || mins === 90)) mins = 90;
+    else if (/60/.test(low) && (mins == null || mins === 60)) mins = 60;
+    else if (/30/.test(low) && (mins == null || mins === 30)) mins = 30;
+
+    var kind = null;
+    if (/aquatic|\bsw\b|swim/.test(low)) kind = "Aquatic Activity";
+    else if (/climb|\bcl\b/.test(low)) kind = "Climbing Activity";
+    else if (/physical|\bfitness\b|\bft\b|\bfn\b/.test(low)) kind = "Physical Activity";
+    else if (/multi|s&c|s\s*&\s*c/.test(low)) kind = "Multi-Activity";
+
+    for (var i = 0; i < SERVICE_CATALOG.length; i++) {
+      var c = SERVICE_CATALOG[i];
+      if (c.custom || c.hoursSeparate) continue;
+      if (c.kind === kind && c.durationMin === mins) {
+        out.id = c.id;
+        out.custom = "";
+        return out;
+      }
+    }
+    return out;
+  }
+
+  function composeServiceLabel(cat, day, hours, customText) {
+    if (!cat) return String(customText || "").trim();
+    if (cat.custom) return String(customText || "").trim();
+    if (cat.hoursSeparate) {
+      var base = "Day Centre";
+      var h = String(hours || "").trim();
+      return h ? base + " (" + h + ")" : base;
+    }
+    var label = cat.label;
+    var d = String(day || "").trim();
+    if (d) label += " (" + d + ")";
+    return label;
+  }
+
+  function serviceEditHtml(svcKey, rawService, dataObj) {
+    dataObj = dataObj || {};
+    var parsed = parseServiceSelection(rawService);
+    if (!parsed.hours) {
+      parsed.hours = String(dataObj.Hours || dataObj["Session hours"] || dataObj["Day Centre hours"] || "").trim();
+    }
+    var cat = catalogById(parsed.id) || catalogById("other");
+    var rate = cat && cat.costPerSession != null ? "£" + cat.costPerSession + " / session" : "Varies — set Total (£) manually";
+    var opts = SERVICE_CATALOG.map(function (c) {
+      return '<option value="' + esc(c.id) + '"' + (c.id === parsed.id ? " selected" : "") + ">" + esc(c.label) +
+        (c.costPerSession != null ? " · £" + c.costPerSession + "/session" : "") +
+        "</option>";
+    }).join("");
+    var dayOpts = SERVICE_DAY_OPTS.map(function (d) {
+      return '<option value="' + esc(d.value) + '"' + (d.value === parsed.day ? " selected" : "") + ">" + esc(d.label) + "</option>";
+    }).join("");
+    var showHours = !!(cat && cat.hoursSeparate);
+    var showCustom = !!(cat && cat.custom);
+    var showDay = !showHours && !showCustom;
+
+    return '<div class="pay-fields" id="payServiceEdit" data-svc-key="' + esc(svcKey) + '">'
+      + '<div class="pay-field"><label>' + icon("tag", 13) + "<span>Service</span></label>"
+      + '<select id="paySvcCatalog">' + opts + "</select></div>"
+      + '<div class="pay-field" id="paySvcDayWrap" style="' + (showDay ? "" : "display:none") + '"><label>' + icon("calendar", 13) + "<span>Day</span></label>"
+      + '<select id="paySvcDay">' + dayOpts + "</select></div>"
+      + '<div class="pay-field" id="paySvcHoursWrap" style="' + (showHours ? "" : "display:none") + '"><label>' + icon("calendar", 13) + "<span>Hours (Day Centre)</span></label>"
+      + '<input type="text" id="paySvcHours" placeholder="e.g. 11:00–16:00 or 5h" value="' + esc(parsed.hours) + '" /></div>'
+      + '<div class="pay-field" id="paySvcCustomWrap" style="' + (showCustom ? "" : "display:none") + '"><label>' + icon("tag", 13) + "<span>Custom service</span></label>"
+      + '<input type="text" id="paySvcCustom" value="' + esc(parsed.custom || (showCustom ? rawService : "")) + '" placeholder="Type the full service label" /></div>'
+      + '<div class="pay-field"><label>' + icon("coins", 13) + "<span>Cost / session</span></label>"
+      + '<input type="text" id="paySvcRate" readonly value="' + esc(rate) + '" /></div>'
+      + '<input type="hidden" data-data="' + esc(svcKey) + '" id="paySvcHidden" value="' + esc(composeServiceLabel(cat, parsed.day, parsed.hours, parsed.custom || rawService)) + '" />'
+      + '<input type="hidden" data-data="Hours" id="paySvcHoursHidden" value="' + esc(showHours ? parsed.hours : "") + '" />'
+      + '<input type="hidden" data-data="Cost / session" id="paySvcCostHidden" value="' + esc(cat && cat.costPerSession != null ? String(cat.costPerSession) : "") + '" />'
+      + "</div>";
+  }
+
+  function wireServiceEdit(root) {
+    var box = root.querySelector("#payServiceEdit");
+    if (!box) return;
+    var catEl = root.querySelector("#paySvcCatalog");
+    var dayEl = root.querySelector("#paySvcDay");
+    var hoursEl = root.querySelector("#paySvcHours");
+    var customEl = root.querySelector("#paySvcCustom");
+    var rateEl = root.querySelector("#paySvcRate");
+    var hidden = root.querySelector("#paySvcHidden");
+    var hoursHidden = root.querySelector("#paySvcHoursHidden");
+    var costHidden = root.querySelector("#paySvcCostHidden");
+    var dayWrap = root.querySelector("#paySvcDayWrap");
+    var hoursWrap = root.querySelector("#paySvcHoursWrap");
+    var customWrap = root.querySelector("#paySvcCustomWrap");
+
+    function sync() {
+      var cat = catalogById(catEl && catEl.value) || catalogById("other");
+      var isDc = !!(cat && cat.hoursSeparate);
+      var isCustom = !!(cat && cat.custom);
+      if (dayWrap) dayWrap.style.display = !isDc && !isCustom ? "" : "none";
+      if (hoursWrap) hoursWrap.style.display = isDc ? "" : "none";
+      if (customWrap) customWrap.style.display = isCustom ? "" : "none";
+      var day = dayEl ? dayEl.value : "";
+      var hours = hoursEl ? String(hoursEl.value || "").trim() : "";
+      var custom = customEl ? String(customEl.value || "").trim() : "";
+      var label = composeServiceLabel(cat, day, hours, custom);
+      if (hidden) hidden.value = label;
+      if (hoursHidden) hoursHidden.value = isDc ? hours : "";
+      if (costHidden) costHidden.value = cat && cat.costPerSession != null ? String(cat.costPerSession) : "";
+      if (rateEl) {
+        rateEl.value = cat && cat.costPerSession != null
+          ? "£" + cat.costPerSession + " / session"
+          : "Varies — set Total (£) manually";
+      }
+      /* Predetermined session cost into Cost field when present in the form (not Total £). */
+      var costInp = root.querySelector('[data-data="Cost"]');
+      if (costInp && cat && cat.costPerSession != null) {
+        var cur = String(costInp.value || "").trim();
+        if (!cur || /^\d+(\.\d+)?$/.test(cur) || /^£?\s*\d+(\.\d+)?\s*(\/\s*session)?$/i.test(cur)) {
+          costInp.value = String(cat.costPerSession);
+        }
+      }
+    }
+
+    if (catEl) catEl.addEventListener("change", sync);
+    if (dayEl) dayEl.addEventListener("change", sync);
+    if (hoursEl) hoursEl.addEventListener("input", sync);
+    if (customEl) customEl.addEventListener("input", sync);
+    sync();
+  }
+
   function normalizeSelectKey(name) {
     return String(name || "")
       .trim()
@@ -257,7 +452,10 @@
   ];
 
   function groupedFieldsHtml(d, skipKey) {
-    var keys = Object.keys(d).filter(function (k) { return k !== skipKey; });
+    var skip = {};
+    skip[String(skipKey || "")] = true;
+    ["Hours", "Session hours", "Day Centre hours", "Cost / session"].forEach(function (k) { skip[k] = true; });
+    var keys = Object.keys(d).filter(function (k) { return !skip[k]; });
     if (!keys.length) return '<p class="pay-empty">No extra fields.</p>';
     var used = {};
     var html = "";
@@ -968,9 +1166,12 @@
       + field("client_name", "Client name", r.client_name, "prop", "user")
       + field("parent_name", "Parent / LA", r.parent_name, "prop", "users")
       + field(null, "Group", r.sheet, "sheet", "fund")
-      + field(svcKey, "Service", d[svcKey] || "", "data", "tag")
       + field(null, "Status", r.payment_status, "status", "flag")
       + field(null, "Total (£)", r.amount, "amount", "coins")
+      + "</div>"
+      + '<div style="margin-top:12px;min-width:0">'
+      + '<p class="muted" style="margin:0 0 8px;font-size:12px;max-width:48rem;overflow-wrap:break-word">Pick a standard service (session rate is fixed). For <strong>Day Centre</strong>, set hours separately — Total (£) stays manual.</p>'
+      + serviceEditHtml(svcKey, d[svcKey] || "", d)
       + "</div>";
 
     // Service is shown prominently above, so skip its key here; the rest are
@@ -993,7 +1194,7 @@
       + '<div class="pay-screen__body"><div class="pay-screen__inner">'
       + '<section class="pay-sect"><div class="pay-sect__h">' + icon("clients", 17) + 'Key details</div>' + top + '</section>'
       + '<section class="pay-sect"><div class="pay-sect__h">' + icon("list", 17) + 'All spreadsheet fields</div>'
-      + '<p class="muted" style="margin:0 0 12px;font-size:12px;max-width:48rem;overflow-wrap:break-word">Where possible, use the dropdowns (Funding, Payer, Payment method, VAT, Funder, Term, Group) so everyone picks the same wording.</p>'
+      + '<p class="muted" style="margin:0 0 12px;font-size:12px;max-width:48rem;overflow-wrap:break-word">Where possible, use the dropdowns (Funding, Payer, Payment method, VAT, Funder, Term, Group, Service) so everyone picks the same wording.</p>'
       + dataFields + '</section>'
       + '</div></div>'
       + '<div class="pay-screen__foot">'
@@ -1008,6 +1209,7 @@
     document.addEventListener("keydown", state.escHandler);
 
     var mr = screen;
+    wireServiceEdit(mr);
     var sheetEl = mr.querySelector("#payEditSheet");
     if (sheetEl) {
       sheetEl.addEventListener("change", function () {
