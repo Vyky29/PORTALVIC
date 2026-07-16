@@ -14,8 +14,18 @@ export function stripeWebhookSecret(): string {
   return String(Deno.env.get("STRIPE_WEBHOOK_SECRET") || "").trim();
 }
 
+/** True when STRIPE_SECRET_KEY is a live key (sk_live_…). */
+export function stripeIsLiveMode(): boolean {
+  return stripeSecretKey().startsWith("sk_live_");
+}
+
+/** True when a usable secret is set. Test keys are treated as not configured for parent Checkout. */
 export function stripeConfigured(): boolean {
-  return !!stripeSecretKey();
+  const key = stripeSecretKey();
+  if (!key) return false;
+  // Parent portal must collect real funds — reject Stripe test mode.
+  if (key.startsWith("sk_test_")) return false;
+  return key.startsWith("sk_live_") || key.startsWith("rk_live_");
 }
 
 /** Percent fee charged by Stripe (e.g. 1.5). Env: STRIPE_FEE_PERCENT */

@@ -70,10 +70,14 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json(405, { ok: false, error: "method_not_allowed" });
 
   if (!stripeConfigured()) {
+    const raw = String(Deno.env.get("STRIPE_SECRET_KEY") || "").trim();
+    const isTest = raw.startsWith("sk_test_");
     return json(503, {
       ok: false,
-      error: "stripe_not_configured",
-      message: "Card payment is not available yet. Please pay by bank transfer or contact the office.",
+      error: isTest ? "stripe_test_mode" : "stripe_not_configured",
+      message: isTest
+        ? "Card / Apple Pay is not collecting real funds yet (Stripe test mode). Please pay by bank transfer, or ask the office to enable live Stripe."
+        : "Card payment is not available yet. Please pay by bank transfer or contact the office.",
     });
   }
 
