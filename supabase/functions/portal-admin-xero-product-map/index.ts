@@ -110,7 +110,10 @@ Deno.serve(async (req) => {
   }
 
   if (action === "add_key") {
-    const serviceKey = clean(body.service_key, 80).toUpperCase().replace(/\s+/g, "_");
+    const serviceKey = clean(body.service_key, 80)
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
     const label = clean(body.label, 160);
     if (!serviceKey || !label) {
       return portalAdminJson(400, { ok: false, error: "service_key_and_label_required" });

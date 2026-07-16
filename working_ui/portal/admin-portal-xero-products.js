@@ -141,9 +141,20 @@
       ' exempt mapped</p>' +
       '</div>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+      '<button type="button" class="btn btn--ghost" id="xeroMapAddBtn">＋ Add row</button>' +
       '<button type="button" class="btn btn--primary" id="xeroMapSyncBtn">Sync from Xero</button>' +
       '<button type="button" class="btn btn--ghost" id="xeroMapReloadBtn">Reload</button>' +
       '</div></div>' +
+      '<div id="xeroMapAddForm" hidden style="margin-top:12px;padding:12px;border:1px solid var(--line,#d9dee8);border-radius:12px;min-width:0">' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;align-items:end;min-width:0">' +
+      '<label style="min-width:0"><span class="muted" style="display:block;font-size:12px;margin-bottom:4px">Portal key</span>' +
+      '<input class="inp" id="xeroMapNewKey" maxlength="80" placeholder="e.g. TRANSPORT" style="width:100%;max-width:100%;box-sizing:border-box;text-transform:uppercase"></label>' +
+      '<label style="min-width:0"><span class="muted" style="display:block;font-size:12px;margin-bottom:4px">Name</span>' +
+      '<input class="inp" id="xeroMapNewLabel" maxlength="160" placeholder="e.g. Transport" style="width:100%;max-width:100%;box-sizing:border-box"></label>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;min-width:0">' +
+      '<button type="button" class="btn btn--primary" id="xeroMapCreateBtn">Create row</button>' +
+      '<button type="button" class="btn btn--ghost" id="xeroMapCancelAddBtn">Cancel</button>' +
+      '</div></div></div>' +
       '<div style="overflow:auto;margin-top:12px;min-width:0">' +
       '<table class="data-table" style="width:100%;min-width:640px"><thead><tr>' +
       '<th>Portal service</th><th>Xero item (VAT)</th><th>Xero item (Exempt)</th><th>Status</th><th></th>' +
@@ -169,8 +180,50 @@
   }
 
   function bind(root) {
+    var addBtn = root.querySelector('#xeroMapAddBtn');
+    var addForm = root.querySelector('#xeroMapAddForm');
+    var createBtn = root.querySelector('#xeroMapCreateBtn');
+    var cancelAddBtn = root.querySelector('#xeroMapCancelAddBtn');
+    var newKey = root.querySelector('#xeroMapNewKey');
+    var newLabel = root.querySelector('#xeroMapNewLabel');
     var syncBtn = root.querySelector('#xeroMapSyncBtn');
     var reloadBtn = root.querySelector('#xeroMapReloadBtn');
+    if (addBtn && addForm) {
+      addBtn.addEventListener('click', function () {
+        addForm.hidden = false;
+        if (newKey) newKey.focus();
+      });
+    }
+    if (cancelAddBtn && addForm) {
+      cancelAddBtn.addEventListener('click', function () {
+        addForm.hidden = true;
+        if (newKey) newKey.value = '';
+        if (newLabel) newLabel.value = '';
+      });
+    }
+    if (createBtn) {
+      createBtn.addEventListener('click', async function () {
+        var key = String((newKey && newKey.value) || '')
+          .trim()
+          .toUpperCase()
+          .replace(/[^A-Z0-9]+/g, '_')
+          .replace(/^_+|_+$/g, '');
+        var label = String((newLabel && newLabel.value) || '').trim();
+        if (!key || !label) {
+          cfg.toast('Enter a Portal key and name.', 'error');
+          return;
+        }
+        createBtn.disabled = true;
+        var r = await api({ action: 'add_key', service_key: key, label: label });
+        createBtn.disabled = false;
+        if (r.error) {
+          cfg.toast(r.message || r.error || 'Could not create row', 'error');
+          return;
+        }
+        cfg.toast('Added ' + label, 'ok');
+        load(root);
+      });
+    }
     if (syncBtn) {
       syncBtn.addEventListener('click', async function () {
         syncBtn.disabled = true;
