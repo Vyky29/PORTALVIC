@@ -1067,7 +1067,8 @@
         ? portalReplaceMakeupOverrideForSession(s, iso)
         : null;
       if(replaceMakeupDedicated){
-        return { feedbackDone: false, incident: false, absent: false, cancelled: true };
+        /* Original client was replaced by MakeUp — count as Absent (feedback owed by replacement). */
+        return { feedbackDone: false, incident: false, absent: true, cancelled: false };
       }
       const ov = typeof portalTodayScheduleOverrideForSession === 'function'
         ? portalTodayScheduleOverrideForSession(s, iso)
@@ -1775,11 +1776,16 @@
       const out = [];
       items.forEach(function(it){
         if(it && it.kind === 'client' && !it.portalOverrideMakeUpTag){
-          const occ = portalTodaySlotOccupancyKey(it);
-          if(occ && makeupSlotKeys[occ]){
-            const ov = it.__portalScheduleOverride;
-            const isMakeupRow = ov && String(ov.override_type || '').trim() === 'client_replace_in_slot';
-            if(!isMakeupRow) return;
+          const pill = String(it.portalOverrideAlertPill || '').trim().toUpperCase();
+          if(pill === 'ABSENT'){
+            /* Keep Absent original alongside MakeUp replacement in the same slot. */
+          } else {
+            const occ = portalTodaySlotOccupancyKey(it);
+            if(occ && makeupSlotKeys[occ]){
+              const ov = it.__portalScheduleOverride;
+              const isMakeupRow = ov && String(ov.override_type || '').trim() === 'client_replace_in_slot';
+              if(!isMakeupRow) return;
+            }
           }
         }
         const k = portalTodayScheduleViewCardDedupeKey(it);
@@ -2002,7 +2008,6 @@
         programmeWidePack ? { programmeWide: true } : null
       );
       const primary = portalUpgradeTodayItemsWithAbsentOverrides(
-        portalInjectAbsentCardsAlongsideMakeup(
         todaySessionsAfterDedupe
         .sort((a, b) => Number(normalizeTimeForSort(a.start)) - Number(normalizeTimeForSort(b.start)))
         .map(s => {
@@ -2436,11 +2441,6 @@
           }, meta);
         })
         .filter(Boolean),
-        sessionDateKey,
-        viewDay,
-        anchor,
-        supportHidePoolNote
-      ),
         sessionDateKey
       );
       const extra = [];
@@ -2803,6 +2803,16 @@
       }
       if(typeof portalSuppressAnchorClientWhenMakeupReplaced === 'function'){
         mergedToday = portalSuppressAnchorClientWhenMakeupReplaced(mergedToday, sessionDateKey, staffId);
+      }
+      /* After MakeUp presentation + suppress: show original as Absent next to replacement. */
+      if(typeof portalInjectAbsentCardsAlongsideMakeup === 'function'){
+        mergedToday = portalInjectAbsentCardsAlongsideMakeup(
+          mergedToday,
+          sessionDateKey,
+          anchorDayWord,
+          anchor,
+          supportHidePoolNote
+        );
       }
       if(typeof portalDedupeTodayScheduleViewCards === 'function'){
         mergedToday = portalDedupeTodayScheduleViewCards(mergedToday);

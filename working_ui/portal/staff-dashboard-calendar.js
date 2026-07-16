@@ -561,7 +561,7 @@
       if(baseEarly && iso && !portalTodayCardUsesReplaceOverride(item)
         && typeof portalRosterSessionSupersededByMakeupReplace === 'function'
         && portalRosterSessionSupersededByMakeupReplace(baseEarly, iso)){
-        return { feedbackDone: false, incident: false, absent: false, cancelled: true };
+        return { feedbackDone: false, incident: false, absent: true, cancelled: false };
       }
       if(baseEarly && iso && typeof portalRosterSessionFeedbackResolvedFlags === 'function' && !portalTodayCardUsesReplaceOverride(item)){
         const exEarly = portalRosterSessionFeedbackResolvedFlags(baseEarly, iso, staffId);

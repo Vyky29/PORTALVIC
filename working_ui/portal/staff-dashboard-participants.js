@@ -3407,8 +3407,10 @@
       const activity = (s.activity || 'Swimming').trim();
       const time = rosterSlotTimeLabel(s);
       const baseId = String(s.clientId || '').trim().toLowerCase();
-      const cAbs = portalClientNotesLookup(baseId) || clientNotesById[baseId];
-      if(!cAbs) return null;
+      if(!baseId || portalScheduleOverrideAnchorIsOpenSlot(baseId)) return null;
+      const cAbs = portalClientNotesLookup(baseId) || clientNotesById[baseId] || {
+        name: String(s.clientName || s.name || baseId).trim() || 'Participant'
+      };
       const showSpec = !isBespokeActivity(activity);
       let poolLocationAbs = resolvePoolLocationLabelFromSession(s, activity, cAbs, viewDay);
       if(supportHidePoolNote) poolLocationAbs = null;
@@ -3445,7 +3447,7 @@
         __portalScheduleOverride: absentOv
       };
     }
-    /** When admin marks absent + make-up on the same slot, show both cards (Aqsa green + replacement pink). */
+    /** When admin marks MakeUp (or absent + make-up) on a slot, show the original as Absent and the replacement as MakeUp. */
     function portalInjectAbsentCardsAlongsideMakeup(items, sessionDateKey, viewDay, anchor, supportHidePoolNote){
       if(!Array.isArray(items) || !items.length) return items || [];
       const seen = Object.create(null);
@@ -3459,8 +3461,15 @@
         if(it && it.portalOverrideMakeUpTag){
           const base = it.__portalBaseSession;
           const origId = base ? String(base.clientId || '').trim().toLowerCase() : '';
-          if(base && origId && !seen[origId]){
-            const absentOv = portalScheduleOverrideForSessionByType(base, sessionDateKey, 'client_absence_announced');
+          if(base && origId && !seen[origId] && !portalScheduleOverrideAnchorIsOpenSlot(origId)){
+            let absentOv = portalScheduleOverrideForSessionByType(base, sessionDateKey, 'client_absence_announced');
+            /* MakeUp alone means the original did not attend — synthesise Absent from the replace override. */
+            if(!absentOv){
+              absentOv = it.__portalScheduleOverride
+                || (typeof portalReplaceMakeupOverrideForSession === 'function'
+                  ? portalReplaceMakeupOverrideForSession(base, sessionDateKey)
+                  : null);
+            }
             if(absentOv){
               const absentItem = portalBuildAdminAbsentSessionItem(base, sessionDateKey, viewDay, anchor, absentOv, supportHidePoolNote);
               if(absentItem){
@@ -3545,6 +3554,8 @@
       if(!iso) return items;
       return items.map(function(it){
         if(!it || it.kind !== 'client') return it;
+        /* Keep synthesised Absent cards for the original participant — do not turn them into MakeUp. */
+        if(String(it.portalOverrideAlertPill || '').trim().toUpperCase() === 'ABSENT') return it;
         let ov = it.__portalScheduleOverride;
         const base = it.__portalBaseSession;
         if((!ov || String(ov.override_type || '').trim() !== 'client_replace_in_slot') && base){
@@ -3651,11 +3662,14 @@
         return [start, end, staff, venue].join('|');
       }
       const replacedAnchors = Object.create(null);
+      const replacedByStart = Object.create(null);
       function markReplaced(it){
         if(!it || !it.__portalBaseSession) return;
         const anchorId = String(it.__portalBaseSession.clientId || '').trim().toLowerCase();
         if(!anchorId || portalScheduleOverrideAnchorIsOpenSlot(anchorId)) return;
         replacedAnchors[slotKey(it) + '|' + anchorId] = true;
+        const start = portalCanonicalHmToken(it.__portalBaseSession.start || '');
+        if(start) replacedByStart[start + '|' + sid + '|' + anchorId] = true;
       }
       items.forEach(function(it){
         if(it && it.portalOverrideMakeUpTag) markReplaced(it);
@@ -3674,9 +3688,10 @@
           const end = portalCanonicalHmToken(portalHmFromDbTime(ov.anchor_end));
           const venue = portalNormKeyStr(ov.anchor_venue);
           replacedAnchors[[start, end, sid, venue].join('|') + '|' + anchorId] = true;
+          if(start) replacedByStart[start + '|' + sid + '|' + anchorId] = true;
         });
       }
-      if(!Object.keys(replacedAnchors).length) return items;
+      if(!Object.keys(replacedAnchors).length && !Object.keys(replacedByStart).length) return items;
       return items.filter(function(it){
         if(!it || it.kind !== 'client') return true;
         if(it.portalOverrideMakeUpTag) return true;
@@ -3686,6 +3701,8 @@
         const anchorId = String(base.clientId || it.clientId || '').trim().toLowerCase();
         if(!anchorId) return true;
         if(replacedAnchors[slotKey(it) + '|' + anchorId]) return false;
+        const start = portalCanonicalHmToken(base.start || String(it.sessionKey || '').split('|')[1] || '');
+        if(start && replacedByStart[start + '|' + sid + '|' + anchorId]) return false;
         return !portalAnchorSessionFullyCoveredByMakeupReplaces(base, iso, sid);
       });
     }
