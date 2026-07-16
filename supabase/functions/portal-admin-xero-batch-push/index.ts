@@ -13,6 +13,7 @@ import {
 import { xeroConfigured } from "../_shared/xero_auth.ts";
 import { xeroCreateAccrecInvoice } from "../_shared/xero_invoices.ts";
 import { xeroSyncPaidInvoiceShare } from "../_shared/xero_payments.ts";
+import { resolveParticipantInvoiceFunding } from "../_shared/portal_invoice_funding.ts";
 
 function clean(v: unknown, max = 200): string {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
@@ -91,6 +92,7 @@ Deno.serve(async (req) => {
 
   const contactIds = [...new Set(shares.map((s) => clean(s.contact_id, 120)).filter(Boolean))];
   const parentByContact = new Map<string, Record<string, unknown>>();
+  const participantByContact = new Map<string, string>();
   if (contactIds.length) {
     const { data: parents } = await admin
       .from("portal_parent_contacts")
@@ -100,6 +102,17 @@ Deno.serve(async (req) => {
       .in("contact_id", contactIds);
     for (const p of parents || []) {
       parentByContact.set(clean(p.contact_id, 120), p);
+    }
+    const { data: pax } = await admin
+      .from("portal_participants")
+      .select("contact_id, display_name, first_name, last_name")
+      .in("contact_id", contactIds);
+    for (const p of pax || []) {
+      const id = clean(p.contact_id, 120);
+      const name =
+        clean(p.display_name, 120) ||
+        [p.first_name, p.last_name].filter(Boolean).join(" ").trim();
+      if (id && name) participantByContact.set(id, name);
     }
   }
 
@@ -139,6 +152,18 @@ Deno.serve(async (req) => {
       String(share.created_at || "").slice(0, 10) ||
       new Date().toISOString().slice(0, 10);
 
+    const storedVat = clean(share.vat_mode, 20).toLowerCase();
+    let vatMode: "exempt" | "vat_20";
+    if (storedVat === "exempt" || storedVat === "vat_20") {
+      vatMode = storedVat;
+    } else {
+      const funding = await resolveParticipantInvoiceFunding(admin, {
+        contactId: cid,
+        displayName: participantByContact.get(cid) || cid,
+      });
+      vatMode = funding.vatMode;
+    }
+
     const created = await xeroCreateAccrecInvoice(
       {
         contactId: cid,
@@ -150,7 +175,7 @@ Deno.serve(async (req) => {
         unitPriceGbp: share.unit_price_gbp != null ? Number(share.unit_price_gbp) : null,
         lineDescription: clean(share.line_description, 800) || clean(share.invoice_number, 80),
         reference: clean(share.reference_text, 120) || clean(share.invoice_number, 80),
-        vatMode: clean(share.vat_mode, 20) || "vat_20",
+        vatMode,
         parentName,
         parentEmail: clean(parent.email, 200) || null,
         addressLine1: clean(parent.address_line1, 120) || null,

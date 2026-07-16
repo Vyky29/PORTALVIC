@@ -126,6 +126,7 @@ for (const spec of INVOICES) {
         payment_status: "unpaid",
         share_status: "ready",
         payment_method_hint: spec.payment_method_hint,
+        vat_mode: "exempt",
         notes: null,
         reference_text: spec.reference_text,
         line_description: spec.line_description,
@@ -190,6 +191,7 @@ for (const spec of INVOICES) {
       ready_by: "seed_elia_demo_parent_invoices",
       notes: null,
       payment_method_hint: spec.payment_method_hint,
+      vat_mode: "exempt",
       reference_text: spec.reference_text,
       line_description: spec.line_description,
     })

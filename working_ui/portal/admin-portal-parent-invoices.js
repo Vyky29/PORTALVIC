@@ -635,6 +635,15 @@
       '<div style="margin-top:8px"><span class="muted">Method</span><br>' +
       methodChipHtml(methodLabel(inv)) +
       '</div>' +
+      '<div style="margin-top:8px"><span class="muted">VAT</span><br>' +
+      esc(
+        String(inv.vat_mode || '').toLowerCase() === 'exempt'
+          ? 'Exempt'
+          : String(inv.vat_mode || '').toLowerCase() === 'vat_20'
+            ? 'VAT 20%'
+            : '—',
+      ) +
+      '</div>' +
       '<div style="margin-top:8px">' +
       statusChip(inv.payment_status, inv.share_status) +
       '</div></div>' +
@@ -1039,6 +1048,49 @@
         if (nameEl) nameEl.textContent = name + ' (' + cid + ')';
         var clientIdEl = global.document.getElementById('portalParentInvoiceClientId');
         if (clientIdEl && !String(clientIdEl.value || '').trim()) clientIdEl.value = cid;
+        void (async function () {
+          var vatEl = global.document.getElementById('portalParentInvoiceVatMode');
+          if (!client || !vatEl) return;
+          var fl = '';
+          var { data: pc } = await client
+            .from('portal_parent_contacts')
+            .select('funding_label')
+            .eq('contact_id', cid)
+            .maybeSingle();
+          fl = String((pc && pc.funding_label) || '').toLowerCase();
+          if (!fl) {
+            var { data: pay } = await client
+              .from('client_payments')
+              .select('data, sheet')
+              .or('client_key.eq.' + cid + ',client_name.ilike.' + name.replace(/,/g, ''))
+              .limit(1)
+              .maybeSingle();
+            if (pay) {
+              var d = pay.data || {};
+              var vatRaw = String(d.VAT || d.vat || '').toLowerCase();
+              var fundRaw = String(d.Fund || d.fund || '').toLowerCase();
+              if (vatRaw.includes('exempt') || fundRaw.includes('la') || fundRaw.includes('nhs')) {
+                fl = 'la exempt';
+              } else if (vatRaw.includes('20') || fundRaw.includes('private')) {
+                fl = 'private vat';
+              }
+              if (String(pay.sheet || '').toUpperCase() === 'LA') fl = 'la exempt';
+            }
+          }
+          if (
+            fl.includes('la') ||
+            fl.includes('nhs') ||
+            fl.includes('ehcp') ||
+            fl.includes('exempt') ||
+            fl.includes('direct payment') ||
+            fl.includes('local authority')
+          ) {
+            vatEl.value = 'exempt';
+          } else if (fl.includes('private') || fl.includes('vat') || fl.includes('pf')) {
+            vatEl.value = 'vat_20';
+          }
+          syncLaCreateFields();
+        })();
         hitsEl.hidden = true;
         hitsEl.innerHTML = '';
       });

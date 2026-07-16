@@ -7,6 +7,7 @@ import {
   buildPortalTaxInvoicePdf,
   type PortalInvoiceVatMode,
 } from "./portal_tax_invoice_pdf.ts";
+import { resolveParticipantInvoiceFunding } from "./portal_invoice_funding.ts";
 
 const BUCKET = "documents";
 
@@ -77,6 +78,58 @@ function cleanMultiline(v: unknown, max = 2400): string {
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
+}
+
+function invoiceModeLabel(
+  paymentMethodHint: string,
+  vatMode: PortalInvoiceVatMode,
+): string {
+  if (paymentMethodHint === "gocardless") return "Direct Payment (GoCardless)";
+  if (paymentMethodHint === "la_funded") return "LA funded (VAT exempt)";
+  if (paymentMethodHint === "payment_link") return "Card / Apple Pay";
+  if (vatMode === "exempt") return "Bank transfer / Card (VAT exempt)";
+  return "Bank transfer / Card (parent portal)";
+}
+
+function invoiceDescriptionLines(input: {
+  lineDescription: string;
+  vatMode: PortalInvoiceVatMode;
+  descriptionComplete?: boolean;
+  displayName: string;
+  clientIdLabel: string;
+  poLabel: string;
+  quantity: number;
+  reference: string | null;
+  modeLabel: string;
+}): string[] {
+  const descriptionFromInput = String(input.lineDescription)
+    .split("\n")
+    .map((s) => s.trimEnd())
+    .filter((s, i, arr) => s || (i > 0 && i < arr.length - 1));
+  if (input.descriptionComplete) {
+    return descriptionFromInput.slice(0, 24);
+  }
+  if (input.vatMode === "exempt") {
+    return [
+      ...descriptionFromInput.slice(0, 12),
+      "",
+      `Client's Id: ${input.clientIdLabel}`,
+      `PO: ${input.poLabel || "—"}`,
+      input.quantity !== 1 ? `- Quantity: ${input.quantity}` : null,
+      input.reference ? `- Reference: ${input.reference}` : null,
+      `- Mode: ${input.modeLabel}`,
+      "- VAT: Exempt",
+    ].filter((x): x is string => !!x);
+  }
+  return [
+    ...descriptionFromInput.slice(0, 12),
+    "",
+    `Client's Name: ${input.displayName}`,
+    input.quantity !== 1 ? `- Quantity: ${input.quantity}` : null,
+    input.reference ? `- Reference: ${input.reference}` : null,
+    `- Mode: ${input.modeLabel}`,
+    "- VAT: 20% (private funding)",
+  ].filter((x): x is string => !!x);
 }
 
 export async function createPortalFamilyInvoice(
@@ -169,42 +222,18 @@ export async function createPortalFamilyInvoice(
   }
 
   const unitPrice = Math.round((amountGbp / quantity) * 10000) / 10000;
-  const modeLabel =
-    paymentMethodHint === "gocardless"
-      ? "Direct Payment (GoCardless)"
-      : paymentMethodHint === "la_funded" || vatMode === "exempt"
-        ? "LA funded (VAT exempt)"
-        : paymentMethodHint === "payment_link"
-          ? "Card / Apple Pay"
-          : "Bank transfer / Card (parent portal)";
-  const descriptionFromInput = String(lineDescription)
-    .split("\n")
-    .map((s) => s.trimEnd())
-    .filter((s, i, arr) => s || (i > 0 && i < arr.length - 1));
-  const descriptionLines = input.descriptionComplete
-    ? descriptionFromInput.slice(0, 24)
-    : vatMode === "exempt"
-      ? [
-          ...descriptionFromInput.slice(0, 12),
-          "",
-          `Client's Id: ${clientIdLabel}`,
-          `PO: ${poLabel}`,
-          quantity !== 1 ? `- Quantity: ${quantity}` : null,
-          reference ? `- Reference: ${reference}` : null,
-          `- Mode: ${modeLabel}`,
-          "- VAT: Exempt",
-        ].filter((x): x is string => !!x)
-      : [
-          // Keep blank lines from the lead (title / body spacing).
-          ...descriptionFromInput.slice(0, 12),
-          "",
-          `Client's Name: ${displayName}`,
-          quantity !== 1 ? `- Quantity: ${quantity}` : null,
-          reference ? `- Reference: ${reference}` : null,
-          `- Mode: ${modeLabel}`,
-          "- VAT: 20% (private funding)",
-        ].filter((x): x is string => !!x);
-
+  const modeLabel = invoiceModeLabel(paymentMethodHint, vatMode);
+  const descriptionLines = invoiceDescriptionLines({
+    lineDescription,
+    vatMode,
+    descriptionComplete: !!input.descriptionComplete,
+    displayName,
+    clientIdLabel,
+    poLabel,
+    quantity,
+    reference,
+    modeLabel,
+  });
 
   let pdfBytes: Uint8Array;
   try {
@@ -344,4 +373,156 @@ export async function resolvePortalInvoiceOwnerUserId(
     .limit(1)
     .maybeSingle();
   return anyStaff?.id ? String(anyStaff.id) : null;
+}
+
+export async function regeneratePortalInvoiceSharePdf(
+  admin: SupabaseClient,
+  invoiceShareId: string,
+): Promise<{ ok: true; pdfStoragePath: string } | { ok: false; error: string }> {
+  const shareId = clean(invoiceShareId, 80);
+  if (!shareId) return { ok: false, error: "invoice_id_required" };
+
+  const { data: share, error: shareErr } = await admin
+    .from("portal_parent_invoice_share")
+    .select("*")
+    .eq("id", shareId)
+    .maybeSingle();
+  if (shareErr || !share) return { ok: false, error: "not_found" };
+
+  const { data: doc } = await admin
+    .from("documents")
+    .select("id, user_id, file_url, related_date, created_at")
+    .eq("id", share.document_id)
+    .maybeSingle();
+  if (!doc?.id) return { ok: false, error: "document_not_found" };
+
+  const contactId = clean(share.contact_id, 120);
+  const { data: participant } = await admin
+    .from("portal_participants")
+    .select("contact_id, display_name, first_name, last_name")
+    .eq("contact_id", contactId)
+    .maybeSingle();
+  if (!participant) return { ok: false, error: "participant_not_found" };
+
+  const displayName =
+    clean(participant.display_name, 120) ||
+    [participant.first_name, participant.last_name].filter(Boolean).join(" ").trim() ||
+    contactId;
+
+  const funding = await resolveParticipantInvoiceFunding(admin, {
+    contactId,
+    displayName,
+  });
+  const storedVat = clean(share.vat_mode, 20).toLowerCase();
+  const vatMode: PortalInvoiceVatMode =
+    storedVat === "exempt" || storedVat === "vat_20" ? storedVat : funding.vatMode;
+
+  const { data: parentContact } = await admin
+    .from("portal_parent_contacts")
+    .select(
+      "parent_display, parent_first_name, parent_last_name, address_line1, address_line2, city, postcode",
+    )
+    .eq("contact_id", contactId)
+    .maybeSingle();
+
+  const billToName =
+    clean(parentContact?.parent_display, 120) ||
+    [parentContact?.parent_first_name, parentContact?.parent_last_name]
+      .filter(Boolean)
+      .join(" ")
+      .trim() ||
+    "Parent / carer";
+  const billToLines = [
+    clean(parentContact?.address_line1, 120),
+    clean(parentContact?.address_line2, 120),
+    clean(parentContact?.city, 80),
+    clean(parentContact?.postcode, 20),
+    "UNITED KINGDOM",
+  ].filter(Boolean);
+
+  const amountGbp = round2(Number(share.amount_gbp));
+  const qtyRaw = Number(share.quantity);
+  const quantity = Number.isFinite(qtyRaw) && qtyRaw > 0 ? Math.round(qtyRaw * 100) / 100 : 1;
+  const dueDate = share.due_date ? String(share.due_date).slice(0, 10) : null;
+  const invoiceDate =
+    (doc.related_date ? String(doc.related_date).slice(0, 10) : null) ||
+    (doc.created_at ? String(doc.created_at).slice(0, 10) : null) ||
+    new Date().toISOString().slice(0, 10);
+  const reference = clean(share.reference_text, 120) || null;
+  const lineDescription =
+    cleanMultiline(share.line_description, 2400) ||
+    "Structured activity support delivered for a SEND participant.";
+  const paymentMethodHint = clean(share.payment_method_hint, 40) || "bank_transfer";
+  const invoiceNumber = clean(share.invoice_number, 80) || shareId.slice(0, 8);
+  const clientIdLabel = funding.clientId || contactId;
+  const poLabel = funding.po || "";
+  const modeLabel = invoiceModeLabel(paymentMethodHint, vatMode);
+  const descriptionLines = invoiceDescriptionLines({
+    lineDescription,
+    vatMode,
+    displayName,
+    clientIdLabel,
+    poLabel,
+    quantity,
+    reference,
+    modeLabel,
+  });
+
+  let pdfBytes: Uint8Array;
+  try {
+    pdfBytes = await buildPortalTaxInvoicePdf({
+      invoiceNumber,
+      invoiceDateIso: invoiceDate,
+      dueDateIso: dueDate,
+      reference,
+      service: null,
+      vatMode,
+      totalGbp: amountGbp,
+      quantity,
+      descriptionLines,
+      billToName,
+      billToLines,
+      participantName: displayName,
+      paid: String(share.payment_status || "").toLowerCase() === "paid",
+    });
+  } catch (err) {
+    console.error("[regeneratePortalInvoiceSharePdf] pdf", err);
+    return { ok: false, error: "pdf_failed" };
+  }
+
+  const ownerId = clean(doc.user_id, 80) || (await resolvePortalInvoiceOwnerUserId(admin));
+  if (!ownerId) return { ok: false, error: "owner_required" };
+
+  const stamp = Date.now();
+  const storagePath = `${ownerId}/billing/client_invoice_${contactId}_${stamp}.pdf`;
+  const { error: upErr } = await admin.storage.from(BUCKET).upload(storagePath, pdfBytes, {
+    contentType: "application/pdf",
+    upsert: false,
+  });
+  if (upErr) {
+    console.error("[regeneratePortalInvoiceSharePdf] upload", upErr.message);
+    return { ok: false, error: "upload_failed" };
+  }
+
+  const oldPath = doc.file_url ? String(doc.file_url) : "";
+  const now = new Date().toISOString();
+  const { error: docErr } = await admin
+    .from("documents")
+    .update({ file_url: storagePath })
+    .eq("id", doc.id);
+  if (docErr) {
+    console.error("[regeneratePortalInvoiceSharePdf] doc", docErr.message);
+    await admin.storage.from(BUCKET).remove([storagePath]);
+    return { ok: false, error: "document_update_failed" };
+  }
+
+  const sharePatch: Record<string, unknown> = { updated_at: now };
+  if (!clean(share.vat_mode, 20)) sharePatch.vat_mode = vatMode;
+  await admin.from("portal_parent_invoice_share").update(sharePatch).eq("id", shareId);
+
+  if (oldPath && oldPath !== storagePath) {
+    await admin.storage.from(BUCKET).remove([oldPath]).catch(() => {});
+  }
+
+  return { ok: true, pdfStoragePath: storagePath };
 }

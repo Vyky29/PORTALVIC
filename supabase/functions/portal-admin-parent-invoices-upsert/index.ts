@@ -12,7 +12,7 @@ import {
 import { xeroSyncPaidInvoiceShare } from "../_shared/xero_payments.ts";
 import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
 import { type PortalInvoiceVatMode } from "../_shared/portal_tax_invoice_pdf.ts";
-import { createPortalFamilyInvoice } from "../_shared/portal_create_family_invoice.ts";
+import { createPortalFamilyInvoice, regeneratePortalInvoiceSharePdf } from "../_shared/portal_create_family_invoice.ts";
 import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
 
 const BUCKET = "documents";
@@ -138,6 +138,26 @@ Deno.serve(async (req) => {
       fields = {};
     }
     action = clean(fields.action, 30).toLowerCase();
+  }
+
+  if (action === "regenerate_pdf") {
+    const invoiceId = clean(fields.invoice_id, 80);
+    if (!invoiceId) return portalAdminJson(400, { ok: false, error: "invoice_id_required" });
+    const regen = await regeneratePortalInvoiceSharePdf(admin, invoiceId);
+    if (!regen.ok) {
+      const status = regen.error === "not_found" ? 404 : 500;
+      return portalAdminJson(status, { ok: false, error: regen.error });
+    }
+    const { data: invoice } = await admin
+      .from("portal_parent_invoice_share")
+      .select("*")
+      .eq("id", invoiceId)
+      .maybeSingle();
+    return portalAdminJson(200, {
+      ok: true,
+      invoice,
+      pdf_storage_path: regen.pdfStoragePath,
+    });
   }
 
   if (action === "create_portal") {
@@ -362,6 +382,10 @@ Deno.serve(async (req) => {
     }
     if (fields.payment_link_surcharge_note !== undefined) {
       patch.payment_link_surcharge_note = clean(fields.payment_link_surcharge_note, 200) || null;
+    }
+    if (fields.vat_mode !== undefined) {
+      const vatRaw = clean(fields.vat_mode, 20).toLowerCase();
+      patch.vat_mode = vatRaw === "exempt" ? "exempt" : "vat_20";
     }
     if (fields.xero_invoice_id !== undefined) {
       patch.xero_invoice_id = clean(fields.xero_invoice_id, 80) || null;
