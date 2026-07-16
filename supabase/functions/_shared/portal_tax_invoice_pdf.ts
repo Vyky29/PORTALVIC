@@ -388,12 +388,6 @@ export async function buildPortalTaxInvoicePdf(
       drawCentered(vatLabel, colVatX, colVatW, rowValueY, 8.5, font);
       drawCentered(money(rowSplit.net), colAmtX, colAmtW, rowValueY, 8.5, font);
       y = rowTop - rowHeight;
-      page.drawLine({
-        start: { x: left, y: y + 4 },
-        end: { x: right, y: y + 4 },
-        thickness: 0.35,
-        color: rgb(0.88, 0.88, 0.88),
-      });
     }
   } else {
     const descBlockH = descStartY - descEndY;
