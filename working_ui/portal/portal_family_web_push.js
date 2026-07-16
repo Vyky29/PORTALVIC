@@ -114,8 +114,8 @@
     }
     try {
       var swUrl = new URL(SW_URL, global.location.href).href;
-      // Script path /parent/… → max scope /parent (no special header required).
-      var reg = await global.navigator.serviceWorker.register(swUrl, { scope: "/parent" });
+      // Scope must match SW path max-scope (/parent or /parent/).
+      var reg = await global.navigator.serviceWorker.register(swUrl, { scope: "/parent/" });
       global.__FAMILY_SW_REG__ = reg;
       try {
         await reg.update();

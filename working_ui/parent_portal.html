@@ -1652,7 +1652,8 @@
     }
     .pp-hub-reenrol__actions {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
+      flex-wrap: nowrap;
       gap: 8px;
       align-items: stretch;
       justify-content: stretch;
@@ -1660,8 +1661,21 @@
       min-width: 0;
       width: 100%;
     }
+    @media (min-width: 520px) {
+      .pp-hub-reenrol__actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+    }
     .pp-hub-reenrol__actions .pp-hub-reenrol__cta {
-      flex: 1 1 calc(50% - 4px);
+      flex: 1 1 auto;
+      width: 100%;
+    }
+    @media (min-width: 520px) {
+      .pp-hub-reenrol__actions .pp-hub-reenrol__cta {
+        flex: 1 1 calc(50% - 4px);
+        width: auto;
+      }
     }
     .pp-hub-reenrol__cta--crash {
       background: #fff;
@@ -1682,8 +1696,8 @@
     }
     .pp-hub-reenrol__cta > span {
       min-width: 0;
-      overflow-wrap: break-word;
-      white-space: normal;
+      overflow-wrap: normal;
+      white-space: nowrap;
       text-align: center;
     }
     .pp-hub-reenrol--auto {
@@ -3909,7 +3923,7 @@
   </main>
 
   <script src="/portal/portal-vapid-public.js?v=20260610-v4"></script>
-  <script src="/portal/portal_family_web_push.js?v=20260716-parent-sw-scope"></script>
+  <script src="/portal/portal_family_web_push.js?v=20260716-parent-sw-slash"></script>
   <script src="/portal/portal_participant_identity.js?v=20260705-adam-ab"></script>
   <script src="/portal/portal_participant_photos.js?v=20260710-eiji-hazem-photos"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260714-one-feedback"></script>
