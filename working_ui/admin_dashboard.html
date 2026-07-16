@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-portal-ui-build="20260706-global-search-live" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
+<html lang="en-GB" data-portal-ui-build="20260716-finance-tab-icos" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
 <head>
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <!-- Web Push: window.__PORTAL_VAPID_PUBLIC_KEY__ must match Supabase VAPID_PUBLIC_KEY (see portal-vapid-public.js). -->
@@ -21714,13 +21714,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
 
     function financeHubTabsHtml(active){
       var tabs = [
-        { id:'create', label:'Create invoice' },
-        { id:'reenrolments', label:'Re-enrolments' },
-        { id:'payments', label:'Payments' }
+        { id:'create', label:'Create invoice', iconId:'staffhr_contracts' },
+        { id:'reenrolments', label:'Re-enrolments', iconId:'clients' },
+        { id:'payments', label:'Payments', iconId:'c4k_payments' }
       ];
       return tabs.map(function(t){
         var on = t.id === active;
+        var ico = adminNavIconHtml(t.iconId || t.id);
         return '<button type="button" class="c4k-sessions-hub-tab'+(on?' is-active':'')+'" role="tab" data-finance-tab="'+esc(t.id)+'" aria-selected="'+(on?'true':'false')+'">'+
+          (ico ? '<span class="c4k-sessions-hub-tab__ico" aria-hidden="true">'+ico+'</span>' : '')+
           '<span class="c4k-sessions-hub-tab__label">'+esc(t.label)+'</span></button>';
       }).join('');
     }
