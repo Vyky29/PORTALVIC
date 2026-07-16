@@ -105,7 +105,11 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
     return `${formatSessionClock(start)} – ${formatSessionClock(end)}`;
   }
 
-  /** Public pack rows: one per bookable time (swim = 30′ bands · climb = 60′ slots). */
+  /**
+   * Public pack rows: one per bookable time.
+   * Aquatic: each 30′ band has capacity 2 (Instructor A + B).
+   * Climbing: each 60′ hour has capacity 1 (one instructor) — waiting-list hours excluded.
+   */
   function packUnitsFor(activity: CrashActivity): {
     unitId: string;
     slotIds: string[];
@@ -124,12 +128,20 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
         };
       });
     }
-    return crashSlotsFor("climbing").map((slot) => ({
+    return crashSlotsFor("climbing", { bookableOnly: true }).map((slot) => ({
       unitId: slot.id,
       slotIds: [slot.id],
       start: slot.start,
       end: slot.end,
     }));
+  }
+
+  function activityDatesForWeek(
+    week: (typeof CRASH_SUMMER_WEEKS)[CrashWeekId],
+    activity: CrashActivity,
+  ): string[] {
+    if (activity === "climbing") return (week.climbing_dates || week.dates).slice();
+    return (week.swimming_dates || week.dates).slice();
   }
 
   const intensiveSlots: Record<string, unknown>[] = [];
@@ -145,12 +157,13 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
         act.id === "climbing"
           ? CRASH_PRICES.climbing.weekly_pack
           : CRASH_PRICES.swimming.weekly_pack;
+      const actDates = activityDatesForWeek(week, act.id);
       for (const unit of packUnitsFor(act.id)) {
         let packFree = 0;
         for (const slotId of unit.slotIds) {
-          const freeAllWeek = week.dates.every(
-            (date) => !taken.has(`${act.id}|${date}|${slotId}`),
-          );
+          const freeAllWeek =
+            actDates.length > 0 &&
+            actDates.every((date) => !taken.has(`${act.id}|${date}|${slotId}`));
           if (freeAllWeek) packFree += 1;
         }
         intensiveSlots.push({
@@ -170,7 +183,7 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
           taken: Math.max(0, unit.slotIds.length - packFree),
           packPrice,
           slotIds: unit.slotIds,
-          dateIso: week.dates[0],
+          dateIso: actDates[0] || week.dates[0],
         });
       }
     }
@@ -179,11 +192,11 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
   // Loose / individual hours only in each week's Fri–Sun unlock window.
   for (const week of weeks) {
     if (!crashIndividualDaysOpenForWeek(week.id)) continue;
-    for (const date of week.dates) {
-      const d = new Date(`${date}T12:00:00Z`);
-      const dow = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()];
-      const dayLabel = `${week.id === "w1" ? "Week 1" : "Week 2"} · ${dow} ${Number(date.slice(8, 10))} Jul · individual`;
-      for (const act of activities) {
+    for (const act of activities) {
+      for (const date of activityDatesForWeek(week, act.id)) {
+        const d = new Date(`${date}T12:00:00Z`);
+        const dow = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()];
+        const dayLabel = `${week.id === "w1" ? "Week 1" : "Week 2"} · ${dow} ${Number(date.slice(8, 10))} Jul · individual`;
         for (const unit of packUnitsFor(act.id)) {
           let booked = 0;
           for (const slotId of unit.slotIds) {

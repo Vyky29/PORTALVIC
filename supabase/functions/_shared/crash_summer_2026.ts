@@ -1,7 +1,8 @@
 /**
  * Summer holiday crash courses — July 2026.
  * Climbing Week 1: Mon 20 – Thu 23 July · Swimming Week 1: Tue 21 – Fri 24 July.
- * Climbing: 10:00–13:00 (+ 14:00 waiting list) · Swimming: 8 × 30′ slots/day.
+ * Climbing: 1 place per 60′ (1 instructor) · 10:00–13:00 (+ 14:00 waiting list).
+ * Swimming/Aquatic: 2 places per 30′ band (2 instructors) = 8 × 30′ units/day.
  */
 
 export type CrashActivity = "climbing" | "swimming";
@@ -206,21 +207,21 @@ export function crashCountTakenUnits(
 ): number {
   const climbDates = new Set(crashWeekDates(weekId, "climbing"));
   const swimDates = new Set(crashWeekDates(weekId, "swimming"));
-  const waitlistClimb = new Set(
-    CRASH_CLIMBING_SLOTS.filter((s) => s.waiting_list || s.bookable === false).map((s) => s.id),
-  );
+  const publicClimb = new Set(crashBookableClimbingSlots().map((s) => s.id));
+  const publicSwim = new Set(CRASH_SWIMMING_SLOTS.map((s) => s.id));
   let n = 0;
   for (const line of lines || []) {
     const date = String(line?.session_date || "");
     const act = String(line?.activity || "");
     const slotId = String(line?.slot_id || "");
     if (act === "climbing") {
-      if (waitlistClimb.has(slotId)) continue;
+      // Only standard bookable hours (exclude waiting list + admin specials).
+      if (!publicClimb.has(slotId)) continue;
       if (climbDates.has(date)) n += 1;
     } else if (act === "swimming") {
+      // Only Acton evening grid (exclude SwimFarm / special AM holds).
+      if (!publicSwim.has(slotId)) continue;
       if (swimDates.has(date)) n += 1;
-    } else if (climbDates.has(date) || swimDates.has(date)) {
-      n += 1;
     }
   }
   return n;

@@ -1,5 +1,6 @@
 -- Summer holiday crash courses (July 2026): climbing + swimming slot bookings.
--- Capacity: climbing 2×60′/day · swimming 8×30′/day. Place held only while awaiting_payment
+-- Capacity: climbing 1 place per 60′ hour (1 instructor) · swimming 2 places per 30′ band
+-- (2 instructors) = 8×30′ units/day. Place held only while awaiting_payment
 -- (hold TTL) or confirmed after pay-in-full.
 
 CREATE TABLE IF NOT EXISTS public.portal_crash_summer_bookings (
