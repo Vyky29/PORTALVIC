@@ -5677,6 +5677,19 @@
       background:#111;
       border:1px solid rgba(255,255,255,.22);
       box-shadow:0 0 0 1px rgba(255,255,255,.18) inset,0 2px 8px rgba(0,0,0,.35);
+      text-transform:none;
+      flex:0 1 auto;
+      min-width:0;
+      max-width:100%;
+      padding:4px 9px;
+    }
+    .portal-session-slot-chip--submitted-late > span{
+      white-space:normal;
+      overflow:visible;
+      overflow-wrap:break-word;
+      text-overflow:unset;
+      text-align:center;
+      line-height:1.2;
     }
     .portal-session-slot-chip--absent{
       color:#fff;

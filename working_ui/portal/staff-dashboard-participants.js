@@ -1264,7 +1264,7 @@
           }catch(_){}
         }
         if(late){
-          return '<span class="portal-session-slot-chip portal-session-slot-chip--submitted-late" aria-label="Feedback submitted late"><span>Submitted (Late)</span></span>';
+          return '<span class="portal-session-slot-chip portal-session-slot-chip--submitted-late" aria-label="Feedback submitted late"><span>Submitted late</span></span>';
         }
         return '<span class="portal-session-slot-chip portal-session-slot-chip--submitted" aria-label="Feedback submitted"><span>Submitted</span></span>';
       }
