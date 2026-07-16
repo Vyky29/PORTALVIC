@@ -67,11 +67,13 @@
   }
 
   function placeItemHtml(p) {
+    var ip = p.client_ip ? String(p.client_ip).trim() : "";
     return (
       "<li><strong>" +
       esc(p.visitor_label || "Visitor") +
       "</strong> — " +
       esc(p.label || "Unknown") +
+      (ip ? ' · <code class="cpp-ip">' + esc(ip) + "</code>" : "") +
       (p.online ? " — online" : "") +
       "</li>"
     );
@@ -97,7 +99,7 @@
     var note = $("cbsGeoNote");
     if (note) {
       note.textContent =
-        "Approx. place from connection IP (not phone GPS). London " +
+        "Approx. place from connection IP (not phone GPS). IP shown so you can match your own visits. London " +
         (g.london != null ? g.london : 0) +
         " | Outside London " +
         ((g.england || 0) + (g.outside || 0)) +
@@ -126,6 +128,7 @@
         : p.client_device === "tablet"
           ? "Tablet"
           : "");
+    var ip = p.client_ip ? String(p.client_ip).trim() : "";
     return (
       '<li class="cpp-row cpp-row--' +
       esc(tone) +
@@ -137,12 +140,16 @@
       '<span class="cpp-row__meta">' +
       esc(p.last_surface_label || "Browsing") +
       esc(detail) +
+      (ip ? ' · IP <code class="cpp-ip">' + esc(ip) + "</code>" : "") +
       "</span>" +
       "</div>" +
       '<div class="cpp-row__side">' +
       '<span class="cpp-pill cpp-pill--loc" title="Approx. place from connection IP">' +
       esc(loc || "Place ?") +
       "</span>" +
+      (ip
+        ? '<span class="cpp-pill cpp-pill--ip" title="Connection IP">' + esc(ip) + "</span>"
+        : "") +
       '<span class="cpp-pill cpp-pill--device">' +
       esc(device || "Device ?") +
       "</span>" +
@@ -203,6 +210,9 @@
                 "<div><strong>" +
                 esc(a.visitor_label || "Visitor") +
                 "</strong>" +
+                (a.client_ip
+                  ? ' · <code class="cpp-ip">' + esc(a.client_ip) + "</code>"
+                  : "") +
                 (a.child_name ? "  - " + esc(a.child_name) : "") +
                 '<div class="cpp-feed__what">' +
                 esc(a.event_label) +

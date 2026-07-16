@@ -94,8 +94,13 @@ Deno.serve(async (req) => {
     last_detail: detail,
     client_device: clientDeviceFromRequest(req),
   };
+  const ip = clientIp(req);
+  if (ip) {
+    sessionPatch.client_ip = ip;
+    sessionPatch.ip_hash = await sha256Hex(ip);
+  }
   try {
-    const geo = await resolveParentGeo(req, clientIp(req), body.geo_hint);
+    const geo = await resolveParentGeo(req, ip, body.geo_hint);
     if (geo) Object.assign(sessionPatch, parentGeoToDbFields(geo));
   } catch {
     /* ignore */

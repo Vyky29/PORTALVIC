@@ -65,8 +65,13 @@ Deno.serve(async (req) => {
         last_used_at: new Date().toISOString(),
         client_device: clientDeviceFromRequest(req),
       };
+      const resumeIp = clientIp(req);
+      if (resumeIp) {
+        patch.client_ip = resumeIp;
+        patch.ip_hash = await sha256Hex(resumeIp);
+      }
       try {
-        const geo = await resolveParentGeo(req, clientIp(req), bodyHint);
+        const geo = await resolveParentGeo(req, resumeIp, bodyHint);
         if (geo) Object.assign(patch, parentGeoToDbFields(geo));
       } catch {
         /* ignore */
@@ -88,6 +93,7 @@ Deno.serve(async (req) => {
     token_hash: tokenHash,
     expires_at: expiresAt,
     client_device: clientDeviceFromRequest(req),
+    client_ip: ip || null,
     ip_hash: ip ? await sha256Hex(ip) : null,
     user_agent_hash: ua ? await sha256Hex(ua) : null,
     last_surface: "offer",

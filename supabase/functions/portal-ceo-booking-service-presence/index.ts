@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
   const { data: sessions, error: sessErr } = await admin
     .from("portal_booking_service_sessions")
     .select(
-      "id, issued_at, expires_at, last_used_at, revoked_at, last_surface, last_detail, client_device, geo_bucket, geo_label, geo_lat, geo_lng, geo_city, geo_region, geo_country",
+      "id, issued_at, expires_at, last_used_at, revoked_at, last_surface, last_detail, client_device, client_ip, geo_bucket, geo_label, geo_lat, geo_lng, geo_city, geo_region, geo_country",
     )
     .is("revoked_at", null)
     .gt("expires_at", new Date(now).toISOString())
@@ -108,6 +108,7 @@ Deno.serve(async (req) => {
     const bucket = clean(s.geo_bucket, 20).toLowerCase();
     const geoLabel = clean(s.geo_label, 120) || null;
     const device = clean(s.client_device, 20).toLowerCase() || null;
+    const ip = clean((s as { client_ip?: unknown }).client_ip, 64) || null;
     const item = {
       session_id: String(s.id),
       visitor_label: visitorLabel(s),
@@ -119,6 +120,7 @@ Deno.serve(async (req) => {
       online: isOnline,
       client_device: device,
       client_device_label: deviceLabel(device) || null,
+      client_ip: ip,
       geo_bucket: bucket || null,
       geo_label: geoLabel,
       geo_city: clean(s.geo_city, 80) || null,
@@ -137,6 +139,7 @@ Deno.serve(async (req) => {
       mapPoints.push({
         session_id: String(s.id),
         visitor_label: item.visitor_label,
+        client_ip: ip,
         bucket: "london",
         label: geoLabel || "London",
         lat: pinLat,
@@ -148,6 +151,7 @@ Deno.serve(async (req) => {
       outsideList.push({
         session_id: String(s.id),
         visitor_label: item.visitor_label,
+        client_ip: ip,
         label: geoLabel || "England (outside London)",
         kind: "england",
         online: isOnline,
@@ -157,6 +161,7 @@ Deno.serve(async (req) => {
       outsideList.push({
         session_id: String(s.id),
         visitor_label: item.visitor_label,
+        client_ip: ip,
         label: geoLabel || "Outside UK",
         kind: "outside",
         online: isOnline,
@@ -181,6 +186,7 @@ Deno.serve(async (req) => {
       at: a.created_at,
       session_id: sid,
       visitor_label: s ? visitorLabel(s) : "Visitor",
+      client_ip: s ? clean((s as { client_ip?: unknown }).client_ip, 64) || null : null,
       event_type: clean(a.event_type, 40),
       event_label: surfaceLabel(String(a.event_type || "")),
       detail: clean(a.detail, 160) || null,
