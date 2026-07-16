@@ -164,6 +164,42 @@ Deno.serve(async (req) => {
       vatMode = funding.vatMode;
     }
 
+    const rawLineItems = Array.isArray(share.line_items) ? share.line_items : [];
+    const xeroLines = rawLineItems
+      .map((ln: Record<string, unknown>) => {
+        const qty = Number(ln.quantity) > 0 ? Number(ln.quantity) : 1;
+        const amt = Number(ln.amount_gbp);
+        const unit = Number(ln.unit_price_gbp);
+        const unitAmount = Number.isFinite(unit) && unit !== 0
+          ? unit
+          : Number.isFinite(amt) && amt !== 0
+            ? amt / qty
+            : 0;
+        return {
+          description: clean(ln.description, 800) || clean(share.line_description, 800),
+          quantity: qty,
+          unitAmount,
+          itemCode: clean(ln.xero_item_code, 80) || null,
+        };
+      })
+      .filter((ln) => ln.unitAmount !== 0);
+    if (xeroLines.length) {
+      const lineTotal = rawLineItems.reduce(
+        (sum: number, ln: Record<string, unknown>) =>
+          sum + (Number.isFinite(Number(ln.amount_gbp)) ? Number(ln.amount_gbp) : 0),
+        0,
+      );
+      const adjustment = Math.round((Number(share.amount_gbp) - lineTotal) * 100) / 100;
+      if (Math.abs(adjustment) >= 0.01) {
+        xeroLines.push({
+          description: adjustment < 0 ? "Family credit applied" : "Invoice adjustment",
+          quantity: 1,
+          unitAmount: adjustment,
+          itemCode: null,
+        });
+      }
+    }
+
     const created = await xeroCreateAccrecInvoice(
       {
         contactId: cid,
@@ -183,24 +219,7 @@ Deno.serve(async (req) => {
         city: clean(parent.city, 80) || null,
         postcode: clean(parent.postcode, 20) || null,
         existingXeroContactId: clean(parent.xero_contact_id, 80) || null,
-        lines: (Array.isArray(share.line_items) ? share.line_items : [])
-          .map((ln: Record<string, unknown>) => {
-            const qty = Number(ln.quantity) > 0 ? Number(ln.quantity) : 1;
-            const amt = Number(ln.amount_gbp);
-            const unit = Number(ln.unit_price_gbp);
-            const unitAmount = Number.isFinite(unit) && unit > 0
-              ? unit
-              : Number.isFinite(amt) && amt > 0
-                ? amt / qty
-                : 0;
-            return {
-              description: clean(ln.description, 800) || clean(share.line_description, 800),
-              quantity: qty,
-              unitAmount,
-              itemCode: clean(ln.xero_item_code, 80) || null,
-            };
-          })
-          .filter((ln) => ln.unitAmount > 0),
+        lines: xeroLines,
       },
       admin,
     );

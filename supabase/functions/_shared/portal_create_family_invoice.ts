@@ -115,6 +115,8 @@ function invoiceDescriptionLines(input: {
   quantity: number;
   reference: string | null;
   modeLabel: string;
+  isLaFunded: boolean;
+  hasLineItems: boolean;
 }): string[] {
   const descriptionFromInput = String(input.lineDescription)
     .split("\n")
@@ -123,26 +125,29 @@ function invoiceDescriptionLines(input: {
   if (input.descriptionComplete) {
     return descriptionFromInput.slice(0, 24);
   }
-  if (input.vatMode === "exempt") {
+  const descriptionBody = input.hasLineItems
+    ? ["Structured activity support delivered for a SEND participant."]
+    : descriptionFromInput.slice(0, 12);
+  if (input.isLaFunded) {
     return [
-      ...descriptionFromInput.slice(0, 12),
+      ...descriptionBody,
       "",
-      `Client's Id: ${input.clientIdLabel}`,
+      `Client ID: ${input.clientIdLabel}`,
       `PO: ${input.poLabel || "—"}`,
-      input.quantity !== 1 ? `- Quantity: ${input.quantity}` : null,
       input.reference ? `- Reference: ${input.reference}` : null,
       `- Mode: ${input.modeLabel}`,
       "- VAT: Exempt",
     ].filter((x): x is string => !!x);
   }
   return [
-    ...descriptionFromInput.slice(0, 12),
+    ...descriptionBody,
     "",
     `Client's Name: ${input.displayName}`,
-    input.quantity !== 1 ? `- Quantity: ${input.quantity}` : null,
     input.reference ? `- Reference: ${input.reference}` : null,
     `- Mode: ${input.modeLabel}`,
-    "- VAT: 20% (private funding)",
+    input.vatMode === "exempt"
+      ? "- VAT: Exempt (Direct Payment)"
+      : "- VAT: 20% (private funding)",
   ].filter((x): x is string => !!x);
 }
 
@@ -183,8 +188,8 @@ export async function createPortalFamilyInvoice(
   const paymentMethodHint =
     input.paymentMethodHint ||
     (vatMode === "exempt" ? "la_funded" : "bank_transfer");
-  const clientIdLabel = clean(input.clientIdLabel, 80) || contactId;
-  const poLabel = clean(input.poLabel, 80);
+  let clientIdLabel = clean(input.clientIdLabel, 80) || contactId;
+  let poLabel = clean(input.poLabel, 80);
   const now = new Date().toISOString();
   const readyBy = clean(input.readyBy, 120) || "portal";
 
@@ -199,6 +204,17 @@ export async function createPortalFamilyInvoice(
     clean(participant.display_name, 120) ||
     [participant.first_name, participant.last_name].filter(Boolean).join(" ").trim() ||
     contactId;
+
+  if (paymentMethodHint === "la_funded" && (!clean(input.clientIdLabel, 80) || !poLabel)) {
+    const funding = await resolveParticipantInvoiceFunding(admin, {
+      contactId,
+      displayName,
+    });
+    if (!clean(input.clientIdLabel, 80) && funding.clientId) {
+      clientIdLabel = clean(funding.clientId, 80) || contactId;
+    }
+    if (!poLabel && funding.po) poLabel = clean(funding.po, 80);
+  }
 
   const { data: parentContact } = await admin
     .from("portal_parent_contacts")
@@ -238,6 +254,7 @@ export async function createPortalFamilyInvoice(
 
   const unitPrice = Math.round((amountGbp / quantity) * 10000) / 10000;
   const modeLabel = invoiceModeLabel(paymentMethodHint, vatMode);
+  const isLaFunded = paymentMethodHint === "la_funded";
   const descriptionLines = invoiceDescriptionLines({
     lineDescription,
     vatMode,
@@ -248,6 +265,8 @@ export async function createPortalFamilyInvoice(
     quantity,
     reference,
     modeLabel,
+    isLaFunded,
+    hasLineItems: !!input.lineItems?.length,
   });
 
   let pdfBytes: Uint8Array;
@@ -262,6 +281,7 @@ export async function createPortalFamilyInvoice(
       totalGbp: amountGbp,
       quantity,
       descriptionLines,
+      lineItems: input.lineItems || [],
       billToName,
       billToLines,
       participantName: displayName,
@@ -483,6 +503,9 @@ export async function regeneratePortalInvoiceSharePdf(
   const paymentSchedule = normalizePaymentSchedule(share.payment_schedule);
   const amountPaidGbp = round2(Number(share.amount_paid_gbp) || 0);
   const isPaid = String(share.payment_status || "").toLowerCase() === "paid";
+  const lineItems = Array.isArray(share.line_items)
+    ? (share.line_items as PortalInvoiceLineItem[])
+    : [];
   const descriptionLines = invoiceDescriptionLines({
     lineDescription,
     vatMode,
@@ -492,6 +515,8 @@ export async function regeneratePortalInvoiceSharePdf(
     quantity,
     reference,
     modeLabel,
+    isLaFunded: paymentMethodHint === "la_funded",
+    hasLineItems: lineItems.length > 0,
   });
 
   let pdfBytes: Uint8Array;
@@ -506,6 +531,7 @@ export async function regeneratePortalInvoiceSharePdf(
       totalGbp: amountGbp,
       quantity,
       descriptionLines,
+      lineItems,
       billToName,
       billToLines,
       participantName: displayName,

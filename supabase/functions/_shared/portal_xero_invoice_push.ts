@@ -68,9 +68,9 @@ export async function pushPortalInvoiceShareToXero(
       const qty = Number(ln.quantity) > 0 ? Number(ln.quantity) : 1;
       const amt = Number(ln.amount_gbp);
       const unit = Number(ln.unit_price_gbp);
-      const unitAmount = Number.isFinite(unit) && unit > 0
+      const unitAmount = Number.isFinite(unit) && unit !== 0
         ? unit
-        : Number.isFinite(amt) && amt > 0
+        : Number.isFinite(amt) && amt !== 0
           ? amt / qty
           : 0;
       return {
@@ -80,7 +80,23 @@ export async function pushPortalInvoiceShareToXero(
         itemCode: clean(ln.xero_item_code, 80) || null,
       };
     })
-    .filter((ln) => ln.unitAmount > 0);
+    .filter((ln) => ln.unitAmount !== 0);
+  if (xeroLines.length) {
+    const lineTotal = rawLines.reduce(
+      (sum: number, ln: Record<string, unknown>) =>
+        sum + (Number.isFinite(Number(ln.amount_gbp)) ? Number(ln.amount_gbp) : 0),
+      0,
+    );
+    const adjustment = Math.round((Number(share.amount_gbp) - lineTotal) * 100) / 100;
+    if (Math.abs(adjustment) >= 0.01) {
+      xeroLines.push({
+        description: adjustment < 0 ? "Family credit applied" : "Invoice adjustment",
+        quantity: 1,
+        unitAmount: adjustment,
+        itemCode: null,
+      });
+    }
+  }
 
   const created = await xeroCreateAccrecInvoice(
     {

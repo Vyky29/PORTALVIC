@@ -19,6 +19,13 @@ export type PortalInvoicePdfInput = {
   totalGbp: number;
   quantity: number;
   descriptionLines: string[];
+  /** Individual invoice rows (one per service/product). */
+  lineItems?: Array<{
+    description: string;
+    quantity: number;
+    unit_price_gbp: number;
+    amount_gbp: number;
+  }>;
   billToName: string;
   billToLines: string[];
   participantName: string;
@@ -58,6 +65,14 @@ function money(n: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+}
+
+function roundMoney(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+function round4Money(n: number): number {
+  return Math.round(n * 10000) / 10000;
 }
 
 function formatUkDate(iso: string | null | undefined): string {
@@ -318,18 +333,80 @@ export async function buildPortalTaxInvoicePdf(
     y -= 12;
   }
   const descEndY = y;
-  const descBlockH = descStartY - descEndY;
-  // Vertically centre qty / unit / vat / amount in the description cell
-  const midY = descStartY - Math.max(0, descBlockH) / 2 - 3;
-
   const vatLabel = isExempt ? "Exempt" : "20%";
-  drawCentered(money(qty), colQtyX, colQtyW, midY, 9, font);
-  drawCentered(money(unitNet), colUnitX, colUnitW, midY, 9, font);
-  drawCentered(vatLabel, colVatX, colVatW, midY, 9, font);
-  drawCentered(money(split.net), colAmtX, colAmtW, midY, 9, font);
+  const rawLineItems = (input.lineItems || [])
+    .map((line) => ({
+      description: pdfSafeText(line?.description || "Service"),
+      quantity: Number(line?.quantity),
+      unit_price_gbp: Number(line?.unit_price_gbp),
+      amount_gbp: Number(line?.amount_gbp),
+    }))
+    .filter(
+      (line) =>
+        line.description &&
+        Number.isFinite(line.quantity) &&
+        line.quantity > 0 &&
+        Number.isFinite(line.amount_gbp) &&
+        line.amount_gbp !== 0,
+    );
+
+  // Keep item rows reconcilable with the invoice total (e.g. a family credit
+  // applied after the original service lines were generated).
+  if (rawLineItems.length) {
+    const lineGross = roundMoney(
+      rawLineItems.reduce((sum, line) => sum + line.amount_gbp, 0),
+    );
+    const adjustment = roundMoney(total - lineGross);
+    if (Math.abs(adjustment) >= 0.01) {
+      rawLineItems.push({
+        description: adjustment < 0 ? "Family credit applied" : "Invoice adjustment",
+        quantity: 1,
+        unit_price_gbp: adjustment,
+        amount_gbp: adjustment,
+      });
+    }
+  }
+
+  if (rawLineItems.length) {
+    y = descEndY - 4;
+    for (const line of rawLineItems.slice(0, 12)) {
+      const rowSplit = isExempt
+        ? { net: roundMoney(line.amount_gbp), vat: 0, total: roundMoney(line.amount_gbp) }
+        : splitVat20(line.amount_gbp);
+      const rowUnitNet = round4Money(rowSplit.net / line.quantity);
+      const rowDesc = wrapPdfLines(line.description, 34).slice(0, 3);
+      const rowHeight = Math.max(24, rowDesc.length * 11 + 8);
+      const rowTop = y;
+      for (const desc of rowDesc) {
+        page.drawText(desc, { x: colDescX, y, size: 8.5, font, color: ink });
+        y -= 11;
+      }
+      const rowMidY = rowTop - rowHeight / 2 + 3;
+      drawCentered(money(line.quantity), colQtyX, colQtyW, rowMidY, 8.5, font);
+      drawCentered(money(rowUnitNet), colUnitX, colUnitW, rowMidY, 8.5, font);
+      drawCentered(vatLabel, colVatX, colVatW, rowMidY, 8.5, font);
+      drawCentered(money(rowSplit.net), colAmtX, colAmtW, rowMidY, 8.5, font);
+      y = rowTop - rowHeight;
+      page.drawLine({
+        start: { x: left, y: y + 4 },
+        end: { x: right, y: y + 4 },
+        thickness: 0.35,
+        color: rgb(0.88, 0.88, 0.88),
+      });
+    }
+  } else {
+    const descBlockH = descStartY - descEndY;
+    // Legacy one-line invoice: vertically centre totals in the description cell.
+    const midY = descStartY - Math.max(0, descBlockH) / 2 - 3;
+    drawCentered(money(qty), colQtyX, colQtyW, midY, 9, font);
+    drawCentered(money(unitNet), colUnitX, colUnitW, midY, 9, font);
+    drawCentered(vatLabel, colVatX, colVatW, midY, 9, font);
+    drawCentered(money(split.net), colAmtX, colAmtW, midY, 9, font);
+    y = Math.min(y, midY - 14);
+  }
 
   // Air above totals rule + space before Subtotal
-  y = Math.min(y, midY - 14) - 16;
+  y -= 16;
   page.drawLine({
     start: { x: left, y: y + 10 },
     end: { x: right, y: y + 10 },
