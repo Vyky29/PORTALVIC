@@ -121,9 +121,9 @@
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/portal_incident_parent_notify.js?v=20260703-incident-notify"></script>
   <script src="/portal/portal_wa_thread_refresh.js?v=20260716-wa-audio-guard"></script>
-  <script src="/portal/portal_chat_bubble_icons.js?v=20260716-wa-ps-icons"></script>
-  <script src="/portal/admin-parent-notify-log.js?v=20260716-pnlog-head-once"></script>
-  <script src="/portal/admin-staff-whatsapp.js?v=20260716-wa-no-dup-intro"></script>
+  <script src="/portal/portal_chat_bubble_icons.js?v=20260716-admin-ps-icons-lg"></script>
+  <script src="/portal/admin-parent-notify-log.js?v=20260716-wa-audio-guard"></script>
+  <script src="/portal/admin-staff-whatsapp.js?v=20260716-wa-audio-guard"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260715-welcome-warm"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260716-wa-composer-stable" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260716-wa-no-dup-intro" />
@@ -149,7 +149,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260716-wa-ps-icons" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260716-admin-ps-icons-lg" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
@@ -246,11 +246,11 @@
         <div id="portalLivePresenceBar" class="portal-live-presence admin-topbar-presence" hidden aria-live="polite"></div>
         <div class="admin-topbar-meta">
           <span class="admin-date" id="topDate"></span>
-          <button type="button" class="admin-icon-btn" id="btnFamilyMsgs" aria-label="Family messages — parents WhatsApp" title="Family messages (parents)">
+          <button type="button" class="admin-icon-btn admin-icon-btn--chat" id="btnFamilyMsgs" aria-label="Family messages — parents WhatsApp" title="Family messages (parents)">
             <span class="admin-icon-btn__svg" id="btnFamilyMsgsIco" aria-hidden="true"></span>
             <span class="admin-badge is-empty" id="familyMsgBadge">0</span>
           </button>
-          <button type="button" class="admin-icon-btn" id="btnStaffWa" aria-label="CS WhatsApp — staff" title="CS WhatsApp (staff)">
+          <button type="button" class="admin-icon-btn admin-icon-btn--chat" id="btnStaffWa" aria-label="CS WhatsApp — staff" title="CS WhatsApp (staff)">
             <span class="admin-icon-btn__svg" id="btnStaffWaIco" aria-hidden="true"></span>
             <span class="admin-badge is-empty" id="staffWaBadge">0</span>
           </button>
@@ -27941,10 +27941,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var pIco = $('btnFamilyMsgsIco');
         var sIco = $('btnStaffWaIco');
         if(typeof window.portalParentChatIconSvg === 'function' && pIco){
-          pIco.innerHTML = window.portalParentChatIconSvg({ size: 20 });
+          pIco.innerHTML = window.portalParentChatIconSvg({ size: 28 });
         }
         if(typeof window.portalStaffChatIconSvg === 'function' && sIco){
-          sIco.innerHTML = window.portalStaffChatIconSvg({ size: 20 });
+          sIco.innerHTML = window.portalStaffChatIconSvg({ size: 28 });
         }
       })();
       if(!window.__portalAdminFamilyMsgBadgeBound){

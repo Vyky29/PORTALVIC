@@ -1,6 +1,6 @@
 /**
  * Speech-bubble chat icons with a single letter (P = parents, S = staff).
- * Used on admin topbar and staff CS WhatsApp entry.
+ * Admin dashboard topbar only.
  */
 (function (global) {
   function escLetter(letter) {
@@ -11,7 +11,8 @@
   function portalChatBubbleIconSvg(letter, opts) {
     opts = opts || {};
     var L = escLetter(letter) || "?";
-    var size = Number(opts.size) > 0 ? Number(opts.size) : 20;
+    var size = Number(opts.size) > 0 ? Number(opts.size) : 28;
+    var fontSize = (size * 0.5).toFixed(1);
     return (
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:' +
       size +
@@ -19,7 +20,9 @@
       size +
       'px">' +
       '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>' +
-      '<text x="12" y="12.8" text-anchor="middle" dominant-baseline="middle" fill="currentColor" stroke="none" font-size="9.5" font-weight="800" font-family="system-ui,-apple-system,BlinkMacSystemFont,sans-serif">' +
+      '<text x="12" y="12.8" text-anchor="middle" dominant-baseline="middle" fill="currentColor" stroke="none" font-size="' +
+      fontSize +
+      '" font-weight="800" font-family="system-ui,-apple-system,BlinkMacSystemFont,sans-serif">' +
       L +
       "</text></svg>"
     );
