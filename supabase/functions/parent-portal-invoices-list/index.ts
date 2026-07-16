@@ -31,7 +31,12 @@ function clean(v: unknown, max = 200): string {
  * Smoke / TEST invoice numbers are admin-only (never shown to families).
  */
 function parentInvoiceAllowedForShare(
-  share: { invoice_number?: unknown; payment_status?: unknown },
+  share: {
+    invoice_number?: unknown;
+    payment_status?: unknown;
+    reference_text?: unknown;
+    billing_term?: unknown;
+  },
   docTitle: unknown,
 ): boolean {
   const status = clean(share.payment_status, 40).toLowerCase();
@@ -39,10 +44,13 @@ function parentInvoiceAllowedForShare(
 
   const title = clean(docTitle, 240).toLowerCase();
   const num = clean(share.invoice_number, 80).toLowerCase();
-  const blob = `${title} ${num}`;
+  const ref = clean(share.reference_text, 160).toLowerCase();
+  const blob = `${title} ${num} ${ref}`;
 
   if (/^smoke[-_]/.test(num) || /^test[-_]/.test(num)) return false;
   if (/\bcrash\b/.test(blob)) return true;
+  // Term invoices from re-enrolment carry billing_term — always parent-facing.
+  if (clean(share.billing_term, 20)) return true;
   if (/26\/27|2026\/27|2026-27|autumn term 26|spring term 26|summer term 26/.test(blob)) {
     return true;
   }
@@ -136,8 +144,9 @@ Deno.serve(async (req) => {
     .eq("contact_id", contactId)
     .eq("share_status", "ready")
     .neq("payment_method_hint", "la_funded")
-    .order("due_date", { ascending: false, nullsFirst: false })
-    .order("ready_at", { ascending: false, nullsFirst: false })
+    // Chronological: Autumn → Spring → Summer (earliest due date first).
+    .order("due_date", { ascending: true, nullsFirst: false })
+    .order("ready_at", { ascending: true, nullsFirst: false })
     .limit(50);
 
   if (error) {
