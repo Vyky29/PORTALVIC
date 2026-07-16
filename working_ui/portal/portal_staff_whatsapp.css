@@ -8,7 +8,7 @@
   box-sizing:border-box;
   width:100%;
   max-width:100%;
-  margin:6px 0 0;
+  margin:10px 2px 4px 0;
   padding:5px 4px;
   border:1px solid rgba(217,154,31,.45);
   border-radius:10px;
@@ -26,9 +26,15 @@
   flex:0 0 auto;
   position:relative;
   white-space:nowrap;
+  /* Badge + unread ring sit on the rim — never clip the chip itself */
+  overflow:visible;
 }
 .topbar-left--name:has(.topbar-staff-wa-btn){
   width:max(var(--topbar-side-block-w), 118px);
+  overflow:visible;
+  /* Room for absolute badge (top/right) and unread outline */
+  padding:2px 8px 6px 2px;
+  box-sizing:border-box;
 }
 .topbar-staff-wa-btn__ico{
   width:12px;
@@ -76,7 +82,8 @@
   height:var(--topbar-row-h);
   max-height:var(--topbar-row-h);
   min-height:0;
-  overflow:hidden;
+  /* visible so WA unread badge / ring and profile glow are not cropped */
+  overflow:visible;
   gap:0;
 }
 .topbar-left--name.topbar-left--wa-compact .topbar-profile-card{
@@ -94,10 +101,11 @@
   flex:1 1 auto;
 }
 .topbar-left--name.topbar-left--wa-compact .topbar-staff-wa-btn{
-  margin:4px 0 0;
+  margin:8px 2px 2px 0;
   padding:4px 3px;
   font-size:9px;
   flex:0 0 auto;
+  overflow:visible;
 }
 .topbar-left--name.topbar-left--wa-compact .topbar-staff-wa-btn__ico,
 .topbar-left--name.topbar-left--wa-compact .topbar-staff-wa-btn__ico svg{
