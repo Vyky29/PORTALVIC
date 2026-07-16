@@ -5435,27 +5435,46 @@
         listHost.innerHTML = invoices.map(invoiceCardHtml).join("");
         wireInvoiceActions();
         try {
-          var flash = sessionStorage.getItem("pp_invoice_paid_flash");
-          if (flash) {
-            sessionStorage.removeItem("pp_invoice_paid_flash");
-            var paidInv = invoices.find(function (inv) {
-              return String(inv.id) === String(flash);
+          var pendingReturn = sessionStorage.getItem("pp_invoice_return_pending");
+          if (pendingReturn) {
+            var pendingInv = invoices.find(function (inv) {
+              return String(inv.id) === String(pendingReturn);
             });
-            showNotice(
-              "success",
-              paidInv
-                ? "Payment received — " +
-                    (paidInv.invoice_number
-                      ? "invoice " + paidInv.invoice_number
-                      : "invoice") +
-                    " is marked paid. Open the PDF below."
-                : "Payment received — your invoice is marked paid. Open the PDF below.",
-            );
-            var card = listHost.querySelector(
-              '[data-invoice-id="' + String(flash).replace(/"/g, "") + '"]',
-            );
-            if (card && typeof card.scrollIntoView === "function") {
-              card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            var pendingPaid =
+              pendingInv &&
+              String(pendingInv.payment_status || "").toLowerCase() === "paid";
+            if (pendingPaid) {
+              sessionStorage.removeItem("pp_invoice_return_pending");
+              sessionStorage.removeItem("pp_invoice_return_tries");
+              showNotice(
+                "success",
+                "Payment received — " +
+                  (pendingInv.invoice_number
+                    ? "invoice " + pendingInv.invoice_number
+                    : "invoice") +
+                  " is marked paid. Open the PDF below.",
+              );
+              var paidCard = listHost.querySelector(
+                '[data-invoice-id="' + String(pendingReturn).replace(/"/g, "") + '"]',
+              );
+              if (paidCard && typeof paidCard.scrollIntoView === "function") {
+                paidCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+              }
+            } else {
+              var tries = Number(sessionStorage.getItem("pp_invoice_return_tries") || "0");
+              if (tries < 5) {
+                sessionStorage.setItem("pp_invoice_return_tries", String(tries + 1));
+                global.setTimeout(function () {
+                  void refreshList();
+                }, 3000);
+              } else {
+                sessionStorage.removeItem("pp_invoice_return_pending");
+                sessionStorage.removeItem("pp_invoice_return_tries");
+                showNotice(
+                  "info",
+                  "We have not confirmed card or Apple Pay for this invoice yet. If payment completed, wait a minute and refresh. If it still shows Unpaid, contact the office with your receipt — we do not have it on file yet.",
+                );
+              }
             }
           }
           var gcFlash = sessionStorage.getItem("pp_gocardless_flash");

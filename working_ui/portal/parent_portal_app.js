@@ -1732,7 +1732,8 @@
     var view = params.get("view") || "";
     if (invoicePaid && invoiceId) {
       try {
-        sessionStorage.setItem("pp_invoice_paid_flash", String(invoiceId));
+        sessionStorage.setItem("pp_invoice_return_pending", String(invoiceId));
+        sessionStorage.setItem("pp_invoice_return_tries", "0");
       } catch (_eFlash) {}
     }
     if (gcParam === "1" || gcParam === "cancel") {
