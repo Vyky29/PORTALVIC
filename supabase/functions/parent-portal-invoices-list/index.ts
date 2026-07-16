@@ -197,10 +197,8 @@ Deno.serve(async (req) => {
     if (!doc || !doc.file_url) continue;
     if (!parentInvoiceAllowedForShare(share, doc.title)) continue;
     const hintEarly = clean(share.payment_method_hint, 40) || "bank_transfer";
-    const isLaFundedEarly =
-      hintEarly === "la_funded" || clean(share.vat_mode, 20) === "exempt";
-    // LA / VAT-exempt: office invoices the funder — parents only see the booking.
-    if (isLaFundedEarly) continue;
+    // LA-funded only: office invoices the funder — parents do not pay in the portal.
+    if (hintEarly === "la_funded") continue;
     const { data: signed } = await supabase.storage
       .from(BUCKET)
       .createSignedUrl(String(doc.file_url), 3600);

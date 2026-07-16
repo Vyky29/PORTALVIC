@@ -297,8 +297,7 @@
   function methodLabel(inv) {
     var hint = String(inv.payment_method_hint || '').toLowerCase();
     var via = String(inv.paid_via || '').toLowerCase();
-    var vat = String(inv.vat_mode || '').toLowerCase();
-    if (hint === 'la_funded' || vat === 'exempt') {
+    if (hint === 'la_funded') {
       return 'LA funded';
     }
     if (via === 'gocardless' || hint === 'gocardless' || inv.gocardless_url) {
@@ -313,6 +312,61 @@
     if (via === 'admin') return 'Admin / Office';
     if (hint === 'other') return 'Other';
     return 'Bank transfer';
+  }
+
+  function fundingCategoryLabel(inv) {
+    var label = String(inv.funding_category_label || '').trim();
+    if (label) return label;
+    var cat = String(inv.funding_category || '').toLowerCase();
+    if (cat === 'la_managed') return 'LA manages invoice (exempt)';
+    if (cat === 'parent_direct_payment') return 'Parents · Direct Payment (exempt)';
+    if (cat === 'parent_private') return 'Parents · Private (VAT 20%)';
+    var hint = String(inv.payment_method_hint || '').toLowerCase();
+    var vat = String(inv.vat_mode || '').toLowerCase();
+    if (hint === 'la_funded') return 'LA manages invoice (exempt)';
+    if (vat === 'exempt') return 'Parents · Direct Payment (exempt)';
+    return 'Parents · Private (VAT 20%)';
+  }
+
+  function fundingToneClass(label) {
+    var s = String(label || '').toLowerCase();
+    if (s.indexOf('la manages') >= 0 || s.indexOf('la funded') >= 0) {
+      return 'pp-inv-acc__fund--la';
+    }
+    if (s.indexOf('direct payment') >= 0) {
+      return 'pp-inv-acc__fund--direct';
+    }
+    return 'pp-inv-acc__fund--private';
+  }
+
+  function fundingChipHtml(inv) {
+    var text = fundingCategoryLabel(inv);
+    return (
+      '<span class="pp-inv-acc__fund ' +
+      fundingToneClass(text) +
+      '" title="Funding route">' +
+      esc(text) +
+      '</span>'
+    );
+  }
+
+  function groupFundingChipsHtml(invoices) {
+    var seen = Object.create(null);
+    var out = [];
+    (invoices || []).forEach(function (inv) {
+      var m = fundingCategoryLabel(inv);
+      if (!seen[m]) {
+        seen[m] = true;
+        out.push(
+          '<span class="pp-inv-acc__fund ' +
+            fundingToneClass(m) +
+            '" title="Funding route">' +
+            esc(m) +
+            '</span>',
+        );
+      }
+    });
+    return out.join('');
   }
 
   function methodToneClass(label) {
@@ -632,6 +686,9 @@
       '<div style="margin-top:8px"><span class="muted">Due</span><br>' +
       esc(formatDate(inv.due_date)) +
       '</div>' +
+      '<div style="margin-top:8px"><span class="muted">Funding</span><br>' +
+      fundingChipHtml(inv) +
+      '</div>' +
       '<div style="margin-top:8px"><span class="muted">Method</span><br>' +
       methodChipHtml(methodLabel(inv)) +
       '</div>' +
@@ -697,7 +754,7 @@
       esc(formatMoney(groupTotalGbp(invoices))) +
       '</span>' +
       '<span class="pp-inv-acc__methods">' +
-      groupMethodChipsHtml(invoices) +
+      groupFundingChipsHtml(invoices) +
       '</span>' +
       '<span class="pp-inv-acc__status">' +
       groupStatusSummary(invoices) +
@@ -731,6 +788,10 @@
       '.pp-inv-acc__method--card{color:#1e3a8a;background:#dbeafe;border-color:#93c5fd}' +
       '.pp-inv-acc__method--admin{color:#334155;background:#e2e8f0;border-color:#cbd5e1}' +
       '.pp-inv-acc__method--other{color:#4a6578;background:#eef2f5;border-color:#d5dee6}' +
+      '.pp-inv-acc__fund{font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid transparent}' +
+      '.pp-inv-acc__fund--private{color:#9a3412;background:#ffedd5;border-color:#fdba74}' +
+      '.pp-inv-acc__fund--direct{color:#065f46;background:#d1fae5;border-color:#a7f3d0}' +
+      '.pp-inv-acc__fund--la{color:#5b21b6;background:#ede9fe;border-color:#c4b5fd}' +
       '.pp-inv-acc__status{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}' +
       '.pp-inv-acc__xero{font-size:11px;color:#92400e}' +
       '.pp-inv-acc__xero--ok{color:#065f46}' +

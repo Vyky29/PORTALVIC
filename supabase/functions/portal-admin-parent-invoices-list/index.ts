@@ -10,6 +10,11 @@ import {
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
 import { evaluateOwnArrangementBuffer } from "../_shared/portal_payment_holds.ts";
+import {
+  invoiceFundingCategory,
+  invoiceFundingCategoryLabel,
+  resolveParticipantInvoiceFunding,
+} from "../_shared/portal_invoice_funding.ts";
 
 const BUCKET = "documents";
 
@@ -154,6 +159,7 @@ Deno.serve(async (req) => {
   }
 
   let invoices = [];
+  const fundingByContact = new Map<string, Awaited<ReturnType<typeof resolveParticipantInvoiceFunding>>>();
   for (const share of shares || []) {
     const doc = docsById.get(String(share.document_id)) || {};
     let pdfUrl: string | null = null;
@@ -164,6 +170,17 @@ Deno.serve(async (req) => {
       pdfUrl = signed?.signedUrl || null;
     }
     const cid = clean(share.contact_id, 120);
+    let funding = fundingByContact.get(cid);
+    if (!funding) {
+      funding = await resolveParticipantInvoiceFunding(admin, cid);
+      fundingByContact.set(cid, funding);
+    }
+    const fundingCategory = invoiceFundingCategory({
+      vatMode: clean(share.vat_mode, 20) === "exempt" ? "exempt" : "vat_20",
+      paymentMethodHint: clean(share.payment_method_hint, 40),
+      fundingLabel: funding.fundingLabel,
+      paymentSheet: funding.paymentSheet,
+    });
     invoices.push({
       ...share,
       title: clean(doc.title, 200) || "Invoice",
@@ -175,6 +192,10 @@ Deno.serve(async (req) => {
       document_created_at: doc.created_at || null,
       payment_hold: holdByContact.get(cid) || null,
       buffer_status: bufferByContact.get(cid) || null,
+      funding_category: fundingCategory,
+      funding_category_label: invoiceFundingCategoryLabel(fundingCategory),
+      funding_label: funding.fundingLabel || null,
+      payment_sheet: funding.paymentSheet || null,
     });
   }
 

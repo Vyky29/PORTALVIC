@@ -47,6 +47,47 @@ export type ParticipantInvoiceFunding = {
   paymentSheet: string;
 };
 
+export type InvoiceFundingCategory =
+  | "parent_private"
+  | "parent_direct_payment"
+  | "la_managed";
+
+const FUNDING_CATEGORY_LABELS: Record<InvoiceFundingCategory, string> = {
+  parent_private: "Parents · Private (VAT 20%)",
+  parent_direct_payment: "Parents · Direct Payment (exempt)",
+  la_managed: "LA manages invoice (exempt)",
+};
+
+export function invoiceFundingCategoryLabel(category: InvoiceFundingCategory): string {
+  return FUNDING_CATEGORY_LABELS[category] || category;
+}
+
+/** Who manages the invoice and VAT route for admin + parent portal. */
+export function invoiceFundingCategory(input: {
+  vatMode: PortalInvoiceVatMode;
+  paymentMethodHint?: string;
+  fundingLabel?: string;
+  paymentSheet?: string;
+}): InvoiceFundingCategory {
+  const hint = clean(input.paymentMethodHint, 40).toLowerCase();
+  const sheet = clean(input.paymentSheet, 40).toUpperCase();
+  const label = clean(input.fundingLabel, 120).toLowerCase();
+
+  if (hint === "la_funded" || sheet === "LA") {
+    return "la_managed";
+  }
+  if (
+    sheet === "DIRECT_PAYMENTS" ||
+    input.vatMode === "exempt" ||
+    label.includes("direct payment") ||
+    label.includes("care package") ||
+    label.includes("ehcp")
+  ) {
+    return "parent_direct_payment";
+  }
+  return "parent_private";
+}
+
 export async function resolveParticipantInvoiceFunding(
   admin: SupabaseClient,
   opts: { contactId: string; displayName: string },
