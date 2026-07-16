@@ -34,12 +34,12 @@
   var TERM_BUCKETS = [
     {
       id: "summer_2526",
-      title: "Summer Term 25/26",
+      title: "SUMMER TERM 25/26",
       subtitle: "Term sessions · Jul crash courses · May–Jul billing",
     },
     {
       id: "autumn_2627",
-      title: "Autumn Term 26/27",
+      title: "AUTUMN TERM 26/27",
       subtitle: "Re-enrolment 2026-27 · instalments from Sep 2026",
     },
   ];
@@ -136,7 +136,6 @@
   }
 
   function injectStyleOnce() {
-    if (document.getElementById("adminPayStyle")) return;
     var css = [
       ".pay-wrap{min-width:0}",
       ".pay-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:0 0 12px}",
@@ -219,8 +218,12 @@
       ".pay-term-acc__sum{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;cursor:pointer;list-style:none;font-weight:800;color:#0f172a;background:#f8fafc;border-bottom:1px solid transparent;min-width:0}",
       ".pay-term-acc[open]>.pay-term-acc__sum{border-bottom-color:#eef2f7}",
       ".pay-term-acc__sum::-webkit-details-marker{display:none}",
-      ".pay-term-acc__title{display:block;font-size:15px;min-width:0;overflow-wrap:break-word}",
-      ".pay-term-acc__sub{display:block;font-size:12px;font-weight:700;color:#64748b;margin-top:2px;overflow-wrap:break-word}",
+      ".pay-term-acc__title{display:block;font-size:16px;letter-spacing:.04em;min-width:0;overflow-wrap:break-word}",
+      ".pay-term-acc__body{padding:14px 16px;min-width:0}",
+      ".pay-term-acc__body .pay-kpis{margin-bottom:12px}",
+      ".pay-term-acc__body .pay-groups{margin-bottom:14px}",
+      ".pay-term-acc__body .pay-card-h{margin:0 0 10px}",
+      ".pay-term-acc__sub{display:block;font-size:12px;font-weight:700;color:#64748b;margin-top:2px;overflow-wrap:break-word;letter-spacing:0;text-transform:none}",
       ".pay-term-acc__meta{flex:0 0 auto;text-align:right;font-size:12px;font-weight:700;color:#64748b;min-width:0}",
       ".pay-term-acc__meta b{display:block;font-size:15px;color:#0f172a}",
       ".pay-term-acc__meta--out{color:#b91c1c}",
@@ -229,10 +232,13 @@
       ".pay-term-acc__sum::after{content:'';width:8px;height:8px;border-right:2px solid #94a3b8;border-bottom:2px solid #94a3b8;transform:rotate(45deg);transition:transform .15s;flex:0 0 auto}",
       ".pay-term-acc[open]>.pay-term-acc__sum::after{transform:rotate(-135deg)}",
     ].join("\n");
-    var st = document.createElement("style");
-    st.id = "adminPayStyle";
+    var st = document.getElementById("adminPayStyle");
+    if (!st) {
+      st = document.createElement("style");
+      st.id = "adminPayStyle";
+      document.head.appendChild(st);
+    }
     st.textContent = css;
-    document.head.appendChild(st);
   }
 
   function pillFor(r) {
@@ -270,10 +276,10 @@
 
   function normalizeTermLabel(raw) {
     var s = String(raw || "").trim();
-    if (!s || s === "—" || s === "-") return "Summer Term 25/26";
-    if (/summer\s*term\s*2026/i.test(s)) return "Summer Term 25/26";
-    if (/summer\s*term\s*25\s*\/\s*26/i.test(s)) return "Summer Term 25/26";
-    if (/autumn\s*term\s*26/i.test(s) || /26\s*\/\s*27/.test(s)) return "Autumn Term 26/27";
+    if (!s || s === "—" || s === "-") return "SUMMER TERM 25/26";
+    if (/summer\s*term\s*2026/i.test(s)) return "SUMMER TERM 25/26";
+    if (/summer\s*term\s*25\s*\/\s*26/i.test(s)) return "SUMMER TERM 25/26";
+    if (/autumn\s*term\s*26/i.test(s) || /26\s*\/\s*27/.test(s)) return "AUTUMN TERM 26/27";
     return s;
   }
 
@@ -348,22 +354,71 @@
     return html;
   }
 
+  function tallyRows(rows) {
+    var billed = 0, paid = 0, outstanding = 0, paidN = 0, outN = 0, naN = 0;
+    var grp = { PARENTS: { billed: 0, paid: 0, out: 0, n: 0 }, LA: { billed: 0, paid: 0, out: 0, n: 0 } };
+    (rows || []).forEach(function (r) {
+      var a = Number(r.amount) || 0;
+      var c = category(r);
+      if (c !== "notreenrolled") billed += a;
+      if (c === "paid") { paid += a; paidN++; }
+      else if (c === "outstanding") { outstanding += a; outN++; }
+      else if (c === "notreenrolled") naN++;
+      var g = grp[r.sheet];
+      if (g && c !== "notreenrolled") {
+        g.billed += a; g.n++;
+        if (c === "paid") g.paid += a; else g.out += a;
+      }
+    });
+    return { billed: billed, paid: paid, outstanding: outstanding, paidN: paidN, outN: outN, naN: naN, grp: grp };
+  }
+
+  function termSummaryBlockHtml(scopedRows, visibleRows) {
+    var t = tallyRows(scopedRows);
+    var html = '<div class="pay-term-acc__body">';
+    html += '<div class="pay-kpis">'
+      + kpiCard("billed", "", "Billed", money(t.billed))
+      + kpiCard("paid", "pay-kpi--paid", "Paid", money(t.paid))
+      + kpiCard("out", "pay-kpi--out", "Outstanding", money(t.outstanding))
+      + "</div>";
+    if (state.mode === "payments") {
+      html += '<div class="pay-groups">'
+        + grpCard("priv", "pay-grp--priv", labelFor("PARENTS"), t.grp.PARENTS)
+        + grpCard("fund", "pay-grp--fund", labelFor("LA"), t.grp.LA)
+        + "</div>";
+    }
+    html += '<div class="pay-card-h" style="display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0">'
+      + '<h3 style="margin:0;font-size:15px;color:#0f172a;display:flex;align-items:center;gap:8px">'
+      + icon("clients", 17) + "Participants</h3>"
+      + '<span style="font-size:12px;color:#64748b;flex:0 0 auto">' + visibleRows.length + " shown</span></div>";
+    html += paymentsTableBodyHtml(visibleRows.slice().sort(sortPaymentRows));
+    html += "</div>";
+    return html;
+  }
+
   function termAccordionHtml(visible) {
     var groups = groupRowsByTermBucket(visible);
-    if (!groups.length) {
-      return '<div class="pay-card"><div class="pay-empty">No records match this filter.</div></div>';
-    }
+    var scopedByTerm = groupRowsByTermBucket(baseRows());
+    var byId = {};
+    groups.forEach(function (g) { byId[g.bucket.id] = g; });
     var html = '<div class="pay-term-stack">';
-    groups.forEach(function (g) {
+    var any = false;
+    scopedByTerm.forEach(function (sg) {
+      if (!sg.rows.length) return;
+      any = true;
+      var vis = (byId[sg.bucket.id] && byId[sg.bucket.id].rows) || [];
       html += '<details class="pay-term-acc" open>'
         + '<summary class="pay-term-acc__sum">'
-        + '<span><span class="pay-term-acc__title">' + esc(g.bucket.title) + "</span>"
-        + '<span class="pay-term-acc__sub">' + esc(g.bucket.subtitle) + "</span></span>"
-        + termAccordionMetaHtml(g)
+        + '<span><span class="pay-term-acc__title">' + esc(sg.bucket.title) + "</span>"
+        + '<span class="pay-term-acc__sub">' + esc(sg.bucket.subtitle) + "</span></span>"
+        + termAccordionMetaHtml({ rows: sg.rows })
         + "</summary>"
-        + paymentsTableBodyHtml(g.rows)
+        + termSummaryBlockHtml(sg.rows, vis)
         + "</details>";
     });
+    if (!any) {
+      return '<div class="pay-card"><div class="pay-empty">No records match this filter.</div></div>';
+    }
     html += "</div>";
     return html;
   }
@@ -407,7 +462,7 @@
       var v = d[keys[i]];
       if (v != null && String(v).trim() && String(v).trim() !== "-") return normalizeTermLabel(String(v).trim());
     }
-    return "Summer Term 25/26";
+    return "SUMMER TERM 25/26";
   }
 
   // Local authority / funder for the row, normalized to a short label so it can
@@ -443,50 +498,17 @@
     if (!root) return;
     var scoped = baseRows();
     var visible = scoped.filter(statusMatch);
-
-    var billed = 0, paid = 0, outstanding = 0, paidN = 0, outN = 0, naN = 0;
-    // Income split by funding type: Private (parents) vs Funded (local authority).
-    var grp = { PARENTS: { billed: 0, paid: 0, out: 0, n: 0 }, LA: { billed: 0, paid: 0, out: 0, n: 0 } };
-    scoped.forEach(function (r) {
-      var a = Number(r.amount) || 0;
-      var c = category(r);
-      if (c !== "notreenrolled") billed += a;
-      if (c === "paid") { paid += a; paidN++; }
-      else if (c === "outstanding") { outstanding += a; outN++; }
-      else if (c === "notreenrolled") naN++;
-      var g = grp[r.sheet];
-      if (g && c !== "notreenrolled") {
-        g.billed += a; g.n++;
-        if (c === "paid") g.paid += a; else g.out += a;
-      }
-    });
+    var totals = tallyRows(scoped);
+    var paidN = totals.paidN, outN = totals.outN, naN = totals.naN;
 
     var html = '<div class="pay-wrap">';
 
-    // KPIs
-    html += '<div class="pay-kpis">'
-      + kpiCard("billed", "", "Billed", money(billed))
-      + kpiCard("paid", "pay-kpi--paid", "Paid", money(paid))
-      + kpiCard("out", "pay-kpi--out", "Outstanding", money(outstanding))
-      + '</div>';
-
-    // Income by funding type (private parents vs funded / local authority).
-    // Only on the dedicated payments screen; Participants/Orders stay leaner.
-    if (state.mode === "payments") {
-      html += '<div class="pay-groups">'
-        + grpCard("priv", "pay-grp--priv", labelFor("PARENTS"), grp.PARENTS)
-        + grpCard("fund", "pay-grp--fund", labelFor("LA"), grp.LA)
-        + '</div>';
-    }
-
-    // Filter bar
     var sheetOpts = '<option value="">All groups</option>';
     SHEET_ORDER.forEach(function (s) {
       if (allRows().some(function (r) { return r.sheet === s; })) {
         sheetOpts += '<option value="' + esc(s) + '"' + (state.sheetFilter === s ? " selected" : "") + ">" + esc(labelFor(s)) + "</option>";
       }
     });
-    // LA / funder filter — distinct normalized LA labels present in the data.
     var laVals = {};
     allRows().forEach(function (r) { var l = laFor(r); if (l) laVals[l] = 1; });
     var laList = Object.keys(laVals).sort();
@@ -504,16 +526,9 @@
       + '<input type="search" class="pay-search" id="paySearch" placeholder="Search client, parent…" value="' + esc(state.query) + '" />'
       + '</div>';
 
-    // Table — Participants roster (aggregated) for "participants" mode, otherwise
-    // one row per record (Orders / Payments). Same source, detail, edits + audit.
     if (state.mode === "participants") {
       html += participantsTableHtml(visible);
     } else {
-      var cardTitle = state.mode === "orders" ? "Orders" : "Participants";
-      html += '<div class="pay-card-h" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;min-width:0">'
-        + "<h3 style=\"margin:0;font-size:15px;color:#0f172a;display:flex;align-items:center;gap:8px\">"
-        + icon("clients", 17) + esc(cardTitle) + "</h3>"
-        + '<span style="font-size:12px;color:#64748b;flex:0 0 auto">' + visible.length + " shown</span></div>";
       html += termAccordionHtml(visible);
     }
     html += "</div>";
@@ -925,7 +940,7 @@
                 amount_billed: 0,
                 amount_out: 0,
                 data: {
-                  Term: "Autumn Term 26/27",
+                  Term: "AUTUMN TERM 26/27",
                   Services: "Re-enrolment 2026-27",
                 },
                 _termBucket: "autumn_2627",
