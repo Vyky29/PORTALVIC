@@ -5630,16 +5630,49 @@
         });
       });
 
+      function navigateExternal(url) {
+        if (!url) return false;
+        try {
+          var link = global.document.createElement("a");
+          link.href = url;
+          link.rel = "noopener noreferrer";
+          link.style.display = "none";
+          global.document.body.appendChild(link);
+          link.click();
+          if (link.parentNode) link.parentNode.removeChild(link);
+          return true;
+        } catch (_navA) {
+          try {
+            global.location.assign(url);
+            return true;
+          } catch (_navB) {
+            global.location.href = url;
+            return true;
+          }
+        }
+      }
+
       function runGocardlessSetup(btn, invoiceId) {
-        if (typeof opts.startGocardlessSetup !== "function") return;
+        if (typeof opts.startGocardlessSetup !== "function") {
+          showNotice(
+            "error",
+            "Direct Payment is not available on this page — refresh and try again.",
+          );
+          return;
+        }
         btn.disabled = true;
         btn.setAttribute("aria-busy", "true");
         showNotice("info", "Opening GoCardless to set up Direct Payment…");
         void opts
           .startGocardlessSetup(invoiceId || "")
           .then(function (j) {
-            if (j && j.authorisation_url) {
-              global.location.href = j.authorisation_url;
+            var url =
+              (j && j.authorisation_url) ||
+              (j && j.url) ||
+              (j && j.data && j.data.authorisation_url) ||
+              "";
+            if (url) {
+              if (!navigateExternal(url)) throw new Error("no_url");
               return;
             }
             if (j && j.already_mandated) {

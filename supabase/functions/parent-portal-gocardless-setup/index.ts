@@ -140,6 +140,20 @@ Deno.serve(async (req) => {
     .eq("contact_id", contactId)
     .maybeSingle();
 
+  const pendingUrl = clean(mandateRow?.authorisation_url, 500);
+  if (
+    mandateRow &&
+    String(mandateRow.mandate_status || "").toLowerCase() === "pending" &&
+    pendingUrl
+  ) {
+    return json(200, {
+      ok: true,
+      authorisation_url: pendingUrl,
+      resumed: true,
+      invoice_id: invoiceId || null,
+    });
+  }
+
   if (
     mandateRow &&
     mandateIsActive(mandateRow.mandate_status) &&
