@@ -27,6 +27,7 @@ const SCOPES = [
   "accounting.payments",
   "accounting.invoices",
   "accounting.contacts",
+  "accounting.settings", // Items (products) sync for the Xero product map
 ].join(" ");
 
 function loadEnv(path) {
@@ -76,7 +77,7 @@ const server = createServer(async (req, res) => {
   if (url.pathname === "/") {
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
     res.end(`<!doctype html><meta charset="utf-8"><title>Xero re-consent</title>
-      <p><a href="${authorizeUrl}">Authorize Xero (payments + invoices + contacts)</a></p>
+      <p><a href="${authorizeUrl}">Authorize Xero (payments + invoices + contacts + settings/items)</a></p>
       <p>Redirect URI must be registered on the Xero app: <code>${REDIRECT}</code></p>`);
     return;
   }
