@@ -456,9 +456,13 @@
       var markHydrated = false;
       try{
       try{
+        if(typeof window.portalWaitForSupabaseClientReady === 'function'){
+          await window.portalWaitForSupabaseClientReady(8000);
+        }
         const box = window.__PORTAL_SUPABASE__;
         if(!box || !box.client){
-          markHydrated = true;
+          /* Client not ready yet — do not seal hydrated; retry after portal:supabase-ready. */
+          try{ window.__PORTAL_SCHEDULE_OVERRIDES_NEED_AUTH_RETRY__ = true; }catch(_){}
           return;
         }
         let sess = box.session;
@@ -660,6 +664,7 @@
         try{
           /* Do not seal hydration while still waiting for auth — cover/absence rows
              must retry after identity resolves (Simon←Aurora, Yuri absences). */
+          if(window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__) return;
           if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__
             && !window.__PORTAL_SCHEDULE_OVERRIDES_NEED_AUTH_RETRY__){
             window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true;
@@ -3090,6 +3095,14 @@
       }catch(_){}
     }
     try{ portalStaffEnsureScheduleOverridesHydratedSoon(); }catch(_){}
+    try{
+      window.addEventListener('portal:supabase-ready', function portalStaffScheduleOverridesOnSupabaseReady(){
+        try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = false; }catch(_){}
+        if(typeof portalStaffKickScheduleOverridesHydrate === 'function'){
+          void portalStaffKickScheduleOverridesHydrate({ force: true, timeoutMs: 8000 });
+        }
+      });
+    }catch(_){}
     /** Summer Term 2: shift-date list can include weekdays without a roster row — not a worked day. */
     function portalStaffSummerShiftDateWithoutRosterRow(isoYmd, staffId){
       try{
