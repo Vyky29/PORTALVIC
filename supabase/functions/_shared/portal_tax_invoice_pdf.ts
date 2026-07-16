@@ -228,8 +228,9 @@ export async function buildPortalTaxInvoicePdf(
     ["Invoice Date", formatUkDate(input.invoiceDateIso)],
     ["Invoice Number", pdfSafeText(input.invoiceNumber)],
     ["Reference", pdfSafeText(input.reference || "").slice(0, 40) || "-"],
-    ["Service", pdfSafeText(input.service || "").slice(0, 48) || "-"],
   ];
+  const serviceLabel = pdfSafeText(input.service || "").slice(0, 48);
+  if (serviceLabel) meta.push(["Service", serviceLabel]);
   for (const [label, val] of meta) {
     page.drawText(label, { x: left, y, size: 8, font, color: muted });
     page.drawText(val, {

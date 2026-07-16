@@ -177,7 +177,10 @@ export function lineItemsToDescription(lines: PortalInvoiceLineItem[]): string {
   if (!lines.length) {
     return "Structured activity support delivered across aquatic environments for a SEND participant.";
   }
-  return lines
-    .map((l) => `${l.description} — GBP ${l.amount_gbp.toFixed(2)}`)
-    .join("\n");
+  return (
+    "Structured activity support delivered for a SEND participant.\n\n" +
+    lines
+      .map((l) => `${l.description} — GBP ${l.amount_gbp.toFixed(2)}`)
+      .join("\n")
+  );
 }
