@@ -1798,11 +1798,11 @@
             returnBtn.disabled = true;
             void returnPhotoToInbox(row.id, row)
               .then(function () {
-                if (statusEl) {
-                  statusEl.textContent = "Photo returned to Inbox (unassigned).";
-                  statusEl.className = "portal-forms-status";
-                }
-                void refresh({ stayOnKey: "" });
+                return afterPhotosDeleted(
+                  key,
+                  [row.id],
+                  "Photo returned to Inbox (unassigned)."
+                );
               })
               .catch(function (err) {
                 console.error(err);
