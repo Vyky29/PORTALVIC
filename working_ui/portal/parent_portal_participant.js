@@ -2114,11 +2114,33 @@
         "</div>"
       );
     }
+    function termAccordionHtml(label, contentHtml, isOpen, isCompleted) {
+      if (!contentHtml) return "";
+      return (
+        '<details class="pp-hub-ops__term-accordion' +
+        (isCompleted ? " pp-hub-ops__term-accordion--completed" : "") +
+        '"' +
+        (isOpen ? " open" : "") +
+        ">" +
+        '<summary class="pp-hub-ops__term-summary">' +
+        termHalfRowIcon(label) +
+        '<span class="pp-hub-ops__term-summary-title">' +
+        esc(label) +
+        "</span>" +
+        '<svg class="pp-hub-ops__term-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>' +
+        "</summary>" +
+        '<div class="pp-hub-ops__term-body">' +
+        contentHtml +
+        "</div></details>"
+      );
+    }
 
     var intensiveIcon =
       '<svg class="pp-hub-ops__date-chips-label-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"/></svg>';
 
     var rows = [];
+    var completedTermHtml = "";
+    var firstUpcomingTermRendered = false;
     var crashDates = findCrashCourseDates(data);
     var todayIso = isoDateLocal(new Date());
     var summerTo = currentYearTermToIso(data);
@@ -2133,13 +2155,20 @@
         if (isFirstHalfTermDate(d.iso, data, false)) summerFirst.push(d);
         else summerSecond.push(d);
       });
-      // Keep completed greens visible (do not hide "done").
+      // Keep completed greens, but place this finished term after all upcoming terms.
+      var completedRows = [];
       if (summerFirst.length) {
-        rows.push(rowHtml("Summer · First half term", summerFirst));
+        completedRows.push(rowHtml("Summer · First half term", summerFirst));
       }
       if (summerSecond.length) {
-        rows.push(rowHtml("Summer · Second half term", summerSecond));
+        completedRows.push(rowHtml("Summer · Second half term", summerSecond));
       }
+      completedTermHtml = termAccordionHtml(
+        "Summer term · completed",
+        completedRows.join(""),
+        false,
+        true,
+      );
     }
 
     if (crashDates.length) {
@@ -2175,7 +2204,11 @@
           if (!t || !t.starts) return;
           var termEnd = t.mainTermEnds || t.ends || t.lastDay || "";
           if (!termEnd) return;
-          var labelBase = String(t.name || t.id || "Term").replace(/\s+Term\s*$/i, "").trim() || "Term";
+          var labelBase =
+            String(t.name || t.id || "Term")
+              .replace(/\s+Term(?:\s+\d{4})?\s*$/i, "")
+              .replace(/\s+\d{4}\s*$/i, "")
+              .trim() || "Term";
           var tFirst = [];
           var tSecond = [];
           nextDates.forEach(function (d) {
@@ -2185,8 +2218,20 @@
           });
           tFirst = filterChipListForDisplay(tFirst, statusByIso, true);
           tSecond = filterChipListForDisplay(tSecond, statusByIso, true);
-          if (tFirst.length) rows.push(rowHtml(labelBase + " · First half term", tFirst));
-          if (tSecond.length) rows.push(rowHtml(labelBase + " · Second half term", tSecond));
+          var termRows = [];
+          if (tFirst.length) termRows.push(rowHtml(labelBase + " · First half term", tFirst));
+          if (tSecond.length) termRows.push(rowHtml(labelBase + " · Second half term", tSecond));
+          if (termRows.length) {
+            rows.push(
+              termAccordionHtml(
+                labelBase + " term",
+                termRows.join(""),
+                !firstUpcomingTermRendered,
+                false,
+              ),
+            );
+            firstUpcomingTermRendered = true;
+          }
         });
       } else {
         var first = [];
@@ -2197,11 +2242,16 @@
         });
         first = filterChipListForDisplay(first, statusByIso, true);
         second = filterChipListForDisplay(second, statusByIso, true);
-        if (first.length) rows.push(rowHtml("Autumn · First half term", first));
-        if (second.length) rows.push(rowHtml("Autumn · Second half term", second));
+        var fallbackRows = [];
+        if (first.length) fallbackRows.push(rowHtml("Autumn · First half term", first));
+        if (second.length) fallbackRows.push(rowHtml("Autumn · Second half term", second));
+        if (fallbackRows.length) {
+          rows.push(termAccordionHtml("Autumn term", fallbackRows.join(""), true, false));
+        }
       }
     }
 
+    if (completedTermHtml) rows.push(completedTermHtml);
     if (!rows.length) return "";
     return (
       '<div class="pp-hub-ops__date-chips-stack" aria-label="Session dates">' +

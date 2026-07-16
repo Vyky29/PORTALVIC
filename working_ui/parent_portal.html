@@ -941,6 +941,61 @@
       width: 100%;
       flex: 1 1 100%;
     }
+    .pp-hub-ops__term-accordion {
+      min-width: 0;
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid rgba(45, 132, 179, 0.18);
+      border-radius: 12px;
+      background: #fff;
+      overflow: hidden;
+    }
+    .pp-hub-ops__term-accordion--completed {
+      border-color: rgba(21, 128, 61, 0.2);
+      background: rgba(22, 163, 74, 0.035);
+    }
+    .pp-hub-ops__term-summary {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      padding: 11px 12px;
+      color: var(--ink, #1a2b3c);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.25;
+      cursor: pointer;
+      list-style: none;
+    }
+    .pp-hub-ops__term-summary::-webkit-details-marker { display: none; }
+    .pp-hub-ops__term-summary::marker { content: ""; }
+    .pp-hub-ops__term-summary-title {
+      min-width: 0;
+      flex: 1 1 auto;
+      overflow-wrap: break-word;
+    }
+    .pp-hub-ops__term-summary .pp-hub-ops__date-chips-label-ico {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 auto;
+    }
+    .pp-hub-ops__term-chevron {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 auto;
+      color: var(--muted, #64748b);
+      transition: transform 0.18s ease;
+    }
+    .pp-hub-ops__term-accordion[open] .pp-hub-ops__term-chevron {
+      transform: rotate(180deg);
+    }
+    .pp-hub-ops__term-body {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      min-width: 0;
+      padding: 0 12px 12px;
+    }
     .pp-hub-ops__chip-legend {
       list-style: none;
       margin: 0 0 4px;
@@ -3947,7 +4002,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260715-dc-hide-staff-aquatic"></script>
   <script src="/portal/parent_portal_team.js?v=20260710-eiji-hazem-photos"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260715-crash-cal-first"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260716-term-invoice-schedule"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260716-term-accordions"></script>
   <script src="/portal/parent_portal_app.js?v=20260716-stripe-return-verify"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
