@@ -5,6 +5,47 @@
   "use strict";
 
   var STORE_KEY = "portalAdminPaxContactEdits_v1";
+
+  var FUNDING_SOURCE_OPTS = [
+    { value: "privately_funded", label: "Using private funds" },
+    { value: "la_nhs", label: "Using money from LA" },
+  ];
+  var FUNDER_DETAIL_OPTS = [
+    { value: "parent_direct_payments", label: "Parent · Direct Payments (LA money)" },
+    { value: "ealing_children", label: "Ealing · Children" },
+    { value: "ealing_adult", label: "Ealing · Adult" },
+    { value: "hf_children", label: "Hammersmith & Fulham · Children" },
+    { value: "hf_adult", label: "Hammersmith & Fulham · Adult" },
+    { value: "kensington_chelsea", label: "Kensington & Chelsea" },
+    { value: "westminster", label: "Westminster" },
+    { value: "brent", label: "Brent" },
+    { value: "nhs_north_west", label: "NHS North West" },
+    { value: "nhs_ila", label: "NHS ILA" },
+  ];
+  var PAY_PRIVATE_OPTS = [
+    "Bank Transfer (fixed due dates)",
+    "Direct Payment (GoCardless · monthly)",
+    "Own arrangement — cannot meet payment dates (+ £50 / term)",
+  ];
+  var FUNDER_PAY = {
+    parent_direct_payments: PAY_PRIVATE_OPTS.slice(),
+    ealing_children: [
+      "Direct payment (CWD) · monthly arrears · real 38-wk invoice (paid over 52 wks)",
+      "Care in Finance · monthly arrears · real 38-wk invoice (paid over 52 wks)",
+    ],
+    ealing_adult: [
+      "Care in Finance · monthly arrears · real 38-wk invoice (paid over 52 wks)",
+      "Direct payment (CWD) · monthly arrears · real 38-wk invoice (paid over 52 wks)",
+    ],
+    hf_children: ["LA invoice (BACS) · monthly arrears · draft year + term · real monthly"],
+    hf_adult: ["LA invoice (BACS) · monthly arrears · draft year + term · real monthly"],
+    kensington_chelsea: ["LA invoice (BACS) · monthly arrears · draft year + term · real monthly"],
+    westminster: ["LA invoice (BACS) · monthly arrears · draft year + term · real monthly"],
+    brent: ["LA invoice (BACS) · monthly arrears · draft year + term · real monthly"],
+    nhs_north_west: ["NHS invoice (PO) · monthly arrears · draft year + term · original monthly"],
+    nhs_ila: ["NHS invoice (PO) · monthly arrears · draft term · original monthly"],
+  };
+
   var cfg = {
     esc: function (s) {
       return String(s == null ? "" : s);
@@ -85,15 +126,116 @@
     saveStore(map);
   }
 
+  function funderDetailLabel(code) {
+    for (var i = 0; i < FUNDER_DETAIL_OPTS.length; i++) {
+      if (FUNDER_DETAIL_OPTS[i].value === code) return FUNDER_DETAIL_OPTS[i].label;
+    }
+    return "";
+  }
+
+  function composeFundingLabel(source, detail) {
+    if (source === "privately_funded") return "Using private funds";
+    if (source === "la_nhs") {
+      var det = funderDetailLabel(detail);
+      return det ? "Using money from LA · " + det : "Using money from LA";
+    }
+    return "";
+  }
+
+  function parseFundingLabel(raw) {
+    var s = String(raw || "").trim();
+    if (!s || s === "—") return { source: "", detail: "" };
+    var low = s.toLowerCase();
+    if (/private/.test(low) && !/direct payment|la money|using money from la/.test(low)) {
+      return { source: "privately_funded", detail: "" };
+    }
+    if (/using money from la|la\/nhs|local authority|nhs|direct payment|cwd|care in finance|bacs/.test(low)) {
+      var detail = "";
+      for (var i = 0; i < FUNDER_DETAIL_OPTS.length; i++) {
+        var lab = FUNDER_DETAIL_OPTS[i].label.toLowerCase();
+        var bits = lab.split("·").map(function (x) {
+          return x.trim();
+        });
+        var hit = bits.every(function (b) {
+          return !b || low.indexOf(b) >= 0;
+        });
+        if (hit || low.indexOf(lab) >= 0) {
+          detail = FUNDER_DETAIL_OPTS[i].value;
+          break;
+        }
+      }
+      if (!detail) {
+        if (/ealing/.test(low) && /adult/.test(low)) detail = "ealing_adult";
+        else if (/ealing/.test(low)) detail = "ealing_children";
+        else if (/hammer|h&f|h\s*&\s*f|fulham/.test(low) && /adult/.test(low)) detail = "hf_adult";
+        else if (/hammer|h&f|fulham/.test(low)) detail = "hf_children";
+        else if (/kensington|rbkc/.test(low)) detail = "kensington_chelsea";
+        else if (/westminster/.test(low)) detail = "westminster";
+        else if (/brent/.test(low)) detail = "brent";
+        else if (/ila/.test(low)) detail = "nhs_ila";
+        else if (/nhs/.test(low)) detail = "nhs_north_west";
+        else if (/direct payment/.test(low)) detail = "parent_direct_payments";
+      }
+      return { source: "la_nhs", detail: detail };
+    }
+    if (/using private funds/.test(low)) return { source: "privately_funded", detail: "" };
+    return { source: "", detail: "" };
+  }
+
+  function payOptsFor(source, detail) {
+    if (source !== "la_nhs") return PAY_PRIVATE_OPTS.slice();
+    if (detail === "parent_direct_payments") return PAY_PRIVATE_OPTS.slice();
+    var opts = FUNDER_PAY[detail];
+    return opts && opts.length ? opts.slice() : PAY_PRIVATE_OPTS.slice();
+  }
+
+  function selectOptsHtml(opts, selected, placeholder) {
+    var html = '<option value="">' + esc(placeholder || "— Select —") + "</option>";
+    var found = false;
+    (opts || []).forEach(function (o) {
+      var v = typeof o === "string" ? o : o.value;
+      var lab = typeof o === "string" ? o : o.label;
+      var sel = String(selected || "") === String(v);
+      if (sel) found = true;
+      html +=
+        '<option value="' +
+        esc(v) +
+        '"' +
+        (sel ? " selected" : "") +
+        ">" +
+        esc(lab) +
+        "</option>";
+    });
+    if (selected && !found) {
+      html +=
+        '<option value="' +
+        esc(selected) +
+        '" selected>' +
+        esc(selected) +
+        " (current)</option>";
+    }
+    return html;
+  }
+
   /** Merge saved edits onto a participants-parents portal export row. */
   function applyOverrideToPortalRow(row) {
     if (!row) return row;
-    var cid = String(row.contactId || "").trim();
+    var cid = String(row.contactId || row.contact_id || "").trim();
     if (!cid) return row;
     var ov = getOverride(cid);
     if (!ov) return row;
     var out = Object.assign({}, row);
-    if (ov.parentDisplay != null) out.parentDisplay = ov.parentDisplay;
+    if (ov.parentDisplay != null) {
+      out.parentDisplay = ov.parentDisplay;
+      var parts = String(ov.parentDisplay || "")
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+      if (parts.length) {
+        out.parentFirstName = parts[0];
+        out.parentLastName = parts.slice(1).join(" ");
+      }
+    }
     if (ov.mobile != null) out.mobile = ov.mobile;
     if (ov.email != null) out.username = ov.email;
     if (ov.addressLine1 != null) out.addressLine1 = ov.addressLine1;
@@ -101,8 +243,14 @@
     if (ov.city != null) out.city = ov.city;
     if (ov.postcode != null) out.postcode = ov.postcode;
     if (ov.registrationDisplay != null) out.createdDisplay = ov.registrationDisplay;
-    if (ov.fundingLabel != null) out._adminFundingLabel = ov.fundingLabel;
-    if (ov.paymentMethodLabel != null) out._adminPaymentMethodLabel = ov.paymentMethodLabel;
+    if (ov.fundingLabel != null) {
+      out.fundingLabel = ov.fundingLabel;
+      out._adminFundingLabel = ov.fundingLabel;
+    }
+    if (ov.paymentMethodLabel != null) {
+      out.paymentMethodLabel = ov.paymentMethodLabel;
+      out._adminPaymentMethodLabel = ov.paymentMethodLabel;
+    }
     return out;
   }
 
@@ -120,11 +268,7 @@
     if (ov.mobile != null) p.reg.phone = ov.mobile || "—";
     if (ov.email != null) p.reg.email = ov.email || "—";
     if (ov.addressFull != null) p.addressFull = ov.addressFull;
-    else if (
-      ov.addressLine1 != null ||
-      ov.city != null ||
-      ov.postcode != null
-    ) {
+    else if (ov.addressLine1 != null || ov.city != null || ov.postcode != null) {
       p.addressFull = [ov.addressLine1, ov.addressLine2, ov.city, ov.postcode]
         .map(function (x) {
           return String(x || "").trim();
@@ -143,6 +287,52 @@
     }
     p._adminContactEdited = true;
     return p;
+  }
+
+  /** Merge a live portal_parent_contacts row into the static export map. */
+  function mergeLiveContactIntoPortalRow(row, live) {
+    if (!row || !live) return row;
+    var out = Object.assign({}, row);
+    if (live.parent_display) {
+      out.parentDisplay = String(live.parent_display).trim();
+      if (live.parent_first_name) out.parentFirstName = String(live.parent_first_name).trim();
+      if (live.parent_last_name) out.parentLastName = String(live.parent_last_name).trim();
+    }
+    if (live.mobile != null && String(live.mobile).trim()) out.mobile = String(live.mobile).trim();
+    if (live.email != null && String(live.email).trim()) out.username = String(live.email).trim();
+    if (live.address_line1 != null) out.addressLine1 = String(live.address_line1 || "").trim() || out.addressLine1;
+    if (live.address_line2 != null) out.addressLine2 = String(live.address_line2 || "").trim() || out.addressLine2;
+    if (live.city != null) out.city = String(live.city || "").trim() || out.city;
+    if (live.postcode != null) out.postcode = String(live.postcode || "").trim() || out.postcode;
+    if (live.registration_date) {
+      out.createdIso = String(live.registration_date).slice(0, 10);
+      out.createdDisplay = isoToUk(live.registration_date) || out.createdDisplay;
+    }
+    if (live.funding_label != null && String(live.funding_label).trim()) {
+      out.fundingLabel = String(live.funding_label).trim();
+      out._adminFundingLabel = out.fundingLabel;
+    }
+    if (live.payment_method_label != null && String(live.payment_method_label).trim()) {
+      out.paymentMethodLabel = String(live.payment_method_label).trim();
+      out._adminPaymentMethodLabel = out.paymentMethodLabel;
+    }
+    return out;
+  }
+
+  function applyLiveContactToParentsSource(contactId, live) {
+    var cid = String(contactId || "").trim();
+    if (!cid || !live) return;
+    var src = global.PARTICIPANTS_PARENTS_PORTAL_SOURCE;
+    var rows = src && Array.isArray(src.rows) ? src.rows : [];
+    for (var i = 0; i < rows.length; i++) {
+      if (String(rows[i].contactId || "").trim() === cid) {
+        var merged = mergeLiveContactIntoPortalRow(rows[i], live);
+        Object.keys(merged).forEach(function (k) {
+          rows[i][k] = merged[k];
+        });
+        break;
+      }
+    }
   }
 
   async function portalAuthToken() {
@@ -205,9 +395,12 @@
     if (!raw || raw === "—") {
       return { line1: "", line2: "", city: "", postcode: "" };
     }
-    var parts = raw.split(",").map(function (x) {
-      return String(x || "").trim();
-    }).filter(Boolean);
+    var parts = raw
+      .split(",")
+      .map(function (x) {
+        return String(x || "").trim();
+      })
+      .filter(Boolean);
     var postcode = "";
     var city = "";
     var line1 = "";
@@ -228,6 +421,19 @@
     return { line1: line1, line2: line2, city: city, postcode: postcode };
   }
 
+  function refreshFundingUi() {
+    var srcEl = global.document.getElementById("paxEditFundingSource");
+    var detWrap = global.document.getElementById("paxEditFunderWrap");
+    var detEl = global.document.getElementById("paxEditFunderDetail");
+    var payEl = global.document.getElementById("paxEditPay");
+    if (!srcEl || !payEl) return;
+    var source = String(srcEl.value || "").trim();
+    var detail = detEl ? String(detEl.value || "").trim() : "";
+    if (detWrap) detWrap.style.display = source === "la_nhs" ? "block" : "none";
+    var curPay = String(payEl.value || "").trim();
+    payEl.innerHTML = selectOptsHtml(payOptsFor(source, detail), curPay, "— Select payment method —");
+  }
+
   function openEditModal(pax, displayFunding, displayPay) {
     if (typeof cfg.openModal !== "function") {
       cfg.toast("Edit modal unavailable", "warn");
@@ -240,10 +446,19 @@
     }
     var r = (pax && pax.reg) || {};
     var addr = parseAddressParts(pax && pax.addressFull);
-    var fund = String(displayFunding != null ? displayFunding : r.fundingRoute || "").trim();
-    var pay = String(displayPay != null ? displayPay : r.paymentMethod || "").trim();
+    var fund = String(
+      displayFunding != null
+        ? displayFunding
+        : pax._adminFundingLabel || r.fundingRoute || ""
+    ).trim();
+    var pay = String(
+      displayPay != null
+        ? displayPay
+        : pax._adminPaymentMethodLabel || r.paymentMethod || ""
+    ).trim();
     if (fund === "—") fund = "";
     if (pay === "—") pay = "";
+    var parsed = parseFundingLabel(fund);
     var regDate = String(r.formReceived || "").trim();
     if (regDate === "—") regDate = "";
 
@@ -287,13 +502,20 @@
         esc(regDate) +
         '" />' +
         '<label class="muted" style="display:block;margin-top:10px">Funding</label>' +
-        '<input class="inp" id="paxEditFunding" style="max-width:100%;box-sizing:border-box" value="' +
-        esc(fund) +
-        '" />' +
+        '<select class="inp" id="paxEditFundingSource" style="max-width:100%;box-sizing:border-box">' +
+        selectOptsHtml(FUNDING_SOURCE_OPTS, parsed.source, "— Private or LA —") +
+        "</select>" +
+        '<div id="paxEditFunderWrap" style="margin-top:10px;display:' +
+        (parsed.source === "la_nhs" ? "block" : "none") +
+        ';min-width:0">' +
+        '<label class="muted">LA / NHS funder</label>' +
+        '<select class="inp" id="paxEditFunderDetail" style="max-width:100%;box-sizing:border-box">' +
+        selectOptsHtml(FUNDER_DETAIL_OPTS, parsed.detail, "— Ealing / H&F / RBKC / … —") +
+        "</select></div>" +
         '<label class="muted" style="display:block;margin-top:10px">Payment method</label>' +
-        '<input class="inp" id="paxEditPay" style="max-width:100%;box-sizing:border-box" value="' +
-        esc(pay) +
-        '" />' +
+        '<select class="inp" id="paxEditPay" style="max-width:100%;box-sizing:border-box">' +
+        selectOptsHtml(payOptsFor(parsed.source, parsed.detail), pay, "— Select payment method —") +
+        "</select>" +
         '<p id="paxEditErr" class="muted" style="display:none;margin:10px 0 0;color:#b91c1c;font-size:13px"></p>' +
         "</div>" +
         '<div class="modal-f">' +
@@ -304,6 +526,10 @@
 
     var cancel = global.document.getElementById("paxEditCancel");
     var save = global.document.getElementById("paxEditSave");
+    var srcEl = global.document.getElementById("paxEditFundingSource");
+    var detEl = global.document.getElementById("paxEditFunderDetail");
+    if (srcEl) srcEl.onchange = refreshFundingUi;
+    if (detEl) detEl.onchange = refreshFundingUi;
     if (cancel) {
       cancel.onclick = function () {
         if (typeof cfg.closeModal === "function") cfg.closeModal();
@@ -331,6 +557,17 @@
           showErr("Registration date must be DD/MM/YYYY.");
           return;
         }
+        var fundSrc = String(
+          (global.document.getElementById("paxEditFundingSource") || {}).value || ""
+        ).trim();
+        var fundDet = String(
+          (global.document.getElementById("paxEditFunderDetail") || {}).value || ""
+        ).trim();
+        if (fundSrc === "la_nhs" && !fundDet) {
+          showErr("Select the LA / NHS funder.");
+          return;
+        }
+        var fundingLabel = composeFundingLabel(fundSrc, fundDet);
         var fields = {
           parentDisplay: parentDisplay,
           mobile: String((global.document.getElementById("paxEditPhone") || {}).value || "").trim(),
@@ -340,8 +577,10 @@
           city: String((global.document.getElementById("paxEditCity") || {}).value || "").trim(),
           postcode: String((global.document.getElementById("paxEditPostcode") || {}).value || "").trim(),
           registrationDisplay: regDisp,
-          fundingLabel: String((global.document.getElementById("paxEditFunding") || {}).value || "").trim(),
-          paymentMethodLabel: String((global.document.getElementById("paxEditPay") || {}).value || "").trim(),
+          fundingLabel: fundingLabel,
+          paymentMethodLabel: String(
+            (global.document.getElementById("paxEditPay") || {}).value || ""
+          ).trim(),
         };
         fields.addressFull = [fields.addressLine1, fields.addressLine2, fields.city, fields.postcode]
           .filter(Boolean)
@@ -358,12 +597,24 @@
           return;
         }
         if (remote.contact && remote.contact.registration_date) {
-          fields.registrationDisplay = isoToUk(remote.contact.registration_date) || fields.registrationDisplay;
+          fields.registrationDisplay =
+            isoToUk(remote.contact.registration_date) || fields.registrationDisplay;
         }
         if (remote.contact && remote.contact.mobile != null) {
           fields.mobile = String(remote.contact.mobile || "").trim();
         }
+        if (remote.contact && remote.contact.parent_display) {
+          fields.parentDisplay = String(remote.contact.parent_display).trim() || fields.parentDisplay;
+        }
+        if (remote.contact && remote.contact.funding_label != null) {
+          fields.fundingLabel = String(remote.contact.funding_label || "").trim() || fields.fundingLabel;
+        }
+        if (remote.contact && remote.contact.payment_method_label != null) {
+          fields.paymentMethodLabel =
+            String(remote.contact.payment_method_label || "").trim() || fields.paymentMethodLabel;
+        }
         setOverride(cid, fields);
+        applyLiveContactToParentsSource(cid, remote.contact);
         if (typeof cfg.closeModal === "function") cfg.closeModal();
         cfg.toast("Client information saved", "ok");
         if (typeof cfg.onSaved === "function") {
@@ -381,6 +632,8 @@
     openEditModal: openEditModal,
     applyOverrideToPortalRow: applyOverrideToPortalRow,
     applyOverrideToPax: applyOverrideToPax,
+    mergeLiveContactIntoPortalRow: mergeLiveContactIntoPortalRow,
+    applyLiveContactToParentsSource: applyLiveContactToParentsSource,
     getOverride: getOverride,
     contactIdFromPax: contactIdFromPax,
   };

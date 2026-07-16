@@ -89,7 +89,7 @@
   <script src="/portal/admin-training-progress.js?v=20260608-device-attribution"></script>
   <script src="/portal/admin-push-devices.js?v=20260619-push-devices"></script>
   <script src="/portal/portal_wellbeing_admin_actions.js?v=20260604-wb-flow-refine"></script>
-  <script src="/portal/admin-portal-parent-contact-edit.js?v=20260713-wa-phone-sync"></script>
+  <script src="/portal/admin-portal-parent-contact-edit.js?v=20260716-funding-selects-hydrate"></script>
   <script src="/portal/portal_announcement_media.js?v=20260713-ann-photos-ceo"></script>
   <script src="/portal/portal_participant_photos.js?v=20260609-photo-fallback"></script>
   <!-- Roster bundle lazy-loaded via admin_heavy_scripts_loader.js (c4k_sessions, scheduling, …) -->
@@ -9143,6 +9143,46 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return out;
     }
+    /** Pull live carer / address / funding from portal_parent_contacts over the static export. */
+    async function adminHydrateParentContactsFromSupabase(){
+      var client = typeof getSchedSupabaseClient === 'function' ? getSchedSupabaseClient() : null;
+      if(!client || typeof client.from !== 'function') return false;
+      try{
+        var res = await client
+          .from('portal_parent_contacts')
+          .select('contact_id,parent_display,parent_first_name,parent_last_name,email,mobile,address_line1,address_line2,city,postcode,registration_date,funding_label,payment_method_label')
+          .limit(5000);
+        if(res.error || !res.data || !res.data.length) return false;
+        var byId = Object.create(null);
+        res.data.forEach(function(row){
+          var cid = String(row.contact_id || '').trim();
+          if(cid) byId[cid] = row;
+        });
+        var src = typeof window !== 'undefined' ? window.PARTICIPANTS_PARENTS_PORTAL_SOURCE : null;
+        var rows = src && Array.isArray(src.rows) ? src.rows : [];
+        var changed = false;
+        var mergeFn = window.AdminParentContactEdit && window.AdminParentContactEdit.mergeLiveContactIntoPortalRow;
+        for(var i = 0; i < rows.length; i++){
+          var cid2 = String(rows[i].contactId || '').trim();
+          var live = cid2 ? byId[cid2] : null;
+          if(!live) continue;
+          if(typeof mergeFn === 'function'){
+            var merged = mergeFn(rows[i], live);
+            Object.keys(merged).forEach(function(k){ rows[i][k] = merged[k]; });
+          } else {
+            if(live.parent_display) rows[i].parentDisplay = String(live.parent_display).trim();
+            if(live.email) rows[i].username = String(live.email).trim();
+            if(live.mobile) rows[i].mobile = String(live.mobile).trim();
+            if(live.funding_label) rows[i].fundingLabel = String(live.funding_label).trim();
+            if(live.payment_method_label) rows[i].paymentMethodLabel = String(live.payment_method_label).trim();
+          }
+          changed = true;
+        }
+        return changed;
+      }catch(_e){
+        return false;
+      }
+    }
     function portalParentContactEditConfigureOnce(){
       if(window.__portalParentContactEditConfigured || !window.AdminParentContactEdit) return;
       window.__portalParentContactEditConfigured = true;
@@ -9161,20 +9201,41 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         },
         onSaved: function(cid, fields, meta){
           try{
+            var live = meta && meta.contact ? meta.contact : null;
+            if(live && window.AdminParentContactEdit && typeof window.AdminParentContactEdit.applyLiveContactToParentsSource === 'function'){
+              window.AdminParentContactEdit.applyLiveContactToParentsSource(cid, live);
+            }
             var src = typeof window !== 'undefined' ? window.PARTICIPANTS_PARENTS_PORTAL_SOURCE : null;
             var rows = src && Array.isArray(src.rows) ? src.rows : [];
             var i;
             for(i = 0; i < rows.length; i++){
-              if(String(rows[i].contactId || '').trim() === String(cid || '').trim()){
-                if(fields.parentDisplay != null) rows[i].parentDisplay = fields.parentDisplay;
-                if(fields.mobile != null) rows[i].mobile = fields.mobile;
-                if(fields.email != null) rows[i].username = fields.email;
-                if(fields.addressLine1 != null) rows[i].addressLine1 = fields.addressLine1;
-                if(fields.addressLine2 != null) rows[i].addressLine2 = fields.addressLine2;
-                if(fields.city != null) rows[i].city = fields.city;
-                if(fields.postcode != null) rows[i].postcode = fields.postcode;
-                break;
+              if(String(rows[i].contactId || '').trim() !== String(cid || '').trim()) continue;
+              if(fields.parentDisplay != null){
+                rows[i].parentDisplay = fields.parentDisplay;
+                var nmParts = String(fields.parentDisplay || '').trim().split(/\s+/).filter(Boolean);
+                if(nmParts.length){
+                  rows[i].parentFirstName = nmParts[0];
+                  rows[i].parentLastName = nmParts.slice(1).join(' ');
+                }
               }
+              if(fields.mobile != null) rows[i].mobile = fields.mobile;
+              if(fields.email != null) rows[i].username = fields.email;
+              if(fields.addressLine1 != null) rows[i].addressLine1 = fields.addressLine1;
+              if(fields.addressLine2 != null) rows[i].addressLine2 = fields.addressLine2;
+              if(fields.city != null) rows[i].city = fields.city;
+              if(fields.postcode != null) rows[i].postcode = fields.postcode;
+              if(fields.registrationDisplay != null && String(fields.registrationDisplay).trim()){
+                rows[i].createdDisplay = fields.registrationDisplay;
+              }
+              if(fields.fundingLabel != null){
+                rows[i].fundingLabel = fields.fundingLabel;
+                rows[i]._adminFundingLabel = fields.fundingLabel;
+              }
+              if(fields.paymentMethodLabel != null){
+                rows[i].paymentMethodLabel = fields.paymentMethodLabel;
+                rows[i]._adminPaymentMethodLabel = fields.paymentMethodLabel;
+              }
+              break;
             }
           }catch(_patch){}
           try{
@@ -9187,6 +9248,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               void window.PortalParentNotifyLog.refresh();
             }
           }catch(_fm){}
+          try{
+            if(typeof state.rebuildPaxContactsList === 'function') state.rebuildPaxContactsList();
+          }catch(_list){}
           try{
             if(typeof state.reopenPaxDetail === 'function') state.reopenPaxDetail();
             else if(state.openPaxContactId && typeof paxContactsFindById === 'function'){
@@ -14932,11 +14996,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           nhsTr: '—',
           assessment: '—',
           support: '—',
-          fundingRoute: row._adminFundingLabel || '—',
+          fundingRoute: row._adminFundingLabel || row.fundingLabel || '—',
           preferredService: '—',
           preferredWhen: '—',
           formReceived: String(row.createdDisplay || '').trim() || '—',
-          paymentMethod: row._adminPaymentMethodLabel || '—',
+          paymentMethod: row._adminPaymentMethodLabel || row.paymentMethodLabel || '—',
           consent: '—',
           flags: '—'
         },
@@ -14958,8 +15022,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         mockEnrichId: null,
         _portalSource: true
       };
-      if(row._adminFundingLabel) paxObj._adminFundingLabel = row._adminFundingLabel;
-      if(row._adminPaymentMethodLabel) paxObj._adminPaymentMethodLabel = row._adminPaymentMethodLabel;
+      if(row._adminFundingLabel || row.fundingLabel){
+        paxObj._adminFundingLabel = row._adminFundingLabel || row.fundingLabel;
+      }
+      if(row._adminPaymentMethodLabel || row.paymentMethodLabel){
+        paxObj._adminPaymentMethodLabel = row._adminPaymentMethodLabel || row.paymentMethodLabel;
+      }
       if(window.AdminParentContactEdit && typeof window.AdminParentContactEdit.applyOverrideToPax === 'function'){
         try{ window.AdminParentContactEdit.applyOverrideToPax(paxObj); }catch(_ov){}
       }
@@ -15459,11 +15527,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }).map(function(x){ return String(x).trim(); });
         if(pnr.length) payFundingNextLine = pnr.join(' — ');
       }
-      var rFundingDisp = (r.fundingRoute && String(r.fundingRoute).trim() && String(r.fundingRoute).trim() !== '—' && P._adminContactEdited)
-        ? String(r.fundingRoute).trim()
+      var rFundingDisp = (P._adminFundingLabel || (r.fundingRoute && String(r.fundingRoute).trim() && String(r.fundingRoute).trim() !== '—' && P._adminContactEdited))
+        ? String(P._adminFundingLabel || r.fundingRoute).trim()
         : (payFundFromSheet || (r.fundingRoute != null && String(r.fundingRoute).trim() ? r.fundingRoute : '—'));
-      var rPayDisp = (r.paymentMethod && String(r.paymentMethod).trim() && String(r.paymentMethod).trim() !== '—' && P._adminContactEdited)
-        ? String(r.paymentMethod).trim()
+      var rPayDisp = (P._adminPaymentMethodLabel || (r.paymentMethod && String(r.paymentMethod).trim() && String(r.paymentMethod).trim() !== '—' && P._adminContactEdited))
+        ? String(P._adminPaymentMethodLabel || r.paymentMethod).trim()
         : (payMethodFromSheet || (r.paymentMethod != null && String(r.paymentMethod).trim() ? r.paymentMethod : '—'));
       /* Prefer explicit admin funding/payment overrides when present. */
       if(r._adminFundingLabel) rFundingDisp = r._adminFundingLabel;
@@ -23676,9 +23744,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var p = byId[String(id)];
             if(!p){ tr.style.display = 'none'; return; }
             var ok = true;
-            /* When searching, ignore the Booking status filter so anyone (old,
-               trial, waiting list, in sessions) can be found by name/contact. */
-            if(!q && bk !== 'all' && !paxContactsMatchesBookingStatus(p, bk)) ok = false;
+            /* Booking status always applies — even with a search query (e.g. "amir"
+               + In Sessions must not surface Old participants). */
+            if(bk !== 'all' && !paxContactsMatchesBookingStatus(p, bk)) ok = false;
             if(qv !== 'all' && !paxContactsRegQuestionHasAnswer(p, qv)) ok = false;
             if(q){
               var blob = (
@@ -23803,8 +23871,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 }catch(_k){}
                 window.AdminParentContactEdit.openEditModal(
                   cur,
-                  cur.reg && cur.reg.fundingRoute,
-                  cur.reg && cur.reg.paymentMethod
+                  (cur && cur._adminFundingLabel) || (cur.reg && cur.reg.fundingRoute),
+                  (cur && cur._adminPaymentMethodLabel) || (cur.reg && cur.reg.paymentMethod)
                 );
               });
             }
@@ -23822,11 +23890,34 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(root2){
           portalParentContactEditConfigureOnce();
           state.openPaxContactId = null;
+          state.rebuildPaxContactsList = function(){
+            var tb = document.querySelector('#paxContactsTbl tbody');
+            if(!tb) return;
+            tb.innerHTML = paxContactsListRowsHtml();
+            if(root2){
+              root2.querySelectorAll('[data-pax-contacts-open]').forEach(function(bo){
+                if(bo._paxOpenBound) return;
+                bo._paxOpenBound = true;
+                bo.addEventListener('click', function(){
+                  var pid = bo.getAttribute('data-pax-contacts-open');
+                  var p = paxContactsFindById(pid);
+                  if(p) paxContactsShowDetail(p);
+                });
+              });
+            }
+          };
           state.reopenPaxDetail = function(){
             if(!state.openPaxContactId) return;
             var pp = paxContactsFindById(state.openPaxContactId);
             if(pp) paxContactsShowDetail(pp);
           };
+          void adminHydrateParentContactsFromSupabase().then(function(changed){
+            if(changed && typeof state.rebuildPaxContactsList === 'function'){
+              state.rebuildPaxContactsList();
+              if(typeof paxContactsRefreshFilters === 'function') paxContactsRefreshFilters();
+              if(state.openPaxContactId && typeof state.reopenPaxDetail === 'function') state.reopenPaxDetail();
+            }
+          });
           var ps = $('paxContactsSearch');
           if(ps) ps.addEventListener('input', paxContactsRefreshFilters);
           var pb = $('paxContactsBookingStatus');
@@ -24114,6 +24205,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
      * when no payment row matches. Returns { source, method, isLA }.
      */
     function adminParticipantFundingInfo(p){
+      if(p && (p._adminFundingLabel || p._adminPaymentMethodLabel || (p.reg && (p.reg.fundingRoute || p.reg.paymentMethod) && p._adminContactEdited))){
+        var srcA = String(p._adminFundingLabel || (p.reg && p.reg.fundingRoute) || '').trim();
+        var methA = String(p._adminPaymentMethodLabel || (p.reg && p.reg.paymentMethod) || '').trim();
+        if(srcA === '—') srcA = '';
+        if(methA === '—') methA = '';
+        if(srcA || methA){
+          var isLAAdmin = /using money from la|la\/nhs|local authority|nhs|cwd|care in finance|bacs|direct payment/i.test(srcA + ' ' + methA);
+          return {
+            source: srcA ? (/private/i.test(srcA) && !isLAAdmin ? 'Private funds' : (isLAAdmin ? 'LA/NHS funds' : srcA)) : '',
+            method: methA,
+            isLA: isLAAdmin
+          };
+        }
+      }
       var info = null;
       try{
         info = (typeof adminClientsPaymentsPortalFundingForParticipant === 'function')
