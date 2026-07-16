@@ -73,7 +73,7 @@
       esc(p.visitor_label || "Visitor") +
       "</strong> — " +
       esc(p.label || "Unknown") +
-      (ip ? ' · <code class="cpp-ip">' + esc(ip) + "</code>" : "") +
+      (ip ? ' · IP <code class="cpp-ip">' + esc(ip) + "</code>" : "") +
       (p.online ? " — online" : "") +
       "</li>"
     );
@@ -140,7 +140,6 @@
       '<span class="cpp-row__meta">' +
       esc(p.last_surface_label || "Browsing") +
       esc(detail) +
-      (ip ? ' · IP <code class="cpp-ip">' + esc(ip) + "</code>" : "") +
       "</span>" +
       "</div>" +
       '<div class="cpp-row__side">' +
@@ -148,7 +147,9 @@
       esc(loc || "Place ?") +
       "</span>" +
       (ip
-        ? '<span class="cpp-pill cpp-pill--ip" title="Connection IP">' + esc(ip) + "</span>"
+        ? '<span class="cpp-pill cpp-pill--ip" title="Connection IP">' +
+          esc(ip) +
+          "</span>"
         : "") +
       '<span class="cpp-pill cpp-pill--device">' +
       esc(device || "Device ?") +
@@ -211,7 +212,7 @@
                 esc(a.visitor_label || "Visitor") +
                 "</strong>" +
                 (a.client_ip
-                  ? ' · <code class="cpp-ip">' + esc(a.client_ip) + "</code>"
+                  ? ' · IP <code class="cpp-ip">' + esc(a.client_ip) + "</code>"
                   : "") +
                 (a.child_name ? "  - " + esc(a.child_name) : "") +
                 '<div class="cpp-feed__what">' +
