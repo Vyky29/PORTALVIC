@@ -52,6 +52,11 @@ const PORTAL_PARTICIPANT_SLUG_ALIASES: Record<string, string> = {
   emanuel_do: "emanuel",
   gap_emanuel_dodson: "emanuel",
   gap_emmanuel_dodson: "emanuel",
+  // Portal "Thomas (Tom) Eriksson" vs roster client_id "tom"
+  thomas_tom_eriksson: "tom",
+  thomas_tom: "tom",
+  thomas_tom_er: "tom",
+  thomas_eriksson: "tom",
   // Portal "Timi Dairo" / Oluwatimilehin vs roster client_id "timi"
   timi_dairo: "timi",
   gap_timi_dairo: "timi",
@@ -180,6 +185,27 @@ export type ParticipantIdentityInput = {
   lastName?: string;
 };
 
+/** Prefer "Tom" from "Thomas (Tom)" / "Thomas (Tom) Eriksson". */
+function extractParentheticalNicknames(raw: string): string[] {
+  const out: string[] = [];
+  const re = /\(([^)]+)\)/g;
+  let m: RegExpExecArray | null;
+  const s = String(raw || "");
+  while ((m = re.exec(s))) {
+    const nick = String(m[1] || "").trim();
+    if (nick) out.push(nick);
+  }
+  return out;
+}
+
+/** Legal / outer name without parenthetical nicknames. */
+function stripParentheticalNicknames(raw: string): string {
+  return String(raw || "")
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function resolveParticipantClientSlugs(input: ParticipantIdentityInput): string[] {
   const out = new Set<string>();
   const add = (raw: string) => {
@@ -191,10 +217,32 @@ export function resolveParticipantClientSlugs(input: ParticipantIdentityInput): 
 
   add(input.contactId || "");
   add(input.displayName || "");
-  if (input.firstName || input.lastName) {
-    add(`${input.firstName || ""} ${input.lastName || ""}`.trim());
-    add(workerShortName(input.firstName || "", input.lastName || ""));
-    if (input.firstName) add(input.firstName);
+  add(stripParentheticalNicknames(input.displayName || ""));
+
+  const lastName = stripParentheticalNicknames(input.lastName || "");
+  const firstRaw = String(input.firstName || "").trim();
+  const firstClean = stripParentheticalNicknames(firstRaw);
+  const nicks = [
+    ...extractParentheticalNicknames(input.displayName || ""),
+    ...extractParentheticalNicknames(firstRaw),
+  ];
+
+  if (firstRaw || lastName) {
+    add(`${firstRaw} ${lastName}`.trim());
+    add(workerShortName(firstRaw, lastName));
+    if (firstRaw) add(firstRaw);
+  }
+  if (firstClean && firstClean !== firstRaw) {
+    add(`${firstClean} ${lastName}`.trim());
+    add(workerShortName(firstClean, lastName));
+    add(firstClean);
+  }
+  for (const nick of nicks) {
+    add(nick);
+    if (lastName) {
+      add(`${nick} ${lastName}`.trim());
+      add(workerShortName(nick, lastName));
+    }
   }
 
   return [...out].filter(Boolean);
