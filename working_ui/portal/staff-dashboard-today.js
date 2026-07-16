@@ -499,7 +499,8 @@
         }
         if(!sess || !sess.user){
           console.warn('[portal] schedule_overrides: no auth session on client');
-          try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
+          /* Do not mark hydrated — auth may still be resolving; kick/retry must run again
+             or cover staff never receive instructor_reassign rows for Today. */
           return;
         }
         // Validated staff-requested days off (Session Disruption reports upsert
@@ -1733,7 +1734,13 @@
         if(String(ov.status || 'active') !== 'active') continue;
         if(String(ov.override_type || '').trim() !== 'instructor_reassign') continue;
         if(normaliseIsoDate(ov.session_date) !== iso) continue;
-        if(portalNormKeyStr(ov.payload && ov.payload.covering_staff_id) !== sid) continue;
+        const cov = typeof portalCanonicalStaffKeyForMatch === 'function'
+          ? portalCanonicalStaffKeyForMatch(ov.payload && ov.payload.covering_staff_id)
+          : portalNormKeyStr(ov.payload && ov.payload.covering_staff_id);
+        const me = typeof portalCanonicalStaffKeyForMatch === 'function'
+          ? portalCanonicalStaffKeyForMatch(sid)
+          : sid;
+        if(!cov || cov !== me) continue;
         if(portalNormKeyStr(ov.anchor_venue) !== venue) continue;
         if(overlapFn(ov.anchor_start, ov.anchor_end, sStart, sEnd)) return true;
       }
