@@ -2164,7 +2164,7 @@
         completedRows.push(rowHtml("Summer · Second half term", summerSecond));
       }
       completedTermHtml = termAccordionHtml(
-        "Summer term · completed",
+        "Summer Term 25/26 · completed",
         completedRows.join(""),
         false,
         true,
@@ -2224,7 +2224,7 @@
           if (termRows.length) {
             rows.push(
               termAccordionHtml(
-                labelBase + " term",
+                labelBase + " Term 26/27",
                 termRows.join(""),
                 !firstUpcomingTermRendered,
                 false,
@@ -2246,7 +2246,7 @@
         if (first.length) fallbackRows.push(rowHtml("Autumn · First half term", first));
         if (second.length) fallbackRows.push(rowHtml("Autumn · Second half term", second));
         if (fallbackRows.length) {
-          rows.push(termAccordionHtml("Autumn term", fallbackRows.join(""), true, false));
+          rows.push(termAccordionHtml("Autumn Term 26/27", fallbackRows.join(""), true, false));
         }
       }
     }
