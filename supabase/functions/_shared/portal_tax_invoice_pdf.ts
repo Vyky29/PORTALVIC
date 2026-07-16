@@ -381,11 +381,12 @@ export async function buildPortalTaxInvoicePdf(
         page.drawText(desc, { x: colDescX, y, size: 8.5, font, color: ink });
         y -= 11;
       }
-      const rowMidY = rowTop - rowHeight / 2 + 3;
-      drawCentered(money(line.quantity), colQtyX, colQtyW, rowMidY, 8.5, font);
-      drawCentered(money(rowUnitNet), colUnitX, colUnitW, rowMidY, 8.5, font);
-      drawCentered(vatLabel, colVatX, colVatW, rowMidY, 8.5, font);
-      drawCentered(money(rowSplit.net), colAmtX, colAmtW, rowMidY, 8.5, font);
+      // Keep all values on the same baseline as the service name.
+      const rowValueY = rowTop;
+      drawCentered(money(line.quantity), colQtyX, colQtyW, rowValueY, 8.5, font);
+      drawCentered(money(rowUnitNet), colUnitX, colUnitW, rowValueY, 8.5, font);
+      drawCentered(vatLabel, colVatX, colVatW, rowValueY, 8.5, font);
+      drawCentered(money(rowSplit.net), colAmtX, colAmtW, rowValueY, 8.5, font);
       y = rowTop - rowHeight;
       page.drawLine({
         start: { x: left, y: y + 4 },
