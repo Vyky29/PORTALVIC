@@ -79,6 +79,7 @@
     selectedKey: "",
     draftByKey: Object.create(null),
     sending: false,
+    composerSig: "",
     mobileShowThread: false,
     stickToBottom: true,
     contactDirectory: [],
@@ -1257,6 +1258,88 @@
     state.draftByKey[state.selectedKey] = ta.value;
   }
 
+  function syncComposerSendingState() {
+    var ta = document.getElementById("portalPnlogComposerInput");
+    var btn = document.getElementById("portalPnlogComposerSend");
+    if (ta) ta.disabled = !!state.sending;
+    if (btn) {
+      btn.disabled = !!state.sending;
+      btn.textContent = state.sending ? "Sending…" : "Send";
+    }
+  }
+
+  function composerPhoneKey(t) {
+    if (!t) return "";
+    return String(t.sendPhone || t.phone || "");
+  }
+
+  function renderPaneHeadHtml(t) {
+    if (!t) return "";
+    var title = t.name;
+    if (t.client && namesRoughlySame(title, t.client) && t.waContact && !namesRoughlySame(t.waContact, t.client)) {
+      title = t.waContact;
+    }
+    var participant = t.client || "";
+    var enrolledHtml = participant ? enrolledChipsForClient(participant) : "";
+    var subline = threadPhoneForUi(t) + (participant ? " · " + participant : "");
+    return (
+      '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-pane-back" id="portalPnlogBack">← Back</button>' +
+      '<div class="portal-pnlog-pane-head__text">' +
+      '<div class="portal-pnlog-pane-head__who">' +
+      esc(title) +
+      "</div>" +
+      '<div class="portal-pnlog-pane-head__sub-row">' +
+      '<div class="portal-pnlog-pane-head__sub muted">' +
+      esc(subline) +
+      "</div>" +
+      enrolledHtml +
+      "</div></div>"
+    );
+  }
+
+  function renderThreadMessagesHtml(t) {
+    if (!t) return "";
+    if (!t.events.length) {
+      return '<p class="muted portal-pnlog-empty">No messages in this thread yet.</p>';
+    }
+    return t.events.map(renderBubble).join("");
+  }
+
+  function ensureChatShell(host) {
+    var shell = host.querySelector("#portalPnlogChatShell");
+    if (shell) return shell;
+    host.innerHTML =
+      '<div class="portal-pnlog-chat" id="portalPnlogChatShell">' +
+      '<aside class="portal-pnlog-chat__list" aria-label="Conversations">' +
+      '<div class="portal-pnlog-chat__list-inner" id="portalPnlogListInner"></div></aside>' +
+      '<section class="portal-pnlog-chat__pane" aria-label="Thread">' +
+      '<div class="portal-pnlog-pane-empty" id="portalPnlogPaneEmpty">' +
+      "<p><strong>Select a conversation</strong></p>" +
+      '<p class="muted">WhatsApp threads with families appear on the left. Replies send via the Business API number.</p>' +
+      "</div>" +
+      '<div class="portal-pnlog-pane-active" id="portalPnlogPaneActive" hidden>' +
+      '<div class="portal-pnlog-pane-head" id="portalPnlogPaneHead"></div>' +
+      '<div class="portal-pnlog-thread-scroll" id="portalPnlogThreadScroll">' +
+      '<div class="portal-pnlog-thread" id="portalPnlogThread"></div></div>' +
+      '<div id="portalPnlogComposerMount"></div>' +
+      "</div></section></div>";
+    return host.querySelector("#portalPnlogChatShell");
+  }
+
+  function mountComposer(t, force) {
+    var mount = document.getElementById("portalPnlogComposerMount");
+    if (!mount) return;
+    var phoneKey = composerPhoneKey(t);
+    var nextSig = (t && t.key ? t.key : "") + "|" + phoneKey + "|" + (phoneKey ? "ok" : "none");
+    if (!force && state.composerSig === nextSig && mount.querySelector("#portalPnlogComposerInput, .portal-pnlog-composer--disabled")) {
+      syncComposerSendingState();
+      return;
+    }
+    state.composerSig = nextSig;
+    mount.innerHTML = renderComposer(t);
+    syncComposerSendingState();
+  }
+
   function isNearBottom(el) {
     if (!el) return true;
     return el.scrollHeight - el.scrollTop - el.clientHeight < 80;
@@ -1335,15 +1418,6 @@
     );
   }
 
-  function renderPaneEmpty() {
-    return (
-      '<div class="portal-pnlog-pane-empty">' +
-      "<p><strong>Select a conversation</strong></p>" +
-      '<p class="muted">WhatsApp threads with families appear on the left. Replies send via the Business API number.</p>' +
-      "</div>"
-    );
-  }
-
   function renderComposer(t) {
     if (!t || !(t.sendPhone || t.phone)) {
       return (
@@ -1355,7 +1429,7 @@
     var disabled = state.sending ? " disabled" : "";
     return (
       '<div class="portal-pnlog-composer">' +
-      '<textarea id="portalPnlogComposerInput" class="portal-pnlog-composer__input" rows="2" placeholder="Type a WhatsApp reply…" maxlength="4000"' +
+      '<textarea id="portalPnlogComposerInput" class="portal-pnlog-composer__input" rows="4" placeholder="Type a WhatsApp reply…" maxlength="4000" autocomplete="off" spellcheck="true"' +
       disabled +
       ">" +
       esc(draft) +
@@ -1370,51 +1444,24 @@
     );
   }
 
-  function renderThreadPane(t) {
-    if (!t) return renderPaneEmpty();
-    var title = t.name;
-    if (t.client && namesRoughlySame(title, t.client) && t.waContact && !namesRoughlySame(t.waContact, t.client)) {
-      title = t.waContact;
-    }
-    var participant = t.client || "";
-    var enrolledHtml = participant ? enrolledChipsForClient(participant) : "";
-    var subline = threadPhoneForUi(t) + (participant ? " · " + participant : "");
-    return (
-      '<div class="portal-pnlog-pane-head">' +
-      '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-pane-back" id="portalPnlogBack">← Back</button>' +
-      '<div class="portal-pnlog-pane-head__text">' +
-      '<div class="portal-pnlog-pane-head__who">' +
-      esc(title) +
-      "</div>" +
-      '<div class="portal-pnlog-pane-head__sub-row">' +
-      '<div class="portal-pnlog-pane-head__sub muted">' +
-      esc(subline) +
-      "</div>" +
-      enrolledHtml +
-      "</div></div></div>" +
-      '<div class="portal-pnlog-thread-scroll" id="portalPnlogThreadScroll">' +
-      '<div class="portal-pnlog-thread">' +
-      (t.events.length
-        ? t.events.map(renderBubble).join("")
-        : '<p class="muted portal-pnlog-empty">No messages in this thread yet.</p>') +
-      "</div></div>" +
-      renderComposer(t)
-    );
-  }
-
   function renderChat(fromRefresh) {
     var host = document.getElementById("portalParentNotifyLogList");
     var countEl = document.getElementById("portalParentNotifyLogCount");
     if (!host) return;
 
+    captureComposerDraft();
+
     var prevThreadScroll = document.getElementById("portalPnlogThreadScroll");
-    var prevListScroll = host.querySelector(".portal-pnlog-chat__list-inner");
+    var prevListScroll = document.getElementById("portalPnlogListInner") || host.querySelector(".portal-pnlog-chat__list-inner");
     var savedListTop = prevListScroll ? prevListScroll.scrollTop : 0;
     var savedThreadTop = prevThreadScroll ? prevThreadScroll.scrollTop : 0;
+    var wasComposing =
+      document.activeElement && document.activeElement.id === "portalPnlogComposerInput";
+    var selStart = wasComposing ? document.activeElement.selectionStart : null;
+    var selEnd = wasComposing ? document.activeElement.selectionEnd : null;
     if (fromRefresh && prevThreadScroll) {
       state.stickToBottom = isNearBottom(prevThreadScroll);
     }
-    if (!fromRefresh) captureComposerDraft();
 
     var threads = (state.threads || [])
       .concat(directoryThreadsMatchingQuery())
@@ -1447,6 +1494,7 @@
       if (!still) {
         state.selectedKey = "";
         state.mobileShowThread = false;
+        state.composerSig = "";
       }
     }
 
@@ -1455,37 +1503,60 @@
       ? threads.map(renderConvListItem).join("")
       : '<p class="muted portal-pnlog-empty">No WhatsApp conversations match your filters. Outbound sends and inbound replies to the API number appear here.</p>';
 
-    var shellCls =
+    var shell = ensureChatShell(host);
+    shell.className =
       "portal-pnlog-chat" +
       (state.mobileShowThread && state.selectedKey ? " portal-pnlog-chat--thread" : "");
 
-    host.innerHTML =
-      '<div class="' +
-      shellCls +
-      '">' +
-      '<aside class="portal-pnlog-chat__list" aria-label="Conversations">' +
-      '<div class="portal-pnlog-chat__list-inner">' +
-      listHtml +
-      "</div></aside>" +
-      '<section class="portal-pnlog-chat__pane" aria-label="Thread">' +
-      renderThreadPane(selected) +
-      "</section></div>";
+    var listInner = document.getElementById("portalPnlogListInner");
+    if (listInner) listInner.innerHTML = listHtml;
+
+    var emptyEl = document.getElementById("portalPnlogPaneEmpty");
+    var activeEl = document.getElementById("portalPnlogPaneActive");
+    var headEl = document.getElementById("portalPnlogPaneHead");
+    var threadEl = document.getElementById("portalPnlogThread");
+
+    if (!selected) {
+      if (emptyEl) emptyEl.hidden = false;
+      if (activeEl) activeEl.hidden = true;
+      state.composerSig = "";
+      var mountClear = document.getElementById("portalPnlogComposerMount");
+      if (mountClear) mountClear.innerHTML = "";
+    } else {
+      if (emptyEl) emptyEl.hidden = true;
+      if (activeEl) activeEl.hidden = false;
+      if (headEl) headEl.innerHTML = renderPaneHeadHtml(selected);
+      if (threadEl) threadEl.innerHTML = renderThreadMessagesHtml(selected);
+      // Keep the same textarea node while typing / on poll so Grammarly + focus stay.
+      mountComposer(selected, !fromRefresh && !wasComposing);
+      syncComposerSendingState();
+    }
 
     bindChatInteractions();
 
-    // Poll/realtime rebuilds the DOM — restore list + thread scroll so browsing
-    // older conversations is not yanked back to the newest.
+    // Poll/realtime updates list + bubbles only — restore scroll; restore caret if we had to remount.
     global.requestAnimationFrame(function () {
-      var listEl = host.querySelector(".portal-pnlog-chat__list-inner");
+      var listEl = document.getElementById("portalPnlogListInner");
       if (listEl && fromRefresh) {
         listEl.scrollTop = savedListTop;
       }
       if (selected) {
         if (fromRefresh && !state.stickToBottom) {
-          var threadEl = document.getElementById("portalPnlogThreadScroll");
-          if (threadEl) threadEl.scrollTop = savedThreadTop;
+          var scrollEl = document.getElementById("portalPnlogThreadScroll");
+          if (scrollEl) scrollEl.scrollTop = savedThreadTop;
         } else {
           scrollThreadToBottom(!fromRefresh || state.stickToBottom);
+        }
+        if (wasComposing) {
+          var ta = document.getElementById("portalPnlogComposerInput");
+          if (ta) {
+            try {
+              ta.focus();
+              if (selStart != null && selEnd != null && typeof ta.setSelectionRange === "function") {
+                ta.setSelectionRange(selStart, selEnd);
+              }
+            } catch (_f2) {}
+          }
         }
       }
     });
@@ -1596,7 +1667,7 @@
           var err = formatSendError(res && res.error, res && res.data);
           if (statusEl) statusEl.textContent = err;
           else cfg.toast(err, "err");
-          renderChat(true);
+          syncComposerSendingState();
           return;
         }
         state.draftByKey[t.key] = "";
@@ -1606,13 +1677,15 @@
             : "Sent.";
         cfg.toast(msg, "ok");
         state.stickToBottom = true;
+        if (ta) ta.value = "";
+        syncComposerSendingState();
         void loadRows(true);
       })
       .catch(function () {
         state.sending = false;
         if (statusEl) statusEl.textContent = "Send failed — check your connection.";
         else cfg.toast("Send failed", "err");
-        renderChat(true);
+        syncComposerSendingState();
       });
   }
 

@@ -97,6 +97,20 @@
   background: #fff;
 }
 
+.portal-pnlog-pane-active {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.portal-pnlog-pane-active[hidden] {
+  display: none !important;
+}
+
 .portal-pnlog-conv {
   display: flex;
   flex-direction: column;
@@ -502,18 +516,19 @@
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  min-height: 56px;
-  max-height: 140px;
+  min-height: 96px;
+  max-height: 28vh;
   resize: vertical;
   border: 1px solid rgba(45, 132, 179, 0.35);
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 10px 12px;
   font: inherit;
-  font-size: 14px;
-  line-height: 1.4;
+  font-size: 15px;
+  line-height: 1.45;
   background: #fff;
   color: var(--pnlog-ink);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
   box-sizing: border-box;
 }
 
