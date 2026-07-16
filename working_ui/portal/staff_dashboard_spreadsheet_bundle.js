@@ -249,7 +249,8 @@
     }
   },
   "clientRosterStartDates": {
-    "Emanuel": "2026-06-12"
+    "Emanuel": "2026-06-12",
+    "Logan": "2026-05-11"
   },
   "clientWeekdaysOnly": {
     "Emanuel": [

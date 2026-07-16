@@ -1353,6 +1353,26 @@
     return d;
   }
 
+  /**
+   * Earliest date this child should show on hub session chips.
+   * Uses registration_date from parent-portal-participant-detail when set
+   * (late joiners must not see projected weekdays from term start).
+   */
+  function participantSessionStartIso(data) {
+    var p = (data && data.participant) || {};
+    var iso = String(p.registration_date || p.registrationDate || "").trim().slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+    return "";
+  }
+
+  /** Raise a term window start so chips never begin before the child joined. */
+  function chipWindowFromIso(termFromIso, data) {
+    var from = String(termFromIso || "").trim().slice(0, 10);
+    var start = participantSessionStartIso(data);
+    if (start && (!from || start > from)) return start;
+    return from;
+  }
+
   function isoInRange(iso, from, to) {
     if (!iso || !from || !to) return false;
     return iso >= from && iso <= to;
@@ -1496,6 +1516,8 @@
       // Stop scanning past current-year end for this participant.
       if (!familyAcceptedNextYear(data) && iso > termTo) break;
       if (isClubClosedIso(iso, data)) continue;
+      var startIso = participantSessionStartIso(data);
+      if (startIso && iso < startIso) continue;
       // JS: Sun=0 … Sat=6 → calendar Mon=0 … Sun=6
       var jsDow = d.getDay();
       var col = jsDow === 0 ? 6 : jsDow - 1;
@@ -1533,11 +1555,11 @@
     });
     if (!Object.keys(cols).length) return [];
 
-    var fromIso = CURRENT_YEAR_TERM_FROM;
+    var fromIso = chipWindowFromIso(CURRENT_YEAR_TERM_FROM, data);
     var toIso = currentYearTermToIso(data);
     if (familyAcceptedNextYear(data)) {
       var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
-      if (cal && cal.openFrom) fromIso = cal.openFrom;
+      if (cal && cal.openFrom) fromIso = chipWindowFromIso(cal.openFrom, data);
       if (cal && cal.openTo) toIso = cal.openTo;
     }
 
@@ -1592,7 +1614,7 @@
     });
     if (!Object.keys(cols).length) return [];
 
-    var fromIso = CURRENT_YEAR_TERM_FROM;
+    var fromIso = chipWindowFromIso(CURRENT_YEAR_TERM_FROM, data);
     var toIso = currentYearTermToIso(data);
     var todayIso = isoDateLocal(new Date());
     // Prefer the next remaining summer session (not a Sept 26/27 next session).
@@ -2218,7 +2240,7 @@
     var cols = dayCentreWeekdayCols(data);
     if (!Object.keys(cols).length) return [];
     var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27 || {};
-    var fromIso = cal.openFrom || "2026-09-01";
+    var fromIso = chipWindowFromIso(cal.openFrom || "2026-09-01", data);
     var toIso = cal.openTo || "2027-07-30";
     var todayIso = isoDateLocal(new Date());
     var startParts = String(fromIso).split("-");

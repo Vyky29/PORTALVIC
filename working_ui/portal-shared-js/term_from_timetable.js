@@ -513,7 +513,8 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     "javier"
   ],
   "termClientFirstSessionDate": {
-    "amaar_ah": "2026-04-24"
+    "amaar_ah": "2026-04-24",
+    "logan": "2026-05-11"
   },
   "termHalfTermWeekStarts": [
     "2026-05-25"

@@ -786,10 +786,12 @@ Deno.serve(async (req) => {
 
   const { data: contactRow } = await supabase
     .from("portal_parent_contacts")
-    .select("city, postcode, in_class, on_waiting_list, child_display")
+    .select("city, postcode, in_class, on_waiting_list, child_display, registration_date")
     .eq("contact_id", contactId)
     .eq("parent_person_id", session.parent_person_id)
     .maybeSingle();
+
+  const registrationDateIso = isoFromAny(contactRow?.registration_date) || null;
 
   const avatar = await resolveParticipantAvatarUrls(supabase, url, {
     contact_id: contactId,
@@ -1312,6 +1314,8 @@ Deno.serve(async (req) => {
         on_waiting_list: participant.on_waiting_list ?? contactRow?.on_waiting_list ?? null,
         city: contactRow?.city && contactRow.city !== "—" ? contactRow.city : null,
         postcode: contactRow?.postcode && contactRow.postcode !== "—" ? contactRow.postcode : null,
+        /** When set, hub session chips start on/after this date (not full-term weekday projection). */
+        registration_date: registrationDateIso,
         avatar_url: avatar.avatar_url,
         has_avatar: !!(avatar.avatar_url || participant.avatar_storage_path),
       },
