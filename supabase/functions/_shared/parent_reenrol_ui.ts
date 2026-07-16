@@ -1,8 +1,14 @@
 /**
  * Whether the parent should fill re-enrolment 2026/27 themselves,
- * or the office/funder path renews automatically (Day Centre + LA/NHS).
- * LA-funded families skip the form but may still book crash courses
- * (unless the participant is on the no-extra-booking list).
+ * or the office/funder path renews automatically.
+ *
+ * Office auto (no parent form) ONLY when:
+ *   - Day Centre place, OR
+ *   - Club invoices the funder directly: Ealing, Hammersmith & Fulham (H&F), or NHS
+ *
+ * NOT auto (parent must re-enrol + choose how to pay):
+ *   - Private self-pay
+ *   - Parent pays us with LA Direct Payments / personal budget (LA money, parent pays)
  */
 export type ParentReenrolUiMode = "required" | "auto";
 
@@ -39,21 +45,64 @@ export function servicesDetailHasDayCentre(
   return false;
 }
 
-/** True when fees are LA / NHS / local-authority billed (not private parent pay). */
-export function fundingLabelIsLaOrNhs(raw: unknown): boolean {
+/**
+ * Parent pays the club using LA Direct Payments / personal budget.
+ * Still needs re-enrolment and a pay method — not “office invoices the LA”.
+ */
+export function fundingLabelIsParentDirectPayments(raw: unknown): boolean {
   const fl = clean(raw, 160).toLowerCase();
   if (!fl) return false;
-  return (
-    /\blocal authority\b/.test(fl) ||
-    /\bnnhs\b/.test(fl) ||
-    /\behcp\b/.test(fl) ||
-    /\bdirect payment\b/.test(fl) ||
-    /\bcare package\b/.test(fl) ||
-    /\bealing\b/.test(fl) ||
+  if (/parent\s*[·•\-]\s*direct payment|direct payments?\s*\(la money\)/.test(fl)) return true;
+  if (/using money from la|using funds from la/.test(fl)) return true;
+  if (/la_direct_payments|parent_direct_payments/.test(fl)) return true;
+  if (/\bdirect payments?\b/.test(fl) && /ehcp|care package|personal budget/.test(fl)) return true;
+  // Bare Direct Payment / DP without named funder-invoice language → parent-held budget.
+  if (/\bdirect payments?\b/.test(fl) || /(^|[^a-z])dp([^a-z]|$)/.test(fl)) {
+    if (/\bealing\b|\bhammersmith\b|\bfulham\b|\bh\s*&\s*f\b|\blbhf\b|\bnhs\b/.test(fl)) {
+      // e.g. "Ealing Direct Payments" still parent-held unless it says invoice/BACS to club
+      if (!/invoice|bacs|care in finance|\bcwd\b|purchase order/.test(fl)) return true;
+    } else {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Club invoices Ealing, Hammersmith & Fulham, or NHS directly.
+ * Only these (plus Day Centre) skip the parent re-enrol form.
+ */
+export function fundingLabelIsClubInvoicedFunder(raw: unknown): boolean {
+  const fl = clean(raw, 160).toLowerCase();
+  if (!fl) return false;
+  if (fundingLabelIsParentDirectPayments(fl)) return false;
+
+  // NHS pays the club
+  if (/\bnhs\b/.test(fl)) return true;
+
+  // Named LAs that invoice the club (not parent Direct Payments)
+  if (/\bealing\b/.test(fl) && !/\bdirect payment/.test(fl)) return true;
+  if (
     /\bhammersmith\b/.test(fl) ||
+    /\bfulham\b/.test(fl) ||
     /\bh\s*&\s*f\b/.test(fl) ||
-    /(^|[^a-z])la([^a-z]|$)/.test(fl)
-  );
+    /\blbhf\b/.test(fl)
+  ) {
+    if (/\bdirect payment/.test(fl)) return false;
+    return true;
+  }
+
+  // Explicit care-in-finance / CWD / PO language tied to those funders
+  if (/care in finance|\bcwd\b|purchase order|\bla invoice\b/.test(fl)) {
+    return /\bealing\b|\bhammersmith\b|\bfulham\b|\bh\s*&\s*f\b|\blbhf\b|\bnhs\b/.test(fl);
+  }
+
+  return false;
+}
+
+/** @deprecated Use fundingLabelIsClubInvoicedFunder — kept for older imports. */
+export function fundingLabelIsLaOrNhs(raw: unknown): boolean {
+  return fundingLabelIsClubInvoicedFunder(raw);
 }
 
 export function buildParentReenrolUi(opts: {
@@ -72,10 +121,11 @@ export function buildParentReenrolUi(opts: {
   const reasons: Array<"day_centre" | "la_funded" | "acat_brought"> = [];
   if (opts.hasDayCentre) reasons.push("day_centre");
 
-  const sheetLa = clean(opts.paymentSheet, 20).toUpperCase() === "LA";
-  const vatExempt = clean(opts.vatMode, 20).toLowerCase() === "exempt";
-  const fundLa = fundingLabelIsLaOrNhs(opts.fundingLabel);
-  if (sheetLa || vatExempt || fundLa) reasons.push("la_funded");
+  const sheet = clean(opts.paymentSheet, 40).toUpperCase();
+  const sheetLa = sheet === "LA";
+  // Never treat VAT-exempt or Direct Payments as “LA invoices us”.
+  const funderPaysClub = fundingLabelIsClubInvoicedFunder(opts.fundingLabel);
+  if (sheetLa || funderPaysClub) reasons.push("la_funded");
   if (isAcat) reasons.push("acat_brought");
 
   const officeAuto = reasons.includes("day_centre") || reasons.includes("la_funded");
@@ -96,10 +146,10 @@ export function buildParentReenrolUi(opts: {
   }
 
   const baseNote = reasons.includes("day_centre") && reasons.includes("la_funded")
-    ? "Day Centre and LA / NHS places renew with the office — nothing for you to submit."
+    ? "Day Centre and Ealing / H&F / NHS places renew with the office — nothing for you to submit."
     : reasons.includes("day_centre")
     ? "Day Centre places renew with the office — nothing for you to submit."
-    : "LA / NHS funded places renew with the office — nothing for you to submit.";
+    : "Places billed to Ealing, Hammersmith & Fulham, or the NHS renew with the office — nothing for you to submit.";
 
   const note = (isAcat
     ? "ACAT should approve this place — it is an ACAT-only service. " + baseNote

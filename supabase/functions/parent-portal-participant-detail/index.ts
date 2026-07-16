@@ -1140,6 +1140,7 @@ Deno.serve(async (req) => {
       hasDayCentre,
       fundingLabel: funding.fundingLabel,
       vatMode: funding.vatMode,
+      paymentSheet: funding.paymentSheet,
       isAcatMember: isAcatMemberIdentity(identityInput),
       blocksExtraBooking: participantBlocksExtraBooking(identityInput),
     });

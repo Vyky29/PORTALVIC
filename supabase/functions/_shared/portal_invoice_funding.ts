@@ -43,6 +43,8 @@ export type ParticipantInvoiceFunding = {
   clientId: string;
   po: string;
   source: "funding_label" | "client_payments" | "default_private";
+  /** client_payments.sheet: PARENTS | LA | DIRECT_PAYMENTS | … */
+  paymentSheet: string;
 };
 
 export async function resolveParticipantInvoiceFunding(
@@ -76,6 +78,7 @@ export async function resolveParticipantInvoiceFunding(
       clientId: contactId,
       po: "",
       source: "funding_label",
+      paymentSheet: "",
     };
   }
   if (
@@ -88,6 +91,7 @@ export async function resolveParticipantInvoiceFunding(
       clientId: contactId,
       po: "",
       source: "funding_label",
+      paymentSheet: "",
     };
   }
 
@@ -139,6 +143,7 @@ export async function resolveParticipantInvoiceFunding(
       clientId: pickClientId(data, clean(paymentRow.client_key, 80) || contactId),
       po: pickPo(data),
       source: "client_payments",
+      paymentSheet: clean(paymentRow.sheet, 40),
     };
   }
 
@@ -148,5 +153,6 @@ export async function resolveParticipantInvoiceFunding(
     clientId: contactId,
     po: "",
     source: "default_private",
+    paymentSheet: "",
   };
 }
