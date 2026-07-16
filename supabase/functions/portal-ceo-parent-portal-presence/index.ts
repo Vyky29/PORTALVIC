@@ -414,6 +414,99 @@ Deno.serve(async (req) => {
 
   actions.sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")));
 
+  // Family Web Push: which parents turned on alerts.
+  const { data: pushRows } = await admin
+    .from("portal_family_push_subscriptions")
+    .select("parent_person_id, updated_at, user_agent")
+    .order("updated_at", { ascending: false })
+    .limit(2000);
+
+  const alertsOnByParent = new Map<
+    string,
+    { devices: number; last_at: string | null }
+  >();
+  for (const r of pushRows || []) {
+    const pid = clean(r.parent_person_id, 80);
+    if (!pid) continue;
+    const prev = alertsOnByParent.get(pid);
+    const at = r.updated_at ? String(r.updated_at) : null;
+    if (!prev) {
+      alertsOnByParent.set(pid, { devices: 1, last_at: at });
+    } else {
+      prev.devices += 1;
+      if (at && (!prev.last_at || at > prev.last_at)) prev.last_at = at;
+    }
+  }
+
+  const { data: allParents } = await admin
+    .from("portal_parent_contacts")
+    .select(
+      "parent_person_id, contact_id, child_display, parent_display, parent_first_name, parent_last_name",
+    )
+    .not("parent_person_id", "is", null)
+    .limit(2000);
+
+  const parentMeta = new Map<
+    string,
+    { parent_name: string; children: string[] }
+  >();
+  for (const c of allParents || []) {
+    const pid = clean(c.parent_person_id, 80);
+    if (!pid) continue;
+    const parentName = parentDisplayFromContact(c) || "Parent";
+    const child = clean(c.child_display, 120);
+    const cur = parentMeta.get(pid) || { parent_name: parentName, children: [] };
+    if (parentName && parentName !== "Parent" && !looksLikeRawId(parentName)) {
+      cur.parent_name = parentName;
+    } else if (cur.parent_name === "Parent" && parentName) {
+      cur.parent_name = parentName;
+    }
+    if (child && !cur.children.includes(child)) cur.children.push(child);
+    parentMeta.set(pid, cur);
+  }
+
+  // Also include push-only parents not yet in contacts map.
+  for (const pid of alertsOnByParent.keys()) {
+    if (!parentMeta.has(pid)) {
+      parentMeta.set(pid, { parent_name: resolveParentName(pid), children: [] });
+    }
+  }
+
+  const alertsOn: Record<string, unknown>[] = [];
+  const alertsOff: Record<string, unknown>[] = [];
+  for (const [pid, meta] of parentMeta.entries()) {
+    const push = alertsOnByParent.get(pid);
+    const kids = meta.children.slice(0, 6).join(", ");
+    const row = {
+      parent_person_id: pid,
+      parent_name: meta.parent_name || resolveParentName(pid),
+      children: meta.children,
+      children_label: kids || null,
+      alerts_on: !!push,
+      devices: push ? push.devices : 0,
+      last_subscribed_at: push ? push.last_at : null,
+    };
+    if (push) alertsOn.push(row);
+    else alertsOff.push(row);
+  }
+  alertsOn.sort((a, b) =>
+    String(b.last_subscribed_at || "").localeCompare(String(a.last_subscribed_at || "")),
+  );
+  alertsOff.sort((a, b) =>
+    String(a.parent_name || "").localeCompare(String(b.parent_name || ""), "en", {
+      sensitivity: "base",
+    }),
+  );
+
+  for (const list of [online, recent]) {
+    for (const item of list) {
+      const pid = clean(item.parent_person_id, 80);
+      const push = pid ? alertsOnByParent.get(pid) : null;
+      item.alerts_on = !!push;
+      item.alerts_devices = push ? push.devices : 0;
+    }
+  }
+
   return portalAdminJson(200, {
     ok: true,
     generated_at: new Date().toISOString(),
@@ -423,11 +516,18 @@ Deno.serve(async (req) => {
       active_last_24h: online.length + recent.length,
       sign_ins_today: signInsToday || 0,
       geo: geoSummary,
+      alerts_on: alertsOn.length,
+      alerts_off: alertsOff.length,
+      alerts_total: alertsOn.length + alertsOff.length,
     },
     online,
     recent,
     activity,
     actions: actions.slice(0, 40),
+    alerts: {
+      on: alertsOn,
+      off: alertsOff,
+    },
     map: {
       london_only: true,
       points: mapPoints,

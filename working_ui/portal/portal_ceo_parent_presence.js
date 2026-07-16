@@ -152,6 +152,13 @@
       '<span class="cpp-pill cpp-pill--device">' +
       esc(device || "Device ?") +
       "</span>" +
+      '<span class="cpp-pill cpp-pill--' +
+      (p.alerts_on ? "alerts-on" : "alerts-off") +
+      '" title="' +
+      (p.alerts_on ? "Family alerts enabled" : "Family alerts not enabled yet") +
+      '">' +
+      esc(p.alerts_on ? "Alerts on" : "Alerts off") +
+      "</span>" +
       '<span class="cpp-pill">' +
       esc(p.last_surface_label || "Signed in") +
       "</span>" +
@@ -162,20 +169,83 @@
     );
   }
 
+  function alertParentRowHtml(p, tone) {
+    var kids = p.children_label || (Array.isArray(p.children) ? p.children.join(", ") : "");
+    var when = p.last_subscribed_at ? ago(p.last_subscribed_at) : "";
+    var devices =
+      p.alerts_on && p.devices > 1 ? p.devices + " devices" : p.alerts_on ? "1 device" : "";
+    return (
+      '<li class="cpp-row cpp-row--' +
+      esc(tone) +
+      '">' +
+      '<div class="cpp-row__main">' +
+      '<strong class="cpp-row__name">' +
+      esc(p.parent_name || "Parent") +
+      "</strong>" +
+      '<span class="cpp-row__meta">' +
+      esc(kids || "—") +
+      "</span>" +
+      "</div>" +
+      '<div class="cpp-row__side">' +
+      '<span class="cpp-pill cpp-pill--' +
+      (p.alerts_on ? "alerts-on" : "alerts-off") +
+      '">' +
+      esc(p.alerts_on ? "On" : "Off") +
+      "</span>" +
+      (devices
+        ? '<span class="cpp-row__ago">' + esc(devices) + "</span>"
+        : "") +
+      (when ? '<span class="cpp-row__ago">' + esc(when) + "</span>" : "") +
+      "</div></li>"
+    );
+  }
+
   function render(data) {
     var sum = (data && data.summary) || {};
     var onlineEl = $("cppOnlineCount");
     var dayEl = $("cppDayCount");
     var activeEl = $("cppActiveCount");
+    var alertsOnEl = $("cppAlertsOnCount");
+    var alertsOffEl = $("cppAlertsOffCount");
     if (onlineEl) onlineEl.textContent = String(sum.online_now != null ? sum.online_now : "-");
     if (dayEl) dayEl.textContent = String(sum.sign_ins_today != null ? sum.sign_ins_today : "-");
     if (activeEl) activeEl.textContent = String(sum.active_last_24h != null ? sum.active_last_24h : "-");
+    if (alertsOnEl) alertsOnEl.textContent = String(sum.alerts_on != null ? sum.alerts_on : "-");
+    if (alertsOffEl) alertsOffEl.textContent = String(sum.alerts_off != null ? sum.alerts_off : "-");
 
     var online = (data && data.online) || [];
     var recent = (data && data.recent) || [];
     var activity = (data && data.activity) || [];
     var actions = (data && data.actions) || [];
+    var alerts = (data && data.alerts) || {};
+    var alertsOn = alerts.on || [];
+    var alertsOff = alerts.off || [];
 
+    var onHead = $("cppAlertsOnHeading");
+    var offHead = $("cppAlertsOffHeading");
+    if (onHead) onHead.textContent = "Alerts on (" + alertsOn.length + ")";
+    if (offHead) offHead.textContent = "Alerts off (" + alertsOff.length + ")";
+
+    var onHost = $("cppAlertsOnList");
+    if (onHost) {
+      onHost.innerHTML = alertsOn.length
+        ? alertsOn
+            .map(function (p) {
+              return alertParentRowHtml(p, "online");
+            })
+            .join("")
+        : '<li class="cpp-empty">Nobody has turned on Family alerts yet.</li>';
+    }
+    var offHost = $("cppAlertsOffList");
+    if (offHost) {
+      offHost.innerHTML = alertsOff.length
+        ? alertsOff
+            .map(function (p) {
+              return alertParentRowHtml(p, "recent");
+            })
+            .join("")
+        : '<li class="cpp-empty">All linked parents have alerts on.</li>';
+    }
     var onlineHost = $("cppOnlineList");
     if (onlineHost) {
       onlineHost.innerHTML = online.length

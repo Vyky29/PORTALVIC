@@ -196,6 +196,31 @@
       background: #eef7f0;
       color: #1f5c38;
     }
+    .cpp-pill--alerts-on {
+      background: #e8f6ee;
+      color: #166534;
+    }
+    .cpp-pill--alerts-off {
+      background: #f4f4f5;
+      color: #52525b;
+    }
+    .cpp-alerts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      min-width: 0;
+    }
+    @media (max-width: 720px) {
+      .cpp-alerts-grid { grid-template-columns: 1fr; }
+    }
+    .cpp-alerts-grid h3 {
+      margin: 0 0 8px;
+      font-size: 0.88rem;
+      color: var(--ink);
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .cpp-alerts-grid .cpp-list { max-height: 320px; }
     .cpp-feed__when {
       flex: 0 0 72px;
       font-size: 0.75rem;
@@ -277,6 +302,8 @@
       <div class="cpp-kpi"><strong id="cppOnlineCount">—</strong><span>Online now</span></div>
       <div class="cpp-kpi"><strong id="cppActiveCount">—</strong><span>Active last 24h</span></div>
       <div class="cpp-kpi"><strong id="cppDayCount">—</strong><span>Sign-ins today</span></div>
+      <div class="cpp-kpi"><strong id="cppAlertsOnCount">—</strong><span>Alerts on</span></div>
+      <div class="cpp-kpi"><strong id="cppAlertsOffCount">—</strong><span>Alerts off</span></div>
     </div>
 
     <div class="cpp-toolbar">
@@ -286,6 +313,24 @@
         <span class="cpp-status" id="cppStamp" style="margin-left:10px"></span>
       </div>
     </div>
+
+    <section class="cpp-card cpp-map-card" aria-labelledby="cppAlertsTitle">
+      <h2 id="cppAlertsTitle">Family alerts (Web Push)</h2>
+      <p class="cpp-geo-note" style="margin-top:0;margin-bottom:10px">
+        Parents who tapped <strong>Turn on alerts</strong> in the Family portal (phone Home Screen on iPhone).
+        “Off” means we have their family linked but no push subscription yet.
+      </p>
+      <div class="cpp-alerts-grid">
+        <div>
+          <h3 id="cppAlertsOnHeading">Alerts on</h3>
+          <ul class="cpp-list" id="cppAlertsOnList"></ul>
+        </div>
+        <div>
+          <h3 id="cppAlertsOffHeading">Alerts off</h3>
+          <ul class="cpp-list" id="cppAlertsOffList"></ul>
+        </div>
+      </div>
+    </section>
 
     <section class="cpp-card cpp-map-card" aria-labelledby="cppMapTitle">
       <h2 id="cppMapTitle">Where parents connect from</h2>
@@ -328,7 +373,7 @@
     </div>
   </div>
 
-  <script src="/portal/portal_ceo_parent_presence.js?v=20260716-actions-paid-inv"></script>
+  <script src="/portal/portal_ceo_parent_presence.js?v=20260716-alerts-on-off"></script>
   <script type="module">
     import { bootstrapDashboardSupabase } from "/portal/auth-handler.js?v=20260625-exec-single-session-exempt";
     await bootstrapDashboardSupabase({ page: "ceo" });
