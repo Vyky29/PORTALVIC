@@ -2,8 +2,8 @@
 
 const STRIPE_API = "https://api.stripe.com/v1";
 
-/** Default UK domestic card rate (Stripe standard). Override via env if needed. */
-const DEFAULT_FEE_PERCENT = 1.5;
+/** Default UK card gross-up rate (conservative; covers EEA/international). Override via env if needed. */
+const DEFAULT_FEE_PERCENT = 3.5;
 const DEFAULT_FEE_FIXED_PENCE = 20;
 
 export function stripeSecretKey(): string {
@@ -28,7 +28,7 @@ export function stripeConfigured(): boolean {
   return key.startsWith("sk_live_") || key.startsWith("rk_live_");
 }
 
-/** Percent fee charged by Stripe (e.g. 1.5). Env: STRIPE_FEE_PERCENT */
+/** Percent fee used for gross-up (e.g. 3.5). Env: STRIPE_FEE_PERCENT */
 export function stripeFeePercent(): number {
   const raw = Number(Deno.env.get("STRIPE_FEE_PERCENT"));
   if (Number.isFinite(raw) && raw >= 0 && raw < 50) return raw;
