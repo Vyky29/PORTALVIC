@@ -127,6 +127,21 @@
       overflow-wrap:break-word;
       color:var(--ink);
     }
+    .slot-hold{
+      background:var(--blueSoft);
+      border:1px solid rgba(45,132,179,.28);
+      border-left:4px solid var(--blue);
+      border-radius:var(--radius);
+      padding:12px 14px;
+      margin-bottom:12px;
+      font-size:14px;
+      overflow-wrap:break-word;
+      color:var(--ink);
+      min-width:0;
+      max-width:100%;
+    }
+    .slot-hold strong{color:var(--blue);}
+    .slot-hold[hidden]{display:none !important;}
     form{display:block;}
     .section{
       border:1px solid var(--line);
@@ -348,9 +363,9 @@
   </style>
   <script src="/portal-static-bootstrap.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="/portal/parent_form_submit.js"></script>
+  <script src="/portal/parent_form_submit.js?v=20260716-slot-hold"></script>
   <script src="/portal/parent_registration_portal.js?v=20260715-prefill-review"></script>
-  <script src="/portal/portal_booking_service_presence.js?v=20260715-no-parent-loc"></script>
+  <script src="/portal/portal_booking_service_presence.js?v=20260716-slot-hold"></script>
   <script>
     try {
       if (window.PortalBookingServicePresence) window.PortalBookingServicePresence.bootRegistration();
@@ -395,6 +410,8 @@
         </div>
       </div>
     </div>
+
+    <div class="slot-hold" id="slotHoldBanner" hidden></div>
 
     <div class="notice" id="formNotice">
       Fill in <strong>all</strong> sections below (every question is required). You must add a <strong>photo of the participant</strong> (face or ID document).
@@ -835,6 +852,57 @@
     if (window.ParentRegistrationPortal) {
       ParentRegistrationPortal.initPortalRegistrationMode(form, formHelpers);
     }
+
+    function bookingRequestFromUrl() {
+      try {
+        var q = new URLSearchParams(window.location.search || '');
+        if (String(q.get('from') || '').toLowerCase() !== 'bookingservice') return null;
+        var slotId = String(q.get('slot_id') || '').trim();
+        if (!slotId) return null;
+        return {
+          from: 'bookingservice',
+          slot_id: slotId,
+          service: String(q.get('service') || '').trim() || null,
+          service_name: String(q.get('service_name') || '').trim() || null,
+          activity: String(q.get('activity') || '').trim() || null,
+          crash_activity: String(q.get('crash_activity') || '').trim() || null,
+          venue: String(q.get('venue') || '').trim() || null,
+          day: String(q.get('day') || '').trim() || null,
+          time: String(q.get('time') || '').trim() || null,
+          pack: String(q.get('pack') || '').trim() || null,
+          booking_mode: String(q.get('booking_mode') || '').trim() || null,
+          week_id: String(q.get('week_id') || '').trim() || null,
+          block_id: String(q.get('block_id') || '').trim() || null,
+          date: String(q.get('date') || '').trim() || null
+        };
+      } catch (_e) {
+        return null;
+      }
+    }
+
+    var bookingRequest = bookingRequestFromUrl();
+    (function showSlotHoldBanner() {
+      var el = document.getElementById('slotHoldBanner');
+      if (!el || !bookingRequest) return;
+      var bits = [
+        bookingRequest.service_name || bookingRequest.service,
+        bookingRequest.venue,
+        bookingRequest.day,
+        bookingRequest.time,
+        bookingRequest.activity
+      ].filter(Boolean);
+      el.innerHTML =
+        'You selected: <strong>' +
+        bits.map(function (b) {
+          return String(b)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+        }).join(' · ') +
+        '</strong>. When you submit this form, that place is held for you while clubSENsational reviews your details. After approval you will get Parent Portal access (booking, invoice, calendar).';
+      el.removeAttribute('hidden');
+    })();
+
     function fmtDate(iso){
       if (!iso) return '';
       var p = iso.split('-');
@@ -999,6 +1067,17 @@
         y += 10;
 
         doc.setTextColor(0, 0, 0);
+        if (bookingRequest) {
+          y = addSection(doc, y, 'Requested booking slot', [
+            ['Service', bookingRequest.service_name || bookingRequest.service || ''],
+            ['Venue', bookingRequest.venue || ''],
+            ['Day', bookingRequest.day || ''],
+            ['Time', bookingRequest.time || ''],
+            ['Activity', bookingRequest.activity || bookingRequest.crash_activity || ''],
+            ['Slot id', bookingRequest.slot_id || '']
+          ], pageW, M, maxY);
+        }
+
         y = addSection(doc, y, 'Parent / guardian', [
           ['Name', val('parent_name')],
           ['Relationship', radio('relationship')],
@@ -1070,6 +1149,9 @@
               ehcp: radio('ehcp'),
               social_worker: radio('social_worker')
             };
+        if (bookingRequest) {
+          submitPayload.booking_request = bookingRequest;
+        }
         window.portalSubmitParentForm({
           form_type: 'client_registration',
           participant_name: val('participant_name'),
@@ -1082,16 +1164,25 @@
           photo: photoFile || null,
           photo_filename: photoFile ? photoFile.name : undefined,
           payload: submitPayload
-        }).then(function(){
+        }).then(function(res){
           if (portalMode && typeof portalMode.afterSubmitSuccess === 'function') {
             return portalMode.afterSubmitSuccess();
           }
           if (window.portalFinishParentSubmit) {
+            var holdMsg = (res && res.slot_held)
+              ? ' Your selected session place is held for review — the office will confirm Parent Portal access next.'
+              : (bookingRequest
+                ? ' Your selected session was sent with this form for the office to review.'
+                : '');
             window.portalFinishParentSubmit({
               formEl: form,
               successEl: document.getElementById('parentSubmitDone'),
               noticeEl: document.getElementById('formNotice'),
-              submitBtn: btn
+              submitBtn: btn,
+              message:
+                'Your form was sent to clubSENsational. A PDF copy was saved on your device.' +
+                holdMsg +
+                ' You do not need to email us — you can close this page.'
             });
           }
         }).catch(function(err){

@@ -122,9 +122,15 @@
       var detail = "";
       try {
         var q2 = new URLSearchParams(global.location.search || "");
-        detail = [q2.get("service_name") || q2.get("service"), q2.get("day"), q2.get("time")]
+        detail = [
+          q2.get("slot_id"),
+          q2.get("service_name") || q2.get("service"),
+          q2.get("day"),
+          q2.get("time"),
+        ]
           .filter(Boolean)
-          .join(" · ");
+          .join(" · ")
+          .slice(0, 160);
       } catch (_e2) {
         /* ignore */
       }

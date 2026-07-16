@@ -77,13 +77,35 @@
     if (options.photo instanceof Blob) {
       fd.append('photo', options.photo, options.photo_filename || 'participant-photo.jpg');
     }
+    try {
+      var sessTok =
+        (global.PortalBookingServicePresence &&
+          typeof global.PortalBookingServicePresence.getToken === 'function' &&
+          global.PortalBookingServicePresence.getToken()) ||
+        '';
+      if (sessTok) fd.append('booking_service_session', String(sessTok));
+    } catch (_eSess) {
+      /* ignore */
+    }
+
+    var headers = {
+      Authorization: 'Bearer ' + key,
+      apikey: key
+    };
+    try {
+      var tokHdr =
+        (global.PortalBookingServicePresence &&
+          typeof global.PortalBookingServicePresence.getToken === 'function' &&
+          global.PortalBookingServicePresence.getToken()) ||
+        '';
+      if (tokHdr) headers['x-booking-service-session'] = String(tokHdr);
+    } catch (_eHdr) {
+      /* ignore */
+    }
 
     return fetch(base + '/functions/v1/portal-parent-form-submit', {
       method: 'POST',
-      headers: {
-        Authorization: 'Bearer ' + key,
-        apikey: key
-      },
+      headers: headers,
       body: fd
     }).then(function (res) {
       return res.json().catch(function () {
@@ -95,7 +117,17 @@
         }
         try {
           if (global.PortalBookingServicePresence) {
-            void global.PortalBookingServicePresence.ping('registration_submit');
+            var slotBit = '';
+            try {
+              var br = options.payload && options.payload.booking_request;
+              if (br && br.slot_id) slotBit = String(br.slot_id);
+            } catch (_eSlot) {
+              /* ignore */
+            }
+            void global.PortalBookingServicePresence.ping(
+              'registration_submit',
+              slotBit || (j.slot_held ? 'slot_held' : null)
+            );
           }
         } catch (_e2) {
           /* ignore */

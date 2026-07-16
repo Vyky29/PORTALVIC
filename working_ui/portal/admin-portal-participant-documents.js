@@ -96,7 +96,7 @@
     return (
       '<div class="card" style="margin-top:0"><div class="card-pad" style="overflow:auto;padding:0">' +
       '<table class="tbl tbl--center tbl--dense"><thead><tr>' +
-      '<th>Submitted</th><th>Form</th><th>Participant</th><th>Parent</th><th>Status</th><th>PDF</th><th>Photo</th>' +
+      '<th>Submitted</th><th>Form</th><th>Participant</th><th>Parent</th><th>Requested slot</th><th>Status</th><th>PDF</th><th>Photo</th>' +
       '</tr></thead><tbody>' +
       docs.map(function (d) {
         var formLab = FORM_LABELS[d.form_type] || d.form_type || '—';
@@ -107,12 +107,28 @@
         var photoLink = d.photo_signed_url
           ? '<a href="' + esc(d.photo_signed_url) + '" target="_blank" rel="noopener">View photo</a>'
           : '—';
+        var slotLine = '—';
+        try {
+          var br = d.payload_json && d.payload_json.booking_request;
+          if (br && typeof br === 'object') {
+            var bits = [
+              br.service_name || br.service || br.service_id,
+              br.venue,
+              br.day || br.day_label,
+              br.time || br.time_label,
+            ].filter(Boolean);
+            slotLine = bits.length ? bits.join(' · ') : (br.slot_id || '—');
+          }
+        } catch (_e) {
+          slotLine = '—';
+        }
         return (
           '<tr>' +
           '<td class="muted" style="white-space:nowrap">' + esc(formatDate(d.submitted_at)) + '</td>' +
           '<td style="min-width:0;overflow-wrap:break-word">' + esc(formLab) + '</td>' +
           '<td style="min-width:0;overflow-wrap:break-word"><strong>' + esc(d.participant_name || '—') + '</strong></td>' +
           '<td class="muted" style="min-width:0;max-width:14rem;overflow-wrap:break-word">' + esc(parentLine) + '</td>' +
+          '<td class="muted" style="min-width:0;max-width:16rem;overflow-wrap:break-word">' + esc(slotLine) + '</td>' +
           '<td><span class="chip chip--' + (d.status === 'reviewed' ? 'ok' : 'info') + '">' + esc(d.status || 'new') + '</span></td>' +
           '<td>' + pdfLink + '</td>' +
           '<td>' + photoLink + '</td>' +

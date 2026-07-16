@@ -364,6 +364,48 @@ Deno.serve(async (req) => {
   const weekly = buildWeeklyOfferFromMadre(madreRow.document as MadreDoc);
   const intensive = await loadCrashIntensive(supabase);
 
+  // Soft holds from new-client registration forms (Booking Service → registration).
+  await supabase
+    .from("portal_booking_slot_reservations")
+    .update({
+      status: "expired",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("status", "pending")
+    .lt("hold_expires_at", new Date().toISOString());
+
+  const { data: holds, error: holdsErr } = await supabase
+    .from("portal_booking_slot_reservations")
+    .select("slot_id")
+    .eq("status", "pending");
+
+  if (holdsErr) {
+    console.warn("[portal-booking-offer] slot holds", holdsErr.message);
+  }
+
+  const holdCounts = new Map<string, number>();
+  for (const h of holds || []) {
+    const sid = String(h.slot_id || "").trim();
+    if (!sid) continue;
+    holdCounts.set(sid, (holdCounts.get(sid) || 0) + 1);
+  }
+
+  if (holdCounts.size) {
+    for (const slot of weekly.slots) {
+      const extra = holdCounts.get(slot.id) || 0;
+      if (!extra) continue;
+      slot.taken = Math.min(slot.capacity, (Number(slot.taken) || 0) + extra);
+    }
+    for (const slot of intensive.slots) {
+      const extra = holdCounts.get(String(slot.id || "")) || 0;
+      if (!extra) continue;
+      slot.taken = Math.min(
+        Number(slot.capacity) || 0,
+        (Number(slot.taken) || 0) + extra,
+      );
+    }
+  }
+
   const intensiveService = {
     id: "intensive",
     name: "Intensive Courses & Camps",
@@ -413,6 +455,9 @@ Deno.serve(async (req) => {
       intensive_slots: intensive.slots.length,
       madre_meta_from: weekly.termFrom,
       madre_meta_to: weekly.termTo,
+      pending_slot_holds: holdCounts.size
+        ? [...holdCounts.values()].reduce((a, b) => a + b, 0)
+        : 0,
     },
   });
 });
