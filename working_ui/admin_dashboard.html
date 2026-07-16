@@ -80,6 +80,7 @@
   <script src="/portal/admin-portal-participant-documents.js?v=20260716-slot-hold"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260709-family-credits"></script>
   <script src="/portal/admin-portal-parent-credits.js?v=20260709-family-credits"></script>
+  <script src="/portal/admin-portal-xero-products.js?v=20260716-xero-product-map"></script>
   <script src="/portal/admin-portal-parent-invoices.js?v=20260716-funding-categories"></script>
   <script src="/portal/admin-portal-parent-makeups.js?v=20260709-makeup-roster"></script>
   <script src="/portal/admin-portal-parent-consents.js?v=20260709-offsite-annual"></script>
@@ -21722,6 +21723,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var tabs = [
         { id:'create', label:'Create invoice', iconId:'staffhr_contracts' },
         { id:'reenrolments', label:'Re-enrolments', iconId:'clients' },
+        { id:'xero_products', label:'Xero products', iconId:'reenrol_payments' },
         { id:'payments', label:'Payments', iconId:'c4k_payments' }
       ];
       return tabs.map(function(t){
@@ -21736,14 +21738,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       portalParentInvoicesConfigureOnce();
       var tab = state.financeTab || 'payments';
       var inv = window.PortalParentInvoices || {};
+      var xeroProd = window.PortalXeroProducts || {};
       var createHtml = typeof inv.createInvoiceEmbedHtml === 'function' ? inv.createInvoiceEmbedHtml() : '';
       var reenrolHtml = typeof inv.reenrolmentsEmbedHtml === 'function' ? inv.reenrolmentsEmbedHtml() : '';
+      var xeroProductsHtml = typeof xeroProd.mountHtml === 'function' ? xeroProd.mountHtml() : '';
       var hide = function(id){ return tab === id ? '' : ' hidden'; };
       return '<h1 class="page-title" style="display:flex;align-items:center;gap:10px"><span aria-hidden="true" style="display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#eff6ff;color:#2d84b3"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="none"><text x="12" y="17" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor" font-family="system-ui,Segoe UI,sans-serif">\u00a3</text></svg></span><span>Finance</span></h1>'+
         '<p class="page-intro">Create invoices, track re-enrolment instalments, and review term payments by family — Summer Term 25/26 vs Autumn Term 26/27.</p>'+
         '<div class="c4k-sessions-hub-tabs" role="tablist" aria-label="Finance">'+financeHubTabsHtml(tab)+'</div>'+
         '<div id="financePanelCreate" class="finance-hub-panel"'+hide('create')+'>'+createHtml+'</div>'+
         '<div id="financePanelReenrolments" class="finance-hub-panel"'+hide('reenrolments')+'>'+reenrolHtml+'</div>'+
+        '<div id="financePanelXeroProducts" class="finance-hub-panel"'+hide('xero_products')+'>'+xeroProductsHtml+'</div>'+
         '<div id="financePanelPayments" class="finance-hub-panel"'+hide('payments')+'><div id="payModuleRoot"></div></div>';
     }
     function bindFinanceView(){
@@ -21762,6 +21767,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(tab === 'reenrolments' && window.PortalParentInvoices && typeof window.PortalParentInvoices.bindListEmbed === 'function'){
         window.PortalParentInvoices.bindListEmbed();
+      }
+      if(tab === 'xero_products' && window.PortalXeroProducts){
+        window.PortalXeroProducts.configure({
+          getClient: getSchedSupabaseClient,
+          getSupabaseUrl: function(){
+            var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+            return u;
+          },
+          getAnonKey: function(){
+            var k = typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY.trim() : '';
+            return k;
+          },
+          toast: portalAdminToast,
+          esc: esc
+        });
+        if(typeof window.PortalXeroProducts.mountBind === 'function') window.PortalXeroProducts.mountBind();
       }
       if(tab === 'payments' && window.AdminPayments && $('payModuleRoot')){
         window.AdminPayments.configure({

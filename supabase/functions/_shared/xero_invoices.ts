@@ -34,6 +34,13 @@ export type XeroInvoicePushInput = {
   city?: string | null;
   postcode?: string | null;
   existingXeroContactId?: string | null;
+  /** Multi-line invoice (re-enrolment products). When set, overrides single line fields. */
+  lines?: Array<{
+    description: string;
+    quantity: number;
+    unitAmount: number;
+    itemCode?: string | null;
+  }>;
 };
 
 export type XeroInvoicePushResult =
@@ -189,6 +196,37 @@ export async function xeroCreateAccrecInvoice(
   const dueDate = cleanXero(input.dueDateIso, 20) || invoiceDate;
   const reference = cleanXero(input.reference, 120) || invoiceNumber;
 
+  const inputLines = Array.isArray(input.lines)
+    ? input.lines
+        .map((ln) => ({
+          description: cleanXero(ln.description, 4000) || description,
+          quantity: Number(ln.quantity) > 0 ? round2(Number(ln.quantity)) : 1,
+          unitAmount: round4(Number(ln.unitAmount)),
+          itemCode: cleanXero(ln.itemCode, 80) || null,
+        }))
+        .filter((ln) => ln.unitAmount > 0)
+    : [];
+
+  const lineItems =
+    inputLines.length > 0
+      ? inputLines.map((ln) => ({
+          Description: ln.description,
+          Quantity: ln.quantity,
+          UnitAmount: ln.unitAmount,
+          AccountCode: salesCode,
+          TaxType: taxType,
+          ...(ln.itemCode ? { ItemCode: ln.itemCode } : {}),
+        }))
+      : [
+          {
+            Description: description,
+            Quantity: quantity,
+            UnitAmount: unit,
+            AccountCode: salesCode,
+            TaxType: taxType,
+          },
+        ];
+
   const body = {
     Invoices: [
       {
@@ -200,15 +238,7 @@ export async function xeroCreateAccrecInvoice(
         Reference: reference,
         LineAmountTypes: vatMode === "exempt" ? "NoTax" : "Inclusive",
         Status: "AUTHORISED",
-        LineItems: [
-          {
-            Description: description,
-            Quantity: quantity,
-            UnitAmount: unit,
-            AccountCode: salesCode,
-            TaxType: taxType,
-          },
-        ],
+        LineItems: lineItems,
       },
     ],
   };

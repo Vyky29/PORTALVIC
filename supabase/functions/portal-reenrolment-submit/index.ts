@@ -17,6 +17,12 @@ import {
   parseReenrolTermTotals,
   termTotalsFromWeeklySlots,
 } from "../_shared/reenrolment_auto_invoices.ts";
+import {
+  buildReenrolTermLineItems,
+  lineItemsToDescription,
+  loadProductMap,
+} from "../_shared/portal_xero_product_catalog.ts";
+import type { ParsedSlot } from "../_shared/reenrolment_catalog.ts";
 import { gocardlessConfigured } from "../_shared/gocardless.ts";
 import {
   mandateIsActive,
@@ -172,13 +178,37 @@ Deno.serve(async (req) => {
         console.error("[portal-reenrolment-submit] no invoice owner user");
         invoicesSkipped = "no_owner";
       } else {
+        const productMap = await loadProductMap(supabase);
+        const weeklySlots = Array.isArray(body.weekly_slots)
+          ? (body.weekly_slots as ParsedSlot[])
+          : [];
+        const weeklyChoicesMap =
+          weeklyChoices && typeof weeklyChoices === "object"
+            ? (weeklyChoices as Record<string, { choice?: string }>)
+            : null;
+
         for (const inv of plan.termInvoices) {
+          let lineItems =
+            inv.term && weeklySlots.length && !inv.isAdminFee
+              ? buildReenrolTermLineItems({
+                slots: weeklySlots,
+                weeklyChoices: weeklyChoicesMap,
+                term: inv.term,
+                vatMode: plan.vatMode,
+                productMap,
+              })
+              : [];
+          const lineDescription =
+            lineItems.length > 0
+              ? lineItemsToDescription(lineItems)
+              : inv.lineDescription;
+
           const created = await createPortalFamilyInvoice(supabase, {
             contactId: participantContactId,
             amountGbp: inv.amountGbp,
             dueDateIso: inv.dueDateIso,
             vatMode: plan.vatMode,
-            lineDescription: inv.lineDescription,
+            lineDescription,
             reference: inv.reference,
             notes: null,
             title: `Invoice — ${participantName} · ${inv.label}`,
@@ -189,6 +219,7 @@ Deno.serve(async (req) => {
             readyBy: "reenrolment_auto",
             paymentSchedule: inv.paymentSchedule,
             billingTerm: inv.term,
+            lineItems,
           });
           if (!created.ok) {
             console.error(

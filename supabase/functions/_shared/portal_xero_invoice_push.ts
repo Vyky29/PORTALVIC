@@ -22,7 +22,7 @@ export async function pushPortalInvoiceShareToXero(
   const { data: share, error } = await admin
     .from("portal_parent_invoice_share")
     .select(
-      "id, contact_id, document_id, invoice_number, amount_gbp, due_date, quantity, unit_price_gbp, line_description, reference_text, vat_mode, xero_invoice_id, created_at, payment_status",
+      "id, contact_id, document_id, invoice_number, amount_gbp, due_date, quantity, unit_price_gbp, line_description, line_items, reference_text, vat_mode, xero_invoice_id, created_at, payment_status",
     )
     .eq("id", shareId)
     .maybeSingle();
@@ -61,6 +61,27 @@ export async function pushPortalInvoiceShareToXero(
     invoiceDate = new Date().toISOString().slice(0, 10);
   }
 
+  const vatMode = clean(share.vat_mode, 20) || "vat_20";
+  const rawLines = Array.isArray(share.line_items) ? share.line_items : [];
+  const xeroLines = rawLines
+    .map((ln: Record<string, unknown>) => {
+      const qty = Number(ln.quantity) > 0 ? Number(ln.quantity) : 1;
+      const amt = Number(ln.amount_gbp);
+      const unit = Number(ln.unit_price_gbp);
+      const unitAmount = Number.isFinite(unit) && unit > 0
+        ? unit
+        : Number.isFinite(amt) && amt > 0
+          ? amt / qty
+          : 0;
+      return {
+        description: clean(ln.description, 800) || clean(share.line_description, 800),
+        quantity: qty,
+        unitAmount,
+        itemCode: clean(ln.xero_item_code, 80) || null,
+      };
+    })
+    .filter((ln) => ln.unitAmount > 0);
+
   const created = await xeroCreateAccrecInvoice(
     {
       contactId: cid,
@@ -72,7 +93,7 @@ export async function pushPortalInvoiceShareToXero(
       unitPriceGbp: share.unit_price_gbp != null ? Number(share.unit_price_gbp) : null,
       lineDescription: clean(share.line_description, 800) || clean(share.invoice_number, 80),
       reference: clean(share.reference_text, 120) || clean(share.invoice_number, 80),
-      vatMode: clean(share.vat_mode, 20) || "vat_20",
+      vatMode,
       parentName,
       parentEmail: clean(parent?.email, 200) || null,
       addressLine1: clean(parent?.address_line1, 120) || null,
@@ -80,6 +101,7 @@ export async function pushPortalInvoiceShareToXero(
       city: clean(parent?.city, 80) || null,
       postcode: clean(parent?.postcode, 20) || null,
       existingXeroContactId: clean(parent?.xero_contact_id, 80) || null,
+      lines: xeroLines.length ? xeroLines : undefined,
     },
     admin,
   );

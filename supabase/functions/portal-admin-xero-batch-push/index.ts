@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
   let q = admin
     .from("portal_parent_invoice_share")
     .select(
-      "id, contact_id, invoice_number, amount_gbp, due_date, payment_status, paid_via, xero_invoice_id, xero_payment_id, created_via, vat_mode, line_description, quantity, unit_price_gbp, reference_text, created_at, document_id",
+      "id, contact_id, invoice_number, amount_gbp, due_date, payment_status, paid_via, xero_invoice_id, xero_payment_id, created_via, vat_mode, line_description, line_items, quantity, unit_price_gbp, reference_text, created_at, document_id",
     )
     .is("xero_invoice_id", null)
     .in("created_via", ["portal", "reenrolment"])
@@ -183,6 +183,24 @@ Deno.serve(async (req) => {
         city: clean(parent.city, 80) || null,
         postcode: clean(parent.postcode, 20) || null,
         existingXeroContactId: clean(parent.xero_contact_id, 80) || null,
+        lines: (Array.isArray(share.line_items) ? share.line_items : [])
+          .map((ln: Record<string, unknown>) => {
+            const qty = Number(ln.quantity) > 0 ? Number(ln.quantity) : 1;
+            const amt = Number(ln.amount_gbp);
+            const unit = Number(ln.unit_price_gbp);
+            const unitAmount = Number.isFinite(unit) && unit > 0
+              ? unit
+              : Number.isFinite(amt) && amt > 0
+                ? amt / qty
+                : 0;
+            return {
+              description: clean(ln.description, 800) || clean(share.line_description, 800),
+              quantity: qty,
+              unitAmount,
+              itemCode: clean(ln.xero_item_code, 80) || null,
+            };
+          })
+          .filter((ln) => ln.unitAmount > 0),
       },
       admin,
     );

@@ -14,6 +14,10 @@ import {
   nextInstalmentDueDate,
   normalizePaymentSchedule,
 } from "./portal_invoice_payment_schedule.ts";
+import {
+  lineItemsToDescription,
+  type PortalInvoiceLineItem,
+} from "./portal_xero_product_catalog.ts";
 
 const BUCKET = "documents";
 
@@ -56,6 +60,7 @@ export type PortalFamilyInvoiceCreateInput = {
   /** Planned instalments on this invoice (re-enrolment term invoices). */
   paymentSchedule?: InvoicePaymentScheduleRow[];
   billingTerm?: "autumn" | "spring" | "summer" | null;
+  lineItems?: PortalInvoiceLineItem[];
 };
 
 export type PortalFamilyInvoiceCreateResult =
@@ -170,6 +175,7 @@ export async function createPortalFamilyInvoice(
   const reference = clean(input.reference, 120) || null;
   const service = clean(input.service, 80) || null;
   const lineDescription =
+    (input.lineItems?.length ? lineItemsToDescription(input.lineItems) : "") ||
     cleanMultiline(input.lineDescription, 2400) ||
     "Structured activity support delivered for a SEND participant.";
   const notes = clean(input.notes, 800) || null; // Admin-only — never sent to parent portal.
@@ -342,6 +348,7 @@ export async function createPortalFamilyInvoice(
     next_instalment_due:
       nextInstalmentDueDate(input.paymentSchedule || []) || dueDate,
     billing_term: input.billingTerm || null,
+    line_items: (input.lineItems || []).length ? input.lineItems : [],
     updated_at: now,
   };
 
