@@ -1853,10 +1853,11 @@
   }
 
   function viewHtml() {
+    // page-intro must be a top-level sibling (not inside #portalParentNotifyLogRoot)
+    // so admin page-head can extract + strip it once — no duplicate copy in the body.
     return (
-      '<div id="portalParentNotifyLogRoot" class="portal-day-ops-embed portal-pnlog-root">' +
-      '<h1 class="page-title">Family messages</h1>' +
       '<p class="page-intro">WhatsApp conversations via the Business API — pick a family on the left, read the thread, and reply in the box below (no email on this screen). Search also finds families from Contacts even if there is no WhatsApp history yet. Delivery ticks: Sent → Delivered → Read. Refreshes every 15s.</p>' +
+      '<div id="portalParentNotifyLogRoot" class="portal-day-ops-embed portal-pnlog-root">' +
       '<div class="portal-pnlog-toolbar">' +
       '<input type="search" id="portalParentNotifyLogSearch" class="inp portal-pnlog-toolbar__search" placeholder="Search parent, participant, phone…" autocomplete="off" />' +
       '<select id="portalParentNotifyLogOutcome" class="sel portal-pnlog-toolbar__sel" aria-label="Filter">' +
