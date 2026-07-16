@@ -1387,6 +1387,13 @@
   var CURRENT_YEAR_TERM_BREAK_TO = "2026-05-31";
   var CURRENT_YEAR_TERM_CLOSED = { "2026-05-04": true };
 
+  /** 2026/27: only Day Centre runs 1–4 Sept; after-schools & weekend services start 5 Sept. */
+  var NEXT_YEAR_AFTERSCHOOL_FROM = "2026-09-05";
+
+  function serviceIsDayCentre(labelOrService) {
+    return /day\s*centre/i.test(String(labelOrService || ""));
+  }
+
   function participantHasDayCentre(data) {
     var detail =
       data && data.general && Array.isArray(data.general.services_detail)
@@ -1394,9 +1401,15 @@
         : [];
     for (var i = 0; i < detail.length; i++) {
       var lab = String((detail[i] && (detail[i].label || detail[i].service)) || "");
-      if (/day\s*centre/i.test(lab)) return true;
+      if (serviceIsDayCentre(lab)) return true;
     }
     return false;
+  }
+
+  /** True when this 26/27 date is before the service kind starts (non-Day-Centre → 5 Sept). */
+  function nextYearDateBeforeServiceStart(iso, isDayCentreService) {
+    if (isDayCentreService) return false;
+    return iso >= "2026-09-01" && iso < NEXT_YEAR_AFTERSCHOOL_FROM;
   }
 
   function currentYearTermToIso(data) {
@@ -1547,6 +1560,9 @@
       if (!slots || !slots.length) continue;
       slots.forEach(function (s) {
         if (out.length >= max) return;
+        if (nextYearDateBeforeServiceStart(iso, serviceIsDayCentre(s.label || s.service))) {
+          return;
+        }
         out.push({
           iso: iso,
           dayLabel: formatHubDateLabel(iso),
@@ -1571,9 +1587,12 @@
         : [];
     if (!detail.length) return [];
     var cols = Object.create(null);
+    var dcCols = Object.create(null);
     detail.forEach(function (s) {
       var col = dayNameToCalCol(s && s.day);
-      if (col != null) cols[col] = true;
+      if (col == null) return;
+      cols[col] = true;
+      if (serviceIsDayCentre((s && (s.label || s.service)) || "")) dcCols[col] = true;
     });
     if (!Object.keys(cols).length) return [];
 
@@ -1599,7 +1618,10 @@
       if (!isClubClosedIso(iso, data)) {
         var jsDow = cursor.getDay();
         var col = jsDow === 0 ? 6 : jsDow - 1;
-        if (cols[col]) {
+        // 1–4 Sept 2026: Day Centre only — other services start 5 Sept.
+        var runs =
+          cols[col] && (dcCols[col] || !nextYearDateBeforeServiceStart(iso, false));
+        if (runs) {
           out.push(
             annotateChipDate(
               {
@@ -1998,6 +2020,7 @@
       // No roster days yet — show Mon–Fri autumn structure.
       cols = { 0: true, 1: true, 2: true, 3: true, 4: true };
     }
+    var dcCols = dayCentreWeekdayCols(data);
     var todayIso = isoDateLocal(new Date());
     var startParts = String(autumn.starts).split("-");
     var cursor = new Date(Number(startParts[0]), Number(startParts[1]) - 1, Number(startParts[2]));
@@ -2010,7 +2033,9 @@
       if (!isNextYearClubClosedIso(iso)) {
         var jsDow = cursor.getDay();
         var col = jsDow === 0 ? 6 : jsDow - 1;
-        if (cols[col]) {
+        // 1–4 Sept 2026: Day Centre only — after-schools start 5 Sept.
+        var runs = cols[col] && (dcCols[col] || !nextYearDateBeforeServiceStart(iso, false));
+        if (runs) {
           out.push(
             annotateChipDate(
               {
