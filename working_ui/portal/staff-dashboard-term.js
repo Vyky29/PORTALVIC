@@ -2254,8 +2254,27 @@
       if(areaUp === 'HOME') return 'HOME';
       return '';
     }
+    /**
+     * MADRE / spreadsheet rows that are duty blocks, not participants
+     * (Shadowing Roberto, Training, Meeting). These must never ask for session feedback.
+     */
+    function portalRosterNonClientSessionKind(s){
+      if(!s) return '';
+      const cid = String(s.clientId || s.client_id || '').trim().toLowerCase();
+      if(cid === 'shadowing' || cid === 'training' || cid === 'meeting') return cid;
+      const name = String(
+        s.clientDisplay || s.clientName || s.client_name || s.name || ''
+      ).trim().toLowerCase();
+      if(name === 'shadowing' || /^\s*shadowing\b/.test(name)) return 'shadowing';
+      if(name === 'training' || name === 'meeting') return name;
+      const svc = String(s.activity || s.rosterService || s.service || '').trim().toLowerCase();
+      if(svc === 'shadowing' || /\bshadowing\b/.test(svc)) return 'shadowing';
+      if(svc === 'training' || svc === 'meeting') return svc;
+      if(s.shadowing_host || s.shadowing_label || s.shadowingHost) return 'shadowing';
+      return '';
+    }
     function portalSessionIsRosterDutySlot(s){
-      return !!portalRosterDutySlotLabel(s);
+      return !!portalRosterDutySlotLabel(s) || !!portalRosterNonClientSessionKind(s);
     }
     function sessionModelStatus(s){
       const statusLow = String(s && s.status || '').trim().toLowerCase();

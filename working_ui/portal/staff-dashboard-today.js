@@ -2072,6 +2072,61 @@
               portalOverrideSuppressReviewOrange: true,
             }, meta);
           }
+          // Spreadsheet / MADRE "SHADOWING" (or Training/Meeting) rows are not participants —
+          // never request session feedback (same as admin session_add shadowing).
+          const nonClientKind =
+            typeof portalRosterNonClientSessionKind === 'function'
+              ? portalRosterNonClientSessionKind(s)
+              : '';
+          if(nonClientKind){
+            if(String(s.staffId || '').trim().toLowerCase() !== staffId) return null;
+            const displayTitle =
+              nonClientKind === 'shadowing'
+                ? 'Shadowing'
+                : nonClientKind === 'meeting'
+                  ? 'Team meeting'
+                  : 'Training session';
+            const host =
+              String(s.shadowing_host || s.shadowingHost || s.shadowing_label || s.shadowingLabel || '')
+                .trim();
+            const note = host
+              ? displayTitle + (nonClientKind === 'shadowing' ? ' · ' + host : '')
+              : displayTitle + ' (roster)';
+            const ended =
+              typeof sessionEndTs === 'number' && Number.isFinite(sessionEndTs) && Date.now() > sessionEndTs;
+            return Object.assign({
+              time: time,
+              kind: 'client',
+              clientId: nonClientKind,
+              name: displayTitle,
+              activity: displayTitle,
+              areaLabel: resolvePoolLocationLabelFromSession(s, activity, {}, viewDay) || '',
+              poolLocationLabel: resolvePoolLocationLabelFromSession(s, activity, {}, viewDay) || '',
+              showPoolSymbol: false,
+              showSpecialty: false,
+              specialtyLabel: '',
+              general: note,
+              specialty: '',
+              openSheet: false,
+              sessionKey: sessionDateKey + '|' + s.start + '|' + nonClientKind,
+              sessionStartTs,
+              sessionEndTs,
+              noSessionFeedbackRequired: true,
+              actionsDisabled: true,
+              detailsOpenAllowed: true,
+              portalOverrideSuppressReviewOrange: true,
+              portalOverrideCardTone: ended
+                ? 'green'
+                : nonClientKind === 'shadowing'
+                  ? 'shadowing'
+                  : nonClientKind === 'meeting'
+                    ? 'meeting'
+                    : 'training',
+              portalOverrideAlertPill: ended ? 'COMPLETED' : '',
+              portalOverrideHideAdminBadge: true,
+              scheduleAdminAdjusted: true,
+            }, meta);
+          }
           if(portalSessionHasSlotOpenOverride(s, sessionDateKey) && portalSpreadsheetSlotClosedLike(s)){
             const slotOp = typeof portalFindSlotOpenOverrideForSession === 'function' ? portalFindSlotOpenOverrideForSession(s, sessionDateKey) : null;
             const disp = String(s.clientDisplay || s.clientName || '').trim();
@@ -5881,6 +5936,14 @@
         // HOME / MANAGER / Admin are duty shifts, not participant sessions: they never
         // need feedback and must not hold a day "still running" until the shift end time.
         if(status === 'Home' || status === 'Manager' || status === 'Admin') return false;
+        if(
+          typeof portalRosterNonClientSessionKind === 'function' &&
+          portalRosterNonClientSessionKind(s)
+        ){
+          return false;
+        }
+        var cidPre = String((s && s.clientId) || '').trim().toLowerCase();
+        if(cidPre === 'shadowing' || cidPre === 'training' || cidPre === 'meeting') return false;
         if(status === 'Closed'){
           var iso = String(sessionDateIsoForOpen || '').trim();
           if(iso && typeof portalSessionHasSlotOpenOverride === 'function' && portalSessionHasSlotOpenOverride(s, iso)) return true;
