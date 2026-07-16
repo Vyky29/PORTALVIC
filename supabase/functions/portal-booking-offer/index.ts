@@ -16,6 +16,7 @@ import {
   CRASH_SWIM_TIME_BANDS,
   crashIndividualDaysOpenForWeek,
   crashIndividualRulesCopy,
+  crashSummerOfferRangeCopy,
   crashSlotById,
   crashSlotsFor,
   crashWeekFillSnapshot,
@@ -303,19 +304,14 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
     }
   }
 
-  const packNote = crashIndividualRulesCopy(week2Open);
-  const summerRange = week2Open
-    ? "Week 1: climb Mon–Thu 20–23 July · swim Tue–Fri 21–24 July · Week 2: Tue 28 – Fri 31 July 2026 · " +
-      packNote
-    : "Currently open: Week 1 (climb Mon–Thu 20–23 July · swim Tue–Fri 21–24 July). Week 2 (28–31 July) opens when Week 1 reaches 80% of places. · " +
-      packNote;
+  const summerRange = crashSummerOfferRangeCopy(week2Open);
 
   return {
     hold_minutes: CRASH_HOLD_MINUTES,
     individual_days_open: individualOpen,
     individual_days_open_by_week: { w1: w1Open, w2: w2Open },
     individual_windows: CRASH_INDIVIDUAL_WINDOWS,
-    rules: packNote,
+    rules: crashIndividualRulesCopy(week2Open),
     week1_fill_pct: fill.week1_fill_pct,
     week2_open: week2Open,
     weeks_open: fill.weeks_open,

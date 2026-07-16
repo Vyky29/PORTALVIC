@@ -178,19 +178,24 @@ export function crashIndividualDaysOpen(now = new Date()): boolean {
   );
 }
 
-export function crashIndividualRulesCopy(week2Open = true): string {
+/** Single public blurb for July intensives (offer card + booking rules). */
+export function crashSummerOfferRangeCopy(week2Open = false): string {
   if (!week2Open) {
     return (
-      "Currently open: Week 1 only — climbing Mon 20 – Thu 23 July; swimming Tue 21 – Fri 24 July. " +
+      "Week 1 open now — climbing Mon 20 – Thu 23 July · swimming Tue 21 – Fri 24 July. " +
       "Week 2 (Tue 28 – Fri 31 July) opens when Week 1 reaches 80% of places. " +
-      "Individual leftover hours for Week 1: Fri 17 – Sun 19 July (register interest below if you want to be reminded)."
+      "Leftover individual hours for Week 1: Fri 17 – Sun 19 July (register interest if you want a reminder)."
     );
   }
   return (
-    "Crash courses are four-day week packs. Week 1 climbing is Mon–Thu 20–23 July; swimming Tue–Fri 21–24 July. " +
-    "Individual leftover hours: Week 1 only Fri 17 – Sun 19 July; " +
-    "Week 2 only Fri 24 – Sun 26 July (packs only until Thu 23)."
+    "Week 1 — climbing Mon 20 – Thu 23 July · swimming Tue 21 – Fri 24 July. " +
+      "Week 2 — Tue 28 – Fri 31 July. " +
+      "Leftover individual hours: Week 1 Fri 17 – Sun 19 July; Week 2 Fri 24 – Sun 26 July."
   );
+}
+
+export function crashIndividualRulesCopy(week2Open = true): string {
+  return crashSummerOfferRangeCopy(week2Open);
 }
 
 export function crashWeekCapacityUnits(weekId: CrashWeekId): number {
