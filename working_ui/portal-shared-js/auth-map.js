@@ -301,6 +301,7 @@ export const PORTAL_STAFF_CODE_TO_ROSTER_KEY = {
   stf013: "victor",
   stf014: "carlos",
   stf015: "alex",
+  stf016: "simon",
   stf017: "javi",
   stf018: "raul",
   stf019: "sevitha",

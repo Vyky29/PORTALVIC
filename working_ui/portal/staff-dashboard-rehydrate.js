@@ -347,8 +347,20 @@
         }
         if(typeof window.portalStaffKickScheduleOverridesHydrate === "function"){
           /* Force after identity: early hydrate may have run without auth and left
-             NEED_AUTH_RETRY set — cover staff + absences only land once session exists. */
+             NEED_AUTH_RETRY set — cover staff + absences only land once session exists.
+             Retry a few times so late auth / empty RLS races still recover (Simon←Elijah). */
           void window.portalStaffKickScheduleOverridesHydrate({ force: true, timeoutMs: 6000 });
+          [800, 2000, 4000].forEach(function (ms) {
+            setTimeout(function () {
+              try {
+                var n = Array.isArray(window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__)
+                  ? window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__.length
+                  : 0;
+                if (n > 0 && !window.__PORTAL_SCHEDULE_OVERRIDES_NEED_AUTH_RETRY__) return;
+                void window.portalStaffKickScheduleOverridesHydrate({ force: true, timeoutMs: 5000 });
+              } catch (_r) {}
+            }, ms);
+          });
         }else{
           try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
         }

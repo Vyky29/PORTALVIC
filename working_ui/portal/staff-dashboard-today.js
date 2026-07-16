@@ -462,12 +462,22 @@
           return;
         }
         let sess = box.session;
+        /* Auth can land a few hundred ms after first paint. Poll briefly so cover
+           staff (Simon←Aurora / Elijah) are not sealed on an empty RLS result. */
         if((!sess || !sess.user) && box.client.auth){
-          try{
-            const cur = await box.client.auth.getSession();
-            sess = cur && cur.data && cur.data.session;
-            if(sess && sess.user) box.session = sess;
-          }catch(_gs){}
+          var waitUntil = Date.now() + 3500;
+          while(Date.now() < waitUntil){
+            try{
+              const cur = await box.client.auth.getSession();
+              sess = cur && cur.data && cur.data.session;
+              if(sess && sess.user){
+                box.session = sess;
+                break;
+              }
+            }catch(_gs){}
+            if(sess && sess.user) break;
+            await new Promise(function(r){ setTimeout(r, 200); });
+          }
         }
         if((!sess || !sess.user) && box.client.auth){
           const stores = [window.localStorage, window.sessionStorage];
@@ -545,6 +555,7 @@
         const selectCols = 'id,created_at,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,payload,status';
         const merged = [];
         const CHUNK = 40;
+        var fetchErrors = 0;
         for(let start = 0; start < isoList.length; start += CHUNK){
           const chunk = isoList.slice(start, start + CHUNK);
           if(!chunk.length) continue;
@@ -554,7 +565,8 @@
             .in('session_date', chunk)
             .order('created_at', { ascending: false });
           if(res.error){
-            console.debug('[portal] schedule_overrides fetch', res.error, chunk);
+            fetchErrors += 1;
+            console.warn('[portal] schedule_overrides fetch', res.error && (res.error.message || res.error), chunk && chunk[0]);
             continue;
           }
           (res.data || []).forEach(function(row){ merged.push(row); });
@@ -586,10 +598,11 @@
         if(merged.length || !Array.isArray(prevOv) || !prevOv.length){
           window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ = merged;
         }
-        if(merged.length) console.info('[portal] schedule_overrides loaded:', merged.length);
+        if(merged.length) console.warn('[portal] schedule_overrides loaded:', merged.length);
+        else if(fetchErrors) console.warn('[portal] schedule_overrides empty after', fetchErrors, 'chunk error(s)');
         markHydrated = true;
       }catch(e){
-        console.debug('[portal] schedule_overrides fetch', e);
+        console.warn('[portal] schedule_overrides fetch', e);
         // Never wipe an already-loaded set on a transient error (see anti-flicker above).
         if(!Array.isArray(window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__)) window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ = [];
         markHydrated = true;
@@ -1572,6 +1585,28 @@
         portalNormKeyStr(ov.anchor_venue)
       ].join('|');
     }
+    function portalScheduleOverridePayload(ov){
+      var pl = ov && ov.payload;
+      if(pl && typeof pl === 'object' && !Array.isArray(pl)) return pl;
+      if(typeof pl === 'string' && pl){
+        try{
+          var parsed = JSON.parse(pl);
+          if(parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+        }catch(_p){}
+      }
+      return {};
+    }
+    function portalInstructorCoverStaffKeyFromOverride(ov){
+      var pl = portalScheduleOverridePayload(ov);
+      var fromId = typeof portalCanonicalStaffKeyForMatch === 'function'
+        ? portalCanonicalStaffKeyForMatch(pl.covering_staff_id)
+        : portalNormKeyStr(pl.covering_staff_id);
+      if(fromId) return fromId;
+      var fromName = typeof portalCanonicalStaffKeyForMatch === 'function'
+        ? portalCanonicalStaffKeyForMatch(pl.covering_staff_name)
+        : portalNormKeyStr(pl.covering_staff_name);
+      return fromName || '';
+    }
     function portalPickLatestInstructorCoverOverridesForStaff(staffId, sessionDateKey){
       const sid = typeof portalCanonicalStaffKeyForMatch === 'function'
         ? portalCanonicalStaffKeyForMatch(staffId)
@@ -1582,9 +1617,7 @@
         if(normaliseIsoDate(ov.session_date) !== iso) return;
         if(String(ov.status || 'active') !== 'active') return;
         if(String(ov.override_type || '').trim() !== 'instructor_reassign') return;
-        const cov = typeof portalCanonicalStaffKeyForMatch === 'function'
-          ? portalCanonicalStaffKeyForMatch(ov.payload && ov.payload.covering_staff_id)
-          : portalNormKeyStr(ov.payload && ov.payload.covering_staff_id);
+        const cov = portalInstructorCoverStaffKeyFromOverride(ov);
         if(!cov || cov !== sid) return;
         const slotKey = portalScheduleOverrideInstructorCoverSlotKey(ov);
         if(!slotKey) return;
@@ -1757,9 +1790,7 @@
         if(String(ov.status || 'active') !== 'active') continue;
         if(String(ov.override_type || '').trim() !== 'instructor_reassign') continue;
         if(normaliseIsoDate(ov.session_date) !== iso) continue;
-        const cov = typeof portalCanonicalStaffKeyForMatch === 'function'
-          ? portalCanonicalStaffKeyForMatch(ov.payload && ov.payload.covering_staff_id)
-          : portalNormKeyStr(ov.payload && ov.payload.covering_staff_id);
+        const cov = portalInstructorCoverStaffKeyFromOverride(ov);
         const me = typeof portalCanonicalStaffKeyForMatch === 'function'
           ? portalCanonicalStaffKeyForMatch(sid)
           : sid;
@@ -2534,7 +2565,7 @@
       );
       const extra = [];
       portalPickLatestInstructorCoverOverridesForStaff(staffId, sessionDateKey).forEach(function(ov){
-        const cov = portalNormKeyStr(ov.payload && ov.payload.covering_staff_id) || portalNormKeyStr(staffId);
+        const cov = portalInstructorCoverStaffKeyFromOverride(ov) || portalNormKeyStr(staffId);
         const base = portalFindSpreadsheetSessionMatchingOverride(ov, anchorDayWord) || {
           day: anchorDayWord,
           start: portalHmFromDbTime(ov.anchor_start) || '09:00',
@@ -2543,8 +2574,8 @@
           clientId: String(ov.anchor_client_id || '').toLowerCase(),
           staffId: String(ov.anchor_staff_id || '').trim().toLowerCase(),
           status: 'Scheduled',
-          activity: String(ov.payload && ov.payload.activity || ov.payload && ov.payload.service || 'Swimming').trim() || 'Swimming',
-          rosterService: String(ov.payload && ov.payload.service || '').trim(),
+          activity: String(portalScheduleOverridePayload(ov).activity || portalScheduleOverridePayload(ov).service || 'Swimming').trim() || 'Swimming',
+          rosterService: String(portalScheduleOverridePayload(ov).service || '').trim(),
           session_date: sessionDateKey
         };
         const coverWinStart = portalHmFromDbTime(ov.anchor_start) || base.start;
@@ -2562,7 +2593,23 @@
         };
         let slotOv = slotOvBase;
         if(isAbsenceOrClearOv(slotOvCover) && !isAbsenceOrClearOv(slotOvBase)) slotOv = slotOvCover;
-        if(st2 === 'Closed' || st2 === 'Available') return;
+        /* instructor_reassign with a real client must still inject even if a wrong
+           Available match leaked into `base` (cover staff empty Teaching Pool slot). */
+        const coverClientId = String(ov.anchor_client_id || base.clientId || '').trim().toLowerCase();
+        const coverHasRealClient = !!(coverClientId
+          && coverClientId !== 'available'
+          && coverClientId !== 'closed'
+          && !/^(no[_\s-]?client|no[_\s-]?participant|open[_\s-]?slot)$/i.test(coverClientId));
+        if((st2 === 'Closed' || st2 === 'Available') && !coverHasRealClient) return;
+        if((st2 === 'Closed' || st2 === 'Available') && coverHasRealClient){
+          s.status = 'Scheduled';
+          base.status = 'Scheduled';
+          if(!base.clientId || String(base.clientId).toLowerCase() === 'available'){
+            base.clientId = coverClientId;
+            s.clientId = coverClientId;
+          }
+          st2 = 'Scheduled';
+        }
         if(slotOv && slotOv.override_type === 'slot_clear_client'){
           const isCancelledByAdmin = !!(slotOv.payload && slotOv.payload.cancelled_by_admin);
           if(isCancelledByAdmin
@@ -2954,7 +3001,8 @@
             }catch(_){}
             try{ window.__PORTAL_STAFF_ROSTER_HYDRATED__ = true; }catch(_){}
           }
-          if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__){
+          if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__
+            && !window.__PORTAL_SCHEDULE_OVERRIDES_NEED_AUTH_RETRY__){
             try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
           }
           if(!window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__){
@@ -3000,7 +3048,8 @@
           window.__PORTAL_STAFF_INITIAL_TODAY_SETTLE_TIMER__ = null;
           if(window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__) return;
           /* Never leave TODAY on “syncing” forever if overrides lag — force the gate open. */
-          if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__){
+          if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__
+            && !window.__PORTAL_SCHEDULE_OVERRIDES_NEED_AUTH_RETRY__){
             try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
           }
           if(!window.__PORTAL_STAFF_ROSTER_HYDRATED__){
@@ -3029,9 +3078,10 @@
         }
         window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATE_TIMER__ = setTimeout(function(){
           window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATE_TIMER__ = null;
-          if(window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__) return;
+          if(window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__
+            && !window.__PORTAL_SCHEDULE_OVERRIDES_NEED_AUTH_RETRY__) return;
           if(typeof portalStaffKickScheduleOverridesHydrate === 'function'){
-            void portalStaffKickScheduleOverridesHydrate({ timeoutMs: 500 });
+            void portalStaffKickScheduleOverridesHydrate({ force: true, timeoutMs: 500 });
           }else{
             try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
             try{ if(typeof renderToday === 'function') renderToday(); }catch(_){}
@@ -4097,7 +4147,7 @@
             stf001: 'sandra', stf002: 'roberto', stf003: 'dan', stf004: 'angel',
             stf005: 'youssef', stf006: 'john', stf007: 'bismark', stf008: 'giuseppe',
             stf009: 'godsway', stf010: 'javier', stf011: 'aurora', stf012: 'berta',
-            stf013: 'victor', stf014: 'carlos', stf015: 'alex', stf017: 'javi',
+            stf013: 'victor', stf014: 'carlos', stf015: 'alex', stf016: 'simon', stf017: 'javi',
             stf018: 'raul', stf019: 'sevitha', stf020: 'teflon', stf021: 'lulia',
             stf022: 'andres'
           };
