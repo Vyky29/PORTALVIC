@@ -1,13 +1,12 @@
 <?php
 /**
  * Plugin Name: clubSENsational Family Portal Proxy
- * Description: Serves /parent and /bookingservice on www.clubsensational.org via reverse proxy (URL stays on your domain).
- * Version: 1.3.2
+ * Description: Serves /parent and /bookingportal on www.clubsensational.org via reverse proxy (URL stays on your domain).
+ * Version: 1.3.3
  * Author: clubSENsational
  *
  * Proxies family portal pages and static assets from family.clubsensational.org (Vercel).
  */
-
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -29,6 +28,8 @@ function cs_family_portal_should_proxy(string $path): bool
     $patterns = [
         '#^/parent(?:/|$)#',
         '#^/parents(?:/|$)#',
+        '#^/bookingportal(?:/|$)#',
+        '#^/booking-portal(?:/|$)#',
         '#^/bookingservice(?:/|$)#',
         '#^/booking-service(?:/|$)#',
         '#^/portal/#',
@@ -65,9 +66,9 @@ function cs_family_portal_map_path(string $path): string
         return '/parent/re-enrolment';
     }
 
-    if (preg_match('#^/booking-service(?:/(.*))?$#', $path, $m)) {
+    if (preg_match('#^/(?:booking-service|bookingservice|booking-portal)(?:/(.*))?$#', $path, $m)) {
         $rest = isset($m[1]) ? trim((string) $m[1], '/') : '';
-        return $rest === '' ? '/bookingservice' : '/bookingservice/' . $rest;
+        return $rest === '' ? '/bookingportal' : '/bookingportal/' . $rest;
     }
 
     return $path === '/' ? '/parent' : $path;

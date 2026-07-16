@@ -377,7 +377,7 @@ Deno.serve(async (req) => {
   const weekly = buildWeeklyOfferFromMadre(madreRow.document as MadreDoc);
   const intensive = await loadCrashIntensive(supabase);
 
-  // Soft holds from new-client registration forms (Booking Service → registration).
+  // Soft holds from new-client registration forms (Booking Portal → registration).
   await supabase
     .from("portal_booking_slot_reservations")
     .update({

@@ -1,5 +1,5 @@
 /**
- * Public Booking Service visitor presence (anonymous new clients).
+ * Public Booking Portal visitor presence (anonymous new clients).
  * Location comes from server-side IP geo only — no browser location.
  */
 (function (global) {
@@ -111,10 +111,15 @@
     });
   }
 
+  function isBookingPortalFromParam(raw) {
+    var v = String(raw || "").toLowerCase().trim();
+    return v === "bookingportal" || v === "bookingservice" || v === "booking-portal" || v === "booking-service";
+  }
+
   function bootRegistration() {
     try {
       var q = new URLSearchParams(global.location.search || "");
-      if (String(q.get("from") || "").toLowerCase() !== "bookingservice") return;
+      if (!isBookingPortalFromParam(q.get("from"))) return;
     } catch (_e) {
       return;
     }

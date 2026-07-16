@@ -1,5 +1,5 @@
 /**
- * CEO - Booking Service presence (new clients).
+ * CEO - Booking Portal presence (new clients).
  * Connection place = server IP geo only (no browser GPS, no live map).
  */
 (function (global) {
@@ -174,7 +174,7 @@
               return visitorRowHtml(p, "online");
             })
             .join("")
-        : '<li class="cpp-empty">Nobody browsing Booking Service in the last ' +
+        : '<li class="cpp-empty">Nobody browsing Booking Portal in the last ' +
           esc(String((data && data.online_window_minutes) || 5)) +
           " minutes.</li>";
     }
@@ -187,7 +187,7 @@
               return visitorRowHtml(p, "recent");
             })
             .join("")
-        : '<li class="cpp-empty">No other Booking Service visits in the last 24 hours.</li>';
+        : '<li class="cpp-empty">No other Booking Portal visits in the last 24 hours.</li>';
     }
 
     var actHost = $("cbsActivityList");
@@ -211,13 +211,13 @@
               );
             })
             .join("")
-        : '<li class="cpp-empty">No surface pings yet — visitors need to open /bookingservice after this deploy.</li>';
+        : '<li class="cpp-empty">No surface pings yet — visitors need to open /bookingportal after this deploy.</li>';
     }
 
     var actionHost = $("cbsActionsList");
     if (actionHost) {
       actionHost.innerHTML =
-        '<li class="cpp-empty">New-client Booking Service has no Family absences here — use Surfaces for browse / Book / registration.</li>';
+        '<li class="cpp-empty">New-client Booking Portal has no Family absences here — use Surfaces for browse / Book / registration.</li>';
     }
 
     renderPlaces(data);

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * New-client Booking Service → registration smoke (Portal live).
+ * New-client Booking Portal → registration smoke (Portal live).
  *
  * Checks:
  *   1) portal-booking-offer returns weekly slots
@@ -114,7 +114,7 @@ async function main() {
     );
 
     const bookingRequest = {
-      from: "bookingservice",
+      from: "bookingportal",
       slot_id: SLOT_ID,
       service: "climbing",
       service_name: "Climbing",

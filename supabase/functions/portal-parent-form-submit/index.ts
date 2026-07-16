@@ -76,7 +76,7 @@ function extractBookingRequest(payload: Record<string, unknown>): BookingRequest
   const dateRaw = asTrimmed(br.date || br.date_iso, 32);
   const dateIso = dateRaw && /^\d{4}-\d{2}-\d{2}$/.test(dateRaw) ? dateRaw : null;
   return {
-    from: asTrimmed(br.from, 40) || "bookingservice",
+    from: asTrimmed(br.from, 40) || "bookingportal",
     slot_id: slotId,
     service_id: asTrimmed(br.service || br.service_id, 80),
     service_name: asTrimmed(br.service_name, 120),

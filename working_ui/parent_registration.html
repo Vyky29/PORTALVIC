@@ -365,7 +365,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="/portal/parent_form_submit.js?v=20260716-slot-hold"></script>
   <script src="/portal/parent_registration_portal.js?v=20260715-prefill-review"></script>
-  <script src="/portal/portal_booking_service_presence.js?v=20260716-slot-hold"></script>
+  <script src="/portal/portal_booking_service_presence.js?v=20260716-bookingportal"></script>
   <script>
     try {
       if (window.PortalBookingServicePresence) window.PortalBookingServicePresence.bootRegistration();
@@ -856,11 +856,19 @@
     function bookingRequestFromUrl() {
       try {
         var q = new URLSearchParams(window.location.search || '');
-        if (String(q.get('from') || '').toLowerCase() !== 'bookingservice') return null;
+        var fromRaw = String(q.get('from') || '').toLowerCase().trim();
+        if (
+          fromRaw !== 'bookingportal' &&
+          fromRaw !== 'bookingservice' &&
+          fromRaw !== 'booking-portal' &&
+          fromRaw !== 'booking-service'
+        ) {
+          return null;
+        }
         var slotId = String(q.get('slot_id') || '').trim();
         if (!slotId) return null;
         return {
-          from: 'bookingservice',
+          from: 'bookingportal',
           slot_id: slotId,
           service: String(q.get('service') || '').trim() || null,
           service_name: String(q.get('service_name') || '').trim() || null,

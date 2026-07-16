@@ -5,7 +5,7 @@ Sirve rutas del portal en **www.clubsensational.org** (la URL **no cambia** en e
 Proxies desde `family.clubsensational.org` (Vercel):
 
 - `/parent`, `/parents`, `/parent/*`
-- `/bookingservice`, `/booking-service` (oferta pública de clases)
+- `/bookingportal`, `/booking-portal` (oferta pública de clases; legacy `/bookingservice` still redirects)
 - `/portal/*` (JS, CSS, imágenes)
 - `/portal-static-bootstrap.js`, manifest PWA, service worker (`clubsensational-family-sw.js`), etc.
 
@@ -15,19 +15,19 @@ Proxies desde `family.clubsensational.org` (Vercel):
 2. Activa / actualiza **clubSENsational Family Portal Proxy** (v1.3+)
 3. Prueba:
    - https://www.clubsensational.org/parent
-   - https://www.clubsensational.org/bookingservice
+   - https://www.clubsensational.org/bookingportal
 
 ## Requisitos
 
 - Registro DNS **A** `family` → `76.76.21.21` (Vercel)
-- Upstream vivos: `https://family.clubsensational.org/parent` y `/bookingservice`
+- Upstream vivos: `https://family.clubsensational.org/parent` y `/bookingportal`
 
 ## Mientras no actualices el plugin
 
 Usa directo:
 
-- https://family.clubsensational.org/bookingservice
-- o https://portalvic.vercel.app/bookingservice
+- https://family.clubsensational.org/bookingportal
+- o https://portalvic.vercel.app/bookingportal
 
 ## Cambiar upstream
 

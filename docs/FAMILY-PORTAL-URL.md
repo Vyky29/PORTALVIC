@@ -18,20 +18,20 @@ El family portal **no** debe usarse en el dominio staff.
 - `/parent/re-enrolment` — re-enrolment 2026/27
 - `/parent/registration` — registro general
 - `/parent/climbing-registration` — escalada
-- `/bookingservice` — oferta pública de clases (mock / filtros)
+- `/bookingportal` — oferta pública de clases (mock / filtros)
 
 Mientras `clubsensational.org/parent` no esté enlazado, todo funciona en:
 
 **https://portalvic.vercel.app/parent**  
-**https://family.clubsensational.org/bookingservice** (o `portalvic.vercel.app/bookingservice`)
+**https://family.clubsensational.org/bookingportal** (o `portalvic.vercel.app/bookingportal`)
 
 ## Conectar `clubsensational.org/parent`
 
-WordPress ya usa `www.clubsensational.org`. Para que `/parent`, `/parents` y `/bookingservice` abran el portal:
+WordPress ya usa `www.clubsensational.org`. Para que `/parent`, `/parents` y `/bookingportal` abran el portal:
 
 ### Opción A — Plugin WordPress (recomendada, ~2 min)
 
-En el repo: `wordpress/clubsensational-family-portal-redirect/` (v1.3+ = **proxy** + bookingservice)
+En el repo: `wordpress/clubsensational-family-portal-redirect/` (v1.3+ = **proxy** + bookingportal)
 
 1. Comprimir la carpeta en ZIP o subirla por FTP a `wp-content/plugins/`
 2. WordPress → **Plugins** → activar **clubSENsational Family Portal Proxy**
@@ -39,7 +39,7 @@ En el repo: `wordpress/clubsensational-family-portal-redirect/` (v1.3+ = **proxy
    - https://www.clubsensational.org/parent — portal carga **sin cambiar** la URL
    - https://www.clubsensational.org/parents → mismo contenido
    - https://www.clubsensational.org/parent/re-enrolment
-   - https://www.clubsensational.org/bookingservice — catálogo de clases
+   - https://www.clubsensational.org/bookingportal — catálogo de clases
 
 El plugin hace **reverse proxy** desde `family.clubsensational.org` (Vercel). Requiere DNS **A** `family` → `76.76.21.21`.
 
