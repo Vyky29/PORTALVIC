@@ -120,6 +120,7 @@
   <script src="/portal/admin-parent-notify-send.js?v=20260715-wa-132005"></script>
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/portal_incident_parent_notify.js?v=20260703-incident-notify"></script>
+  <script src="/portal/portal_chat_bubble_icons.js?v=20260716-wa-ps-icons"></script>
   <script src="/portal/admin-parent-notify-log.js?v=20260716-pnlog-head-once"></script>
   <script src="/portal/admin-staff-whatsapp.js?v=20260716-wa-no-dup-intro"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260715-welcome-warm"></script>
@@ -147,7 +148,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260712-late-day-strip" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260716-wa-ps-icons" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
@@ -244,9 +245,13 @@
         <div id="portalLivePresenceBar" class="portal-live-presence admin-topbar-presence" hidden aria-live="polite"></div>
         <div class="admin-topbar-meta">
           <span class="admin-date" id="topDate"></span>
-          <button type="button" class="admin-icon-btn" id="btnFamilyMsgs" aria-label="Family messages &amp; replies" title="Family messages &amp; replies">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:20px;height:20px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <button type="button" class="admin-icon-btn" id="btnFamilyMsgs" aria-label="Family messages — parents WhatsApp" title="Family messages (parents)">
+            <span class="admin-icon-btn__svg" id="btnFamilyMsgsIco" aria-hidden="true"></span>
             <span class="admin-badge is-empty" id="familyMsgBadge">0</span>
+          </button>
+          <button type="button" class="admin-icon-btn" id="btnStaffWa" aria-label="CS WhatsApp — staff" title="CS WhatsApp (staff)">
+            <span class="admin-icon-btn__svg" id="btnStaffWaIco" aria-hidden="true"></span>
+            <span class="admin-badge is-empty" id="staffWaBadge">0</span>
           </button>
           <button type="button" class="admin-icon-btn" id="btnAlerts" aria-label="Alerts" title="Alerts">
             🔔
@@ -27925,6 +27930,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         setView('portal_parent_notify_log');
         closeSidebarMob();
       });
+      var btnStaffWaEl = $('btnStaffWa');
+      if(btnStaffWaEl) btnStaffWaEl.addEventListener('click', function(e){
+        e.stopPropagation();
+        setView('portal_staff_whatsapp');
+        closeSidebarMob();
+      });
+      (function portalAdminInitWaTopbarIcons(){
+        var pIco = $('btnFamilyMsgsIco');
+        var sIco = $('btnStaffWaIco');
+        if(typeof window.portalParentChatIconSvg === 'function' && pIco){
+          pIco.innerHTML = window.portalParentChatIconSvg({ size: 20 });
+        }
+        if(typeof window.portalStaffChatIconSvg === 'function' && sIco){
+          sIco.innerHTML = window.portalStaffChatIconSvg({ size: 20 });
+        }
+      })();
       if(!window.__portalAdminFamilyMsgBadgeBound){
         window.__portalAdminFamilyMsgBadgeBound = true;
         window.portalAdminRefreshFamilyMsgBadge = function portalAdminRefreshFamilyMsgBadge(){
@@ -27949,6 +27970,30 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(document.visibilityState === 'visible') window.portalAdminRefreshFamilyMsgBadge();
         }, 30000);
         setTimeout(function(){ window.portalAdminRefreshFamilyMsgBadge(); }, 1500);
+      }
+      if(!window.__portalAdminStaffWaBadgeBound){
+        window.__portalAdminStaffWaBadgeBound = true;
+        window.portalAdminRefreshStaffWaBadge = function portalAdminRefreshStaffWaBadge(){
+          var badge = $('staffWaBadge');
+          if(!badge) return;
+          if(!window.PortalStaffWhatsappAdmin || typeof window.PortalStaffWhatsappAdmin.unreadCount !== 'function') return;
+          Promise.resolve(window.PortalStaffWhatsappAdmin.unreadCount()).then(function(n){
+            n = (typeof n === 'number' && n > 0) ? n : 0;
+            badge.textContent = n > 99 ? '99+' : String(n);
+            badge.classList.toggle('is-empty', n < 1);
+            var btn = $('btnStaffWa');
+            if(btn) btn.classList.toggle('admin-icon-btn--has-alerts', n > 0);
+          }).catch(function(){});
+        };
+        window.addEventListener('portal:supabase-ready', function(){ window.portalAdminRefreshStaffWaBadge(); });
+        window.addEventListener('portal:staff-wa-unread', function(){ window.portalAdminRefreshStaffWaBadge(); });
+        document.addEventListener('visibilitychange', function(){
+          if(document.visibilityState === 'visible') window.portalAdminRefreshStaffWaBadge();
+        });
+        setInterval(function(){
+          if(document.visibilityState === 'visible') window.portalAdminRefreshStaffWaBadge();
+        }, 30000);
+        setTimeout(function(){ window.portalAdminRefreshStaffWaBadge(); }, 1500);
       }
       var alertsPopEl = $('alertsPop');
       if(alertsPopEl && !alertsPopEl.dataset.activityJumpBound){

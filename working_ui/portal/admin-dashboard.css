@@ -866,6 +866,8 @@
       transition:background .15s,border-color .15s,box-shadow .15s;
     }
     .admin-icon-btn:hover,.admin-icon-btn:focus-visible{background:#f1f5f9;border-color:#8eb4d0;outline:none;box-shadow:0 0 0 1px rgba(45,132,179,.1)}
+    .admin-icon-btn__svg{display:flex;align-items:center;justify-content:center;line-height:0;pointer-events:none}
+    .admin-icon-btn__svg svg{display:block}
     .admin-badge{position:absolute;top:6px;right:6px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--danger);color:#fff;font-size:9px;font-weight:800;line-height:16px;text-align:center}
     .admin-badge.is-empty{display:none}
     .dayops-screen-nav__card--portal-dm-unread,
