@@ -310,7 +310,9 @@ Deno.serve(async (req) => {
       api_available: gcApiAvailable,
       mandate_active: gcMandateActive,
       mandate_status: gcMandateStatus,
-      setup_available: anyGcSetup || (gcApiAvailable && anyGcHintOpen && !gcMandateActive),
+      // Setup lives on the GC invoice card when can_setup_gocardless — avoid duplicate banner.
+      setup_available:
+        !anyGcSetup && gcApiAvailable && anyGcHintOpen && !gcMandateActive,
       can_schedule: gcApiAvailable && gcMandateActive && anyGcHintOpen,
     },
   });

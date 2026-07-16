@@ -5123,6 +5123,51 @@
     return "Unpaid";
   }
 
+  function invoiceActIco(kind) {
+    var base =
+      ' class="pp-invoice-act-ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
+    if (kind === "download") {
+      return (
+        "<svg" +
+        base +
+        '><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+      );
+    }
+    if (kind === "preview") {
+      return (
+        "<svg" +
+        base +
+        '><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'
+      );
+    }
+    if (kind === "gocardless") {
+      return (
+        "<svg" +
+        base +
+        '><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>'
+      );
+    }
+    if (kind === "card") {
+      return (
+        "<svg" +
+        base +
+        '><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>'
+      );
+    }
+    if (kind === "bank") {
+      return (
+        "<svg" +
+        base +
+        '><path d="M3 10h18"/><path d="M5 10V6l7-3 7 3v4"/><rect x="5" y="14" width="4" height="6"/><rect x="15" y="14" width="4" height="6"/></svg>'
+      );
+    }
+    return "";
+  }
+
+  function invoiceBtnLabel(kind, text) {
+    return invoiceActIco(kind) + '<span class="pp-invoice-act-label">' + text + "</span>";
+  }
+
   function invoiceBankPanelHtml(inv) {
     var bank = inv && inv.bank_transfer;
     if (!bank) return "";
@@ -5300,7 +5345,9 @@
         esc(pdf) +
         '" download="' +
         esc((num || "invoice").replace(/[^\w.-]+/g, "_") + ".pdf") +
-        '" target="_blank" rel="noopener noreferrer">Download PDF</a>' +
+        '" target="_blank" rel="noopener noreferrer">' +
+        invoiceBtnLabel("download", "Download PDF") +
+        "</a>" +
         "</div>";
     } else if (showDraftFlow) {
       pdfActs =
@@ -5312,30 +5359,42 @@
             esc(pdf) +
             '" data-pp-pdf-title="' +
             esc(num ? "Draft — " + num : "Draft invoice") +
-            '">Preview draft invoice</button>'
+            '">' +
+            invoiceBtnLabel("preview", "Preview draft invoice") +
+            "</button>"
           : '<p class="pp-muted">Draft invoice not available yet.</p>') +
         (canSetupGc
           ? '<button type="button" class="pp-btn pp-btn--primary pp-invoice-card__btn-full" data-pp-setup-gocardless="' +
             esc(inv.id) +
-            '">Set up Direct Payment</button>'
+            '">' +
+            invoiceBtnLabel("gocardless", "Set up Direct Payment") +
+            "</button>"
           : "") +
         (!canSetupGc && gc && !isGcInvoice
           ? '<a class="pp-btn pp-btn--primary pp-invoice-card__btn-full" href="' +
             esc(gc) +
-            '" target="_blank" rel="noopener noreferrer">Pay with GoCardless</a>'
+            '" target="_blank" rel="noopener noreferrer">' +
+            invoiceBtnLabel("gocardless", "Pay with GoCardless") +
+            "</a>"
           : "") +
         (pl
           ? '<a class="pp-btn pp-btn--ghost pp-invoice-card__btn-full" href="' +
             esc(pl) +
-            '" target="_blank" rel="noopener noreferrer">Card / Apple Pay link' +
-            (cardCharge ? " · " + esc(cardCharge) : "") +
+            '" target="_blank" rel="noopener noreferrer">' +
+            invoiceBtnLabel(
+              "card",
+              "Card / Apple Pay link" + (cardCharge ? " · " + esc(cardCharge) : ""),
+            ) +
             "</a>"
           : "") +
         (canPay
           ? '<button type="button" class="pp-btn pp-btn--sec pp-invoice-card__btn-full" data-pp-pay-invoice="' +
             esc(inv.id) +
-            '">Card / Apple Pay' +
-            (cardCharge ? " · " + esc(cardCharge) : "") +
+            '">' +
+            invoiceBtnLabel(
+              "card",
+              "Card / Apple Pay" + (cardCharge ? " · " + esc(cardCharge) : ""),
+            ) +
             "</button>"
           : "") +
         "</div>";
@@ -5404,7 +5463,9 @@
             '" maxlength="120" autocomplete="off" /></label>' +
             '<button type="button" class="pp-btn pp-btn--primary pp-invoice-card__btn-full" data-pp-report-paid="' +
             esc(inv.id) +
-            '">I&apos;ve paid by bank transfer</button>' +
+            '">' +
+            invoiceBtnLabel("bank", "I&apos;ve paid by bank transfer") +
+            "</button>" +
             "</div>"
           : "") +
       "</article>"
@@ -5448,17 +5509,22 @@
         var invoices = (j && j.invoices) || [];
         var gcMeta = (j && j.gocardless) || {};
         var gcHost = host.querySelector("#ppGocardlessSetupHost");
+        var gcSetupOnCard = invoices.some(function (inv) {
+          return !!(inv && inv.can_setup_gocardless);
+        });
         if (gcHost) {
-          if (gcMeta.setup_available) {
+          if (gcMeta.mandate_active) {
+            gcHost.hidden = false;
+            gcHost.innerHTML =
+              '<p class="pp-muted pp-invoice-pay__note">Direct Payment mandate is active. Upcoming invoices are collected automatically.</p>';
+          } else if (gcMeta.setup_available && !gcSetupOnCard) {
             gcHost.hidden = false;
             gcHost.innerHTML =
               '<p class="pp-invoice-pay__title">Direct Payment (GoCardless)</p>' +
               '<p class="pp-muted pp-invoice-pay__note">Authorise once with your bank. We then collect each Direct Payment invoice on its due date.</p>' +
-              '<button type="button" class="pp-btn pp-btn--primary" data-pp-setup-gocardless="">Set up Direct Payment</button>';
-          } else if (gcMeta.mandate_active) {
-            gcHost.hidden = false;
-            gcHost.innerHTML =
-              '<p class="pp-muted pp-invoice-pay__note">Direct Payment mandate is active. Upcoming invoices are collected automatically.</p>';
+              '<button type="button" class="pp-btn pp-btn--primary" data-pp-setup-gocardless="">' +
+              invoiceBtnLabel("gocardless", "Set up Direct Payment") +
+              "</button>";
           } else {
             gcHost.hidden = true;
             gcHost.innerHTML = "";
