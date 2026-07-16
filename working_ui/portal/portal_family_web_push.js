@@ -6,7 +6,9 @@
 
   var STYLE_ID = "family-push-alerts-css";
   var DISMISS_KEY = "familyPushAlertsDismissed";
-  var SW_URL = "/portal/clubsensational-family-sw.js?v=20260715-family-sw-proxy";
+  // Served under /parent/ so default SW max-scope covers the portal even when
+  // WordPress (www) strips Service-Worker-Allowed from /portal/* responses.
+  var SW_URL = "/parent/clubsensational-family-sw.js?v=20260716-parent-sw-scope";
 
   function $(id) {
     return document.getElementById(id);
@@ -112,8 +114,7 @@
     }
     try {
       var swUrl = new URL(SW_URL, global.location.href).href;
-      // SW lives under /portal/ (WordPress proxies that path); scope /parent needs
-      // Service-Worker-Allowed: / on the script response (vercel.json).
+      // Script path /parent/… → max scope /parent (no special header required).
       var reg = await global.navigator.serviceWorker.register(swUrl, { scope: "/parent" });
       global.__FAMILY_SW_REG__ = reg;
       try {
@@ -273,14 +274,21 @@
         "</div>";
       return;
     }
-    var iosHint =
-      isIOS() && !isStandalonePwa()
-        ? " On iPhone this only works after you open Family from your Home Screen icon."
-        : "";
+    if (isIOS() && !isStandalonePwa()) {
+      el.innerHTML =
+        "<p><strong>Alerts on iPhone</strong> need the Family app on your Home Screen first: " +
+        "Share → <strong>Add to Home Screen</strong>, open that icon, then tap Turn on alerts. " +
+        "Safari in the browser tab cannot keep alerts when the phone is locked.</p>" +
+        '<div class="family-push-alerts__actions">' +
+        '<button type="button" class="family-push-alerts__go" data-family-push="enable">Turn on alerts</button>' +
+        '<button type="button" class="family-push-alerts__later" data-family-push="dismiss">Not now</button>' +
+        "</div>";
+      return;
+    }
     el.innerHTML =
-      "<p><strong>Turn on alerts</strong> for instructor changes, cancellations and absences — even when the app is closed." +
-      iosHint +
-      '</p><div class="family-push-alerts__actions">' +
+      "<p><strong>Turn on alerts</strong> for instructor changes, cancellations and absences — even when the browser is closed. " +
+      "Works in Chrome/Edge on phone or computer; no app install needed.</p>" +
+      '<div class="family-push-alerts__actions">' +
       '<button type="button" class="family-push-alerts__go" data-family-push="enable">Turn on alerts</button>' +
       '<button type="button" class="family-push-alerts__later" data-family-push="dismiss">Not now</button>' +
       "</div>";

@@ -112,6 +112,10 @@
     { "source": "/parent/app", "destination": "/parent_portal.html" },
     { "source": "/parent/login", "destination": "/parent_portal.html" },
     { "source": "/parent/portal", "destination": "/parent_portal.html" },
+    {
+      "source": "/parent/clubsensational-family-sw.js",
+      "destination": "/portal/clubsensational-family-sw.js"
+    },
     { "source": "/parent", "destination": "/parent_portal.html" },
     { "source": "/climbing-registration", "destination": "/climbing_registration.html" },
     { "source": "/climbing_registration", "destination": "/climbing_registration.html" },
@@ -128,6 +132,13 @@
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
         { "key": "Service-Worker-Allowed", "value": "/" }
+      ]
+    },
+    {
+      "source": "/parent/clubsensational-family-sw.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
+        { "key": "Service-Worker-Allowed", "value": "/parent" }
       ]
     },
     {
