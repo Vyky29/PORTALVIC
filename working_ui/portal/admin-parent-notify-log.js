@@ -335,28 +335,49 @@
 
   function mergeContactDirectories(preferred, fallback) {
     var byId = Object.create(null);
+    var byPhone = Object.create(null);
     var byChild = Object.create(null);
     var out = [];
     function upsert(c, overwrite) {
       if (!c) return;
       var id = c.contactId;
-      var existing = (id && byId[id]) || (c.childNorm && byChild[c.childNorm]) || null;
+      var existing =
+        (id && byId[id]) ||
+        (c.matchKey && byPhone[c.matchKey]) ||
+        (c.childNorm && byChild[c.childNorm]) ||
+        null;
       if (existing) {
-        if (overwrite || (!existing.mobile && c.mobile)) {
-          existing.mobile = c.mobile || existing.mobile;
-          existing.matchKey = c.matchKey || existing.matchKey;
-          existing.sendDigits = c.sendDigits || existing.sendDigits;
-          existing.parent = c.parent || existing.parent;
-          existing.child = c.child || existing.child;
-          existing.childNorm = c.childNorm || existing.childNorm;
+        if (overwrite) {
+          if (c.mobile) {
+            existing.mobile = c.mobile;
+            existing.matchKey = c.matchKey || existing.matchKey;
+            existing.sendDigits = c.sendDigits || existing.sendDigits;
+          }
+          if (c.parent) existing.parent = c.parent;
+          if (c.child) {
+            existing.child = c.child;
+            existing.childNorm = c.childNorm || existing.childNorm;
+          }
+          if (c.contactId && !existing.contactId) existing.contactId = c.contactId;
+        } else {
+          if (!existing.mobile && c.mobile) {
+            existing.mobile = c.mobile;
+            existing.matchKey = c.matchKey || existing.matchKey;
+            existing.sendDigits = c.sendDigits || existing.sendDigits;
+          }
+          if (!existing.parent && c.parent) existing.parent = c.parent;
+          if (!existing.child && c.child) {
+            existing.child = c.child;
+            existing.childNorm = c.childNorm || existing.childNorm;
+          }
         }
         return;
       }
       out.push(c);
       if (id) byId[id] = c;
+      if (c.matchKey) byPhone[c.matchKey] = c;
       if (c.childNorm) byChild[c.childNorm] = c;
     }
-    // Live DB first; local/export overrides overwrite on conflict.
     (fallback || []).forEach(function (c) {
       upsert(c, false);
     });
@@ -369,25 +390,24 @@
   function findContactForThread(t, directory) {
     var list = directory || state.contactDirectory || [];
     if (!t || !list.length) return null;
+    var i;
+    /* WhatsApp threads are keyed by phone — prefer the contact on that number. */
+    var threadKey = phoneMatchKey(t.phone);
+    if (threadKey) {
+      for (i = 0; i < list.length; i++) {
+        if (list[i].matchKey && list[i].matchKey === threadKey) return list[i];
+      }
+    }
     var clientNorm = String(t.client || "")
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, " ")
       .trim();
-    var i;
     if (clientNorm) {
       for (i = 0; i < list.length; i++) {
         if (list[i].childNorm && list[i].childNorm === clientNorm) return list[i];
       }
       for (i = 0; i < list.length; i++) {
-        var cn = list[i].childNorm;
-        if (!cn) continue;
-        if (namesRoughlySame(list[i].child, t.client)) return list[i];
-      }
-    }
-    var threadKey = phoneMatchKey(t.phone);
-    if (threadKey) {
-      for (i = 0; i < list.length; i++) {
-        if (list[i].matchKey && list[i].matchKey === threadKey) return list[i];
+        if (list[i].childNorm && namesRoughlySame(list[i].child, t.client)) return list[i];
       }
     }
     return null;
@@ -412,8 +432,15 @@
         t.sendPhone = threadDigits || t.phone;
         t.phoneFromProfile = false;
       }
-      if (contact && contact.parent && !t.parentName) t.parentName = contact.parent;
-      if (contact && contact.child && !t.client) t.client = contact.child;
+      /* Always prefer live Participant / contact directory over stale notify-log labels. */
+      if (contact && contact.parent) t.parentName = contact.parent;
+      if (contact && contact.child) t.client = contact.child;
+      var parent = t.parentName;
+      if (!parent || namesRoughlySame(parent, t.client)) {
+        if (t.waContact && !namesRoughlySame(t.waContact, t.client)) parent = t.waContact;
+        else if (!parent) parent = t.waContact || "";
+      }
+      t.name = parent || t.client || "+" + t.phone;
     });
     return threads;
   }
@@ -1721,7 +1748,8 @@
       state.timeline = mergeTimeline(outboundRes.data || [], inbound);
       var liveDir = await fetchLiveContactDirectory();
       var localDir = directoryFromCfg();
-      state.contactDirectory = mergeContactDirectories(localDir, liveDir);
+      /* Live portal_parent_contacts wins over static export / stale labels. */
+      state.contactDirectory = mergeContactDirectories(liveDir, localDir);
       state.threads = enrichThreadsWithProfilePhones(buildWhatsAppThreads(state.timeline));
       if (statusEl) {
         var note = state.timeline.length >= FETCH_LIMIT ? "Showing latest " + FETCH_LIMIT + " messages." : "";

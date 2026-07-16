@@ -298,6 +298,11 @@
       if (live.parent_first_name) out.parentFirstName = String(live.parent_first_name).trim();
       if (live.parent_last_name) out.parentLastName = String(live.parent_last_name).trim();
     }
+    if (live.child_display) {
+      out.childDisplay = String(live.child_display).trim();
+      if (live.child_first_name) out.childFirstName = String(live.child_first_name).trim();
+      if (live.child_last_name) out.childLastName = String(live.child_last_name).trim();
+    }
     if (live.mobile != null && String(live.mobile).trim()) out.mobile = String(live.mobile).trim();
     if (live.email != null && String(live.email).trim()) out.username = String(live.email).trim();
     if (live.address_line1 != null) out.addressLine1 = String(live.address_line1 || "").trim() || out.addressLine1;

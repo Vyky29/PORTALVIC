@@ -120,7 +120,7 @@
   <script src="/portal/admin-parent-notify-send.js?v=20260715-wa-132005"></script>
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/portal_incident_parent_notify.js?v=20260703-incident-notify"></script>
-  <script src="/portal/admin-parent-notify-log.js?v=20260715-wa-132005"></script>
+  <script src="/portal/admin-parent-notify-log.js?v=20260716-wa-live-names"></script>
   <script src="/portal/admin-staff-whatsapp.js?v=20260716-wa-no-dup-intro"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260715-welcome-warm"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260714-preserve-newlines" />
@@ -9151,7 +9151,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       try{
         var res = await client
           .from('portal_parent_contacts')
-          .select('contact_id,parent_display,parent_first_name,parent_last_name,email,mobile,address_line1,address_line2,city,postcode,registration_date,funding_label,payment_method_label')
+          .select('contact_id,parent_display,parent_first_name,parent_last_name,child_display,email,mobile,address_line1,address_line2,city,postcode,registration_date,funding_label,payment_method_label')
           .limit(5000);
         if(res.error || !res.data || !res.data.length) return false;
         var byId = Object.create(null);
