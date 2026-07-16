@@ -181,17 +181,22 @@ export function crashIndividualDaysOpen(now = new Date()): boolean {
 /** Single public blurb for July intensives (offer card + booking rules). */
 export function crashSummerOfferRangeCopy(week2Open = false): string {
   if (!week2Open) {
-    return (
-      "Week 1 open now — climbing Mon 20 – Thu 23 July · swimming Tue 21 – Fri 24 July. " +
-      "Week 2 (Tue 28 – Fri 31 July) opens when Week 1 reaches 80% of places. " +
-      "Leftover individual hours for Week 1: Fri 17 – Sun 19 July (register interest if you want a reminder)."
-    );
+    return [
+      "Week 1 open now!!",
+      "Climbing Mon 20 – Thu 23 July",
+      "Aquatic Activity Tue 21 – Fri 24 July",
+      "Leftover individual hours for Week 1: Fri 17 – Sun 19 July (register interest if you want a reminder).",
+      "",
+      "Week 2 (Tue 28 – Fri 31 July) opens when Week 1 reaches 80% of places.",
+    ].join("\n");
   }
-  return (
-    "Week 1 — climbing Mon 20 – Thu 23 July · swimming Tue 21 – Fri 24 July. " +
-      "Week 2 — Tue 28 – Fri 31 July. " +
-      "Leftover individual hours: Week 1 Fri 17 – Sun 19 July; Week 2 Fri 24 – Sun 26 July."
-  );
+  return [
+    "Week 1",
+    "Climbing Mon 20 – Thu 23 July",
+    "Aquatic Activity Tue 21 – Fri 24 July",
+    "Week 2 — Tue 28 – Fri 31 July",
+    "Leftover individual hours: Week 1 Fri 17 – Sun 19 July; Week 2 Fri 24 – Sun 26 July.",
+  ].join("\n");
 }
 
 export function crashIndividualRulesCopy(week2Open = true): string {

@@ -140,7 +140,7 @@
       badge: "Summer Holidays 2026",
       title: "Summer holiday crash courses",
       range:
-        "Week 1 open now — climbing Mon 20 – Thu 23 July · swimming Tue 21 – Fri 24 July. Week 2 (Tue 28 – Fri 31 July) opens when Week 1 reaches 80% of places. Leftover individual hours for Week 1: Fri 17 – Sun 19 July (register interest if you want a reminder).",
+        "Week 1 open now!!\nClimbing Mon 20 – Thu 23 July\nAquatic Activity Tue 21 – Fri 24 July\nLeftover individual hours for Week 1: Fri 17 – Sun 19 July (register interest if you want a reminder).\n\nWeek 2 (Tue 28 – Fri 31 July) opens when Week 1 reaches 80% of places.",
       badgeIcon: "sun",
       sort: 1,
       dates: [
