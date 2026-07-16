@@ -80,7 +80,7 @@
   <script src="/portal/admin-portal-participant-documents.js?v=20260619-pax-docs"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260709-family-credits"></script>
   <script src="/portal/admin-portal-parent-credits.js?v=20260709-family-credits"></script>
-  <script src="/portal/admin-portal-parent-invoices.js?v=20260715-la-hidden"></script>
+  <script src="/portal/admin-portal-parent-invoices.js?v=20260716-finance-tabs"></script>
   <script src="/portal/admin-portal-parent-makeups.js?v=20260709-makeup-roster"></script>
   <script src="/portal/admin-portal-parent-consents.js?v=20260709-offsite-annual"></script>
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
@@ -108,7 +108,7 @@
   <script src="/portal/admin_ld_funding_review.js?v=20260714-ld-docs-rls"></script>
   <script src="/portal/admin-training-records.js?v=20260714-tr-p3"></script>
   <script src="/portal/admin-hr.js?v=20260714-tr-p3"></script>
-  <script src="/portal/admin-payments.js?v=20260531-la-column"></script>
+  <script src="/portal/admin-payments.js?v=20260716-term-accordion"></script>
   <script src="/portal/portal-comms-order-payments.js?v=20260617-cfk-order-enrich"></script>
   <script src="/portal/portal-admin-settings-hub.js?v=20260703-settings-timeout-fix"></script>
   <script src="/portal/admin-onboarding.js?v=20260530-onboarding-clickdocs"></script>
@@ -121,10 +121,10 @@
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/portal_incident_parent_notify.js?v=20260703-incident-notify"></script>
   <script src="/portal/admin-parent-notify-log.js?v=20260715-wa-132005"></script>
-  <script src="/portal/admin-staff-whatsapp.js?v=20260714-preserve-newlines"></script>
+  <script src="/portal/admin-staff-whatsapp.js?v=20260716-wa-no-dup-intro"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260715-welcome-warm"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260714-preserve-newlines" />
-  <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260714-preserve-newlines" />
+  <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260716-wa-no-dup-intro" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260707-cancel-reason-policy"></script>
   <script src="/portal/cfk-app.js?v=20260614-cfk-services"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
@@ -402,8 +402,8 @@
       { id:'clients', label:'Participants' },
       { id:'portal_nav_client_services', label:'Client services review', externalUrl:'/client_services_review.html', skipBottomNav:true },
       { id:'c4k_payments', label:'Programme payments (operations)', hubLabel:'Ops payments' },
-      { id:'reenrol_payments', label:'Family invoices', hubLabel:'Family invoices' },
-      { id:'invoices', label:'Family invoices', hubLabel:'Family invoices' },
+      { id:'reenrol_payments', label:'Finance', hubLabel:'Finance' },
+      { id:'invoices', label:'Finance', hubLabel:'Finance' },
       { id:'c4k_sessions', label:'Sessions overview' },
       { id:'session_disruptions', label:'Session disruptions' },
       { id:'c4k_waitlist', label:'Waiting list' },
@@ -1114,7 +1114,7 @@
       }
     };
 
-    var state = { view:'nav_hub', navHubGroup:null, drawerClient:null, drawerStaff:null, drawerIsSynthetic:false, reportTargetClient:null, search:'', shiftModalCtx:null, pendingBookingsScroll:null, pendingBookingsSlotFocus:null, commsOrderDetailKey:'', sessionOverview:{ iso:'', overrides:[] }, sessionFeedback:{ anchorIso:'', selectedIso:null, rangeFrom:'', rangeTo:'', clientQ:'' }, navGroupsOpen:{ g_operator:false, g_c4k:false, g_zoho:false, g_supabase:false, g_xero:false, g_indeed:false, g_settings_portal:false }, c4kServicesRegisterOpen:false, registerSessionSlot:null, scrollToCapacityEmbed:false, portalLatePendingCount:0 };
+    var state = { view:'nav_hub', navHubGroup:null, drawerClient:null, drawerStaff:null, drawerIsSynthetic:false, reportTargetClient:null, search:'', shiftModalCtx:null, pendingBookingsScroll:null, pendingBookingsSlotFocus:null, commsOrderDetailKey:'', sessionOverview:{ iso:'', overrides:[] }, sessionFeedback:{ anchorIso:'', selectedIso:null, rangeFrom:'', rangeTo:'', clientQ:'' }, navGroupsOpen:{ g_operator:false, g_c4k:false, g_zoho:false, g_supabase:false, g_xero:false, g_indeed:false, g_settings_portal:false }, c4kServicesRegisterOpen:false, registerSessionSlot:null, scrollToCapacityEmbed:false, portalLatePendingCount:0, financeTab:'payments' };
     var sched = { slotsById:{}, overrides:[], termEvents:[], rosterLogRows:[], activeSlot:null, lastMsg:'', waitingSupabaseRetryBound:false, weekAnchorIso:'' };
     /** Schedule &amp; Covers: summer term 2 roster window (dated rows in spreadsheet bundle). */
     var SCHED_COVER_TERM_START = '2026-06-01';
@@ -20639,7 +20639,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         staff_ghost_teleport:'Open any worker dashboard in read-only ghost view — roster and TODAY mirror without their PIN or logging them out.',
         policies:'Documents · sign-offs · compliance',
         invoices:'Create, share and collect family invoices in Portal (Tide / Card). Same as Family invoices.',
-        reenrol_payments:'Create TAX INVOICE PDFs in Portal, share with families, and track Tide / Card payments — no Xero needed for day-to-day.',
+        reenrol_payments:'Create invoices, track re-enrolment instalments, and review term payments (Summer 25/26 · Autumn 26/27).',
         c4k_payments:'Term fees and balances owed — programme finance grid with one row per family.',
         bookings:'All orders · slot state · funding',
         absents_refunds:'Refunds, session credits and missed-session queues — approve or resolve family credits.',
@@ -20735,10 +20735,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         icon:'💷',
         title:'Finance',
         description:'Create and share family invoices in Portal, track payments, and review credits.',
-        preview:['Family invoices','Create & share PDFs','Tide / Card payments','Refunds and credits'],
-        status:'Day-to-day billing is Family invoices (Portal). Tide and Stripe run automatically — no separate finance screen.',
+        preview:['Finance','Create invoice','Re-enrolments','Term payments'],
+        status:'Finance: create invoices, track re-enrolment instalments, and review payments by term (Summer 25/26 · Autumn 26/27).',
         primary:[
-          { id:'reenrol_payments', label:'Family invoices' },
+          { id:'reenrol_payments', label:'Finance' },
           { id:'absents_refunds', label:'Refunds & credits' }
         ],
         secondary:[]
@@ -21042,7 +21042,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         (portalAdminBookingsHidden()
           ? portalDashTileHtml('c4k_services', '', 'c4k_services', 'Services', 'Weekly programme grid &amp; capacity', false, 'sessions')
           : portalDashTileHtml('orders_all', '', 'bookings', 'Bookings / orders', 'Bookings &amp; wait list', false, 'bookings'))+
-        portalDashTileHtml('reenrol_payments', '', 'reenrol_payments', 'Family invoices', 'Create, share &amp; collect', false, 'payments')+
+        portalDashTileHtml('reenrol_payments', '', 'reenrol_payments', 'Finance', 'Invoices &amp; term payments', false, 'payments')+
         portalDashTileHtml('c4k_reviews', '', 'c4k_reviews', 'Progress', 'Term reviews &amp; goals', false, 'reviews')+
         portalDashTileHtml('c4k_reports', '', 'c4k_reports', 'Reports', 'Request packs &amp; LA delivery', false, 'reports_q');
       var staffRow1 =
@@ -21675,18 +21675,67 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="toolbar" style="margin-top:14px"><button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr">Staff &amp; HR</button> <button type="button" class="btn btn--ghost btn--sm" data-act="settings">Settings</button></div>';
     }
 
+    function financeHubTabsHtml(active){
+      var tabs = [
+        { id:'create', label:'Create invoice' },
+        { id:'reenrolments', label:'Re-enrolments' },
+        { id:'payments', label:'Payments' }
+      ];
+      return tabs.map(function(t){
+        var on = t.id === active;
+        return '<button type="button" class="c4k-sessions-hub-tab'+(on?' is-active':'')+'" role="tab" data-finance-tab="'+esc(t.id)+'" aria-selected="'+(on?'true':'false')+'">'+
+          '<span class="c4k-sessions-hub-tab__label">'+esc(t.label)+'</span></button>';
+      }).join('');
+    }
     function viewReenrolPayments(){
-      // Live, editable client re-enrolment payments (powered by public.client_payments).
-      // Rendered by /portal/admin-payments.js into #payModuleRoot (see bindView).
       portalParentInvoicesConfigureOnce();
-      var invoicesEmbed =
-        window.PortalParentInvoices && typeof window.PortalParentInvoices.embedHtml === 'function'
-          ? window.PortalParentInvoices.embedHtml()
-          : '';
-      return '<h1 class="page-title" style="display:flex;align-items:center;gap:10px"><span aria-hidden="true" style="display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#eff6ff;color:#2d84b3"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="none"><text x="12" y="17" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor" font-family="system-ui,Segoe UI,sans-serif">\u00a3</text></svg></span><span>Family invoices</span></h1>'+
-        '<p class="page-intro">Create and share TAX INVOICE PDFs with families (Portal path A). Parents pay by Tide bank transfer or Card / Apple Pay — no separate Tide/Stripe admin screen. Below: term payment tracker by family.</p>'+
-        invoicesEmbed+
-        '<div id="payModuleRoot"></div>';
+      var tab = state.financeTab || 'payments';
+      var inv = window.PortalParentInvoices || {};
+      var createHtml = typeof inv.createInvoiceEmbedHtml === 'function' ? inv.createInvoiceEmbedHtml() : '';
+      var reenrolHtml = typeof inv.reenrolmentsEmbedHtml === 'function' ? inv.reenrolmentsEmbedHtml() : '';
+      var hide = function(id){ return tab === id ? '' : ' hidden'; };
+      return '<h1 class="page-title" style="display:flex;align-items:center;gap:10px"><span aria-hidden="true" style="display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#eff6ff;color:#2d84b3"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="none"><text x="12" y="17" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor" font-family="system-ui,Segoe UI,sans-serif">\u00a3</text></svg></span><span>Finance</span></h1>'+
+        '<p class="page-intro">Create invoices, track re-enrolment instalments, and review term payments by family — Summer Term 25/26 vs Autumn Term 26/27.</p>'+
+        '<div class="c4k-sessions-hub-tabs" role="tablist" aria-label="Finance">'+financeHubTabsHtml(tab)+'</div>'+
+        '<div id="financePanelCreate" class="finance-hub-panel"'+hide('create')+'>'+createHtml+'</div>'+
+        '<div id="financePanelReenrolments" class="finance-hub-panel"'+hide('reenrolments')+'>'+reenrolHtml+'</div>'+
+        '<div id="financePanelPayments" class="finance-hub-panel"'+hide('payments')+'><div id="payModuleRoot"></div></div>';
+    }
+    function bindFinanceView(){
+      var tab = state.financeTab || 'payments';
+      document.querySelectorAll('[data-finance-tab]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var next = btn.getAttribute('data-finance-tab') || 'payments';
+          if(next === tab) return;
+          state.financeTab = next;
+          setView('reenrol_payments');
+        });
+      });
+      portalParentInvoicesConfigureOnce();
+      if(tab === 'create' && window.PortalParentInvoices && typeof window.PortalParentInvoices.bindCreateEmbed === 'function'){
+        window.PortalParentInvoices.bindCreateEmbed();
+      }
+      if(tab === 'reenrolments' && window.PortalParentInvoices && typeof window.PortalParentInvoices.bindListEmbed === 'function'){
+        window.PortalParentInvoices.bindListEmbed();
+      }
+      if(tab === 'payments' && window.AdminPayments && $('payModuleRoot')){
+        window.AdminPayments.configure({
+          getClient: getSchedSupabaseClient,
+          getSupabaseUrl: function(){
+            var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+            return u;
+          },
+          getAnonKey: function(){
+            var k = typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY.trim() : '';
+            return k;
+          },
+          toast: portalAdminToast,
+          esc: esc,
+          openModal: openModal,
+          closeModal: closeModal
+        });
+        window.AdminPayments.mount($('payModuleRoot'));
+      }
     }
     function viewLogs(){
       // Rendered by /portal/admin-logs.js into #logsModuleRoot (see bindView 'logs').
@@ -23557,20 +23606,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
 
       if(id==='reenrol_payments'){
-        portalParentInvoicesConfigureOnce();
-        if(window.PortalParentInvoices && typeof window.PortalParentInvoices.bindEmbed === 'function'){
-          window.PortalParentInvoices.bindEmbed();
-        }
-        if(window.AdminPayments && $('payModuleRoot')){
-          window.AdminPayments.configure({
-            getClient: getSchedSupabaseClient,
-            toast: portalAdminToast,
-            esc: esc,
-            openModal: openModal,
-            closeModal: closeModal
-          });
-          window.AdminPayments.mount($('payModuleRoot'));
-        }
+        bindFinanceView();
       }
       if(id==='logs'){
         if(window.AdminLogs && $('logsModuleRoot')){

@@ -331,9 +331,11 @@
   }
 
   function viewHtml() {
+    // page-intro must be a top-level sibling (not inside #portalStaffWaAdmin)
+    // so admin page-head can extract + strip it once — no duplicate copy in the body.
     return (
+      '<p class="page-intro">Staff WhatsApp — ticks <strong>Sent → Delivered → Read</strong>. Cold outbound uses the approved template until they reply.</p>' +
       '<div class="portal-staff-wa-admin" id="portalStaffWaAdmin">' +
-      '<p class="page-intro">CS WhatsApp with staff — same delivery ticks as Family messages: <strong>Sent → Delivered → Read</strong>. Also shows if they opened the chat in the portal. Cold messages (no reply in 24h) go via the approved WhatsApp template; free-form chat works after they write from the WhatsApp app. Staff replies: <strong>Via portal CS WhatsApp</strong> or <strong>Via WhatsApp app</strong>.</p>' +
       '<p class="portal-staff-wa-admin__count muted" id="portalStaffWaCount"></p>' +
       '<div class="portal-staff-wa-admin__layout">' +
       '<aside class="portal-staff-wa-admin__list" id="portalStaffWaDir"></aside>' +
@@ -349,7 +351,7 @@
       toolBtnHtml("portalStaffWaClearAttach", "Clear", ICO_CLEAR, true) +
       '<span class="portal-staff-wa-admin__attach-preview muted" id="portalStaffWaAttachPreview"></span>' +
       "</div>" +
-      '<textarea id="portalStaffWaDraft" rows="3" placeholder="Message…" maxlength="4000"></textarea>' +
+      '<textarea id="portalStaffWaDraft" rows="2" placeholder="Message…" maxlength="4000"></textarea>' +
       '<button type="submit" class="btn" id="portalStaffWaSend">Send WhatsApp</button>' +
       "</form>" +
       "</section>" +

@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260708-v20-unified-parent-feedback';
+  var PORTAL_DAY_OPS_BUILD = '20260712-payload-cache';
   function portalHubBuildToken() {
     return String(global.PORTAL_ADMIN_HUB_BUILD || PORTAL_DAY_OPS_BUILD || '').trim();
   }
@@ -832,10 +832,10 @@
 
   function reRenderHub(hub) {
     if (!hub || !hub.root || !hub.root.isConnected) return;
-    if (hub.opts && hub.opts.externalTabs) {
-      if (typeof hub.renderPanels === 'function') hub.renderPanels();
-    } else if (typeof hub.render === 'function') {
+    if (typeof hub.render === 'function') {
       hub.render();
+    } else if (typeof hub.renderPanels === 'function') {
+      hub.renderPanels();
     }
   }
 
@@ -1375,8 +1375,43 @@
     getFeedbackHub: function () {
       return feedbackHub;
     },
-    ensurePayload: function () {
+    ensurePayload: function (opts) {
+      opts = opts || {};
+      var forceReload = !!(opts && opts.force);
       if (loadInFlight) return loadInFlight;
+      var skipEdgeEarly = !!(cfg && cfg.skipAdminFormsEdge);
+      /* Re-entering Sessions overview must not wipe settled live rows (that flashes foto1 → foto2). */
+      if (
+        !forceReload &&
+        skipEdgeEarly &&
+        payload.session_feedback_loaded === true &&
+        Array.isArray(payload.session_feedback) &&
+        payload.session_feedback.length > 0
+      ) {
+        syncScheduleOverridesIntoPayload();
+        portalDayOpsRenderLiveLoadStatus();
+        setStatus('');
+        if (!global.__PORTAL_DAY_OPS_ENRICH__ && !global.__PORTAL_DAY_OPS_SOFT_REFRESH__) {
+          var softPromise = fetchOverviewSupabaseExtras()
+            .then(function (partial) {
+              applyPayload(partial);
+              mergePortalVenueIntoPayload();
+              portalDayOpsAfterFeedbackPayloadMerge();
+              return partial;
+            })
+            .catch(function (softErr) {
+              dayOpsDebug('[PortalDayOps] soft refresh failed', softErr);
+              return null;
+            })
+            .finally(function () {
+              if (global.__PORTAL_DAY_OPS_SOFT_REFRESH__ === softPromise) {
+                global.__PORTAL_DAY_OPS_SOFT_REFRESH__ = null;
+              }
+            });
+          global.__PORTAL_DAY_OPS_SOFT_REFRESH__ = softPromise;
+        }
+        return Promise.resolve(payload);
+      }
       loadInFlight = (async function () {
         if (
           global.portalAdminLoadHeavyScripts &&
@@ -1464,7 +1499,7 @@
             cfg.invalidateLiveCaches();
           } catch (_inv) {}
         }
-        await global.PortalDayOps.ensurePayload();
+        await global.PortalDayOps.ensurePayload({ force: !!(options && options.force) });
         await ensureLiveRosterForHub(!!(options && options.force));
         if (tabId === 'overview' || tabId === 'incidents' || tabId === 'absents' || tabId === 'cancellations') {
           pendingOverviewTab = overviewTabForC4k(tabId);

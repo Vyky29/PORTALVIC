@@ -18,6 +18,8 @@
 
   var deps = {
     getClient: function () { return (global.__PORTAL_SUPABASE__ || {}).client || null; },
+    getSupabaseUrl: null,
+    getAnonKey: null,
     toast: function (m) { try { console.log("[pay]", m); } catch (_) {} },
     esc: function (s) {
       return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -27,6 +29,20 @@
     openModal: null,
     closeModal: null,
   };
+
+  // Academic-term buckets for the accordion (Summer 25/26 workbook + Jul crash; Autumn 26/27 re-enrol).
+  var TERM_BUCKETS = [
+    {
+      id: "summer_2526",
+      title: "Summer Term 25/26",
+      subtitle: "Term sessions · Jul crash courses · May–Jul billing",
+    },
+    {
+      id: "autumn_2627",
+      title: "Autumn Term 26/27",
+      subtitle: "Re-enrolment 2026-27 · instalments from Sep 2026",
+    },
+  ];
 
   var SHEET_LABELS = {
     "PARENTS": "Private (parents)",
@@ -39,6 +55,7 @@
   var state = {
     rootEl: null,
     rows: [],
+    reenrolRows: [],      // synthetic rows from portal_parent_invoice_share (created_via reenrolment)
     mode: "payments",     // payments | orders | participants (same data, different framing)
     statusFilter: "active", // active (re-enrolled) | all | outstanding | paid | notreenrolled
     sheetFilter: "",      // "" = all groups, else sheet name
@@ -197,6 +214,20 @@
       ".pay-screen__foot{flex:0 0 auto;display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;background:#fff;border-top:1px solid #e2e8f0}",
       ".pay-screen__foot .pay-msg{flex:1;align-self:center;font-size:13px;color:#64748b;margin:0}",
       "@media(max-width:560px){.pay-screen__body{padding:14px}.pay-screen__ttl h2{font-size:17px}}",
+      ".pay-term-stack{display:flex;flex-direction:column;gap:12px}",
+      ".pay-term-acc{background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;min-width:0;box-shadow:0 1px 3px rgba(15,23,42,.05)}",
+      ".pay-term-acc__sum{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;cursor:pointer;list-style:none;font-weight:800;color:#0f172a;background:#f8fafc;border-bottom:1px solid transparent;min-width:0}",
+      ".pay-term-acc[open]>.pay-term-acc__sum{border-bottom-color:#eef2f7}",
+      ".pay-term-acc__sum::-webkit-details-marker{display:none}",
+      ".pay-term-acc__title{display:block;font-size:15px;min-width:0;overflow-wrap:break-word}",
+      ".pay-term-acc__sub{display:block;font-size:12px;font-weight:700;color:#64748b;margin-top:2px;overflow-wrap:break-word}",
+      ".pay-term-acc__meta{flex:0 0 auto;text-align:right;font-size:12px;font-weight:700;color:#64748b;min-width:0}",
+      ".pay-term-acc__meta b{display:block;font-size:15px;color:#0f172a}",
+      ".pay-term-acc__meta--out{color:#b91c1c}",
+      ".pay-term-acc .pay-tbl-wrap{border-radius:0}",
+      ".pay-term-acc .pay-tbl thead th{background:#fff}",
+      ".pay-term-acc__sum::after{content:'';width:8px;height:8px;border-right:2px solid #94a3b8;border-bottom:2px solid #94a3b8;transform:rotate(45deg);transition:transform .15s;flex:0 0 auto}",
+      ".pay-term-acc[open]>.pay-term-acc__sum::after{transform:rotate(-135deg)}",
     ].join("\n");
     var st = document.createElement("style");
     st.id = "adminPayStyle";
@@ -211,10 +242,136 @@
     return '<span class="pay-pill ' + cls + '">' + esc(label) + "</span>";
   }
 
+  function allRows() {
+    return (state.rows || []).concat(state.reenrolRows || []);
+  }
+
+  function supabaseBase() {
+    if (typeof deps.getSupabaseUrl === "function") {
+      return String(deps.getSupabaseUrl() || "").replace(/\/$/, "");
+    }
+    var c = deps.getClient();
+    return c && c.supabaseUrl ? String(c.supabaseUrl).replace(/\/$/, "") : "";
+  }
+
+  function anonKey() {
+    if (typeof deps.getAnonKey === "function") return String(deps.getAnonKey() || "");
+    return typeof global.SUPABASE_ANON_KEY === "string" ? global.SUPABASE_ANON_KEY : "";
+  }
+
+  function portalAuthToken() {
+    var client = deps.getClient();
+    if (!client || !client.auth) return Promise.resolve(null);
+    return client.auth.getSession().then(function (res) {
+      var session = res && res.data && res.data.session;
+      return session && session.access_token ? session.access_token : null;
+    });
+  }
+
+  function normalizeTermLabel(raw) {
+    var s = String(raw || "").trim();
+    if (!s || s === "—" || s === "-") return "Summer Term 25/26";
+    if (/summer\s*term\s*2026/i.test(s)) return "Summer Term 25/26";
+    if (/summer\s*term\s*25\s*\/\s*26/i.test(s)) return "Summer Term 25/26";
+    if (/autumn\s*term\s*26/i.test(s) || /26\s*\/\s*27/.test(s)) return "Autumn Term 26/27";
+    return s;
+  }
+
+  function termBucketFor(r) {
+    if (r && r._termBucket) return r._termBucket;
+    var svc = String(serviceFor(r) || "").toLowerCase();
+    var term = String(termFor(r) || "").toLowerCase();
+    var blob = svc + " " + term + " " + JSON.stringify((r && r.data) || {});
+    if (/autumn.*26|26\/27|2026-27|reenrol/.test(blob)) return "autumn_2627";
+    return "summer_2526";
+  }
+
+  function sortPaymentRows(a, b) {
+    var s = String(a.sheet).localeCompare(String(b.sheet));
+    if (s) return s;
+    return String(a.client_name || "").localeCompare(String(b.client_name || ""));
+  }
+
+  function groupRowsByTermBucket(rows) {
+    var map = {};
+    TERM_BUCKETS.forEach(function (b) { map[b.id] = []; });
+    rows.forEach(function (r) {
+      var bid = termBucketFor(r);
+      if (!map[bid]) map[bid] = [];
+      map[bid].push(r);
+    });
+    return TERM_BUCKETS.map(function (b) {
+      return { bucket: b, rows: (map[b.id] || []).slice().sort(sortPaymentRows) };
+    }).filter(function (g) { return g.rows.length > 0; });
+  }
+
+  function termAccordionMetaHtml(group) {
+    var rows = group.rows;
+    var out = 0;
+    var outN = 0;
+    rows.forEach(function (r) {
+      if (category(r) === "outstanding") {
+        out += Number(r.amount) || 0;
+        outN++;
+      }
+    });
+    var fam = rows.length === 1 ? "family" : "families";
+    var html = '<span class="pay-term-acc__meta"><b>' + rows.length + "</b> " + fam;
+    if (outN) html += '<span class="pay-term-acc__meta--out">' + money(out) + " due</span>";
+    html += "</span>";
+    return html;
+  }
+
+  function paymentsTableBodyHtml(rows) {
+    var colClient = state.mode === "orders" ? "Participant" : "Client";
+    if (!rows.length) {
+      return '<div class="pay-tbl-wrap"><table class="pay-tbl"><tbody>'
+        + '<tr><td colspan="8" class="pay-empty">No records in this term.</td></tr></tbody></table></div>';
+    }
+    var html = '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>' + colClient
+      + '</th><th>Group</th><th>Service</th><th>Term</th><th>LA</th><th>Parent</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
+    rows.forEach(function (r) {
+      var attr = r._synthetic
+        ? ' data-pay-reenrol="' + esc(r._contactId || r.id) + '"'
+        : ' data-pay-id="' + esc(r.id) + '"';
+      html += "<tr" + attr + ">"
+        + '<td class="pay-name">' + esc(r.client_name || "—") + "</td>"
+        + "<td>" + esc(labelFor(r.sheet)) + "</td>"
+        + "<td>" + esc(serviceFor(r)) + "</td>"
+        + "<td>" + esc(termFor(r)) + "</td>"
+        + "<td>" + esc(laFor(r) || "—") + "</td>"
+        + "<td>" + esc(parentPersonFor(r)) + "</td>"
+        + '<td class="num">' + money(r.amount) + "</td>"
+        + "<td>" + pillFor(r) + "</td></tr>";
+    });
+    html += "</tbody></table></div>";
+    return html;
+  }
+
+  function termAccordionHtml(visible) {
+    var groups = groupRowsByTermBucket(visible);
+    if (!groups.length) {
+      return '<div class="pay-card"><div class="pay-empty">No records match this filter.</div></div>';
+    }
+    var html = '<div class="pay-term-stack">';
+    groups.forEach(function (g) {
+      html += '<details class="pay-term-acc" open>'
+        + '<summary class="pay-term-acc__sum">'
+        + '<span><span class="pay-term-acc__title">' + esc(g.bucket.title) + "</span>"
+        + '<span class="pay-term-acc__sub">' + esc(g.bucket.subtitle) + "</span></span>"
+        + termAccordionMetaHtml(g)
+        + "</summary>"
+        + paymentsTableBodyHtml(g.rows)
+        + "</details>";
+    });
+    html += "</div>";
+    return html;
+  }
+
   function baseRows() {
     // Rows matching the group + search, regardless of status (for KPI totals).
     var q = state.query;
-    return state.rows.filter(function (r) {
+    return allRows().filter(function (r) {
       if (state.sheetFilter && r.sheet !== state.sheetFilter) return false;
       if (state.laFilter && laFor(r) !== state.laFilter) return false;
       if (!q) return true;
@@ -248,9 +405,9 @@
     var keys = ["Term", "term", "Terms"];
     for (var i = 0; i < keys.length; i++) {
       var v = d[keys[i]];
-      if (v != null && String(v).trim() && String(v).trim() !== "-") return String(v).trim();
+      if (v != null && String(v).trim() && String(v).trim() !== "-") return normalizeTermLabel(String(v).trim());
     }
-    return "Summer term 2026";
+    return "Summer Term 25/26";
   }
 
   // Local authority / funder for the row, normalized to a short label so it can
@@ -325,13 +482,13 @@
     // Filter bar
     var sheetOpts = '<option value="">All groups</option>';
     SHEET_ORDER.forEach(function (s) {
-      if (state.rows.some(function (r) { return r.sheet === s; })) {
+      if (allRows().some(function (r) { return r.sheet === s; })) {
         sheetOpts += '<option value="' + esc(s) + '"' + (state.sheetFilter === s ? " selected" : "") + ">" + esc(labelFor(s)) + "</option>";
       }
     });
     // LA / funder filter — distinct normalized LA labels present in the data.
     var laVals = {};
-    state.rows.forEach(function (r) { var l = laFor(r); if (l) laVals[l] = 1; });
+    allRows().forEach(function (r) { var l = laFor(r); if (l) laVals[l] = 1; });
     var laList = Object.keys(laVals).sort();
     var laOpts = '<option value="">All LAs</option>';
     laList.forEach(function (l) {
@@ -353,29 +510,11 @@
       html += participantsTableHtml(visible);
     } else {
       var cardTitle = state.mode === "orders" ? "Orders" : "Participants";
-      html += '<div class="pay-card"><div class="pay-card-h"><h3>' + icon("clients", 17) + esc(cardTitle) + '</h3><span style="font-size:12px;color:#64748b">' + visible.length + ' shown</span></div>';
-      html += '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>' + (state.mode === "orders" ? "Participant" : "Client") + '</th><th>Group</th><th>Service</th><th>Term</th><th>LA</th><th>Parent</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
-      if (!visible.length) {
-        html += '<tr><td colspan="8" class="pay-empty">No records match this filter.</td></tr>';
-      } else {
-        visible.sort(function (a, b) {
-          var s = String(a.sheet).localeCompare(String(b.sheet));
-          if (s) return s;
-          return String(a.client_name || "").localeCompare(String(b.client_name || ""));
-        });
-        visible.forEach(function (r) {
-          html += '<tr data-pay-id="' + esc(r.id) + '">'
-            + '<td class="pay-name">' + esc(r.client_name || "—") + "</td>"
-            + "<td>" + esc(labelFor(r.sheet)) + "</td>"
-            + "<td>" + esc(serviceFor(r)) + "</td>"
-            + "<td>" + esc(termFor(r)) + "</td>"
-            + "<td>" + esc(laFor(r) || "—") + "</td>"
-            + "<td>" + esc(parentPersonFor(r)) + "</td>"
-            + '<td class="num">' + money(r.amount) + "</td>"
-            + "<td>" + pillFor(r) + "</td></tr>";
-        });
-      }
-      html += "</tbody></table></div></div>";
+      html += '<div class="pay-card-h" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;min-width:0">'
+        + "<h3 style=\"margin:0;font-size:15px;color:#0f172a;display:flex;align-items:center;gap:8px\">"
+        + icon("clients", 17) + esc(cardTitle) + "</h3>"
+        + '<span style="font-size:12px;color:#64748b;flex:0 0 auto">' + visible.length + " shown</span></div>";
+      html += termAccordionHtml(visible);
     }
     html += "</div>";
 
@@ -387,8 +526,7 @@
     return '<button type="button" data-pay-status="' + id + '" aria-pressed="' + (state.statusFilter === id) + '">' + label + "</button>";
   }
 
-  // Aggregate orders into one row per participant (used by Participants view).
-  function participantsTableHtml(rows) {
+  function participantsRowsBodyHtml(rows) {
     var byName = {};
     var order = [];
     rows.forEach(function (r) {
@@ -407,33 +545,69 @@
     var people = order.map(function (k) { return byName[k]; }).sort(function (a, b) {
       return String(a.name).localeCompare(String(b.name));
     });
-
-    var html = '<div class="pay-card"><div class="pay-card-h"><h3>' + icon("clients", 17) + 'Participants</h3><span style="font-size:12px;color:#64748b">' + people.length + ' shown</span></div>';
-    html += '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>Participant</th><th>Group</th><th>Service(s)</th><th class="num">Orders</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
     if (!people.length) {
-      html += '<tr><td colspan="6" class="pay-empty">No participants match this filter.</td></tr>';
-    } else {
-      people.forEach(function (g) {
-        var svcList = Object.keys(g.services);
-        var svcTxt = svcList.length ? svcList.join(" · ") : "—";
-        var pill = g.anyOut
-          ? '<span class="pay-pill pay-pill--out">Outstanding</span>'
-          : '<span class="pay-pill pay-pill--paid">Paid</span>';
-        // One order -> open its record directly. Several orders -> open an
-        // intermediate screen listing them all, then drill into one.
-        var rowAttr = g.orders.length > 1
-          ? 'data-pay-orders="' + esc(g.orders.map(function (o) { return o.id; }).join(",")) + '" data-pay-pname="' + esc(g.name) + '"'
-          : 'data-pay-id="' + esc(g.orders[0].id) + '"';
-        html += '<tr ' + rowAttr + '>'
-          + '<td class="pay-name">' + esc(g.name) + "</td>"
-          + "<td>" + esc(labelFor(g.sheet)) + "</td>"
-          + "<td>" + esc(svcTxt) + "</td>"
-          + '<td class="num">' + g.orders.length + "</td>"
-          + '<td class="num">' + money(g.total) + "</td>"
-          + "<td>" + pill + "</td></tr>";
-      });
+      return '<div class="pay-tbl-wrap"><table class="pay-tbl"><tbody>'
+        + '<tr><td colspan="6" class="pay-empty">No participants in this term.</td></tr></tbody></table></div>';
     }
-    html += "</tbody></table></div></div>";
+    var html = '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>Participant</th><th>Group</th><th>Service(s)</th><th class="num">Orders</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
+    people.forEach(function (g) {
+      var svcList = Object.keys(g.services);
+      var svcTxt = svcList.length ? svcList.join(" · ") : "—";
+      var pill = g.anyOut
+        ? '<span class="pay-pill pay-pill--out">Outstanding</span>'
+        : '<span class="pay-pill pay-pill--paid">Paid</span>';
+      var first = g.orders[0];
+      var rowAttr;
+      if (first && first._synthetic) {
+        rowAttr = 'data-pay-reenrol="' + esc(first._contactId || first.id) + '"';
+      } else if (g.orders.length > 1) {
+        rowAttr = 'data-pay-orders="' + esc(g.orders.map(function (o) { return o.id; }).join(",")) + '" data-pay-pname="' + esc(g.name) + '"';
+      } else {
+        rowAttr = 'data-pay-id="' + esc(g.orders[0].id) + '"';
+      }
+      html += "<tr " + rowAttr + ">"
+        + '<td class="pay-name">' + esc(g.name) + "</td>"
+        + "<td>" + esc(labelFor(g.sheet)) + "</td>"
+        + "<td>" + esc(svcTxt) + "</td>"
+        + '<td class="num">' + g.orders.length + "</td>"
+        + '<td class="num">' + money(g.total) + "</td>"
+        + "<td>" + pill + "</td></tr>";
+    });
+    html += "</tbody></table></div>";
+    return html;
+  }
+
+  // Aggregate orders into one row per participant (used by Participants view).
+  function participantsTableHtml(rows) {
+    var groups = groupRowsByTermBucket(rows);
+    var totalPeople = 0;
+    groups.forEach(function (g) {
+      var keys = {};
+      g.rows.forEach(function (r) {
+        var k = String(r.client_name || "").toLowerCase().trim() || ("id:" + r.id);
+        keys[k] = 1;
+      });
+      totalPeople += Object.keys(keys).length;
+    });
+    if (!groups.length) {
+      return '<div class="pay-card"><div class="pay-empty">No participants match this filter.</div></div>';
+    }
+    var html = '<div class="pay-card-h" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;min-width:0">'
+      + "<h3 style=\"margin:0;font-size:15px;color:#0f172a;display:flex;align-items:center;gap:8px\">"
+      + icon("clients", 17) + "Participants</h3>"
+      + '<span style="font-size:12px;color:#64748b;flex:0 0 auto">' + totalPeople + " shown</span></div>";
+    html += '<div class="pay-term-stack">';
+    groups.forEach(function (g) {
+      html += '<details class="pay-term-acc" open>'
+        + '<summary class="pay-term-acc__sum">'
+        + '<span><span class="pay-term-acc__title">' + esc(g.bucket.title) + "</span>"
+        + '<span class="pay-term-acc__sub">' + esc(g.bucket.subtitle) + "</span></span>"
+        + termAccordionMetaHtml(g)
+        + "</summary>"
+        + participantsRowsBodyHtml(g.rows)
+        + "</details>";
+    });
+    html += "</div>";
     return html;
   }
 
@@ -480,6 +654,11 @@
     root.querySelectorAll("[data-pay-id]").forEach(function (tr) {
       tr.addEventListener("click", function () { openDetail(tr.getAttribute("data-pay-id")); });
     });
+    root.querySelectorAll("[data-pay-reenrol]").forEach(function (tr) {
+      tr.addEventListener("click", function () {
+        deps.toast("Autumn re-enrolment instalments — open Family invoices above for this family.");
+      });
+    });
     root.querySelectorAll("[data-pay-orders]").forEach(function (tr) {
       tr.addEventListener("click", function () {
         var ids = String(tr.getAttribute("data-pay-orders") || "").split(",").filter(Boolean);
@@ -492,7 +671,7 @@
   // its editable record (same detail + audit as everywhere else).
   function openParticipantOrders(name, ids) {
     var orders = ids
-      .map(function (id) { return state.rows.filter(function (x) { return String(x.id) === String(id); })[0]; })
+      .map(function (id) { return allRows().filter(function (x) { return String(x.id) === String(id); })[0]; })
       .filter(Boolean);
     if (!orders.length) return;
     if (orders.length === 1) { openDetail(orders[0].id); return; }
@@ -576,8 +755,12 @@
   }
 
   function openDetail(id) {
-    var r = state.rows.filter(function (x) { return String(x.id) === String(id); })[0];
+    var r = allRows().filter(function (x) { return String(x.id) === String(id); })[0];
     if (!r) return;
+    if (r._synthetic) {
+      deps.toast("Autumn re-enrolment instalments — open Family invoices above for this family.");
+      return;
+    }
     var d = r.data || {};
 
     // Resolve which data key actually holds the booked service, so editing
@@ -700,8 +883,82 @@
 
   function configure(opts) {
     opts = opts || {};
-    ["getClient", "toast", "esc", "openModal", "closeModal"].forEach(function (k) {
+    ["getClient", "getSupabaseUrl", "getAnonKey", "toast", "esc", "openModal", "closeModal"].forEach(function (k) {
       if (typeof opts[k] === "function") deps[k] = opts[k];
+    });
+  }
+
+  function loadReenrolRows() {
+    var base = supabaseBase();
+    var key = anonKey();
+    if (!base || !key) return Promise.resolve([]);
+    return portalAuthToken().then(function (token) {
+      if (!token) return [];
+      return fetch(base + "/functions/v1/portal-admin-parent-invoices-list", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + token,
+          apikey: key,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ share_status: "all", payment_status: "all", limit: 200 }),
+      }).then(function (res) { return res.json().then(function (j) { return { res: res, j: j }; }); })
+        .then(function (pack) {
+          if (!pack.res.ok || !pack.j || !pack.j.ok) return [];
+          var invs = (pack.j.invoices || []).filter(function (inv) {
+            return String(inv.created_via || "") === "reenrolment";
+          });
+          var agg = {};
+          invs.forEach(function (inv) {
+            var cid = String(inv.contact_id || "").trim();
+            if (!cid) return;
+            if (!agg[cid]) {
+              var isLa = inv.payment_method_hint === "la_funded" || inv.vat_mode === "exempt";
+              agg[cid] = {
+                id: "reenrol-" + cid,
+                _contactId: cid,
+                sheet: isLa ? "LA" : "PARENTS",
+                client_name: inv.participant_display || inv.related_client || cid,
+                parent_name: inv.parent_display || "",
+                payment_status: "Paid",
+                amount: 0,
+                amount_billed: 0,
+                amount_out: 0,
+                data: {
+                  Term: "Autumn Term 26/27",
+                  Services: "Re-enrolment 2026-27",
+                },
+                _termBucket: "autumn_2627",
+                _synthetic: true,
+                _reenrol: true,
+                _invoiceIds: [],
+              };
+            }
+            var row = agg[cid];
+            var amt = Number(inv.amount_gbp) || 0;
+            var st = String(inv.payment_status || "").toLowerCase();
+            row.amount_billed += amt;
+            row._invoiceIds.push(inv.id);
+            if (st === "paid") {
+              // keep Paid unless another instalment is open
+            } else if (st !== "void") {
+              row.amount_out += amt;
+              row.payment_status = "Outstanding";
+            }
+          });
+          return Object.keys(agg).map(function (cid) {
+            var row = agg[cid];
+            row.amount = row.amount_out > 0 ? row.amount_out : row.amount_billed;
+            if (row.amount_out <= 0 && row.amount_billed > 0) row.payment_status = "Paid";
+            return row;
+          });
+        }).catch(function () { return []; });
+    });
+  }
+
+  function loadAllData(client) {
+    return Promise.all([loadAll(client), loadReenrolRows()]).then(function (res) {
+      return { payments: res[0], reenrol: res[1] };
     });
   }
 
@@ -723,9 +980,10 @@
       return;
     }
 
-    loadAll(client).then(function (rows) {
-      state.rows = rows;
-      if (!rows.length) {
+    loadAllData(client).then(function (pack) {
+      state.rows = pack.payments;
+      state.reenrolRows = pack.reenrol;
+      if (!state.rows.length && !state.reenrolRows.length) {
         rootEl.innerHTML = '<p class="pay-empty">No payments yet. Run the client_payments migration + seed in Supabase, then reopen this view.</p>';
         return;
       }
@@ -758,10 +1016,17 @@
 
   // Ensure rows are in memory (load once if needed), then run cb(true|false).
   function ensureLoaded(cb) {
-    if (state.rows && state.rows.length) { cb(true); return; }
+    if ((state.rows && state.rows.length) || (state.reenrolRows && state.reenrolRows.length)) {
+      cb(true);
+      return;
+    }
     var client = deps.getClient();
     if (!client) { cb(false); return; }
-    loadAll(client).then(function (rows) { state.rows = rows; cb(true); }).catch(function () { cb(false); });
+    loadAllData(client).then(function (pack) {
+      state.rows = pack.payments;
+      state.reenrolRows = pack.reenrol;
+      cb(true);
+    }).catch(function () { cb(false); });
   }
 
   // Open the editable full-screen record for a single client_payments id.

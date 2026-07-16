@@ -1139,13 +1139,12 @@
     });
   }
 
-  function embedHtml() {
+  function createInvoiceEmbedHtml() {
     return (
       '<div class="card" style="margin-bottom:14px">' +
-      '<div class="card-h"><h3>Family invoices</h3>' +
-      '<span class="chip chip--pend" id="portalParentInvoicesMetaEmbed">…</span></div>' +
+      '<div class="card-h"><h3>Create invoice</h3></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word"><strong>Create in Portal</strong> generates a TAX INVOICE PDF and shares it with the family. For bookkeeping: <strong>Push to Xero</strong> creates ACCREC invoices (or use CSV export). Own arrangement: nightly buffer check soft-holds families below the 2-session prepaid minimum; then <strong>Remind</strong> → <strong>Hold 1 session</strong> → pay restores; hard cut stays manual.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word"><strong>Create in Portal</strong> generates a TAX INVOICE PDF and shares it with the family. Use the term reference (e.g. Summer Term 25/26 or Autumn Term 26/27) so invoices group correctly in Payments.</p>' +
       '<form id="portalParentInvoiceCreateForm" class="toolbar" style="flex-direction:column;align-items:stretch;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--line,#e5e7eb)">' +
       '<div style="font-weight:700">Create invoice in Portal</div>' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end">' +
@@ -1179,7 +1178,7 @@
       '<label style="min-width:0">Notes (optional)<input class="inp" id="portalParentInvoiceNotes" style="width:100%;max-width:28rem" /></label>' +
       '<div><button type="submit" class="btn btn--primary btn--sm">Create &amp; share</button></div>' +
       '</form>' +
-      '<details style="margin-bottom:14px">' +
+      '<details style="margin:0">' +
       '<summary class="muted" style="cursor:pointer;font-weight:600">Or upload a Xero / office PDF</summary>' +
       '<form id="portalParentInvoiceUploadForm" class="toolbar" style="flex-direction:column;align-items:stretch;gap:10px;margin-top:10px">' +
       '<label style="min-width:0">Xero Invoice ID (GUID, optional sync)<input class="inp" id="portalParentInvoiceXeroId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" style="width:100%;max-width:28rem" /></label>' +
@@ -1190,6 +1189,17 @@
       '<label style="min-width:0">PDF<input class="inp" id="portalParentInvoiceFile" type="file" accept="application/pdf,.pdf" style="width:100%;max-width:28rem" /></label>' +
       '<div><button type="submit" class="btn btn--sec btn--sm">Upload &amp; share PDF</button></div>' +
       '</form></details>' +
+      '</div></div>'
+    );
+  }
+
+  function reenrolmentsEmbedHtml() {
+    return (
+      '<div class="card" style="margin-bottom:14px">' +
+      '<div class="card-h"><h3>Re-enrolments &amp; shared invoices</h3>' +
+      '<span class="chip chip--pend" id="portalParentInvoicesMetaEmbed">…</span></div>' +
+      '<div class="card-pad">' +
+      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Track instalments shared with families after re-enrolment. <strong>Push to Xero</strong> for bookkeeping; match Tide bank CSV to mark paid. Own arrangement: buffer soft-hold → Remind → Hold 1 session → pay restores.</p>' +
       '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sm" data-inv-filter="all">All</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="ready">Shared</button>' +
@@ -1217,9 +1227,12 @@
     );
   }
 
-  function bindEmbed() {
-    state.filter = 'all';
+  function bindCreateEmbed() {
     bindUploadForm();
+  }
+
+  function bindListEmbed() {
+    state.filter = 'all';
     bindTideMatchPanel();
     var host = global.document.getElementById('portalParentInvoicesHost');
     var refresh = global.document.getElementById('portalParentInvoicesRefreshEmbed');
@@ -1254,9 +1267,22 @@
     void renderHost(host);
   }
 
+  function bindEmbed() {
+    bindCreateEmbed();
+    bindListEmbed();
+  }
+
+  function embedHtml() {
+    return createInvoiceEmbedHtml() + reenrolmentsEmbedHtml();
+  }
+
   global.PortalParentInvoices = {
     configure: configure,
     embedHtml: embedHtml,
-    bindEmbed: bindEmbed
+    createInvoiceEmbedHtml: createInvoiceEmbedHtml,
+    reenrolmentsEmbedHtml: reenrolmentsEmbedHtml,
+    bindEmbed: bindEmbed,
+    bindCreateEmbed: bindCreateEmbed,
+    bindListEmbed: bindListEmbed
   };
 })(typeof window !== 'undefined' ? window : globalThis);
