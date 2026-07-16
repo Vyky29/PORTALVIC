@@ -809,7 +809,29 @@
           ? "Your place renews with the office — nothing for you to submit."
           : "Confirm places for next year"),
       acat_confirm_notice: String(r.acat_confirm_notice || "").trim(),
+      can_book_extras: r.can_book_extras !== false && data && data.can_book_extras !== false,
     };
+  }
+
+  /** Tinashe, Ikram, Fadi, Timi — no crash / extras (mirrors Edge identity list). */
+  function participantBlocksExtraBookingLocal(data) {
+    var p = (data && data.participant) || {};
+    if (data && data.can_book_extras === false) return true;
+    if (data && data.reenrolment && data.reenrolment.can_book_extras === false) return true;
+    var blob = [p.contact_id, p.display_name, p.first_name, p.last_name, p.name]
+      .map(function (x) { return String(x || "").toLowerCase(); })
+      .join(" ");
+    if (/\btinashe\b/.test(blob)) return true;
+    if (/\bikram\b/.test(blob)) return true;
+    if (/\bfadi\b/.test(blob)) return true;
+    if (/\btimi\b/.test(blob) || /oluwatimilehin/.test(blob)) return true;
+    return false;
+  }
+
+  function canBookExtrasFor(data) {
+    if (participantBlocksExtraBookingLocal(data)) return false;
+    var booking = bookingSummary(data);
+    return booking.can_book_extras !== false;
   }
 
   function reenrolBannerHtml(data) {
@@ -866,6 +888,13 @@
   }
 
   function crashBookBtnHtml(data) {
+    if (!canBookExtrasFor(data)) {
+      return (
+        '<p class="pp-muted pp-hub-reenrol__no-extra" role="note">' +
+        "Extra holiday sessions are not available for this place." +
+        "</p>"
+      );
+    }
     var p = (data && data.participant) || {};
     var contactId = String(p.contact_id || "").trim();
     var href =
@@ -3166,16 +3195,21 @@
       var crashHref =
         "/parent/crash-summer" +
         (contactId ? "?contact_id=" + encodeURIComponent(String(contactId)) : "");
+      var crashAction = canBookExtrasFor(data)
+        ? '<a class="pp-btn pp-btn--ghost" href="' + esc(crashHref) + '">Book crash courses</a>'
+        : '<p class="pp-muted">Extra holiday sessions are not available for this place.</p>';
       body =
         '<p class="pp-muted">You have not submitted re-enrolment choices for 2026/27 yet.</p>' +
-        '<p class="pp-muted">Please respond by <strong>Wednesday 22 July 2026</strong>. From Thursday 23 July, unconfirmed places may be released to new clients. You can book crash courses first if you prefer, then complete re-enrolment.</p>' +
+        '<p class="pp-muted">Please respond by <strong>Wednesday 22 July 2026</strong>. From Thursday 23 July, unconfirmed places may be released to new clients.' +
+        (canBookExtrasFor(data)
+          ? " You can book crash courses first if you prefer, then complete re-enrolment."
+          : "") +
+        "</p>" +
         '<div class="pp-hub-reenrol__actions" style="margin-top:10px">' +
         '<a class="pp-btn pp-btn--primary" href="' +
         esc(reenrolHref) +
         '">Open re-enrolment form</a>' +
-        '<a class="pp-btn pp-btn--ghost" href="' +
-        esc(crashHref) +
-        '">Book crash courses</a>' +
+        crashAction +
         "</div>";
     } else {
       var activityItems = (booking.items || []).filter(isBookingActivityItem);

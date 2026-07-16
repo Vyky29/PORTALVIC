@@ -26,6 +26,7 @@ import {
 import {
   isAcatMemberIdentity,
   canonicalParticipantClientId,
+  participantBlocksExtraBooking,
   participantIdentityMatches,
   resolveParticipantLookupNames,
 } from "../_shared/participant_identity.ts";
@@ -298,17 +299,19 @@ Deno.serve(async (req) => {
     invoiceType: paymentCtx?.vat || null,
   });
 
+  const identityForUi = {
+    contactId: String(participantRow.contact_id || ""),
+    displayName: participantDisplayName,
+    firstName: String(participantRow.first_name || ""),
+    lastName: String(participantRow.last_name || ""),
+  };
   const parentReenrolUi = buildParentReenrolUi({
     hasDayCentre: dayCentreSlots.length > 0,
     fundingLabel: paymentCtx?.fundingSource || null,
     vatMode: paymentCtx?.vatCode || null,
     paymentSheet: paymentCtx?.sheet || null,
-    isAcatMember: isAcatMemberIdentity({
-      contactId: String(participantRow.contact_id || ""),
-      displayName: participantDisplayName,
-      firstName: String(participantRow.first_name || ""),
-      lastName: String(participantRow.last_name || ""),
-    }),
+    isAcatMember: isAcatMemberIdentity(identityForUi),
+    blocksExtraBooking: participantBlocksExtraBooking(identityForUi),
   });
 
   return json(200, {

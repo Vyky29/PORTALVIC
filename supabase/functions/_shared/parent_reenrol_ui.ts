@@ -1,6 +1,8 @@
 /**
  * Whether the parent should fill re-enrolment 2026/27 themselves,
  * or the office/funder path renews automatically (Day Centre + LA/NHS).
+ * LA-funded families skip the form but may still book crash courses
+ * (unless the participant is on the no-extra-booking list).
  */
 export type ParentReenrolUiMode = "required" | "auto";
 
@@ -14,6 +16,8 @@ export type ParentReenrolUi = {
    * because it is an ACAT-only service.
    */
   acat_confirm_notice: string;
+  /** False for Tinashe / Ikram / Fadi / Timi — no crash or other extras. */
+  can_book_extras: boolean;
 };
 
 /** Shown when Kate / Kamy / Jack W / Jack S touch Booking 2026/27. */
@@ -59,8 +63,11 @@ export function buildParentReenrolUi(opts: {
   paymentSheet?: string | null;
   /** Kate / Kamy / Jack W / Jack S — Monday ACAT brought clients. */
   isAcatMember?: boolean;
+  /** Tinashe / Ikram / Fadi / Timi — no crash or other extras. */
+  blocksExtraBooking?: boolean;
 }): ParentReenrolUi {
   const isAcat = !!opts.isAcatMember;
+  const canBookExtras = !opts.blocksExtraBooking;
   const acatNotice = isAcat ? ACAT_REENROL_CONFIRM_NOTICE : "";
   const reasons: Array<"day_centre" | "la_funded" | "acat_brought"> = [];
   if (opts.hasDayCentre) reasons.push("day_centre");
@@ -72,6 +79,9 @@ export function buildParentReenrolUi(opts: {
   if (isAcat) reasons.push("acat_brought");
 
   const officeAuto = reasons.includes("day_centre") || reasons.includes("la_funded");
+  const crashHint = canBookExtras
+    ? " You can still book summer crash courses if places are available."
+    : " Extra holiday sessions (including crash courses) are not available for this place.";
 
   if (!officeAuto) {
     return {
@@ -81,18 +91,25 @@ export function buildParentReenrolUi(opts: {
         ? "Confirm your other places for next year. The Monday ACAT slot still needs ACAT approval."
         : "Confirm places for next year",
       acat_confirm_notice: acatNotice,
+      can_book_extras: canBookExtras,
     };
   }
 
   const baseNote = reasons.includes("day_centre") && reasons.includes("la_funded")
     ? "Day Centre and LA / NHS places renew with the office — nothing for you to submit."
     : reasons.includes("day_centre")
-      ? "Day Centre places renew with the office — nothing for you to submit."
-      : "LA / NHS funded places renew with the office — nothing for you to submit.";
+    ? "Day Centre places renew with the office — nothing for you to submit."
+    : "LA / NHS funded places renew with the office — nothing for you to submit.";
 
-  const note = isAcat
+  const note = (isAcat
     ? "ACAT should approve this place — it is an ACAT-only service. " + baseNote
-    : baseNote;
+    : baseNote) + crashHint;
 
-  return { mode: "auto", reasons, note, acat_confirm_notice: acatNotice };
+  return {
+    mode: "auto",
+    reasons,
+    note,
+    acat_confirm_notice: acatNotice,
+    can_book_extras: canBookExtras,
+  };
 }

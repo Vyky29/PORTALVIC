@@ -41,6 +41,10 @@ import {
   sendEmailWithAttachmentViaSmtp,
 } from "../_shared/portal_parent_messaging.ts";
 import { resolveParticipantInvoiceFunding } from "../_shared/portal_invoice_funding.ts";
+import {
+  NO_EXTRA_BOOKING_NOTE,
+  participantBlocksExtraBooking,
+} from "../_shared/participant_identity.ts";
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -164,6 +168,21 @@ Deno.serve(async (req) => {
     clean(participant?.display_name, 120) ||
     [participant?.first_name, participant?.last_name].filter(Boolean).join(" ").trim() ||
     contactId;
+
+  if (
+    participantBlocksExtraBooking({
+      contactId,
+      displayName,
+      firstName: clean(participant?.first_name, 80),
+      lastName: clean(participant?.last_name, 80),
+    })
+  ) {
+    return json(403, {
+      ok: false,
+      error: "extras_not_available",
+      message: NO_EXTRA_BOOKING_NOTE,
+    });
+  }
 
   const rawActs = Array.isArray(body.activities) ? body.activities : [];
   const activities = Array.from(

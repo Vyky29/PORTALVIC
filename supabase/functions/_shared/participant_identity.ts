@@ -59,6 +59,9 @@ const PORTAL_PARTICIPANT_SLUG_ALIASES: Record<string, string> = {
   oluwatimilehin_nathan: "timi",
   oluwatimilehin_na: "timi",
   oluwatimilehin: "timi",
+  // No-extra-booking LA clients (full portal names → roster short ids)
+  tinashe_nekati: "tinashe",
+  ikram_omar: "ikram",
   // ACAT Monday 11–12 members (portal full name / contact_id → roster short id)
   kate_fordham: "kate",
   kamy_akhavan: "kamy",
@@ -74,6 +77,31 @@ export const ACAT_GROUP_CLIENT_SLUGS = new Set(["acat", "acat_group"]);
 
 /** Individual ACAT members who attend the Monday group slot. */
 export const ACAT_MEMBER_CLIENT_SLUGS = new Set(["kate", "kamy", "jack_w", "jack_s"]);
+
+/**
+ * LA / Day Centre clients who must not book crash courses or other extras
+ * (office-managed programmes only). Canonical roster first-name slugs.
+ */
+export const NO_EXTRA_BOOKING_CLIENT_SLUGS = new Set([
+  "tinashe",
+  "ikram",
+  "fadi",
+  "timi",
+]);
+
+export const NO_EXTRA_BOOKING_NOTE =
+  "Extra holiday sessions (including crash courses) are not available for this place — please contact the office if you need help.";
+
+export function participantBlocksExtraBooking(input: ParticipantIdentityInput): boolean {
+  const slugs = expandParticipantClientSlugs(resolveParticipantClientSlugs(input));
+  for (const s of slugs) {
+    const c = rosterParticipantSlugAlias(s);
+    if (NO_EXTRA_BOOKING_CLIENT_SLUGS.has(c)) return true;
+    const head = c.split("_")[0];
+    if (head && NO_EXTRA_BOOKING_CLIENT_SLUGS.has(head)) return true;
+  }
+  return false;
+}
 
 export function isAcatGroupClientId(clientIdOrName: string): boolean {
   const slug = slugifyParticipantKey(clientIdOrName);

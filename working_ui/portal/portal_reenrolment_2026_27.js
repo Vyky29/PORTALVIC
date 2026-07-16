@@ -2839,6 +2839,7 @@
 
   function renderOtherServicesInfoHtml(data) {
     var hasDc = hasDayCentreEnrolled(data);
+    var canExtras = !(data && data.parent_reenrol_ui && data.parent_reenrol_ui.can_book_extras === false);
     var cards = "";
     if (!hasDc) {
       cards +=
@@ -2849,14 +2850,22 @@
         '<button type="button" class="re-btn re-btn--secondary" id="reDayCentreDatesBtn">Day Centre dates 2026/27</button>' +
         "</div></article>";
     }
-    cards +=
-      '<article class="re-offer-block">' +
-      "<h4>Summer crash courses · July 2026</h4>" +
-      '<p class="re-muted">Climbing (Westway) and Swimming (Acton), four-day week packs. <strong>Currently open: Week 1 — climb Mon–Thu 20–23 July · swim Tue–Fri 21–24 July.</strong> Week 2 (28–31 July) opens when Week 1 reaches 80% of places. Individual leftover hours for Week 1: Fri 17–Sun 19 July (register interest on the crash booking page). <strong>Pay in full</strong> to reserve — places are limited.</p>' +
-      '<div class="re-offer-actions">' +
-      '<a class="re-btn re-btn--primary" id="reCrashBookBtn" href="/parent/crash-summer">Book summer crash courses</a>' +
-      '<button type="button" class="re-btn re-btn--secondary" id="reCrashDatesBtn">View dates on calendar</button>' +
-      "</div></article>";
+    if (canExtras) {
+      cards +=
+        '<article class="re-offer-block">' +
+        "<h4>Summer crash courses · July 2026</h4>" +
+        '<p class="re-muted">Climbing (Westway) and Swimming (Acton), four-day week packs. <strong>Currently open: Week 1 — climb Mon–Thu 20–23 July · swim Tue–Fri 21–24 July.</strong> Week 2 (28–31 July) opens when Week 1 reaches 80% of places. Individual leftover hours for Week 1: Fri 17–Sun 19 July (register interest on the crash booking page). <strong>Pay in full</strong> to reserve — places are limited.</p>' +
+        '<div class="re-offer-actions">' +
+        '<a class="re-btn re-btn--primary" id="reCrashBookBtn" href="/parent/crash-summer">Book summer crash courses</a>' +
+        '<button type="button" class="re-btn re-btn--secondary" id="reCrashDatesBtn">View dates on calendar</button>' +
+        "</div></article>";
+    } else {
+      cards +=
+        '<article class="re-offer-block">' +
+        "<h4>Summer crash courses · July 2026</h4>" +
+        '<p class="re-muted">Extra holiday sessions are not available for this place. Please contact the office if you need help.</p>' +
+        "</article>";
+    }
     cards +=
       '<article class="re-offer-block">' +
       "<h4>Half-term intensives</h4>" +
@@ -3357,6 +3366,10 @@
       var autoNote =
         String(ui.note || "").trim() ||
         "Your place renews with the office — nothing for you to submit.";
+      var canExtras = ui.can_book_extras !== false;
+      var crashCta = canExtras
+        ? '<p style="margin-top:12px"><a class="re-btn re-btn--primary" href="/parent/crash-summer">Book summer crash courses</a></p>'
+        : "";
       host.innerHTML =
         acatBanner +
         '<div class="re-banner re-banner--info" role="status">' +
@@ -3365,6 +3378,7 @@
         esc(autoNote) +
         "</p>" +
         "<p>Your hub shows sessions still left this term, and the office manages your 2026/27 booking with your funder / ACAT.</p>" +
+        crashCta +
         "</div>" +
         '<div class="re-form-grid">' +
         '<div class="re-form-grid__current">' +

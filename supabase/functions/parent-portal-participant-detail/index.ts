@@ -28,6 +28,7 @@ import {
   isAcatMemberIdentity,
   acatGroupFeedbackEligibleSlugs,
   parentPortalSuppressSessionProgress,
+  participantBlocksExtraBooking,
   participantIdentityMatches,
   resolveParticipantClientSlugs,
   resolveParticipantLookupNames,
@@ -1140,6 +1141,7 @@ Deno.serve(async (req) => {
       fundingLabel: funding.fundingLabel,
       vatMode: funding.vatMode,
       isAcatMember: isAcatMemberIdentity(identityInput),
+      blocksExtraBooking: participantBlocksExtraBooking(identityInput),
     });
 
     // Confirmed / held crash weeks for this child — hub date chips (not weekly roster).
@@ -1330,7 +1332,9 @@ Deno.serve(async (req) => {
         parent_action_reasons: parentReenrolUi.reasons,
         parent_action_note: parentReenrolUi.note,
         acat_confirm_notice: parentReenrolUi.acat_confirm_notice || "",
+        can_book_extras: parentReenrolUi.can_book_extras !== false,
       },
+      can_book_extras: parentReenrolUi.can_book_extras !== false,
       crash_course: crashCourse,
       pending_review_count: sessionsOut.filter((s) => s.message_pending).length,
       weekly_notes: weeklyNotes,

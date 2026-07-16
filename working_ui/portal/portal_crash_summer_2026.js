@@ -838,6 +838,17 @@
     renderSlots();
   }
 
+  function childBlocksExtraBooking(c) {
+    var blob = [c && c.contact_id, c && c.display_name, c && c.first_name, c && c.last_name]
+      .map(function (x) { return String(x || "").toLowerCase(); })
+      .join(" ");
+    if (/\btinashe\b/.test(blob)) return true;
+    if (/\bikram\b/.test(blob)) return true;
+    if (/\bfadi\b/.test(blob)) return true;
+    if (/\btimi\b/.test(blob) || /oluwatimilehin/.test(blob)) return true;
+    return false;
+  }
+
   async function loadChildren() {
     var res = await fetch(fn("parent-portal-home-load"), {
       method: "POST",
@@ -866,21 +877,41 @@
     try {
       last = String(localStorage.getItem("pp_last_contact_id") || "");
     } catch (_e) {}
+    var preferred = last;
+    if (preferred && state.children.some(function (c) {
+      return String(c.contact_id || "") === preferred && childBlocksExtraBooking(c);
+    })) {
+      preferred = "";
+    }
+    if (!preferred) {
+      var openChild = state.children.find(function (c) { return !childBlocksExtraBooking(c); });
+      if (openChild) preferred = String(openChild.contact_id || "");
+    }
     sel.innerHTML = state.children
       .map(function (c) {
         var id = String(c.contact_id || "");
         var name = String(c.display_name || c.first_name || id);
+        var blocked = childBlocksExtraBooking(c);
         return (
           '<option value="' +
           id.replace(/"/g, "") +
           '"' +
-          (id === last ? " selected" : "") +
+          (id === preferred ? " selected" : "") +
+          (blocked ? " disabled" : "") +
           ">" +
           name.replace(/</g, "&lt;") +
+          (blocked ? " (extras not available)" : "") +
           "</option>"
         );
       })
       .join("");
+    if (state.children.every(childBlocksExtraBooking)) {
+      if ($("csForm")) $("csForm").hidden = true;
+      showNotice(
+        "info",
+        "Extra holiday sessions (including crash courses) are not available for the linked children on this account. Please contact the office if you need help.",
+      );
+    }
   }
 
   async function startCheckout(invoiceId, contactId) {
@@ -1253,7 +1284,9 @@
         showNotice(
           "error",
           (data && data.message) ||
-            (data && data.error === "individual_days_not_open"
+            (data && data.error === "extras_not_available"
+              ? "Extra holiday sessions are not available for this participant."
+              : data && data.error === "individual_days_not_open"
               ? data.message ||
                 "Individual hours are not open for this week yet. Book a four-day weekly pack."
               : data && data.error === "slot_unavailable"
