@@ -405,30 +405,75 @@
     return labels.length ? labels.join(' · ') : 'Bank transfer';
   }
 
+  function invoiceSortRank(inv) {
+    var pay = String((inv && inv.payment_status) || 'unpaid').toLowerCase();
+    if (pay === 'paid') return 0;
+    if (pay === 'pending_confirmation') return 1;
+    if (pay === 'partial') return 2;
+    if (pay === 'unpaid') return 3;
+    if (pay === 'void') return 8;
+    return 5;
+  }
+
+  function sortInvoicesForDisplay(invoices) {
+    return (invoices || []).slice().sort(function (a, b) {
+      var ra = invoiceSortRank(a);
+      var rb = invoiceSortRank(b);
+      if (ra !== rb) return ra - rb;
+      var da = String(a.updated_at || a.due_date || '');
+      var db = String(b.updated_at || b.due_date || '');
+      return db.localeCompare(da);
+    });
+  }
+
+  function summaryFilterChip(filter, label, tone) {
+    return (
+      '<button type="button" class="chip chip--' +
+      tone +
+      ' pp-inv-acc__filter-chip" data-inv-filter="' +
+      esc(filter) +
+      '" title="Show ' +
+      esc(label) +
+      ' only">' +
+      esc(label) +
+      '</button>'
+    );
+  }
+
   function groupStatusSummary(invoices) {
     var unpaid = 0;
     var paid = 0;
     var pending = 0;
+    var voidN = 0;
+    var hidden = 0;
     var xeroFail = 0;
     var xeroMissing = 0;
     (invoices || []).forEach(function (inv) {
       var pay = String(inv.payment_status || 'unpaid');
       if (pay === 'paid') paid += 1;
       else if (pay === 'pending_confirmation') pending += 1;
+      else if (pay === 'void') voidN += 1;
       else unpaid += 1;
+      if (String(inv.share_status || '') === 'hidden') hidden += 1;
       if (inv.xero_invoice_id) return;
       if (inv.xero_push_status === 'failed') xeroFail += 1;
       else if (inv.created_via === 'portal' || inv.created_via === 'reenrolment') xeroMissing += 1;
     });
     var chips = [];
     if (unpaid) {
-      chips.push('<span class="chip chip--pend">' + unpaid + ' unpaid</span>');
+      chips.push(summaryFilterChip('unpaid', unpaid + ' unpaid', 'pend'));
     }
     if (pending) {
-      chips.push('<span class="chip chip--pend">' + pending + ' pending</span>');
+      chips.push(summaryFilterChip('pending', pending + ' pending', 'pend'));
     }
     if (paid) {
-      chips.push('<span class="chip chip--ok">' + paid + ' paid</span>');
+      chips.push(summaryFilterChip('paid', paid + ' paid', 'ok'));
+    }
+    if (voidN) {
+      chips.push(summaryFilterChip('void', voidN + ' void', 'warn'));
+    }
+    if (hidden) {
+      chips.push(summaryFilterChip('hidden', hidden + ' hidden', 'warn'));
     }
     if (xeroFail) {
       chips.push('<span class="pp-inv-acc__xero pp-inv-acc__xero--fail">Xero failed ×' + xeroFail + '</span>');
@@ -529,6 +574,13 @@
           '">Soft hold</button> ';
       }
     }
+    var paidMeta =
+      inv.payment_status === 'paid'
+        ? '<div class="muted" style="font-size:11px;color:#065f46;margin-top:4px">Paid' +
+          (inv.paid_via ? ' via ' + esc(String(inv.paid_via)) : '') +
+          (inv.paid_at ? ' · ' + esc(formatDate(inv.paid_at)) : '') +
+          '</div>'
+        : '';
     var xeroChip = inv.xero_invoice_id
       ? '<div class="muted" style="font-size:11px">Xero ' +
         esc(String(inv.xero_invoice_id).slice(0, 8)) +
@@ -546,7 +598,9 @@
           : '';
 
     return (
-      '<article class="pp-inv-acc__card" data-invoice-id="' +
+      '<article class="pp-inv-acc__card' +
+      (inv.payment_status === 'paid' ? ' pp-inv-acc__card--paid' : '') +
+      '" data-invoice-id="' +
       id +
       '">' +
       '<div class="pp-inv-acc__grid">' +
@@ -560,6 +614,7 @@
       '<div class="muted" style="font-size:12px">' +
       esc(inv.title || '') +
       '</div>' +
+      paidMeta +
       xeroChip +
       (linkBits.length
         ? '<div class="muted" style="font-size:11px">' + esc(linkBits.join(' · ')) + '</div>'
@@ -603,7 +658,7 @@
   }
 
   function participantAccordionHtml(group) {
-    var invoices = group.invoices || [];
+    var invoices = sortInvoicesForDisplay(group.invoices || []);
     var n = invoices.length;
     var contactId = esc(group.contact_id || '');
     var name = group.name || 'Participant';
@@ -674,6 +729,9 @@
       '.pp-inv-acc__body{border-top:1px solid #e8eef3;padding:12px;background:#fafcfd;min-width:0}' +
       '.pp-inv-acc__cards{display:flex;flex-direction:column;gap:10px;min-width:0}' +
       '.pp-inv-acc__card{border:1px solid #e2eaf0;border-radius:8px;padding:10px;background:#fff;min-width:0}' +
+      '.pp-inv-acc__card--paid{border-color:#86efac;background:#f0fdf4}' +
+      '.pp-inv-acc__filter-chip{border:0;cursor:pointer;font:inherit;line-height:inherit}' +
+      '.pp-inv-acc__filter-chip:hover{filter:brightness(.96)}' +
       '.pp-inv-acc__grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.7fr) minmax(0,.9fr);gap:12px;min-width:0}' +
       '@media (max-width:820px){.pp-inv-acc__grid{grid-template-columns:1fr}}' +
       '.pp-inv-acc__actions{display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;min-width:0}' +
@@ -779,6 +837,12 @@
       body.share_status = 'ready';
       body.payment_status = 'unpaid';
     }
+    if (state.filter === 'paid') {
+      body.payment_status = 'paid';
+    }
+    if (state.filter === 'void') {
+      body.payment_status = 'void';
+    }
     if (state.filter === 'pending') {
       body.share_status = 'ready';
       body.payment_status = 'pending_confirmation';
@@ -821,9 +885,30 @@
       groupInvoicesByParticipant(state.invoices).map(participantAccordionHtml).join('') +
       '</div>';
     bindRowActions(host);
+    if (state.filter !== 'all') {
+      host.querySelectorAll('.pp-inv-acc__item').forEach(function (item) {
+        item.open = true;
+      });
+    }
+  }
+
+  function setInvoiceFilter(filter) {
+    state.filter = filter || 'all';
+    global.document.querySelectorAll('.toolbar [data-inv-filter]').forEach(function (b) {
+      var on = b.getAttribute('data-inv-filter') === state.filter;
+      b.classList.toggle('btn--ghost', !on);
+    });
   }
 
   function bindRowActions(host) {
+    host.querySelectorAll('.pp-inv-acc__filter-chip').forEach(function (btn) {
+      btn.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        setInvoiceFilter(btn.getAttribute('data-inv-filter') || 'all');
+        void renderHost(host);
+      });
+    });
     host.querySelectorAll('[data-inv-act]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var act = btn.getAttribute('data-inv-act');
@@ -1204,6 +1289,7 @@
       '<button type="button" class="btn btn--sm" data-inv-filter="all">All</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="ready">Shared</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="unpaid">Ready unpaid</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="paid">Paid</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="pending">Pending confirmation</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="buffer_low">Buffer low</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="xero_unsynced">Not in Xero</button>' +
@@ -1254,13 +1340,9 @@
         void pushUnsyncedToXero();
       });
     }
-    global.document.querySelectorAll('[data-inv-filter]').forEach(function (btn) {
+    global.document.querySelectorAll('.toolbar [data-inv-filter]').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        state.filter = btn.getAttribute('data-inv-filter') || 'all';
-        global.document.querySelectorAll('[data-inv-filter]').forEach(function (b) {
-          var on = b.getAttribute('data-inv-filter') === state.filter;
-          b.classList.toggle('btn--ghost', !on);
-        });
+        setInvoiceFilter(btn.getAttribute('data-inv-filter') || 'all');
         void renderHost(global.document.getElementById('portalParentInvoicesHost'));
       });
     });
