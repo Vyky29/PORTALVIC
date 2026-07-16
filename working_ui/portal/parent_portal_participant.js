@@ -5287,6 +5287,61 @@
           .join("") +
         "</div>";
     }
+    var isPaid = status === "paid";
+    var showDraftFlow =
+      !isPaid &&
+      status !== "void" &&
+      (status === "unpaid" || status === "partial" || status === "pending_confirmation");
+    var pdfActs = "";
+    if (isPaid && pdf) {
+      pdfActs =
+        '<div class="pp-invoice-card__acts pp-invoice-card__acts--stack pp-invoice-card__acts--paid-only">' +
+        '<a class="pp-btn pp-btn--primary pp-invoice-card__btn-full" href="' +
+        esc(pdf) +
+        '" download="' +
+        esc((num || "invoice").replace(/[^\w.-]+/g, "_") + ".pdf") +
+        '" target="_blank" rel="noopener noreferrer">Download PDF</a>' +
+        "</div>";
+    } else if (showDraftFlow) {
+      pdfActs =
+        '<div class="pp-invoice-card__acts pp-invoice-card__acts--stack">' +
+        (pdf
+          ? '<button type="button" class="pp-btn pp-btn--primary pp-invoice-card__btn-full" data-pp-preview-invoice="' +
+            esc(inv.id) +
+            '" data-pp-pdf-url="' +
+            esc(pdf) +
+            '" data-pp-pdf-title="' +
+            esc(num ? "Draft — " + num : "Draft invoice") +
+            '">Preview draft invoice</button>'
+          : '<p class="pp-muted">Draft invoice not available yet.</p>') +
+        (canSetupGc
+          ? '<button type="button" class="pp-btn pp-btn--primary pp-invoice-card__btn-full" data-pp-setup-gocardless="' +
+            esc(inv.id) +
+            '">Set up Direct Payment</button>'
+          : "") +
+        (!canSetupGc && gc && !isGcInvoice
+          ? '<a class="pp-btn pp-btn--primary pp-invoice-card__btn-full" href="' +
+            esc(gc) +
+            '" target="_blank" rel="noopener noreferrer">Pay with GoCardless</a>'
+          : "") +
+        (pl
+          ? '<a class="pp-btn pp-btn--ghost pp-invoice-card__btn-full" href="' +
+            esc(pl) +
+            '" target="_blank" rel="noopener noreferrer">Card / Apple Pay link' +
+            (cardCharge ? " · " + esc(cardCharge) : "") +
+            "</a>"
+          : "") +
+        (canPay
+          ? '<button type="button" class="pp-btn pp-btn--sec pp-invoice-card__btn-full" data-pp-pay-invoice="' +
+            esc(inv.id) +
+            '">Card / Apple Pay' +
+            (cardCharge ? " · " + esc(cardCharge) : "") +
+            "</button>"
+          : "") +
+        "</div>";
+    } else if (!pdf) {
+      pdfActs = '<p class="pp-muted">PDF not available yet.</p>';
+    }
     return (
       '<article class="pp-invoice-card pp-invoice-card--' +
       esc(status) +
@@ -5311,76 +5366,47 @@
       (due ? '<p class="pp-invoice-card__meta muted">Due ' + esc(due) + "</p>" : "") +
       pendingNote +
       paidNote +
-      (isGcInvoice || isLaInvoice ? "" : invoiceBankPanelHtml(inv)) +
-      creditHtml +
-      (gcPending
-        ? '<p class="pp-muted pp-invoice-pay__note">Direct Payment (GoCardless) — your mandate will collect this automatically around the due date. No bank transfer or card payment needed.</p>'
-        : "") +
-      (isLaInvoice
-        ? '<p class="pp-muted pp-invoice-pay__note">LA funded (VAT exempt) — the office invoices the local authority / funded provision. No parent card or bank transfer is needed here.</p>'
-        : "") +
-      (canSetupGc
-        ? '<p class="pp-muted pp-invoice-pay__note">Set up Direct Payment once — then invoices are collected automatically by mandate.</p>'
-        : "") +
-      '<div class="pp-invoice-card__acts pp-invoice-card__acts--stack">' +
-      (pdf
-        ? '<button type="button" class="pp-btn pp-btn--primary pp-invoice-card__btn-full" data-pp-preview-invoice="' +
-          esc(inv.id) +
-          '" data-pp-pdf-url="' +
-          esc(pdf) +
-          '" data-pp-pdf-title="' +
-          esc(num || title || "Invoice") +
-          '">Preview invoice</button>' +
-          '<a class="pp-btn pp-btn--ghost pp-invoice-card__btn-full" href="' +
-          esc(pdf) +
-          '" download="' +
-          esc((num || "invoice").replace(/[^\w.-]+/g, "_") + ".pdf") +
-          '" target="_blank" rel="noopener noreferrer">Download PDF</a>'
-        : '<p class="pp-muted">PDF not available yet.</p>') +
-      (canSetupGc
-        ? '<button type="button" class="pp-btn pp-btn--primary pp-invoice-card__btn-full" data-pp-setup-gocardless="' +
-          esc(inv.id) +
-          '">Set up Direct Payment</button>'
-        : "") +
-      (!canSetupGc && gc && !isGcInvoice
-        ? '<a class="pp-btn pp-btn--primary pp-invoice-card__btn-full" href="' +
-          esc(gc) +
-          '" target="_blank" rel="noopener noreferrer">Pay with GoCardless</a>'
-        : "") +
-      (pl
-        ? '<a class="pp-btn pp-btn--ghost pp-invoice-card__btn-full" href="' +
-          esc(pl) +
-          '" target="_blank" rel="noopener noreferrer">Card / Apple Pay link' +
-          (cardCharge ? " · " + esc(cardCharge) : "") +
-          "</a>"
-        : "") +
-      (canPay
-        ? '<button type="button" class="pp-btn pp-btn--sec pp-invoice-card__btn-full" data-pp-pay-invoice="' +
-          esc(inv.id) +
-          '">Card / Apple Pay' +
-          (cardCharge ? " · " + esc(cardCharge) : "") +
-          "</button>"
-        : "") +
-      "</div>" +
-      cardFeeNote +
-      (pl
-        ? '<p class="pp-muted pp-invoice-pay__note">External card link may include a surcharge' +
-          (surcharge ? ": " + esc(surcharge) : "") +
-          ". Bank transfer is preferred (no fee).</p>"
-        : "") +
-      (canReport
-        ? '<div class="pp-invoice-report">' +
-          '<label class="pp-invoice-report__label">Transfer reference (optional)' +
-          '<input class="pp-invoice-report__input" type="text" data-pp-pay-ref="' +
-          esc(inv.id) +
-          '" value="' +
-          esc(suggestedRef) +
-          '" maxlength="120" autocomplete="off" /></label>' +
-          '<button type="button" class="pp-btn pp-btn--primary pp-invoice-card__btn-full" data-pp-report-paid="' +
-          esc(inv.id) +
-          '">I&apos;ve paid by bank transfer</button>' +
-          "</div>"
-        : "") +
+      (isPaid ? "" : isGcInvoice || isLaInvoice ? "" : invoiceBankPanelHtml(inv)) +
+      (isPaid ? "" : creditHtml) +
+      (isPaid
+        ? ""
+        : gcPending
+          ? '<p class="pp-muted pp-invoice-pay__note">Direct Payment (GoCardless) — your mandate will collect this automatically around the due date. No bank transfer or card payment needed.</p>'
+          : "") +
+      (isPaid
+        ? ""
+        : isLaInvoice
+          ? '<p class="pp-muted pp-invoice-pay__note">LA funded (VAT exempt) — the office invoices the local authority / funded provision. No parent card or bank transfer is needed here.</p>'
+          : "") +
+      (isPaid
+        ? ""
+        : canSetupGc
+          ? '<p class="pp-muted pp-invoice-pay__note">Set up Direct Payment once — then invoices are collected automatically by mandate.</p>'
+          : "") +
+      pdfActs +
+      (isPaid ? "" : cardFeeNote) +
+      (isPaid
+        ? ""
+        : pl
+          ? '<p class="pp-muted pp-invoice-pay__note">External card link may include a surcharge' +
+            (surcharge ? ": " + esc(surcharge) : "") +
+            ". Bank transfer is preferred (no fee).</p>"
+          : "") +
+      (isPaid
+        ? ""
+        : canReport
+          ? '<div class="pp-invoice-report">' +
+            '<label class="pp-invoice-report__label">Transfer reference (optional)' +
+            '<input class="pp-invoice-report__input" type="text" data-pp-pay-ref="' +
+            esc(inv.id) +
+            '" value="' +
+            esc(suggestedRef) +
+            '" maxlength="120" autocomplete="off" /></label>' +
+            '<button type="button" class="pp-btn pp-btn--primary pp-invoice-card__btn-full" data-pp-report-paid="' +
+            esc(inv.id) +
+            '">I&apos;ve paid by bank transfer</button>' +
+            "</div>"
+          : "") +
       "</article>"
     );
   }
