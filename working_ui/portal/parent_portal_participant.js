@@ -2709,9 +2709,9 @@
         '<div class="pp-hub-ops__when-row' +
         (next.isToday ? " pp-hub-ops__when-row--today" : "") +
         '">' +
-        '<span class="pp-hub-ops__when-pill">' +
-        esc(next.isToday ? "Today" : "Next") +
-        "</span>" +
+        (next.isToday
+          ? '<span class="pp-hub-ops__when-pill">Today</span>'
+          : "") +
         '<strong class="pp-hub-ops__when">' +
         esc(next.dayLabel) +
         "</strong></div>" +
