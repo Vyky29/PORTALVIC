@@ -35,6 +35,7 @@
       { id: "c0", label: "10:00–11:00 · 1 instructor" },
       { id: "c1", label: "11:00–12:00 · 1 instructor" },
       { id: "c2", label: "12:00–13:00 · 1 instructor" },
+      { id: "c_zak_1300", label: "13:00–14:00 · 1 instructor" },
       {
         id: "c3",
         label: "14:00–15:00 · 1 instructor · waiting list",

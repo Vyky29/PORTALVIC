@@ -1,7 +1,7 @@
 /**
  * Summer holiday crash courses — July 2026.
  * Climbing Week 1: Mon 20 – Thu 23 July · Swimming Week 1: Tue 21 – Fri 24 July.
- * Climbing: 1 place per 60′ (1 instructor) · 10:00–13:00 (+ 14:00 waiting list).
+ * Climbing: 1 place per 60′ (1 instructor) · 10:00–14:00 (+ 14:00 waiting list).
  * Swimming/Aquatic: 2 places per 30′ band (2 instructors) = 8 × 30′ units/day.
  */
 
@@ -57,6 +57,8 @@ export const CRASH_CLIMBING_SLOTS: CrashSlotDef[] = [
   { id: "c0", label: "10:00–11:00 · 1 instructor", start: "10:00", end: "11:00" },
   { id: "c1", label: "11:00–12:00 · 1 instructor", start: "11:00", end: "12:00" },
   { id: "c2", label: "12:00–13:00 · 1 instructor", start: "12:00", end: "13:00" },
+  /** Public 13:00–14:00 hour (Zakariya W1 hold uses this id). */
+  { id: "c_zak_1300", label: "13:00–14:00 · 1 instructor", start: "13:00", end: "14:00" },
   {
     id: "c3",
     label: "14:00–15:00 · 1 instructor · waiting list",
@@ -215,7 +217,7 @@ export function crashCountTakenUnits(
     const act = String(line?.activity || "");
     const slotId = String(line?.slot_id || "");
     if (act === "climbing") {
-      // Only standard bookable hours (exclude waiting list + admin specials).
+      // Standard bookable hours only (exclude waiting-list hours).
       if (!publicClimb.has(slotId)) continue;
       if (climbDates.has(date)) n += 1;
     } else if (act === "swimming") {
@@ -279,7 +281,7 @@ export const CRASH_META = {
   climbing: {
     title: "Climbing",
     invoiceTitle: "Climbing Activity",
-    window: "10:00 am–1:00 pm (14:00 waiting list)",
+    window: "10:00 am–2:00 pm (14:00 waiting list)",
     venue: "Westway Sports & Fitness Centre",
     address: "1 Crowthorne Road, London W10 6RP",
   },

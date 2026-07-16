@@ -19,6 +19,7 @@ import {
   crashSlotById,
   crashSlotsFor,
   crashWeekFillSnapshot,
+  crashWeekLabelForActivity,
   type CrashActivity,
   type CrashWeekId,
 } from "../_shared/crash_summer_2026.ts";
@@ -150,11 +151,9 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
   for (const week of weeks) {
     for (const act of activities) {
       const weekLabel =
-        week.id === "w1"
-          ? (act.id === "climbing"
-            ? "Week 1 · Mon 20 – Thu 23 Jul"
-            : "Week 1 · Tue 21 – Fri 24 Jul")
-          : "Week 2 · Tue 28 – Fri 31 Jul";
+        week.id === "w1" || week.id === "w2"
+          ? crashWeekLabelForActivity(week.id, act.id).replace(/ 2026$/, "").replace(" July", " Jul")
+          : week.label;
       const packPrice =
         act.id === "climbing"
           ? CRASH_PRICES.climbing.weekly_pack
