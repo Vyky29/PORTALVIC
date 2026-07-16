@@ -180,9 +180,12 @@ Deno.serve(async (req) => {
     [participant?.first_name, participant?.last_name].filter(Boolean).join(" ").trim() ||
     "participant";
   const invNo = clean(inv.invoice_number, 40);
-  const productName =
-    clean(doc?.title, 120) ||
-    (invNo ? `Invoice ${invNo}` : `Invoice — ${displayName}`);
+  const docTitle = clean(doc?.title, 120);
+  const productName = invNo
+    ? docTitle && !docTitle.toLowerCase().includes(invNo.toLowerCase())
+      ? `Invoice ${invNo} — ${docTitle}`
+      : `Invoice ${invNo}`
+    : docTitle || `Invoice — ${displayName}`;
   const productNameWithFee =
     gross.fee_pence > 0
       ? `${productName} (incl. £${gross.fee_gbp.toFixed(2)} card fee)`
