@@ -453,11 +453,12 @@
         return window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__;
       }
       window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__ = (async function(){
+      var markHydrated = false;
       try{
       try{
         const box = window.__PORTAL_SUPABASE__;
         if(!box || !box.client){
-          try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
+          markHydrated = true;
           return;
         }
         let sess = box.session;
@@ -499,10 +500,12 @@
         }
         if(!sess || !sess.user){
           console.warn('[portal] schedule_overrides: no auth session on client');
-          /* Do not mark hydrated — auth may still be resolving; kick/retry must run again
-             or cover staff never receive instructor_reassign rows for Today. */
+          /* Do NOT mark hydrated — auth may still be resolving. Kick/retry after identity
+             resolves so cover staff (e.g. Simon←Aurora) and absences (Yuri) reach Today. */
+          try{ window.__PORTAL_SCHEDULE_OVERRIDES_NEED_AUTH_RETRY__ = true; }catch(_){}
           return;
         }
+        try{ window.__PORTAL_SCHEDULE_OVERRIDES_NEED_AUTH_RETRY__ = false; }catch(_){}
         // Validated staff-requested days off (Session Disruption reports upsert
         // into staff_unavailability once admin validates). RLS lets a person read
         // their own rows; these render as "Day off (Time Off Requested)" and
@@ -584,12 +587,16 @@
           window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ = merged;
         }
         if(merged.length) console.info('[portal] schedule_overrides loaded:', merged.length);
+        markHydrated = true;
       }catch(e){
         console.debug('[portal] schedule_overrides fetch', e);
         // Never wipe an already-loaded set on a transient error (see anti-flicker above).
         if(!Array.isArray(window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__)) window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ = [];
+        markHydrated = true;
       }finally{
-        try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
+        if(markHydrated){
+          try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
+        }
       }
       if(typeof portalParticipantsSheetRefreshTabs === 'function') portalParticipantsSheetRefreshTabs();
       try{
@@ -619,7 +626,14 @@
       if(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__){
         return window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__;
       }
-      if(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__) return Promise.resolve();
+      var needAuthRetry = !!(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_NEED_AUTH_RETRY__);
+      if(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__
+        && !needAuthRetry && !opts.force){
+        return Promise.resolve();
+      }
+      if(needAuthRetry){
+        try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = false; }catch(_){}
+      }
       var fn = typeof window !== 'undefined' ? window.portalRefreshScheduleOverridesCache : null;
       if(typeof fn !== 'function'){
         try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
@@ -631,7 +645,12 @@
         new Promise(function(r){ setTimeout(r, ms); })
       ]).then(function(){
         try{
-          if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__) window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true;
+          /* Do not seal hydration while still waiting for auth — cover/absence rows
+             must retry after identity resolves (Simon←Aurora, Yuri absences). */
+          if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__
+            && !window.__PORTAL_SCHEDULE_OVERRIDES_NEED_AUTH_RETRY__){
+            window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true;
+          }
         }catch(_){}
         try{
           if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
@@ -640,7 +659,11 @@
           if(typeof renderMiniCounts === 'function') renderMiniCounts();
         }catch(_){}
       }).catch(function(){
-        try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
+        try{
+          if(!window.__PORTAL_SCHEDULE_OVERRIDES_NEED_AUTH_RETRY__){
+            window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true;
+          }
+        }catch(_){}
         try{ if(typeof renderToday === 'function') renderToday(); }catch(_){}
       });
     }

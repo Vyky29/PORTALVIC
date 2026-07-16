@@ -346,7 +346,9 @@
           }
         }
         if(typeof window.portalStaffKickScheduleOverridesHydrate === "function"){
-          void window.portalStaffKickScheduleOverridesHydrate();
+          /* Force after identity: early hydrate may have run without auth and left
+             NEED_AUTH_RETRY set — cover staff + absences only land once session exists. */
+          void window.portalStaffKickScheduleOverridesHydrate({ force: true, timeoutMs: 6000 });
         }else{
           try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
         }
@@ -966,7 +968,8 @@
               ]);
               if(runId !== _rehydrateRun) return;
               try{
-                if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__){
+                if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__
+                  && !window.__PORTAL_SCHEDULE_OVERRIDES_NEED_AUTH_RETRY__){
                   window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true;
                 }
               }catch(_){}
@@ -975,7 +978,11 @@
               try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
             }
           }catch(_preOvUi){
-            try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
+            try{
+              if(!window.__PORTAL_SCHEDULE_OVERRIDES_NEED_AUTH_RETRY__){
+                window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true;
+              }
+            }catch(_){}
           }
           if (runId === _rehydrateRun) _finishStaffRehydrateUi();
         }
@@ -1011,7 +1018,8 @@
               ]);
               if(runId !== _rehydrateRun) return;
               try{
-                if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__){
+                if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__
+                  && !window.__PORTAL_SCHEDULE_OVERRIDES_NEED_AUTH_RETRY__){
                   window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true;
                 }
               }catch(_){}
@@ -1020,7 +1028,11 @@
               try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
             }
           }catch(_preOvUi){
-            try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
+            try{
+              if(!window.__PORTAL_SCHEDULE_OVERRIDES_NEED_AUTH_RETRY__){
+                window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true;
+              }
+            }catch(_){}
           }
           _finishStaffRehydrateUi();
         }
