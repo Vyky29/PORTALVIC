@@ -239,8 +239,19 @@ export async function createPortalFamilyInvoice(
     return { ok: false, error: "upload_failed" };
   }
 
+  const titleRaw = clean(input.title, 200);
   const title =
-    clean(input.title, 200) || `Invoice ${invoiceNumber} — ${displayName}`;
+    titleRaw &&
+    (titleRaw === invoiceNumber ||
+      titleRaw.startsWith(invoiceNumber + " ") ||
+      titleRaw.startsWith(invoiceNumber + "—") ||
+      titleRaw.startsWith(invoiceNumber + "–") ||
+      titleRaw.startsWith(invoiceNumber + "-") ||
+      /^INV[-_P]/i.test(titleRaw))
+      ? titleRaw
+      : titleRaw
+        ? `${invoiceNumber} — ${titleRaw.replace(/^Invoice\s+/i, "").trim()}`
+        : `${invoiceNumber} — ${displayName}`;
 
   const { data: doc, error: docErr } = await admin
     .from("documents")

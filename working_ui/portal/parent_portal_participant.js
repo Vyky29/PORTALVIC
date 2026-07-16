@@ -5059,13 +5059,29 @@
 
   function invoiceCardHtml(inv) {
     var num = String((inv && inv.invoice_number) || "").trim();
-    // Parent-facing title stays simple — VAT / paid status live on the PDF & chips.
-    var title = num
-      ? "Invoice " + num
-      : String((inv && inv.title) || "Invoice")
-          .replace(/\s*[·•|]\s*VAT\s*(?:20%|Exempt)?/gi, "")
-          .replace(/\s*[·•|]\s*PAID\b/gi, "")
-          .trim() || "Invoice";
+    // Parent-facing title must start with INV-… — never a naked "Crash £700" style label.
+    var title = num;
+    if (!title) {
+      title = String((inv && inv.title) || "Invoice")
+        .replace(/^Invoice\s+/i, "")
+        .replace(/\s*[·•|]\s*VAT\s*(?:20%|Exempt)?/gi, "")
+        .replace(/\s*[·•|]\s*PAID\b/gi, "")
+        .trim();
+      if (!title || /^Crash\b/i.test(title) || /£\s*\d/.test(title)) {
+        title = "Invoice";
+      }
+    }
+    var subtitle = "";
+    var ref = String((inv && inv.reference_text) || "").trim();
+    var notes = String((inv && inv.notes) || "").trim();
+    var rawTitle = String((inv && inv.title) || "");
+    if (/crash/i.test(notes) || /crash/i.test(rawTitle) || /summer term 25\/26/i.test(ref)) {
+      subtitle = "Summer crash course Jul 2026";
+    } else if (/autumn/i.test(ref) || /re-enrol/i.test(notes) || /Autumn term/i.test(rawTitle)) {
+      subtitle = ref || "Autumn term 26/27";
+    } else if (ref && ref !== num) {
+      subtitle = ref;
+    }
     var amount = formatInvoiceMoney(inv && inv.amount_gbp);
     var due = formatDocWhen(inv && inv.due_date);
     var status = String((inv && inv.payment_status) || "unpaid").toLowerCase();
@@ -5171,7 +5187,9 @@
       '">' +
       esc(invoiceStatusLabel(status)) +
       "</span></div>" +
-      (num ? '<p class="pp-invoice-card__meta">Invoice ' + esc(num) + "</p>" : "") +
+      (subtitle
+        ? '<p class="pp-invoice-card__meta">' + esc(subtitle) + "</p>"
+        : "") +
       (amount
         ? '<p class="pp-invoice-card__amount">' + esc(amount) + "</p>"
         : "") +
@@ -5196,7 +5214,7 @@
           '" data-pp-pdf-url="' +
           esc(pdf) +
           '" data-pp-pdf-title="' +
-          esc(num ? "Invoice " + num : title || "Invoice") +
+          esc(num || title || "Invoice") +
           '">Preview invoice</button>' +
           '<a class="pp-btn pp-btn--ghost pp-invoice-card__btn-full" href="' +
           esc(pdf) +
