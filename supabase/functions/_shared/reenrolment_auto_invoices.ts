@@ -3,6 +3,9 @@
  * Mirrors parent UI schedule preview (portal_reenrolment_2026_27.js).
  */
 import type { PortalInvoiceVatMode } from "./portal_tax_invoice_pdf.ts";
+import type { InvoicePaymentScheduleRow } from "./portal_invoice_payment_schedule.ts";
+
+export type ReenrolTermKey = "autumn" | "spring" | "summer";
 
 export type ReenrolInstalment = {
   label: string;
@@ -10,6 +13,18 @@ export type ReenrolInstalment = {
   amountGbp: number;
   lineDescription: string;
   reference: string;
+};
+
+/** One billing-term invoice (full term total + instalment plan on the same share row). */
+export type ReenrolTermInvoice = {
+  term: ReenrolTermKey | null;
+  label: string;
+  amountGbp: number;
+  dueDateIso: string | null;
+  lineDescription: string;
+  reference: string;
+  paymentSchedule: InvoicePaymentScheduleRow[];
+  isAdminFee?: boolean;
 };
 
 export type ReenrolTermTotals = {
@@ -218,13 +233,62 @@ function pushInstalment(
     label: opts.label,
     dueDateIso: opts.dueDateIso,
     amountGbp: amount,
-    // Lead line stays generic (no participant name / pay plan — those belong in PDF meta).
     lineDescription: buildReenrolmentInvoiceLeadDescription(
       opts.academicYear,
       opts.label,
     ),
     reference: instalmentInvoiceReference(opts.label, opts.academicYear),
   });
+}
+
+function pushTermInvoice(
+  out: ReenrolTermInvoice[],
+  opts: {
+    term: ReenrolTermKey | null;
+    label: string;
+    academicYear: string;
+    dueDateIso: string | null;
+    instalmentRows: Array<{ label: string; dueIso: string; amountGbp: number }>;
+    isAdminFee?: boolean;
+  },
+) {
+  const schedule: InvoicePaymentScheduleRow[] = opts.instalmentRows
+    .map((r, i) => ({
+      seq: i + 1,
+      label: clean(r.label, 120) || `Payment ${i + 1}`,
+      due_date: r.dueIso ? String(r.dueIso).slice(0, 10) : null,
+      amount_gbp: round2(r.amountGbp),
+      status: "pending" as const,
+    }))
+    .filter((r) => r.amount_gbp > 0);
+  if (!schedule.length) return;
+  const amountGbp = round2(schedule.reduce((s, r) => s + r.amount_gbp, 0));
+  out.push({
+    term: opts.term,
+    label: opts.label,
+    amountGbp,
+    dueDateIso: opts.dueDateIso || schedule[0]?.due_date || null,
+    lineDescription: buildReenrolmentInvoiceLeadDescription(opts.academicYear, opts.label),
+    reference: instalmentInvoiceReference(opts.label, opts.academicYear),
+    paymentSchedule: schedule,
+    isAdminFee: opts.isAdminFee,
+  });
+}
+
+/** Split a term programme total into equal instalments (GC fee per slice when applicable). */
+function splitTermInstalmentAmounts(
+  termTotal: number,
+  slots: Array<{ label: string; dueIso: string }>,
+  payCode: string,
+): Array<{ label: string; dueIso: string; amountGbp: number }> {
+  const n = slots.length;
+  if (n <= 0 || termTotal <= 0) return [];
+  const per = termTotal / n;
+  return slots.map((s) => ({
+    label: s.label,
+    dueIso: s.dueIso,
+    amountGbp: withGcFee(per, payCode),
+  }));
 }
 
 /**
@@ -242,8 +306,6 @@ export function buildReenrolmentInvoiceLeadDescription(
     "Structured activity support delivered across aquatic environments for a SEND participant."
   );
 }
-
-export type ReenrolTermKey = "autumn" | "spring" | "summer";
 
 /** Billing term for 2026/27: Jul–Aug (re-enrol window) and Sep–Dec → Autumn. */
 export function currentReenrolBillingTerm(asOf: Date = new Date()): ReenrolTermKey {
@@ -335,6 +397,8 @@ export function buildReenrolmentInstalments(args: {
   participantName: string;
   academicYear?: string;
 }): {
+  termInvoices: ReenrolTermInvoice[];
+  /** @deprecated Flat list — use termInvoices. Kept for counts in parent copy. */
   instalments: ReenrolInstalment[];
   vatMode: PortalInvoiceVatMode;
   paymentMethodHint: "bank_transfer" | "gocardless" | "payment_link" | "other";
@@ -344,6 +408,7 @@ export function buildReenrolmentInstalments(args: {
 } {
   const academicYear = args.academicYear || "2026-27";
   const empty = {
+    termInvoices: [] as ReenrolTermInvoice[],
     instalments: [] as ReenrolInstalment[],
     vatMode: "vat_20" as PortalInvoiceVatMode,
     paymentMethodHint: "bank_transfer" as const,
@@ -386,37 +451,44 @@ export function buildReenrolmentInstalments(args: {
   const vatMode = vatModeFromChoices(choices);
   const hint = paymentMethodHint(payCode);
 
-  const out: ReenrolInstalment[] = [];
-  /** Bank first Autumn payment: mid-August so funds arrive before term. */
+  const termOut: ReenrolTermInvoice[] = [];
   const bankAutumnFirstDue = "2026-08-15";
-  /** GoCardless: always collect on the 1st — Autumn starts 1 September. */
   const gcAutumnFirstDue = "2026-09-01";
   const autumnFirstDue =
     payCode === "gocardless" ? gcAutumnFirstDue : bankAutumnFirstDue;
 
+  const term3Meta: Array<{ key: ReenrolTermKey; label: string; due: string }> = [
+    { key: "autumn", label: "Autumn term", due: autumnFirstDue },
+    { key: "spring", label: "Spring term", due: "2026-12-01" },
+    { key: "summer", label: "Summer term", due: "2027-03-01" },
+  ];
+
   if (payCode === "own_way_flexible" || scheduleCode === "own_term") {
-    const terms: Array<{ key: ReenrolTermKey; label: string; due: string }> = [
-      { key: "autumn", label: "Autumn term", due: "2026-09-01" },
-      { key: "spring", label: "Spring term", due: "2027-01-01" },
-      { key: "summer", label: "Summer term", due: "2027-04-01" },
-    ];
-    for (const t of terms) {
+    for (const t of term3Meta) {
       if (!includeTerm(t.key)) continue;
-      pushInstalment(out, {
+      pushTermInvoice(termOut, {
+        term: t.key,
         label: `${t.label} · programme`,
-        dueDateIso: t.due,
-        amountGbp: totals[t.key],
         academicYear,
+        dueDateIso: t.due,
+        instalmentRows: [
+          {
+            label: `${t.label} · full programme`,
+            dueIso: t.due,
+            amountGbp: totals[t.key],
+          },
+        ],
       });
-      pushInstalment(out, {
+      pushTermInvoice(termOut, {
+        term: null,
         label: `${t.label} · admin fee`,
-        dueDateIso: t.due,
-        amountGbp: OWN_FEE,
         academicYear,
+        dueDateIso: t.due,
+        instalmentRows: [{ label: "Admin fee", dueIso: t.due, amountGbp: OWN_FEE }],
+        isAdminFee: true,
       });
     }
   } else if (scheduleCode === "yearly_1off") {
-    /* Full-year one-off: bank transfer / Card / Apple Pay only — not GoCardless. */
     if (payCode === "gocardless") {
       return {
         ...empty,
@@ -426,107 +498,110 @@ export function buildReenrolmentInstalments(args: {
         skipReason: "yearly_1off_bank_only",
       };
     }
-    pushInstalment(out, {
-      label: "Full year (1 payment)",
-      dueDateIso: bankAutumnFirstDue,
-      amountGbp: withGcFee(totals.annual, payCode),
-        academicYear,
-    });
-  } else if (scheduleCode === "term_3") {
-    const term3: Array<{ key: ReenrolTermKey; label: string; due: string }> = [
-      { key: "autumn", label: "Autumn term", due: autumnFirstDue },
-      { key: "spring", label: "Spring term", due: "2026-12-01" },
-      { key: "summer", label: "Summer term", due: "2027-03-01" },
-    ];
-    for (const t of term3) {
+    /* One invoice per term; each term paid in full on first due date. */
+    for (const t of term3Meta) {
       if (!includeTerm(t.key)) continue;
-      pushInstalment(out, {
+      const due = t.key === "autumn" ? bankAutumnFirstDue : t.due;
+      pushTermInvoice(termOut, {
+        term: t.key,
         label: t.label,
-        dueDateIso: t.due,
-        amountGbp: withGcFee(totals[t.key], payCode),
         academicYear,
+        dueDateIso: due,
+        instalmentRows: [
+          {
+            label: `${t.label} · full payment`,
+            dueIso: due,
+            amountGbp: withGcFee(totals[t.key], payCode),
+          },
+        ],
+      });
+    }
+  } else if (scheduleCode === "term_3") {
+    for (const t of term3Meta) {
+      if (!includeTerm(t.key)) continue;
+      pushTermInvoice(termOut, {
+        term: t.key,
+        label: t.label,
+        academicYear,
+        dueDateIso: t.due,
+        instalmentRows: [
+          {
+            label: `${t.label} · full payment`,
+            dueIso: t.due,
+            amountGbp: withGcFee(totals[t.key], payCode),
+          },
+        ],
       });
     }
   } else if (scheduleCode === "term_flexi") {
     for (const t of FLEXI_TERM) {
       if (!includeTerm(t.term)) continue;
-      const termTotal = totals[t.term];
-      const halfAmt = termTotal / 2;
-      for (let hi = 0; hi < t.halves.length; hi++) {
-        const h = t.halves[hi];
+      const rows = t.halves.map((h, hi) => {
         let dueIso = h.dueIso;
-        /* Bank: first Autumn half due 15 Aug. GoCardless stays day 1 (1 Sep). */
         if (t.term === "autumn" && hi === 0) {
           dueIso = payCode === "gocardless" ? gcAutumnFirstDue : bankAutumnFirstDue;
         }
-        pushInstalment(out, {
+        return {
           label: `${t.termLabel} · ${h.halfLabel}`,
-          dueDateIso: dueIso,
-          amountGbp: withGcFee(halfAmt, payCode),
+          dueIso,
+          amountGbp: 0,
+        };
+      });
+      const withAmounts = splitTermInstalmentAmounts(totals[t.term], rows, payCode);
+      pushTermInvoice(termOut, {
+        term: t.term,
+        label: t.termLabel,
         academicYear,
-        });
-      }
+        dueDateIso: withAmounts[0]?.dueIso || null,
+        instalmentRows: withAmounts,
+      });
     }
   } else if (scheduleCode === "monthly_term") {
-    let payNo = 0;
     for (const t of MONTHLY_TERM_PLAN) {
       if (!includeTerm(t.term)) continue;
-      const termTotal = totals[t.term];
-      const perMonth = termTotal / t.months.length;
-      for (let mi = 0; mi < t.months.length; mi++) {
-        const m = t.months[mi];
-        payNo += 1;
+      const slots = t.months.map((m, mi) => {
         let dueIso = m.dueIso;
-        /* Bank first Autumn month: 15 Aug. GC keeps 1 September (and every 1st). */
         if (payCode !== "gocardless" && t.term === "autumn" && mi === 0) {
           dueIso = bankAutumnFirstDue;
         }
-        pushInstalment(out, {
-          label: `Payment ${payNo} · ${m.label} (${t.label})`,
-          dueDateIso: dueIso,
-          amountGbp: withGcFee(perMonth, payCode),
+        return {
+          label: `Payment · ${m.label}`,
+          dueIso,
+          amountGbp: 0,
+        };
+      });
+      const withAmounts = splitTermInstalmentAmounts(totals[t.term], slots, payCode);
+      pushTermInvoice(termOut, {
+        term: t.term,
+        label: `${t.label} term`,
         academicYear,
-        });
-      }
+        dueDateIso: withAmounts[0]?.dueIso || null,
+        instalmentRows: withAmounts,
+      });
     }
   } else if (scheduleCode === "monthly_10") {
-    /* Autumn 4 / Spring 3 / Summer 3 — amounts split from each term total. */
     const plan10 = [
-      {
-        term: "autumn" as const,
-        label: "Autumn",
-        months: MONTHLY_10.slice(0, 4),
-      },
-      {
-        term: "spring" as const,
-        label: "Spring",
-        months: MONTHLY_10.slice(4, 7),
-      },
-      {
-        term: "summer" as const,
-        label: "Summer",
-        months: MONTHLY_10.slice(7, 10),
-      },
+      { term: "autumn" as const, label: "Autumn", months: MONTHLY_10.slice(0, 4) },
+      { term: "spring" as const, label: "Spring", months: MONTHLY_10.slice(4, 7) },
+      { term: "summer" as const, label: "Summer", months: MONTHLY_10.slice(7, 10) },
     ];
-    let payNo = 0;
     for (const t of plan10) {
       if (!includeTerm(t.term)) continue;
-      const termTotal = totals[t.term];
-      const perMonth = termTotal / t.months.length;
-      for (let mi = 0; mi < t.months.length; mi++) {
-        const m = t.months[mi];
-        payNo += 1;
+      const slots = t.months.map((m, mi) => {
         let dueIso = m.dueIso;
         if (payCode !== "gocardless" && t.term === "autumn" && mi === 0) {
           dueIso = bankAutumnFirstDue;
         }
-        pushInstalment(out, {
-          label: `Payment ${payNo} · ${m.label} (${t.label})`,
-          dueDateIso: dueIso,
-          amountGbp: withGcFee(perMonth, payCode),
+        return { label: `Payment · ${m.label}`, dueIso, amountGbp: 0 };
+      });
+      const withAmounts = splitTermInstalmentAmounts(totals[t.term], slots, payCode);
+      pushTermInvoice(termOut, {
+        term: t.term,
+        label: `${t.label} term`,
         academicYear,
-        });
-      }
+        dueDateIso: withAmounts[0]?.dueIso || null,
+        instalmentRows: withAmounts,
+      });
     }
   } else {
     return {
@@ -538,22 +613,34 @@ export function buildReenrolmentInstalments(args: {
     };
   }
 
-  const schedulePlanPhrase = out.length
+  const instalmentCount = termOut.reduce((s, inv) => s + inv.paymentSchedule.length, 0);
+  const schedulePlanPhrase = termOut.length
     ? reenrolmentSchedulePlanPhrase({
       scheduleCode,
       paymentMethodHint: hint,
-      instalmentCount: out.length,
+      instalmentCount,
       enrolmentCadence,
       billingTerm,
     })
     : null;
 
+  const flatInstalments: ReenrolInstalment[] = termOut.flatMap((inv) =>
+    inv.paymentSchedule.map((row) => ({
+      label: `${inv.label} · ${row.label}`,
+      dueDateIso: row.due_date,
+      amountGbp: row.amount_gbp,
+      lineDescription: inv.lineDescription,
+      reference: inv.reference,
+    })),
+  );
+
   return {
-    instalments: out,
+    termInvoices: termOut,
+    instalments: flatInstalments,
     vatMode,
     paymentMethodHint: hint,
     scheduleCode,
     schedulePlanPhrase,
-    skipReason: out.length ? null : "no_instalments",
+    skipReason: termOut.length ? null : "no_instalments",
   };
 }

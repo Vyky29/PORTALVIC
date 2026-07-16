@@ -5243,6 +5243,12 @@
       }
     }
     var amount = formatInvoiceMoney(inv && inv.amount_gbp);
+    var dueNow = inv && inv.amount_due_now != null ? formatInvoiceMoney(inv.amount_due_now) : "";
+    var paidSoFar =
+      inv && inv.amount_paid_gbp != null && Number(inv.amount_paid_gbp) > 0
+        ? formatInvoiceMoney(inv.amount_paid_gbp)
+        : "";
+    var schedule = (inv && inv.payment_schedule) || [];
     var due = formatDocWhen(inv && inv.due_date);
     var status = String((inv && inv.payment_status) || "unpaid").toLowerCase();
     var pdf = (inv && inv.pdf_url) || "";
@@ -5420,7 +5426,34 @@
         ? '<p class="pp-invoice-card__meta">' + esc(subtitle) + "</p>"
         : "") +
       (amount
-        ? '<p class="pp-invoice-card__amount">' + esc(amount) + "</p>"
+        ? '<p class="pp-invoice-card__amount">' +
+          (schedule.length ? "Total " : "") +
+          esc(amount) +
+          (dueNow && (status === "partial" || status === "unpaid") && schedule.length
+            ? " · Due now " + esc(dueNow)
+            : "") +
+          (paidSoFar ? " · Paid " + esc(paidSoFar) : "") +
+          "</p>"
+        : "") +
+      (schedule.length && !isPaid
+        ? '<ul class="pp-invoice-card__schedule pp-muted" style="margin:6px 0 0;padding-left:18px;font-size:12px">' +
+          schedule
+            .map(function (row) {
+              var st = String(row.status || "").toLowerCase();
+              var mark = st === "paid" ? "✓ " : "";
+              return (
+                "<li>" +
+                mark +
+                esc(row.label || "Payment") +
+                " · " +
+                esc(formatDocWhen(row.due_date)) +
+                " · " +
+                esc(formatInvoiceMoney(row.amount_gbp)) +
+                "</li>"
+              );
+            })
+            .join("") +
+          "</ul>"
         : "") +
       (due ? '<p class="pp-invoice-card__meta muted">Due ' + esc(due) + "</p>" : "") +
       pendingNote +

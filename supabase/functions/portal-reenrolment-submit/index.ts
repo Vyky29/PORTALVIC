@@ -166,32 +166,34 @@ Deno.serve(async (req) => {
 
     if (plan.skipReason) {
       invoicesSkipped = plan.skipReason;
-    } else if (plan.instalments.length) {
+    } else if (plan.termInvoices.length) {
       const ownerId = await resolvePortalInvoiceOwnerUserId(supabase);
       if (!ownerId) {
         console.error("[portal-reenrolment-submit] no invoice owner user");
         invoicesSkipped = "no_owner";
       } else {
-        for (const inst of plan.instalments) {
+        for (const inv of plan.termInvoices) {
           const created = await createPortalFamilyInvoice(supabase, {
             contactId: participantContactId,
-            amountGbp: inst.amountGbp,
-            dueDateIso: inst.dueDateIso,
+            amountGbp: inv.amountGbp,
+            dueDateIso: inv.dueDateIso,
             vatMode: plan.vatMode,
-            lineDescription: inst.lineDescription,
-            reference: inst.reference,
+            lineDescription: inv.lineDescription,
+            reference: inv.reference,
             notes: null,
-            title: `Invoice — ${participantName} · ${inst.label}`,
+            title: `Invoice — ${participantName} · ${inv.label}`,
             shareStatus: "ready",
             paymentMethodHint: plan.paymentMethodHint,
             createdVia: "reenrolment",
             ownerUserId: ownerId,
             readyBy: "reenrolment_auto",
+            paymentSchedule: inv.paymentSchedule,
+            billingTerm: inv.term,
           });
           if (!created.ok) {
             console.error(
               "[portal-reenrolment-submit] invoice",
-              inst.label,
+              inv.label,
               created.error,
             );
             invoicesSkipped = invoicesSkipped || created.error;
@@ -199,8 +201,10 @@ Deno.serve(async (req) => {
           }
           invoicesCreated.push({
             invoice_number: created.invoiceNumber,
-            amount_gbp: inst.amountGbp,
-            due_date: inst.dueDateIso,
+            amount_gbp: inv.amountGbp,
+            due_date: inv.dueDateIso,
+            billing_term: inv.term,
+            instalments: inv.paymentSchedule.length,
           });
         }
 

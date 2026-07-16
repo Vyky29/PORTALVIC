@@ -8,6 +8,7 @@ import { stripeVerifyAndParseEvent } from "../_shared/stripe_checkout.ts";
 import { xeroSyncPaidInvoiceShare } from "../_shared/xero_payments.ts";
 import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
 import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
+import { recordInvoiceInstalmentPayment } from "../_shared/portal_create_family_invoice.ts";
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -72,38 +73,73 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const now = new Date().toISOString();
-  const patch = {
-    payment_status: "paid",
-    paid_at: now,
-    paid_via: "stripe",
-    stripe_checkout_session_id: sessionId || null,
-    stripe_payment_intent_id: paymentIntent || null,
-    updated_at: now,
-  };
-
-  let q = supabase.from("portal_parent_invoice_share").update(patch);
-  if (invoiceShareId) {
-    q = q.eq("id", invoiceShareId);
-  } else {
-    q = q.eq("stripe_checkout_session_id", sessionId);
+  let shareId = invoiceShareId;
+  if (!shareId && sessionId) {
+    const { data: bySession } = await supabase
+      .from("portal_parent_invoice_share")
+      .select("id")
+      .eq("stripe_checkout_session_id", sessionId)
+      .maybeSingle();
+    shareId = String(bySession?.id || "").trim();
+  }
+  if (!shareId) {
+    return json(200, { ok: true, skipped: "invoice_not_found" });
   }
 
-  const { data, error } = await q
+  const { data: before } = await supabase
+    .from("portal_parent_invoice_share")
+    .select("id, amount_gbp, payment_schedule")
+    .eq("id", shareId)
+    .maybeSingle();
+  if (!before) {
+    return json(200, { ok: true, skipped: "invoice_not_found" });
+  }
+
+  const netPence = Number(meta.invoice_net_pence);
+  const payGbp =
+    Number.isFinite(netPence) && netPence > 0 ? Math.round(netPence) / 100 : null;
+
+  const schedAmt = Number(
+    (Array.isArray(before.payment_schedule) ? before.payment_schedule : []).find(
+      (r: { status?: string; amount_gbp?: number }) =>
+        String(r?.status || "").toLowerCase() !== "paid",
+    )?.amount_gbp,
+  );
+  const payAmount =
+    payGbp ?? (Number.isFinite(schedAmt) && schedAmt > 0 ? schedAmt : Number(before.amount_gbp));
+
+  const recorded = await recordInvoiceInstalmentPayment(supabase, shareId, {
+    amountGbp: payAmount,
+    paidVia: "stripe",
+    stripeCheckoutSessionId: sessionId || null,
+    stripePaymentIntentId: paymentIntent || null,
+  });
+
+  if (!recorded.ok) {
+    console.error("[parent-portal-stripe-webhook] instalment", recorded.error);
+    return json(500, { ok: false, error: recorded.error });
+  }
+
+  const { data, error } = await supabase
+    .from("portal_parent_invoice_share")
     .select(
-      "id, payment_status, amount_gbp, invoice_number, paid_via, xero_invoice_id, xero_payment_id",
+      "id, payment_status, amount_gbp, amount_paid_gbp, invoice_number, paid_via, xero_invoice_id, xero_payment_id",
     )
+    .eq("id", shareId)
     .maybeSingle();
   if (error) {
     console.error("[parent-portal-stripe-webhook]", error.message);
     return json(500, { ok: false, error: "update_failed" });
   }
   if (!data) {
-    console.warn("[parent-portal-stripe-webhook] invoice not found", invoiceShareId, sessionId);
+    console.warn("[parent-portal-stripe-webhook] invoice not found", shareId, sessionId);
     return json(200, { ok: true, skipped: "invoice_not_found" });
   }
 
-  const xero = await xeroSyncPaidInvoiceShare(supabase, data);
+  const xero =
+    data.payment_status === "paid"
+      ? await xeroSyncPaidInvoiceShare(supabase, data)
+      : { skipped: "partial_instalment" };
   let hold = null;
   try {
     const { data: shareRow } = await supabase
@@ -112,7 +148,9 @@ Deno.serve(async (req) => {
       .eq("id", data.id)
       .maybeSingle();
     const cid = String(shareRow?.contact_id || "").trim();
-    if (cid) hold = await clearPaymentHoldForContact(supabase, cid, "stripe");
+    if (cid && data.payment_status === "paid") {
+      hold = await clearPaymentHoldForContact(supabase, cid, "stripe");
+    }
   } catch (e) {
     console.error(
       "[parent-portal-stripe-webhook] hold clear",
@@ -122,13 +160,15 @@ Deno.serve(async (req) => {
 
   // Summer crash courses: confirm slot holds only after pay-in-full.
   let crashConfirmed = 0;
-  try {
-    crashConfirmed = await confirmCrashSummerBookingsForInvoice(supabase, String(data.id));
-  } catch (e) {
+  if (data.payment_status === "paid") {
+    try {
+      crashConfirmed = await confirmCrashSummerBookingsForInvoice(supabase, String(data.id));
+    } catch (e) {
     console.error(
       "[parent-portal-stripe-webhook] crash confirm",
       e instanceof Error ? e.message : String(e),
     );
+    }
   }
 
   return json(200, {

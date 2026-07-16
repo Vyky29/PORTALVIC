@@ -7,6 +7,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
 import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
 import { stripeConfigured, stripeCreateCheckoutSession, stripeGrossUpFromGbp } from "../_shared/stripe_checkout.ts";
+import { amountDueNow } from "../_shared/portal_invoice_payment_schedule.ts";
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -124,7 +125,7 @@ Deno.serve(async (req) => {
   const { data: inv, error } = await supabase
     .from("portal_parent_invoice_share")
     .select(
-      "id, document_id, contact_id, invoice_number, amount_gbp, payment_status, share_status",
+      "id, document_id, contact_id, invoice_number, amount_gbp, amount_paid_gbp, payment_schedule, payment_status, share_status",
     )
     .eq("id", invoiceId)
     .eq("contact_id", contactId)
@@ -137,6 +138,9 @@ Deno.serve(async (req) => {
   if (inv.payment_status === "paid") {
     return json(409, { ok: false, error: "already_paid" });
   }
+  if (inv.payment_status === "partial") {
+    /* allow next instalment */
+  }
   if (inv.payment_status === "void") {
     return json(409, { ok: false, error: "invoice_void" });
   }
@@ -148,22 +152,22 @@ Deno.serve(async (req) => {
     });
   }
 
-  const amount = Number(inv.amount_gbp);
-  if (!Number.isFinite(amount) || amount <= 0) {
+  const dueAmount = amountDueNow(inv);
+  if (!Number.isFinite(dueAmount) || dueAmount <= 0) {
     return json(400, {
       ok: false,
       error: "amount_required",
-      message: "This invoice has no amount set for card payment. Contact the office.",
+      message: "This invoice has no amount due for card payment. Contact the office.",
     });
   }
 
-  const amountPence = Math.round(amount * 100);
+  const amountPence = Math.round(dueAmount * 100);
   if (amountPence < 30) {
     return json(400, { ok: false, error: "amount_too_small" });
   }
 
-  // Parent pays invoice + Stripe fee so the club nets the exact service amount.
-  const gross = stripeGrossUpFromGbp(amount);
+  // Parent pays instalment (or full balance) + Stripe fee so the club nets the exact service amount.
+  const gross = stripeGrossUpFromGbp(dueAmount);
   const chargePence = gross.charge_pence;
   if (chargePence < 30) {
     return json(400, { ok: false, error: "amount_too_small" });

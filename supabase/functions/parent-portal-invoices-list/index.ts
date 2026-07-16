@@ -8,6 +8,11 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
 import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
 import { stripeConfigured, stripeGrossUpFromGbp } from "../_shared/stripe_checkout.ts";
+import {
+  amountDueNow,
+  normalizePaymentSchedule,
+  parentFacingSchedule,
+} from "../_shared/portal_invoice_payment_schedule.ts";
 import { gocardlessConfigured } from "../_shared/gocardless.ts";
 import { mandateIsActive } from "../_shared/gocardless_portal.ts";
 import {
@@ -126,7 +131,7 @@ Deno.serve(async (req) => {
   const { data: shares, error } = await supabase
     .from("portal_parent_invoice_share")
     .select(
-      "id, document_id, contact_id, invoice_number, amount_gbp, due_date, payment_status, share_status, ready_at, created_at, updated_at, payment_method_hint, gocardless_url, gocardless_payment_id, gocardless_mandate_id, payment_link_url, payment_link_surcharge_note, parent_reported_paid_at, parent_reported_ref, parent_reported_method, paid_at, paid_via, vat_mode, reference_text, line_description",
+      "id, document_id, contact_id, invoice_number, amount_gbp, amount_paid_gbp, payment_schedule, next_instalment_due, billing_term, due_date, payment_status, share_status, ready_at, created_at, updated_at, payment_method_hint, gocardless_url, gocardless_payment_id, gocardless_mandate_id, payment_link_url, payment_link_surcharge_note, parent_reported_paid_at, parent_reported_ref, parent_reported_method, paid_at, paid_via, vat_mode, reference_text, line_description",
     )
     .eq("contact_id", contactId)
     .eq("share_status", "ready")
@@ -203,17 +208,17 @@ Deno.serve(async (req) => {
       .from(BUCKET)
       .createSignedUrl(String(doc.file_url), 3600);
     const amount = share.amount_gbp != null ? Number(share.amount_gbp) : null;
+    const dueNow = amountDueNow(share);
+    const schedule = parentFacingSchedule(normalizePaymentSchedule(share.payment_schedule));
     const status = share.payment_status || "unpaid";
     const openForPay = status === "unpaid" || status === "partial";
     const suggestedRef = suggestedTransferReference(share.invoice_number, displayName);
     const canPayCard =
       cardCheckoutAvailable &&
       openForPay &&
-      amount != null &&
-      Number.isFinite(amount) &&
-      amount > 0;
+      dueNow > 0;
     const cardPricing =
-      canPayCard && amount != null ? stripeGrossUpFromGbp(amount) : null;
+      canPayCard ? stripeGrossUpFromGbp(dueNow) : null;
     const hint = hintEarly;
     const isGcHint = hint === "gocardless";
     const isLaFunded = false;
@@ -237,6 +242,11 @@ Deno.serve(async (req) => {
       title: clean(doc.title, 200) || "Invoice",
       invoice_number: share.invoice_number || null,
       amount_gbp: amount,
+      amount_due_now: dueNow > 0 ? dueNow : null,
+      amount_paid_gbp: share.amount_paid_gbp != null ? Number(share.amount_paid_gbp) : 0,
+      payment_schedule: schedule.length ? schedule : null,
+      next_instalment_due: share.next_instalment_due || null,
+      billing_term: share.billing_term || null,
       due_date: share.due_date || null,
       payment_status: status,
       ready_at: share.ready_at || doc.created_at || null,

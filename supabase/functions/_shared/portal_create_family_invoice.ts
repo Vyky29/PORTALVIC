@@ -8,6 +8,12 @@ import {
   type PortalInvoiceVatMode,
 } from "./portal_tax_invoice_pdf.ts";
 import { resolveParticipantInvoiceFunding } from "./portal_invoice_funding.ts";
+import {
+  applyInstalmentPayment,
+  type InvoicePaymentScheduleRow,
+  nextInstalmentDueDate,
+  normalizePaymentSchedule,
+} from "./portal_invoice_payment_schedule.ts";
 
 const BUCKET = "documents";
 
@@ -47,6 +53,9 @@ export type PortalFamilyInvoiceCreateInput = {
   descriptionComplete?: boolean;
   clientIdLabel?: string | null;
   poLabel?: string | null;
+  /** Planned instalments on this invoice (re-enrolment term invoices). */
+  paymentSchedule?: InvoicePaymentScheduleRow[];
+  billingTerm?: "autumn" | "spring" | "summer" | null;
 };
 
 export type PortalFamilyInvoiceCreateResult =
@@ -251,6 +260,8 @@ export async function createPortalFamilyInvoice(
       billToLines,
       participantName: displayName,
       paid: false,
+      paymentSchedule: input.paymentSchedule || [],
+      amountPaidGbp: 0,
     });
   } catch (err) {
     console.error("[createPortalFamilyInvoice] pdf", err);
@@ -326,6 +337,11 @@ export async function createPortalFamilyInvoice(
     quantity,
     unit_price_gbp: unitPrice,
     reference_text: reference,
+    amount_paid_gbp: 0,
+    payment_schedule: (input.paymentSchedule || []).length ? input.paymentSchedule : [],
+    next_instalment_due:
+      nextInstalmentDueDate(input.paymentSchedule || []) || dueDate,
+    billing_term: input.billingTerm || null,
     updated_at: now,
   };
 
@@ -457,6 +473,9 @@ export async function regeneratePortalInvoiceSharePdf(
   const clientIdLabel = funding.clientId || contactId;
   const poLabel = funding.po || "";
   const modeLabel = invoiceModeLabel(paymentMethodHint, vatMode);
+  const paymentSchedule = normalizePaymentSchedule(share.payment_schedule);
+  const amountPaidGbp = round2(Number(share.amount_paid_gbp) || 0);
+  const isPaid = String(share.payment_status || "").toLowerCase() === "paid";
   const descriptionLines = invoiceDescriptionLines({
     lineDescription,
     vatMode,
@@ -483,7 +502,9 @@ export async function regeneratePortalInvoiceSharePdf(
       billToName,
       billToLines,
       participantName: displayName,
-      paid: String(share.payment_status || "").toLowerCase() === "paid",
+      paid: isPaid,
+      paymentSchedule,
+      amountPaidGbp,
     });
   } catch (err) {
     console.error("[regeneratePortalInvoiceSharePdf] pdf", err);
@@ -525,4 +546,97 @@ export async function regeneratePortalInvoiceSharePdf(
   }
 
   return { ok: true, pdfStoragePath: storagePath };
+}
+
+/** Apply one instalment payment (or mark all paid) and regenerate the PDF. */
+export async function recordInvoiceInstalmentPayment(
+  admin: SupabaseClient,
+  invoiceShareId: string,
+  opts: {
+    amountGbp: number;
+    paidVia: string;
+    markAll?: boolean;
+    stripeCheckoutSessionId?: string | null;
+    stripePaymentIntentId?: string | null;
+  },
+): Promise<
+  | { ok: true; payment_status: string; amount_paid_gbp: number }
+  | { ok: false; error: string }
+> {
+  const shareId = clean(invoiceShareId, 80);
+  if (!shareId) return { ok: false, error: "invoice_id_required" };
+
+  const { data: share, error: shareErr } = await admin
+    .from("portal_parent_invoice_share")
+    .select("*")
+    .eq("id", shareId)
+    .maybeSingle();
+  if (shareErr || !share) return { ok: false, error: "not_found" };
+
+  const now = new Date().toISOString();
+  const schedule = normalizePaymentSchedule(share.payment_schedule);
+  let payment_status = String(share.payment_status || "unpaid");
+  let amount_paid_gbp = round2(Number(share.amount_paid_gbp) || 0);
+  let next_instalment_due: string | null = share.next_instalment_due
+    ? String(share.next_instalment_due).slice(0, 10)
+    : null;
+  let payment_schedule = schedule;
+
+  if (schedule.length) {
+    const applied = applyInstalmentPayment(schedule, {
+      amountGbp: opts.amountGbp,
+      paidAt: now,
+      paidVia: opts.paidVia,
+      markAll: !!opts.markAll,
+    });
+    payment_schedule = applied.schedule;
+    amount_paid_gbp = applied.amount_paid_gbp;
+    payment_status = applied.payment_status;
+    next_instalment_due = applied.next_instalment_due;
+  } else {
+    const total = round2(Number(share.amount_gbp) || 0);
+    amount_paid_gbp = opts.markAll
+      ? total
+      : round2(amount_paid_gbp + opts.amountGbp);
+    if (total > 0 && amount_paid_gbp + 0.01 >= total) payment_status = "paid";
+    else if (amount_paid_gbp > 0) payment_status = "partial";
+    else payment_status = "unpaid";
+  }
+
+  const patch: Record<string, unknown> = {
+    payment_status,
+    amount_paid_gbp,
+    payment_schedule,
+    next_instalment_due,
+    updated_at: now,
+  };
+  if (payment_status === "paid") {
+    patch.paid_at = now;
+    patch.paid_via = clean(opts.paidVia, 40) || "admin";
+    patch.next_instalment_due = null;
+  } else if (amount_paid_gbp > 0) {
+    patch.paid_at = null;
+    patch.paid_via = null;
+  }
+  if (opts.stripeCheckoutSessionId !== undefined) {
+    patch.stripe_checkout_session_id = opts.stripeCheckoutSessionId || null;
+  }
+  if (opts.stripePaymentIntentId !== undefined) {
+    patch.stripe_payment_intent_id = opts.stripePaymentIntentId || null;
+  }
+
+  const { error: updErr } = await admin
+    .from("portal_parent_invoice_share")
+    .update(patch)
+    .eq("id", shareId);
+  if (updErr) {
+    console.error("[recordInvoiceInstalmentPayment]", updErr.message);
+    return { ok: false, error: "update_failed" };
+  }
+
+  await regeneratePortalInvoiceSharePdf(admin, shareId).catch((e) => {
+    console.error("[recordInvoiceInstalmentPayment] pdf", e);
+  });
+
+  return { ok: true, payment_status, amount_paid_gbp };
 }

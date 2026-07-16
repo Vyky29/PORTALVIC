@@ -25,6 +25,15 @@ export type PortalInvoicePdfInput = {
   paid?: boolean;
   amountPaidGbp?: number | null;
   creditAppliedGbp?: number | null;
+  /** Instalment plan rows (re-enrolment term invoices). */
+  paymentSchedule?: Array<{
+    seq: number;
+    label: string;
+    due_date: string | null;
+    amount_gbp: number;
+    status: string;
+    paid_at?: string | null;
+  }>;
 };
 
 const VAT_NUMBER = "450697474";
@@ -368,6 +377,44 @@ export async function buildPortalTaxInvoicePdf(
       font: fontBold,
       color: ink,
     });
+    y -= 16;
+  }
+
+  const schedule = (input.paymentSchedule || []).filter(
+    (r) => r && Number(r.amount_gbp) > 0,
+  );
+  if (schedule.length) {
+    page.drawText("Payment plan", {
+      x: left,
+      y,
+      size: 10,
+      font: fontBold,
+      color: ink,
+    });
+    y -= 14;
+    for (const row of schedule.slice(0, 14)) {
+      const paid = String(row.status || "").toLowerCase() === "paid";
+      const mark = paid ? "[paid] " : "[due]  ";
+      const dueBit = row.due_date ? formatUkDate(row.due_date) : "—";
+      const line = pdfSafeText(
+        `${mark}${row.seq}. ${row.label} — ${dueBit} — GBP ${money(Number(row.amount_gbp))}`,
+      ).slice(0, 88);
+      page.drawText(line, { x: left, y, size: 8, font, color: paid ? muted : ink });
+      y -= 11;
+    }
+    const paidSoFar = Number(input.amountPaidGbp);
+    const totalSched = schedule.reduce((s, r) => s + Number(r.amount_gbp), 0);
+    const remaining = Math.max(
+      0,
+      Math.round((totalSched - (Number.isFinite(paidSoFar) ? paidSoFar : 0)) * 100) / 100,
+    );
+    y -= 4;
+    page.drawText(
+      pdfSafeText(
+        `Paid to date: GBP ${money(Number.isFinite(paidSoFar) ? paidSoFar : 0)} · Remaining: GBP ${money(remaining)}`,
+      ).slice(0, 90),
+      { x: left, y, size: 9, font: fontBold, color: ink },
+    );
     y -= 16;
   }
 
