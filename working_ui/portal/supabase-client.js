@@ -1254,6 +1254,35 @@ export function portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedKeys, 
     ) {
       continue;
     }
+    /* Peer absent must not clear another worker's owned timed slot (Sunday SwimFarm pairs,
+       climbing, etc.). Shared day_centre / bespoke_shared keys may still fan out. Own marks
+       match exact key or same clock token. */
+    if (
+      markAbsent &&
+      portalRosterKeyNeedsSubmitterOwnership(rosterKey, perStaffOwnOnly) &&
+      !ownOnly.has(rosterKey)
+    ) {
+      let allowPeerAbsent = false;
+      for (const fk0 of submittedKeys || []) {
+        const fk = String(fk0 || "").trim();
+        if (!fk || !portalFeedbackSubmittedKeyMatchesRosterKey(fk, rosterKey, opts)) continue;
+        if (fk === rosterKey) {
+          allowPeerAbsent = true;
+          break;
+        }
+        const ft = portalSessionKeyTimeToken(fk);
+        const rt = portalSessionKeyTimeToken(rosterKey);
+        if (ft && rt && ft === rt) {
+          allowPeerAbsent = true;
+          break;
+        }
+        if (portalRosterKeyIsSharedFeedbackUnit(fk) || portalRosterKeyIsSharedFeedbackUnit(rosterKey)) {
+          allowPeerAbsent = true;
+          break;
+        }
+      }
+      if (!allowPeerAbsent) continue;
+    }
     for (const fk of submittedKeys || []) {
       if (!portalFeedbackSubmittedKeyMatchesRosterKey(fk, rosterKey, opts)) continue;
       const prev = memory[rosterKey] || base();

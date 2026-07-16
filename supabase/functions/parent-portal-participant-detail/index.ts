@@ -974,7 +974,13 @@ Deno.serve(async (req) => {
     });
   }
 
-  let attendanceSummary = { attended: 0, absent: 0, total: 0, makeup_absent: 0 };
+  let attendanceSummary = {
+    attended: 0,
+    absent: 0,
+    total: 0,
+    makeup_absent: 0,
+    absent_dates: [] as string[],
+  };
   if (wantSessions && !suppressSessionProgress && clientSlugs.length) {
     const { data: overrideRows, error: ovErr } = await supabase
       .from("schedule_overrides")

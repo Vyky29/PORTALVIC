@@ -1549,14 +1549,18 @@
       ].join('|');
     }
     function portalPickLatestInstructorCoverOverridesForStaff(staffId, sessionDateKey){
-      const sid = portalNormKeyStr(staffId);
+      const sid = typeof portalCanonicalStaffKeyForMatch === 'function'
+        ? portalCanonicalStaffKeyForMatch(staffId)
+        : portalNormKeyStr(staffId);
       const iso = normaliseIsoDate(sessionDateKey);
       const bySlot = Object.create(null);
       portalScheduleOverrideRowsAll().forEach(function(ov){
         if(normaliseIsoDate(ov.session_date) !== iso) return;
         if(String(ov.status || 'active') !== 'active') return;
         if(String(ov.override_type || '').trim() !== 'instructor_reassign') return;
-        const cov = portalNormKeyStr(ov.payload && ov.payload.covering_staff_id);
+        const cov = typeof portalCanonicalStaffKeyForMatch === 'function'
+          ? portalCanonicalStaffKeyForMatch(ov.payload && ov.payload.covering_staff_id)
+          : portalNormKeyStr(ov.payload && ov.payload.covering_staff_id);
         if(!cov || cov !== sid) return;
         const slotKey = portalScheduleOverrideInstructorCoverSlotKey(ov);
         if(!slotKey) return;
@@ -2604,7 +2608,9 @@
           return;
         }
         if(slotOv && slotOv.override_type === 'client_absence_announced'){
-          const cAbs = clientNotesById[base.clientId];
+          const cAbs = (typeof portalClientNotesLookup === 'function'
+            ? portalClientNotesLookup(base.clientId)
+            : null) || clientNotesById[base.clientId];
           if(!cAbs) return;
           const activityA = (s.activity || 'Swimming').trim();
           const timeA = rosterSlotTimeLabel(s);

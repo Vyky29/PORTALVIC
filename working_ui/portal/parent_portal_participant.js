@@ -2372,6 +2372,24 @@
     }
 
     var tasks = [];
+    // Admin / staff-recorded absences (schedule overrides + absent feedback) from participant detail.
+    ((data && data.attendance_summary && data.attendance_summary.absent_dates) || []).forEach(
+      function (iso) {
+        var d = String(iso || "").slice(0, 10);
+        if (d) statusByIso[d] = "absent";
+      },
+    );
+    ((data && data.sessions) || []).forEach(function (s) {
+      var iso = String((s && s.session_date) || "").slice(0, 10);
+      if (!iso) return;
+      var att = String((s && s.attendance) || "").toLowerCase();
+      if (
+        /\b(absent|absence|no[\s-]?show|noshow|did not attend)\b/.test(att) ||
+        /^(no|n|false|0)$/.test(att)
+      ) {
+        statusByIso[iso] = "absent";
+      }
+    });
     if (typeof opts.listAbsences === "function") {
       tasks.push(
         opts.listAbsences().then(function (j) {

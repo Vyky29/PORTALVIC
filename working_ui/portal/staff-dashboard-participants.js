@@ -3214,19 +3214,11 @@
       if(String(r.override_type || '').trim() !== 'client_absence_announced') return false;
       const rowIso = normaliseIsoDate(r.session_date);
       if(!rowIso || rowIso !== iso) return false;
-      if(!portalOverrideAnchorStaffKeysMatch(r.anchor_staff_id, s.staffId)) return false;
       if(!portalRosterClientIdsMatch(r.anchor_client_id, s.clientId)) return false;
-      if(portalScheduleOverrideAnchorTimesMatchSession(r, s, 'client_absence_announced')) return true;
-      if(portalOverrideSlotLabelMatchesRow(r, s)) return true;
-      /* Admin aquatic full-band absent: same staff + client + day covers the remaining sheet slot
-         even when the override was saved against a ghost 24h label (e.g. "16 to 17" vs "4 to 5"). */
-      try{
-        const p = r.payload && typeof r.payload === 'object' ? r.payload : {};
-        if(p.aquatic_full_band_absent === true || String(p.feedback_resolution || '').trim().toLowerCase() === 'absent'){
-          return true;
-        }
-      }catch(_){}
-      return false;
+      /* Admin absence is participant+day authority: every worker who had this client that day
+         (incl. cover / MADRE staff rewrites) must see ABSENT — not only the anchor instructor.
+         Peer worker quick-marks stay per-slot via portalSessionNeedsPerStaffOwnFeedbackOnly. */
+      return true;
     }
     function portalScheduleOverridesMatchingSession(s, sessionDateIso, overrideType){
       if(!s) return [];
@@ -3267,6 +3259,21 @@
         else if(absentLoose.length > 1){
           absentLoose.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
           rows = [absentLoose[0]];
+        }
+      }
+      /* General pick (wantType empty): still surface day-wide admin absences when the
+         override is anchored to a different instructor than the live MADRE/cover staff. */
+      if(!wantType){
+        const seenIds = Object.create(null);
+        rows.forEach(function(r){ if(r && r.id != null) seenIds[String(r.id)] = true; });
+        const absentDay = all.filter(function(r){
+          if(!portalScheduleOverrideAbsentLooseMatchesSession(r, s, iso)) return false;
+          if(r && r.id != null && seenIds[String(r.id)]) return false;
+          return true;
+        });
+        if(absentDay.length){
+          absentDay.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
+          rows = rows.concat(absentDay);
         }
       }
       rows.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });

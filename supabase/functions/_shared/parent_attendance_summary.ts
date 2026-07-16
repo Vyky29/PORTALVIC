@@ -8,6 +8,8 @@ export type ParentAttendanceSummary = {
   absent: number;
   total: number;
   makeup_absent: number;
+  /** ISO dates with at least one absent/missed slot (admin absence, staff absent feedback, replace). */
+  absent_dates: string[];
 };
 
 export type ParentAttendanceFeedbackRow = {
@@ -182,10 +184,18 @@ export function buildParentAttendanceSummary(
 
   const attended = attendedSlots.size;
   const absent = absentSlots.size;
+  const absentDates = [
+    ...new Set(
+      [...absentSlots]
+        .map((k) => String(k || "").split("|")[0] || "")
+        .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)),
+    ),
+  ].sort();
   return {
     attended,
     absent,
     total: attended + absent,
     makeup_absent: makeupAbsent,
+    absent_dates: absentDates,
   };
 }
