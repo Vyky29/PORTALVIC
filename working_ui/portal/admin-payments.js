@@ -53,6 +53,109 @@
   var SHEET_ORDER = ["PARENTS", "DIRECT_PAYMENTS", "LA", "No re-enroled"];
   var STATUS_OPTIONS = ["Paid", "Outstanding", "Not paid", "Pending", "Not re-enrolled"];
 
+  /** Canonical selectable values for payment edit fields (keeps wording consistent). */
+  var SELECT_CATALOG = {
+    sheet: [
+      { value: "PARENTS", label: "Private (parents)" },
+      { value: "DIRECT_PAYMENTS", label: "Funded · Direct Payments" },
+      { value: "LA", label: "Local authority (invoice)" },
+      { value: "No re-enroled", label: "Not re-enrolled" },
+    ],
+    funding: [
+      "Private (parents)",
+      "Funded · Direct Payments",
+      "Local authority · Ealing",
+      "Local authority · H&F",
+      "Local authority · Kensington & Chelsea",
+      "Local authority · Westminster",
+      "Local authority · Brent",
+      "NHS · SBS",
+      "NHS · ILA (People Places)",
+    ],
+    "funding origin": [
+      "Private",
+      "Parent Direct Payments",
+      "LA-funded",
+      "NHS-funded",
+    ],
+    "payment method": [
+      "Bank Transfer (fixed due dates)",
+      "Direct Payment (GoCardless · monthly)",
+      "Own arrangement — cannot meet payment dates (+ £50 / term)",
+      "1 - Bank Transfer",
+      "2 - Bank Transfer",
+      "4 - Go Cardless",
+      "Own Way (upfront)",
+      "Own Way (behind)",
+      "LA invoice (BACS)",
+      "LA invoice (Care in Finance)",
+      "Direct payment (CWD remittance)",
+      "NHS invoice (PO)",
+      "One-off payment",
+    ],
+    vat: [
+      "Exempt",
+      "20% VAT included",
+      "PF / VAT 20%",
+    ],
+    funder: [
+      "Ealing",
+      "H&F (Hammersmith & Fulham)",
+      "Kensington & Chelsea",
+      "Westminster",
+      "Brent",
+      "NHS · SBS",
+      "NHS · ILA",
+    ],
+    payer: [
+      "Parent / family (private funds)",
+      "Parent · Direct Payments (LA money)",
+      "Local authority / NHS (pays direct)",
+    ],
+    term: [
+      "SUMMER TERM 25/26",
+      "AUTUMN TERM 26/27",
+      "Spring term 25/26",
+      "Whole Year 25/26",
+      "Summer term 2026",
+    ],
+  };
+
+  function normalizeSelectKey(name) {
+    return String(name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/_/g, " ")
+      .replace(/\s+/g, " ");
+  }
+
+  function selectOptionsFor(fieldName, currentValue) {
+    var key = normalizeSelectKey(fieldName);
+    var list = SELECT_CATALOG[key];
+    if (!list || !list.length) return null;
+    var v = currentValue == null ? "" : String(currentValue).trim();
+    var opts = list.map(function (o) {
+      if (o && typeof o === "object") return { value: String(o.value), label: String(o.label) };
+      return { value: String(o), label: String(o) };
+    });
+    if (v) {
+      var hit = opts.some(function (o) { return o.value === v || o.label === v; });
+      if (!hit) opts.unshift({ value: v, label: v + " (current)" });
+    }
+    return opts;
+  }
+
+  function selectHtml(attrs, options, currentValue) {
+    var v = currentValue == null ? "" : String(currentValue).trim();
+    var html = "<select " + attrs + ">";
+    html += '<option value="">— Select —</option>';
+    (options || []).forEach(function (o) {
+      var sel = o.value === v || o.label === v ? " selected" : "";
+      html += '<option value="' + esc(o.value) + '"' + sel + ">" + esc(o.label) + "</option>";
+    });
+    return html + "</select>";
+  }
+
   /** Parent pays with LA Direct Payments / personal budget — not an LA/NHS invoice to the club. */
   function isParentDirectPaymentsLabel(raw) {
     var low = String(raw || "").toLowerCase();
@@ -817,13 +920,23 @@
       }).join("") + "</select>";
     } else if (type === "amount") {
       control = '<input type="number" step="0.01" data-prop="amount" value="' + esc(v) + '" />';
+    } else if (type === "sheet") {
+      control = selectHtml('data-prop="sheet" id="payEditSheet"', selectOptionsFor("sheet", v), v);
     } else if (type === "prop") {
-      control = '<input type="text" data-prop="' + esc(name) + '" value="' + esc(v) + '" />';
+      var propOpts = selectOptionsFor(name, v);
+      control = propOpts
+        ? selectHtml('data-prop="' + esc(name) + '"', propOpts, v)
+        : '<input type="text" data-prop="' + esc(name) + '" value="' + esc(v) + '" />';
     } else {
-      var long = v.length > 48;
-      control = long
-        ? '<textarea data-data="' + esc(name) + '">' + esc(v) + "</textarea>"
-        : '<input type="text" data-data="' + esc(name) + '" value="' + esc(v) + '" />';
+      var dataOpts = selectOptionsFor(name, v);
+      if (dataOpts) {
+        control = selectHtml('data-data="' + esc(name) + '"', dataOpts, v);
+      } else {
+        var long = v.length > 48;
+        control = long
+          ? '<textarea data-data="' + esc(name) + '">' + esc(v) + "</textarea>"
+          : '<input type="text" data-data="' + esc(name) + '" value="' + esc(v) + '" />';
+      }
     }
     var lab = (ico ? icon(ico, 13) : icon("field", 13)) + "<span>" + esc(label) + "</span>";
     return '<div class="pay-field"><label>' + lab + "</label>" + control + "</div>";
@@ -854,6 +967,7 @@
     var top = '<div class="pay-fields">'
       + field("client_name", "Client name", r.client_name, "prop", "user")
       + field("parent_name", "Parent / LA", r.parent_name, "prop", "users")
+      + field(null, "Group", r.sheet, "sheet", "fund")
       + field(svcKey, "Service", d[svcKey] || "", "data", "tag")
       + field(null, "Status", r.payment_status, "status", "flag")
       + field(null, "Total (£)", r.amount, "amount", "coins")
@@ -873,12 +987,13 @@
       '<div class="pay-screen__head">'
       + '<span class="pay-screen__ico">' + icon("user", 22) + '</span>'
       + '<div class="pay-screen__ttl"><h2>' + esc(r.client_name || "Client") + '</h2>'
-      + '<span class="pay-screen__sub">' + icon("fund", 12) + " " + esc(labelFor(r.sheet)) + '</span></div>'
+      + '<span class="pay-screen__sub" id="payEditGroupLabel">' + icon("fund", 12) + " " + esc(labelFor(r.sheet)) + '</span></div>'
       + '<button type="button" class="pay-screen__x" id="payClose" aria-label="Close">' + icon("x", 20) + '</button>'
       + '</div>'
       + '<div class="pay-screen__body"><div class="pay-screen__inner">'
       + '<section class="pay-sect"><div class="pay-sect__h">' + icon("clients", 17) + 'Key details</div>' + top + '</section>'
       + '<section class="pay-sect"><div class="pay-sect__h">' + icon("list", 17) + 'All spreadsheet fields</div>'
+      + '<p class="muted" style="margin:0 0 12px;font-size:12px;max-width:48rem;overflow-wrap:break-word">Where possible, use the dropdowns (Funding, Payer, Payment method, VAT, Funder, Term, Group) so everyone picks the same wording.</p>'
       + dataFields + '</section>'
       + '</div></div>'
       + '<div class="pay-screen__foot">'
@@ -893,6 +1008,13 @@
     document.addEventListener("keydown", state.escHandler);
 
     var mr = screen;
+    var sheetEl = mr.querySelector("#payEditSheet");
+    if (sheetEl) {
+      sheetEl.addEventListener("change", function () {
+        var lab = mr.querySelector("#payEditGroupLabel");
+        if (lab) lab.innerHTML = icon("fund", 12) + " " + esc(labelFor(sheetEl.value));
+      });
+    }
     var closeX = mr.querySelector("#payClose");
     if (closeX) closeX.addEventListener("click", function () { closeScreen(); });
     var cancel = mr.querySelector("#payCancel");
@@ -907,8 +1029,8 @@
     if (!client) { if (msg) msg.textContent = "Supabase not connected yet — sign in as admin and retry."; return; }
 
     // Snapshot before the write so we can log a readable diff afterwards.
-    var logLabels = { client_name: "Client name", parent_name: "Parent / LA", payment_status: "Status", amount: "Total (£)" };
-    var oldFlat = Object.assign({ client_name: r.client_name, parent_name: r.parent_name, payment_status: r.payment_status, amount: r.amount }, r.data || {});
+    var logLabels = { client_name: "Client name", parent_name: "Parent / LA", payment_status: "Status", amount: "Total (£)", sheet: "Group" };
+    var oldFlat = Object.assign({ client_name: r.client_name, parent_name: r.parent_name, payment_status: r.payment_status, amount: r.amount, sheet: r.sheet }, r.data || {});
 
     var patch = {};
     mr.querySelectorAll("[data-prop]").forEach(function (inp) {
@@ -923,6 +1045,30 @@
       var v = String(inp.value == null ? "" : inp.value).trim();
       if (v !== "") newData[k] = v;
     });
+    /* Keep Funding / Payer / origin aligned with Group so wording stays consistent. */
+    if (patch.sheet === "PARENTS") {
+      newData.Funding = "Private (parents)";
+      if (!newData.Payer || /local authority|nhs \(pays|direct payments/i.test(String(newData.Payer))) {
+        newData.Payer = "Parent / family (private funds)";
+      }
+      newData["Funding origin"] = "Private";
+      if (newData["Funding Origin"] != null) delete newData["Funding Origin"];
+    } else if (patch.sheet === "DIRECT_PAYMENTS") {
+      newData.Funding = "Funded · Direct Payments";
+      newData.Payer = "Parent · Direct Payments (LA money)";
+      newData["Funding origin"] = "Parent Direct Payments";
+      if (newData["Funding Origin"] != null) delete newData["Funding Origin"];
+      if (!newData.VAT || /20%|pf|0\.2/i.test(String(newData.VAT))) newData.VAT = "Exempt";
+    } else if (patch.sheet === "LA") {
+      if (!newData.Funding || /private|direct payments/i.test(String(newData.Funding))) {
+        newData.Funding = "Local authority · H&F";
+      }
+      newData.Payer = "Local authority / NHS (pays direct)";
+      newData["Funding origin"] = "LA-funded";
+      if (newData["Funding Origin"] != null) delete newData["Funding Origin"];
+      if (!newData.VAT || /20%|pf|0\.2/i.test(String(newData.VAT))) newData.VAT = "Exempt";
+    }
+    if (newData.VAT === "EXCEMP") newData.VAT = "Exempt";
     patch.data = newData;
 
     if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = "Saving…"; }
