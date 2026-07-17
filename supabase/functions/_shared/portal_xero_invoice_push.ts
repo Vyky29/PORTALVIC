@@ -4,6 +4,7 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { xeroConfigured } from "./xero_auth.ts";
 import { xeroCreateAccrecInvoice } from "./xero_invoices.ts";
+import { resolveLaFunderBillTo } from "./portal_invoice_funding.ts";
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -22,7 +23,7 @@ export async function pushPortalInvoiceShareToXero(
   const { data: share, error } = await admin
     .from("portal_parent_invoice_share")
     .select(
-      "id, contact_id, document_id, invoice_number, amount_gbp, due_date, quantity, unit_price_gbp, line_description, line_items, reference_text, vat_mode, xero_invoice_id, created_at, payment_status",
+      "id, contact_id, document_id, invoice_number, amount_gbp, due_date, quantity, unit_price_gbp, line_description, line_items, reference_text, vat_mode, xero_invoice_id, created_at, payment_status, payment_method_hint",
     )
     .eq("id", shareId)
     .maybeSingle();
@@ -43,10 +44,40 @@ export async function pushPortalInvoiceShareToXero(
     .eq("contact_id", cid)
     .maybeSingle();
 
-  const parentName =
+  let parentName =
     clean(parent?.parent_display, 120) ||
     [parent?.parent_first_name, parent?.parent_last_name].filter(Boolean).join(" ").trim() ||
     "Parent / carer";
+  let parentEmail = clean(parent?.email, 200) || null;
+  let addressLine1 = clean(parent?.address_line1, 120) || null;
+  let addressLine2 = clean(parent?.address_line2, 120) || null;
+  let city = clean(parent?.city, 80) || null;
+  let postcode = clean(parent?.postcode, 20) || null;
+  let existingXeroContactId = clean(parent?.xero_contact_id, 80) || null;
+
+  // LA-managed invoices: the Xero customer is the funding authority, not the parent.
+  if (clean(share.payment_method_hint, 40) === "la_funded") {
+    const { data: pax } = await admin
+      .from("portal_participants")
+      .select("display_name, first_name, last_name")
+      .eq("contact_id", cid)
+      .maybeSingle();
+    const paxName =
+      clean(pax?.display_name, 120) ||
+      [pax?.first_name, pax?.last_name].filter(Boolean).join(" ").trim() ||
+      cid;
+    const laBillTo = await resolveLaFunderBillTo(admin, {
+      contactId: cid,
+      displayName: paxName,
+    });
+    parentName = laBillTo.name;
+    parentEmail = null;
+    addressLine1 = null;
+    addressLine2 = null;
+    city = null;
+    postcode = null;
+    existingXeroContactId = null;
+  }
 
   let invoiceDate = String(share.created_at || "").slice(0, 10);
   if (share.document_id) {
@@ -113,12 +144,12 @@ export async function pushPortalInvoiceShareToXero(
       reference: clean(share.reference_text, 120) || clean(share.invoice_number, 80),
       vatMode,
       parentName,
-      parentEmail: clean(parent?.email, 200) || null,
-      addressLine1: clean(parent?.address_line1, 120) || null,
-      addressLine2: clean(parent?.address_line2, 120) || null,
-      city: clean(parent?.city, 80) || null,
-      postcode: clean(parent?.postcode, 20) || null,
-      existingXeroContactId: clean(parent?.xero_contact_id, 80) || null,
+      parentEmail,
+      addressLine1,
+      addressLine2,
+      city,
+      postcode,
+      existingXeroContactId,
       lines: xeroLines.length ? xeroLines : undefined,
     },
     admin,

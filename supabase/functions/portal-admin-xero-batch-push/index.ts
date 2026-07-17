@@ -13,7 +13,10 @@ import {
 import { xeroConfigured } from "../_shared/xero_auth.ts";
 import { xeroCreateAccrecInvoice } from "../_shared/xero_invoices.ts";
 import { xeroSyncPaidInvoiceShare } from "../_shared/xero_payments.ts";
-import { resolveParticipantInvoiceFunding } from "../_shared/portal_invoice_funding.ts";
+import {
+  resolveLaFunderBillTo,
+  resolveParticipantInvoiceFunding,
+} from "../_shared/portal_invoice_funding.ts";
 
 function clean(v: unknown, max = 200): string {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
@@ -64,7 +67,7 @@ Deno.serve(async (req) => {
   let q = admin
     .from("portal_parent_invoice_share")
     .select(
-      "id, contact_id, invoice_number, amount_gbp, due_date, payment_status, paid_via, xero_invoice_id, xero_payment_id, created_via, vat_mode, line_description, line_items, quantity, unit_price_gbp, reference_text, created_at, document_id",
+      "id, contact_id, invoice_number, amount_gbp, due_date, payment_status, paid_via, xero_invoice_id, xero_payment_id, created_via, vat_mode, line_description, line_items, quantity, unit_price_gbp, reference_text, created_at, document_id, payment_method_hint",
     )
     .is("xero_invoice_id", null)
     .in("created_via", ["portal", "reenrolment"])
@@ -142,10 +145,31 @@ Deno.serve(async (req) => {
 
     const cid = clean(share.contact_id, 120);
     const parent = parentByContact.get(cid) || {};
-    const parentName =
+    let parentName =
       clean(parent.parent_display, 120) ||
       [parent.parent_first_name, parent.parent_last_name].filter(Boolean).join(" ").trim() ||
       "Parent / carer";
+    let parentEmail = clean(parent.email, 200) || null;
+    let addressLine1 = clean(parent.address_line1, 120) || null;
+    let addressLine2 = clean(parent.address_line2, 120) || null;
+    let addressCity = clean(parent.city, 80) || null;
+    let addressPostcode = clean(parent.postcode, 20) || null;
+    let existingXeroContactId = clean(parent.xero_contact_id, 80) || null;
+
+    // LA-managed invoices: bill the funding authority, not the parent.
+    if (clean(share.payment_method_hint, 40) === "la_funded") {
+      const laBillTo = await resolveLaFunderBillTo(admin, {
+        contactId: cid,
+        displayName: participantByContact.get(cid) || cid,
+      });
+      parentName = laBillTo.name;
+      parentEmail = null;
+      addressLine1 = null;
+      addressLine2 = null;
+      addressCity = null;
+      addressPostcode = null;
+      existingXeroContactId = null;
+    }
 
     const invoiceDate =
       docDateById.get(String(share.document_id || "")) ||
@@ -215,12 +239,12 @@ Deno.serve(async (req) => {
         reference: clean(share.reference_text, 120) || clean(share.invoice_number, 80),
         vatMode,
         parentName,
-        parentEmail: clean(parent.email, 200) || null,
-        addressLine1: clean(parent.address_line1, 120) || null,
-        addressLine2: clean(parent.address_line2, 120) || null,
-        city: clean(parent.city, 80) || null,
-        postcode: clean(parent.postcode, 20) || null,
-        existingXeroContactId: clean(parent.xero_contact_id, 80) || null,
+        parentEmail,
+        addressLine1,
+        addressLine2,
+        city: addressCity,
+        postcode: addressPostcode,
+        existingXeroContactId,
         lines: xeroLines,
       },
       admin,

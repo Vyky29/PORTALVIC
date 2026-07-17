@@ -7,7 +7,10 @@ import {
   buildPortalTaxInvoicePdf,
   type PortalInvoiceVatMode,
 } from "./portal_tax_invoice_pdf.ts";
-import { resolveParticipantInvoiceFunding } from "./portal_invoice_funding.ts";
+import {
+  resolveLaFunderBillTo,
+  resolveParticipantInvoiceFunding,
+} from "./portal_invoice_funding.ts";
 import {
   applyInstalmentPayment,
   type InvoicePaymentScheduleRow,
@@ -227,20 +230,29 @@ export async function createPortalFamilyInvoice(
     .eq("contact_id", contactId)
     .maybeSingle();
 
-  const billToName =
-    clean(parentContact?.parent_display, 120) ||
-    [parentContact?.parent_first_name, parentContact?.parent_last_name]
-      .filter(Boolean)
-      .join(" ")
-      .trim() ||
-    "Parent / carer";
-  const billToLines = [
-    clean(parentContact?.address_line1, 120),
-    clean(parentContact?.address_line2, 120),
-    clean(parentContact?.city, 80),
-    clean(parentContact?.postcode, 20),
-    "UNITED KINGDOM",
-  ].filter(Boolean);
+  // LA-managed invoices are billed to the funding authority, never the parent.
+  let billToName: string;
+  let billToLines: string[];
+  if (paymentMethodHint === "la_funded") {
+    const laBillTo = await resolveLaFunderBillTo(admin, { contactId, displayName });
+    billToName = laBillTo.name;
+    billToLines = laBillTo.lines;
+  } else {
+    billToName =
+      clean(parentContact?.parent_display, 120) ||
+      [parentContact?.parent_first_name, parentContact?.parent_last_name]
+        .filter(Boolean)
+        .join(" ")
+        .trim() ||
+      "Parent / carer";
+    billToLines = [
+      clean(parentContact?.address_line1, 120),
+      clean(parentContact?.address_line2, 120),
+      clean(parentContact?.city, 80),
+      clean(parentContact?.postcode, 20),
+      "UNITED KINGDOM",
+    ].filter(Boolean);
+  }
 
   let invoiceNumber = clean(input.invoiceNumber, 80);
   if (!invoiceNumber) {
@@ -471,20 +483,29 @@ export async function regeneratePortalInvoiceSharePdf(
     .eq("contact_id", contactId)
     .maybeSingle();
 
-  const billToName =
-    clean(parentContact?.parent_display, 120) ||
-    [parentContact?.parent_first_name, parentContact?.parent_last_name]
-      .filter(Boolean)
-      .join(" ")
-      .trim() ||
-    "Parent / carer";
-  const billToLines = [
-    clean(parentContact?.address_line1, 120),
-    clean(parentContact?.address_line2, 120),
-    clean(parentContact?.city, 80),
-    clean(parentContact?.postcode, 20),
-    "UNITED KINGDOM",
-  ].filter(Boolean);
+  const hintForBillTo = clean(share.payment_method_hint, 40);
+  let billToName: string;
+  let billToLines: string[];
+  if (hintForBillTo === "la_funded") {
+    const laBillTo = await resolveLaFunderBillTo(admin, { contactId, displayName });
+    billToName = laBillTo.name;
+    billToLines = laBillTo.lines;
+  } else {
+    billToName =
+      clean(parentContact?.parent_display, 120) ||
+      [parentContact?.parent_first_name, parentContact?.parent_last_name]
+        .filter(Boolean)
+        .join(" ")
+        .trim() ||
+      "Parent / carer";
+    billToLines = [
+      clean(parentContact?.address_line1, 120),
+      clean(parentContact?.address_line2, 120),
+      clean(parentContact?.city, 80),
+      clean(parentContact?.postcode, 20),
+      "UNITED KINGDOM",
+    ].filter(Boolean);
+  }
 
   const amountGbp = round2(Number(share.amount_gbp));
   const qtyRaw = Number(share.quantity);
@@ -512,9 +533,14 @@ export async function regeneratePortalInvoiceSharePdf(
   const paymentSchedule = normalizePaymentSchedule(share.payment_schedule);
   const amountPaidGbp = round2(Number(share.amount_paid_gbp) || 0);
   const isPaid = String(share.payment_status || "").toLowerCase() === "paid";
+  // Stored descriptions that already carry Client Id / PO / client name blocks
+  // must not get a second metadata block appended on regeneration.
+  const storedDescriptionComplete =
+    !lineItems.length && /\bclient'?s?\s+(id|name)\s*:/i.test(lineDescription);
   const descriptionLines = invoiceDescriptionLines({
     lineDescription,
     vatMode,
+    descriptionComplete: storedDescriptionComplete,
     displayName,
     clientIdLabel,
     poLabel,

@@ -88,6 +88,85 @@ export function invoiceFundingCategory(input: {
   return "parent_private";
 }
 
+function normalizeNameKey(v: unknown): string {
+  return String(v ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/**
+ * Bill-to for LA-managed invoices: the funding authority (from client_payments
+ * Funder/Funding), never the parent. Parents don't see or own these invoices.
+ */
+export async function resolveLaFunderBillTo(
+  admin: SupabaseClient,
+  opts: { contactId: string; displayName: string },
+): Promise<{ name: string; lines: string[] }> {
+  const displayName = clean(opts.displayName, 120);
+
+  let paymentRow: Record<string, unknown> | null = null;
+  const preferredKey = paymentClientKeyForParticipant(displayName);
+  if (preferredKey) {
+    const { data: keyed } = await admin
+      .from("client_payments")
+      .select("client_key, client_name, data")
+      .eq("client_key", preferredKey)
+      .maybeSingle();
+    if (keyed) paymentRow = keyed as Record<string, unknown>;
+  }
+  if (!paymentRow && displayName) {
+    const { data: byName } = await admin
+      .from("client_payments")
+      .select("client_key, client_name, data")
+      .ilike("client_name", displayName)
+      .order("imported_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (byName) paymentRow = byName as Record<string, unknown>;
+  }
+  if (!paymentRow && displayName) {
+    // Sheets often store short names ("Adam P" for "Adam Pilcher") — prefix match.
+    const target = normalizeNameKey(displayName);
+    const { data: laRows } = await admin
+      .from("client_payments")
+      .select("client_key, client_name, data, sheet")
+      .in("sheet", ["LA", "DIRECT_PAYMENTS"])
+      .limit(400);
+    let best: Record<string, unknown> | null = null;
+    let bestLen = 0;
+    for (const row of laRows || []) {
+      const candidate = normalizeNameKey(row.client_name);
+      if (!candidate || candidate.length < 4) continue;
+      if (target.startsWith(candidate) || candidate.startsWith(target)) {
+        if (candidate.length > bestLen) {
+          best = row as Record<string, unknown>;
+          bestLen = candidate.length;
+        }
+      }
+    }
+    if (best) paymentRow = best;
+  }
+
+  const data =
+    paymentRow?.data && typeof paymentRow.data === "object"
+      ? (paymentRow.data as Record<string, unknown>)
+      : {};
+  const funder = clean(data["Funder"], 120) || clean(data["Funding"], 120);
+  if (funder) return { name: funder, lines: ["UNITED KINGDOM"] };
+
+  // Generic labels ("LA funded", "exempt") are not an authority name.
+  const { data: contact } = await admin
+    .from("portal_parent_contacts")
+    .select("funding_label")
+    .eq("contact_id", clean(opts.contactId, 120))
+    .maybeSingle();
+  const label = clean(contact?.funding_label, 120);
+  const generic = /^(la|nhs|ehcp|la funded|nhs funded|exempt|funded|local authority)$/i;
+  const name = label && !generic.test(label) ? label : "Local Authority";
+  return { name, lines: ["UNITED KINGDOM"] };
+}
+
 export async function resolveParticipantInvoiceFunding(
   admin: SupabaseClient,
   opts: { contactId: string; displayName: string },
