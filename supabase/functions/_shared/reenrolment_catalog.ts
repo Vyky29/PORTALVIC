@@ -501,9 +501,27 @@ export function enrichWeeklySlotsFromRoster(
   });
 }
 
+/**
+ * Payment sheets sometimes list several services in one cell without ·/+
+ * separators (e.g. "60' SW (Tu&Th) 60' C (Sun) & 90' S&C (Sun)"). Split before
+ * each duration token (NN') so every service parses on its own — otherwise the
+ * whole string collapses into one slot with the wrong duration and price.
+ */
+function splitCombinedDurationSegments(part: string): string[] {
+  const pieces = String(part || "")
+    .split(/\s+(?=\d{2,3}\s*['’′])/)
+    .map((p) => p.replace(/[&,/]+\s*$/, "").trim())
+    .filter(Boolean);
+  // Only split when each service keeps its own "(day)" — combos like
+  // "90' S&C & 60' CL (Su)" share one day and must stay a single segment.
+  if (pieces.length > 1 && pieces.every((p) => p.includes("("))) return pieces;
+  return [part];
+}
+
 export function parseServiceString(service: string): ParsedSlot[] {
   const parts = String(service || "")
     .split(/\s*[·•]\s*|\s+\+\s+/)
+    .flatMap(splitCombinedDurationSegments)
     .map((p) => p.trim())
     .filter(Boolean);
   const out: ParsedSlot[] = [];

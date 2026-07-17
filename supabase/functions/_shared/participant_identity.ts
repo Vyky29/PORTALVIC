@@ -75,6 +75,13 @@ const PORTAL_PARTICIPANT_SLUG_ALIASES: Record<string, string> = {
   jack_w_walker: "jack_w",
   jack_stratton: "jack_s",
   jack_s_stratton: "jack_s",
+  // BELHADJ brothers — portal full names vs roster short ids "eiji" / "hazem"
+  kacem_eiji_belhadj: "eiji",
+  kacem_eiji_be: "eiji",
+  kacem_eiji: "eiji",
+  hazem_kei_belhadj: "hazem",
+  hazem_kei_be: "hazem",
+  hazem_kei: "hazem",
 };
 
 /** Collective roster / feedback client for Monday 11–12 ACAT aquatic. */
