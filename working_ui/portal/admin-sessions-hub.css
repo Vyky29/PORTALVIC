@@ -1417,6 +1417,23 @@
       vertical-align: middle;
     }
     .ash-table--feedback .ash-cell-sub { text-align: center; }
+    .ash-table--register .ash-cell-participant-service {
+      min-width: 150px;
+      max-width: 220px;
+      overflow-wrap: break-word;
+    }
+    .ash-table--register .ash-cell-service {
+      margin-top: 4px;
+      line-height: 1.3;
+      overflow-wrap: break-word;
+    }
+    .ash-table--register th:nth-child(5),
+    .ash-table--register th:nth-child(6),
+    .ash-table--register td:nth-child(5),
+    .ash-table--register td:nth-child(6) {
+      text-align: left;
+      vertical-align: top;
+    }
     .ash-table--feedback .ash-regulation-group { justify-content: center; }
     .ash-table--feedback .ash-cell-note { max-width: min(260px, 28vw); white-space: normal; line-height: 1.35; font-size: 12px; hyphens: auto; }
     .ash-table--notes-only .ash-cell-note { max-width: min(520px, 55vw); }

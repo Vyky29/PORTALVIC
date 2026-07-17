@@ -6314,7 +6314,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   // Register tab: raw session feedback exactly as staff submitted it. No filtered
   // column — filtering lives on the "Feedback (filtered)" tab.
   AdminSessionsHub.REGISTER_TABLE_HEAD =
-    '<th>Participant</th><th>Service</th><th class="ash-th-star" title="Engagement (1–5)">' +
+    '<th>Participant / service</th><th class="ash-th-star" title="Engagement (1–5)">' +
     AdminSessionsHub.ENGAGEMENT_STAR_HEADER +
     "</th><th>Regulation</th><th>Independence</th>" +
     "<th>Session feedback</th><th>Notes</th><th>Reviewed by:</th>";
@@ -6929,6 +6929,20 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
     if (fb && fb._ashAwaitingSlot && fb.slot) {
       var awaitSlot = fb.slot;
+      var awaitSvc = clean(awaitSlot.service) || "\u2014";
+      var awaitTime = awaitSlot.time_slot
+        ? '<div class="ash-cell-sub">' + esc(rosterTimeDisplay(awaitSlot)) + "</div>"
+        : "";
+      var awaitDate = formatFbDateShort(awaitSlot.session_date || awaitSlot.date);
+      var awaitParticipantServiceCell =
+        '<td class="ash-cell-participant-service"><span class="ash-pill ash-pill--client">' +
+        esc(awaitSlot.client_name) +
+        '</span><div class="ash-cell-service">' +
+        esc(awaitSvc) +
+        "</div>" +
+        (awaitDate ? '<div class="ash-cell-sub">' + esc(awaitDate) + "</div>" : "") +
+        awaitTime +
+        "</td>";
       if (hub.slotIsAbsent(awaitSlot)) {
         var absentRow =
           hub.findAbsentFeedbackForSlot(awaitSlot) ||
@@ -6937,13 +6951,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var awaitInstAbsent = hubInstructorCellHtml(awaitSlot, hub.overrideForSlot(awaitSlot));
         return (
           '<tr class="ash-fb-row ash-fb-row--awaiting">' +
-          '<td><span class="ash-pill ash-pill--client">' +
-          esc(awaitSlot.client_name) +
-          "</span></td>" +
-          "<td>" +
-          esc(clean(awaitSlot.service) || "\u2014") +
-          awaitTime +
-          "</td>" +
+          (variant === "register"
+            ? awaitParticipantServiceCell
+            : '<td><span class="ash-pill ash-pill--client">' +
+              esc(awaitSlot.client_name) +
+              "</span></td><td>" +
+              esc(awaitSvc) +
+              awaitTime +
+              "</td>") +
           '<td colspan="' + awaitMidColspan + '" class="ash-td-center">' +
           rosterFeedbackStatusHtml(true, false) +
           "</td>" +
@@ -6953,20 +6968,17 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           "</tr>"
         );
       }
-      var awaitSvc = clean(awaitSlot.service) || "\u2014";
-      var awaitTime = awaitSlot.time_slot
-        ? '<div class="ash-cell-sub">' + esc(rosterTimeDisplay(awaitSlot)) + "</div>"
-        : "";
       var awaitInst = hubInstructorCellHtml(awaitSlot, hub.overrideForSlot(awaitSlot));
       return (
         '<tr class="ash-fb-row ash-fb-row--awaiting">' +
-        '<td><span class="ash-pill ash-pill--client">' +
-        esc(awaitSlot.client_name) +
-        "</span></td>" +
-        "<td>" +
-        esc(awaitSvc) +
-        awaitTime +
-        "</td>" +
+        (variant === "register"
+          ? awaitParticipantServiceCell
+          : '<td><span class="ash-pill ash-pill--client">' +
+            esc(awaitSlot.client_name) +
+            "</span></td><td>" +
+            esc(awaitSvc) +
+            awaitTime +
+            "</td>") +
         '<td colspan="' + awaitMidColspan + '" class="ash-td-center">' +
         rosterFeedbackStatusHtml(false, false) +
         "</td>" +
@@ -7050,6 +7062,23 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         ? global.PortalSwimSessionAxes.swimAxesDisplayHtml(fb, esc).replace("pcso-swim-addon", "ash-swim-addon")
         : "") +
       "</td>";
+    var participantServiceCell =
+      '<td class="ash-cell-participant-service"><span class="ash-link">' +
+      esc(clientLabel) +
+      '</span><div class="ash-cell-service">' +
+      esc(svcLabel) +
+      "</div>" +
+      (sessionDay ? '<div class="ash-cell-sub">' + esc(sessionDay) + "</div>" : "") +
+      svcTimeSub +
+      (cancelled
+        ? '<div class="ash-cell-sub"><span class="ash-status ash-status--cancelled">Submitted (Cancelled)</span></div>'
+        : absent
+          ? '<div class="ash-cell-sub"><span class="ash-status ash-status--absent">Submitted (Absent)</span></div>'
+          : "") +
+      (global.PortalSwimSessionAxes && typeof global.PortalSwimSessionAxes.swimAxesDisplayHtml === "function"
+        ? global.PortalSwimSessionAxes.swimAxesDisplayHtml(fb, esc).replace("pcso-swim-addon", "ash-swim-addon")
+        : "") +
+      "</td>";
     var engagementCell =
       "<td>" +
       (terminal ? cellNa() : fb.engagement_rating != null ? esc(fb.engagement_rating) : "\u2014") +
@@ -7113,8 +7142,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     if (variant === "register") {
       // Raw register: no filtered column.
       cells =
-        participantCell +
-        serviceCell +
+        participantServiceCell +
         engagementCell +
         emotionCell +
         independenceCell +
