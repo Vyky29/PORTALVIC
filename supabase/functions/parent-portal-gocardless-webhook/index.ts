@@ -15,6 +15,7 @@ import {
 import { xeroSyncPaidInvoiceShare } from "../_shared/xero_payments.ts";
 import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
 import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
+import { recordInvoiceInstalmentPayment } from "../_shared/portal_create_family_invoice.ts";
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -27,6 +28,13 @@ function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 }
 
+function consolidatedTargetId(notes: unknown): string {
+  const m = String(notes || "").match(
+    /Consolidated payment tracker:\s*([0-9a-f-]{20,80})/i,
+  );
+  return m ? m[1] : "";
+}
+
 async function markInvoicePaid(
   supabase: ReturnType<typeof createClient>,
   opts: {
@@ -35,6 +43,118 @@ async function markInvoicePaid(
   },
 ) {
   const now = new Date().toISOString();
+  let lookup = supabase
+    .from("portal_parent_invoice_share")
+    .select(
+      "id, contact_id, payment_status, amount_gbp, invoice_number, paid_via, xero_invoice_id, xero_payment_id, notes, payment_schedule, gocardless_payment_id",
+    );
+  if (opts.invoiceShareId) {
+    lookup = lookup.eq("id", opts.invoiceShareId);
+  } else if (opts.paymentId) {
+    lookup = lookup.eq("gocardless_payment_id", opts.paymentId);
+  } else {
+    return { ok: false as const, reason: "no_ref" };
+  }
+  const { data: before, error: lookupError } = await lookup.maybeSingle();
+  if (lookupError) {
+    console.error("[gc-webhook] invoice lookup", lookupError.message);
+    return { ok: false as const, reason: lookupError.message };
+  }
+  if (!before) return { ok: false as const, reason: "invoice_not_found" };
+
+  // Legacy re-enrolment payment rows were consolidated into one full-term
+  // invoice. Keep their existing GoCardless IDs as trackers, but roll each
+  // confirmed payment into the keeper's embedded schedule.
+  const targetId = consolidatedTargetId(before.notes);
+  if (targetId) {
+    const paymentRef = clean(opts.paymentId || before.gocardless_payment_id, 80);
+    const paidViaRef = clean(`gocardless:${paymentRef || before.id}`, 40);
+    const { data: target, error: targetError } = await supabase
+      .from("portal_parent_invoice_share")
+      .select(
+        "id, contact_id, payment_status, amount_gbp, amount_paid_gbp, payment_schedule, invoice_number, xero_invoice_id, xero_payment_id, paid_via",
+      )
+      .eq("id", targetId)
+      .maybeSingle();
+    if (targetError || !target) {
+      console.error("[gc-webhook] consolidated target", targetError?.message || "not_found");
+      return { ok: false as const, reason: "consolidated_target_not_found" };
+    }
+    const targetSchedule = Array.isArray(target.payment_schedule)
+      ? target.payment_schedule as Array<Record<string, unknown>>
+      : [];
+    if (
+      targetSchedule.some((row) =>
+        String(row?.paid_via || "") === paidViaRef
+      )
+    ) {
+      return {
+        ok: true as const,
+        invoice_id: target.id,
+        tracker_invoice_id: before.id,
+        already_applied: true,
+      };
+    }
+
+    // Hidden tracker rows retain their own payment state for audit. The keeper
+    // row is the term invoice itself, so its status is managed only by schedule.
+    if (String(before.id) !== String(targetId)) {
+      await supabase
+        .from("portal_parent_invoice_share")
+        .update({
+          payment_status: "paid",
+          paid_at: now,
+          paid_via: "gocardless",
+          gocardless_payment_id: paymentRef || before.gocardless_payment_id,
+          updated_at: now,
+        })
+        .eq("id", before.id);
+    }
+
+    const nextPending = targetSchedule.find((row) =>
+      String(row?.status || "pending").toLowerCase() !== "paid"
+    );
+    const instalmentAmount =
+      String(before.id) === String(targetId)
+        ? Number(nextPending?.amount_gbp || 0)
+        : Number(before.amount_gbp || 0);
+    if (!Number.isFinite(instalmentAmount) || instalmentAmount <= 0) {
+      return { ok: false as const, reason: "consolidated_instalment_amount_missing" };
+    }
+    const rolled = await recordInvoiceInstalmentPayment(supabase, targetId, {
+      amountGbp: instalmentAmount,
+      paidVia: paidViaRef,
+    });
+    if (!rolled.ok) return { ok: false as const, reason: rolled.error };
+
+    let xero = { synced: false, skipped: "term_not_fully_paid" };
+    if (rolled.payment_status === "paid") {
+      const { data: paidTarget } = await supabase
+        .from("portal_parent_invoice_share")
+        .select(
+          "id, contact_id, payment_status, amount_gbp, invoice_number, paid_via, xero_invoice_id, xero_payment_id",
+        )
+        .eq("id", targetId)
+        .maybeSingle();
+      if (paidTarget) xero = await xeroSyncPaidInvoiceShare(supabase, paidTarget);
+    }
+    let hold = null;
+    try {
+      const cid = clean(target.contact_id, 120);
+      if (cid) hold = await clearPaymentHoldForContact(supabase, cid, "gocardless");
+    } catch (e) {
+      console.error("[gc-webhook] consolidated hold", e instanceof Error ? e.message : String(e));
+    }
+    return {
+      ok: true as const,
+      invoice_id: target.id,
+      tracker_invoice_id: before.id,
+      payment_status: rolled.payment_status,
+      xero,
+      hold,
+    };
+  }
+
   const patch = {
     payment_status: "paid",
     paid_at: now,

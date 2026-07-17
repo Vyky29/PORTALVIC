@@ -71,6 +71,8 @@ Deno.serve(async (req) => {
     )
     .is("xero_invoice_id", null)
     .in("created_via", ["portal", "reenrolment"])
+    .eq("share_status", "ready")
+    .neq("payment_status", "void")
     .order("created_at", { ascending: true })
     .limit(limit);
 
