@@ -1218,7 +1218,7 @@
     var feedback = parentFacingFeedbackRows(sessions.map(mapParentSessionRow));
     hostEl.innerHTML =
       overviewByServiceHtml(feedback, term, {
-        includeAttendance: false,
+        includeAttendance: true,
         attendanceSummary: null,
         includeTable: true,
         parentTable: true,
