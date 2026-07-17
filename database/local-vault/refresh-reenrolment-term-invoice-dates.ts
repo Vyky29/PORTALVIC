@@ -159,7 +159,7 @@ for (const raw of shares || []) {
     const amount = linesTotal(existingFee);
     lines.push({
       service_key: "GC_FEE",
-      description: "Direct Payment (GoCardless) fee",
+      description: "Admin fee",
       detail: null,
       dates: null,
       quantity: qty,

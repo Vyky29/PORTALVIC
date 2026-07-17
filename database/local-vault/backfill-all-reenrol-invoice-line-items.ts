@@ -275,7 +275,7 @@ for (const [key, rows] of groups) {
     if (groupHasGcFee) {
       lines.push({
         service_key: "GC_FEE",
-        description: "Direct Payment (GoCardless) fee",
+        description: "Admin fee",
         detail: null,
         quantity: 1,
         unit_price_gbp: 1.5,

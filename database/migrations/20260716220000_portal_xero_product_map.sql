@@ -52,7 +52,7 @@ values
   ('BESPOKE_60', 'Bespoke Programme 60''', 50),
   ('COUNSELLING_45', 'Counselling 45''', 60),
   ('ADMIN_FEE', 'Admin fee (own arrangement)', 90),
-  ('GC_FEE', 'GoCardless instalment fee', 91)
+  ('GC_FEE', 'Admin fee', 91)
 on conflict (service_key) do nothing;
 
 alter table public.portal_xero_items enable row level security;

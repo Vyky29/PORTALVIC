@@ -73,7 +73,7 @@ for (const row of shares || []) {
     const qty = round2(fee / 1.5);
     lines.push({
       service_key: "GC_FEE",
-      description: "Direct Payment (GoCardless) fee",
+      description: "Admin fee",
       detail: null,
       dates: null,
       quantity: qty,
