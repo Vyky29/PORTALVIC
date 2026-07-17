@@ -1034,41 +1034,22 @@
       .sort(compareAdminWaThreads);
   }
 
-  /** Unread → top (inbound date). Replied → last answered. Read no reply → inbound day. */
-  function hasAdminReplyAfterInbound(t) {
-    if (!t) return false;
-    var out = String(t.lastOutboundAt || "");
-    if (!out) return false;
+  /** Latest message (either direction) — whoever wrote last floats to the top. */
+  function adminWaThreadLatestAt(t) {
+    if (!t) return "";
     var inn = String(t.lastInboundAt || "");
-    if (!inn) return true;
-    return out > inn;
-  }
-
-  function adminWaThreadTier(t) {
-    if (isThreadUnread(t)) return 0;
-    if (hasAdminReplyAfterInbound(t)) return 1;
-    return 2;
-  }
-
-  function adminWaThreadSortKey(t) {
-    var tier = adminWaThreadTier(t);
-    if (tier === 0) return String(t.lastInboundAt || t.lastAt || "");
-    if (tier === 1) return String(t.lastOutboundAt || t.lastAt || "");
-    return String(t.lastInboundAt || t.lastAt || "");
+    var out = String(t.lastOutboundAt || "");
+    var latest = inn > out ? inn : out;
+    return latest || String(t.lastAt || "");
   }
 
   function adminWaThreadListWhen(t) {
-    if (isThreadUnread(t)) return t.lastInboundAt || t.lastAt || "";
-    if (hasAdminReplyAfterInbound(t)) return t.lastOutboundAt || t.lastAt || "";
-    return t.lastInboundAt || t.lastAt || "";
+    return adminWaThreadLatestAt(t);
   }
 
   function compareAdminWaThreads(a, b) {
-    var ta = adminWaThreadTier(a);
-    var tb = adminWaThreadTier(b);
-    if (ta !== tb) return ta - tb;
-    return String(adminWaThreadSortKey(b) || "").localeCompare(
-      String(adminWaThreadSortKey(a) || "")
+    return String(adminWaThreadLatestAt(b) || "").localeCompare(
+      String(adminWaThreadLatestAt(a) || "")
     );
   }
 
@@ -1498,7 +1479,7 @@
         " WhatsApp conversation" +
         (threads.length === 1 ? "" : "s") +
         (unreadCount ? " · " + unreadCount + " unread" : "") +
-        " · unread first";
+        " · latest first";
       countEl.classList.toggle("portal-pnlog-count--has-unread", unreadCount > 0);
     }
 
