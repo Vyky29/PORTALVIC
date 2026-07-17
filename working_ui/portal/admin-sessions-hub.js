@@ -6456,10 +6456,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var share = this.parentShareForFeedback(fb);
     var msg = share && share.parent_message ? String(share.parent_message) : "";
     var status = share ? String(share.share_status || "") : "";
+    // No auto-preparation: the filtered version is only created on demand,
+    // when an admin taps "Filter with AI" (e.g. because a parent asked).
     var pending = !share || status === "pending";
     var edited = !!(share && share.admin_edited_at);
     var hint = pending
-      ? "Preparing family summary…"
+      ? "Not filtered yet — use Filter with AI when a parent asks"
       : status === "hidden" && !msg
         ? "Hidden from families"
         : "";
@@ -6470,7 +6472,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       '<textarea class="ash-family-summary__input" rows="3" data-ash-family-msg="' +
       esc(fbId) +
       '" placeholder="' +
-      esc(pending ? "Preparing…" : "Family summary for parents") +
+      esc(pending ? "Family summary — filter on demand" : "Family summary for parents") +
       '">' +
       esc(msg) +
       "</textarea>" +
