@@ -582,7 +582,10 @@
       esc(String(pctInt)) +
       '%</p><p class="pcso-gauge__avg">' +
       esc(avgText) +
-      " / 5 avg</p></div>"
+      ' / 5 avg</p><p class="pcso-gauge__foot">' +
+      esc(String(vals.length)) +
+      (vals.length === 1 ? " session" : " sessions") +
+      " with scores</p></div>"
     );
   }
 
@@ -629,6 +632,9 @@
           "%</div></div>" +
           '<span class="pcso-emo-grid__lbl">' +
           esc(o.label) +
+          '</span><span class="pcso-emo-grid__sub">' +
+          esc(String(n)) +
+          (n === 1 ? " tag" : " tags") +
           "</span></div>"
         );
       })
@@ -636,9 +642,6 @@
     return (
       '<div class="pcso-emo-grid" role="img" aria-label="Regulation and emotions">' +
       items +
-      "</div>" +
-      '<div class="pcso-emo-grid__foot">' +
-      (total ? total + " tags total" : "No emotion tags yet") +
       "</div>"
     );
   }
@@ -1007,34 +1010,30 @@
     if (row.engagement_rating == null || row.engagement_rating === "") {
       return '<span class="muted">—</span>';
     }
-    var swim = global.PortalSwimSessionAxes;
-    if (swim && swim.isAquaticService(row.service)) {
-      var lab = swim.engagementLabelForDisplay(row.engagement_rating, row.service);
-      return (
-        '<span class="pcso-eng-score pcso-eng-score--swim" title="' +
-        esc(lab) +
-        '">' +
-        esc(lab) +
-        "</span>"
-      );
+    var raw = String(row.engagement_rating);
+    var match = raw.match(/(?:^|\D)([1-5](?:\.\d+)?)(?:\D|$)/);
+    var rating = match ? Number(match[1]) : Number(row.engagement_rating);
+    if (!Number.isFinite(rating) || rating <= 0) return '<span class="muted">—</span>';
+    var count = Math.max(1, Math.min(5, Math.round(rating)));
+    var stars = "";
+    for (var i = 0; i < count; i++) {
+      stars +=
+        '<svg viewBox="0 0 24 24" width="13" height="13" focusable="false">' +
+        '<path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>' +
+        "</svg>";
     }
-    var n = esc(String(row.engagement_rating));
     return (
-      '<span class="pcso-eng-score">' +
-      n +
-      ' <span class="pcso-th-star pcso-eng-star" aria-hidden="true">' +
-      '<svg viewBox="0 0 24 24" width="13" height="13" focusable="false">' +
-      '<path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>' +
-      "</svg></span></span>"
+      '<span class="pcso-eng-score" title="' +
+      esc(raw) +
+      '" aria-label="' +
+      esc(String(rating) + " out of 5") +
+      '"><span class="pcso-th-star pcso-eng-star" aria-hidden="true">' +
+      stars +
+      "</span></span>"
     );
   }
 
   function parentRegulationCell(row) {
-    var swim = global.PortalSwimSessionAxes;
-    if (swim && swim.isAquaticService(row.service)) {
-      var lab = swim.regulationLabelForDisplay(row.client_emotions, row.service);
-      return '<span class="pcso-reg-text" title="' + esc(lab) + '">' + esc(lab) + "</span>";
-    }
     return emotionIconsCell(row.client_emotions);
   }
 
@@ -1073,7 +1072,6 @@
     const dateLine = formatDateLong(row.session_date);
     const svc = displayProgrammeName(row.service);
     const timeLine = formatServiceTime(row.session_time);
-    const svcTime = timeLine ? (svc + " · " + timeLine) : svc;
     const venue = esc(clean(row.venue) || "—");
     const instructor = esc(clean(row.instructor || row.feedback_by_name || row.completed_by_name) || "—");
     const swimAdd =
@@ -1083,7 +1081,8 @@
     return (
       "<tr>" +
       '<td class="pcso-tbl__date"><span class="pcso-tbl__date-main" title="' + esc(dateLine) + '">' + esc(dateLine) + "</span></td>" +
-      '<td class="pcso-tbl__svc"><span class="pcso-tbl__svc-main" title="' + esc(svcTime) + '">' + esc(svcTime) + "</span>" +
+      '<td class="pcso-tbl__svc"><span class="pcso-tbl__svc-main" title="' + esc(svc) + '">' + esc(svc) + "</span>" +
+      (timeLine ? '<span class="pcso-tbl__sub">' + esc(timeLine) + "</span>" : "") +
       swimAdd +
       "</td>" +
       '<td class="pcso-tbl__venue"><span class="pcso-venue-text" title="' + venue + '">' + venue + "</span></td>" +
@@ -1217,15 +1216,10 @@
     var hideAchievements = !!(opts && opts.hideAchievements);
     var term = clean((opts && opts.term_label) || TERM_LABEL);
     var feedback = parentFacingFeedbackRows(sessions.map(mapParentSessionRow));
-    var groups = groupFeedbackByService(feedback);
-    var multi = groups.length > 1;
-    var droppedStaffAquatic = sessions.length > feedback.length;
-    /* Whole-child attendance_summary only when a single programme and we did not
-       drop staff Aquatic lines — otherwise count from the visible rows. */
     hostEl.innerHTML =
       overviewByServiceHtml(feedback, term, {
-        includeAttendance: true,
-        attendanceSummary: multi || droppedStaffAquatic ? null : opts && opts.attendance_summary,
+        includeAttendance: false,
+        attendanceSummary: null,
         includeTable: true,
         parentTable: true,
         tableTitle: "Session feedback",
