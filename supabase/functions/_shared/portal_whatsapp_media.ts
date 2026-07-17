@@ -74,12 +74,13 @@ export async function uploadWhatsappMediaBinary(
 
   const safeMime = String(mime || "application/octet-stream").split(";")[0].trim() ||
     "application/octet-stream";
+  const uploadBuffer = Uint8Array.from(bytes).buffer;
   const form = new FormData();
   form.append("messaging_product", "whatsapp");
   form.append("type", safeMime);
   form.append(
     "file",
-    new Blob([bytes], { type: safeMime }),
+    new Blob([uploadBuffer], { type: safeMime }),
     String(filename || "file").slice(0, 120) || "file",
   );
 

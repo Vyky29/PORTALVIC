@@ -511,6 +511,35 @@
   padding: 14px 12px;
 }
 
+.portal-pnlog-composer__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.portal-pnlog-composer__tool {
+  flex: 0 0 auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.portal-pnlog-composer__attach-preview {
+  flex: 1 1 160px;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.portal-pnlog-composer__media-note {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.35;
+  overflow-wrap: break-word;
+}
+
 .portal-pnlog-composer__input {
   display: block;
   width: 100%;

@@ -8,6 +8,7 @@
   var FETCH_LIMIT = 200;
   var MEDIA_BUCKET = "wa-inbound-media";
   var MEDIA_SIGNED_TTL = 3600;
+  var MAX_ATTACH_BYTES = 4 * 1024 * 1024;
   var signedMediaCache = Object.create(null);
 
   async function resolveMediaSignedUrls(client, rows) {
@@ -84,9 +85,59 @@
     stickToBottom: true,
     contactDirectory: [],
     threadRefresh: { sig: "", deferRefresh: false },
+    attach: null,
+    recording: false,
+    mediaRecorder: null,
+    recordChunks: [],
   };
 
   var SEEN_STORE_KEY = "portal_pnlog_seen_v1";
+
+  function fileToBase64(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var raw = String(reader.result || "");
+        var comma = raw.indexOf(",");
+        resolve(comma >= 0 ? raw.slice(comma + 1) : raw);
+      };
+      reader.onerror = function () {
+        reject(new Error("read_failed"));
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function clearComposerAttach() {
+    state.attach = null;
+    var input = document.getElementById("portalPnlogComposerFile");
+    if (input) input.value = "";
+    var preview = document.getElementById("portalPnlogComposerAttachPreview");
+    if (preview) preview.textContent = "";
+    var clear = document.getElementById("portalPnlogComposerClearAttach");
+    if (clear) clear.hidden = true;
+  }
+
+  function setComposerAttach(fileOrBlob, filename, mime) {
+    if (!fileOrBlob) return;
+    if ((fileOrBlob.size || 0) > MAX_ATTACH_BYTES) {
+      cfg.toast("Attachment too large (max 4 MB)", "err");
+      return;
+    }
+    var name = filename || fileOrBlob.name || "attachment";
+    var type = mime || fileOrBlob.type || "application/octet-stream";
+    void fileToBase64(fileOrBlob)
+      .then(function (base64) {
+        state.attach = { base64: base64, mime: type, filename: name };
+        var preview = document.getElementById("portalPnlogComposerAttachPreview");
+        if (preview) preview.textContent = "Attached: " + name;
+        var clear = document.getElementById("portalPnlogComposerClearAttach");
+        if (clear) clear.hidden = false;
+      })
+      .catch(function () {
+        cfg.toast("Could not read attachment", "err");
+      });
+  }
 
   function readSeenMap() {
     try {
@@ -992,6 +1043,9 @@
         errorDetail: row.error_detail || "",
         channel: "whatsapp",
         row: row,
+        messageType: String(row.message_type || "").toLowerCase(),
+        mediaUrl: row.media_url || "",
+        mediaMime: String(row.media_mime || ""),
       });
       var outAt = String(row.created_at || "");
       if (outAt > wt.lastOutboundAt) wt.lastOutboundAt = outAt;
@@ -1189,7 +1243,7 @@
       metaBits.push('<span class="portal-pnlog-chip portal-pnlog-chip--phone">Phone</span>');
     }
     metaBits.push('<span class="portal-pnlog-bubble__time">' + esc(formatLondon(ev.when)) + "</span>");
-    var mediaHtml = ev.dir === "in" ? renderMedia(ev) : "";
+    var mediaHtml = renderMedia(ev);
     var bodyStr = String(ev.body || "");
     var isReaction = ev.messageType === "reaction";
     var type = String(ev.messageType || "").toLowerCase();
@@ -1243,11 +1297,21 @@
   function syncComposerSendingState() {
     var ta = document.getElementById("portalPnlogComposerInput");
     var btn = document.getElementById("portalPnlogComposerSend");
+    var thread = findThread(state.selectedKey);
+    var mediaAllowed = threadHasOpenWhatsappSession(thread);
     if (ta) ta.disabled = !!state.sending;
     if (btn) {
       btn.disabled = !!state.sending;
       btn.textContent = state.sending ? "Sending…" : "Send";
     }
+    [
+      "portalPnlogComposerPhoto",
+      "portalPnlogComposerDocument",
+      "portalPnlogComposerAudio",
+    ].forEach(function (id) {
+      var tool = document.getElementById(id);
+      if (tool) tool.disabled = !!state.sending || !mediaAllowed;
+    });
   }
 
   function composerPhoneKey(t) {
@@ -1296,7 +1360,7 @@
           ev.when || "",
           ev.dir || "",
           ev.body || "",
-          ev.media_url || "",
+          ev.mediaUrl || "",
           ev.whatsapp_delivered_at || "",
           ev.whatsapp_read_at || "",
           ev.whatsapp_status || "",
@@ -1356,6 +1420,7 @@
     opts = opts || {};
     captureComposerDraft();
     var next = String(key || "");
+    if (next !== state.selectedKey) clearComposerAttach();
     state.selectedKey = next;
     if (next) {
       state.mobileShowThread = true;
@@ -1428,8 +1493,27 @@
     }
     var draft = state.draftByKey[t.key] != null ? state.draftByKey[t.key] : "";
     var disabled = state.sending ? " disabled" : "";
+    var openSession = threadHasOpenWhatsappSession(t);
+    var mediaDisabled = !openSession || state.sending ? " disabled" : "";
     return (
       '<div class="portal-pnlog-composer">' +
+      '<div class="portal-pnlog-composer__tools">' +
+      '<input type="file" id="portalPnlogComposerFile" accept="image/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" hidden />' +
+      '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerPhoto"' +
+      mediaDisabled +
+      '>📷 Photo</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerDocument"' +
+      mediaDisabled +
+      '>📎 Document</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerAudio"' +
+      mediaDisabled +
+      '>🎙 Audio</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerClearAttach" hidden>✕ Clear</button>' +
+      '<span id="portalPnlogComposerAttachPreview" class="portal-pnlog-composer__attach-preview muted"></span>' +
+      "</div>" +
+      (!openSession
+        ? '<p class="portal-pnlog-composer__media-note muted">Photos, documents and audio become available after the parent messages the WhatsApp API number (24-hour reply window).</p>'
+        : "") +
       '<textarea id="portalPnlogComposerInput" class="portal-pnlog-composer__input" rows="4" placeholder="Type a WhatsApp reply…" maxlength="4000" autocomplete="off" spellcheck="true"' +
       disabled +
       ">" +
@@ -1606,6 +1690,69 @@
       .slice(0, 700);
   }
 
+  function syncAudioButton() {
+    var btn = document.getElementById("portalPnlogComposerAudio");
+    if (!btn) return;
+    btn.textContent = state.recording ? "⏹ Stop recording" : "🎙 Audio";
+  }
+
+  async function toggleComposerAudio() {
+    if (state.recording && state.mediaRecorder) {
+      try {
+        state.mediaRecorder.stop();
+      } catch (_e) {}
+      return;
+    }
+    if (!global.navigator || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      cfg.toast("Voice recording is not supported on this device", "err");
+      return;
+    }
+    try {
+      var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      var mime = "";
+      if (typeof MediaRecorder !== "undefined") {
+        if (MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")) mime = "audio/ogg;codecs=opus";
+        else if (MediaRecorder.isTypeSupported("audio/mp4")) mime = "audio/mp4";
+        else if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) mime = "audio/webm;codecs=opus";
+      }
+      state.recordChunks = [];
+      state.mediaRecorder = mime
+        ? new MediaRecorder(stream, { mimeType: mime })
+        : new MediaRecorder(stream);
+      state.recording = true;
+      syncAudioButton();
+      state.mediaRecorder.ondataavailable = function (ev) {
+        if (ev.data && ev.data.size) state.recordChunks.push(ev.data);
+      };
+      state.mediaRecorder.onstop = function () {
+        state.recording = false;
+        syncAudioButton();
+        try {
+          stream.getTracks().forEach(function (track) {
+            track.stop();
+          });
+        } catch (_stop) {}
+        var blobMime =
+          (state.mediaRecorder && state.mediaRecorder.mimeType) || mime || "audio/webm";
+        var blob = new Blob(state.recordChunks, { type: blobMime });
+        var ext =
+          blobMime.indexOf("ogg") >= 0
+            ? "ogg"
+            : blobMime.indexOf("mp4") >= 0
+              ? "m4a"
+              : "webm";
+        setComposerAttach(blob, "voice-note." + ext, blobMime);
+        state.mediaRecorder = null;
+        state.recordChunks = [];
+      };
+      state.mediaRecorder.start();
+    } catch (_e) {
+      state.recording = false;
+      syncAudioButton();
+      cfg.toast("Microphone permission is needed for voice notes", "err");
+    }
+  }
+
   function sendComposerReply() {
     if (state.sending) return;
     var t = findThread(state.selectedKey);
@@ -1614,8 +1761,8 @@
     var statusEl = document.getElementById("portalPnlogComposerStatus");
     var btn = document.getElementById("portalPnlogComposerSend");
     var msgBody = ta ? String(ta.value || "").trim() : "";
-    if (!msgBody) {
-      if (statusEl) statusEl.textContent = "Message is empty.";
+    if (!msgBody && !state.attach) {
+      if (statusEl) statusEl.textContent = "Write a message or attach a photo, document or audio.";
       return;
     }
     if (!ensureParentNotifySendConfigured()) {
@@ -1629,6 +1776,13 @@
     if (!ctx.clientDisplay && t.client) ctx.clientDisplay = t.client;
     if (!ctx.parentName && t.name) ctx.parentName = t.name;
     var openSession = threadHasOpenWhatsappSession(t);
+    if (state.attach && !openSession) {
+      if (statusEl) {
+        statusEl.textContent =
+          "Attachments can only be sent within 24 hours after the parent messages the WhatsApp API number.";
+      }
+      return;
+    }
     var contextWaId = "";
     if (openSession && t.lastInboundId) {
       for (var i = t.events.length - 1; i >= 0; i--) {
@@ -1672,7 +1826,7 @@
         : "No open WhatsApp session — sending via approved template (paragraphs kept in portal history)…";
     }
 
-    void global.PortalParentNotifySend.send({
+    var sendPayload = {
       kind: sendKind,
       channel: "whatsapp",
       parentName: ctx.parentName || t.name || "",
@@ -1683,7 +1837,13 @@
       sessionDate: ctx.sessionDate || null,
       venue: ctx.venue || null,
       contextWaId: contextWaId || null,
-    })
+    };
+    if (state.attach) {
+      sendPayload.mediaBase64 = state.attach.base64;
+      sendPayload.mediaMime = state.attach.mime;
+      sendPayload.mediaFilename = state.attach.filename;
+    }
+    void global.PortalParentNotifySend.send(sendPayload)
       .then(function (res) {
         state.sending = false;
         if (!res || !res.ok) {
@@ -1701,6 +1861,7 @@
         cfg.toast(msg, "ok");
         state.stickToBottom = true;
         if (ta) ta.value = "";
+        clearComposerAttach();
         syncComposerSendingState();
         void loadRows(true);
       })
@@ -1726,6 +1887,38 @@
         renderChat(false);
         return;
       }
+      var photoBtn = e.target.closest("#portalPnlogComposerPhoto");
+      if (photoBtn) {
+        e.preventDefault();
+        var photoInput = document.getElementById("portalPnlogComposerFile");
+        if (photoInput) {
+          photoInput.accept = "image/*";
+          photoInput.click();
+        }
+        return;
+      }
+      var docBtn = e.target.closest("#portalPnlogComposerDocument");
+      if (docBtn) {
+        e.preventDefault();
+        var docInput = document.getElementById("portalPnlogComposerFile");
+        if (docInput) {
+          docInput.accept = "image/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv";
+          docInput.click();
+        }
+        return;
+      }
+      var audioBtn = e.target.closest("#portalPnlogComposerAudio");
+      if (audioBtn) {
+        e.preventDefault();
+        void toggleComposerAudio();
+        return;
+      }
+      var clearAttach = e.target.closest("#portalPnlogComposerClearAttach");
+      if (clearAttach) {
+        e.preventDefault();
+        clearComposerAttach();
+        return;
+      }
       var sendBtn = e.target.closest("#portalPnlogComposerSend");
       if (sendBtn) {
         e.preventDefault();
@@ -1744,6 +1937,14 @@
         state.draftByKey[state.selectedKey] = e.target.value;
         var statusEl = document.getElementById("portalPnlogComposerStatus");
         if (statusEl) statusEl.textContent = "";
+      }
+    });
+
+    host.addEventListener("change", function (e) {
+      if (!e.target || e.target.id !== "portalPnlogComposerFile") return;
+      var file = e.target.files && e.target.files[0];
+      if (file) {
+        setComposerAttach(file, file.name, file.type || "application/octet-stream");
       }
     });
 
@@ -1814,11 +2015,12 @@
       var outboundRes = await client
         .from("portal_parent_notify_log")
         .select(
-          "id, created_at, sent_by_email, kind, channel, client_display, parent_name, parent_email, parent_phone, session_date, venue, subject, body_text, email_status, whatsapp_status, whatsapp_delivered_at, whatsapp_read_at, error_detail"
+          "id, created_at, sent_by_email, kind, channel, client_display, parent_name, parent_email, parent_phone, session_date, venue, subject, body_text, message_type, media_path, media_mime, email_status, whatsapp_status, whatsapp_delivered_at, whatsapp_read_at, error_detail"
         )
         .order("created_at", { ascending: false })
         .limit(FETCH_LIMIT);
       if (outboundRes.error) throw outboundRes.error;
+      await resolveMediaSignedUrls(client, outboundRes.data || []);
 
       var inbound = [];
       state.inboundAvailable = true;
