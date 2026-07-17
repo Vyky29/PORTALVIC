@@ -74,11 +74,29 @@ export async function verifyParticipantParentAccess(
   if (sessionToken) {
     const session = await resolveParentPortalSession(req, admin);
     if (!session) return null;
+    const { data: linked } = await admin
+      .from("portal_parent_contacts")
+      .select("contact_id")
+      .eq("contact_id", contactId)
+      .eq("parent_person_id", session.parent_person_id)
+      .maybeSingle();
+    if (!linked) {
+      const { data: primaryOwned } = await admin
+        .from("portal_participants")
+        .select("contact_id, display_name")
+        .eq("contact_id", contactId)
+        .eq("parent_person_id", session.parent_person_id)
+        .maybeSingle();
+      if (!primaryOwned) return null;
+      return {
+        contact_id: String(primaryOwned.contact_id),
+        display_name: String(primaryOwned.display_name || ""),
+      };
+    }
     const { data: row } = await admin
       .from("portal_participants")
       .select("contact_id, display_name")
       .eq("contact_id", contactId)
-      .eq("parent_person_id", session.parent_person_id)
       .maybeSingle();
     if (!row) return null;
     return { contact_id: String(row.contact_id), display_name: String(row.display_name || "") };

@@ -76,33 +76,52 @@ Deno.serve(async (req) => {
 
   const parentPersonId = String(sess.parent_person_id || "");
 
-  const participantTable = "portal_participants";
-  let contactsQuery = supabase
-    .from(participantTable)
+  // Co-parents share contact_id but have their own parent_person_id row in
+  // portal_parent_contacts. Resolve children from that link table first.
+  const { data: linkedRows, error: linkedErr } = await supabase
+    .from("portal_parent_contacts")
     .select(
-      "contact_id, display_name, first_name, last_name, dob_iso, in_class, on_waiting_list, avatar_storage_path",
+      "contact_id, child_display, child_first_name, child_last_name, dob_iso, in_class, on_waiting_list, city, postcode",
     )
     .eq("parent_person_id", parentPersonId)
-    .order("display_name", { ascending: true });
+    .order("child_display", { ascending: true });
 
-  let { data: contacts, error: contactsErr } = await contactsQuery;
-
-  if (contactsErr) {
-    const fallback = await supabase
-      .from("portal_parent_contacts")
-      .select(
-        "contact_id, child_display, child_first_name, child_last_name, dob_iso, in_class, on_waiting_list, city, postcode",
-      )
-      .eq("parent_person_id", parentPersonId)
-      .order("child_display", { ascending: true });
-    contacts = fallback.data;
-    contactsErr = fallback.error;
-  }
-
-  if (contactsErr) {
-    console.error("[parent-portal-home-load] contacts error", contactsErr);
+  if (linkedErr) {
+    console.error("[parent-portal-home-load] contacts error", linkedErr);
     return parentPortalJsonInvalid(500);
   }
+
+  const linkedIds = [...new Set((linkedRows || []).map((r) => String(r.contact_id || "")).filter(Boolean))];
+  const { data: participantRows } = linkedIds.length
+    ? await supabase
+      .from("portal_participants")
+      .select(
+        "contact_id, display_name, first_name, last_name, dob_iso, in_class, on_waiting_list, avatar_storage_path",
+      )
+      .in("contact_id", linkedIds)
+    : { data: [] as Array<Record<string, unknown>> };
+
+  const participantById = new Map(
+    (participantRows || []).map((p) => [String(p.contact_id || ""), p]),
+  );
+  const contacts = (linkedRows || []).map((row) => {
+    const p = participantById.get(String(row.contact_id || ""));
+    return {
+      contact_id: row.contact_id,
+      display_name: p?.display_name || row.child_display,
+      first_name: p?.first_name || row.child_first_name,
+      last_name: p?.last_name || row.child_last_name,
+      dob_iso: p?.dob_iso || row.dob_iso,
+      in_class: p?.in_class ?? row.in_class,
+      on_waiting_list: p?.on_waiting_list ?? row.on_waiting_list,
+      avatar_storage_path: p?.avatar_storage_path || null,
+      city: row.city || null,
+      postcode: row.postcode || null,
+      child_display: row.child_display,
+      child_first_name: row.child_first_name,
+      child_last_name: row.child_last_name,
+    };
+  });
 
   const { data: parentMeta } = await supabase
     .from("portal_parent_contacts")

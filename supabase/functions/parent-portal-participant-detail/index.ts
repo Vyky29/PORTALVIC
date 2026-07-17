@@ -753,10 +753,25 @@ Deno.serve(async (req) => {
   const wantSwim = sections.has("swim");
   const wantWeeklyNotes = sections.has("weekly_notes");
 
+  const { data: linked } = await supabase
+    .from("portal_parent_contacts")
+    .select("contact_id")
+    .eq("parent_person_id", session.parent_person_id)
+    .eq("contact_id", contactId)
+    .maybeSingle();
+  if (!linked) {
+    const { data: primaryOwned } = await supabase
+      .from("portal_participants")
+      .select("contact_id")
+      .eq("parent_person_id", session.parent_person_id)
+      .eq("contact_id", contactId)
+      .maybeSingle();
+    if (!primaryOwned) return parentPortalJsonInvalid(403);
+  }
+
   const { data: participant, error: partErr } = await supabase
     .from("portal_participants")
     .select("contact_id, display_name, first_name, last_name, dob_iso, in_class, on_waiting_list, avatar_storage_path")
-    .eq("parent_person_id", session.parent_person_id)
     .eq("contact_id", contactId)
     .maybeSingle();
 
@@ -784,12 +799,21 @@ Deno.serve(async (req) => {
     clean(displayName, 120).split(/\s+/)[0] ||
     clean(displayName, 120);
 
-  const { data: contactRow } = await supabase
+  let { data: contactRow } = await supabase
     .from("portal_parent_contacts")
     .select("city, postcode, in_class, on_waiting_list, child_display, registration_date")
     .eq("contact_id", contactId)
     .eq("parent_person_id", session.parent_person_id)
     .maybeSingle();
+  if (!contactRow) {
+    const fallbackContact = await supabase
+      .from("portal_parent_contacts")
+      .select("city, postcode, in_class, on_waiting_list, child_display, registration_date")
+      .eq("contact_id", contactId)
+      .limit(1)
+      .maybeSingle();
+    contactRow = fallbackContact.data;
+  }
 
   const registrationDateIso = isoFromAny(contactRow?.registration_date) || null;
 
