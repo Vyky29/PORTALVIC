@@ -36,18 +36,34 @@ export async function pushPortalInvoiceShareToXero(
   }
 
   const cid = clean(share.contact_id, 120);
-  const { data: parent } = await admin
+  const { data: parentRows } = await admin
     .from("portal_parent_contacts")
     .select(
-      "parent_display, parent_first_name, parent_last_name, email, address_line1, address_line2, city, postcode, xero_contact_id",
+      "parent_display, parent_first_name, parent_last_name, email, address_line1, address_line2, city, postcode, xero_contact_id, created_at",
     )
     .eq("contact_id", cid)
-    .maybeSingle();
+    .order("created_at", { ascending: true });
+  const parents = parentRows || [];
+  const parentNames = parents
+    .map((p) =>
+      clean(p.parent_display, 120) ||
+      [p.parent_first_name, p.parent_last_name].filter(Boolean).join(" ").trim(),
+    )
+    .filter(Boolean)
+    .filter((n, i, arr) => arr.findIndex((x) => x.toLowerCase() === n.toLowerCase()) === i);
+  const parent =
+    parents.find((p) => clean(p.email, 200) || clean(p.xero_contact_id, 80)) ||
+    parents[0] ||
+    null;
 
   let parentName =
-    clean(parent?.parent_display, 120) ||
-    [parent?.parent_first_name, parent?.parent_last_name].filter(Boolean).join(" ").trim() ||
-    "Parent / carer";
+    parentNames.length === 0
+      ? "Parent / carer"
+      : parentNames.length === 1
+        ? parentNames[0]
+        : parentNames.length === 2
+          ? `${parentNames[0]} & ${parentNames[1]}`
+          : `${parentNames.slice(0, -1).join(", ")} & ${parentNames[parentNames.length - 1]}`;
   let parentEmail = clean(parent?.email, 200) || null;
   let addressLine1 = clean(parent?.address_line1, 120) || null;
   let addressLine2 = clean(parent?.address_line2, 120) || null;

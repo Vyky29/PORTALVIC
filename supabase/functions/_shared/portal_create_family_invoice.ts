@@ -97,6 +97,67 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+type ParentContactBillRow = {
+  parent_display?: string | null;
+  parent_first_name?: string | null;
+  parent_last_name?: string | null;
+  address_line1?: string | null;
+  address_line2?: string | null;
+  city?: string | null;
+  postcode?: string | null;
+};
+
+/** Parent/carer names + home address for private / Direct Payment invoices. */
+async function resolveFamilyBillTo(
+  admin: SupabaseClient,
+  contactId: string,
+): Promise<{ billToName: string; billToLines: string[] }> {
+  const { data: rows } = await admin
+    .from("portal_parent_contacts")
+    .select(
+      "parent_display, parent_first_name, parent_last_name, address_line1, address_line2, city, postcode",
+    )
+    .eq("contact_id", contactId)
+    .order("created_at", { ascending: true });
+
+  const parents = (rows || []) as ParentContactBillRow[];
+  const names: string[] = [];
+  for (const row of parents) {
+    const display =
+      clean(row.parent_display, 120) ||
+      [row.parent_first_name, row.parent_last_name].filter(Boolean).join(" ").trim();
+    if (display && !names.some((n) => n.toLowerCase() === display.toLowerCase())) {
+      names.push(display);
+    }
+  }
+  const billToName =
+    names.length === 0
+      ? "Parent / carer"
+      : names.length === 1
+        ? names[0]
+        : names.length === 2
+          ? `${names[0]} & ${names[1]}`
+          : `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`;
+
+  const withAddress =
+    parents.find((r) => clean(r.address_line1, 120) || clean(r.postcode, 20)) ||
+    parents[0] ||
+    null;
+  const line1 = clean(withAddress?.address_line1, 120);
+  const line2 = clean(withAddress?.address_line2, 120);
+  const city = clean(withAddress?.city, 80);
+  const postcode = clean(withAddress?.postcode, 20);
+  const billToLines = [
+    line1,
+    line2 && line2.toLowerCase() !== city.toLowerCase() ? line2 : "",
+    city,
+    postcode,
+    "UNITED KINGDOM",
+  ].filter(Boolean);
+
+  return { billToName, billToLines };
+}
+
 function invoiceModeLabel(
   paymentMethodHint: string,
   vatMode: PortalInvoiceVatMode,
@@ -219,14 +280,6 @@ export async function createPortalFamilyInvoice(
     if (!poLabel && funding.po) poLabel = clean(funding.po, 80);
   }
 
-  const { data: parentContact } = await admin
-    .from("portal_parent_contacts")
-    .select(
-      "parent_display, parent_first_name, parent_last_name, address_line1, address_line2, city, postcode",
-    )
-    .eq("contact_id", contactId)
-    .maybeSingle();
-
   // LA-managed invoices are billed to the funding authority, never the parent.
   let billToName: string;
   let billToLines: string[];
@@ -237,20 +290,9 @@ export async function createPortalFamilyInvoice(
     billToLines = laBillTo.lines;
     laAdminNote = laBillTo.adminNote;
   } else {
-    billToName =
-      clean(parentContact?.parent_display, 120) ||
-      [parentContact?.parent_first_name, parentContact?.parent_last_name]
-        .filter(Boolean)
-        .join(" ")
-        .trim() ||
-      "Parent / carer";
-    billToLines = [
-      clean(parentContact?.address_line1, 120),
-      clean(parentContact?.address_line2, 120),
-      clean(parentContact?.city, 80),
-      clean(parentContact?.postcode, 20),
-      "UNITED KINGDOM",
-    ].filter(Boolean);
+    const familyBillTo = await resolveFamilyBillTo(admin, contactId);
+    billToName = familyBillTo.billToName;
+    billToLines = familyBillTo.billToLines;
   }
   if (laAdminNote) {
     notes = notes ? `${notes}\n\n${laAdminNote}` : laAdminNote;
@@ -478,14 +520,6 @@ export async function regeneratePortalInvoiceSharePdf(
   const vatMode: PortalInvoiceVatMode =
     storedVat === "exempt" || storedVat === "vat_20" ? storedVat : funding.vatMode;
 
-  const { data: parentContact } = await admin
-    .from("portal_parent_contacts")
-    .select(
-      "parent_display, parent_first_name, parent_last_name, address_line1, address_line2, city, postcode",
-    )
-    .eq("contact_id", contactId)
-    .maybeSingle();
-
   const hintForBillTo = clean(share.payment_method_hint, 40);
   let billToName: string;
   let billToLines: string[];
@@ -496,20 +530,9 @@ export async function regeneratePortalInvoiceSharePdf(
     billToLines = laBillTo.lines;
     laAdminNote = laBillTo.adminNote;
   } else {
-    billToName =
-      clean(parentContact?.parent_display, 120) ||
-      [parentContact?.parent_first_name, parentContact?.parent_last_name]
-        .filter(Boolean)
-        .join(" ")
-        .trim() ||
-      "Parent / carer";
-    billToLines = [
-      clean(parentContact?.address_line1, 120),
-      clean(parentContact?.address_line2, 120),
-      clean(parentContact?.city, 80),
-      clean(parentContact?.postcode, 20),
-      "UNITED KINGDOM",
-    ].filter(Boolean);
+    const familyBillTo = await resolveFamilyBillTo(admin, contactId);
+    billToName = familyBillTo.billToName;
+    billToLines = familyBillTo.billToLines;
   }
 
   const amountGbp = round2(Number(share.amount_gbp));

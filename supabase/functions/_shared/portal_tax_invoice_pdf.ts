@@ -162,8 +162,8 @@ export async function buildPortalTaxInvoicePdf(
   const left = 50;
   const right = width - 50;
 
-  // Right header column: logo flush-right, company address + VAT snug underneath
-  const companyBlock = [...COMPANY_LINES, `VAT Number ${VAT_NUMBER}`];
+  // Right header column: logo flush-right, company address snug underneath
+  const companyBlock = [...COMPANY_LINES];
   let logoW = 0;
   let logoH = 0;
   let logoBottom = height - 44;
@@ -186,14 +186,17 @@ export async function buildPortalTaxInvoicePdf(
     /* logo optional */
   }
 
-  // Registered office (top)
-  page.drawText(REG_OFFICE, {
-    x: 70,
-    y: height - 28,
-    size: 7,
-    font,
-    color: muted,
-  });
+  // Registered office (top, centred)
+  {
+    const topTw = font.widthOfTextAtSize(REG_OFFICE, 7);
+    page.drawText(REG_OFFICE, {
+      x: Math.max(left, (width - topTw) / 2),
+      y: height - 28,
+      size: 7,
+      font,
+      color: muted,
+    });
+  }
 
   // Invoice title
   page.drawText("INVOICE", {
@@ -239,12 +242,13 @@ export async function buildPortalTaxInvoicePdf(
     addrY -= 11;
   }
 
-  // Meta (Invoice Date / Number / Reference / Service) — under bill-to, above Description table
+  // Meta (Invoice Date / Number / Reference / VAT Number / Service)
   y = Math.min(y, addrY) - 18;
   const meta = [
     ["Invoice Date", formatUkDate(input.invoiceDateIso)],
     ["Invoice Number", pdfSafeText(input.invoiceNumber)],
     ["Reference", pdfSafeText(input.reference || "").slice(0, 40) || "-"],
+    ["VAT Number", VAT_NUMBER],
   ];
   const serviceLabel = pdfSafeText(input.service || "").slice(0, 48);
   if (serviceLabel) meta.push(["Service", serviceLabel]);
@@ -506,13 +510,16 @@ export async function buildPortalTaxInvoicePdf(
     y -= 12;
   }
 
-  page.drawText(REG_OFFICE, {
-    x: 70,
-    y: 28,
-    size: 7,
-    font,
-    color: muted,
-  });
+  {
+    const footTw = font.widthOfTextAtSize(REG_OFFICE, 7);
+    page.drawText(REG_OFFICE, {
+      x: Math.max(left, (width - footTw) / 2),
+      y: 28,
+      size: 7,
+      font,
+      color: muted,
+    });
+  }
 
   // Payment advice page
   const page2 = pdf.addPage([595.28, 841.89]);
@@ -556,13 +563,16 @@ export async function buildPortalTaxInvoicePdf(
     font,
     color: muted,
   });
-  page2.drawText(REG_OFFICE, {
-    x: 70,
-    y: 28,
-    size: 7,
-    font,
-    color: muted,
-  });
+  {
+    const foot2Tw = font.widthOfTextAtSize(REG_OFFICE, 7);
+    page2.drawText(REG_OFFICE, {
+      x: Math.max(left, (width - foot2Tw) / 2),
+      y: 28,
+      size: 7,
+      font,
+      color: muted,
+    });
+  }
 
   return pdf.save();
 }
