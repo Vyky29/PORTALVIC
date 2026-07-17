@@ -223,22 +223,6 @@ Deno.serve(async (req) => {
         };
       })
       .filter((ln) => ln.unitAmount !== 0);
-    if (xeroLines.length) {
-      const lineTotal = rawLineItems.reduce(
-        (sum: number, ln: Record<string, unknown>) =>
-          sum + (Number.isFinite(Number(ln.amount_gbp)) ? Number(ln.amount_gbp) : 0),
-        0,
-      );
-      const adjustment = Math.round((Number(share.amount_gbp) - lineTotal) * 100) / 100;
-      if (Math.abs(adjustment) >= 0.01) {
-        xeroLines.push({
-          description: adjustment < 0 ? "Family credit applied" : "Invoice adjustment",
-          quantity: 1,
-          unitAmount: adjustment,
-          itemCode: null,
-        });
-      }
-    }
 
     const created = await xeroCreateAccrecInvoice(
       {

@@ -354,25 +354,6 @@ export async function buildPortalTaxInvoicePdf(
         line.amount_gbp !== 0,
     );
 
-  // Keep item rows reconcilable with the invoice total (e.g. a family credit
-  // applied after the original service lines were generated).
-  if (rawLineItems.length) {
-    const lineGross = roundMoney(
-      rawLineItems.reduce((sum, line) => sum + line.amount_gbp, 0),
-    );
-    const adjustment = roundMoney(total - lineGross);
-    if (Math.abs(adjustment) >= 0.01) {
-      rawLineItems.push({
-        description: adjustment < 0 ? "Family credit applied" : "Invoice adjustment",
-        detail: "",
-        dates: "",
-        quantity: 1,
-        unit_price_gbp: adjustment,
-        amount_gbp: adjustment,
-      });
-    }
-  }
-
   if (rawLineItems.length) {
     y = descEndY - 4;
     for (const line of rawLineItems.slice(0, 12)) {
