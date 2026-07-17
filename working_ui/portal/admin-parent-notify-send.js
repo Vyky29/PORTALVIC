@@ -78,6 +78,7 @@
 
   function formatSendResult(data) {
     if (!data) return 'Sent.';
+    if (data.edited) return 'Message updated on WhatsApp.';
     var parts = [];
     if (data.email && data.email.status === 'sent') parts.push('Email sent');
     if (data.whatsapp && (data.whatsapp.status === 'sent' || data.whatsapp.status === 'sent_sms')) {

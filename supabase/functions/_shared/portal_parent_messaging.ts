@@ -579,6 +579,48 @@ async function sendWhatsappImageMessage(
   }
 }
 
+/**
+ * Edit a previously sent Cloud API text message (Meta: within ~15 minutes).
+ * Returns ok:false when the API rejects — callers should fall back to a new send.
+ */
+export async function editParentWhatsappTextMessage(
+  messageId: string,
+  body: string,
+): Promise<SendWhatsappResult> {
+  const token = (Deno.env.get("META_WHATSAPP_TOKEN") ?? "").trim();
+  const phoneId = (Deno.env.get("META_WHATSAPP_PHONE_NUMBER_ID") ?? "").trim();
+  const waId = String(messageId || "").trim();
+  const text = String(body || "").trim().slice(0, 4096);
+  if (!token || !phoneId) return { ok: false, error: "whatsapp_not_configured" };
+  if (!waId || waId.startsWith("app:")) return { ok: false, error: "whatsapp_edit_missing_id" };
+  if (!text) return { ok: false, error: "whatsapp_edit_empty_body" };
+
+  const url = `https://graph.facebook.com/v21.0/${phoneId}/messages`;
+  const payload = {
+    messaging_product: "whatsapp",
+    message_id: waId,
+    type: "text",
+    text: { preview_url: false, body: text },
+  };
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    const raw = await res.text();
+    if (!res.ok) {
+      return { ok: false, error: `whatsapp_edit_${res.status}: ${raw.slice(0, 400)}` };
+    }
+    return { ok: true, id: waId, channel: "whatsapp" };
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
+}
+
 export async function sendParentMessageViaWhatsapp(
   phoneE164: string,
   body: string,

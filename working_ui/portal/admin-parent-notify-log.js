@@ -89,6 +89,8 @@
     recording: false,
     mediaRecorder: null,
     recordChunks: [],
+    /** When set, composer is correcting an outbound message. */
+    editing: null,
   };
 
   var SEEN_STORE_KEY = "portal_pnlog_seen_v1";
@@ -325,9 +327,11 @@
     var parent = String(row.parent_display || row.parent || "").trim();
     var mobile = String(row.mobile || row.phone || "").trim();
     var contactId = String(row.contact_id || row.contactId || "").trim();
+    var parentPersonId = String(row.parent_person_id || row.parentPersonId || "").trim();
     if (!child && !mobile && !contactId) return null;
     return {
       contactId: contactId,
+      parentPersonId: parentPersonId,
       child: child,
       parent: parent,
       mobile: mobile,
@@ -387,17 +391,20 @@
   }
 
   function mergeContactDirectories(preferred, fallback) {
-    var byId = Object.create(null);
     var byPhone = Object.create(null);
-    var byChild = Object.create(null);
+    var byParentKey = Object.create(null);
     var out = [];
+    function parentKey(c) {
+      if (!c || !c.contactId || !c.parentPersonId) return "";
+      return c.contactId + "\0" + c.parentPersonId;
+    }
     function upsert(c, overwrite) {
       if (!c) return;
-      var id = c.contactId;
+      var pkey = parentKey(c);
+      // Never merge co-parents by child/contact alone — phones must stay distinct.
       var existing =
-        (id && byId[id]) ||
         (c.matchKey && byPhone[c.matchKey]) ||
-        (c.childNorm && byChild[c.childNorm]) ||
+        (pkey && byParentKey[pkey]) ||
         null;
       if (existing) {
         if (overwrite) {
@@ -412,6 +419,9 @@
             existing.childNorm = c.childNorm || existing.childNorm;
           }
           if (c.contactId && !existing.contactId) existing.contactId = c.contactId;
+          if (c.parentPersonId && !existing.parentPersonId) {
+            existing.parentPersonId = c.parentPersonId;
+          }
         } else {
           if (!existing.mobile && c.mobile) {
             existing.mobile = c.mobile;
@@ -423,13 +433,18 @@
             existing.child = c.child;
             existing.childNorm = c.childNorm || existing.childNorm;
           }
+          if (!existing.parentPersonId && c.parentPersonId) {
+            existing.parentPersonId = c.parentPersonId;
+          }
         }
+        if (existing.matchKey) byPhone[existing.matchKey] = existing;
+        var ek = parentKey(existing);
+        if (ek) byParentKey[ek] = existing;
         return;
       }
       out.push(c);
-      if (id) byId[id] = c;
       if (c.matchKey) byPhone[c.matchKey] = c;
-      if (c.childNorm) byChild[c.childNorm] = c;
+      if (pkey) byParentKey[pkey] = c;
     }
     (fallback || []).forEach(function (c) {
       upsert(c, false);
@@ -444,23 +459,17 @@
     var list = directory || state.contactDirectory || [];
     if (!t || !list.length) return null;
     var i;
-    /* WhatsApp threads are keyed by phone — prefer the contact on that number. */
+    /* Match by WhatsApp thread phone only — never by child (co-parents share a child). */
     var threadKey = phoneMatchKey(t.phone);
     if (threadKey) {
       for (i = 0; i < list.length; i++) {
         if (list[i].matchKey && list[i].matchKey === threadKey) return list[i];
       }
     }
-    var clientNorm = String(t.client || "")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, " ")
-      .trim();
-    if (clientNorm) {
+    var threadDigits = canonicalPhoneDigits(t.phone) || phoneDigits(t.phone);
+    if (threadDigits) {
       for (i = 0; i < list.length; i++) {
-        if (list[i].childNorm && list[i].childNorm === clientNorm) return list[i];
-      }
-      for (i = 0; i < list.length; i++) {
-        if (list[i].childNorm && namesRoughlySame(list[i].child, t.client)) return list[i];
+        if (list[i].sendDigits && list[i].sendDigits === threadDigits) return list[i];
       }
     }
     return null;
@@ -471,21 +480,13 @@
     (threads || []).forEach(function (t) {
       if (!t) return;
       var contact = findContactForThread(t, dir);
-      var profileDigits =
-        (contact && contact.sendDigits) ||
-        remappedPhoneDigits(t.phone) ||
-        "";
       var threadDigits = canonicalPhoneDigits(t.phone) || phoneDigits(t.phone);
-      if (profileDigits) {
-        t.profilePhone = profileDigits;
-        t.sendPhone = profileDigits;
-        t.phoneFromProfile = threadDigits !== profileDigits;
-      } else {
-        t.profilePhone = "";
-        t.sendPhone = threadDigits || t.phone;
-        t.phoneFromProfile = false;
-      }
-      /* Always prefer live Participant / contact directory over stale notify-log labels. */
+      // Always send to this WhatsApp thread's number (or an explicit remap of THAT number).
+      // Never redirect to another co-parent's profile mobile.
+      var remapped = remappedPhoneDigits(t.phone);
+      t.sendPhone = remapped || threadDigits || t.phone;
+      t.profilePhone = (contact && contact.sendDigits) || "";
+      t.phoneFromProfile = !!(remapped && remapped !== threadDigits);
       if (contact && contact.parent) t.parentName = contact.parent;
       if (contact && contact.child) t.client = contact.child;
       var parent = t.parentName;
@@ -500,7 +501,8 @@
 
   function threadPhoneForUi(t) {
     if (!t) return "";
-    return formatPhoneDisplay(t.sendPhone || t.phone);
+    // Show the WhatsApp thread number we actually message — never a redirected co-parent.
+    return formatPhoneDisplay(t.phone || t.sendPhone);
   }
 
   function friendlyWaError(detail) {
@@ -1034,6 +1036,7 @@
       var wt = waThread(wkey);
       wt.events.push({
         dir: "out",
+        id: row.id,
         when: row.created_at,
         body: row.body_text,
         kind: row.kind,
@@ -1237,6 +1240,9 @@
       errTip = ev.status === "failed" ? friendlyWaError(ev.errorDetail || (ev.row && ev.row.error_detail)) : "";
       metaBits.push(statusChip(ev.status, ev.channel, errTip || (ev.row && ev.row.error_detail)));
       if (ev.sentBy) metaBits.push(esc(ev.sentBy));
+      if (ev.row && ev.row.meta && ev.row.meta.edited_at) {
+        metaBits.push('<span class="portal-pnlog-chip portal-pnlog-chip--edited">Edited</span>');
+      }
     } else if (ev.fromApp) {
       metaBits.push('<span class="portal-pnlog-chip portal-pnlog-chip--parent-app">Parent app</span>');
     } else {
@@ -1275,6 +1281,24 @@
           esc(errTip) +
           "</div>"
         : "";
+    var editHtml = "";
+    if (
+      ev.dir === "out" &&
+      bodyStr &&
+      !isMediaPlaceholder &&
+      !isReaction &&
+      !mediaHtml &&
+      ev.status !== "failed" &&
+      ev.id
+    ) {
+      var waMid = String((ev.row && ev.row.whatsapp_message_id) || "").trim();
+      editHtml =
+        '<button type="button" class="portal-pnlog-bubble__edit" data-edit-log-id="' +
+        esc(String(ev.id)) +
+        '" data-edit-wa-id="' +
+        esc(waMid) +
+        '">Edit</button>';
+    }
     return (
       '<div class="portal-pnlog-bubble portal-pnlog-bubble--' +
       side +
@@ -1284,6 +1308,7 @@
       errHtml +
       '<div class="portal-pnlog-bubble__meta">' +
       metaBits.join(" ") +
+      (editHtml ? " " + editHtml : "") +
       "</div></div>"
     );
   }
@@ -1302,7 +1327,13 @@
     if (ta) ta.disabled = !!state.sending;
     if (btn) {
       btn.disabled = !!state.sending;
-      btn.textContent = state.sending ? "Sending…" : "Send";
+      btn.textContent = state.sending
+        ? state.editing
+          ? "Saving…"
+          : "Sending…"
+        : state.editing
+          ? "Save edit"
+          : "Send";
     }
     [
       "portalPnlogComposerPhoto",
@@ -1310,13 +1341,50 @@
       "portalPnlogComposerAudio",
     ].forEach(function (id) {
       var tool = document.getElementById(id);
-      if (tool) tool.disabled = !!state.sending || !mediaAllowed;
+      if (tool) tool.disabled = !!state.sending || !mediaAllowed || !!state.editing;
     });
   }
 
   function composerPhoneKey(t) {
     if (!t) return "";
-    return String(t.sendPhone || t.phone || "");
+    // Thread WhatsApp id — not a redirected profile phone.
+    return String(t.phone || t.sendPhone || "");
+  }
+
+  function clearEditing() {
+    state.editing = null;
+  }
+
+  function startEditOutbound(logId, waMessageId, bodyText) {
+    var t = findThread(state.selectedKey);
+    if (!t) return;
+    state.editing = {
+      logId: String(logId || ""),
+      waMessageId: String(waMessageId || ""),
+      threadKey: t.key,
+    };
+    state.draftByKey[t.key] = String(bodyText || "");
+    clearComposerAttach();
+    state.composerSig = "";
+    mountComposer(t, true);
+    var ta = document.getElementById("portalPnlogComposerInput");
+    if (ta) {
+      ta.value = String(bodyText || "");
+      try {
+        ta.focus();
+        ta.setSelectionRange(ta.value.length, ta.value.length);
+      } catch (_f) {}
+    }
+    var statusEl = document.getElementById("portalPnlogComposerStatus");
+    if (statusEl) {
+      statusEl.textContent =
+        "Editing — save updates this WhatsApp message when Meta allows it (≈15 min); otherwise a correction is sent to " +
+        (t.name || "this parent") +
+        " (" +
+        threadPhoneForUi(t) +
+        ").";
+    }
+    syncComposerSendingState();
   }
 
   function renderPaneHeadHtml(t) {
@@ -1420,7 +1488,10 @@
     opts = opts || {};
     captureComposerDraft();
     var next = String(key || "");
-    if (next !== state.selectedKey) clearComposerAttach();
+    if (next !== state.selectedKey) {
+      clearComposerAttach();
+      clearEditing();
+    }
     state.selectedKey = next;
     if (next) {
       state.mobileShowThread = true;
@@ -1494,9 +1565,21 @@
     var draft = state.draftByKey[t.key] != null ? state.draftByKey[t.key] : "";
     var disabled = state.sending ? " disabled" : "";
     var openSession = threadHasOpenWhatsappSession(t);
-    var mediaDisabled = !openSession || state.sending ? " disabled" : "";
+    var mediaDisabled = !openSession || state.sending || state.editing ? " disabled" : "";
+    var toName = t.name || t.parentName || "Parent";
+    var toPhone = threadPhoneForUi(t);
+    var editingNote = state.editing
+      ? '<p class="portal-pnlog-composer__edit-banner" role="status">Editing a sent message — check the recipient below before saving.</p>'
+      : "";
     return (
       '<div class="portal-pnlog-composer">' +
+      editingNote +
+      '<p class="portal-pnlog-composer__to" title="Messages always go to this WhatsApp number">' +
+      "<strong>To:</strong> " +
+      esc(toName) +
+      " · " +
+      esc(toPhone) +
+      "</p>" +
       '<div class="portal-pnlog-composer__tools">' +
       '<input type="file" id="portalPnlogComposerFile" accept="image/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" hidden />' +
       '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerPhoto"' +
@@ -1509,6 +1592,9 @@
       mediaDisabled +
       '>🎙 Audio</button>' +
       '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerClearAttach" hidden>✕ Clear</button>' +
+      (state.editing
+        ? '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerCancelEdit">Cancel edit</button>'
+        : "") +
       '<span id="portalPnlogComposerAttachPreview" class="portal-pnlog-composer__attach-preview muted"></span>' +
       "</div>" +
       (!openSession
@@ -1524,7 +1610,7 @@
       '<button type="button" class="btn btn--pri portal-pnlog-composer__send" id="portalPnlogComposerSend"' +
       disabled +
       ">" +
-      (state.sending ? "Sending…" : "Send") +
+      (state.sending ? (state.editing ? "Saving…" : "Sending…") : state.editing ? "Save edit" : "Send") +
       "</button></div></div>"
     );
   }
@@ -1756,7 +1842,7 @@
   function sendComposerReply() {
     if (state.sending) return;
     var t = findThread(state.selectedKey);
-    if (!t || !(t.sendPhone || t.phone)) return;
+    if (!t || !(t.phone || t.sendPhone)) return;
     var ta = document.getElementById("portalPnlogComposerInput");
     var statusEl = document.getElementById("portalPnlogComposerStatus");
     var btn = document.getElementById("portalPnlogComposerSend");
@@ -1769,9 +1855,12 @@
       if (statusEl) statusEl.textContent = "Send module not loaded — refresh the page.";
       return;
     }
+    // Always the open WhatsApp thread — never another co-parent's profile mobile.
     var sendDigits =
-      canonicalPhoneDigits(t.sendPhone || t.phone) ||
-      phoneDigits(t.sendPhone || t.phone);
+      canonicalPhoneDigits(t.phone) ||
+      phoneDigits(t.phone) ||
+      canonicalPhoneDigits(t.sendPhone) ||
+      phoneDigits(t.sendPhone);
     var ctx = threadContextForPhone(t.phone);
     if (!ctx.clientDisplay && t.client) ctx.clientDisplay = t.client;
     if (!ctx.parentName && t.name) ctx.parentName = t.name;
@@ -1797,7 +1886,7 @@
     /* Cold outbound uses a Meta template; {{1}} must stay short (Meta #132005). */
     var sendKind = openSession ? "custom" : "contact_update";
     var sendBody = msgBody;
-    if (!openSession) {
+    if (!openSession && !state.editing) {
       var flatLen = String(msgBody || "")
         .replace(/[\r\n\t]+/g, " ")
         .replace(/\s{2,}/g, " ")
@@ -1813,17 +1902,24 @@
       }
       sendBody = flattenForWhatsappTemplate(msgBody);
     }
+    var editing = state.editing;
     state.sending = true;
     state.draftByKey[t.key] = msgBody;
     if (btn) {
       btn.disabled = true;
-      btn.textContent = "Sending…";
+      btn.textContent = editing ? "Saving…" : "Sending…";
     }
     if (ta) ta.disabled = true;
     if (statusEl) {
-      statusEl.textContent = openSession
-        ? ""
-        : "No open WhatsApp session — sending via approved template (paragraphs kept in portal history)…";
+      statusEl.textContent = editing
+        ? "Saving edit to " + (t.name || "parent") + " · " + threadPhoneForUi(t) + "…"
+        : openSession
+          ? "Sending to " + (t.name || "parent") + " · " + threadPhoneForUi(t) + "…"
+          : "No open WhatsApp session — sending via approved template to " +
+            (t.name || "parent") +
+            " · " +
+            threadPhoneForUi(t) +
+            "…";
     }
 
     var sendPayload = {
@@ -1838,6 +1934,12 @@
       venue: ctx.venue || null,
       contextWaId: contextWaId || null,
     };
+    if (editing && editing.waMessageId) {
+      sendPayload.editWhatsappMessageId = editing.waMessageId;
+    }
+    if (editing && editing.logId) {
+      sendPayload.replacesLogId = editing.logId;
+    }
     if (state.attach) {
       sendPayload.mediaBase64 = state.attach.base64;
       sendPayload.mediaMime = state.attach.mime;
@@ -1854,14 +1956,19 @@
           return;
         }
         state.draftByKey[t.key] = "";
+        clearEditing();
         var msg =
-          global.PortalParentNotifySend && typeof global.PortalParentNotifySend.formatSendResult === "function"
-            ? global.PortalParentNotifySend.formatSendResult(res.data)
-            : "Sent.";
+          res.data && res.data.edited
+            ? "Message updated on WhatsApp."
+            : global.PortalParentNotifySend && typeof global.PortalParentNotifySend.formatSendResult === "function"
+              ? global.PortalParentNotifySend.formatSendResult(res.data)
+              : "Sent.";
         cfg.toast(msg, "ok");
         state.stickToBottom = true;
         if (ta) ta.value = "";
         clearComposerAttach();
+        state.composerSig = "";
+        mountComposer(t, true);
         syncComposerSendingState();
         void loadRows(true);
       })
@@ -1917,6 +2024,41 @@
       if (clearAttach) {
         e.preventDefault();
         clearComposerAttach();
+        return;
+      }
+      var cancelEdit = e.target.closest("#portalPnlogComposerCancelEdit");
+      if (cancelEdit) {
+        e.preventDefault();
+        clearEditing();
+        var cancelThread = findThread(state.selectedKey);
+        if (cancelThread) {
+          state.draftByKey[cancelThread.key] = "";
+          state.composerSig = "";
+          mountComposer(cancelThread, true);
+        }
+        return;
+      }
+      var editBtn = e.target.closest(".portal-pnlog-bubble__edit[data-edit-log-id]");
+      if (editBtn) {
+        e.preventDefault();
+        var editLogId = editBtn.getAttribute("data-edit-log-id") || "";
+        var editWaId = editBtn.getAttribute("data-edit-wa-id") || "";
+        var bubble = editBtn.closest(".portal-pnlog-bubble");
+        var textEl = bubble && bubble.querySelector(".portal-pnlog-bubble__text");
+        var bodyFromDom = textEl
+          ? String(textEl.innerText || textEl.textContent || "").trim()
+          : "";
+        var editThread = findThread(state.selectedKey);
+        var bodyFromEvent = "";
+        if (editThread && editThread.events) {
+          for (var ei = 0; ei < editThread.events.length; ei++) {
+            if (String(editThread.events[ei].id || "") === editLogId) {
+              bodyFromEvent = String(editThread.events[ei].body || "");
+              break;
+            }
+          }
+        }
+        startEditOutbound(editLogId, editWaId, bodyFromEvent || bodyFromDom);
         return;
       }
       var sendBtn = e.target.closest("#portalPnlogComposerSend");
@@ -2015,7 +2157,7 @@
       var outboundRes = await client
         .from("portal_parent_notify_log")
         .select(
-          "id, created_at, sent_by_email, kind, channel, client_display, parent_name, parent_email, parent_phone, session_date, venue, subject, body_text, message_type, media_path, media_mime, email_status, whatsapp_status, whatsapp_delivered_at, whatsapp_read_at, error_detail"
+          "id, created_at, sent_by_email, kind, channel, client_display, parent_name, parent_email, parent_phone, session_date, venue, subject, body_text, message_type, media_path, media_mime, email_status, whatsapp_status, whatsapp_message_id, whatsapp_delivered_at, whatsapp_read_at, error_detail, meta"
         )
         .order("created_at", { ascending: false })
         .limit(FETCH_LIMIT);

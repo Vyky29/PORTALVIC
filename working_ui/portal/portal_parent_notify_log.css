@@ -378,6 +378,50 @@
   min-width: 0;
 }
 
+.portal-pnlog-bubble__edit {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  min-width: 0;
+}
+
+.portal-pnlog-bubble__edit:hover {
+  opacity: 0.85;
+}
+
+.portal-pnlog-chip--edited {
+  background: rgba(15, 23, 42, 0.08);
+}
+
+.portal-pnlog-composer__to {
+  margin: 0 0 6px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #0f3d54;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.portal-pnlog-composer__edit-banner {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #fff3c4;
+  border: 1px solid rgba(245, 197, 24, 0.65);
+  color: #5c4a00;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
 .portal-pnlog-bubble__time {
   font-size: 11px;
   color: var(--pnlog-muted);

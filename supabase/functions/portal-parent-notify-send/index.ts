@@ -42,6 +42,7 @@ import {
   readParentNotifySmtpConfig,
   sendParentEmailViaSmtp,
   sendParentMobileMessage,
+  editParentWhatsappTextMessage,
   normalizePublicPhotoUrl,
 } from "../_shared/portal_parent_messaging.ts";
 import {
@@ -77,6 +78,10 @@ type NotifyBody = {
   mediaBase64?: unknown;
   mediaMime?: unknown;
   mediaFilename?: unknown;
+  /** When set, try Meta edit of this wamid before sending a new message. */
+  editWhatsappMessageId?: unknown;
+  /** Portal notify log row to update when a native edit succeeds. */
+  replacesLogId?: unknown;
 };
 
 function str(v: unknown, max = 8000): string {
@@ -238,6 +243,48 @@ Deno.serve(async (req) => {
   }
 
   if (channel === "whatsapp" || channel === "both") {
+    const editWaId = str(payload.editWhatsappMessageId, 200);
+    const replacesLogId = str(payload.replacesLogId, 80);
+    if (editWaId && !hasMedia && channel === "whatsapp") {
+      const edited = await editParentWhatsappTextMessage(editWaId, whatsappBodyText);
+      if (edited.ok) {
+        whatsappStatus = "sent";
+        whatsappMessageId = edited.id || editWaId;
+        if (replacesLogId) {
+          const { data: prev } = await admin
+            .from("portal_parent_notify_log")
+            .select("id, meta, body_text")
+            .eq("id", replacesLogId)
+            .maybeSingle();
+          const prevMeta =
+            prev?.meta && typeof prev.meta === "object" && !Array.isArray(prev.meta)
+              ? { ...(prev.meta as Record<string, unknown>) }
+              : {};
+          prevMeta.edited_at = new Date().toISOString();
+          prevMeta.edited_by_email = verified.email || null;
+          prevMeta.previous_body_text = String(prev?.body_text || "").slice(0, 4000);
+          await admin
+            .from("portal_parent_notify_log")
+            .update({
+              body_text: bodyText || whatsappBodyText,
+              whatsapp_status: "sent",
+              whatsapp_message_id: whatsappMessageId,
+              error_detail: null,
+              meta: prevMeta,
+            })
+            .eq("id", replacesLogId);
+        }
+        return portalAdminJson(200, {
+          ok: true,
+          edited: true,
+          logId: replacesLogId || null,
+          email: { status: "skipped" },
+          whatsapp: { status: whatsappStatus, id: whatsappMessageId || undefined },
+        });
+      }
+      // Native edit unavailable — fall through to a normal new send (correction).
+      console.warn("[portal-parent-notify-send] edit fallback", edited.error);
+    }
     if (hasMedia) {
       const bytes = decodeBase64Payload(mediaB64);
       if (!bytes?.length) {

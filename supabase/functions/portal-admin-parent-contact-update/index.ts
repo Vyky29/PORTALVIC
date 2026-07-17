@@ -78,18 +78,20 @@ Deno.serve(async (req) => {
   if (action === "directory") {
     const { data, error } = await admin
       .from("portal_parent_contacts")
-      .select("contact_id, child_display, parent_display, mobile")
-      .limit(5000);
+      .select("contact_id, parent_person_id, child_display, parent_display, mobile")
+      .limit(8000);
     if (error) {
       console.error("[portal-admin-parent-contact-update] directory", error.message);
       return portalAdminJson(500, { ok: false, error: "directory_failed" });
     }
+    // Keep every co-parent row (same child, different mobile) — do not collapse by contact_id.
     const contacts = (data || []).map((row) => ({
       contact_id: String(row.contact_id || "").trim(),
+      parent_person_id: String(row.parent_person_id || "").trim(),
       child_display: String(row.child_display || "").trim(),
       parent_display: String(row.parent_display || "").trim(),
       mobile: String(row.mobile || "").trim(),
-    })).filter((row) => row.contact_id || row.child_display);
+    })).filter((row) => row.contact_id || row.child_display || row.mobile);
     return portalAdminJson(200, { ok: true, contacts });
   }
 
