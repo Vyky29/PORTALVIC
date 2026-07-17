@@ -3997,40 +3997,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function adminC4kParticipantSessionsKpiSlabHtml(pname, drf, od){
       drf = drf || [];
       var usingPortal = adminSessionFeedbackPortalRows().length > 0;
-      var kpiEngHead =
-        '<div class="c4k-reg-kpi-card-head">' +
-        '<h3 class="c4k-reg-kpi-card-title">Engagement</h3>' +
-        '<p class="c4k-reg-kpi-card-sub">(' + esc(ADMIN_PORTAL_SESSION_FEEDBACK_TERM_TITLE) + ')</p>' +
-        '</div>';
-      var kpiEngBody = usingPortal ? adminC4kRegistersKpiEngagementVisualHtml(drf) : adminC4kRegistersKpiMockEngagementVisualHtml();
-      var kpiEmoHead =
-        '<div class="c4k-reg-kpi-card-head">' +
-        '<h3 class="c4k-reg-kpi-card-title">Regulation / emotions</h3>' +
-        '<p class="c4k-reg-kpi-card-sub">(' + esc(ADMIN_PORTAL_SESSION_FEEDBACK_TERM_TITLE) + ')</p>' +
-        '</div>';
-      var kpiEmoBody = usingPortal ? adminC4kRegistersKpiEmotionsVisualHtml(drf) : adminC4kRegistersKpiMockEmotionsVisualHtml();
-      var kpiIndHead =
-        '<div class="c4k-reg-kpi-card-head">' +
-        '<h3 class="c4k-reg-kpi-card-title">Independence</h3>' +
-        '<p class="c4k-reg-kpi-card-sub">(' + esc(ADMIN_PORTAL_SESSION_FEEDBACK_TERM_TITLE) + ')</p>' +
-        '</div>';
-      var kpiIndBody = adminC4kRegistersKpiIndependenceParticipantVisualHtml(drf);
+      var sub = ADMIN_PORTAL_SESSION_FEEDBACK_TERM_TITLE;
+      var kpiEngBody = usingPortal
+        ? adminC4kRegistersKpiEngagementGaugeHtml(drf)
+        : adminC4kRegistersKpiMockEngagementGaugeHtml();
+      var kpiEmoBody = usingPortal
+        ? adminC4kRegistersKpiEmotionsDayVisualHtml(drf)
+        : adminC4kRegistersKpiMockEmotionsDayVisualHtml();
+      var kpiIndBody = adminC4kRegistersKpiIndependenceBarsHtml(drf);
       return (
-        '<div class="c4k-sf-kpi-slab c4k-sf-kpi-slab--embed" style="margin-bottom:12px">' +
-        '<div class="c4k-sf-kpi-row">' +
-        '<div class="c4k-sf-kpi-panel c4k-sf-kpi-panel--eng-sm">' +
-        kpiEngHead +
-        kpiEngBody +
-        '</div>' +
-        '<div class="c4k-sf-kpi-panel">' +
-        kpiEmoHead +
-        kpiEmoBody +
-        '</div>' +
-        '<div class="c4k-sf-kpi-panel">' +
-        kpiIndHead +
-        kpiIndBody +
-        '</div>' +
-        '</div></div>'
+        '<div class="sf-kpi-grid sf-kpi-grid--participant" role="region" aria-label="' +
+        esc(pname || 'Participant') +
+        ' session feedback summary">' +
+        sfKpiCardHtml('Engagement', sub, kpiEngBody, 'eng') +
+        sfKpiCardHtml('Regulation / emotions', sub, kpiEmoBody, 'emo') +
+        sfKpiCardHtml('Independence', sub, kpiIndBody, 'ind') +
+        '</div>'
       );
     }
     function adminC4kRegistersKpiAbsenceVisualHtml(){
