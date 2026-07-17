@@ -17118,7 +17118,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     var C4K_SESSIONS_HUB_TABS = [
       { id:'overview', label:'Sessions overview', iconId:'c4k_sessions', mode:'panel' },
       { id:'feedback', label:'Register', iconId:'c4k_registers', mode:'panel' },
-      { id:'positive', label:'Feedback (filtered)', iconId:'c4k_reviews', mode:'panel' },
+      { id:'positive', label:'Session Feedback', iconId:'c4k_reviews', mode:'panel' },
       { id:'relevant', label:'Notes', iconId:'c4k_relevant', mode:'panel' },
       { id:'incidents', label:'Incidents', iconId:'analytics', mode:'panel' },
       { id:'cancellations', label:'Cancellations', iconId:'absents_refunds', mode:'panel' },
@@ -17130,7 +17130,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     var SESSIONS_HUB_HEAD_META = {
       overview:{ iconId:'c4k_sessions', tone:'sessions', title:'SESSIONS OVERVIEW', sub:'All sessions per day and their status (awaiting feedback, submitted…).' },
       feedback:{ iconId:'c4k_registers', tone:'feedback', title:'REGISTER', sub:'Raw session feedback as staff submitted it — engagement, emotions, independence, narrative and notes.' },
-      positive:{ iconId:'c4k_reviews', tone:'positive', title:'FEEDBACK (FILTERED)', sub:'Raw session feedback next to the parent-safe filtered version generated on review.' },
+      positive:{ iconId:'c4k_reviews', tone:'positive', title:'SESSION FEEDBACK', sub:'Raw session feedback next to the parent-safe filtered version generated on review.' },
       relevant:{ iconId:'c4k_relevant', tone:'relevant', title:'NOTES', sub:'Internal notes — informational only, with an option to email CEOs or other staff.' },
       absents:{ iconId:'absents', tone:'absents', title:'ABSENTS', sub:'Clients marked absent by staff for the selected day.' },
       cancellations:{ iconId:'absents_refunds', tone:'cancellations', title:'CANCELLATIONS', sub:'Cancellation reports by session week and day.' },
@@ -21051,7 +21051,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDashTileHtml('c4k_sessions', '', 'c4k_sessions', 'Sessions overview', 'Live grid & feedback', false, 'sessions', 'sessions_hub_overview')+
         portalDashTileHtml('participant_achievements', '', 'clients', 'Achievement photos', 'Session photos after feedback', false, 'feedback')+
         portalDashTileHtml('c4k_sessions', '', 'c4k_registers', 'Register', 'Raw session feedback', false, 'feedback', 'sessions_hub_feedback')+
-        portalDashTileHtml('c4k_sessions', '', 'c4k_reviews', 'Feedback (filtered)', 'Raw + parent-safe filtered', false, 'feedback', 'sessions_hub_positive')+
+        portalDashTileHtml('c4k_sessions', '', 'c4k_reviews', 'Session Feedback', 'Raw + parent-safe filtered', false, 'feedback', 'sessions_hub_positive')+
         portalDashTileHtml('c4k_sessions', '', 'c4k_relevant', 'Notes', 'Optional notes — share to CEOs/staff', false, 'analytics', 'sessions_hub_relevant')+
         portalDashTileHtml('c4k_sessions', '', 'absents', 'Absents', 'Quick marks by day', false, 'absents', 'sessions_hub_absents');
       var sessionsRow2 =
