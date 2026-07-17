@@ -41,7 +41,7 @@ select
   'Michael',
   'Morrissey',
   null,
-  null,
+  '07533662765',
   c.address_line1,
   c.address_line2,
   c.city,
@@ -56,6 +56,7 @@ on conflict (contact_id, parent_person_id) do update set
   parent_display = excluded.parent_display,
   parent_first_name = excluded.parent_first_name,
   parent_last_name = excluded.parent_last_name,
+  mobile = excluded.mobile,
   dob_iso = excluded.dob_iso,
   in_class = excluded.in_class,
   updated_at = now();
