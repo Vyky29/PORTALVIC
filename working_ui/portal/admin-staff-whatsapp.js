@@ -110,8 +110,20 @@
     };
   }
 
+  function resolveFunctionsBase() {
+    var raw = String(cfg.getSupabaseUrl() || "").trim().replace(/\/$/, "");
+    // Never call Edge Functions on the Vercel origin (relative "" → portalvic.vercel.app/functions…).
+    if (!raw || !/\.supabase\.co$/i.test(raw.replace(/^https?:\/\//, "").split("/")[0] || "")) {
+      raw = String((global.SUPABASE_URL || "")).trim().replace(/\/$/, "");
+    }
+    if (!raw || !/\.supabase\.co$/i.test(raw.replace(/^https?:\/\//, "").split("/")[0] || "")) {
+      raw = "https://cklpnwhlqsulpmkipmqb.supabase.co";
+    }
+    return raw;
+  }
+
   async function api(path, body) {
-    var url = String(cfg.getSupabaseUrl() || "").replace(/\/$/, "") + "/functions/v1/" + path;
+    var url = resolveFunctionsBase() + "/functions/v1/" + path;
     var res = await fetch(url, {
       method: "POST",
       headers: await authHeaders(),
@@ -861,7 +873,7 @@
       });
     });
     renderDirectory();
-    renderMessages();
+    renderMessages({ fromRefresh: !!(opts.silent || opts.keepLoadingQuiet) });
   }
 
   function syncClearAttachBtn() {
