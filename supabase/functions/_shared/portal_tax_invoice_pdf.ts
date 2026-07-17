@@ -23,6 +23,7 @@ export type PortalInvoicePdfInput = {
   lineItems?: Array<{
     description: string;
     detail?: string | null;
+    dates?: string | null;
     quantity: number;
     unit_price_gbp: number;
     amount_gbp: number;
@@ -339,6 +340,7 @@ export async function buildPortalTaxInvoicePdf(
     .map((line) => ({
       description: pdfSafeText(line?.description || "Service"),
       detail: pdfSafeText(line?.detail || ""),
+      dates: pdfSafeText(line?.dates || ""),
       quantity: Number(line?.quantity),
       unit_price_gbp: Number(line?.unit_price_gbp),
       amount_gbp: Number(line?.amount_gbp),
@@ -363,6 +365,7 @@ export async function buildPortalTaxInvoicePdf(
       rawLineItems.push({
         description: adjustment < 0 ? "Family credit applied" : "Invoice adjustment",
         detail: "",
+        dates: "",
         quantity: 1,
         unit_price_gbp: adjustment,
         amount_gbp: adjustment,
@@ -379,15 +382,23 @@ export async function buildPortalTaxInvoicePdf(
       const rowUnitNet = round4Money(rowSplit.net / line.quantity);
       const rowDesc = wrapPdfLines(line.description, 34).slice(0, 3);
       const rowDetail = line.detail ? wrapPdfLines(line.detail, 40).slice(0, 2) : [];
-      const rowHeight = Math.max(24, (rowDesc.length + rowDetail.length) * 11 + 8);
+      const rowDates = line.dates ? wrapPdfLines(line.dates, 55).slice(0, 2) : [];
+      const rowHeight = Math.max(
+        22,
+        rowDesc.length * 10 + rowDetail.length * 9 + rowDates.length * 9 + 6,
+      );
       const rowTop = y;
       for (const desc of rowDesc) {
         page.drawText(desc, { x: colDescX, y, size: 8.5, font, color: ink });
-        y -= 11;
+        y -= 10;
       }
       for (const det of rowDetail) {
         page.drawText(det, { x: colDescX, y, size: 7.5, font, color: muted });
-        y -= 11;
+        y -= 9;
+      }
+      for (const dates of rowDates) {
+        page.drawText(dates, { x: colDescX, y, size: 7, font, color: muted });
+        y -= 9;
       }
       // Keep all values on the same baseline as the service name.
       const rowValueY = rowTop;

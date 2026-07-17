@@ -102,10 +102,10 @@ function invoiceModeLabel(
   vatMode: PortalInvoiceVatMode,
 ): string {
   if (paymentMethodHint === "gocardless") return "Direct Payment (GoCardless)";
-  if (paymentMethodHint === "la_funded") return "LA funded (VAT exempt)";
+  if (paymentMethodHint === "la_funded") return "LA funded";
   if (paymentMethodHint === "payment_link") return "Card / Apple Pay";
-  if (vatMode === "exempt") return "Bank transfer / Card (VAT exempt)";
-  return "Bank transfer / Card (parent portal)";
+  if (vatMode === "exempt") return "Bank transfer / Card";
+  return "Bank transfer / Card";
 }
 
 function invoiceDescriptionLines(input: {
@@ -136,23 +136,20 @@ function invoiceDescriptionLines(input: {
     return [
       ...descriptionBody,
       "",
+      `Participant's Name: ${input.displayName}`,
       `Client ID: ${input.clientIdLabel}`,
       `PO: ${input.poLabel || "—"}`,
       input.reference ? `- Reference: ${input.reference}` : null,
-      `- Mode: ${input.modeLabel}`,
-      "- VAT: Exempt",
-    ].filter((x): x is string => !!x);
+      `- Payment Method: ${input.modeLabel}`,
+    ].filter((x): x is string => x !== null);
   }
   return [
     ...descriptionBody,
     "",
-    `Client's Name: ${input.displayName}`,
+    `Participant's Name: ${input.displayName}`,
     input.reference ? `- Reference: ${input.reference}` : null,
-    `- Mode: ${input.modeLabel}`,
-    input.vatMode === "exempt"
-      ? "- VAT: Exempt (Direct Payment)"
-      : "- VAT: 20% (private funding)",
-  ].filter((x): x is string => !!x);
+    `- Payment Method: ${input.modeLabel}`,
+  ].filter((x): x is string => x !== null);
 }
 
 export async function createPortalFamilyInvoice(

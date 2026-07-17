@@ -15,6 +15,8 @@ export type PortalInvoiceLineItem = {
   description: string;
   /** Session day/time/venue shown under the description (e.g. "Sunday 2:00–2:30 · SwimFarm"). */
   detail?: string | null;
+  /** Compact term session dates shown below the day/time/venue line. */
+  dates?: string | null;
   quantity: number;
   unit_price_gbp: number;
   amount_gbp: number;
@@ -101,6 +103,112 @@ export function slotSessionDetail(
   return [bits, venue].filter(Boolean).join(" · ");
 }
 
+type ReenrolTerm = "autumn" | "spring" | "summer";
+
+const DAY_INDEX: Record<string, number> = {
+  sunday: 0,
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6,
+};
+
+const TERM_DATE_WINDOWS: Record<
+  ReenrolTerm,
+  {
+    weekday: { start: string; end: string; closures: Array<[string, string]> };
+    weekend: { start: string; end: string; closures: Array<[string, string]> };
+  }
+> = {
+  autumn: {
+    weekday: {
+      start: "2026-09-05",
+      end: "2026-12-18",
+      closures: [["2026-10-26", "2026-10-30"]],
+    },
+    weekend: {
+      start: "2026-09-05",
+      end: "2026-12-18",
+      closures: [
+        ["2026-10-24", "2026-10-25"],
+        ["2026-10-31", "2026-11-01"],
+      ],
+    },
+  },
+  spring: {
+    weekday: {
+      start: "2027-01-04",
+      end: "2027-03-25",
+      closures: [["2027-02-15", "2027-02-18"]],
+    },
+    weekend: {
+      start: "2027-01-08",
+      end: "2027-03-25",
+      closures: [
+        ["2027-02-13", "2027-02-14"],
+        ["2027-02-20", "2027-02-21"],
+      ],
+    },
+  },
+  summer: {
+    weekday: {
+      start: "2027-04-17",
+      end: "2027-07-22",
+      closures: [["2027-05-31", "2027-06-03"]],
+    },
+    weekend: {
+      start: "2027-04-17",
+      end: "2027-07-12",
+      closures: [
+        ["2027-05-29", "2027-05-30"],
+        ["2027-06-05", "2027-06-06"],
+      ],
+    },
+  },
+};
+
+function isoDateUtc(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+/** Compact exact dates for one weekly slot, grouped by month. */
+export function slotTermSessionDates(
+  term: ReenrolTerm,
+  day: string,
+  expectedCount: number,
+): string | null {
+  const dayKey = String(day || "").trim().toLowerCase().replace(/s$/, "");
+  const dayIndex = DAY_INDEX[dayKey];
+  if (!Number.isInteger(dayIndex)) return null;
+  const window = TERM_DATE_WINDOWS[term][dayIndex === 0 || dayIndex === 6 ? "weekend" : "weekday"];
+  const start = new Date(`${window.start}T00:00:00Z`);
+  const end = new Date(`${window.end}T00:00:00Z`);
+  const dates: Date[] = [];
+  for (let dt = new Date(start); dt <= end; dt.setUTCDate(dt.getUTCDate() + 1)) {
+    if (dt.getUTCDay() !== dayIndex) continue;
+    const iso = isoDateUtc(dt);
+    if (window.closures.some(([from, to]) => iso >= from && iso <= to)) continue;
+    dates.push(new Date(dt));
+  }
+  const count = Math.max(0, Math.round(Number(expectedCount) || 0));
+  const selected = count > 0 ? dates.slice(0, count) : dates;
+  if (!selected.length) return null;
+  const grouped = new Map<string, number[]>();
+  for (const dt of selected) {
+    const month = dt.toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" });
+    if (!grouped.has(month)) grouped.set(month, []);
+    grouped.get(month)!.push(dt.getUTCDate());
+  }
+  return (
+    "Dates: " +
+    Array.from(grouped.entries())
+      .map(([month, days]) => `${days.join(", ")} ${month}`)
+      .join("; ")
+  );
+}
+
 export async function loadProductMap(
   admin: SupabaseClient,
 ): Promise<Map<string, ProductMapRow>> {
@@ -162,14 +270,15 @@ export function buildReenrolTermLineItems(input: ReenrolLineBuildInput): PortalI
     const description = lineDescriptionForSlot(slot);
     const detail = slotSessionDetail(slot);
     const sessions = Number(slot.sessions?.[input.term] || 0);
-    const prev = byKey.get(service_key);
+    const aggregateKey = `${service_key}\u0000${detail}`;
+    const prev = byKey.get(aggregateKey);
     if (prev) {
       prev.sessions += sessions > 0 ? sessions : 1;
       prev.termTotal = round2(prev.termTotal + termTotal);
       if (description.length > prev.description.length) prev.description = description;
       if (detail && !prev.details.includes(detail)) prev.details.push(detail);
     } else {
-      byKey.set(service_key, {
+      byKey.set(aggregateKey, {
         service_key,
         description,
         details: detail ? [detail] : [],
@@ -189,6 +298,11 @@ export function buildReenrolTermLineItems(input: ReenrolLineBuildInput): PortalI
       service_key: agg.service_key,
       description: label || agg.description,
       detail: agg.details.join(" · ") || null,
+      dates: slotTermSessionDates(
+        input.term,
+        String(agg.details[0] || "").split(/\s+/)[0] || "",
+        qty,
+      ),
       quantity: qty,
       unit_price_gbp: unit,
       amount_gbp: agg.termTotal,
@@ -231,7 +345,7 @@ export function fundedProvisionDescriptionLead(lines: PortalInvoiceLineItem[]): 
       : `${naturalList(environments)} environments`;
   return (
     `Structured activity support delivered within ${environmentPhrase} for a SEND participant ` +
-    "as part of funded provision. (EHCP or local authority care package)."
+    "as part of funded provision."
   );
 }
 
@@ -241,7 +355,7 @@ export function lineItemsToDescription(
 ): string {
   if (!lines.length) {
     return opts.fundedProvision
-      ? "Structured activity support delivered within a structured activity environment for a SEND participant as part of funded provision. (EHCP or local authority care package)."
+      ? "Structured activity support delivered within a structured activity environment for a SEND participant as part of funded provision."
       : "Structured activity support delivered for a SEND participant.";
   }
   const lead = opts.fundedProvision

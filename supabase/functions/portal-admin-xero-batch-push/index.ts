@@ -212,9 +212,11 @@ Deno.serve(async (req) => {
             ? amt / qty
             : 0;
         const detail = clean(ln.detail, 200);
+        const dates = clean(ln.dates, 500);
         const baseDesc = clean(ln.description, 800) || clean(share.line_description, 800);
+        const description = [baseDesc, detail, dates].filter(Boolean).join("\n");
         return {
-          description: detail ? `${baseDesc} — ${detail}` : baseDesc,
+          description,
           quantity: qty,
           unitAmount,
           itemCode: clean(ln.xero_item_code, 80) || null,
