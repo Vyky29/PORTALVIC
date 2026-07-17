@@ -12,6 +12,7 @@ import {
   CRASH_HOLD_MINUTES,
   CRASH_INDIVIDUAL_WINDOWS,
   CRASH_PRICES,
+  CRASH_SUMMER_FULLY_BOOKED,
   CRASH_SUMMER_WEEKS,
   CRASH_SWIM_TIME_BANDS,
   crashIndividualDaysOpenForWeek,
@@ -76,10 +77,13 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
   }
 
   const fill = crashWeekFillSnapshot(lines || [], forceWeek2);
-  const weeks = allWeeks.filter((w) => fill.weeks_open.includes(w.id));
-  const week2Open = fill.week2_open;
-  const w1Open = crashIndividualDaysOpenForWeek("w1");
-  const w2Open = week2Open && crashIndividualDaysOpenForWeek("w2");
+  const weeks = CRASH_SUMMER_FULLY_BOOKED
+    ? allWeeks
+    : allWeeks.filter((w) => fill.weeks_open.includes(w.id));
+  const week2Open = CRASH_SUMMER_FULLY_BOOKED || fill.week2_open;
+  const w1Open = !CRASH_SUMMER_FULLY_BOOKED && crashIndividualDaysOpenForWeek("w1");
+  const w2Open =
+    !CRASH_SUMMER_FULLY_BOOKED && week2Open && crashIndividualDaysOpenForWeek("w2");
   const individualOpen = w1Open || w2Open;
 
   const taken = new Set(
@@ -164,6 +168,7 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
         let packFree = 0;
         for (const slotId of unit.slotIds) {
           const freeAllWeek =
+            !CRASH_SUMMER_FULLY_BOOKED &&
             actDates.length > 0 &&
             actDates.every((date) => !taken.has(`${act.id}|${date}|${slotId}`));
           if (freeAllWeek) packFree += 1;
@@ -304,7 +309,9 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
     }
   }
 
-  const summerRange = crashSummerOfferRangeCopy(week2Open);
+  const summerRange = CRASH_SUMMER_FULLY_BOOKED
+    ? "FULLY BOOKED · Week 1 (20–24 July) and Week 2 (28–31 July)"
+    : crashSummerOfferRangeCopy(week2Open);
 
   return {
     hold_minutes: CRASH_HOLD_MINUTES,
@@ -314,7 +321,8 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
     rules: crashIndividualRulesCopy(week2Open),
     week1_fill_pct: fill.week1_fill_pct,
     week2_open: week2Open,
-    weeks_open: fill.weeks_open,
+    weeks_open: CRASH_SUMMER_FULLY_BOOKED ? ["w1", "w2"] : fill.weeks_open,
+    fully_booked: CRASH_SUMMER_FULLY_BOOKED,
     slots: intensiveSlots,
     blocks: [
       {

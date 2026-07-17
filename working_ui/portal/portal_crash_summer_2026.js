@@ -88,6 +88,7 @@
     individualByWeek: { w1: false, w2: false },
     week2Open: false,
     week1FillPct: 0,
+    fullyBooked: false,
     pendingPay: null,
   };
 
@@ -337,7 +338,10 @@
     }
     var rules = $("csWeekRules");
     if (rules) {
-      if (state.week2Open) {
+      if (state.fullyBooked) {
+        rules.innerHTML =
+          "<strong>Fully booked:</strong> both July Crash Course weeks are now full — Week 1 (20–24 July) and Week 2 (28–31 July).";
+      } else if (state.week2Open) {
         rules.innerHTML =
           "Crash courses are <strong>four-day week packs (Tue–Fri)</strong>. " +
           "Individual leftover hours open only in short windows before each week: " +
@@ -356,8 +360,17 @@
     var info = $("csInfo");
     if (info) {
       var w2Li = info.querySelector('[data-crash-week="w2"]');
-      if (w2Li) w2Li.hidden = !state.week2Open;
+      if (w2Li) w2Li.hidden = !state.week2Open && !state.fullyBooked;
     }
+    var submit = $("csSubmit");
+    if (submit) {
+      submit.disabled = state.fullyBooked;
+      submit.textContent = state.fullyBooked ? "Fully booked" : "Reserve & pay in full";
+    }
+    ["csActClimb", "csActSwim", "csModeIndividual", "csInterestBtn"].forEach(function (id) {
+      var control = $(id);
+      if (control) control.disabled = state.fullyBooked;
+    });
     renderWeeks();
   }
 
@@ -373,6 +386,7 @@
           (state.weekId === w.id ? "true" : "false") +
           '">' +
           w.label +
+          (state.fullyBooked ? " · Fully booked" : "") +
           "</button>"
         );
       })
@@ -802,8 +816,16 @@
         return {};
       });
       if (res.ok && data.ok) {
+        state.fullyBooked = !!data.fully_booked;
         applyWeekOpenGate(data);
         state.availability = data.availability || null;
+        if (state.fullyBooked) {
+          showNotice(
+            "info",
+            data.fully_booked_message ||
+              "July Crash Course Week 1 and Week 2 are fully booked."
+          );
+        }
         if (data.individual_windows) {
           if (data.individual_windows.w1) INDIVIDUAL_WINDOWS.w1 = data.individual_windows.w1;
           if (data.individual_windows.w2) INDIVIDUAL_WINDOWS.w2 = data.individual_windows.w2;

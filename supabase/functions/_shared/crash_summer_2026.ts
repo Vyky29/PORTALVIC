@@ -20,6 +20,8 @@ export type CrashSlotDef = {
 };
 
 export const CRASH_SUMMER_YEAR = 2026;
+/** July 2026 programme is closed to new bookings across both weeks. */
+export const CRASH_SUMMER_FULLY_BOOKED = true;
 
 export type CrashWeekDef = {
   id: CrashWeekId;

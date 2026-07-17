@@ -16,6 +16,7 @@ import {
 } from "../_shared/portal_create_family_invoice.ts";
 import {
   CRASH_HOLD_MINUTES,
+  CRASH_SUMMER_FULLY_BOOKED,
   CRASH_SUMMER_INVOICE_TERM_REFERENCE,
   buildCrashSummerInvoiceDescription,
   crashBankTransferReference,
@@ -105,6 +106,13 @@ Deno.serve(async (req) => {
   }
   if (mode !== "weekly_pack" && mode !== "individual_days") {
     return json(400, { ok: false, error: "invalid_mode" });
+  }
+  if (CRASH_SUMMER_FULLY_BOOKED) {
+    return json(409, {
+      ok: false,
+      error: "fully_booked",
+      message: "July Crash Course Week 1 and Week 2 are fully booked.",
+    });
   }
 
   await expireStaleHolds(supabase);

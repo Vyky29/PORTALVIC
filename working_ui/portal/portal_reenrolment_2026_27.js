@@ -2881,13 +2881,12 @@
         "<h4>Summer crash courses · July 2026</h4>" +
         '<div class="re-offer-copy">' +
         '<p class="re-muted">Climbing (Westway) and Swimming (Acton), available as four-day week packs.</p>' +
-        '<p class="re-muted"><strong>Currently open:</strong> Week 1 — Climbing Mon–Thu 20–23 July; Swimming Tue–Fri 21–24 July. Week 2 (28–31 July) opens when Week 1 reaches 80% of places.</p>' +
-        '<p class="re-muted">Individual leftover hours for Week 1 run Fri 17–Sun 19 July; register your interest on the crash booking page. <strong>Pay in full to reserve — places are limited.</strong></p>' +
+        '<p class="re-muted"><strong>Fully booked:</strong> both July weeks are now full — Week 1 (20–24 July) and Week 2 (28–31 July).</p>' +
         "</div>" +
         '<div class="re-offer-actions">' +
-        '<a class="re-btn re-btn--primary re-btn--icon-top" id="reCrashBookBtn" href="/parent/crash-summer">' +
-        reButtonContent("crash", "Book summer crash courses") +
-        "</a>" +
+        '<span class="re-btn re-btn--secondary re-btn--icon-top" aria-disabled="true">' +
+        reButtonContent("crash", "Fully booked — both weeks") +
+        "</span>" +
         '<button type="button" class="re-btn re-btn--secondary re-btn--icon-top" id="reCrashDatesBtn">' +
         reButtonContent("calendar", "View dates on calendar") +
         "</button>" +
@@ -3026,7 +3025,7 @@
       ],
     },
     {
-      title: "Summer holiday · Week 2 (July 2026) · opens when Week 1 is 80% full",
+      title: "Summer holiday · Week 2 (July 2026) · Fully booked",
       closedUntilNote: true,
       days: [
         { dow: "Mon", num: "27", off: true },
@@ -3175,8 +3174,7 @@
   function renderCrashDatesModalBody(highlightIdx) {
     var hi = highlightIdx != null && !isNaN(Number(highlightIdx)) ? Number(highlightIdx) : -1;
     return (
-      '<p class="re-cal-summary">Summer Jul 2026: Climbing at Westway and Swimming at Acton — <strong>Week 1 open now (climb 20–23 July · swim 21–24 July)</strong>; Week 2 (28–31 July) opens when Week 1 reaches 80% of places. Book after signing in; pay in full to confirm. Half-term intensives run Mon–Thu.</p>' +
-      '<p class="re-cal-summary"><a class="re-cal-offer-link" href="/parent/crash-summer" style="display:inline-flex;padding:8px 0">Book summer crash courses →</a></p>' +
+      '<p class="re-cal-summary">Summer Jul 2026: Climbing at Westway and Swimming at Acton — <strong>Week 1 and Week 2 are fully booked.</strong> Half-term intensives run Mon–Thu.</p>' +
       RE_CRASH_DATES_2627.map(function (block, i) {
         return (
           '<div class="re-cal-block' +
@@ -3403,7 +3401,7 @@
         "Your place renews with the office — nothing for you to submit.";
       var canExtras = ui.can_book_extras !== false;
       var crashCta = canExtras
-        ? '<p style="margin-top:12px"><a class="re-btn re-btn--primary" href="/parent/crash-summer">Book summer crash courses</a></p>'
+        ? '<p style="margin-top:12px"><span class="re-btn re-btn--secondary" aria-disabled="true">July crash courses · Fully booked</span></p>'
         : "";
       host.innerHTML =
         acatBanner +

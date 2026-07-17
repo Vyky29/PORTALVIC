@@ -151,7 +151,7 @@
       badge: "Summer Holidays 2026",
       title: "Summer holiday crash courses",
       range:
-        "Week 1 open now!!\nClimbing Mon 20 – Thu 23 July\nAquatic Activity Tue 21 – Fri 24 July\nLeftover individual hours for Week 1: Fri 17 – Sun 19 July (register interest if you want a reminder).\n\nWeek 2 (Tue 28 – Fri 31 July) opens when Week 1 reaches 80% of places.",
+        "FULLY BOOKED\nWeek 1: Climbing Mon 20 – Thu 23 July · Aquatic Activity Tue 21 – Fri 24 July\nWeek 2: Tue 28 – Fri 31 July",
       badgeIcon: "sun",
       sort: 1,
       dates: [
@@ -243,15 +243,15 @@
 
     /* Summer crash · Week 1 (Tue–Fri 21–24 July) */
     { id: "in-s1-ww-tue", serviceId: "intensive", blockId: "summer_july", venue: "Westway", day: "Week 1 · Tue 21 Jul", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 2 },
-    { id: "in-s1-ww-wed", serviceId: "intensive", blockId: "summer_july", venue: "Westway", day: "Week 1 · Wed 22 Jul", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 1 },
-    { id: "in-s1-ww-thu", serviceId: "intensive", blockId: "summer_july", venue: "Westway", day: "Week 1 · Thu 23 Jul", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 0 },
+    { id: "in-s1-ww-wed", serviceId: "intensive", blockId: "summer_july", venue: "Westway", day: "Week 1 · Wed 22 Jul", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 2 },
+    { id: "in-s1-ww-thu", serviceId: "intensive", blockId: "summer_july", venue: "Westway", day: "Week 1 · Thu 23 Jul", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 2 },
     { id: "in-s1-ww-fri", serviceId: "intensive", blockId: "summer_july", venue: "Westway", day: "Week 1 · Fri 24 Jul", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 2 },
     { id: "in-s1-act-tue", serviceId: "intensive", blockId: "summer_july", venue: "Acton", day: "Week 1 · Tue 21 Jul", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 8 },
-    { id: "in-s1-act-wed", serviceId: "intensive", blockId: "summer_july", venue: "Acton", day: "Week 1 · Wed 22 Jul", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 5 },
-    { id: "in-s1-act-thu", serviceId: "intensive", blockId: "summer_july", venue: "Acton", day: "Week 1 · Thu 23 Jul", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 3 },
+    { id: "in-s1-act-wed", serviceId: "intensive", blockId: "summer_july", venue: "Acton", day: "Week 1 · Wed 22 Jul", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 8 },
+    { id: "in-s1-act-thu", serviceId: "intensive", blockId: "summer_july", venue: "Acton", day: "Week 1 · Thu 23 Jul", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 8 },
     { id: "in-s1-act-fri", serviceId: "intensive", blockId: "summer_july", venue: "Acton", day: "Week 1 · Fri 24 Jul", timeLabel: "10.00 – 12.00 · Swimming", sortTime: "10:00", capacity: 8, taken: 8 },
 
-    /* Week 2 slots omitted until Week 1 ≥ 80% (live offer follows API weeks_open). */
+    /* Week 2 is fully booked; no bookable public slots are shown. */
 
     /* October half term 2026 Mon–Thu */
     { id: "in-oct-ww-mon", serviceId: "intensive", blockId: "oct_ht", venue: "Westway", day: "Mon 26 Oct", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 1 },

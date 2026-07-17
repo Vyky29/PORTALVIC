@@ -872,7 +872,7 @@
       '<aside class="pp-hub-reenrol" aria-label="Re-enrolment 2026/27">' +
       '<div class="pp-hub-reenrol__copy">' +
       "<strong>Re-enrol 2026/27</strong>" +
-      '<span class="pp-muted">Confirm by Wed 22 July — or book crash courses first</span>' +
+      '<span class="pp-muted">Confirm by Wed 22 July · July crash courses are fully booked</span>' +
       acatNotice +
       "</div>" +
       '<div class="pp-hub-reenrol__actions">' +
@@ -895,17 +895,10 @@
         "</p>"
       );
     }
-    var p = (data && data.participant) || {};
-    var contactId = String(p.contact_id || "").trim();
-    var href =
-      "/parent/crash-summer" +
-      (contactId ? "?contact_id=" + encodeURIComponent(contactId) : "");
     return (
-      '<a class="pp-btn pp-btn--ghost pp-hub-reenrol__cta pp-hub-reenrol__cta--crash" href="' +
-      esc(href) +
-      '">' +
+      '<span class="pp-btn pp-btn--ghost pp-hub-reenrol__cta pp-hub-reenrol__cta--crash" aria-disabled="true">' +
       '<svg class="pp-hub-reenrol__cta-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>' +
-      "<span>Book crash courses</span></a>"
+      "<span>Crash courses · Fully booked</span></span>"
     );
   }
 
@@ -3388,11 +3381,8 @@
           ? yearChips
           : '<p class="pp-muted">Day Centre dates will appear here once your weekdays are on the current roster.</p>');
     } else if (!booking.submitted || !booking.items.length) {
-      var crashHref =
-        "/parent/crash-summer" +
-        (contactId ? "?contact_id=" + encodeURIComponent(String(contactId)) : "");
       var crashAction = canBookExtrasFor(data)
-        ? '<a class="pp-btn pp-btn--ghost" href="' + esc(crashHref) + '">Book crash courses</a>'
+        ? '<span class="pp-btn pp-btn--ghost" aria-disabled="true">July crash courses · Fully booked</span>'
         : '<p class="pp-muted">Extra holiday sessions are not available for this place.</p>';
       body =
         '<p class="pp-muted">You have not submitted re-enrolment choices for 2026/27 yet.</p>' +

@@ -7,6 +7,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders } from "../_shared/parent_portal_auth.ts";
 import {
   CRASH_HOLD_MINUTES,
+  CRASH_SUMMER_FULLY_BOOKED,
   CRASH_SUMMER_WEEKS,
   crashCatalogPublic,
   crashIndividualDaysOpenForWeek,
@@ -95,10 +96,16 @@ Deno.serve(async (req) => {
   }
 
   const fill = crashWeekFillSnapshot(allLines || [], forceWeek2Open());
-  const week2Open = fill.week2_open;
-  const catalog = crashCatalogPublic({ openWeekIds: fill.weeks_open });
+  const week2Open = CRASH_SUMMER_FULLY_BOOKED || fill.week2_open;
+  const catalog = crashCatalogPublic({
+    openWeekIds: CRASH_SUMMER_FULLY_BOOKED ? ["w1", "w2"] : fill.weeks_open,
+  });
 
-  if (weekFilter && !crashIsBookingWeekOpen(weekFilter, fill.week1_fill, fill.force_week2)) {
+  if (
+    !CRASH_SUMMER_FULLY_BOOKED &&
+    weekFilter &&
+    !crashIsBookingWeekOpen(weekFilter, fill.week1_fill, fill.force_week2)
+  ) {
     return json(403, {
       ok: false,
       error: "week_not_open",
@@ -110,7 +117,9 @@ Deno.serve(async (req) => {
     });
   }
 
-  const weeks = weekFilter
+  const weeks = CRASH_SUMMER_FULLY_BOOKED
+    ? catalog.weeks
+    : weekFilter
     ? catalog.weeks.filter((w) => w.id === weekFilter)
     : catalog.weeks;
 
@@ -133,7 +142,7 @@ Deno.serve(async (req) => {
       for (const date of actDates) {
         availability[activity][date] = {};
         for (const slot of crashSlotsFor(activity)) {
-          if (slot.bookable === false || slot.waiting_list) {
+          if (CRASH_SUMMER_FULLY_BOOKED || slot.bookable === false || slot.waiting_list) {
             availability[activity][date][slot.id] = false;
           } else {
             availability[activity][date][slot.id] = !taken.has(
@@ -161,6 +170,10 @@ Deno.serve(async (req) => {
 
   return json(200, {
     ok: true,
+    fully_booked: CRASH_SUMMER_FULLY_BOOKED,
+    fully_booked_message: CRASH_SUMMER_FULLY_BOOKED
+      ? "July Crash Course Week 1 and Week 2 are fully booked."
+      : null,
     catalog,
     capacity,
     hold_minutes: CRASH_HOLD_MINUTES,
@@ -179,6 +192,6 @@ Deno.serve(async (req) => {
     week1_fill_pct: fill.week1_fill_pct,
     week2_open_at_fill: fill.week2_open_at_fill,
     week2_open: week2Open,
-    weeks_open: fill.weeks_open,
+    weeks_open: CRASH_SUMMER_FULLY_BOOKED ? ["w1", "w2"] : fill.weeks_open,
   });
 });
