@@ -59,7 +59,7 @@ export async function pushPortalInvoiceShareToXero(
   if (clean(share.payment_method_hint, 40) === "la_funded") {
     const { data: pax } = await admin
       .from("portal_participants")
-      .select("display_name, first_name, last_name")
+      .select("display_name, first_name, last_name, dob_iso")
       .eq("contact_id", cid)
       .maybeSingle();
     const paxName =
@@ -69,13 +69,23 @@ export async function pushPortalInvoiceShareToXero(
     const laBillTo = await resolveLaFunderBillTo(admin, {
       contactId: cid,
       displayName: paxName,
+      dobIso: pax?.dob_iso ? String(pax.dob_iso) : null,
     });
     parentName = laBillTo.name;
-    parentEmail = null;
-    addressLine1 = null;
-    addressLine2 = null;
-    city = null;
-    postcode = null;
+    parentEmail = laBillTo.paymentEmail;
+    // lines: org / street / city / postcode / UNITED KINGDOM (order varies by profile)
+    const addr = laBillTo.lines.filter((l) => !/^UNITED KINGDOM$/i.test(l));
+    const postcodeLine = addr.find((l) => /^[A-Z]{1,2}\d/i.test(l) && l.length <= 12) || null;
+    const streetLine = addr.find((l) => /\d/.test(l) && l !== postcodeLine) || null;
+    const cityLine =
+      addr.find((l) => /london|hammersmith/i.test(l) && l !== streetLine) ||
+      addr.find((l) => l !== streetLine && l !== postcodeLine && !/council|corporate|services/i.test(l)) ||
+      null;
+    const orgLine = addr.find((l) => /council|corporate|services/i.test(l) && l !== cityLine) || null;
+    addressLine1 = streetLine;
+    addressLine2 = orgLine;
+    city = cityLine;
+    postcode = postcodeLine;
     existingXeroContactId = null;
   }
 

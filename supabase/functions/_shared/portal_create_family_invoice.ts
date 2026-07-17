@@ -189,7 +189,7 @@ export async function createPortalFamilyInvoice(
       : "") ||
     cleanMultiline(input.lineDescription, 2400) ||
     "Structured activity support delivered for a SEND participant.";
-  const notes = clean(input.notes, 800) || null; // Admin-only — never sent to parent portal.
+  let notes = clean(input.notes, 800) || null; // Admin-only — never sent to parent portal.
   const shareStatus = input.shareStatus === "hidden" ? "hidden" : "ready";
   const paymentMethodHint =
     input.paymentMethodHint ||
@@ -233,10 +233,12 @@ export async function createPortalFamilyInvoice(
   // LA-managed invoices are billed to the funding authority, never the parent.
   let billToName: string;
   let billToLines: string[];
+  let laAdminNote: string | null = null;
   if (paymentMethodHint === "la_funded") {
     const laBillTo = await resolveLaFunderBillTo(admin, { contactId, displayName });
     billToName = laBillTo.name;
     billToLines = laBillTo.lines;
+    laAdminNote = laBillTo.adminNote;
   } else {
     billToName =
       clean(parentContact?.parent_display, 120) ||
@@ -252,6 +254,10 @@ export async function createPortalFamilyInvoice(
       clean(parentContact?.postcode, 20),
       "UNITED KINGDOM",
     ].filter(Boolean);
+  }
+  if (laAdminNote) {
+    notes = notes ? `${notes}\n\n${laAdminNote}` : laAdminNote;
+    notes = notes.slice(0, 800);
   }
 
   let invoiceNumber = clean(input.invoiceNumber, 80);
@@ -486,10 +492,12 @@ export async function regeneratePortalInvoiceSharePdf(
   const hintForBillTo = clean(share.payment_method_hint, 40);
   let billToName: string;
   let billToLines: string[];
+  let laAdminNote: string | null = null;
   if (hintForBillTo === "la_funded") {
     const laBillTo = await resolveLaFunderBillTo(admin, { contactId, displayName });
     billToName = laBillTo.name;
     billToLines = laBillTo.lines;
+    laAdminNote = laBillTo.adminNote;
   } else {
     billToName =
       clean(parentContact?.parent_display, 120) ||
@@ -606,6 +614,15 @@ export async function regeneratePortalInvoiceSharePdf(
   if (!clean(share.vat_mode, 20)) sharePatch.vat_mode = vatMode;
   if (lineItems.length && cleanMultiline(share.line_description, 2400) !== lineDescription) {
     sharePatch.line_description = lineDescription;
+  }
+  if (laAdminNote) {
+    const existingNotes = clean(share.notes, 800);
+    // Replace a previous LA bill-to block, or append.
+    const withoutOld = existingNotes
+      .replace(/\n?LA bill-to:[\s\S]*?(?=\n\n|$)/g, "")
+      .trim();
+    const merged = withoutOld ? `${withoutOld}\n\n${laAdminNote}` : laAdminNote;
+    sharePatch.notes = merged.slice(0, 800);
   }
   await admin.from("portal_parent_invoice_share").update(sharePatch).eq("id", shareId);
 

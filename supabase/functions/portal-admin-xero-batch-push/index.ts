@@ -163,11 +163,21 @@ Deno.serve(async (req) => {
         displayName: participantByContact.get(cid) || cid,
       });
       parentName = laBillTo.name;
-      parentEmail = null;
-      addressLine1 = null;
-      addressLine2 = null;
-      addressCity = null;
-      addressPostcode = null;
+      parentEmail = laBillTo.paymentEmail;
+      const addr = laBillTo.lines.filter((l) => !/^UNITED KINGDOM$/i.test(l));
+      const postcodeLine = addr.find((l) => /^[A-Z]{1,2}\d/i.test(l) && l.length <= 12) || null;
+      const streetLine = addr.find((l) => /\d/.test(l) && l !== postcodeLine) || null;
+      const cityLine =
+        addr.find((l) => /london|hammersmith/i.test(l) && l !== streetLine) ||
+        addr.find(
+          (l) => l !== streetLine && l !== postcodeLine && !/council|corporate|services/i.test(l),
+        ) ||
+        null;
+      const orgLine = addr.find((l) => /council|corporate|services/i.test(l) && l !== cityLine) || null;
+      addressLine1 = streetLine;
+      addressLine2 = orgLine;
+      addressCity = cityLine;
+      addressPostcode = postcodeLine;
       existingXeroContactId = null;
     }
 
