@@ -3982,18 +3982,6 @@
   }
 
   function emotionFacesHtml(fb, escFn) {
-    var swim = global.PortalSwimSessionAxes;
-    if (swim && swim.isAquaticService(fb && fb.service)) {
-      var lab = swim.regulationLabelForDisplay(fb.client_emotions, fb.service);
-      if (!lab || lab === "—") return "\u2014";
-      return (
-        '<span class="ash-regulation-swim" title="' +
-        escFn(lab) +
-        '">' +
-        escFn(lab) +
-        "</span>"
-      );
-    }
     var tokens = emotionTokens(fb.client_emotions);
     if (!tokens.length && clean(fb.client_emotions)) tokens = [String(fb.client_emotions)];
     if (!tokens.length) return "\u2014";
