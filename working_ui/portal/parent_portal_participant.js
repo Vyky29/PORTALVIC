@@ -1746,6 +1746,9 @@
       });
     });
     var today = new Date();
+    var todayIso = isoDateLocal(today);
+    var tomorrowIso = isoDateLocal(addDaysLocal(today, 1));
+    var nowMins = today.getHours() * 60 + today.getMinutes();
     var out = [];
     var max = Math.max(1, limit || 3);
     var termTo = currentYearTermToIso(data);
@@ -1787,6 +1790,11 @@
         if (nextYearDateBeforeServiceStart(iso, serviceIsDayCentre(s.label || s.service))) {
           return;
         }
+        // Today: skip slots that have already ended so the heading can flip to Tomorrow.
+        if (iso === todayIso) {
+          var endM = parseServiceEndMinutes(s.time);
+          if (endM != null && nowMins >= endM) return;
+        }
         out.push({
           iso: iso,
           dayLabel: formatHubDateLabel(iso),
@@ -1796,11 +1804,20 @@
           time: s.time || "",
           venue: String(s.venue || "").trim(),
           area: String(s.area || "").trim(),
-          isToday: offset === 0,
+          isToday: iso === todayIso,
+          isTomorrow: iso === tomorrowIso,
         });
       });
     }
     return out;
+  }
+
+  /** Hub section title: Today / Tomorrow / Next session from the next remaining booking. */
+  function nextSessionSectionLabel(next) {
+    if (!next) return "Next session";
+    if (next.isToday) return "Today";
+    if (next.isTomorrow) return "Tomorrow";
+    return "Next session";
   }
 
   /** All session dates this term for the child's booked weekdays (unique calendar days). */
@@ -3021,10 +3038,8 @@
         '<div class="pp-hub-ops__next">' +
         '<div class="pp-hub-ops__when-row' +
         (next.isToday ? " pp-hub-ops__when-row--today" : "") +
+        (next.isTomorrow ? " pp-hub-ops__when-row--tomorrow" : "") +
         '">' +
-        (next.isToday
-          ? '<span class="pp-hub-ops__when-pill">Today</span>'
-          : "") +
         '<strong class="pp-hub-ops__when">' +
         esc(next.dayLabel) +
         "</strong></div>" +
@@ -3033,6 +3048,11 @@
         "</ul></div>";
     }
     var termParts = buildTermSessionDateParts(data);
+    var heading = nextSessionSectionLabel(next);
+    var headingClass =
+      "pp-pax-info-section-label pp-pax-info-section-label--next" +
+      (next && next.isToday ? " pp-pax-info-section-label--today" : "") +
+      (next && next.isTomorrow ? " pp-pax-info-section-label--tomorrow" : "");
     var thisTermBlock =
       '<div class="pp-hub-term-block pp-hub-term-block--this" data-pp-term-chips="this"' +
       (termParts.thisTermHtml ? "" : " hidden") +
@@ -3055,7 +3075,11 @@
     return (
       '<section class="pp-hub-ops" aria-label="Sessions and next booking">' +
       thisTermBlock +
-      '<p class="pp-pax-info-section-label pp-pax-info-section-label--next">Next session</p>' +
+      '<p class="' +
+      headingClass +
+      '" data-pp-next-heading>' +
+      esc(heading) +
+      "</p>" +
       '<div class="pp-hub-ops__next-block">' +
       nextBody +
       "</div>" +
@@ -3162,10 +3186,58 @@
       });
   }
 
+  function clearHubNextSessionLive(host) {
+    if (!host || !host.__ppNextLive) return;
+    try {
+      clearInterval(host.__ppNextLive);
+    } catch (_e) {}
+    host.__ppNextLive = null;
+  }
+
+  /** Refresh Today/Tomorrow heading when today's last slot ends (without full hub reload). */
+  function mountHubNextSessionLive(host, data, opts) {
+    clearHubNextSessionLive(host);
+    if (!host) return;
+    host.__ppNextLive = setInterval(function () {
+      if (!host.isConnected || !host.querySelector('.pp-pax-shell[data-pp-view="hub"]')) {
+        clearHubNextSessionLive(host);
+        return;
+      }
+      var oldOps = host.querySelector(".pp-hub-ops");
+      if (!oldOps) return;
+      var openTerms = {};
+      oldOps.querySelectorAll("details.pp-hub-ops__term-accordion").forEach(function (el, i) {
+        openTerms[i] = !!el.open;
+      });
+      var wrap = document.createElement("div");
+      wrap.innerHTML = hubOpsCardHtml(data);
+      var neu = wrap.firstChild;
+      if (!neu) return;
+      var alerts = oldOps.querySelector("#ppHubAlerts");
+      var alertsHtml = alerts ? alerts.outerHTML : "";
+      var alertsHidden = alerts ? alerts.hidden : true;
+      oldOps.replaceWith(neu);
+      neu.querySelectorAll("details.pp-hub-ops__term-accordion").forEach(function (el, i) {
+        if (openTerms[i]) el.open = true;
+      });
+      if (alertsHtml) {
+        var spot = neu.querySelector("#ppHubAlerts");
+        if (spot) {
+          spot.outerHTML = alertsHtml;
+          var restored = neu.querySelector("#ppHubAlerts");
+          if (restored) restored.hidden = alertsHidden;
+        }
+      }
+      // Re-apply chip statuses onto the new ops block.
+      mountTermDateChipStatuses(host, data, opts, null);
+    }, 30000);
+  }
+
   function renderHub(host, data, opts) {
     ensureGeneralFields(data, { allowPlaceholders: true });
     setParticipantPageTitle(hubBackLabel(data).text);
     closeHubMenuSheet();
+    clearHubNextSessionLive(host);
     // Dashboard: This term chips → next session → later terms (whole year) → shortcuts.
     // Menu lives top-left (sheet).
     host.innerHTML =
@@ -3178,6 +3250,7 @@
     syncHubMenuChrome(host, data, opts);
     var messagesPromise = mountHubAlerts(host, data, opts);
     mountTermDateChipStatuses(host, data, opts, messagesPromise);
+    mountHubNextSessionLive(host, data, opts);
     if (global.ParentPortalApp && global.ParentPortalApp.photo && typeof global.ParentPortalApp.photo.bindOn === "function") {
       global.ParentPortalApp.photo.bindOn(host);
     }
