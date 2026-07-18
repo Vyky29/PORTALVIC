@@ -1204,18 +1204,26 @@
     function fullDay(tok) {
       var t = String(tok || "").trim().toLowerCase().replace(/\./g, "");
       if (map[t]) return map[t];
-      var k3 = t.slice(0, 3);
-      if (map[k3]) return map[k3];
+      /* Only use 3-letter prefix for bare day tokens (not "mon–wed"). */
+      if (/^[a-z]{3,9}$/.test(t)) {
+        var k3 = t.slice(0, 3);
+        if (map[k3]) return map[k3];
+      }
       return String(tok || "").trim();
     }
+    function onePart(part) {
+      var p = String(part || "").trim();
+      var range = p.match(/^([A-Za-z.]+)\s*(?:[–\-—]|\s+to\s+)\s*([A-Za-z.]+)$/i);
+      if (range) return fullDay(range[1]) + "-" + fullDay(range[2]);
+      return fullDay(p) || p;
+    }
     var s = String(raw || "").trim();
+    /* "Mon–Wed & Fri" / "Mon, Wed & Fri" — expand each side; keep ranges intact. */
     var amp = s.split(/\s*(?:&|,| and )\s*/i).map(function (x) { return x.trim(); }).filter(Boolean);
     if (amp.length > 1) {
-      return amp.map(fullDay).join(" & ");
+      return amp.map(onePart).join(" & ");
     }
-    var range = s.match(/^([A-Za-z.]+)\s*(?:[–\-—]|\s+to\s+)\s*([A-Za-z.]+)$/i);
-    if (range) return fullDay(range[1]) + "-" + fullDay(range[2]);
-    return fullDay(s) || s;
+    return onePart(s) || s;
   }
 
   function serviceDisplayParts(r) {
