@@ -362,7 +362,7 @@ export function reenrolmentSchedulePlanPhrase(args: {
       return `${n || months} ${units} scheduled for ${termLabel} term (monthly · term-by-term)`;
     }
     if (code === "own_term") {
-      return `${n || 2} ${units} scheduled for ${termLabel} term (own timing · term-by-term, including admin fee)`;
+      return `${n || 2} ${units} scheduled for ${termLabel} term (own timing · term-by-term, including admin fee; advance credit due on re-enrolment)`;
     }
     if (n === 1) return `1 ${unit} scheduled for ${termLabel} term (term-by-term)`;
     if (n > 1) return `${n} ${units} scheduled for ${termLabel} term (term-by-term)`;
@@ -384,7 +384,7 @@ export function reenrolmentSchedulePlanPhrase(args: {
     return `${n || 11} ${units} scheduled (monthly by term)`;
   }
   if (code === "own_term") {
-    return `${n || 6} ${units} scheduled (term by term · own timing, including admin fees)`;
+    return `${n || 6} ${units} scheduled (term by term · own timing, including admin fees; advance credit due on re-enrolment)`;
   }
   if (n === 1) return `1 ${unit} scheduled`;
   if (n > 1) return `${n} ${units} scheduled`;
@@ -464,6 +464,23 @@ export function buildReenrolmentInstalments(args: {
   ];
 
   if (payCode === "own_way_flexible" || scheduleCode === "own_term") {
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const bufferGbp = num(choices.advance_buffer_gbp);
+    if (bufferGbp > 0) {
+      pushTermInvoice(termOut, {
+        term: null,
+        label: "Advance credit · secure place",
+        academicYear,
+        dueDateIso: todayIso,
+        instalmentRows: [
+          {
+            label: "Minimum prepaid (2 sessions × each service)",
+            dueIso: todayIso,
+            amountGbp: bufferGbp,
+          },
+        ],
+      });
+    }
     for (const t of term3Meta) {
       if (!includeTerm(t.key)) continue;
       pushTermInvoice(termOut, {

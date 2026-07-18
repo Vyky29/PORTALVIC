@@ -789,10 +789,10 @@
     var termLabel = reenrolTermDisplayLabel(currentReenrolBillingTerm());
     if (payCode === "own_way_flexible" && schedCode === "own_term") {
       return termOnly
-        ? "Term-by-term: we invoice " +
+        ? "Term-by-term Own arrangement: when you submit re-enrolment you must pay the minimum credit now (2 sessions × each service) so we can hold the place, plus " +
             termLabel +
-            " only for now (programme + £50 admin). Later terms when you reconfirm. Own payment timing — keep at least two sessions paid in advance for every service."
-        : "Term by term on your own payment timing (bank transfer, Card or Apple Pay) — not our fixed due dates. Programme total stays the same, plus a £50 admin fee each term. You must keep at least two sessions paid in advance for every service you attend; if the balance falls below that, we may pause sessions or move you to a standard payment plan.";
+            " programme and £50 admin. Later terms when you reconfirm. Keep that 2-session credit topped up."
+        : "Own arrangement: when you submit re-enrolment you must pay the minimum credit now (2 sessions × each service) so we can hold the place. Then term by term on your own timing (+ £50 admin each term). Keep at least two sessions paid in advance for every service; if the balance falls below that, we may pause sessions or move you to a standard plan.";
     }
     if (payCode === "gocardless") {
       if (schedCode === "term_3") {
@@ -858,10 +858,17 @@
     var payEl = document.querySelector('input[name="re_pay_2627"]:checked');
     var schedEl = document.querySelector('input[name="re_pay_schedule_2627"]:checked');
     var fundEl = document.querySelector('input[name="re_fund_2627"]:checked');
-    var fundCode = fundEl ? fundEl.value : "privately_funded";
+    var fundCode = fundEl
+      ? fundEl.value
+      : (state.billing2627 && state.billing2627.fundCode) || "privately_funded";
     if (!isParentPaysPanel(fundCode)) return "";
-    var payCode = payEl ? payEl.value : "bank_transfer";
+    var payCode = normalizePayMethodChoice(
+      (payEl && payEl.value) ||
+        (state.billing2627 && state.billing2627.payCode) ||
+        "bank_transfer",
+    );
     var schedCode = schedEl ? schedEl.value : null;
+    if (schedCode === "own_term") payCode = "own_way_flexible";
     if (payCode !== "bank_transfer" && payCode !== "gocardless" && payCode !== "own_way_flexible") {
       return "";
     }
@@ -900,9 +907,9 @@
         });
       });
       if (buffer.total > 0) {
-        ownRows.push({
-          label: "Minimum credit on account (2 sessions × each service)",
-          due: "Always in advance",
+        ownRows.unshift({
+          label: "Pay now to secure place (2 sessions × each service)",
+          due: "Due on re-enrolment",
           amount: money(buffer.total),
         });
       }
@@ -1621,6 +1628,18 @@
     opts = opts.filter(function (o) {
       return scheduleMatchesCadence(o.code, cad);
     });
+    /* Bank Transfer / Card: offer Own arrangement in the same plan list (term-by-term only). */
+    if (cad === "term_by_term" && payCode === "bank_transfer") {
+      var hasOwn = opts.some(function (o) {
+        return o.code === "own_term";
+      });
+      if (!hasOwn) {
+        opts.push({
+          code: "own_term",
+          label: "Own arrangement — pay now to secure place (+ £50 / term)",
+        });
+      }
+    }
     /* Term-by-term + GoCardless: monthly first, label = N payments this term (not “10 / year”). */
     if (cad === "term_by_term" && payCode === "gocardless") {
       var n = installmentCountForSchedule("monthly_10", cad);
@@ -1777,7 +1796,7 @@
       " per instalment. " +
       "<strong>Own arrangement</strong> (cannot meet our payment dates) is term-only and adds " +
       money(RE_ADMIN_FEE_OWN) +
-      " each term, plus a minimum prepaid balance of two sessions per service." +
+      " each term. You pay a minimum of two sessions per service <strong>on re-enrolment</strong> to secure the place, and must keep that prepaid balance topped up." +
       "</div>" +
       '<div id="reCancelNotice" class="re-funding-fee re-funding-fee--fail" role="note">' +
       "<strong>Cancelling your booking</strong>" +
@@ -1819,6 +1838,13 @@
     );
   }
 
+  /** Own arrangement sits in the Bank Transfer plan list (term-by-term). */
+  function scheduleListPayCode(payCode, cadence) {
+    var cad = normalizeEnrolmentCadence(cadence);
+    if (payCode === "own_way_flexible" && cad === "term_by_term") return "bank_transfer";
+    return payCode;
+  }
+
   function refreshBillingPaySection(data) {
     var b = state.billing2627 || {};
     if (b.editing) return;
@@ -1831,9 +1857,18 @@
       payCode = "bank_transfer";
       b.payCode = payCode;
     }
-    var scheduleDefault = defaultScheduleForPayAndCadence(payCode, state.enrolmentCadence);
+    var cadence = state.enrolmentCadence;
+    var scheduleDefault =
+      payCode === "own_way_flexible"
+        ? "own_term"
+        : defaultScheduleForPayAndCadence(payCode, cadence);
     var schedWrap = $("rePayScheduleWrap");
-    if (schedWrap) schedWrap.innerHTML = renderPayScheduleFieldset(payCode, scheduleDefault);
+    if (schedWrap) {
+      schedWrap.innerHTML = renderPayScheduleFieldset(
+        scheduleListPayCode(payCode, cadence),
+        scheduleDefault,
+      );
+    }
     syncPrivatePayPanels();
     syncPaymentSchedulePreview();
   }
@@ -2008,19 +2043,19 @@
       (normalizeEnrolmentCadence(state.enrolmentCadence) === "term_by_term"
         ? "The total above is for the <strong>current term only</strong> (term-by-term). Later terms are billed when you reconfirm. "
         : "The total above covers your confirmed sessions for the year. ") +
-      "<strong>Bank Transfer / Card / Apple Pay</strong> uses fixed due dates (pay each invoice from the parent portal — no admin fee if on time). <strong>Direct Payment (GoCardless)</strong> is collected automatically once we set up your mandate. <strong>Own arrangement</strong> is only for privately funded families who cannot meet those dates (+ £50 / term) — not available with LA Direct Payments funding.</p>" +
+      "<strong>Bank Transfer / Card / Apple Pay</strong> uses fixed due dates (pay each invoice from the parent portal — no admin fee if on time; monthly is not offered here — use Direct Payment for monthly). <strong>Direct Payment (GoCardless)</strong> is collected automatically once we set up your mandate. <strong>Own arrangement</strong> (in the plan list, private funding only) means you pay a 2-session credit <strong>now on re-enrolment</strong> to secure the place (+ £50 / term) — not available with LA Direct Payments funding.</p>" +
       '<div id="rePaySchedulePreview" class="re-pay-preview-host"' +
       (editing ? " hidden" : "") +
       "></div>" +
       '<div id="reOwnWayNote" class="re-funding-fee re-funding-fee--own"' +
       (editing || payCode !== "own_way_flexible" ? " hidden" : "") +
       ">" +
-      "<strong>Own arrangement</strong>" +
+      "<strong>Own arrangement</strong> " +
       "Only if you cannot pay the full amount on our published due dates. " +
       "Term by term only (+ " +
       money(RE_ADMIN_FEE_OWN) +
-      " each term). You must always keep at least <strong>two sessions paid in advance for each service</strong> " +
-      "(e.g. two services → two sessions of each). If the balance falls below that, we may pause sessions or move you to a standard plan. " +
+      " each term). When you submit re-enrolment you must <strong>pay now</strong> a minimum of two sessions per service so we can hold the place. " +
+      "Keep that prepaid balance topped up; if it falls below two sessions per service, we may pause sessions or move you to a standard plan. " +
       "Paying on time on Bank Transfer / Card / Apple Pay has <strong>no</strong> £50 fee. Overpayments are kept as credit." +
       "</div>" +
       renderRelevantInfoHtml(payCode, editing) +
@@ -2063,7 +2098,7 @@
     },
     {
       code: "own_way_flexible",
-      label: "Own arrangement — cannot meet payment dates (+ £50 / term)",
+      label: "Own arrangement — pay now to secure place (+ £50 / term)",
     },
   ];
 
@@ -2080,10 +2115,6 @@
       { code: "yearly_1off", label: "All year — one payment" },
       { code: "term_3", label: "Pay each term — one payment" },
       { code: "term_flexi", label: "Flexi term — 2 payments per term" },
-      {
-        code: "monthly_10",
-        label: "Regular monthly — 10 payments (4 / 3 / 3 by term)",
-      },
     ],
     gocardless: [
       { code: "term_3", label: "Pay each term — one payment" },
@@ -2096,7 +2127,7 @@
     own_way_flexible: [
       {
         code: "own_term",
-        label: "Term by term — own payment timing (+ £50 each term)",
+        label: "Own arrangement — pay now to secure place (+ £50 each term)",
       },
     ],
   };
@@ -2107,10 +2138,8 @@
     var termLabel = reenrolTermDisplayLabel(currentReenrolBillingTerm());
     if (code === "own_term") {
       return termOnly
-        ? "Only if you cannot meet our fixed due dates. We invoice " +
-            termLabel +
-            " only for now (programme + £50 admin); later terms when you reconfirm. Keep at least two sessions paid in advance for every service."
-        : "Only if you cannot meet our fixed due dates. Term by term on your own timing. £50 admin fee each term. Keep at least two sessions paid in advance for every service. On the parent portal you can still pay each amount by bank transfer or Card / Apple Pay when an invoice is ready.";
+        ? "Only if you cannot meet our fixed due dates. On submit you pay a minimum credit now (2 sessions per service) to secure the place, plus this term’s programme and £50 admin. Later terms when you reconfirm."
+        : "Only if you cannot meet our fixed due dates. On submit you pay a minimum credit now (2 sessions per service) to secure your place. Term by term thereafter (+ £50 admin each term). Prefer Bank Transfer / Card on a standard plan if you can meet due dates.";
     }
     if (code === "yearly_1off") {
       return "One payment for the full academic year — due by 15 August 2026. Pay from the parent portal by bank transfer (no fee) or Card / Apple Pay (small processing fee). Same programme total. Not available with Direct Payment (GoCardless).";
@@ -2272,7 +2301,7 @@
       var checked = o.code === selected ? " checked" : "";
       var hint =
         o.code === "own_way_flexible"
-          ? "Term only (+ £50 each term). Keep 2 sessions prepaid per service. Prefer Bank Transfer / Card / Apple Pay on a standard plan if you can meet due dates."
+          ? "Term only (+ £50 each term). Pay 2 sessions per service now on re-enrolment to secure the place; keep that prepaid. Prefer Bank Transfer / Card / Apple Pay on a standard plan if you can meet due dates."
           : o.code === "bank_transfer"
             ? "Fixed due dates. Pay each invoice in the parent portal by bank transfer (no fee) or Card / Apple Pay (small fee)."
             : "Automatic Direct Debit once we set up your GoCardless mandate. Choose term, flexi or monthly below. £1.50 per instalment.";
@@ -2425,15 +2454,21 @@
       var prev = document.querySelector('input[name="re_pay_schedule_2627"]:checked');
       var prevVal = prev ? prev.value : null;
       if (payCode === "bank_transfer" || payCode === "gocardless" || payCode === "own_way_flexible") {
-        var fallbackSched = defaultScheduleForPayAndCadence(payCode, cadence);
-        var opts = schedulesForPayAndCadence(payCode, cadence);
+        var listPay = scheduleListPayCode(payCode, cadence);
+        var fallbackSched =
+          payCode === "own_way_flexible"
+            ? "own_term"
+            : defaultScheduleForPayAndCadence(payCode, cadence);
+        var opts = schedulesForPayAndCadence(listPay, cadence);
         var keepPrev = opts.some(function (o) {
           return o.code === prevVal;
         });
-        schedWrap.innerHTML = renderPayScheduleFieldset(
-          payCode,
-          keepPrev ? prevVal : fallbackSched,
-        );
+        var selectedSched = keepPrev ? prevVal : fallbackSched;
+        if (selectedSched === "own_term") {
+          payCode = "own_way_flexible";
+          b.payCode = payCode;
+        }
+        schedWrap.innerHTML = renderPayScheduleFieldset(listPay, selectedSched);
         schedWrap.hidden = false;
       } else {
         schedWrap.innerHTML = "";
@@ -2465,7 +2500,7 @@
           (cadence === "term_by_term"
             ? "The total above is for the <strong>current term only</strong> (term-by-term). Later terms are billed when you reconfirm. "
             : "The total above covers your confirmed sessions for the year. ") +
-          "<strong>Bank Transfer / Card / Apple Pay</strong> uses fixed due dates (pay each invoice from the parent portal — no admin fee if on time). <strong>Direct Payment (GoCardless)</strong> is collected automatically once we set up your mandate. <strong>Own arrangement</strong> is only for privately funded families who cannot meet those dates (+ £50 / term) — not available with LA Direct Payments funding.";
+          "<strong>Bank Transfer / Card / Apple Pay</strong> uses fixed due dates (pay each invoice from the parent portal — no admin fee if on time; monthly is not offered here — use Direct Payment for monthly). <strong>Direct Payment (GoCardless)</strong> is collected automatically once we set up your mandate. <strong>Own arrangement</strong> (in the plan list, private funding only) means you pay a 2-session credit <strong>now on re-enrolment</strong> to secure the place (+ £50 / term) — not available with LA Direct Payments funding.";
       }
     }
     syncPaymentSchedulePreview();
@@ -2546,6 +2581,20 @@
         return;
       }
       if (t && t.name === "re_pay_schedule_2627") {
+        if (!state.billing2627) state.billing2627 = {};
+        if (t.value === "own_term") {
+          state.billing2627.payCode = "own_way_flexible";
+        } else if (state.billing2627.payCode === "own_way_flexible") {
+          state.billing2627.payCode = "bank_transfer";
+        }
+        var arrangeView = $("reBillingArrangementView");
+        if (arrangeView && !state.billing2627.editing) {
+          arrangeView.innerHTML = renderBilling2627DefaultView();
+        }
+        var ownNote = $("reOwnWayNote");
+        if (ownNote) {
+          ownNote.hidden = state.billing2627.payCode !== "own_way_flexible";
+        }
         syncPaymentSchedulePreview();
         return;
       }
@@ -2621,6 +2670,10 @@
         payCode === "own_way_flexible")
         ? schedEl.value
         : defaultScheduleForPayAndCadence(payCode, cadence);
+    if (scheduleCode === "own_term") {
+      payCode = "own_way_flexible";
+      if (state.billing2627) state.billing2627.payCode = payCode;
+    }
     if (cadence && !scheduleMatchesCadence(scheduleCode, cadence)) {
       scheduleCode = defaultScheduleForPayAndCadence(payCode, cadence);
     }
@@ -2670,7 +2723,7 @@
         advance_buffer_lines: payCode === "own_way_flexible" ? advanceBuffer.lines : null,
         advance_buffer_note:
           payCode === "own_way_flexible"
-            ? "Must keep at least two sessions paid in advance for each service. Below that, sessions may be paused or moved to a standard payment plan."
+            ? "Pay the minimum credit (two sessions per service) now on re-enrolment to secure the place. Keep that balance topped up; below that, sessions may be paused or moved to a standard payment plan."
             : null,
         estimated_annual_total: annualTotal,
         estimated_total_with_admin_fee:
