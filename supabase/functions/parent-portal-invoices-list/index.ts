@@ -19,6 +19,8 @@ import {
   suggestedTransferReference,
   tideBankDetailsFromEnv,
 } from "../_shared/tide_bank_details.ts";
+import { resolveParticipantInvoiceFunding } from "../_shared/portal_invoice_funding.ts";
+import { fundingLabelIsClubInvoicedFunder } from "../_shared/parent_reenrol_ui.ts";
 
 const BUCKET = "documents";
 
@@ -135,6 +137,29 @@ Deno.serve(async (req) => {
     clean(participant?.display_name, 80) ||
     [participant?.first_name, participant?.last_name].filter(Boolean).join(" ").trim() ||
     "participant";
+
+  // Ealing / H&F / NHS (club invoices the funder): no parent invoice surface.
+  const funding = await resolveParticipantInvoiceFunding(supabase, {
+    contactId,
+    displayName,
+  });
+  const sheetLa = clean(funding.paymentSheet, 40).toUpperCase() === "LA";
+  if (sheetLa || fundingLabelIsClubInvoicedFunder(funding.fundingLabel)) {
+    return json(200, {
+      ok: true,
+      invoices: [],
+      show_invoices: false,
+      bank_transfer_available: false,
+      payments_enabled: false,
+      gocardless: {
+        api_available: false,
+        mandate_active: false,
+        mandate_status: null,
+        setup_available: false,
+        can_schedule: false,
+      },
+    });
+  }
 
   const { data: shares, error } = await supabase
     .from("portal_parent_invoice_share")

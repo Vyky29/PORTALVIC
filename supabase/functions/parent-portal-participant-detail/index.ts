@@ -1368,8 +1368,11 @@ Deno.serve(async (req) => {
         parent_action_note: parentReenrolUi.note,
         acat_confirm_notice: parentReenrolUi.acat_confirm_notice || "",
         can_book_extras: parentReenrolUi.can_book_extras !== false,
+        /** Ealing / H&F / NHS (club-invoiced LA): booking yes, invoices no. */
+        show_invoices: !parentReenrolUi.reasons.includes("la_funded"),
       },
       can_book_extras: parentReenrolUi.can_book_extras !== false,
+      show_invoices: !parentReenrolUi.reasons.includes("la_funded"),
       crash_course: crashCourse,
       pending_review_count: sessionsOut.filter((s) => s.message_pending).length,
       weekly_notes: weeklyNotes,

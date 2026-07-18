@@ -797,12 +797,19 @@
   function bookingSummary(data) {
     var r = data.reenrolment || {};
     var action = String(r.parent_action || "").toLowerCase() === "auto" ? "auto" : "required";
+    var reasons = Array.isArray(r.parent_action_reasons) ? r.parent_action_reasons : [];
+    var showInvoices =
+      r.show_invoices !== false &&
+      data &&
+      data.show_invoices !== false &&
+      reasons.indexOf("la_funded") < 0;
     return {
       submitted: !!r.submitted,
       submitted_at: r.submitted_at || null,
       hint: String(r.summary_hint || "").trim() || "Not submitted yet",
       items: Array.isArray(r.items) ? r.items : [],
       parent_action: action,
+      parent_action_reasons: reasons,
       parent_action_note:
         String(r.parent_action_note || "").trim() ||
         (action === "auto"
@@ -810,7 +817,13 @@
           : "Confirm places for next year"),
       acat_confirm_notice: String(r.acat_confirm_notice || "").trim(),
       can_book_extras: r.can_book_extras !== false && data && data.can_book_extras !== false,
+      /** False for Ealing / H&F / NHS club-invoiced LA — My booking stays, My invoices hidden. */
+      show_invoices: showInvoices,
     };
+  }
+
+  function showInvoicesForParticipant(data) {
+    return bookingSummary(data).show_invoices !== false;
   }
 
   /** Tinashe, Ikram, Fadi, Timi — no crash / extras (mirrors Edge identity list). */
@@ -1105,10 +1118,12 @@
             : "Permissions & registration PDFs",
         unreadBadge: consentBadge,
       }) +
-      infoBtnHtml("invoices", "My invoices", invoiceIcon, {
-        extraClass: " pp-pax-info-btn--invoices",
-        subtitle: "Pay crash & term invoices",
-      }) +
+      (showInvoicesForParticipant(data)
+        ? infoBtnHtml("invoices", "My invoices", invoiceIcon, {
+            extraClass: " pp-pax-info-btn--invoices",
+            subtitle: "Pay crash & term invoices",
+          })
+        : "") +
       infoBtnHtml("booking", "My booking", bookingIcon, {
         subtitle: booking.submitted
           ? booking.hint || "2026/27 choices"
@@ -6430,7 +6445,14 @@
     else if (view === "calendar") renderCalendar(host, data, opts);
     else if (view === "absence") renderAbsence(host, data, opts);
     else if (view === "balance") renderBalance(host, data, opts);
-    else if (view === "invoices") renderInvoices(host, data, opts);
+    else if (view === "invoices") {
+      if (!showInvoicesForParticipant(data)) {
+        // LA / NHS club-invoiced: no invoice surface — send them to booking instead.
+        openSubview(host, data, opts, "booking", viewOpts || {});
+        return;
+      }
+      renderInvoices(host, data, opts);
+    }
     else if (view === "documents" || view === "consents") renderConsents(host, data, opts);
     else if (view === "messages") {
       var msgOpts = opts || {};
