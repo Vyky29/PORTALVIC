@@ -987,9 +987,27 @@
     var keys = ["Services", "Service", "Programme", "Programmes", "Activity"];
     for (var i = 0; i < keys.length; i++) {
       var v = d[keys[i]];
-      if (v != null && String(v).trim() && String(v).trim() !== "-") return String(v).trim();
+      if (v != null && String(v).trim() && String(v).trim() !== "-") {
+        return normalizeServiceDisplay(String(v).trim());
+      }
     }
     return "—";
+  }
+
+  /** Display-only: legacy workbook codes → current service names. */
+  function normalizeServiceDisplay(raw) {
+    var s = String(raw || "").trim();
+    if (!s) return s;
+    s = s.replace(/\bS\s*&\s*C\b/gi, "Multi-Activity");
+    s = s.replace(/\bSW\b/g, "Aquatic Activity");
+    s = s.replace(/\bCL\b/g, "Climbing Activity");
+    s = s.replace(/\bFT\b/g, "Physical Activity");
+    s = s.replace(/\bFIT\b/g, "Physical Activity");
+    s = s.replace(/\bBS\b/g, "Bespoke");
+    /* "30' Aquatic (Sat)" → "30' Aquatic Activity (Sat)" */
+    s = s.replace(/(\d+\s*['′']?\s*)Aquatic\b(?!\s+Activity)/gi, "$1Aquatic Activity");
+    s = s.replace(/(\d+\s*['′']?\s*)Multi\b(?!-Activity)/gi, "$1Multi-Activity");
+    return s;
   }
 
   function termFor(r) {
@@ -1529,6 +1547,8 @@
         route = /\bnen\b|\bnhs\b/i.test(route) ? INVOICE_TYPE.NHS_EXEMPT : INVOICE_TYPE.LA_EXEMPT;
       }
       delete newData.Paid;
+      if (route === INVOICE_TYPE.NHS_EXEMPT) newData.Paid = PAID_BY.FUNDED_BY_NHS;
+      else newData.Paid = PAID_BY.FUNDED_BY_LA;
       newData["Invoice type"] = route;
       newData.Funding = route;
       newData.Funder = route;
