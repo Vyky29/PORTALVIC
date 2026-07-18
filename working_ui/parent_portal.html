@@ -2359,9 +2359,9 @@
       overflow-wrap: break-word;
     }
     .pp-hub-reenrolled--unpaid {
-      background: rgba(234, 88, 12, 0.12);
-      color: #9a3412;
-      border: 1px solid rgba(234, 88, 12, 0.35);
+      background: #ffedd5;
+      color: #c2410c;
+      border: 1px solid #fb923c;
     }
     .pp-hub-reenrolled--chip {
       display: inline-flex;
@@ -2381,7 +2381,15 @@
       border: 1px solid rgba(22, 163, 74, 0.28);
     }
     .pp-hub-reenrolled--chip.pp-hub-reenrolled--unpaid {
-      border-color: rgba(234, 88, 12, 0.4);
+      background: #ffedd5;
+      color: #c2410c;
+      border-color: #fb923c;
+    }
+    /* Tick stays green even on the orange unpaid chip. */
+    .pp-hub-reenrolled--unpaid .pp-hub-reenrolled__mark,
+    .pp-hub-reenrolled--chip.pp-hub-reenrolled--unpaid .pp-hub-reenrolled__mark {
+      background: #16a34a;
+      color: #fff;
     }
     .pp-hub-reenrolled--chip .pp-hub-reenrolled__mark {
       width: 14px;
