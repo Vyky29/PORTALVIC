@@ -1175,18 +1175,19 @@
     );
   }
 
-  function hubMenuBodyHtml(data, opts) {
+  function hubMenuHeadActionsHtml(opts) {
     return (
-      infoButtonsHtml(data, opts) +
-      '<div class="pp-hub-menu__extra">' +
-      '<button type="button" class="pp-hub-menu__link" data-pp-open="general">' +
-      "General information" +
+      '<button type="button" class="pp-hub-menu-sheet__action" data-pp-open="general">' +
+      "General Info" +
       "</button>" +
       (opts && typeof opts.openContactDetails === "function"
-        ? '<button type="button" class="pp-hub-menu__link" data-pp-open-contact>Contact details on file</button>'
-        : "") +
-      "</div>"
+        ? '<button type="button" class="pp-hub-menu-sheet__action" data-pp-open-contact>Details on file</button>'
+        : "")
     );
+  }
+
+  function hubMenuBodyHtml(data, opts) {
+    return infoButtonsHtml(data, opts);
   }
 
   function closeHubMenuSheet() {
@@ -1215,12 +1216,13 @@
     if (!doc) return;
     var btn = doc.getElementById("ppHubMenuBtn");
     var sheetBody = doc.getElementById("ppHubMenuSheetBody");
+    var headActions = doc.getElementById("ppHubMenuSheetHeadActions");
     var sheet = doc.getElementById("ppHubMenuSheet");
     if (btn) btn.hidden = false;
-    if (sheetBody) {
-      sheetBody.innerHTML = hubMenuBodyHtml(data, opts);
-      bindHubOpenButtons(host, data, opts, sheetBody);
-      sheetBody.querySelectorAll("[data-pp-open-contact]").forEach(function (el) {
+    if (headActions) {
+      headActions.innerHTML = hubMenuHeadActionsHtml(opts);
+      bindHubOpenButtons(host, data, opts, headActions);
+      headActions.querySelectorAll("[data-pp-open-contact]").forEach(function (el) {
         if (el.__ppBoundContact) return;
         el.__ppBoundContact = true;
         el.addEventListener("click", function () {
@@ -1228,6 +1230,10 @@
           if (opts && typeof opts.openContactDetails === "function") opts.openContactDetails();
         });
       });
+    }
+    if (sheetBody) {
+      sheetBody.innerHTML = hubMenuBodyHtml(data, opts);
+      bindHubOpenButtons(host, data, opts, sheetBody);
     }
     if (btn && !btn.__ppBoundMenu) {
       btn.__ppBoundMenu = true;
