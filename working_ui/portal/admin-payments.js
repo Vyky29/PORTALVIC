@@ -1542,6 +1542,93 @@
     });
   }
 
+  function isAutumnReenrolInvoice(inv) {
+    var via = String((inv && inv.created_via) || "");
+    // Family re-enrol INV-Ps + LA office-auto booked places (no family INV-P yet).
+    return via === "reenrolment" || via === "la_office_auto";
+  }
+
+  function isLaManagedAutumnCandidate(inv) {
+    if (!inv) return false;
+    if (String(inv.created_via || "") === "la_office_auto") return true;
+    if (inv.is_la_office_auto === true) return true;
+    return String(inv.funding_category || "") === "la_managed";
+  }
+
+  function reenrolInvoiceAmountGbp(inv) {
+    var via = String((inv && inv.created_via) || "");
+    /* Instalments keep amount_gbp; LA office-auto / booked-place rows use term totals. */
+    if (via === "reenrolment") {
+      return Number(inv && inv.amount_gbp) || 0;
+    }
+    var n = Number(inv && inv.amount_selected_gbp);
+    if (n > 0) return n;
+    n = Number(inv && inv.booked_term_gbp);
+    if (n > 0) return n;
+    n = Number(inv && inv.booked_autumn_gbp);
+    if (n > 0) return n;
+    n = Number(inv && inv.amount_gbp);
+    if (n > 0) return n;
+    n = Number(inv && inv.booked_annual_gbp);
+    return n > 0 ? n : 0;
+  }
+
+  function laBookedAutumnAmountGbp(inv) {
+    var n = Number(inv && inv.amount_selected_gbp);
+    if (n > 0) return n;
+    n = Number(inv && inv.booked_term_gbp);
+    if (n > 0) return n;
+    n = Number(inv && inv.booked_autumn_gbp);
+    if (n > 0) return n;
+    n = Number(inv && inv.booked_annual_gbp);
+    return n > 0 ? n : 0;
+  }
+
+  function buildAutumnReenrolAggRow(inv, opts) {
+    opts = opts || {};
+    var cid = String(inv.contact_id || "").trim();
+    var via = String(inv.created_via || "");
+    var isLaAuto = via === "la_office_auto" || opts.forceLa === true;
+    var hint = String(inv.payment_method_hint || "").toLowerCase();
+    var vat = String(inv.vat_mode || "").toLowerCase();
+    if (isLaAuto || String(inv.funding_category || "") === "la_managed") {
+      hint = "la_funded";
+      vat = vat || "exempt";
+    }
+    var svc =
+      String(inv.booked_service_raw || "").trim() ||
+      (isLaAuto ? "LA office auto · booked place 2026-27" : "Re-enrolment 2026-27");
+    return {
+      id: (isLaAuto ? "la-auto-" : "reenrol-") + cid,
+      _contactId: cid,
+      _paymentMethodHint: hint,
+      _vatMode: vat,
+      _fundingLabel: String(inv.funding_label || "").trim(),
+      sheet: classifyPayGroup({
+        payment_method_hint: hint,
+        vat_mode: vat,
+        funding_label: inv.funding_label,
+        _reenrol: true,
+      }),
+      client_name: inv.participant_display || inv.related_client || cid,
+      parent_name: inv.parent_display || "",
+      payment_status: "Outstanding",
+      amount: 0,
+      amount_billed: 0,
+      amount_out: 0,
+      data: {
+        Term: "AUTUMN TERM 26/27",
+        Services: svc,
+        Funder: inv.funding_label || "",
+      },
+      _termBucket: "autumn_2627",
+      _synthetic: true,
+      _reenrol: true,
+      _laOfficeAuto: isLaAuto,
+      _invoiceIds: [],
+    };
+  }
+
   function loadReenrolRows() {
     var base = supabaseBase();
     var key = anonKey();
@@ -1555,55 +1642,44 @@
           apikey: key,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ share_status: "all", payment_status: "all", limit: 200 }),
+        body: JSON.stringify({
+          share_status: "all",
+          payment_status: "all",
+          billing_amount: "autumn",
+          limit: 400,
+        }),
       }).then(function (res) { return res.json().then(function (j) { return { res: res, j: j }; }); })
         .then(function (pack) {
           if (!pack.res.ok || !pack.j || !pack.j.ok) return [];
-          var invs = (pack.j.invoices || []).filter(function (inv) {
-            return String(inv.created_via || "") === "reenrolment";
-          });
+          var allInvs = pack.j.invoices || [];
+          var invs = allInvs.filter(isAutumnReenrolInvoice);
           var agg = {};
           invs.forEach(function (inv) {
             var cid = String(inv.contact_id || "").trim();
             if (!cid) return;
+            var via = String(inv.created_via || "");
+            var isLaAuto = via === "la_office_auto";
             if (!agg[cid]) {
-              var hint = String(inv.payment_method_hint || "").toLowerCase();
-              var vat = String(inv.vat_mode || "").toLowerCase();
-              agg[cid] = {
-                id: "reenrol-" + cid,
-                _contactId: cid,
-                _paymentMethodHint: hint,
-                _vatMode: vat,
-                sheet: classifyPayGroup({
-                  payment_method_hint: hint,
-                  vat_mode: vat,
-                  _reenrol: true,
-                }),
-                client_name: inv.participant_display || inv.related_client || cid,
-                parent_name: inv.parent_display || "",
-                payment_status: "Paid",
-                amount: 0,
-                amount_billed: 0,
-                amount_out: 0,
-                data: {
-                  Term: "AUTUMN TERM 26/27",
-                  Services: "Re-enrolment 2026-27",
-                },
-                _termBucket: "autumn_2627",
-                _synthetic: true,
-                _reenrol: true,
-                _invoiceIds: [],
-              };
+              agg[cid] = buildAutumnReenrolAggRow(inv, { forceLa: isLaAuto });
             }
             var row = agg[cid];
-            var amt = Number(inv.amount_gbp) || 0;
+            /* Prefer la_office_auto row identity if both somehow appear. */
+            if (isLaAuto) {
+              row.id = "la-auto-" + cid;
+              row._laOfficeAuto = true;
+              row._paymentMethodHint = "la_funded";
+              if (!row._fundingLabel && inv.funding_label) {
+                row._fundingLabel = String(inv.funding_label).trim();
+                row.data.Funder = row._fundingLabel;
+              }
+            }
+            var amt = reenrolInvoiceAmountGbp(inv);
             var st = String(inv.payment_status || "").toLowerCase();
             row.amount_billed += amt;
-            row._invoiceIds.push(inv.id);
-            /* Prefer la_funded / exempt signals if any instalment carries them. */
+            if (inv.id) row._invoiceIds.push(inv.id);
             var hint = String(inv.payment_method_hint || "").toLowerCase();
             var vat = String(inv.vat_mode || "").toLowerCase();
-            if (hint === "la_funded") row._paymentMethodHint = hint;
+            if (hint === "la_funded" || isLaAuto) row._paymentMethodHint = "la_funded";
             if (vat === "exempt" && row._vatMode !== "exempt") row._vatMode = vat;
             if (st === "paid") {
               // keep Paid unless another instalment is open
@@ -1612,13 +1688,39 @@
               row.payment_status = "Outstanding";
             }
           });
+
+          /*
+           * LA sheet clients already re-enrolled for 2026/27 may only appear as
+           * funding_category=la_managed on existing shares (API skips synthetic
+           * la_office_auto when any INV-P exists). Still show them under Autumn.
+           */
+          allInvs.forEach(function (inv) {
+            if (!isLaManagedAutumnCandidate(inv)) return;
+            var cid = String(inv.contact_id || "").trim();
+            if (!cid || agg[cid]) return;
+            var amt = laBookedAutumnAmountGbp(inv);
+            if (amt <= 0 && !inv.reenrolment_submitted_at && !(inv.booked_slots && inv.booked_slots.length)) {
+              return;
+            }
+            var row = buildAutumnReenrolAggRow(inv, { forceLa: true });
+            /* Use booked autumn once — do not sum every historical LA share. */
+            row.amount_billed = amt;
+            row.amount_out = amt;
+            row.amount = amt;
+            row.payment_status = amt > 0 ? "Outstanding" : "Paid";
+            if (inv.id) row._invoiceIds.push(inv.id);
+            agg[cid] = row;
+          });
+
           return Object.keys(agg).map(function (cid) {
             var row = agg[cid];
             row.amount = row.amount_out > 0 ? row.amount_out : row.amount_billed;
             if (row.amount_out <= 0 && row.amount_billed > 0) row.payment_status = "Paid";
+            else if (row.amount_out > 0) row.payment_status = "Outstanding";
             row.sheet = classifyPayGroup({
               payment_method_hint: row._paymentMethodHint,
               vat_mode: row._vatMode,
+              funding_label: row._fundingLabel,
               _reenrol: true,
             });
             return row;
