@@ -46,10 +46,38 @@
 
   function isIOS() {
     try {
-      return /iPhone|iPad|iPod/i.test(String((global.navigator && global.navigator.userAgent) || ""));
+      var ua = String((global.navigator && global.navigator.userAgent) || "");
+      if (/iPhone|iPad|iPod/i.test(ua)) return true;
+      /* iPadOS 13+ may report as Mac with touch. */
+      if (/Macintosh/i.test(ua) && global.navigator && global.navigator.maxTouchPoints > 1) {
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  function userAgent() {
+    try {
+      return String((global.navigator && global.navigator.userAgent) || "");
     } catch (_) {
-      return false;
+      return "";
     }
+  }
+
+  /** WhatsApp / Instagram / Facebook in-app browsers — no reliable Web Push. */
+  function isInAppBrowser() {
+    var ua = userAgent();
+    if (/WhatsApp|FBAN|FBAV|Instagram|Line\/|Twitter|LinkedInApp|Snapchat|MicroMessenger|GSA\//i.test(ua)) {
+      return true;
+    }
+    /* iOS WKWebView often omits "Safari" while still including AppleWebKit. */
+    if (isIOS() && /AppleWebKit/i.test(ua) && !/Safari\//i.test(ua)) return true;
+    return false;
+  }
+
+  /** Chrome on iPhone cannot Add-to-Home-Screen for Web Push — Safari is required. */
+  function isIOSChrome() {
+    return isIOS() && /CriOS|Chrome\//i.test(userAgent());
   }
 
   function pushSupported() {
@@ -60,6 +88,13 @@
       "PushManager" in global &&
       typeof global.Notification !== "undefined"
     );
+  }
+
+  function iosAlertsGateReason() {
+    if (!isIOS() || isStandalonePwa()) return null;
+    if (isInAppBrowser()) return "ios-in-app";
+    if (isIOSChrome()) return "ios-use-safari";
+    return "ios-need-homescreen";
   }
 
   function urlBase64ToUint8Array(base64String) {
@@ -155,11 +190,14 @@
   }
 
   async function subscribeNow() {
+    /* On iPhone, Home Screen / Safari gate comes before PushManager checks —
+       in-app browsers (WhatsApp) often report unsupported and confused parents. */
+    var iosGate = iosAlertsGateReason();
+    if (iosGate) {
+      return { ok: false, reason: iosGate };
+    }
     if (!pushSupported()) {
       return { ok: false, reason: "unsupported" };
-    }
-    if (isIOS() && !isStandalonePwa()) {
-      return { ok: false, reason: "ios-need-homescreen" };
     }
     var vapid = vapidKey();
     if (!vapid) return { ok: false, reason: "no-vapid" };
@@ -191,6 +229,12 @@
   }
 
   function statusCopy(reason) {
+    if (reason === "ios-in-app") {
+      return "You are inside WhatsApp (or another in-app browser) — alerts cannot work here. Tap ··· → Open in Safari, then Share → Add to Home Screen, open that Family icon, and turn on alerts.";
+    }
+    if (reason === "ios-use-safari") {
+      return "Chrome on iPhone cannot keep locked-screen alerts. Open this page in Safari → Share → Add to Home Screen, open that icon, then tap Turn on alerts.";
+    }
     if (reason === "ios-need-homescreen") {
       return "On iPhone, add Family to your Home Screen (Share → Add to Home Screen), open it from that icon, then tap Turn on alerts.";
     }
@@ -200,7 +244,9 @@
         : "Notifications are blocked for this site. Allow them in browser settings, then try again.";
     }
     if (reason === "unsupported") {
-      return "This browser cannot receive alerts when closed. Try Chrome/Edge on Android, or Safari from the Home Screen on iPhone.";
+      return isIOS()
+        ? "This browser cannot receive alerts when closed. On iPhone use Safari → Share → Add to Home Screen, then open the Family icon."
+        : "This browser cannot receive alerts when closed. Try Chrome or Edge on Android, or Chrome/Edge on a computer.";
     }
     if (reason === "no-vapid") {
       return "Alert keys are not configured yet — please try again later.";
@@ -275,10 +321,17 @@
       return;
     }
     if (isIOS() && !isStandalonePwa()) {
+      var gate = iosAlertsGateReason();
+      var lead =
+        gate === "ios-in-app"
+          ? "<p><strong>Open in Safari first</strong> — you are inside WhatsApp (or another app browser). Tap ··· → <strong>Open in Safari</strong>, then Share → <strong>Add to Home Screen</strong>. Open that Family icon and turn on alerts there. Alerts do not work inside WhatsApp.</p>"
+          : gate === "ios-use-safari"
+            ? "<p><strong>Use Safari on iPhone</strong> for alerts (not Chrome). In Safari: Share → <strong>Add to Home Screen</strong>, open that icon, then tap Turn on alerts. Chrome on iPhone cannot keep alerts when the phone is locked.</p>"
+            : "<p><strong>Alerts on iPhone</strong> need the Family app on your Home Screen first: " +
+              "Share → <strong>Add to Home Screen</strong>, open that icon, then tap Turn on alerts. " +
+              "A normal Safari tab cannot keep alerts when the phone is locked.</p>";
       el.innerHTML =
-        "<p><strong>Alerts on iPhone</strong> need the Family app on your Home Screen first: " +
-        "Share → <strong>Add to Home Screen</strong>, open that icon, then tap Turn on alerts. " +
-        "Safari in the browser tab cannot keep alerts when the phone is locked.</p>" +
+        lead +
         '<div class="family-push-alerts__actions">' +
         '<button type="button" class="family-push-alerts__go" data-family-push="enable">Turn on alerts</button>' +
         '<button type="button" class="family-push-alerts__later" data-family-push="dismiss">Not now</button>' +
