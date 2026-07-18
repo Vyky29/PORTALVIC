@@ -789,10 +789,8 @@
     var termLabel = reenrolTermDisplayLabel(currentReenrolBillingTerm());
     if (payCode === "own_way_flexible" && schedCode === "own_term") {
       return termOnly
-        ? "Term-by-term Own arrangement: when you submit re-enrolment you must pay the minimum credit now (2 sessions × each service) so we can hold the place, plus " +
-            termLabel +
-            " programme and £50 admin. Later terms when you reconfirm. Keep that 2-session credit topped up."
-        : "Own arrangement: when you submit re-enrolment you must pay the minimum credit now (2 sessions × each service) so we can hold the place. Then term by term on your own timing (+ £50 admin each term). Keep at least two sessions paid in advance for every service; if the balance falls below that, we may pause sessions or move you to a standard plan.";
+        ? "Less than a full flexi/term payment: on re-enrolment you pay only the minimum credit (2 session days × each service) plus £50 admin so we can hold the place. Top up as you go to keep 2 sessions prepaid. Paying more than that minimum has no extra fee — surplus stays as credit for later."
+        : "Less than a full flexi/term payment: on re-enrolment you pay only the minimum credit (2 session days × each service) plus £50 admin each term. Top up as you go. Paying more than asked has no extra fee — surplus stays as credit for the next payment.";
     }
     if (payCode === "gocardless") {
       if (schedCode === "term_3") {
@@ -849,7 +847,7 @@
       );
     }
     if (payCode === "bank_transfer") {
-      return "Same programme total — the first payment (term, one-off or full year) is due by 15 August 2026 so it reaches us before term; later payments follow each term. Paying on or before each due date (including Card / Apple Pay when offered) has no admin fee.";
+      return "Same programme total — the first payment (term, one-off or full year) is due by 15 August 2026 so it reaches us before term; later payments follow each term. Paying on or before each due date (including Card / Apple Pay when offered) has no admin fee. If you pay more than the invoice, there is no extra fee — surplus stays as credit for the next payment.";
     }
     return "Same programme total — compare due dates below. The office confirms your final invoice plan before term starts.";
   }
@@ -892,32 +890,33 @@
     if (payCode === "own_way_flexible") {
       var buffer = ownArrangementAdvanceBuffer(data);
       var ownRows = [];
-      ["Autumn", "Spring", "Summer"].forEach(function (label, i) {
-        var termKey = i === 0 ? "autumn" : i === 1 ? "spring" : "summer";
-        if (!includeTerm(termKey)) return;
-        ownRows.push({
-          label: label + " term · programme",
-          due: "Your own timing",
-          amount: money(termProgrammeTotal(data, termKey)),
-        });
-        ownRows.push({
-          label: label + " term · admin fee",
-          due: "Each term",
-          amount: money(RE_ADMIN_FEE_OWN),
-        });
-      });
       if (buffer.total > 0) {
-        ownRows.unshift({
-          label: "Pay now to secure place (2 sessions × each service)",
+        ownRows.push({
+          label: "Pay now — minimum (2 session days × each service)",
           due: "Due on re-enrolment",
           amount: money(buffer.total),
+        });
+      }
+      if (billingTerm) {
+        ownRows.push({
+          label: reenrolTermDisplayLabel(billingTerm) + " · admin fee",
+          due: "Due on re-enrolment",
+          amount: money(RE_ADMIN_FEE_OWN),
+        });
+      } else {
+        ["Autumn", "Spring", "Summer"].forEach(function (label) {
+          ownRows.push({
+            label: label + " term · admin fee",
+            due: "Each term",
+            amount: money(RE_ADMIN_FEE_OWN),
+          });
         });
       }
       var ownFeeNote =
         feeTotal > 0
           ? billingTerm
-            ? " Admin fee for this term: " + money(feeTotal) + "."
-            : " Admin fees add " + money(feeTotal) + " over the year (indicative total " + money(annual + feeTotal) + ")."
+            ? " Admin fee this term: " + money(feeTotal) + " (because this is below a full flexi/term plan)."
+            : " Admin fees: " + money(feeTotal) + " over the year (£50 each term)."
           : "";
       return (
         '<div class="re-pay-preview">' +
@@ -925,6 +924,7 @@
         '<p class="re-muted re-pay-preview__note">' +
         esc(paymentPreviewNote(payCode, schedCode, cadence)) +
         ownFeeNote +
+        " If you pay more than this minimum, there is no extra fee — the surplus stays as credit for your next payment." +
         "</p>" +
         '<ul class="re-pay-preview-list">' +
         ownRows
@@ -1636,7 +1636,7 @@
       if (!hasOwn) {
         opts.push({
           code: "own_term",
-          label: "Own arrangement — pay now to secure place (+ £50 / term)",
+          label: "Own arrangement — less than flexi (2 session days + £50 / term)",
         });
       }
     }
@@ -1794,9 +1794,10 @@
       "Direct Payment (GoCardless) adds " +
       money(RE_ADMIN_FEE_GC_PER_INSTALLMENT) +
       " per instalment. " +
-      "<strong>Own arrangement</strong> (cannot meet our payment dates) is term-only and adds " +
+      "<strong>Own arrangement</strong> (pay less than a full flexi/term plan — minimum 2 session days) adds " +
       money(RE_ADMIN_FEE_OWN) +
-      " each term. You pay a minimum of two sessions per service <strong>on re-enrolment</strong> to secure the place, and must keep that prepaid balance topped up." +
+      " each term. That minimum is due <strong>on re-enrolment</strong> to secure the place; keep it topped up. " +
+      "Paying <strong>more</strong> than asked has <strong>no</strong> extra fee — surplus stays as credit for the next payment." +
       "</div>" +
       '<div id="reCancelNotice" class="re-funding-fee re-funding-fee--fail" role="note">' +
       "<strong>Cancelling your booking</strong>" +
@@ -2043,7 +2044,7 @@
       (normalizeEnrolmentCadence(state.enrolmentCadence) === "term_by_term"
         ? "The total above is for the <strong>current term only</strong> (term-by-term). Later terms are billed when you reconfirm. "
         : "The total above covers your confirmed sessions for the year. ") +
-      "<strong>Bank Transfer / Card / Apple Pay</strong> uses fixed due dates (pay each invoice from the parent portal — no admin fee if on time; monthly is not offered here — use Direct Payment for monthly). <strong>Direct Payment (GoCardless)</strong> is collected automatically once we set up your mandate. <strong>Own arrangement</strong> (in the plan list, private funding only) means you pay a 2-session credit <strong>now on re-enrolment</strong> to secure the place (+ £50 / term) — not available with LA Direct Payments funding.</p>" +
+      "<strong>Bank Transfer / Card / Apple Pay</strong> uses fixed due dates (pay each invoice from the parent portal — no admin fee if on time; monthly is not offered here — use Direct Payment for monthly). <strong>Direct Payment (GoCardless)</strong> is collected automatically once we set up your mandate. <strong>Own arrangement</strong> (in the plan list) is for paying <strong>less</strong> than a full flexi/term amount — minimum 2 session days now (+ £50 / term). Paying <strong>more</strong> than an invoice asks has no fee; surplus stays as credit — not available with LA Direct Payments funding.</p>" +
       '<div id="rePaySchedulePreview" class="re-pay-preview-host"' +
       (editing ? " hidden" : "") +
       "></div>" +
@@ -2051,12 +2052,11 @@
       (editing || payCode !== "own_way_flexible" ? " hidden" : "") +
       ">" +
       "<strong>Own arrangement</strong> " +
-      "Only if you cannot pay the full amount on our published due dates. " +
-      "Term by term only (+ " +
+      "Choose this only if you need to pay <strong>less</strong> than a full flexi or term invoice. Minimum is 2 session days × each service, due <strong>now on re-enrolment</strong> (+ " +
       money(RE_ADMIN_FEE_OWN) +
-      " each term). When you submit re-enrolment you must <strong>pay now</strong> a minimum of two sessions per service so we can hold the place. " +
-      "Keep that prepaid balance topped up; if it falls below two sessions per service, we may pause sessions or move you to a standard plan. " +
-      "Paying on time on Bank Transfer / Card / Apple Pay has <strong>no</strong> £50 fee. Overpayments are kept as credit." +
+      " admin each term). Keep that prepaid balance topped up. " +
+      "If you pay <strong>more</strong> than asked (on this plan or a standard Bank Transfer invoice), there is <strong>no</strong> extra fee — the surplus stays as credit for the next payment. " +
+      "Standard Bank Transfer / Card / Apple Pay on full due dates has no £50 fee." +
       "</div>" +
       renderRelevantInfoHtml(payCode, editing) +
       "</div></div>" +
@@ -2098,7 +2098,7 @@
     },
     {
       code: "own_way_flexible",
-      label: "Own arrangement — pay now to secure place (+ £50 / term)",
+      label: "Own arrangement — less than flexi (2 session days + £50 / term)",
     },
   ];
 
@@ -2127,7 +2127,7 @@
     own_way_flexible: [
       {
         code: "own_term",
-        label: "Own arrangement — pay now to secure place (+ £50 each term)",
+        label: "Own arrangement — less than flexi (2 session days + £50 each term)",
       },
     ],
   };
@@ -2138,8 +2138,8 @@
     var termLabel = reenrolTermDisplayLabel(currentReenrolBillingTerm());
     if (code === "own_term") {
       return termOnly
-        ? "Only if you cannot meet our fixed due dates. On submit you pay a minimum credit now (2 sessions per service) to secure the place, plus this term’s programme and £50 admin. Later terms when you reconfirm."
-        : "Only if you cannot meet our fixed due dates. On submit you pay a minimum credit now (2 sessions per service) to secure your place. Term by term thereafter (+ £50 admin each term). Prefer Bank Transfer / Card on a standard plan if you can meet due dates.";
+        ? "Pay less than a full flexi/term invoice: only 2 session days × each service now on re-enrolment (+ £50 admin) to secure the place. Top up as you go. Paying more than this minimum has no extra fee — surplus stays as credit."
+        : "Pay less than a full flexi/term invoice: only 2 session days × each service now (+ £50 admin each term). Top up as you go. Paying more than asked has no extra fee — surplus stays as credit for the next payment.";
     }
     if (code === "yearly_1off") {
       return "One payment for the full academic year — due by 15 August 2026. Pay from the parent portal by bank transfer (no fee) or Card / Apple Pay (small processing fee). Same programme total. Not available with Direct Payment (GoCardless).";
@@ -2301,9 +2301,9 @@
       var checked = o.code === selected ? " checked" : "";
       var hint =
         o.code === "own_way_flexible"
-          ? "Term only (+ £50 each term). Pay 2 sessions per service now on re-enrolment to secure the place; keep that prepaid. Prefer Bank Transfer / Card / Apple Pay on a standard plan if you can meet due dates."
+          ? "Pay less than a full flexi/term plan: 2 session days × each service due on re-enrolment (+ £50 each term). Paying more than asked has no extra fee — surplus is credit. Prefer a standard Bank Transfer plan if you can meet full due dates."
           : o.code === "bank_transfer"
-            ? "Fixed due dates. Pay each invoice in the parent portal by bank transfer (no fee) or Card / Apple Pay (small fee)."
+            ? "Fixed due dates. Pay each invoice in the parent portal by bank transfer (no fee) or Card / Apple Pay (small fee). Paying more than the invoice has no admin fee — surplus stays as credit."
             : "Automatic Direct Debit once we set up your GoCardless mandate. Choose term, flexi or monthly below. £1.50 per instalment.";
       return (
         '<label class="re-radio re-radio--pay-method">' +
@@ -2500,7 +2500,7 @@
           (cadence === "term_by_term"
             ? "The total above is for the <strong>current term only</strong> (term-by-term). Later terms are billed when you reconfirm. "
             : "The total above covers your confirmed sessions for the year. ") +
-          "<strong>Bank Transfer / Card / Apple Pay</strong> uses fixed due dates (pay each invoice from the parent portal — no admin fee if on time; monthly is not offered here — use Direct Payment for monthly). <strong>Direct Payment (GoCardless)</strong> is collected automatically once we set up your mandate. <strong>Own arrangement</strong> (in the plan list, private funding only) means you pay a 2-session credit <strong>now on re-enrolment</strong> to secure the place (+ £50 / term) — not available with LA Direct Payments funding.";
+          "<strong>Bank Transfer / Card / Apple Pay</strong> uses fixed due dates (pay each invoice from the parent portal — no admin fee if on time; monthly is not offered here — use Direct Payment for monthly). <strong>Direct Payment (GoCardless)</strong> is collected automatically once we set up your mandate. <strong>Own arrangement</strong> (in the plan list) is for paying <strong>less</strong> than a full flexi/term amount — minimum 2 session days now (+ £50 / term). Paying <strong>more</strong> than an invoice asks has no fee; surplus stays as credit — not available with LA Direct Payments funding.";
       }
     }
     syncPaymentSchedulePreview();
@@ -2723,7 +2723,7 @@
         advance_buffer_lines: payCode === "own_way_flexible" ? advanceBuffer.lines : null,
         advance_buffer_note:
           payCode === "own_way_flexible"
-            ? "Pay the minimum credit (two sessions per service) now on re-enrolment to secure the place. Keep that balance topped up; below that, sessions may be paused or moved to a standard payment plan."
+            ? "Minimum prepaid (2 session days × each service) due on re-enrolment — less than a full flexi/term plan, so £50 admin applies. Keep that balance topped up. Paying more than asked has no extra fee; surplus stays as credit for the next payment."
             : null,
         estimated_annual_total: annualTotal,
         estimated_total_with_admin_fee:

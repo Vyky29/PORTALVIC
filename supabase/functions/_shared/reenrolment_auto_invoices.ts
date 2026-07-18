@@ -362,7 +362,7 @@ export function reenrolmentSchedulePlanPhrase(args: {
       return `${n || months} ${units} scheduled for ${termLabel} term (monthly · term-by-term)`;
     }
     if (code === "own_term") {
-      return `${n || 2} ${units} scheduled for ${termLabel} term (own timing · term-by-term, including admin fee; advance credit due on re-enrolment)`;
+      return `${n || 2} ${units} due on re-enrolment for ${termLabel} (minimum 2 session days + admin fee; top-ups as you go)`;
     }
     if (n === 1) return `1 ${unit} scheduled for ${termLabel} term (term-by-term)`;
     if (n > 1) return `${n} ${units} scheduled for ${termLabel} term (term-by-term)`;
@@ -384,7 +384,7 @@ export function reenrolmentSchedulePlanPhrase(args: {
     return `${n || 11} ${units} scheduled (monthly by term)`;
   }
   if (code === "own_term") {
-    return `${n || 6} ${units} scheduled (term by term · own timing, including admin fees; advance credit due on re-enrolment)`;
+    return `${n || 6} ${units} (minimum 2 session days + admin each term on re-enrol / term start; top-ups as you go)`;
   }
   if (n === 1) return `1 ${unit} scheduled`;
   if (n > 1) return `${n} ${units} scheduled`;
@@ -464,6 +464,8 @@ export function buildReenrolmentInstalments(args: {
   ];
 
   if (payCode === "own_way_flexible" || scheduleCode === "own_term") {
+    /* Minimum plan: less than flexi — only 2-session credit + £50 admin due on submit.
+       Full programme is topped up as they go; overpayments become credit (no fee). */
     const todayIso = new Date().toISOString().slice(0, 10);
     const bufferGbp = num(choices.advance_buffer_gbp);
     if (bufferGbp > 0) {
@@ -474,7 +476,7 @@ export function buildReenrolmentInstalments(args: {
         dueDateIso: todayIso,
         instalmentRows: [
           {
-            label: "Minimum prepaid (2 sessions × each service)",
+            label: "Minimum prepaid (2 session days × each service)",
             dueIso: todayIso,
             amountGbp: bufferGbp,
           },
@@ -484,24 +486,11 @@ export function buildReenrolmentInstalments(args: {
     for (const t of term3Meta) {
       if (!includeTerm(t.key)) continue;
       pushTermInvoice(termOut, {
-        term: t.key,
-        label: `${t.label} · programme`,
-        academicYear,
-        dueDateIso: t.due,
-        instalmentRows: [
-          {
-            label: `${t.label} · full programme`,
-            dueIso: t.due,
-            amountGbp: totals[t.key],
-          },
-        ],
-      });
-      pushTermInvoice(termOut, {
         term: null,
         label: `${t.label} · admin fee`,
         academicYear,
-        dueDateIso: t.due,
-        instalmentRows: [{ label: "Admin fee", dueIso: t.due, amountGbp: OWN_FEE }],
+        dueDateIso: todayIso,
+        instalmentRows: [{ label: "Admin fee", dueIso: todayIso, amountGbp: OWN_FEE }],
         isAdminFee: true,
       });
     }

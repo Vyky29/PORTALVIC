@@ -164,7 +164,7 @@ export function buildReenrolmentParentSummary(
       bits.push(
         "Min prepaid £" +
           Number(funding2627.advance_buffer_gbp).toFixed(2) +
-          " (2 sessions × service)",
+          " (2 session days × service; £50 if below flexi)",
       );
     }
     if (bits.length) {
