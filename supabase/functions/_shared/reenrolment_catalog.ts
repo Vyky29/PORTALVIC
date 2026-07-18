@@ -735,9 +735,90 @@ function splitCombinedDurationSegments(part: string): string[] {
   return [part];
 }
 
+/** Split payment-sheet list cells (`A; B` or `A · B`). */
+export function splitPaymentListCell(raw: string): string[] {
+  return String(raw || "")
+    .split(/\s*;\s*|\s*[·•]\s*|\s+\+\s+/)
+    .map((p) => p.trim().replace(/^[;,\s]+|[;,\s]+$/g, ""))
+    .filter(Boolean);
+}
+
+function durationMinutesFromSessionFragment(session: string): number | null {
+  const m = String(session || "").match(
+    /(\d{1,2}(?:[.:]\d{1,2})?)\s*to\s*(\d{1,2}(?:[.:]\d{1,2})?)/i,
+  );
+  if (!m) return null;
+  const se = publishedSlotStartEndMinutes(`${m[1]} to ${m[2]}`);
+  if (!se || !(se.end > se.start)) return null;
+  return se.end - se.start;
+}
+
+function dayFromSessionFragment(session: string): string {
+  const m = String(session || "").match(
+    /\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b/i,
+  );
+  return m ? normalizeDay(m[1]) : "";
+}
+
+function defaultDurationForServiceLabel(svc: string): number {
+  const st = normalizeServiceType(svc);
+  if (st.includes("MULTI") || st.includes("S&C")) return 90;
+  if (st.includes("CLIMB")) return 60;
+  if (st.includes("PHYSICAL") || st.includes("BESPOKE")) return 60;
+  if (st.includes("COUNSEL")) return 45;
+  return 30;
+}
+
+/**
+ * LA/payment sheets often store parallel cells, e.g.
+ *   Services: "Aquatic Activity; Multi-Activity"
+ *   Sessions: "Monday 6 to 6.30; Sunday 12.30 to 2"
+ * Pair them into catalogue-shaped segments (`30' Aquatic Activity (Monday) · …`)
+ * so parseServiceString keeps every service (not just Multi).
+ */
+export function coalescePaymentServiceAndSessions(
+  serviceRaw: string,
+  sessionsRaw: string,
+): string {
+  const services = splitPaymentListCell(serviceRaw);
+  const sessions = splitPaymentListCell(sessionsRaw);
+  if (!services.length) return String(serviceRaw || "").trim();
+
+  const alreadyCatalogue =
+    services.length === 1 &&
+    !/;/.test(String(serviceRaw || "")) &&
+    /^\d+\s*[''′]/.test(String(serviceRaw || "").trim());
+  if (alreadyCatalogue) return String(serviceRaw || "").trim();
+
+  const paired = services.map((svc, i) => {
+    const already = String(svc).trim();
+    if (/^\d+\s*[''′]/.test(already) && /\(/.test(already)) return already;
+
+    const sess =
+      sessions[i] ||
+      (services.length === 1 && sessions.length ? sessions.join("; ") : "");
+    const day =
+      dayFromSessionFragment(sess) ||
+      (() => {
+        const paren = already.match(/\(([^)]+)\)/);
+        return paren ? normalizeDay(paren[1].split(/[/+&·,]/)[0] || "") : "";
+      })();
+    const fromTime = durationMinutesFromSessionFragment(sess);
+    let durationMin = fromTime != null && fromTime > 0
+      ? fromTime
+      : defaultDurationForServiceLabel(already);
+    const name = already.replace(/\s*\([^)]*\)\s*$/, "").trim() || already;
+    if (day) return `${durationMin}' ${name} (${day})`;
+    if (/^\d+\s*[''′]/.test(already)) return already;
+    return `${durationMin}' ${name}`;
+  });
+
+  return paired.join(" · ");
+}
+
 export function parseServiceString(service: string): ParsedSlot[] {
   const parts = String(service || "")
-    .split(/\s*[·•]\s*|\s+\+\s+/)
+    .split(/\s*[·•]\s*|\s+\+\s+|\s*;\s*/)
     .flatMap(splitCombinedDurationSegments)
     .map((p) => p.trim())
     .filter(Boolean);
@@ -908,14 +989,18 @@ function applyPaymentDayHints(
     let out = slot;
     const st = normalizeServiceType(slot.serviceType);
     const isMulti = st.includes("MULTI");
-    if (hint && DAY_ORDER.includes(hint) && hint !== slot.day) {
-      if (isMulti && slot.durationMin >= 60) {
-        out = retargetSlotDay(slot, hint);
-      } else if (!slot.day || !DAY_ORDER.includes(slot.day)) {
-        out = retargetSlotDay(slot, hint);
-      }
+    const hasDay = !!(slot.day && DAY_ORDER.includes(slot.day));
+    // Never overwrite an explicit per-slot day (multi-service sheets pair
+    // "Aquatic … (Monday) · Multi … (Sunday)" — first paren must not win).
+    if (!hasDay && hint && DAY_ORDER.includes(hint)) {
+      out = retargetSlotDay(slot, hint);
     }
-    if (isMulti && slot.durationMin >= 60 && /\(\s*sun\b/i.test(String(serviceRaw || ""))) {
+    if (
+      isMulti &&
+      out.durationMin >= 60 &&
+      !hasDay &&
+      /\(\s*sun\b/i.test(String(serviceRaw || ""))
+    ) {
       out = retargetSlotDay(out, "Sunday");
     }
     out.displayLabel = buildSlotDisplayLabel(out);
@@ -1324,7 +1409,7 @@ function applyCostToDayCentre(
 export function paymentRowToContext(row: Record<string, unknown>) {
   const data = (row.data && typeof row.data === "object" ? row.data : {}) as Record<string, unknown>;
   const sheet = String(row.sheet || "");
-  const service = pickPaymentField(data, [
+  const serviceRaw = pickPaymentField(data, [
     "service",
     "Service",
     "Services",
@@ -1333,6 +1418,18 @@ export function paymentRowToContext(row: Record<string, unknown>) {
     "Programmes",
     "Activity",
   ]) || String(row.service || "").trim();
+  const sessionsRaw = pickPaymentField(data, [
+    "Sessions",
+    "sessions",
+    "Session",
+    "Schedule",
+    "schedule",
+    "Times",
+    "Time",
+    "Time slot",
+    "Time Slot",
+  ]);
+  const service = coalescePaymentServiceAndSessions(serviceRaw, sessionsRaw);
   const clientName = String(
     row.client_name || data.pax || data["Client Name"] || data.clientName || "",
   );
