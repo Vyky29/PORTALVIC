@@ -637,7 +637,6 @@
     mode: "payments",     // payments | orders | participants (same data, different framing)
     statusFilter: "active", // active (re-enrolled) | all | outstanding | paid | notreenrolled
     sheetFilter: "",      // "" = all groups, else sheet name
-    laFilter: "",         // "" = all invoice types, else one of INVOICE_TYPE_OPTIONS
     paidFilter: "",       // "" = all Paid values, else one of PAID_BY_OPTIONS
     query: "",
   };
@@ -1074,7 +1073,6 @@
     var q = state.query;
     return allRows().filter(function (r) {
       if (state.sheetFilter && r.sheet !== state.sheetFilter) return false;
-      if (state.laFilter && invoiceTypeFor(r) !== state.laFilter) return false;
       if (state.paidFilter && paidByFor(r) !== state.paidFilter) return false;
       if (!q) return true;
       if (String(r.client_name || "").toLowerCase().indexOf(q) >= 0) return true;
