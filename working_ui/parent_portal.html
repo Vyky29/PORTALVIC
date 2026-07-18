@@ -554,23 +554,28 @@
     }
     .pp-participant-head {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
-      gap: 10px;
+      gap: 8px;
       min-width: 0;
     }
     .pp-participant-head-start {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 8px;
       min-width: 0;
       flex: 1;
     }
     .pp-participant-head-titles {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2px;
       min-width: 0;
       flex: 1;
     }
-    .pp-hub-menu-btn {
+    .pp-hub-menu-btn,
+    .pp-hub-chrome-btn {
       display: inline-flex;
       flex-direction: column;
       align-items: center;
@@ -579,35 +584,43 @@
       flex-shrink: 0;
       margin: 0;
       padding: 6px 8px;
-      min-width: 44px;
-      min-height: 44px;
+      min-width: 48px;
+      min-height: 48px;
       border: 1px solid var(--line);
       border-radius: 12px;
       background: var(--white);
       color: var(--blue);
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
     }
-    .pp-hub-menu-btn[hidden] { display: none !important; }
-    .pp-hub-menu-btn:focus-visible {
+    .pp-hub-menu-btn[hidden],
+    .pp-hub-chrome-btn[hidden] { display: none !important; }
+    .pp-hub-menu-btn:focus-visible,
+    .pp-hub-chrome-btn:focus-visible {
       outline: 2px solid rgba(45, 132, 179, 0.45);
       outline-offset: 2px;
     }
-    .pp-hub-menu-btn[aria-expanded="true"] {
+    .pp-hub-menu-btn[aria-expanded="true"],
+    .pp-hub-chrome-btn:active {
       border-color: var(--blue);
       background: var(--blueSoft);
     }
-    .pp-hub-menu-btn__ico {
-      width: 20px;
-      height: 20px;
+    .pp-hub-menu-btn__ico,
+    .pp-hub-chrome-btn__ico {
+      width: 18px;
+      height: 18px;
       display: block;
+      flex-shrink: 0;
     }
-    .pp-hub-menu-btn__label {
+    .pp-hub-menu-btn__label,
+    .pp-hub-chrome-btn__label {
       font-size: 10px;
       font-weight: 800;
       letter-spacing: 0.02em;
       line-height: 1;
       color: var(--ink);
+      white-space: nowrap;
     }
     .pp-hub-menu-sheet {
       position: fixed;
@@ -2058,12 +2071,13 @@
     }
     .pp-participant-head-actions {
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       align-items: center;
       justify-content: flex-end;
-      gap: 8px;
+      gap: 6px;
       flex: 0 0 auto;
       min-width: 0;
+      align-self: center;
     }
     .pp-hub-alerts__head {
       display: flex;
@@ -4036,6 +4050,18 @@
     }
     .pp-participant-title .pp-title-inner {
       justify-content: flex-start;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .pp-participant-title .pp-title-ico {
+      flex-shrink: 0;
+    }
+    .pp-participant-title .pp-title-inner > span:last-child {
+      min-width: 0;
+      overflow-wrap: break-word;
+      line-height: 1.2;
+      font-size: 17px;
     }
     .pp-pax-back:hover,
     .pp-pax-back:focus-visible,
@@ -4430,8 +4456,14 @@
           </div>
         </div>
         <div class="pp-participant-head-actions">
-          <button id="ppParticipantSignOut" class="pp-icon-btn" type="button" hidden>Sign out</button>
-          <button id="ppParticipantRefresh" class="pp-icon-btn" type="button" data-contact-id="">Refresh</button>
+          <button id="ppParticipantSignOut" class="pp-hub-chrome-btn" type="button" hidden aria-label="Sign out">
+            <svg class="pp-hub-chrome-btn__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span class="pp-hub-chrome-btn__label">Sign out</span>
+          </button>
+          <button id="ppParticipantRefresh" class="pp-hub-chrome-btn" type="button" data-contact-id="" aria-label="Refresh">
+            <svg class="pp-hub-chrome-btn__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            <span class="pp-hub-chrome-btn__label">Refresh</span>
+          </button>
         </div>
       </div>
       <div id="ppHubMenuSheet" class="pp-hub-menu-sheet" hidden>
