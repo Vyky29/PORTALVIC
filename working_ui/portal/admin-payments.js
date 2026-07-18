@@ -637,7 +637,7 @@
     mode: "payments",     // payments | orders | participants (same data, different framing)
     statusFilter: "active", // active (re-enrolled) | all | outstanding | paid | notreenrolled
     sheetFilter: "",      // "" = all groups, else sheet name
-    paidFilter: "",       // "" = all Paid values, else one of PAID_BY_OPTIONS
+    paidFilterByTerm: {}, // termBucketId -> Paid value ("" = all)
     query: "",
   };
 
@@ -753,7 +753,8 @@
       ".pay-seg button[aria-pressed=true]{background:#2d84b3;color:#fff}",
       ".pay-sel{font:inherit;font-size:13px;padding:9px 11px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#0f172a}",
       ".pay-search{flex:1;min-width:160px;font:inherit;padding:9px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#0f172a}",
-      ".pay-chip-filters{display:flex;flex-direction:column;gap:8px;width:100%;min-width:0;margin:0 0 4px}",
+      ".pay-chip-filters{display:flex;flex-direction:column;gap:8px;width:100%;min-width:0;margin:0 0 12px}",
+      ".pay-chip-filters--term{margin:0 0 14px;padding-bottom:12px;border-bottom:1px solid #eef2f7}",
       ".pay-chip-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}",
       ".pay-chip-row__lab{flex:0 0 auto;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#64748b;margin-right:2px}",
       ".pay-chip{display:inline-flex;align-items:center;justify-content:center;max-width:100%;padding:5px 11px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.25;border:1px solid transparent;overflow-wrap:anywhere;text-align:center}",
@@ -828,7 +829,8 @@
       ".pay-term-acc__sub{display:block;font-size:12px;font-weight:700;color:#64748b;margin-top:2px;overflow-wrap:break-word;letter-spacing:0;text-transform:none}",
       ".pay-term-acc__meta{flex:0 0 auto;text-align:right;font-size:12px;font-weight:700;color:#64748b;min-width:0}",
       ".pay-term-acc__meta b{display:block;font-size:15px;color:#0f172a}",
-      ".pay-term-acc__meta--out{color:#b91c1c}",
+      ".pay-term-acc__meta--out{display:block;color:#b91c1c;margin-top:2px}",
+      ".pay-term-acc__meta--lab{display:block;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:.02em}",
       ".pay-term-acc .pay-tbl-wrap{border-radius:0}",
       ".pay-term-acc .pay-tbl thead th{background:#fff}",
       ".pay-term-acc__sum::after{content:'';width:8px;height:8px;border-right:2px solid #94a3b8;border-bottom:2px solid #94a3b8;transform:rotate(45deg);transition:transform .15s;flex:0 0 auto}",
@@ -882,10 +884,35 @@
     return '<span class="pay-chip ' + invoiceChipClass(label) + '">' + esc(label) + "</span>";
   }
 
-  function filterChipBtn(kind, value, label, active, toneCls) {
+  function filterChipBtn(kind, value, label, active, toneCls, termId) {
     var pressed = active ? "true" : "false";
     var cls = "pay-chip pay-chip--btn " + (active ? toneCls : "pay-chip--muted");
-    return '<button type="button" class="' + cls + '" data-pay-chip-kind="' + esc(kind) + '" data-pay-chip-value="' + esc(value) + '" aria-pressed="' + pressed + '">' + esc(label) + "</button>";
+    var termAttr = termId ? ' data-pay-chip-term="' + esc(termId) + '"' : "";
+    return '<button type="button" class="' + cls + '" data-pay-chip-kind="' + esc(kind) + '" data-pay-chip-value="' + esc(value) + '"' + termAttr + ' aria-pressed="' + pressed + '">' + esc(label) + "</button>";
+  }
+
+  function paidFilterForTerm(termId) {
+    var map = state.paidFilterByTerm || {};
+    return map[termId] || "";
+  }
+
+  function paidFilterChipsHtml(termId) {
+    var cur = paidFilterForTerm(termId);
+    var html = '<div class="pay-chip-filters pay-chip-filters--term" role="group" aria-label="Paid filter for this term">'
+      + '<div class="pay-chip-row">'
+      + '<span class="pay-chip-row__lab">Paid</span>'
+      + filterChipBtn("paid", "", "All", !cur, "pay-chip--muted", termId);
+    PAID_BY_OPTIONS.forEach(function (l) {
+      html += filterChipBtn("paid", l, l, cur === l, paidChipClass(l), termId);
+    });
+    html += "</div></div>";
+    return html;
+  }
+
+  function applyPaidFilter(rows, termId) {
+    var paid = paidFilterForTerm(termId);
+    if (!paid) return rows || [];
+    return (rows || []).filter(function (r) { return paidByFor(r) === paid; });
   }
 
   function allRows() {
@@ -952,7 +979,7 @@
   }
 
   function termAccordionMetaHtml(group) {
-    var rows = group.rows;
+    var rows = group.rows || [];
     var out = 0;
     var outN = 0;
     rows.forEach(function (r) {
@@ -961,8 +988,11 @@
         outN++;
       }
     });
-    var fam = rows.length === 1 ? "family" : "families";
-    var html = '<span class="pay-term-acc__meta"><b>' + rows.length + "</b> " + fam;
+    /* Count = payment lines / orders in this term (not unique families). */
+    var unit = rows.length === 1 ? "order" : "orders";
+    var html = '<span class="pay-term-acc__meta" title="Payment lines in this term (one client can have several)">'
+      + "<b>" + rows.length + "</b>"
+      + '<span class="pay-term-acc__meta--lab">' + unit + "</span>";
     if (outN) html += '<span class="pay-term-acc__meta--out">' + money(out) + " due</span>";
     html += "</span>";
     return html;
@@ -1017,9 +1047,10 @@
     return { billed: billed, paid: paid, outstanding: outstanding, paidN: paidN, outN: outN, naN: naN, grp: grp };
   }
 
-  function termSummaryBlockHtml(scopedRows, visibleRows) {
+  function termSummaryBlockHtml(scopedRows, visibleRows, termId) {
     var t = tallyRows(scopedRows);
     var html = '<div class="pay-term-acc__body">';
+    html += paidFilterChipsHtml(termId);
     html += '<div class="pay-kpis">'
       + kpiCard("billed", "", "Billed", money(t.billed))
       + kpiCard("paid", "pay-kpi--paid", "Paid", money(t.paid))
@@ -1042,23 +1073,27 @@
   }
 
   function termAccordionHtml(visible) {
-    var groups = groupRowsByTermBucket(visible);
-    var scopedByTerm = groupRowsByTermBucket(baseRows());
-    var byId = {};
-    groups.forEach(function (g) { byId[g.bucket.id] = g; });
+    var baseGrouped = groupRowsByTermBucket(baseRows());
     var html = '<div class="pay-term-stack">';
     var any = false;
-    scopedByTerm.forEach(function (sg) {
+    baseGrouped.forEach(function (sg) {
       if (!sg.rows.length) return;
+      var termId = sg.bucket.id;
+      var scoped = applyPaidFilter(sg.rows, termId);
+      if (!scoped.length && paidFilterForTerm(termId)) {
+        /* Still show the term so the Paid filter can be cleared. */
+      } else if (!scoped.length) {
+        return;
+      }
       any = true;
-      var vis = (byId[sg.bucket.id] && byId[sg.bucket.id].rows) || [];
-      html += '<details class="pay-term-acc" open>'
+      var vis = scoped.filter(statusMatch);
+      html += '<details class="pay-term-acc" open data-pay-term="' + esc(termId) + '">'
         + '<summary class="pay-term-acc__sum">'
         + '<span><span class="pay-term-acc__title">' + esc(sg.bucket.title) + "</span>"
         + '<span class="pay-term-acc__sub">' + esc(sg.bucket.subtitle) + "</span></span>"
-        + termAccordionMetaHtml({ rows: sg.rows })
+        + termAccordionMetaHtml({ rows: scoped })
         + "</summary>"
-        + termSummaryBlockHtml(sg.rows, vis)
+        + termSummaryBlockHtml(scoped, vis, termId)
         + "</details>";
     });
     if (!any) {
@@ -1069,11 +1104,10 @@
   }
 
   function baseRows() {
-    // Rows matching the group + search, regardless of status (for KPI totals).
+    // Rows matching the group + search (Paid filter is per-term, applied later).
     var q = state.query;
     return allRows().filter(function (r) {
       if (state.sheetFilter && r.sheet !== state.sheetFilter) return false;
-      if (state.paidFilter && paidByFor(r) !== state.paidFilter) return false;
       if (!q) return true;
       if (String(r.client_name || "").toLowerCase().indexOf(q) >= 0) return true;
       if (String(r.parent_name || "").toLowerCase().indexOf(q) >= 0) return true;
@@ -1364,21 +1398,12 @@
       }
     });
 
-    var paidChipRow = '<div class="pay-chip-row" role="group" aria-label="Paid filter">'
-      + '<span class="pay-chip-row__lab">Paid</span>'
-      + filterChipBtn("paid", "", "All", !state.paidFilter, "pay-chip--muted");
-    PAID_BY_OPTIONS.forEach(function (l) {
-      paidChipRow += filterChipBtn("paid", l, l, state.paidFilter === l, paidChipClass(l));
-    });
-    paidChipRow += "</div>";
-
     html += '<div class="pay-bar">'
       + '<div class="pay-seg" role="group" aria-label="Status filter">'
       + seg("active", "Active (" + (paidN + outN) + ")") + seg("outstanding", "Outstanding (" + outN + ")") + seg("paid", "Paid (" + paidN + ")") + seg("notreenrolled", "Not re-enrolled (" + naN + ")") + seg("all", "All")
       + '</div>'
       + '<select class="pay-sel" id="paySheet">' + sheetOpts + '</select>'
       + '<input type="search" class="pay-search" id="paySearch" placeholder="Search client, parent…" value="' + esc(state.query) + '" />'
-      + '<div class="pay-chip-filters">' + paidChipRow + '</div>'
       + '</div>';
 
     if (state.mode === "participants") {
@@ -1453,35 +1478,42 @@
 
   // Aggregate orders into one row per participant (used by Participants view).
   function participantsTableHtml(rows) {
-    var groups = groupRowsByTermBucket(rows);
+    var baseGrouped = groupRowsByTermBucket(baseRows());
     var totalPeople = 0;
-    groups.forEach(function (g) {
+    var htmlBlocks = [];
+    baseGrouped.forEach(function (g) {
+      if (!g.rows.length) return;
+      var termId = g.bucket.id;
+      var paidScoped = applyPaidFilter(g.rows, termId);
+      var scoped = paidScoped.filter(statusMatch);
+      if (!paidScoped.length && !paidFilterForTerm(termId)) return;
       var keys = {};
-      g.rows.forEach(function (r) {
+      scoped.forEach(function (r) {
         var k = String(r.client_name || "").toLowerCase().trim() || ("id:" + r.id);
         keys[k] = 1;
       });
       totalPeople += Object.keys(keys).length;
+      htmlBlocks.push(
+        '<details class="pay-term-acc" open data-pay-term="' + esc(termId) + '">'
+        + '<summary class="pay-term-acc__sum">'
+        + '<span><span class="pay-term-acc__title">' + esc(g.bucket.title) + "</span>"
+        + '<span class="pay-term-acc__sub">' + esc(g.bucket.subtitle) + "</span></span>"
+        + termAccordionMetaHtml({ rows: paidScoped })
+        + "</summary>"
+        + '<div class="pay-term-acc__body">'
+        + paidFilterChipsHtml(termId)
+        + participantsRowsBodyHtml(scoped)
+        + "</div></details>"
+      );
     });
-    if (!groups.length) {
+    if (!htmlBlocks.length) {
       return '<div class="pay-card"><div class="pay-empty">No participants match this filter.</div></div>';
     }
     var html = '<div class="pay-card-h" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;min-width:0">'
       + "<h3 style=\"margin:0;font-size:15px;color:#0f172a;display:flex;align-items:center;gap:8px\">"
       + icon("clients", 17) + "Participants</h3>"
       + '<span style="font-size:12px;color:#64748b;flex:0 0 auto">' + totalPeople + " shown</span></div>";
-    html += '<div class="pay-term-stack">';
-    groups.forEach(function (g) {
-      html += '<details class="pay-term-acc" open>'
-        + '<summary class="pay-term-acc__sum">'
-        + '<span><span class="pay-term-acc__title">' + esc(g.bucket.title) + "</span>"
-        + '<span class="pay-term-acc__sub">' + esc(g.bucket.subtitle) + "</span></span>"
-        + termAccordionMetaHtml(g)
-        + "</summary>"
-        + participantsRowsBodyHtml(g.rows)
-        + "</details>";
-    });
-    html += "</div>";
+    html += '<div class="pay-term-stack">' + htmlBlocks.join("") + "</div>";
     return html;
   }
 
@@ -1519,7 +1551,11 @@
         ev.stopPropagation();
         var kind = b.getAttribute("data-pay-chip-kind");
         var val = b.getAttribute("data-pay-chip-value") || "";
-        if (kind === "paid") state.paidFilter = val;
+        var termId = b.getAttribute("data-pay-chip-term") || "";
+        if (kind === "paid") {
+          if (!state.paidFilterByTerm) state.paidFilterByTerm = {};
+          if (termId) state.paidFilterByTerm[termId] = val;
+        }
         render();
       });
     });
