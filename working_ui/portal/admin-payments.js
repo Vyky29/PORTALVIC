@@ -44,39 +44,48 @@
     },
   ];
 
+  /* Sheet = billing channel (filter cards). Detail payer type = LA/NHS/FAMILY column. */
   var SHEET_LABELS = {
-    "PARENTS": "Private (parents)",
-    "DIRECT_PAYMENTS": "Funded · Direct Payments",
-    "LA": "Local authority (invoice)",
+    "PARENTS": "Family · Private",
+    "DIRECT_PAYMENTS": "Family · Direct Payments",
+    "LA": "LA / NHS invoice",
     "No re-enroled": "Not re-enrolled",
   };
   var SHEET_ORDER = ["PARENTS", "DIRECT_PAYMENTS", "LA", "No re-enroled"];
   var STATUS_OPTIONS = ["Paid", "Outstanding", "Not paid", "Pending", "Not re-enrolled"];
 
+  /** LA/NHS/FAMILY — only these options (Family ×2, LAs ×1, NHS ×2). */
+  var PAYER_ROUTE = {
+    FAMILY_PRIVATE: "Using Private Funds",
+    FAMILY_DP: "Using Funds from LA (EHCP/Care Package) · Direct Payments",
+    LA_INVOICE: "Local Authority (invoice)",
+    NHS_INVOICE: "NHS (invoice)",
+    NEN: "NEN",
+  };
+  var PAYER_ROUTE_OPTIONS = [
+    PAYER_ROUTE.FAMILY_PRIVATE,
+    PAYER_ROUTE.FAMILY_DP,
+    PAYER_ROUTE.LA_INVOICE,
+    PAYER_ROUTE.NHS_INVOICE,
+    PAYER_ROUTE.NEN,
+  ];
+
   /** Canonical selectable values for payment edit fields (keeps wording consistent). */
   var SELECT_CATALOG = {
     sheet: [
-      { value: "PARENTS", label: "Private (parents)" },
-      { value: "DIRECT_PAYMENTS", label: "Funded · Direct Payments" },
-      { value: "LA", label: "Local authority (invoice)" },
+      { value: "PARENTS", label: "Family · Private" },
+      { value: "DIRECT_PAYMENTS", label: "Family · Direct Payments" },
+      { value: "LA", label: "LA / NHS invoice" },
       { value: "No re-enroled", label: "Not re-enrolled" },
     ],
-    funding: [
-      "Private (parents)",
-      "Funded · Direct Payments",
-      "Local authority · Ealing",
-      "Local authority · H&F",
-      "Local authority · Kensington & Chelsea",
-      "Local authority · Westminster",
-      "Local authority · Brent",
-      "NHS · SBS",
-      "NHS · ILA (People Places)",
-    ],
+    "la/nhs/family": PAYER_ROUTE_OPTIONS.slice(),
+    funding: PAYER_ROUTE_OPTIONS.slice(),
     "funding origin": [
       "Private",
       "Parent Direct Payments",
       "LA-funded",
       "NHS-funded",
+      "NEN",
     ],
     "payment method": [
       "Bank Transfer (fixed due dates)",
@@ -99,18 +108,10 @@
       "Includes 20% VAT (in price)",
       "PF / VAT 20%",
     ],
-    funder: [
-      "Ealing",
-      "H&F (Hammersmith & Fulham)",
-      "Kensington & Chelsea",
-      "Westminster",
-      "Brent",
-      "NHS · SBS",
-      "NHS · ILA",
-    ],
+    funder: PAYER_ROUTE_OPTIONS.slice(),
     payer: [
-      "Parent / family (private funds)",
-      "Parent · Direct Payments (LA money)",
+      PAYER_ROUTE.FAMILY_PRIVATE,
+      PAYER_ROUTE.FAMILY_DP,
       "Local authority / NHS (pays direct)",
     ],
     term: [
@@ -457,6 +458,7 @@
 
   function selectOptionsFor(fieldName, currentValue) {
     var key = normalizeSelectKey(fieldName);
+    if (key === "la" || key === "la nhs family" || key === "funder") key = "la/nhs/family";
     var list = SELECT_CATALOG[key];
     if (!list || !list.length) return null;
     var v = currentValue == null ? "" : String(currentValue).trim();
@@ -547,7 +549,7 @@
     mode: "payments",     // payments | orders | participants (same data, different framing)
     statusFilter: "active", // active (re-enrolled) | all | outstanding | paid | notreenrolled
     sheetFilter: "",      // "" = all groups, else sheet name
-    laFilter: "",         // "" = all LAs, else normalized LA label (Ealing, LBHF (H&F)…)
+    laFilter: "",         // "" = all payer routes, else one of PAYER_ROUTE_OPTIONS
     query: "",
   };
 
@@ -830,20 +832,19 @@
     var colClient = state.mode === "orders" ? "Participant" : "Client";
     if (!rows.length) {
       return '<div class="pay-tbl-wrap"><table class="pay-tbl"><tbody>'
-        + '<tr><td colspan="8" class="pay-empty">No records in this term.</td></tr></tbody></table></div>';
+        + '<tr><td colspan="7" class="pay-empty">No records in this term.</td></tr></tbody></table></div>';
     }
     var html = '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>' + colClient
-      + '</th><th>Group</th><th>Service</th><th>Term</th><th>LA</th><th>Parent</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
+      + '</th><th>LA/NHS/FAMILY</th><th>Service</th><th>Term</th><th>Parent</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
     rows.forEach(function (r) {
       var attr = r._synthetic
         ? ' data-pay-reenrol="' + esc(r._contactId || r.id) + '"'
         : ' data-pay-id="' + esc(r.id) + '"';
       html += "<tr" + attr + ">"
         + '<td class="pay-name">' + esc(r.client_name || "—") + "</td>"
-        + "<td>" + esc(labelFor(r.sheet)) + "</td>"
+        + "<td>" + esc(payerRouteFor(r) || "—") + "</td>"
         + "<td>" + esc(serviceFor(r)) + "</td>"
         + "<td>" + esc(termFor(r)) + "</td>"
-        + "<td>" + esc(laFor(r) || "—") + "</td>"
         + "<td>" + esc(parentPersonFor(r)) + "</td>"
         + '<td class="num">' + money(r.amount) + "</td>"
         + "<td>" + pillFor(r) + "</td></tr>";
@@ -931,7 +932,7 @@
     var q = state.query;
     return allRows().filter(function (r) {
       if (state.sheetFilter && r.sheet !== state.sheetFilter) return false;
-      if (state.laFilter && laFor(r) !== state.laFilter) return false;
+      if (state.laFilter && payerRouteFor(r) !== state.laFilter) return false;
       if (!q) return true;
       if (String(r.client_name || "").toLowerCase().indexOf(q) >= 0) return true;
       if (String(r.parent_name || "").toLowerCase().indexOf(q) >= 0) return true;
@@ -968,29 +969,70 @@
     return "SUMMER TERM 25/26";
   }
 
-  // Local authority / funder for the row, normalized to a short label so it can
-  // be its own column and a filter (Ealing, LBHF (H&F), NHS · SBS, NHS · ILA).
-  // Private (parents) rows have no LA -> "". Direct Payments show a short tag.
-  function laFor(r) {
-    if (r && r.sheet === "DIRECT_PAYMENTS") return "Direct Payments";
+  // LA/NHS/FAMILY payer route — only the five canonical options.
+  function payerRouteFor(r) {
+    if (!r) return "";
+    var sheet = String(r.sheet || "").trim();
     var d = r.data || {};
-    var raw = String(d.Funder || r._fundingLabel || "").trim();
+    var raw = String(
+      d["LA/NHS/FAMILY"] || d.Funder || d.Funding || r._fundingLabel || ""
+    ).trim();
     if (!raw) {
       var pn = String(r.parent_name || "");
-      var ix = pn.indexOf("\u00b7"); // "·"
+      var ix = pn.indexOf("\u00b7");
       if (ix > 0) raw = pn.slice(0, ix).trim();
     }
-    if (!raw) return "";
-    if (isParentDirectPaymentsLabel(raw)) return "Direct Payments";
-    if (/hammersmith|h&f|lbhf/i.test(raw)) return "LBHF (H&F)";
-    if (/ealing/i.test(raw)) return "Ealing";
-    if (/nhs/i.test(raw) && /sbs/i.test(raw)) return "NHS \u00b7 SBS";
-    if (/nhs/i.test(raw) && /ila/i.test(raw)) return "NHS \u00b7 ILA";
-    if (/nhs/i.test(raw)) return "NHS";
-    return raw;
+    var origin = String(d["Funding origin"] || d["Funding Origin"] || "").trim();
+    var hint = String(r._paymentMethodHint || "").toLowerCase();
+    var blob = (raw + " " + origin + " " + sheet).toLowerCase();
+
+    // Already one of the five labels
+    for (var i = 0; i < PAYER_ROUTE_OPTIONS.length; i++) {
+      if (raw === PAYER_ROUTE_OPTIONS[i]) return raw;
+    }
+
+    // NEN
+    if (/\bnen\b/i.test(raw) || /\bnen\b/.test(blob)) return PAYER_ROUTE.NEN;
+
+    // Family · Direct Payments (parent-held LA money)
+    if (
+      sheet === "DIRECT_PAYMENTS" ||
+      isParentDirectPaymentsLabel(raw) ||
+      isParentDirectPaymentsLabel(origin) ||
+      (/direct payments?/i.test(blob) && !/invoice|pays direct|nhs invoice/i.test(blob))
+    ) {
+      return PAYER_ROUTE.FAMILY_DP;
+    }
+
+    // Family · Private
+    if (
+      sheet === "PARENTS" ||
+      /using private funds|private \(parents\)|private funds|^private$/i.test(raw) ||
+      (/^private$/i.test(origin) && hint !== "la_funded")
+    ) {
+      return PAYER_ROUTE.FAMILY_PRIVATE;
+    }
+
+    // NHS (invoice)
+    if (/\bnhs\b/i.test(raw) || /\bnhs\b/.test(blob)) return PAYER_ROUTE.NHS_INVOICE;
+
+    // Local Authority (invoice)
+    if (
+      sheet === "LA" ||
+      hint === "la_funded" ||
+      /la funded|local authority|la invoice|care in finance|\bcwd\b/i.test(blob) ||
+      isLaInvoiceFundingLabel(raw)
+    ) {
+      return PAYER_ROUTE.LA_INVOICE;
+    }
+
+    if (sheet === "DIRECT_PAYMENTS") return PAYER_ROUTE.FAMILY_DP;
+    if (sheet === "LA") return PAYER_ROUTE.LA_INVOICE;
+    if (sheet === "PARENTS") return PAYER_ROUTE.FAMILY_PRIVATE;
+    return "";
   }
 
-  // Parent / contact name only (strip the "Funder ·" prefix now shown in the LA column).
+  // Parent / contact name only (strip any "Funder ·" prefix).
   function parentPersonFor(r) {
     var pn = String(r.parent_name || "").trim();
     var ix = pn.indexOf("\u00b7"); // "·"
@@ -1014,11 +1056,8 @@
         sheetOpts += '<option value="' + esc(s) + '"' + (state.sheetFilter === s ? " selected" : "") + ">" + esc(labelFor(s)) + "</option>";
       }
     });
-    var laVals = {};
-    allRows().forEach(function (r) { var l = laFor(r); if (l) laVals[l] = 1; });
-    var laList = Object.keys(laVals).sort();
-    var laOpts = '<option value="">All LAs</option>';
-    laList.forEach(function (l) {
+    var laOpts = '<option value="">All LA/NHS/FAMILY</option>';
+    PAYER_ROUTE_OPTIONS.forEach(function (l) {
       laOpts += '<option value="' + esc(l) + '"' + (state.laFilter === l ? " selected" : "") + ">" + esc(l) + "</option>";
     });
 
@@ -1027,7 +1066,7 @@
       + seg("active", "Active (" + (paidN + outN) + ")") + seg("outstanding", "Outstanding (" + outN + ")") + seg("paid", "Paid (" + paidN + ")") + seg("notreenrolled", "Not re-enrolled (" + naN + ")") + seg("all", "All")
       + '</div>'
       + '<select class="pay-sel" id="paySheet">' + sheetOpts + '</select>'
-      + (laList.length ? '<select class="pay-sel" id="payLA" aria-label="Local authority filter">' + laOpts + '</select>' : '')
+      + '<select class="pay-sel" id="payLA" aria-label="LA/NHS/FAMILY filter">' + laOpts + '</select>'
       + '<input type="search" class="pay-search" id="paySearch" placeholder="Search client, parent…" value="' + esc(state.query) + '" />'
       + '</div>';
 
@@ -1069,7 +1108,7 @@
       return '<div class="pay-tbl-wrap"><table class="pay-tbl"><tbody>'
         + '<tr><td colspan="6" class="pay-empty">No participants in this term.</td></tr></tbody></table></div>';
     }
-    var html = '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>Participant</th><th>Group</th><th>Service(s)</th><th class="num">Orders</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
+    var html = '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>Client</th><th>LA/NHS/FAMILY</th><th>Service(s)</th><th class="num">Orders</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
     people.forEach(function (g) {
       var svcList = Object.keys(g.services);
       var svcTxt = svcList.length ? svcList.join(" · ") : "—";
@@ -1087,7 +1126,7 @@
       }
       html += "<tr " + rowAttr + ">"
         + '<td class="pay-name">' + esc(g.name) + "</td>"
-        + "<td>" + esc(labelFor(g.sheet)) + "</td>"
+        + "<td>" + esc(payerRouteFor(first) || "—") + "</td>"
         + "<td>" + esc(svcTxt) + "</td>"
         + '<td class="num">' + g.orders.length + "</td>"
         + '<td class="num">' + money(g.total) + "</td>"
@@ -1386,24 +1425,34 @@
     });
     /* Keep Funding / Payer / origin aligned with Group so wording stays consistent. */
     if (patch.sheet === "PARENTS") {
-      newData.Funding = "Private (parents)";
+      newData.Funding = PAYER_ROUTE.FAMILY_PRIVATE;
+      newData.Funder = PAYER_ROUTE.FAMILY_PRIVATE;
+      newData["LA/NHS/FAMILY"] = PAYER_ROUTE.FAMILY_PRIVATE;
       if (!newData.Payer || /local authority|nhs \(pays|direct payments/i.test(String(newData.Payer))) {
-        newData.Payer = "Parent / family (private funds)";
+        newData.Payer = PAYER_ROUTE.FAMILY_PRIVATE;
       }
       newData["Funding origin"] = "Private";
       if (newData["Funding Origin"] != null) delete newData["Funding Origin"];
     } else if (patch.sheet === "DIRECT_PAYMENTS") {
-      newData.Funding = "Funded · Direct Payments";
-      newData.Payer = "Parent · Direct Payments (LA money)";
+      newData.Funding = PAYER_ROUTE.FAMILY_DP;
+      newData.Funder = PAYER_ROUTE.FAMILY_DP;
+      newData["LA/NHS/FAMILY"] = PAYER_ROUTE.FAMILY_DP;
+      newData.Payer = PAYER_ROUTE.FAMILY_DP;
       newData["Funding origin"] = "Parent Direct Payments";
       if (newData["Funding Origin"] != null) delete newData["Funding Origin"];
       if (!newData.VAT || /20%|pf|0\.2/i.test(String(newData.VAT))) newData.VAT = "Exempt";
     } else if (patch.sheet === "LA") {
-      if (!newData.Funding || /private|direct payments/i.test(String(newData.Funding))) {
-        newData.Funding = "Local authority · H&F";
+      var route = String(newData["LA/NHS/FAMILY"] || newData.Funder || newData.Funding || "").trim();
+      if (route !== PAYER_ROUTE.NHS_INVOICE && route !== PAYER_ROUTE.NEN && route !== PAYER_ROUTE.LA_INVOICE) {
+        route = /\bnen\b/i.test(route) ? PAYER_ROUTE.NEN
+          : /\bnhs\b/i.test(route) ? PAYER_ROUTE.NHS_INVOICE
+          : PAYER_ROUTE.LA_INVOICE;
       }
+      newData.Funding = route;
+      newData.Funder = route;
+      newData["LA/NHS/FAMILY"] = route;
       newData.Payer = "Local authority / NHS (pays direct)";
-      newData["Funding origin"] = "LA-funded";
+      newData["Funding origin"] = route === PAYER_ROUTE.NEN || route === PAYER_ROUTE.NHS_INVOICE ? "NHS-funded" : "LA-funded";
       if (newData["Funding Origin"] != null) delete newData["Funding Origin"];
       if (!newData.VAT || /20%|pf|0\.2/i.test(String(newData.VAT))) newData.VAT = "Exempt";
     }
