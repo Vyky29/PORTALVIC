@@ -171,6 +171,8 @@
 
   function isThreadUnread(t) {
     if (!t || t.channel !== "whatsapp" || !t.hasInbound || !t.lastInboundAt) return false;
+    // Staff already messaged after the parent's last reply — not waiting on you.
+    if (t.lastOutboundAt && String(t.lastOutboundAt) >= String(t.lastInboundAt)) return false;
     var seen = readSeenMap()[t.key] || "";
     return String(t.lastInboundAt) > seen;
   }
@@ -1965,6 +1967,7 @@
               : "Sent.";
         cfg.toast(msg, "ok");
         state.stickToBottom = true;
+        markThreadSeen(t.key, new Date().toISOString());
         if (ta) ta.value = "";
         clearComposerAttach();
         state.composerSig = "";
@@ -2319,17 +2322,36 @@
         .order("created_at", { ascending: false })
         .limit(FETCH_LIMIT);
       if (res.error) return 0;
-      var lastByPhone = {};
+      var lastInboundByPhone = {};
       (res.data || []).forEach(function (r) {
         var pk = phoneDigits(r && r.from_phone);
         if (!pk) return;
         var at = String((r && r.created_at) || "");
-        if (!lastByPhone[pk] || at > lastByPhone[pk]) lastByPhone[pk] = at;
+        if (!lastInboundByPhone[pk] || at > lastInboundByPhone[pk]) lastInboundByPhone[pk] = at;
       });
+      var lastOutboundByPhone = {};
+      var outRes = await client
+        .from("portal_parent_notify_log")
+        .select("parent_phone, created_at, channel, whatsapp_status")
+        .order("created_at", { ascending: false })
+        .limit(FETCH_LIMIT);
+      if (!outRes.error) {
+        (outRes.data || []).forEach(function (r) {
+          var ch = String((r && r.channel) || "").toLowerCase();
+          if (ch !== "whatsapp" && ch !== "both") return;
+          var pk = phoneDigits(r && r.parent_phone);
+          if (!pk) return;
+          var at = String((r && r.created_at) || "");
+          if (!lastOutboundByPhone[pk] || at > lastOutboundByPhone[pk]) lastOutboundByPhone[pk] = at;
+        });
+      }
       var seen = readSeenMap();
       var n = 0;
-      Object.keys(lastByPhone).forEach(function (pk) {
-        if (String(lastByPhone[pk]) > String(seen[pk] || "")) n += 1;
+      Object.keys(lastInboundByPhone).forEach(function (pk) {
+        var inn = String(lastInboundByPhone[pk] || "");
+        var out = String(lastOutboundByPhone[pk] || "");
+        if (out && out >= inn) return;
+        if (inn > String(seen[pk] || "")) n += 1;
       });
       return n;
     } catch (_e) {
