@@ -1465,7 +1465,10 @@
     return {
       full: pName,
       first: first,
+      /** Personalized hub name — used on Back buttons from subviews. */
       text: first + "'s Hub",
+      /** Chrome title on the hub itself — avoid repeating the name above the profile card. */
+      pageTitle: "Hub",
     };
   }
 
