@@ -362,7 +362,7 @@ export async function resolveParticipantInvoiceFunding(
         fundNorm ||
         ctx.fundingSource ||
         clean(data["Funding"], 120) ||
-        (finalVat === "exempt" ? "LA / NHS" : "Private"),
+        (finalVat === "exempt" ? "Local Authority" : "Private"),
       clientId: pickClientId(data, clean(paymentRow.client_key, 80) || contactId),
       po: pickPo(data),
       source: "client_payments",

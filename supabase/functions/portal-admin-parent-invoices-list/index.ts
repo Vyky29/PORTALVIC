@@ -564,7 +564,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       buffer_status: bufferByContact.get(cid) || null,
       funding_category: fundingCategory,
       funding_category_label: invoiceFundingCategoryLabel(fundingCategory),
-      funding_label: funding.fundingLabel || "LA / NHS",
+      funding_label: funding.fundingLabel || "Local Authority",
       payment_sheet: pack.sheet || "LA",
       ...booked,
       booked_slots: pack.slots || [],

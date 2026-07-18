@@ -526,10 +526,68 @@
     return false;
   }
 
+  /** Generic umbrella from contacts / API — not a real NHS funder. */
+  function isGenericLaNhsUmbrella(raw) {
+    var low = String(raw || "")
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!low) return false;
+    return /^(la\s*\/\s*nhs|la\/nhs|la\s*&\s*nhs)(\s*(funds?|invoice|exempt))?$/.test(low)
+      || low === "la / nhs funds"
+      || low === "la/nhs funds";
+  }
+
+  /** Explicit NHS / SBS / ILA / NEN funder (not the "LA / NHS" umbrella). */
+  function isExplicitNhsFunder(raw) {
+    var low = String(raw || "").toLowerCase();
+    if (!low || isGenericLaNhsUmbrella(low)) return false;
+    if (/funded by nhs|nhs \(exempt|nhs \(invoice|nhs invoice|\bnnen\b|\bnen\b|\bsbs\b|\bila\b|people places/.test(low)) {
+      return true;
+    }
+    if (/\bnhs\s*[·•\-]/.test(low)) return true;
+    if (/\bnhs\b/.test(low) && !/\blocal authority\b/.test(low)) return true;
+    return false;
+  }
+
+  /**
+   * Known day-centre / bespoke NHS clients (user rule).
+   * Tinashe is day-aware: Fridays NHS, Mon/Wed LA.
+   */
+  function curatedNhsRouteForParticipant(r) {
+    var name = String((r && r.client_name) || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    if (!name) return "";
+    if (/^ikram\b/.test(name)) return "NHS_INVOICE";
+    if (/^emanuel\b|^emmanuel\b/.test(name)) return "NHS_INVOICE";
+    if (/^timi\b/.test(name)) return "NHS_INVOICE";
+    if (/^fadi\b/.test(name)) return "NHS_INVOICE";
+    if (!/^tinashe\b/.test(name)) return "";
+    var d = (r && r.data) || {};
+    var funder = String(d.Funder || d.Funding || "").toLowerCase();
+    var paid = String(d.Paid || d["Paid by"] || "").toLowerCase();
+    var parent = String(r.parent_name || "").toLowerCase();
+    var svc = String(rawServiceText(r) || "").toLowerCase();
+    if (
+      isExplicitNhsFunder(funder)
+      || isExplicitNhsFunder(paid)
+      || /nhs\s*[·•]|nhs invoice|people places|\bila\b/.test(funder + " " + parent)
+    ) {
+      return "NHS_INVOICE";
+    }
+    if (/ealing|cwd|direct payment|funded by la|local authority \(exempt/.test(funder + " " + paid + " " + parent)) {
+      return "LA_INVOICE";
+    }
+    var hasFri = /\bfri/.test(svc);
+    var hasMonWed = /\bmon|\bwed/.test(svc);
+    if (hasFri && !hasMonWed) return "NHS_INVOICE";
+    if (hasMonWed && !hasFri) return "LA_INVOICE";
+    return "LA_INVOICE";
+  }
+
   /** LA/NHS invoices the club (Care in Finance, CWD, BACS, borough / NHS PO). */
   function isLaInvoiceFundingLabel(raw) {
     var low = String(raw || "").toLowerCase();
-    if (!low || isParentDirectPaymentsLabel(low)) return false;
+    if (!low || isParentDirectPaymentsLabel(low) || isGenericLaNhsUmbrella(low)) return false;
     return /ealing|hammer|fulham|h\s*&\s*f|lbhf|kensington|rbkc|westminster|brent|nhs|care in finance|\bcwd\b|la invoice|local authority|purchase order|\bpo\b/.test(low);
   }
 
@@ -1165,14 +1223,21 @@
   /**
    * Internal route: FAMILY_PRIVATE | FAMILY_DP | LA_INVOICE | NHS_INVOICE | NEN.
    * Display uses paidByFor() + invoiceTypeFor().
+   *
+   * Important: contact/API umbrella "LA / NHS" is NOT NHS — default those to LA
+   * unless the funder is explicitly NHS/SBS/ILA, or the participant is on the
+   * curated NHS list (Ikram, Emanuel, Timi, Fadi; Tinashe Fridays).
    */
   function payerRouteFor(r) {
     if (!r) return "";
     var sheet = String(r.sheet || "").trim();
     var d = r.data || {};
+    var fundingLabel = String(r._fundingLabel || "").trim();
+    if (isGenericLaNhsUmbrella(fundingLabel)) fundingLabel = "";
     var raw = String(
-      d["Invoice type"] || d["LA/NHS/FAMILY"] || d.Funder || d.Funding || r._fundingLabel || ""
+      d["Invoice type"] || d["LA/NHS/FAMILY"] || d.Funder || d.Funding || fundingLabel || ""
     ).trim();
+    if (isGenericLaNhsUmbrella(raw)) raw = String(d["Invoice type"] || d.Paid || "").trim() || "";
     var paidRaw = String(d.Paid || d["Paid by"] || "").trim();
     if (!raw && !paidRaw) {
       var pn = String(r.parent_name || "");
@@ -1181,14 +1246,22 @@
     }
     var origin = String(d["Funding origin"] || d["Funding Origin"] || "").trim();
     var hint = String(r._paymentMethodHint || "").toLowerCase();
-    var blob = (raw + " " + paidRaw + " " + origin + " " + sheet).toLowerCase();
+    var blob = (raw + " " + paidRaw + " " + origin + " " + sheet + " " + String(r.parent_name || "")).toLowerCase();
 
-    if (raw === INVOICE_TYPE.NHS_EXEMPT || raw === PAYER_ROUTE.NHS_INVOICE || raw === "NHS (invoice)") {
+    if (paidRaw === PAID_BY.FUNDED_BY_NHS || raw === INVOICE_TYPE.NHS_EXEMPT || raw === PAYER_ROUTE.NHS_INVOICE || raw === "NHS (invoice)") {
       return "NHS_INVOICE";
     }
-    if (raw === INVOICE_TYPE.LA_EXEMPT || raw === PAYER_ROUTE.LA_INVOICE || raw === "Local Authority (invoice)") {
+
+    /* Curated NHS names beat a stale "Funded by LA" Paid chip (e.g. Timi). */
+    var curated = curatedNhsRouteForParticipant(r);
+    if (curated === "NHS_INVOICE") return "NHS_INVOICE";
+
+    if (paidRaw === PAID_BY.FUNDED_BY_LA || raw === INVOICE_TYPE.LA_EXEMPT || raw === PAYER_ROUTE.LA_INVOICE || raw === "Local Authority (invoice)") {
       return "LA_INVOICE";
     }
+
+    if (curated) return curated;
+
     if (
       raw === INVOICE_TYPE.PARENT_EXEMPT ||
       paidRaw === PAID_BY.FUNDS_FROM_LA ||
@@ -1196,7 +1269,7 @@
       /using funds from la/i.test(raw) ||
       /ehcp|care package/i.test(raw)
     ) {
-      if (!/\bnhs\b/i.test(blob) && !/local authority \(exempt|local authority \(invoice/i.test(blob)) {
+      if (!isExplicitNhsFunder(blob) && !/local authority \(exempt|local authority \(invoice/i.test(blob)) {
         return "FAMILY_DP";
       }
     }
@@ -1227,13 +1300,17 @@
       return "FAMILY_PRIVATE";
     }
 
-    if (/\bnhs\b/i.test(raw) || /\bnhs\b/.test(blob)) return "NHS_INVOICE";
+    /* Explicit NHS before LA sheet default — never treat umbrella "LA / NHS" as NHS. */
+    if (isExplicitNhsFunder(raw) || isExplicitNhsFunder(paidRaw) || isExplicitNhsFunder(origin) || isExplicitNhsFunder(blob)) {
+      return "NHS_INVOICE";
+    }
 
     if (
       sheet === "LA" ||
       hint === "la_funded" ||
       /la funded|local authority|la invoice|care in finance|\bcwd\b/i.test(blob) ||
-      isLaInvoiceFundingLabel(raw)
+      isLaInvoiceFundingLabel(raw) ||
+      isGenericLaNhsUmbrella(String(r._fundingLabel || ""))
     ) {
       return "LA_INVOICE";
     }
@@ -1333,7 +1410,10 @@
     var byName = {};
     var order = [];
     rows.forEach(function (r) {
-      var key = String(r.client_name || "").toLowerCase().trim() || ("id:" + r.id);
+      var nameKey = String(r.client_name || "").toLowerCase().trim() || ("id:" + r.id);
+      /* Keep LA vs NHS orders separate (Tinashe Mon/Wed vs Fri). */
+      var route = paidByFor(r) || invoiceTypeFor(r) || "x";
+      var key = nameKey + "|" + route;
       if (!byName[key]) {
         byName[key] = { name: r.client_name || "—", sheet: r.sheet, services: {}, orders: [], total: 0, anyOut: false };
         order.push(key);
@@ -1700,7 +1780,9 @@
     } else if (patch.sheet === "LA") {
       var route = String(newData["Invoice type"] || newData.Funder || newData.Funding || "").trim();
       if (route !== INVOICE_TYPE.NHS_EXEMPT && route !== INVOICE_TYPE.LA_EXEMPT) {
-        route = /\bnen\b|\bnhs\b/i.test(route) ? INVOICE_TYPE.NHS_EXEMPT : INVOICE_TYPE.LA_EXEMPT;
+        route = isExplicitNhsFunder(route) || /\bnen\b/i.test(route)
+          ? INVOICE_TYPE.NHS_EXEMPT
+          : INVOICE_TYPE.LA_EXEMPT;
       }
       delete newData.Paid;
       if (route === INVOICE_TYPE.NHS_EXEMPT) newData.Paid = PAID_BY.FUNDED_BY_NHS;
@@ -1821,16 +1903,75 @@
       if (name) byChildName[name] = info;
     });
 
+    /* Index LA payment funders by normalized client name for autumn enrichment. */
+    var payFunderByNorm = {};
+    (payments || []).forEach(function (r) {
+      if (String(r.sheet || "").toUpperCase() !== "LA") return;
+      var nk = String(r.client_name || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+      if (!nk) return;
+      var fund = fundingHintFromPaymentData(r.data) || String((r.data && r.data.Paid) || "").trim();
+      if (!fund || isGenericLaNhsUmbrella(fund)) return;
+      if (!payFunderByNorm[nk]) payFunderByNorm[nk] = [];
+      payFunderByNorm[nk].push({ fund: fund, row: r });
+    });
+
+    function enrichFromPayments(r) {
+      if (r.data && (r.data.Funder || r.data.Paid || r.data["Invoice type"])) return;
+      var nk = String(r.client_name || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+      if (!nk) return;
+      var hits = payFunderByNorm[nk];
+      if (!hits) {
+        var first = nk.split(" ")[0];
+        Object.keys(payFunderByNorm).forEach(function (k) {
+          if (hits) return;
+          if (k === nk || k.indexOf(first) === 0 || nk.indexOf(k) === 0) hits = payFunderByNorm[k];
+        });
+      }
+      if (!hits || !hits.length) return;
+      /* Prefer NHS hit for curated NHS names; else first. */
+      var pick = hits[0];
+      var curated = curatedNhsRouteForParticipant(r);
+      if (curated === "NHS_INVOICE") {
+        for (var i = 0; i < hits.length; i++) {
+          if (isExplicitNhsFunder(hits[i].fund) || /funded by nhs|nhs \(exempt/i.test(hits[i].fund)) {
+            pick = hits[i];
+            break;
+          }
+        }
+      }
+      r._fundingLabel = pick.fund;
+      if (!r.data) r.data = {};
+      if (!r.data.Funder) r.data.Funder = pick.fund;
+      var src = pick.row && pick.row.data;
+      if (src) {
+        if (src.Paid && !r.data.Paid) r.data.Paid = src.Paid;
+        if (src["Invoice type"] && !r.data["Invoice type"]) r.data["Invoice type"] = src["Invoice type"];
+        if (src.Services && !r.data.Services) r.data.Services = src.Services;
+        if (pick.row.parent_name && !r.parent_name) r.parent_name = pick.row.parent_name;
+      }
+    }
+
     (reenrol || []).forEach(function (r) {
+      enrichFromPayments(r);
       var cid = String(r._contactId || "").trim();
       var info = cid ? fundingByContact[cid] : null;
-      var label = (info && info.funding_label) || r._fundingLabel || "";
+      /* Prefer invoice / row funder over contact umbrella "LA / NHS". */
+      var fromRow = String(r._fundingLabel || "").trim();
+      var fromContact = String((info && info.funding_label) || "").trim();
+      var label = fromRow;
+      if (!label || isGenericLaNhsUmbrella(label)) {
+        if (fromContact && !isGenericLaNhsUmbrella(fromContact)) label = fromContact;
+        else if (fromRow) label = fromRow;
+        else label = fromContact;
+      }
+      if (isGenericLaNhsUmbrella(label)) label = "";
       r._fundingLabel = label;
+      if (label && r.data && !r.data.Funder) r.data.Funder = label;
       r.sheet = classifyPayGroup({
         sheet: r.sheet,
         payment_method_hint: r._paymentMethodHint,
         vat_mode: r._vatMode,
-        funding_label: label,
+        funding_label: label || "Local Authority",
         _reenrol: true,
       });
     });
@@ -1839,7 +1980,13 @@
       var fromData = fundingHintFromPaymentData(r.data);
       var nameKey = String(r.client_name || "").trim().toLowerCase();
       var info = nameKey ? byChildName[nameKey] : null;
-      var label = fromData || (info && info.funding_label) || r._fundingLabel || "";
+      var fromContact = String((info && info.funding_label) || "").trim();
+      var label = fromData || "";
+      if (!label || isGenericLaNhsUmbrella(label)) {
+        if (fromContact && !isGenericLaNhsUmbrella(fromContact)) label = fromContact;
+        else label = fromData || fromContact || r._fundingLabel || "";
+      }
+      if (isGenericLaNhsUmbrella(label)) label = "";
       r._fundingLabel = label;
       r.sheet = classifyPayGroup({
         sheet: r.sheet,
