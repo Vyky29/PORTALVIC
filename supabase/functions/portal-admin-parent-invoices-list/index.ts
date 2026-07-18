@@ -15,11 +15,84 @@ import {
   invoiceFundingCategoryLabel,
   resolveParticipantInvoiceFunding,
 } from "../_shared/portal_invoice_funding.ts";
+import {
+  namesMatch,
+  paymentRowToContext,
+  REENROL_ACADEMIC_YEAR,
+} from "../_shared/reenrolment_catalog.ts";
 
 const BUCKET = "documents";
+const CURRENT_BILLING_TERM = "autumn";
 
 function clean(v: unknown, max = 200): string {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function num(v: unknown): number {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+function termLabel(term: string): string {
+  const t = clean(term, 20).toLowerCase();
+  if (t === "autumn") return "Autumn 26/27";
+  if (t === "spring") return "Spring 27";
+  if (t === "summer") return "Summer 27";
+  return t || "Term";
+}
+
+function payloadTermTotals(payload: unknown): {
+  autumn: number;
+  spring: number;
+  summer: number;
+  annual: number;
+} | null {
+  if (!payload || typeof payload !== "object") return null;
+  const tt = (payload as Record<string, unknown>).term_totals;
+  if (!tt || typeof tt !== "object") return null;
+  const o = tt as Record<string, unknown>;
+  const autumn = round2(num(o.autumn));
+  const spring = round2(num(o.spring));
+  const summer = round2(num(o.summer));
+  let annual = round2(num(o.annual));
+  if (!annual) annual = round2(autumn + spring + summer);
+  if (annual <= 0 && autumn <= 0 && spring <= 0 && summer <= 0) return null;
+  return { autumn, spring, summer, annual };
+}
+
+function termTotalsFromPaymentContext(ctx: ReturnType<typeof paymentRowToContext>): {
+  autumn: number;
+  spring: number;
+  summer: number;
+  annual: number;
+} {
+  let autumn = 0;
+  let spring = 0;
+  let summer = 0;
+  let annual = 0;
+  for (const slot of ctx.weeklySlots || []) {
+    autumn += num(slot.termTotals?.autumn);
+    spring += num(slot.termTotals?.spring);
+    summer += num(slot.termTotals?.summer);
+    annual += num(slot.termTotals?.annual);
+  }
+  for (const slot of ctx.dayCentreSlots || []) {
+    autumn += num(slot.termTotals?.autumn);
+    spring += num(slot.termTotals?.spring);
+    summer += num(slot.termTotals?.summer);
+    annual += num(slot.termTotals?.annual);
+  }
+  annual = round2(annual || autumn + spring + summer);
+  return {
+    autumn: round2(autumn),
+    spring: round2(spring),
+    summer: round2(summer),
+    annual,
+  };
 }
 
 Deno.serve(async (req) => {
@@ -56,7 +129,7 @@ Deno.serve(async (req) => {
   const payFilter = clean(body.payment_status, 20).toLowerCase() || "all";
   const listFilter = clean(body.filter, 40).toLowerCase();
   const contactId = clean(body.contact_id, 120);
-  const limit = Math.min(Math.max(Number(body.limit) || 100, 1), 200);
+  const limit = Math.min(Math.max(Number(body.limit) || 200, 1), 400);
 
   const admin = createClient(baseUrl, serviceRole, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -65,7 +138,7 @@ Deno.serve(async (req) => {
   let q = admin
     .from("portal_parent_invoice_share")
     .select(
-      "id, document_id, contact_id, invoice_number, amount_gbp, due_date, payment_status, share_status, ready_at, ready_by, notes, created_at, updated_at, payment_method_hint, gocardless_url, payment_link_url, payment_link_surcharge_note, parent_reported_paid_at, parent_reported_ref, parent_reported_method, parent_reported_notes, paid_at, paid_via, xero_invoice_id, xero_payment_id, xero_synced_at, xero_push_status, xero_push_error, created_via, vat_mode, line_description, quantity, unit_price_gbp, reference_text",
+      "id, document_id, contact_id, invoice_number, amount_gbp, due_date, payment_status, share_status, ready_at, ready_by, notes, created_at, updated_at, payment_method_hint, gocardless_url, payment_link_url, payment_link_surcharge_note, parent_reported_paid_at, parent_reported_ref, parent_reported_method, parent_reported_notes, paid_at, paid_via, xero_invoice_id, xero_payment_id, xero_synced_at, xero_push_status, xero_push_error, created_via, vat_mode, line_description, quantity, unit_price_gbp, reference_text, billing_term, payment_schedule, amount_paid_gbp, next_instalment_due",
     )
     .order("updated_at", { ascending: false })
     .limit(limit);
@@ -158,8 +231,106 @@ Deno.serve(async (req) => {
     }
   }
 
-  let invoices = [];
+  // Latest re-enrolment submission per contact (2026-27) for sort + booked totals.
+  const reenrolByContact = new Map<
+    string,
+    { submitted_at: string; totals: ReturnType<typeof payloadTermTotals>; name: string }
+  >();
+  const reenrolByName = new Map<
+    string,
+    { submitted_at: string; totals: ReturnType<typeof payloadTermTotals>; contact_id: string }
+  >();
+  {
+    const { data: subs } = await admin
+      .from("portal_re_enrolment_submissions")
+      .select("participant_contact_id, participant_name, submitted_at, payload")
+      .eq("academic_year", REENROL_ACADEMIC_YEAR)
+      .order("submitted_at", { ascending: false })
+      .limit(500);
+    for (const s of subs || []) {
+      const cid = clean(s.participant_contact_id, 120);
+      const name = clean(s.participant_name, 120);
+      const submittedAt = clean(s.submitted_at, 40);
+      const totals = payloadTermTotals(s.payload);
+      if (cid && !reenrolByContact.has(cid)) {
+        reenrolByContact.set(cid, { submitted_at: submittedAt, totals, name });
+      }
+      const nameKey = name.toLowerCase();
+      if (nameKey && !reenrolByName.has(nameKey)) {
+        reenrolByName.set(nameKey, { submitted_at: submittedAt, totals, contact_id: cid });
+      }
+    }
+  }
+
+  // LA / Direct Payments payment rows → booked term totals for office-auto clients.
+  type LaPayMatch = {
+    row: Record<string, unknown>;
+    totals: ReturnType<typeof termTotalsFromPaymentContext>;
+    sheet: string;
+  };
+  const laPayByContact = new Map<string, LaPayMatch>();
+  {
+    const { data: laRows } = await admin
+      .from("client_payments")
+      .select("client_key, client_name, parent_name, payment_status, amount, data, sheet, imported_at")
+      .in("sheet", ["LA", "DIRECT_PAYMENTS"]);
+    const { data: inClassContacts } = await admin
+      .from("portal_parent_contacts")
+      .select(
+        "contact_id, child_display, child_first_name, child_last_name, parent_display, parent_first_name, parent_last_name, funding_label, in_class",
+      )
+      .eq("in_class", true)
+      .limit(500);
+    const contacts = (inClassContacts || []).map((c) => {
+      const child =
+        clean(c.child_display, 120) ||
+        [c.child_first_name, c.child_last_name].filter(Boolean).join(" ").trim();
+      const parent =
+        clean(c.parent_display, 120) ||
+        [c.parent_first_name, c.parent_last_name].filter(Boolean).join(" ").trim();
+      return {
+        contact_id: clean(c.contact_id, 120),
+        child,
+        parent,
+        funding_label: clean(c.funding_label, 120),
+      };
+    }).filter((c) => c.contact_id && c.child);
+
+    for (const row of laRows || []) {
+      const sheet = clean(row.sheet, 40).toUpperCase();
+      // Office auto = club invoices the LA (sheet LA). Direct Payments stay parent-visible.
+      if (sheet !== "LA") continue;
+      const ctx = paymentRowToContext(row as Record<string, unknown>);
+      const totals = termTotalsFromPaymentContext(ctx);
+      const clientName = clean(ctx.clientName || row.client_name, 120);
+      if (!clientName) continue;
+      let matched: (typeof contacts)[0] | null = null;
+      for (const c of contacts) {
+        if (namesMatch(clientName, c.child) || namesMatch(c.child, clientName)) {
+          matched = c;
+          break;
+        }
+      }
+      if (!matched) continue;
+      if (laPayByContact.has(matched.contact_id)) continue;
+      laPayByContact.set(matched.contact_id, {
+        row: row as Record<string, unknown>,
+        totals,
+        sheet,
+      });
+      if (!nameByContact.has(matched.contact_id) && matched.child) {
+        nameByContact.set(matched.contact_id, matched.child);
+      }
+      if (!parentByContact.has(matched.contact_id) && matched.parent) {
+        parentByContact.set(matched.contact_id, matched.parent);
+      }
+    }
+  }
+
+  let invoices: Record<string, unknown>[] = [];
   const fundingByContact = new Map<string, Awaited<ReturnType<typeof resolveParticipantInvoiceFunding>>>();
+  const invoiceContactIds = new Set<string>();
+
   for (const share of shares || []) {
     const doc = docsById.get(String(share.document_id)) || {};
     let pdfUrl: string | null = null;
@@ -170,9 +341,15 @@ Deno.serve(async (req) => {
       pdfUrl = signed?.signedUrl || null;
     }
     const cid = clean(share.contact_id, 120);
+    if (cid) invoiceContactIds.add(cid);
+    const displayName =
+      nameByContact.get(cid) || clean(doc.related_client, 120) || "";
     let funding = fundingByContact.get(cid);
     if (!funding) {
-      funding = await resolveParticipantInvoiceFunding(admin, cid);
+      funding = await resolveParticipantInvoiceFunding(admin, {
+        contactId: cid,
+        displayName,
+      });
       fundingByContact.set(cid, funding);
     }
     const fundingCategory = invoiceFundingCategory({
@@ -181,6 +358,24 @@ Deno.serve(async (req) => {
       fundingLabel: funding.fundingLabel,
       paymentSheet: funding.paymentSheet,
     });
+
+    const reenrol =
+      (cid && reenrolByContact.get(cid)) ||
+      reenrolByName.get(displayName.toLowerCase()) ||
+      null;
+    const laPay = cid ? laPayByContact.get(cid) : null;
+    const bookedFromReenrol = reenrol?.totals;
+    const bookedFromLa = laPay?.totals || null;
+    const bookedAnnual =
+      bookedFromReenrol?.annual ||
+      bookedFromLa?.annual ||
+      0;
+    const termKey = CURRENT_BILLING_TERM as "autumn" | "spring" | "summer";
+    const bookedTerm =
+      (bookedFromReenrol && bookedFromReenrol[termKey]) ||
+      (bookedFromLa && bookedFromLa[termKey]) ||
+      0;
+
     invoices.push({
       ...share,
       title: clean(doc.title, 200) || "Invoice",
@@ -196,12 +391,103 @@ Deno.serve(async (req) => {
       funding_category_label: invoiceFundingCategoryLabel(fundingCategory),
       funding_label: funding.fundingLabel || null,
       payment_sheet: funding.paymentSheet || null,
+      booked_annual_gbp: bookedAnnual || null,
+      booked_term_gbp: bookedTerm || null,
+      billing_term: CURRENT_BILLING_TERM,
+      billing_term_label: termLabel(CURRENT_BILLING_TERM),
+      reenrolment_submitted_at: reenrol?.submitted_at || null,
+      is_la_office_auto: fundingCategory === "la_managed" && !reenrol,
     });
   }
 
-  if (listFilter === "buffer_low") {
-    invoices = invoices.filter((inv) => inv.buffer_status && inv.buffer_status.is_low);
+  // Synthetic rows for LA sheet clients (office auto) with no family invoice yet.
+  const OFFICE_AUTO_SORT_TS = "2026-06-01T12:00:00.000Z";
+  for (const [cid, pack] of laPayByContact) {
+    if (invoiceContactIds.has(cid)) continue;
+    if (listFilter === "xero_unsynced" || listFilter === "buffer_low") continue;
+    if (shareFilter === "ready" || payFilter === "paid" || payFilter === "pending_confirmation") {
+      continue;
+    }
+    const displayName = nameByContact.get(cid) || clean(pack.row.client_name, 120) || cid;
+    let funding = fundingByContact.get(cid);
+    if (!funding) {
+      funding = await resolveParticipantInvoiceFunding(admin, {
+        contactId: cid,
+        displayName,
+      });
+      fundingByContact.set(cid, funding);
+    }
+    const fundingCategory = invoiceFundingCategory({
+      vatMode: "exempt",
+      paymentMethodHint: "la_funded",
+      fundingLabel: funding.fundingLabel,
+      paymentSheet: pack.sheet || "LA",
+    });
+    const termKey = CURRENT_BILLING_TERM as "autumn" | "spring" | "summer";
+    const bookedAnnual = pack.totals.annual || 0;
+    const bookedTerm = pack.totals[termKey] || 0;
+    const reenrol = reenrolByContact.get(cid) || null;
+    invoices.push({
+      id: `la-auto-${cid}`,
+      document_id: null,
+      contact_id: cid,
+      invoice_number: null,
+      amount_gbp: bookedTerm || bookedAnnual || 0,
+      due_date: null,
+      payment_status: "unpaid",
+      share_status: "hidden",
+      ready_at: null,
+      ready_by: null,
+      notes: "LA office auto re-enrolment — no family INV-P yet",
+      created_at: OFFICE_AUTO_SORT_TS,
+      updated_at: OFFICE_AUTO_SORT_TS,
+      payment_method_hint: "la_funded",
+      created_via: "la_office_auto",
+      vat_mode: "exempt",
+      title: "LA office auto · booked place",
+      related_client: displayName,
+      participant_display: displayName,
+      parent_display: parentByContact.get(cid) || clean(pack.row.parent_name, 120) || "",
+      file_url: null,
+      pdf_url: null,
+      document_created_at: null,
+      payment_hold: holdByContact.get(cid) || null,
+      buffer_status: bufferByContact.get(cid) || null,
+      funding_category: fundingCategory,
+      funding_category_label: invoiceFundingCategoryLabel(fundingCategory),
+      funding_label: funding.fundingLabel || "LA / NHS",
+      payment_sheet: pack.sheet || "LA",
+      booked_annual_gbp: bookedAnnual || null,
+      booked_term_gbp: bookedTerm || null,
+      billing_term: CURRENT_BILLING_TERM,
+      billing_term_label: termLabel(CURRENT_BILLING_TERM),
+      reenrolment_submitted_at: reenrol?.submitted_at || OFFICE_AUTO_SORT_TS,
+      is_la_office_auto: true,
+      xero_invoice_id: null,
+      xero_push_status: null,
+    });
+    invoiceContactIds.add(cid);
   }
+
+  if (listFilter === "buffer_low") {
+    invoices = invoices.filter((inv) => inv.buffer_status && (inv.buffer_status as { is_low?: boolean }).is_low);
+  }
+  if (listFilter === "la_auto") {
+    invoices = invoices.filter(
+      (inv) =>
+        inv.is_la_office_auto === true ||
+        inv.created_via === "la_office_auto" ||
+        inv.funding_category === "la_managed",
+    );
+  }
+
+  // Newest re-enrol first (LA office autos share a cohort timestamp).
+  invoices.sort((a, b) => {
+    const ta = String(a.reenrolment_submitted_at || a.updated_at || "");
+    const tb = String(b.reenrolment_submitted_at || b.updated_at || "");
+    if (ta !== tb) return tb.localeCompare(ta);
+    return String(a.participant_display || "").localeCompare(String(b.participant_display || ""));
+  });
 
   const { count: readyUnpaid } = await admin
     .from("portal_parent_invoice_share")
@@ -227,6 +513,7 @@ Deno.serve(async (req) => {
     .in("created_via", ["portal", "reenrolment"]);
 
   const bufferLowContacts = [...bufferByContact.values()].filter((b) => b.is_low).length;
+  const laAutoCount = invoices.filter((inv) => inv.created_via === "la_office_auto").length;
 
   return portalAdminJson(200, {
     ok: true,
@@ -237,6 +524,9 @@ Deno.serve(async (req) => {
       payment_holds_open: openHolds || 0,
       buffer_low_contacts: bufferLowContacts,
       xero_unsynced: xeroUnsynced || 0,
+      la_office_auto: laAutoCount,
+      billing_term: CURRENT_BILLING_TERM,
+      billing_term_label: termLabel(CURRENT_BILLING_TERM),
     },
   });
 });

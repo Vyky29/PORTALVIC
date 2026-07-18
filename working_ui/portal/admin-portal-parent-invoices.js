@@ -435,15 +435,50 @@
         byId[key] = {
           contact_id: inv.contact_id,
           name: inv.participant_display || inv.related_client || inv.contact_id || 'Participant',
-          invoices: []
+          invoices: [],
+          reenrolment_submitted_at: inv.reenrolment_submitted_at || null,
+          booked_annual_gbp: null,
+          booked_term_gbp: null,
+          billing_term_label: inv.billing_term_label || null,
+          is_la_office_auto: !!inv.is_la_office_auto || inv.created_via === 'la_office_auto'
         };
         order.push(key);
       }
-      byId[key].invoices.push(inv);
+      var g = byId[key];
+      g.invoices.push(inv);
+      if (inv.reenrolment_submitted_at) {
+        if (
+          !g.reenrolment_submitted_at ||
+          String(inv.reenrolment_submitted_at) > String(g.reenrolment_submitted_at)
+        ) {
+          g.reenrolment_submitted_at = inv.reenrolment_submitted_at;
+        }
+      }
+      var ann = Number(inv.booked_annual_gbp);
+      if (Number.isFinite(ann) && ann > 0) {
+        g.booked_annual_gbp = Math.max(Number(g.booked_annual_gbp) || 0, ann);
+      }
+      var term = Number(inv.booked_term_gbp);
+      if (Number.isFinite(term) && term > 0) {
+        g.booked_term_gbp = Math.max(Number(g.booked_term_gbp) || 0, term);
+      }
+      if (inv.billing_term_label) g.billing_term_label = inv.billing_term_label;
+      if (inv.is_la_office_auto || inv.created_via === 'la_office_auto') {
+        g.is_la_office_auto = true;
+      }
     });
-    return order.map(function (k) {
-      return byId[k];
-    });
+    return order
+      .map(function (k) {
+        return byId[k];
+      })
+      .sort(function (a, b) {
+        var ta = String(a.reenrolment_submitted_at || '');
+        var tb = String(b.reenrolment_submitted_at || '');
+        if (ta && tb && ta !== tb) return tb.localeCompare(ta);
+        if (ta && !tb) return -1;
+        if (!ta && tb) return 1;
+        return String(a.name || '').localeCompare(String(b.name || ''));
+      });
   }
 
   function groupMethodSummary(invoices) {
@@ -502,7 +537,12 @@
     var hidden = 0;
     var xeroFail = 0;
     var xeroMissing = 0;
+    var laAuto = 0;
     (invoices || []).forEach(function (inv) {
+      if (inv.created_via === 'la_office_auto' || inv.is_la_office_auto) {
+        laAuto += 1;
+        return;
+      }
       var pay = String(inv.payment_status || 'unpaid');
       if (pay === 'paid') paid += 1;
       else if (pay === 'pending_confirmation') pending += 1;
@@ -514,6 +554,11 @@
       else if (inv.created_via === 'portal' || inv.created_via === 'reenrolment') xeroMissing += 1;
     });
     var chips = [];
+    if (laAuto) {
+      chips.push(
+        '<span class="pp-inv-acc__fund pp-inv-acc__fund--la" title="Office auto re-enrolment">LA auto</span>',
+      );
+    }
     if (unpaid) {
       chips.push(summaryFilterChip('unpaid', unpaid + ' unpaid', 'pend'));
     }
@@ -539,9 +584,29 @@
 
   function groupTotalGbp(invoices) {
     return (invoices || []).reduce(function (sum, inv) {
+      if (inv.created_via === 'la_office_auto') return sum;
       var n = Number(inv.amount_gbp);
       return sum + (Number.isFinite(n) ? n : 0);
     }, 0);
+  }
+
+  function groupBookedAmountsHtml(group) {
+    var annual = Number(group.booked_annual_gbp);
+    var term = Number(group.booked_term_gbp);
+    var termLabel = String(group.billing_term_label || 'Term').trim() || 'Term';
+    var invTotal = groupTotalGbp(group.invoices || []);
+    var bits = [];
+    if (Number.isFinite(annual) && annual > 0) {
+      bits.push('Booked ' + formatMoney(annual));
+    }
+    if (Number.isFinite(term) && term > 0) {
+      bits.push(termLabel + ' ' + formatMoney(term));
+    }
+    if (!bits.length && invTotal > 0) {
+      bits.push(formatMoney(invTotal));
+    }
+    if (!bits.length) return '—';
+    return bits.join(' · ');
   }
 
   function invoiceDetailCardHtml(inv, opts) {
@@ -725,14 +790,45 @@
 
   function participantAccordionHtml(group) {
     var invoices = sortInvoicesForDisplay(group.invoices || []);
-    var n = invoices.length;
+    var realInvoices = invoices.filter(function (inv) {
+      return inv.created_via !== 'la_office_auto';
+    });
+    var n = realInvoices.length;
     var contactId = esc(group.contact_id || '');
     var name = group.name || 'Participant';
     var cards = invoices
       .map(function (inv, idx) {
+        if (inv.created_via === 'la_office_auto') {
+          return (
+            '<article class="pp-inv-acc__card" data-invoice-id="' +
+            esc(inv.id) +
+            '">' +
+            '<div class="pp-inv-acc__grid">' +
+            '<div class="pp-inv-acc__col" style="min-width:0">' +
+            '<div style="font-size:13px;overflow-wrap:break-word">' +
+            '<strong>LA office auto</strong>' +
+            '<div class="muted" style="font-size:12px">Place renews with the office — no family invoice shared yet. Booked totals from the LA payments sheet.</div>' +
+            '</div></div>' +
+            '<div class="pp-inv-acc__col">' +
+            '<div><span class="muted">Booked (year)</span><br><strong>' +
+            esc(formatMoney(inv.booked_annual_gbp)) +
+            '</strong></div>' +
+            '<div style="margin-top:8px"><span class="muted">' +
+            esc(inv.billing_term_label || 'Term') +
+            '</span><br><strong>' +
+            esc(formatMoney(inv.booked_term_gbp)) +
+            '</strong></div>' +
+            '<div style="margin-top:8px"><span class="muted">Funding</span><br>' +
+            fundingChipHtml(inv) +
+            '</div></div></div></article>'
+          );
+        }
         return invoiceDetailCardHtml(inv, { showHoldOnce: idx === 0 });
       })
       .join('');
+    var countLabel = group.is_la_office_auto && !n
+      ? 'LA auto · no INV-P'
+      : String(n) + ' invoice' + (n === 1 ? '' : 's');
     return (
       '<details class="pp-inv-acc__item" data-contact-id="' +
       contactId +
@@ -744,14 +840,12 @@
       esc(name) +
       '</strong>' +
       '<span class="pp-inv-acc__num">' +
-      esc(String(n)) +
-      ' invoice' +
-      (n === 1 ? '' : 's') +
+      esc(countLabel) +
       (contactId ? ' · ' + contactId : '') +
       '</span>' +
       '</span>' +
-      '<span class="pp-inv-acc__amt">' +
-      esc(formatMoney(groupTotalGbp(invoices))) +
+      '<span class="pp-inv-acc__amt" title="Booked year total and current term">' +
+      esc(groupBookedAmountsHtml(group)) +
       '</span>' +
       '<span class="pp-inv-acc__methods">' +
       groupFundingChipsHtml(invoices) +
@@ -779,7 +873,7 @@
       '.pp-inv-acc__who{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 140px}' +
       '.pp-inv-acc__name{overflow-wrap:break-word}' +
       '.pp-inv-acc__num{font-size:12px;color:#4a6578;overflow-wrap:break-word}' +
-      '.pp-inv-acc__amt{font-weight:700;flex:0 0 auto}' +
+      '.pp-inv-acc__amt{font-weight:700;flex:1 1 160px;min-width:0;overflow-wrap:break-word;text-align:right}' +
       '.pp-inv-acc__methods{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0;flex:0 1 auto;max-width:100%}' +
       '.pp-inv-acc__method{font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid transparent}' +
       '.pp-inv-acc__method--gc{color:#065f46;background:#d1fae5;border-color:#a7f3d0}' +
@@ -901,7 +995,7 @@
   async function renderHost(host) {
     if (!host) return;
     host.innerHTML = '<p class="muted">Loading…</p>';
-    var body = { limit: 100 };
+    var body = { limit: 300 };
     if (state.filter === 'ready' || state.filter === 'hidden') body.share_status = state.filter;
     if (state.filter === 'unpaid') {
       body.share_status = 'ready';
@@ -917,7 +1011,7 @@
       body.share_status = 'ready';
       body.payment_status = 'pending_confirmation';
     }
-    if (state.filter === 'buffer_low' || state.filter === 'xero_unsynced') {
+    if (state.filter === 'buffer_low' || state.filter === 'xero_unsynced' || state.filter === 'la_auto') {
       body.filter = state.filter;
     }
     var r = await api('portal-admin-parent-invoices-list', body);
@@ -942,6 +1036,9 @@
       }
       if (state.meta.xero_unsynced) {
         parts.push(String(state.meta.xero_unsynced) + ' not in Xero');
+      }
+      if (state.meta.la_office_auto) {
+        parts.push(String(state.meta.la_office_auto) + ' LA auto');
       }
       metaEl.textContent = parts.join(' · ');
     }
@@ -1397,9 +1494,10 @@
       '<div class="card-h"><h3>Re-enrolments &amp; shared invoices</h3>' +
       '<span class="chip chip--pend" id="portalParentInvoicesMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Track instalments shared with families after re-enrolment. <strong>Push to Xero</strong> for bookkeeping; match Tide bank CSV to mark paid. Own arrangement: buffer soft-hold → Remind → Hold 1 session → pay restores.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Track instalments after re-enrolment. Rows show <strong>booked year</strong> and <strong>current term</strong> totals, sorted by re-enrol date. LA sheet clients appear as office auto even without a family invoice. <strong>Push to Xero</strong> for bookkeeping; match Tide bank CSV to mark paid.</p>' +
       '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sm" data-inv-filter="all">All</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="la_auto">LA auto</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="ready">Shared</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="unpaid">Ready unpaid</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="paid">Paid</button>' +
