@@ -778,6 +778,12 @@
       ".pay-card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid #eef2f7}",
       ".pay-card-h h3{margin:0;font-size:15px;color:#0f172a}",
       ".pay-tbl-wrap{overflow-x:auto;min-width:0}",
+      ".pay-tbl-caption{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 12px;min-width:0;flex:0 1 auto;justify-content:flex-end;text-align:right}",
+      ".pay-tbl-caption__n{font-size:13px;font-weight:700;color:#0f172a}",
+      ".pay-tbl-caption__n b{font-size:15px}",
+      ".pay-tbl-caption__due{font-size:12px;font-weight:700;color:#b91c1c}",
+      ".pay-tbl__idx{width:2.5rem;color:#94a3b8;font-variant-numeric:tabular-nums}",
+      ".pay-tbl thead th.pay-tbl__idx{color:#94a3b8;font-weight:700}",
       ".pay-tbl{width:100%;border-collapse:collapse;font-size:14px}",
       ".pay-tbl th,.pay-tbl td{padding:10px 12px;border-bottom:1px solid #eef2f7;text-align:center;vertical-align:middle;overflow-wrap:break-word;max-width:260px}",
       ".pay-tbl thead th{background:#f8fafc;color:#0f172a;font-size:11px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}",
@@ -978,8 +984,8 @@
     }).filter(function (g) { return g.rows.length > 0; });
   }
 
-  function termAccordionMetaHtml(group) {
-    var rows = group.rows || [];
+  function termOrdersMetaParts(rows) {
+    rows = rows || [];
     var out = 0;
     var outN = 0;
     rows.forEach(function (r) {
@@ -988,13 +994,30 @@
         outN++;
       }
     });
-    /* Count = payment lines / orders in this term (not unique families). */
-    var unit = rows.length === 1 ? "order" : "orders";
+    return {
+      n: rows.length,
+      unit: rows.length === 1 ? "order" : "orders",
+      due: out,
+      dueN: outN,
+    };
+  }
+
+  function termAccordionMetaHtml(group) {
+    var m = termOrdersMetaParts(group.rows);
     var html = '<span class="pay-term-acc__meta" title="Payment lines in this term (one client can have several)">'
-      + "<b>" + rows.length + "</b>"
-      + '<span class="pay-term-acc__meta--lab">' + unit + "</span>";
-    if (outN) html += '<span class="pay-term-acc__meta--out">' + money(out) + " due</span>";
+      + "<b>" + m.n + "</b>"
+      + '<span class="pay-term-acc__meta--lab">' + m.unit + "</span>";
+    if (m.dueN) html += '<span class="pay-term-acc__meta--out">' + money(m.due) + " due</span>";
     html += "</span>";
+    return html;
+  }
+
+  function tableOrdersCaptionHtml(rows) {
+    var m = termOrdersMetaParts(rows);
+    var html = '<div class="pay-tbl-caption" title="Payment lines in this term (one client can have several)">'
+      + '<span class="pay-tbl-caption__n"><b>' + m.n + "</b> " + m.unit + "</span>";
+    if (m.dueN) html += '<span class="pay-tbl-caption__due">' + money(m.due) + " due</span>";
+    html += "</div>";
     return html;
   }
 
@@ -1002,15 +1025,16 @@
     var colClient = state.mode === "orders" ? "Participant" : "Client";
     if (!rows.length) {
       return '<div class="pay-tbl-wrap"><table class="pay-tbl"><tbody>'
-        + '<tr><td colspan="8" class="pay-empty">No records in this term.</td></tr></tbody></table></div>';
+        + '<tr><td colspan="9" class="pay-empty">No records in this term.</td></tr></tbody></table></div>';
     }
-    var html = '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>' + colClient
+    var html = '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th class="num pay-tbl__idx">#</th><th>' + colClient
       + '</th><th>Paid</th><th>Invoice type</th><th>Service</th><th>Term</th><th>Parent</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
-    rows.forEach(function (r) {
+    rows.forEach(function (r, i) {
       var attr = r._synthetic
         ? ' data-pay-reenrol="' + esc(r._contactId || r.id) + '"'
         : ' data-pay-id="' + esc(r.id) + '"';
       html += "<tr" + attr + ">"
+        + '<td class="num pay-tbl__idx">' + (i + 1) + "</td>"
         + '<td class="pay-name">' + esc(r.client_name || "—") + "</td>"
         + "<td>" + paidChipHtml(paidByFor(r)) + "</td>"
         + "<td>" + invoiceChipHtml(invoiceTypeFor(r)) + "</td>"
@@ -1063,10 +1087,11 @@
         + grpCard("fund", "pay-grp--fund", labelFor("LA"), t.grp.LA)
         + "</div>";
     }
-    html += '<div class="pay-card-h" style="display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0">'
-      + '<h3 style="margin:0;font-size:15px;color:#0f172a;display:flex;align-items:center;gap:8px">'
+    html += '<div class="pay-card-h" style="display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;flex-wrap:wrap">'
+      + '<h3 style="margin:0;font-size:15px;color:#0f172a;display:flex;align-items:center;gap:8px;min-width:0">'
       + icon("clients", 17) + "Participants</h3>"
-      + '<span style="font-size:12px;color:#64748b;flex:0 0 auto">' + visibleRows.length + " shown</span></div>";
+      + tableOrdersCaptionHtml(scopedRows)
+      + "</div>";
     html += paymentsTableBodyHtml(visibleRows.slice().sort(sortPaymentRows));
     html += "</div>";
     return html;
@@ -1444,11 +1469,13 @@
       return String(a.name).localeCompare(String(b.name));
     });
     if (!people.length) {
-      return '<div class="pay-tbl-wrap"><table class="pay-tbl"><tbody>'
-        + '<tr><td colspan="7" class="pay-empty">No participants in this term.</td></tr></tbody></table></div>';
+      return tableOrdersCaptionHtml(rows)
+        + '<div class="pay-tbl-wrap"><table class="pay-tbl"><tbody>'
+        + '<tr><td colspan="8" class="pay-empty">No participants in this term.</td></tr></tbody></table></div>';
     }
-    var html = '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>Client</th><th>Paid</th><th>Invoice type</th><th>Service(s)</th><th class="num">Orders</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
-    people.forEach(function (g) {
+    var html = tableOrdersCaptionHtml(rows)
+      + '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th class="num pay-tbl__idx">#</th><th>Client</th><th>Paid</th><th>Invoice type</th><th>Service(s)</th><th class="num">Orders</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
+    people.forEach(function (g, i) {
       var svcList = Object.keys(g.services);
       var svcTxt = svcList.length ? svcList.join(" · ") : "—";
       var pill = g.anyOut
@@ -1464,6 +1491,7 @@
         rowAttr = 'data-pay-id="' + esc(g.orders[0].id) + '"';
       }
       html += "<tr " + rowAttr + ">"
+        + '<td class="num pay-tbl__idx">' + (i + 1) + "</td>"
         + '<td class="pay-name">' + esc(g.name) + "</td>"
         + "<td>" + paidChipHtml(paidByFor(first)) + "</td>"
         + "<td>" + invoiceChipHtml(invoiceTypeFor(first)) + "</td>"
