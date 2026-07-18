@@ -1263,6 +1263,10 @@
         subtitle: hasServices ? "Missed / note" : "No sessions yet",
         disabled: !hasServices,
       }) +
+      infoBtnHtml("team", teamCaption, teamIcon, {
+        extraClass: " pp-pax-info-btn--team",
+        subtitle: "Instructors",
+      }) +
       "</div>" +
       '<p class="pp-pax-info-section-label pp-pax-info-section-label--progress">Progress</p>' +
       '<div class="pp-pax-info-row pp-pax-info-row--progress">' +
@@ -1321,10 +1325,6 @@
           " pp-pax-info-btn--messages" +
           (msgUnread > 0 ? " pp-pax-info-btn--has-unread" : ""),
         unreadBadge: msgBadge,
-      }) +
-      infoBtnHtml("team", teamCaption, teamIcon, {
-        extraClass: " pp-pax-info-btn--team",
-        subtitle: "Instructors",
       }) +
       "</div></div>"
     );
