@@ -2154,6 +2154,69 @@
   var CHIP_CREDIT_SVG =
     '<svg class="pp-hub-ops__date-chip__mark" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="4.5"/><path d="M7.2 4.4c-.3-.4-.8-.6-1.3-.6-.9 0-1.5.5-1.5 1.2 0 1.4 2.8.8 2.8 2.4 0 .7-.6 1.2-1.5 1.2-.5 0-1-.2-1.3-.6"/><path d="M6 3.2v.8M6 8v.8"/></svg>';
 
+  /**
+   * 2026/27 session dates from the current roster weekdays, used when the family
+   * has NOT re-enrolled yet — painted red (pendingReenrol) as a confirm nudge.
+   */
+  function findUnconfirmedNextYearSessionDates(data) {
+    var detail =
+      data && data.general && Array.isArray(data.general.services_detail)
+        ? data.general.services_detail
+        : [];
+    if (!detail.length) return [];
+    var cols = Object.create(null);
+    var dcCols = Object.create(null);
+    detail.forEach(function (s) {
+      var col = dayNameToCalCol(s && s.day);
+      if (col == null) return;
+      cols[col] = true;
+      if (serviceIsDayCentre((s && (s.label || s.service)) || "")) dcCols[col] = true;
+    });
+    if (!Object.keys(cols).length) return [];
+
+    var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
+    var fromIso = chipWindowFromIso((cal && cal.openFrom) || "2026-09-01", data);
+    var toIso = (cal && cal.openTo) || "2027-07-16";
+    var summerTo = currentYearTermToIso(data);
+    var todayIso = isoDateLocal(new Date());
+    var startParts = String(fromIso).split("-");
+    var cursor = new Date(Number(startParts[0]), Number(startParts[1]) - 1, Number(startParts[2]));
+    var out = [];
+    var guard = 0;
+    while (guard < 450) {
+      guard++;
+      var iso = isoDateLocal(cursor);
+      if (iso > toIso) break;
+      if (iso <= summerTo) {
+        cursor = addDaysLocal(cursor, 1);
+        continue;
+      }
+      if (!isNextYearClubClosedIso(iso)) {
+        var jsDow = cursor.getDay();
+        var col = jsDow === 0 ? 6 : jsDow - 1;
+        var runs =
+          cols[col] && (dcCols[col] || !nextYearDateBeforeServiceStart(iso, false));
+        if (runs) {
+          out.push(
+            annotateChipDate(
+              {
+                iso: iso,
+                shortLabel: formatTermChipLabel(iso),
+                past: iso < todayIso,
+                isToday: iso === todayIso,
+                isNext: false,
+                pendingReenrol: true,
+              },
+              data,
+            ),
+          );
+        }
+      }
+      cursor = addDaysLocal(cursor, 1);
+    }
+    return out;
+  }
+
   function termChipToneMeta(d, statusByIso) {
     statusByIso = statusByIso || {};
     var st = statusByIso[d.iso] || "";
@@ -2168,6 +2231,14 @@
       return {
         tone: "cancelled",
         title: "Cancelled — " + d.iso,
+        icon: CHIP_X_SVG,
+      };
+    }
+    // Not re-enrolled for 2026/27 — projected places stay red until they confirm.
+    if (d.pendingReenrol) {
+      return {
+        tone: "unconfirmed",
+        title: "Not confirmed for 2026/27 — re-enrol to keep this place — " + d.iso,
         icon: CHIP_X_SVG,
       };
     }
@@ -2561,7 +2632,7 @@
       '<span class="pp-hub-ops__chip-legend__text"><strong>Green</strong> — completed</span></li>' +
       '<li class="pp-hub-ops__chip-legend__item">' +
       '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--red" aria-hidden="true"></span>' +
-      '<span class="pp-hub-ops__chip-legend__text"><strong>Red</strong> — absent or cancelled</span></li>' +
+      '<span class="pp-hub-ops__chip-legend__text"><strong>Red</strong> — absent, cancelled, or not confirmed for 2026/27</span></li>' +
       "</ul>"
     );
   }
@@ -2581,7 +2652,9 @@
 
   /** Whole-year (or LA auto) bookings see Spring/Summer under Next session; term-by-term does not. */
   function showLaterTermsOnHub(data) {
-    return familyAcceptedNextYear(data) && !isTermByTermBooking(data);
+    // Term-by-term bookings only see the current confirmed block; everyone else
+    // can see Later terms (incl. Summer history after term end / unconfirmed 26/27).
+    return !isTermByTermBooking(data);
   }
 
   /**
@@ -2652,8 +2725,10 @@
     var crashDates = findCrashCourseDates(data);
     var todayIso = isoDateLocal(new Date());
     var summerTo = currentYearTermToIso(data);
+    var acceptedNext = familyAcceptedNextYear(data);
 
-    if (todayIso <= summerTo) {
+    // Summer history stays available after Fri 17 Jul (otherwise the hub goes blank).
+    {
       var summerDates = findCurrentSummerSessionDates(data);
       var summerFirst = [];
       var summerSecond = [];
@@ -2668,12 +2743,14 @@
       if (summerSecond.length) {
         completedRows.push(rowHtml("Summer · Second half term", summerSecond));
       }
-      completedTermHtml = termAccordionHtml(
-        "Summer Term 25/26 · completed",
-        completedRows.join(""),
-        false,
-        true,
-      );
+      if (completedRows.length) {
+        completedTermHtml = termAccordionHtml(
+          "Summer Term 25/26 · completed",
+          completedRows.join(""),
+          false,
+          true,
+        );
+      }
     }
 
     if (crashDates.length) {
@@ -2697,12 +2774,10 @@
       }
     }
 
-    if (familyAcceptedNextYear(data)) {
-      var nextDates = findTermSessionDates(data).filter(function (d) {
-        return d.iso > summerTo;
-      });
+    function pushTermAccordionsFromDates(nextDates, forceNextYearHalf, accordionLabelSuffix) {
       var calNy = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
       var termsNy = (calNy && Array.isArray(calNy.terms) ? calNy.terms : []) || [];
+      var suffix = accordionLabelSuffix || " Term 26/27";
       if (termsNy.length) {
         termsNy.forEach(function (t) {
           if (!t || !t.starts) return;
@@ -2717,7 +2792,7 @@
           var tSecond = [];
           nextDates.forEach(function (d) {
             if (d.iso < t.starts || d.iso > termEnd) return;
-            if (isFirstHalfTermDate(d.iso, data)) tFirst.push(d);
+            if (isFirstHalfTermDate(d.iso, data, forceNextYearHalf)) tFirst.push(d);
             else tSecond.push(d);
           });
           tFirst = filterChipListForDisplay(tFirst, statusByIso, true);
@@ -2727,7 +2802,7 @@
           if (tSecond.length) termRows.push(rowHtml(labelBase + " · Second half term", tSecond));
           if (termRows.length) {
             upcomingAccordions.push({
-              label: labelBase + " Term 26/27",
+              label: labelBase + suffix,
               body: termRows.join(""),
             });
           }
@@ -2736,7 +2811,7 @@
         var first = [];
         var second = [];
         nextDates.forEach(function (d) {
-          if (isFirstHalfTermDate(d.iso, data)) first.push(d);
+          if (isFirstHalfTermDate(d.iso, data, forceNextYearHalf)) first.push(d);
           else second.push(d);
         });
         first = filterChipListForDisplay(first, statusByIso, true);
@@ -2746,24 +2821,29 @@
         if (second.length) fallbackRows.push(rowHtml("Autumn · Second half term", second));
         if (fallbackRows.length) {
           upcomingAccordions.push({
-            label: "Autumn Term 26/27",
+            label: "Autumn" + suffix,
             body: fallbackRows.join(""),
           });
         }
       }
     }
 
+    if (acceptedNext) {
+      var nextDates = findTermSessionDates(data).filter(function (d) {
+        return d.iso > summerTo;
+      });
+      pushTermAccordionsFromDates(nextDates, true, " Term 26/27");
+    } else {
+      // Not re-enrolled: 2026/27 places in red until they confirm.
+      var pendingDates = findUnconfirmedNextYearSessionDates(data);
+      pushTermAccordionsFromDates(pendingDates, true, " Term 26/27 · not confirmed");
+    }
+
     if (crashHtml) thisChunks.push(crashHtml);
 
-    if (upcomingAccordions.length) {
-      upcomingAccordions.forEach(function (term, idx) {
-        var html = termAccordionHtml(term.label, term.body, false, false);
-        if (idx === 0) thisChunks.push(html);
-        else laterChunks.push(html);
-      });
-      if (completedTermHtml) laterChunks.push(completedTermHtml);
-    } else if (todayIso <= summerTo) {
-      // Still in / finishing current summer with no 2026/27 chips yet — This term.
+    // Still in Summer 25/26 and not re-enrolled: keep live summer chips in This term,
+    // and park the red 26/27 preview under Later terms.
+    if (!acceptedNext && todayIso <= summerTo) {
       var summerDatesOnly = findCurrentSummerSessionDates(data);
       var sFirst = [];
       var sSecond = [];
@@ -2775,8 +2855,39 @@
       if (sFirst.length) summerBody.push(rowHtml("Summer · First half term", sFirst));
       if (sSecond.length) summerBody.push(rowHtml("Summer · Second half term", sSecond));
       if (summerBody.length) {
-        thisChunks.push(termAccordionHtml("Summer Term 25/26", summerBody.join(""), false, false));
+        thisChunks.push(termAccordionHtml("Summer Term 25/26", summerBody.join(""), true, false));
       }
+      upcomingAccordions.forEach(function (term) {
+        laterChunks.push(termAccordionHtml(term.label, term.body, false, false));
+      });
+      upcomingAccordions = [];
+    }
+
+    if (upcomingAccordions.length) {
+      upcomingAccordions.forEach(function (term, idx) {
+        var html = termAccordionHtml(term.label, term.body, idx === 0, false);
+        if (idx === 0) thisChunks.push(html);
+        else laterChunks.push(html);
+      });
+      if (completedTermHtml) laterChunks.push(completedTermHtml);
+    } else if (todayIso <= summerTo && !thisChunks.length) {
+      // Fallback if summer rows failed to build above.
+      var summerDatesFallback = findCurrentSummerSessionDates(data);
+      var sf = [];
+      var ss = [];
+      summerDatesFallback.forEach(function (d) {
+        if (isFirstHalfTermDate(d.iso, data, false)) sf.push(d);
+        else ss.push(d);
+      });
+      var summerBodyFb = [];
+      if (sf.length) summerBodyFb.push(rowHtml("Summer · First half term", sf));
+      if (ss.length) summerBodyFb.push(rowHtml("Summer · Second half term", ss));
+      if (summerBodyFb.length) {
+        thisChunks.push(termAccordionHtml("Summer Term 25/26", summerBodyFb.join(""), true, false));
+      }
+    } else if (completedTermHtml && !thisChunks.length) {
+      // After summer end with no projected next-year dates (e.g. no roster days).
+      thisChunks.push(completedTermHtml);
     }
 
     var allowLater = !isTermByTermBooking(data);
@@ -3220,7 +3331,7 @@
       var endNote;
       if (!hasCrash && !hasNextYear) {
         endNote =
-          "No upcoming session on the calendar yet. Past sessions are green; the next one will show here when dates open.";
+          "Summer term has ended. Dates above are red until you re-enrol for 2026/27 — confirm by Wed 22 July to keep the place.";
       } else if (booking.parent_action === "auto") {
         endNote =
           "No more sessions left this summer term. Your 2026/27 place continues with the office — nothing for you to submit.";
