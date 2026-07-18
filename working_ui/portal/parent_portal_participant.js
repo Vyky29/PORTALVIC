@@ -2413,6 +2413,7 @@
         '<svg class="pp-hub-ops__term-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>' +
         "</summary>" +
         '<div class="pp-hub-ops__term-body">' +
+        termChipColorLegendHtml() +
         contentHtml +
         "</div></details>"
       );
@@ -2559,15 +2560,13 @@
     var allowLater = !isTermByTermBooking(data);
     var thisInner = thisChunks.join("");
     var laterInner = allowLater ? laterChunks.join("") : "";
-    var legend = termChipColorLegendHtml();
 
-    function wrapStack(inner, aria, withLegend) {
+    function wrapStack(inner, aria) {
       if (!inner) return "";
       return (
         '<div class="pp-hub-ops__date-chips-stack" aria-label="' +
         esc(aria) +
         '">' +
-        (withLegend ? legend : "") +
         inner +
         "</div>"
       );
@@ -2575,9 +2574,9 @@
 
     var fullInner = thisInner + (allowLater ? laterChunks.join("") : "");
     return {
-      thisTermHtml: thisInner ? wrapStack(thisInner, "This term session dates", true) : "",
-      laterTermsHtml: laterInner ? wrapStack(laterInner, "Later term session dates", false) : "",
-      fullHtml: fullInner ? wrapStack(fullInner, "Session dates", true) : "",
+      thisTermHtml: thisInner ? wrapStack(thisInner, "This term session dates") : "",
+      laterTermsHtml: laterInner ? wrapStack(laterInner, "Later term session dates") : "",
+      fullHtml: fullInner ? wrapStack(fullInner, "Session dates") : "",
     };
   }
 
