@@ -638,6 +638,8 @@
     statusFilter: "active", // active (re-enrolled) | all | outstanding | paid | notreenrolled
     sheetFilter: "",      // "" = all groups, else sheet name
     paidFilterByTerm: {}, // termBucketId -> Paid value ("" = all)
+    termOpenById: {}, // termBucketId -> boolean (persist accordion open across re-renders)
+    focusTermId: "", // after Paid chip click, keep this term open + in view
     query: "",
   };
 
@@ -911,6 +913,24 @@
     return map[termId] || "";
   }
 
+  function captureTermOpenState(root) {
+    if (!root) return;
+    if (!state.termOpenById) state.termOpenById = {};
+    root.querySelectorAll("details.pay-term-acc[data-pay-term]").forEach(function (el) {
+      var id = el.getAttribute("data-pay-term");
+      if (id) state.termOpenById[id] = !!el.open;
+    });
+  }
+
+  /** Remember open/closed; unknown terms default open (first paint). */
+  function termDetailsOpenAttr(termId) {
+    var map = state.termOpenById || {};
+    if (Object.prototype.hasOwnProperty.call(map, termId)) {
+      return map[termId] ? " open" : "";
+    }
+    return " open";
+  }
+
   function paidFilterChipsHtml(termId) {
     var cur = paidFilterForTerm(termId);
     var html = '<div class="pay-chip-filters pay-chip-filters--term" role="group" aria-label="Paid filter for this term">'
@@ -1128,7 +1148,7 @@
       }
       any = true;
       var vis = scoped.filter(statusMatch);
-      html += '<details class="pay-term-acc" open data-pay-term="' + esc(termId) + '">'
+      html += '<details class="pay-term-acc"' + termDetailsOpenAttr(termId) + ' data-pay-term="' + esc(termId) + '">'
         + '<summary class="pay-term-acc__sum">'
         + '<span><span class="pay-term-acc__title">' + esc(sg.bucket.title) + "</span>"
         + '<span class="pay-term-acc__sub">' + esc(sg.bucket.subtitle) + "</span></span>"
@@ -1433,6 +1453,14 @@
   function render() {
     var root = state.rootEl;
     if (!root) return;
+    var scrollY = window.scrollY || 0;
+    var focusTerm = String(state.focusTermId || "").trim();
+    captureTermOpenState(root);
+    if (focusTerm) {
+      if (!state.termOpenById) state.termOpenById = {};
+      state.termOpenById[focusTerm] = true;
+    }
+
     var scoped = baseRows();
     var visible = scoped.filter(statusMatch);
     var totals = tallyRows(scoped);
@@ -1464,6 +1492,21 @@
 
     root.innerHTML = html;
     bindRoot(root);
+
+    if (focusTerm) {
+      state.focusTermId = "";
+      var focusEl = root.querySelector('details.pay-term-acc[data-pay-term="' + focusTerm + '"]');
+      if (focusEl) {
+        focusEl.open = true;
+        try {
+          focusEl.scrollIntoView({ block: "nearest", inline: "nearest" });
+        } catch (_) {
+          focusEl.scrollIntoView(true);
+        }
+      }
+    } else {
+      window.scrollTo(0, scrollY);
+    }
   }
 
   function seg(id, label) {
@@ -1546,7 +1589,7 @@
       });
       totalPeople += Object.keys(keys).length;
       htmlBlocks.push(
-        '<details class="pay-term-acc" open data-pay-term="' + esc(termId) + '">'
+        '<details class="pay-term-acc"' + termDetailsOpenAttr(termId) + ' data-pay-term="' + esc(termId) + '">'
         + '<summary class="pay-term-acc__sum">'
         + '<span><span class="pay-term-acc__title">' + esc(g.bucket.title) + "</span>"
         + '<span class="pay-term-acc__sub">' + esc(g.bucket.subtitle) + "</span></span>"
@@ -1607,8 +1650,17 @@
         if (kind === "paid") {
           if (!state.paidFilterByTerm) state.paidFilterByTerm = {};
           if (termId) state.paidFilterByTerm[termId] = val;
+          if (termId) state.focusTermId = termId;
         }
         render();
+      });
+    });
+    root.querySelectorAll("details.pay-term-acc[data-pay-term]").forEach(function (el) {
+      el.addEventListener("toggle", function () {
+        var id = el.getAttribute("data-pay-term");
+        if (!id) return;
+        if (!state.termOpenById) state.termOpenById = {};
+        state.termOpenById[id] = !!el.open;
       });
     });
     var s = root.querySelector("#paySearch");
