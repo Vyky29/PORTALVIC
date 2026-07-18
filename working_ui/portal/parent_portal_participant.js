@@ -2534,7 +2534,7 @@
 
     if (upcomingAccordions.length) {
       upcomingAccordions.forEach(function (term, idx) {
-        var html = termAccordionHtml(term.label, term.body, idx === 0, false);
+        var html = termAccordionHtml(term.label, term.body, false, false);
         if (idx === 0) thisChunks.push(html);
         else laterChunks.push(html);
       });
@@ -2552,7 +2552,7 @@
       if (sFirst.length) summerBody.push(rowHtml("Summer · First half term", sFirst));
       if (sSecond.length) summerBody.push(rowHtml("Summer · Second half term", sSecond));
       if (summerBody.length) {
-        thisChunks.push(termAccordionHtml("Summer Term 25/26", summerBody.join(""), true, false));
+        thisChunks.push(termAccordionHtml("Summer Term 25/26", summerBody.join(""), false, false));
       }
     }
 
