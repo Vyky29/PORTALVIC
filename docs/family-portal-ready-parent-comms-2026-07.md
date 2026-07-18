@@ -61,8 +61,14 @@ From Thu 23 July, unconfirmed places may be released. Full welcome email has all
 
 ## Individual WhatsApp (with PIN) — template
 
+Use this after families already received the first Family portal welcome.
+
+**Single child**
+
 ```
-Hi {{parent_first}} — your Family portal login is ready.
+Hi {{parent_first}} — quick update on your Family portal login.
+
+For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in).
 
 Open: https://www.clubsensational.org/parent
 
@@ -72,6 +78,11 @@ Sign in with:
 
 Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.
 
-Same PIN works for every child on your account. You can change it after signing in.
 Any problem, reply here.
+```
+
+**More than one child** — add this line after the PIN:
+
+```
+Same PIN works for every child on your account.
 ```
