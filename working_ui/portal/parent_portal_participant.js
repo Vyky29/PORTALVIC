@@ -4247,39 +4247,95 @@
   }
 
   function renderAnnouncements(host, data, opts) {
-    var items = Array.isArray(data.club_announcements) ? data.club_announcements : [];
-    var body;
-    if (!items.length) {
-      body =
-        '<p class="pp-muted">Club notices will appear here when something affects sessions this week (venue change, closure, key dates).</p>';
-    } else {
-      body =
-        '<ul class="pp-week-notes-folder">' +
-        items
-          .map(function (a) {
-            return (
-              '<li class="pp-week-notes-folder__item">' +
-              '<div class="pp-week-notes-folder__meta">' +
-              '<strong class="pp-week-notes-folder__range">' +
-              esc((a && a.title) || "Notice") +
-              "</strong></div>" +
-              (a && a.body
-                ? '<p class="pp-week-notes-folder__body">' + esc(String(a.body)) + "</p>"
-                : "") +
-              "</li>"
-            );
-          })
-          .join("") +
-        "</ul>";
+    var staticItems = Array.isArray(data.club_announcements) ? data.club_announcements.slice() : [];
+
+    function announcementFromMessage(m) {
+      if (!m || m.direction !== "out") return null;
+      if (!messageMatchesParticipant(m, data)) return null;
+      var k = String(m.kind || "").toLowerCase();
+      var title = "";
+      if (k === "instructor_change" || k === "instructor_reassign") {
+        title = "Instructor update";
+      } else if (k === "session_cancelled") {
+        title = "Session cancelled";
+      } else if (k === "absence_announced") {
+        title = "Absence noted";
+      } else {
+        return null;
+      }
+      var body = String(m.body_text || m.subject || "").trim().replace(/\s+/g, " ");
+      if (body.length > 280) body = body.slice(0, 277) + "…";
+      return {
+        id: m.id || m.created_at || title,
+        title: title,
+        body: body,
+        when: m.created_at || null,
+        kind: k,
+      };
     }
-    host.innerHTML = subviewShell(
-      data,
-      "announcements",
-      '<h3 class="pp-pax-subview-title">Club announcements</h3>' +
-        '<p class="pp-muted pp-pax-subview-note">Short club notices — not personal messages.</p>' +
-        body,
-    );
-    bindBack(host, data, opts);
+
+    function paint(items) {
+      var body;
+      if (!items.length) {
+        body =
+          '<p class="pp-muted">Club notices will appear here when something affects sessions (instructor change, venue change, closure, key dates).</p>';
+      } else {
+        body =
+          '<ul class="pp-week-notes-folder">' +
+          items
+            .map(function (a) {
+              return (
+                '<li class="pp-week-notes-folder__item">' +
+                '<div class="pp-week-notes-folder__meta">' +
+                '<strong class="pp-week-notes-folder__range">' +
+                esc((a && a.title) || "Notice") +
+                "</strong>" +
+                (a && a.when
+                  ? '<span class="pp-muted" style="font-size:12px">' +
+                    esc(formatMessageWhen(a.when)) +
+                    "</span>"
+                  : "") +
+                "</div>" +
+                (a && a.body
+                  ? '<p class="pp-week-notes-folder__body">' + esc(String(a.body)) + "</p>"
+                  : "") +
+                "</li>"
+              );
+            })
+            .join("") +
+          "</ul>";
+      }
+      host.innerHTML = subviewShell(
+        data,
+        "announcements",
+        '<h3 class="pp-pax-subview-title">Club announcements</h3>' +
+          '<p class="pp-muted pp-pax-subview-note">Instructor changes, cancellations and other club notices for this child.</p>' +
+          body,
+      );
+      bindBack(host, data, opts);
+    }
+
+    paint(staticItems);
+
+    if (!opts || typeof opts.loadMessages !== "function") return;
+    void opts
+      .loadMessages({ markRead: false })
+      .then(function (payload) {
+        if (!host.isConnected) return;
+        var fromMsgs = [];
+        var seen = Object.create(null);
+        ((payload && payload.messages) || []).forEach(function (m) {
+          var a = announcementFromMessage(m);
+          if (!a) return;
+          var key = String(a.kind || "") + "|" + String(a.when || "") + "|" + String(a.body || "").slice(0, 40);
+          if (seen[key]) return;
+          seen[key] = true;
+          fromMsgs.push(a);
+        });
+        if (!fromMsgs.length && !staticItems.length) return;
+        paint(fromMsgs.concat(staticItems));
+      })
+      .catch(function () {});
   }
 
   function firstNameOf(data) {
@@ -4340,13 +4396,25 @@
         esc(m.nationality) +
         "</p>"
       : "";
+    var isCover =
+      String(m.role || "").toLowerCase() === "cover" ||
+      !!m.is_cover ||
+      !!m.covering_after_change;
+    var badgeHtml = isCover
+      ? '<span class="pp-team-card__badge" title="Covering after an instructor change">Instructor change</span>'
+      : "";
     return (
-      '<article class="pp-team-card">' +
+      '<article class="pp-team-card' +
+      (isCover ? " pp-team-card--cover" : "") +
+      '">' +
       teamMemberPhotoHtml(m) +
       '<div class="pp-team-card__body">' +
+      '<div class="pp-team-card__name-row">' +
       '<h4 class="pp-team-card__name">' +
       esc(m.name || "Team member") +
       "</h4>" +
+      badgeHtml +
+      "</div>" +
       natHtml +
       speaksHtml +
       (m.bio ? '<p class="pp-team-card__bio">' + esc(m.bio) + "</p>" : "") +
@@ -4374,7 +4442,7 @@
     var pName = p.display_name || "Participant";
     setParticipantPageTitle(pName + "\u2019s Team");
 
-    function paint(members) {
+    function paint(members, changeNote) {
       var colClass =
         members.length >= 4
           ? " pp-team-grid--2"
@@ -4392,40 +4460,82 @@
         : '<p class="pp-muted">No instructors on file yet for sessions since ' +
           esc(sinceLabel.slice(0, 10).split("-").reverse().join("/")) +
           ".</p>";
+      var noteHtml = changeNote
+        ? '<div class="pp-team-change-note" role="status">' +
+          "<strong>Recent instructor change</strong>" +
+          '<p class="pp-muted" style="margin:4px 0 0">' +
+          esc(changeNote) +
+          "</p></div>"
+        : "";
       host.innerHTML =
         '<div class="pp-pax-shell" data-pp-view="team">' +
         '<div class="pp-pax-sticky-hero pp-team-backbar">' +
         hubBackButtonHtml(data) +
         "</div>" +
         '<div class="pp-pax-subview-body">' +
-        '<p class="pp-muted pp-team-intro">Instructors from recent sessions, plus anyone covering after an instructor change — open this anytime to show your child who to expect.</p>' +
+        '<p class="pp-muted pp-team-intro">Instructors from recent sessions. If someone is covering after a change, they appear here with an <strong>Instructor change</strong> badge — show this to your child so they know who to expect.</p>' +
+        noteHtml +
         bodyHtml +
         "</div></div>";
       bindBack(host, data, opts);
     }
 
     var base = teamMembers(data);
-    paint(base);
+    paint(base, "");
 
     if (!opts || typeof opts.loadMessages !== "function") return;
     void opts
       .loadMessages({ markRead: false })
       .then(function (payload) {
         if (!host.isConnected) return;
-        var covers = coverInstructorsFromMessages((payload && payload.messages) || []);
-        if (!covers.length) return;
+        var msgs = ((payload && payload.messages) || []).filter(function (m) {
+          return messageMatchesParticipant(m, data);
+        });
+        var covers = coverInstructorsFromMessages(msgs);
+        var changeNote = "";
+        for (var i = 0; i < msgs.length; i++) {
+          var m = msgs[i];
+          if (!m || m.direction !== "out") continue;
+          if (!messageMatchesParticipant(m, data)) continue;
+          var k = String(m.kind || "").toLowerCase();
+          if (k !== "instructor_change" && k !== "instructor_reassign") continue;
+          var preview = String(m.body_text || "").trim().replace(/\s+/g, " ");
+          if (preview.length > 160) preview = preview.slice(0, 157) + "…";
+          changeNote = preview || "A covering instructor was assigned for a recent session.";
+          break;
+        }
         var seen = Object.create(null);
         var merged = [];
         base.forEach(function (m) {
-          var k = String((m && (m.staff_key || m.key || m.username || m.name)) || "")
+          var key = String((m && (m.staff_key || m.key || m.username || m.name)) || "")
             .trim()
             .toLowerCase()
             .split(/\s+/)[0];
-          if (k) seen[k] = true;
-          merged.push(m);
+          if (key) seen[key] = true;
+          if (String((m && m.role) || "").toLowerCase() === "cover") {
+            merged.push(Object.assign({}, m, { covering_after_change: true }));
+          } else {
+            merged.push(m);
+          }
         });
         covers.forEach(function (c) {
-          if (seen[c.key]) return;
+          if (seen[c.key]) {
+            for (var j = 0; j < merged.length; j++) {
+              var mk = String(
+                (merged[j] && (merged[j].staff_key || merged[j].key || merged[j].name)) || "",
+              )
+                .trim()
+                .toLowerCase()
+                .split(/\s+/)[0];
+              if (mk === c.key) {
+                merged[j] = Object.assign({}, merged[j], {
+                  role: "cover",
+                  covering_after_change: true,
+                });
+              }
+            }
+            return;
+          }
           var card = null;
           if (
             global.PortalParentTeam &&
@@ -4437,10 +4547,14 @@
             card = {
               name: c.name,
               avatar_url: "/portal/staff_photos/" + c.key + ".png",
-              bio: "Covering instructor for a recent session change.",
+              bio: "Covering instructor after a recent session change.",
+              role: "cover",
+              covering_after_change: true,
             };
           } else {
             card = Object.assign({}, card, {
+              role: "cover",
+              covering_after_change: true,
               bio:
                 (card.bio ? card.bio + " " : "") +
                 "Also covering after a recent instructor change.",
@@ -4449,7 +4563,7 @@
           seen[c.key] = true;
           merged.push(card);
         });
-        if (merged.length !== base.length) paint(merged);
+        paint(merged, changeNote);
       })
       .catch(function () {});
   }
@@ -4719,6 +4833,16 @@
     if (!filter || filter === "all") return true;
     var ch = messageDeliveryChannel(m);
     if (filter === "email") return ch === "email";
+    if (filter === "updates") {
+      var k = String((m && m.kind) || "").toLowerCase();
+      return (
+        k === "instructor_change" ||
+        k === "instructor_reassign" ||
+        k === "session_cancelled" ||
+        k === "absence_announced" ||
+        k === "makeup_scheduled"
+      );
+    }
     // WhatsApp tab shows the two-way chat: everything that is not a pure email.
     return ch !== "email";
   }
@@ -4740,19 +4864,21 @@
     }
     return (
       '<div class="pp-msgs-filter" role="group" aria-label="Filter messages by channel">' +
+      btn("all", "All") +
       btn("whatsapp", "WhatsApp") +
       btn("email", "Email") +
+      btn("updates", "Updates") +
       "</div>"
     );
   }
 
   function renderMessages(host, data, opts) {
     opts = opts || {};
-    var state = { messages: [], waBiz: null, filter: "whatsapp" };
+    var state = { messages: [], waBiz: null, filter: "all" };
     var prefill = String(opts.prefillMessage || "").trim();
     var body =
       '<h3 class="pp-pax-subview-title">Messages</h3>' +
-      '<p class="pp-muted pp-pax-subview-note">Club updates by WhatsApp and email. Use the buttons to see each channel on its own.</p>' +
+      '<p class="pp-muted pp-pax-subview-note">Club updates (including instructor changes), WhatsApp and email. Use <strong>Updates</strong> for session changes only.</p>' +
       messagesFilterBarHtml(state.filter) +
       '<div id="ppMsgsThreadHost"><p class="pp-muted">Loading messages…</p></div>' +
       messagesComposeHtml(null);
