@@ -691,6 +691,18 @@
     return participantPhotoHtml(p);
   }
 
+  function hubIdentityMetaInlineHtml(p) {
+    p = p || {};
+    var dobIso = p.dob_iso || "";
+    var dobText = p.dob_display || (dobIso ? formatDate(dobIso) : "");
+    var age = ageFromDobIso(dobIso);
+    var bits = [];
+    if (dobText) bits.push("D.O.B: " + dobText);
+    if (age != null) bits.push("Age: " + age);
+    if (!bits.length) return "";
+    return '<p class="pp-muted pp-hub-hero__meta">' + esc(bits.join(" · ")) + "</p>";
+  }
+
   function hubHeroHtml(data, opts) {
     var p = data.participant || {};
     var status = statusChips(p);
@@ -700,17 +712,19 @@
       '<header class="pp-hub-hero' +
       (needsPhoto ? " pp-hub-hero--needs-photo" : "") +
       '">' +
-      '<div class="pp-hub-hero__id">' +
+      '<div class="pp-hub-hero__row">' +
       hubHeroPhotoHtml(data, opts) +
+      '<div class="pp-hub-hero__copy">' +
+      '<div class="pp-hub-hero__title-row">' +
       '<h3 class="pp-hub-hero__name">' +
       esc(p.display_name || "Participant") +
       "</h3>" +
-      participantIdentityMetaHtml(p) +
-      enrolledServiceChipsHtml(data) +
       (status ? '<div class="pp-chip-row pp-hub-hero__status">' + status + "</div>" : "") +
-      hubPhotoNoticeHtml(data, opts) +
       "</div>" +
-      "</header>" +
+      hubIdentityMetaInlineHtml(p) +
+      enrolledServiceChipsHtml(data) +
+      hubPhotoNoticeHtml(data, opts) +
+      "</div></div></header>" +
       reenrolBannerHtml(data)
     );
   }

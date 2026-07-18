@@ -706,24 +706,21 @@
       padding: 10px 10px 12px;
     }
     body.pp-step-participant .pp-hub-hero {
-      gap: 6px;
+      gap: 0;
       margin-bottom: 6px;
     }
     body.pp-step-participant .pp-hub-hero .pp-pax-photo,
     body.pp-step-participant .pp-hub-hero .pp-child-photo {
-      width: 64px;
-      height: 64px;
+      width: 56px;
+      height: 56px;
       border-width: 2px;
     }
     body.pp-step-participant .pp-hub-hero .pp-pax-photo--init,
     body.pp-step-participant .pp-hub-hero .pp-child-photo--init {
-      font-size: 22px;
+      font-size: 20px;
     }
     body.pp-step-participant .pp-hub-hero__name {
-      font-size: 18px;
-    }
-    body.pp-step-participant .pp-hub-hero__id {
-      gap: 4px;
+      font-size: 16px;
     }
     body.pp-step-participant .pp-hub-reenrol {
       margin: 0 0 8px;
@@ -732,6 +729,11 @@
     }
     body.pp-step-participant .pp-hub-reenrol__copy strong {
       font-size: 13px;
+    }
+    body.pp-step-participant .pp-hub-reenrolled {
+      margin: 0 0 6px;
+      padding: 6px 10px;
+      font-size: 12px;
     }
     body.pp-step-participant .pp-hub-ops {
       margin: 4px 0 6px;
@@ -776,10 +778,10 @@
     @media (max-height: 720px) {
       body.pp-step-participant .pp-hub-hero .pp-pax-photo,
       body.pp-step-participant .pp-hub-hero .pp-child-photo {
-        width: 56px;
-        height: 56px;
+        width: 48px;
+        height: 48px;
       }
-      body.pp-step-participant .pp-hub-hero__name { font-size: 16px; }
+      body.pp-step-participant .pp-hub-hero__name { font-size: 15px; }
       body.pp-step-participant .pp-hub-shortcut { min-height: 54px; }
     }
     .pp-participant-body {
@@ -3464,55 +3466,77 @@
     .pp-hub-hero {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 8px;
       align-items: stretch;
-      margin-bottom: 14px;
+      margin-bottom: 10px;
       min-width: 0;
     }
-    .pp-hub-hero__id {
+    .pp-hub-hero__row {
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      gap: 8px;
+      align-items: flex-start;
+      gap: 12px;
       min-width: 0;
       width: 100%;
     }
-    .pp-hub-hero .pp-pax-photo {
-      width: 96px;
-      height: 96px;
-      border-width: 3px;
+    .pp-hub-hero__copy {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 4px;
+      min-width: 0;
+      flex: 1;
     }
-    .pp-hub-hero .pp-pax-photo--init { font-size: 28px; }
+    .pp-hub-hero__title-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      min-width: 0;
+    }
+    .pp-hub-hero .pp-pax-photo,
+    .pp-hub-hero .pp-child-photo-block {
+      flex-shrink: 0;
+    }
+    .pp-hub-hero .pp-pax-photo {
+      width: 56px;
+      height: 56px;
+      border-width: 2px;
+    }
+    .pp-hub-hero .pp-pax-photo--init { font-size: 20px; }
     .pp-hub-hero__name {
       margin: 0;
-      font-size: 22px;
+      font-size: 17px;
       font-weight: 800;
       color: var(--ink);
       overflow-wrap: break-word;
       min-width: 0;
-      max-width: 100%;
-      text-align: center;
+      flex: 1;
+      text-align: left;
+      line-height: 1.25;
     }
-    .pp-hub-hero__id .pp-pax-meta {
+    .pp-hub-hero__meta {
       margin: 0;
       font-size: 12px;
       line-height: 1.35;
       overflow-wrap: break-word;
-      text-align: center;
-      max-width: 100%;
+      min-width: 0;
+      text-align: left;
     }
-    .pp-hub-hero__id .pp-pax-meta + .pp-pax-meta { margin-top: 2px; }
-    .pp-hub-hero__id .pp-svc-chips {
-      justify-content: center;
-      flex: 0 0 auto;
-      width: 100%;
+    .pp-hub-hero__copy .pp-svc-chips {
+      justify-content: flex-start;
+      flex: 0 1 auto;
+      width: auto;
       max-width: 100%;
-      margin-top: 4px;
+      margin-top: 2px;
     }
     .pp-hub-hero__status {
-      justify-content: center;
-      margin-top: 2px;
+      justify-content: flex-end;
+      margin: 0;
+      flex-shrink: 0;
+    }
+    .pp-hub-hero__status .pp-chip {
+      font-size: 10px;
+      padding: 2px 8px;
     }
     .pp-pax-meta {
       margin: 0;
@@ -4442,7 +4466,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260717-parent-session-attendance"></script>
   <script src="/portal/parent_portal_team.js?v=20260710-eiji-hazem-photos"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260715-crash-cal-first"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260718-legend-inside"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260718-hero-compact"></script>
   <script src="/portal/parent_portal_app.js?v=20260718-hub-compact-menu"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
