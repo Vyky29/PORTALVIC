@@ -59,16 +59,21 @@ Tip: Add to Home Screen, open from that icon and turn on alerts so updates reach
 
 From Thu 23 July, unconfirmed places may be released. Full welcome email has all the details.
 
-## Individual WhatsApp (with PIN) — template
+## Individual WhatsApp (with PIN) — templates
 
-Use this after families already received the first Family portal welcome.
+Use after families already received the first Family portal welcome.  
+**Do not** put PINs in the mass Family broadcast — only in these one-to-one WhatsApps.
 
-**Single child**
+Generated lists (local):  
+`database/local-vault/tmp/parent-portal-pin-whatsapps-thanks.txt`  
+`database/local-vault/tmp/parent-portal-pin-whatsapps-pending.txt`
+
+### A — Already re-enrolled (thank you + PIN replaces DOB)
 
 ```
-Hi {{parent_first}} — quick update on your Family portal login.
+Hi {{parent_first}} — thank you for re-enrolling for 2026/27.
 
-For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in).
+For easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in).
 
 Open: https://www.clubsensational.org/parent
 
@@ -76,12 +81,34 @@ Sign in with:
 • Child’s first name: {{child_first}}
 • Family PIN: {{pin}}
 
+{{same_pin_line_if_multi_child}}
+
+Crash courses are still open to book in the portal if you need them.
+
+Any problem, reply here.
+```
+
+### B — Not yet re-enrolled (PIN update + deadline 22 July)
+
+```
+Hi {{parent_first}} — quick update on your Family portal login.
+
+For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.
+
+Open: https://www.clubsensational.org/parent
+
+Sign in with:
+• Child’s first name: {{child_first}}
+• Family PIN: {{pin}}
+
+{{same_pin_line_if_multi_child}}
+
 Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.
 
 Any problem, reply here.
 ```
 
-**More than one child** — add this line after the PIN:
+**More than one child only** — insert this line after the PIN block:
 
 ```
 Same PIN works for every child on your account.
