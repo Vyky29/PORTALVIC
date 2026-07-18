@@ -720,15 +720,23 @@
     var css = [
       ".pay-wrap{min-width:0}",
       ".pay-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:0 0 12px}",
-      ".pay-kpi{display:flex;align-items:center;justify-content:center;gap:12px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px}",
-      ".pay-kpi__ico{flex:0 0 auto;width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:#eff6ff;color:#2d84b3}",
+      ".pay-kpi{display:flex;align-items:center;justify-content:center;gap:12px;border-radius:14px;padding:14px 16px;border:1px solid transparent}",
+      ".pay-kpi__ico{flex:0 0 auto;width:38px;height:38px;border-radius:11px;display:grid;place-items:center}",
       ".pay-kpi__txt{min-width:0;text-align:center}",
-      ".pay-kpi b{display:block;font-size:22px;color:#0f172a}",
-      ".pay-kpi span{font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.03em;font-weight:700}",
-      ".pay-kpi--out b{color:#b91c1c}",
-      ".pay-kpi--out .pay-kpi__ico{background:#fef2f2;color:#b91c1c}",
-      ".pay-kpi--paid b{color:#15803d}",
-      ".pay-kpi--paid .pay-kpi__ico{background:#e7f6ee;color:#15803d}",
+      ".pay-kpi b{display:block;font-size:22px;font-variant-numeric:tabular-nums}",
+      ".pay-kpi span{font-size:12px;text-transform:uppercase;letter-spacing:.03em;font-weight:700}",
+      ".pay-kpi--billed{background:#eff6ff;border-color:#bfdbfe}",
+      ".pay-kpi--billed .pay-kpi__ico{background:#dbeafe;color:#1d4ed8}",
+      ".pay-kpi--billed span{color:#1e40af}",
+      ".pay-kpi--billed b{color:#1e3a8a}",
+      ".pay-kpi--paid{background:#ecfdf5;border-color:#a7f3d0}",
+      ".pay-kpi--paid .pay-kpi__ico{background:#d1fae5;color:#047857}",
+      ".pay-kpi--paid span{color:#047857}",
+      ".pay-kpi--paid b{color:#166534}",
+      ".pay-kpi--out{background:#fef2f2;border-color:#fecaca}",
+      ".pay-kpi--out .pay-kpi__ico{background:#fee2e2;color:#b91c1c}",
+      ".pay-kpi--out span{color:#b91c1c}",
+      ".pay-kpi--out b{color:#991b1b}",
       ".pay-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin:0 0 14px}",
       ".pay-grp{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;min-width:0}",
       ".pay-grp__h{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 0 12px;min-width:0}",
@@ -1076,7 +1084,7 @@
     var html = '<div class="pay-term-acc__body">';
     html += paidFilterChipsHtml(termId);
     html += '<div class="pay-kpis">'
-      + kpiCard("billed", "", "Billed", money(t.billed))
+      + kpiCard("billed", "pay-kpi--billed", "Billed", money(t.billed))
       + kpiCard("paid", "pay-kpi--paid", "Paid", money(t.paid))
       + kpiCard("out", "pay-kpi--out", "Outstanding", money(t.outstanding))
       + "</div>";
