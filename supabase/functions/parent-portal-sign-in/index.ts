@@ -18,6 +18,7 @@ import {
   childFirstNameToken,
   isMasterPin,
   isValidFamilyPin,
+  masterPinFromEnv,
   normalizeParticipantFirstName,
   normalizePinDigits,
   verifyFamilyPinHash,
@@ -60,7 +61,11 @@ Deno.serve(async (req) => {
     body.participant_first_name || body.child_first_name || "",
   );
   const pinDigits = normalizePinDigits(body.login_pin || body.pin || "");
-  if (!firstName || (pinDigits.length !== 4 && pinDigits.length !== 6)) {
+  const masterLen = masterPinFromEnv().length;
+  if (
+    !firstName ||
+    (pinDigits.length !== 4 && pinDigits.length !== masterLen && pinDigits.length !== 6)
+  ) {
     return parentPortalJsonInvalid(400);
   }
 
@@ -122,14 +127,18 @@ Deno.serve(async (req) => {
     const uniqueParents = [
       ...new Set(matchedRows.map((r) => String(r.parent_person_id || "").trim()).filter(Boolean)),
     ];
-    if (uniqueParents.length !== 1) {
-      // Ambiguous first name across families — refuse master login without uniqueness.
+    if (!uniqueParents.length) {
       await recordFail();
-      return json(401, { ok: false, error: "ambiguous_name" });
+      return parentPortalJsonInvalid();
     }
-    matchedParentId = uniqueParents[0];
-    matchedContactId = String(matchedRows.find((r) => r.parent_person_id === matchedParentId)?.contact_id || "") ||
-      null;
+    /* Prefer a non-demo parent when the same first name exists on test rows. */
+    const preferred =
+      uniqueParents.find((pid) => !/demo|test/i.test(pid)) || uniqueParents[0];
+    matchedParentId = preferred;
+    matchedContactId =
+      String(
+        matchedRows.find((r) => String(r.parent_person_id) === matchedParentId)?.contact_id || "",
+      ) || null;
   } else {
     if (!isValidFamilyPin(pinDigits)) {
       await recordFail();
@@ -153,11 +162,13 @@ Deno.serve(async (req) => {
       if (!hash) continue;
       if (await verifyFamilyPinHash(pinDigits, hash)) hits.push(pid);
     }
-    if (hits.length !== 1) {
+    if (!hits.length) {
       await recordFail();
       return parentPortalJsonInvalid();
     }
-    matchedParentId = hits[0];
+    /* Co-parents share one family PIN — multiple hits with the same PIN is OK.
+       Prefer a non-demo parent_person_id when test rows collide on first name. */
+    matchedParentId = hits.find((pid) => !/demo|test/i.test(pid)) || hits[0];
     matchedContactId =
       String(
         matchedRows.find((r) => String(r.parent_person_id) === matchedParentId)?.contact_id || "",
