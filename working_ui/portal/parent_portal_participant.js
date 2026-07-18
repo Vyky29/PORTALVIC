@@ -3248,7 +3248,7 @@
 
   function renderHub(host, data, opts) {
     ensureGeneralFields(data, { allowPlaceholders: true });
-    setParticipantPageTitle(hubBackLabel(data).text);
+    setParticipantPageTitle(hubBackLabel(data).pageTitle);
     closeHubMenuSheet();
     clearHubNextSessionLive(host);
     // Dashboard: This term chips → next session → later terms (whole year) → shortcuts.
