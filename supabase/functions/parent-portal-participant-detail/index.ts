@@ -36,6 +36,7 @@ import {
 } from "../_shared/participant_identity.ts";
 import {
   buildParentAttendanceSummary,
+  expandAbsentDatesFromLeave,
   PARENT_SESSION_TERM_START_ISO,
 } from "../_shared/parent_attendance_summary.ts";
 import { REENROL_ACADEMIC_YEAR } from "../_shared/reenrolment_catalog.ts";
@@ -1023,16 +1024,32 @@ Deno.serve(async (req) => {
     makeup_absent: 0,
     absent_dates: [] as string[],
   };
-  if (wantSessions && !suppressSessionProgress && clientSlugs.length) {
+  /** Earliest slot_clear_client date (left mid-term) — used to paint later missed chips red. */
+  let placeLeftFromIso = "";
+  const wantAttendanceChips = (wantSessions || wantGeneral) && !suppressSessionProgress;
+  if (wantAttendanceChips && clientSlugs.length) {
     const { data: overrideRows, error: ovErr } = await supabase
       .from("schedule_overrides")
       .select("session_date, anchor_start, anchor_client_id, override_type, status, payload")
       .eq("status", "active")
-      .in("override_type", ["client_replace_in_slot", "client_absence_announced"])
+      .in("override_type", [
+        "client_replace_in_slot",
+        "client_absence_announced",
+        "slot_clear_client",
+      ])
       .gte("session_date", PARENT_SESSION_TERM_START_ISO)
       .in("anchor_client_id", clientSlugs);
     if (ovErr) {
       console.error("[parent-portal-participant-detail] schedule_overrides error", ovErr);
+    }
+    const clears = (overrideRows || []).filter(
+      (ov) => String(ov.override_type || "") === "slot_clear_client",
+    );
+    for (const ov of clears) {
+      const iso = String(ov.session_date || "").slice(0, 10);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(iso) && (!placeLeftFromIso || iso < placeLeftFromIso)) {
+        placeLeftFromIso = iso;
+      }
     }
     attendanceSummary = buildParentAttendanceSummary(
       rawFeedback,
@@ -1040,7 +1057,7 @@ Deno.serve(async (req) => {
       clientSlugs,
       PARENT_SESSION_TERM_START_ISO,
     );
-  } else if (wantSessions && !suppressSessionProgress && rawFeedback.length) {
+  } else if (wantAttendanceChips && rawFeedback.length) {
     attendanceSummary = buildParentAttendanceSummary(
       rawFeedback,
       [],
@@ -1199,6 +1216,32 @@ Deno.serve(async (req) => {
     if (lines) {
       rosterServicesCount = lines.count;
       rosterServicesDetail = lines.detail;
+    }
+  }
+
+  if (placeLeftFromIso && rosterServicesDetail.length) {
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const termTo = servicesDetailHasDayCentre(rosterServicesDetail)
+      ? "2026-07-31"
+      : "2026-07-17";
+    const untilIso = todayIso < termTo ? todayIso : termTo;
+    const days = rosterServicesDetail
+      .map((s) => String((s && (s as { day?: string }).day) || ""))
+      .filter(Boolean);
+    const expanded = expandAbsentDatesFromLeave(placeLeftFromIso, days, untilIso);
+    if (expanded.length) {
+      const set = new Set(attendanceSummary.absent_dates || []);
+      for (const iso of expanded) set.add(iso);
+      const absentDates = [...set].sort();
+      attendanceSummary = {
+        ...attendanceSummary,
+        absent_dates: absentDates,
+        absent: Math.max(attendanceSummary.absent, absentDates.length),
+        total: Math.max(
+          attendanceSummary.total,
+          attendanceSummary.attended + absentDates.length,
+        ),
+      };
     }
   }
 

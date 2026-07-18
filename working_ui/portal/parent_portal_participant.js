@@ -3076,7 +3076,10 @@
         }),
       );
     }
-    if (!tasks.length) return;
+    if (!tasks.length) {
+      mergeAndPaint();
+      return;
+    }
     void Promise.all(
       tasks.map(function (p) {
         return p.catch(function () {});

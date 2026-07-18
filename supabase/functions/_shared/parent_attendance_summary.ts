@@ -133,6 +133,8 @@ export function scheduleOverrideCountsAsMissedForClient(
 
   const type = cleanStr(ov.override_type, 80);
   if (type === "client_absence_announced") return true;
+  /** Cleared place / left mid-term — count as missed for parent hub chips. */
+  if (type === "slot_clear_client") return true;
 
   if (type === "client_replace_in_slot") {
     const rep = rosterParticipantSlugAlias(slugifyParticipantKey(overrideReplacementClientId(ov.payload)));
@@ -198,4 +200,42 @@ export function buildParentAttendanceSummary(
     makeup_absent: makeupAbsent,
     absent_dates: absentDates,
   };
+}
+
+const WEEKDAY_TO_JS: Record<string, number> = {
+  sunday: 0,
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6,
+};
+
+/** Fill in missed weekday session dates from leave-from through untilIso (inclusive). */
+export function expandAbsentDatesFromLeave(
+  leaveFromIso: string,
+  serviceDays: string[],
+  untilIso: string,
+): string[] {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(leaveFromIso) || !/^\d{4}-\d{2}-\d{2}$/.test(untilIso)) {
+    return [];
+  }
+  if (untilIso < leaveFromIso) return [];
+  const dows = new Set<number>();
+  for (const raw of serviceDays || []) {
+    const d = WEEKDAY_TO_JS[cleanStr(raw, 20).toLowerCase()];
+    if (d != null) dows.add(d);
+  }
+  if (!dows.size) return [];
+  const out: string[] = [];
+  const start = new Date(`${leaveFromIso}T12:00:00Z`);
+  const end = new Date(`${untilIso}T12:00:00Z`);
+  for (let t = start.getTime(); t <= end.getTime(); t += 86400000) {
+    const d = new Date(t);
+    if (!dows.has(d.getUTCDay())) continue;
+    const iso = d.toISOString().slice(0, 10);
+    out.push(iso);
+  }
+  return out;
 }
