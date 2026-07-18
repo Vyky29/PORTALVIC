@@ -500,10 +500,16 @@ export function resolveParentNotifyWhatsappTemplate(kind: string): string {
 export const WHATSAPP_TEMPLATE_BODY_MAX = 700;
 
 export function flattenWhatsappTemplateBody(body: string, max = WHATSAPP_TEMPLATE_BODY_MAX): string {
+  // Meta {{1}} rejects raw newlines; keep paragraph breaks as " · " so login
+  // blocks (PIN, name, URL) stay readable instead of one run-on sentence.
   return String(body || "")
-    .replace(/[\r\n\t]+/g, " ")
+    .replace(/\r\n/g, "\n")
+    .replace(/\t+/g, " ")
+    .replace(/\n{2,}/g, " · ")
+    .replace(/\n/g, " · ")
     .replace(/ {5,}/g, "    ")
     .replace(/\s{2,}/g, " ")
+    .replace(/(?: · ){2,}/g, " · ")
     .trim()
     .slice(0, max);
 }

@@ -108,8 +108,13 @@ Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.
 Any problem, reply here.
 ```
 
-**More than one child only** — insert this line after the PIN block:
+### Note on WhatsApp template chrome
 
-```
-Same PIN works for every child on your account.
-```
+Cold outbound uses Meta template `portal_parent_update` (Utility). WhatsApp always shows:
+- **clubSENsational (UPDATE)** — template category label
+- **Update from clubSENsational:** — fixed text in the template (before our body)
+- **Thank you, ClubSENsational** — template footer
+
+That header/footer is **not** something we can remove from each send without changing/re-approving the template in Meta Business Manager. Free-form replies inside the 24-hour window (parent messaged first) do **not** use that chrome.
+
+Our body for {{1}} cannot keep real line breaks (Meta rejects them), so we format with a clear **LOGIN DETAILS** block and separate sections with ` · ` when flattened.
