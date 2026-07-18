@@ -339,7 +339,7 @@ export async function buildPortalTaxInvoicePdf(
     y -= 12;
   }
   const descEndY = y;
-  const vatLabel = isExempt ? "Exempt" : "20%";
+  const vatLabel = isExempt ? "Exempt" : "Incl. 20%";
   const rawLineItems = (input.lineItems || [])
     .map((line) => ({
       description: pdfSafeText(line?.description || "Service"),
@@ -432,9 +432,20 @@ export async function buildPortalTaxInvoicePdf(
   if (isExempt) {
     drawTot("TOTAL  EXEMPT", money(0));
   } else {
-    drawTot("TOTAL  VAT  20%", money(split.vat));
+    drawTot("VAT 20% (included)", money(split.vat));
   }
   drawTot("TOTAL GBP", money(split.total), true);
+  if (!isExempt) {
+    y -= 2;
+    page.drawText("Includes 20% VAT in the price shown — not added on top.", {
+      x: left,
+      y,
+      size: 7.5,
+      font,
+      color: muted,
+    });
+    y -= 14;
+  }
 
   const credit = input.creditAppliedGbp != null ? Number(input.creditAppliedGbp) : 0;
   const paidAmt = input.amountPaidGbp != null ? Number(input.amountPaidGbp) : 0;

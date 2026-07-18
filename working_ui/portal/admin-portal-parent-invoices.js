@@ -329,12 +329,12 @@
     var cat = String(inv.funding_category || '').toLowerCase();
     if (cat === 'la_managed') return 'LA manages invoice (exempt)';
     if (cat === 'parent_direct_payment') return 'Parents · Direct Payment (exempt)';
-    if (cat === 'parent_private') return 'Parents · Private (VAT 20%)';
+    if (cat === 'parent_private') return 'Parents · Private (Includes 20% VAT)';
     var hint = String(inv.payment_method_hint || '').toLowerCase();
     var vat = String(inv.vat_mode || '').toLowerCase();
     if (hint === 'la_funded') return 'LA manages invoice (exempt)';
     if (vat === 'exempt') return 'Parents · Direct Payment (exempt)';
-    return 'Parents · Private (VAT 20%)';
+    return 'Parents · Private (Includes 20% VAT)';
   }
 
   function fundingToneClass(label) {
@@ -804,7 +804,7 @@
         String(inv.vat_mode || '').toLowerCase() === 'exempt'
           ? 'Exempt'
           : String(inv.vat_mode || '').toLowerCase() === 'vat_20'
-            ? 'VAT 20%'
+            ? 'Includes 20% VAT (in price)'
             : '—',
       ) +
       '</div>' +
@@ -1574,7 +1574,7 @@
       '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
       '<label style="flex:1 1 140px;min-width:0">VAT / funding' +
       '<select class="inp" id="portalParentInvoiceVatMode" style="width:100%">' +
-      '<option value="vat_20">Private · VAT 20%</option>' +
+      '<option value="vat_20">Private · Includes 20% VAT (in price)</option>' +
       '<option value="exempt">LA funded · Exempt</option>' +
       '</select></label>' +
       '<label style="flex:1 1 100px;min-width:0">Amount £ (total)<input class="inp" id="portalParentInvoiceAmount" type="number" min="0.01" step="0.01" required style="width:100%" /></label>' +

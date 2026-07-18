@@ -60,7 +60,7 @@ export type InvoiceFundingCategory =
   | "la_managed";
 
 const FUNDING_CATEGORY_LABELS: Record<InvoiceFundingCategory, string> = {
-  parent_private: "Parents · Private (VAT 20%)",
+  parent_private: "Parents · Private (Includes 20% VAT)",
   parent_direct_payment: "Parents · Direct Payment (exempt)",
   la_managed: "LA manages invoice (exempt)",
 };

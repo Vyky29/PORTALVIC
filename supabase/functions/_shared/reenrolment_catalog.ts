@@ -916,15 +916,15 @@ export type InvoiceTypeCode = "vat_included" | "exempt";
 export function normalizeInvoiceType(vatRaw: string): { code: InvoiceTypeCode; label: string } {
   const s = String(vatRaw || "").trim().toLowerCase();
   if (!s || s === "—" || s === "-") {
-    return { code: "vat_included", label: "20% VAT included" };
+    return { code: "vat_included", label: "Includes 20% VAT (in price)" };
   }
   if (s.includes("exempt") || s === "0") {
     return { code: "exempt", label: "EXEMPT VAT" };
   }
   if (s.includes("20") || s.includes("vat") || s === "0.2") {
-    return { code: "vat_included", label: "20% VAT included" };
+    return { code: "vat_included", label: "Includes 20% VAT (in price)" };
   }
-  return { code: "vat_included", label: "20% VAT included" };
+  return { code: "vat_included", label: "Includes 20% VAT (in price)" };
 }
 
 export function normalizeFundingSource(raw: string): string {

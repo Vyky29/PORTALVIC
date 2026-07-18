@@ -2084,7 +2084,7 @@
   }
 
   function vatLabelForFunding(fundCode) {
-    return isDirectPayments(fundCode) ? "EXEMPT VAT" : "20% VAT included";
+    return isDirectPayments(fundCode) ? "EXEMPT VAT" : "Includes 20% VAT (in price)";
   }
 
   var RE_PRIVATE_PAY_METHODS = [

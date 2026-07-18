@@ -96,6 +96,7 @@
     vat: [
       "Exempt",
       "20% VAT included",
+      "Includes 20% VAT (in price)",
       "PF / VAT 20%",
     ],
     funder: [
