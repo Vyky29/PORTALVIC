@@ -1,8 +1,8 @@
 // @ts-nocheck — Edge Function (Deno).
 //
 // portal-crash-summer-interest
-// Parent registers interest in individual leftover hours (or a waiting-list climb slot)
-// before the Fri–Sun booking window.
+// Parent registers interest in individual leftover hours, a waiting-list climb slot,
+// or future crash courses when July weeks are fully booked.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
@@ -51,11 +51,23 @@ Deno.serve(async (req) => {
   const note = String(body.note || "").trim().slice(0, 400) || null;
 
   if (!contactId) return json(400, { ok: false, error: "contact_required" });
-  if (weekId !== "w1" && weekId !== "w2") {
-    return json(400, { ok: false, error: "invalid_week" });
-  }
-  if (interestType !== "individual_hours" && interestType !== "waiting_list_slot") {
+  const allowedTypes = new Set([
+    "individual_hours",
+    "waiting_list_slot",
+    "next_crash_courses",
+  ]);
+  if (!allowedTypes.has(interestType)) {
     return json(400, { ok: false, error: "invalid_interest_type" });
+  }
+
+  const storeWeekId =
+    interestType === "next_crash_courses"
+      ? "next"
+      : weekId === "w1" || weekId === "w2"
+        ? weekId
+        : "";
+  if (!storeWeekId) {
+    return json(400, { ok: false, error: "invalid_week" });
   }
 
   const { data: contact, error: cErr } = await supabase
@@ -73,7 +85,7 @@ Deno.serve(async (req) => {
     .from("portal_crash_summer_interest")
     .select("id")
     .eq("contact_id", contactId)
-    .eq("week_id", weekId)
+    .eq("week_id", storeWeekId)
     .eq("interest_type", interestType)
     .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
     .limit(1);
@@ -83,21 +95,26 @@ Deno.serve(async (req) => {
       ok: true,
       already_registered: true,
       message:
-        "Thanks — we already have your interest for this week. We will follow up when individual hours open.",
+        interestType === "next_crash_courses"
+          ? "Thanks — we already have your details for the next crash courses. We will be in touch."
+          : "Thanks — we already have your interest for this week. We will follow up when individual hours open.",
     });
   }
+
+  const defaultNote =
+    interestType === "waiting_list_slot"
+      ? `Waiting list · ${slotId || "climb slot"}`
+      : interestType === "next_crash_courses"
+        ? "Interested in the next crash courses after July 2026"
+        : "Interested in individual leftover hours";
 
   const { error: insErr } = await supabase.from("portal_crash_summer_interest").insert({
     contact_id: contactId,
     parent_person_id: session.parent_person_id,
-    week_id: weekId,
+    week_id: storeWeekId,
     interest_type: interestType,
-    slot_id: slotId,
-    note:
-      note ||
-      (interestType === "waiting_list_slot"
-        ? `Waiting list · ${slotId || "climb slot"}`
-        : "Interested in individual leftover hours"),
+    slot_id: interestType === "next_crash_courses" ? null : slotId,
+    note: note || defaultNote,
   });
 
   if (insErr) {
@@ -110,6 +127,8 @@ Deno.serve(async (req) => {
     message:
       interestType === "waiting_list_slot"
         ? "Thanks — you are on the waiting list for that time. We will contact you if it opens."
-        : "Thanks — we have noted your interest in individual hours. We will contact you when leftover times open (from Fri 17 July for Week 1).",
+        : interestType === "next_crash_courses"
+          ? "Thanks — we have your details. We will contact you when the next crash courses open."
+          : "Thanks — we have noted your interest in individual hours. We will contact you when leftover times open (from Fri 17 July for Week 1).",
   });
 });

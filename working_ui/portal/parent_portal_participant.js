@@ -881,17 +881,47 @@
       ? '<p class="pp-muted pp-hub-reenrol__acat">' + esc(booking.acat_confirm_notice) + "</p>"
       : "";
     if (booking.submitted) {
-      // Status chip sits beside the name; only keep extra ACAT note here if present.
-      return acatNotice
-        ? '<aside class="pp-hub-reenrol pp-hub-reenrol--acat" role="note">' + acatNotice + "</aside>"
-        : "";
+      var crashAfter = canBookExtrasFor(data) ? crashBookBtnHtml(data) : "";
+      if (acatNotice || crashAfter) {
+        return (
+          '<aside class="pp-hub-reenrol' +
+          (acatNotice ? " pp-hub-reenrol--acat" : " pp-hub-reenrol--crash") +
+          '" role="note" aria-label="Crash course July">' +
+          (acatNotice ||
+            '<div class="pp-hub-reenrol__copy">' +
+              "<strong>Crash course July</strong>" +
+              '<span class="pp-muted">Fully booked — leave details for the next courses</span>' +
+              "</div>") +
+          (crashAfter
+            ? '<div class="pp-hub-reenrol__actions">' + crashAfter + "</div>"
+            : "") +
+          "</aside>"
+        );
+      }
+      return "";
     }
     if (booking.parent_action === "auto") {
       var laAuto = (booking.parent_action_reasons || []).indexOf("la_funded") >= 0;
-      /* LA / NHS: no re-enrol box — Re-enrolled chip is enough (invoices also hidden). */
+      /* LA / NHS: no re-enrol box — Re-enrolled chip + Crash course July CTA. */
       if (laAuto) {
-        return acatNotice
-          ? '<aside class="pp-hub-reenrol pp-hub-reenrol--acat" role="note">' + acatNotice + "</aside>"
+        var crashOnly = crashBookBtnHtml(data);
+        if (acatNotice) {
+          return (
+            '<aside class="pp-hub-reenrol pp-hub-reenrol--acat" role="note">' +
+            acatNotice +
+            (crashOnly ? '<div class="pp-hub-reenrol__actions">' + crashOnly + "</div>" : "") +
+            "</aside>"
+          );
+        }
+        return crashOnly
+          ? '<aside class="pp-hub-reenrol pp-hub-reenrol--crash" aria-label="Crash course July">' +
+            '<div class="pp-hub-reenrol__copy">' +
+            "<strong>Crash course July</strong>" +
+            '<span class="pp-muted">Fully booked — leave details for the next courses</span>' +
+            "</div>" +
+            '<div class="pp-hub-reenrol__actions">' +
+            crashOnly +
+            "</div></aside>"
           : "";
       }
       return (
@@ -915,7 +945,7 @@
       '<aside class="pp-hub-reenrol" aria-label="Re-enrolment 2026/27">' +
       '<div class="pp-hub-reenrol__copy">' +
       "<strong>Re-enrol 2026/27</strong>" +
-      '<span class="pp-muted">Confirm by Wed 22 July · July crash courses are fully booked</span>' +
+      '<span class="pp-muted">Confirm by Wed 22 July · July crash course fully booked</span>' +
       acatNotice +
       "</div>" +
       '<div class="pp-hub-reenrol__actions">' +
@@ -938,10 +968,17 @@
         "</p>"
       );
     }
+    var p = (data && data.participant) || {};
+    var contactId = p.contact_id || "";
+    var href =
+      "/parent/crash-summer" +
+      (contactId ? "?contact_id=" + encodeURIComponent(String(contactId)) : "");
     return (
-      '<span class="pp-btn pp-btn--ghost pp-hub-reenrol__cta pp-hub-reenrol__cta--crash" aria-disabled="true">' +
+      '<a class="pp-btn pp-btn--ghost pp-hub-reenrol__cta pp-hub-reenrol__cta--crash" href="' +
+      esc(href) +
+      '">' +
       '<svg class="pp-hub-reenrol__cta-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>' +
-      "<span>Crash courses · Fully booked</span></span>"
+      "<span>Crash course July</span></a>"
     );
   }
 
@@ -1678,8 +1715,10 @@
       : CURRENT_YEAR_TERM_TO;
   }
 
-  /** Hub / Absent use 2026/27 closed dates only after the family has submitted Booking 2026/27. */
+  /** Hub / Absent use 2026/27 closed dates after Booking submit or office-auto (LA / Day Centre). */
   function familyAcceptedNextYear(data) {
+    var booking = bookingSummary(data);
+    if (booking.parent_action === "auto") return true;
     var r = (data && data.reenrolment) || {};
     return !!r.submitted;
   }
@@ -3839,7 +3878,9 @@
           : '<p class="pp-muted">Day Centre dates will appear here once your weekdays are on the current roster.</p>');
     } else if (!booking.submitted || !booking.items.length) {
       var crashAction = canBookExtrasFor(data)
-        ? '<span class="pp-btn pp-btn--ghost" aria-disabled="true">July crash courses · Fully booked</span>'
+        ? '<a class="pp-btn pp-btn--ghost" href="/parent/crash-summer?contact_id=' +
+          encodeURIComponent(String(contactId)) +
+          '">Crash course July</a>'
         : '<p class="pp-muted">Extra holiday sessions are not available for this place.</p>';
       body =
         '<p class="pp-muted">You have not submitted re-enrolment choices for 2026/27 yet.</p>' +

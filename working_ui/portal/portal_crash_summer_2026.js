@@ -366,11 +366,31 @@
     if (submit) {
       submit.disabled = state.fullyBooked;
       submit.textContent = state.fullyBooked ? "Fully booked" : "Reserve & pay in full";
+      submit.hidden = !!state.fullyBooked;
     }
-    ["csActClimb", "csActSwim", "csModeIndividual", "csInterestBtn"].forEach(function (id) {
+    ["csActClimb", "csActSwim", "csModeIndividual"].forEach(function (id) {
       var control = $(id);
       if (control) control.disabled = state.fullyBooked;
     });
+    var nextWrap = $("csNextInterestWrap");
+    var interestWrap = $("csInterestWrap");
+    if (nextWrap) nextWrap.hidden = !state.fullyBooked;
+    if (interestWrap) interestWrap.hidden = !!state.fullyBooked || !!state.individualDaysOpen;
+    var slotsCard = $("csSlotsCard");
+    if (slotsCard) {
+      slotsCard.querySelectorAll(".day-block, #csSlotsHost, #csSlotsHint, #csTotal").forEach(function () {});
+      var hideBookBits = state.fullyBooked;
+      ["csSlotsHint", "csSlotsHost", "csTotal"].forEach(function (id) {
+        var el = $(id);
+        if (el) el.hidden = hideBookBits;
+      });
+      var payNote = slotsCard.querySelector("p.muted:not([id])");
+      if (payNote && /Payment must be completed/.test(payNote.textContent || "")) {
+        payNote.hidden = hideBookBits;
+      }
+    }
+    var nextBtn = $("csNextInterestBtn");
+    if (nextBtn) nextBtn.disabled = false;
     renderWeeks();
   }
 
@@ -660,7 +680,7 @@
       }
     }
     if (interestWrap) {
-      interestWrap.hidden = !!state.individualDaysOpen;
+      interestWrap.hidden = !!state.fullyBooked || !!state.individualDaysOpen;
     }
     if (hint) {
       if (state.individualDaysOpen) {
@@ -706,7 +726,11 @@
       showNotice("error", "Choose your child first.");
       return;
     }
-    var btn = $("csInterestBtn");
+    var isNext = interestType === "next_crash_courses";
+    var btn = isNext ? $("csNextInterestBtn") : $("csInterestBtn");
+    var idleLabel = isNext
+      ? "Leave details for next crash courses"
+      : "I'm interested in individual hours";
     if (btn) {
       btn.disabled = true;
       btn.textContent = "Sending…";
@@ -722,9 +746,9 @@
         },
         body: JSON.stringify({
           contact_id: contact,
-          week_id: state.weekId || "w1",
+          week_id: isNext ? "next" : state.weekId || "w1",
           interest_type: interestType || "individual_hours",
-          slot_id: slotId || null,
+          slot_id: isNext ? null : slotId || null,
         }),
       });
       var data = await res.json().catch(function () {
@@ -737,14 +761,21 @@
       showNotice(
         "success",
         data.message ||
-          "Thanks — we have noted your interest and will follow up.",
+          (isNext
+            ? "Thanks — we have your details for the next crash courses."
+            : "Thanks — we have noted your interest and will follow up."),
       );
+      if (btn) {
+        btn.textContent = isNext ? "Details saved" : "Interest registered";
+        btn.disabled = true;
+        return;
+      }
     } catch (_e) {
       showNotice("error", "Network error — please try again.");
     } finally {
-      if (btn) {
+      if (btn && btn.textContent === "Sending…") {
         btn.disabled = false;
-        btn.textContent = "I'm interested in individual hours";
+        btn.textContent = idleLabel;
       }
     }
   }
@@ -785,6 +816,13 @@
       interestBtn.setAttribute("data-bound", "1");
       interestBtn.addEventListener("click", function () {
         void registerInterest("individual_hours", null);
+      });
+    }
+    var nextBtn = $("csNextInterestBtn");
+    if (nextBtn && !nextBtn.getAttribute("data-bound")) {
+      nextBtn.setAttribute("data-bound", "1");
+      nextBtn.addEventListener("click", function () {
+        void registerInterest("next_crash_courses", null);
       });
     }
   }
