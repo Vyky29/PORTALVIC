@@ -705,7 +705,6 @@
 
   function hubHeroHtml(data, opts) {
     var p = data.participant || {};
-    var status = statusChips(p);
     var needsPhoto = participantNeedsPhoto(p, opts);
     return (
       hubSiblingsHtml(data, opts) +
@@ -715,12 +714,9 @@
       '<div class="pp-hub-hero__row">' +
       hubHeroPhotoHtml(data, opts) +
       '<div class="pp-hub-hero__copy">' +
-      '<div class="pp-hub-hero__title-row">' +
       '<h3 class="pp-hub-hero__name">' +
       esc(p.display_name || "Participant") +
       "</h3>" +
-      (status ? '<div class="pp-chip-row pp-hub-hero__status">' + status + "</div>" : "") +
-      "</div>" +
       hubIdentityMetaInlineHtml(p) +
       enrolledServiceChipsHtml(data) +
       hubPhotoNoticeHtml(data, opts) +
