@@ -3399,9 +3399,9 @@
   }
 
   function filterHubAlerts(messages, data) {
+    // Hub preview is only for urgent day-ops (cancel / absence). Instructor
+    // cover notes live in Messages — do not surface them here.
     var ALERT = {
-      instructor_change: 1,
-      instructor_reassign: 1,
       session_cancelled: 1,
       absence_announced: 1,
     };
