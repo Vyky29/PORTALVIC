@@ -3361,10 +3361,16 @@
       '<svg class="pp-hub-ops__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
     var nextBody;
     if (!hasServices) {
+      var summerEndedEmpty = isoDateLocal(new Date()) > currentYearTermToIso(data);
+      var emptyMsg = summerEndedEmpty
+        ? "Summer term has ended and this place has no current roster days yet. Re-enrol for 2026/27 (or open Crash course July) from Quick access."
+        : "No weekly services on the current roster yet — next sessions will show here when days are assigned.";
       nextBody =
         '<div class="pp-hub-ops__empty-wrap">' +
         calIco +
-        '<p class="pp-muted pp-hub-ops__empty">Booked sessions will appear here once services are on the current roster.</p>' +
+        '<p class="pp-muted pp-hub-ops__empty">' +
+        esc(emptyMsg) +
+        "</p>" +
         "</div>";
     } else if (!next) {
       var booking = bookingSummary(data);
