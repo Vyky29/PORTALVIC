@@ -1582,7 +1582,14 @@
 
     var children = (body && body.children) || [];
     if (!skipAutoHub && children.length) {
-      var openId = preferredContactId(children);
+      var prefer = String(opts.preferredContactId || "").trim();
+      var openId =
+        (prefer &&
+          children.some(function (c) {
+            return String(c.contact_id) === prefer;
+          }) &&
+          prefer) ||
+        preferredContactId(children);
       if (openId) {
         await loadParticipantDetail(openId);
         return true;
@@ -1592,20 +1599,19 @@
     return true;
   }
 
-  function normalizeDobInput(raw) {
+  function normalizePinInput(raw) {
     return String(raw || "").replace(/\D/g, "");
   }
 
   async function signIn() {
     hideNotice($("ppNotice"));
-    var parentFirstName = String($("ppParentFirstName").value || "").trim();
-    var parentLastName = String($("ppParentLastName").value || "").trim();
-    var dobRaw = normalizeDobInput($("ppParticipantDob").value);
-    if (!parentFirstName || !parentLastName || dobRaw.length !== 8) {
+    var firstName = String($("ppParticipantFirstName").value || "").trim();
+    var pinRaw = normalizePinInput($("ppLoginPin").value);
+    if (!firstName || (pinRaw.length !== 4 && pinRaw.length !== 6)) {
       showNotice(
         $("ppNotice"),
         "error",
-        "Enter your first name, last name, and oldest participant date of birth as 8 digits (DDMMYYYY).",
+        "Enter the participant first name and your 4-digit family PIN.",
       );
       return;
     }
@@ -1622,19 +1628,28 @@
           Authorization: "Bearer " + anonKey(),
         },
         body: JSON.stringify({
-          parent_first_name: parentFirstName,
-          parent_last_name: parentLastName,
-          login_dob: dobRaw,
+          participant_first_name: firstName,
+          login_pin: pinRaw,
         }),
       });
       var body = await res.json().catch(function () {
         return {};
       });
+      if (res.status === 429) {
+        showNotice(
+          $("ppNotice"),
+          "error",
+          "Too many attempts. Please wait a little and try again.",
+        );
+        return;
+      }
       if (!res.ok || !body.ok || !body.session_token) {
         showNotice(
           $("ppNotice"),
           "error",
-          "We could not sign you in. Check your name and the oldest child&apos;s date of birth, then try again.",
+          body && body.error === "ambiguous_name"
+            ? "That first name matches more than one family. Contact the office."
+            : "We could not sign you in. Check the first name and PIN, then try again.",
         );
         return;
       }
@@ -1643,12 +1658,71 @@
         ? new Date(body.expires_at).getTime()
         : Date.now() + 24 * 60 * 60 * 1000;
       saveSession();
-      await loadHome();
+      await loadHome({
+        preferredContactId: body.preferred_contact_id || "",
+      });
     } catch (_e) {
       showNotice($("ppNotice"), "error", "Network error — please try again.");
     } finally {
       btn.disabled = false;
       btn.removeAttribute("aria-busy");
+    }
+  }
+
+  async function changePin() {
+    hideNotice($("ppNotice"));
+    var cur = normalizePinInput($("ppPinCurrent") && $("ppPinCurrent").value);
+    var n1 = normalizePinInput($("ppPinNew") && $("ppPinNew").value);
+    var n2 = normalizePinInput($("ppPinNew2") && $("ppPinNew2").value);
+    if (cur.length !== 4 || n1.length !== 4 || n2.length !== 4) {
+      showNotice($("ppNotice"), "error", "PINs must be exactly 4 digits.");
+      return;
+    }
+    if (n1 !== n2) {
+      showNotice($("ppNotice"), "error", "New PIN and confirmation do not match.");
+      return;
+    }
+    if (!state.session.token) {
+      showNotice($("ppNotice"), "error", "Please sign in again.");
+      return;
+    }
+    var btn = $("ppChangePinBtn");
+    if (btn) {
+      btn.disabled = true;
+      btn.setAttribute("aria-busy", "true");
+    }
+    try {
+      var res = await fetch(fn("parent-portal-change-pin"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: anonKey(),
+          Authorization: "Bearer " + anonKey(),
+          "x-parent-portal-session": state.session.token,
+        },
+        body: JSON.stringify({ current_pin: cur, new_pin: n1 }),
+      });
+      var body = await res.json().catch(function () {
+        return {};
+      });
+      if (!res.ok || !body.ok) {
+        var msg = "Could not update PIN.";
+        if (body.error === "current_pin_invalid") msg = "Current PIN is incorrect.";
+        if (body.error === "pin_weak") msg = "Choose a less obvious PIN (not 0000 or 1234).";
+        showNotice($("ppNotice"), "error", msg);
+        return;
+      }
+      if ($("ppPinCurrent")) $("ppPinCurrent").value = "";
+      if ($("ppPinNew")) $("ppPinNew").value = "";
+      if ($("ppPinNew2")) $("ppPinNew2").value = "";
+      showNotice($("ppNotice"), "ok", "Family PIN updated.");
+    } catch (_e) {
+      showNotice($("ppNotice"), "error", "Network error — please try again.");
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.removeAttribute("aria-busy");
+      }
     }
   }
 
@@ -1658,11 +1732,31 @@
       void signIn();
     });
 
-    $("ppParticipantDob").addEventListener("input", function (e) {
-      var el = e.target;
-      if (!el) return;
-      el.value = normalizeDobInput(el.value).slice(0, 8);
-    });
+    var pinInput = $("ppLoginPin");
+    if (pinInput) {
+      pinInput.addEventListener("input", function (e) {
+        var el = e.target;
+        if (!el) return;
+        el.value = normalizePinInput(el.value).slice(0, 6);
+      });
+    }
+
+    var changePinForm = $("ppChangePinForm");
+    if (changePinForm) {
+      changePinForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        void changePin();
+      });
+      ["ppPinCurrent", "ppPinNew", "ppPinNew2"].forEach(function (id) {
+        var el = $(id);
+        if (!el) return;
+        el.addEventListener("input", function (ev) {
+          var t = ev.target;
+          if (!t) return;
+          t.value = normalizePinInput(t.value).slice(0, 4);
+        });
+      });
+    }
 
     function doSignOut() {
       clearSession();

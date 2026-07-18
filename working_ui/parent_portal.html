@@ -3913,35 +3913,26 @@
           <span>Sign in</span>
         </span>
       </h2>
-      <p class="pp-muted" style="margin-bottom:14px">Use your first and last name as parent or carer, and the date of birth of your <strong>oldest</strong> linked participant (for families with more than one child).</p>
+      <p class="pp-muted" style="margin-bottom:14px">Enter your child’s <strong>first name</strong> (no surname) and your family <strong>4-digit PIN</strong>. If you have more than one child, any of their first names works with the same PIN.</p>
       <form id="ppIdentifyForm">
         <div class="pp-field">
-          <label for="ppParentFirstName" class="pp-label-ico">
+          <label for="ppParticipantFirstName" class="pp-label-ico">
             <span class="pp-title-ico pp-title-ico--sm" aria-hidden="true">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             </span>
-            <span>First name</span>
+            <span>Participant first name</span>
           </label>
-          <input id="ppParentFirstName" name="parent_first_name" type="text" autocomplete="given-name" required placeholder="Your first name" />
+          <input id="ppParticipantFirstName" name="participant_first_name" type="text" autocomplete="off" required placeholder="e.g. Victor" />
         </div>
         <div class="pp-field">
-          <label for="ppParentLastName" class="pp-label-ico">
+          <label for="ppLoginPin" class="pp-label-ico">
             <span class="pp-title-ico pp-title-ico--sm" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
             </span>
-            <span>Last name</span>
+            <span>Family PIN</span>
           </label>
-          <input id="ppParentLastName" name="parent_last_name" type="text" autocomplete="family-name" required placeholder="Your last name" />
-        </div>
-        <div class="pp-field">
-          <label for="ppParticipantDob" class="pp-label-ico">
-            <span class="pp-title-ico pp-title-ico--sm" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            </span>
-            <span>Oldest participant date of birth</span>
-          </label>
-          <input id="ppParticipantDob" name="login_dob" type="text" inputmode="numeric" autocomplete="off" required maxlength="8" placeholder="DDMMYYYY" />
-          <p class="pp-muted" style="margin-top:6px;font-size:12px">8 digits — usually day, month, year (e.g. 08082022). No spaces or slashes.</p>
+          <input id="ppLoginPin" name="login_pin" type="password" inputmode="numeric" autocomplete="one-time-code" required maxlength="6" placeholder="4-digit PIN" />
+          <p class="pp-muted" style="margin-top:6px;font-size:12px">4 digits from the club. You can change it after signing in.</p>
         </div>
         <button id="ppSignInBtn" class="pp-btn pp-btn--primary" type="submit">Sign in</button>
       </form>
@@ -3977,6 +3968,33 @@
       </div>
 
       <div class="pp-card" id="ppContactBlock"></div>
+
+      <div class="pp-card" id="ppPinCard">
+        <h3 class="pp-section-title">
+          <span class="pp-title-inner">
+            <span class="pp-title-ico" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            </span>
+            <span>Family PIN</span>
+          </span>
+        </h3>
+        <p class="pp-muted" style="margin:0 0 12px;font-size:13px">Change your 4-digit portal PIN. It applies to every child on this account.</p>
+        <form id="ppChangePinForm">
+          <div class="pp-field">
+            <label for="ppPinCurrent">Current PIN</label>
+            <input id="ppPinCurrent" type="password" inputmode="numeric" maxlength="4" autocomplete="off" required placeholder="••••" />
+          </div>
+          <div class="pp-field">
+            <label for="ppPinNew">New PIN</label>
+            <input id="ppPinNew" type="password" inputmode="numeric" maxlength="4" autocomplete="off" required placeholder="4 digits" />
+          </div>
+          <div class="pp-field">
+            <label for="ppPinNew2">Confirm new PIN</label>
+            <input id="ppPinNew2" type="password" inputmode="numeric" maxlength="4" autocomplete="off" required placeholder="Repeat" />
+          </div>
+          <button id="ppChangePinBtn" class="pp-btn pp-btn--sec" type="submit">Update PIN</button>
+        </form>
+      </div>
     </section>
 
     <section id="ppStepParticipant" hidden>

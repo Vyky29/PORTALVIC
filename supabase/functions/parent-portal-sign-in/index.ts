@@ -1,9 +1,8 @@
 // @ts-nocheck — Edge Function (Deno).
 //
 // parent-portal-sign-in
-// ---------------------
-// Sign in with parent/carer name + participant date of birth (DDMMYYYY, e.g. 29031988).
-// No OTP — mints a short-lived session on successful match.
+// Sign in with participant first name + 4-digit family PIN
+// (or 6-digit office master PIN).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
@@ -15,11 +14,23 @@ import {
   sha256Hex,
 } from "../_shared/parent_portal_auth.ts";
 import { resolveParentGeo, parentGeoToDbFields } from "../_shared/parent_geo.ts";
+import {
+  childFirstNameToken,
+  isMasterPin,
+  isValidFamilyPin,
+  normalizeParticipantFirstName,
+  normalizePinDigits,
+  verifyFamilyPinHash,
+} from "../_shared/parent_portal_pin.ts";
 
-const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24 h — no OTP re-auth
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+const MAX_ATTEMPTS_PER_HOUR = 20;
 
-function normalizeDobInput(raw: string): string {
-  return String(raw || "").replace(/\D/g, "");
+function json(status: number, body: Record<string, unknown>) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...parentPortalCorsHeaders, "Content-Type": "application/json" },
+  });
 }
 
 Deno.serve(async (req) => {
@@ -29,11 +40,14 @@ Deno.serve(async (req) => {
   }
 
   let body: {
+    participant_first_name?: unknown;
+    child_first_name?: unknown;
+    login_pin?: unknown;
+    pin?: unknown;
+    /** Legacy DOB login fields — ignored (PIN login only). */
     parent_first_name?: unknown;
     parent_last_name?: unknown;
     login_dob?: unknown;
-    parent_name?: unknown;
-    participant_dob?: unknown;
     geo_hint?: unknown;
   };
   try {
@@ -42,10 +56,13 @@ Deno.serve(async (req) => {
     return parentPortalJsonInvalid(400);
   }
 
-  const parentFirstName = String(body.parent_first_name || body.parent_name || "").trim();
-  const parentLastName = String(body.parent_last_name || "").trim();
-  const dobDigits = normalizeDobInput(String(body.login_dob || body.participant_dob || ""));
-  if (!parentFirstName || !parentLastName || dobDigits.length !== 8) return parentPortalJsonInvalid(400);
+  const firstName = normalizeParticipantFirstName(
+    body.participant_first_name || body.child_first_name || "",
+  );
+  const pinDigits = normalizePinDigits(body.login_pin || body.pin || "");
+  if (!firstName || (pinDigits.length !== 4 && pinDigits.length !== 6)) {
+    return parentPortalJsonInvalid(400);
+  }
 
   const url = Deno.env.get("SUPABASE_URL") || "";
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
@@ -58,24 +75,102 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const { data: matchedParentId, error: matchErr } = await supabase.rpc(
-    "portal_parent_match_identity_dob",
-    {
-      p_parent_first_name: parentFirstName,
-      p_parent_last_name: parentLastName,
-      p_login_dob: dobDigits,
-    },
-  );
-  if (matchErr) {
-    console.error("[parent-portal-sign-in] match rpc error", matchErr);
+  const ip = clientIp(req);
+  const ipHash = ip ? await sha256Hex(ip) : await sha256Hex("unknown");
+
+  // Soft rate limit
+  const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const { count: attemptCount } = await supabase
+    .from("portal_parent_pin_attempts")
+    .select("id", { count: "exact", head: true })
+    .eq("ip_hash", ipHash)
+    .gte("created_at", hourAgo);
+  if ((attemptCount || 0) >= MAX_ATTEMPTS_PER_HOUR) {
+    return json(429, { ok: false, error: "too_many_attempts" });
+  }
+
+  const recordFail = async () => {
+    await supabase.from("portal_parent_pin_attempts").insert({
+      ip_hash: ipHash,
+      name_norm: firstName,
+    });
+  };
+
+  // Candidate contacts by child first name (first token of first_name or display).
+  const { data: contacts, error: cErr } = await supabase
+    .from("portal_parent_contacts")
+    .select(
+      "contact_id, parent_person_id, child_first_name, child_display, parent_display, email, mobile",
+    )
+    .limit(4000);
+  if (cErr) {
+    console.error("[parent-portal-sign-in] contacts", cErr.message);
+    return parentPortalJsonInvalid(500);
+  }
+
+  const matchedRows = (contacts || []).filter((row) => childFirstNameToken(row) === firstName);
+  if (!matchedRows.length) {
+    await recordFail();
     return parentPortalJsonInvalid();
   }
-  if (!matchedParentId) return parentPortalJsonInvalid();
+
+  const master = isMasterPin(pinDigits);
+  let matchedParentId: string | null = null;
+  let matchedContactId: string | null = null;
+
+  if (master) {
+    const uniqueParents = [
+      ...new Set(matchedRows.map((r) => String(r.parent_person_id || "").trim()).filter(Boolean)),
+    ];
+    if (uniqueParents.length !== 1) {
+      // Ambiguous first name across families — refuse master login without uniqueness.
+      await recordFail();
+      return json(401, { ok: false, error: "ambiguous_name" });
+    }
+    matchedParentId = uniqueParents[0];
+    matchedContactId = String(matchedRows.find((r) => r.parent_person_id === matchedParentId)?.contact_id || "") ||
+      null;
+  } else {
+    if (!isValidFamilyPin(pinDigits)) {
+      await recordFail();
+      return parentPortalJsonInvalid();
+    }
+    const parentIds = [
+      ...new Set(matchedRows.map((r) => String(r.parent_person_id || "").trim()).filter(Boolean)),
+    ];
+    const { data: creds } = await supabase
+      .from("portal_parent_portal_credentials")
+      .select("parent_person_id, pin_hash")
+      .in("parent_person_id", parentIds);
+
+    const byParent = new Map(
+      (creds || []).map((c) => [String(c.parent_person_id), String(c.pin_hash || "")]),
+    );
+
+    const hits: string[] = [];
+    for (const pid of parentIds) {
+      const hash = byParent.get(pid);
+      if (!hash) continue;
+      if (await verifyFamilyPinHash(pinDigits, hash)) hits.push(pid);
+    }
+    if (hits.length !== 1) {
+      await recordFail();
+      return parentPortalJsonInvalid();
+    }
+    matchedParentId = hits[0];
+    matchedContactId =
+      String(
+        matchedRows.find((r) => String(r.parent_person_id) === matchedParentId)?.contact_id || "",
+      ) || null;
+  }
+
+  if (!matchedParentId) {
+    await recordFail();
+    return parentPortalJsonInvalid();
+  }
 
   const nowIso = new Date().toISOString();
-  const ip = clientIp(req);
   const ua = req.headers.get("user-agent") || "";
-  const ipHash = ip ? await sha256Hex(ip) : null;
   const uaHash = ua ? await sha256Hex(ua) : null;
 
   const token = newSessionToken();
@@ -98,6 +193,8 @@ Deno.serve(async (req) => {
     ip_hash: ipHash,
     user_agent_hash: uaHash,
     client_device: clientDeviceFromRequest(req),
+    last_contact_id: matchedContactId,
+    last_surface: master ? "office_master" : "pin_login",
     ...geoFields,
   });
   if (insertErr) {
@@ -105,24 +202,21 @@ Deno.serve(async (req) => {
     return parentPortalJsonInvalid(500);
   }
 
-  const { data: parentRow } = await supabase
-    .from("portal_parent_contacts")
-    .select("parent_display, email, mobile")
-    .eq("parent_person_id", matchedParentId)
-    .limit(1)
-    .maybeSingle();
+  const parentRow = matchedRows.find((r) => String(r.parent_person_id) === matchedParentId);
 
   return new Response(
     JSON.stringify({
       ok: true,
       session_token: token,
       expires_at: expiresAt,
+      master_login: master,
       parent: {
         parent_person_id: matchedParentId,
         display_name: parentRow?.parent_display ?? null,
         email: parentRow?.email ?? null,
         mobile: parentRow?.mobile ?? null,
       },
+      preferred_contact_id: matchedContactId,
     }),
     { status: 200, headers: { ...parentPortalCorsHeaders, "Content-Type": "application/json" } },
   );
