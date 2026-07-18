@@ -696,6 +696,23 @@
       ".pay-seg button[aria-pressed=true]{background:#2d84b3;color:#fff}",
       ".pay-sel{font:inherit;font-size:13px;padding:9px 11px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#0f172a}",
       ".pay-search{flex:1;min-width:160px;font:inherit;padding:9px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#0f172a}",
+      ".pay-chip-filters{display:flex;flex-direction:column;gap:8px;width:100%;min-width:0;margin:0 0 4px}",
+      ".pay-chip-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}",
+      ".pay-chip-row__lab{flex:0 0 auto;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#64748b;margin-right:2px}",
+      ".pay-chip{display:inline-flex;align-items:center;justify-content:center;max-width:100%;padding:5px 11px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.25;border:1px solid transparent;overflow-wrap:anywhere;text-align:center}",
+      ".pay-chip--btn{font:inherit;cursor:pointer;background:#fff;color:#475569;border-color:#e2e8f0}",
+      ".pay-chip--btn:hover{border-color:#94a3b8}",
+      ".pay-chip--btn[aria-pressed=true]{box-shadow:0 0 0 2px rgba(45,132,179,.25)}",
+      ".pay-chip--funds-la{background:#ecfdf5;color:#047857;border-color:#a7f3d0}",
+      ".pay-chip--private{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}",
+      ".pay-chip--funded-la{background:#f5f3ff;color:#6d28d9;border-color:#ddd6fe}",
+      ".pay-chip--funded-nhs{background:#ecfeff;color:#0e7490;border-color:#a5f3fc}",
+      ".pay-chip--inv-parent-ex{background:#f0fdf4;color:#166534;border-color:#bbf7d0}",
+      ".pay-chip--inv-parent-20{background:#fff7ed;color:#c2410c;border-color:#fed7aa}",
+      ".pay-chip--inv-la{background:#faf5ff;color:#7c3aed;border-color:#e9d5ff}",
+      ".pay-chip--inv-nhs{background:#f0f9ff;color:#0369a1;border-color:#bae6fd}",
+      ".pay-chip--muted{background:#f1f5f9;color:#64748b;border-color:#e2e8f0}",
+      ".pay-tbl td .pay-chip{white-space:normal}",
       ".pay-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 1px 3px rgba(15,23,42,.05);overflow:hidden}",
       ".pay-card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid #eef2f7}",
       ".pay-card-h h3{margin:0;font-size:15px;color:#0f172a}",
@@ -777,6 +794,38 @@
     var label = r.payment_status || (c === "paid" ? "Paid" : "Outstanding");
     var cls = c === "paid" ? "pay-pill--paid" : (c === "notreenrolled" ? "pay-pill--na" : "pay-pill--out");
     return '<span class="pay-pill ' + cls + '">' + esc(label) + "</span>";
+  }
+
+  function paidChipClass(label) {
+    if (label === PAID_BY.FUNDS_FROM_LA) return "pay-chip--funds-la";
+    if (label === PAID_BY.PRIVATE_FUNDS) return "pay-chip--private";
+    if (label === PAID_BY.FUNDED_BY_LA) return "pay-chip--funded-la";
+    if (label === PAID_BY.FUNDED_BY_NHS) return "pay-chip--funded-nhs";
+    return "pay-chip--muted";
+  }
+
+  function invoiceChipClass(label) {
+    if (label === INVOICE_TYPE.PARENT_EXEMPT) return "pay-chip--inv-parent-ex";
+    if (label === INVOICE_TYPE.PARENT_20) return "pay-chip--inv-parent-20";
+    if (label === INVOICE_TYPE.LA_EXEMPT) return "pay-chip--inv-la";
+    if (label === INVOICE_TYPE.NHS_EXEMPT) return "pay-chip--inv-nhs";
+    return "pay-chip--muted";
+  }
+
+  function paidChipHtml(label) {
+    if (!label) return '<span class="pay-chip pay-chip--muted">—</span>';
+    return '<span class="pay-chip ' + paidChipClass(label) + '">' + esc(label) + "</span>";
+  }
+
+  function invoiceChipHtml(label) {
+    if (!label) return '<span class="pay-chip pay-chip--muted">—</span>';
+    return '<span class="pay-chip ' + invoiceChipClass(label) + '">' + esc(label) + "</span>";
+  }
+
+  function filterChipBtn(kind, value, label, active, toneCls) {
+    var pressed = active ? "true" : "false";
+    var cls = "pay-chip pay-chip--btn " + (active ? toneCls : "pay-chip--muted");
+    return '<button type="button" class="' + cls + '" data-pay-chip-kind="' + esc(kind) + '" data-pay-chip-value="' + esc(value) + '" aria-pressed="' + pressed + '">' + esc(label) + "</button>";
   }
 
   function allRows() {
@@ -873,8 +922,8 @@
         : ' data-pay-id="' + esc(r.id) + '"';
       html += "<tr" + attr + ">"
         + '<td class="pay-name">' + esc(r.client_name || "—") + "</td>"
-        + "<td>" + esc(paidByFor(r) || "—") + "</td>"
-        + "<td>" + esc(invoiceTypeFor(r) || "—") + "</td>"
+        + "<td>" + paidChipHtml(paidByFor(r)) + "</td>"
+        + "<td>" + invoiceChipHtml(invoiceTypeFor(r)) + "</td>"
         + "<td>" + esc(serviceFor(r)) + "</td>"
         + "<td>" + esc(termFor(r)) + "</td>"
         + "<td>" + esc(parentPersonFor(r)) + "</td>"
@@ -1146,23 +1195,30 @@
         sheetOpts += '<option value="' + esc(s) + '"' + (state.sheetFilter === s ? " selected" : "") + ">" + esc(labelFor(s)) + "</option>";
       }
     });
-    var paidOpts = '<option value="">All Paid</option>';
+
+    var paidChipRow = '<div class="pay-chip-row" role="group" aria-label="Paid filter">'
+      + '<span class="pay-chip-row__lab">Paid</span>'
+      + filterChipBtn("paid", "", "All", !state.paidFilter, "pay-chip--muted");
     PAID_BY_OPTIONS.forEach(function (l) {
-      paidOpts += '<option value="' + esc(l) + '"' + (state.paidFilter === l ? " selected" : "") + ">" + esc(l) + "</option>";
+      paidChipRow += filterChipBtn("paid", l, l, state.paidFilter === l, paidChipClass(l));
     });
-    var laOpts = '<option value="">All invoice types</option>';
+    paidChipRow += "</div>";
+
+    var invChipRow = '<div class="pay-chip-row" role="group" aria-label="Invoice type filter">'
+      + '<span class="pay-chip-row__lab">Invoice</span>'
+      + filterChipBtn("invoice", "", "All", !state.laFilter, "pay-chip--muted");
     INVOICE_TYPE_OPTIONS.forEach(function (l) {
-      laOpts += '<option value="' + esc(l) + '"' + (state.laFilter === l ? " selected" : "") + ">" + esc(l) + "</option>";
+      invChipRow += filterChipBtn("invoice", l, l, state.laFilter === l, invoiceChipClass(l));
     });
+    invChipRow += "</div>";
 
     html += '<div class="pay-bar">'
       + '<div class="pay-seg" role="group" aria-label="Status filter">'
       + seg("active", "Active (" + (paidN + outN) + ")") + seg("outstanding", "Outstanding (" + outN + ")") + seg("paid", "Paid (" + paidN + ")") + seg("notreenrolled", "Not re-enrolled (" + naN + ")") + seg("all", "All")
       + '</div>'
       + '<select class="pay-sel" id="paySheet">' + sheetOpts + '</select>'
-      + '<select class="pay-sel" id="payPaid" aria-label="Paid filter">' + paidOpts + '</select>'
-      + '<select class="pay-sel" id="payLA" aria-label="Invoice type filter">' + laOpts + '</select>'
       + '<input type="search" class="pay-search" id="paySearch" placeholder="Search client, parent…" value="' + esc(state.query) + '" />'
+      + '<div class="pay-chip-filters">' + paidChipRow + invChipRow + '</div>'
       + '</div>';
 
     if (state.mode === "participants") {
@@ -1221,8 +1277,8 @@
       }
       html += "<tr " + rowAttr + ">"
         + '<td class="pay-name">' + esc(g.name) + "</td>"
-        + "<td>" + esc(paidByFor(first) || "—") + "</td>"
-        + "<td>" + esc(invoiceTypeFor(first) || "—") + "</td>"
+        + "<td>" + paidChipHtml(paidByFor(first)) + "</td>"
+        + "<td>" + invoiceChipHtml(invoiceTypeFor(first)) + "</td>"
         + "<td>" + esc(svcTxt) + "</td>"
         + '<td class="num">' + g.orders.length + "</td>"
         + '<td class="num">' + money(g.total) + "</td>"
@@ -1294,10 +1350,17 @@
     });
     var sh = root.querySelector("#paySheet");
     if (sh) sh.addEventListener("change", function () { state.sheetFilter = sh.value; render(); });
-    var la = root.querySelector("#payLA");
-    if (la) la.addEventListener("change", function () { state.laFilter = la.value; render(); });
-    var paid = root.querySelector("#payPaid");
-    if (paid) paid.addEventListener("change", function () { state.paidFilter = paid.value; render(); });
+    root.querySelectorAll("[data-pay-chip-kind]").forEach(function (b) {
+      b.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var kind = b.getAttribute("data-pay-chip-kind");
+        var val = b.getAttribute("data-pay-chip-value") || "";
+        if (kind === "paid") state.paidFilter = val;
+        else if (kind === "invoice") state.laFilter = val;
+        render();
+      });
+    });
     var s = root.querySelector("#paySearch");
     if (s) {
       s.addEventListener("input", function () {
