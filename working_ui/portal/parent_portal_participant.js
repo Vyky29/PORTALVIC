@@ -2344,7 +2344,29 @@
     );
   }
 
-  function termSessionDateChipsHtml(data, statusByIso) {
+  /** True when the family chose term-by-term (not whole-year auto re-enrol). */
+  function isTermByTermBooking(data) {
+    var items = bookingSummary(data).items || [];
+    for (var i = 0; i < items.length; i++) {
+      var lab = String((items[i] && items[i].label) || "").toLowerCase();
+      if (lab.indexOf("re-enrolment style") >= 0 || lab.indexOf("reenrolment style") >= 0) {
+        var choice = String((items[i] && items[i].choice) || "").toLowerCase();
+        return /term\s*by\s*term|term-by-term/.test(choice);
+      }
+    }
+    return false;
+  }
+
+  /** Whole-year (or LA auto) bookings see Spring/Summer under Next session; term-by-term does not. */
+  function showLaterTermsOnHub(data) {
+    return familyAcceptedNextYear(data) && !isTermByTermBooking(data);
+  }
+
+  /**
+   * Split term date chips: current/first term vs later terms.
+   * Used on the hub (This term / Later terms) and Sessions Overview.
+   */
+  function buildTermSessionDateParts(data, statusByIso) {
     function chipsOnly(list, ariaLabel) {
       if (!list.length) return "";
       return (
@@ -2399,15 +2421,15 @@
     var intensiveIcon =
       '<svg class="pp-hub-ops__date-chips-label-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"/></svg>';
 
-    var rows = [];
+    var thisChunks = [];
+    var laterChunks = [];
     var completedTermHtml = "";
-    var firstUpcomingTermRendered = false;
+    var crashHtml = "";
+    var upcomingAccordions = [];
     var crashDates = findCrashCourseDates(data);
     var todayIso = isoDateLocal(new Date());
     var summerTo = currentYearTermToIso(data);
 
-    // Summer Term 25/26 (12 Apr – 17/31 Jul): past = green, next (last of this week) highlighted.
-    // Keep showing while still in / just finishing summer, including after crash / re-enrol.
     if (todayIso <= summerTo) {
       var summerDates = findCurrentSummerSessionDates(data);
       var summerFirst = [];
@@ -2416,7 +2438,6 @@
         if (isFirstHalfTermDate(d.iso, data, false)) summerFirst.push(d);
         else summerSecond.push(d);
       });
-      // Keep completed greens, but place this finished term after all upcoming terms.
       var completedRows = [];
       if (summerFirst.length) {
         completedRows.push(rowHtml("Summer · First half term", summerFirst));
@@ -2443,14 +2464,13 @@
         );
       });
       if (activityRows.length) {
-        rows.push(
+        crashHtml =
           '<div class="pp-hub-ops__date-chips-section" aria-label="July Intensive Courses & Camps">' +
-            '<div class="pp-hub-ops__date-chips-section-head">' +
-            intensiveIcon +
-            "<span>July Intensive Courses &amp; Camps</span></div>" +
-            activityRows.join("") +
-            "</div>",
-        );
+          '<div class="pp-hub-ops__date-chips-section-head">' +
+          intensiveIcon +
+          "<span>July Intensive Courses &amp; Camps</span></div>" +
+          activityRows.join("") +
+          "</div>";
       }
     }
 
@@ -2483,15 +2503,10 @@
           if (tFirst.length) termRows.push(rowHtml(labelBase + " · First half term", tFirst));
           if (tSecond.length) termRows.push(rowHtml(labelBase + " · Second half term", tSecond));
           if (termRows.length) {
-            rows.push(
-              termAccordionHtml(
-                labelBase + " Term 26/27",
-                termRows.join(""),
-                !firstUpcomingTermRendered,
-                false,
-              ),
-            );
-            firstUpcomingTermRendered = true;
+            upcomingAccordions.push({
+              label: labelBase + " Term 26/27",
+              body: termRows.join(""),
+            });
           }
         });
       } else {
@@ -2507,19 +2522,67 @@
         if (first.length) fallbackRows.push(rowHtml("Autumn · First half term", first));
         if (second.length) fallbackRows.push(rowHtml("Autumn · Second half term", second));
         if (fallbackRows.length) {
-          rows.push(termAccordionHtml("Autumn Term 26/27", fallbackRows.join(""), true, false));
+          upcomingAccordions.push({
+            label: "Autumn Term 26/27",
+            body: fallbackRows.join(""),
+          });
         }
       }
     }
 
-    if (completedTermHtml) rows.push(completedTermHtml);
-    if (!rows.length) return "";
-    return (
-      '<div class="pp-hub-ops__date-chips-stack" aria-label="Session dates">' +
-      termChipColorLegendHtml() +
-      rows.join("") +
-      "</div>"
-    );
+    if (crashHtml) thisChunks.push(crashHtml);
+
+    if (upcomingAccordions.length) {
+      upcomingAccordions.forEach(function (term, idx) {
+        var html = termAccordionHtml(term.label, term.body, idx === 0, false);
+        if (idx === 0) thisChunks.push(html);
+        else laterChunks.push(html);
+      });
+      if (completedTermHtml) laterChunks.push(completedTermHtml);
+    } else if (todayIso <= summerTo) {
+      // Still in / finishing current summer with no 2026/27 chips yet — This term.
+      var summerDatesOnly = findCurrentSummerSessionDates(data);
+      var sFirst = [];
+      var sSecond = [];
+      summerDatesOnly.forEach(function (d) {
+        if (isFirstHalfTermDate(d.iso, data, false)) sFirst.push(d);
+        else sSecond.push(d);
+      });
+      var summerBody = [];
+      if (sFirst.length) summerBody.push(rowHtml("Summer · First half term", sFirst));
+      if (sSecond.length) summerBody.push(rowHtml("Summer · Second half term", sSecond));
+      if (summerBody.length) {
+        thisChunks.push(termAccordionHtml("Summer Term 25/26", summerBody.join(""), true, false));
+      }
+    }
+
+    var allowLater = !isTermByTermBooking(data);
+    var thisInner = thisChunks.join("");
+    var laterInner = allowLater ? laterChunks.join("") : "";
+    var legend = termChipColorLegendHtml();
+
+    function wrapStack(inner, aria, withLegend) {
+      if (!inner) return "";
+      return (
+        '<div class="pp-hub-ops__date-chips-stack" aria-label="' +
+        esc(aria) +
+        '">' +
+        (withLegend ? legend : "") +
+        inner +
+        "</div>"
+      );
+    }
+
+    var fullInner = thisInner + (allowLater ? laterChunks.join("") : "");
+    return {
+      thisTermHtml: thisInner ? wrapStack(thisInner, "This term session dates", true) : "",
+      laterTermsHtml: laterInner ? wrapStack(laterInner, "Later term session dates", false) : "",
+      fullHtml: fullInner ? wrapStack(fullInner, "Session dates", true) : "",
+    };
+  }
+
+  function termSessionDateChipsHtml(data, statusByIso) {
+    return buildTermSessionDateParts(data, statusByIso).fullHtml;
   }
 
   /** Weekday columns for Day Centre services only (My booking 2026/27). */
@@ -2677,6 +2740,35 @@
 
   function applyTermDateChipStatuses(host, data, statusByIso) {
     if (!host) return;
+    var parts = buildTermSessionDateParts(data, statusByIso);
+    var thisEl = host.querySelector('[data-pp-term-chips="this"]');
+    var laterEl = host.querySelector('[data-pp-term-chips="later"]');
+    if (thisEl || laterEl) {
+      if (thisEl) {
+        if (parts.thisTermHtml) {
+          thisEl.hidden = false;
+          thisEl.innerHTML =
+            '<p class="pp-pax-info-section-label pp-pax-info-section-label--term">This term</p>' +
+            parts.thisTermHtml;
+        } else {
+          thisEl.hidden = true;
+          thisEl.innerHTML = "";
+        }
+      }
+      if (laterEl) {
+        var showLater = showLaterTermsOnHub(data) && !!parts.laterTermsHtml;
+        if (showLater) {
+          laterEl.hidden = false;
+          laterEl.innerHTML =
+            '<p class="pp-pax-info-section-label pp-pax-info-section-label--later">Later terms</p>' +
+            parts.laterTermsHtml;
+        } else {
+          laterEl.hidden = true;
+          laterEl.innerHTML = "";
+        }
+      }
+      return;
+    }
     var wrap =
       host.querySelector(".pp-hub-ops__date-chips-stack") ||
       host.querySelector(".pp-hub-ops__date-chips");
@@ -2910,7 +3002,7 @@
           "No more sessions left this summer term. Your 2026/27 place continues with the office — nothing for you to submit.";
       } else if (hasNextYear) {
         endNote =
-          "No upcoming session found on your usual days yet. Open Sessions for term dates and when 2026/27 starts.";
+          "No upcoming session found on your usual days yet. Check This term dates above for when sessions start.";
       } else {
         endNote = "No more sessions left this summer term. Book 2026/27 when you are ready.";
       }
@@ -2931,12 +3023,34 @@
         sameDay.map(hubOpsSessionSlotHtml).join("") +
         "</ul></div>";
     }
+    var termParts = buildTermSessionDateParts(data);
+    var thisTermBlock =
+      '<div class="pp-hub-term-block pp-hub-term-block--this" data-pp-term-chips="this"' +
+      (termParts.thisTermHtml ? "" : " hidden") +
+      ">" +
+      (termParts.thisTermHtml
+        ? '<p class="pp-pax-info-section-label pp-pax-info-section-label--term">This term</p>' +
+          termParts.thisTermHtml
+        : "") +
+      "</div>";
+    var showLater = showLaterTermsOnHub(data) && !!termParts.laterTermsHtml;
+    var laterTermBlock =
+      '<div class="pp-hub-term-block pp-hub-term-block--later" data-pp-term-chips="later"' +
+      (showLater ? "" : " hidden") +
+      ">" +
+      (showLater
+        ? '<p class="pp-pax-info-section-label pp-pax-info-section-label--later">Later terms</p>' +
+          termParts.laterTermsHtml
+        : "") +
+      "</div>";
     return (
-      '<section class="pp-hub-ops" aria-label="Next session">' +
+      '<section class="pp-hub-ops" aria-label="Sessions and next booking">' +
+      thisTermBlock +
       '<p class="pp-pax-info-section-label pp-pax-info-section-label--next">Next session</p>' +
       '<div class="pp-hub-ops__next-block">' +
       nextBody +
       "</div>" +
+      laterTermBlock +
       '<div id="ppHubAlerts" class="pp-hub-alerts" hidden></div>' +
       "</section>"
     );
@@ -3043,8 +3157,8 @@
     ensureGeneralFields(data, { allowPlaceholders: true });
     setParticipantPageTitle(hubBackLabel(data).text);
     closeHubMenuSheet();
-    // Dashboard: profile + next session + shortcuts. Menu lives top-left (sheet).
-    // Term date accordion lives on Sessions (not on home).
+    // Dashboard: This term chips → next session → later terms (whole year) → shortcuts.
+    // Menu lives top-left (sheet).
     host.innerHTML =
       '<div class="pp-pax-shell" data-pp-view="hub">' +
       hubHeroHtml(data, opts) +
@@ -3053,7 +3167,8 @@
       "</div>";
     bindHub(host, data, opts);
     syncHubMenuChrome(host, data, opts);
-    void mountHubAlerts(host, data, opts);
+    var messagesPromise = mountHubAlerts(host, data, opts);
+    mountTermDateChipStatuses(host, data, opts, messagesPromise);
     if (global.ParentPortalApp && global.ParentPortalApp.photo && typeof global.ParentPortalApp.photo.bindOn === "function") {
       global.ParentPortalApp.photo.bindOn(host);
     }
