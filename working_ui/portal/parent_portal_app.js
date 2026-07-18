@@ -1194,9 +1194,14 @@
       }
     } catch (err) {
       if (err && (err.status === 401 || err.status === 403)) {
-        clearSession();
-        setStep("identify");
-        showNotice($("ppNotice"), "error", "Your session expired. Please sign in again.");
+        // Stay signed in on participant ACL miss — show home instead of killing the session.
+        setStep("home");
+        showNotice(
+          $("ppNotice"),
+          "error",
+          "We could not open that participant hub. Try another child from the list, or sign in again.",
+        );
+        void loadHome({ skipAutoHub: true });
         return;
       }
       host.innerHTML =

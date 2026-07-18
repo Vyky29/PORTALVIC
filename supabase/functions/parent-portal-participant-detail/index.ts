@@ -755,7 +755,9 @@ Deno.serve(async (req) => {
 
   const { data: linked } = await supabase
     .from("portal_parent_contacts")
-    .select("contact_id")
+    .select(
+      "contact_id, child_display, child_first_name, child_last_name, dob_iso, in_class, on_waiting_list, city, postcode, registration_date",
+    )
     .eq("parent_person_id", session.parent_person_id)
     .eq("contact_id", contactId)
     .maybeSingle();
@@ -769,11 +771,25 @@ Deno.serve(async (req) => {
     if (!primaryOwned) return parentPortalJsonInvalid(403);
   }
 
-  const { data: participant, error: partErr } = await supabase
+  const { data: participantRow, error: partErr } = await supabase
     .from("portal_participants")
     .select("contact_id, display_name, first_name, last_name, dob_iso, in_class, on_waiting_list, avatar_storage_path")
     .eq("contact_id", contactId)
     .maybeSingle();
+
+  // Contact-linked children (e.g. test/broadcast rows) may not have portal_participants yet.
+  const participant = participantRow || (linked
+    ? {
+      contact_id: contactId,
+      display_name: linked.child_display,
+      first_name: linked.child_first_name,
+      last_name: linked.child_last_name,
+      dob_iso: linked.dob_iso,
+      in_class: linked.in_class,
+      on_waiting_list: linked.on_waiting_list,
+      avatar_storage_path: null,
+    }
+    : null);
 
   if (partErr || !participant) return parentPortalJsonInvalid(403);
 
