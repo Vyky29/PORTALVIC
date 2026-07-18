@@ -706,6 +706,7 @@
   function hubHeroHtml(data, opts) {
     var p = data.participant || {};
     var needsPhoto = participantNeedsPhoto(p, opts);
+    var reenrolChip = hubReenrolledChipHtml(data);
     return (
       hubSiblingsHtml(data, opts) +
       '<header class="pp-hub-hero' +
@@ -714,9 +715,12 @@
       '<div class="pp-hub-hero__row">' +
       hubHeroPhotoHtml(data, opts) +
       '<div class="pp-hub-hero__copy">' +
+      '<div class="pp-hub-hero__title-row">' +
       '<h3 class="pp-hub-hero__name">' +
       esc(p.display_name || "Participant") +
       "</h3>" +
+      reenrolChip +
+      "</div>" +
       hubIdentityMetaInlineHtml(p) +
       enrolledServiceChipsHtml(data) +
       hubPhotoNoticeHtml(data, opts) +
@@ -858,21 +862,27 @@
     return booking.can_book_extras !== false;
   }
 
+  function hubReenrolledChipHtml(data) {
+    var booking = bookingSummary(data);
+    if (!booking.submitted) return "";
+    return (
+      '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip" role="status" title="Re-enrolled for 2026/27">' +
+      '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
+      "<span>Re-enrolled</span>" +
+      "</span>"
+    );
+  }
+
   function reenrolBannerHtml(data) {
     var booking = bookingSummary(data);
     var acatNotice = booking.acat_confirm_notice
       ? '<p class="pp-muted pp-hub-reenrol__acat">' + esc(booking.acat_confirm_notice) + "</p>"
       : "";
     if (booking.submitted) {
-      return (
-        '<p class="pp-hub-reenrolled" role="status">' +
-        '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
-        " Re-enrolled for 2026/27" +
-        "</p>" +
-        (acatNotice
-          ? '<aside class="pp-hub-reenrol pp-hub-reenrol--acat" role="note">' + acatNotice + "</aside>"
-          : "")
-      );
+      // Status chip sits beside the name; only keep extra ACAT note here if present.
+      return acatNotice
+        ? '<aside class="pp-hub-reenrol pp-hub-reenrol--acat" role="note">' + acatNotice + "</aside>"
+        : "";
     }
     if (booking.parent_action === "auto") {
       return (
