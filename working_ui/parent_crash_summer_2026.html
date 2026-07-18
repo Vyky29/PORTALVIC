@@ -323,10 +323,19 @@
         </div>
         <div id="csNextInterestWrap" class="interest-wrap" style="margin-top:12px" hidden>
           <p class="muted" style="margin:0 0 8px;overflow-wrap:break-word;min-width:0">
-            <strong>July Crash Course is fully booked.</strong>
-            Leave your details if you want us to contact you about the next crash courses.
+            <strong>July Crash Course is fully booked</strong> (Week 1 and Week 2).
+            Join the waiting list if you want leftover / individual days — if a place frees up, we will call you.
           </p>
-          <button type="button" class="btn btn--primary" id="csNextInterestBtn">Leave details for next crash courses</button>
+          <div class="checks" style="margin:0 0 10px" id="csWaitWeeks">
+            <label><input type="checkbox" id="csWaitW1" checked /><span>Week 1 · 20–24 July</span></label>
+            <label><input type="checkbox" id="csWaitW2" checked /><span>Week 2 · 28–31 July</span></label>
+            <label><input type="checkbox" id="csWaitSpare" checked /><span>Open to individual / spare days (not only full packs)</span></label>
+          </div>
+          <button type="button" class="btn btn--primary" id="csWaitlistBtn">Join waiting list</button>
+          <p class="muted" style="margin:12px 0 8px;overflow-wrap:break-word;min-width:0">
+            Or leave details for <strong>future</strong> crash courses after July:
+          </p>
+          <button type="button" class="btn btn--secondary" id="csNextInterestBtn">Leave details for next crash courses</button>
         </div>
       </section>
 
@@ -395,6 +404,6 @@
       </ul>
     </section>
   </div>
-  <script src="/portal/portal_crash_summer_2026.js?v=20260718-next-interest"></script>
+  <script src="/portal/portal_crash_summer_2026.js?v=20260718-waitlist-weeks"></script>
 </body>
 </html>

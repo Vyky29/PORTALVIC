@@ -97,13 +97,15 @@ Deno.serve(async (req) => {
       message:
         interestType === "next_crash_courses"
           ? "Thanks — we already have your details for the next crash courses. We will be in touch."
-          : "Thanks — we already have your interest for this week. We will follow up when individual hours open.",
+          : interestType === "waiting_list_slot"
+            ? "Thanks — you are already on the waiting list for this week. We will call you if a place opens."
+            : "Thanks — we already have your interest for this week. We will follow up when individual hours open.",
     });
   }
 
   const defaultNote =
     interestType === "waiting_list_slot"
-      ? `Waiting list · ${slotId || "climb slot"}`
+      ? `Waiting list · ${weekId}${slotId ? " · " + slotId : ""} · open to spare/individual days`
       : interestType === "next_crash_courses"
         ? "Interested in the next crash courses after July 2026"
         : "Interested in individual leftover hours";
@@ -126,7 +128,7 @@ Deno.serve(async (req) => {
     ok: true,
     message:
       interestType === "waiting_list_slot"
-        ? "Thanks — you are on the waiting list for that time. We will contact you if it opens."
+        ? "Thanks — you are on the waiting list. We will call you if a place or spare day opens."
         : interestType === "next_crash_courses"
           ? "Thanks — we have your details. We will contact you when the next crash courses open."
           : "Thanks — we have noted your interest in individual hours. We will contact you when leftover times open (from Fri 17 July for Week 1).",

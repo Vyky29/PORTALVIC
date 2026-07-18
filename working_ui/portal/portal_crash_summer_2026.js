@@ -327,6 +327,10 @@
       });
     }
     state.week2Open = openIds.indexOf("w2") !== -1;
+    if (state.fullyBooked && Array.isArray(CATALOG.weeksAll) && CATALOG.weeksAll.length) {
+      CATALOG.weeks = CATALOG.weeksAll.slice();
+      state.week2Open = true;
+    }
     if (typeof (data && data.week1_fill_pct) === "number") {
       state.week1FillPct = data.week1_fill_pct;
     }
@@ -340,7 +344,7 @@
     if (rules) {
       if (state.fullyBooked) {
         rules.innerHTML =
-          "<strong>Fully booked:</strong> both July Crash Course weeks are now full — Week 1 (20–24 July) and Week 2 (28–31 July).";
+          "<strong>Fully booked:</strong> Week 1 and Week 2 are full. Join the <strong>waiting list</strong> below for leftover / individual days — we will call you if a place opens.";
       } else if (state.week2Open) {
         rules.innerHTML =
           "Crash courses are <strong>four-day week packs (Tue–Fri)</strong>. " +
@@ -368,10 +372,14 @@
       submit.textContent = state.fullyBooked ? "Fully booked" : "Reserve & pay in full";
       submit.hidden = !!state.fullyBooked;
     }
-    ["csActClimb", "csActSwim", "csModeIndividual"].forEach(function (id) {
+    ["csActClimb", "csActSwim"].forEach(function (id) {
       var control = $(id);
-      if (control) control.disabled = state.fullyBooked;
+      // Keep activity ticks enabled when fully booked so waiting-list preference can use them.
+      if (control && id === "csModeIndividual") control.disabled = state.fullyBooked;
+      else if (control && !state.fullyBooked) control.disabled = false;
     });
+    var modeIndividual = $("csModeIndividual");
+    if (modeIndividual) modeIndividual.disabled = state.fullyBooked;
     var nextWrap = $("csNextInterestWrap");
     var interestWrap = $("csInterestWrap");
     if (nextWrap) nextWrap.hidden = !state.fullyBooked;
@@ -716,7 +724,8 @@
     }
   }
 
-  async function registerInterest(interestType, slotId) {
+  async function registerInterest(interestType, slotId, opts) {
+    opts = opts || {};
     if (!state.sessionToken) {
       showNotice("error", "Please sign in via the family portal first.");
       return;
@@ -727,10 +736,17 @@
       return;
     }
     var isNext = interestType === "next_crash_courses";
-    var btn = isNext ? $("csNextInterestBtn") : $("csInterestBtn");
+    var isWait = interestType === "waiting_list_slot";
+    var btn = isNext
+      ? $("csNextInterestBtn")
+      : isWait
+        ? $("csWaitlistBtn")
+        : $("csInterestBtn");
     var idleLabel = isNext
       ? "Leave details for next crash courses"
-      : "I'm interested in individual hours";
+      : isWait
+        ? "Join waiting list"
+        : "I'm interested in individual hours";
     if (btn) {
       btn.disabled = true;
       btn.textContent = "Sending…";
@@ -746,9 +762,10 @@
         },
         body: JSON.stringify({
           contact_id: contact,
-          week_id: isNext ? "next" : state.weekId || "w1",
+          week_id: isNext ? "next" : opts.weekId || state.weekId || "w1",
           interest_type: interestType || "individual_hours",
           slot_id: isNext ? null : slotId || null,
+          note: opts.note || null,
         }),
       });
       var data = await res.json().catch(function () {
@@ -756,27 +773,91 @@
       });
       if (!res.ok || !data.ok) {
         showNotice("error", (data && data.message) || "Could not save your interest. Try again.");
-        return;
+        return false;
       }
-      showNotice(
-        "success",
-        data.message ||
-          (isNext
-            ? "Thanks — we have your details for the next crash courses."
-            : "Thanks — we have noted your interest and will follow up."),
-      );
-      if (btn) {
-        btn.textContent = isNext ? "Details saved" : "Interest registered";
+      if (!opts.silentNotice) {
+        showNotice(
+          "success",
+          data.message ||
+            (isNext
+              ? "Thanks — we have your details for the next crash courses."
+              : isWait
+                ? "Thanks — you are on the waiting list. We will call you if a place opens."
+                : "Thanks — we have noted your interest and will follow up."),
+        );
+      }
+      if (btn && !opts.keepButton) {
+        btn.textContent = isNext
+          ? "Details saved"
+          : isWait
+            ? "On waiting list"
+            : "Interest registered";
         btn.disabled = true;
-        return;
       }
+      return true;
     } catch (_e) {
       showNotice("error", "Network error — please try again.");
+      return false;
     } finally {
       if (btn && btn.textContent === "Sending…") {
         btn.disabled = false;
         btn.textContent = idleLabel;
       }
+    }
+  }
+
+  async function joinCrashWaitingList() {
+    var w1 = $("csWaitW1") && $("csWaitW1").checked;
+    var w2 = $("csWaitW2") && $("csWaitW2").checked;
+    var spare = $("csWaitSpare") && $("csWaitSpare").checked;
+    if (!w1 && !w2) {
+      showNotice("error", "Choose Week 1 and/or Week 2 for the waiting list.");
+      return;
+    }
+    var acts = [];
+    if ($("csActClimb") && $("csActClimb").checked) acts.push("climbing");
+    if ($("csActSwim") && $("csActSwim").checked) acts.push("swimming");
+    var noteBits = [
+      "Waiting list · July crash",
+      spare ? "open to individual/spare days" : "full pack preferred if possible",
+    ];
+    if (acts.length) noteBits.push("activities: " + acts.join("+"));
+    var note = noteBits.join(" · ");
+    var weeks = [];
+    if (w1) weeks.push("w1");
+    if (w2) weeks.push("w2");
+    var btn = $("csWaitlistBtn");
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Sending…";
+    }
+    var okAny = false;
+    for (var i = 0; i < weeks.length; i++) {
+      var ok = await registerInterest("waiting_list_slot", null, {
+        weekId: weeks[i],
+        note: note + " · " + weeks[i].toUpperCase(),
+        silentNotice: true,
+        keepButton: true,
+      });
+      if (ok) okAny = true;
+    }
+    if (okAny) {
+      showNotice(
+        "success",
+        "Thanks — you are on the waiting list for " +
+          weeks.map(function (w) {
+            return w === "w1" ? "Week 1" : "Week 2";
+          }).join(" and ") +
+          (spare ? " (including individual / spare days)" : "") +
+          ". We will call you if a place opens.",
+      );
+      if (btn) {
+        btn.textContent = "On waiting list";
+        btn.disabled = true;
+      }
+    } else if (btn) {
+      btn.disabled = false;
+      btn.textContent = "Join waiting list";
     }
   }
 
@@ -823,6 +904,13 @@
       nextBtn.setAttribute("data-bound", "1");
       nextBtn.addEventListener("click", function () {
         void registerInterest("next_crash_courses", null);
+      });
+    }
+    var waitBtn = $("csWaitlistBtn");
+    if (waitBtn && !waitBtn.getAttribute("data-bound")) {
+      waitBtn.setAttribute("data-bound", "1");
+      waitBtn.addEventListener("click", function () {
+        void joinCrashWaitingList();
       });
     }
   }

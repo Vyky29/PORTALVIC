@@ -763,7 +763,7 @@
         : "This place is no longer active, so Family portal tools are not available. If you need access again, please contact the office / admin.") +
       "</span>" +
       (crash
-        ? '<span class="pp-muted">July crash course is fully booked — you can still leave your details for the next courses.</span>'
+        ? '<span class="pp-muted">July crash course is fully booked — join the waiting list for leftover / spare days, or leave details for the next courses.</span>'
         : "") +
       "</div>" +
       (crash ? '<div class="pp-hub-reenrol__actions">' + crash + "</div>" : "") +
