@@ -30,12 +30,12 @@
     "Dear families,\n\n" +
     "We are delighted to welcome you to the new clubSENsational Family portal — " +
     "a calmer, clearer home for everything about your child’s place with us.\n\n" +
-    "You already have access. There is nothing to apply for and no new password to wait for.\n\n" +
+    "You already have access. There is nothing to apply for.\n\n" +
     "Open your portal here:\n" +
     "https://www.clubsensational.org/parent\n\n" +
     "Sign in with:\n" +
-    "• your first name and last name (as we have them on file), and\n" +
-    "• your oldest child’s date of birth as 8 digits — DDMMYYYY (for example 05122012).\n\n" +
+    "• your child’s first name (no surname), and\n" +
+    "• your family 4-digit PIN (we send this to you on WhatsApp).\n\n" +
     "What you can do in the Family portal\n" +
     "• See each child’s hub — sessions, photos, weekly notes and messages from the club\n" +
     "• Re-enrol for 2026/27 — please confirm by Wednesday 22 July 2026 (the last day to respond)\n" +
@@ -60,11 +60,12 @@
   // the approved template already appends "Thank you, ClubSENsational".
   // Stay well under ~700 chars — Meta rejects near-limit {{1}} as #132005
   // ("Translated text too long") once the template footer is included.
+  // Note: family PIN is personal — use individual WhatsApp sends for the PIN itself.
   var WA_TEMPLATE_MAX = 700;
   var DEFAULT_WA_BODY =
     "Welcome to your Family portal — you already have access.\n" +
     "https://www.clubsensational.org/parent\n" +
-    "Sign in with your name + oldest child’s DOB (DDMMYYYY).\n\n" +
+    "Sign in with your child’s first name + your family 4-digit PIN (sent to you on WhatsApp).\n\n" +
     "Inside you can re-enrol for 2026/27 (by Wed 22 July), book July crash courses now, see sessions, photos and messages.\n\n" +
     "Tip: Add to Home Screen, open from that icon and turn on alerts so updates reach your phone.\n\n" +
     "From Thu 23 July, unconfirmed places may be released. Full welcome email has all the details.";
