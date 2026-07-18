@@ -2203,6 +2203,78 @@
       box-shadow: none;
       animation: none;
     }
+    .pp-hub-reenrol--popup {
+      margin: 0;
+      width: 100%;
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .pp-hub-reenrol--popup .pp-hub-reenrol__actions {
+      flex-direction: column;
+    }
+    .pp-hub-reenrol--popup .pp-hub-reenrol__actions .pp-hub-reenrol__cta {
+      width: 100%;
+      flex: 1 1 auto;
+    }
+    .pp-reenrol-popup {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 16px;
+      box-sizing: border-box;
+    }
+    .pp-reenrol-popup[hidden] {
+      display: none !important;
+    }
+    .pp-reenrol-popup__backdrop {
+      position: absolute;
+      inset: 0;
+      border: 0;
+      padding: 0;
+      margin: 0;
+      background: rgba(15, 28, 42, 0.45);
+      cursor: pointer;
+    }
+    .pp-reenrol-popup__panel {
+      position: relative;
+      z-index: 1;
+      width: min(420px, 100%);
+      min-width: 0;
+      max-height: min(90vh, 640px);
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .pp-reenrol-popup__dismiss {
+      width: 100%;
+      margin-top: 10px;
+    }
+    body.pp-reenrol-popup-open {
+      overflow: hidden;
+    }
+    .pp-hub-menu-reenr {
+      margin: 0 0 16px;
+      padding: 0 0 14px;
+      border-bottom: 1px solid rgba(23, 50, 71, 0.08);
+      min-width: 0;
+    }
+    .pp-hub-menu-reenr__hint {
+      margin: 0 0 10px;
+      font-size: 13px;
+      overflow-wrap: break-word;
+    }
+    .pp-hub-menu-reenr__actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+    .pp-hub-menu-reenr__actions .pp-hub-reenrol__cta {
+      width: 100%;
+      max-width: 100%;
+    }
     .pp-hub-reenrolled {
       display: flex;
       align-items: center;
@@ -3172,6 +3244,7 @@
     .pp-hub-shortcut--notes .pp-hub-shortcut__ico { background: #fff6e5; color: #b7791f; }
     .pp-hub-shortcut--photos .pp-hub-shortcut__ico { background: #ecfdf5; color: #047857; }
     .pp-hub-shortcut--crash .pp-hub-shortcut__ico { background: #fff1e8; color: #c2410c; }
+    .pp-hub-shortcut--reenr .pp-hub-shortcut__ico { background: #fff8e6; color: #a16207; }
     .pp-hub-shortcut--messages .pp-hub-shortcut__label { color: #1f6a94; }
     .pp-hub-shortcut--sessions .pp-hub-shortcut__label { color: #0f766e; }
     .pp-hub-shortcut--calendar .pp-hub-shortcut__label { color: #1d4ed8; }
@@ -3182,6 +3255,7 @@
     .pp-hub-shortcut--notes .pp-hub-shortcut__label { color: #b7791f; }
     .pp-hub-shortcut--photos .pp-hub-shortcut__label { color: #047857; }
     .pp-hub-shortcut--crash .pp-hub-shortcut__label { color: #c2410c; }
+    .pp-hub-shortcut--reenr .pp-hub-shortcut__label { color: #a16207; }
     a.pp-hub-shortcut { text-decoration: none; color: inherit; }
     .pp-hub-shortcut__label {
       font-size: 11px;
@@ -4743,7 +4817,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260717-parent-session-attendance"></script>
   <script src="/portal/parent_portal_team.js?v=20260710-eiji-hazem-photos"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260715-crash-cal-first"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260718-this-term-blink"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260718-reenrol-popup"></script>
   <script src="/portal/parent_portal_app.js?v=20260718-former-client"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

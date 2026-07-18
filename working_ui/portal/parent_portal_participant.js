@@ -796,7 +796,7 @@
       (isFormerClient(data) ? "" : enrolledServiceChipsHtml(data)) +
       (isFormerClient(data) ? "" : hubPhotoNoticeHtml(data, opts)) +
       "</div></div></header>" +
-      (isFormerClient(data) ? formerClientNoticeHtml(data) : reenrolBannerHtml(data))
+      (isFormerClient(data) ? formerClientNoticeHtml(data) : "")
     );
   }
 
@@ -947,89 +947,151 @@
     );
   }
 
-  function reenrolBannerHtml(data) {
+  function needsReenrolCta(data) {
+    if (isFormerClient(data)) return false;
+    var booking = bookingSummary(data);
+    return !booking.submitted && booking.parent_action !== "auto";
+  }
+
+  function reenrolHref(data) {
+    var p = (data && data.participant) || {};
+    var contactId = p.contact_id || "";
+    return (
+      "/parent/re-enrolment?from=portal&contact_id=" +
+      encodeURIComponent(String(contactId))
+    );
+  }
+
+  function startReenrolBtnHtml(data) {
+    if (!needsReenrolCta(data)) return "";
+    return (
+      '<a class="pp-btn pp-btn--primary pp-hub-reenrol__cta" href="' +
+      esc(reenrolHref(data)) +
+      '">' +
+      '<svg class="pp-hub-reenrol__cta-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>' +
+      "<span>Start re-enrolment</span></a>"
+    );
+  }
+
+  function reenrolQuickAccessBtnHtml(data, icoFn) {
+    if (!needsReenrolCta(data)) return "";
+    return (
+      '<a class="pp-hub-shortcut pp-hub-shortcut--reenr" href="' +
+      esc(reenrolHref(data)) +
+      '" aria-label="Re-enrolment 2026/27">' +
+      '<span class="pp-hub-shortcut__ico" aria-hidden="true">' +
+      icoFn(
+        '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/>',
+      ) +
+      "</span>" +
+      '<span class="pp-hub-shortcut__label">Re-enrolment</span></a>'
+    );
+  }
+
+  function reenrolIntensiveMenuSectionHtml(data) {
+    if (isFormerClient(data)) return "";
+    var startBtn = startReenrolBtnHtml(data);
+    var crashBtn = canBookExtrasFor(data) ? crashBookBtnHtml(data) : "";
+    if (!startBtn && !crashBtn) return "";
+    return (
+      '<section class="pp-hub-menu-reenr" aria-label="Re-enrolments and intensive courses">' +
+      '<p class="pp-pax-info-section-label">Re-enrolments &amp; Intensive Courses</p>' +
+      '<p class="pp-muted pp-hub-menu-reenr__hint">Confirm by Wed 22 July · July crash course fully booked — waiting list available</p>' +
+      '<div class="pp-hub-menu-reenr__actions">' +
+      startBtn +
+      crashBtn +
+      "</div></section>"
+    );
+  }
+
+  function reenrolPopupDismissKey(data) {
+    var p = (data && data.participant) || {};
+    return "pp_reenrol_popup_dismissed_" + String(p.contact_id || "x");
+  }
+
+  function hideReenrolPopup() {
+    var doc = global.document;
+    if (!doc) return;
+    var el = doc.getElementById("ppReenrolPopup");
+    if (el) el.hidden = true;
+    if (doc.body) doc.body.classList.remove("pp-reenrol-popup-open");
+  }
+
+  function closeReenrolPopup(data) {
+    hideReenrolPopup();
+    try {
+      if (data) global.sessionStorage.setItem(reenrolPopupDismissKey(data), "1");
+    } catch (_e) {}
+  }
+
+  function openReenrolPopup(data) {
+    var doc = global.document;
+    if (!doc || !needsReenrolCta(data)) return;
+    var el = doc.getElementById("ppReenrolPopup");
+    if (!el) {
+      el = doc.createElement("div");
+      el.id = "ppReenrolPopup";
+      el.className = "pp-reenrol-popup";
+      el.setAttribute("hidden", "");
+      doc.body.appendChild(el);
+    }
     var booking = bookingSummary(data);
     var acatNotice = booking.acat_confirm_notice
       ? '<p class="pp-muted pp-hub-reenrol__acat">' + esc(booking.acat_confirm_notice) + "</p>"
       : "";
-    if (booking.submitted) {
-      var crashAfter = canBookExtrasFor(data) ? crashBookBtnHtml(data) : "";
-      if (acatNotice || crashAfter) {
-        return (
-          '<aside class="pp-hub-reenrol' +
-          (acatNotice ? " pp-hub-reenrol--acat" : " pp-hub-reenrol--crash") +
-          '" role="note" aria-label="Crash course July">' +
-          (acatNotice ||
-            '<div class="pp-hub-reenrol__copy">' +
-              "<strong>Crash course July</strong>" +
-              '<span class="pp-muted">Fully booked — leave details for the next courses</span>' +
-              "</div>") +
-          (crashAfter
-            ? '<div class="pp-hub-reenrol__actions">' + crashAfter + "</div>"
-            : "") +
-          "</aside>"
-        );
-      }
-      return "";
-    }
-    if (booking.parent_action === "auto") {
-      var laAuto = (booking.parent_action_reasons || []).indexOf("la_funded") >= 0;
-      /* LA / NHS: no re-enrol box — Re-enrolled chip + Crash course July CTA. */
-      if (laAuto) {
-        var crashOnly = crashBookBtnHtml(data);
-        if (acatNotice) {
-          return (
-            '<aside class="pp-hub-reenrol pp-hub-reenrol--acat" role="note">' +
-            acatNotice +
-            (crashOnly ? '<div class="pp-hub-reenrol__actions">' + crashOnly + "</div>" : "") +
-            "</aside>"
-          );
-        }
-        return crashOnly
-          ? '<aside class="pp-hub-reenrol pp-hub-reenrol--crash" aria-label="Crash course July">' +
-            '<div class="pp-hub-reenrol__copy">' +
-            "<strong>Crash course July</strong>" +
-            '<span class="pp-muted">Fully booked — leave details for the next courses</span>' +
-            "</div>" +
-            '<div class="pp-hub-reenrol__actions">' +
-            crashOnly +
-            "</div></aside>"
-          : "";
-      }
-      return (
-        '<aside class="pp-hub-reenrol pp-hub-reenrol--auto" role="status" aria-label="Booking 2026/27">' +
-        '<div class="pp-hub-reenrol__copy">' +
-        "<strong>2026/27 booking</strong>" +
-        '<span class="pp-muted">' +
-        esc(booking.parent_action_note) +
-        "</span>" +
-        acatNotice +
-        "</div>" +
-        crashBookBtnHtml(data) +
-        "</aside>"
-      );
-    }
-    var p = data.participant || {};
-    var contactId = p.contact_id || "";
-    var href =
-      "/parent/re-enrolment?from=portal&contact_id=" + encodeURIComponent(String(contactId));
-    return (
-      '<aside class="pp-hub-reenrol" aria-label="Re-enrolment 2026/27">' +
+    el.innerHTML =
+      '<button type="button" class="pp-reenrol-popup__backdrop" data-pp-reenrol-popup-close aria-label="Close"></button>' +
+      '<div class="pp-reenrol-popup__panel" role="dialog" aria-modal="true" aria-labelledby="ppReenrolPopupTitle">' +
+      '<aside class="pp-hub-reenrol pp-hub-reenrol--popup" aria-label="Re-enrolment 2026/27">' +
       '<div class="pp-hub-reenrol__copy">' +
-      "<strong>Re-enrol 2026/27</strong>" +
+      '<strong id="ppReenrolPopupTitle">Re-enrol 2026/27</strong>' +
       '<span class="pp-muted">Confirm by Wed 22 July · July crash course fully booked</span>' +
       acatNotice +
       "</div>" +
       '<div class="pp-hub-reenrol__actions">' +
-      '<a class="pp-btn pp-btn--primary pp-hub-reenrol__cta" href="' +
-      esc(href) +
-      '">' +
-      '<svg class="pp-hub-reenrol__cta-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>' +
-      "<span>Start re-enrolment</span></a>" +
-      crashBookBtnHtml(data) +
+      startReenrolBtnHtml(data) +
+      (canBookExtrasFor(data) ? crashBookBtnHtml(data) : "") +
       "</div>" +
-      "</aside>"
-    );
+      '<button type="button" class="pp-btn pp-btn--ghost pp-reenrol-popup__dismiss" data-pp-reenrol-popup-close>Close</button>' +
+      "</aside></div>";
+    el.hidden = false;
+    el.__ppReenrolData = data;
+    if (doc.body) doc.body.classList.add("pp-reenrol-popup-open");
+    el.querySelectorAll("[data-pp-reenrol-popup-close]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        closeReenrolPopup(data);
+      });
+    });
+    if (!doc.__ppReenrolPopupEscBound) {
+      doc.__ppReenrolPopupEscBound = true;
+      doc.addEventListener("keydown", function (ev) {
+        if (ev.key !== "Escape") return;
+        var popup = doc.getElementById("ppReenrolPopup");
+        if (!popup || popup.hidden) return;
+        closeReenrolPopup(popup.__ppReenrolData || null);
+      });
+    }
+  }
+
+  function scheduleReenrolPopup(host, data) {
+    if (!host || !needsReenrolCta(data)) return;
+    try {
+      if (global.sessionStorage.getItem(reenrolPopupDismissKey(data)) === "1") return;
+    } catch (_e) {}
+    try {
+      clearTimeout(host.__ppReenrolPopupT);
+    } catch (_e2) {}
+    host.__ppReenrolPopupT = setTimeout(function () {
+      if (!host.isConnected) return;
+      if (!host.querySelector('.pp-pax-shell[data-pp-view="hub"]')) return;
+      openReenrolPopup(data);
+    }, 5000);
+  }
+
+  function reenrolBannerHtml(data) {
+    // Legacy helper kept for any leftover callers — hub no longer embeds this card.
+    if (!needsReenrolCta(data)) return "";
+    return "";
   }
 
   function crashBookBtnHtml(data) {
@@ -1331,6 +1393,8 @@
             { unreadBadge: notesBadge, extraClass: " pp-hub-shortcut--notes" },
           )
         : "") +
+      reenrolQuickAccessBtnHtml(data, ico) +
+      (canBookExtrasFor(data) ? crashQuickAccessBtnHtml(data, ico) : "") +
       "</div></section>"
     );
   }
@@ -1355,7 +1419,7 @@
   }
 
   function hubMenuBodyHtml(data, opts) {
-    return infoButtonsHtml(data, opts);
+    return reenrolIntensiveMenuSectionHtml(data) + infoButtonsHtml(data, opts);
   }
 
   function closeHubMenuSheet() {
@@ -3538,6 +3602,7 @@
     bindHub(host, data, opts);
     syncHubMenuChrome(host, data, opts);
     if (former) {
+      hideReenrolPopup();
       if (global.ParentPortalApp && global.ParentPortalApp.photo && typeof global.ParentPortalApp.photo.bindOn === "function") {
         global.ParentPortalApp.photo.bindOn(host);
       }
@@ -3550,6 +3615,7 @@
       global.ParentPortalApp.photo.bindOn(host);
     }
     void refreshConsentsHubBadge(host, data, opts);
+    scheduleReenrolPopup(host, data);
   }
 
   function refreshConsentsHubBadge(host, data, opts) {
@@ -7252,6 +7318,7 @@
   function openSubview(host, data, opts, view, viewOpts) {
     viewOpts = viewOpts || {};
     closeHubMenuSheet();
+    if (view !== "hub") hideReenrolPopup();
     if (isFormerClient(data)) {
       var allowed = { hub: true };
       if (formerHasFeedback(data)) {
