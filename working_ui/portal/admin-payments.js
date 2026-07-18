@@ -44,7 +44,7 @@
     },
   ];
 
-  /* Sheet = billing channel (filter cards). Detail payer type = LA/NHS/FAMILY column. */
+  /* Sheet = billing channel (filter cards). Columns: Paid + Invoice type. */
   var SHEET_LABELS = {
     "PARENTS": "Family · Private",
     "DIRECT_PAYMENTS": "Family · Direct Payments",
@@ -54,20 +54,40 @@
   var SHEET_ORDER = ["PARENTS", "DIRECT_PAYMENTS", "LA", "No re-enroled"];
   var STATUS_OPTIONS = ["Paid", "Outstanding", "Not paid", "Pending", "Not re-enrolled"];
 
-  /** LA/NHS/FAMILY — only these options (Family ×2, LAs ×1, NHS ×2). */
+  /** Who pays the club (family routes only — LA/NHS invoice rows leave this blank). */
+  var PAID_BY = {
+    FUNDS_FROM_LA: "Using Funds from LA",
+    PRIVATE_FUNDS: "Using Private Funds",
+  };
+  var PAID_BY_OPTIONS = [PAID_BY.FUNDS_FROM_LA, PAID_BY.PRIVATE_FUNDS];
+
+  /** Invoice type shown in Payments — only these labels. */
+  var INVOICE_TYPE = {
+    NHS_EXEMPT: "NHS (Exempt invoice)",
+    LA_EXEMPT: "Local Authority (Exempt invoice)",
+    PARENT_20: "Parent (20% included invoice)",
+    PARENT_EXEMPT: "Parent (Exempt invoice)",
+  };
+  var INVOICE_TYPE_OPTIONS = [
+    INVOICE_TYPE.NHS_EXEMPT,
+    INVOICE_TYPE.LA_EXEMPT,
+    INVOICE_TYPE.PARENT_20,
+    INVOICE_TYPE.PARENT_EXEMPT,
+  ];
+
+  /** Internal route used to classify rows (maps → Paid + Invoice type). */
   var PAYER_ROUTE = {
     FAMILY_PRIVATE: "Using Private Funds",
-    FAMILY_DP: "Using Funds from LA (EHCP/Care Package) · Direct Payments",
-    LA_INVOICE: "Local Authority (invoice)",
-    NHS_INVOICE: "NHS (invoice)",
-    NEN: "NEN",
+    FAMILY_DP: "Using Funds from LA",
+    LA_INVOICE: "Local Authority (Exempt invoice)",
+    NHS_INVOICE: "NHS (Exempt invoice)",
+    NEN: "NHS (Exempt invoice)",
   };
   var PAYER_ROUTE_OPTIONS = [
     PAYER_ROUTE.FAMILY_PRIVATE,
     PAYER_ROUTE.FAMILY_DP,
     PAYER_ROUTE.LA_INVOICE,
     PAYER_ROUTE.NHS_INVOICE,
-    PAYER_ROUTE.NEN,
   ];
 
   /** Canonical selectable values for payment edit fields (keeps wording consistent). */
@@ -78,8 +98,10 @@
       { value: "LA", label: "LA / NHS invoice" },
       { value: "No re-enroled", label: "Not re-enrolled" },
     ],
-    "la/nhs/family": PAYER_ROUTE_OPTIONS.slice(),
-    funding: PAYER_ROUTE_OPTIONS.slice(),
+    paid: PAID_BY_OPTIONS.slice(),
+    "invoice type": INVOICE_TYPE_OPTIONS.slice(),
+    "la/nhs/family": INVOICE_TYPE_OPTIONS.slice(),
+    funding: INVOICE_TYPE_OPTIONS.concat(PAID_BY_OPTIONS),
     "funding origin": [
       "Private",
       "Parent Direct Payments",
@@ -108,10 +130,10 @@
       "Includes 20% VAT (in price)",
       "PF / VAT 20%",
     ],
-    funder: PAYER_ROUTE_OPTIONS.slice(),
+    funder: INVOICE_TYPE_OPTIONS.slice(),
     payer: [
-      PAYER_ROUTE.FAMILY_PRIVATE,
-      PAYER_ROUTE.FAMILY_DP,
+      PAID_BY.PRIVATE_FUNDS,
+      PAID_BY.FUNDS_FROM_LA,
       "Local authority / NHS (pays direct)",
     ],
     term: [
@@ -458,7 +480,8 @@
 
   function selectOptionsFor(fieldName, currentValue) {
     var key = normalizeSelectKey(fieldName);
-    if (key === "la" || key === "la nhs family" || key === "funder") key = "la/nhs/family";
+    if (key === "la" || key === "la nhs family" || key === "funder" || key === "invoice type") key = "invoice type";
+    if (key === "paid" || key === "paid by") key = "paid";
     var list = SELECT_CATALOG[key];
     if (!list || !list.length) return null;
     var v = currentValue == null ? "" : String(currentValue).trim();
@@ -549,7 +572,8 @@
     mode: "payments",     // payments | orders | participants (same data, different framing)
     statusFilter: "active", // active (re-enrolled) | all | outstanding | paid | notreenrolled
     sheetFilter: "",      // "" = all groups, else sheet name
-    laFilter: "",         // "" = all payer routes, else one of PAYER_ROUTE_OPTIONS
+    laFilter: "",         // "" = all invoice types, else one of INVOICE_TYPE_OPTIONS
+    paidFilter: "",       // "" = all Paid values, else one of PAID_BY_OPTIONS
     query: "",
   };
 
@@ -832,17 +856,18 @@
     var colClient = state.mode === "orders" ? "Participant" : "Client";
     if (!rows.length) {
       return '<div class="pay-tbl-wrap"><table class="pay-tbl"><tbody>'
-        + '<tr><td colspan="7" class="pay-empty">No records in this term.</td></tr></tbody></table></div>';
+        + '<tr><td colspan="8" class="pay-empty">No records in this term.</td></tr></tbody></table></div>';
     }
     var html = '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>' + colClient
-      + '</th><th>LA/NHS/FAMILY</th><th>Service</th><th>Term</th><th>Parent</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
+      + '</th><th>Paid</th><th>Invoice type</th><th>Service</th><th>Term</th><th>Parent</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
     rows.forEach(function (r) {
       var attr = r._synthetic
         ? ' data-pay-reenrol="' + esc(r._contactId || r.id) + '"'
         : ' data-pay-id="' + esc(r.id) + '"';
       html += "<tr" + attr + ">"
         + '<td class="pay-name">' + esc(r.client_name || "—") + "</td>"
-        + "<td>" + esc(payerRouteFor(r) || "—") + "</td>"
+        + "<td>" + esc(paidByFor(r) || "—") + "</td>"
+        + "<td>" + esc(invoiceTypeFor(r) || "—") + "</td>"
         + "<td>" + esc(serviceFor(r)) + "</td>"
         + "<td>" + esc(termFor(r)) + "</td>"
         + "<td>" + esc(parentPersonFor(r)) + "</td>"
@@ -932,7 +957,8 @@
     var q = state.query;
     return allRows().filter(function (r) {
       if (state.sheetFilter && r.sheet !== state.sheetFilter) return false;
-      if (state.laFilter && payerRouteFor(r) !== state.laFilter) return false;
+      if (state.laFilter && invoiceTypeFor(r) !== state.laFilter) return false;
+      if (state.paidFilter && paidByFor(r) !== state.paidFilter) return false;
       if (!q) return true;
       if (String(r.client_name || "").toLowerCase().indexOf(q) >= 0) return true;
       if (String(r.parent_name || "").toLowerCase().indexOf(q) >= 0) return true;
@@ -969,66 +995,103 @@
     return "SUMMER TERM 25/26";
   }
 
-  // LA/NHS/FAMILY payer route — only the five canonical options.
+  /**
+   * Internal route: FAMILY_PRIVATE | FAMILY_DP | LA_INVOICE | NHS_INVOICE | NEN.
+   * Display uses paidByFor() + invoiceTypeFor().
+   */
   function payerRouteFor(r) {
     if (!r) return "";
     var sheet = String(r.sheet || "").trim();
     var d = r.data || {};
     var raw = String(
-      d["LA/NHS/FAMILY"] || d.Funder || d.Funding || r._fundingLabel || ""
+      d["Invoice type"] || d["LA/NHS/FAMILY"] || d.Funder || d.Funding || r._fundingLabel || ""
     ).trim();
-    if (!raw) {
+    var paidRaw = String(d.Paid || d["Paid by"] || "").trim();
+    if (!raw && !paidRaw) {
       var pn = String(r.parent_name || "");
       var ix = pn.indexOf("\u00b7");
       if (ix > 0) raw = pn.slice(0, ix).trim();
     }
     var origin = String(d["Funding origin"] || d["Funding Origin"] || "").trim();
     var hint = String(r._paymentMethodHint || "").toLowerCase();
-    var blob = (raw + " " + origin + " " + sheet).toLowerCase();
+    var blob = (raw + " " + paidRaw + " " + origin + " " + sheet).toLowerCase();
 
-    // Already one of the five labels
-    for (var i = 0; i < PAYER_ROUTE_OPTIONS.length; i++) {
-      if (raw === PAYER_ROUTE_OPTIONS[i]) return raw;
+    if (raw === INVOICE_TYPE.NHS_EXEMPT || raw === PAYER_ROUTE.NHS_INVOICE || raw === "NHS (invoice)") {
+      return "NHS_INVOICE";
+    }
+    if (raw === INVOICE_TYPE.LA_EXEMPT || raw === PAYER_ROUTE.LA_INVOICE || raw === "Local Authority (invoice)") {
+      return "LA_INVOICE";
+    }
+    if (
+      raw === INVOICE_TYPE.PARENT_EXEMPT ||
+      paidRaw === PAID_BY.FUNDS_FROM_LA ||
+      raw === PAYER_ROUTE.FAMILY_DP ||
+      /using funds from la/i.test(raw) ||
+      /ehcp|care package/i.test(raw)
+    ) {
+      if (!/\bnhs\b/i.test(blob) && !/local authority \(exempt|local authority \(invoice/i.test(blob)) {
+        return "FAMILY_DP";
+      }
+    }
+    if (
+      raw === INVOICE_TYPE.PARENT_20 ||
+      paidRaw === PAID_BY.PRIVATE_FUNDS ||
+      raw === PAYER_ROUTE.FAMILY_PRIVATE
+    ) {
+      return "FAMILY_PRIVATE";
     }
 
-    // NEN
-    if (/\bnen\b/i.test(raw) || /\bnen\b/.test(blob)) return PAYER_ROUTE.NEN;
+    if (/\bnen\b/i.test(raw) || /\bnen\b/.test(blob)) return "NEN";
 
-    // Family · Direct Payments (parent-held LA money)
     if (
       sheet === "DIRECT_PAYMENTS" ||
       isParentDirectPaymentsLabel(raw) ||
       isParentDirectPaymentsLabel(origin) ||
       (/direct payments?/i.test(blob) && !/invoice|pays direct|nhs invoice/i.test(blob))
     ) {
-      return PAYER_ROUTE.FAMILY_DP;
+      return "FAMILY_DP";
     }
 
-    // Family · Private
     if (
       sheet === "PARENTS" ||
       /using private funds|private \(parents\)|private funds|^private$/i.test(raw) ||
       (/^private$/i.test(origin) && hint !== "la_funded")
     ) {
-      return PAYER_ROUTE.FAMILY_PRIVATE;
+      return "FAMILY_PRIVATE";
     }
 
-    // NHS (invoice)
-    if (/\bnhs\b/i.test(raw) || /\bnhs\b/.test(blob)) return PAYER_ROUTE.NHS_INVOICE;
+    if (/\bnhs\b/i.test(raw) || /\bnhs\b/.test(blob)) return "NHS_INVOICE";
 
-    // Local Authority (invoice)
     if (
       sheet === "LA" ||
       hint === "la_funded" ||
       /la funded|local authority|la invoice|care in finance|\bcwd\b/i.test(blob) ||
       isLaInvoiceFundingLabel(raw)
     ) {
-      return PAYER_ROUTE.LA_INVOICE;
+      return "LA_INVOICE";
     }
 
-    if (sheet === "DIRECT_PAYMENTS") return PAYER_ROUTE.FAMILY_DP;
-    if (sheet === "LA") return PAYER_ROUTE.LA_INVOICE;
-    if (sheet === "PARENTS") return PAYER_ROUTE.FAMILY_PRIVATE;
+    if (sheet === "DIRECT_PAYMENTS") return "FAMILY_DP";
+    if (sheet === "LA") return "LA_INVOICE";
+    if (sheet === "PARENTS") return "FAMILY_PRIVATE";
+    return "";
+  }
+
+  /** Paid column — family routes only. */
+  function paidByFor(r) {
+    var route = payerRouteFor(r);
+    if (route === "FAMILY_DP") return PAID_BY.FUNDS_FROM_LA;
+    if (route === "FAMILY_PRIVATE") return PAID_BY.PRIVATE_FUNDS;
+    return "";
+  }
+
+  /** Invoice type column. */
+  function invoiceTypeFor(r) {
+    var route = payerRouteFor(r);
+    if (route === "FAMILY_DP") return INVOICE_TYPE.PARENT_EXEMPT;
+    if (route === "FAMILY_PRIVATE") return INVOICE_TYPE.PARENT_20;
+    if (route === "LA_INVOICE") return INVOICE_TYPE.LA_EXEMPT;
+    if (route === "NHS_INVOICE" || route === "NEN") return INVOICE_TYPE.NHS_EXEMPT;
     return "";
   }
 
@@ -1056,8 +1119,12 @@
         sheetOpts += '<option value="' + esc(s) + '"' + (state.sheetFilter === s ? " selected" : "") + ">" + esc(labelFor(s)) + "</option>";
       }
     });
-    var laOpts = '<option value="">All LA/NHS/FAMILY</option>';
-    PAYER_ROUTE_OPTIONS.forEach(function (l) {
+    var paidOpts = '<option value="">All Paid</option>';
+    PAID_BY_OPTIONS.forEach(function (l) {
+      paidOpts += '<option value="' + esc(l) + '"' + (state.paidFilter === l ? " selected" : "") + ">" + esc(l) + "</option>";
+    });
+    var laOpts = '<option value="">All invoice types</option>';
+    INVOICE_TYPE_OPTIONS.forEach(function (l) {
       laOpts += '<option value="' + esc(l) + '"' + (state.laFilter === l ? " selected" : "") + ">" + esc(l) + "</option>";
     });
 
@@ -1066,7 +1133,8 @@
       + seg("active", "Active (" + (paidN + outN) + ")") + seg("outstanding", "Outstanding (" + outN + ")") + seg("paid", "Paid (" + paidN + ")") + seg("notreenrolled", "Not re-enrolled (" + naN + ")") + seg("all", "All")
       + '</div>'
       + '<select class="pay-sel" id="paySheet">' + sheetOpts + '</select>'
-      + '<select class="pay-sel" id="payLA" aria-label="LA/NHS/FAMILY filter">' + laOpts + '</select>'
+      + '<select class="pay-sel" id="payPaid" aria-label="Paid filter">' + paidOpts + '</select>'
+      + '<select class="pay-sel" id="payLA" aria-label="Invoice type filter">' + laOpts + '</select>'
       + '<input type="search" class="pay-search" id="paySearch" placeholder="Search client, parent…" value="' + esc(state.query) + '" />'
       + '</div>';
 
@@ -1106,9 +1174,9 @@
     });
     if (!people.length) {
       return '<div class="pay-tbl-wrap"><table class="pay-tbl"><tbody>'
-        + '<tr><td colspan="6" class="pay-empty">No participants in this term.</td></tr></tbody></table></div>';
+        + '<tr><td colspan="7" class="pay-empty">No participants in this term.</td></tr></tbody></table></div>';
     }
-    var html = '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>Client</th><th>LA/NHS/FAMILY</th><th>Service(s)</th><th class="num">Orders</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
+    var html = '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>Client</th><th>Paid</th><th>Invoice type</th><th>Service(s)</th><th class="num">Orders</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
     people.forEach(function (g) {
       var svcList = Object.keys(g.services);
       var svcTxt = svcList.length ? svcList.join(" · ") : "—";
@@ -1126,7 +1194,8 @@
       }
       html += "<tr " + rowAttr + ">"
         + '<td class="pay-name">' + esc(g.name) + "</td>"
-        + "<td>" + esc(payerRouteFor(first) || "—") + "</td>"
+        + "<td>" + esc(paidByFor(first) || "—") + "</td>"
+        + "<td>" + esc(invoiceTypeFor(first) || "—") + "</td>"
         + "<td>" + esc(svcTxt) + "</td>"
         + '<td class="num">' + g.orders.length + "</td>"
         + '<td class="num">' + money(g.total) + "</td>"
@@ -1200,6 +1269,8 @@
     if (sh) sh.addEventListener("change", function () { state.sheetFilter = sh.value; render(); });
     var la = root.querySelector("#payLA");
     if (la) la.addEventListener("change", function () { state.laFilter = la.value; render(); });
+    var paid = root.querySelector("#payPaid");
+    if (paid) paid.addEventListener("change", function () { state.paidFilter = paid.value; render(); });
     var s = root.querySelector("#paySearch");
     if (s) {
       s.addEventListener("input", function () {
@@ -1423,36 +1494,37 @@
       var v = String(inp.value == null ? "" : inp.value).trim();
       if (v !== "") newData[k] = v;
     });
-    /* Keep Funding / Payer / origin aligned with Group so wording stays consistent. */
+    /* Keep Paid / Invoice type / Funding aligned with Group. */
     if (patch.sheet === "PARENTS") {
-      newData.Funding = PAYER_ROUTE.FAMILY_PRIVATE;
-      newData.Funder = PAYER_ROUTE.FAMILY_PRIVATE;
-      newData["LA/NHS/FAMILY"] = PAYER_ROUTE.FAMILY_PRIVATE;
-      if (!newData.Payer || /local authority|nhs \(pays|direct payments/i.test(String(newData.Payer))) {
-        newData.Payer = PAYER_ROUTE.FAMILY_PRIVATE;
+      newData.Paid = PAID_BY.PRIVATE_FUNDS;
+      newData["Invoice type"] = INVOICE_TYPE.PARENT_20;
+      newData.Funding = INVOICE_TYPE.PARENT_20;
+      newData.Funder = INVOICE_TYPE.PARENT_20;
+      if (!newData.Payer || /local authority|nhs \(pays|direct payments|funds from la/i.test(String(newData.Payer))) {
+        newData.Payer = PAID_BY.PRIVATE_FUNDS;
       }
       newData["Funding origin"] = "Private";
       if (newData["Funding Origin"] != null) delete newData["Funding Origin"];
     } else if (patch.sheet === "DIRECT_PAYMENTS") {
-      newData.Funding = PAYER_ROUTE.FAMILY_DP;
-      newData.Funder = PAYER_ROUTE.FAMILY_DP;
-      newData["LA/NHS/FAMILY"] = PAYER_ROUTE.FAMILY_DP;
-      newData.Payer = PAYER_ROUTE.FAMILY_DP;
+      newData.Paid = PAID_BY.FUNDS_FROM_LA;
+      newData["Invoice type"] = INVOICE_TYPE.PARENT_EXEMPT;
+      newData.Funding = INVOICE_TYPE.PARENT_EXEMPT;
+      newData.Funder = INVOICE_TYPE.PARENT_EXEMPT;
+      newData.Payer = PAID_BY.FUNDS_FROM_LA;
       newData["Funding origin"] = "Parent Direct Payments";
       if (newData["Funding Origin"] != null) delete newData["Funding Origin"];
       if (!newData.VAT || /20%|pf|0\.2/i.test(String(newData.VAT))) newData.VAT = "Exempt";
     } else if (patch.sheet === "LA") {
-      var route = String(newData["LA/NHS/FAMILY"] || newData.Funder || newData.Funding || "").trim();
-      if (route !== PAYER_ROUTE.NHS_INVOICE && route !== PAYER_ROUTE.NEN && route !== PAYER_ROUTE.LA_INVOICE) {
-        route = /\bnen\b/i.test(route) ? PAYER_ROUTE.NEN
-          : /\bnhs\b/i.test(route) ? PAYER_ROUTE.NHS_INVOICE
-          : PAYER_ROUTE.LA_INVOICE;
+      var route = String(newData["Invoice type"] || newData.Funder || newData.Funding || "").trim();
+      if (route !== INVOICE_TYPE.NHS_EXEMPT && route !== INVOICE_TYPE.LA_EXEMPT) {
+        route = /\bnen\b|\bnhs\b/i.test(route) ? INVOICE_TYPE.NHS_EXEMPT : INVOICE_TYPE.LA_EXEMPT;
       }
+      delete newData.Paid;
+      newData["Invoice type"] = route;
       newData.Funding = route;
       newData.Funder = route;
-      newData["LA/NHS/FAMILY"] = route;
       newData.Payer = "Local authority / NHS (pays direct)";
-      newData["Funding origin"] = route === PAYER_ROUTE.NEN || route === PAYER_ROUTE.NHS_INVOICE ? "NHS-funded" : "LA-funded";
+      newData["Funding origin"] = route === INVOICE_TYPE.NHS_EXEMPT ? "NHS-funded" : "LA-funded";
       if (newData["Funding Origin"] != null) delete newData["Funding Origin"];
       if (!newData.VAT || /20%|pf|0\.2/i.test(String(newData.VAT))) newData.VAT = "Exempt";
     }
