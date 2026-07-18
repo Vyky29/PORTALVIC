@@ -2,13 +2,13 @@
  * Whether the parent should fill re-enrolment 2026/27 themselves,
  * or the office/funder path renews automatically.
  *
- * Office auto (no parent form) ONLY when:
+ * Office auto (no parent form) + hide My invoices when:
  *   - Day Centre place, OR
- *   - Club invoices the funder directly: Ealing, Hammersmith & Fulham (H&F), or NHS
+ *   - Club invoices the funder (Ealing / H&F / NHS), OR
+ *   - LA sheet / LA Direct Payments / CWD remittance (parent-held LA money)
  *
  * NOT auto (parent must re-enrol + choose how to pay):
- *   - Private self-pay
- *   - Parent pays us with LA Direct Payments / personal budget (LA money, parent pays)
+ *   - Private self-pay only
  */
 export type ParentReenrolUiMode = "required" | "auto";
 
@@ -122,10 +122,16 @@ export function buildParentReenrolUi(opts: {
   if (opts.hasDayCentre) reasons.push("day_centre");
 
   const sheet = clean(opts.paymentSheet, 40).toUpperCase();
-  const sheetLa = sheet === "LA";
-  // Never treat VAT-exempt or Direct Payments as “LA invoices us”.
+  const sheetLa = sheet === "LA" || sheet === "DIRECT_PAYMENTS";
+  const parentDp = fundingLabelIsParentDirectPayments(opts.fundingLabel);
   const funderPaysClub = fundingLabelIsClubInvoicedFunder(opts.fundingLabel);
-  if (sheetLa || funderPaysClub) reasons.push("la_funded");
+  const vatExemptLa =
+    clean(opts.vatMode, 20).toLowerCase() === "exempt" &&
+    (sheetLa || parentDp || funderPaysClub ||
+      /\bla\b|\bnhs\b|local authority|ealing|hammersmith|fulham/.test(
+        clean(opts.fundingLabel, 160).toLowerCase(),
+      ));
+  if (sheetLa || funderPaysClub || parentDp || vatExemptLa) reasons.push("la_funded");
   if (isAcat) reasons.push("acat_brought");
 
   const officeAuto = reasons.includes("day_centre") || reasons.includes("la_funded");
@@ -146,10 +152,10 @@ export function buildParentReenrolUi(opts: {
   }
 
   const baseNote = reasons.includes("day_centre") && reasons.includes("la_funded")
-    ? "Day Centre and Ealing / H&F / NHS places renew with the office — nothing for you to submit."
+    ? "Day Centre and LA / NHS places renew with the office — nothing for you to submit."
     : reasons.includes("day_centre")
     ? "Day Centre places renew with the office — nothing for you to submit."
-    : "Places billed to Ealing, Hammersmith & Fulham, or the NHS renew with the office — nothing for you to submit.";
+    : "LA / NHS funded places renew with the office — nothing for you to submit.";
 
   const note = (isAcat
     ? "ACAT should approve this place — it is an ACAT-only service. " + baseNote

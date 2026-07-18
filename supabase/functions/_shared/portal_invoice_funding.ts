@@ -275,7 +275,8 @@ export async function resolveParticipantInvoiceFunding(
       fl.includes("exempt") ||
       fl.includes("direct payment") ||
       fl.includes("local authority") ||
-      fl.includes("care package"))
+      fl.includes("care package") ||
+      fl.includes("cwd"))
   ) {
     return {
       vatMode: "exempt",
@@ -283,7 +284,7 @@ export async function resolveParticipantInvoiceFunding(
       clientId: contactId,
       po: "",
       source: "funding_label",
-      paymentSheet: "",
+      paymentSheet: "LA",
     };
   }
   if (
@@ -300,15 +301,30 @@ export async function resolveParticipantInvoiceFunding(
     };
   }
 
-  const preferredKey = paymentClientKeyForParticipant(displayName);
-  let paymentRow: Record<string, unknown> | null = null;
-  if (preferredKey) {
-    const { data: keyed } = await admin
-      .from("client_payments")
-      .select("client_key, client_name, parent_name, payment_status, amount, data, sheet")
-      .eq("client_key", preferredKey)
-      .maybeSingle();
-    if (keyed) paymentRow = keyed as Record<string, unknown>;
+  /* Prefer fuzzy LA/PARENTS sheet match (short names like "Samer" vs "Samer Bakhiet"). */
+  let paymentRow = await loadLaPaymentRow(admin, displayName);
+  if (!paymentRow) {
+    const preferredKey = paymentClientKeyForParticipant(displayName);
+    if (preferredKey) {
+      const { data: keyed } = await admin
+        .from("client_payments")
+        .select("client_key, client_name, parent_name, payment_status, amount, data, sheet")
+        .eq("client_key", preferredKey)
+        .maybeSingle();
+      if (keyed) paymentRow = keyed as Record<string, unknown>;
+    }
+  }
+  if (!paymentRow) {
+    const first = displayName.split(/\s+/)[0] || "";
+    const firstKey = first ? paymentClientKeyForParticipant(first) : "";
+    if (firstKey) {
+      const { data: keyed } = await admin
+        .from("client_payments")
+        .select("client_key, client_name, parent_name, payment_status, amount, data, sheet")
+        .eq("client_key", firstKey)
+        .maybeSingle();
+      if (keyed) paymentRow = keyed as Record<string, unknown>;
+    }
   }
   if (!paymentRow && displayName) {
     const { data: byName } = await admin
@@ -328,27 +344,29 @@ export async function resolveParticipantInvoiceFunding(
         ? (paymentRow.data as Record<string, unknown>)
         : {};
     const fundNorm = normalizeFundingSource(ctx.fundingSource);
-    const vat =
-      ctx.vatCode === "exempt" ||
-      /local authority|nhs|direct payment/i.test(fundNorm) ||
-      String(paymentRow.sheet || "").toUpperCase() === "LA"
-        ? "exempt"
-        : "vat_20";
-    // If sheet PARENTS and vat empty → private (vat_20).
+    const sheet = clean(paymentRow.sheet, 40);
+    const sheetUp = sheet.toUpperCase();
     const vatRaw = normalizeInvoiceType(String(data.vat || data.VAT || ""));
     const finalVat: PortalInvoiceVatMode =
-      String(paymentRow.sheet || "").toUpperCase() === "LA"
+      sheetUp === "LA" || sheetUp === "DIRECT_PAYMENTS"
         ? "exempt"
         : vatRaw.code === "exempt"
           ? "exempt"
-          : vat;
+          : ctx.vatCode === "exempt" ||
+              /local authority|nhs|direct payment/i.test(fundNorm)
+            ? "exempt"
+            : "vat_20";
     return {
       vatMode: finalVat,
-      fundingLabel: fundNorm || ctx.fundingSource || (finalVat === "exempt" ? "LA / NHS" : "Private"),
+      fundingLabel:
+        fundNorm ||
+        ctx.fundingSource ||
+        clean(data["Funding"], 120) ||
+        (finalVat === "exempt" ? "LA / NHS" : "Private"),
       clientId: pickClientId(data, clean(paymentRow.client_key, 80) || contactId),
       po: pickPo(data),
       source: "client_payments",
-      paymentSheet: clean(paymentRow.sheet, 40),
+      paymentSheet: sheet,
     };
   }
 

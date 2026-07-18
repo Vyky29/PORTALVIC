@@ -863,7 +863,10 @@
 
   function hubReenrolledChipHtml(data) {
     var booking = bookingSummary(data);
-    if (!booking.submitted) return "";
+    var laAuto =
+      booking.parent_action === "auto" &&
+      (booking.parent_action_reasons || []).indexOf("la_funded") >= 0;
+    if (!booking.submitted && !laAuto) return "";
     return (
       '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip" role="status" title="Re-enrolled for 2026/27">' +
       '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
@@ -884,6 +887,13 @@
         : "";
     }
     if (booking.parent_action === "auto") {
+      var laAuto = (booking.parent_action_reasons || []).indexOf("la_funded") >= 0;
+      /* LA / NHS: no re-enrol box — Re-enrolled chip is enough (invoices also hidden). */
+      if (laAuto) {
+        return acatNotice
+          ? '<aside class="pp-hub-reenrol pp-hub-reenrol--acat" role="note">' + acatNotice + "</aside>"
+          : "";
+      }
       return (
         '<aside class="pp-hub-reenrol pp-hub-reenrol--auto" role="status" aria-label="Booking 2026/27">' +
         '<div class="pp-hub-reenrol__copy">' +
