@@ -658,10 +658,24 @@
       flex-shrink: 0;
       min-width: 0;
     }
-    .pp-hub-menu-sheet__head strong {
-      font-size: 16px;
-      color: var(--ink);
+    .pp-hub-menu-sheet__title {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
       flex-shrink: 0;
+      min-width: 0;
+      color: var(--ink);
+    }
+    .pp-hub-menu-sheet__title-ico {
+      width: 18px;
+      height: 18px;
+      display: block;
+      flex-shrink: 0;
+    }
+    .pp-hub-menu-sheet__title strong {
+      font-size: 16px;
+      color: inherit;
+      white-space: nowrap;
     }
     .pp-hub-menu-sheet__actions {
       display: flex;
@@ -673,24 +687,41 @@
     }
     .pp-hub-menu-sheet__action {
       display: inline-flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 2px;
+      flex-shrink: 1;
       margin: 0;
-      padding: 7px 9px;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      background: rgba(45, 132, 179, 0.06);
-      color: var(--blue);
-      font-size: 12px;
-      font-weight: 700;
-      line-height: 1.15;
-      text-align: center;
-      cursor: pointer;
+      padding: 6px 8px;
       min-width: 0;
       max-width: 100%;
+      min-height: 48px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--white);
+      color: var(--blue);
+      cursor: pointer;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pp-hub-menu-sheet__action-ico {
+      width: 18px;
+      height: 18px;
+      display: block;
+      flex-shrink: 0;
+    }
+    .pp-hub-menu-sheet__action-label {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      line-height: 1.1;
+      color: var(--ink);
+      text-align: center;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      max-width: 100%;
     }
     .pp-hub-menu-sheet__close {
       display: inline-flex;
@@ -4593,7 +4624,10 @@
         <button type="button" class="pp-hub-menu-sheet__backdrop" data-pp-hub-menu-close aria-label="Close menu"></button>
         <div class="pp-hub-menu-sheet__panel" role="dialog" aria-modal="true" aria-label="Menu">
           <div class="pp-hub-menu-sheet__head">
-            <strong>Menu</strong>
+            <div class="pp-hub-menu-sheet__title">
+              <svg class="pp-hub-menu-sheet__title-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+              <strong>Menu</strong>
+            </div>
             <div id="ppHubMenuSheetHeadActions" class="pp-hub-menu-sheet__actions"></div>
             <button type="button" class="pp-hub-menu-sheet__close" data-pp-hub-menu-close aria-label="Close">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
@@ -4622,7 +4656,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260717-parent-session-attendance"></script>
   <script src="/portal/parent_portal_team.js?v=20260710-eiji-hazem-photos"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260715-crash-cal-first"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260718-no-in-class"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260718-menu-head-icons"></script>
   <script src="/portal/parent_portal_app.js?v=20260718-hub-compact-menu"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
