@@ -713,6 +713,9 @@
       ".pay-chip--inv-nhs{background:#f0f9ff;color:#0369a1;border-color:#bae6fd}",
       ".pay-chip--muted{background:#f1f5f9;color:#64748b;border-color:#e2e8f0}",
       ".pay-tbl td .pay-chip{white-space:normal}",
+      ".pay-svc-2line{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;max-width:100%}",
+      ".pay-svc-2line__a{font-weight:700;color:#0f172a;overflow-wrap:break-word}",
+      ".pay-svc-2line__b{font-size:12px;font-weight:600;color:#64748b;overflow-wrap:break-word}",
       ".pay-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 1px 3px rgba(15,23,42,.05);overflow:hidden}",
       ".pay-card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid #eef2f7}",
       ".pay-card-h h3{margin:0;font-size:15px;color:#0f172a}",
@@ -924,7 +927,7 @@
         + '<td class="pay-name">' + esc(r.client_name || "—") + "</td>"
         + "<td>" + paidChipHtml(paidByFor(r)) + "</td>"
         + "<td>" + invoiceChipHtml(invoiceTypeFor(r)) + "</td>"
-        + "<td>" + esc(serviceFor(r)) + "</td>"
+        + "<td>" + serviceCellHtml(r) + "</td>"
         + "<td>" + esc(termFor(r)) + "</td>"
         + "<td>" + esc(parentPersonFor(r)) + "</td>"
         + '<td class="num">' + money(r.amount) + "</td>"
@@ -1032,15 +1035,93 @@
   }
 
   function serviceFor(r) {
+    var parts = serviceDisplayParts(r);
+    if (!parts.line1 || parts.line1 === "—") return "—";
+    return parts.line2 ? parts.line1 + " " + parts.line2 : parts.line1;
+  }
+
+  function serviceCellHtml(r) {
+    var parts = serviceDisplayParts(r);
+    if (!parts.line1 || parts.line1 === "—") return "—";
+    if (!parts.line2) return esc(parts.line1);
+    return '<span class="pay-svc-2line">'
+      + '<span class="pay-svc-2line__a">' + esc(parts.line1) + "</span>"
+      + '<span class="pay-svc-2line__b">' + esc(parts.line2) + "</span>"
+      + "</span>";
+  }
+
+  function rawServiceText(r) {
     var d = r.data || {};
     var keys = ["Services", "Service", "Programme", "Programmes", "Activity"];
     for (var i = 0; i < keys.length; i++) {
       var v = d[keys[i]];
-      if (v != null && String(v).trim() && String(v).trim() !== "-") {
-        return normalizeServiceDisplay(String(v).trim());
-      }
+      if (v != null && String(v).trim() && String(v).trim() !== "-") return String(v).trim();
     }
-    return "—";
+    return "";
+  }
+
+  function expandDayRangeLabel(raw) {
+    var map = {
+      mon: "Monday", monday: "Monday",
+      tue: "Tuesday", tues: "Tuesday", tuesday: "Tuesday",
+      wed: "Wednesday", wednesday: "Wednesday",
+      thu: "Thursday", thur: "Thursday", thurs: "Thursday", thursday: "Thursday",
+      fri: "Friday", friday: "Friday",
+      sat: "Saturday", saturday: "Saturday",
+      sun: "Sunday", sunday: "Sunday",
+    };
+    function fullDay(tok) {
+      var t = String(tok || "").trim().toLowerCase().replace(/\./g, "");
+      if (map[t]) return map[t];
+      var k3 = t.slice(0, 3);
+      if (map[k3]) return map[k3];
+      return String(tok || "").trim();
+    }
+    var s = String(raw || "").trim();
+    var range = s.match(/^([A-Za-z.]+)\s*(?:[–\-—]|\s+to\s+)\s*([A-Za-z.]+)$/i);
+    if (range) return fullDay(range[1]) + "-" + fullDay(range[2]);
+    return fullDay(s) || s;
+  }
+
+  function serviceDisplayParts(r) {
+    var raw = rawServiceText(r);
+    if (!raw) return { line1: "—", line2: "" };
+    return normalizeServiceParts(raw);
+  }
+
+  /**
+   * Display-only service label.
+   * Legacy "60' 2:1 Bespoke 2h30 (Mon–Fri)" → "2h30' Day Centre" + "(Monday-Friday)".
+   */
+  function normalizeServiceParts(raw) {
+    var s = String(raw || "").trim();
+    if (!s) return { line1: "", line2: "" };
+
+    var hoursDay = null;
+    /* "60' 2:1 Bespoke 2h30 (Mon–Fri)" — hours after Bespoke are the real Day Centre length */
+    var bes = s.match(
+      /^(?:\d+\s*['′']?\s*)?(?:\d+\s*:\s*\d+\s+)?Bespoke\s+(\d+)\s*h\s*(\d{2})?\b(?:\s*\(([^)]+)\))?\s*$/i
+    );
+    if (bes) hoursDay = { h: bes[1], mm: bes[2] || "", days: bes[3] || "" };
+
+    /* "30' 2:1 Day Centre 5h (Mon–Wed)" — drop the misleading unit prefix */
+    if (!hoursDay) {
+      var dc = s.match(
+        /^(?:\d+\s*['′']?\s*)?(?:\d+\s*:\s*\d+\s+)?Day\s*Centre\s+(\d+)\s*h\s*(\d{2})?\b(?:\s*\(([^)]+)\))?\s*$/i
+      );
+      if (dc) hoursDay = { h: dc[1], mm: dc[2] || "", days: dc[3] || "" };
+    }
+
+    if (hoursDay) {
+      var hrs = hoursDay.h + "h" + hoursDay.mm + "'";
+      return {
+        line1: hrs + " Day Centre",
+        line2: hoursDay.days ? "(" + expandDayRangeLabel(hoursDay.days) + ")" : "",
+      };
+    }
+
+    s = normalizeServiceDisplay(s);
+    return { line1: s, line2: "" };
   }
 
   /** Display-only: legacy workbook codes → current service names. */
@@ -1401,7 +1482,7 @@
       .sort(function (a, b) { return String(serviceFor(a)).localeCompare(String(serviceFor(b))); })
       .map(function (r) {
         return '<tr data-pay-open="' + esc(r.id) + '">'
-          + '<td>' + esc(serviceFor(r)) + '</td>'
+          + '<td>' + serviceCellHtml(r) + '</td>'
           + '<td>' + esc(termFor(r)) + '</td>'
           + '<td>' + esc(r.parent_name || "") + '</td>'
           + '<td class="num">' + money(r.amount) + '</td>'
