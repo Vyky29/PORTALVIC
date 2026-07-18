@@ -716,6 +716,23 @@
     return sessions.length > 0;
   }
 
+  function hasAchievementPhotos(data) {
+    if (data && data.has_achievement_photos === true) return true;
+    var ach = Array.isArray(data && data.achievements) ? data.achievements : [];
+    return ach.length > 0;
+  }
+
+  function photosShortcutBtnHtml(icoFn) {
+    return hubShortcutBtn(
+      "achievements",
+      "Photos",
+      icoFn(
+        '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>',
+      ),
+      { extraClass: " pp-hub-shortcut--photos" },
+    );
+  }
+
   function formerClientNoticeHtml(data) {
     var hasFb = formerHasFeedback(data);
     return (
@@ -1149,7 +1166,7 @@
 
   function hubShortcutsHtml(data, opts) {
     if (isFormerClient(data)) {
-      if (!formerHasFeedback(data)) return "";
+      if (!formerHasFeedback(data) && !hasAchievementPhotos(data)) return "";
       var notesUnreadF = unreadWeeklyNotesCount(data, opts);
       var notesBadgeF =
         opts && typeof opts.unreadBadgeHtml === "function" && notesUnreadF > 0
@@ -1166,20 +1183,23 @@
         '<section class="pp-hub-shortcuts" aria-label="Quick access">' +
         '<p class="pp-pax-info-section-label">Quick access</p>' +
         '<div class="pp-hub-shortcuts__grid">' +
-        hubShortcutBtn(
-          "weekly_notes",
-          "Notes",
-          icoF(
-            '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/>',
-          ),
-          { unreadBadge: notesBadgeF, extraClass: " pp-hub-shortcut--notes" },
-        ) +
-        hubShortcutBtn(
-          "sessions",
-          "Sessions",
-          icoF('<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>'),
-          { extraClass: " pp-hub-shortcut--sessions" },
-        ) +
+        (formerHasFeedback(data)
+          ? hubShortcutBtn(
+              "weekly_notes",
+              "Notes",
+              icoF(
+                '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/>',
+              ),
+              { unreadBadge: notesBadgeF, extraClass: " pp-hub-shortcut--notes" },
+            ) +
+            hubShortcutBtn(
+              "sessions",
+              "Sessions",
+              icoF('<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>'),
+              { extraClass: " pp-hub-shortcut--sessions" },
+            )
+          : "") +
+        (hasAchievementPhotos(data) ? photosShortcutBtnHtml(icoF) : "") +
         "</div></section>"
       );
     }
@@ -1233,6 +1253,7 @@
             { extraClass: " pp-hub-shortcut--sessions" },
           )
         : "") +
+      (hasAchievementPhotos(data) ? photosShortcutBtnHtml(ico) : "") +
       hubShortcutBtn(
         "calendar",
         "Calendar",
@@ -6985,8 +7006,12 @@
     viewOpts = viewOpts || {};
     closeHubMenuSheet();
     if (isFormerClient(data)) {
-      var allowed = { hub: true, weekly_notes: true, sessions: true };
-      if (!formerHasFeedback(data)) allowed = { hub: true };
+      var allowed = { hub: true };
+      if (formerHasFeedback(data)) {
+        allowed.weekly_notes = true;
+        allowed.sessions = true;
+      }
+      if (hasAchievementPhotos(data)) allowed.achievements = true;
       if (!allowed[view]) {
         renderHub(host, data, opts);
         return;

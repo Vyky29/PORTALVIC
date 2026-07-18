@@ -1050,6 +1050,49 @@ Deno.serve(async (req) => {
   }
 
   let achievements: Record<string, unknown>[] = [];
+  let hasAchievementPhotos = false;
+
+  async function probeAchievementPhotos(): Promise<boolean> {
+    const expandedSlugs = expandParticipantClientSlugs(clientSlugs);
+    const achProbeSelect = "id, client_name, client_id";
+    const seen = new Set<string>();
+    const consider = (rows: unknown[] | null | undefined) => {
+      for (const row of rows || []) {
+        if (!row || typeof row !== "object") continue;
+        const rec = row as Record<string, unknown>;
+        if (!participantIdentityMatches(
+          identityInput,
+          String(rec.client_name || ""),
+          String(rec.client_id || ""),
+        )) continue;
+        if (clean(rec.client_id, 80).toLowerCase() === LEAD_INBOX_CLIENT_ID) continue;
+        const aid = String(rec.id || "");
+        if (!aid || seen.has(aid)) continue;
+        seen.add(aid);
+        return true;
+      }
+      return false;
+    };
+    if (expandedSlugs.length) {
+      const { data } = await supabase
+        .from("portal_participant_achievement_photos")
+        .select(achProbeSelect)
+        .in("status", [...PARENT_ACH_STATUSES])
+        .in("client_id", expandedSlugs)
+        .limit(12);
+      if (consider(data)) return true;
+    }
+    for (const nm of lookupNames.slice(0, 4)) {
+      const { data } = await supabase
+        .from("portal_participant_achievement_photos")
+        .select(achProbeSelect)
+        .in("status", [...PARENT_ACH_STATUSES])
+        .ilike("client_name", nm)
+        .limit(12);
+      if (consider(data)) return true;
+    }
+    return false;
+  }
 
   if (wantAchievements) {
     const achSelect =
@@ -1131,6 +1174,9 @@ Deno.serve(async (req) => {
       }),
     );
     achievements = signedRows.filter(Boolean) as Record<string, unknown>[];
+    hasAchievementPhotos = achievements.length > 0;
+  } else {
+    hasAchievementPhotos = await probeAchievementPhotos();
   }
 
   const serviceSet = new Set<string>();
@@ -1352,6 +1398,7 @@ Deno.serve(async (req) => {
       sections_loaded: Array.from(sections),
       portal_access: isFormerClient ? "former" : "active",
       has_session_feedback: hasSessionFeedback,
+      has_achievement_photos: hasAchievementPhotos,
       participant: {
         contact_id: participant.contact_id,
         display_name: displayName,
@@ -1383,7 +1430,7 @@ Deno.serve(async (req) => {
       team: isFormerClient ? [] : teamOut,
       sessions: sessionsOut,
       attendance_summary: isFormerClient ? null : attendanceSummary,
-      achievements: isFormerClient ? [] : achievements,
+      achievements: isFormerClient && !hasAchievementPhotos ? [] : achievements,
       swim_term_reviews: isFormerClient ? [] : swimTermReviews,
       swim_term_review_available: isFormerClient ? false : swimTermReviewAvailable,
       reenrolment: {
