@@ -830,6 +830,58 @@
     );
   }
 
+  function bookedSlotsHtml(inv) {
+    var slots = Array.isArray(inv.booked_slots) ? inv.booked_slots : [];
+    if (!slots.length) {
+      var raw = String(inv.booked_service_raw || '').trim();
+      return raw
+        ? '<div style="margin-top:10px;font-size:12px;overflow-wrap:break-word"><span class="muted">Services</span><br>' +
+          esc(raw) +
+          '</div>'
+        : '';
+    }
+    var period = String(state.amountPeriod || inv.billing_term || 'autumn').toLowerCase();
+    var periodLabel = amountPeriodLabel(period);
+    var rows = slots
+      .map(function (s) {
+        var label = String(s.label || s.service || 'Service').trim();
+        var price =
+          s.price_per_session_gbp != null && Number(s.price_per_session_gbp) > 0
+            ? formatMoney(s.price_per_session_gbp) + '/session'
+            : '—/session';
+        var sessN = Number(s.term_sessions);
+        if (!Number.isFinite(sessN) || sessN < 0) sessN = 0;
+        var sessLabel =
+          period === 'year' || period === 'annual'
+            ? sessN + ' sessions / year'
+            : sessN + ' sessions · ' + periodLabel;
+        var termAmt =
+          s.term_total_gbp != null && Number(s.term_total_gbp) > 0
+            ? ' · ' + formatMoney(s.term_total_gbp)
+            : '';
+        return (
+          '<li style="margin:0 0 8px;padding:8px 10px;border:1px solid var(--line,#e5e7eb);border-radius:10px;min-width:0;overflow-wrap:break-word">' +
+          '<div style="font-weight:700;font-size:13px">' +
+          esc(label) +
+          '</div>' +
+          '<div class="muted" style="font-size:12px;margin-top:2px">' +
+          esc(price) +
+          ' · ' +
+          esc(sessLabel) +
+          esc(termAmt) +
+          '</div></li>'
+        );
+      })
+      .join('');
+    return (
+      '<div style="margin-top:10px;min-width:0">' +
+      '<div class="muted" style="font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:6px">Booked services</div>' +
+      '<ul style="list-style:none;margin:0;padding:0">' +
+      rows +
+      '</ul></div>'
+    );
+  }
+
   function participantAccordionHtml(group) {
     var invoices = sortInvoicesForDisplay(group.invoices || []);
     var realInvoices = invoices.filter(function (inv) {
@@ -850,6 +902,7 @@
             '<div style="font-size:13px;overflow-wrap:break-word">' +
             '<strong>LA office auto</strong>' +
             '<div class="muted" style="font-size:12px">Place renews with the office — no family invoice shared yet. Booked totals from the LA payments sheet.</div>' +
+            bookedSlotsHtml(inv) +
             '</div></div>' +
             '<div class="pp-inv-acc__col">' +
             '<div><span class="muted">Year 26/27</span><br><strong>' +

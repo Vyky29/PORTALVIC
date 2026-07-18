@@ -132,6 +132,64 @@ function bookedFieldsFromTotals(
   };
 }
 
+type BookedSlotSummary = {
+  label: string;
+  service: string;
+  day: string;
+  duration_min: number | null;
+  price_per_session_gbp: number | null;
+  is_day_centre: boolean;
+  sessions: { autumn: number; spring: number; summer: number; annual: number };
+  term_sessions: number;
+  term_total_gbp: number | null;
+};
+
+function bookedSlotsFromPaymentContext(
+  ctx: ReturnType<typeof paymentRowToContext>,
+  amountKey: "year" | "autumn" | "spring" | "summer",
+): BookedSlotSummary[] {
+  const termKey = amountKey === "year" ? "annual" : amountKey;
+  const out: BookedSlotSummary[] = [];
+  const all = [...(ctx.weeklySlots || []), ...(ctx.dayCentreSlots || [])];
+  for (const slot of all) {
+    const sessions = {
+      autumn: num(slot.sessions?.autumn),
+      spring: num(slot.sessions?.spring),
+      summer: num(slot.sessions?.summer),
+      annual: num(slot.sessions?.annual),
+    };
+    const price = slot.pricePerSession != null ? round2(num(slot.pricePerSession)) : null;
+    const termSessions = sessions[termKey] || 0;
+    const termTotal =
+      slot.termTotals && slot.termTotals[termKey] != null
+        ? round2(num(slot.termTotals[termKey]))
+        : price != null
+          ? round2(price * termSessions)
+          : null;
+    const label =
+      clean(slot.displayLabel, 160) ||
+      [
+        slot.durationMin ? `${slot.durationMin}'` : "",
+        clean(slot.serviceType, 80),
+        slot.day ? clean(slot.day, 40) : "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+    out.push({
+      label: label || "Service",
+      service: clean(slot.serviceType, 80) || "Service",
+      day: clean(slot.day, 40),
+      duration_min: slot.durationMin || null,
+      price_per_session_gbp: price,
+      is_day_centre: !!slot.isDayCentre,
+      sessions,
+      term_sessions: termSessions,
+      term_total_gbp: termTotal,
+    });
+  }
+  return out;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: portalAdminCorsHeaders() });
   if (req.method !== "POST") {
@@ -323,6 +381,8 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     row: Record<string, unknown>;
     totals: ReturnType<typeof termTotalsFromPaymentContext>;
     sheet: string;
+    slots: BookedSlotSummary[];
+    service_raw: string;
   };
   const laPayByContact = new Map<string, LaPayMatch>();
   {
@@ -358,6 +418,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       if (sheet !== "LA") continue;
       const ctx = paymentRowToContext(row as Record<string, unknown>);
       const totals = termTotalsFromPaymentContext(ctx);
+      const slots = bookedSlotsFromPaymentContext(ctx, amountKey);
       const clientName = clean(ctx.clientName || row.client_name, 120);
       if (!clientName) continue;
       let matched: (typeof contacts)[0] | null = null;
@@ -373,6 +434,8 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
         row: row as Record<string, unknown>,
         totals,
         sheet,
+        slots,
+        service_raw: clean(ctx.serviceRaw, 240),
       });
       if (!nameByContact.has(matched.contact_id) && matched.child) {
         nameByContact.set(matched.contact_id, matched.child);
@@ -441,6 +504,8 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       funding_label: funding.fundingLabel || null,
       payment_sheet: funding.paymentSheet || null,
       ...booked,
+      booked_slots: laPay?.slots || [],
+      booked_service_raw: laPay?.service_raw || null,
       reenrolment_submitted_at: reenrol?.submitted_at || null,
       is_la_office_auto: fundingCategory === "la_managed" && !reenrol,
     });
@@ -502,6 +567,8 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       funding_label: funding.fundingLabel || "LA / NHS",
       payment_sheet: pack.sheet || "LA",
       ...booked,
+      booked_slots: pack.slots || [],
+      booked_service_raw: pack.service_raw || null,
       reenrolment_submitted_at: reenrol?.submitted_at || OFFICE_AUTO_SORT_TS,
       is_la_office_auto: true,
       xero_invoice_id: null,
