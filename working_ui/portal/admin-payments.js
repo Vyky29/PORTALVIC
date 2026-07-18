@@ -922,13 +922,44 @@
     });
   }
 
-  /** Remember open/closed; unknown terms default open (first paint). */
+  /** Admin workspace scrolls, not window — restore that or filters jump to Summer. */
+  function paymentsScrollParent(fromEl) {
+    var el = fromEl;
+    while (el && el !== document.body && el !== document.documentElement) {
+      var st = window.getComputedStyle ? window.getComputedStyle(el) : null;
+      var oy = st ? st.overflowY : "";
+      if ((oy === "auto" || oy === "scroll" || oy === "overlay") && el.scrollHeight > el.clientHeight + 1) {
+        return el;
+      }
+      el = el.parentElement;
+    }
+    return document.getElementById("workspace") || document.scrollingElement || document.documentElement;
+  }
+
+  function capturePaymentsScroll(root) {
+    var sc = paymentsScrollParent(root);
+    return { el: sc, top: sc ? sc.scrollTop : 0, winY: window.scrollY || 0 };
+  }
+
+  function restorePaymentsScroll(saved) {
+    if (!saved) return;
+    if (saved.el) {
+      try { saved.el.scrollTop = saved.top; } catch (_) {}
+    }
+    try { window.scrollTo(0, saved.winY || 0); } catch (_) {}
+  }
+
+  /**
+   * Remember open/closed across re-renders.
+   * First paint: keep Summer collapsed, Autumn open (filter chips live in Autumn).
+   */
   function termDetailsOpenAttr(termId) {
     var map = state.termOpenById || {};
     if (Object.prototype.hasOwnProperty.call(map, termId)) {
       return map[termId] ? " open" : "";
     }
-    return " open";
+    if (termId === "autumn_2627") return " open";
+    return "";
   }
 
   function paidFilterChipsHtml(termId) {
@@ -1453,7 +1484,7 @@
   function render() {
     var root = state.rootEl;
     if (!root) return;
-    var scrollY = window.scrollY || 0;
+    var savedScroll = capturePaymentsScroll(root);
     var focusTerm = String(state.focusTermId || "").trim();
     captureTermOpenState(root);
     if (focusTerm) {
@@ -1496,17 +1527,13 @@
     if (focusTerm) {
       state.focusTermId = "";
       var focusEl = root.querySelector('details.pay-term-acc[data-pay-term="' + focusTerm + '"]');
-      if (focusEl) {
-        focusEl.open = true;
-        try {
-          focusEl.scrollIntoView({ block: "nearest", inline: "nearest" });
-        } catch (_) {
-          focusEl.scrollIntoView(true);
-        }
-      }
-    } else {
-      window.scrollTo(0, scrollY);
+      if (focusEl) focusEl.open = true;
     }
+    /* Restore workspace scroll — do not scrollIntoView (that jumps to Summer). */
+    restorePaymentsScroll(savedScroll);
+    requestAnimationFrame(function () {
+      restorePaymentsScroll(savedScroll);
+    });
   }
 
   function seg(id, label) {
