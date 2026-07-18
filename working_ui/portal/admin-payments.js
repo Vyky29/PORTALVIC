@@ -54,12 +54,19 @@
   var SHEET_ORDER = ["PARENTS", "DIRECT_PAYMENTS", "LA", "No re-enroled"];
   var STATUS_OPTIONS = ["Paid", "Outstanding", "Not paid", "Pending", "Not re-enrolled"];
 
-  /** Who pays the club (family routes only — LA/NHS invoice rows leave this blank). */
+  /** Who pays / funds the place. */
   var PAID_BY = {
     FUNDS_FROM_LA: "Using Funds from LA",
     PRIVATE_FUNDS: "Using Private Funds",
+    FUNDED_BY_LA: "Funded by LA",
+    FUNDED_BY_NHS: "Funded by NHS",
   };
-  var PAID_BY_OPTIONS = [PAID_BY.FUNDS_FROM_LA, PAID_BY.PRIVATE_FUNDS];
+  var PAID_BY_OPTIONS = [
+    PAID_BY.FUNDS_FROM_LA,
+    PAID_BY.PRIVATE_FUNDS,
+    PAID_BY.FUNDED_BY_LA,
+    PAID_BY.FUNDED_BY_NHS,
+  ];
 
   /** Invoice type shown in Payments — only these labels. */
   var INVOICE_TYPE = {
@@ -1077,11 +1084,13 @@
     return "";
   }
 
-  /** Paid column — family routes only. */
+  /** Paid column. */
   function paidByFor(r) {
     var route = payerRouteFor(r);
     if (route === "FAMILY_DP") return PAID_BY.FUNDS_FROM_LA;
     if (route === "FAMILY_PRIVATE") return PAID_BY.PRIVATE_FUNDS;
+    if (route === "LA_INVOICE") return PAID_BY.FUNDED_BY_LA;
+    if (route === "NHS_INVOICE" || route === "NEN") return PAID_BY.FUNDED_BY_NHS;
     return "";
   }
 
