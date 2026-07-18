@@ -733,8 +733,26 @@
     );
   }
 
+  function crashQuickAccessBtnHtml(data, icoFn) {
+    var p = (data && data.participant) || {};
+    var contactId = p.contact_id || "";
+    var href =
+      "/parent/crash-summer" +
+      (contactId ? "?contact_id=" + encodeURIComponent(String(contactId)) : "");
+    return (
+      '<a class="pp-hub-shortcut pp-hub-shortcut--crash" href="' +
+      esc(href) +
+      '" aria-label="Crash course July">' +
+      '<span class="pp-hub-shortcut__ico" aria-hidden="true">' +
+      icoFn('<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>') +
+      "</span>" +
+      '<span class="pp-hub-shortcut__label">Crash course July</span></a>'
+    );
+  }
+
   function formerClientNoticeHtml(data) {
     var hasFb = formerHasFeedback(data);
+    var crash = canBookExtrasFor(data) ? crashBookBtnHtml(data) : "";
     return (
       '<aside class="pp-hub-reenrol pp-hub-reenrol--former" role="status" aria-label="Former client">' +
       '<div class="pp-hub-reenrol__copy">' +
@@ -743,7 +761,13 @@
       (hasFb
         ? "This place is no longer active. You can still open past session notes below. For anything else, please contact the office."
         : "This place is no longer active, so Family portal tools are not available. If you need access again, please contact the office / admin.") +
-      "</span></div></aside>"
+      "</span>" +
+      (crash
+        ? '<span class="pp-muted">July crash course is fully booked — you can still leave your details for the next courses.</span>'
+        : "") +
+      "</div>" +
+      (crash ? '<div class="pp-hub-reenrol__actions">' + crash + "</div>" : "") +
+      "</aside>"
     );
   }
 
@@ -1166,7 +1190,9 @@
 
   function hubShortcutsHtml(data, opts) {
     if (isFormerClient(data)) {
-      if (!formerHasFeedback(data) && !hasAchievementPhotos(data)) return "";
+      if (!formerHasFeedback(data) && !hasAchievementPhotos(data) && !canBookExtrasFor(data)) {
+        return "";
+      }
       var notesUnreadF = unreadWeeklyNotesCount(data, opts);
       var notesBadgeF =
         opts && typeof opts.unreadBadgeHtml === "function" && notesUnreadF > 0
@@ -1200,6 +1226,7 @@
             )
           : "") +
         (hasAchievementPhotos(data) ? photosShortcutBtnHtml(icoF) : "") +
+        (canBookExtrasFor(data) ? crashQuickAccessBtnHtml(data, icoF) : "") +
         "</div></section>"
       );
     }

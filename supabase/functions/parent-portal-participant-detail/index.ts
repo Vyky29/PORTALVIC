@@ -1441,12 +1441,16 @@ Deno.serve(async (req) => {
           ? "This place is no longer active."
           : parentReenrolUi.note,
         acat_confirm_notice: isFormerClient ? "" : parentReenrolUi.acat_confirm_notice || "",
-        can_book_extras: isFormerClient ? false : parentReenrolUi.can_book_extras !== false,
+        can_book_extras: isFormerClient
+          ? true
+          : parentReenrolUi.can_book_extras !== false,
         show_invoices: isFormerClient
           ? false
           : !parentReenrolUi.reasons.includes("la_funded"),
       },
-      can_book_extras: isFormerClient ? false : parentReenrolUi.can_book_extras !== false,
+      can_book_extras: isFormerClient
+        ? true
+        : parentReenrolUi.can_book_extras !== false,
       show_invoices: isFormerClient
         ? false
         : !parentReenrolUi.reasons.includes("la_funded"),
