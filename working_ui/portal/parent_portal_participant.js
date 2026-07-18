@@ -939,12 +939,149 @@
       booking.parent_action === "auto" &&
       (booking.parent_action_reasons || []).indexOf("la_funded") >= 0;
     if (!booking.submitted && !laAuto) return "";
+    var pay = hubReenrolPayState(data);
+    if (pay === "unpaid") {
+      return (
+        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--unpaid" data-pp-hub-reenrol-chip role="status" title="Re-enrolled for 2026/27 — payment outstanding">' +
+        '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
+        "<span>Re-enrolled (unpaid)</span>" +
+        "</span>"
+      );
+    }
     return (
-      '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip" role="status" title="Re-enrolled for 2026/27">' +
+      '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip" data-pp-hub-reenrol-chip role="status" title="Re-enrolled for 2026/27">' +
       '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
       "<span>Re-enrolled</span>" +
       "</span>"
     );
+  }
+
+  /**
+   * Hub visual for 2026/27 place:
+   *  unconfirmed — not re-enrolled (red blink)
+   *  unpaid — re-enrolled, parent still owes term invoice (orange blink)
+   *  settled — paid, or LA/NHS office-billed (green chip, no blink)
+   */
+  function hubReenrolPayState(data) {
+    if (!familyAcceptedNextYear(data)) return "unconfirmed";
+    var booking = bookingSummary(data);
+    if (!booking.show_invoices) return "settled";
+    if (data && data._hubReenrolPay === "settled") return "settled";
+    if (data && data._hubReenrolPay === "unpaid") return "unpaid";
+    /* Until invoices resolve, assume unpaid so orange shows immediately. */
+    return "unpaid";
+  }
+
+  function thisTermBlockModClass(data) {
+    var pay = hubReenrolPayState(data);
+    if (pay === "unconfirmed") return " pp-hub-term-block--unconfirmed";
+    if (pay === "unpaid") return " pp-hub-term-block--unpaid";
+    return " pp-hub-term-block--settled";
+  }
+
+  function isCrashInvoice(inv) {
+    var blob = [
+      inv && inv.billing_term,
+      inv && inv.reference_text,
+      inv && inv.title,
+      inv && inv.subtitle,
+      inv && inv.parent_facing_subtitle,
+      inv && inv.line_description,
+    ]
+      .map(function (x) {
+        return String(x || "");
+      })
+      .join(" ")
+      .toLowerCase();
+    return /\bcrash\b/.test(blob);
+  }
+
+  function isTermProgrammeInvoice(inv) {
+    if (!inv || isCrashInvoice(inv)) return false;
+    if (String(inv.billing_term || "").trim()) return true;
+    var blob = [
+      inv.billing_term,
+      inv.reference_text,
+      inv.title,
+      inv.subtitle,
+      inv.parent_facing_subtitle,
+      inv.line_description,
+    ]
+      .map(function (x) {
+        return String(x || "");
+      })
+      .join(" ")
+      .toLowerCase();
+    return /26\/27|2026-27|2026\/27|autumn|re-enrol|reenrol|spring term 26|summer term 26/.test(blob);
+  }
+
+  function termProgrammeInvoicesPaid(invoices) {
+    var term = (invoices || []).filter(isTermProgrammeInvoice);
+    if (!term.length) return false;
+    return term.every(function (inv) {
+      return String((inv && inv.payment_status) || "").toLowerCase() === "paid";
+    });
+  }
+
+  function applyHubReenrolPayVisual(host, data, state) {
+    if (!host || !data) return;
+    data._hubReenrolPay = state;
+    var chip = host.querySelector("[data-pp-hub-reenrol-chip]");
+    if (chip) {
+      var tmp = document.createElement("div");
+      tmp.innerHTML = hubReenrolledChipHtml(data);
+      var next = tmp.firstChild;
+      if (next) chip.replaceWith(next);
+    }
+    var block = host.querySelector('[data-pp-term-chips="this"]');
+    if (block) {
+      block.classList.remove(
+        "pp-hub-term-block--unconfirmed",
+        "pp-hub-term-block--unpaid",
+        "pp-hub-term-block--settled",
+      );
+      block.classList.add(
+        state === "unconfirmed"
+          ? "pp-hub-term-block--unconfirmed"
+          : state === "unpaid"
+            ? "pp-hub-term-block--unpaid"
+            : "pp-hub-term-block--settled",
+      );
+      var acc = block.querySelector(".pp-hub-ops__term-accordion");
+      if (acc) {
+        if (state === "settled") acc.classList.add("pp-hub-ops__term-accordion--completed");
+        else acc.classList.remove("pp-hub-ops__term-accordion--completed");
+      }
+    }
+  }
+
+  function mountHubReenrolPaymentState(host, data, opts) {
+    if (!host || !data || isFormerClient(data)) return;
+    if (!familyAcceptedNextYear(data)) {
+      applyHubReenrolPayVisual(host, data, "unconfirmed");
+      return;
+    }
+    var booking = bookingSummary(data);
+    if (!booking.show_invoices) {
+      applyHubReenrolPayVisual(host, data, "settled");
+      return;
+    }
+    applyHubReenrolPayVisual(host, data, "unpaid");
+    if (typeof opts.listInvoices !== "function") return;
+    void opts
+      .listInvoices()
+      .then(function (j) {
+        if (!host.isConnected) return;
+        var paid = termProgrammeInvoicesPaid((j && j.invoices) || []);
+        applyHubReenrolPayVisual(host, data, paid ? "settled" : "unpaid");
+        if (paid) {
+          /* Refresh day chips so upcoming dates stay blue without attention styling. */
+          mountTermDateChipStatuses(host, data, opts, null);
+        }
+      })
+      .catch(function () {
+        /* Keep unpaid orange if invoices cannot load. */
+      });
   }
 
   function needsReenrolCta(data) {
@@ -2696,7 +2833,7 @@
       '<span class="pp-hub-ops__chip-legend__text"><strong>Green</strong> — completed</span></li>' +
       '<li class="pp-hub-ops__chip-legend__item">' +
       '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--red" aria-hidden="true"></span>' +
-      '<span class="pp-hub-ops__chip-legend__text"><strong>Red</strong> — absent, cancelled, or not confirmed for 2026/27</span></li>' +
+      '<span class="pp-hub-ops__chip-legend__text"><strong>Red</strong> — absent, cancelled, or not re-enrolled for 2026/27</span></li>' +
       "</ul>"
     );
   }
@@ -2908,8 +3045,9 @@
     if (acceptedNext || todayIso > summerTo) {
       // Re-enrolled, or summer over without confirm: 26/27 above Next session,
       // Summer history under Later terms (below the session box).
+      var autumnSettled = hubReenrolPayState(data) === "settled";
       upcomingAccordions.forEach(function (term, idx) {
-        var html = termAccordionHtml(term.label, term.body, false, false);
+        var html = termAccordionHtml(term.label, term.body, false, autumnSettled && acceptedNext);
         if (idx === 0) thisChunks.push(html);
         else laterChunks.push(html);
       });
@@ -3413,7 +3551,9 @@
       (next && next.isToday ? " pp-pax-info-section-label--today" : "") +
       (next && next.isTomorrow ? " pp-pax-info-section-label--tomorrow" : "");
     var thisTermBlock =
-      '<div class="pp-hub-term-block pp-hub-term-block--this" data-pp-term-chips="this"' +
+      '<div class="pp-hub-term-block pp-hub-term-block--this' +
+      thisTermBlockModClass(data) +
+      '" data-pp-term-chips="this"' +
       (termParts.thisTermHtml ? "" : " hidden") +
       ">" +
       (termParts.thisTermHtml
@@ -3616,6 +3756,7 @@
     }
     var messagesPromise = mountHubAlerts(host, data, opts);
     mountTermDateChipStatuses(host, data, opts, messagesPromise);
+    mountHubReenrolPaymentState(host, data, opts);
     mountHubNextSessionLive(host, data, opts);
     mountHubMakeupNotice(host, data, opts);
     if (global.ParentPortalApp && global.ParentPortalApp.photo && typeof global.ParentPortalApp.photo.bindOn === "function") {
