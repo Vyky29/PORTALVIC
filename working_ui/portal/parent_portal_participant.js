@@ -702,10 +702,38 @@
     return '<p class="pp-muted pp-hub-hero__meta">' + esc(bits.join(" · ")) + "</p>";
   }
 
+  function isFormerClient(data) {
+    if (data && data.portal_access === "former") return true;
+    var p = (data && data.participant) || {};
+    return p.in_class === false;
+  }
+
+  function formerHasFeedback(data) {
+    if (data && data.has_session_feedback === true) return true;
+    var notes = Array.isArray(data && data.weekly_notes) ? data.weekly_notes : [];
+    if (notes.length) return true;
+    var sessions = Array.isArray(data && data.sessions) ? data.sessions : [];
+    return sessions.length > 0;
+  }
+
+  function formerClientNoticeHtml(data) {
+    var hasFb = formerHasFeedback(data);
+    return (
+      '<aside class="pp-hub-reenrol pp-hub-reenrol--former" role="status" aria-label="Former client">' +
+      '<div class="pp-hub-reenrol__copy">' +
+      "<strong>Former client</strong>" +
+      '<span class="pp-muted">' +
+      (hasFb
+        ? "This place is no longer active. You can still open past session notes below. For anything else, please contact the office."
+        : "This place is no longer active, so Family portal tools are not available. If you need access again, please contact the office / admin.") +
+      "</span></div></aside>"
+    );
+  }
+
   function hubHeroHtml(data, opts) {
     var p = data.participant || {};
-    var needsPhoto = participantNeedsPhoto(p, opts);
-    var reenrolChip = hubReenrolledChipHtml(data);
+    var needsPhoto = !isFormerClient(data) && participantNeedsPhoto(p, opts);
+    var reenrolChip = isFormerClient(data) ? "" : hubReenrolledChipHtml(data);
     return (
       hubSiblingsHtml(data, opts) +
       '<header class="pp-hub-hero' +
@@ -719,12 +747,15 @@
       esc(p.display_name || "Participant") +
       "</h3>" +
       reenrolChip +
+      (isFormerClient(data)
+        ? '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--former" role="status">Former</span>'
+        : "") +
       "</div>" +
       hubIdentityMetaInlineHtml(p) +
-      enrolledServiceChipsHtml(data) +
-      hubPhotoNoticeHtml(data, opts) +
+      (isFormerClient(data) ? "" : enrolledServiceChipsHtml(data)) +
+      (isFormerClient(data) ? "" : hubPhotoNoticeHtml(data, opts)) +
       "</div></div></header>" +
-      reenrolBannerHtml(data)
+      (isFormerClient(data) ? formerClientNoticeHtml(data) : reenrolBannerHtml(data))
     );
   }
 
@@ -1117,6 +1148,41 @@
   }
 
   function hubShortcutsHtml(data, opts) {
+    if (isFormerClient(data)) {
+      if (!formerHasFeedback(data)) return "";
+      var notesUnreadF = unreadWeeklyNotesCount(data, opts);
+      var notesBadgeF =
+        opts && typeof opts.unreadBadgeHtml === "function" && notesUnreadF > 0
+          ? opts.unreadBadgeHtml(notesUnreadF, "New weekly notes")
+          : "";
+      var icoF = function (paths) {
+        return (
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+          paths +
+          "</svg>"
+        );
+      };
+      return (
+        '<section class="pp-hub-shortcuts" aria-label="Quick access">' +
+        '<p class="pp-pax-info-section-label">Quick access</p>' +
+        '<div class="pp-hub-shortcuts__grid">' +
+        hubShortcutBtn(
+          "weekly_notes",
+          "Notes",
+          icoF(
+            '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/>',
+          ),
+          { unreadBadge: notesBadgeF, extraClass: " pp-hub-shortcut--notes" },
+        ) +
+        hubShortcutBtn(
+          "sessions",
+          "Sessions",
+          icoF('<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>'),
+          { extraClass: " pp-hub-shortcut--sessions" },
+        ) +
+        "</div></section>"
+      );
+    }
     var msgUnread =
       opts && typeof opts.unreadMessagesTotal === "function" ? opts.unreadMessagesTotal() : 0;
     var msgBadge =
@@ -1272,6 +1338,12 @@
     var sheetBody = doc.getElementById("ppHubMenuSheetBody");
     var headActions = doc.getElementById("ppHubMenuSheetHeadActions");
     var sheet = doc.getElementById("ppHubMenuSheet");
+    if (isFormerClient(data)) {
+      if (btn) btn.hidden = true;
+      if (sheet) sheet.hidden = true;
+      if (doc.body) doc.body.classList.remove("pp-hub-menu-open");
+      return;
+    }
     if (btn) btn.hidden = false;
     if (headActions) {
       headActions.innerHTML = hubMenuHeadActionsHtml(opts);
@@ -3313,16 +3385,22 @@
     setParticipantPageTitle(hubBackLabel(data).pageTitle);
     closeHubMenuSheet();
     clearHubNextSessionLive(host);
-    // Dashboard: This term chips → next session → later terms (whole year) → shortcuts.
-    // Menu lives top-left (sheet).
+    var former = isFormerClient(data);
+    // Former clients: notice + optional Notes/Sessions only (no ops / re-enrol / booking).
     host.innerHTML =
       '<div class="pp-pax-shell" data-pp-view="hub">' +
       hubHeroHtml(data, opts) +
-      hubOpsCardHtml(data) +
+      (former ? "" : hubOpsCardHtml(data)) +
       hubShortcutsHtml(data, opts) +
       "</div>";
     bindHub(host, data, opts);
     syncHubMenuChrome(host, data, opts);
+    if (former) {
+      if (global.ParentPortalApp && global.ParentPortalApp.photo && typeof global.ParentPortalApp.photo.bindOn === "function") {
+        global.ParentPortalApp.photo.bindOn(host);
+      }
+      return;
+    }
     var messagesPromise = mountHubAlerts(host, data, opts);
     mountTermDateChipStatuses(host, data, opts, messagesPromise);
     mountHubNextSessionLive(host, data, opts);
@@ -6906,6 +6984,14 @@
   function openSubview(host, data, opts, view, viewOpts) {
     viewOpts = viewOpts || {};
     closeHubMenuSheet();
+    if (isFormerClient(data)) {
+      var allowed = { hub: true, weekly_notes: true, sessions: true };
+      if (!formerHasFeedback(data)) allowed = { hub: true };
+      if (!allowed[view]) {
+        renderHub(host, data, opts);
+        return;
+      }
+    }
     if (opts && typeof opts.activityPing === "function") {
       var pingView =
         view === "documents" || view === "consents"

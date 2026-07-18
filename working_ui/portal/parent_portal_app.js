@@ -1124,7 +1124,11 @@
               global.portalRegisterParticipantStorageAvatar(c.contact_id, c.display_name, c.avatar_url);
             }
             var chips = [];
-            if (c.on_waiting_list) chips.push('<span class="pp-chip pp-chip--wait">Waiting list</span>');
+            if (c.portal_access === "former" || c.in_class === false) {
+              chips.push('<span class="pp-chip pp-chip--former">Former client</span>');
+            } else if (c.on_waiting_list) {
+              chips.push('<span class="pp-chip pp-chip--wait">Waiting list</span>');
+            }
             var childUnread = unreadCountForContact(c.contact_id);
             if (childUnread > 0) {
               chips.push(unreadBadgeHtml(childUnread, "New messages for " + (c.display_name || "participant")));

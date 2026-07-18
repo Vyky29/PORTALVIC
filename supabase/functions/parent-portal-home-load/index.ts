@@ -160,6 +160,7 @@ Deno.serve(async (req) => {
         dob_iso: c.dob_iso,
         in_class: c.in_class,
         on_waiting_list: c.on_waiting_list,
+        portal_access: c.in_class === false ? "former" : "active",
         city: c.city || null,
         postcode: c.postcode || null,
         avatar_url: avatar.avatar_url,

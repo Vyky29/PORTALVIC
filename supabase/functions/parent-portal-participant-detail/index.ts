@@ -1338,11 +1338,20 @@ Deno.serve(async (req) => {
     }
   }
 
+  const inClassFlag = participant.in_class ?? contactRow?.in_class ?? null;
+  const isFormerClient = inClassFlag === false;
+  const hasSessionFeedback =
+    sessionsOut.length > 0 ||
+    weeklyNotes.length > 0 ||
+    !!(weeklyNoteLatest && weeklyNoteLatest.week_start);
+
   return new Response(
     JSON.stringify({
       ok: true,
       term_label: TERM_LABEL,
       sections_loaded: Array.from(sections),
+      portal_access: isFormerClient ? "former" : "active",
+      has_session_feedback: hasSessionFeedback,
       participant: {
         contact_id: participant.contact_id,
         display_name: displayName,
@@ -1350,7 +1359,7 @@ Deno.serve(async (req) => {
         last_name: participant.last_name,
         dob_iso: participant.dob_iso,
         dob_display: formatDobDisplay(participant.dob_iso),
-        in_class: participant.in_class ?? contactRow?.in_class ?? null,
+        in_class: inClassFlag,
         on_waiting_list: participant.on_waiting_list ?? contactRow?.on_waiting_list ?? null,
         city: contactRow?.city && contactRow.city !== "—" ? contactRow.city : null,
         postcode: contactRow?.postcode && contactRow.postcode !== "—" ? contactRow.postcode : null,
@@ -1369,39 +1378,52 @@ Deno.serve(async (req) => {
         general_info_sheet: generalInfoSheet,
         fields: generalFields,
         updated_at: generalUpdatedAt,
-        editable: true,
+        editable: !isFormerClient,
       },
-      team: teamOut,
+      team: isFormerClient ? [] : teamOut,
       sessions: sessionsOut,
-      attendance_summary: attendanceSummary,
-      achievements,
-      swim_term_reviews: swimTermReviews,
-      swim_term_review_available: swimTermReviewAvailable,
+      attendance_summary: isFormerClient ? null : attendanceSummary,
+      achievements: isFormerClient ? [] : achievements,
+      swim_term_reviews: isFormerClient ? [] : swimTermReviews,
+      swim_term_review_available: isFormerClient ? false : swimTermReviewAvailable,
       reenrolment: {
         ...reenrolmentSummary,
-        parent_action: parentReenrolUi.mode,
-        parent_action_reasons: parentReenrolUi.reasons,
-        parent_action_note: parentReenrolUi.note,
-        acat_confirm_notice: parentReenrolUi.acat_confirm_notice || "",
-        can_book_extras: parentReenrolUi.can_book_extras !== false,
-        /** Ealing / H&F / NHS (club-invoiced LA): booking yes, invoices no. */
-        show_invoices: !parentReenrolUi.reasons.includes("la_funded"),
+        parent_action: isFormerClient ? "none" : parentReenrolUi.mode,
+        parent_action_reasons: isFormerClient ? [] : parentReenrolUi.reasons,
+        parent_action_note: isFormerClient
+          ? "This place is no longer active."
+          : parentReenrolUi.note,
+        acat_confirm_notice: isFormerClient ? "" : parentReenrolUi.acat_confirm_notice || "",
+        can_book_extras: isFormerClient ? false : parentReenrolUi.can_book_extras !== false,
+        show_invoices: isFormerClient
+          ? false
+          : !parentReenrolUi.reasons.includes("la_funded"),
       },
-      can_book_extras: parentReenrolUi.can_book_extras !== false,
-      show_invoices: !parentReenrolUi.reasons.includes("la_funded"),
-      crash_course: crashCourse,
+      can_book_extras: isFormerClient ? false : parentReenrolUi.can_book_extras !== false,
+      show_invoices: isFormerClient
+        ? false
+        : !parentReenrolUi.reasons.includes("la_funded"),
+      crash_course: isFormerClient ? { dates: [] } : crashCourse,
       pending_review_count: sessionsOut.filter((s) => s.message_pending).length,
       weekly_notes: weeklyNotes,
       weekly_note_latest: weeklyNoteLatest,
       // Wireframe slot — club noticeboard (not wired yet).
       club_announcements: [],
       session_progress: {
-        enabled: !suppressSessionProgress,
-        sessions_overview: !suppressSessionProgress,
-        weekly_notes: !suppressSessionProgress,
-        reason: suppressSessionProgress
-          ? "Irregular ACAT attendance — session overview and weekly notes are not shown for this participant."
-          : "",
+        enabled: isFormerClient
+          ? hasSessionFeedback
+          : !suppressSessionProgress,
+        sessions_overview: isFormerClient
+          ? hasSessionFeedback
+          : !suppressSessionProgress,
+        weekly_notes: isFormerClient ? hasSessionFeedback : !suppressSessionProgress,
+        reason: isFormerClient
+          ? hasSessionFeedback
+            ? "Former client — past session notes only."
+            : "Former client — limited portal access."
+          : suppressSessionProgress
+            ? "Irregular ACAT attendance — session overview and weekly notes are not shown for this participant."
+            : "",
       },
     }),
     { status: 200, headers: { ...parentPortalCorsHeaders, "Content-Type": "application/json" } },
