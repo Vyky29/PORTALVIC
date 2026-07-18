@@ -1357,11 +1357,11 @@
       infoBtnHtml("achievements", "Achievement photos", achievementsIcon, {
         extraClass: " pp-pax-info-btn--achievements",
       }) +
-      infoBtnHtml("swim", "Swimming term review", swimIcon, {
-        disabled: !swimAvailable,
-        subtitle: swimAvailable ? "" : "Not available yet",
-        extraClass: " pp-pax-info-btn--swim",
-      }) +
+      (swimAvailable
+        ? infoBtnHtml("swim", "Swimming term review", swimIcon, {
+            extraClass: " pp-pax-info-btn--swim",
+          })
+        : "") +
       "</div>" +
       '<p class="pp-pax-info-section-label pp-pax-info-section-label--paper">Paperwork</p>' +
       '<div class="pp-pax-info-row pp-pax-info-row--paper">' +
