@@ -2833,17 +2833,26 @@
         return d.iso > summerTo;
       });
       pushTermAccordionsFromDates(nextDates, true, " Term 26/27");
-    } else {
-      // Not re-enrolled: 2026/27 places in red until they confirm.
+    } else if (todayIso > summerTo) {
+      // Summer 25/26 finished and still not confirmed → 26/27 chips in red.
       var pendingDates = findUnconfirmedNextYearSessionDates(data);
       pushTermAccordionsFromDates(pendingDates, true, " Term 26/27 · not confirmed");
     }
 
     if (crashHtml) thisChunks.push(crashHtml);
 
-    // Still in Summer 25/26 and not re-enrolled: keep live summer chips in This term,
-    // and park the red 26/27 preview under Later terms.
-    if (!acceptedNext && todayIso <= summerTo) {
+    if (acceptedNext || todayIso > summerTo) {
+      // Re-enrolled, or summer over without confirm: 26/27 above Next session,
+      // Summer history under Later terms (below the session box).
+      upcomingAccordions.forEach(function (term, idx) {
+        var html = termAccordionHtml(term.label, term.body, idx === 0, false);
+        if (idx === 0) thisChunks.push(html);
+        else laterChunks.push(html);
+      });
+      if (completedTermHtml) laterChunks.push(completedTermHtml);
+    } else {
+      // Through Fri 17 Jul, not re-enrolled: Summer only (green past / blue upcoming).
+      // No 26/27 red preview until the term has ended.
       var summerDatesOnly = findCurrentSummerSessionDates(data);
       var sFirst = [];
       var sSecond = [];
@@ -2857,37 +2866,6 @@
       if (summerBody.length) {
         thisChunks.push(termAccordionHtml("Summer Term 25/26", summerBody.join(""), true, false));
       }
-      upcomingAccordions.forEach(function (term) {
-        laterChunks.push(termAccordionHtml(term.label, term.body, false, false));
-      });
-      upcomingAccordions = [];
-    }
-
-    if (upcomingAccordions.length) {
-      upcomingAccordions.forEach(function (term, idx) {
-        var html = termAccordionHtml(term.label, term.body, idx === 0, false);
-        if (idx === 0) thisChunks.push(html);
-        else laterChunks.push(html);
-      });
-      if (completedTermHtml) laterChunks.push(completedTermHtml);
-    } else if (todayIso <= summerTo && !thisChunks.length) {
-      // Fallback if summer rows failed to build above.
-      var summerDatesFallback = findCurrentSummerSessionDates(data);
-      var sf = [];
-      var ss = [];
-      summerDatesFallback.forEach(function (d) {
-        if (isFirstHalfTermDate(d.iso, data, false)) sf.push(d);
-        else ss.push(d);
-      });
-      var summerBodyFb = [];
-      if (sf.length) summerBodyFb.push(rowHtml("Summer · First half term", sf));
-      if (ss.length) summerBodyFb.push(rowHtml("Summer · Second half term", ss));
-      if (summerBodyFb.length) {
-        thisChunks.push(termAccordionHtml("Summer Term 25/26", summerBodyFb.join(""), true, false));
-      }
-    } else if (completedTermHtml && !thisChunks.length) {
-      // After summer end with no projected next-year dates (e.g. no roster days).
-      thisChunks.push(completedTermHtml);
     }
 
     var allowLater = !isTermByTermBooking(data);
@@ -3328,10 +3306,12 @@
       var booking = bookingSummary(data);
       var hasCrash = hasCrashBooking(data);
       var hasNextYear = familyAcceptedNextYear(data);
+      var summerEnded = isoDateLocal(new Date()) > currentYearTermToIso(data);
       var endNote;
       if (!hasCrash && !hasNextYear) {
-        endNote =
-          "Summer term has ended. Dates above are red until you re-enrol for 2026/27 — confirm by Wed 22 July to keep the place.";
+        endNote = summerEnded
+          ? "Summer term has ended. Dates above stay red until you re-enrol for 2026/27 — confirm by Wed 22 July to keep the place."
+          : "No upcoming session on the calendar yet. Past sessions are green; the next one will show here when dates open.";
       } else if (booking.parent_action === "auto") {
         endNote =
           "No more sessions left this summer term. Your 2026/27 place continues with the office — nothing for you to submit.";
