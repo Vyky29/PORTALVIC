@@ -548,7 +548,6 @@
 
   function statusChips(p) {
     var chips = [];
-    if (p.in_class) chips.push('<span class="pp-chip pp-chip--ok">In class</span>');
     if (p.on_waiting_list) chips.push('<span class="pp-chip pp-chip--wait">Waiting list</span>');
     return chips.join("");
   }
