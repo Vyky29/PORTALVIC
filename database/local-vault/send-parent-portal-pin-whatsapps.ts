@@ -30,7 +30,7 @@ const OUT_REPORT = "database/local-vault/tmp/parent-portal-pin-send-report.json"
 /** Only families with a child on the live roster in this window (current clients). */
 const ROSTER_SINCE_DAYS = 14;
 /** Always exclude these contact_ids even if still flagged in_class. */
-const EXCLUDE_CONTACT_IDS = new Set(["144", "394", "216"]); // Haider, Rhys, Matthias
+const EXCLUDE_CONTACT_IDS = new Set(["144", "394", "216", "169"]); // Haider, Rhys, Matthias, Yaqoub
 
 function secret(name: string): string {
   const fromEnv = Deno.env.get(name);
