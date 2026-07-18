@@ -39,10 +39,19 @@ function round2(n: number): number {
 
 function termLabel(term: string): string {
   const t = clean(term, 20).toLowerCase();
+  if (t === "year" || t === "annual") return "Year 26/27";
   if (t === "autumn") return "Autumn 26/27";
   if (t === "spring") return "Spring 27";
   if (t === "summer") return "Summer 27";
   return t || "Term";
+}
+
+function normalizeBillingAmountKey(raw: unknown): "year" | "autumn" | "spring" | "summer" {
+  const t = clean(raw, 20).toLowerCase();
+  if (t === "year" || t === "annual") return "year";
+  if (t === "spring") return "spring";
+  if (t === "summer") return "summer";
+  return "autumn";
 }
 
 function payloadTermTotals(payload: unknown): {
@@ -95,6 +104,34 @@ function termTotalsFromPaymentContext(ctx: ReturnType<typeof paymentRowToContext
   };
 }
 
+function bookedFieldsFromTotals(
+  totals: { autumn: number; spring: number; summer: number; annual: number } | null | undefined,
+  amountKey: "year" | "autumn" | "spring" | "summer",
+) {
+  const autumn = totals?.autumn || 0;
+  const spring = totals?.spring || 0;
+  const summer = totals?.summer || 0;
+  const annual = totals?.annual || 0;
+  const selected =
+    amountKey === "year"
+      ? annual
+      : amountKey === "spring"
+        ? spring
+        : amountKey === "summer"
+          ? summer
+          : autumn;
+  return {
+    booked_annual_gbp: annual || null,
+    booked_autumn_gbp: autumn || null,
+    booked_spring_gbp: spring || null,
+    booked_summer_gbp: summer || null,
+    booked_term_gbp: amountKey === "year" ? annual || null : selected || null,
+    billing_term: amountKey === "year" ? "year" : amountKey,
+    billing_term_label: termLabel(amountKey === "year" ? "year" : amountKey),
+    amount_selected_gbp: selected || null,
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: portalAdminCorsHeaders() });
   if (req.method !== "POST") {
@@ -118,6 +155,7 @@ Deno.serve(async (req) => {
     contact_id?: string;
     limit?: number;
     filter?: string;
+    billing_amount?: string;
   } = {};
   try {
     body = await req.json();
@@ -128,6 +166,9 @@ Deno.serve(async (req) => {
   const shareFilter = clean(body.share_status, 20).toLowerCase() || "all";
   const payFilter = clean(body.payment_status, 20).toLowerCase() || "all";
   const listFilter = clean(body.filter, 40).toLowerCase();
+  const amountKey = normalizeBillingAmountKey(
+    (body as { billing_amount?: string }).billing_amount || CURRENT_BILLING_TERM,
+  );
   const contactId = clean(body.contact_id, 120);
   const limit = Math.min(Math.max(Number(body.limit) || 200, 1), 400);
 
@@ -366,15 +407,8 @@ Deno.serve(async (req) => {
     const laPay = cid ? laPayByContact.get(cid) : null;
     const bookedFromReenrol = reenrol?.totals;
     const bookedFromLa = laPay?.totals || null;
-    const bookedAnnual =
-      bookedFromReenrol?.annual ||
-      bookedFromLa?.annual ||
-      0;
-    const termKey = CURRENT_BILLING_TERM as "autumn" | "spring" | "summer";
-    const bookedTerm =
-      (bookedFromReenrol && bookedFromReenrol[termKey]) ||
-      (bookedFromLa && bookedFromLa[termKey]) ||
-      0;
+    const bookedTotals = bookedFromReenrol || bookedFromLa || null;
+    const booked = bookedFieldsFromTotals(bookedTotals, amountKey);
 
     invoices.push({
       ...share,
@@ -391,10 +425,7 @@ Deno.serve(async (req) => {
       funding_category_label: invoiceFundingCategoryLabel(fundingCategory),
       funding_label: funding.fundingLabel || null,
       payment_sheet: funding.paymentSheet || null,
-      booked_annual_gbp: bookedAnnual || null,
-      booked_term_gbp: bookedTerm || null,
-      billing_term: CURRENT_BILLING_TERM,
-      billing_term_label: termLabel(CURRENT_BILLING_TERM),
+      ...booked,
       reenrolment_submitted_at: reenrol?.submitted_at || null,
       is_la_office_auto: fundingCategory === "la_managed" && !reenrol,
     });
@@ -423,16 +454,14 @@ Deno.serve(async (req) => {
       fundingLabel: funding.fundingLabel,
       paymentSheet: pack.sheet || "LA",
     });
-    const termKey = CURRENT_BILLING_TERM as "autumn" | "spring" | "summer";
-    const bookedAnnual = pack.totals.annual || 0;
-    const bookedTerm = pack.totals[termKey] || 0;
+    const booked = bookedFieldsFromTotals(pack.totals, amountKey);
     const reenrol = reenrolByContact.get(cid) || null;
     invoices.push({
       id: `la-auto-${cid}`,
       document_id: null,
       contact_id: cid,
       invoice_number: null,
-      amount_gbp: bookedTerm || bookedAnnual || 0,
+      amount_gbp: booked.amount_selected_gbp || booked.booked_annual_gbp || 0,
       due_date: null,
       payment_status: "unpaid",
       share_status: "hidden",
@@ -457,10 +486,7 @@ Deno.serve(async (req) => {
       funding_category_label: invoiceFundingCategoryLabel(fundingCategory),
       funding_label: funding.fundingLabel || "LA / NHS",
       payment_sheet: pack.sheet || "LA",
-      booked_annual_gbp: bookedAnnual || null,
-      booked_term_gbp: bookedTerm || null,
-      billing_term: CURRENT_BILLING_TERM,
-      billing_term_label: termLabel(CURRENT_BILLING_TERM),
+      ...booked,
       reenrolment_submitted_at: reenrol?.submitted_at || OFFICE_AUTO_SORT_TS,
       is_la_office_auto: true,
       xero_invoice_id: null,
@@ -525,8 +551,10 @@ Deno.serve(async (req) => {
       buffer_low_contacts: bufferLowContacts,
       xero_unsynced: xeroUnsynced || 0,
       la_office_auto: laAutoCount,
-      billing_term: CURRENT_BILLING_TERM,
-      billing_term_label: termLabel(CURRENT_BILLING_TERM),
+      billing_term: amountKey === "year" ? "year" : amountKey,
+      billing_term_label: termLabel(amountKey === "year" ? "year" : amountKey),
+      billing_amount: amountKey,
+      academic_year: REENROL_ACADEMIC_YEAR,
     },
   });
 });

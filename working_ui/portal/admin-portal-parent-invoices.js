@@ -22,6 +22,7 @@
 
   var state = {
     filter: 'all',
+    amountPeriod: 'autumn',
     invoices: [],
     meta: {},
     searchHits: [],
@@ -438,6 +439,9 @@
           invoices: [],
           reenrolment_submitted_at: inv.reenrolment_submitted_at || null,
           booked_annual_gbp: null,
+          booked_autumn_gbp: null,
+          booked_spring_gbp: null,
+          booked_summer_gbp: null,
           booked_term_gbp: null,
           billing_term_label: inv.billing_term_label || null,
           is_la_office_auto: !!inv.is_la_office_auto || inv.created_via === 'la_office_auto'
@@ -458,6 +462,13 @@
       if (Number.isFinite(ann) && ann > 0) {
         g.booked_annual_gbp = Math.max(Number(g.booked_annual_gbp) || 0, ann);
       }
+      ['autumn', 'spring', 'summer'].forEach(function (term) {
+        var key = 'booked_' + term + '_gbp';
+        var v = Number(inv[key]);
+        if (Number.isFinite(v) && v > 0) {
+          g[key] = Math.max(Number(g[key]) || 0, v);
+        }
+      });
       var term = Number(inv.booked_term_gbp);
       if (Number.isFinite(term) && term > 0) {
         g.booked_term_gbp = Math.max(Number(g.booked_term_gbp) || 0, term);
@@ -590,17 +601,40 @@
     }, 0);
   }
 
+  function amountPeriodLabel(period) {
+    var p = String(period || 'autumn').toLowerCase();
+    if (p === 'year' || p === 'annual') return 'Year 26/27';
+    if (p === 'spring') return 'Spring 27';
+    if (p === 'summer') return 'Summer 27';
+    return 'Autumn 26/27';
+  }
+
+  function groupAmountForPeriod(group, period) {
+    var p = String(period || state.amountPeriod || 'autumn').toLowerCase();
+    if (p === 'year' || p === 'annual') return Number(group.booked_annual_gbp);
+    if (p === 'spring') return Number(group.booked_spring_gbp);
+    if (p === 'summer') return Number(group.booked_summer_gbp);
+    if (p === 'autumn') return Number(group.booked_autumn_gbp);
+    return Number(group.booked_term_gbp);
+  }
+
   function groupBookedAmountsHtml(group) {
+    var period = String(state.amountPeriod || 'autumn').toLowerCase();
+    var selected = groupAmountForPeriod(group, period);
     var annual = Number(group.booked_annual_gbp);
-    var term = Number(group.booked_term_gbp);
-    var termLabel = String(group.billing_term_label || 'Term').trim() || 'Term';
     var invTotal = groupTotalGbp(group.invoices || []);
     var bits = [];
-    if (Number.isFinite(annual) && annual > 0) {
-      bits.push('Booked ' + formatMoney(annual));
+    if (Number.isFinite(selected) && selected > 0) {
+      bits.push(amountPeriodLabel(period) + ' ' + formatMoney(selected));
     }
-    if (Number.isFinite(term) && term > 0) {
-      bits.push(termLabel + ' ' + formatMoney(term));
+    if (
+      period !== 'year' &&
+      period !== 'annual' &&
+      Number.isFinite(annual) &&
+      annual > 0 &&
+      annual !== selected
+    ) {
+      bits.push('Year ' + formatMoney(annual));
     }
     if (!bits.length && invTotal > 0) {
       bits.push(formatMoney(invTotal));
@@ -810,13 +844,17 @@
             '<div class="muted" style="font-size:12px">Place renews with the office — no family invoice shared yet. Booked totals from the LA payments sheet.</div>' +
             '</div></div>' +
             '<div class="pp-inv-acc__col">' +
-            '<div><span class="muted">Booked (year)</span><br><strong>' +
+            '<div><span class="muted">Year 26/27</span><br><strong>' +
             esc(formatMoney(inv.booked_annual_gbp)) +
             '</strong></div>' +
-            '<div style="margin-top:8px"><span class="muted">' +
-            esc(inv.billing_term_label || 'Term') +
-            '</span><br><strong>' +
-            esc(formatMoney(inv.booked_term_gbp)) +
+            '<div style="margin-top:8px"><span class="muted">Autumn 26/27</span><br><strong>' +
+            esc(formatMoney(inv.booked_autumn_gbp != null ? inv.booked_autumn_gbp : inv.booked_term_gbp)) +
+            '</strong></div>' +
+            '<div style="margin-top:8px"><span class="muted">Spring 27</span><br><strong>' +
+            esc(formatMoney(inv.booked_spring_gbp)) +
+            '</strong></div>' +
+            '<div style="margin-top:8px"><span class="muted">Summer 27</span><br><strong>' +
+            esc(formatMoney(inv.booked_summer_gbp)) +
             '</strong></div>' +
             '<div style="margin-top:8px"><span class="muted">Funding</span><br>' +
             fundingChipHtml(inv) +
@@ -844,7 +882,7 @@
       (contactId ? ' · ' + contactId : '') +
       '</span>' +
       '</span>' +
-      '<span class="pp-inv-acc__amt" title="Booked year total and current term">' +
+      '<span class="pp-inv-acc__amt" title="Booked amount for selected year / term filter">' +
       esc(groupBookedAmountsHtml(group)) +
       '</span>' +
       '<span class="pp-inv-acc__methods">' +
@@ -1014,6 +1052,7 @@
     if (state.filter === 'buffer_low' || state.filter === 'xero_unsynced' || state.filter === 'la_auto') {
       body.filter = state.filter;
     }
+    body.billing_amount = state.amountPeriod || 'autumn';
     var r = await api('portal-admin-parent-invoices-list', body);
     if (r.error) {
       host.innerHTML = '<p class="muted">Could not load invoices (' + esc(r.error) + ').</p>';
@@ -1063,6 +1102,16 @@
     state.filter = filter || 'all';
     global.document.querySelectorAll('.toolbar [data-inv-filter]').forEach(function (b) {
       var on = b.getAttribute('data-inv-filter') === state.filter;
+      b.classList.toggle('btn--ghost', !on);
+    });
+  }
+
+  function setAmountPeriod(period) {
+    var p = String(period || 'autumn').toLowerCase();
+    if (p !== 'year' && p !== 'autumn' && p !== 'spring' && p !== 'summer') p = 'autumn';
+    state.amountPeriod = p;
+    global.document.querySelectorAll('.toolbar [data-inv-amount]').forEach(function (b) {
+      var on = b.getAttribute('data-inv-amount') === state.amountPeriod;
       b.classList.toggle('btn--ghost', !on);
     });
   }
@@ -1494,7 +1543,14 @@
       '<div class="card-h"><h3>Re-enrolments &amp; shared invoices</h3>' +
       '<span class="chip chip--pend" id="portalParentInvoicesMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Track instalments after re-enrolment. Rows show <strong>booked year</strong> and <strong>current term</strong> totals, sorted by re-enrol date. LA sheet clients appear as office auto even without a family invoice. <strong>Push to Xero</strong> for bookkeeping; match Tide bank CSV to mark paid.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Track instalments after re-enrolment. Use <strong>Year / Term</strong> filters to switch booked totals. Rows are sorted by re-enrol date. LA sheet clients appear as office auto even without a family invoice. Day Centre places start 1 Sept (no half-term; Christmas closed). <strong>Push to Xero</strong> for bookkeeping; match Tide bank CSV to mark paid.</p>' +
+      '<div class="toolbar" style="margin-bottom:8px;flex-wrap:wrap;gap:8px;align-items:center">' +
+      '<span class="muted" style="font-size:12px;font-weight:700">Amount</span>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-inv-amount="year">Year 26/27</button>' +
+      '<button type="button" class="btn btn--sm" data-inv-amount="autumn">Autumn</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-inv-amount="spring">Spring</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-inv-amount="summer">Summer</button>' +
+      '</div>' +
       '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sm" data-inv-filter="all">All</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="la_auto">LA auto</button>' +
@@ -1530,6 +1586,7 @@
 
   function bindListEmbed() {
     state.filter = 'all';
+    state.amountPeriod = 'autumn';
     bindTideMatchPanel();
     var host = global.document.getElementById('portalParentInvoicesHost');
     var refresh = global.document.getElementById('portalParentInvoicesRefreshEmbed');
@@ -1557,6 +1614,13 @@
         void renderHost(global.document.getElementById('portalParentInvoicesHost'));
       });
     });
+    global.document.querySelectorAll('.toolbar [data-inv-amount]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        setAmountPeriod(btn.getAttribute('data-inv-amount') || 'autumn');
+        void renderHost(global.document.getElementById('portalParentInvoicesHost'));
+      });
+    });
+    setAmountPeriod(state.amountPeriod);
     void renderHost(host);
   }
 

@@ -9,6 +9,25 @@ export const SESSION_COUNTS = {
   weekend: { autumn: 13, spring: 9, summer: 11, annual: 33 },
 } as const;
 
+/**
+ * Day Centre 2026/27 — starts 1 Sept; no half-term weekday breaks.
+ * Club closed only for Christmas (+ Easter from calendar). Weekends half-term
+ * closures do not affect Mon–Fri Day Centre places.
+ */
+export const DAY_CENTRE_CALENDAR_2026_27 = {
+  openFrom: "2026-09-01",
+  openTo: "2027-07-30",
+  terms: [
+    { id: "autumn" as const, starts: "2026-09-01", ends: "2026-12-18" },
+    { id: "spring" as const, starts: "2027-01-04", ends: "2027-03-25" },
+    { id: "summer" as const, starts: "2027-04-12", ends: "2027-07-30" },
+  ],
+  closedRanges: [
+    { from: "2026-12-19", to: "2027-01-03" },
+    { from: "2027-03-26", to: "2027-04-11" },
+  ],
+};
+
 export type ParsedSlot = {
   id: string;
   raw: string;
@@ -54,7 +73,192 @@ const DAY_ALIASES: Record<string, string> = {
 
 const WEEKEND_DAYS = new Set(["Saturday", "Sunday"]);
 
-/** Base unit prices (per session at standard duration). */
+const DAY_RANGE_ORDER = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
+function isoFromParts(y: number, m0: number, d: number): string {
+  const mm = String(m0 + 1).padStart(2, "0");
+  const dd = String(d).padStart(2, "0");
+  return `${y}-${mm}-${dd}`;
+}
+
+function addDaysIso(iso: string, days: number): string {
+  const p = String(iso || "").split("-").map(Number);
+  if (p.length !== 3 || p.some((n) => !Number.isFinite(n))) return iso;
+  const dt = new Date(p[0], p[1] - 1, p[2] + days);
+  return isoFromParts(dt.getFullYear(), dt.getMonth(), dt.getDate());
+}
+
+function jsDowFromIso(iso: string): number {
+  const p = String(iso || "").split("-").map(Number);
+  if (p.length !== 3) return -1;
+  return new Date(p[0], p[1] - 1, p[2]).getDay(); // Sun=0 … Sat=6
+}
+
+function dayNameFromJsDow(jsDow: number): string {
+  // JS Sun=0 → calendar Mon-first names
+  return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][jsDow] || "";
+}
+
+function isoInClosedRange(iso: string, from: string, to: string): boolean {
+  return !!iso && !!from && !!to && iso >= from && iso <= to;
+}
+
+function isDayCentreClosedIso(iso: string): boolean {
+  const cal = DAY_CENTRE_CALENDAR_2026_27;
+  if (iso < cal.openFrom || iso > cal.openTo) return true;
+  for (const r of cal.closedRanges) {
+    if (isoInClosedRange(iso, r.from, r.to)) return true;
+  }
+  return false;
+}
+
+/** Count Day Centre sessions for one weekday across 2026/27 terms (no half-term). */
+export function countDayCentreSessionsForDay(day: string): {
+  autumn: number;
+  spring: number;
+  summer: number;
+  annual: number;
+} {
+  const want = normalizeDay(day);
+  const counts = { autumn: 0, spring: 0, summer: 0, annual: 0 };
+  if (!want || WEEKEND_DAYS.has(want)) return counts;
+  const cal = DAY_CENTRE_CALENDAR_2026_27;
+  let cursor = cal.openFrom;
+  let guard = 0;
+  while (cursor <= cal.openTo && guard < 450) {
+    guard += 1;
+    if (!isDayCentreClosedIso(cursor) && dayNameFromJsDow(jsDowFromIso(cursor)) === want) {
+      counts.annual += 1;
+      for (const t of cal.terms) {
+        if (cursor >= t.starts && cursor <= t.ends) {
+          counts[t.id] += 1;
+          break;
+        }
+      }
+    }
+    cursor = addDaysIso(cursor, 1);
+  }
+  return counts;
+}
+
+/** Expand "(Mon & Wed)", "(Mon–Wed & Fri)", "(Mon, Wed & Fri)", "(Mon–Fri)". */
+export function expandDaysFromParen(dayRaw: string): string[] {
+  const raw = String(dayRaw || "")
+    .replace(/\s*1:1.*$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!raw) return [];
+  if (/^mon\s*[–-]\s*fri$/i.test(raw) || /^monday\s*[–-]\s*friday$/i.test(raw)) {
+    return ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+  }
+  const tokens = raw
+    .split(/\s*(?:&|,|\+|\/|·| and )\s*/i)
+    .map((t) => t.trim())
+    .filter(Boolean);
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const tok of tokens) {
+    const range = tok.match(
+      /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s*[–-]\s*(Mon|Tue|Wed|Thu|Fri|Sat|Sun|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)$/i,
+    );
+    if (range) {
+      const a = normalizeDay(range[1]);
+      const b = normalizeDay(range[2]);
+      const ai = DAY_RANGE_ORDER.indexOf(a);
+      const bi = DAY_RANGE_ORDER.indexOf(b);
+      if (ai >= 0 && bi >= ai) {
+        for (let i = ai; i <= bi; i++) {
+          const d = DAY_RANGE_ORDER[i];
+          if (!seen.has(d)) {
+            seen.add(d);
+            out.push(d);
+          }
+        }
+        continue;
+      }
+    }
+    const d = normalizeDay(tok);
+    if (d && !seen.has(d)) {
+      seen.add(d);
+      out.push(d);
+    }
+  }
+  return out;
+}
+
+function buildWeeklySlot(opts: {
+  id: string;
+  raw: string;
+  serviceType: string;
+  durationMin: number;
+  day: string;
+  ratio?: string;
+}): ParsedSlot {
+  const day = normalizeDay(opts.day);
+  const isWeekend = WEEKEND_DAYS.has(day);
+  const counts = sessionCountsForDay(day);
+  const serviceType = canonicalizeServiceTypeToken(opts.serviceType);
+  const durationMin =
+    serviceType.includes("MULTI") && (!opts.durationMin || opts.durationMin < 60)
+      ? 90
+      : opts.durationMin || 30;
+  const price = unitPriceFor(serviceType, durationMin);
+  const slot: ParsedSlot = {
+    id: opts.id,
+    raw: opts.raw,
+    serviceType,
+    durationMin,
+    day,
+    isWeekend,
+    isDayCentre: false,
+    pricePerSession: price,
+    sessions: { ...counts },
+    termTotals: termTotals(price, counts),
+    ratio: opts.ratio,
+  };
+  slot.displayLabel = buildSlotDisplayLabel(slot);
+  return slot;
+}
+
+function buildDayCentreSlots(opts: {
+  index: number;
+  raw: string;
+  serviceType: string;
+  days: string[];
+  ratio?: string;
+  hoursLabel?: string;
+}): ParsedSlot[] {
+  const days = (opts.days.length ? opts.days : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"])
+    .map(normalizeDay)
+    .filter((d) => d && !WEEKEND_DAYS.has(d));
+  const unique = [...new Set(days)];
+  return unique.map((day, i) => {
+    const counts = countDayCentreSessionsForDay(day);
+    return {
+      id: `dc-${opts.index}-${i}`,
+      raw: opts.raw,
+      serviceType: opts.serviceType,
+      durationMin: 0,
+      day,
+      isWeekend: false,
+      isDayCentre: true,
+      pricePerSession: null,
+      sessions: { ...counts },
+      termTotals: termTotals(null, counts),
+      ratio: opts.ratio,
+      hoursLabel: opts.hoursLabel,
+      venue: "SwimFarm",
+    } as ParsedSlot;
+  });
+}
 export function unitPriceFor(serviceType: string, durationMin: number): number | null {
   const t = normalizeServiceType(serviceType);
   if (t.includes("DAY CENTRE")) return null;
@@ -249,48 +453,44 @@ export function mergeWeeklySlotsFromRosterAndPayment(
   return sortWeeklySlotsByDay(merged);
 }
 
-function parseOneSegment(segment: string, index: number): ParsedSlot | null {
-  const raw = normalizeServiceSegment(segment);
-  if (!raw || raw === "—" || raw === "-") return null;
+function parseOneSegment(segment: string, index: number): ParsedSlot[] {
+  let raw = normalizeServiceSegment(segment);
+  if (!raw || raw === "—" || raw === "-") return [];
+
+  // "2× 60'' Aquatic (Mon & Wed)" — strip multiplier; days expand below.
+  const multMatch = raw.match(/^(\d+)\s*[x×]\s*(.+)$/i);
+  let multiplier = 1;
+  if (multMatch) {
+    multiplier = Math.max(1, Number(multMatch[1]) || 1);
+    raw = normalizeServiceSegment(multMatch[2]);
+  }
 
   const dcMatch = raw.match(/day\s*centre/i);
   if (dcMatch) {
     const ratio = raw.match(/(\d:\d)/)?.[1] || undefined;
     const hours = raw.match(/(\d+h(?:\d+)?|\d+\s*h(?:\s*\d+)?)/i)?.[0] || undefined;
-    return {
-      id: `dc-${index}`,
-      raw,
+    const paren = raw.match(/\(([^)]+)\)/)?.[1] || "";
+    const days = expandDaysFromParen(paren);
+    return buildDayCentreSlots({
+      index,
+      raw: segment,
       serviceType: "DAY CENTRE",
-      durationMin: 0,
-      day: "",
-      isWeekend: false,
-      isDayCentre: true,
-      pricePerSession: null,
-      sessions: { autumn: 0, spring: 0, summer: 0, annual: 0 },
-      termTotals: { autumn: 0, spring: 0, summer: 0, annual: 0 },
+      days,
       ratio,
       hoursLabel: hours,
-      venue: "SwimFarm",
-    };
+    });
   }
 
   const bespokeDc = raw.match(/(\d:\d)\s*bespoke\s*([\d.h\s]+)/i);
   if (bespokeDc && raw.match(/mon\s*[–-]\s*fri|mon–fri|mon-fri/i)) {
-    return {
-      id: `dc-${index}`,
-      raw,
+    return buildDayCentreSlots({
+      index,
+      raw: segment,
       serviceType: "DAY CENTRE (BESPOKE BLOCK)",
-      durationMin: 0,
-      day: "Mon–Fri",
-      isWeekend: false,
-      isDayCentre: true,
-      pricePerSession: null,
-      sessions: { autumn: 0, spring: 0, summer: 0, annual: 0 },
-      termTotals: { autumn: 0, spring: 0, summer: 0, annual: 0 },
+      days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
       ratio: bespokeDc[1],
       hoursLabel: bespokeDc[2]?.trim(),
-      venue: "SwimFarm",
-    };
+    });
   }
 
   const shortSw = raw.match(/^(SW|CL)\s*\(([^)]+)\)/i);
@@ -298,27 +498,20 @@ function parseOneSegment(segment: string, index: number): ParsedSlot | null {
     const durationMin = shortSw[1].toUpperCase() === "CL" ? 60 : 30;
     const serviceType = shortSw[1].toUpperCase() === "CL" ? "CLIMBING ACTIVITY" : "AQUATIC ACTIVITY";
     const dayRaw = shortSw[2] || "";
-    const dayPart = dayRaw.split(/[/+&·]/)[0]?.trim() || dayRaw;
-    const day = normalizeDay(dayPart.replace(/\s*1:1.*$/i, "").trim());
+    const days = expandDaysFromParen(dayRaw);
     const ratio = dayRaw.match(/(\d:\d)/)?.[1];
-    const isWeekend = WEEKEND_DAYS.has(day);
-    const counts = sessionCountsForDay(day);
-    const price = unitPriceFor(serviceType, durationMin);
-    const slot: ParsedSlot = {
-      id: `slot-${index}`,
-      raw,
-      serviceType,
-      durationMin,
-      day,
-      isWeekend,
-      isDayCentre: false,
-      pricePerSession: price,
-      sessions: { ...counts },
-      termTotals: termTotals(price, counts),
-      ratio: ratio || undefined,
-    };
-    slot.displayLabel = buildSlotDisplayLabel(slot);
-    return slot;
+    const dayList = days.length ? days : [normalizeDay(dayRaw.split(/[/+&·]/)[0] || "")];
+    const slots = dayList.map((day, i) =>
+      buildWeeklySlot({
+        id: `slot-${index}-${i}`,
+        raw: segment,
+        serviceType,
+        durationMin,
+        day,
+        ratio: ratio || undefined,
+      }),
+    );
+    return expandByMultiplier(slots, multiplier, index);
   }
 
   const m =
@@ -332,35 +525,48 @@ function parseOneSegment(segment: string, index: number): ParsedSlot | null {
     if (/day centre/i.test(raw)) {
       return parseOneSegment("Day Centre " + raw, index);
     }
-    return null;
+    return [];
   }
 
   const durationMin = Number(m[1]) || 30;
   let serviceType = canonicalizeServiceTypeToken(stripServiceToken(m[2]));
-
   const dayRaw = m[3] || "";
-  const dayPart = dayRaw.split(/[/+&·]/)[0]?.trim() || dayRaw;
-  const day = normalizeDay(dayPart.replace(/\s*1:1.*$/i, "").trim());
+  const days = expandDaysFromParen(dayRaw);
   const ratio = dayRaw.match(/(\d:\d)/)?.[1];
-  const isWeekend = WEEKEND_DAYS.has(day);
-  const counts = sessionCountsForDay(day);
-  const price = unitPriceFor(serviceType, durationMin);
+  const dayList = days.length
+    ? days
+    : [normalizeDay(dayRaw.split(/[/+&·]/)[0]?.trim() || dayRaw)];
+  const slots = dayList
+    .filter(Boolean)
+    .map((day, i) =>
+      buildWeeklySlot({
+        id: `slot-${index}-${i}`,
+        raw: segment,
+        serviceType,
+        durationMin,
+        day,
+        ratio: ratio || undefined,
+      }),
+    );
+  return expandByMultiplier(slots, multiplier, index);
+}
 
-  const slot: ParsedSlot = {
-    id: `slot-${index}`,
-    raw,
-    serviceType,
-    durationMin,
-    day,
-    isWeekend,
-    isDayCentre: false,
-    pricePerSession: price,
-    sessions: { ...counts },
-    termTotals: termTotals(price, counts),
-    ratio: ratio || undefined,
-  };
-  slot.displayLabel = buildSlotDisplayLabel(slot);
-  return slot;
+/** If "2× … (Mon)" with one day, duplicate; if days already match multiplier, keep as-is. */
+function expandByMultiplier(slots: ParsedSlot[], multiplier: number, index: number): ParsedSlot[] {
+  if (!slots.length || multiplier <= 1) return slots;
+  if (slots.length >= multiplier) return slots;
+  if (slots.length === 1) {
+    const base = slots[0];
+    const out: ParsedSlot[] = [];
+    for (let i = 0; i < multiplier; i++) {
+      out.push({
+        ...base,
+        id: `slot-${index}-m${i}`,
+      });
+    }
+    return out;
+  }
+  return slots;
 }
 
 export function formatServiceTypeLabel(serviceType: string): string {
@@ -526,13 +732,13 @@ export function parseServiceString(service: string): ParsedSlot[] {
     .filter(Boolean);
   const out: ParsedSlot[] = [];
   parts.forEach((part, i) => {
-    const slot = parseOneSegment(part, i);
-    if (slot) out.push(slot);
+    const slots = parseOneSegment(part, i);
+    for (const slot of slots) out.push(slot);
   });
 
   if (!out.length && /day centre/i.test(service)) {
-    const slot = parseOneSegment(service, 0);
-    if (slot) out.push(slot);
+    const slots = parseOneSegment(service, 0);
+    for (const slot of slots) out.push(slot);
   }
   return out;
 }
@@ -1040,7 +1246,10 @@ export function buildCurrentArrangements2526(opts: {
   };
 }
 
-function parseCostPerSession(data: Record<string, unknown>): number | null {
+function parseCostInfo(data: Record<string, unknown>): {
+  perSession: number | null;
+  perWeek: number | null;
+} {
   const raw = pickPaymentField(data, [
     "Cost",
     "cost",
@@ -1050,24 +1259,53 @@ function parseCostPerSession(data: Record<string, unknown>): number | null {
     "Session cost",
     "Session price",
   ]);
-  if (!raw) return null;
+  if (!raw) return { perSession: null, perWeek: null };
   const m = String(raw).match(/£?\s*([\d]+(?:\.\d+)?)/);
-  if (!m) return null;
+  if (!m) return { perSession: null, perWeek: null };
   const n = Number(m[1]);
-  return Number.isFinite(n) && n > 0 ? n : null;
+  if (!Number.isFinite(n) || n <= 0) return { perSession: null, perWeek: null };
+  if (/\/\s*week/i.test(String(raw))) return { perSession: null, perWeek: n };
+  return { perSession: n, perWeek: null };
+}
+
+function parseCostPerSession(data: Record<string, unknown>): number | null {
+  return parseCostInfo(data).perSession;
 }
 
 function applyCostFallbackToWeekly(
   weekly: ParsedSlot[],
   costPerSession: number | null,
+  costPerWeek: number | null = null,
 ): ParsedSlot[] {
-  if (costPerSession == null || !weekly.length) return weekly;
+  if (!weekly.length) return weekly;
+  let sessionPrice = costPerSession;
+  if (sessionPrice == null && costPerWeek != null && costPerWeek > 0) {
+    const unpriced = weekly.filter((s) => s.pricePerSession == null).length;
+    const n = unpriced || weekly.length;
+    if (n > 0) sessionPrice = Math.round((costPerWeek / n) * 100) / 100;
+  }
+  if (sessionPrice == null) return weekly;
   return weekly.map((s) => {
     if (s.pricePerSession != null) return s;
     return {
       ...s,
-      pricePerSession: costPerSession,
-      termTotals: termTotals(costPerSession, s.sessions),
+      pricePerSession: sessionPrice,
+      termTotals: termTotals(sessionPrice, s.sessions),
+    };
+  });
+}
+
+function applyCostToDayCentre(
+  dayCentre: ParsedSlot[],
+  costPerSession: number | null,
+): ParsedSlot[] {
+  if (costPerSession == null || !dayCentre.length) return dayCentre;
+  return dayCentre.map((s) => {
+    const price = s.pricePerSession != null ? s.pricePerSession : costPerSession;
+    return {
+      ...s,
+      pricePerSession: price,
+      termTotals: termTotals(price, s.sessions),
     };
   });
 }
@@ -1127,9 +1365,14 @@ export function paymentRowToContext(row: Record<string, unknown>) {
 
   const slots = parseServiceString(service);
   const { weekly: weeklyRaw, dayCentre } = splitSlots(slots);
-  const costPerSession = parseCostPerSession(data);
+  const costInfo = parseCostInfo(data);
   const weeklyRawWithHints = applyPaymentDayHints(weeklyRaw, service, data);
-  const weekly = applyCostFallbackToWeekly(weeklyRawWithHints, costPerSession);
+  const weekly = applyCostFallbackToWeekly(
+    weeklyRawWithHints,
+    costInfo.perSession,
+    costInfo.perWeek,
+  );
+  const dayCentrePriced = applyCostToDayCentre(dayCentre, costInfo.perSession);
 
   return {
     clientKey: String(row.client_key || ""),
@@ -1144,7 +1387,7 @@ export function paymentRowToContext(row: Record<string, unknown>) {
     vatCode: vatInfo.code,
     serviceRaw: service,
     weeklySlots: weekly,
-    dayCentreSlots: dayCentre,
+    dayCentreSlots: dayCentrePriced,
     annualWeeklyTotal: annualTotalForWeekly(weekly),
   };
 }
