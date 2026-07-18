@@ -559,6 +559,229 @@
       gap: 10px;
       min-width: 0;
     }
+    .pp-participant-head-start {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      min-width: 0;
+      flex: 1;
+    }
+    .pp-participant-head-titles {
+      min-width: 0;
+      flex: 1;
+    }
+    .pp-hub-menu-btn {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      flex-shrink: 0;
+      margin: 0;
+      padding: 6px 8px;
+      min-width: 44px;
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--white);
+      color: var(--blue);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pp-hub-menu-btn[hidden] { display: none !important; }
+    .pp-hub-menu-btn:focus-visible {
+      outline: 2px solid rgba(45, 132, 179, 0.45);
+      outline-offset: 2px;
+    }
+    .pp-hub-menu-btn[aria-expanded="true"] {
+      border-color: var(--blue);
+      background: var(--blueSoft);
+    }
+    .pp-hub-menu-btn__ico {
+      width: 20px;
+      height: 20px;
+      display: block;
+    }
+    .pp-hub-menu-btn__label {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      line-height: 1;
+      color: var(--ink);
+    }
+    .pp-hub-menu-sheet {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: flex;
+      align-items: stretch;
+      justify-content: flex-start;
+      min-width: 0;
+    }
+    .pp-hub-menu-sheet[hidden] { display: none !important; }
+    .pp-hub-menu-sheet__backdrop {
+      position: absolute;
+      inset: 0;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: rgba(23, 50, 71, 0.38);
+      cursor: pointer;
+    }
+    .pp-hub-menu-sheet__panel {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      width: min(100%, 360px);
+      max-width: 92vw;
+      height: 100%;
+      max-height: 100dvh;
+      background: var(--white);
+      box-shadow: 8px 0 32px rgba(23, 50, 71, 0.18);
+      min-width: 0;
+      overflow: hidden;
+    }
+    .pp-hub-menu-sheet__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: max(12px, env(safe-area-inset-top)) 14px 12px;
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+      min-width: 0;
+    }
+    .pp-hub-menu-sheet__head strong {
+      font-size: 16px;
+      color: var(--ink);
+    }
+    .pp-hub-menu-sheet__close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .pp-hub-menu-sheet__close svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+    .pp-hub-menu-sheet__body {
+      flex: 1;
+      min-height: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      padding: 12px 12px max(20px, env(safe-area-inset-bottom));
+      -webkit-overflow-scrolling: touch;
+    }
+    .pp-hub-menu-sheet__body .pp-pax-info-buttons {
+      margin: 0 0 10px;
+    }
+    body.pp-hub-menu-open {
+      overflow: hidden;
+    }
+    /* Hub: reclaim vertical space (hide large brand) so Quick access fits first screen */
+    body.pp-step-participant .pp-brand,
+    body.pp-step-participant .pp-legal {
+      display: none !important;
+    }
+    body.pp-step-participant .pp-page {
+      padding-top: max(8px, env(safe-area-inset-top));
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
+    }
+    body.pp-step-participant .pp-participant-head {
+      margin-bottom: 8px;
+    }
+    body.pp-step-participant .pp-participant-body .pp-pax-shell[data-pp-view="hub"] {
+      padding: 10px 10px 12px;
+    }
+    body.pp-step-participant .pp-hub-hero {
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    body.pp-step-participant .pp-hub-hero .pp-pax-photo,
+    body.pp-step-participant .pp-hub-hero .pp-child-photo {
+      width: 64px;
+      height: 64px;
+      border-width: 2px;
+    }
+    body.pp-step-participant .pp-hub-hero .pp-pax-photo--init,
+    body.pp-step-participant .pp-hub-hero .pp-child-photo--init {
+      font-size: 22px;
+    }
+    body.pp-step-participant .pp-hub-hero__name {
+      font-size: 18px;
+    }
+    body.pp-step-participant .pp-hub-hero__id {
+      gap: 4px;
+    }
+    body.pp-step-participant .pp-hub-reenrol {
+      margin: 0 0 8px;
+      padding: 8px 12px;
+      gap: 8px;
+    }
+    body.pp-step-participant .pp-hub-reenrol__copy strong {
+      font-size: 13px;
+    }
+    body.pp-step-participant .pp-hub-ops {
+      margin: 4px 0 6px;
+    }
+    body.pp-step-participant .pp-pax-info-section-label--next,
+    body.pp-step-participant .pp-hub-shortcuts .pp-pax-info-section-label {
+      margin: 4px 0 4px;
+      padding: 5px 10px;
+      font-size: 10px;
+    }
+    body.pp-step-participant .pp-hub-shortcuts {
+      margin: 2px 0 0;
+    }
+    body.pp-step-participant .pp-hub-shortcuts__grid {
+      gap: 6px;
+      margin-top: 4px;
+    }
+    body.pp-step-participant .pp-hub-shortcut {
+      min-height: 60px;
+      padding: 8px 4px 6px;
+      gap: 4px;
+      border-radius: 12px;
+    }
+    body.pp-step-participant .pp-hub-shortcut__ico {
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+    }
+    body.pp-step-participant .pp-hub-shortcut__ico svg {
+      width: 16px;
+      height: 16px;
+    }
+    body.pp-step-participant .pp-hub-shortcut__label {
+      font-size: 10px;
+    }
+    body.pp-step-participant .pp-hub-ops__when {
+      font-size: 15px;
+    }
+    body.pp-step-participant .pp-hub-ops__slot {
+      padding: 8px 10px;
+    }
+    @media (max-height: 720px) {
+      body.pp-step-participant .pp-hub-hero .pp-pax-photo,
+      body.pp-step-participant .pp-hub-hero .pp-child-photo {
+        width: 56px;
+        height: 56px;
+      }
+      body.pp-step-participant .pp-hub-hero__name { font-size: 16px; }
+      body.pp-step-participant .pp-hub-shortcut { min-height: 54px; }
+    }
     .pp-participant-body {
       flex: 1;
       min-height: 0;
@@ -2702,72 +2925,6 @@
     .pp-hub-shortcut__badge-wrap .pp-unread-badge {
       position: static;
     }
-    .pp-hub-menu {
-      margin: 12px 0 4px;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      background: var(--white);
-      min-width: 0;
-      overflow: hidden;
-    }
-    .pp-hub-menu__summary {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 12px 14px;
-      cursor: pointer;
-      list-style: none;
-      min-width: 0;
-    }
-    .pp-hub-menu__summary::-webkit-details-marker { display: none; }
-    .pp-hub-menu__summary::marker { content: ""; }
-    .pp-hub-menu__summary-main {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-width: 0;
-      flex: 1;
-      flex-wrap: wrap;
-    }
-    .pp-hub-menu__summary-main strong {
-      font-size: 15px;
-      color: var(--ink);
-    }
-    .pp-hub-menu__summary-main .pp-muted {
-      flex-basis: 100%;
-      margin: 0;
-      padding-left: 30px;
-      font-size: 12px;
-    }
-    .pp-hub-menu__burger {
-      width: 20px;
-      height: 20px;
-      flex-shrink: 0;
-      color: var(--blue);
-    }
-    .pp-hub-menu__chev {
-      width: 10px;
-      height: 10px;
-      border-right: 2px solid var(--muted);
-      border-bottom: 2px solid var(--muted);
-      transform: rotate(45deg);
-      flex-shrink: 0;
-      transition: transform 0.15s ease;
-      margin-top: -4px;
-    }
-    .pp-hub-menu[open] .pp-hub-menu__chev {
-      transform: rotate(225deg);
-      margin-top: 4px;
-    }
-    .pp-hub-menu__body {
-      padding: 0 12px 14px;
-      border-top: 1px solid var(--line);
-      min-width: 0;
-    }
-    .pp-hub-menu__body .pp-pax-info-buttons {
-      margin: 12px 0 8px;
-    }
     .pp-hub-menu__extra {
       display: flex;
       flex-direction: column;
@@ -4200,20 +4357,38 @@
 
     <section id="ppStepParticipant" hidden>
       <div class="pp-participant-head">
-        <div style="min-width:0">
-          <button id="ppBackToHome" class="pp-btn pp-btn--ghost pp-back-home" type="button" aria-label="All children"><svg class="pp-nav-ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span>All children</span></button>
-          <h2 id="ppParticipantTitle" class="pp-participant-title">
-            <span class="pp-title-inner">
-              <span class="pp-title-ico" aria-hidden="true">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.25"/><path d="M5.5 19.5c1.2-3.2 3.5-4.75 6.5-4.75s5.3 1.55 6.5 4.75"/></svg>
+        <div class="pp-participant-head-start">
+          <button id="ppHubMenuBtn" class="pp-hub-menu-btn" type="button" hidden aria-expanded="false" aria-controls="ppHubMenuSheet" aria-label="Open menu">
+            <svg class="pp-hub-menu-btn__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            <span class="pp-hub-menu-btn__label">Menu</span>
+          </button>
+          <div class="pp-participant-head-titles" style="min-width:0">
+            <button id="ppBackToHome" class="pp-btn pp-btn--ghost pp-back-home" type="button" aria-label="All children"><svg class="pp-nav-ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span>All children</span></button>
+            <h2 id="ppParticipantTitle" class="pp-participant-title">
+              <span class="pp-title-inner">
+                <span class="pp-title-ico" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.25"/><path d="M5.5 19.5c1.2-3.2 3.5-4.75 6.5-4.75s5.3 1.55 6.5 4.75"/></svg>
+                </span>
+                <span>Participant</span>
               </span>
-              <span>Participant</span>
-            </span>
-          </h2>
+            </h2>
+          </div>
         </div>
         <div class="pp-participant-head-actions">
           <button id="ppParticipantSignOut" class="pp-icon-btn" type="button" hidden>Sign out</button>
           <button id="ppParticipantRefresh" class="pp-icon-btn" type="button" data-contact-id="">Refresh</button>
+        </div>
+      </div>
+      <div id="ppHubMenuSheet" class="pp-hub-menu-sheet" hidden>
+        <button type="button" class="pp-hub-menu-sheet__backdrop" data-pp-hub-menu-close aria-label="Close menu"></button>
+        <div class="pp-hub-menu-sheet__panel" role="dialog" aria-modal="true" aria-label="Menu">
+          <div class="pp-hub-menu-sheet__head">
+            <strong>Menu</strong>
+            <button type="button" class="pp-hub-menu-sheet__close" data-pp-hub-menu-close aria-label="Close">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+          </div>
+          <div id="ppHubMenuSheetBody" class="pp-hub-menu-sheet__body"></div>
         </div>
       </div>
       <div id="ppParticipantNotice" class="pp-notice pp-notice--info" hidden role="status"></div>
@@ -4236,8 +4411,8 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260717-parent-session-attendance"></script>
   <script src="/portal/parent_portal_team.js?v=20260710-eiji-hazem-photos"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260715-crash-cal-first"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260717-july-fully-booked"></script>
-  <script src="/portal/parent_portal_app.js?v=20260716-stripe-return-verify"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260718-hub-compact-menu"></script>
+  <script src="/portal/parent_portal_app.js?v=20260718-hub-compact-menu"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {

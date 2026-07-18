@@ -1155,18 +1155,8 @@
     );
   }
 
-  function hubMenuHtml(data, opts) {
+  function hubMenuBodyHtml(data, opts) {
     return (
-      '<details class="pp-hub-menu">' +
-      '<summary class="pp-hub-menu__summary">' +
-      '<span class="pp-hub-menu__summary-main">' +
-      '<svg class="pp-hub-menu__burger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>' +
-      "<strong>Menu</strong>" +
-      '<span class="pp-muted">All sections by category</span>' +
-      "</span>" +
-      '<span class="pp-hub-menu__chev" aria-hidden="true"></span>' +
-      "</summary>" +
-      '<div class="pp-hub-menu__body">' +
       infoButtonsHtml(data, opts) +
       '<div class="pp-hub-menu__extra">' +
       '<button type="button" class="pp-hub-menu__link" data-pp-open="general">' +
@@ -1175,8 +1165,67 @@
       (opts && typeof opts.openContactDetails === "function"
         ? '<button type="button" class="pp-hub-menu__link" data-pp-open-contact>Contact details on file</button>'
         : "") +
-      "</div></div></details>"
+      "</div>"
     );
+  }
+
+  function closeHubMenuSheet() {
+    var doc = global.document;
+    if (!doc) return;
+    var btn = doc.getElementById("ppHubMenuBtn");
+    var sheet = doc.getElementById("ppHubMenuSheet");
+    if (btn) btn.setAttribute("aria-expanded", "false");
+    if (sheet) sheet.hidden = true;
+    if (doc.body) doc.body.classList.remove("pp-hub-menu-open");
+  }
+
+  function openHubMenuSheet() {
+    var doc = global.document;
+    if (!doc) return;
+    var btn = doc.getElementById("ppHubMenuBtn");
+    var sheet = doc.getElementById("ppHubMenuSheet");
+    if (!sheet) return;
+    sheet.hidden = false;
+    if (btn) btn.setAttribute("aria-expanded", "true");
+    if (doc.body) doc.body.classList.add("pp-hub-menu-open");
+  }
+
+  function syncHubMenuChrome(host, data, opts) {
+    var doc = global.document;
+    if (!doc) return;
+    var btn = doc.getElementById("ppHubMenuBtn");
+    var sheetBody = doc.getElementById("ppHubMenuSheetBody");
+    var sheet = doc.getElementById("ppHubMenuSheet");
+    if (btn) btn.hidden = false;
+    if (sheetBody) {
+      sheetBody.innerHTML = hubMenuBodyHtml(data, opts);
+      bindHubOpenButtons(host, data, opts, sheetBody);
+      sheetBody.querySelectorAll("[data-pp-open-contact]").forEach(function (el) {
+        if (el.__ppBoundContact) return;
+        el.__ppBoundContact = true;
+        el.addEventListener("click", function () {
+          closeHubMenuSheet();
+          if (opts && typeof opts.openContactDetails === "function") opts.openContactDetails();
+        });
+      });
+    }
+    if (btn && !btn.__ppBoundMenu) {
+      btn.__ppBoundMenu = true;
+      btn.addEventListener("click", function () {
+        var open = btn.getAttribute("aria-expanded") === "true";
+        if (open) closeHubMenuSheet();
+        else openHubMenuSheet();
+      });
+    }
+    if (sheet && !sheet.__ppBoundMenu) {
+      sheet.__ppBoundMenu = true;
+      sheet.querySelectorAll("[data-pp-hub-menu-close]").forEach(function (el) {
+        el.addEventListener("click", closeHubMenuSheet);
+      });
+      doc.addEventListener("keydown", function (ev) {
+        if (ev.key === "Escape") closeHubMenuSheet();
+      });
+    }
   }
 
   function infoButtonsHtml(data, opts) {
@@ -2993,16 +3042,17 @@
   function renderHub(host, data, opts) {
     ensureGeneralFields(data, { allowPlaceholders: true });
     setParticipantPageTitle(hubBackLabel(data).text);
-    // Dashboard: profile + next session + shortcuts + categorized menu.
+    closeHubMenuSheet();
+    // Dashboard: profile + next session + shortcuts. Menu lives top-left (sheet).
     // Term date accordion lives on Sessions (not on home).
     host.innerHTML =
       '<div class="pp-pax-shell" data-pp-view="hub">' +
       hubHeroHtml(data, opts) +
       hubOpsCardHtml(data) +
       hubShortcutsHtml(data, opts) +
-      hubMenuHtml(data, opts) +
       "</div>";
     bindHub(host, data, opts);
+    syncHubMenuChrome(host, data, opts);
     void mountHubAlerts(host, data, opts);
     if (global.ParentPortalApp && global.ParentPortalApp.photo && typeof global.ParentPortalApp.photo.bindOn === "function") {
       global.ParentPortalApp.photo.bindOn(host);
@@ -3025,12 +3075,7 @@
           sw.innerHTML = hubShortcutsHtml(data, opts);
           if (sw.firstChild) shortcutsOld.replaceWith(sw.firstChild);
         }
-        var old = host.querySelector(".pp-pax-info-buttons");
-        if (old) {
-          var wrap = document.createElement("div");
-          wrap.innerHTML = infoButtonsHtml(data, opts);
-          if (wrap.firstChild) old.replaceWith(wrap.firstChild);
-        }
+        syncHubMenuChrome(host, data, opts);
         bindHubOpenButtons(host, data, opts);
       })
       .catch(function () {});
@@ -6586,6 +6631,7 @@
 
   function openSubview(host, data, opts, view, viewOpts) {
     viewOpts = viewOpts || {};
+    closeHubMenuSheet();
     if (opts && typeof opts.activityPing === "function") {
       var pingView =
         view === "documents" || view === "consents"
@@ -6627,20 +6673,23 @@
     }
   }
 
-  function bindHubOpenButtons(host, data, opts) {
+  function bindHubOpenButtons(host, data, opts, root) {
     var sectionByView = {
       sessions: "sessions",
       achievements: "achievements",
       swim: "swim",
       weekly_notes: "weekly_notes",
     };
-    host.querySelectorAll("[data-pp-open]").forEach(function (btn) {
+    var scope = root || host;
+    if (!scope || !scope.querySelectorAll) return;
+    scope.querySelectorAll("[data-pp-open]").forEach(function (btn) {
       if (btn.__ppBoundOpen) return;
       btn.__ppBoundOpen = true;
       btn.addEventListener("click", function () {
         if (btn.disabled) return;
         var view = btn.getAttribute("data-pp-open");
         var section = sectionByView[view];
+        closeHubMenuSheet();
         if (
           section &&
           opts &&

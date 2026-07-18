@@ -649,6 +649,21 @@
     if ($("ppStepIdentify")) $("ppStepIdentify").hidden = step !== "identify";
     if ($("ppStepHome")) $("ppStepHome").hidden = step !== "home";
     if ($("ppStepParticipant")) $("ppStepParticipant").hidden = step !== "participant";
+    if (document.body) {
+      document.body.classList.toggle("pp-step-participant", step === "participant");
+      document.body.classList.toggle("pp-step-home", step === "home");
+      document.body.classList.toggle("pp-step-identify", step === "identify");
+    }
+    if (step !== "participant") {
+      var menuBtn = $("ppHubMenuBtn");
+      var menuSheet = $("ppHubMenuSheet");
+      if (menuBtn) {
+        menuBtn.hidden = true;
+        menuBtn.setAttribute("aria-expanded", "false");
+      }
+      if (menuSheet) menuSheet.hidden = true;
+      document.body.classList.remove("pp-hub-menu-open");
+    }
     if (step === "home" && state.session.token) {
       void pingActivity("home", null);
     }
