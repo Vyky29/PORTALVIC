@@ -959,13 +959,14 @@
   /**
    * Hub visual for 2026/27 place:
    *  unconfirmed — not re-enrolled (red blink)
-   *  unpaid — re-enrolled, parent still owes term invoice (orange blink)
-   *  settled — paid, or LA/NHS office-billed (green chip, no blink)
+   *  unpaid — re-enrolled, term invoice not fully paid (orange blink)
+   *  settled — term invoice(s) paid, or true office-billed LA/NHS with no parent term invoice
+   *
+   * Direct Payments / "Using Funds from LA" must stay orange until paid — do not
+   * treat show_invoices=false as settled on its own.
    */
   function hubReenrolPayState(data) {
     if (!familyAcceptedNextYear(data)) return "unconfirmed";
-    var booking = bookingSummary(data);
-    if (!booking.show_invoices) return "settled";
     if (data && data._hubReenrolPay === "settled") return "settled";
     if (data && data._hubReenrolPay === "unpaid") return "unpaid";
     /* Until invoices resolve, assume unpaid so orange shows immediately. */
@@ -1015,12 +1016,27 @@
     return /26\/27|2026-27|2026\/27|autumn|re-enrol|reenrol|spring term 26|summer term 26/.test(blob);
   }
 
-  function termProgrammeInvoicesPaid(invoices) {
-    var term = (invoices || []).filter(isTermProgrammeInvoice);
-    if (!term.length) return false;
-    return term.every(function (inv) {
-      return String((inv && inv.payment_status) || "").toLowerCase() === "paid";
+  function termProgrammeInvoices(invoices) {
+    return (invoices || []).filter(isTermProgrammeInvoice);
+  }
+
+  function isInvoiceFullyPaid(inv) {
+    return String((inv && inv.payment_status) || "").toLowerCase() === "paid";
+  }
+
+  /** Current (autumn) term invoices if present; else any 26/27 programme invoices. */
+  function termInvoicesForHubPay(invoices) {
+    var term = termProgrammeInvoices(invoices);
+    var autumn = term.filter(function (inv) {
+      var blob = [inv.billing_term, inv.reference_text, inv.title, inv.subtitle]
+        .map(function (x) {
+          return String(x || "");
+        })
+        .join(" ")
+        .toLowerCase();
+      return blob.indexOf("autumn") >= 0 || blob === "autumn" || /\bautumn\b/.test(blob);
     });
+    return autumn.length ? autumn : term;
   }
 
   function applyHubReenrolPayVisual(host, data, state) {
@@ -1061,20 +1077,25 @@
       applyHubReenrolPayVisual(host, data, "unconfirmed");
       return;
     }
-    var booking = bookingSummary(data);
-    if (!booking.show_invoices) {
-      applyHubReenrolPayVisual(host, data, "settled");
-      return;
-    }
+    /* Always start orange until invoices prove paid (incl. Direct Payments). */
     applyHubReenrolPayVisual(host, data, "unpaid");
     if (typeof opts.listInvoices !== "function") return;
     void opts
       .listInvoices()
       .then(function (j) {
         if (!host.isConnected) return;
-        var paid = termProgrammeInvoicesPaid((j && j.invoices) || []);
-        applyHubReenrolPayVisual(host, data, paid ? "settled" : "unpaid");
-        if (paid) {
+        var invoices = (j && j.invoices) || [];
+        var term = termInvoicesForHubPay(invoices);
+        var booking = bookingSummary(data);
+        var nextState = "unpaid";
+        if (term.length) {
+          nextState = term.every(isInvoiceFullyPaid) ? "settled" : "unpaid";
+        } else if (!booking.show_invoices) {
+          /* True office-billed LA/NHS: no parent term invoice to pay. */
+          nextState = "settled";
+        }
+        applyHubReenrolPayVisual(host, data, nextState);
+        if (nextState === "settled") {
           /* Refresh day chips so upcoming dates stay blue without attention styling. */
           mountTermDateChipStatuses(host, data, opts, null);
         }
