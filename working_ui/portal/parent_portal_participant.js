@@ -3617,11 +3617,57 @@
     var messagesPromise = mountHubAlerts(host, data, opts);
     mountTermDateChipStatuses(host, data, opts, messagesPromise);
     mountHubNextSessionLive(host, data, opts);
+    mountHubMakeupNotice(host, data, opts);
     if (global.ParentPortalApp && global.ParentPortalApp.photo && typeof global.ParentPortalApp.photo.bindOn === "function") {
       global.ParentPortalApp.photo.bindOn(host);
     }
     void refreshConsentsHubBadge(host, data, opts);
     scheduleReenrolPopup(host, data);
+  }
+
+  /** Open makeup grants (e.g. club cancellation) — hub banner; not billed / not on invoices. */
+  function mountHubMakeupNotice(host, data, opts) {
+    if (!host || typeof opts.listMakeups !== "function") return;
+    void opts
+      .listMakeups()
+      .then(function (payload) {
+        if (!host.isConnected) return;
+        var grants = (payload && payload.grants) || [];
+        var open = grants.filter(function (g) {
+          return g && (g.status === "open" || g.pending_offer);
+        });
+        var shell = host.querySelector(".pp-pax-shell[data-pp-view='hub']");
+        if (!shell) return;
+        var old = shell.querySelector("#ppHubMakeupNotice");
+        if (old) old.remove();
+        if (!open.length) return;
+        var g0 = open[0];
+        var notes = String(g0.notes || "").trim();
+        var banner = document.createElement("div");
+        banner.id = "ppHubMakeupNotice";
+        banner.className = "pp-notice pp-notice--info pp-hub-makeup-notice";
+        banner.setAttribute("role", "status");
+        banner.innerHTML =
+          "<strong>Makeup session due</strong>" +
+          (g0.service_label || g0.preferred_venue
+            ? " — " +
+              esc(
+                [g0.service_label, g0.preferred_venue].filter(Boolean).join(" · "),
+              )
+            : "") +
+          ". Not billed and not on invoices." +
+          (notes ? "<br><span class=\"pp-muted\">" + esc(notes) + "</span>" : "") +
+          ' <button type="button" class="pp-hub-alerts__all" data-pp-open="absence">View makeup</button>';
+        var ops = shell.querySelector(".pp-hub-ops");
+        if (ops) shell.insertBefore(banner, ops);
+        else shell.appendChild(banner);
+        banner.querySelectorAll("[data-pp-open]").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            openSubview(host, data, opts, btn.getAttribute("data-pp-open") || "absence");
+          });
+        });
+      })
+      .catch(function () {});
   }
 
   function refreshConsentsHubBadge(host, data, opts) {
@@ -7007,9 +7053,9 @@
     });
     var hint =
       status === "open"
-        ? "You have a makeup grant for " +
-          (g.preferred_venue || "your centre") +
-          ". The office will offer a slot when one is available at that venue."
+        ? "You have a makeup session due" +
+          (g.preferred_venue ? " at " + (g.preferred_venue || "your centre") : "") +
+          ". The office will offer a slot when one is available. This makeup is not billed and does not appear on invoices."
         : status === "consumed"
           ? acceptedOffer && acceptedOffer.roster_override_id
             ? "Makeup accepted and placed on the club roster" +
@@ -7024,19 +7070,21 @@
           : status === "forfeited"
             ? "Makeup forfeited after a declined offer."
             : "Status: " + status;
+    var notes = String(g.notes || "").trim();
     return (
       '<article class="pp-absence-card" data-status="' +
       esc(status) +
       '">' +
       '<div class="pp-absence-card__head">' +
-      "<strong>Makeup grant</strong>" +
+      "<strong>Makeup session due</strong>" +
       '<span class="pp-absence-chip">' +
-      esc(status) +
+      esc(status === "open" ? "Awaiting slot" : status) +
       "</span></div>" +
       '<p class="pp-absence-card__svc">' +
       esc(g.preferred_venue || "") +
       (g.service_label ? " · " + esc(g.service_label) : "") +
       "</p>" +
+      (notes ? '<p class="pp-absence-card__reason">' + esc(notes) + "</p>" : "") +
       '<p class="pp-muted pp-absence-card__hint">' +
       esc(hint) +
       "</p></article>"
