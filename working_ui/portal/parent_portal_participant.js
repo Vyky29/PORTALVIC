@@ -580,6 +580,7 @@
     var s = String(label || "").toLowerCase();
     if (/aquatic|swim/.test(s)) return "aquatic";
     if (/climb/.test(s)) return "climb";
+    if (/physical/.test(s)) return "physical";
     if (/multi/.test(s)) return "multi";
     if (/bespoke/.test(s)) return "bespoke";
     if (/day\s*centre|daycentre/.test(s)) return "daycentre";
@@ -3052,20 +3053,22 @@
     global.location.href = registrationEditUrl(data, opts, returnView);
   }
 
-  /** Prefer stable colours by service type; never use closed-day red. */
+  /** Prefer stable colours by service type; never use closed-day red. Each type unique. */
   var PP_CAL_SERVICE_TONES = [
-    "#2d84b3",
-    "#0d9488",
-    "#7c4dbf",
-    "#15803d",
-    "#b45309",
-    "#0369a1",
+    "#4f46e5", /* physical / fallback 0 — indigo */
+    "#0d9488", /* aquatic — teal */
+    "#2d84b3", /* climb — steel blue */
+    "#15803d", /* multi — green */
+    "#7c4dbf", /* bespoke — purple */
+    "#b45309", /* day centre — amber */
+    "#0369a1", /* extra */
   ];
 
   function toneForServiceLabel(label, fallbackIdx) {
     var s = String(label || "").toLowerCase();
-    if (/aquatic|swim/.test(s)) return "#0d9488"; // teal — not closed red
-    if (/climb/.test(s)) return "#2d84b3";
+    if (/aquatic|swim/.test(s)) return "#0d9488"; // teal
+    if (/climb/.test(s)) return "#2d84b3"; // steel blue
+    if (/physical/.test(s)) return "#4f46e5"; // indigo — not the same as climb
     if (/multi/.test(s)) return "#15803d";
     if (/bespoke/.test(s)) return "#7c4dbf";
     if (/day\s*centre|daycentre/.test(s)) return "#b45309";
