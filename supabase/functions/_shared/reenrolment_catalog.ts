@@ -794,6 +794,14 @@ export function coalescePaymentServiceAndSessions(
     const already = String(svc).trim();
     if (/^\d+\s*[''′]/.test(already) && /\(/.test(already)) return already;
 
+    /* Keep multi-day Day Centre labels intact — never collapse
+     * "(Mon, Wed & Fri)" / "(Mon & Fri)" down to the first weekday. */
+    const existingParen = already.match(/\(([^)]+)\)/);
+    if (existingParen) {
+      const daysInParen = expandDaysFromParen(existingParen[1]);
+      if (daysInParen.length > 1) return already;
+    }
+
     const sess =
       sessions[i] ||
       (services.length === 1 && sessions.length ? sessions.join("; ") : "");
@@ -801,7 +809,10 @@ export function coalescePaymentServiceAndSessions(
       dayFromSessionFragment(sess) ||
       (() => {
         const paren = already.match(/\(([^)]+)\)/);
-        return paren ? normalizeDay(paren[1].split(/[/+&·,]/)[0] || "") : "";
+        if (!paren) return "";
+        const days = expandDaysFromParen(paren[1]);
+        if (days.length > 1) return "";
+        return days[0] || normalizeDay(paren[1].split(/[/+&·,]/)[0] || "");
       })();
     const fromTime = durationMinutesFromSessionFragment(sess);
     let durationMin = fromTime != null && fromTime > 0
@@ -970,9 +981,10 @@ function extractDayHintFromPayment(serviceRaw: string, data: Record<string, unkn
   const blob = `${serviceRaw} ${sessions}`.toLowerCase();
   const paren = String(serviceRaw || "").match(/\(([^)]+)\)/);
   if (paren) {
-    const dayPart = paren[1].split(/[/+&·,]/)[0]?.trim() || "";
-    const fromParen = normalizeDay(dayPart.replace(/\s*1:1.*$/i, "").trim());
-    if (fromParen && DAY_ORDER.includes(fromParen)) return fromParen;
+    const days = expandDaysFromParen(paren[1]);
+    /* Only a single weekday is a usable global hint; multi-day labels
+     * (Mon, Wed & Fri) must not collapse onto Monday. */
+    if (days.length === 1 && DAY_ORDER.includes(days[0])) return days[0];
   }
   if (/\bsun(day|s)?\b/.test(blob)) return "Sunday";
   if (/\bsat(urday|s)?\b/.test(blob)) return "Saturday";
