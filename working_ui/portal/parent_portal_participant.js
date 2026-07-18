@@ -1025,8 +1025,10 @@
     opts = opts || {};
     var disabled = !!opts.disabled;
     var unreadBadge = opts.unreadBadge || "";
+    var extraClass = opts.extraClass || "";
     return (
       '<button type="button" class="pp-hub-shortcut' +
+      extraClass +
       (disabled ? " pp-hub-shortcut--disabled" : "") +
       (unreadBadge ? " pp-hub-shortcut--has-unread" : "") +
       '" data-pp-open="' +
@@ -1089,13 +1091,14 @@
         "messages",
         "Messages",
         ico('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'),
-        { unreadBadge: msgBadge },
+        { unreadBadge: msgBadge, extraClass: " pp-hub-shortcut--messages" },
       ) +
       (sessionProgressEnabled
         ? hubShortcutBtn(
             "sessions",
             "Sessions",
             ico('<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>'),
+            { extraClass: " pp-hub-shortcut--sessions" },
           )
         : "") +
       hubShortcutBtn(
@@ -1104,6 +1107,7 @@
         ico(
           '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
         ),
+        { extraClass: " pp-hub-shortcut--calendar" },
       ) +
       hubShortcutBtn(
         "booking",
@@ -1111,6 +1115,7 @@
         ico(
           '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01"/>',
         ),
+        { extraClass: " pp-hub-shortcut--booking" },
       ) +
       hubShortcutBtn(
         "absence",
@@ -1118,13 +1123,13 @@
         ico(
           '<circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-3.5 4.2-5 8-5s6.5 1.5 8 5"/><path d="M16 4l4 4M20 4l-4 4"/>',
         ),
-        { disabled: !hasServices },
+        { disabled: !hasServices, extraClass: " pp-hub-shortcut--absence" },
       ) +
       hubShortcutBtn(
         "consents",
         "Consents",
         ico('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>'),
-        { unreadBadge: consentBadge },
+        { unreadBadge: consentBadge, extraClass: " pp-hub-shortcut--consents" },
       ) +
       (showInvoicesForParticipant(data)
         ? hubShortcutBtn(
@@ -1133,6 +1138,7 @@
             ico(
               '<path d="M4 2h16v20l-2-1.5L16 22l-2-1.5L12 22l-2-1.5L8 22l-2-1.5L4 22V2z"/><path d="M8 8h8M8 12h8"/>',
             ),
+            { extraClass: " pp-hub-shortcut--invoices" },
           )
         : "") +
       (sessionProgressEnabled
@@ -1142,7 +1148,7 @@
             ico(
               '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/>',
             ),
-            { unreadBadge: notesBadge },
+            { unreadBadge: notesBadge, extraClass: " pp-hub-shortcut--notes" },
           )
         : "") +
       "</div></section>"
