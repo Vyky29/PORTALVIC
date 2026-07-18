@@ -138,6 +138,19 @@ Deno.serve(async (req) => {
     return portalAdminJson(405, { ok: false, error: "method_not_allowed" });
   }
 
+  try {
+    return await handleAdminParentInvoicesList(req);
+  } catch (err) {
+    console.error("[portal-admin-parent-invoices-list] unhandled", err);
+    return portalAdminJson(500, {
+      ok: false,
+      error: "internal_error",
+      message: err instanceof Error ? err.message : "unexpected_error",
+    });
+  }
+});
+
+async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
   const verified = await verifyPortalAdminAccessToken(req.headers.get("Authorization"));
   if (!verified.ok) {
     return portalAdminJson(verified.status, { ok: false, error: verified.error });
@@ -256,21 +269,23 @@ Deno.serve(async (req) => {
   }
 
   const bufferByContact = new Map<string, Record<string, unknown>>();
-  for (const cid of contactIds) {
-    try {
-      const ev = await evaluateOwnArrangementBuffer(admin, cid);
-      if (ev.is_own_arrangement) {
-        bufferByContact.set(cid, {
-          required_gbp: ev.required_gbp,
-          available_gbp: ev.available_gbp,
-          shortfall_gbp: ev.shortfall_gbp,
-          is_low: ev.is_low,
-        });
+  await Promise.all(
+    contactIds.map(async (cid) => {
+      try {
+        const ev = await evaluateOwnArrangementBuffer(admin, cid);
+        if (ev.is_own_arrangement) {
+          bufferByContact.set(cid, {
+            required_gbp: ev.required_gbp,
+            available_gbp: ev.available_gbp,
+            shortfall_gbp: ev.shortfall_gbp,
+            is_low: ev.is_low,
+          });
+        }
+      } catch (err) {
+        console.error("[portal-admin-parent-invoices-list] buffer", cid, err);
       }
-    } catch (err) {
-      console.error("[portal-admin-parent-invoices-list] buffer", cid, err);
-    }
-  }
+    }),
+  );
 
   // Latest re-enrolment submission per contact (2026-27) for sort + booked totals.
   const reenrolByContact = new Map<
@@ -557,4 +572,4 @@ Deno.serve(async (req) => {
       academic_year: REENROL_ACADEMIC_YEAR,
     },
   });
-});
+}

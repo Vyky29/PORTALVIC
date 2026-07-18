@@ -121,6 +121,11 @@ function isDayCentreClosedIso(iso: string): boolean {
 }
 
 /** Count Day Centre sessions for one weekday across 2026/27 terms (no half-term). */
+const _dcSessionCountCache = new Map<
+  string,
+  { autumn: number; spring: number; summer: number; annual: number }
+>();
+
 export function countDayCentreSessionsForDay(day: string): {
   autumn: number;
   spring: number;
@@ -128,8 +133,13 @@ export function countDayCentreSessionsForDay(day: string): {
   annual: number;
 } {
   const want = normalizeDay(day);
+  const cached = _dcSessionCountCache.get(want);
+  if (cached) return { ...cached };
   const counts = { autumn: 0, spring: 0, summer: 0, annual: 0 };
-  if (!want || WEEKEND_DAYS.has(want)) return counts;
+  if (!want || WEEKEND_DAYS.has(want)) {
+    _dcSessionCountCache.set(want, counts);
+    return { ...counts };
+  }
   const cal = DAY_CENTRE_CALENDAR_2026_27;
   let cursor = cal.openFrom;
   let guard = 0;
@@ -146,7 +156,8 @@ export function countDayCentreSessionsForDay(day: string): {
     }
     cursor = addDaysIso(cursor, 1);
   }
-  return counts;
+  _dcSessionCountCache.set(want, counts);
+  return { ...counts };
 }
 
 /** Expand "(Mon & Wed)", "(Mon–Wed & Fri)", "(Mon, Wed & Fri)", "(Mon–Fri)". */

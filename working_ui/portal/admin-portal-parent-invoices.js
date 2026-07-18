@@ -85,7 +85,7 @@
 
   async function api(path, body, isForm) {
     var token = await portalAuthToken();
-    if (!token) return { error: 'session_expired' };
+    if (!token) return { error: 'session_expired', message: 'Sign in again to load Finance.' };
     var headers = {
       Authorization: 'Bearer ' + token,
       apikey: cfg.getAnonKey()
@@ -97,7 +97,15 @@
       headers['Content-Type'] = 'application/json';
       opts.body = JSON.stringify(body || {});
     }
-    var res = await fetch(supabaseBase() + '/functions/v1/' + path, opts);
+    var res;
+    try {
+      res = await fetch(supabaseBase() + '/functions/v1/' + path, opts);
+    } catch (err) {
+      return {
+        error: 'network_error',
+        message: (err && err.message) || 'Could not reach Supabase (network / CORS).'
+      };
+    }
     var j = null;
     try {
       j = await res.json();
@@ -105,7 +113,7 @@
       j = null;
     }
     if (!res.ok || !j || !j.ok) {
-      return { error: (j && j.error) || 'request_failed', message: (j && j.message) || '' };
+      return { error: (j && j.error) || 'request_failed', message: (j && j.message) || ('HTTP ' + res.status) };
     }
     return j;
   }
@@ -1033,68 +1041,78 @@
   async function renderHost(host) {
     if (!host) return;
     host.innerHTML = '<p class="muted">Loading…</p>';
-    var body = { limit: 300 };
-    if (state.filter === 'ready' || state.filter === 'hidden') body.share_status = state.filter;
-    if (state.filter === 'unpaid') {
-      body.share_status = 'ready';
-      body.payment_status = 'unpaid';
-    }
-    if (state.filter === 'paid') {
-      body.payment_status = 'paid';
-    }
-    if (state.filter === 'void') {
-      body.payment_status = 'void';
-    }
-    if (state.filter === 'pending') {
-      body.share_status = 'ready';
-      body.payment_status = 'pending_confirmation';
-    }
-    if (state.filter === 'buffer_low' || state.filter === 'xero_unsynced' || state.filter === 'la_auto') {
-      body.filter = state.filter;
-    }
-    body.billing_amount = state.amountPeriod || 'autumn';
-    var r = await api('portal-admin-parent-invoices-list', body);
-    if (r.error) {
-      host.innerHTML = '<p class="muted">Could not load invoices (' + esc(r.error) + ').</p>';
-      return;
-    }
-    state.invoices = r.invoices || [];
-    state.meta = r.meta || {};
-    var metaEl = global.document.getElementById('portalParentInvoicesMetaEmbed');
-    if (metaEl) {
-      var parts = [];
-      parts.push(String(state.meta.ready_unpaid || 0) + ' unpaid');
-      if (state.meta.pending_confirmation) {
-        parts.push(String(state.meta.pending_confirmation) + ' pending');
+    try {
+      var body = { limit: 300 };
+      if (state.filter === 'ready' || state.filter === 'hidden') body.share_status = state.filter;
+      if (state.filter === 'unpaid') {
+        body.share_status = 'ready';
+        body.payment_status = 'unpaid';
       }
-      if (state.meta.payment_holds_open) {
-        parts.push(String(state.meta.payment_holds_open) + ' holds');
+      if (state.filter === 'paid') {
+        body.payment_status = 'paid';
       }
-      if (state.meta.buffer_low_contacts) {
-        parts.push(String(state.meta.buffer_low_contacts) + ' buffer low');
+      if (state.filter === 'void') {
+        body.payment_status = 'void';
       }
-      if (state.meta.xero_unsynced) {
-        parts.push(String(state.meta.xero_unsynced) + ' not in Xero');
+      if (state.filter === 'pending') {
+        body.share_status = 'ready';
+        body.payment_status = 'pending_confirmation';
       }
-      if (state.meta.la_office_auto) {
-        parts.push(String(state.meta.la_office_auto) + ' LA auto');
+      if (state.filter === 'buffer_low' || state.filter === 'xero_unsynced' || state.filter === 'la_auto') {
+        body.filter = state.filter;
       }
-      metaEl.textContent = parts.join(' · ');
-    }
-    if (!state.invoices.length) {
-      host.innerHTML = '<p class="muted">No invoices yet. Upload a PDF below to share with a family.</p>';
-      return;
-    }
-    host.innerHTML =
-      accordionListStyles() +
-      '<div class="pp-inv-acc" role="list">' +
-      groupInvoicesByParticipant(state.invoices).map(participantAccordionHtml).join('') +
-      '</div>';
-    bindRowActions(host);
-    if (state.filter !== 'all') {
-      host.querySelectorAll('.pp-inv-acc__item').forEach(function (item) {
-        item.open = true;
-      });
+      body.billing_amount = state.amountPeriod || 'autumn';
+      var r = await api('portal-admin-parent-invoices-list', body);
+      if (r.error) {
+        host.innerHTML =
+          '<p class="muted">Could not load invoices (' +
+          esc(r.message || r.error) +
+          '). Try Refresh, or sign out and back in.</p>';
+        return;
+      }
+      state.invoices = r.invoices || [];
+      state.meta = r.meta || {};
+      var metaEl = global.document.getElementById('portalParentInvoicesMetaEmbed');
+      if (metaEl) {
+        var parts = [];
+        parts.push(String(state.meta.ready_unpaid || 0) + ' unpaid');
+        if (state.meta.pending_confirmation) {
+          parts.push(String(state.meta.pending_confirmation) + ' pending');
+        }
+        if (state.meta.payment_holds_open) {
+          parts.push(String(state.meta.payment_holds_open) + ' holds');
+        }
+        if (state.meta.buffer_low_contacts) {
+          parts.push(String(state.meta.buffer_low_contacts) + ' buffer low');
+        }
+        if (state.meta.xero_unsynced) {
+          parts.push(String(state.meta.xero_unsynced) + ' not in Xero');
+        }
+        if (state.meta.la_office_auto) {
+          parts.push(String(state.meta.la_office_auto) + ' LA auto');
+        }
+        metaEl.textContent = parts.join(' · ');
+      }
+      if (!state.invoices.length) {
+        host.innerHTML = '<p class="muted">No invoices yet. Upload a PDF below to share with a family.</p>';
+        return;
+      }
+      host.innerHTML =
+        accordionListStyles() +
+        '<div class="pp-inv-acc" role="list">' +
+        groupInvoicesByParticipant(state.invoices).map(participantAccordionHtml).join('') +
+        '</div>';
+      bindRowActions(host);
+      if (state.filter !== 'all') {
+        host.querySelectorAll('.pp-inv-acc__item').forEach(function (item) {
+          item.open = true;
+        });
+      }
+    } catch (err) {
+      host.innerHTML =
+        '<p class="muted">Could not load invoices (' +
+        esc((err && err.message) || 'unexpected_error') +
+        ').</p>';
     }
   }
 
