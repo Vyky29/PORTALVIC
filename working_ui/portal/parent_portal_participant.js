@@ -1021,6 +1021,158 @@
     return n;
   }
 
+  function hubShortcutBtn(view, caption, iconSvg, opts) {
+    opts = opts || {};
+    var disabled = !!opts.disabled;
+    var unreadBadge = opts.unreadBadge || "";
+    return (
+      '<button type="button" class="pp-hub-shortcut' +
+      (disabled ? " pp-hub-shortcut--disabled" : "") +
+      (unreadBadge ? " pp-hub-shortcut--has-unread" : "") +
+      '" data-pp-open="' +
+      esc(view) +
+      '"' +
+      (disabled ? ' disabled aria-disabled="true"' : "") +
+      ' aria-label="' +
+      esc(caption) +
+      '">' +
+      '<span class="pp-hub-shortcut__ico" aria-hidden="true">' +
+      iconSvg +
+      "</span>" +
+      (unreadBadge
+        ? '<span class="pp-hub-shortcut__badge-wrap">' + unreadBadge + "</span>"
+        : "") +
+      '<span class="pp-hub-shortcut__label">' +
+      esc(caption) +
+      "</span></button>"
+    );
+  }
+
+  function hubShortcutsHtml(data, opts) {
+    var msgUnread =
+      opts && typeof opts.unreadMessagesTotal === "function" ? opts.unreadMessagesTotal() : 0;
+    var msgBadge =
+      opts && typeof opts.unreadBadgeHtml === "function" && msgUnread > 0
+        ? opts.unreadBadgeHtml(msgUnread, "Unread messages")
+        : "";
+    var consentPending =
+      opts && typeof opts.consentsPendingCount === "function" ? opts.consentsPendingCount() : 0;
+    var consentBadge =
+      opts && typeof opts.unreadBadgeHtml === "function" && consentPending > 0
+        ? opts.unreadBadgeHtml(consentPending, "Pending consents")
+        : "";
+    var notesUnread = unreadWeeklyNotesCount(data, opts);
+    var notesBadge =
+      opts && typeof opts.unreadBadgeHtml === "function" && notesUnread > 0
+        ? opts.unreadBadgeHtml(notesUnread, "New weekly notes")
+        : "";
+    var hasServices = !!(
+      data &&
+      data.general &&
+      Array.isArray(data.general.services_detail) &&
+      data.general.services_detail.length
+    );
+    var sessionProgressEnabled =
+      !(data && data.session_progress) || data.session_progress.enabled !== false;
+    var ico = function (paths) {
+      return (
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        paths +
+        "</svg>"
+      );
+    };
+    return (
+      '<section class="pp-hub-shortcuts" aria-label="Quick access">' +
+      '<p class="pp-pax-info-section-label">Quick access</p>' +
+      '<div class="pp-hub-shortcuts__grid">' +
+      hubShortcutBtn(
+        "messages",
+        "Messages",
+        ico('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'),
+        { unreadBadge: msgBadge },
+      ) +
+      (sessionProgressEnabled
+        ? hubShortcutBtn(
+            "sessions",
+            "Sessions",
+            ico('<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>'),
+          )
+        : "") +
+      hubShortcutBtn(
+        "calendar",
+        "Calendar",
+        ico(
+          '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+        ),
+      ) +
+      hubShortcutBtn(
+        "booking",
+        "Booking",
+        ico(
+          '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01"/>',
+        ),
+      ) +
+      hubShortcutBtn(
+        "absence",
+        "Absent",
+        ico(
+          '<circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-3.5 4.2-5 8-5s6.5 1.5 8 5"/><path d="M16 4l4 4M20 4l-4 4"/>',
+        ),
+        { disabled: !hasServices },
+      ) +
+      hubShortcutBtn(
+        "consents",
+        "Consents",
+        ico('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>'),
+        { unreadBadge: consentBadge },
+      ) +
+      (showInvoicesForParticipant(data)
+        ? hubShortcutBtn(
+            "invoices",
+            "Invoices",
+            ico(
+              '<path d="M4 2h16v20l-2-1.5L16 22l-2-1.5L12 22l-2-1.5L8 22l-2-1.5L4 22V2z"/><path d="M8 8h8M8 12h8"/>',
+            ),
+          )
+        : "") +
+      (sessionProgressEnabled
+        ? hubShortcutBtn(
+            "weekly_notes",
+            "Notes",
+            ico(
+              '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/>',
+            ),
+            { unreadBadge: notesBadge },
+          )
+        : "") +
+      "</div></section>"
+    );
+  }
+
+  function hubMenuHtml(data, opts) {
+    return (
+      '<details class="pp-hub-menu">' +
+      '<summary class="pp-hub-menu__summary">' +
+      '<span class="pp-hub-menu__summary-main">' +
+      '<svg class="pp-hub-menu__burger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>' +
+      "<strong>Menu</strong>" +
+      '<span class="pp-muted">All sections by category</span>' +
+      "</span>" +
+      '<span class="pp-hub-menu__chev" aria-hidden="true"></span>' +
+      "</summary>" +
+      '<div class="pp-hub-menu__body">' +
+      infoButtonsHtml(data, opts) +
+      '<div class="pp-hub-menu__extra">' +
+      '<button type="button" class="pp-hub-menu__link" data-pp-open="general">' +
+      "General information" +
+      "</button>" +
+      (opts && typeof opts.openContactDetails === "function"
+        ? '<button type="button" class="pp-hub-menu__link" data-pp-open-contact>Contact details on file</button>'
+        : "") +
+      "</div></div></details>"
+    );
+  }
+
   function infoButtonsHtml(data, opts) {
     var msgUnread =
       opts && typeof opts.unreadMessagesTotal === "function" ? opts.unreadMessagesTotal() : 0;
@@ -1076,35 +1228,60 @@
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>';
     var announceIcon =
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M16 8.5a4.5 4.5 0 0 1 0 7"/><path d="M18.5 6a8 8 0 0 1 0 12"/></svg>';
+    var teamIcon =
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
+    var sessionsIcon =
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>';
+    var achievementsIcon =
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 16l-5-5-4 4-2-2-5 5"/></svg>';
+    var swimIcon =
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12c2.5 2.5 5.5 4 10 4s7.5-1.5 10-4"/><path d="M2 16c2.5 2.5 5.5 4 10 4s7.5-1.5 10-4"/></svg>';
     return (
       '<div class="pp-pax-info-buttons">' +
-      '<p class="pp-pax-info-section-label">This week</p>' +
-      '<div class="pp-pax-info-row pp-pax-info-row--week">' +
-      infoBtnHtml("announcements", "Club announcements", announceIcon, {
-        extraClass:
-          " pp-pax-info-btn--announcements" +
-          (announceCount > 0 ? " pp-pax-info-btn--has-unread" : ""),
-        subtitle: announceCount ? announceCount + " active" : "Club notices",
-        unreadBadge: announceBadge,
+      '<p class="pp-pax-info-section-label pp-pax-info-section-label--schedule">Schedule</p>' +
+      '<div class="pp-pax-info-row pp-pax-info-row--schedule">' +
+      infoBtnHtml("calendar", "My Calendar", calIcon, {
+        extraClass: " pp-pax-info-btn--calendar",
+        subtitle: "Year view",
       }) +
-      infoBtnHtml("messages", "Messages", msgIcon, {
-        extraClass:
-          " pp-pax-info-btn--messages" +
-          (msgUnread > 0 ? " pp-pax-info-btn--has-unread" : ""),
-        unreadBadge: msgBadge,
+      (sessionProgressEnabled
+        ? infoBtnHtml("sessions", "Sessions Overview", sessionsIcon, {
+            extraClass: " pp-pax-info-btn--sessions",
+            subtitle: "Term dates & by activity",
+          })
+        : "") +
+      infoBtnHtml("booking", "My booking", bookingIcon, {
+        subtitle: booking.submitted
+          ? booking.hint || "2026/27 choices"
+          : booking.parent_action === "auto"
+            ? "2026/27 with the office"
+            : "Crash & 2026/27 places",
+        extraClass: " pp-pax-info-btn--booking",
       }) +
       infoBtnHtml("absence", "Report absent", absentIcon, {
         extraClass: " pp-pax-info-btn--absence",
         subtitle: hasServices ? "Missed / note" : "No sessions yet",
         disabled: !hasServices,
       }) +
-      infoBtnHtml("calendar", "My Calendar", calIcon, {
-        extraClass: " pp-pax-info-btn--calendar",
-        subtitle: "Term dates",
+      "</div>" +
+      '<p class="pp-pax-info-section-label pp-pax-info-section-label--progress">Progress</p>' +
+      '<div class="pp-pax-info-row pp-pax-info-row--progress">' +
+      (sessionProgressEnabled
+        ? infoBtnHtml("weekly_notes", "Weekly notes", notesIcon, {
+            extraClass:
+              " pp-pax-info-btn--weekly-notes" +
+              (notesUnread > 0 ? " pp-pax-info-btn--has-unread" : ""),
+            subtitle: noteCount ? noteCount + " in folder" : "From feedback",
+            unreadBadge: notesBadge,
+          })
+        : "") +
+      infoBtnHtml("achievements", "Achievement photos", achievementsIcon, {
+        extraClass: " pp-pax-info-btn--achievements",
       }) +
-      infoBtnHtml("team", teamCaption, '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>', {
-        extraClass: " pp-pax-info-btn--team",
-        subtitle: "Instructors",
+      infoBtnHtml("swim", "Swimming term review", swimIcon, {
+        disabled: !swimAvailable,
+        subtitle: swimAvailable ? "" : "Not available yet",
+        extraClass: " pp-pax-info-btn--swim",
       }) +
       "</div>" +
       '<p class="pp-pax-info-section-label pp-pax-info-section-label--paper">Paperwork</p>' +
@@ -1125,57 +1302,30 @@
             subtitle: "Pay crash & term invoices",
           })
         : "") +
-      infoBtnHtml("booking", "My booking", bookingIcon, {
-        subtitle: booking.submitted
-          ? booking.hint || "2026/27 choices"
-          : booking.parent_action === "auto"
-            ? "2026/27 with the office"
-            : "Crash & 2026/27 places",
-        extraClass: " pp-pax-info-btn--booking",
-      }) +
       infoBtnHtml("balance", "Credits & refunds", balanceIcon, {
         extraClass: " pp-pax-info-btn--balance",
         subtitle: "Family ledger",
       }) +
       "</div>" +
-      '<p class="pp-pax-info-section-label pp-pax-info-section-label--progress">Progress</p>' +
-      '<div class="pp-pax-info-row pp-pax-info-row--progress">' +
-      (sessionProgressEnabled
-        ? infoBtnHtml(
-            "weekly_notes",
-            "Weekly notes",
-            notesIcon,
-            {
-              extraClass:
-                " pp-pax-info-btn--weekly-notes" +
-                (notesUnread > 0 ? " pp-pax-info-btn--has-unread" : ""),
-              subtitle: noteCount ? noteCount + " in folder" : "From feedback",
-              unreadBadge: notesBadge,
-            },
-          ) +
-          infoBtnHtml(
-            "sessions",
-            "Sessions Overview",
-            '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
-            { extraClass: " pp-pax-info-btn--sessions", subtitle: "By activity" },
-          )
-        : "") +
-      infoBtnHtml(
-        "achievements",
-        "Achievement photos",
-        '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 16l-5-5-4 4-2-2-5 5"/></svg>',
-        { extraClass: " pp-pax-info-btn--achievements" },
-      ) +
-      infoBtnHtml(
-        "swim",
-        "Swimming term review",
-        '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12c2.5 2.5 5.5 4 10 4s7.5-1.5 10-4"/><path d="M2 16c2.5 2.5 5.5 4 10 4s7.5-1.5 10-4"/></svg>',
-        {
-          disabled: !swimAvailable,
-          subtitle: swimAvailable ? "" : "Not available yet",
-          extraClass: " pp-pax-info-btn--swim",
-        },
-      ) +
+      '<p class="pp-pax-info-section-label pp-pax-info-section-label--club">Club</p>' +
+      '<div class="pp-pax-info-row pp-pax-info-row--club">' +
+      infoBtnHtml("announcements", "Club announcements", announceIcon, {
+        extraClass:
+          " pp-pax-info-btn--announcements" +
+          (announceCount > 0 ? " pp-pax-info-btn--has-unread" : ""),
+        subtitle: announceCount ? announceCount + " active" : "Club notices",
+        unreadBadge: announceBadge,
+      }) +
+      infoBtnHtml("messages", "Messages", msgIcon, {
+        extraClass:
+          " pp-pax-info-btn--messages" +
+          (msgUnread > 0 ? " pp-pax-info-btn--has-unread" : ""),
+        unreadBadge: msgBadge,
+      }) +
+      infoBtnHtml("team", teamCaption, teamIcon, {
+        extraClass: " pp-pax-info-btn--team",
+        subtitle: "Instructors",
+      }) +
       "</div></div>"
     );
   }
@@ -2685,8 +2835,6 @@
       : [];
     var calIco =
       '<svg class="pp-hub-ops__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
-    var chipsHtml =
-      '<div class="pp-hub-ops__badge-row">' + termSessionDateChipsHtml(data) + "</div>";
     var nextBody;
     if (!hasServices) {
       nextBody =
@@ -2707,7 +2855,7 @@
           "No more sessions left this summer term. Your 2026/27 place continues with the office — nothing for you to submit.";
       } else if (hasNextYear) {
         endNote =
-          "No upcoming session found on your usual days yet. Check the term dates above for when 2026/27 starts.";
+          "No upcoming session found on your usual days yet. Open Sessions for term dates and when 2026/27 starts.";
       } else {
         endNote = "No more sessions left this summer term. Book 2026/27 when you are ready.";
       }
@@ -2729,11 +2877,7 @@
         "</ul></div>";
     }
     return (
-      '<section class="pp-hub-ops" aria-label="Sessions overview">' +
-      '<div class="pp-hub-ops__panel">' +
-      '<div class="pp-hub-ops__main">' +
-      chipsHtml +
-      "</div></div>" +
+      '<section class="pp-hub-ops" aria-label="Next session">' +
       '<p class="pp-pax-info-section-label pp-pax-info-section-label--next">Next session</p>' +
       '<div class="pp-hub-ops__next-block">' +
       nextBody +
@@ -2843,28 +2987,20 @@
   function renderHub(host, data, opts) {
     ensureGeneralFields(data, { allowPlaceholders: true });
     setParticipantPageTitle(hubBackLabel(data).text);
-    // Services once: chips beside the name. No second "Booked services" block.
-    // Messages only in the info buttons row (not again under next session).
+    // Dashboard: profile + next session + shortcuts + categorized menu.
+    // Term date accordion lives on Sessions (not on home).
     host.innerHTML =
       '<div class="pp-pax-shell" data-pp-view="hub">' +
       hubHeroHtml(data, opts) +
       hubOpsCardHtml(data) +
-      infoButtonsHtml(data, opts) +
-      hubGeneralInfoHtml(data) +
-      contactLinkHtml(opts) +
+      hubShortcutsHtml(data, opts) +
+      hubMenuHtml(data, opts) +
       "</div>";
     bindHub(host, data, opts);
-    var messagesPromise = mountHubAlerts(host, data, opts);
-    mountTermDateChipStatuses(host, data, opts, messagesPromise);
+    void mountHubAlerts(host, data, opts);
     if (global.ParentPortalApp && global.ParentPortalApp.photo && typeof global.ParentPortalApp.photo.bindOn === "function") {
       global.ParentPortalApp.photo.bindOn(host);
     }
-    void ensureGeneralFieldsAsync(data).then(function () {
-      var fieldsHost = host.querySelector(".pp-hub-hero__info-fields");
-      if (fieldsHost) {
-        fieldsHost.innerHTML = generalProfileReadHtml(data);
-      }
-    });
     void refreshConsentsHubBadge(host, data, opts);
   }
 
@@ -2877,13 +3013,18 @@
         if (typeof opts.setConsentsPendingCount === "function") {
           opts.setConsentsPendingCount(pending);
         }
+        var shortcutsOld = host.querySelector(".pp-hub-shortcuts");
+        if (shortcutsOld) {
+          var sw = document.createElement("div");
+          sw.innerHTML = hubShortcutsHtml(data, opts);
+          if (sw.firstChild) shortcutsOld.replaceWith(sw.firstChild);
+        }
         var old = host.querySelector(".pp-pax-info-buttons");
-        if (!old) return;
-        var wrap = document.createElement("div");
-        wrap.innerHTML = infoButtonsHtml(data, opts);
-        var neu = wrap.firstChild;
-        if (!neu) return;
-        old.replaceWith(neu);
+        if (old) {
+          var wrap = document.createElement("div");
+          wrap.innerHTML = infoButtonsHtml(data, opts);
+          if (wrap.firstChild) old.replaceWith(wrap.firstChild);
+        }
         bindHubOpenButtons(host, data, opts);
       })
       .catch(function () {});
@@ -2921,14 +3062,28 @@
       bindBack(host, data, opts);
       return;
     }
+    var termChips = termSessionDateChipsHtml(data);
     host.innerHTML = subviewShell(
       data,
       "sessions",
       '<h3 class="pp-pax-subview-title">Sessions Overview</h3>' +
-        '<p class="pp-muted pp-pax-subview-note">Date, service, venue, instructor, engagement, regulation and independence — shown separately for each activity when your child does more than one.</p>' +
+        '<p class="pp-muted pp-pax-subview-note">Term dates below, then date, service, venue, instructor, engagement, regulation and independence — shown separately for each activity when your child does more than one.</p>' +
+        (termChips
+          ? '<section class="pp-sessions-term-dates" aria-label="Term session dates">' +
+            '<div class="pp-hub-ops__badge-row">' +
+            termChips +
+            "</div></section>"
+          : "") +
         '<div id="ppPaxSessionsHost"><p class="pcso-loading" role="status">Loading sessions…</p></div>',
     );
     bindBack(host, data, opts);
+    var messagesPromise =
+      opts && typeof opts.loadMessages === "function"
+        ? opts.loadMessages({ markRead: false }).catch(function () {
+            return null;
+          })
+        : null;
+    mountTermDateChipStatuses(host, data, opts, messagesPromise);
     var sessionsHost = host.querySelector("#ppPaxSessionsHost");
     if (
       sessionsHost &&

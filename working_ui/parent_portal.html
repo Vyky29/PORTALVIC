@@ -2601,6 +2601,187 @@
       background: linear-gradient(90deg, rgba(37, 99, 235, 0.14), rgba(37, 99, 235, 0.02));
       border-left-color: #2563eb;
     }
+    .pp-pax-info-section-label--schedule {
+      background: linear-gradient(90deg, rgba(37, 99, 235, 0.12), rgba(37, 99, 235, 0.02));
+      border-left-color: #2563eb;
+    }
+    .pp-pax-info-section-label--club {
+      background: linear-gradient(90deg, rgba(124, 58, 237, 0.12), rgba(124, 58, 237, 0.02));
+      border-left-color: #7c3aed;
+    }
+    .pp-hub-shortcuts {
+      margin: 10px 0 4px;
+      min-width: 0;
+    }
+    .pp-hub-shortcuts__grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+      min-width: 0;
+    }
+    @media (max-width: 380px) {
+      .pp-hub-shortcuts__grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+    .pp-hub-shortcut {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 6px;
+      min-width: 0;
+      min-height: 72px;
+      margin: 0;
+      padding: 10px 6px 8px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--white);
+      color: var(--ink);
+      cursor: pointer;
+      text-align: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pp-hub-shortcut:focus-visible {
+      outline: 2px solid rgba(45, 132, 179, 0.45);
+      outline-offset: 2px;
+    }
+    .pp-hub-shortcut--disabled,
+    .pp-hub-shortcut:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .pp-hub-shortcut__ico {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: rgba(45, 132, 179, 0.1);
+      color: var(--blue);
+      flex-shrink: 0;
+    }
+    .pp-hub-shortcut__ico svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+    .pp-hub-shortcut__label {
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+      min-width: 0;
+      max-width: 100%;
+    }
+    .pp-hub-shortcut__badge-wrap {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      z-index: 1;
+    }
+    .pp-hub-shortcut__badge-wrap .pp-unread-badge {
+      position: static;
+    }
+    .pp-hub-menu {
+      margin: 12px 0 4px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--white);
+      min-width: 0;
+      overflow: hidden;
+    }
+    .pp-hub-menu__summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+      cursor: pointer;
+      list-style: none;
+      min-width: 0;
+    }
+    .pp-hub-menu__summary::-webkit-details-marker { display: none; }
+    .pp-hub-menu__summary::marker { content: ""; }
+    .pp-hub-menu__summary-main {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+      flex-wrap: wrap;
+    }
+    .pp-hub-menu__summary-main strong {
+      font-size: 15px;
+      color: var(--ink);
+    }
+    .pp-hub-menu__summary-main .pp-muted {
+      flex-basis: 100%;
+      margin: 0;
+      padding-left: 30px;
+      font-size: 12px;
+    }
+    .pp-hub-menu__burger {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      color: var(--blue);
+    }
+    .pp-hub-menu__chev {
+      width: 10px;
+      height: 10px;
+      border-right: 2px solid var(--muted);
+      border-bottom: 2px solid var(--muted);
+      transform: rotate(45deg);
+      flex-shrink: 0;
+      transition: transform 0.15s ease;
+      margin-top: -4px;
+    }
+    .pp-hub-menu[open] .pp-hub-menu__chev {
+      transform: rotate(225deg);
+      margin-top: 4px;
+    }
+    .pp-hub-menu__body {
+      padding: 0 12px 14px;
+      border-top: 1px solid var(--line);
+      min-width: 0;
+    }
+    .pp-hub-menu__body .pp-pax-info-buttons {
+      margin: 12px 0 8px;
+    }
+    .pp-hub-menu__extra {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 4px;
+      min-width: 0;
+    }
+    .pp-hub-menu__link {
+      display: block;
+      width: 100%;
+      margin: 0;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(45, 132, 179, 0.04);
+      color: var(--blue);
+      font-size: 14px;
+      font-weight: 700;
+      text-align: left;
+      cursor: pointer;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .pp-sessions-term-dates {
+      margin: 4px 0 14px;
+      min-width: 0;
+    }
+    .pp-sessions-term-dates .pp-hub-ops__badge-row {
+      margin: 0;
+    }
     .pp-hub-ops__next-block {
       margin: 0 0 4px;
       min-width: 0;
