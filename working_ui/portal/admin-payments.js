@@ -1078,6 +1078,10 @@
       return String(tok || "").trim();
     }
     var s = String(raw || "").trim();
+    var amp = s.split(/\s*(?:&|,| and )\s*/i).map(function (x) { return x.trim(); }).filter(Boolean);
+    if (amp.length > 1) {
+      return amp.map(fullDay).join(" & ");
+    }
     var range = s.match(/^([A-Za-z.]+)\s*(?:[–\-—]|\s+to\s+)\s*([A-Za-z.]+)$/i);
     if (range) return fullDay(range[1]) + "-" + fullDay(range[2]);
     return fullDay(s) || s;
@@ -1104,12 +1108,20 @@
     );
     if (bes) hoursDay = { h: bes[1], mm: bes[2] || "", days: bes[3] || "" };
 
-    /* "30' 2:1 Day Centre 5h (Mon–Wed)" — drop the misleading unit prefix */
+    /* "1:1 Day Centre 5h (Mon, Wed & Fri)" / "2:1 Day Centre 5h (…)" — hours after Day Centre */
     if (!hoursDay) {
       var dc = s.match(
         /^(?:\d+\s*['′']?\s*)?(?:\d+\s*:\s*\d+\s+)?Day\s*Centre\s+(\d+)\s*h\s*(\d{2})?\b(?:\s*\(([^)]+)\))?\s*$/i
       );
       if (dc) hoursDay = { h: dc[1], mm: dc[2] || "", days: dc[3] || "" };
+    }
+
+    /* Already modern: "2h30' Day Centre …" or "2h' 2:1 Day Centre (Mon & Fri)" */
+    if (!hoursDay) {
+      var modern = s.match(
+        /^(\d+)\s*h\s*(\d{2})?'?\s*(?:\d+\s*:\s*\d+\s+)?Day\s*Centre\b(?:\s*\(([^)]+)\))?\s*$/i
+      );
+      if (modern) hoursDay = { h: modern[1], mm: modern[2] || "", days: modern[3] || "" };
     }
 
     if (hoursDay) {
