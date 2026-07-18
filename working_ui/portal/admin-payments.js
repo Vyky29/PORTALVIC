@@ -1372,21 +1372,13 @@
     });
     paidChipRow += "</div>";
 
-    var invChipRow = '<div class="pay-chip-row" role="group" aria-label="Invoice type filter">'
-      + '<span class="pay-chip-row__lab">Invoice</span>'
-      + filterChipBtn("invoice", "", "All", !state.laFilter, "pay-chip--muted");
-    INVOICE_TYPE_OPTIONS.forEach(function (l) {
-      invChipRow += filterChipBtn("invoice", l, l, state.laFilter === l, invoiceChipClass(l));
-    });
-    invChipRow += "</div>";
-
     html += '<div class="pay-bar">'
       + '<div class="pay-seg" role="group" aria-label="Status filter">'
       + seg("active", "Active (" + (paidN + outN) + ")") + seg("outstanding", "Outstanding (" + outN + ")") + seg("paid", "Paid (" + paidN + ")") + seg("notreenrolled", "Not re-enrolled (" + naN + ")") + seg("all", "All")
       + '</div>'
       + '<select class="pay-sel" id="paySheet">' + sheetOpts + '</select>'
       + '<input type="search" class="pay-search" id="paySearch" placeholder="Search client, parent…" value="' + esc(state.query) + '" />'
-      + '<div class="pay-chip-filters">' + paidChipRow + invChipRow + '</div>'
+      + '<div class="pay-chip-filters">' + paidChipRow + '</div>'
       + '</div>';
 
     if (state.mode === "participants") {
@@ -1528,7 +1520,6 @@
         var kind = b.getAttribute("data-pay-chip-kind");
         var val = b.getAttribute("data-pay-chip-value") || "";
         if (kind === "paid") state.paidFilter = val;
-        else if (kind === "invoice") state.laFilter = val;
         render();
       });
     });
