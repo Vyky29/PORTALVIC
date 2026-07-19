@@ -803,11 +803,11 @@
       ".pay-chip--muted{background:#f1f5f9;color:#64748b;border-color:#e2e8f0}",
       ".pay-tbl td .pay-chip{white-space:normal;max-width:100%;margin:0 auto;box-sizing:border-box}",
       ".pay-tbl td .pay-chip--inv{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:5px 8px;border-radius:10px;line-height:1.15;text-align:center}",
-      ".pay-chip__a{display:block;font-size:11px;font-weight:800}",
-      ".pay-chip__b{display:block;font-size:10px;font-weight:700;opacity:.92}",
+      ".pay-chip__a{display:block;font-size:11px;font-weight:800;white-space:nowrap}",
+      ".pay-chip__b{display:block;font-size:10px;font-weight:700;opacity:.92;white-space:nowrap}",
       ".pay-tbl td.pay-col-paid .pay-chip{font-size:10px;font-weight:800;padding:5px 7px;line-height:1.2}",
       ".pay-svc-lines{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;width:100%;max-width:100%;text-align:center}",
-      ".pay-svc-line{display:block;font-weight:700;font-size:12.5px;color:#0f172a;line-height:1.3;white-space:nowrap !important;max-width:none;overflow:visible;text-align:center}",
+      ".pay-svc-line{display:block;font-weight:700;font-size:12.5px;color:#0f172a;line-height:1.3;white-space:nowrap !important;max-width:100%;overflow:hidden;text-overflow:ellipsis;text-align:center}",
       ".pay-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 1px 3px rgba(15,23,42,.05);overflow:hidden}",
       ".pay-card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid #eef2f7}",
       ".pay-card-h h3{margin:0;font-size:15px;color:#0f172a}",
@@ -816,15 +816,15 @@
       ".pay-tbl thead th.pay-tbl__idx{color:#94a3b8;font-weight:700}",
       ".pay-tbl{width:100%;min-width:760px;border-collapse:separate;border-spacing:0;font-size:13px;table-layout:fixed}",
       ".pay-tbl th,.pay-tbl td{padding:10px 6px;border-bottom:1px solid #eef2f7;text-align:center;vertical-align:middle;overflow-wrap:anywhere;word-break:break-word;min-width:0;max-width:100%;box-sizing:border-box}",
-      ".pay-tbl th.pay-col-client,.pay-tbl td.pay-col-client{width:7.5rem;text-align:center}",
-      ".pay-tbl th.pay-col-paid,.pay-tbl td.pay-col-paid{width:6.5rem;text-align:center}",
-      ".pay-tbl th.pay-col-inv,.pay-tbl td.pay-col-inv{width:6.25rem;text-align:center}",
-      ".pay-tbl th.pay-col-support,.pay-tbl td.pay-col-support{width:2.4rem;max-width:2.4rem;padding-left:1px;padding-right:1px;text-align:center;overflow:hidden;overflow-wrap:normal;word-break:normal}",
+      ".pay-tbl th.pay-col-client,.pay-tbl td.pay-col-client{width:8.75rem;text-align:center}",
+      ".pay-tbl th.pay-col-paid,.pay-tbl td.pay-col-paid{width:7.5rem;text-align:center}",
+      ".pay-tbl th.pay-col-inv,.pay-tbl td.pay-col-inv{width:7.5rem;text-align:center}",
+      ".pay-tbl th.pay-col-support,.pay-tbl td.pay-col-support{width:2.6rem;max-width:2.6rem;padding-left:2px;padding-right:2px;text-align:center;overflow:hidden;overflow-wrap:normal;word-break:normal}",
       ".pay-tbl th.pay-col-support{font-size:9px;line-height:1.05}",
       ".pay-tbl td.pay-col-support .pay-chip{font-size:10px;padding:3px 4px;white-space:nowrap}",
-      ".pay-tbl th.pay-col-svc,.pay-tbl td.pay-col-svc{width:58%;text-align:center;overflow-x:auto;overflow-y:hidden;overflow-wrap:normal;word-break:normal}",
-      ".pay-tbl th.pay-col-total,.pay-tbl td.pay-col-total{width:4.25rem;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:13px;font-weight:700}",
-      ".pay-tbl th.pay-col-status,.pay-tbl td.pay-col-status{width:2.85rem;max-width:2.85rem;padding-left:1px;padding-right:1px;text-align:center;overflow:hidden;overflow-wrap:normal;word-break:normal}",
+      ".pay-tbl th.pay-col-svc,.pay-tbl td.pay-col-svc{width:38%;text-align:center;overflow:hidden;overflow-wrap:normal;word-break:normal}",
+      ".pay-tbl th.pay-col-total,.pay-tbl td.pay-col-total{width:4.75rem;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:13px;font-weight:700}",
+      ".pay-tbl th.pay-col-status,.pay-tbl td.pay-col-status{width:3rem;max-width:3rem;padding-left:2px;padding-right:2px;text-align:center;overflow:hidden;overflow-wrap:normal;word-break:normal}",
       ".pay-tbl th.pay-col-status{font-size:9px;line-height:1.05}",
       ".pay-tbl td.pay-col-status .pay-pill{font-size:9px;padding:3px 4px;white-space:nowrap}",
       ".pay-tbl thead th{background:#f8fafc;color:#0f172a;font-size:10px;text-transform:uppercase;letter-spacing:.03em;white-space:normal;line-height:1.2;padding:8px 6px}",
@@ -1058,6 +1058,7 @@
     if (s.indexOf("fadi") === 0) return "fadi";
     if (s.indexOf("adaam") === 0 || s.indexOf("aadam") === 0) return "adaam";
     if (s.indexOf("amaar") === 0) return "amaar";
+    if (s.indexOf("amar") === 0) return "amar_rai"; /* Amar-Rai / amar-rai / amar_rai_singh */
     if (s.indexOf("aydaan") === 0) return "aydaan";
     return s;
   }
@@ -1765,15 +1766,26 @@
   function serviceOneLinersFor(r) {
     var d = (r && r.data) || {};
     var sessions = String(d.Sessions || d["Session times"] || "").trim();
-    var raw = rawServiceText(r);
     var out = [];
     var seen = Object.create(null);
 
     function push(line) {
       var t = String(line || "").trim();
-      if (!t || t === "—" || isBogusDayCentreLine(t) || seen[t.toLowerCase()]) return;
-      seen[t.toLowerCase()] = 1;
+      if (!t || t === "—" || isBogusDayCentreLine(t)) return;
+      var dm = t.match(/^(\d+)\s*['′']/);
+      if (dm && parseInt(dm[1], 10) < 15) return;
+      var key = t.toLowerCase().replace(/\s+/g, " ");
+      if (seen[key]) return;
+      seen[key] = 1;
       out.push(t);
+    }
+
+    /* Roster sessions win: one line per day/service, no workbook duplicates. */
+    if (r && Array.isArray(r._participantSessions) && r._participantSessions.length) {
+      r._participantSessions.forEach(function (sess) {
+        push(labelFromParticipantSession(sess));
+      });
+      if (out.length) return out;
     }
 
     if (r && r._crash && r._crashLineDesc) {
@@ -1786,8 +1798,13 @@
       if (out.length) return out;
     }
 
-    /* Prefer one clean Day Centre line from workbook/raw over fragmented slots. */
-    if (raw && /day\s*centre/i.test(raw)) {
+    var raw = String(d.Services || d.Service || "").trim();
+    if (!raw || isPlaceholderServiceLabel(raw)) {
+      push(formatServiceOneLiner(serviceDisplayParts(r)));
+      return out;
+    }
+
+    if (/day\s*centre/i.test(raw)) {
       var dcWhole = formatServicePieceOneLiner(raw.replace(/\s*·\s*/g, " "), sessions)
         || formatServiceOneLiner(normalizeServiceParts(raw, sessions));
       if (dcWhole && looksLikeDayCentreLine(dcWhole) && !isBogusDayCentreLine(dcWhole)) {
@@ -1795,20 +1812,11 @@
       }
     }
 
-    if (!raw) return [];
     splitServiceList(raw).forEach(function (piece) {
-      push(formatServicePieceOneLiner(piece, sessions));
+      expandRawServiceToCanonLines(piece, sessions).forEach(push);
     });
-    if (out.length) {
-      var dcOnly = out.filter(looksLikeDayCentreLine);
-      if (dcOnly.length > 1 && dcOnly.length === out.length) {
-        var merged = formatServiceOneLiner(normalizeServiceParts(raw, sessions));
-        if (merged) return [merged];
-      }
-      return out;
-    }
+    if (out.length) return out;
 
-    /* Fallback: whole string as one Day Centre / afterschool block. */
     push(formatServiceOneLiner(serviceDisplayParts(r)));
     return out;
   }
@@ -1915,6 +1923,97 @@
   function dayTitleShort(d) {
     var map = { MON: "Mon", TUE: "Tue", WED: "Wed", THU: "Thu", FRI: "Fri", SAT: "Sat", SUN: "Sun" };
     return map[d] || d;
+  }
+
+  function dayTitleFull(d) {
+    var map = {
+      MON: "Monday", TUE: "Tuesday", WED: "Wednesday", THU: "Thursday",
+      FRI: "Friday", SAT: "Saturday", SUN: "Sunday",
+    };
+    var tok = dayShortToken(d);
+    return map[tok] || String(d || "").trim();
+  }
+
+  /** Canonical: 60' Climbing Activity, Sunday - 11 to 12 */
+  function formatCanonServiceLine(opts) {
+    opts = opts || {};
+    var dur = Number(opts.durMin) || 0;
+    var svc = normalizeServiceDisplay(String(opts.service || "").trim());
+    svc = svc.replace(/\s*\(1\s*to\s*1\)|\s*\(1to1\)|\s*1to1\b/gi, "").trim();
+    if (!svc) return "";
+    if (dur > 0 && dur < 15) return ""; /* junk like 2' from "2×" */
+    var head = (dur ? dur + "' " : "") + svc;
+    head = head.replace(/\s+/g, " ").trim();
+    var day = opts.day ? dayTitleFull(opts.day) : "";
+    var time = String(opts.time || "").trim().replace(/\s+/g, " ");
+    if (time) {
+      var tm = time.match(
+        /^(\d{1,2}(?:[.:]\d{2})?)\s*(?:[–\-—]|to)\s*(\d{1,2}(?:[.:]\d{2})?)\s*(am|pm)?$/i
+      );
+      if (tm) time = formatServiceTimeLine(tm[1], tm[2] + (tm[3] ? " " + tm[3] : ""));
+    }
+    if (day && time) return head + ", " + day + " - " + time;
+    if (day) return head + ", " + day;
+    if (time) return head + " - " + time;
+    return head;
+  }
+
+  function collectDayTokensFromText(raw) {
+    var days = [];
+    var seen = Object.create(null);
+    var re = /\b(mon(?:day)?s?|tue(?:s(?:day)?)?s?|wed(?:nesday)?s?|thu(?:r(?:s(?:day)?)?)?s?|fri(?:day)?s?|sat(?:urday)?s?|sun(?:day)?s?)\b/gi;
+    var m;
+    while ((m = re.exec(String(raw || "")))) {
+      var d = dayShortToken(m[1]);
+      if (d && !seen[d]) { seen[d] = 1; days.push(d); }
+    }
+    return days;
+  }
+
+  function kindTitleFromText(s) {
+    var low = String(s || "").toLowerCase();
+    if (/day\s*centre/.test(low)) return "Day Centre";
+    if (/aquatic|swim/.test(low)) return "Aquatic Activity";
+    if (/climb/.test(low)) return "Climbing Activity";
+    if (/multi/.test(low)) return "Multi-Activity";
+    if (/bespoke|\bff\b/.test(low)) return "Bespoke Programme";
+    if (/physical|fitness|\bft\b/.test(low)) return "Physical Activity";
+    return "";
+  }
+
+  /** Expand workbook labels into one line per day (no duplicate summaries). */
+  function expandRawServiceToCanonLines(raw, sessionsHint) {
+    var s = normalizeServiceDisplay(cleanServiceLabelJunk(raw));
+    if (!s || isPlaceholderServiceLabel(s)) return [];
+    s = s.replace(/^\d+\s*[×x]\s*/i, "").trim(); /* 2× 60' … */
+    s = s.replace(/\s*1\s*:\s*1\b|\s*1to1\b/gi, "").trim();
+
+    if (/day\s*centre|bespoke\s+\d+\s*h/i.test(s)) {
+      var one = formatServicePieceOneLiner(s, sessionsHint)
+        || formatServiceOneLiner(normalizeServiceParts(s, sessionsHint));
+      return one ? [one] : [];
+    }
+
+    var durM = s.match(/(\d+)\s*['′']/);
+    var dur = durM ? parseInt(durM[1], 10) : 0;
+    if (dur > 0 && dur < 15) return [];
+    var title = kindTitleFromText(s);
+    if (!title) {
+      var stripped = s
+        .replace(/^\d+\s*['′']?\s*/, "")
+        .replace(/\([^)]*\)/g, "")
+        .trim();
+      title = normalizeServiceDisplay(stripped) || stripped;
+    }
+    var days = collectDayTokensFromText(s);
+    var time = extractTimeFromSessions(sessionsHint) || extractTimeFromText(s);
+    if (!days.length) {
+      var line = formatCanonServiceLine({ durMin: dur, service: title, day: "", time: time });
+      return line ? [line] : [];
+    }
+    return days.map(function (d) {
+      return formatCanonServiceLine({ durMin: dur, service: title, day: d, time: time });
+    }).filter(Boolean);
   }
 
   function parseServiceIdentity(raw) {
@@ -3423,15 +3522,15 @@
 
   function labelFromParticipantSession(sess) {
     if (!sess || typeof sess !== "object") return "";
-    var dur = Number(sess.durationMin) || 0;
-    var svc = String(sess.service || "").trim();
-    var day = String(sess.day || "").trim();
-    if (!svc) return "";
-    var head = (dur ? dur + "' " : "") + svc;
-    return day ? head + " (" + dayTitleShort(dayShortToken(day)) + ")" : head;
+    return formatCanonServiceLine({
+      durMin: sess.durationMin,
+      service: sess.service,
+      day: sess.day,
+      time: sess.timeSlot || sess.time || "",
+    });
   }
 
-  /** Fill missing Aquatic (etc.) from roster-validated participant_service_lines. */
+  /** Attach roster sessions so table shows one clean line per slot (no workbook dupes). */
   function enrichReenrolServicesFromParticipantLines(client, rows) {
     if (!client || !rows || !rows.length) return Promise.resolve(rows);
     return client
@@ -3453,12 +3552,9 @@
           if (!r || !r._reenrol) return;
           var slug = paymentParticipantSlug(r);
           var line = bySlug[slug];
-          if (!line || !Array.isArray(line.sessions)) return;
-          var labels = line.sessions.map(labelFromParticipantSession).filter(Boolean);
-          if (!labels.length) return;
-          if (!r._serviceParts) r._serviceParts = Object.create(null);
-          labels.forEach(function (s) { r._serviceParts[s] = 1; });
-          var list = dedupeServiceLabelList(Object.keys(r._serviceParts));
+          if (!line || !Array.isArray(line.sessions) || !line.sessions.length) return;
+          r._participantSessions = line.sessions.slice();
+          var list = serviceOneLinersFor(r);
           r._serviceParts = Object.create(null);
           list.forEach(function (s) { r._serviceParts[s] = 1; });
           r.data = r.data || {};
