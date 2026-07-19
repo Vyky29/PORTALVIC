@@ -1372,19 +1372,24 @@
 
   /**
    * ACAT Mon 11–12 Aquatic (Jack S / Jack W / Kate / Kamy) — Day Centre stream.
-   * Starred payment rows (Jack S*) are the Monday swim; Sunday Multi stays Afterschool.
+   * Prefer explicit Cohort/Stream; do not rely on Services alone (roster enrich can overwrite).
    */
   function isAcatMondayAquaticRow(r) {
     var slug = paymentParticipantSlug(r);
     if (slug !== "jacks" && slug !== "jackw" && slug !== "kate" && slug !== "kamy") {
       return false;
     }
-    var s = rowServiceBlob(r);
+    var d = (r && r.data) || {};
+    if (String(d.Cohort || "").toUpperCase() === "ACAT") return true;
+    if (/day\s*centre/i.test(String(d.Stream || ""))) return true;
     var name = String((r && r.client_name) || "");
+    if (/\(\s*acat\s*\)/i.test(name) || /\*/.test(name)) {
+      var s0 = rowServiceBlob(r);
+      if (/aquatic/i.test(s0) && /\bmon(day)?\b/i.test(s0)) return true;
+    }
+    var s = rowServiceBlob(r);
     if (!/aquatic/i.test(s)) return false;
     if (!/\bmon(day)?\b/i.test(s)) return false;
-    /* Prefer the ACAT Monday line (often marked with *). */
-    if (/\*/.test(name)) return true;
     return /11\s*(?:to|-|–|:)\s*12/.test(s) && !/multi/i.test(s);
   }
 
@@ -4222,6 +4227,9 @@
         });
         rows.forEach(function (r) {
           if (!r) return;
+          /* Keep ACAT Monday Aquatic workbook lines — do not replace with full roster. */
+          if (String((r.data && r.data.Cohort) || "").toUpperCase() === "ACAT") return;
+          if (isAcatMondayAquaticRow(r)) return;
           var slug = paymentParticipantSlug(r);
           var line = bySlug[slug];
           if (!line || !Array.isArray(line.sessions) || !line.sessions.length) {
