@@ -1597,8 +1597,8 @@
     rows = rows || [];
     var out = 0;
     var outN = 0;
-    var asDue = 0;
-    var dcDue = 0;
+    var asBilled = 0;
+    var dcBilled = 0;
     var asN = 0;
     var dcN = 0;
     var counted = 0;
@@ -1608,18 +1608,20 @@
       if (paymentParticipantSlug(r) === "acat" && !isDayCentreRow(r)) return;
       counted++;
       var amt = Number(r.amount) || 0;
-      var isOut = category(r) === "outstanding";
+      var c = category(r);
+      var isOut = c === "outstanding";
+      var countsTowardBilled = c !== "notreenrolled";
       if (isDayCentreRow(r)) {
         dcN++;
+        if (countsTowardBilled) dcBilled += amt;
         if (isOut) {
-          dcDue += amt;
           out += amt;
           outN++;
         }
       } else {
         asN++;
+        if (countsTowardBilled) asBilled += amt;
         if (isOut) {
-          asDue += amt;
           out += amt;
           outN++;
         }
@@ -1633,11 +1635,12 @@
       unit: counted === 1 ? "order" : "orders",
       due: out,
       dueN: outN,
-      asDue: asDue,
-      dcDue: dcDue,
+      /* Header chips: billed (matches KPI cards), not outstanding. */
+      asDue: asBilled,
+      dcDue: dcBilled,
       asN: asN,
       dcN: dcN,
-      termTot: asDue + dcDue,
+      termTot: asBilled + dcBilled,
       yearTot: yearTot,
     };
   }
@@ -1689,17 +1692,17 @@
 
   function termAccordionMetaHtml(group) {
     var m = termOrdersMetaParts(group.rows);
-    var html = '<span class="pay-term-acc__meta" title="Outstanding by stream for this term">'
+    var html = '<span class="pay-term-acc__meta" title="Billed totals for this term (Afterschool + Day Centre)">'
       + '<span class="pay-term-acc__chip pay-term-acc__chip--stack pay-term-acc__chip--orders">'
       + '<span class="pay-term-acc__chip-title">' + esc(m.unit) + "</span>"
       + "<b>" + m.n + "</b></span>"
-      + '<span class="pay-term-acc__chip pay-term-acc__chip--stack pay-term-acc__chip--as" title="Afterschool &amp; Weekend Services outstanding">'
+      + '<span class="pay-term-acc__chip pay-term-acc__chip--stack pay-term-acc__chip--as" title="Afterschool &amp; Weekend Services billed this term">'
       + '<span class="pay-term-acc__chip-title">Afterschool &amp; Weekends</span>'
       + "<b>" + money(m.asDue) + "</b></span>"
-      + '<span class="pay-term-acc__chip pay-term-acc__chip--stack pay-term-acc__chip--dc" title="Day Centre outstanding">'
+      + '<span class="pay-term-acc__chip pay-term-acc__chip--stack pay-term-acc__chip--dc" title="Day Centre billed this term">'
       + '<span class="pay-term-acc__chip-title">Day Centre</span>'
       + "<b>" + money(m.dcDue) + "</b></span>"
-      + '<span class="pay-term-acc__chip pay-term-acc__chip--stack pay-term-acc__chip--term-tot" title="Afterschool + Day Centre outstanding this term">'
+      + '<span class="pay-term-acc__chip pay-term-acc__chip--stack pay-term-acc__chip--term-tot" title="Afterschool billed + Day Centre billed">'
       + '<span class="pay-term-acc__chip-title">Total this term</span>'
       + "<b>" + money(m.termTot) + "</b></span>"
       + '<span class="pay-term-acc__chip pay-term-acc__chip--stack pay-term-acc__chip--year-tot" title="Projected year programme for LA/NHS, auto-reenrol and known continuing places">'
