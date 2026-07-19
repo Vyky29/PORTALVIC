@@ -435,6 +435,82 @@
     return '';
   }
 
+  var WEEKDAY_ORDER = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+    'Other',
+  ];
+
+  function normalizeWeekdayToken(raw) {
+    var t = String(raw || '')
+      .trim()
+      .toLowerCase()
+      .replace(/\./g, '');
+    if (!t) return '';
+    var map = {
+      mon: 'Monday',
+      monday: 'Monday',
+      tue: 'Tuesday',
+      tues: 'Tuesday',
+      tuesday: 'Tuesday',
+      wed: 'Wednesday',
+      wednesday: 'Wednesday',
+      thu: 'Thursday',
+      thur: 'Thursday',
+      thurs: 'Thursday',
+      thursday: 'Thursday',
+      fri: 'Friday',
+      friday: 'Friday',
+      sat: 'Saturday',
+      saturday: 'Saturday',
+      sun: 'Sunday',
+      sunday: 'Sunday',
+    };
+    if (map[t]) return map[t];
+    var k3 = t.slice(0, 3);
+    return map[k3] || '';
+  }
+
+  /** Weekdays from invoice line_items / description / booked slots. */
+  function weekdaysFromInvoice(inv) {
+    var seen = Object.create(null);
+    var days = [];
+    function add(tok) {
+      var d = normalizeWeekdayToken(tok);
+      if (!d || seen[d]) return;
+      seen[d] = 1;
+      days.push(d);
+    }
+    function scan(text) {
+      var s = String(text || '');
+      if (!s) return;
+      var re =
+        /\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Tues|Wed|Thu|Thur|Thurs|Fri|Sat|Sun)\b/gi;
+      var m;
+      while ((m = re.exec(s))) add(m[1]);
+    }
+    (Array.isArray(inv && inv.line_items) ? inv.line_items : []).forEach(function (it) {
+      if (!it || typeof it !== 'object') return;
+      scan([it.detail, it.description, it.dates].join(' '));
+    });
+    if (!days.length) {
+      scan([inv && inv.line_description, inv && inv.reference_text, inv && inv.title].join(' '));
+    }
+    if (!days.length) {
+      (Array.isArray(inv && inv.booked_slots) ? inv.booked_slots : []).forEach(function (s) {
+        scan([s && s.label, s && s.service, s && s.day, s && s.slot].join(' '));
+        if (s && s.day) add(s.day);
+      });
+    }
+    if (!days.length) scan(String((inv && inv.booked_service_raw) || ''));
+    return days.length ? days : ['Other'];
+  }
+
   function groupInvoicesByParticipant(invoices) {
     var order = [];
     var byId = Object.create(null);
@@ -471,10 +547,10 @@
         g.booked_annual_gbp = Math.max(Number(g.booked_annual_gbp) || 0, ann);
       }
       ['autumn', 'spring', 'summer'].forEach(function (term) {
-        var key = 'booked_' + term + '_gbp';
-        var v = Number(inv[key]);
+        var bookedKey = 'booked_' + term + '_gbp';
+        var v = Number(inv[bookedKey]);
         if (Number.isFinite(v) && v > 0) {
-          g[key] = Math.max(Number(g[key]) || 0, v);
+          g[bookedKey] = Math.max(Number(g[bookedKey]) || 0, v);
         }
       });
       var term = Number(inv.booked_term_gbp);
@@ -498,6 +574,36 @@
         if (!ta && tb) return 1;
         return String(a.name || '').localeCompare(String(b.name || ''));
       });
+  }
+
+  /** Nested: Day → participants (invoice appears under each weekday it covers). */
+  function groupInvoicesByDayThenParticipant(invoices) {
+    var byDay = Object.create(null);
+    (invoices || []).forEach(function (inv) {
+      weekdaysFromInvoice(inv).forEach(function (day) {
+        if (!byDay[day]) byDay[day] = [];
+        byDay[day].push(inv);
+      });
+    });
+    return WEEKDAY_ORDER.filter(function (day) {
+      return byDay[day] && byDay[day].length;
+    }).map(function (day) {
+      var participants = groupInvoicesByParticipant(byDay[day]);
+      var invIds = Object.create(null);
+      var invN = 0;
+      (byDay[day] || []).forEach(function (inv) {
+        var id = String(inv.id || inv.invoice_number || '');
+        if (!id || invIds[id]) return;
+        invIds[id] = 1;
+        invN += 1;
+      });
+      return {
+        day: day,
+        participants: participants,
+        invoice_count: invN,
+        participant_count: participants.length,
+      };
+    });
   }
 
   function groupMethodSummary(invoices) {
@@ -999,7 +1105,7 @@
       ? 'LA auto · no INV-P'
       : String(n) + ' invoice' + (n === 1 ? '' : 's');
     return (
-      '<details class="pp-inv-acc__item" data-contact-id="' +
+      '<details class="pp-inv-acc__item pp-inv-acc__item--pax" data-contact-id="' +
       contactId +
       '">' +
       '<summary class="pp-inv-acc__sum">' +
@@ -1030,12 +1136,61 @@
     );
   }
 
+  function dayAccordionHtml(dayGroup) {
+    var day = dayGroup.day || 'Other';
+    var participants = dayGroup.participants || [];
+    var paxN = dayGroup.participant_count != null ? dayGroup.participant_count : participants.length;
+    var invN = dayGroup.invoice_count != null ? dayGroup.invoice_count : 0;
+    var allInvs = [];
+    participants.forEach(function (g) {
+      (g.invoices || []).forEach(function (inv) {
+        allInvs.push(inv);
+      });
+    });
+    var sub =
+      String(paxN) +
+      ' participant' +
+      (paxN === 1 ? '' : 's') +
+      ' · ' +
+      String(invN) +
+      ' invoice' +
+      (invN === 1 ? '' : 's');
+    return (
+      '<details class="pp-inv-acc__item pp-inv-acc__item--day" data-inv-day="' +
+      esc(day) +
+      '">' +
+      '<summary class="pp-inv-acc__sum pp-inv-acc__sum--day">' +
+      '<span class="pp-inv-acc__chev" aria-hidden="true"></span>' +
+      '<span class="pp-inv-acc__who">' +
+      '<strong class="pp-inv-acc__name">' +
+      esc(day) +
+      '</strong>' +
+      '<span class="pp-inv-acc__num">' +
+      esc(sub) +
+      '</span>' +
+      '</span>' +
+      '<span class="pp-inv-acc__status">' +
+      groupStatusSummary(allInvs) +
+      '</span>' +
+      '</summary>' +
+      '<div class="pp-inv-acc__body pp-inv-acc__body--day">' +
+      '<div class="pp-inv-acc__day-pax">' +
+      participants.map(participantAccordionHtml).join('') +
+      '</div></div></details>'
+    );
+  }
+
   function accordionListStyles() {
     return (
       '<style id="pp-inv-acc-css">' +
       '.pp-inv-acc{display:flex;flex-direction:column;gap:8px;min-width:0}' +
       '.pp-inv-acc__item{border:1px solid #dbe4ec;border-radius:10px;background:#fff;min-width:0;overflow:hidden}' +
+      '.pp-inv-acc__item--day{border-color:#c5d4e3;background:#f8fafc}' +
+      '.pp-inv-acc__item--pax{background:#fff}' +
+      '.pp-inv-acc__day-pax{display:flex;flex-direction:column;gap:8px;min-width:0}' +
+      '.pp-inv-acc__body--day{background:#eef2f7}' +
       '.pp-inv-acc__sum{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 12px;cursor:pointer;list-style:none;min-width:0}' +
+      '.pp-inv-acc__sum--day{background:#e8eef5}' +
       '.pp-inv-acc__sum::-webkit-details-marker{display:none}' +
       '.pp-inv-acc__chev{width:0;height:0;border-left:5px solid #4a6578;border-top:4px solid transparent;border-bottom:4px solid transparent;flex:0 0 auto;transition:transform .15s ease}' +
       '.pp-inv-acc__item[open]>.pp-inv-acc__sum .pp-inv-acc__chev{transform:rotate(90deg)}' +
@@ -1230,14 +1385,10 @@
       host.innerHTML =
         accordionListStyles() +
         '<div class="pp-inv-acc" role="list">' +
-        groupInvoicesByParticipant(state.invoices).map(participantAccordionHtml).join('') +
+        groupInvoicesByDayThenParticipant(state.invoices).map(dayAccordionHtml).join('') +
         '</div>';
       bindRowActions(host);
-      if (state.filter !== 'all') {
-        host.querySelectorAll('.pp-inv-acc__item').forEach(function (item) {
-          item.open = true;
-        });
-      }
+      /* Day + participant accordions stay closed until opened. */
     } catch (err) {
       host.innerHTML =
         '<p class="muted">Could not load invoices (' +
