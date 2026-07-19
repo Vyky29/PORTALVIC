@@ -1040,34 +1040,22 @@
     return termBucketFor(r) === "summer_2526";
   }
 
-  /**
-   * Summer Day Centre: Mon/Wed/Fri 30' swimming (and the Mon & Wed weekday block).
-   * Fri-only 90' Bespoke (NHS) stays Afterschool & Weekends.
-   */
-  function isTinasheSummerDayCentreRow(r) {
-    if (!isSummerTermRow(r)) return false;
+  /** July crash swimming only (not weekday 90' Bespoke Mon/Wed/Fri). */
+  function isTinasheCrashSwimRow(r) {
+    if (r && r._crash) return true;
     var s = rowServiceBlob(r);
-    if (!s || s === "—") return false;
-    if (/90\s*['′']?\s*bespoke/.test(s) && /\bfri\b/.test(s) && !/\bmon\b/.test(s) && !/\bwed\b/.test(s)) {
-      return false;
-    }
-    if (
-      /30\s*['′']?\s*(?:swim|swimming|aquatic|\bsw\b)/.test(s)
-      && (/\bmon\b/.test(s) || /\bwed\b/.test(s) || /\bfri\b/.test(s))
-    ) {
-      return true;
-    }
-    /* Ealing weekday Mon & Wed block → Day Centre stream for Summer 25/26. */
-    if (/\bmon\b/.test(s) && /\bwed\b/.test(s) && !/\bfri\b/.test(s)) return true;
-    if (/mon\s*(?:&|and|,)\s*wed/.test(s) && !/\bfri\b/.test(s)) return true;
-    return false;
+    return /crash/.test(s) && /30\s*['′']?\s*(?:swim|swimming|aquatic)|aquatic\s*activity\s*30/i.test(s);
   }
 
   function isDayCentreRow(r) {
     var slug = paymentParticipantSlug(r);
     var s = rowServiceBlob(r);
 
-    if (slug === "tinashe") return isTinasheSummerDayCentreRow(r);
+    /*
+     * Tinashe: weekday 90' Bespoke stays Afterschool & Weekends.
+     * Only July crash 30' swimming → Day Centre.
+     */
+    if (slug === "tinashe") return isTinasheCrashSwimRow(r);
 
     /* Patrick Summer 25/26 (incl. climb crash) → Day Centre. */
     if (slug === "patrick" && isSummerTermRow(r)) return true;
@@ -2877,9 +2865,9 @@
       .filter(isSummerCrashInvoice)
       .map(buildCrashPaymentRow)
       .filter(function (r) {
-        /* Day Centre Summer stream: Zakariya crash + Patrick (and any future DC crash). */
+        /* Day Centre Summer stream: Zakariya crash, Patrick, Tinashe crash swim. */
         var slug = paymentParticipantSlug(r);
-        return slug === "zakariya" || slug === "patrick";
+        return slug === "zakariya" || slug === "patrick" || slug === "tinashe";
       });
   }
 
