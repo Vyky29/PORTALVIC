@@ -435,80 +435,53 @@
     return '';
   }
 
-  var WEEKDAY_ORDER = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday',
-    'Other',
-  ];
-
-  function normalizeWeekdayToken(raw) {
-    var t = String(raw || '')
-      .trim()
-      .toLowerCase()
-      .replace(/\./g, '');
-    if (!t) return '';
-    var map = {
-      mon: 'Monday',
-      monday: 'Monday',
-      tue: 'Tuesday',
-      tues: 'Tuesday',
-      tuesday: 'Tuesday',
-      wed: 'Wednesday',
-      wednesday: 'Wednesday',
-      thu: 'Thursday',
-      thur: 'Thursday',
-      thurs: 'Thursday',
-      thursday: 'Thursday',
-      fri: 'Friday',
-      friday: 'Friday',
-      sat: 'Saturday',
-      saturday: 'Saturday',
-      sun: 'Sunday',
-      sunday: 'Sunday',
-    };
-    if (map[t]) return map[t];
-    var k3 = t.slice(0, 3);
-    return map[k3] || '';
+  /** YYYY-MM-DD of when the family completed re-enrolment (local calendar day). */
+  function reenrolDateKey(inv) {
+    var raw = String(
+      (inv && (inv.reenrolment_submitted_at || inv.created_at || inv.document_created_at)) || '',
+    ).trim();
+    if (!raw) return '';
+    if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+      /* Prefer local calendar day from the timestamp when time is present. */
+      try {
+        var d0 = new Date(raw);
+        if (!isNaN(d0.getTime()) && /T|\d{2}:\d{2}/.test(raw)) {
+          var y0 = d0.getFullYear();
+          var m0 = String(d0.getMonth() + 1).padStart(2, '0');
+          var day0 = String(d0.getDate()).padStart(2, '0');
+          return y0 + '-' + m0 + '-' + day0;
+        }
+      } catch (_e0) {}
+      return raw.slice(0, 10);
+    }
+    try {
+      var d = new Date(raw);
+      if (isNaN(d.getTime())) return '';
+      var y = d.getFullYear();
+      var m = String(d.getMonth() + 1).padStart(2, '0');
+      var day = String(d.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + day;
+    } catch (_e) {
+      return '';
+    }
   }
 
-  /** Weekdays from invoice line_items / description / booked slots. */
-  function weekdaysFromInvoice(inv) {
-    var seen = Object.create(null);
-    var days = [];
-    function add(tok) {
-      var d = normalizeWeekdayToken(tok);
-      if (!d || seen[d]) return;
-      seen[d] = 1;
-      days.push(d);
-    }
-    function scan(text) {
-      var s = String(text || '');
-      if (!s) return;
-      var re =
-        /\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Tues|Wed|Thu|Thur|Thurs|Fri|Sat|Sun)\b/gi;
-      var m;
-      while ((m = re.exec(s))) add(m[1]);
-    }
-    (Array.isArray(inv && inv.line_items) ? inv.line_items : []).forEach(function (it) {
-      if (!it || typeof it !== 'object') return;
-      scan([it.detail, it.description, it.dates].join(' '));
-    });
-    if (!days.length) {
-      scan([inv && inv.line_description, inv && inv.reference_text, inv && inv.title].join(' '));
-    }
-    if (!days.length) {
-      (Array.isArray(inv && inv.booked_slots) ? inv.booked_slots : []).forEach(function (s) {
-        scan([s && s.label, s && s.service, s && s.day, s && s.slot].join(' '));
-        if (s && s.day) add(s.day);
+  function formatReenrolDayLabel(isoDate) {
+    if (!isoDate) return 'No re-enrolment date';
+    var p = String(isoDate).split('-');
+    if (p.length < 3) return String(isoDate);
+    try {
+      var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+      if (isNaN(d.getTime())) return String(isoDate);
+      return d.toLocaleDateString('en-GB', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
       });
+    } catch (_e) {
+      return String(isoDate);
     }
-    if (!days.length) scan(String((inv && inv.booked_service_raw) || ''));
-    return days.length ? days : ['Other'];
   }
 
   function groupInvoicesByParticipant(invoices) {
@@ -576,29 +549,40 @@
       });
   }
 
-  /** Nested: Day → participants (invoice appears under each weekday it covers). */
+  /**
+   * Nested: re-enrolment completion date → participants.
+   * Newest re-enrolment days first; undated at the end.
+   */
   function groupInvoicesByDayThenParticipant(invoices) {
     var byDay = Object.create(null);
+    var dayOrder = [];
     (invoices || []).forEach(function (inv) {
-      weekdaysFromInvoice(inv).forEach(function (day) {
-        if (!byDay[day]) byDay[day] = [];
-        byDay[day].push(inv);
-      });
+      var key = reenrolDateKey(inv) || '_none';
+      if (!byDay[key]) {
+        byDay[key] = [];
+        dayOrder.push(key);
+      }
+      byDay[key].push(inv);
     });
-    return WEEKDAY_ORDER.filter(function (day) {
-      return byDay[day] && byDay[day].length;
-    }).map(function (day) {
-      var participants = groupInvoicesByParticipant(byDay[day]);
+    dayOrder.sort(function (a, b) {
+      if (a === '_none') return 1;
+      if (b === '_none') return -1;
+      return String(b).localeCompare(String(a));
+    });
+    return dayOrder.map(function (key) {
+      var list = byDay[key] || [];
+      var participants = groupInvoicesByParticipant(list);
       var invIds = Object.create(null);
       var invN = 0;
-      (byDay[day] || []).forEach(function (inv) {
+      list.forEach(function (inv) {
         var id = String(inv.id || inv.invoice_number || '');
         if (!id || invIds[id]) return;
         invIds[id] = 1;
         invN += 1;
       });
       return {
-        day: day,
+        day: key === '_none' ? 'No re-enrolment date' : formatReenrolDayLabel(key),
+        day_key: key,
         participants: participants,
         invoice_count: invN,
         participant_count: participants.length,
@@ -1137,7 +1121,8 @@
   }
 
   function dayAccordionHtml(dayGroup) {
-    var day = dayGroup.day || 'Other';
+    var day = dayGroup.day || 'No re-enrolment date';
+    var dayKey = dayGroup.day_key || '';
     var participants = dayGroup.participants || [];
     var paxN = dayGroup.participant_count != null ? dayGroup.participant_count : participants.length;
     var invN = dayGroup.invoice_count != null ? dayGroup.invoice_count : 0;
@@ -1148,6 +1133,7 @@
       });
     });
     var sub =
+      'Re-enrolled · ' +
       String(paxN) +
       ' participant' +
       (paxN === 1 ? '' : 's') +
@@ -1157,7 +1143,7 @@
       (invN === 1 ? '' : 's');
     return (
       '<details class="pp-inv-acc__item pp-inv-acc__item--day" data-inv-day="' +
-      esc(day) +
+      esc(dayKey || day) +
       '">' +
       '<summary class="pp-inv-acc__sum pp-inv-acc__sum--day">' +
       '<span class="pp-inv-acc__chev" aria-hidden="true"></span>' +
