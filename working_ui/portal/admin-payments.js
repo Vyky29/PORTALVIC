@@ -588,6 +588,10 @@
   function isLaInvoiceFundingLabel(raw) {
     var low = String(raw || "").toLowerCase();
     if (!low || isParentDirectPaymentsLabel(low) || isGenericLaNhsUmbrella(low)) return false;
+    /* Never treat private / parent VAT wording as an LA invoice funder. */
+    if (/using private funds|private\s*\(parents\)|^private$|parent\s*\(20|parent\s*\(exempt|gocardless/i.test(low)) {
+      return false;
+    }
     return /ealing|hammer|fulham|h\s*&\s*f|lbhf|kensington|rbkc|westminster|brent|nhs|care in finance|\bcwd\b|la invoice|local authority|purchase order|\bpo\b/.test(low);
   }
 
@@ -599,6 +603,98 @@
       if (v != null && String(v).trim()) return String(v).trim();
     }
     return "";
+  }
+
+  function normClientNameKey(name) {
+    return String(name || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  }
+
+  /**
+   * Autumn route from invoice + optional Summer 25/26 payment row.
+   * Summer sheet/Paid wins for family clients (Private stay Private).
+   */
+  function autumnPayRouteFromInvoice(inv, opts) {
+    opts = opts || {};
+    var via = String((inv && inv.created_via) || "");
+    var cat = String((inv && inv.funding_category) || "").toLowerCase();
+    var paySheet = String((inv && inv.payment_sheet) || "").toUpperCase();
+    var hint = String((inv && inv.payment_method_hint) || "").toLowerCase();
+    var vat = String((inv && inv.vat_mode) || "").toLowerCase();
+    var fundingLabel = String((inv && inv.funding_label) || "").trim();
+    var summer = opts.summerRow || null;
+    var summerSheet = summer ? String(summer.sheet || "").toUpperCase() : "";
+
+    var forceLa = opts.forceLa === true || via === "la_office_auto";
+    var isLa =
+      forceLa
+      || hint === "la_funded"
+      || paySheet === "LA"
+      || (cat === "la_managed" && via !== "reenrolment" && paySheet !== "PARENTS" && paySheet !== "DIRECT_PAYMENTS");
+
+    /* Summer Private / Direct Payments beats a mis-tagged autumn LA label. */
+    if (!forceLa && !opts.forceLa && summerSheet === "PARENTS") {
+      isLa = false;
+    }
+    if (!forceLa && summerSheet === "DIRECT_PAYMENTS" && hint !== "la_funded" && paySheet !== "LA") {
+      isLa = false;
+    }
+    if (!forceLa && summerSheet === "LA") {
+      isLa = true;
+    }
+
+    if (isLa) {
+      var nhs = /nhs/i.test(fundingLabel)
+        || (summer && /nhs|funded by nhs/i.test(String((summer.data && summer.data.Paid) || "") + " " + String((summer.data && summer.data.Funder) || "")));
+      return {
+        sheet: "LA",
+        hint: "la_funded",
+        vat: "exempt",
+        paid: nhs ? PAID_BY.FUNDED_BY_NHS : PAID_BY.FUNDED_BY_LA,
+        invType: nhs ? INVOICE_TYPE.NHS_EXEMPT : INVOICE_TYPE.LA_EXEMPT,
+        fundingLabel: fundingLabel,
+        laOfficeAuto: forceLa || via === "la_office_auto",
+      };
+    }
+
+    var isDp =
+      paySheet === "DIRECT_PAYMENTS"
+      || cat === "parent_direct_payment"
+      || summerSheet === "DIRECT_PAYMENTS"
+      || isParentDirectPaymentsLabel(fundingLabel);
+
+    if (
+      paySheet === "PARENTS"
+      || cat === "parent_private"
+      || summerSheet === "PARENTS"
+      || hint === "gocardless"
+      || hint === "bank_transfer"
+      || hint === "payment_link"
+      || /using private funds|^private$/i.test(fundingLabel)
+    ) {
+      isDp = false;
+    }
+
+    if (isDp || (vat === "exempt" && via === "reenrolment" && summerSheet !== "PARENTS")) {
+      return {
+        sheet: "DIRECT_PAYMENTS",
+        hint: hint === "la_funded" ? "" : hint,
+        vat: "exempt",
+        paid: PAID_BY.FUNDS_FROM_LA,
+        invType: INVOICE_TYPE.PARENT_EXEMPT,
+        fundingLabel: fundingLabel,
+        laOfficeAuto: false,
+      };
+    }
+
+    return {
+      sheet: "PARENTS",
+      hint: hint === "la_funded" ? "" : hint,
+      vat: vat === "exempt" ? "vat_20" : (vat || "vat_20"),
+      paid: PAID_BY.PRIVATE_FUNDS,
+      invType: INVOICE_TYPE.PARENT_20,
+      fundingLabel: fundingLabel || "Private",
+      laOfficeAuto: false,
+    };
   }
 
   /**
@@ -615,12 +711,13 @@
     var sheet = String(opts.sheet || "").trim();
     var sheetUp = sheet.toUpperCase();
 
+    if (sheetUp === "PARENTS" || sheet === "PARENTS") return "PARENTS";
     if (hint === "la_funded") return "LA";
     if (isParentDirectPaymentsLabel(label)) return "DIRECT_PAYMENTS";
     if (isLaInvoiceFundingLabel(label)) return "LA";
 
     /* Re-enrolment: VAT exempt without la_funded = LA Direct Payments route (not private VAT). */
-    if (opts._reenrol && vat === "exempt" && hint !== "la_funded") {
+    if (opts._reenrol && vat === "exempt" && hint !== "la_funded" && sheetUp !== "PARENTS") {
       return "DIRECT_PAYMENTS";
     }
 
@@ -3492,11 +3589,34 @@
       if (name) byChildName[name] = info;
     });
 
+    /* Index Summer payment rows by normalized client name (any sheet). */
+    var summerByNorm = {};
+    (payments || []).forEach(function (r) {
+      var nk = normClientNameKey(r.client_name);
+      if (!nk) return;
+      if (!summerByNorm[nk]) summerByNorm[nk] = r;
+    });
+
+    function findSummerRow(r) {
+      var nk = normClientNameKey(r && r.client_name);
+      if (!nk) return null;
+      if (summerByNorm[nk]) return summerByNorm[nk];
+      var first = nk.split(" ")[0];
+      var hit = null;
+      Object.keys(summerByNorm).forEach(function (k) {
+        if (hit) return;
+        if (k === nk || (first.length >= 4 && (k.indexOf(first) === 0 || nk.indexOf(k) === 0))) {
+          hit = summerByNorm[k];
+        }
+      });
+      return hit;
+    }
+
     /* Index LA payment funders by normalized client name for autumn enrichment. */
     var payFunderByNorm = {};
     (payments || []).forEach(function (r) {
       if (String(r.sheet || "").toUpperCase() !== "LA") return;
-      var nk = String(r.client_name || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+      var nk = normClientNameKey(r.client_name);
       if (!nk) return;
       var fund = fundingHintFromPaymentData(r.data) || String((r.data && r.data.Paid) || "").trim();
       if (!fund || isGenericLaNhsUmbrella(fund)) return;
@@ -3506,7 +3626,7 @@
 
     function enrichFromPayments(r) {
       if (r.data && (r.data.Funder || r.data.Paid || r.data["Invoice type"])) return;
-      var nk = String(r.client_name || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+      var nk = normClientNameKey(r.client_name);
       if (!nk) return;
       var hits = payFunderByNorm[nk];
       if (!hits) {
@@ -3541,7 +3661,39 @@
     }
 
     (reenrol || []).forEach(function (r) {
-      enrichFromPayments(r);
+      var summer = findSummerRow(r);
+      /* Summer 25/26 sheet is source of truth for Private / DP / LA (except true LA office-auto). */
+      if (summer && !r._laOfficeAuto) {
+        var summerSheet = String(summer.sheet || "").toUpperCase();
+        if (summerSheet === "PARENTS" || summerSheet === "DIRECT_PAYMENTS" || summerSheet === "LA") {
+          r.sheet = summer.sheet;
+          if (!r.data) r.data = {};
+          var sData = summer.data || {};
+          if (sData.Paid) r.data.Paid = sData.Paid;
+          if (sData["Invoice type"]) r.data["Invoice type"] = sData["Invoice type"];
+          if (summerSheet === "PARENTS") {
+            r._paymentMethodHint = String(r._paymentMethodHint || "").toLowerCase() === "la_funded"
+              ? ""
+              : r._paymentMethodHint;
+            r._vatMode = "vat_20";
+            r.data.Paid = PAID_BY.PRIVATE_FUNDS;
+            r.data["Invoice type"] = INVOICE_TYPE.PARENT_20;
+            r.data.Funder = sData.Funder || "Private";
+            r._fundingLabel = r.data.Funder;
+          } else if (summerSheet === "DIRECT_PAYMENTS") {
+            r._paymentMethodHint = String(r._paymentMethodHint || "").toLowerCase() === "la_funded"
+              ? ""
+              : r._paymentMethodHint;
+            r._vatMode = "exempt";
+            r.data.Paid = PAID_BY.FUNDS_FROM_LA;
+            r.data["Invoice type"] = INVOICE_TYPE.PARENT_EXEMPT;
+          }
+        }
+      }
+
+      if (String(r.sheet || "").toUpperCase() !== "PARENTS") {
+        enrichFromPayments(r);
+      }
       var cid = String(r._contactId || "").trim();
       var info = cid ? fundingByContact[cid] : null;
       /* Prefer invoice / row funder over contact umbrella "LA / NHS". */
@@ -3554,13 +3706,16 @@
         else label = fromContact;
       }
       if (isGenericLaNhsUmbrella(label)) label = "";
+      if (String(r.sheet || "").toUpperCase() === "PARENTS") {
+        label = label && !isLaInvoiceFundingLabel(label) ? label : "Private";
+      }
       r._fundingLabel = label;
       if (label && r.data && !r.data.Funder) r.data.Funder = label;
       r.sheet = classifyPayGroup({
         sheet: r.sheet,
         payment_method_hint: r._paymentMethodHint,
         vat_mode: r._vatMode,
-        funding_label: label || "Local Authority",
+        funding_label: label,
         _reenrol: true,
       });
     });
@@ -3577,11 +3732,17 @@
       }
       if (isGenericLaNhsUmbrella(label)) label = "";
       r._fundingLabel = label;
-      r.sheet = classifyPayGroup({
-        sheet: r.sheet,
-        funding_label: label,
-        _reenrol: false,
-      });
+      /* Keep Summer workbook sheet — do not reclassify Private → LA from contact labels. */
+      var sheetUp = String(r.sheet || "").toUpperCase();
+      if (sheetUp === "PARENTS" || sheetUp === "DIRECT_PAYMENTS" || sheetUp === "LA" || sheetUp === "NO RE-ENROLED") {
+        r.sheet = r.sheet;
+      } else {
+        r.sheet = classifyPayGroup({
+          sheet: r.sheet,
+          funding_label: label,
+          _reenrol: false,
+        });
+      }
     });
   }
 
@@ -3595,7 +3756,14 @@
     if (!inv) return false;
     if (String(inv.created_via || "") === "la_office_auto") return true;
     if (inv.is_la_office_auto === true) return true;
-    return String(inv.funding_category || "") === "la_managed";
+    var sheet = String(inv.payment_sheet || "").toUpperCase();
+    var hint = String(inv.payment_method_hint || "").toLowerCase();
+    /* Family re-enrol / GoCardless private invoices are never LA office synthetics. */
+    if (String(inv.created_via || "") === "reenrolment") return false;
+    if (sheet === "PARENTS" || sheet === "DIRECT_PAYMENTS") return false;
+    if (hint === "gocardless" || hint === "bank_transfer" || hint === "payment_link") return false;
+    if (hint === "la_funded" || sheet === "LA") return true;
+    return String(inv.funding_category || "") === "la_managed" && sheet === "LA";
   }
 
   function reenrolInvoiceAmountGbp(inv) {
@@ -3640,30 +3808,14 @@
   function buildAutumnReenrolAggRow(inv, opts) {
     opts = opts || {};
     var cid = String(inv.contact_id || "").trim();
-    var via = String(inv.created_via || "");
-    var isLaAuto = via === "la_office_auto" || opts.forceLa === true;
-    var hint = String(inv.payment_method_hint || "").toLowerCase();
-    var vat = String(inv.vat_mode || "").toLowerCase();
-    if (isLaAuto || String(inv.funding_category || "") === "la_managed") {
-      hint = "la_funded";
-      vat = vat || "exempt";
-    }
-    var fundingLabel = String(inv.funding_label || "").trim();
-    var paidChip = "";
-    if (/nhs/i.test(fundingLabel)) paidChip = PAID_BY.FUNDED_BY_NHS;
-    else if (fundingLabel) paidChip = PAID_BY.FUNDED_BY_LA;
+    var route = autumnPayRouteFromInvoice(inv, opts);
     var row = {
-      id: isLaAuto ? String(inv.id || ("la-auto-" + cid)) : ("reenrol-" + cid),
+      id: route.laOfficeAuto ? String(inv.id || ("la-auto-" + cid)) : ("reenrol-" + cid),
       _contactId: cid,
-      _paymentMethodHint: hint,
-      _vatMode: vat,
-      _fundingLabel: fundingLabel,
-      sheet: classifyPayGroup({
-        payment_method_hint: hint,
-        vat_mode: vat,
-        funding_label: inv.funding_label,
-        _reenrol: true,
-      }),
+      _paymentMethodHint: route.hint,
+      _vatMode: route.vat,
+      _fundingLabel: route.fundingLabel,
+      sheet: route.sheet,
       client_name: inv.participant_display || inv.related_client || cid,
       parent_name: inv.parent_display || "",
       payment_status: "Outstanding",
@@ -3673,15 +3825,15 @@
       data: {
         Term: "Autumn 26/27",
         Services: "",
-        Funder: fundingLabel,
-        Paid: paidChip,
-        "Invoice type": /nhs/i.test(fundingLabel) ? INVOICE_TYPE.NHS_EXEMPT : INVOICE_TYPE.LA_EXEMPT,
+        Funder: route.fundingLabel || (route.sheet === "PARENTS" ? "Private" : ""),
+        Paid: route.paid,
+        "Invoice type": route.invType,
       },
       _serviceParts: Object.create(null),
       _termBucket: "autumn_2627",
       _synthetic: true,
       _reenrol: true,
-      _laOfficeAuto: isLaAuto,
+      _laOfficeAuto: !!route.laOfficeAuto,
       _invoiceIds: [],
     };
     mergeServiceLabelsIntoRow(row, inv);
@@ -3751,8 +3903,16 @@
       if (inv.id) row._invoiceIds.push(inv.id);
       var hint = String(inv.payment_method_hint || "").toLowerCase();
       var vat = String(inv.vat_mode || "").toLowerCase();
-      if (hint === "la_funded" || isLaAuto) row._paymentMethodHint = "la_funded";
-      if (vat === "exempt" && row._vatMode !== "exempt") row._vatMode = vat;
+      if (isLaAuto || (hint === "la_funded" && String(row.sheet || "").toUpperCase() === "LA")) {
+        row._paymentMethodHint = "la_funded";
+      }
+      if (
+        vat === "exempt"
+        && row._vatMode !== "exempt"
+        && String(row.sheet || "").toUpperCase() !== "PARENTS"
+      ) {
+        row._vatMode = vat;
+      }
       if (st === "paid") {
         // keep Paid unless another instalment is open
       } else if (st !== "void") {
@@ -3790,6 +3950,7 @@
       if (row.amount_out <= 0 && row.amount_billed > 0) row.payment_status = "Paid";
       else if (row.amount_out > 0) row.payment_status = "Outstanding";
       row.sheet = classifyPayGroup({
+        sheet: row.sheet,
         payment_method_hint: row._paymentMethodHint,
         vat_mode: row._vatMode,
         funding_label: row._fundingLabel,
