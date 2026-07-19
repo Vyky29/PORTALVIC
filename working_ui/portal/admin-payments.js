@@ -801,29 +801,35 @@
       ".pay-chip--inv-la{background:#faf5ff;color:#7c3aed;border-color:#e9d5ff}",
       ".pay-chip--inv-nhs{background:#f0f9ff;color:#0369a1;border-color:#bae6fd}",
       ".pay-chip--muted{background:#f1f5f9;color:#64748b;border-color:#e2e8f0}",
-      ".pay-tbl td .pay-chip{white-space:normal}",
-      ".pay-svc-lines{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0;max-width:100%;text-align:left}",
-      ".pay-svc-line{display:block;font-weight:700;font-size:13px;color:#0f172a;line-height:1.35;white-space:nowrap;max-width:100%}",
+      ".pay-tbl td .pay-chip{white-space:normal;max-width:100%;margin:0 auto}",
+      ".pay-svc-lines{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;width:100%;max-width:100%;text-align:center}",
+      ".pay-svc-line{display:block;font-weight:700;font-size:12.5px;color:#0f172a;line-height:1.35;white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-width:100%;text-align:center}",
       ".pay-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 1px 3px rgba(15,23,42,.05);overflow:hidden}",
       ".pay-card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid #eef2f7}",
       ".pay-card-h h3{margin:0;font-size:15px;color:#0f172a}",
-      ".pay-tbl-wrap{overflow-x:auto;min-width:0}",
-      ".pay-tbl__idx{width:2.5rem;color:#94a3b8;font-variant-numeric:tabular-nums}",
+      ".pay-tbl-wrap{overflow-x:auto;min-width:0;-webkit-overflow-scrolling:touch}",
+      ".pay-tbl__idx{width:3rem;color:#94a3b8;font-variant-numeric:tabular-nums}",
       ".pay-tbl thead th.pay-tbl__idx{color:#94a3b8;font-weight:700}",
-      ".pay-tbl{width:100%;border-collapse:collapse;font-size:14px;table-layout:fixed}",
-      ".pay-tbl th,.pay-tbl td{padding:10px 12px;border-bottom:1px solid #eef2f7;text-align:center;vertical-align:middle;overflow-wrap:break-word;max-width:none}",
-      ".pay-tbl th.pay-col-client,.pay-tbl td.pay-col-client{width:14%;text-align:left;min-width:0}",
-      ".pay-tbl th.pay-col-svc,.pay-tbl td.pay-col-svc{width:42%;text-align:left;min-width:0}",
+      ".pay-tbl{width:100%;min-width:920px;border-collapse:separate;border-spacing:0;font-size:14px;table-layout:fixed}",
+      ".pay-tbl th,.pay-tbl td{padding:12px 10px;border-bottom:1px solid #eef2f7;text-align:center;vertical-align:middle;overflow-wrap:anywhere;word-break:break-word;min-width:0;max-width:100%;box-sizing:border-box}",
+      ".pay-tbl th.pay-col-client,.pay-tbl td.pay-col-client{width:15%;text-align:center}",
+      ".pay-tbl th.pay-col-paid,.pay-tbl td.pay-col-paid{width:12%;text-align:center}",
+      ".pay-tbl th.pay-col-inv,.pay-tbl td.pay-col-inv{width:13%;text-align:center}",
+      ".pay-tbl th.pay-col-support,.pay-tbl td.pay-col-support{width:7%;text-align:center}",
+      ".pay-tbl th.pay-col-svc,.pay-tbl td.pay-col-svc{width:28%;text-align:center}",
+      ".pay-tbl th.pay-col-total,.pay-tbl td.pay-col-total{width:9%;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}",
+      ".pay-tbl th.pay-col-status,.pay-tbl td.pay-col-status{width:9%;text-align:center;white-space:nowrap}",
       ".pay-tbl thead th{background:#f8fafc;color:#0f172a;font-size:11px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}",
       ".pay-tbl thead tr.pay-tbl__filter-row th{background:#fff;text-transform:none;letter-spacing:0;white-space:normal;font-weight:400;padding:10px 12px;vertical-align:middle}",
       ".pay-tbl tbody tr{cursor:pointer}",
       ".pay-tbl tbody tr:hover{background:#f8fafc}",
       ".pay-tbl td.num{text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}",
-      ".pay-name-stack{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;max-width:100%;text-align:left}",
-      ".pay-name{font-weight:700;color:#0f172a;overflow-wrap:break-word;min-width:0;max-width:100%}",
-      ".pay-name-parent{font-size:12px;font-weight:600;color:#64748b;overflow-wrap:break-word;min-width:0;max-width:100%}",
-      ".pay-amt-stack{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}",
+      ".pay-name-stack{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;max-width:100%;margin:0 auto;text-align:center}",
+      ".pay-name{font-weight:700;color:#0f172a;overflow-wrap:anywhere;word-break:break-word;min-width:0;max-width:100%;text-align:center}",
+      ".pay-name-parent{font-size:12px;font-weight:600;color:#64748b;overflow-wrap:anywhere;word-break:break-word;min-width:0;max-width:100%;text-align:center}",
+      ".pay-amt-stack{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;margin:0 auto}",
       ".pay-amt-credit{font-size:11px;font-weight:700;color:#047857;white-space:nowrap}",
+      ".pay-tbl .pay-pill{margin:0 auto}",
       ".pay-pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}",
       ".pay-pill--paid{background:#e7f6ee;color:#15803d}",
       ".pay-pill--out{background:#fef2f2;color:#b91c1c}",
@@ -1425,7 +1431,8 @@
     return "<thead>"
       + '<tr class="pay-tbl__filter-row"><th colspan="8">' + paidFilterChipsHtml(termId) + "</th></tr>"
       + '<tr><th class="num pay-tbl__idx">#</th><th class="pay-col-client">' + colClient
-      + '</th><th>Paid</th><th>Invoice type</th><th>Support</th><th class="pay-col-svc">Service</th><th class="num">Total</th><th>Status</th></tr>'
+      + '</th><th class="pay-col-paid">Paid</th><th class="pay-col-inv">Invoice type</th><th class="pay-col-support">Support</th>'
+      + '<th class="pay-col-svc">Service</th><th class="pay-col-total">Total</th><th class="pay-col-status">Status</th></tr>'
       + "</thead>";
   }
 
@@ -1457,12 +1464,12 @@
       html += "<tr" + attr + ">"
         + '<td class="num pay-tbl__idx">' + (i + 1) + "</td>"
         + '<td class="pay-col-client">' + clientCellHtml(r) + "</td>"
-        + "<td>" + paidChipHtml(paidByFor(r)) + "</td>"
-        + "<td>" + invoiceChipHtml(invoiceTypeFor(r)) + "</td>"
-        + "<td>" + supportCellHtml(r) + "</td>"
+        + '<td class="pay-col-paid">' + paidChipHtml(paidByFor(r)) + "</td>"
+        + '<td class="pay-col-inv">' + invoiceChipHtml(invoiceTypeFor(r)) + "</td>"
+        + '<td class="pay-col-support">' + supportCellHtml(r) + "</td>"
         + '<td class="pay-col-svc">' + serviceCellHtml(r) + "</td>"
-        + '<td class="num">' + amountCellHtml(r) + "</td>"
-        + "<td>" + pillFor(r) + "</td></tr>";
+        + '<td class="pay-col-total num">' + amountCellHtml(r) + "</td>"
+        + '<td class="pay-col-status">' + pillFor(r) + "</td></tr>";
     });
     html += "</tbody></table></div>";
     return html;
@@ -1711,6 +1718,22 @@
     return formatServiceOneLiner(parts);
   }
 
+  function looksLikeDayCentreLine(s) {
+    return /day\s*centre/i.test(String(s || ""));
+  }
+
+  function isBogusDayCentreLine(s) {
+    var t = String(s || "").trim();
+    if (!t) return true;
+    /* Roster junk: "DAY CENTRE Monday", "1' Day Centre…", "300' Day Centre…" */
+    if (/^day\s*centre\s+(mon|tue|wed|thu|fri|sat|sun)/i.test(t)) return true;
+    if (/^(\d+)\s*['′']\s*day\s*centre/i.test(t)) {
+      var mins = parseInt(RegExp.$1, 10);
+      if (!Number.isFinite(mins) || mins < 30 || mins > 480) return true;
+    }
+    return false;
+  }
+
   function serviceOneLinersFor(r) {
     var d = (r && r.data) || {};
     var sessions = String(d.Sessions || d["Session times"] || "").trim();
@@ -1720,7 +1743,7 @@
 
     function push(line) {
       var t = String(line || "").trim();
-      if (!t || t === "—" || seen[t.toLowerCase()]) return;
+      if (!t || t === "—" || isBogusDayCentreLine(t) || seen[t.toLowerCase()]) return;
       seen[t.toLowerCase()] = 1;
       out.push(t);
     }
@@ -1735,11 +1758,27 @@
       if (out.length) return out;
     }
 
+    /* Prefer one clean Day Centre line from workbook/raw over fragmented slots. */
+    if (raw && /day\s*centre/i.test(raw)) {
+      var dcWhole = formatServicePieceOneLiner(raw.replace(/\s*·\s*/g, " "), sessions)
+        || formatServiceOneLiner(normalizeServiceParts(raw, sessions));
+      if (dcWhole && looksLikeDayCentreLine(dcWhole) && !isBogusDayCentreLine(dcWhole)) {
+        return [dcWhole];
+      }
+    }
+
     if (!raw) return [];
     splitServiceList(raw).forEach(function (piece) {
       push(formatServicePieceOneLiner(piece, sessions));
     });
-    if (out.length) return out;
+    if (out.length) {
+      var dcOnly = out.filter(looksLikeDayCentreLine);
+      if (dcOnly.length > 1 && dcOnly.length === out.length) {
+        var merged = formatServiceOneLiner(normalizeServiceParts(raw, sessions));
+        if (merged) return [merged];
+      }
+      return out;
+    }
 
     /* Fallback: whole string as one Day Centre / afterschool block. */
     push(formatServiceOneLiner(serviceDisplayParts(r)));
@@ -2484,7 +2523,8 @@
   function participantsTableHeadHtml(termId) {
     return "<thead>"
       + '<tr class="pay-tbl__filter-row"><th colspan="9">' + paidFilterChipsHtml(termId) + "</th></tr>"
-      + '<tr><th class="num pay-tbl__idx">#</th><th class="pay-col-client">Client</th><th>Paid</th><th>Invoice type</th><th>Support</th><th class="pay-col-svc">Service(s)</th><th class="num">Orders</th><th class="num">Total</th><th>Status</th></tr>'
+      + '<tr><th class="num pay-tbl__idx">#</th><th class="pay-col-client">Client</th><th class="pay-col-paid">Paid</th><th class="pay-col-inv">Invoice type</th><th class="pay-col-support">Support</th>'
+      + '<th class="pay-col-svc">Service(s)</th><th class="num">Orders</th><th class="pay-col-total">Total</th><th class="pay-col-status">Status</th></tr>'
       + "</thead>";
   }
 
@@ -2551,13 +2591,13 @@
       html += "<tr " + rowAttr + ">"
         + '<td class="num pay-tbl__idx">' + (i + 1) + "</td>"
         + '<td class="pay-col-client">' + clientCellHtml(first || g.sample || { client_name: g.name }) + "</td>"
-        + "<td>" + paidChipHtml(paidByFor(first)) + "</td>"
-        + "<td>" + invoiceChipHtml(invoiceTypeFor(first)) + "</td>"
-        + "<td>" + supportCellHtml(first) + "</td>"
+        + '<td class="pay-col-paid">' + paidChipHtml(paidByFor(first)) + "</td>"
+        + '<td class="pay-col-inv">' + invoiceChipHtml(invoiceTypeFor(first)) + "</td>"
+        + '<td class="pay-col-support">' + supportCellHtml(first) + "</td>"
         + '<td class="pay-col-svc">' + svcHtml + "</td>"
         + '<td class="num">' + g.orders.length + "</td>"
-        + '<td class="num">' + money(g.total) + "</td>"
-        + "<td>" + pill + "</td></tr>";
+        + '<td class="pay-col-total num">' + money(g.total) + "</td>"
+        + '<td class="pay-col-status">' + pill + "</td></tr>";
     });
     html += "</tbody></table></div>";
     return html;
