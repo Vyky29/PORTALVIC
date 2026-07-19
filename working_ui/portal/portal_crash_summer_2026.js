@@ -746,7 +746,7 @@
     var idleLabel = isNext
       ? "Leave details for next crash courses"
       : isWait
-        ? "Join waiting list"
+        ? "Keep me informed"
         : "I'm interested in individual hours";
     if (btn) {
       btn.disabled = true;
@@ -849,16 +849,16 @@
           weeks.map(function (w) {
             return w === "w1" ? "Week 1" : "Week 2";
           }).join(" and ") +
-          (spare ? " (including individual / spare days)" : "") +
+          (spare ? " (spare hours & last-minute cancellations)" : "") +
           ". We will call you if a place opens.",
       );
       if (btn) {
-        btn.textContent = "On waiting list";
+        btn.textContent = "We'll keep you informed";
         btn.disabled = true;
       }
     } else if (btn) {
       btn.disabled = false;
-      btn.textContent = "Join waiting list";
+      btn.textContent = "Keep me informed";
     }
   }
 
