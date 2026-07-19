@@ -777,6 +777,7 @@
       '</div>' +
       paidMeta +
       xeroChip +
+      invoiceServiceLinesHtml(inv) +
       (linkBits.length
         ? '<div class="muted" style="font-size:11px">' + esc(linkBits.join(' · ')) + '</div>'
         : '') +
@@ -827,6 +828,75 @@
       confirmBtn +
       holdBtns +
       '</div></div></article>'
+    );
+  }
+
+  /** Service + time slot lines under INV-P number (from line_items / line_description). */
+  function invoiceServiceLinesHtml(inv) {
+    var items = Array.isArray(inv.line_items) ? inv.line_items : [];
+    var rows = [];
+    items.forEach(function (it) {
+      if (!it || typeof it !== 'object') return;
+      var desc = String(it.description || it.service_key || '').trim();
+      var detail = String(it.detail || '').trim();
+      var dates = String(it.dates || '').trim();
+      var qty = Number(it.quantity);
+      var amt = it.amount_gbp != null ? Number(it.amount_gbp) : null;
+      if (!desc && !detail) return;
+      /* Skip bare "Credits" / narrative-only credit rows unless they carry a slot. */
+      if (/^credits?$/i.test(desc) && !detail) return;
+      var metaBits = [];
+      if (detail) metaBits.push(detail);
+      if (Number.isFinite(qty) && qty > 0 && !/^credits?$/i.test(desc)) {
+        metaBits.push(qty + (qty === 1 ? ' session' : ' sessions'));
+      }
+      if (amt != null && Number.isFinite(amt)) metaBits.push(formatMoney(amt));
+      rows.push(
+        '<li class="pp-inv-acc__svc-row">' +
+          '<div class="pp-inv-acc__svc-name">' +
+          esc(desc || 'Service') +
+          '</div>' +
+          (metaBits.length
+            ? '<div class="pp-inv-acc__svc-meta">' + esc(metaBits.join(' · ')) + '</div>'
+            : '') +
+          (dates
+            ? '<div class="pp-inv-acc__svc-dates">' + esc(dates) + '</div>'
+            : '') +
+          '</li>',
+      );
+    });
+    if (!rows.length) {
+      var raw = String(inv.line_description || '').trim();
+      if (raw) {
+        /* Prefer the service lines after the boilerplate paragraph. */
+        var parts = raw
+          .split(/\n+/)
+          .map(function (p) {
+            return String(p || '').trim();
+          })
+          .filter(Boolean)
+          .filter(function (p) {
+            return !/^structured activity support/i.test(p);
+          });
+        if (parts.length) {
+          rows = parts.map(function (p) {
+            return (
+              '<li class="pp-inv-acc__svc-row">' +
+              '<div class="pp-inv-acc__svc-name">' +
+              esc(p) +
+              '</div></li>'
+            );
+          });
+        }
+      }
+    }
+    if (!rows.length) return '';
+    return (
+      '<div class="pp-inv-acc__svc">' +
+      '<div class="pp-inv-acc__svc-lab">Service</div>' +
+      '<ul class="pp-inv-acc__svc-list">' +
+      rows.join('') +
+      '</ul></div>'
     );
   }
 
@@ -998,6 +1068,13 @@
       '.pp-inv-acc__grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.7fr) minmax(0,.9fr);gap:12px;min-width:0}' +
       '@media (max-width:820px){.pp-inv-acc__grid{grid-template-columns:1fr}}' +
       '.pp-inv-acc__actions{display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;min-width:0}' +
+      '.pp-inv-acc__svc{margin-top:10px;min-width:0}' +
+      '.pp-inv-acc__svc-lab{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#64748b;margin:0 0 6px}' +
+      '.pp-inv-acc__svc-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;min-width:0}' +
+      '.pp-inv-acc__svc-row{margin:0;padding:8px 10px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;min-width:0}' +
+      '.pp-inv-acc__svc-name{font-size:13px;font-weight:700;color:#0f172a;overflow-wrap:break-word}' +
+      '.pp-inv-acc__svc-meta{margin-top:2px;font-size:12px;color:#475569;overflow-wrap:break-word}' +
+      '.pp-inv-acc__svc-dates{margin-top:4px;font-size:11px;color:#64748b;overflow-wrap:break-word}' +
       '</style>'
     );
   }
