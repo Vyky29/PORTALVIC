@@ -154,12 +154,21 @@ export async function getParentMessageReadAt(
   supabase: SupabaseClient,
   parentPersonId: string,
 ): Promise<string> {
-  const { data } = await supabase
-    .from("portal_parent_portal_message_read")
-    .select("read_at")
-    .eq("parent_person_id", parentPersonId)
-    .maybeSingle();
-  return data?.read_at ? String(data.read_at) : PARENT_PORTAL_MESSAGE_READ_EPOCH;
+  try {
+    const { data, error } = await supabase
+      .from("portal_parent_portal_message_read")
+      .select("read_at")
+      .eq("parent_person_id", parentPersonId)
+      .maybeSingle();
+    if (error) {
+      console.warn("[parent-portal] read_at", error.message);
+      return PARENT_PORTAL_MESSAGE_READ_EPOCH;
+    }
+    return data?.read_at ? String(data.read_at) : PARENT_PORTAL_MESSAGE_READ_EPOCH;
+  } catch (e) {
+    console.warn("[parent-portal] read_at exception", e);
+    return PARENT_PORTAL_MESSAGE_READ_EPOCH;
+  }
 }
 
 export async function markParentMessagesRead(

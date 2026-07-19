@@ -540,6 +540,43 @@ verify_jwt = false
 [functions.parent-portal-credits-list]
 verify_jwt = false
 
+# Parent portal session auth uses x-parent-portal-session (not end-user JWT).
+[functions.parent-portal-messages-list]
+verify_jwt = false
+
+[functions.parent-portal-message-send]
+verify_jwt = false
+
+[functions.parent-portal-home-load]
+verify_jwt = false
+
+[functions.parent-portal-sign-in]
+verify_jwt = false
+
+[functions.parent-portal-otp-request]
+verify_jwt = false
+
+[functions.parent-portal-otp-verify]
+verify_jwt = false
+
+[functions.parent-portal-participant-detail]
+verify_jwt = false
+
+[functions.parent-portal-change-pin]
+verify_jwt = false
+
+[functions.parent-portal-general-info-save]
+verify_jwt = false
+
+[functions.parent-portal-registration-load]
+verify_jwt = false
+
+[functions.parent-portal-registration-save]
+verify_jwt = false
+
+[functions.parent-portal-achievement-download]
+verify_jwt = false
+
 [functions.portal-admin-parent-credits-list]
 verify_jwt = false
 
