@@ -1364,6 +1364,24 @@
     return /crash/.test(s) && /30\s*['′']?\s*(?:swim|swimming|aquatic)|aquatic\s*activity\s*30/i.test(s);
   }
 
+  /**
+   * ACAT Mon 11–12 Aquatic (Jack S / Jack W / Kate / Kamy) — Day Centre stream.
+   * Starred payment rows (Jack S*) are the Monday swim; Sunday Multi stays Afterschool.
+   */
+  function isAcatMondayAquaticRow(r) {
+    var slug = paymentParticipantSlug(r);
+    if (slug !== "jacks" && slug !== "jackw" && slug !== "kate" && slug !== "kamy") {
+      return false;
+    }
+    var s = rowServiceBlob(r);
+    var name = String((r && r.client_name) || "");
+    if (!/aquatic/i.test(s)) return false;
+    if (!/\bmon(day)?\b/i.test(s)) return false;
+    /* Prefer the ACAT Monday line (often marked with *). */
+    if (/\*/.test(name)) return true;
+    return /11\s*(?:to|-|–|:)\s*12/.test(s) && !/multi/i.test(s);
+  }
+
   function isDayCentreRow(r) {
     var slug = paymentParticipantSlug(r);
     var s = rowServiceBlob(r);
@@ -1394,6 +1412,9 @@
 
     /* Cyrus: only the Thursday 90' Bespoke amount/stream. */
     if (slug === "cyrus") return isCyrusThursdayBespokeRow(r);
+
+    /* ACAT Monday Aquatic (Jack S / Jack W / Kate / Kamy) → Day Centre. */
+    if (isAcatMondayAquaticRow(r)) return true;
 
     if (/day\s*centre/.test(s)) return true;
 
