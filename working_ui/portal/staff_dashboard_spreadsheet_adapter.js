@@ -44,6 +44,11 @@
       { time_slot: "12 to 1", area: "Big Pool" },
       { time_slot: "1 to 3", area: "Day Centre" },
     ],
+    "emanuel|11to2": [
+      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "12 to 1", area: "Big Pool" },
+      { time_slot: "1 to 2", area: "Day Centre" },
+    ],
     "emanuel|11to1": [
       { time_slot: "11 to 12", area: "Day Centre" },
       { time_slot: "12 to 1", area: "Big Pool" },
@@ -51,20 +56,38 @@
   };
   // Days on which a participant's combined Day Centre block should NOT be split
   // into the Big Pool segments (it stays a single plain "Day Centre" card).
-  // Ikram only goes to the Big Pool on Mon/Wed; Tuesday is Day Centre only.
+  // Ikram special (pool hour) Mon/Wed/Fri; Tue + Sat = plain Day Centre card.
   var PORTAL_COMBINED_SEGMENTS_SKIP_DAYS = {
-    "ikram|11to4": ["tuesday"],
-    // Fadi swims (Big Pool) only Mon/Wed/Fri; Tue/Thu are plain Day Centre 12.30-3.
+    "ikram|11to4": ["tuesday", "saturday", "sunday"],
+    // Fadi: Mon/Wed Small Pool first hour (see day overrides below); Fri Big Pool contiguous.
+    // Tue/Thu often use explicit MADRE segments (gap for Zakariya) — skip synth.
     "fadi|12.30to3": ["tuesday", "thursday"],
+  };
+  var PORTAL_COMBINED_SEGMENTS_DAY_OVERRIDE = {
+    "fadi|12.30to3|monday": [
+      { time_slot: "12.30 to 1", area: "Small Pool" },
+      { time_slot: "2 to 3", area: "Day Centre" },
+    ],
+    "fadi|12.30to3|wednesday": [
+      { time_slot: "12.30 to 1", area: "Small Pool" },
+      { time_slot: "2 to 3", area: "Day Centre" },
+    ],
+    "fadi|12.30to3|friday": [
+      { time_slot: "12.30 to 1", area: "Big Pool" },
+      { time_slot: "1 to 3", area: "Day Centre" },
+    ],
   };
   function portalSynthesizeCombinedSegments(nameLower, service, timeSlot, day) {
     const svc = String(service || "").trim().toLowerCase();
     if (svc !== "day centre") return null;
     const slot = String(timeSlot || "").replace(/\s+/g, "").toLowerCase();
     const name = String(nameLower || "").trim().toLowerCase();
+    const dayKey = String(day || "").trim().toLowerCase();
     const key = name + "|" + slot;
     const skipDays = PORTAL_COMBINED_SEGMENTS_SKIP_DAYS[key];
-    if (skipDays && skipDays.indexOf(String(day || "").trim().toLowerCase()) !== -1) return null;
+    if (skipDays && skipDays.indexOf(dayKey) !== -1) return null;
+    const dayHit = PORTAL_COMBINED_SEGMENTS_DAY_OVERRIDE[key + "|" + dayKey];
+    if (dayHit) return dayHit.map(function (s) { return { time_slot: s.time_slot, area: s.area }; });
     const hit = PORTAL_COMBINED_DAY_CENTRE_SEGMENTS[key];
     return hit ? hit.map(function (s) { return { time_slot: s.time_slot, area: s.area }; }) : null;
   }
