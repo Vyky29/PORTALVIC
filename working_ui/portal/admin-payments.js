@@ -609,6 +609,39 @@
     return String(name || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
   }
 
+  /** Prefer fuller portal name when Summer is short workbook form (Aydaan Ah → Aydaan Ahmed). */
+  function preferredParticipantName(summerName, autumnName) {
+    var s = String(summerName || "").trim();
+    var a = String(autumnName || "").trim();
+    if (!s) return a || "—";
+    if (!a) return s;
+    if (s.toLowerCase() === a.toLowerCase()) return a;
+    var sTok = s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(/\s+/).filter(Boolean);
+    var aTok = a.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(/\s+/).filter(Boolean);
+    if (sTok[0] && sTok[0] === aTok[0]) {
+      if (aTok.length > sTok.length || a.length >= s.length + 2) return a;
+      if (sTok.length > aTok.length) return s;
+      return a.length >= s.length ? a : s;
+    }
+    return s;
+  }
+
+  function preferredParentName(summerParent, autumnParent) {
+    function personBit(raw) {
+      var s = String(raw || "").trim();
+      var ix = s.indexOf("\u00b7");
+      if (ix < 0) ix = s.indexOf("·");
+      if (ix > 0) {
+        var left = s.slice(0, ix).trim();
+        if (/ealing|h\s*&\s*f|nhs|lbhf|cwd|local authority|\bla\b/i.test(left)) {
+          s = s.slice(ix + 1).trim() || s;
+        }
+      }
+      return s;
+    }
+    return preferredParticipantName(personBit(summerParent), personBit(autumnParent));
+  }
+
   /**
    * Autumn route from invoice + optional Summer 25/26 payment row.
    * Summer sheet/Paid wins for family clients (Private stay Private).
@@ -3662,6 +3695,15 @@
 
     (reenrol || []).forEach(function (r) {
       var summer = findSummerRow(r);
+      /* Same display name in Summer + Autumn (prefer fuller portal form). */
+      if (summer) {
+        var canonName = preferredParticipantName(summer.client_name, r.client_name);
+        var canonParent = preferredParentName(summer.parent_name, r.parent_name);
+        r.client_name = canonName;
+        r.parent_name = canonParent;
+        summer.client_name = canonName;
+        summer.parent_name = canonParent;
+      }
       /* Summer 25/26 sheet is source of truth for Private / DP / LA (except true LA office-auto). */
       if (summer && !r._laOfficeAuto) {
         var summerSheet = String(summer.sheet || "").toUpperCase();
