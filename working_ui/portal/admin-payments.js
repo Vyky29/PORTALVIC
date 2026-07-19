@@ -34,12 +34,12 @@
   var TERM_BUCKETS = [
     {
       id: "summer_2526",
-      title: "SUMMER TERM 25/26",
+      title: "Summer 25/26",
       subtitle: "Term sessions · Jul crash courses · May–Jul billing",
     },
     {
       id: "autumn_2627",
-      title: "AUTUMN TERM 26/27",
+      title: "Autumn 26/27",
       subtitle: "Re-enrolment 2026-27 · instalments from Sep 2026",
     },
   ];
@@ -144,8 +144,8 @@
       "Local authority / NHS (pays direct)",
     ],
     term: [
-      "SUMMER TERM 25/26",
-      "AUTUMN TERM 26/27",
+      "Summer 25/26",
+      "Autumn 26/27",
       "Spring term 25/26",
       "Whole Year 25/26",
       "Summer term 2026",
@@ -787,9 +787,9 @@
       ".pay-chip--inv-nhs{background:#f0f9ff;color:#0369a1;border-color:#bae6fd}",
       ".pay-chip--muted{background:#f1f5f9;color:#64748b;border-color:#e2e8f0}",
       ".pay-tbl td .pay-chip{white-space:normal}",
-      ".pay-svc-2line{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;max-width:100%}",
-      ".pay-svc-2line__a{font-weight:700;color:#0f172a;overflow-wrap:break-word}",
-      ".pay-svc-2line__b{font-size:12px;font-weight:600;color:#64748b;overflow-wrap:break-word}",
+      ".pay-svc-3line{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;max-width:100%}",
+      ".pay-svc-3line__a{font-weight:800;color:#0f172a;overflow-wrap:break-word;line-height:1.25}",
+      ".pay-svc-3line__b,.pay-svc-3line__c{font-size:12px;font-weight:600;color:#64748b;overflow-wrap:break-word;line-height:1.25}",
       ".pay-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 1px 3px rgba(15,23,42,.05);overflow:hidden}",
       ".pay-card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid #eef2f7}",
       ".pay-card-h h3{margin:0;font-size:15px;color:#0f172a}",
@@ -1199,10 +1199,11 @@
 
   function normalizeTermLabel(raw) {
     var s = String(raw || "").trim();
-    if (!s || s === "—" || s === "-") return "SUMMER TERM 25/26";
-    if (/summer\s*term\s*2026/i.test(s)) return "SUMMER TERM 25/26";
-    if (/summer\s*term\s*25\s*\/\s*26/i.test(s)) return "SUMMER TERM 25/26";
-    if (/autumn\s*term\s*26/i.test(s) || /26\s*\/\s*27/.test(s)) return "AUTUMN TERM 26/27";
+    if (!s || s === "—" || s === "-") return "Summer 25/26";
+    if (/autumn/i.test(s) || /26\s*\/\s*27/.test(s) || /2026\s*[-–\/]\s*27/.test(s)) {
+      return "Autumn 26/27";
+    }
+    if (/summer/i.test(s) || /25\s*\/\s*26/.test(s)) return "Summer 25/26";
     return s;
   }
 
@@ -1441,17 +1442,18 @@
   function serviceFor(r) {
     var parts = serviceDisplayParts(r);
     if (!parts.line1 || parts.line1 === "—" || isPlaceholderServiceLabel(parts.line1)) return "—";
-    return parts.line2 ? parts.line1 + " " + parts.line2 : parts.line1;
+    return [parts.line1, parts.line2, parts.line3].filter(Boolean).join(" · ");
   }
 
   function serviceCellHtml(r) {
     var parts = serviceDisplayParts(r);
     if (!parts.line1 || parts.line1 === "—" || isPlaceholderServiceLabel(parts.line1)) return "—";
-    if (!parts.line2) return esc(parts.line1);
-    return '<span class="pay-svc-2line">'
-      + '<span class="pay-svc-2line__a">' + esc(parts.line1) + "</span>"
-      + '<span class="pay-svc-2line__b">' + esc(parts.line2) + "</span>"
-      + "</span>";
+    var html = '<span class="pay-svc-3line">'
+      + '<span class="pay-svc-3line__a">' + esc(parts.line1) + "</span>";
+    if (parts.line2) html += '<span class="pay-svc-3line__b">' + esc(parts.line2) + "</span>";
+    if (parts.line3) html += '<span class="pay-svc-3line__c">' + esc(parts.line3) + "</span>";
+    html += "</span>";
+    return html;
   }
 
   function rawServiceText(r) {
@@ -1551,53 +1553,208 @@
     return onePart(s) || s;
   }
 
-  function serviceDisplayParts(r) {
-    var raw = rawServiceText(r);
-    if (!raw) return { line1: "—", line2: "" };
-    return normalizeServiceParts(raw);
+  function dayShortToken(tok) {
+    var t = String(tok || "").trim().toLowerCase().replace(/\./g, "");
+    var map = {
+      mon: "MON", monday: "MON",
+      tue: "TUE", tues: "TUE", tuesday: "TUE",
+      wed: "WED", wednesday: "WED",
+      thu: "THU", thur: "THU", thurs: "THU", thursday: "THU",
+      fri: "FRI", friday: "FRI",
+      sat: "SAT", saturday: "SAT",
+      sun: "SUN", sunday: "SUN",
+    };
+    if (map[t]) return map[t];
+    if (/^[a-z]{3,9}$/.test(t) && map[t.slice(0, 3)]) return map[t.slice(0, 3)];
+    return String(tok || "").trim().toUpperCase();
+  }
+
+  /** "Mon–Wed & Fri" → "MON to WED & FRI"; "Mon & Fri" → "MON & FRI". */
+  function formatServiceDaysLine(daysRaw) {
+    var s = String(daysRaw || "").trim();
+    if (!s) return "";
+    s = s.replace(/^\(|\)$/g, "").trim();
+    var chunks = s.split(/\s*(?:&| and )\s*/i).map(function (x) { return x.trim(); }).filter(Boolean);
+    var out = chunks.map(function (chunk) {
+      var range = chunk.match(/^([A-Za-z.]+)\s*(?:[–\-—]|\s+to\s+)\s*([A-Za-z.]+)$/i);
+      if (range) return dayShortToken(range[1]) + " to " + dayShortToken(range[2]);
+      var parts = chunk.split(/\s*,\s*/).map(dayShortToken).filter(Boolean);
+      if (parts.length > 1) return parts.join(", ");
+      return dayShortToken(chunk);
+    }).filter(Boolean);
+    return out.join(" & ");
+  }
+
+  function clockMeridiem(tok) {
+    var h = parseInt(String(tok || "").trim(), 10);
+    if (!Number.isFinite(h)) return "";
+    if (h === 12) return "pm";
+    if (h >= 1 && h <= 8) return "pm";
+    if (h >= 9 && h <= 11) return "am";
+    return "";
+  }
+
+  /** "11–1" / "11 to 4" / "12.30 to 3" → "11 am to 1 pm". */
+  function formatServiceTimeLine(startRaw, endRaw) {
+    function one(tok) {
+      var t = String(tok || "").trim().replace(":", ".");
+      if (!t) return "";
+      if (/\b(am|pm)\b/i.test(t)) return t.toLowerCase().replace(/\s+/g, " ");
+      var mer = clockMeridiem(t);
+      return mer ? t + " " + mer : t;
+    }
+    var a = one(startRaw);
+    var b = one(endRaw);
+    if (a && b) return a + " to " + b;
+    return a || b || "";
+  }
+
+  function extractTimeFromSessions(sessions) {
+    var m = String(sessions || "").match(
+      /(\d{1,2}(?:[.:]\d{2})?)\s*(?:[–\-—]|to)\s*(\d{1,2}(?:[.:]\d{2})?)/i
+    );
+    if (!m) return "";
+    return formatServiceTimeLine(m[1], m[2]);
+  }
+
+  function defaultDayCentreTime(hoursKey) {
+    var k = String(hoursKey || "").toLowerCase();
+    if (k === "5h") return "11 am to 4 pm";
+    if (k === "2h30") return "12.30 pm to 3 pm";
+    if (k === "2h") return "11 am to 1 pm";
+    if (k === "1h") return "11 am to 12 pm";
+    return "";
+  }
+
+  function collectDayCentreWeekdays(raw) {
+    var days = [];
+    var seen = Object.create(null);
+    var re = /DAY\s*CENTRE(?:\s*\([^)]*\))?\s+(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Tues|Wed|Thu|Thur|Thurs|Fri|Sat|Sun)\b/gi;
+    var m;
+    while ((m = re.exec(String(raw || "")))) {
+      var d = dayShortToken(m[1]);
+      if (d && !seen[d]) { seen[d] = 1; days.push(d); }
+    }
+    return days;
   }
 
   /**
-   * Display-only service label.
-   * Legacy "60' 2:1 Bespoke 2h30 (Mon–Fri)" → "2h30' Day Centre" + "(Monday-Friday)".
+   * Service cell: 3 lines — hours+name, days, time.
+   * e.g. "5h DAY CENTRE" / "MON to WED & FRI" / "11 am to 4 pm"
    */
-  function normalizeServiceParts(raw) {
+  function serviceDisplayParts(r) {
+    var raw = rawServiceText(r);
+    var sessions = String(((r && r.data) || {}).Sessions || ((r && r.data) || {})["Session times"] || "").trim();
+    if (!raw) return { line1: "—", line2: "", line3: "" };
+    return normalizeServiceParts(raw, sessions);
+  }
+
+  function normalizeServiceParts(raw, sessions) {
     var s = String(raw || "").trim();
-    if (!s) return { line1: "", line2: "" };
+    if (!s) return { line1: "", line2: "", line3: "" };
+    sessions = String(sessions || "").trim();
 
-    var hoursDay = null;
-    /* "60' 2:1 Bespoke 2h30 (Mon–Fri)" — hours after Bespoke are the real Day Centre length */
-    var bes = s.match(
-      /^(?:\d+\s*['′']?\s*)?(?:\d+\s*:\s*\d+\s+)?Bespoke\s+(\d+)\s*h\s*(\d{2})?\b(?:\s*\(([^)]+)\))?\s*$/i
+    var h = "";
+    var mm = "";
+    var daysRaw = "";
+    var isDayCentre = false;
+
+    /* Anywhere in string: "1:1 Day Centre 5h (Mon, Wed & Fri)" */
+    var dc = s.match(
+      /(?:\d+\s*:\s*\d+\s+)?Day\s*Centre\s+(\d+)\s*h\s*(\d{2})?\b(?:\s*\(([^)]+)\))?/i
     );
-    if (bes) hoursDay = { h: bes[1], mm: bes[2] || "", days: bes[3] || "" };
-
-    /* "1:1 Day Centre 5h (Mon, Wed & Fri)" / "2:1 Day Centre 5h (…)" — hours after Day Centre */
-    if (!hoursDay) {
-      var dc = s.match(
-        /^(?:\d+\s*['′']?\s*)?(?:\d+\s*:\s*\d+\s+)?Day\s*Centre\s+(\d+)\s*h\s*(\d{2})?\b(?:\s*\(([^)]+)\))?\s*$/i
-      );
-      if (dc) hoursDay = { h: dc[1], mm: dc[2] || "", days: dc[3] || "" };
+    if (dc) {
+      h = dc[1];
+      mm = dc[2] || "";
+      daysRaw = dc[3] || "";
+      isDayCentre = true;
     }
 
-    /* Already modern: "2h30' Day Centre …" or "2h' 2:1 Day Centre (Mon & Fri)" */
-    if (!hoursDay) {
+    /* "2h' 2:1 Day Centre (Mon & Fri)" / "2h30' Day Centre …" */
+    if (!isDayCentre) {
       var modern = s.match(
-        /^(\d+)\s*h\s*(\d{2})?'?\s*(?:\d+\s*:\s*\d+\s+)?Day\s*Centre\b(?:\s*\(([^)]+)\))?\s*$/i
+        /(\d+)\s*h\s*(\d{2})?'?\s*(?:\d+\s*:\s*\d+\s+)?Day\s*Centre\b(?:\s*\(([^)]+)\))?/i
       );
-      if (modern) hoursDay = { h: modern[1], mm: modern[2] || "", days: modern[3] || "" };
+      if (modern) {
+        h = modern[1];
+        mm = modern[2] || "";
+        daysRaw = modern[3] || "";
+        isDayCentre = true;
+      }
     }
 
-    if (hoursDay) {
-      var hrs = hoursDay.h + "h" + hoursDay.mm + "'";
+    /* "2:1 Bespoke 2h30 (Mon–Fri)" → Day Centre block */
+    if (!isDayCentre) {
+      var bes = s.match(
+        /(?:\d+\s*:\s*\d+\s+)?Bespoke\s+(\d+)\s*h\s*(\d{2})?\b(?:\s*\(([^)]+)\))?/i
+      );
+      if (bes && /day\s*centre|bespoke\s*block/i.test(s)) {
+        h = bes[1];
+        mm = bes[2] || "";
+        daysRaw = bes[3] || "";
+        isDayCentre = true;
+      } else if (bes && !/\b(aquatic|climb|multi|crash|physical)\b/i.test(s)) {
+        /* Standalone bespoke-with-hours (Fadi) treated as Day Centre length. */
+        h = bes[1];
+        mm = bes[2] || "";
+        daysRaw = bes[3] || "";
+        isDayCentre = true;
+      }
+    }
+
+    if (isDayCentre && h) {
+      var hoursKey = h + "h" + (mm || "");
+      var line1 = h + "h" + (mm || "") + " DAY CENTRE";
+
+      if (!daysRaw) {
+        var fromParts = collectDayCentreWeekdays(s);
+        if (fromParts.length) daysRaw = fromParts.join(" & ");
+      }
+      if (!daysRaw && /mon\s*[–\-—]\s*fri|monday\s*[–\-—]\s*friday/i.test(s)) {
+        daysRaw = "Mon–Fri";
+      }
+
       return {
-        line1: hrs + " Day Centre",
-        line2: hoursDay.days ? "(" + expandDayRangeLabel(hoursDay.days) + ")" : "",
+        line1: line1,
+        line2: formatServiceDaysLine(daysRaw),
+        line3: extractTimeFromSessions(sessions) || defaultDayCentreTime(hoursKey),
       };
     }
 
-    s = normalizeServiceDisplay(s);
-    return { line1: s, line2: "" };
+    /* Afterschool / other: "30' Aquatic Activity (Thursday)" */
+    var as = s.match(
+      /^(\d+\s*['′']?\s*[A-Za-z][A-Za-z\s\-]*?)(?:\s*\(([^)]+)\))?\s*$/
+    );
+    if (as && s.indexOf(" · ") < 0) {
+      var line1b = normalizeServiceDisplay(as[1].trim());
+      var inside = String(as[2] || "").trim();
+      var daysPart = "";
+      var timePart = "";
+      if (inside) {
+        var timeInParen = inside.match(
+          /(\d{1,2}(?:[.:]\d{2})?)\s*(?:[–\-—]|to)\s*(\d{1,2}(?:[.:]\d{2})?)/i
+        );
+        if (timeInParen) {
+          timePart = formatServiceTimeLine(timeInParen[1], timeInParen[2]);
+          daysPart = formatServiceDaysLine(
+            inside.replace(timeInParen[0], "").replace(/^[·,\s]+|[·,\s]+$/g, "")
+          );
+        } else {
+          daysPart = formatServiceDaysLine(inside);
+        }
+      }
+      return {
+        line1: line1b,
+        line2: daysPart,
+        line3: timePart || extractTimeFromSessions(sessions),
+      };
+    }
+
+    return {
+      line1: normalizeServiceDisplay(s),
+      line2: "",
+      line3: extractTimeFromSessions(sessions),
+    };
   }
 
   /** Display-only: legacy workbook codes → current service names. */
@@ -1623,7 +1780,7 @@
       var v = d[keys[i]];
       if (v != null && String(v).trim() && String(v).trim() !== "-") return normalizeTermLabel(String(v).trim());
     }
-    return "SUMMER TERM 25/26";
+    return "Summer 25/26";
   }
 
   /**
@@ -2524,7 +2681,7 @@
       amount_billed: 0,
       amount_out: 0,
       data: {
-        Term: "AUTUMN TERM 26/27",
+        Term: "Autumn 26/27",
         Services: "",
         Funder: inv.funding_label || "",
       },
@@ -2702,7 +2859,7 @@
       amount_billed: amt,
       amount_out: paid ? 0 : amt,
       data: {
-        Term: "SUMMER TERM 25/26",
+        Term: "Summer 25/26",
         Services: crashServicesLabel(inv),
         Paid: PAID_BY.PRIVATE_FUNDS,
         "Invoice type": invType,
