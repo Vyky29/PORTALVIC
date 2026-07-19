@@ -4022,7 +4022,70 @@
     var amt = Number(inv && inv.amount_gbp) || 0;
     if (amt > 0 && annual > 0 && Math.abs(amt - annual) < 0.05) return 0;
     if (amt > 0 && annual > 0 && amt > annual * 0.85) return 0;
+    if (amt > 0) return amt;
     return 0;
+  }
+
+  /** Parse `14 × £50 … + 13 × £120 … = £2,260` from summer workbook. */
+  function parseAutumnBasisGbp(data) {
+    var raw = String((data && data["Autumn 26/27 basis"]) || "");
+    if (!raw) return 0;
+    var eq = raw.match(/=\s*£?\s*([\d,]+(?:\.\d+)?)/);
+    if (eq) return Number(String(eq[1]).replace(/,/g, "")) || 0;
+    var bits = raw.match(/(\d+)\s*[×x]\s*£?\s*([\d,]+(?:\.\d+)?)/gi) || [];
+    var sum = 0;
+    bits.forEach(function (bit) {
+      var m = bit.match(/(\d+)\s*[×x]\s*£?\s*([\d,]+(?:\.\d+)?)/i);
+      if (!m) return;
+      sum += (Number(m[1]) || 0) * (Number(String(m[2]).replace(/,/g, "")) || 0);
+    });
+    return sum > 0 ? Math.round(sum * 100) / 100 : 0;
+  }
+
+  /**
+   * When la_office_auto / INV-P amounts are still 0, fill Autumn (+ year) from the
+   * matched summer client_payments pack (basis field or scheduled place).
+   */
+  function fillAutumnAmountsFromSummerWorkbook(reenrol, payments) {
+    var bySlug = Object.create(null);
+    (payments || []).forEach(function (p) {
+      if (String((p && p.sheet) || "").toUpperCase() !== "LA") return;
+      var slug = paymentParticipantSlug(p);
+      if (!slug) return;
+      var prefer = termBucketFor(p) === "summer_2526";
+      if (!bySlug[slug] || prefer) bySlug[slug] = p;
+    });
+    (reenrol || []).forEach(function (r) {
+      if (!r || !r._reenrol) return;
+      var slug = paymentParticipantSlug(r);
+      var summer = slug ? bySlug[slug] : null;
+      if (!summer) return;
+      var data = summer.data || {};
+      var autumnAmt = parseAutumnBasisGbp(data);
+      var annualAmt = Number(r._amountAnnual) || 0;
+      if (!(annualAmt > 0)) {
+        annualAmt =
+          parseMoneyField(data["Year billed (26/27)"]) ||
+          parseMoneyField(data["Year outstanding"]) ||
+          0;
+      }
+      if (!(Number(r.amount) > 0) && autumnAmt > 0) {
+        r.amount = autumnAmt;
+        r.amount_billed = autumnAmt;
+        r.amount_out = autumnAmt;
+        r.payment_status = "Outstanding";
+        r.data = r.data || {};
+        if (data["Autumn 26/27 basis"]) {
+          r.data["Autumn 26/27 basis"] = data["Autumn 26/27 basis"];
+        }
+      }
+      if (!(Number(r._amountAnnual) > 0) && annualAmt > 0) {
+        r._amountAnnual = annualAmt;
+      } else if (!(Number(r._amountAnnual) > 0) && autumnAmt > 0) {
+        /* Weekday-heavy afterschool places ≈ autumn × (38/14). */
+        r._amountAnnual = Math.round(autumnAmt * (38 / 14) * 100) / 100;
+      }
+    });
   }
 
   function laBookedAutumnAmountGbp(inv) {
@@ -4372,6 +4435,7 @@
         .filter(Boolean);
       return loadFundingLabelsByContact(client, contactIds).then(function (fundingByContact) {
         applyPayGroupClassification(payments, reenrol, fundingByContact);
+        fillAutumnAmountsFromSummerWorkbook(reenrol, payments);
         var allRows = payments.concat(reenrol).concat(crash);
         return enrichPaymentServicesFromParticipantLines(client, allRows).then(function () {
           return { payments: payments, reenrol: reenrol, crash: crash };

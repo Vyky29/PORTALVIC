@@ -332,11 +332,39 @@ function termTotals(price: number | null, counts: { autumn: number; spring: numb
   };
 }
 
+/**
+ * LA / Summer workbook lines often look like:
+ *   `30' Aquatic Activity, Monday - 6 to 6.30`
+ * Catalogue parse expects a paren day: `30' Aquatic Activity (Monday)`.
+ */
 function normalizeServiceSegment(raw: string): string {
-  return String(raw || "")
+  let s = String(raw || "")
     .replace(/[''′](?:\s*[''′])+/g, "'")
     .replace(/\s+/g, " ")
     .trim();
+  const day =
+    "Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Wed|Thu|Fri|Sat|Sun";
+  const clock =
+    "\\d{1,2}(?:[.:]\\d{1,2})?(?:\\s*(?:am|pm))?";
+  /* ", Monday - 6 to 6.30" / ", Monday" → " (Monday)" */
+  s = s.replace(
+    new RegExp(
+      `,\\s*(${day})\\s*(?:[-–—]\\s*${clock}\\s*(?:(?:to|-)\\s*${clock})?)?\\s*$`,
+      "i",
+    ),
+    " ($1)",
+  );
+  /* "… Aquatic Monday - 6 to 6.30" (no comma) when not already parenthesised */
+  if (!/\([^)]*\)\s*$/.test(s)) {
+    s = s.replace(
+      new RegExp(
+        `\\s+(${day})\\s*(?:[-–—]\\s*${clock}\\s*(?:(?:to|-)\\s*${clock})?)?\\s*$`,
+        "i",
+      ),
+      " ($1)",
+    );
+  }
+  return s;
 }
 
 function stripServiceToken(raw: string): string {
@@ -1390,7 +1418,11 @@ function parseCostInfo(data: Record<string, unknown>): {
   const n = Number(m[1]);
   if (!Number.isFinite(n) || n <= 0) return { perSession: null, perWeek: null };
   if (/\/\s*week/i.test(String(raw))) return { perSession: null, perWeek: n };
-  return { perSession: n, perWeek: null };
+  /* Require explicit session unit — bare "£3,700" / "1,850.00" are year packages. */
+  if (/\/\s*session/i.test(String(raw)) || /\bper\s+session\b/i.test(String(raw))) {
+    return { perSession: n, perWeek: null };
+  }
+  return { perSession: null, perWeek: null };
 }
 
 function parseCostPerSession(data: Record<string, unknown>): number | null {
