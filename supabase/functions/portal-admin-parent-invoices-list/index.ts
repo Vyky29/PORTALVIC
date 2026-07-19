@@ -384,7 +384,8 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     slots: BookedSlotSummary[];
     service_raw: string;
   };
-  const laPayByContact = new Map<string, LaPayMatch>();
+  /** One contact may have several LA payment rows (e.g. Tinashe Mon/Wed Ealing + Fri NHS). */
+  const laPayByContact = new Map<string, LaPayMatch[]>();
   {
     const { data: laRows } = await admin
       .from("client_payments")
@@ -429,14 +430,15 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
         }
       }
       if (!matched) continue;
-      if (laPayByContact.has(matched.contact_id)) continue;
-      laPayByContact.set(matched.contact_id, {
+      const list = laPayByContact.get(matched.contact_id) || [];
+      list.push({
         row: row as Record<string, unknown>,
         totals,
         sheet,
         slots,
         service_raw: clean(ctx.serviceRaw, 240),
       });
+      laPayByContact.set(matched.contact_id, list);
       if (!nameByContact.has(matched.contact_id) && matched.child) {
         nameByContact.set(matched.contact_id, matched.child);
       }
@@ -482,11 +484,16 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       (cid && reenrolByContact.get(cid)) ||
       reenrolByName.get(displayName.toLowerCase()) ||
       null;
-    const laPay = cid ? laPayByContact.get(cid) : null;
+    const laPacks = cid ? laPayByContact.get(cid) || [] : [];
     const bookedFromReenrol = reenrol?.totals;
-    const bookedFromLa = laPay?.totals || null;
+    const bookedFromLa = laPacks[0]?.totals || null;
     const bookedTotals = bookedFromReenrol || bookedFromLa || null;
     const booked = bookedFieldsFromTotals(bookedTotals, amountKey);
+    const mergedSlots = laPacks.flatMap((p) => p.slots || []);
+    const mergedServiceRaw = laPacks
+      .map((p) => p.service_raw)
+      .filter(Boolean)
+      .join(" · ");
 
     invoices.push({
       ...share,
@@ -504,22 +511,38 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       funding_label: funding.fundingLabel || null,
       payment_sheet: funding.paymentSheet || null,
       ...booked,
-      booked_slots: laPay?.slots || [],
-      booked_service_raw: laPay?.service_raw || null,
+      booked_slots: mergedSlots,
+      booked_service_raw: mergedServiceRaw || null,
       reenrolment_submitted_at: reenrol?.submitted_at || null,
       is_la_office_auto: fundingCategory === "la_managed" && !reenrol,
     });
   }
 
   // Synthetic rows for LA sheet clients (office auto) with no family invoice yet.
+  // One synthetic per client_payments row so Mon/Wed LA and Fri NHS stay separate (Tinashe).
+  // If several payment packs exist for one contact, always emit them (even when a family
+  // INV-P already exists) so Funded by LA vs NHS filters stay correct.
+  const multiLaPackContacts = new Set<string>();
+  for (const [cid, packs] of laPayByContact) {
+    if (packs.length > 1) multiLaPackContacts.add(cid);
+  }
+  if (multiLaPackContacts.size) {
+    invoices = invoices.filter((inv) => {
+      const cid = clean(inv.contact_id, 120);
+      if (!cid || !multiLaPackContacts.has(cid)) return true;
+      // Drop family shares for multi-pack contacts; synthetics replace them in this list.
+      return inv.created_via === "la_office_auto";
+    });
+  }
   const OFFICE_AUTO_SORT_TS = "2026-06-01T12:00:00.000Z";
-  for (const [cid, pack] of laPayByContact) {
-    if (invoiceContactIds.has(cid)) continue;
+  for (const [cid, packs] of laPayByContact) {
+    const multiPack = packs.length > 1;
+    if (invoiceContactIds.has(cid) && !multiPack) continue;
     if (listFilter === "xero_unsynced" || listFilter === "buffer_low") continue;
     if (shareFilter === "ready" || payFilter === "paid" || payFilter === "pending_confirmation") {
       continue;
     }
-    const displayName = nameByContact.get(cid) || clean(pack.row.client_name, 120) || cid;
+    const displayName = nameByContact.get(cid) || clean(packs[0]?.row?.client_name, 120) || cid;
     let funding = fundingByContact.get(cid);
     if (!funding) {
       funding = await resolveParticipantInvoiceFunding(admin, {
@@ -528,52 +551,63 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       });
       fundingByContact.set(cid, funding);
     }
-    const fundingCategory = invoiceFundingCategory({
-      vatMode: "exempt",
-      paymentMethodHint: "la_funded",
-      fundingLabel: funding.fundingLabel,
-      paymentSheet: pack.sheet || "LA",
-    });
-    const booked = bookedFieldsFromTotals(pack.totals, amountKey);
     const reenrol = reenrolByContact.get(cid) || null;
-    invoices.push({
-      id: `la-auto-${cid}`,
-      document_id: null,
-      contact_id: cid,
-      invoice_number: null,
-      amount_gbp: booked.amount_selected_gbp || booked.booked_annual_gbp || 0,
-      due_date: null,
-      payment_status: "unpaid",
-      share_status: "hidden",
-      ready_at: null,
-      ready_by: null,
-      notes: "LA office auto re-enrolment — no family INV-P yet",
-      created_at: OFFICE_AUTO_SORT_TS,
-      updated_at: OFFICE_AUTO_SORT_TS,
-      payment_method_hint: "la_funded",
-      created_via: "la_office_auto",
-      vat_mode: "exempt",
-      title: "LA office auto · booked place",
-      related_client: displayName,
-      participant_display: displayName,
-      parent_display: parentByContact.get(cid) || clean(pack.row.parent_name, 120) || "",
-      file_url: null,
-      pdf_url: null,
-      document_created_at: null,
-      payment_hold: holdByContact.get(cid) || null,
-      buffer_status: bufferByContact.get(cid) || null,
-      funding_category: fundingCategory,
-      funding_category_label: invoiceFundingCategoryLabel(fundingCategory),
-      funding_label: funding.fundingLabel || "Local Authority",
-      payment_sheet: pack.sheet || "LA",
-      ...booked,
-      booked_slots: pack.slots || [],
-      booked_service_raw: pack.service_raw || null,
-      reenrolment_submitted_at: reenrol?.submitted_at || OFFICE_AUTO_SORT_TS,
-      is_la_office_auto: true,
-      xero_invoice_id: null,
-      xero_push_status: null,
-    });
+    for (const pack of packs) {
+      const data = (pack.row.data || {}) as Record<string, unknown>;
+      const payFunding =
+        clean(data.Funder, 120) ||
+        clean(data.Funding, 120) ||
+        clean(data.Paid, 120) ||
+        funding.fundingLabel ||
+        "Local Authority";
+      const clientKey = clean(pack.row.client_key, 80) || "row";
+      const fundingCategory = invoiceFundingCategory({
+        vatMode: "exempt",
+        paymentMethodHint: "la_funded",
+        fundingLabel: payFunding,
+        paymentSheet: pack.sheet || "LA",
+      });
+      const booked = bookedFieldsFromTotals(pack.totals, amountKey);
+      invoices.push({
+        id: `la-auto-${cid}-${clientKey}`,
+        document_id: null,
+        contact_id: cid,
+        invoice_number: null,
+        amount_gbp: booked.amount_selected_gbp || booked.booked_annual_gbp || 0,
+        due_date: null,
+        payment_status: "unpaid",
+        share_status: "hidden",
+        ready_at: null,
+        ready_by: null,
+        notes: "LA office auto re-enrolment — no family INV-P yet",
+        created_at: OFFICE_AUTO_SORT_TS,
+        updated_at: OFFICE_AUTO_SORT_TS,
+        payment_method_hint: "la_funded",
+        created_via: "la_office_auto",
+        vat_mode: "exempt",
+        title: "LA office auto · booked place",
+        related_client: displayName,
+        participant_display: displayName,
+        parent_display: parentByContact.get(cid) || clean(pack.row.parent_name, 120) || "",
+        file_url: null,
+        pdf_url: null,
+        document_created_at: null,
+        payment_hold: holdByContact.get(cid) || null,
+        buffer_status: bufferByContact.get(cid) || null,
+        funding_category: fundingCategory,
+        funding_category_label: invoiceFundingCategoryLabel(fundingCategory),
+        funding_label: payFunding,
+        payment_sheet: pack.sheet || "LA",
+        ...booked,
+        booked_slots: pack.slots || [],
+        booked_service_raw: pack.service_raw || null,
+        reenrolment_submitted_at: reenrol?.submitted_at || OFFICE_AUTO_SORT_TS,
+        is_la_office_auto: true,
+        xero_invoice_id: null,
+        xero_push_status: null,
+        payment_client_key: clientKey,
+      });
+    }
     invoiceContactIds.add(cid);
   }
 

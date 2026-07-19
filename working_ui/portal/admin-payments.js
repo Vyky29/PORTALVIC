@@ -787,23 +787,26 @@
       ".pay-chip--inv-nhs{background:#f0f9ff;color:#0369a1;border-color:#bae6fd}",
       ".pay-chip--muted{background:#f1f5f9;color:#64748b;border-color:#e2e8f0}",
       ".pay-tbl td .pay-chip{white-space:normal}",
-      ".pay-svc-3line{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;max-width:100%}",
-      ".pay-svc-3line__a{font-weight:800;color:#0f172a;overflow-wrap:break-word;line-height:1.25}",
-      ".pay-svc-3line__b,.pay-svc-3line__c{font-size:12px;font-weight:600;color:#64748b;overflow-wrap:break-word;line-height:1.25}",
+      ".pay-svc-lines{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0;max-width:100%;text-align:left}",
+      ".pay-svc-line{display:block;font-weight:700;font-size:13px;color:#0f172a;line-height:1.35;white-space:nowrap;max-width:100%}",
       ".pay-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 1px 3px rgba(15,23,42,.05);overflow:hidden}",
       ".pay-card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid #eef2f7}",
       ".pay-card-h h3{margin:0;font-size:15px;color:#0f172a}",
       ".pay-tbl-wrap{overflow-x:auto;min-width:0}",
       ".pay-tbl__idx{width:2.5rem;color:#94a3b8;font-variant-numeric:tabular-nums}",
       ".pay-tbl thead th.pay-tbl__idx{color:#94a3b8;font-weight:700}",
-      ".pay-tbl{width:100%;border-collapse:collapse;font-size:14px}",
-      ".pay-tbl th,.pay-tbl td{padding:10px 12px;border-bottom:1px solid #eef2f7;text-align:center;vertical-align:middle;overflow-wrap:break-word;max-width:260px}",
+      ".pay-tbl{width:100%;border-collapse:collapse;font-size:14px;table-layout:fixed}",
+      ".pay-tbl th,.pay-tbl td{padding:10px 12px;border-bottom:1px solid #eef2f7;text-align:center;vertical-align:middle;overflow-wrap:break-word;max-width:none}",
+      ".pay-tbl th.pay-col-client,.pay-tbl td.pay-col-client{width:14%;text-align:left;min-width:0}",
+      ".pay-tbl th.pay-col-svc,.pay-tbl td.pay-col-svc{width:42%;text-align:left;min-width:0}",
       ".pay-tbl thead th{background:#f8fafc;color:#0f172a;font-size:11px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}",
       ".pay-tbl thead tr.pay-tbl__filter-row th{background:#fff;text-transform:none;letter-spacing:0;white-space:normal;font-weight:400;padding:10px 12px;vertical-align:middle}",
       ".pay-tbl tbody tr{cursor:pointer}",
       ".pay-tbl tbody tr:hover{background:#f8fafc}",
       ".pay-tbl td.num{text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}",
-      ".pay-name{font-weight:700;color:#0f172a}",
+      ".pay-name-stack{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;max-width:100%;text-align:left}",
+      ".pay-name{font-weight:700;color:#0f172a;overflow-wrap:break-word;min-width:0;max-width:100%}",
+      ".pay-name-parent{font-size:12px;font-weight:600;color:#64748b;overflow-wrap:break-word;min-width:0;max-width:100%}",
       ".pay-pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}",
       ".pay-pill--paid{background:#e7f6ee;color:#15803d}",
       ".pay-pill--out{background:#fef2f2;color:#b91c1c}",
@@ -1001,6 +1004,9 @@
     if (s.indexOf("ikram") === 0) return "ikram";
     if (s.indexOf("emanuel") === 0 || s.indexOf("emmanuel") === 0) return "emanuel";
     if (s.indexOf("fadi") === 0) return "fadi";
+    if (s.indexOf("adaam") === 0 || s.indexOf("aadam") === 0) return "adaam";
+    if (s.indexOf("amaar") === 0) return "amaar";
+    if (s.indexOf("aydaan") === 0) return "aydaan";
     return s;
   }
 
@@ -1371,10 +1377,21 @@
 
   function paymentsTableHeadHtml(termId, colClient) {
     return "<thead>"
-      + '<tr class="pay-tbl__filter-row"><th colspan="10">' + paidFilterChipsHtml(termId) + "</th></tr>"
-      + '<tr><th class="num pay-tbl__idx">#</th><th>' + colClient
-      + '</th><th>Paid</th><th>Invoice type</th><th>Support</th><th>Service</th><th>Term</th><th>Parent</th><th class="num">Total</th><th>Status</th></tr>'
+      + '<tr class="pay-tbl__filter-row"><th colspan="8">' + paidFilterChipsHtml(termId) + "</th></tr>"
+      + '<tr><th class="num pay-tbl__idx">#</th><th class="pay-col-client">' + colClient
+      + '</th><th>Paid</th><th>Invoice type</th><th>Support</th><th class="pay-col-svc">Service</th><th class="num">Total</th><th>Status</th></tr>'
       + "</thead>";
+  }
+
+  function clientCellHtml(r) {
+    var name = String((r && r.client_name) || "—").trim() || "—";
+    var parent = parentPersonFor(r);
+    var html = '<span class="pay-name-stack"><span class="pay-name">' + esc(name) + "</span>";
+    if (parent && parent !== "—") {
+      html += '<span class="pay-name-parent">' + esc(parent) + "</span>";
+    }
+    html += "</span>";
+    return html;
   }
 
   function paymentsTableBodyHtml(rows, termId) {
@@ -1382,7 +1399,7 @@
     if (!rows.length) {
       return '<div class="pay-tbl-wrap"><table class="pay-tbl">'
         + paymentsTableHeadHtml(termId, colClient)
-        + '<tbody><tr><td colspan="10" class="pay-empty">No records in this term.</td></tr></tbody></table></div>';
+        + '<tbody><tr><td colspan="8" class="pay-empty">No records in this term.</td></tr></tbody></table></div>';
     }
     var html = '<div class="pay-tbl-wrap"><table class="pay-tbl">'
       + paymentsTableHeadHtml(termId, colClient)
@@ -1393,13 +1410,11 @@
         : ' data-pay-id="' + esc(r._sourcePaymentId || r.id) + '"';
       html += "<tr" + attr + ">"
         + '<td class="num pay-tbl__idx">' + (i + 1) + "</td>"
-        + '<td class="pay-name">' + esc(r.client_name || "—") + "</td>"
+        + '<td class="pay-col-client">' + clientCellHtml(r) + "</td>"
         + "<td>" + paidChipHtml(paidByFor(r)) + "</td>"
         + "<td>" + invoiceChipHtml(invoiceTypeFor(r)) + "</td>"
         + "<td>" + supportCellHtml(r) + "</td>"
-        + "<td>" + serviceCellHtml(r) + "</td>"
-        + "<td>" + esc(termFor(r)) + "</td>"
-        + "<td>" + esc(parentPersonFor(r)) + "</td>"
+        + '<td class="pay-col-svc">' + serviceCellHtml(r) + "</td>"
         + '<td class="num">' + money(r.amount) + "</td>"
         + "<td>" + pillFor(r) + "</td></tr>";
     });
@@ -1510,21 +1525,192 @@
     return /re-?enrolment\s*2026|booked place 2026|la office auto/i.test(t);
   }
 
+  /** "2h30 DAY CENTRE" + "MON to FRI" + "12.30 pm to 3 pm" → one display line. */
+  function formatServiceOneLiner(parts) {
+    if (!parts || !parts.line1 || parts.line1 === "—" || isPlaceholderServiceLabel(parts.line1)) {
+      return "";
+    }
+    var title = String(parts.line1).trim();
+    var days = String(parts.line2 || "").trim();
+    var hours = String(parts.line3 || "").trim();
+    if (days && hours) return title + ", " + days + " - " + hours;
+    if (days) return title + ", " + days;
+    if (hours) return title + " - " + hours;
+    return title;
+  }
+
+  function crashTitleFromHead(head) {
+    var s = normalizeServiceDisplay(String(head || "").trim());
+    s = s.replace(/\s*\(1\s*to\s*1\)|\s*\(1to1\)|\s*1to1\b/gi, "").trim();
+    var durM = s.match(/^(\d+\s*['′']?)\s*(.*)$/);
+    var dur = durM ? durM[1].replace(/\s+/g, "") : "";
+    var rest = durM ? durM[2].trim() : s;
+    if (/climb/i.test(rest)) {
+      return (dur ? dur + " " : "") + "CLIMBING INTENSIVE COURSE (JULY)";
+    }
+    if (/aquatic|swim/i.test(rest)) {
+      return (dur ? dur + " " : "") + "AQUATIC ACTIVITY (JULY)";
+    }
+    if (/multi/i.test(rest)) {
+      return (dur ? dur + " " : "") + "MULTI-ACTIVITY (JULY)";
+    }
+    return s.replace(/\s+/g, " ");
+  }
+
+  function formatCrashDateDays(raw) {
+    var s = String(raw || "").trim();
+    if (!s) return "";
+    var m = s.match(
+      /(\d{1,2}(?:st|nd|rd|th)?)\s+to\s+(\d{1,2}(?:st|nd|rd|th)?)\s+([A-Za-z]+)/i
+    );
+    if (!m) return s;
+    var month = m[3];
+    var startDay = m[1].replace(/(st|nd|rd|th)$/i, "");
+    var endDay = m[2].replace(/(st|nd|rd|th)$/i, "");
+    function ordinal(n) {
+      var x = parseInt(n, 10);
+      if (!Number.isFinite(x)) return String(n);
+      var v = x % 100;
+      if (v >= 11 && v <= 13) return x + "th";
+      return x + ({ 1: "st", 2: "nd", 3: "rd" }[x % 10] || "th");
+    }
+    /* Weekday from typical July crash packs when known from invoice copy. */
+    var startName = /20/i.test(m[1]) ? "MONDAY" : /21/i.test(m[1]) ? "TUESDAY" : "";
+    var endName = /23/i.test(m[2]) ? "THURSDAY" : /24/i.test(m[2]) ? "THURSDAY" : "";
+    if (startName && endName) {
+      return startName + " " + ordinal(startDay) + " to " + endName + " " + ordinal(endDay) + " " + month;
+    }
+    return ordinal(startDay) + " to " + ordinal(endDay) + " " + month;
+  }
+
+  function formatCrashParenBundle(head, bundle) {
+    var bits = String(bundle || "").split(/\s*·\s*/).map(function (x) {
+      return String(x || "").trim();
+    }).filter(Boolean);
+    var dateBit = "";
+    var timeBit = "";
+    bits.forEach(function (b) {
+      if (/^\d{1,2}(?:st|nd|rd|th)?\s+to\s+/i.test(b) || /\bJuly\b/i.test(b)) {
+        var tm = b.match(
+          /(\d{1,2}(?:st|nd|rd|th)?\s+to\s+\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+)(?:,\s*)?(.+)?/i
+        );
+        if (tm) {
+          dateBit = formatCrashDateDays(tm[1]);
+          var rest = String(tm[2] || "").trim();
+          if (rest) timeBit = extractTimeFromText(rest) || formatServiceTimeLine(
+            (rest.match(/(\d{1,2}(?:[.:]\d{2})?)/) || [])[1],
+            (rest.match(/to\s+(\d{1,2}(?:[.:]\d{2})?)/i) || [])[1]
+          );
+        } else {
+          dateBit = formatCrashDateDays(b);
+        }
+      } else if (/\d{1,2}(?:[.:]\d{2})?\s*(?:[–\-—]|to)\s*\d{1,2}/i.test(b)) {
+        timeBit = extractTimeFromText(b) || timeBit;
+      }
+    });
+    return formatServiceOneLiner({
+      line1: crashTitleFromHead(head),
+      line2: dateBit,
+      line3: timeBit,
+    });
+  }
+
+  /** Bullet-style crash invoices (Patrick). */
+  function parseBulletCrashOneLiners(desc) {
+    var text = String(desc || "");
+    if (!/summer\s*crash|crash\s*course/i.test(text)) return [];
+    var head = "";
+    var hm = text.match(/[-–]\s*(\d+\s*['′']?[^\n]*?(?:Climbing|Aquatic|Swimming|Multi)[^\n]*)/i);
+    if (hm) head = hm[1].trim();
+    if (!head) {
+      if (/climb/i.test(text)) head = "60' Climbing Activity";
+      else if (/aquatic|swim/i.test(text)) head = "60' Aquatic Activity";
+      else return [];
+    }
+    var dateM = text.match(
+      /(\d{1,2}(?:st|nd|rd|th)?\s+to\s+\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+)(?:\s+from\s+(\d{1,2}[:.]\d{2})\s*[-–]\s*(\d{1,2}[:.]\d{2})\s*(am|pm)?)?/i
+    );
+    var days = dateM ? formatCrashDateDays(dateM[1]) : "";
+    var hours = "";
+    if (dateM && dateM[2] && dateM[3]) {
+      hours = formatServiceTimeLine(dateM[2], dateM[3] + (dateM[4] ? " " + dateM[4] : ""));
+    }
+    if (!hours) hours = extractTimeFromText(text);
+    var one = formatServiceOneLiner({
+      line1: crashTitleFromHead(head),
+      line2: days,
+      line3: hours,
+    });
+    return one ? [one] : [];
+  }
+
+  function formatServicePieceOneLiner(piece, sessions) {
+    var s = cleanServiceLabelJunk(piece);
+    if (!s || isPlaceholderServiceLabel(s)) return "";
+    s = normalizeServiceDisplay(s);
+
+    var crashParen = s.match(/^(.+?)\s*\(([^)]*Summer crash[^)]*)\)\s*$/i);
+    if (crashParen) {
+      return formatCrashParenBundle(crashParen[1], crashParen[2]);
+    }
+
+    /* Avoid treating "Westway / Dates / Week 1…" junk as a service title. */
+    if (/^summer\s*crash|^westway|^dates?:?$|^week\s*\d|^summer\s*term|\bsessions?\b$/i.test(s)) {
+      return "";
+    }
+
+    var parts = normalizeServiceParts(s, sessions);
+    return formatServiceOneLiner(parts);
+  }
+
+  function serviceOneLinersFor(r) {
+    var d = (r && r.data) || {};
+    var sessions = String(d.Sessions || d["Session times"] || "").trim();
+    var raw = rawServiceText(r);
+    var out = [];
+    var seen = Object.create(null);
+
+    function push(line) {
+      var t = String(line || "").trim();
+      if (!t || t === "—" || seen[t.toLowerCase()]) return;
+      seen[t.toLowerCase()] = 1;
+      out.push(t);
+    }
+
+    if (r && r._crash && r._crashLineDesc) {
+      parseBulletCrashOneLiners(r._crashLineDesc).forEach(push);
+      var inlineRe = /([^\n—]+?)\s*\(([^)]*Summer crash[^)]*)\)/gi;
+      var m;
+      while ((m = inlineRe.exec(String(r._crashLineDesc || "")))) {
+        push(formatCrashParenBundle(m[1], m[2]));
+      }
+      if (out.length) return out;
+    }
+
+    if (!raw) return [];
+    splitServiceList(raw).forEach(function (piece) {
+      push(formatServicePieceOneLiner(piece, sessions));
+    });
+    if (out.length) return out;
+
+    /* Fallback: whole string as one Day Centre / afterschool block. */
+    push(formatServiceOneLiner(serviceDisplayParts(r)));
+    return out;
+  }
+
   function serviceFor(r) {
-    var parts = serviceDisplayParts(r);
-    if (!parts.line1 || parts.line1 === "—" || isPlaceholderServiceLabel(parts.line1)) return "—";
-    return [parts.line1, parts.line2, parts.line3].filter(Boolean).join(" · ");
+    var lines = serviceOneLinersFor(r);
+    return lines.length ? lines.join(" · ") : "—";
   }
 
   function serviceCellHtml(r) {
-    var parts = serviceDisplayParts(r);
-    if (!parts.line1 || parts.line1 === "—" || isPlaceholderServiceLabel(parts.line1)) return "—";
-    var html = '<span class="pay-svc-3line">'
-      + '<span class="pay-svc-3line__a">' + esc(parts.line1) + "</span>";
-    if (parts.line2) html += '<span class="pay-svc-3line__b">' + esc(parts.line2) + "</span>";
-    if (parts.line3) html += '<span class="pay-svc-3line__c">' + esc(parts.line3) + "</span>";
-    html += "</span>";
-    return html;
+    var lines = serviceOneLinersFor(r);
+    if (!lines.length) return "—";
+    return '<span class="pay-svc-lines">'
+      + lines.map(function (line) {
+        return '<span class="pay-svc-line" title="' + esc(line) + '">' + esc(line) + "</span>";
+      }).join("")
+      + "</span>";
   }
 
   function rawServiceText(r) {
@@ -1732,10 +1918,12 @@
     if (!out.length && inv && inv.line_description) {
       String(inv.line_description)
         .split(/\n+/)
-        .map(function (p) { return String(p || "").trim(); })
+        .map(function (p) { return String(p || "").trim().replace(/^[-–•]+\s*/, ""); })
         .filter(Boolean)
         .forEach(function (p) {
           if (/^structured activity support/i.test(p)) return;
+          if (/^client'?s\s*name\s*:/i.test(p)) return;
+          if (/^summer\s*crash|^westway|^dates?:?$|^week\s*\d|^summer\s*term|\b\d+\s*sessions?\b$/i.test(p)) return;
           add(p);
         });
     }
@@ -1835,9 +2023,19 @@
     function one(tok) {
       var t = String(tok || "").trim().replace(":", ".");
       if (!t) return "";
-      if (/\b(am|pm)\b/i.test(t)) return t.toLowerCase().replace(/\s+/g, " ");
-      var mer = clockMeridiem(t);
-      return mer ? t + " " + mer : t;
+      var merHit = t.match(/\b(am|pm)\b/i);
+      var mer = merHit ? merHit[1].toLowerCase() : "";
+      t = t.replace(/\b(am|pm)\b/i, "").trim();
+      var hm = t.match(/^(\d{1,2})(?:\.(\d{2}))?$/);
+      if (hm) {
+        var h = hm[1];
+        var mins = hm[2] || "";
+        if (mins === "00") mins = "";
+        t = mins ? h + "." + mins : h;
+        if (!mer) mer = clockMeridiem(h);
+      }
+      if (mer) return t + " " + mer;
+      return t;
     }
     var a = one(startRaw);
     var b = one(endRaw);
@@ -2238,7 +2436,7 @@
   function participantsTableHeadHtml(termId) {
     return "<thead>"
       + '<tr class="pay-tbl__filter-row"><th colspan="9">' + paidFilterChipsHtml(termId) + "</th></tr>"
-      + '<tr><th class="num pay-tbl__idx">#</th><th>Client</th><th>Paid</th><th>Invoice type</th><th>Support</th><th>Service(s)</th><th class="num">Orders</th><th class="num">Total</th><th>Status</th></tr>'
+      + '<tr><th class="num pay-tbl__idx">#</th><th class="pay-col-client">Client</th><th>Paid</th><th>Invoice type</th><th>Support</th><th class="pay-col-svc">Service(s)</th><th class="num">Orders</th><th class="num">Total</th><th>Status</th></tr>'
       + "</thead>";
   }
 
@@ -2251,13 +2449,20 @@
       var route = paidByFor(r) || invoiceTypeFor(r) || "x";
       var key = nameKey + "|" + route;
       if (!byName[key]) {
-        byName[key] = { name: r.client_name || "—", sheet: r.sheet, services: {}, orders: [], total: 0, anyOut: false };
+        byName[key] = {
+          name: r.client_name || "—",
+          sheet: r.sheet,
+          sample: r,
+          services: {},
+          orders: [],
+          total: 0,
+          anyOut: false,
+        };
         order.push(key);
       }
       var g = byName[key];
       g.orders.push(r);
-      var svc = serviceFor(r);
-      if (svc && svc !== "—") g.services[svc] = 1;
+      serviceOneLinersFor(r).forEach(function (line) { g.services[line] = 1; });
       g.total += Number(r.amount) || 0;
       if (category(r) === "outstanding") g.anyOut = true;
     });
@@ -2275,10 +2480,14 @@
       + participantsTableHeadHtml(termId)
       + "<tbody>";
     people.forEach(function (g, i) {
-      var svcList = Object.keys(g.services).filter(function (s) {
-        return s && !isPlaceholderServiceLabel(s);
-      });
-      var svcTxt = svcList.length ? svcList.join(" · ") : "—";
+      var svcLines = Object.keys(g.services).filter(Boolean);
+      var svcHtml = svcLines.length
+        ? ('<span class="pay-svc-lines">'
+          + svcLines.map(function (line) {
+            return '<span class="pay-svc-line" title="' + esc(line) + '">' + esc(line) + "</span>";
+          }).join("")
+          + "</span>")
+        : "—";
       var pill = g.anyOut
         ? '<span class="pay-pill pay-pill--out">Outstanding</span>'
         : '<span class="pay-pill pay-pill--paid">Paid</span>';
@@ -2293,11 +2502,11 @@
       }
       html += "<tr " + rowAttr + ">"
         + '<td class="num pay-tbl__idx">' + (i + 1) + "</td>"
-        + '<td class="pay-name">' + esc(g.name) + "</td>"
+        + '<td class="pay-col-client">' + clientCellHtml(first || g.sample || { client_name: g.name }) + "</td>"
         + "<td>" + paidChipHtml(paidByFor(first)) + "</td>"
         + "<td>" + invoiceChipHtml(invoiceTypeFor(first)) + "</td>"
         + "<td>" + supportCellHtml(first) + "</td>"
-        + "<td>" + esc(svcTxt) + "</td>"
+        + '<td class="pay-col-svc">' + svcHtml + "</td>"
         + '<td class="num">' + g.orders.length + "</td>"
         + '<td class="num">' + money(g.total) + "</td>"
         + "<td>" + pill + "</td></tr>";
@@ -2451,9 +2660,7 @@
       .sort(function (a, b) { return String(serviceFor(a)).localeCompare(String(serviceFor(b))); })
       .map(function (r) {
         return '<tr data-pay-open="' + esc(r.id) + '">'
-          + '<td>' + serviceCellHtml(r) + '</td>'
-          + '<td>' + esc(termFor(r)) + '</td>'
-          + '<td>' + esc(r.parent_name || "") + '</td>'
+          + '<td class="pay-col-svc">' + serviceCellHtml(r) + '</td>'
           + '<td class="num">' + money(r.amount) + '</td>'
           + '<td>' + pillFor(r) + '</td></tr>';
       }).join("");
@@ -2473,7 +2680,7 @@
       + '</div>'
       + '<div class="pay-screen__body"><div class="pay-screen__inner">'
       + '<p class="muted" style="margin:0 0 12px;font-size:13px">Tap an order to open and edit its full record.</p>'
-      + '<div class="pay-card"><div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>Service</th><th>Term</th><th>Parent / LA</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>'
+      + '<div class="pay-card"><div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th class="pay-col-svc">Service</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>'
       + rowsHtml
       + '</tbody></table></div></div>'
       + '</div></div>'
@@ -2925,6 +3132,16 @@
     return n > 0 ? n : 0;
   }
 
+  /** Keep Tinashe Mon/Wed LA and Fri NHS as separate autumn rows (la-auto-…-tinashe / …-tinashe-nhs). */
+  function autumnAggKey(inv) {
+    var cid = String((inv && inv.contact_id) || "").trim();
+    var via = String((inv && inv.created_via) || "");
+    if (via === "la_office_auto") {
+      return String((inv && inv.id) || ("la-auto-" + cid));
+    }
+    return cid;
+  }
+
   function buildAutumnReenrolAggRow(inv, opts) {
     opts = opts || {};
     var cid = String(inv.contact_id || "").trim();
@@ -2936,12 +3153,16 @@
       hint = "la_funded";
       vat = vat || "exempt";
     }
+    var fundingLabel = String(inv.funding_label || "").trim();
+    var paidChip = "";
+    if (/nhs/i.test(fundingLabel)) paidChip = PAID_BY.FUNDED_BY_NHS;
+    else if (fundingLabel) paidChip = PAID_BY.FUNDED_BY_LA;
     var row = {
-      id: (isLaAuto ? "la-auto-" : "reenrol-") + cid,
+      id: isLaAuto ? String(inv.id || ("la-auto-" + cid)) : ("reenrol-" + cid),
       _contactId: cid,
       _paymentMethodHint: hint,
       _vatMode: vat,
-      _fundingLabel: String(inv.funding_label || "").trim(),
+      _fundingLabel: fundingLabel,
       sheet: classifyPayGroup({
         payment_method_hint: hint,
         vat_mode: vat,
@@ -2957,7 +3178,9 @@
       data: {
         Term: "Autumn 26/27",
         Services: "",
-        Funder: inv.funding_label || "",
+        Funder: fundingLabel,
+        Paid: paidChip,
+        "Invoice type": /nhs/i.test(fundingLabel) ? INVOICE_TYPE.NHS_EXEMPT : INVOICE_TYPE.LA_EXEMPT,
       },
       _serviceParts: Object.create(null),
       _termBucket: "autumn_2627",
@@ -3003,23 +3226,28 @@
     var invs = allInvs.filter(isAutumnReenrolInvoice);
     var agg = {};
     invs.forEach(function (inv) {
-      var cid = String(inv.contact_id || "").trim();
-      if (!cid) return;
+      var key = autumnAggKey(inv);
+      if (!key) return;
       var via = String(inv.created_via || "");
       var isLaAuto = via === "la_office_auto";
-      if (!agg[cid]) {
-        agg[cid] = buildAutumnReenrolAggRow(inv, { forceLa: isLaAuto });
+      if (!agg[key]) {
+        agg[key] = buildAutumnReenrolAggRow(inv, { forceLa: isLaAuto });
       }
-      var row = agg[cid];
+      var row = agg[key];
       mergeServiceLabelsIntoRow(row, inv);
-      /* Prefer la_office_auto row identity if both somehow appear. */
       if (isLaAuto) {
-        row.id = "la-auto-" + cid;
         row._laOfficeAuto = true;
         row._paymentMethodHint = "la_funded";
-        if (!row._fundingLabel && inv.funding_label) {
+        if (inv.funding_label) {
           row._fundingLabel = String(inv.funding_label).trim();
           row.data.Funder = row._fundingLabel;
+          if (/nhs/i.test(row._fundingLabel)) {
+            row.data.Paid = PAID_BY.FUNDED_BY_NHS;
+            row.data["Invoice type"] = INVOICE_TYPE.NHS_EXEMPT;
+          } else {
+            row.data.Paid = PAID_BY.FUNDED_BY_LA;
+            row.data["Invoice type"] = INVOICE_TYPE.LA_EXEMPT;
+          }
         }
       }
       var amt = reenrolInvoiceAmountGbp(inv);
@@ -3045,8 +3273,8 @@
      */
     allInvs.forEach(function (inv) {
       if (!isLaManagedAutumnCandidate(inv)) return;
-      var cid = String(inv.contact_id || "").trim();
-      if (!cid || agg[cid]) return;
+      var key = autumnAggKey(inv);
+      if (!key || agg[key]) return;
       var amt = laBookedAutumnAmountGbp(inv);
       if (amt <= 0 && !inv.reenrolment_submitted_at && !(inv.booked_slots && inv.booked_slots.length)) {
         return;
@@ -3058,11 +3286,11 @@
       row.amount = amt;
       row.payment_status = amt > 0 ? "Outstanding" : "Paid";
       if (inv.id) row._invoiceIds.push(inv.id);
-      agg[cid] = row;
+      agg[key] = row;
     });
 
-    return Object.keys(agg).map(function (cid) {
-      var row = agg[cid];
+    return Object.keys(agg).map(function (key) {
+      var row = agg[key];
       row.amount = row.amount_out > 0 ? row.amount_out : row.amount_billed;
       if (row.amount_out <= 0 && row.amount_billed > 0) row.payment_status = "Paid";
       else if (row.amount_out > 0) row.payment_status = "Outstanding";
@@ -3074,6 +3302,54 @@
       });
       return row;
     });
+  }
+
+  function labelFromParticipantSession(sess) {
+    if (!sess || typeof sess !== "object") return "";
+    var dur = Number(sess.durationMin) || 0;
+    var svc = String(sess.service || "").trim();
+    var day = String(sess.day || "").trim();
+    if (!svc) return "";
+    var head = (dur ? dur + "' " : "") + svc;
+    return day ? head + " (" + dayTitleShort(dayShortToken(day)) + ")" : head;
+  }
+
+  /** Fill missing Aquatic (etc.) from roster-validated participant_service_lines. */
+  function enrichReenrolServicesFromParticipantLines(client, rows) {
+    if (!client || !rows || !rows.length) return Promise.resolve(rows);
+    return client
+      .from("portal_participant_service_lines")
+      .select("client_key, client_name, sessions")
+      .limit(500)
+      .then(function (res) {
+        if (res.error || !res.data) return rows;
+        var bySlug = Object.create(null);
+        res.data.forEach(function (line) {
+          var slug = paymentParticipantSlug({
+            client_key: line.client_key,
+            client_name: line.client_name,
+          });
+          if (!slug) return;
+          bySlug[slug] = line;
+        });
+        rows.forEach(function (r) {
+          if (!r || !r._reenrol) return;
+          var slug = paymentParticipantSlug(r);
+          var line = bySlug[slug];
+          if (!line || !Array.isArray(line.sessions)) return;
+          var labels = line.sessions.map(labelFromParticipantSession).filter(Boolean);
+          if (!labels.length) return;
+          if (!r._serviceParts) r._serviceParts = Object.create(null);
+          labels.forEach(function (s) { r._serviceParts[s] = 1; });
+          var list = dedupeServiceLabelList(Object.keys(r._serviceParts));
+          r._serviceParts = Object.create(null);
+          list.forEach(function (s) { r._serviceParts[s] = 1; });
+          r.data = r.data || {};
+          r.data.Services = list.join(" · ");
+        });
+        return rows;
+      })
+      .catch(function () { return rows; });
   }
 
   function isSummerCrashInvoice(inv) {
@@ -3092,18 +3368,16 @@
   }
 
   function crashServicesLabel(inv) {
-    var labels = serviceLabelsFromInvoice(inv);
+    var desc = String((inv && inv.line_description) || "");
+    var tmp = { _crash: true, _crashLineDesc: desc, data: { Services: "" } };
+    var ones = serviceOneLinersFor(tmp);
+    if (ones.length) return ones.join(" · ");
+    var labels = serviceLabelsFromInvoice(inv).filter(function (s) {
+      return s && !/^summer\s*crash|^westway|^dates?:?$|^week\s*\d|^summer\s*term|\bsessions?\b$/i.test(s);
+    });
     if (labels.length) return labels.join(" · ");
-    var desc = String(inv.line_description || "");
-    var bits = [];
-    if (/aquatic|swimming|swim/i.test(desc)) bits.push("60' Swimming");
-    if (/climb/i.test(desc)) bits.push("60' Climbing");
-    if (bits.length) {
-      if (/4\s*sessions|4\s*days|20th to 23rd|21st to 24th/i.test(desc)) {
-        return bits.join(" · ") + " (4 days)";
-      }
-      return bits.join(" · ");
-    }
+    if (/aquatic|swimming|swim/i.test(desc)) return "60' Aquatic Activity (July crash)";
+    if (/climb/i.test(desc)) return "60' Climbing Intensive Course (July)";
     return "Summer crash course";
   }
 
@@ -3116,11 +3390,13 @@
     var paid = st === "paid";
     var vat = String(inv.vat_mode || "").toLowerCase();
     var invType = vat === "exempt" ? INVOICE_TYPE.PARENT_EXEMPT : INVOICE_TYPE.PARENT_20;
+    var crashDesc = String(inv.line_description || "");
     var row = {
       id: "crash-" + (inv.id || cid),
       _contactId: cid,
       _synthetic: true,
       _crash: true,
+      _crashLineDesc: crashDesc,
       _termBucket: "summer_2526",
       _invoiceIds: inv.id ? [inv.id] : [],
       _paymentMethodHint: String(inv.payment_method_hint || "").toLowerCase(),
@@ -3141,8 +3417,14 @@
       },
       _serviceParts: Object.create(null),
     };
-    mergeServiceLabelsIntoRow(row, inv);
-    if (!row.data.Services) row.data.Services = crashServicesLabel(inv);
+    /* Prefer structured crash one-liners over raw invoice bullet junk. */
+    var crashLines = serviceOneLinersFor(row);
+    if (crashLines.length) {
+      row.data.Services = crashLines.join(" · ");
+    } else {
+      mergeServiceLabelsIntoRow(row, inv);
+      if (!row.data.Services) row.data.Services = crashServicesLabel(inv);
+    }
     return row;
   }
 
@@ -3178,7 +3460,9 @@
         .filter(Boolean);
       return loadFundingLabelsByContact(client, contactIds).then(function (fundingByContact) {
         applyPayGroupClassification(payments, reenrol, fundingByContact);
-        return { payments: payments, reenrol: reenrol, crash: crash };
+        return enrichReenrolServicesFromParticipantLines(client, reenrol).then(function (enriched) {
+          return { payments: payments, reenrol: enriched || reenrol, crash: crash };
+        });
       });
     });
   }
