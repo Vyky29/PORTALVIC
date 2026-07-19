@@ -1039,14 +1039,18 @@
       ".pay-term-acc__body .pay-groups{margin-bottom:14px}",
       ".pay-term-acc__body .pay-card-h{margin:0 0 10px}",
       ".pay-term-acc__sub{display:block;font-size:12px;font-weight:700;color:#64748b;margin-top:2px;overflow-wrap:break-word;letter-spacing:0;text-transform:none}",
-      ".pay-term-acc__meta{flex:0 1 auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:end;min-width:0;max-width:min(100%,42rem)}",
+      ".pay-term-acc__meta{flex:0 1 auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:end;min-width:0;max-width:min(100%,56rem)}",
       ".pay-term-acc__chip{display:inline-flex;align-items:center;gap:6px;max-width:100%;min-width:0;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;line-height:1.2;border:1px solid transparent;overflow-wrap:anywhere;white-space:nowrap}",
       ".pay-term-acc__chip b{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}",
+      ".pay-term-acc__chip--stack{flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;border-radius:14px;padding:7px 12px;white-space:normal}",
+      ".pay-term-acc__chip-title{display:block;font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;line-height:1.1;opacity:.78}",
       ".pay-term-acc__chip--orders{background:#f1f5f9;color:#334155;border-color:#e2e8f0}",
       ".pay-term-acc__chip--due{background:#fef2f2;color:#b91c1c;border-color:#fecaca}",
       ".pay-term-acc__chip--ok{background:#ecfdf5;color:#047857;border-color:#a7f3d0}",
       ".pay-term-acc__chip--as{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}",
       ".pay-term-acc__chip--dc{background:#f5f3ff;color:#6d28d9;border-color:#ddd6fe}",
+      ".pay-term-acc__chip--term-tot{background:#ecfeff;color:#0e7490;border-color:#a5f3fc}",
+      ".pay-term-acc__chip--year-tot{background:#fff7ed;color:#c2410c;border-color:#fed7aa}",
       ".pay-term-acc__chip .pay-term-acc__chip-lab{font-size:11px;font-weight:700;opacity:.88}",
       ".pay-tbl-caption{display:grid;grid-template-columns:auto auto;gap:8px;align-items:center;justify-content:end;min-width:0;flex:0 1 auto}",
       ".pay-tbl-caption .pay-term-acc__chip{justify-content:center}",
@@ -1592,6 +1596,7 @@
     var asN = 0;
     var dcN = 0;
     var counted = 0;
+    var yearTot = 0;
     rows.forEach(function (r) {
       /* Match stream filters: ACAT hidden until Day Centre re-enrol. */
       if (paymentParticipantSlug(r) === "acat" && !isDayCentreRow(r)) return;
@@ -1613,6 +1618,9 @@
           outN++;
         }
       }
+      if (isYearProgrammeRow(r)) {
+        yearTot += yearProgrammeGbp(r);
+      }
     });
     return {
       n: counted,
@@ -1623,7 +1631,54 @@
       dcDue: dcDue,
       asN: asN,
       dcN: dcN,
+      termTot: asDue + dcDue,
+      yearTot: yearTot,
     };
+  }
+
+  /**
+   * Full-year programme rows: LA/NHS (38/43 weeks), auto-reenrol office,
+   * Direct Payments / termly places we already know will continue.
+   */
+  function isYearProgrammeRow(r) {
+    if (!r) return false;
+    if (r._laOfficeAuto || r._reenrol || r._synthetic) return true;
+    var paid = paidByFor(r);
+    if (
+      paid === PAID_BY.FUNDED_BY_LA
+      || paid === PAID_BY.FUNDED_BY_NHS
+      || paid === PAID_BY.FUNDS_FROM_LA
+    ) {
+      return true;
+    }
+    var sheet = String(r.sheet || "").toUpperCase();
+    if (sheet === "LA" || sheet === "DIRECT_PAYMENTS") return true;
+    return false;
+  }
+
+  function parseMoneyField(raw) {
+    var s = String(raw == null ? "" : raw).replace(/,/g, "");
+    var m = s.match(/-?\d+(?:\.\d+)?/);
+    return m ? Number(m[0]) : 0;
+  }
+
+  function yearProgrammeGbp(r) {
+    var annual = Number(r && r._amountAnnual) || 0;
+    if (annual > 0) return annual;
+    var d = (r && r.data) || {};
+    var keys = [
+      "Year outstanding",
+      "Year billed (26/27)",
+      "Year billed (25/26)",
+      "Year billed",
+      "booked_annual_gbp",
+    ];
+    for (var i = 0; i < keys.length; i++) {
+      var n = parseMoneyField(d[keys[i]]);
+      if (n > 0) return n;
+    }
+    /* Known continuing place but no year figure yet — use this term line. */
+    return Number(r && r.amount) || 0;
   }
 
   function termAccordionMetaHtml(group) {
@@ -1635,7 +1690,13 @@
       + "<b>" + money(m.asDue) + "</b></span>"
       + '<span class="pay-term-acc__chip pay-term-acc__chip--dc" title="Day Centre outstanding">'
       + '<span class="pay-term-acc__chip-lab">Day Centre</span>'
-      + "<b>" + money(m.dcDue) + "</b></span>";
+      + "<b>" + money(m.dcDue) + "</b></span>"
+      + '<span class="pay-term-acc__chip pay-term-acc__chip--stack pay-term-acc__chip--term-tot" title="Afterschool + Day Centre outstanding this term">'
+      + '<span class="pay-term-acc__chip-title">Total this term</span>'
+      + "<b>" + money(m.termTot) + "</b></span>"
+      + '<span class="pay-term-acc__chip pay-term-acc__chip--stack pay-term-acc__chip--year-tot" title="Projected year programme for LA/NHS, auto-reenrol and known continuing places">'
+      + '<span class="pay-term-acc__chip-title">Total this year</span>'
+      + "<b>" + money(m.yearTot) + "</b></span>";
     html += "</span>";
     return html;
   }
