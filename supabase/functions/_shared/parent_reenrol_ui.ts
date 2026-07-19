@@ -122,16 +122,17 @@ export function buildParentReenrolUi(opts: {
   if (opts.hasDayCentre) reasons.push("day_centre");
 
   const sheet = clean(opts.paymentSheet, 40).toUpperCase();
-  const sheetLa = sheet === "LA" || sheet === "DIRECT_PAYMENTS";
+  /** Club invoices the LA/NHS directly — not parent-held Direct Payments budgets. */
+  const sheetLaManaged = sheet === "LA";
   const parentDp = fundingLabelIsParentDirectPayments(opts.fundingLabel);
   const funderPaysClub = fundingLabelIsClubInvoicedFunder(opts.fundingLabel);
-  const vatExemptLa =
-    clean(opts.vatMode, 20).toLowerCase() === "exempt" &&
-    (sheetLa || parentDp || funderPaysClub ||
-      /\bla\b|\bnhs\b|local authority|ealing|hammersmith|fulham/.test(
-        clean(opts.fundingLabel, 160).toLowerCase(),
-      ));
-  if (sheetLa || funderPaysClub || parentDp || vatExemptLa) reasons.push("la_funded");
+  /*
+   * Office auto (no parent form) only when the club invoices the funder, or Day Centre.
+   * "Using Funds from LA" / Direct Payments = parents still pay → keep parent form.
+   */
+  if ((sheetLaManaged || funderPaysClub) && !parentDp) {
+    reasons.push("la_funded");
+  }
   if (isAcat) reasons.push("acat_brought");
 
   const officeAuto = reasons.includes("day_centre") || reasons.includes("la_funded");
