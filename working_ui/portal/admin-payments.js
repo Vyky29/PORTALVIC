@@ -1159,7 +1159,9 @@
 
   function serviceKindForTerm(termId) {
     var map = state.serviceKindByTerm || {};
-    return map[termId] === "day_centre" ? "day_centre" : "afterschool";
+    if (map[termId] === "day_centre" || map[termId] === "afterschool") return map[termId];
+    /* Summer NHS / Day Centre debt is the usual focus for this term. */
+    return termId === "summer_2526" ? "day_centre" : "afterschool";
   }
 
   /** Stable participant slug for Payments dedupe / stream rules. */
@@ -1488,10 +1490,20 @@
 
   function termBucketFor(r) {
     if (r && r._termBucket) return r._termBucket;
-    var svc = String(serviceFor(r) || "").toLowerCase();
-    var term = String(termFor(r) || "").toLowerCase();
-    var blob = svc + " " + term + " " + JSON.stringify((r && r.data) || {});
-    if (/autumn.*26|26\/27|2026-27|reenrol/.test(blob)) return "autumn_2627";
+    /*
+     * Use Term / Labels only — never the full data JSON.
+     * Payments verify keys like "Autumn 26/27" were wrongly sending every
+     * Summer workbook row into Autumn (Summer looked empty / £0).
+     */
+    var label = termFor(r);
+    if (label === "Autumn 26/27") return "autumn_2627";
+    if (label === "Summer 25/26") return "summer_2526";
+    var d = (r && r.data) || {};
+    var raw = [d.Term, d.term, d.Terms, d["Billing term"], d["Term label"]]
+      .map(function (v) { return String(v || "").trim(); })
+      .filter(Boolean)
+      .join(" ");
+    if (/autumn|26\s*\/\s*27|2026\s*[-–\/]\s*27/i.test(raw)) return "autumn_2627";
     return "summer_2526";
   }
 
