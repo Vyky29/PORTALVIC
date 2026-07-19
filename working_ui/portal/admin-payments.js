@@ -1060,6 +1060,22 @@
     if (s.indexOf("amaar") === 0) return "amaar";
     if (s.indexOf("amar") === 0) return "amar_rai"; /* Amar-Rai / amar-rai / amar_rai_singh */
     if (s.indexOf("aydaan") === 0) return "aydaan";
+    /* BELHADJ — full portal names vs roster short ids */
+    if (
+      s === "eiji"
+      || s.indexOf("kacem_eiji") === 0
+      || (s.indexOf("belhadj") >= 0 && s.indexOf("eiji") >= 0)
+    ) {
+      return "eiji";
+    }
+    if (
+      s === "hazem"
+      || s.indexOf("hazem") === 0
+      || (s.indexOf("belhadj") >= 0 && s.indexOf("hazem") >= 0)
+    ) {
+      return "hazem";
+    }
+    if (s.indexOf("elijah") === 0) return "elijah";
     return s;
   }
 
@@ -1763,6 +1779,19 @@
     return false;
   }
 
+  function rowHasGoCardlessFee(r) {
+    var d = (r && r.data) || {};
+    var blob = [
+      d.Services,
+      d.Service,
+      r && r._paymentMethodHint,
+      Object.keys((r && r._serviceParts) || {}).join(" "),
+    ].join(" ");
+    if (isGoCardlessFeeLabel(blob)) return true;
+    return String((r && r._paymentMethodHint) || "").toLowerCase() === "gocardless"
+      && /admin\s*fee|direct\s*payment/i.test(blob);
+  }
+
   function serviceOneLinersFor(r) {
     var d = (r && r.data) || {};
     var sessions = String(d.Sessions || d["Session times"] || "").trim();
@@ -1772,6 +1801,8 @@
     function push(line) {
       var t = String(line || "").trim();
       if (!t || t === "—" || isBogusDayCentreLine(t)) return;
+      if (isVenueOnlyLabel(t)) return;
+      if (isGoCardlessFeeLabel(t)) t = "Admin Fee (GoCardless)";
       var dm = t.match(/^(\d+)\s*['′']/);
       if (dm && parseInt(dm[1], 10) < 15) return;
       var key = t.toLowerCase().replace(/\s+/g, " ");
@@ -1780,11 +1811,14 @@
       out.push(t);
     }
 
-    /* Roster sessions win: one line per day/service, no workbook duplicates. */
+    /* Roster sessions win: one clean line per slot (no venue). */
     if (r && Array.isArray(r._participantSessions) && r._participantSessions.length) {
-      r._participantSessions.forEach(function (sess) {
+      coalesceParticipantSessions(r._participantSessions).forEach(function (sess) {
         push(labelFromParticipantSession(sess));
       });
+      if (rowHasGoCardlessFee(r) || (r._serviceParts && r._serviceParts["Admin Fee (GoCardless)"])) {
+        push("Admin Fee (GoCardless)");
+      }
       if (out.length) return out;
     }
 
@@ -1811,6 +1845,9 @@
         return [dcWhole];
       }
     }
+
+    stitchServiceFragments(splitServiceList(raw)).forEach(push);
+    if (out.length) return out;
 
     splitServiceList(raw).forEach(function (piece) {
       expandRawServiceToCanonLines(piece, sessions).forEach(push);
@@ -1934,28 +1971,264 @@
     return map[tok] || String(d || "").trim();
   }
 
-  /** Canonical: 60' Climbing Activity, Sunday - 11 to 12 */
+  /** Canonical: 60' Climbing Activity, Sunday - 11 am to 12 pm */
   function formatCanonServiceLine(opts) {
     opts = opts || {};
     var dur = Number(opts.durMin) || 0;
     var svc = normalizeServiceDisplay(String(opts.service || "").trim());
     svc = svc.replace(/\s*\(1\s*to\s*1\)|\s*\(1to1\)|\s*1to1\b/gi, "").trim();
     if (!svc) return "";
-    if (dur > 0 && dur < 15) return ""; /* junk like 2' from "2×" */
+    if (/^admin\s*fee|^direct\s*payment/i.test(svc)) return "Admin Fee (GoCardless)";
+    if (dur > 0 && dur < 15) return "";
     var head = (dur ? dur + "' " : "") + svc;
     head = head.replace(/\s+/g, " ").trim();
     var day = opts.day ? dayTitleFull(opts.day) : "";
-    var time = String(opts.time || "").trim().replace(/\s+/g, " ");
-    if (time) {
-      var tm = time.match(
-        /^(\d{1,2}(?:[.:]\d{2})?)\s*(?:[–\-—]|to)\s*(\d{1,2}(?:[.:]\d{2})?)\s*(am|pm)?$/i
-      );
-      if (tm) time = formatServiceTimeLine(tm[1], tm[2] + (tm[3] ? " " + tm[3] : ""));
-    }
+    var time = normalizeSessionTimeRange(opts.time);
     if (day && time) return head + ", " + day + " - " + time;
     if (day) return head + ", " + day;
     if (time) return head + " - " + time;
     return head;
+  }
+
+  function isVenueOnlyLabel(s) {
+    var t = String(s || "").trim();
+    return /^(acton|westway|swimfarm|northolt|hub(?:\s*room)?|teaching\s*pool|wall|lane)\b/i.test(t)
+      || /^(acton|westway|swimfarm|northolt)$/i.test(t);
+  }
+
+  function isGoCardlessFeeLabel(s) {
+    var t = String(s || "").trim();
+    return /admin\s*fee/i.test(t)
+      || /direct\s*payment.*fee/i.test(t)
+      || /gocardless.*fee/i.test(t)
+      || /^direct\s*payment\s*\(gocardless\)/i.test(t);
+  }
+
+  /** "4.30 to 5 pm" / "12.30 to 2" / "5 to 6" → "4.30 pm to 5 pm". */
+  function normalizeSessionTimeRange(raw) {
+    var s = String(raw || "").trim().replace(/\s+/g, " ");
+    if (!s) return "";
+    /* Drop duplicated "Day …, Day - …" halves — keep the first time range. */
+    s = s.replace(/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s+/i, "");
+    var m = s.match(
+      /(\d{1,2}(?:[.:]\d{2})?)\s*(am|pm)?\s*(?:[–\-—]|to)\s*(\d{1,2}(?:[.:]\d{2})?)\s*(am|pm)?/i
+    );
+    if (!m) return "";
+    var a = m[1];
+    var b = m[3];
+    var merA = (m[2] || "").toLowerCase();
+    var merB = (m[4] || "").toLowerCase();
+    if (!merA && !merB) {
+      /* Afternoon activity hours default to pm. */
+      merB = clockMeridiem(b) || "pm";
+      merA = clockMeridiem(a) || merB;
+    } else if (!merA) merA = merB;
+    else if (!merB) merB = merA;
+    return formatServiceTimeLine(a + " " + merA, b + " " + merB);
+  }
+
+  /**
+   * Invoice/roster fragments → one canon line.
+   * e.g. "Aquatic Activity 30' (Tuesday 4.30 to 5 pm · Acton)"
+   */
+  function parseRichServiceFragment(raw) {
+    var s = cleanServiceLabelJunk(raw);
+    if (!s || isPlaceholderServiceLabel(s) || isVenueOnlyLabel(s)) return "";
+    if (isGoCardlessFeeLabel(s)) return "Admin Fee (GoCardless)";
+
+    s = s.replace(/\s*[—–-]\s*GBP\s*[\d,.]+.*$/i, "").trim();
+    s = normalizeServiceDisplay(s);
+
+    var feeOnly = s.match(/^(admin\s*fee|direct\s*payment.*fee)/i);
+    if (feeOnly) return "Admin Fee (GoCardless)";
+
+    /* "Aquatic Activity 30' (Tuesday 4.30 to 5 pm · Acton)" */
+    var inv = s.match(
+      /^(.+?)\s+(\d+)\s*['′']?\s*\(([^)]+)\)\s*$/i
+    );
+    if (inv && !/^\d+\s*['′']/.test(s)) {
+      var title1 = inv[1].trim();
+      var dur1 = parseInt(inv[2], 10) || 0;
+      var bits1 = String(inv[3] || "").split(/\s*·\s*/).map(function (x) {
+        return String(x || "").trim();
+      }).filter(function (x) { return x && !isVenueOnlyLabel(x); });
+      var dayTime = bits1.join(" ");
+      var days1 = collectDayTokensFromText(dayTime);
+      var time1 = normalizeSessionTimeRange(dayTime);
+      return formatCanonServiceLine({
+        durMin: dur1,
+        service: kindTitleFromText(title1) || title1,
+        day: days1[0] || "",
+        time: time1,
+      });
+    }
+
+    /* "30' Aquatic Activity (Thursday)" / with optional time in paren */
+    var std = s.match(
+      /^(\d+)\s*['′']?\s*(.+?)(?:\s*\(([^)]+)\))?\s*$/i
+    );
+    if (std) {
+      var dur2 = parseInt(std[1], 10) || 0;
+      var title2 = std[2].trim();
+      var inside = String(std[3] || "").trim();
+      /* Also support ", Sunday - 12.30 pm to 2 pm" after the title. */
+      var dayFromTitle = "";
+      var timeFromTitle = "";
+      var tail = title2.match(
+        /^(.*?)(?:,\s*)?((?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*)\s*(?:-\s*)?(.+)$/i
+      );
+      if (!inside && tail) {
+        title2 = tail[1].trim().replace(/,\s*$/, "");
+        dayFromTitle = tail[2];
+        timeFromTitle = tail[3];
+      }
+      var bits2 = inside.split(/\s*·\s*/).map(function (x) {
+        return String(x || "").trim();
+      }).filter(function (x) { return x && !isVenueOnlyLabel(x); });
+      var blob2 = bits2.join(" ") || [dayFromTitle, timeFromTitle].filter(Boolean).join(" ");
+      var days2 = collectDayTokensFromText(blob2 || inside || s);
+      var time2 = normalizeSessionTimeRange(blob2 || inside || timeFromTitle || s);
+      return formatCanonServiceLine({
+        durMin: dur2,
+        service: kindTitleFromText(title2) || title2,
+        day: days2[0] || dayFromTitle || "",
+        time: time2,
+      });
+    }
+
+    return formatServicePieceOneLiner(s, "") || "";
+  }
+
+  /**
+   * Join split invoice/workbook fragments into Aydaan-style lines.
+   * Drops venues; attaches orphan day/time lines to the prior activity.
+   */
+  function stitchServiceFragments(parts) {
+    var pending = null;
+    var out = [];
+
+    function flush() {
+      if (!pending) return;
+      var line = formatCanonServiceLine(pending);
+      if (line) out.push(line);
+      pending = null;
+    }
+
+    function looksTimeOrDayOnly(s) {
+      if (/\d+\s*['′']/.test(s)) return false;
+      if (kindTitleFromText(s)) return false;
+      if (/aquatic|climb|multi|day\s*centre|bespoke|physical/i.test(s)) return false;
+      return collectDayTokensFromText(s).length > 0
+        || /\d{1,2}(?:[.:]\d{2})?\s*(am|pm)?\s*(?:[–\-—]|to)\s*\d/i.test(s);
+    }
+
+    (parts || []).forEach(function (raw) {
+      var s = cleanServiceLabelJunk(raw);
+      if (!s || isVenueOnlyLabel(s) || isPlaceholderServiceLabel(s)) return;
+      if (isGoCardlessFeeLabel(s)) {
+        flush();
+        out.push("Admin Fee (GoCardless)");
+        return;
+      }
+      if (looksTimeOrDayOnly(s)) {
+        if (pending) {
+          var days = collectDayTokensFromText(s);
+          var time = normalizeSessionTimeRange(s);
+          if (days[0] && !pending.day) pending.day = days[0];
+          if (time) pending.time = time;
+        }
+        return;
+      }
+
+      flush();
+      var rich = parseRichServiceFragment(s);
+      if (!rich) return;
+      if (isGoCardlessFeeLabel(rich) || rich === "Admin Fee (GoCardless)") {
+        out.push("Admin Fee (GoCardless)");
+        return;
+      }
+      var dm = rich.match(/^(\d+)\s*['′']?\s*(.+?)(?:,\s*([A-Za-z]+))?(?:\s*-\s*(.+))?$/);
+      if (dm) {
+        pending = {
+          durMin: parseInt(dm[1], 10) || 0,
+          service: String(dm[2] || "").trim(),
+          day: String(dm[3] || "").trim(),
+          time: String(dm[4] || "").trim(),
+        };
+        /* Already complete (day+time) → emit now. */
+        if (pending.day && pending.time) {
+          flush();
+        }
+        return;
+      }
+      out.push(rich);
+    });
+    flush();
+    return out;
+  }
+
+  function sessionStartMinutes(timeSlot) {
+    var m = String(timeSlot || "").match(/(\d{1,2})(?:[.:](\d{2}))?/);
+    if (!m) return null;
+    return parseInt(m[1], 10) * 60 + parseInt(m[2] || "0", 10);
+  }
+
+  function sessionEndMinutes(timeSlot) {
+    var m = String(timeSlot || "").match(
+      /(\d{1,2})(?:[.:](\d{2}))?\s*(?:am|pm)?\s*(?:[–\-—]|to)\s*(\d{1,2})(?:[.:](\d{2}))?/i
+    );
+    if (!m) return null;
+    return parseInt(m[3], 10) * 60 + parseInt(m[4] || "0", 10);
+  }
+
+  function minutesToSlotTok(mins) {
+    if (mins == null || !Number.isFinite(mins)) return "";
+    var h = Math.floor(mins / 60);
+    var m = mins % 60;
+    return m ? h + "." + (m < 10 ? "0" + m : String(m)) : String(h);
+  }
+
+  /** Merge consecutive same-day same-service slots (e.g. 5.30–6 + 6–6.30 → 60'). */
+  function coalesceParticipantSessions(sessions) {
+    var list = (sessions || []).map(function (s) {
+      return {
+        day: String(s.day || "").trim(),
+        service: String(s.service || "").trim(),
+        timeSlot: String(s.timeSlot || s.time || "").trim(),
+        durationMin: Number(s.durationMin) || 0,
+        venue: s.venue,
+        instructor: s.instructor,
+      };
+    }).filter(function (s) { return s.service; });
+
+    list.sort(function (a, b) {
+      var da = dayShortToken(a.day);
+      var db = dayShortToken(b.day);
+      if (da !== db) return String(da).localeCompare(String(db));
+      return (sessionStartMinutes(a.timeSlot) || 0) - (sessionStartMinutes(b.timeSlot) || 0);
+    });
+
+    var out = [];
+    list.forEach(function (s) {
+      var prev = out[out.length - 1];
+      var same =
+        prev
+        && dayShortToken(prev.day) === dayShortToken(s.day)
+        && normalizeServiceDisplay(prev.service).toLowerCase()
+          === normalizeServiceDisplay(s.service).toLowerCase();
+      var prevEnd = prev ? sessionEndMinutes(prev.timeSlot) : null;
+      var curStart = sessionStartMinutes(s.timeSlot);
+      if (same && prevEnd != null && curStart != null && prevEnd === curStart) {
+        var curEnd = sessionEndMinutes(s.timeSlot);
+        prev.durationMin = (Number(prev.durationMin) || 0) + (Number(s.durationMin) || 0);
+        prev.timeSlot = minutesToSlotTok(sessionStartMinutes(prev.timeSlot))
+          + " to "
+          + minutesToSlotTok(curEnd != null ? curEnd : curStart);
+        return;
+      }
+      out.push(s);
+    });
+    return out;
   }
 
   function collectDayTokensFromText(raw) {
@@ -2113,7 +2386,7 @@
     var out = [];
     function add(raw) {
       var s = cleanServiceLabelJunk(raw);
-      if (!s || isPlaceholderServiceLabel(s)) return;
+      if (!s || isPlaceholderServiceLabel(s) || isVenueOnlyLabel(s)) return;
       out.push(s);
     }
     (Array.isArray(inv && inv.booked_slots) ? inv.booked_slots : []).forEach(function (slot) {
@@ -2138,10 +2411,11 @@
           if (/^structured activity support/i.test(p)) return;
           if (/^client'?s\s*name\s*:/i.test(p)) return;
           if (/^summer\s*crash|^westway|^dates?:?$|^week\s*\d|^summer\s*term|\b\d+\s*sessions?\b$/i.test(p)) return;
+          if (isVenueOnlyLabel(p)) return;
           add(p);
         });
     }
-    return dedupeServiceLabelList(out);
+    return stitchServiceFragments(dedupeServiceLabelList(out));
   }
 
   function mergeServiceLabelsIntoRow(row, inv) {
@@ -2149,7 +2423,12 @@
     serviceLabelsFromInvoice(inv).forEach(function (s) {
       row._serviceParts[s] = 1;
     });
-    var list = dedupeServiceLabelList(Object.keys(row._serviceParts));
+    var list = stitchServiceFragments(Object.keys(row._serviceParts));
+    /* Keep a single GoCardless fee line even if invoice had Admin + Direct Payment. */
+    var fee = "Admin Fee (GoCardless)";
+    var hasFee = list.some(function (s) { return s === fee || isGoCardlessFeeLabel(s); });
+    list = list.filter(function (s) { return s !== fee && !isGoCardlessFeeLabel(s); });
+    if (hasFee) list.push(fee);
     row._serviceParts = Object.create(null);
     list.forEach(function (s) { row._serviceParts[s] = 1; });
     row.data = row.data || {};
@@ -3530,8 +3809,8 @@
     });
   }
 
-  /** Attach roster sessions so table shows one clean line per slot (no workbook dupes). */
-  function enrichReenrolServicesFromParticipantLines(client, rows) {
+  /** Attach roster sessions so table shows one clean line per slot (no venue / workbook mess). */
+  function enrichPaymentServicesFromParticipantLines(client, rows) {
     if (!client || !rows || !rows.length) return Promise.resolve(rows);
     return client
       .from("portal_participant_service_lines")
@@ -3549,12 +3828,27 @@
           bySlug[slug] = line;
         });
         rows.forEach(function (r) {
-          if (!r || !r._reenrol) return;
+          if (!r) return;
           var slug = paymentParticipantSlug(r);
           var line = bySlug[slug];
-          if (!line || !Array.isArray(line.sessions) || !line.sessions.length) return;
-          r._participantSessions = line.sessions.slice();
+          if (!line || !Array.isArray(line.sessions) || !line.sessions.length) {
+            /* Still normalise fee labels / stitch messy Services text. */
+            var fixed = serviceOneLinersFor(r);
+            if (fixed.length) {
+              r._serviceParts = Object.create(null);
+              fixed.forEach(function (s) { r._serviceParts[s] = 1; });
+              r.data = r.data || {};
+              r.data.Services = fixed.join(" · ");
+            }
+            return;
+          }
+          var hadFee = rowHasGoCardlessFee(r);
+          r._participantSessions = coalesceParticipantSessions(line.sessions);
           var list = serviceOneLinersFor(r);
+          if (hadFee) {
+            var fee = "Admin Fee (GoCardless)";
+            if (list.indexOf(fee) < 0) list.push(fee);
+          }
           r._serviceParts = Object.create(null);
           list.forEach(function (s) { r._serviceParts[s] = 1; });
           r.data = r.data || {};
@@ -3563,6 +3857,10 @@
         return rows;
       })
       .catch(function () { return rows; });
+  }
+
+  function enrichReenrolServicesFromParticipantLines(client, rows) {
+    return enrichPaymentServicesFromParticipantLines(client, rows);
   }
 
   function isSummerCrashInvoice(inv) {
@@ -3673,8 +3971,9 @@
         .filter(Boolean);
       return loadFundingLabelsByContact(client, contactIds).then(function (fundingByContact) {
         applyPayGroupClassification(payments, reenrol, fundingByContact);
-        return enrichReenrolServicesFromParticipantLines(client, reenrol).then(function (enriched) {
-          return { payments: payments, reenrol: enriched || reenrol, crash: crash };
+        var allRows = payments.concat(reenrol).concat(crash);
+        return enrichPaymentServicesFromParticipantLines(client, allRows).then(function () {
+          return { payments: payments, reenrol: reenrol, crash: crash };
         });
       });
     });
