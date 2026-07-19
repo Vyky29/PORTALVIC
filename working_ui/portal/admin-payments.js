@@ -846,14 +846,15 @@
     return "£" + Number(n).toLocaleString("en-GB", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   }
 
-  function ealingSummerCreditGbp(r) {
+  /** Ealing LA — last Summer payment received in July (stored under legacy “credit” key). */
+  function ealingJulyPaymentGbp(r) {
     var d = (r && r.data) || {};
     var n = Number(d["Ealing summer credit (25/26)"]);
     return Number.isFinite(n) && n > 0 ? n : 0;
   }
 
   function amountCellHtml(r) {
-    var credit = ealingSummerCreditGbp(r);
+    var julyPay = ealingJulyPaymentGbp(r);
     var main = money(r.amount);
     var yearAmt = Number(r._amountAnnual);
     if (!(yearAmt > 0)) {
@@ -867,12 +868,12 @@
       yearNote = '<span class="pay-amt-year" title="Full-year programme (not this term alone)">Year '
         + money(yearAmt) + "</span>";
     }
-    if (!credit && !yearNote) return main;
+    if (!julyPay && !yearNote) return main;
     return '<span class="pay-amt-stack">'
       + "<span>" + main + "</span>"
-      + (credit
-        ? '<span class="pay-amt-credit" title="Ealing credit applied to Summer 25/26">−'
-          + money(credit) + " credit</span>"
+      + (julyPay
+        ? '<span class="pay-amt-july" title="Last payment received in July (Ealing LA)">−'
+          + money(julyPay) + " July paid</span>"
         : "")
       + yearNote
       + "</span>";
@@ -995,7 +996,7 @@
       ".pay-name{font-weight:700;font-size:13px;color:#0f172a;overflow-wrap:anywhere;word-break:break-word;min-width:0;max-width:100%;text-align:center;line-height:1.25}",
       ".pay-name-parent{font-size:11px;font-weight:600;color:#64748b;overflow-wrap:anywhere;word-break:break-word;min-width:0;max-width:100%;text-align:center;line-height:1.2}",
       ".pay-amt-stack{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:0;margin:0 auto}",
-      ".pay-amt-credit{font-size:10px;font-weight:700;color:#047857;white-space:nowrap}",
+      ".pay-amt-july{font-size:10px;font-weight:700;color:#047857;white-space:nowrap}",
       ".pay-tbl .pay-pill{margin:0 auto;font-size:10px;padding:3px 8px}",
       ".pay-pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}",
       ".pay-pill--paid{background:#e7f6ee;color:#15803d}",
@@ -1040,10 +1041,11 @@
       ".pay-term-acc__body .pay-card-h{margin:0 0 10px}",
       ".pay-term-acc__sub{display:block;font-size:12px;font-weight:700;color:#64748b;margin-top:2px;overflow-wrap:break-word;letter-spacing:0;text-transform:none}",
       ".pay-term-acc__meta{flex:0 1 auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:end;min-width:0;max-width:min(100%,56rem)}",
-      ".pay-term-acc__chip{display:inline-flex;align-items:center;gap:6px;max-width:100%;min-width:0;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;line-height:1.2;border:1px solid transparent;overflow-wrap:anywhere;white-space:nowrap}",
+      ".pay-term-acc__chip{display:inline-flex;align-items:center;justify-content:center;gap:6px;max-width:100%;min-width:0;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;line-height:1.2;border:1px solid transparent;overflow-wrap:anywhere;white-space:nowrap;text-align:center}",
       ".pay-term-acc__chip b{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}",
-      ".pay-term-acc__chip--stack{flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;border-radius:14px;padding:7px 12px;white-space:normal}",
-      ".pay-term-acc__chip-title{display:block;font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;line-height:1.1;opacity:.78}",
+      ".pay-term-acc__chip--stack{flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:14px;padding:7px 12px;white-space:normal;text-align:center}",
+      ".pay-term-acc__chip-title{display:block;width:100%;font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;line-height:1.15;opacity:.78;text-align:center}",
+      ".pay-term-acc__chip--stack b{display:block;width:100%;text-align:center}",
       ".pay-term-acc__chip--orders{background:#f1f5f9;color:#334155;border-color:#e2e8f0}",
       ".pay-term-acc__chip--due{background:#fef2f2;color:#b91c1c;border-color:#fecaca}",
       ".pay-term-acc__chip--ok{background:#ecfdf5;color:#047857;border-color:#a7f3d0}",
@@ -1051,7 +1053,6 @@
       ".pay-term-acc__chip--dc{background:#f5f3ff;color:#6d28d9;border-color:#ddd6fe}",
       ".pay-term-acc__chip--term-tot{background:#ecfeff;color:#0e7490;border-color:#a5f3fc}",
       ".pay-term-acc__chip--year-tot{background:#fff7ed;color:#c2410c;border-color:#fed7aa}",
-      ".pay-term-acc__chip .pay-term-acc__chip-lab{font-size:11px;font-weight:700;opacity:.88}",
       ".pay-tbl-caption{display:grid;grid-template-columns:auto auto;gap:8px;align-items:center;justify-content:end;min-width:0;flex:0 1 auto}",
       ".pay-tbl-caption .pay-term-acc__chip{justify-content:center}",
       "@media(max-width:720px){.pay-term-acc__meta,.pay-tbl-caption{justify-content:stretch}.pay-term-acc__chip{justify-content:center;white-space:normal}}",
@@ -1689,12 +1690,14 @@
   function termAccordionMetaHtml(group) {
     var m = termOrdersMetaParts(group.rows);
     var html = '<span class="pay-term-acc__meta" title="Outstanding by stream for this term">'
-      + '<span class="pay-term-acc__chip pay-term-acc__chip--orders"><b>' + m.n + "</b> " + m.unit + "</span>"
-      + '<span class="pay-term-acc__chip pay-term-acc__chip--as" title="Afterschool &amp; Weekend Services outstanding">'
-      + '<span class="pay-term-acc__chip-lab">Afterschool &amp; Weekends</span>'
+      + '<span class="pay-term-acc__chip pay-term-acc__chip--stack pay-term-acc__chip--orders">'
+      + '<span class="pay-term-acc__chip-title">' + esc(m.unit) + "</span>"
+      + "<b>" + m.n + "</b></span>"
+      + '<span class="pay-term-acc__chip pay-term-acc__chip--stack pay-term-acc__chip--as" title="Afterschool &amp; Weekend Services outstanding">'
+      + '<span class="pay-term-acc__chip-title">Afterschool &amp; Weekends</span>'
       + "<b>" + money(m.asDue) + "</b></span>"
-      + '<span class="pay-term-acc__chip pay-term-acc__chip--dc" title="Day Centre outstanding">'
-      + '<span class="pay-term-acc__chip-lab">Day Centre</span>'
+      + '<span class="pay-term-acc__chip pay-term-acc__chip--stack pay-term-acc__chip--dc" title="Day Centre outstanding">'
+      + '<span class="pay-term-acc__chip-title">Day Centre</span>'
       + "<b>" + money(m.dcDue) + "</b></span>"
       + '<span class="pay-term-acc__chip pay-term-acc__chip--stack pay-term-acc__chip--term-tot" title="Afterschool + Day Centre outstanding this term">'
       + '<span class="pay-term-acc__chip-title">Total this term</span>'
