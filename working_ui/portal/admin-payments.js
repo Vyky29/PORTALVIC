@@ -638,6 +638,7 @@
     statusFilter: "active", // active (re-enrolled) | all | outstanding | paid | notreenrolled
     sheetFilter: "",      // "" = all groups, else sheet name
     paidFilterByTerm: {}, // termBucketId -> Paid value ("" = all)
+    serviceKindByTerm: {}, // termBucketId -> "afterschool" | "day_centre"
     termOpenById: {}, // termBucketId -> boolean (persist accordion open across re-renders)
     focusTermId: "", // after Paid chip click, keep this term open + in view
     query: "",
@@ -763,8 +764,12 @@
       ".pay-seg button[aria-pressed=true]{background:#2d84b3;color:#fff}",
       ".pay-sel{font:inherit;font-size:13px;padding:9px 11px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#0f172a}",
       ".pay-search{flex:1;min-width:160px;font:inherit;padding:9px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#0f172a}",
-      ".pay-chip-filters{display:flex;flex-direction:column;gap:8px;width:100%;min-width:0;margin:0 0 12px}",
-      ".pay-chip-filters--term{margin:0 0 14px;padding-bottom:12px;border-bottom:1px solid #eef2f7}",
+      ".pay-svc-kind{display:flex;flex-wrap:wrap;gap:8px;width:100%;min-width:0;margin:0 0 14px;padding-bottom:12px;border-bottom:1px solid #eef2f7}",
+      ".pay-svc-kind__btn{font:inherit;font-weight:700;font-size:13px;padding:10px 16px;border-radius:10px;border:1px solid #c3d0e0;background:#fff;color:#334155;cursor:pointer;min-width:0;max-width:100%;overflow-wrap:break-word;text-align:center}",
+      ".pay-svc-kind__btn:hover{border-color:#94a3b8}",
+      ".pay-svc-kind__btn[aria-pressed=true]{background:#2d84b3;color:#fff;border-color:#2d84b3;box-shadow:0 0 0 2px rgba(45,132,179,.22)}",
+      ".pay-chip-filters{display:flex;flex-direction:column;gap:8px;width:100%;min-width:0;margin:0}",
+      ".pay-chip-filters--tbl{margin:0}",
       ".pay-chip-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}",
       ".pay-chip-row__lab{flex:0 0 auto;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#64748b;margin-right:2px}",
       ".pay-chip{display:inline-flex;align-items:center;justify-content:center;max-width:100%;padding:5px 11px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.25;border:1px solid transparent;overflow-wrap:anywhere;text-align:center}",
@@ -793,6 +798,7 @@
       ".pay-tbl{width:100%;border-collapse:collapse;font-size:14px}",
       ".pay-tbl th,.pay-tbl td{padding:10px 12px;border-bottom:1px solid #eef2f7;text-align:center;vertical-align:middle;overflow-wrap:break-word;max-width:260px}",
       ".pay-tbl thead th{background:#f8fafc;color:#0f172a;font-size:11px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}",
+      ".pay-tbl thead tr.pay-tbl__filter-row th{background:#fff;text-transform:none;letter-spacing:0;white-space:normal;font-weight:400;padding:10px 12px;vertical-align:middle}",
       ".pay-tbl tbody tr{cursor:pointer}",
       ".pay-tbl tbody tr:hover{background:#f8fafc}",
       ".pay-tbl td.num{text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}",
@@ -962,9 +968,41 @@
     return "";
   }
 
+  function serviceKindForTerm(termId) {
+    var map = state.serviceKindByTerm || {};
+    return map[termId] === "day_centre" ? "day_centre" : "afterschool";
+  }
+
+  function isDayCentreRow(r) {
+    var raw = String(rawServiceText(r) || "").toLowerCase();
+    var disp = String(serviceFor(r) || "").toLowerCase();
+    var s = (raw + " " + disp).replace(/\s+/g, " ").trim();
+    if (!s || s === "—") return false;
+    if (/day\s*centre/.test(s)) return true;
+    /* Bespoke day-centre blocks (not crash / aquatic / multi / climb). */
+    if (/\bbespoke\b/.test(s) && !/\b(crash|aquatic|multi|climb|physical\s*activity)\b/.test(s)) {
+      return true;
+    }
+    return false;
+  }
+
+  function serviceKindToggleHtml(termId) {
+    var cur = serviceKindForTerm(termId);
+    function btn(kind, label) {
+      var on = cur === kind;
+      return '<button type="button" class="pay-svc-kind__btn" data-pay-svc-kind="' + esc(kind)
+        + '" data-pay-svc-term="' + esc(termId) + '" aria-pressed="' + (on ? "true" : "false") + '">'
+        + esc(label) + "</button>";
+    }
+    return '<div class="pay-svc-kind" role="group" aria-label="Service stream for this term">'
+      + btn("afterschool", "Afterschool & Weekend Services")
+      + btn("day_centre", "Day Centre")
+      + "</div>";
+  }
+
   function paidFilterChipsHtml(termId) {
     var cur = paidFilterForTerm(termId);
-    var html = '<div class="pay-chip-filters pay-chip-filters--term" role="group" aria-label="Paid filter for this term">'
+    var html = '<div class="pay-chip-filters pay-chip-filters--tbl" role="group" aria-label="Paid filter for this term">'
       + '<div class="pay-chip-row">'
       + '<span class="pay-chip-row__lab">Paid</span>'
       + filterChipBtn("paid", "", "All", !cur, "pay-chip--muted", termId);
@@ -975,10 +1013,22 @@
     return html;
   }
 
+  function applyServiceKindFilter(rows, termId) {
+    var kind = serviceKindForTerm(termId);
+    return (rows || []).filter(function (r) {
+      var dc = isDayCentreRow(r);
+      return kind === "day_centre" ? dc : !dc;
+    });
+  }
+
   function applyPaidFilter(rows, termId) {
     var paid = paidFilterForTerm(termId);
     if (!paid) return rows || [];
     return (rows || []).filter(function (r) { return paidByFor(r) === paid; });
+  }
+
+  function applyTermTableFilters(rows, termId) {
+    return applyPaidFilter(applyServiceKindFilter(rows || [], termId), termId);
   }
 
   function allRows() {
@@ -1107,14 +1157,24 @@
     return '<span class="pay-chip pay-chip--muted">' + esc(supportRatioFor(r)) + "</span>";
   }
 
-  function paymentsTableBodyHtml(rows) {
+  function paymentsTableHeadHtml(termId, colClient) {
+    return "<thead>"
+      + '<tr class="pay-tbl__filter-row"><th colspan="10">' + paidFilterChipsHtml(termId) + "</th></tr>"
+      + '<tr><th class="num pay-tbl__idx">#</th><th>' + colClient
+      + '</th><th>Paid</th><th>Invoice type</th><th>Support</th><th>Service</th><th>Term</th><th>Parent</th><th class="num">Total</th><th>Status</th></tr>'
+      + "</thead>";
+  }
+
+  function paymentsTableBodyHtml(rows, termId) {
     var colClient = state.mode === "orders" ? "Participant" : "Client";
     if (!rows.length) {
-      return '<div class="pay-tbl-wrap"><table class="pay-tbl"><tbody>'
-        + '<tr><td colspan="10" class="pay-empty">No records in this term.</td></tr></tbody></table></div>';
+      return '<div class="pay-tbl-wrap"><table class="pay-tbl">'
+        + paymentsTableHeadHtml(termId, colClient)
+        + '<tbody><tr><td colspan="10" class="pay-empty">No records in this term.</td></tr></tbody></table></div>';
     }
-    var html = '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th class="num pay-tbl__idx">#</th><th>' + colClient
-      + '</th><th>Paid</th><th>Invoice type</th><th>Support</th><th>Service</th><th>Term</th><th>Parent</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
+    var html = '<div class="pay-tbl-wrap"><table class="pay-tbl">'
+      + paymentsTableHeadHtml(termId, colClient)
+      + "<tbody>";
     rows.forEach(function (r, i) {
       var attr = r._synthetic
         ? ' data-pay-reenrol="' + esc(r._contactId || r.id) + '"'
@@ -1161,7 +1221,7 @@
   function termSummaryBlockHtml(scopedRows, visibleRows, termId) {
     var t = tallyRows(scopedRows);
     var html = '<div class="pay-term-acc__body">';
-    html += paidFilterChipsHtml(termId);
+    html += serviceKindToggleHtml(termId);
     html += '<div class="pay-kpis">'
       + kpiCard("billed", "pay-kpi--billed", "Billed", money(t.billed))
       + kpiCard("paid", "pay-kpi--paid", "Paid", money(t.paid))
@@ -1179,7 +1239,7 @@
       + icon("clients", 17) + "Participants</h3>"
       + tableOrdersCaptionHtml(scopedRows)
       + "</div>";
-    html += paymentsTableBodyHtml(visibleRows.slice().sort(sortPaymentRows));
+    html += paymentsTableBodyHtml(visibleRows.slice().sort(sortPaymentRows), termId);
     html += "</div>";
     return html;
   }
@@ -1191,12 +1251,8 @@
     baseGrouped.forEach(function (sg) {
       if (!sg.rows.length) return;
       var termId = sg.bucket.id;
-      var scoped = applyPaidFilter(sg.rows, termId);
-      if (!scoped.length && paidFilterForTerm(termId)) {
-        /* Still show the term so the Paid filter can be cleared. */
-      } else if (!scoped.length) {
-        return;
-      }
+      var scoped = applyTermTableFilters(sg.rows, termId);
+      /* Always keep the term openable so stream / Paid filters stay reachable. */
       any = true;
       var vis = scoped.filter(statusMatch);
       html += '<details class="pay-term-acc"' + termDetailsOpenAttr(termId) + ' data-pay-term="' + esc(termId) + '">'
@@ -1618,7 +1674,14 @@
     return '<button type="button" data-pay-status="' + id + '" aria-pressed="' + (state.statusFilter === id) + '">' + label + "</button>";
   }
 
-  function participantsRowsBodyHtml(rows) {
+  function participantsTableHeadHtml(termId) {
+    return "<thead>"
+      + '<tr class="pay-tbl__filter-row"><th colspan="9">' + paidFilterChipsHtml(termId) + "</th></tr>"
+      + '<tr><th class="num pay-tbl__idx">#</th><th>Client</th><th>Paid</th><th>Invoice type</th><th>Support</th><th>Service(s)</th><th class="num">Orders</th><th class="num">Total</th><th>Status</th></tr>'
+      + "</thead>";
+  }
+
+  function participantsRowsBodyHtml(rows, termId) {
     var byName = {};
     var order = [];
     rows.forEach(function (r) {
@@ -1642,11 +1705,14 @@
     });
     if (!people.length) {
       return tableOrdersCaptionHtml(rows)
-        + '<div class="pay-tbl-wrap"><table class="pay-tbl"><tbody>'
-        + '<tr><td colspan="9" class="pay-empty">No participants in this term.</td></tr></tbody></table></div>';
+        + '<div class="pay-tbl-wrap"><table class="pay-tbl">'
+        + participantsTableHeadHtml(termId)
+        + '<tbody><tr><td colspan="9" class="pay-empty">No participants in this term.</td></tr></tbody></table></div>';
     }
     var html = tableOrdersCaptionHtml(rows)
-      + '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th class="num pay-tbl__idx">#</th><th>Client</th><th>Paid</th><th>Invoice type</th><th>Support</th><th>Service(s)</th><th class="num">Orders</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
+      + '<div class="pay-tbl-wrap"><table class="pay-tbl">'
+      + participantsTableHeadHtml(termId)
+      + "<tbody>";
     people.forEach(function (g, i) {
       var svcList = Object.keys(g.services).filter(function (s) {
         return s && !isPlaceholderServiceLabel(s);
@@ -1687,9 +1753,8 @@
     baseGrouped.forEach(function (g) {
       if (!g.rows.length) return;
       var termId = g.bucket.id;
-      var paidScoped = applyPaidFilter(g.rows, termId);
+      var paidScoped = applyTermTableFilters(g.rows, termId);
       var scoped = paidScoped.filter(statusMatch);
-      if (!paidScoped.length && !paidFilterForTerm(termId)) return;
       var keys = {};
       scoped.forEach(function (r) {
         var k = String(r.client_name || "").toLowerCase().trim() || ("id:" + r.id);
@@ -1704,8 +1769,8 @@
         + termAccordionMetaHtml({ rows: paidScoped })
         + "</summary>"
         + '<div class="pay-term-acc__body">'
-        + paidFilterChipsHtml(termId)
-        + participantsRowsBodyHtml(scoped)
+        + serviceKindToggleHtml(termId)
+        + participantsRowsBodyHtml(scoped, termId)
         + "</div></details>"
       );
     });
@@ -1759,6 +1824,20 @@
           if (!state.paidFilterByTerm) state.paidFilterByTerm = {};
           if (termId) state.paidFilterByTerm[termId] = val;
           if (termId) state.focusTermId = termId;
+        }
+        render();
+      });
+    });
+    root.querySelectorAll("[data-pay-svc-kind]").forEach(function (b) {
+      b.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var kind = b.getAttribute("data-pay-svc-kind") || "afterschool";
+        var termId = b.getAttribute("data-pay-svc-term") || "";
+        if (!state.serviceKindByTerm) state.serviceKindByTerm = {};
+        if (termId) {
+          state.serviceKindByTerm[termId] = kind === "day_centre" ? "day_centre" : "afterschool";
+          state.focusTermId = termId;
         }
         render();
       });
