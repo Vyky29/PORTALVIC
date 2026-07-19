@@ -854,11 +854,32 @@
 
   function amountCellHtml(r) {
     var credit = ealingSummerCreditGbp(r);
-    if (!credit) return money(r.amount);
+    var main = money(r.amount);
+    var yearAmt = Number(r._amountAnnual);
+    if (!(yearAmt > 0)) {
+      var d = (r && r.data) || {};
+      var rawY = d["Year billed (26/27)"] || d["Year billed (25/26)"] || d["Year outstanding"] || "";
+      var m = String(rawY).replace(/[^0-9.]/g, "");
+      if (m) yearAmt = Number(m);
+    }
+    var yearNote = "";
+    if (yearAmt > 0 && Number(r.amount) > 0 && Math.abs(yearAmt - Number(r.amount)) > 1) {
+      yearNote = '<span class="pay-amt-year" title="Full-year programme (not this term alone)">Year '
+        + money(yearAmt) + "</span>";
+    }
+    if (!credit && !yearNote) return main;
     return '<span class="pay-amt-stack">'
-      + "<span>" + money(r.amount) + "</span>"
-      + '<span class="pay-amt-credit" title="Ealing credit applied to Summer 25/26">−'
-      + money(credit) + " credit</span></span>";
+      + "<span>" + main + "</span>"
+      + (credit
+        ? '<span class="pay-amt-credit" title="Ealing credit applied to Summer 25/26">−'
+          + money(credit) + " credit</span>"
+        : "")
+      + yearNote
+      + "</span>";
+  }
+
+  function termCellHtml(r) {
+    return '<span class="pay-term-pill">' + esc(termFor(r) || "—") + "</span>";
   }
 
   function category(r) {
@@ -955,7 +976,10 @@
       ".pay-tbl th.pay-col-support,.pay-tbl td.pay-col-support{width:2.6rem;max-width:2.6rem;padding-left:2px;padding-right:2px;text-align:center;overflow:hidden;overflow-wrap:normal;word-break:normal}",
       ".pay-tbl th.pay-col-support{font-size:9px;line-height:1.05}",
       ".pay-tbl td.pay-col-support .pay-chip{font-size:10px;padding:3px 4px;white-space:nowrap}",
-      ".pay-tbl th.pay-col-svc,.pay-tbl td.pay-col-svc{width:38%;text-align:center;overflow:hidden;overflow-wrap:normal;word-break:normal}",
+      ".pay-tbl th.pay-col-svc,.pay-tbl td.pay-col-svc{width:32%;text-align:center;overflow:hidden;overflow-wrap:normal;word-break:normal}",
+      ".pay-tbl th.pay-col-term,.pay-tbl td.pay-col-term{width:5.5rem;text-align:center}",
+      ".pay-term-pill{display:inline-block;max-width:100%;padding:3px 7px;border-radius:999px;background:#eef6fb;color:#1e5a7a;border:1px solid rgba(45,132,179,.28);font-size:10px;font-weight:700;line-height:1.2;overflow-wrap:break-word}",
+      ".pay-amt-year{display:block;font-size:10px;font-weight:600;color:#64748b;line-height:1.2;overflow-wrap:break-word}",
       ".pay-tbl th.pay-col-total,.pay-tbl td.pay-col-total{width:4.75rem;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:13px;font-weight:700}",
       ".pay-tbl th.pay-col-status,.pay-tbl td.pay-col-status{width:3rem;max-width:3rem;padding-left:2px;padding-right:2px;text-align:center;overflow:hidden;overflow-wrap:normal;word-break:normal}",
       ".pay-tbl th.pay-col-status{font-size:9px;line-height:1.05}",
@@ -1621,8 +1645,8 @@
     return "<thead>"
       + '<tr><th class="num pay-tbl__idx">#</th><th class="pay-col-client">' + colClient
       + '</th><th class="pay-col-paid">Paid</th><th class="pay-col-inv">Invoice type</th><th class="pay-col-support">Support</th>'
-      + '<th class="pay-col-svc">Service</th><th class="pay-col-total">Total</th><th class="pay-col-status">Status</th></tr>'
-      + '<tr class="pay-tbl__filter-row"><th colspan="8">' + paidFilterChipsHtml(termId) + "</th></tr>"
+      + '<th class="pay-col-svc">Service</th><th class="pay-col-term">Term</th><th class="pay-col-total">Total</th><th class="pay-col-status">Status</th></tr>'
+      + '<tr class="pay-tbl__filter-row"><th colspan="9">' + paidFilterChipsHtml(termId) + "</th></tr>"
       + "</thead>";
   }
 
@@ -1642,7 +1666,7 @@
     if (!rows.length) {
       return '<div class="pay-tbl-wrap"><table class="pay-tbl">'
         + paymentsTableHeadHtml(termId, colClient)
-        + '<tbody><tr><td colspan="8" class="pay-empty">No records in this term.</td></tr></tbody></table></div>';
+        + '<tbody><tr><td colspan="9" class="pay-empty">No records in this term.</td></tr></tbody></table></div>';
     }
     var html = '<div class="pay-tbl-wrap"><table class="pay-tbl">'
       + paymentsTableHeadHtml(termId, colClient)
@@ -1658,6 +1682,7 @@
         + '<td class="pay-col-inv">' + invoiceChipHtml(invoiceTypeFor(r)) + "</td>"
         + '<td class="pay-col-support">' + supportCellHtml(r) + "</td>"
         + '<td class="pay-col-svc">' + serviceCellHtml(r) + "</td>"
+        + '<td class="pay-col-term">' + termCellHtml(r) + "</td>"
         + '<td class="pay-col-total num">' + amountCellHtml(r) + "</td>"
         + '<td class="pay-col-status">' + pillFor(r) + "</td></tr>";
     });
@@ -3834,29 +3859,47 @@
   function reenrolInvoiceAmountGbp(inv) {
     var via = String((inv && inv.created_via) || "");
     /* Instalments keep amount_gbp; LA office-auto / booked-place rows use term totals.
-     * Never fall back to booked_annual_gbp here — Autumn chips must not sum full-year LA figures. */
+     * Never fall back to booked_annual_gbp — Autumn must show term, not year. */
     if (via === "reenrolment") {
       return Number(inv && inv.amount_gbp) || 0;
     }
+    return autumnTermAmountFromInvoice(inv);
+  }
+
+  function autumnTermAmountFromInvoice(inv) {
     var n = Number(inv && inv.amount_selected_gbp);
     if (n > 0) return n;
     n = Number(inv && inv.booked_term_gbp);
     if (n > 0) return n;
     n = Number(inv && inv.booked_autumn_gbp);
     if (n > 0) return n;
-    n = Number(inv && inv.amount_gbp);
-    return n > 0 ? n : 0;
+    /* Sum slot autumn totals when pack fields missing. */
+    var slots = inv && Array.isArray(inv.booked_slots) ? inv.booked_slots : [];
+    if (slots.length) {
+      var sum = 0;
+      slots.forEach(function (s) {
+        var t = Number(s && s.term_total_gbp);
+        if (t > 0) {
+          sum += t;
+          return;
+        }
+        var price = Number(s && s.price_per_session_gbp);
+        var sess = Number(s && s.term_sessions);
+        if (!(sess > 0) && s && s.sessions) sess = Number(s.sessions.autumn) || 0;
+        if (price > 0 && sess > 0) sum += price * sess;
+      });
+      if (sum > 0) return Math.round(sum * 100) / 100;
+    }
+    var annual = Number(inv && inv.booked_annual_gbp) || 0;
+    var amt = Number(inv && inv.amount_gbp) || 0;
+    /* Reject year figures accidentally stored as amount_gbp. */
+    if (amt > 0 && annual > 0 && Math.abs(amt - annual) < 0.05) return 0;
+    if (amt > 0 && annual > 0 && amt > annual * 0.85) return 0;
+    return amt > 0 ? amt : 0;
   }
 
   function laBookedAutumnAmountGbp(inv) {
-    var n = Number(inv && inv.amount_selected_gbp);
-    if (n > 0) return n;
-    n = Number(inv && inv.booked_term_gbp);
-    if (n > 0) return n;
-    n = Number(inv && inv.booked_autumn_gbp);
-    if (n > 0) return n;
-    n = Number(inv && inv.amount_gbp);
-    return n > 0 ? n : 0;
+    return autumnTermAmountFromInvoice(inv);
   }
 
   /** Keep Tinashe Mon/Wed LA and Fri NHS as separate autumn rows (la-auto-…-tinashe / …-tinashe-nhs). */
@@ -3964,6 +4007,8 @@
       var amt = reenrolInvoiceAmountGbp(inv);
       var st = String(inv.payment_status || "").toLowerCase();
       row.amount_billed += amt;
+      var annual = Number(inv.booked_annual_gbp) || 0;
+      if (annual > 0) row._amountAnnual = Math.max(Number(row._amountAnnual) || 0, annual);
       if (inv.id) row._invoiceIds.push(inv.id);
       var hint = String(inv.payment_method_hint || "").toLowerCase();
       var vat = String(inv.vat_mode || "").toLowerCase();
@@ -4003,6 +4048,7 @@
       row.amount_billed = amt;
       row.amount_out = amt;
       row.amount = amt;
+      row._amountAnnual = Number(inv.booked_annual_gbp) || 0;
       row.payment_status = amt > 0 ? "Outstanding" : "Paid";
       if (inv.id) row._invoiceIds.push(inv.id);
       agg[key] = row;

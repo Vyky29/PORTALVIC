@@ -481,7 +481,24 @@ function parseOneSegment(segment: string, index: number): ParsedSlot[] {
     const ratio = raw.match(/(\d:\d)/)?.[1] || undefined;
     const hours = raw.match(/(\d+h(?:\d+)?|\d+\s*h(?:\s*\d+)?)/i)?.[0] || undefined;
     const paren = raw.match(/\(([^)]+)\)/)?.[1] || "";
-    const days = expandDaysFromParen(paren);
+    let days = expandDaysFromParen(paren);
+    /*
+     * Payment rows often say "150' Day Centre, Monday - 12.30 to 3" (no parens).
+     * Without a day we used to default Mon–Fri per segment → ×5 over-count (year totals).
+     */
+    if (!days.length) {
+      const dayHit = raw.match(
+        /\b(Monday|Tuesday|Wednesday|Thursday|Friday|Mon|Tue|Wed|Thu|Fri)\b/i,
+      );
+      if (dayHit) days = [normalizeDay(dayHit[1])];
+    }
+    if (!days.length) {
+      const loose = raw
+        .replace(/day\s*centre/i, " ")
+        .replace(/\d+[''′]?\s*/g, " ")
+        .replace(/\d{1,2}[.:]\d{2}\s*(?:to|-)\s*\d{1,2}[.:]?\d{0,2}/gi, " ");
+      days = expandDaysFromParen(loose);
+    }
     return buildDayCentreSlots({
       index,
       raw: segment,
