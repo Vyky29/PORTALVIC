@@ -609,7 +609,7 @@
     return String(name || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
   }
 
-  /** Prefer fuller portal name when Summer is short workbook form (Aydaan Ah → Aydaan Ahmed). */
+  /** Prefer fuller portal name when Summer is short workbook form (Aydaan Ah → Aydaan Ahmed; Eiji → Kacem Eiji BELHADJ). */
   function preferredParticipantName(summerName, autumnName) {
     var s = String(summerName || "").trim();
     var a = String(autumnName || "").trim();
@@ -623,6 +623,9 @@
       if (sTok.length > aTok.length) return s;
       return a.length >= s.length ? a : s;
     }
+    /* Short payment/roster name appears inside legal registration name. */
+    if (sTok.length === 1 && aTok.indexOf(sTok[0]) >= 0 && aTok.length > 1) return a;
+    if (aTok.length === 1 && sTok.indexOf(aTok[0]) >= 0 && sTok.length > 1) return s;
     return s;
   }
 
@@ -3634,11 +3637,19 @@
       var nk = normClientNameKey(r && r.client_name);
       if (!nk) return null;
       if (summerByNorm[nk]) return summerByNorm[nk];
-      var first = nk.split(" ")[0];
+      var toks = nk.split(" ").filter(Boolean);
+      var first = toks[0] || "";
       var hit = null;
+      var hitScore = 0;
       Object.keys(summerByNorm).forEach(function (k) {
-        if (hit) return;
-        if (k === nk || (first.length >= 4 && (k.indexOf(first) === 0 || nk.indexOf(k) === 0))) {
+        var kTok = k.split(" ").filter(Boolean);
+        var score = 0;
+        if (k === nk) score = 1000;
+        else if (first.length >= 4 && (k.indexOf(first) === 0 || nk.indexOf(k) === 0)) score = 100;
+        else if (kTok.length === 1 && toks.indexOf(kTok[0]) >= 0) score = 250; /* eiji inside kacem eiji belhadj */
+        else if (toks.length === 1 && kTok.indexOf(toks[0]) >= 0) score = 250;
+        if (score > hitScore) {
+          hitScore = score;
           hit = summerByNorm[k];
         }
       });

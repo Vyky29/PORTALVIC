@@ -782,7 +782,8 @@ Deno.serve(async (req) => {
   const participant = participantRow || (linked
     ? {
       contact_id: contactId,
-      display_name: linked.child_display,
+      /* Parent UI: short first name; admin keeps full child_display. */
+      display_name: linked.child_first_name || linked.child_display,
       first_name: linked.child_first_name,
       last_name: linked.child_last_name,
       dob_iso: linked.dob_iso,

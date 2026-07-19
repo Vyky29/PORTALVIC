@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
 
   const childrenOut = await Promise.all(
     (contacts || []).map(async (c) => {
-      const displayName = c.display_name || c.child_display;
+      const displayName = c.display_name || c.child_first_name || c.child_display;
       const avatar = await resolveParticipantAvatarUrls(supabase, url, {
         contact_id: String(c.contact_id || ""),
         display_name: String(displayName || ""),
