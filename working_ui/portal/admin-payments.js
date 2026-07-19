@@ -713,6 +713,21 @@
     return "£" + Number(n).toLocaleString("en-GB", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   }
 
+  function ealingSummerCreditGbp(r) {
+    var d = (r && r.data) || {};
+    var n = Number(d["Ealing summer credit (25/26)"]);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  }
+
+  function amountCellHtml(r) {
+    var credit = ealingSummerCreditGbp(r);
+    if (!credit) return money(r.amount);
+    return '<span class="pay-amt-stack">'
+      + "<span>" + money(r.amount) + "</span>"
+      + '<span class="pay-amt-credit" title="Ealing credit applied to Summer 25/26">−'
+      + money(credit) + " credit</span></span>";
+  }
+
   function category(r) {
     var s = String(r.payment_status || "").toLowerCase();
     if (s.indexOf("re-enrol") >= 0 || s.indexOf("reenrol") >= 0) return "notreenrolled";
@@ -807,6 +822,8 @@
       ".pay-name-stack{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;max-width:100%;text-align:left}",
       ".pay-name{font-weight:700;color:#0f172a;overflow-wrap:break-word;min-width:0;max-width:100%}",
       ".pay-name-parent{font-size:12px;font-weight:600;color:#64748b;overflow-wrap:break-word;min-width:0;max-width:100%}",
+      ".pay-amt-stack{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}",
+      ".pay-amt-credit{font-size:11px;font-weight:700;color:#047857;white-space:nowrap}",
       ".pay-pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}",
       ".pay-pill--paid{background:#e7f6ee;color:#15803d}",
       ".pay-pill--out{background:#fef2f2;color:#b91c1c}",
@@ -1444,7 +1461,7 @@
         + "<td>" + invoiceChipHtml(invoiceTypeFor(r)) + "</td>"
         + "<td>" + supportCellHtml(r) + "</td>"
         + '<td class="pay-col-svc">' + serviceCellHtml(r) + "</td>"
-        + '<td class="num">' + money(r.amount) + "</td>"
+        + '<td class="num">' + amountCellHtml(r) + "</td>"
         + "<td>" + pillFor(r) + "</td></tr>";
     });
     html += "</tbody></table></div>";
