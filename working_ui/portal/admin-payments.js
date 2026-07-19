@@ -812,17 +812,17 @@
       ".pay-card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid #eef2f7}",
       ".pay-card-h h3{margin:0;font-size:15px;color:#0f172a}",
       ".pay-tbl-wrap{overflow-x:auto;min-width:0;-webkit-overflow-scrolling:touch}",
-      ".pay-tbl__idx{width:2.25rem;color:#94a3b8;font-variant-numeric:tabular-nums}",
+      ".pay-tbl__idx,.pay-tbl th.pay-tbl__idx,.pay-tbl td.pay-tbl__idx{width:1.75rem;max-width:1.75rem;padding-left:2px;padding-right:2px;color:#94a3b8;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden}",
       ".pay-tbl thead th.pay-tbl__idx{color:#94a3b8;font-weight:700}",
       ".pay-tbl{width:100%;min-width:760px;border-collapse:separate;border-spacing:0;font-size:13px;table-layout:fixed}",
       ".pay-tbl th,.pay-tbl td{padding:10px 6px;border-bottom:1px solid #eef2f7;text-align:center;vertical-align:middle;overflow-wrap:anywhere;word-break:break-word;min-width:0;max-width:100%;box-sizing:border-box}",
-      ".pay-tbl th.pay-col-client,.pay-tbl td.pay-col-client{width:7.75rem;text-align:center}",
-      ".pay-tbl th.pay-col-paid,.pay-tbl td.pay-col-paid{width:6.75rem;text-align:center}",
-      ".pay-tbl th.pay-col-inv,.pay-tbl td.pay-col-inv{width:6.5rem;text-align:center}",
-      ".pay-tbl th.pay-col-support,.pay-tbl td.pay-col-support{width:3.4rem;text-align:center}",
-      ".pay-tbl th.pay-col-svc,.pay-tbl td.pay-col-svc{width:auto;text-align:center}",
-      ".pay-tbl th.pay-col-total,.pay-tbl td.pay-col-total{width:4.5rem;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:13px;font-weight:700}",
-      ".pay-tbl th.pay-col-status,.pay-tbl td.pay-col-status{width:5.5rem;text-align:center;white-space:nowrap}",
+      ".pay-tbl th.pay-col-client,.pay-tbl td.pay-col-client{width:7.5rem;text-align:center}",
+      ".pay-tbl th.pay-col-paid,.pay-tbl td.pay-col-paid{width:6.5rem;text-align:center}",
+      ".pay-tbl th.pay-col-inv,.pay-tbl td.pay-col-inv{width:6.25rem;text-align:center}",
+      ".pay-tbl th.pay-col-support,.pay-tbl td.pay-col-support{width:3.25rem;text-align:center}",
+      ".pay-tbl th.pay-col-svc,.pay-tbl td.pay-col-svc{width:46%;text-align:center}",
+      ".pay-tbl th.pay-col-total,.pay-tbl td.pay-col-total{width:4.25rem;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:13px;font-weight:700}",
+      ".pay-tbl th.pay-col-status,.pay-tbl td.pay-col-status{width:5.25rem;text-align:center;white-space:nowrap}",
       ".pay-tbl thead th{background:#f8fafc;color:#0f172a;font-size:10px;text-transform:uppercase;letter-spacing:.03em;white-space:normal;line-height:1.2;padding:8px 6px}",
       ".pay-tbl thead tr.pay-tbl__filter-row th{background:#fff;text-transform:none;letter-spacing:0;white-space:normal;font-weight:400;padding:10px 12px;vertical-align:middle}",
       ".pay-tbl tbody tr{cursor:pointer}",
@@ -1448,11 +1448,13 @@
   }
 
   function paymentsTableHeadHtml(termId, colClient) {
+    /* Column header row MUST be first: table-layout:fixed sizes from row 1.
+       A colspan filter row first was stretching # equally with every column. */
     return "<thead>"
-      + '<tr class="pay-tbl__filter-row"><th colspan="8">' + paidFilterChipsHtml(termId) + "</th></tr>"
       + '<tr><th class="num pay-tbl__idx">#</th><th class="pay-col-client">' + colClient
       + '</th><th class="pay-col-paid">Paid</th><th class="pay-col-inv">Invoice type</th><th class="pay-col-support">Support</th>'
       + '<th class="pay-col-svc">Service</th><th class="pay-col-total">Total</th><th class="pay-col-status">Status</th></tr>'
+      + '<tr class="pay-tbl__filter-row"><th colspan="8">' + paidFilterChipsHtml(termId) + "</th></tr>"
       + "</thead>";
   }
 
@@ -2542,9 +2544,9 @@
 
   function participantsTableHeadHtml(termId) {
     return "<thead>"
-      + '<tr class="pay-tbl__filter-row"><th colspan="9">' + paidFilterChipsHtml(termId) + "</th></tr>"
       + '<tr><th class="num pay-tbl__idx">#</th><th class="pay-col-client">Client</th><th class="pay-col-paid">Paid</th><th class="pay-col-inv">Invoice type</th><th class="pay-col-support">Support</th>'
       + '<th class="pay-col-svc">Service(s)</th><th class="num">Orders</th><th class="pay-col-total">Total</th><th class="pay-col-status">Status</th></tr>'
+      + '<tr class="pay-tbl__filter-row"><th colspan="9">' + paidFilterChipsHtml(termId) + "</th></tr>"
       + "</thead>";
   }
 
