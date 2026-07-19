@@ -2903,59 +2903,117 @@
     );
   }
 
+  function renderCrashOfferDayPills(days) {
+    return (
+      '<div class="re-crash-cal__days" aria-hidden="true">' +
+      (days || [])
+        .map(function (d) {
+          return (
+            '<span class="re-crash-cal__day' +
+            (d.off ? " re-crash-cal__day--off" : "") +
+            '">' +
+            '<span class="re-crash-cal__dow">' +
+            esc(d.dow) +
+            "</span>" +
+            '<span class="re-crash-cal__num">' +
+            esc(d.num) +
+            "</span>" +
+            (d.sub ? '<span class="re-crash-cal__sub">' + esc(d.sub) + "</span>" : "") +
+            "</span>"
+          );
+        })
+        .join("") +
+      "</div>"
+    );
+  }
+
+  function renderCrashOfferTile(tile) {
+    var body =
+      '<span class="re-crash-cal__label">' +
+      esc(tile.label) +
+      "</span>" +
+      '<span class="re-crash-cal__sublabel">' +
+      esc(tile.sublabel) +
+      "</span>" +
+      renderCrashOfferDayPills(tile.days);
+    if (tile.href) {
+      return (
+        '<a class="re-crash-cal re-crash-cal--' +
+        esc(tile.accent) +
+        '" href="' +
+        esc(tile.href) +
+        '">' +
+        body +
+        "</a>"
+      );
+    }
+    return (
+      '<button type="button" class="re-crash-cal re-crash-cal--' +
+      esc(tile.accent) +
+      '" data-crash-offer-idx="' +
+      esc(String(tile.crashIdx)) +
+      '">' +
+      body +
+      "</button>"
+    );
+  }
+
   function renderOtherServicesInfoHtml(data) {
-    var hasDc = hasDayCentreEnrolled(data);
     var canExtras = !(data && data.parent_reenrol_ui && data.parent_reenrol_ui.can_book_extras === false);
     var hasSchoolPlacement = !!(
       data &&
       data.parent_reenrol_ui &&
       data.parent_reenrol_ui.has_school_placement
     );
-    var canViewDayCentreOffer = !hasSchoolPlacement && !(
-      data &&
-      data.parent_reenrol_ui &&
-      data.parent_reenrol_ui.can_view_day_centre_offer === false
-    );
     var cards = "";
-    if (!hasDc && canViewDayCentreOffer) {
-      cards +=
-        '<article class="re-offer-block">' +
-        "<h4>Day Centre (SwimFarm)</h4>" +
-        '<p class="re-muted">Weekday provision (Mon–Fri), separate from After-School &amp; Weekends. Contact the office if you would like to add Day Centre.</p>' +
-        '<div class="re-offer-actions">' +
-        '<button type="button" class="re-btn re-btn--secondary re-btn--icon-top" id="reDayCentreDatesBtn">' +
-        reButtonContent("daycentre", "Day Centre dates 2026/27") +
-        "</button>" +
-        "</div></article>";
-    }
     if (canExtras) {
+      var julyDays = (RE_CRASH_DATES_2627[0] && RE_CRASH_DATES_2627[0].days) || [];
+      var tiles = [
+        {
+          accent: "july",
+          label: "July 2026",
+          sublabel: "Climb & swim · weeks 1–2",
+          days: julyDays,
+          href: "/parent/crash-summer",
+        },
+      ];
+      if (!hasSchoolPlacement) {
+        tiles.push(
+          {
+            accent: "oct",
+            label: "October",
+            sublabel: "Half term 2026",
+            days: (RE_CRASH_DATES_2627[2] && RE_CRASH_DATES_2627[2].days) || [],
+            crashIdx: 2,
+          },
+          {
+            accent: "feb",
+            label: "February",
+            sublabel: "Half term 2027",
+            days: (RE_CRASH_DATES_2627[3] && RE_CRASH_DATES_2627[3].days) || [],
+            crashIdx: 3,
+          },
+          {
+            accent: "may",
+            label: "May",
+            sublabel: "Half term 2027",
+            days: (RE_CRASH_DATES_2627[4] && RE_CRASH_DATES_2627[4].days) || [],
+            crashIdx: 4,
+          }
+        );
+      }
       cards +=
-        '<article class="re-offer-block">' +
-        "<h4>Summer crash courses · July 2026</h4>" +
-        '<div class="re-offer-copy">' +
-        '<p class="re-muted">Climbing (Westway) and Swimming (Acton), available as four-day week packs.</p>' +
-        '<p class="re-muted"><strong>Fully booked:</strong> both July weeks are now full — Week 1 (20–24 July) and Week 2 (28–31 July).</p>' +
-        "</div>" +
-        '<div class="re-offer-actions">' +
-        '<span class="re-btn re-btn--secondary re-btn--icon-top" aria-disabled="true">' +
-        reButtonContent("crash", "Fully booked — both weeks") +
-        "</span>" +
-        '<button type="button" class="re-btn re-btn--secondary re-btn--icon-top" id="reCrashDatesBtn">' +
-        reButtonContent("calendar", "View dates on calendar") +
-        "</button>" +
+        '<article class="re-offer-block re-offer-block--crash">' +
+        "<h4>Crash courses &amp; intensives</h4>" +
+        '<p class="re-muted">Tap a calendar to open booking or dates. Climbing (Westway) and Swimming (Acton) for July; half terms Mon–Thu.</p>' +
+        '<div class="re-crash-cal-row">' +
+        tiles.map(renderCrashOfferTile).join("") +
         "</div></article>";
     } else {
       cards +=
         '<article class="re-offer-block">' +
-        "<h4>Summer crash courses · July 2026</h4>" +
+        "<h4>Crash courses &amp; intensives</h4>" +
         '<p class="re-muted">Extra holiday sessions are not available for this place. Please contact the office if you need help.</p>' +
-        "</article>";
-    }
-    if (!hasSchoolPlacement) {
-      cards +=
-        '<article class="re-offer-block">' +
-        "<h4>Half-term intensives</h4>" +
-        '<p class="re-muted">October, February and May half terms (Mon–Thu). Booking for those weeks opens closer to the dates.</p>' +
         "</article>";
     }
     return (
@@ -2971,18 +3029,17 @@
   function bindDoneOfferHandlers() {
     var host = $("reDoneOffer");
     if (!host) return;
-    var dcBtn = host.querySelector("#reDayCentreDatesBtn");
-    if (dcBtn) {
-      dcBtn.addEventListener("click", function () {
-        openStaffCalendarModal("Day Centre dates 2026/27", "dcCalDayCentrePanel");
+    host.querySelectorAll("[data-crash-offer-idx]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var idx = Number(btn.getAttribute("data-crash-offer-idx"));
+        openStaffCalendarModal("Crash course dates 2026/27", "dcCalCrashPanel");
+        requestAnimationFrame(function () {
+          var block =
+            $("reInfoModalBody") && $("reInfoModalBody").querySelector("#reCrashBlock" + idx);
+          if (block) block.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        });
       });
-    }
-    var crashBtn = host.querySelector("#reCrashDatesBtn");
-    if (crashBtn) {
-      crashBtn.addEventListener("click", function () {
-        openStaffCalendarModal("Intensive course dates 2026/27", "dcCalCrashPanel");
-      });
-    }
+    });
   }
 
   var RE_DAY_CENTRE_DATES_2627 = [
@@ -3068,7 +3125,7 @@
 
   var RE_CRASH_DATES_2627 = [
     {
-      title: "Summer holiday · Week 1 (July 2026) · open now",
+      title: "Summer holiday · Week 1 (July 2026)",
       days: [
         { dow: "Mon", num: "20", off: true },
         { dow: "Tue", num: "21" },
@@ -3078,14 +3135,13 @@
       ],
     },
     {
-      title: "Summer holiday · Week 2 (July 2026) · Fully booked",
-      closedUntilNote: true,
+      title: "Summer holiday · Week 2 (July 2026)",
       days: [
         { dow: "Mon", num: "27", off: true },
-        { dow: "Tue", num: "28", off: true },
-        { dow: "Wed", num: "29", off: true },
-        { dow: "Thu", num: "30", off: true },
-        { dow: "Fri", num: "31", off: true },
+        { dow: "Tue", num: "28" },
+        { dow: "Wed", num: "29" },
+        { dow: "Thu", num: "30" },
+        { dow: "Fri", num: "31" },
       ],
     },
     {
@@ -3227,7 +3283,7 @@
   function renderCrashDatesModalBody(highlightIdx) {
     var hi = highlightIdx != null && !isNaN(Number(highlightIdx)) ? Number(highlightIdx) : -1;
     return (
-      '<p class="re-cal-summary">Summer Jul 2026: Climbing at Westway and Swimming at Acton — <strong>Week 1 and Week 2 are fully booked.</strong> Half-term intensives run Mon–Thu.</p>' +
+      '<p class="re-cal-summary">Summer Jul 2026: Climbing at Westway and Swimming at Acton (four-day packs). Half-term intensives run Mon–Thu — booking opens closer to each date.</p>' +
       RE_CRASH_DATES_2627.map(function (block, i) {
         return (
           '<div class="re-cal-block' +
@@ -3454,7 +3510,7 @@
         "Your place renews with the office — nothing for you to submit.";
       var canExtras = ui.can_book_extras !== false;
       var crashCta = canExtras
-        ? '<p style="margin-top:12px"><span class="re-btn re-btn--secondary" aria-disabled="true">July crash courses · Fully booked</span></p>'
+        ? '<p style="margin-top:12px"><a class="re-btn re-btn--accent" href="/parent/crash-summer">Book July crash courses</a></p>'
         : "";
       host.innerHTML =
         acatBanner +

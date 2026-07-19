@@ -344,7 +344,8 @@
     if (rules) {
       if (state.fullyBooked) {
         rules.innerHTML =
-          "<strong>Fully booked:</strong> Week 1 and Week 2 are full. Join the <strong>waiting list</strong> below for leftover / individual days — we will call you if a place opens.";
+          "<strong>Both July weeks are fully booked.</strong> " +
+          "Use <strong>Keep me informed</strong> below for spare / leftover hours or last-minute cancellations (Week 1 and Week 2).";
       } else if (state.week2Open) {
         rules.innerHTML =
           "Crash courses are <strong>four-day week packs (Tue–Fri)</strong>. " +
