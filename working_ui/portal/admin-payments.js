@@ -807,7 +807,7 @@
       ".pay-chip__b{display:block;font-size:10px;font-weight:700;opacity:.92}",
       ".pay-tbl td.pay-col-paid .pay-chip{font-size:10px;font-weight:800;padding:5px 7px;line-height:1.2}",
       ".pay-svc-lines{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;width:100%;max-width:100%;text-align:center}",
-      ".pay-svc-line{display:block;font-weight:700;font-size:12.5px;color:#0f172a;line-height:1.3;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;text-align:center}",
+      ".pay-svc-line{display:block;font-weight:700;font-size:12.5px;color:#0f172a;line-height:1.3;white-space:nowrap !important;max-width:none;overflow:visible;text-align:center}",
       ".pay-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 1px 3px rgba(15,23,42,.05);overflow:hidden}",
       ".pay-card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid #eef2f7}",
       ".pay-card-h h3{margin:0;font-size:15px;color:#0f172a}",
@@ -819,10 +819,14 @@
       ".pay-tbl th.pay-col-client,.pay-tbl td.pay-col-client{width:7.5rem;text-align:center}",
       ".pay-tbl th.pay-col-paid,.pay-tbl td.pay-col-paid{width:6.5rem;text-align:center}",
       ".pay-tbl th.pay-col-inv,.pay-tbl td.pay-col-inv{width:6.25rem;text-align:center}",
-      ".pay-tbl th.pay-col-support,.pay-tbl td.pay-col-support{width:3.25rem;text-align:center}",
-      ".pay-tbl th.pay-col-svc,.pay-tbl td.pay-col-svc{width:46%;text-align:center}",
+      ".pay-tbl th.pay-col-support,.pay-tbl td.pay-col-support{width:2.4rem;max-width:2.4rem;padding-left:1px;padding-right:1px;text-align:center;overflow:hidden;overflow-wrap:normal;word-break:normal}",
+      ".pay-tbl th.pay-col-support{font-size:9px;line-height:1.05}",
+      ".pay-tbl td.pay-col-support .pay-chip{font-size:10px;padding:3px 4px;white-space:nowrap}",
+      ".pay-tbl th.pay-col-svc,.pay-tbl td.pay-col-svc{width:58%;text-align:center;overflow-x:auto;overflow-y:hidden;overflow-wrap:normal;word-break:normal}",
       ".pay-tbl th.pay-col-total,.pay-tbl td.pay-col-total{width:4.25rem;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:13px;font-weight:700}",
-      ".pay-tbl th.pay-col-status,.pay-tbl td.pay-col-status{width:5.25rem;text-align:center;white-space:nowrap}",
+      ".pay-tbl th.pay-col-status,.pay-tbl td.pay-col-status{width:2.85rem;max-width:2.85rem;padding-left:1px;padding-right:1px;text-align:center;overflow:hidden;overflow-wrap:normal;word-break:normal}",
+      ".pay-tbl th.pay-col-status{font-size:9px;line-height:1.05}",
+      ".pay-tbl td.pay-col-status .pay-pill{font-size:9px;padding:3px 4px;white-space:nowrap}",
       ".pay-tbl thead th{background:#f8fafc;color:#0f172a;font-size:10px;text-transform:uppercase;letter-spacing:.03em;white-space:normal;line-height:1.2;padding:8px 6px}",
       ".pay-tbl thead tr.pay-tbl__filter-row th{background:#fff;text-transform:none;letter-spacing:0;white-space:normal;font-weight:400;padding:10px 12px;vertical-align:middle}",
       ".pay-tbl tbody tr{cursor:pointer}",
@@ -910,9 +914,11 @@
 
   function pillFor(r) {
     var c = category(r);
-    var label = r.payment_status || (c === "paid" ? "Paid" : "Outstanding");
     var cls = c === "paid" ? "pay-pill--paid" : (c === "notreenrolled" ? "pay-pill--na" : "pay-pill--out");
-    return '<span class="pay-pill ' + cls + '">' + esc(label) + "</span>";
+    /* Compact table labels so Status column stays tiny. */
+    var label = c === "paid" ? "Paid" : (c === "notreenrolled" ? "N/A" : "Out");
+    var full = r.payment_status || (c === "paid" ? "Paid" : "Outstanding");
+    return '<span class="pay-pill ' + cls + '" title="' + esc(full) + '">' + esc(label) + "</span>";
   }
 
   function paidChipClass(label) {
