@@ -634,6 +634,7 @@
     rootEl: null,
     rows: [],
     reenrolRows: [],      // synthetic rows from portal_parent_invoice_share (created_via reenrolment)
+    crashRows: [],        // synthetic Summer crash course invoices (INV-P-CRASH-*)
     mode: "payments",     // payments | orders | participants (same data, different framing)
     statusFilter: "active", // active (re-enrolled) | all | outstanding | paid | notreenrolled
     sheetFilter: "",      // "" = all groups, else sheet name
@@ -995,6 +996,8 @@
     if (s === "acat" || s === "acat_group" || s.indexOf("acat_") === 0) return "acat";
     if (s.indexOf("cyrus") === 0) return "cyrus";
     if (s.indexOf("tinashe") === 0) return "tinashe";
+    if (s.indexOf("zakariya") === 0) return "zakariya";
+    if (s.indexOf("patrick") === 0) return "patrick";
     if (s.indexOf("ikram") === 0) return "ikram";
     if (s.indexOf("emanuel") === 0 || s.indexOf("emmanuel") === 0) return "emanuel";
     if (s.indexOf("fadi") === 0) return "fadi";
@@ -1033,12 +1036,51 @@
     return thu && (bespoke90 || (/\bbespoke\b/.test(s) && thu));
   }
 
+  function isSummerTermRow(r) {
+    return termBucketFor(r) === "summer_2526";
+  }
+
+  /**
+   * Summer Day Centre: Mon/Wed/Fri 30' swimming (and the Mon & Wed weekday block).
+   * Fri-only 90' Bespoke (NHS) stays Afterschool & Weekends.
+   */
+  function isTinasheSummerDayCentreRow(r) {
+    if (!isSummerTermRow(r)) return false;
+    var s = rowServiceBlob(r);
+    if (!s || s === "—") return false;
+    if (/90\s*['′']?\s*bespoke/.test(s) && /\bfri\b/.test(s) && !/\bmon\b/.test(s) && !/\bwed\b/.test(s)) {
+      return false;
+    }
+    if (
+      /30\s*['′']?\s*(?:swim|swimming|aquatic|\bsw\b)/.test(s)
+      && (/\bmon\b/.test(s) || /\bwed\b/.test(s) || /\bfri\b/.test(s))
+    ) {
+      return true;
+    }
+    /* Ealing weekday Mon & Wed block → Day Centre stream for Summer 25/26. */
+    if (/\bmon\b/.test(s) && /\bwed\b/.test(s) && !/\bfri\b/.test(s)) return true;
+    if (/mon\s*(?:&|and|,)\s*wed/.test(s) && !/\bfri\b/.test(s)) return true;
+    return false;
+  }
+
   function isDayCentreRow(r) {
     var slug = paymentParticipantSlug(r);
     var s = rowServiceBlob(r);
 
-    /* Fri 90' Bespoke = afterschool / weekends, not Day Centre. */
-    if (slug === "tinashe") return false;
+    if (slug === "tinashe") return isTinasheSummerDayCentreRow(r);
+
+    /* Patrick Summer 25/26 (incl. climb crash) → Day Centre. */
+    if (slug === "patrick" && isSummerTermRow(r)) return true;
+
+    /*
+     * Zakariya: crash climb+swim (4 days) → Day Centre.
+     * Sunday term 30' SW / 60' CL stays Afterschool & Weekends.
+     */
+    if (slug === "zakariya") {
+      if (r && r._crash) return true;
+      if (/crash/.test(s)) return true;
+      return false;
+    }
 
     /* ACAT only appears in Day Centre once they re-enrol. */
     if (slug === "acat") {
@@ -1111,6 +1153,7 @@
   function allRows() {
     var payments = state.rows || [];
     var reenrol = state.reenrolRows || [];
+    var crash = state.crashRows || [];
     /*
      * Prefer portal re-enrol invoice rows over workbook/manual client_payments
      * for the same participant + term (fixes Timi vs Timi Dairo double count).
@@ -1129,7 +1172,7 @@
       if (slug && reenrolByTermSlug[term] && reenrolByTermSlug[term][slug]) return false;
       return true;
     });
-    return filteredPayments.concat(reenrol);
+    return filteredPayments.concat(reenrol, crash);
   }
 
   function supabaseBase() {
@@ -2496,7 +2539,7 @@
     return row;
   }
 
-  function loadReenrolRows() {
+  function fetchAdminParentInvoices() {
     var base = supabaseBase();
     var key = anonKey();
     if (!base || !key) return Promise.resolve([]);
@@ -2518,93 +2561,193 @@
       }).then(function (res) { return res.json().then(function (j) { return { res: res, j: j }; }); })
         .then(function (pack) {
           if (!pack.res.ok || !pack.j || !pack.j.ok) return [];
-          var allInvs = pack.j.invoices || [];
-          var invs = allInvs.filter(isAutumnReenrolInvoice);
-          var agg = {};
-          invs.forEach(function (inv) {
-            var cid = String(inv.contact_id || "").trim();
-            if (!cid) return;
-            var via = String(inv.created_via || "");
-            var isLaAuto = via === "la_office_auto";
-            if (!agg[cid]) {
-              agg[cid] = buildAutumnReenrolAggRow(inv, { forceLa: isLaAuto });
-            }
-            var row = agg[cid];
-            mergeServiceLabelsIntoRow(row, inv);
-            /* Prefer la_office_auto row identity if both somehow appear. */
-            if (isLaAuto) {
-              row.id = "la-auto-" + cid;
-              row._laOfficeAuto = true;
-              row._paymentMethodHint = "la_funded";
-              if (!row._fundingLabel && inv.funding_label) {
-                row._fundingLabel = String(inv.funding_label).trim();
-                row.data.Funder = row._fundingLabel;
-              }
-            }
-            var amt = reenrolInvoiceAmountGbp(inv);
-            var st = String(inv.payment_status || "").toLowerCase();
-            row.amount_billed += amt;
-            if (inv.id) row._invoiceIds.push(inv.id);
-            var hint = String(inv.payment_method_hint || "").toLowerCase();
-            var vat = String(inv.vat_mode || "").toLowerCase();
-            if (hint === "la_funded" || isLaAuto) row._paymentMethodHint = "la_funded";
-            if (vat === "exempt" && row._vatMode !== "exempt") row._vatMode = vat;
-            if (st === "paid") {
-              // keep Paid unless another instalment is open
-            } else if (st !== "void") {
-              row.amount_out += amt;
-              row.payment_status = "Outstanding";
-            }
-          });
+          return pack.j.invoices || [];
+        })
+        .catch(function () { return []; });
+    });
+  }
 
-          /*
-           * LA sheet clients already re-enrolled for 2026/27 may only appear as
-           * funding_category=la_managed on existing shares (API skips synthetic
-           * la_office_auto when any INV-P exists). Still show them under Autumn.
-           */
-          allInvs.forEach(function (inv) {
-            if (!isLaManagedAutumnCandidate(inv)) return;
-            var cid = String(inv.contact_id || "").trim();
-            if (!cid || agg[cid]) return;
-            var amt = laBookedAutumnAmountGbp(inv);
-            if (amt <= 0 && !inv.reenrolment_submitted_at && !(inv.booked_slots && inv.booked_slots.length)) {
-              return;
-            }
-            var row = buildAutumnReenrolAggRow(inv, { forceLa: true });
-            /* Use booked autumn once — do not sum every historical LA share. */
-            row.amount_billed = amt;
-            row.amount_out = amt;
-            row.amount = amt;
-            row.payment_status = amt > 0 ? "Outstanding" : "Paid";
-            if (inv.id) row._invoiceIds.push(inv.id);
-            agg[cid] = row;
-          });
+  function buildReenrolRowsFromInvoices(allInvs) {
+    allInvs = allInvs || [];
+    var invs = allInvs.filter(isAutumnReenrolInvoice);
+    var agg = {};
+    invs.forEach(function (inv) {
+      var cid = String(inv.contact_id || "").trim();
+      if (!cid) return;
+      var via = String(inv.created_via || "");
+      var isLaAuto = via === "la_office_auto";
+      if (!agg[cid]) {
+        agg[cid] = buildAutumnReenrolAggRow(inv, { forceLa: isLaAuto });
+      }
+      var row = agg[cid];
+      mergeServiceLabelsIntoRow(row, inv);
+      /* Prefer la_office_auto row identity if both somehow appear. */
+      if (isLaAuto) {
+        row.id = "la-auto-" + cid;
+        row._laOfficeAuto = true;
+        row._paymentMethodHint = "la_funded";
+        if (!row._fundingLabel && inv.funding_label) {
+          row._fundingLabel = String(inv.funding_label).trim();
+          row.data.Funder = row._fundingLabel;
+        }
+      }
+      var amt = reenrolInvoiceAmountGbp(inv);
+      var st = String(inv.payment_status || "").toLowerCase();
+      row.amount_billed += amt;
+      if (inv.id) row._invoiceIds.push(inv.id);
+      var hint = String(inv.payment_method_hint || "").toLowerCase();
+      var vat = String(inv.vat_mode || "").toLowerCase();
+      if (hint === "la_funded" || isLaAuto) row._paymentMethodHint = "la_funded";
+      if (vat === "exempt" && row._vatMode !== "exempt") row._vatMode = vat;
+      if (st === "paid") {
+        // keep Paid unless another instalment is open
+      } else if (st !== "void") {
+        row.amount_out += amt;
+        row.payment_status = "Outstanding";
+      }
+    });
 
-          return Object.keys(agg).map(function (cid) {
-            var row = agg[cid];
-            row.amount = row.amount_out > 0 ? row.amount_out : row.amount_billed;
-            if (row.amount_out <= 0 && row.amount_billed > 0) row.payment_status = "Paid";
-            else if (row.amount_out > 0) row.payment_status = "Outstanding";
-            row.sheet = classifyPayGroup({
-              payment_method_hint: row._paymentMethodHint,
-              vat_mode: row._vatMode,
-              funding_label: row._fundingLabel,
-              _reenrol: true,
-            });
-            return row;
-          });
-        }).catch(function () { return []; });
+    /*
+     * LA sheet clients already re-enrolled for 2026/27 may only appear as
+     * funding_category=la_managed on existing shares (API skips synthetic
+     * la_office_auto when any INV-P exists). Still show them under Autumn.
+     */
+    allInvs.forEach(function (inv) {
+      if (!isLaManagedAutumnCandidate(inv)) return;
+      var cid = String(inv.contact_id || "").trim();
+      if (!cid || agg[cid]) return;
+      var amt = laBookedAutumnAmountGbp(inv);
+      if (amt <= 0 && !inv.reenrolment_submitted_at && !(inv.booked_slots && inv.booked_slots.length)) {
+        return;
+      }
+      var row = buildAutumnReenrolAggRow(inv, { forceLa: true });
+      /* Use booked autumn once — do not sum every historical LA share. */
+      row.amount_billed = amt;
+      row.amount_out = amt;
+      row.amount = amt;
+      row.payment_status = amt > 0 ? "Outstanding" : "Paid";
+      if (inv.id) row._invoiceIds.push(inv.id);
+      agg[cid] = row;
+    });
+
+    return Object.keys(agg).map(function (cid) {
+      var row = agg[cid];
+      row.amount = row.amount_out > 0 ? row.amount_out : row.amount_billed;
+      if (row.amount_out <= 0 && row.amount_billed > 0) row.payment_status = "Paid";
+      else if (row.amount_out > 0) row.payment_status = "Outstanding";
+      row.sheet = classifyPayGroup({
+        payment_method_hint: row._paymentMethodHint,
+        vat_mode: row._vatMode,
+        funding_label: row._fundingLabel,
+        _reenrol: true,
+      });
+      return row;
+    });
+  }
+
+  function isSummerCrashInvoice(inv) {
+    if (!inv) return false;
+    var st = String(inv.payment_status || "").toLowerCase();
+    if (st === "void") return false;
+    var num = String(inv.invoice_number || "");
+    if (/crash/i.test(num)) return true;
+    var blob = [
+      inv.line_description,
+      inv.reference_text,
+      inv.title,
+      JSON.stringify(inv.line_items || []),
+    ].join(" ").toLowerCase();
+    return /summer\s*crash|crash\s*course/.test(blob);
+  }
+
+  function crashServicesLabel(inv) {
+    var labels = serviceLabelsFromInvoice(inv);
+    if (labels.length) return labels.join(" · ");
+    var desc = String(inv.line_description || "");
+    var bits = [];
+    if (/aquatic|swimming|swim/i.test(desc)) bits.push("60' Swimming");
+    if (/climb/i.test(desc)) bits.push("60' Climbing");
+    if (bits.length) {
+      if (/4\s*sessions|4\s*days|20th to 23rd|21st to 24th/i.test(desc)) {
+        return bits.join(" · ") + " (4 days)";
+      }
+      return bits.join(" · ");
+    }
+    return "Summer crash course";
+  }
+
+  function buildCrashPaymentRow(inv) {
+    var cid = String(inv.contact_id || "").trim();
+    var fullName = String(inv.participant_display || inv.related_client || cid).trim();
+    var shortName = fullName.split(/\s+/)[0] || fullName;
+    var amt = Number(inv.amount_gbp) || 0;
+    var st = String(inv.payment_status || "").toLowerCase();
+    var paid = st === "paid";
+    var vat = String(inv.vat_mode || "").toLowerCase();
+    var invType = vat === "exempt" ? INVOICE_TYPE.PARENT_EXEMPT : INVOICE_TYPE.PARENT_20;
+    var row = {
+      id: "crash-" + (inv.id || cid),
+      _contactId: cid,
+      _synthetic: true,
+      _crash: true,
+      _termBucket: "summer_2526",
+      _invoiceIds: inv.id ? [inv.id] : [],
+      _paymentMethodHint: String(inv.payment_method_hint || "").toLowerCase(),
+      _vatMode: vat || "vat_20",
+      sheet: "PARENTS",
+      client_name: shortName,
+      parent_name: String(inv.parent_display || "").trim(),
+      payment_status: paid ? "Paid" : "Outstanding",
+      amount: amt,
+      amount_billed: amt,
+      amount_out: paid ? 0 : amt,
+      data: {
+        Term: "SUMMER TERM 25/26",
+        Services: crashServicesLabel(inv),
+        Paid: PAID_BY.PRIVATE_FUNDS,
+        "Invoice type": invType,
+        Invoice: String(inv.invoice_number || "").trim(),
+      },
+      _serviceParts: Object.create(null),
+    };
+    mergeServiceLabelsIntoRow(row, inv);
+    if (!row.data.Services) row.data.Services = crashServicesLabel(inv);
+    return row;
+  }
+
+  function buildCrashRowsFromInvoices(allInvs) {
+    return (allInvs || [])
+      .filter(isSummerCrashInvoice)
+      .map(buildCrashPaymentRow)
+      .filter(function (r) {
+        /* Day Centre Summer stream: Zakariya crash + Patrick (and any future DC crash). */
+        var slug = paymentParticipantSlug(r);
+        return slug === "zakariya" || slug === "patrick";
+      });
+  }
+
+  function loadPortalInvoiceDerivedRows() {
+    return fetchAdminParentInvoices().then(function (allInvs) {
+      return {
+        reenrol: buildReenrolRowsFromInvoices(allInvs),
+        crash: buildCrashRowsFromInvoices(allInvs),
+      };
     });
   }
 
   function loadAllData(client) {
-    return Promise.all([loadAll(client), loadReenrolRows()]).then(function (res) {
+    return Promise.all([loadAll(client), loadPortalInvoiceDerivedRows()]).then(function (res) {
       var payments = res[0] || [];
-      var reenrol = res[1] || [];
-      var contactIds = reenrol.map(function (r) { return r._contactId; }).filter(Boolean);
+      var derived = res[1] || {};
+      var reenrol = derived.reenrol || [];
+      var crash = derived.crash || [];
+      var contactIds = reenrol
+        .concat(crash)
+        .map(function (r) { return r._contactId; })
+        .filter(Boolean);
       return loadFundingLabelsByContact(client, contactIds).then(function (fundingByContact) {
         applyPayGroupClassification(payments, reenrol, fundingByContact);
-        return { payments: payments, reenrol: reenrol };
+        return { payments: payments, reenrol: reenrol, crash: crash };
       });
     });
   }
@@ -2630,7 +2773,8 @@
     loadAllData(client).then(function (pack) {
       state.rows = pack.payments;
       state.reenrolRows = pack.reenrol;
-      if (!state.rows.length && !state.reenrolRows.length) {
+      state.crashRows = pack.crash || [];
+      if (!state.rows.length && !state.reenrolRows.length && !state.crashRows.length) {
         rootEl.innerHTML = '<p class="pay-empty">No payments yet. Run the client_payments migration + seed in Supabase, then reopen this view.</p>';
         return;
       }
@@ -2663,7 +2807,11 @@
 
   // Ensure rows are in memory (load once if needed), then run cb(true|false).
   function ensureLoaded(cb) {
-    if ((state.rows && state.rows.length) || (state.reenrolRows && state.reenrolRows.length)) {
+    if (
+      (state.rows && state.rows.length)
+      || (state.reenrolRows && state.reenrolRows.length)
+      || (state.crashRows && state.crashRows.length)
+    ) {
       cb(true);
       return;
     }
@@ -2672,6 +2820,7 @@
     loadAllData(client).then(function (pack) {
       state.rows = pack.payments;
       state.reenrolRows = pack.reenrol;
+      state.crashRows = pack.crash || [];
       cb(true);
     }).catch(function () { cb(false); });
   }
