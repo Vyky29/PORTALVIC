@@ -917,6 +917,8 @@
       ".pay-grp--priv .pay-grp__ico{background:#eff6ff;color:#2d84b3}",
       ".pay-grp--dp .pay-grp__ico{background:#ecfdf5;color:#047857}",
       ".pay-grp--fund .pay-grp__ico{background:#f1ecfb;color:#7c3aed}",
+      ".pay-grp--nhs .pay-grp__ico{background:#e0f2fe;color:#0369a1}",
+      ".pay-grp--nhs{border-color:rgba(3,105,161,.22)}",
       ".pay-grp__head-txt{min-width:0;text-align:center}",
       ".pay-grp__t{display:block;font-size:14px;font-weight:800;color:#0f172a;overflow-wrap:break-word}",
       ".pay-grp__sub{display:block;font-size:11px;color:#94a3b8;font-weight:700}",
@@ -1445,11 +1447,14 @@
 
   function paidFilterChipsHtml(termId) {
     var cur = paidFilterForTerm(termId);
+    var stream = serviceKindForTerm(termId);
     var html = '<div class="pay-chip-filters pay-chip-filters--tbl" role="group" aria-label="Paid filter for this term">'
       + '<div class="pay-chip-row">'
       + '<span class="pay-chip-row__lab">Paid</span>'
       + filterChipBtn("paid", "", "All", !cur, "pay-chip--muted", termId);
     PAID_BY_OPTIONS.forEach(function (l) {
+      /* Afterschool: no NHS chip — NHS Day Centre is on the other stream. */
+      if (stream === "afterschool" && l === PAID_BY.FUNDED_BY_NHS) return;
       html += filterChipBtn("paid", l, l, cur === l, paidChipClass(l), termId);
     });
     html += "</div></div>";
@@ -1462,7 +1467,14 @@
       /* ACAT stays hidden until they renew — not listed under afterschool either. */
       if (paymentParticipantSlug(r) === "acat" && !isDayCentreRow(r)) return false;
       var dc = isDayCentreRow(r);
-      return kind === "day_centre" ? dc : !dc;
+      if (kind === "day_centre") return dc;
+      /* Afterschool: no Day Centre cohort; Tinashe Fri NHS stays here. */
+      if (dc) return false;
+      if (paymentParticipantSlug(r) === "tinashe") return true;
+      if (paidByFor(r) === PAID_BY.FUNDED_BY_NHS || invoiceTypeFor(r) === INVOICE_TYPE.NHS_EXEMPT) {
+        return false;
+      }
+      return true;
     });
   }
 
@@ -1711,12 +1723,29 @@
     return html;
   }
 
-  function tallyRows(rows) {
+  function fundGroupKey(r, streamKind) {
+    if (!r) return "";
+    var sheet = String(r.sheet || "").toUpperCase();
+    if (sheet === "PARENTS") return "PARENTS";
+    if (sheet === "DIRECT_PAYMENTS") return "DIRECT_PAYMENTS";
+    var nhs = paidByFor(r) === PAID_BY.FUNDED_BY_NHS || invoiceTypeFor(r) === INVOICE_TYPE.NHS_EXEMPT;
+    if (streamKind === "day_centre") {
+      /* Keep ACAT (DP / Using Funds from LA) out of NHS + LA invoice totals. */
+      if (sheet === "DIRECT_PAYMENTS" || isAcatMondayAquaticRow(r)) return "DIRECT_PAYMENTS";
+      return nhs ? "NHS" : "LA";
+    }
+    /* Afterschool: third card is LA invoice only — Tinashe Fri NHS still rolls in here. */
+    if (sheet === "LA") return "LA";
+    return sheet;
+  }
+
+  function tallyRows(rows, streamKind) {
     var billed = 0, paid = 0, outstanding = 0, paidN = 0, outN = 0, naN = 0;
     var grp = {
       PARENTS: { billed: 0, paid: 0, out: 0, n: 0 },
       DIRECT_PAYMENTS: { billed: 0, paid: 0, out: 0, n: 0 },
       LA: { billed: 0, paid: 0, out: 0, n: 0 },
+      NHS: { billed: 0, paid: 0, out: 0, n: 0 },
     };
     (rows || []).forEach(function (r) {
       var a = Number(r.amount) || 0;
@@ -1725,7 +1754,8 @@
       if (c === "paid") { paid += a; paidN++; }
       else if (c === "outstanding") { outstanding += a; outN++; }
       else if (c === "notreenrolled") naN++;
-      var g = grp[r.sheet];
+      var key = fundGroupKey(r, streamKind);
+      var g = grp[key];
       if (g && c !== "notreenrolled") {
         g.billed += a; g.n++;
         if (c === "paid") g.paid += a; else g.out += a;
@@ -1735,7 +1765,8 @@
   }
 
   function termSummaryBlockHtml(scopedRows, visibleRows, termId) {
-    var t = tallyRows(scopedRows);
+    var stream = serviceKindForTerm(termId);
+    var t = tallyRows(scopedRows, stream);
     var html = '<div class="pay-term-acc__body">';
     html += serviceKindToggleHtml(termId);
     html += '<div class="pay-kpis">'
@@ -1745,10 +1776,15 @@
       + "</div>";
     if (state.mode === "payments") {
       html += '<div class="pay-groups">'
-        + grpCard("priv", "pay-grp--priv", labelFor("PARENTS"), t.grp.PARENTS)
-        + grpCard("fund", "pay-grp--dp", labelFor("DIRECT_PAYMENTS"), t.grp.DIRECT_PAYMENTS)
-        + grpCard("fund", "pay-grp--fund", labelFor("LA"), t.grp.LA)
-        + "</div>";
+        + grpCard("priv", "pay-grp--priv", "Family · Private", t.grp.PARENTS)
+        + grpCard("fund", "pay-grp--dp", "Family · Direct Payments", t.grp.DIRECT_PAYMENTS);
+      if (stream === "day_centre") {
+        html += grpCard("fund", "pay-grp--fund", "LA invoice", t.grp.LA)
+          + grpCard("fund", "pay-grp--nhs", "NHS invoice", t.grp.NHS);
+      } else {
+        html += grpCard("fund", "pay-grp--fund", "LA invoice", t.grp.LA);
+      }
+      html += "</div>";
     }
     html += '<div class="pay-card-h" style="display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;flex-wrap:wrap">'
       + '<h3 style="margin:0;font-size:15px;color:#0f172a;display:flex;align-items:center;gap:8px;min-width:0">'
@@ -3294,6 +3330,9 @@
         if (termId) {
           state.serviceKindByTerm[termId] = kind === "day_centre" ? "day_centre" : "afterschool";
           state.focusTermId = termId;
+          if (kind !== "day_centre" && paidFilterForTerm(termId) === PAID_BY.FUNDED_BY_NHS) {
+            state.paidFilterByTerm[termId] = "";
+          }
         }
         render();
       });
@@ -3888,13 +3927,14 @@
   }
 
   function autumnTermAmountFromInvoice(inv) {
-    var n = Number(inv && inv.amount_selected_gbp);
-    if (n > 0) return n;
-    n = Number(inv && inv.booked_term_gbp);
-    if (n > 0) return n;
-    n = Number(inv && inv.booked_autumn_gbp);
-    if (n > 0) return n;
-    /* Sum slot autumn totals when pack fields missing. */
+    var annual = Number(inv && inv.booked_annual_gbp) || 0;
+    var autumn = Number(inv && inv.booked_autumn_gbp) || 0;
+    if (autumn > 0) return autumn;
+    var term = Number(inv && inv.booked_term_gbp) || 0;
+    if (term > 0 && !(annual > 0 && Math.abs(term - annual) < 0.05)) return term;
+    var selected = Number(inv && inv.amount_selected_gbp) || 0;
+    if (selected > 0 && !(annual > 0 && Math.abs(selected - annual) < 0.05)) return selected;
+    /* Sum slot autumn totals when pack fields missing / wrong. */
     var slots = inv && Array.isArray(inv.booked_slots) ? inv.booked_slots : [];
     if (slots.length) {
       var sum = 0;
@@ -3909,14 +3949,14 @@
         if (!(sess > 0) && s && s.sessions) sess = Number(s.sessions.autumn) || 0;
         if (price > 0 && sess > 0) sum += price * sess;
       });
-      if (sum > 0) return Math.round(sum * 100) / 100;
+      if (sum > 0 && !(annual > 0 && Math.abs(sum - annual) < 0.05)) {
+        return Math.round(sum * 100) / 100;
+      }
     }
-    var annual = Number(inv && inv.booked_annual_gbp) || 0;
     var amt = Number(inv && inv.amount_gbp) || 0;
-    /* Reject year figures accidentally stored as amount_gbp. */
     if (amt > 0 && annual > 0 && Math.abs(amt - annual) < 0.05) return 0;
     if (amt > 0 && annual > 0 && amt > annual * 0.85) return 0;
-    return amt > 0 ? amt : 0;
+    return 0;
   }
 
   function laBookedAutumnAmountGbp(inv) {
