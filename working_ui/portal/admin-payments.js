@@ -1027,13 +1027,96 @@
     });
   }
 
-  /** Cyrus Day Centre stream = Thursday 90' Bespoke only (not other club services). */
+  /** Cyrus Day Centre stream = Thursday 90' Bespoke only (not aquatic / multi). */
   function isCyrusThursdayBespokeRow(r) {
+    if (r && r._cyrusPart === "thu_bespoke") return true;
+    if (r && r._cyrusPart === "afterschool") return false;
     var s = rowServiceBlob(r);
     if (!s) return false;
     var thu = /\bthu(?:rs(?:day)?)?\b/.test(s);
-    var bespoke90 = /90\s*['′']?\s*bespoke|bespoke[^.]{0,24}90|90[^.]{0,24}bespoke/.test(s);
-    return thu && (bespoke90 || (/\bbespoke\b/.test(s) && thu));
+    var bespoke90 = /90\s*['′']?\s*bespoke|bespoke[^.]{0,24}90|90[^.]{0,24}bespoke|90\s*['′']?\s*ff\b/.test(s);
+    return thu && bespoke90;
+  }
+
+  /**
+   * Split Cyrus summer workbook row: Thu 90' Bespoke (£90/session) → Day Centre;
+   * Wed aquatic + Wed/Sun multi → Afterschool & Weekends.
+   */
+  function splitCyrusSummerServiceRows(r) {
+    if (!r || r._cyrusPart || r._synthetic || r._crash) return null;
+    if (paymentParticipantSlug(r) !== "cyrus") return null;
+    if (termBucketFor(r) !== "summer_2526") return null;
+    var d = r.data || {};
+    var svc = String(d.Services || d.Service || "");
+    var thuNote = String(d["Thursday Bespoke"] || "");
+    var blob = (svc + " " + thuNote).toLowerCase();
+    var hasThu = /90\s*['′']?\s*ff\b|\bff\s*\(\s*thu|thursday\s*bespoke|90\s*['′']?\s*bespoke/.test(blob)
+      && /\bthu/.test(blob);
+    var hasOther = /30\s*['′']?\s*sw\b|aquatic|s\s*&\s*c|multi-?activity/.test(blob);
+    if (!hasThu || !hasOther) return null;
+
+    var sessParts = String(d.Sessions || "")
+      .split("/")
+      .map(function (x) { return parseInt(String(x).trim(), 10); })
+      .filter(function (n) { return Number.isFinite(n) && n > 0; });
+    var thuSessions = sessParts[0] || 13;
+    var thuRate = 90;
+    var thuAmt = thuSessions * thuRate;
+    var total = Number(r.amount) || 0;
+    var otherAmt = total > thuAmt ? Math.round((total - thuAmt) * 100) / 100 : 0;
+    var otherSessions = sessParts.length > 1 ? sessParts.slice(1).join("/") : "13/13/11";
+
+    function clonePart(part, idSuffix, amount, services, sessions, cost) {
+      var out = {};
+      Object.keys(r).forEach(function (k) { out[k] = r[k]; });
+      out.id = String(r.id) + idSuffix;
+      out._cyrusPart = part;
+      out._sourcePaymentId = r.id;
+      out._syntheticSplit = true;
+      out.amount = amount;
+      out.data = Object.assign({}, d, {
+        Services: services,
+        Sessions: sessions,
+        Cost: cost,
+        Term: d.Term || "Summer 25/26",
+      });
+      if (part === "thu_bespoke") {
+        out.data["Thursday Bespoke"] = thuNote
+          || "90' Bespoke Programme · Thu 15:30–17:00 · Victor · SwimFarm Hub · £90/session";
+      } else {
+        delete out.data["Thursday Bespoke"];
+      }
+      return out;
+    }
+
+    return [
+      clonePart(
+        "thu_bespoke",
+        "::thu-bespoke",
+        thuAmt,
+        "90' Bespoke Programme (Thu)",
+        String(thuSessions),
+        "£90 / session (friendly rate; std £125/hr)"
+      ),
+      clonePart(
+        "afterschool",
+        "::afterschool",
+        otherAmt,
+        "30' Aquatic Activity (Wed), 90' Multi-Activity (Wed), 90' Multi-Activity (Sun)",
+        otherSessions,
+        d.Cost || ""
+      ),
+    ];
+  }
+
+  function expandSplitServiceRows(rows) {
+    var out = [];
+    (rows || []).forEach(function (r) {
+      var parts = splitCyrusSummerServiceRows(r);
+      if (parts && parts.length) out.push.apply(out, parts);
+      else out.push(r);
+    });
+    return out;
   }
 
   function isSummerTermRow(r) {
@@ -1160,7 +1243,7 @@
       if (slug && reenrolByTermSlug[term] && reenrolByTermSlug[term][slug]) return false;
       return true;
     });
-    return filteredPayments.concat(reenrol, crash);
+    return expandSplitServiceRows(filteredPayments.concat(reenrol, crash));
   }
 
   function supabaseBase() {
@@ -1307,7 +1390,7 @@
     rows.forEach(function (r, i) {
       var attr = r._synthetic
         ? ' data-pay-reenrol="' + esc(r._contactId || r.id) + '"'
-        : ' data-pay-id="' + esc(r.id) + '"';
+        : ' data-pay-id="' + esc(r._sourcePaymentId || r.id) + '"';
       html += "<tr" + attr + ">"
         + '<td class="num pay-tbl__idx">' + (i + 1) + "</td>"
         + '<td class="pay-name">' + esc(r.client_name || "—") + "</td>"
@@ -1605,6 +1688,27 @@
     return formatServiceTimeLine(m[1], m[2]);
   }
 
+  /** "15:30–17:00" / "3.30 to 5" → "3.30 pm to 5 pm". */
+  function extractTimeFromText(raw) {
+    var s = String(raw || "");
+    var m24 = s.match(/(\d{1,2})[:.](\d{2})\s*(?:[–\-—]|to)\s*(\d{1,2})[:.](\d{2})/);
+    if (m24) {
+      function one(h, m) {
+        h = parseInt(h, 10);
+        m = String(m || "00");
+        if (!Number.isFinite(h)) return "";
+        var mer = h >= 12 ? "pm" : "am";
+        var h12 = h % 12;
+        if (!h12) h12 = 12;
+        return m === "00" ? h12 + " " + mer : h12 + "." + m + " " + mer;
+      }
+      var a = one(m24[1], m24[2]);
+      var b = one(m24[3], m24[4]);
+      return a && b ? a + " to " + b : "";
+    }
+    return extractTimeFromSessions(s);
+  }
+
   function defaultDayCentreTime(hoursKey) {
     var k = String(hoursKey || "").toLowerCase();
     if (k === "5h") return "11 am to 4 pm";
@@ -1631,10 +1735,15 @@
    * e.g. "5h DAY CENTRE" / "MON to WED & FRI" / "11 am to 4 pm"
    */
   function serviceDisplayParts(r) {
+    var d = (r && r.data) || {};
     var raw = rawServiceText(r);
-    var sessions = String(((r && r.data) || {}).Sessions || ((r && r.data) || {})["Session times"] || "").trim();
+    var sessions = String(d.Sessions || d["Session times"] || "").trim();
     if (!raw) return { line1: "—", line2: "", line3: "" };
-    return normalizeServiceParts(raw, sessions);
+    var parts = normalizeServiceParts(raw, sessions);
+    if (!parts.line3) {
+      parts.line3 = extractTimeFromText(d["Thursday Bespoke"] || d.Notes || sessions);
+    }
+    return parts;
   }
 
   function normalizeServiceParts(raw, sessions) {
@@ -1754,6 +1863,8 @@
     s = s.replace(/\bCL\b/g, "Climbing Activity");
     s = s.replace(/\bFT\b/g, "Physical Activity");
     s = s.replace(/\bFIT\b/g, "Physical Activity");
+    /* Workbook "90' FF (Thu)" = Thursday Bespoke Programme (£90 friendly). */
+    s = s.replace(/(\d+\s*['′']?\s*)FF\b/gi, "$1Bespoke Programme");
     s = s.replace(/\bBS\b/g, "Bespoke");
     /* "30' Aquatic (Sat)" → "30' Aquatic Activity (Sat)" */
     s = s.replace(/(\d+\s*['′']?\s*)Aquatic\b(?!\s+Activity)/gi, "$1Aquatic Activity");
@@ -2259,8 +2370,18 @@
   }
 
   function openDetail(id) {
-    var r = allRows().filter(function (x) { return String(x.id) === String(id); })[0];
+    /* Prefer the real client_payments row (split Cyrus display rows share its id). */
+    var r = (state.rows || []).filter(function (x) { return String(x.id) === String(id); })[0]
+      || allRows().filter(function (x) {
+        return String(x.id) === String(id) || String(x._sourcePaymentId || "") === String(id);
+      })[0];
     if (!r) return;
+    if (r._syntheticSplit && r._sourcePaymentId) {
+      var src = (state.rows || []).filter(function (x) {
+        return String(x.id) === String(r._sourcePaymentId);
+      })[0];
+      if (src) r = src;
+    }
     if (r._synthetic) {
       deps.toast("Autumn re-enrolment instalments — open Family invoices above for this family.");
       return;
