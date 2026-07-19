@@ -11,7 +11,7 @@ import {
   portalLeadProgrammeLeadWorkingOnIso,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260702-ma-lead-team-absent";
+} from "./portal_lead_session_scope.js?v=20260719-michelle-dc-weekdays";
 
 const LEAD_SERVICE_CHANGE_TYPES = new Set([
   "instructor_reassign",
@@ -303,6 +303,8 @@ function collectInScopeMemberKeys(iso, scopes, source) {
   const memberKeys = [];
   rows.forEach(function (row) {
     if (!rosterRowMatchesIso(row, iso)) return;
+    /* Casa / Manager / HOME duty rows are not Day Centre participant cover. */
+    if (isDutyClientName(row && row.client_name)) return;
     const slot = rosterRowToSlot(row, iso);
     if (!portalLeadSlotInScope(slot, scopes)) return;
     staffKeysFromInstructorLabel(resolvedInstructorsForRow(row, iso, source)).forEach(function (k) {
@@ -877,6 +879,7 @@ function isDutyClientName(name) {
   return (
     !n ||
     n === "home" ||
+    n === "casa" ||
     n === "manager" ||
     n === "closed" ||
     n === "available" ||

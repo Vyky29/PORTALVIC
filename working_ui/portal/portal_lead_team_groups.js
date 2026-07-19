@@ -41,7 +41,12 @@
   ];
 
   var MICHELLE_DC_SCOPES = [
-    { weekdays: DOW.slice(), serviceKeys: ["daycentre"], venues: [], programmeWide: true },
+    {
+      weekdays: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      serviceKeys: ["daycentre"],
+      venues: [],
+      programmeWide: true,
+    },
   ];
 
   /** Programme teams per lead (admin slug lead_team_* in portal_ceo_group). */

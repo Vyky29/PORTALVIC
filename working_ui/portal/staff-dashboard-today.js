@@ -3219,7 +3219,7 @@
         ];
       }
       if(sid === 'michelle'){
-        return [{ weekdays: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'], serviceKeys: ['daycentre'], venues: [], programmeWideRoster: true, leadTeamBanner: true, ownClientsOnly: true }];
+        return [{ weekdays: ['Monday','Tuesday','Wednesday','Thursday','Friday'], serviceKeys: ['daycentre'], venues: [], programmeWideRoster: true, leadTeamBanner: true, ownClientsOnly: true }];
       }
       return [];
     }

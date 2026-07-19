@@ -91,7 +91,8 @@ const MICHELLE_SCOPES = [
   {
     id: "day-centre-all",
     label: "Day Centre — all programme days",
-    weekdays: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+    /* Day Centre is Mon–Fri only — weekend scopes freeze/slow Michelle's PWA lead paths. */
+    weekdays: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
     serviceKeys: ["daycentre"],
     programmeWideRoster: true,
     leadTeamBanner: true,
