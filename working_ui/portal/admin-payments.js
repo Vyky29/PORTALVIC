@@ -3821,7 +3821,8 @@
 
   function reenrolInvoiceAmountGbp(inv) {
     var via = String((inv && inv.created_via) || "");
-    /* Instalments keep amount_gbp; LA office-auto / booked-place rows use term totals. */
+    /* Instalments keep amount_gbp; LA office-auto / booked-place rows use term totals.
+     * Never fall back to booked_annual_gbp here — Autumn chips must not sum full-year LA figures. */
     if (via === "reenrolment") {
       return Number(inv && inv.amount_gbp) || 0;
     }
@@ -3832,8 +3833,6 @@
     n = Number(inv && inv.booked_autumn_gbp);
     if (n > 0) return n;
     n = Number(inv && inv.amount_gbp);
-    if (n > 0) return n;
-    n = Number(inv && inv.booked_annual_gbp);
     return n > 0 ? n : 0;
   }
 
@@ -3844,7 +3843,7 @@
     if (n > 0) return n;
     n = Number(inv && inv.booked_autumn_gbp);
     if (n > 0) return n;
-    n = Number(inv && inv.booked_annual_gbp);
+    n = Number(inv && inv.amount_gbp);
     return n > 0 ? n : 0;
   }
 

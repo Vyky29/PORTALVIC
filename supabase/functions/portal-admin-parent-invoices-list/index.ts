@@ -573,7 +573,11 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
         document_id: null,
         contact_id: cid,
         invoice_number: null,
-        amount_gbp: booked.amount_selected_gbp || booked.booked_annual_gbp || 0,
+        amount_gbp:
+          booked.amount_selected_gbp ||
+          booked.booked_term_gbp ||
+          (amountKey === "year" ? booked.booked_annual_gbp : null) ||
+          0,
         due_date: null,
         payment_status: "unpaid",
         share_status: "hidden",
