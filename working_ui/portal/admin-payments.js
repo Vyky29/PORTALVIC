@@ -1088,14 +1088,33 @@
     return html;
   }
 
+  /** Support ratio chip: default 1to1; Ikram/Fadi/Timi = 2to1; Tinashe = 3to1. */
+  function supportRatioFor(r) {
+    var name = String((r && r.client_name) || "").toLowerCase();
+    if (/\btinashe\b/.test(name)) return "3to1";
+    if (
+      /\bikram\b/.test(name) ||
+      /\bfadi\b/.test(name) ||
+      /\btimi\b/.test(name) ||
+      /oluwatimilehin/.test(name)
+    ) {
+      return "2to1";
+    }
+    return "1to1";
+  }
+
+  function supportCellHtml(r) {
+    return '<span class="pay-chip pay-chip--muted">' + esc(supportRatioFor(r)) + "</span>";
+  }
+
   function paymentsTableBodyHtml(rows) {
     var colClient = state.mode === "orders" ? "Participant" : "Client";
     if (!rows.length) {
       return '<div class="pay-tbl-wrap"><table class="pay-tbl"><tbody>'
-        + '<tr><td colspan="9" class="pay-empty">No records in this term.</td></tr></tbody></table></div>';
+        + '<tr><td colspan="10" class="pay-empty">No records in this term.</td></tr></tbody></table></div>';
     }
     var html = '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th class="num pay-tbl__idx">#</th><th>' + colClient
-      + '</th><th>Paid</th><th>Invoice type</th><th>Service</th><th>Term</th><th>Parent</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
+      + '</th><th>Paid</th><th>Invoice type</th><th>Support</th><th>Service</th><th>Term</th><th>Parent</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
     rows.forEach(function (r, i) {
       var attr = r._synthetic
         ? ' data-pay-reenrol="' + esc(r._contactId || r.id) + '"'
@@ -1105,6 +1124,7 @@
         + '<td class="pay-name">' + esc(r.client_name || "—") + "</td>"
         + "<td>" + paidChipHtml(paidByFor(r)) + "</td>"
         + "<td>" + invoiceChipHtml(invoiceTypeFor(r)) + "</td>"
+        + "<td>" + supportCellHtml(r) + "</td>"
         + "<td>" + serviceCellHtml(r) + "</td>"
         + "<td>" + esc(termFor(r)) + "</td>"
         + "<td>" + esc(parentPersonFor(r)) + "</td>"
@@ -1216,15 +1236,21 @@
     return category(r) === state.statusFilter;
   }
 
+  function isPlaceholderServiceLabel(s) {
+    var t = String(s || "").trim();
+    if (!t || t === "-" || t === "—") return true;
+    return /re-?enrolment\s*2026|booked place 2026|la office auto/i.test(t);
+  }
+
   function serviceFor(r) {
     var parts = serviceDisplayParts(r);
-    if (!parts.line1 || parts.line1 === "—") return "—";
+    if (!parts.line1 || parts.line1 === "—" || isPlaceholderServiceLabel(parts.line1)) return "—";
     return parts.line2 ? parts.line1 + " " + parts.line2 : parts.line1;
   }
 
   function serviceCellHtml(r) {
     var parts = serviceDisplayParts(r);
-    if (!parts.line1 || parts.line1 === "—") return "—";
+    if (!parts.line1 || parts.line1 === "—" || isPlaceholderServiceLabel(parts.line1)) return "—";
     if (!parts.line2) return esc(parts.line1);
     return '<span class="pay-svc-2line">'
       + '<span class="pay-svc-2line__a">' + esc(parts.line1) + "</span>"
@@ -1237,9 +1263,61 @@
     var keys = ["Services", "Service", "Programme", "Programmes", "Activity"];
     for (var i = 0; i < keys.length; i++) {
       var v = d[keys[i]];
-      if (v != null && String(v).trim() && String(v).trim() !== "-") return String(v).trim();
+      if (v != null && String(v).trim() && String(v).trim() !== "-") {
+        var s = String(v).trim();
+        if (!isPlaceholderServiceLabel(s)) return s;
+      }
     }
     return "";
+  }
+
+  /** Real programme labels from invoice booked_slots / line_items (never "Re-enrolment…"). */
+  function serviceLabelsFromInvoice(inv) {
+    var out = [];
+    var seen = Object.create(null);
+    function add(raw) {
+      var s = String(raw || "").trim();
+      if (!s || isPlaceholderServiceLabel(s) || seen[s]) return;
+      if (/^credits?$/i.test(s)) return;
+      if (/^structured activity support/i.test(s)) return;
+      seen[s] = 1;
+      out.push(s);
+    }
+    (Array.isArray(inv && inv.booked_slots) ? inv.booked_slots : []).forEach(function (slot) {
+      add(slot && (slot.label || slot.service));
+    });
+    (Array.isArray(inv && inv.line_items) ? inv.line_items : []).forEach(function (it) {
+      if (!it || typeof it !== "object") return;
+      var desc = String(it.description || "").trim();
+      var detail = String(it.detail || "").trim();
+      if (/^credits?$/i.test(desc)) return;
+      if (desc && detail) add(desc + " · " + detail);
+      else add(desc || detail);
+    });
+    add(inv && inv.booked_service_raw);
+    if (!out.length && inv && inv.line_description) {
+      String(inv.line_description)
+        .split(/\n+/)
+        .map(function (p) { return String(p || "").trim(); })
+        .filter(Boolean)
+        .forEach(function (p) {
+          if (/^structured activity support/i.test(p)) return;
+          /* "Aquatic Activity 30' (Wednesday 6 to 6.30 pm · Acton) — GBP 700.00" */
+          var cut = p.replace(/\s*[—–-]\s*GBP\s*[\d,.]+.*$/i, "").trim();
+          add(cut || p);
+        });
+    }
+    return out;
+  }
+
+  function mergeServiceLabelsIntoRow(row, inv) {
+    if (!row._serviceParts) row._serviceParts = Object.create(null);
+    serviceLabelsFromInvoice(inv).forEach(function (s) {
+      row._serviceParts[s] = 1;
+    });
+    var list = Object.keys(row._serviceParts);
+    row.data = row.data || {};
+    row.data.Services = list.length ? list.join(" · ") : "";
   }
 
   function expandDayRangeLabel(raw) {
@@ -1565,12 +1643,14 @@
     if (!people.length) {
       return tableOrdersCaptionHtml(rows)
         + '<div class="pay-tbl-wrap"><table class="pay-tbl"><tbody>'
-        + '<tr><td colspan="8" class="pay-empty">No participants in this term.</td></tr></tbody></table></div>';
+        + '<tr><td colspan="9" class="pay-empty">No participants in this term.</td></tr></tbody></table></div>';
     }
     var html = tableOrdersCaptionHtml(rows)
-      + '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th class="num pay-tbl__idx">#</th><th>Client</th><th>Paid</th><th>Invoice type</th><th>Service(s)</th><th class="num">Orders</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
+      + '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th class="num pay-tbl__idx">#</th><th>Client</th><th>Paid</th><th>Invoice type</th><th>Support</th><th>Service(s)</th><th class="num">Orders</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
     people.forEach(function (g, i) {
-      var svcList = Object.keys(g.services);
+      var svcList = Object.keys(g.services).filter(function (s) {
+        return s && !isPlaceholderServiceLabel(s);
+      });
       var svcTxt = svcList.length ? svcList.join(" · ") : "—";
       var pill = g.anyOut
         ? '<span class="pay-pill pay-pill--out">Outstanding</span>'
@@ -1589,6 +1669,7 @@
         + '<td class="pay-name">' + esc(g.name) + "</td>"
         + "<td>" + paidChipHtml(paidByFor(first)) + "</td>"
         + "<td>" + invoiceChipHtml(invoiceTypeFor(first)) + "</td>"
+        + "<td>" + supportCellHtml(first) + "</td>"
         + "<td>" + esc(svcTxt) + "</td>"
         + '<td class="num">' + g.orders.length + "</td>"
         + '<td class="num">' + money(g.total) + "</td>"
@@ -2205,10 +2286,7 @@
       hint = "la_funded";
       vat = vat || "exempt";
     }
-    var svc =
-      String(inv.booked_service_raw || "").trim() ||
-      (isLaAuto ? "LA office auto · booked place 2026-27" : "Re-enrolment 2026-27");
-    return {
+    var row = {
       id: (isLaAuto ? "la-auto-" : "reenrol-") + cid,
       _contactId: cid,
       _paymentMethodHint: hint,
@@ -2228,15 +2306,18 @@
       amount_out: 0,
       data: {
         Term: "AUTUMN TERM 26/27",
-        Services: svc,
+        Services: "",
         Funder: inv.funding_label || "",
       },
+      _serviceParts: Object.create(null),
       _termBucket: "autumn_2627",
       _synthetic: true,
       _reenrol: true,
       _laOfficeAuto: isLaAuto,
       _invoiceIds: [],
     };
+    mergeServiceLabelsIntoRow(row, inv);
+    return row;
   }
 
   function loadReenrolRows() {
@@ -2273,6 +2354,7 @@
               agg[cid] = buildAutumnReenrolAggRow(inv, { forceLa: isLaAuto });
             }
             var row = agg[cid];
+            mergeServiceLabelsIntoRow(row, inv);
             /* Prefer la_office_auto row identity if both somehow appear. */
             if (isLaAuto) {
               row.id = "la-auto-" + cid;
