@@ -1534,22 +1534,186 @@
       var v = d[keys[i]];
       if (v != null && String(v).trim() && String(v).trim() !== "-") {
         var s = String(v).trim();
-        if (!isPlaceholderServiceLabel(s)) return s;
+        if (!isPlaceholderServiceLabel(s)) return collapseJoinedServices(s);
       }
     }
     return "";
   }
 
   /** Real programme labels from invoice booked_slots / line_items (never "Re-enrolment…"). */
+  function cleanServiceLabelJunk(raw) {
+    var s = String(raw || "").trim();
+    if (!s) return "";
+    s = s.replace(/^[-–•]+\s*/, "").trim();
+    if (/^client'?s\s*name\s*:/i.test(s)) return "";
+    if (/^credits?$/i.test(s)) return "";
+    if (/^structured activity support/i.test(s)) return "";
+    if (/^demo\b/i.test(s) && !/\d+\s*['′']/.test(s)) return "";
+    s = s.replace(/\s*[—–-]\s*GBP\s*[\d,.]+.*$/i, "").trim();
+    s = s.replace(/\s*·\s*demo\b.*$/i, "").trim();
+    return s;
+  }
+
+  /** Same service+duration+days → one key (Sundays ≈ Sunday ≈ Sun). */
+  function serviceIdentityKey(raw) {
+    var s = normalizeServiceDisplay(cleanServiceLabelJunk(raw)).toLowerCase();
+    if (!s) return "";
+    var dur = (s.match(/(\d+)\s*['′']?/) || [])[1] || "";
+    var kind = "";
+    if (/day\s*centre/.test(s)) kind = "daycentre";
+    else if (/aquatic|swim/.test(s)) kind = "aquatic";
+    else if (/climb/.test(s)) kind = "climb";
+    else if (/multi/.test(s)) kind = "multi";
+    else if (/bespoke|\bff\b/.test(s)) kind = "bespoke";
+    else if (/physical|fitness|\bft\b/.test(s)) kind = "physical";
+    else kind = s.replace(/[^a-z0-9]+/g, " ").trim().slice(0, 48);
+    var days = [];
+    var seen = Object.create(null);
+    var dayRe = /\b(mon(?:day)?s?|tue(?:s(?:day)?)?s?|wed(?:nesday)?s?|thu(?:r(?:s(?:day)?)?)?s?|fri(?:day)?s?|sat(?:urday)?s?|sun(?:day)?s?)\b/gi;
+    var m;
+    while ((m = dayRe.exec(s))) {
+      var d = dayShortToken(m[1]);
+      if (d && !seen[d]) { seen[d] = 1; days.push(d); }
+    }
+    days.sort();
+    var ratio = "";
+    var rm = s.match(/\b(\d)\s*[:to]+\s*(\d)\b/i);
+    if (rm) ratio = rm[1] + "to" + rm[2];
+    var mult = (s.match(/\b(\d)\s*x\b/i) || [])[1] || "";
+    return [dur, kind, days.join("+"), ratio, mult].join("|");
+  }
+
+  function preferServiceLabel(a, b) {
+    function score(x) {
+      var s = String(x || "");
+      var n = 0;
+      if (/\([^)]*\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(s)) n += 4;
+      if (/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s*&\s*(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(s)) n += 5;
+      if (/,\s*(Mondays?|Tuesdays?|Wednesdays?|Thursdays?|Fridays?|Saturdays?|Sundays?)\b/i.test(s)) n += 1;
+      if (/\bdemo\b/i.test(s)) n -= 8;
+      if (/client'?s\s*name/i.test(s)) n -= 12;
+      if (/^[-–]/.test(s.trim())) n -= 4;
+      n -= Math.min(s.length, 120) * 0.02;
+      return n;
+    }
+    return score(a) >= score(b) ? a : b;
+  }
+
+  function serviceKindTitle(kind) {
+    var map = {
+      aquatic: "Aquatic Activity",
+      climb: "Climbing Activity",
+      multi: "Multi-Activity",
+      bespoke: "Bespoke Programme",
+      physical: "Physical Activity",
+      daycentre: "Day Centre",
+    };
+    return map[kind] || "";
+  }
+
+  function dayTitleShort(d) {
+    var map = { MON: "Mon", TUE: "Tue", WED: "Wed", THU: "Thu", FRI: "Fri", SAT: "Sat", SUN: "Sun" };
+    return map[d] || d;
+  }
+
+  function parseServiceIdentity(raw) {
+    var s = normalizeServiceDisplay(cleanServiceLabelJunk(raw));
+    var key = serviceIdentityKey(s);
+    var parts = key.split("|");
+    return {
+      label: s,
+      key: key,
+      dur: parts[0] || "",
+      kind: parts[1] || "",
+      days: parts[2] ? parts[2].split("+").filter(Boolean) : [],
+      ratio: parts[3] || "",
+      mult: parts[4] || "",
+    };
+  }
+
+  /** Collapse "… Sundays · … (Sunday)" and Mon+Fri listed twice into one label each. */
+  function dedupeServiceLabelList(labels) {
+    var bestByKey = Object.create(null);
+    (labels || []).forEach(function (lab) {
+      var s = cleanServiceLabelJunk(lab);
+      if (!s || isPlaceholderServiceLabel(s)) return;
+      var info = parseServiceIdentity(s);
+      var key = info.key || ("raw:" + s.toLowerCase());
+      if (!bestByKey[key]) bestByKey[key] = s;
+      else bestByKey[key] = preferServiceLabel(bestByKey[key], s);
+    });
+
+    var items = Object.keys(bestByKey).map(function (k) {
+      return parseServiceIdentity(bestByKey[k]);
+    });
+
+    /* Drop single-day rows covered by a multi-day summary of same duration+kind. */
+    items = items.filter(function (it) {
+      if (it.days.length !== 1) return true;
+      return !items.some(function (other) {
+        if (other === it) return false;
+        if (other.dur !== it.dur || other.kind !== it.kind) return false;
+        if (other.days.length < 2) return false;
+        return other.days.indexOf(it.days[0]) >= 0;
+      });
+    });
+
+    /* Merge remaining same dur+kind with different days into one line. */
+    var groups = Object.create(null);
+    var order = [];
+    items.forEach(function (it) {
+      if (!it.dur || !it.kind || it.kind.length > 20) {
+        var uk = "solo:" + it.label.toLowerCase();
+        if (!groups[uk]) { groups[uk] = { solo: it.label }; order.push(uk); }
+        return;
+      }
+      var gk = it.dur + "|" + it.kind + "|" + it.ratio + "|" + it.mult;
+      if (!groups[gk]) {
+        groups[gk] = {
+          dur: it.dur,
+          kind: it.kind,
+          ratio: it.ratio,
+          mult: it.mult,
+          days: it.days.slice(),
+          label: it.label,
+        };
+        order.push(gk);
+      } else {
+        var g = groups[gk];
+        it.days.forEach(function (d) {
+          if (g.days.indexOf(d) < 0) g.days.push(d);
+        });
+        g.label = preferServiceLabel(g.label, it.label);
+      }
+    });
+
+    return order.map(function (gk) {
+      var g = groups[gk];
+      if (g.solo) return g.solo;
+      var title = serviceKindTitle(g.kind);
+      if (!title || !g.days.length) return g.label;
+      var dayBits = g.days.map(dayTitleShort);
+      var dayTxt = dayBits.length === 1 ? dayBits[0] : dayBits.join(" & ");
+      var head = g.dur + "' " + title;
+      if (g.mult) head = g.mult + "x " + head;
+      if (g.ratio) head += " " + g.ratio.replace("to", ":");
+      return head + " (" + dayTxt + ")";
+    });
+  }
+
+  function collapseJoinedServices(raw) {
+    var s = String(raw || "").trim();
+    if (!s) return "";
+    var parts = s.split(/\s*·\s*/).map(function (x) { return x.trim(); }).filter(Boolean);
+    if (parts.length <= 1) return cleanServiceLabelJunk(s) || s;
+    return dedupeServiceLabelList(parts).join(" · ");
+  }
+
   function serviceLabelsFromInvoice(inv) {
     var out = [];
-    var seen = Object.create(null);
     function add(raw) {
-      var s = String(raw || "").trim();
-      if (!s || isPlaceholderServiceLabel(s) || seen[s]) return;
-      if (/^credits?$/i.test(s)) return;
-      if (/^structured activity support/i.test(s)) return;
-      seen[s] = 1;
+      var s = cleanServiceLabelJunk(raw);
+      if (!s || isPlaceholderServiceLabel(s)) return;
       out.push(s);
     }
     (Array.isArray(inv && inv.booked_slots) ? inv.booked_slots : []).forEach(function (slot) {
@@ -1560,8 +1724,9 @@
       var desc = String(it.description || "").trim();
       var detail = String(it.detail || "").trim();
       if (/^credits?$/i.test(desc)) return;
-      if (desc && detail) add(desc + " · " + detail);
-      else add(desc || detail);
+      /* Prefer description; detail often repeats the same slot in another wording. */
+      if (desc) add(desc);
+      if (detail && serviceIdentityKey(detail) !== serviceIdentityKey(desc)) add(detail);
     });
     add(inv && inv.booked_service_raw);
     if (!out.length && inv && inv.line_description) {
@@ -1571,12 +1736,10 @@
         .filter(Boolean)
         .forEach(function (p) {
           if (/^structured activity support/i.test(p)) return;
-          /* "Aquatic Activity 30' (Wednesday 6 to 6.30 pm · Acton) — GBP 700.00" */
-          var cut = p.replace(/\s*[—–-]\s*GBP\s*[\d,.]+.*$/i, "").trim();
-          add(cut || p);
+          add(p);
         });
     }
-    return out;
+    return dedupeServiceLabelList(out);
   }
 
   function mergeServiceLabelsIntoRow(row, inv) {
@@ -1584,7 +1747,9 @@
     serviceLabelsFromInvoice(inv).forEach(function (s) {
       row._serviceParts[s] = 1;
     });
-    var list = Object.keys(row._serviceParts);
+    var list = dedupeServiceLabelList(Object.keys(row._serviceParts));
+    row._serviceParts = Object.create(null);
+    list.forEach(function (s) { row._serviceParts[s] = 1; });
     row.data = row.data || {};
     row.data.Services = list.length ? list.join(" · ") : "";
   }
