@@ -801,35 +801,39 @@
       ".pay-chip--inv-la{background:#faf5ff;color:#7c3aed;border-color:#e9d5ff}",
       ".pay-chip--inv-nhs{background:#f0f9ff;color:#0369a1;border-color:#bae6fd}",
       ".pay-chip--muted{background:#f1f5f9;color:#64748b;border-color:#e2e8f0}",
-      ".pay-tbl td .pay-chip{white-space:normal;max-width:100%;margin:0 auto}",
-      ".pay-svc-lines{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;width:100%;max-width:100%;text-align:center}",
-      ".pay-svc-line{display:block;font-weight:700;font-size:12.5px;color:#0f172a;line-height:1.35;white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-width:100%;text-align:center}",
+      ".pay-tbl td .pay-chip{white-space:normal;max-width:100%;margin:0 auto;box-sizing:border-box}",
+      ".pay-tbl td .pay-chip--inv{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:5px 8px;border-radius:10px;line-height:1.15;text-align:center}",
+      ".pay-chip__a{display:block;font-size:11px;font-weight:800}",
+      ".pay-chip__b{display:block;font-size:10px;font-weight:700;opacity:.92}",
+      ".pay-tbl td.pay-col-paid .pay-chip{font-size:10px;font-weight:800;padding:5px 7px;line-height:1.2}",
+      ".pay-svc-lines{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;width:100%;max-width:100%;text-align:center}",
+      ".pay-svc-line{display:block;font-weight:700;font-size:12.5px;color:#0f172a;line-height:1.3;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;text-align:center}",
       ".pay-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 1px 3px rgba(15,23,42,.05);overflow:hidden}",
       ".pay-card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid #eef2f7}",
       ".pay-card-h h3{margin:0;font-size:15px;color:#0f172a}",
       ".pay-tbl-wrap{overflow-x:auto;min-width:0;-webkit-overflow-scrolling:touch}",
-      ".pay-tbl__idx{width:3rem;color:#94a3b8;font-variant-numeric:tabular-nums}",
+      ".pay-tbl__idx{width:2.25rem;color:#94a3b8;font-variant-numeric:tabular-nums}",
       ".pay-tbl thead th.pay-tbl__idx{color:#94a3b8;font-weight:700}",
-      ".pay-tbl{width:100%;min-width:920px;border-collapse:separate;border-spacing:0;font-size:14px;table-layout:fixed}",
-      ".pay-tbl th,.pay-tbl td{padding:12px 10px;border-bottom:1px solid #eef2f7;text-align:center;vertical-align:middle;overflow-wrap:anywhere;word-break:break-word;min-width:0;max-width:100%;box-sizing:border-box}",
-      ".pay-tbl th.pay-col-client,.pay-tbl td.pay-col-client{width:15%;text-align:center}",
-      ".pay-tbl th.pay-col-paid,.pay-tbl td.pay-col-paid{width:12%;text-align:center}",
-      ".pay-tbl th.pay-col-inv,.pay-tbl td.pay-col-inv{width:13%;text-align:center}",
-      ".pay-tbl th.pay-col-support,.pay-tbl td.pay-col-support{width:7%;text-align:center}",
-      ".pay-tbl th.pay-col-svc,.pay-tbl td.pay-col-svc{width:28%;text-align:center}",
-      ".pay-tbl th.pay-col-total,.pay-tbl td.pay-col-total{width:9%;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}",
-      ".pay-tbl th.pay-col-status,.pay-tbl td.pay-col-status{width:9%;text-align:center;white-space:nowrap}",
-      ".pay-tbl thead th{background:#f8fafc;color:#0f172a;font-size:11px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}",
+      ".pay-tbl{width:100%;min-width:760px;border-collapse:separate;border-spacing:0;font-size:13px;table-layout:fixed}",
+      ".pay-tbl th,.pay-tbl td{padding:10px 6px;border-bottom:1px solid #eef2f7;text-align:center;vertical-align:middle;overflow-wrap:anywhere;word-break:break-word;min-width:0;max-width:100%;box-sizing:border-box}",
+      ".pay-tbl th.pay-col-client,.pay-tbl td.pay-col-client{width:7.75rem;text-align:center}",
+      ".pay-tbl th.pay-col-paid,.pay-tbl td.pay-col-paid{width:6.75rem;text-align:center}",
+      ".pay-tbl th.pay-col-inv,.pay-tbl td.pay-col-inv{width:6.5rem;text-align:center}",
+      ".pay-tbl th.pay-col-support,.pay-tbl td.pay-col-support{width:3.4rem;text-align:center}",
+      ".pay-tbl th.pay-col-svc,.pay-tbl td.pay-col-svc{width:auto;text-align:center}",
+      ".pay-tbl th.pay-col-total,.pay-tbl td.pay-col-total{width:4.5rem;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:13px;font-weight:700}",
+      ".pay-tbl th.pay-col-status,.pay-tbl td.pay-col-status{width:5.5rem;text-align:center;white-space:nowrap}",
+      ".pay-tbl thead th{background:#f8fafc;color:#0f172a;font-size:10px;text-transform:uppercase;letter-spacing:.03em;white-space:normal;line-height:1.2;padding:8px 6px}",
       ".pay-tbl thead tr.pay-tbl__filter-row th{background:#fff;text-transform:none;letter-spacing:0;white-space:normal;font-weight:400;padding:10px 12px;vertical-align:middle}",
       ".pay-tbl tbody tr{cursor:pointer}",
       ".pay-tbl tbody tr:hover{background:#f8fafc}",
       ".pay-tbl td.num{text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}",
-      ".pay-name-stack{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;max-width:100%;margin:0 auto;text-align:center}",
-      ".pay-name{font-weight:700;color:#0f172a;overflow-wrap:anywhere;word-break:break-word;min-width:0;max-width:100%;text-align:center}",
-      ".pay-name-parent{font-size:12px;font-weight:600;color:#64748b;overflow-wrap:anywhere;word-break:break-word;min-width:0;max-width:100%;text-align:center}",
-      ".pay-amt-stack{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;margin:0 auto}",
-      ".pay-amt-credit{font-size:11px;font-weight:700;color:#047857;white-space:nowrap}",
-      ".pay-tbl .pay-pill{margin:0 auto}",
+      ".pay-name-stack{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:0;max-width:100%;margin:0 auto;text-align:center}",
+      ".pay-name{font-weight:700;font-size:13px;color:#0f172a;overflow-wrap:anywhere;word-break:break-word;min-width:0;max-width:100%;text-align:center;line-height:1.25}",
+      ".pay-name-parent{font-size:11px;font-weight:600;color:#64748b;overflow-wrap:anywhere;word-break:break-word;min-width:0;max-width:100%;text-align:center;line-height:1.2}",
+      ".pay-amt-stack{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:0;margin:0 auto}",
+      ".pay-amt-credit{font-size:10px;font-weight:700;color:#047857;white-space:nowrap}",
+      ".pay-tbl .pay-pill{margin:0 auto;font-size:10px;padding:3px 8px}",
       ".pay-pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}",
       ".pay-pill--paid{background:#e7f6ee;color:#15803d}",
       ".pay-pill--out{background:#fef2f2;color:#b91c1c}",
@@ -932,9 +936,25 @@
     return '<span class="pay-chip ' + paidChipClass(label) + '">' + esc(label) + "</span>";
   }
 
+  /** "Parent (Exempt invoice)" → top "Parent", bottom "(Exempt invoice)". */
+  function invoiceChipParts(label) {
+    var s = String(label || "").trim();
+    if (!s) return { top: "", bottom: "" };
+    var m = s.match(/^(.+?)\s*(\([^)]+\))\s*$/);
+    if (m) return { top: m[1].trim(), bottom: m[2].trim() };
+    return { top: s, bottom: "" };
+  }
+
   function invoiceChipHtml(label) {
     if (!label) return '<span class="pay-chip pay-chip--muted">—</span>';
-    return '<span class="pay-chip ' + invoiceChipClass(label) + '">' + esc(label) + "</span>";
+    var parts = invoiceChipParts(label);
+    var html = '<span class="pay-chip pay-chip--inv ' + invoiceChipClass(label) + '">'
+      + '<span class="pay-chip__a">' + esc(parts.top || "—") + "</span>";
+    if (parts.bottom) {
+      html += '<span class="pay-chip__b">' + esc(parts.bottom) + "</span>";
+    }
+    html += "</span>";
+    return html;
   }
 
   function filterChipBtn(kind, value, label, active, toneCls, termId) {
