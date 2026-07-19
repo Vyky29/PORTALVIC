@@ -973,16 +973,91 @@
     return map[termId] === "day_centre" ? "day_centre" : "afterschool";
   }
 
+  /** Stable participant slug for Payments dedupe / stream rules. */
+  function paymentParticipantSlug(r) {
+    var key = String((r && r.client_key) || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_|_$/g, "");
+    var name = String((r && r.client_name) || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_|_$/g, "");
+    var s = key || name;
+    if (
+      s === "timi"
+      || s === "timmy"
+      || s.indexOf("timi_dairo") === 0
+      || s.indexOf("oluwatimilehin") === 0
+    ) {
+      return "timi";
+    }
+    if (s === "acat" || s === "acat_group" || s.indexOf("acat_") === 0) return "acat";
+    if (s.indexOf("cyrus") === 0) return "cyrus";
+    if (s.indexOf("tinashe") === 0) return "tinashe";
+    if (s.indexOf("ikram") === 0) return "ikram";
+    if (s.indexOf("emanuel") === 0 || s.indexOf("emmanuel") === 0) return "emanuel";
+    if (s.indexOf("fadi") === 0) return "fadi";
+    return s;
+  }
+
+  function rowServiceBlob(r) {
+    var d = (r && r.data) || {};
+    var bits = [
+      rawServiceText(r),
+      serviceFor(r),
+      d["Thursday Bespoke"],
+      d.Services,
+      d.Service,
+      d.Notes,
+    ];
+    return bits
+      .map(function (x) { return String(x || "").toLowerCase(); })
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function hasAcatReenrolRow() {
+    return (state.reenrolRows || []).some(function (r) {
+      return paymentParticipantSlug(r) === "acat";
+    });
+  }
+
+  /** Cyrus Day Centre stream = Thursday 90' Bespoke only (not other club services). */
+  function isCyrusThursdayBespokeRow(r) {
+    var s = rowServiceBlob(r);
+    if (!s) return false;
+    var thu = /\bthu(?:rs(?:day)?)?\b/.test(s);
+    var bespoke90 = /90\s*['′']?\s*bespoke|bespoke[^.]{0,24}90|90[^.]{0,24}bespoke/.test(s);
+    return thu && (bespoke90 || (/\bbespoke\b/.test(s) && thu));
+  }
+
   function isDayCentreRow(r) {
-    var raw = String(rawServiceText(r) || "").toLowerCase();
-    var disp = String(serviceFor(r) || "").toLowerCase();
-    var s = (raw + " " + disp).replace(/\s+/g, " ").trim();
-    if (!s || s === "—") return false;
+    var slug = paymentParticipantSlug(r);
+    var s = rowServiceBlob(r);
+
+    /* Fri 90' Bespoke = afterschool / weekends, not Day Centre. */
+    if (slug === "tinashe") return false;
+
+    /* ACAT only appears in Day Centre once they re-enrol. */
+    if (slug === "acat") {
+      return !!(r && (r._reenrol || r._synthetic)) || hasAcatReenrolRow();
+    }
+
+    /* Cyrus: only the Thursday 90' Bespoke amount/stream. */
+    if (slug === "cyrus") return isCyrusThursdayBespokeRow(r);
+
     if (/day\s*centre/.test(s)) return true;
-    /* Bespoke day-centre blocks (not crash / aquatic / multi / climb). */
-    if (/\bbespoke\b/.test(s) && !/\b(crash|aquatic|multi|climb|physical\s*activity)\b/.test(s)) {
+
+    /* Core Day Centre cohort (Ikram / Emanuel / Fadi / Timi). */
+    if (slug === "ikram" || slug === "emanuel" || slug === "fadi" || slug === "timi") {
       return true;
     }
+
+    /* Explicit bespoke day-centre block labels (not generic afterschool Bespoke). */
+    if (/bespoke\s*block|day\s*centre\s*\(\s*bespoke/.test(s)) return true;
+
     return false;
   }
 
@@ -1016,6 +1091,8 @@
   function applyServiceKindFilter(rows, termId) {
     var kind = serviceKindForTerm(termId);
     return (rows || []).filter(function (r) {
+      /* ACAT stays hidden until they renew — not listed under afterschool either. */
+      if (paymentParticipantSlug(r) === "acat" && !isDayCentreRow(r)) return false;
       var dc = isDayCentreRow(r);
       return kind === "day_centre" ? dc : !dc;
     });
@@ -1032,7 +1109,27 @@
   }
 
   function allRows() {
-    return (state.rows || []).concat(state.reenrolRows || []);
+    var payments = state.rows || [];
+    var reenrol = state.reenrolRows || [];
+    /*
+     * Prefer portal re-enrol invoice rows over workbook/manual client_payments
+     * for the same participant + term (fixes Timi vs Timi Dairo double count).
+     */
+    var reenrolByTermSlug = Object.create(null);
+    reenrol.forEach(function (r) {
+      var term = termBucketFor(r);
+      var slug = paymentParticipantSlug(r);
+      if (!slug) return;
+      if (!reenrolByTermSlug[term]) reenrolByTermSlug[term] = Object.create(null);
+      reenrolByTermSlug[term][slug] = true;
+    });
+    var filteredPayments = payments.filter(function (r) {
+      var term = termBucketFor(r);
+      var slug = paymentParticipantSlug(r);
+      if (slug && reenrolByTermSlug[term] && reenrolByTermSlug[term][slug]) return false;
+      return true;
+    });
+    return filteredPayments.concat(reenrol);
   }
 
   function supabaseBase() {
