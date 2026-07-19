@@ -849,15 +849,18 @@
       ".pay-term-acc__body .pay-groups{margin-bottom:14px}",
       ".pay-term-acc__body .pay-card-h{margin:0 0 10px}",
       ".pay-term-acc__sub{display:block;font-size:12px;font-weight:700;color:#64748b;margin-top:2px;overflow-wrap:break-word;letter-spacing:0;text-transform:none}",
-      ".pay-term-acc__meta{flex:0 1 auto;display:grid;grid-template-columns:auto auto;gap:8px;align-items:center;justify-content:end;min-width:0;max-width:100%}",
+      ".pay-term-acc__meta{flex:0 1 auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:end;min-width:0;max-width:min(100%,42rem)}",
       ".pay-term-acc__chip{display:inline-flex;align-items:center;gap:6px;max-width:100%;min-width:0;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;line-height:1.2;border:1px solid transparent;overflow-wrap:anywhere;white-space:nowrap}",
       ".pay-term-acc__chip b{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}",
       ".pay-term-acc__chip--orders{background:#f1f5f9;color:#334155;border-color:#e2e8f0}",
       ".pay-term-acc__chip--due{background:#fef2f2;color:#b91c1c;border-color:#fecaca}",
       ".pay-term-acc__chip--ok{background:#ecfdf5;color:#047857;border-color:#a7f3d0}",
+      ".pay-term-acc__chip--as{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}",
+      ".pay-term-acc__chip--dc{background:#f5f3ff;color:#6d28d9;border-color:#ddd6fe}",
+      ".pay-term-acc__chip .pay-term-acc__chip-lab{font-size:11px;font-weight:700;opacity:.88}",
       ".pay-tbl-caption{display:grid;grid-template-columns:auto auto;gap:8px;align-items:center;justify-content:end;min-width:0;flex:0 1 auto}",
       ".pay-tbl-caption .pay-term-acc__chip{justify-content:center}",
-      "@media(max-width:560px){.pay-term-acc__meta,.pay-tbl-caption{grid-template-columns:1fr;justify-content:stretch}.pay-term-acc__chip{justify-content:center;white-space:normal}}",
+      "@media(max-width:720px){.pay-term-acc__meta,.pay-tbl-caption{justify-content:stretch}.pay-term-acc__chip{justify-content:center;white-space:normal}}",
       ".pay-term-acc .pay-tbl-wrap{border-radius:0}",
       ".pay-term-acc .pay-tbl thead th{background:#fff}",
       ".pay-term-acc__sum::after{content:'';width:8px;height:8px;border-right:2px solid #94a3b8;border-bottom:2px solid #94a3b8;transform:rotate(45deg);transition:transform .15s;flex:0 0 auto}",
@@ -1316,29 +1319,55 @@
     rows = rows || [];
     var out = 0;
     var outN = 0;
+    var asDue = 0;
+    var dcDue = 0;
+    var asN = 0;
+    var dcN = 0;
+    var counted = 0;
     rows.forEach(function (r) {
-      if (category(r) === "outstanding") {
-        out += Number(r.amount) || 0;
-        outN++;
+      /* Match stream filters: ACAT hidden until Day Centre re-enrol. */
+      if (paymentParticipantSlug(r) === "acat" && !isDayCentreRow(r)) return;
+      counted++;
+      var amt = Number(r.amount) || 0;
+      var isOut = category(r) === "outstanding";
+      if (isDayCentreRow(r)) {
+        dcN++;
+        if (isOut) {
+          dcDue += amt;
+          out += amt;
+          outN++;
+        }
+      } else {
+        asN++;
+        if (isOut) {
+          asDue += amt;
+          out += amt;
+          outN++;
+        }
       }
     });
     return {
-      n: rows.length,
-      unit: rows.length === 1 ? "order" : "orders",
+      n: counted,
+      unit: counted === 1 ? "order" : "orders",
       due: out,
       dueN: outN,
+      asDue: asDue,
+      dcDue: dcDue,
+      asN: asN,
+      dcN: dcN,
     };
   }
 
   function termAccordionMetaHtml(group) {
     var m = termOrdersMetaParts(group.rows);
-    var html = '<span class="pay-term-acc__meta" title="Payment lines in this term (one client can have several)">'
-      + '<span class="pay-term-acc__chip pay-term-acc__chip--orders"><b>' + m.n + "</b> " + m.unit + "</span>";
-    if (m.dueN) {
-      html += '<span class="pay-term-acc__chip pay-term-acc__chip--due"><b>' + money(m.due) + "</b> due</span>";
-    } else {
-      html += '<span class="pay-term-acc__chip pay-term-acc__chip--ok"><b>£0</b> due</span>';
-    }
+    var html = '<span class="pay-term-acc__meta" title="Outstanding by stream for this term">'
+      + '<span class="pay-term-acc__chip pay-term-acc__chip--orders"><b>' + m.n + "</b> " + m.unit + "</span>"
+      + '<span class="pay-term-acc__chip pay-term-acc__chip--as" title="Afterschool &amp; Weekend Services outstanding">'
+      + '<span class="pay-term-acc__chip-lab">Afterschool &amp; Weekends</span>'
+      + "<b>" + money(m.asDue) + "</b></span>"
+      + '<span class="pay-term-acc__chip pay-term-acc__chip--dc" title="Day Centre outstanding">'
+      + '<span class="pay-term-acc__chip-lab">Day Centre</span>'
+      + "<b>" + money(m.dcDue) + "</b></span>";
     html += "</span>";
     return html;
   }
@@ -1478,7 +1507,9 @@
     baseGrouped.forEach(function (sg) {
       if (!sg.rows.length) return;
       var termId = sg.bucket.id;
-      var scoped = applyTermTableFilters(sg.rows, termId);
+      /* Header stream totals ignore Afterschool/Day Centre toggle (always both). */
+      var metaRows = applyPaidFilter(sg.rows, termId);
+      var scoped = applyServiceKindFilter(metaRows, termId);
       /* Always keep the term openable so stream / Paid filters stay reachable. */
       any = true;
       var vis = scoped.filter(statusMatch);
@@ -1486,7 +1517,7 @@
         + '<summary class="pay-term-acc__sum">'
         + '<span><span class="pay-term-acc__title">' + esc(sg.bucket.title) + "</span>"
         + '<span class="pay-term-acc__sub">' + esc(sg.bucket.subtitle) + "</span></span>"
-        + termAccordionMetaHtml({ rows: scoped })
+        + termAccordionMetaHtml({ rows: metaRows })
         + "</summary>"
         + termSummaryBlockHtml(scoped, vis, termId)
         + "</details>";
@@ -2523,7 +2554,8 @@
     baseGrouped.forEach(function (g) {
       if (!g.rows.length) return;
       var termId = g.bucket.id;
-      var paidScoped = applyTermTableFilters(g.rows, termId);
+      var metaRows = applyPaidFilter(g.rows, termId);
+      var paidScoped = applyServiceKindFilter(metaRows, termId);
       var scoped = paidScoped.filter(statusMatch);
       var keys = {};
       scoped.forEach(function (r) {
@@ -2536,7 +2568,7 @@
         + '<summary class="pay-term-acc__sum">'
         + '<span><span class="pay-term-acc__title">' + esc(g.bucket.title) + "</span>"
         + '<span class="pay-term-acc__sub">' + esc(g.bucket.subtitle) + "</span></span>"
-        + termAccordionMetaHtml({ rows: paidScoped })
+        + termAccordionMetaHtml({ rows: metaRows })
         + "</summary>"
         + '<div class="pay-term-acc__body">'
         + serviceKindToggleHtml(termId)
