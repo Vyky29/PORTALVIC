@@ -295,7 +295,9 @@
     }
     .topbar-lead--halo-flanks .topbar-left--tools{
       grid-area:left;
-      justify-self:end;
+      justify-self:start;
+      display:flex;
+      justify-content:flex-start;
     }
     .topbar-lead--halo-flanks .topbar-center--halo{
       grid-area:center;
@@ -309,7 +311,9 @@
     }
     .topbar-lead--halo-flanks .topbar-right--tools{
       grid-area:right;
-      justify-self:start;
+      justify-self:end;
+      display:flex;
+      justify-content:flex-end;
       width:auto;
       max-width:100%;
     }
