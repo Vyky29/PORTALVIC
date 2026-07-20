@@ -1209,6 +1209,7 @@
       '</span>' +
       '<span class="pp-inv-acc__methods">' +
       groupFundingChipsHtml(invoices) +
+      groupMethodChipsHtml(invoices) +
       '</span>' +
       '<span class="pp-inv-acc__status">' +
       groupStatusSummary(invoices) +
