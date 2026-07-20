@@ -552,7 +552,7 @@
     return chips.join("");
   }
 
-  function shortServiceChipLabel(rawLabel) {
+  function shortServiceChipLabel(rawLabel, day) {
     var s = String(rawLabel || "").trim();
     if (!s) return "";
     var dur = "";
@@ -567,12 +567,19 @@
       }
       s = m[2];
     }
-    if (/^bespoke\b/i.test(s)) return dur + "Bespoke";
-    if (/multi[- ]?activity/i.test(s)) return dur + "Multi-Activity";
-    if (/^aquatic\b/i.test(s)) return dur + "Aquatic";
-    if (/climb/i.test(s)) return dur + "Climbing";
-    if (/day\s*centre/i.test(s)) return dur + "Day centre";
-    return (dur + s.replace(/\bProgramme\b/gi, "").replace(/\bActivity\b/gi, "").replace(/\s{2,}/g, " ").trim()).trim();
+    var base = "";
+    if (/^bespoke\b/i.test(s)) base = dur + "Bespoke";
+    else if (/multi[- ]?activity/i.test(s)) base = dur + "Multi-Activity";
+    else if (/^aquatic\b/i.test(s)) base = dur + "Aquatic";
+    else if (/climb/i.test(s)) base = dur + "Climbing";
+    else if (/day\s*centre/i.test(s)) base = dur + "Day centre";
+    else
+      base = (dur + s.replace(/\bProgramme\b/gi, "").replace(/\bActivity\b/gi, "").replace(/\s{2,}/g, " ").trim()).trim();
+    var dayPart = String(day || "").trim();
+    if (dayPart && /day\s*centre/i.test(String(rawLabel || ""))) {
+      return base + " (" + dayPart + ")";
+    }
+    return base;
   }
 
   function serviceChipToneClass(label) {
@@ -597,7 +604,7 @@
       '<div class="pp-svc-chips" aria-label="Booked services">' +
       detail
         .map(function (s) {
-          var label = shortServiceChipLabel(s.label || "Service");
+          var label = shortServiceChipLabel(s.label || "Service", s.day);
           var tip = [s.day, s.time].filter(Boolean).join(" / ");
           var tone = serviceChipToneClass(s.label || label);
           return (
@@ -933,12 +940,59 @@
     return booking.can_book_extras !== false;
   }
 
+  /**
+   * Adaam / Aydaan / Amaar (Leila Ahmed) — re-enrolled but Summer 2026 still outstanding.
+   * Contact ids: Aadam 124, Amaar 105, Aydaan 125 (roster spelling Aadam).
+   */
+  function isOutstandingSummerAhmedSibling(data) {
+    var p = (data && data.participant) || {};
+    var id = String(p.contact_id || "").trim();
+    if (id === "124" || id === "105" || id === "125") return true;
+    var blob = [p.display_name, p.first_name, p.last_name, p.name]
+      .map(function (x) {
+        return String(x || "").toLowerCase();
+      })
+      .join(" ");
+    if (!/ahmed/.test(blob)) return false;
+    return /\b(adaam|aadam|aydaan|amaar)\b/.test(blob);
+  }
+
+  /** True office-billed LA / NHS — parent does not pay term invoices in the hub. */
+  function isOfficeBilledLaOrNhs(data) {
+    var booking = bookingSummary(data);
+    if (booking.show_invoices === false) return true;
+    return (
+      booking.parent_action === "auto" &&
+      (booking.parent_action_reasons || []).indexOf("la_funded") >= 0
+    );
+  }
+
   function hubReenrolledChipHtml(data) {
     var booking = bookingSummary(data);
     var laAuto =
       booking.parent_action === "auto" &&
       (booking.parent_action_reasons || []).indexOf("la_funded") >= 0;
     if (!booking.submitted && !laAuto) return "";
+
+    if (isOutstandingSummerAhmedSibling(data)) {
+      return (
+        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--unpaid" data-pp-hub-reenrol-chip role="status" title="Re-enrolled for 2026/27 — Summer 2026 payments outstanding">' +
+        '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
+        "<span>Re-enrolled (Outstanding Payments Summer 2026)</span>" +
+        "</span>"
+      );
+    }
+
+    /* LA / NHS office-billed: never show “(unpaid)” — parent is not the payer. */
+    if (isOfficeBilledLaOrNhs(data)) {
+      return (
+        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip" data-pp-hub-reenrol-chip role="status" title="Re-enrolled for 2026/27">' +
+        '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
+        "<span>Re-enrolled</span>" +
+        "</span>"
+      );
+    }
+
     var pay = hubReenrolPayState(data);
     if (pay === "unpaid") {
       return (
@@ -1077,7 +1131,17 @@
       applyHubReenrolPayVisual(host, data, "unconfirmed");
       return;
     }
-    /* Always start orange until invoices prove paid (incl. Direct Payments). */
+    /* Adaam / Aydaan / Amaar: keep Summer 2026 outstanding chip. */
+    if (isOutstandingSummerAhmedSibling(data)) {
+      applyHubReenrolPayVisual(host, data, "unpaid");
+      return;
+    }
+    /* True office-billed LA / NHS: plain Re-enrolled (not unpaid). */
+    if (isOfficeBilledLaOrNhs(data)) {
+      applyHubReenrolPayVisual(host, data, "settled");
+      return;
+    }
+    /* Private / Direct Payments: orange until invoices prove paid. */
     applyHubReenrolPayVisual(host, data, "unpaid");
     if (typeof opts.listInvoices !== "function") return;
     void opts
