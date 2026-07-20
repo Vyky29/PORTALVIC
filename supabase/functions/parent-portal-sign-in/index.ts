@@ -15,7 +15,7 @@ import {
 } from "../_shared/parent_portal_auth.ts";
 import { resolveParentGeo, parentGeoToDbFields } from "../_shared/parent_geo.ts";
 import {
-  childFirstNameToken,
+  childFirstNameMatchesLogin,
   isMasterPin,
   isValidFamilyPin,
   masterPinFromEnv,
@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
     return parentPortalJsonInvalid(500);
   }
 
-  const matchedRows = (contacts || []).filter((row) => childFirstNameToken(row) === firstName);
+  const matchedRows = (contacts || []).filter((row) => childFirstNameMatchesLogin(row, firstName));
   if (!matchedRows.length) {
     await recordFail();
     return parentPortalJsonInvalid();

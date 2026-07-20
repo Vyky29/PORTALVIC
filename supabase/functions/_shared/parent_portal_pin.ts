@@ -79,3 +79,28 @@ export function childFirstNameToken(row: {
   if (fromFirst) return fromFirst;
   return normalizeParticipantFirstName(row.child_display);
 }
+
+/**
+ * Login may use the legal first name OR the club display first name
+ * (e.g. child_first_name "Oluwatimilehin Nathan", child_display "Timi Dairo"
+ * → both "oluwatimilehin" and "timi" work).
+ */
+export function childFirstNameLoginTokens(row: {
+  child_first_name?: unknown;
+  child_display?: unknown;
+}): string[] {
+  const tokens = [
+    normalizeParticipantFirstName(row.child_first_name),
+    normalizeParticipantFirstName(row.child_display),
+  ].filter(Boolean);
+  return [...new Set(tokens)];
+}
+
+export function childFirstNameMatchesLogin(
+  row: { child_first_name?: unknown; child_display?: unknown },
+  loginFirstName: string,
+): boolean {
+  const want = normalizeParticipantFirstName(loginFirstName);
+  if (!want) return false;
+  return childFirstNameLoginTokens(row).includes(want);
+}
