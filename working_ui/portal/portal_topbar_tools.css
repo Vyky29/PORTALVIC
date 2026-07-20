@@ -85,14 +85,14 @@
   grid-area:wa;
   width:100%;
   max-width:100%;
-  margin:2px 0 0;
+  margin:4px 0 0;
   min-width:0;
   display:flex;
-  justify-content:stretch;
+  justify-content:center;
 }
 .topbar-lead--halo-flanks .topbar-wa-row .topbar-tool-cell--staff-wa{
-  width:100%;
-  max-width:100%;
+  width:min(168px, 48vw);
+  max-width:min(168px, 48vw);
   height:auto;
   max-height:none;
   padding-top:0;
@@ -945,9 +945,8 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   }
 }
 
-/* CS WhatsApp: thin double-width bar (must load after .topbar-tool-btn max-width rules) */
-.topbar-tools-grid > .topbar-tool-cell--staff-wa.topbar-tool-cell--span2,
-.topbar-wa-row > .topbar-tool-cell--staff-wa.topbar-tool-cell--span2{
+/* CS WhatsApp: compact chunky pill under halo (must load after .topbar-tool-btn max-width rules) */
+.topbar-tools-grid > .topbar-tool-cell--staff-wa.topbar-tool-cell--span2{
   grid-column:1 / -1 !important;
   width:100% !important;
   max-width:100% !important;
@@ -964,12 +963,28 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   box-sizing:border-box;
   overflow:visible;
 }
+.topbar-wa-row > .topbar-tool-cell--staff-wa.topbar-tool-cell--span2{
+  grid-column:auto !important;
+  width:min(168px, 48vw) !important;
+  max-width:min(168px, 48vw) !important;
+  height:auto;
+  max-height:none;
+  justify-self:center;
+  align-self:center;
+  min-width:0;
+  display:flex !important;
+  flex-direction:column;
+  align-items:stretch;
+  justify-content:center;
+  padding-top:0;
+  box-sizing:border-box;
+  overflow:visible;
+}
 .topbar-tools-grid > .topbar-tool-cell--staff-wa .topbar-tool-btn.topbar-tool-btn--staff-wa,
 .topbar-tools-grid--lead > .topbar-tool-cell--staff-wa .topbar-tool-btn.topbar-tool-btn--staff-wa,
 .topbar-tools-grid--eight > .topbar-tool-cell--staff-wa .topbar-tool-btn.topbar-tool-btn--staff-wa,
 .topbar-tools-grid--ceo-full > .topbar-tool-cell--staff-wa .topbar-tool-btn.topbar-tool-btn--staff-wa,
-.topbar-tools-grid--dense > .topbar-tool-cell--staff-wa .topbar-tool-btn.topbar-tool-btn--staff-wa,
-.topbar-wa-row > .topbar-tool-cell--staff-wa .topbar-tool-btn.topbar-tool-btn--staff-wa{
+.topbar-tools-grid--dense > .topbar-tool-cell--staff-wa .topbar-tool-btn.topbar-tool-btn--staff-wa{
   display:inline-flex !important;
   flex-direction:row !important;
   align-items:center !important;
@@ -990,12 +1005,34 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   background:linear-gradient(180deg,#ffe9a3,#f5d56a) !important;
   color:#173247 !important;
   box-shadow:0 1px 2px rgba(232,196,74,.22);
-  /* visible so unread badge can sit on the top-right rim (not clipped over the label) */
   overflow:visible !important;
   box-sizing:border-box;
 }
-.topbar-tools-grid > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-btn__ico,
-.topbar-wa-row > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-btn__ico{
+.topbar-wa-row > .topbar-tool-cell--staff-wa .topbar-tool-btn.topbar-tool-btn--staff-wa{
+  display:inline-flex !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:6px;
+  grid-template-rows:none !important;
+  grid-template-columns:none !important;
+  width:100% !important;
+  max-width:none !important;
+  height:36px !important;
+  max-height:36px !important;
+  min-height:36px !important;
+  min-width:0 !important;
+  flex:0 0 36px;
+  padding:0 12px !important;
+  border:1px solid rgba(232,196,74,.55) !important;
+  border-radius:12px !important;
+  background:linear-gradient(180deg,#ffe9a3,#f5d56a) !important;
+  color:#173247 !important;
+  box-shadow:0 1px 3px rgba(232,196,74,.28);
+  overflow:visible !important;
+  box-sizing:border-box;
+}
+.topbar-tools-grid > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-btn__ico{
   width:12px !important;
   height:12px !important;
   max-width:12px !important;
@@ -1003,14 +1040,12 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   flex:0 0 auto;
   color:#173247;
 }
-.topbar-tools-grid > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-btn__ico svg,
-.topbar-wa-row > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-btn__ico svg{
+.topbar-tools-grid > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-btn__ico svg{
   width:12px;
   height:12px;
   display:block;
 }
-.topbar-tools-grid > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-label,
-.topbar-wa-row > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-label{
+.topbar-tools-grid > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-label{
   flex:0 1 auto;
   min-width:0;
   max-width:100%;
@@ -1018,6 +1053,35 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   min-height:0 !important;
   max-height:none !important;
   font-size:8.5px !important;
+  font-weight:800;
+  line-height:1;
+  letter-spacing:0;
+  color:#173247 !important;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.topbar-wa-row > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-btn__ico{
+  width:16px !important;
+  height:16px !important;
+  max-width:16px !important;
+  max-height:16px !important;
+  flex:0 0 auto;
+  color:#173247;
+}
+.topbar-wa-row > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-btn__ico svg{
+  width:16px;
+  height:16px;
+  display:block;
+}
+.topbar-wa-row > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-label{
+  flex:0 1 auto;
+  min-width:0;
+  max-width:100%;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  font-size:11px !important;
   font-weight:800;
   line-height:1;
   letter-spacing:0;

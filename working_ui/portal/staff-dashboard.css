@@ -319,9 +319,9 @@
       grid-area:wa;
       width:100%;
       max-width:100%;
-      margin:2px 0 0;
+      margin:4px 0 0;
       display:flex;
-      justify-content:stretch;
+      justify-content:center;
     }
     .topbar-lead.topbar-lead--halo-tools{
       grid-template-columns:auto minmax(0,1fr);
