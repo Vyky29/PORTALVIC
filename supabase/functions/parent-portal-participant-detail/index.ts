@@ -1305,22 +1305,59 @@ Deno.serve(async (req) => {
         .in("booking_id", bookingIds)
         .in("status", ["confirmed", "awaiting_payment"])
         .order("session_date", { ascending: true })
-        .limit(64);
-      const seenKey = new Set<string>();
-      const dates: Array<{ iso: string; activity: string; slot_label: string }> = [];
+        .limit(120);
+      /** Merge half-hour bands (e.g. 13:00–13:30 + 13:30–14:00 → 13:00–14:00). */
+      const mergeCrashSlotLabels = (labels: string[]): string => {
+        const timeRe = /(\d{1,2}:\d{2})\s*[–\-]\s*(\d{1,2}:\d{2})/;
+        let earliest: string | null = null;
+        let latest: string | null = null;
+        let suffix = "";
+        for (const raw of labels) {
+          const label = String(raw || "");
+          const m = label.match(timeRe);
+          if (m) {
+            if (!earliest || m[1] < earliest) earliest = m[1];
+            if (!latest || m[2] > latest) latest = m[2];
+          }
+          const parts = label
+            .split("·")
+            .map((p) => p.trim())
+            .filter(Boolean);
+          if (parts.length > 1 && !suffix) suffix = parts.slice(1).join(" · ");
+        }
+        if (earliest && latest) {
+          return suffix ? `${earliest}–${latest} · ${suffix}` : `${earliest}–${latest}`;
+        }
+        return labels[0] || "";
+      };
+      const byDayActivity = new Map<
+        string,
+        { iso: string; activity: string; labels: string[] }
+      >();
       for (const line of crashLines || []) {
         const iso = String(line.session_date || "").slice(0, 10);
         const activity = clean(line.activity, 40);
         if (!iso) continue;
         const key = iso + "|" + activity.toLowerCase();
-        if (seenKey.has(key)) continue;
-        seenKey.add(key);
-        dates.push({
-          iso,
-          activity,
-          slot_label: clean(line.slot_label, 80),
-        });
+        const label = clean(line.slot_label, 80);
+        const existing = byDayActivity.get(key);
+        if (!existing) {
+          byDayActivity.set(key, {
+            iso,
+            activity,
+            labels: label ? [label] : [],
+          });
+        } else if (label) {
+          existing.labels.push(label);
+        }
       }
+      const dates: Array<{ iso: string; activity: string; slot_label: string }> = Array.from(
+        byDayActivity.values(),
+      ).map((g) => ({
+        iso: g.iso,
+        activity: g.activity,
+        slot_label: mergeCrashSlotLabels(g.labels),
+      }));
       crashCourse = { dates, week_ids: weekIds };
     }
   }
