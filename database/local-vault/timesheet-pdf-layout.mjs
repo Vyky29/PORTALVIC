@@ -264,29 +264,41 @@ export function buildFormattedTimesheetPdfBytes(opts) {
   doc.setFontSize(8.5 * S);
   for (let i = 0; i < entries.length; i++) {
     const e = entries[i];
-    const rate = e.rate != null ? Number(e.rate) : hourlyRate;
+    const isDayOff = !!(e.dayOff || /day off/i.test(String(e.service || e.role || "")));
+    const rate = isDayOff ? 0 : e.rate != null ? Number(e.rate) : hourlyRate;
     const daily = money(Number(e.hours || 0) * rate);
     const thisRowH = rowH * pdfEntryRowHeightScale(e);
+    if (isDayOff) {
+      doc.setFillColor(254, 226, 226);
+      doc.rect(colX[0], y, colX[6] - colX[0], thisRowH, "FD");
+    }
     doc.rect(colX[0], y, colX[6] - colX[0], thisRowH, "S");
-    const isFlat = serviceFlatRate(e.service || e.role) != null;
+    const isFlat = !isDayOff && serviceFlatRate(e.service || e.role) != null;
     const midCol = manual
       ? String(e.note || e.day || "").slice(0, 22)
-      : isFlat
-        ? String(entryRoleLabel(e) || e.role || "Training").slice(0, 22)
-        : String(e.day || "").slice(0, 22);
+      : isDayOff
+        ? "Day off"
+        : isFlat
+          ? String(entryRoleLabel(e) || e.role || "Training").slice(0, 22)
+          : String(e.day || "").slice(0, 22);
     const statusTxt = manual
       ? "Manual"
-      : isFlat
-        ? "Completed"
-        : e.completed === false
-          ? "Pending feedback"
-          : "Completed";
+      : isDayOff
+        ? "Day off"
+        : isFlat
+          ? "Completed"
+          : e.completed === false
+            ? "Pending feedback"
+            : "Completed";
+    if (isDayOff) doc.setTextColor(153, 27, 27);
+    else doc.setTextColor(16, 34, 56);
     doc.text(displayDateFancy(e.date), (colX[0] + colX[1]) / 2, y + cellBaseline, { align: "center" });
     doc.text(midCol, (colX[1] + colX[2]) / 2, y + cellBaseline, { align: "center" });
     drawPdfServiceCell(doc, e, (colX[2] + colX[3]) / 2, y, cellBaseline, S, manual);
     doc.text(money(e.hours), (colX[3] + colX[4]) / 2, y + cellBaseline, { align: "center" });
     doc.text(daily, (colX[4] + colX[5]) / 2, y + cellBaseline, { align: "center" });
     doc.text(statusTxt, (colX[5] + colX[6]) / 2, y + cellBaseline, { align: "center" });
+    doc.setTextColor(16, 34, 56);
     y += thisRowH;
   }
 
