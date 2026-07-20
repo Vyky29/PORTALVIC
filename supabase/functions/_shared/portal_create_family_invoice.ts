@@ -360,7 +360,7 @@ export async function createPortalFamilyInvoice(
       billToLines,
       participantName: displayName,
       paid: false,
-      isDraft: (input.shareStatus || "ready") !== "ready",
+      isDraft: true,
       paymentSchedule: createSchedule,
       amountPaidGbp: 0,
     });
@@ -620,7 +620,7 @@ export async function regeneratePortalInvoiceSharePdf(
       billToLines,
       participantName: displayName,
       paid: isPaid,
-      isDraft: String(share.share_status || "").toLowerCase() !== "ready",
+      isDraft: !isPaid,
       paymentSchedule,
       amountPaidGbp,
     });

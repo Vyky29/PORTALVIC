@@ -4,6 +4,10 @@
  */
 import { PDFDocument, StandardFonts, rgb } from "https://esm.sh/pdf-lib@1.17.1";
 import { CLUBSENSATIONAL_LOGO_PNG_B64 } from "./clubsensational_logo_b64.ts";
+import {
+  ANNOUNCEMENTS_LOGO_GREEN_PNG_B64,
+  ANNOUNCEMENTS_LOGO_RED_PNG_B64,
+} from "./announcements_stamp_logo_b64.ts";
 
 export type PortalInvoiceVatMode = "exempt" | "vat_20";
 
@@ -32,7 +36,10 @@ export type PortalInvoicePdfInput = {
   billToLines: string[];
   participantName: string;
   paid?: boolean;
-  /** Hidden / not-ready share — red Draft Invoice stamp (skipped when paid). */
+  /**
+   * Red Draft Invoice stamp (announcements logo). Defaults to unpaid.
+   * Paid invoices always get the green PAID stamp instead.
+   */
   isDraft?: boolean;
   amountPaidGbp?: number | null;
   creditAppliedGbp?: number | null;
@@ -169,16 +176,15 @@ export async function buildPortalTaxInvoicePdf(
   let logoW = 0;
   let logoH = 0;
   let logoBottom = height - 44;
-  let embeddedLogo: Awaited<ReturnType<typeof pdf.embedPng>> | null = null;
   try {
-    embeddedLogo = await pdf.embedPng(b64ToBytes(CLUBSENSATIONAL_LOGO_PNG_B64));
-    const natW = embeddedLogo.width || 1;
-    const natH = embeddedLogo.height || 1;
+    const headerLogo = await pdf.embedPng(b64ToBytes(CLUBSENSATIONAL_LOGO_PNG_B64));
+    const natW = headerLogo.width || 1;
+    const natH = headerLogo.height || 1;
     logoW = 72;
     logoH = (natH / natW) * logoW;
     const logoX = right - logoW;
     const logoY = height - 44 - logoH;
-    page.drawImage(embeddedLogo, {
+    page.drawImage(headerLogo, {
       x: logoX,
       y: logoY,
       width: logoW,
@@ -459,6 +465,45 @@ export async function buildPortalTaxInvoicePdf(
     drawTot("AMOUNT DUE GBP", money(input.paid ? 0 : due), true);
   }
 
+  // Announcements round logo stamp — BELOW totals (never over Subtotal/TOTAL figures).
+  // Paid → green PAID; otherwise Draft Invoice (red) for parent preview until paid.
+  const showPaidStamp = !!input.paid;
+  const showDraftStamp = !showPaidStamp && input.isDraft !== false;
+  let stampReserveBottom = y;
+  if (showPaidStamp || showDraftStamp) {
+    try {
+      const stampBytes = b64ToBytes(
+        showPaidStamp ? ANNOUNCEMENTS_LOGO_GREEN_PNG_B64 : ANNOUNCEMENTS_LOGO_RED_PNG_B64,
+      );
+      const stampLogo = await pdf.embedPng(stampBytes);
+      const stampW = 64;
+      const stampH = ((stampLogo.height || 1) / (stampLogo.width || 1)) * stampW;
+      const stampX = right - stampW;
+      // Image y is bottom edge; place top of stamp just under last totals line.
+      const stampY = y - 6 - stampH;
+      page.drawImage(stampLogo, {
+        x: stampX,
+        y: stampY,
+        width: stampW,
+        height: stampH,
+      });
+      const label = showPaidStamp ? "PAID" : "Draft Invoice";
+      const labelSize = showPaidStamp ? 12 : 10;
+      const accent = showPaidStamp ? rgb(0.06, 0.5, 0.28) : rgb(0.75, 0.08, 0.1);
+      const labelTw = fontBold.widthOfTextAtSize(label, labelSize);
+      page.drawText(label, {
+        x: stampX + Math.max(0, (stampW - labelTw) / 2),
+        y: stampY - 14,
+        size: labelSize,
+        font: fontBold,
+        color: accent,
+      });
+      stampReserveBottom = stampY - 20;
+    } catch (err) {
+      console.error("[buildPortalTaxInvoicePdf] stamp", err);
+    }
+  }
+
   y -= 8;
   if (input.dueDateIso) {
     page.drawText(`Due Date: ${formatUkDate(input.dueDateIso)}`, {
@@ -517,6 +562,11 @@ export async function buildPortalTaxInvoicePdf(
     y -= 16;
   }
 
+  // Keep Manual Payment Details below the stamp so bank lines never sit under it.
+  if (y > stampReserveBottom - 8) {
+    y = stampReserveBottom - 8;
+  }
+
   page.drawText("Manual Payment Details", {
     x: left,
     y,
@@ -540,54 +590,6 @@ export async function buildPortalTaxInvoicePdf(
       size: 7,
       font,
       color: muted,
-    });
-  }
-
-  // Status stamp: green PAID (logo) or red Draft Invoice — mid-right, clear of body text.
-  if (embeddedLogo && (input.paid || input.isDraft)) {
-    const isPaidStamp = !!input.paid;
-    const stampW = 88;
-    const stampH = ((embeddedLogo.height || 1) / (embeddedLogo.width || 1)) * stampW;
-    const stampX = right - stampW - 4;
-    // Fixed mid-right so it never collides with header logo or bank footer.
-    const stampY = 310;
-    const accent = isPaidStamp ? rgb(0.02, 0.48, 0.28) : rgb(0.72, 0.1, 0.12);
-    const wash = isPaidStamp ? rgb(0.82, 0.95, 0.88) : rgb(0.98, 0.88, 0.88);
-    page.drawEllipse({
-      x: stampX + stampW / 2,
-      y: stampY + stampH / 2,
-      xScale: stampW / 2 + 10,
-      yScale: stampH / 2 + 14,
-      color: wash,
-      borderColor: accent,
-      borderWidth: 2.2,
-      opacity: 0.92,
-    });
-    try {
-      page.drawImage(embeddedLogo, {
-        x: stampX,
-        y: stampY,
-        width: stampW,
-        height: stampH,
-        opacity: 0.88,
-      });
-    } catch {
-      page.drawImage(embeddedLogo, {
-        x: stampX,
-        y: stampY,
-        width: stampW,
-        height: stampH,
-      });
-    }
-    const label = isPaidStamp ? "PAID" : "Draft Invoice";
-    const labelSize = isPaidStamp ? 15 : 11;
-    const labelTw = fontBold.widthOfTextAtSize(label, labelSize);
-    page.drawText(label, {
-      x: stampX + Math.max(0, (stampW - labelTw) / 2),
-      y: stampY - 18,
-      size: labelSize,
-      font: fontBold,
-      color: accent,
     });
   }
 
