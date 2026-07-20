@@ -94,15 +94,19 @@
     return n;
   }
 
-  async function authHeaders() {
+  async function getAccessToken() {
     var client = cfg.getClient();
-    var token = "";
+    if (!client || !client.auth || !client.auth.getSession) return "";
     try {
-      if (client && client.auth && client.auth.getSession) {
-        var res = await client.auth.getSession();
-        token = (res && res.data && res.data.session && res.data.session.access_token) || "";
-      }
-    } catch (_e) {}
+      var res = await client.auth.getSession();
+      return (res && res.data && res.data.session && res.data.session.access_token) || "";
+    } catch (_e) {
+      return "";
+    }
+  }
+
+  async function authHeaders() {
+    var token = await getAccessToken();
     return {
       Authorization: "Bearer " + token,
       apikey: cfg.getAnonKey(),
@@ -123,6 +127,10 @@
   }
 
   async function api(path, body) {
+    var token = await getAccessToken();
+    if (!token) {
+      return { ok: false, status: 0, data: { ok: false, error: "no_session" } };
+    }
     var url = resolveFunctionsBase() + "/functions/v1/" + path;
     var res = await fetch(url, {
       method: "POST",
@@ -1142,6 +1150,7 @@
 
   async function fetchUnreadCount() {
     try {
+      if (!(await getAccessToken())) return 0;
       var res = await api("portal-staff-messages-list", { directory: true });
       if (!res.ok) return 0;
       var dir = Array.isArray(res.data.directory) ? res.data.directory : [];

@@ -124,7 +124,7 @@
   <script src="/portal/portal_wa_thread_refresh.js?v=20260716-wa-audio-guard"></script>
   <script src="/portal/portal_chat_bubble_icons.js?v=20260716-admin-ps-icons-lg"></script>
   <script src="/portal/admin-parent-notify-log.js?v=20260720-wa-thread-merge"></script>
-  <script src="/portal/admin-staff-whatsapp.js?v=20260717-supabase-url-guard"></script>
+  <script src="/portal/admin-staff-whatsapp.js?v=20260720-no-session-quiet"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260718-pin-login"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260717-wa-edit" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260716-wa-no-dup-intro" />
@@ -26535,7 +26535,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var mobile = adminIsMobileNavLayout();
       var sidebar = $('adminSidebar');
       var backdrop = $('sidebarBackdrop');
-      if(sidebar) sidebar.setAttribute('aria-hidden', mobile ? (open ? 'false' : 'true') : 'false');
+      var hideSidebar = mobile && !open;
+      if(sidebar){
+        if(hideSidebar){
+          try{
+            var ae = document.activeElement;
+            if(ae && sidebar.contains(ae) && typeof ae.blur === 'function') ae.blur();
+          }catch(_blur){}
+        }
+        sidebar.setAttribute('aria-hidden', hideSidebar ? 'true' : 'false');
+      }
       if(backdrop) backdrop.setAttribute('aria-hidden', mobile ? (open ? 'false' : 'true') : 'true');
       var brandEl = $('adminSidebarBrand');
       var mob = $('btnMenuMob');
@@ -28064,6 +28073,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.portalAdminRefreshStaffWaBadge = function portalAdminRefreshStaffWaBadge(){
           var badge = $('staffWaBadge');
           if(!badge) return;
+          portalStaffWhatsappConfigureOnce();
           if(!window.PortalStaffWhatsappAdmin || typeof window.PortalStaffWhatsappAdmin.unreadCount !== 'function') return;
           Promise.resolve(window.PortalStaffWhatsappAdmin.unreadCount()).then(function(n){
             n = (typeof n === 'number' && n > 0) ? n : 0;
