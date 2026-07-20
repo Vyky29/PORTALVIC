@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Accept commissioning Terms — clubSENsational</title>
+  <style>
+    :root {
+      --ink: #173247;
+      --muted: #728290;
+      --line: rgba(23, 50, 71, .12);
+      --blue: #2d84b3;
+      --soft: #eaf5fb;
+      --white: #fff;
+      --gold: #f4b740;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      line-height: 1.5;
+      background: #f4f8fb;
+    }
+    .wrap { max-width: 560px; margin: 0 auto; padding: 24px 16px 64px; min-width: 0; }
+    .card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px 16px 28px;
+      min-width: 0;
+    }
+    h1 { margin: 0 0 8px; font-size: 1.35rem; overflow-wrap: break-word; }
+    .sub { color: var(--muted); font-size: .92rem; margin: 0 0 16px; overflow-wrap: break-word; }
+    label { display: block; font-size: 13px; font-weight: 700; margin: 12px 0 4px; }
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font: inherit;
+      min-width: 0;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 16px;
+      width: 100%;
+      padding: 12px 14px;
+      border: 0;
+      border-radius: 12px;
+      background: var(--blue);
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+    .btn--sec { background: var(--soft); color: var(--ink); margin-top: 8px; }
+    .msg { margin-top: 12px; font-size: 14px; overflow-wrap: break-word; }
+    .msg--err { color: #b91c1c; }
+    .msg--ok { color: #166534; }
+    a { color: var(--blue); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" id="panel">
+      <h1>Accept Terms</h1>
+      <p class="sub" id="intro">Loading your commissioning Terms link…</p>
+      <p class="sub" id="docLine" hidden></p>
+      <p><a id="docLink" href="/commissioning/terms" target="_blank" rel="noopener">Open full Terms &amp; Conditions</a></p>
+      <form id="acceptForm" hidden>
+        <label for="orgName">Organisation name</label>
+        <input id="orgName" name="organisation_name" autocomplete="organization" required />
+        <label for="byName">Your full name</label>
+        <input id="byName" name="accepted_by_name" autocomplete="name" required />
+        <label for="byRole">Your role</label>
+        <input id="byRole" name="accepted_by_role" placeholder="e.g. Commissioning manager" />
+        <label for="byEmail">Work email</label>
+        <input id="byEmail" name="accepted_by_email" type="email" autocomplete="email" required />
+        <label for="poRef">PO reference (if available)</label>
+        <input id="poRef" name="po_reference" />
+        <button type="submit" class="btn" id="submitBtn">I accept these Terms</button>
+        <button type="button" class="btn btn--sec" id="reloadDoc">Re-open Terms</button>
+      </form>
+      <p class="msg" id="msg" role="status"></p>
+    </div>
+  </div>
+  <script>
+  (function () {
+    var SUPABASE_URL = String(
+      window.SUPABASE_URL || "https://cklpnwhlqsulpmkipmqb.supabase.co"
+    ).replace(/\/$/, "");
+    // Same publishable key as other Portal static pages (staff_profile_update, etc.).
+    var SUPABASE_ANON = String(
+      window.SUPABASE_ANON_KEY ||
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrbHBud2hscXN1bHBta2lwbXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMDg4NzIsImV4cCI6MjA5MTc4NDg3Mn0.-T7rVyDHQbzMqEKOVz6fi3OlZdB_gPH2i5p-ZPveopE"
+    );
+
+    var params = new URLSearchParams(location.search);
+    var token = (params.get("token") || "").trim();
+    var intro = document.getElementById("intro");
+    var form = document.getElementById("acceptForm");
+    var msg = document.getElementById("msg");
+    var docLine = document.getElementById("docLine");
+    var docLink = document.getElementById("docLink");
+
+    function setMsg(text, ok) {
+      msg.textContent = text || "";
+      msg.className = "msg " + (ok ? "msg--ok" : "msg--err");
+    }
+
+    async function call(action, extra) {
+      var body = Object.assign({ action: action, token: token }, extra || {});
+      var res = await fetch(SUPABASE_URL + "/functions/v1/commissioning-terms-accept", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + SUPABASE_ANON,
+          apikey: SUPABASE_ANON,
+        },
+        body: JSON.stringify(body),
+      });
+      var data = {};
+      try { data = await res.json(); } catch (_) {}
+      return { res: res, data: data };
+    }
+
+    async function boot() {
+      if (!token) {
+        intro.textContent = "This acceptance link is missing a token.";
+        setMsg("Ask ClubSENsational admin to resend the Terms link.", false);
+        return;
+      }
+      var out = await call("view");
+      if (!out.data || !out.data.ok) {
+        intro.textContent = "This link is invalid or has expired.";
+        setMsg((out.data && out.data.error) || "Unable to open link", false);
+        return;
+      }
+      if (out.data.already_accepted) {
+        intro.textContent = "These Terms have already been accepted. Thank you.";
+        setMsg("Accepted — no further action needed.", true);
+        return;
+      }
+      var doc = out.data.document || {};
+      intro.textContent =
+        "Please read the Local Authority and Commissioning Organisation Terms & Conditions, then confirm below.";
+      docLine.hidden = false;
+      docLine.textContent =
+        (doc.title || "Commissioning Terms") + " · version " + (doc.version || "");
+      if (doc.public_path) docLink.href = doc.public_path;
+      form.hidden = false;
+      if (out.data.organisation_name) {
+        document.getElementById("orgName").value = out.data.organisation_name;
+      }
+      var rec = out.data.recipient || {};
+      if (rec.name) document.getElementById("byName").value = rec.name;
+      if (rec.email) document.getElementById("byEmail").value = rec.email;
+      if (rec.role) document.getElementById("byRole").value = rec.role;
+    }
+
+    form.addEventListener("submit", async function (ev) {
+      ev.preventDefault();
+      var btn = document.getElementById("submitBtn");
+      btn.disabled = true;
+      setMsg("Saving acceptance…", true);
+      var out = await call("accept", {
+        organisation_name: document.getElementById("orgName").value,
+        accepted_by_name: document.getElementById("byName").value,
+        accepted_by_role: document.getElementById("byRole").value,
+        accepted_by_email: document.getElementById("byEmail").value,
+        po_reference: document.getElementById("poRef").value,
+      });
+      btn.disabled = false;
+      if (!out.data || !out.data.ok) {
+        setMsg((out.data && out.data.error) || "Could not save acceptance", false);
+        return;
+      }
+      form.hidden = true;
+      intro.textContent = "Thank you. Your acceptance has been recorded.";
+      setMsg(
+        "Version " +
+          (out.data.document_version || "") +
+          " accepted at " +
+          (out.data.accepted_at || ""),
+        true
+      );
+    });
+
+    document.getElementById("reloadDoc").addEventListener("click", function () {
+      window.open(docLink.href, "_blank", "noopener");
+    });
+
+    boot();
+  })();
+  </script>
+</body>
+</html>

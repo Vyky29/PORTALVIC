@@ -671,3 +671,10 @@ verify_jwt = false
 
 [functions.portal-ceo-booking-service-presence]
 verify_jwt = false
+
+# LA / commissioning Terms (JWT checked inside admin fn; accept uses hashed token).
+[functions.commissioning-terms-accept]
+verify_jwt = false
+
+[functions.commissioning-terms-admin]
+verify_jwt = false
