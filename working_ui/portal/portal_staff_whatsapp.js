@@ -711,31 +711,39 @@
 
   /** Session tool icons only (excludes CS WhatsApp cell). */
   function countSessionTopbarTools() {
-    var grid = document.getElementById("topbarToolsGrid");
-    if (!grid) return 0;
-    var cells = grid.querySelectorAll(".topbar-tool-cell");
+    var roots = [];
+    var left = document.getElementById("topbarToolsGridLeft");
+    var right = document.getElementById("topbarToolsGridRight");
+    var legacy = document.getElementById("topbarToolsGrid");
+    if (left) roots.push(left);
+    if (right) roots.push(right);
+    if (!left && !right && legacy) roots.push(legacy);
     var n = 0;
-    for (var i = 0; i < cells.length; i++) {
-      var cell = cells[i];
-      if (cell.id === "topbarToolCellStaffWa") continue;
-      if (cell.classList.contains("topbar-tool-cell--staff-wa")) continue;
-      if (cell.hidden) continue;
-      n++;
-    }
+    roots.forEach(function (grid) {
+      var cells = grid.querySelectorAll(".topbar-tool-cell");
+      for (var i = 0; i < cells.length; i++) {
+        var cell = cells[i];
+        if (cell.id === "topbarToolCellStaffWa") continue;
+        if (cell.classList.contains("topbar-tool-cell--staff-wa")) continue;
+        if (cell.hidden) continue;
+        n++;
+      }
+    });
     return n;
   }
 
   function ensureWaGridCell() {
-    var grid = document.getElementById("topbarToolsGrid");
-    if (!grid) return null;
     var cell = document.getElementById("topbarToolCellStaffWa");
     if (cell) return cell;
+    var row = document.getElementById("topbarWaRow");
+    var host = row || document.getElementById("topbarToolsGridRight") || document.getElementById("topbarToolsGrid");
+    if (!host) return null;
     cell = document.createElement("div");
     cell.id = "topbarToolCellStaffWa";
     cell.className = "topbar-tool-cell topbar-tool-cell--staff-wa topbar-tool-cell--span2";
     cell.hidden = true;
     cell.setAttribute("aria-hidden", "true");
-    grid.appendChild(cell);
+    host.appendChild(cell);
     return cell;
   }
 
@@ -798,24 +806,28 @@
     var btn = document.getElementById("topbarStaffWaBtn");
     var cell = document.getElementById("topbarToolCellStaffWa");
     var lead = document.querySelector(".topbar-lead");
-    var grid = document.getElementById("topbarToolsGrid");
     if (!btn) {
       if (cell) {
         cell.hidden = true;
         cell.setAttribute("aria-hidden", "true");
       }
       if (lead) lead.classList.remove("topbar-lead--wa-in-grid");
-      if (grid) grid.classList.remove("topbar-tools-grid--wa-extra");
       return;
     }
     placeWaInGrid(btn);
     if (lead) lead.classList.add("topbar-lead--wa-in-grid");
-    if (grid) grid.classList.add("topbar-tools-grid--wa-extra");
     applyUnreadBadge(lastUnreadCount);
   }
 
   function ensureButton(staffKey) {
-    if (!document.getElementById("topbarToolsGrid")) return;
+    if (
+      !document.getElementById("topbarToolsGridLeft") &&
+      !document.getElementById("topbarToolsGridRight") &&
+      !document.getElementById("topbarToolsGrid") &&
+      !document.getElementById("topbarWaRow")
+    ) {
+      return;
+    }
     var existing = document.getElementById("topbarStaffWaBtn");
     if (!isStaffWhatsappUser(staffKey)) {
       if (existing) existing.remove();

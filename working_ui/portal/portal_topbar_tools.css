@@ -34,6 +34,131 @@
   --topbar-profile-female-band:#f5b8d4;
   --topbar-profile-female-ink:#9c2756;
 }
+.topbar-lead.topbar-lead--halo-flanks{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  grid-template-areas:
+    "left center right"
+    "wa wa wa";
+  gap:4px clamp(8px,2.2vw,16px);
+  align-items:start;
+  width:100%;
+  min-width:0;
+}
+.topbar-lead--halo-flanks .topbar-left--tools{
+  grid-area:left;
+  justify-self:end;
+  align-self:start;
+  width:auto;
+  max-width:100%;
+  min-width:0;
+  display:flex;
+  justify-content:flex-end;
+  padding:0;
+  margin:0;
+}
+.topbar-lead--halo-flanks .topbar-center--halo{
+  grid-area:center;
+  justify-self:center;
+  align-self:start;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  min-width:0;
+  padding:0 4px;
+  margin-top:-2px;
+}
+.topbar-lead--halo-flanks .topbar-right--tools{
+  grid-area:right;
+  justify-self:start;
+  align-self:start;
+  width:auto;
+  max-width:100%;
+  min-width:0;
+  display:flex;
+  justify-content:flex-start;
+  padding:0;
+  margin:0;
+}
+.topbar-lead--halo-flanks .topbar-wa-row{
+  grid-area:wa;
+  width:100%;
+  max-width:min(320px,100%);
+  margin:2px auto 0;
+  min-width:0;
+  display:flex;
+  justify-content:center;
+}
+.topbar-lead--halo-flanks .topbar-wa-row .topbar-tool-cell--staff-wa{
+  width:100%;
+  max-width:100%;
+  height:auto;
+  max-height:none;
+  padding-top:0;
+}
+.topbar-tools-grid--flank{
+  display:grid;
+  grid-template-columns:var(--topbar-tools-cell);
+  grid-auto-rows:var(--topbar-tools-cell);
+  gap:var(--topbar-tools-gap-y);
+  width:var(--topbar-tools-cell);
+  height:auto;
+  max-height:none;
+  margin:0;
+}
+.topbar-tools-grid--flank .topbar-tool-cell--row1-solo,
+.topbar-tools-grid--flank .topbar-tool-cell--row-last-solo{
+  grid-column:auto;
+  width:var(--topbar-tools-cell);
+  max-width:var(--topbar-tools-cell);
+  justify-self:stretch;
+}
+.topbar-name--under-halo{
+  position:relative;
+  z-index:3;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  margin:0;
+  margin-top:calc(var(--avatar-orbit-outset, 16px) + 4px);
+  padding:0 4px;
+  max-width:min(140px,36vw);
+  min-width:0;
+  font-size:clamp(13px,3.4vw,17px);
+  font-weight:800;
+  line-height:1.1;
+  letter-spacing:-0.01em;
+  text-align:center;
+  color:var(--ink,#173247);
+  background:transparent;
+  overflow:hidden;
+}
+.topbar-name--under-halo .topbar-name__given,
+.topbar-name--under-halo .topbar-name__surname{
+  display:block;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  text-align:center;
+  color:inherit !important;
+  background:transparent !important;
+}
+.topbar-profile-card--sr{
+  position:absolute !important;
+  width:1px !important;
+  height:1px !important;
+  padding:0 !important;
+  margin:-1px !important;
+  overflow:hidden !important;
+  clip:rect(0,0,0,0) !important;
+  white-space:nowrap !important;
+  border:0 !important;
+}
 .topbar-lead.topbar-lead--halo-tools{
   grid-template-columns:auto minmax(0,1fr);
   gap:clamp(8px,2vw,18px) clamp(10px,2.8vw,22px);
@@ -821,12 +946,13 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
 }
 
 /* CS WhatsApp: thin double-width bar (must load after .topbar-tool-btn max-width rules) */
-.topbar-tools-grid > .topbar-tool-cell--staff-wa.topbar-tool-cell--span2{
+.topbar-tools-grid > .topbar-tool-cell--staff-wa.topbar-tool-cell--span2,
+.topbar-wa-row > .topbar-tool-cell--staff-wa.topbar-tool-cell--span2{
   grid-column:1 / -1 !important;
   width:100% !important;
   max-width:100% !important;
-  height:var(--topbar-tools-cell);
-  max-height:var(--topbar-tools-cell);
+  height:auto;
+  max-height:none;
   justify-self:stretch;
   align-self:stretch;
   min-width:0;
@@ -834,7 +960,7 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   flex-direction:column;
   align-items:stretch;
   justify-content:flex-end;
-  padding-top:3px;
+  padding-top:0;
   box-sizing:border-box;
   overflow:visible;
 }
@@ -842,7 +968,8 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
 .topbar-tools-grid--lead > .topbar-tool-cell--staff-wa .topbar-tool-btn.topbar-tool-btn--staff-wa,
 .topbar-tools-grid--eight > .topbar-tool-cell--staff-wa .topbar-tool-btn.topbar-tool-btn--staff-wa,
 .topbar-tools-grid--ceo-full > .topbar-tool-cell--staff-wa .topbar-tool-btn.topbar-tool-btn--staff-wa,
-.topbar-tools-grid--dense > .topbar-tool-cell--staff-wa .topbar-tool-btn.topbar-tool-btn--staff-wa{
+.topbar-tools-grid--dense > .topbar-tool-cell--staff-wa .topbar-tool-btn.topbar-tool-btn--staff-wa,
+.topbar-wa-row > .topbar-tool-cell--staff-wa .topbar-tool-btn.topbar-tool-btn--staff-wa{
   display:inline-flex !important;
   flex-direction:row !important;
   align-items:center !important;
@@ -867,7 +994,8 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   overflow:visible !important;
   box-sizing:border-box;
 }
-.topbar-tools-grid > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-btn__ico{
+.topbar-tools-grid > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-btn__ico,
+.topbar-wa-row > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-btn__ico{
   width:12px !important;
   height:12px !important;
   max-width:12px !important;
@@ -875,12 +1003,14 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   flex:0 0 auto;
   color:#173247;
 }
-.topbar-tools-grid > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-btn__ico svg{
+.topbar-tools-grid > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-btn__ico svg,
+.topbar-wa-row > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-btn__ico svg{
   width:12px;
   height:12px;
   display:block;
 }
-.topbar-tools-grid > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-label{
+.topbar-tools-grid > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-label,
+.topbar-wa-row > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-label{
   flex:0 1 auto;
   min-width:0;
   max-width:100%;

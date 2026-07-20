@@ -287,6 +287,42 @@
       min-width:0;
       overflow:visible;
     }
+    .topbar-lead.topbar-lead--halo-flanks{
+      grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+      grid-template-areas:
+        "left center right"
+        "wa wa wa";
+      gap:4px clamp(8px,2.2vw,16px);
+      align-items:start;
+    }
+    .topbar-lead--halo-flanks .topbar-left--tools{
+      grid-area:left;
+      justify-self:end;
+    }
+    .topbar-lead--halo-flanks .topbar-center--halo{
+      grid-area:center;
+      justify-self:center;
+      align-self:start;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      margin-top:-2px;
+      padding:0 4px;
+    }
+    .topbar-lead--halo-flanks .topbar-right--tools{
+      grid-area:right;
+      justify-self:start;
+      width:auto;
+      max-width:100%;
+    }
+    .topbar-lead--halo-flanks .topbar-wa-row{
+      grid-area:wa;
+      width:100%;
+      max-width:min(320px,100%);
+      margin:2px auto 0;
+      display:flex;
+      justify-content:center;
+    }
     .topbar-lead.topbar-lead--halo-tools{
       grid-template-columns:auto minmax(0,1fr);
       gap:clamp(8px,2vw,18px) clamp(10px,2.8vw,22px);
@@ -367,9 +403,9 @@
     }
     /* Wrapper: same geometric centre for photo + orbiting dots (no header overflow) */
     .avatar-wrap{
-      --avatar-core-size:68px;
-      --avatar-wrap-size:78px;
-      --avatar-orbit-outset:15px;
+      --avatar-core-size:78px;
+      --avatar-wrap-size:90px;
+      --avatar-orbit-outset:16px;
       position:relative;
       width:var(--avatar-wrap-size);
       height:var(--avatar-wrap-size);
@@ -381,6 +417,11 @@
       transition:transform .2s ease, width .28s ease, height .28s ease;
       -webkit-tap-highlight-color:transparent;
       cursor:pointer;
+    }
+    .topbar-center--halo .avatar-wrap--staff-halo{
+      --avatar-core-size:82px;
+      --avatar-wrap-size:94px;
+      --avatar-orbit-outset:17px;
     }
     .avatar-wrap:hover{
       transform:scale(1.05);

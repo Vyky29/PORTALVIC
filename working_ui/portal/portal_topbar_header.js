@@ -293,51 +293,75 @@
     return cell.classList.contains("topbar-tool-cell--staff-wa");
   }
 
+  function topbarToolGridRoots() {
+    var roots = [];
+    var left = document.getElementById("topbarToolsGridLeft");
+    var right = document.getElementById("topbarToolsGridRight");
+    var legacy = document.getElementById("topbarToolsGrid");
+    if (left) roots.push(left);
+    if (right) roots.push(right);
+    if (!left && !right && legacy) roots.push(legacy);
+    return roots;
+  }
+
   /** Session tools only — CS WhatsApp double-width cell is placement-only, not a session icon. */
   function countVisibleTopbarToolCells() {
-    var grid = document.getElementById("topbarToolsGrid");
-    if (!grid) return 0;
     if (typeof global.portalCountSessionTopbarTools === "function") {
       try {
         return global.portalCountSessionTopbarTools();
       } catch (_e) {}
     }
-    var cells = grid.querySelectorAll(".topbar-tool-cell");
     var n = 0;
-    for (var i = 0; i < cells.length; i++) {
-      if (isStaffWaToolCell(cells[i])) continue;
-      if (!cells[i].hidden) n++;
-    }
+    topbarToolGridRoots().forEach(function (grid) {
+      var cells = grid.querySelectorAll(".topbar-tool-cell");
+      for (var i = 0; i < cells.length; i++) {
+        if (isStaffWaToolCell(cells[i])) continue;
+        if (!cells[i].hidden) n++;
+      }
+    });
     return n;
   }
 
   /** Even counts → 2 columns; compact 6/8 grids never use row-1 solo (avoids John 7-icon overflow). */
   function portalSyncTopbarToolsGridLayout() {
-    var grid = document.getElementById("topbarToolsGrid");
-    if (!grid) return;
-    var n = countVisibleTopbarToolCells();
-    var catalogGrid = grid.classList.contains("topbar-tools-grid--catalog");
-    var strictTwoCol =
-      catalogGrid ||
-      grid.classList.contains("topbar-tools-grid--lead") ||
-      grid.classList.contains("topbar-tools-grid--eight") ||
-      grid.classList.contains("topbar-tools-grid--ceo-full");
-    var achievements = document.getElementById("topbarToolCellAchievements");
-    var useSoloFirstRow = !strictTwoCol && n === 1;
-    if (achievements) {
-      achievements.classList.toggle("topbar-tool-cell--row1-solo", useSoloFirstRow);
-    }
-    var cells = grid.querySelectorAll(".topbar-tool-cell");
-    for (var i = 0; i < cells.length; i++) {
-      cells[i].classList.remove("topbar-tool-cell--row-last-solo");
-    }
-    if (n > 1 && n % 2 === 1) {
-      for (var j = cells.length - 1; j >= 0; j--) {
-        if (cells[j].hidden || isStaffWaToolCell(cells[j])) continue;
-        cells[j].classList.add("topbar-tool-cell--row-last-solo");
-        break;
+    var roots = topbarToolGridRoots();
+    if (!roots.length) return;
+    roots.forEach(function (grid) {
+      if (grid.classList.contains("topbar-tools-grid--flank")) {
+        var cells = grid.querySelectorAll(".topbar-tool-cell");
+        for (var i = 0; i < cells.length; i++) {
+          cells[i].classList.remove("topbar-tool-cell--row1-solo", "topbar-tool-cell--row-last-solo");
+        }
+        return;
       }
-    }
+      var n = 0;
+      var cellsAll = grid.querySelectorAll(".topbar-tool-cell");
+      for (var c = 0; c < cellsAll.length; c++) {
+        if (isStaffWaToolCell(cellsAll[c])) continue;
+        if (!cellsAll[c].hidden) n++;
+      }
+      var catalogGrid = grid.classList.contains("topbar-tools-grid--catalog");
+      var strictTwoCol =
+        catalogGrid ||
+        grid.classList.contains("topbar-tools-grid--lead") ||
+        grid.classList.contains("topbar-tools-grid--eight") ||
+        grid.classList.contains("topbar-tools-grid--ceo-full");
+      var achievements = document.getElementById("topbarToolCellAchievements");
+      var useSoloFirstRow = !strictTwoCol && n === 1;
+      if (achievements && achievements.parentNode === grid) {
+        achievements.classList.toggle("topbar-tool-cell--row1-solo", useSoloFirstRow);
+      }
+      for (var i2 = 0; i2 < cellsAll.length; i2++) {
+        cellsAll[i2].classList.remove("topbar-tool-cell--row-last-solo");
+      }
+      if (n > 1 && n % 2 === 1) {
+        for (var j = cellsAll.length - 1; j >= 0; j--) {
+          if (cellsAll[j].hidden || isStaffWaToolCell(cellsAll[j])) continue;
+          cellsAll[j].classList.add("topbar-tool-cell--row-last-solo");
+          break;
+        }
+      }
+    });
   }
 
   function canonicalTopbarStaffKey(value) {
@@ -516,6 +540,12 @@
       grid.classList.add("topbar-tools-grid--lead");
       grid.classList.remove("topbar-tools-grid--eight");
     }
+    ["topbarToolsGridLeft", "topbarToolsGridRight"].forEach(function (id) {
+      var g = document.getElementById(id);
+      if (!g) return;
+      g.classList.add("topbar-tools-grid--lead");
+      g.classList.remove("topbar-tools-grid--eight", "topbar-tools-grid--ceo-full");
+    });
     var leadRow = document.querySelector(".topbar-lead");
     if (leadRow) {
       leadRow.classList.add("topbar-lead--tools-6");
@@ -650,16 +680,32 @@
 
     var grid = document.getElementById("topbarToolsGrid");
     var visibleToolCount = countVisibleTopbarToolCells();
-    var catalogGrid = grid && grid.classList.contains("topbar-tools-grid--catalog");
-    var useEightGrid = !isCeo && visibleToolCount >= 7;
+    var flankMode = !!(
+      document.getElementById("topbarToolsGridLeft") ||
+      document.getElementById("topbarToolsGridRight")
+    );
+    var catalogGrid =
+      flankMode ||
+      (grid && grid.classList.contains("topbar-tools-grid--catalog"));
+    var useEightGrid = !isCeo && !flankMode && visibleToolCount >= 7;
     var useSixGrid =
-      !isCeo && !useEightGrid && (catalogGrid || showLeadExtras || visibleToolCount > 3);
+      !isCeo && !useEightGrid && (catalogGrid || showLeadExtras || visibleToolCount > 3 || flankMode);
 
-    if (grid && !isCeo) {
-      grid.classList.toggle("topbar-tools-grid--eight", useEightGrid);
-      grid.classList.toggle("topbar-tools-grid--lead", useSixGrid);
-      grid.classList.toggle("topbar-tools-grid--dense", useSixGrid && visibleToolCount >= 4);
-      grid.classList.remove("topbar-tools-grid--ceo-full");
+    function applyGridMode(g) {
+      if (!g) return;
+      g.classList.toggle("topbar-tools-grid--eight", useEightGrid);
+      g.classList.toggle("topbar-tools-grid--lead", useSixGrid || flankMode);
+      g.classList.toggle(
+        "topbar-tools-grid--dense",
+        (useSixGrid || flankMode) && visibleToolCount >= 4
+      );
+      g.classList.remove("topbar-tools-grid--ceo-full");
+    }
+
+    if (!isCeo) {
+      applyGridMode(grid);
+      applyGridMode(document.getElementById("topbarToolsGridLeft"));
+      applyGridMode(document.getElementById("topbarToolsGridRight"));
     }
     var leadRow = document.querySelector(".topbar-lead");
     if (leadRow && !isCeo) {
