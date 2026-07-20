@@ -84,11 +84,11 @@
 .topbar-lead--halo-flanks .topbar-wa-row{
   grid-area:wa;
   width:100%;
-  max-width:min(320px,100%);
-  margin:2px auto 0;
+  max-width:100%;
+  margin:2px 0 0;
   min-width:0;
   display:flex;
-  justify-content:center;
+  justify-content:stretch;
 }
 .topbar-lead--halo-flanks .topbar-wa-row .topbar-tool-cell--staff-wa{
   width:100%;
