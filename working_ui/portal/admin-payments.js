@@ -2198,9 +2198,13 @@
     baseGrouped.forEach(function (sg) {
       if (!sg.rows.length) return;
       var termId = sg.bucket.id;
-      /* Header stream totals ignore Afterschool/Day Centre toggle (always both). */
-      var metaRows = applyPaidFilter(sg.rows, termId);
-      var scoped = applyServiceKindFilter(metaRows, termId);
+      /*
+       * Header chips (ORDERS / AS / DC / term / year): always full-term billed.
+       * Paid + stream filters must not recompute these — they only scope the
+       * mid KPIs/groups and the Participants table for the active stream.
+       */
+      var headerRows = sg.rows;
+      var scoped = applyServiceKindFilter(applyPaidFilter(sg.rows, termId), termId);
       /* Always keep the term openable so stream / Paid filters stay reachable. */
       any = true;
       var vis = scoped.filter(statusMatch);
@@ -2208,7 +2212,7 @@
         + '<summary class="pay-term-acc__sum">'
         + '<span><span class="pay-term-acc__title">' + esc(sg.bucket.title) + "</span>"
         + '<span class="pay-term-acc__sub">' + esc(sg.bucket.subtitle) + "</span></span>"
-        + termAccordionMetaHtml({ rows: metaRows, termId: termId })
+        + termAccordionMetaHtml({ rows: headerRows, termId: termId })
         + "</summary>"
         + termSummaryBlockHtml(scoped, vis, termId)
         + "</details>";
@@ -3709,8 +3713,9 @@
     baseGrouped.forEach(function (g) {
       if (!g.rows.length) return;
       var termId = g.bucket.id;
-      var metaRows = applyPaidFilter(g.rows, termId);
-      var paidScoped = applyServiceKindFilter(metaRows, termId);
+      /* Header chips stay full-term; Paid/stream filters only scope the table. */
+      var headerRows = g.rows;
+      var paidScoped = applyServiceKindFilter(applyPaidFilter(g.rows, termId), termId);
       var scoped = paidScoped.filter(statusMatch);
       var keys = {};
       scoped.forEach(function (r) {
@@ -3723,7 +3728,7 @@
         + '<summary class="pay-term-acc__sum">'
         + '<span><span class="pay-term-acc__title">' + esc(g.bucket.title) + "</span>"
         + '<span class="pay-term-acc__sub">' + esc(g.bucket.subtitle) + "</span></span>"
-        + termAccordionMetaHtml({ rows: metaRows, termId: termId })
+        + termAccordionMetaHtml({ rows: headerRows, termId: termId })
         + "</summary>"
         + '<div class="pay-term-acc__body">'
         + serviceKindToggleHtml(termId)
