@@ -14993,12 +14993,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     /** Participants whose primary contact is a service / local-authority coordinator (not a family member). Keyed by normalized name. */
     var ADMIN_PARTICIPANT_CONTACT_OVERRIDES = {
-      'acat': { contact: 'Mara Mendes & Jordan Smith / H&F Adult Social Care', email: 'Mara.Mendes@lbhf.gov.uk · jordan.smith@lbhf.gov.uk', phone: '07766 364819' },
-      // Jack Stratton (Jack S) — one child, registered twice (mother + LBHF day centre). Family is
-      // the primary contact (Sunday with parents); Mondays run via the LA day centre (Jordan Smith).
-      'jack stratton': { contact: 'Veronica Grace (mother) · Mon: LA day centre — Jordan Smith (LBHF)', email: 'vgrace67@gmail.com', phone: '07803093911' },
-      // Jack Walker (Jack W) — family contact provided by CEO (no email/phone on file); Mondays via LA day centre.
-      'jack walker': { contact: 'Francesca Walker (mother) · Mon: LA day centre — Jordan Smith (LBHF)' }
+      'acat': { contact: 'Jordan Smith (H&F Adult Social Care / ACAT)', email: 'jordan.smith@lbhf.gov.uk', phone: '07766 364819' },
+      // Jack Stratton (Jack S) — family WhatsApp is Veronica only. Jordan Smith is Mon ACAT coordinator
+      // on a separate number and must not appear as Jack's WhatsApp thread participant.
+      'jack stratton': { contact: 'Veronica Grace', email: 'vgrace67@gmail.com', phone: '07803093911' },
+      // Jack Walker (Jack W) — family contact; Mondays via LA day centre (Jordan) on ACAT number only.
+      'jack walker': { contact: 'Francesca Walker (mother)' },
     };
     function adminParticipantContactOverride(displayName){
       var k = adminPortalNormalizedPersonName(displayName);

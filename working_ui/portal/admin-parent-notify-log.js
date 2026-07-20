@@ -11,6 +11,24 @@
   var MAX_ATTACH_BYTES = 4 * 1024 * 1024;
   var signedMediaCache = Object.create(null);
 
+  /**
+   * LA / day-centre coordinator mobiles (not family phones).
+   * Force display labels so a mis-stamped outbound (e.g. Maire/Kate) cannot
+   * re-label this WhatsApp thread as Jack Stratton / Veronica / Kate.
+   */
+  var KNOWN_WA_THREAD_OVERRIDES = {
+    "7766364819": {
+      parentName: "Jordan Smith",
+      client: "ACAT (H&F day centre)",
+      waContact: "Jordan Smith",
+    },
+  };
+
+  function knownWaThreadOverride(phone) {
+    var key = phoneMatchKey(phone);
+    return (key && KNOWN_WA_THREAD_OVERRIDES[key]) || null;
+  }
+
   async function resolveMediaSignedUrls(client, rows) {
     if (!client || !client.storage || !rows || !rows.length) return;
     var now = Date.now();
@@ -491,6 +509,14 @@
       t.phoneFromProfile = !!(remapped && remapped !== threadDigits);
       if (contact && contact.parent) t.parentName = contact.parent;
       if (contact && contact.child) t.client = contact.child;
+      /* Coordinator phones win over any mis-stamped outbound (Kate/Maire → Jordan). */
+      var ov = knownWaThreadOverride(t.phone || t.sendPhone);
+      if (ov) {
+        t.parentName = ov.parentName;
+        t.client = ov.client;
+        t.waContact = ov.waContact || ov.parentName;
+        t.coordinatorThread = true;
+      }
       var parent = t.parentName;
       if (!parent || namesRoughlySame(parent, t.client)) {
         if (t.waContact && !namesRoughlySame(t.waContact, t.client)) parent = t.waContact;
@@ -1067,17 +1093,25 @@
       if (outAt > wt.lastOutboundAt) wt.lastOutboundAt = outAt;
       var pname = String(row.parent_name || "").trim();
       var cname = String(row.client_display || "").trim();
-      // Prefer a parent_name that is not just a copy of the participant name.
-      if (pname) {
-        if (!wt.parentName) wt.parentName = pname;
-        else if (
-          namesRoughlySame(wt.parentName, wt.client || cname) &&
-          !namesRoughlySame(pname, cname || wt.client)
-        ) {
-          wt.parentName = pname;
+      var ovOut = knownWaThreadOverride(wkey);
+      if (ovOut) {
+        wt.parentName = ovOut.parentName;
+        wt.client = ovOut.client;
+        wt.waContact = ovOut.waContact || ovOut.parentName;
+        wt.coordinatorThread = true;
+      } else {
+        // Prefer a parent_name that is not just a copy of the participant name.
+        if (pname) {
+          if (!wt.parentName) wt.parentName = pname;
+          else if (
+            namesRoughlySame(wt.parentName, wt.client || cname) &&
+            !namesRoughlySame(pname, cname || wt.client)
+          ) {
+            wt.parentName = pname;
+          }
         }
+        if (cname && !wt.client) wt.client = cname;
       }
-      if (cname && !wt.client) wt.client = cname;
       if (String(row.whatsapp_status || "").toLowerCase() === "failed") wt.hasFailed = true;
       else wt.hasSent = true;
     });
@@ -1131,6 +1165,7 @@
     if (outcome === "sent" && !t.hasSent) return false;
     if (outcome === "unread" && !isThreadUnread(t)) return false;
     if (!q) return true;
+    var phoneKey = phoneMatchKey(t.phone || t.sendPhone || "");
     var parts = [
       t.name,
       t.parentName,
@@ -1139,14 +1174,21 @@
       t.sendPhone,
       t.client,
       t.profilePhone,
+      phoneKey,
       t.fromDirectory ? "directory" : "",
+      t.coordinatorThread ? "jordan acat h&f" : "",
     ];
     (t.events || []).forEach(function (e) {
       parts.push(e.body || "");
       parts.push(e.subject || "");
       parts.push(e.sentBy || "");
     });
-    return parts.join(" ").toLowerCase().indexOf(q) >= 0;
+    var hay = parts.join(" ").toLowerCase();
+    if (hay.indexOf(q) >= 0) return true;
+    /* Token match: "pat" → Pat Nekati / Mantombi Pat / Nekati family (Pat). */
+    var tokens = q.split(/[^a-z0-9]+/).filter(function (x) { return x.length >= 2; });
+    if (!tokens.length) return false;
+    return tokens.every(function (tok) { return hay.indexOf(tok) >= 0; });
   }
 
   /** When searching, include enrolled families from Contacts even with no WhatsApp history yet. */
@@ -1870,13 +1912,28 @@
     }
     // Always the open WhatsApp thread — never another co-parent's profile mobile.
     var sendDigits =
-      canonicalPhoneDigits(t.phone) ||
-      phoneDigits(t.phone) ||
       canonicalPhoneDigits(t.sendPhone) ||
-      phoneDigits(t.sendPhone);
+      phoneDigits(t.sendPhone) ||
+      canonicalPhoneDigits(t.phone) ||
+      phoneDigits(t.phone);
+    var ov = knownWaThreadOverride(sendDigits || t.phone);
     var ctx = threadContextForPhone(t.phone);
-    if (!ctx.clientDisplay && t.client) ctx.clientDisplay = t.client;
-    if (!ctx.parentName && t.name) ctx.parentName = t.name;
+    if (ov) {
+      ctx.parentName = ov.parentName;
+      ctx.clientDisplay = ov.client;
+    } else {
+      if (!ctx.clientDisplay && t.client) ctx.clientDisplay = t.client;
+      if (!ctx.parentName && t.name) ctx.parentName = t.name;
+      /* Prefer live directory labels for this WhatsApp number over a prior mis-stamp. */
+      var dirHit = findContactForThread(t, state.contactDirectory || []);
+      if (dirHit) {
+        if (dirHit.parent) ctx.parentName = dirHit.parent;
+        if (dirHit.child) ctx.clientDisplay = dirHit.child;
+      }
+    }
+    if (ov && statusEl && !state.editing) {
+      /* Keep the To: line honest before send. */
+    }
     var openSession = threadHasOpenWhatsappSession(t);
     if (state.attach && !openSession) {
       if (statusEl) {
@@ -2173,6 +2230,7 @@
         .select(
           "id, created_at, sent_by_email, kind, channel, client_display, parent_name, parent_email, parent_phone, session_date, venue, subject, body_text, message_type, media_path, media_mime, email_status, whatsapp_status, whatsapp_message_id, whatsapp_delivered_at, whatsapp_read_at, error_detail, meta"
         )
+        .or("channel.eq.whatsapp,channel.eq.both")
         .order("created_at", { ascending: false })
         .limit(FETCH_LIMIT);
       if (outboundRes.error) throw outboundRes.error;
