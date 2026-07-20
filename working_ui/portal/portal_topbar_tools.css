@@ -181,7 +181,8 @@
   align-items:center;
   justify-content:center;
   margin:0;
-  margin-top:calc(var(--avatar-orbit-outset, 16px) + 4px);
+  /* Idle halo: no orbit dots — keep name tight under the photo (no grey gap). */
+  margin-top:2px;
   padding:0 4px;
   max-width:min(140px,36vw);
   min-width:0;

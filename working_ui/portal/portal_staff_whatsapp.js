@@ -170,8 +170,8 @@
       btn.setAttribute(
         "aria-label",
         lastUnreadCount > 0
-          ? "Open CS WhatsApp, " + lastUnreadCount + " unread"
-          : "Open CS WhatsApp"
+          ? "Message admin on WhatsApp, " + lastUnreadCount + " unread"
+          : "Message admin on WhatsApp"
       );
     }
     var alertsBlock = document.getElementById("portalStaffWaAlertsBlock");
@@ -758,14 +758,14 @@
       if (ico) ico.className = "topbar-tool-btn__ico";
       if (lab) {
         lab.className = "topbar-tool-label";
-        lab.textContent = "CS WhatsApp";
+        lab.textContent = "ADMIN";
       }
     } else {
       btn.className = "topbar-staff-wa-btn";
       if (ico) ico.className = "topbar-staff-wa-btn__ico";
       if (lab) {
         lab.className = "topbar-staff-wa-btn__label";
-        lab.textContent = "CS WhatsApp";
+        lab.textContent = "ADMIN";
       }
     }
     if (lastUnreadCount > 0) {
@@ -855,7 +855,7 @@
       return;
     }
     if (existing) {
-      existing.setAttribute("aria-label", "Open CS WhatsApp");
+      existing.setAttribute("aria-label", "Message admin on WhatsApp");
       syncWaTopbarPlacement();
       return existing;
     }
@@ -863,12 +863,12 @@
     btn.type = "button";
     btn.id = "topbarStaffWaBtn";
     btn.className = "topbar-staff-wa-btn";
-    btn.setAttribute("aria-label", "Open CS WhatsApp");
+    btn.setAttribute("aria-label", "Message admin on WhatsApp");
     btn.innerHTML =
       '<span class="topbar-staff-wa-btn__ico" aria-hidden="true">' +
       WA_ICO_SVG +
       "</span>" +
-      '<span class="topbar-staff-wa-btn__label">CS WhatsApp</span>';
+      '<span class="topbar-staff-wa-btn__label">ADMIN</span>';
     btn.addEventListener("click", function (ev) {
       ev.preventDefault();
       ev.stopPropagation();
