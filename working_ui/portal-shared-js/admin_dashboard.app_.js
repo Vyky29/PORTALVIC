@@ -1398,7 +1398,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         engNum: engNum,
         emoLabel: emotions || '—',
         indep: independence || '—',
-        pos: adminSfStr(r.positive) || '—',
+        pos: adminSfStr(r.positive) || adminSfStr(r.sessionNarrative) || adminSfStr(r.session_narrative) || '—',
         rel: relevantP || '—',
         incidents: incidents || '—',
         attendance: adminSfStr(r.attendance) || '—',
@@ -9974,9 +9974,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var engCell = typeof d.eng === 'number' ? esc(d.eng) + ' / 5' : esc(d.eng);
           var dateC = esc(d.dateDisplay || d.when || '—');
           var attDisp = esc(String(d.attendance != null ? d.attendance : '—'));
-          var incRaw = String(d.incidents != null ? d.incidents : '').trim();
-          var incDisp = !incRaw || incRaw === '—' ? '—' : (incRaw.length > 72 ? esc(incRaw.slice(0, 69)) + '\u2026' : esc(incRaw));
-          var incTitle = incRaw && incRaw !== '—' ? esc(incRaw) : '';
           return (
             '<tr><td class="muted" style="white-space:nowrap;min-width:0">'+dateC+'</td>'+
             '<td class="muted" style="min-width:0;max-width:120px;overflow-wrap:break-word">'+esc(d.instructor||'—')+'</td>'+
@@ -9985,13 +9982,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             '<td class="muted c4k-sf-col-emo" style="min-width:0">'+adminC4kEmotionIconsCellHtml(d.emoLabel)+'</td>'+
             '<td class="muted" style="max-width:140px;min-width:0;overflow-wrap:break-word">'+esc(d.indep||'—')+'</td>'+
             '<td class="muted" style="max-width:100px;min-width:0;overflow-wrap:break-word">'+attDisp+'</td>'+
-            '<td class="muted" style="max-width:160px;min-width:0;overflow-wrap:break-word" title="'+incTitle+'">'+incDisp+'</td>'+
             adminC4kDailyRegisterPosRelTdPairHtml(d)+
             '</tr>'
           );
-        }).join('') : '<tr><td colspan="10" class="muted">No session feedback lines for this participant yet — open <strong>Session Feedback</strong> when the export is loaded.</td></tr>';
+        }).join('') : '<tr><td colspan="9" class="muted">No session feedback lines for this participant yet — open <strong>Session Feedback</strong> when the export is loaded.</td></tr>';
       } else {
-        dregRows = '<tr><td colspan="10" class="muted">—</td></tr>';
+        dregRows = '<tr><td colspan="9" class="muted">—</td></tr>';
       }
       var revAmb = adminPortalParticipantAmbiguityMap();
       var revList = (MOCK.c4kReviewsList || []).filter(function(x){
@@ -10130,7 +10126,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div data-c4k-panel="ses" class="c4k-panel">'+
         '<div class="card card-pad"><p class="muted" style="margin:0;max-width:52rem;min-width:0;overflow-wrap:break-word">Session export rows matched to this participant (same name rules as roster). <strong>Booked services</strong> and timetable lines stay under <strong>Services</strong>.</p></div>'+
         paxSesKpiHtml+
-        '<div class="card" style="margin-top:12px"><div class="card-h"><h3>All feedbacks</h3><button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_registers">Open full grid</button></div><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center tbl--dense"><thead><tr><th>Date</th><th title="Feedback completed by (sheet)">Instructor</th><th scope="col" class="c4k-sf-col-svc" title="Service and session time (second line)">Service</th><th>Engagement</th><th scope="col" class="c4k-sf-col-emo" title="Emotions / regulation (icons)" aria-label="Emotions and regulation">' + adminC4kEmotionHeaderLegendHtml() + '</th><th scope="col" class="c4k-sf-col-indep">Independence</th><th scope="col" title="Workbook attendance column">Attendance</th><th scope="col" title="Incidents / notes">Incidents</th><th scope="col" class="c4k-sf-col-pos" title="Click the cell when there is text to open review and notify">Positive <span class="muted" style="font-weight:600">(opt.)</span></th><th scope="col" class="c4k-sf-col-rel" title="Click the cell when there is text to open review actions">Relevant <span class="muted" style="font-weight:600">(opt.)</span></th></tr></thead><tbody>'+dregRows+'</tbody></table></div></div>'+
+        '<div class="card" style="margin-top:12px"><div class="card-h"><h3>All feedbacks</h3><button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_registers">Open full grid</button></div><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center tbl--dense"><thead><tr><th>Date</th><th title="Feedback completed by (sheet)">Instructor</th><th scope="col" class="c4k-sf-col-svc" title="Service and session time (second line)">Service</th><th>Engagement</th><th scope="col" class="c4k-sf-col-emo" title="Emotions / regulation (icons)" aria-label="Emotions and regulation">' + adminC4kEmotionHeaderLegendHtml() + '</th><th scope="col" class="c4k-sf-col-indep">Independence</th><th scope="col" title="Workbook attendance column">Attendance</th><th scope="col" class="c4k-sf-col-pos" title="Click the cell when there is text to open review and notify">Positive <span class="muted" style="font-weight:600">(opt.)</span></th><th scope="col" class="c4k-sf-col-rel" title="Click the cell when there is text to open review actions">Relevant <span class="muted" style="font-weight:600">(opt.)</span></th></tr></thead><tbody>'+dregRows+'</tbody></table></div></div>'+
         '</div>'+
         '<div data-c4k-panel="att" class="c4k-panel">'+paxAttPanel+'</div>'+
         '<div data-c4k-panel="bill" class="c4k-panel">'+paxBillPanel+'</div>'+

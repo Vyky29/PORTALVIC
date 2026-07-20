@@ -9,7 +9,7 @@
     "/portal/teflon_guide_demo_data.js?v=20260604-guide-roster",
     "/portal/teflon_guide_demo_merge.js?v=20260604-guide-roster",
     "/portal/portal_participant_achievements.js?v=20260713-ios-video-save",
-    "/portal/portal_client_sessions_overview.js?v=20260715-dc-hide-staff-aquatic",
+    "/portal/portal_client_sessions_overview.js?v=20260720-no-incidents-show-narrative",
     "/portal/portal_induction.js?v=20260712-induction-loop",
     "/portal/portal_induction_bind.js?v=20260712-induction-loop",
     "/portal/portal_guide_ack.js?v=20260614-no-menu-guide",

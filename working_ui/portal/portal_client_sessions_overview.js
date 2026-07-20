@@ -131,6 +131,7 @@
         r.independence || r.engagement_patterns || r.engagementPatterns
       ),
       positive_feedback: clean(r.positive || r.positive_feedback),
+      session_narrative: clean(r.sessionNarrative || r.session_narrative),
       relevant_information: clean(
         r.relevantParent || r.relevant || r.relevant_information
       ),
@@ -155,6 +156,7 @@
         ? patterns.map(clean).filter(Boolean).join(", ")
         : clean(patterns),
       positive_feedback: clean(r.positive_feedback),
+      session_narrative: clean(r.session_narrative),
       relevant_information: clean(r.relevant_information),
       incidents: clean(r.incidents),
       swim_done: r.swim_done === true || r.swim_done === "true" || r.swim_done === 1,
@@ -163,6 +165,11 @@
       swim_independence: clean(r.swim_independence),
       source: "live",
     };
+  }
+
+  /** Staff-facing feedback text: filtered positive, else raw session narrative. */
+  function feedbackTextForDisplay(row) {
+    return clean(row && row.positive_feedback) || clean(row && row.session_narrative) || "";
   }
 
   function mapDbIncident(r) {
@@ -220,7 +227,7 @@
     const name = clean(clientName);
     const id = slugify(clientId || clientName);
     const fbSel =
-      "session_date, client_name, client_id, service, session_time, attendance, engagement_rating, engagement_patterns, client_emotions, positive_feedback, relevant_information, completed_by_name, incidents, created_at, swim_done, swim_engagement_rating, swim_regulation, swim_independence";
+      "session_date, client_name, client_id, service, session_time, attendance, engagement_rating, engagement_patterns, client_emotions, positive_feedback, session_narrative, relevant_information, completed_by_name, incidents, created_at, swim_done, swim_engagement_rating, swim_regulation, swim_independence";
     const incSel =
       "session_date, client_name, client_id, service, session_time, incident_category, statement_during, statement_before, statement_after, location, submitted_by_name, created_at";
 
@@ -793,7 +800,7 @@
       tableHtml =
         opts && opts.parentTable
           ? parentFeedbackTableHtml(rows)
-          : feedbackTableHtml(rows, (opts && opts.incMap) || Object.create(null));
+          : feedbackTableHtml(rows);
     }
     /* Per-service attendance must come from this group's rows — never the
        whole-child attendance_summary (that mixes programmes). */
@@ -845,7 +852,7 @@
             "</h4></div>" +
             (opts.parentTable
               ? parentFeedbackTableHtml(only.rows)
-              : feedbackTableHtml(only.rows, (opts && opts.incMap) || Object.create(null))) +
+              : feedbackTableHtml(only.rows)) +
             "</section>"
           : "");
       return single;
@@ -862,34 +869,6 @@
     );
   }
 
-  function incidentLookup(incidents) {
-    const map = Object.create(null);
-    incidents.forEach(function (inc) {
-      const k = isoFromAny(inc.session_date);
-      if (!k) return;
-      const prev = map[k] || [];
-      prev.push(inc);
-      map[k] = prev;
-    });
-    return map;
-  }
-
-  function incidentCellForRow(row, incMap) {
-    const inline = clean(row.incidents);
-    if (inline && inline.toLowerCase() !== "none" && inline !== "—") {
-      const short = inline.length > 72 ? inline.slice(0, 69) + "…" : inline;
-      return '<span title="' + esc(inline) + '">' + esc(short) + "</span>";
-    }
-    const list = incMap[isoFromAny(row.session_date)] || [];
-    if (!list.length) return '<span class="muted">—</span>';
-    const txt = list
-      .map(function (i) {
-        return clean(i.incident_category) || "Incident";
-      })
-      .join("; ");
-    return '<span class="pcso-inc-flag" title="' + esc(txt) + '">' + esc(txt.length > 48 ? txt.slice(0, 45) + "…" : txt) + "</span>";
-  }
-
   function noteCell(raw, max) {
     const v = clean(raw);
     if (!v || v === "—") return '<span class="muted">—</span>';
@@ -898,7 +877,7 @@
     return '<span title="' + esc(v) + '">' + esc(short) + "</span>";
   }
 
-  function feedbackTableRow(row, incMap) {
+  function feedbackTableRow(row) {
     const inst = clean(row.completed_by_name) || "—";
     const dateLine = formatDateLong(row.session_date);
     const svc = displayProgrammeName(row.service);
@@ -907,6 +886,8 @@
       row.engagement_rating != null && row.engagement_rating !== ""
         ? esc(String(row.engagement_rating))
         : '<span class="muted">—</span>';
+    const feedbackBody = feedbackTextForDisplay(row);
+    const relevantBody = clean(row.relevant_information);
     return (
       "<tr>" +
       '<td class="pcso-tbl__inst">' +
@@ -919,14 +900,13 @@
       '<td class="pcso-tbl__eng">' + eng + "</td>" +
       '<td class="pcso-tbl__emo">' + emotionIconsCell(row.client_emotions) + "</td>" +
       '<td class="pcso-tbl__indep">' + esc(clean(row.engagement_patterns) || "—") + "</td>" +
-      '<td class="pcso-tbl__inc">' + incidentCellForRow(row, incMap) + "</td>" +
-      '<td class="pcso-tbl__pos">' + noteCell(row.positive_feedback, 140) + "</td>" +
-      '<td class="pcso-tbl__rel">' + noteCell(row.relevant_information, 100) + "</td>" +
+      '<td class="pcso-tbl__pos">' + noteCell(feedbackBody, 180) + "</td>" +
+      '<td class="pcso-tbl__rel">' + noteCell(relevantBody, 140) + "</td>" +
       "</tr>"
     );
   }
 
-  function feedbackTableHtml(feedback, incMap) {
+  function feedbackTableHtml(feedback) {
     if (!feedback.length) {
       return '<p class="pcso-empty" role="status">No session feedback recorded for this participant yet.</p>';
     }
@@ -939,11 +919,10 @@
       '<th scope="col" class="pcso-tbl__eng" title="Engagement (1–5)">' + starHeaderHtml() + "</th>" +
       '<th scope="col" class="pcso-tbl__emo" aria-label="Regulation and emotions">' + emotionHeaderHtml() + "</th>" +
       '<th scope="col" class="pcso-tbl__indep">Independence</th>' +
-      '<th scope="col" class="pcso-tbl__inc">Incidents</th>' +
-      '<th scope="col" class="pcso-tbl__pos">Positive</th>' +
+      '<th scope="col" class="pcso-tbl__pos">Feedback</th>' +
       '<th scope="col" class="pcso-tbl__rel">Relevant</th>' +
       "</tr></thead><tbody>" +
-      feedback.map(function (r) { return feedbackTableRow(r, incMap); }).join("") +
+      feedback.map(function (r) { return feedbackTableRow(r); }).join("") +
       "</tbody></table></div>"
     );
   }
@@ -994,14 +973,12 @@
       liveFb,
     ]);
     const incidents = mergeRows([liveInc]);
-    const incMap = incidentLookup(incidents);
 
     hostEl.innerHTML =
       overviewByServiceHtml(feedback, TERM_LABEL, {
         includeTable: true,
         parentTable: false,
         tableTitle: "All feedbacks",
-        incMap: incMap,
       }) +
       incidentsSectionHtml(incidents);
   }
