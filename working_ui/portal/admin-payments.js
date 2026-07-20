@@ -62,8 +62,8 @@
     FUNDED_BY_NHS: "Funded by NHS",
   };
   var PAID_BY_OPTIONS = [
-    PAID_BY.FUNDS_FROM_LA,
     PAID_BY.PRIVATE_FUNDS,
+    PAID_BY.FUNDS_FROM_LA,
     PAID_BY.FUNDED_BY_LA,
     PAID_BY.FUNDED_BY_NHS,
   ];
@@ -3512,23 +3512,34 @@
     var curated = curatedNhsRouteForParticipant(r);
     if (curated === "NHS_INVOICE") return "NHS_INVOICE";
 
-    if (paidRaw === PAID_BY.FUNDED_BY_LA || raw === INVOICE_TYPE.LA_EXEMPT || raw === PAYER_ROUTE.LA_INVOICE || raw === "Local Authority (invoice)") {
-      return "LA_INVOICE";
-    }
-
-    if (curated) return curated;
-
+    /*
+     * Family Direct Payments before LA invoice labels.
+     * Summer workbook often tags DP families as sheet LA / "Funded by LA", but
+     * re-enrol Parent (Exempt) + Using Funds from LA means the family still pays us.
+     */
     if (
       raw === INVOICE_TYPE.PARENT_EXEMPT ||
       paidRaw === PAID_BY.FUNDS_FROM_LA ||
       raw === PAYER_ROUTE.FAMILY_DP ||
+      sheet === "DIRECT_PAYMENTS" ||
+      isParentDirectPaymentsLabel(raw) ||
+      isParentDirectPaymentsLabel(paidRaw) ||
+      isParentDirectPaymentsLabel(origin) ||
       /using funds from la/i.test(raw) ||
+      /using funds from la/i.test(paidRaw) ||
       /ehcp|care package/i.test(raw)
     ) {
       if (!isExplicitNhsFunder(blob) && !/local authority \(exempt|local authority \(invoice/i.test(blob)) {
         return "FAMILY_DP";
       }
     }
+
+    if (paidRaw === PAID_BY.FUNDED_BY_LA || raw === INVOICE_TYPE.LA_EXEMPT || raw === PAYER_ROUTE.LA_INVOICE || raw === "Local Authority (invoice)") {
+      return "LA_INVOICE";
+    }
+
+    if (curated) return curated;
+
     if (
       raw === INVOICE_TYPE.PARENT_20 ||
       paidRaw === PAID_BY.PRIVATE_FUNDS ||
@@ -3540,7 +3551,6 @@
     if (/\bnen\b/i.test(raw) || /\bnen\b/.test(blob)) return "NEN";
 
     if (
-      sheet === "DIRECT_PAYMENTS" ||
       isParentDirectPaymentsLabel(raw) ||
       isParentDirectPaymentsLabel(origin) ||
       (/direct payments?/i.test(blob) && !/invoice|pays direct|nhs invoice/i.test(blob))
@@ -4327,7 +4337,9 @@
         summer.client_name = canonName;
         summer.parent_name = canonParent;
       }
-      /* Summer 25/26 sheet is source of truth for Private / DP / LA (except true LA office-auto). */
+      /* Summer 25/26 sheet is source of truth for Private / DP / LA (except true LA office-auto).
+       * Exception: Summer "LA" + Autumn family re-enrol (exempt, not la_funded) = Direct Payments
+       * (parent pays us with LA money) — e.g. Serine / Eiji / Hazem. */
       if (summer && !r._laOfficeAuto) {
         var summerSheet = String(summer.sheet || "").toUpperCase();
         if (summerSheet === "PARENTS" || summerSheet === "DIRECT_PAYMENTS" || summerSheet === "LA") {
@@ -4352,12 +4364,40 @@
             r._vatMode = "exempt";
             r.data.Paid = PAID_BY.FUNDS_FROM_LA;
             r.data["Invoice type"] = INVOICE_TYPE.PARENT_EXEMPT;
+          } else if (summerSheet === "LA") {
+            var hintLow = String(r._paymentMethodHint || "").toLowerCase();
+            var vatLow = String(r._vatMode || "").toLowerCase();
+            var familyDp =
+              hintLow !== "la_funded"
+              && (vatLow === "exempt"
+                || hintLow === "bank_transfer"
+                || hintLow === "gocardless"
+                || hintLow === "payment_link"
+                || r._reenrol === true);
+            if (familyDp) {
+              r.sheet = "DIRECT_PAYMENTS";
+              r._vatMode = "exempt";
+              r.data.Paid = PAID_BY.FUNDS_FROM_LA;
+              r.data["Invoice type"] = INVOICE_TYPE.PARENT_EXEMPT;
+            } else {
+              r.sheet = "LA";
+              r._vatMode = "exempt";
+              r.data.Paid = PAID_BY.FUNDED_BY_LA;
+              r.data["Invoice type"] = INVOICE_TYPE.LA_EXEMPT;
+            }
           }
         }
       }
 
       if (String(r.sheet || "").toUpperCase() !== "PARENTS") {
         enrichFromPayments(r);
+      }
+      /* After enrich, keep DP chips if we classified as Direct Payments. */
+      if (String(r.sheet || "").toUpperCase() === "DIRECT_PAYMENTS") {
+        if (!r.data) r.data = {};
+        r.data.Paid = PAID_BY.FUNDS_FROM_LA;
+        r.data["Invoice type"] = INVOICE_TYPE.PARENT_EXEMPT;
+        r._vatMode = "exempt";
       }
       var cid = String(r._contactId || "").trim();
       var info = cid ? fundingByContact[cid] : null;
