@@ -853,6 +853,37 @@
     return Number.isFinite(n) && n > 0 ? n : 0;
   }
 
+  /**
+   * Day Centre Summer — separate April / May NHS invoices (e.g. Timi £500 + £500)
+   * folded into the term Total. Stored as explicit data keys or Extras text.
+   */
+  function summerAprMayInvoicesGbp(r) {
+    var d = (r && r.data) || {};
+    var apr = Number(d["April invoice (25/26)"]);
+    var may = Number(d["May invoice (25/26)"]);
+    var tot = Number(d["April–May invoices (25/26)"]);
+    if (!(apr > 0) && !(may > 0) && !(tot > 0)) {
+      var blob = [d.Extras, d["Summer basis"], d.Next, d.Sessions].join(" ");
+      var mApr = blob.match(/\bapr(?:il|\.)?\b[^\d£]{0,12}£?\s*([\d,]+(?:\.\d+)?)/i);
+      var mMay = blob.match(/\bmay\b[^\d£]{0,12}£?\s*([\d,]+(?:\.\d+)?)/i);
+      if (mApr) apr = Number(String(mApr[1]).replace(/,/g, ""));
+      if (mMay) may = Number(String(mMay[1]).replace(/,/g, ""));
+      if (!(apr > 0) && !(may > 0)) {
+        var mPair = blob.match(/(?:abr|apr)[–\-]?may\s+extras?\s*£?\s*([\d,]+)\s*\+\s*£?\s*([\d,]+)/i)
+          || blob.match(/£\s*([\d,]+)\s*\+\s*£?\s*([\d,]+)\s*(?:abr|apr)/i);
+        if (mPair) {
+          apr = Number(String(mPair[1]).replace(/,/g, ""));
+          may = Number(String(mPair[2]).replace(/,/g, ""));
+        }
+      }
+    }
+    if (!(apr > 0)) apr = 0;
+    if (!(may > 0)) may = 0;
+    if (!(tot > 0)) tot = apr + may;
+    if (!(tot > 0)) return null;
+    return { april: apr, may: may, total: tot };
+  }
+
   function resolveYearProgrammeGbp(r) {
     var yearAmt = Number(r && r._amountAnnual);
     if (yearAmt > 0) return yearAmt;
@@ -939,11 +970,31 @@
 
     /* Summer 25/26 Total = this term only (no Year line). */
     if (bucket === "summer_2526") {
-      if (!julyPay) return main;
-      return '<span class="pay-amt-stack">'
-        + "<span>" + main + "</span>"
-        + '<span class="pay-amt-july" title="Last payment received in July (Ealing LA)">−'
-        + money(julyPay) + " July paid</span>"
+      var aprMay = summerAprMayInvoicesGbp(r);
+      var sessOnly = aprMay && termAmt > aprMay.total
+        ? Math.round((termAmt - aprMay.total) * 100) / 100
+        : 0;
+      if (!julyPay && !aprMay) return main;
+      return '<span class="pay-amt-stack" title="'
+        + (aprMay
+          ? "Jun–Jul sessions + April/May invoices"
+          : "Summer term total")
+        + '">'
+        + '<span class="pay-amt-term">' + main + "</span>"
+        + (aprMay && sessOnly > 0
+          ? '<span class="pay-amt-season">Sessions ' + money(sessOnly) + "</span>"
+          : "")
+        + (aprMay
+          ? '<span class="pay-amt-season" title="NHS invoices April &amp; May">Apr '
+            + money(aprMay.april || aprMay.total / 2)
+            + " · May "
+            + money(aprMay.may || aprMay.total / 2)
+            + "</span>"
+          : "")
+        + (julyPay
+          ? '<span class="pay-amt-july" title="Last payment received in July (Ealing LA)">−'
+            + money(julyPay) + " July paid</span>"
+          : "")
         + "</span>";
     }
 
