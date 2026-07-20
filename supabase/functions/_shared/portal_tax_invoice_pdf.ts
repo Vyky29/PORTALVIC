@@ -465,8 +465,8 @@ export async function buildPortalTaxInvoicePdf(
     drawTot("AMOUNT DUE GBP", money(input.paid ? 0 : due), true);
   }
 
-  // Announcements round logo stamp — BELOW totals (never over Subtotal/TOTAL figures).
-  // Paid → green PAID; otherwise Draft Invoice (red) for parent preview until paid.
+  // Announcements round stamp — BELOW totals (never over Subtotal/TOTAL figures).
+  // Paid → green PAID INVOICE; otherwise red DRAFT INVOICE until paid.
   const showPaidStamp = !!input.paid;
   const showDraftStamp = !showPaidStamp && input.isDraft !== false;
   let stampReserveBottom = y;
@@ -476,7 +476,7 @@ export async function buildPortalTaxInvoicePdf(
         showPaidStamp ? ANNOUNCEMENTS_LOGO_GREEN_PNG_B64 : ANNOUNCEMENTS_LOGO_RED_PNG_B64,
       );
       const stampLogo = await pdf.embedPng(stampBytes);
-      const stampW = 64;
+      const stampW = 72;
       const stampH = ((stampLogo.height || 1) / (stampLogo.width || 1)) * stampW;
       const stampX = right - stampW;
       // Image y is bottom edge; place top of stamp just under last totals line.
@@ -487,18 +487,7 @@ export async function buildPortalTaxInvoicePdf(
         width: stampW,
         height: stampH,
       });
-      const label = showPaidStamp ? "PAID" : "Draft Invoice";
-      const labelSize = showPaidStamp ? 12 : 10;
-      const accent = showPaidStamp ? rgb(0.06, 0.5, 0.28) : rgb(0.75, 0.08, 0.1);
-      const labelTw = fontBold.widthOfTextAtSize(label, labelSize);
-      page.drawText(label, {
-        x: stampX + Math.max(0, (stampW - labelTw) / 2),
-        y: stampY - 14,
-        size: labelSize,
-        font: fontBold,
-        color: accent,
-      });
-      stampReserveBottom = stampY - 20;
+      stampReserveBottom = stampY - 8;
     } catch (err) {
       console.error("[buildPortalTaxInvoicePdf] stamp", err);
     }
