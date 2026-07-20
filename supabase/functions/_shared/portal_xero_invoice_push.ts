@@ -4,6 +4,10 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { xeroConfigured } from "./xero_auth.ts";
 import { xeroCreateAccrecInvoice } from "./xero_invoices.ts";
+import {
+  xeroHydrateRefreshFromDb,
+  xeroPersistRefreshToDb,
+} from "./xero_oauth_store.ts";
 import { resolveLaFunderBillTo } from "./portal_invoice_funding.ts";
 
 function clean(v: unknown, max = 200): string {
@@ -19,6 +23,8 @@ export async function pushPortalInvoiceShareToXero(
   shareId: string,
 ): Promise<PortalXeroPushResult> {
   if (!xeroConfigured()) return { ok: false, error: "xero_not_configured" };
+
+  await xeroHydrateRefreshFromDb(admin);
 
   const { data: share, error } = await admin
     .from("portal_parent_invoice_share")
@@ -177,6 +183,7 @@ export async function pushPortalInvoiceShareToXero(
         updated_at: now,
       })
       .eq("id", shareId);
+    await xeroPersistRefreshToDb(admin);
     return { ok: false, error: created.error, detail: created.detail };
   }
 
@@ -192,6 +199,8 @@ export async function pushPortalInvoiceShareToXero(
     })
     .eq("id", shareId)
     .is("xero_invoice_id", null);
+
+  await xeroPersistRefreshToDb(admin);
 
   if (stampErr) {
     return {

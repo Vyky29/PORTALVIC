@@ -25,7 +25,8 @@ XERO_CLIENT_ID="..."
 XERO_CLIENT_SECRET="..."
 XERO_REFRESH_TOKEN="..."   # from Xero OAuth consent; rotates — update when Xero issues a new one
 XERO_TENANT_ID="..."       # organisation connection id
-XERO_BANK_ACCOUNT_CODE="090"  # optional; bank/clearing for Payments (default 090)
+XERO_BANK_ACCOUNT_CODE="090"  # optional legacy; bank feeds often have no Code
+XERO_BANK_ACCOUNT_ID="…"      # preferred — Xero AccountID GUID for Tide/Revolut GBP bank
 XERO_SALES_ACCOUNT_CODE="200" # optional; sales account for ACCREC lines (default 200)
 ```
 

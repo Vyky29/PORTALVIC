@@ -1416,6 +1416,21 @@
     var msg =
       r.message ||
       'Pushed ' + String(r.pushed || 0) + (r.failed ? ', ' + r.failed + ' failed' : '');
+    if (r.failed && Array.isArray(r.results)) {
+      var fails = r.results
+        .filter(function (x) {
+          return x && x.ok === false;
+        })
+        .slice(0, 3)
+        .map(function (x) {
+          return (
+            String(x.invoice_number || 'invoice') +
+            ': ' +
+            String((x.detail || x.error || (x.payment && (x.payment.detail || x.payment.error)) || 'failed')).slice(0, 80)
+          );
+        });
+      if (fails.length) msg = msg + ' — ' + fails.join('; ');
+    }
     cfg.toast(msg, r.failed ? 'error' : 'ok');
     void renderHost(global.document.getElementById('portalParentInvoicesHost'));
   }

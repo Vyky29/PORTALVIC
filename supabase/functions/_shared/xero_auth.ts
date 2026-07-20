@@ -17,10 +17,34 @@ export function xeroConfigured(): boolean {
   );
 }
 
-export async function xeroAccessToken(): Promise<string | null> {
+/**
+ * Xero rotates refresh tokens on every use. Cache the access token (and the
+ * latest refresh) for this isolate so one Edge Function request does not burn
+ * the secret mid-batch (e.g. GET invoice + POST payment × N).
+ */
+let cachedAccessToken: string | null = null;
+let cachedAccessExpiresAt = 0;
+let liveRefreshToken: string | null = null;
+let refreshInFlight: Promise<string | null> | null = null;
+
+function envRefreshToken(): string {
+  return cleanXero(Deno.env.get("XERO_REFRESH_TOKEN"), 500);
+}
+
+/** Optional: hydrate from DB so cold starts keep the rotated token. */
+export function xeroSeedRefreshToken(token: string | null | undefined): void {
+  const t = cleanXero(token, 500);
+  if (t) liveRefreshToken = t;
+}
+
+export function xeroCurrentRefreshToken(): string {
+  return liveRefreshToken || envRefreshToken();
+}
+
+async function refreshAccessToken(): Promise<string | null> {
   const clientId = cleanXero(Deno.env.get("XERO_CLIENT_ID"), 120);
   const clientSecret = cleanXero(Deno.env.get("XERO_CLIENT_SECRET"), 200);
-  const refreshToken = cleanXero(Deno.env.get("XERO_REFRESH_TOKEN"), 500);
+  const refreshToken = xeroCurrentRefreshToken();
   if (!clientId || !clientSecret || !refreshToken) return null;
 
   const basic = btoa(`${clientId}:${clientSecret}`);
@@ -35,15 +59,40 @@ export async function xeroAccessToken(): Promise<string | null> {
   const json = await res.json().catch(() => ({}));
   if (!res.ok || !json?.access_token) {
     console.error("[xeroAccessToken]", json?.error || res.status, json?.error_description || "");
+    cachedAccessToken = null;
+    cachedAccessExpiresAt = 0;
     return null;
   }
-  // Note: Xero rotates refresh tokens. Store the new refresh_token in secrets when you rotate.
-  if (json.refresh_token && String(json.refresh_token) !== refreshToken) {
-    console.warn(
-      "[xeroAccessToken] Xero returned a new refresh_token — update XERO_REFRESH_TOKEN secret.",
-    );
+
+  const access = String(json.access_token);
+  const expiresIn = Number(json.expires_in) || 1800;
+  cachedAccessToken = access;
+  cachedAccessExpiresAt = Date.now() + Math.max(60, expiresIn - 90) * 1000;
+
+  if (json.refresh_token) {
+    const next = cleanXero(json.refresh_token, 500);
+    if (next && next !== refreshToken) {
+      liveRefreshToken = next;
+      console.warn(
+        "[xeroAccessToken] Xero rotated refresh_token — persisted in-memory for this isolate; update secret / portal_xero_oauth when possible.",
+      );
+    } else if (next) {
+      liveRefreshToken = next;
+    }
   }
-  return String(json.access_token);
+
+  return access;
+}
+
+export async function xeroAccessToken(): Promise<string | null> {
+  if (cachedAccessToken && Date.now() < cachedAccessExpiresAt) {
+    return cachedAccessToken;
+  }
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = refreshAccessToken().finally(() => {
+    refreshInFlight = null;
+  });
+  return refreshInFlight;
 }
 
 export function xeroTenantId(): string {
