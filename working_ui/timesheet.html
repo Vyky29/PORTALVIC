@@ -956,14 +956,50 @@
     }
 
     /** Same portal_session_key shape as staff dashboard (aquatic, day centre, bespoke, …). */
+    function timesheetSessionAreaBlob(s) {
+      return [s && s.area, s && s.rosterArea, s && s.pool_note, s && s.poolArea, s && s.pool]
+        .map(function (v) {
+          return String(v || "").trim();
+        })
+        .filter(Boolean)
+        .join(" ");
+    }
+
+    function timesheetSessionIsBespokeShared(s) {
+      if (!s) return false;
+      if (String(s.feedbackUnitKey || "").indexOf("bespoke_shared") >= 0) return true;
+      const act = String(s.activity || s.rosterService || s.service || "").toLowerCase();
+      if (!/bespoke/.test(act)) return false;
+      /* Mirror staff-dashboard-term portalRosterSessionIsBespokeShared. */
+      if (String(s.venue || "").trim().toLowerCase() === "swimfarm") {
+        const inst = String(s.instructors || s.staffNames || "").trim();
+        if (inst) {
+          const n = inst.split(/[,/&+]+|\s+and\s+/gi).filter(function (p) {
+            return String(p || "").trim();
+          }).length;
+          if (n >= 2) return true;
+        }
+        if (String(s.clientId || "").trim().toLowerCase() === "tinashe") return true;
+      }
+      return /hub/.test(timesheetSessionAreaBlob(s).toLowerCase());
+    }
+
+    function timesheetSessionIsDayCentre(s) {
+      if (!s) return false;
+      if (String(s.feedbackUnitKey || "").indexOf("day_centre") >= 0) return true;
+      return /day\s*centre/i.test(String(s.activity || s.rosterService || s.service || ""));
+    }
+
     function timesheetSessionReviewKey(s, dateObj) {
       const dateKey = isoDate(dateObj);
       const dayWord = WEEKDAY[dateObj.getDay()];
       const cid = String(s.clientId || "").trim().toLowerCase();
       if (!dateKey || !cid) return "";
       const act = String(s.activity || s.rosterService || s.service || "").trim().toLowerCase();
-      if (/day\s*centre/.test(act)) return `${dateKey}|${cid}|day_centre`;
-      if (/bespoke/.test(act) && /hub/.test(String(s.area || "").trim().toLowerCase())) {
+      if (/day\s*centre/.test(act) || timesheetSessionIsDayCentre(s)) {
+        return `${dateKey}|${cid}|day_centre`;
+      }
+      if (timesheetSessionIsBespokeShared(s)) {
         return `${dateKey}|${cid}|bespoke_shared`;
       }
       if (
@@ -977,7 +1013,7 @@
       }
       let suffix = "";
       if (/multi[-\s]?activity/.test(act) || act === "bespoke" || act.indexOf("climbing") >= 0) {
-        let ak = timesheetSlugAreaKey(s.area || "");
+        let ak = timesheetSlugAreaKey(timesheetSessionAreaBlob(s) || s.area || "");
         /* Feedback stores pool (big_pool); never treat venue SwimFarm as the area token. */
         if (!ak || ak === "swimfarm" || ak === "swim_farm") {
           ak = timesheetSlugAreaKey(s.poolArea || s.pool || "");
@@ -1044,13 +1080,25 @@
 
     function sessionMatchesScheduleOverride(s, dateKey, ov) {
       if (String(ov.session_date || "").trim().slice(0, 10) !== dateKey) return false;
+      const ovClient = String(ov.anchor_client_id || "").trim().toLowerCase();
+      const sClient = String(s.clientId || "").trim().toLowerCase();
+      if (ovClient && sClient && ovClient !== sClient) return false;
+      const type = String(ov.override_type || "").trim();
+      /* Admin absences are participant+day — every instructor on that client that day (mirror staff dash). */
+      if (type === "client_absence_announced") {
+        return !!(ovClient && sClient && ovClient === sClient);
+      }
+      /* Shared Bespoke / Day Centre: slot close from any co-instructor counts for all. */
+      if (
+        type === "slot_close" &&
+        (timesheetSessionIsBespokeShared(s) || timesheetSessionIsDayCentre(s))
+      ) {
+        return !!(ovClient && sClient && ovClient === sClient);
+      }
       if (normTimesheetStaffKey(ov.anchor_staff_id) !== normTimesheetStaffKey(s.staffId)) return false;
       const ovStart = hmFromDbTime(ov.anchor_start);
       const sStart = String(s.start || "").trim().slice(0, 5);
       if (ovStart && sStart && ovStart !== sStart) return false;
-      const ovClient = String(ov.anchor_client_id || "").trim().toLowerCase();
-      const sClient = String(s.clientId || "").trim().toLowerCase();
-      if (ovClient && sClient && ovClient !== sClient) return false;
       return true;
     }
 
@@ -1348,12 +1396,6 @@
       }
     }
 
-    function timesheetSessionIsBespokeShared(s) {
-      const act = String((s && (s.activity || s.rosterService || s.service)) || "").toLowerCase();
-      if (!/bespoke/.test(act)) return false;
-      return /hub/.test(String(s.area || s.rosterArea || "").trim().toLowerCase());
-    }
-
     function timesheetSessionIsSundaySwimfarmPerStaff(s, iso) {
       if (!s) return false;
       const day =
@@ -1409,7 +1451,7 @@
       const memory = parseReviewMap();
       try {
         const mod = await withTimeout(
-          import("/portal/supabase-client.js?v=20260713-swimfarm-match"),
+          import("/portal/supabase-client.js?v=20260720-bespoke-absent"),
           8000,
           "supabase_client_import"
         );
