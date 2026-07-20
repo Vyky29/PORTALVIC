@@ -133,8 +133,12 @@
         }
         portalFinishWeekDayReviewFlow(day, isoOpt, usedDateLock, termJudgementAllowed);
       };
-      if(typeof requestAnimationFrame === 'function') requestAnimationFrame(finish);
-      else finish();
+      /* Keep rAF short — heavy finish runs on next macrotask (fewer Violation spam). */
+      if(typeof requestAnimationFrame === 'function'){
+        requestAnimationFrame(function(){ setTimeout(finish, 0); });
+      } else {
+        setTimeout(finish, 0);
+      }
     }
     try{ window.portalOpenWeekDayReviewFlow = portalOpenWeekDayReviewFlow; }catch(_){}
     /** System notification (roster override): open the affected calendar day in Today / week anchor. */

@@ -602,8 +602,9 @@
         if(merged.length || !Array.isArray(prevOv) || !prevOv.length){
           window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ = merged;
         }
-        if(merged.length) console.warn('[portal] schedule_overrides loaded:', merged.length);
-        else if(fetchErrors) console.warn('[portal] schedule_overrides empty after', fetchErrors, 'chunk error(s)');
+        if(!merged.length && fetchErrors){
+          console.warn('[portal] schedule_overrides empty after', fetchErrors, 'chunk error(s)');
+        }
         markHydrated = true;
       }catch(e){
         console.warn('[portal] schedule_overrides fetch', e);
@@ -4001,17 +4002,20 @@
           window.__PORTAL_TODAY_SYNC_RETRY__ = false;
           if(tries > maxTries){
             window.__PORTAL_TODAY_SYNC_RETRY_GAVE_UP__ = true;
-            try{ window.__PORTAL_STAFF_SESSIONS_GUARD_MODEL__ = null; }catch(_){}
-            try{
-              if(typeof window.portalRebootstrapSessionsForPinnedStaff === 'function'){
-                window.portalRebootstrapSessionsForPinnedStaff();
-              }
-            }catch(_){}
-            try{ window.__PORTAL_STAFF_ROSTER_HYDRATED__ = true; }catch(_){}
-            portalStaffMarkInitialTodayScheduleSettled();
-            try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
-            if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
-            if(typeof renderToday === 'function') renderToday();
+            /* Defer heavy settle work so the interval callback stays short. */
+            setTimeout(function(){
+              try{ window.__PORTAL_STAFF_SESSIONS_GUARD_MODEL__ = null; }catch(_){}
+              try{
+                if(typeof window.portalRebootstrapSessionsForPinnedStaff === 'function'){
+                  window.portalRebootstrapSessionsForPinnedStaff();
+                }
+              }catch(_){}
+              try{ window.__PORTAL_STAFF_ROSTER_HYDRATED__ = true; }catch(_){}
+              portalStaffMarkInitialTodayScheduleSettled();
+              try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
+              if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
+              if(typeof renderToday === 'function') renderToday();
+            }, 0);
           }
           return;
         }
@@ -4038,10 +4042,12 @@
         if(typeof portalStaffTodayBlockIsOff === 'function' && portalStaffTodayBlockIsOff(sid)){
           clearInterval(timer);
           window.__PORTAL_TODAY_SYNC_RETRY__ = false;
-          portalStaffMarkInitialTodayScheduleSettled();
-          try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
-          if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
-          if(typeof renderToday === 'function') renderToday();
+          setTimeout(function(){
+            portalStaffMarkInitialTodayScheduleSettled();
+            try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
+            if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
+            if(typeof renderToday === 'function') renderToday();
+          }, 0);
           return;
         }
         var mode = typeof portalStaffLiveTodayEmptyPanelMode === 'function'
@@ -4052,22 +4058,23 @@
           window.__PORTAL_TODAY_SYNC_RETRY__ = false;
           return;
         }
-        if(typeof window.portalRefreshPortalRosterRowsFromSupabase === 'function'){
-          var rosterClient = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
-          if(rosterClient) void window.portalRefreshPortalRosterRowsFromSupabase(rosterClient);
-        }
-        if(typeof window.portalRebootstrapSessionsForPinnedStaff === 'function') window.portalRebootstrapSessionsForPinnedStaff();
-        else if(typeof window.portalBootstrapFromMachineFallback === 'function'){
-          const sid = String(
-          (typeof portalAuthStaffRosterId === 'function' ? portalAuthStaffRosterId() : '')
-          || STAFF_DASHBOARD_ID
-          || ''
-        ).trim().toLowerCase();
-          let retryIso = '';
-          try{
-            const retryAnchor = typeof portalResolveTodaySectionCalendarDate === 'function'
-              ? portalResolveTodaySectionCalendarDate()
-              : null;
+        setTimeout(function(){
+          if(typeof window.portalRefreshPortalRosterRowsFromSupabase === 'function'){
+            var rosterClient = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
+            if(rosterClient) void window.portalRefreshPortalRosterRowsFromSupabase(rosterClient);
+          }
+          if(typeof window.portalRebootstrapSessionsForPinnedStaff === 'function') window.portalRebootstrapSessionsForPinnedStaff();
+          else if(typeof window.portalBootstrapFromMachineFallback === 'function'){
+            const sid2 = String(
+            (typeof portalAuthStaffRosterId === 'function' ? portalAuthStaffRosterId() : '')
+            || STAFF_DASHBOARD_ID
+            || ''
+          ).trim().toLowerCase();
+            let retryIso = '';
+            try{
+              const retryAnchor = typeof portalResolveTodaySectionCalendarDate === 'function'
+                ? portalResolveTodaySectionCalendarDate()
+                : null;
             if(retryAnchor && typeof portalIsoYmdFromDate === 'function'){
               retryIso = portalIsoYmdFromDate(retryAnchor);
             }
@@ -4076,15 +4083,16 @@
             || !retryIso
             || portalStaffMachineBundleFallbackAllowed(sid, retryIso);
           if(retryFbOk){
-          const fb = sid ? window.portalBootstrapFromMachineFallback(sid) : null;
+          const fb = sid2 ? window.portalBootstrapFromMachineFallback(sid2) : null;
           if(fb && fb.boot && Array.isArray(fb.boot.sessionsModel) && fb.boot.sessionsModel.length){
             sessionsModel = fb.boot.sessionsModel;
             if(fb.boot.clientNotesById) clientNotesById = Object.assign({}, clientNotesById || {}, fb.boot.clientNotesById);
           }
           }
         }
-        if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
-        if(typeof renderToday === 'function') renderToday();
+          if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
+          if(typeof renderToday === 'function') renderToday();
+        }, 0);
       }, 2500);
     }
     try{ window.portalStaffScheduleTodaySyncRetry = portalStaffScheduleTodaySyncRetry; }catch(_){}
