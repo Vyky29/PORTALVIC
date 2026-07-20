@@ -303,12 +303,10 @@
     );
   }
 
-  function methodLabel(inv) {
+  function methodChannelLabel(inv) {
     var hint = String(inv.payment_method_hint || '').toLowerCase();
     var via = String(inv.paid_via || '').toLowerCase();
-    if (hint === 'la_funded') {
-      return 'LA funded';
-    }
+    if (hint === 'la_funded') return 'LA funded';
     if (via === 'gocardless' || hint === 'gocardless' || inv.gocardless_url) {
       return 'GoCardless';
     }
@@ -323,6 +321,51 @@
     return 'Bank transfer';
   }
 
+  /** Flexi / one-off / per term / own — from payment_schedule labels. */
+  function schedulePlanShort(inv) {
+    var sched = Array.isArray(inv.payment_schedule) ? inv.payment_schedule : [];
+    var rows = sched.filter(function (r) {
+      return r && Number(r.amount_gbp) > 0;
+    });
+    var blob = rows
+      .map(function (r) {
+        return String(r.label || '');
+      })
+      .join(' ')
+      .toLowerCase();
+    var notes = String(inv.notes || '').toLowerCase();
+    var hay = blob + ' ' + notes;
+    var n = rows.length;
+    if (
+      /yearly_1off|one[\s-]?off.*(year|annual)|full academic year|whole year/.test(hay) ||
+      (n === 1 && /\b(year|annual|full year)\b/.test(blob))
+    ) {
+      return 'One-off (whole year)';
+    }
+    if (n >= 2 && /\b(half|1st|2nd|flexi)\b/.test(hay)) {
+      return 'Flexi (2 per term)';
+    }
+    if (n >= 3 && /month/.test(hay)) return n + ' monthly instalments';
+    if (
+      /own way|own arrangement|own_term|admin fee|minimum prepaid|top-?ups? as you go/.test(
+        hay,
+      )
+    ) {
+      return 'Own arrangement';
+    }
+    if (n === 1) return 'One per term';
+    if (n === 2) return '2 payments this term';
+    if (n > 2) return n + ' instalments';
+    if (inv.due_date && !n) return 'One-off (pay in full by due date)';
+    return '';
+  }
+
+  function methodLabel(inv) {
+    var channel = methodChannelLabel(inv);
+    var plan = schedulePlanShort(inv);
+    return plan ? channel + ' · ' + plan : channel;
+  }
+
   function fundingCategoryLabel(inv) {
     var label = String(inv.funding_category_label || '').trim();
     if (label) return label;
@@ -335,6 +378,26 @@
     if (hint === 'la_funded') return 'LA manages invoice (exempt)';
     if (vat === 'exempt') return 'Parents · Direct Payment (exempt)';
     return 'Parents · Private (Includes 20% VAT)';
+  }
+
+  /** VAT line must follow funding route — never show 20% VAT on Direct Payment / LA exempt. */
+  function vatDisplayLabel(inv) {
+    var cat = String(inv.funding_category || '').toLowerCase();
+    var fund = fundingCategoryLabel(inv).toLowerCase();
+    if (
+      cat === 'parent_direct_payment' ||
+      cat === 'la_managed' ||
+      fund.indexOf('exempt') >= 0
+    ) {
+      return 'Exempt';
+    }
+    var vat = String(inv.vat_mode || '').toLowerCase();
+    if (vat === 'exempt') return 'Exempt';
+    if (vat === 'vat_20') return 'Includes 20% VAT (in price)';
+    if (cat === 'parent_private' || fund.indexOf('private') >= 0) {
+      return 'Includes 20% VAT (in price)';
+    }
+    return '—';
   }
 
   function fundingToneClass(label) {
@@ -891,13 +954,7 @@
       methodChipHtml(methodLabel(inv)) +
       '</div>' +
       '<div style="margin-top:8px"><span class="muted">VAT</span><br>' +
-      esc(
-        String(inv.vat_mode || '').toLowerCase() === 'exempt'
-          ? 'Exempt'
-          : String(inv.vat_mode || '').toLowerCase() === 'vat_20'
-            ? 'Includes 20% VAT (in price)'
-            : '—',
-      ) +
+      esc(vatDisplayLabel(inv)) +
       '</div>' +
       '<div style="margin-top:8px">' +
       statusChip(inv.payment_status, inv.share_status) +

@@ -48,6 +48,48 @@ export function scheduleInstalmentCount(raw: unknown): number {
   return normalizePaymentSchedule(raw).length;
 }
 
+/**
+ * Short plan phrase for admin Method chip + PDF "Payment Method" line.
+ * Always keep the invoice total separate; this only describes how they pay it.
+ */
+export function paymentSchedulePlanShortLabel(
+  schedule: InvoicePaymentScheduleRow[],
+  opts?: { notes?: string | null; dueDateIso?: string | null },
+): string | null {
+  const rows = (schedule || []).filter((r) => r && Number(r.amount_gbp) > 0);
+  const blob = rows.map((r) => String(r.label || "")).join(" ").toLowerCase();
+  const notes = String(opts?.notes || "").toLowerCase();
+  const hay = `${blob} ${notes}`;
+  const n = rows.length;
+
+  if (
+    /yearly_1off|one[\s-]?off.*(year|annual)|full academic year|whole year/.test(hay) ||
+    (n === 1 && /\b(year|annual|full year)\b/.test(blob))
+  ) {
+    return "One-off (whole year)";
+  }
+  if (n >= 2 && /\b(half|1st|2nd|flexi)\b/.test(hay)) {
+    return "Flexi (2 per term)";
+  }
+  if (n >= 3 && /month/.test(hay)) {
+    return `${n} monthly instalments`;
+  }
+  if (
+    /own way|own arrangement|own_term|admin fee|minimum prepaid|top-?ups? as you go/.test(
+      hay,
+    )
+  ) {
+    return "Own arrangement";
+  }
+  if (n === 1) return "One per term";
+  if (n === 2) return "2 payments this term";
+  if (n > 2) return `${n} instalments`;
+  if (opts?.dueDateIso && !n) {
+    return "One-off (pay in full by due date)";
+  }
+  return null;
+}
+
 export function nextPendingInstalment(
   schedule: InvoicePaymentScheduleRow[],
 ): InvoicePaymentScheduleRow | null {

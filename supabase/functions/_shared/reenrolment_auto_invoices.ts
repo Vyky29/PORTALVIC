@@ -197,7 +197,14 @@ function paymentMethodHint(
 function vatModeFromChoices(choices: Record<string, unknown>): PortalInvoiceVatMode {
   const code = clean(choices.invoice_type_code, 40).toLowerCase();
   const fund = clean(choices.funding_code, 40).toLowerCase();
-  if (code === "exempt" || fund === "la_direct_payments") return "exempt";
+  if (
+    code === "exempt" ||
+    fund === "la_direct_payments" ||
+    fund === "la_nhs" ||
+    fund.includes("direct_payment")
+  ) {
+    return "exempt";
+  }
   return "vat_20";
 }
 

@@ -16,6 +16,7 @@ import {
   type InvoicePaymentScheduleRow,
   nextInstalmentDueDate,
   normalizePaymentSchedule,
+  paymentSchedulePlanShortLabel,
 } from "./portal_invoice_payment_schedule.ts";
 import {
   lineItemsToDescription,
@@ -158,15 +159,24 @@ async function resolveFamilyBillTo(
   return { billToName, billToLines };
 }
 
-function invoiceModeLabel(
-  paymentMethodHint: string,
-  vatMode: PortalInvoiceVatMode,
-): string {
+function invoicePaymentChannelLabel(paymentMethodHint: string): string {
   if (paymentMethodHint === "gocardless") return "Direct Payment (GoCardless)";
   if (paymentMethodHint === "la_funded") return "LA funded";
   if (paymentMethodHint === "payment_link") return "Card / Apple Pay";
-  if (vatMode === "exempt") return "Bank transfer / Card";
-  return "Bank transfer / Card";
+  if (paymentMethodHint === "other") return "Other";
+  return "Bank transfer";
+}
+
+/** Channel + schedule plan (flexi / one-off / per term / own). */
+function invoiceModeLabel(
+  paymentMethodHint: string,
+  _vatMode: PortalInvoiceVatMode,
+  schedule?: InvoicePaymentScheduleRow[],
+  opts?: { notes?: string | null; dueDateIso?: string | null },
+): string {
+  const channel = invoicePaymentChannelLabel(paymentMethodHint);
+  const plan = paymentSchedulePlanShortLabel(schedule || [], opts);
+  return plan ? `${channel} · ${plan}` : channel;
 }
 
 function invoiceDescriptionLines(input: {
@@ -313,7 +323,11 @@ export async function createPortalFamilyInvoice(
   }
 
   const unitPrice = Math.round((amountGbp / quantity) * 10000) / 10000;
-  const modeLabel = invoiceModeLabel(paymentMethodHint, vatMode);
+  const createSchedule = input.paymentSchedule || [];
+  const modeLabel = invoiceModeLabel(paymentMethodHint, vatMode, createSchedule, {
+    notes: input.notes || null,
+    dueDateIso: dueDate,
+  });
   const isLaFunded = paymentMethodHint === "la_funded";
   const descriptionLines = invoiceDescriptionLines({
     lineDescription,
@@ -346,7 +360,7 @@ export async function createPortalFamilyInvoice(
       billToLines,
       participantName: displayName,
       paid: false,
-      paymentSchedule: input.paymentSchedule || [],
+      paymentSchedule: createSchedule,
       amountPaidGbp: 0,
     });
   } catch (err) {
@@ -517,8 +531,14 @@ export async function regeneratePortalInvoiceSharePdf(
     displayName,
   });
   const storedVat = clean(share.vat_mode, 20).toLowerCase();
-  const vatMode: PortalInvoiceVatMode =
-    storedVat === "exempt" || storedVat === "vat_20" ? storedVat : funding.vatMode;
+  // Prefer live funding when DP/LA is exempt — corrects stale vat_20 on Direct Payment shares.
+  let vatMode: PortalInvoiceVatMode =
+    storedVat === "exempt" || storedVat === "vat_20"
+      ? (storedVat as PortalInvoiceVatMode)
+      : funding.vatMode;
+  if (funding.vatMode === "exempt") {
+    vatMode = "exempt";
+  }
 
   const hintForBillTo = clean(share.payment_method_hint, 40);
   let billToName: string;
@@ -557,8 +577,11 @@ export async function regeneratePortalInvoiceSharePdf(
   const invoiceNumber = clean(share.invoice_number, 80) || shareId.slice(0, 8);
   const clientIdLabel = funding.clientId || contactId;
   const poLabel = funding.po || "";
-  const modeLabel = invoiceModeLabel(paymentMethodHint, vatMode);
   const paymentSchedule = normalizePaymentSchedule(share.payment_schedule);
+  const modeLabel = invoiceModeLabel(paymentMethodHint, vatMode, paymentSchedule, {
+    notes: clean(share.notes, 800) || null,
+    dueDateIso: dueDate,
+  });
   const amountPaidGbp = round2(Number(share.amount_paid_gbp) || 0);
   const isPaid = String(share.payment_status || "").toLowerCase() === "paid";
   // Stored descriptions that already carry Client Id / PO / client name blocks
@@ -631,7 +654,9 @@ export async function regeneratePortalInvoiceSharePdf(
   }
 
   const sharePatch: Record<string, unknown> = { updated_at: now };
-  if (!clean(share.vat_mode, 20)) sharePatch.vat_mode = vatMode;
+  if (!clean(share.vat_mode, 20) || (funding.vatMode === "exempt" && storedVat !== "exempt")) {
+    sharePatch.vat_mode = vatMode;
+  }
   if (lineItems.length && cleanMultiline(share.line_description, 2400) !== lineDescription) {
     sharePatch.line_description = lineDescription;
   }

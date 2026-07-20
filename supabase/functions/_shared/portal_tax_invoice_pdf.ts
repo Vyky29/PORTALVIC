@@ -504,6 +504,14 @@ export async function buildPortalTaxInvoicePdf(
       { x: left, y, size: 9, font: fontBold, color: ink },
     );
     y -= 16;
+  } else if (input.dueDateIso && !input.paid) {
+    page.drawText(
+      pdfSafeText(
+        `Pay in full by ${formatUkDate(input.dueDateIso)} (one-off — invoice total above).`,
+      ).slice(0, 95),
+      { x: left, y, size: 9, font, color: ink },
+    );
+    y -= 16;
   }
 
   page.drawText("Manual Payment Details", {
