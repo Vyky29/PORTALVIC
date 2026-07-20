@@ -3663,6 +3663,7 @@
       + participantsTableHeadHtml(termId)
       + "<tbody>";
     people.forEach(function (g, i) {
+      var first = g.orders[0];
       var svcLines = Object.keys(g.services).filter(Boolean);
       var svcHtml = svcLines.length
         ? ('<span class="pay-svc-lines">'
@@ -3677,7 +3678,6 @@
       var pill = g.anyOut
         ? '<span class="pay-pill pay-pill--out">Outstanding</span>'
         : '<span class="pay-pill pay-pill--paid">Paid</span>';
-      var first = g.orders[0];
       var rowAttr;
       if (first && first._synthetic) {
         rowAttr = 'data-pay-reenrol="' + esc(first._contactId || first.id) + '"';
