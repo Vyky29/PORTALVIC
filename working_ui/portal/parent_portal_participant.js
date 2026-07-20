@@ -2063,6 +2063,19 @@
     return now.getHours() * 60 + now.getMinutes() >= maxEnd;
   }
 
+  /** Crash / intensive chip: green when THAT activity's slot has ended (not the whole day). */
+  function isCrashActivitySlotFinished(iso, slotLabel) {
+    var todayIso = isoDateLocal(new Date());
+    var day = String(iso || "").slice(0, 10);
+    if (!day) return false;
+    if (day < todayIso) return true;
+    if (day > todayIso) return false;
+    var parsed = crashParseSlotLabelMinutes(slotLabel);
+    if (!parsed || parsed.end == null) return false;
+    var now = new Date();
+    return now.getHours() * 60 + now.getMinutes() >= parsed.end;
+  }
+
   function annotateChipDate(d, data) {
     if (!d || !d.iso) return d;
     var finished = isIsoSessionFinished(d.iso, data);
@@ -2791,18 +2804,17 @@
       .map(function (row) {
         var iso = String((row && row.iso) || "").slice(0, 10);
         if (!iso) return null;
-        return annotateChipDate(
-          {
-            iso: iso,
-            activity: String((row && row.activity) || "").trim(),
-            slot_label: String((row && row.slot_label) || "").trim(),
-            shortLabel: formatTermChipLabel(iso),
-            past: iso < todayIso,
-            isToday: iso === todayIso,
-            isNext: false,
-          },
-          data,
-        );
+        var slotLabel = String((row && row.slot_label) || "").trim();
+        var finished = isCrashActivitySlotFinished(iso, slotLabel);
+        return {
+          iso: iso,
+          activity: String((row && row.activity) || "").trim(),
+          slot_label: slotLabel,
+          shortLabel: formatTermChipLabel(iso),
+          past: finished,
+          isToday: iso === todayIso && !finished,
+          isNext: false,
+        };
       })
       .filter(Boolean);
     var nextByActivity = Object.create(null);
@@ -2814,7 +2826,7 @@
     });
     mapped.forEach(function (d) {
       var key = crashActivityRowKey(d.activity) || "other";
-      d.isNext = !!nextByActivity[key] && d.iso === nextByActivity[key];
+      d.isNext = !d.past && !!nextByActivity[key] && d.iso === nextByActivity[key];
     });
     return mapped;
   }
