@@ -1146,7 +1146,8 @@
       ".pay-chip__b{display:block;font-size:10px;font-weight:700;opacity:.92;white-space:nowrap}",
       ".pay-tbl td.pay-col-paid .pay-chip{font-size:10px;font-weight:800;padding:5px 7px;line-height:1.2}",
       ".pay-svc-lines{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;width:100%;max-width:100%;text-align:center}",
-      ".pay-svc-line{display:block;font-weight:700;font-size:12.5px;color:#0f172a;line-height:1.3;white-space:nowrap !important;max-width:100%;overflow:hidden;text-overflow:ellipsis;text-align:center}",
+      ".pay-svc-line{display:block;font-weight:500;font-size:12.5px;color:#94a3b8;line-height:1.3;white-space:nowrap !important;max-width:100%;overflow:hidden;text-overflow:ellipsis;text-align:center}",
+      ".pay-svc-line--on{font-weight:800;color:#0f172a}",
       ".pay-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 1px 3px rgba(15,23,42,.05);overflow:hidden}",
       ".pay-card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid #eef2f7}",
       ".pay-card-h h3{margin:0;font-size:15px;color:#0f172a}",
@@ -2441,24 +2442,14 @@
     }
 
     /*
-     * Cyrus split rows: Services text is authoritative (Thu bespoke vs afterschool).
-     * Do not fall through to the full roster list — that bleeds all slots into both streams.
+     * Cyrus: always list the full package (paid together), but stream rows
+     * and Day Centre / Afterschool emphasis decide which lines are bold.
      */
-    if (r && r._cyrusPart) {
-      var cyrusRaw = String(d.Services || d.Service || "").trim();
-      if (cyrusRaw) {
-        cyrusRaw.split(/\n/).forEach(function (line) { push(line); });
-        if (!out.length) {
-          stitchServiceFragments(splitServiceList(cyrusRaw)).forEach(push);
-        }
+    if (r && (r._cyrusPart || paymentParticipantSlug(r) === "cyrus")) {
+      if (termBucketFor(r) === "autumn_2627" || termBucketFor(r) === "summer_2526") {
+        cyrusPackageServiceLines().forEach(push);
+        if (out.length) return out;
       }
-      if (
-        r._cyrusPart === "afterschool"
-        && (rowHasGoCardlessFee(r) || (r._serviceParts && r._serviceParts["Admin Fee (GoCardless)"]))
-      ) {
-        push("Admin Fee (GoCardless)");
-      }
-      if (out.length) return out;
     }
 
     /* Summer crash course invoices — before roster (roster is term Sundays, not Jul crash). */
@@ -2525,6 +2516,34 @@
     return out;
   }
 
+  function isCyrusBespokeServiceLine(line) {
+    var s = String(line || "").toLowerCase();
+    return /bespoke|\bff\b/.test(s) && /\bthu/.test(s);
+  }
+
+  /** Cyrus package lines (paid together) — emphasis follows Day Centre vs Afterschool stream. */
+  function cyrusPackageServiceLines() {
+    return [
+      "90' Multi-Activity - 4.30 pm to 6 pm",
+      "90' Multi-Activity - 11 am to 12.30 pm",
+      "90' Bespoke Programme, Thursday - 3.30 pm to 5 pm",
+      "30' Aquatic Activity, Wednesday - 4 pm to 4.30 pm",
+      "Admin Fee (GoCardless)",
+    ];
+  }
+
+  function serviceLineEmphasized(r, line) {
+    if (!r) return true;
+    if (paymentParticipantSlug(r) !== "cyrus") return true;
+    var bespoke = isCyrusBespokeServiceLine(line);
+    if (r._cyrusPart === "thu_bespoke") return bespoke;
+    if (r._cyrusPart === "afterschool") return !bespoke;
+    var termId = termBucketFor(r);
+    var kind = typeof serviceKindForTerm === "function" ? serviceKindForTerm(termId) : "afterschool";
+    if (kind === "day_centre") return bespoke;
+    return !bespoke;
+  }
+
   function serviceFor(r) {
     var lines = serviceOneLinersFor(r);
     return lines.length ? lines.join(" · ") : "—";
@@ -2535,7 +2554,10 @@
     if (!lines.length) return "—";
     return '<span class="pay-svc-lines">'
       + lines.map(function (line) {
-        return '<span class="pay-svc-line" title="' + esc(line) + '">' + esc(line) + "</span>";
+        var on = serviceLineEmphasized(r, line);
+        return '<span class="pay-svc-line'
+          + (on ? " pay-svc-line--on" : "")
+          + '" title="' + esc(line) + '">' + esc(line) + "</span>";
       }).join("")
       + "</span>";
   }
@@ -3645,7 +3667,10 @@
       var svcHtml = svcLines.length
         ? ('<span class="pay-svc-lines">'
           + svcLines.map(function (line) {
-            return '<span class="pay-svc-line" title="' + esc(line) + '">' + esc(line) + "</span>";
+            var on = serviceLineEmphasized(first || g.sample || { client_name: g.name }, line);
+            return '<span class="pay-svc-line'
+              + (on ? " pay-svc-line--on" : "")
+              + '" title="' + esc(line) + '">' + esc(line) + "</span>";
           }).join("")
           + "</span>")
         : "—";
