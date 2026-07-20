@@ -56,6 +56,8 @@
     erik: "portal/participants/erik.png",
     gabriel: "portal/participants/gabriel.png",
     yoan: "portal/participants/yoan.png",
+    zakariya: "portal/participants/zakariya.png",
+    "zakariya warsame": "portal/participants/zakariya.png",
   };
 
   /** Files actually shipped under working_ui/portal/participants/ — avoids 404 on slug guesses. */
@@ -95,6 +97,7 @@
     "/portal/participants/yassir.png": true,
     "/portal/participants/yusef-ah.png": true,
     "/portal/participants/zaid.png": true,
+    "/portal/participants/zakariya.png": true,
   };
 
   /** Supabase Storage / remote URLs keyed by contact_id and normalized display name. */
