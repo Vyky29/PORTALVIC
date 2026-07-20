@@ -497,6 +497,23 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       .map((p) => p.service_raw)
       .filter(Boolean)
       .join(" · ");
+    /*
+     * Keep each INV-P's own billing_term (autumn/spring/summer).
+     * bookedFieldsFromTotals uses the list filter amountKey — spreading it used
+     * to overwrite Spring/Summer shares as "autumn", so Payments treated unpaid
+     * siblings as open Autumn and kept paid rows (e.g. Serine INV-P-0087) on Out.
+     */
+    const shareTerm = clean(share.billing_term, 20).toLowerCase();
+    const ownTerm =
+      shareTerm === "spring" ||
+      shareTerm === "summer" ||
+      shareTerm === "autumn" ||
+      shareTerm === "year" ||
+      shareTerm === "annual"
+        ? shareTerm === "annual"
+          ? "year"
+          : shareTerm
+        : "";
 
     invoices.push({
       ...share,
@@ -514,6 +531,8 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       funding_label: funding.fundingLabel || null,
       payment_sheet: funding.paymentSheet || null,
       ...booked,
+      billing_term: ownTerm || booked.billing_term,
+      billing_term_label: ownTerm ? termLabel(ownTerm) : booked.billing_term_label,
       booked_slots: mergedSlots,
       booked_service_raw: mergedServiceRaw || null,
       reenrolment_submitted_at: reenrol?.submitted_at || null,

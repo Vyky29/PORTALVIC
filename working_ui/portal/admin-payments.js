@@ -4416,17 +4416,16 @@
 
   /**
    * Which academic term a re-enrol INV-P covers (from reference / billing label).
+   * Prefer reference_text over billing_term — the list API used to overwrite
+   * billing_term with the Year/Term filter (all siblings looked like Autumn).
    */
   function reenrolInvoiceSeason(inv) {
     if (!inv) return "autumn";
-    var term = String(inv.billing_term || inv.amount_key || "").trim().toLowerCase();
-    if (term === "spring" || term === "summer" || term === "autumn") return term;
-    if (term === "year" || term === "annual") return "year";
     var blob = [
-      inv.billing_term_label,
       inv.reference_text,
       inv.title,
       inv.notes,
+      inv.billing_term_label,
     ]
       .map(function (x) { return String(x || "").toLowerCase(); })
       .join(" ");
@@ -4436,6 +4435,9 @@
       return "summer";
     }
     if (/autumn\s*term|\(autumn\)|fall\s*term/.test(blob)) return "autumn";
+    var term = String(inv.billing_term || inv.amount_key || "").trim().toLowerCase();
+    if (term === "spring" || term === "summer" || term === "autumn") return term;
+    if (term === "year" || term === "annual") return "year";
     return "autumn";
   }
 
@@ -4711,7 +4713,11 @@
         row.amount_billed = Math.max(Number(row.amount_billed) || 0, amt);
       }
       if (st === "paid") {
-        // keep Paid unless another autumn instalment is open
+        /* Paid Autumn INV-P — clear outstanding unless a later autumn sibling is open. */
+        if (!(Number(row.amount_out) > 0)) {
+          row.amount_out = 0;
+          row.payment_status = "Paid";
+        }
       } else if (st !== "void") {
         /* Outstanding: catalogue autumn still unpaid (don't stack instalment GBP). */
         row.amount_out = Math.max(Number(row.amount_out) || 0, amt);
