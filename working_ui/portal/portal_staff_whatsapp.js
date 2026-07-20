@@ -792,68 +792,30 @@
   }
 
   /**
-   * 2–4 session icons → CS WhatsApp as double-width grid cell.
-   * 5+ icons → keep under photo and shrink photo+name+WA to match grid height.
-   * 0–1 icons → under photo, normal size.
+   * CS WhatsApp always lives in the tools grid as a full-width bar (below session icons).
    */
   function syncWaTopbarPlacement() {
-    var card = document.getElementById("topbarProfileCard");
     var btn = document.getElementById("topbarStaffWaBtn");
     var cell = document.getElementById("topbarToolCellStaffWa");
-    var left = card && (card.closest(".topbar-left--name") || card.parentNode);
     var lead = document.querySelector(".topbar-lead");
     var grid = document.getElementById("topbarToolsGrid");
-    if (!btn || !card) {
-      if (left) {
-        left.classList.remove("topbar-left--wa-under", "topbar-left--wa-compact");
-      }
-      if (lead) lead.classList.remove("topbar-lead--wa-in-grid");
-      if (grid) grid.classList.remove("topbar-tools-grid--wa-extra");
+    if (!btn) {
       if (cell) {
         cell.hidden = true;
         cell.setAttribute("aria-hidden", "true");
       }
+      if (lead) lead.classList.remove("topbar-lead--wa-in-grid");
+      if (grid) grid.classList.remove("topbar-tools-grid--wa-extra");
       return;
     }
-    var n = countSessionTopbarTools();
-    var inGrid = n >= 2 && n <= 4;
-    if (inGrid) {
-      placeWaInGrid(btn);
-      if (left) {
-        left.classList.remove("topbar-left--wa-under", "topbar-left--wa-compact");
-      }
-      if (lead) lead.classList.add("topbar-lead--wa-in-grid");
-      if (grid) {
-        /* Extra row when session icons already fill 2+ rows (3–4 icons). */
-        var needExtra = n >= 3;
-        var alreadyTall =
-          grid.classList.contains("topbar-tools-grid--lead") ||
-          grid.classList.contains("topbar-tools-grid--eight") ||
-          grid.classList.contains("topbar-tools-grid--ceo-full");
-        /* 4 icons already use 3-row lead grid — WA fills the spare row. */
-        if (alreadyTall && n === 4) needExtra = false;
-        if (alreadyTall && n === 3) needExtra = false;
-        grid.classList.toggle("topbar-tools-grid--wa-extra", needExtra);
-      }
-    } else {
-      if (cell) {
-        cell.hidden = true;
-        cell.setAttribute("aria-hidden", "true");
-      }
-      placeWaUnderPhoto(btn, card);
-      if (left) {
-        left.classList.add("topbar-left--wa-under");
-        left.classList.toggle("topbar-left--wa-compact", n >= 5);
-      }
-      if (lead) lead.classList.remove("topbar-lead--wa-in-grid");
-      if (grid) grid.classList.remove("topbar-tools-grid--wa-extra");
-    }
+    placeWaInGrid(btn);
+    if (lead) lead.classList.add("topbar-lead--wa-in-grid");
+    if (grid) grid.classList.add("topbar-tools-grid--wa-extra");
     applyUnreadBadge(lastUnreadCount);
   }
 
   function ensureButton(staffKey) {
-    var card = document.getElementById("topbarProfileCard");
-    if (!card) return;
+    if (!document.getElementById("topbarToolsGrid")) return;
     var existing = document.getElementById("topbarStaffWaBtn");
     if (!isStaffWhatsappUser(staffKey)) {
       if (existing) existing.remove();
@@ -885,7 +847,7 @@
       ev.stopPropagation();
       openSheet();
     });
-    placeWaUnderPhoto(btn, card);
+    placeWaInGrid(btn);
     syncWaTopbarPlacement();
     void refreshUnread();
     return btn;

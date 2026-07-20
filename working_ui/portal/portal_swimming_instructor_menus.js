@@ -504,6 +504,41 @@
     });
   }
 
+  /** Show slot in grid; inactive tools stay visible but greyed and non-interactive. */
+  function setTopbarToolGroup(ids, active, opts) {
+    opts = opts || {};
+    var slotVisible = opts.visible !== false;
+    (ids || []).forEach(function (id) {
+      var el = global.document && global.document.getElementById(id);
+      if (!el) return;
+      if (!slotVisible) {
+        el.hidden = true;
+        el.setAttribute("aria-hidden", "true");
+        el.classList.remove("topbar-tool-cell--inactive", "topbar-tool-btn--inactive");
+        if (el.classList.contains("topbar-tool-btn")) {
+          el.disabled = false;
+          el.removeAttribute("aria-disabled");
+        }
+        return;
+      }
+      el.hidden = false;
+      el.setAttribute("aria-hidden", "false");
+      var isBtn = el.classList.contains("topbar-tool-btn");
+      var isCell = el.classList.contains("topbar-tool-cell");
+      if (isBtn) {
+        el.disabled = !active;
+        el.classList.toggle("topbar-tool-btn--inactive", !active);
+        el.setAttribute("aria-disabled", active ? "false" : "true");
+      }
+      if (isCell) {
+        el.classList.toggle("topbar-tool-cell--inactive", !active);
+      }
+    });
+  }
+
+  var LEAD_REPORT_IDS = ["topbarToolCellLeadReport", "topbarToolLeadReport"];
+  var STATS_IDS = ["topbarToolCellSessionsOverview", "topbarToolSessionsOverview"];
+
   function portalStaffVenueReportToolsAllowed() {
     try {
       if (typeof global.portalCanOpenVenueReportNormally === "function") {
@@ -538,16 +573,30 @@
 
   function applyTopbarProfile(profile) {
     profile = profile || DEFAULT_TOPBAR_PROFILE;
-    /* Venue tool is now self-initiated (staff do a venue review only if a venue isn't
-       right), so it follows the header profile flag alone and is no longer gated by the
-       scheduled opening/closing duty windows. */
     var venueOn = !!profile.venue;
-    setIdsVisible(SWIMMING_ACHIEVEMENT_IDS, portalTopbarPhotoVisibleForProfile(profile));
-    setIdsVisible(SWIMMING_TERM_REVIEW_IDS, !!profile.swReview);
-    setIdsVisible(LEAD_TERM_REVIEW_IDS, !!profile.leadReview);
-    setIdsVisible(SWIMMING_VENUE_IDS, venueOn);
-    setIdsVisible(SWIMMING_PICKUP_IDS, !!profile.pickup);
-    setIdsVisible(SWIMMING_PLANNER_IDS, !!profile.planner);
+    var staffKey = resolveCurrentStaffKey();
+    if (!staffKey) staffKey = resolveProgrammeLeadStaffKeyFromAuth();
+    var isProgrammeLead = portalStaffIsProgrammeLeadKey(staffKey);
+    var isLeadShell = !!global.__PORTAL_TOPBAR_IS_LEAD__;
+    var showProgrammeOnly = isProgrammeLead || isLeadShell;
+
+    setTopbarToolGroup(SWIMMING_ACHIEVEMENT_IDS, portalTopbarPhotoVisibleForProfile(profile), {
+      visible: true,
+    });
+    setTopbarToolGroup(SWIMMING_TERM_REVIEW_IDS, !!profile.swReview, { visible: true });
+    setTopbarToolGroup(SWIMMING_VENUE_IDS, venueOn, { visible: true });
+    setTopbarToolGroup(SWIMMING_PICKUP_IDS, !!profile.pickup, { visible: true });
+    setTopbarToolGroup(SWIMMING_PLANNER_IDS, !!profile.planner, { visible: true });
+    setTopbarToolGroup(LEAD_REPORT_IDS, isLeadShell || isProgrammeLead || !!profile.leadExtras, {
+      visible: true,
+    });
+    setTopbarToolGroup(LEAD_TERM_REVIEW_IDS, isLeadShell || !!profile.leadReview, {
+      visible: showProgrammeOnly,
+    });
+    setTopbarToolGroup(STATS_IDS, isLeadShell || profile.stats !== false, {
+      visible: showProgrammeOnly,
+    });
+
     if (profile.planner && typeof global.portalEnableRoutinesPlannerUi === "function") {
       try {
         global.portalEnableRoutinesPlannerUi();
@@ -559,7 +608,7 @@
     });
 
     global.__PORTAL_TOPBAR_SIX_ICON_GRID__ = !!profile.sixIcon;
-    global.__PORTAL_TOPBAR_LEAD_EXTRAS__ = !!profile.leadExtras;
+    global.__PORTAL_TOPBAR_LEAD_EXTRAS__ = !!profile.leadExtras || isProgrammeLead || isLeadShell;
 
     try {
       if (typeof global.syncClientSwimTermReviewButton === "function") {
@@ -573,12 +622,8 @@
     if (!staffKey) staffKey = resolveProgrammeLeadStaffKeyFromAuth();
     var profile = resolveTopbarProfileForStaff(staffKey);
     applyTopbarProfile(profile);
-    var showLead = !!profile.leadExtras;
-    var showStats = showLead && profile.stats !== false;
-    setIdsVisible(["topbarToolCellLeadReport", "topbarToolLeadReport"], showLead);
-    setIdsVisible(["topbarToolCellSessionsOverview", "topbarToolSessionsOverview"], showStats);
     global.__PORTAL_TOPBAR_SIX_ICON_GRID__ = false;
-    global.__PORTAL_TOPBAR_LEAD_EXTRAS__ = showLead;
+    global.__PORTAL_TOPBAR_LEAD_EXTRAS__ = true;
   }
 
   global.portalSyncCeoFullTopbarTools = applyCeoStaffTopbarTools;
@@ -677,14 +722,14 @@
     { id: "pickup", label: "PickUp", cellId: "topbarToolCellPickup", profileKey: "pickup" },
     {
       id: "swReview",
-      label: "Review",
+      label: "Swim Rev",
       cellId: "topbarToolCellTermReview",
       profileKey: "swReview",
       reviewKind: "swimming",
     },
     {
       id: "leadReview",
-      label: "TermRev",
+      label: "Team Rev",
       cellId: "topbarToolCellLeadTermReview",
       profileKey: "leadReview",
       reviewKind: "lead",

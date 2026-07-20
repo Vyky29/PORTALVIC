@@ -34,6 +34,66 @@
   --topbar-profile-female-band:#f5b8d4;
   --topbar-profile-female-ink:#9c2756;
 }
+.topbar-lead.topbar-lead--halo-tools{
+  grid-template-columns:auto minmax(0,1fr);
+  gap:clamp(8px,2vw,18px) clamp(10px,2.8vw,22px);
+  align-items:stretch;
+}
+.topbar-lead--halo-tools .topbar-center{
+  justify-self:start;
+  align-self:center;
+  min-width:0;
+}
+.topbar-lead--halo-tools .topbar-right.topbar-right--tools{
+  justify-self:stretch;
+  width:100%;
+  max-width:none;
+  min-width:0;
+}
+.topbar-lead--halo-tools .topbar-tools-grid{
+  margin-left:auto;
+}
+.topbar-name--sr,
+.topbar-profile-card--sr{
+  position:absolute !important;
+  width:1px !important;
+  height:1px !important;
+  padding:0 !important;
+  margin:-1px !important;
+  overflow:hidden !important;
+  clip:rect(0,0,0,0) !important;
+  white-space:nowrap !important;
+  border:0 !important;
+}
+.topbar-tool-btn--inactive,
+.topbar-tool-btn:disabled{
+  opacity:.36;
+  filter:grayscale(.88) saturate(.35);
+  cursor:not-allowed;
+  pointer-events:none;
+  box-shadow:none !important;
+}
+.topbar-tool-cell--inactive .topbar-tool-label{
+  opacity:.72;
+}
+.topbar-tools-grid--catalog.topbar-tools-grid--lead.topbar-tools-grid--wa-extra{
+  --topbar-tools-grid-rows:4;
+  --topbar-tools-grid-h:calc(4 * var(--topbar-tools-cell) + 3 * var(--topbar-tools-gap-y));
+  height:var(--topbar-tools-grid-h);
+  max-height:var(--topbar-tools-grid-h);
+}
+.topbar-tools-grid--catalog.topbar-tools-grid--eight.topbar-tools-grid--wa-extra{
+  --topbar-tools-grid-rows:5;
+  --topbar-tools-grid-h:calc(5 * var(--topbar-tools-cell) + 4 * var(--topbar-tools-gap-y));
+  height:var(--topbar-tools-grid-h);
+  max-height:var(--topbar-tools-grid-h);
+}
+.topbar-lead--halo-tools.topbar-lead--wa-in-grid.topbar-lead--tools-6{
+  --topbar-row-h:max(calc(4 * var(--topbar-tools-cell-6) + 3 * var(--topbar-tools-gap-y)),var(--topbar-brand-visual-h));
+}
+.topbar-lead--halo-tools.topbar-lead--wa-in-grid.topbar-lead--tools-8{
+  --topbar-row-h:max(calc(5 * var(--topbar-tools-cell-8) + 4 * var(--topbar-tools-gap-y)),var(--topbar-brand-visual-h));
+}
 .topbar-lead{
   min-height:var(--topbar-row-h);
   align-items:stretch;

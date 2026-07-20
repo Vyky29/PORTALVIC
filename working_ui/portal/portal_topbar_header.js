@@ -146,6 +146,10 @@
       img.onerror = null;
       img.onload = null;
     }
+    var avatar = document.getElementById("avatar");
+    if (avatar) avatar.classList.remove("avatar--has-staff-photo");
+    var brand = document.getElementById("topbarBrandLogo");
+    if (brand) brand.hidden = false;
     var box = document.getElementById("topbarStaffPhoto");
     if (box) box.setAttribute("aria-hidden", "true");
     if (ini) {
@@ -175,6 +179,10 @@
       img.alt = name ? name + " profile photo" : "Profile photo";
       img.hidden = false;
       img.style.display = "";
+      var avatar = document.getElementById("avatar");
+      if (avatar) avatar.classList.add("avatar--has-staff-photo");
+      var brand = document.getElementById("topbarBrandLogo");
+      if (brand) brand.hidden = true;
       var box = document.getElementById("topbarStaffPhoto");
       if (box) box.setAttribute("aria-hidden", "false");
     };
@@ -241,11 +249,19 @@
 
   function portalSyncTopbarProfileCard() {
     var card = document.getElementById("topbarProfileCard");
-    if (!card) return;
-    card.setAttribute("data-gender", resolveTopbarStaffGender());
+    var wrap = document.getElementById("avatarWrap");
+    var gender = resolveTopbarStaffGender();
+    if (card) card.setAttribute("data-gender", gender);
+    if (wrap) wrap.setAttribute("data-gender", gender);
     var key = resolveTopbarStaffKey();
-    if (key) card.setAttribute("data-staff-key", key);
-    else card.removeAttribute("data-staff-key");
+    if (card) {
+      if (key) card.setAttribute("data-staff-key", key);
+      else card.removeAttribute("data-staff-key");
+    }
+    if (wrap) {
+      if (key) wrap.setAttribute("data-staff-key", key);
+      else wrap.removeAttribute("data-staff-key");
+    }
     try {
       if (typeof global.portalStaffWaSyncTopbar === "function") {
         global.portalStaffWaSyncTopbar(key || "");
@@ -300,7 +316,9 @@
     var grid = document.getElementById("topbarToolsGrid");
     if (!grid) return;
     var n = countVisibleTopbarToolCells();
+    var catalogGrid = grid.classList.contains("topbar-tools-grid--catalog");
     var strictTwoCol =
+      catalogGrid ||
       grid.classList.contains("topbar-tools-grid--lead") ||
       grid.classList.contains("topbar-tools-grid--eight") ||
       grid.classList.contains("topbar-tools-grid--ceo-full");
@@ -485,9 +503,11 @@
   };
 
   function portalApplyInlineCeoTopbarTools() {
-    CEO_INLINE_TOPBAR_IDS.forEach(function (id) {
-      setElementVisible(id, true);
-    });
+    if (typeof global.portalSyncCeoFullTopbarTools === "function") {
+      try {
+        global.portalSyncCeoFullTopbarTools();
+      } catch (_) {}
+    }
     global.__PORTAL_TOPBAR_SIX_ICON_GRID__ = false;
     global.__PORTAL_TOPBAR_LEAD_EXTRAS__ = true;
     var grid = document.getElementById("topbarToolsGrid");
@@ -626,20 +646,15 @@
 
     if (isCeo) {
       portalApplyInlineCeoTopbarTools();
-    } else {
-      LEAD_TOPBAR_CELL_IDS.forEach(function (id) {
-        setElementVisible(id, showLeadExtras);
-      });
-      LEAD_TOPBAR_BTN_IDS.forEach(function (id) {
-        setElementVisible(id, showLeadExtras);
-      });
     }
 
-    var visibleToolCount = countVisibleTopbarToolCells();
-    var useEightGrid = !isCeo && visibleToolCount >= 7;
-    var useSixGrid = !isCeo && !useEightGrid && (showLeadExtras || visibleToolCount > 3);
-
     var grid = document.getElementById("topbarToolsGrid");
+    var visibleToolCount = countVisibleTopbarToolCells();
+    var catalogGrid = grid && grid.classList.contains("topbar-tools-grid--catalog");
+    var useEightGrid = !isCeo && visibleToolCount >= 7;
+    var useSixGrid =
+      !isCeo && !useEightGrid && (catalogGrid || showLeadExtras || visibleToolCount > 3);
+
     if (grid && !isCeo) {
       grid.classList.toggle("topbar-tools-grid--eight", useEightGrid);
       grid.classList.toggle("topbar-tools-grid--lead", useSixGrid);
@@ -763,6 +778,13 @@
 
         var toolBtn = e.target.closest ? e.target.closest("[id^='topbarTool']") : null;
         if (!toolBtn || !toolBtn.id) return;
+        if (
+          toolBtn.disabled ||
+          toolBtn.classList.contains("topbar-tool-btn--inactive") ||
+          toolBtn.getAttribute("aria-disabled") === "true"
+        ) {
+          return;
+        }
         e.preventDefault();
         e.stopPropagation();
 
