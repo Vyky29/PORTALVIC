@@ -327,13 +327,13 @@
   }
 
   /** Hide Day Centre (etc.) before staff-specific service start — e.g. Youssef from 12 Jun.
-   *  Also hide after per-staff calendar end (e.g. Youssef through 24 Jul). */
+   *  Also hide after per-staff calendar end (e.g. Youssef through 24 Jul), unless the day
+   *  is on termStaffExtraCalendarDatesByProfileKey (crash / special weeks). */
   function staffSessionServiceActiveOnDate(staffId, sessionRow, isoYmd) {
     var iso = normIso(isoYmd);
     var id = String(staffId || "").trim().toLowerCase();
     if (!iso || !id || !sessionRow) return true;
-    var calTo = toIso(id);
-    if (calTo && iso > calTo) return false;
+    if (!staffDateInView(iso, id)) return false;
     if (!rosterRowIsDayCentre(sessionRow)) return true;
     var start = staffServiceStartIso(id, "day_centre");
     if (start && iso < start) return false;
