@@ -61,6 +61,7 @@ export function paymentSchedulePlanShortLabel(
   const notes = String(opts?.notes || "").toLowerCase();
   const hay = `${blob} ${notes}`;
   const n = rows.length;
+  if (!n) return null;
 
   if (
     /yearly_1off|one[\s-]?off.*(year|annual)|full academic year|whole year/.test(hay) ||
@@ -71,7 +72,12 @@ export function paymentSchedulePlanShortLabel(
   if (n >= 2 && /\b(half|1st|2nd|flexi)\b/.test(hay)) {
     return "Flexi (2 per term)";
   }
-  if (n >= 3 && /month/.test(hay)) {
+  if (
+    n >= 3 &&
+    (/month/.test(hay) ||
+      /payment\s*\d|january|february|march|april|may|june|july|august|september|october|november|december/
+        .test(hay))
+  ) {
     return `${n} monthly`;
   }
   if (
@@ -87,9 +93,6 @@ export function paymentSchedulePlanShortLabel(
   if (n === 1) return "One per term";
   if (n === 2) return "2 payments this term";
   if (n > 2) return `${n} instalments`;
-  if (opts?.dueDateIso && !n) {
-    return "One-off (pay in full by due date)";
-  }
   return null;
 }
 

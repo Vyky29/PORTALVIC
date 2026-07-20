@@ -340,6 +340,7 @@
     var notes = String(inv.notes || '').toLowerCase();
     var hay = blob + ' ' + notes;
     var n = rows.length;
+    if (!n) return '';
     if (
       /yearly_1off|one[\s-]?off.*(year|annual)|full academic year|whole year/.test(hay) ||
       (n === 1 && /\b(year|annual|full year)\b/.test(blob))
@@ -349,7 +350,15 @@
     if (n >= 2 && /\b(half|1st|2nd|flexi)\b/.test(hay)) {
       return 'Flexi (2 per term)';
     }
-    if (n >= 3 && /month/.test(hay)) return n + ' monthly';
+    if (
+      n >= 3 &&
+      (/month/.test(hay) ||
+        /payment\s*\d|january|february|march|april|may|june|july|august|september|october|november|december/.test(
+          hay,
+        ))
+    ) {
+      return n + ' monthly';
+    }
     if (
       /own way|own arrangement|own_term|admin fee|minimum prepaid|top-?ups? as you go/.test(
         hay,
@@ -363,7 +372,6 @@
     if (n === 1) return 'One per term';
     if (n === 2) return '2 payments this term';
     if (n > 2) return n + ' instalments';
-    if (inv.due_date && !n) return 'One-off (pay in full by due date)';
     return '';
   }
 
@@ -509,9 +517,18 @@
   }
 
   function groupMethodChipsHtml(invoices) {
+    var list = invoices || [];
+    var ready = list.filter(function (inv) {
+      return String(inv.share_status || '').toLowerCase() === 'ready';
+    });
+    var pool = ready.length ? ready : list;
+    var withSched = pool.filter(function (inv) {
+      return scheduleRows(inv).length > 0;
+    });
+    var source = withSched.length ? withSched : pool;
     var seen = Object.create(null);
     var out = [];
-    (invoices || []).forEach(function (inv) {
+    source.forEach(function (inv) {
       var channel = methodChannelLabel(inv);
       var plan = schedulePlanShort(inv);
       var key = channel + '|' + plan;
