@@ -1149,3 +1149,89 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   text-overflow:ellipsis;
   white-space:nowrap;
 }
+
+/* FORCE: CS WhatsApp fills Venue+Swim Rev width */
+.topbar-tools-grid.topbar-tools-grid--flank,
+.topbar-tools-grid.topbar-tools-grid--flank.topbar-tools-grid--lead,
+.topbar-tools-grid.topbar-tools-grid--flank.topbar-tools-grid--dense,
+.topbar-tools-grid.topbar-tools-grid--flank-2col,
+.topbar-tools-grid.topbar-tools-grid--flank-2col.topbar-tools-grid--lead,
+.topbar-tools-grid.topbar-tools-grid--flank-2col.topbar-tools-grid--dense,
+#topbarToolsGridRight.topbar-tools-grid{
+  height:auto !important;
+  max-height:none !important;
+}
+#topbarToolsGridRight.topbar-tools-grid--flank-2col{
+  grid-template-columns:repeat(2, var(--topbar-tools-cell)) !important;
+  width:calc(2 * var(--topbar-tools-cell) + var(--topbar-tools-gap-x)) !important;
+  max-width:100% !important;
+}
+#topbarToolsGridRight > #topbarToolCellStaffWa,
+#topbarToolsGridRight > .topbar-tool-cell--staff-wa.topbar-tool-cell--span2{
+  grid-column:1 / -1 !important;
+  grid-row:auto !important;
+  width:100% !important;
+  min-width:100% !important;
+  max-width:none !important;
+  justify-self:stretch !important;
+  align-self:stretch !important;
+  height:auto !important;
+  min-height:32px !important;
+  max-height:none !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
+  justify-content:center !important;
+  box-sizing:border-box !important;
+}
+#topbarToolsGridRight > #topbarToolCellStaffWa > .topbar-tool-btn,
+#topbarToolsGridRight > #topbarToolCellStaffWa > button,
+#topbarToolsGridRight > .topbar-tool-cell--staff-wa > .topbar-tool-btn--staff-wa{
+  display:inline-flex !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  justify-content:center !important;
+  align-self:stretch !important;
+  gap:6px !important;
+  grid-template-rows:none !important;
+  grid-template-columns:none !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  flex:1 1 auto !important;
+  height:32px !important;
+  max-height:32px !important;
+  min-height:32px !important;
+  margin:0 !important;
+  padding:0 10px !important;
+  border:1px solid rgba(232,196,74,.55) !important;
+  border-radius:11px !important;
+  background:linear-gradient(180deg,#ffe9a3,#f5d56a) !important;
+  color:#173247 !important;
+  box-shadow:0 1px 3px rgba(232,196,74,.28) !important;
+  box-sizing:border-box !important;
+  overflow:visible !important;
+}
+#topbarToolsGridRight > #topbarToolCellStaffWa .topbar-tool-btn__ico,
+#topbarToolsGridRight > #topbarToolCellStaffWa .topbar-tool-btn__ico svg{
+  width:15px !important;
+  height:15px !important;
+  max-width:15px !important;
+  max-height:15px !important;
+  color:#173247 !important;
+}
+#topbarToolsGridRight > #topbarToolCellStaffWa .topbar-tool-label{
+  flex:0 1 auto !important;
+  width:auto !important;
+  max-width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  font-size:10.5px !important;
+  font-weight:800 !important;
+  line-height:1 !important;
+  color:#173247 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}

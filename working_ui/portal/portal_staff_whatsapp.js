@@ -796,9 +796,22 @@
     var cell = ensureWaGridCell();
     if (!cell) return;
     styleWaButtonForMode(btn, true);
+    cell.classList.add("topbar-tool-cell--staff-wa", "topbar-tool-cell--span2");
     cell.hidden = false;
     cell.setAttribute("aria-hidden", "false");
+    cell.style.gridColumn = "1 / -1";
+    cell.style.width = "100%";
+    cell.style.maxWidth = "none";
+    cell.style.minWidth = "100%";
+    cell.style.justifySelf = "stretch";
+    btn.style.width = "100%";
+    btn.style.maxWidth = "none";
+    btn.style.alignSelf = "stretch";
     if (btn.parentNode !== cell) cell.appendChild(btn);
+    var right = document.getElementById("topbarToolsGridRight");
+    if (right && cell.parentNode === right && right.lastElementChild !== cell) {
+      right.appendChild(cell);
+    }
   }
 
   /**
