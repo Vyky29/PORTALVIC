@@ -2222,8 +2222,109 @@
     }
   }
 
-  /** Next booked session from current roster services_detail (weekday pattern). */
-  function findNextSessions(data, limit) {
+  /** Hub-style clock range from minutes, e.g. 720–780 → "12 to 1". */
+  function hubTimeRangeFromMinutes(startMins, endMins) {
+    if (startMins == null || endMins == null || endMins <= startMins) return "";
+    function fmt(mins) {
+      var h24 = Math.floor(mins / 60) % 24;
+      var mm = mins % 60;
+      var h12 = h24 % 12;
+      if (h12 === 0) h12 = 12;
+      if (mm === 0) return String(h12);
+      if (mm === 30) return h12 + ".30";
+      return h12 + ":" + (mm < 10 ? "0" : "") + mm;
+    }
+    return fmt(startMins) + " to " + fmt(endMins);
+  }
+
+  function crashVenueFromSlotLabel(slotLabel) {
+    var parts = String(slotLabel || "")
+      .split("·")
+      .map(function (p) {
+        return String(p || "").trim();
+      })
+      .filter(Boolean);
+    if (parts.length < 2) return "";
+    return parts[1]
+      .replace(/\s*\(.*?\)\s*/g, " ")
+      .replace(/\b1\s*instructor\b/i, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+  }
+
+  /**
+   * Upcoming July crash / intensive slots (merged per day + activity).
+   * Two half-hour swim bands become one "1 to 2" Aquatic card.
+   */
+  function findCrashUpcomingSessionRows(data) {
+    var raw =
+      data && data.crash_course && Array.isArray(data.crash_course.dates)
+        ? data.crash_course.dates
+        : [];
+    if (!raw.length) return [];
+    var groups = Object.create(null);
+    raw.forEach(function (row) {
+      var iso = String((row && row.iso) || "").slice(0, 10);
+      if (!iso) return;
+      var actKey = crashActivityRowKey(row.activity) || "other";
+      var key = iso + "|" + actKey;
+      if (!groups[key]) {
+        groups[key] = {
+          iso: iso,
+          activity: row.activity,
+          actKey: actKey,
+          slots: [],
+        };
+      }
+      groups[key].slots.push(row);
+    });
+    var today = new Date();
+    var todayIso = isoDateLocal(today);
+    var tomorrowIso = isoDateLocal(addDaysLocal(today, 1));
+    var nowMins = today.getHours() * 60 + today.getMinutes();
+    var out = [];
+    Object.keys(groups).forEach(function (key) {
+      var g = groups[key];
+      if (g.iso < todayIso) return;
+      var minStart = null;
+      var maxEnd = null;
+      var venue = "";
+      g.slots.forEach(function (row) {
+        var parsed = crashParseSlotLabelMinutes(row && row.slot_label);
+        if (!parsed) return;
+        if (minStart == null || parsed.start < minStart) minStart = parsed.start;
+        if (maxEnd == null || parsed.end > maxEnd) maxEnd = parsed.end;
+        if (!venue) venue = crashVenueFromSlotLabel(row.slot_label);
+      });
+      if (minStart == null || maxEnd == null) return;
+      if (g.iso === todayIso && nowMins >= maxEnd) return;
+      var dur = Math.max(0, maxEnd - minStart);
+      var activityLabel = crashActivityRowLabel(g.activity);
+      var rawLabel = (dur ? dur + "' " : "") + activityLabel;
+      out.push({
+        iso: g.iso,
+        dayLabel: formatHubDateLabel(g.iso),
+        label: shortServiceChipLabel(rawLabel) || activityLabel,
+        rawLabel: rawLabel,
+        day: "",
+        time: hubTimeRangeFromMinutes(minStart, maxEnd),
+        venue: venue,
+        area: "",
+        isToday: g.iso === todayIso,
+        isTomorrow: g.iso === tomorrowIso,
+        source: "crash",
+        _start: minStart,
+      });
+    });
+    out.sort(function (a, b) {
+      if (a.iso !== b.iso) return a.iso < b.iso ? -1 : 1;
+      return (a._start || 0) - (b._start || 0);
+    });
+    return out;
+  }
+
+  /** Next booked session from roster weekday pattern (services_detail). */
+  function findRosterPatternNextSessions(data, limit) {
     var detail =
       data && data.general && Array.isArray(data.general.services_detail)
         ? data.general.services_detail
@@ -2302,10 +2403,28 @@
           area: String(s.area || "").trim(),
           isToday: iso === todayIso,
           isTomorrow: iso === tomorrowIso,
+          source: "roster",
+          _start: parseServiceStartMinutes(s.time),
         });
       });
     }
     return out;
+  }
+
+  /**
+   * Next sessions for the hub: July crash/intensive first when sooner,
+   * then regular roster weekdays (e.g. Autumn Sundays).
+   */
+  function findNextSessions(data, limit) {
+    var max = Math.max(1, limit || 3);
+    var crash = findCrashUpcomingSessionRows(data);
+    var roster = findRosterPatternNextSessions(data, Math.max(max, 8));
+    var combined = crash.concat(roster);
+    combined.sort(function (a, b) {
+      if (a.iso !== b.iso) return a.iso < b.iso ? -1 : 1;
+      return (a._start || 0) - (b._start || 0);
+    });
+    return combined.slice(0, max);
   }
 
   /** Hub section title: Today / Tomorrow / Next session from the next remaining booking. */
@@ -3628,6 +3747,7 @@
       Array.isArray(data.general.services_detail) &&
       data.general.services_detail.length
     );
+    var hasCrash = hasCrashBooking(data);
     var nextList = findNextSessions(data, 4);
     var next = nextList[0] || null;
     // Same calendar day as the next session (e.g. Rodin Climbing + Aquatic on Sunday).
@@ -3636,10 +3756,16 @@
           return x.iso === next.iso;
         })
       : [];
+    // If Next is a crash day, only show that day's crash cards (don't mix in roster slots).
+    if (next && next.source === "crash") {
+      sameDay = sameDay.filter(function (x) {
+        return x.source === "crash";
+      });
+    }
     var calIco =
       '<svg class="pp-hub-ops__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
     var nextBody;
-    if (!hasServices) {
+    if (!hasServices && !hasCrash) {
       var summerEndedEmpty = isoDateLocal(new Date()) > currentYearTermToIso(data);
       var emptyMsg = summerEndedEmpty
         ? "Summer term has ended and this place has no current roster days yet. Re-enrol for 2026/27 (or open Crash course July) from Quick access."
@@ -3653,7 +3779,6 @@
         "</div>";
     } else if (!next) {
       var booking = bookingSummary(data);
-      var hasCrash = hasCrashBooking(data);
       var hasNextYear = familyAcceptedNextYear(data);
       var summerEnded = isoDateLocal(new Date()) > currentYearTermToIso(data);
       var endNote;
