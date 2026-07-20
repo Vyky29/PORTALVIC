@@ -867,45 +867,72 @@
   }
 
   /**
-   * Autumn / Spring / Summer share of a full-year programme (38 session-weeks).
-   * Autumn is the billed term on the row; remaining year splits evenly across
-   * Spring + Summer (12 + 12 of the residual 24 weeks).
+   * Autumn 26/27 season totals for the Total column.
+   * Prefer catalogue booked_* once; never invent Spring/Summer from an inflated
+   * instalment sum. Weekday programme weights: 14 / 11 / 13 (annual 38).
    */
-  function autumnYearSeasonSplitGbp(autumnAmt, yearAmt) {
-    var autumn = Math.max(0, Number(autumnAmt) || 0);
-    var year = Math.max(0, Number(yearAmt) || 0);
-    if (!(year > 0)) {
-      return { autumn: autumn, spring: 0, summer: 0, year: 0 };
+  function autumnCatalogSeasonTotals(r) {
+    var autumn = Number(r && r._amountAutumn);
+    if (!(autumn > 0)) autumn = Number(r && r.amount) || 0;
+    var spring = Number(r && r._amountSpring) || 0;
+    var summer = Number(r && r._amountSummer) || 0;
+    var year = resolveYearProgrammeGbp(r);
+    var AW = 14;
+    var SpW = 11;
+    var SuW = 13;
+    var AnnW = AW + SpW + SuW; /* 38 */
+
+    if (year > 0 && autumn > year * 1.02) {
+      /* Instalment sum / wrong amount_gbp exceeded year — rebuild from year. */
+      autumn = Math.round((year * AW) / AnnW * 100) / 100;
+      spring = Math.round((year * SpW) / AnnW * 100) / 100;
+      summer = Math.round((year - autumn - spring) * 100) / 100;
+      return { autumn: autumn, spring: spring, summer: summer, year: year };
     }
-    if (!(autumn > 0)) {
-      /* No autumn yet — split whole year 14/12/12. */
-      var a = Math.round(year * (14 / 38) * 100) / 100;
-      var rem0 = Math.round((year - a) * 100) / 100;
-      var spring0 = Math.round((rem0 / 2) * 100) / 100;
-      return { autumn: a, spring: spring0, summer: Math.round((rem0 - spring0) * 100) / 100, year: year };
+    /* Autumn should be ≈14/38 of year; if far off, trust year and rebuild terms. */
+    if (year > 0 && autumn > 0) {
+      var expectedA = (year * AW) / AnnW;
+      if (Math.abs(autumn - expectedA) / year > 0.08) {
+        autumn = Math.round(expectedA * 100) / 100;
+        spring = Math.round((year * SpW) / AnnW * 100) / 100;
+        summer = Math.round((year - autumn - spring) * 100) / 100;
+        return { autumn: autumn, spring: spring, summer: summer, year: year };
+      }
     }
-    var rem = Math.max(0, Math.round((year - autumn) * 100) / 100);
-    var spring = Math.round((rem / 2) * 100) / 100;
-    var summer = Math.round((rem - spring) * 100) / 100;
+    if (year > 0 && spring > 0 && summer > 0 && autumn > 0) {
+      return { autumn: autumn, spring: spring, summer: summer, year: year };
+    }
+    if (year > 0 && autumn > 0) {
+      var rem = Math.max(0, Math.round((year - autumn) * 100) / 100);
+      spring = Math.round((rem * SpW) / (SpW + SuW) * 100) / 100;
+      summer = Math.round((rem - spring) * 100) / 100;
+      return { autumn: autumn, spring: spring, summer: summer, year: year };
+    }
+    if (year > 0) {
+      autumn = Math.round((year * AW) / AnnW * 100) / 100;
+      spring = Math.round((year * SpW) / AnnW * 100) / 100;
+      summer = Math.round((year - autumn - spring) * 100) / 100;
+      return { autumn: autumn, spring: spring, summer: summer, year: year };
+    }
     return { autumn: autumn, spring: spring, summer: summer, year: year };
   }
 
   function amountCellHtml(r) {
     var julyPay = ealingJulyPaymentGbp(r);
-    var autumnAmt = Number(r.amount) || 0;
+    var termAmt = Number(r.amount) || 0;
     var main = money(r.amount);
     var yearAmt = resolveYearProgrammeGbp(r);
     var bucket = typeof termBucketFor === "function" ? termBucketFor(r) : "";
 
     /* Autumn 26/27 Total column: Autumn (bold) → Spring → Summer → Year. */
-    if (bucket === "autumn_2627" && yearAmt > 0) {
-      var split = autumnYearSeasonSplitGbp(autumnAmt, yearAmt);
-      if (split.year > 0 && (split.spring > 0 || split.summer > 0 || Math.abs(split.year - split.autumn) > 1)) {
-        return '<span class="pay-amt-stack" title="Autumn term billed, then remaining year split Spring / Summer">'
+    if (bucket === "autumn_2627") {
+      var split = autumnCatalogSeasonTotals(r);
+      if (split.year > 0 || split.autumn > 0) {
+        return '<span class="pay-amt-stack" title="Catalogue Autumn / Spring / Summer / Year">'
           + '<span class="pay-amt-term">' + money(split.autumn) + "</span>"
           + '<span class="pay-amt-season">Spring ' + money(split.spring) + "</span>"
           + '<span class="pay-amt-season">Summer ' + money(split.summer) + "</span>"
-          + '<span class="pay-amt-year">Year ' + money(split.year) + "</span>"
+          + '<span class="pay-amt-year">Year ' + money(split.year > 0 ? split.year : (split.autumn + split.spring + split.summer)) + "</span>"
           + "</span>";
       }
     }
@@ -921,7 +948,7 @@
     }
 
     var yearNote = "";
-    if (yearAmt > 0 && autumnAmt > 0 && Math.abs(yearAmt - autumnAmt) > 1) {
+    if (yearAmt > 0 && termAmt > 0 && Math.abs(yearAmt - termAmt) > 1) {
       yearNote = '<span class="pay-amt-year" title="Full-year programme (not this term alone)">Year '
         + money(yearAmt) + "</span>";
     }
@@ -4054,12 +4081,27 @@
 
   function reenrolInvoiceAmountGbp(inv) {
     var via = String((inv && inv.created_via) || "");
-    /* Instalments keep amount_gbp; LA office-auto / booked-place rows use term totals.
-     * Never fall back to booked_annual_gbp — Autumn must show term, not year. */
+    /* Prefer catalogue Autumn once — never use raw amount_gbp (instalments stack). */
+    var autumn = Number(inv && inv.booked_autumn_gbp) || 0;
+    if (autumn > 0) return autumn;
     if (via === "reenrolment") {
+      autumn = autumnTermAmountFromInvoice(inv);
+      if (autumn > 0) return autumn;
       return Number(inv && inv.amount_gbp) || 0;
     }
     return autumnTermAmountFromInvoice(inv);
+  }
+
+  function absorbCatalogSeasonTotals(row, inv) {
+    if (!row || !inv) return;
+    var autumn = Number(inv.booked_autumn_gbp) || autumnTermAmountFromInvoice(inv) || 0;
+    var spring = Number(inv.booked_spring_gbp) || 0;
+    var summer = Number(inv.booked_summer_gbp) || 0;
+    var annual = Number(inv.booked_annual_gbp) || 0;
+    if (autumn > 0) row._amountAutumn = Math.max(Number(row._amountAutumn) || 0, autumn);
+    if (spring > 0) row._amountSpring = Math.max(Number(row._amountSpring) || 0, spring);
+    if (summer > 0) row._amountSummer = Math.max(Number(row._amountSummer) || 0, summer);
+    if (annual > 0) row._amountAnnual = Math.max(Number(row._amountAnnual) || 0, annual);
   }
 
   function autumnTermAmountFromInvoice(inv) {
@@ -4266,7 +4308,11 @@
       }
       var amt = reenrolInvoiceAmountGbp(inv);
       var st = String(inv.payment_status || "").toLowerCase();
-      row.amount_billed += amt;
+      absorbCatalogSeasonTotals(row, inv);
+      /* Catalogue Autumn is once-per-place — do not sum every instalment INV-P. */
+      if (amt > 0) {
+        row.amount_billed = Math.max(Number(row.amount_billed) || 0, amt);
+      }
       var annual = Number(inv.booked_annual_gbp) || 0;
       if (annual > 0) row._amountAnnual = Math.max(Number(row._amountAnnual) || 0, annual);
       if (inv.id) row._invoiceIds.push(inv.id);
@@ -4285,7 +4331,8 @@
       if (st === "paid") {
         // keep Paid unless another instalment is open
       } else if (st !== "void") {
-        row.amount_out += amt;
+        /* Outstanding: catalogue autumn still unpaid (don't stack instalment GBP). */
+        row.amount_out = Math.max(Number(row.amount_out) || 0, amt);
         row.payment_status = "Outstanding";
       }
     });
@@ -4305,18 +4352,30 @@
       }
       var row = buildAutumnReenrolAggRow(inv, { forceLa: true });
       /* Use booked autumn once — do not sum every historical LA share. */
+      absorbCatalogSeasonTotals(row, inv);
       row.amount_billed = amt;
       row.amount_out = amt;
       row.amount = amt;
-      row._amountAnnual = Number(inv.booked_annual_gbp) || 0;
-      row.payment_status = amt > 0 ? "Outstanding" : "Paid";
+      if (Number(row._amountAutumn) > 0) {
+        row.amount = row._amountAutumn;
+        row.amount_billed = row._amountAutumn;
+        row.amount_out = row._amountAutumn;
+      }
+      row._amountAnnual = Number(inv.booked_annual_gbp) || Number(row._amountAnnual) || 0;
+      row.payment_status = amt > 0 || Number(row._amountAutumn) > 0 ? "Outstanding" : "Paid";
       if (inv.id) row._invoiceIds.push(inv.id);
       agg[key] = row;
     });
 
     return Object.keys(agg).map(function (key) {
       var row = agg[key];
-      row.amount = row.amount_out > 0 ? row.amount_out : row.amount_billed;
+      if (Number(row._amountAutumn) > 0) {
+        row.amount = row._amountAutumn;
+        row.amount_billed = Math.max(Number(row.amount_billed) || 0, row._amountAutumn);
+        if (Number(row.amount_out) > 0) row.amount_out = row._amountAutumn;
+      } else {
+        row.amount = row.amount_out > 0 ? row.amount_out : row.amount_billed;
+      }
       if (row.amount_out <= 0 && row.amount_billed > 0) row.payment_status = "Paid";
       else if (row.amount_out > 0) row.payment_status = "Outstanding";
       row.sheet = classifyPayGroup({
