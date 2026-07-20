@@ -1305,7 +1305,6 @@ export function slotsFromPublishedSessions(
     }
     const day = normalizeDay(String(s.day || ""));
     const isWeekend = WEEKEND_DAYS.has(day);
-    const counts = sessionCountsForDay(day);
     const area = String(s.area || "").trim();
     const timeSlot = String(s.timeSlot || "").trim();
     const venue = String(s.venue || "").trim();
@@ -1314,6 +1313,9 @@ export function slotsFromPublishedSessions(
       serviceType.includes("AQUATIC") &&
       (/acat/i.test(area) ||
         (/monday/i.test(day) && /11\s*to\s*12/i.test(timeSlot) && /swimfarm/i.test(venue)));
+    const counts = isAcatAquatic
+      ? countDayCentreSessionsForDay(day || "Monday")
+      : sessionCountsForDay(day);
     const price =
       Number.isFinite(feeRaw) && feeRaw > 0
         ? feeRaw
@@ -1327,7 +1329,7 @@ export function slotsFromPublishedSessions(
       durationMin,
       day,
       isWeekend,
-      isDayCentre: false,
+      isDayCentre: isAcatAquatic,
       pricePerSession: price,
       sessions: { ...counts },
       termTotals: termTotals(price, counts),

@@ -901,8 +901,35 @@
    * Autumn 26/27 season totals for the Total column.
    * Prefer catalogue booked_* once; never invent Spring/Summer from an inflated
    * instalment sum. Weekday programme weights: 14 / 11 / 13 (annual 38).
+   * ACAT Mon aquatic (Day Centre): 15 / 12 / 16 (annual 43) × £50.
    */
   function autumnCatalogSeasonTotals(r) {
+    /* ACAT — £50 × Day Centre Monday weeks (43/year; first week Tue 1 Sep makeup for Aug 31 BH). */
+    if (typeof isAcatMondayAquaticRow === "function" && isAcatMondayAquaticRow(r)) {
+      return { autumn: 750, spring: 600, summer: 800, year: 2150 };
+    }
+    if (r && r._cyrusPart === "thu_bespoke") {
+      var dcA = Number(r._amountAutumn) || 14 * 90;
+      var dcSp = Number(r._amountSpring) || 11 * 90;
+      var dcSu = Number(r._amountSummer) || 13 * 90;
+      var dcY = Number(r._amountAnnual) || 38 * 90;
+      return { autumn: dcA, spring: dcSp, summer: dcSu, year: dcY };
+    }
+    if (r && r._cyrusPart === "afterschool") {
+      var asA = Number(r._amountAutumn) || 0;
+      var asSp = Number(r._amountSpring) || 0;
+      var asSu = Number(r._amountSummer) || 0;
+      var asY = Number(r._amountAnnual) || 0;
+      if (asA > 0 || asY > 0) {
+        return {
+          autumn: asA || Number(r.amount) || 0,
+          spring: asSp,
+          summer: asSu,
+          year: asY || (asA + asSp + asSu),
+        };
+      }
+    }
+
     var autumn = Number(r && r._amountAutumn);
     if (!(autumn > 0)) autumn = Number(r && r.amount) || 0;
     var spring = Number(r && r._amountSpring) || 0;
@@ -1354,12 +1381,19 @@
     }
     if (s === "acat" || s === "acat_group" || s.indexOf("acat_") === 0) return "acat";
     if (s.indexOf("cyrus") === 0) return "cyrus";
+    if (s.indexOf("mahdavi") >= 0) return "cyrus";
+    if (s.indexOf("olivia") === 0 && (name.indexOf("cyrus") >= 0 || key.indexOf("cyrus") >= 0)) return "cyrus";
     if (s.indexOf("tinashe") === 0) return "tinashe";
     if (s.indexOf("zakariya") === 0) return "zakariya";
     if (s.indexOf("patrick") === 0) return "patrick";
     if (s.indexOf("ikram") === 0) return "ikram";
     if (s.indexOf("emanuel") === 0 || s.indexOf("emmanuel") === 0) return "emanuel";
     if (s.indexOf("fadi") === 0) return "fadi";
+    /* ACAT cohort — roster / payments keys vary (jacks vs jack_s / Jack S (ACAT)). */
+    if (s === "jacks" || s.indexOf("jack_s") === 0 || /^jacks?_acat/.test(s)) return "jacks";
+    if (s === "jackw" || s.indexOf("jack_w") === 0 || /^jackw?_acat/.test(s)) return "jackw";
+    if (s.indexOf("kamy") === 0) return "kamy";
+    if (s.indexOf("kate") === 0) return "kate";
     if (s.indexOf("adaam") === 0 || s.indexOf("aadam") === 0) return "adaam";
     if (s.indexOf("amaar") === 0) return "amaar";
     if (s.indexOf("amar") === 0) return "amar_rai"; /* Amar-Rai / amar-rai / amar_rai_singh */
@@ -1418,22 +1452,128 @@
   }
 
   /**
-   * Split Cyrus summer workbook row: Thu 90' Bespoke (£90/session) → Day Centre;
-   * Wed aquatic + Wed/Sun multi → Afterschool & Weekends.
+   * Cyrus catalogue (friendly Thu 90' @ £90 + private afterschool package).
+   * Day Centre stream = Thursday only. Afterschool = Wed MA + Sun MA + Wed aquatic.
    */
-  function splitCyrusSummerServiceRows(r) {
-    if (!r || r._cyrusPart || r._synthetic || r._crash) return null;
+  function cyrusPackageSeasonTotals() {
+    var thuRate = 90;
+    var multiRate = 120;
+    var aqRate = 50;
+    var wd = { autumn: 14, spring: 11, summer: 13, annual: 38 };
+    var we = { autumn: 13, spring: 9, summer: 11, annual: 33 };
+    function term(period) {
+      var dc = thuRate * wd[period];
+      var as = multiRate * wd[period] + multiRate * we[period] + aqRate * wd[period];
+      return { dc: dc, as: as, total: dc + as };
+    }
+    return {
+      autumn: term("autumn"),
+      spring: term("spring"),
+      summer: term("summer"),
+      annual: term("annual"),
+    };
+  }
+
+  /**
+   * Split Cyrus into Day Centre (Thu 90' Bespoke) vs Afterschool & Weekends (rest).
+   * Summer workbook + Autumn 26/27 re-enrol rows.
+   */
+  function splitCyrusServiceRows(r) {
+    if (!r || r._cyrusPart || r._crash) return null;
     if (paymentParticipantSlug(r) !== "cyrus") return null;
-    if (termBucketFor(r) !== "summer_2526") return null;
+    var bucket = termBucketFor(r);
+    if (bucket !== "summer_2526" && bucket !== "autumn_2627") return null;
     var d = r.data || {};
     var svc = String(d.Services || d.Service || "");
     var thuNote = String(d["Thursday Bespoke"] || "");
     var blob = (svc + " " + thuNote).toLowerCase();
-    var hasThu = /90\s*['′']?\s*ff\b|\bff\s*\(\s*thu|thursday\s*bespoke|90\s*['′']?\s*bespoke/.test(blob)
+    var hasThu = /90\s*['′']?\s*ff\b|\bff\s*\(\s*thu|thursday\s*bespoke|90\s*['′']?\s*bespoke|bespoke[^.]{0,40}thu/.test(blob)
       && /\bthu/.test(blob);
-    var hasOther = /30\s*['′']?\s*sw\b|aquatic|s\s*&\s*c|multi-?activity/.test(blob);
-    if (!hasThu || !hasOther) return null;
+    var hasOther = /30\s*['′']?\s*sw\b|aquatic|s\s*&\s*c|multi-?activity|admin\s*fee/.test(blob);
+    /* Autumn: known Cyrus package even when service text is short/messy. */
+    if (bucket === "autumn_2627" && !hasThu && /bespoke|multi|aquatic|mahdavi/i.test(blob + " " + String(r.client_name || ""))) {
+      hasThu = true;
+      hasOther = true;
+    }
+    if (!hasThu) return null;
+    if (bucket === "summer_2526" && !hasOther) return null;
 
+    var pack = cyrusPackageSeasonTotals();
+    var isAutumn = bucket === "autumn_2627";
+
+    function clonePart(part, idSuffix, amount, services, sessions, cost, seasons) {
+      var out = {};
+      Object.keys(r).forEach(function (k) { out[k] = r[k]; });
+      out.id = String(r.id) + idSuffix;
+      out._cyrusPart = part;
+      out._sourcePaymentId = r.id;
+      out._syntheticSplit = true;
+      out.amount = amount;
+      out.amount_billed = amount;
+      out.amount_out = amount;
+      if (seasons) {
+        out._amountAutumn = seasons.autumn;
+        out._amountSpring = seasons.spring;
+        out._amountSummer = seasons.summer;
+        out._amountAnnual = seasons.annual;
+      }
+      out.data = Object.assign({}, d, {
+        Services: services,
+        Sessions: sessions,
+        Cost: cost,
+        Term: d.Term || (isAutumn ? "Autumn 26/27" : "Summer 25/26"),
+        Stream: part === "thu_bespoke" ? "Day Centre" : "Afterschool & Weekends",
+      });
+      if (part === "thu_bespoke") {
+        out.data["Thursday Bespoke"] = thuNote
+          || "90' Bespoke Programme · Thu 15:30–17:00 · Victor · SwimFarm Hub · £90/session";
+      } else {
+        delete out.data["Thursday Bespoke"];
+      }
+      if (isAutumn) out._termBucket = "autumn_2627";
+      return out;
+    }
+
+    if (isAutumn) {
+      var afterSvc = [
+        "90' Multi-Activity - 4.30 pm to 6 pm",
+        "90' Multi-Activity - 11 am to 12.30 pm",
+        "30' Aquatic Activity, Wednesday - 4 pm to 4.30 pm",
+      ].join("\n");
+      if (/admin\s*fee/i.test(blob)) afterSvc += "\nAdmin Fee (GoCardless)";
+      return [
+        clonePart(
+          "thu_bespoke",
+          "::thu-bespoke",
+          pack.autumn.dc,
+          "90' Bespoke Programme, Thursday - 3.30 pm to 5 pm",
+          "14 / 11 / 13 / 38",
+          "£90 / session (friendly rate; std £125/hr)",
+          {
+            autumn: pack.autumn.dc,
+            spring: pack.spring.dc,
+            summer: pack.summer.dc,
+            annual: pack.annual.dc,
+          }
+        ),
+        clonePart(
+          "afterschool",
+          "::afterschool",
+          pack.autumn.as,
+          afterSvc,
+          "weekday 14/11/13 · weekend 13/9/11",
+          d.Cost || "Catalogue Multi £120 · Aquatic 30' £50",
+          {
+            autumn: pack.autumn.as,
+            spring: pack.spring.as,
+            summer: pack.summer.as,
+            annual: pack.annual.as,
+          }
+        ),
+      ];
+    }
+
+    /* Summer 25/26 — keep prior workbook session split, map Thu @ £90. */
     var sessParts = String(d.Sessions || "")
       .split("/")
       .map(function (x) { return parseInt(String(x).trim(), 10); })
@@ -1445,29 +1585,6 @@
     var otherAmt = total > thuAmt ? Math.round((total - thuAmt) * 100) / 100 : 0;
     var otherSessions = sessParts.length > 1 ? sessParts.slice(1).join("/") : "13/13/11";
 
-    function clonePart(part, idSuffix, amount, services, sessions, cost) {
-      var out = {};
-      Object.keys(r).forEach(function (k) { out[k] = r[k]; });
-      out.id = String(r.id) + idSuffix;
-      out._cyrusPart = part;
-      out._sourcePaymentId = r.id;
-      out._syntheticSplit = true;
-      out.amount = amount;
-      out.data = Object.assign({}, d, {
-        Services: services,
-        Sessions: sessions,
-        Cost: cost,
-        Term: d.Term || "Summer 25/26",
-      });
-      if (part === "thu_bespoke") {
-        out.data["Thursday Bespoke"] = thuNote
-          || "90' Bespoke Programme · Thu 15:30–17:00 · Victor · SwimFarm Hub · £90/session";
-      } else {
-        delete out.data["Thursday Bespoke"];
-      }
-      return out;
-    }
-
     return [
       clonePart(
         "thu_bespoke",
@@ -1475,7 +1592,8 @@
         thuAmt,
         "90' Bespoke Programme (Thu)",
         String(thuSessions),
-        "£90 / session (friendly rate; std £125/hr)"
+        "£90 / session (friendly rate; std £125/hr)",
+        null
       ),
       clonePart(
         "afterschool",
@@ -1483,7 +1601,8 @@
         otherAmt,
         "30' Aquatic Activity (Wed), 90' Multi-Activity (Wed), 90' Multi-Activity (Sun)",
         otherSessions,
-        d.Cost || ""
+        d.Cost || "",
+        null
       ),
     ];
   }
@@ -1491,7 +1610,7 @@
   function expandSplitServiceRows(rows) {
     var out = [];
     (rows || []).forEach(function (r) {
-      var parts = splitCyrusSummerServiceRows(r);
+      var parts = splitCyrusServiceRows(r);
       if (parts && parts.length) out.push.apply(out, parts);
       else out.push(r);
     });
@@ -1746,6 +1865,10 @@
       if (paymentParticipantSlug(r) === "acat" && !isDayCentreRow(r)) return;
       counted++;
       var amt = Number(r.amount) || 0;
+      if (termBucketFor(r) === "autumn_2627" && typeof autumnCatalogSeasonTotals === "function") {
+        var splitMeta = autumnCatalogSeasonTotals(r);
+        if (splitMeta && splitMeta.autumn > 0) amt = splitMeta.autumn;
+      }
       var c = category(r);
       var isOut = c === "outstanding";
       var countsTowardBilled = c !== "notreenrolled";
