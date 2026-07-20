@@ -24,6 +24,8 @@ Finance → **LA / Commissioning Terms** (`admin-commissioning-terms.js`).
 
 Feature flags (defaults): `commissioning_terms_enabled=true`, `commissioning_attendance_hard_block=false`.
 
+Active document: **v1.1** (absence always chargeable; discretionary makeup for LA where possible).
+
 ## Smoke
 
 ```bash
