@@ -1474,6 +1474,27 @@
     };
   }
 
+  /** Roster session → Cyrus Day Centre (Thu 90' Bespoke) only. */
+  function isCyrusThuBespokeSession(sess) {
+    if (!sess || typeof sess !== "object") return false;
+    var blob = [sess.service, sess.day, sess.timeSlot, sess.time, sess.label]
+      .map(function (x) { return String(x || ""); })
+      .join(" ")
+      .toLowerCase();
+    return /bespoke|\bff\b/.test(blob) && /\bthu/.test(blob);
+  }
+
+  /** Roster session → Cyrus Afterschool (multi / aquatic; never Thu bespoke). */
+  function isCyrusAfterschoolSession(sess) {
+    if (!sess || typeof sess !== "object") return false;
+    if (isCyrusThuBespokeSession(sess)) return false;
+    var blob = [sess.service, sess.day, sess.timeSlot, sess.time, sess.label]
+      .map(function (x) { return String(x || ""); })
+      .join(" ")
+      .toLowerCase();
+    return /multi|aquatic|swim/.test(blob);
+  }
+
   /**
    * Split Cyrus into Day Centre (Thu 90' Bespoke) vs Afterschool & Weekends (rest).
    * Summer workbook + Autumn 26/27 re-enrol rows.
@@ -1486,12 +1507,16 @@
     var d = r.data || {};
     var svc = String(d.Services || d.Service || "");
     var thuNote = String(d["Thursday Bespoke"] || "");
-    var blob = (svc + " " + thuNote).toLowerCase();
+    var blob = (svc + " " + thuNote + " " + String(r.client_name || "")).toLowerCase();
     var hasThu = /90\s*['′']?\s*ff\b|\bff\s*\(\s*thu|thursday\s*bespoke|90\s*['′']?\s*bespoke|bespoke[^.]{0,40}thu/.test(blob)
       && /\bthu/.test(blob);
     var hasOther = /30\s*['′']?\s*sw\b|aquatic|s\s*&\s*c|multi-?activity|admin\s*fee/.test(blob);
-    /* Autumn: known Cyrus package even when service text is short/messy. */
-    if (bucket === "autumn_2627" && !hasThu && /bespoke|multi|aquatic|mahdavi/i.test(blob + " " + String(r.client_name || ""))) {
+    var isAutumn = bucket === "autumn_2627";
+    /*
+     * Always split Cyrus in these terms: roster enrich can leave Services empty
+     * or without a clear Thu token until after clone filters sessions.
+     */
+    if (isAutumn || /bespoke|multi|aquatic|mahdavi|cyrus/i.test(blob) || (Array.isArray(r._participantSessions) && r._participantSessions.length)) {
       hasThu = true;
       hasOther = true;
     }
@@ -1499,7 +1524,12 @@
     if (bucket === "summer_2526" && !hasOther) return null;
 
     var pack = cyrusPackageSeasonTotals();
-    var isAutumn = bucket === "autumn_2627";
+    var thuSvcLabel = "90' Bespoke Programme, Thursday - 3.30 pm to 5 pm";
+    var afterSvcLines = [
+      "90' Multi-Activity - 4.30 pm to 6 pm",
+      "90' Multi-Activity - 11 am to 12.30 pm",
+      "30' Aquatic Activity, Wednesday - 4 pm to 4.30 pm",
+    ];
 
     function clonePart(part, idSuffix, amount, services, sessions, cost, seasons) {
       var out = {};
@@ -1517,6 +1547,20 @@
         out._amountSummer = seasons.summer;
         out._amountAnnual = seasons.annual;
       }
+      /* Never let the full roster bleed into both stream rows. */
+      if (Array.isArray(r._participantSessions) && r._participantSessions.length) {
+        out._participantSessions = r._participantSessions.filter(
+          part === "thu_bespoke" ? isCyrusThuBespokeSession : isCyrusAfterschoolSession
+        );
+      } else {
+        out._participantSessions = [];
+      }
+      out._serviceParts = Object.create(null);
+      String(services || "")
+        .split(/\n|·/)
+        .map(function (s) { return String(s || "").trim(); })
+        .filter(Boolean)
+        .forEach(function (s) { out._serviceParts[s] = 1; });
       out.data = Object.assign({}, d, {
         Services: services,
         Sessions: sessions,
@@ -1535,18 +1579,12 @@
     }
 
     if (isAutumn) {
-      var afterSvc = [
-        "90' Multi-Activity - 4.30 pm to 6 pm",
-        "90' Multi-Activity - 11 am to 12.30 pm",
-        "30' Aquatic Activity, Wednesday - 4 pm to 4.30 pm",
-      ].join("\n");
-      if (/admin\s*fee/i.test(blob)) afterSvc += "\nAdmin Fee (GoCardless)";
       return [
         clonePart(
           "thu_bespoke",
           "::thu-bespoke",
           pack.autumn.dc,
-          "90' Bespoke Programme, Thursday - 3.30 pm to 5 pm",
+          thuSvcLabel,
           "14 / 11 / 13 / 38",
           "£90 / session (friendly rate; std £125/hr)",
           {
@@ -1560,7 +1598,7 @@
           "afterschool",
           "::afterschool",
           pack.autumn.as,
-          afterSvc,
+          afterSvcLines.join("\n"),
           "weekday 14/11/13 · weekend 13/9/11",
           d.Cost || "Catalogue Multi £120 · Aquatic 30' £50",
           {
@@ -1590,7 +1628,7 @@
         "thu_bespoke",
         "::thu-bespoke",
         thuAmt,
-        "90' Bespoke Programme (Thu)",
+        thuSvcLabel,
         String(thuSessions),
         "£90 / session (friendly rate; std £125/hr)",
         null
@@ -1599,7 +1637,7 @@
         "afterschool",
         "::afterschool",
         otherAmt,
-        "30' Aquatic Activity (Wed), 90' Multi-Activity (Wed), 90' Multi-Activity (Sun)",
+        afterSvcLines.join("\n"),
         otherSessions,
         d.Cost || "",
         null
@@ -2375,9 +2413,40 @@
       out.push(t);
     }
 
+    /*
+     * Cyrus split rows: Services text is authoritative (Thu bespoke vs afterschool).
+     * Do not fall through to the full roster list — that bleeds all slots into both streams.
+     */
+    if (r && r._cyrusPart) {
+      var cyrusRaw = String(d.Services || d.Service || "").trim();
+      if (cyrusRaw) {
+        cyrusRaw.split(/\n/).forEach(function (line) { push(line); });
+        if (!out.length) {
+          stitchServiceFragments(splitServiceList(cyrusRaw)).forEach(push);
+        }
+      }
+      if (
+        r._cyrusPart === "afterschool"
+        && (rowHasGoCardlessFee(r) || (r._serviceParts && r._serviceParts["Admin Fee (GoCardless)"]))
+      ) {
+        push("Admin Fee (GoCardless)");
+      }
+      if (out.length) return out;
+    }
+
     /* Roster sessions win: one clean line per slot (no venue). */
     if (r && Array.isArray(r._participantSessions) && r._participantSessions.length) {
-      coalesceParticipantSessions(r._participantSessions).forEach(function (sess) {
+      var sessList = coalesceParticipantSessions(r._participantSessions);
+      if (paymentParticipantSlug(r) === "cyrus") {
+        /* Unsplit Cyrus (should be rare): still isolate when Stream is set. */
+        var streamHint = String((r.data && r.data.Stream) || "").toLowerCase();
+        if (/day\s*centre/.test(streamHint)) {
+          sessList = sessList.filter(isCyrusThuBespokeSession);
+        } else if (/afterschool/.test(streamHint)) {
+          sessList = sessList.filter(isCyrusAfterschoolSession);
+        }
+      }
+      sessList.forEach(function (sess) {
         push(labelFromParticipantSession(sess));
       });
       if (rowHasGoCardlessFee(r) || (r._serviceParts && r._serviceParts["Admin Fee (GoCardless)"])) {
@@ -4596,7 +4665,19 @@
           /* Keep ACAT Monday Aquatic workbook lines — do not replace with full roster. */
           if (String((r.data && r.data.Cohort) || "").toUpperCase() === "ACAT") return;
           if (isAcatMondayAquaticRow(r)) return;
+          /*
+           * Cyrus is split into Day Centre (Thu bespoke) vs Afterschool at render.
+           * Attach roster sessions for that split, but do not overwrite Services with
+           * the full four-slot blob (Day Centre would show Multis + Aquatic).
+           */
           var slug = paymentParticipantSlug(r);
+          if (slug === "cyrus") {
+            var cyrusLine = bySlug[slug];
+            if (cyrusLine && Array.isArray(cyrusLine.sessions) && cyrusLine.sessions.length) {
+              r._participantSessions = coalesceParticipantSessions(cyrusLine.sessions);
+            }
+            return;
+          }
           var line = bySlug[slug];
           if (!line || !Array.isArray(line.sessions) || !line.sessions.length) {
             /* Still normalise fee labels / stitch messy Services text. */
