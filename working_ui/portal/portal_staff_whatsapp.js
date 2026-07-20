@@ -735,8 +735,10 @@
   function ensureWaGridCell() {
     var cell = document.getElementById("topbarToolCellStaffWa");
     if (cell) return cell;
-    var row = document.getElementById("topbarWaRow");
-    var host = row || document.getElementById("topbarToolsGridRight") || document.getElementById("topbarToolsGrid");
+    var host =
+      document.getElementById("topbarToolsGridRight") ||
+      document.getElementById("topbarWaRow") ||
+      document.getElementById("topbarToolsGrid");
     if (!host) return null;
     cell = document.createElement("div");
     cell.id = "topbarToolCellStaffWa";

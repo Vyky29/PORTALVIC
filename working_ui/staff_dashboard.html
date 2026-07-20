@@ -155,9 +155,9 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script defer src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260720-wa-chunky" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260720-today-up" />
   <link rel="stylesheet" href="/portal/portal_staff_whatsapp.css?v=20260716-wa-no-clip" />
-  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260720-wa-chunky" />
+  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260720-today-up" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260709-overview-by-service" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260704-area-note-fixed" />
 </head>
@@ -354,7 +354,7 @@
         </div>
 
         <div class="topbar-right topbar-right--tools">
-          <div class="topbar-tools-grid topbar-tools-grid--flank topbar-tools-grid--catalog" id="topbarToolsGridRight" role="group" aria-label="Session tools right">
+          <div class="topbar-tools-grid topbar-tools-grid--flank topbar-tools-grid--flank-2col topbar-tools-grid--catalog" id="topbarToolsGridRight" role="group" aria-label="Session tools right">
             <div class="topbar-tool-cell" id="topbarToolCellVenue">
               <button type="button" class="topbar-tool-btn topbar-tool-btn--venue" id="topbarToolVenue" data-portal-external-url="portal-venue-review.html" aria-label="Venue report">
                 <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V10l8-4 8 4v12"/><path d="M9 22v-6h6v6"/><path d="M8 6h8"/><path d="M10 10h4"/></svg></span>
@@ -367,7 +367,7 @@
                 <span class="topbar-tool-label" aria-hidden="true">Swim Rev</span>
               </button>
             </div>
-            <div class="topbar-tool-cell" id="topbarToolCellLeadReport">
+            <div class="topbar-tool-cell" id="topbarToolCellLeadReport" hidden aria-hidden="true">
               <button type="button" class="topbar-tool-btn topbar-tool-btn--lead-report" id="topbarToolLeadReport" data-portal-external-url="portal-lead-feedback.html" aria-label="Lead feedback report">
                 <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></svg></span>
                 <span class="topbar-tool-label" aria-hidden="true">Lead</span>
@@ -379,11 +379,8 @@
                 <span class="topbar-tool-label" aria-hidden="true">Team Rev</span>
               </button>
             </div>
+            <div class="topbar-tool-cell topbar-tool-cell--staff-wa topbar-tool-cell--span2" id="topbarToolCellStaffWa" hidden aria-hidden="true"></div>
           </div>
-        </div>
-
-        <div class="topbar-wa-row" id="topbarWaRow">
-          <div class="topbar-tool-cell topbar-tool-cell--staff-wa topbar-tool-cell--span2" id="topbarToolCellStaffWa" hidden aria-hidden="true"></div>
         </div>
         <div id="topbarToolsGrid" hidden aria-hidden="true"></div>
       </div>
@@ -1030,9 +1027,9 @@
   <script src="/portal/portal_participant_photos.js?v=20260710-eiji-hazem-photos"></script>
   <script src="/portal/portal_participant_avatars_hydrate.js?v=20260702-avatar-shared"></script>
   <script src="/portal/portal_participant_identity.js?v=20260712-rayyan-f"></script>
-  <script src="/portal/portal_swimming_instructor_menus.js?v=20260720-halo-flanks"></script>
+  <script src="/portal/portal_swimming_instructor_menus.js?v=20260720-today-up"></script>
   <script src="/portal/portal_topbar_header.js?v=20260720-halo-flanks"></script>
-  <script src="/portal/portal_staff_whatsapp.js?v=20260720-halo-flanks"></script>
+  <script src="/portal/portal_staff_whatsapp.js?v=20260720-today-up"></script>
   <script src="/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category"></script>
   <script src="/portal/portal_area_note_icons.js?v=20260704-area-note-fixed"></script>
   <script src="/portal/portal_today_next_chips.js?v=20260711-home-fulltext"></script>
