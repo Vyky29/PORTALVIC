@@ -583,7 +583,9 @@
     setTopbarToolGroup(SWIMMING_ACHIEVEMENT_IDS, portalTopbarPhotoVisibleForProfile(profile), {
       visible: true,
     });
-    setTopbarToolGroup(SWIMMING_TERM_REVIEW_IDS, !!profile.swReview, { visible: true });
+    /* Swim Rev is for swimming instructors only — never for Berta/John/Michelle (or lead shell). */
+    var showSwReview = !!profile.swReview && !isProgrammeLead && !isLeadShell;
+    setTopbarToolGroup(SWIMMING_TERM_REVIEW_IDS, showSwReview, { visible: showSwReview });
     setTopbarToolGroup(SWIMMING_VENUE_IDS, venueOn, { visible: true });
     setTopbarToolGroup(SWIMMING_PICKUP_IDS, !!profile.pickup, { visible: true });
     setTopbarToolGroup(SWIMMING_PLANNER_IDS, !!profile.planner, { visible: true });
@@ -604,7 +606,7 @@
     }
 
     SWIMMING_MENU_IDS.forEach(function (id) {
-      setElementVisible(id, !!profile.swReview);
+      setElementVisible(id, showSwReview);
     });
 
     global.__PORTAL_TOPBAR_SIX_ICON_GRID__ = !!profile.sixIcon;
