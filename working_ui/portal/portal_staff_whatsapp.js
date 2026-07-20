@@ -758,7 +758,7 @@
       if (ico) ico.className = "topbar-tool-btn__ico";
       if (lab) {
         lab.className = "topbar-tool-label";
-        lab.textContent = "CS WhatsApp";
+        lab.textContent = "CS WA";
       }
     } else {
       btn.className = "topbar-staff-wa-btn";
