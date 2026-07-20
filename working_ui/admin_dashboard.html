@@ -61,7 +61,7 @@
     })();
   </script>
 <script src="/portal/portal_brand.js?v=20260520-brand"></script>
-  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260717-register-regulation-faces" />
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260720-dc-crash-weeks" />
   <script src="/portal/portal_staff_display_names.js?v=20260630-staff-display-names"></script>
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260614-changelog" />
@@ -75,7 +75,7 @@
   <script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260714-one-feedback"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260716-register-fast"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260720-dc-crash-weeks"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260716-slot-hold"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260709-family-credits"></script>
@@ -1124,9 +1124,15 @@
 
     var state = { view:'nav_hub', navHubGroup:null, drawerClient:null, drawerStaff:null, drawerIsSynthetic:false, reportTargetClient:null, search:'', shiftModalCtx:null, pendingBookingsScroll:null, pendingBookingsSlotFocus:null, commsOrderDetailKey:'', sessionOverview:{ iso:'', overrides:[] }, sessionFeedback:{ anchorIso:'', selectedIso:null, rangeFrom:'', rangeTo:'', clientQ:'' }, navGroupsOpen:{ g_operator:false, g_c4k:false, g_zoho:false, g_supabase:false, g_xero:false, g_indeed:false, g_settings_portal:false }, c4kServicesRegisterOpen:false, registerSessionSlot:null, scrollToCapacityEmbed:false, portalLatePendingCount:0, financeTab:'payments' };
     var sched = { slotsById:{}, overrides:[], termEvents:[], rosterLogRows:[], activeSlot:null, lastMsg:'', waitingSupabaseRetryBound:false, weekAnchorIso:'' };
-    /** Schedule &amp; Covers: summer term 2 roster window (dated rows in spreadsheet bundle). */
+    /**
+     * Schedule &amp; Covers + Sessions week window.
+     * Standard programmes end Fri 17 Jul; Day Centre + crash continue through Fri 31 Jul.
+     * Prefer PORTAL_TERM_FROM_TIMETABLE.lastDate so admin stays in sync with the MADRE calendar.
+     */
     var SCHED_COVER_TERM_START = '2026-06-01';
-    var SCHED_COVER_TERM_END = '2026-07-17';
+    var SCHED_COVER_TERM_END =
+      (window.PORTAL_TERM_FROM_TIMETABLE && String(PORTAL_TERM_FROM_TIMETABLE.lastDate || '').slice(0, 10)) ||
+      '2026-07-31';
     var booking = { slotsById:{}, overrides:[], waitingSupabaseRetryBound:false, selectedDate:'', metaById:{}, financeById:{}, activeTab:'master', ordersScope:'all', ordersTimePreset:'today', ordersClientFilter:'', portalOrdersPage:1, portalOrdersRows:[] };
     var invoices = { lines:[{ description:'', quantity:1, unitPrice:0, taxType:'vat20' }] };
     var KEY_MOBILE = 'adminDashDevMobilePreview';
@@ -4764,8 +4770,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!days.length) return false;
       var targetMon = bookingIsoAddDays(days[0], deltaWeeks * 7);
       var targetSun = bookingIsoAddDays(targetMon, 6);
-      if(deltaWeeks < 0) return targetMon >= SCHED_COVER_TERM_START;
-      return targetSun <= SCHED_COVER_TERM_END;
+      /* Allow weeks that only partially overlap the window (e.g. Mon 27 Jul–Sun 2 Aug). */
+      if(deltaWeeks < 0) return targetSun >= SCHED_COVER_TERM_START;
+      return targetMon <= SCHED_COVER_TERM_END;
     }
     function schedShiftWeek(deltaWeeks){
       schedEnsureState();
@@ -4991,7 +4998,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<div class="c4k-hub-weekbar__left">' +
             '<span class="c4k-hub-weekbar__lbl">WEEK (MON–SUN)</span>' +
             '<span class="c4k-hub-weekbar__range" id="schedWeekRange">' + esc(schedWeekRangeLabel(anchorIso)) + '</span>' +
-            '<span class="muted" style="display:block;font-size:11px;margin-top:4px">Summer term 2 · ' + esc(bookingFormatDdMmYyyy(SCHED_COVER_TERM_START)) + ' – ' + esc(bookingFormatDdMmYyyy(SCHED_COVER_TERM_END)) + '</span>' +
+            '<span class="muted" style="display:block;font-size:11px;margin-top:4px;overflow-wrap:break-word">Summer term 2 · Day Centre + crash · ' + esc(bookingFormatDdMmYyyy(SCHED_COVER_TERM_START)) + ' – ' + esc(bookingFormatDdMmYyyy(SCHED_COVER_TERM_END)) + '</span>' +
           '</div>' +
           '<div class="c4k-hub-weekbar__btns">' +
             '<button type="button" class="btn btn--ghost btn--sm" id="schedWeekPrev"' + (canPrev ? '' : ' disabled') + '>← Past week</button>' +
@@ -16088,7 +16095,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
      * Bounds match the term window you specified (no fabricated sessions — only merged `STAFF_DASHBOARD_SOURCE` rows).
      */
     var SERVICES_ROSTER_CALENDAR_START_ISO = '2026-04-13';
-    var SERVICES_ROSTER_CALENDAR_END_ISO = '2026-07-18';
+    var SERVICES_ROSTER_CALENDAR_END_ISO = SCHED_COVER_TERM_END;
     function adminEnumerateIsosInclusive(startIso, endIso){
       var out = [];
       var ds = bookingParseIsoLocal(String(startIso || '').trim());
@@ -17175,7 +17182,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var d = bookingParseIsoLocal(h.weekAnchorIso || isoDateLocal(new Date()));
       if(!d) return;
       d.setDate(d.getDate() + deltaWeeks * 7);
-      h.weekAnchorIso = isoDateLocal(d);
+      var nextIso = isoDateLocal(d);
+      var mon = bookingWeekIsoRangeMonSun(nextIso)[0] || nextIso;
+      /* Same Day Centre + crash window as Schedule & Covers (through 31 Jul). */
+      if(mon < SCHED_COVER_TERM_START){
+        var startDays = bookingWeekIsoRangeMonSun(SCHED_COVER_TERM_START);
+        mon = startDays[0] || SCHED_COVER_TERM_START;
+      }
+      if(mon > SCHED_COVER_TERM_END){
+        var endDays = bookingWeekIsoRangeMonSun(SCHED_COVER_TERM_END);
+        mon = endDays[0] || SCHED_COVER_TERM_END;
+      }
+      h.weekAnchorIso = mon;
       h.selectedIso = null;
       state.sessionOverview.iso = h.weekAnchorIso;
       sessionsHubRefreshActiveTab();
@@ -18322,7 +18340,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260717-register-regulation-faces';
+    var PORTAL_ADMIN_HUB_BUILD = '20260720-dc-crash-weeks';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
@@ -18480,6 +18498,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         skipAdminFormsEdge: true,
         isClubClosedDay: portalAdminDayIsClubClosed,
         showFullWeekDayStrip: true,
+        minSessionDate: SCHED_COVER_TERM_START,
+        maxSessionDate: SCHED_COVER_TERM_END,
         getClient: getSchedSupabaseClient,
         waitForSupabaseClient: adminWaitForSupabaseReady,
         getSupabaseUrl: function(){

@@ -76,9 +76,16 @@
   function clampHubWeekStart(hub, weekStartIso) {
     var ws = mondayOfWeek(weekStartIso || isoToday());
     var min = hub && hub.opts && hub.opts.minSessionDate;
-    if (!min || !/^\d{4}-\d{2}-\d{2}$/.test(min)) return ws;
-    var minMon = mondayOfWeek(min);
-    return ws < minMon ? minMon : ws;
+    if (min && /^\d{4}-\d{2}-\d{2}$/.test(min)) {
+      var minMon = mondayOfWeek(min);
+      if (ws < minMon) ws = minMon;
+    }
+    var max = hub && hub.opts && hub.opts.maxSessionDate;
+    if (max && /^\d{4}-\d{2}-\d{2}$/.test(max)) {
+      var maxMon = mondayOfWeek(max);
+      if (ws > maxMon) ws = maxMon;
+    }
+    return ws;
   }
 
   function htmlClosedDayCardInlineStyle() {

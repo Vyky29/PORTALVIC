@@ -866,6 +866,8 @@
       getFeedbackDayStats: cfg.getFeedbackDayStats,
       isClubClosedDay: cfg.isClubClosedDay,
       showFullWeekDayStrip: cfg.showFullWeekDayStrip,
+      minSessionDate: cfg.minSessionDate || "",
+      maxSessionDate: cfg.maxSessionDate || "",
       onViewFiltersChange: function (changedHub) {
         var other =
           changedHub === trackingHub
