@@ -4372,8 +4372,7 @@
               && (vatLow === "exempt"
                 || hintLow === "bank_transfer"
                 || hintLow === "gocardless"
-                || hintLow === "payment_link"
-                || r._reenrol === true);
+                || hintLow === "payment_link");
             if (familyDp) {
               r.sheet = "DIRECT_PAYMENTS";
               r._vatMode = "exempt";
