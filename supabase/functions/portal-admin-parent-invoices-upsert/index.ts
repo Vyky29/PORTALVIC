@@ -430,6 +430,7 @@ Deno.serve(async (req) => {
 
     let xero = null;
     let hold = null;
+    let pdf = null;
     if (updated.payment_status === "paid") {
       xero = await xeroSyncPaidInvoiceShare(admin, updated);
       try {
@@ -451,6 +452,26 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Same PDF as parent hub: red Draft Invoice → green PAID when status flips.
+    const payChanged = !!pay && pay !== String(existing.payment_status || "").toLowerCase();
+    if (payChanged && (pay === "paid" || pay === "unpaid")) {
+      try {
+        const regen = await regeneratePortalInvoiceSharePdf(admin, invoiceId);
+        pdf = regen.ok
+          ? { regenerated: true, pdf_storage_path: regen.pdfStoragePath }
+          : { regenerated: false, error: regen.error };
+        if (!regen.ok) {
+          console.error("[portal-admin-parent-invoices-upsert] pdf regen", regen.error);
+        }
+      } catch (e) {
+        console.error(
+          "[portal-admin-parent-invoices-upsert] pdf regen",
+          e instanceof Error ? e.message : String(e),
+        );
+        pdf = { regenerated: false, error: "pdf_regen_failed" };
+      }
+    }
+
     const title = clean(fields.title, 200);
     if (title || fields.due_date !== undefined) {
       const docPatch: Record<string, unknown> = {};
@@ -461,7 +482,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return portalAdminJson(200, { ok: true, invoice: updated, xero, hold });
+    return portalAdminJson(200, { ok: true, invoice: updated, xero, hold, pdf });
   }
 
   return portalAdminJson(400, { ok: false, error: "action_required" });
