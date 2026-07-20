@@ -1772,10 +1772,6 @@
       min-width: 0;
     }
     .pp-hub-ops__slot-time {
-      grid-column: 3;
-      grid-row: 1;
-      align-self: center;
-      justify-self: end;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -1787,6 +1783,55 @@
       white-space: nowrap;
       min-width: 0;
       text-align: center;
+    }
+    .pp-hub-ops__slot-end {
+      grid-column: 3;
+      grid-row: 1;
+      align-self: center;
+      justify-self: end;
+      display: inline-flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px 8px;
+      min-width: 0;
+      max-width: 100%;
+    }
+    .pp-hub-ops__session-done-chip {
+      flex: 0 1 auto;
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #0f172a;
+      color: #fff;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      line-height: 1.2;
+      text-transform: uppercase;
+      white-space: nowrap;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pp-hub-ops__slot--completed {
+      background: rgba(220, 38, 38, 0.1);
+      border-color: rgba(185, 28, 28, 0.38);
+      box-shadow: none;
+    }
+    .pp-hub-ops__slot--completed .pp-hub-ops__slot-name {
+      color: #991b1b;
+    }
+    .pp-hub-ops__slot--completed .pp-hub-ops__slot-place {
+      color: #b91c1c;
+    }
+    .pp-hub-ops__slot--completed .pp-hub-ops__slot-ico {
+      color: #b91c1c;
+      background: rgba(220, 38, 38, 0.14);
+    }
+    .pp-hub-ops__slot--completed .pp-hub-ops__slot-time {
+      color: #991b1b;
     }
     .pp-hub-ops__slot-time .pp-hub-ops__meta-ico {
       width: 16px;

@@ -2256,7 +2256,8 @@
    * Upcoming July crash / intensive slots (merged per day + activity).
    * Two half-hour swim bands become one "1 to 2" Aquatic card.
    */
-  function findCrashUpcomingSessionRows(data) {
+  function findCrashUpcomingSessionRows(data, opts) {
+    opts = opts || {};
     var raw =
       data && data.crash_course && Array.isArray(data.crash_course.dates)
         ? data.crash_course.dates
@@ -2297,7 +2298,9 @@
         if (!venue) venue = crashVenueFromSlotLabel(row.slot_label);
       });
       if (minStart == null || maxEnd == null) return;
-      if (g.iso === todayIso && nowMins >= maxEnd) return;
+      var completed = g.iso === todayIso && nowMins >= maxEnd;
+      /* Keep today's finished slots so the hub can show red "Session completed" cards. */
+      if (completed && !opts.includeCompletedToday) return;
       var dur = Math.max(0, maxEnd - minStart);
       var activityLabel = crashActivityRowLabel(g.activity);
       var rawLabel = (dur ? dur + "' " : "") + activityLabel;
@@ -2313,7 +2316,9 @@
         isToday: g.iso === todayIso,
         isTomorrow: g.iso === tomorrowIso,
         source: "crash",
+        completed: completed,
         _start: minStart,
+        _end: maxEnd,
       });
     });
     out.sort(function (a, b) {
@@ -2324,7 +2329,8 @@
   }
 
   /** Next booked session from roster weekday pattern (services_detail). */
-  function findRosterPatternNextSessions(data, limit) {
+  function findRosterPatternNextSessions(data, limit, opts) {
+    opts = opts || {};
     var detail =
       data && data.general && Array.isArray(data.general.services_detail)
         ? data.general.services_detail
@@ -2387,11 +2393,9 @@
         if (nextYearDateBeforeServiceStart(iso, serviceIsDayCentre(s.label || s.service))) {
           return;
         }
-        // Today: skip slots that have already ended so the heading can flip to Tomorrow.
-        if (iso === todayIso) {
-          var endM = parseServiceEndMinutes(s.time);
-          if (endM != null && nowMins >= endM) return;
-        }
+        var endM = parseServiceEndMinutes(s.time);
+        var completed = iso === todayIso && endM != null && nowMins >= endM;
+        if (completed && !opts.includeCompletedToday) return;
         out.push({
           iso: iso,
           dayLabel: formatHubDateLabel(iso),
@@ -2404,7 +2408,9 @@
           isToday: iso === todayIso,
           isTomorrow: iso === tomorrowIso,
           source: "roster",
+          completed: completed,
           _start: parseServiceStartMinutes(s.time),
+          _end: endM,
         });
       });
     }
@@ -2415,16 +2421,34 @@
    * Next sessions for the hub: July crash/intensive first when sooner,
    * then regular roster weekdays (e.g. Autumn Sundays).
    */
-  function findNextSessions(data, limit) {
+  function findNextSessions(data, limit, opts) {
+    opts = opts || {};
     var max = Math.max(1, limit || 3);
-    var crash = findCrashUpcomingSessionRows(data);
-    var roster = findRosterPatternNextSessions(data, Math.max(max, 8));
+    var crash = findCrashUpcomingSessionRows(data, opts);
+    var roster = findRosterPatternNextSessions(data, Math.max(max, 8), opts);
     var combined = crash.concat(roster);
     combined.sort(function (a, b) {
       if (a.iso !== b.iso) return a.iso < b.iso ? -1 : 1;
       return (a._start || 0) - (b._start || 0);
     });
     return combined.slice(0, max);
+  }
+
+  /** All sessions on a calendar day (incl. finished today) for the hub Today cards. */
+  function findSessionsOnIso(data, iso) {
+    var want = String(iso || "").slice(0, 10);
+    if (!want) return [];
+    var crash = findCrashUpcomingSessionRows(data, { includeCompletedToday: true }).filter(
+      function (s) {
+        return s.iso === want;
+      },
+    );
+    if (crash.length) return crash;
+    return findRosterPatternNextSessions(data, 24, { includeCompletedToday: true }).filter(
+      function (s) {
+        return s.iso === want;
+      },
+    );
   }
 
   /** Hub section title: Today / Tomorrow / Next session from the next remaining booking. */
@@ -3712,16 +3736,31 @@
 
   function hubOpsSessionSlotHtml(s) {
     var tone = serviceChipToneClass(s.rawLabel || s.label || "");
+    var completed = !!s.completed;
     var placeBits = [s.venue, s.area].filter(Boolean);
     var place = placeBits.join(" · ");
     var pinIco =
       '<svg class="pp-hub-ops__meta-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>';
     var clockIco =
       '<svg class="pp-hub-ops__meta-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+    var timeBlock = s.time
+      ? '<span class="pp-hub-ops__slot-end">' +
+        (completed
+          ? '<span class="pp-hub-ops__session-done-chip">SESSION COMPLETED</span>'
+          : "") +
+        '<span class="pp-hub-ops__slot-time">' +
+        clockIco +
+        "<span>" +
+        esc(s.time) +
+        "</span></span></span>"
+      : "";
     return (
       '<li class="pp-hub-ops__slot pp-hub-ops__slot--' +
       esc(tone) +
-      '">' +
+      (completed ? " pp-hub-ops__slot--completed" : "") +
+      '"' +
+      (completed ? ' aria-label="' + esc((s.label || "Session") + " — session completed") + '"' : "") +
+      ">" +
       '<span class="pp-hub-ops__slot-ico" aria-hidden="true">' +
       hubOpsSlotGlyph(tone) +
       "</span>" +
@@ -3733,9 +3772,7 @@
         ? '<div class="pp-hub-ops__slot-place">' + pinIco + "<span>" + esc(place) + "</span></div>"
         : "") +
       "</div>" +
-      (s.time
-        ? '<span class="pp-hub-ops__slot-time">' + clockIco + "<span>" + esc(s.time) + "</span></span>"
-        : "") +
+      timeBlock +
       "</li>"
     );
   }
@@ -3748,19 +3785,33 @@
       data.general.services_detail.length
     );
     var hasCrash = hasCrashBooking(data);
+    var todayIso = isoDateLocal(new Date());
+    var todayRows = findSessionsOnIso(data, todayIso);
     var nextList = findNextSessions(data, 4);
-    var next = nextList[0] || null;
-    // Same calendar day as the next session (e.g. Rodin Climbing + Aquatic on Sunday).
-    var sameDay = next
-      ? nextList.filter(function (x) {
-          return x.iso === next.iso;
-        })
-      : [];
-    // If Next is a crash day, only show that day's crash cards (don't mix in roster slots).
-    if (next && next.source === "crash") {
-      sameDay = sameDay.filter(function (x) {
-        return x.source === "crash";
-      });
+    var next = null;
+    var sameDay = [];
+    if (todayRows.length) {
+      /* Stay on Today until midnight — finished slots stay visible (red + chip). */
+      next = {
+        iso: todayIso,
+        dayLabel: formatHubDateLabel(todayIso),
+        isToday: true,
+        isTomorrow: false,
+        source: todayRows[0].source,
+      };
+      sameDay = todayRows;
+    } else {
+      next = nextList[0] || null;
+      sameDay = next
+        ? nextList.filter(function (x) {
+            return x.iso === next.iso;
+          })
+        : [];
+      if (next && next.source === "crash") {
+        sameDay = sameDay.filter(function (x) {
+          return x.source === "crash";
+        });
+      }
     }
     var calIco =
       '<svg class="pp-hub-ops__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
