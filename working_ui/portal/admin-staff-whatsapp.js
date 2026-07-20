@@ -395,14 +395,18 @@
   }
 
   function compareStaffWaDirectory(a, b) {
-    /* Latest writer / activity first — e.g. Giuseppe today before older unread threads. */
+    /* Unread inbound first (any date), then most recent received, then any activity. */
+    var ua = isLeaderUnread(a) ? 0 : 1;
+    var ub = isLeaderUnread(b) ? 0 : 1;
+    if (ua !== ub) return ua - ub;
+    var cmpIn = String((b && b.lastInboundAt) || "").localeCompare(
+      String((a && a.lastInboundAt) || ""),
+    );
+    if (cmpIn) return cmpIn;
     var cmp = String(staffWaLastActivityAt(b) || "").localeCompare(
       String(staffWaLastActivityAt(a) || ""),
     );
     if (cmp) return cmp;
-    var ua = isLeaderUnread(a) ? 0 : 1;
-    var ub = isLeaderUnread(b) ? 0 : 1;
-    if (ua !== ub) return ua - ub;
     return displayNameForStaff(a).localeCompare(displayNameForStaff(b), undefined, {
       sensitivity: "base",
     });
@@ -417,7 +421,7 @@
       total +
       " staff" +
       (unread ? " · " + unread + " unread" : "") +
-      " · latest first";
+      " · unread first";
     el.classList.toggle("portal-staff-wa-admin__count--has-unread", unread > 0);
   }
 
