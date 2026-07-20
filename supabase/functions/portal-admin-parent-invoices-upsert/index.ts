@@ -14,6 +14,10 @@ import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
 import { type PortalInvoiceVatMode } from "../_shared/portal_tax_invoice_pdf.ts";
 import { createPortalFamilyInvoice, regeneratePortalInvoiceSharePdf } from "../_shared/portal_create_family_invoice.ts";
 import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
+import {
+  applyInstalmentPayment,
+  normalizePaymentSchedule,
+} from "../_shared/portal_invoice_payment_schedule.ts";
 
 const BUCKET = "documents";
 const MAX_BYTES = 12 * 1024 * 1024;
@@ -396,6 +400,22 @@ Deno.serve(async (req) => {
       if (pay === "paid") {
         patch.paid_at = now;
         patch.paid_via = clean(fields.paid_via, 40) || "admin";
+        const totalGbp = parseAmount(existing.amount_gbp) || 0;
+        const schedule = normalizePaymentSchedule(existing.payment_schedule);
+        if (schedule.length) {
+          const applied = applyInstalmentPayment(schedule, {
+            amountGbp: totalGbp,
+            paidAt: now,
+            paidVia: String(patch.paid_via),
+            markAll: true,
+          });
+          patch.payment_schedule = applied.schedule;
+          patch.amount_paid_gbp = applied.amount_paid_gbp;
+          patch.next_instalment_due = null;
+        } else {
+          patch.amount_paid_gbp = totalGbp;
+          patch.next_instalment_due = null;
+        }
       }
       if (pay === "unpaid") {
         patch.paid_at = null;
@@ -406,6 +426,17 @@ Deno.serve(async (req) => {
         patch.parent_reported_notes = null;
         patch.xero_payment_id = null;
         patch.xero_synced_at = null;
+        patch.amount_paid_gbp = 0;
+        const schedule = normalizePaymentSchedule(existing.payment_schedule);
+        if (schedule.length) {
+          patch.payment_schedule = schedule.map((row) => ({
+            ...row,
+            status: "pending",
+            paid_at: null,
+            paid_via: null,
+          }));
+          patch.next_instalment_due = schedule[0]?.due_date || existing.due_date || null;
+        }
       }
     }
     const share = parseShareStatus(fields.share_status);

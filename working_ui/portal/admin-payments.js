@@ -4681,11 +4681,8 @@
       }
       var amt = reenrolInvoiceAmountGbp(inv);
       var st = String(inv.payment_status || "").toLowerCase();
+      var season = reenrolInvoiceSeason(inv);
       absorbCatalogSeasonTotals(row, inv);
-      /* Catalogue Autumn is once-per-place — do not sum every instalment INV-P. */
-      if (amt > 0) {
-        row.amount_billed = Math.max(Number(row.amount_billed) || 0, amt);
-      }
       var annual = Number(inv.booked_annual_gbp) || 0;
       if (annual > 0) row._amountAnnual = Math.max(Number(row._amountAnnual) || 0, annual);
       if (inv.id) row._invoiceIds.push(inv.id);
@@ -4701,8 +4698,20 @@
       ) {
         row._vatMode = vat;
       }
+      /*
+       * Autumn Payments status follows the Autumn INV-P only.
+       * Hidden Spring/Summer re-enrol siblings must not keep the row "Out"
+       * after admin marks the Autumn invoice paid (Serine INV-P-0087).
+       */
+      if (season !== "autumn" && season !== "year") {
+        return;
+      }
+      /* Catalogue Autumn is once-per-place — do not sum every instalment INV-P. */
+      if (amt > 0) {
+        row.amount_billed = Math.max(Number(row.amount_billed) || 0, amt);
+      }
       if (st === "paid") {
-        // keep Paid unless another instalment is open
+        // keep Paid unless another autumn instalment is open
       } else if (st !== "void") {
         /* Outstanding: catalogue autumn still unpaid (don't stack instalment GBP). */
         row.amount_out = Math.max(Number(row.amount_out) || 0, amt);
