@@ -321,12 +321,16 @@
     return 'Bank transfer';
   }
 
-  /** Flexi / one-off / per term / own — from payment_schedule labels. */
-  function schedulePlanShort(inv) {
+  function scheduleRows(inv) {
     var sched = Array.isArray(inv.payment_schedule) ? inv.payment_schedule : [];
-    var rows = sched.filter(function (r) {
+    return sched.filter(function (r) {
       return r && Number(r.amount_gbp) > 0;
     });
+  }
+
+  /** Flexi / one-off / per term / own — from payment_schedule labels. */
+  function schedulePlanShort(inv) {
+    var rows = scheduleRows(inv);
     var blob = rows
       .map(function (r) {
         return String(r.label || '');
@@ -345,13 +349,16 @@
     if (n >= 2 && /\b(half|1st|2nd|flexi)\b/.test(hay)) {
       return 'Flexi (2 per term)';
     }
-    if (n >= 3 && /month/.test(hay)) return n + ' monthly instalments';
+    if (n >= 3 && /month/.test(hay)) return n + ' monthly';
     if (
       /own way|own arrangement|own_term|admin fee|minimum prepaid|top-?ups? as you go/.test(
         hay,
       )
     ) {
       return 'Own arrangement';
+    }
+    if (n === 1 && /full payment|one payment|pay in full/.test(hay)) {
+      return 'One per term';
     }
     if (n === 1) return 'One per term';
     if (n === 2) return '2 payments this term';
@@ -364,6 +371,35 @@
     var channel = methodChannelLabel(inv);
     var plan = schedulePlanShort(inv);
     return plan ? channel + ' · ' + plan : channel;
+  }
+
+  /** Two chips: channel + schedule option (what bank-transfer flavour). */
+  function methodChipsHtml(inv) {
+    var channel = methodChannelLabel(inv);
+    var plan = schedulePlanShort(inv);
+    var html = methodChipHtml(channel);
+    if (plan) {
+      html +=
+        ' <span class="pp-inv-acc__method pp-inv-acc__method--plan" title="Payment schedule">' +
+        esc(plan) +
+        '</span>';
+    }
+    var rows = scheduleRows(inv);
+    if (rows.length) {
+      var dates = rows
+        .map(function (r) {
+          return formatDate(r.due_date);
+        })
+        .filter(Boolean)
+        .join(' · ');
+      if (dates) {
+        html +=
+          '<div class="muted pp-inv-acc__plan-dates" style="font-size:11px;margin-top:4px;line-height:1.35;min-width:0;overflow-wrap:break-word">' +
+          esc(dates) +
+          '</div>';
+      }
+    }
+    return html;
   }
 
   function fundingCategoryLabel(inv) {
@@ -476,10 +512,18 @@
     var seen = Object.create(null);
     var out = [];
     (invoices || []).forEach(function (inv) {
-      var m = methodLabel(inv);
-      if (!seen[m]) {
-        seen[m] = true;
-        out.push(methodChipHtml(m));
+      var channel = methodChannelLabel(inv);
+      var plan = schedulePlanShort(inv);
+      var key = channel + '|' + plan;
+      if (seen[key]) return;
+      seen[key] = true;
+      out.push(methodChipHtml(channel));
+      if (plan) {
+        out.push(
+          '<span class="pp-inv-acc__method pp-inv-acc__method--plan" title="Payment schedule">' +
+            esc(plan) +
+            '</span>',
+        );
       }
     });
     return out.length ? out.join('') : methodChipHtml('Bank transfer');
@@ -951,7 +995,7 @@
       fundingChipHtml(inv) +
       '</div>' +
       '<div style="margin-top:8px"><span class="muted">Method</span><br>' +
-      methodChipHtml(methodLabel(inv)) +
+      methodChipsHtml(inv) +
       '</div>' +
       '<div style="margin-top:8px"><span class="muted">VAT</span><br>' +
       esc(vatDisplayLabel(inv)) +
@@ -1246,9 +1290,11 @@
       '.pp-inv-acc__method--gc{color:#065f46;background:#d1fae5;border-color:#a7f3d0}' +
       '.pp-inv-acc__method--la{color:#5b21b6;background:#ede9fe;border-color:#c4b5fd}' +
       '.pp-inv-acc__method--bank{color:#9a3412;background:#ffedd5;border-color:#fdba74}' +
+      '.pp-inv-acc__method--plan{color:#0f766e;background:#ccfbf1;border-color:#5eead4}' +
       '.pp-inv-acc__method--card{color:#1e3a8a;background:#dbeafe;border-color:#93c5fd}' +
       '.pp-inv-acc__method--admin{color:#334155;background:#e2e8f0;border-color:#cbd5e1}' +
       '.pp-inv-acc__method--other{color:#4a6578;background:#eef2f5;border-color:#d5dee6}' +
+      '.pp-inv-acc__plan-dates{max-width:100%}' +
       '.pp-inv-acc__fund{font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid transparent}' +
       '.pp-inv-acc__fund--private{color:#9a3412;background:#ffedd5;border-color:#fdba74}' +
       '.pp-inv-acc__fund--direct{color:#065f46;background:#d1fae5;border-color:#a7f3d0}' +

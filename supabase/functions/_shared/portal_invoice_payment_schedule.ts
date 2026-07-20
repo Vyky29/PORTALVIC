@@ -72,7 +72,7 @@ export function paymentSchedulePlanShortLabel(
     return "Flexi (2 per term)";
   }
   if (n >= 3 && /month/.test(hay)) {
-    return `${n} monthly instalments`;
+    return `${n} monthly`;
   }
   if (
     /own way|own arrangement|own_term|admin fee|minimum prepaid|top-?ups? as you go/.test(
@@ -80,6 +80,9 @@ export function paymentSchedulePlanShortLabel(
     )
   ) {
     return "Own arrangement";
+  }
+  if (n === 1 && /full payment|one payment|pay in full/.test(hay)) {
+    return "One per term";
   }
   if (n === 1) return "One per term";
   if (n === 2) return "2 payments this term";
