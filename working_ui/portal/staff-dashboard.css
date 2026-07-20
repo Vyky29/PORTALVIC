@@ -5584,15 +5584,28 @@
       padding:4px 7px;
       font-size:10px;
     }
+    /* "Updated by admin" must stay readable — never 50%-width ellipsis. */
+    .section-card--today .session-chips-below-name--wrap .portal-session-slot-chip--updated{
+      max-width:100%;
+      flex:1 1 100%;
+      padding:4px 10px;
+      font-size:10px;
+    }
     .section-card--today .session-chips-below-name:not(.session-chips-below-name--wrap) .portal-session-slot-chip,
     .section-card--today .session-chips-below-name:not(.session-chips-below-name--wrap) .portal-sched-ov-badge{
       max-width:100%;
     }
-    .section-card--today .session-chips-below-name--wrap .portal-session-slot-chip--trial > span,
-    .section-card--today .session-chips-below-name--wrap .portal-session-slot-chip--updated > span{
+    .section-card--today .session-chips-below-name--wrap .portal-session-slot-chip--trial > span{
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
+      overflow-wrap:normal;
+      text-align:center;
+    }
+    .section-card--today .session-chips-below-name--wrap .portal-session-slot-chip--updated > span{
+      white-space:nowrap;
+      overflow:visible;
+      text-overflow:clip;
       overflow-wrap:normal;
       text-align:center;
     }
@@ -5655,9 +5668,10 @@
       text-transform:none;
     }
     .portal-session-slot-chip--updated > span{
-      white-space:normal;
-      overflow-wrap:anywhere;
-      text-overflow:unset;
+      white-space:nowrap;
+      overflow:visible;
+      text-overflow:clip;
+      overflow-wrap:normal;
       text-align:center;
     }
     .portal-session-slot-chip--pending{
