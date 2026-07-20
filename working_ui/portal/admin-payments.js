@@ -681,10 +681,13 @@
     if (!forceLa && !opts.forceLa && summerSheet === "PARENTS") {
       isLa = false;
     }
-    if (!forceLa && summerSheet === "DIRECT_PAYMENTS" && hint !== "la_funded" && paySheet !== "LA") {
+    if (!forceLa && summerSheet === "DIRECT_PAYMENTS") {
       isLa = false;
     }
-    if (!forceLa && summerSheet === "LA") {
+    if (!forceLa && isDpHint) {
+      isLa = false;
+    }
+    if (!forceLa && summerSheet === "LA" && !isDpHint) {
       isLa = true;
     }
 
