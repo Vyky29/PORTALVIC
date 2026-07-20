@@ -492,12 +492,19 @@
   function decorateSheetHandles() {
     if (!global.document) return;
     Array.prototype.forEach.call(global.document.querySelectorAll(".sheet-handle"), function (el) {
-      if (el.dataset.portalSheetBackBound === "1") return;
-      el.dataset.portalSheetBackBound = "1";
-      el.setAttribute("role", "button");
-      el.setAttribute("tabindex", "0");
-      el.setAttribute("aria-label", "Go back");
+      if (el.dataset.portalSheetBackBound !== "1") {
+        el.dataset.portalSheetBackBound = "1";
+        el.setAttribute("role", "button");
+        el.setAttribute("aria-label", "Go back");
+      }
+      var sheet = el.closest && el.closest(".sheet");
+      var open = !!(sheet && sheet.classList.contains("open"));
+      el.setAttribute("tabindex", open ? "0" : "-1");
     });
+  }
+
+  function portalSyncSheetHandleTabindex() {
+    decorateSheetHandles();
   }
 
   function portalInitSheetBackNavigation() {
@@ -547,6 +554,7 @@
   global.portalHandleDockQuickMenuTap = portalHandleDockQuickMenuTap;
   global.portalQuickMenuMinimalToggle = portalQuickMenuMinimalToggle;
   global.portalBindDockQuickMenuEarly = portalBindDockQuickMenuEarly;
+  global.portalSyncSheetHandleTabindex = portalSyncSheetHandleTabindex;
 
   if (global.document) {
     if (global.document.readyState === "loading") {

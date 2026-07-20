@@ -3354,6 +3354,8 @@
         }
       }
       currentSheet.classList.add('open');
+      currentSheet.setAttribute('aria-hidden', 'false');
+      if(typeof portalSyncSheetHandleTabindex === 'function') portalSyncSheetHandleTabindex();
       if(backdropEl){
         if(id === 'internalChatSheet') backdropEl.classList.remove('open');
         else backdropEl.classList.add('open');
@@ -3461,7 +3463,15 @@
         }
       }catch(_achCam){}
       const hadClientOpen = $$('.sheet.open').some(s => s.id === 'clientSheet');
-      $$('.sheet.open').forEach(s => s.classList.remove('open'));
+      $$('.sheet.open').forEach(s => {
+        try{
+          const ae = document.activeElement;
+          if(ae && s.contains(ae) && typeof ae.blur === 'function') ae.blur();
+        }catch(_blur){}
+        s.classList.remove('open');
+        s.setAttribute('aria-hidden', 'true');
+      });
+      if(typeof portalSyncSheetHandleTabindex === 'function') portalSyncSheetHandleTabindex();
       document.getElementById('clientGeneralSheet')?.setAttribute('aria-hidden', 'true');
       document.getElementById('clientBtnGeneral')?.setAttribute('aria-expanded', 'false');
       document.getElementById('clientSessionsOverviewSheet')?.setAttribute('aria-hidden', 'true');
