@@ -108,6 +108,15 @@
 
   function toIso(staffId) {
     var t = termCfg();
+    var id = String(staffId || "").trim().toLowerCase();
+    var perStaff = t.termStaffDashboardCalendarToByProfileKey;
+    if (id && perStaff && typeof perStaff === "object") {
+      var lookup = termStaffProfileLookupKeys(id);
+      for (var i = 0; i < lookup.length; i++) {
+        var override = normIso(perStaff[lookup[i]]);
+        if (override) return override;
+      }
+    }
     var standard = normIso(t.termDashboardCalendarTo) || "2026-07-17";
     var dayCentre = normIso(t.termDashboardCalendarToDayCentre) || normIso(t.lastDate) || "2026-07-31";
     if (staffId != null && String(staffId).trim() && staffUsesDayCentreCalendar(staffId)) {
@@ -317,11 +326,14 @@
     return normIso(perStaff[svc]);
   }
 
-  /** Hide Day Centre (etc.) before staff-specific service start — e.g. Youssef from 12 Jun. */
+  /** Hide Day Centre (etc.) before staff-specific service start — e.g. Youssef from 12 Jun.
+   *  Also hide after per-staff calendar end (e.g. Youssef through 24 Jul). */
   function staffSessionServiceActiveOnDate(staffId, sessionRow, isoYmd) {
     var iso = normIso(isoYmd);
     var id = String(staffId || "").trim().toLowerCase();
     if (!iso || !id || !sessionRow) return true;
+    var calTo = toIso(id);
+    if (calTo && iso > calTo) return false;
     if (!rosterRowIsDayCentre(sessionRow)) return true;
     var start = staffServiceStartIso(id, "day_centre");
     if (start && iso < start) return false;

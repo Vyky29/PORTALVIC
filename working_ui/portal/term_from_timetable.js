@@ -20,6 +20,9 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   "termDashboardCalendarFrom": "2026-06-01",
   "termDashboardCalendarTo": "2026-07-17",
   "termDashboardCalendarToDayCentre": "2026-07-31",
+  "termStaffDashboardCalendarToByProfileKey": {
+    "youssef": "2026-07-24"
+  },
   "termStaffDayCentreCalendarKeys": [
     "michelle",
     "lulia",
