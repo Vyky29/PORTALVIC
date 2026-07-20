@@ -390,31 +390,28 @@
     return out > inn;
   }
 
-  function staffWaTier(l) {
-    if (isLeaderUnread(l)) return 0;
-    if (hasAdminReplyAfterInbound(l)) return 1;
-    return 2;
-  }
-
-  function staffWaSortKey(l) {
-    var tier = staffWaTier(l);
-    if (tier === 0) return String(l.lastInboundAt || "");
-    if (tier === 1) return String(l.lastOutboundAt || l.lastInboundAt || "");
-    return String(l.lastInboundAt || l.lastOutboundAt || "");
+  /** Most recent activity on the thread (staff inbound or club outbound). */
+  function staffWaLastActivityAt(l) {
+    var inn = String((l && l.lastInboundAt) || "");
+    var out = String((l && l.lastOutboundAt) || "");
+    if (!inn) return out;
+    if (!out) return inn;
+    return inn >= out ? inn : out;
   }
 
   function staffWaListWhen(l) {
-    if (isLeaderUnread(l)) return l.lastInboundAt || "";
-    if (hasAdminReplyAfterInbound(l)) return l.lastOutboundAt || "";
-    return l.lastInboundAt || l.lastOutboundAt || "";
+    return staffWaLastActivityAt(l);
   }
 
   function compareStaffWaDirectory(a, b) {
-    var ta = staffWaTier(a);
-    var tb = staffWaTier(b);
-    if (ta !== tb) return ta - tb;
-    var cmp = String(staffWaSortKey(b) || "").localeCompare(String(staffWaSortKey(a) || ""));
+    /* Latest writer / activity first — e.g. Giuseppe today before older unread threads. */
+    var cmp = String(staffWaLastActivityAt(b) || "").localeCompare(
+      String(staffWaLastActivityAt(a) || ""),
+    );
     if (cmp) return cmp;
+    var ua = isLeaderUnread(a) ? 0 : 1;
+    var ub = isLeaderUnread(b) ? 0 : 1;
+    if (ua !== ub) return ua - ub;
     return displayNameForStaff(a).localeCompare(displayNameForStaff(b), undefined, {
       sensitivity: "base",
     });
@@ -429,7 +426,7 @@
       total +
       " staff" +
       (unread ? " · " + unread + " unread" : "") +
-      " · unread first";
+      " · latest first";
     el.classList.toggle("portal-staff-wa-admin__count--has-unread", unread > 0);
   }
 
