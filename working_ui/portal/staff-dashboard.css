@@ -441,10 +441,18 @@
       display:none !important;
     }
     .avatar.avatar--has-staff-photo{
-      background:#1a2330;
+      background:#5c5c5c !important;
     }
-    .avatar.avatar--has-staff-photo .topbar-staff-photo--halo{
-      background:#1a2330;
+    .avatar.avatar--has-staff-photo .topbar-staff-photo--halo,
+    .avatar.avatar--has-staff-photo .avatar-wrap[data-gender="f"] .topbar-staff-photo--halo,
+    .avatar-wrap[data-gender="f"] .avatar.avatar--has-staff-photo .topbar-staff-photo--halo,
+    .avatar-wrap[data-staff-key="sandra"] .avatar.avatar--has-staff-photo .topbar-staff-photo--halo,
+    .avatar-wrap[data-staff-key="aurora"] .avatar.avatar--has-staff-photo .topbar-staff-photo--halo,
+    .avatar-wrap[data-staff-key="berta"] .avatar.avatar--has-staff-photo .topbar-staff-photo--halo,
+    .avatar-wrap[data-staff-key="sevitha"] .avatar.avatar--has-staff-photo .topbar-staff-photo--halo,
+    .avatar-wrap[data-staff-key="lulia"] .avatar.avatar--has-staff-photo .topbar-staff-photo--halo,
+    .avatar-wrap[data-staff-key="michelle"] .avatar.avatar--has-staff-photo .topbar-staff-photo--halo{
+      background:#5c5c5c !important;
     }
     .topbar-staff-photo--halo{
       position:absolute;
@@ -470,14 +478,19 @@
     .avatar-wrap[data-staff-key="michelle"] .topbar-staff-photo--halo{
       background:var(--topbar-profile-female-bg,#fef5f9);
     }
-    .topbar-staff-photo--halo img{
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      object-position:center 22%;
-      transform:scale(1.14);
-      transform-origin:center 22%;
-      display:block;
+    .topbar-staff-photo--halo img,
+    .avatar.avatar--brand-default .topbar-staff-photo--halo img,
+    .avatar.avatar--has-staff-photo .topbar-staff-photo--halo img,
+    #topbarStaffPhotoImg{
+      width:100% !important;
+      height:100% !important;
+      max-width:none !important;
+      max-height:none !important;
+      object-fit:cover !important;
+      object-position:center 20% !important;
+      transform:none !important;
+      background:#5c5c5c !important;
+      display:block !important;
     }
     .topbar-staff-photo--halo .topbar-staff-photo__initials{
       position:absolute;
@@ -1005,8 +1018,9 @@
       pointer-events:none;
     }
     .avatar-initials:not([hidden]){display:flex}
-    /* Default club logo: fits fully inside the circle */
-    .avatar.avatar--brand-default img{
+    /* Default club logo: fits fully inside the circle (not staff profile photos) */
+    .avatar.avatar--brand-default > img.avatar-brand-logo,
+    .avatar.avatar--brand-default img.avatar-brand-logo{
       object-fit:contain;
       object-position:center;
       background:linear-gradient(180deg,#f2f7fb,#e5edf5);
