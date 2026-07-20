@@ -1641,7 +1641,21 @@
   }
 
   function hubMenuBodyHtml(data, opts) {
-    return reenrolIntensiveMenuSectionHtml(data) + infoButtonsHtml(data, opts);
+    var statusByIso =
+      (opts && opts.statusByIso) ||
+      (opts && opts.host && opts.host._ppTermStatusByIso) ||
+      Object.create(null);
+    var parts = buildTermSessionDateParts(data, statusByIso);
+    var oldSection = "";
+    if (parts.oldTermDatesHtml) {
+      oldSection =
+        '<section class="pp-hub-menu-old-terms" aria-label="Old term dates">' +
+        '<p class="pp-pax-info-section-label pp-pax-info-section-label--old">Old Term Dates</p>' +
+        '<p class="pp-muted pp-hub-menu-old-terms__hint">Previous academic year — Summer 25/26 session dates.</p>' +
+        parts.oldTermDatesHtml +
+        "</section>";
+    }
+    return reenrolIntensiveMenuSectionHtml(data) + oldSection + infoButtonsHtml(data, opts);
   }
 
   function closeHubMenuSheet() {
@@ -1692,7 +1706,8 @@
       });
     }
     if (sheetBody) {
-      sheetBody.innerHTML = hubMenuBodyHtml(data, opts);
+      var menuOpts = Object.assign({}, opts || {}, { host: host });
+      sheetBody.innerHTML = hubMenuBodyHtml(data, menuOpts);
       bindHubOpenButtons(host, data, opts, sheetBody);
     }
     if (btn && !btn.__ppBoundMenu) {
@@ -3005,6 +3020,7 @@
 
     var thisChunks = [];
     var laterChunks = [];
+    var oldTermChunks = [];
     var completedTermHtml = "";
     var crashHtml = "";
     var upcomingAccordions = [];
@@ -3128,15 +3144,22 @@
     if (crashHtml) thisChunks.push(crashHtml);
 
     if (acceptedNext || todayIso > summerTo) {
-      // Re-enrolled, or summer over without confirm: 26/27 above Next session,
-      // Summer history under Later terms (below the session box).
+      // Re-enrolled, or summer over without confirm: 26/27 under This term / Later terms.
+      // Summer 25/26 is never a Later term — after re-enrol it moves to Quick menu → Old Term Dates.
       var autumnSettled = hubReenrolPayState(data) === "settled";
       upcomingAccordions.forEach(function (term, idx) {
         var html = termAccordionHtml(term.label, term.body, false, autumnSettled && acceptedNext);
         if (idx === 0) thisChunks.push(html);
         else laterChunks.push(html);
       });
-      if (completedTermHtml) laterChunks.push(completedTermHtml);
+      if (completedTermHtml) {
+        if (acceptedNext) {
+          oldTermChunks.push(completedTermHtml);
+        } else {
+          /* Still visible on the hub under This term until they re-enrol. */
+          thisChunks.push(completedTermHtml);
+        }
+      }
     } else {
       // Through Fri 17 Jul, not re-enrolled: Summer only (green past / blue upcoming).
       // No 26/27 red preview until the term has ended.
@@ -3158,6 +3181,7 @@
     var allowLater = !isTermByTermBooking(data);
     var thisInner = thisChunks.join("");
     var laterInner = allowLater ? laterChunks.join("") : "";
+    var oldInner = oldTermChunks.join("");
 
     function wrapStack(inner, aria) {
       if (!inner) return "";
@@ -3174,6 +3198,7 @@
     return {
       thisTermHtml: thisInner ? wrapStack(thisInner, "This term session dates") : "",
       laterTermsHtml: laterInner ? wrapStack(laterInner, "Later term session dates") : "",
+      oldTermDatesHtml: oldInner ? wrapStack(oldInner, "Old term session dates") : "",
       fullHtml: fullInner ? wrapStack(fullInner, "Session dates") : "",
     };
   }
@@ -3338,6 +3363,10 @@
   function applyTermDateChipStatuses(host, data, statusByIso) {
     if (!host) return;
     var parts = buildTermSessionDateParts(data, statusByIso);
+    try {
+      host._ppTermStatusByIso = statusByIso || Object.create(null);
+      host._ppTermParts = parts;
+    } catch (_e) {}
     var thisEl = host.querySelector('[data-pp-term-chips="this"]');
     var laterEl = host.querySelector('[data-pp-term-chips="later"]');
     if (thisEl || laterEl) {
@@ -3363,6 +3392,33 @@
           laterEl.hidden = true;
           laterEl.innerHTML = "";
         }
+      }
+      /* Refresh Quick menu Old Term Dates once chip statuses resolve. */
+      var sheetBody = global.document && global.document.getElementById("ppHubMenuSheetBody");
+      if (sheetBody && parts.oldTermDatesHtml) {
+        var oldSec = sheetBody.querySelector(".pp-hub-menu-old-terms");
+        var nextOld =
+          '<section class="pp-hub-menu-old-terms" aria-label="Old term dates">' +
+          '<p class="pp-pax-info-section-label pp-pax-info-section-label--old">Old Term Dates</p>' +
+          '<p class="pp-muted pp-hub-menu-old-terms__hint">Previous academic year — Summer 25/26 session dates.</p>' +
+          parts.oldTermDatesHtml +
+          "</section>";
+        if (oldSec) {
+          oldSec.outerHTML = nextOld;
+        } else {
+          var reenr = sheetBody.querySelector(".pp-hub-menu-reenr");
+          var tmp = global.document.createElement("div");
+          tmp.innerHTML = nextOld;
+          var node = tmp.firstChild;
+          if (node) {
+            if (reenr && reenr.nextSibling) sheetBody.insertBefore(node, reenr.nextSibling);
+            else if (reenr) sheetBody.appendChild(node);
+            else sheetBody.insertBefore(node, sheetBody.firstChild);
+          }
+        }
+      } else if (sheetBody && !parts.oldTermDatesHtml) {
+        var gone = sheetBody.querySelector(".pp-hub-menu-old-terms");
+        if (gone) gone.remove();
       }
       return;
     }
@@ -3610,7 +3666,7 @@
           "No more sessions left this summer term. Your 2026/27 place continues with the office — nothing for you to submit.";
       } else if (hasNextYear) {
         endNote =
-          "No upcoming session found on your usual days yet. Check This term dates above for when sessions start.";
+          "No upcoming session found on your usual days yet. Check This term dates below for when sessions start.";
       } else {
         endNote = "No more sessions left this summer term. Book 2026/27 when you are ready.";
       }
@@ -3658,7 +3714,6 @@
       "</div>";
     return (
       '<section class="pp-hub-ops" aria-label="Sessions and next booking">' +
-      thisTermBlock +
       '<p class="' +
       headingClass +
       '" data-pp-next-heading>' +
@@ -3667,6 +3722,7 @@
       '<div class="pp-hub-ops__next-block">' +
       nextBody +
       "</div>" +
+      thisTermBlock +
       laterTermBlock +
       '<div id="ppHubAlerts" class="pp-hub-alerts" hidden></div>' +
       "</section>"
