@@ -1692,6 +1692,7 @@
 
   function termAccordionMetaHtml(group) {
     var m = termOrdersMetaParts(group.rows);
+    var termId = String((group && group.termId) || "").trim();
     var html = '<span class="pay-term-acc__meta" title="Billed totals for this term (Afterschool + Day Centre)">'
       + '<span class="pay-term-acc__chip pay-term-acc__chip--stack pay-term-acc__chip--orders">'
       + '<span class="pay-term-acc__chip-title">' + esc(m.unit) + "</span>"
@@ -1704,10 +1705,13 @@
       + "<b>" + money(m.dcDue) + "</b></span>"
       + '<span class="pay-term-acc__chip pay-term-acc__chip--stack pay-term-acc__chip--term-tot" title="Afterschool billed + Day Centre billed">'
       + '<span class="pay-term-acc__chip-title">Total this term</span>'
-      + "<b>" + money(m.termTot) + "</b></span>"
-      + '<span class="pay-term-acc__chip pay-term-acc__chip--stack pay-term-acc__chip--year-tot" title="Projected year programme for LA/NHS, auto-reenrol and known continuing places">'
-      + '<span class="pay-term-acc__chip-title">Total this year</span>'
-      + "<b>" + money(m.yearTot) + "</b></span>";
+      + "<b>" + money(m.termTot) + "</b></span>";
+    /* Summer 25/26 is mid-year billing — year programme total is misleading here. */
+    if (termId !== "summer_2526") {
+      html += '<span class="pay-term-acc__chip pay-term-acc__chip--stack pay-term-acc__chip--year-tot" title="Projected year programme for LA/NHS, auto-reenrol and known continuing places">'
+        + '<span class="pay-term-acc__chip-title">Total this year</span>'
+        + "<b>" + money(m.yearTot) + "</b></span>";
+    }
     html += "</span>";
     return html;
   }
@@ -1885,7 +1889,7 @@
         + '<summary class="pay-term-acc__sum">'
         + '<span><span class="pay-term-acc__title">' + esc(sg.bucket.title) + "</span>"
         + '<span class="pay-term-acc__sub">' + esc(sg.bucket.subtitle) + "</span></span>"
-        + termAccordionMetaHtml({ rows: metaRows })
+        + termAccordionMetaHtml({ rows: metaRows, termId: termId })
         + "</summary>"
         + termSummaryBlockHtml(scoped, vis, termId)
         + "</details>";
@@ -3330,7 +3334,7 @@
         + '<summary class="pay-term-acc__sum">'
         + '<span><span class="pay-term-acc__title">' + esc(g.bucket.title) + "</span>"
         + '<span class="pay-term-acc__sub">' + esc(g.bucket.subtitle) + "</span></span>"
-        + termAccordionMetaHtml({ rows: metaRows })
+        + termAccordionMetaHtml({ rows: metaRows, termId: termId })
         + "</summary>"
         + '<div class="pay-term-acc__body">'
         + serviceKindToggleHtml(termId)
