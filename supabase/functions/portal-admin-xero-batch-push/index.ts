@@ -1,8 +1,9 @@
 // @ts-nocheck — Edge Function (Deno).
 //
 // portal-admin-xero-batch-push
-// Push Portal-created family invoices (INV-P) into Xero as ACCREC invoices.
-// Stamps xero_invoice_id on success. Idempotent: skips rows that already have one.
+// Push PAID Portal-created family invoices (INV-P) into Xero as ACCREC invoices,
+// then post the Payment so they show as paid. Unpaid drafts stay Portal-only.
+// Also retries payment write-back for paid rows that already have xero_invoice_id.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
@@ -72,7 +73,7 @@ Deno.serve(async (req) => {
     .is("xero_invoice_id", null)
     .in("created_via", ["portal", "reenrolment"])
     .eq("share_status", "ready")
-    .neq("payment_status", "void")
+    .eq("payment_status", "paid")
     .order("created_at", { ascending: true })
     .limit(limit);
 
@@ -84,18 +85,38 @@ Deno.serve(async (req) => {
     return portalAdminJson(500, { ok: false, error: "list_failed" });
   }
 
-  if (!shares?.length) {
+  // Paid invoices already in Xero but missing payment write-back.
+  let paymentOnly: typeof shares = [];
+  if (!ids.length) {
+    const { data: needPay } = await admin
+      .from("portal_parent_invoice_share")
+      .select(
+        "id, contact_id, invoice_number, amount_gbp, due_date, payment_status, paid_via, xero_invoice_id, xero_payment_id, created_via, vat_mode, line_description, line_items, quantity, unit_price_gbp, reference_text, created_at, document_id, payment_method_hint",
+      )
+      .eq("payment_status", "paid")
+      .eq("share_status", "ready")
+      .in("created_via", ["portal", "reenrolment"])
+      .not("xero_invoice_id", "is", null)
+      .is("xero_payment_id", null)
+      .order("created_at", { ascending: true })
+      .limit(limit);
+    paymentOnly = needPay || [];
+  }
+
+  if (!shares?.length && !paymentOnly.length) {
     return portalAdminJson(200, {
       ok: true,
       pushed: 0,
       failed: 0,
       skipped: 0,
+      payments_synced: 0,
       results: [],
-      message: "No unsynced Portal invoices to push.",
+      message: "No paid Portal invoices waiting for Xero (create or payment sync).",
     });
   }
 
-  const contactIds = [...new Set(shares.map((s) => clean(s.contact_id, 120)).filter(Boolean))];
+  const allForContacts = [...(shares || []), ...paymentOnly];
+  const contactIds = [...new Set(allForContacts.map((s) => clean(s.contact_id, 120)).filter(Boolean))];
   const parentByContact = new Map<string, Record<string, unknown>>();
   const participantByContact = new Map<string, string>();
   if (contactIds.length) {
@@ -121,7 +142,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  const docIds = shares.map((s) => String(s.document_id || "")).filter(Boolean);
+  const docIds = (shares || []).map((s) => String(s.document_id || "")).filter(Boolean);
   const docDateById = new Map<string, string>();
   if (docIds.length) {
     const { data: docs } = await admin.from("documents").select("id, created_at").in("id", docIds);
@@ -136,8 +157,11 @@ Deno.serve(async (req) => {
   let pushed = 0;
   let failed = 0;
   let skipped = 0;
+  let paymentsSynced = 0;
 
-  for (const share of shares) {
+  for (const share of shares || []) {
+    // Soft pacing — Xero returns 429 when we burst.
+    await new Promise((r) => setTimeout(r, 300));
     const shareId = String(share.id);
     if (clean(share.xero_invoice_id, 80)) {
       skipped += 1;
@@ -317,15 +341,52 @@ Deno.serve(async (req) => {
     });
   }
 
+  for (const share of paymentOnly) {
+    const shareId = String(share.id);
+    await new Promise((r) => setTimeout(r, 200));
+    const paymentSync = await xeroSyncPaidInvoiceShare(admin, {
+      id: shareId,
+      xero_invoice_id: share.xero_invoice_id,
+      xero_payment_id: share.xero_payment_id,
+      amount_gbp: share.amount_gbp,
+      invoice_number: share.invoice_number,
+      paid_via: share.paid_via || "portal",
+    });
+    if (paymentSync?.synced) {
+      paymentsSynced += 1;
+      results.push({
+        id: shareId,
+        invoice_number: share.invoice_number,
+        ok: true,
+        payment_only: true,
+        payment: paymentSync,
+      });
+    } else {
+      results.push({
+        id: shareId,
+        invoice_number: share.invoice_number,
+        ok: !!paymentSync?.skipped,
+        payment_only: true,
+        payment: paymentSync,
+      });
+      if (paymentSync?.error) failed += 1;
+      else skipped += 1;
+    }
+  }
+
+  const parts = [];
+  if (pushed) parts.push(`Pushed ${pushed} paid invoice${pushed === 1 ? "" : "s"} to Xero`);
+  if (paymentsSynced) {
+    parts.push(`synced ${paymentsSynced} payment${paymentsSynced === 1 ? "" : "s"}`);
+  }
+  if (failed) parts.push(`${failed} failed`);
   return portalAdminJson(200, {
     ok: true,
     pushed,
     failed,
     skipped,
+    payments_synced: paymentsSynced,
     results,
-    message:
-      pushed || failed
-        ? `Pushed ${pushed} to Xero` + (failed ? `, ${failed} failed` : "")
-        : "Nothing pushed",
+    message: parts.length ? parts.join(", ") : "Nothing pushed",
   });
 });

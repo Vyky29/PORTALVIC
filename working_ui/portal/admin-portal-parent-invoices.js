@@ -547,8 +547,13 @@
   }
 
   function xeroSummary(inv) {
+    var pay = String((inv && inv.payment_status) || '').toLowerCase();
+    /* Xero push is paid-only — unpaid drafts stay Portal-only (no status nag). */
+    if (pay !== 'paid') return '';
     if (inv.xero_invoice_id) {
-      return '<span class="pp-inv-acc__xero pp-inv-acc__xero--ok">In Xero</span>';
+      return inv.xero_payment_id
+        ? '<span class="pp-inv-acc__xero pp-inv-acc__xero--ok">In Xero · paid</span>'
+        : '<span class="pp-inv-acc__xero pp-inv-acc__xero--ok">In Xero</span>';
     }
     if (inv.xero_push_status === 'failed') {
       return '<span class="pp-inv-acc__xero pp-inv-acc__xero--fail">Xero failed</span>';
@@ -782,6 +787,8 @@
       else if (pay === 'void') voidN += 1;
       else unpaid += 1;
       if (String(inv.share_status || '') === 'hidden') hidden += 1;
+      /* Xero chips: paid Portal INV-Ps only */
+      if (pay !== 'paid') return;
       if (inv.xero_invoice_id) return;
       if (inv.xero_push_status === 'failed') xeroFail += 1;
       else if (inv.created_via === 'portal' || inv.created_via === 'reenrolment') xeroMissing += 1;
@@ -1949,7 +1956,7 @@
       '<div class="card-h"><h3>Re-enrolments &amp; shared invoices</h3>' +
       '<span class="chip chip--pend" id="portalParentInvoicesMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Track instalments after re-enrolment. Use <strong>Year / Term</strong> filters to switch booked totals. Rows are sorted by re-enrol date. LA sheet clients appear as office auto even without a family invoice. Day Centre places start 1 Sept (no half-term; Christmas closed). <strong>Push to Xero</strong> for bookkeeping; match Tide bank CSV to mark paid.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Track instalments after re-enrolment. Use <strong>Year / Term</strong> filters to switch booked totals. Rows are sorted by re-enrol date. LA sheet clients appear as office auto even without a family invoice. Day Centre places start 1 Sept (no half-term; Christmas closed). <strong>Push paid to Xero</strong> sends only <em>paid</em> Portal INV-Ps (creates the ACCREC and marks it paid in Xero). Unpaid drafts stay in Portal until you mark paid.</p>' +
       '<div class="toolbar" style="margin-bottom:8px;flex-wrap:wrap;gap:8px;align-items:center">' +
       '<span class="muted" style="font-size:12px;font-weight:700">Amount</span>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-amount="year">Year 26/27</button>' +
@@ -1965,10 +1972,10 @@
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="paid">Paid</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="pending">Pending confirmation</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="buffer_low">Buffer low</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="xero_unsynced">Not in Xero</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="xero_unsynced">Paid not in Xero</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="hidden">Hidden</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParentInvoicesRefreshEmbed">Refresh</button>' +
-      '<button type="button" class="btn btn--sm btn--primary" id="portalParentInvoicesPushXero">Push to Xero</button>' +
+      '<button type="button" class="btn btn--sm btn--primary" id="portalParentInvoicesPushXero" title="Creates ACCREC in Xero for paid Portal invoices and posts the payment">Push paid to Xero</button>' +
       '<button type="button" class="btn btn--sm" id="portalParentInvoicesExportXero">Export to Xero CSV</button>' +
       '</div>' +
       '<details style="margin:0 0 14px;padding:12px;border:1px solid var(--line,#e5e7eb);border-radius:10px;max-width:100%;min-width:0">' +

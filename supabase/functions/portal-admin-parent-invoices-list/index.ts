@@ -261,7 +261,10 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
   }
   if (contactId) q = q.eq("contact_id", contactId);
   if (listFilter === "xero_unsynced") {
-    q = q.is("xero_invoice_id", null).in("created_via", ["portal", "reenrolment"]);
+    q = q
+      .is("xero_invoice_id", null)
+      .in("created_via", ["portal", "reenrolment"])
+      .eq("payment_status", "paid");
   }
 
   const { data: shares, error } = await q;
@@ -656,6 +659,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     .from("portal_parent_invoice_share")
     .select("id", { count: "exact", head: true })
     .is("xero_invoice_id", null)
+    .eq("payment_status", "paid")
     .in("created_via", ["portal", "reenrolment"]);
 
   const bufferLowContacts = [...bufferByContact.values()].filter((b) => b.is_low).length;
