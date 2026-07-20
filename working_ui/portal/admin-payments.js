@@ -2241,6 +2241,14 @@
     return title;
   }
 
+  /** Day Centre summer crash for Zakariya (Mon–Thu week of 20 Jul). */
+  function zakariyaCrashServiceLines() {
+    return [
+      "60' Climbing Activity, July 20th to 23rd - 12 pm to 1 pm",
+      "60' Aquatic Activity, July 20th to 23rd - 1 pm to 2 pm",
+    ];
+  }
+
   function crashTitleFromHead(head) {
     var s = normalizeServiceDisplay(String(head || "").trim());
     s = s.replace(/\s*\(1\s*to\s*1\)|\s*\(1to1\)|\s*1to1\b/gi, "").trim();
@@ -2434,6 +2442,23 @@
       if (out.length) return out;
     }
 
+    /* Summer crash course invoices — before roster (roster is term Sundays, not Jul crash). */
+    if (r && r._crash) {
+      if (paymentParticipantSlug(r) === "zakariya") {
+        zakariyaCrashServiceLines().forEach(push);
+        if (out.length) return out;
+      }
+      if (r._crashLineDesc) {
+        parseBulletCrashOneLiners(r._crashLineDesc).forEach(push);
+        var inlineRe = /([^\n—]+?)\s*\(([^)]*Summer crash[^)]*)\)/gi;
+        var m;
+        while ((m = inlineRe.exec(String(r._crashLineDesc || "")))) {
+          push(formatCrashParenBundle(m[1], m[2]));
+        }
+        if (out.length) return out;
+      }
+    }
+
     /* Roster sessions win: one clean line per slot (no venue). */
     if (r && Array.isArray(r._participantSessions) && r._participantSessions.length) {
       var sessList = coalesceParticipantSessions(r._participantSessions);
@@ -2451,16 +2476,6 @@
       });
       if (rowHasGoCardlessFee(r) || (r._serviceParts && r._serviceParts["Admin Fee (GoCardless)"])) {
         push("Admin Fee (GoCardless)");
-      }
-      if (out.length) return out;
-    }
-
-    if (r && r._crash && r._crashLineDesc) {
-      parseBulletCrashOneLiners(r._crashLineDesc).forEach(push);
-      var inlineRe = /([^\n—]+?)\s*\(([^)]*Summer crash[^)]*)\)/gi;
-      var m;
-      while ((m = inlineRe.exec(String(r._crashLineDesc || "")))) {
-        push(formatCrashParenBundle(m[1], m[2]));
       }
       if (out.length) return out;
     }
@@ -4666,6 +4681,11 @@
           if (String((r.data && r.data.Cohort) || "").toUpperCase() === "ACAT") return;
           if (isAcatMondayAquaticRow(r)) return;
           /*
+           * Crash invoices never inherit term roster slots (Zakariya Sunday climb/swim
+           * would overwrite Day Centre Jul crash lines).
+           */
+          if (r._crash) return;
+          /*
            * Cyrus is split into Day Centre (Thu bespoke) vs Afterschool at render.
            * Attach roster sessions for that split, but do not overwrite Services with
            * the full four-slot blob (Day Centre would show Multis + Aquatic).
@@ -4783,6 +4803,9 @@
     } else {
       mergeServiceLabelsIntoRow(row, inv);
       if (!row.data.Services) row.data.Services = crashServicesLabel(inv);
+    }
+    if (paymentParticipantSlug(row) === "zakariya") {
+      row.data.Services = zakariyaCrashServiceLines().join("\n");
     }
     return row;
   }
