@@ -910,6 +910,16 @@
       }
     }
 
+    /* Summer 25/26 Total = this term only (no Year line). */
+    if (bucket === "summer_2526") {
+      if (!julyPay) return main;
+      return '<span class="pay-amt-stack">'
+        + "<span>" + main + "</span>"
+        + '<span class="pay-amt-july" title="Last payment received in July (Ealing LA)">−'
+        + money(julyPay) + " July paid</span>"
+        + "</span>";
+    }
+
     var yearNote = "";
     if (yearAmt > 0 && autumnAmt > 0 && Math.abs(yearAmt - autumnAmt) > 1) {
       yearNote = '<span class="pay-amt-year" title="Full-year programme (not this term alone)">Year '
