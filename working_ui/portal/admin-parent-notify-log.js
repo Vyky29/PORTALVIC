@@ -5,7 +5,7 @@
 (function (global) {
   "use strict";
 
-  var FETCH_LIMIT = 200;
+  var FETCH_LIMIT = 800;
   var MEDIA_BUCKET = "wa-inbound-media";
   var MEDIA_SIGNED_TTL = 3600;
   var MAX_ATTACH_BYTES = 4 * 1024 * 1024;
@@ -579,7 +579,8 @@
   }
 
   function threadContextForPhone(phone) {
-    var digits = phoneDigits(phone);
+    var key = phoneMatchKey(phone);
+    var digits = canonicalPhoneDigits(phone) || phoneDigits(phone);
     var ctx = {
       parentName: "",
       parentWhatsapp: digits,
@@ -587,11 +588,13 @@
       sessionDate: "",
       venue: "",
     };
-    if (!digits) return ctx;
+    if (!key && !digits) return ctx;
     (state.timeline || []).forEach(function (item) {
       if (item.direction !== "out") return;
       var row = item.row;
-      if (phoneDigits(row.parent_phone) !== digits) return;
+      var rowKey = phoneMatchKey(row.parent_phone);
+      if (key && rowKey !== key) return;
+      if (!key && phoneDigits(row.parent_phone) !== digits) return;
       if (row.client_display && !ctx.clientDisplay) ctx.clientDisplay = String(row.client_display).trim();
       if (row.parent_name && !ctx.parentName) ctx.parentName = String(row.parent_name).trim();
       if (row.session_date && !ctx.sessionDate) ctx.sessionDate = String(row.session_date).trim();
@@ -1003,9 +1006,13 @@
     (items || []).forEach(function (item) {
       var row = item.row;
       if (item.direction === "in") {
-        var pkey = phoneDigits(row.from_phone);
+        var pkey = phoneMatchKey(row.from_phone) || phoneDigits(row.from_phone);
         if (!pkey) return;
         var t = waThread(pkey);
+        if (!t.sendPhone) {
+          t.sendPhone = formatPhoneDisplay(row.from_phone) || String(row.from_phone || "");
+          t.phone = t.sendPhone;
+        }
         var meta = row.meta && typeof row.meta === "object" ? row.meta : {};
         var fromApp =
           meta.source === "parent_portal" ||
@@ -1033,9 +1040,13 @@
       }
       var ch = String(row.channel || "").toLowerCase();
       if (ch !== "whatsapp" && ch !== "both") return;
-      var wkey = phoneDigits(row.parent_phone);
+      var wkey = phoneMatchKey(row.parent_phone) || phoneDigits(row.parent_phone);
       if (!wkey) return;
       var wt = waThread(wkey);
+      if (!wt.sendPhone) {
+        wt.sendPhone = formatPhoneDisplay(row.parent_phone) || String(row.parent_phone || "");
+        wt.phone = wt.sendPhone;
+      }
       wt.events.push({
         dir: "out",
         id: row.id,
@@ -2324,7 +2335,7 @@
       if (res.error) return 0;
       var lastInboundByPhone = {};
       (res.data || []).forEach(function (r) {
-        var pk = phoneDigits(r && r.from_phone);
+        var pk = phoneMatchKey(r && r.from_phone) || phoneDigits(r && r.from_phone);
         if (!pk) return;
         var at = String((r && r.created_at) || "");
         if (!lastInboundByPhone[pk] || at > lastInboundByPhone[pk]) lastInboundByPhone[pk] = at;
@@ -2339,7 +2350,7 @@
         (outRes.data || []).forEach(function (r) {
           var ch = String((r && r.channel) || "").toLowerCase();
           if (ch !== "whatsapp" && ch !== "both") return;
-          var pk = phoneDigits(r && r.parent_phone);
+          var pk = phoneMatchKey(r && r.parent_phone) || phoneDigits(r && r.parent_phone);
           if (!pk) return;
           var at = String((r && r.created_at) || "");
           if (!lastOutboundByPhone[pk] || at > lastOutboundByPhone[pk]) lastOutboundByPhone[pk] = at;

@@ -384,7 +384,7 @@ Deno.serve(async (req) => {
     client_display: str(payload.clientDisplay, 200) || null,
     parent_name: str(payload.parentName, 200) || null,
     parent_email: parentEmail || null,
-    parent_phone: parentPhoneRaw || null,
+    parent_phone: parentPhone || parentPhoneRaw || null,
     session_date: /^\d{4}-\d{2}-\d{2}$/.test(sessionDate) ? sessionDate : null,
     slot_id: str(payload.slotId, 120) || null,
     venue: str(payload.venue, 200) || null,
@@ -401,6 +401,7 @@ Deno.serve(async (req) => {
     meta: {
       parent_email_masked: parentEmail ? maskEmailForLog(parentEmail) : null,
       parent_phone_masked: parentPhone ? maskPhoneForLog(parentPhone) : null,
+      parent_phone_raw: parentPhoneRaw || null,
       email_provider: "smtp",
       instructor_photo_url: instructorPhotoUrl || null,
       instructor_photo_name: instructorPhotoName || null,
