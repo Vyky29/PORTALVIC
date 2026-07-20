@@ -3758,7 +3758,7 @@
     var timeBlock = s.time
       ? '<span class="pp-hub-ops__slot-end">' +
         (completed
-          ? '<span class="pp-hub-ops__session-done-chip">SESSION COMPLETED</span>'
+          ? '<span class="pp-hub-ops__session-done-chip"><span class="pp-hub-ops__session-done-chip__mark" aria-hidden="true">✓</span>SESSION COMPLETED</span>'
           : "") +
         '<span class="pp-hub-ops__slot-time">' +
         clockIco +

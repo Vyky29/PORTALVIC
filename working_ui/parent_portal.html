@@ -1801,10 +1801,12 @@
       flex: 0 1 auto;
       display: inline-flex;
       align-items: center;
-      padding: 4px 8px;
+      gap: 4px;
+      padding: 3px 8px 3px 4px;
       border-radius: 999px;
-      background: #0f172a;
-      color: #fff;
+      background: rgba(22, 163, 74, 0.12);
+      color: #166534;
+      border: 1px solid rgba(22, 163, 74, 0.28);
       font-size: 9px;
       font-weight: 800;
       letter-spacing: 0.04em;
@@ -1814,24 +1816,25 @@
       max-width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
+      min-width: 0;
     }
+    .pp-hub-ops__session-done-chip__mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      background: #16a34a;
+      color: #fff;
+      font-size: 9px;
+      font-weight: 800;
+      line-height: 1;
+    }
+    /* Completed: keep normal black text; green chip carries the status. */
     .pp-hub-ops__slot--completed {
-      background: rgba(220, 38, 38, 0.1);
-      border-color: rgba(185, 28, 28, 0.38);
       box-shadow: none;
-    }
-    .pp-hub-ops__slot--completed .pp-hub-ops__slot-name {
-      color: #991b1b;
-    }
-    .pp-hub-ops__slot--completed .pp-hub-ops__slot-place {
-      color: #b91c1c;
-    }
-    .pp-hub-ops__slot--completed .pp-hub-ops__slot-ico {
-      color: #b91c1c;
-      background: rgba(220, 38, 38, 0.14);
-    }
-    .pp-hub-ops__slot--completed .pp-hub-ops__slot-time {
-      color: #991b1b;
     }
     .pp-hub-ops__slot-time .pp-hub-ops__meta-ico {
       width: 16px;
@@ -4972,7 +4975,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260717-parent-session-attendance"></script>
   <script src="/portal/parent_portal_team.js?v=20260710-eiji-hazem-photos"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260715-crash-cal-first"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260720-chip-per-activity"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260720-session-done-green"></script>
   <script src="/portal/parent_portal_app.js?v=20260718-former-client"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
