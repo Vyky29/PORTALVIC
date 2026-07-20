@@ -31,85 +31,91 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: parentPortalCorsHeaders });
   if (req.method !== "POST") return json(405, { ok: false, error: "method_not_allowed" });
 
-  const url = Deno.env.get("SUPABASE_URL") || "";
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-  if (!url || !serviceKey) return parentPortalJsonInvalid(500);
-
-  const supabase = createClient(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
-  const session = await resolveParentPortalSession(req, supabase);
-  if (!session) return parentPortalJsonInvalid();
-
-  let body: { contact_id?: string } = {};
   try {
-    body = await req.json();
-  } catch (_) {
-    body = {};
-  }
+    const url = Deno.env.get("SUPABASE_URL") || "";
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    if (!url || !serviceKey) return parentPortalJsonInvalid(500);
 
-  const contactId = clean(body.contact_id, 120);
-  if (!contactId) return json(400, { ok: false, error: "contact_id_required" });
+    const supabase = createClient(url, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
 
-  const { data: participant } = await supabase
-    .from("portal_participants")
-    .select("contact_id")
-    .eq("parent_person_id", session.parent_person_id)
-    .eq("contact_id", contactId)
-    .maybeSingle();
+    const session = await resolveParentPortalSession(req, supabase);
+    if (!session) return parentPortalJsonInvalid();
 
-  if (!participant) {
-    const fallback = await supabase
-      .from("portal_parent_contacts")
+    let body: { contact_id?: string } = {};
+    try {
+      body = await req.json();
+    } catch (_) {
+      body = {};
+    }
+
+    const contactId = clean(body.contact_id, 120);
+    if (!contactId) return json(400, { ok: false, error: "contact_id_required" });
+
+    const { data: participant } = await supabase
+      .from("portal_participants")
       .select("contact_id")
       .eq("parent_person_id", session.parent_person_id)
       .eq("contact_id", contactId)
       .maybeSingle();
-    if (!fallback.data) return parentPortalJsonInvalid(403);
-  }
 
-  const today = todayIsoLondon();
+    if (!participant) {
+      const fallback = await supabase
+        .from("portal_parent_contacts")
+        .select("contact_id")
+        .eq("parent_person_id", session.parent_person_id)
+        .eq("contact_id", contactId)
+        .maybeSingle();
+      if (!fallback.data) return parentPortalJsonInvalid(403);
+    }
 
-  // Auto-expire open reports past the 14-day proof window (no upload left).
-  await supabase
-    .from("portal_parent_absence_reports")
-    .update({ status: "expired", updated_at: new Date().toISOString() })
-    .eq("parent_person_id", session.parent_person_id)
-    .eq("contact_id", contactId)
-    .in("status", ["missed", "pending_review"])
-    .lt("proof_deadline", today);
+    const today = todayIsoLondon();
 
-  const { data: rows, error } = await supabase
-    .from("portal_parent_absence_reports")
-    .select(
-      "id, contact_id, participant_display, session_date, service_label, session_time, status, reason_code, reason_text, proof_file_name, proof_uploaded_at, proof_deadline, reviewed_at, review_notes, outcome, outcome_notes, created_at",
-    )
-    .eq("parent_person_id", session.parent_person_id)
-    .eq("contact_id", contactId)
-    .order("session_date", { ascending: false })
-    .limit(40);
+    // Auto-expire open reports past the 14-day proof window (no upload left).
+    await supabase
+      .from("portal_parent_absence_reports")
+      .update({ status: "expired", updated_at: new Date().toISOString() })
+      .eq("parent_person_id", session.parent_person_id)
+      .eq("contact_id", contactId)
+      .in("status", ["missed", "pending_review"])
+      .lt("proof_deadline", today);
 
-  if (error) {
-    console.error("[parent-portal-absence-list]", error.message);
+    const { data: rows, error } = await supabase
+      .from("portal_parent_absence_reports")
+      .select(
+        "id, contact_id, participant_display, session_date, service_label, session_time, status, reason_code, reason_text, proof_file_name, proof_uploaded_at, proof_deadline, reviewed_at, review_notes, outcome, outcome_notes, created_at",
+      )
+      .eq("parent_person_id", session.parent_person_id)
+      .eq("contact_id", contactId)
+      .order("session_date", { ascending: false })
+      .limit(40);
+
+    if (error) {
+      console.error("[parent-portal-absence-list]", error.message);
+      return parentPortalJsonInvalid(500);
+    }
+
+    const reports = (rows || []).map((r) => {
+      const deadline = String(r.proof_deadline || "");
+      const isUnwellTrack =
+        r.status === "missed" || r.status === "pending_review" || r.status === "rejected";
+      const canUpload =
+        isUnwellTrack &&
+        (r.status === "missed" || r.status === "pending_review" || r.status === "rejected") &&
+        deadline >= today;
+      return {
+        ...r,
+        can_upload_proof: canUpload,
+        proof_window_closed:
+          !canUpload &&
+          (r.status === "missed" || r.status === "expired" || r.status === "rejected"),
+      };
+    });
+
+    return json(200, { ok: true, reports, today });
+  } catch (e) {
+    console.error("[parent-portal-absence-list]", e);
     return parentPortalJsonInvalid(500);
   }
-
-  const reports = (rows || []).map((r) => {
-    const deadline = String(r.proof_deadline || "");
-    const isUnwellTrack = r.status === "missed" || r.status === "pending_review" || r.status === "rejected";
-    const canUpload =
-      isUnwellTrack &&
-      (r.status === "missed" || r.status === "pending_review" || r.status === "rejected") &&
-      deadline >= today;
-    return {
-      ...r,
-      can_upload_proof: canUpload,
-      proof_window_closed:
-        !canUpload &&
-        (r.status === "missed" || r.status === "expired" || r.status === "rejected"),
-    };
-  });
-
-  return json(200, { ok: true, reports, today });
 });

@@ -3214,7 +3214,8 @@
       var crashGroups = groupCrashDatesByActivity(crashDates);
       var activityRows = [];
       crashGroups.forEach(function (g) {
-        var visible = filterChipListForDisplay(g.dates, statusByIso, true);
+        /* Keep completed (green) crash days visible — same week, parents need to see them. */
+        var visible = filterChipListForDisplay(g.dates, statusByIso, false);
         if (!visible.length) return;
         activityRows.push(
           rowHtml(g.label, visible, g.icon || "", "pp-hub-ops__date-chips-label--activity"),
