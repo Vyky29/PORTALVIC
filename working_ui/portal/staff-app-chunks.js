@@ -6,10 +6,10 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260716-makeup-absent";
+  var VER = "20260720-michelle-john-green";
 
   var TIER_ROSTER = [
-    "/portal/term_from_timetable.js?v=20260702-feedback-jun25",
+    "/portal/term_from_timetable.js?v=20260720-michelle-john-green",
     "/portal/term_calendar_dashboard_shared.js?v=20260702-feedback-jun25",
     "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260707-roberto-venues",
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260712-rayyan-f",

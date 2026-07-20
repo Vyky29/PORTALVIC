@@ -120,6 +120,18 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     ],
     "dan": [
       "2026-06-07"
+    ],
+    "michelle": [
+      "2026-07-07"
+    ],
+    "luliya": [
+      "2026-07-07"
+    ],
+    "lulia": [
+      "2026-07-07"
+    ],
+    "john": [
+      "2026-06-24"
     ]
   },
   "termStaffExtraCalendarDatesByProfileKey": {

@@ -1035,7 +1035,9 @@
         ? portalBuildSessionReviewKey(iso, s, dayWord, portalEffectiveClientIdForReview(s, iso))
         : '';
       const skL = String(sk || '').trim().toLowerCase();
-      if(!skL) return '';
+      const sid = typeof portalNormKeyStr === 'function'
+        ? portalNormKeyStr(s.staffId)
+        : String(s.staffId || '').trim().toLowerCase();
       const rows = typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [];
       for(let i = 0; i < rows.length; i++){
         const r = rows[i];
@@ -1051,14 +1053,21 @@
         p = p && typeof p === 'object' ? p : {};
         const res = String(p.feedback_resolution || '').trim().toLowerCase();
         if(res !== 'absent' && res !== 'cancelled') continue;
+        const sameClient = typeof portalRosterClientIdsMatch === 'function'
+          ? portalRosterClientIdsMatch(r.anchor_client_id, s.clientId)
+          : String(r.anchor_client_id || '').trim().toLowerCase() === String(s.clientId || '').trim().toLowerCase();
+        const sameStaff = typeof portalStaffKeysMatch === 'function'
+          ? portalStaffKeysMatch(r.anchor_staff_id, sid || s.staffId)
+          : String(r.anchor_staff_id || '').trim().toLowerCase() === sid;
         const pk = String(p.portal_session_key || '').trim().toLowerCase();
-        if(pk && portalFeedbackResolutionKeyMatchesReview(pk, skL)) return res;
-        /* Timed cancel without usable key: still honour same-staff Day Centre / Bespoke cancel. */
-        if(!pk && (skL.indexOf('|day_centre') >= 0 || skL.indexOf('|bespoke_shared') >= 0)
-          && typeof portalRosterClientIdsMatch === 'function'
-          && portalRosterClientIdsMatch(r.anchor_client_id, s.clientId)
-          && typeof portalStaffKeysMatch === 'function'
-          && portalStaffKeysMatch(r.anchor_staff_id, s.staffId)){
+        if(skL && pk && portalFeedbackResolutionKeyMatchesReview(pk, skL)) return res;
+        /*
+         * Paid admin cancel (Ikram Tue 7 Jul for Michelle/Luliya): honour same staff+client
+         * even when timed payload key ≠ Day Centre review key, or review key is empty.
+         */
+        if(sameClient && sameStaff) return res;
+        if(!pk && sameClient && sameStaff
+          && (skL.indexOf('|day_centre') >= 0 || skL.indexOf('|bespoke_shared') >= 0)){
           return res;
         }
       }
@@ -1136,7 +1145,36 @@
         if(t === 'instructor_reassign'){
           const cov = String(ov.payload && ov.payload.covering_staff_id || '').trim().toLowerCase();
           const orig = typeof portalNormKeyStr === 'function' ? portalNormKeyStr(s.staffId) : String(s.staffId || '').trim().toLowerCase();
-          if(cov && orig === sid){
+          const anchor = typeof portalNormKeyStr === 'function'
+            ? portalNormKeyStr(ov.anchor_staff_id)
+            : String(ov.anchor_staff_id || '').trim().toLowerCase();
+          /* Original instructor was covered away — no feedback owed (John 24 Jun / Tinashe). */
+          if(cov && (orig === sid || anchor === sid)){
+            return { feedbackDone: true, incident: false, absent: false, cancelled: false };
+          }
+        }
+      }
+      /* Loose fallback: active reassign away for this staff+client+date (window match missed). */
+      if(sid){
+        const allRe = typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [];
+        for(let ri = 0; ri < allRe.length; ri++){
+          const rov = allRe[ri];
+          if(String(rov.status || 'active') !== 'active') continue;
+          if(String(rov.override_type || '').trim() !== 'instructor_reassign') continue;
+          const rowIso = typeof portalNormalizeScheduleOverrideSessionDate === 'function'
+            ? portalNormalizeScheduleOverrideSessionDate(rov.session_date)
+            : String(rov.session_date || '').trim().slice(0, 10);
+          if(rowIso !== iso) continue;
+          const anchorR = typeof portalNormKeyStr === 'function'
+            ? portalNormKeyStr(rov.anchor_staff_id)
+            : String(rov.anchor_staff_id || '').trim().toLowerCase();
+          if(anchorR !== sid) continue;
+          const sameClientR = typeof portalRosterClientIdsMatch === 'function'
+            ? portalRosterClientIdsMatch(rov.anchor_client_id, s.clientId)
+            : String(rov.anchor_client_id || '').trim().toLowerCase() === String(s.clientId || '').trim().toLowerCase();
+          if(!sameClientR) continue;
+          const covR = String(rov.payload && rov.payload.covering_staff_id || '').trim().toLowerCase();
+          if(covR){
             return { feedbackDone: true, incident: false, absent: false, cancelled: false };
           }
         }

@@ -1767,10 +1767,21 @@
     function portalTermStaffForcedCompleteDates(staffId){
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
       const map = t && t.termStaffFeedbackCompleteDatesByProfileKey;
-      const id = String(staffId || '').trim().toLowerCase();
-      const raw = map && map[id];
-      if(!Array.isArray(raw)) return [];
-      return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
+      if(!map || typeof map !== 'object') return [];
+      const keys = typeof portalTermStaffProfileLookupKeys === 'function'
+        ? portalTermStaffProfileLookupKeys(staffId)
+        : [String(staffId || '').trim().toLowerCase()];
+      const seen = Object.create(null);
+      const out = [];
+      keys.forEach(function(k){
+        const raw = map[k];
+        if(!Array.isArray(raw)) return;
+        raw.forEach(function(d){
+          const iso = String(d || '').trim().slice(0, 10);
+          if(iso && !seen[iso]){ seen[iso] = true; out.push(iso); }
+        });
+      });
+      return out;
     }
     /** Admin-flagged outstanding days: force orange even when assume-complete-through would green them. */
     function portalTermStaffForcedPendingDates(staffId){
