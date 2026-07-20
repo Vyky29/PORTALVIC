@@ -98,68 +98,67 @@
   grid-column:1 / -1 !important;
   width:100% !important;
   max-width:100% !important;
-  height:var(--topbar-tools-cell);
-  min-height:var(--topbar-tools-cell);
-  max-height:var(--topbar-tools-cell);
+  height:auto;
+  min-height:calc(var(--topbar-tools-cell) * 0.72);
+  max-height:none;
   justify-self:stretch;
   align-self:stretch;
   display:flex !important;
-  flex-direction:row;
-  align-items:center;
+  flex-direction:column;
+  align-items:stretch;
   justify-content:center;
-  padding:0;
+  padding-top:1px;
   box-sizing:border-box;
   overflow:visible;
 }
-/* Same footprint as Venue / Swim Rev (one cell wide), centered under the 2-col row */
+/* Full width of Venue + Swim Rev (two cells) */
 .topbar-tools-grid--flank-2col > .topbar-tool-cell--staff-wa .topbar-tool-btn.topbar-tool-btn--staff-wa{
-  display:grid !important;
-  grid-template-rows:minmax(0,1fr) var(--topbar-tool-label-band-h) !important;
+  display:inline-flex !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:6px;
+  grid-template-rows:none !important;
   grid-template-columns:none !important;
-  flex-direction:unset !important;
-  align-items:stretch !important;
-  justify-items:center !important;
-  gap:0 !important;
-  width:var(--topbar-tools-cell) !important;
-  max-width:var(--topbar-tools-cell) !important;
+  width:100% !important;
+  max-width:none !important;
   min-width:0 !important;
-  height:var(--topbar-tools-cell) !important;
-  max-height:var(--topbar-tools-cell) !important;
-  min-height:0 !important;
-  flex:0 0 var(--topbar-tools-cell);
-  padding:2px 2px 1px !important;
+  height:32px !important;
+  max-height:32px !important;
+  min-height:32px !important;
+  flex:0 0 32px;
+  padding:0 10px !important;
   border:1px solid rgba(232,196,74,.55) !important;
-  border-radius:9px !important;
+  border-radius:11px !important;
   background:linear-gradient(180deg,#ffe9a3,#f5d56a) !important;
   color:#173247 !important;
   box-shadow:0 1px 3px rgba(232,196,74,.28);
-  overflow:hidden !important;
+  overflow:visible !important;
   box-sizing:border-box;
 }
 .topbar-tools-grid--flank-2col > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-btn__ico{
-  width:var(--topbar-tool-ico-size) !important;
-  height:var(--topbar-tool-ico-size) !important;
-  max-width:var(--topbar-tool-ico-size) !important;
-  max-height:calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 5px) !important;
-  flex:none;
+  width:15px !important;
+  height:15px !important;
+  max-width:15px !important;
+  max-height:15px !important;
+  flex:0 0 auto;
   color:#173247;
 }
 .topbar-tools-grid--flank-2col > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-btn__ico svg{
-  width:100%;
-  height:100%;
+  width:15px;
+  height:15px;
   display:block;
 }
 .topbar-tools-grid--flank-2col > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-label{
-  flex:none;
+  flex:0 1 auto;
   min-width:0;
   max-width:100%;
-  width:100%;
-  height:var(--topbar-tool-label-band-h) !important;
+  height:auto !important;
   min-height:0 !important;
-  max-height:var(--topbar-tool-label-band-h) !important;
-  font-size:var(--topbar-tool-label-size) !important;
-  font-weight:700;
-  line-height:1.05;
+  max-height:none !important;
+  font-size:10.5px !important;
+  font-weight:800;
+  line-height:1;
   letter-spacing:0;
   color:#173247 !important;
   overflow:hidden;
