@@ -969,14 +969,15 @@
         '…' +
         (inv.xero_payment_id ? ' · paid in Xero' : '') +
         '</div>'
-      : inv.xero_push_status === 'failed'
+      : inv.payment_status === 'paid' && inv.xero_push_status === 'failed'
         ? '<div class="muted" style="font-size:11px;color:#b91c1c">Xero push failed' +
           (inv.xero_push_error
             ? ': ' + esc(String(inv.xero_push_error).slice(0, 60))
             : '') +
           '</div>'
-        : inv.created_via === 'portal' || inv.created_via === 'reenrolment'
-          ? '<div class="muted" style="font-size:11px;color:#92400e">Not in Xero</div>'
+        : inv.payment_status === 'paid' &&
+            (inv.created_via === 'portal' || inv.created_via === 'reenrolment')
+          ? '<div class="muted" style="font-size:11px;color:#92400e">Paid · not in Xero yet</div>'
           : '';
 
     return (
@@ -1485,7 +1486,7 @@
           parts.push(String(state.meta.buffer_low_contacts) + ' buffer low');
         }
         if (state.meta.xero_unsynced) {
-          parts.push(String(state.meta.xero_unsynced) + ' not in Xero');
+          parts.push(String(state.meta.xero_unsynced) + ' paid not in Xero');
         }
         if (state.meta.la_office_auto) {
           parts.push(String(state.meta.la_office_auto) + ' LA auto');
