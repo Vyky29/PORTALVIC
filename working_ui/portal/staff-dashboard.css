@@ -930,6 +930,13 @@
       --avatar-wrap-size:78px;
       --avatar-core-size:68px;
     }
+    .topbar-lead .avatar-wrap.avatar-wrap--staff-halo,
+    .topbar-lead .avatar-wrap.avatar-wrap--staff-halo.avatar-wrap--portal-orbit-idle,
+    .topbar-lead .avatar-wrap.avatar-wrap--staff-halo:not(.avatar-wrap--portal-orbit-idle){
+      --avatar-wrap-size:94px;
+      --avatar-core-size:82px;
+      --avatar-orbit-outset:17px;
+    }
     /* Unread internal chat only — blue orbits + logo pulse */
     .avatar-wrap.avatar-wrap--portal-alert-chat .avatar{
       animation:avatar-outline-alert-blue 1.12s ease-in-out infinite;
