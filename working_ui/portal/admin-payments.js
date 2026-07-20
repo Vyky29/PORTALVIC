@@ -853,18 +853,65 @@
     return Number.isFinite(n) && n > 0 ? n : 0;
   }
 
+  function resolveYearProgrammeGbp(r) {
+    var yearAmt = Number(r && r._amountAnnual);
+    if (yearAmt > 0) return yearAmt;
+    var d = (r && r.data) || {};
+    var rawY = d["Year billed (26/27)"] || d["Year billed (25/26)"] || d["Year outstanding"] || "";
+    var m = String(rawY).replace(/[^0-9.]/g, "");
+    if (m) {
+      var n = Number(m);
+      if (n > 0) return n;
+    }
+    return 0;
+  }
+
+  /**
+   * Autumn / Spring / Summer share of a full-year programme (38 session-weeks).
+   * Autumn is the billed term on the row; remaining year splits evenly across
+   * Spring + Summer (12 + 12 of the residual 24 weeks).
+   */
+  function autumnYearSeasonSplitGbp(autumnAmt, yearAmt) {
+    var autumn = Math.max(0, Number(autumnAmt) || 0);
+    var year = Math.max(0, Number(yearAmt) || 0);
+    if (!(year > 0)) {
+      return { autumn: autumn, spring: 0, summer: 0, year: 0 };
+    }
+    if (!(autumn > 0)) {
+      /* No autumn yet — split whole year 14/12/12. */
+      var a = Math.round(year * (14 / 38) * 100) / 100;
+      var rem0 = Math.round((year - a) * 100) / 100;
+      var spring0 = Math.round((rem0 / 2) * 100) / 100;
+      return { autumn: a, spring: spring0, summer: Math.round((rem0 - spring0) * 100) / 100, year: year };
+    }
+    var rem = Math.max(0, Math.round((year - autumn) * 100) / 100);
+    var spring = Math.round((rem / 2) * 100) / 100;
+    var summer = Math.round((rem - spring) * 100) / 100;
+    return { autumn: autumn, spring: spring, summer: summer, year: year };
+  }
+
   function amountCellHtml(r) {
     var julyPay = ealingJulyPaymentGbp(r);
+    var autumnAmt = Number(r.amount) || 0;
     var main = money(r.amount);
-    var yearAmt = Number(r._amountAnnual);
-    if (!(yearAmt > 0)) {
-      var d = (r && r.data) || {};
-      var rawY = d["Year billed (26/27)"] || d["Year billed (25/26)"] || d["Year outstanding"] || "";
-      var m = String(rawY).replace(/[^0-9.]/g, "");
-      if (m) yearAmt = Number(m);
+    var yearAmt = resolveYearProgrammeGbp(r);
+    var bucket = typeof termBucketFor === "function" ? termBucketFor(r) : "";
+
+    /* Autumn 26/27 Total column: Autumn (bold) → Spring → Summer → Year. */
+    if (bucket === "autumn_2627" && yearAmt > 0) {
+      var split = autumnYearSeasonSplitGbp(autumnAmt, yearAmt);
+      if (split.year > 0 && (split.spring > 0 || split.summer > 0 || Math.abs(split.year - split.autumn) > 1)) {
+        return '<span class="pay-amt-stack" title="Autumn term billed, then remaining year split Spring / Summer">'
+          + '<span class="pay-amt-term">' + money(split.autumn) + "</span>"
+          + '<span class="pay-amt-season">Spring ' + money(split.spring) + "</span>"
+          + '<span class="pay-amt-season">Summer ' + money(split.summer) + "</span>"
+          + '<span class="pay-amt-year">Year ' + money(split.year) + "</span>"
+          + "</span>";
+      }
     }
+
     var yearNote = "";
-    if (yearAmt > 0 && Number(r.amount) > 0 && Math.abs(yearAmt - Number(r.amount)) > 1) {
+    if (yearAmt > 0 && autumnAmt > 0 && Math.abs(yearAmt - autumnAmt) > 1) {
       yearNote = '<span class="pay-amt-year" title="Full-year programme (not this term alone)">Year '
         + money(yearAmt) + "</span>";
     }
