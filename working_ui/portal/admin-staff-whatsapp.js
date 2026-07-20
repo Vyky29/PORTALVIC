@@ -381,15 +381,6 @@
     );
   }
 
-  function hasAdminReplyAfterInbound(l) {
-    if (!l) return false;
-    var out = String(l.lastOutboundAt || "");
-    if (!out) return false;
-    var inn = String(l.lastInboundAt || "");
-    if (!inn) return true;
-    return out > inn;
-  }
-
   /** Most recent activity on the thread (staff inbound or club outbound). */
   function staffWaLastActivityAt(l) {
     var inn = String((l && l.lastInboundAt) || "");
