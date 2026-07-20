@@ -2379,11 +2379,16 @@
       align-self: flex-start;
       margin-top: 2px;
       border: 1px solid rgba(22, 163, 74, 0.28);
+      min-width: 0;
     }
     .pp-hub-reenrolled--chip.pp-hub-reenrolled--unpaid {
       background: #ffedd5;
       color: #c2410c;
       border-color: #fb923c;
+      white-space: normal;
+      overflow-wrap: break-word;
+      text-overflow: unset;
+      overflow: visible;
     }
     /* Tick stays green even on the orange unpaid chip. */
     .pp-hub-reenrolled--unpaid .pp-hub-reenrolled__mark,
