@@ -940,21 +940,43 @@
     var SuW = 13;
     var AnnW = AW + SpW + SuW; /* 38 */
 
+    function rebuildFromYear(y) {
+      var a = Math.round((y * AW) / AnnW * 100) / 100;
+      var sp = Math.round((y * SpW) / AnnW * 100) / 100;
+      var su = Math.round((y - a - sp) * 100) / 100;
+      return { autumn: a, spring: sp, summer: su, year: y };
+    }
+
+    /* Term INV-P trio present and sensible — trust face totals, not crumbs. */
+    if (autumn > 0 && spring > 0 && summer > 0) {
+      var sum3 = Math.round((autumn + spring + summer) * 100) / 100;
+      var crumbMax = Math.max(80, autumn * 0.06);
+      if (spring > crumbMax && summer > crumbMax) {
+        if (!(year > 0) || Math.abs(year - autumn) < 1 || Math.abs(year - sum3) > 1) {
+          year = sum3;
+        }
+        return { autumn: autumn, spring: spring, summer: summer, year: year };
+      }
+      /*
+       * Autumn ≈ year with tiny Spring/Summer leftovers (Serine bug): rebuild.
+       * Prefer annual when it looks like a real programme year; else treat Autumn
+       * as the mistaken year total.
+       */
+      if (spring <= crumbMax && summer <= crumbMax) {
+        var yFix = year > 0 && year >= autumn ? year : (year > autumn * 0.5 ? year : autumn);
+        if (yFix >= autumn * 0.85) return rebuildFromYear(yFix);
+      }
+    }
+
     if (year > 0 && autumn > year * 1.02) {
       /* Instalment sum / wrong amount_gbp exceeded year — rebuild from year. */
-      autumn = Math.round((year * AW) / AnnW * 100) / 100;
-      spring = Math.round((year * SpW) / AnnW * 100) / 100;
-      summer = Math.round((year - autumn - spring) * 100) / 100;
-      return { autumn: autumn, spring: spring, summer: summer, year: year };
+      return rebuildFromYear(year);
     }
     /* Autumn should be ≈14/38 of year; if far off, trust year and rebuild terms. */
     if (year > 0 && autumn > 0) {
       var expectedA = (year * AW) / AnnW;
       if (Math.abs(autumn - expectedA) / year > 0.08) {
-        autumn = Math.round(expectedA * 100) / 100;
-        spring = Math.round((year * SpW) / AnnW * 100) / 100;
-        summer = Math.round((year - autumn - spring) * 100) / 100;
-        return { autumn: autumn, spring: spring, summer: summer, year: year };
+        return rebuildFromYear(year);
       }
     }
     if (year > 0 && spring > 0 && summer > 0 && autumn > 0) {
@@ -967,10 +989,7 @@
       return { autumn: autumn, spring: spring, summer: summer, year: year };
     }
     if (year > 0) {
-      autumn = Math.round((year * AW) / AnnW * 100) / 100;
-      spring = Math.round((year * SpW) / AnnW * 100) / 100;
-      summer = Math.round((year - autumn - spring) * 100) / 100;
-      return { autumn: autumn, spring: spring, summer: summer, year: year };
+      return rebuildFromYear(year);
     }
     return { autumn: autumn, spring: spring, summer: summer, year: year };
   }
@@ -4339,9 +4358,24 @@
 
   function reenrolInvoiceAmountGbp(inv) {
     var via = String((inv && inv.created_via) || "");
+    var season = reenrolInvoiceSeason(inv);
+    /*
+     * Spring/Summer re-enrol INV-Ps must not feed Autumn billed (that produced
+     * Serine-style Autumn £9k ≈ year with Spring/Summer crumbs).
+     */
+    if (season === "spring" || season === "summer") {
+      return Number(inv && inv.booked_autumn_gbp) || 0;
+    }
     /* Prefer catalogue Autumn once — never use raw amount_gbp (instalments stack). */
     var autumn = Number(inv && inv.booked_autumn_gbp) || 0;
-    if (autumn > 0) return autumn;
+    if (autumn > 0) {
+      var face = Number(inv && inv.amount_gbp) || 0;
+      var annual = Number(inv && inv.booked_annual_gbp) || 0;
+      /* Face amount matching year is not Autumn. */
+      if (face > 0 && annual > 0 && Math.abs(face - annual) < 0.05) return autumn;
+      if (face > 0 && face <= autumn * 1.15) return Math.max(autumn, face);
+      return autumn;
+    }
     if (via === "reenrolment") {
       autumn = autumnTermAmountFromInvoice(inv);
       if (autumn > 0) return autumn;
@@ -4350,15 +4384,66 @@
     return autumnTermAmountFromInvoice(inv);
   }
 
+  /**
+   * Which academic term a re-enrol INV-P covers (from reference / billing label).
+   */
+  function reenrolInvoiceSeason(inv) {
+    if (!inv) return "autumn";
+    var term = String(inv.billing_term || inv.amount_key || "").trim().toLowerCase();
+    if (term === "spring" || term === "summer" || term === "autumn") return term;
+    if (term === "year" || term === "annual") return "year";
+    var blob = [
+      inv.billing_term_label,
+      inv.reference_text,
+      inv.title,
+      inv.notes,
+    ]
+      .map(function (x) { return String(x || "").toLowerCase(); })
+      .join(" ");
+    if (/spring\s*term|\(spring\)|billing[^a-z]*spring/.test(blob)) return "spring";
+    if (/summer\s*term\s*26\s*\/\s*27|summer\s*26\s*\/\s*27|\(summer\)/.test(blob)) return "summer";
+    if (/summer\s*term/.test(blob) && /26\s*\/\s*27|2026|2027/.test(blob) && !/autumn/.test(blob)) {
+      return "summer";
+    }
+    if (/autumn\s*term|\(autumn\)|fall\s*term/.test(blob)) return "autumn";
+    return "autumn";
+  }
+
   function absorbCatalogSeasonTotals(row, inv) {
     if (!row || !inv) return;
-    var autumn = Number(inv.booked_autumn_gbp) || autumnTermAmountFromInvoice(inv) || 0;
+    var season = reenrolInvoiceSeason(inv);
+    var face = Number(inv.amount_gbp) || 0;
+    var autumn = Number(inv.booked_autumn_gbp) || 0;
     var spring = Number(inv.booked_spring_gbp) || 0;
     var summer = Number(inv.booked_summer_gbp) || 0;
     var annual = Number(inv.booked_annual_gbp) || 0;
-    if (autumn > 0) row._amountAutumn = Math.max(Number(row._amountAutumn) || 0, autumn);
-    if (spring > 0) row._amountSpring = Math.max(Number(row._amountSpring) || 0, spring);
-    if (summer > 0) row._amountSummer = Math.max(Number(row._amountSummer) || 0, summer);
+
+    if (season === "spring") {
+      var sp = face > 0 ? face : spring;
+      if (sp > 0) row._amountSpring = Math.max(Number(row._amountSpring) || 0, sp);
+    } else if (season === "summer") {
+      var su = face > 0 ? face : summer;
+      if (su > 0) row._amountSummer = Math.max(Number(row._amountSummer) || 0, su);
+    } else {
+      /*
+       * Autumn (or year) INV-P: prefer face when it is the Autumn term bill;
+       * never adopt face when it equals annual catalogue.
+       */
+      var au = 0;
+      if (face > 0 && annual > 0 && Math.abs(face - annual) < 0.05) {
+        au = autumn || 0;
+      } else if (face > 0 && autumn > 0 && face > autumn * 1.5) {
+        au = autumn;
+      } else if (face > 0) {
+        au = face;
+      } else {
+        au = autumn || autumnTermAmountFromInvoice(inv) || 0;
+      }
+      if (au > 0) row._amountAutumn = Math.max(Number(row._amountAutumn) || 0, au);
+      /* Catalogue Spring/Summer on the Autumn pack — only if missing later term INV-Ps. */
+      if (spring > 0) row._amountSpring = Math.max(Number(row._amountSpring) || 0, spring);
+      if (summer > 0) row._amountSummer = Math.max(Number(row._amountSummer) || 0, summer);
+    }
     if (annual > 0) row._amountAnnual = Math.max(Number(row._amountAnnual) || 0, annual);
   }
 
@@ -4627,6 +4712,20 @@
 
     return Object.keys(agg).map(function (key) {
       var row = agg[key];
+      var a = Number(row._amountAutumn) || 0;
+      var sp = Number(row._amountSpring) || 0;
+      var su = Number(row._amountSummer) || 0;
+      var y = Number(row._amountAnnual) || 0;
+      if (a > 0 && sp > 0 && su > 0) {
+        var sum3 = Math.round((a + sp + su) * 100) / 100;
+        var crumbMax = Math.max(80, a * 0.06);
+        if (sp > crumbMax && su > crumbMax) {
+          /* Prefer Autumn+Spring+Summer INV-P faces (credits included) over catalogue year. */
+          if (!(y > 0) || Math.abs(y - a) < 1 || Math.abs(y - sum3) > 1) {
+            row._amountAnnual = sum3;
+          }
+        }
+      }
       if (Number(row._amountAutumn) > 0) {
         row.amount = row._amountAutumn;
         row.amount_billed = Math.max(Number(row.amount_billed) || 0, row._amountAutumn);
