@@ -516,11 +516,13 @@
 
   /** Parent pays with LA Direct Payments / personal budget — not an LA/NHS invoice to the club. */
   function isParentDirectPaymentsLabel(raw) {
-    var low = String(raw || "").toLowerCase();
+    var low = String(raw || "").toLowerCase().replace(/\s+/g, " ").trim();
     if (!low) return false;
     if (/parent\s*[·•\-]\s*direct payment|direct payments?\s*\(la money\)/.test(low)) return true;
+    /* Exact Paid-chip wording (and close variants). */
+    if (/^using funds from la$|^using money from la$/.test(low)) return true;
     if (/using money from la/.test(low) && /direct payment/.test(low)) return true;
-    if (/using funds from la/.test(low) && /direct payment/.test(low)) return true;
+    if (/using funds from la/.test(low)) return true;
     if (/la_direct_payments|parent_direct_payments/.test(low)) return true;
     if (/direct payment/.test(low) && /ehcp|care package|personal budget/.test(low)) return true;
     return false;
@@ -661,9 +663,17 @@
     var summerSheet = summer ? String(summer.sheet || "").toUpperCase() : "";
 
     var forceLa = opts.forceLa === true || via === "la_office_auto";
+    /* Parent Direct Payments must never become Funded by LA / LA invoice. */
+    var isDpHint =
+      paySheet === "DIRECT_PAYMENTS"
+      || cat === "parent_direct_payment"
+      || summerSheet === "DIRECT_PAYMENTS"
+      || isParentDirectPaymentsLabel(fundingLabel)
+      || (vat === "exempt" && via === "reenrolment" && hint !== "la_funded" && paySheet !== "LA");
+
     var isLa =
       forceLa
-      || hint === "la_funded"
+      || (hint === "la_funded" && !isDpHint && paySheet !== "DIRECT_PAYMENTS" && cat !== "parent_direct_payment")
       || paySheet === "LA"
       || (cat === "la_managed" && via !== "reenrolment" && paySheet !== "PARENTS" && paySheet !== "DIRECT_PAYMENTS");
 
@@ -734,22 +744,42 @@
   }
 
   /**
-   * Group for the Payments table:
-   *  PARENTS — private family funds
-   *  DIRECT_PAYMENTS — funded via parent-held LA Direct Payments (family still pays us)
-   *  LA — Local authority / NHS invoice (funder in charge)
+   * Group for the Payments table / KPI cards:
+   *  PARENTS — Using Private Funds → Family · Private
+   *  DIRECT_PAYMENTS — Using Funds from LA → Family · Direct Payments
+   *  LA — Funded by LA → LA invoice
+   *  (NHS split is applied later in fundGroupKey for Day Centre)
    */
   function classifyPayGroup(opts) {
     opts = opts || {};
     var hint = String(opts.payment_method_hint || "").toLowerCase();
     var vat = String(opts.vat_mode || "").toLowerCase();
     var label = String(opts.funding_label || "").trim();
+    var paid = String(opts.paid_by || opts.paid || "").trim();
+    var invType = String(opts.invoice_type || "").trim();
     var sheet = String(opts.sheet || "").trim();
     var sheetUp = sheet.toUpperCase();
 
     if (sheetUp === "PARENTS" || sheet === "PARENTS") return "PARENTS";
+    if (paid === PAID_BY.PRIVATE_FUNDS || invType === INVOICE_TYPE.PARENT_20) return "PARENTS";
+    if (/using private funds|^private$/i.test(label) || /using private funds|^private$/i.test(paid)) {
+      return "PARENTS";
+    }
+
+    /* Family Direct Payments before la_funded — parents still pay us with LA money. */
+    if (
+      paid === PAID_BY.FUNDS_FROM_LA
+      || invType === INVOICE_TYPE.PARENT_EXEMPT
+      || isParentDirectPaymentsLabel(label)
+      || isParentDirectPaymentsLabel(paid)
+      || sheetUp === "DIRECT_PAYMENTS"
+    ) {
+      return "DIRECT_PAYMENTS";
+    }
+
+    if (paid === PAID_BY.FUNDED_BY_LA || paid === PAID_BY.FUNDED_BY_NHS) return "LA";
+    if (invType === INVOICE_TYPE.LA_EXEMPT || invType === INVOICE_TYPE.NHS_EXEMPT) return "LA";
     if (hint === "la_funded") return "LA";
-    if (isParentDirectPaymentsLabel(label)) return "DIRECT_PAYMENTS";
     if (isLaInvoiceFundingLabel(label)) return "LA";
 
     /* Re-enrolment: VAT exempt without la_funded = LA Direct Payments route (not private VAT). */
@@ -757,7 +787,6 @@
       return "DIRECT_PAYMENTS";
     }
 
-    if (sheetUp === "DIRECT_PAYMENTS" || sheet === "DIRECT_PAYMENTS") return "DIRECT_PAYMENTS";
     if (sheetUp === "LA" || sheet === "LA") return "LA";
     if (sheetUp === "NO RE-ENROLED" || sheet === "No re-enroled") return "No re-enroled";
     return "PARENTS";
@@ -2118,18 +2147,31 @@
     return html;
   }
 
+  /**
+   * KPI card bucket from the Paid chip (same mapping as Afterschool / Day Centre):
+   *  Using Private Funds → Family · Private
+   *  Using Funds from LA → Family · Direct Payments
+   *  Funded by LA → LA invoice
+   *  Funded by NHS → NHS invoice (Day Centre) / LA invoice card (Afterschool)
+   */
   function fundGroupKey(r, streamKind) {
     if (!r) return "";
+    var route = payerRouteFor(r);
+    if (route === "FAMILY_PRIVATE") return "PARENTS";
+    if (route === "FAMILY_DP") return "DIRECT_PAYMENTS";
+    if (route === "NHS_INVOICE" || route === "NEN") {
+      return streamKind === "day_centre" ? "NHS" : "LA";
+    }
+    if (route === "LA_INVOICE") return "LA";
+
     var sheet = String(r.sheet || "").toUpperCase();
     if (sheet === "PARENTS") return "PARENTS";
     if (sheet === "DIRECT_PAYMENTS") return "DIRECT_PAYMENTS";
-    var nhs = paidByFor(r) === PAID_BY.FUNDED_BY_NHS || invoiceTypeFor(r) === INVOICE_TYPE.NHS_EXEMPT;
     if (streamKind === "day_centre") {
-      /* Keep ACAT (DP / Using Funds from LA) out of NHS + LA invoice totals. */
-      if (sheet === "DIRECT_PAYMENTS" || isAcatMondayAquaticRow(r)) return "DIRECT_PAYMENTS";
+      if (isAcatMondayAquaticRow(r)) return "DIRECT_PAYMENTS";
+      var nhs = paidByFor(r) === PAID_BY.FUNDED_BY_NHS || invoiceTypeFor(r) === INVOICE_TYPE.NHS_EXEMPT;
       return nhs ? "NHS" : "LA";
     }
-    /* Afterschool: third card is LA invoice only — Tinashe Fri NHS still rolls in here. */
     if (sheet === "LA") return "LA";
     return sheet;
   }
@@ -4336,6 +4378,8 @@
         payment_method_hint: r._paymentMethodHint,
         vat_mode: r._vatMode,
         funding_label: label,
+        paid_by: r.data && r.data.Paid,
+        invoice_type: r.data && r.data["Invoice type"],
         _reenrol: true,
       });
     });
@@ -4785,6 +4829,8 @@
         payment_method_hint: row._paymentMethodHint,
         vat_mode: row._vatMode,
         funding_label: row._fundingLabel,
+        paid_by: row.data && row.data.Paid,
+        invoice_type: row.data && row.data["Invoice type"],
         _reenrol: true,
       });
       return row;
