@@ -4,41 +4,22 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Timesheet</title>
-  <script src="/portal/portal_orientation_lock.js?v=20260625-horizontal-lock"></script>
+  <script src="/portal/portal_orientation_lock.js?v=20260721-free-orient"></script>
   <script>
     (function () {
       try { document.documentElement.classList.add("portal-app-shell"); } catch (_) {}
-      function forceTimesheetVertical() {
+      /* Allow portrait and landscape — unlock any previous force-lock. */
+      function allowAnyOrientation() {
         try {
           document.documentElement.classList.remove("portal-force-landscape");
-          document.documentElement.classList.add("portal-timesheet-vertical");
-          if (document.body) {
-            document.body.classList.remove("portal-force-landscape");
-            document.body.classList.add("portal-timesheet-vertical");
-          }
+          if (document.body) document.body.classList.remove("portal-force-landscape");
         } catch (_) {}
         if (typeof portalUnlockOrientation === "function") void portalUnlockOrientation();
-        try {
-          if (
-            window.matchMedia &&
-            window.matchMedia("(max-width: 900px)").matches &&
-            window.screen &&
-            window.screen.orientation &&
-            typeof window.screen.orientation.lock === "function"
-          ) {
-            void window.screen.orientation.lock("portrait").catch(function () {});
-          }
-        } catch (_) {}
       }
-      forceTimesheetVertical();
-      document.addEventListener("DOMContentLoaded", forceTimesheetVertical);
-      window.addEventListener("pageshow", forceTimesheetVertical);
-      document.addEventListener("visibilitychange", function () {
-        if (document.hidden) return;
-        if (document.body && document.body.classList.contains("portal-timesheet-manual")) return;
-        forceTimesheetVertical();
-      });
-      window.__portalTimesheetForceVertical = forceTimesheetVertical;
+      allowAnyOrientation();
+      document.addEventListener("DOMContentLoaded", allowAnyOrientation);
+      window.addEventListener("pageshow", allowAnyOrientation);
+      window.__portalTimesheetAllowAnyOrientation = allowAnyOrientation;
     })();
   </script>
   <style id="portal-hide-wp-chrome">
@@ -286,7 +267,7 @@
         <div><strong>Month:</strong> <span id="monthTop">-</span></div>
         <div><strong>Employee:</strong> <span id="empName">-</span></div>
         <div><strong>Role:</strong> <span id="roleLabel">-</span></div>
-        <div><strong>Rate:</strong> <span id="rateTop">£0/h</span></div>
+        <div><strong id="rateTopLabel">Rate:</strong> <span id="rateTop">£0/h</span></div>
       </section>
       <div class="legend" aria-hidden="false">
         <span><i class="swatch-paid" aria-hidden="true"></i> Green — feedback complete (paid now)</span>
@@ -415,13 +396,13 @@
       stf022: "andres"
     };
     /**
-     * Part-time / manual-entry staff: no roster-driven timesheet. They log extra
-     * hours by hand. Everyone else keeps the automatic (roster + feedback) sheet.
+     * Manual-entry staff (none currently). Roberto uses the same roster timesheet
+     * as everyone else, with a fixed monthly salary and no £/h rate shown.
      */
-    const MANUAL_TIMESHEET_ROSTER_KEYS = new Set(["roberto"]);
+    const MANUAL_TIMESHEET_ROSTER_KEYS = new Set([]);
     /**
-     * Fixed monthly part-time salary (GBP) paid on top of any logged extra hours.
-     * Keyed by roster id. Shown as its own line in the PDF + payroll report.
+     * Fixed monthly part-time salary (GBP). Keyed by roster id.
+     * Shown instead of hourly rate on the timesheet UI/PDF.
      */
     const FIXED_MONTHLY_SALARY_BY_ROSTER_KEY = {
       roberto: 2166.67
@@ -430,6 +411,26 @@
       const k = String(key || "").trim().toLowerCase();
       const v = Number(FIXED_MONTHLY_SALARY_BY_ROSTER_KEY[k] || 0);
       return v > 0 ? v : 0;
+    }
+    /** Mon–Fri count inclusive between ISO dates (payroll daily-rate divisor). */
+    function weekdayCountInclusive(startIso, endIso) {
+      const a = parseIsoDate(startIso);
+      const b = parseIsoDate(endIso);
+      if (!a || !b || b < a) return 0;
+      let n = 0;
+      const cur = new Date(a.getFullYear(), a.getMonth(), a.getDate());
+      const last = new Date(b.getFullYear(), b.getMonth(), b.getDate());
+      while (cur <= last) {
+        const d = cur.getDay();
+        if (d !== 0 && d !== 6) n += 1;
+        cur.setDate(cur.getDate() + 1);
+      }
+      return n;
+    }
+    function dailyRateFromMonthly(monthly, startIso, endIso) {
+      const m = Number(monthly || 0);
+      const days = weekdayCountInclusive(startIso, endIso) || 1;
+      return Number((m / days).toFixed(2));
     }
     /**
      * Payroll cycle is 25 -> 24. On-time deadline is the 24th of the closing
@@ -1562,6 +1563,19 @@
       state.effectiveRate = state.totalHours > 0
         ? Number((state.totalCost / state.totalHours).toFixed(2))
         : (state.primaryRate != null ? state.primaryRate : Number(state.hourlyRate || 0));
+
+      /* Fixed monthly (part-time): same roster sheet, no £/h — pay is the monthly cycle amount. */
+      const fixedMonthly = fixedMonthlySalaryForRosterKey(state.staffRosterKey);
+      if (fixedMonthly > 0) {
+        state.entries.forEach((e) => {
+          if (!e.dayOff) e.rate = 0;
+        });
+        state.totalCost = fixedMonthly;
+        state.potentialCost = fixedMonthly;
+        state.pendingCost = 0;
+        state.lateHoldCost = 0;
+        state.effectiveRate = null;
+      }
     }
 
     async function fetchStaffDaysOffEntries(supabase, userId, rosterKey, startIso, endIso) {
@@ -2024,6 +2038,11 @@
     }
 
     function formatRateHeaderText() {
+      const fixed = fixedMonthlySalaryForRosterKey(state.staffRosterKey);
+      if (fixed > 0) {
+        const daily = dailyRateFromMonthly(fixed, state.periodStart, state.periodEnd);
+        return `£${money(fixed)}/mo · £${money(daily)}/day`;
+      }
       const rates = state.roleRates || {};
       const roles = sortedPayRoles();
       if (roles.length > 1) {
@@ -2032,6 +2051,12 @@
       if (roles.length === 1) return `£${money(rates[roles[0]])}/h`;
       const r = state.effectiveRate != null ? state.effectiveRate : (state.primaryRate != null ? state.primaryRate : state.hourlyRate);
       return `£${money(r)}/h`;
+    }
+
+    function paintRateHeaderLabel() {
+      const lab = document.getElementById("rateTopLabel");
+      if (!lab) return;
+      lab.textContent = fixedMonthlySalaryForRosterKey(state.staffRosterKey) > 0 ? "Pay:" : "Rate:";
     }
 
     /** Rate for a given role: its own rate, else the worker's primary, else the single fallback. */
@@ -2604,6 +2629,7 @@
       try {
         document.getElementById("empName").textContent = state.employeeName || "-";
         document.getElementById("roleLabel").textContent = state.roleLabel || "-";
+        paintRateHeaderLabel();
         document.getElementById("rateTop").textContent = formatRateHeaderText();
       } catch (_) {}
     }
@@ -2706,6 +2732,7 @@
       }
       document.getElementById("totalHours").textContent = money(state.totalHours);
       state.roleLabel = formatRoleHeaderText();
+      paintRateHeaderLabel();
       document.getElementById("rateTop").textContent = formatRateHeaderText();
       document.getElementById("roleLabel").textContent = state.roleLabel;
       document.getElementById("totalCost").textContent = money(state.totalCost);
@@ -2836,8 +2863,11 @@
         document.body.classList.add("portal-timesheet-manual");
         document.body.classList.remove("portal-timesheet-vertical");
       } catch (_) {}
-      if (typeof portalLockLandscape === "function") void portalLockLandscape({ always: true });
-      if (typeof portalBindLandscapeLock === "function") portalBindLandscapeLock({ always: true });
+      if (typeof portalUnlockOrientation === "function") void portalUnlockOrientation();
+      try {
+        document.documentElement.classList.remove("portal-force-landscape");
+        document.body.classList.remove("portal-force-landscape");
+      } catch (_) {}
       const autoWrap = document.getElementById("autoWrap");
       const legend = document.querySelector(".legend");
       const manualForm = document.getElementById("manualForm");
@@ -2929,8 +2959,8 @@
         return;
       }
 
-      if (typeof window.__portalTimesheetForceVertical === "function") {
-        window.__portalTimesheetForceVertical();
+      if (typeof window.__portalTimesheetAllowAnyOrientation === "function") {
+        window.__portalTimesheetAllowAnyOrientation();
       }
 
       await timesheetEnsureLiveRoster(supabase);
@@ -3067,14 +3097,18 @@
       }
 
       // Summary rows are known up-front; needed for the single-page height budget.
-      const fixedSalary = state.manual ? fixedMonthlySalaryForRosterKey(state.staffRosterKey) : 0;
+      const fixedSalary = fixedMonthlySalaryForRosterKey(state.staffRosterKey);
+      const fixedDaily =
+        fixedSalary > 0
+          ? dailyRateFromMonthly(fixedSalary, state.periodStart, state.periodEnd)
+          : 0;
       const summaryRows = state.manual
         ? (fixedSalary > 0
             ? [
                 { label: "Extra hours", value: money(state.totalHours), tone: "neutral" },
-                { label: "Rate", value: `£${money(state.effectiveRate != null ? state.effectiveRate : state.hourlyRate)}/h`, tone: "neutral" },
                 { label: "Extra hours pay", value: `£${money(state.totalCost)}`, tone: "neutral" },
-                { label: "Fixed monthly salary", value: `£${money(fixedSalary)}`, tone: "neutral" },
+                { label: "Monthly salary", value: `£${money(fixedSalary)}`, tone: "neutral" },
+                { label: "Daily rate", value: `£${money(fixedDaily)}/day`, tone: "neutral" },
                 { label: "Total to pay", value: `£${money(Number((Number(state.totalCost || 0) + fixedSalary).toFixed(2)))}`, tone: "okStrong" }
               ]
             : [
@@ -3082,15 +3116,26 @@
                 { label: "Rate", value: `£${money(state.effectiveRate != null ? state.effectiveRate : state.hourlyRate)}/h`, tone: "neutral" },
                 { label: "Total to pay", value: `£${money(state.totalCost)}`, tone: "okStrong" }
               ])
-        : [
-            { label: "Hours ready to pay now (green)", value: money(state.totalHours), tone: "ok" },
-            { label: "Rate (avg)", value: `£${money(state.effectiveRate != null ? state.effectiveRate : state.hourlyRate)}/h`, tone: "neutral" },
-            { label: "Ready to pay now", value: `£${money(state.totalCost)}`, tone: "okStrong" },
-            { label: "Pending until feedback is completed", value: `£${money(state.pendingCost)}`, tone: "warn" },
-            { label: "Total if all feedback is completed", value: `£${money(state.potentialCost)}`, tone: "neutral" }
-          ];
+        : fixedSalary > 0
+          ? [
+              { label: "Hours logged (green)", value: money(state.totalHours), tone: "ok" },
+              { label: "Monthly salary", value: `£${money(fixedSalary)}`, tone: "neutral" },
+              { label: "Daily rate", value: `£${money(fixedDaily)}/day`, tone: "neutral" },
+              { label: "Ready to pay now", value: `£${money(fixedSalary)}`, tone: "okStrong" }
+            ]
+          : [
+              { label: "Hours ready to pay now (green)", value: money(state.totalHours), tone: "ok" },
+              { label: "Rate (avg)", value: `£${money(state.effectiveRate != null ? state.effectiveRate : state.hourlyRate)}/h`, tone: "neutral" },
+              { label: "Ready to pay now", value: `£${money(state.totalCost)}`, tone: "okStrong" },
+              { label: "Pending until feedback is completed", value: `£${money(state.pendingCost)}`, tone: "warn" },
+              { label: "Total if all feedback is completed", value: `£${money(state.potentialCost)}`, tone: "neutral" }
+            ];
       const lpsSummary = submissionLateStatus();
       if (lpsSummary.isLate) {
+        const grossPay =
+          state.manual && fixedSalary > 0
+            ? Number((Number(state.totalCost || 0) + fixedSalary).toFixed(2))
+            : Number(state.totalCost || 0);
         summaryRows.push({
           label: "Late penalty (HMRC late reporting)",
           value: `-£${money(LATE_PENALTY_GBP)}`,
@@ -3098,7 +3143,7 @@
         });
         summaryRows.push({
           label: `Net to pay (moved to ${lpsSummary.lateMonth})`,
-          value: `£${money(Math.max(0, Number(state.totalCost || 0) + fixedSalary - LATE_PENALTY_GBP))}`,
+          value: `£${money(Math.max(0, grossPay - LATE_PENALTY_GBP))}`,
           tone: "okStrong"
         });
       }
@@ -3365,7 +3410,11 @@
           } catch (_) {}
         }
         const s = submissionLateStatus();
-        const gross = Number(state.totalCost || 0);
+        const fixedOnSubmit = fixedMonthlySalaryForRosterKey(state.staffRosterKey);
+        const gross =
+          state.manual && fixedOnSubmit > 0
+            ? Number((Number(state.totalCost || 0) + fixedOnSubmit).toFixed(2))
+            : Number(state.totalCost || 0);
         if (s.isLate) {
           const net = Math.max(0, gross - LATE_PENALTY_GBP);
           alert(

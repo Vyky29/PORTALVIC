@@ -16,11 +16,20 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Expenses</title>
-  <script src="/portal/portal_orientation_lock.js?v=20260625-horizontal-lock"></script>
+  <script src="/portal/portal_orientation_lock.js?v=20260721-free-orient"></script>
   <script>
     (function () {
-      if (typeof portalLockLandscape === "function") void portalLockLandscape({ always: true });
-      if (typeof portalBindLandscapeLock === "function") portalBindLandscapeLock({ always: true });
+      /* Expenses works in portrait and landscape — do not force lock. */
+      function allowAnyOrientation() {
+        if (typeof portalUnlockOrientation === "function") void portalUnlockOrientation();
+        try {
+          document.documentElement.classList.remove("portal-force-landscape");
+          if (document.body) document.body.classList.remove("portal-force-landscape");
+        } catch (_) {}
+      }
+      allowAnyOrientation();
+      document.addEventListener("DOMContentLoaded", allowAnyOrientation);
+      window.addEventListener("pageshow", allowAnyOrientation);
     })();
   </script>
   <style id="portal-expenses-styles">
