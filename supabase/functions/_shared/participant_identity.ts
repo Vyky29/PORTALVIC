@@ -94,8 +94,8 @@ const PORTAL_PARTICIPANT_SLUG_ALIASES: Record<string, string> = {
 export const ACAT_GROUP_CLIENT_SLUGS = new Set(["acat", "acat_group"]);
 
 /** Individual ACAT members who attend the Monday group slot. */
-/** Active ACAT Mon cohort for 26/27 (Kate + Kamy left — no re-enrolment, Jul 2026). */
-export const ACAT_MEMBER_CLIENT_SLUGS = new Set(["jack_w", "jack_s"]);
+/** ACAT Mon cohort members (Jack S/W, Kate, Kamy). Autumn 26/27 rows only when re-enrolled. */
+export const ACAT_MEMBER_CLIENT_SLUGS = new Set(["kate", "kamy", "jack_w", "jack_s"]);
 
 /**
  * LA / Day Centre clients who must not book crash courses or other extras
@@ -336,10 +336,14 @@ export function participantIdentityMatches(
     return true;
   }
 
-  // Staff often write Monday 11–12 under collective "ACAT"; Jack parents see it.
+  // Staff often write Monday 11–12 under collective "ACAT"; Kamy / Jack parents see it.
+  // Kate is excluded (irregular attendance — no parent session progress / notes).
   if (
     (isAcatGroupClientId(rowClientId) || isAcatGroupClientId(rowName)) &&
-    slugs.some((s) => ACAT_MEMBER_CLIENT_SLUGS.has(rosterParticipantSlugAlias(s)))
+    slugs.some((s) => {
+      const canon = rosterParticipantSlugAlias(s);
+      return ACAT_MEMBER_CLIENT_SLUGS.has(canon) && canon !== "kate";
+    })
   ) {
     return true;
   }

@@ -2503,8 +2503,7 @@
   }
 
   /** Monday SwimFarm ACAT block \u2013 group feedback covers these roster names (slug keys). */
-  /* Kate + Kamy left 26/27 (no re-enrolment, Jul 2026). */
-  var ACAT_MEMBER_SLUGS = { jack_w: true, jack_s: true };
+  var ACAT_MEMBER_SLUGS = { jack_w: true, jack_s: true, kamy: true, kate: true };
 
   function isAcatMemberClient(name) {
     return !!ACAT_MEMBER_SLUGS[canonicalClientSlug(name)];
