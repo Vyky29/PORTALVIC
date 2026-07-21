@@ -277,6 +277,14 @@
     return String(phone || "").replace(/\D/g, "");
   }
 
+  /** Fold accents so search "lea" matches "Léa", "jose" matches "José", etc. */
+  function foldSearchText(s) {
+    return String(s || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+  }
+
   /** Canonical UK-ish WhatsApp digits (no +), mirroring server normalizeParentPhoneE164. */
   function canonicalPhoneDigits(phone) {
     var digits = phoneDigits(phone);
@@ -1160,7 +1168,7 @@
   }
 
   function threadMatches(t) {
-    var q = String(state.query || "").trim().toLowerCase();
+    var q = foldSearchText(state.query || "").trim();
     var outcome = String(state.outcome || "all").toLowerCase();
     if (outcome === "replies" && !t.hasInbound) return false;
     if (outcome === "failed" && !t.hasFailed) return false;
@@ -1185,7 +1193,7 @@
       parts.push(e.subject || "");
       parts.push(e.sentBy || "");
     });
-    var hay = parts.join(" ").toLowerCase();
+    var hay = foldSearchText(parts.join(" "));
     if (hay.indexOf(q) >= 0) return true;
     /* Token match: "pat" → Pat Nekati / Mantombi Pat / Nekati family (Pat). */
     var tokens = q.split(/[^a-z0-9]+/).filter(function (x) { return x.length >= 2; });
