@@ -51,10 +51,10 @@
     }
     td{font-size:14px}
     .td-service{min-width:0;text-align:center}
-    .timesheet-service-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;padding:2px 0}
-    .timesheet-service-cell__service{font-size:13px;line-height:1.2;overflow-wrap:break-word;word-break:break-word;max-width:100%}
-    .timesheet-service-cell__venue{font-size:12px;line-height:1.15;color:#334155;overflow-wrap:break-word;word-break:break-word;max-width:100%}
-    .timesheet-service-cell__role{font-size:12px;line-height:1.15;max-width:100%;overflow-wrap:break-word;word-break:break-word}
+    .timesheet-service-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2px;min-width:0;padding:2px 0;width:100%}
+    .timesheet-service-cell__service{font-size:13px;line-height:1.2;overflow-wrap:break-word;word-break:break-word;max-width:100%;text-align:center}
+    .timesheet-service-cell__venue{font-size:12px;line-height:1.15;color:#334155;overflow-wrap:break-word;word-break:break-word;max-width:100%;text-align:center}
+    .timesheet-service-cell__role{font-size:12px;line-height:1.15;max-width:100%;overflow-wrap:break-word;word-break:break-word;text-align:center}
     .num{text-align:center}
     .sum-row td{background:#f4f7fb;font-weight:700}
     .sum-label{text-align:center}
@@ -2356,19 +2356,21 @@
         : [16, 34, 56];
     }
 
-    function drawPdfServiceCell(doc, entry, cx, y, cellBaseline, S, isManual) {
+    function drawPdfServiceCell(doc, entry, cx, y, cellBaseline, S, isManual, thisRowH) {
+      const rowH = Number(thisRowH) > 0 ? Number(thisRowH) : cellBaseline * 2;
+      const midY = y + rowH / 2;
       if (isManual && !(entry && entry.serviceLabel) && !(entry && entry.service)) {
-        doc.text("-", cx, y + cellBaseline, { align: "center" });
+        doc.text("-", cx, midY + 1.2 * S, { align: "center" });
         return;
       }
       if (entry && entry.dayOff) {
         doc.setFontSize(8 * S);
         doc.setTextColor(16, 34, 56);
-        doc.text(String(timesheetEntryServiceLabel(entry) || "Day off").slice(0, 28), cx, y + cellBaseline - 1.4 * S, {
+        doc.text(String(timesheetEntryServiceLabel(entry) || "Day off").slice(0, 28), cx, midY - 1.2 * S, {
           align: "center",
         });
         doc.setFont("helvetica", "bold");
-        doc.text("Day off", cx, y + cellBaseline + 2 * S, { align: "center" });
+        doc.text("Day off", cx, midY + 2.2 * S, { align: "center" });
         doc.setFont("helvetica", "normal");
         return;
       }
@@ -2378,36 +2380,36 @@
       if (venue && role) {
         doc.setFontSize(7.6 * S);
         doc.setTextColor(16, 34, 56);
-        doc.text(serviceLine, cx, y + cellBaseline - 2.6 * S, { align: "center" });
+        doc.text(serviceLine, cx, midY - 2.4 * S, { align: "center" });
         doc.setFontSize(7 * S);
         doc.setTextColor(51, 65, 85);
-        doc.text(venue, cx, y + cellBaseline - 0.1 * S, { align: "center" });
+        doc.text(venue, cx, midY + 0.2 * S, { align: "center" });
         doc.setFontSize(7.2 * S);
         doc.setFont("helvetica", "bold");
         const [rr, gg, bb] = timesheetRolePdfRgb(
           timesheetEntryDisplayRole(entry) || (entry && (entry.role || entry.roleLabel)),
         );
         doc.setTextColor(rr, gg, bb);
-        doc.text(role, cx, y + cellBaseline + 2.5 * S, { align: "center" });
+        doc.text(role, cx, midY + 2.8 * S, { align: "center" });
         doc.setFont("helvetica", "normal");
         doc.setTextColor(16, 34, 56);
         doc.setFontSize(8.5 * S);
       } else if (role) {
-        doc.setFontSize(8.5 * S);
+        doc.setFontSize(8 * S);
         doc.setTextColor(16, 34, 56);
-        doc.text(serviceLine, cx, y + cellBaseline - 1.4 * S, { align: "center" });
+        doc.text(serviceLine, cx, midY - 1.2 * S, { align: "center" });
         doc.setFontSize(7.2 * S);
         doc.setFont("helvetica", "bold");
         const [rr, gg, bb] = timesheetRolePdfRgb(
           timesheetEntryDisplayRole(entry) || (entry && (entry.role || entry.roleLabel)),
         );
         doc.setTextColor(rr, gg, bb);
-        doc.text(role, cx, y + cellBaseline + 2 * S, { align: "center" });
+        doc.text(role, cx, midY + 2.2 * S, { align: "center" });
         doc.setFont("helvetica", "normal");
         doc.setTextColor(16, 34, 56);
         doc.setFontSize(8.5 * S);
       } else {
-        doc.text(serviceLine, cx, y + cellBaseline, { align: "center" });
+        doc.text(serviceLine, cx, midY + 1.2 * S, { align: "center" });
       }
     }
 
@@ -3434,18 +3436,28 @@
         const thisRowH = rowH * pdfEntryRowHeightScale(e);
         doc.rect(colX[0], y, colX[6] - colX[0], thisRowH, "S");
         const isFlat = serviceFlatRate(e.service || e.role) != null;
-        const midCol = state.manual
-          ? String(e.note || e.day || "").slice(0, 22)
-          : (e.dayOff ? "Day off" : (isFlat ? String(timesheetEntryRoleLabel(e) || e.role || "Training").slice(0, 22) : e.day));
-        const statusTxt = state.manual
-          ? "Manual"
-          : (e.dayOff ? "Day off" : (isFlat ? "Completed" : (e.completed ? "Completed" : "Pending feedback")));
-        doc.text(displayDateFancy(e.date), (colX[0] + colX[1]) / 2, y + cellBaseline, { align: "center" });
-        doc.text(midCol, (colX[1] + colX[2]) / 2, y + cellBaseline, { align: "center" });
-        drawPdfServiceCell(doc, e, (colX[2] + colX[3]) / 2, y, cellBaseline, S, state.manual);
-        doc.text(money(e.hours), (colX[3] + colX[4]) / 2, y + cellBaseline, { align: "center" });
-        doc.text(daily, (colX[4] + colX[5]) / 2, y + cellBaseline, { align: "center" });
-        doc.text(statusTxt, (colX[5] + colX[6]) / 2, y + cellBaseline, { align: "center" });
+        const noDate = !String(e.date || "").trim();
+        const isAdminExtra = !!(e.admin || e.status === "Admin" || /extra hours/i.test(String(e.service || e.serviceName || "")));
+        const midY = y + thisRowH / 2 + 1.2 * S;
+        const midCol = noDate
+          ? "—"
+          : state.manual
+            ? String(e.day || "").slice(0, 22) || "—"
+            : (e.dayOff ? "Day off" : (isFlat ? String(timesheetEntryRoleLabel(e) || e.role || "Training").slice(0, 22) : e.day));
+        const statusTxt = isAdminExtra
+          ? "Admin"
+          : state.manual
+            ? "Manual"
+            : (e.dayOff ? "Day off" : (isFlat ? "Completed" : (e.completed ? "Completed" : "Pending feedback")));
+        if (e.dayOff) doc.setTextColor(153, 27, 27);
+        else doc.setTextColor(16, 34, 56);
+        doc.text(displayDateFancy(e.date), (colX[0] + colX[1]) / 2, midY, { align: "center" });
+        doc.text(midCol, (colX[1] + colX[2]) / 2, midY, { align: "center" });
+        drawPdfServiceCell(doc, e, (colX[2] + colX[3]) / 2, y, cellBaseline, S, state.manual, thisRowH);
+        doc.text(money(e.hours), (colX[3] + colX[4]) / 2, midY, { align: "center" });
+        doc.text(daily, (colX[4] + colX[5]) / 2, midY, { align: "center" });
+        doc.text(statusTxt, (colX[5] + colX[6]) / 2, midY, { align: "center" });
+        doc.setTextColor(16, 34, 56);
         y += thisRowH;
       }
 
