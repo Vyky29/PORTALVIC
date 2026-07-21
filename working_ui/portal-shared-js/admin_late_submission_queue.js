@@ -737,12 +737,12 @@
           var uid = _escAttr(String(r.submitted_by_user_id || "").trim());
           var sdate = _escAttr(String(r.session_date || "").slice(0, 10));
           var action = cleared
-            ? '<span class="chip chip--ok">Pay released</span>'
+            ? '<span class="chip chip--ok">Released</span>'
             : '<button type="button" class="btn btn--pri btn--sm" data-late-release-pay="' +
               uid +
               '" data-late-release-date="' +
               sdate +
-              '">Release for pay</button>';
+              '">Release</button>';
           return (
             "<tr>" +
             '<td class="portal-late-fb-staff"><div class="portal-late-fb-staff__name">' +
@@ -778,10 +778,10 @@
         '<table class="tbl portal-late-fb-tbl">' +
         "<thead><tr>" +
         '<th scope="col">Staff</th>' +
-        '<th scope="col">Service / Date / Time</th>' +
+        '<th scope="col">Service</th>' +
         '<th scope="col">Participant</th>' +
-        '<th scope="col">Completed feedback</th>' +
-        '<th scope="col">Timesheet pay</th>' +
+        '<th scope="col">Done</th>' +
+        '<th scope="col">Pay</th>' +
         "</tr></thead><tbody>" +
         body +
         "</tbody></table></div>"

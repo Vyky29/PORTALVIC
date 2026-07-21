@@ -1504,20 +1504,24 @@
     .portal-late-admin-msg.is-error{color:var(--danger)}
     .portal-late-admin-status{margin-top:8px;font-size:13px;color:var(--muted);min-height:1.25em;overflow-wrap:break-word}
     .portal-late-admin-status.is-error{color:var(--danger);font-weight:600}
-    .portal-late-fb-wrap{margin-top:12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow:auto;min-width:0;-webkit-overflow-scrolling:touch}
-    .portal-late-fb-tbl{width:100%;min-width:36rem;border-collapse:collapse;table-layout:fixed}
-    .portal-late-fb-tbl th,.portal-late-fb-tbl td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left;min-width:0}
-    .portal-late-fb-tbl th{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:var(--surface2,rgba(0,0,0,.03));position:sticky;top:0;z-index:1}
+    .portal-late-fb-wrap{margin-top:12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow-x:hidden;overflow-y:visible;min-width:0;max-width:100%}
+    .portal-late-fb-tbl{width:100%;min-width:0;max-width:100%;border-collapse:collapse;table-layout:fixed}
+    .portal-late-fb-tbl th,.portal-late-fb-tbl td{padding:8px 8px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left;min-width:0;overflow-wrap:break-word;word-break:break-word}
+    .portal-late-fb-tbl th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);background:var(--surface2,rgba(0,0,0,.03));position:sticky;top:0;z-index:1;line-height:1.25}
     .portal-late-fb-tbl tbody tr:last-child td{border-bottom:0}
-    .portal-late-fb-tbl th:nth-child(1),.portal-late-fb-tbl td:nth-child(1){width:22%}
-    .portal-late-fb-tbl th:nth-child(2),.portal-late-fb-tbl td:nth-child(2){width:30%}
-    .portal-late-fb-tbl th:nth-child(3),.portal-late-fb-tbl td:nth-child(3){width:22%}
-    .portal-late-fb-tbl th:nth-child(4),.portal-late-fb-tbl td:nth-child(4){width:26%}
-    .portal-late-fb-staff__name{font-weight:650;font-size:14px;overflow-wrap:break-word}
+    .portal-late-fb-tbl th:nth-child(1),.portal-late-fb-tbl td:nth-child(1){width:16%}
+    .portal-late-fb-tbl th:nth-child(2),.portal-late-fb-tbl td:nth-child(2){width:26%}
+    .portal-late-fb-tbl th:nth-child(3),.portal-late-fb-tbl td:nth-child(3){width:16%}
+    .portal-late-fb-tbl th:nth-child(4),.portal-late-fb-tbl td:nth-child(4){width:18%}
+    .portal-late-fb-tbl th:nth-child(5),.portal-late-fb-tbl td:nth-child(5){width:24%}
+    .portal-late-fb-staff__name{font-weight:650;font-size:12.5px;overflow-wrap:break-word;min-width:0}
     .portal-late-fb-stack{display:flex;flex-direction:column;gap:2px;min-width:0}
-    .portal-late-fb-stack__svc{font-weight:650;font-size:13px;overflow-wrap:break-word}
-    .portal-late-fb-stack__date,.portal-late-fb-stack__time{font-size:12px;color:var(--muted);overflow-wrap:break-word}
-    .portal-late-fb-pax,.portal-late-fb-done{font-size:13px;overflow-wrap:break-word}
+    .portal-late-fb-stack__svc{font-weight:650;font-size:12px;overflow-wrap:break-word}
+    .portal-late-fb-stack__date,.portal-late-fb-stack__time{font-size:11px;color:var(--muted);overflow-wrap:break-word}
+    .portal-late-fb-pax,.portal-late-fb-done{font-size:12px;overflow-wrap:break-word;min-width:0}
+    .portal-late-fb-pay{min-width:0}
+    .portal-late-fb-pay .btn{max-width:100%;white-space:normal;text-align:center;line-height:1.25;padding:5px 8px;height:auto;min-height:0}
+    .portal-late-fb-pay .chip{max-width:100%;white-space:normal;overflow-wrap:break-word}
     .portal-late-approval-panel{border-top:1px solid var(--line);padding-top:8px}
     .portal-late-approval-panel__sum{cursor:pointer;font-weight:650;font-size:14px;min-width:0;overflow-wrap:break-word}
     .portal-late-day-strip{margin-top:4px}
