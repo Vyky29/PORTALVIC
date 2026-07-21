@@ -656,6 +656,101 @@
   global.portalStaffHasLeadFieldToolsOnStaffShell = portalStaffHasLeadFieldToolsOnStaffShell;
 
   /**
+   * Halo flanks layout:
+   *  - 4 session icons: all left (1×4); ADMIN right = 4-button block
+   *  - 5 icons (plan+swim): 4 left; Plan (2) + ADMIN (2) on right
+   *  - 6 lead: 4 left; Lead+Stats (2) + ADMIN (2) on right
+   */
+  function portalSyncHaloFlankToolPlacement() {
+    var left = document.getElementById("topbarToolsGridLeft");
+    var right = document.getElementById("topbarToolsGridRight");
+    var leadRow = document.querySelector(".topbar-lead--halo-flanks");
+    if (!left || !right || !leadRow) return;
+
+    function cell(id) {
+      return document.getElementById(id);
+    }
+    function visible(el) {
+      return !!(el && !el.hidden);
+    }
+
+    var photo = cell("topbarToolCellAchievements");
+    var pickup = cell("topbarToolCellPickup");
+    var plan = cell("topbarToolCellSessionPlanner");
+    var stats = cell("topbarToolCellSessionsOverview");
+    var venue = cell("topbarToolCellVenue");
+    var swim = cell("topbarToolCellTermReview");
+    var lead = cell("topbarToolCellLeadReport");
+    var teamRev = cell("topbarToolCellLeadTermReview");
+    var wa = cell("topbarToolCellStaffWa");
+
+    var hasLead = visible(lead);
+    var hasStats = visible(stats);
+    var hasPlan = visible(plan);
+    var hasSwim = visible(swim);
+    var mode = "4";
+    if (hasLead || hasStats) mode = "6";
+    else if (hasPlan && hasSwim) mode = "5";
+
+    leadRow.classList.remove(
+      "topbar-lead--flank-4",
+      "topbar-lead--flank-5",
+      "topbar-lead--flank-6",
+    );
+    leadRow.classList.add("topbar-lead--flank-" + mode);
+    right.classList.toggle("topbar-tools-grid--flank-2col", mode === "6");
+    right.classList.toggle("topbar-tools-grid--flank-stack", mode === "4" || mode === "5");
+
+    var leftOrder;
+    var rightOrder;
+    if (mode === "6") {
+      leftOrder = [photo, venue, plan, pickup];
+      rightOrder = [lead, stats, wa];
+    } else if (mode === "5") {
+      leftOrder = [photo, venue, swim, pickup];
+      rightOrder = [plan, wa];
+    } else if (hasSwim && !hasPlan) {
+      leftOrder = [photo, venue, swim, pickup];
+      rightOrder = [wa];
+    } else {
+      leftOrder = [photo, venue, plan, pickup];
+      rightOrder = [wa];
+    }
+
+    var parked = [teamRev];
+    leftOrder.forEach(function (el) {
+      if (el && el.parentNode !== left) left.appendChild(el);
+    });
+    rightOrder.forEach(function (el) {
+      if (el && el.parentNode !== right) right.appendChild(el);
+    });
+    /* Keep unused cells out of the right stack so they do not affect ADMIN sizing. */
+    [photo, pickup, plan, stats, venue, swim, lead, teamRev].forEach(function (el) {
+      if (!el) return;
+      var inLeft = leftOrder.indexOf(el) >= 0;
+      var inRight = rightOrder.indexOf(el) >= 0;
+      if (!inLeft && !inRight && el.parentNode !== left) left.appendChild(el);
+    });
+    parked.forEach(function (el) {
+      if (el && el.parentNode !== left) left.appendChild(el);
+    });
+    if (wa && wa.parentNode !== right) right.appendChild(wa);
+
+    if (plan) {
+      plan.classList.toggle("topbar-tool-cell--flank-span2h", mode === "5");
+    }
+    if (lead) lead.classList.remove("topbar-tool-cell--flank-tall");
+    if (stats) stats.classList.remove("topbar-tool-cell--flank-tall");
+    if (wa) {
+      wa.classList.toggle("topbar-tool-cell--flank-admin-4", mode === "4");
+      wa.classList.toggle("topbar-tool-cell--flank-admin-2", mode === "5" || mode === "6");
+      wa.classList.add("topbar-tool-cell--staff-wa", "topbar-tool-cell--span2");
+    }
+  }
+
+  global.portalSyncHaloFlankToolPlacement = portalSyncHaloFlankToolPlacement;
+
+  /**
    * Lead shell or programme lead (Berta/John) or exec on staff shell: 6 tools in 2×3.
    * CEOs on staff shell = same lead extras as programme leads.
    */
@@ -719,10 +814,16 @@
     }
     portalSyncTopbarToolsGridLayout();
     try {
+      portalSyncHaloFlankToolPlacement();
+    } catch (_flank) {}
+    try {
       if (typeof global.portalStaffWaSyncPlacement === "function") {
         global.portalStaffWaSyncPlacement();
       }
     } catch (_waPlace) {}
+    try {
+      portalSyncHaloFlankToolPlacement();
+    } catch (_flank2) {}
   };
 
   global.portalStaffIsProgrammeLeadTopbar = portalStaffIsProgrammeLeadTopbar;

@@ -74,12 +74,12 @@
       sixIcon: false,
     },
     angel: {
-      photo: false,
+      photo: true,
       swReview: true,
       leadReview: false,
-      venue: false,
+      venue: true,
       pickup: true,
-      planner: false,
+      planner: true,
       sixIcon: false,
     },
     aurora: {
@@ -133,18 +133,18 @@
       photo: true,
       swReview: false,
       leadReview: false,
-      venue: false,
+      venue: true,
       pickup: true,
-      planner: false,
+      planner: true,
       sixIcon: false,
     },
     godsway: {
       photo: true,
       swReview: false,
       leadReview: false,
-      venue: false,
+      venue: true,
       pickup: true,
-      planner: false,
+      planner: true,
       sixIcon: false,
     },
     javier: {
@@ -208,10 +208,10 @@
       stats: true,
     },
     simon: {
-      photo: false,
+      photo: true,
       swReview: true,
       leadReview: false,
-      venue: false,
+      venue: true,
       pickup: true,
       planner: false,
       sixIcon: false,
@@ -592,9 +592,16 @@
     setTopbarToolGroup(LEAD_REPORT_IDS, true, {
       visible: isLeadShell || isProgrammeLead || !!profile.leadExtras,
     });
-    setTopbarToolGroup(LEAD_TERM_REVIEW_IDS, isLeadShell || !!profile.leadReview, {
-      visible: showProgrammeOnly,
-    });
+    /* Team Rev stays in Quick Menu → Service Leads (not on the halo topbar). */
+    setTopbarToolGroup(
+      ["topbarToolCellLeadTermReview", "topbarToolLeadTermReview"],
+      false,
+      { visible: false },
+    );
+    setElementVisible(
+      "quickMenuStaffLeadTermReview",
+      isLeadShell || (showProgrammeOnly && !!profile.leadReview),
+    );
     setTopbarToolGroup(STATS_IDS, isLeadShell || profile.stats !== false, {
       visible: showProgrammeOnly,
     });
@@ -774,7 +781,6 @@
       if (venueOn) out.push("venue");
       if (profile.pickup) out.push("pickup");
       if (profile.swReview) out.push("swReview");
-      if (profile.leadReview) out.push("leadReview");
       if (plannerOn) out.push("plan");
       if (showLeadExtras) {
         out.push("lead");
@@ -786,7 +792,7 @@
     if (venueOn) out.push("venue");
     if (profile.pickup) out.push("pickup");
     if (profile.swReview) out.push("swReview");
-    if (profile.leadReview && (isProgrammeLead || isLeadShell)) out.push("leadReview");
+    /* Team Rev is Quick Menu only — not a halo icon. */
     if (plannerOn) out.push("plan");
     if (showLeadExtras) {
       out.push("lead");

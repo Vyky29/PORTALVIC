@@ -832,6 +832,11 @@
     placeWaInGrid(btn);
     if (lead) lead.classList.add("topbar-lead--wa-in-grid");
     applyUnreadBadge(lastUnreadCount);
+    try {
+      if (typeof global.portalSyncHaloFlankToolPlacement === "function") {
+        global.portalSyncHaloFlankToolPlacement();
+      }
+    } catch (_e) {}
   }
 
   function ensureButton(staffKey) {

@@ -166,6 +166,92 @@
   white-space:nowrap;
   text-align:center;
 }
+
+/* Right stack (4+admin / 5+admin): single column matching left 4-icon height */
+.topbar-tools-grid--flank-stack{
+  grid-template-columns:var(--topbar-tools-cell) !important;
+  width:var(--topbar-tools-cell) !important;
+  gap:var(--topbar-tools-gap-y) !important;
+}
+.topbar-lead--flank-4 .topbar-tools-grid--flank-stack > .topbar-tool-cell--flank-admin-4,
+.topbar-lead--flank-4 #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-4{
+  grid-column:1 / -1 !important;
+  grid-row:auto !important;
+  width:100% !important;
+  min-width:0 !important;
+  height:calc(4 * var(--topbar-tools-cell) + 3 * var(--topbar-tools-gap-y)) !important;
+  min-height:calc(4 * var(--topbar-tools-cell) + 3 * var(--topbar-tools-gap-y)) !important;
+  max-height:none !important;
+}
+.topbar-lead--flank-4 #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-4 > .topbar-tool-btn,
+.topbar-lead--flank-4 #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-4 > button{
+  width:100% !important;
+  height:100% !important;
+  min-height:100% !important;
+  max-height:none !important;
+  flex:1 1 auto !important;
+  flex-direction:column !important;
+  gap:8px !important;
+  border-radius:14px !important;
+  padding:10px 6px !important;
+}
+.topbar-lead--flank-4 #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-4 .topbar-tool-btn__ico,
+.topbar-lead--flank-4 #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-4 .topbar-tool-btn__ico svg{
+  width:22px !important;
+  height:22px !important;
+  max-width:22px !important;
+  max-height:22px !important;
+}
+.topbar-lead--flank-4 #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-4 .topbar-tool-label{
+  font-size:11px !important;
+  white-space:normal !important;
+}
+
+.topbar-lead--flank-5 .topbar-tool-cell--flank-span2h,
+.topbar-lead--flank-5 #topbarToolCellSessionPlanner.topbar-tool-cell--flank-span2h{
+  height:calc(2 * var(--topbar-tools-cell) + var(--topbar-tools-gap-y)) !important;
+  min-height:calc(2 * var(--topbar-tools-cell) + var(--topbar-tools-gap-y)) !important;
+  width:100% !important;
+}
+.topbar-lead--flank-5 #topbarToolCellSessionPlanner.topbar-tool-cell--flank-span2h > .topbar-tool-btn{
+  width:100% !important;
+  height:100% !important;
+  min-height:100% !important;
+  max-height:none !important;
+}
+.topbar-lead--flank-5 #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-2,
+.topbar-lead--flank-6 #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-2{
+  grid-column:1 / -1 !important;
+  height:calc(2 * var(--topbar-tools-cell) + var(--topbar-tools-gap-y)) !important;
+  min-height:calc(2 * var(--topbar-tools-cell) + var(--topbar-tools-gap-y)) !important;
+  max-height:none !important;
+}
+.topbar-lead--flank-5 #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-2 > .topbar-tool-btn,
+.topbar-lead--flank-5 #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-2 > button,
+.topbar-lead--flank-6 #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-2 > .topbar-tool-btn,
+.topbar-lead--flank-6 #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-2 > button{
+  width:100% !important;
+  height:100% !important;
+  min-height:100% !important;
+  max-height:none !important;
+  flex:1 1 auto !important;
+  flex-direction:column !important;
+  gap:6px !important;
+  border-radius:12px !important;
+  padding:8px 6px !important;
+}
+
+.topbar-lead--flank-6 .topbar-tool-cell--flank-tall{
+  height:calc(2 * var(--topbar-tools-cell) + var(--topbar-tools-gap-y)) !important;
+  min-height:calc(2 * var(--topbar-tools-cell) + var(--topbar-tools-gap-y)) !important;
+}
+.topbar-lead--flank-6 .topbar-tool-cell--flank-tall > .topbar-tool-btn{
+  width:100% !important;
+  height:100% !important;
+  min-height:100% !important;
+  max-height:none !important;
+}
+
 .topbar-tools-grid--flank .topbar-tool-cell--row1-solo,
 .topbar-tools-grid--flank .topbar-tool-cell--row-last-solo{
   grid-column:auto;
@@ -1185,6 +1271,15 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   justify-content:center !important;
   box-sizing:border-box !important;
 }
+.topbar-lead--flank-4 #topbarToolsGridRight > #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-4{
+  height:calc(4 * var(--topbar-tools-cell) + 3 * var(--topbar-tools-gap-y)) !important;
+  min-height:calc(4 * var(--topbar-tools-cell) + 3 * var(--topbar-tools-gap-y)) !important;
+}
+.topbar-lead--flank-5 #topbarToolsGridRight > #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-2,
+.topbar-lead--flank-6 #topbarToolsGridRight > #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-2{
+  height:calc(2 * var(--topbar-tools-cell) + var(--topbar-tools-gap-y)) !important;
+  min-height:calc(2 * var(--topbar-tools-cell) + var(--topbar-tools-gap-y)) !important;
+}
 #topbarToolsGridRight > #topbarToolCellStaffWa > .topbar-tool-btn,
 #topbarToolsGridRight > #topbarToolCellStaffWa > button,
 #topbarToolsGridRight > .topbar-tool-cell--staff-wa > .topbar-tool-btn--staff-wa{
@@ -1212,6 +1307,20 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   box-shadow:0 1px 3px rgba(232,196,74,.28) !important;
   box-sizing:border-box !important;
   overflow:visible !important;
+}
+.topbar-lead--flank-4 #topbarToolsGridRight > #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-4 > .topbar-tool-btn,
+.topbar-lead--flank-4 #topbarToolsGridRight > #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-4 > button,
+.topbar-lead--flank-5 #topbarToolsGridRight > #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-2 > .topbar-tool-btn,
+.topbar-lead--flank-5 #topbarToolsGridRight > #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-2 > button,
+.topbar-lead--flank-6 #topbarToolsGridRight > #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-2 > .topbar-tool-btn,
+.topbar-lead--flank-6 #topbarToolsGridRight > #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-2 > button{
+  flex-direction:column !important;
+  height:100% !important;
+  min-height:100% !important;
+  max-height:none !important;
+  padding:8px 6px !important;
+  border-radius:12px !important;
+  gap:8px !important;
 }
 #topbarToolsGridRight > #topbarToolCellStaffWa .topbar-tool-btn__ico,
 #topbarToolsGridRight > #topbarToolCellStaffWa .topbar-tool-btn__ico svg{
