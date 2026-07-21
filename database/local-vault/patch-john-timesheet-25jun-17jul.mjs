@@ -116,21 +116,31 @@ function loadJohnShifts() {
     );
 }
 
-function mkWork(iso, hours, label) {
+function mkWork(iso, hours, timeRange, venue, serviceName) {
+  const title = serviceName || "Bespoke Programme";
+  const range = timeRange || "";
   return {
     day: weekdayName(iso),
     date: iso,
     note: "",
     role: ROLE,
+    roleLabel: ROLE,
+    displayRole: ROLE,
     hours,
     manual: false,
-    service: label,
+    service: title,
+    serviceName: title,
+    service_name: title,
+    serviceLabel: range ? `${range} ${title}` : title,
+    service_label: range ? `${range} ${title}` : title,
+    venue,
+    timeRange: range,
+    time_range: range,
     completed: true,
     dayOff: false,
     late_hold: false,
     feedback_late: false,
     rate: RATE,
-    service_label: label,
   };
 }
 
@@ -143,12 +153,16 @@ function mkDayOff(iso, reason) {
     hours: 0,
     manual: false,
     service: "Day off",
+    serviceName: "Day off",
+    serviceLabel: reason || "Day off",
+    service_label: reason || "Day off",
+    venue: "",
+    timeRange: "",
     completed: true,
     dayOff: true,
     late_hold: false,
     feedback_late: false,
     rate: 0,
-    service_label: reason || "Day off",
   };
 }
 
@@ -157,17 +171,25 @@ function mkJuneExtra() {
   return {
     day: "",
     date: "",
-    note: "Extra pay from June (£60)",
+    note: "",
     role: ROLE,
+    roleLabel: ROLE,
+    displayRole: ROLE,
     hours,
-    manual: true,
+    manual: false,
+    admin: true,
+    status: "Admin",
     service: "Extra hours (June)",
+    serviceName: "Extra hours (June)",
+    serviceLabel: "Extra hours (June)",
+    service_label: "Extra hours (June)",
+    venue: "",
+    timeRange: "",
     completed: true,
     dayOff: false,
     late_hold: false,
     feedback_late: false,
     rate: RATE,
-    service_label: "Extra hours (June)",
   };
 }
 
@@ -181,12 +203,13 @@ for (const r of shifts) {
   }
   let hours = parseMachineSlotHours(r.time_range, r.day);
   if (!(hours > 0)) continue;
+  const isSunday = String(r.day || "") === "Sunday";
   /* Programme leads (Berta/John): Sunday MA / SwimFarm = 5.5h. */
-  if (String(r.day || "") === "Sunday") {
-    hours = 5.5;
-  }
-  const label = `${r.time_range} ${r.venue}`.trim();
-  byDate.set(iso, mkWork(iso, hours, label));
+  if (isSunday) hours = 5.5;
+  const timeRange = isSunday ? "9.00-2.30" : "4.15-6.15";
+  const serviceName = isSunday ? "Multi-Activity" : "Bespoke Programme";
+  const venue = String(r.venue || "SwimFarm").trim() || "SwimFarm";
+  byDate.set(iso, mkWork(iso, hours, timeRange, venue, serviceName));
 }
 for (const [iso, reason] of DAY_OFFS) {
   byDate.set(iso, mkDayOff(iso, reason));

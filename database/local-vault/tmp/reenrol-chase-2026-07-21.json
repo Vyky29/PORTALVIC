@@ -1,0 +1,641 @@
+{
+  "generated_at": "2026-07-21T07:19:12.350Z",
+  "deadline_note": "Today + tomorrow to complete (21–22 Jul 2026)",
+  "workbook": {
+    "PARENTS": 54,
+    "DIRECT_PAYMENTS": 17,
+    "LA": 20
+  },
+  "submissions_2026_27": 25,
+  "ready_n": 23,
+  "missing_n": 48,
+  "la_auto_n": 20,
+  "ready": [
+    {
+      "participant": "Arthur Manners",
+      "parent": "Francesca Manners",
+      "group": "Private",
+      "via": "form+invoice"
+    },
+    {
+      "participant": "Arthur Morrissey",
+      "parent": "Michael Morrissey",
+      "group": "Private",
+      "via": "form+invoice"
+    },
+    {
+      "participant": "Bediako Mensah",
+      "parent": "Romina Banjo",
+      "group": "Private",
+      "via": "form+invoice"
+    },
+    {
+      "participant": "Cayra Mensah",
+      "parent": "Romina Banjo",
+      "group": "Private",
+      "via": "form+invoice"
+    },
+    {
+      "participant": "Cyrus Mahdavi",
+      "parent": "Olivia Mahdavi",
+      "group": "Private",
+      "via": "form+invoice"
+    },
+    {
+      "participant": "Eliademo (demo)",
+      "parent": "Victor Matilla",
+      "group": "Direct Payments",
+      "via": "form"
+    },
+    {
+      "participant": "Erik Ndregjoni",
+      "parent": "Agata Ndregjoni",
+      "group": "Direct Payments",
+      "via": "form+invoice"
+    },
+    {
+      "participant": "Gabriel Chapplow",
+      "parent": "Mike Chapplow",
+      "group": "Private",
+      "via": "form+invoice"
+    },
+    {
+      "participant": "Gemma Mesaria-Gonzalez",
+      "parent": "Maria Gonzalez",
+      "group": "Private",
+      "via": "form+invoice"
+    },
+    {
+      "participant": "Hazem Kei BELHADJ",
+      "parent": "Léa Igabille",
+      "group": "Direct Payments",
+      "via": "form+invoice"
+    },
+    {
+      "participant": "Kayden Annang-Eshun",
+      "parent": "Selina Eshun",
+      "group": "Private",
+      "via": "form+invoice"
+    },
+    {
+      "participant": "Khalid Abdulla",
+      "parent": "Fozia Ibrahim",
+      "group": "Private",
+      "via": "form+invoice"
+    },
+    {
+      "participant": "Max Kacharava",
+      "parent": "Nana Kacharava",
+      "group": "Private",
+      "via": "form+invoice"
+    },
+    {
+      "participant": "Richard Gonçalves Fonseca",
+      "parent": "LETICIA GONCALVES FERREIRA",
+      "group": "Private",
+      "via": "form+invoice"
+    },
+    {
+      "participant": "Rodin Esmati",
+      "parent": "Sima Amirizadeh",
+      "group": "Private",
+      "via": "form+invoice"
+    },
+    {
+      "participant": "Serine Hodroje",
+      "parent": "Bouchra Taoufiki",
+      "group": "Direct Payments",
+      "via": "form+invoice"
+    },
+    {
+      "participant": "Stephanie Ng",
+      "parent": "Zu Yi Wen",
+      "group": "Direct Payments",
+      "via": "form+invoice"
+    },
+    {
+      "participant": "Tyson Gardiner",
+      "parent": "Margaretta Allotey",
+      "group": "Private",
+      "via": "form+invoice"
+    },
+    {
+      "participant": "Yamik Limbu",
+      "parent": "Bhawana Limbu",
+      "group": "Private",
+      "via": "form+invoice"
+    },
+    {
+      "participant": "Yuri Carvalho",
+      "parent": "Nazaré Carvalho",
+      "group": "Private",
+      "via": "form+invoice"
+    },
+    {
+      "participant": "Zaid Alfadhl",
+      "parent": "Zaynab Alfadhl",
+      "group": "Direct Payments",
+      "via": "form+invoice"
+    },
+    {
+      "participant": "Zakariya Warsame",
+      "parent": "Catarina da Silva",
+      "group": "Private",
+      "via": "form+invoice"
+    },
+    {
+      "participant": "Zayana Zareenah Waheed",
+      "parent": "Mansura Akter",
+      "group": "Private",
+      "via": "form+invoice"
+    }
+  ],
+  "missing": [
+    {
+      "participant": "Adam Abed",
+      "sheet_name": "Adam A",
+      "parent": "Zainab Alkamali",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "07516593518",
+      "matched_contact": true
+    },
+    {
+      "participant": "Adam Memy",
+      "sheet_name": "Adam M",
+      "parent": "Maysoun Sharf",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "+44 7491 151131",
+      "matched_contact": true
+    },
+    {
+      "participant": "Amber Stephens",
+      "sheet_name": "Amber",
+      "parent": "Nicole Stephens",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "+44 7930 343649",
+      "matched_contact": true
+    },
+    {
+      "participant": "Amir Kais",
+      "sheet_name": "Amir",
+      "parent": "Saliha Ziani",
+      "group": "Direct Payments",
+      "funding": "Funded · Direct Payments",
+      "mobile": "+44 7786 629245",
+      "matched_contact": true
+    },
+    {
+      "participant": "Aqsa Farooq",
+      "sheet_name": "Aqsa",
+      "parent": "Farida Farooq",
+      "group": "Direct Payments",
+      "funding": "Funded · Direct Payments",
+      "mobile": null,
+      "matched_contact": true
+    },
+    {
+      "participant": "Ayaan Imam",
+      "sheet_name": "Ayaan",
+      "parent": "Nadia Imam",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "+44 7939 256666",
+      "matched_contact": true
+    },
+    {
+      "participant": "Ayden Wong",
+      "sheet_name": "Ayden",
+      "parent": "Fedoua Halim",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "07957748344",
+      "matched_contact": true
+    },
+    {
+      "participant": "Ayman El Bakry",
+      "sheet_name": "Ayman",
+      "parent": "Zeyna Bakry",
+      "group": "Private",
+      "funding": "Private (parents)",
+      "mobile": "+44 7939 894070",
+      "matched_contact": true
+    },
+    {
+      "participant": "Ayman El Bakry",
+      "sheet_name": "Ayman",
+      "parent": "Zeyna Bakry",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "+44 7939 894070",
+      "matched_contact": true
+    },
+    {
+      "participant": "Eddie Mckenzie Iglesias",
+      "sheet_name": "Eddie",
+      "parent": "Marta Iglesias",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "+44 7762 947442",
+      "matched_contact": true
+    },
+    {
+      "participant": "Eiji",
+      "sheet_name": "Eiji",
+      "parent": "Lea",
+      "group": "Direct Payments",
+      "funding": "Parent (Exempt invoice)",
+      "mobile": null,
+      "matched_contact": false
+    },
+    {
+      "participant": "Emani",
+      "sheet_name": "Emani",
+      "parent": "Sam sam Abdi",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "07398232285",
+      "matched_contact": true
+    },
+    {
+      "participant": "Haider Ali",
+      "sheet_name": "Haider",
+      "parent": "Siama Hussain",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "+44 7946 536856",
+      "matched_contact": true
+    },
+    {
+      "participant": "Haneef Yusuf",
+      "sheet_name": "Haneef",
+      "parent": "Aishatu Dapchi",
+      "group": "Direct Payments",
+      "funding": "Funded · Direct Payments",
+      "mobile": "+44 7741 341554",
+      "matched_contact": true
+    },
+    {
+      "participant": "Ismael",
+      "sheet_name": "Ismael",
+      "parent": "—",
+      "group": "Private",
+      "funding": "Private (parents)",
+      "mobile": null,
+      "matched_contact": false
+    },
+    {
+      "participant": "Jack Stratton",
+      "sheet_name": "Jack S",
+      "parent": "Veronica Grace",
+      "group": "Direct Payments",
+      "funding": "Funded · Direct Payments",
+      "mobile": "07803093911",
+      "matched_contact": true
+    },
+    {
+      "participant": "Jack W (ACAT)",
+      "sheet_name": "Jack W (ACAT)",
+      "parent": "Francesca",
+      "group": "Direct Payments",
+      "funding": "Funded · Direct Payments",
+      "mobile": null,
+      "matched_contact": false
+    },
+    {
+      "participant": "Jake",
+      "sheet_name": "Jake",
+      "parent": "Kate",
+      "group": "Private",
+      "funding": "Private (parents)",
+      "mobile": null,
+      "matched_contact": false
+    },
+    {
+      "participant": "Jibril",
+      "sheet_name": "Jibril",
+      "parent": "Hali",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": null,
+      "matched_contact": false
+    },
+    {
+      "participant": "Joel Hibbert-Nixon",
+      "sheet_name": "Joel",
+      "parent": "Anthony Davis",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "+44 7956 477735",
+      "matched_contact": true
+    },
+    {
+      "participant": "Junaid Fussaini",
+      "sheet_name": "Junaid",
+      "parent": "Fadwa Guechchati",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "+44 7470 565588",
+      "matched_contact": true
+    },
+    {
+      "participant": "Kamy (ACAT)",
+      "sheet_name": "Kamy (ACAT)",
+      "parent": "Fay",
+      "group": "Direct Payments",
+      "funding": "Funded · Direct Payments",
+      "mobile": null,
+      "matched_contact": false
+    },
+    {
+      "participant": "Kareena Al hassani",
+      "sheet_name": "Kareena",
+      "parent": "Chopi Al hassani",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "+44 7982 615603",
+      "matched_contact": true
+    },
+    {
+      "participant": "Karo",
+      "sheet_name": "Karo",
+      "parent": "Chopi Al hassani",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "07982615603",
+      "matched_contact": true
+    },
+    {
+      "participant": "Kate (ACAT)",
+      "sheet_name": "Kate (ACAT)",
+      "parent": "Maire",
+      "group": "Direct Payments",
+      "funding": "Funded · Direct Payments",
+      "mobile": null,
+      "matched_contact": false
+    },
+    {
+      "participant": "Kirushy Saravanapavan",
+      "sheet_name": "Kirushy",
+      "parent": "Saratha Saravanapavan",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "+44 7413 773788",
+      "matched_contact": true
+    },
+    {
+      "participant": "Lais",
+      "sheet_name": "Lais",
+      "parent": "-",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": null,
+      "matched_contact": false
+    },
+    {
+      "participant": "Linda Kaheh",
+      "sheet_name": "Linda",
+      "parent": "Catherine Rastgoow",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "+44 7770 711666",
+      "matched_contact": true
+    },
+    {
+      "participant": "Logan Hibbitts",
+      "sheet_name": "Logan",
+      "parent": "Shane Hibbitts",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "07876528284",
+      "matched_contact": true
+    },
+    {
+      "participant": "Maiyar Alolabi",
+      "sheet_name": "Maiyar",
+      "parent": "Nizar Alolabi",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "+44 7961 631777",
+      "matched_contact": true
+    },
+    {
+      "participant": "Mario Cristobal Laurrieta",
+      "sheet_name": "Mario",
+      "parent": "Alexandra Laurrieta Saiz",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "+44 7708 196518",
+      "matched_contact": true
+    },
+    {
+      "participant": "Mia Mesi",
+      "sheet_name": "Mia",
+      "parent": "Kelidon Mesi",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "07815548173",
+      "matched_contact": true
+    },
+    {
+      "participant": "Mohammed",
+      "sheet_name": "Mohammed",
+      "parent": "Anab",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": null,
+      "matched_contact": false
+    },
+    {
+      "participant": "Mohamoud",
+      "sheet_name": "Mohamoud",
+      "parent": "Nafiso",
+      "group": "Private",
+      "funding": "Private (parents)",
+      "mobile": null,
+      "matched_contact": false
+    },
+    {
+      "participant": "Rayan Thapa",
+      "sheet_name": "Rayan T",
+      "parent": "Rakesh Thapa",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "+44 7842 888424",
+      "matched_contact": true
+    },
+    {
+      "participant": "Rayyan Fida",
+      "sheet_name": "Rayyan F",
+      "parent": "Huma Qureshi",
+      "group": "Direct Payments",
+      "funding": "Funded · Direct Payments",
+      "mobile": "+44 7928 692278",
+      "matched_contact": true
+    },
+    {
+      "participant": "Ruben Devgun",
+      "sheet_name": "Ruben",
+      "parent": "Jasmine Devgun",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "+44 7943 199718",
+      "matched_contact": true
+    },
+    {
+      "participant": "Scott de Wolff",
+      "sheet_name": "Scott",
+      "parent": "Alvar de Wolff",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "+44 7584 601743",
+      "matched_contact": true
+    },
+    {
+      "participant": "Shaan Boora",
+      "sheet_name": "Shaan",
+      "parent": "Meena Boora",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "+44 7888 039660",
+      "matched_contact": true
+    },
+    {
+      "participant": "Shire Osman",
+      "sheet_name": "Shire",
+      "parent": "Hanan Mahdi Mussa",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "+44 7359 158806",
+      "matched_contact": true
+    },
+    {
+      "participant": "Summer",
+      "sheet_name": "Summer",
+      "parent": "S. Messing",
+      "group": "Private",
+      "funding": "Private (parents)",
+      "mobile": null,
+      "matched_contact": false
+    },
+    {
+      "participant": "Thushyan Suthakaran",
+      "sheet_name": "Thushyan",
+      "parent": "Nishani Suthakaran",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "+44 7393 913709",
+      "matched_contact": true
+    },
+    {
+      "participant": "Tom",
+      "sheet_name": "Tom",
+      "parent": "Kirstin",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": null,
+      "matched_contact": false
+    },
+    {
+      "participant": "VITHURA Pakeerathan",
+      "sheet_name": "Vithura",
+      "parent": "Yalini Pakeerathan",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "+44 7578 281112",
+      "matched_contact": true
+    },
+    {
+      "participant": "Yoan Bekele",
+      "sheet_name": "Yoan",
+      "parent": "Hanna Belete",
+      "group": "Direct Payments",
+      "funding": "Parent (Exempt invoice)",
+      "mobile": "+44 7761 722567",
+      "matched_contact": true
+    },
+    {
+      "participant": "Yossi Sium",
+      "sheet_name": "Yossi",
+      "parent": "Tirhas Sium",
+      "group": "Direct Payments",
+      "funding": "Funded · Direct Payments",
+      "mobile": "+44 7946 369628",
+      "matched_contact": true
+    },
+    {
+      "participant": "Yunis Hussein",
+      "sheet_name": "Yunis",
+      "parent": "Namja Hussein",
+      "group": "Private",
+      "funding": "Private",
+      "mobile": "+44 7539 070935",
+      "matched_contact": true
+    },
+    {
+      "participant": "Yusef Ahmed",
+      "sheet_name": "Yusef Ahmed",
+      "parent": "Fatima",
+      "group": "Direct Payments",
+      "funding": "Funded · Direct Payments",
+      "mobile": null,
+      "matched_contact": false
+    }
+  ],
+  "la_auto": [
+    "Faris Lobinet — Hyam Nessour",
+    "Simon Yohannes — Sara Girmaye",
+    "Yassir Boujettif — Nadia Boujettif",
+    "Tinashe Nekati — Pat Nekati",
+    "Steven Cesare — Asamahan Alalawi",
+    "Tinashe Nekati — Pat Nekati",
+    "Ikram Omar — Farhia Mahamed",
+    "Amaar Ahmed — Leila Ahmed",
+    "Samer Bakhiet — Bakhiet Osman",
+    "Aydaan Ahmed — Leila Ahmed",
+    "Saaib Abdullah — Ahmed Begum",
+    "Timi Dairo — Afolake Olabisi Dairo",
+    "Aboodi Patel — Maya Ali",
+    "Amar-Rai Singh — Kiren Kaur",
+    "Adam Pilcher — Juliette Fenton",
+    "Matthias Mekonnen — Matthias Melake",
+    "Aadam Ahmed — Leila Ahmed",
+    "Elijah Yared — amy gebru",
+    "Fadi Abu daud — Noura Zorkota",
+    "Emanuel Dodson — Almaz Woldu"
+  ],
+  "submitted_people": [
+    "Arthur Manners — Francesca Manners",
+    "Arthur Morrissey — Michael Morrissey",
+    "Bediako Mensah — Romina Banjo",
+    "Cayra Mensah — Romina Banjo",
+    "Cyrus Mahdavi — Olivia Mahdavi",
+    "Eliademo (demo) — Victor Matilla",
+    "Erik Ndregjoni — Agata Ndregjoni",
+    "Gabriel Chapplow — Mike Chapplow",
+    "Gemma Mesaria-Gonzalez — Maria Gonzalez",
+    "Hazem Kei BELHADJ — Léa Igabille",
+    "Kacem Eiji BELHADJ — Léa Igabille",
+    "Kacem Eiji BELHADJ — Léa Igabille",
+    "Kayden Annang-Eshun — Selina Eshun",
+    "Khalid Abdulla — Fozia Ibrahim",
+    "Max Kacharava — Nana Kacharava",
+    "Richard Gonçalves Fonseca — LETICIA GONCALVES FERREIRA",
+    "Rodin Esmati — Sima Amirizadeh",
+    "Serine Hodroje — Bouchra Taoufiki",
+    "Stephanie Ng — Zu Yi Wen",
+    "Tyson Gardiner — Margaretta Allotey",
+    "Yamik Limbu — Bhawana Limbu",
+    "Yuri Carvalho — Nazaré Carvalho",
+    "Zaid Alfadhl — Zaynab Alfadhl",
+    "Zakariya Warsame — Catarina da Silva",
+    "Zayana Zareenah Waheed — Mansura Akter"
+  ],
+  "submitted_not_on_private_dp_ready": [
+    "Kacem Eiji BELHADJ — Léa Igabille",
+    "Kacem Eiji BELHADJ — Léa Igabille"
+  ],
+  "ambiguous": []
+}
