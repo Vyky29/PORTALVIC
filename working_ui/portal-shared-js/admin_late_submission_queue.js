@@ -725,7 +725,7 @@
           "<strong>No late feedback on " +
           _esc(formatSessionDate(selectedDay) || "this day") +
           "</strong>" +
-          "<p style=\"margin:8px 0 0\">Late = completed after the session London day, or same day after 21:00. Pick another day above, or another week.</p></div>"
+          "<p style=\"margin:8px 0 0\">Late = completed after the session London day, or same day after 21:00. This day lists late rows for the <strong>session date</strong> and feedback <strong>delivered</strong> that day. Pick another day above, or another week.</p></div>"
         );
       }
       var body = rows
@@ -898,8 +898,24 @@
 
       function paintDayView() {
         var day = _weekState.selectedDay;
+        var seenIds = Object.create(null);
         var dayRows = (_weekState.weekRows || []).filter(function (r) {
-          return r._completed_day === day;
+          var id = String(r.id || "");
+          var sess = String(r.session_date || "").slice(0, 10);
+          var match =
+            r._completed_day === day ||
+            sess === day;
+          if (!match) return false;
+          if (id && seenIds[id]) return false;
+          if (id) seenIds[id] = true;
+          return true;
+        });
+        // Prefer session-day rows first, then deliveries completed that day.
+        dayRows.sort(function (a, b) {
+          var aSess = String(a.session_date || "").slice(0, 10) === day ? 0 : 1;
+          var bSess = String(b.session_date || "").slice(0, 10) === day ? 0 : 1;
+          if (aSess !== bSess) return aSess - bSess;
+          return String(a.created_at || "").localeCompare(String(b.created_at || ""));
         });
         if (stripEl) {
           stripEl.innerHTML = self.renderDayStripHtml(
