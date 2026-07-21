@@ -1,0 +1,57 @@
+{
+  "startedAt": "2026-07-20T08:24:50.206Z",
+  "finishedAt": "2026-07-20T08:24:52.669Z",
+  "results": [
+    {
+      "name": "feature_flags",
+      "ok": true,
+      "detail": "{\"commissioning_terms_enabled\":true,\"commissioning_attendance_hard_block\":false}"
+    },
+    {
+      "name": "active_commissioning_doc",
+      "ok": true,
+      "detail": "1.0 /commissioning/terms"
+    },
+    {
+      "name": "family_doc_catalog_isolated",
+      "ok": true,
+      "detail": "/parent/terms"
+    },
+    {
+      "name": "create_org",
+      "ok": true,
+      "detail": "19ff3348-fb78-403d-97bb-e978e8211381"
+    },
+    {
+      "name": "send_event",
+      "ok": true,
+      "detail": "b8736bc6-065c-46e5-bb90-ca652f18d458"
+    },
+    {
+      "name": "edge_view",
+      "ok": true,
+      "detail": "viewed"
+    },
+    {
+      "name": "edge_accept",
+      "ok": true,
+      "detail": "1.0"
+    },
+    {
+      "name": "create_placement",
+      "ok": true,
+      "detail": "50ed76db-6aa8-4399-934b-9b4ff37a56fe"
+    },
+    {
+      "name": "create_po",
+      "ok": true,
+      "detail": "PO-SMOKE-mrsyldmt"
+    },
+    {
+      "name": "approve_attend",
+      "ok": true,
+      "detail": "approved_to_attend"
+    }
+  ],
+  "failed": 0
+}

@@ -1,0 +1,1 @@
+select id::text, employee_name, status, letter_document_id::text, submitted_by_user_id::text, course_title, updated_at::text from public.portal_staff_ld_funding_applications where lower(coalesce(employee_name,'')) like '%teflon%' order by updated_at desc nulls last limit 5;

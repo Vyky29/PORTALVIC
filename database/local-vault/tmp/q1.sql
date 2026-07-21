@@ -1,0 +1,1 @@
+select policyname, cmd, coalesce(with_check,'') as with_check from pg_policies where schemaname='public' and tablename='documents' and (policyname ilike '%insert%' or policyname ilike '%ld%') order by policyname;

@@ -1,0 +1,193 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+{
+  "mode": "SEND",
+  "campaign": "family_portal_pin_20260718",
+  "total": 86,
+  "thanks": 18,
+  "pending": 68,
+  "whatsapp": 83,
+  "email": 1,
+  "skip": 2,
+  "skip_reasons": {
+    "demo": 2
+  },
+  "over700": 0
+}
+WHATSAPP PENDING | Afolake Olabisi Dairo | 07825627454 | login Oluwatimilehin | PIN 1679
+WHATSAPP THANKS | Agata Ndregjoni | +447493175142 | login Erik | PIN 9863
+WHATSAPP PENDING | Aishatu Dapchi | +44 7741 341554 | login Haneef | PIN 1382
+WHATSAPP PENDING | Alexandra Laurrieta Saiz | +44 7708 196518 | login Mario | PIN 6252
+WHATSAPP PENDING | Almaz Woldu | 07951034876 | login Emanuel | PIN 0716
+WHATSAPP PENDING | Alvar de Wolff | +44 7584 601743 | login Scott | PIN 9420
+WHATSAPP PENDING | amy gebru | +44 7595 440700 | login Elijah | PIN 6238
+WHATSAPP PENDING | Anab Mohamud | 07983272230 | login Mohamed | PIN 7580
+WHATSAPP PENDING | Anthony Davis | +44 7956 477735 | login Joel | PIN 8818
+WHATSAPP PENDING | Asamahan Alalawi | 07453529995 | login Steven | PIN 3626
+WHATSAPP PENDING | Bakhiet Osman | +44 7450 939603 | login Samer | PIN 1443
+WHATSAPP PENDING | Bhawana Limbu | 07476608860 | login Yamik | PIN 5504
+WHATSAPP THANKS | Bouchra Taoufiki | +447435898806 | login Serine | PIN 0485
+WHATSAPP THANKS | Catarina da Silva | +447925482666 | login Zakariya | PIN 1980
+WHATSAPP PENDING | Catherine Rastgoow | +44 7770 711666 | login Linda | PIN 7446
+WHATSAPP PENDING | Chopi Al hassani | +44 7982 615603 | login Kareena/Karo | PIN 7938
+WHATSAPP PENDING | Fadwa Guechchati | +44 7470 565588 | login Junaid | PIN 8955
+WHATSAPP PENDING | Farhia Mahamed | 07304070432 | login Ikram | PIN 5883
+EMAIL PENDING | Farida Farooq | faridafarooq@hotmail.co.uk | login Aqsa | PIN 1852
+WHATSAPP PENDING | Faryaneh Akhavan | 07795181580 | login Kamy | PIN 0724
+WHATSAPP PENDING | Fatimah Ahmed | 07544293139 | login Yusuf | PIN 3713
+WHATSAPP PENDING | Fedoua Halim | 07957748344 | login Ayden | PIN 2977
+WHATSAPP THANKS | Fozia Ibrahim | +44 7557 301290 | login Khalid | PIN 4940
+WHATSAPP PENDING | Francesca E Walker | 07718742339 | login Jack | PIN 5228
+WHATSAPP THANKS | Francesca Manners | +44 7813 895932 | login Arthur | PIN 7640
+WHATSAPP PENDING | Hanan Mahdi Mussa | +44 7359 158806 | login Shire | PIN 0339
+WHATSAPP PENDING | Hanna Belete | +44 7761 722567 | login Yoan | PIN 9613
+WHATSAPP PENDING | Heba Aboueita | 07783558896 | login Anas | PIN 6147
+WHATSAPP PENDING | Huma Qureshi | +44 7928 692278 | login Rayyan | PIN 7061
+WHATSAPP PENDING | Hyam Nessour | 07539340595 | login Faris | PIN 7208
+WHATSAPP THANKS | Jane Mackey | +44 7948 279809 | login Arthur | PIN 4204
+WHATSAPP PENDING | Jasmine Devgun | +44 7943 199718 | login Ruben | PIN 1129
+WHATSAPP PENDING | Juliette Fenton | 07841097041 | login Adam | PIN 5478
+WHATSAPP PENDING | Kelidon Mesi | 07815548173 | login Mia | PIN 2105
+WHATSAPP PENDING | Kiren Kaur | +44 7917 007900 | login Amar-Rai | PIN 0314
+WHATSAPP PENDING | Kirstin Eriksson | +44 7766 495852 | login Thomas | PIN 6484
+WHATSAPP THANKS | Léa Igabille | +44 7473 737973 | login Hazem/Kacem | PIN 4070
+WHATSAPP PENDING | Leila Ahmed | +44 7913 121655 | login Aadam/Amaar/Aydaan | PIN 8557
+WHATSAPP THANKS | LETICIA GONCALVES FERREIRA | +44 7453 158852 | login Richard | PIN 2797
+WHATSAPP PENDING | Lucy Ritzema | 07495084479 | login Eddie | PIN 9173
+WHATSAPP PENDING | Maire Fordham | 07716878189 | login Kate | PIN 5519
+WHATSAPP PENDING | Mansura Akter | +44 7595 948125 | login Zayana | PIN 6902
+WHATSAPP THANKS | Margaretta Allotey | +44 7955 486481 | login Tyson | PIN 9137
+WHATSAPP THANKS | Maria Gonzalez | +44 7910 131944 | login Gemma | PIN 8874
+WHATSAPP PENDING | Marta Iglesias | +44 7762 947442 | login Eddie | PIN 7817
+WHATSAPP PENDING | Matthias Melake | +44 7843 933177 | login Matthias | PIN 6788
+WHATSAPP PENDING | Maya Ali | +44 7900 109661 | login Aboodi | PIN 7352
+WHATSAPP PENDING | Maysoun Sharf | +44 7491 151131 | login Adam | PIN 2958
+WHATSAPP PENDING | Meena Boora | +44 7888 039660 | login Shaan | PIN 0099
+WHATSAPP THANKS | Michael Morrissey | 07533662765 | login Arthur | PIN 4204
+WHATSAPP THANKS | Mike Chapplow | +44 7983 117737 | login Gabriel | PIN 7066
+WHATSAPP PENDING | Nadia Boujettif | +44 7946 425482 | login Yassir | PIN 8530
+WHATSAPP PENDING | Nadia Imam | +44 7939 256666 | login Ayaan | PIN 6314
+WHATSAPP PENDING | Namja Hussein | +44 7539 070935 | login Yunis | PIN 6550
+WHATSAPP THANKS | Nana Kacharava | +44 7397 543358 | login Max | PIN 9808
+WHATSAPP THANKS | Nazaré Carvalho | +44 7568 601103 | login Yuri | PIN 8350
+WHATSAPP PENDING | Nicole Stephens | +44 7930 343649 | login Amber | PIN 0660
+WHATSAPP PENDING | Nishani Suthakaran | +44 7393 913709 | login Thushyan | PIN 3262
+WHATSAPP PENDING | Nizar Alolabi | +44 7961 631777 | login Maiyar | PIN 7901
+WHATSAPP PENDING | Noura Zorkota | +44 7555 692210 | login Fadi | PIN 9956
+WHATSAPP PENDING | Obah Yusuf | 07490805861 | login Yaqoub | PIN 4694
+WHATSAPP THANKS | Olivia Mahdavi | +44 7500 333553 | login Cyrus | PIN 8957
+WHATSAPP PENDING | Orla O'Sullivan | 07866899186 | login Patrick | PIN 8546
+WHATSAPP PENDING | Pat Nekati | +44 07586616540 | login Tinashe | PIN 5858
+WHATSAPP PENDING | Rakesh Thapa | +44 7842 888424 | login Rayan | PIN 1494
+WHATSAPP THANKS | Romina Banjo | +44 7769 670527 | login Bediako/Cayra | PIN 6823
+WHATSAPP PENDING | Salem Zerti | 07789584222 | login Jad | PIN 1470
+WHATSAPP PENDING | Saliha Ziani | +44 7786 629245 | login Amir | PIN 0548
+WHATSAPP PENDING | Sam sam Abdi | 07398232285 | login Emani | PIN 8858
+WHATSAPP PENDING | Sara Girmaye | +44 7456 594498 | login Simon | PIN 3093
+WHATSAPP PENDING | Saratha Saravanapavan | +44 7413 773788 | login Kirushy | PIN 0243
+WHATSAPP PENDING | Selina Eshun | +44 7545 025724 | login Kayden | PIN 0100
+WHATSAPP PENDING | Shahanara Begum | 07886890767 | login Saaib | PIN 2651
+WHATSAPP PENDING | Shane Hibbitts | 07876528284 | login Logan | PIN 4144
+WHATSAPP PENDING | Siama Hussain | +44 7946 536856 | login Haider | PIN 3799
+WHATSAPP THANKS | Sima Amirizadeh | +44 7500 902933 | login Rodin | PIN 1252
+WHATSAPP PENDING | Sonam Sony | +44 7960 299369 | login Rhys | PIN 3629
+WHATSAPP PENDING | Tirhas Sium | +44 7946 369628 | login Yossi | PIN 3967
+WHATSAPP PENDING | Veronica Grace | 07803093911 | login Jack | PIN 0897
+SKIP PENDING | Victor (TEST · Elia) | (skip:demo) | login Elia | PIN 2903
+SKIP THANKS | Victor Matilla | (skip:demo) | login Elia | PIN 2903
+WHATSAPP PENDING | Yalini Pakeerathan | +44 7578 281112 | login VITHURA | PIN 5283
+WHATSAPP PENDING | Zainab Alkamali | 07516593518 | login Adam | PIN 2374
+WHATSAPP PENDING | Zaynab Alfadhl | +44 7852 758314 | login Zaid | PIN 7667
+WHATSAPP PENDING | Zeyna Bakry | +44 7939 894070 | login Ayman | PIN 4084
+WHATSAPP PENDING | Zu Yi Wen | +44 7727 472827 | login Stephanie | PIN 6268
+WA OK 1/86 Afolake Olabisi Dairo pending
+WA OK 2/86 Agata Ndregjoni thanks
+WA OK 3/86 Aishatu Dapchi pending
+WA OK 4/86 Alexandra Laurrieta Saiz pending
+WA OK 5/86 Almaz Woldu pending
+WA OK 6/86 Alvar de Wolff pending
+WA OK 7/86 amy gebru pending
+WA OK 8/86 Anab Mohamud pending
+WA OK 9/86 Anthony Davis pending
+WA OK 10/86 Asamahan Alalawi pending
+WA OK 11/86 Bakhiet Osman pending
+WA OK 12/86 Bhawana Limbu pending
+WA OK 13/86 Bouchra Taoufiki thanks
+WA OK 14/86 Catarina da Silva thanks
+WA OK 15/86 Catherine Rastgoow pending
+WA OK 16/86 Chopi Al hassani pending
+WA OK 17/86 Fadwa Guechchati pending
+WA OK 18/86 Farhia Mahamed pending
+EMAIL OK 19/86 Farida Farooq pending
+WA OK 20/86 Faryaneh Akhavan pending
+WA OK 21/86 Fatimah Ahmed pending
+WA OK 22/86 Fedoua Halim pending
+WA OK 23/86 Fozia Ibrahim thanks
+WA OK 24/86 Francesca E Walker pending
+WA OK 25/86 Francesca Manners thanks
+WA OK 26/86 Hanan Mahdi Mussa pending
+WA OK 27/86 Hanna Belete pending
+WA OK 28/86 Heba Aboueita pending
+WA OK 29/86 Huma Qureshi pending
+WA OK 30/86 Hyam Nessour pending
+WA OK 31/86 Jane Mackey thanks
+WA OK 32/86 Jasmine Devgun pending
+WA OK 33/86 Juliette Fenton pending
+WA OK 34/86 Kelidon Mesi pending
+WA OK 35/86 Kiren Kaur pending
+WA OK 36/86 Kirstin Eriksson pending
+WA OK 37/86 Léa Igabille thanks
+WA OK 38/86 Leila Ahmed pending
+WA OK 39/86 LETICIA GONCALVES FERREIRA thanks
+WA OK 40/86 Lucy Ritzema pending
+WA OK 41/86 Maire Fordham pending
+WA OK 42/86 Mansura Akter pending
+WA OK 43/86 Margaretta Allotey thanks
+WA OK 44/86 Maria Gonzalez thanks
+WA OK 45/86 Marta Iglesias pending
+WA OK 46/86 Matthias Melake pending
+WA OK 47/86 Maya Ali pending
+WA OK 48/86 Maysoun Sharf pending
+WA OK 49/86 Meena Boora pending
+WA OK 50/86 Michael Morrissey thanks
+WA OK 51/86 Mike Chapplow thanks
+WA OK 52/86 Nadia Boujettif pending
+WA OK 53/86 Nadia Imam pending
+WA OK 54/86 Namja Hussein pending
+WA OK 55/86 Nana Kacharava thanks
+WA OK 56/86 Nazaré Carvalho thanks
+WA OK 57/86 Nicole Stephens pending
+WA OK 58/86 Nishani Suthakaran pending
+WA OK 59/86 Nizar Alolabi pending
+WA OK 60/86 Noura Zorkota pending
+WA OK 61/86 Obah Yusuf pending
+WA OK 62/86 Olivia Mahdavi thanks
+WA OK 63/86 Orla O'Sullivan pending
+WA OK 64/86 Pat Nekati pending
+WA OK 65/86 Rakesh Thapa pending
+WA OK 66/86 Romina Banjo thanks
+WA OK 67/86 Salem Zerti pending
+WA OK 68/86 Saliha Ziani pending
+WA OK 69/86 Sam sam Abdi pending
+WA OK 70/86 Sara Girmaye pending
+WA OK 71/86 Saratha Saravanapavan pending
+WA OK 72/86 Selina Eshun pending
+WA OK 73/86 Shahanara Begum pending
+WA OK 74/86 Shane Hibbitts pending
+WA OK 75/86 Siama Hussain pending
+WA OK 76/86 Sima Amirizadeh thanks
+WA OK 77/86 Sonam Sony pending
+WA OK 78/86 Tirhas Sium pending
+WA OK 79/86 Veronica Grace pending
+WA OK 82/86 Yalini Pakeerathan pending
+WA OK 83/86 Zainab Alkamali pending
+WA OK 84/86 Zaynab Alfadhl pending
+WA OK 85/86 Zeyna Bakry pending
+WA OK 86/86 Zu Yi Wen pending
+{
+  "done": true,
+  "waSent": 83,
+  "waFailed": 0,
+  "emSent": 1,
+  "emFailed": 0,
+  "report_path": "database/local-vault/tmp/parent-portal-pin-send-report.json"
+}

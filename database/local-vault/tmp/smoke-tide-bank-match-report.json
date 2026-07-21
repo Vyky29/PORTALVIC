@@ -1,0 +1,55 @@
+{
+  "at": "2026-07-15T09:02:38.763Z",
+  "results": [
+    {
+      "step": "unit.score_strong",
+      "ok": true,
+      "detail": "strong"
+    },
+    {
+      "step": "unit.score_medium",
+      "ok": true,
+      "detail": "medium"
+    },
+    {
+      "step": "unit.score_noise",
+      "ok": true,
+      "detail": "none"
+    },
+    {
+      "step": "db.table",
+      "ok": true,
+      "detail": "portal_tide_bank_matches ok"
+    },
+    {
+      "step": "db.seed",
+      "ok": true,
+      "detail": "strong=f32f685f medium=3682a002"
+    },
+    {
+      "step": "edge.auth",
+      "ok": true,
+      "detail": "no admin password — using service-role confirm path"
+    },
+    {
+      "step": "svc.insert_match",
+      "ok": true,
+      "detail": "100477c9"
+    },
+    {
+      "step": "svc.confirm",
+      "ok": true,
+      "detail": "via=tide_match"
+    },
+    {
+      "step": "svc.idempotent",
+      "ok": true,
+      "detail": "confirmed"
+    },
+    {
+      "step": "cleanup.void",
+      "ok": true,
+      "detail": "INV-P-9901/9902"
+    }
+  ]
+}

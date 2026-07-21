@@ -1,0 +1,33 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+30 invoice(s) to regenerate
+INV-P-0014: ok
+INV-P-0018: ok
+INV-P-0022: ok
+INV-P-0025: ok
+INV-P-0028: ok
+INV-P-0032: ok
+INV-P-0035: ok
+INV-P-0038: ok
+INV-P-0042: ok
+INV-P-0046: ok
+INV-P-0050: ok
+INV-P-0054: ok
+INV-P-0057: ok
+INV-P-0060: ok
+INV-P-0061: ok
+INV-P-0062: ok
+INV-P-0063: ok
+INV-P-0067: ok
+INV-P-0068: ok
+INV-P-0072: ok
+INV-P-0074: ok
+INV-P-0075: ok
+INV-P-0079: ok
+INV-P-0083: ok
+INV-P-0087: ok
+INV-P-0088: ok
+INV-P-0089: ok
+INV-P-0090: ok
+INV-P-0091: ok
+INV-P-0092: ok
+Done — 30 ok, 0 failed.

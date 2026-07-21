@@ -1,0 +1,1 @@
+select client_key, client_name, sheet, data->>'vat' as vat, data->>'fund' as fund, data->>'PO' as po, data->>'po' as po2 from public.client_payments where lower(client_name) like '%elia%' or lower(client_key) like '%elia%' limit 10;

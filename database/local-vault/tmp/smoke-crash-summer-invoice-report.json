@@ -1,0 +1,65 @@
+{
+  "at": "2026-07-15T00:03:18.379Z",
+  "results": [
+    {
+      "step": "prep.parent",
+      "ok": true,
+      "detail": "Elia → parent-victor-matilla-demo"
+    },
+    {
+      "step": "prep.session",
+      "ok": true,
+      "detail": "minted"
+    },
+    {
+      "step": "avail.ok",
+      "ok": true,
+      "detail": "http=200 fill=30% weeks=w1"
+    },
+    {
+      "step": "avail.slot",
+      "ok": true,
+      "detail": "climbing c1 free for weekly pack"
+    },
+    {
+      "step": "book.hold",
+      "ok": true,
+      "detail": "http=200 booking=066f23a5 err= Slots held for 2 hours. Pay in full by bank transfer or Card / Apple Pay to confirm — unpaid holds are released automatically."
+    },
+    {
+      "step": "book.pay_screen_invoice",
+      "ok": true,
+      "detail": "inv=INV-P-0013 id=19fe0bbc £300 pdf=yes emailed=true"
+    },
+    {
+      "step": "book.bank_options",
+      "ok": true,
+      "detail": "available=true ref=Elia Climbing Activity"
+    },
+    {
+      "step": "book.card_options",
+      "ok": true,
+      "detail": "available=true charge=304.78"
+    },
+    {
+      "step": "db.invoice_ready",
+      "ok": true,
+      "detail": "status=unpaid/ready hint=bank_transfer ready_by=crash_summer_book £300"
+    },
+    {
+      "step": "db.booking_linked",
+      "ok": true,
+      "detail": "link=true status=awaiting_payment"
+    },
+    {
+      "step": "pay.stripe_checkout",
+      "ok": true,
+      "detail": "http=200 err= url=https://checkout.stripe.com/c/pay/cs_test_a1Whkp"
+    },
+    {
+      "step": "cleanup.cancel",
+      "ok": true,
+      "detail": "booking=066f23a5 inv=19fe0bbc"
+    }
+  ]
+}

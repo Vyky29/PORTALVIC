@@ -1,0 +1,103 @@
+{
+  "at": "2026-07-16T00:17:01.991Z",
+  "report": [
+    {
+      "contactId": "79",
+      "name": "Cyrus Mahdavi",
+      "amount": 90,
+      "ok": true,
+      "id": "f39eee3a-92f8-471a-8019-1a31f399e0c4",
+      "parent": "Olivia Mahdavi",
+      "child": "Cyrus Mahdavi"
+    },
+    {
+      "contactId": "54",
+      "name": "Ayaan Imam",
+      "amount": 70,
+      "ok": true,
+      "id": "e16c0772-7f42-4258-9f72-63db9c2ce300",
+      "parent": "Nadia Imam",
+      "child": "Ayaan Imam"
+    },
+    {
+      "contactId": "58",
+      "name": "Serine Hodroje",
+      "amount": 70,
+      "ok": true,
+      "id": "e703c499-9880-4343-b16f-f859ddfcf587",
+      "parent": "Bouchra Taoufiki",
+      "child": "Serine Hodroje"
+    },
+    {
+      "contactId": "236",
+      "name": "Eddie Mckenzie Iglesias",
+      "amount": 50,
+      "ok": true,
+      "id": "b8119ba0-13d6-4c57-a59c-516437d1a0f0",
+      "parent": "Marta Iglesias",
+      "child": "Eddie Mckenzie Iglesias"
+    },
+    {
+      "contactId": "376",
+      "name": "Emani",
+      "amount": 50,
+      "ok": true,
+      "id": "a4237169-ace2-4bcc-a486-ac3c643cc640",
+      "parent": "Sam sam Abdi",
+      "child": "Emani"
+    },
+    {
+      "contactId": "92",
+      "name": "Mario Cristobal Laurrieta",
+      "amount": 50,
+      "ok": true,
+      "id": "fd2130d9-eb03-4d5d-805f-ae20a7704396",
+      "parent": "Alexandra Laurrieta Saiz",
+      "child": "Mario Cristobal Laurrieta"
+    }
+  ],
+  "open": [
+    {
+      "participant_display": "Cyrus Mahdavi",
+      "amount_gbp": 90,
+      "status": "open",
+      "contact_id": "79",
+      "notes": "From client_services_review CREDITS (£) export 2026-07-16 — for Autumn 2026/27"
+    },
+    {
+      "participant_display": "Serine Hodroje",
+      "amount_gbp": 70,
+      "status": "open",
+      "contact_id": "58",
+      "notes": "From client_services_review CREDITS (£) export 2026-07-16 — for Autumn 2026/27"
+    },
+    {
+      "participant_display": "Ayaan Imam",
+      "amount_gbp": 70,
+      "status": "open",
+      "contact_id": "54",
+      "notes": "From client_services_review CREDITS (£) export 2026-07-16 — for Autumn 2026/27"
+    },
+    {
+      "participant_display": "Mario Cristobal Laurrieta",
+      "amount_gbp": 50,
+      "status": "open",
+      "contact_id": "92",
+      "notes": "From client_services_review CREDITS (£) export 2026-07-16 — for Autumn 2026/27"
+    },
+    {
+      "participant_display": "Emani",
+      "amount_gbp": 50,
+      "status": "open",
+      "contact_id": "376",
+      "notes": "From client_services_review CREDITS (£) export 2026-07-16 — for Autumn 2026/27"
+    },
+    {
+      "participant_display": "Eddie Mckenzie Iglesias",
+      "amount_gbp": 50,
+      "status": "open",
+      "contact_id": "236",
+      "notes": "From client_services_review CREDITS (£) export 2026-07-16 — for Autumn 2026/27"
+    }
+  ]
+}

@@ -1,0 +1,263 @@
+MAP [
+  {
+    "service_key": "AQUATIC_30",
+    "label": "Aquatic Activity 30'",
+    "xero_item_code_vat": "SW",
+    "xero_item_code_exempt": "SW2",
+    "sort_order": 10,
+    "notes": null,
+    "updated_at": "2026-07-16T18:51:39.563+00:00"
+  },
+  {
+    "service_key": "AQUATIC_60",
+    "label": "Aquatic Activity 60'",
+    "xero_item_code_vat": "SW",
+    "xero_item_code_exempt": "SW2",
+    "sort_order": 11,
+    "notes": null,
+    "updated_at": "2026-07-16T18:51:59.69+00:00"
+  },
+  {
+    "service_key": "CLIMBING_60",
+    "label": "Climbing Activity 60'",
+    "xero_item_code_vat": "CL",
+    "xero_item_code_exempt": "CL2",
+    "sort_order": 20,
+    "notes": null,
+    "updated_at": "2026-07-16T18:52:11.073+00:00"
+  },
+  {
+    "service_key": "CLIMBING_90",
+    "label": "Climbing Activity 90'",
+    "xero_item_code_vat": "CL",
+    "xero_item_code_exempt": "CL2",
+    "sort_order": 21,
+    "notes": null,
+    "updated_at": "2026-07-16T18:52:19.989+00:00"
+  },
+  {
+    "service_key": "MULTI_90",
+    "label": "Multi-Activity 90'",
+    "xero_item_code_vat": "SC",
+    "xero_item_code_exempt": "SC2",
+    "sort_order": 30,
+    "notes": null,
+    "updated_at": "2026-07-16T18:52:29.737+00:00"
+  },
+  {
+    "service_key": "PHYSICAL_60",
+    "label": "Physical Activity 60'",
+    "xero_item_code_vat": "FN",
+    "xero_item_code_exempt": "FN2",
+    "sort_order": 40,
+    "notes": null,
+    "updated_at": "2026-07-16T18:52:40.552+00:00"
+  },
+  {
+    "service_key": "BESPOKE_60",
+    "label": "Bespoke Programme 60'",
+    "xero_item_code_vat": "BP",
+    "xero_item_code_exempt": "BP2",
+    "sort_order": 50,
+    "notes": null,
+    "updated_at": "2026-07-16T18:52:48.413+00:00"
+  },
+  {
+    "service_key": "COUNSELLING_45",
+    "label": "Counselling 45'",
+    "xero_item_code_vat": null,
+    "xero_item_code_exempt": null,
+    "sort_order": 60,
+    "notes": null,
+    "updated_at": "2026-07-16T18:34:20.736963+00:00"
+  },
+  {
+    "service_key": "TRANSPORT",
+    "label": "Transport",
+    "xero_item_code_vat": null,
+    "xero_item_code_exempt": null,
+    "sort_order": 70,
+    "notes": null,
+    "updated_at": "2026-07-16T19:32:21.131295+00:00"
+  },
+  {
+    "service_key": "ADMIN_FEE",
+    "label": "Admin fee (own arrangement)",
+    "xero_item_code_vat": null,
+    "xero_item_code_exempt": null,
+    "sort_order": 90,
+    "notes": null,
+    "updated_at": "2026-07-16T18:34:20.736963+00:00"
+  },
+  {
+    "service_key": "GC_FEE",
+    "label": "GoCardless instalment fee",
+    "xero_item_code_vat": "GC1",
+    "xero_item_code_exempt": null,
+    "sort_order": 91,
+    "notes": null,
+    "updated_at": "2026-07-16T18:53:03.728+00:00"
+  },
+  {
+    "service_key": "CREDIT",
+    "label": "Credits",
+    "xero_item_code_vat": null,
+    "xero_item_code_exempt": null,
+    "sort_order": 100,
+    "notes": null,
+    "updated_at": "2026-07-16T20:36:18.988+00:00"
+  },
+  {
+    "service_key": "INTENSIVE_COURSES_CAMPS",
+    "label": "Crash Courses",
+    "xero_item_code_vat": null,
+    "xero_item_code_exempt": null,
+    "sort_order": 100,
+    "notes": null,
+    "updated_at": "2026-07-16T20:37:37.522+00:00"
+  }
+]
+ITEMS [
+  {
+    "item_code": "BP",
+    "item_id": "90dcaf0c-1260-43bf-adeb-3c0e69930324",
+    "name": "Structured Activity Support – Bespoke",
+    "description": "Structured activity support delivered for a SEND participant across agreed environments.",
+    "sales_unit_price": 125,
+    "sales_tax_type": "OUTPUT2",
+    "is_sold": true,
+    "synced_at": "2026-07-16T18:46:17.629+00:00"
+  },
+  {
+    "item_code": "BP2",
+    "item_id": "9f06d525-b9e6-4c7b-bc8c-b5c5aa044bac",
+    "name": "Structured Activity Support – Bespoke",
+    "description": "Structured activity support delivered for a SEND participant as part of funded provision across agreed environments (EHCP or local authority care package).",
+    "sales_unit_price": 125,
+    "sales_tax_type": "NONE",
+    "is_sold": true,
+    "synced_at": "2026-07-16T18:46:17.629+00:00"
+  },
+  {
+    "item_code": "CL",
+    "item_id": "7bb01f9b-4bd0-4448-a5f9-6d51e3900306",
+    "name": "Structured Activity Support – Climbing",
+    "description": "Structured activity support delivered within a climbing environment for a SEND participant.",
+    "sales_unit_price": 75,
+    "sales_tax_type": "OUTPUT2",
+    "is_sold": true,
+    "synced_at": "2026-07-16T18:46:17.629+00:00"
+  },
+  {
+    "item_code": "CL2",
+    "item_id": "44f3ca43-b9f1-4c75-befd-97d1a2f33eb8",
+    "name": "Structured Activity Support – Climbing",
+    "description": "Structured activity support delivered within a climbing environment for a SEND participant as part of funded provision (EHCP or local authority care package).",
+    "sales_unit_price": 75,
+    "sales_tax_type": "NONE",
+    "is_sold": true,
+    "synced_at": "2026-07-16T18:46:17.629+00:00"
+  },
+  {
+    "item_code": "FN",
+    "item_id": "eb0a5f7d-44ea-449c-9451-a134db79dc41",
+    "name": "Structured Activity Support – Physical & Movement",
+    "description": "Structured activity support delivered within a physical activity environment for a SEND participant.",
+    "sales_unit_price": 70,
+    "sales_tax_type": "OUTPUT2",
+    "is_sold": true,
+    "synced_at": "2026-07-16T18:46:17.629+00:00"
+  },
+  {
+    "item_code": "FN2",
+    "item_id": "48b0caf7-f0fa-49ff-909b-f59c1db6c17b",
+    "name": "Structured Activity Support – Physical & Movement",
+    "description": "Structured activity support delivered within a physical activity environment for a SEND participant as part of funded provision (EHCP or local authority care package).",
+    "sales_unit_price": 70,
+    "sales_tax_type": "NONE",
+    "is_sold": true,
+    "synced_at": "2026-07-16T18:46:17.629+00:00"
+  },
+  {
+    "item_code": "GC1",
+    "item_id": "6cca7a9f-8832-485c-98b5-3fdae76f44bf",
+    "name": "GoCardless Fees",
+    "description": "GoCardless Fees",
+    "sales_unit_price": null,
+    "sales_tax_type": null,
+    "is_sold": true,
+    "synced_at": "2026-07-16T18:46:17.629+00:00"
+  },
+  {
+    "item_code": "SC",
+    "item_id": "ffe16ec4-11ce-43aa-bc7b-1fec153e67ab",
+    "name": "Structured Activity Support – Multi-Activity",
+    "description": "Structured activity support delivered across aquatic and indoor environments for a SEND participant.",
+    "sales_unit_price": 120,
+    "sales_tax_type": "OUTPUT2",
+    "is_sold": true,
+    "synced_at": "2026-07-16T18:46:17.629+00:00"
+  },
+  {
+    "item_code": "SC2",
+    "item_id": "d55b461b-ae60-4083-a20f-88e71a3ea1e1",
+    "name": "Structured Activity Support – Multi-Activity",
+    "description": "Structured activity support delivered across aquatic and indoor environments for a SEND participant as part of funded provision (EHCP or local authority care package).",
+    "sales_unit_price": 120,
+    "sales_tax_type": "NONE",
+    "is_sold": true,
+    "synced_at": "2026-07-16T18:46:17.629+00:00"
+  },
+  {
+    "item_code": "SW",
+    "item_id": "bb3e12d7-c829-459f-a836-096cf630d75f",
+    "name": "Structured Activity Support – Aquatic",
+    "description": "Structured activity support delivered within an aquatic environment for a SEND participant.",
+    "sales_unit_price": 50,
+    "sales_tax_type": "OUTPUT2",
+    "is_sold": true,
+    "synced_at": "2026-07-16T18:46:17.629+00:00"
+  },
+  {
+    "item_code": "SW2",
+    "item_id": "8e64ff30-a7e8-403e-91d6-70f3afa21ecf",
+    "name": "Structured Activity Support – Aquatic",
+    "description": "Structured activity support delivered within an aquatic environment for a SEND participant as part of funded provision (EHCP or local authority care package).",
+    "sales_unit_price": 50,
+    "sales_tax_type": "NONE",
+    "is_sold": true,
+    "synced_at": "2026-07-16T18:46:17.629+00:00"
+  }
+]
+INV {
+  "invoice_number": "INV-P-0079",
+  "line_items": [
+    {
+      "detail": "Tuesday 5.30 to 6.30 pm · Acton",
+      "quantity": 14,
+      "amount_gbp": 700,
+      "description": "Aquatic Activity 60'",
+      "service_key": "AQUATIC_60",
+      "unit_price_gbp": 50,
+      "xero_item_code": "SW2"
+    },
+    {
+      "detail": "Sunday 10 to 11 am · Westway",
+      "quantity": 13,
+      "amount_gbp": 975,
+      "description": "Climbing Activity 60'",
+      "service_key": "CLIMBING_60",
+      "unit_price_gbp": 75,
+      "xero_item_code": "CL2"
+    },
+    {
+      "detail": "Sunday 11 am to 12.30 pm · SwimFarm",
+      "quantity": 13,
+      "amount_gbp": 1560,
+      "description": "Multi-Activity 90'",
+      "service_key": "MULTI_90",
+      "unit_price_gbp": 120,
+      "xero_item_code": "SC2"
+    }
+  ]
+}

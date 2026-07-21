@@ -1,0 +1,433 @@
+{
+  "active_unique_mobile_families": 83,
+  "unique_api_inbound_phones": 32,
+  "active_families_with_api_inbound": 30,
+  "recipients_without_api_inbound": 53,
+  "recipients": [
+    {
+      "parent": "Afolake Olabisi Dairo",
+      "children": "Timi Dairo",
+      "mobile": "+447825627454",
+      "contact_ids": [
+        "gap-timi-dairo"
+      ]
+    },
+    {
+      "parent": "Aishatu Dapchi",
+      "children": "Haneef Yusuf",
+      "mobile": "+447741341554",
+      "contact_ids": [
+        "126"
+      ]
+    },
+    {
+      "parent": "Alexandra Laurrieta Saiz",
+      "children": "Mario Cristobal Laurrieta",
+      "mobile": "+447708196518",
+      "contact_ids": [
+        "92"
+      ]
+    },
+    {
+      "parent": "Almaz Woldu",
+      "children": "Emanuel Dodson",
+      "mobile": "+447951034876",
+      "contact_ids": [
+        "gap-emanuel-dodson"
+      ]
+    },
+    {
+      "parent": "Alvar de Wolff",
+      "children": "Scott de Wolff",
+      "mobile": "+447584601743",
+      "contact_ids": [
+        "142"
+      ]
+    },
+    {
+      "parent": "Anab Mohamud",
+      "children": "Mohamed Mohamud",
+      "mobile": "+447983272230",
+      "contact_ids": [
+        "56"
+      ]
+    },
+    {
+      "parent": "Anthony Davis",
+      "children": "Joel Hibbert-Nixon",
+      "mobile": "+447956477735",
+      "contact_ids": [
+        "390"
+      ]
+    },
+    {
+      "parent": "Asamahan Alalawi",
+      "children": "Steven Cesare",
+      "mobile": "+447453529995",
+      "contact_ids": [
+        "239"
+      ]
+    },
+    {
+      "parent": "Bakhiet Osman",
+      "children": "Samer Bakhiet",
+      "mobile": "+447450939603",
+      "contact_ids": [
+        "88"
+      ]
+    },
+    {
+      "parent": "Catherine Rastgoow",
+      "children": "Linda Kaheh",
+      "mobile": "+447770711666",
+      "contact_ids": [
+        "338"
+      ]
+    },
+    {
+      "parent": "Farhia Mahamed",
+      "children": "Ikram Omar",
+      "mobile": "+447304070432",
+      "contact_ids": [
+        "gap-ikram-omar"
+      ]
+    },
+    {
+      "parent": "Faryaneh Akhavan",
+      "children": "Kamy Akhavan",
+      "mobile": "+447795181580",
+      "contact_ids": [
+        "199"
+      ]
+    },
+    {
+      "parent": "Fedoua Halim",
+      "children": "Ayden Wong",
+      "mobile": "+447957748344",
+      "contact_ids": [
+        "gap-ayden-wong"
+      ]
+    },
+    {
+      "parent": "Fozia Ibrahim",
+      "children": "Khalid Abdulla",
+      "mobile": "+447557301290",
+      "contact_ids": [
+        "137"
+      ]
+    },
+    {
+      "parent": "Francesca E Walker",
+      "children": "Jack Walker",
+      "mobile": "+447718742339",
+      "contact_ids": [
+        "gap-jack-walker"
+      ]
+    },
+    {
+      "parent": "Hanan Mahdi Mussa",
+      "children": "Shire Osman",
+      "mobile": "+447359158806",
+      "contact_ids": [
+        "274"
+      ]
+    },
+    {
+      "parent": "Hanna Belete",
+      "children": "Yoan Bekele",
+      "mobile": "+447761722567",
+      "contact_ids": [
+        "46"
+      ]
+    },
+    {
+      "parent": "Hyam Nessour",
+      "children": "Faris Lobinet",
+      "mobile": "+447539340595",
+      "contact_ids": [
+        "209"
+      ]
+    },
+    {
+      "parent": "Jane Mackey",
+      "children": "Arthur Morrissey",
+      "mobile": "+447948279809",
+      "contact_ids": [
+        "201"
+      ]
+    },
+    {
+      "parent": "Jasmine Devgun",
+      "children": "Ruben Devgun",
+      "mobile": "+447943199718",
+      "contact_ids": [
+        "307"
+      ]
+    },
+    {
+      "parent": "Kelidon Mesi",
+      "children": "Mia Mesi",
+      "mobile": "+447815548173",
+      "contact_ids": [
+        "385"
+      ]
+    },
+    {
+      "parent": "Kiren Kaur",
+      "children": "Amar-Rai Singh",
+      "mobile": "+447917007900",
+      "contact_ids": [
+        "130"
+      ]
+    },
+    {
+      "parent": "Léa Igabille",
+      "children": "Hazem Kei BELHADJ, Kacem Eiji BELHADJ",
+      "mobile": "+447473737973",
+      "contact_ids": [
+        "40",
+        "39"
+      ]
+    },
+    {
+      "parent": "Maire Fordham",
+      "children": "Kate Fordham",
+      "mobile": "+447716878189",
+      "contact_ids": [
+        "197"
+      ]
+    },
+    {
+      "parent": "Mansura Akter",
+      "children": "Zayana Zareenah Waheed",
+      "mobile": "+447595948125",
+      "contact_ids": [
+        "188"
+      ]
+    },
+    {
+      "parent": "Maria Gonzalez",
+      "children": "Gemma Mesaria-Gonzalez",
+      "mobile": "+447910131944",
+      "contact_ids": [
+        "292"
+      ]
+    },
+    {
+      "parent": "Marta Iglesias",
+      "children": "Eddie Mckenzie Iglesias",
+      "mobile": "+447762947442",
+      "contact_ids": [
+        "236"
+      ]
+    },
+    {
+      "parent": "Matthias Melake",
+      "children": "Matthias Mekonnen",
+      "mobile": "+447843933177",
+      "contact_ids": [
+        "216"
+      ]
+    },
+    {
+      "parent": "Meena Boora",
+      "children": "Shaan Boora",
+      "mobile": "+447888039660",
+      "contact_ids": [
+        "146"
+      ]
+    },
+    {
+      "parent": "Mike Chapplow",
+      "children": "Gabriel Chapplow",
+      "mobile": "+447983117737",
+      "contact_ids": [
+        "99"
+      ]
+    },
+    {
+      "parent": "Nadia Imam",
+      "children": "Ayaan Imam",
+      "mobile": "+447939256666",
+      "contact_ids": [
+        "54"
+      ]
+    },
+    {
+      "parent": "Namja Hussein",
+      "children": "Yunis Hussein",
+      "mobile": "+447539070935",
+      "contact_ids": [
+        "232"
+      ]
+    },
+    {
+      "parent": "Nana Kacharava",
+      "children": "Max Kacharava",
+      "mobile": "+447397543358",
+      "contact_ids": [
+        "284"
+      ]
+    },
+    {
+      "parent": "Nicole Stephens",
+      "children": "Amber Stephens",
+      "mobile": "+447930343649",
+      "contact_ids": [
+        "63"
+      ]
+    },
+    {
+      "parent": "Nishani Suthakaran",
+      "children": "Thushyan Suthakaran",
+      "mobile": "+447393913709",
+      "contact_ids": [
+        "371"
+      ]
+    },
+    {
+      "parent": "Nizar Alolabi",
+      "children": "Maiyar Alolabi",
+      "mobile": "+447961631777",
+      "contact_ids": [
+        "48"
+      ]
+    },
+    {
+      "parent": "Noura Zorkota",
+      "children": "Fadi Abu daud",
+      "mobile": "+447555692210",
+      "contact_ids": [
+        "101"
+      ]
+    },
+    {
+      "parent": "Obah Yusuf",
+      "children": "Yaqoub Ismail",
+      "mobile": "+447490805861",
+      "contact_ids": [
+        "169"
+      ]
+    },
+    {
+      "parent": "Orla O'Sullivan",
+      "children": "Patrick Dhennin",
+      "mobile": "+447866899186",
+      "contact_ids": [
+        "7559001"
+      ]
+    },
+    {
+      "parent": "Pat Nekati",
+      "children": "Tinashe Nekati",
+      "mobile": "+4407586616540",
+      "contact_ids": [
+        "gap-tinashe-icloud"
+      ]
+    },
+    {
+      "parent": "Salem Zerti",
+      "children": "Jad Zerti",
+      "mobile": "+447789584222",
+      "contact_ids": [
+        "gap-jad-zerti"
+      ]
+    },
+    {
+      "parent": "Sam sam Abdi",
+      "children": "Emani",
+      "mobile": "+447398232285",
+      "contact_ids": [
+        "376"
+      ]
+    },
+    {
+      "parent": "Saratha Saravanapavan",
+      "children": "Kirushy Saravanapavan",
+      "mobile": "+447413773788",
+      "contact_ids": [
+        "388"
+      ]
+    },
+    {
+      "parent": "Selina Eshun",
+      "children": "Kayden Annang-Eshun",
+      "mobile": "+447545025724",
+      "contact_ids": [
+        "37"
+      ]
+    },
+    {
+      "parent": "Shahanara Begum",
+      "children": "Saaib Abdullah",
+      "mobile": "+447886890767",
+      "contact_ids": [
+        "gap-saaib-abdullah"
+      ]
+    },
+    {
+      "parent": "Siama Hussain",
+      "children": "Haider Ali",
+      "mobile": "+447946536856",
+      "contact_ids": [
+        "144"
+      ]
+    },
+    {
+      "parent": "Sonam Sony",
+      "children": "Rhys Davies",
+      "mobile": "+447960299369",
+      "contact_ids": [
+        "394"
+      ]
+    },
+    {
+      "parent": "Tirhas Sium",
+      "children": "Yossi Sium",
+      "mobile": "+447946369628",
+      "contact_ids": [
+        "230"
+      ]
+    },
+    {
+      "parent": "Veronica Grace",
+      "children": "Jack Stratton",
+      "mobile": "+447803093911",
+      "contact_ids": [
+        "170"
+      ]
+    },
+    {
+      "parent": "Victor (TEST · Elia)",
+      "children": "Elia (test)",
+      "mobile": "+447715444979",
+      "contact_ids": [
+        "elia-test-broadcast"
+      ]
+    },
+    {
+      "parent": "Victor Matilla",
+      "children": "Elia",
+      "mobile": "+447700900123",
+      "contact_ids": [
+        "elia-matilla-demo"
+      ]
+    },
+    {
+      "parent": "Zainab Alkamali",
+      "children": "Adam Abed",
+      "mobile": "+447516593518",
+      "contact_ids": [
+        "65"
+      ]
+    },
+    {
+      "parent": "Zaynab Alfadhl",
+      "children": "Zaid Alfadhl",
+      "mobile": "+447852758314",
+      "contact_ids": [
+        "68"
+      ]
+    }
+  ]
+}

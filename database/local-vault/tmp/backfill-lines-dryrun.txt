@@ -1,0 +1,103 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+72 re-enrolment invoice(s) without line items.
+c176 autumn: 4 invoice(s) · term lines £1560 (snapshot; dev snap 0.00 vs cat 0.00)
+  INV-P-0014 £390: Multi-Activity 90' ×3.25 = £390
+  INV-P-0015 £390: Multi-Activity 90' ×3.25 = £390
+  INV-P-0016 £390: Multi-Activity 90' ×3.25 = £390
+  INV-P-0017 £390: Multi-Activity 90' ×3.25 = £390
+c79 autumn: 4 invoice(s) · term lines £6565 (snapshot; dev snap 88.50 vs cat 88.50)
+  INV-P-0018: £1552.75 vs lines £1641.25 (diff -88.5) — PDF adjustment row will cover it
+  INV-P-0018 £1552.75: Aquatic Activity 30' ×3.5 = £175 | 90' Bespoke Programme - 3.30 to 5 pm, Thursdays (SwimFarm) ×3.5 = £656.25 | Multi-Activity 90' ×6.75 = £810
+  INV-P-0019 £1642.75: Aquatic Activity 30' ×3.5 = £175 | 90' Bespoke Programme - 3.30 to 5 pm, Thursdays (SwimFarm) ×3.5 = £656.25 | Multi-Activity 90' ×6.75 = £810 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0020 £1642.75: Aquatic Activity 30' ×3.5 = £175 | 90' Bespoke Programme - 3.30 to 5 pm, Thursdays (SwimFarm) ×3.5 = £656.25 | Multi-Activity 90' ×6.75 = £810 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0021 £1642.75: Aquatic Activity 30' ×3.5 = £175 | 90' Bespoke Programme - 3.30 to 5 pm, Thursdays (SwimFarm) ×3.5 = £656.25 | Multi-Activity 90' ×6.75 = £810 | Direct Payment (GoCardless) fee ×1 = £1.5
+c79 spring: 3 invoice(s) · term lines £5012.5 (snapshot; dev snap 0.00 vs cat 0.00)
+  INV-P-0022 £1672.33: Aquatic Activity 30' ×3.67 = £183.33 | 90' Bespoke Programme - 3.30 to 5 pm, Thursdays (SwimFarm) ×3.67 = £687.5 | Multi-Activity 90' ×6.67 = £800 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0023 £1672.33: Aquatic Activity 30' ×3.67 = £183.33 | 90' Bespoke Programme - 3.30 to 5 pm, Thursdays (SwimFarm) ×3.67 = £687.5 | Multi-Activity 90' ×6.67 = £800 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0024 £1672.33: Aquatic Activity 30' ×3.67 = £183.33 | 90' Bespoke Programme - 3.30 to 5 pm, Thursdays (SwimFarm) ×3.67 = £687.5 | Multi-Activity 90' ×6.67 = £800 | Direct Payment (GoCardless) fee ×1 = £1.5
+c79 summer: 3 invoice(s) · term lines £5967.5 (snapshot; dev snap 0.00 vs cat 0.00)
+  INV-P-0025 £1990.67: Aquatic Activity 30' ×4.33 = £216.67 | 90' Bespoke Programme - 3.30 to 5 pm, Thursdays (SwimFarm) ×4.33 = £812.5 | Multi-Activity 90' ×8 = £960 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0026 £1990.67: Aquatic Activity 30' ×4.33 = £216.67 | 90' Bespoke Programme - 3.30 to 5 pm, Thursdays (SwimFarm) ×4.33 = £812.5 | Multi-Activity 90' ×8 = £960 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0027 £1990.67: Aquatic Activity 30' ×4.33 = £216.67 | 90' Bespoke Programme - 3.30 to 5 pm, Thursdays (SwimFarm) ×4.33 = £812.5 | Multi-Activity 90' ×8 = £960 | Direct Payment (GoCardless) fee ×1 = £1.5
+c298 autumn: 4 invoice(s) · term lines £700 (snapshot; dev snap 0.00 vs cat 0.00)
+  INV-P-0028 £176.5: Aquatic Activity 30' ×3.5 = £175 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0029 £176.5: Aquatic Activity 30' ×3.5 = £175 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0030 £176.5: Aquatic Activity 30' ×3.5 = £175 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0031 £176.5: Aquatic Activity 30' ×3.5 = £175 | Direct Payment (GoCardless) fee ×1 = £1.5
+c298 spring: 3 invoice(s) · term lines £550 (snapshot; dev snap 0.00 vs cat 0.00)
+  INV-P-0032 £184.83: Aquatic Activity 30' ×3.67 = £183.33 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0033 £184.83: Aquatic Activity 30' ×3.67 = £183.33 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0034 £184.83: Aquatic Activity 30' ×3.67 = £183.33 | Direct Payment (GoCardless) fee ×1 = £1.5
+c298 summer: 3 invoice(s) · term lines £650 (snapshot; dev snap 0.00 vs cat 0.00)
+  INV-P-0035 £218.17: Aquatic Activity 30' ×4.33 = £216.67 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0036 £218.17: Aquatic Activity 30' ×4.33 = £216.67 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0037 £218.17: Aquatic Activity 30' ×4.33 = £216.67 | Direct Payment (GoCardless) fee ×1 = £1.5
+c114 autumn: 4 invoice(s) · term lines £700 (snapshot; dev snap 0.00 vs cat 0.00)
+  INV-P-0038 £176.5: Aquatic Activity 30' ×3.5 = £175 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0039 £176.5: Aquatic Activity 30' ×3.5 = £175 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0040 £176.5: Aquatic Activity 30' ×3.5 = £175 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0041 £176.5: Aquatic Activity 30' ×3.5 = £175 | Direct Payment (GoCardless) fee ×1 = £1.5
+c278 autumn: 4 invoice(s) · term lines £700 (snapshot; dev snap 0.00 vs cat 0.00)
+  INV-P-0042 £176.5: Aquatic Activity 30' ×3.5 = £175 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0043 £176.5: Aquatic Activity 30' ×3.5 = £175 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0044 £176.5: Aquatic Activity 30' ×3.5 = £175 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0045 £176.5: Aquatic Activity 30' ×3.5 = £175 | Direct Payment (GoCardless) fee ×1 = £1.5
+c279 autumn: 4 invoice(s) · term lines £700 (snapshot; dev snap 0.00 vs cat 0.00)
+  INV-P-0046 £176.5: Aquatic Activity 30' ×3.5 = £175 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0047 £176.5: Aquatic Activity 30' ×3.5 = £175 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0048 £176.5: Aquatic Activity 30' ×3.5 = £175 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0049 £176.5: Aquatic Activity 30' ×3.5 = £175 | Direct Payment (GoCardless) fee ×1 = £1.5
+c193 autumn: 4 invoice(s) · term lines £1560 (snapshot; dev snap 0.00 vs cat 0.00)
+  INV-P-0050 £391.5: Multi-Activity 90' ×3.25 = £390 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0051 £391.5: Multi-Activity 90' ×3.25 = £390 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0052 £391.5: Multi-Activity 90' ×3.25 = £390 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0053 £391.5: Multi-Activity 90' ×3.25 = £390 | Direct Payment (GoCardless) fee ×1 = £1.5
+c193 spring: 3 invoice(s) · term lines £1080 (snapshot; dev snap 0.00 vs cat 0.00)
+  INV-P-0054 £361.5: Multi-Activity 90' ×3 = £360 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0055 £361.5: Multi-Activity 90' ×3 = £360 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0056 £361.5: Multi-Activity 90' ×3 = £360 | Direct Payment (GoCardless) fee ×1 = £1.5
+c193 summer: 3 invoice(s) · term lines £1320 (snapshot; dev snap 0.00 vs cat 0.00)
+  INV-P-0057 £441.5: Multi-Activity 90' ×3.67 = £440 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0058 £441.5: Multi-Activity 90' ×3.67 = £440 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0059 £441.5: Multi-Activity 90' ×3.67 = £440 | Direct Payment (GoCardless) fee ×1 = £1.5
+c99 autumn: 1 invoice(s) · term lines £1560 (snapshot; dev snap 0.00 vs cat 0.00)
+  INV-P-0060 £1560: Multi-Activity 90' ×13 = £1560
+c99 spring: 1 invoice(s) · term lines £1080 (snapshot; dev snap 0.00 vs cat 0.00)
+  INV-P-0061 £1080: Multi-Activity 90' ×9 = £1080
+c99 summer: 1 invoice(s) · term lines £1320 (snapshot; dev snap 0.00 vs cat 0.00)
+  INV-P-0062 £1320: Multi-Activity 90' ×11 = £1320
+c61 autumn: 4 invoice(s) · term lines £700 (snapshot; dev snap 0.00 vs cat 0.00)
+  INV-P-0063 £176.5: Aquatic Activity 30' ×3.5 = £175 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0064 £176.5: Aquatic Activity 30' ×3.5 = £175 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0065 £176.5: Aquatic Activity 30' ×3.5 = £175 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0066 £176.5: Aquatic Activity 30' ×3.5 = £175 | Direct Payment (GoCardless) fee ×1 = £1.5
+c292 autumn: 1 invoice(s) · term lines £700 (snapshot; dev snap 0.00 vs cat 0.00)
+  INV-P-0067 £700: Aquatic Activity 30' ×14 = £700
+c284 autumn: 4 invoice(s) · term lines £650 (snapshot; dev snap 0.00 vs cat 0.00)
+  INV-P-0068 £164: Aquatic Activity 30' ×3.25 = £162.5 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0069 £164: Aquatic Activity 30' ×3.25 = £162.5 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0070 £164: Aquatic Activity 30' ×3.25 = £162.5 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0071 £164: Aquatic Activity 30' ×3.25 = £162.5 | Direct Payment (GoCardless) fee ×1 = £1.5
+c137 autumn: 2 invoice(s) · term lines £700 (snapshot; dev snap 0.00 vs cat 0.00)
+  INV-P-0072 £350: Aquatic Activity 30' ×7 = £350
+  INV-P-0073 £350: Aquatic Activity 30' ×7 = £350
+c247 autumn: 4 invoice(s) · term lines £1625 (snapshot; dev snap 0.00 vs cat 0.00)
+  INV-P-0075 £407.75: Aquatic Activity 30' ×3.25 = £162.5 | Climbing Activity 60' ×3.25 = £243.75 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0076 £407.75: Aquatic Activity 30' ×3.25 = £162.5 | Climbing Activity 60' ×3.25 = £243.75 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0077 £407.75: Aquatic Activity 30' ×3.25 = £162.5 | Climbing Activity 60' ×3.25 = £243.75 | Direct Payment (GoCardless) fee ×1 = £1.5
+  INV-P-0078 £407.75: Aquatic Activity 30' ×3.25 = £162.5 | Climbing Activity 60' ×3.25 = £243.75 | Direct Payment (GoCardless) fee ×1 = £1.5
+c40 autumn: 4 invoice(s) · term lines £3235 (snapshot; dev snap 0.00 vs cat 700.00)
+  INV-P-0079 £808.75: Aquatic Activity 60' ×3.5 = £175 | Climbing Activity 60' ×3.25 = £243.75 | Multi-Activity 90' ×3.25 = £390
+  INV-P-0080 £808.75: Aquatic Activity 60' ×3.5 = £175 | Climbing Activity 60' ×3.25 = £243.75 | Multi-Activity 90' ×3.25 = £390
+  INV-P-0081 £808.75: Aquatic Activity 60' ×3.5 = £175 | Climbing Activity 60' ×3.25 = £243.75 | Multi-Activity 90' ×3.25 = £390
+  INV-P-0082 £808.75: Aquatic Activity 60' ×3.5 = £175 | Climbing Activity 60' ×3.25 = £243.75 | Multi-Activity 90' ×3.25 = £390
+c39 autumn: 4 invoice(s) · term lines £2715 (snapshot; dev snap 514.00 vs cat 700.00)
+  INV-P-0083: £808.75 vs lines £678.75 (diff 130) — PDF adjustment row will cover it
+  INV-P-0083 £808.75: Aquatic Activity 60' ×3.5 = £175 | Climbing Activity 60' ×3.25 = £243.75 | Multi-Activity 90' ×3.25 = £260
+  INV-P-0084: £808.75 vs lines £678.75 (diff 130) — PDF adjustment row will cover it
+  INV-P-0084 £808.75: Aquatic Activity 60' ×3.5 = £175 | Climbing Activity 60' ×3.25 = £243.75 | Multi-Activity 90' ×3.25 = £260
+  INV-P-0085: £808.75 vs lines £678.75 (diff 130) — PDF adjustment row will cover it
+  INV-P-0085 £808.75: Aquatic Activity 60' ×3.5 = £175 | Climbing Activity 60' ×3.25 = £243.75 | Multi-Activity 90' ×3.25 = £260
+  INV-P-0086: £808.75 vs lines £678.75 (diff 130) — PDF adjustment row will cover it
+  INV-P-0086 £808.75: Aquatic Activity 60' ×3.5 = £175 | Climbing Activity 60' ×3.25 = £243.75 | Multi-Activity 90' ×3.25 = £260
+Dry run only — set APPLY=1 to write.

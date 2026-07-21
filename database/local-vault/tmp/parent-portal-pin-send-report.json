@@ -1,0 +1,540 @@
+{
+  "done": true,
+  "campaign": "family_portal_pin_20260718",
+  "waSent": 83,
+  "waFailed": 0,
+  "emSent": 1,
+  "emFailed": 0,
+  "summary": {
+    "mode": "SEND",
+    "campaign": "family_portal_pin_20260718",
+    "total": 86,
+    "thanks": 18,
+    "pending": 68,
+    "whatsapp": 83,
+    "email": 1,
+    "skip": 2,
+    "skip_reasons": {
+      "demo": 2
+    },
+    "over700": 0
+  },
+  "report": [
+    {
+      "parent": "Afolake Olabisi Dairo",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Agata Ndregjoni",
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Aishatu Dapchi",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Alexandra Laurrieta Saiz",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Almaz Woldu",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Alvar de Wolff",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "amy gebru",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Anab Mohamud",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Anthony Davis",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Asamahan Alalawi",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Bakhiet Osman",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Bhawana Limbu",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Bouchra Taoufiki",
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Catarina da Silva",
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Catherine Rastgoow",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Chopi Al hassani",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Fadwa Guechchati",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Farhia Mahamed",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Farida Farooq",
+      "variant": "pending",
+      "channel": "email",
+      "ok": true
+    },
+    {
+      "parent": "Faryaneh Akhavan",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Fatimah Ahmed",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Fedoua Halim",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Fozia Ibrahim",
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Francesca E Walker",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Francesca Manners",
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Hanan Mahdi Mussa",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Hanna Belete",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Heba Aboueita",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Huma Qureshi",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Hyam Nessour",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Jane Mackey",
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Jasmine Devgun",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Juliette Fenton",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Kelidon Mesi",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Kiren Kaur",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Kirstin Eriksson",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Léa Igabille",
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Leila Ahmed",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "LETICIA GONCALVES FERREIRA",
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Lucy Ritzema",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Maire Fordham",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Mansura Akter",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Margaretta Allotey",
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Maria Gonzalez",
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Marta Iglesias",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Matthias Melake",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Maya Ali",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Maysoun Sharf",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Meena Boora",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Michael Morrissey",
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Mike Chapplow",
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Nadia Boujettif",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Nadia Imam",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Namja Hussein",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Nana Kacharava",
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Nazaré Carvalho",
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Nicole Stephens",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Nishani Suthakaran",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Nizar Alolabi",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Noura Zorkota",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Obah Yusuf",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Olivia Mahdavi",
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Orla O'Sullivan",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Pat Nekati",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Rakesh Thapa",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Romina Banjo",
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Salem Zerti",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Saliha Ziani",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Sam sam Abdi",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Sara Girmaye",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Saratha Saravanapavan",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Selina Eshun",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Shahanara Begum",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Shane Hibbitts",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Siama Hussain",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Sima Amirizadeh",
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Sonam Sony",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Tirhas Sium",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Veronica Grace",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Victor (TEST · Elia)",
+      "variant": "pending",
+      "channel": "skip",
+      "reason": "demo"
+    },
+    {
+      "parent": "Victor Matilla",
+      "variant": "thanks",
+      "channel": "skip",
+      "reason": "demo"
+    },
+    {
+      "parent": "Yalini Pakeerathan",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Zainab Alkamali",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Zaynab Alfadhl",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Zeyna Bakry",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    },
+    {
+      "parent": "Zu Yi Wen",
+      "variant": "pending",
+      "channel": "whatsapp",
+      "ok": true
+    }
+  ]
+}

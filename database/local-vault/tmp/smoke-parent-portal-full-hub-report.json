@@ -1,0 +1,6829 @@
+{
+  "started_at": "2026-07-18T15:12:24.203Z",
+  "finished_at": "2026-07-18T15:21:54.396Z",
+  "url": "https://cklpnwhlqsulpmkipmqb.supabase.co",
+  "parents": 86,
+  "pass": 1348,
+  "fail": 3,
+  "accuracy_warnings": 11,
+  "skipped_pay_actions": [
+    "parent-portal-invoice-checkout",
+    "parent-portal-gocardless-setup",
+    "parent-portal-invoice-report-paid",
+    "parent-portal-credit-apply-invoice"
+  ],
+  "accuracy": [
+    {
+      "step": "Anab Mohamud · Mohamed Mohamud: active but no services_detail",
+      "severity": "warn",
+      "detail": "hub Next session will look empty"
+    },
+    {
+      "step": "Fedoua Halim · Ayden Wong: active but no services_detail",
+      "severity": "warn",
+      "detail": "hub Next session will look empty"
+    },
+    {
+      "step": "Heba Aboueita · Anas Ismail: active but no services_detail",
+      "severity": "warn",
+      "detail": "hub Next session will look empty"
+    },
+    {
+      "step": "Maire Fordham · Kate Fordham: has services but 0 sessions & 0 notes",
+      "severity": "warn",
+      "detail": "check feedback mapping"
+    },
+    {
+      "step": "Mansura Akter · Zayana Zareenah Waheed: active but no services_detail",
+      "severity": "warn",
+      "detail": "hub Next session will look empty"
+    },
+    {
+      "step": "Maya Ali · Aboodi Patel: active but no services_detail",
+      "severity": "warn",
+      "detail": "hub Next session will look empty"
+    },
+    {
+      "step": "Nadia Boujettif · Yassir Boujettif: has services but 0 sessions & 0 notes",
+      "severity": "warn",
+      "detail": "check feedback mapping"
+    },
+    {
+      "step": "Rakesh Thapa · Rayan Thapa: active but no services_detail",
+      "severity": "warn",
+      "detail": "hub Next session will look empty"
+    },
+    {
+      "step": "Saratha Saravanapavan · Kirushy Saravanapavan: active but no services_detail",
+      "severity": "warn",
+      "detail": "hub Next session will look empty"
+    },
+    {
+      "step": "Victor (TEST · Elia) · Elia (test): active but no services_detail",
+      "severity": "warn",
+      "detail": "hub Next session will look empty"
+    },
+    {
+      "step": "Victor Matilla · Eliademo (demo): active but no services_detail",
+      "severity": "warn",
+      "detail": "hub Next session will look empty"
+    }
+  ],
+  "results": [
+    {
+      "step": "parents queued",
+      "ok": true,
+      "detail": "86 parent(s)"
+    },
+    {
+      "step": "Afolake Olabisi Dairo: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Afolake Olabisi Dairo: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Afolake Olabisi Dairo: home vs DB",
+      "ok": true,
+      "detail": "Timi Dairo"
+    },
+    {
+      "step": "Afolake Olabisi Dairo · Timi Dairo: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Afolake Olabisi Dairo · Timi Dairo: messages",
+      "ok": true,
+      "detail": "msgs=2 unread=2"
+    },
+    {
+      "step": "Afolake Olabisi Dairo · Timi Dairo: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Afolake Olabisi Dairo · Timi Dairo: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Afolake Olabisi Dairo · Timi Dairo: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Afolake Olabisi Dairo · Timi Dairo: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Afolake Olabisi Dairo · Timi Dairo: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Afolake Olabisi Dairo · Timi Dairo: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Afolake Olabisi Dairo · Timi Dairo: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Afolake Olabisi Dairo · Timi Dairo: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Afolake Olabisi Dairo · Timi Dairo: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Afolake Olabisi Dairo · Timi Dairo: hub payload shapes",
+      "ok": true,
+      "detail": "services=2 sessions=6 notes=3 photos=92 team=3"
+    },
+    {
+      "step": "Agata Ndregjoni: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Agata Ndregjoni: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Agata Ndregjoni: home vs DB",
+      "ok": true,
+      "detail": "Erik Ndregjoni"
+    },
+    {
+      "step": "Agata Ndregjoni · Erik Ndregjoni: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Agata Ndregjoni · Erik Ndregjoni: messages",
+      "ok": true,
+      "detail": "msgs=5 unread=4"
+    },
+    {
+      "step": "Agata Ndregjoni · Erik Ndregjoni: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Agata Ndregjoni · Erik Ndregjoni: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Agata Ndregjoni · Erik Ndregjoni: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Agata Ndregjoni · Erik Ndregjoni: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Agata Ndregjoni · Erik Ndregjoni: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Agata Ndregjoni · Erik Ndregjoni: invoices",
+      "ok": true,
+      "detail": "1 invoice(s)"
+    },
+    {
+      "step": "Agata Ndregjoni · Erik Ndregjoni: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Agata Ndregjoni · Erik Ndregjoni: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Agata Ndregjoni · Erik Ndregjoni: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Agata Ndregjoni · Erik Ndregjoni: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=12 notes=1 photos=16 team=5"
+    },
+    {
+      "step": "Aishatu Dapchi: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Aishatu Dapchi: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Aishatu Dapchi: home vs DB",
+      "ok": true,
+      "detail": "Haneef Yusuf"
+    },
+    {
+      "step": "Aishatu Dapchi · Haneef Yusuf: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Aishatu Dapchi · Haneef Yusuf: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Aishatu Dapchi · Haneef Yusuf: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Aishatu Dapchi · Haneef Yusuf: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Aishatu Dapchi · Haneef Yusuf: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Aishatu Dapchi · Haneef Yusuf: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Aishatu Dapchi · Haneef Yusuf: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Aishatu Dapchi · Haneef Yusuf: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Aishatu Dapchi · Haneef Yusuf: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Aishatu Dapchi · Haneef Yusuf: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Aishatu Dapchi · Haneef Yusuf: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Aishatu Dapchi · Haneef Yusuf: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=4 notes=1 photos=8 team=4"
+    },
+    {
+      "step": "Alexandra Laurrieta Saiz: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Alexandra Laurrieta Saiz: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Alexandra Laurrieta Saiz: home vs DB",
+      "ok": true,
+      "detail": "Mario Cristobal Laurrieta"
+    },
+    {
+      "step": "Alexandra Laurrieta Saiz · Mario Cristobal Laurrieta: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Alexandra Laurrieta Saiz · Mario Cristobal Laurrieta: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Alexandra Laurrieta Saiz · Mario Cristobal Laurrieta: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Alexandra Laurrieta Saiz · Mario Cristobal Laurrieta: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Alexandra Laurrieta Saiz · Mario Cristobal Laurrieta: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Alexandra Laurrieta Saiz · Mario Cristobal Laurrieta: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Alexandra Laurrieta Saiz · Mario Cristobal Laurrieta: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Alexandra Laurrieta Saiz · Mario Cristobal Laurrieta: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Alexandra Laurrieta Saiz · Mario Cristobal Laurrieta: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Alexandra Laurrieta Saiz · Mario Cristobal Laurrieta: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Alexandra Laurrieta Saiz · Mario Cristobal Laurrieta: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Alexandra Laurrieta Saiz · Mario Cristobal Laurrieta: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=7 notes=1 photos=0 team=2"
+    },
+    {
+      "step": "Almaz Woldu: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Almaz Woldu: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Almaz Woldu: home vs DB",
+      "ok": true,
+      "detail": "Emanuel Dodson"
+    },
+    {
+      "step": "Almaz Woldu · Emanuel Dodson: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Almaz Woldu · Emanuel Dodson: messages",
+      "ok": true,
+      "detail": "msgs=6 unread=6"
+    },
+    {
+      "step": "Almaz Woldu · Emanuel Dodson: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Almaz Woldu · Emanuel Dodson: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Almaz Woldu · Emanuel Dodson: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Almaz Woldu · Emanuel Dodson: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Almaz Woldu · Emanuel Dodson: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Almaz Woldu · Emanuel Dodson: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Almaz Woldu · Emanuel Dodson: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Almaz Woldu · Emanuel Dodson: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Almaz Woldu · Emanuel Dodson: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Almaz Woldu · Emanuel Dodson: hub payload shapes",
+      "ok": true,
+      "detail": "services=3 sessions=17 notes=6 photos=45 team=4"
+    },
+    {
+      "step": "Alvar de Wolff: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Alvar de Wolff: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Alvar de Wolff: home vs DB",
+      "ok": true,
+      "detail": "Scott de Wolff"
+    },
+    {
+      "step": "Alvar de Wolff · Scott de Wolff: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Alvar de Wolff · Scott de Wolff: messages",
+      "ok": true,
+      "detail": "msgs=6 unread=0"
+    },
+    {
+      "step": "Alvar de Wolff · Scott de Wolff: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Alvar de Wolff · Scott de Wolff: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Alvar de Wolff · Scott de Wolff: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Alvar de Wolff · Scott de Wolff: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Alvar de Wolff · Scott de Wolff: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Alvar de Wolff · Scott de Wolff: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Alvar de Wolff · Scott de Wolff: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Alvar de Wolff · Scott de Wolff: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Alvar de Wolff · Scott de Wolff: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Alvar de Wolff · Scott de Wolff: hub payload shapes",
+      "ok": true,
+      "detail": "services=2 sessions=17 notes=1 photos=12 team=6"
+    },
+    {
+      "step": "amy gebru: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "amy gebru: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "amy gebru: home vs DB",
+      "ok": true,
+      "detail": "Elijah Yared"
+    },
+    {
+      "step": "amy gebru · Elijah Yared: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "amy gebru · Elijah Yared: messages",
+      "ok": true,
+      "detail": "msgs=5 unread=4"
+    },
+    {
+      "step": "amy gebru · Elijah Yared: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "amy gebru · Elijah Yared: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "amy gebru · Elijah Yared: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "amy gebru · Elijah Yared: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "amy gebru · Elijah Yared: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "amy gebru · Elijah Yared: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "amy gebru · Elijah Yared: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "amy gebru · Elijah Yared: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "amy gebru · Elijah Yared: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "amy gebru · Elijah Yared: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=8 notes=1 photos=0 team=4"
+    },
+    {
+      "step": "Anab Mohamud: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Anab Mohamud: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Anab Mohamud: home vs DB",
+      "ok": true,
+      "detail": "Mohamed Mohamud"
+    },
+    {
+      "step": "Anab Mohamud · Mohamed Mohamud: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Anab Mohamud · Mohamed Mohamud: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Anab Mohamud · Mohamed Mohamud: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Anab Mohamud · Mohamed Mohamud: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Anab Mohamud · Mohamed Mohamud: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Anab Mohamud · Mohamed Mohamud: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Anab Mohamud · Mohamed Mohamud: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Anab Mohamud · Mohamed Mohamud: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Anab Mohamud · Mohamed Mohamud: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Anab Mohamud · Mohamed Mohamud: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Anab Mohamud · Mohamed Mohamud: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Anab Mohamud · Mohamed Mohamud: hub payload shapes",
+      "ok": true,
+      "detail": "services=0 sessions=0 notes=0 photos=0 team=0"
+    },
+    {
+      "step": "Anthony Davis: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Anthony Davis: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Anthony Davis: home vs DB",
+      "ok": true,
+      "detail": "Joel Hibbert-Nixon"
+    },
+    {
+      "step": "Anthony Davis · Joel Hibbert-Nixon: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Anthony Davis · Joel Hibbert-Nixon: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Anthony Davis · Joel Hibbert-Nixon: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Anthony Davis · Joel Hibbert-Nixon: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Anthony Davis · Joel Hibbert-Nixon: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Anthony Davis · Joel Hibbert-Nixon: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Anthony Davis · Joel Hibbert-Nixon: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Anthony Davis · Joel Hibbert-Nixon: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Anthony Davis · Joel Hibbert-Nixon: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Anthony Davis · Joel Hibbert-Nixon: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Anthony Davis · Joel Hibbert-Nixon: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Anthony Davis · Joel Hibbert-Nixon: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=2 notes=0 photos=0 team=1"
+    },
+    {
+      "step": "Asamahan Alalawi: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Asamahan Alalawi: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Asamahan Alalawi: home vs DB",
+      "ok": true,
+      "detail": "Steven Cesare"
+    },
+    {
+      "step": "Asamahan Alalawi · Steven Cesare: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Asamahan Alalawi · Steven Cesare: messages",
+      "ok": true,
+      "detail": "msgs=3 unread=0"
+    },
+    {
+      "step": "Asamahan Alalawi · Steven Cesare: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Asamahan Alalawi · Steven Cesare: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Asamahan Alalawi · Steven Cesare: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Asamahan Alalawi · Steven Cesare: documents",
+      "ok": true,
+      "detail": "docs=1"
+    },
+    {
+      "step": "Asamahan Alalawi · Steven Cesare: consents",
+      "ok": true,
+      "detail": "pending=0"
+    },
+    {
+      "step": "Asamahan Alalawi · Steven Cesare: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Asamahan Alalawi · Steven Cesare: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Asamahan Alalawi · Steven Cesare: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Asamahan Alalawi · Steven Cesare: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Asamahan Alalawi · Steven Cesare: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=7 notes=1 photos=0 team=1"
+    },
+    {
+      "step": "Bakhiet Osman: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Bakhiet Osman: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Bakhiet Osman: home vs DB",
+      "ok": true,
+      "detail": "Samer Bakhiet"
+    },
+    {
+      "step": "Bakhiet Osman · Samer Bakhiet: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Bakhiet Osman · Samer Bakhiet: messages",
+      "ok": true,
+      "detail": "msgs=3 unread=3"
+    },
+    {
+      "step": "Bakhiet Osman · Samer Bakhiet: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Bakhiet Osman · Samer Bakhiet: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Bakhiet Osman · Samer Bakhiet: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Bakhiet Osman · Samer Bakhiet: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Bakhiet Osman · Samer Bakhiet: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Bakhiet Osman · Samer Bakhiet: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Bakhiet Osman · Samer Bakhiet: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Bakhiet Osman · Samer Bakhiet: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Bakhiet Osman · Samer Bakhiet: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Bakhiet Osman · Samer Bakhiet: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=9 notes=1 photos=20 team=7"
+    },
+    {
+      "step": "Bhawana Limbu: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Bhawana Limbu: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Bhawana Limbu: home vs DB",
+      "ok": true,
+      "detail": "Yamik Limbu"
+    },
+    {
+      "step": "Bhawana Limbu · Yamik Limbu: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Bhawana Limbu · Yamik Limbu: messages",
+      "ok": true,
+      "detail": "msgs=7 unread=4"
+    },
+    {
+      "step": "Bhawana Limbu · Yamik Limbu: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Bhawana Limbu · Yamik Limbu: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Bhawana Limbu · Yamik Limbu: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Bhawana Limbu · Yamik Limbu: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Bhawana Limbu · Yamik Limbu: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Bhawana Limbu · Yamik Limbu: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Bhawana Limbu · Yamik Limbu: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Bhawana Limbu · Yamik Limbu: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Bhawana Limbu · Yamik Limbu: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Bhawana Limbu · Yamik Limbu: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=7 notes=1 photos=0 team=1"
+    },
+    {
+      "step": "Bouchra Taoufiki: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Bouchra Taoufiki: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Bouchra Taoufiki: home vs DB",
+      "ok": true,
+      "detail": "Serine Hodroje"
+    },
+    {
+      "step": "Bouchra Taoufiki · Serine Hodroje: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Bouchra Taoufiki · Serine Hodroje: messages",
+      "ok": true,
+      "detail": "msgs=17 unread=1"
+    },
+    {
+      "step": "Bouchra Taoufiki · Serine Hodroje: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Bouchra Taoufiki · Serine Hodroje: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Bouchra Taoufiki · Serine Hodroje: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Bouchra Taoufiki · Serine Hodroje: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Bouchra Taoufiki · Serine Hodroje: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Bouchra Taoufiki · Serine Hodroje: invoices",
+      "ok": true,
+      "detail": "1 invoice(s)"
+    },
+    {
+      "step": "Bouchra Taoufiki · Serine Hodroje: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Bouchra Taoufiki · Serine Hodroje: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Bouchra Taoufiki · Serine Hodroje: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Bouchra Taoufiki · Serine Hodroje: hub payload shapes",
+      "ok": true,
+      "detail": "services=3 sessions=17 notes=1 photos=64 team=6"
+    },
+    {
+      "step": "Catarina da Silva: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Catarina da Silva: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Catarina da Silva: home vs DB",
+      "ok": true,
+      "detail": "Zakariya Warsame"
+    },
+    {
+      "step": "Catarina da Silva · Zakariya Warsame: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Catarina da Silva · Zakariya Warsame: messages",
+      "ok": true,
+      "detail": "msgs=60 unread=6"
+    },
+    {
+      "step": "Catarina da Silva · Zakariya Warsame: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Catarina da Silva · Zakariya Warsame: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Catarina da Silva · Zakariya Warsame: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Catarina da Silva · Zakariya Warsame: documents",
+      "ok": true,
+      "detail": "docs=1"
+    },
+    {
+      "step": "Catarina da Silva · Zakariya Warsame: consents",
+      "ok": true,
+      "detail": "pending=0"
+    },
+    {
+      "step": "Catarina da Silva · Zakariya Warsame: invoices",
+      "ok": true,
+      "detail": "2 invoice(s)"
+    },
+    {
+      "step": "Catarina da Silva · Zakariya Warsame: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Catarina da Silva · Zakariya Warsame: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Catarina da Silva · Zakariya Warsame: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Catarina da Silva · Zakariya Warsame: hub payload shapes",
+      "ok": true,
+      "detail": "services=2 sessions=12 notes=1 photos=5 team=7"
+    },
+    {
+      "step": "Catherine Rastgoow: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Catherine Rastgoow: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Catherine Rastgoow: home vs DB",
+      "ok": true,
+      "detail": "Linda Kaheh"
+    },
+    {
+      "step": "Catherine Rastgoow · Linda Kaheh: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Catherine Rastgoow · Linda Kaheh: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Catherine Rastgoow · Linda Kaheh: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Catherine Rastgoow · Linda Kaheh: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Catherine Rastgoow · Linda Kaheh: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Catherine Rastgoow · Linda Kaheh: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Catherine Rastgoow · Linda Kaheh: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Catherine Rastgoow · Linda Kaheh: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Catherine Rastgoow · Linda Kaheh: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Catherine Rastgoow · Linda Kaheh: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Catherine Rastgoow · Linda Kaheh: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Catherine Rastgoow · Linda Kaheh: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=7 notes=1 photos=0 team=1"
+    },
+    {
+      "step": "Chopi Al hassani: mint-session",
+      "ok": true,
+      "detail": "2 child(ren)"
+    },
+    {
+      "step": "Chopi Al hassani: home-load",
+      "ok": true,
+      "detail": "2 children"
+    },
+    {
+      "step": "Chopi Al hassani: home vs DB",
+      "ok": true,
+      "detail": "Kareena Al hassani · Karo"
+    },
+    {
+      "step": "Chopi Al hassani · Kareena Al hassani: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Chopi Al hassani · Kareena Al hassani: messages",
+      "ok": true,
+      "detail": "msgs=11 unread=6"
+    },
+    {
+      "step": "Chopi Al hassani · Kareena Al hassani: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Chopi Al hassani · Kareena Al hassani: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Chopi Al hassani · Kareena Al hassani: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Chopi Al hassani · Kareena Al hassani: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Chopi Al hassani · Kareena Al hassani: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Chopi Al hassani · Kareena Al hassani: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Chopi Al hassani · Kareena Al hassani: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Chopi Al hassani · Kareena Al hassani: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Chopi Al hassani · Kareena Al hassani: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Chopi Al hassani · Kareena Al hassani: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=6 notes=0 photos=0 team=1"
+    },
+    {
+      "step": "Chopi Al hassani · Karo: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Chopi Al hassani · Karo: messages",
+      "ok": true,
+      "detail": "msgs=11 unread=6"
+    },
+    {
+      "step": "Chopi Al hassani · Karo: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Chopi Al hassani · Karo: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Chopi Al hassani · Karo: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Chopi Al hassani · Karo: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Chopi Al hassani · Karo: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Chopi Al hassani · Karo: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Chopi Al hassani · Karo: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Chopi Al hassani · Karo: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Chopi Al hassani · Karo: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Chopi Al hassani · Karo: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=8 notes=1 photos=0 team=3"
+    },
+    {
+      "step": "Fadwa Guechchati: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Fadwa Guechchati: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Fadwa Guechchati: home vs DB",
+      "ok": true,
+      "detail": "Junaid Fussaini"
+    },
+    {
+      "step": "Fadwa Guechchati · Junaid Fussaini: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Fadwa Guechchati · Junaid Fussaini: messages",
+      "ok": true,
+      "detail": "msgs=5 unread=3"
+    },
+    {
+      "step": "Fadwa Guechchati · Junaid Fussaini: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Fadwa Guechchati · Junaid Fussaini: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Fadwa Guechchati · Junaid Fussaini: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Fadwa Guechchati · Junaid Fussaini: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Fadwa Guechchati · Junaid Fussaini: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Fadwa Guechchati · Junaid Fussaini: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Fadwa Guechchati · Junaid Fussaini: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Fadwa Guechchati · Junaid Fussaini: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Fadwa Guechchati · Junaid Fussaini: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Fadwa Guechchati · Junaid Fussaini: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=6 notes=0 photos=0 team=3"
+    },
+    {
+      "step": "Farhia Mahamed: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Farhia Mahamed: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Farhia Mahamed: home vs DB",
+      "ok": true,
+      "detail": "Ikram Omar"
+    },
+    {
+      "step": "Farhia Mahamed · Ikram Omar: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Farhia Mahamed · Ikram Omar: messages",
+      "ok": true,
+      "detail": "msgs=2 unread=2"
+    },
+    {
+      "step": "Farhia Mahamed · Ikram Omar: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Farhia Mahamed · Ikram Omar: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Farhia Mahamed · Ikram Omar: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Farhia Mahamed · Ikram Omar: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Farhia Mahamed · Ikram Omar: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Farhia Mahamed · Ikram Omar: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Farhia Mahamed · Ikram Omar: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Farhia Mahamed · Ikram Omar: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Farhia Mahamed · Ikram Omar: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Farhia Mahamed · Ikram Omar: hub payload shapes",
+      "ok": true,
+      "detail": "services=4 sessions=27 notes=7 photos=127 team=2"
+    },
+    {
+      "step": "Farida Farooq: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Farida Farooq: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Farida Farooq: home vs DB",
+      "ok": true,
+      "detail": "Aqsa Farooq"
+    },
+    {
+      "step": "Farida Farooq · Aqsa Farooq: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Farida Farooq · Aqsa Farooq: messages",
+      "ok": true,
+      "detail": "msgs=3 unread=3"
+    },
+    {
+      "step": "Farida Farooq · Aqsa Farooq: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Farida Farooq · Aqsa Farooq: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Farida Farooq · Aqsa Farooq: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Farida Farooq · Aqsa Farooq: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Farida Farooq · Aqsa Farooq: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Farida Farooq · Aqsa Farooq: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Farida Farooq · Aqsa Farooq: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Farida Farooq · Aqsa Farooq: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Farida Farooq · Aqsa Farooq: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Farida Farooq · Aqsa Farooq: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=7 notes=1 photos=0 team=4"
+    },
+    {
+      "step": "Faryaneh Akhavan: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Faryaneh Akhavan: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Faryaneh Akhavan: home vs DB",
+      "ok": true,
+      "detail": "Kamy Akhavan"
+    },
+    {
+      "step": "Faryaneh Akhavan · Kamy Akhavan: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Faryaneh Akhavan · Kamy Akhavan: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Faryaneh Akhavan · Kamy Akhavan: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Faryaneh Akhavan · Kamy Akhavan: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Faryaneh Akhavan · Kamy Akhavan: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Faryaneh Akhavan · Kamy Akhavan: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Faryaneh Akhavan · Kamy Akhavan: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Faryaneh Akhavan · Kamy Akhavan: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Faryaneh Akhavan · Kamy Akhavan: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Faryaneh Akhavan · Kamy Akhavan: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Faryaneh Akhavan · Kamy Akhavan: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Faryaneh Akhavan · Kamy Akhavan: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=6 notes=1 photos=0 team=1"
+    },
+    {
+      "step": "Fatimah Ahmed: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Fatimah Ahmed: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Fatimah Ahmed: home vs DB",
+      "ok": true,
+      "detail": "Yusuf Ahmed"
+    },
+    {
+      "step": "Fatimah Ahmed · Yusuf Ahmed: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Fatimah Ahmed · Yusuf Ahmed: messages",
+      "ok": true,
+      "detail": "msgs=7 unread=0"
+    },
+    {
+      "step": "Fatimah Ahmed · Yusuf Ahmed: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Fatimah Ahmed · Yusuf Ahmed: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Fatimah Ahmed · Yusuf Ahmed: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Fatimah Ahmed · Yusuf Ahmed: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Fatimah Ahmed · Yusuf Ahmed: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Fatimah Ahmed · Yusuf Ahmed: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Fatimah Ahmed · Yusuf Ahmed: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Fatimah Ahmed · Yusuf Ahmed: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Fatimah Ahmed · Yusuf Ahmed: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Fatimah Ahmed · Yusuf Ahmed: hub payload shapes",
+      "ok": true,
+      "detail": "services=3 sessions=17 notes=1 photos=13 team=4"
+    },
+    {
+      "step": "Fedoua Halim: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Fedoua Halim: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Fedoua Halim: home vs DB",
+      "ok": true,
+      "detail": "Ayden Wong"
+    },
+    {
+      "step": "Fedoua Halim · Ayden Wong: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Fedoua Halim · Ayden Wong: messages",
+      "ok": true,
+      "detail": "msgs=3 unread=2"
+    },
+    {
+      "step": "Fedoua Halim · Ayden Wong: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Fedoua Halim · Ayden Wong: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Fedoua Halim · Ayden Wong: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Fedoua Halim · Ayden Wong: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Fedoua Halim · Ayden Wong: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Fedoua Halim · Ayden Wong: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Fedoua Halim · Ayden Wong: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Fedoua Halim · Ayden Wong: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Fedoua Halim · Ayden Wong: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Fedoua Halim · Ayden Wong: hub payload shapes",
+      "ok": true,
+      "detail": "services=0 sessions=0 notes=0 photos=0 team=0"
+    },
+    {
+      "step": "Fozia Ibrahim: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Fozia Ibrahim: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Fozia Ibrahim: home vs DB",
+      "ok": true,
+      "detail": "Khalid Abdulla"
+    },
+    {
+      "step": "Fozia Ibrahim · Khalid Abdulla: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Fozia Ibrahim · Khalid Abdulla: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=2"
+    },
+    {
+      "step": "Fozia Ibrahim · Khalid Abdulla: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Fozia Ibrahim · Khalid Abdulla: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Fozia Ibrahim · Khalid Abdulla: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Fozia Ibrahim · Khalid Abdulla: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Fozia Ibrahim · Khalid Abdulla: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Fozia Ibrahim · Khalid Abdulla: invoices",
+      "ok": true,
+      "detail": "1 invoice(s)"
+    },
+    {
+      "step": "Fozia Ibrahim · Khalid Abdulla: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Fozia Ibrahim · Khalid Abdulla: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Fozia Ibrahim · Khalid Abdulla: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Fozia Ibrahim · Khalid Abdulla: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=7 notes=1 photos=0 team=3"
+    },
+    {
+      "step": "Francesca E Walker: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Francesca E Walker: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Francesca E Walker: home vs DB",
+      "ok": true,
+      "detail": "Jack Walker"
+    },
+    {
+      "step": "Francesca E Walker · Jack Walker: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Francesca E Walker · Jack Walker: messages",
+      "ok": true,
+      "detail": "msgs=3 unread=3"
+    },
+    {
+      "step": "Francesca E Walker · Jack Walker: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Francesca E Walker · Jack Walker: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Francesca E Walker · Jack Walker: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Francesca E Walker · Jack Walker: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Francesca E Walker · Jack Walker: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Francesca E Walker · Jack Walker: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Francesca E Walker · Jack Walker: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Francesca E Walker · Jack Walker: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Francesca E Walker · Jack Walker: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Francesca E Walker · Jack Walker: hub payload shapes",
+      "ok": true,
+      "detail": "services=2 sessions=18 notes=1 photos=7 team=6"
+    },
+    {
+      "step": "Francesca Manners: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Francesca Manners: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Francesca Manners: home vs DB",
+      "ok": true,
+      "detail": "Arthur Manners"
+    },
+    {
+      "step": "Francesca Manners · Arthur Manners: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Francesca Manners · Arthur Manners: messages",
+      "ok": true,
+      "detail": "msgs=7 unread=4"
+    },
+    {
+      "step": "Francesca Manners · Arthur Manners: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Francesca Manners · Arthur Manners: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Francesca Manners · Arthur Manners: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Francesca Manners · Arthur Manners: documents",
+      "ok": true,
+      "detail": "docs=1"
+    },
+    {
+      "step": "Francesca Manners · Arthur Manners: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Francesca Manners · Arthur Manners: invoices",
+      "ok": true,
+      "detail": "1 invoice(s)"
+    },
+    {
+      "step": "Francesca Manners · Arthur Manners: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Francesca Manners · Arthur Manners: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Francesca Manners · Arthur Manners: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Francesca Manners · Arthur Manners: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=11 notes=1 photos=16 team=5"
+    },
+    {
+      "step": "Hanan Mahdi Mussa: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Hanan Mahdi Mussa: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Hanan Mahdi Mussa: home vs DB",
+      "ok": true,
+      "detail": "Shire Osman"
+    },
+    {
+      "step": "Hanan Mahdi Mussa · Shire Osman: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Hanan Mahdi Mussa · Shire Osman: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Hanan Mahdi Mussa · Shire Osman: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Hanan Mahdi Mussa · Shire Osman: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Hanan Mahdi Mussa · Shire Osman: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Hanan Mahdi Mussa · Shire Osman: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Hanan Mahdi Mussa · Shire Osman: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Hanan Mahdi Mussa · Shire Osman: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Hanan Mahdi Mussa · Shire Osman: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Hanan Mahdi Mussa · Shire Osman: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Hanan Mahdi Mussa · Shire Osman: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Hanan Mahdi Mussa · Shire Osman: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=6 notes=1 photos=0 team=4"
+    },
+    {
+      "step": "Hanna Belete: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Hanna Belete: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Hanna Belete: home vs DB",
+      "ok": true,
+      "detail": "Yoan Bekele"
+    },
+    {
+      "step": "Hanna Belete · Yoan Bekele: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Hanna Belete · Yoan Bekele: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Hanna Belete · Yoan Bekele: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Hanna Belete · Yoan Bekele: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Hanna Belete · Yoan Bekele: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Hanna Belete · Yoan Bekele: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Hanna Belete · Yoan Bekele: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Hanna Belete · Yoan Bekele: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Hanna Belete · Yoan Bekele: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Hanna Belete · Yoan Bekele: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Hanna Belete · Yoan Bekele: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Hanna Belete · Yoan Bekele: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=6 notes=1 photos=0 team=1"
+    },
+    {
+      "step": "Heba Aboueita: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Heba Aboueita: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Heba Aboueita: home vs DB",
+      "ok": true,
+      "detail": "Anas Ismail"
+    },
+    {
+      "step": "Heba Aboueita · Anas Ismail: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Heba Aboueita · Anas Ismail: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=3"
+    },
+    {
+      "step": "Heba Aboueita · Anas Ismail: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Heba Aboueita · Anas Ismail: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Heba Aboueita · Anas Ismail: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Heba Aboueita · Anas Ismail: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Heba Aboueita · Anas Ismail: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Heba Aboueita · Anas Ismail: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Heba Aboueita · Anas Ismail: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Heba Aboueita · Anas Ismail: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Heba Aboueita · Anas Ismail: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Heba Aboueita · Anas Ismail: hub payload shapes",
+      "ok": true,
+      "detail": "services=0 sessions=1 notes=0 photos=0 team=1"
+    },
+    {
+      "step": "Huma Qureshi: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Huma Qureshi: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Huma Qureshi: home vs DB",
+      "ok": true,
+      "detail": "Rayyan Fida"
+    },
+    {
+      "step": "Huma Qureshi · Rayyan Fida: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Huma Qureshi · Rayyan Fida: messages",
+      "ok": true,
+      "detail": "msgs=5 unread=1"
+    },
+    {
+      "step": "Huma Qureshi · Rayyan Fida: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Huma Qureshi · Rayyan Fida: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Huma Qureshi · Rayyan Fida: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Huma Qureshi · Rayyan Fida: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Huma Qureshi · Rayyan Fida: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Huma Qureshi · Rayyan Fida: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Huma Qureshi · Rayyan Fida: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Huma Qureshi · Rayyan Fida: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Huma Qureshi · Rayyan Fida: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Huma Qureshi · Rayyan Fida: hub payload shapes",
+      "ok": true,
+      "detail": "services=2 sessions=20 notes=1 photos=34 team=7"
+    },
+    {
+      "step": "Hyam Nessour: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Hyam Nessour: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Hyam Nessour: home vs DB",
+      "ok": true,
+      "detail": "Faris Lobinet"
+    },
+    {
+      "step": "Hyam Nessour · Faris Lobinet: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Hyam Nessour · Faris Lobinet: messages",
+      "ok": true,
+      "detail": "msgs=3 unread=3"
+    },
+    {
+      "step": "Hyam Nessour · Faris Lobinet: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Hyam Nessour · Faris Lobinet: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Hyam Nessour · Faris Lobinet: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Hyam Nessour · Faris Lobinet: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Hyam Nessour · Faris Lobinet: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Hyam Nessour · Faris Lobinet: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Hyam Nessour · Faris Lobinet: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Hyam Nessour · Faris Lobinet: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Hyam Nessour · Faris Lobinet: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Hyam Nessour · Faris Lobinet: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=6 notes=1 photos=0 team=3"
+    },
+    {
+      "step": "Jane Mackey: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Jane Mackey: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Jane Mackey: home vs DB",
+      "ok": true,
+      "detail": "Arthur Morrissey"
+    },
+    {
+      "step": "Jane Mackey · Arthur Morrissey: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Jane Mackey · Arthur Morrissey: messages",
+      "ok": true,
+      "detail": "msgs=9 unread=1"
+    },
+    {
+      "step": "Jane Mackey · Arthur Morrissey: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Jane Mackey · Arthur Morrissey: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Jane Mackey · Arthur Morrissey: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Jane Mackey · Arthur Morrissey: documents",
+      "ok": true,
+      "detail": "docs=1"
+    },
+    {
+      "step": "Jane Mackey · Arthur Morrissey: consents",
+      "ok": true,
+      "detail": "pending=0"
+    },
+    {
+      "step": "Jane Mackey · Arthur Morrissey: invoices",
+      "ok": true,
+      "detail": "1 invoice(s)"
+    },
+    {
+      "step": "Jane Mackey · Arthur Morrissey: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Jane Mackey · Arthur Morrissey: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Jane Mackey · Arthur Morrissey: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Jane Mackey · Arthur Morrissey: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=12 notes=1 photos=30 team=3"
+    },
+    {
+      "step": "Jasmine Devgun: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Jasmine Devgun: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Jasmine Devgun: home vs DB",
+      "ok": true,
+      "detail": "Ruben Devgun"
+    },
+    {
+      "step": "Jasmine Devgun · Ruben Devgun: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Jasmine Devgun · Ruben Devgun: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Jasmine Devgun · Ruben Devgun: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Jasmine Devgun · Ruben Devgun: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Jasmine Devgun · Ruben Devgun: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Jasmine Devgun · Ruben Devgun: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Jasmine Devgun · Ruben Devgun: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Jasmine Devgun · Ruben Devgun: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Jasmine Devgun · Ruben Devgun: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Jasmine Devgun · Ruben Devgun: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Jasmine Devgun · Ruben Devgun: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Jasmine Devgun · Ruben Devgun: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=5 notes=0 photos=0 team=2"
+    },
+    {
+      "step": "Juliette Fenton: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Juliette Fenton: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Juliette Fenton: home vs DB",
+      "ok": true,
+      "detail": "Adam Pilcher"
+    },
+    {
+      "step": "Juliette Fenton · Adam Pilcher: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Juliette Fenton · Adam Pilcher: messages",
+      "ok": true,
+      "detail": "msgs=10 unread=6"
+    },
+    {
+      "step": "Juliette Fenton · Adam Pilcher: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Juliette Fenton · Adam Pilcher: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Juliette Fenton · Adam Pilcher: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Juliette Fenton · Adam Pilcher: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Juliette Fenton · Adam Pilcher: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Juliette Fenton · Adam Pilcher: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Juliette Fenton · Adam Pilcher: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Juliette Fenton · Adam Pilcher: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Juliette Fenton · Adam Pilcher: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Juliette Fenton · Adam Pilcher: hub payload shapes",
+      "ok": true,
+      "detail": "services=2 sessions=13 notes=1 photos=0 team=2"
+    },
+    {
+      "step": "Kelidon Mesi: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Kelidon Mesi: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Kelidon Mesi: home vs DB",
+      "ok": true,
+      "detail": "Mia Mesi"
+    },
+    {
+      "step": "Kelidon Mesi · Mia Mesi: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Kelidon Mesi · Mia Mesi: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Kelidon Mesi · Mia Mesi: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Kelidon Mesi · Mia Mesi: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Kelidon Mesi · Mia Mesi: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Kelidon Mesi · Mia Mesi: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Kelidon Mesi · Mia Mesi: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Kelidon Mesi · Mia Mesi: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Kelidon Mesi · Mia Mesi: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Kelidon Mesi · Mia Mesi: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Kelidon Mesi · Mia Mesi: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Kelidon Mesi · Mia Mesi: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=5 notes=1 photos=0 team=3"
+    },
+    {
+      "step": "Kiren Kaur: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Kiren Kaur: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Kiren Kaur: home vs DB",
+      "ok": true,
+      "detail": "Amar-Rai Singh"
+    },
+    {
+      "step": "Kiren Kaur · Amar-Rai Singh: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Kiren Kaur · Amar-Rai Singh: messages",
+      "ok": true,
+      "detail": "msgs=3 unread=3"
+    },
+    {
+      "step": "Kiren Kaur · Amar-Rai Singh: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Kiren Kaur · Amar-Rai Singh: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Kiren Kaur · Amar-Rai Singh: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Kiren Kaur · Amar-Rai Singh: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Kiren Kaur · Amar-Rai Singh: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Kiren Kaur · Amar-Rai Singh: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Kiren Kaur · Amar-Rai Singh: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Kiren Kaur · Amar-Rai Singh: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Kiren Kaur · Amar-Rai Singh: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Kiren Kaur · Amar-Rai Singh: hub payload shapes",
+      "ok": true,
+      "detail": "services=2 sessions=10 notes=1 photos=0 team=1"
+    },
+    {
+      "step": "Kirstin Eriksson: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Kirstin Eriksson: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Kirstin Eriksson: home vs DB",
+      "ok": true,
+      "detail": "Thomas (Tom) Eriksson"
+    },
+    {
+      "step": "Kirstin Eriksson · Thomas (Tom) Eriksson: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Kirstin Eriksson · Thomas (Tom) Eriksson: messages",
+      "ok": true,
+      "detail": "msgs=10 unread=6"
+    },
+    {
+      "step": "Kirstin Eriksson · Thomas (Tom) Eriksson: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Kirstin Eriksson · Thomas (Tom) Eriksson: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Kirstin Eriksson · Thomas (Tom) Eriksson: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Kirstin Eriksson · Thomas (Tom) Eriksson: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Kirstin Eriksson · Thomas (Tom) Eriksson: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Kirstin Eriksson · Thomas (Tom) Eriksson: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Kirstin Eriksson · Thomas (Tom) Eriksson: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Kirstin Eriksson · Thomas (Tom) Eriksson: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Kirstin Eriksson · Thomas (Tom) Eriksson: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Kirstin Eriksson · Thomas (Tom) Eriksson: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=6 notes=0 photos=0 team=1"
+    },
+    {
+      "step": "Léa Igabille: mint-session",
+      "ok": true,
+      "detail": "2 child(ren)"
+    },
+    {
+      "step": "Léa Igabille: home-load",
+      "ok": true,
+      "detail": "2 children"
+    },
+    {
+      "step": "Léa Igabille: home vs DB",
+      "ok": true,
+      "detail": "Hazem Kei BELHADJ · Kacem Eiji BELHADJ"
+    },
+    {
+      "step": "Léa Igabille · Hazem Kei BELHADJ: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Léa Igabille · Hazem Kei BELHADJ: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=2"
+    },
+    {
+      "step": "Léa Igabille · Hazem Kei BELHADJ: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Léa Igabille · Hazem Kei BELHADJ: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Léa Igabille · Hazem Kei BELHADJ: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Léa Igabille · Hazem Kei BELHADJ: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Léa Igabille · Hazem Kei BELHADJ: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Léa Igabille · Hazem Kei BELHADJ: invoices",
+      "ok": true,
+      "detail": "1 invoice(s)"
+    },
+    {
+      "step": "Léa Igabille · Hazem Kei BELHADJ: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Léa Igabille · Hazem Kei BELHADJ: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Léa Igabille · Hazem Kei BELHADJ: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Léa Igabille · Hazem Kei BELHADJ: hub payload shapes",
+      "ok": true,
+      "detail": "services=4 sessions=47 notes=0 photos=44 team=10"
+    },
+    {
+      "step": "Léa Igabille · Kacem Eiji BELHADJ: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Léa Igabille · Kacem Eiji BELHADJ: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=2"
+    },
+    {
+      "step": "Léa Igabille · Kacem Eiji BELHADJ: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Léa Igabille · Kacem Eiji BELHADJ: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Léa Igabille · Kacem Eiji BELHADJ: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Léa Igabille · Kacem Eiji BELHADJ: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Léa Igabille · Kacem Eiji BELHADJ: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Léa Igabille · Kacem Eiji BELHADJ: invoices",
+      "ok": true,
+      "detail": "1 invoice(s)"
+    },
+    {
+      "step": "Léa Igabille · Kacem Eiji BELHADJ: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Léa Igabille · Kacem Eiji BELHADJ: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Léa Igabille · Kacem Eiji BELHADJ: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Léa Igabille · Kacem Eiji BELHADJ: hub payload shapes",
+      "ok": true,
+      "detail": "services=4 sessions=39 notes=0 photos=47 team=9"
+    },
+    {
+      "step": "Leila Ahmed: mint-session",
+      "ok": true,
+      "detail": "3 child(ren)"
+    },
+    {
+      "step": "Leila Ahmed: home-load",
+      "ok": true,
+      "detail": "3 children"
+    },
+    {
+      "step": "Leila Ahmed: home vs DB",
+      "ok": true,
+      "detail": "Aadam Ahmed · Amaar Ahmed · Aydaan Ahmed"
+    },
+    {
+      "step": "Leila Ahmed · Aadam Ahmed: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Leila Ahmed · Aadam Ahmed: messages",
+      "ok": true,
+      "detail": "msgs=9 unread=0"
+    },
+    {
+      "step": "Leila Ahmed · Aadam Ahmed: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Leila Ahmed · Aadam Ahmed: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Leila Ahmed · Aadam Ahmed: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Leila Ahmed · Aadam Ahmed: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Leila Ahmed · Aadam Ahmed: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Leila Ahmed · Aadam Ahmed: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Leila Ahmed · Aadam Ahmed: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Leila Ahmed · Aadam Ahmed: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Leila Ahmed · Aadam Ahmed: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Leila Ahmed · Aadam Ahmed: hub payload shapes",
+      "ok": true,
+      "detail": "services=2 sessions=17 notes=1 photos=28 team=4"
+    },
+    {
+      "step": "Leila Ahmed · Amaar Ahmed: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Leila Ahmed · Amaar Ahmed: messages",
+      "ok": true,
+      "detail": "msgs=9 unread=0"
+    },
+    {
+      "step": "Leila Ahmed · Amaar Ahmed: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Leila Ahmed · Amaar Ahmed: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Leila Ahmed · Amaar Ahmed: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Leila Ahmed · Amaar Ahmed: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Leila Ahmed · Amaar Ahmed: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Leila Ahmed · Amaar Ahmed: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Leila Ahmed · Amaar Ahmed: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Leila Ahmed · Amaar Ahmed: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Leila Ahmed · Amaar Ahmed: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Leila Ahmed · Amaar Ahmed: hub payload shapes",
+      "ok": true,
+      "detail": "services=2 sessions=15 notes=1 photos=12 team=3"
+    },
+    {
+      "step": "Leila Ahmed · Aydaan Ahmed: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Leila Ahmed · Aydaan Ahmed: messages",
+      "ok": true,
+      "detail": "msgs=9 unread=0"
+    },
+    {
+      "step": "Leila Ahmed · Aydaan Ahmed: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Leila Ahmed · Aydaan Ahmed: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Leila Ahmed · Aydaan Ahmed: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Leila Ahmed · Aydaan Ahmed: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Leila Ahmed · Aydaan Ahmed: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Leila Ahmed · Aydaan Ahmed: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Leila Ahmed · Aydaan Ahmed: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Leila Ahmed · Aydaan Ahmed: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Leila Ahmed · Aydaan Ahmed: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Leila Ahmed · Aydaan Ahmed: hub payload shapes",
+      "ok": true,
+      "detail": "services=2 sessions=15 notes=1 photos=17 team=5"
+    },
+    {
+      "step": "LETICIA GONCALVES FERREIRA: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "LETICIA GONCALVES FERREIRA: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "LETICIA GONCALVES FERREIRA: home vs DB",
+      "ok": true,
+      "detail": "Richard Gonçalves Fonseca"
+    },
+    {
+      "step": "LETICIA GONCALVES FERREIRA · Richard Gonçalves Fonseca: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "LETICIA GONCALVES FERREIRA · Richard Gonçalves Fonseca: messages",
+      "ok": true,
+      "detail": "msgs=5 unread=1"
+    },
+    {
+      "step": "LETICIA GONCALVES FERREIRA · Richard Gonçalves Fonseca: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "LETICIA GONCALVES FERREIRA · Richard Gonçalves Fonseca: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "LETICIA GONCALVES FERREIRA · Richard Gonçalves Fonseca: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "LETICIA GONCALVES FERREIRA · Richard Gonçalves Fonseca: documents",
+      "ok": true,
+      "detail": "docs=1"
+    },
+    {
+      "step": "LETICIA GONCALVES FERREIRA · Richard Gonçalves Fonseca: consents",
+      "ok": true,
+      "detail": "pending=0"
+    },
+    {
+      "step": "LETICIA GONCALVES FERREIRA · Richard Gonçalves Fonseca: invoices",
+      "ok": true,
+      "detail": "1 invoice(s)"
+    },
+    {
+      "step": "LETICIA GONCALVES FERREIRA · Richard Gonçalves Fonseca: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "LETICIA GONCALVES FERREIRA · Richard Gonçalves Fonseca: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "LETICIA GONCALVES FERREIRA · Richard Gonçalves Fonseca: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "LETICIA GONCALVES FERREIRA · Richard Gonçalves Fonseca: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=5 notes=1 photos=0 team=1"
+    },
+    {
+      "step": "Lucy Ritzema: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Lucy Ritzema: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Lucy Ritzema: home vs DB",
+      "ok": true,
+      "detail": "Eddie Ritzema"
+    },
+    {
+      "step": "Lucy Ritzema · Eddie Ritzema: detail/all-sections",
+      "ok": true,
+      "detail": "access=former"
+    },
+    {
+      "step": "Lucy Ritzema · Eddie Ritzema: messages",
+      "ok": true,
+      "detail": "msgs=1 unread=1"
+    },
+    {
+      "step": "Lucy Ritzema · Eddie Ritzema: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Lucy Ritzema · Eddie Ritzema: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Lucy Ritzema · Eddie Ritzema: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Lucy Ritzema · Eddie Ritzema: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Lucy Ritzema · Eddie Ritzema: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Lucy Ritzema · Eddie Ritzema: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Lucy Ritzema · Eddie Ritzema: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Lucy Ritzema · Eddie Ritzema: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Lucy Ritzema · Eddie Ritzema: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Lucy Ritzema · Eddie Ritzema: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=7 notes=0 photos=0 team=0"
+    },
+    {
+      "step": "Maire Fordham: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Maire Fordham: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Maire Fordham: home vs DB",
+      "ok": true,
+      "detail": "Kate Fordham"
+    },
+    {
+      "step": "Maire Fordham · Kate Fordham: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Maire Fordham · Kate Fordham: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Maire Fordham · Kate Fordham: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Maire Fordham · Kate Fordham: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Maire Fordham · Kate Fordham: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Maire Fordham · Kate Fordham: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Maire Fordham · Kate Fordham: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Maire Fordham · Kate Fordham: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Maire Fordham · Kate Fordham: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Maire Fordham · Kate Fordham: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Maire Fordham · Kate Fordham: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Maire Fordham · Kate Fordham: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=0 notes=0 photos=0 team=0"
+    },
+    {
+      "step": "Mansura Akter: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Mansura Akter: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Mansura Akter: home vs DB",
+      "ok": true,
+      "detail": "Zayana Zareenah Waheed"
+    },
+    {
+      "step": "Mansura Akter · Zayana Zareenah Waheed: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Mansura Akter · Zayana Zareenah Waheed: messages",
+      "ok": true,
+      "detail": "msgs=5 unread=4"
+    },
+    {
+      "step": "Mansura Akter · Zayana Zareenah Waheed: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Mansura Akter · Zayana Zareenah Waheed: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Mansura Akter · Zayana Zareenah Waheed: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Mansura Akter · Zayana Zareenah Waheed: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Mansura Akter · Zayana Zareenah Waheed: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Mansura Akter · Zayana Zareenah Waheed: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Mansura Akter · Zayana Zareenah Waheed: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Mansura Akter · Zayana Zareenah Waheed: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Mansura Akter · Zayana Zareenah Waheed: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Mansura Akter · Zayana Zareenah Waheed: hub payload shapes",
+      "ok": true,
+      "detail": "services=0 sessions=0 notes=0 photos=0 team=0"
+    },
+    {
+      "step": "Margaretta Allotey: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Margaretta Allotey: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Margaretta Allotey: home vs DB",
+      "ok": true,
+      "detail": "Tyson Gardiner"
+    },
+    {
+      "step": "Margaretta Allotey · Tyson Gardiner: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Margaretta Allotey · Tyson Gardiner: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=3"
+    },
+    {
+      "step": "Margaretta Allotey · Tyson Gardiner: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Margaretta Allotey · Tyson Gardiner: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Margaretta Allotey · Tyson Gardiner: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Margaretta Allotey · Tyson Gardiner: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Margaretta Allotey · Tyson Gardiner: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Margaretta Allotey · Tyson Gardiner: invoices",
+      "ok": true,
+      "detail": "1 invoice(s)"
+    },
+    {
+      "step": "Margaretta Allotey · Tyson Gardiner: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Margaretta Allotey · Tyson Gardiner: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Margaretta Allotey · Tyson Gardiner: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Margaretta Allotey · Tyson Gardiner: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=7 notes=1 photos=0 team=3"
+    },
+    {
+      "step": "Maria Gonzalez: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Maria Gonzalez: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Maria Gonzalez: home vs DB",
+      "ok": true,
+      "detail": "Gemma Mesaria-Gonzalez"
+    },
+    {
+      "step": "Maria Gonzalez · Gemma Mesaria-Gonzalez: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Maria Gonzalez · Gemma Mesaria-Gonzalez: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Maria Gonzalez · Gemma Mesaria-Gonzalez: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Maria Gonzalez · Gemma Mesaria-Gonzalez: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Maria Gonzalez · Gemma Mesaria-Gonzalez: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Maria Gonzalez · Gemma Mesaria-Gonzalez: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Maria Gonzalez · Gemma Mesaria-Gonzalez: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Maria Gonzalez · Gemma Mesaria-Gonzalez: invoices",
+      "ok": true,
+      "detail": "1 invoice(s)"
+    },
+    {
+      "step": "Maria Gonzalez · Gemma Mesaria-Gonzalez: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Maria Gonzalez · Gemma Mesaria-Gonzalez: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Maria Gonzalez · Gemma Mesaria-Gonzalez: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Maria Gonzalez · Gemma Mesaria-Gonzalez: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=8 notes=1 photos=0 team=2"
+    },
+    {
+      "step": "Marta Iglesias: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Marta Iglesias: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Marta Iglesias: home vs DB",
+      "ok": true,
+      "detail": "Eddie Mckenzie Iglesias"
+    },
+    {
+      "step": "Marta Iglesias · Eddie Mckenzie Iglesias: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Marta Iglesias · Eddie Mckenzie Iglesias: messages",
+      "ok": true,
+      "detail": "msgs=5 unread=5"
+    },
+    {
+      "step": "Marta Iglesias · Eddie Mckenzie Iglesias: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Marta Iglesias · Eddie Mckenzie Iglesias: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Marta Iglesias · Eddie Mckenzie Iglesias: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Marta Iglesias · Eddie Mckenzie Iglesias: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Marta Iglesias · Eddie Mckenzie Iglesias: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Marta Iglesias · Eddie Mckenzie Iglesias: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Marta Iglesias · Eddie Mckenzie Iglesias: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Marta Iglesias · Eddie Mckenzie Iglesias: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Marta Iglesias · Eddie Mckenzie Iglesias: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Marta Iglesias · Eddie Mckenzie Iglesias: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=7 notes=1 photos=0 team=1"
+    },
+    {
+      "step": "Matthias Melake: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Matthias Melake: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Matthias Melake: home vs DB",
+      "ok": true,
+      "detail": "Matthias Mekonnen"
+    },
+    {
+      "step": "Matthias Melake · Matthias Mekonnen: detail/all-sections",
+      "ok": true,
+      "detail": "access=former"
+    },
+    {
+      "step": "Matthias Melake · Matthias Mekonnen: messages",
+      "ok": true,
+      "detail": "msgs=3 unread=3"
+    },
+    {
+      "step": "Matthias Melake · Matthias Mekonnen: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Matthias Melake · Matthias Mekonnen: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Matthias Melake · Matthias Mekonnen: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Matthias Melake · Matthias Mekonnen: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Matthias Melake · Matthias Mekonnen: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Matthias Melake · Matthias Mekonnen: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Matthias Melake · Matthias Mekonnen: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Matthias Melake · Matthias Mekonnen: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Matthias Melake · Matthias Mekonnen: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Matthias Melake · Matthias Mekonnen: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=5 notes=1 photos=0 team=0"
+    },
+    {
+      "step": "Maya Ali: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Maya Ali: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Maya Ali: home vs DB",
+      "ok": true,
+      "detail": "Aboodi Patel"
+    },
+    {
+      "step": "Maya Ali · Aboodi Patel: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Maya Ali · Aboodi Patel: messages",
+      "ok": true,
+      "detail": "msgs=5 unread=4"
+    },
+    {
+      "step": "Maya Ali · Aboodi Patel: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Maya Ali · Aboodi Patel: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Maya Ali · Aboodi Patel: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Maya Ali · Aboodi Patel: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Maya Ali · Aboodi Patel: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Maya Ali · Aboodi Patel: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Maya Ali · Aboodi Patel: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Maya Ali · Aboodi Patel: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Maya Ali · Aboodi Patel: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Maya Ali · Aboodi Patel: hub payload shapes",
+      "ok": true,
+      "detail": "services=0 sessions=0 notes=0 photos=0 team=0"
+    },
+    {
+      "step": "Maysoun Sharf: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Maysoun Sharf: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Maysoun Sharf: home vs DB",
+      "ok": true,
+      "detail": "Adam Memy"
+    },
+    {
+      "step": "Maysoun Sharf · Adam Memy: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Maysoun Sharf · Adam Memy: messages",
+      "ok": true,
+      "detail": "msgs=5 unread=0"
+    },
+    {
+      "step": "Maysoun Sharf · Adam Memy: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Maysoun Sharf · Adam Memy: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Maysoun Sharf · Adam Memy: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Maysoun Sharf · Adam Memy: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Maysoun Sharf · Adam Memy: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Maysoun Sharf · Adam Memy: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Maysoun Sharf · Adam Memy: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Maysoun Sharf · Adam Memy: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Maysoun Sharf · Adam Memy: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Maysoun Sharf · Adam Memy: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=3 notes=1 photos=0 team=1"
+    },
+    {
+      "step": "Meena Boora: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Meena Boora: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Meena Boora: home vs DB",
+      "ok": true,
+      "detail": "Shaan Boora"
+    },
+    {
+      "step": "Meena Boora · Shaan Boora: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Meena Boora · Shaan Boora: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=1"
+    },
+    {
+      "step": "Meena Boora · Shaan Boora: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Meena Boora · Shaan Boora: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Meena Boora · Shaan Boora: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Meena Boora · Shaan Boora: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Meena Boora · Shaan Boora: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Meena Boora · Shaan Boora: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Meena Boora · Shaan Boora: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Meena Boora · Shaan Boora: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Meena Boora · Shaan Boora: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Meena Boora · Shaan Boora: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=5 notes=1 photos=0 team=4"
+    },
+    {
+      "step": "Michael Morrissey: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Michael Morrissey: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Michael Morrissey: home vs DB",
+      "ok": true,
+      "detail": "Arthur Morrissey"
+    },
+    {
+      "step": "Michael Morrissey · Arthur Morrissey: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Michael Morrissey · Arthur Morrissey: messages",
+      "ok": true,
+      "detail": "msgs=3 unread=3"
+    },
+    {
+      "step": "Michael Morrissey · Arthur Morrissey: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Michael Morrissey · Arthur Morrissey: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Michael Morrissey · Arthur Morrissey: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Michael Morrissey · Arthur Morrissey: documents",
+      "ok": false,
+      "detail": "{\"ok\":false,\"error\":\"invalid\"}"
+    },
+    {
+      "step": "Michael Morrissey · Arthur Morrissey: consents",
+      "ok": true,
+      "detail": "pending=0"
+    },
+    {
+      "step": "Michael Morrissey · Arthur Morrissey: invoices",
+      "ok": true,
+      "detail": "1 invoice(s)"
+    },
+    {
+      "step": "Michael Morrissey · Arthur Morrissey: registration",
+      "ok": false,
+      "detail": "{\"ok\":false,\"error\":\"invalid\"}"
+    },
+    {
+      "step": "Michael Morrissey · Arthur Morrissey: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Michael Morrissey · Arthur Morrissey: reenrol-lookup",
+      "ok": false,
+      "detail": "matched=undefined ok=false"
+    },
+    {
+      "step": "Michael Morrissey · Arthur Morrissey: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=12 notes=1 photos=30 team=3"
+    },
+    {
+      "step": "Mike Chapplow: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Mike Chapplow: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Mike Chapplow: home vs DB",
+      "ok": true,
+      "detail": "Gabriel Chapplow"
+    },
+    {
+      "step": "Mike Chapplow · Gabriel Chapplow: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Mike Chapplow · Gabriel Chapplow: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=2"
+    },
+    {
+      "step": "Mike Chapplow · Gabriel Chapplow: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Mike Chapplow · Gabriel Chapplow: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Mike Chapplow · Gabriel Chapplow: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Mike Chapplow · Gabriel Chapplow: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Mike Chapplow · Gabriel Chapplow: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Mike Chapplow · Gabriel Chapplow: invoices",
+      "ok": true,
+      "detail": "1 invoice(s)"
+    },
+    {
+      "step": "Mike Chapplow · Gabriel Chapplow: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Mike Chapplow · Gabriel Chapplow: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Mike Chapplow · Gabriel Chapplow: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Mike Chapplow · Gabriel Chapplow: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=13 notes=1 photos=16 team=3"
+    },
+    {
+      "step": "Nadia Boujettif: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Nadia Boujettif: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Nadia Boujettif: home vs DB",
+      "ok": true,
+      "detail": "Yassir Boujettif"
+    },
+    {
+      "step": "Nadia Boujettif · Yassir Boujettif: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Nadia Boujettif · Yassir Boujettif: messages",
+      "ok": true,
+      "detail": "msgs=6 unread=5"
+    },
+    {
+      "step": "Nadia Boujettif · Yassir Boujettif: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nadia Boujettif · Yassir Boujettif: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nadia Boujettif · Yassir Boujettif: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nadia Boujettif · Yassir Boujettif: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Nadia Boujettif · Yassir Boujettif: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Nadia Boujettif · Yassir Boujettif: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Nadia Boujettif · Yassir Boujettif: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Nadia Boujettif · Yassir Boujettif: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nadia Boujettif · Yassir Boujettif: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Nadia Boujettif · Yassir Boujettif: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=0 notes=0 photos=0 team=0"
+    },
+    {
+      "step": "Nadia Imam: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Nadia Imam: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Nadia Imam: home vs DB",
+      "ok": true,
+      "detail": "Ayaan Imam"
+    },
+    {
+      "step": "Nadia Imam · Ayaan Imam: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Nadia Imam · Ayaan Imam: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Nadia Imam · Ayaan Imam: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nadia Imam · Ayaan Imam: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nadia Imam · Ayaan Imam: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nadia Imam · Ayaan Imam: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Nadia Imam · Ayaan Imam: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Nadia Imam · Ayaan Imam: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Nadia Imam · Ayaan Imam: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Nadia Imam · Ayaan Imam: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nadia Imam · Ayaan Imam: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Nadia Imam · Ayaan Imam: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=7 notes=1 photos=41 team=1"
+    },
+    {
+      "step": "Namja Hussein: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Namja Hussein: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Namja Hussein: home vs DB",
+      "ok": true,
+      "detail": "Yunis Hussein"
+    },
+    {
+      "step": "Namja Hussein · Yunis Hussein: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Namja Hussein · Yunis Hussein: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Namja Hussein · Yunis Hussein: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Namja Hussein · Yunis Hussein: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Namja Hussein · Yunis Hussein: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Namja Hussein · Yunis Hussein: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Namja Hussein · Yunis Hussein: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Namja Hussein · Yunis Hussein: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Namja Hussein · Yunis Hussein: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Namja Hussein · Yunis Hussein: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Namja Hussein · Yunis Hussein: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Namja Hussein · Yunis Hussein: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=8 notes=1 photos=0 team=1"
+    },
+    {
+      "step": "Nana Kacharava: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Nana Kacharava: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Nana Kacharava: home vs DB",
+      "ok": true,
+      "detail": "Max Kacharava"
+    },
+    {
+      "step": "Nana Kacharava · Max Kacharava: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Nana Kacharava · Max Kacharava: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Nana Kacharava · Max Kacharava: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nana Kacharava · Max Kacharava: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nana Kacharava · Max Kacharava: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nana Kacharava · Max Kacharava: documents",
+      "ok": true,
+      "detail": "docs=2"
+    },
+    {
+      "step": "Nana Kacharava · Max Kacharava: consents",
+      "ok": true,
+      "detail": "pending=0"
+    },
+    {
+      "step": "Nana Kacharava · Max Kacharava: invoices",
+      "ok": true,
+      "detail": "1 invoice(s)"
+    },
+    {
+      "step": "Nana Kacharava · Max Kacharava: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Nana Kacharava · Max Kacharava: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nana Kacharava · Max Kacharava: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Nana Kacharava · Max Kacharava: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=5 notes=1 photos=1 team=4"
+    },
+    {
+      "step": "Nazaré Carvalho: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Nazaré Carvalho: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Nazaré Carvalho: home vs DB",
+      "ok": true,
+      "detail": "Yuri Carvalho"
+    },
+    {
+      "step": "Nazaré Carvalho · Yuri Carvalho: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Nazaré Carvalho · Yuri Carvalho: messages",
+      "ok": true,
+      "detail": "msgs=12 unread=6"
+    },
+    {
+      "step": "Nazaré Carvalho · Yuri Carvalho: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nazaré Carvalho · Yuri Carvalho: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nazaré Carvalho · Yuri Carvalho: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nazaré Carvalho · Yuri Carvalho: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Nazaré Carvalho · Yuri Carvalho: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Nazaré Carvalho · Yuri Carvalho: invoices",
+      "ok": true,
+      "detail": "1 invoice(s)"
+    },
+    {
+      "step": "Nazaré Carvalho · Yuri Carvalho: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Nazaré Carvalho · Yuri Carvalho: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nazaré Carvalho · Yuri Carvalho: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Nazaré Carvalho · Yuri Carvalho: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=3 notes=0 photos=0 team=1"
+    },
+    {
+      "step": "Nicole Stephens: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Nicole Stephens: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Nicole Stephens: home vs DB",
+      "ok": true,
+      "detail": "Amber Stephens"
+    },
+    {
+      "step": "Nicole Stephens · Amber Stephens: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Nicole Stephens · Amber Stephens: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Nicole Stephens · Amber Stephens: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nicole Stephens · Amber Stephens: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nicole Stephens · Amber Stephens: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nicole Stephens · Amber Stephens: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Nicole Stephens · Amber Stephens: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Nicole Stephens · Amber Stephens: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Nicole Stephens · Amber Stephens: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Nicole Stephens · Amber Stephens: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nicole Stephens · Amber Stephens: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Nicole Stephens · Amber Stephens: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=7 notes=1 photos=0 team=1"
+    },
+    {
+      "step": "Nishani Suthakaran: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Nishani Suthakaran: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Nishani Suthakaran: home vs DB",
+      "ok": true,
+      "detail": "Thushyan Suthakaran"
+    },
+    {
+      "step": "Nishani Suthakaran · Thushyan Suthakaran: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Nishani Suthakaran · Thushyan Suthakaran: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Nishani Suthakaran · Thushyan Suthakaran: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nishani Suthakaran · Thushyan Suthakaran: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nishani Suthakaran · Thushyan Suthakaran: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nishani Suthakaran · Thushyan Suthakaran: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Nishani Suthakaran · Thushyan Suthakaran: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Nishani Suthakaran · Thushyan Suthakaran: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Nishani Suthakaran · Thushyan Suthakaran: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Nishani Suthakaran · Thushyan Suthakaran: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nishani Suthakaran · Thushyan Suthakaran: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Nishani Suthakaran · Thushyan Suthakaran: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=6 notes=0 photos=0 team=1"
+    },
+    {
+      "step": "Nizar Alolabi: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Nizar Alolabi: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Nizar Alolabi: home vs DB",
+      "ok": true,
+      "detail": "Maiyar Alolabi"
+    },
+    {
+      "step": "Nizar Alolabi · Maiyar Alolabi: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Nizar Alolabi · Maiyar Alolabi: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Nizar Alolabi · Maiyar Alolabi: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nizar Alolabi · Maiyar Alolabi: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nizar Alolabi · Maiyar Alolabi: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nizar Alolabi · Maiyar Alolabi: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Nizar Alolabi · Maiyar Alolabi: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Nizar Alolabi · Maiyar Alolabi: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Nizar Alolabi · Maiyar Alolabi: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Nizar Alolabi · Maiyar Alolabi: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Nizar Alolabi · Maiyar Alolabi: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Nizar Alolabi · Maiyar Alolabi: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=7 notes=1 photos=0 team=4"
+    },
+    {
+      "step": "Noura Zorkota: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Noura Zorkota: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Noura Zorkota: home vs DB",
+      "ok": true,
+      "detail": "Fadi Abu daud"
+    },
+    {
+      "step": "Noura Zorkota · Fadi Abu daud: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Noura Zorkota · Fadi Abu daud: messages",
+      "ok": true,
+      "detail": "msgs=3 unread=2"
+    },
+    {
+      "step": "Noura Zorkota · Fadi Abu daud: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Noura Zorkota · Fadi Abu daud: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Noura Zorkota · Fadi Abu daud: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Noura Zorkota · Fadi Abu daud: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Noura Zorkota · Fadi Abu daud: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Noura Zorkota · Fadi Abu daud: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Noura Zorkota · Fadi Abu daud: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Noura Zorkota · Fadi Abu daud: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Noura Zorkota · Fadi Abu daud: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Noura Zorkota · Fadi Abu daud: hub payload shapes",
+      "ok": true,
+      "detail": "services=5 sessions=35 notes=7 photos=20 team=2"
+    },
+    {
+      "step": "Obah Yusuf: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Obah Yusuf: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Obah Yusuf: home vs DB",
+      "ok": true,
+      "detail": "Yaqoub Ismail"
+    },
+    {
+      "step": "Obah Yusuf · Yaqoub Ismail: detail/all-sections",
+      "ok": true,
+      "detail": "access=former"
+    },
+    {
+      "step": "Obah Yusuf · Yaqoub Ismail: messages",
+      "ok": true,
+      "detail": "msgs=13 unread=4"
+    },
+    {
+      "step": "Obah Yusuf · Yaqoub Ismail: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Obah Yusuf · Yaqoub Ismail: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Obah Yusuf · Yaqoub Ismail: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Obah Yusuf · Yaqoub Ismail: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Obah Yusuf · Yaqoub Ismail: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Obah Yusuf · Yaqoub Ismail: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Obah Yusuf · Yaqoub Ismail: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Obah Yusuf · Yaqoub Ismail: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Obah Yusuf · Yaqoub Ismail: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Obah Yusuf · Yaqoub Ismail: hub payload shapes",
+      "ok": true,
+      "detail": "services=0 sessions=0 notes=0 photos=0 team=0"
+    },
+    {
+      "step": "Olivia Mahdavi: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Olivia Mahdavi: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Olivia Mahdavi: home vs DB",
+      "ok": true,
+      "detail": "Cyrus Mahdavi"
+    },
+    {
+      "step": "Olivia Mahdavi · Cyrus Mahdavi: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Olivia Mahdavi · Cyrus Mahdavi: messages",
+      "ok": true,
+      "detail": "msgs=6 unread=5"
+    },
+    {
+      "step": "Olivia Mahdavi · Cyrus Mahdavi: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Olivia Mahdavi · Cyrus Mahdavi: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Olivia Mahdavi · Cyrus Mahdavi: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Olivia Mahdavi · Cyrus Mahdavi: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Olivia Mahdavi · Cyrus Mahdavi: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Olivia Mahdavi · Cyrus Mahdavi: invoices",
+      "ok": true,
+      "detail": "1 invoice(s)"
+    },
+    {
+      "step": "Olivia Mahdavi · Cyrus Mahdavi: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Olivia Mahdavi · Cyrus Mahdavi: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Olivia Mahdavi · Cyrus Mahdavi: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Olivia Mahdavi · Cyrus Mahdavi: hub payload shapes",
+      "ok": true,
+      "detail": "services=4 sessions=34 notes=1 photos=48 team=11"
+    },
+    {
+      "step": "Orla O'Sullivan: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Orla O'Sullivan: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Orla O'Sullivan: home vs DB",
+      "ok": true,
+      "detail": "Patrick Dhennin"
+    },
+    {
+      "step": "Orla O'Sullivan · Patrick Dhennin: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Orla O'Sullivan · Patrick Dhennin: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=3"
+    },
+    {
+      "step": "Orla O'Sullivan · Patrick Dhennin: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Orla O'Sullivan · Patrick Dhennin: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Orla O'Sullivan · Patrick Dhennin: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Orla O'Sullivan · Patrick Dhennin: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Orla O'Sullivan · Patrick Dhennin: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Orla O'Sullivan · Patrick Dhennin: invoices",
+      "ok": true,
+      "detail": "1 invoice(s)"
+    },
+    {
+      "step": "Orla O'Sullivan · Patrick Dhennin: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Orla O'Sullivan · Patrick Dhennin: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Orla O'Sullivan · Patrick Dhennin: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Orla O'Sullivan · Patrick Dhennin: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=6 notes=6 photos=9 team=4"
+    },
+    {
+      "step": "Pat Nekati: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Pat Nekati: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Pat Nekati: home vs DB",
+      "ok": true,
+      "detail": "Tinashe Nekati"
+    },
+    {
+      "step": "Pat Nekati · Tinashe Nekati: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Pat Nekati · Tinashe Nekati: messages",
+      "ok": true,
+      "detail": "msgs=24 unread=15"
+    },
+    {
+      "step": "Pat Nekati · Tinashe Nekati: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Pat Nekati · Tinashe Nekati: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Pat Nekati · Tinashe Nekati: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Pat Nekati · Tinashe Nekati: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Pat Nekati · Tinashe Nekati: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Pat Nekati · Tinashe Nekati: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Pat Nekati · Tinashe Nekati: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Pat Nekati · Tinashe Nekati: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Pat Nekati · Tinashe Nekati: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Pat Nekati · Tinashe Nekati: hub payload shapes",
+      "ok": true,
+      "detail": "services=3 sessions=20 notes=1 photos=81 team=5"
+    },
+    {
+      "step": "Rakesh Thapa: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Rakesh Thapa: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Rakesh Thapa: home vs DB",
+      "ok": true,
+      "detail": "Rayan Thapa"
+    },
+    {
+      "step": "Rakesh Thapa · Rayan Thapa: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Rakesh Thapa · Rayan Thapa: messages",
+      "ok": true,
+      "detail": "msgs=12 unread=6"
+    },
+    {
+      "step": "Rakesh Thapa · Rayan Thapa: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Rakesh Thapa · Rayan Thapa: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Rakesh Thapa · Rayan Thapa: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Rakesh Thapa · Rayan Thapa: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Rakesh Thapa · Rayan Thapa: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Rakesh Thapa · Rayan Thapa: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Rakesh Thapa · Rayan Thapa: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Rakesh Thapa · Rayan Thapa: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Rakesh Thapa · Rayan Thapa: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Rakesh Thapa · Rayan Thapa: hub payload shapes",
+      "ok": true,
+      "detail": "services=0 sessions=0 notes=0 photos=0 team=0"
+    },
+    {
+      "step": "Romina Banjo: mint-session",
+      "ok": true,
+      "detail": "2 child(ren)"
+    },
+    {
+      "step": "Romina Banjo: home-load",
+      "ok": true,
+      "detail": "2 children"
+    },
+    {
+      "step": "Romina Banjo: home vs DB",
+      "ok": true,
+      "detail": "Bediako Mensah · Cayra Mensah"
+    },
+    {
+      "step": "Romina Banjo · Bediako Mensah: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Romina Banjo · Bediako Mensah: messages",
+      "ok": true,
+      "detail": "msgs=7 unread=2"
+    },
+    {
+      "step": "Romina Banjo · Bediako Mensah: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Romina Banjo · Bediako Mensah: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Romina Banjo · Bediako Mensah: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Romina Banjo · Bediako Mensah: documents",
+      "ok": true,
+      "detail": "docs=1"
+    },
+    {
+      "step": "Romina Banjo · Bediako Mensah: consents",
+      "ok": true,
+      "detail": "pending=0"
+    },
+    {
+      "step": "Romina Banjo · Bediako Mensah: invoices",
+      "ok": true,
+      "detail": "1 invoice(s)"
+    },
+    {
+      "step": "Romina Banjo · Bediako Mensah: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Romina Banjo · Bediako Mensah: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Romina Banjo · Bediako Mensah: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Romina Banjo · Bediako Mensah: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=4 notes=0 photos=0 team=3"
+    },
+    {
+      "step": "Romina Banjo · Cayra Mensah: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Romina Banjo · Cayra Mensah: messages",
+      "ok": true,
+      "detail": "msgs=7 unread=2"
+    },
+    {
+      "step": "Romina Banjo · Cayra Mensah: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Romina Banjo · Cayra Mensah: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Romina Banjo · Cayra Mensah: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Romina Banjo · Cayra Mensah: documents",
+      "ok": true,
+      "detail": "docs=1"
+    },
+    {
+      "step": "Romina Banjo · Cayra Mensah: consents",
+      "ok": true,
+      "detail": "pending=0"
+    },
+    {
+      "step": "Romina Banjo · Cayra Mensah: invoices",
+      "ok": true,
+      "detail": "1 invoice(s)"
+    },
+    {
+      "step": "Romina Banjo · Cayra Mensah: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Romina Banjo · Cayra Mensah: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Romina Banjo · Cayra Mensah: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Romina Banjo · Cayra Mensah: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=4 notes=0 photos=0 team=1"
+    },
+    {
+      "step": "Salem Zerti: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Salem Zerti: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Salem Zerti: home vs DB",
+      "ok": true,
+      "detail": "Jad Zerti"
+    },
+    {
+      "step": "Salem Zerti · Jad Zerti: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Salem Zerti · Jad Zerti: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Salem Zerti · Jad Zerti: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Salem Zerti · Jad Zerti: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Salem Zerti · Jad Zerti: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Salem Zerti · Jad Zerti: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Salem Zerti · Jad Zerti: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Salem Zerti · Jad Zerti: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Salem Zerti · Jad Zerti: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Salem Zerti · Jad Zerti: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Salem Zerti · Jad Zerti: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Salem Zerti · Jad Zerti: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=7 notes=1 photos=0 team=1"
+    },
+    {
+      "step": "Saliha Ziani: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Saliha Ziani: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Saliha Ziani: home vs DB",
+      "ok": true,
+      "detail": "Amir Kais"
+    },
+    {
+      "step": "Saliha Ziani · Amir Kais: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Saliha Ziani · Amir Kais: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=3"
+    },
+    {
+      "step": "Saliha Ziani · Amir Kais: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Saliha Ziani · Amir Kais: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Saliha Ziani · Amir Kais: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Saliha Ziani · Amir Kais: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Saliha Ziani · Amir Kais: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Saliha Ziani · Amir Kais: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Saliha Ziani · Amir Kais: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Saliha Ziani · Amir Kais: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Saliha Ziani · Amir Kais: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Saliha Ziani · Amir Kais: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=8 notes=1 photos=0 team=2"
+    },
+    {
+      "step": "Sam sam Abdi: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Sam sam Abdi: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Sam sam Abdi: home vs DB",
+      "ok": true,
+      "detail": "Emani"
+    },
+    {
+      "step": "Sam sam Abdi · Emani: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Sam sam Abdi · Emani: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Sam sam Abdi · Emani: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Sam sam Abdi · Emani: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Sam sam Abdi · Emani: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Sam sam Abdi · Emani: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Sam sam Abdi · Emani: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Sam sam Abdi · Emani: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Sam sam Abdi · Emani: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Sam sam Abdi · Emani: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Sam sam Abdi · Emani: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Sam sam Abdi · Emani: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=4 notes=1 photos=0 team=1"
+    },
+    {
+      "step": "Sara Girmaye: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Sara Girmaye: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Sara Girmaye: home vs DB",
+      "ok": true,
+      "detail": "Simon Yohannes"
+    },
+    {
+      "step": "Sara Girmaye · Simon Yohannes: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Sara Girmaye · Simon Yohannes: messages",
+      "ok": true,
+      "detail": "msgs=7 unread=1"
+    },
+    {
+      "step": "Sara Girmaye · Simon Yohannes: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Sara Girmaye · Simon Yohannes: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Sara Girmaye · Simon Yohannes: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Sara Girmaye · Simon Yohannes: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Sara Girmaye · Simon Yohannes: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Sara Girmaye · Simon Yohannes: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Sara Girmaye · Simon Yohannes: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Sara Girmaye · Simon Yohannes: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Sara Girmaye · Simon Yohannes: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Sara Girmaye · Simon Yohannes: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=6 notes=1 photos=0 team=3"
+    },
+    {
+      "step": "Saratha Saravanapavan: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Saratha Saravanapavan: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Saratha Saravanapavan: home vs DB",
+      "ok": true,
+      "detail": "Kirushy Saravanapavan"
+    },
+    {
+      "step": "Saratha Saravanapavan · Kirushy Saravanapavan: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Saratha Saravanapavan · Kirushy Saravanapavan: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Saratha Saravanapavan · Kirushy Saravanapavan: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Saratha Saravanapavan · Kirushy Saravanapavan: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Saratha Saravanapavan · Kirushy Saravanapavan: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Saratha Saravanapavan · Kirushy Saravanapavan: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Saratha Saravanapavan · Kirushy Saravanapavan: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Saratha Saravanapavan · Kirushy Saravanapavan: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Saratha Saravanapavan · Kirushy Saravanapavan: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Saratha Saravanapavan · Kirushy Saravanapavan: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Saratha Saravanapavan · Kirushy Saravanapavan: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Saratha Saravanapavan · Kirushy Saravanapavan: hub payload shapes",
+      "ok": true,
+      "detail": "services=0 sessions=1 notes=0 photos=0 team=1"
+    },
+    {
+      "step": "Selina Eshun: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Selina Eshun: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Selina Eshun: home vs DB",
+      "ok": true,
+      "detail": "Kayden Annang-Eshun"
+    },
+    {
+      "step": "Selina Eshun · Kayden Annang-Eshun: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Selina Eshun · Kayden Annang-Eshun: messages",
+      "ok": true,
+      "detail": "msgs=5 unread=0"
+    },
+    {
+      "step": "Selina Eshun · Kayden Annang-Eshun: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Selina Eshun · Kayden Annang-Eshun: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Selina Eshun · Kayden Annang-Eshun: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Selina Eshun · Kayden Annang-Eshun: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Selina Eshun · Kayden Annang-Eshun: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Selina Eshun · Kayden Annang-Eshun: invoices",
+      "ok": true,
+      "detail": "1 invoice(s)"
+    },
+    {
+      "step": "Selina Eshun · Kayden Annang-Eshun: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Selina Eshun · Kayden Annang-Eshun: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Selina Eshun · Kayden Annang-Eshun: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Selina Eshun · Kayden Annang-Eshun: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=7 notes=1 photos=0 team=2"
+    },
+    {
+      "step": "Shahanara Begum: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Shahanara Begum: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Shahanara Begum: home vs DB",
+      "ok": true,
+      "detail": "Saaib Abdullah"
+    },
+    {
+      "step": "Shahanara Begum · Saaib Abdullah: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Shahanara Begum · Saaib Abdullah: messages",
+      "ok": true,
+      "detail": "msgs=3 unread=3"
+    },
+    {
+      "step": "Shahanara Begum · Saaib Abdullah: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Shahanara Begum · Saaib Abdullah: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Shahanara Begum · Saaib Abdullah: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Shahanara Begum · Saaib Abdullah: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Shahanara Begum · Saaib Abdullah: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Shahanara Begum · Saaib Abdullah: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Shahanara Begum · Saaib Abdullah: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Shahanara Begum · Saaib Abdullah: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Shahanara Begum · Saaib Abdullah: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Shahanara Begum · Saaib Abdullah: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=5 notes=1 photos=0 team=1"
+    },
+    {
+      "step": "Shane Hibbitts: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Shane Hibbitts: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Shane Hibbitts: home vs DB",
+      "ok": true,
+      "detail": "Logan Hibbitts"
+    },
+    {
+      "step": "Shane Hibbitts · Logan Hibbitts: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Shane Hibbitts · Logan Hibbitts: messages",
+      "ok": true,
+      "detail": "msgs=7 unread=5"
+    },
+    {
+      "step": "Shane Hibbitts · Logan Hibbitts: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Shane Hibbitts · Logan Hibbitts: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Shane Hibbitts · Logan Hibbitts: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Shane Hibbitts · Logan Hibbitts: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Shane Hibbitts · Logan Hibbitts: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Shane Hibbitts · Logan Hibbitts: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Shane Hibbitts · Logan Hibbitts: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Shane Hibbitts · Logan Hibbitts: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Shane Hibbitts · Logan Hibbitts: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Shane Hibbitts · Logan Hibbitts: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=7 notes=1 photos=0 team=3"
+    },
+    {
+      "step": "Siama Hussain: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Siama Hussain: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Siama Hussain: home vs DB",
+      "ok": true,
+      "detail": "Haider Ali"
+    },
+    {
+      "step": "Siama Hussain · Haider Ali: detail/all-sections",
+      "ok": true,
+      "detail": "access=former"
+    },
+    {
+      "step": "Siama Hussain · Haider Ali: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Siama Hussain · Haider Ali: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Siama Hussain · Haider Ali: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Siama Hussain · Haider Ali: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Siama Hussain · Haider Ali: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Siama Hussain · Haider Ali: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Siama Hussain · Haider Ali: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Siama Hussain · Haider Ali: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Siama Hussain · Haider Ali: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Siama Hussain · Haider Ali: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Siama Hussain · Haider Ali: hub payload shapes",
+      "ok": true,
+      "detail": "services=0 sessions=0 notes=0 photos=0 team=0"
+    },
+    {
+      "step": "Sima Amirizadeh: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Sima Amirizadeh: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Sima Amirizadeh: home vs DB",
+      "ok": true,
+      "detail": "Rodin Esmati"
+    },
+    {
+      "step": "Sima Amirizadeh · Rodin Esmati: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Sima Amirizadeh · Rodin Esmati: messages",
+      "ok": true,
+      "detail": "msgs=11 unread=1"
+    },
+    {
+      "step": "Sima Amirizadeh · Rodin Esmati: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Sima Amirizadeh · Rodin Esmati: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Sima Amirizadeh · Rodin Esmati: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Sima Amirizadeh · Rodin Esmati: documents",
+      "ok": true,
+      "detail": "docs=1"
+    },
+    {
+      "step": "Sima Amirizadeh · Rodin Esmati: consents",
+      "ok": true,
+      "detail": "pending=0"
+    },
+    {
+      "step": "Sima Amirizadeh · Rodin Esmati: invoices",
+      "ok": true,
+      "detail": "1 invoice(s)"
+    },
+    {
+      "step": "Sima Amirizadeh · Rodin Esmati: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Sima Amirizadeh · Rodin Esmati: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Sima Amirizadeh · Rodin Esmati: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Sima Amirizadeh · Rodin Esmati: hub payload shapes",
+      "ok": true,
+      "detail": "services=2 sessions=12 notes=1 photos=6 team=3"
+    },
+    {
+      "step": "Sonam Sony: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Sonam Sony: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Sonam Sony: home vs DB",
+      "ok": true,
+      "detail": "Rhys Davies"
+    },
+    {
+      "step": "Sonam Sony · Rhys Davies: detail/all-sections",
+      "ok": true,
+      "detail": "access=former"
+    },
+    {
+      "step": "Sonam Sony · Rhys Davies: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Sonam Sony · Rhys Davies: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Sonam Sony · Rhys Davies: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Sonam Sony · Rhys Davies: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Sonam Sony · Rhys Davies: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Sonam Sony · Rhys Davies: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Sonam Sony · Rhys Davies: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Sonam Sony · Rhys Davies: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Sonam Sony · Rhys Davies: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Sonam Sony · Rhys Davies: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Sonam Sony · Rhys Davies: hub payload shapes",
+      "ok": true,
+      "detail": "services=0 sessions=0 notes=0 photos=0 team=0"
+    },
+    {
+      "step": "Tirhas Sium: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Tirhas Sium: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Tirhas Sium: home vs DB",
+      "ok": true,
+      "detail": "Yossi Sium"
+    },
+    {
+      "step": "Tirhas Sium · Yossi Sium: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Tirhas Sium · Yossi Sium: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Tirhas Sium · Yossi Sium: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Tirhas Sium · Yossi Sium: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Tirhas Sium · Yossi Sium: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Tirhas Sium · Yossi Sium: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Tirhas Sium · Yossi Sium: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Tirhas Sium · Yossi Sium: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Tirhas Sium · Yossi Sium: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Tirhas Sium · Yossi Sium: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Tirhas Sium · Yossi Sium: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Tirhas Sium · Yossi Sium: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=3 notes=0 photos=0 team=1"
+    },
+    {
+      "step": "Veronica Grace: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Veronica Grace: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Veronica Grace: home vs DB",
+      "ok": true,
+      "detail": "Jack Stratton"
+    },
+    {
+      "step": "Veronica Grace · Jack Stratton: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Veronica Grace · Jack Stratton: messages",
+      "ok": true,
+      "detail": "msgs=5 unread=5"
+    },
+    {
+      "step": "Veronica Grace · Jack Stratton: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Veronica Grace · Jack Stratton: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Veronica Grace · Jack Stratton: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Veronica Grace · Jack Stratton: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Veronica Grace · Jack Stratton: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Veronica Grace · Jack Stratton: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Veronica Grace · Jack Stratton: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Veronica Grace · Jack Stratton: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Veronica Grace · Jack Stratton: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Veronica Grace · Jack Stratton: hub payload shapes",
+      "ok": true,
+      "detail": "services=2 sessions=17 notes=1 photos=18 team=5"
+    },
+    {
+      "step": "Victor (TEST · Elia): mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Victor (TEST · Elia): home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Victor (TEST · Elia): home vs DB",
+      "ok": true,
+      "detail": "Elia (test)"
+    },
+    {
+      "step": "Victor (TEST · Elia) · Elia (test): detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Victor (TEST · Elia) · Elia (test): messages",
+      "ok": true,
+      "detail": "msgs=10 unread=10"
+    },
+    {
+      "step": "Victor (TEST · Elia) · Elia (test): absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Victor (TEST · Elia) · Elia (test): makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Victor (TEST · Elia) · Elia (test): credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Victor (TEST · Elia) · Elia (test): documents",
+      "ok": true,
+      "detail": "docs=2"
+    },
+    {
+      "step": "Victor (TEST · Elia) · Elia (test): consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Victor (TEST · Elia) · Elia (test): invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Victor (TEST · Elia) · Elia (test): registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Victor (TEST · Elia) · Elia (test): activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Victor (TEST · Elia) · Elia (test): reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Victor (TEST · Elia) · Elia (test): hub payload shapes",
+      "ok": true,
+      "detail": "services=0 sessions=0 notes=0 photos=0 team=0"
+    },
+    {
+      "step": "Victor Matilla: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Victor Matilla: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Victor Matilla: home vs DB",
+      "ok": true,
+      "detail": "Eliademo (demo)"
+    },
+    {
+      "step": "Victor Matilla · Eliademo (demo): detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Victor Matilla · Eliademo (demo): messages",
+      "ok": true,
+      "detail": "msgs=0 unread=0"
+    },
+    {
+      "step": "Victor Matilla · Eliademo (demo): absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Victor Matilla · Eliademo (demo): makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Victor Matilla · Eliademo (demo): credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Victor Matilla · Eliademo (demo): documents",
+      "ok": true,
+      "detail": "docs=2"
+    },
+    {
+      "step": "Victor Matilla · Eliademo (demo): consents",
+      "ok": true,
+      "detail": "pending=0"
+    },
+    {
+      "step": "Victor Matilla · Eliademo (demo): invoices",
+      "ok": true,
+      "detail": "3 invoice(s)"
+    },
+    {
+      "step": "Victor Matilla · Eliademo (demo): registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Victor Matilla · Eliademo (demo): activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Victor Matilla · Eliademo (demo): reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Victor Matilla · Eliademo (demo): hub payload shapes",
+      "ok": true,
+      "detail": "services=0 sessions=0 notes=0 photos=0 team=0"
+    },
+    {
+      "step": "Yalini Pakeerathan: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Yalini Pakeerathan: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Yalini Pakeerathan: home vs DB",
+      "ok": true,
+      "detail": "VITHURA Pakeerathan"
+    },
+    {
+      "step": "Yalini Pakeerathan · VITHURA Pakeerathan: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Yalini Pakeerathan · VITHURA Pakeerathan: messages",
+      "ok": true,
+      "detail": "msgs=5 unread=4"
+    },
+    {
+      "step": "Yalini Pakeerathan · VITHURA Pakeerathan: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Yalini Pakeerathan · VITHURA Pakeerathan: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Yalini Pakeerathan · VITHURA Pakeerathan: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Yalini Pakeerathan · VITHURA Pakeerathan: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Yalini Pakeerathan · VITHURA Pakeerathan: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Yalini Pakeerathan · VITHURA Pakeerathan: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Yalini Pakeerathan · VITHURA Pakeerathan: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Yalini Pakeerathan · VITHURA Pakeerathan: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Yalini Pakeerathan · VITHURA Pakeerathan: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Yalini Pakeerathan · VITHURA Pakeerathan: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=7 notes=1 photos=0 team=1"
+    },
+    {
+      "step": "Zainab Alkamali: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Zainab Alkamali: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Zainab Alkamali: home vs DB",
+      "ok": true,
+      "detail": "Adam Abed"
+    },
+    {
+      "step": "Zainab Alkamali · Adam Abed: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Zainab Alkamali · Adam Abed: messages",
+      "ok": true,
+      "detail": "msgs=4 unread=4"
+    },
+    {
+      "step": "Zainab Alkamali · Adam Abed: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Zainab Alkamali · Adam Abed: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Zainab Alkamali · Adam Abed: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Zainab Alkamali · Adam Abed: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Zainab Alkamali · Adam Abed: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Zainab Alkamali · Adam Abed: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Zainab Alkamali · Adam Abed: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Zainab Alkamali · Adam Abed: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Zainab Alkamali · Adam Abed: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Zainab Alkamali · Adam Abed: hub payload shapes",
+      "ok": true,
+      "detail": "services=2 sessions=26 notes=1 photos=36 team=10"
+    },
+    {
+      "step": "Zaynab Alfadhl: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Zaynab Alfadhl: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Zaynab Alfadhl: home vs DB",
+      "ok": true,
+      "detail": "Zaid Alfadhl"
+    },
+    {
+      "step": "Zaynab Alfadhl · Zaid Alfadhl: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Zaynab Alfadhl · Zaid Alfadhl: messages",
+      "ok": true,
+      "detail": "msgs=5 unread=5"
+    },
+    {
+      "step": "Zaynab Alfadhl · Zaid Alfadhl: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Zaynab Alfadhl · Zaid Alfadhl: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Zaynab Alfadhl · Zaid Alfadhl: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Zaynab Alfadhl · Zaid Alfadhl: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Zaynab Alfadhl · Zaid Alfadhl: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Zaynab Alfadhl · Zaid Alfadhl: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Zaynab Alfadhl · Zaid Alfadhl: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Zaynab Alfadhl · Zaid Alfadhl: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Zaynab Alfadhl · Zaid Alfadhl: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Zaynab Alfadhl · Zaid Alfadhl: hub payload shapes",
+      "ok": true,
+      "detail": "services=2 sessions=15 notes=1 photos=26 team=8"
+    },
+    {
+      "step": "Zeyna Bakry: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Zeyna Bakry: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Zeyna Bakry: home vs DB",
+      "ok": true,
+      "detail": "Ayman El Bakry"
+    },
+    {
+      "step": "Zeyna Bakry · Ayman El Bakry: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Zeyna Bakry · Ayman El Bakry: messages",
+      "ok": true,
+      "detail": "msgs=6 unread=5"
+    },
+    {
+      "step": "Zeyna Bakry · Ayman El Bakry: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Zeyna Bakry · Ayman El Bakry: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Zeyna Bakry · Ayman El Bakry: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Zeyna Bakry · Ayman El Bakry: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Zeyna Bakry · Ayman El Bakry: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Zeyna Bakry · Ayman El Bakry: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Zeyna Bakry · Ayman El Bakry: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Zeyna Bakry · Ayman El Bakry: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Zeyna Bakry · Ayman El Bakry: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Zeyna Bakry · Ayman El Bakry: hub payload shapes",
+      "ok": true,
+      "detail": "services=2 sessions=21 notes=1 photos=0 team=6"
+    },
+    {
+      "step": "Zu Yi Wen: mint-session",
+      "ok": true,
+      "detail": "1 child(ren)"
+    },
+    {
+      "step": "Zu Yi Wen: home-load",
+      "ok": true,
+      "detail": "1 children"
+    },
+    {
+      "step": "Zu Yi Wen: home vs DB",
+      "ok": true,
+      "detail": "Stephanie Ng"
+    },
+    {
+      "step": "Zu Yi Wen · Stephanie Ng: detail/all-sections",
+      "ok": true,
+      "detail": "access=active"
+    },
+    {
+      "step": "Zu Yi Wen · Stephanie Ng: messages",
+      "ok": true,
+      "detail": "msgs=20 unread=8"
+    },
+    {
+      "step": "Zu Yi Wen · Stephanie Ng: absence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Zu Yi Wen · Stephanie Ng: makeup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Zu Yi Wen · Stephanie Ng: credits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Zu Yi Wen · Stephanie Ng: documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "step": "Zu Yi Wen · Stephanie Ng: consents",
+      "ok": true,
+      "detail": "pending=4"
+    },
+    {
+      "step": "Zu Yi Wen · Stephanie Ng: invoices",
+      "ok": true,
+      "detail": "0 invoice(s)"
+    },
+    {
+      "step": "Zu Yi Wen · Stephanie Ng: registration",
+      "ok": true,
+      "detail": "loaded"
+    },
+    {
+      "step": "Zu Yi Wen · Stephanie Ng: activity-ping",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "Zu Yi Wen · Stephanie Ng: reenrol-lookup",
+      "ok": true,
+      "detail": "matched=undefined ok=true"
+    },
+    {
+      "step": "Zu Yi Wen · Stephanie Ng: hub payload shapes",
+      "ok": true,
+      "detail": "services=1 sessions=12 notes=1 photos=2 team=6"
+    }
+  ]
+}

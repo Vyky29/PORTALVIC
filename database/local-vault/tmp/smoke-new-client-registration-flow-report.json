@@ -1,0 +1,49 @@
+{
+  "at": "2026-07-16T11:19:34.723Z",
+  "smoke_email": "smoke-reg-1784200771210@clubsensational.test",
+  "participant": "Smoke Reg f2lxm",
+  "slot_id": "live-climbing-westway-sunday-15-00-3-00-4-00",
+  "results": [
+    {
+      "step": "offer_live",
+      "ok": true,
+      "detail": "status=200 weekly=79"
+    },
+    {
+      "step": "slot_in_offer",
+      "ok": true,
+      "detail": "live-climbing-westway-sunday-15-00-3-00-4-00 taken=0/2"
+    },
+    {
+      "step": "form_submit",
+      "ok": true,
+      "detail": "id=aae1ef2b-5fe9-466d-8e10-8ef73e698e39 slot_held=true reservation=6bb7cd63-6ba3-429b-b0c9-bb2c8669a857"
+    },
+    {
+      "step": "payload_slot_persisted",
+      "ok": true,
+      "detail": "status=new slot=live-climbing-westway-sunday-15-00-3-00-4-00"
+    },
+    {
+      "step": "slot_reservation_row",
+      "ok": true,
+      "detail": "id=6bb7cd63-6ba3-429b-b0c9-bb2c8669a857 expires=2026-08-06T11:19:33.577+00:00"
+    },
+    {
+      "step": "offer_seat_hold",
+      "ok": true,
+      "detail": "taken 0 → 1 (pending_holds=1)"
+    },
+    {
+      "step": "no_auto_portal_contact",
+      "ok": true,
+      "detail": "no contact for smoke email (admin must provision after validate)"
+    },
+    {
+      "step": "cleanup",
+      "ok": true,
+      "detail": "doc=aae1ef2b-5fe9-466d-8e10-8ef73e698e39 reservation=6bb7cd63-6ba3-429b-b0c9-bb2c8669a857"
+    }
+  ],
+  "ok": true
+}

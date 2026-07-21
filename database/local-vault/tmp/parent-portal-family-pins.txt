@@ -1,0 +1,93 @@
+Parent portal family PINs
+Generated 2026-07-18T09:05:29.069Z
+Families: 85
+Login: participant FIRST NAME + 4-digit PIN (same PIN for all siblings / co-parents).
+Office master (any first name): 6-digit PIN from PARENT_PORTAL_MASTER_PIN (default 29031988).
+
+Parent | Login names | PIN | Children
+-------|-------------|-----|----------
+Afolake Olabisi Dairo | Timi | 1679 | Timi Dairo
+Agata Ndregjoni | Erik | 9863 | Erik Ndregjoni
+Aishatu Dapchi | Haneef | 1382 | Haneef Yusuf
+Alexandra Laurrieta Saiz | Mario | 6252 | Mario Cristobal Laurrieta
+Almaz Woldu | Emanuel | 0716 | Emanuel Dodson
+Alvar de Wolff | Scott | 9420 | Scott de Wolff
+amy gebru | Elijah | 6238 | Elijah Yared
+Anab Mohamud | Mohamed | 7580 | Mohamed Yusuf
+Anthony Davis | Joel | 8818 | Joel Hibbert-Nixon
+Asamahan Alalawi | Steven | 3626 | Steven Cesare
+Bakhiet Osman | Samer | 1443 | Samer Bakhiet
+Bhawana Limbu | Yamik | 5504 | Yamik Limbu
+Bouchra Taoufiki | Serine | 0485 | Serine Hodroje
+Catarina da Silva | Zakariya | 1980 | Zakariya Warsame
+Catherine Rastgoow | Linda | 7446 | Linda Kaheh
+Chopi Al hassani | Kareena / Karo | 7938 | Kareena Al hassani; Karo
+Fadwa Guechchati | Junaid | 8955 | Junaid Fussaini
+Farhia Mahamed | Ikram | 5883 | Ikram Omar
+Farida Farooq | Aqsa | 1852 | Aqsa Farooq
+Faryaneh Akhavan | Kamy | 0724 | Kamy Akhavan
+Fatimah Ahmed | Yusuf | 3713 | Yusuf Ahmed
+Fedoua Halim | Ayden | 2977 | Ayden Wong
+Fozia Ibrahim | Khalid | 4940 | Khalid Abdulla
+Francesca E Walker | Jack | 5228 | Jack Walker
+Francesca Manners | Arthur | 7640 | Arthur Manners
+Hanan Mahdi Mussa | Shire | 0339 | Shire Osman
+Hanna Belete | Yoan | 9613 | Yoan Bekele
+Heba Aboueita | Anas | 6147 | Anas Ismail
+Huma Qureshi | Rayyan | 7061 | Rayyan Fida
+Hyam Nessour | Faris | 7208 | Faris Lobinet
+Jane Mackey | Arthur | 4204 | Arthur Morrissey
+Jasmine Devgun | Ruben | 1129 | Ruben Devgun
+Juliette Fenton | Adam | 5478 | Adam Pilcher
+Kelidon Mesi | Mia | 2105 | Mia Mesi
+Kiren Kaur | Amar-Rai | 0314 | Amar-Rai Singh
+Kirstin Eriksson | Thomas | 6484 | Thomas (Tom) Eriksson
+Léa Igabille | Hazem / Kacem | 4070 | Hazem Kei BELHADJ; Kacem Eiji BELHADJ
+Leila Ahmed | Aadam / Amaar / Aydaan | 8557 | Aadam Ahmed; Amaar Ahmed; Aydaan Ahmed
+LETICIA GONCALVES FERREIRA | Richard | 2797 | Richard Gonçalves Fonseca
+Lucy Ritzema | Eddie | 9173 | Eddie Ritzema
+Maire Fordham | Kate | 5519 | Kate Fordham
+Mansura Akter | Zayana | 6902 | Zayana Zareenah Waheed
+Margaretta Allotey | Tyson | 9137 | Tyson Gardiner
+Maria Gonzalez | Gemma | 8874 | Gemma Mesaria-Gonzalez
+Marta Iglesias | Eddie | 7817 | Eddie Mckenzie Iglesias
+Matthias Melake | Matthias | 6788 | Matthias Mekonnen
+Maya Ali | Aboodi | 7352 | Aboodi Patel
+Maysoun Sharf | Adam | 2958 | Adam Memy
+Meena Boora | Shaan | 0099 | Shaan Boora
+Mike Chapplow | Gabriel | 7066 | Gabriel Chapplow
+Nadia Boujettif | Yassir | 8530 | Yassir Boujettif
+Nadia Imam | Ayaan | 6314 | Ayaan Imam
+Namja Hussein | Yunis | 6550 | Yunis Hussein
+Nana Kacharava | Max | 9808 | Max Kacharava
+Nazaré Carvalho | Yuri | 8350 | Yuri Carvalho
+Nicole Stephens | Amber | 0660 | Amber Stephens
+Nishani Suthakaran | Thushyan | 3262 | Thushyan Suthakaran
+Nizar Alolabi | Maiyar | 7901 | Maiyar Alolabi
+Noura Zorkota | Fadi | 9956 | Fadi Abu daud
+Obah Yusuf | Yaqoub | 4694 | Yaqoub Ismail
+Olivia Mahdavi | Cyrus | 8957 | Cyrus Mahdavi
+Orla O'Sullivan | Patrick | 8546 | Patrick Dhennin
+Pat Nekati | Tinashe | 5858 | Tinashe Nekati
+Rakesh Thapa | Rayan | 1494 | Rayan Thapa
+Romina Banjo | Bediako / Cayra | 6823 | Bediako Mensah; Cayra Mensah
+Salem Zerti | Jad | 1470 | Jad Zerti
+Saliha Ziani | Amir | 0548 | Amir Kais
+Sam sam Abdi | Emani | 8858 | Emani
+Sara Girmaye | Simon | 3093 | Simon Yohannes
+Saratha Saravanapavan | Kirushy | 0243 | Kirushy Saravanapavan
+Selina Eshun | Kayden | 0100 | Kayden Annang-Eshun
+Shahanara Begum | Saaib | 2651 | Saaib Abdullah
+Shane Hibbitts | Logan | 4144 | Logan Hibbitts
+Siama Hussain | Haider | 3799 | Haider Ali
+Sima Amirizadeh | Rodin | 1252 | Rodin Esmati
+Sonam Sony | Rhys | 3629 | Rhys Davies
+Tirhas Sium | Yossi | 3967 | Yossi Sium
+Veronica Grace | Jack | 0897 | Jack Stratton
+Victor (TEST · Elia) | Elia | 1302 | Elia (test)
+Victor Matilla | Elia | 7738 | Elia
+Yalini Pakeerathan | VITHURA | 5283 | VITHURA Pakeerathan
+Zainab Alkamali | Adam | 2374 | Adam Abed
+Zaynab Alfadhl | Zaid | 7667 | Zaid Alfadhl
+Zeyna Bakry | Ayman | 4084 | Ayman El Bakry
+Zu Yi Wen | Stephanie | 6268 | Stephanie Ng

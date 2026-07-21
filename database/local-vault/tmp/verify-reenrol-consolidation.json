@@ -1,0 +1,85 @@
+{
+  "ready_count": 27,
+  "hidden_trackers": 49,
+  "issues": [],
+  "sample_0079": {
+    "id": "51569589-a1be-4aa6-a3e8-ee3e978537bb",
+    "invoice_number": "INV-P-0079",
+    "contact_id": "40",
+    "amount_gbp": 3235,
+    "payment_status": "unpaid",
+    "share_status": "ready",
+    "billing_term": "autumn",
+    "reference_text": "Autumn term 26/27",
+    "line_items": [
+      {
+        "detail": "Tuesday 5.30 to 6.30 pm · Acton",
+        "quantity": 14,
+        "amount_gbp": 700,
+        "description": "Aquatic Activity 60'",
+        "service_key": "AQUATIC_60",
+        "unit_price_gbp": 50,
+        "xero_item_code": "SW2"
+      },
+      {
+        "detail": "Sunday 10 to 11 am · Westway",
+        "quantity": 13,
+        "amount_gbp": 975,
+        "description": "Climbing Activity 60'",
+        "service_key": "CLIMBING_60",
+        "unit_price_gbp": 75,
+        "xero_item_code": "CL2"
+      },
+      {
+        "detail": "Sunday 11 am to 12.30 pm · SwimFarm",
+        "quantity": 13,
+        "amount_gbp": 1560,
+        "description": "Multi-Activity 90'",
+        "service_key": "MULTI_90",
+        "unit_price_gbp": 120,
+        "xero_item_code": "SC2"
+      }
+    ],
+    "payment_schedule": [
+      {
+        "seq": 1,
+        "label": "Payment 1 · September 2026 (Autumn)",
+        "status": "pending",
+        "paid_at": null,
+        "due_date": "2026-08-15",
+        "paid_via": null,
+        "amount_gbp": 808.75
+      },
+      {
+        "seq": 2,
+        "label": "Payment 2 · October 2026 (Autumn)",
+        "status": "pending",
+        "paid_at": null,
+        "due_date": "2026-10-01",
+        "paid_via": null,
+        "amount_gbp": 808.75
+      },
+      {
+        "seq": 3,
+        "label": "Payment 3 · November 2026 (Autumn)",
+        "status": "pending",
+        "paid_at": null,
+        "due_date": "2026-11-01",
+        "paid_via": null,
+        "amount_gbp": 808.75
+      },
+      {
+        "seq": 4,
+        "label": "Payment 4 · December 2026 (Autumn)",
+        "status": "pending",
+        "paid_at": null,
+        "due_date": "2026-12-01",
+        "paid_via": null,
+        "amount_gbp": 808.75
+      }
+    ],
+    "next_instalment_due": "2026-08-15",
+    "notes": "Consolidated payment tracker: 51569589-a1be-4aa6-a3e8-ee3e978537bb",
+    "document_id": "ff180925-e92d-4bf1-aab1-23a7a7b2061c"
+  }
+}

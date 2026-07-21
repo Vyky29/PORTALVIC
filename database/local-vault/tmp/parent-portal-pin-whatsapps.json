@@ -1,0 +1,2182 @@
+{
+  "generatedAt": "2026-07-18T11:29:29.404Z",
+  "mode": "SEND",
+  "campaign": "family_portal_pin_20260718",
+  "total": 86,
+  "thanks": 18,
+  "pending": 68,
+  "whatsapp": 83,
+  "email": 1,
+  "skip": 2,
+  "skip_reasons": {
+    "demo": 2
+  },
+  "over700": 0,
+  "rows": [
+    {
+      "parent_person_id": "gap-afolake-dairo",
+      "parent": "Afolake Olabisi Dairo",
+      "parent_first": "Afolake",
+      "children": [
+        "Timi Dairo"
+      ],
+      "login_names": [
+        "Oluwatimilehin"
+      ],
+      "contact_ids": [
+        "gap-timi-dairo"
+      ],
+      "pin": "1679",
+      "mobile": "07825627454",
+      "email": "afolakedairo@yahoo.co.uk",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Afolake — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Oluwatimilehin\nFamily PIN: 1679\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Afolake — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Oluwatimilehin · Family PIN: 1679 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 437
+    },
+    {
+      "parent_person_id": "5797478",
+      "parent": "Agata Ndregjoni",
+      "parent_first": "Agata",
+      "children": [
+        "Erik Ndregjoni"
+      ],
+      "login_names": [
+        "Erik"
+      ],
+      "contact_ids": [
+        "176"
+      ],
+      "pin": "9863",
+      "mobile": "+447493175142",
+      "email": "agatku@icloud.com",
+      "multi_child": false,
+      "re_enrolled": true,
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Agata — thank you for re-enrolling for 2026/27.\n\nFor easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in).\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Erik\nFamily PIN: 9863\n\nCrash courses are still open to book in the portal if you need them.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Agata — thank you for re-enrolling for 2026/27. · For easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in). · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Erik · Family PIN: 9863 · Crash courses are still open to book in the portal if you need them. · Any problem, reply here.",
+      "chars": 427
+    },
+    {
+      "parent_person_id": "5662981",
+      "parent": "Aishatu Dapchi",
+      "parent_first": "Aishatu",
+      "children": [
+        "Haneef Yusuf"
+      ],
+      "login_names": [
+        "Haneef"
+      ],
+      "contact_ids": [
+        "126"
+      ],
+      "pin": "1382",
+      "mobile": "+44 7741 341554",
+      "email": "aisha.dapchi@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Aishatu — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Haneef\nFamily PIN: 1382\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Aishatu — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Haneef · Family PIN: 1382 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 429
+    },
+    {
+      "parent_person_id": "5652323",
+      "parent": "Alexandra Laurrieta Saiz",
+      "parent_first": "Alexandra",
+      "children": [
+        "Mario Cristobal Laurrieta"
+      ],
+      "login_names": [
+        "Mario"
+      ],
+      "contact_ids": [
+        "92"
+      ],
+      "pin": "6252",
+      "mobile": "+44 7708 196518",
+      "email": "alaurrietasaiz@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Alexandra — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Mario\nFamily PIN: 6252\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Alexandra — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Mario · Family PIN: 6252 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 430
+    },
+    {
+      "parent_person_id": "gap-almaz-woldu",
+      "parent": "Almaz Woldu",
+      "parent_first": "Almaz",
+      "children": [
+        "Emanuel Dodson"
+      ],
+      "login_names": [
+        "Emanuel"
+      ],
+      "contact_ids": [
+        "gap-emanuel-dodson"
+      ],
+      "pin": "0716",
+      "mobile": "07951034876",
+      "email": "woldualmaz80@yahoo.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Almaz — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Emanuel\nFamily PIN: 0716\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Almaz — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Emanuel · Family PIN: 0716 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 428
+    },
+    {
+      "parent_person_id": "5680959",
+      "parent": "Alvar de Wolff",
+      "parent_first": "Alvar",
+      "children": [
+        "Scott de Wolff"
+      ],
+      "login_names": [
+        "Scott"
+      ],
+      "contact_ids": [
+        "142"
+      ],
+      "pin": "9420",
+      "mobile": "+44 7584 601743",
+      "email": "alvardewolff@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Alvar — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Scott\nFamily PIN: 9420\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Alvar — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Scott · Family PIN: 9420 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 426
+    },
+    {
+      "parent_person_id": "3101704",
+      "parent": "amy gebru",
+      "parent_first": "amy",
+      "children": [
+        "Elijah Yared"
+      ],
+      "login_names": [
+        "Elijah"
+      ],
+      "contact_ids": [
+        "181"
+      ],
+      "pin": "6238",
+      "mobile": "+44 7595 440700",
+      "email": "amygebru24@yahoo.co.uk",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi amy — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Elijah\nFamily PIN: 6238\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi amy — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Elijah · Family PIN: 6238 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 425
+    },
+    {
+      "parent_person_id": "5602949",
+      "parent": "Anab Mohamud",
+      "parent_first": "Anab",
+      "children": [
+        "Mohamed Yusuf"
+      ],
+      "login_names": [
+        "Mohamed"
+      ],
+      "contact_ids": [
+        "56"
+      ],
+      "pin": "7580",
+      "mobile": "07983272230",
+      "email": "anab97a@hotmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Anab — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Mohamed\nFamily PIN: 7580\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Anab — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Mohamed · Family PIN: 7580 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 427
+    },
+    {
+      "parent_person_id": "7522257",
+      "parent": "Anthony Davis",
+      "parent_first": "Anthony",
+      "children": [
+        "Joel Hibbert-Nixon"
+      ],
+      "login_names": [
+        "Joel"
+      ],
+      "contact_ids": [
+        "390"
+      ],
+      "pin": "8818",
+      "mobile": "+44 7956 477735",
+      "email": "tdavisgb@hotmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Anthony — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Joel\nFamily PIN: 8818\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Anthony — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Joel · Family PIN: 8818 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 427
+    },
+    {
+      "parent_person_id": "2462904",
+      "parent": "Asamahan Alalawi",
+      "parent_first": "Asamahan",
+      "children": [
+        "Steven Cesare"
+      ],
+      "login_names": [
+        "Steven"
+      ],
+      "contact_ids": [
+        "239"
+      ],
+      "pin": "3626",
+      "mobile": "07453529995",
+      "email": "asmahan.alalawi@yahoo.co.uk",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Asamahan — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Steven\nFamily PIN: 3626\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Asamahan — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Steven · Family PIN: 3626 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 430
+    },
+    {
+      "parent_person_id": "5650393",
+      "parent": "Bakhiet Osman",
+      "parent_first": "Bakhiet",
+      "children": [
+        "Samer Bakhiet"
+      ],
+      "login_names": [
+        "Samer"
+      ],
+      "contact_ids": [
+        "88"
+      ],
+      "pin": "1443",
+      "mobile": "+44 7450 939603",
+      "email": "bakhiet.osman@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Bakhiet — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Samer\nFamily PIN: 1443\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Bakhiet — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Samer · Family PIN: 1443 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 428
+    },
+    {
+      "parent_person_id": "gap-bhawana-limbu",
+      "parent": "Bhawana Limbu",
+      "parent_first": "Bhawana",
+      "children": [
+        "Yamik Limbu"
+      ],
+      "login_names": [
+        "Yamik"
+      ],
+      "contact_ids": [
+        "gap-yamik-limbu"
+      ],
+      "pin": "5504",
+      "mobile": "07476608860",
+      "email": "limbubhawana481@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Bhawana — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Yamik\nFamily PIN: 5504\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Bhawana — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Yamik · Family PIN: 5504 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 428
+    },
+    {
+      "parent_person_id": "5603580",
+      "parent": "Bouchra Taoufiki",
+      "parent_first": "Bouchra",
+      "children": [
+        "Serine Hodroje"
+      ],
+      "login_names": [
+        "Serine"
+      ],
+      "contact_ids": [
+        "58"
+      ],
+      "pin": "0485",
+      "mobile": "+447435898806",
+      "email": "bouchrataoufiki22@gmail.com",
+      "multi_child": false,
+      "re_enrolled": true,
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Bouchra — thank you for re-enrolling for 2026/27.\n\nFor easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in).\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Serine\nFamily PIN: 0485\n\nCrash courses are still open to book in the portal if you need them.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Bouchra — thank you for re-enrolling for 2026/27. · For easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in). · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Serine · Family PIN: 0485 · Crash courses are still open to book in the portal if you need them. · Any problem, reply here.",
+      "chars": 431
+    },
+    {
+      "parent_person_id": "5596624",
+      "parent": "Catarina da Silva",
+      "parent_first": "Catarina",
+      "children": [
+        "Zakariya Warsame"
+      ],
+      "login_names": [
+        "Zakariya"
+      ],
+      "contact_ids": [
+        "42"
+      ],
+      "pin": "1980",
+      "mobile": "+447925482666",
+      "email": "marianasilvago1234@gmail.com",
+      "multi_child": false,
+      "re_enrolled": true,
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Catarina — thank you for re-enrolling for 2026/27.\n\nFor easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in).\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Zakariya\nFamily PIN: 1980\n\nCrash courses are still open to book in the portal if you need them.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Catarina — thank you for re-enrolling for 2026/27. · For easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in). · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Zakariya · Family PIN: 1980 · Crash courses are still open to book in the portal if you need them. · Any problem, reply here.",
+      "chars": 434
+    },
+    {
+      "parent_person_id": "6986408",
+      "parent": "Catherine Rastgoow",
+      "parent_first": "Catherine",
+      "children": [
+        "Linda Kaheh"
+      ],
+      "login_names": [
+        "Linda"
+      ],
+      "contact_ids": [
+        "338"
+      ],
+      "pin": "7446",
+      "mobile": "+44 7770 711666",
+      "email": "catherine_rastgoow@yahoo.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Catherine — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Linda\nFamily PIN: 7446\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Catherine — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Linda · Family PIN: 7446 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 430
+    },
+    {
+      "parent_person_id": "6436375",
+      "parent": "Chopi Al hassani",
+      "parent_first": "Chopi",
+      "children": [
+        "Kareena Al hassani",
+        "Karo"
+      ],
+      "login_names": [
+        "Kareena",
+        "Karo"
+      ],
+      "contact_ids": [
+        "290",
+        "gap-karo-alhassani"
+      ],
+      "pin": "7938",
+      "mobile": "+44 7982 615603",
+      "email": "kwranichopi@yahoo.co.uk",
+      "multi_child": true,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Chopi — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Kareena / Karo\nFamily PIN: 7938\n\nSame PIN works for every child on your account.\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Chopi — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Kareena / Karo · Family PIN: 7938 · Same PIN works for every child on your account. · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 485
+    },
+    {
+      "parent_person_id": "3954563",
+      "parent": "Fadwa Guechchati",
+      "parent_first": "Fadwa",
+      "children": [
+        "Junaid Fussaini"
+      ],
+      "login_names": [
+        "Junaid"
+      ],
+      "contact_ids": [
+        "368"
+      ],
+      "pin": "8955",
+      "mobile": "+44 7470 565588",
+      "email": "f_guechchati@hotmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Fadwa — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Junaid\nFamily PIN: 8955\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Fadwa — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Junaid · Family PIN: 8955 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 427
+    },
+    {
+      "parent_person_id": "gap-ikram-omar-parent",
+      "parent": "Farhia Mahamed",
+      "parent_first": "Farhia",
+      "children": [
+        "Ikram Omar"
+      ],
+      "login_names": [
+        "Ikram"
+      ],
+      "contact_ids": [
+        "gap-ikram-omar"
+      ],
+      "pin": "5883",
+      "mobile": "07304070432",
+      "email": "mfarhia27@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Farhia — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Ikram\nFamily PIN: 5883\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Farhia — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Ikram · Family PIN: 5883 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 427
+    },
+    {
+      "parent_person_id": "5762887",
+      "parent": "Farida Farooq",
+      "parent_first": "Farida",
+      "children": [
+        "Aqsa Farooq"
+      ],
+      "login_names": [
+        "Aqsa"
+      ],
+      "contact_ids": [
+        "167"
+      ],
+      "pin": "1852",
+      "mobile": "",
+      "email": "faridafarooq@hotmail.co.uk",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "email",
+      "skip_reason": null,
+      "wa": "Hi Farida — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Aqsa\nFamily PIN: 1852\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Farida — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Aqsa · Family PIN: 1852 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 426
+    },
+    {
+      "parent_person_id": "faryaneh-akhavan",
+      "parent": "Faryaneh Akhavan",
+      "parent_first": "Faryaneh",
+      "children": [
+        "Kamy Akhavan"
+      ],
+      "login_names": [
+        "Kamy"
+      ],
+      "contact_ids": [
+        "199"
+      ],
+      "pin": "0724",
+      "mobile": "07795181580",
+      "email": "faryaneh_akhavan@yahoo.co.uk",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Faryaneh — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Kamy\nFamily PIN: 0724\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Faryaneh — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Kamy · Family PIN: 0724 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 428
+    },
+    {
+      "parent_person_id": "5520425",
+      "parent": "Fatimah Ahmed",
+      "parent_first": "Fatimah",
+      "children": [
+        "Yusuf Ahmed"
+      ],
+      "login_names": [
+        "Yusuf"
+      ],
+      "contact_ids": [
+        "13"
+      ],
+      "pin": "3713",
+      "mobile": "07544293139",
+      "email": "fatimahahmed2017@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Fatimah — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Yusuf\nFamily PIN: 3713\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Fatimah — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Yusuf · Family PIN: 3713 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 428
+    },
+    {
+      "parent_person_id": "gap-fedoua-halim",
+      "parent": "Fedoua Halim",
+      "parent_first": "Fedoua",
+      "children": [
+        "Ayden Wong"
+      ],
+      "login_names": [
+        "Ayden"
+      ],
+      "contact_ids": [
+        "gap-ayden-wong"
+      ],
+      "pin": "2977",
+      "mobile": "07957748344",
+      "email": "fedouahalim@aol.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Fedoua — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Ayden\nFamily PIN: 2977\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Fedoua — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Ayden · Family PIN: 2977 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 427
+    },
+    {
+      "parent_person_id": "5592963",
+      "parent": "Fozia Ibrahim",
+      "parent_first": "Fozia",
+      "children": [
+        "Khalid Abdulla"
+      ],
+      "login_names": [
+        "Khalid"
+      ],
+      "contact_ids": [
+        "137"
+      ],
+      "pin": "4940",
+      "mobile": "+44 7557 301290",
+      "email": "fauzia59@gmail.com",
+      "multi_child": false,
+      "re_enrolled": true,
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Fozia — thank you for re-enrolling for 2026/27.\n\nFor easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in).\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Khalid\nFamily PIN: 4940\n\nCrash courses are still open to book in the portal if you need them.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Fozia — thank you for re-enrolling for 2026/27. · For easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in). · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Khalid · Family PIN: 4940 · Crash courses are still open to book in the portal if you need them. · Any problem, reply here.",
+      "chars": 429
+    },
+    {
+      "parent_person_id": "gap-francesca-walker",
+      "parent": "Francesca E Walker",
+      "parent_first": "Francesca",
+      "children": [
+        "Jack Walker"
+      ],
+      "login_names": [
+        "Jack"
+      ],
+      "contact_ids": [
+        "gap-jack-walker"
+      ],
+      "pin": "5228",
+      "mobile": "07718742339",
+      "email": "fcesca13@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Francesca — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Jack\nFamily PIN: 5228\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Francesca — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Jack · Family PIN: 5228 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 429
+    },
+    {
+      "parent_person_id": "3474090",
+      "parent": "Francesca Manners",
+      "parent_first": "Francesca",
+      "children": [
+        "Arthur Manners"
+      ],
+      "login_names": [
+        "Arthur"
+      ],
+      "contact_ids": [
+        "193"
+      ],
+      "pin": "7640",
+      "mobile": "+44 7813 895932",
+      "email": "walker.francesca@gmail.com",
+      "multi_child": false,
+      "re_enrolled": true,
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Francesca — thank you for re-enrolling for 2026/27.\n\nFor easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in).\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Arthur\nFamily PIN: 7640\n\nCrash courses are still open to book in the portal if you need them.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Francesca — thank you for re-enrolling for 2026/27. · For easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in). · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Arthur · Family PIN: 7640 · Crash courses are still open to book in the portal if you need them. · Any problem, reply here.",
+      "chars": 433
+    },
+    {
+      "parent_person_id": "6323929",
+      "parent": "Hanan Mahdi Mussa",
+      "parent_first": "Hanan",
+      "children": [
+        "Shire Osman"
+      ],
+      "login_names": [
+        "Shire"
+      ],
+      "contact_ids": [
+        "274"
+      ],
+      "pin": "0339",
+      "mobile": "+44 7359 158806",
+      "email": "hananmusa23@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Hanan — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Shire\nFamily PIN: 0339\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Hanan — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Shire · Family PIN: 0339 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 426
+    },
+    {
+      "parent_person_id": "5599567",
+      "parent": "Hanna Belete",
+      "parent_first": "Hanna",
+      "children": [
+        "Yoan Bekele"
+      ],
+      "login_names": [
+        "Yoan"
+      ],
+      "contact_ids": [
+        "46"
+      ],
+      "pin": "9613",
+      "mobile": "+44 7761 722567",
+      "email": "hanna_belete@yahoo.co.uk",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Hanna — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Yoan\nFamily PIN: 9613\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Hanna — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Yoan · Family PIN: 9613 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 425
+    },
+    {
+      "parent_person_id": "7560102",
+      "parent": "Heba Aboueita",
+      "parent_first": "Heba",
+      "children": [
+        "Anas Ismail"
+      ],
+      "login_names": [
+        "Anas"
+      ],
+      "contact_ids": [
+        "7560101"
+      ],
+      "pin": "6147",
+      "mobile": "07783558896",
+      "email": "jana_adam0@yahoo.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Heba — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Anas\nFamily PIN: 6147\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Heba — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Anas · Family PIN: 6147 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 424
+    },
+    {
+      "parent_person_id": "5656331",
+      "parent": "Huma Qureshi",
+      "parent_first": "Huma",
+      "children": [
+        "Rayyan Fida"
+      ],
+      "login_names": [
+        "Rayyan"
+      ],
+      "contact_ids": [
+        "97"
+      ],
+      "pin": "7061",
+      "mobile": "+44 7928 692278",
+      "email": "huma_m_q@hotmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Huma — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Rayyan\nFamily PIN: 7061\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Huma — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Rayyan · Family PIN: 7061 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 426
+    },
+    {
+      "parent_person_id": "6071859",
+      "parent": "Hyam Nessour",
+      "parent_first": "Hyam",
+      "children": [
+        "Faris Lobinet"
+      ],
+      "login_names": [
+        "Faris"
+      ],
+      "contact_ids": [
+        "209"
+      ],
+      "pin": "7208",
+      "mobile": "07539340595",
+      "email": "hyamnessour@htmail.co.uk",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Hyam — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Faris\nFamily PIN: 7208\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Hyam — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Faris · Family PIN: 7208 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 425
+    },
+    {
+      "parent_person_id": "1338816",
+      "parent": "Jane Mackey",
+      "parent_first": "Jane",
+      "children": [
+        "Arthur Morrissey"
+      ],
+      "login_names": [
+        "Arthur"
+      ],
+      "contact_ids": [
+        "201"
+      ],
+      "pin": "4204",
+      "mobile": "+44 7948 279809",
+      "email": "janemackeyeg@hotmail.co.uk",
+      "multi_child": false,
+      "re_enrolled": true,
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Jane — thank you for re-enrolling for 2026/27.\n\nFor easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in).\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Arthur\nFamily PIN: 4204\n\nCrash courses are still open to book in the portal if you need them.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Jane — thank you for re-enrolling for 2026/27. · For easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in). · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Arthur · Family PIN: 4204 · Crash courses are still open to book in the portal if you need them. · Any problem, reply here.",
+      "chars": 428
+    },
+    {
+      "parent_person_id": "6696652",
+      "parent": "Jasmine Devgun",
+      "parent_first": "Jasmine",
+      "children": [
+        "Ruben Devgun"
+      ],
+      "login_names": [
+        "Ruben"
+      ],
+      "contact_ids": [
+        "307"
+      ],
+      "pin": "1129",
+      "mobile": "+44 7943 199718",
+      "email": "jasminedevgun@hotmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Jasmine — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Ruben\nFamily PIN: 1129\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Jasmine — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Ruben · Family PIN: 1129 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 428
+    },
+    {
+      "parent_person_id": "7166746",
+      "parent": "Juliette Fenton",
+      "parent_first": "Juliette",
+      "children": [
+        "Adam Pilcher"
+      ],
+      "login_names": [
+        "Adam"
+      ],
+      "contact_ids": [
+        "354"
+      ],
+      "pin": "5478",
+      "mobile": "07841097041",
+      "email": "julzfenton@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Juliette — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Adam\nFamily PIN: 5478\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Juliette — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Adam · Family PIN: 5478 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 428
+    },
+    {
+      "parent_person_id": "7451607",
+      "parent": "Kelidon Mesi",
+      "parent_first": "Kelidon",
+      "children": [
+        "Mia Mesi"
+      ],
+      "login_names": [
+        "Mia"
+      ],
+      "contact_ids": [
+        "385"
+      ],
+      "pin": "2105",
+      "mobile": "07815548173",
+      "email": "kelidon.mesi@yahoo.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Kelidon — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Mia\nFamily PIN: 2105\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Kelidon — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Mia · Family PIN: 2105 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 426
+    },
+    {
+      "parent_person_id": "5676201",
+      "parent": "Kiren Kaur",
+      "parent_first": "Kiren",
+      "children": [
+        "Amar-Rai Singh"
+      ],
+      "login_names": [
+        "Amar-Rai"
+      ],
+      "contact_ids": [
+        "130"
+      ],
+      "pin": "0314",
+      "mobile": "+44 7917 007900",
+      "email": "kinkaur76@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Kiren — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Amar-Rai\nFamily PIN: 0314\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Kiren — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Amar-Rai · Family PIN: 0314 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 429
+    },
+    {
+      "parent_person_id": "1795640",
+      "parent": "Kirstin Eriksson",
+      "parent_first": "Kirstin",
+      "children": [
+        "Thomas (Tom) Eriksson"
+      ],
+      "login_names": [
+        "Thomas"
+      ],
+      "contact_ids": [
+        "89"
+      ],
+      "pin": "6484",
+      "mobile": "+44 7766 495852",
+      "email": "kirstin.eriksson@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Kirstin — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Thomas\nFamily PIN: 6484\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Kirstin — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Thomas · Family PIN: 6484 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 429
+    },
+    {
+      "parent_person_id": "5593670",
+      "parent": "Léa Igabille",
+      "parent_first": "Léa",
+      "children": [
+        "Hazem Kei BELHADJ",
+        "Kacem Eiji BELHADJ"
+      ],
+      "login_names": [
+        "Hazem",
+        "Kacem"
+      ],
+      "contact_ids": [
+        "40",
+        "39"
+      ],
+      "pin": "4070",
+      "mobile": "+44 7473 737973",
+      "email": "sekel.lea@gmail.com",
+      "multi_child": true,
+      "re_enrolled": true,
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Léa — thank you for re-enrolling for 2026/27.\n\nFor easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in).\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Hazem / Kacem\nFamily PIN: 4070\n\nSame PIN works for every child on your account.\n\nCrash courses are still open to book in the portal if you need them.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Léa — thank you for re-enrolling for 2026/27. · For easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in). · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Hazem / Kacem · Family PIN: 4070 · Same PIN works for every child on your account. · Crash courses are still open to book in the portal if you need them. · Any problem, reply here.",
+      "chars": 484
+    },
+    {
+      "parent_person_id": "5593003",
+      "parent": "Leila Ahmed",
+      "parent_first": "Leila",
+      "children": [
+        "Aadam Ahmed",
+        "Amaar Ahmed",
+        "Aydaan Ahmed"
+      ],
+      "login_names": [
+        "Aadam",
+        "Amaar",
+        "Aydaan"
+      ],
+      "contact_ids": [
+        "124",
+        "105",
+        "125"
+      ],
+      "pin": "8557",
+      "mobile": "+44 7913 121655",
+      "email": "leila.ahmed.la@icloud.com",
+      "multi_child": true,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Leila — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Aadam / Amaar / Aydaan\nFamily PIN: 8557\n\nSame PIN works for every child on your account.\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Leila — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Aadam / Amaar / Aydaan · Family PIN: 8557 · Same PIN works for every child on your account. · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 493
+    },
+    {
+      "parent_person_id": "3214884",
+      "parent": "LETICIA GONCALVES FERREIRA",
+      "parent_first": "LETICIA",
+      "children": [
+        "Richard Gonçalves Fonseca"
+      ],
+      "login_names": [
+        "Richard"
+      ],
+      "contact_ids": [
+        "61"
+      ],
+      "pin": "2797",
+      "mobile": "+44 7453 158852",
+      "email": "leticia_ferreira5@hotmail.com",
+      "multi_child": false,
+      "re_enrolled": true,
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi LETICIA — thank you for re-enrolling for 2026/27.\n\nFor easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in).\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Richard\nFamily PIN: 2797\n\nCrash courses are still open to book in the portal if you need them.\n\nAny problem, reply here.",
+      "wa_flat": "Hi LETICIA — thank you for re-enrolling for 2026/27. · For easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in). · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Richard · Family PIN: 2797 · Crash courses are still open to book in the portal if you need them. · Any problem, reply here.",
+      "chars": 432
+    },
+    {
+      "parent_person_id": "7560302",
+      "parent": "Lucy Ritzema",
+      "parent_first": "Lucy",
+      "children": [
+        "Eddie Ritzema"
+      ],
+      "login_names": [
+        "Eddie"
+      ],
+      "contact_ids": [
+        "7560301"
+      ],
+      "pin": "9173",
+      "mobile": "07495084479",
+      "email": "lucylritzema@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Lucy — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Eddie\nFamily PIN: 9173\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Lucy — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Eddie · Family PIN: 9173 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 425
+    },
+    {
+      "parent_person_id": "maire-fordham",
+      "parent": "Maire Fordham",
+      "parent_first": "Maire",
+      "children": [
+        "Kate Fordham"
+      ],
+      "login_names": [
+        "Kate"
+      ],
+      "contact_ids": [
+        "197"
+      ],
+      "pin": "5519",
+      "mobile": "07716878189",
+      "email": "maire.ni.reagain@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Maire — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Kate\nFamily PIN: 5519\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Maire — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Kate · Family PIN: 5519 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 425
+    },
+    {
+      "parent_person_id": "5754470",
+      "parent": "Mansura Akter",
+      "parent_first": "Mansura",
+      "children": [
+        "Zayana Zareenah Waheed"
+      ],
+      "login_names": [
+        "Zayana"
+      ],
+      "contact_ids": [
+        "188"
+      ],
+      "pin": "6902",
+      "mobile": "+44 7595 948125",
+      "email": "sham_law82@yahoo.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Mansura — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Zayana\nFamily PIN: 6902\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Mansura — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Zayana · Family PIN: 6902 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 429
+    },
+    {
+      "parent_person_id": "6578878",
+      "parent": "Margaretta Allotey",
+      "parent_first": "Margaretta",
+      "children": [
+        "Tyson Gardiner"
+      ],
+      "login_names": [
+        "Tyson"
+      ],
+      "contact_ids": [
+        "298"
+      ],
+      "pin": "9137",
+      "mobile": "+44 7955 486481",
+      "email": "margaretta.allotey@googlemail.com",
+      "multi_child": false,
+      "re_enrolled": true,
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Margaretta — thank you for re-enrolling for 2026/27.\n\nFor easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in).\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Tyson\nFamily PIN: 9137\n\nCrash courses are still open to book in the portal if you need them.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Margaretta — thank you for re-enrolling for 2026/27. · For easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in). · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Tyson · Family PIN: 9137 · Crash courses are still open to book in the portal if you need them. · Any problem, reply here.",
+      "chars": 433
+    },
+    {
+      "parent_person_id": "6518947",
+      "parent": "Maria Gonzalez",
+      "parent_first": "Maria",
+      "children": [
+        "Gemma Mesaria-Gonzalez"
+      ],
+      "login_names": [
+        "Gemma"
+      ],
+      "contact_ids": [
+        "292"
+      ],
+      "pin": "8874",
+      "mobile": "+44 7910 131944",
+      "email": "trisqvel@yahoo.es",
+      "multi_child": false,
+      "re_enrolled": true,
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Maria — thank you for re-enrolling for 2026/27.\n\nFor easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in).\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Gemma\nFamily PIN: 8874\n\nCrash courses are still open to book in the portal if you need them.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Maria — thank you for re-enrolling for 2026/27. · For easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in). · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Gemma · Family PIN: 8874 · Crash courses are still open to book in the portal if you need them. · Any problem, reply here.",
+      "chars": 428
+    },
+    {
+      "parent_person_id": "6131851",
+      "parent": "Marta Iglesias",
+      "parent_first": "Marta",
+      "children": [
+        "Eddie Mckenzie Iglesias"
+      ],
+      "login_names": [
+        "Eddie"
+      ],
+      "contact_ids": [
+        "236"
+      ],
+      "pin": "7817",
+      "mobile": "+44 7762 947442",
+      "email": "martaip@yahoo.co.uk",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Marta — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Eddie\nFamily PIN: 7817\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Marta — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Eddie · Family PIN: 7817 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 426
+    },
+    {
+      "parent_person_id": "5722117",
+      "parent": "Matthias Melake",
+      "parent_first": "Matthias",
+      "children": [
+        "Matthias Mekonnen"
+      ],
+      "login_names": [
+        "Matthias"
+      ],
+      "contact_ids": [
+        "216"
+      ],
+      "pin": "6788",
+      "mobile": "+44 7843 933177",
+      "email": "kiyamekonnen@hotmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Matthias — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Matthias\nFamily PIN: 6788\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Matthias — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Matthias · Family PIN: 6788 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 432
+    },
+    {
+      "parent_person_id": "5735748",
+      "parent": "Maya Ali",
+      "parent_first": "Maya",
+      "children": [
+        "Aboodi Patel"
+      ],
+      "login_names": [
+        "Aboodi"
+      ],
+      "contact_ids": [
+        "155"
+      ],
+      "pin": "7352",
+      "mobile": "+44 7900 109661",
+      "email": "maya.a.gadir@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Maya — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Aboodi\nFamily PIN: 7352\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Maya — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Aboodi · Family PIN: 7352 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 426
+    },
+    {
+      "parent_person_id": "3208761",
+      "parent": "Maysoun Sharf",
+      "parent_first": "Maysoun",
+      "children": [
+        "Adam Memy"
+      ],
+      "login_names": [
+        "Adam"
+      ],
+      "contact_ids": [
+        "304"
+      ],
+      "pin": "2958",
+      "mobile": "+44 7491 151131",
+      "email": "mayelokla@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Maysoun — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Adam\nFamily PIN: 2958\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Maysoun — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Adam · Family PIN: 2958 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 427
+    },
+    {
+      "parent_person_id": "5691039",
+      "parent": "Meena Boora",
+      "parent_first": "Meena",
+      "children": [
+        "Shaan Boora"
+      ],
+      "login_names": [
+        "Shaan"
+      ],
+      "contact_ids": [
+        "146"
+      ],
+      "pin": "0099",
+      "mobile": "+44 7888 039660",
+      "email": "meenakshiboora@hotmail.co.uk",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Meena — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Shaan\nFamily PIN: 0099\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Meena — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Shaan · Family PIN: 0099 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 426
+    },
+    {
+      "parent_person_id": "michael-morrissey",
+      "parent": "Michael Morrissey",
+      "parent_first": "Michael",
+      "children": [
+        "Arthur Morrissey"
+      ],
+      "login_names": [
+        "Arthur"
+      ],
+      "contact_ids": [
+        "201"
+      ],
+      "pin": "4204",
+      "mobile": "07533662765",
+      "email": "",
+      "multi_child": false,
+      "re_enrolled": true,
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Michael — thank you for re-enrolling for 2026/27.\n\nFor easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in).\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Arthur\nFamily PIN: 4204\n\nCrash courses are still open to book in the portal if you need them.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Michael — thank you for re-enrolling for 2026/27. · For easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in). · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Arthur · Family PIN: 4204 · Crash courses are still open to book in the portal if you need them. · Any problem, reply here.",
+      "chars": 431
+    },
+    {
+      "parent_person_id": "5656560",
+      "parent": "Mike Chapplow",
+      "parent_first": "Mike",
+      "children": [
+        "Gabriel Chapplow"
+      ],
+      "login_names": [
+        "Gabriel"
+      ],
+      "contact_ids": [
+        "99"
+      ],
+      "pin": "7066",
+      "mobile": "+44 7983 117737",
+      "email": "mike.chapplow@gmail.com",
+      "multi_child": false,
+      "re_enrolled": true,
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Mike — thank you for re-enrolling for 2026/27.\n\nFor easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in).\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Gabriel\nFamily PIN: 7066\n\nCrash courses are still open to book in the portal if you need them.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Mike — thank you for re-enrolling for 2026/27. · For easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in). · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Gabriel · Family PIN: 7066 · Crash courses are still open to book in the portal if you need them. · Any problem, reply here.",
+      "chars": 429
+    },
+    {
+      "parent_person_id": "5672895",
+      "parent": "Nadia Boujettif",
+      "parent_first": "Nadia",
+      "children": [
+        "Yassir Boujettif"
+      ],
+      "login_names": [
+        "Yassir"
+      ],
+      "contact_ids": [
+        "119"
+      ],
+      "pin": "8530",
+      "mobile": "+44 7946 425482",
+      "email": "nadiaboujettif@yahoo.co.uk",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Nadia — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Yassir\nFamily PIN: 8530\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Nadia — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Yassir · Family PIN: 8530 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 427
+    },
+    {
+      "parent_person_id": "5602767",
+      "parent": "Nadia Imam",
+      "parent_first": "Nadia",
+      "children": [
+        "Ayaan Imam"
+      ],
+      "login_names": [
+        "Ayaan"
+      ],
+      "contact_ids": [
+        "54"
+      ],
+      "pin": "6314",
+      "mobile": "+44 7939 256666",
+      "email": "nadiamomin@yahoo.co.uk",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Nadia — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Ayaan\nFamily PIN: 6314\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Nadia — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Ayaan · Family PIN: 6314 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 426
+    },
+    {
+      "parent_person_id": "6126595",
+      "parent": "Namja Hussein",
+      "parent_first": "Namja",
+      "children": [
+        "Yunis Hussein"
+      ],
+      "login_names": [
+        "Yunis"
+      ],
+      "contact_ids": [
+        "232"
+      ],
+      "pin": "6550",
+      "mobile": "+44 7539 070935",
+      "email": "najmaalisaed1@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Namja — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Yunis\nFamily PIN: 6550\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Namja — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Yunis · Family PIN: 6550 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 426
+    },
+    {
+      "parent_person_id": "6436006",
+      "parent": "Nana Kacharava",
+      "parent_first": "Nana",
+      "children": [
+        "Max Kacharava"
+      ],
+      "login_names": [
+        "Max"
+      ],
+      "contact_ids": [
+        "284"
+      ],
+      "pin": "9808",
+      "mobile": "+44 7397 543358",
+      "email": "nanukakacharava@yahoo.com",
+      "multi_child": false,
+      "re_enrolled": true,
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Nana — thank you for re-enrolling for 2026/27.\n\nFor easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in).\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Max\nFamily PIN: 9808\n\nCrash courses are still open to book in the portal if you need them.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Nana — thank you for re-enrolling for 2026/27. · For easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in). · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Max · Family PIN: 9808 · Crash courses are still open to book in the portal if you need them. · Any problem, reply here.",
+      "chars": 425
+    },
+    {
+      "parent_person_id": "5672110",
+      "parent": "Nazaré Carvalho",
+      "parent_first": "Nazaré",
+      "children": [
+        "Yuri Carvalho"
+      ],
+      "login_names": [
+        "Yuri"
+      ],
+      "contact_ids": [
+        "114"
+      ],
+      "pin": "8350",
+      "mobile": "+44 7568 601103",
+      "email": "nazacarvalho2011@gmail.com",
+      "multi_child": false,
+      "re_enrolled": true,
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Nazaré — thank you for re-enrolling for 2026/27.\n\nFor easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in).\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Yuri\nFamily PIN: 8350\n\nCrash courses are still open to book in the portal if you need them.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Nazaré — thank you for re-enrolling for 2026/27. · For easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in). · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Yuri · Family PIN: 8350 · Crash courses are still open to book in the portal if you need them. · Any problem, reply here.",
+      "chars": 428
+    },
+    {
+      "parent_person_id": "4385782",
+      "parent": "Nicole Stephens",
+      "parent_first": "Nicole",
+      "children": [
+        "Amber Stephens"
+      ],
+      "login_names": [
+        "Amber"
+      ],
+      "contact_ids": [
+        "63"
+      ],
+      "pin": "0660",
+      "mobile": "+44 7930 343649",
+      "email": "nicolekerrystephens@yahoo.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Nicole — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Amber\nFamily PIN: 0660\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Nicole — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Amber · Family PIN: 0660 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 427
+    },
+    {
+      "parent_person_id": "7286383",
+      "parent": "Nishani Suthakaran",
+      "parent_first": "Nishani",
+      "children": [
+        "Thushyan Suthakaran"
+      ],
+      "login_names": [
+        "Thushyan"
+      ],
+      "contact_ids": [
+        "371"
+      ],
+      "pin": "3262",
+      "mobile": "+44 7393 913709",
+      "email": "nishanisutha@icloud.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Nishani — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Thushyan\nFamily PIN: 3262\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Nishani — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Thushyan · Family PIN: 3262 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 431
+    },
+    {
+      "parent_person_id": "5600408",
+      "parent": "Nizar Alolabi",
+      "parent_first": "Nizar",
+      "children": [
+        "Maiyar Alolabi"
+      ],
+      "login_names": [
+        "Maiyar"
+      ],
+      "contact_ids": [
+        "48"
+      ],
+      "pin": "7901",
+      "mobile": "+44 7961 631777",
+      "email": "alolabi@live.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Nizar — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Maiyar\nFamily PIN: 7901\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Nizar — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Maiyar · Family PIN: 7901 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 427
+    },
+    {
+      "parent_person_id": "5661672",
+      "parent": "Noura Zorkota",
+      "parent_first": "Noura",
+      "children": [
+        "Fadi Abu daud"
+      ],
+      "login_names": [
+        "Fadi"
+      ],
+      "contact_ids": [
+        "101"
+      ],
+      "pin": "9956",
+      "mobile": "+44 7555 692210",
+      "email": "nzorkota1970@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Noura — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Fadi\nFamily PIN: 9956\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Noura — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Fadi · Family PIN: 9956 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 425
+    },
+    {
+      "parent_person_id": "5762893",
+      "parent": "Obah Yusuf",
+      "parent_first": "Obah",
+      "children": [
+        "Yaqoub Ismail"
+      ],
+      "login_names": [
+        "Yaqoub"
+      ],
+      "contact_ids": [
+        "169"
+      ],
+      "pin": "4694",
+      "mobile": "07490805861",
+      "email": "obahyusuf@hotmail.co.uk",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Obah — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Yaqoub\nFamily PIN: 4694\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Obah — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Yaqoub · Family PIN: 4694 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 426
+    },
+    {
+      "parent_person_id": "3183372",
+      "parent": "Olivia Mahdavi",
+      "parent_first": "Olivia",
+      "children": [
+        "Cyrus Mahdavi"
+      ],
+      "login_names": [
+        "Cyrus"
+      ],
+      "contact_ids": [
+        "79"
+      ],
+      "pin": "8957",
+      "mobile": "+44 7500 333553",
+      "email": "oliviamahdavi@gmail.com",
+      "multi_child": false,
+      "re_enrolled": true,
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Olivia — thank you for re-enrolling for 2026/27.\n\nFor easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in).\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Cyrus\nFamily PIN: 8957\n\nCrash courses are still open to book in the portal if you need them.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Olivia — thank you for re-enrolling for 2026/27. · For easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in). · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Cyrus · Family PIN: 8957 · Crash courses are still open to book in the portal if you need them. · Any problem, reply here.",
+      "chars": 429
+    },
+    {
+      "parent_person_id": "7559002",
+      "parent": "Orla O'Sullivan",
+      "parent_first": "Orla",
+      "children": [
+        "Patrick Dhennin"
+      ],
+      "login_names": [
+        "Patrick"
+      ],
+      "contact_ids": [
+        "7559001"
+      ],
+      "pin": "8546",
+      "mobile": "07866899186",
+      "email": "orla.osullivan@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Orla — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Patrick\nFamily PIN: 8546\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Orla — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Patrick · Family PIN: 8546 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 427
+    },
+    {
+      "parent_person_id": "gap-tinashe-nekati",
+      "parent": "Pat Nekati",
+      "parent_first": "Pat",
+      "children": [
+        "Tinashe Nekati"
+      ],
+      "login_names": [
+        "Tinashe"
+      ],
+      "contact_ids": [
+        "gap-tinashe-icloud"
+      ],
+      "pin": "5858",
+      "mobile": "+44 07586616540",
+      "email": "enquiries@libertysocialworkservices.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Pat — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Tinashe\nFamily PIN: 5858\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Pat — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Tinashe · Family PIN: 5858 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 426
+    },
+    {
+      "parent_person_id": "3540246",
+      "parent": "Rakesh Thapa",
+      "parent_first": "Rakesh",
+      "children": [
+        "Rayan Thapa"
+      ],
+      "login_names": [
+        "Rayan"
+      ],
+      "contact_ids": [
+        "261"
+      ],
+      "pin": "1494",
+      "mobile": "+44 7842 888424",
+      "email": "rax86@hotmail.co.uk",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Rakesh — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Rayan\nFamily PIN: 1494\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Rakesh — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Rayan · Family PIN: 1494 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 427
+    },
+    {
+      "parent_person_id": "6349477",
+      "parent": "Romina Banjo",
+      "parent_first": "Romina",
+      "children": [
+        "Bediako Mensah",
+        "Cayra Mensah"
+      ],
+      "login_names": [
+        "Bediako",
+        "Cayra"
+      ],
+      "contact_ids": [
+        "278",
+        "279"
+      ],
+      "pin": "6823",
+      "mobile": "+44 7769 670527",
+      "email": "rominabanjo@yahoo.com",
+      "multi_child": true,
+      "re_enrolled": true,
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Romina — thank you for re-enrolling for 2026/27.\n\nFor easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in).\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Bediako / Cayra\nFamily PIN: 6823\n\nSame PIN works for every child on your account.\n\nCrash courses are still open to book in the portal if you need them.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Romina — thank you for re-enrolling for 2026/27. · For easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in). · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Bediako / Cayra · Family PIN: 6823 · Same PIN works for every child on your account. · Crash courses are still open to book in the portal if you need them. · Any problem, reply here.",
+      "chars": 489
+    },
+    {
+      "parent_person_id": "gap-salem-zerti",
+      "parent": "Salem Zerti",
+      "parent_first": "Salem",
+      "children": [
+        "Jad Zerti"
+      ],
+      "login_names": [
+        "Jad"
+      ],
+      "contact_ids": [
+        "gap-jad-zerti"
+      ],
+      "pin": "1470",
+      "mobile": "07789584222",
+      "email": "salem@zerti.co.uk",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Salem — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Jad\nFamily PIN: 1470\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Salem — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Jad · Family PIN: 1470 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 424
+    },
+    {
+      "parent_person_id": "5670324",
+      "parent": "Saliha Ziani",
+      "parent_first": "Saliha",
+      "children": [
+        "Amir Kais"
+      ],
+      "login_names": [
+        "Amir"
+      ],
+      "contact_ids": [
+        "108"
+      ],
+      "pin": "0548",
+      "mobile": "+44 7786 629245",
+      "email": "s-ziani@live.co.uk",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Saliha — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Amir\nFamily PIN: 0548\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Saliha — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Amir · Family PIN: 0548 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 426
+    },
+    {
+      "parent_person_id": "7342658",
+      "parent": "Sam sam Abdi",
+      "parent_first": "Sam",
+      "children": [
+        "Emani"
+      ],
+      "login_names": [
+        "Emani"
+      ],
+      "contact_ids": [
+        "376"
+      ],
+      "pin": "8858",
+      "mobile": "07398232285",
+      "email": "samimdee@hotmail.co.uk",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Sam — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Emani\nFamily PIN: 8858\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Sam — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Emani · Family PIN: 8858 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 424
+    },
+    {
+      "parent_person_id": "7557006",
+      "parent": "Sara Girmaye",
+      "parent_first": "Sara",
+      "children": [
+        "Simon Yohannes"
+      ],
+      "login_names": [
+        "Simon"
+      ],
+      "contact_ids": [
+        "396"
+      ],
+      "pin": "3093",
+      "mobile": "+44 7456 594498",
+      "email": "sabagi09@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Sara — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Simon\nFamily PIN: 3093\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Sara — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Simon · Family PIN: 3093 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 425
+    },
+    {
+      "parent_person_id": "7517494",
+      "parent": "Saratha Saravanapavan",
+      "parent_first": "Saratha",
+      "children": [
+        "Kirushy Saravanapavan"
+      ],
+      "login_names": [
+        "Kirushy"
+      ],
+      "contact_ids": [
+        "388"
+      ],
+      "pin": "0243",
+      "mobile": "+44 7413 773788",
+      "email": "saravanapavannagarasa@yahoo.co.uk",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Saratha — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Kirushy\nFamily PIN: 0243\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Saratha — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Kirushy · Family PIN: 0243 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 430
+    },
+    {
+      "parent_person_id": "3784044",
+      "parent": "Selina Eshun",
+      "parent_first": "Selina",
+      "children": [
+        "Kayden Annang-Eshun"
+      ],
+      "login_names": [
+        "Kayden"
+      ],
+      "contact_ids": [
+        "37"
+      ],
+      "pin": "0100",
+      "mobile": "+44 7545 025724",
+      "email": "sel_amar@yahoo.co.uk",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Selina — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Kayden\nFamily PIN: 0100\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Selina — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Kayden · Family PIN: 0100 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 428
+    },
+    {
+      "parent_person_id": "gap-shahanara-begum",
+      "parent": "Shahanara Begum",
+      "parent_first": "Shahanara",
+      "children": [
+        "Saaib Abdullah"
+      ],
+      "login_names": [
+        "Saaib"
+      ],
+      "contact_ids": [
+        "gap-saaib-abdullah"
+      ],
+      "pin": "2651",
+      "mobile": "07886890767",
+      "email": "pobox10@msn.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Shahanara — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Saaib\nFamily PIN: 2651\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Shahanara — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Saaib · Family PIN: 2651 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 430
+    },
+    {
+      "parent_person_id": "gap-shane-hibbitts",
+      "parent": "Shane Hibbitts",
+      "parent_first": "Shane",
+      "children": [
+        "Logan Hibbitts"
+      ],
+      "login_names": [
+        "Logan"
+      ],
+      "contact_ids": [
+        "gap-logan-hibbitts"
+      ],
+      "pin": "4144",
+      "mobile": "07876528284",
+      "email": "shanehibbitts@hotmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Shane — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Logan\nFamily PIN: 4144\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Shane — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Logan · Family PIN: 4144 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 426
+    },
+    {
+      "parent_person_id": "5681944",
+      "parent": "Siama Hussain",
+      "parent_first": "Siama",
+      "children": [
+        "Haider Ali"
+      ],
+      "login_names": [
+        "Haider"
+      ],
+      "contact_ids": [
+        "144"
+      ],
+      "pin": "3799",
+      "mobile": "+44 7946 536856",
+      "email": "siama80@hotmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Siama — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Haider\nFamily PIN: 3799\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Siama — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Haider · Family PIN: 3799 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 427
+    },
+    {
+      "parent_person_id": "6166438",
+      "parent": "Sima Amirizadeh",
+      "parent_first": "Sima",
+      "children": [
+        "Rodin Esmati"
+      ],
+      "login_names": [
+        "Rodin"
+      ],
+      "contact_ids": [
+        "247"
+      ],
+      "pin": "1252",
+      "mobile": "+44 7500 902933",
+      "email": "simaamiri@yahoo.com",
+      "multi_child": false,
+      "re_enrolled": true,
+      "variant": "thanks",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Sima — thank you for re-enrolling for 2026/27.\n\nFor easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in).\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Rodin\nFamily PIN: 1252\n\nCrash courses are still open to book in the portal if you need them.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Sima — thank you for re-enrolling for 2026/27. · For easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in). · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Rodin · Family PIN: 1252 · Crash courses are still open to book in the portal if you need them. · Any problem, reply here.",
+      "chars": 427
+    },
+    {
+      "parent_person_id": "7544014",
+      "parent": "Sonam Sony",
+      "parent_first": "Sonam",
+      "children": [
+        "Rhys Davies"
+      ],
+      "login_names": [
+        "Rhys"
+      ],
+      "contact_ids": [
+        "394"
+      ],
+      "pin": "3629",
+      "mobile": "+44 7960 299369",
+      "email": "sonamis@hotmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Sonam — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Rhys\nFamily PIN: 3629\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Sonam — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Rhys · Family PIN: 3629 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 425
+    },
+    {
+      "parent_person_id": "6124794",
+      "parent": "Tirhas Sium",
+      "parent_first": "Tirhas",
+      "children": [
+        "Yossi Sium"
+      ],
+      "login_names": [
+        "Yossi"
+      ],
+      "contact_ids": [
+        "230"
+      ],
+      "pin": "3967",
+      "mobile": "+44 7946 369628",
+      "email": "tirhassium39@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Tirhas — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Yossi\nFamily PIN: 3967\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Tirhas — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Yossi · Family PIN: 3967 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 427
+    },
+    {
+      "parent_person_id": "5517161",
+      "parent": "Veronica Grace",
+      "parent_first": "Veronica",
+      "children": [
+        "Jack Stratton"
+      ],
+      "login_names": [
+        "Jack"
+      ],
+      "contact_ids": [
+        "170"
+      ],
+      "pin": "0897",
+      "mobile": "07803093911",
+      "email": "vgrace67@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Veronica — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Jack\nFamily PIN: 0897\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Veronica — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Jack · Family PIN: 0897 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 428
+    },
+    {
+      "parent_person_id": "parent-elia-test",
+      "parent": "Victor (TEST · Elia)",
+      "parent_first": "Victor",
+      "children": [
+        "Elia (test)"
+      ],
+      "login_names": [
+        "Elia"
+      ],
+      "contact_ids": [
+        "elia-test-broadcast"
+      ],
+      "pin": "2903",
+      "mobile": "+447715444979",
+      "email": "vytry29@hotmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "skip",
+      "skip_reason": "demo",
+      "wa": "Hi Victor — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Elia\nFamily PIN: 2903\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Victor — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Elia · Family PIN: 2903 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 426
+    },
+    {
+      "parent_person_id": "parent-victor-matilla-demo",
+      "parent": "Victor Matilla",
+      "parent_first": "Victor",
+      "children": [
+        "Elia"
+      ],
+      "login_names": [
+        "Elia"
+      ],
+      "contact_ids": [
+        "elia-matilla-demo"
+      ],
+      "pin": "2903",
+      "mobile": "+447700900123",
+      "email": "victor.matilla.demo@clubsensational.org",
+      "multi_child": false,
+      "re_enrolled": true,
+      "variant": "thanks",
+      "channel": "skip",
+      "skip_reason": "demo",
+      "wa": "Hi Victor — thank you for re-enrolling for 2026/27.\n\nFor easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in).\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Elia\nFamily PIN: 2903\n\nCrash courses are still open to book in the portal if you need them.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Victor — thank you for re-enrolling for 2026/27. · For easier access, Family portal login no longer uses date of birth. We’ve switched to a personal family PIN (you can change it anytime after signing in). · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Elia · Family PIN: 2903 · Crash courses are still open to book in the portal if you need them. · Any problem, reply here.",
+      "chars": 428
+    },
+    {
+      "parent_person_id": "7269187",
+      "parent": "Yalini Pakeerathan",
+      "parent_first": "Yalini",
+      "children": [
+        "VITHURA Pakeerathan"
+      ],
+      "login_names": [
+        "VITHURA"
+      ],
+      "contact_ids": [
+        "367"
+      ],
+      "pin": "5283",
+      "mobile": "+44 7578 281112",
+      "email": "yalini1773@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Yalini — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: VITHURA\nFamily PIN: 5283\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Yalini — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: VITHURA · Family PIN: 5283 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 429
+    },
+    {
+      "parent_person_id": "702139",
+      "parent": "Zainab Alkamali",
+      "parent_first": "Zainab",
+      "children": [
+        "Adam Abed"
+      ],
+      "login_names": [
+        "Adam"
+      ],
+      "contact_ids": [
+        "65"
+      ],
+      "pin": "2374",
+      "mobile": "07516593518",
+      "email": "zainab_kamali@hotmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Zainab — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Adam\nFamily PIN: 2374\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Zainab — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Adam · Family PIN: 2374 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 426
+    },
+    {
+      "parent_person_id": "5613836",
+      "parent": "Zaynab Alfadhl",
+      "parent_first": "Zaynab",
+      "children": [
+        "Zaid Alfadhl"
+      ],
+      "login_names": [
+        "Zaid"
+      ],
+      "contact_ids": [
+        "68"
+      ],
+      "pin": "7667",
+      "mobile": "+44 7852 758314",
+      "email": "zaynab1980@hotmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Zaynab — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Zaid\nFamily PIN: 7667\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Zaynab — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Zaid · Family PIN: 7667 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 426
+    },
+    {
+      "parent_person_id": "5781763",
+      "parent": "Zeyna Bakry",
+      "parent_first": "Zeyna",
+      "children": [
+        "Ayman El Bakry"
+      ],
+      "login_names": [
+        "Ayman"
+      ],
+      "contact_ids": [
+        "174"
+      ],
+      "pin": "4084",
+      "mobile": "+44 7939 894070",
+      "email": "zeinabakry2001@gmail.com",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Zeyna — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Ayman\nFamily PIN: 4084\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Zeyna — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Ayman · Family PIN: 4084 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 426
+    },
+    {
+      "parent_person_id": "5834968",
+      "parent": "Zu Yi Wen",
+      "parent_first": "Zu",
+      "children": [
+        "Stephanie Ng"
+      ],
+      "login_names": [
+        "Stephanie"
+      ],
+      "contact_ids": [
+        "186"
+      ],
+      "pin": "6268",
+      "mobile": "+44 7727 472827",
+      "email": "zuyiw@yahoo.co.uk",
+      "multi_child": false,
+      "re_enrolled": false,
+      "variant": "pending",
+      "channel": "whatsapp",
+      "skip_reason": null,
+      "wa": "Hi Zu — quick update on your Family portal login.\n\nFor easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in.\n\nOpen the portal:\nhttps://www.clubsensational.org/parent\n\nLOGIN DETAILS\nChild’s first name: Stephanie\nFamily PIN: 6268\n\nPlease re-enrol for 2026/27 by Wed 22 July. Crash courses are open now.\n\nAny problem, reply here.",
+      "wa_flat": "Hi Zu — quick update on your Family portal login. · For easier access we’ve switched to a personal family PIN (you can change it anytime after signing in). Date of birth is no longer used to sign in. · Open the portal: · https://www.clubsensational.org/parent · LOGIN DETAILS · Child’s first name: Stephanie · Family PIN: 6268 · Please re-enrol for 2026/27 by Wed 22 July. Crash courses are open now. · Any problem, reply here.",
+      "chars": 427
+    }
+  ]
+}

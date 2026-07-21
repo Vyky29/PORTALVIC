@@ -1,0 +1,11 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+INV-P-0087: fix lines → AQUATIC_60 £1400 | CLIMBING_60 £975 | PHYSICAL_60 £1050 | CREDIT £-100
+INV-P-0018: fix lines → AQUATIC_30 £700 | BESPOKE_90 £2625 | MULTI_90 £1680 | MULTI_90 £1560 | GC_FEE £6 | CREDIT £-90
+INV-P-0092: fix lines → MULTI_90 £1320 | GC_FEE £4.5
+INV-P-0091: fix lines → MULTI_90 £1080 | GC_FEE £4.5
+INV-P-0090: fix lines → MULTI_90 £1560 | GC_FEE £6
+INV-P-0035: fix lines → AQUATIC_30 £650.01 | GC_FEE £4.5
+INV-P-0032: fix lines → AQUATIC_30 £549.99 | GC_FEE £4.5
+INV-P-0025: fix lines → AQUATIC_30 £650 | BESPOKE_90 £2437.51 | MULTI_90 £1560 | MULTI_90 £1320 | GC_FEE £4.5
+INV-P-0022: fix lines → AQUATIC_30 £550 | BESPOKE_90 £2062.49 | MULTI_90 £1320 | MULTI_90 £1080 | GC_FEE £4.5
+Dry run — set APPLY=1 to write.

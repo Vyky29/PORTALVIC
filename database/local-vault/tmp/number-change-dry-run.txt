@@ -1,0 +1,60 @@
+{
+  "mode": "DRY_RUN",
+  "campaign": "whatsapp_number_change_20260717",
+  "message": "Important contact update: Our usual number ending in 71 is currently unavailable on WhatsApp. You can still call us or send a normal text message (SMS) to that number, but WhatsApp messages will not arrive. For WhatsApp, please message our dedicated number +44 7886 292726. This number is for WhatsApp messages only and does not accept calls. Please save it. Thank you, ClubSENsational.",
+  "active_unique_mobile_families": 81,
+  "excluded_with_api_inbound": 30,
+  "excluded_already_sent": 0,
+  "recipients": 51
+}
+DRY Afolake Olabisi Dairo · Timi Dairo · +********7454
+DRY Aishatu Dapchi · Haneef Yusuf · +********1554
+DRY Alexandra Laurrieta Saiz · Mario Cristobal Laurrieta · +********6518
+DRY Almaz Woldu · Emanuel Dodson · +********4876
+DRY Alvar de Wolff · Scott de Wolff · +********1743
+DRY Anab Mohamud · Mohamed Mohamud · +********2230
+DRY Anthony Davis · Joel Hibbert-Nixon · +********7735
+DRY Asamahan Alalawi · Steven Cesare · +********9995
+DRY Bakhiet Osman · Samer Bakhiet · +********9603
+DRY Catherine Rastgoow · Linda Kaheh · +********1666
+DRY Farhia Mahamed · Ikram Omar · +********0432
+DRY Faryaneh Akhavan · Kamy Akhavan · +********1580
+DRY Fedoua Halim · Ayden Wong · +********8344
+DRY Fozia Ibrahim · Khalid Abdulla · +********1290
+DRY Francesca E Walker · Jack Walker · +********2339
+DRY Hanan Mahdi Mussa · Shire Osman · +********8806
+DRY Hanna Belete · Yoan Bekele · +********2567
+DRY Hyam Nessour · Faris Lobinet · +********0595
+DRY Jane Mackey · Arthur Morrissey · +********9809
+DRY Jasmine Devgun · Ruben Devgun · +********9718
+DRY Kelidon Mesi · Mia Mesi · +********8173
+DRY Kiren Kaur · Amar-Rai Singh · +********7900
+DRY Léa Igabille · Hazem Kei BELHADJ, Kacem Eiji BELHADJ · +********7973
+DRY Maire Fordham · Kate Fordham · +********8189
+DRY Mansura Akter · Zayana Zareenah Waheed · +********8125
+DRY Maria Gonzalez · Gemma Mesaria-Gonzalez · +********1944
+DRY Marta Iglesias · Eddie Mckenzie Iglesias · +********7442
+DRY Matthias Melake · Matthias Mekonnen · +********3177
+DRY Meena Boora · Shaan Boora · +********9660
+DRY Mike Chapplow · Gabriel Chapplow · +********7737
+DRY Nadia Imam · Ayaan Imam · +********6666
+DRY Namja Hussein · Yunis Hussein · +********0935
+DRY Nana Kacharava · Max Kacharava · +********3358
+DRY Nicole Stephens · Amber Stephens · +********3649
+DRY Nishani Suthakaran · Thushyan Suthakaran · +********3709
+DRY Nizar Alolabi · Maiyar Alolabi · +********1777
+DRY Noura Zorkota · Fadi Abu daud · +********2210
+DRY Obah Yusuf · Yaqoub Ismail · +********5861
+DRY Orla O'Sullivan · Patrick Dhennin · +********9186
+DRY Pat Nekati · Tinashe Nekati · +*********6540
+DRY Salem Zerti · Jad Zerti · +********4222
+DRY Sam sam Abdi · Emani · +********2285
+DRY Saratha Saravanapavan · Kirushy Saravanapavan · +********3788
+DRY Selina Eshun · Kayden Annang-Eshun · +********5724
+DRY Shahanara Begum · Saaib Abdullah · +********0767
+DRY Siama Hussain · Haider Ali · +********6856
+DRY Sonam Sony · Rhys Davies · +********9369
+DRY Tirhas Sium · Yossi Sium · +********9628
+DRY Veronica Grace · Jack Stratton · +********3911
+DRY Zainab Alkamali · Adam Abed · +********3518
+DRY Zaynab Alfadhl · Zaid Alfadhl · +********8314

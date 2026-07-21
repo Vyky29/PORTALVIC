@@ -1,0 +1,75 @@
+{
+  "at": "2026-07-14T23:56:51.826Z",
+  "results": [
+    {
+      "step": "prep.parent_link",
+      "ok": true,
+      "detail": "Elia → parent-victor-matilla-demo"
+    },
+    {
+      "step": "prep.seed_unpaid",
+      "ok": true,
+      "detail": "bank=b333480a stripe=37ee93af credit=d39988e9"
+    },
+    {
+      "step": "prep.mint_session",
+      "ok": true,
+      "detail": "parent session minted"
+    },
+    {
+      "step": "list.invoices",
+      "ok": true,
+      "detail": "http=200 count=5 tideish=false stripe=null gc=null"
+    },
+    {
+      "step": "bank.report_paid",
+      "ok": true,
+      "detail": "http=200 status=pending_confirmation"
+    },
+    {
+      "step": "bank.db_pending",
+      "ok": true,
+      "detail": "db=pending_confirmation ref=SMOKE-REF-BANK"
+    },
+    {
+      "step": "bank.admin_confirm",
+      "ok": true,
+      "detail": "db=paid via=admin"
+    },
+    {
+      "step": "stripe.checkout_create",
+      "ok": true,
+      "detail": "http=200 error= url=https://checkout.stripe.com/c/pay/cs_test_a14K32GxuRFlCI2wox"
+    },
+    {
+      "step": "stripe.configured",
+      "ok": true,
+      "detail": "Checkout Session created (not completed — no charge)"
+    },
+    {
+      "step": "gocardless.setup",
+      "ok": true,
+      "detail": "http=200 error= url=https://pay.gocardless.com/billing/static/flow?id=BRF01KXHGZPBZRWSCFQS"
+    },
+    {
+      "step": "credit.seed",
+      "ok": true,
+      "detail": "id=ee73bdc5 £15"
+    },
+    {
+      "step": "credit.apply",
+      "ok": true,
+      "detail": "http=200 inv=partial amount=25 err="
+    },
+    {
+      "step": "crash.awaiting_payment_exists",
+      "ok": true,
+      "detail": "count=3 sample_contact=247"
+    },
+    {
+      "step": "crash.linked_invoice",
+      "ok": true,
+      "detail": "pay=unpaid amount=300"
+    }
+  ]
+}

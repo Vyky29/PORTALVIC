@@ -1,0 +1,71 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+Autumn term 26/27 · c176: keep INV-P-0014; 4 payment row(s), £1560, 1 service line(s)
+  Multi-Activity 90' ×13 = £1560
+  INV-P-0014: consolidated + PDF regenerated
+Autumn term 26/27 · c79: keep INV-P-0018; 4 payment row(s), £6481, 4 service line(s)
+  Aquatic Activity 30' ×14 = £700 | 90' Bespoke Programme - 3.30 to 5 pm, Thursdays (SwimFarm) ×14 = £2625 | Multi-Activity 90' ×27 = £3240 | Direct Payment (GoCardless) fee ×4 = £6
+  INV-P-0018: consolidated + PDF regenerated
+Spring term 26/27 · c79: keep INV-P-0022; 3 payment row(s), £5016.99, 4 service line(s)
+  Aquatic Activity 30' ×11 = £549.99 | 90' Bespoke Programme - 3.30 to 5 pm, Thursdays (SwimFarm) ×11 = £2062.5 | Multi-Activity 90' ×20 = £2400 | Direct Payment (GoCardless) fee ×3 = £4.5
+  INV-P-0022: consolidated + PDF regenerated
+Summer term 26/27 · c79: keep INV-P-0025; 3 payment row(s), £5972.01, 4 service line(s)
+  Aquatic Activity 30' ×13 = £650.01 | 90' Bespoke Programme - 3.30 to 5 pm, Thursdays (SwimFarm) ×13 = £2437.5 | Multi-Activity 90' ×24 = £2880 | Direct Payment (GoCardless) fee ×3 = £4.5
+  INV-P-0025: consolidated + PDF regenerated
+Autumn term 26/27 · c298: keep INV-P-0028; 4 payment row(s), £706, 2 service line(s)
+  Aquatic Activity 30' ×14 = £700 | Direct Payment (GoCardless) fee ×4 = £6
+  INV-P-0028: consolidated + PDF regenerated
+Spring term 26/27 · c298: keep INV-P-0032; 3 payment row(s), £554.49, 2 service line(s)
+  Aquatic Activity 30' ×11 = £549.99 | Direct Payment (GoCardless) fee ×3 = £4.5
+  INV-P-0032: consolidated + PDF regenerated
+Summer term 26/27 · c298: keep INV-P-0035; 3 payment row(s), £654.51, 2 service line(s)
+  Aquatic Activity 30' ×13 = £650.01 | Direct Payment (GoCardless) fee ×3 = £4.5
+  INV-P-0035: consolidated + PDF regenerated
+Autumn term 26/27 · c114: keep INV-P-0038; 4 payment row(s), £706, 2 service line(s)
+  Aquatic Activity 30' ×14 = £700 | Direct Payment (GoCardless) fee ×4 = £6
+  INV-P-0038: consolidated + PDF regenerated
+Autumn term 26/27 · c278: keep INV-P-0042; 4 payment row(s), £706, 2 service line(s)
+  Aquatic Activity 30' ×14 = £700 | Direct Payment (GoCardless) fee ×4 = £6
+  INV-P-0042: consolidated + PDF regenerated
+Autumn term 26/27 · c279: keep INV-P-0046; 4 payment row(s), £706, 2 service line(s)
+  Aquatic Activity 30' ×14 = £700 | Direct Payment (GoCardless) fee ×4 = £6
+  INV-P-0046: consolidated + PDF regenerated
+Autumn term 26/27 · c193: keep INV-P-0050; 4 payment row(s), £1566, 2 service line(s)
+  Multi-Activity 90' ×13 = £1560 | Direct Payment (GoCardless) fee ×4 = £6
+  INV-P-0050: consolidated + PDF regenerated
+Spring term 26/27 · c193: keep INV-P-0054; 3 payment row(s), £1084.5, 2 service line(s)
+  Multi-Activity 90' ×9 = £1080 | Direct Payment (GoCardless) fee ×3 = £4.5
+  INV-P-0054: consolidated + PDF regenerated
+Summer term 26/27 · c193: keep INV-P-0057; 3 payment row(s), £1324.5, 2 service line(s)
+  Multi-Activity 90' ×11 = £1320 | Direct Payment (GoCardless) fee ×3 = £4.5
+  INV-P-0057: consolidated + PDF regenerated
+Autumn term 26/27 · c99: keep INV-P-0060; 1 payment row(s), £1560, 1 service line(s)
+  Multi-Activity 90' ×13 = £1560
+  INV-P-0060: consolidated + PDF regenerated
+Spring term 26/27 · c99: keep INV-P-0061; 1 payment row(s), £1080, 1 service line(s)
+  Multi-Activity 90' ×9 = £1080
+  INV-P-0061: consolidated + PDF regenerated
+Summer term 26/27 · c99: keep INV-P-0062; 1 payment row(s), £1320, 1 service line(s)
+  Multi-Activity 90' ×11 = £1320
+  INV-P-0062: consolidated + PDF regenerated
+Autumn term 26/27 · c61: keep INV-P-0063; 4 payment row(s), £706, 2 service line(s)
+  Aquatic Activity 30' ×14 = £700 | Direct Payment (GoCardless) fee ×4 = £6
+  INV-P-0063: consolidated + PDF regenerated
+Autumn term 26/27 · c292: keep INV-P-0067; 1 payment row(s), £700, 1 service line(s)
+  Aquatic Activity 30' ×14 = £700
+  INV-P-0067: consolidated + PDF regenerated
+Autumn term 26/27 · c284: keep INV-P-0068; 4 payment row(s), £656, 2 service line(s)
+  Aquatic Activity 30' ×13 = £650 | Direct Payment (GoCardless) fee ×4 = £6
+  INV-P-0068: consolidated + PDF regenerated
+Autumn term 26/27 · c137: keep INV-P-0072; 2 payment row(s), £700, 1 service line(s)
+  Aquatic Activity 30' ×14 = £700
+  INV-P-0072: consolidated + PDF regenerated
+Autumn term 26/27 · c247: keep INV-P-0075; 4 payment row(s), £1631, 3 service line(s)
+  Aquatic Activity 30' ×13 = £650 | Climbing Activity 60' ×13 = £975 | Direct Payment (GoCardless) fee ×4 = £6
+  INV-P-0075: consolidated + PDF regenerated
+Autumn term 26/27 · c40: keep INV-P-0079; 4 payment row(s), £3235, 3 service line(s)
+  Aquatic Activity 60' ×14 = £700 | Climbing Activity 60' ×13 = £975 | Multi-Activity 90' ×13 = £1560
+  INV-P-0079: consolidated + PDF regenerated
+Autumn term 26/27 · c39: keep INV-P-0083; 4 payment row(s), £3235, 3 service line(s)
+  Aquatic Activity 60' ×14 = £700 | Climbing Activity 60' ×13 = £975 | Multi-Activity 90' ×13 = £1560
+  INV-P-0083: consolidated + PDF regenerated
+Done — 23 term invoice(s), 49 old tracker(s) hidden, 0 failure(s).

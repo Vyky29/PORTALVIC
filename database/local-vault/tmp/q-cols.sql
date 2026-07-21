@@ -1,0 +1,1 @@
+select column_name from information_schema.columns where table_schema='public' and table_name in ('portal_parent_contacts','portal_participants','portal_reenrolment_submissions') and (column_name ilike '%fund%' or column_name ilike '%po%' or column_name ilike '%purchase%' or column_name ilike '%client_ref%' or column_name ilike '%vat%') order by table_name, column_name;

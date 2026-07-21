@@ -1,0 +1,90 @@
+{
+  "started_at": "2026-07-15T09:08:32.121Z",
+  "steps": [
+    {
+      "step": "rodin.crash_invoices",
+      "shares": 5,
+      "docs": 5,
+      "storage": 5,
+      "invoice_numbers": [
+        "INV-P-0006",
+        "INV-P-0007",
+        "INV-P-0008",
+        "INV-P-0009",
+        "INV-P-0010"
+      ],
+      "at": "2026-07-15T09:08:33.690Z"
+    },
+    {
+      "step": "rodin.crash_bookings",
+      "deleted": 5,
+      "statuses": [
+        "expired",
+        "expired",
+        "expired",
+        "expired",
+        "expired"
+      ],
+      "at": "2026-07-15T09:08:33.798Z"
+    },
+    {
+      "step": "year_term.invoices",
+      "shares": 3,
+      "docs": 3,
+      "storage": 3,
+      "invoice_numbers": [
+        "INV-2526-A-247",
+        "INV-2526-S-247",
+        "INV-2526-U-247"
+      ],
+      "at": "2026-07-15T09:08:34.566Z"
+    },
+    {
+      "step": "messages.before_important_update",
+      "cutoff": "2026-07-06T15:05:59.472856+00:00",
+      "deleted_outbound": 90,
+      "deleted_inbound": 10,
+      "at": "2026-07-15T09:08:35.125Z"
+    }
+  ],
+  "cutoff": "2026-07-06T15:05:59.472856+00:00",
+  "verify": {
+    "rodin_bookings": [],
+    "rodin_invoices": [
+      {
+        "invoice_number": "INV-P-0002",
+        "payment_status": "unpaid",
+        "ready_by": "reenrolment_auto",
+        "notes": "Auto from re-enrolment 2026-27 · submission cf8de046-c290-4007-b199-a9bfa9b996ff · Payment 1 · September 2026 (Autumn)"
+      },
+      {
+        "invoice_number": "INV-P-0003",
+        "payment_status": "unpaid",
+        "ready_by": "reenrolment_auto",
+        "notes": "Auto from re-enrolment 2026-27 · submission cf8de046-c290-4007-b199-a9bfa9b996ff · Payment 2 · October 2026 (Autumn)"
+      },
+      {
+        "invoice_number": "INV-P-0004",
+        "payment_status": "unpaid",
+        "ready_by": "reenrolment_auto",
+        "notes": "Auto from re-enrolment 2026-27 · submission cf8de046-c290-4007-b199-a9bfa9b996ff · Payment 3 · November 2026 (Autumn)"
+      },
+      {
+        "invoice_number": "INV-P-0005",
+        "payment_status": "unpaid",
+        "ready_by": "reenrolment_auto",
+        "notes": "Auto from re-enrolment 2026-27 · submission cf8de046-c290-4007-b199-a9bfa9b996ff · Payment 4 · December 2026 (Autumn)"
+      }
+    ],
+    "important_update_still": 3,
+    "notify_before_left": 0,
+    "inbound_before_left": 0,
+    "fadi_first_messages": [
+      {
+        "created_at": "2026-07-06T15:39:57.267133+00:00",
+        "subject": "Important Update – ClubSENsational Contact Numbers",
+        "kind": "contact_update"
+      }
+    ]
+  }
+}

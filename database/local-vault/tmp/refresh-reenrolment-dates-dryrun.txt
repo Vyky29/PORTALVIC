@@ -1,0 +1,29 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+INV-P-0014: autumn · 1 line(s) · Multi-Activity 90' ×13
+INV-P-0018: autumn · 5 line(s) · Aquatic Activity 30' ×14 | 90' Bespoke Programme - 3.30 to 5 pm, Thursdays (SwimFarm) ×14 | Multi-Activity 90' ×14 | Multi-Activity 90' ×13 | Direct Payment (GoCardless) fee ×4
+INV-P-0022: spring · 5 line(s) · Aquatic Activity 30' ×11 | 90' Bespoke Programme - 3.30 to 5 pm, Thursdays (SwimFarm) ×11 | Multi-Activity 90' ×11 | Multi-Activity 90' ×9 | Direct Payment (GoCardless) fee ×3
+INV-P-0025: summer · 5 line(s) · Aquatic Activity 30' ×13 | 90' Bespoke Programme - 3.30 to 5 pm, Thursdays (SwimFarm) ×13 | Multi-Activity 90' ×13 | Multi-Activity 90' ×11 | Direct Payment (GoCardless) fee ×3
+INV-P-0028: autumn · 2 line(s) · Aquatic Activity 30' ×14 | Direct Payment (GoCardless) fee ×4
+INV-P-0032: spring · 2 line(s) · Aquatic Activity 30' ×11 | Direct Payment (GoCardless) fee ×3
+INV-P-0035: summer · 2 line(s) · Aquatic Activity 30' ×13 | Direct Payment (GoCardless) fee ×3
+INV-P-0038: autumn · 2 line(s) · Aquatic Activity 30' ×14 | Direct Payment (GoCardless) fee ×4
+INV-P-0042: autumn · 2 line(s) · Aquatic Activity 30' ×14 | Direct Payment (GoCardless) fee ×4
+INV-P-0046: autumn · 2 line(s) · Aquatic Activity 30' ×14 | Direct Payment (GoCardless) fee ×4
+INV-P-0050: autumn · 2 line(s) · Multi-Activity 90' ×13 | Direct Payment (GoCardless) fee ×4
+INV-P-0054: spring · 2 line(s) · Multi-Activity 90' ×9 | Direct Payment (GoCardless) fee ×3
+INV-P-0057: summer · 2 line(s) · Multi-Activity 90' ×11 | Direct Payment (GoCardless) fee ×3
+INV-P-0060: autumn · 1 line(s) · Multi-Activity 90' ×13
+INV-P-0061: spring · 1 line(s) · Multi-Activity 90' ×9
+INV-P-0062: summer · 1 line(s) · Multi-Activity 90' ×11
+INV-P-0063: autumn · 2 line(s) · Aquatic Activity 30' ×14 | Direct Payment (GoCardless) fee ×4
+INV-P-0067: autumn · 1 line(s) · Aquatic Activity 30' ×14
+INV-P-0068: autumn · 2 line(s) · Aquatic Activity 30' ×13 | Direct Payment (GoCardless) fee ×4
+INV-P-0072: autumn · 1 line(s) · Aquatic Activity 30' ×14
+INV-P-0074: autumn · 2 line(s) · Aquatic Activity 30' ×13 | Climbing Activity 60' ×13
+INV-P-0075: autumn · 3 line(s) · Aquatic Activity 30' ×13 | Climbing Activity 60' ×13 | Direct Payment (GoCardless) fee ×4
+INV-P-0079: autumn · 3 line(s) · Aquatic Activity 60' ×14 | Climbing Activity 60' ×13 | Multi-Activity 90' ×13
+INV-P-0083: autumn · 3 line(s) · Aquatic Activity 60' ×14 | Climbing Activity 60' ×13 | Multi-Activity 90' ×13
+INV-P-0087: autumn · 3 line(s) · Aquatic Activity 60' ×14 | Climbing Activity 60' ×13 | Physical Activity 60' ×14
+INV-P-0088: spring · 3 line(s) · Aquatic Activity 60' ×11 | Climbing Activity 60' ×9 | Physical Activity 60' ×11
+INV-P-0089: summer · 3 line(s) · Aquatic Activity 60' ×13 | Climbing Activity 60' ×11 | Physical Activity 60' ×13
+Dry run — 27 visible term invoice(s).

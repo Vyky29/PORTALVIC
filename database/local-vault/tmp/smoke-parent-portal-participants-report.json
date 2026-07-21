@@ -1,0 +1,159 @@
+{
+  "started_at": "2026-07-18T15:08:51.080Z",
+  "finished_at": "2026-07-18T15:09:08.404Z",
+  "url": "https://cklpnwhlqsulpmkipmqb.supabase.co",
+  "pass": 30,
+  "fail": 0,
+  "results": [
+    {
+      "step": "demo-victor: sign-in",
+      "ok": true,
+      "detail": "status=200"
+    },
+    {
+      "step": "demo-victor: home-load",
+      "ok": true,
+      "detail": "1 children (db=1)"
+    },
+    {
+      "step": "demo-victor: home matches DB contacts",
+      "ok": true,
+      "detail": "Eliademo (demo)"
+    },
+    {
+      "step": "demo-victor: detail Eliademo (demo)",
+      "ok": true,
+      "detail": "access=active in_class=true"
+    },
+    {
+      "step": "elia-test: sign-in",
+      "ok": true,
+      "detail": "status=200"
+    },
+    {
+      "step": "elia-test: home-load",
+      "ok": true,
+      "detail": "1 children (db=1)"
+    },
+    {
+      "step": "elia-test: home matches DB contacts",
+      "ok": true,
+      "detail": "Elia (test)"
+    },
+    {
+      "step": "elia-test: detail Elia (test)",
+      "ok": true,
+      "detail": "access=active in_class=true"
+    },
+    {
+      "step": "sample multi-child parents",
+      "ok": true,
+      "detail": "5593003×3, 6349477×2, 5593670×2, 6436375×2"
+    },
+    {
+      "step": "multi:5593003: mint-session",
+      "ok": true,
+      "detail": "5593003"
+    },
+    {
+      "step": "multi:5593003: home-load",
+      "ok": true,
+      "detail": "3 children (db=3)"
+    },
+    {
+      "step": "multi:5593003: home matches DB contacts",
+      "ok": true,
+      "detail": "Aadam Ahmed · Amaar Ahmed · Aydaan Ahmed"
+    },
+    {
+      "step": "multi:5593003: detail Aadam Ahmed",
+      "ok": true,
+      "detail": "access=active in_class=true"
+    },
+    {
+      "step": "multi:5593003: detail Amaar Ahmed",
+      "ok": true,
+      "detail": "access=active in_class=true"
+    },
+    {
+      "step": "multi:5593003: detail Aydaan Ahmed",
+      "ok": true,
+      "detail": "access=active in_class=true"
+    },
+    {
+      "step": "multi:6349477: mint-session",
+      "ok": true,
+      "detail": "6349477"
+    },
+    {
+      "step": "multi:6349477: home-load",
+      "ok": true,
+      "detail": "2 children (db=2)"
+    },
+    {
+      "step": "multi:6349477: home matches DB contacts",
+      "ok": true,
+      "detail": "Bediako Mensah · Cayra Mensah"
+    },
+    {
+      "step": "multi:6349477: detail Bediako Mensah",
+      "ok": true,
+      "detail": "access=active in_class=true"
+    },
+    {
+      "step": "multi:6349477: detail Cayra Mensah",
+      "ok": true,
+      "detail": "access=active in_class=true"
+    },
+    {
+      "step": "multi:5593670: mint-session",
+      "ok": true,
+      "detail": "5593670"
+    },
+    {
+      "step": "multi:5593670: home-load",
+      "ok": true,
+      "detail": "2 children (db=2)"
+    },
+    {
+      "step": "multi:5593670: home matches DB contacts",
+      "ok": true,
+      "detail": "Hazem Kei BELHADJ · Kacem Eiji BELHADJ"
+    },
+    {
+      "step": "multi:5593670: detail Hazem Kei BELHADJ",
+      "ok": true,
+      "detail": "access=active in_class=true"
+    },
+    {
+      "step": "multi:5593670: detail Kacem Eiji BELHADJ",
+      "ok": true,
+      "detail": "access=active in_class=true"
+    },
+    {
+      "step": "multi:6436375: mint-session",
+      "ok": true,
+      "detail": "6436375"
+    },
+    {
+      "step": "multi:6436375: home-load",
+      "ok": true,
+      "detail": "2 children (db=2)"
+    },
+    {
+      "step": "multi:6436375: home matches DB contacts",
+      "ok": true,
+      "detail": "Kareena Al hassani · Karo"
+    },
+    {
+      "step": "multi:6436375: detail Kareena Al hassani",
+      "ok": true,
+      "detail": "access=active in_class=true"
+    },
+    {
+      "step": "multi:6436375: detail Karo",
+      "ok": true,
+      "detail": "access=active in_class=true"
+    }
+  ]
+}
