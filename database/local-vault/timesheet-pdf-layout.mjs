@@ -49,7 +49,41 @@ function serviceFlatRate(service) {
 }
 
 function entryServiceLabel(entry) {
-  return String((entry && (entry.serviceLabel || entry.service)) || "-").trim();
+  return String((entry && (entry.serviceLabel || entry.service_label || entry.service)) || "-").trim();
+}
+
+function entryVenueLabel(entry) {
+  return String((entry && (entry.venue || entry.venueLabel)) || "").trim();
+}
+
+function entryTimeRangeLabel(entry) {
+  return String((entry && (entry.timeRange || entry.time_range)) || "").trim();
+}
+
+function stripVenueSuffix(label) {
+  return String(label || "")
+    .replace(/\s*\([^)]*\)\s*$/g, "")
+    .trim();
+}
+
+function entryServiceTitle(entry) {
+  const explicit = String((entry && (entry.serviceName || entry.service_name)) || "").trim();
+  if (explicit) return explicit;
+  const raw = entryServiceLabel(entry);
+  if (!raw || raw === "-") return "";
+  const noVenue = stripVenueSuffix(raw);
+  const m = noVenue.match(/^\d{1,2}[.:]\d{2}\s*-\s*\d{1,2}[.:]\d{2}\s+(.+)$/);
+  if (m) return String(m[1] || "").trim();
+  return noVenue;
+}
+
+function entryServiceLine(entry) {
+  const timeRange = entryTimeRangeLabel(entry);
+  const title = entryServiceTitle(entry);
+  if (timeRange && title) return `${timeRange} ${title}`;
+  if (title) return title;
+  if (timeRange) return timeRange;
+  return entryServiceLabel(entry) || "-";
 }
 
 function entryRoleLabel(entry) {
@@ -80,20 +114,52 @@ export function timesheetRolePdfRgb(role) {
 }
 
 function pdfEntryRowHeightScale(entry) {
-  return entryRoleLabel(entry) ? 1.38 : 1;
+  if (entry && entry.dayOff) return 1.38;
+  const venue = entryVenueLabel(entry);
+  const role = entryRoleLabel(entry);
+  if (venue && role) return 1.62;
+  if (role || venue) return 1.38;
+  return 1;
 }
 
 function drawPdfServiceCell(doc, entry, cx, y, cellBaseline, S, manual) {
-  if (manual) {
+  if (manual && !entryServiceTitle(entry) && !entryServiceLabel(entry)) {
     doc.text("-", cx, y + cellBaseline, { align: "center" });
     return;
   }
-  const service = entryServiceLabel(entry).slice(0, 28);
+  if (entry && (entry.dayOff || /day off/i.test(String(entry.service || entry.role || "")))) {
+    doc.setFontSize(8 * S);
+    doc.setTextColor(16, 34, 56);
+    doc.text(String(entryServiceLabel(entry) || "Day off").slice(0, 28), cx, y + cellBaseline - 1.4 * S, {
+      align: "center",
+    });
+    doc.setFont("helvetica", "bold");
+    doc.text("Day off", cx, y + cellBaseline + 2 * S, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    return;
+  }
+  const serviceLine = entryServiceLine(entry).slice(0, 32);
+  const venue = entryVenueLabel(entry).slice(0, 24);
   const role = entryRoleLabel(entry).slice(0, 24);
-  if (role) {
+  if (venue && role) {
+    doc.setFontSize(7.6 * S);
+    doc.setTextColor(16, 34, 56);
+    doc.text(serviceLine, cx, y + cellBaseline - 2.6 * S, { align: "center" });
+    doc.setFontSize(7 * S);
+    doc.setTextColor(51, 65, 85);
+    doc.text(venue, cx, y + cellBaseline - 0.1 * S, { align: "center" });
+    doc.setFontSize(7.2 * S);
+    doc.setFont("helvetica", "bold");
+    const [rr, gg, bb] = timesheetRolePdfRgb(entryColorRole(entry));
+    doc.setTextColor(rr, gg, bb);
+    doc.text(role, cx, y + cellBaseline + 2.5 * S, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(16, 34, 56);
+    doc.setFontSize(8.5 * S);
+  } else if (role) {
     doc.setFontSize(8.5 * S);
     doc.setTextColor(16, 34, 56);
-    doc.text(service, cx, y + cellBaseline - 1.4 * S, { align: "center" });
+    doc.text(serviceLine, cx, y + cellBaseline - 1.4 * S, { align: "center" });
     doc.setFontSize(7.2 * S);
     doc.setFont("helvetica", "bold");
     const [rr, gg, bb] = timesheetRolePdfRgb(entryColorRole(entry));
@@ -103,7 +169,7 @@ function drawPdfServiceCell(doc, entry, cx, y, cellBaseline, S, manual) {
     doc.setTextColor(16, 34, 56);
     doc.setFontSize(8.5 * S);
   } else {
-    doc.text(service.slice(0, 30), cx, y + cellBaseline, { align: "center" });
+    doc.text(serviceLine.slice(0, 30), cx, y + cellBaseline, { align: "center" });
   }
 }
 

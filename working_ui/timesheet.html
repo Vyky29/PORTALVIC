@@ -51,9 +51,10 @@
     }
     td{font-size:14px}
     .td-service{min-width:0;text-align:center}
-    .timesheet-service-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;padding:2px 0}
-    .timesheet-service-cell__service{font-size:14px;line-height:1.25;overflow-wrap:break-word;word-break:break-word;max-width:100%}
-    .timesheet-service-cell__role{font-size:12px;line-height:1.2;max-width:100%;overflow-wrap:break-word;word-break:break-word}
+    .timesheet-service-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;padding:2px 0}
+    .timesheet-service-cell__service{font-size:13px;line-height:1.2;overflow-wrap:break-word;word-break:break-word;max-width:100%}
+    .timesheet-service-cell__venue{font-size:12px;line-height:1.15;color:#334155;overflow-wrap:break-word;word-break:break-word;max-width:100%}
+    .timesheet-service-cell__role{font-size:12px;line-height:1.15;max-width:100%;overflow-wrap:break-word;word-break:break-word}
     .num{text-align:center}
     .sum-row td{background:#f4f7fb;font-weight:700}
     .sum-label{text-align:center}
@@ -1730,6 +1731,94 @@
       return Number(p[0] || 0) * 60 + Number(p[1] || 0);
     }
 
+    /** Club display: 16:15 → 4.15, 14:15 → 2.15, 09:15 → 9.15 */
+    function minutesToClubHm(totalMin) {
+      let m = ((Math.round(Number(totalMin) || 0) % (24 * 60)) + 24 * 60) % (24 * 60);
+      let h = Math.floor(m / 60);
+      const min = m % 60;
+      if (h > 12) h -= 12;
+      return `${h}.${String(min).padStart(2, "0")}`;
+    }
+
+    function clubTimeRangeFromMinutes(startMin, endMin) {
+      if (!Number.isFinite(startMin) || !Number.isFinite(endMin)) return "";
+      return `${minutesToClubHm(startMin)}-${minutesToClubHm(endMin)}`;
+    }
+
+    function timesheetStripVenueSuffix(label) {
+      return String(label || "")
+        .replace(/\s*\([^)]*\)\s*$/g, "")
+        .trim();
+    }
+
+    function timesheetPrimaryVenueFromRows(rows) {
+      const counts = Object.create(null);
+      (rows || []).forEach((s) => {
+        const v = String((s && s.venue) || "").trim();
+        if (!v) return;
+        counts[v] = (counts[v] || 0) + 1;
+      });
+      let best = "";
+      let bestN = 0;
+      Object.keys(counts).forEach((k) => {
+        if (counts[k] > bestN) {
+          best = k;
+          bestN = counts[k];
+        }
+      });
+      return best;
+    }
+
+    function timesheetServiceNameFromRows(rows, role) {
+      const labels = (rows || [])
+        .map((s) => timesheetStripVenueSuffix(timesheetServiceDisplayLabel(s, role)))
+        .filter(Boolean);
+      const uniq = labels.filter((v, i, arr) => arr.indexOf(v) === i);
+      if (!uniq.length) return String(role || "Shift").trim() || "Shift";
+      /* Prefer a clear programme name when mixed. */
+      const bespoke = uniq.find((x) => /bespoke/i.test(x));
+      if (bespoke) return /programme/i.test(bespoke) ? bespoke : "Bespoke Programme";
+      const multi = uniq.find((x) => /multi/i.test(x));
+      if (multi) return /activity/i.test(multi) ? multi : "Multi-Activity";
+      return uniq[0];
+    }
+
+    function timesheetPaidWindowForRows(rows, dayName, rosterKey, role, hours) {
+      let minStart = Infinity;
+      let maxEnd = -Infinity;
+      (rows || []).forEach((s) => {
+        const a = hmToMinutes(String((s && s.start) || "").trim());
+        let b = hmToMinutes(String((s && s.end) || "").trim());
+        if (!Number.isFinite(a)) return;
+        if (!Number.isFinite(b)) b = a;
+        if (b < a) b += 24 * 60;
+        if (a < minStart) minStart = a;
+        if (b > maxEnd) maxEnd = b;
+      });
+      const key = String(rosterKey || "").trim().toLowerCase();
+      const r = String(role || "").trim();
+      const looksMaBespoke = (rows || []).some((s) => isMaOrBespokeService(sessionServiceLower(s)));
+      if (
+        dayName &&
+        dayName !== "Sunday" &&
+        WEEKDAY_MA_BESPOKE_STAFF_KEYS.has(key) &&
+        (r === "Support Worker" || SUNDAY_MA_LEAD_KEYS.has(key) || /lead/i.test(r) || looksMaBespoke)
+      ) {
+        return { startMin: 16 * 60 + 15, endMin: 18 * 60 + 15 };
+      }
+      if (
+        dayName === "Sunday" &&
+        SUNDAY_MA_LEAD_KEYS.has(key) &&
+        (Number(hours) === SUNDAY_LEAD_MA_PAY_HOURS || Number(hours) >= 5)
+      ) {
+        return { startMin: 9 * 60, endMin: 14 * 60 + 30 };
+      }
+      if (Number.isFinite(minStart) && Number.isFinite(maxEnd) && maxEnd > minStart) {
+        return { startMin: minStart, endMin: maxEnd };
+      }
+      return null;
+    }
+
     /** Map a roster service string to the pay role (mirror of public.portal_service_to_role). */
     function sessionPayRole(session){
       const svc = String(
@@ -2188,6 +2277,35 @@
       return String((entry && (entry.serviceLabel || entry.service)) || "").trim();
     }
 
+    function timesheetEntryVenueLabel(entry) {
+      return String((entry && (entry.venue || entry.venueLabel)) || "").trim();
+    }
+
+    function timesheetEntryTimeRangeLabel(entry) {
+      return String((entry && (entry.timeRange || entry.time_range)) || "").trim();
+    }
+
+    function timesheetEntryServiceTitle(entry) {
+      const explicit = String((entry && (entry.serviceName || entry.service_name)) || "").trim();
+      if (explicit) return explicit;
+      const raw = timesheetEntryServiceLabel(entry);
+      if (!raw) return "";
+      /* Legacy: "4.15-6.15 SwimFarm" or "Aquatic Activity (SwimFarm)" */
+      const noVenue = timesheetStripVenueSuffix(raw);
+      const m = noVenue.match(/^\d{1,2}[.:]\d{2}\s*-\s*\d{1,2}[.:]\d{2}\s+(.+)$/);
+      if (m) return String(m[1] || "").trim();
+      return noVenue;
+    }
+
+    function timesheetEntryServiceLine(entry) {
+      const timeRange = timesheetEntryTimeRangeLabel(entry);
+      const title = timesheetEntryServiceTitle(entry);
+      if (timeRange && title) return `${timeRange} ${title}`;
+      if (title) return title;
+      if (timeRange) return timeRange;
+      return timesheetEntryServiceLabel(entry) || "-";
+    }
+
     function timesheetEntryRoleLabel(entry) {
       const displayRole = timesheetEntryDisplayRole(entry);
       if (displayRole === "Lead") return "Lead";
@@ -2197,20 +2315,36 @@
     }
 
     function timesheetEntryServiceCellHtml(entry) {
-      const serviceLabel = timesheetEntryServiceLabel(entry) || "-";
+      if (entry && entry.dayOff) {
+        const label = timesheetEntryServiceLabel(entry) || "Day off";
+        return (
+          '<div class="timesheet-service-cell">' +
+          `<div class="timesheet-service-cell__service">${esc(label)}</div>` +
+          '<div class="timesheet-service-cell__role"><strong>Day off</strong></div>' +
+          "</div>"
+        );
+      }
+      const serviceLine = timesheetEntryServiceLine(entry);
+      const venue = timesheetEntryVenueLabel(entry);
       const roleLabel = timesheetEntryRoleLabel(entry);
       const colorRole = timesheetEntryDisplayRole(entry) || (entry && entry.role);
       const roleHtml = roleLabel ? timesheetRoleHtml(colorRole, roleLabel) : "";
       return (
         '<div class="timesheet-service-cell">' +
-        `<div class="timesheet-service-cell__service">${esc(serviceLabel)}</div>` +
+        `<div class="timesheet-service-cell__service">${esc(serviceLine || "-")}</div>` +
+        (venue ? `<div class="timesheet-service-cell__venue">${esc(venue)}</div>` : "") +
         (roleHtml ? `<div class="timesheet-service-cell__role">${roleHtml}</div>` : "") +
         "</div>"
       );
     }
 
     function pdfEntryRowHeightScale(entry) {
-      return timesheetEntryRoleLabel(entry) ? 1.38 : 1;
+      if (entry && entry.dayOff) return 1.38;
+      const venue = timesheetEntryVenueLabel(entry);
+      const role = timesheetEntryRoleLabel(entry);
+      if (venue && role) return 1.62;
+      if (role || venue) return 1.38;
+      return 1;
     }
 
     function timesheetRolePdfRgb(role) {
@@ -2223,16 +2357,45 @@
     }
 
     function drawPdfServiceCell(doc, entry, cx, y, cellBaseline, S, isManual) {
-      if (isManual) {
+      if (isManual && !(entry && entry.serviceLabel) && !(entry && entry.service)) {
         doc.text("-", cx, y + cellBaseline, { align: "center" });
         return;
       }
-      const service = String(timesheetEntryServiceLabel(entry) || "-").slice(0, 28);
+      if (entry && entry.dayOff) {
+        doc.setFontSize(8 * S);
+        doc.setTextColor(16, 34, 56);
+        doc.text(String(timesheetEntryServiceLabel(entry) || "Day off").slice(0, 28), cx, y + cellBaseline - 1.4 * S, {
+          align: "center",
+        });
+        doc.setFont("helvetica", "bold");
+        doc.text("Day off", cx, y + cellBaseline + 2 * S, { align: "center" });
+        doc.setFont("helvetica", "normal");
+        return;
+      }
+      const serviceLine = String(timesheetEntryServiceLine(entry) || "-").slice(0, 32);
+      const venue = String(timesheetEntryVenueLabel(entry) || "").slice(0, 24);
       const role = timesheetEntryRoleLabel(entry).slice(0, 24);
-      if (role) {
+      if (venue && role) {
+        doc.setFontSize(7.6 * S);
+        doc.setTextColor(16, 34, 56);
+        doc.text(serviceLine, cx, y + cellBaseline - 2.6 * S, { align: "center" });
+        doc.setFontSize(7 * S);
+        doc.setTextColor(51, 65, 85);
+        doc.text(venue, cx, y + cellBaseline - 0.1 * S, { align: "center" });
+        doc.setFontSize(7.2 * S);
+        doc.setFont("helvetica", "bold");
+        const [rr, gg, bb] = timesheetRolePdfRgb(
+          timesheetEntryDisplayRole(entry) || (entry && (entry.role || entry.roleLabel)),
+        );
+        doc.setTextColor(rr, gg, bb);
+        doc.text(role, cx, y + cellBaseline + 2.5 * S, { align: "center" });
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(16, 34, 56);
+        doc.setFontSize(8.5 * S);
+      } else if (role) {
         doc.setFontSize(8.5 * S);
         doc.setTextColor(16, 34, 56);
-        doc.text(service, cx, y + cellBaseline - 1.4 * S, { align: "center" });
+        doc.text(serviceLine, cx, y + cellBaseline - 1.4 * S, { align: "center" });
         doc.setFontSize(7.2 * S);
         doc.setFont("helvetica", "bold");
         const [rr, gg, bb] = timesheetRolePdfRgb(
@@ -2244,7 +2407,7 @@
         doc.setTextColor(16, 34, 56);
         doc.setFontSize(8.5 * S);
       } else {
-        doc.text(service, cx, y + cellBaseline, { align: "center" });
+        doc.text(serviceLine, cx, y + cellBaseline, { align: "center" });
       }
     }
 
@@ -2316,17 +2479,20 @@
       hours = youssefActonAfternoonPayableHours(dayName, rosterKey, dominantRole, hours, rows);
       const role = dominantRole || "";
       const rate = rateForRole(role);
+      const serviceName = timesheetServiceNameFromRows(rows, role);
+      const venue = timesheetPrimaryVenueFromRows(rows);
+      const window = timesheetPaidWindowForRows(rows, dayName, rosterKey, role, hours);
+      const timeRange = window ? clubTimeRangeFromMinutes(window.startMin, window.endMin) : "";
       return {
         date: dateKey,
         day: dayName,
         hours,
         completed: completedAll,
-        service: dominantService,
-        serviceLabel: rows
-          .map((s) => timesheetServiceDisplayLabel(s, role))
-          .filter(Boolean)
-          .filter((v, i, arr) => arr.indexOf(v) === i)
-          .join(" · ") || dominantService,
+        service: serviceName || dominantService,
+        serviceName: serviceName || dominantService,
+        serviceLabel: timeRange ? `${timeRange} ${serviceName || dominantService}` : (serviceName || dominantService),
+        venue,
+        timeRange,
         role,
         rate,
         blendedRate: null
@@ -2410,23 +2576,35 @@
           hours = sundayMaSupportPayableHours(dayName, rosterKey, role, svc, hours, groupRows);
           hours = sundaySwimPayableHours(dayName, rosterKey, role, svc, dateKey, hours, groupRows);
           if (!(hours > 0)) return;
-          const serviceLabel =
-            group.serviceLabel ||
-            (isWeekdayMaBespokeGroup
-              ? groupRows
-                  .map((s) => timesheetServiceDisplayLabel(s, role))
-                  .filter(Boolean)
-                  .filter((v, i, arr) => arr.indexOf(v) === i)
-                  .join(" · ")
-              : "") ||
-            svc;
+          const serviceName =
+            timesheetStripVenueSuffix(
+              group.serviceLabel ||
+                (isWeekdayMaBespokeGroup
+                  ? groupRows
+                      .map((s) => timesheetServiceDisplayLabel(s, role))
+                      .filter(Boolean)
+                      .filter((v, i, arr) => arr.indexOf(v) === i)
+                      .join(" · ")
+                  : "") ||
+                svc,
+            ) || svc;
+          const named =
+            /bespoke/i.test(serviceName) && !/programme/i.test(serviceName)
+              ? "Bespoke Programme"
+              : serviceName;
+          const venue = timesheetPrimaryVenueFromRows(groupRows);
+          const window = timesheetPaidWindowForRows(groupRows, dayName, rosterKey, role, hours);
+          const timeRange = window ? clubTimeRangeFromMinutes(window.startMin, window.endMin) : "";
           entries.push({
             date: dateKey,
             day: dayName,
             hours,
             completed: completedAll,
-            service: svc,
-            serviceLabel,
+            service: named,
+            serviceName: named,
+            serviceLabel: timeRange ? `${timeRange} ${named}` : named,
+            venue,
+            timeRange,
             role,
             rate: rateForRole(role),
             blendedRate: null
@@ -2480,7 +2658,10 @@
           single.hours = sundaySwimInstructorPayHours(rosterKey);
           single.role = "Swimming Instructor";
           single.service = "Aquatic Activity";
-          single.serviceLabel = "Aquatic Activity (SwimFarm)";
+          single.serviceName = "Aquatic Activity";
+          single.venue = "SwimFarm";
+          single.timeRange = clubTimeRangeFromMinutes(9 * 60 + 15, 15 * 60 + 15);
+          single.serviceLabel = `${single.timeRange} Aquatic Activity`;
           single.rate = rateForRole("Swimming Instructor");
           return [single];
         }
@@ -3364,6 +3545,9 @@
           manual: !!state.manual,
           service: e.service || "",
           service_label: timesheetEntryServiceLabel(e),
+          service_name: e.serviceName || timesheetEntryServiceTitle(e),
+          venue: e.venue || "",
+          time_range: e.timeRange || e.time_range || "",
           role: e.role || "",
           rate: e.dayOff ? 0 : (e.rate != null ? e.rate : undefined),
         }))
