@@ -81,7 +81,7 @@
   <script src="/portal/admin-portal-parent-absences.js?v=20260709-family-credits"></script>
   <script src="/portal/admin-portal-parent-credits.js?v=20260709-family-credits"></script>
   <script src="/portal/admin-portal-xero-products.js?v=20260716-add-product-rows"></script>
-  <script src="/portal/admin-portal-parent-invoices.js?v=20260721-tide-xero-ensure-v1"></script>
+  <script src="/portal/admin-portal-parent-invoices.js?v=20260721-finance-guide-v1"></script>
   <script src="/portal/admin-portal-parent-makeups.js?v=20260709-makeup-roster"></script>
   <script src="/portal/admin-portal-parent-consents.js?v=20260709-offsite-annual"></script>
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
@@ -21812,7 +21812,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var xeroProductsHtml = typeof xeroProd.mountHtml === 'function' ? xeroProd.mountHtml() : '';
       var hide = function(id){ return tab === id ? '' : ' hidden'; };
       return '<h1 class="page-title" style="display:flex;align-items:center;gap:10px"><span aria-hidden="true" style="display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#eff6ff;color:#2d84b3"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="none"><text x="12" y="17" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor" font-family="system-ui,Segoe UI,sans-serif">\u00a3</text></svg></span><span>Finance</span></h1>'+
-        '<p class="page-intro">Create invoices, track re-enrolment instalments, and review term payments by family — Summer Term 25/26 vs Autumn Term 26/27.</p>'+
+        '<p class="page-intro" style="max-width:48rem;overflow-wrap:break-word">Create invoices, track re-enrolment instalments, and review term payments by family — Summer Term 25/26 vs Autumn Term 26/27. <a href="/admin_finance_guide.html" target="_blank" rel="noopener">Finance guide (EN/ES)</a> — booking leads → pay → Xero.</p>'+
         '<div class="c4k-sessions-hub-tabs" role="tablist" aria-label="Finance">'+financeHubTabsHtml(tab)+'</div>'+
         '<div id="financePanelCreate" class="finance-hub-panel"'+hide('create')+'>'+createHtml+'</div>'+
         '<div id="financePanelReenrolments" class="finance-hub-panel"'+hide('reenrolments')+'>'+reenrolHtml+'</div>'+

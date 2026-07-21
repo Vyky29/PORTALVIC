@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Admin Finance guide · Guía Finance</title>
+  <link rel="icon" href="/portal/F-02-1.png" />
+  <style>
+    :root {
+      --ink: #14212b;
+      --muted: #5b6b76;
+      --line: #d7e0e7;
+      --paper: #f7fafc;
+      --card: #ffffff;
+      --brand: #0f6f8c;
+      --brand-deep: #0a4f64;
+      --navy: #0a3d62;
+      --ok: #0f7a4c;
+      --ok-soft: #e8f7ef;
+      --warn: #9a5b00;
+      --warn-soft: #fff6e0;
+      --danger: #b42318;
+      --info-soft: #eef7fb;
+      --shadow: 0 10px 30px rgba(20, 33, 43, 0.06);
+      --radius: 16px;
+      --max: 980px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 500px at 10% -10%, #dff3f8 0%, transparent 55%),
+        radial-gradient(900px 400px at 100% 0%, #fff1d0 0%, transparent 50%),
+        var(--paper);
+      line-height: 1.55;
+    }
+    a { color: var(--brand-deep); }
+    .wrap { max-width: var(--max); margin: 0 auto; padding: 24px 16px 72px; min-width: 0; }
+    header.hero {
+      display: grid;
+      gap: 14px;
+      margin-bottom: 22px;
+      padding: 20px 18px 18px;
+      border: 1px solid var(--line);
+      border-radius: calc(var(--radius) + 4px);
+      background: linear-gradient(180deg, #fff, #f3f9fb);
+      box-shadow: var(--shadow);
+      min-width: 0;
+    }
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+    .brand-row img {
+      width: 56px;
+      height: 56px;
+      object-fit: contain;
+      flex: 0 0 auto;
+    }
+    .brand-row h1 {
+      margin: 0;
+      font-size: clamp(1.25rem, 3.2vw, 1.85rem);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      overflow-wrap: break-word;
+      color: var(--navy);
+    }
+    .brand-row p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+      overflow-wrap: break-word;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      min-width: 0;
+    }
+    .chip, .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      text-decoration: none;
+      cursor: pointer;
+      min-width: 0;
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+    .chip--on, .btn--primary {
+      background: var(--brand-deep);
+      border-color: var(--brand-deep);
+      color: #fff;
+    }
+    .btn--ghost { background: #eef5f8; color: var(--brand-deep); }
+    .toc {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .toc a {
+      display: block;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      text-decoration: none;
+      color: var(--ink);
+      font-weight: 650;
+      font-size: 14px;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .toc a:hover { border-color: #9ec8d6; background: var(--info-soft); }
+    .card {
+      margin: 0 0 16px;
+      padding: 18px 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: var(--shadow);
+      min-width: 0;
+    }
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 1.2rem;
+      color: var(--navy);
+      overflow-wrap: break-word;
+    }
+    .card h3 {
+      margin: 18px 0 8px;
+      font-size: 1.02rem;
+      color: var(--brand-deep);
+      overflow-wrap: break-word;
+    }
+    .card p, .card li { font-size: 15px; overflow-wrap: break-word; }
+    .card > p { color: var(--muted); margin-top: 0; }
+    .card ul, .card ol { margin: 8px 0 0; padding-left: 1.2rem; }
+    .card li { margin-bottom: 6px; }
+    .k {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 6px;
+      background: #eef3f7;
+      border: 1px solid #d3dde6;
+      font-size: 12.5px;
+      font-weight: 700;
+      white-space: normal;
+      overflow-wrap: break-word;
+      max-width: 100%;
+    }
+    .ex {
+      margin: 12px 0 0;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: var(--info-soft);
+      border: 1px solid #c5dde8;
+      font-size: 14px;
+      min-width: 0;
+    }
+    .ex strong { color: var(--navy); }
+    .note {
+      margin: 12px 0 0;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: var(--warn-soft);
+      border: 1px solid #f0d9a0;
+      font-size: 14px;
+    }
+    .okbox {
+      margin: 12px 0 0;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: var(--ok-soft);
+      border: 1px solid #b7e4cb;
+      font-size: 14px;
+    }
+    .flow {
+      display: grid;
+      gap: 8px;
+      margin: 12px 0 0;
+    }
+    .flow-step {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 10px;
+      align-items: start;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fbfcfd;
+      min-width: 0;
+    }
+    .flow-n {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--brand-deep);
+      color: #fff;
+      font-weight: 800;
+      font-size: 13px;
+      display: grid;
+      place-items: center;
+      flex: none;
+    }
+    .flow-step p { margin: 0; font-size: 14px; }
+    .flow-step .who { color: var(--muted); font-size: 12.5px; font-weight: 700; margin-bottom: 2px; }
+    table.simple {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    table.simple th, table.simple td {
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+    table.simple th { background: #f0f6f9; color: var(--navy); }
+    .lang-en [data-lang="es"], .lang-es [data-lang="en"] { display: none !important; }
+    footer {
+      margin-top: 28px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+    @media (max-width: 560px) {
+      .wrap { padding: 16px 12px 56px; }
+      table.simple { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    }
+  </style>
+</head>
+<body class="lang-en">
+  <div class="wrap">
+    <header class="hero">
+      <div class="brand-row">
+        <img src="/portal/F-02-1.png" alt="clubSENsational" width="56" height="56" />
+        <div style="min-width:0">
+          <h1 data-lang="en">Finance guide for admins</h1>
+          <h1 data-lang="es">Guía Finance para administradores</h1>
+          <p data-lang="en">Booking leads become invoices. This page explains every path — re-enrolment, new clients, crash booking, bank transfer, card, and Xero.</p>
+          <p data-lang="es">Los leads de booking acaban en facturas. Esta página explica cada camino: re-enrolment, clientes nuevos, crash booking, transferencia, tarjeta y Xero.</p>
+        </div>
+      </div>
+      <div class="toolbar">
+        <button type="button" class="chip chip--on" id="langEn" aria-pressed="true">English</button>
+        <button type="button" class="chip" id="langEs" aria-pressed="false">Español</button>
+        <a class="btn btn--ghost" href="/admin_dashboard.html#reenrol_payments">Open Finance</a>
+      </div>
+    </header>
+
+    <nav class="card" aria-label="Contents">
+      <h2 data-lang="en">Contents</h2>
+      <h2 data-lang="es">Índice</h2>
+      <ul class="toc">
+        <li><a href="#big-picture" data-lang="en">1. Big picture</a><a href="#big-picture" data-lang="es">1. Visión general</a></li>
+        <li><a href="#where" data-lang="en">2. Where to click</a><a href="#where" data-lang="es">2. Dónde hacer clic</a></li>
+        <li><a href="#reenroll" data-lang="en">3. Re-enrolments</a><a href="#reenroll" data-lang="es">3. Re-enrolments</a></li>
+        <li><a href="#crash" data-lang="en">4. New / crash booking</a><a href="#crash" data-lang="es">4. Cliente nuevo / crash</a></li>
+        <li><a href="#manual" data-lang="en">5. Manual &amp; LA invoices</a><a href="#manual" data-lang="es">5. Facturas manuales y LA</a></li>
+        <li><a href="#pay" data-lang="en">6. How parents pay</a><a href="#pay" data-lang="es">6. Cómo pagan los padres</a></li>
+        <li><a href="#office-day" data-lang="en">7. Office daily routine</a><a href="#office-day" data-lang="es">7. Rutina diaria de oficina</a></li>
+        <li><a href="#xero" data-lang="en">8. Xero &amp; Tide</a><a href="#xero" data-lang="es">8. Xero y Tide</a></li>
+        <li><a href="#cheat" data-lang="en">9. Cheat sheet</a><a href="#cheat" data-lang="es">9. Chuleta rápida</a></li>
+      </ul>
+    </nav>
+
+    <!-- 1 -->
+    <section class="card" id="big-picture">
+      <h2 data-lang="en">1. Big picture — booking is finance</h2>
+      <h2 data-lang="es">1. Visión general — booking es finance</h2>
+      <p data-lang="en">Every place that “books” a child eventually creates money work: an <strong>INV-P</strong> invoice in Portal (for the family) and, when paid, a matching record in <strong>Xero</strong> (for the books).</p>
+      <p data-lang="es">Todo sitio donde se “reserva” a un niño acaba en trabajo de dinero: una factura <strong>INV-P</strong> en Portal (para la familia) y, al pagar, el registro en <strong>Xero</strong> (contabilidad).</p>
+
+      <div class="flow">
+        <div class="flow-step">
+          <div class="flow-n">1</div>
+          <div>
+            <div class="who" data-lang="en">LEAD</div>
+            <div class="who" data-lang="es">LEAD</div>
+            <p data-lang="en">Re-enrolment · Crash summer booking · Office creates invoice · Programme sheet “Invoice”</p>
+            <p data-lang="es">Re-enrolment · Booking crash summer · Oficina crea factura · Programa “Invoice”</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-n">2</div>
+          <div>
+            <div class="who" data-lang="en">PORTAL DRAFT</div>
+            <div class="who" data-lang="es">BORRADOR EN PORTAL</div>
+            <p data-lang="en">INV-P-#### appears. Parent can open <span class="k">Preview draft invoice</span>. Not yet in Xero (except crash, which tries early).</p>
+            <p data-lang="es">Aparece INV-P-####. El padre ve <span class="k">Preview draft invoice</span>. Aún no está en Xero (salvo crash, que intenta crear ACCREC pronto).</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-n">3</div>
+          <div>
+            <div class="who" data-lang="en">PAYMENT</div>
+            <div class="who" data-lang="es">PAGO</div>
+            <p data-lang="en">Card / Apple Pay · GoCardless · Bank transfer (Tide) · Credit on file · Office marks paid</p>
+            <p data-lang="es">Tarjeta / Apple Pay · GoCardless · Transferencia (Tide) · Crédito · Oficina marca pagado</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-n">4</div>
+          <div>
+            <div class="who" data-lang="en">PAID + BOOKS</div>
+            <div class="who" data-lang="es">PAGADO + CONTABILIDAD</div>
+            <p data-lang="en">Portal stamp flips to PAID. Xero gets ACCREC + Payment automatically when secrets work. Bank-feed green tick still needs Xero UI / JAX.</p>
+            <p data-lang="es">El sello del Portal pasa a PAID. Xero recibe ACCREC + Payment solo si los secretos funcionan. El tick verde del bank feed sigue en Xero / JAX.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="note" data-lang="en"><strong>Two truths:</strong> Portal INV-P = what parents and office use day to day. Xero = accounting. Paying in Portal does not mean the bank line is already reconciled in Xero.</div>
+      <div class="note" data-lang="es"><strong>Dos verdades:</strong> INV-P en Portal = lo que usan padres y oficina. Xero = contabilidad. Pagar en Portal no significa que la línea del banco ya esté reconciliada en Xero.</div>
+    </section>
+
+    <!-- 2 -->
+    <section class="card" id="where">
+      <h2 data-lang="en">2. Where to click in Admin</h2>
+      <h2 data-lang="es">2. Dónde hacer clic en Admin</h2>
+      <p data-lang="en">Sidebar / hub → <span class="k">Finance</span>. Inside Finance you have tabs:</p>
+      <p data-lang="es">Menú lateral / hub → <span class="k">Finance</span>. Dentro hay pestañas:</p>
+      <table class="simple">
+        <thead>
+          <tr>
+            <th data-lang="en">Tab</th><th data-lang="es">Pestaña</th>
+            <th data-lang="en">Use it for</th><th data-lang="es">Para qué sirve</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td data-lang="en"><strong>Create invoice</strong></td>
+            <td data-lang="es"><strong>Create invoice</strong></td>
+            <td data-lang="en">Manual INV-P for a family, or upload a PDF</td>
+            <td data-lang="es">INV-P manual para una familia, o subir un PDF</td>
+          </tr>
+          <tr>
+            <td data-lang="en"><strong>Re-enrolments</strong></td>
+            <td data-lang="es"><strong>Re-enrolments</strong></td>
+            <td data-lang="en">Main list: unpaid / pending / paid, Tide CSV, Push Xero, holds</td>
+            <td data-lang="es">Lista principal: impagos / pending / paid, Tide CSV, Push Xero, holds</td>
+          </tr>
+          <tr>
+            <td data-lang="en"><strong>Xero products</strong></td>
+            <td data-lang="es"><strong>Xero products</strong></td>
+            <td data-lang="en">Map catalogue lines to Xero items</td>
+            <td data-lang="es">Mapear líneas del catálogo a ítems de Xero</td>
+          </tr>
+          <tr>
+            <td data-lang="en"><strong>Payments</strong></td>
+            <td data-lang="es"><strong>Payments</strong></td>
+            <td data-lang="en">Term overview (Summer / Autumn…)</td>
+            <td data-lang="es">Resumen por término (Summer / Autumn…)</td>
+          </tr>
+        </tbody>
+      </table>
+      <p data-lang="en" style="margin-top:12px">Related (same Finance group): <span class="k">LA / Commissioning Terms</span>. Credits live under <span class="k">Absents, refunds &amp; credits</span>.</p>
+      <p data-lang="es" style="margin-top:12px">Relacionado (mismo grupo Finance): <span class="k">LA / Commissioning Terms</span>. Los créditos están en <span class="k">Absents, refunds &amp; credits</span>.</p>
+    </section>
+
+    <!-- 3 -->
+    <section class="card" id="reenroll">
+      <h2 data-lang="en">3. Re-enrolments (existing families)</h2>
+      <h2 data-lang="es">3. Re-enrolments (familias existentes)</h2>
+      <p data-lang="en">Parent pays their chosen plan for the next year / term. Portal creates the instalment invoices automatically on <strong>first submit</strong> (parent-pays families only — not LA office / funder invoice).</p>
+      <p data-lang="es">El padre elige el plan del próximo año / término. Portal crea las facturas a plazos solos en el <strong>primer envío</strong> (solo familias que pagan ellos — no LA / funder).</p>
+
+      <h3 data-lang="en">Steps</h3>
+      <h3 data-lang="es">Pasos</h3>
+      <ol data-lang="en">
+        <li>Parent opens hub → <span class="k">Re-enrolment</span> → chooses plan → submits.</li>
+        <li>Portal creates INV-P rows (e.g. Autumn / Spring / Summer instalments) already shared to Invoices.</li>
+        <li>Parent pays each due invoice (card, GC, bank, or credit).</li>
+        <li>Office watches Finance → <span class="k">Re-enrolments</span>: chase unpaid, confirm bank, check Xero.</li>
+      </ol>
+      <ol data-lang="es">
+        <li>Padre abre hub → <span class="k">Re-enrolment</span> → elige plan → envía.</li>
+        <li>Portal crea filas INV-P (p. ej. Autumn / Spring / Summer) ya compartidas en Invoices.</li>
+        <li>El padre paga cada factura cuando toca (tarjeta, GC, banco o crédito).</li>
+        <li>Oficina mira Finance → <span class="k">Re-enrolments</span>: cobra impagos, confirma banco, revisa Xero.</li>
+      </ol>
+
+      <div class="ex" data-lang="en">
+        <strong>Example — Maya, Autumn bank transfer</strong><br />
+        1) Mum submits re-enrolment with Bank Transfer.<br />
+        2) INV-P-0142 appears for Autumn (£1,200), draft PDF ready.<br />
+        3) Mum transfers to Tide using reference <em>Maya</em> (participant name), then taps <span class="k">I've paid by bank transfer</span>.<br />
+        4) Office filter <span class="k">Pending confirmation</span> → open <span class="k">Match Tide bank CSV</span> → <span class="k">Upload &amp; score</span> → <span class="k">Confirm</span>.<br />
+        5) Invoice is PAID in Portal; Xero ACCREC + Payment created; green tick still OK’d in Xero bank feed if needed.
+      </div>
+      <div class="ex" data-lang="es">
+        <strong>Ejemplo — Maya, Autumn por transferencia</strong><br />
+        1) La madre envía el re-enrolment con Bank Transfer.<br />
+        2) Aparece INV-P-0142 de Autumn (£1,200), PDF draft listo.<br />
+        3) Transfiere a Tide con referencia <em>Maya</em> (nombre del participante) y pulsa <span class="k">I've paid by bank transfer</span>.<br />
+        4) Oficina filtra <span class="k">Pending confirmation</span> → <span class="k">Match Tide bank CSV</span> → <span class="k">Upload &amp; score</span> → <span class="k">Confirm</span>.<br />
+        5) Factura PAID en Portal; ACCREC + Payment en Xero; el tick verde se OK’ea en el bank feed de Xero si hace falta.
+      </div>
+
+      <div class="note" data-lang="en"><strong>Resubmits:</strong> changing the plan later does not auto-create duplicate invoices. Adjust amounts / create new rows in Finance.</div>
+      <div class="note" data-lang="es"><strong>Reenvíos:</strong> cambiar el plan después no duplica facturas solos. Ajusta importes / crea filas nuevas en Finance.</div>
+    </section>
+
+    <!-- 4 -->
+    <section class="card" id="crash">
+      <h2 data-lang="en">4. New clients &amp; crash summer booking</h2>
+      <h2 data-lang="es">4. Clientes nuevos y booking crash summer</h2>
+      <p data-lang="en">Public booking page (e.g. <code>/parent/crash-summer</code>). Parent reserves a place and must pay in full within ~2 hours or the hold releases.</p>
+      <p data-lang="es">Página pública de booking (p. ej. <code>/parent/crash-summer</code>). El padre reserva plaza y debe pagar entero en ~2 horas o se libera el hold.</p>
+
+      <h3 data-lang="en">Steps</h3>
+      <h3 data-lang="es">Pasos</h3>
+      <ol data-lang="en">
+        <li>Parent completes booking → <span class="k">Reserve &amp; pay in full</span>.</li>
+        <li>Portal creates a full-amount INV-P + PDF (+ email). Crash also best-effort pushes ACCREC to Xero early.</li>
+        <li>Parent pays on the booking page (Tide / Card) or via hub Invoices.</li>
+        <li>When paid, the crash place is confirmed. Same office tools if bank transfer was used.</li>
+      </ol>
+      <ol data-lang="es">
+        <li>Padre completa booking → <span class="k">Reserve &amp; pay in full</span>.</li>
+        <li>Portal crea INV-P de importe completo + PDF (+ email). Crash también intenta ACCREC en Xero pronto.</li>
+        <li>Paga en la página de booking (Tide / tarjeta) o en hub Invoices.</li>
+        <li>Al pagar, se confirma la plaza crash. Mismas herramientas de oficina si fue transferencia.</li>
+      </ol>
+
+      <div class="ex" data-lang="en">
+        <strong>Example — new family, SwimFarm crash Week 1</strong><br />
+        1) Dad books Wed–Fri crash online.<br />
+        2) INV-P-0201 created for £450; email with PDF; 2-hour hold starts.<br />
+        3) He pays Card / Apple Pay → Stripe webhook marks PAID → place confirmed.<br />
+        4) Office sees the row under Finance → Re-enrolments / Payments (Summer crash). No Tide step needed.
+      </div>
+      <div class="ex" data-lang="es">
+        <strong>Ejemplo — familia nueva, crash SwimFarm Week 1</strong><br />
+        1) El padre reserva crash mié–vie online.<br />
+        2) Se crea INV-P-0201 de £450; email con PDF; hold de 2 horas.<br />
+        3) Paga Card / Apple Pay → webhook Stripe marca PAID → plaza confirmada.<br />
+        4) Oficina ve la fila en Finance → Re-enrolments / Payments (Summer crash). No hace falta Tide.
+      </div>
+    </section>
+
+    <!-- 5 -->
+    <section class="card" id="manual">
+      <h2 data-lang="en">5. Manual invoices, LA, and other leads</h2>
+      <h2 data-lang="es">5. Facturas manuales, LA y otros leads</h2>
+
+      <h3 data-lang="en">Office Create &amp; share</h3>
+      <h3 data-lang="es">Oficina Create &amp; share</h3>
+      <ol data-lang="en">
+        <li>Finance → <span class="k">Create invoice</span>.</li>
+        <li>Search participant → amount, due date, description, term Reference.</li>
+        <li>VAT: <span class="k">Private · Includes 20% VAT</span> or <span class="k">LA funded · Exempt</span> (+ Client Id / PO when LA).</li>
+        <li>Click <span class="k">Create &amp; share</span> → INV-P allocated and shared to parent hub (private). LA exempt is office-facing.</li>
+      </ol>
+      <ol data-lang="es">
+        <li>Finance → <span class="k">Create invoice</span>.</li>
+        <li>Busca participante → importe, vencimiento, descripción, Reference del término.</li>
+        <li>IVA: <span class="k">Private · Includes 20% VAT</span> o <span class="k">LA funded · Exempt</span> (+ Client Id / PO si es LA).</li>
+        <li>Pulsa <span class="k">Create &amp; share</span> → se asigna INV-P y se comparte al hub (privado). LA exempt es para oficina.</li>
+      </ol>
+
+      <h3 data-lang="en">Upload PDF</h3>
+      <h3 data-lang="es">Subir PDF</h3>
+      <p data-lang="en">Use <span class="k">Or upload a Xero / office PDF</span> → <span class="k">Upload &amp; share PDF</span>. Paste Xero InvoiceID GUID if you want payment write-back later.</p>
+      <p data-lang="es">Usa <span class="k">Or upload a Xero / office PDF</span> → <span class="k">Upload &amp; share PDF</span>. Pega el GUID de InvoiceID de Xero si quieres write-back de pago después.</p>
+
+      <h3 data-lang="en">Programme sheet</h3>
+      <h3 data-lang="es">Hoja de programa</h3>
+      <p data-lang="en">From programme payments grid, <span class="k">Invoice</span> jumps into Finance create/share.</p>
+      <p data-lang="es">Desde la rejilla de pagos del programa, <span class="k">Invoice</span> salta a Finance create/share.</p>
+
+      <h3 data-lang="en">Credits</h3>
+      <h3 data-lang="es">Créditos</h3>
+      <p data-lang="en">Absents marked as Credit → parent can <span class="k">Use … credit</span> on an unpaid invoice. Admin can Mark applied / refunded / Cancel in credits.</p>
+      <p data-lang="es">Ausencias como Credit → el padre puede <span class="k">Use … credit</span> en una factura. Admin puede Mark applied / refunded / Cancel en créditos.</p>
+    </section>
+
+    <!-- 6 -->
+    <section class="card" id="pay">
+      <h2 data-lang="en">6. How parents pay (and what office does)</h2>
+      <h2 data-lang="es">6. Cómo pagan los padres (y qué hace la oficina)</h2>
+      <table class="simple">
+        <thead>
+          <tr>
+            <th data-lang="en">Method</th><th data-lang="es">Método</th>
+            <th data-lang="en">Parent action</th><th data-lang="es">Acción del padre</th>
+            <th data-lang="en">Office action</th><th data-lang="es">Acción oficina</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td data-lang="en">Card / Apple Pay</td>
+            <td data-lang="es">Tarjeta / Apple Pay</td>
+            <td data-lang="en">Pay on invoice / crash page</td>
+            <td data-lang="es">Paga en factura / crash</td>
+            <td data-lang="en">Automatic (Stripe). Spot-check Paid.</td>
+            <td data-lang="es">Automático (Stripe). Revisa Paid.</td>
+          </tr>
+          <tr>
+            <td data-lang="en">GoCardless</td>
+            <td data-lang="es">GoCardless</td>
+            <td data-lang="en">Set up / Pay with GC</td>
+            <td data-lang="es">Alta / pagar con GC</td>
+            <td data-lang="en">Automatic via webhook</td>
+            <td data-lang="es">Automático vía webhook</td>
+          </tr>
+          <tr>
+            <td data-lang="en">Bank (Tide)</td>
+            <td data-lang="es">Banco (Tide)</td>
+            <td data-lang="en">Transfer + <span class="k">I've paid…</span></td>
+            <td data-lang="es">Transferir + <span class="k">I've paid…</span></td>
+            <td data-lang="en">Tide CSV Confirm or Confirm paid</td>
+            <td data-lang="es">Tide CSV Confirm o Confirm paid</td>
+          </tr>
+          <tr>
+            <td data-lang="en">Credit</td>
+            <td data-lang="es">Crédito</td>
+            <td data-lang="en">Use credit on invoice</td>
+            <td data-lang="es">Usar crédito en factura</td>
+            <td data-lang="en">Usually automatic; fix in credits if stuck</td>
+            <td data-lang="es">Casi automático; arreglar en credits si falla</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="okbox" data-lang="en">
+        <strong>Bank reference rule</strong><br />
+        PDF / Xero <em>Reference</em> = term label (e.g. Summer term 25/26).<br />
+        Tide pay reference = <strong>participant display name only</strong> (e.g. Maya).
+      </div>
+      <div class="okbox" data-lang="es">
+        <strong>Regla de referencia bancaria</strong><br />
+        <em>Reference</em> del PDF / Xero = etiqueta del término (p. ej. Summer term 25/26).<br />
+        Referencia Tide = <strong>solo el nombre del participante</strong> (p. ej. Maya).
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section class="card" id="office-day">
+      <h2 data-lang="en">7. Suggested office daily routine</h2>
+      <h2 data-lang="es">7. Rutina diaria sugerida de oficina</h2>
+      <ol data-lang="en">
+        <li>Open Finance → <span class="k">Re-enrolments</span> → filter <span class="k">Pending confirmation</span>.</li>
+        <li>Export Tide inbound CSV → <span class="k">Match Tide bank CSV</span> → <span class="k">Upload &amp; score</span> → Confirm strong matches; review medium.</li>
+        <li>Filter <span class="k">Ready unpaid</span> / <span class="k">Buffer low</span> → chase parents (Remind / Soft hold if needed).</li>
+        <li>Filter <span class="k">Paid not in Xero</span> → <span class="k">Push paid to Xero</span> for any leftovers / failures.</li>
+        <li>In Xero bank feed, OK suggested matches (or leave to JAX if enabled).</li>
+      </ol>
+      <ol data-lang="es">
+        <li>Abre Finance → <span class="k">Re-enrolments</span> → filtro <span class="k">Pending confirmation</span>.</li>
+        <li>Exporta CSV de Tide → <span class="k">Match Tide bank CSV</span> → <span class="k">Upload &amp; score</span> → Confirm strong; revisa medium.</li>
+        <li>Filtro <span class="k">Ready unpaid</span> / <span class="k">Buffer low</span> → cobra a padres (Remind / Soft hold si hace falta).</li>
+        <li>Filtro <span class="k">Paid not in Xero</span> → <span class="k">Push paid to Xero</span> para restos / fallos.</li>
+        <li>En el bank feed de Xero, OK a los matches sugeridos (o deja JAX si está activo).</li>
+      </ol>
+    </section>
+
+    <!-- 8 -->
+    <section class="card" id="xero">
+      <h2 data-lang="en">8. Xero &amp; Tide — what each button does</h2>
+      <h2 data-lang="es">8. Xero y Tide — qué hace cada botón</h2>
+      <table class="simple">
+        <thead>
+          <tr>
+            <th data-lang="en">Action</th><th data-lang="es">Acción</th>
+            <th data-lang="en">Why it exists</th><th data-lang="es">Para qué existe</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td data-lang="en"><span class="k">Push paid to Xero</span></td>
+            <td data-lang="es"><span class="k">Push paid to Xero</span></td>
+            <td data-lang="en">Backlog / retries: create ACCREC + Payment for paid Portal INV-Ps. Normal pay paths usually auto-do this now.</td>
+            <td data-lang="es">Cola / reintentos: crea ACCREC + Payment para INV-P pagados. Los pagos normales ya suelen hacerlo solos.</td>
+          </tr>
+          <tr>
+            <td data-lang="en"><span class="k">Match Tide bank CSV</span></td>
+            <td data-lang="es"><span class="k">Match Tide bank CSV</span></td>
+            <td data-lang="en">Bank has no webhook. Links Tide money → Portal paid (+ Xero books). Uses Tide date on the Payment.</td>
+            <td data-lang="es">El banco no tiene webhook. Enlaza dinero Tide → Portal paid (+ libros Xero). Usa la fecha Tide en el Payment.</td>
+          </tr>
+          <tr>
+            <td data-lang="en"><span class="k">Confirm paid</span> / <span class="k">Mark paid</span></td>
+            <td data-lang="es"><span class="k">Confirm paid</span> / <span class="k">Mark paid</span></td>
+            <td data-lang="en">Manual when you know money arrived (cash, odd ref, skip CSV).</td>
+            <td data-lang="es">Manual cuando sabes que llegó el dinero (efectivo, ref rara, sin CSV).</td>
+          </tr>
+          <tr>
+            <td data-lang="en"><span class="k">Export to Xero CSV</span></td>
+            <td data-lang="es"><span class="k">Export to Xero CSV</span></td>
+            <td data-lang="en">Fallback if API push fails.</td>
+            <td data-lang="es">Plan B si falla el push por API.</td>
+          </tr>
+          <tr>
+            <td data-lang="en">Green reconcile tick</td>
+            <td data-lang="es">Tick verde de reconcile</td>
+            <td data-lang="en"><strong>Only in Xero.</strong> Portal cannot close bank-feed lines by API.</td>
+            <td data-lang="es"><strong>Solo en Xero.</strong> Portal no puede cerrar líneas del bank feed por API.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 9 -->
+    <section class="card" id="cheat">
+      <h2 data-lang="en">9. Cheat sheet — buttons</h2>
+      <h2 data-lang="es">9. Chuleta — botones</h2>
+      <p data-lang="en"><strong>Re-enrolments filters:</strong> All · LA auto · Shared · Ready unpaid · Paid · Pending confirmation · Buffer low · Paid not in Xero · Hidden</p>
+      <p data-lang="es"><strong>Filtros Re-enrolments:</strong> All · LA auto · Shared · Ready unpaid · Paid · Pending confirmation · Buffer low · Paid not in Xero · Hidden</p>
+      <p data-lang="en"><strong>Per row:</strong> PDF · Share / Hide · Confirm paid · Mark paid · Mark unpaid · Soft hold · Remind · Hold 1 session · Release hold</p>
+      <p data-lang="es"><strong>Por fila:</strong> PDF · Share / Hide · Confirm paid · Mark paid · Mark unpaid · Soft hold · Remind · Hold 1 session · Release hold</p>
+      <p data-lang="en"><strong>Tide panel:</strong> Upload &amp; score · Refresh matches · Confirm · Ignore</p>
+      <p data-lang="es"><strong>Panel Tide:</strong> Upload &amp; score · Refresh matches · Confirm · Ignore</p>
+
+      <div class="ex" data-lang="en">
+        <strong>One-liner for new admins</strong><br />
+        Leads book → INV-P draft in Portal → parent pays → office confirms bank if needed → books go to Xero → OK the bank line in Xero.
+      </div>
+      <div class="ex" data-lang="es">
+        <strong>Frase para admins nuevos</strong><br />
+        El lead reserva → INV-P draft en Portal → el padre paga → la oficina confirma banco si hace falta → libros en Xero → OK a la línea del banco en Xero.
+      </div>
+    </section>
+
+    <footer>
+      <p data-lang="en">clubSENsational · PORTAL Admin Finance guide · Open from Admin → Finance anytime.</p>
+      <p data-lang="es">clubSENsational · Guía Finance Admin PORTAL · Ábrela desde Admin → Finance cuando quieras.</p>
+      <p><a href="/admin_dashboard.html#reenrol_payments">Finance</a> · <a href="/admin_portal_guide.html">Admin portal guide</a></p>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      var body = document.body;
+      var en = document.getElementById("langEn");
+      var es = document.getElementById("langEs");
+      function setLang( wh) {
+        body.classList.remove("lang-en", "lang-es");
+        body.classList.add(wh === "es" ? "lang-es" : "lang-en");
+        document.documentElement.lang = wh === "es" ? "es" : "en-GB";
+        if (en) {
+          en.classList.toggle("chip--on", wh !== "es");
+          en.setAttribute("aria-pressed", wh !== "es" ? "true" : "false");
+        }
+        if (es) {
+          es.classList.toggle("chip--on", wh === "es");
+          es.setAttribute("aria-pressed", wh === "es" ? "true" : "false");
+        }
+        try {
+          localStorage.setItem("portal_finance_guide_lang", wh);
+        } catch (_) {}
+      }
+      if (en) en.addEventListener("click", function () { setLang("en"); });
+      if (es) es.addEventListener("click", function () { setLang("es"); });
+      var saved = "";
+      try {
+        saved = localStorage.getItem("portal_finance_guide_lang") || "";
+      } catch (_) {}
+      if (saved === "es" || saved === "en") setLang(saved);
+      else if ((navigator.language || "").toLowerCase().indexOf("es") === 0) setLang("es");
+    })();
+  </script>
+</body>
+</html>
