@@ -260,8 +260,17 @@ export async function xeroCreateAccrecInvoice(
   unit = round4(unit);
 
   const vatMode = cleanXero(input.vatMode, 20).toLowerCase();
-  const taxType = vatMode === "exempt" ? "NONE" : "OUTPUT2";
-  const salesCode = cleanXero(Deno.env.get("XERO_SALES_ACCOUNT_CODE"), 40) || "200";
+  const isExempt = vatMode === "exempt";
+  /* UK Xero tax types: Exempt Income = EXEMPTOUTPUT; 20% (VAT on Income) = OUTPUT2 */
+  const taxType = isExempt
+    ? (cleanXero(Deno.env.get("XERO_TAX_TYPE_EXEMPT"), 40) || "EXEMPTOUTPUT")
+    : (cleanXero(Deno.env.get("XERO_TAX_TYPE_VAT"), 40) || "OUTPUT2");
+  /* 202 = Sales Structured Support Activity (VAT Exempt); 200 = Sales Structured Support (Taxable 20%) */
+  const salesCode = isExempt
+    ? (cleanXero(Deno.env.get("XERO_SALES_ACCOUNT_CODE_EXEMPT"), 40) || "202")
+    : (cleanXero(Deno.env.get("XERO_SALES_ACCOUNT_CODE_VAT"), 40) ||
+      cleanXero(Deno.env.get("XERO_SALES_ACCOUNT_CODE"), 40) ||
+      "200");
   const description =
     cleanXero(input.lineDescription, 4000) ||
     "Structured activity support delivered for a SEND participant.";
@@ -312,7 +321,8 @@ export async function xeroCreateAccrecInvoice(
         DueDate: dueDate,
         InvoiceNumber: xeroInvoiceNumber,
         Reference: reference,
-        LineAmountTypes: vatMode === "exempt" ? "NoTax" : "Inclusive",
+        /* Inclusive for VAT-on-income gross amounts; Exclusive for exempt (0% EXEMPTOUTPUT). */
+        LineAmountTypes: isExempt ? "Exclusive" : "Inclusive",
         Status: "AUTHORISED",
         LineItems: lineItems,
       },

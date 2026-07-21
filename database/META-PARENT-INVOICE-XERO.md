@@ -38,11 +38,14 @@ XERO_REFRESH_TOKEN="..."   # from Xero OAuth consent; rotates — update when Xe
 XERO_TENANT_ID="..."       # organisation connection id
 XERO_BANK_ACCOUNT_CODE="090"  # optional legacy; bank feeds often have no Code
 XERO_BANK_ACCOUNT_ID="…"      # preferred — Xero AccountID GUID for Tide/Revolut GBP bank
-XERO_SALES_ACCOUNT_CODE="200" # optional; sales account for ACCREC lines (default 200)
+XERO_SALES_ACCOUNT_CODE="200"          # legacy alias for taxable (optional)
+XERO_SALES_ACCOUNT_CODE_VAT="200"      # Sales Structured Support (Taxable 20%)
+XERO_SALES_ACCOUNT_CODE_EXEMPT="202"   # Sales Structured Support Activity (VAT Exempt)
+XERO_TAX_TYPE_VAT="OUTPUT2"            # 20% (VAT on Income)
+XERO_TAX_TYPE_EXEMPT="EXEMPTOUTPUT"    # Exempt Income
 ```
 
-Create a Xero **Web app** (OAuth2). Apps created on/after **2 March 2026** must use
-**granular** scopes (broad `accounting.transactions` is rejected).
+Defaults if unset: taxable → account **200** + tax **OUTPUT2**; exempt → account **202** + tax **EXEMPTOUTPUT**.
 
 Required scopes for push + payment write-back:
 
