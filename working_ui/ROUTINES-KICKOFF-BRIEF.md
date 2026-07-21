@@ -27,24 +27,31 @@ Anon key: set in Vercel env for **both** apps — do not commit to git.
 
 ## Planner permissions
 
-Uses `staff_profiles.app_role` (lowercase): `staff` | `lead` | `admin` | `ceo`.
+Uses `staff_profiles.app_role` + `staff_profiles.planner_full_access` + `staff_participant_access`.
 
-| Role | Planner library |
+| Flag / role | Planner library |
 |------|-----------------|
-| `ceo`, `admin` | Full library |
-| `lead`, `staff` | Universal packs + tailored packs listed in `staff_participant_access` |
+| `planner_full_access = true` (Michelle, Victor, Raul, Palankas/`Javi`) | **Full project** |
+| `ceo` / `admin` (legacy) | Full library (visualVIC may still honour this) |
+| `lead` / `staff` without full flag | Universal packs + rows in `staff_participant_access` |
 
 Inactive profiles (`is_active = false`) → no access.
 
-### Participant assignments (seed)
+`staff_participant_access.participant_slug` may be a tailored participant **or** a service pack:  
+`ikram`, `serine`, `ayaan`, `emanuel`, `tinashe`, `fadi`, `core`, `climbing`, `fitness`.
 
-| Person | app_role | participant_slug(s) |
-|--------|----------|------------------------|
-| Luliya | staff | ikram, emanuel |
-| Youssef | staff | ikram, emanuel |
-| Michelle | lead | ikram, emanuel |
-| Sandra | staff | serine, ayaan |
-| Victor, Raul, Javi | ceo | *(none — full access)* |
+### Assignments (Jul 2026)
+
+| Person | Scope |
+|--------|--------|
+| Alex, Andres, Carlos | climbing, core |
+| Bismark | climbing, tinashe, core |
+| Sandra | fitness, ayaan, serine, core |
+| Giuseppe, Godsway, John | tinashe, core |
+| Roberto | fadi, core |
+| Luliya | ikram, core |
+| Youssef | fadi, emanuel, core |
+| Michelle, Victor, Raul, Palankas (Javi) | **full project** (`planner_full_access`) |
 
 ## Portal tasks (this repo does not implement HTML dashboards)
 

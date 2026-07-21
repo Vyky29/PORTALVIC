@@ -54,10 +54,17 @@ En [Supabase → Authentication → URL Configuration](https://supabase.com/dash
 - **No** hace falta configurar en visualVIC ninguna URL del portal staff ni de portalvic para que Plan funcione.
 - Quién ve qué en visualVIC (servicio, participantes, carpetas premium, etc.) se configura **en visualVIC / Supabase**, no en variables de entorno del portal.
 
-Ejemplos de alcance (producto visualVIC):
+Ejemplos de alcance (producto visualVIC / `staff_participant_access`):
 
-- Sandra → Physical Activity, Core, Ayaan, Serine
-- Day Centre → Day Centre, Core, Emanuel, Fadi, Ikram, Timi + carpeta premium (shower, getting changed, …)
+- Sandra → Fitness, Ayaan, Serine & Core
+- Alex / Andres / Carlos → Climbing & Core
+- Bismark → Climbing, Tinashe & Core
+- Giuseppe / Godsway / John → Tinashe & Core
+- Roberto → Fadi & Core
+- Luliya → Ikram & Core
+- Youssef → Fadi, Emanuel & Core
+- Michelle / Victor / Raul / Palankas → proyecto completo (`planner_full_access`)
+- Day Centre (legacy note) → Day Centre, Core, Emanuel, Fadi, Ikram, Timi + carpeta premium (shower, getting changed, …)
 
 ## Staff app rollout (open to all — Jul 2026)
 
