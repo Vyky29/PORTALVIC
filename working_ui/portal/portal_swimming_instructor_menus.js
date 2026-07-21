@@ -588,7 +588,9 @@
     setTopbarToolGroup(SWIMMING_TERM_REVIEW_IDS, showSwReview, { visible: showSwReview });
     setTopbarToolGroup(SWIMMING_VENUE_IDS, venueOn, { visible: true });
     setTopbarToolGroup(SWIMMING_PICKUP_IDS, !!profile.pickup, { visible: true });
-    setTopbarToolGroup(SWIMMING_PLANNER_IDS, !!profile.planner, { visible: true });
+    setTopbarToolGroup(SWIMMING_PLANNER_IDS, !!profile.planner, {
+      visible: !!profile.planner,
+    });
     setTopbarToolGroup(LEAD_REPORT_IDS, true, {
       visible: isLeadShell || isProgrammeLead || !!profile.leadExtras,
     });
