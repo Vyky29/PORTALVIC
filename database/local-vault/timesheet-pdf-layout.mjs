@@ -25,8 +25,10 @@ function dayOrdinal(n) {
 }
 
 function displayDateFancy(iso) {
-  const d = parseIsoDate(iso);
-  if (!d) return String(iso || "");
+  const raw = String(iso || "").trim();
+  if (!raw || raw === "-" || raw === "—") return "—";
+  const d = parseIsoDate(raw);
+  if (!d) return "—";
   const dd = dayOrdinal(d.getDate());
   const month = d.toLocaleDateString("en-GB", { month: "long" });
   return `${dd}/${month}/${d.getFullYear()}`;
@@ -274,14 +276,17 @@ export function buildFormattedTimesheetPdfBytes(opts) {
     }
     doc.rect(colX[0], y, colX[6] - colX[0], thisRowH, "S");
     const isFlat = !isDayOff && serviceFlatRate(e.service || e.role) != null;
-    const midCol = manual
-      ? String(e.note || e.day || "").slice(0, 22)
-      : isDayOff
-        ? "Day off"
-        : isFlat
-          ? String(entryRoleLabel(e) || e.role || "Training").slice(0, 22)
-          : String(e.day || "").slice(0, 22);
-    const statusTxt = manual
+    const noDate = !String(e.date || "").trim();
+    const midCol = noDate
+      ? String(e.note || e.service_label || e.service || "Extra hours").slice(0, 22)
+      : manual
+        ? String(e.note || e.service_label || e.service || e.day || "").slice(0, 22)
+        : isDayOff
+          ? "Day off"
+          : isFlat
+            ? String(entryRoleLabel(e) || e.role || "Training").slice(0, 22)
+            : String(e.day || "").slice(0, 22);
+    const statusTxt = noDate || manual
       ? "Manual"
       : isDayOff
         ? "Day off"

@@ -58,11 +58,24 @@ export function michelleDayCentrePayableHours(rosterKey, dateObj, role, computed
   return MICHELLE_DAY_CENTRE_PAY_HOURS;
 }
 
-export function isSundayMaSupportPayBand(dayName, role, service, dayRows) {
+export function isSundayMaSupportPayBand(dayName, role, service, dayRows, rosterKey) {
   if (String(dayName || "") !== "Sunday") return false;
-  const svc = String(service || "").toLowerCase();
   const r = String(role || "").trim();
-  if (r === "Support Worker" || /multi[-\s]?activity/.test(svc)) {
+  /* Swim instructors use the 6h / 6.5h band — never the 5h / 5.5h MA lead split. */
+  if (r === "Swimming Instructor") return false;
+  const key = String(rosterKey || "")
+    .trim()
+    .toLowerCase();
+  const svc = String(service || "").toLowerCase();
+  const isLeadRole =
+    SUNDAY_MA_LEAD_KEYS.has(key) ||
+    /^service\s*lead$/i.test(r) ||
+    /^lead$/i.test(r);
+  if (
+    r === "Support Worker" ||
+    isLeadRole ||
+    /multi[-\s]?activity/.test(svc)
+  ) {
     const rows = dayRows || [];
     if (!rows.length) return true;
     return rows.some((s) => {
@@ -71,14 +84,19 @@ export function isSundayMaSupportPayBand(dayName, role, service, dayRows) {
       const act = sessionServiceLower(s);
       const venue = String(s.venue || s.area || "").toLowerCase();
       if (/climb/.test(act)) return false;
-      return /multi|support|hub|bespoke/.test(act) || venue.indexOf("hub") >= 0 || venue.indexOf("pool") >= 0;
+      return (
+        /multi|support|hub|bespoke/.test(act) ||
+        venue.indexOf("hub") >= 0 ||
+        venue.indexOf("pool") >= 0 ||
+        venue.indexOf("swimfarm") >= 0
+      );
     });
   }
   return false;
 }
 
 export function sundayMaSupportPayableHours(dayName, rosterKey, role, service, computedHours, dayRows) {
-  if (!isSundayMaSupportPayBand(dayName, role, service, dayRows)) return computedHours;
+  if (!isSundayMaSupportPayBand(dayName, role, service, dayRows, rosterKey)) return computedHours;
   const key = String(rosterKey || "")
     .trim()
     .toLowerCase();
