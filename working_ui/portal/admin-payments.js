@@ -638,13 +638,35 @@
       if (ix < 0) ix = s.indexOf("·");
       if (ix > 0) {
         var left = s.slice(0, ix).trim();
-        if (/ealing|h\s*&\s*f|nhs|lbhf|cwd|local authority|\bla\b/i.test(left)) {
+        if (/ealing|h\s*&\s*f|nhs|lbhf|cwd|local authority|\bla\b|sbs/i.test(left)) {
           s = s.slice(ix + 1).trim() || s;
         }
       }
       return s;
     }
-    return preferredParticipantName(personBit(summerParent), personBit(autumnParent));
+    var s = personBit(summerParent);
+    var a = personBit(autumnParent);
+    /* Workbook LA/NHS rows store funder/stream ("Day Centre", "Prasher") — never prefer those. */
+    if (isNonPersonParentLabel(s) && !isNonPersonParentLabel(a)) return a;
+    if (isNonPersonParentLabel(a) && !isNonPersonParentLabel(s)) return s;
+    if (isNonPersonParentLabel(s) && isNonPersonParentLabel(a)) return "";
+    return preferredParticipantName(s, a);
+  }
+
+  /** Workbook / funder labels that must not show under the client name. */
+  function isNonPersonParentLabel(raw) {
+    var s = String(raw || "").trim();
+    if (!s || s === "—") return true;
+    var low = s.toLowerCase().replace(/\s+/g, " ");
+    if (
+      /^(day\s*centre|afterschool|prasher|nhs(\/sbs)?|sbs|lbhf|ealing|h\s*&\s*f|cwd|local\s*authority|\bla\b|funded by|using funds|private funds|direct payments?)$/i
+        .test(low)
+    ) {
+      return true;
+    }
+    if (/^(nhs|sbs|la)\b/.test(low) && low.length < 28) return true;
+    if (/day\s*centre|afterschool\s*&\s*weekend|funded by (nhs|la)/i.test(low)) return true;
+    return false;
   }
 
   /**
@@ -2226,7 +2248,7 @@
     var name = String((r && r.client_name) || "—").trim() || "—";
     var parent = parentPersonFor(r);
     var html = '<span class="pay-name-stack"><span class="pay-name">' + esc(name) + "</span>";
-    if (parent && parent !== "—") {
+    if (parent) {
       html += '<span class="pay-name-parent">' + esc(parent) + "</span>";
     }
     html += "</span>";
@@ -3719,12 +3741,17 @@
     return "";
   }
 
-  // Parent / contact name only (strip any "Funder ·" prefix).
+  // Parent / contact name only (strip any "Funder ·" prefix; never show stream/funder junk).
   function parentPersonFor(r) {
-    var pn = String(r.parent_name || "").trim();
+    if (r && r._portalParentDisplay && !isNonPersonParentLabel(r._portalParentDisplay)) {
+      return String(r._portalParentDisplay).trim();
+    }
+    var pn = String((r && r.parent_name) || "").trim();
     var ix = pn.indexOf("\u00b7"); // "·"
-    if (ix >= 0) return pn.slice(ix + 1).trim() || "—";
-    return pn || "—";
+    if (ix < 0) ix = pn.indexOf("·");
+    if (ix >= 0) pn = pn.slice(ix + 1).trim() || pn;
+    if (isNonPersonParentLabel(pn)) return "";
+    return pn || "";
   }
 
   function render() {
@@ -4314,16 +4341,31 @@
     function ingest(rows) {
       (rows || []).forEach(function (row) {
         if (!row || !row.contact_id) return;
-        map[String(row.contact_id)] = {
-          funding_label: String(row.funding_label || "").trim(),
-          payment_method_label: String(row.payment_method_label || "").trim(),
-          child_display: String(row.child_display || "").trim(),
+        var cid = String(row.contact_id);
+        var prev = map[cid] || {};
+        map[cid] = {
+          funding_label: String(row.funding_label || prev.funding_label || "").trim(),
+          payment_method_label: String(row.payment_method_label || prev.payment_method_label || "").trim(),
+          child_display: String(row.child_display || prev.child_display || "").trim(),
+          parent_display: String(row.parent_display || prev.parent_display || "").trim()
+            || [row.parent_first_name, row.parent_last_name].filter(Boolean).join(" ").trim()
+            || String(prev.parent_display || "").trim(),
         };
       });
     }
+    /* All contacts with a parent name (Day Centre NHS workbook stores funder junk in parent_name). */
+    var allParents = client
+      .from("portal_parent_contacts")
+      .select("contact_id, funding_label, payment_method_label, child_display, parent_display, parent_first_name, parent_last_name")
+      .limit(800)
+      .then(function (res) {
+        if (!res.error) ingest(res.data);
+      })
+      .catch(function () {});
+
     var labeled = client
       .from("portal_parent_contacts")
-      .select("contact_id, funding_label, payment_method_label, child_display")
+      .select("contact_id, funding_label, payment_method_label, child_display, parent_display, parent_first_name, parent_last_name")
       .not("funding_label", "is", null)
       .neq("funding_label", "")
       .limit(500)
@@ -4337,7 +4379,7 @@
       if (!chunk.length) return Promise.resolve(map);
       return client
         .from("portal_parent_contacts")
-        .select("contact_id, funding_label, payment_method_label, child_display")
+        .select("contact_id, funding_label, payment_method_label, child_display, parent_display, parent_first_name, parent_last_name")
         .in("contact_id", chunk)
         .then(function (res) {
           if (res.error) throw res.error;
@@ -4345,7 +4387,7 @@
           return page(from + 80);
         });
     }
-    return labeled.then(function () {
+    return Promise.all([allParents, labeled]).then(function () {
       return page(0);
     }).catch(function () { return map; });
   }
@@ -4353,11 +4395,51 @@
   function applyPayGroupClassification(payments, reenrol, fundingByContact) {
     fundingByContact = fundingByContact || {};
     var byChildName = {};
+    var parentByChild = {};
     Object.keys(fundingByContact).forEach(function (cid) {
       var info = fundingByContact[cid];
       var name = String((info && info.child_display) || "").trim().toLowerCase();
       if (name) byChildName[name] = info;
+      var parent = String((info && info.parent_display) || "").trim();
+      if (parent && !isNonPersonParentLabel(parent)) {
+        var nk = normClientNameKey(info.child_display);
+        if (nk) parentByChild[nk] = parent;
+        /* First-name key for short workbook names (Timi / Fadi). */
+        var first = nk.split(" ")[0];
+        if (first && first.length >= 3 && !parentByChild[first]) parentByChild[first] = parent;
+      }
     });
+
+    function portalParentForRow(r) {
+      if (!r) return "";
+      var cid = String(r._contactId || "").trim();
+      if (cid && fundingByContact[cid] && fundingByContact[cid].parent_display) {
+        var p0 = String(fundingByContact[cid].parent_display).trim();
+        if (p0 && !isNonPersonParentLabel(p0)) return p0;
+      }
+      var nk = normClientNameKey(r.client_name);
+      if (nk && parentByChild[nk]) return parentByChild[nk];
+      var first = nk.split(" ")[0];
+      if (first && parentByChild[first]) return parentByChild[first];
+      /* Match "Emanuel Dodson" contact when row is "Emanuel". */
+      var hit = "";
+      Object.keys(parentByChild).forEach(function (k) {
+        if (hit) return;
+        if (first && first.length >= 4 && (k.indexOf(first) === 0 || first.indexOf(k) === 0)) {
+          hit = parentByChild[k];
+        }
+      });
+      return hit || "";
+    }
+
+    function applyPortalParent(r) {
+      var portal = portalParentForRow(r);
+      if (!portal) return;
+      r._portalParentDisplay = portal;
+      if (isNonPersonParentLabel(r.parent_name) || isNonPersonParentLabel(parentPersonFor({ parent_name: r.parent_name }))) {
+        r.parent_name = portal;
+      }
+    }
 
     /* Index Summer payment rows by normalized client name (any sheet). */
     var summerByNorm = {};
@@ -4574,6 +4656,10 @@
         });
       }
     });
+
+    /* Replace workbook funder/stream labels (Day Centre / Prasher) with real parents. */
+    (reenrol || []).forEach(applyPortalParent);
+    (payments || []).forEach(applyPortalParent);
   }
 
   function isAutumnReenrolInvoice(inv) {
