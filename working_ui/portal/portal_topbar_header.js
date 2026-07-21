@@ -657,9 +657,9 @@
 
   /**
    * Halo flanks layout:
-   *  - 4 session icons: all left (1×4); ADMIN right = 4-button block
-   *  - 5 icons (plan+swim): 4 left; Plan (2) + ADMIN (2) on right
-   *  - 6 lead: 4 left; Lead+Stats (2) + ADMIN (2) on right
+   *  - 4 session icons: left 2×2; ADMIN right fills matching 2×2
+   *  - 5 icons (plan+swim): left 2×2; right Plan (top 2) + ADMIN (bottom 2)
+   *  - 6 lead: left 2×2; right Lead|Stats (top) + ADMIN (bottom 2)
    */
   function portalSyncHaloFlankToolPlacement() {
     var left = document.getElementById("topbarToolsGridLeft");
@@ -698,53 +698,69 @@
       "topbar-lead--flank-6",
     );
     leadRow.classList.add("topbar-lead--flank-" + mode);
-    right.classList.toggle("topbar-tools-grid--flank-2col", mode === "6");
-    right.classList.toggle("topbar-tools-grid--flank-stack", mode === "4" || mode === "5");
+
+    /* Both flanks are always a 2-column tile grid matching the left 2×2. */
+    left.classList.add("topbar-tools-grid--flank-2col");
+    right.classList.add("topbar-tools-grid--flank-2col");
+    right.classList.remove("topbar-tools-grid--flank-stack");
+    left.classList.remove("topbar-tools-grid--flank-stack");
 
     var leftOrder;
     var rightOrder;
     if (mode === "6") {
-      leftOrder = [photo, venue, plan, pickup];
+      leftOrder = [photo, pickup, plan, venue];
       rightOrder = [lead, stats, wa];
     } else if (mode === "5") {
-      leftOrder = [photo, venue, swim, pickup];
+      leftOrder = [photo, pickup, swim, venue];
       rightOrder = [plan, wa];
     } else if (hasSwim && !hasPlan) {
-      leftOrder = [photo, venue, swim, pickup];
+      leftOrder = [photo, pickup, swim, venue];
       rightOrder = [wa];
     } else {
-      leftOrder = [photo, venue, plan, pickup];
+      leftOrder = [photo, pickup, plan, venue];
       rightOrder = [wa];
     }
 
-    var parked = [teamRev];
     leftOrder.forEach(function (el) {
-      if (el && el.parentNode !== left) left.appendChild(el);
+      if (el) left.appendChild(el);
     });
     rightOrder.forEach(function (el) {
-      if (el && el.parentNode !== right) right.appendChild(el);
+      if (el) right.appendChild(el);
     });
-    /* Keep unused cells out of the right stack so they do not affect ADMIN sizing. */
     [photo, pickup, plan, stats, venue, swim, lead, teamRev].forEach(function (el) {
       if (!el) return;
-      var inLeft = leftOrder.indexOf(el) >= 0;
-      var inRight = rightOrder.indexOf(el) >= 0;
-      if (!inLeft && !inRight && el.parentNode !== left) left.appendChild(el);
+      if (leftOrder.indexOf(el) >= 0 || rightOrder.indexOf(el) >= 0) return;
+      left.appendChild(el);
     });
-    parked.forEach(function (el) {
-      if (el && el.parentNode !== left) left.appendChild(el);
-    });
-    if (wa && wa.parentNode !== right) right.appendChild(wa);
+    if (teamRev) left.appendChild(teamRev);
+    if (wa) right.appendChild(wa);
 
     if (plan) {
-      plan.classList.toggle("topbar-tool-cell--flank-span2h", mode === "5");
+      plan.classList.toggle("topbar-tool-cell--flank-span2w", mode === "5");
+      plan.style.gridColumn = mode === "5" ? "1 / -1" : "";
+      plan.style.gridRow = mode === "5" ? "1" : "";
     }
-    if (lead) lead.classList.remove("topbar-tool-cell--flank-tall");
-    if (stats) stats.classList.remove("topbar-tool-cell--flank-tall");
+    if (lead) {
+      lead.style.gridColumn = "";
+      lead.style.gridRow = mode === "6" ? "1" : "";
+    }
+    if (stats) {
+      stats.style.gridColumn = "";
+      stats.style.gridRow = mode === "6" ? "1" : "";
+    }
     if (wa) {
+      wa.hidden = false;
+      wa.setAttribute("aria-hidden", "false");
+      wa.classList.add("topbar-tool-cell--staff-wa", "topbar-tool-cell--span2");
       wa.classList.toggle("topbar-tool-cell--flank-admin-4", mode === "4");
       wa.classList.toggle("topbar-tool-cell--flank-admin-2", mode === "5" || mode === "6");
-      wa.classList.add("topbar-tool-cell--staff-wa", "topbar-tool-cell--span2");
+      if (mode === "4") {
+        wa.style.gridColumn = "1 / -1";
+        wa.style.gridRow = "1 / span 2";
+      } else {
+        wa.style.gridColumn = "1 / -1";
+        wa.style.gridRow = "2";
+      }
     }
   }
 

@@ -804,12 +804,16 @@
     cell.style.maxWidth = "none";
     cell.style.minWidth = "100%";
     cell.style.justifySelf = "stretch";
+    cell.style.alignSelf = "stretch";
     btn.style.width = "100%";
     btn.style.maxWidth = "none";
+    btn.style.height = "100%";
     btn.style.alignSelf = "stretch";
     if (btn.parentNode !== cell) cell.appendChild(btn);
     var right = document.getElementById("topbarToolsGridRight");
-    if (right && cell.parentNode === right && right.lastElementChild !== cell) {
+    if (right && cell.parentNode !== right) {
+      right.appendChild(cell);
+    } else if (right && cell.parentNode === right && right.lastElementChild !== cell) {
       right.appendChild(cell);
     }
   }
