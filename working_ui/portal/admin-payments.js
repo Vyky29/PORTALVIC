@@ -1697,10 +1697,114 @@
     ];
   }
 
+  /**
+   * ACAT kids who re-enrol Mon aquatic (Day Centre) + Multi weekend (Afterschool)
+   * on one INV-P (e.g. Jack Walker / Francesca). One aggregated row fails
+   * isAcatMondayAquaticRow because Services also contain "multi".
+   */
+  function splitAcatDualStreamRows(r) {
+    if (!r || r._acatPart || r._cyrusPart || r._crash) return null;
+    var slug = paymentParticipantSlug(r);
+    if (slug !== "jacks" && slug !== "jackw" && slug !== "kate" && slug !== "kamy") {
+      return null;
+    }
+    if (termBucketFor(r) !== "autumn_2627") return null;
+    var blob = rowServiceBlob(r);
+    var hasAquaticMon =
+      /aquatic|swim/i.test(blob)
+      && /\bmon(day)?\b/i.test(blob)
+      && /11\s*(?:am\s*)?(?:to|-|–|:)\s*12/.test(blob);
+    var hasMulti = /multi/i.test(blob);
+    if (!hasAquaticMon || !hasMulti) return null;
+
+    var d = r.data || {};
+    var we = { autumn: 13, spring: 9, summer: 11, annual: 33 };
+    var multiRate = 120;
+    var asSeasons = {
+      autumn: we.autumn * multiRate,
+      spring: we.spring * multiRate,
+      summer: we.summer * multiRate,
+      annual: we.annual * multiRate,
+    };
+    /* Prefer Multi line face from invoice when present (Jack Walker INV-P-0110 = £1560). */
+    var billed = Number(r._amountAutumn) || Number(r.amount_billed) || Number(r.amount) || 0;
+    if (billed > 2000) {
+      /* Combined aquatic+multi autumn — peel multi if remainder looks like ACAT aquatic. */
+      var multiFace = asSeasons.autumn;
+      var aqFace = Math.round((billed - multiFace) * 100) / 100;
+      if (aqFace >= 650 && aqFace <= 800) {
+        asSeasons.autumn = multiFace;
+      }
+    } else if (billed >= 1400 && billed <= 1700) {
+      asSeasons.autumn = billed;
+    }
+
+    var dcSvc = "60' Aquatic Activity, Monday - 11 am to 12 pm";
+    var asSvc = "90' Multi-Activity, Sunday - 9.30 am to 11 am";
+    var dcName = String(r.client_name || "").trim() || "Jack W";
+    if (!/\(\s*acat\s*\)/i.test(dcName)) dcName = dcName.replace(/\s*\*$/, "").trim() + " (ACAT)";
+
+    function clonePart(part, idSuffix, amount, services, seasons, displayName, stream) {
+      var out = {};
+      Object.keys(r).forEach(function (k) { out[k] = r[k]; });
+      out.id = String(r.id) + idSuffix;
+      out._acatPart = part;
+      out._sourcePaymentId = r.id;
+      out._syntheticSplit = true;
+      out.client_name = displayName;
+      out.amount = amount;
+      out.amount_billed = amount;
+      out.amount_out = amount;
+      out.payment_status = amount > 0 ? "Outstanding" : "Paid";
+      if (seasons) {
+        out._amountAutumn = seasons.autumn;
+        out._amountSpring = seasons.spring;
+        out._amountSummer = seasons.summer;
+        out._amountAnnual = seasons.annual;
+      }
+      out._serviceParts = Object.create(null);
+      String(services || "")
+        .split(/\n|·/)
+        .map(function (s) { return String(s || "").trim(); })
+        .filter(Boolean)
+        .forEach(function (s) { out._serviceParts[s] = 1; });
+      out.data = Object.assign({}, d, {
+        Services: services,
+        Term: "Autumn 26/27",
+        Stream: stream,
+        Cohort: part === "aquatic_mon" ? "ACAT" : (d.Cohort || ""),
+      });
+      if (part !== "aquatic_mon") delete out.data.Cohort;
+      out._termBucket = "autumn_2627";
+      return out;
+    }
+
+    return [
+      clonePart(
+        "aquatic_mon",
+        "::acat-aquatic",
+        750,
+        dcSvc,
+        { autumn: 750, spring: 600, summer: 800, annual: 2150 },
+        dcName,
+        "Day Centre"
+      ),
+      clonePart(
+        "afterschool",
+        "::acat-afterschool",
+        asSeasons.autumn,
+        asSvc,
+        asSeasons,
+        String(r.client_name || "").trim().replace(/\s*\(\s*acat\s*\)\s*$/i, "").trim() || dcName,
+        "Afterschool & Weekends"
+      ),
+    ];
+  }
+
   function expandSplitServiceRows(rows) {
     var out = [];
     (rows || []).forEach(function (r) {
-      var parts = splitCyrusServiceRows(r);
+      var parts = splitCyrusServiceRows(r) || splitAcatDualStreamRows(r);
       if (parts && parts.length) out.push.apply(out, parts);
       else out.push(r);
     });
@@ -1723,17 +1827,25 @@
    * Prefer explicit Cohort/Stream; do not rely on Services alone (roster enrich can overwrite).
    */
   function isAcatMondayAquaticRow(r) {
+    if (r && r._acatPart === "aquatic_mon") return true;
+    if (r && r._acatPart === "afterschool") return false;
     var slug = paymentParticipantSlug(r);
     if (slug !== "jacks" && slug !== "jackw" && slug !== "kate" && slug !== "kamy") {
       return false;
     }
     var d = (r && r.data) || {};
-    if (String(d.Cohort || "").toUpperCase() === "ACAT") return true;
+    if (String(d.Cohort || "").toUpperCase() === "ACAT") {
+      /* Combined aquatic+multi re-enrol row — aquatic half only after split. */
+      if (/multi/i.test(rowServiceBlob(r)) && /aquatic|swim/i.test(rowServiceBlob(r))) {
+        return false;
+      }
+      return true;
+    }
     if (/day\s*centre/i.test(String(d.Stream || ""))) return true;
     var name = String((r && r.client_name) || "");
     if (/\(\s*acat\s*\)/i.test(name) || /\*/.test(name)) {
       var s0 = rowServiceBlob(r);
-      if (/aquatic/i.test(s0) && /\bmon(day)?\b/i.test(s0)) return true;
+      if (/aquatic/i.test(s0) && /\bmon(day)?\b/i.test(s0) && !/multi/i.test(s0)) return true;
     }
     var s = rowServiceBlob(r);
     if (!/aquatic/i.test(s)) return false;
