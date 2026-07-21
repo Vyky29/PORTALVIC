@@ -117,19 +117,29 @@ async function loadLaPaymentRow(
   displayName: string,
 ): Promise<Record<string, unknown> | null> {
   let paymentRow: Record<string, unknown> | null = null;
-  const preferredKey = paymentClientKeyForParticipant(displayName);
-  if (preferredKey) {
+
+  const tryKey = async (clientKey: string) => {
+    if (!clientKey || paymentRow) return;
     const { data: keyed } = await admin
       .from("client_payments")
-      .select("client_key, client_name, data, sheet")
-      .eq("client_key", preferredKey)
+      .select("client_key, client_name, parent_name, payment_status, amount, data, sheet")
+      .eq("client_key", clientKey)
+      .order("imported_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
     if (keyed) paymentRow = keyed as Record<string, unknown>;
+  };
+
+  const preferredKey = paymentClientKeyForParticipant(displayName);
+  await tryKey(preferredKey);
+  /* Sheet keys are often compacted (jackw) while aliases emit hyphenated (jack-w). */
+  if (!paymentRow && preferredKey.includes("-")) {
+    await tryKey(preferredKey.replace(/-/g, ""));
   }
   if (!paymentRow && displayName) {
     const { data: byName } = await admin
       .from("client_payments")
-      .select("client_key, client_name, data, sheet")
+      .select("client_key, client_name, parent_name, payment_status, amount, data, sheet")
       .ilike("client_name", displayName)
       .order("imported_at", { ascending: false })
       .limit(1)
@@ -137,23 +147,45 @@ async function loadLaPaymentRow(
     if (byName) paymentRow = byName as Record<string, unknown>;
   }
   if (!paymentRow && displayName) {
-    // Sheets often store short names ("Adam P" for "Adam Pilcher") — prefix match.
+    // Sheets often store short names ("Adam P" / "Jack W") — surname-aware prefix match.
     const target = normalizeNameKey(displayName);
+    const targetToks = target.split(/\s+/).filter(Boolean);
+    const wantFirst = targetToks[0] || "";
+    const wantLast = targetToks.length > 1 ? targetToks[targetToks.length - 1] : "";
     const { data: laRows } = await admin
       .from("client_payments")
-      .select("client_key, client_name, data, sheet")
+      .select("client_key, client_name, parent_name, payment_status, amount, data, sheet")
       .in("sheet", ["LA", "DIRECT_PAYMENTS"])
       .limit(400);
     let best: Record<string, unknown> | null = null;
-    let bestLen = 0;
+    let bestScore = 0;
     for (const row of laRows || []) {
       const candidate = normalizeNameKey(row.client_name);
       if (!candidate || candidate.length < 4) continue;
-      if (target.startsWith(candidate) || candidate.startsWith(target)) {
-        if (candidate.length > bestLen) {
-          best = row as Record<string, unknown>;
-          bestLen = candidate.length;
+      const candToks = candidate
+        .split(/\s+/)
+        .filter((t) => t && t !== "acat");
+      const candLast = candToks.length > 1
+        ? candToks[candToks.length - 1]
+        : candToks[0] || "";
+      let score = 0;
+      if (candidate === target) score = 1000;
+      else if (target.startsWith(candidate) || candidate.startsWith(target)) {
+        score = 100 + candidate.length;
+        if (wantLast && candLast && candLast !== wantFirst) {
+          if (wantLast === candLast) score += 500;
+          else if (wantLast.startsWith(candLast) || candLast.startsWith(wantLast)) {
+            score += 400;
+          } else if (candLast.length === 1 && wantLast.charAt(0) === candLast) {
+            score += 400; /* Walker ↔ W */
+          } else {
+            score = 0; /* Jack Walker must not match Jack S */
+          }
         }
+      }
+      if (score > bestScore) {
+        best = row as Record<string, unknown>;
+        bestScore = score;
       }
     }
     if (best) paymentRow = best;
@@ -302,40 +334,7 @@ export async function resolveParticipantInvoiceFunding(
   }
 
   /* Prefer fuzzy LA/PARENTS sheet match (short names like "Samer" vs "Samer Bakhiet"). */
-  let paymentRow = await loadLaPaymentRow(admin, displayName);
-  if (!paymentRow) {
-    const preferredKey = paymentClientKeyForParticipant(displayName);
-    if (preferredKey) {
-      const { data: keyed } = await admin
-        .from("client_payments")
-        .select("client_key, client_name, parent_name, payment_status, amount, data, sheet")
-        .eq("client_key", preferredKey)
-        .maybeSingle();
-      if (keyed) paymentRow = keyed as Record<string, unknown>;
-    }
-  }
-  if (!paymentRow) {
-    const first = displayName.split(/\s+/)[0] || "";
-    const firstKey = first ? paymentClientKeyForParticipant(first) : "";
-    if (firstKey) {
-      const { data: keyed } = await admin
-        .from("client_payments")
-        .select("client_key, client_name, parent_name, payment_status, amount, data, sheet")
-        .eq("client_key", firstKey)
-        .maybeSingle();
-      if (keyed) paymentRow = keyed as Record<string, unknown>;
-    }
-  }
-  if (!paymentRow && displayName) {
-    const { data: byName } = await admin
-      .from("client_payments")
-      .select("client_key, client_name, parent_name, payment_status, amount, data, sheet")
-      .ilike("client_name", displayName)
-      .order("imported_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (byName) paymentRow = byName as Record<string, unknown>;
-  }
+  const paymentRow = await loadLaPaymentRow(admin, displayName);
 
   if (paymentRow) {
     const ctx = paymentRowToContext(paymentRow);

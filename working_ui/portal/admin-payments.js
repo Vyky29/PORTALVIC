@@ -4261,14 +4261,26 @@
       if (summerByNorm[nk]) return summerByNorm[nk];
       var toks = nk.split(" ").filter(Boolean);
       var first = toks[0] || "";
+      var wantLast = toks.length > 1 ? toks[toks.length - 1] : "";
       var hit = null;
       var hitScore = 0;
       Object.keys(summerByNorm).forEach(function (k) {
         var kTok = k.split(" ").filter(Boolean);
+        /* Ignore trailing cohort tags when comparing surnames (Jack W ACAT). */
+        var candCore = kTok.filter(function (t) { return t !== "acat"; });
+        var candLast = candCore.length > 1 ? candCore[candCore.length - 1] : (candCore[0] || "");
         var score = 0;
         if (k === nk) score = 1000;
-        else if (first.length >= 4 && (k.indexOf(first) === 0 || nk.indexOf(k) === 0)) score = 100;
-        else if (kTok.length === 1 && toks.indexOf(kTok[0]) >= 0) score = 250; /* eiji inside kacem eiji belhadj */
+        else if (first.length >= 4 && (k.indexOf(first) === 0 || nk.indexOf(k) === 0)) {
+          /* First-name prefix alone is ambiguous (Jack Walker ≠ Jack S / Veronica). */
+          score = 100;
+          if (wantLast && candLast && candLast !== first) {
+            if (wantLast === candLast) score += 500;
+            else if (wantLast.indexOf(candLast) === 0 || candLast.indexOf(wantLast) === 0) score += 400;
+            else if (candLast.length === 1 && wantLast.charAt(0) === candLast) score += 400; /* Walker ↔ W */
+            else score = 0; /* Jack Walker must not match Jack S */
+          }
+        } else if (kTok.length === 1 && toks.indexOf(kTok[0]) >= 0) score = 250; /* eiji inside kacem eiji belhadj */
         else if (toks.length === 1 && kTok.indexOf(toks[0]) >= 0) score = 250;
         if (score > hitScore) {
           hitScore = score;

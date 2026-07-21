@@ -239,7 +239,27 @@ export async function createPortalFamilyInvoice(
   const ownerId = clean(input.ownerUserId, 80);
   if (!ownerId) return { ok: false, error: "owner_required" };
 
-  const vatMode: PortalInvoiceVatMode = input.vatMode === "exempt" ? "exempt" : "vat_20";
+  const { data: participant } = await admin
+    .from("portal_participants")
+    .select("contact_id, display_name, first_name, last_name, parent_person_id")
+    .eq("contact_id", contactId)
+    .maybeSingle();
+  if (!participant) return { ok: false, error: "participant_not_found" };
+
+  const displayName =
+    clean(participant.display_name, 120) ||
+    [participant.first_name, participant.last_name].filter(Boolean).join(" ").trim() ||
+    contactId;
+
+  /* Direct Payments / LA sheet always win over parent form choices that picked 20%. */
+  const fundingUpfront = await resolveParticipantInvoiceFunding(admin, {
+    contactId,
+    displayName,
+  });
+  const vatMode: PortalInvoiceVatMode =
+    input.vatMode === "exempt" || fundingUpfront.vatMode === "exempt"
+      ? "exempt"
+      : "vat_20";
   const qtyRaw = Number(input.quantity);
   const quantity = Number.isFinite(qtyRaw) && qtyRaw > 0 ? Math.round(qtyRaw * 100) / 100 : 1;
   const dueDate = input.dueDateIso && /^\d{4}-\d{2}-\d{2}$/.test(input.dueDateIso)
@@ -267,27 +287,11 @@ export async function createPortalFamilyInvoice(
   const now = new Date().toISOString();
   const readyBy = clean(input.readyBy, 120) || "portal";
 
-  const { data: participant } = await admin
-    .from("portal_participants")
-    .select("contact_id, display_name, first_name, last_name, parent_person_id")
-    .eq("contact_id", contactId)
-    .maybeSingle();
-  if (!participant) return { ok: false, error: "participant_not_found" };
-
-  const displayName =
-    clean(participant.display_name, 120) ||
-    [participant.first_name, participant.last_name].filter(Boolean).join(" ").trim() ||
-    contactId;
-
   if (paymentMethodHint === "la_funded" && (!clean(input.clientIdLabel, 80) || !poLabel)) {
-    const funding = await resolveParticipantInvoiceFunding(admin, {
-      contactId,
-      displayName,
-    });
-    if (!clean(input.clientIdLabel, 80) && funding.clientId) {
-      clientIdLabel = clean(funding.clientId, 80) || contactId;
+    if (!clean(input.clientIdLabel, 80) && fundingUpfront.clientId) {
+      clientIdLabel = clean(fundingUpfront.clientId, 80) || contactId;
     }
-    if (!poLabel && funding.po) poLabel = clean(funding.po, 80);
+    if (!poLabel && fundingUpfront.po) poLabel = clean(fundingUpfront.po, 80);
   }
 
   // LA-managed invoices are billed to the funding authority, never the parent.
