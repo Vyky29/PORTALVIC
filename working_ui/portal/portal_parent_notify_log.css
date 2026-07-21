@@ -378,8 +378,17 @@
   min-width: 0;
 }
 
-.portal-pnlog-bubble__edit {
+.portal-pnlog-bubble__actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
   margin-left: auto;
+  min-width: 0;
+}
+
+.portal-pnlog-bubble__reply,
+.portal-pnlog-bubble__edit {
   border: 0;
   background: transparent;
   color: inherit;
@@ -392,8 +401,20 @@
   min-width: 0;
 }
 
+.portal-pnlog-bubble__reply:hover,
 .portal-pnlog-bubble__edit:hover {
   opacity: 0.85;
+}
+
+.portal-pnlog-bubble__reply.is-active {
+  text-decoration: none;
+  font-weight: 700;
+  color: #0f3d54;
+}
+
+.portal-pnlog-bubble--replying {
+  outline: 2px solid rgba(15, 61, 84, 0.35);
+  outline-offset: 2px;
 }
 
 .portal-pnlog-chip--edited {
@@ -420,6 +441,35 @@
   line-height: 1.4;
   overflow-wrap: anywhere;
   min-width: 0;
+}
+
+.portal-pnlog-composer__reply-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #e8f4fb;
+  border: 1px solid rgba(15, 61, 84, 0.2);
+  color: #0f3d54;
+  font-size: 12px;
+  line-height: 1.4;
+  min-width: 0;
+}
+
+.portal-pnlog-composer__reply-banner-main {
+  flex: 1 1 12rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.portal-pnlog-composer__reply-banner-warn {
+  display: block;
+  margin-top: 4px;
+  color: #5c4a00;
+  font-weight: 600;
 }
 
 .portal-pnlog-bubble__time {

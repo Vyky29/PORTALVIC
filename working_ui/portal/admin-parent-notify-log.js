@@ -109,6 +109,8 @@
     recordChunks: [],
     /** When set, composer is correcting an outbound message. */
     editing: null,
+    /** When set, next send quotes this WhatsApp message (Meta context.message_id). */
+    replyTo: null,
   };
 
   var SEEN_STORE_KEY = "portal_pnlog_seen_v1";
@@ -1286,6 +1288,36 @@
     );
   }
 
+  function eventWaMessageId(ev) {
+    if (!ev || !ev.row) return "";
+    if (ev.dir === "in") return String(ev.row.wa_message_id || "").trim();
+    return String(ev.row.whatsapp_message_id || "").trim();
+  }
+
+  function canReplyToEvent(ev) {
+    var id = eventWaMessageId(ev);
+    if (!id || id.indexOf("app:") === 0) return false;
+    if (ev.messageType === "reaction") return false;
+    if (ev.dir === "out" && String(ev.status || "").toLowerCase() === "failed") return false;
+    return true;
+  }
+
+  function replyPreviewForEvent(ev) {
+    var bodyStr = String((ev && ev.body) || "").trim();
+    var type = String((ev && ev.messageType) || "").toLowerCase();
+    if (/^\[(sticker|image|video|audio|document)\]$/i.test(bodyStr)) {
+      return bodyStr.replace(/^\[|\]$/g, "").replace(/^\w/, function (c) {
+        return c.toUpperCase();
+      });
+    }
+    if (bodyStr) return bodyPreview(bodyStr);
+    if (type === "image" || type === "sticker") return type === "sticker" ? "Sticker" : "Photo";
+    if (type === "audio" || type === "video" || type === "document") {
+      return type.charAt(0).toUpperCase() + type.slice(1);
+    }
+    return "Message";
+  }
+
   function renderBubble(ev) {
     var side = ev.dir === "in" ? "in" : "out";
     var metaBits = [];
@@ -1336,7 +1368,21 @@
           esc(errTip) +
           "</div>"
         : "";
-    var editHtml = "";
+    var waMid = eventWaMessageId(ev);
+    var replySelected =
+      state.replyTo &&
+      state.replyTo.waMessageId &&
+      waMid &&
+      state.replyTo.waMessageId === waMid;
+    var actionHtml = "";
+    if (canReplyToEvent(ev)) {
+      actionHtml +=
+        '<button type="button" class="portal-pnlog-bubble__reply' +
+        (replySelected ? " is-active" : "") +
+        '" data-reply-wa-id="' +
+        esc(waMid) +
+        '" title="Reply to this message (quote in WhatsApp)">Reply</button>';
+    }
     if (
       ev.dir === "out" &&
       bodyStr &&
@@ -1346,8 +1392,7 @@
       ev.status !== "failed" &&
       ev.id
     ) {
-      var waMid = String((ev.row && ev.row.whatsapp_message_id) || "").trim();
-      editHtml =
+      actionHtml +=
         '<button type="button" class="portal-pnlog-bubble__edit" data-edit-log-id="' +
         esc(String(ev.id)) +
         '" data-edit-wa-id="' +
@@ -1357,13 +1402,16 @@
     return (
       '<div class="portal-pnlog-bubble portal-pnlog-bubble--' +
       side +
-      '">' +
+      (replySelected ? " portal-pnlog-bubble--replying" : "") +
+      '"' +
+      (waMid ? ' data-wa-id="' + esc(waMid) + '"' : "") +
+      ">" +
       mediaHtml +
       contentHtml +
       errHtml +
       '<div class="portal-pnlog-bubble__meta">' +
       metaBits.join(" ") +
-      (editHtml ? " " + editHtml : "") +
+      (actionHtml ? '<span class="portal-pnlog-bubble__actions">' + actionHtml + "</span>" : "") +
       "</div></div>"
     );
   }
@@ -1410,9 +1458,46 @@
     state.editing = null;
   }
 
+  function clearReplyTo() {
+    state.replyTo = null;
+  }
+
+  function startReplyToMessage(waMessageId, preview, side) {
+    var t = findThread(state.selectedKey);
+    if (!t) return;
+    var id = String(waMessageId || "").trim();
+    if (!id || id.indexOf("app:") === 0) {
+      cfg.toast("This message cannot be quoted (no WhatsApp id).", "err");
+      return;
+    }
+    clearEditing();
+    state.replyTo = {
+      waMessageId: id,
+      preview: String(preview || "Message").slice(0, 120),
+      side: side === "in" ? "in" : "out",
+      threadKey: t.key,
+    };
+    clearComposerAttach();
+    state.composerSig = "";
+    state.threadRefresh.sig = "";
+    mountComposer(t, true);
+    var threadEl = document.getElementById("portalPnlogThread");
+    if (threadEl) {
+      threadEl.innerHTML = renderThreadMessagesHtml(t);
+    }
+    var ta = document.getElementById("portalPnlogComposerInput");
+    if (ta) {
+      try {
+        ta.focus();
+      } catch (_f) {}
+    }
+    syncComposerSendingState();
+  }
+
   function startEditOutbound(logId, waMessageId, bodyText) {
     var t = findThread(state.selectedKey);
     if (!t) return;
+    clearReplyTo();
     state.editing = {
       logId: String(logId || ""),
       waMessageId: String(waMessageId || ""),
@@ -1421,7 +1506,10 @@
     state.draftByKey[t.key] = String(bodyText || "");
     clearComposerAttach();
     state.composerSig = "";
+    state.threadRefresh.sig = "";
     mountComposer(t, true);
+    var editThreadEl = document.getElementById("portalPnlogThread");
+    if (editThreadEl) editThreadEl.innerHTML = renderThreadMessagesHtml(t);
     var ta = document.getElementById("portalPnlogComposerInput");
     if (ta) {
       ta.value = String(bodyText || "");
@@ -1517,7 +1605,21 @@
     var mount = document.getElementById("portalPnlogComposerMount");
     if (!mount) return;
     var phoneKey = composerPhoneKey(t);
-    var nextSig = (t && t.key ? t.key : "") + "|" + phoneKey + "|" + (phoneKey ? "ok" : "none");
+    var replyKey =
+      state.replyTo && state.replyTo.threadKey === (t && t.key)
+        ? state.replyTo.waMessageId || ""
+        : "";
+    var editKey = state.editing && state.editing.threadKey === (t && t.key) ? state.editing.logId || "" : "";
+    var nextSig =
+      (t && t.key ? t.key : "") +
+      "|" +
+      phoneKey +
+      "|" +
+      (phoneKey ? "ok" : "none") +
+      "|r:" +
+      replyKey +
+      "|e:" +
+      editKey;
     if (!force && state.composerSig === nextSig && mount.querySelector("#portalPnlogComposerInput, .portal-pnlog-composer--disabled")) {
       syncComposerSendingState();
       return;
@@ -1546,6 +1648,7 @@
     if (next !== state.selectedKey) {
       clearComposerAttach();
       clearEditing();
+      clearReplyTo();
     }
     state.selectedKey = next;
     if (next) {
@@ -1626,9 +1729,27 @@
     var editingNote = state.editing
       ? '<p class="portal-pnlog-composer__edit-banner" role="status">Editing a sent message — check the recipient below before saving.</p>'
       : "";
+    var replyNote = "";
+    if (state.replyTo && state.replyTo.threadKey === t.key && !state.editing) {
+      var quoteWorks = openSession;
+      replyNote =
+        '<div class="portal-pnlog-composer__reply-banner" role="status">' +
+        '<div class="portal-pnlog-composer__reply-banner-main">' +
+        "<strong>Replying to</strong> · " +
+        esc(state.replyTo.side === "in" ? "parent" : "our message") +
+        ": " +
+        esc(state.replyTo.preview || "Message") +
+        (!quoteWorks
+          ? '<span class="portal-pnlog-composer__reply-banner-warn"> Quote appears in WhatsApp only while the 24-hour reply window is open (parent messaged recently).</span>'
+          : "") +
+        "</div>" +
+        '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerCancelReply">Cancel</button>' +
+        "</div>";
+    }
     return (
       '<div class="portal-pnlog-composer">' +
       editingNote +
+      replyNote +
       '<p class="portal-pnlog-composer__to" title="Messages always go to this WhatsApp number">' +
       "<strong>To:</strong> " +
       esc(toName) +
@@ -1754,7 +1875,14 @@
       if (headEl) headEl.innerHTML = renderPaneHeadHtml(selected);
       if (threadEl) {
         var threadHtml = renderThreadMessagesHtml(selected);
-        var threadSig = String(selected.key || "") + "::" + threadEventsSig(selected);
+        var threadSig =
+          String(selected.key || "") +
+          "::" +
+          threadEventsSig(selected) +
+          "::reply:" +
+          (state.replyTo && state.replyTo.threadKey === selected.key
+            ? state.replyTo.waMessageId || ""
+            : "");
         var maybeUpdate =
           typeof global.portalWaMaybeUpdateThreadHost === "function"
             ? global.portalWaMaybeUpdateThreadHost
@@ -1943,7 +2071,14 @@
       return;
     }
     var contextWaId = "";
-    if (openSession && t.lastInboundId) {
+    if (
+      openSession &&
+      state.replyTo &&
+      state.replyTo.threadKey === t.key &&
+      state.replyTo.waMessageId
+    ) {
+      contextWaId = String(state.replyTo.waMessageId).trim();
+    } else if (openSession && t.lastInboundId) {
       for (var i = t.events.length - 1; i >= 0; i--) {
         if (t.events[i].dir === "in" && t.events[i].row) {
           contextWaId = String(
@@ -2027,6 +2162,7 @@
         }
         state.draftByKey[t.key] = "";
         clearEditing();
+        clearReplyTo();
         var msg =
           res.data && res.data.edited
             ? "Message updated on WhatsApp."
@@ -2105,8 +2241,53 @@
         if (cancelThread) {
           state.draftByKey[cancelThread.key] = "";
           state.composerSig = "";
+          state.threadRefresh.sig = "";
           mountComposer(cancelThread, true);
+          var cancelThreadEl = document.getElementById("portalPnlogThread");
+          if (cancelThreadEl) cancelThreadEl.innerHTML = renderThreadMessagesHtml(cancelThread);
         }
+        return;
+      }
+      var cancelReply = e.target.closest("#portalPnlogComposerCancelReply");
+      if (cancelReply) {
+        e.preventDefault();
+        clearReplyTo();
+        var replyThread = findThread(state.selectedKey);
+        if (replyThread) {
+          state.composerSig = "";
+          state.threadRefresh.sig = "";
+          mountComposer(replyThread, true);
+          var replyThreadEl = document.getElementById("portalPnlogThread");
+          if (replyThreadEl) replyThreadEl.innerHTML = renderThreadMessagesHtml(replyThread);
+        }
+        return;
+      }
+      var replyBtn = e.target.closest(".portal-pnlog-bubble__reply[data-reply-wa-id]");
+      if (replyBtn) {
+        e.preventDefault();
+        var replyWaId = replyBtn.getAttribute("data-reply-wa-id") || "";
+        var replyBubble = replyBtn.closest(".portal-pnlog-bubble");
+        var replySide = replyBubble && replyBubble.classList.contains("portal-pnlog-bubble--in")
+          ? "in"
+          : "out";
+        var preview = "";
+        var replyThreadFind = findThread(state.selectedKey);
+        if (replyThreadFind && replyThreadFind.events) {
+          for (var ri = 0; ri < replyThreadFind.events.length; ri++) {
+            if (eventWaMessageId(replyThreadFind.events[ri]) === replyWaId) {
+              preview = replyPreviewForEvent(replyThreadFind.events[ri]);
+              replySide = replyThreadFind.events[ri].dir === "in" ? "in" : "out";
+              break;
+            }
+          }
+        }
+        if (!preview && replyBubble) {
+          var textNode = replyBubble.querySelector(".portal-pnlog-bubble__text");
+          preview = textNode
+            ? bodyPreview(String(textNode.innerText || textNode.textContent || ""))
+            : "Message";
+        }
+        startReplyToMessage(replyWaId, preview || "Message", replySide);
         return;
       }
       var editBtn = e.target.closest(".portal-pnlog-bubble__edit[data-edit-log-id]");
@@ -2295,7 +2476,7 @@
     // page-intro must be a top-level sibling (not inside #portalParentNotifyLogRoot)
     // so admin page-head can extract + strip it once — no duplicate copy in the body.
     return (
-      '<p class="page-intro">WhatsApp conversations via the Business API — pick a family on the left, read the thread, and reply in the box below (no email on this screen). Search also finds families from Contacts even if there is no WhatsApp history yet. Delivery ticks: Sent → Delivered → Read. Refreshes every 15s.</p>' +
+      '<p class="page-intro">WhatsApp conversations via the Business API — pick a family on the left, read the thread, and reply in the box below (no email on this screen). Use <strong>Reply</strong> on a bubble to quote that message (like swipe-to-reply). Search also finds families from Contacts even if there is no WhatsApp history yet. Delivery ticks: Sent → Delivered → Read. Refreshes every 15s.</p>' +
       '<div id="portalParentNotifyLogRoot" class="portal-day-ops-embed portal-pnlog-root">' +
       '<div class="portal-pnlog-toolbar">' +
       '<input type="search" id="portalParentNotifyLogSearch" class="inp portal-pnlog-toolbar__search" placeholder="Search parent, participant, phone…" autocomplete="off" />' +
