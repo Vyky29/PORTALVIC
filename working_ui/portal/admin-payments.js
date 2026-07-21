@@ -1727,7 +1727,7 @@
   function splitAcatDualStreamRows(r) {
     if (!r || r._acatPart || r._cyrusPart || r._crash) return null;
     var slug = paymentParticipantSlug(r);
-    if (slug !== "jacks" && slug !== "jackw" && slug !== "kate" && slug !== "kamy") {
+    if (slug !== "jacks" && slug !== "jackw") {
       return null;
     }
     if (termBucketFor(r) !== "autumn_2627") return null;
@@ -1845,14 +1845,15 @@
   }
 
   /**
-   * ACAT Mon 11–12 Aquatic (Jack S / Jack W / Kate / Kamy) — Day Centre stream.
+   * ACAT Mon 11–12 Aquatic (Jack S / Jack W) — Day Centre stream.
    * Prefer explicit Cohort/Stream; do not rely on Services alone (roster enrich can overwrite).
+   * Kate + Kamy left 26/27 (no re-enrolment, Jul 2026).
    */
   function isAcatMondayAquaticRow(r) {
     if (r && r._acatPart === "aquatic_mon") return true;
     if (r && r._acatPart === "afterschool") return false;
     var slug = paymentParticipantSlug(r);
-    if (slug !== "jacks" && slug !== "jackw" && slug !== "kate" && slug !== "kamy") {
+    if (slug !== "jacks" && slug !== "jackw") {
       return false;
     }
     var d = (r && r.data) || {};
