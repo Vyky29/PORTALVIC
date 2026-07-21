@@ -3,9 +3,13 @@
  *   Mon/Wed/Fri (27, 29, 31):
  *     Roberto: Yaqoub Aquatic 12–1 (SwimFarm) · Fadi Day Centre 1–3
  *     Raul: Tinashe Aquatic 1–1.30 (SwimFarm)
- *     Roberto PM Acton: Saaib 4.30–5 · Adam P 5–6.30
+ *   Tue/Thu (28, 30) — Roberto PM Acton only:
+ *     Saaib 4.30–5 · Adam P 5–6.30
+ *   (Other days: mornings only — no Acton PM.)
  *
  *   node database/local-vault/patch-madre-crash-w2-yaqoub-tinashe-roberto-pm.mjs
+ *
+ * NOTE: Do not re-apply Acton PM on Mon/Wed/Fri. Corrected in MADRE rev 217+.
  */
 import fs from "fs";
 
@@ -27,7 +31,10 @@ const headers = {
 };
 
 const WEEK_START = "2026-07-27";
+/** Yaqoub + Tinashe mornings */
 const CRASH_DAYS = ["2026-07-27", "2026-07-29", "2026-07-31"];
+/** Roberto Acton PM — Tue/Thu only (not Mon/Wed/Fri) */
+const ACTON_DAYS = ["2026-07-28", "2026-07-30"];
 const WD = {
   "2026-07-27": "Monday",
   "2026-07-28": "Tuesday",
@@ -160,6 +167,24 @@ for (const iso of CRASH_DAYS) {
       /^yaqoub$/i.test(String(s.client_name || "")) &&
       /^12\s*to\s*1$/i.test(String(s.time_slot || "").replace(/\./g, "")),
   );
+  const hasPm = (rd?.slots || []).some((s) => {
+    const mins = startMinutes(s.time_slot);
+    return mins != null && mins >= 16 * 60;
+  });
+  const rad = (raul.days || []).find(
+    (x) => String(x.sessionDate || "").slice(0, 10) === iso,
+  );
+  const hasTin = (rad?.slots || []).some(
+    (s) =>
+      /^tinashe$/i.test(String(s.client_name || "")) &&
+      /^1\s*to\s*1\.?30/i.test(String(s.time_slot || "")),
+  );
+  if (!hasYaq || hasPm || !hasTin) alreadyOk = false;
+}
+for (const iso of ACTON_DAYS) {
+  const rd = (roberto.days || []).find(
+    (x) => String(x.sessionDate || "").slice(0, 10) === iso,
+  );
   const hasSaaib = (rd?.slots || []).some(
     (s) =>
       /^saaib$/i.test(String(s.client_name || "")) &&
@@ -170,15 +195,7 @@ for (const iso of CRASH_DAYS) {
       /^adam\s*p/i.test(String(s.client_name || "")) &&
       /^5\s*to\s*6\.?30/i.test(String(s.time_slot || "")),
   );
-  const rad = (raul.days || []).find(
-    (x) => String(x.sessionDate || "").slice(0, 10) === iso,
-  );
-  const hasTin = (rad?.slots || []).some(
-    (s) =>
-      /^tinashe$/i.test(String(s.client_name || "")) &&
-      /^1\s*to\s*1\.?30/i.test(String(s.time_slot || "")),
-  );
-  if (!hasYaq || !hasSaaib || !hasAdam || !hasTin) alreadyOk = false;
+  if (!hasSaaib || !hasAdam) alreadyOk = false;
 }
 if (alreadyOk) {
   console.log("noop — already applied", { revision: prevRev });
@@ -216,6 +233,21 @@ for (const iso of CRASH_DAYS) {
       instructors: "ROBERTO",
       participant_info: fadiInfo,
     },
+  ];
+  sortSlots(d);
+  notes.push(`${iso} roberto: Yaqoub 12–1 · Fadi 1–3 (mornings only)`);
+}
+
+for (const iso of ACTON_DAYS) {
+  const d = ensureDay(roberto, iso);
+  d.slots = (d.slots || []).filter((s) => {
+    const n = String(s.client_name || "").trim().toLowerCase();
+    if (/^(saaib|adam\s*p|adam\s*pi|adam\s*pilcher)$/i.test(n)) return false;
+    const mins = startMinutes(s.time_slot);
+    if (mins != null && mins >= 16 * 60) return false;
+    return true;
+  });
+  d.slots.push(
     {
       area: "Teaching Pool",
       venue: "Acton",
@@ -236,10 +268,10 @@ for (const iso of CRASH_DAYS) {
       instructors: "ROBERTO",
       participant_info: adamInfo,
     },
-  ];
+  );
   sortSlots(d);
   notes.push(
-    `${iso} roberto: Yaqoub 12–1 · Fadi 1–3 · Saaib 4.30–5 Acton · Adam P 5–6.30 Acton`,
+    `${iso} roberto: Saaib 4.30–5 Acton · Adam P 5–6.30 Acton`,
   );
 }
 
@@ -304,7 +336,7 @@ for (const iso of CRASH_DAYS) {
 doc.meta = doc.meta || {};
 doc.meta.notes = Array.isArray(doc.meta.notes) ? doc.meta.notes : [];
 doc.meta.notes.push(
-  `rev ${prevRev + 1}: Crash W2 Mon/Wed/Fri — Yaqoub 12–1 Roberto, Tinashe 1–1.30 Raul, Roberto Acton Saaib 4.30–5 + Adam P 5–6.30`,
+  `rev ${prevRev + 1}: Crash W2 — Yaqoub 12–1 Roberto + Tinashe 1–1.30 Raul (Mon/Wed/Fri); Roberto Acton Saaib 4.30–5 + Adam P 5–6.30 (Tue/Thu only)`,
 );
 
 const nextRev = prevRev + 1;
