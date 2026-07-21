@@ -42,7 +42,8 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
       "rev 219: Roberto this week Fadi+Zak only (no Acton); next week Yaqoub+Zak Mon/Wed/Fri, Acton Tue/Thu, Fadi off staff (holiday); Raul Tinashe 27/29/31 1\u20131.30",
       "rev 220: Fadi off all staff dashboards week 27\u201331 Jul (holiday; still billed)",
       "rev 221: Youssef off staff week 27\u201331 Jul (holiday)",
-      "rev 222: Week 27\u201331 Jul full rota \u2014 Ikram special swim Wed only; Emanuel handoffs Raul/Victor/Roberto; Adam P to 5.30; Makki Wed Victor; Thu Acton only"
+      "rev 222: Week 27\u201331 Jul full rota \u2014 Ikram special swim Wed only; Emanuel handoffs Raul/Victor/Roberto; Adam P to 5.30; Makki Wed Victor; Thu Acton only",
+      "rev 223: Wed 29 \u2014 drop Makki; Ikram swim Small Pool; Big Pool 11\u201312 Emanuel/Raul + Yaqoub/Roberto; 1\u20132 only Zak; Tinashe 1\u20131.30"
     ],
     "title": "Summer Term 2 Roster Master",
     "source": "staff_dashboard_spreadsheet_bundle.js + clients_info_embed.js",
@@ -16900,7 +16901,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                   "venue": "SwimFarm",
                   "service": "Aquatic Activity",
                   "pool_note": "Big Pool",
-                  "time_slot": "12 to 1",
+                  "time_slot": "11 to 12",
                   "client_name": "Yaqoub",
                   "instructors": "ROBERTO",
                   "participant_info": ""
@@ -17052,7 +17053,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                     },
                     {
                       "time_slot": "12 to 1",
-                      "area": "Big Pool"
+                      "area": "Small Pool"
                     },
                     {
                       "time_slot": "1 to 4",
@@ -17179,7 +17180,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
                     },
                     {
                       "time_slot": "12 to 1",
-                      "area": "Big Pool"
+                      "area": "Small Pool"
                     },
                     {
                       "time_slot": "1 to 4",
@@ -17253,28 +17254,7 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
               "sessionDate": "2026-07-28"
             },
             {
-              "slots": [
-                {
-                  "area": "Hub Room",
-                  "venue": "SwimFarm",
-                  "service": "Day Centre",
-                  "pool_note": "Hub Room",
-                  "time_slot": "11 to 1",
-                  "client_name": "Makki",
-                  "instructors": "VICTOR",
-                  "participant_info": ""
-                },
-                {
-                  "area": "Hub Room",
-                  "venue": "SwimFarm",
-                  "service": "Day Centre",
-                  "pool_note": "Hub Room",
-                  "time_slot": "1 to 2",
-                  "client_name": "Emanuel",
-                  "instructors": "VICTOR",
-                  "participant_info": "1. Age: 20 years (born July 2004)\n2. Medical: No chronic conditions. Medication: Aripiprazole 12.5 mg once daily; Melatonin as needed before bed. No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), dancing, YouTube videos, music, lights, bubbles, shopping, walking outdoors.\n4. Dislikes/Avoids: Climbing, sitting for long periods, iPad/tablet apps, deep-pressure activities.\n5. Known Triggers: Loud/unexpected noise, transitions or routine changes, waiting/delays, fatigue/hunger, group settings/crowds.\n6. Regulation Strategies: Preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby.\n7. Level of Support: Needs adult nearby and regular guidance; requires 1:1 continuous supervision when distressed.\n8. Communication: Gestural and non-verbal communication (pointing, leading adults); mainly expresses needs through behaviour.\n9. Preferred Communication: ABA-based structured approach; 1:1 adult support to process instructions.\n10. Mobility: Walks independently; needs assistance for transitions or moving between spaces.\n11. Personal Care: Requires physical assistance or close supervision.\n12. Task Engagement: Needs 1:1 support for most activities; benefits from clear visual structure.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger; requires constant 1:1 supervision.\n15. Other Notes: May exhibit self-harm behaviours during meltdowns; calm adult support and close supervision essential at all times."
-                }
-              ],
+              "slots": [],
               "weekday": "Wednesday",
               "sessionDate": "2026-07-29"
             },
@@ -17352,11 +17332,11 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
             {
               "slots": [
                 {
-                  "area": "Hub Room",
+                  "area": "Big Pool",
                   "venue": "SwimFarm",
-                  "service": "Day Centre",
-                  "pool_note": "Hub Room",
-                  "time_slot": "11 to 1",
+                  "service": "Aquatic Activity",
+                  "pool_note": "Big Pool",
+                  "time_slot": "11 to 12",
                   "client_name": "Emanuel",
                   "instructors": "RAUL",
                   "participant_info": "1. Age: 20 years (born July 2004)\n2. Medical: No chronic conditions. Medication: Aripiprazole 12.5 mg once daily; Melatonin as needed before bed. No allergies. No Health/Emergency Plan in place.\n3. Likes/Motivators: Trampolining, swinging, rocking, Playdoh, slime, kinetic sand, water play (swimming, pouring, splashing), dancing, YouTube videos, music, lights, bubbles, shopping, walking outdoors.\n4. Dislikes/Avoids: Climbing, sitting for long periods, iPad/tablet apps, deep-pressure activities.\n5. Known Triggers: Loud/unexpected noise, transitions or routine changes, waiting/delays, fatigue/hunger, group settings/crowds.\n6. Regulation Strategies: Preferred toy/object, visual supports (first/then, countdowns), supportive adult nearby.\n7. Level of Support: Needs adult nearby and regular guidance; requires 1:1 continuous supervision when distressed.\n8. Communication: Gestural and non-verbal communication (pointing, leading adults); mainly expresses needs through behaviour.\n9. Preferred Communication: ABA-based structured approach; 1:1 adult support to process instructions.\n10. Mobility: Walks independently; needs assistance for transitions or moving between spaces.\n11. Personal Care: Requires physical assistance or close supervision.\n12. Task Engagement: Needs 1:1 support for most activities; benefits from clear visual structure.\n13. Transitions/Flexibility: Needs preparation and countdowns for transitions.\n14. Safety: No awareness of danger; requires constant 1:1 supervision.\n15. Other Notes: May exhibit self-harm behaviours during meltdowns; calm adult support and close supervision essential at all times."
@@ -21723,51 +21703,6 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "raw_assignment": "Roberto 12-4 Yaqoub/Zak/Emanuel"
       },
       {
-        "day": "Wednesday",
-        "venue": "SwimFarm",
-        "staff_key": "michelle",
-        "staff_name": "Michelle",
-        "time_range": "11-4",
-        "session_date": "2026-07-29",
-        "raw_assignment": "Michelle 11-4 Ikram"
-      },
-      {
-        "day": "Wednesday",
-        "venue": "SwimFarm",
-        "staff_key": "lulia",
-        "staff_name": "Luliya",
-        "time_range": "11-4",
-        "session_date": "2026-07-29",
-        "raw_assignment": "Luliya 11-4 Ikram"
-      },
-      {
-        "day": "Wednesday",
-        "venue": "SwimFarm",
-        "staff_key": "victor",
-        "staff_name": "Victor",
-        "time_range": "11-2",
-        "session_date": "2026-07-29",
-        "raw_assignment": "Victor 11-2"
-      },
-      {
-        "day": "Wednesday",
-        "venue": "SwimFarm",
-        "staff_key": "raul",
-        "staff_name": "Raul",
-        "time_range": "11-1.30",
-        "session_date": "2026-07-29",
-        "raw_assignment": "Raul 11-1.30"
-      },
-      {
-        "day": "Wednesday",
-        "venue": "SwimFarm",
-        "staff_key": "roberto",
-        "staff_name": "Roberto",
-        "time_range": "12-4",
-        "session_date": "2026-07-29",
-        "raw_assignment": "Roberto 12-4 Yaqoub/Zak/Emanuel"
-      },
-      {
         "day": "Friday",
         "venue": "SwimFarm",
         "staff_key": "michelle",
@@ -21847,6 +21782,42 @@ window.PORTAL_ROSTER_TERM_MASTER_SEED = {
         "time_range": "4.30-5.30",
         "session_date": "2026-07-30",
         "raw_assignment": "Roberto Acton Saaib+Adam P"
+      },
+      {
+        "day": "Wednesday",
+        "venue": "SwimFarm",
+        "staff_key": "michelle",
+        "staff_name": "Michelle",
+        "time_range": "11-4",
+        "session_date": "2026-07-29",
+        "raw_assignment": "Michelle 11-4 Ikram (Small Pool 12-1)"
+      },
+      {
+        "day": "Wednesday",
+        "venue": "SwimFarm",
+        "staff_key": "lulia",
+        "staff_name": "Luliya",
+        "time_range": "11-4",
+        "session_date": "2026-07-29",
+        "raw_assignment": "Luliya 11-4 Ikram (Small Pool 12-1)"
+      },
+      {
+        "day": "Wednesday",
+        "venue": "SwimFarm",
+        "staff_key": "raul",
+        "staff_name": "Raul",
+        "time_range": "11-1.30",
+        "session_date": "2026-07-29",
+        "raw_assignment": "Raul Emanuel 11-12 + Tinashe 1-1.30"
+      },
+      {
+        "day": "Wednesday",
+        "venue": "SwimFarm",
+        "staff_key": "roberto",
+        "staff_name": "Roberto",
+        "time_range": "11-4",
+        "session_date": "2026-07-29",
+        "raw_assignment": "Roberto Yaqoub 11-12 \u00b7 Zak 1-2 \u00b7 Emanuel 2-4"
       }
     ],
     "termTo": "2026-07-31",

@@ -14058,30 +14058,20 @@
     {
       "client_name": "Emanuel",
       "day": "Wednesday",
-      "instructors": "VICTOR",
-      "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "1 to 2",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-29"
-    },
-    {
-      "client_name": "Emanuel",
-      "day": "Wednesday",
       "instructors": "RAUL",
-      "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "11 to 1",
+      "service": "Aquatic Activity",
+      "area": "Big Pool",
+      "time_slot": "11 to 12",
       "venue": "SwimFarm",
       "session_date": "2026-07-29"
     },
     {
-      "client_name": "Makki",
+      "client_name": "Yaqoub",
       "day": "Wednesday",
-      "instructors": "VICTOR",
-      "service": "Day Centre",
-      "area": "Hub Room",
-      "time_slot": "11 to 1",
+      "instructors": "ROBERTO",
+      "service": "Aquatic Activity",
+      "area": "Big Pool",
+      "time_slot": "11 to 12",
       "venue": "SwimFarm",
       "session_date": "2026-07-29"
     },
@@ -14102,16 +14092,6 @@
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-29"
-    },
-    {
-      "client_name": "Yaqoub",
-      "day": "Wednesday",
-      "instructors": "ROBERTO",
-      "service": "Aquatic Activity",
-      "area": "Big Pool",
-      "time_slot": "12 to 1",
       "venue": "SwimFarm",
       "session_date": "2026-07-29"
     },
@@ -14255,7 +14235,7 @@
     }
   ],
   "meta": {
-    "rosterMadreSyncedAt": "2026-07-21T13:48:36Z",
+    "rosterMadreSyncedAt": "2026-07-21T13:55:31Z",
     "rosterMadreSource": "roster_term_master.json"
   }
 };
