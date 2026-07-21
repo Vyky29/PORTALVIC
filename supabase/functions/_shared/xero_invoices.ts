@@ -271,6 +271,7 @@ export async function xeroCreateAccrecInvoice(
     cleanXero(input.reference, 120) ||
     (xeroInvoiceNumber !== invoiceNumber ? invoiceNumber : invoiceNumber);
 
+  /* Allow negative UnitAmount (Portal credits / vouchers). Qty stays > 0. */
   const inputLines = Array.isArray(input.lines)
     ? input.lines
         .map((ln) => ({
@@ -279,7 +280,7 @@ export async function xeroCreateAccrecInvoice(
           unitAmount: round4(Number(ln.unitAmount)),
           itemCode: cleanXero(ln.itemCode, 80) || null,
         }))
-        .filter((ln) => ln.unitAmount > 0)
+        .filter((ln) => Number.isFinite(ln.unitAmount) && ln.unitAmount !== 0)
     : [];
 
   const lineItems =

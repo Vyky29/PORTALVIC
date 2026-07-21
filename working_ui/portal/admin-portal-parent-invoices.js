@@ -195,7 +195,7 @@
       esc(String(meta.strong || 0)) +
       ' strong · ' +
       esc(String(meta.medium || 0)) +
-      ' review). Confirm marks the invoice paid and posts Payment to Xero when linked — bank-feed tick in Xero stays manual.</p>' +
+      ' review). Confirm marks the invoice paid and creates the Xero ACCREC if missing (awaiting payment) — mark Paid + reconcile in Xero.</p>' +
       '<div style="overflow:auto;max-width:100%">' +
       '<table class="table" style="width:100%;min-width:42rem">' +
       '<thead><tr><th>Date</th><th>Amount</th><th>Reference</th><th>Score</th><th>Invoice</th><th>Actions</th></tr></thead>' +
@@ -548,7 +548,7 @@
 
   function xeroSummary(inv) {
     var pay = String((inv && inv.payment_status) || '').toLowerCase();
-    /* Xero push is paid-only — unpaid drafts stay Portal-only (no status nag). */
+    /* Xero push creates ACCREC awaiting payment — unpaid drafts stay Portal-only. */
     if (pay !== 'paid') return '';
     if (inv.xero_invoice_id) {
       return inv.xero_payment_id
@@ -1996,7 +1996,7 @@
       '</div>' +
       '<details style="margin:0 0 14px;padding:12px;border:1px solid var(--line,#e5e7eb);border-radius:10px;max-width:100%;min-width:0">' +
       '<summary style="cursor:pointer;font-weight:700">Match Tide bank CSV</summary>' +
-      '<p class="muted" style="margin:8px 0 10px;max-width:48rem;overflow-wrap:break-word">Export inbound payments from Tide → upload here. Portal suggests INV-P matches by reference + amount. <strong>Confirm</strong> marks paid, creates the Xero ACCREC if missing, and posts the Payment (using the Tide date). Xero’s green bank-feed tick cannot be closed by API — OK/JAX still happens in Xero.</p>' +
+      '<p class="muted" style="margin:8px 0 10px;max-width:48rem;overflow-wrap:break-word">Export inbound payments from Tide → upload here. Portal suggests INV-P matches by reference + amount. <strong>Confirm</strong> marks paid and creates the Xero ACCREC if missing (awaiting payment). Mark Paid + reconcile the bank line in Xero.</p>' +
       '<div class="toolbar" style="flex-wrap:wrap;gap:8px;margin-bottom:8px">' +
       '<input class="inp" id="portalTideMatchFile" type="file" accept=".csv,text/csv,text/plain" style="max-width:20rem;min-width:0" />' +
       '<button type="button" class="btn btn--sm btn--primary" id="portalTideMatchUpload">Upload &amp; score</button>' +

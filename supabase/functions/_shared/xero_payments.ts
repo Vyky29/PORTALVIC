@@ -319,11 +319,11 @@ export async function xeroSyncPaidInvoiceShare(
 }
 
 /**
- * Close Portal → Xero books for a paid INV-P:
- * 1) create ACCREC if missing
- * 2) post Payment (optional bank date for better match suggestions)
+ * Ensure a paid Portal INV-P exists in Xero as an AUTHORISED ACCREC
+ * (awaiting payment). Does **not** post a Xero Payment — staff mark Paid
+ * and reconcile the bank line in Xero UI.
  *
- * Does **not** tick Xero bank-feed Reconcile — Xero blocks that via public API.
+ * `opts.paymentDateIso` is accepted for call-site compatibility but ignored.
  */
 export async function xeroEnsurePaidShareInBooks(
   // deno-lint-ignore no-explicit-any
@@ -340,31 +340,33 @@ export async function xeroEnsurePaidShareInBooks(
     paymentDateIso?: string | null;
   },
 ): Promise<XeroPaidShareSyncResult> {
+  void opts;
   if (!xeroConfigured()) return { synced: false, skipped: "xero_not_configured" };
 
-  let xeroId = clean(share.xero_invoice_id, 80);
-  let pushedInvoiceId: string | undefined;
-
-  if (!xeroId) {
-    const pushed = await pushPortalInvoiceShareToXero(supabase, String(share.id));
-    if (!pushed.ok) {
-      return {
-        synced: false,
-        error: pushed.error,
-        detail: pushed.detail,
-      };
-    }
-    xeroId = clean(pushed.xero_invoice_id, 80);
-    pushedInvoiceId = xeroId || undefined;
-    if (!xeroId) {
-      return { synced: false, error: "xero_push_missing_id" };
-    }
+  const existingId = clean(share.xero_invoice_id, 80);
+  if (existingId) {
+    return {
+      synced: false,
+      skipped: "already_has_xero_invoice",
+      pushed_invoice_id: existingId,
+    };
   }
 
-  const sync = await xeroSyncPaidInvoiceShare(
-    supabase,
-    { ...share, xero_invoice_id: xeroId },
-    opts,
-  );
-  return pushedInvoiceId ? { ...sync, pushed_invoice_id: pushedInvoiceId } : sync;
+  const pushed = await pushPortalInvoiceShareToXero(supabase, String(share.id));
+  if (!pushed.ok) {
+    return {
+      synced: false,
+      error: pushed.error,
+      detail: pushed.detail,
+    };
+  }
+  const xeroId = clean(pushed.xero_invoice_id, 80);
+  if (!xeroId) return { synced: false, error: "xero_push_missing_id" };
+  return {
+    synced: false,
+    skipped: pushed.skipped
+      ? "already_has_xero_invoice"
+      : "invoice_pushed_awaiting_payment",
+    pushed_invoice_id: xeroId,
+  };
 }

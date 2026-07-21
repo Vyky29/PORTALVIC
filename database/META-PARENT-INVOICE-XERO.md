@@ -8,30 +8,26 @@ and bank reconciliation.
 Finance → **Family invoices** → **Push to Xero** creates ACCREC invoices in Xero for
 Portal-created rows (`created_via` portal/reenrolment) that do not yet have
 `xero_invoice_id`. On success the share row is stamped with the Xero InvoiceID.
-If the invoice is already **paid** in Portal, payment write-back runs immediately.
+Invoices are left **awaiting payment** in Xero (no Payment write-back).
 
 Also available: **Export to Xero CSV** as a manual import fallback.
 
-Paid paths (Stripe, GoCardless, admin Confirm paid, Tide Confirm) now call
-**`xeroEnsurePaidShareInBooks`**: create ACCREC if missing, then post Payment.
-The batch button remains for backlog retries and rows that failed earlier.
+Paid paths (Stripe, GoCardless, admin Confirm paid, Tide Confirm) call
+**`xeroEnsurePaidShareInBooks`**: create ACCREC if missing, left **awaiting payment**.
+Staff mark Paid and reconcile the bank line in Xero. The batch button remains for
+backlog retries and rows that failed earlier.
 
 ## Payment write-back
 
-When a family invoice is marked **paid** in the portal (Stripe Checkout, admin
-Confirm paid, Tide CSV Confirm, or credit apply), Portal posts a matching
-**Payment** in Xero. If the share has no `xero_invoice_id` yet, Portal creates
-the ACCREC first (except credit-apply, which still requires a prior link).
+Portal does **not** post Xero Payments on paid anymore (Finance preference:
+invoice in books → mark Paid + reconcile in Xero). `xeroSyncPaidInvoiceShare`
+remains in code for rare one-off scripts only.
 
 ## Bank-feed green tick (Reconcile)
 
 **Xero does not allow reconciling bank statement lines via the public API**
 (documented: Accounting API → Bank Statements → “Reconcile via the API”).
-Portal can create ACCREC + Payment; the green OK on the Tide/Xero bank feed
-still needs Xero UI, bank rules, or Xero’s JAX auto-reconcile.
-
-Tide Confirm posts the Payment using the **Tide booking date** so amount+date
-align and Xero is more likely to suggest OK / auto-match.
+Portal creates the ACCREC (awaiting payment); staff mark Paid and tick OK in Xero.
 
 ## Secrets (Supabase Edge Functions)
 
