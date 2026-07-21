@@ -1972,7 +1972,7 @@
       '<div class="card-h"><h3>Re-enrolments &amp; shared invoices</h3>' +
       '<span class="chip chip--pend" id="portalParentInvoicesMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Track instalments after re-enrolment. Use <strong>Year / Term</strong> filters to switch booked totals. Rows are sorted by re-enrol date. LA sheet clients appear as office auto even without a family invoice. Day Centre places start 1 Sept (no half-term; Christmas closed). <strong>Push paid to Xero</strong> sends only <em>paid</em> Portal INV-Ps (creates the ACCREC and marks it paid in Xero). Unpaid drafts stay in Portal until you mark paid. <a href="/admin_finance_guide.html" target="_blank" rel="noopener">Finance guide (EN/ES)</a>.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Track instalments after re-enrolment. Use <strong>Year / Term</strong> filters to switch booked totals. Rows are sorted by re-enrol date. LA sheet clients appear as office auto even without a family invoice. Day Centre places start 1 Sept (no half-term; Christmas closed). <strong>Push paid to Xero</strong> sends only <em>paid</em> Portal INV-Ps (creates the ACCREC <em>awaiting payment</em> — mark Paid + reconcile in Xero). Unpaid drafts stay in Portal until you mark paid. <a href="/admin_finance_guide.html" target="_blank" rel="noopener">Finance guide (EN/ES)</a>.</p>' +
       '<div class="toolbar" style="margin-bottom:8px;flex-wrap:wrap;gap:8px;align-items:center">' +
       '<span class="muted" style="font-size:12px;font-weight:700">Amount</span>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-amount="year">Year 26/27</button>' +
@@ -1991,7 +1991,7 @@
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="xero_unsynced">Paid not in Xero</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="hidden">Hidden</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParentInvoicesRefreshEmbed">Refresh</button>' +
-      '<button type="button" class="btn btn--sm btn--primary" id="portalParentInvoicesPushXero" title="Creates ACCREC in Xero for paid Portal invoices and posts the payment">Push paid to Xero</button>' +
+      '<button type="button" class="btn btn--sm btn--primary" id="portalParentInvoicesPushXero" title="Creates ACCREC in Xero for paid Portal invoices (awaiting payment)">Push paid to Xero</button>' +
       '<button type="button" class="btn btn--sm" id="portalParentInvoicesExportXero">Export to Xero CSV</button>' +
       '</div>' +
       '<details style="margin:0 0 14px;padding:12px;border:1px solid var(--line,#e5e7eb);border-radius:10px;max-width:100%;min-width:0">' +

@@ -126,6 +126,29 @@ const server = createServer(async (req, res) => {
     ...(tenantId ? { XERO_TENANT_ID: tenantId } : {}),
   });
 
+  // Edge Functions hydrate from portal_xero_oauth — keep DB in sync.
+  try {
+    const { createClient } = await import("@supabase/supabase-js");
+    const sbUrl = env.SUPABASE_URL || env.PORTAL_SUPABASE_URL || "";
+    const sbKey = env.SUPABASE_SERVICE_ROLE_KEY || env.PORTAL_SUPABASE_SERVICE_ROLE_KEY || "";
+    if (sbUrl && sbKey) {
+      const sb = createClient(sbUrl, sbKey, { auth: { persistSession: false } });
+      const { error: dbErr } = await sb
+        .from("portal_xero_oauth")
+        .update({
+          refresh_token: tokenJson.refresh_token,
+          updated_at: new Date().toISOString(),
+        })
+        .neq("refresh_token", "");
+      if (dbErr) console.warn("portal_xero_oauth update failed:", dbErr.message);
+      else console.log("Updated portal_xero_oauth.refresh_token");
+    } else {
+      console.warn("No SUPABASE_URL/SERVICE_ROLE_KEY in env — skipped portal_xero_oauth update");
+    }
+  } catch (e) {
+    console.warn("Could not update portal_xero_oauth:", e?.message || e);
+  }
+
   console.log("\nUpdated", ENV_PATH);
   console.log("scope:", tokenJson.scope || "(none in response)");
   console.log("tenant:", tenantId || "(unchanged)");
