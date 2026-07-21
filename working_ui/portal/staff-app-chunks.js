@@ -9,7 +9,7 @@
   var VER = "20260720-michelle-dayoff-31";
 
   var TIER_ROSTER = [
-    "/portal/term_from_timetable.js?v=20260720-michelle-to-31",
+    "/portal/term_from_timetable.js?v=20260720-michelle-dayoff-31",
     "/portal/term_calendar_dashboard_shared.js?v=20260702-feedback-jun25",
     "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260707-roberto-venues",
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260712-rayyan-f",
@@ -34,7 +34,7 @@
     "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",
     "/portal/portal_dashboard_ui_coalesce.js?v=20260630-term-idle-rAF",
     "/portal/portal_participant_photos.js?v=20260720-zakariya-photo",
-    "/portal/portal_topbar_header.js?v=20260713-javier-topbar",
+    "/portal/portal_topbar_header.js?v=20260721-flank6-swap",
     "/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category",
     "/portal/portal_swimming_instructor_menus.js?v=20260713-topbar-full",
     "/portal/portal_area_note_icons.js?v=20260702-home-icon",

@@ -659,7 +659,7 @@
    * Halo flanks layout:
    *  - 4 session icons: left 2×2; ADMIN right fills matching 2×2
    *  - 5 icons (plan+swim): left 2×2; right Plan (top 2) + ADMIN (bottom 2)
-   *  - 6 lead: left 2×2; right Lead|Stats (top) + ADMIN (bottom 2)
+   *  - 6 lead: left Lead|PickUp / Stats|Venue; right Photo|Plan + ADMIN (bottom 2)
    */
   function portalSyncHaloFlankToolPlacement() {
     var left = document.getElementById("topbarToolsGridLeft");
@@ -708,8 +708,9 @@
     var leftOrder;
     var rightOrder;
     if (mode === "6") {
-      leftOrder = [photo, pickup, plan, venue];
-      rightOrder = [lead, stats, wa];
+      /* Swap: Photo+Plan sit above ADMIN; Lead+Stats take their left column. */
+      leftOrder = [lead, pickup, stats, venue];
+      rightOrder = [photo, plan, wa];
     } else if (mode === "5") {
       leftOrder = [photo, pickup, swim, venue];
       rightOrder = [plan, wa];
@@ -738,15 +739,19 @@
     if (plan) {
       plan.classList.toggle("topbar-tool-cell--flank-span2w", mode === "5");
       plan.style.gridColumn = mode === "5" ? "1 / -1" : "";
-      plan.style.gridRow = mode === "5" ? "1" : "";
+      plan.style.gridRow = mode === "5" ? "1" : mode === "6" ? "1" : "";
+    }
+    if (photo) {
+      photo.style.gridColumn = "";
+      photo.style.gridRow = mode === "6" ? "1" : "";
     }
     if (lead) {
       lead.style.gridColumn = "";
-      lead.style.gridRow = mode === "6" ? "1" : "";
+      lead.style.gridRow = "";
     }
     if (stats) {
       stats.style.gridColumn = "";
-      stats.style.gridRow = mode === "6" ? "1" : "";
+      stats.style.gridRow = "";
     }
     if (wa) {
       wa.hidden = false;
