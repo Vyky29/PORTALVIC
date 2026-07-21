@@ -9,7 +9,7 @@ import {
   portalAdminJson,
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
-import { xeroSyncPaidInvoiceShare } from "../_shared/xero_payments.ts";
+import { xeroEnsurePaidShareInBooks } from "../_shared/xero_payments.ts";
 import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
 import { type PortalInvoiceVatMode } from "../_shared/portal_tax_invoice_pdf.ts";
 import { createPortalFamilyInvoice, regeneratePortalInvoiceSharePdf } from "../_shared/portal_create_family_invoice.ts";
@@ -463,7 +463,7 @@ Deno.serve(async (req) => {
     let hold = null;
     let pdf = null;
     if (updated.payment_status === "paid") {
-      xero = await xeroSyncPaidInvoiceShare(admin, updated);
+      xero = await xeroEnsurePaidShareInBooks(admin, updated);
       try {
         const cid = clean(updated.contact_id, 120);
         if (cid) hold = await clearPaymentHoldForContact(admin, cid, "admin", verified.userId || null);

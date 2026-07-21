@@ -5,7 +5,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { stripeVerifyAndParseEvent } from "../_shared/stripe_checkout.ts";
-import { xeroSyncPaidInvoiceShare } from "../_shared/xero_payments.ts";
+import { xeroEnsurePaidShareInBooks } from "../_shared/xero_payments.ts";
 import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
 import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
 import { recordInvoiceInstalmentPayment } from "../_shared/portal_create_family_invoice.ts";
@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
 
   const xero =
     data.payment_status === "paid"
-      ? await xeroSyncPaidInvoiceShare(supabase, data)
+      ? await xeroEnsurePaidShareInBooks(supabase, data)
       : { skipped: "partial_instalment" };
   let hold = null;
   try {

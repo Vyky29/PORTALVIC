@@ -12,7 +12,7 @@ import {
   scheduleGocardlessPaymentsForContact,
   upsertMandateRow,
 } from "../_shared/gocardless_portal.ts";
-import { xeroSyncPaidInvoiceShare } from "../_shared/xero_payments.ts";
+import { xeroEnsurePaidShareInBooks } from "../_shared/xero_payments.ts";
 import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
 import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
 import { recordInvoiceInstalmentPayment } from "../_shared/portal_create_family_invoice.ts";
@@ -136,7 +136,7 @@ async function markInvoicePaid(
         )
         .eq("id", targetId)
         .maybeSingle();
-      if (paidTarget) xero = await xeroSyncPaidInvoiceShare(supabase, paidTarget);
+      if (paidTarget) xero = await xeroEnsurePaidShareInBooks(supabase, paidTarget);
     }
     let hold = null;
     try {
@@ -185,7 +185,7 @@ async function markInvoicePaid(
   }
   if (!data) return { ok: false as const, reason: "invoice_not_found" };
 
-  const xero = await xeroSyncPaidInvoiceShare(supabase, data);
+  const xero = await xeroEnsurePaidShareInBooks(supabase, data);
   let hold = null;
   try {
     const cid = clean(data.contact_id, 120);

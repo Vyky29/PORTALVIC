@@ -1,6 +1,6 @@
 # Parent invoices → Xero
 
-Portal INV-P invoices are the day-to-day source of truth. Xero is for bookkeeping
+Portal INV-Ps are the day-to-day source of truth. Xero is for bookkeeping
 and bank reconciliation.
 
 ## Batch push (API)
@@ -12,11 +12,26 @@ If the invoice is already **paid** in Portal, payment write-back runs immediatel
 
 Also available: **Export to Xero CSV** as a manual import fallback.
 
+Paid paths (Stripe, GoCardless, admin Confirm paid, Tide Confirm) now call
+**`xeroEnsurePaidShareInBooks`**: create ACCREC if missing, then post Payment.
+The batch button remains for backlog retries and rows that failed earlier.
+
 ## Payment write-back
 
 When a family invoice is marked **paid** in the portal (Stripe Checkout, admin
-Confirm paid, or credit apply), Portal posts a matching **Payment** in Xero
-if the share row has a `xero_invoice_id`.
+Confirm paid, Tide CSV Confirm, or credit apply), Portal posts a matching
+**Payment** in Xero. If the share has no `xero_invoice_id` yet, Portal creates
+the ACCREC first (except credit-apply, which still requires a prior link).
+
+## Bank-feed green tick (Reconcile)
+
+**Xero does not allow reconciling bank statement lines via the public API**
+(documented: Accounting API → Bank Statements → “Reconcile via the API”).
+Portal can create ACCREC + Payment; the green OK on the Tide/Xero bank feed
+still needs Xero UI, bank rules, or Xero’s JAX auto-reconcile.
+
+Tide Confirm posts the Payment using the **Tide booking date** so amount+date
+align and Xero is more likely to suggest OK / auto-match.
 
 ## Secrets (Supabase Edge Functions)
 
@@ -69,15 +84,17 @@ Authorize in the browser, then run the printed `npx supabase secrets set …` co
 
 ## Admin usage
 
-- Prefer **Push to Xero** for Portal-generated invoices.
+- Prefer **Push to Xero** for Portal-generated invoices (or rely on auto-ensure on pay).
 - For uploaded Xero PDFs, paste the Xero **InvoiceID** (GUID) so payment write-back works.
 - Contact mapping is stored on `portal_parent_contacts.xero_contact_id`.
 
 ## Redeploy after setting secrets / scopes
 
 - `portal-admin-xero-batch-push`
-- `parent-portal-stripe-webhook`
+- `portal-admin-tide-match-confirm`
 - `portal-admin-parent-invoices-upsert`
+- `parent-portal-stripe-webhook`
+- `parent-portal-gocardless-webhook`
 - `parent-portal-credit-apply-invoice`
 
 If secrets are missing, payments still work in the portal; Xero is simply skipped.

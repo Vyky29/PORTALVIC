@@ -1996,7 +1996,7 @@
       '</div>' +
       '<details style="margin:0 0 14px;padding:12px;border:1px solid var(--line,#e5e7eb);border-radius:10px;max-width:100%;min-width:0">' +
       '<summary style="cursor:pointer;font-weight:700">Match Tide bank CSV</summary>' +
-      '<p class="muted" style="margin:8px 0 10px;max-width:48rem;overflow-wrap:break-word">Export inbound payments from Tide → upload here. Portal suggests INV-P matches by reference + amount. <strong>Confirm</strong> marks paid (and Xero Payment when linked). Xero bank-feed reconcile stays in Xero.</p>' +
+      '<p class="muted" style="margin:8px 0 10px;max-width:48rem;overflow-wrap:break-word">Export inbound payments from Tide → upload here. Portal suggests INV-P matches by reference + amount. <strong>Confirm</strong> marks paid, creates the Xero ACCREC if missing, and posts the Payment (using the Tide date). Xero’s green bank-feed tick cannot be closed by API — OK/JAX still happens in Xero.</p>' +
       '<div class="toolbar" style="flex-wrap:wrap;gap:8px;margin-bottom:8px">' +
       '<input class="inp" id="portalTideMatchFile" type="file" accept=".csv,text/csv,text/plain" style="max-width:20rem;min-width:0" />' +
       '<button type="button" class="btn btn--sm btn--primary" id="portalTideMatchUpload">Upload &amp; score</button>' +

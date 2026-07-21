@@ -11,6 +11,7 @@ import {
   xeroHydrateRefreshFromDb,
   xeroPersistRefreshToDb,
 } from "./xero_oauth_store.ts";
+import { pushPortalInvoiceShareToXero } from "./portal_xero_invoice_push.ts";
 
 export { xeroConfigured };
 
@@ -165,6 +166,16 @@ export async function xeroCreateInvoicePayment(input: {
   return { ok: true, payment_id: paymentId };
 }
 
+export type XeroPaidShareSyncResult = {
+  synced: boolean;
+  payment_id?: string;
+  skipped?: string;
+  error?: string;
+  detail?: string;
+  /** Set when Ensure path created the ACCREC first. */
+  pushed_invoice_id?: string;
+};
+
 /**
  * Best-effort: if share has xero_invoice_id and Xero is configured, post payment and stamp row.
  * Never throws — callers should not fail parent payment on Xero errors.
@@ -180,13 +191,11 @@ export async function xeroSyncPaidInvoiceShare(
     invoice_number?: string | null;
     paid_via?: string | null;
   },
-): Promise<{
-  synced: boolean;
-  payment_id?: string;
-  skipped?: string;
-  error?: string;
-  detail?: string;
-}> {
+  opts?: {
+    /** Prefer bank/Tide booking date so Xero Find & Match / JAX can suggest OK. */
+    paymentDateIso?: string | null;
+  },
+): Promise<XeroPaidShareSyncResult> {
   const xeroId = clean(share.xero_invoice_id, 80);
   if (!xeroId) return { synced: false, skipped: "no_xero_invoice_id" };
   if (clean(share.xero_payment_id, 80)) return { synced: false, skipped: "already_synced" };
@@ -265,10 +274,12 @@ export async function xeroSyncPaidInvoiceShare(
 
   const via = clean(share.paid_via, 40) || "portal";
   const invNo = clean(share.invoice_number, 80);
+  const payDate = clean(opts?.paymentDateIso, 20);
   const created = await xeroCreateInvoicePayment({
     xeroInvoiceId: xeroId,
     amountGbp: payAmount,
     reference: invNo ? `Portal ${via} · ${invNo}` : `Portal ${via}`,
+    dateIso: /^\d{4}-\d{2}-\d{2}$/.test(payDate) ? payDate : undefined,
     accessToken: token,
   });
 
@@ -305,4 +316,55 @@ export async function xeroSyncPaidInvoiceShare(
   }
 
   return { synced: true, payment_id: created.payment_id };
+}
+
+/**
+ * Close Portal → Xero books for a paid INV-P:
+ * 1) create ACCREC if missing
+ * 2) post Payment (optional bank date for better match suggestions)
+ *
+ * Does **not** tick Xero bank-feed Reconcile — Xero blocks that via public API.
+ */
+export async function xeroEnsurePaidShareInBooks(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  share: {
+    id: string;
+    xero_invoice_id?: string | null;
+    xero_payment_id?: string | null;
+    amount_gbp?: number | string | null;
+    invoice_number?: string | null;
+    paid_via?: string | null;
+  },
+  opts?: {
+    paymentDateIso?: string | null;
+  },
+): Promise<XeroPaidShareSyncResult> {
+  if (!xeroConfigured()) return { synced: false, skipped: "xero_not_configured" };
+
+  let xeroId = clean(share.xero_invoice_id, 80);
+  let pushedInvoiceId: string | undefined;
+
+  if (!xeroId) {
+    const pushed = await pushPortalInvoiceShareToXero(supabase, String(share.id));
+    if (!pushed.ok) {
+      return {
+        synced: false,
+        error: pushed.error,
+        detail: pushed.detail,
+      };
+    }
+    xeroId = clean(pushed.xero_invoice_id, 80);
+    pushedInvoiceId = xeroId || undefined;
+    if (!xeroId) {
+      return { synced: false, error: "xero_push_missing_id" };
+    }
+  }
+
+  const sync = await xeroSyncPaidInvoiceShare(
+    supabase,
+    { ...share, xero_invoice_id: xeroId },
+    opts,
+  );
+  return pushedInvoiceId ? { ...sync, pushed_invoice_id: pushedInvoiceId } : sync;
 }

@@ -47,10 +47,12 @@ Finance → **Family invoices** → **Match Tide bank CSV**:
 3. Review suggestions:
    - **strong** — reference contains `INV-P-####` and amount matches (±1p)
    - **medium** — amount matches and name/reference fuzzy-match (review before confirm)
-4. **Confirm** marks the invoice `paid` (`paid_via=tide_match`), confirms crash holds if linked, and posts a **Payment** in Xero when `xero_invoice_id` is set.
+4. **Confirm** marks the invoice `paid` (`paid_via=tide_match`), confirms crash holds if linked, **creates the Xero ACCREC if missing**, and posts a **Payment** dated to the Tide booking date when Xero is configured.
 5. **Ignore** dismisses a noise row.
 
-Idempotent: re-uploading the same Tide rows does not double-pay. This does **not** tick Xero’s bank-feed Reconcile screen — it only writes the accounting Payment so Find & Match is easier.
+Idempotent: re-uploading the same Tide rows does not double-pay.
+
+**Bank-feed green tick:** Xero does **not** expose reconcile via API. Confirming here writes books (ACCREC + Payment) so Find & Match / JAX can OK the statement line in Xero; Portal cannot click that tick for you.
 
 Deploy:
 

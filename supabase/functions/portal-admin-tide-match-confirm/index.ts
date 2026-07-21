@@ -10,7 +10,7 @@ import {
   portalAdminJson,
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
-import { xeroSyncPaidInvoiceShare } from "../_shared/xero_payments.ts";
+import { xeroEnsurePaidShareInBooks } from "../_shared/xero_payments.ts";
 import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
 import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
 
@@ -191,7 +191,12 @@ Deno.serve(async (req) => {
   let xero = null;
   let hold = null;
   try {
-    xero = await xeroSyncPaidInvoiceShare(admin, updatedInv);
+    // Push ACCREC if missing, then Payment using Tide booking date (helps Xero suggest match).
+    // Xero does not allow closing bank-feed Reconcile via API — green tick stays in Xero UI / JAX.
+    const bookingDate = clean(match.booking_date, 20);
+    xero = await xeroEnsurePaidShareInBooks(admin, updatedInv, {
+      paymentDateIso: /^\d{4}-\d{2}-\d{2}$/.test(bookingDate) ? bookingDate : null,
+    });
   } catch (e) {
     console.error(
       "[portal-admin-tide-match-confirm] xero",
