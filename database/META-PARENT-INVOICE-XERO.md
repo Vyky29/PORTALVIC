@@ -47,6 +47,9 @@ XERO_TAX_TYPE_EXEMPT="EXEMPTOUTPUT"    # Exempt Income
 
 Defaults if unset: taxable → account **200** + tax **OUTPUT2**; exempt → account **202** + tax **EXEMPTOUTPUT**.
 
+Create a Xero **Web app** (OAuth2). Apps created on/after **2 March 2026** must use
+**granular** scopes (broad `accounting.transactions` is rejected).
+
 Required scopes for push + payment write-back:
 
 ```
