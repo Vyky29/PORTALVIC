@@ -37,15 +37,15 @@
     if (/^parent(?:\/|$)/.test(path)) return base + "/" + path;
     return base + "/parent/" + path;
   };
-  /** visualVIC Routines Planner (prod). */
+  /** visualVIC Routines — Plan opens Home (library still for building). */
   window.ROUTINES_PLANNER_URL =
-    window.ROUTINES_PLANNER_URL || "https://visual-vic.vercel.app/planner";
+    window.ROUTINES_PLANNER_URL || "https://visual-vic.vercel.app/dashboard";
   window.ROUTINES_PLANNER_HANDOFF_URL =
     window.ROUTINES_PLANNER_HANDOFF_URL ||
-    "https://visual-vic.vercel.app/planner/auth/handoff";
+    "https://visual-vic.vercel.app/planner/auth/handoff?return=/dashboard";
   window.ROUTINES_PLANNER_LOGIN_URL =
     window.ROUTINES_PLANNER_LOGIN_URL ||
-    "https://visual-vic.vercel.app/planner/login";
+    "https://visual-vic.vercel.app/planner/login?return=/dashboard";
   window.PORTAL_INDUCTION_BASE_URL =
     window.PORTAL_INDUCTION_BASE_URL ||
     String(window.PORTAL_CANONICAL_ORIGIN).replace(/\/$/, "") + "/general-induction/";
