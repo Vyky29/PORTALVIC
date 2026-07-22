@@ -443,6 +443,110 @@
   min-width: 0;
 }
 
+.portal-pnlog-composer__tpl-banner {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #faf5ff;
+  border: 1px solid #d8b4fe;
+  color: #581c87;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.portal-pnlog-composer__tpl-banner code {
+  font-size: 11px;
+  background: rgba(88, 28, 135, 0.08);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.portal-pnlog-composer__session-open {
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.portal-pnlog-composer__tpl-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 8px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid #c4b5fd;
+  background: linear-gradient(180deg, #faf5ff 0%, #fff 55%);
+  min-width: 0;
+}
+
+.portal-pnlog-composer__tpl-fixed {
+  font-size: 13px;
+  font-weight: 700;
+  color: #5b21b6;
+  letter-spacing: 0.01em;
+}
+
+.portal-pnlog-composer__tpl-mid-lab {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.portal-pnlog-composer__input--tpl {
+  margin: 0;
+  border-color: #c4b5fd;
+  background: #fff;
+}
+
+.portal-pnlog-composer__tpl-len {
+  margin: 0 0 8px;
+  font-size: 12px;
+}
+
+.portal-pnlog-composer__tpl-len.is-over {
+  color: #b91c1c;
+  font-weight: 700;
+}
+
+.portal-pnlog-composer__tpl-preview {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  min-width: 0;
+}
+
+.portal-pnlog-composer__tpl-preview-lab {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin: 0 0 4px;
+}
+
+.portal-pnlog-composer__tpl-preview-body {
+  font-size: 13px;
+  line-height: 1.45;
+  color: #0f172a;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.portal-pnlog-composer__tpl-var {
+  font-weight: 700;
+  color: #6d28d9;
+  background: #ede9fe;
+  border-radius: 4px;
+  padding: 0 3px;
+}
+
 .portal-pnlog-composer__reply-banner {
   display: flex;
   flex-wrap: wrap;

@@ -114,6 +114,11 @@
   };
 
   var SEEN_STORE_KEY = "portal_pnlog_seen_v1";
+  /** Meta cold template shell (portal_parent_update_v2 · en). Only {{1}} is editable. */
+  var WA_COLD_TEMPLATE_NAME = "portal_parent_update_v2";
+  var WA_COLD_TEMPLATE_PREFIX = "Hello, ";
+  var WA_COLD_TEMPLATE_SUFFIX = " Thank you.";
+  var WA_TEMPLATE_BODY_MAX = 700;
 
   function fileToBase64(file) {
     return new Promise(function (resolve, reject) {
@@ -1686,12 +1691,15 @@
         ? state.replyTo.waMessageId || ""
         : "";
     var editKey = state.editing && state.editing.threadKey === (t && t.key) ? state.editing.logId || "" : "";
+    var sessionKey = threadHasOpenWhatsappSession(t) ? "open" : "cold";
     var nextSig =
       (t && t.key ? t.key : "") +
       "|" +
       phoneKey +
       "|" +
       (phoneKey ? "ok" : "none") +
+      "|" +
+      sessionKey +
       "|r:" +
       replyKey +
       "|e:" +
@@ -1703,6 +1711,7 @@
     state.composerSig = nextSig;
     mount.innerHTML = renderComposer(t);
     syncComposerSendingState();
+    syncColdTemplatePreview();
   }
 
   function isNearBottom(el) {
@@ -1799,6 +1808,7 @@
     var draft = state.draftByKey[t.key] != null ? state.draftByKey[t.key] : "";
     var disabled = state.sending ? " disabled" : "";
     var openSession = threadHasOpenWhatsappSession(t);
+    var needsTemplate = !openSession && !state.editing;
     var mediaDisabled = !openSession || state.sending || state.editing ? " disabled" : "";
     var toName = t.name || t.parentName || "Parent";
     var toPhone = threadPhoneForUi(t);
@@ -1822,10 +1832,46 @@
         '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerCancelReply">Cancel</button>' +
         "</div>";
     }
+    var sessionNote = "";
+    var templateShell = "";
+    var textareaPlaceholder = "Type a WhatsApp reply…";
+    var textareaMax = "4000";
+    if (needsTemplate) {
+      sessionNote =
+        '<div class="portal-pnlog-composer__tpl-banner" role="status">' +
+        "<strong>Needs Meta template</strong> · no open 24h window. Outbound uses approved " +
+        "<code>" +
+        esc(WA_COLD_TEMPLATE_NAME) +
+        "</code> — edit only the middle part (<code>{{1}}</code>). " +
+        "Fixed text <em>Hello,</em> / <em>Thank you.</em> cannot be changed here." +
+        "</div>";
+      templateShell =
+        '<div class="portal-pnlog-composer__tpl-shell">' +
+        '<div class="portal-pnlog-composer__tpl-fixed" aria-hidden="true">' +
+        esc(WA_COLD_TEMPLATE_PREFIX.trim()) +
+        "</div>" +
+        '<label class="portal-pnlog-composer__tpl-mid-lab muted" for="portalPnlogComposerInput">Editable {{1}}</label>';
+      textareaPlaceholder =
+        "Write {{1}} here — short update for this family (line breaks become · on send)…";
+      textareaMax = String(WA_TEMPLATE_BODY_MAX);
+    } else if (openSession && !state.editing) {
+      sessionNote =
+        '<p class="portal-pnlog-composer__session-open muted" role="status">24h window open — free-text reply (no Meta template).</p>';
+    }
+    var afterTextarea = needsTemplate
+      ? '<div class="portal-pnlog-composer__tpl-fixed" aria-hidden="true">' +
+        esc(WA_COLD_TEMPLATE_SUFFIX.trim()) +
+        "</div></div>" +
+        '<p id="portalPnlogTplLen" class="portal-pnlog-composer__tpl-len muted"></p>' +
+        coldTemplatePreviewHtml(draft)
+      : "";
     return (
-      '<div class="portal-pnlog-composer">' +
+      '<div class="portal-pnlog-composer' +
+      (needsTemplate ? " portal-pnlog-composer--tpl" : "") +
+      '">' +
       editingNote +
       replyNote +
+      sessionNote +
       '<p class="portal-pnlog-composer__to" title="Messages always go to this WhatsApp number">' +
       "<strong>To:</strong> " +
       esc(toName) +
@@ -1852,17 +1898,35 @@
       (!openSession
         ? '<p class="portal-pnlog-composer__media-note muted">Photos, documents and audio become available after the parent messages the WhatsApp API number (24-hour reply window).</p>'
         : "") +
-      '<textarea id="portalPnlogComposerInput" class="portal-pnlog-composer__input" rows="4" placeholder="Type a WhatsApp reply…" maxlength="4000" autocomplete="off" spellcheck="true"' +
+      templateShell +
+      '<textarea id="portalPnlogComposerInput" class="portal-pnlog-composer__input' +
+      (needsTemplate ? " portal-pnlog-composer__input--tpl" : "") +
+      '" rows="' +
+      (needsTemplate ? "5" : "4") +
+      '" placeholder="' +
+      esc(textareaPlaceholder) +
+      '" maxlength="' +
+      textareaMax +
+      '" autocomplete="off" spellcheck="true"' +
       disabled +
       ">" +
       esc(draft) +
       "</textarea>" +
+      afterTextarea +
       '<div class="portal-pnlog-composer__bar">' +
       '<p id="portalPnlogComposerStatus" class="portal-pnlog-composer__status muted" role="status"></p>' +
       '<button type="button" class="btn btn--pri portal-pnlog-composer__send" id="portalPnlogComposerSend"' +
       disabled +
       ">" +
-      (state.sending ? (state.editing ? "Sending correction…" : "Sending…") : state.editing ? "Send correction" : "Send") +
+      (state.sending
+        ? state.editing
+          ? "Sending correction…"
+          : "Sending…"
+        : state.editing
+          ? "Send correction"
+          : needsTemplate
+            ? "Send template"
+            : "Send") +
       "</button></div></div>"
     );
   }
@@ -2028,11 +2092,51 @@
 
   function flattenForWhatsappTemplate(text) {
     return String(text || "")
-      .replace(/[\r\n\t]+/g, " ")
+      .replace(/\r\n/g, "\n")
+      .replace(/\t+/g, " ")
+      .replace(/\n{2,}/g, " · ")
+      .replace(/\n/g, " · ")
       .replace(/ {5,}/g, "    ")
       .replace(/\s{2,}/g, " ")
+      .replace(/(?: · ){2,}/g, " · ")
       .trim()
-      .slice(0, 700);
+      .slice(0, WA_TEMPLATE_BODY_MAX);
+  }
+
+  function coldTemplatePreviewHtml(body) {
+    var mid = flattenForWhatsappTemplate(body);
+    var shown = mid || "…";
+    return (
+      '<div class="portal-pnlog-composer__tpl-preview" id="portalPnlogTplPreview" aria-live="polite">' +
+      '<div class="portal-pnlog-composer__tpl-preview-lab">WhatsApp will send</div>' +
+      '<div class="portal-pnlog-composer__tpl-preview-body">' +
+      esc(WA_COLD_TEMPLATE_PREFIX) +
+      '<span class="portal-pnlog-composer__tpl-var">' +
+      esc(shown) +
+      "</span>" +
+      esc(WA_COLD_TEMPLATE_SUFFIX) +
+      "</div></div>"
+    );
+  }
+
+  function syncColdTemplatePreview() {
+    var ta = document.getElementById("portalPnlogComposerInput");
+    var prev = document.getElementById("portalPnlogTplPreview");
+    var lenEl = document.getElementById("portalPnlogTplLen");
+    if (!ta || !prev) return;
+    var flat = flattenForWhatsappTemplate(ta.value);
+    var varEl = prev.querySelector(".portal-pnlog-composer__tpl-var");
+    if (varEl) varEl.textContent = flat || "…";
+    if (lenEl) {
+      var n = flat.length;
+      lenEl.textContent =
+        n +
+        " / " +
+        WA_TEMPLATE_BODY_MAX +
+        " characters in {{1}}" +
+        (n >= WA_TEMPLATE_BODY_MAX ? " — at limit" : "");
+      lenEl.classList.toggle("is-over", n >= WA_TEMPLATE_BODY_MAX);
+    }
   }
 
   function syncAudioButton() {
@@ -2183,11 +2287,13 @@
         .replace(/[\r\n\t]+/g, " ")
         .replace(/\s{2,}/g, " ")
         .trim().length;
-      if (flatLen > 700) {
+      if (flatLen > WA_TEMPLATE_BODY_MAX) {
         var tooLong =
           "Too long for WhatsApp template (" +
           flatLen +
-          " chars; max ~700). Paste the short WhatsApp text, or use Family broadcast (email = full body, WhatsApp = short field).";
+          " chars; max ~" +
+          WA_TEMPLATE_BODY_MAX +
+          "). Paste the short WhatsApp text, or use Family broadcast (email = full body, WhatsApp = short field).";
         if (statusEl) statusEl.textContent = tooLong;
         else cfg.toast(tooLong, "err");
         return;
@@ -2427,6 +2533,7 @@
         state.draftByKey[state.selectedKey] = e.target.value;
         var statusEl = document.getElementById("portalPnlogComposerStatus");
         if (statusEl) statusEl.textContent = "";
+        syncColdTemplatePreview();
       }
     });
 
