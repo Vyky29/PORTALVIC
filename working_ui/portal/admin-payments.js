@@ -1436,6 +1436,11 @@
 
   /** Stable participant slug for Payments dedupe / stream rules. */
   function paymentParticipantSlug(r) {
+    var cid = String((r && r._contactId) || "").toLowerCase().trim();
+    if (cid === "354") return "adam_p";
+    if (cid === "gap-saaib-abdullah") return "saaib";
+    if (cid === "169") return "yaqoub";
+    if (cid === "gap-tinashe-icloud") return "tinashe";
     var key = String((r && r.client_key) || "")
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "_")
@@ -1458,8 +1463,18 @@
     if (s.indexOf("mahdavi") >= 0) return "cyrus";
     if (s.indexOf("olivia") === 0 && (name.indexOf("cyrus") >= 0 || key.indexOf("cyrus") >= 0)) return "cyrus";
     if (s.indexOf("tinashe") === 0) return "tinashe";
+    if (s.indexOf("yaqoub") === 0 || s.indexOf("yaqo") === 0) return "yaqoub";
     if (s.indexOf("zakariya") === 0) return "zakariya";
     if (s.indexOf("patrick") === 0) return "patrick";
+    if (
+      s === "adam_p"
+      || s.indexOf("adam_p") === 0
+      || s.indexOf("adam_pilcher") === 0
+      || (s.indexOf("adam") === 0 && s.indexOf("pilcher") >= 0)
+    ) {
+      return "adam_p";
+    }
+    if (s.indexOf("saaib") === 0 || s.indexOf("saiib") === 0) return "saaib";
     if (s.indexOf("ikram") === 0) return "ikram";
     if (s.indexOf("emanuel") === 0 || s.indexOf("emmanuel") === 0) return "emanuel";
     if (s.indexOf("fadi") === 0) return "fadi";
@@ -1886,6 +1901,13 @@
      */
     if (slug === "tinashe") return isTinasheCrashSwimRow(r);
 
+    /* Yaqoub July crash aquatic (office INV) → Day Centre. */
+    if (slug === "yaqoub") {
+      if (r && r._crash) return true;
+      if (/crash/.test(s)) return true;
+      return false;
+    }
+
     /* Patrick Summer 25/26 (incl. climb crash) → Day Centre. */
     if (slug === "patrick" && isSummerTermRow(r)) return true;
 
@@ -1897,6 +1919,12 @@
       if (r && r._crash) return true;
       if (/crash/.test(s)) return true;
       return false;
+    }
+
+    /* Adam Pilcher / Saaib July crash swim → Afterschool & Weekends (not Day Centre). */
+    if (slug === "adam_p" || slug === "saaib") {
+      if (r && r._crash) return false;
+      if (/crash/.test(s)) return false;
     }
 
     /* ACAT only appears in Day Centre once they re-enrol. */
@@ -5184,6 +5212,8 @@
       inv.line_description,
       inv.reference_text,
       inv.title,
+      inv.notes,
+      inv.service,
       JSON.stringify(inv.line_items || []),
     ].join(" ").toLowerCase();
     return /summer\s*crash|crash\s*course/.test(blob);
@@ -5211,8 +5241,12 @@
     var st = String(inv.payment_status || "").toLowerCase();
     var paid = st === "paid";
     var vat = String(inv.vat_mode || "").toLowerCase();
+    var hint = String(inv.payment_method_hint || "").toLowerCase();
     var invType = vat === "exempt" ? INVOICE_TYPE.PARENT_EXEMPT : INVOICE_TYPE.PARENT_20;
-    var crashDesc = String(inv.line_description || "");
+    var paidBy = PAID_BY.PRIVATE_FUNDS;
+    if (hint === "la_funded") paidBy = PAID_BY.FUNDED_BY_LA;
+    else if (vat === "exempt") paidBy = PAID_BY.FUNDS_FROM_LA;
+    var crashDesc = String(inv.line_description || inv.notes || "");
     var row = {
       id: "crash-" + (inv.id || cid),
       _contactId: cid,
@@ -5221,7 +5255,7 @@
       _crashLineDesc: crashDesc,
       _termBucket: "summer_2526",
       _invoiceIds: inv.id ? [inv.id] : [],
-      _paymentMethodHint: String(inv.payment_method_hint || "").toLowerCase(),
+      _paymentMethodHint: hint,
       _vatMode: vat || "vat_20",
       sheet: "PARENTS",
       client_name: shortName,
@@ -5233,7 +5267,7 @@
       data: {
         Term: "Summer 25/26",
         Services: crashServicesLabel(inv),
-        Paid: PAID_BY.PRIVATE_FUNDS,
+        Paid: paidBy,
         "Invoice type": invType,
         Invoice: String(inv.invoice_number || "").trim(),
       },
@@ -5258,9 +5292,24 @@
       .filter(isSummerCrashInvoice)
       .map(buildCrashPaymentRow)
       .filter(function (r) {
-        /* Day Centre Summer stream: Zakariya crash, Patrick, Tinashe crash swim. */
+        /*
+         * Summer crash income rows for Payments streams:
+         * Day Centre — Zakariya / Patrick / Tinashe / Yaqoub
+         * Afterschool & Weekends — Adam Pilcher / Saaib (and any other crash not DC)
+         */
         var slug = paymentParticipantSlug(r);
-        return slug === "zakariya" || slug === "patrick" || slug === "tinashe";
+        if (
+          slug === "zakariya"
+          || slug === "patrick"
+          || slug === "tinashe"
+          || slug === "yaqoub"
+          || slug === "adam_p"
+          || slug === "saaib"
+        ) {
+          return true;
+        }
+        /* Keep other summer crash invoices visible under Afterschool by default. */
+        return !isDayCentreRow(r);
       });
   }
 
