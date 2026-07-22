@@ -1944,10 +1944,10 @@
       return false;
     }
 
-    /* Adam Pilcher / Saaib July crash swim → Afterschool & Weekends (not Day Centre). */
+    /* Adam Pilcher / Saaib July crash swim → Day Centre (Summer 25/26). */
     if (slug === "adam_p" || slug === "saaib") {
-      if (r && r._crash) return false;
-      if (/crash/.test(s)) return false;
+      if (r && r._crash) return true;
+      if (/crash/.test(s)) return true;
     }
 
     /* ACAT only appears in Day Centre once they re-enrol. */
@@ -5317,8 +5317,7 @@
       .filter(function (r) {
         /*
          * Summer crash income rows for Payments streams:
-         * Day Centre — Zakariya / Patrick / Tinashe / Yaqoub
-         * Afterschool & Weekends — Adam Pilcher / Saaib (and any other crash not DC)
+         * Day Centre — Zakariya / Patrick / Tinashe / Yaqoub / Adam Pilcher / Saaib
          */
         var slug = paymentParticipantSlug(r);
         if (
