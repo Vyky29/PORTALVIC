@@ -186,7 +186,9 @@
       /* Days off */
       ".hr-off-chip{display:inline-flex;align-items:center;gap:5px;margin-left:6px;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;background:#fff7ed;color:#c2410c}",
       ".hr-off-chip .hr-ico{width:12px;height:12px;color:#ea580c}",
-      ".hr-days-off{color:#9a3412;font-weight:600;font-size:12px;max-width:220px;min-width:0;overflow-wrap:break-word}",
+      ".hr-days-off{color:#9a3412;font-weight:600;font-size:12px;max-width:240px;min-width:0;overflow-wrap:break-word}",
+      ".hr-days-off__past{color:#9a6a4a;font-weight:600}",
+      ".hr-days-off__sep{color:#cbd5e1;font-weight:500}",
       ".hr-off-list{padding:14px 16px;display:flex;flex-direction:column;gap:8px}",
       ".hr-off-row{display:flex;align-items:center;gap:10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:9px 12px}",
       ".hr-off-row .hr-ico{flex:0 0 auto;color:#ea580c}",
@@ -323,11 +325,32 @@
     var t = todayIso();
     return offsFor(nameKey, personRow).filter(function (u) { return String(u.off_date) >= t; });
   }
-  function formatDaysOffRequested(ups) {
-    if (!ups || !ups.length) return "";
-    var dates = ups.map(function (u) { return fmtDate(u.off_date); });
-    if (dates.length <= 3) return dates.join(", ");
-    return dates.slice(0, 2).join(", ") + " +" + (dates.length - 2) + " more";
+  function pastOffs(nameKey, personRow) {
+    var t = todayIso();
+    return offsFor(nameKey, personRow).filter(function (u) { return String(u.off_date) < t; });
+  }
+  /** Upcoming first; if none, recent past so validated history (Javier/Berta/John…) still shows. */
+  function formatDaysOffRequested(nameKey, personRow) {
+    var up = upcomingOffs(nameKey, personRow);
+    var past = pastOffs(nameKey, personRow);
+    if (!up.length && !past.length) return "";
+    var parts = [];
+    if (up.length) {
+      var upDates = up.map(function (u) { return fmtDate(u.off_date); });
+      parts.push(upDates.length <= 3
+        ? upDates.join(", ")
+        : upDates.slice(0, 2).join(", ") + " +" + (upDates.length - 2) + " more");
+    }
+    if (past.length) {
+      var recent = past.slice(-3).reverse();
+      var pastDates = recent.map(function (u) { return fmtDate(u.off_date); });
+      var pastBit = pastDates.join(", ");
+      if (past.length > 3) pastBit += " +" + (past.length - 3) + " earlier";
+      parts.push(up.length
+        ? '<span class="hr-days-off__past" title="Previous days off">had ' + pastBit + "</span>"
+        : '<span class="hr-days-off__past" title="Previous days off">' + pastBit + "</span>");
+    }
+    return parts.join('<span class="hr-days-off__sep"> · </span>');
   }
   function fmtDate(iso) {
     var s = String(iso || "");
@@ -964,8 +987,13 @@
         var pill = personActive(p)
           ? '<span class="hr-pill hr-pill--on">Active</span>'
           : '<span class="hr-pill hr-pill--off">Inactive</span>';
-        var up = upcomingOffs(nk(p), p);
-        var offLabel = formatDaysOffRequested(up);
+        var offLabel = formatDaysOffRequested(nk(p), p);
+        var allOffs = offsFor(nk(p), p);
+        var offTitle = allOffs.length
+          ? allOffs.map(function (u) {
+              return fmtDate(u.off_date) + (u.reason ? " — " + u.reason : "");
+            }).join("\n")
+          : "";
         var dash = '<span class="muted">—</span>';
         var rsum = rosterFor(p);
         var role = roleLabel(d.Role || d.role || "", rsum);
@@ -979,7 +1007,8 @@
           + '<td>' + (esc(shifts) || dash) + '</td>'
           + '<td>' + (esc(svc) || dash) + '</td>'
           + '<td>' + (esc(rota) || dash) + '</td>'
-          + '<td class="hr-days-off">' + (offLabel || dash) + '</td>'
+          + '<td class="hr-days-off"' + (offTitle ? ' title="' + esc(offTitle) + '"' : "") + '>'
+          + (offLabel || dash) + '</td>'
           + '<td>' + (esc(ven) || dash) + '</td>'
           + '<td>' + pill + '</td></tr>';
       });
