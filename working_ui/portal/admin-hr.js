@@ -64,6 +64,15 @@
     query: "",
   };
 
+  // Roster usernames that do not match Employees-info first names (e.g. Aida ↔ lulia).
+  var ROSTER_FIRST_ALIASES = {
+    aida: ["lulia", "luliya"],
+    luliya: ["lulia", "aida"],
+    lulia: ["luliya", "aida"],
+    john: ["john"],
+    javi: ["javi"],
+  };
+
   function esc(s) { return deps.esc(s); }
   function labelFor(sheet) { return SHEET_LABELS[sheet] || sheet; }
 
@@ -177,6 +186,7 @@
       /* Days off */
       ".hr-off-chip{display:inline-flex;align-items:center;gap:5px;margin-left:6px;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;background:#fff7ed;color:#c2410c}",
       ".hr-off-chip .hr-ico{width:12px;height:12px;color:#ea580c}",
+      ".hr-days-off{color:#9a3412;font-weight:600;font-size:12px;max-width:220px;min-width:0;overflow-wrap:break-word}",
       ".hr-off-list{padding:14px 16px;display:flex;flex-direction:column;gap:8px}",
       ".hr-off-row{display:flex;align-items:center;gap:10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:9px 12px}",
       ".hr-off-row .hr-ico{flex:0 0 auto;color:#ea580c}",
@@ -245,9 +255,11 @@
     aidaluliyajemal: ["lulia", "luliya", "aida", "aidaluliyajemal"],
     carlos: ["carlos", "carlosherrero"],
     carlosherrero: ["carlos", "carlosherrero"],
-    john: ["john", "johnkyeifram"],
-    johnkyeifram: ["john", "johnkyeifram"],
-    sevitha: ["sevitha", "info"],
+    john: ["john", "johnkyei", "johnkyeifram"],
+    johnkyei: ["john", "johnkyei", "johnkyeifram"],
+    johnkyeifram: ["john", "johnkyei", "johnkyeifram"],
+    sevitha: ["sevitha", "sevithavadlamudi", "info"],
+    sevithavadlamudi: ["sevitha", "sevithavadlamudi", "info"],
     angel: ["angel", "angelfalceto"],
     angelfalceto: ["angel", "angelfalceto"],
     victor: ["victor", "victormatilla"],
@@ -311,6 +323,12 @@
     var t = todayIso();
     return offsFor(nameKey, personRow).filter(function (u) { return String(u.off_date) >= t; });
   }
+  function formatDaysOffRequested(ups) {
+    if (!ups || !ups.length) return "";
+    var dates = ups.map(function (u) { return fmtDate(u.off_date); });
+    if (dates.length <= 3) return dates.join(", ");
+    return dates.slice(0, 2).join(", ") + " +" + (dates.length - 2) + " more";
+  }
   function fmtDate(iso) {
     var s = String(iso || "");
     var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
@@ -325,16 +343,99 @@
       .sort(function (a, b) {
         return String(a.employee_name || "").localeCompare(String(b.employee_name || ""));
       });
-    // Active = has a login account (linked to staff_profiles). Everyone else is
-    // inactive. Linkage is per-person, so a name_key counts as linked if ANY of
-    // its rows carries a staff_id.
+    // Login linkage: staff_id on any HR row for that name_key.
     state.linkedKeys = {};
     state.rows.forEach(function (r) {
       if (r.staff_id) state.linkedKeys[nk(r)] = true;
     });
+    mergeRosterPeopleIntoList();
   }
 
-  function personActive(r) { return !!state.linkedKeys[nk(r)]; }
+  function personHasLogin(r) {
+    if (!r) return false;
+    if (state.linkedKeys[nk(r)]) return true;
+    return !!resolvePersonStaffId(nk(r), r);
+  }
+
+  // Active = portal login and/or currently on the live rota (working this term).
+  function personActive(r) {
+    if (!r) return false;
+    if (personHasLogin(r)) return true;
+    return !!rosterFor(r);
+  }
+
+  function markRosterCovered(covered, token) {
+    var k = normName(token);
+    if (k) covered[k] = true;
+    var aliases = ROSTER_FIRST_ALIASES[k];
+    if (aliases) aliases.forEach(function (a) { if (a) covered[normName(a)] = true; });
+  }
+
+  /** Ensure every rota staff appears in the Staff table even if missing from Employees info. */
+  function mergeRosterPeopleIntoList() {
+    var src = global.STAFF_DASHBOARD_SOURCE;
+    var profiles = (src && src.staffProfiles) || {};
+    var covered = {};
+    state.people.forEach(function (p) {
+      markRosterCovered(covered, firstKey(p.employee_name));
+      markRosterCovered(covered, p.employee_name);
+      Object.keys(offNameKeySet(nk(p))).forEach(function (a) { markRosterCovered(covered, a); });
+      // If this HR person already maps to a roster summary, cover that roster key too.
+      var rsumKey = null;
+      var m = rosterMap();
+      var fk = firstKey(p.employee_name);
+      if (fk && m[fk]) rsumKey = fk;
+      else {
+        var aliasList = (fk && ROSTER_FIRST_ALIASES[fk]) || [];
+        for (var ai = 0; ai < aliasList.length; ai++) {
+          if (m[normName(aliasList[ai])]) { rsumKey = normName(aliasList[ai]); break; }
+        }
+      }
+      if (rsumKey) covered[rsumKey] = true;
+    });
+    Object.keys(profiles).forEach(function (sid) {
+      if (sid === "demo") return;
+      var key = normName(sid);
+      if (!key || covered[key]) return;
+      var prof = profiles[sid] || {};
+      var display = String(prof.staffName || sid).trim();
+      if (!display) return;
+      if (covered[firstKey(display)] || covered[normName(display)]) {
+        covered[key] = true;
+        return;
+      }
+      var synthetic = {
+        id: "roster:" + key,
+        sheet: PEOPLE_SHEET,
+        row_index: 9000,
+        name_key: key,
+        employee_name: display,
+        staff_id: null,
+        active: true,
+        data: {},
+        _rosterOnly: true,
+      };
+      var rsum = null;
+      try { rsum = rosterMap()[key] || null; } catch (_e) { rsum = null; }
+      synthetic.data.Role = roleLabel("", rsum || { track: prof.staffRoleTrack || "", primaryService: "" });
+      var profilesRows = state.profileConfirmRows || [];
+      for (var i = 0; i < profilesRows.length; i++) {
+        var pr = profilesRows[i];
+        var un = String(pr.username || "").trim().toLowerCase();
+        if (un && (un === key || un === firstKey(display))) {
+          synthetic.staff_id = String(pr.id);
+          state.linkedKeys[key] = true;
+          break;
+        }
+      }
+      state.people.push(synthetic);
+      markRosterCovered(covered, key);
+      markRosterCovered(covered, display);
+    });
+    state.people.sort(function (a, b) {
+      return String(a.employee_name || "").localeCompare(String(b.employee_name || ""));
+    });
+  }
 
   function hrStaffAvatarHtml(person) {
     if (typeof global.portalStaffAvatarInnerHtml !== "function") return "";
@@ -504,7 +605,22 @@
   }
   function rosterFor(p) {
     var m = rosterMap();
-    return m[firstKey(p && p.employee_name)] || m[normName(p && p.employee_name)] || null;
+    if (!p) return null;
+    var fk = firstKey(p.employee_name);
+    if (fk && m[fk]) return m[fk];
+    var full = normName(p.employee_name);
+    if (full && m[full]) return m[full];
+    var tryKeys = [];
+    if (fk && ROSTER_FIRST_ALIASES[fk]) tryKeys = tryKeys.concat(ROSTER_FIRST_ALIASES[fk]);
+    Object.keys(offNameKeySet(nk(p))).forEach(function (a) {
+      tryKeys.push(a);
+      tryKeys.push(firstKey(a));
+    });
+    for (var i = 0; i < tryKeys.length; i++) {
+      var k = normName(tryKeys[i]);
+      if (k && m[k]) return m[k];
+    }
+    return null;
   }
   function roleLabel(rawRole, rsum) {
     var raw = String(rawRole || "").trim();
@@ -829,7 +945,7 @@
 
     var html = '<div class="hr-wrap">';
     html += '<div class="hr-bar">'
-      + '<div class="hr-seg" role="group" aria-label="Account filter">'
+      + '<div class="hr-seg" role="group" aria-label="Staff status filter">'
       + '<button type="button" data-hr-filter="active" aria-pressed="' + (state.activeFilter === "active") + '">Active (' + counts.active + ')</button>'
       + '<button type="button" data-hr-filter="inactive" aria-pressed="' + (state.activeFilter === "inactive") + '">Inactive (' + counts.inactive + ')</button>'
       + '<button type="button" data-hr-filter="all" aria-pressed="' + (state.activeFilter === "all") + '">All (' + counts.all + ')</button>'
@@ -839,9 +955,9 @@
 
     // Staff first (people + nested category boxes), then annual profile / L&D.
     html += '<div class="hr-card"><div class="hr-card-h"><h3>' + icon("staff", 17) + 'Staff</h3><span class="hr-multi">' + peopleRows.length + ' shown</span></div>';
-    html += '<div class="hr-tbl-wrap"><table class="hr-tbl hr-tbl--center"><thead><tr><th>Name</th><th>Role</th><th>Shifts</th><th>Services booked for</th><th>Days on rota</th><th>Venues</th><th>Status</th></tr></thead><tbody>';
+    html += '<div class="hr-tbl-wrap"><table class="hr-tbl hr-tbl--center"><thead><tr><th>Name</th><th>Role</th><th>Shifts</th><th>Services booked for</th><th>Days on rota</th><th>Days Off Requested</th><th>Venues</th><th>Status</th></tr></thead><tbody>';
     if (!peopleRows.length) {
-      html += '<tr><td colspan="7" class="hr-empty">No people match this filter.</td></tr>';
+      html += '<tr><td colspan="8" class="hr-empty">No people match this filter.</td></tr>';
     } else {
       peopleRows.forEach(function (p) {
         var d = p.data || {};
@@ -849,9 +965,7 @@
           ? '<span class="hr-pill hr-pill--on">Active</span>'
           : '<span class="hr-pill hr-pill--off">Inactive</span>';
         var up = upcomingOffs(nk(p), p);
-        var offChip = up.length
-          ? '<span class="hr-off-chip" title="' + esc(up.map(function (u) { return fmtDate(u.off_date); }).join(", ")) + '">' + icon("cal", 12) + up.length + ' day' + (up.length === 1 ? "" : "s") + ' off</span>'
-          : "";
+        var offLabel = formatDaysOffRequested(up);
         var dash = '<span class="muted">—</span>';
         var rsum = rosterFor(p);
         var role = roleLabel(d.Role || d.role || "", rsum);
@@ -865,8 +979,9 @@
           + '<td>' + (esc(shifts) || dash) + '</td>'
           + '<td>' + (esc(svc) || dash) + '</td>'
           + '<td>' + (esc(rota) || dash) + '</td>'
+          + '<td class="hr-days-off">' + (offLabel || dash) + '</td>'
           + '<td>' + (esc(ven) || dash) + '</td>'
-          + '<td>' + pill + offChip + '</td></tr>';
+          + '<td>' + pill + '</td></tr>';
       });
     }
     html += '</tbody></table></div>';
@@ -1042,12 +1157,35 @@
 
   function openPerson(nameKey) {
     var rows = state.rows.filter(function (r) { return nk(r) === nameKey; });
-    if (!rows.length) return;
     var personRow = rows.filter(function (r) { return r.sheet === PEOPLE_SHEET; })[0] || rows[0];
+    if (!personRow) {
+      personRow = state.people.filter(function (p) { return nk(p) === nameKey; })[0];
+    }
+    if (!personRow) return;
     var displayName = personRow.employee_name || "Person";
-    var linked = personActive(personRow);
+    var linked = personHasLogin(personRow);
+    var onRota = !!rosterFor(personRow);
     var d0 = personRow.data || {};
     var roleStr = d0.Role || d0.role || "";
+    if (personRow._rosterOnly && !rows.length) {
+      var sectionsRoster = daysOffSectionHtml(nameKey, personRow);
+      sectionsRoster += '<p class="muted" style="padding:8px 4px;font-size:13px">On the live rota only — not yet in the Employees info matrix. Days off still apply.</p>';
+      var pillRoster = personActive(personRow)
+        ? '<span class="hr-pill hr-pill--on">Active</span> <span class="muted" style="font-weight:600">'
+          + (linked ? "login + on rota" : "on rota") + '</span>'
+        : '<span class="hr-pill hr-pill--off">Inactive</span>';
+      var screenRoster = openScreen({
+        headIcon: hrStaffAvatarHtml(personRow) || icon("user", 22),
+        title: displayName,
+        sub: (roleStr ? '<span>' + esc(roleStr) + '</span> · ' : "") + pillRoster,
+        body: '<div class="hr-person">' + sectionsRoster + '</div>',
+        foot: '<button type="button" class="btn btn--ghost" id="hrPersonCancel">Close</button>',
+      });
+      var cancelRoster = screenRoster.querySelector("#hrPersonCancel");
+      if (cancelRoster) cancelRoster.addEventListener("click", function () { closeScreen(); });
+      bindDaysOff(screenRoster, nameKey, displayName, personRow);
+      return;
+    }
 
     // Order: Employee info first, then the rest by CATEGORY_ORDER, then any others.
     var order = [PEOPLE_SHEET].concat(CATEGORY_ORDER);
@@ -1079,9 +1217,11 @@
         + '<div class="hr-fields">' + fields + '</div></details>';
     });
 
-    var pill = linked
-      ? '<span class="hr-pill hr-pill--on">Active</span> <span class="muted" style="font-weight:600">has a login account</span>'
-      : '<span class="hr-pill hr-pill--off">Inactive</span> <span class="muted" style="font-weight:600">no login account</span>';
+    var pill = personActive(personRow)
+      ? '<span class="hr-pill hr-pill--on">Active</span> <span class="muted" style="font-weight:600">'
+        + (linked && onRota ? "login + on rota" : (linked ? "has a login account" : "on rota"))
+        + '</span>'
+      : '<span class="hr-pill hr-pill--off">Inactive</span> <span class="muted" style="font-weight:600">not on rota / no login</span>';
     var sub = (roleStr ? '<span>' + esc(roleStr) + '</span> · ' : "") + pill;
 
     var foot = '<p id="hrPersonMsg" class="hr-msg"></p>'
@@ -1595,6 +1735,8 @@
         state.unavail = parts[0] || [];
         state.profileConfirmRows = parts[1] || [];
         state.ldFundingApps = parts[2] || [];
+        // Rebuild after profiles load so Active + roster-only staff resolve logins.
+        rebuildDerived();
         render();
       });
     }).catch(function (err) {
