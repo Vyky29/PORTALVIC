@@ -911,6 +911,19 @@
    * Day Centre Summer — separate April / May NHS invoices (e.g. Timi £500 + £500)
    * folded into the term Total. Stored as explicit data keys or Extras text.
    */
+  /** Day Centre Summer — separate June / July NHS invoices (e.g. Emanuel £4k + £7k). */
+  function summerJunJulInvoicesGbp(r) {
+    var d = (r && r.data) || {};
+    var jun = Number(d["June invoice (25/26)"]);
+    var jul = Number(d["July invoice (25/26)"]);
+    if (!(jun > 0) && !(jul > 0)) return null;
+    return {
+      june: jun > 0 ? jun : 0,
+      july: jul > 0 ? jul : 0,
+      total: (jun > 0 ? jun : 0) + (jul > 0 ? jul : 0),
+    };
+  }
+
   function summerAprMayInvoicesGbp(r) {
     var d = (r && r.data) || {};
     var apr = Number(d["April invoice (25/26)"]);
@@ -1071,14 +1084,17 @@
     /* Summer 25/26 Total = this term only (no Year line). */
     if (bucket === "summer_2526") {
       var aprMay = summerAprMayInvoicesGbp(r);
+      var junJul = summerJunJulInvoicesGbp(r);
       var sessOnly = aprMay && termAmt > aprMay.total
         ? Math.round((termAmt - aprMay.total) * 100) / 100
         : 0;
-      if (!julyPay && !aprMay) return main;
+      if (!julyPay && !aprMay && !junJul) return main;
       return '<span class="pay-amt-stack" title="'
         + (aprMay
           ? "Jun–Jul sessions + April/May invoices"
-          : "Summer term total")
+          : junJul
+            ? "June + July NHS invoices"
+            : "Summer term total")
         + '">'
         + '<span class="pay-amt-term">' + main + "</span>"
         + (aprMay && sessOnly > 0
@@ -1089,6 +1105,13 @@
             + money(aprMay.april || aprMay.total / 2)
             + " · May "
             + money(aprMay.may || aprMay.total / 2)
+            + "</span>"
+          : "")
+        + (junJul
+          ? '<span class="pay-amt-season" title="NHS invoices June &amp; July">Jun '
+            + money(junJul.june)
+            + " · Jul "
+            + money(junJul.july)
             + "</span>"
           : "")
         + (julyPay
