@@ -944,7 +944,17 @@
           return;
         }
 
-        var toolBtn = e.target.closest ? e.target.closest("[id^='topbarTool']") : null;
+        /* Only real tool <button>s — never cells. Matching #topbarToolCellStaffWa
+           in capture phase was swallowing ADMIN clicks before its own listener. */
+        if (
+          e.target.closest &&
+          (e.target.closest("#topbarStaffWaBtn") ||
+            e.target.closest("#topbarToolCellStaffWa") ||
+            e.target.closest(".topbar-tool-cell--staff-wa"))
+        ) {
+          return;
+        }
+        var toolBtn = e.target.closest ? e.target.closest("button[id^='topbarTool']") : null;
         if (!toolBtn || !toolBtn.id) return;
         if (
           toolBtn.disabled ||

@@ -277,6 +277,10 @@
       box-sizing:border-box;
       overflow:visible;
     }
+    /* Halo flanks: hug screen edges + a bit more vertical room for larger tiles. */
+    .topbar:has(.topbar-lead--halo-flanks){
+      padding:6px 1px 4px;
+    }
     .topbar-lead{
       display:grid;
       grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
@@ -290,7 +294,7 @@
     .topbar-lead.topbar-lead--halo-flanks{
       grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
       grid-template-areas:"left center right";
-      gap:2px clamp(6px,1.8vw,12px);
+      gap:4px clamp(2px,0.8vw,6px);
       align-items:start;
     }
     .topbar-lead--halo-flanks .topbar-left--tools{
@@ -298,6 +302,8 @@
       justify-self:start;
       display:flex;
       justify-content:flex-start;
+      position:relative;
+      z-index:4;
     }
     .topbar-lead--halo-flanks .topbar-center--halo{
       grid-area:center;
@@ -307,7 +313,9 @@
       flex-direction:column;
       align-items:center;
       margin-top:0;
-      padding:0 4px;
+      padding:0 2px;
+      position:relative;
+      z-index:1;
     }
     .topbar-lead--halo-flanks .topbar-right--tools{
       grid-area:right;
@@ -316,6 +324,8 @@
       justify-content:flex-end;
       width:auto;
       max-width:100%;
+      position:relative;
+      z-index:4;
     }
     .topbar-lead.topbar-lead--halo-tools{
       grid-template-columns:auto minmax(0,1fr);

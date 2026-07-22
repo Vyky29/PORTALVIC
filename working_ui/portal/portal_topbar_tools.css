@@ -38,10 +38,26 @@
   display:grid;
   grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
   grid-template-areas:"left center right";
-  gap:2px clamp(6px,1.8vw,12px);
+  /* Tighter centre gap so flanks can sit closer to the screen edges. */
+  gap:4px clamp(2px,0.8vw,6px);
   align-items:start;
   width:100%;
   min-width:0;
+  /* Slightly larger tool tiles — use vertical room under/over the avatar. */
+  --topbar-tools-cell-4:clamp(48px,13vw,56px);
+  --topbar-tools-cell-6:clamp(46px,12.5vw,54px);
+  --topbar-tools-cell-8:clamp(42px,11.5vw,50px);
+  --topbar-tools-cell:var(--topbar-tools-cell-4);
+  --topbar-tools-gap-x:3px;
+  --topbar-tools-gap-y:3px;
+  --topbar-tool-label-band-h:13px;
+  --topbar-tool-ico-size:clamp(26px,calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 4px),34px);
+  --topbar-tool-ico-size-6:clamp(24px,calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 4px),32px);
+  --topbar-tools-grid-w:calc(2 * var(--topbar-tools-cell) + var(--topbar-tools-gap-x));
+  --topbar-tools-grid-h:calc(var(--topbar-tools-grid-rows) * var(--topbar-tools-cell) + (var(--topbar-tools-grid-rows) - 1) * var(--topbar-tools-gap-y));
+  --topbar-tools-grid-h-4:calc(2 * var(--topbar-tools-cell-4) + var(--topbar-tools-gap-y));
+  --topbar-tools-grid-h-6:calc(3 * var(--topbar-tools-cell-6) + 2 * var(--topbar-tools-gap-y));
+  --topbar-tools-grid-h-8:calc(4 * var(--topbar-tools-cell-8) + 3 * var(--topbar-tools-gap-y));
 }
 .topbar-lead--halo-flanks .topbar-left--tools{
   grid-area:left;
@@ -54,6 +70,8 @@
   justify-content:flex-start;
   padding:0;
   margin:0;
+  position:relative;
+  z-index:4;
 }
 .topbar-lead--halo-flanks .topbar-center--halo{
   grid-area:center;
@@ -64,8 +82,10 @@
   align-items:center;
   justify-content:flex-start;
   min-width:0;
-  padding:0 4px;
+  padding:0 2px;
   margin-top:0;
+  position:relative;
+  z-index:1;
 }
 .topbar-lead--halo-flanks .topbar-right--tools{
   grid-area:right;
@@ -79,6 +99,8 @@
   align-items:flex-start;
   padding:0;
   margin:0;
+  position:relative;
+  z-index:4;
 }
 /* Keep right tools flush with the left 2×2 (no vertical centering in the tall column). */
 .topbar-lead--halo-flanks.topbar-lead--flank-4 .topbar-right.topbar-right--tools,
@@ -1111,6 +1133,15 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
     --topbar-tool-label-size-6:7.75px;
     --topbar-tool-label-size-8:7.5px;
   }
+  /* Halo flanks keep larger tiles on narrow phones (edge + vertical room). */
+  .topbar-lead--halo-flanks{
+    --topbar-tools-cell-4:clamp(46px,12.8vw,52px);
+    --topbar-tools-cell-6:clamp(44px,12.2vw,50px);
+    --topbar-tools-cell-8:clamp(40px,11vw,46px);
+    --topbar-tool-label-band-h:12px;
+    --topbar-tool-ico-size:clamp(25px,calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 4px),32px);
+    --topbar-tool-ico-size-6:clamp(23px,calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 4px),30px);
+  }
 }
 @media (max-width:360px){
   :root{
@@ -1123,6 +1154,14 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
     --topbar-tool-label-size:7.5px;
     --topbar-tool-label-size-6:7.25px;
     --topbar-tool-label-size-8:7px;
+  }
+  .topbar-lead--halo-flanks{
+    --topbar-tools-cell-4:clamp(44px,12.5vw,50px);
+    --topbar-tools-cell-6:clamp(42px,12vw,48px);
+    --topbar-tools-cell-8:clamp(38px,10.5vw,44px);
+    --topbar-tool-label-band-h:12px;
+    --topbar-tool-ico-size:clamp(24px,calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 4px),30px);
+    --topbar-tool-ico-size-6:clamp(22px,calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 4px),28px);
   }
 }
 
