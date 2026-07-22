@@ -188,27 +188,36 @@
   inset:0;
   z-index:12000;
   display:flex;
-  align-items:flex-end;
-  justify-content:center;
+  align-items:stretch;
+  justify-content:stretch;
 }
 .portal-staff-wa-sheet[hidden]{ display:none !important; }
 .portal-staff-wa-sheet__backdrop{
   position:absolute;
   inset:0;
-  background:rgba(15,23,42,.45);
+  background:#0f172a;
+  opacity:.08;
+  pointer-events:none;
 }
 .portal-staff-wa-sheet__panel{
   position:relative;
   z-index:1;
-  width:min(520px,100%);
-  max-height:min(78vh,640px);
+  width:100%;
+  max-width:none;
+  height:100%;
+  max-height:none;
+  min-height:0;
   display:flex;
   flex-direction:column;
-  min-height:0;
   background:#f7faf8;
-  border-radius:18px 18px 0 0;
-  box-shadow:0 -8px 32px rgba(15,23,42,.2);
-  padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));
+  border-radius:0;
+  box-shadow:none;
+  padding:
+    max(12px, env(safe-area-inset-top, 0px))
+    max(14px, env(safe-area-inset-right, 0px))
+    max(12px, env(safe-area-inset-bottom, 0px))
+    max(14px, env(safe-area-inset-left, 0px));
+  box-sizing:border-box;
 }
 .portal-staff-wa-sheet__head{
   display:flex;
@@ -216,6 +225,7 @@
   justify-content:space-between;
   gap:10px;
   min-width:0;
+  flex:0 0 auto;
 }
 .portal-staff-wa-sheet__head h2{
   margin:0;
@@ -244,13 +254,15 @@
   color:#64748b;
   line-height:1.35;
   overflow-wrap:break-word;
+  flex:0 0 auto;
 }
 .portal-staff-wa-sheet__thread{
   margin-top:12px;
   flex:1 1 auto;
-  min-height:120px;
-  max-height:36vh;
+  min-height:0;
+  max-height:none;
   overflow:auto;
+  -webkit-overflow-scrolling:touch;
   display:flex;
   flex-direction:column;
   gap:8px;
@@ -266,6 +278,7 @@
   gap:8px;
   margin-top:10px;
   min-width:0;
+  flex:0 0 auto;
 }
 .portal-staff-wa-sheet__tools{
   display:flex;
