@@ -1072,6 +1072,177 @@
     }
     .sheet__actions { display: flex; flex-wrap: wrap; gap: 8px; }
     .sheet__actions .btn { flex: 1 1 140px; }
+
+    /* —— Access gate: preview OK, seats / prices / book locked until verified —— */
+    html.booking-gated,
+    body.booking-gated {
+      cursor: default;
+    }
+    body.booking-gated .slot-col--avail .badge,
+    body.booking-gated .slot-col--action .btn,
+    body.booking-gated .svc-meta,
+    body.booking-gated .svc-card__hint,
+    body.booking-gated .day-acc__remaining {
+      filter: blur(5px);
+      user-select: none;
+      pointer-events: none;
+    }
+    body.booking-gated .slot-col--action .btn,
+    body.booking-gated [data-book],
+    body.booking-gated [data-enquire],
+    body.booking-gated [data-dc-enquire] {
+      pointer-events: none !important;
+    }
+    body.booking-gate-open {
+      overflow: hidden !important;
+    }
+    .booking-gate {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: max(12px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+      background: rgba(23, 50, 71, 0.48);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+    }
+    .booking-gate[hidden] { display: none !important; }
+    .booking-gate__panel {
+      width: min(440px, 100%);
+      max-height: min(92dvh, 720px);
+      overflow: auto;
+      background: var(--white);
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      box-shadow: 0 24px 60px rgba(23, 50, 71, 0.22);
+      padding: 22px 20px 18px;
+      min-width: 0;
+    }
+    .booking-gate__eyebrow {
+      margin: 0 0 6px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--blueDeep);
+    }
+    .booking-gate__title {
+      margin: 0 0 8px;
+      font-size: clamp(1.35rem, 4vw, 1.65rem);
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+      overflow-wrap: break-word;
+    }
+    .booking-gate__lede {
+      margin: 0 0 18px;
+      font-size: 0.95rem;
+      color: var(--muted);
+      overflow-wrap: break-word;
+    }
+    .booking-gate__field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin: 0 0 12px;
+      min-width: 0;
+    }
+    .booking-gate__field label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .booking-gate__field input[type="text"],
+    .booking-gate__field input[type="email"],
+    .booking-gate__field input[type="tel"] {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font: inherit;
+      font-size: 1rem;
+      color: var(--ink);
+      background: #fbfdff;
+    }
+    .booking-gate__field input:focus {
+      outline: 2px solid rgba(45, 132, 179, 0.35);
+      border-color: var(--blue);
+    }
+    .booking-gate__check {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin: 0 0 12px;
+      font-size: 0.88rem;
+      color: var(--text);
+      line-height: 1.4;
+      min-width: 0;
+    }
+    .booking-gate__check input {
+      margin-top: 3px;
+      flex: none;
+      width: 18px;
+      height: 18px;
+    }
+    .booking-gate__check span {
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .booking-gate__check a {
+      color: var(--blueDeep);
+      font-weight: 700;
+    }
+    .booking-gate__msg {
+      margin: 0 0 12px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--ok);
+      overflow-wrap: break-word;
+    }
+    .booking-gate__msg--error { color: var(--danger); }
+    .booking-gate__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .booking-gate__actions .btn {
+      flex: 1 1 140px;
+      justify-content: center;
+    }
+    .booking-gate__hint {
+      margin: 0 0 14px;
+      font-size: 0.92rem;
+      color: var(--text);
+      overflow-wrap: break-word;
+    }
+    .booking-gate__code {
+      letter-spacing: 0.28em;
+      font-weight: 800;
+      font-size: 1.35rem !important;
+      text-align: center;
+    }
+    .booking-gate__secondary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .booking-gate__linkbtn {
+      appearance: none;
+      border: 0;
+      background: transparent;
+      color: var(--blueDeep);
+      font: inherit;
+      font-size: 0.88rem;
+      font-weight: 700;
+      padding: 6px 0;
+      cursor: pointer;
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -1203,8 +1374,91 @@
     </div>
   </div>
 
+  <div class="booking-gate" id="bookingLeadGate" hidden>
+    <div
+      class="booking-gate__panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bookingLeadTitle"
+      aria-describedby="bookingLeadLede"
+    >
+      <div id="bookingLeadStepDetails">
+        <p class="booking-gate__eyebrow">Booking Portal</p>
+        <h2 class="booking-gate__title" id="bookingLeadTitle">Tell us who is looking</h2>
+        <p class="booking-gate__lede" id="bookingLeadLede">
+          Enter your details to explore availability and begin a booking.
+        </p>
+        <form id="bookingLeadDetailsForm" novalidate>
+          <div class="booking-gate__field">
+            <label for="bookingLeadFirstName">First name</label>
+            <input id="bookingLeadFirstName" name="first_name" type="text" autocomplete="given-name" required maxlength="80" />
+          </div>
+          <div class="booking-gate__field">
+            <label for="bookingLeadEmail">Email address</label>
+            <input id="bookingLeadEmail" name="email" type="email" autocomplete="email" required inputmode="email" />
+          </div>
+          <div class="booking-gate__field">
+            <label for="bookingLeadMobile">Mobile number</label>
+            <input id="bookingLeadMobile" name="mobile" type="tel" autocomplete="tel" required inputmode="tel" />
+          </div>
+          <label class="booking-gate__check">
+            <input id="bookingLeadPrivacy" name="privacy_accepted" type="checkbox" required />
+            <span>
+              I have read and accept the
+              <a href="/terms_and_conditions.html" target="_blank" rel="noopener">Privacy Notice</a>
+              (required).
+            </span>
+          </label>
+          <label class="booking-gate__check">
+            <input id="bookingLeadMarketing" name="marketing_consent" type="checkbox" />
+            <span>
+              I would like to receive news, availability updates and information about ClubSENsational services
+              (optional).
+            </span>
+          </label>
+          <p class="booking-gate__msg" id="bookingLeadDetailsMsg" hidden></p>
+          <div class="booking-gate__actions">
+            <button type="submit" class="btn btn--book" id="bookingLeadSendCode">Send access code</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="bookingLeadStepOtp" hidden>
+        <p class="booking-gate__eyebrow">Almost there</p>
+        <h2 class="booking-gate__title">Enter your access code</h2>
+        <p class="booking-gate__hint" id="bookingLeadOtpHint">
+          We’ve sent a 6-digit code to your email. Enter it below to explore availability.
+        </p>
+        <form id="bookingLeadOtpForm" novalidate>
+          <div class="booking-gate__field">
+            <label for="bookingLeadCode">Access code</label>
+            <input
+              id="bookingLeadCode"
+              name="code"
+              class="booking-gate__code"
+              type="text"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              maxlength="8"
+              required
+            />
+          </div>
+          <p class="booking-gate__msg" id="bookingLeadOtpMsg" hidden></p>
+          <div class="booking-gate__actions">
+            <button type="submit" class="btn btn--book" id="bookingLeadVerify">Unlock booking</button>
+          </div>
+          <div class="booking-gate__secondary">
+            <button type="button" class="booking-gate__linkbtn" id="bookingLeadBack">Edit details</button>
+            <button type="button" class="booking-gate__linkbtn" id="bookingLeadResend">Resend code</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <script src="/portal/portal_booking_offer.js?v=20260716-daycentre-info"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
+  <script src="/portal/portal_booking_lead_gate.js?v=20260722-lead-gate"></script>
   <script>
 (function () {
   "use strict";
@@ -1882,6 +2136,10 @@
   }
 
   function goToRegistration(slot) {
+    if (window.PortalBookingLeadGate && !window.PortalBookingLeadGate.isUnlocked()) {
+      window.PortalBookingLeadGate.openGate();
+      return;
+    }
     try {
       if (window.PortalBookingServicePresence) {
         var bits = [slot && slot.id, slot && slot.serviceId, slot && slot.day, slot && slot.timeLabel]
@@ -1893,10 +2151,25 @@
     } catch (_e) {
       /* ignore */
     }
+    try {
+      if (window.PortalBookingLeadGate) {
+        void window.PortalBookingLeadGate.pingActivity({
+          booking_status: "registration_started",
+          registration_status: "started",
+          service_viewed: (slot && slot.serviceId) || "",
+        });
+      }
+    } catch (_e2) {
+      /* ignore */
+    }
     window.location.href = registrationUrlForSlot(slot);
   }
 
   function openDayCentreEnquire(svc) {
+    if (window.PortalBookingLeadGate && !window.PortalBookingLeadGate.isUnlocked()) {
+      window.PortalBookingLeadGate.openGate();
+      return;
+    }
     var sheet = document.getElementById("actionSheet");
     var title = document.getElementById("sheetTitle");
     var body = document.getElementById("sheetBody");
@@ -1924,6 +2197,10 @@
   }
 
   function openSheet(slot) {
+    if (window.PortalBookingLeadGate && !window.PortalBookingLeadGate.isUnlocked()) {
+      window.PortalBookingLeadGate.openGate();
+      return;
+    }
     var svc = mock.serviceById(slot.serviceId);
     if (svc && svc.id === "day_centre") {
       openDayCentreEnquire(svc);
@@ -1937,6 +2214,16 @@
     title.textContent = enquireOnly
       ? "Enquire about this course"
       : "Join waiting list / enquire";
+    try {
+      if (window.PortalBookingLeadGate) {
+        void window.PortalBookingLeadGate.pingActivity({
+          booking_status: enquireOnly ? "exploring_services" : "waiting_list",
+          service_viewed: (slot && slot.serviceId) || "",
+        });
+      }
+    } catch (_e) {
+      /* ignore */
+    }
     body.textContent =
       (svc ? svc.name : "Session") +
       " · " +
@@ -1997,7 +2284,18 @@
   document.getElementById("serviceCards").addEventListener("click", function (e) {
     var card = e.target && e.target.closest && e.target.closest("[data-jump-service]");
     if (!card) return;
-    jumpToService(card.getAttribute("data-jump-service"));
+    var sid = card.getAttribute("data-jump-service");
+    try {
+      if (window.PortalBookingLeadGate && window.PortalBookingLeadGate.isUnlocked()) {
+        void window.PortalBookingLeadGate.pingActivity({
+          booking_status: "exploring_services",
+          service_viewed: sid || "",
+        });
+      }
+    } catch (_e) {
+      /* ignore */
+    }
+    jumpToService(sid);
   });
 
   document.getElementById("timetableHost").addEventListener("click", function (e) {
@@ -2072,6 +2370,15 @@
   try {
     if (window.PortalBookingServicePresence) window.PortalBookingServicePresence.bootOffer();
   } catch (_e) {
+    /* ignore */
+  }
+  try {
+    if (window.PortalBookingLeadGate) {
+      window.PortalBookingLeadGate.guardClicks(document.getElementById("timetableHost"));
+      window.PortalBookingLeadGate.guardClicks(document.getElementById("serviceCards"));
+      void window.PortalBookingLeadGate.boot();
+    }
+  } catch (_e2) {
     /* ignore */
   }
 })();

@@ -366,11 +366,50 @@
   <script src="/portal/parent_form_submit.js?v=20260716-slot-hold"></script>
   <script src="/portal/parent_registration_portal.js?v=20260715-prefill-review"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-bookingportal"></script>
+  <script src="/portal/portal_booking_lead_gate.js?v=20260722-lead-gate"></script>
   <script>
     try {
       if (window.PortalBookingServicePresence) window.PortalBookingServicePresence.bootRegistration();
     } catch (_e) {}
   </script>
+  <style>
+    .lead-prefill-banner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px 14px;
+      margin: 0 0 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(45, 132, 179, 0.22);
+      background: #eaf5fb;
+      min-width: 0;
+    }
+    .lead-prefill-banner p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--ink, #173247);
+      font-weight: 600;
+      min-width: 0;
+      overflow-wrap: break-word;
+      flex: 1 1 200px;
+    }
+    .lead-prefill-banner button {
+      appearance: none;
+      border: 1px solid rgba(45, 132, 179, 0.35);
+      background: #fff;
+      color: #1f6a94;
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 8px 12px;
+      cursor: pointer;
+      flex: none;
+    }
+    .lead-prefill-banner button:hover { background: #f7fbff; }
+  </style>
 </head>
 <body>
   <div class="page">
@@ -425,6 +464,10 @@
           <span class="section-head__label">Parent / guardian</span>
         </div>
         <div class="section-body">
+          <div class="lead-prefill-banner" id="leadPrefillBanner" hidden>
+            <p id="leadPrefillText">Parent/carer details filled from your booking enquiry.</p>
+            <button type="button" id="leadPrefillEdit">Edit details</button>
+          </div>
           <div class="field" data-icon="user">
             <label class="field-label" for="parent_name"><span class="field-label__text">Name <span class="required-mark">*</span></span></label>
             <input type="text" id="parent_name" name="parent_name" required autocomplete="name" />
@@ -889,6 +932,71 @@
     }
 
     var bookingRequest = bookingRequestFromUrl();
+
+    (function applyBookingLeadPrefill() {
+      var gate = window.PortalBookingLeadGate;
+      if (!gate) return;
+      var banner = document.getElementById('leadPrefillBanner');
+      var editBtn = document.getElementById('leadPrefillEdit');
+      var nameEl = document.getElementById('parent_name');
+      var emailEl = document.getElementById('parent_email');
+      var phoneEl = document.getElementById('parent_phone');
+      if (!nameEl || !emailEl || !phoneEl) return;
+
+      function unlockFields() {
+        nameEl.readOnly = false;
+        emailEl.readOnly = false;
+        phoneEl.readOnly = false;
+        if (banner) banner.hidden = true;
+      }
+
+      function lockFields(lead) {
+        if (lead.first_name && !nameEl.value) nameEl.value = lead.first_name;
+        if (lead.email && !emailEl.value) emailEl.value = lead.email;
+        if (lead.mobile && !phoneEl.value) phoneEl.value = lead.mobile;
+        if (!nameEl.value && !emailEl.value && !phoneEl.value) return;
+        nameEl.readOnly = true;
+        emailEl.readOnly = true;
+        phoneEl.readOnly = true;
+        if (banner) {
+          var bits = [lead.first_name, lead.email, lead.mobile].filter(Boolean).join(' · ');
+          var text = document.getElementById('leadPrefillText');
+          if (text) {
+            text.textContent =
+              'Parent/carer details from your booking enquiry' +
+              (bits ? ': ' + bits : '') +
+              '. These belong to the person making the enquiry — not the participant.';
+          }
+          banner.hidden = false;
+        }
+        if (editBtn) {
+          editBtn.onclick = function () {
+            unlockFields();
+            try { nameEl.focus(); } catch (_e) {}
+          };
+        }
+      }
+
+      var cached = gate.getLeadForPrefill && gate.getLeadForPrefill();
+      if (cached && (cached.first_name || cached.email || cached.mobile)) {
+        lockFields(cached);
+      }
+
+      Promise.resolve(gate.validateSession && gate.validateSession())
+        .then(function (ok) {
+          if (!ok) return;
+          var lead = gate.getLeadForPrefill && gate.getLeadForPrefill();
+          if (lead) lockFields(lead);
+          try {
+            void gate.pingActivity({
+              booking_status: 'registration_started',
+              registration_status: 'started'
+            });
+          } catch (_e2) {}
+        })
+        .catch(function () {});
+    })();
+
     (function showSlotHoldBanner() {
       var el = document.getElementById('slotHoldBanner');
       if (!el || !bookingRequest) return;
@@ -1182,6 +1290,14 @@
               : (bookingRequest
                 ? ' Your selected session was sent with this form for the office to review.'
                 : '');
+            try {
+              if (window.PortalBookingLeadGate) {
+                void window.PortalBookingLeadGate.pingActivity({
+                  booking_status: 'registration_submitted',
+                  registration_status: 'submitted'
+                });
+              }
+            } catch (_leadPing) {}
             window.portalFinishParentSubmit({
               formEl: form,
               successEl: document.getElementById('parentSubmitDone'),

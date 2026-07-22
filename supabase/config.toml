@@ -672,6 +672,16 @@ verify_jwt = false
 [functions.portal-ceo-booking-service-presence]
 verify_jwt = false
 
+# Public Booking Portal lead gate (email OTP + session; anon key only).
+[functions.portal-booking-lead-otp-request]
+verify_jwt = false
+
+[functions.portal-booking-lead-otp-verify]
+verify_jwt = false
+
+[functions.portal-booking-lead-session]
+verify_jwt = false
+
 # LA / commissioning Terms (JWT checked inside admin fn; accept uses hashed token).
 [functions.commissioning-terms-accept]
 verify_jwt = false
