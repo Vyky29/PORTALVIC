@@ -1209,9 +1209,35 @@
     return tokens.every(function (tok) { return hay.indexOf(tok) >= 0; });
   }
 
+  /** True when query looks like a phone and matches the thread/contact number (07… ↔ +447…). */
+  function phoneQueryMatches(phone, qRaw) {
+    var qDigits = phoneDigits(qRaw);
+    if (qDigits.length < 7) return false;
+    var qCanon = canonicalPhoneDigits(qRaw) || qDigits;
+    var pCanon = canonicalPhoneDigits(phone) || phoneDigits(phone);
+    if (!pCanon) return false;
+    if (pCanon === qCanon || pCanon === qDigits) return true;
+    if (pCanon.indexOf(qDigits) >= 0 || qDigits.indexOf(pCanon) >= 0) return true;
+    /* Last 9–10 national digits: 7715444979 */
+    var qTail = qDigits.replace(/^44/, "").replace(/^0/, "");
+    var pTail = pCanon.replace(/^44/, "").replace(/^0/, "");
+    if (qTail.length >= 7 && (pTail === qTail || pTail.slice(-qTail.length) === qTail)) return true;
+    return false;
+  }
+
+  function threadPhoneMatchesQuery(t, qRaw) {
+    return (
+      phoneQueryMatches(t.phone, qRaw) ||
+      phoneQueryMatches(t.sendPhone, qRaw) ||
+      phoneQueryMatches(t.profilePhone, qRaw)
+    );
+  }
+
   /** Higher = better when a search query is active (name hits before body-only). */
   function searchRankForThread(t, q) {
     if (!q) return 0;
+    var qRaw = String(state.query || "").trim();
+    if (threadPhoneMatchesQuery(t, qRaw)) return t.fromDirectory ? 320 : 280;
     var idHay = threadIdentityHay(t);
     if (hayMatchesQuery(idHay, q)) {
       if (t.fromDirectory) return 300;
@@ -1222,13 +1248,15 @@
   }
 
   function threadMatches(t) {
-    var q = foldSearchText(state.query || "").trim();
+    var qRaw = String(state.query || "").trim();
+    var q = foldSearchText(qRaw);
     var outcome = String(state.outcome || "all").toLowerCase();
     if (outcome === "replies" && !t.hasInbound) return false;
     if (outcome === "failed" && !t.hasFailed) return false;
     if (outcome === "sent" && !t.hasSent) return false;
     if (outcome === "unread" && !isThreadUnread(t)) return false;
     if (!q) return true;
+    if (threadPhoneMatchesQuery(t, qRaw)) return true;
     if (hayMatchesQuery(threadIdentityHay(t), q)) return true;
     /* Message text only — do not match sentBy (staff email), or "victor" lists every outbound. */
     return hayMatchesQuery(threadBodyHay(t), q);
@@ -1236,7 +1264,8 @@
 
   /** When searching, include enrolled families from Contacts even with no WhatsApp history yet. */
   function directoryThreadsMatchingQuery() {
-    var q = foldSearchText(state.query || "").trim();
+    var qRaw = String(state.query || "").trim();
+    var q = foldSearchText(qRaw);
     if (q.length < 2) return [];
     var outcome = String(state.outcome || "all").toLowerCase();
     if (outcome && outcome !== "all") return [];
@@ -1255,7 +1284,9 @@
       var hay = foldSearchText(
         [c.parent, c.child, c.mobile, digits, c.contactId].join(" ")
       );
-      if (!hayMatchesQuery(hay, q)) return;
+      if (!phoneQueryMatches(c.mobile, qRaw) && !phoneQueryMatches(digits, qRaw) && !hayMatchesQuery(hay, q)) {
+        return;
+      }
       out.push({
         key: digits,
         channel: "whatsapp",
