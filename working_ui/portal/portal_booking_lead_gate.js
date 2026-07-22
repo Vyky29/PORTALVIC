@@ -1,6 +1,6 @@
 /**
- * Booking Portal access gate — "Tell us who is looking" + email OTP.
- * Unlocks availability / Book after a verified lead session.
+ * Booking Portal access gate — aligned with registration parent/carer fields
+ * (parent_name, parent_email, parent_phone) + family portal session handoff.
  */
 (function (global) {
   "use strict";
@@ -40,20 +40,42 @@
     }
   }
 
+  function normalizeLead(lead) {
+    if (!lead || typeof lead !== "object") return null;
+    var parentName = String(lead.parent_name || lead.first_name || "").trim();
+    var email = String(lead.parent_email || lead.email || "").trim();
+    var phone = String(lead.parent_phone || lead.mobile || "").trim();
+    return {
+      id: lead.id || null,
+      parent_name: parentName,
+      first_name: parentName,
+      email: email,
+      parent_email: email,
+      mobile: phone,
+      parent_phone: phone,
+      marketing_consent: !!lead.marketing_consent,
+      privacy_notice_version: lead.privacy_notice_version || PRIVACY_VERSION,
+      booking_status: lead.booking_status || null,
+      registration_status: lead.registration_status || null,
+      client_status: lead.client_status || null,
+      services_viewed: lead.services_viewed || [],
+    };
+  }
+
   function saveStored(token, expiresAt, lead) {
     state.token = String(token || "");
-    state.lead = lead || null;
+    state.lead = normalizeLead(lead);
     try {
       global.localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
           token: state.token,
           expiresAt: expiresAt ? new Date(expiresAt).getTime() : Date.now() + 14 * 86400000,
-          lead: lead
+          lead: state.lead
             ? {
-                first_name: lead.first_name,
-                email: lead.email,
-                mobile: lead.mobile,
+                parent_name: state.lead.parent_name,
+                email: state.lead.email,
+                mobile: state.lead.mobile,
               }
             : null,
         })
@@ -70,6 +92,23 @@
       global.localStorage.removeItem(STORAGE_KEY);
     } catch (_e) {
       /* ignore */
+    }
+  }
+
+  function adoptTokenFromUrl() {
+    try {
+      var q = new URLSearchParams(global.location.search || "");
+      var tok = String(q.get("lead_session") || "").trim();
+      if (!/^[a-f0-9]{32,128}$/i.test(tok)) return false;
+      saveStored(tok, null, null);
+      q.delete("lead_session");
+      var next = global.location.pathname + (q.toString() ? "?" + q.toString() : "") + (global.location.hash || "");
+      if (global.history && global.history.replaceState) {
+        global.history.replaceState({}, "", next);
+      }
+      return true;
+    } catch (_e) {
+      return false;
     }
   }
 
@@ -111,18 +150,10 @@
     gate.setAttribute("aria-hidden", show ? "false" : "true");
     document.documentElement.classList.toggle("booking-gate-open", !!show);
     document.body.classList.toggle("booking-gate-open", !!show);
-    if (show) {
-      try {
-        document.body.style.overflow = "hidden";
-      } catch (_e) {
-        /* ignore */
-      }
-    } else {
-      try {
-        document.body.style.overflow = "";
-      } catch (_e2) {
-        /* ignore */
-      }
+    try {
+      document.body.style.overflow = show ? "hidden" : "";
+    } catch (_e) {
+      /* ignore */
     }
   }
 
@@ -147,17 +178,18 @@
     if (label) btn.textContent = label;
   }
 
-  async function validateSession() {
+  async function validateSession(tokenOverride) {
     var stored = loadStored();
-    if (!stored || !stored.token) return false;
+    var tok = String(tokenOverride || state.token || (stored && stored.token) || "").trim();
+    if (!tok) return false;
     try {
       var out = await api(
         "portal-booking-lead-session",
         { booking_status: "exploring_services" },
-        { "x-booking-lead-session": stored.token }
+        { "x-booking-lead-session": tok }
       );
       if (out.res.ok && out.data && out.data.ok && out.data.lead) {
-        saveStored(stored.token, out.data.expires_at || stored.expiresAt, out.data.lead);
+        saveStored(tok, out.data.expires_at || (stored && stored.expiresAt), out.data.lead);
         return true;
       }
     } catch (_e) {
@@ -180,10 +212,10 @@
     setLocked(true);
     showStep("details");
     showModal(true);
-    var first = $("bookingLeadFirstName");
-    if (first) {
+    var nameEl = $("bookingLeadParentName") || $("bookingLeadFirstName");
+    if (nameEl) {
       try {
-        first.focus();
+        nameEl.focus();
       } catch (_e) {
         /* ignore */
       }
@@ -192,24 +224,28 @@
 
   async function submitDetails(ev) {
     if (ev) ev.preventDefault();
-    var firstName = String(($("bookingLeadFirstName") && $("bookingLeadFirstName").value) || "").trim();
+    var parentName = String(
+      ($("bookingLeadParentName") && $("bookingLeadParentName").value) ||
+        ($("bookingLeadFirstName") && $("bookingLeadFirstName").value) ||
+        ""
+    ).trim();
     var email = String(($("bookingLeadEmail") && $("bookingLeadEmail").value) || "").trim();
-    var mobile = String(($("bookingLeadMobile") && $("bookingLeadMobile").value) || "").trim();
+    var phone = String(($("bookingLeadMobile") && $("bookingLeadMobile").value) || "").trim();
     var privacy = !!( $("bookingLeadPrivacy") && $("bookingLeadPrivacy").checked );
     var marketing = !!( $("bookingLeadMarketing") && $("bookingLeadMarketing").checked );
     var btn = $("bookingLeadSendCode");
 
     setMsg("bookingLeadDetailsMsg", "", false);
-    if (firstName.length < 2) {
-      setMsg("bookingLeadDetailsMsg", "Please enter your first name.", true);
+    if (parentName.length < 2) {
+      setMsg("bookingLeadDetailsMsg", "Please enter the parent/carer name.", true);
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setMsg("bookingLeadDetailsMsg", "Please enter a valid email address.", true);
       return;
     }
-    if (mobile.replace(/\D/g, "").length < 10) {
-      setMsg("bookingLeadDetailsMsg", "Please enter a valid mobile number.", true);
+    if (phone.replace(/\D/g, "").length < 10) {
+      setMsg("bookingLeadDetailsMsg", "Please enter a valid phone number.", true);
       return;
     }
     if (!privacy) {
@@ -220,9 +256,9 @@
     setBusy(btn, true, "Sending code…");
     try {
       var out = await api("portal-booking-lead-otp-request", {
-        first_name: firstName,
-        email: email,
-        mobile: mobile,
+        parent_name: parentName,
+        parent_email: email,
+        parent_phone: phone,
         privacy_accepted: true,
         marketing_consent: marketing,
         privacy_notice_version: PRIVACY_VERSION,
@@ -236,8 +272,10 @@
             : err === "email_invalid"
               ? "Please enter a valid email address."
               : err === "mobile_invalid"
-                ? "Please enter a valid mobile number."
-                : "We couldn’t send a code just now. Please try again.";
+                ? "Please enter a valid phone number."
+                : err === "parent_name_required"
+                  ? "Please enter the parent/carer name."
+                  : "We couldn’t send a code just now. Please try again.";
         setMsg("bookingLeadDetailsMsg", human, true);
         setBusy(btn, false, "Send access code");
         return;
@@ -246,7 +284,8 @@
       var hint = (out.data && out.data.email_hint) || email;
       var otpHint = $("bookingLeadOtpHint");
       if (otpHint) {
-        otpHint.textContent = "We sent a 6-digit code to " + hint + ". Enter it below to explore availability.";
+        otpHint.textContent =
+          "We sent a 6-digit code to " + hint + ". Enter it below to explore availability.";
       }
       showStep("otp");
       var codeEl = $("bookingLeadCode");
@@ -319,13 +358,6 @@
         submitDetails();
       });
     }
-    var gate = $("bookingLeadGate");
-    if (gate) {
-      gate.addEventListener("click", function (e) {
-        // Non-dismissible: ignore backdrop clicks.
-        e.stopPropagation();
-      });
-    }
   }
 
   function guardClicks(root) {
@@ -334,9 +366,10 @@
       "click",
       function (e) {
         if (state.unlocked) return;
-        var t = e.target && e.target.closest
-          ? e.target.closest("[data-book], [data-enquire], [data-dc-enquire], .btn--book, .btn--wait")
-          : null;
+        var t =
+          e.target && e.target.closest
+            ? e.target.closest("[data-book], [data-enquire], [data-dc-enquire], .btn--book, .btn--wait")
+            : null;
         if (!t) return;
         e.preventDefault();
         e.stopPropagation();
@@ -347,14 +380,16 @@
   }
 
   async function pingActivity(payload) {
-    if (!state.token && !loadStored()) return;
     var stored = loadStored();
     var tok = state.token || (stored && stored.token) || "";
     if (!tok) return;
     try {
-      await api("portal-booking-lead-session", payload || {}, {
+      var out = await api("portal-booking-lead-session", payload || {}, {
         "x-booking-lead-session": tok,
       });
+      if (out.res.ok && out.data && out.data.lead) {
+        saveStored(tok, out.data.expires_at || (stored && stored.expiresAt), out.data.lead);
+      }
     } catch (_e) {
       /* ignore */
     }
@@ -363,42 +398,69 @@
   function getLeadForPrefill() {
     if (state.lead) return state.lead;
     var stored = loadStored();
-    return (stored && stored.lead) || null;
+    return normalizeLead(stored && stored.lead);
   }
 
-  async function boot() {
+  function getSessionToken() {
+    var s = loadStored();
+    return (s && s.token) || state.token || "";
+  }
+
+  /**
+   * Registration URL handoff: keep same host when possible + pass lead_session
+   * so family.clubsensational.org / www can both recover the lead.
+   */
+  function appendSessionToUrl(url) {
+    var tok = getSessionToken();
+    if (!tok || !url) return url;
+    try {
+      var u = new URL(url, global.location && global.location.origin);
+      u.searchParams.set("lead_session", tok);
+      u.searchParams.set("from", u.searchParams.get("from") || "bookingportal");
+      return u.toString();
+    } catch (_e) {
+      var join = String(url).indexOf("?") >= 0 ? "&" : "?";
+      return url + join + "lead_session=" + encodeURIComponent(tok);
+    }
+  }
+
+  async function boot(opts) {
+    opts = opts || {};
     wireUi();
     setLocked(true);
     showModal(false);
+    adoptTokenFromUrl();
 
     var ok = await validateSession();
     if (ok) {
       unlock();
-      return;
+      return true;
     }
 
-    // Preview window: browse look & feel, no booking yet.
+    if (opts.skipPreview) {
+      openGate();
+      return false;
+    }
+
     state.timer = setTimeout(function () {
       if (!state.unlocked) openGate();
     }, PREVIEW_MS);
+    return false;
   }
 
-  var apiPublic = {
+  global.PortalBookingLeadGate = {
     boot: boot,
     guardClicks: guardClicks,
     pingActivity: pingActivity,
     getLeadForPrefill: getLeadForPrefill,
-    getSessionToken: function () {
-      var s = loadStored();
-      return (s && s.token) || state.token || "";
-    },
+    getSessionToken: getSessionToken,
+    appendSessionToUrl: appendSessionToUrl,
     isUnlocked: function () {
       return !!state.unlocked;
     },
     openGate: openGate,
     privacyVersion: PRIVACY_VERSION,
     validateSession: validateSession,
+    adoptTokenFromUrl: adoptTokenFromUrl,
   };
-
-  global.PortalBookingLeadGate = apiPublic;
 })(typeof window !== "undefined" ? window : globalThis);

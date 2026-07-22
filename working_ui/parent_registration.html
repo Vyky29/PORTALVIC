@@ -366,7 +366,7 @@
   <script src="/portal/parent_form_submit.js?v=20260716-slot-hold"></script>
   <script src="/portal/parent_registration_portal.js?v=20260715-prefill-review"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-bookingportal"></script>
-  <script src="/portal/portal_booking_lead_gate.js?v=20260722-lead-gate"></script>
+  <script src="/portal/portal_booking_lead_gate.js?v=20260722-lead-gate2"></script>
   <script>
     try {
       if (window.PortalBookingServicePresence) window.PortalBookingServicePresence.bootRegistration();
@@ -951,21 +951,24 @@
       }
 
       function lockFields(lead) {
-        if (lead.first_name && !nameEl.value) nameEl.value = lead.first_name;
-        if (lead.email && !emailEl.value) emailEl.value = lead.email;
-        if (lead.mobile && !phoneEl.value) phoneEl.value = lead.mobile;
+        var parentName = lead.parent_name || lead.first_name || '';
+        var parentEmail = lead.parent_email || lead.email || '';
+        var parentPhone = lead.parent_phone || lead.mobile || '';
+        if (parentName) nameEl.value = parentName;
+        if (parentEmail) emailEl.value = parentEmail;
+        if (parentPhone) phoneEl.value = parentPhone;
         if (!nameEl.value && !emailEl.value && !phoneEl.value) return;
         nameEl.readOnly = true;
         emailEl.readOnly = true;
         phoneEl.readOnly = true;
         if (banner) {
-          var bits = [lead.first_name, lead.email, lead.mobile].filter(Boolean).join(' · ');
+          var bits = [parentName, parentEmail, parentPhone].filter(Boolean).join(' · ');
           var text = document.getElementById('leadPrefillText');
           if (text) {
             text.textContent =
-              'Parent/carer details from your booking enquiry' +
+              'Parent / guardian details from Booking Portal' +
               (bits ? ': ' + bits : '') +
-              '. These belong to the person making the enquiry — not the participant.';
+              '. This is the person making the enquiry — fill participant details separately below.';
           }
           banner.hidden = false;
         }
@@ -977,8 +980,12 @@
         }
       }
 
+      try {
+        if (gate.adoptTokenFromUrl) gate.adoptTokenFromUrl();
+      } catch (_adopt) {}
+
       var cached = gate.getLeadForPrefill && gate.getLeadForPrefill();
-      if (cached && (cached.first_name || cached.email || cached.mobile)) {
+      if (cached && (cached.parent_name || cached.first_name || cached.email || cached.mobile)) {
         lockFields(cached);
       }
 

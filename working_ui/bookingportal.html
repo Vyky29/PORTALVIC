@@ -1383,29 +1383,53 @@
       aria-describedby="bookingLeadLede"
     >
       <div id="bookingLeadStepDetails">
-        <p class="booking-gate__eyebrow">Booking Portal</p>
+        <p class="booking-gate__eyebrow">Parent / guardian</p>
         <h2 class="booking-gate__title" id="bookingLeadTitle">Tell us who is looking</h2>
         <p class="booking-gate__lede" id="bookingLeadLede">
-          Enter your details to explore availability and begin a booking.
+          Enter the parent/carer details used on our registration form to explore availability and begin a booking.
+          Already with us?
+          <a href="/parent" style="color:var(--blueDeep);font-weight:700">Open the family portal</a>.
         </p>
         <form id="bookingLeadDetailsForm" novalidate>
           <div class="booking-gate__field">
-            <label for="bookingLeadFirstName">First name</label>
-            <input id="bookingLeadFirstName" name="first_name" type="text" autocomplete="given-name" required maxlength="80" />
+            <label for="bookingLeadParentName">Name <span aria-hidden="true">*</span></label>
+            <input
+              id="bookingLeadParentName"
+              name="parent_name"
+              type="text"
+              autocomplete="name"
+              required
+              maxlength="120"
+              placeholder="Parent / carer full name"
+            />
           </div>
           <div class="booking-gate__field">
-            <label for="bookingLeadEmail">Email address</label>
-            <input id="bookingLeadEmail" name="email" type="email" autocomplete="email" required inputmode="email" />
+            <label for="bookingLeadEmail">Email address <span aria-hidden="true">*</span></label>
+            <input
+              id="bookingLeadEmail"
+              name="parent_email"
+              type="email"
+              autocomplete="email"
+              required
+              inputmode="email"
+            />
           </div>
           <div class="booking-gate__field">
-            <label for="bookingLeadMobile">Mobile number</label>
-            <input id="bookingLeadMobile" name="mobile" type="tel" autocomplete="tel" required inputmode="tel" />
+            <label for="bookingLeadMobile">Phone <span aria-hidden="true">*</span></label>
+            <input
+              id="bookingLeadMobile"
+              name="parent_phone"
+              type="tel"
+              autocomplete="tel"
+              required
+              inputmode="tel"
+            />
           </div>
           <label class="booking-gate__check">
             <input id="bookingLeadPrivacy" name="privacy_accepted" type="checkbox" required />
             <span>
               I have read and accept the
-              <a href="/terms_and_conditions.html" target="_blank" rel="noopener">Privacy Notice</a>
+              <a href="/parent/terms" target="_blank" rel="noopener">Privacy Notice</a>
               (required).
             </span>
           </label>
@@ -1458,7 +1482,7 @@
 
   <script src="/portal/portal_booking_offer.js?v=20260716-daycentre-info"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
-  <script src="/portal/portal_booking_lead_gate.js?v=20260722-lead-gate"></script>
+  <script src="/portal/portal_booking_lead_gate.js?v=20260722-lead-gate2"></script>
   <script>
 (function () {
   "use strict";
@@ -2124,15 +2148,38 @@
     if (slot.weekId) q.set("week_id", slot.weekId);
     if (slot.blockId) q.set("block_id", slot.blockId);
     if (slot.dateIso) q.set("date", slot.dateIso);
-    // Client questionnaire / registration form (slot context travels in the query string).
-    var path = "/parent/registration";
+    try {
+      if (window.PortalBookingLeadGate) {
+        var tok = window.PortalBookingLeadGate.getSessionToken();
+        if (tok) q.set("lead_session", tok);
+      }
+    } catch (_tok) {
+      /* ignore */
+    }
+    // Prefer same-origin registration so lead session + branding stay aligned with
+    // /parent (family portal) routes on www.clubsensational.org.
+    var path = "/parent/registration?" + q.toString();
+    try {
+      var host = String(window.location.hostname || "").toLowerCase();
+      if (/clubsensational\.org$/i.test(host) || /portalvic\.vercel\.app$/i.test(host)) {
+        return window.location.origin + path;
+      }
+    } catch (_e) {
+      /* ignore */
+    }
     if (typeof window.portalFamilyPortalUrl === "function") {
       try {
         var abs = window.portalFamilyPortalUrl("registration");
-        if (abs) return abs + (abs.indexOf("?") >= 0 ? "&" : "?") + q.toString();
-      } catch (_e) {}
+        if (abs) {
+          var withQ = abs + (abs.indexOf("?") >= 0 ? "&" : "?") + q.toString();
+          if (window.PortalBookingLeadGate && window.PortalBookingLeadGate.appendSessionToUrl) {
+            return window.PortalBookingLeadGate.appendSessionToUrl(withQ);
+          }
+          return withQ;
+        }
+      } catch (_e2) {}
     }
-    return path + "?" + q.toString();
+    return path;
   }
 
   function goToRegistration(slot) {

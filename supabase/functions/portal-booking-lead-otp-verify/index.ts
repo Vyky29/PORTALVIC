@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
   const { data: lead } = await supabase
     .from("portal_booking_leads")
     .select(
-      "id, first_name, email, mobile, marketing_consent, privacy_notice_version, booking_status, registration_status, client_status",
+      "id, parent_name, email, mobile, marketing_consent, privacy_notice_version, booking_status, registration_status, client_status",
     )
     .eq("email_norm", email)
     .maybeSingle();
@@ -136,9 +136,13 @@ Deno.serve(async (req) => {
     expires_at: expiresAt,
     lead: {
       id: lead.id,
-      first_name: lead.first_name,
+      parent_name: lead.parent_name,
+      // Compatibility aliases for older clients
+      first_name: lead.parent_name,
       email: lead.email,
+      parent_email: lead.email,
       mobile: lead.mobile,
+      parent_phone: lead.mobile,
       marketing_consent: !!lead.marketing_consent,
       privacy_notice_version: lead.privacy_notice_version,
       booking_status: nextStatus,

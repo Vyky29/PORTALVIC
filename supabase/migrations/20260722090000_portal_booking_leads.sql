@@ -5,7 +5,7 @@ begin;
 
 create table if not exists public.portal_booking_leads (
   id uuid primary key default gen_random_uuid(),
-  first_name text not null,
+  parent_name text not null,
   email text not null,
   email_norm text generated always as (
     nullif(lower(trim(coalesce(email, ''))), '')

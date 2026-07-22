@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
   const { data: lead } = await supabase
     .from("portal_booking_leads")
     .select(
-      "id, first_name, email, mobile, marketing_consent, privacy_notice_version, booking_status, registration_status, client_status, services_viewed, first_page_visited",
+      "id, parent_name, email, mobile, marketing_consent, privacy_notice_version, booking_status, registration_status, client_status, services_viewed, first_page_visited",
     )
     .eq("id", sess.lead_id)
     .maybeSingle();
@@ -124,7 +124,7 @@ Deno.serve(async (req) => {
   const { data: refreshed } = await supabase
     .from("portal_booking_leads")
     .select(
-      "id, first_name, email, mobile, marketing_consent, privacy_notice_version, booking_status, registration_status, client_status, services_viewed",
+      "id, parent_name, email, mobile, marketing_consent, privacy_notice_version, booking_status, registration_status, client_status, services_viewed",
     )
     .eq("id", lead.id)
     .maybeSingle();
@@ -136,9 +136,12 @@ Deno.serve(async (req) => {
     expires_at: sess.expires_at,
     lead: {
       id: row.id,
-      first_name: row.first_name,
+      parent_name: row.parent_name,
+      first_name: row.parent_name,
       email: row.email,
+      parent_email: row.email,
       mobile: row.mobile,
+      parent_phone: row.mobile,
       marketing_consent: !!row.marketing_consent,
       privacy_notice_version: row.privacy_notice_version,
       booking_status: row.booking_status,

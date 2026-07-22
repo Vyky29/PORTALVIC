@@ -63,9 +63,13 @@ export function maskEmail(raw: string): string {
   return shown + "***@" + domain;
 }
 
-export function sanitizeFirstName(raw: string): string {
+/** Parent/carer display name — matches registration `parent_name`. */
+export function sanitizeParentName(raw: string): string {
   return String(raw || "")
     .trim()
     .replace(/\s+/g, " ")
-    .slice(0, 80);
+    .slice(0, 120);
 }
+
+/** @deprecated use sanitizeParentName */
+export const sanitizeFirstName = sanitizeParentName;

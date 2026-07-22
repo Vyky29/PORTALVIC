@@ -18,7 +18,7 @@ import {
   newOtpCode,
   normalizeEmail,
   normalizePhoneE164,
-  sanitizeFirstName,
+  sanitizeParentName,
   sha256Hex,
 } from "../_shared/booking_lead_auth.ts";
 import {
@@ -41,9 +41,12 @@ Deno.serve(async (req) => {
     return bookingLeadJson({ ok: false, error: "invalid_json" }, 400);
   }
 
-  const firstName = sanitizeFirstName(String(body.first_name || ""));
-  const email = normalizeEmail(String(body.email || ""));
-  const mobileRaw = String(body.mobile || body.phone || "").trim();
+  // Align with registration form: parent_name / parent_email / parent_phone.
+  const parentName = sanitizeParentName(
+    String(body.parent_name || body.first_name || body.name || ""),
+  );
+  const email = normalizeEmail(String(body.parent_email || body.email || ""));
+  const mobileRaw = String(body.parent_phone || body.mobile || body.phone || "").trim();
   const mobile = normalizePhoneE164(mobileRaw) || mobileRaw.replace(/\s+/g, "");
   const privacyAccepted = body.privacy_accepted === true || body.privacy_accepted === "true";
   const marketingConsent =
@@ -53,8 +56,8 @@ Deno.serve(async (req) => {
     .trim()
     .slice(0, 64);
 
-  if (!firstName || firstName.length < 2) {
-    return bookingLeadJson({ ok: false, error: "first_name_required" }, 400);
+  if (!parentName || parentName.length < 2) {
+    return bookingLeadJson({ ok: false, error: "parent_name_required" }, 400);
   }
   if (!isValidEmail(email)) {
     return bookingLeadJson({ ok: false, error: "email_invalid" }, 400);
@@ -109,7 +112,7 @@ Deno.serve(async (req) => {
 
   if (leadId) {
     const patch: Record<string, unknown> = {
-      first_name: firstName,
+      parent_name: parentName,
       email,
       mobile,
       marketing_consent: marketingConsent,
@@ -124,7 +127,7 @@ Deno.serve(async (req) => {
     const { data: inserted, error: insertLeadErr } = await supabase
       .from("portal_booking_leads")
       .insert({
-        first_name: firstName,
+        parent_name: parentName,
         email,
         mobile,
         marketing_consent: marketingConsent,
@@ -177,7 +180,7 @@ Deno.serve(async (req) => {
       to: email,
       subject: "Your clubSENsational booking access code",
       bodyText:
-        `Hello ${firstName},\n\n` +
+        `Hello ${parentName},\n\n` +
         `Your access code for the clubSENsational Booking Portal is:\n\n` +
         `${code}\n\n` +
         `It expires in 10 minutes. Enter this code on the booking page to explore availability.\n\n` +
