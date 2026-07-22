@@ -78,6 +78,7 @@
 
   function formatSendResult(data) {
     if (!data) return 'Sent.';
+    if (data.corrected) return 'Correction sent as a quoted reply (WhatsApp cannot edit the old bubble).';
     if (data.edited) return 'Message updated on WhatsApp.';
     var parts = [];
     if (data.email && data.email.status === 'sent') parts.push('Email sent');

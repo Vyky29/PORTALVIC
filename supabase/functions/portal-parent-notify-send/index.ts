@@ -42,7 +42,6 @@ import {
   readParentNotifySmtpConfig,
   sendParentEmailViaSmtp,
   sendParentMobileMessage,
-  editParentWhatsappTextMessage,
   normalizePublicPhotoUrl,
 } from "../_shared/portal_parent_messaging.ts";
 import {
@@ -78,9 +77,9 @@ type NotifyBody = {
   mediaBase64?: unknown;
   mediaMime?: unknown;
   mediaFilename?: unknown;
-  /** When set, try Meta edit of this wamid before sending a new message. */
+  /** Original WhatsApp wamid to quote-correct (Cloud API cannot rewrite bubbles). */
   editWhatsappMessageId?: unknown;
-  /** Portal notify log row to update when a native edit succeeds. */
+  /** Portal notify log row whose body should show the corrected text. */
   replacesLogId?: unknown;
 };
 
@@ -184,7 +183,7 @@ Deno.serve(async (req) => {
 
   const smtpConfig = readParentNotifySmtpConfig();
   const replyTo = str(Deno.env.get("PORTAL_MAIL_REPLY_TO"), 320);
-  const notifyKind = str(payload.kind, 64).toLowerCase();
+  let notifyKind = str(payload.kind, 64).toLowerCase();
   const instructorPhotoUrl = normalizePublicPhotoUrl(str(payload.instructorPhotoUrl, 500));
   const instructorPhotoName = str(payload.instructorPhotoName, 120);
   const admin = createClient(baseUrl, serviceRole, {
@@ -242,48 +241,19 @@ Deno.serve(async (req) => {
     }
   }
 
+  /** When set, we quote-correct the original WA message (Cloud API cannot rewrite bubbles). */
+  let correctionOfWaId = "";
+  let replacesLogId = "";
   if (channel === "whatsapp" || channel === "both") {
     const editWaId = str(payload.editWhatsappMessageId, 200);
-    const replacesLogId = str(payload.replacesLogId, 80);
+    replacesLogId = str(payload.replacesLogId, 80);
     if (editWaId && !hasMedia && channel === "whatsapp") {
-      const edited = await editParentWhatsappTextMessage(editWaId, whatsappBodyText);
-      if (edited.ok) {
-        whatsappStatus = "sent";
-        whatsappMessageId = edited.id || editWaId;
-        if (replacesLogId) {
-          const { data: prev } = await admin
-            .from("portal_parent_notify_log")
-            .select("id, meta, body_text")
-            .eq("id", replacesLogId)
-            .maybeSingle();
-          const prevMeta =
-            prev?.meta && typeof prev.meta === "object" && !Array.isArray(prev.meta)
-              ? { ...(prev.meta as Record<string, unknown>) }
-              : {};
-          prevMeta.edited_at = new Date().toISOString();
-          prevMeta.edited_by_email = verified.email || null;
-          prevMeta.previous_body_text = String(prev?.body_text || "").slice(0, 4000);
-          await admin
-            .from("portal_parent_notify_log")
-            .update({
-              body_text: bodyText || whatsappBodyText,
-              whatsapp_status: "sent",
-              whatsapp_message_id: whatsappMessageId,
-              error_detail: null,
-              meta: prevMeta,
-            })
-            .eq("id", replacesLogId);
-        }
-        return portalAdminJson(200, {
-          ok: true,
-          edited: true,
-          logId: replacesLogId || null,
-          email: { status: "skipped" },
-          whatsapp: { status: whatsappStatus, id: whatsappMessageId || undefined },
-        });
-      }
-      // Native edit unavailable — fall through to a normal new send (correction).
-      console.warn("[portal-parent-notify-send] edit fallback", edited.error);
+      // Meta Cloud API cannot edit a sent business bubble. Always send a free-text
+      // correction that quotes the original wamid, then update the portal log row.
+      correctionOfWaId = editWaId;
+      // Must quote the bubble being corrected (not some other open-session inbound).
+      contextWaId = editWaId;
+      notifyKind = "custom";
     }
     if (hasMedia) {
       const bytes = decodeBase64Payload(mediaB64);
@@ -411,6 +381,11 @@ Deno.serve(async (req) => {
     },
   };
 
+  if (correctionOfWaId) {
+    (logRow.meta as Record<string, unknown>).correction_of_wa_id = correctionOfWaId;
+    (logRow.meta as Record<string, unknown>).replaces_log_id = replacesLogId || null;
+  }
+
   const { data: inserted, error: logErr } = await admin
     .from("portal_parent_notify_log")
     .insert(logRow)
@@ -419,6 +394,40 @@ Deno.serve(async (req) => {
 
   if (logErr) {
     console.error("[portal-parent-notify-send] audit insert failed", logErr.message);
+  }
+
+  // Quote-correction: refresh the original bubble body in the portal thread.
+  if (
+    !allFailed &&
+    replacesLogId &&
+    correctionOfWaId &&
+    (whatsappStatus === "sent" || whatsappStatus === "sent_sms")
+  ) {
+    const { data: prev } = await admin
+      .from("portal_parent_notify_log")
+      .select("id, meta, body_text")
+      .eq("id", replacesLogId)
+      .maybeSingle();
+    if (prev?.id) {
+      const prevMeta =
+        prev.meta && typeof prev.meta === "object" && !Array.isArray(prev.meta)
+          ? { ...(prev.meta as Record<string, unknown>) }
+          : {};
+      prevMeta.edited_at = new Date().toISOString();
+      prevMeta.edited_by_email = verified.email || null;
+      prevMeta.previous_body_text = String(prev.body_text || "").slice(0, 4000);
+      prevMeta.correction_log_id = inserted?.id || null;
+      prevMeta.correction_wa_id = whatsappMessageId || null;
+      prevMeta.correction_mode = "quoted_reply";
+      await admin
+        .from("portal_parent_notify_log")
+        .update({
+          body_text: bodyText || whatsappBodyText,
+          error_detail: null,
+          meta: prevMeta,
+        })
+        .eq("id", replacesLogId);
+    }
   }
 
   // Family Web Push is additive (WhatsApp/email unchanged). Fire for hub alert kinds
@@ -443,6 +452,9 @@ Deno.serve(async (req) => {
   return portalAdminJson(200, {
     ok: true,
     logId: inserted?.id || null,
+    corrected: !!correctionOfWaId,
+    quoted: !!correctionOfWaId,
+    edited: false,
     email: { status: emailStatus, id: emailMessageId || undefined },
     whatsapp: { status: whatsappStatus, id: whatsappMessageId || undefined },
     partial: errors.length > 0,

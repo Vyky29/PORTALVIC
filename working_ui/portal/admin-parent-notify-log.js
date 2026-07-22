@@ -1398,14 +1398,16 @@
       !isReaction &&
       !mediaHtml &&
       ev.status !== "failed" &&
-      ev.id
+      ev.id &&
+      waMid &&
+      !String(waMid).startsWith("app:")
     ) {
       actionHtml +=
         '<button type="button" class="portal-pnlog-bubble__edit" data-edit-log-id="' +
         esc(String(ev.id)) +
         '" data-edit-wa-id="' +
         esc(waMid) +
-        '">Edit</button>';
+        '" title="Send a quoted correction (WhatsApp cannot rewrite the old bubble)">Correct</button>';
     }
     return (
       '<div class="portal-pnlog-bubble portal-pnlog-bubble--' +
@@ -1529,11 +1531,11 @@
     var statusEl = document.getElementById("portalPnlogComposerStatus");
     if (statusEl) {
       statusEl.textContent =
-        "Editing — save updates this WhatsApp message when Meta allows it (≈15 min); otherwise a correction is sent to " +
+        "Correcting — WhatsApp Cloud API cannot rewrite a sent bubble. Save sends a reply that quotes the original to " +
         (t.name || "this parent") +
         " (" +
         threadPhoneForUi(t) +
-        ").";
+        "), and updates this thread in the portal.";
     }
     syncComposerSendingState();
   }
@@ -1735,7 +1737,7 @@
     var toName = t.name || t.parentName || "Parent";
     var toPhone = threadPhoneForUi(t);
     var editingNote = state.editing
-      ? '<p class="portal-pnlog-composer__edit-banner" role="status">Editing a sent message — check the recipient below before saving.</p>'
+      ? '<p class="portal-pnlog-composer__edit-banner" role="status">Correcting a sent message — WhatsApp will quote the original; check the recipient below before sending.</p>'
       : "";
     var replyNote = "";
     if (state.replyTo && state.replyTo.threadKey === t.key && !state.editing) {
@@ -1777,7 +1779,7 @@
       '>🎙 Audio</button>' +
       '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerClearAttach" hidden>✕ Clear</button>' +
       (state.editing
-        ? '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerCancelEdit">Cancel edit</button>'
+        ? '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerCancelEdit">Cancel</button>'
         : "") +
       '<span id="portalPnlogComposerAttachPreview" class="portal-pnlog-composer__attach-preview muted"></span>' +
       "</div>" +
@@ -1794,7 +1796,7 @@
       '<button type="button" class="btn btn--pri portal-pnlog-composer__send" id="portalPnlogComposerSend"' +
       disabled +
       ">" +
-      (state.sending ? (state.editing ? "Saving…" : "Sending…") : state.editing ? "Save edit" : "Send") +
+      (state.sending ? (state.editing ? "Sending correction…" : "Sending…") : state.editing ? "Send correction" : "Send") +
       "</button></div></div>"
     );
   }
@@ -2078,8 +2080,18 @@
       }
       return;
     }
+    var editing = state.editing;
+    if (editing && (!editing.waMessageId || String(editing.waMessageId).startsWith("app:"))) {
+      var noId =
+        "This message has no WhatsApp id — cannot correct it as a quote. Send a new message instead.";
+      if (statusEl) statusEl.textContent = noId;
+      else cfg.toast(noId, "err");
+      return;
+    }
     var contextWaId = "";
-    if (
+    if (editing && editing.waMessageId) {
+      contextWaId = String(editing.waMessageId).trim();
+    } else if (
       openSession &&
       state.replyTo &&
       state.replyTo.threadKey === t.key &&
@@ -2096,10 +2108,11 @@
         }
       }
     }
-    /* Cold outbound uses a Meta template; {{1}} must stay short (Meta #132005). */
-    var sendKind = openSession ? "custom" : "contact_update";
+    /* Cold outbound uses a Meta template; {{1}} must stay short (Meta #132005).
+       Quote-corrections always use free-text with context (need open 24h window). */
+    var sendKind = editing || openSession ? "custom" : "contact_update";
     var sendBody = msgBody;
-    if (!openSession && !state.editing) {
+    if (!openSession && !editing) {
       var flatLen = String(msgBody || "")
         .replace(/[\r\n\t]+/g, " ")
         .replace(/\s{2,}/g, " ")
@@ -2115,17 +2128,23 @@
       }
       sendBody = flattenForWhatsappTemplate(msgBody);
     }
-    var editing = state.editing;
+    if (editing && !openSession) {
+      var closed =
+        "Corrections need an open WhatsApp session (parent messaged within 24h). Ask them to reply first, then correct.";
+      if (statusEl) statusEl.textContent = closed;
+      else cfg.toast(closed, "err");
+      return;
+    }
     state.sending = true;
     state.draftByKey[t.key] = msgBody;
     if (btn) {
       btn.disabled = true;
-      btn.textContent = editing ? "Saving…" : "Sending…";
+      btn.textContent = editing ? "Sending correction…" : "Sending…";
     }
     if (ta) ta.disabled = true;
     if (statusEl) {
       statusEl.textContent = editing
-        ? "Saving edit to " + (t.name || "parent") + " · " + threadPhoneForUi(t) + "…"
+        ? "Sending quoted correction to " + (t.name || "parent") + " · " + threadPhoneForUi(t) + "…"
         : openSession
           ? "Sending to " + (t.name || "parent") + " · " + threadPhoneForUi(t) + "…"
           : "No open WhatsApp session — sending via approved template to " +
@@ -2149,6 +2168,7 @@
     };
     if (editing && editing.waMessageId) {
       sendPayload.editWhatsappMessageId = editing.waMessageId;
+      sendPayload.contextWaId = editing.waMessageId;
     }
     if (editing && editing.logId) {
       sendPayload.replacesLogId = editing.logId;
@@ -2172,11 +2192,13 @@
         clearEditing();
         clearReplyTo();
         var msg =
-          res.data && res.data.edited
-            ? "Message updated on WhatsApp."
-            : global.PortalParentNotifySend && typeof global.PortalParentNotifySend.formatSendResult === "function"
-              ? global.PortalParentNotifySend.formatSendResult(res.data)
-              : "Sent.";
+          res.data && res.data.corrected
+            ? "Correction sent as a quoted reply (WhatsApp cannot edit the old bubble)."
+            : res.data && res.data.edited
+              ? "Message updated on WhatsApp."
+              : global.PortalParentNotifySend && typeof global.PortalParentNotifySend.formatSendResult === "function"
+                ? global.PortalParentNotifySend.formatSendResult(res.data)
+                : "Sent.";
         cfg.toast(msg, "ok");
         state.stickToBottom = true;
         markThreadSeen(t.key, new Date().toISOString());
