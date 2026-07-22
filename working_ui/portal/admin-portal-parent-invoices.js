@@ -328,7 +328,7 @@
     });
   }
 
-  /** Flexi / one-off / per term / own — from payment_schedule labels. */
+  /** Flexi / one-off / termly / own — from payment_schedule labels. */
   function schedulePlanShort(inv) {
     var rows = scheduleRows(inv);
     var blob = rows
@@ -366,13 +366,22 @@
     ) {
       return 'Own arrangement';
     }
-    if (n === 1 && /full payment|one payment|pay in full/.test(hay)) {
-      return 'One per term';
-    }
-    if (n === 1) return 'One per term';
+    if (n === 1) return 'TERMLY';
     if (n === 2) return '2 payments this term';
     if (n > 2) return n + ' instalments';
     return '';
+  }
+
+  function isAutoReenrolledInv(inv) {
+    return !!(inv && (inv.created_via === 'la_office_auto' || inv.is_la_office_auto));
+  }
+
+  function autoReenrolledChipHtml() {
+    return (
+      '<span class="pp-inv-acc__method pp-inv-acc__method--auto" title="Office auto re-enrolment — place renews without a family form">' +
+      'AUTO RE-ENROLLED' +
+      '</span>'
+    );
   }
 
   function methodLabel(inv) {
@@ -518,23 +527,30 @@
 
   function groupMethodChipsHtml(invoices) {
     var list = invoices || [];
+    var autoOnly = list.length > 0 && list.every(isAutoReenrolledInv);
+    var anyAuto = list.some(isAutoReenrolledInv);
     var ready = list.filter(function (inv) {
       return String(inv.share_status || '').toLowerCase() === 'ready';
     });
-    var pool = ready.length ? ready : list;
+    var pool = ready.length ? ready : list.filter(function (inv) {
+      return !isAutoReenrolledInv(inv);
+    });
+    if (!pool.length) pool = list;
     var withSched = pool.filter(function (inv) {
       return scheduleRows(inv).length > 0;
     });
     var source = withSched.length ? withSched : pool;
     var seen = Object.create(null);
     var out = [];
+    if (anyAuto) out.push(autoReenrolledChipHtml());
     source.forEach(function (inv) {
+      if (isAutoReenrolledInv(inv) && autoOnly) return;
       var channel = methodChannelLabel(inv);
       var plan = schedulePlanShort(inv);
       var key = channel + '|' + plan;
       if (seen[key]) return;
       seen[key] = true;
-      out.push(methodChipHtml(channel));
+      if (!isAutoReenrolledInv(inv)) out.push(methodChipHtml(channel));
       if (plan) {
         out.push(
           '<span class="pp-inv-acc__method pp-inv-acc__method--plan" title="Payment schedule">' +
@@ -543,7 +559,8 @@
         );
       }
     });
-    return out.length ? out.join('') : methodChipHtml('Bank transfer');
+    if (out.length) return out.join('');
+    return anyAuto ? autoReenrolledChipHtml() : methodChipHtml('Bank transfer');
   }
 
   function xeroSummary(inv) {
@@ -795,9 +812,7 @@
     });
     var chips = [];
     if (laAuto) {
-      chips.push(
-        '<span class="pp-inv-acc__fund pp-inv-acc__fund--la" title="Office auto re-enrolment">LA auto</span>',
-      );
+      chips.push(autoReenrolledChipHtml());
     }
     if (unpaid) {
       chips.push(summaryFilterChip('unpaid', unpaid + ' unpaid', 'pend'));
@@ -1186,8 +1201,8 @@
             '<div class="pp-inv-acc__grid">' +
             '<div class="pp-inv-acc__col" style="min-width:0">' +
             '<div style="font-size:13px;overflow-wrap:break-word">' +
-            '<strong>LA office auto</strong>' +
-            '<div class="muted" style="font-size:12px">Place renews with the office — no family invoice shared yet. Booked totals from the LA payments sheet.</div>' +
+            autoReenrolledChipHtml() +
+            '<div class="muted" style="font-size:12px;margin-top:6px">Place renews with the office — no family invoice shared yet. Booked totals from the LA payments sheet.</div>' +
             bookedSlotsHtml(inv) +
             '</div></div>' +
             '<div class="pp-inv-acc__col">' +
@@ -1212,7 +1227,7 @@
       })
       .join('');
     var countLabel = group.is_la_office_auto && !n
-      ? 'LA auto · no INV-P'
+      ? 'Auto re-enrolled · no INV-P'
       : String(n) + ' invoice' + (n === 1 ? '' : 's');
     return (
       '<details class="pp-inv-acc__item pp-inv-acc__item--pax" data-contact-id="' +
@@ -1235,6 +1250,9 @@
       '<span class="pp-inv-acc__methods">' +
       groupFundingChipsHtml(invoices) +
       groupMethodChipsHtml(invoices) +
+      (group.is_la_office_auto && !invoices.some(isAutoReenrolledInv)
+        ? autoReenrolledChipHtml()
+        : '') +
       '</span>' +
       '<span class="pp-inv-acc__status">' +
       groupStatusSummary(invoices) +
@@ -1317,6 +1335,7 @@
       '.pp-inv-acc__method--la{color:#5b21b6;background:#ede9fe;border-color:#c4b5fd}' +
       '.pp-inv-acc__method--bank{color:#9a3412;background:#ffedd5;border-color:#fdba74}' +
       '.pp-inv-acc__method--plan{color:#0f766e;background:#ccfbf1;border-color:#5eead4}' +
+      '.pp-inv-acc__method--auto{color:#5b21b6;background:#ede9fe;border-color:#c4b5fd;letter-spacing:.03em}' +
       '.pp-inv-acc__method--card{color:#1e3a8a;background:#dbeafe;border-color:#93c5fd}' +
       '.pp-inv-acc__method--admin{color:#334155;background:#e2e8f0;border-color:#cbd5e1}' +
       '.pp-inv-acc__method--other{color:#4a6578;background:#eef2f5;border-color:#d5dee6}' +
@@ -1504,7 +1523,7 @@
           parts.push(String(state.meta.xero_unsynced) + ' paid not in Xero');
         }
         if (state.meta.la_office_auto) {
-          parts.push(String(state.meta.la_office_auto) + ' LA auto');
+          parts.push(String(state.meta.la_office_auto) + ' auto re-enrolled');
         }
         metaEl.textContent = parts.join(' · ');
       }
@@ -1982,7 +2001,7 @@
       '</div>' +
       '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sm" data-inv-filter="all">All</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="la_auto">LA auto</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="la_auto">Auto re-enrolled</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="ready">Shared</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="unpaid">Ready unpaid</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="paid">Paid</button>' +
