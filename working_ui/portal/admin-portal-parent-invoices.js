@@ -1401,7 +1401,6 @@
       '.pp-inv-acc__fund--nhs{color:#9f1239;background:#ffe4e6;border-color:#fb7185}' +
       /* Payment status: green=paid, orange=unpaid only */ +
       '.pp-inv-acc__pay-chip{font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid transparent;display:inline-flex;align-items:center}' +
-      '.pp-inv-acc__pay-chip--paid{color:#065f46;background:#d1fae5;border-color:#6ee7b7}' +
       '.pp-inv-acc__pay-chip--unpaid{color:#9a3412;background:#ffedd5;border-color:#fdba74}' +
       '.pp-inv-acc__pay-chip--pending{color:#1e40af;background:#dbeafe;border-color:#93c5fd}' +
       '.pp-inv-acc__pay-chip--shared{color:#1e3a8a;background:#e0e7ff;border-color:#a5b4fc}' +
@@ -1415,8 +1414,15 @@
       '.pp-inv-acc__cards{display:flex;flex-direction:column;gap:10px;min-width:0}' +
       '.pp-inv-acc__card{border:1px solid #e2eaf0;border-radius:8px;padding:10px;background:#fff;min-width:0}' +
       '.pp-inv-acc__card--paid{border-color:#86efac;background:#f0fdf4}' +
-      '.pp-inv-acc__filter-chip{border:1px solid transparent;cursor:pointer;font:inherit;line-height:inherit}' +
-      '.pp-inv-acc__filter-chip:hover{filter:brightness(.96)}' +
+      /* Filter chips are <button> — reset UA styles so paid green is not washed out. */ +
+      '.pp-inv-acc__filter-chip{-webkit-appearance:none;appearance:none;margin:0;cursor:pointer;font:inherit;line-height:inherit}' +
+      '.pp-inv-acc__filter-chip:hover{filter:brightness(.97)}' +
+      /* Paid last + button.selector so dashboard button resets cannot win. */ +
+      'button.pp-inv-acc__pay-chip--paid,.pp-inv-acc__pay-chip--paid{color:#047857;background-color:#bbf7d0;background:#bbf7d0;border:1px solid #34d399}' +
+      'button.pp-inv-acc__pay-chip--unpaid,.pp-inv-acc__pay-chip--unpaid{color:#9a3412;background-color:#ffedd5;background:#ffedd5;border:1px solid #fdba74}' +
+      'button.pp-inv-acc__pay-chip--pending,.pp-inv-acc__pay-chip--pending{color:#1e40af;background-color:#dbeafe;background:#dbeafe;border:1px solid #93c5fd}' +
+      'button.pp-inv-acc__pay-chip--hidden,.pp-inv-acc__pay-chip--hidden{color:#475569;background-color:#f1f5f9;background:#f1f5f9;border:1px solid #cbd5e1}' +
+      'button.pp-inv-acc__pay-chip--other,.pp-inv-acc__pay-chip--other{color:#4a6578;background-color:#eef2f5;background:#eef2f5;border:1px solid #d5dee6}' +
       '.pp-inv-acc__grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.7fr) minmax(0,.9fr);gap:12px;min-width:0}' +
       '@media (max-width:820px){.pp-inv-acc__grid{grid-template-columns:1fr}}' +
       '.pp-inv-acc__actions{display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;min-width:0}' +
