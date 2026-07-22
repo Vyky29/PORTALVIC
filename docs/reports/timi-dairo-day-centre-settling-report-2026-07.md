@@ -1,8 +1,8 @@
-# Day Centre Settling Report — Timi Dairo
+# Day Centre Settling Report: Timi Dairo
 
-**Period covered:** **31 May 2026** to **22 July 2026**  
-**Service:** Day Centre and Aquatic Activity (on site), currently typically **11:00–13:00** (Monday and Friday)  
-**Support model:** **1:1 on site**  
+**Period covered:** **April 2025** to **22 July 2026** (with attendance gaps)  
+**Service:** Day Centre and Aquatic Activity (on site), currently typically **11:00–13:00** Monday and Friday  
+**Support model:** **2:1 on site** (funded from **May 2026**); familiarisation before that was unpaid / no contract  
 **Prepared by:** Victor Casanova  
 **Date:** 22 July 2026  
 
@@ -14,94 +14,112 @@ Dear Afolake,
 
 I hope you are well.
 
-Please find below a summary of how Timi (Timmy) has been settling into the Day Centre. This report brings together the graded transition since **31 May 2026**, staff session feedback, and the aquatic progress he has made within a two-hour on-site routine.
+Please find below a summary of how Timi (Timmy) has settled into the Day Centre, from unpaid familiarisation visits in **spring 2025** through to consistent funded **two-hour** sessions in **2026**, with **2:1** support from **May 2026**.
 
 ## Overview
 
-From **31 May 2026**, Timi began attending with you and his carers. Settling was deliberately paced: the Hub door was left open with his motivators visible so he could approach at his own speed while still linked to the car and familiar adults. Early contacts lasted only **seconds**, then **minutes**, then around **twenty minutes** in the Hub after positive micro-interactions with staff such as Victor and Raul.
+Timi’s settling has been gradual and highly successful. He began with seconds at the Hub doorway (often running back to the car) and now stays for about **two hours**, following circle time, Hub activities with peers, aquatic work, shower, and Hub regulation with snack before going home. He no longer shows the early urge to leave. He is typically regulated, engaged and content, and has shown that he can cope with a longer session while keeping that engagement. Aquatic work focuses on water familiarisation and adaptation to the medium).
 
-He then accepted classroom activities (motor coordination, motor skills, sensory and regulation work). After approximately two days of spending around an hour in class, the Pristine Environment / hyperoxic pool area was introduced — including a day when he sat in a chair within that environment. Progressively he built up to spending **two hours** at the centre from approximately **7 July 2026 (date to be confirmed)**.
+Staff who know him have been surprised by how calm and engaged he is in table work and in the pool, and by snack preferences (e.g. crisps and crackers) they had not previously seen.
 
-His timetable also moved from an afternoon slot (**13:00–15:00**) to the current morning slot (**11:00–13:00**).
+He has also benefited from **digital visual aids**: a visual routine showing **his avatar** doing the day’s activities and moving through the different places in the centre. This has supported predictability and acceptance of the sequence; we will continue to implement and refine it.
 
-Across recorded feedback his presentation is most often **Happy/Excited**, with strong days rated at engagement **4–5**. Lower scores usually reflect transition or pool-readiness load rather than the placement not working. Settling has not been perfectly linear, and that is expected for a graded transition of this kind.
+## Timeline
 
-## Gradual transition (summary)
+| Period | What happened |
+|--------|----------------|
+| **April 2025 onward** | Started Mon/Fri familiarisation visits (at first inconsistent). **No formal contract**, **no allocated support worker**. Offered to help the family. Manager used manager/admin time to build the routine. Attendance also affected when mum was in hospital / unable to bring him. |
+| **~July 2025** | Centre closure / pause |
+| **Dec 2025 / Jan 2026** | Contact resumed |
+| **Jan–early spring 2026** | Some attendance days |
+| **April 2026** | More consistent Mon/Fri |
+| **End May 2026** | Accepted ~**two-hour** day; local authority asked for funded support → **2:1** |
+| **June 2026 onward** | Consistent ~two-hour sessions |
+
+## Gradual transition (familiarisation)
 
 | Phase | What we did |
 |------|-------------|
 | Doorway / seconds | Open Hub door, motivators visible; brief entry then return to car |
-| Minutes | Longer stays; brief positive staff interactions |
+| Minutes | Longer stays; Manager-led positive interactions |
 | ~20 minutes | Hub stays after successful micro-interactions |
-| Classroom | Motor skills, sensory and regulation activities in class |
-| New environment | Introduction of Pristine / pool space; sitting in chair in pool environment |
-| Two hours | Full short Day Centre block including aquatic routine |
+| Classroom | Puzzles, fine motor, matching/sorting, vocational packaging, sensory/regulation |
+| New environment | Pristine / pool space; sitting in chair in pool environment |
+| Two hours | Full short Day Centre block including aquatic routine; one trial day showed he can stay longer while remaining engaged |
 
-## Daily structure and 1:1 support
+Timetable moved from afternoon (**13:00–15:00**) to morning (**11:00–13:00**).
 
-Timi is supported **1:1 on site**. A typical successful flow is:
+## Daily structure and 2:1 support
+
+Since **May 2026**, Timi is supported **2:1 on site**. Typical flow:
 
 1. Arrival and low-demand settle  
 2. Circle time  
-3. Short activity routines (classroom / sensory / motor)  
-4. Transition to the pool (changing and shower)  
+3. Short activity routines (puzzles, fine motor, matching/sorting, vocational packaging, sensory)  
+4. Transition to the pool (changing and shower; 2:1 for movement between spaces)  
 5. Aquatic block  
-6. Shower, close of session, leave with carers / mum  
+6. Shower  
+7. Hub regulation / snack and relaxation (including group snack requests)  
+8. Leave for home with carers / mum  
 
-Sessions remain **on site**, in line with the request that he is not taken off premises. Parent-provided food continues as agreed.
+Sessions remain **on site** for now, in line with family preference. Parent-provided food continues.
 
-**Looking ahead:** if Timi later accepts a longer day or community access, **2:1 support would be required**. That is a future contingency, not the current offer.
+### Why 2:1 (not 1:1)
 
-## Classroom, sensory and regulation
+The early plan was that 1:1 might be enough on site, but when the two-hour day became real, one adult was not enough:
 
-Once longer stays were accepted, classroom time became an active part of the day: motor coordination, table work, sensory input and regulation support. Engagement is strongest when waiting is reduced, the sequence is familiar, and preferred motivators are available. Behaviours when load rises are treated as communication — a need for predictability, personal care, or more time.
+- **Transitions / absconding risk** when moving between Hub, changing and pool  
+- **Soiling** (excitement and/or movement related): urine and/or faeces  
+- **Sensory faecal digging / spreading** (e.g. onto mirrors): one adult cleans/changes Timi while the second cleans the environment  
+- **Looking ahead:** if hours increase, 2:1 also allows community activities to be offered on the same basis as for other Day Centre clients, when agreed  
 
-## Aquatic activity (Level 1)
+## Classroom, peers, sensory room and regulation
 
-Swimming / water time has been a central success:
+When he first accepted class time, he struggled with other clients and sought the **sensory room** to be away from the group. He has progressed to **full circle time** and shared Hub activities **without needing to leave** for the sensory room.
 
-- **Initial refusal** of water entry, with high tension / spasms around the pool edge  
-- **Motivator games from outside** the pool (collect toys, sort into a bag)  
-- Gradual acceptance of **collecting toys inside** the water, entering, completing the routine, then leaving after several minutes  
-- **Shower** accepted and enjoyed  
-- **Current picture:** he can spend around **thirty minutes** in the water, regulated and enjoying the medium; small aquatic skills and movements are being introduced within **Level 1** (water familiarisation and acceptance of the aquatic environment)
+After swimming he joins snack/relaxation with the group and has requested preferred snacks (crisps, crackers).
 
-Portal aquatic feedback on **29 June** recorded throwing / picking up objects in the small pool and jumping in. Strong July days have included calm full participation; harder days are met with reduced demand so that water stays positively associated.
+## Aquatic activity: water familiarisation and adaptation
+
+- Initial refusal of water entry  
+- Motivator games from outside the pool → collecting toys inside → several minutes of immersion  
+- Shower accepted and enjoyed  
+- Now ~**thirty minutes** regulated in the water; gradual introduction of new aquatic skills and activities  
+
+This stage includes water familiarisation, water adaptation, early breathing control and early water safety (adaptation to the medium).
+
+On his first full pool day the session was extended beyond the usual two hours to see whether he would stay engaged; he remained regulated and content, showing he can cope with more time without losing engagement.
 
 ## Challenges encountered
 
-- **Toileting accidents** linked to excitement and/or toileting need — managed promptly with carer handover; proactive changing / nappy strategies used when agreed  
-- **Faecal digging / hand-to-bottom behaviour** — redirected into the known routine; anticipation and closer supervision have supported improvement  
-- **Variable pool readiness** on some days — paced, never forced  
-- Care-profile awareness: asthma, hay fever, cat/dust sensitivity, constipation, foot/orthopaedic limits (including trampoline restrictions)
+- Toileting / soiling linked to excitement and/or movement  
+- Faecal digging / sensory spreading: dual-adult response  
+- Absconding / leaving risk on transitions  
+- Variable pool readiness on some days  
+- Care-profile awareness (asthma, hay fever, cat/dust, constipation, foot/ortho limits)
 
 ## Progress and quality of life
 
-- Seconds at the doorway → sustained **two-hour** on-site block  
-- Acceptance of circle time, classroom and sensory routines  
-- Trusting micro-interactions with familiar Day Centre staff  
-- Acceptance of the pool environment and graded water entry  
-- Extended regulated aquatic time and start of Level 1 skills  
-- Positive shower association  
-- Successful move to the **11:00–13:00** slot  
-- Warm partnership with family and carers, including photo/video sharing on strong days  
+- Seconds at the doorway → sustained two-hour block without wanting to leave; capacity to cope with more time while staying engaged  
+- Unpaid Manager-led familiarisation → successful funded **2:1** placement  
+- Sensory-room isolation → full circle time and shared Hub activities  
+- Table work and vocational packaging; group snack requests  
+- Strong aquatic familiarisation and calm engagement in the pool  
+- Benefit from digital visual aids (avatar routine + activity locations); to continue  
 
 ## Summary and recommendations
 
-Timi has settled through a carefully graded transition and now accesses a meaningful two-hour Day Centre and aquatic routine with **1:1 on-site** support. Aquatic familiarisation has been particularly strong. Personal-care challenges remain active themes and are being managed with clearer anticipation.
+1. Continue funded **2:1** for the Mon/Fri Day Centre and aquatic block  
+2. Keep sessions **on site** for now  
+3. If hours are extended, retain **2:1** so community activities can later be offered like other clients, when agreed  
+4. Protect the sequence: arrival → circle time → short activities → paced pool transition → aquatic block → shower → Hub regulation / snack and relaxation → leave for home  
+5. Continue water familiarisation and adaptation; gradually introduce new aquatic skills and activities  
+6. Maintain toileting / soiling / faecal-spreading dual-adult strategies  
+7. Preserve the morning slot; any further extension of hours should be trialled carefully when he remains regulated  
+8. Continue and refine digital visual aids (avatar-based routine and activity locations)  
+9. Continue photo / video updates and joint strategy review with family  
 
-We recommend continuing:
-
-1. **1:1 staffing** for the current on-site Monday / Friday block  
-2. Keep sessions **on site** unless goals change by agreement  
-3. Plan **2:1** only if the day is lengthened or community access is introduced later  
-4. Protect the sequence: arrival → circle time → short activities → paced pool transition → aquatic block → shower / leave  
-5. Continue **Level 1** aquatic work without pressure  
-6. Maintain agreed toileting / nappy and faecal-digging redirection strategies  
-7. Preserve the **11:00–13:00** slot while it supports engagement  
-8. Continue photo / video updates and joint strategy review with family  
-
-Timi has shown that, with the right pace and familiar support, he can be calm, engaged and successful here. We look forward to consolidating these gains with you.
+Timi has shown that, with the right pace and **2:1** support, he can be calm, engaged and successful here.
 
 Kind regards,
 
@@ -109,4 +127,4 @@ Victor Casanova
 
 ---
 
-*Internal note — evidence base: Portal `session_feedback` and aquatic notes for Timi (May–July 2026), Day Centre observations of the graded transition from 31 May 2026, and family/carer handover comments. Two-hour start date marked TBC (~7 July 2026 placeholder). Support model in this report follows current operational 1:1 on site (care profile historically notes 2:1 capacity needs if intensity or community access increases).*
+*Internal note: familiarisation from April 2025 (no contract); funded 2:1 from May 2026; consistent ~2-hour days from June 2026. Portal feedback sample mainly May–July 2026.*

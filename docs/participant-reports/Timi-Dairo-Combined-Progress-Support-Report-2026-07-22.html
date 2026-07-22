@@ -772,7 +772,7 @@ li,
   }
  }
 
-/* Timi report: no photo stories; tighten weekly quotes for longer narrative */
+/* Timi report extras */
 .weekly-quote { min-height: 0; }
 .phase-list {
   margin: 10px 0 14px;
@@ -812,6 +812,83 @@ li,
   .page { margin: 0; border: none; max-width: none; padding: 18px 22px; }
   .no-print { display: none !important; }
 }
+
+
+/* Premium photo stories for Timi */
+.photo-story {
+  margin: 16px 0 18px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--brand-gold);
+  background: var(--soft);
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.photo-story + .photo-story { margin-top: 12px; }
+.photo-story__label {
+  margin: 0 0 8px;
+  font-family: "Avenir Next", "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 7.5pt;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brand-navy);
+}
+.photo-grid--two {
+  grid-template-columns: repeat(2, 1fr);
+}
+.photo-grid--three {
+  grid-template-columns: repeat(3, 1fr);
+}
+.photo-story--portrait-grid .photo-grid--two img,
+.photo-story--portrait-grid .photo-grid--three img {
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  object-position: center 20%;
+}
+.photo-story--mixed .photo-grid--two img {
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+.photo-feature {
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  object-position: center 18%;
+  border: 1px solid #fff;
+}
+@media print {
+  .photo-story {
+    margin: 10px 0 14px;
+    padding: 6px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .photo-grid {
+    gap: 5px;
+    margin-top: 5px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .photo-feature {
+    max-height: 78mm;
+  }
+  .photo-story--portrait-grid .photo-grid--two img {
+    max-height: 72mm;
+  }
+  .photo-story--portrait-grid .photo-grid--three img {
+    max-height: 58mm;
+  }
+  h2 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  .callout, .two-col, table.schedule, .weekly-quotes {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -837,130 +914,159 @@ li,
     <div><dt>Report date</dt><dd>22 July 2026</dd></div>
     <div><dt>Family and next of kin</dt><dd>Afolake Olabisi Dairo (mother)</dd></div>
     <div><dt>Address</dt><dd>29 Everington Street, London W6 8DX</dd></div>
-    <div><dt>Period covered</dt><dd>31 May 2026 to 22 July 2026</dd></div>
-    <div><dt>Attendance</dt><dd>Monday and Friday · currently 11:00–13:00</dd></div>
+    <div><dt>Period covered</dt><dd>April 2025 to 22 July 2026 <span style="font-weight:500;color:var(--muted)">(with attendance gaps)</span></dd></div>
+    <div><dt>Attendance</dt><dd>Monday and Friday · currently ~11:00–13:00</dd></div>
     <div><dt>Service</dt><dd>Day Centre and Aquatic Activity (on site)</dd></div>
-    <div><dt>Support model</dt><dd>1:1 on site</dd></div>
+    <div><dt>Support model</dt><dd>2:1 on site <span style="font-weight:500;color:var(--muted)">(from May 2026 · funded)</span></dd></div>
     <div><dt>Prepared by</dt><dd>Victor Casanova (Day Centre)</dd></div>
-    <div><dt>Prepared for</dt><dd>Family · NHS / funding teams</dd></div>
+    <div><dt>Prepared for</dt><dd>Family · Local Authority / NHS / funding teams</dd></div>
   </dl>
 
-  <p class="lead">This combined report summarises how Timi has settled into clubSENsational Day Centre since <strong>31 May 2026</strong>. It describes a carefully paced transition from brief car-supported visits to a full two-hour on-site routine, including classroom, sensory and aquatic activity, and sets out the support model that currently works for him.</p>
-  <p class="lead">Sessions remain <strong>on site</strong>. The present model is <strong>1:1</strong>. If Timi later accepts a longer day or access into the community, a move to <strong>2:1</strong> would be required to keep that offer safe and meaningful.</p>
+  <p class="lead">This combined report summarises how Timi has settled into clubSENsational Day Centre from his first familiarisation visits in <strong>spring 2025</strong> through to consistent two-hour sessions in <strong>2026</strong>. It describes a carefully paced, unpaid transition led by the Day Centre Manager, the later request for funded support, and the outcomes now seen with a <strong>2:1</strong> team on site.</p>
+  <p class="lead">During familiarisation there was <strong>no formal contract and no allocated support worker</strong>. Formal <strong>2:1</strong> support was requested from the local authority when Timi began accepting a full two-hour day (from <strong>May 2026</strong>), because one adult alone was no longer enough for safe transitions and personal care. That 2:1 model remains essential on site; if his hours are extended further, it also unlocks the same community offer available to other Day Centre clients.</p>
 
   <h2>1. Overview: settling and presentation</h2>
   <div class="callout success">
     <strong class="label">Overall picture</strong>
-    Timi’s settling has been gradual, intentional and highly successful. He began with seconds of exposure at the Hub doorway while remaining closely linked to mum and carers, and has progressed to spending approximately two hours at the centre, following a predictable routine of circle time, short classroom and sensory activities, and a structured transition into the hyperoxic pool. He now accepts long, regulated periods in the water and is working within <strong>Level 1</strong> of the aquatic programme (water familiarisation and acceptance of the medium). Progress has been clearly positive.
+    Timi’s settling has been gradual, intentional and highly successful across more than a year of contact with the centre. He began with seconds of exposure at the Hub doorway while linked to mum, carers and the car, and has progressed to spending approximately <strong>two hours</strong> on site, following circle time, Hub activities with peers, aquatic work, shower, and Hub regulation with snack before going home. He no longer shows the early urge to leave the building. He is typically highly regulated, engaged and content with what is offered, and has shown that he can cope with a longer session while keeping that engagement. In the water he accepts long, calm periods and is working on <strong>water familiarisation, water adaptation and early adaptation to the aquatic medium</strong>. Progress has been clearly positive.
   </div>
 
-  <div class="feedback-dashboard">
-    <div class="feedback-dashboard__head">
-      <div>
-        <p class="feedback-dashboard__eyebrow">Recorded feedback outcomes</p>
-        <p class="feedback-dashboard__title">A paced settling journey with strong aquatic gains</p>
-      </div>
-      <p class="feedback-dashboard__period">31 May to mid-July 2026 · selected portal records</p>
+  <section class="feedback-dashboard" aria-label="Feedback session outcomes">
+   <div class="feedback-dashboard__head">
+    <div>
+     <p class="feedback-dashboard__eyebrow">Recorded feedback outcomes</p>
+     <h3 class="feedback-dashboard__title">A paced settling journey with strong recent gains</h3>
     </div>
-    <div class="feedback-kpis">
-      <div class="feedback-kpi">
-        <span class="feedback-kpi__value">9+</span>
-        <span class="feedback-kpi__label">session feedback records reviewed across May–July</span>
-      </div>
-      <div class="feedback-kpi">
-        <span class="feedback-kpi__value">Mon / Fri</span>
-        <span class="feedback-kpi__label">regular Day Centre attendance pattern</span>
-      </div>
+    <p class="feedback-dashboard__period">May to mid-July 2026</p>
+   </div>
+
+   <div class="feedback-kpis">
+    <div class="feedback-kpi">
+     <span class="feedback-kpi__value">9</span>
+     <span class="feedback-kpi__label">feedback session records reviewed</span>
     </div>
-    <div class="feedback-charts">
-      <div class="feedback-chart">
-        <p class="feedback-chart__title">Engagement</p>
-        <p class="feedback-chart__subtitle">Rated sessions · sample average</p>
-        <svg class="engagement-gauge" viewBox="0 0 160 100" aria-hidden="true">
-          <defs>
-            <linearGradient id="engagementGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stop-color="#f4bd2a"/>
-              <stop offset="100%" stop-color="#35415d"/>
-            </linearGradient>
-          </defs>
-          <path class="engagement-gauge__track" d="M20 80 A60 60 0 0 1 140 80"/>
-          <path class="engagement-gauge__range" d="M20 80 A60 60 0 0 1 118 35" pathLength="100" stroke-dasharray="74 100"/>
-          <line class="engagement-gauge__needle" x1="80" y1="80" x2="118" y2="38"/>
-          <circle class="engagement-gauge__hub" cx="80" cy="80" r="4"/>
-          <text class="engagement-gauge__label" x="20" y="96">0</text>
-          <text class="engagement-gauge__label" x="140" y="96">5</text>
-          <text class="engagement-gauge__score" x="80" y="68">~3.7</text>
-          <text class="engagement-gauge__caption" x="80" y="82">out of 5</text>
-        </svg>
-        <p class="feedback-chart__foot">Rated entries range from 1 to 5. Strongest settling days score 4–5; lower scores usually reflect transition or pool-readiness load rather than overall placement failure.</p>
-      </div>
-      <div class="feedback-chart">
-        <p class="feedback-chart__title">Regulation and emotions</p>
-        <p class="feedback-chart__subtitle">Typical presentation when settled</p>
-        <div class="emotion-status-grid">
-          <div class="emotion-status">
-            <div class="emotion-ring" style="--value:78"><strong>Most</strong></div>
-            <span class="emotion-status__label">Happy or excited</span>
-            <span class="emotion-status__count">Dominant pattern</span>
-          </div>
-          <div class="emotion-status is-anxious">
-            <div class="emotion-ring" style="--value:18"><strong>Some</strong></div>
-            <span class="emotion-status__label">Anxious / unsettled</span>
-            <span class="emotion-status__count">Often early waiting or transitions</span>
-          </div>
-          <div class="emotion-status is-withdrawn">
-            <div class="emotion-ring" style="--value:4"><strong>Low</strong></div>
-            <span class="emotion-status__label">Withdrawn</span>
-            <span class="emotion-status__count">Rare in records</span>
-          </div>
-          <div class="emotion-status is-out-of-control">
-            <div class="emotion-ring" style="--value:0"><strong>0</strong></div>
-            <span class="emotion-status__label">Out of control</span>
-            <span class="emotion-status__count">Not the pattern</span>
-          </div>
-        </div>
-      </div>
-      <div class="feedback-chart">
-        <p class="feedback-chart__title">Independence</p>
-        <p class="feedback-chart__subtitle">Support level on rated days</p>
-        <div class="independence-chart">
-          <div class="independence-column">
-            <span class="independence-value">Low</span>
-            <div class="independence-bar" style="height:18%"></div>
-            <span class="independence-label">Independent</span>
-          </div>
-          <div class="independence-column">
-            <span class="independence-value">Often</span>
-            <div class="independence-bar is-primary" style="height:55%"></div>
-            <span class="independence-label">With prompts</span>
-          </div>
-          <div class="independence-column">
-            <span class="independence-value">Some</span>
-            <div class="independence-bar is-secondary" style="height:40%"></div>
-            <span class="independence-label">Regular support</span>
-          </div>
-          <div class="independence-column">
-            <span class="independence-value">Some</span>
-            <div class="independence-bar" style="height:35%"></div>
-            <span class="independence-label">Full support</span>
-          </div>
-        </div>
-        <p class="feedback-chart__foot">He benefits from familiar adults, low language, visuals and paced demands. Independence rises when the sequence is known and sensory needs are met early.</p>
-      </div>
+    <div class="feedback-kpi">
+     <span class="feedback-kpi__value">Mon/Fri</span>
+     <span class="feedback-kpi__label">regular Day Centre attendance pattern</span>
     </div>
-    <p class="feedback-dashboard__note">Dashboard figures combine portal session feedback with Day Centre observations across the settling period. Engagement is variable by design of a graded transition; the direction of travel — from doorway exposure to a two-hour aquatic-inclusive day — is strongly positive.</p>
+   </div>
+
+   <div class="feedback-charts">
+    <div class="feedback-chart">
+     <h3 class="feedback-chart__title">Engagement</h3>
+     <p class="feedback-chart__subtitle">Summer Term 2026 · 7 ratings</p>
+     <svg class="engagement-gauge" viewBox="0 0 180 105" role="img" aria-label="Engagement average 3.7 out of 5 across 7 ratings, equivalent to 74 percent">
+      <defs>
+       <linearGradient id="engagementGradient" x1="25" y1="0" x2="155" y2="0" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#e84b3c"></stop>
+        <stop offset="35%" stop-color="#f0bd2d"></stop>
+        <stop offset="68%" stop-color="#37b66a"></stop>
+        <stop offset="100%" stop-color="#16834b"></stop>
+       </linearGradient>
+      </defs>
+      <path class="engagement-gauge__track" d="M 25 84 A 65 65 0 0 1 155 84" pathLength="100"></path>
+      <path class="engagement-gauge__range" d="M 25 84 A 65 65 0 0 1 155 84" pathLength="100" stroke-dasharray="74 26"></path>
+      <text class="engagement-gauge__label" x="19" y="96">0%</text>
+      <text class="engagement-gauge__label" x="161" y="96">100%</text>
+      <line class="engagement-gauge__needle" x1="90" y1="84" x2="125.6" y2="46.1"></line>
+      <circle class="engagement-gauge__hub" cx="90" cy="84" r="3"></circle>
+      <text class="engagement-gauge__score" x="90" y="65">74%</text>
+      <text class="engagement-gauge__caption" x="90" y="76">3.7 out of 5 average</text>
+     </svg>
+     <p class="feedback-chart__foot">Rated entries range from 1 to 5. Stronger days score 4 or 5.</p>
+    </div>
+
+    <div class="feedback-chart">
+     <h3 class="feedback-chart__title">Regulation and emotions</h3>
+     <p class="feedback-chart__subtitle">Summer Term 2026 · 7 tagged entries</p>
+     <div class="emotion-status-grid" aria-label="Mostly happy or excited, with some anxious tags">
+      <div class="emotion-status">
+       <span class="emotion-icon" role="img" aria-label="Happy or excited"></span>
+       <span class="emotion-ring" style="--value: 71;"><strong>71%</strong></span>
+       <span class="emotion-status__label">Happy or excited</span>
+       <span class="emotion-status__count">5 tags</span>
+      </div>
+      <div class="emotion-status is-anxious">
+       <span class="emotion-icon" role="img" aria-label="Anxious"></span>
+       <span class="emotion-ring" style="--value: 29;"><strong>29%</strong></span>
+       <span class="emotion-status__label">Anxious</span>
+       <span class="emotion-status__count">2 tags</span>
+      </div>
+      <div class="emotion-status is-withdrawn">
+       <span class="emotion-icon" role="img" aria-label="Withdrawn"></span>
+       <span class="emotion-ring" style="--value: 0;"><strong>0%</strong></span>
+       <span class="emotion-status__label">Withdrawn</span>
+       <span class="emotion-status__count">0 tags</span>
+      </div>
+      <div class="emotion-status is-out-of-control">
+       <span class="emotion-icon" role="img" aria-label="Out of control"></span>
+       <span class="emotion-ring" style="--value: 0;"><strong>0%</strong></span>
+       <span class="emotion-status__label">Out of control</span>
+       <span class="emotion-status__count">0 tags</span>
+      </div>
+     </div>
+    </div>
+
+    <div class="feedback-chart">
+     <h3 class="feedback-chart__title">Independence</h3>
+     <p class="feedback-chart__subtitle">Summer Term 2026 · 7 tagged entries</p>
+     <div class="independence-chart" aria-label="Independence with prompts most common, with regular and full support on higher-load days">
+      <div class="independence-column">
+       <span class="independence-value">14%</span>
+       <span class="independence-bar" style="height: 14%;"></span>
+       <span class="independence-label">Independent</span>
+      </div>
+      <div class="independence-column">
+       <span class="independence-value">43%</span>
+       <span class="independence-bar is-primary" style="height: 43%;"></span>
+       <span class="independence-label">With prompts</span>
+      </div>
+      <div class="independence-column">
+       <span class="independence-value">29%</span>
+       <span class="independence-bar is-secondary" style="height: 29%;"></span>
+       <span class="independence-label">Regular support</span>
+      </div>
+      <div class="independence-column">
+       <span class="independence-value">14%</span>
+       <span class="independence-bar" style="height: 14%;"></span>
+       <span class="independence-label">Full support</span>
+      </div>
+     </div>
+    </div>
+   </div>
+
+   <p class="feedback-dashboard__note">
+    The feedback pattern shows a paced settling journey with mostly happy or excited presentation,
+    variable engagement by day, and support levels that match transition and personal-care needs
+    across Timi’s recorded sessions.
+   </p>
+  </section>
+
+  <p>Timi is non-verbal and benefits from PECS / visuals, familiar staff interpretation and a calm, low-language approach. He responds best to predictable sequencing, preferred motivators (including music where appropriate), and reduced waiting. Parent request remains that he is <strong>not taken off premises</strong> at present; food is provided by family as agreed. Staff who know him from other contexts have been surprised by how calm and engaged he is in table work and in the pool, and by snack preferences (for example crisps and crackers) that they had not previously seen.</p>
+  <div class="callout">
+    <strong class="label">Digital visual aids and avatar routine</strong>
+    Timi has clearly benefited from <strong>digital visual aids</strong> created for him: a visual routine that shows <strong>his avatar</strong> completing the day’s activities and moving through the different places in the centre where those activities happen (Hub, classroom spaces, pool area and related transitions). Introducing this digitally has supported predictability, reduced uncertainty around “what comes next”, and strengthened his acceptance of the Day Centre sequence. We will continue to implement and refine these visual supports as part of his ongoing routine.
   </div>
 
-  <p>Timi is non-verbal and benefits from PECS / visuals, familiar staff interpretation and a calm, low-language approach. He responds best to predictable sequencing, preferred motivators (including music where appropriate), and reduced waiting. Parent request remains that he is <strong>not taken off premises</strong>; food is provided by family as agreed.</p>
+  <figure class="photo-story photo-story--portrait-grid">
+  <p class="photo-story__label">Visual supports</p>
+  <img class="photo-feature" src="images/timi/visual-tablet-avatar.png" alt="Timi at the table with a tablet showing his digital visual routine" />
+  <div class="photo-grid photo-grid--three">
+    <img src="images/timi/visual-schedule-bag.png" alt="Timi using a yellow task bag with a visual checklist" />
+    <img src="images/timi/visual-checklist-packaging.png" alt="Timi sorting sensory items with a laminated visual checklist" />
+    <img src="images/timi/class-matching-visual.png" alt="Timi completing a matching activity with a screen visual in the background" />
+  </div>
+  <figcaption>Digital and printed visual aids in use: avatar-based routine on tablet, checked visual schedules, and matching activities that keep the Day Centre sequence predictable.</figcaption>
+</figure>
 
   <div class="weekly-quotes">
     <div class="weekly-quotes__head">
-      <p class="weekly-quotes__title">Staff feedback highlights</p>
-      <p class="weekly-quotes__period">Selected directly from session records</p>
+      <p class="weekly-quotes__title">Staff and family highlights</p>
+      <p class="weekly-quotes__period">Selected from session records and handover comments</p>
     </div>
     <div class="weekly-quotes__grid">
       <figure class="weekly-quote">
-        <span class="weekly-quote__week">May</span>
+        <span class="weekly-quote__week">May 2026</span>
         <p class="weekly-quote__text">Participated in lots of activities.</p>
         <cite>V. Matilla, session feedback, 15 May 2026</cite>
       </figure>
@@ -970,28 +1076,29 @@ li,
         <cite>R. Reali, aquatic feedback, 29 June 2026</cite>
       </figure>
       <figure class="weekly-quote">
-        <span class="weekly-quote__week">Early July</span>
-        <p class="weekly-quote__text">Described as a spectacular session: routine followed on arrival, calm full swim, positive snack and leave, with photos and videos shared with family.</p>
-        <cite>Day Centre team notes, 3 July 2026</cite>
+        <span class="weekly-quote__week">Team view</span>
+        <p class="weekly-quote__text">Staff who work with him have said they had never seen him so calm and engaged in table-work activities, or so regulated in the pool following instructions, and were surprised to see him enjoy snack requests such as crisps and crackers with the group.</p>
+        <cite>Day Centre team / handover comments, 2026</cite>
       </figure>
       <figure class="weekly-quote">
-        <span class="weekly-quote__week">Ongoing</span>
+        <span class="weekly-quote__week">Family</span>
         <p class="weekly-quote__text">Carers and mum have commented on how calm and participating he can be on strong settling days, and have expressed happiness with progress even when a session needed more support.</p>
         <cite>Family / carer handover notes, July 2026</cite>
       </figure>
     </div>
   </div>
 
-  <h2>2. Gradual transition into the Day Centre</h2>
-  <p>From <strong>31 May 2026</strong>, Timi began attending with mum and carers. Early visits were deliberately low-demand. The Hub door was left open with his motivators and preferred items visible so that he could approach the environment at his own pace while still linked to the car and familiar adults.</p>
+  <h2>2. Gradual transition into the Day Centre (from April 2025)</h2>
+  <p>Timi’s familiarisation began in <strong>spring 2025</strong>. From around <strong>April 2025</strong> he started visiting on Mondays and/or Fridays, at first inconsistently, then building a routine of Mon/Fri visits simply to get used to the centre. There was <strong>no formal contract</strong> and <strong>no allocated support staff</strong>. The visits were offered to help the family with transition. Attendance was also affected by mum’s circumstances (including periods when she was in hospital and could not bring him). The Day Centre Manager stepped away from manager / admin time to interact with Timi for the short windows he came (often around twenty minutes to an hour) and to build the routine that later allowed full access.</p>
+  <p>After centre closure around <strong>July 2025</strong>, contact paused until roughly <strong>December 2025 / January 2026</strong>. From January into early spring 2026 he attended on some days; from <strong>April 2026</strong> attendance on Mondays and Fridays became more consistent; and from <strong>June 2026</strong> he has come regularly for approximately <strong>two hours</strong>. By the end of the familiarisation pathway he no longer tried to leave as he had at the beginning: he stayed regulated, engaged and content with the programme.</p>
   <ul class="phase-list">
     <li>
       <span class="phase-tag">Seconds</span>
-      <span class="phase-body">Very short entries into the classroom / Hub, then an immediate return to the car. The aim was positive association, not duration.</span>
+      <span class="phase-body">Very short entries into the classroom / Hub, then an immediate return to the car, often running back. The aim was positive association, not duration.</span>
     </li>
     <li>
       <span class="phase-tag">Minutes</span>
-      <span class="phase-body">Time inside was increased gradually. Brief, positive interactions with known staff (including Victor and Raul) were introduced and were well received.</span>
+      <span class="phase-body">Time inside was increased gradually. Brief, positive interactions with the Manager and later known staff were introduced and were well received.</span>
     </li>
     <li>
       <span class="phase-tag">~20 minutes</span>
@@ -999,24 +1106,24 @@ li,
     </li>
     <li>
       <span class="phase-tag">Classroom</span>
-      <span class="phase-body">He then accepted structured classroom activities: motor coordination and motor skills, sensory work, and regulation support inside the class.</span>
+      <span class="phase-body">He then accepted structured classroom activities: puzzles, fine-motor skills, matching and sorting, vocational packaging, sensory work and regulation support inside the class.</span>
     </li>
     <li>
       <span class="phase-tag">New environment</span>
-      <span class="phase-body">After approximately two days of spending around an hour in class, the Pristine Environment / hyperoxic pool area was introduced. On one key day he sat in a chair within the pool environment, accepting being in a different sensory space.</span>
+      <span class="phase-body">The Pristine Environment / hyperoxic pool area was introduced. On one key day he sat in a chair within the pool environment, accepting being in a different sensory space.</span>
     </li>
     <li>
-      <span class="phase-tag">Two hours</span>
-      <span class="phase-body">Progressively, the routine was built until he was spending <strong>two hours</strong> at the centre from approximately <span class="tbc" title="Placeholder — confirm exact date">7 July 2026 (date to be confirmed)</span>.</span>
+      <span class="phase-tag">Two hours+</span>
+      <span class="phase-body">By the end of <strong>May 2026</strong> he had accepted staying for around <strong>two hours</strong>. From <strong>June 2026</strong> this became consistent. On his first full pool day the session was extended beyond the usual two hours to see whether he would stay engaged; family arrived early to collect him, but were asked to leave him a little longer. He remained regulated and content, showing that he can cope with more time without losing engagement.</span>
     </li>
   </ul>
   <div class="callout">
     <strong class="label">Schedule change</strong>
-    Early sessions were typically in the afternoon (<strong>13:00–15:00</strong> / “1 to 3”). As settling progressed, the slot moved to <strong>11:00–13:00</strong>, which is his current pattern on Mondays and Fridays.
+    Earlier sessions were typically in the afternoon (<strong>13:00–15:00</strong>). As settling progressed, the slot moved to <strong>11:00–13:00</strong>, which is his current Monday and Friday pattern.
   </div>
 
-  <h2>3. Daily structure and on-site support (1:1)</h2>
-  <p>Timi is currently supported on a <strong>1:1 basis on site</strong>. This model fits the present two-hour block: arrival and settling, circle time, short activity routines, pool transition, aquatic time, shower and leave. One consistent adult can pace demands, interpret communication, manage personal care and keep the sequence predictable within the building.</p>
+  <h2>3. Daily structure and on-site support (2:1)</h2>
+  <p>Since <strong>May 2026</strong>, when funded support began, Timi has been supported on a <strong>2:1 basis on site</strong>. This model fits the present two-hour block: arrival and settling, circle time, short activity routines, pool transition, aquatic time, shower, then Hub regulation with snack and relaxation before going home. Two consistent adults can pace demands, interpret communication, manage personal care and environmental cleaning, and keep transitions safe within the building.</p>
   <p>A typical successful flow is now:</p>
   <table class="schedule">
     <thead>
@@ -1030,127 +1137,228 @@ li,
       </tr>
       <tr>
         <td>Circle time</td>
-        <td>Shared start to the session</td>
+        <td>Shared start to the session with peers</td>
         <td>Belonging, predictability</td>
       </tr>
       <tr>
         <td>Short activity block</td>
-        <td>Motor skills, table work, sensory and regulation activities</td>
+        <td>Puzzles, fine motor, matching / sorting, vocational packaging, sensory and regulation</td>
         <td>Engagement before water</td>
       </tr>
       <tr>
         <td>Pool transition</td>
-        <td>Changing, shower, move into the pool environment</td>
-        <td>Paced, low-pressure</td>
+        <td>Changing, shower, move into the pool environment (2:1 for movement between spaces)</td>
+        <td>Safety, paced demand</td>
       </tr>
       <tr>
         <td>Aquatic block</td>
-        <td>Water familiarisation, motivator games, early aquatic skills</td>
-        <td>Regulation and Level 1 skills</td>
+        <td>Water familiarisation and adaptation, motivator games, early aquatic skills and activities</td>
+        <td>Regulation and adaptation to the medium</td>
       </tr>
       <tr>
         <td>Close</td>
-        <td>Shower (enjoyed), snack where relevant, leave with carers / mum</td>
+        <td>Shower, then Hub regulation / snack and relaxation (including group snack requests) before going home</td>
         <td>Calm ending, family handover</td>
       </tr>
     </tbody>
   </table>
+  <figure class="photo-story photo-story--portrait-grid">
+  <p class="photo-story__label">Hub engagement</p>
+  <div class="photo-grid photo-grid--two">
+    <img src="images/timi/hub-ball-engagement.png" alt="Timi smiling while catching a soft ball on the Hub beanbag" />
+    <img src="images/timi/hub-puzzle-support.png" alt="Timi completing a fruit peg puzzle with staff support" />
+    <img src="images/timi/hub-sandwich-play.png" alt="Timi assembling toy food on the Hub turf" />
+    <img src="images/timi/hub-pegboard.png" alt="Timi concentrating on a colourful pegboard activity" />
+  </div>
+  <figcaption>Positive Hub moments during settling: shared play, puzzles with staff support, and joyful engagement that no longer ends in a rush back to the car.</figcaption>
+</figure>
+
   <div class="two-col">
     <div class="card">
-      <h3>What 1:1 enables on site</h3>
+      <h3>What 2:1 enables on site</h3>
       <ul>
-        <li>One adult leading the known routine end to end</li>
-        <li>Immediate response to toileting or regulation needs</li>
+        <li>One adult leading the routine while the other covers transitions and absconding risk</li>
+        <li>Immediate personal care if he soils himself, while the second adult cleans the environment</li>
         <li>Flexible pacing of classroom and pool demands</li>
-        <li>Safe supervision in Hub and pool environments within a short block</li>
+        <li>Safe supervision across Hub and pool within the session</li>
       </ul>
     </div>
     <div class="card">
       <h3>Core activity pillars</h3>
       <ul>
-        <li>Circle time and Hub belonging</li>
-        <li>Motor coordination / fine-motor table work</li>
+        <li>Circle time and Hub belonging with peers</li>
+        <li>Table work: puzzles, fine motor, matching / sorting, vocational packaging</li>
         <li>Sensory and emotional regulation</li>
-        <li>Aquatic familiarisation (Level 1) and shower routine</li>
+        <li>Digital visual routine (avatar + activity locations)</li>
+        <li>Water familiarisation, adaptation to the medium, shower, snack and relaxation</li>
       </ul>
     </div>
   </div>
 
-  <h2>4. Classroom, motor skills, sensory and regulation</h2>
-  <p>Once Timi accepted longer stays, classroom time became an active part of the day rather than only doorway exposure. Staff introduced motor coordination and motor-skill tasks, sensory activities and regulation support inside the class. Portal notes from earlier settling also show engagement with puzzles, sorting, matching and other table-top sequences when he is ready.</p>
-  <p>Engagement is strongest when waiting is reduced, preferred spaces or motivators are available early, and transitions are signalled clearly. When sensory or emotional load rises — for example through excitement or anxiety — behaviours are treated as communication: a need for predictability, personal care support, or more time.</p>
+  <h2>4. Classroom, peers, sensory room and regulation</h2>
+  <p>Once Timi accepted longer stays, classroom time became an active part of the day rather than only doorway exposure. Table-work has included <strong>puzzles</strong>, <strong>fine-motor skills</strong>, <strong>matching and sorting</strong>, and <strong>vocational packaging</strong> activities, alongside sensory and regulation support. Staff familiar with him have commented that they had not previously seen him so calm and engaged in these table activities.</p>
+  <div class="callout">
+    <strong class="label">From sensory room isolation to shared Hub time</strong>
+    When he first began accepting time in the classroom, he found it difficult to cope with other classmates and Day Centre clients. He repeatedly sought the <strong>sensory room</strong>, where he could be away from the group and regulate in a quieter space. Staff respected that need and used it as a bridge rather than a barrier. Little by little he accepted staying longer for activities first, and he has now progressed to accepting <strong>full circle time</strong> and remaining with the group for Hub activities <strong>without needing to leave for the sensory room</strong>. That shift, from isolating to regulate to sharing the Hub routine with peers, is one of the clearest social and regulation gains of his settling period.
+  </div>
+  <p>After swimming he also joins Hub regulation and snack with the group. He has made clear snack requests (for example <strong>crisps</strong> and <strong>crackers</strong>). When this was shared with staff who support him, they were surprised: they had not known that he enjoyed these snacks. Combined with photo and video updates, this has helped the wider team see a calmer, more engaged presentation than they had previously associated with him.</p>
+  <p>Engagement is strongest when waiting is reduced, preferred spaces or motivators are available early, and transitions are signalled clearly. When sensory or emotional load rises (for example through excitement or anxiety), behaviours are treated as communication: a need for predictability, personal care support, or more time.</p>
 
-  <h2>5. Aquatic activity and water familiarisation (Level 1)</h2>
+  <figure class="photo-story photo-story--portrait-grid">
+  <p class="photo-story__label">Classroom, sorting and fine motor</p>
+  <div class="photo-grid photo-grid--two">
+    <img src="images/timi/hub-colour-sorting.png" alt="Timi sorting coloured balls into matching rings" />
+    <img src="images/timi/hub-animal-sorting.png" alt="Timi sorting animal figures into coloured bowls" />
+    <img src="images/timi/class-fine-motor-rods.png" alt="Timi connecting coloured rods at the table" />
+    <img src="images/timi/class-connecting-rods.png" alt="Timi focused on a fine-motor connecting activity" />
+  </div>
+  <figcaption>Table work and structured Hub activities: colour sorting, matching, fine-motor sequences and vocational-style packaging tasks.</figcaption>
+</figure>
+
+  <figure class="photo-story photo-story--portrait-grid">
+  <p class="photo-story__label">Motor coordination and sensory</p>
+  <div class="photo-grid photo-grid--three">
+    <img src="images/timi/motor-block-stack.png" alt="Timi placing a ball into a bin on a foam-block tower" />
+    <img src="images/timi/motor-foam-blocks.png" alt="Timi carrying a foam block during a stacking activity" />
+    <img src="images/timi/sensory-turtles.png" alt="Timi arranging colourful turtle sensory toys on a mat" />
+  </div>
+  <figcaption>Motor coordination and sensory exploration within the centre: foam-block challenges and tactile sequencing.</figcaption>
+</figure>
+
+  <h2>5. Aquatic activity: water familiarisation and adaptation to the medium</h2>
   <div class="callout success">
     <strong class="label">Current aquatic picture</strong>
-    Timi now accepts being in the water for extended periods on his own terms — typically around <strong>thirty minutes</strong> of calm, regulated enjoyment of the medium within his session. Small aquatic skills and movements have begun. This sits within <strong>Level 1</strong> of the clubSENsational aquatic pathway: water familiarisation and acceptance of the aquatic environment. Progress has been very positive.
+    Timi now accepts being in the water for extended periods on his own terms, typically around <strong>thirty minutes</strong> of calm, regulated enjoyment within his session. Small aquatic skills and movements have begun. Progress has been very positive.
   </div>
   <p>Pool progression was graded with the same care as the Hub transition:</p>
   <ul>
     <li><strong>Initial refusal:</strong> At first he rejected entering the water and interacted mainly with spasms / high tension around the pool edge, without accepting immersion.</li>
-    <li><strong>Motivator retrieval from outside:</strong> Preferred toys and motivators were integrated so that he collected them from outside the pool and sorted them into a bag — building a functional game without forcing entry.</li>
+    <li><strong>Motivator retrieval from outside:</strong> Preferred toys and motivators were integrated so that he collected them from outside the pool and sorted them into a bag, building a functional game without forcing entry.</li>
     <li><strong>Retrieval inside the pool:</strong> Gradually he accepted collecting toys from inside the water, entered, completed the pick-up routine, and left after several minutes of accepted immersion.</li>
     <li><strong>Shower:</strong> He accepted and enjoyed showering as part of the changing / aquatic routine.</li>
-    <li><strong>Extended independent comfort:</strong> He can now remain in the water for longer stretches, regulated and enjoying the environment, with early Level 1 aquatic movements being introduced.</li>
+    <li><strong>Extended independent comfort:</strong> He can now remain in the water for longer stretches, regulated and enjoying the environment, calm enough to follow instructions and try new aquatic skills and activities.</li>
   </ul>
-  <p>On 29 June, aquatic feedback recorded practice throwing and picking up objects in the small pool, including jumping in — consistent with the motivator-retrieval pathway. On stronger July days he has completed calm, full participation swims; on harder days staff still reduce demand, protect positive association, and never force performance.</p>
+  <figure class="photo-story photo-story--portrait-grid">
+  <p class="photo-story__label">Aquatic familiarisation</p>
+  <div class="photo-grid photo-grid--three">
+    <img src="images/timi/pool-toy-bag.png" alt="Timi in the pool receiving a toy bag from staff" />
+    <img src="images/timi/pool-dumbbells.png" alt="Timi using foam aquatic dumbbells at the pool edge" />
+    <img src="images/timi/pool-edge-toys.png" alt="Timi reaching for toys on a floating mat" />
+    <img src="images/timi/pool-supported-reach.png" alt="Timi reaching into the water with instructor support" />
+    <img src="images/timi/pool-foam-number.png" alt="Timi engaging with a foam number aid at the pool ledge" />
+    <img src="images/timi/pool-ledge-activity.png" alt="Timi leaning into the pool during a guided aquatic activity" />
+  </div>
+  <figcaption>Water familiarisation and adaptation in the hyperoxic pool: toy retrieval, supported reach, foam equipment and calm participation with staff.</figcaption>
+</figure>
+
+  <h3>What this stage of the programme includes</h3>
+  <p>The focus now is <strong>adaptation to the aquatic medium</strong>: helping Timi feel calm, secure and willing to stay in and around water, while gradually introducing new aquatic skills and activities. In practical terms that covers:</p>
+  <div class="two-col">
+    <div class="card">
+      <h3>Water familiarisation</h3>
+      <ul>
+        <li>Accepting water contact on the body (pouring, splashing, water running over him)</li>
+        <li>Remaining comfortably where water is present (shower, poolside or shallow water)</li>
+        <li>Simple interaction with water through touch, movement and play</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Water adaptation</h3>
+      <ul>
+        <li>Travelling forward and backward through the water</li>
+        <li>Changing direction (sideways movement or turning)</li>
+        <li>Using the wall, rail, float or other supports to move with confidence</li>
+      </ul>
+    </div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <h3>Breathing control (early)</h3>
+      <ul>
+        <li>Blowing air while water is poured over the head</li>
+        <li>Blowing bubbles at the water surface</li>
+        <li>Using breath to move water or a floating toy</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Water safety (early)</h3>
+      <ul>
+        <li>Entering the water safely in an appropriate way</li>
+        <li>Exiting the water safely</li>
+        <li>Moving towards a point of safety (poolside, wall, steps or support)</li>
+      </ul>
+    </div>
+  </div>
+  <p>Timi’s next steps are to consolidate this adaptation and gradually introduce new aquatic skills and activities at a pace he can accept, always protecting positive association with the water.</p>
+  <p>On 29 June, aquatic feedback recorded practice throwing and picking up objects in the small pool, including jumping in, consistent with the motivator-retrieval pathway. On stronger days he remains calm, follows instructions and enjoys the water; on harder days staff still reduce demand and never force performance.</p>
   <blockquote class="quote">
     Practised throwing and picking up objects in the small pool. We made him pick the toys up and he jumped into the pool.
     <cite>R. Reali, aquatic session feedback, 29 June 2026</cite>
   </blockquote>
 
-  <h2>6. Support model now and looking ahead</h2>
+  <h2>6. Support model: from unpaid familiarisation to funded 2:1</h2>
   <div class="callout important">
-    <strong class="label">Current recommendation</strong>
-    <strong>1:1 on site</strong> is the model in use for Timi’s present Day Centre and aquatic block. Sessions remain within the building. Community access is not part of the current offer, in line with family preference that he is not taken off premises.
+    <strong class="label">Current model</strong>
+    Timi is supported <strong>2:1 on site</strong>, funded from <strong>May 2026</strong>. Before that, familiarisation visits had <strong>no contract and no allocated support worker</strong>; the Day Centre Manager used manager / admin time to build access. Sessions remain on site at present.
   </div>
-  <p>If in future Timi accepts a longer day at the centre, or if community access becomes an agreed goal, <strong>2:1 support would be required</strong>. A second adult would be needed to manage transitions, personal care and environmental load safely while preserving the quality of the activity for him and for peers. That step is noted here as a forward-looking contingency, not as a present community programme.</p>
+  <h3>Unpaid familiarisation (to May 2026)</h3>
+  <p>While Timi was only visiting to get used to the centre, clubSENsational did not allocate a support worker and there was no formal placement contract. The Manager left admin and management duties to spend the short visit windows with him, shaping the graded routine described above. That goodwill phase was essential to reach a point where a funded day could succeed.</p>
+  <h3>Why 2:1 was requested (from May 2026)</h3>
+  <p>When Timi accepted staying for around two hours, one adult alone was no longer enough. The local authority was asked for support. The initial planning assumption had been that <strong>1:1</strong> might be sufficient on site, but observed behaviours showed that <strong>2:1 is required</strong>:</p>
+  <ul>
+    <li><strong>Transition / absconding risk:</strong> Moving between Hub, changing areas and pool carries a real risk of him running off. A second adult is needed to keep those moves safe.</li>
+    <li><strong>Toileting / soiling:</strong> There have been episodes linked to excitement and/or movement in which he soils himself (urine and/or faeces). Because of his sensory seeking, he may touch and spread faeces (including onto surfaces such as mirrors). One adult needs to clean and change Timi while the second adult cleans the environment and protects dignity and hygiene for everyone.</li>
+    <li><strong>Activity quality:</strong> With two adults, one can continue leading the known routine and regulation while the other manages care or environmental load, so the session does not collapse around personal care.</li>
+  </ul>
   <div class="callout">
-    <strong class="label">Impact of the current 1:1 model</strong>
-    Within the two-hour on-site block, 1:1 has been sufficient to deliver the graded transition, classroom engagement and aquatic familiarisation described in this report. Extending intensity or leaving site without increasing to 2:1 would reduce safety and the chance of success.
+    <strong class="label">Looking ahead</strong>
+    If Timi’s time at the centre increases further, <strong>2:1</strong> also makes it possible, when family and commissioners agree, to offer community activities alongside other Day Centre clients in the same way as peers. Community access is not the present offer (family preference remains on-site for now), but the staffing model is what would unlock that equitable next step.
   </div>
 
   <h2>7. Health, personal care and challenges encountered</h2>
-  <p>Alongside strong gains, staff have worked with recurring personal-care and regulation challenges. These are recorded openly because anticipating them has improved sessions:</p>
+  <p>Alongside strong gains, staff have worked with recurring personal-care and regulation challenges. These are recorded openly because they are a core reason 2:1 is needed, and because anticipating them has improved sessions:</p>
   <ul>
-    <li><strong>Toileting accidents:</strong> Occasional wetting linked to high excitement and/or toileting need. Accidents are managed promptly, carers are informed, and the day continues without shame. Strategies have included proactive changing / nappy use for the centre period on agreed days, with carers asked to pack towel, flip-flops and underpants.</li>
-    <li><strong>Faecal digging / hand-to-bottom behaviour:</strong> At times Timi has dug with his hand at his bottom and removed faeces. Staff redirect him into the known routine, increase anticipation and supervision around vulnerable moments, and have seen improvement when the sequence is tight and demands are well paced.</li>
+    <li><strong>Toileting / soiling accidents:</strong> Episodes of wetting or soiling linked to high excitement and/or movement between spaces. Accidents are managed promptly, carers are informed, and the day continues without shame. Strategies have included proactive changing / nappy use for the centre period on agreed days, with carers asked to pack towel, flip-flops and underpants.</li>
+    <li><strong>Faecal digging / sensory spreading:</strong> At times Timi digs with his hand at his bottom, removes faeces and, because of sensory seeking, may touch and spread it (for example onto mirrors or surfaces). Redirection into the known routine, close anticipation, and a second adult for cleaning have supported safer management and improvement.</li>
+    <li><strong>Absconding / leaving risk on transitions:</strong> Especially earlier in settling, and still relevant when moving between spaces; 2:1 covers this risk.</li>
     <li><strong>Variable pool readiness:</strong> Some days still show resistance at the pool or changing stage; the response remains patience, reduced demand and protection of long-term water confidence.</li>
     <li><strong>Health profile awareness:</strong> Asthma, hay fever, cat/dust sensitivity, constipation and foot/orthopaedic concerns (including trampoline restrictions) are held in the care profile. Parent-provided food continues.</li>
   </ul>
-  <p>None of these challenges reverse the overall settling picture. They guide how the team anticipates needs so that Timi can keep accessing the successful parts of his day.</p>
+  <p>None of these challenges reverse the overall settling picture. They explain why funded 2:1 was requested once the two-hour day became real, and they guide how the team anticipates needs so that Timi can keep accessing the successful parts of his day.</p>
 
   <h2>8. Progress and developmental impact</h2>
-  <p>Across the period from late May into July, Timi has shown meaningful developmental and quality-of-life gains:</p>
+  <p>Across April 2025 to July 2026, Timi has shown meaningful developmental and quality-of-life gains:</p>
   <ul>
-    <li>From doorway exposure measured in seconds to a sustained <strong>two-hour</strong> Day Centre block</li>
-    <li>Acceptance of circle time, short classroom routines, and sensory / regulation work on site</li>
-    <li>Positive micro-interactions with Day Centre staff, building trust with familiar adults</li>
-    <li>Acceptance of the Pristine / pool environment, including sitting in that space before full aquatic participation</li>
-    <li>Graded water entry via motivator games through to ~30 minutes of regulated aquatic enjoyment</li>
-    <li>Entry into <strong>Level 1 aquatic skills</strong> (water familiarisation and movement in water)</li>
-    <li>Positive shower association within the aquatic routine</li>
-    <li>Successful timetable shift from afternoon to morning slots</li>
-    <li>Improving anticipation and redirection around toileting and faecal-digging behaviours</li>
-    <li>Warm family / carer partnership, including photo and video sharing on strong days</li>
+    <li>From doorway exposure measured in seconds (and running back to the car) to a sustained <strong>two-hour</strong> Day Centre block, without wanting to leave, and evidence that he can cope with more time while staying engaged</li>
+    <li>Unpaid Manager-led familiarisation leading to successful funded placement</li>
+    <li>Acceptance of circle time, table work (puzzles, fine motor, matching / sorting, vocational packaging) and shared Hub routines</li>
+    <li>From needing the sensory room to escape peers, to accepting <strong>full circle time and shared Hub activities</strong> without leaving the group</li>
+    <li>Group snack and relaxation after swimming, including clear requests for preferred snacks (e.g. crisps, crackers)</li>
+    <li>Benefit from <strong>digital visual aids</strong> showing his avatar in the Day Centre routine and activity locations, to be continued and refined</li>
+    <li>Positive surprise from staff who had not previously seen him so calm, engaged or snack-motivated</li>
+    <li>Acceptance of the Pristine / pool environment and graded water entry through to ~30 minutes of regulated aquatic enjoyment</li>
+    <li>Early work on <strong>water familiarisation, water adaptation, breathing control and water safety</strong>, with gradual introduction of new aquatic skills and activities</li>
+    <li>Successful timetable shift to the morning slot and proven capacity to extend a session when engagement stays high</li>
+    <li>Clearer anticipation and dual-adult management of toileting, faecal-digging and transition risk under <strong>2:1</strong></li>
   </ul>
 
   <h2>9. Summary and recommendations</h2>
-  <p>Timi has settled into clubSENsational Day Centre through a carefully graded transition that respected his need for predictability, motivators and low-pressure exposure. He now follows a meaningful on-site routine and has made particularly strong progress in aquatic familiarisation. Challenges around toileting and faecal digging remain active support themes, but they are being managed with clearer anticipation and routine-based redirection.</p>
+  <p>Timi has settled into clubSENsational Day Centre through a carefully graded transition that began as unpaid familiarisation in 2025 and became a consistent funded two-hour day in 2026. He is now typically regulated, engaged and content on site, with particularly strong progress in Hub belonging, table work, snack participation and aquatic familiarisation. Personal-care and transition risks remain active themes and are the reason <strong>2:1</strong>, not 1:1, is the correct on-site model.</p>
   <div class="callout success">
     <strong class="label">We recommend</strong>
     <ol>
-      <li>Continue <strong>1:1 on-site support</strong> for the current Monday / Friday two-hour Day Centre and aquatic block.</li>
-      <li>Keep sessions <strong>on site</strong> unless and until family and commissioners agree a different goal.</li>
-      <li>If the day is lengthened or community access is introduced later, plan and fund a move to <strong>2:1</strong>.</li>
-      <li>Protect the successful sequence: arrival → circle time → short activities → paced pool transition → aquatic block → shower / leave.</li>
-      <li>Continue <strong>Level 1</strong> aquatic work — celebrate acceptance and regulation; introduce skills without pressure.</li>
-      <li>Maintain agreed personal-care strategies (proactive toileting / nappy planning; close supervision and redirection around faecal-digging moments).</li>
-      <li>Preserve the <strong>11:00–13:00</strong> slot while it supports regulation and engagement.</li>
+      <li>Continue funded <strong>2:1 on-site support</strong> for the Monday / Friday Day Centre and aquatic block.</li>
+      <li>Keep sessions <strong>on site</strong> for now, in line with family preference.</li>
+      <li>If hours are extended further, retain <strong>2:1</strong> so that community activities can later be offered on the same basis as for other Day Centre clients, when agreed.</li>
+      <li>Protect the successful sequence: arrival → circle time → short activities → paced pool transition → aquatic block → shower → Hub regulation / snack and relaxation → leave for home.</li>
+      <li>Continue <strong>water familiarisation and adaptation</strong> work: celebrate acceptance and regulation; gradually introduce new aquatic skills and activities.</li>
+      <li>Maintain agreed personal-care strategies (proactive toileting / nappy planning; close supervision and dual-adult response around soiling and faecal-spreading moments).</li>
+      <li>Preserve the morning slot while it supports regulation and engagement; any further extension of hours should be trialled carefully when he remains regulated.</li>
+      <li>Continue and refine <strong>digital visual aids</strong> (avatar-based routine and activity locations) to support predictability across the day.</li>
       <li>Continue photo / video handovers and joint review of strategies with mum and carers.</li>
     </ol>
   </div>
-  <p>Timi has demonstrated that, with a graded transition and familiar 1:1 support, he can be calm, engaged and successful in this setting. Continued partnership between home and the Day Centre will consolidate these gains and protect the quality of his experience as next steps are considered.</p>
+  <p>Timi has demonstrated that, with a graded transition and the right level of support, he can be calm, engaged and successful in this setting. Continued partnership between home, the Day Centre and the local authority will consolidate these gains and protect the quality of his experience as next steps are considered.</p>
 
   <div class="signoff" style="margin-top:22px;padding-top:14px;border-top:2px solid var(--ink);font-family:'Avenir Next',Segoe UI,Helvetica,Arial,sans-serif;">
     <p style="margin:0 0 4px;font-weight:700;">Victor Casanova</p>
@@ -1159,8 +1367,9 @@ li,
 
   <footer style="margin-top:18px;padding-top:12px;border-top:1px solid var(--line);font-family:'Avenir Next',Segoe UI,Helvetica,Arial,sans-serif;font-size:7.5pt;color:var(--muted);line-height:1.45;">
     <p style="margin:0 0 6px;"><strong>clubSENsational Ltd</strong> · Company No. 13755417 · 71-75 Shelton Street, Covent Garden, WC2H 9JQ, London · www.clubsensational.org</p>
-    <p style="margin:0;">Confidential — prepared for the participant’s family and authorised NHS / funding partners. Please do not circulate without consent. Exact date on which the two-hour block began is marked for confirmation.</p>
+    <p style="margin:0;">Confidential. Prepared for the participant’s family and authorised local authority / NHS / funding partners. Please do not circulate without consent.</p>
   </footer>
+
 </article>
 </body>
 </html>
