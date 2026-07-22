@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260722-quiet-mid-session";
+  var VER = "20260722-ceo-fb-once";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260720-michelle-dayoff-31",

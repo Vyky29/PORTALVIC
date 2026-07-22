@@ -1491,6 +1491,28 @@
     }
     const PORTAL_REMINDER_NOTIFY_STORAGE = 'portalReminderLastNotify_v1';
     const PORTAL_REMINDER_NOTIFY_TAG = 'clubsensational-portal-reminder';
+    /** CEOs: outstanding-feedback Notification/vibrate at most once until the backlog clears. */
+    const PORTAL_CEO_FB_ONCE_STORAGE = 'portalCeoOutstandingFbNotified_v1';
+    function portalStaffIsCeoForFeedbackReminders(){
+      try{
+        if(typeof portalStaffIsCeoTopbarFullAccess === 'function' && portalStaffIsCeoTopbarFullAccess()) return true;
+      }catch(_){}
+      try{
+        const box = window.__PORTAL_SUPABASE__ || {};
+        const role = String((box.staff_profile && box.staff_profile.app_role) || '').trim().toLowerCase();
+        if(role === 'ceo') return true;
+      }catch(_){}
+      return false;
+    }
+    function portalCeoOutstandingFeedbackAlreadyNotified(){
+      try{ return localStorage.getItem(PORTAL_CEO_FB_ONCE_STORAGE) === '1'; }catch(_){ return false; }
+    }
+    function portalMarkCeoOutstandingFeedbackNotified(){
+      try{ localStorage.setItem(PORTAL_CEO_FB_ONCE_STORAGE, '1'); }catch(_){}
+    }
+    function portalClearCeoOutstandingFeedbackNotified(){
+      try{ localStorage.removeItem(PORTAL_CEO_FB_ONCE_STORAGE); }catch(_){}
+    }
     /** Drop sticky OS banners once outstanding feedback / venue reminders are cleared. */
     function portalClearReminderNotifications(){
       function shouldCloseReminderNotification(n){
@@ -1523,6 +1545,7 @@
       try{
         localStorage.removeItem(PORTAL_REMINDER_NOTIFY_STORAGE);
       }catch(_e){}
+      portalClearCeoOutstandingFeedbackNotified();
     }
     function portalMinutesUntilLocalMidnight(){
       const n = new Date();
@@ -1597,6 +1620,7 @@
      * Roster overrides: Realtime → portalMaybeNotifyScheduleOverrideFromPayload → header OS banner + vibrate (not this function).
      * Mid-session: mute Notification/vibrate for outstanding tasks (camera briefly hides the tab and used to re-fire alerts).
      * Halo / orbit chrome stays on via syncPortalHeaderAlertChrome.
+     * CEOs: outstanding-feedback sound/push at most once until the backlog is cleared; other roles keep normal cadence.
      */
     function portalMaybeNotifyReminders(st){
       try{
@@ -1607,6 +1631,7 @@
           portalClearReminderNotifications();
           return;
         }
+        if(!st.sessionFeedbackNeed) portalClearCeoOutstandingFeedbackNotified();
         /* Quiet during an active client/available block — halo is enough while taking photos. */
         if(typeof portalStaffCurrentlyInActiveClientSession === 'function'
           && portalStaffCurrentlyInActiveClientSession()){
@@ -1615,10 +1640,15 @@
         }
         const tabVisible = typeof document !== 'undefined' && document.visibilityState === 'visible';
         const suppressFeedbackPush = tabVisible && !!st.sessionFeedbackNeed;
-        if(suppressFeedbackPush && !st.venueOpenNeed && !st.venueCloseNeed) return;
+        const isCeo = portalStaffIsCeoForFeedbackReminders();
+        let includeFeedback = !!(st.sessionFeedbackNeed && !suppressFeedbackPush);
+        if(isCeo && includeFeedback && portalCeoOutstandingFeedbackAlreadyNotified()){
+          includeFeedback = false;
+        }
+        if(!includeFeedback && !st.venueOpenNeed && !st.venueCloseNeed) return;
         const level = typeof portalReminderUrgencyLevel === 'function' ? portalReminderUrgencyLevel(st) : 0;
         const bodyParts = [];
-        if(st.sessionFeedbackNeed && !suppressFeedbackPush){
+        if(includeFeedback){
           const n = Math.max(0, Number(st.sessionFeedbackCount) || 0);
           if(n > 0) bodyParts.push('Incomplete sessions (x' + n + ').');
         }
@@ -1642,7 +1672,9 @@
         }catch(_e){}
         const now = Date.now();
         const escalated = level > (Number(last.level) || -1);
-        if(!escalated && (now - (Number(last.t) || 0) < minGap) && String(last.body || '') === body) return;
+        /* CEOs: first outstanding-feedback ping ignores the normal throttle/escalation cadence. */
+        const ceoFirstFeedbackPing = isCeo && includeFeedback && !portalCeoOutstandingFeedbackAlreadyNotified();
+        if(!ceoFirstFeedbackPing && !escalated && (now - (Number(last.t) || 0) < minGap) && String(last.body || '') === body) return;
         const icon = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
         try{
           const n = new Notification(title, {
@@ -1658,6 +1690,7 @@
           });
         }catch(_e){ return; }
         if(typeof portalReminderVibrateForLevel === 'function') portalReminderVibrateForLevel(level);
+        if(isCeo && includeFeedback) portalMarkCeoOutstandingFeedbackNotified();
         try{
           localStorage.setItem(PORTAL_REMINDER_NOTIFY_STORAGE, JSON.stringify({ t: now, level: level, body: body }));
         }catch(_e){}
