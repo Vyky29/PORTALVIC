@@ -20,8 +20,8 @@
   var COMPANY_FOOTER_ADDRESS     = '71-75 Shelton Street, Covent Garden, WC2H 9JQ, London';
   var HR_CONTACT_EMAIL           = 'hr@clubsensational.co.uk';
 
-  var LOGO_PATH    = '../assets/clubsensational-logo-hq.png?v=2';
-  var LOGO_DISPLAY = '../assets/clubsensational-logo.png?v=2';
+  var LOGO_PATH    = 'assets/clubsensational-logo-hq.png?v=3';
+  var LOGO_DISPLAY = 'assets/clubsensational-logo-hq.png?v=3';
 
   var RATE_TABLE = {
     'Support Worker':       { 'Scale 1': 18, 'Scale 2': 20, 'Scale 3': 23 },
@@ -1366,21 +1366,38 @@
       }
     });
 
+    var refMeta = (s.contractReference && String(s.contractReference).trim()) || '';
+    var dateMeta = (s.contractDateLabel && String(s.contractDateLabel).trim()) || '';
     var logoImg = forPdf
-      ? '<img src="' + logoSrc + '" alt="clubSENsational" class="contract-logo" width="260" height="188" style="' + (imgStyle || '') + 'max-width:260px;height:auto;">'
-      : '<img src="' + logoSrc + '" srcset="' + LOGO_DISPLAY + ' 1x, assets/clubsensational-logo@2x.png?v=2 2x" alt="clubSENsational" class="contract-logo" width="260" height="188"' + (imgStyle ? ' style="' + imgStyle + 'max-width:260px;height:auto;"' : '') + '>';
+      ? '<img src="' + logoSrc + '" alt="clubSENsational" class="contract-logo" width="280" height="202" style="' + (imgStyle || '') + 'max-width:280px;height:auto;">'
+      : '<img src="' + logoSrc + '" srcset="' + LOGO_DISPLAY + ' 1x, assets/clubsensational-logo@2x.png?v=3 2x" alt="clubSENsational" class="contract-logo" width="280" height="202"' + (imgStyle ? ' style="' + imgStyle + 'max-width:280px;height:auto;"' : '') + '>';
 
     return (
       '<div class="contract-document">' +
         '<header class="contract-letterhead">' +
-          logoImg +
-          '<div class="letterhead-legal">' + COMPANY_LEGAL_NAME + '</div>' +
+          '<div class="letterhead-accent" aria-hidden="true"></div>' +
+          '<div class="letterhead-brand">' +
+            logoImg +
+            '<div class="letterhead-legal">' + COMPANY_LEGAL_NAME + '</div>' +
+            '<div class="letterhead-reg">Registered in England and Wales &middot; Company No. ' + COMPANY_NUMBER + '</div>' +
+            '<div class="letterhead-address">' + COMPANY_FOOTER_ADDRESS + '</div>' +
+          '</div>' +
+          '<div class="letterhead-rule" aria-hidden="true"></div>' +
+          '<div class="letterhead-docmeta">' +
+            (refMeta ? '<span class="letterhead-chip">Ref ' + refMeta + '</span>' : '') +
+            '<span class="letterhead-chip">Version ' + CONTRACT_VERSION + '</span>' +
+            (dateMeta ? '<span class="letterhead-chip">' + dateMeta + '</span>' : '') +
+          '</div>' +
         '</header>' +
         '<div class="contract-body">' +
           '<h1 class="contract-doc-title">' + contractDocTitle(contractKind) + '</h1>' +
           body +
         '</div>' +
-        '<footer class="contract-footer">' + COMPANY_FOOTER_ADDRESS + ' &middot; Registered Company No. ' + COMPANY_NUMBER + '</footer>' +
+        '<footer class="contract-footer">' +
+          '<div class="footer-brand">' + COMPANY_LEGAL_NAME + '</div>' +
+          '<div>' + COMPANY_FOOTER_ADDRESS + ' &middot; Company No. ' + COMPANY_NUMBER + '</div>' +
+          '<div class="footer-web">www.clubsensational.org</div>' +
+        '</footer>' +
       '</div>'
     );
   }
@@ -1392,23 +1409,36 @@
   function buildPdfHtml(templateData, sigs) {
     var kind = normalizeContractKind(templateData && templateData.CONTRACT_KIND);
     var pdfStyles = '<style>' +
-      '.contract-document{font-family:Georgia,serif;color:#111;box-sizing:border-box;width:100%;max-width:100%;overflow-wrap:break-word;word-wrap:break-word;}' +
-      '.contract-letterhead{background:#fff;padding:14px 16px 10px;text-align:center;border-bottom:3px solid #c9a227;box-sizing:border-box;}' +
-      '.contract-logo{width:220px;max-width:100%;height:auto;display:block;margin:0 auto;}' +
-      '.letterhead-legal{margin-top:8px;font-family:Arial,sans-serif;font-size:8pt;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#0f2744;}' +
-      '.contract-body{padding:12px 14px;box-sizing:border-box;}' +
-      '.contract-doc-title{text-align:center;font-size:12pt;font-weight:700;color:#0f2744;letter-spacing:0.05em;text-transform:uppercase;margin:0 0 14px;padding-bottom:8px;border-bottom:2px solid #c9a227;}' +
+      '.contract-document{font-family:Georgia,"Times New Roman",serif;color:#152033;box-sizing:border-box;width:100%;max-width:100%;overflow-wrap:break-word;word-wrap:break-word;}' +
+      '.contract-letterhead{background:linear-gradient(180deg,#fbfcfe 0%,#ffffff 72%);padding:0 0 12px;text-align:center;box-sizing:border-box;border-bottom:1px solid #e6edf4;}' +
+      '.letterhead-accent{height:5px;background:linear-gradient(90deg,#0f2744 0%,#c9a227 52%,#0f2744 100%);}' +
+      '.letterhead-brand{padding:16px 18px 8px;}' +
+      '.contract-logo{width:240px;max-width:72%;height:auto;display:block;margin:0 auto 8px;}' +
+      '.letterhead-legal{margin:0;font-family:Arial,Helvetica,sans-serif;font-size:9pt;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#0f2744;}' +
+      '.letterhead-reg{margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:7.5pt;color:#5b6b7c;letter-spacing:0.02em;}' +
+      '.letterhead-address{margin:2px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:7.5pt;color:#5b6b7c;}' +
+      '.letterhead-rule{height:1px;margin:10px 18px 8px;background:linear-gradient(90deg,transparent,#c9a227,#0f2744,#c9a227,transparent);}' +
+      '.letterhead-docmeta{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;padding:0 14px 2px;}' +
+      '.letterhead-chip{display:inline-block;font-family:Arial,Helvetica,sans-serif;font-size:7pt;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#0f2744;background:#f3f6f9;border:1px solid #d7e0ea;border-radius:999px;padding:3px 9px;}' +
+      '.contract-body{padding:14px 16px 10px;box-sizing:border-box;}' +
+      '.contract-doc-title{text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:12.5pt;font-weight:700;color:#0f2744;letter-spacing:0.08em;text-transform:uppercase;margin:0 0 14px;padding:10px 8px;background:#f7fafc;border-top:2px solid #c9a227;border-bottom:2px solid #c9a227;}' +
       '.contract-opening{text-align:center;font-weight:600;color:#0f2744;margin:0 0 14px;font-size:10pt;}' +
-      '.contract-section h3{font-family:Arial,sans-serif;font-size:8.5pt;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#0f2744;margin:14px 0 6px;padding-bottom:3px;border-bottom:1px solid #c9a227;}' +
-      '.contract-section p{margin:0 0 8px;font-size:9.5pt;line-height:1.45;text-align:justify;overflow-wrap:break-word;word-wrap:break-word;}' +
-      '.contract-parties{background:#e8f0f6;border:1px solid #b8cfd9;border-left:3px solid #0f2744;padding:10px 12px;margin:8px 0 12px;font-size:9pt;box-sizing:border-box;max-width:100%;overflow-wrap:break-word;}' +
-      '.contract-parties strong{display:block;font-family:Arial,sans-serif;font-size:8pt;text-transform:uppercase;color:#0f2744;margin-bottom:4px;}' +
+      '.contract-section h3{font-family:Arial,Helvetica,sans-serif;font-size:8.5pt;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#0f2744;margin:16px 0 6px;padding:0 0 4px 8px;border-left:3px solid #c9a227;border-bottom:1px solid #e6edf4;}' +
+      '.contract-section p{margin:0 0 8px;font-size:9.5pt;line-height:1.5;text-align:justify;overflow-wrap:break-word;word-wrap:break-word;}' +
+      '.contract-parties{background:linear-gradient(180deg,#f3f7fb,#eaf1f7);border:1px solid #c5d6e3;border-left:4px solid #0f2744;padding:10px 12px;margin:8px 0 12px;font-size:9pt;box-sizing:border-box;max-width:100%;overflow-wrap:break-word;}' +
+      '.contract-parties strong{display:block;font-family:Arial,Helvetica,sans-serif;font-size:8pt;letter-spacing:0.06em;text-transform:uppercase;color:#0f2744;margin-bottom:4px;}' +
       '.contract-parties p{overflow-wrap:break-word;word-wrap:break-word;}' +
-      '.contract-signature-block{border-top:1px dashed #ccc;padding-top:8px;}' +
+      '.contract-signature-block{border-top:1px dashed #c5d0db;padding-top:10px;margin-top:8px;}' +
       '.contract-annex{page-break-before:always;margin-top:20px;padding-top:14px;border-top:2px solid #c9a227;}' +
-      '.contract-footer{font-family:Arial,sans-serif;font-size:7.5pt;color:#64748b;text-align:center;padding:10px 14px;border-top:1px solid #e2e8f0;background:#f7f9fb;box-sizing:border-box;}' +
+      '.contract-footer{font-family:Arial,Helvetica,sans-serif;font-size:7.5pt;color:#64748b;text-align:center;padding:12px 14px;border-top:1px solid #e2e8f0;background:linear-gradient(180deg,#fbfcfe,#f3f6f9);box-sizing:border-box;}' +
+      '.footer-brand{font-weight:700;color:#0f2744;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:2px;}' +
+      '.footer-web{margin-top:2px;color:#0f2744;}' +
       '</style>';
-    return pdfStyles + renderContractHtml(fillTemplate(templateData, kind), true, sigs, kind);
+    var mergedSigs = Object.assign({}, sigs || {}, {
+      contractReference: (templateData && templateData.CONTRACT_REFERENCE) || (sigs && sigs.contractReference) || '',
+      contractDateLabel: (templateData && templateData.CONTRACT_DATE) || (sigs && sigs.contractDateLabel) || ''
+    });
+    return pdfStyles + renderContractHtml(fillTemplate(templateData, kind), true, mergedSigs, kind);
   }
 
   /* ================================================================

@@ -484,7 +484,9 @@
     data.CONTRACT_REFERENCE = contractReference;
     const kind = data.CONTRACT_KIND || contractKind;
     $("livePreview").innerHTML = C.renderContractHtml(C.fillTemplate(data, kind), false, {
-      directorSignatureDataUrl: directorSignatureDataUrl
+      directorSignatureDataUrl: directorSignatureDataUrl,
+      contractReference: contractReference,
+      contractDateLabel: data.CONTRACT_DATE || ""
     }, kind);
 
     if (isZeroHoursKind()) {
