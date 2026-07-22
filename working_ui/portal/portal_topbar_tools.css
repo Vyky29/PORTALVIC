@@ -282,6 +282,9 @@
   height:var(--topbar-tools-cell) !important;
   min-height:var(--topbar-tools-cell) !important;
   max-height:none !important;
+  overflow:visible !important;
+  position:relative;
+  z-index:5;
 }
 .topbar-lead--flank-5 #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-2 > .topbar-tool-btn,
 .topbar-lead--flank-5 #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-2 > button,
@@ -1353,6 +1356,7 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   max-height:calc(2 * var(--topbar-tools-cell) + var(--topbar-tools-gap-y)) !important;
   margin:0 !important;
   align-self:flex-start !important;
+  overflow:visible !important;
 }
 .topbar-lead--flank-4 #topbarToolsGridRight > #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-4{
   grid-column:1 / -1 !important;
