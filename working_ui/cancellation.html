@@ -1107,7 +1107,7 @@ button{
         }
       }
       if (!window.STAFF_DASHBOARD_SOURCE || !Array.isArray(window.STAFF_DASHBOARD_SOURCE.rows)) {
-        await loadPortalScriptOnceCx(__portalJsCx('staff_dashboard_spreadsheet_bundle.js?v=roster-71cd10c00c'));
+        await loadPortalScriptOnceCx(__portalJsCx('staff_dashboard_spreadsheet_bundle.js?v=roster-ef7cab1b5e'));
       }
       var wd = weekdayFromIsoCx(context.sessionDate);
       var want = slugifyClient(cid || context.clientName);
@@ -1424,7 +1424,7 @@ button{
   Promise.resolve()
     .then(function(){ return loadPortalScriptOnceCx(__portalJsCx('clients_info_embed.js?v=20260517-roster-clients')); })
     .catch(function(){})
-    .then(function(){ return loadPortalScriptOnceCx(__portalJsCx('staff_dashboard_spreadsheet_bundle.js?v=roster-71cd10c00c')); })
+    .then(function(){ return loadPortalScriptOnceCx(__portalJsCx('staff_dashboard_spreadsheet_bundle.js?v=roster-ef7cab1b5e')); })
     .catch(function(){})
     .then(function(){ return loadPortalScriptOnceCx(__portalJsCx('participant_services.js?v=20260609-autofill')); })
     .catch(function(){})
