@@ -255,6 +255,8 @@
       if (!document.getElementById("portalStaffWaForm")) {
         injectComposer(existing);
       }
+      var sub = existing.querySelector(".portal-staff-wa-sheet__sub");
+      if (sub) sub.textContent = "Reply here or on WhatsApp.";
       return existing;
     }
     var sheet = document.createElement("div");
@@ -268,7 +270,7 @@
       '<h2 id="portalStaffWaTitle">CS WhatsApp</h2>' +
       '<button type="button" class="portal-staff-wa-sheet__close" data-staff-wa-close="1" aria-label="Close">×</button>' +
       "</header>" +
-      '<p class="portal-staff-wa-sheet__sub">Messages with the club also arrive on your WhatsApp number on file. Reply here or on WhatsApp.</p>' +
+      '<p class="portal-staff-wa-sheet__sub">Reply here or on WhatsApp.</p>' +
       '<div class="portal-staff-wa-sheet__thread" id="portalStaffWaThread" role="log" aria-live="polite"></div>' +
       '<p class="portal-staff-wa-sheet__hint" id="portalStaffWaHint"></p>' +
       composerHtml() +
@@ -689,8 +691,14 @@
   function openSheet() {
     var sheet = ensureSheet();
     sheet.hidden = false;
+    document.documentElement.classList.add("portal-staff-wa-open");
     document.body.classList.add("portal-staff-wa-open");
     void loadThread().then(function () {
+      /* Autofocus opens the keyboard on phones and pushes/hides the Close header. */
+      var coarse =
+        (window.matchMedia && window.matchMedia("(max-width: 720px), (pointer: coarse)").matches) ||
+        false;
+      if (coarse) return;
       var draft = document.getElementById("portalStaffWaDraft");
       if (draft) {
         try {
@@ -703,6 +711,7 @@
   function closeSheet() {
     var sheet = document.getElementById("portalStaffWaSheet");
     if (sheet) sheet.hidden = true;
+    document.documentElement.classList.remove("portal-staff-wa-open");
     document.body.classList.remove("portal-staff-wa-open");
   }
 
