@@ -14071,7 +14071,7 @@
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
       "area": "Big Pool",
-      "time_slot": "11 to 12",
+      "time_slot": "12 to 1",
       "venue": "SwimFarm",
       "session_date": "2026-07-29"
     },
