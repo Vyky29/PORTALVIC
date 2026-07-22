@@ -578,7 +578,6 @@ li,
  padding: 8px;
  border: 1px solid var(--line);
  background: var(--soft);
- break-inside: avoid;
 }
 .photo-feature,
 .photo-grid img {
@@ -588,8 +587,6 @@ li,
  object-fit: cover;
  object-position: center center;
  background: var(--soft);
-}
-.photo-feature {
  border: 1px solid #fff;
 }
 .photo-grid {
@@ -602,38 +599,15 @@ li,
 .photo-grid--two {
  grid-template-columns: repeat(2, 1fr);
 }
-.photo-grid img {
- border: 1px solid #fff;
+.photo-grid--hero-pair {
+ grid-template-columns: 1.15fr 0.85fr;
 }
-.photo-story--portrait-grid .photo-grid img {
- aspect-ratio: 3 / 4;
-}
-.photo-grid--gym-three {
- grid-template-columns: 3fr 4fr 4fr;
-}
-.photo-grid--gym-pair {
- grid-template-columns: 3fr 4fr;
-}
-.photo-story--portrait-grid .photo-grid--gym-three img,
-.photo-story--portrait-grid .photo-grid--gym-pair img {
- aspect-ratio: 3 / 4;
-}
-.photo-grid--landscape-wide {
- grid-template-columns: repeat(2, 1fr);
-}
-.photo-grid--landscape-wide img {
- aspect-ratio: 16 / 9;
-}
-.photo-grid--landscape-standard img {
+.photo-story--compact .photo-grid img,
+.photo-story--compact .photo-feature {
  aspect-ratio: 4 / 3;
 }
-.photo-grid--portrait-standard img {
- aspect-ratio: 3 / 4;
-}
-.photo-grid--portrait-pair {
- grid-template-columns: repeat(2, 1fr);
-}
-.photo-grid--portrait-pair img {
+.photo-story--portrait-grid .photo-grid img,
+.photo-story--portrait-grid .photo-feature {
  aspect-ratio: 3 / 4;
 }
 .photo-story figcaption {
@@ -642,6 +616,9 @@ li,
  font-size: 8.2pt;
  line-height: 1.4;
  color: #505a72;
+}
+.activity-block {
+ margin: 0 0 8px;
 }
  footer.doc-foot {
   margin-top: 22px;
@@ -728,30 +705,36 @@ li,
   break-inside: avoid-page;
   page-break-inside: avoid;
  }
+ .activity-block h2 {
+  break-after: avoid-page;
+  page-break-after: avoid;
+ }
  .photo-story {
-  margin: 8px 0 12px;
+  margin: 6px 0 10px;
   padding: 0;
   border: 0;
   background: none;
-  break-inside: auto;
-  page-break-inside: auto;
+  break-inside: avoid-page;
+  page-break-inside: avoid;
  }
  .photo-grid {
-  gap: 6px;
-  margin-top: 6px;
-  break-inside: avoid-page;
-  page-break-inside: avoid;
+  gap: 5px;
+  margin-top: 5px;
  }
- .photo-feature,
+ .photo-story--compact .photo-grid img,
+ .photo-story--compact .photo-feature {
+  aspect-ratio: 4 / 3;
+  max-height: 48mm;
+ }
+ .photo-story--portrait-grid .photo-grid img,
+ .photo-story--portrait-grid .photo-feature {
+  aspect-ratio: 3 / 4;
+  max-height: 46mm;
+ }
  .photo-story figcaption {
-  break-inside: avoid-page;
-  page-break-inside: avoid;
- }
- .photo-feature {
-  width: auto;
-  max-width: 100%;
-  max-height: 88mm;
-  margin: 0 auto;
+  break-before: avoid-page;
+  page-break-before: avoid;
+  margin-top: 5px;
  }
  .closing-block {
   break-inside: avoid-page;
@@ -1064,194 +1047,177 @@ li,
    </p>
   </div>
 
-  <div class="section-intro">
-   <h2>3. Gym and physical wellbeing</h2>
-   <p>
-    Gym access has been a clear motivator. In the early weeks Emanuel wanted to try all the
-    machines (often around ten minutes on each), which made the gym block very long and put pressure
-    on the 12:00 swim transition. Staff then introduced a <strong>timer within the gym routine</strong>.
-    He responded positively: he could finish when the timer ended without completing every exercise.
-    By late June, he had settled into a preferred circuit when time allowed, including the treadmill,
-    air bike, racer bike and short crunch sets. Gym work supports strength, fitness, motor planning and
-    achievement; afternoon sport extends physical and social participation.
-   </p>
-  </div>
-  <figure class="photo-story photo-story--portrait-grid" aria-label="Emanuel taking part in his gym programme">
-   <img
-    class="photo-feature"
-    src="images/emanuel/gym-strength-machine.jpg"
-    alt="Emanuel smiling while using a strength machine in the gym"
-   />
-   <div class="photo-grid photo-grid--gym-three">
-    <img
-     src="images/emanuel/gym-bike.jpg"
-     alt="Emanuel completing cardiovascular exercise on an indoor bike"
-    />
-    <img
-     src="images/emanuel/gym-press.jpg"
-     alt="Emanuel completing a supported upper-body strength exercise"
-    />
-    <img
-     src="images/emanuel/gym-treadmill.jpg"
-     alt="Emanuel exercising on a treadmill"
-    />
+  <section class="activity-block">
+   <div class="section-intro">
+    <h2>3. Gym and physical wellbeing</h2>
+    <p>
+     Gym access has been a clear motivator. In the early weeks Emanuel wanted to try all the
+     machines (often around ten minutes on each), which made the gym block very long and put pressure
+     on the 12:00 swim transition. Staff then introduced a <strong>timer within the gym routine</strong>.
+     He responded positively: he could finish when the timer ended without completing every exercise.
+     By late June, he had settled into a preferred circuit when time allowed, including the treadmill,
+     air bike, racer bike and short crunch sets. Gym work supports strength, fitness, motor planning and
+     achievement; afternoon sport extends physical and social participation.
+    </p>
    </div>
-   <div class="photo-grid photo-grid--gym-pair">
-    <img
-     src="images/emanuel/physical-basketball-01.jpg"
-     alt="Emanuel practising a basketball shot during outdoor physical activity"
-    />
-    <img
-     src="images/emanuel/physical-basketball-02.jpg"
-     alt="Emanuel preparing to shoot a basketball during his physical wellbeing programme"
-    />
-   </div>
-   <figcaption>
-    Physical wellbeing programme: structured strength, cardiovascular exercise and basketball within Emanuel’s weekly routine.
-   </figcaption>
-  </figure>
+   <figure class="photo-story photo-story--compact" aria-label="Emanuel taking part in his gym programme">
+    <div class="photo-grid photo-grid--two">
+     <img
+      src="images/emanuel/gym-strength-machine.jpg"
+      alt="Emanuel smiling while using a strength machine in the gym"
+     />
+     <img
+      src="images/emanuel/gym-press.jpg"
+      alt="Emanuel completing a supported upper-body strength exercise"
+     />
+    </div>
+    <div class="photo-grid photo-grid--two">
+     <img
+      src="images/emanuel/gym-bike.jpg"
+      alt="Emanuel completing cardiovascular exercise on an indoor bike"
+     />
+     <img
+      src="images/emanuel/gym-treadmill.jpg"
+      alt="Emanuel exercising on a treadmill"
+     />
+    </div>
+    <div class="photo-grid photo-grid--two">
+     <img
+      src="images/emanuel/physical-basketball-01.jpg"
+      alt="Emanuel practising a basketball shot during outdoor physical activity"
+     />
+     <img
+      src="images/emanuel/physical-basketball-02.jpg"
+      alt="Emanuel preparing to shoot a basketball during his physical wellbeing programme"
+     />
+    </div>
+    <figcaption>
+     Physical wellbeing programme: strength, cardio and basketball within Emanuel’s weekly routine.
+    </figcaption>
+   </figure>
+  </section>
 
-  <div class="section-intro">
-   <h2>4. Aquatic activity</h2>
-   <p>
-    Swimming has become one of the highlights of Emanuel’s weekly programme. He engages positively
-    in pool sessions and remains motivated during both structured instruction and play-based
-    activities. Session feedback records a high level of engagement, including occasions when he requested
-    additional activities rather than taking an offered break. He practises breathing control, body
-    position through push and glide, kicking, coordination, rotation, arm movement and structured
-    aquatic games, with individual guidance helping him build confidence and maintain participation.
-   </p>
-   <p>
-    The aquatic programme supports water confidence, fitness, coordination,
-    emotional regulation, communication and turn-taking. It also gives Emanuel regular opportunities
-    to make choices, follow short multi-step instructions and sustain engagement within a predictable,
-    sensory-rich environment, in line with OT advice on proprioceptive and vestibular input.
-   </p>
-  </div>
-  <figure class="photo-story" aria-label="Emanuel taking part in his aquatic programme">
-   <div class="photo-grid photo-grid--landscape-wide">
-    <img
-     src="images/emanuel/swimming-01-supported-floating.jpg"
-     alt="Emanuel practising a supported back float during an aquatic session"
-    />
-    <img
-     src="images/emanuel/swimming-02-pool-movement.jpg"
-     alt="Emanuel practising movement through the water with pool equipment"
-    />
+  <section class="activity-block">
+   <div class="section-intro">
+    <h2>4. Aquatic activity</h2>
+    <p>
+     Swimming has become one of the highlights of Emanuel’s weekly programme. He engages positively
+     in pool sessions and remains motivated during both structured instruction and play-based
+     activities. Session feedback records a high level of engagement, including occasions when he requested
+     additional activities rather than taking an offered break. He practises breathing control, body
+     position through push and glide, kicking, coordination, rotation, arm movement and structured
+     aquatic games, with individual guidance helping him build confidence and maintain participation.
+    </p>
+    <p>
+     The aquatic programme supports water confidence, fitness, coordination,
+     emotional regulation, communication and turn-taking. It also gives Emanuel regular opportunities
+     to make choices, follow short multi-step instructions and sustain engagement within a predictable,
+     sensory-rich environment, in line with OT advice on proprioceptive and vestibular input.
+    </p>
    </div>
-   <div class="photo-grid photo-grid--landscape-standard">
-    <img
-     src="images/emanuel/swimming-03-communication.jpg"
-     alt="Emanuel communicating with his swimming instructor in the pool"
-    />
-    <img
-     src="images/emanuel/swimming-06-pool-edge.jpg"
-     alt="Emanuel working with his instructor near the pool edge"
-    />
-    <img
-     src="images/emanuel/swimming-08-ball-game.jpg"
-     alt="Emanuel taking part in a swimming and ball game"
-    />
+   <figure class="photo-story photo-story--compact" aria-label="Emanuel taking part in his aquatic programme">
+    <div class="photo-grid photo-grid--two">
+     <img
+      src="images/emanuel/swimming-01-supported-floating.jpg"
+      alt="Emanuel practising a supported back float during an aquatic session"
+     />
+     <img
+      src="images/emanuel/swimming-02-pool-movement.jpg"
+      alt="Emanuel practising movement through the water with pool equipment"
+     />
+    </div>
+    <div class="photo-grid photo-grid--two">
+     <img
+      src="images/emanuel/swimming-03-communication.jpg"
+      alt="Emanuel communicating with his swimming instructor in the pool"
+     />
+     <img
+      src="images/emanuel/swimming-04-ball-activity.jpg"
+      alt="Emanuel smiling during a structured ball activity in the pool"
+     />
+    </div>
+    <div class="photo-grid photo-grid--two">
+     <img
+      src="images/emanuel/swimming-09-visual-support.jpg"
+      alt="Emanuel using visual activity supports during his swimming session"
+     />
+     <img
+      src="images/emanuel/swimming-10-instruction.jpg"
+      alt="Emanuel receiving individual instruction in the pool"
+     />
+    </div>
+    <figcaption>
+     Aquatic programme: instruction, water confidence, movement, communication and structured play.
+    </figcaption>
+   </figure>
+  </section>
+
+  <section class="activity-block">
+   <div class="section-intro">
+    <h2>5. Classroom, vocational skills and communication</h2>
+    <p>
+     Classroom time is a central part of Emanuel’s Day Centre offer. A large share of it is
+     <strong>vocational and adult-oriented</strong>, designed to build practical routines that could
+     later transfer to roles such as stock assistant. He works on matching names and placing cards
+     into envelopes, assembling product boxes, packing and completing multi-step matching sequences.
+     Alongside this he practises maths, handwriting and other fine-motor table tasks that strengthen
+     attention, accuracy and perseverance.
+    </p>
+    <p>
+     He also takes part in circle time and shared group planning, where visual supports help him
+     follow the sequence of the day and make choices. This classroom structure gives him repeated
+     opportunities to practise turn-taking, waiting, commenting and negotiating preferred activities
+     with familiar staff.
+    </p>
+    <p>
+     Emanuel has particularly benefited from <strong>personalised digital visual aids</strong> that
+     clubSENsational created for him. These show his avatar completing the Day Centre routine and the
+     different places where he takes part in activities, including classroom, gym, pool and Hub
+     spaces. Introducing this digitally has made the daily sequence clearer and more motivating for
+     him, supported smoother transitions, and strengthened his understanding of what comes next. The
+     team will continue to implement and develop this approach as part of his ongoing support.
+    </p>
+    <p>
+     At the end of the day, the group completes a day review using photos of where each person has
+     been. Emanuel uses <strong>Colourful Semantics</strong> (who, doing what and where) to comment,
+     which supports communication, social attention and shared celebration of the day. He
+     communicates verbally and expresses preferences clearly: requesting a preferred sport, accepting
+     an alternative when needed, choosing a snack, asking for community activities, and deciding to
+     continue with swimming after a calm check-in.
+    </p>
    </div>
-   <div class="photo-grid photo-grid--portrait-standard">
-    <img
-     src="images/emanuel/swimming-04-ball-activity.jpg"
-     alt="Emanuel smiling during a structured ball activity in the pool"
-    />
-    <img
-     src="images/emanuel/swimming-05-supported-reach.jpg"
-     alt="Emanuel completing a supported reaching activity in the water"
-    />
-    <img
-     src="images/emanuel/swimming-07-back-float.jpg"
-     alt="Emanuel practising a back float with a buoyancy aid"
-    />
-   </div>
-   <div class="photo-grid photo-grid--portrait-pair">
-    <img
-     src="images/emanuel/swimming-09-visual-support.jpg"
-     alt="Emanuel using visual activity supports during his swimming session"
-    />
-    <img
-     src="images/emanuel/swimming-10-instruction.jpg"
-     alt="Emanuel receiving individual instruction in the pool"
-    />
-   </div>
-   <figcaption>
-    Aquatic programme: individual instruction, water confidence, movement, communication and structured play.
-   </figcaption>
-  </figure>
-  <div class="section-intro">
-   <h2>5. Classroom, vocational skills and communication</h2>
-   <p>
-    Classroom time is a central part of Emanuel’s Day Centre offer. A large share of it is
-    <strong>vocational and adult-oriented</strong>, designed to build practical routines that could
-    later transfer to roles such as stock assistant. He works on matching names and placing cards
-    into envelopes, assembling product boxes, packing and completing multi-step matching sequences.
-    Alongside this he practises maths, handwriting and other fine-motor table tasks that strengthen
-    attention, accuracy and perseverance.
-   </p>
-   <p>
-    He also takes part in circle time and shared group planning, where visual supports help him
-    follow the sequence of the day and make choices. This classroom structure gives him repeated
-    opportunities to practise turn-taking, waiting, commenting and negotiating preferred activities
-    with familiar staff.
-   </p>
-   <p>
-    Emanuel has particularly benefited from <strong>personalised digital visual aids</strong> that
-    clubSENsational created for him. These show his avatar completing the Day Centre routine and the
-    different places where he takes part in activities, including classroom, gym, pool and Hub
-    spaces. Introducing this digitally has made the daily sequence clearer and more motivating for
-    him, supported smoother transitions, and strengthened his understanding of what comes next. The
-    team will continue to implement and develop this approach as part of his ongoing support.
-   </p>
-   <p>
-    At the end of the day, the group completes a day review using photos of where each person has
-    been. Emanuel uses <strong>Colourful Semantics</strong> (who, doing what and where) to comment,
-    which supports communication, social attention and shared celebration of the day. He
-    communicates verbally and expresses preferences clearly: requesting a preferred sport, accepting
-    an alternative when needed, choosing a snack, asking for community activities, and deciding to
-    continue with swimming after a calm check-in.
-   </p>
-  </div>
-  <figure class="photo-story photo-story--portrait-grid" aria-label="Emanuel taking part in classroom, vocational and life-skills activities">
-   <img
-    class="photo-feature"
-    src="images/emanuel/vocational-packing-checklist.jpg"
-    alt="Emanuel completing a supported packing and matching checklist during a vocational classroom activity"
-   />
-   <div class="photo-grid">
-    <img
-     src="images/emanuel/class-05-circle-time.jpg"
-     alt="Emanuel choosing activities on the interactive circle-time board"
-    />
-    <img
-     src="images/emanuel/class-01-snack-visual.jpg"
-     alt="Emanuel at snack time with a first-and-then visual support"
-    />
-    <img
-     src="images/emanuel/class-06-wordsearch.jpg"
-     alt="Emanuel smiling while completing a word search activity"
-    />
-   </div>
-   <div class="photo-grid">
-    <img
-     src="images/emanuel/class-07-handwriting.jpg"
-     alt="Emanuel concentrating on a handwriting and word search task"
-    />
-    <img
-     src="images/emanuel/class-02-washing-up.jpg"
-     alt="Emanuel washing up as part of a life-skills task"
-    />
-    <img
-     src="images/emanuel/vocational-self-checkout.jpg"
-     alt="Emanuel using a self-service checkout during a supported vocational activity"
-    />
-   </div>
-   <figcaption>
-    Classroom and vocational participation: packing and matching sequences, circle time, table work, life skills and community practice.
-   </figcaption>
-  </figure>
+   <figure class="photo-story photo-story--portrait-grid" aria-label="Emanuel taking part in classroom, vocational and life-skills activities">
+    <div class="photo-grid photo-grid--hero-pair">
+     <img
+      class="photo-feature"
+      src="images/emanuel/vocational-packing-checklist.jpg"
+      alt="Emanuel completing a supported packing and matching checklist during a vocational classroom activity"
+     />
+     <img
+      src="images/emanuel/class-05-circle-time.jpg"
+      alt="Emanuel choosing activities on the interactive circle-time board"
+     />
+    </div>
+    <div class="photo-grid">
+     <img
+      src="images/emanuel/class-01-snack-visual.jpg"
+      alt="Emanuel at snack time with a first-and-then visual support"
+     />
+     <img
+      src="images/emanuel/class-07-handwriting.jpg"
+      alt="Emanuel concentrating on a handwriting and word search task"
+     />
+     <img
+      src="images/emanuel/vocational-self-checkout.jpg"
+      alt="Emanuel using a self-service checkout during a supported vocational activity"
+     />
+    </div>
+    <figcaption>
+     Classroom and vocational participation: packing sequences, circle time, table work and life skills.
+    </figcaption>
+   </figure>
+  </section>
+
   <h2>6. Community access: why 2:1 is essential</h2>
   <div class="callout important">
    <strong class="label">Support request</strong>
