@@ -78,6 +78,9 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     ],
     "youssef": [
       "2026-07-07"
+    ],
+    "dan": [
+      "2026-06-29"
     ]
   },
   "termStaffOffWeekdaysRangeByProfileKey": {
