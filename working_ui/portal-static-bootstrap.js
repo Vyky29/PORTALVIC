@@ -948,45 +948,82 @@
     }
 
     var VISUAL_VIC_WINDOW_NAME = "portalVisualVicPlanner";
-    var VISUAL_VIC_WINDOW_FEATURES = "noopener,noreferrer";
 
     function openVisualVicPlannerUrl(url) {
       var u = String(url || "").trim();
       if (!u) return false;
       try {
-        var w = window.open(u, VISUAL_VIC_WINDOW_NAME, VISUAL_VIC_WINDOW_FEATURES);
+        /* No noopener here — we may need to set location after auth handoff. */
+        var w = window.open(u, VISUAL_VIC_WINDOW_NAME);
         if (w) {
           try {
             w.focus();
           } catch (_) {}
+          return true;
         }
-        return !!w;
+      } catch (_) {}
+      try {
+        window.location.assign(u);
+        return true;
       } catch (_) {
         return false;
       }
     }
 
+    /**
+     * Open planner while still in the user-gesture stack.
+     * Awaiting auth.getSession() before window.open is blocked on iOS/Safari.
+     */
     window.portalOpenRoutinesPlanner = async function portalOpenRoutinesPlanner() {
       var handoff = handoffUrl;
       var login = loginUrl;
-      if (!handoff || !login) return false;
+      if (!handoff && !login) {
+        var fallback = String(window.ROUTINES_PLANNER_URL || "").trim();
+        return fallback ? openVisualVicPlannerUrl(fallback) : false;
+      }
+      var targetLogin = login || handoff;
+      var targetHandoff = handoff || login;
+
+      /* Must open synchronously in the click gesture; noopener would return null. */
+      var win = null;
+      try {
+        win = window.open("about:blank", VISUAL_VIC_WINDOW_NAME);
+      } catch (_) {
+        win = null;
+      }
+
+      function go(url) {
+        var u = String(url || "").trim();
+        if (!u) return false;
+        if (win && !win.closed) {
+          try {
+            win.location.replace(u);
+            try {
+              win.focus();
+            } catch (_) {}
+            return true;
+          } catch (_) {}
+        }
+        return openVisualVicPlannerUrl(u);
+      }
+
       var authClient = resolveRoutinesAuthClient();
       if (!authClient) {
-        return openVisualVicPlannerUrl(login);
+        return go(targetLogin);
       }
       try {
         var result = await authClient.auth.getSession();
         var session = result && result.data && result.data.session;
         if (!session || !session.access_token || !session.refresh_token) {
-          return openVisualVicPlannerUrl(login);
+          return go(targetLogin);
         }
         var hash = new URLSearchParams({
           access_token: session.access_token,
           refresh_token: session.refresh_token,
         }).toString();
-        return openVisualVicPlannerUrl(handoff + "#" + hash);
+        return go(String(targetHandoff).split("#")[0] + "#" + hash);
       } catch (_) {
-        return openVisualVicPlannerUrl(login);
+        return go(targetLogin);
       }
     };
 

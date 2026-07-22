@@ -968,7 +968,11 @@
 
         if (toolBtn.id === "topbarToolSessionPlanner") {
           if (typeof global.portalOpenRoutinesPlanner === "function") {
-            void global.portalOpenRoutinesPlanner();
+            void Promise.resolve(global.portalOpenRoutinesPlanner()).then(function (ok) {
+              if (ok) return;
+              var routinesUrl = String(global.ROUTINES_PLANNER_URL || "").trim();
+              if (routinesUrl) openExternalUrl(routinesUrl);
+            });
             return;
           }
           var routinesUrl = String(global.ROUTINES_PLANNER_URL || "").trim();
