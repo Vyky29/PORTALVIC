@@ -14,6 +14,7 @@
     token: "",
     pendingEmail: "",
     timer: null,
+    flow: "returning",
   };
 
   function cfg() {
@@ -164,6 +165,24 @@
     if (otp) otp.hidden = step !== "otp";
   }
 
+  function setFlow(flow) {
+    state.flow = flow === "new" ? "new" : "returning";
+    var ret = $("bookingLeadReturningBlock");
+    var neu = $("bookingLeadNewBlock");
+    var tabR = $("bookingLeadTabReturning");
+    var tabN = $("bookingLeadTabNew");
+    if (ret) ret.hidden = state.flow !== "returning";
+    if (neu) neu.hidden = state.flow !== "new";
+    if (tabR) {
+      tabR.classList.toggle("is-active", state.flow === "returning");
+      tabR.setAttribute("aria-selected", state.flow === "returning" ? "true" : "false");
+    }
+    if (tabN) {
+      tabN.classList.toggle("is-active", state.flow === "new");
+      tabN.setAttribute("aria-selected", state.flow === "new" ? "true" : "false");
+    }
+  }
+
   function setMsg(elId, text, isError) {
     var el = $(elId);
     if (!el) return;
@@ -211,15 +230,105 @@
   function openGate() {
     setLocked(true);
     showStep("details");
+    setFlow(state.flow || "returning");
     showModal(true);
-    var nameEl = $("bookingLeadParentName") || $("bookingLeadFirstName");
-    if (nameEl) {
+    var focusEl =
+      state.flow === "new"
+        ? $("bookingLeadParentName") || $("bookingLeadFirstName")
+        : $("bookingLeadReturningEmail");
+    if (focusEl) {
       try {
-        nameEl.focus();
+        focusEl.focus();
       } catch (_e) {
         /* ignore */
       }
     }
+  }
+
+  function afterOtpSent(email, out, msgId, btn, idleLabel) {
+    state.pendingEmail = email;
+    var hint = (out.data && out.data.email_hint) || email;
+    var otpHint = $("bookingLeadOtpHint");
+    if (otpHint) {
+      var recog = (out.data && out.data.recognition) || "";
+      var prefix =
+        recog === "existing_client"
+          ? "Welcome back — we recognised your family. "
+          : recog === "returning_lead"
+            ? "Welcome back. "
+            : "";
+      otpHint.textContent =
+        prefix + "We sent a 6-digit code to " + hint + ". Enter it below to explore availability.";
+    }
+    showStep("otp");
+    var codeEl = $("bookingLeadCode");
+    if (codeEl) {
+      codeEl.value = "";
+      try {
+        codeEl.focus();
+      } catch (_e2) {
+        /* ignore */
+      }
+    }
+    setMsg("bookingLeadOtpMsg", "", false);
+    setBusy(btn, false, idleLabel);
+  }
+
+  async function submitReturning(ev) {
+    if (ev) ev.preventDefault();
+    var email = String(
+      ($("bookingLeadReturningEmail") && $("bookingLeadReturningEmail").value) || ""
+    ).trim();
+    var phone = String(
+      ($("bookingLeadReturningMobile") && $("bookingLeadReturningMobile").value) || ""
+    ).trim();
+    var privacy = !!(
+      $("bookingLeadReturningPrivacy") && $("bookingLeadReturningPrivacy").checked
+    );
+    var btn = $("bookingLeadReturningSend");
+
+    setMsg("bookingLeadReturningMsg", "", false);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setMsg("bookingLeadReturningMsg", "Please enter a valid email address.", true);
+      return;
+    }
+    if (!privacy) {
+      setMsg("bookingLeadReturningMsg", "Please accept the Privacy Notice to continue.", true);
+      return;
+    }
+
+    setBusy(btn, true, "Sending code…");
+    try {
+      var out = await api("portal-booking-lead-otp-request", {
+        flow: "returning",
+        parent_email: email,
+        parent_phone: phone,
+        privacy_accepted: true,
+        privacy_notice_version: PRIVACY_VERSION,
+        first_page_visited: (global.location && global.location.pathname) || "/bookingportal",
+      });
+      if (!out.res.ok || !out.data || !out.data.ok) {
+        var err = (out.data && out.data.error) || "send_failed";
+        var human =
+          err === "not_recognised"
+            ? "We couldn’t find that email on file. Try your club email, add the phone on file, or use New visitor."
+            : err === "privacy_required"
+              ? "Please accept the Privacy Notice to continue."
+              : err === "email_invalid"
+                ? "Please enter a valid email address."
+                : err === "mobile_invalid"
+                  ? "Add the phone number on your club record, or use New visitor."
+                  : "We couldn’t send a code just now. Please try again.";
+        setMsg("bookingLeadReturningMsg", human, true);
+        setBusy(btn, false, "Send access code");
+        return;
+      }
+      afterOtpSent(email, out, "bookingLeadReturningMsg", btn, "Send access code");
+      return;
+    } catch (_e3) {
+      setMsg("bookingLeadReturningMsg", "Network error — please try again.", true);
+    }
+    setBusy(btn, false, "Send access code");
   }
 
   async function submitDetails(ev) {
@@ -256,6 +365,7 @@
     setBusy(btn, true, "Sending code…");
     try {
       var out = await api("portal-booking-lead-otp-request", {
+        flow: "new",
         parent_name: parentName,
         parent_email: email,
         parent_phone: phone,
@@ -277,31 +387,15 @@
                   ? "Please enter the parent/carer name."
                   : "We couldn’t send a code just now. Please try again.";
         setMsg("bookingLeadDetailsMsg", human, true);
-        setBusy(btn, false, "Send access code");
+        setBusy(btn, false, "Request access code");
         return;
       }
-      state.pendingEmail = email;
-      var hint = (out.data && out.data.email_hint) || email;
-      var otpHint = $("bookingLeadOtpHint");
-      if (otpHint) {
-        otpHint.textContent =
-          "We sent a 6-digit code to " + hint + ". Enter it below to explore availability.";
-      }
-      showStep("otp");
-      var codeEl = $("bookingLeadCode");
-      if (codeEl) {
-        codeEl.value = "";
-        try {
-          codeEl.focus();
-        } catch (_e2) {
-          /* ignore */
-        }
-      }
-      setMsg("bookingLeadOtpMsg", "", false);
+      afterOtpSent(email, out, "bookingLeadDetailsMsg", btn, "Request access code");
+      return;
     } catch (_e3) {
       setMsg("bookingLeadDetailsMsg", "Network error — please try again.", true);
     }
-    setBusy(btn, false, "Send access code");
+    setBusy(btn, false, "Request access code");
   }
 
   async function submitOtp(ev) {
@@ -341,11 +435,25 @@
 
   function wireUi() {
     var detailsForm = $("bookingLeadDetailsForm");
+    var returningForm = $("bookingLeadReturningForm");
     var otpForm = $("bookingLeadOtpForm");
     var backBtn = $("bookingLeadBack");
     var resendBtn = $("bookingLeadResend");
+    var tabR = $("bookingLeadTabReturning");
+    var tabN = $("bookingLeadTabNew");
     if (detailsForm) detailsForm.addEventListener("submit", submitDetails);
+    if (returningForm) returningForm.addEventListener("submit", submitReturning);
     if (otpForm) otpForm.addEventListener("submit", submitOtp);
+    if (tabR) {
+      tabR.addEventListener("click", function () {
+        setFlow("returning");
+      });
+    }
+    if (tabN) {
+      tabN.addEventListener("click", function () {
+        setFlow("new");
+      });
+    }
     if (backBtn) {
       backBtn.addEventListener("click", function () {
         showStep("details");
@@ -355,9 +463,11 @@
     if (resendBtn) {
       resendBtn.addEventListener("click", function () {
         showStep("details");
-        submitDetails();
+        if (state.flow === "returning") submitReturning();
+        else submitDetails();
       });
     }
+    setFlow(state.flow || "returning");
   }
 
   function guardClicks(root) {

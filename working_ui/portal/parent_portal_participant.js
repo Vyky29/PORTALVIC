@@ -759,22 +759,24 @@
 
   function formerClientNoticeHtml(data) {
     var hasFb = formerHasFeedback(data);
-    var crash = canBookExtrasFor(data) ? crashBookBtnHtml(data) : "";
     return (
       '<aside class="pp-hub-reenrol pp-hub-reenrol--former" role="status" aria-label="Former client">' +
       '<div class="pp-hub-reenrol__copy">' +
       "<strong>Former client</strong>" +
       '<span class="pp-muted">' +
       (hasFb
-        ? "This place is no longer active. You can still open past session notes below. For anything else, please contact the office."
-        : "This place is no longer active, so Family portal tools are not available. If you need access again, please contact the office / admin.") +
+        ? "Family portal access for this place has ended. You can still open past session notes below. To book again, use the booking portal, or contact admin."
+        : "Family portal access for this place has ended. To book again, use the booking portal, or contact admin.") +
       "</span>" +
-      (crash
-        ? '<span class="pp-muted">July crash course is fully booked — join the waiting list for leftover / spare days, or leave details for the next courses.</span>'
-        : "") +
       "</div>" +
-      (crash ? '<div class="pp-hub-reenrol__actions">' + crash + "</div>" : "") +
-      "</aside>"
+      '<div class="pp-hub-reenrol__actions">' +
+      '<a class="pp-btn pp-btn--primary" href="' +
+      esc(BOOKING_PORTAL_URL) +
+      '" target="_blank" rel="noopener noreferrer">Book online</a>' +
+      '<a class="pp-btn pp-btn--ghost" href="' +
+      esc(OFFICE_CONTACT_MAILTO) +
+      '">Contact admin</a>' +
+      "</div></aside>"
     );
   }
 
@@ -1243,7 +1245,8 @@
   }
 
   function bookingPortalQuickAccessBtnHtml(data, icoFn) {
-    if (isFormerClient(data) || !familyAcceptedNextYear(data)) return "";
+    /* Former + re-enrolled (incl. LA/NHS office-auto): booking portal for extra services. */
+    if (!isFormerClient(data) && !familyAcceptedNextYear(data)) return "";
     return (
       '<a class="pp-hub-shortcut pp-hub-shortcut--book-portal" href="' +
       esc(BOOKING_PORTAL_URL) +
@@ -1543,9 +1546,6 @@
 
   function hubShortcutsHtml(data, opts) {
     if (isFormerClient(data)) {
-      if (!formerHasFeedback(data) && !hasAchievementPhotos(data) && !canBookExtrasFor(data)) {
-        return "";
-      }
       var notesUnreadF = unreadWeeklyNotesCount(data, opts);
       var notesBadgeF =
         opts && typeof opts.unreadBadgeHtml === "function" && notesUnreadF > 0
@@ -1562,6 +1562,7 @@
         '<section class="pp-hub-shortcuts" aria-label="Quick access">' +
         '<p class="pp-pax-info-section-label">Quick access</p>' +
         '<div class="pp-hub-shortcuts__grid">' +
+        bookingPortalQuickAccessBtnHtml(data, icoF) +
         (formerHasFeedback(data)
           ? hubShortcutBtn(
               "weekly_notes",
@@ -1579,7 +1580,6 @@
             )
           : "") +
         (hasAchievementPhotos(data) ? photosShortcutBtnHtml(icoF) : "") +
-        (canBookExtrasFor(data) ? crashQuickAccessBtnHtml(data, icoF) : "") +
         "</div></section>"
       );
     }

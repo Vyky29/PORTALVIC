@@ -1128,6 +1128,39 @@
       text-transform: uppercase;
       color: var(--blueDeep);
     }
+    .booking-gate__tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin: 0 0 14px;
+      min-width: 0;
+    }
+    .booking-gate__tab {
+      min-width: 0;
+      margin: 0;
+      padding: 8px 10px;
+      border: 1px solid rgba(23, 50, 71, 0.16);
+      border-radius: 10px;
+      background: #f4f7fa;
+      color: #3d5160;
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      line-height: 1.25;
+      cursor: pointer;
+      overflow-wrap: break-word;
+    }
+    .booking-gate__tab.is-active {
+      background: #e8f1fb;
+      border-color: rgba(31, 106, 148, 0.45);
+      color: var(--blueDeep);
+    }
+    .booking-gate__optional {
+      font-weight: 500;
+      color: var(--muted);
+      text-transform: none;
+      letter-spacing: 0;
+    }
     .booking-gate__title {
       margin: 0 0 8px;
       font-size: clamp(1.35rem, 4vw, 1.65rem);
@@ -1384,67 +1417,135 @@
     >
       <div id="bookingLeadStepDetails">
         <p class="booking-gate__eyebrow">Parent / guardian</p>
-        <h2 class="booking-gate__title" id="bookingLeadTitle">Tell us who is looking</h2>
-        <p class="booking-gate__lede" id="bookingLeadLede">
-          Enter the parent/carer details used on our registration form to explore availability and begin a booking.
-          Already with us?
-          <a href="/parent" style="color:var(--blueDeep);font-weight:700">Open the family portal</a>.
-        </p>
-        <form id="bookingLeadDetailsForm" novalidate>
-          <div class="booking-gate__field">
-            <label for="bookingLeadParentName">Name <span aria-hidden="true">*</span></label>
-            <input
-              id="bookingLeadParentName"
-              name="parent_name"
-              type="text"
-              autocomplete="name"
-              required
-              maxlength="120"
-              placeholder="Parent / carer full name"
-            />
-          </div>
-          <div class="booking-gate__field">
-            <label for="bookingLeadEmail">Email address <span aria-hidden="true">*</span></label>
-            <input
-              id="bookingLeadEmail"
-              name="parent_email"
-              type="email"
-              autocomplete="email"
-              required
-              inputmode="email"
-            />
-          </div>
-          <div class="booking-gate__field">
-            <label for="bookingLeadMobile">Phone <span aria-hidden="true">*</span></label>
-            <input
-              id="bookingLeadMobile"
-              name="parent_phone"
-              type="tel"
-              autocomplete="tel"
-              required
-              inputmode="tel"
-            />
-          </div>
-          <label class="booking-gate__check">
-            <input id="bookingLeadPrivacy" name="privacy_accepted" type="checkbox" required />
-            <span>
-              I have read and accept the
-              <a href="/parent/terms" target="_blank" rel="noopener">Privacy Notice</a>
-              (required).
-            </span>
-          </label>
-          <label class="booking-gate__check">
-            <input id="bookingLeadMarketing" name="marketing_consent" type="checkbox" />
-            <span>
-              I would like to receive news, availability updates and information about ClubSENsational services
-              (optional).
-            </span>
-          </label>
-          <p class="booking-gate__msg" id="bookingLeadDetailsMsg" hidden></p>
-          <div class="booking-gate__actions">
-            <button type="submit" class="btn btn--book" id="bookingLeadSendCode">Send access code</button>
-          </div>
-        </form>
+        <div class="booking-gate__tabs" role="tablist" aria-label="Access type">
+          <button
+            type="button"
+            class="booking-gate__tab is-active"
+            id="bookingLeadTabReturning"
+            role="tab"
+            aria-selected="true"
+            data-booking-gate-flow="returning"
+          >
+            Already with us
+          </button>
+          <button
+            type="button"
+            class="booking-gate__tab"
+            id="bookingLeadTabNew"
+            role="tab"
+            aria-selected="false"
+            data-booking-gate-flow="new"
+          >
+            New visitor
+          </button>
+        </div>
+
+        <div id="bookingLeadReturningBlock">
+          <h2 class="booking-gate__title" id="bookingLeadTitle">Welcome back</h2>
+          <p class="booking-gate__lede" id="bookingLeadLede">
+            Existing club families and anyone who has already registered on this booking portal can enter with email
+            and a one-time code — no need to request access again.
+            Active family portal users can also
+            <a href="/parent" style="color:var(--blueDeep);font-weight:700">open the family portal</a>.
+          </p>
+          <form id="bookingLeadReturningForm" novalidate>
+            <div class="booking-gate__field">
+              <label for="bookingLeadReturningEmail">Email on file <span aria-hidden="true">*</span></label>
+              <input
+                id="bookingLeadReturningEmail"
+                name="parent_email"
+                type="email"
+                autocomplete="email"
+                required
+                inputmode="email"
+              />
+            </div>
+            <div class="booking-gate__field">
+              <label for="bookingLeadReturningMobile">Phone on file <span class="booking-gate__optional">(if email differs)</span></label>
+              <input
+                id="bookingLeadReturningMobile"
+                name="parent_phone"
+                type="tel"
+                autocomplete="tel"
+                inputmode="tel"
+              />
+            </div>
+            <label class="booking-gate__check">
+              <input id="bookingLeadReturningPrivacy" name="privacy_accepted" type="checkbox" required />
+              <span>
+                I have read and accept the
+                <a href="/parent/terms" target="_blank" rel="noopener">Privacy Notice</a>
+                (required).
+              </span>
+            </label>
+            <p class="booking-gate__msg" id="bookingLeadReturningMsg" hidden></p>
+            <div class="booking-gate__actions">
+              <button type="submit" class="btn btn--book" id="bookingLeadReturningSend">Send access code</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="bookingLeadNewBlock" hidden>
+          <h2 class="booking-gate__title">Tell us who is looking</h2>
+          <p class="booking-gate__lede">
+            New to ClubSENsational? Enter parent/carer details to request access, explore availability, and begin a booking.
+          </p>
+          <form id="bookingLeadDetailsForm" novalidate>
+            <div class="booking-gate__field">
+              <label for="bookingLeadParentName">Name <span aria-hidden="true">*</span></label>
+              <input
+                id="bookingLeadParentName"
+                name="parent_name"
+                type="text"
+                autocomplete="name"
+                required
+                maxlength="120"
+                placeholder="Parent / carer full name"
+              />
+            </div>
+            <div class="booking-gate__field">
+              <label for="bookingLeadEmail">Email address <span aria-hidden="true">*</span></label>
+              <input
+                id="bookingLeadEmail"
+                name="parent_email"
+                type="email"
+                autocomplete="email"
+                required
+                inputmode="email"
+              />
+            </div>
+            <div class="booking-gate__field">
+              <label for="bookingLeadMobile">Phone <span aria-hidden="true">*</span></label>
+              <input
+                id="bookingLeadMobile"
+                name="parent_phone"
+                type="tel"
+                autocomplete="tel"
+                required
+                inputmode="tel"
+              />
+            </div>
+            <label class="booking-gate__check">
+              <input id="bookingLeadPrivacy" name="privacy_accepted" type="checkbox" required />
+              <span>
+                I have read and accept the
+                <a href="/parent/terms" target="_blank" rel="noopener">Privacy Notice</a>
+                (required).
+              </span>
+            </label>
+            <label class="booking-gate__check">
+              <input id="bookingLeadMarketing" name="marketing_consent" type="checkbox" />
+              <span>
+                I would like to receive news, availability updates and information about ClubSENsational services
+                (optional).
+              </span>
+            </label>
+            <p class="booking-gate__msg" id="bookingLeadDetailsMsg" hidden></p>
+            <div class="booking-gate__actions">
+              <button type="submit" class="btn btn--book" id="bookingLeadSendCode">Request access code</button>
+            </div>
+          </form>
+        </div>
       </div>
 
       <div id="bookingLeadStepOtp" hidden>
@@ -1482,7 +1583,7 @@
 
   <script src="/portal/portal_booking_offer.js?v=20260716-daycentre-info"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
-  <script src="/portal/portal_booking_lead_gate.js?v=20260722-lead-gate2"></script>
+  <script src="/portal/portal_booking_lead_gate.js?v=20260722-returning-access"></script>
   <script>
 (function () {
   "use strict";
