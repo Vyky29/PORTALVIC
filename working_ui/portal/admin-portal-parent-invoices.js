@@ -284,19 +284,23 @@
   function statusChip(payment, share) {
     var pay = String(payment || 'unpaid');
     var sh = String(share || 'hidden');
-    var tone = 'pend';
-    if (pay === 'paid') tone = 'ok';
-    else if (pay === 'void') tone = 'warn';
-    else if (pay === 'partial') tone = 'info';
-    else if (pay === 'pending_confirmation') tone = 'pend';
+    /* Green = paid only; orange = unpaid only. Everything else uses neutral tones. */
+    var payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--other';
+    if (pay === 'paid') payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--paid';
+    else if (pay === 'unpaid') payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--unpaid';
+    else if (pay === 'pending_confirmation') payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--pending';
+    else if (pay === 'partial') payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--pending';
+    var shareCls =
+      'pp-inv-acc__pay-chip ' +
+      (sh === 'ready' ? 'pp-inv-acc__pay-chip--shared' : 'pp-inv-acc__pay-chip--hidden');
     return (
-      '<span class="chip chip--' +
-      tone +
+      '<span class="' +
+      payCls +
       '">' +
       esc(pay.replace(/_/g, ' ')) +
       '</span> ' +
-      '<span class="chip chip--' +
-      (sh === 'ready' ? 'ok' : 'warn') +
+      '<span class="' +
+      shareCls +
       '">' +
       esc(sh) +
       '</span>'
@@ -770,11 +774,17 @@
     });
   }
 
-  function summaryFilterChip(filter, label, tone) {
+  function summaryFilterChip(filter, label, payTone) {
+    var cls = 'pp-inv-acc__pay-chip pp-inv-acc__filter-chip';
+    if (payTone === 'paid') cls += ' pp-inv-acc__pay-chip--paid';
+    else if (payTone === 'unpaid') cls += ' pp-inv-acc__pay-chip--unpaid';
+    else if (payTone === 'pending') cls += ' pp-inv-acc__pay-chip--pending';
+    else if (payTone === 'hidden') cls += ' pp-inv-acc__pay-chip--hidden';
+    else cls += ' pp-inv-acc__pay-chip--other';
     return (
-      '<button type="button" class="chip chip--' +
-      tone +
-      ' pp-inv-acc__filter-chip" data-inv-filter="' +
+      '<button type="button" class="' +
+      cls +
+      '" data-inv-filter="' +
       esc(filter) +
       '" title="Show ' +
       esc(label) +
@@ -788,7 +798,6 @@
     var unpaid = 0;
     var paid = 0;
     var pending = 0;
-    var voidN = 0;
     var hidden = 0;
     var xeroFail = 0;
     var xeroMissing = 0;
@@ -799,9 +808,9 @@
         return;
       }
       var pay = String(inv.payment_status || 'unpaid');
+      if (pay === 'void') return; /* void chips not shown */
       if (pay === 'paid') paid += 1;
       else if (pay === 'pending_confirmation') pending += 1;
-      else if (pay === 'void') voidN += 1;
       else unpaid += 1;
       if (String(inv.share_status || '') === 'hidden') hidden += 1;
       /* Xero chips: paid Portal INV-Ps only */
@@ -815,19 +824,16 @@
       chips.push(autoReenrolledChipHtml());
     }
     if (unpaid) {
-      chips.push(summaryFilterChip('unpaid', unpaid + ' unpaid', 'pend'));
+      chips.push(summaryFilterChip('unpaid', unpaid + ' unpaid', 'unpaid'));
     }
     if (pending) {
-      chips.push(summaryFilterChip('pending', pending + ' pending', 'pend'));
+      chips.push(summaryFilterChip('pending', pending + ' pending', 'pending'));
     }
     if (paid) {
-      chips.push(summaryFilterChip('paid', paid + ' paid', 'ok'));
-    }
-    if (voidN) {
-      chips.push(summaryFilterChip('void', voidN + ' void', 'warn'));
+      chips.push(summaryFilterChip('paid', paid + ' paid', 'paid'));
     }
     if (hidden) {
-      chips.push(summaryFilterChip('hidden', hidden + ' hidden', 'warn'));
+      chips.push(summaryFilterChip('hidden', hidden + ' hidden', 'hidden'));
     }
     if (xeroFail) {
       chips.push('<span class="pp-inv-acc__xero pp-inv-acc__xero--fail">Xero failed ×' + xeroFail + '</span>');
@@ -1331,28 +1337,38 @@
       '.pp-inv-acc__amt{font-weight:700;flex:1 1 160px;min-width:0;overflow-wrap:break-word;text-align:right}' +
       '.pp-inv-acc__methods{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0;flex:0 1 auto;max-width:100%}' +
       '.pp-inv-acc__method{font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid transparent}' +
-      '.pp-inv-acc__method--gc{color:#065f46;background:#d1fae5;border-color:#a7f3d0}' +
-      '.pp-inv-acc__method--la{color:#5b21b6;background:#ede9fe;border-color:#c4b5fd}' +
-      '.pp-inv-acc__method--bank{color:#9a3412;background:#ffedd5;border-color:#fdba74}' +
-      '.pp-inv-acc__method--plan{color:#0f766e;background:#ccfbf1;border-color:#5eead4}' +
+      /* Methods: never green (paid) or orange (unpaid) */ +
+      '.pp-inv-acc__method--gc{color:#9f1239;background:#ffe4e6;border-color:#fda4af}' +
+      '.pp-inv-acc__method--la{color:#6b21a8;background:#f3e8ff;border-color:#d8b4fe}' +
+      '.pp-inv-acc__method--bank{color:#44403c;background:#f5f5f4;border-color:#d6d3d1}' +
+      '.pp-inv-acc__method--plan{color:#0e7490;background:#cffafe;border-color:#67e8f9}' +
       '.pp-inv-acc__method--auto{color:#5b21b6;background:#ede9fe;border-color:#c4b5fd;letter-spacing:.03em}' +
-      '.pp-inv-acc__method--card{color:#1e3a8a;background:#dbeafe;border-color:#93c5fd}' +
+      '.pp-inv-acc__method--card{color:#1d4ed8;background:#dbeafe;border-color:#93c5fd}' +
       '.pp-inv-acc__method--admin{color:#334155;background:#e2e8f0;border-color:#cbd5e1}' +
       '.pp-inv-acc__method--other{color:#4a6578;background:#eef2f5;border-color:#d5dee6}' +
       '.pp-inv-acc__plan-dates{max-width:100%}' +
       '.pp-inv-acc__fund{font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid transparent}' +
-      '.pp-inv-acc__fund--private{color:#9a3412;background:#ffedd5;border-color:#fdba74}' +
-      '.pp-inv-acc__fund--direct{color:#065f46;background:#d1fae5;border-color:#a7f3d0}' +
-      '.pp-inv-acc__fund--la{color:#5b21b6;background:#ede9fe;border-color:#c4b5fd}' +
+      /* Funding: distinct from methods + paid/unpaid */ +
+      '.pp-inv-acc__fund--private{color:#3730a3;background:#e0e7ff;border-color:#a5b4fc}' +
+      '.pp-inv-acc__fund--direct{color:#0369a1;background:#e0f2fe;border-color:#7dd3fc}' +
+      '.pp-inv-acc__fund--la{color:#86198f;background:#fae8ff;border-color:#f0abfc}' +
+      /* Payment status: green=paid, orange=unpaid only */ +
+      '.pp-inv-acc__pay-chip{font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid transparent;display:inline-flex;align-items:center}' +
+      '.pp-inv-acc__pay-chip--paid{color:#065f46;background:#d1fae5;border-color:#6ee7b7}' +
+      '.pp-inv-acc__pay-chip--unpaid{color:#9a3412;background:#ffedd5;border-color:#fdba74}' +
+      '.pp-inv-acc__pay-chip--pending{color:#1e40af;background:#dbeafe;border-color:#93c5fd}' +
+      '.pp-inv-acc__pay-chip--shared{color:#1e3a8a;background:#e0e7ff;border-color:#a5b4fc}' +
+      '.pp-inv-acc__pay-chip--hidden{color:#475569;background:#f1f5f9;border-color:#cbd5e1}' +
+      '.pp-inv-acc__pay-chip--other{color:#4a6578;background:#eef2f5;border-color:#d5dee6}' +
       '.pp-inv-acc__status{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}' +
-      '.pp-inv-acc__xero{font-size:11px;color:#92400e}' +
-      '.pp-inv-acc__xero--ok{color:#065f46}' +
+      '.pp-inv-acc__xero{font-size:11px;color:#64748b}' +
+      '.pp-inv-acc__xero--ok{color:#1e40af}' +
       '.pp-inv-acc__xero--fail{color:#b91c1c}' +
       '.pp-inv-acc__body{border-top:1px solid #e8eef3;padding:12px;background:#fafcfd;min-width:0}' +
       '.pp-inv-acc__cards{display:flex;flex-direction:column;gap:10px;min-width:0}' +
       '.pp-inv-acc__card{border:1px solid #e2eaf0;border-radius:8px;padding:10px;background:#fff;min-width:0}' +
       '.pp-inv-acc__card--paid{border-color:#86efac;background:#f0fdf4}' +
-      '.pp-inv-acc__filter-chip{border:0;cursor:pointer;font:inherit;line-height:inherit}' +
+      '.pp-inv-acc__filter-chip{border:1px solid transparent;cursor:pointer;font:inherit;line-height:inherit}' +
       '.pp-inv-acc__filter-chip:hover{filter:brightness(.96)}' +
       '.pp-inv-acc__grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.7fr) minmax(0,.9fr);gap:12px;min-width:0}' +
       '@media (max-width:820px){.pp-inv-acc__grid{grid-template-columns:1fr}}' +
@@ -1989,7 +2005,7 @@
     return (
       '<div class="card" style="margin-bottom:14px">' +
       '<div class="card-h"><h3>Re-enrolments &amp; shared invoices</h3>' +
-      '<span class="chip chip--pend" id="portalParentInvoicesMetaEmbed">…</span></div>' +
+      '<span class="pp-inv-acc__pay-chip pp-inv-acc__pay-chip--other" id="portalParentInvoicesMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
       '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Track instalments after re-enrolment. Use <strong>Year / Term</strong> filters to switch booked totals. Rows are sorted by re-enrol date. LA sheet clients appear as office auto even without a family invoice. Day Centre places start 1 Sept (no half-term; Christmas closed). <strong>Push paid to Xero</strong> sends only <em>paid</em> Portal INV-Ps (creates the ACCREC <em>awaiting payment</em> — mark Paid + reconcile in Xero). Unpaid drafts stay in Portal until you mark paid. <a href="/admin_finance_guide.html" target="_blank" rel="noopener">Finance guide (EN/ES)</a>.</p>' +
       '<div class="toolbar" style="margin-bottom:8px;flex-wrap:wrap;gap:8px;align-items:center">' +
