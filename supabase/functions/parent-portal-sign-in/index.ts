@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
   const { data: contacts, error: cErr } = await supabase
     .from("portal_parent_contacts")
     .select(
-      "contact_id, parent_person_id, child_first_name, child_display, parent_display, email, mobile",
+      "contact_id, parent_person_id, child_first_name, child_display, parent_display, email, mobile, in_class",
     )
     .limit(4000);
   if (cErr) {
@@ -113,13 +113,44 @@ Deno.serve(async (req) => {
     return parentPortalJsonInvalid(500);
   }
 
-  const matchedRows = (contacts || []).filter((row) => childFirstNameMatchesLogin(row, firstName));
-  if (!matchedRows.length) {
+  const nameMatched = (contacts || []).filter((row) => childFirstNameMatchesLogin(row, firstName));
+  if (!nameMatched.length) {
     await recordFail();
     return parentPortalJsonInvalid();
   }
 
+  const nameContactIds = [
+    ...new Set(nameMatched.map((r) => String(r.contact_id || "").trim()).filter(Boolean)),
+  ];
+  const { data: participantFlags } = nameContactIds.length
+    ? await supabase
+      .from("portal_participants")
+      .select("contact_id, in_class")
+      .in("contact_id", nameContactIds)
+    : { data: [] as Array<{ contact_id?: string; in_class?: boolean | null }> };
+  const inClassByContact = new Map(
+    (participantFlags || []).map((p) => [String(p.contact_id || ""), p.in_class]),
+  );
+
+  const isActiveRow = (row: { contact_id?: string; in_class?: boolean | null }) => {
+    const cid = String(row.contact_id || "");
+    const flag = inClassByContact.has(cid) ? inClassByContact.get(cid) : row.in_class;
+    return flag !== false;
+  };
+
   const master = isMasterPin(pinDigits);
+  /** Former = in_class false — no family PIN login. Office master PIN still allowed. */
+  const matchedRows = master ? nameMatched : nameMatched.filter(isActiveRow);
+  if (!matchedRows.length) {
+    await recordFail();
+    return json(403, {
+      ok: false,
+      error: "former_client",
+      message:
+        "Family portal access has ended for this place. Please use the booking portal or contact admin.",
+    });
+  }
+
   let matchedParentId: string | null = null;
   let matchedContactId: string | null = null;
 

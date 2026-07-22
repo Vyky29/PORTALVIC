@@ -1668,12 +1668,15 @@
         return;
       }
       if (!res.ok || !body.ok || !body.session_token) {
+        var errCode = body && body.error;
         showNotice(
           $("ppNotice"),
           "error",
-          body && body.error === "ambiguous_name"
-            ? "That first name matches more than one family. Contact the office."
-            : "We could not sign you in. Check the first name and PIN, then try again.",
+          errCode === "former_client"
+            ? "Family portal access has ended for this place. Use the booking portal to book again, or contact admin."
+            : errCode === "ambiguous_name"
+              ? "That first name matches more than one family. Contact the office."
+              : "We could not sign you in. Check the first name and PIN, then try again.",
         );
         return;
       }
