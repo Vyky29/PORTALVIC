@@ -983,11 +983,12 @@
       }
       var targetLogin = login || handoff;
       var targetHandoff = handoff || login;
+      var bridgeUrl = String(targetHandoff || targetLogin).split("#")[0];
 
-      /* Must open synchronously in the click gesture; noopener would return null. */
+      /* Open visualVIC handoff immediately (not about:blank) while we still have the tap gesture. */
       var win = null;
       try {
-        win = window.open("about:blank", VISUAL_VIC_WINDOW_NAME);
+        win = window.open(bridgeUrl || targetLogin, VISUAL_VIC_WINDOW_NAME);
       } catch (_) {
         win = null;
       }
