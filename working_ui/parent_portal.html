@@ -2392,6 +2392,43 @@
       width: 100%;
       max-width: 100%;
     }
+    .pp-hub-slot-live {
+      margin: 0 0 16px;
+      padding: 12px 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(194, 65, 12, 0.28);
+      background: #fff7ed;
+      min-width: 0;
+    }
+    .pp-hub-slot-live__copy {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+      margin: 0 0 12px;
+    }
+    .pp-hub-slot-live__copy strong {
+      font-size: 14px;
+      color: #9a3412;
+      overflow-wrap: break-word;
+    }
+    .pp-hub-slot-live__text {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.4;
+      overflow-wrap: break-word;
+    }
+    .pp-hub-slot-live__actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+    .pp-hub-slot-live__actions .pp-btn {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
     .pp-hub-menu-old-terms {
       margin: 0 0 16px;
       padding: 0 0 14px;
@@ -3402,6 +3439,7 @@
     .pp-hub-shortcut--notes .pp-hub-shortcut__ico { background: #fff6e5; color: #b7791f; }
     .pp-hub-shortcut--photos .pp-hub-shortcut__ico { background: #ecfdf5; color: #047857; }
     .pp-hub-shortcut--crash .pp-hub-shortcut__ico { background: #fff1e8; color: #c2410c; }
+    .pp-hub-shortcut--book-portal .pp-hub-shortcut__ico { background: #ecfdf5; color: #047857; }
     .pp-hub-shortcut--reenr .pp-hub-shortcut__ico { background: #fff8e6; color: #a16207; }
     .pp-hub-shortcut--messages .pp-hub-shortcut__label { color: #1f6a94; }
     .pp-hub-shortcut--sessions .pp-hub-shortcut__label { color: #0f766e; }
@@ -3413,6 +3451,7 @@
     .pp-hub-shortcut--notes .pp-hub-shortcut__label { color: #b7791f; }
     .pp-hub-shortcut--photos .pp-hub-shortcut__label { color: #047857; }
     .pp-hub-shortcut--crash .pp-hub-shortcut__label { color: #c2410c; }
+    .pp-hub-shortcut--book-portal .pp-hub-shortcut__label { color: #047857; }
     .pp-hub-shortcut--reenr .pp-hub-shortcut__label { color: #a16207; }
     a.pp-hub-shortcut { text-decoration: none; color: inherit; }
     .pp-hub-shortcut__label {
@@ -4975,7 +5014,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260720-no-incidents-show-narrative"></script>
   <script src="/portal/parent_portal_team.js?v=20260710-eiji-hazem-photos"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260715-crash-cal-first"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260720-crash-keep-green"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260722-booking-portal-slot"></script>
   <script src="/portal/parent_portal_app.js?v=20260718-former-client"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

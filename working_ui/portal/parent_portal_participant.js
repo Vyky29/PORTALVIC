@@ -1169,10 +1169,42 @@
       });
   }
 
+  /** Keep in sync with portal_reenrolment_2026_27.js — form open through end of this local day. */
+  var RE_ENROL_DEADLINE_ISO = "2026-07-22";
+  var BOOKING_PORTAL_URL = "https://www.clubsensational.org/bookingportal";
+  var OFFICE_CONTACT_MAILTO = "mailto:info@clubsensational.org";
+
+  function localIsoToday() {
+    var now = new Date();
+    var m = now.getMonth() + 1;
+    var d = now.getDate();
+    return (
+      now.getFullYear() +
+      "-" +
+      (m < 10 ? "0" : "") +
+      m +
+      "-" +
+      (d < 10 ? "0" : "") +
+      d
+    );
+  }
+
+  function isReenrolFormOpen() {
+    return localIsoToday() <= RE_ENROL_DEADLINE_ISO;
+  }
+
   function needsReenrolCta(data) {
     if (isFormerClient(data)) return false;
+    if (!isReenrolFormOpen()) return false;
     var booking = bookingSummary(data);
     return !booking.submitted && booking.parent_action !== "auto";
+  }
+
+  /** After deadline: active families who did not re-enrol (excludes Former + office-auto). */
+  function needsUnconfirmedSlotBanner(data) {
+    if (isFormerClient(data)) return false;
+    if (isReenrolFormOpen()) return false;
+    return !familyAcceptedNextYear(data);
   }
 
   function reenrolHref(data) {
@@ -1210,8 +1242,45 @@
     );
   }
 
+  function bookingPortalQuickAccessBtnHtml(data, icoFn) {
+    if (isFormerClient(data) || !familyAcceptedNextYear(data)) return "";
+    return (
+      '<a class="pp-hub-shortcut pp-hub-shortcut--book-portal" href="' +
+      esc(BOOKING_PORTAL_URL) +
+      '" target="_blank" rel="noopener noreferrer" aria-label="Book online">' +
+      '<span class="pp-hub-shortcut__ico" aria-hidden="true">' +
+      icoFn(
+        '<circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8l4 4-4 4"/>',
+      ) +
+      "</span>" +
+      '<span class="pp-hub-shortcut__label">Book online</span></a>'
+    );
+  }
+
+  function unconfirmedSlotBannerHtml(data) {
+    if (!needsUnconfirmedSlotBanner(data)) return "";
+    var crash = canBookExtrasFor(data) ? crashBookBtnHtml(data) : "";
+    return (
+      '<aside class="pp-hub-slot-live" role="status" aria-label="Place released to booking portal">' +
+      '<div class="pp-hub-slot-live__copy">' +
+      "<strong>Re-enrolment not completed</strong>" +
+      '<p class="pp-muted pp-hub-slot-live__text">You have not completed re-enrolment for 2026/27. Your previous place has gone live on the booking portal. You can book online, or contact the office.</p>' +
+      "</div>" +
+      '<div class="pp-hub-slot-live__actions">' +
+      '<a class="pp-btn pp-btn--primary" href="' +
+      esc(BOOKING_PORTAL_URL) +
+      '" target="_blank" rel="noopener noreferrer">Book online</a>' +
+      '<a class="pp-btn pp-btn--ghost" href="' +
+      esc(OFFICE_CONTACT_MAILTO) +
+      '">Contact the office</a>' +
+      crash +
+      "</div></aside>"
+    );
+  }
+
   function reenrolIntensiveMenuSectionHtml(data) {
     if (isFormerClient(data)) return "";
+    if (needsUnconfirmedSlotBanner(data)) return "";
     var startBtn = startReenrolBtnHtml(data);
     var crashBtn = canBookExtrasFor(data) ? crashBookBtnHtml(data) : "";
     if (!startBtn && !crashBtn) return "";
@@ -1616,6 +1685,7 @@
           )
         : "") +
       reenrolQuickAccessBtnHtml(data, ico) +
+      bookingPortalQuickAccessBtnHtml(data, ico) +
       (canBookExtrasFor(data) ? crashQuickAccessBtnHtml(data, ico) : "") +
       "</div></section>"
     );
@@ -1655,7 +1725,12 @@
         parts.oldTermDatesHtml +
         "</section>";
     }
-    return reenrolIntensiveMenuSectionHtml(data) + oldSection + infoButtonsHtml(data, opts);
+    return (
+      unconfirmedSlotBannerHtml(data) +
+      reenrolIntensiveMenuSectionHtml(data) +
+      oldSection +
+      infoButtonsHtml(data, opts)
+    );
   }
 
   function closeHubMenuSheet() {
@@ -3562,14 +3637,20 @@
         if (oldSec) {
           oldSec.outerHTML = nextOld;
         } else {
-          var reenr = sheetBody.querySelector(".pp-hub-menu-reenr");
+          var afterBanner =
+            sheetBody.querySelector(".pp-hub-slot-live") ||
+            sheetBody.querySelector(".pp-hub-menu-reenr");
           var tmp = global.document.createElement("div");
           tmp.innerHTML = nextOld;
           var node = tmp.firstChild;
           if (node) {
-            if (reenr && reenr.nextSibling) sheetBody.insertBefore(node, reenr.nextSibling);
-            else if (reenr) sheetBody.appendChild(node);
-            else sheetBody.insertBefore(node, sheetBody.firstChild);
+            if (afterBanner && afterBanner.nextSibling) {
+              sheetBody.insertBefore(node, afterBanner.nextSibling);
+            } else if (afterBanner) {
+              sheetBody.appendChild(node);
+            } else {
+              sheetBody.insertBefore(node, sheetBody.firstChild);
+            }
           }
         }
       } else if (sheetBody && !parts.oldTermDatesHtml) {
