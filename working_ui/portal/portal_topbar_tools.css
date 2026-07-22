@@ -43,21 +43,58 @@
   align-items:start;
   width:100%;
   min-width:0;
-  /* Slightly larger tool tiles — use vertical room under/over the avatar. */
+  /* Larger tiles + matching icon/label scale (same on every tool button). */
   --topbar-tools-cell-4:clamp(48px,13vw,56px);
   --topbar-tools-cell-6:clamp(46px,12.5vw,54px);
   --topbar-tools-cell-8:clamp(42px,11.5vw,50px);
   --topbar-tools-cell:var(--topbar-tools-cell-4);
   --topbar-tools-gap-x:3px;
   --topbar-tools-gap-y:3px;
-  --topbar-tool-label-band-h:13px;
-  --topbar-tool-ico-size:clamp(26px,calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 4px),34px);
-  --topbar-tool-ico-size-6:clamp(24px,calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 4px),32px);
+  --topbar-tool-label-band-h:15px;
+  --topbar-tool-label-size:10px;
+  --topbar-tool-label-size-6:10px;
+  --topbar-tool-label-size-8:9.5px;
+  /* One icon size for all flank tiles — fills the cell above the label band. */
+  --topbar-tool-ico-size:clamp(28px,calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 7px),34px);
+  --topbar-tool-ico-size-6:var(--topbar-tool-ico-size);
   --topbar-tools-grid-w:calc(2 * var(--topbar-tools-cell) + var(--topbar-tools-gap-x));
   --topbar-tools-grid-h:calc(var(--topbar-tools-grid-rows) * var(--topbar-tools-cell) + (var(--topbar-tools-grid-rows) - 1) * var(--topbar-tools-gap-y));
   --topbar-tools-grid-h-4:calc(2 * var(--topbar-tools-cell-4) + var(--topbar-tools-gap-y));
   --topbar-tools-grid-h-6:calc(3 * var(--topbar-tools-cell-6) + 2 * var(--topbar-tools-gap-y));
   --topbar-tools-grid-h-8:calc(4 * var(--topbar-tools-cell-8) + 3 * var(--topbar-tools-gap-y));
+}
+/* Uniform icon + label inside every session tool (not the ADMIN pill). */
+.topbar-lead--halo-flanks .topbar-tool-btn:not(.topbar-tool-btn--staff-wa){
+  padding:3px 2px 2px;
+  gap:0;
+  grid-template-rows:minmax(0,1fr) var(--topbar-tool-label-band-h);
+}
+.topbar-lead--halo-flanks .topbar-tool-btn:not(.topbar-tool-btn--staff-wa) .topbar-tool-btn__ico{
+  width:var(--topbar-tool-ico-size) !important;
+  height:var(--topbar-tool-ico-size) !important;
+  max-width:var(--topbar-tool-ico-size) !important;
+  max-height:calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 6px) !important;
+  min-width:0;
+  flex:none;
+}
+.topbar-lead--halo-flanks .topbar-tool-btn:not(.topbar-tool-btn--staff-wa) .topbar-tool-btn__ico svg{
+  width:100% !important;
+  height:100% !important;
+  display:block;
+}
+.topbar-lead--halo-flanks .topbar-tool-btn:not(.topbar-tool-btn--staff-wa) .topbar-tool-label{
+  height:var(--topbar-tool-label-band-h) !important;
+  min-height:var(--topbar-tool-label-band-h) !important;
+  max-height:var(--topbar-tool-label-band-h) !important;
+  font-size:var(--topbar-tool-label-size) !important;
+  font-weight:800;
+  letter-spacing:-0.02em;
+  line-height:1;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  max-width:100%;
+  min-width:0;
 }
 .topbar-lead--halo-flanks .topbar-left--tools{
   grid-area:left;
@@ -1136,14 +1173,17 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
     --topbar-tool-label-size-6:7.75px;
     --topbar-tool-label-size-8:7.5px;
   }
-  /* Halo flanks keep larger tiles on narrow phones (edge + vertical room). */
+  /* Halo flanks keep larger tiles + readable icon/label on narrow phones. */
   .topbar-lead--halo-flanks{
     --topbar-tools-cell-4:clamp(46px,12.8vw,52px);
     --topbar-tools-cell-6:clamp(44px,12.2vw,50px);
     --topbar-tools-cell-8:clamp(40px,11vw,46px);
-    --topbar-tool-label-band-h:12px;
-    --topbar-tool-ico-size:clamp(25px,calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 4px),32px);
-    --topbar-tool-ico-size-6:clamp(23px,calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 4px),30px);
+    --topbar-tool-label-band-h:14px;
+    --topbar-tool-label-size:9.5px;
+    --topbar-tool-label-size-6:9.5px;
+    --topbar-tool-label-size-8:9px;
+    --topbar-tool-ico-size:clamp(26px,calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 7px),32px);
+    --topbar-tool-ico-size-6:var(--topbar-tool-ico-size);
   }
 }
 @media (max-width:360px){
@@ -1162,9 +1202,12 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
     --topbar-tools-cell-4:clamp(44px,12.5vw,50px);
     --topbar-tools-cell-6:clamp(42px,12vw,48px);
     --topbar-tools-cell-8:clamp(38px,10.5vw,44px);
-    --topbar-tool-label-band-h:12px;
-    --topbar-tool-ico-size:clamp(24px,calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 4px),30px);
-    --topbar-tool-ico-size-6:clamp(22px,calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 4px),28px);
+    --topbar-tool-label-band-h:14px;
+    --topbar-tool-label-size:9px;
+    --topbar-tool-label-size-6:9px;
+    --topbar-tool-label-size-8:8.5px;
+    --topbar-tool-ico-size:clamp(24px,calc(var(--topbar-tools-cell) - var(--topbar-tool-label-band-h) - 7px),30px);
+    --topbar-tool-ico-size-6:var(--topbar-tool-ico-size);
   }
 }
 
@@ -1439,10 +1482,10 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
 }
 #topbarToolsGridRight > #topbarToolCellStaffWa .topbar-tool-btn__ico,
 #topbarToolsGridRight > #topbarToolCellStaffWa .topbar-tool-btn__ico svg{
-  width:15px !important;
-  height:15px !important;
-  max-width:15px !important;
-  max-height:15px !important;
+  width:17px !important;
+  height:17px !important;
+  max-width:17px !important;
+  max-height:17px !important;
   color:#173247 !important;
 }
 #topbarToolsGridRight > #topbarToolCellStaffWa .topbar-tool-label{
@@ -1452,7 +1495,7 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   height:auto !important;
   min-height:0 !important;
   max-height:none !important;
-  font-size:10.5px !important;
+  font-size:11px !important;
   font-weight:800 !important;
   line-height:1 !important;
   color:#173247 !important;
