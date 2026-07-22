@@ -1162,9 +1162,63 @@
   }
 
   function compareAdminWaThreads(a, b) {
+    var q = foldSearchText(state.query || "").trim();
+    if (q) {
+      var ra = searchRankForThread(a, q);
+      var rb = searchRankForThread(b, q);
+      if (rb !== ra) return rb - ra;
+    }
     return String(adminWaThreadLatestAt(b) || "").localeCompare(
       String(adminWaThreadLatestAt(a) || "")
     );
+  }
+
+  /** Identity fields only — never staff sender email (would match every thread Victor sent). */
+  function threadIdentityHay(t) {
+    var phoneKey = phoneMatchKey(t.phone || t.sendPhone || "");
+    return foldSearchText(
+      [
+        t.name,
+        t.parentName,
+        t.waContact,
+        t.phone,
+        t.sendPhone,
+        t.client,
+        t.profilePhone,
+        phoneKey,
+        t.fromDirectory ? "directory" : "",
+        t.coordinatorThread ? "jordan acat h&f" : "",
+      ].join(" ")
+    );
+  }
+
+  function threadBodyHay(t) {
+    var parts = [];
+    (t.events || []).forEach(function (e) {
+      parts.push(e.body || "");
+      parts.push(e.subject || "");
+    });
+    return foldSearchText(parts.join(" "));
+  }
+
+  function hayMatchesQuery(hay, q) {
+    if (!q) return true;
+    if (hay.indexOf(q) >= 0) return true;
+    var tokens = q.split(/[^a-z0-9]+/).filter(function (x) { return x.length >= 2; });
+    if (!tokens.length) return false;
+    return tokens.every(function (tok) { return hay.indexOf(tok) >= 0; });
+  }
+
+  /** Higher = better when a search query is active (name hits before body-only). */
+  function searchRankForThread(t, q) {
+    if (!q) return 0;
+    var idHay = threadIdentityHay(t);
+    if (hayMatchesQuery(idHay, q)) {
+      if (t.fromDirectory) return 300;
+      return 200;
+    }
+    if (hayMatchesQuery(threadBodyHay(t), q)) return 50;
+    return 0;
   }
 
   function threadMatches(t) {
@@ -1175,35 +1229,14 @@
     if (outcome === "sent" && !t.hasSent) return false;
     if (outcome === "unread" && !isThreadUnread(t)) return false;
     if (!q) return true;
-    var phoneKey = phoneMatchKey(t.phone || t.sendPhone || "");
-    var parts = [
-      t.name,
-      t.parentName,
-      t.waContact,
-      t.phone,
-      t.sendPhone,
-      t.client,
-      t.profilePhone,
-      phoneKey,
-      t.fromDirectory ? "directory" : "",
-      t.coordinatorThread ? "jordan acat h&f" : "",
-    ];
-    (t.events || []).forEach(function (e) {
-      parts.push(e.body || "");
-      parts.push(e.subject || "");
-      parts.push(e.sentBy || "");
-    });
-    var hay = foldSearchText(parts.join(" "));
-    if (hay.indexOf(q) >= 0) return true;
-    /* Token match: "pat" → Pat Nekati / Mantombi Pat / Nekati family (Pat). */
-    var tokens = q.split(/[^a-z0-9]+/).filter(function (x) { return x.length >= 2; });
-    if (!tokens.length) return false;
-    return tokens.every(function (tok) { return hay.indexOf(tok) >= 0; });
+    if (hayMatchesQuery(threadIdentityHay(t), q)) return true;
+    /* Message text only — do not match sentBy (staff email), or "victor" lists every outbound. */
+    return hayMatchesQuery(threadBodyHay(t), q);
   }
 
   /** When searching, include enrolled families from Contacts even with no WhatsApp history yet. */
   function directoryThreadsMatchingQuery() {
-    var q = String(state.query || "").trim().toLowerCase();
+    var q = foldSearchText(state.query || "").trim();
     if (q.length < 2) return [];
     var outcome = String(state.outcome || "all").toLowerCase();
     if (outcome && outcome !== "all") return [];
@@ -1219,8 +1252,10 @@
       if (!c || !c.mobile) return;
       var digits = c.sendDigits || canonicalPhoneDigits(c.mobile) || phoneDigits(c.mobile);
       if (!digits || existing[digits] || existing[c.matchKey]) return;
-      var hay = [c.parent, c.child, c.mobile, digits, c.contactId].join(" ").toLowerCase();
-      if (hay.indexOf(q) < 0) return;
+      var hay = foldSearchText(
+        [c.parent, c.child, c.mobile, digits, c.contactId].join(" ")
+      );
+      if (!hayMatchesQuery(hay, q)) return;
       out.push({
         key: digits,
         channel: "whatsapp",
