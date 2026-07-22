@@ -783,7 +783,7 @@ function splitCombinedDurationSegments(part: string): string[] {
 /** Split payment-sheet list cells (`A; B` or `A · B`). */
 export function splitPaymentListCell(raw: string): string[] {
   return String(raw || "")
-    .split(/\s*;\s*|\s*[·•]\s*|\s+\+\s+/)
+    .split(/\s*;\s*|\s*[·•]\s*|\s+\+\s+|\n+/)
     .map((p) => p.trim().replace(/^[;,\s]+|[;,\s]+$/g, ""))
     .filter(Boolean);
 }
@@ -873,8 +873,13 @@ export function coalescePaymentServiceAndSessions(
 }
 
 export function parseServiceString(service: string): ParsedSlot[] {
+  /*
+   * Payment workbook Services often use newlines between Day Centre days
+   * ("300' Day Centre, Monday…\n300' Day Centre, Wednesday…"). Without a
+   * newline split we keep one segment and only the last weekday matched.
+   */
   const parts = String(service || "")
-    .split(/\s*[·•]\s*|\s+\+\s+|\s*;\s*/)
+    .split(/\s*[·•]\s*|\s+\+\s+|\s*;\s*|\n+/)
     .flatMap(splitCombinedDurationSegments)
     .map((p) => p.trim())
     .filter(Boolean);

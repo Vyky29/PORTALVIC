@@ -4741,7 +4741,7 @@
      * Spring/Summer re-enrol INV-Ps must not feed Autumn billed (that produced
      * Serine-style Autumn £9k ≈ year with Spring/Summer crumbs).
      */
-    if (season === "spring" || season === "summer") {
+    if (season === "spring" || season === "summer" || season === "summer_2526") {
       return Number(inv && inv.booked_autumn_gbp) || 0;
     }
     /* Prefer catalogue Autumn once — never use raw amount_gbp (instalments stack). */
@@ -4773,10 +4773,22 @@
       inv.reference_text,
       inv.title,
       inv.notes,
+      inv.line_description,
       inv.billing_term_label,
     ]
       .map(function (x) { return String(x || "").toLowerCase(); })
       .join(" ");
+    /*
+     * June / July 2026 NHS Day Centre month bills are Summer 25/26 ops invoices —
+     * not Autumn 26/27 (Emanuel INV-P-0128/0129 were wrongly treated as Autumn £7k).
+     */
+    if (
+      !/autumn\s*26|26\s*\/\s*27|re-?enrol/.test(blob) &&
+      (/\b(?:june|july)\s+2026\b/.test(blob) ||
+        /june invoice\s*\(25\s*\/\s*26\)|july invoice\s*\(25\s*\/\s*26\)|office_.*jun_jul/.test(blob))
+    ) {
+      return "summer_2526";
+    }
     if (/spring\s*term|\(spring\)|billing[^a-z]*spring/.test(blob)) return "spring";
     if (/summer\s*term\s*26\s*\/\s*27|summer\s*26\s*\/\s*27|\(summer\)/.test(blob)) return "summer";
     if (/summer\s*term/.test(blob) && /26\s*\/\s*27|2026|2027/.test(blob) && !/autumn/.test(blob)) {
@@ -4798,6 +4810,15 @@
     var summer = Number(inv.booked_summer_gbp) || 0;
     var annual = Number(inv.booked_annual_gbp) || 0;
 
+    /* Prior-year month invoices: keep catalogue season totals, never face as Autumn. */
+    if (season === "summer_2526") {
+      if (autumn > 0) row._amountAutumn = Math.max(Number(row._amountAutumn) || 0, autumn);
+      if (spring > 0) row._amountSpring = Math.max(Number(row._amountSpring) || 0, spring);
+      if (summer > 0) row._amountSummer = Math.max(Number(row._amountSummer) || 0, summer);
+      if (annual > 0) row._amountAnnual = Math.max(Number(row._amountAnnual) || 0, annual);
+      return;
+    }
+
     if (season === "spring") {
       var sp = face > 0 ? face : spring;
       if (sp > 0) row._amountSpring = Math.max(Number(row._amountSpring) || 0, sp);
@@ -4806,14 +4827,16 @@
       if (su > 0) row._amountSummer = Math.max(Number(row._amountSummer) || 0, su);
     } else {
       /*
-       * Autumn (or year) INV-P: prefer face when it is the Autumn term bill;
-       * never adopt face when it equals annual catalogue.
+       * Autumn (or year) INV-P: prefer catalogue Autumn when face diverges
+       * (month bills / instalments / year pack). Use face only when it is
+       * clearly the Autumn term amount (~catalogue).
        */
       var au = 0;
       if (face > 0 && annual > 0 && Math.abs(face - annual) < 0.05) {
         au = autumn || 0;
-      } else if (face > 0 && autumn > 0 && face > autumn * 1.5) {
-        au = autumn;
+      } else if (autumn > 0 && face > 0) {
+        if (face >= autumn * 0.85 && face <= autumn * 1.15) au = Math.max(autumn, face);
+        else au = autumn;
       } else if (face > 0) {
         au = face;
       } else {
@@ -5054,6 +5077,7 @@
        * after admin marks the Autumn invoice paid (Serine INV-P-0087).
        */
       if (season !== "autumn" && season !== "year") {
+        /* Spring / Summer 26/27 / Summer 25/26 month bills — catalogue only above. */
         return;
       }
       /* Catalogue Autumn is once-per-place — do not sum every instalment INV-P. */
