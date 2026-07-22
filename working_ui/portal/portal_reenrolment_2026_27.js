@@ -825,13 +825,6 @@
       }
       return "Same programme total — Direct Payment (GoCardless). The office confirms your final collection plan.";
     }
-    if (payCode === "bank_transfer" && schedCode === "monthly_10") {
-      return termOnly
-        ? "Term-by-term: monthly invoices for " +
-            termLabel +
-            " only (Autumn 4 / Spring 3 / Summer 3). Later terms when you reconfirm. First due by 15 August 2026 when billing Autumn."
-        : "Same programme total — ten invoices (Autumn 4, Spring 3, Summer 3). Pay each month from the parent portal by bank transfer or Card / Apple Pay. First due by 15 August 2026; then on the 1st of each month.";
-    }
     if (payCode === "bank_transfer" && schedCode === "term_flexi") {
       return termOnly
         ? "Term-by-term: two invoices for " +
@@ -948,12 +941,7 @@
     }
     var autumnFirstDue =
       payCode === "gocardless" ? RE_GC_AUTUMN_FIRST_DUE : RE_BANK_FIRST_DUE;
-    var bankFirstDue =
-      payCode === "bank_transfer"
-        ? schedCode === "monthly_10" || schedCode === "monthly_term"
-          ? RE_BANK_FIRST_DUE
-          : RE_BANK_FIRST_DUE
-        : autumnFirstDue;
+    var bankFirstDue = RE_BANK_FIRST_DUE;
     var rows = [];
     if (schedCode === "yearly_1off") {
       rows.push({
@@ -1628,6 +1616,12 @@
     opts = opts.filter(function (o) {
       return scheduleMatchesCadence(o.code, cad);
     });
+    /* Bank transfer / Card / Apple Pay: never monthly — only one-off (year/term) or flexi (2/term). */
+    if (payCode === "bank_transfer") {
+      opts = opts.filter(function (o) {
+        return o.code !== "monthly_10" && o.code !== "monthly_term";
+      });
+    }
     /* Bank Transfer / Card: offer Own arrangement in the same plan list (term-by-term only). */
     if (cad === "term_by_term" && payCode === "bank_transfer") {
       var hasOwn = opts.some(function (o) {
@@ -2676,6 +2670,13 @@
     }
     if (cadence && !scheduleMatchesCadence(scheduleCode, cadence)) {
       scheduleCode = defaultScheduleForPayAndCadence(payCode, cadence);
+    }
+    /* Bank transfer has no monthly plan — coerce legacy/stuck monthly to flexi (2/term). */
+    if (
+      payCode === "bank_transfer" &&
+      (scheduleCode === "monthly_10" || scheduleCode === "monthly_term")
+    ) {
+      scheduleCode = "term_flexi";
     }
     /* Whole-year one-off is bank transfer / Card / Apple Pay only. */
     if (payCode === "gocardless" && scheduleCode === "yearly_1off") {
