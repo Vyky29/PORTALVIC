@@ -1038,6 +1038,28 @@
         it.sessionStartTs != null && it.sessionEndTs != null
       );
     }
+    /**
+     * True while staff is inside any client/available block today (start ≤ now < end).
+     * Used to mute reminder Notification/vibrate mid-session (photos) while keeping the halo.
+     * Before first start and after a block ends, reminders may sound again.
+     */
+    function portalStaffCurrentlyInActiveClientSession(){
+      try{
+        const now = Date.now();
+        const shift = typeof portalTodayShiftSessions === 'function' ? portalTodayShiftSessions() : [];
+        for(let i = 0; i < shift.length; i++){
+          const it = shift[i];
+          if(!it) continue;
+          if(it.kind !== 'client' && it.kind !== 'available') continue;
+          const start = it.sessionStartTs;
+          const end = it.sessionEndTs;
+          if(typeof start !== 'number' || !Number.isFinite(start)) continue;
+          if(typeof end !== 'number' || !Number.isFinite(end)) continue;
+          if(now >= start && now < end) return true;
+        }
+        return false;
+      }catch(_){ return false; }
+    }
     /** Feedback reminders/notifications only after the full today shift (+15 min), not between back-to-back sessions. Orange cards still use isSessionEndedForFeedback per session. */
     function portalStaffTodayShiftEndedForFeedbackReminders(){
       try{
@@ -1075,6 +1097,7 @@
       }catch(_){ return true; }
     }
     try{ window.portalStaffTodayShiftEndedForFeedbackReminders = portalStaffTodayShiftEndedForFeedbackReminders; }catch(_){}
+    try{ window.portalStaffCurrentlyInActiveClientSession = portalStaffCurrentlyInActiveClientSession; }catch(_){}
     function portalVenueReportScopeApplies(){
       const id = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
       const sched = typeof window !== 'undefined' ? window.PortalVenueReportSchedule : null;
@@ -1572,6 +1595,8 @@
     /**
      * In-browser reminder notifications (session feedback + venue only while tab open / background).
      * Roster overrides: Realtime → portalMaybeNotifyScheduleOverrideFromPayload → header OS banner + vibrate (not this function).
+     * Mid-session: mute Notification/vibrate for outstanding tasks (camera briefly hides the tab and used to re-fire alerts).
+     * Halo / orbit chrome stays on via syncPortalHeaderAlertChrome.
      */
     function portalMaybeNotifyReminders(st){
       try{
@@ -1580,6 +1605,12 @@
         if(dashboardData && !portalStaffFeedbackPipelineReady()) return;
         if(!(st.sessionFeedbackNeed || st.venueOpenNeed || st.venueCloseNeed)){
           portalClearReminderNotifications();
+          return;
+        }
+        /* Quiet during an active client/available block — halo is enough while taking photos. */
+        if(typeof portalStaffCurrentlyInActiveClientSession === 'function'
+          && portalStaffCurrentlyInActiveClientSession()){
+          try{ portalClearReminderNotifications(); }catch(_clr){}
           return;
         }
         const tabVisible = typeof document !== 'undefined' && document.visibilityState === 'visible';
