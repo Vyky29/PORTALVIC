@@ -126,22 +126,29 @@ const server = createServer(async (req, res) => {
     ...(tenantId ? { XERO_TENANT_ID: tenantId } : {}),
   });
 
-  // Edge Functions hydrate from portal_xero_oauth — keep DB in sync.
+  // Edge Functions hydrate from portal_xero_oauth — keep DB in sync (fetch; no SDK).
   try {
-    const { createClient } = await import("@supabase/supabase-js");
-    const sbUrl = env.SUPABASE_URL || env.PORTAL_SUPABASE_URL || "";
+    const sbUrl = (env.SUPABASE_URL || env.PORTAL_SUPABASE_URL || "").replace(/\/$/, "");
     const sbKey = env.SUPABASE_SERVICE_ROLE_KEY || env.PORTAL_SUPABASE_SERVICE_ROLE_KEY || "";
     if (sbUrl && sbKey) {
-      const sb = createClient(sbUrl, sbKey, { auth: { persistSession: false } });
-      const { error: dbErr } = await sb
-        .from("portal_xero_oauth")
-        .update({
+      const dbRes = await fetch(`${sbUrl}/rest/v1/portal_xero_oauth?id=eq.1`, {
+        method: "PATCH",
+        headers: {
+          apikey: sbKey,
+          Authorization: `Bearer ${sbKey}`,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({
           refresh_token: tokenJson.refresh_token,
           updated_at: new Date().toISOString(),
-        })
-        .neq("refresh_token", "");
-      if (dbErr) console.warn("portal_xero_oauth update failed:", dbErr.message);
-      else console.log("Updated portal_xero_oauth.refresh_token");
+        }),
+      });
+      if (!dbRes.ok) {
+        console.warn("portal_xero_oauth update failed:", dbRes.status, await dbRes.text());
+      } else {
+        console.log("Updated portal_xero_oauth.refresh_token");
+      }
     } else {
       console.warn("No SUPABASE_URL/SERVICE_ROLE_KEY in env — skipped portal_xero_oauth update");
     }

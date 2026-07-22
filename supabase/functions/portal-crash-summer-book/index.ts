@@ -36,7 +36,6 @@ import {
   stripeConfigured,
   stripeGrossUpFromGbp,
 } from "../_shared/stripe_checkout.ts";
-import { pushPortalInvoiceShareToXero } from "../_shared/portal_xero_invoice_push.ts";
 import {
   readParentNotifySmtpConfig,
   sendEmailWithAttachmentViaSmtp,
@@ -441,22 +440,9 @@ Deno.serve(async (req) => {
     console.error("[portal-crash-summer-book] email_throw", err);
   }
 
-  // Best-effort Xero ACCREC — booking still succeeds if Xero fails.
-  let xero: Record<string, unknown> | null = null;
-  if (invoiceId) {
-    try {
-      const pushed = await pushPortalInvoiceShareToXero(supabase, invoiceId);
-      xero = pushed.ok
-        ? { ok: true, xero_invoice_id: pushed.xero_invoice_id, skipped: !!pushed.skipped }
-        : { ok: false, error: pushed.error, detail: pushed.detail || null };
-      if (!pushed.ok) {
-        console.error("[portal-crash-summer-book] xero", pushed.error, pushed.detail);
-      }
-    } catch (err) {
-      console.error("[portal-crash-summer-book] xero_throw", err);
-      xero = { ok: false, error: "xero_throw" };
-    }
-  }
+  // Do not push to Xero on booking. Invoice stays Portal-only until office
+  // Confirm paid (or Stripe/GC marks paid), which creates AUTHORISED ACCREC
+  // awaiting payment — staff then mark Paid + reconcile in Xero UI.
 
   const tide = tideBankDetailsFromEnv();
   const card = stripeConfigured()
@@ -484,7 +470,7 @@ Deno.serve(async (req) => {
     pay_in_full_required: true,
     pdf_url: pdfUrl,
     invoice_emailed: emailSent,
-    xero,
+    xero: null,
     bank_transfer: {
       available: tide.available,
       payee_name: tide.payee_name,

@@ -21,6 +21,13 @@ export type PortalXeroPushResult =
 export async function pushPortalInvoiceShareToXero(
   admin: SupabaseClient,
   shareId: string,
+  opts?: {
+    /**
+     * Office/scripts only. Production paths must push only after Confirm paid
+     * (payment_status === "paid"). Unpaid re-enrol / booking drafts stay Portal-only.
+     */
+    allowUnpaid?: boolean;
+  },
 ): Promise<PortalXeroPushResult> {
   if (!xeroConfigured()) return { ok: false, error: "xero_not_configured" };
 
@@ -39,6 +46,15 @@ export async function pushPortalInvoiceShareToXero(
   }
   if (clean(share.xero_invoice_id, 80)) {
     return { ok: true, xero_invoice_id: String(share.xero_invoice_id), skipped: true };
+  }
+
+  const payStatus = clean(share.payment_status, 40).toLowerCase();
+  if (payStatus !== "paid" && !opts?.allowUnpaid) {
+    return {
+      ok: false,
+      error: "xero_push_requires_paid",
+      detail: "Create in Xero only after Confirm paid (AUTHORISED awaiting payment).",
+    };
   }
 
   const cid = clean(share.contact_id, 120);
