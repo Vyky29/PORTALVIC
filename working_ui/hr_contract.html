@@ -490,7 +490,7 @@
     /* Tablet: 640px+ */
     @media (min-width: 640px) {
       .container { padding: 1.5rem 1.75rem 2.5rem; }
-      .contract-types { grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+      .contract-types { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
       .checkbox-group { grid-template-columns: 1fr 1fr; }
       .progress-bar { flex-wrap: wrap; }
       .progress-step { flex: 1 1 calc(33.333% - 0.25rem); min-width: 120px; }
@@ -632,18 +632,23 @@
 
     <div class="contract-types" role="group" aria-label="Contract type">
       <div class="type-card active" id="typeZero" data-contract-kind="zero_hours" tabindex="0" aria-pressed="true">
-        <h3>Zero Hours Contract</h3>
-        <p style="margin:0;font-size:0.85rem;color:var(--grey-500);">Variable schedule employment</p>
+        <h3>Zero Hours — Activity Services</h3>
+        <p style="margin:0;font-size:0.85rem;color:var(--grey-500);">Variable hours outside Day Centre</p>
+        <span class="badge badge-active">Active</span>
+      </div>
+      <div class="type-card" id="typeDayCentre" data-contract-kind="day_centre_part_time" tabindex="0" aria-pressed="false">
+        <h3>Part-Time — Day Centre</h3>
+        <p style="margin:0;font-size:0.85rem;color:var(--grey-500);">Guaranteed hours 11:00–16:00</p>
+        <span class="badge badge-active">Active</span>
+      </div>
+      <div class="type-card" id="typeFullTime" data-contract-kind="full_time" tabindex="0" aria-pressed="false">
+        <h3>Permanent Full-Time</h3>
+        <p style="margin:0;font-size:0.85rem;color:var(--grey-500);">e.g. Business Development, 40h/week</p>
         <span class="badge badge-active">Active</span>
       </div>
       <div class="type-card" id="typeFixed" data-contract-kind="fixed_term" tabindex="0" aria-pressed="false">
-        <h3>Fixed-Term Part-Time</h3>
-        <p style="margin:0;font-size:0.85rem;color:var(--grey-500);">Fixed-term employment with set end date</p>
-        <span class="badge badge-active">Active</span>
-      </div>
-      <div class="type-card" id="typePermanent" data-contract-kind="permanent_part_time" tabindex="0" aria-pressed="false">
-        <h3>Permanent Part-Time (Term-Time Only)</h3>
-        <p style="margin:0;font-size:0.85rem;color:var(--grey-500);">Permanent term-time employment</p>
+        <h3>Fixed-Term</h3>
+        <p style="margin:0;font-size:0.85rem;color:var(--grey-500);">Salaried with set end date</p>
         <span class="badge badge-active">Active</span>
       </div>
     </div>
@@ -704,7 +709,7 @@
               <input type="date" id="commencementDate" name="commencementDate" required>
               <span class="error-msg">Commencement date is required.</span>
             </div>
-            <div class="form-group fixed-term-field fixed-term-only-field hidden" id="fgTermEnd">
+            <div class="form-group fixed-term-only-field hidden" id="fgTermEnd">
               <label for="termEndDate">Term end date <span aria-hidden="true">*</span></label>
               <input type="date" id="termEndDate" name="termEndDate">
               <span class="error-msg">Term end date is required.</span>
@@ -729,17 +734,47 @@
                 <span class="error-msg">Select a scale for each role.</span>
               </fieldset>
             </div>
-            <div class="form-group fixed-term-field hidden" id="fgAnnualSalary">
+            <div class="form-group day-centre-field hidden" id="fgWorkDays">
+              <fieldset>
+                <legend style="font-weight:500;margin-bottom:0.35rem;color:var(--navy);font-size:0.9rem;">Work days <span aria-hidden="true">*</span></legend>
+                <div class="checkbox-group" id="workDayCheckboxes">
+                  <label class="place-option"><input type="checkbox" name="workDay" value="Monday"><span>Monday</span></label>
+                  <label class="place-option"><input type="checkbox" name="workDay" value="Tuesday"><span>Tuesday</span></label>
+                  <label class="place-option"><input type="checkbox" name="workDay" value="Wednesday"><span>Wednesday</span></label>
+                  <label class="place-option"><input type="checkbox" name="workDay" value="Thursday"><span>Thursday</span></label>
+                  <label class="place-option"><input type="checkbox" name="workDay" value="Friday"><span>Friday</span></label>
+                </div>
+                <p class="field-hint">11:00–16:00 = 5 paid hours/day; short comfort break if possible.</p>
+                <span class="error-msg">Select at least one work day.</span>
+              </fieldset>
+            </div>
+            <div class="form-group salaried-field hidden" id="fgAnnualSalary">
               <label for="annualSalary">Annual salary (£) <span aria-hidden="true">*</span></label>
               <input type="number" id="annualSalary" name="annualSalary" min="1" step="1" placeholder="e.g. 19000">
               <span class="error-msg">Annual salary is required.</span>
             </div>
-            <div class="form-group fixed-term-field hidden" id="fgWeeklyHours">
+            <div class="form-group salaried-field hidden" id="fgWeeklyHours">
               <label for="weeklyHours">Contracted hours per week <span aria-hidden="true">*</span></label>
               <input type="number" id="weeklyHours" name="weeklyHours" min="1" step="0.5" placeholder="e.g. 24">
               <span class="error-msg">Weekly hours are required.</span>
             </div>
+            <div class="form-group salaried-field hidden" id="fgJobTitleOverride">
+              <label for="jobTitleOverride">Job title override (optional)</label>
+              <input type="text" id="jobTitleOverride" name="jobTitleOverride" placeholder="Leave blank to use role names as title">
+              <p class="field-hint">If empty, selected roles will join as the job title.</p>
+            </div>
             <div class="rate-display" id="rateDisplay" aria-live="polite">Select at least one role and a scale for each role.</div>
+            <div class="form-group" id="fgConcurrent" style="margin-top:1rem;">
+              <label class="ack-label">
+                <input type="checkbox" id="concurrentWithOther" name="concurrentWithOther">
+                <span>This contract runs alongside another active contract with the same employee</span>
+              </label>
+              <div id="otherContractRefWrap" class="hidden" style="margin-top:0.5rem;">
+                <label for="otherContractRef" style="font-size:0.85rem;font-weight:500;color:var(--navy);">Other contract reference (optional)</label>
+                <input type="text" id="otherContractRef" name="otherContractRef" placeholder="e.g. ZH-Smith-2026-001">
+              </div>
+              <p class="field-hint" id="concurrentHint" style="display:none;">Tip: after creating a Day Centre contract, you may also need a Zero Hours Activity Services contract for evening sessions.</p>
+            </div>
             <div class="form-group" id="fgPlace" style="margin-bottom:1rem;">
               <fieldset>
                 <legend style="font-weight:500;margin-bottom:0.35rem;color:var(--navy);font-size:0.9rem;">Place of work <span aria-hidden="true">*</span></legend>
