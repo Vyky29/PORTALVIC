@@ -380,12 +380,46 @@
     return !!(inv && (inv.created_via === 'la_office_auto' || inv.is_la_office_auto));
   }
 
-  function autoReenrolledChipHtml() {
+  /** Enrolment cadence: AUTO (year / office) vs TERMLY (bill each term). */
+  function enrolmentCadenceKey(inv) {
+    if (isAutoReenrolledInv(inv)) return 'AUTO';
+    var plan = schedulePlanShort(inv);
+    if (plan === 'One-off (whole year)') return 'AUTO';
+    var notes = String((inv && inv.notes) || '').toLowerCase();
+    if (/yearly_1off|auto[_\s-]?continue/.test(notes)) return 'AUTO';
+    return 'TERMLY';
+  }
+
+  function enrolmentCadenceChipHtml(key) {
+    var k = key === 'AUTO' ? 'AUTO' : 'TERMLY';
+    var cls = k === 'AUTO' ? 'pp-inv-acc__method--auto' : 'pp-inv-acc__method--plan';
+    var title =
+      k === 'AUTO'
+        ? 'AUTO — place continues for the year (office renew or yearly plan)'
+        : 'TERMLY — re-enrol / bill each term';
     return (
-      '<span class="pp-inv-acc__method pp-inv-acc__method--auto" title="Office auto re-enrolment — place renews without a family form">' +
-      'AUTO RE-ENROLLED' +
+      '<span class="pp-inv-acc__method ' +
+      cls +
+      '" title="' +
+      title +
+      '">' +
+      k +
       '</span>'
     );
+  }
+
+  function groupEnrolmentCadenceKey(invoices) {
+    var list = invoices || [];
+    if (!list.length) return 'TERMLY';
+    if (list.some(isAutoReenrolledInv)) return 'AUTO';
+    var allAuto = list.every(function (inv) {
+      return enrolmentCadenceKey(inv) === 'AUTO';
+    });
+    return allAuto ? 'AUTO' : 'TERMLY';
+  }
+
+  function autoReenrolledChipHtml() {
+    return enrolmentCadenceChipHtml('AUTO');
   }
 
   function methodLabel(inv) {
@@ -394,12 +428,16 @@
     return plan ? channel + ' · ' + plan : channel;
   }
 
-  /** Two chips: channel + schedule option (what bank-transfer flavour). */
+  /** Cadence + channel + schedule option (what bank-transfer flavour). */
   function methodChipsHtml(inv) {
+    var cadence = enrolmentCadenceKey(inv);
     var channel = methodChannelLabel(inv);
     var plan = schedulePlanShort(inv);
-    var html = methodChipHtml(channel);
-    if (plan) {
+    var html = enrolmentCadenceChipHtml(cadence);
+    if (!isAutoReenrolledInv(inv)) {
+      html += ' ' + methodChipHtml(channel);
+    }
+    if (plan && !(plan === 'TERMLY' && cadence === 'TERMLY')) {
       html +=
         ' <span class="pp-inv-acc__method pp-inv-acc__method--plan" title="Payment schedule">' +
         esc(plan) +
@@ -424,26 +462,36 @@
   }
 
   function fundingCategoryLabel(inv) {
-    var label = String(inv.funding_category_label || '').trim();
-    if (label) return label;
-    var cat = String(inv.funding_category || '').toLowerCase();
-    if (cat === 'la_managed') return 'LA manages invoice (exempt)';
+    var cat = String((inv && inv.funding_category) || '').toLowerCase();
+    var fundRaw = String((inv && inv.funding_label) || '').toLowerCase();
+    var label = String((inv && inv.funding_category_label) || '').trim();
+    var isNhs =
+      cat === 'nhs_managed' ||
+      /\bnhs\b/.test(fundRaw) ||
+      /\bsbs\b/.test(fundRaw) ||
+      /\bnhs\b/.test(label.toLowerCase());
+    if (isNhs) return 'NHS manages invoice (exempt)';
+    if (cat === 'la_managed' || /^la manages/i.test(label)) {
+      return 'LA manages invoice (exempt)';
+    }
+    if (label && !/^la manages/i.test(label) && !/\bnhs\b/i.test(label)) return label;
     if (cat === 'parent_direct_payment') return 'Parents · Direct Payment (exempt)';
     if (cat === 'parent_private') return 'Parents · Private (Includes 20% VAT)';
-    var hint = String(inv.payment_method_hint || '').toLowerCase();
-    var vat = String(inv.vat_mode || '').toLowerCase();
+    var hint = String((inv && inv.payment_method_hint) || '').toLowerCase();
+    var vat = String((inv && inv.vat_mode) || '').toLowerCase();
     if (hint === 'la_funded') return 'LA manages invoice (exempt)';
     if (vat === 'exempt') return 'Parents · Direct Payment (exempt)';
     return 'Parents · Private (Includes 20% VAT)';
   }
 
-  /** VAT line must follow funding route — never show 20% VAT on Direct Payment / LA exempt. */
+  /** VAT line must follow funding route — never show 20% VAT on Direct Payment / LA / NHS exempt. */
   function vatDisplayLabel(inv) {
     var cat = String(inv.funding_category || '').toLowerCase();
     var fund = fundingCategoryLabel(inv).toLowerCase();
     if (
       cat === 'parent_direct_payment' ||
       cat === 'la_managed' ||
+      cat === 'nhs_managed' ||
       fund.indexOf('exempt') >= 0
     ) {
       return 'Exempt';
@@ -459,6 +507,9 @@
 
   function fundingToneClass(label) {
     var s = String(label || '').toLowerCase();
+    if (s.indexOf('nhs manages') >= 0 || s.indexOf('nhs funded') >= 0) {
+      return 'pp-inv-acc__fund--nhs';
+    }
     if (s.indexOf('la manages') >= 0 || s.indexOf('la funded') >= 0) {
       return 'pp-inv-acc__fund--la';
     }
@@ -531,14 +582,16 @@
 
   function groupMethodChipsHtml(invoices) {
     var list = invoices || [];
+    var cadence = groupEnrolmentCadenceKey(list);
     var autoOnly = list.length > 0 && list.every(isAutoReenrolledInv);
-    var anyAuto = list.some(isAutoReenrolledInv);
     var ready = list.filter(function (inv) {
       return String(inv.share_status || '').toLowerCase() === 'ready';
     });
-    var pool = ready.length ? ready : list.filter(function (inv) {
-      return !isAutoReenrolledInv(inv);
-    });
+    var pool = ready.length
+      ? ready
+      : list.filter(function (inv) {
+          return !isAutoReenrolledInv(inv);
+        });
     if (!pool.length) pool = list;
     var withSched = pool.filter(function (inv) {
       return scheduleRows(inv).length > 0;
@@ -546,16 +599,19 @@
     var source = withSched.length ? withSched : pool;
     var seen = Object.create(null);
     var out = [];
-    if (anyAuto) out.push(autoReenrolledChipHtml());
+    /* Always one clear AUTO / TERMLY chip (never duplicate). */
+    out.push(enrolmentCadenceChipHtml(cadence));
+    if (autoOnly) return out.join('');
     source.forEach(function (inv) {
-      if (isAutoReenrolledInv(inv) && autoOnly) return;
+      if (isAutoReenrolledInv(inv)) return;
       var channel = methodChannelLabel(inv);
       var plan = schedulePlanShort(inv);
       var key = channel + '|' + plan;
       if (seen[key]) return;
       seen[key] = true;
-      if (!isAutoReenrolledInv(inv)) out.push(methodChipHtml(channel));
-      if (plan) {
+      out.push(methodChipHtml(channel));
+      /* Avoid a second identical TERMLY chip next to enrolment cadence. */
+      if (plan && !(plan === 'TERMLY' && cadence === 'TERMLY')) {
         out.push(
           '<span class="pp-inv-acc__method pp-inv-acc__method--plan" title="Payment schedule">' +
             esc(plan) +
@@ -563,8 +619,7 @@
         );
       }
     });
-    if (out.length) return out.join('');
-    return anyAuto ? autoReenrolledChipHtml() : methodChipHtml('Bank transfer');
+    return out.join('');
   }
 
   function xeroSummary(inv) {
@@ -801,12 +856,9 @@
     var hidden = 0;
     var xeroFail = 0;
     var xeroMissing = 0;
-    var laAuto = 0;
     (invoices || []).forEach(function (inv) {
-      if (inv.created_via === 'la_office_auto' || inv.is_la_office_auto) {
-        laAuto += 1;
-        return;
-      }
+      /* Office autos have no family payment status chip. */
+      if (inv.created_via === 'la_office_auto' || inv.is_la_office_auto) return;
       var pay = String(inv.payment_status || 'unpaid');
       if (pay === 'void') return; /* void chips not shown */
       if (pay === 'paid') paid += 1;
@@ -820,9 +872,6 @@
       else if (inv.created_via === 'portal' || inv.created_via === 'reenrolment') xeroMissing += 1;
     });
     var chips = [];
-    if (laAuto) {
-      chips.push(autoReenrolledChipHtml());
-    }
     if (unpaid) {
       chips.push(summaryFilterChip('unpaid', unpaid + ' unpaid', 'unpaid'));
     }
@@ -1256,9 +1305,6 @@
       '<span class="pp-inv-acc__methods">' +
       groupFundingChipsHtml(invoices) +
       groupMethodChipsHtml(invoices) +
-      (group.is_la_office_auto && !invoices.some(isAutoReenrolledInv)
-        ? autoReenrolledChipHtml()
-        : '') +
       '</span>' +
       '<span class="pp-inv-acc__status">' +
       groupStatusSummary(invoices) +
@@ -1336,7 +1382,7 @@
       '.pp-inv-acc__num{font-size:12px;color:#4a6578;overflow-wrap:break-word}' +
       '.pp-inv-acc__amt{font-weight:700;flex:1 1 160px;min-width:0;overflow-wrap:break-word;text-align:right}' +
       '.pp-inv-acc__methods{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0;flex:0 1 auto;max-width:100%}' +
-      '.pp-inv-acc__method{font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid transparent}' +
+      '.pp-inv-acc__method{display:inline-flex;align-items:center;font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid #d5dee6;background:#eef2f5;color:#334155}' +
       /* Methods: never green (paid) or orange (unpaid) */ +
       '.pp-inv-acc__method--gc{color:#9f1239;background:#ffe4e6;border-color:#fda4af}' +
       '.pp-inv-acc__method--la{color:#6b21a8;background:#f3e8ff;border-color:#d8b4fe}' +
@@ -1347,11 +1393,12 @@
       '.pp-inv-acc__method--admin{color:#334155;background:#e2e8f0;border-color:#cbd5e1}' +
       '.pp-inv-acc__method--other{color:#4a6578;background:#eef2f5;border-color:#d5dee6}' +
       '.pp-inv-acc__plan-dates{max-width:100%}' +
-      '.pp-inv-acc__fund{font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid transparent}' +
-      /* Funding: distinct from methods + paid/unpaid */ +
-      '.pp-inv-acc__fund--private{color:#3730a3;background:#e0e7ff;border-color:#a5b4fc}' +
-      '.pp-inv-acc__fund--direct{color:#0369a1;background:#e0f2fe;border-color:#7dd3fc}' +
-      '.pp-inv-acc__fund--la{color:#86198f;background:#fae8ff;border-color:#f0abfc}' +
+      '.pp-inv-acc__fund{display:inline-flex;align-items:center;font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid #c7d2fe;background:#e0e7ff;color:#312e81}' +
+      /* Funding: distinct from methods + paid/unpaid — every route is a chip */ +
+      '.pp-inv-acc__fund--private{color:#312e81;background:#e0e7ff;border-color:#a5b4fc}' +
+      '.pp-inv-acc__fund--direct{color:#075985;background:#bae6fd;border-color:#38bdf8}' +
+      '.pp-inv-acc__fund--la{color:#86198f;background:#fae8ff;border-color:#e879f9}' +
+      '.pp-inv-acc__fund--nhs{color:#9f1239;background:#ffe4e6;border-color:#fb7185}' +
       /* Payment status: green=paid, orange=unpaid only */ +
       '.pp-inv-acc__pay-chip{font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid transparent;display:inline-flex;align-items:center}' +
       '.pp-inv-acc__pay-chip--paid{color:#065f46;background:#d1fae5;border-color:#6ee7b7}' +

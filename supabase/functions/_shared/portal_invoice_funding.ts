@@ -57,12 +57,14 @@ export type ParticipantInvoiceFunding = {
 export type InvoiceFundingCategory =
   | "parent_private"
   | "parent_direct_payment"
-  | "la_managed";
+  | "la_managed"
+  | "nhs_managed";
 
 const FUNDING_CATEGORY_LABELS: Record<InvoiceFundingCategory, string> = {
   parent_private: "Parents · Private (Includes 20% VAT)",
   parent_direct_payment: "Parents · Direct Payment (exempt)",
   la_managed: "LA manages invoice (exempt)",
+  nhs_managed: "NHS manages invoice (exempt)",
 };
 
 export function invoiceFundingCategoryLabel(category: InvoiceFundingCategory): string {
@@ -79,6 +81,16 @@ export function invoiceFundingCategory(input: {
   const hint = clean(input.paymentMethodHint, 40).toLowerCase();
   const sheet = clean(input.paymentSheet, 40).toUpperCase();
   const label = clean(input.fundingLabel, 120).toLowerCase();
+
+  /* NHS/SBS before generic LA sheet — Day Centre packs often live on sheet=LA. */
+  if (
+    /\bnhs\b/.test(label) ||
+    /\bsbs\b/.test(label) ||
+    label.includes("nhs-funded") ||
+    label.includes("funded by nhs")
+  ) {
+    return "nhs_managed";
+  }
 
   if (hint === "la_funded" || sheet === "LA") {
     return "la_managed";

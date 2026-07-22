@@ -536,7 +536,8 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       booked_slots: mergedSlots,
       booked_service_raw: mergedServiceRaw || null,
       reenrolment_submitted_at: reenrol?.submitted_at || null,
-      is_la_office_auto: fundingCategory === "la_managed" && !reenrol,
+      is_la_office_auto:
+        (fundingCategory === "la_managed" || fundingCategory === "nhs_managed") && !reenrol,
     });
   }
 
@@ -645,7 +646,8 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       (inv) =>
         inv.is_la_office_auto === true ||
         inv.created_via === "la_office_auto" ||
-        inv.funding_category === "la_managed",
+        inv.funding_category === "la_managed" ||
+        inv.funding_category === "nhs_managed",
     );
   }
 
