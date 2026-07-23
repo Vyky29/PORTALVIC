@@ -55,9 +55,17 @@
 
   function getArrayForKind(kind) {
     var p = getPayload();
-    if (kind === "lead") return p.lead_session_reports || [];
+    if (kind === "lead") {
+      var leads = p.lead_session_reports || [];
+      var cached = global.__PORTAL_LEAD_SESSION_REPORTS__ || [];
+      return leads.length >= cached.length ? leads : cached;
+    }
     if (kind === "venue") return p.venue_reviews || [];
-    if (kind === "incident") return p.incident_reports || [];
+    if (kind === "incident") {
+      var inc = p.incident_reports || [];
+      var incCached = global.__PORTAL_INCIDENT_REPORTS__ || [];
+      return inc.length >= incCached.length ? inc : incCached;
+    }
     if (kind === "cancellation") return p.cancellation_reports || [];
     if (kind === "feedback") return p.session_feedback || [];
     return [];

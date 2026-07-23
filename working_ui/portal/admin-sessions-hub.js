@@ -7359,17 +7359,34 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         ev.stopPropagation();
         var pk = pfrmView.getAttribute("data-pfrm-view");
         var pidx = parseInt(pfrmView.getAttribute("data-portal-forms-idx"), 10);
-        if (!pk || isNaN(pidx)) return;
+        var pid = String(pfrmView.getAttribute("data-portal-forms-id") || "").trim();
+        if (!pk) return;
+        var DayOps = global.PortalDayOps;
+        if (DayOps && typeof DayOps.openFormsRecord === "function") {
+          DayOps.openFormsRecord(pk, pidx, null, pid);
+          return;
+        }
         var parr =
           pk === "incident"
             ? hub.payload.incident_reports
             : pk === "cancellation"
               ? hub.payload.cancellation_reports
-              : null;
-        var prow = parr && parr[pidx];
+              : pk === "lead"
+                ? hub.payload.lead_session_reports || global.__PORTAL_LEAD_SESSION_REPORTS__
+                : null;
+        var prow = null;
+        if (pid && Array.isArray(parr)) {
+          for (var pri = 0; pri < parr.length; pri++) {
+            if (String((parr[pri] && parr[pri].id) || "") === pid) {
+              prow = parr[pri];
+              break;
+            }
+          }
+        }
+        if (!prow && Array.isArray(parr) && Number.isFinite(pidx) && pidx >= 0) prow = parr[pidx] || null;
         var Pfrm = global.PortalFormRecordModal;
         if (Pfrm && prow && typeof Pfrm.openWithRow === "function") Pfrm.openWithRow(pk, prow);
-        else if (Pfrm && typeof Pfrm.open === "function") Pfrm.open(pk, pidx);
+        else if (Pfrm && typeof Pfrm.open === "function" && Number.isFinite(pidx)) Pfrm.open(pk, pidx);
         return;
       }
       if (t.closest("[data-ash-modal-send]")) {

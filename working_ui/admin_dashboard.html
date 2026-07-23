@@ -75,7 +75,7 @@
   <script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260714-one-feedback"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260723-lead-view-open"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260723-lead-view-by-id"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260716-slot-hold"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260709-family-credits"></script>
@@ -17729,11 +17729,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
     }
     async function adminFetchLeadSessionReportsForHub(){
-      if(window.__PORTAL_LEAD_SESSION_REPORTS__) return window.__PORTAL_LEAD_SESSION_REPORTS__;
+      // [] is truthy — only reuse a non-empty cache (failed auth used to stick empty forever).
+      if(Array.isArray(window.__PORTAL_LEAD_SESSION_REPORTS__) && window.__PORTAL_LEAD_SESSION_REPORTS__.length){
+        return window.__PORTAL_LEAD_SESSION_REPORTS__;
+      }
       var auth = await adminEnsureAuthedSupabaseClient();
       if(!auth.client || !auth.tok){
         adminRecordLiveLoad('lead_session_reports', { count: 0, error: auth.error || 'no_client' });
-        window.__PORTAL_LEAD_SESSION_REPORTS__ = [];
+        window.__PORTAL_LEAD_SESSION_REPORTS__ = null;
         return [];
       }
       try{
@@ -17749,7 +17752,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         });
         if(res.error){
           adminRecordLiveLoad('lead_session_reports', { count: 0, error: res.error.message || String(res.error) });
-          window.__PORTAL_LEAD_SESSION_REPORTS__ = [];
+          window.__PORTAL_LEAD_SESSION_REPORTS__ = null;
           return [];
         }
         window.__PORTAL_LEAD_SESSION_REPORTS__ = res.data || [];
@@ -17757,7 +17760,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return window.__PORTAL_LEAD_SESSION_REPORTS__;
       }catch(e){
         adminRecordLiveLoad('lead_session_reports', { count: 0, error: String(e && e.message ? e.message : e) });
-        window.__PORTAL_LEAD_SESSION_REPORTS__ = [];
+        window.__PORTAL_LEAD_SESSION_REPORTS__ = null;
         return [];
       }
     }
@@ -18343,7 +18346,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260721-kate-kamy-summer-keep';
+    var PORTAL_ADMIN_HUB_BUILD = '20260723-lead-view-by-id';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;

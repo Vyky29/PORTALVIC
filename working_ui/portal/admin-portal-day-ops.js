@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260723-lead-view-open';
+  var PORTAL_DAY_OPS_BUILD = '20260723-lead-view-by-id';
   function portalHubBuildToken() {
     return String(global.PORTAL_ADMIN_HUB_BUILD || PORTAL_DAY_OPS_BUILD || '').trim();
   }
@@ -217,23 +217,41 @@
     }
   }
 
+  /** Prefer non-empty merges — overview soft-refresh used to wipe lead/incident arrays with []. */
+  function mergeArrayField(key, incoming) {
+    if (!Array.isArray(incoming)) return;
+    var cur = payload[key];
+    if (incoming.length || !Array.isArray(cur) || !cur.length) {
+      payload[key] = incoming;
+    }
+  }
+
   function applyPayload(j) {
     if (!j) return;
     if (j.counts) payload.counts = j.counts;
-    if (Array.isArray(j.session_feedback)) payload.session_feedback = j.session_feedback;
+    if (Array.isArray(j.session_feedback)) {
+      if (j.session_feedback.length || !Array.isArray(payload.session_feedback) || !payload.session_feedback.length) {
+        payload.session_feedback = j.session_feedback;
+      }
+    }
     if (j.session_feedback_loaded !== undefined) payload.session_feedback_loaded = j.session_feedback_loaded;
     if (j.session_feedback_total != null) {
       payload.session_feedback_total = j.session_feedback_total;
-    } else if (Array.isArray(j.session_feedback)) {
+    } else if (Array.isArray(j.session_feedback) && j.session_feedback.length) {
       payload.session_feedback_total = j.session_feedback.length;
     }
-    if (Array.isArray(j.incident_reports)) payload.incident_reports = j.incident_reports;
-    if (Array.isArray(j.lead_session_reports)) payload.lead_session_reports = j.lead_session_reports;
-    if (Array.isArray(j.venue_reviews)) payload.venue_reviews = j.venue_reviews;
-    if (Array.isArray(j.cancellation_reports)) payload.cancellation_reports = j.cancellation_reports;
-    if (Array.isArray(j.schedule_overrides)) payload.schedule_overrides = j.schedule_overrides;
-    if (Array.isArray(j.session_quick_marks)) payload.session_quick_marks = j.session_quick_marks;
-    if (Array.isArray(j.parent_feedback_shares)) payload.parent_feedback_shares = j.parent_feedback_shares;
+    mergeArrayField('incident_reports', j.incident_reports);
+    mergeArrayField('lead_session_reports', j.lead_session_reports);
+    mergeArrayField('venue_reviews', j.venue_reviews);
+    mergeArrayField('cancellation_reports', j.cancellation_reports);
+    mergeArrayField('schedule_overrides', j.schedule_overrides);
+    mergeArrayField('session_quick_marks', j.session_quick_marks);
+    mergeArrayField('parent_feedback_shares', j.parent_feedback_shares);
+    try {
+      if ((payload.lead_session_reports || []).length) {
+        global.__PORTAL_LEAD_SESSION_REPORTS__ = payload.lead_session_reports;
+      }
+    } catch (_syncLead) {}
   }
 
   function portalDayOpsAfterFeedbackPayloadMerge() {
@@ -971,33 +989,53 @@
     }
   }
 
+  function preferNonEmptyArray() {
+    var best = [];
+    for (var ai = 0; ai < arguments.length; ai++) {
+      var a = arguments[ai];
+      if (Array.isArray(a) && a.length > best.length) best = a;
+    }
+    return best;
+  }
+
   function formsArrayForKind(kind) {
     if (kind === 'lead') {
-      return (
-        payload.lead_session_reports ||
-        (global.__PORTAL_LEAD_SESSION_REPORTS__ || null) ||
-        []
+      return preferNonEmptyArray(
+        payload.lead_session_reports,
+        global.__PORTAL_LEAD_SESSION_REPORTS__,
       );
     }
     if (kind === 'venue') return payload.venue_reviews || [];
     if (kind === 'incident') {
-      return (
-        payload.incident_reports ||
-        (trackingHub && trackingHub.payload && trackingHub.payload.incident_reports) ||
-        []
+      return preferNonEmptyArray(
+        payload.incident_reports,
+        trackingHub && trackingHub.payload && trackingHub.payload.incident_reports,
+        global.__PORTAL_INCIDENT_REPORTS__,
       );
     }
     if (kind === 'cancellation') {
-      return (
-        payload.cancellation_reports ||
-        (trackingHub && trackingHub.payload && trackingHub.payload.cancellation_reports) ||
-        []
+      return preferNonEmptyArray(
+        payload.cancellation_reports,
+        trackingHub && trackingHub.payload && trackingHub.payload.cancellation_reports,
       );
     }
     return [];
   }
 
-  function openPortalFormsRecord(kind, idx, rowOverride) {
+  function findFormsRow(kind, idx, rowId) {
+    var arr = formsArrayForKind(kind);
+    var id = String(rowId || '').trim();
+    if (id) {
+      for (var fi = 0; fi < arr.length; fi++) {
+        if (String((arr[fi] && arr[fi].id) || '') === id) return arr[fi];
+      }
+    }
+    var i = Number(idx);
+    if (Number.isFinite(i) && i >= 0) return arr[i] || null;
+    return null;
+  }
+
+  function openPortalFormsRecord(kind, idx, rowOverride, rowId) {
     kind = String(kind || '').trim();
     var i = Number(idx);
     if (!kind) return;
@@ -1006,13 +1044,16 @@
       console.warn('[PortalDayOps] PortalFormRecordModal missing — cannot open', kind);
       return;
     }
-    var row = rowOverride || null;
-    if (!row && Number.isFinite(i) && i >= 0) {
-      var arr = formsArrayForKind(kind);
-      row = arr[i] || null;
-    }
+    var row = rowOverride || findFormsRow(kind, idx, rowId);
     if (!row) {
-      console.warn('[PortalDayOps] no row for forms view', kind, idx);
+      console.warn(
+        '[PortalDayOps] no row for forms view',
+        kind,
+        idx,
+        rowId || '',
+        'arrLen=',
+        formsArrayForKind(kind).length,
+      );
       return;
     }
     if (typeof modal.openWithRow === 'function') {
@@ -1035,8 +1076,10 @@
       ev.preventDefault();
       ev.stopPropagation();
       openPortalFormsRecord(
-        pfrmBtn.getAttribute('data-pfrm-view'),
+        pfrmBtn.getAttribute('data-pfrm-view') || pfrmBtn.getAttribute('data-portal-forms-kind'),
         pfrmBtn.getAttribute('data-portal-forms-idx'),
+        null,
+        pfrmBtn.getAttribute('data-portal-forms-id'),
       );
       return true;
     }
@@ -1046,16 +1089,22 @@
     if (viewBtn) {
       var kind = viewBtn.getAttribute('data-portal-forms-kind');
       var idx = parseInt(viewBtn.getAttribute('data-portal-forms-idx'), 10);
-      if (!kind || isNaN(idx)) return false;
-      var arr = formsArrayForKind(kind);
-      var row = arr[idx] || null;
+      var rowId = viewBtn.getAttribute('data-portal-forms-id');
+      if (!kind) return false;
+      var row = findFormsRow(kind, idx, rowId);
       if (!row) {
-        console.warn('[PortalDayOps] View click — missing row', kind, idx, (arr || []).length);
+        console.warn(
+          '[PortalDayOps] View click — missing row',
+          kind,
+          idx,
+          rowId || '',
+          formsArrayForKind(kind).length,
+        );
         return false;
       }
       ev.preventDefault();
       ev.stopPropagation();
-      openPortalFormsRecord(kind, idx, row);
+      openPortalFormsRecord(kind, idx, row, rowId);
       return true;
     }
     return false;
@@ -1081,9 +1130,10 @@
         if (!row.closest('.portal-day-ops-embed, #c4kHubPanelLead, #c4kHubPanelVenue')) return;
         var kind = row.getAttribute('data-portal-forms-kind');
         var idx = parseInt(row.getAttribute('data-portal-forms-idx'), 10);
-        if (!kind || isNaN(idx)) return;
+        var rowId = row.getAttribute('data-portal-forms-id');
+        if (!kind) return;
         ev.preventDefault();
-        openPortalFormsRecord(kind, idx, formsArrayForKind(kind)[idx] || null);
+        openPortalFormsRecord(kind, idx, findFormsRow(kind, idx, rowId), rowId);
       });
     }
     // Also bind directly on current lead/venue View buttons (mobile-safe).
@@ -1095,7 +1145,8 @@
         ev.stopPropagation();
         var kind = btn.getAttribute('data-portal-forms-kind');
         var idx = parseInt(btn.getAttribute('data-portal-forms-idx'), 10);
-        openPortalFormsRecord(kind, idx, formsArrayForKind(kind)[idx] || null);
+        var rowId = btn.getAttribute('data-portal-forms-id');
+        openPortalFormsRecord(kind, idx, findFormsRow(kind, idx, rowId), rowId);
       });
     });
   }
@@ -1328,14 +1379,20 @@
         leadTbody.innerHTML =
           '<tr><td colspan="4"><div class="submission-state">No lead reports yet.</div></td></tr>';
       } else {
+        try {
+          global.__PORTAL_LEAD_SESSION_REPORTS__ = lead;
+        } catch (_cacheLead) {}
         leadTbody.innerHTML = lead
           .map(function (r, i) {
             var who = esc(cellText(r.submitted_by_name));
             var svcSub = portalFormsLeadServiceSubLine(r);
             var svcTitle = String(r.service || '') + (svcSub ? ' · ' + svcSub : '');
+            var rid = esc(String(r.id || ''));
             return (
               '<tr class="portal-forms-data-row" data-portal-forms-kind="lead" data-portal-forms-idx="' +
               i +
+              '" data-portal-forms-id="' +
+              rid +
               '" title="Double-click to view">' +
               '<td class="col-date">' +
               portalFormsWhenStackHtml(r.created_at, esc) +
@@ -1350,6 +1407,8 @@
               '</td>' +
               '<td class="col-actions"><button type="button" class="portal-forms-view-btn" data-pfrm-view="lead" data-portal-forms-kind="lead" data-portal-forms-idx="' +
               i +
+              '" data-portal-forms-id="' +
+              rid +
               '" aria-label="View lead report">View</button></td>' +
               '</tr>'
             );
@@ -1410,6 +1469,9 @@
       cfg = Object.assign({}, cfg, c || {});
       if (trackingHub) trackingHub.opts.getFeedbackDayStats = cfg.getFeedbackDayStats;
       if (feedbackHub) feedbackHub.opts.getFeedbackDayStats = cfg.getFeedbackDayStats;
+    },
+    openFormsRecord: function (kind, idx, rowOverride, rowId) {
+      openPortalFormsRecord(kind, idx, rowOverride, rowId);
     },
     getPayload: function () {
       return payload;
