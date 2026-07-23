@@ -6765,19 +6765,24 @@
     return invoiceActIco(kind) + '<span class="pp-invoice-act-label">' + text + "</span>";
   }
 
-  function invoiceBankPanelHtml(inv) {
+  function invoiceBankPanelHtml(inv, previewBtnHtml) {
     var bank = inv && inv.bank_transfer;
     if (!bank) return "";
     var status = String((inv && inv.payment_status) || "").toLowerCase();
     if (status === "paid" || status === "void") return "";
     var ref = String((inv && inv.suggested_reference) || bank.reference_hint || "").trim();
+    var previewBlock = previewBtnHtml
+      ? '<div class="pp-invoice-pay__preview">' + previewBtnHtml + "</div>"
+      : "";
     if (!bank.available) {
       return (
         '<div class="pp-invoice-pay">' +
         '<p class="pp-invoice-pay__title">Pay by bank transfer</p>' +
         '<p class="pp-muted pp-invoice-pay__note">' +
         esc(bank.message || "Contact the office for bank transfer details.") +
-        "</p></div>"
+        "</p>" +
+        previewBlock +
+        "</div>"
       );
     }
     return (
@@ -6798,6 +6803,7 @@
         : "") +
       "</dl>" +
       '<p class="pp-muted pp-invoice-pay__note">Use the participant name as the payment reference so we can match it in Tide. Prefer bank transfer — no card fee.</p>' +
+      previewBlock +
       "</div>"
     );
   }
@@ -6940,6 +6946,22 @@
       !isPaid &&
       status !== "void" &&
       (status === "unpaid" || status === "partial" || status === "pending_confirmation");
+    var showBankPanel = !isPaid && !isGcInvoice && !isLaInvoice;
+    var previewBtnHtml = "";
+    if (showDraftFlow && pdf) {
+      previewBtnHtml =
+        '<button type="button" class="pp-btn pp-btn--primary pp-invoice-card__btn-full" data-pp-preview-invoice="' +
+        esc(inv.id) +
+        '" data-pp-pdf-url="' +
+        esc(pdf) +
+        '" data-pp-pdf-title="' +
+        esc(num ? "Draft — " + num : "Draft invoice") +
+        '">' +
+        invoiceBtnLabel("preview", "Preview draft invoice") +
+        "</button>";
+    } else if (showDraftFlow && !pdf) {
+      previewBtnHtml = '<p class="pp-muted">Draft invoice not available yet.</p>';
+    }
     var pdfActs = "";
     if (isPaid && pdf) {
       pdfActs =
@@ -6953,56 +6975,76 @@
         "</a>" +
         "</div>";
     } else if (showDraftFlow) {
-      pdfActs =
-        '<div class="pp-invoice-card__acts pp-invoice-card__acts--stack">' +
-        (pdf
-          ? '<button type="button" class="pp-btn pp-btn--primary pp-invoice-card__btn-full" data-pp-preview-invoice="' +
-            esc(inv.id) +
-            '" data-pp-pdf-url="' +
-            esc(pdf) +
-            '" data-pp-pdf-title="' +
-            esc(num ? "Draft — " + num : "Draft invoice") +
-            '">' +
-            invoiceBtnLabel("preview", "Preview draft invoice") +
-            "</button>"
-          : '<p class="pp-muted">Draft invoice not available yet.</p>') +
-        (canSetupGc
-          ? '<button type="button" class="pp-btn pp-btn--primary pp-invoice-card__btn-full" data-pp-setup-gocardless="' +
-            esc(inv.id) +
-            '">' +
-            invoiceBtnLabel("gocardless", "Set up Direct Payment") +
-            "</button>"
-          : "") +
-        (!canSetupGc && gc && !isGcInvoice
-          ? '<a class="pp-btn pp-btn--primary pp-invoice-card__btn-full" href="' +
-            esc(gc) +
-            '" target="_blank" rel="noopener noreferrer">' +
-            invoiceBtnLabel("gocardless", "Pay with GoCardless") +
-            "</a>"
-          : "") +
-        (pl
-          ? '<a class="pp-btn pp-btn--ghost pp-invoice-card__btn-full" href="' +
-            esc(pl) +
-            '" target="_blank" rel="noopener noreferrer">' +
-            invoiceBtnLabel(
-              "card",
-              "Card / Apple Pay link" + (cardCharge ? " · " + esc(cardCharge) : ""),
-            ) +
-            "</a>"
-          : "") +
-        (canPay
-          ? '<button type="button" class="pp-btn pp-btn--sec pp-invoice-card__btn-full" data-pp-pay-invoice="' +
-            esc(inv.id) +
-            '">' +
-            invoiceBtnLabel(
-              "card",
-              "Card / Apple Pay" + (cardCharge ? " · " + esc(cardCharge) : ""),
-            ) +
-            "</button>"
-          : "") +
-        "</div>";
+      var extraActs = "";
+      if (canSetupGc) {
+        extraActs +=
+          '<button type="button" class="pp-btn pp-btn--primary pp-invoice-card__btn-full" data-pp-setup-gocardless="' +
+          esc(inv.id) +
+          '">' +
+          invoiceBtnLabel("gocardless", "Set up Direct Payment") +
+          "</button>";
+      }
+      if (!canSetupGc && gc && !isGcInvoice) {
+        extraActs +=
+          '<a class="pp-btn pp-btn--primary pp-invoice-card__btn-full" href="' +
+          esc(gc) +
+          '" target="_blank" rel="noopener noreferrer">' +
+          invoiceBtnLabel("gocardless", "Pay with GoCardless") +
+          "</a>";
+      }
+      if (pl) {
+        extraActs +=
+          '<a class="pp-btn pp-btn--ghost pp-invoice-card__btn-full" href="' +
+          esc(pl) +
+          '" target="_blank" rel="noopener noreferrer">' +
+          invoiceBtnLabel(
+            "card",
+            "Card / Apple Pay link" + (cardCharge ? " · " + esc(cardCharge) : ""),
+          ) +
+          "</a>";
+      }
+      // Preview lives in the yellow Tide box when bank panel is shown.
+      if (!showBankPanel && previewBtnHtml) {
+        extraActs = previewBtnHtml + extraActs;
+      }
+      if (extraActs) {
+        pdfActs =
+          '<div class="pp-invoice-card__acts pp-invoice-card__acts--stack">' +
+          extraActs +
+          "</div>";
+      }
     } else if (!pdf) {
       pdfActs = '<p class="pp-muted">PDF not available yet.</p>';
+    }
+    var payPairHtml = "";
+    if (showDraftFlow && (canPay || canReport)) {
+      var payBtn = canPay
+        ? '<button type="button" class="pp-btn pp-btn--sec pp-invoice-pay-pair__btn" data-pp-pay-invoice="' +
+          esc(inv.id) +
+          '">' +
+          invoiceBtnLabel(
+            "card",
+            "Card / Apple Pay" + (cardCharge ? " · " + esc(cardCharge) : ""),
+          ) +
+          "</button>"
+        : "";
+      var reportBtn = canReport
+        ? '<button type="button" class="pp-btn pp-btn--paid-report pp-invoice-pay-pair__btn" data-pp-report-paid="' +
+          esc(inv.id) +
+          '" data-pp-pay-ref-default="' +
+          esc(suggestedRef) +
+          '">' +
+          invoiceBtnLabel("bank", "I&apos;ve paid by bank transfer") +
+          "</button>"
+        : "";
+      payPairHtml =
+        '<div class="pp-invoice-pay-pair">' +
+        payBtn +
+        reportBtn +
+        "</div>" +
+        (canReport
+          ? '<p class="pp-muted pp-invoice-pay__note pp-invoice-pay__notify">Tap <strong>I&apos;ve paid by bank transfer</strong> after you send the Tide transfer <em>or</em> pay with Card / Apple Pay — this alerts the office to validate the payment and release the slot.</p>'
+          : "");
     }
     return (
       '<article class="pp-invoice-card pp-invoice-card--' +
@@ -7055,7 +7097,7 @@
       (due ? '<p class="pp-invoice-card__meta muted">Due ' + esc(due) + "</p>" : "") +
       pendingNote +
       paidNote +
-      (isPaid ? "" : isGcInvoice || isLaInvoice ? "" : invoiceBankPanelHtml(inv)) +
+      (showBankPanel ? invoiceBankPanelHtml(inv, previewBtnHtml) : "") +
       (isPaid ? "" : creditHtml) +
       (isPaid
         ? ""
@@ -7073,6 +7115,7 @@
           ? '<p class="pp-muted pp-invoice-pay__note">Set up Direct Payment once — then invoices are collected automatically by mandate.</p>'
           : "") +
       pdfActs +
+      payPairHtml +
       (isPaid ? "" : cardFeeNote) +
       (isPaid
         ? ""
@@ -7080,23 +7123,6 @@
           ? '<p class="pp-muted pp-invoice-pay__note">External card link may include a surcharge' +
             (surcharge ? ": " + esc(surcharge) : "") +
             ". Bank transfer is preferred (no fee).</p>"
-          : "") +
-      (isPaid
-        ? ""
-        : canReport
-          ? '<div class="pp-invoice-report">' +
-            '<label class="pp-invoice-report__label">Transfer reference (optional)' +
-            '<input class="pp-invoice-report__input" type="text" data-pp-pay-ref="' +
-            esc(inv.id) +
-            '" value="' +
-            esc(suggestedRef) +
-            '" maxlength="120" autocomplete="off" /></label>' +
-            '<button type="button" class="pp-btn pp-btn--primary pp-invoice-card__btn-full" data-pp-report-paid="' +
-            esc(inv.id) +
-            '">' +
-            invoiceBtnLabel("bank", "I&apos;ve paid by bank transfer") +
-            "</button>" +
-            "</div>"
           : "") +
       "</article>"
     );
@@ -7459,8 +7485,7 @@
         btn.addEventListener("click", function () {
           var id = btn.getAttribute("data-pp-report-paid");
           if (!id || typeof opts.reportInvoicePaid !== "function") return;
-          var refInput = listHost.querySelector('[data-pp-pay-ref="' + id + '"]');
-          var ref = refInput ? String(refInput.value || "").trim() : "";
+          var ref = String(btn.getAttribute("data-pp-pay-ref-default") || "").trim();
           btn.disabled = true;
           btn.setAttribute("aria-busy", "true");
           void opts

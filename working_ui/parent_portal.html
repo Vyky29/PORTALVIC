@@ -248,6 +248,11 @@
       background: linear-gradient(135deg, var(--blue), #1f6587);
       color: var(--white);
     }
+    .pp-btn--sec {
+      background: #eef2f6;
+      color: var(--ink, #0f172a);
+      border: 1px solid var(--line, #e2e8f0);
+    }
     .pp-btn--ghost {
       background: transparent;
       color: var(--blue);
@@ -2115,6 +2120,43 @@
       line-height: 1.4;
       overflow-wrap: break-word;
     }
+    .pp-invoice-pay__preview {
+      margin-top: 12px;
+      min-width: 0;
+    }
+    .pp-invoice-pay__preview .pp-btn {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    .pp-invoice-pay-pair {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+      min-width: 0;
+      align-items: stretch;
+    }
+    .pp-invoice-pay-pair__btn {
+      flex: 1 1 calc(50% - 4px);
+      min-width: 0;
+      max-width: 100%;
+      width: auto;
+      box-sizing: border-box;
+      white-space: normal;
+      line-height: 1.25;
+      gap: 6px;
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+    .pp-btn--paid-report {
+      background: linear-gradient(135deg, #15803d, #166534);
+      color: #fff;
+    }
+    .pp-invoice-pay__notify {
+      margin-top: 8px;
+    }
     .pp-invoice-credit {
       margin: 0 0 12px;
       padding: 12px;
@@ -2135,31 +2177,6 @@
       max-width: 100%;
       overflow-wrap: break-word;
       white-space: normal;
-    }
-    .pp-invoice-report {
-      margin-top: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      min-width: 0;
-    }
-    .pp-invoice-report__label {
-      display: block;
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--ink);
-      min-width: 0;
-    }
-    .pp-invoice-report__input {
-      display: block;
-      width: 100%;
-      margin-top: 4px;
-      padding: 10px 12px;
-      border: 1px solid var(--line, #e2e8f0);
-      border-radius: 10px;
-      font: inherit;
-      box-sizing: border-box;
-      min-width: 0;
     }
     .pp-hub-siblings {
       display: flex;
