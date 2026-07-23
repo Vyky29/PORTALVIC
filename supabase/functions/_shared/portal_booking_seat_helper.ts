@@ -425,14 +425,19 @@ type DayBucket = {
 };
 
 /**
- * July crash weeks only carry intensive lines — they must not become the
- * "latest" standing template for Autumn weekly capacity (would hide after-school
- * frees released after re-enrol deadline).
+ * Full July crash window (W1 Mon 20 → W2 Fri 31), including Mon 27 between
+ * weeks — never use as Autumn standing weekly template.
  */
-const CRASH_TEMPLATE_SKIP_DATES = new Set<string>([
-  ...CRASH_SUMMER_WEEKS.w1.dates,
-  ...CRASH_SUMMER_WEEKS.w2.dates,
-]);
+const CRASH_TEMPLATE_SKIP_DATES: Set<string> = (() => {
+  const out = new Set<string>([
+    ...CRASH_SUMMER_WEEKS.w1.dates,
+    ...CRASH_SUMMER_WEEKS.w2.dates,
+  ]);
+  for (let d = 20; d <= 31; d++) {
+    out.add(`2026-07-${String(d).padStart(2, "0")}`);
+  }
+  return out;
+})();
 
 /**
  * Build weekly template slots from MADRE document.
