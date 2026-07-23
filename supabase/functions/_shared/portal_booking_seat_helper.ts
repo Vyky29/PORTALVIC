@@ -308,16 +308,16 @@ function slotMidMinutes(slot: OfferSlot): number {
 /**
  * Collapse Multi raw MADRE fragments into operator timetable rows
  * (same rules as admin Services register):
- * - Wed Acton → one 4.30–6 block, cap 4
+ * - Wed Acton → withheld from public booking until opening is confirmed
  * - Sun SwimFarm → three 90′ bands 9.30–11 / 11–12.30 / 12.30–2, cap 6
  */
 function foldMultiActivityOfferSlots(slots: OfferSlot[]): OfferSlot[] {
   const rest: OfferSlot[] = [];
-  const wedActon: OfferSlot[] = [];
   const sunSwim: OfferSlot[] = [];
   for (const s of slots) {
     if (s.serviceId === "multi" && s.venue === "Acton" && s.day === "Wednesday") {
-      wedActon.push(s);
+      /* Hide Wed Acton Multi from booking portal — opening not confirmed. */
+      continue;
     } else if (
       s.serviceId === "multi" &&
       s.venue === "SwimFarm" &&
@@ -327,25 +327,6 @@ function foldMultiActivityOfferSlots(slots: OfferSlot[]): OfferSlot[] {
     } else {
       rest.push(s);
     }
-  }
-
-  if (wedActon.length) {
-    const cap = 4;
-    const taken = Math.min(cap, Math.max(0, ...wedActon.map((s) => s.taken)));
-    const ref =
-      wedActon.map((s) => s.referenceDate || "").filter(Boolean).sort().pop() ||
-      null;
-    rest.push({
-      id: slotId("multi", "Acton", "Wednesday", "16:30", "4.30 – 6.00"),
-      serviceId: "multi",
-      venue: "Acton",
-      day: "Wednesday",
-      timeLabel: "4.30 – 6.00",
-      sortTime: "16:30",
-      capacity: cap,
-      taken,
-      referenceDate: ref,
-    });
   }
 
   if (sunSwim.length) {
@@ -547,6 +528,11 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
   folded = ensureClimbingSundayOpenBand(folded);
   /* Day Centre is office-arranged only — never expose MADRE capacity as bookable slots. */
   folded = folded.filter((s) => s.serviceId !== "day_centre");
+  /* Defence in depth: Wed Acton Multi stays off the public offer. */
+  folded = folded.filter(
+    (s) =>
+      !(s.serviceId === "multi" && s.venue === "Acton" && s.day === "Wednesday"),
+  );
 
   folded.sort((a, b) => {
     const dayOrder: Record<string, number> = {
@@ -582,7 +568,10 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
     "day_centre",
   ];
   const fullServices: OfferService[] = always.map((id) => {
-    const fromMadre = [...(venueSets.get(id) || [])].sort();
+    let fromMadre = [...(venueSets.get(id) || [])].sort();
+    if (id === "multi") {
+      fromMadre = fromMadre.filter((v) => v !== "Acton");
+    }
     return {
       ...SERVICE_META[id],
       venues: fromMadre.length ? fromMadre : defaults[id],
