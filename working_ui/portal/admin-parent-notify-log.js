@@ -1839,11 +1839,8 @@
     if (needsTemplate) {
       sessionNote =
         '<div class="portal-pnlog-composer__tpl-banner" role="status">' +
-        "<strong>Needs Meta template</strong> · no open 24h window. Outbound uses approved " +
-        "<code>" +
-        esc(WA_COLD_TEMPLATE_NAME) +
-        "</code> — edit only the middle part (<code>{{1}}</code>). " +
-        "Fixed text <em>Hello,</em> / <em>Thank you.</em> cannot be changed here." +
+        "<strong>Needs Meta template</strong> — parent has not messaged in the last 24h. " +
+        "Edit only the middle box (<code>{{1}}</code>). Scroll up to read the full chat." +
         "</div>";
       templateShell =
         '<div class="portal-pnlog-composer__tpl-shell">' +
@@ -1878,31 +1875,34 @@
       " · " +
       esc(toPhone) +
       "</p>" +
-      '<div class="portal-pnlog-composer__tools">' +
-      '<input type="file" id="portalPnlogComposerFile" accept="image/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" hidden />' +
-      '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerPhoto"' +
-      mediaDisabled +
-      '>📷 Photo</button>' +
-      '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerDocument"' +
-      mediaDisabled +
-      '>📎 Document</button>' +
-      '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerAudio"' +
-      mediaDisabled +
-      '>🎙 Audio</button>' +
-      '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerClearAttach" hidden>✕ Clear</button>' +
-      (state.editing
-        ? '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerCancelEdit">Cancel</button>'
-        : "") +
-      '<span id="portalPnlogComposerAttachPreview" class="portal-pnlog-composer__attach-preview muted"></span>' +
-      "</div>" +
-      (!openSession
-        ? '<p class="portal-pnlog-composer__media-note muted">Photos, documents and audio become available after the parent messages the WhatsApp API number (24-hour reply window).</p>'
-        : "") +
+      (needsTemplate
+        ? state.editing
+          ? '<div class="portal-pnlog-composer__tools">' +
+            '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerCancelEdit">Cancel</button>' +
+            "</div>"
+          : ""
+        : '<div class="portal-pnlog-composer__tools">' +
+          '<input type="file" id="portalPnlogComposerFile" accept="image/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" hidden />' +
+          '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerPhoto"' +
+          mediaDisabled +
+          ">📷 Photo</button>" +
+          '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerDocument"' +
+          mediaDisabled +
+          ">📎 Document</button>" +
+          '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerAudio"' +
+          mediaDisabled +
+          ">🎙 Audio</button>" +
+          '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerClearAttach" hidden>✕ Clear</button>' +
+          (state.editing
+            ? '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-composer__tool" id="portalPnlogComposerCancelEdit">Cancel</button>'
+            : "") +
+          '<span id="portalPnlogComposerAttachPreview" class="portal-pnlog-composer__attach-preview muted"></span>' +
+          "</div>") +
       templateShell +
       '<textarea id="portalPnlogComposerInput" class="portal-pnlog-composer__input' +
       (needsTemplate ? " portal-pnlog-composer__input--tpl" : "") +
       '" rows="' +
-      (needsTemplate ? "5" : "4") +
+      (needsTemplate ? "3" : "4") +
       '" placeholder="' +
       esc(textareaPlaceholder) +
       '" maxlength="' +
@@ -2676,11 +2676,18 @@
   }
 
   function viewHtml() {
-    // page-intro must be a top-level sibling (not inside #portalParentNotifyLogRoot)
-    // so admin page-head can extract + strip it once — no duplicate copy in the body.
+    // Short page-intro for the admin head; full how-to sits in-body (left-aligned).
     return (
-      '<p class="page-intro">WhatsApp conversations via the Business API — pick a family on the left, read the thread, and reply in the box below (no email on this screen). Use <strong>Reply</strong> on a bubble to quote that message (like swipe-to-reply). Search also finds families from Contacts even if there is no WhatsApp history yet. Delivery ticks: Sent → Delivered → Read. Refreshes every 15s.</p>' +
+      '<p class="page-intro">WhatsApp with families — pick a chat, read the thread, reply below. Delivery: Sent → Delivered → Read.</p>' +
       '<div id="portalParentNotifyLogRoot" class="portal-day-ops-embed portal-pnlog-root">' +
+      '<aside class="portal-pnlog-howto" aria-label="How to use Family messages">' +
+      '<p class="portal-pnlog-howto__title">How to use this screen</p>' +
+      '<ol class="portal-pnlog-howto__steps">' +
+      "<li><strong>Left:</strong> choose a family. Search works even if there is no WhatsApp history yet.</li>" +
+      "<li><strong>Centre:</strong> read the full chat thread (scroll if needed). This stays visible even when a Meta template is required.</li>" +
+      "<li><strong>Bottom:</strong> type your reply. If you see <em>Needs Meta template</em>, only the middle box is editable — then Send.</li>" +
+      "<li>Use <strong>Reply</strong> on a bubble to quote it. Photos/files only when the 24h window is open. Auto-refresh every 15s.</li>" +
+      "</ol></aside>" +
       '<div class="portal-pnlog-toolbar">' +
       '<input type="search" id="portalParentNotifyLogSearch" class="inp portal-pnlog-toolbar__search" placeholder="Search parent, participant, phone…" autocomplete="off" />' +
       '<select id="portalParentNotifyLogOutcome" class="sel portal-pnlog-toolbar__sel" aria-label="Filter">' +

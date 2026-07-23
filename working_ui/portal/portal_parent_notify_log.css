@@ -9,6 +9,50 @@
   min-width: 0;
 }
 
+/* Page head: full-width intro under title (not a right-side column) */
+#workspace:has(#portalParentNotifyLogRoot) > .admin-page-head {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+#workspace:has(#portalParentNotifyLogRoot) > .admin-page-head .admin-page-head__intro {
+  flex: 1 1 100%;
+  max-width: 100%;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.portal-pnlog-howto {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(45, 132, 179, 0.22);
+  background: #f4f9fc;
+  min-width: 0;
+}
+.portal-pnlog-howto__title {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--pnlog-ink);
+}
+.portal-pnlog-howto__steps {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #334155;
+  min-width: 0;
+}
+.portal-pnlog-howto__steps li {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
 .portal-pnlog-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -60,8 +104,8 @@
   grid-template-columns: minmax(240px, 340px) minmax(0, 1fr);
   gap: 0;
   min-width: 0;
-  height: min(72vh, 680px);
-  max-height: min(72vh, 680px);
+  height: min(78vh, 760px);
+  max-height: min(78vh, 760px);
   border: 1px solid rgba(45, 132, 179, 0.22);
   border-radius: 14px;
   overflow: hidden;
@@ -302,13 +346,23 @@
   color: #334155;
 }
 
-/* Must shrink so the composer stays visible below */
+/* Thread keeps a real share of the pane — Meta template composer must not cover it */
 .portal-pnlog-thread-scroll {
-  flex: 1 1 0;
-  min-height: 0;
+  flex: 1 1 55%;
+  min-height: min(220px, 42%);
   overflow: auto;
   padding: 12px 14px 8px;
   -webkit-overflow-scrolling: touch;
+}
+
+#portalPnlogComposerMount {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 48%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  border-top: 2px solid var(--pnlog-yellow);
+  background: #fff;
 }
 
 .portal-pnlog-thread {
@@ -444,14 +498,14 @@
 }
 
 .portal-pnlog-composer__tpl-banner {
-  margin: 0 0 8px;
-  padding: 8px 10px;
+  margin: 0 0 6px;
+  padding: 6px 9px;
   border-radius: 10px;
   background: #faf5ff;
   border: 1px solid #d8b4fe;
   color: #581c87;
-  font-size: 12px;
-  line-height: 1.4;
+  font-size: 11px;
+  line-height: 1.35;
   overflow-wrap: anywhere;
   min-width: 0;
 }
@@ -473,9 +527,9 @@
 .portal-pnlog-composer__tpl-shell {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin: 0 0 8px;
-  padding: 10px;
+  gap: 4px;
+  margin: 0 0 6px;
+  padding: 8px;
   border-radius: 12px;
   border: 1px solid #c4b5fd;
   background: linear-gradient(180deg, #faf5ff 0%, #fff 55%);
@@ -514,12 +568,14 @@
 }
 
 .portal-pnlog-composer__tpl-preview {
-  margin: 0 0 10px;
-  padding: 8px 10px;
+  margin: 0 0 6px;
+  padding: 6px 9px;
   border-radius: 10px;
   background: #f1f5f9;
   border: 1px solid #cbd5e1;
   min-width: 0;
+  max-height: 5.5rem;
+  overflow: auto;
 }
 
 .portal-pnlog-composer__tpl-preview-lab {
@@ -691,18 +747,23 @@
   margin-top: 4px;
 }
 
-/* Always pinned at bottom of the pane */
+/* Composer sits in #portalPnlogComposerMount (scrollable when Meta template UI is tall) */
 .portal-pnlog-composer {
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   padding: 10px 12px 12px;
   background: #fff;
-  border-top: 2px solid var(--pnlog-yellow);
-  box-shadow: 0 -6px 16px rgba(15, 23, 42, 0.06);
+  border-top: 0;
+  box-shadow: none;
   min-width: 0;
   z-index: 2;
+}
+
+.portal-pnlog-composer--tpl .portal-pnlog-composer__input {
+  min-height: 56px;
+  max-height: 12vh;
 }
 
 .portal-pnlog-composer--disabled {
@@ -802,8 +863,16 @@
 @media (max-width: 780px) {
   .portal-pnlog-chat {
     grid-template-columns: minmax(0, 1fr);
-    height: min(78vh, 680px);
-    max-height: min(78vh, 680px);
+    height: min(80vh, 760px);
+    max-height: min(80vh, 760px);
+  }
+
+  #portalPnlogComposerMount {
+    max-height: 42%;
+  }
+
+  .portal-pnlog-thread-scroll {
+    min-height: min(200px, 38%);
   }
 
   .portal-pnlog-chat__list {
