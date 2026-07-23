@@ -1073,28 +1073,42 @@
     .sheet__actions { display: flex; flex-wrap: wrap; gap: 8px; }
     .sheet__actions .btn { flex: 1 1 140px; }
 
-    /* —— Access gate: preview OK, seats / prices / book locked until verified —— */
-    html.booking-gated,
-    body.booking-gated {
-      cursor: default;
-    }
-    body.booking-gated .slot-col--avail .badge,
-    body.booking-gated .slot-col--action .btn,
-    body.booking-gated .svc-meta,
-    body.booking-gated .svc-card__hint,
-    body.booking-gated .day-acc__remaining {
-      filter: blur(5px);
-      user-select: none;
-      pointer-events: none;
-    }
-    body.booking-gated .slot-col--action .btn,
-    body.booking-gated [data-book],
-    body.booking-gated [data-enquire],
-    body.booking-gated [data-dc-enquire] {
-      pointer-events: none !important;
-    }
+    /* —— Optional returning sign-in (browse + Book stay open for new visitors) —— */
     body.booking-gate-open {
       overflow: hidden !important;
+    }
+    .booking-sign-in-row {
+      margin: 10px 0 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 8px 14px;
+      min-width: 0;
+      max-width: 36rem;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .booking-sign-in-link {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--blueDeep);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      overflow-wrap: break-word;
+    }
+    .booking-signed-in {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--ink);
+      background: rgba(90, 159, 196, 0.16);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 10px;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .booking-gate {
       position: fixed;
@@ -1110,6 +1124,7 @@
     }
     .booking-gate[hidden] { display: none !important; }
     .booking-gate__panel {
+      position: relative;
       width: min(440px, 100%);
       max-height: min(92dvh, 720px);
       overflow: auto;
@@ -1119,6 +1134,24 @@
       box-shadow: 0 24px 60px rgba(23, 50, 71, 0.22);
       padding: 22px 20px 18px;
       min-width: 0;
+    }
+    .booking-gate__close {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      width: 36px;
+      height: 36px;
+      border: 0;
+      background: transparent;
+      color: var(--ink);
+      font-size: 1.6rem;
+      line-height: 1;
+      cursor: pointer;
+      border-radius: 10px;
+    }
+    .booking-gate__close:hover,
+    .booking-gate__close:focus-visible {
+      background: rgba(23, 50, 71, 0.06);
     }
     .booking-gate__eyebrow {
       margin: 0 0 6px;
@@ -1324,7 +1357,11 @@
         </div>
       </div>
       <h1>clubSENsational</h1>
-      <p class="lede">Browse every service we offer — including fully booked times — then open weekly slots by venue and day.</p>
+      <p class="lede">Browse every service we offer — including fully booked times — then open weekly slots by venue and day. New visitors can look freely; Book opens the registration form.</p>
+      <p class="booking-sign-in-row">
+        <span id="bookingLeadSignedIn" class="booking-signed-in" hidden>Signed in</span>
+        <a href="#already-with-us" id="bookingLeadOpenReturning" class="booking-sign-in-link">Already with us? Sign in with email code</a>
+      </p>
     </header>
 
     <p class="offer-banner" id="offerBanner" role="status">
@@ -1389,9 +1426,10 @@
       <div id="timetableHost" aria-live="polite"></div>
     </section>
 
-    <p class="foot">
+    <p class="foot" id="already-with-us">
       Already with us?
-      <a href="/parent">Open the parent portal</a>
+      <a href="#already-with-us" id="bookingLeadOpenReturningFoot">Sign in with email code</a>
+      · <a href="/parent">Parent portal</a> (office-activated)
       · Office: <a href="mailto:info@clubsensational.org">info@clubsensational.org</a>
     </p>
   </main>
@@ -1415,6 +1453,7 @@
       aria-labelledby="bookingLeadTitle"
       aria-describedby="bookingLeadLede"
     >
+      <button type="button" class="booking-gate__close" id="bookingLeadClose" aria-label="Close">×</button>
       <div id="bookingLeadStepDetails">
         <p class="booking-gate__eyebrow">Parent / guardian</p>
         <div class="booking-gate__tabs" role="tablist" aria-label="Access type">
@@ -1443,10 +1482,9 @@
         <div id="bookingLeadReturningBlock">
           <h2 class="booking-gate__title" id="bookingLeadTitle">Welcome back</h2>
           <p class="booking-gate__lede" id="bookingLeadLede">
-            Existing club families and anyone who has already registered on this booking portal can enter with email
-            and a one-time code — no need to request access again.
-            Active family portal users can also
-            <a href="/parent" style="color:var(--blueDeep);font-weight:700">open the family portal</a>.
+            Families already with the club can sign in with the email on file and a one-time code
+            (or a magic link from the office). This recognises you for booking — it does not open the parent portal
+            by itself; the office activates that separately.
           </p>
           <form id="bookingLeadReturningForm" novalidate>
             <div class="booking-gate__field">
@@ -1486,63 +1524,15 @@
         </div>
 
         <div id="bookingLeadNewBlock" hidden>
-          <h2 class="booking-gate__title">Tell us who is looking</h2>
+          <h2 class="booking-gate__title">New visitor</h2>
           <p class="booking-gate__lede">
-            New to ClubSENsational? Enter parent/carer details to request access, explore availability, and begin a booking.
+            No code needed to browse. When you find a time, press <strong>Book</strong> — you’ll enter your details
+            on the registration form and we’ll hold the slot when you submit. Parent portal access comes later via the office.
           </p>
           <form id="bookingLeadDetailsForm" novalidate>
-            <div class="booking-gate__field">
-              <label for="bookingLeadParentName">Name <span aria-hidden="true">*</span></label>
-              <input
-                id="bookingLeadParentName"
-                name="parent_name"
-                type="text"
-                autocomplete="name"
-                required
-                maxlength="120"
-                placeholder="Parent / carer full name"
-              />
-            </div>
-            <div class="booking-gate__field">
-              <label for="bookingLeadEmail">Email address <span aria-hidden="true">*</span></label>
-              <input
-                id="bookingLeadEmail"
-                name="parent_email"
-                type="email"
-                autocomplete="email"
-                required
-                inputmode="email"
-              />
-            </div>
-            <div class="booking-gate__field">
-              <label for="bookingLeadMobile">Phone <span aria-hidden="true">*</span></label>
-              <input
-                id="bookingLeadMobile"
-                name="parent_phone"
-                type="tel"
-                autocomplete="tel"
-                required
-                inputmode="tel"
-              />
-            </div>
-            <label class="booking-gate__check">
-              <input id="bookingLeadPrivacy" name="privacy_accepted" type="checkbox" required />
-              <span>
-                I have read and accept the
-                <a href="/parent/terms" target="_blank" rel="noopener">Privacy Notice</a>
-                (required).
-              </span>
-            </label>
-            <label class="booking-gate__check">
-              <input id="bookingLeadMarketing" name="marketing_consent" type="checkbox" />
-              <span>
-                I would like to receive news, availability updates and information about ClubSENsational services
-                (optional).
-              </span>
-            </label>
             <p class="booking-gate__msg" id="bookingLeadDetailsMsg" hidden></p>
             <div class="booking-gate__actions">
-              <button type="submit" class="btn btn--book" id="bookingLeadSendCode">Request access code</button>
+              <button type="submit" class="btn btn--book" id="bookingLeadBrowseFree">Continue browsing</button>
             </div>
           </form>
         </div>
@@ -1552,7 +1542,7 @@
         <p class="booking-gate__eyebrow">Almost there</p>
         <h2 class="booking-gate__title">Enter your access code</h2>
         <p class="booking-gate__hint" id="bookingLeadOtpHint">
-          We’ve sent a 6-digit code to your email. Enter it below to explore availability.
+          We’ve sent a 6-digit code to your email. Enter it below to continue.
         </p>
         <form id="bookingLeadOtpForm" novalidate>
           <div class="booking-gate__field">
@@ -1570,7 +1560,7 @@
           </div>
           <p class="booking-gate__msg" id="bookingLeadOtpMsg" hidden></p>
           <div class="booking-gate__actions">
-            <button type="submit" class="btn btn--book" id="bookingLeadVerify">Unlock booking</button>
+            <button type="submit" class="btn btn--book" id="bookingLeadVerify">Continue</button>
           </div>
           <div class="booking-gate__secondary">
             <button type="button" class="booking-gate__linkbtn" id="bookingLeadBack">Edit details</button>
@@ -1583,7 +1573,7 @@
 
   <script src="/portal/portal_booking_offer.js?v=20260716-daycentre-info"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
-  <script src="/portal/portal_booking_lead_gate.js?v=20260722-returning-access"></script>
+  <script src="/portal/portal_booking_lead_gate.js?v=20260723-browse-free"></script>
   <script>
 (function () {
   "use strict";
@@ -2284,10 +2274,6 @@
   }
 
   function goToRegistration(slot) {
-    if (window.PortalBookingLeadGate && !window.PortalBookingLeadGate.isUnlocked()) {
-      window.PortalBookingLeadGate.openGate();
-      return;
-    }
     try {
       if (window.PortalBookingServicePresence) {
         var bits = [slot && slot.id, slot && slot.serviceId, slot && slot.day, slot && slot.timeLabel]
@@ -2300,7 +2286,7 @@
       /* ignore */
     }
     try {
-      if (window.PortalBookingLeadGate) {
+      if (window.PortalBookingLeadGate && window.PortalBookingLeadGate.isSignedIn && window.PortalBookingLeadGate.isSignedIn()) {
         void window.PortalBookingLeadGate.pingActivity({
           booking_status: "registration_started",
           registration_status: "started",
@@ -2314,10 +2300,6 @@
   }
 
   function openDayCentreEnquire(svc) {
-    if (window.PortalBookingLeadGate && !window.PortalBookingLeadGate.isUnlocked()) {
-      window.PortalBookingLeadGate.openGate();
-      return;
-    }
     var sheet = document.getElementById("actionSheet");
     var title = document.getElementById("sheetTitle");
     var body = document.getElementById("sheetBody");
@@ -2345,10 +2327,6 @@
   }
 
   function openSheet(slot) {
-    if (window.PortalBookingLeadGate && !window.PortalBookingLeadGate.isUnlocked()) {
-      window.PortalBookingLeadGate.openGate();
-      return;
-    }
     var svc = mock.serviceById(slot.serviceId);
     if (svc && svc.id === "day_centre") {
       openDayCentreEnquire(svc);
@@ -2434,7 +2412,7 @@
     if (!card) return;
     var sid = card.getAttribute("data-jump-service");
     try {
-      if (window.PortalBookingLeadGate && window.PortalBookingLeadGate.isUnlocked()) {
+      if (window.PortalBookingLeadGate && window.PortalBookingLeadGate.isSignedIn && window.PortalBookingLeadGate.isSignedIn()) {
         void window.PortalBookingLeadGate.pingActivity({
           booking_status: "exploring_services",
           service_viewed: sid || "",
@@ -2500,10 +2478,10 @@
       var weekly = mock.stats && mock.stats.weekly_slots;
       setBanner(
         "info",
-        "Live places from the club roster" +
+        "Browse freely — no code needed. Live places from the club roster" +
           (weekly != null ? " · " + weekly + " weekly times" : n ? " · " + n + " times" : "") +
           (mock.TERM_LABEL ? " · " + mock.TERM_LABEL : "") +
-          ". Book opens the registration questionnaire; full slots can join a waiting list by email."
+          ". Book opens registration (slot hold on submit). Already with us? Sign in above."
       );
     })
     .catch(function () {
@@ -2522,9 +2500,14 @@
   }
   try {
     if (window.PortalBookingLeadGate) {
-      window.PortalBookingLeadGate.guardClicks(document.getElementById("timetableHost"));
-      window.PortalBookingLeadGate.guardClicks(document.getElementById("serviceCards"));
       void window.PortalBookingLeadGate.boot();
+      var footSignIn = document.getElementById("bookingLeadOpenReturningFoot");
+      if (footSignIn) {
+        footSignIn.addEventListener("click", function (e) {
+          e.preventDefault();
+          window.PortalBookingLeadGate.openGate({ flow: "returning" });
+        });
+      }
     }
   } catch (_e2) {
     /* ignore */

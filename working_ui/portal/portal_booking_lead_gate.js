@@ -1,19 +1,20 @@
 /**
- * Booking Portal access gate — aligned with registration parent/carer fields
- * (parent_name, parent_email, parent_phone) + family portal session handoff.
+ * Booking Portal access:
+ * - New visitors browse freely (no OTP). Book → registration form → hold on submit.
+ * - Already-with-us: optional email OTP / magic link (lead_session) for recognition + prefill.
+ * Parent portal access stays office-activated (not automatic from this gate).
  */
 (function (global) {
   "use strict";
 
   var STORAGE_KEY = "clubsens_booking_lead_session_v1";
   var PRIVACY_VERSION = "2026-07-v1";
-  var PREVIEW_MS = 5000;
   var state = {
-    unlocked: false,
+    unlocked: true,
+    signedIn: false,
     lead: null,
     token: "",
     pendingEmail: "",
-    timer: null,
     flow: "returning",
   };
 
@@ -89,6 +90,7 @@
   function clearStored() {
     state.token = "";
     state.lead = null;
+    state.signedIn = false;
     try {
       global.localStorage.removeItem(STORAGE_KEY);
     } catch (_e) {
@@ -103,7 +105,8 @@
       if (!/^[a-f0-9]{32,128}$/i.test(tok)) return false;
       saveStored(tok, null, null);
       q.delete("lead_session");
-      var next = global.location.pathname + (q.toString() ? "?" + q.toString() : "") + (global.location.hash || "");
+      var next =
+        global.location.pathname + (q.toString() ? "?" + q.toString() : "") + (global.location.hash || "");
       if (global.history && global.history.replaceState) {
         global.history.replaceState({}, "", next);
       }
@@ -138,10 +141,10 @@
     return document.getElementById(id);
   }
 
-  function setLocked(locked) {
-    document.documentElement.classList.toggle("booking-gated", !!locked);
-    document.body.classList.toggle("booking-gated", !!locked);
-    state.unlocked = !locked;
+  function setBrowseOpen() {
+    document.documentElement.classList.remove("booking-gated");
+    document.body.classList.remove("booking-gated");
+    state.unlocked = true;
   }
 
   function showModal(show) {
@@ -197,6 +200,22 @@
     if (label) btn.textContent = label;
   }
 
+  function syncSignedInUi() {
+    var chip = $("bookingLeadSignedIn");
+    var openBtn = $("bookingLeadOpenReturning");
+    if (chip) {
+      chip.hidden = !state.signedIn;
+      if (state.signedIn && state.lead) {
+        var label =
+          state.lead.parent_name ||
+          state.lead.email ||
+          "Signed in";
+        chip.textContent = "Signed in · " + label;
+      }
+    }
+    if (openBtn) openBtn.hidden = !!state.signedIn;
+  }
+
   async function validateSession(tokenOverride) {
     var stored = loadStored();
     var tok = String(tokenOverride || state.token || (stored && stored.token) || "").trim();
@@ -209,6 +228,7 @@
       );
       if (out.res.ok && out.data && out.data.ok && out.data.lead) {
         saveStored(tok, out.data.expires_at || (stored && stored.expiresAt), out.data.lead);
+        state.signedIn = true;
         return true;
       }
     } catch (_e) {
@@ -218,19 +238,28 @@
     return false;
   }
 
-  function unlock() {
-    if (state.timer) {
-      clearTimeout(state.timer);
-      state.timer = null;
-    }
-    setLocked(false);
+  function closeGate() {
     showModal(false);
+    setBrowseOpen();
+    syncSignedInUi();
   }
 
-  function openGate() {
-    setLocked(true);
+  function markSignedIn() {
+    state.signedIn = true;
+    setBrowseOpen();
+    showModal(false);
+    syncSignedInUi();
+  }
+
+  /**
+   * Optional sign-in for families already on file (OTP / magic link).
+   * Does not block browsing or Book for new visitors.
+   */
+  function openGate(opts) {
+    opts = opts || {};
+    setBrowseOpen();
     showStep("details");
-    setFlow(state.flow || "returning");
+    setFlow(opts.flow === "new" ? "new" : "returning");
     showModal(true);
     var focusEl =
       state.flow === "new"
@@ -258,7 +287,7 @@
             ? "Welcome back. "
             : "";
       otpHint.textContent =
-        prefix + "We sent a 6-digit code to " + hint + ". Enter it below to explore availability.";
+        prefix + "We sent a 6-digit code to " + hint + ". Enter it below to continue.";
     }
     showStep("otp");
     var codeEl = $("bookingLeadCode");
@@ -311,13 +340,13 @@
         var err = (out.data && out.data.error) || "send_failed";
         var human =
           err === "not_recognised"
-            ? "We couldn’t find that email on file. Try your club email, add the phone on file, or use New visitor."
+            ? "We couldn’t find that email on file. Try your club email, add the phone on file, or continue as a new visitor and Book."
             : err === "privacy_required"
               ? "Please accept the Privacy Notice to continue."
               : err === "email_invalid"
                 ? "Please enter a valid email address."
                 : err === "mobile_invalid"
-                  ? "Add the phone number on your club record, or use New visitor."
+                  ? "Add the phone number on your club record, or continue as a new visitor and Book."
                   : "We couldn’t send a code just now. Please try again.";
         setMsg("bookingLeadReturningMsg", human, true);
         setBusy(btn, false, "Send access code");
@@ -333,76 +362,16 @@
 
   async function submitDetails(ev) {
     if (ev) ev.preventDefault();
-    var parentName = String(
-      ($("bookingLeadParentName") && $("bookingLeadParentName").value) ||
-        ($("bookingLeadFirstName") && $("bookingLeadFirstName").value) ||
-        ""
-    ).trim();
-    var email = String(($("bookingLeadEmail") && $("bookingLeadEmail").value) || "").trim();
-    var phone = String(($("bookingLeadMobile") && $("bookingLeadMobile").value) || "").trim();
-    var privacy = !!( $("bookingLeadPrivacy") && $("bookingLeadPrivacy").checked );
-    var marketing = !!( $("bookingLeadMarketing") && $("bookingLeadMarketing").checked );
-    var btn = $("bookingLeadSendCode");
-
-    setMsg("bookingLeadDetailsMsg", "", false);
-    if (parentName.length < 2) {
-      setMsg("bookingLeadDetailsMsg", "Please enter the parent/carer name.", true);
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setMsg("bookingLeadDetailsMsg", "Please enter a valid email address.", true);
-      return;
-    }
-    if (phone.replace(/\D/g, "").length < 10) {
-      setMsg("bookingLeadDetailsMsg", "Please enter a valid phone number.", true);
-      return;
-    }
-    if (!privacy) {
-      setMsg("bookingLeadDetailsMsg", "Please accept the Privacy Notice to continue.", true);
-      return;
-    }
-
-    setBusy(btn, true, "Sending code…");
-    try {
-      var out = await api("portal-booking-lead-otp-request", {
-        flow: "new",
-        parent_name: parentName,
-        parent_email: email,
-        parent_phone: phone,
-        privacy_accepted: true,
-        marketing_consent: marketing,
-        privacy_notice_version: PRIVACY_VERSION,
-        first_page_visited: (global.location && global.location.pathname) || "/bookingportal",
-      });
-      if (!out.res.ok || !out.data || !out.data.ok) {
-        var err = (out.data && out.data.error) || "send_failed";
-        var human =
-          err === "privacy_required"
-            ? "Please accept the Privacy Notice to continue."
-            : err === "email_invalid"
-              ? "Please enter a valid email address."
-              : err === "mobile_invalid"
-                ? "Please enter a valid phone number."
-                : err === "parent_name_required"
-                  ? "Please enter the parent/carer name."
-                  : "We couldn’t send a code just now. Please try again.";
-        setMsg("bookingLeadDetailsMsg", human, true);
-        setBusy(btn, false, "Request access code");
-        return;
-      }
-      afterOtpSent(email, out, "bookingLeadDetailsMsg", btn, "Request access code");
-      return;
-    } catch (_e3) {
-      setMsg("bookingLeadDetailsMsg", "Network error — please try again.", true);
-    }
-    setBusy(btn, false, "Request access code");
+    /* New visitors no longer OTP here — close and browse; Book opens registration. */
+    closeGate();
   }
 
   async function submitOtp(ev) {
     if (ev) ev.preventDefault();
     var email =
       state.pendingEmail ||
-      String(($("bookingLeadEmail") && $("bookingLeadEmail").value) || "").trim();
+      String(($("bookingLeadEmail") && $("bookingLeadEmail").value) || "").trim() ||
+      String(($("bookingLeadReturningEmail") && $("bookingLeadReturningEmail").value) || "").trim();
     var code = String(($("bookingLeadCode") && $("bookingLeadCode").value) || "").trim();
     var btn = $("bookingLeadVerify");
     setMsg("bookingLeadOtpMsg", "", false);
@@ -422,18 +391,20 @@
               ? "Too many attempts. Request a new code."
               : "That code didn’t match. Please try again.";
         setMsg("bookingLeadOtpMsg", human, true);
-        setBusy(btn, false, "Unlock booking");
+        setBusy(btn, false, "Continue");
         return;
       }
       saveStored(out.data.session_token, out.data.expires_at, out.data.lead);
-      unlock();
+      markSignedIn();
     } catch (_e) {
       setMsg("bookingLeadOtpMsg", "Network error — please try again.", true);
     }
-    setBusy(btn, false, "Unlock booking");
+    setBusy(btn, false, "Continue");
   }
 
   function wireUi() {
+    if (wireUi._done) return;
+    wireUi._done = true;
     var detailsForm = $("bookingLeadDetailsForm");
     var returningForm = $("bookingLeadReturningForm");
     var otpForm = $("bookingLeadOtpForm");
@@ -441,6 +412,9 @@
     var resendBtn = $("bookingLeadResend");
     var tabR = $("bookingLeadTabReturning");
     var tabN = $("bookingLeadTabNew");
+    var closeBtn = $("bookingLeadClose");
+    var browseBtn = $("bookingLeadBrowseFree");
+    var openReturning = $("bookingLeadOpenReturning");
     if (detailsForm) detailsForm.addEventListener("submit", submitDetails);
     if (returningForm) returningForm.addEventListener("submit", submitReturning);
     if (otpForm) otpForm.addEventListener("submit", submitOtp);
@@ -464,29 +438,36 @@
       resendBtn.addEventListener("click", function () {
         showStep("details");
         if (state.flow === "returning") submitReturning();
-        else submitDetails();
+      });
+    }
+    if (closeBtn) {
+      closeBtn.addEventListener("click", function () {
+        closeGate();
+      });
+    }
+    if (browseBtn) {
+      browseBtn.addEventListener("click", function () {
+        closeGate();
+      });
+    }
+    if (openReturning) {
+      openReturning.addEventListener("click", function (e) {
+        if (e) e.preventDefault();
+        openGate({ flow: "returning" });
+      });
+    }
+    var gate = $("bookingLeadGate");
+    if (gate) {
+      gate.addEventListener("click", function (e) {
+        if (e.target === gate) closeGate();
       });
     }
     setFlow(state.flow || "returning");
   }
 
-  function guardClicks(root) {
-    if (!root) return;
-    root.addEventListener(
-      "click",
-      function (e) {
-        if (state.unlocked) return;
-        var t =
-          e.target && e.target.closest
-            ? e.target.closest("[data-book], [data-enquire], [data-dc-enquire], .btn--book, .btn--wait")
-            : null;
-        if (!t) return;
-        e.preventDefault();
-        e.stopPropagation();
-        openGate();
-      },
-      true
-    );
+  /** Book / enquire are never blocked — kept for API compatibility. */
+  function guardClicks(_root) {
+    /* no-op: browsing and Book stay open for new visitors */
   }
 
   async function pingActivity(payload) {
@@ -499,6 +480,8 @@
       });
       if (out.res.ok && out.data && out.data.lead) {
         saveStored(tok, out.data.expires_at || (stored && stored.expiresAt), out.data.lead);
+        state.signedIn = true;
+        syncSignedInUi();
       }
     } catch (_e) {
       /* ignore */
@@ -537,24 +520,30 @@
   async function boot(opts) {
     opts = opts || {};
     wireUi();
-    setLocked(true);
+    setBrowseOpen();
     showModal(false);
     adoptTokenFromUrl();
 
     var ok = await validateSession();
     if (ok) {
-      unlock();
+      markSignedIn();
       return true;
     }
 
-    if (opts.skipPreview) {
-      openGate();
+    /* Optional: force returning gate (e.g. ?sign_in=1) — never auto-lock browse. */
+    if (opts.openReturning || opts.skipPreview) {
+      openGate({ flow: "returning" });
       return false;
     }
-
-    state.timer = setTimeout(function () {
-      if (!state.unlocked) openGate();
-    }, PREVIEW_MS);
+    try {
+      var q = new URLSearchParams(global.location.search || "");
+      if (q.get("sign_in") === "1" || q.get("returning") === "1") {
+        openGate({ flow: "returning" });
+      }
+    } catch (_e) {
+      /* ignore */
+    }
+    syncSignedInUi();
     return false;
   }
 
@@ -566,9 +555,13 @@
     getSessionToken: getSessionToken,
     appendSessionToUrl: appendSessionToUrl,
     isUnlocked: function () {
-      return !!state.unlocked;
+      return true;
+    },
+    isSignedIn: function () {
+      return !!state.signedIn;
     },
     openGate: openGate,
+    closeGate: closeGate,
     privacyVersion: PRIVACY_VERSION,
     validateSession: validateSession,
     adoptTokenFromUrl: adoptTokenFromUrl,
