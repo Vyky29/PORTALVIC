@@ -1616,13 +1616,22 @@
     opts = opts.filter(function (o) {
       return scheduleMatchesCadence(o.code, cad);
     });
-    /* Bank transfer / Card / Apple Pay: never monthly — only one-off (year/term) or flexi (2/term). */
+    /* Bank Transfer: never monthly — only one-off (year/term) or flexi. */
     if (payCode === "bank_transfer") {
       opts = opts.filter(function (o) {
         return o.code !== "monthly_10" && o.code !== "monthly_term";
       });
+      opts = opts.map(function (o) {
+        if (o.code === "term_flexi" && cad === "whole_year") {
+          return { code: o.code, label: "Flexi: 6 per year" };
+        }
+        if (o.code === "term_flexi") {
+          return { code: o.code, label: "Flexi: 2 per term" };
+        }
+        return o;
+      });
     }
-    /* Bank Transfer / Card: offer Own arrangement in the same plan list (term-by-term only). */
+    /* Bank Transfer: offer Own way in the same plan list (term-by-term only). */
     if (cad === "term_by_term" && payCode === "bank_transfer") {
       var hasOwn = opts.some(function (o) {
         return o.code === "own_term";
@@ -1630,24 +1639,18 @@
       if (!hasOwn) {
         opts.push({
           code: "own_term",
-          label: "Own arrangement — less than flexi (2 session days + £50 / term)",
+          label: "Own way — 2 sessions prepaid + £50 / term",
         });
       }
     }
-    /* Term-by-term + GoCardless: monthly first, label = N payments this term (not “10 / year”). */
+    /* Term-by-term + GoCardless: monthly first; keep canonical naming. */
     if (cad === "term_by_term" && payCode === "gocardless") {
-      var n = installmentCountForSchedule("monthly_10", cad);
       opts = opts
         .map(function (o) {
           if (o.code !== "monthly_10") return o;
           return {
             code: o.code,
-            label:
-              "Regular monthly — " +
-              n +
-              " Payment" +
-              (n === 1 ? "" : "s") +
-              " this Term",
+            label: "GoCardless (monthly ×10) · £1.50 / instalment",
           };
         })
         .sort(function (a, b) {
@@ -1784,13 +1787,13 @@
       "</div>" +
       '<div id="reFeesNotice" class="re-funding-fee re-funding-fee--fail" role="note">' +
       "<strong>Payment fees</strong>" +
-      "Standard plans (bank transfer or Card / Apple Pay on or before due dates) have <strong>no admin fee</strong>. " +
-      "Direct Payment (GoCardless) adds " +
+      "<strong>Bank Transfer</strong> / <strong>Apple Pay</strong> on or before due dates have <strong>no admin fee</strong>. " +
+      "<strong>GoCardless</strong> adds " +
       money(RE_ADMIN_FEE_GC_PER_INSTALLMENT) +
       " per instalment. " +
-      "<strong>Own arrangement</strong> (pay less than a full flexi/term plan — minimum 2 session days) adds " +
+      "<strong>Own way</strong> (own dates; always keep 2 sessions prepaid) adds " +
       money(RE_ADMIN_FEE_OWN) +
-      " each term. That minimum is due <strong>on re-enrolment</strong> to secure the place; keep it topped up. " +
+      " each term. That minimum is due <strong>on re-enrolment</strong>; we remind you when the 2-session credit drops. " +
       "Paying <strong>more</strong> than asked has <strong>no</strong> extra fee — surplus stays as credit for the next payment." +
       "</div>" +
       '<div id="reCancelNotice" class="re-funding-fee re-funding-fee--fail" role="note">' +
@@ -2038,19 +2041,19 @@
       (normalizeEnrolmentCadence(state.enrolmentCadence) === "term_by_term"
         ? "The total above is for the <strong>current term only</strong> (term-by-term). Later terms are billed when you reconfirm. "
         : "The total above covers your confirmed sessions for the year. ") +
-      "<strong>Bank Transfer / Card / Apple Pay</strong> uses fixed due dates (pay each invoice from the parent portal — no admin fee if on time; monthly is not offered here — use Direct Payment for monthly). <strong>Direct Payment (GoCardless)</strong> is collected automatically once we set up your mandate. <strong>Own arrangement</strong> (in the plan list) is for paying <strong>less</strong> than a full flexi/term amount — minimum 2 session days now (+ £50 / term). Paying <strong>more</strong> than an invoice asks has no fee; surplus stays as credit — not available with LA Direct Payments funding.</p>" +
+      "<strong>Bank Transfer</strong> / <strong>Apple Pay</strong> use fixed due dates (pay each invoice from the parent portal — no admin fee if on time; monthly is not offered here — use <strong>GoCardless</strong> for monthly). <strong>GoCardless</strong> is collected automatically once we set up your mandate (£1.50 / instalment). <strong>Own way</strong> is for families who cannot meet our due dates — keep 2 sessions prepaid always (+ £50 / term); we remind you when that buffer drops. Paying <strong>more</strong> than asked has no fee; surplus stays as credit — Own way is not available with <strong>Funds from the LA</strong>.</p>" +
       '<div id="rePaySchedulePreview" class="re-pay-preview-host"' +
       (editing ? " hidden" : "") +
       "></div>" +
       '<div id="reOwnWayNote" class="re-funding-fee re-funding-fee--own"' +
       (editing || payCode !== "own_way_flexible" ? " hidden" : "") +
       ">" +
-      "<strong>Own arrangement</strong> " +
-      "Choose this only if you need to pay <strong>less</strong> than a full flexi or term invoice. Minimum is 2 session days × each service, due <strong>now on re-enrolment</strong> (+ " +
+      "<strong>Own way</strong> " +
+      "For when you cannot pay on our fixed dates. Always keep <strong>2 sessions prepaid</strong> per service (due <strong>now on re-enrolment</strong>) + " +
       money(RE_ADMIN_FEE_OWN) +
-      " admin each term). Keep that prepaid balance topped up. " +
-      "If you pay <strong>more</strong> than asked (on this plan or a standard Bank Transfer invoice), there is <strong>no</strong> extra fee — the surplus stays as credit for the next payment. " +
-      "Standard Bank Transfer / Card / Apple Pay on full due dates has no £50 fee." +
+      " admin each term. We will remind you when that 2-session credit drops. " +
+      "If you pay <strong>more</strong> than asked, there is <strong>no</strong> extra fee — the surplus stays as credit. " +
+      "Standard Bank Transfer / Apple Pay on full due dates has no £50 fee." +
       "</div>" +
       renderRelevantInfoHtml(payCode, editing) +
       "</div></div>" +
@@ -2058,7 +2061,7 @@
       esc(RE_ENROL_DEADLINE_LABEL) +
       " (last day to respond). From " +
       esc(RE_ENROL_RELEASE_LABEL) +
-      ", unconfirmed places may be released to new clients on our booking website. First bank / Card / Apple Pay due dates from mid-August (first Autumn payment by 15 August); Direct Payment (GoCardless) collections on the 1st from 1 September — see schedule above.</p>" +
+      ", unconfirmed places may be released to new clients on our booking website. First Bank Transfer / Apple Pay due dates from mid-August (first Autumn payment by 15 August); GoCardless collections on the 1st from 1 September — see schedule above.</p>" +
       "</div></div>" +
       renderReenrolFarewellHtml(data) +
       "</div>"
@@ -2084,15 +2087,15 @@
   var RE_PRIVATE_PAY_METHODS = [
     {
       code: "bank_transfer",
-      label: "Bank Transfer / Card / Apple Pay (fixed due dates)",
+      label: "Bank Transfer (Apple Pay also available when paying)",
     },
     {
       code: "gocardless",
-      label: "Direct Payment (GoCardless)",
+      label: "GoCardless (£1.50 per instalment)",
     },
     {
       code: "own_way_flexible",
-      label: "Own arrangement — less than flexi (2 session days + £50 / term)",
+      label: "Own way — 2 sessions prepaid + £50 / term",
     },
   ];
 
@@ -2100,28 +2103,28 @@
     { code: "privately_funded", label: "Privately" },
     {
       code: "la_direct_payments",
-      label: "Using funds from LA (Direct Payments from your EHCP care package)",
+      label: "Funds from the LA",
     },
   ];
 
   var RE_SCHEDULE_OPTIONS = {
     bank_transfer: [
-      { code: "yearly_1off", label: "All year — one payment" },
-      { code: "term_3", label: "Pay each term — one payment" },
-      { code: "term_flexi", label: "Flexi term — 2 payments per term" },
+      { code: "yearly_1off", label: "One-off payment (year)" },
+      { code: "term_3", label: "One-off payment (term)" },
+      { code: "term_flexi", label: "Flexi: 2 per term" },
     ],
     gocardless: [
-      { code: "term_3", label: "Pay each term — one payment" },
-      { code: "term_flexi", label: "Flexi term — 2 payments per term" },
+      { code: "term_3", label: "GoCardless (one per term ×3) · £1.50 / instalment" },
+      { code: "term_flexi", label: "Flexi: 2 per term" },
       {
         code: "monthly_10",
-        label: "Regular monthly — 10 payments (4 / 3 / 3 by term)",
+        label: "GoCardless (monthly ×10) · £1.50 / instalment",
       },
     ],
     own_way_flexible: [
       {
         code: "own_term",
-        label: "Own arrangement — less than flexi (2 session days + £50 each term)",
+        label: "Own way — 2 sessions prepaid + £50 / term",
       },
     ],
   };
@@ -2326,8 +2329,8 @@
       return (
         '<p class="re-muted re-cadence-wait">' +
         (cadence === "whole_year"
-          ? "Whole-year re-enrolment works with <strong>Bank Transfer</strong> or <strong>Direct Payment (GoCardless)</strong>. Edit payment method above if needed."
-          : "Term-by-term re-enrolment works with <strong>Bank Transfer</strong>, <strong>Direct Payment (GoCardless)</strong> or <strong>Own arrangement</strong> (private funding only). Edit payment method above if needed.") +
+          ? "Whole-year re-enrolment works with <strong>Bank Transfer</strong> or <strong>GoCardless</strong>. Edit payment method above if needed."
+          : "Term-by-term re-enrolment works with <strong>Bank Transfer</strong>, <strong>GoCardless</strong> or <strong>Own way</strong> (Privately funding only). Edit payment method above if needed.") +
         "</p>"
       );
     }
@@ -2494,7 +2497,7 @@
           (cadence === "term_by_term"
             ? "The total above is for the <strong>current term only</strong> (term-by-term). Later terms are billed when you reconfirm. "
             : "The total above covers your confirmed sessions for the year. ") +
-          "<strong>Bank Transfer / Card / Apple Pay</strong> uses fixed due dates (pay each invoice from the parent portal — no admin fee if on time; monthly is not offered here — use Direct Payment for monthly). <strong>Direct Payment (GoCardless)</strong> is collected automatically once we set up your mandate. <strong>Own arrangement</strong> (in the plan list) is for paying <strong>less</strong> than a full flexi/term amount — minimum 2 session days now (+ £50 / term). Paying <strong>more</strong> than an invoice asks has no fee; surplus stays as credit — not available with LA Direct Payments funding.";
+          "<strong>Bank Transfer</strong> / <strong>Apple Pay</strong> use fixed due dates (pay each invoice from the parent portal — no admin fee if on time; monthly is not offered here — use <strong>GoCardless</strong> for monthly). <strong>GoCardless</strong> is collected automatically once we set up your mandate (£1.50 / instalment). <strong>Own way</strong> is for families who cannot meet our due dates — keep 2 sessions prepaid always (+ £50 / term); we remind you when that buffer drops. Paying <strong>more</strong> than asked has no fee; surplus stays as credit — Own way is not available with <strong>Funds from the LA</strong>.";
       }
     }
     syncPaymentSchedulePreview();

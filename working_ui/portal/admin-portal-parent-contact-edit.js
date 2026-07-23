@@ -25,7 +25,7 @@
   var PAY_PRIVATE_OPTS = [
     "Bank Transfer (fixed due dates)",
     "Direct Payment (GoCardless · monthly)",
-    "Own arrangement — cannot meet payment dates (+ £50 / term)",
+    "Own way — 2 sessions prepaid + £50 / term",
   ];
   var FUNDER_PAY = {
     parent_direct_payments: PAY_PRIVATE_OPTS.slice(),

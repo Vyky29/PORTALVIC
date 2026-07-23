@@ -72,22 +72,30 @@ export function paymentSchedulePlanShortLabel(
   const isGc = method === "gocardless";
 
   if (
+    /own way|own arrangement|own_term|admin fee|minimum prepaid|top-?ups? as you go/.test(
+      hay,
+    )
+  ) {
+    return "Own way";
+  }
+  if (
     /yearly_1off|one[\s-]?off.*(year|annual)|full academic year|whole year/.test(hay) ||
     (n === 1 && /\b(year|annual|full year)\b/.test(blob))
   ) {
-    return "One-off (whole year)";
+    return "One-off payment (year)";
   }
   if (n === 1 && /one[\s-]?off|whole term|full term/.test(hay)) {
-    return "One-off (whole term)";
+    return "One-off payment (term)";
   }
-  // Bank transfer: only one-off or flexi (2 per term). Never "monthly".
+  // Bank transfer: only one-off or flexi. Never "monthly".
   if (isBank && !isGc) {
-    if (n === 1) return "One-off (whole term)";
-    if (n === 2 || /\b(half|1st|2nd|flexi)\b/.test(hay)) return "Flexi (2 per term)";
-    return "Flexi (2 per term)";
+    if (n === 1) return "One-off payment (term)";
+    if (n >= 6 || /6 per year|six per year/.test(hay)) return "Flexi: 6 per year";
+    if (n === 2 || /\b(half|1st|2nd|flexi)\b/.test(hay)) return "Flexi: 2 per term";
+    return "Flexi: 2 per term";
   }
   if (n >= 2 && /\b(half|1st|2nd|flexi)\b/.test(hay)) {
-    return "Flexi (2 per term)";
+    return "Flexi: 2 per term";
   }
   if (
     isGc &&
@@ -96,21 +104,24 @@ export function paymentSchedulePlanShortLabel(
       /payment\s*\d|january|february|march|april|may|june|july|august|september|october|november|december/
         .test(hay))
   ) {
-    return `${n} monthly`;
-  }
-  if (
-    /own way|own arrangement|own_term|admin fee|minimum prepaid|top-?ups? as you go/.test(
-      hay,
-    )
-  ) {
-    return "Own arrangement";
+    return "GoCardless (monthly ×10) · £1.50 / instalment";
   }
   if (n === 1 && /full payment|one payment|pay in full/.test(hay)) {
-    return "One per term";
+    return isGc
+      ? "GoCardless (one per term ×3) · £1.50 / instalment"
+      : "One-off payment (term)";
   }
-  if (n === 1) return "One per term";
-  if (n === 2) return "Flexi (2 per term)";
-  if (n > 2) return isGc ? `${n} monthly` : "Flexi (2 per term)";
+  if (n === 1) {
+    return isGc
+      ? "GoCardless (one per term ×3) · £1.50 / instalment"
+      : "One-off payment (term)";
+  }
+  if (n === 2) return "Flexi: 2 per term";
+  if (n > 2) {
+    return isGc
+      ? "GoCardless (monthly ×10) · £1.50 / instalment"
+      : "Flexi: 2 per term";
+  }
   return null;
 }
 

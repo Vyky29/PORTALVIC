@@ -62,8 +62,8 @@ export type InvoiceFundingCategory =
 
 const FUNDING_CATEGORY_LABELS: Record<InvoiceFundingCategory, string> = {
   parent_private: "Privately",
-  /** Parent pays; LA funds the package — VAT exempt (not Private 20%). */
-  parent_direct_payment: "Direct Payment Private",
+  /** Parent pays with LA package funds — VAT exempt (not Privately 20%). */
+  parent_direct_payment: "Funds from the LA",
   la_managed: "LA managed",
   nhs_managed: "NHS managed",
 };
@@ -74,7 +74,7 @@ export function invoiceFundingCategoryLabel(category: InvoiceFundingCategory): s
 
 /**
  * Funding first (not VAT):
- * Privately · Direct Payment Private (exempt) · LA managed · NHS managed.
+ * Privately · Funds from the LA · LA managed · NHS managed.
  * Sheet DIRECT_PAYMENTS beats a wrong re-enrol "privately_funded" choice.
  * Never infer DP from vat_mode=exempt alone.
  */
@@ -385,7 +385,7 @@ export async function resolveParticipantInvoiceFunding(
     };
   }
 
-  // Parent uses LA package funds → Direct Payment Private (exempt), not LA-managed.
+  // Parent uses LA package funds → Funds from the LA (exempt), not LA-managed.
   if (
     fl &&
     (/direct.?payment/.test(fl) ||

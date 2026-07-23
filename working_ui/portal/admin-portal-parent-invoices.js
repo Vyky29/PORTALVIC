@@ -307,7 +307,9 @@
     );
   }
 
-  /** Payment via: Bank Transfer & Apple Pay · GoCardless */
+  /**
+   * Via: Bank Transfer · Apple Pay · GoCardless · Payment link
+   */
   function methodChannelLabel(inv) {
     var reenrolPay = String(inv.reenrol_payment_method_code || '').toLowerCase();
     var hint = String(inv.payment_method_hint || '').toLowerCase();
@@ -321,19 +323,32 @@
     ) {
       return 'GoCardless';
     }
-    if (via === 'stripe' || hint === 'payment_link' || inv.payment_link_url) {
-      return 'Bank Transfer & Apple Pay';
+    if (
+      via === 'apple_pay' ||
+      via === 'apple' ||
+      hint === 'apple_pay' ||
+      /apple\s*pay/.test(via) ||
+      /apple\s*pay/.test(hint)
+    ) {
+      return 'Apple Pay';
+    }
+    if (hint === 'payment_link' || inv.payment_link_url) {
+      return 'Payment link';
+    }
+    if (via === 'stripe' || via === 'card') {
+      return 'Payment link';
     }
     if (
       reenrolPay === 'bank_transfer' ||
+      reenrolPay === 'own_way_flexible' ||
       via === 'tide' ||
       via === 'bank' ||
       hint === 'bank_transfer'
     ) {
-      return 'Bank Transfer & Apple Pay';
+      return 'Bank Transfer';
     }
     if (via === 'admin') return 'Admin / Office';
-    return 'Bank Transfer & Apple Pay';
+    return 'Bank Transfer';
   }
 
   function scheduleRows(inv) {
@@ -343,22 +358,34 @@
     });
   }
 
+  var OWN_WAY_TITLE =
+    'Own way — pay on your own dates; always keep 2 sessions prepaid; remind when buffer drops; £50 admin fee per term';
+
   /**
-   * Arrangement chip:
-   * One-off payment (year) · One-off payment (term) ·
-   * Flexi: 2 instalments per Term / 6 per year ·
-   * GoCardless (one invoice per term) · GoCardless (monthly ×10)
+   * Arrangement:
+   * One-off payment (year|term) · Flexi: 2 per term · Flexi: 6 per year ·
+   * GoCardless (one per term ×3 / monthly ×10) · £1.50 / instalment · Own way
    */
   function schedulePlanShort(inv) {
     var code = String(inv.reenrol_payment_schedule_code || '').toLowerCase();
+    var payCode = String(inv.reenrol_payment_method_code || '').toLowerCase();
+    var cadence = String(inv.reenrol_enrolment_cadence || '').toLowerCase();
     var channel = methodChannelLabel(inv);
     var isGc = channel === 'GoCardless';
+    var yearCadence = cadence === 'whole_year' || cadence === 'auto';
+
+    if (code === 'own_term' || payCode === 'own_way_flexible') return 'Own way';
     if (code === 'yearly_1off') return 'One-off payment (year)';
-    if (code === 'term_flexi') return 'Flexi: 2 instalments per Term / 6 per year';
-    if (code === 'monthly_10') return 'GoCardless (monthly ×10)';
-    if (code === 'monthly_term') return 'GoCardless (monthly)';
+    if (code === 'term_flexi') {
+      return yearCadence ? 'Flexi: 6 per year' : 'Flexi: 2 per term';
+    }
+    if (code === 'monthly_10' || code === 'monthly_term') {
+      return 'GoCardless (monthly ×10) · £1.50 / instalment';
+    }
     if (code === 'term_3') {
-      return isGc ? 'GoCardless (one invoice per term)' : 'One-off payment (term)';
+      return isGc
+        ? 'GoCardless (one per term ×3) · £1.50 / instalment'
+        : 'One-off payment (term)';
     }
 
     var rows = scheduleRows(inv);
@@ -371,6 +398,9 @@
     var notes = String(inv.notes || '').toLowerCase();
     var hay = blob + ' ' + notes;
     var n = rows.length;
+    if (/own way|own arrangement|own_term|minimum prepaid|top-?ups? as you go/.test(hay)) {
+      return 'Own way';
+    }
     if (!n) return '';
     if (
       /yearly_1off|one[\s-]?off.*(year|annual)|full academic year|whole year/.test(hay) ||
@@ -378,14 +408,17 @@
     ) {
       return 'One-off payment (year)';
     }
-    if (n >= 2 && /\b(half|1st|2nd|flexi)\b/.test(hay)) {
-      return 'Flexi: 2 instalments per Term / 6 per year';
+    if (n >= 6 || /6 per year|six per year/.test(hay) || (yearCadence && n >= 2 && /flexi|half/.test(hay))) {
+      return 'Flexi: 6 per year';
     }
-    if (isGc && n >= 3) return 'GoCardless (monthly ×10)';
-    if (isGc && n === 1) return 'GoCardless (one invoice per term)';
+    if (n >= 2 && /\b(half|1st|2nd|flexi)\b/.test(hay)) {
+      return 'Flexi: 2 per term';
+    }
+    if (isGc && n >= 3) return 'GoCardless (monthly ×10) · £1.50 / instalment';
+    if (isGc && n === 1) return 'GoCardless (one per term ×3) · £1.50 / instalment';
     if (!isGc && n === 1) return 'One-off payment (term)';
-    if (!isGc) return 'Flexi: 2 instalments per Term / 6 per year';
-    return 'GoCardless (monthly ×10)';
+    if (!isGc) return 'Flexi: 2 per term';
+    return 'GoCardless (monthly ×10) · £1.50 / instalment';
   }
 
   function isAutoReenrolledInv(inv) {
@@ -446,8 +479,16 @@
   function arrangementChipHtml(plan) {
     var text = String(plan || '').trim();
     if (!text) return '';
+    var title =
+      text === 'Own way'
+        ? OWN_WAY_TITLE
+        : text.indexOf('GoCardless') === 0
+          ? text + ' (GoCardless fee £1.50 per instalment)'
+          : 'Payment arrangement';
     return (
-      '<span class="pp-inv-acc__arrange" title="Payment arrangement">' +
+      '<span class="pp-inv-acc__arrange" title="' +
+      esc(title) +
+      '">' +
       esc(text) +
       '</span>'
     );
@@ -484,7 +525,7 @@
   }
 
   /**
-   * Funding: Privately · Direct Payment Private (exempt) · LA managed · NHS managed.
+   * Funding: Privately · Funds from the LA · LA managed · NHS managed.
    * Payment sheet / API category beat a wrong re-enrol "privately_funded" choice.
    */
   function fundingCategoryLabel(inv) {
@@ -499,6 +540,7 @@
       /direct.?payment/.test(fundRaw) ||
       fundRaw.indexOf('supported with funds') >= 0 ||
       fundRaw.indexOf('using funds from la') >= 0 ||
+      fundRaw.indexOf('funds from the la') >= 0 ||
       fundRaw.indexOf('funds from la') >= 0 ||
       fundRaw.indexOf('parent (exempt') >= 0 ||
       fundRaw.indexOf('care package') >= 0 ||
@@ -513,9 +555,10 @@
       billing === 'direct_payments' ||
       code === 'la_direct_payments' ||
       isDpLabel ||
+      /^funds from the la$/i.test(apiLabel) ||
       /^direct payment/i.test(apiLabel)
     ) {
-      return 'Direct Payment Private';
+      return 'Funds from the LA';
     }
     if (
       cat === 'la_managed' ||
@@ -542,7 +585,7 @@
     return 'Privately';
   }
 
-  /** VAT line must follow funding route — never show 20% VAT on DP / LA / NHS. */
+  /** VAT line must follow funding route — never show 20% VAT on Funds from the LA / LA / NHS. */
   function vatDisplayLabel(inv) {
     var cat = String(inv.funding_category || '').toLowerCase();
     var fund = fundingCategoryLabel(inv).toLowerCase();
@@ -550,8 +593,8 @@
       cat === 'parent_direct_payment' ||
       cat === 'la_managed' ||
       cat === 'nhs_managed' ||
+      fund.indexOf('funds from the la') >= 0 ||
       fund.indexOf('direct payment') >= 0 ||
-      fund.indexOf('supported with funds') >= 0 ||
       fund === 'la managed' ||
       fund === 'nhs managed'
     ) {
@@ -573,7 +616,11 @@
     if (s === 'la managed' || s.indexOf('la funded') >= 0) {
       return 'pp-inv-acc__fund--la';
     }
-    if (s.indexOf('direct payment') >= 0 || s.indexOf('supported with funds') >= 0) {
+    if (
+      s.indexOf('funds from the la') >= 0 ||
+      s.indexOf('direct payment') >= 0 ||
+      s.indexOf('supported with funds') >= 0
+    ) {
       return 'pp-inv-acc__fund--direct';
     }
     return 'pp-inv-acc__fund--private';
@@ -617,7 +664,10 @@
     if (s.indexOf('gocardless') >= 0) {
       return 'pp-inv-acc__method--gc';
     }
-    if (s.indexOf('card') >= 0 || s.indexOf('apple') >= 0 || s.indexOf('stripe') >= 0) {
+    if (s.indexOf('payment link') >= 0 || s.indexOf('stripe') >= 0 || s.indexOf('card') >= 0) {
+      return 'pp-inv-acc__method--card';
+    }
+    if (s.indexOf('apple') >= 0) {
       return 'pp-inv-acc__method--card';
     }
     if (s.indexOf('admin') >= 0 || s.indexOf('office') >= 0) {
@@ -630,9 +680,7 @@
   }
 
   function methodChipHtml(label) {
-    var text =
-      String(label || 'Bank Transfer & Apple Pay').trim() ||
-      'Bank Transfer & Apple Pay';
+    var text = String(label || 'Bank Transfer').trim() || 'Bank Transfer';
     return (
       '<span class="pp-inv-acc__method ' +
       methodToneClass(text) +
