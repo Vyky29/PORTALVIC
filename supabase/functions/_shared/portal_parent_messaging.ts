@@ -339,7 +339,7 @@ function wrapBase64(b64: string): string {
 }
 
 /**
- * Send an HTML email (optionally with a single base64 attachment, e.g. a PDF)
+ * Send an HTML email (optionally with one or more base64 attachments, e.g. PDFs)
  * through the same Google Workspace SMTP used for parent notifications. Reuses
  * the SMTP_* secrets already configured for the portal — no Resend needed.
  */
@@ -351,6 +351,7 @@ export async function sendEmailWithAttachmentViaSmtp(opts: {
   replyTo?: string;
   fromOverride?: string;
   attachment?: { filename: string; contentBase64: string; mimeType?: string };
+  attachments?: { filename: string; contentBase64: string; mimeType?: string }[];
 }): Promise<SendEmailResult> {
   const recipients = (opts.to || []).map((r) => String(r || "").trim()).filter(Boolean);
   if (!recipients.length) return { ok: false, error: "smtp_no_recipients" };
@@ -381,25 +382,34 @@ export async function sendEmailWithAttachmentViaSmtp(opts: {
     "",
   ].join("\r\n");
 
+  const attachmentList = [
+    ...(Array.isArray(opts.attachments) ? opts.attachments : []),
+    ...(opts.attachment && opts.attachment.contentBase64 ? [opts.attachment] : []),
+  ].filter((a) => a && a.contentBase64);
+
   let body: string;
-  if (opts.attachment && opts.attachment.contentBase64) {
-    const mime = opts.attachment.mimeType || "application/pdf";
-    const fname = opts.attachment.filename || "attachment.pdf";
+  if (attachmentList.length) {
     headers.push(`Content-Type: multipart/mixed; boundary="${mixedBoundary}"`);
-    body = [
+    const parts = [
       `--${mixedBoundary}`,
       `Content-Type: multipart/alternative; boundary="${altBoundary}"`,
       "",
       altPart,
-      `--${mixedBoundary}`,
-      `Content-Type: ${mime}; name="${fname}"`,
-      "Content-Transfer-Encoding: base64",
-      `Content-Disposition: attachment; filename="${fname}"`,
-      "",
-      wrapBase64(opts.attachment.contentBase64),
-      `--${mixedBoundary}--`,
-      "",
-    ].join("\r\n");
+    ];
+    for (const att of attachmentList) {
+      const mime = att.mimeType || "application/pdf";
+      const fname = att.filename || "attachment.pdf";
+      parts.push(
+        `--${mixedBoundary}`,
+        `Content-Type: ${mime}; name="${fname}"`,
+        "Content-Transfer-Encoding: base64",
+        `Content-Disposition: attachment; filename="${fname}"`,
+        "",
+        wrapBase64(att.contentBase64),
+      );
+    }
+    parts.push(`--${mixedBoundary}--`, "");
+    body = parts.join("\r\n");
   } else {
     headers.push(`Content-Type: multipart/alternative; boundary="${altBoundary}"`);
     body = altPart;
