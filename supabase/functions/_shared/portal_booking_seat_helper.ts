@@ -6,6 +6,7 @@ import {
   canonicalizeServiceTypeToken,
 } from "./reenrolment_catalog.ts";
 import { madreToAdapterRows, type MadreDoc } from "./portal_madre_fold_logic.ts";
+import { CRASH_SUMMER_WEEKS } from "./crash_summer_2026.ts";
 
 export type PublicServiceId =
   | "aquatic"
@@ -424,8 +425,18 @@ type DayBucket = {
 };
 
 /**
+ * July crash weeks only carry intensive lines — they must not become the
+ * "latest" standing template for Autumn weekly capacity (would hide after-school
+ * frees released after re-enrol deadline).
+ */
+const CRASH_TEMPLATE_SKIP_DATES = new Set<string>([
+  ...CRASH_SUMMER_WEEKS.w1.dates,
+  ...CRASH_SUMMER_WEEKS.w2.dates,
+]);
+
+/**
  * Build weekly template slots from MADRE document.
- * Occupancy uses the latest date for each standing time template.
+ * Occupancy uses the latest non-crash date for each standing time template.
  * Times that only exist as historic one-offs (older weeks) are omitted.
  */
 export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
@@ -443,7 +454,7 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
   // key = service|venue|day|sortTime|timeLabel → date → bucket
   const byKey = new Map<string, Map<string, DayBucket>>();
   const venueSets = new Map<PublicServiceId, Set<string>>();
-  /** Latest session date seen for service|venue|weekday (any time). */
+  /** Latest non-crash session date seen for service|venue|weekday (any time). */
   const latestBySvd = new Map<string, string>();
 
   for (const row of rows) {
@@ -458,6 +469,8 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
     const { sortTime, timeLabel } = parseTimeSlot(row.time_slot);
     const iso = norm(row.session_date).slice(0, 10);
     if (!iso) continue;
+    // Crash-week lines are intensive-only; keep them out of Autumn weekly template.
+    if (CRASH_TEMPLATE_SKIP_DATES.has(iso)) continue;
 
     const svd = `${serviceId}|${venue}|${day}`;
     const prevMax = latestBySvd.get(svd);
