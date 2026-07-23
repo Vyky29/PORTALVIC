@@ -10,18 +10,24 @@ import {
   resolveParticipantLookupNames,
   acatGroupFeedbackEligibleSlugs,
   parentPortalSuppressSessionProgress,
+  rosterParticipantSlugAlias,
   type ParticipantIdentityInput,
 } from "./participant_identity.ts";
 
-export const WEEKLY_NOTE_PROMPT_VERSION = "20260715-unique-v2";
+export const WEEKLY_NOTE_PROMPT_VERSION = "20260723-tinashe-lead-v1";
 export const DEFAULT_WEEKLY_NOTE_MODEL = "gpt-4o-mini";
+
+/** Tinashe: Mon/Wed/Fri lead briefs from John; feedback fallback from session instructors. */
+const TINASHE_LEAD_WEEKDAYS = new Set([1, 3, 5]); // Mon, Wed, Fri
+const TINASHE_CONTACT_IDS = new Set(["gap-tinashe-icloud"]);
+const TINASHE_FEEDBACK_AUTHOR_RE = /\b(bismark|giuseppe|godsway)\b/i;
 
 export type WeeklyNoteDaySource = {
   feedback_id: string;
   session_date: string;
   service: string;
   text: string;
-  source: "filtered" | "positive" | "narrative";
+  source: "filtered" | "positive" | "narrative" | "lead_brief";
 };
 
 export type WeeklyNoteBuildResult = {
@@ -140,7 +146,51 @@ type FeedbackRow = {
   positive_feedback?: unknown;
   session_narrative?: unknown;
   relevant_information?: unknown;
+  completed_by_name?: unknown;
 };
+
+type LeadReportRow = {
+  id?: unknown;
+  session_date?: unknown;
+  submitted_by_name?: unknown;
+  client_name?: unknown;
+  client_id?: unknown;
+  service?: unknown;
+  is_bespoke_programme?: unknown;
+  brief_description?: unknown;
+};
+
+export function usesTinasheLeadWeeklyNotes(
+  contactId: string,
+  identity: ParticipantIdentityInput,
+): boolean {
+  const cid = clean(contactId, 80).toLowerCase();
+  if (TINASHE_CONTACT_IDS.has(cid) || cid.includes("tinashe")) return true;
+  for (const slug of resolveParticipantClientSlugs(identity)) {
+    const alias = rosterParticipantSlugAlias(slug);
+    if (alias === "tinashe" || slug.toLowerCase().includes("tinashe")) return true;
+  }
+  const first = clean(identity.firstName, 80).toLowerCase();
+  const last = clean(identity.lastName, 80).toLowerCase();
+  return first === "tinashe" || `${first}_${last}`.includes("tinashe");
+}
+
+function isJohnLeadSubmitter(name: unknown): boolean {
+  const n = clean(name, 120).toLowerCase();
+  return n.startsWith("john") || /\bjohn\b/.test(n);
+}
+
+function isTinasheLeadClient(row: LeadReportRow, identity: ParticipantIdentityInput): boolean {
+  return participantIdentityMatches(
+    identity,
+    String(row.client_name || ""),
+    String(row.client_id || ""),
+  ) || /\btinashe\b/i.test(clean(row.client_name, 120));
+}
+
+function isTinasheFeedbackFallbackAuthor(name: unknown): boolean {
+  return TINASHE_FEEDBACK_AUTHOR_RE.test(clean(name, 120));
+}
 
 type ShareRow = {
   session_feedback_id?: unknown;
@@ -157,7 +207,7 @@ export async function loadFeedbackForParticipantWeek(
   const clientSlugs = acatGroupFeedbackEligibleSlugs(resolveParticipantClientSlugs(identity));
   const lookupNames = resolveParticipantLookupNames(identity);
   const fbSel =
-    "id, session_date, client_name, client_id, service, attendance, positive_feedback, session_narrative, relevant_information";
+    "id, session_date, client_name, client_id, service, attendance, positive_feedback, session_narrative, relevant_information, completed_by_name";
 
   const queries = [];
   if (clientSlugs.length) {
@@ -259,6 +309,93 @@ export async function buildDaySources(
   for (const row of rows) {
     const picked = pickDaySourceText(row, shareById.get(String(row.id || "")));
     if (picked) out.push(picked);
+  }
+  return out;
+}
+
+async function loadJohnLeadBriefsForTinasheWeek(
+  supabase: SupabaseClient,
+  identity: ParticipantIdentityInput,
+  weekStart: string,
+  weekEnd: string,
+): Promise<WeeklyNoteDaySource[]> {
+  const { data, error } = await supabase
+    .from("lead_session_reports")
+    .select(
+      "id, session_date, submitted_by_name, client_name, client_id, service, is_bespoke_programme, brief_description",
+    )
+    .gte("session_date", weekStart)
+    .lte("session_date", weekEnd)
+    .ilike("submitted_by_name", "%john%")
+    .limit(40);
+
+  if (error) {
+    console.error("[weekly-notes] tinashe lead query", error);
+    return [];
+  }
+
+  const byDate = new Map<string, WeeklyNoteDaySource>();
+  for (const row of data || []) {
+    if (!isJohnLeadSubmitter(row.submitted_by_name)) continue;
+    if (!isTinasheLeadClient(row, identity)) continue;
+    const sessionDate = isoDateOnly(row.session_date);
+    const wd = isoWeekdayMon1(sessionDate);
+    if (!TINASHE_LEAD_WEEKDAYS.has(wd)) continue;
+    // Parents see the brief only — never other_information / notes.
+    const brief = clean(row.brief_description, 4000);
+    if (brief.length < 12) continue;
+    const id = clean(row.id, 80);
+    if (!id) continue;
+    byDate.set(sessionDate, {
+      // Stored in uuid[] source_feedback_ids — lead report id (not session_feedback).
+      feedback_id: id,
+      session_date: sessionDate,
+      service: clean(row.service, 200) || "Bespoke Programme",
+      text: brief,
+      source: "lead_brief",
+    });
+  }
+  return [...byDate.values()].sort((a, b) => a.session_date.localeCompare(b.session_date));
+}
+
+/**
+ * Tinashe weekly notes: John's lead brief on Mon/Wed/Fri (no "notes"/other).
+ * If that day's lead report is missing, use session feedback from Bismark,
+ * Giuseppe, or Godsway only.
+ */
+export async function buildTinasheDaySources(
+  supabase: SupabaseClient,
+  identity: ParticipantIdentityInput,
+  weekStart: string,
+  weekEnd: string,
+  feedbackRows: FeedbackRow[],
+): Promise<WeeklyNoteDaySource[]> {
+  const leadByDate = new Map(
+    (await loadJohnLeadBriefsForTinasheWeek(supabase, identity, weekStart, weekEnd)).map((s) => [
+      s.session_date,
+      s,
+    ]),
+  );
+
+  const fallbackRows = feedbackRows.filter((row) => {
+    const sessionDate = isoDateOnly(row.session_date);
+    if (!TINASHE_LEAD_WEEKDAYS.has(isoWeekdayMon1(sessionDate))) return false;
+    return isTinasheFeedbackFallbackAuthor(row.completed_by_name);
+  });
+  const feedbackSources = await buildDaySources(supabase, fallbackRows);
+  const feedbackByDate = new Map(feedbackSources.map((s) => [s.session_date, s]));
+
+  const out: WeeklyNoteDaySource[] = [];
+  for (let i = 0; i <= 6; i++) {
+    const day = addDaysIso(weekStart, i);
+    if (!TINASHE_LEAD_WEEKDAYS.has(isoWeekdayMon1(day))) continue;
+    const lead = leadByDate.get(day);
+    if (lead) {
+      out.push(lead);
+      continue;
+    }
+    const fb = feedbackByDate.get(day);
+    if (fb) out.push(fb);
   }
   return out;
 }
@@ -520,7 +657,10 @@ export async function generateWeeklyNoteForContact(
 
   const todayIso = opts.todayIso || londonTodayIso();
   const rows = await loadFeedbackForParticipantWeek(supabase, opts.identity, weekStart, weekEnd);
-  const sources = await buildDaySources(supabase, rows);
+  const tinasheLeadMode = usesTinasheLeadWeeklyNotes(opts.contactId, opts.identity);
+  const sources = tinasheLeadMode
+    ? await buildTinasheDaySources(supabase, opts.identity, weekStart, weekEnd, rows)
+    : await buildDaySources(supabase, rows);
   if (!sources.length) {
     return {
       ok: true,
