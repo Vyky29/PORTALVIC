@@ -8,6 +8,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders } from "../_shared/parent_portal_auth.ts";
 import type { MadreDoc } from "../_shared/portal_madre_fold_logic.ts";
 import { buildWeeklyOfferFromMadre } from "../_shared/portal_booking_seat_helper.ts";
+import { ensureReenrolUnconfirmedReleasedOnMadre } from "../_shared/portal_reenrol_release_madre.ts";
 import {
   CRASH_HOLD_MINUTES,
   CRASH_INDIVIDUAL_WINDOWS,
@@ -364,6 +365,24 @@ Deno.serve(async (req) => {
   const supabase = createClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+
+  // Thu 23 Jul 2026+: auto-release unconfirmed / withdrawn standing seats on MADRE
+  // so free spaces appear on the public offer without waiting for a manual patch.
+  try {
+    const release = await ensureReenrolUnconfirmedReleasedOnMadre(supabase);
+    if (release.ok && release.changed > 0) {
+      console.log(
+        "[portal-booking-offer] reenrol MADRE release",
+        release.changed,
+        "rev",
+        release.revision,
+      );
+    } else if (!release.ok) {
+      console.error("[portal-booking-offer] reenrol MADRE release", release.error);
+    }
+  } catch (err) {
+    console.error("[portal-booking-offer] reenrol MADRE release", err);
+  }
 
   const { data: madreRow, error: madreErr } = await supabase
     .from("portal_madre_document")
