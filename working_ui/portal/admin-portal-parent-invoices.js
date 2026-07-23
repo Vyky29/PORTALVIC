@@ -370,6 +370,9 @@
     ) {
       return 'Own arrangement';
     }
+    if (n === 1 && /one[\s-]?off|whole term|full term/.test(hay)) {
+      return 'One-off (whole term)';
+    }
     if (n === 1) return 'TERMLY';
     if (n === 2) return '2 payments this term';
     if (n > 2) return n + ' instalments';
@@ -392,13 +395,13 @@
 
   function enrolmentCadenceChipHtml(key) {
     var k = key === 'AUTO' ? 'AUTO' : 'TERMLY';
-    var cls = k === 'AUTO' ? 'pp-inv-acc__method--auto' : 'pp-inv-acc__method--plan';
+    var cls = k === 'AUTO' ? 'pp-inv-acc__type pp-inv-acc__type--auto' : 'pp-inv-acc__type pp-inv-acc__type--termly';
     var title =
       k === 'AUTO'
         ? 'AUTO — place continues for the year (office renew or yearly plan)'
         : 'TERMLY — re-enrol / bill each term';
     return (
-      '<span class="pp-inv-acc__method ' +
+      '<span class="' +
       cls +
       '" title="' +
       title +
@@ -428,20 +431,27 @@
     return plan ? channel + ' · ' + plan : channel;
   }
 
-  /** Cadence + channel + schedule option (what bank-transfer flavour). */
+  function arrangementChipHtml(plan) {
+    var text = String(plan || '').trim();
+    if (!text) return '';
+    return (
+      '<span class="pp-inv-acc__arrange" title="Payment arrangement">' +
+      esc(text) +
+      '</span>'
+    );
+  }
+
+  /** TYPE → FUNDING → channel → arrangement (detail card). */
   function methodChipsHtml(inv) {
     var cadence = enrolmentCadenceKey(inv);
     var channel = methodChannelLabel(inv);
     var plan = schedulePlanShort(inv);
-    var html = enrolmentCadenceChipHtml(cadence);
+    var html = enrolmentCadenceChipHtml(cadence) + ' ' + fundingChipHtml(inv);
     if (!isAutoReenrolledInv(inv)) {
       html += ' ' + methodChipHtml(channel);
     }
     if (plan && !(plan === 'TERMLY' && cadence === 'TERMLY')) {
-      html +=
-        ' <span class="pp-inv-acc__method pp-inv-acc__method--plan" title="Payment schedule">' +
-        esc(plan) +
-        '</span>';
+      html += ' ' + arrangementChipHtml(plan);
     }
     var rows = scheduleRows(inv);
     if (rows.length) {
@@ -551,10 +561,10 @@
 
   function methodToneClass(label) {
     var s = String(label || '').toLowerCase();
-    if (s.indexOf('la funded') >= 0 || s === 'la' || s.indexOf('exempt') >= 0) {
+    if (s.indexOf('la funded') >= 0 || s === 'la') {
       return 'pp-inv-acc__method--la';
     }
-    if (s.indexOf('gocardless') >= 0 || s.indexOf('direct payment') >= 0) {
+    if (s.indexOf('gocardless') >= 0) {
       return 'pp-inv-acc__method--gc';
     }
     if (s.indexOf('card') >= 0 || s.indexOf('apple') >= 0 || s.indexOf('stripe') >= 0) {
@@ -580,7 +590,11 @@
     );
   }
 
-  function groupMethodChipsHtml(invoices) {
+  /**
+   * Summary chips after amounts: TYPE → FUNDING → channel → arrangement.
+   * Each family uses a distinct colour (no shared teal/grey across roles).
+   */
+  function groupMetaChipsHtml(invoices) {
     var list = invoices || [];
     var cadence = groupEnrolmentCadenceKey(list);
     var autoOnly = list.length > 0 && list.every(isAutoReenrolledInv);
@@ -599,8 +613,8 @@
     var source = withSched.length ? withSched : pool;
     var seen = Object.create(null);
     var out = [];
-    /* Always one clear AUTO / TERMLY chip (never duplicate). */
     out.push(enrolmentCadenceChipHtml(cadence));
+    out.push(groupFundingChipsHtml(list));
     if (autoOnly) return out.join('');
     source.forEach(function (inv) {
       if (isAutoReenrolledInv(inv)) return;
@@ -610,13 +624,8 @@
       if (seen[key]) return;
       seen[key] = true;
       out.push(methodChipHtml(channel));
-      /* Avoid a second identical TERMLY chip next to enrolment cadence. */
       if (plan && !(plan === 'TERMLY' && cadence === 'TERMLY')) {
-        out.push(
-          '<span class="pp-inv-acc__method pp-inv-acc__method--plan" title="Payment schedule">' +
-            esc(plan) +
-            '</span>',
-        );
+        out.push(arrangementChipHtml(plan));
       }
     });
     return out.join('');
@@ -917,29 +926,41 @@
     return Number(group.booked_term_gbp);
   }
 
+  /** TERM · term £ · Year £ — separate spans for the summary row order. */
   function groupBookedAmountsHtml(group) {
     var period = String(state.amountPeriod || 'autumn').toLowerCase();
     var selected = groupAmountForPeriod(group, period);
     var annual = Number(group.booked_annual_gbp);
     var invTotal = groupTotalGbp(group.invoices || []);
-    var bits = [];
-    if (Number.isFinite(selected) && selected > 0) {
-      bits.push(amountPeriodLabel(period) + ' ' + formatMoney(selected));
+    var termLabel = amountPeriodLabel(period);
+    var parts = [];
+    if (period === 'year' || period === 'annual') {
+      var yearAmt = Number.isFinite(selected) && selected > 0 ? selected : annual;
+      if (!(Number.isFinite(yearAmt) && yearAmt > 0) && invTotal > 0) yearAmt = invTotal;
+      if (Number.isFinite(yearAmt) && yearAmt > 0) {
+        parts.push(
+          '<span class="pp-inv-acc__term">' +
+            esc(termLabel) +
+            '</span><span class="pp-inv-acc__amt">' +
+            esc(formatMoney(yearAmt)) +
+            '</span>',
+        );
+      }
+    } else {
+      parts.push('<span class="pp-inv-acc__term">' + esc(termLabel) + '</span>');
+      if (Number.isFinite(selected) && selected > 0) {
+        parts.push('<span class="pp-inv-acc__amt">' + esc(formatMoney(selected)) + '</span>');
+      } else if (invTotal > 0) {
+        parts.push('<span class="pp-inv-acc__amt">' + esc(formatMoney(invTotal)) + '</span>');
+      }
+      if (Number.isFinite(annual) && annual > 0 && annual !== selected) {
+        parts.push(
+          '<span class="pp-inv-acc__year">Year ' + esc(formatMoney(annual)) + '</span>',
+        );
+      }
     }
-    if (
-      period !== 'year' &&
-      period !== 'annual' &&
-      Number.isFinite(annual) &&
-      annual > 0 &&
-      annual !== selected
-    ) {
-      bits.push('Year ' + formatMoney(annual));
-    }
-    if (!bits.length && invTotal > 0) {
-      bits.push(formatMoney(invTotal));
-    }
-    if (!bits.length) return '—';
-    return bits.join(' · ');
+    if (!parts.length) return '<span class="pp-inv-acc__amt">—</span>';
+    return parts.join('');
   }
 
   function invoiceDetailCardHtml(inv, opts) {
@@ -1086,10 +1107,7 @@
       '<div style="margin-top:8px"><span class="muted">Due</span><br>' +
       esc(formatDate(inv.due_date)) +
       '</div>' +
-      '<div style="margin-top:8px"><span class="muted">Funding</span><br>' +
-      fundingChipHtml(inv) +
-      '</div>' +
-      '<div style="margin-top:8px"><span class="muted">Method</span><br>' +
+      '<div style="margin-top:8px"><span class="muted">Type · funding · arrangement</span><br>' +
       methodChipsHtml(inv) +
       '</div>' +
       '<div style="margin-top:8px"><span class="muted">VAT</span><br>' +
@@ -1299,12 +1317,11 @@
       (contactId ? ' · ' + contactId : '') +
       '</span>' +
       '</span>' +
-      '<span class="pp-inv-acc__amt" title="Booked amount for selected year / term filter">' +
-      esc(groupBookedAmountsHtml(group)) +
+      '<span class="pp-inv-acc__amounts" title="Booked amount for selected year / term filter">' +
+      groupBookedAmountsHtml(group) +
       '</span>' +
       '<span class="pp-inv-acc__methods">' +
-      groupFundingChipsHtml(invoices) +
-      groupMethodChipsHtml(invoices) +
+      groupMetaChipsHtml(invoices) +
       '</span>' +
       '<span class="pp-inv-acc__status">' +
       groupStatusSummary(invoices) +
@@ -1380,25 +1397,31 @@
       '.pp-inv-acc__who{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 140px}' +
       '.pp-inv-acc__name{overflow-wrap:break-word}' +
       '.pp-inv-acc__num{font-size:12px;color:#4a6578;overflow-wrap:break-word}' +
-      '.pp-inv-acc__amt{font-weight:700;flex:1 1 160px;min-width:0;overflow-wrap:break-word;text-align:right}' +
+      '.pp-inv-acc__amounts{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;flex:1 1 200px;min-width:0;justify-content:flex-end;text-align:right}' +
+      '.pp-inv-acc__term{font-weight:700;color:#0f172a;overflow-wrap:break-word}' +
+      '.pp-inv-acc__amt{font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums;overflow-wrap:break-word}' +
+      '.pp-inv-acc__year{font-weight:700;color:#475569;font-variant-numeric:tabular-nums;overflow-wrap:break-word}' +
       '.pp-inv-acc__methods{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0;flex:0 1 auto;max-width:100%}' +
-      '.pp-inv-acc__method{display:inline-flex;align-items:center;font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid #d5dee6;background:#eef2f5;color:#334155}' +
-      /* Methods: never green (paid) or orange (unpaid) */ +
-      '.pp-inv-acc__method--gc{color:#9f1239;background:#ffe4e6;border-color:#fda4af}' +
-      '.pp-inv-acc__method--la{color:#6b21a8;background:#f3e8ff;border-color:#d8b4fe}' +
-      '.pp-inv-acc__method--bank{color:#44403c;background:#f5f5f4;border-color:#d6d3d1}' +
-      '.pp-inv-acc__method--plan{color:#0e7490;background:#cffafe;border-color:#67e8f9}' +
-      '.pp-inv-acc__method--auto{color:#5b21b6;background:#ede9fe;border-color:#c4b5fd;letter-spacing:.03em}' +
-      '.pp-inv-acc__method--card{color:#1d4ed8;background:#dbeafe;border-color:#93c5fd}' +
-      '.pp-inv-acc__method--admin{color:#334155;background:#e2e8f0;border-color:#cbd5e1}' +
-      '.pp-inv-acc__method--other{color:#4a6578;background:#eef2f5;border-color:#d5dee6}' +
-      '.pp-inv-acc__plan-dates{max-width:100%}' +
-      '.pp-inv-acc__fund{display:inline-flex;align-items:center;font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid #c7d2fe;background:#e0e7ff;color:#312e81}' +
-      /* Funding: distinct from methods + paid/unpaid — every route is a chip */ +
-      '.pp-inv-acc__fund--private{color:#312e81;background:#e0e7ff;border-color:#a5b4fc}' +
-      '.pp-inv-acc__fund--direct{color:#075985;background:#bae6fd;border-color:#38bdf8}' +
+      /* Shared chip shell — colours are exclusive per role (no reused hues). */ +
+      '.pp-inv-acc__type,.pp-inv-acc__method,.pp-inv-acc__arrange,.pp-inv-acc__fund{display:inline-flex;align-items:center;font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid transparent}' +
+      /* TYPE */ +
+      '.pp-inv-acc__type--termly{color:#1e3a8a;background:#dbeafe;border-color:#60a5fa}' +
+      '.pp-inv-acc__type--auto{color:#5b21b6;background:#ede9fe;border-color:#a78bfa;letter-spacing:.03em}' +
+      /* FUNDING — Private ≠ Direct ≠ LA ≠ NHS (no unpaid-orange / paid-green) */ +
+      '.pp-inv-acc__fund--private{color:#312e81;background:#e0e7ff;border-color:#818cf8}' +
+      '.pp-inv-acc__fund--direct{color:#115e59;background:#ccfbf1;border-color:#2dd4bf}' +
       '.pp-inv-acc__fund--la{color:#86198f;background:#fae8ff;border-color:#e879f9}' +
       '.pp-inv-acc__fund--nhs{color:#9f1239;background:#ffe4e6;border-color:#fb7185}' +
+      /* METHOD channel — Bank ≠ GoCardless ≠ Card */ +
+      '.pp-inv-acc__method--bank{color:#3f3f46;background:#f4f4f5;border-color:#a1a1aa}' +
+      '.pp-inv-acc__method--gc{color:#9d174d;background:#fbcfe8;border-color:#ec4899}' +
+      '.pp-inv-acc__method--card{color:#1e40af;background:#93c5fd;border-color:#2563eb}' +
+      '.pp-inv-acc__method--la{color:#6b21a8;background:#ddd6fe;border-color:#8b5cf6}' +
+      '.pp-inv-acc__method--admin{color:#334155;background:#e2e8f0;border-color:#94a3b8}' +
+      '.pp-inv-acc__method--other{color:#4a6578;background:#eef2f5;border-color:#94a3b8}' +
+      /* ARRANGEMENT (Flexi / monthly / one-off) — yellow, not TYPE blue */ +
+      '.pp-inv-acc__arrange{color:#854d0e;background:#fef08a;border-color:#eab308}' +
+      '.pp-inv-acc__plan-dates{max-width:100%}' +
       /* Payment status: green=paid, orange=unpaid only */ +
       '.pp-inv-acc__pay-chip{font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid transparent;display:inline-flex;align-items:center}' +
       '.pp-inv-acc__pay-chip--unpaid{color:#9a3412;background:#ffedd5;border-color:#fdba74}' +
