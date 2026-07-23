@@ -307,22 +307,33 @@
     );
   }
 
+  /** Payment via: Bank Transfer & Apple Pay · GoCardless */
   function methodChannelLabel(inv) {
+    var reenrolPay = String(inv.reenrol_payment_method_code || '').toLowerCase();
     var hint = String(inv.payment_method_hint || '').toLowerCase();
     var via = String(inv.paid_via || '').toLowerCase();
     if (hint === 'la_funded') return 'LA funded';
-    if (via === 'gocardless' || hint === 'gocardless' || inv.gocardless_url) {
+    if (
+      reenrolPay === 'gocardless' ||
+      via === 'gocardless' ||
+      hint === 'gocardless' ||
+      inv.gocardless_url
+    ) {
       return 'GoCardless';
     }
     if (via === 'stripe' || hint === 'payment_link' || inv.payment_link_url) {
-      return 'Card / payment link';
+      return 'Bank Transfer & Apple Pay';
     }
-    if (via === 'tide' || via === 'bank' || hint === 'bank_transfer') {
-      return 'Bank transfer';
+    if (
+      reenrolPay === 'bank_transfer' ||
+      via === 'tide' ||
+      via === 'bank' ||
+      hint === 'bank_transfer'
+    ) {
+      return 'Bank Transfer & Apple Pay';
     }
     if (via === 'admin') return 'Admin / Office';
-    if (hint === 'other') return 'Other';
-    return 'Bank transfer';
+    return 'Bank Transfer & Apple Pay';
   }
 
   function scheduleRows(inv) {
@@ -333,10 +344,23 @@
   }
 
   /**
-   * Bank transfer: One-off (term/year) or Flexi (2 per term) only.
-   * GoCardless may show N monthly. Never label bank schedules as monthly.
+   * Arrangement chip:
+   * One-off payment (year) · One-off payment (term) ·
+   * Flexi: 2 instalments per Term / 6 per year ·
+   * GoCardless (one invoice per term) · GoCardless (monthly ×10)
    */
   function schedulePlanShort(inv) {
+    var code = String(inv.reenrol_payment_schedule_code || '').toLowerCase();
+    var channel = methodChannelLabel(inv);
+    var isGc = channel === 'GoCardless';
+    if (code === 'yearly_1off') return 'One-off payment (year)';
+    if (code === 'term_flexi') return 'Flexi: 2 instalments per Term / 6 per year';
+    if (code === 'monthly_10') return 'GoCardless (monthly ×10)';
+    if (code === 'monthly_term') return 'GoCardless (monthly)';
+    if (code === 'term_3') {
+      return isGc ? 'GoCardless (one invoice per term)' : 'One-off payment (term)';
+    }
+
     var rows = scheduleRows(inv);
     var blob = rows
       .map(function (r) {
@@ -348,54 +372,34 @@
     var hay = blob + ' ' + notes;
     var n = rows.length;
     if (!n) return '';
-    var channel = methodChannelLabel(inv);
-    var isGc = channel === 'GoCardless';
     if (
       /yearly_1off|one[\s-]?off.*(year|annual)|full academic year|whole year/.test(hay) ||
       (n === 1 && /\b(year|annual|full year)\b/.test(blob))
     ) {
-      return 'One-off (whole year)';
-    }
-    if (n === 1 && /one[\s-]?off|whole term|full term/.test(hay)) {
-      return 'One-off (whole term)';
-    }
-    if (!isGc) {
-      if (n === 1) return 'One-off (whole term)';
-      return 'Flexi (2 per term)';
+      return 'One-off payment (year)';
     }
     if (n >= 2 && /\b(half|1st|2nd|flexi)\b/.test(hay)) {
-      return 'Flexi (2 per term)';
+      return 'Flexi: 2 instalments per Term / 6 per year';
     }
-    if (
-      n >= 3 &&
-      (/month/.test(hay) ||
-        /payment\s*\d|january|february|march|april|may|june|july|august|september|october|november|december/.test(
-          hay,
-        ))
-    ) {
-      return n + ' monthly';
-    }
-    if (
-      /own way|own arrangement|own_term|admin fee|minimum prepaid|top-?ups? as you go/.test(
-        hay,
-      )
-    ) {
-      return 'Own arrangement';
-    }
-    if (n === 1) return 'One-off (whole term)';
-    if (n === 2) return 'Flexi (2 per term)';
-    return n + ' monthly';
+    if (isGc && n >= 3) return 'GoCardless (monthly ×10)';
+    if (isGc && n === 1) return 'GoCardless (one invoice per term)';
+    if (!isGc && n === 1) return 'One-off payment (term)';
+    if (!isGc) return 'Flexi: 2 instalments per Term / 6 per year';
+    return 'GoCardless (monthly ×10)';
   }
 
   function isAutoReenrolledInv(inv) {
     return !!(inv && (inv.created_via === 'la_office_auto' || inv.is_la_office_auto));
   }
 
-  /** Enrolment cadence: AUTO (year / office) vs TERMLY (bill each term). */
+  /** Enrolment cadence / method: AUTO vs TERMLY */
   function enrolmentCadenceKey(inv) {
     if (isAutoReenrolledInv(inv)) return 'AUTO';
+    var cadence = String(inv.reenrol_enrolment_cadence || '').toLowerCase();
+    if (cadence === 'whole_year' || cadence === 'auto') return 'AUTO';
+    if (cadence === 'term_by_term' || cadence === 'termly') return 'TERMLY';
     var plan = schedulePlanShort(inv);
-    if (plan === 'One-off (whole year)') return 'AUTO';
+    if (plan === 'One-off payment (year)') return 'AUTO';
     var notes = String((inv && inv.notes) || '').toLowerCase();
     if (/yearly_1off|auto[_\s-]?continue/.test(notes)) return 'AUTO';
     return 'TERMLY';
@@ -449,12 +453,12 @@
     );
   }
 
-  /** TYPE → FUNDING → channel → arrangement (detail card). */
+  /** Funding → AUTO/TERMLY → via → arrangement (detail card). */
   function methodChipsHtml(inv) {
     var cadence = enrolmentCadenceKey(inv);
     var channel = methodChannelLabel(inv);
     var plan = schedulePlanShort(inv);
-    var html = enrolmentCadenceChipHtml(cadence) + ' ' + fundingChipHtml(inv);
+    var html = fundingChipHtml(inv) + ' ' + enrolmentCadenceChipHtml(cadence);
     if (!isAutoReenrolledInv(inv)) {
       html += ' ' + methodChipHtml(channel);
     }
@@ -479,30 +483,58 @@
     return html;
   }
 
+  /**
+   * Funding: Privately · Supported with Funds from the LA · LA managed · NHS managed.
+   * Prefer API category; never infer DP from vat_mode=exempt alone.
+   */
   function fundingCategoryLabel(inv) {
     var cat = String((inv && inv.funding_category) || '').toLowerCase();
     var fundRaw = String((inv && inv.funding_label) || '').toLowerCase();
-    var label = String((inv && inv.funding_category_label) || '').trim();
-    var isNhs =
+    var apiLabel = String((inv && inv.funding_category_label) || '').trim();
+    var code = String((inv && inv.reenrol_funding_code) || '').toLowerCase();
+    var billing = String((inv && inv.reenrol_billing_mode) || '').toLowerCase();
+    var blob = code + ' ' + billing + ' ' + fundRaw + ' ' + apiLabel.toLowerCase();
+
+    if (
       cat === 'nhs_managed' ||
-      /\bnhs\b/.test(fundRaw) ||
-      /\bsbs\b/.test(fundRaw) ||
-      /\bnhs\b/.test(label.toLowerCase());
-    if (isNhs) return 'NHS manages invoice (exempt)';
-    if (cat === 'la_managed' || /^la manages/i.test(label)) {
-      return 'LA manages invoice (exempt)';
+      /\bnhs\b/.test(blob) ||
+      /\bsbs\b/.test(blob)
+    ) {
+      return 'NHS managed';
     }
-    if (label && !/^la manages/i.test(label) && !/\bnhs\b/i.test(label)) return label;
-    if (cat === 'parent_direct_payment') return 'Parents · Direct Payment (exempt)';
-    if (cat === 'parent_private') return 'Parents · Private (Includes 20% VAT)';
+    if (
+      cat === 'la_managed' ||
+      billing === 'funder_invoice' ||
+      code === 'la_managed' ||
+      /^la managed$/i.test(apiLabel)
+    ) {
+      return 'LA managed';
+    }
+    if (
+      cat === 'parent_direct_payment' ||
+      billing === 'direct_payments' ||
+      code === 'la_direct_payments' ||
+      /direct payment|supported with funds|care package|ehcp/.test(blob)
+    ) {
+      return 'Supported with Funds from the LA';
+    }
+    if (
+      cat === 'parent_private' ||
+      billing === 'private' ||
+      code === 'privately_funded' ||
+      code === 'private' ||
+      /private/i.test(apiLabel) ||
+      /private/.test(fundRaw)
+    ) {
+      return 'Privately';
+    }
+    if (apiLabel) return apiLabel;
     var hint = String((inv && inv.payment_method_hint) || '').toLowerCase();
-    var vat = String((inv && inv.vat_mode) || '').toLowerCase();
-    if (hint === 'la_funded') return 'LA manages invoice (exempt)';
-    if (vat === 'exempt') return 'Parents · Direct Payment (exempt)';
-    return 'Parents · Private (Includes 20% VAT)';
+    if (hint === 'la_funded') return 'LA managed';
+    return 'Privately';
   }
 
-  /** VAT line must follow funding route — never show 20% VAT on Direct Payment / LA / NHS exempt. */
+  /** VAT line must follow funding route — never show 20% VAT on DP / LA / NHS. */
   function vatDisplayLabel(inv) {
     var cat = String(inv.funding_category || '').toLowerCase();
     var fund = fundingCategoryLabel(inv).toLowerCase();
@@ -510,28 +542,29 @@
       cat === 'parent_direct_payment' ||
       cat === 'la_managed' ||
       cat === 'nhs_managed' ||
-      fund.indexOf('exempt') >= 0
+      fund.indexOf('supported with funds') >= 0 ||
+      fund === 'la managed' ||
+      fund === 'nhs managed'
     ) {
       return 'Exempt';
     }
     var vat = String(inv.vat_mode || '').toLowerCase();
-    if (vat === 'exempt') return 'Exempt';
+    if (vat === 'exempt' && cat && cat !== 'parent_private') return 'Exempt';
     if (vat === 'vat_20') return 'Includes 20% VAT (in price)';
-    if (cat === 'parent_private' || fund.indexOf('private') >= 0) {
+    if (cat === 'parent_private' || fund === 'privately') {
       return 'Includes 20% VAT (in price)';
     }
+    if (vat === 'exempt') return 'Exempt';
     return '—';
   }
 
   function fundingToneClass(label) {
     var s = String(label || '').toLowerCase();
-    if (s.indexOf('nhs manages') >= 0 || s.indexOf('nhs funded') >= 0) {
-      return 'pp-inv-acc__fund--nhs';
-    }
-    if (s.indexOf('la manages') >= 0 || s.indexOf('la funded') >= 0) {
+    if (s.indexOf('nhs') >= 0) return 'pp-inv-acc__fund--nhs';
+    if (s === 'la managed' || s.indexOf('la funded') >= 0) {
       return 'pp-inv-acc__fund--la';
     }
-    if (s.indexOf('direct payment') >= 0) {
+    if (s.indexOf('supported with funds') >= 0 || s.indexOf('direct payment') >= 0) {
       return 'pp-inv-acc__fund--direct';
     }
     return 'pp-inv-acc__fund--private';
@@ -588,19 +621,20 @@
   }
 
   function methodChipHtml(label) {
-    var text = String(label || 'Bank transfer').trim() || 'Bank transfer';
+    var text =
+      String(label || 'Bank Transfer & Apple Pay').trim() ||
+      'Bank Transfer & Apple Pay';
     return (
       '<span class="pp-inv-acc__method ' +
       methodToneClass(text) +
-      '" title="Payment method">' +
+      '" title="Payment via">' +
       esc(text) +
       '</span>'
     );
   }
 
   /**
-   * Summary chips after amounts: TYPE → FUNDING → channel → arrangement.
-   * Each family uses a distinct colour (no shared teal/grey across roles).
+   * Summary chips: Funding → AUTO/TERMLY → via → arrangement.
    */
   function groupMetaChipsHtml(invoices) {
     var list = invoices || [];
@@ -621,8 +655,8 @@
     var source = withSched.length ? withSched : pool;
     var seen = Object.create(null);
     var out = [];
-    out.push(enrolmentCadenceChipHtml(cadence));
     out.push(groupFundingChipsHtml(list));
+    out.push(enrolmentCadenceChipHtml(cadence));
     if (autoOnly) return out.join('');
     source.forEach(function (inv) {
       if (isAutoReenrolledInv(inv)) return;

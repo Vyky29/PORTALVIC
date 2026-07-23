@@ -61,49 +61,80 @@ export type InvoiceFundingCategory =
   | "nhs_managed";
 
 const FUNDING_CATEGORY_LABELS: Record<InvoiceFundingCategory, string> = {
-  parent_private: "Parents · Private (Includes 20% VAT)",
-  parent_direct_payment: "Parents · Direct Payment (exempt)",
-  la_managed: "LA manages invoice (exempt)",
-  nhs_managed: "NHS manages invoice (exempt)",
+  parent_private: "Privately",
+  parent_direct_payment: "Supported with Funds from the LA",
+  la_managed: "LA managed",
+  nhs_managed: "NHS managed",
 };
 
 export function invoiceFundingCategoryLabel(category: InvoiceFundingCategory): string {
   return FUNDING_CATEGORY_LABELS[category] || category;
 }
 
-/** Who manages the invoice and VAT route for admin + parent portal. */
+/**
+ * Funding first (not VAT):
+ * Privately · Supported with Funds from the LA · LA managed · NHS managed.
+ * Never infer Direct Payments from vat_mode=exempt alone (Private can be mis-stamped exempt).
+ */
 export function invoiceFundingCategory(input: {
-  vatMode: PortalInvoiceVatMode;
+  vatMode?: PortalInvoiceVatMode;
   paymentMethodHint?: string;
   fundingLabel?: string;
   paymentSheet?: string;
+  /** Re-enrol choices_2627.funding_code */
+  fundingCode?: string;
+  /** Re-enrol choices_2627.billing_mode */
+  billingMode?: string;
 }): InvoiceFundingCategory {
   const hint = clean(input.paymentMethodHint, 40).toLowerCase();
   const sheet = clean(input.paymentSheet, 40).toUpperCase();
   const label = clean(input.fundingLabel, 120).toLowerCase();
+  const code = clean(input.fundingCode, 60).toLowerCase();
+  const billing = clean(input.billingMode, 40).toLowerCase();
+  const blob = `${code} ${billing} ${label}`;
 
-  /* NHS/SBS before generic LA sheet — Day Centre packs often live on sheet=LA. */
   if (
-    /\bnhs\b/.test(label) ||
-    /\bsbs\b/.test(label) ||
-    label.includes("nhs-funded") ||
-    label.includes("funded by nhs")
+    /\bnhs\b/.test(blob) ||
+    /\bsbs\b/.test(blob) ||
+    blob.includes("nhs-funded") ||
+    blob.includes("funded by nhs")
   ) {
     return "nhs_managed";
   }
 
-  if (hint === "la_funded" || sheet === "LA") {
+  if (
+    billing === "funder_invoice" ||
+    code === "la_managed" ||
+    hint === "la_funded" ||
+    (sheet === "LA" && !/direct.?payment/i.test(blob))
+  ) {
     return "la_managed";
   }
+
   if (
+    billing === "direct_payments" ||
+    code === "la_direct_payments" ||
     sheet === "DIRECT_PAYMENTS" ||
-    input.vatMode === "exempt" ||
     label.includes("direct payment") ||
+    label.includes("supported with funds") ||
     label.includes("care package") ||
     label.includes("ehcp")
   ) {
     return "parent_direct_payment";
   }
+
+  if (
+    billing === "private" ||
+    code === "privately_funded" ||
+    code === "private" ||
+    label.includes("private") ||
+    sheet === "PARENTS"
+  ) {
+    return "parent_private";
+  }
+
+  // Last resort: LA sheet / la_funded hint only — do not use vat exempt.
+  if (hint === "la_funded" || sheet === "LA") return "la_managed";
   return "parent_private";
 }
 

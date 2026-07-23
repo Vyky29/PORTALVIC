@@ -351,11 +351,18 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     }),
   );
 
-  // Latest re-enrolment submission per contact (2026-27) for sort + booked totals.
-  const reenrolByContact = new Map<
-    string,
-    { submitted_at: string; totals: ReturnType<typeof payloadTermTotals>; name: string }
-  >();
+  // Latest re-enrolment submission per contact (2026-27) for sort + booked totals + funding chips.
+  type ReenrolMeta = {
+    submitted_at: string;
+    totals: ReturnType<typeof payloadTermTotals>;
+    name: string;
+    funding_code: string;
+    billing_mode: string;
+    payment_method_code: string;
+    payment_schedule_code: string;
+    enrolment_cadence: string;
+  };
+  const reenrolByContact = new Map<string, ReenrolMeta>();
   const reenrolByName = new Map<
     string,
     { submitted_at: string; totals: ReturnType<typeof payloadTermTotals>; contact_id: string }
@@ -372,8 +379,29 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       const name = clean(s.participant_name, 120);
       const submittedAt = clean(s.submitted_at, 40);
       const totals = payloadTermTotals(s.payload);
+      const payload =
+        s.payload && typeof s.payload === "object"
+          ? (s.payload as Record<string, unknown>)
+          : {};
+      const fundingRoot =
+        payload.funding && typeof payload.funding === "object"
+          ? (payload.funding as Record<string, unknown>)
+          : {};
+      const choices =
+        fundingRoot.choices_2627 && typeof fundingRoot.choices_2627 === "object"
+          ? (fundingRoot.choices_2627 as Record<string, unknown>)
+          : {};
       if (cid && !reenrolByContact.has(cid)) {
-        reenrolByContact.set(cid, { submitted_at: submittedAt, totals, name });
+        reenrolByContact.set(cid, {
+          submitted_at: submittedAt,
+          totals,
+          name,
+          funding_code: clean(choices.funding_code, 60),
+          billing_mode: clean(choices.billing_mode, 40),
+          payment_method_code: clean(choices.payment_method_code, 40),
+          payment_schedule_code: clean(choices.payment_schedule_code, 40),
+          enrolment_cadence: clean(choices.enrolment_cadence, 40),
+        });
       }
       const nameKey = name.toLowerCase();
       if (nameKey && !reenrolByName.has(nameKey)) {
@@ -479,17 +507,22 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       });
       fundingByContact.set(cid, funding);
     }
+    const reenrol =
+      (cid && reenrolByContact.get(cid)) ||
+      (reenrolByName.get(displayName.toLowerCase())
+        ? reenrolByContact.get(
+          reenrolByName.get(displayName.toLowerCase())!.contact_id,
+        ) || null
+        : null);
+
     const fundingCategory = invoiceFundingCategory({
       vatMode: clean(share.vat_mode, 20) === "exempt" ? "exempt" : "vat_20",
       paymentMethodHint: clean(share.payment_method_hint, 40),
       fundingLabel: funding.fundingLabel,
       paymentSheet: funding.paymentSheet,
+      fundingCode: reenrol?.funding_code || "",
+      billingMode: reenrol?.billing_mode || "",
     });
-
-    const reenrol =
-      (cid && reenrolByContact.get(cid)) ||
-      reenrolByName.get(displayName.toLowerCase()) ||
-      null;
     const laPacks = cid ? laPayByContact.get(cid) || [] : [];
     const bookedFromReenrol = reenrol?.totals;
     const bookedFromLa = laPacks[0]?.totals || null;
@@ -533,6 +566,11 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       funding_category_label: invoiceFundingCategoryLabel(fundingCategory),
       funding_label: funding.fundingLabel || null,
       payment_sheet: funding.paymentSheet || null,
+      reenrol_funding_code: reenrol?.funding_code || null,
+      reenrol_billing_mode: reenrol?.billing_mode || null,
+      reenrol_payment_method_code: reenrol?.payment_method_code || null,
+      reenrol_payment_schedule_code: reenrol?.payment_schedule_code || null,
+      reenrol_enrolment_cadence: reenrol?.enrolment_cadence || null,
       ...booked,
       billing_term: ownTerm || booked.billing_term,
       billing_term_label: ownTerm ? termLabel(ownTerm) : booked.billing_term_label,
@@ -592,6 +630,8 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
         paymentMethodHint: "la_funded",
         fundingLabel: payFunding,
         paymentSheet: pack.sheet || "LA",
+        fundingCode: reenrol?.funding_code || "",
+        billingMode: reenrol?.billing_mode || "",
       });
       const booked = bookedFieldsFromTotals(pack.totals, amountKey);
       invoices.push({
@@ -628,6 +668,11 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
         funding_category_label: invoiceFundingCategoryLabel(fundingCategory),
         funding_label: payFunding,
         payment_sheet: pack.sheet || "LA",
+        reenrol_funding_code: reenrol?.funding_code || null,
+        reenrol_billing_mode: reenrol?.billing_mode || null,
+        reenrol_payment_method_code: reenrol?.payment_method_code || null,
+        reenrol_payment_schedule_code: reenrol?.payment_schedule_code || null,
+        reenrol_enrolment_cadence: reenrol?.enrolment_cadence || null,
         ...booked,
         booked_slots: pack.slots || [],
         booked_service_raw: pack.service_raw || null,
