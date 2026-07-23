@@ -476,6 +476,20 @@
     return plan ? channel + ' · ' + plan : channel;
   }
 
+  function arrangementToneClass(plan) {
+    var s = String(plan || '').toLowerCase();
+    if (s === 'own way' || s.indexOf('own way') === 0) return 'pp-inv-acc__arrange--own';
+    if (s.indexOf('gocardless') === 0) return 'pp-inv-acc__arrange--gc';
+    if (s.indexOf('flexi: 6') === 0 || s.indexOf('6 per year') >= 0) {
+      return 'pp-inv-acc__arrange--flexi6';
+    }
+    if (s.indexOf('flexi') === 0 || s.indexOf('2 per term') >= 0) {
+      return 'pp-inv-acc__arrange--flexi2';
+    }
+    if (s.indexOf('one-off') === 0) return 'pp-inv-acc__arrange--oneoff';
+    return 'pp-inv-acc__arrange--other';
+  }
+
   function arrangementChipHtml(plan) {
     var text = String(plan || '').trim();
     if (!text) return '';
@@ -486,7 +500,9 @@
           ? text + ' (GoCardless fee £1.50 per instalment)'
           : 'Payment arrangement';
     return (
-      '<span class="pp-inv-acc__arrange" title="' +
+      '<span class="pp-inv-acc__arrange ' +
+      arrangementToneClass(text) +
+      '" title="' +
       esc(title) +
       '">' +
       esc(text) +
@@ -664,11 +680,11 @@
     if (s.indexOf('gocardless') >= 0) {
       return 'pp-inv-acc__method--gc';
     }
-    if (s.indexOf('payment link') >= 0 || s.indexOf('stripe') >= 0 || s.indexOf('card') >= 0) {
-      return 'pp-inv-acc__method--card';
+    if (s.indexOf('payment link') >= 0 || s.indexOf('stripe') >= 0) {
+      return 'pp-inv-acc__method--link';
     }
     if (s.indexOf('apple') >= 0) {
-      return 'pp-inv-acc__method--card';
+      return 'pp-inv-acc__method--apple';
     }
     if (s.indexOf('admin') >= 0 || s.indexOf('office') >= 0) {
       return 'pp-inv-acc__method--admin';
@@ -1503,25 +1519,36 @@
       '.pp-inv-acc__methods{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0;flex:0 1 auto;max-width:100%}' +
       // Chip shell + exclusive colours (never put /* */ between + — it injects NaN).
       '.pp-inv-acc__type,.pp-inv-acc__method,.pp-inv-acc__arrange,.pp-inv-acc__fund{display:inline-flex;align-items:center;font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid transparent}' +
-      '.pp-inv-acc__type--termly{color:#1e3a8a;background:#dbeafe;border-color:#60a5fa}' +
-      '.pp-inv-acc__type--auto{color:#5b21b6;background:#ede9fe;border-color:#a78bfa;letter-spacing:.03em}' +
-      '.pp-inv-acc__fund--private{color:#312e81;background:#e0e7ff;border-color:#818cf8}' +
-      '.pp-inv-acc__fund--direct{color:#115e59;background:#ccfbf1;border-color:#2dd4bf}' +
-      '.pp-inv-acc__fund--la{color:#86198f;background:#fae8ff;border-color:#e879f9}' +
-      '.pp-inv-acc__fund--nhs{color:#9f1239;background:#ffe4e6;border-color:#fb7185}' +
-      '.pp-inv-acc__method--bank{color:#3f3f46;background:#f4f4f5;border-color:#a1a1aa}' +
-      '.pp-inv-acc__method--gc{color:#9d174d;background:#fbcfe8;border-color:#ec4899}' +
-      '.pp-inv-acc__method--card{color:#1e40af;background:#93c5fd;border-color:#2563eb}' +
-      '.pp-inv-acc__method--la{color:#6b21a8;background:#ddd6fe;border-color:#8b5cf6}' +
+      // Method cadence: AUTO dark yellow · TERMLY light yellow
+      '.pp-inv-acc__type--auto{color:#713f12;background:#ca8a04;border-color:#a16207;letter-spacing:.03em}' +
+      '.pp-inv-acc__type--termly{color:#854d0e;background:#fef08a;border-color:#facc15}' +
+      // Funding: dark blue · light blue · turquoise · distinct sky blue
+      '.pp-inv-acc__fund--private{color:#f8fafc;background:#1e3a8a;border-color:#172554}' +
+      '.pp-inv-acc__fund--direct{color:#1e40af;background:#bfdbfe;border-color:#60a5fa}' +
+      '.pp-inv-acc__fund--la{color:#115e59;background:#5eead4;border-color:#14b8a6}' +
+      '.pp-inv-acc__fund--nhs{color:#0c4a6e;background:#7dd3fc;border-color:#0284c7}' +
+      // Via: dark lilac · dark pink · red
+      '.pp-inv-acc__method--bank,.pp-inv-acc__method--apple{color:#f5f3ff;background:#5b21b6;border-color:#4c1d95}' +
+      '.pp-inv-acc__method--gc{color:#fff1f2;background:#9f1239;border-color:#881337}' +
+      '.pp-inv-acc__method--link{color:#fff;background:#dc2626;border-color:#b91c1c}' +
+      '.pp-inv-acc__method--card{color:#fff;background:#dc2626;border-color:#b91c1c}' +
+      '.pp-inv-acc__method--la{color:#f5f3ff;background:#5b21b6;border-color:#4c1d95}' +
       '.pp-inv-acc__method--admin{color:#334155;background:#e2e8f0;border-color:#94a3b8}' +
       '.pp-inv-acc__method--other{color:#4a6578;background:#eef2f5;border-color:#94a3b8}' +
-      '.pp-inv-acc__arrange{color:#854d0e;background:#fef08a;border-color:#eab308}' +
+      // Arrangement: light lilac · mid lilacs · light pink · black/white
+      '.pp-inv-acc__arrange{color:#5b21b6;background:#ede9fe;border-color:#c4b5fd}' +
+      '.pp-inv-acc__arrange--oneoff{color:#5b21b6;background:#ede9fe;border-color:#c4b5fd}' +
+      '.pp-inv-acc__arrange--flexi2{color:#581c87;background:#d8b4fe;border-color:#a855f7}' +
+      '.pp-inv-acc__arrange--flexi6{color:#3b0764;background:#c084fc;border-color:#9333ea}' +
+      '.pp-inv-acc__arrange--gc{color:#9d174d;background:#fce7f3;border-color:#f9a8d4}' +
+      '.pp-inv-acc__arrange--own{color:#fff;background:#0f172a;border-color:#020617}' +
+      '.pp-inv-acc__arrange--other{color:#5b21b6;background:#ede9fe;border-color:#c4b5fd}' +
       '.pp-inv-acc__plan-dates{max-width:100%}' +
       '.pp-inv-acc__pay-chip{font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid transparent;display:inline-flex;align-items:center}' +
-      '.pp-inv-acc__pay-chip--unpaid{color:#9a3412;background:#ffedd5;border-color:#fdba74}' +
-      '.pp-inv-acc__pay-chip--pending{color:#1e40af;background:#dbeafe;border-color:#93c5fd}' +
-      '.pp-inv-acc__pay-chip--shared{color:#1e3a8a;background:#e0e7ff;border-color:#a5b4fc}' +
-      '.pp-inv-acc__pay-chip--hidden{color:#475569;background:#f1f5f9;border-color:#cbd5e1}' +
+      '.pp-inv-acc__pay-chip--unpaid{color:#9a3412;background:#ffedd5;border-color:#fb923c}' +
+      '.pp-inv-acc__pay-chip--pending{color:#9a3412;background:#fed7aa;border-color:#fb923c}' +
+      '.pp-inv-acc__pay-chip--shared{color:#047857;background:#bbf7d0;border-color:#34d399}' +
+      '.pp-inv-acc__pay-chip--hidden{color:#475569;background:#e2e8f0;border-color:#94a3b8}' +
       '.pp-inv-acc__pay-chip--other{color:#4a6578;background:#eef2f5;border-color:#d5dee6}' +
       '.pp-inv-acc__status{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}' +
       '.pp-inv-acc__xero{font-size:11px;color:#64748b}' +
@@ -1534,9 +1561,10 @@
       '.pp-inv-acc__filter-chip{-webkit-appearance:none;appearance:none;margin:0;cursor:pointer;font:inherit;line-height:inherit}' +
       '.pp-inv-acc__filter-chip:hover{filter:brightness(.97)}' +
       'button.pp-inv-acc__pay-chip--paid,.pp-inv-acc__pay-chip--paid{color:#047857;background-color:#bbf7d0;background:#bbf7d0;border:1px solid #34d399}' +
-      'button.pp-inv-acc__pay-chip--unpaid,.pp-inv-acc__pay-chip--unpaid{color:#9a3412;background-color:#ffedd5;background:#ffedd5;border:1px solid #fdba74}' +
-      'button.pp-inv-acc__pay-chip--pending,.pp-inv-acc__pay-chip--pending{color:#1e40af;background-color:#dbeafe;background:#dbeafe;border:1px solid #93c5fd}' +
-      'button.pp-inv-acc__pay-chip--hidden,.pp-inv-acc__pay-chip--hidden{color:#475569;background-color:#f1f5f9;background:#f1f5f9;border:1px solid #cbd5e1}' +
+      'button.pp-inv-acc__pay-chip--shared,.pp-inv-acc__pay-chip--shared{color:#047857;background-color:#bbf7d0;background:#bbf7d0;border:1px solid #34d399}' +
+      'button.pp-inv-acc__pay-chip--unpaid,.pp-inv-acc__pay-chip--unpaid{color:#9a3412;background-color:#ffedd5;background:#ffedd5;border:1px solid #fb923c}' +
+      'button.pp-inv-acc__pay-chip--pending,.pp-inv-acc__pay-chip--pending{color:#9a3412;background-color:#fed7aa;background:#fed7aa;border:1px solid #fb923c}' +
+      'button.pp-inv-acc__pay-chip--hidden,.pp-inv-acc__pay-chip--hidden{color:#475569;background-color:#e2e8f0;background:#e2e8f0;border:1px solid #94a3b8}' +
       'button.pp-inv-acc__pay-chip--other,.pp-inv-acc__pay-chip--other{color:#4a6578;background-color:#eef2f5;background:#eef2f5;border:1px solid #d5dee6}' +
       '.pp-inv-acc__grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.7fr) minmax(0,.9fr);gap:12px;min-width:0}' +
       '@media (max-width:820px){.pp-inv-acc__grid{grid-template-columns:1fr}}' +
