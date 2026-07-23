@@ -258,6 +258,9 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
   if (shareFilter === "ready" || shareFilter === "hidden") q = q.eq("share_status", shareFilter);
   if (["unpaid", "paid", "partial", "void", "pending_confirmation"].includes(payFilter)) {
     q = q.eq("payment_status", payFilter);
+  } else {
+    // Default list: hide voided orphan / cancelled INV-Ps (e.g. old monthly trackers).
+    q = q.neq("payment_status", "void");
   }
   if (contactId) q = q.eq("contact_id", contactId);
   if (listFilter === "xero_unsynced") {

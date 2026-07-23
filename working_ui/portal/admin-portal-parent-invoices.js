@@ -332,7 +332,10 @@
     });
   }
 
-  /** Flexi / one-off / termly / own — from payment_schedule labels. */
+  /**
+   * Bank transfer: One-off (term/year) or Flexi (2 per term) only.
+   * GoCardless may show N monthly. Never label bank schedules as monthly.
+   */
   function schedulePlanShort(inv) {
     var rows = scheduleRows(inv);
     var blob = rows
@@ -345,11 +348,20 @@
     var hay = blob + ' ' + notes;
     var n = rows.length;
     if (!n) return '';
+    var channel = methodChannelLabel(inv);
+    var isGc = channel === 'GoCardless';
     if (
       /yearly_1off|one[\s-]?off.*(year|annual)|full academic year|whole year/.test(hay) ||
       (n === 1 && /\b(year|annual|full year)\b/.test(blob))
     ) {
       return 'One-off (whole year)';
+    }
+    if (n === 1 && /one[\s-]?off|whole term|full term/.test(hay)) {
+      return 'One-off (whole term)';
+    }
+    if (!isGc) {
+      if (n === 1) return 'One-off (whole term)';
+      return 'Flexi (2 per term)';
     }
     if (n >= 2 && /\b(half|1st|2nd|flexi)\b/.test(hay)) {
       return 'Flexi (2 per term)';
@@ -370,13 +382,9 @@
     ) {
       return 'Own arrangement';
     }
-    if (n === 1 && /one[\s-]?off|whole term|full term/.test(hay)) {
-      return 'One-off (whole term)';
-    }
-    if (n === 1) return 'TERMLY';
-    if (n === 2) return '2 payments this term';
-    if (n > 2) return n + ' instalments';
-    return '';
+    if (n === 1) return 'One-off (whole term)';
+    if (n === 2) return 'Flexi (2 per term)';
+    return n + ' monthly';
   }
 
   function isAutoReenrolledInv(inv) {

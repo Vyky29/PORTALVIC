@@ -89,13 +89,42 @@ export function lineDescriptionForSlot(
   return day ? `${mins}' ${label} — ${day}` : `${mins}' ${label}`;
 }
 
+const WEEKDAY_RE =
+  /\b(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday)s?\b/i;
+const TIME_RANGE_RE =
+  /(\d{1,2}(?:[.:]\d{2})?\s*(?:am|pm)?\s*to\s*\d{1,2}(?:[.:]\d{2})?\s*(?:am|pm)?)/i;
+
+/** Repair mangled Multi-Activity slots where day landed inside timeSlot. */
+export function repairSlotDayTime<T extends Pick<ParsedSlot, "day" | "timeSlot" | "displayLabel">>(
+  slot: T,
+): T {
+  let day = String(slot.day || "").trim();
+  let timeSlot = String(slot.timeSlot || "").trim();
+  const blob = [day, timeSlot, String(slot.displayLabel || "")].filter(Boolean).join(" ");
+  if (!WEEKDAY_RE.test(day)) {
+    const m = blob.match(WEEKDAY_RE);
+    if (m) day = m[1].replace(/s$/i, "");
+  }
+  if (!timeSlot || /activity\s*-/i.test(timeSlot) || WEEKDAY_RE.test(timeSlot)) {
+    const tm = blob.match(TIME_RANGE_RE);
+    if (tm) timeSlot = tm[1].replace(/\s+/g, " ").trim();
+  }
+  return { ...slot, day, timeSlot };
+}
+
+export function weekdayFromText(text: string): string {
+  const m = String(text || "").match(WEEKDAY_RE);
+  return m ? m[1].replace(/s$/i, "") : "";
+}
+
 /** "Sunday 2:00pm to 2:30pm · SwimFarm" from a weekly slot (day, time, venue). */
 export function slotSessionDetail(
-  slot: Pick<ParsedSlot, "day" | "timeSlot" | "venue">,
+  slot: Pick<ParsedSlot, "day" | "timeSlot" | "venue" | "displayLabel">,
 ): string {
+  const fixed = repairSlotDayTime(slot);
   const bits = [
-    String(slot.day || "").trim(),
-    formatTimeSlotLabel(String(slot.timeSlot || "")),
+    String(fixed.day || "").trim(),
+    formatTimeSlotLabel(String(fixed.timeSlot || "")),
   ]
     .filter(Boolean)
     .join(" ");
@@ -257,8 +286,9 @@ export function buildReenrolTermLineItems(input: ReenrolLineBuildInput): PortalI
     }
   >();
 
-  for (const slot of input.slots || []) {
-    if (!slot || slot.isDayCentre) continue;
+  for (const rawSlot of input.slots || []) {
+    if (!rawSlot || rawSlot.isDayCentre) continue;
+    const slot = repairSlotDayTime(rawSlot);
     const id = String(slot.id || "");
     const choice = id && choices[id] ? String(choices[id].choice || "keep").toLowerCase() : "keep";
     if (choice === "withdraw") continue;
@@ -294,15 +324,15 @@ export function buildReenrolTermLineItems(input: ReenrolLineBuildInput): PortalI
     const label = mapRow?.label || agg.description.split("—")[0].trim();
     const qty = Math.max(1, agg.sessions);
     const unit = round4(agg.termTotal / qty);
+    const day =
+      weekdayFromText(agg.details[0] || "") ||
+      String(agg.details[0] || "").split(/\s+/)[0] ||
+      "";
     lines.push({
       service_key: agg.service_key,
       description: label || agg.description,
       detail: agg.details.join(" · ") || null,
-      dates: slotTermSessionDates(
-        input.term,
-        String(agg.details[0] || "").split(/\s+/)[0] || "",
-        qty,
-      ),
+      dates: slotTermSessionDates(input.term, day, qty),
       quantity: qty,
       unit_price_gbp: unit,
       amount_gbp: agg.termTotal,

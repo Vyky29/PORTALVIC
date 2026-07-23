@@ -54,7 +54,12 @@ export function scheduleInstalmentCount(raw: unknown): number {
  */
 export function paymentSchedulePlanShortLabel(
   schedule: InvoicePaymentScheduleRow[],
-  opts?: { notes?: string | null; dueDateIso?: string | null },
+  opts?: {
+    notes?: string | null;
+    dueDateIso?: string | null;
+    /** bank_transfer | gocardless | … — bank never uses monthly. */
+    paymentMethodHint?: string | null;
+  },
 ): string | null {
   const rows = (schedule || []).filter((r) => r && Number(r.amount_gbp) > 0);
   const blob = rows.map((r) => String(r.label || "")).join(" ").toLowerCase();
@@ -62,6 +67,9 @@ export function paymentSchedulePlanShortLabel(
   const hay = `${blob} ${notes}`;
   const n = rows.length;
   if (!n) return null;
+  const method = String(opts?.paymentMethodHint || "").toLowerCase();
+  const isBank = !method || method === "bank_transfer" || method === "bank" || method === "tide";
+  const isGc = method === "gocardless";
 
   if (
     /yearly_1off|one[\s-]?off.*(year|annual)|full academic year|whole year/.test(hay) ||
@@ -69,10 +77,20 @@ export function paymentSchedulePlanShortLabel(
   ) {
     return "One-off (whole year)";
   }
+  if (n === 1 && /one[\s-]?off|whole term|full term/.test(hay)) {
+    return "One-off (whole term)";
+  }
+  // Bank transfer: only one-off or flexi (2 per term). Never "monthly".
+  if (isBank && !isGc) {
+    if (n === 1) return "One-off (whole term)";
+    if (n === 2 || /\b(half|1st|2nd|flexi)\b/.test(hay)) return "Flexi (2 per term)";
+    return "Flexi (2 per term)";
+  }
   if (n >= 2 && /\b(half|1st|2nd|flexi)\b/.test(hay)) {
     return "Flexi (2 per term)";
   }
   if (
+    isGc &&
     n >= 3 &&
     (/month/.test(hay) ||
       /payment\s*\d|january|february|march|april|may|june|july|august|september|october|november|december/
@@ -91,8 +109,8 @@ export function paymentSchedulePlanShortLabel(
     return "One per term";
   }
   if (n === 1) return "One per term";
-  if (n === 2) return "2 payments this term";
-  if (n > 2) return `${n} instalments`;
+  if (n === 2) return "Flexi (2 per term)";
+  if (n > 2) return isGc ? `${n} monthly` : "Flexi (2 per term)";
   return null;
 }
 
