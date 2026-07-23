@@ -2,6 +2,10 @@
  * After re-enrol deadline (Wed 22 Jul 2026), release standing MADRE seats that
  * are no longer kept for 26/27 so the public booking offer shows them as free.
  *
+ * Only renames slots on/after Autumn 26/27 (REENROL_RELEASE_SESSION_FROM_ISO).
+ * Summer/July history must keep real client names so staff can still open
+ * feedback / cancellations for sessions already delivered.
+ *
  * Idempotent: safe to re-run. Admin can later set CLOSED / re-name slots.
  * Do not move participants between venues here — office handles venue changes.
  */
@@ -10,6 +14,8 @@ import type { MadreDoc } from "./portal_madre_fold_logic.ts";
 
 export const REENROL_RELEASE_DEADLINE_ISO = "2026-07-22";
 export const REENROL_RELEASE_LIVE_FROM_ISO = "2026-07-23";
+/** Do not wipe client names on sessions before this ISO (keep July history). */
+export const REENROL_RELEASE_SESSION_FROM_ISO = "2026-09-01";
 export const MADRE_TERM_KEY = "summer-2026";
 
 type SlotCtx = {
@@ -312,6 +318,23 @@ export function applyReenrolOfficeCorrectionsToMadre(doc: MadreDoc): {
   return { changed, notes };
 }
 
+function slotSessionIso(
+  day: Record<string, unknown>,
+  week: Record<string, unknown>,
+): string {
+  const fromDay = norm(day.sessionDate).slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(fromDay)) return fromDay;
+  const fromWeek = norm(week.start).slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(fromWeek) ? fromWeek : "";
+}
+
+/** True when this session may be renamed for Autumn booking release. */
+export function reenrolReleaseAppliesToSessionIso(sessionIso: string): boolean {
+  const iso = String(sessionIso || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+  return iso >= REENROL_RELEASE_SESSION_FROM_ISO;
+}
+
 /** Mutate MADRE doc in memory; returns change notes. */
 export function applyReenrolReleaseRulesToMadre(doc: MadreDoc): {
   changed: number;
@@ -322,10 +345,14 @@ export function applyReenrolReleaseRulesToMadre(doc: MadreDoc): {
   const notes: string[] = [];
 
   for (const week of doc.weeks ?? []) {
+    const weekRec = week as unknown as Record<string, unknown>;
     for (const st of Object.values(week.staff || {}) as Array<Record<string, unknown>>) {
       const days = (st.days as Array<Record<string, unknown>>) || [];
       for (const day of days) {
         const weekday = norm(day.weekday);
+        const sessionIso = slotSessionIso(day, weekRec);
+        // Keep summer / July history intact for staff feedback.
+        if (!reenrolReleaseAppliesToSessionIso(sessionIso)) continue;
         const slots = (day.slots as Array<Record<string, unknown>>) || [];
         for (const slot of slots) {
           const client = norm(slot.client_name);
@@ -361,7 +388,7 @@ export function applyReenrolReleaseRulesToMadre(doc: MadreDoc): {
             }
             changed += 1;
             notes.push(
-              `${client} → ${target} · ${weekday} ${time} ${venue} (${rule.reason})`,
+              `${client} → ${target} · ${sessionIso} ${weekday} ${time} ${venue} (${rule.reason})`,
             );
             break;
           }
