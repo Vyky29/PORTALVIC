@@ -3495,6 +3495,36 @@
     .pp-hub-shortcut--absence .pp-hub-shortcut__ico { background: #fff1e8; color: #c2410c; }
     .pp-hub-shortcut--consents .pp-hub-shortcut__ico { background: #f3e8ff; color: #7c3aed; }
     .pp-hub-shortcut--invoices .pp-hub-shortcut__ico { background: #fff4e6; color: #b45309; }
+    .pp-hub-shortcut--invoices-unpaid {
+      animation: pp-hub-invoices-pulse-red 1.15s ease-in-out infinite;
+      box-shadow: 0 0 0 0 rgba(198, 40, 40, 0.45);
+    }
+    .pp-hub-shortcut--invoices-unpaid .pp-hub-shortcut__ico {
+      background: #c62828 !important;
+      color: #fff !important;
+    }
+    .pp-hub-shortcut--invoices-unpaid .pp-hub-shortcut__label {
+      color: #b71c1c !important;
+      font-weight: 800;
+    }
+    @keyframes pp-hub-invoices-pulse-red {
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(198, 40, 40, 0.5);
+        filter: brightness(1);
+      }
+      50% {
+        box-shadow: 0 0 0 7px rgba(198, 40, 40, 0);
+        filter: brightness(1.06);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .pp-hub-shortcut--invoices-unpaid {
+        animation: none;
+        outline: 2px solid #ef9a9a;
+        outline-offset: 2px;
+      }
+    }
     .pp-hub-shortcut--notes .pp-hub-shortcut__ico { background: #fff6e5; color: #b7791f; }
     .pp-hub-shortcut--photos .pp-hub-shortcut__ico { background: #ecfdf5; color: #047857; }
     .pp-hub-shortcut--crash .pp-hub-shortcut__ico { background: #fff1e8; color: #c2410c; }
@@ -5073,7 +5103,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260723-no-venue-absent"></script>
   <script src="/portal/parent_portal_team.js?v=20260710-eiji-hazem-photos"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260715-crash-cal-first"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260723-gc-btn-pulse"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260723-inv-hub-pulse"></script>
   <script src="/portal/parent_portal_app.js?v=20260722-former-no-login"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

@@ -1098,6 +1098,25 @@
     return String((inv && inv.payment_status) || "").toLowerCase() === "paid";
   }
 
+  function invoiceNeedsParentPay(inv) {
+    if (!inv) return false;
+    var st = String(inv.payment_status || "").toLowerCase();
+    if (st === "paid" || st === "void" || st === "cancelled") return false;
+    return true;
+  }
+
+  function applyHubInvoicesShortcutVisual(host, hasUnpaid) {
+    if (!host) return;
+    var btn = host.querySelector('.pp-hub-shortcut--invoices[data-pp-open="invoices"]');
+    if (!btn) return;
+    btn.classList.toggle("pp-hub-shortcut--invoices-unpaid", !!hasUnpaid);
+    if (hasUnpaid) {
+      btn.setAttribute("aria-label", "Invoices — unpaid invoices");
+    } else {
+      btn.setAttribute("aria-label", "Invoices");
+    }
+  }
+
   /** Current (autumn) term invoices if present; else any 26/27 programme invoices. */
   function termInvoicesForHubPay(invoices) {
     var term = termProgrammeInvoices(invoices);
@@ -1188,6 +1207,9 @@
       .then(function (j) {
         if (!host.isConnected) return;
         var invoices = (j && j.invoices) || [];
+        var hasUnpaidInvoices = invoices.some(invoiceNeedsParentPay);
+        data._hubInvoicesUnpaid = hasUnpaidInvoices;
+        applyHubInvoicesShortcutVisual(host, hasUnpaidInvoices);
         var crashUnpaidInv = invoices.some(function (inv) {
           return isCrashInvoice(inv) && !isInvoiceFullyPaid(inv);
         });
