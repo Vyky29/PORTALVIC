@@ -151,7 +151,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260721-late-fb-compact" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260723-late-pay-staff" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
@@ -360,7 +360,7 @@
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260704-admin-504"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve"></script>
-  <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260721-late-sess-day"></script>
+  <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260723-late-pay-staff"></script>
   <script src="/portal/portal_admin_alerts_bell.js?v=20260716-cancel-selfserve"></script>
   <script type="module">
     import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20260704-presence-504";
@@ -1865,7 +1865,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var isoToday = isoDateLocal(new Date());
       return (
         '<div class="grid-kpi grid-kpi--6">'+
-          portalOperatorKpiCard('Late feedback', late, late ? 'Past-session cancel/incident approvals' : 'None waiting', 'c4k_late_submissions', late > 0)+
+          portalOperatorKpiCard('Late feedback', late, late ? 'Late incident approvals waiting' : 'Pay release by worker', 'c4k_late_submissions', late > 0)+
           portalOperatorKpiCard('Portal activity (72h)', activityN, 'Feedback · cancellations · incidents', 'c4k_sessions', activityN > 0)+
           portalOperatorKpiCard('Absents pending', absPend, 'Credits & family follow-up', 'absents_refunds', absPend > 0)+
           portalOperatorKpiCard('Sessions today', k.sessionsToday || 0, 'Roster anchors · '+isoToday, 'c4k_sessions', false)+
@@ -19280,27 +19280,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         '<div class="portal-late-admin" id="portalLateAdminRoot">' +
         '<h1 class="page-title">Late feedback</h1>' +
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Late = feedback completed after the session London day, or same day after <strong>21:00</strong>. Day buttons count deliveries that day. Selecting a day also lists late feedback <strong>for that session date</strong> (even if delivered later). Use <strong>Release</strong> so that staff day turns green/payable on the timesheet (no penalty yet — hold only).</p>' +
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Staff can submit late session feedback and cancellations without approval. This screen is for <strong>timesheet pay</strong>: late feedback holds the session day until you <strong>Release</strong> it (no penalty — hold only). Grouped by worker so you can clear all waiting days in one click. Late = completed after the session London day, or same day after <strong>21:00</strong>.</p>' +
         '<div class="c4k-hub-weekbar card-pad" style="margin-top:12px">' +
           '<div class="c4k-hub-weekbar__left">' +
-            '<span class="c4k-hub-weekbar__lbl">WEEK (MON–SUN)</span>' +
+            '<span class="c4k-hub-weekbar__lbl">RANGE</span>' +
             '<span class="c4k-hub-weekbar__range" id="portalLateWeekRange">—</span>' +
           '</div>' +
           '<div class="c4k-hub-weekbar__btns">' +
+            '<button type="button" class="btn btn--sec btn--sm" id="portalLateRecent60">Last 60 days</button>' +
             '<button type="button" class="btn btn--ghost btn--sm" id="portalLateWeekPrev">← Prev week</button>' +
-            '<button type="button" class="btn btn--sec btn--sm" id="portalLateWeekThis">This week</button>' +
+            '<button type="button" class="btn btn--ghost btn--sm" id="portalLateWeekThis">This week</button>' +
             '<button type="button" class="btn btn--ghost btn--sm" id="portalLateWeekNext">Next week →</button>' +
             '<button type="button" class="btn btn--sec btn--sm" id="portalLateAdminRefresh">Refresh</button>' +
           '</div>' +
         '</div>' +
-        '<div id="portalLateDayStrip" class="c4k-hub-sess-strip portal-late-day-strip" role="region" aria-label="Late feedback delivered per day"></div>' +
+        '<div id="portalLateDayStrip" class="c4k-hub-sess-strip portal-late-day-strip" hidden role="region" aria-label="Late feedback delivered per day"></div>' +
         '<p id="portalLateAdminStatus" class="portal-late-admin-status" aria-live="polite"></p>' +
         '<div id="portalLateAdminList" aria-live="polite">' +
         '<div class="portal-late-admin-msg"><strong>Loading…</strong></div>' +
         '</div>' +
         '<details class="portal-late-approval-panel" style="margin-top:28px">' +
         '<summary class="portal-late-approval-panel__sum">Incident late approvals</summary>' +
-        '<p class="muted" style="margin:8px 0 10px;font-size:13px;max-width:52rem;overflow-wrap:break-word">Past-session incidents still need approval. Instructor cancellations and session feedback do not — cancellations are recorded automatically (Before start = Submitted; During = still needs feedback).</p>' +
+        '<p class="muted" style="margin:8px 0 10px;font-size:13px;max-width:52rem;overflow-wrap:break-word">Only past-session <strong>incidents</strong> still need approval here. Instructor cancellations and session feedback do not need approval to submit.</p>' +
         '<div class="filter-row" style="flex-wrap:wrap;gap:8px;align-items:center">' +
         '<label class="muted" for="portalLateApprovalFilter" style="font-size:13px">Show</label>' +
         '<select class="inp" id="portalLateApprovalFilter" style="max-width:200px">' +
@@ -21161,7 +21162,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDashTileHtml('portal_payslips', '', 'portal_payslips', 'Payslips', 'Upload worker payslip PDFs', false, 'payments')+
         portalDashTileHtml('', '', 'invoices', 'Payroll report', 'Monthly PDF · preview &amp; send', false, 'payments', '', '', '/payroll-report.html')+
         portalDashTileHtml('', '', 'c4k_payments', 'Pay rates', 'Hourly rates by role &amp; scale', false, 'payments', '', '', '/pay-rates.html')+
-        portalDashTileHtml('c4k_late_submissions', '', 'c4k_late_submissions', 'Late feedback', 'Who submitted after the session day', state.portalLatePendingCount > 0, 'feedback');
+        portalDashTileHtml('c4k_late_submissions', '', 'c4k_late_submissions', 'Late feedback', 'Release late days for timesheet pay', state.portalLatePendingCount > 0, 'feedback');
       function opsAdminGridHtml(row1, row2, gridCls, row2ExtraCls){
         var cls = gridCls || 'dash-hub__grid--3';
         var html =

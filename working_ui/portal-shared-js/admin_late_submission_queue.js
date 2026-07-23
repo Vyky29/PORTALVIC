@@ -1,7 +1,7 @@
 /**
- * Admin UI: late session feedback log + approve/reject past-session incident requests.
- * Feedback and instructor cancellations are self-serve; this screen lists late feedback
- * and incidents that still need approval.
+ * Admin UI: late session feedback pay release (by worker) + past-session incident approvals.
+ * Feedback and instructor cancellations are self-serve (no approval to submit).
+ * Timesheet pay for late feedback needs admin Release into portal_late_feedback_pay_clearances.
  */
 (function () {
   "use strict";
@@ -412,10 +412,16 @@
     return addDaysIso(isoDay, 2) + "T12:00:00.000Z";
   }
 
-  var _weekState = {
+  var RECENT_DAYS = 60;
+
+  var _listState = {
+    mode: "recent60", // "recent60" | "week"
     monday: "",
-    selectedDay: "",
-    weekRows: [],
+    rangeFrom: "",
+    rangeTo: "",
+    rows: [],
+    groups: [],
+    expandedStaffId: "",
   };
 
   function enrichLateRow(r) {
@@ -436,12 +442,103 @@
     return map;
   }
 
-  function pickDefaultSelectedDay(days, counts, londonToday) {
-    if (londonToday && days.indexOf(londonToday) >= 0) return londonToday;
-    for (var i = days.length - 1; i >= 0; i--) {
-      if ((counts[days[i]] || 0) > 0) return days[i];
-    }
-    return days[days.length - 1] || londonToday || "";
+  async function attachPayClearanceFlags(c, rows) {
+    var clearedMap = Object.create(null);
+    try {
+      var staffIds = [];
+      var seenStaff = Object.create(null);
+      rows.forEach(function (r) {
+        var uid = String(r.submitted_by_user_id || "").trim();
+        if (uid && !seenStaff[uid]) {
+          seenStaff[uid] = true;
+          staffIds.push(uid);
+        }
+      });
+      var sessDates = [];
+      var seenSess = Object.create(null);
+      rows.forEach(function (r) {
+        var sd = String(r.session_date || "").slice(0, 10);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(sd) && !seenSess[sd]) {
+          seenSess[sd] = true;
+          sessDates.push(sd);
+        }
+      });
+      if (staffIds.length && sessDates.length) {
+        var clr = await c
+          .from(CLEAR_TABLE)
+          .select("staff_user_id,session_date,created_at")
+          .in("staff_user_id", staffIds)
+          .in("session_date", sessDates);
+        if (!clr.error && Array.isArray(clr.data)) {
+          clr.data.forEach(function (row) {
+            var k =
+              String(row.staff_user_id || "").trim() +
+              "|" +
+              String(row.session_date || "").slice(0, 10);
+            clearedMap[k] = row;
+          });
+        }
+      }
+    } catch (_) {}
+    rows.forEach(function (r) {
+      var k =
+        String(r.submitted_by_user_id || "").trim() +
+        "|" +
+        String(r.session_date || "").slice(0, 10);
+      r._pay_cleared = !!clearedMap[k];
+      r._clear_key = k;
+    });
+    return rows;
+  }
+
+  function aggregateStaffGroups(rows) {
+    var byStaff = Object.create(null);
+    (rows || []).forEach(function (r) {
+      var uid = String(r.submitted_by_user_id || "").trim();
+      if (!uid) uid = "__unknown__";
+      if (!byStaff[uid]) {
+        byStaff[uid] = {
+          staff_user_id: uid === "__unknown__" ? "" : uid,
+          staff_name: String(r._staff_name || "").trim() || "Staff",
+          lateRows: 0,
+          unclearedDates: Object.create(null),
+          clearedDates: Object.create(null),
+          rows: [],
+        };
+      }
+      var g = byStaff[uid];
+      g.lateRows += 1;
+      g.rows.push(r);
+      if (r._staff_name && g.staff_name === "Staff") {
+        g.staff_name = String(r._staff_name).trim();
+      }
+      var sd = String(r.session_date || "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(sd)) return;
+      if (r._pay_cleared) g.clearedDates[sd] = true;
+      else g.unclearedDates[sd] = true;
+    });
+    var groups = Object.keys(byStaff).map(function (k) {
+      var g = byStaff[k];
+      g.unclearedSessionDays = Object.keys(g.unclearedDates).sort();
+      g.clearedSessionDays = Object.keys(g.clearedDates).sort();
+      g.unclearedCount = g.unclearedSessionDays.length;
+      g.clearedCount = g.clearedSessionDays.length;
+      g.rows.sort(function (a, b) {
+        var ad = String(a.session_date || "");
+        var bd = String(b.session_date || "");
+        if (ad !== bd) return bd.localeCompare(ad);
+        return String(b.created_at || "").localeCompare(String(a.created_at || ""));
+      });
+      return g;
+    });
+    groups.sort(function (a, b) {
+      if (b.unclearedCount !== a.unclearedCount) {
+        return b.unclearedCount - a.unclearedCount;
+      }
+      if (b.lateRows !== a.lateRows) return b.lateRows - a.lateRows;
+      return String(a.staff_name || "").localeCompare(String(b.staff_name || ""));
+    });
+    return groups;
   }
 
   window.PortalAdminLateSubmissions = {
@@ -478,7 +575,7 @@
       }
     },
 
-    fetchLateFeedbackForWeek: async function (mondayIso) {
+    fetchLateFeedbackInRange: async function (fromIso, toIso) {
       var c = await waitForClient();
       if (!c) {
         return {
@@ -486,16 +583,16 @@
           error:
             "Not signed in to Portal. Open login.html, sign in as admin, open Admin again, then tap Refresh.",
           rows: [],
-          days: [],
-          counts: {},
+          groups: [],
         };
       }
-      var londonToday =
-        londonIsoDay(new Date().toISOString()) || portalFallbackToday();
-      var monday = mondayOfWeekIso(mondayIso || londonToday);
-      var days = weekDaysMonSun(monday);
-      var floor = utcFloorForLondonDay(days[0]);
-      var ceil = utcCeilForLondonDay(days[6]);
+      var from = String(fromIso || "").slice(0, 10);
+      var to = String(toIso || "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) {
+        return { ok: false, error: "bad_range", rows: [], groups: [] };
+      }
+      var floor = utcFloorForLondonDay(from);
+      var ceil = utcCeilForLondonDay(to);
       try {
         var res = await c
           .from(FEEDBACK_TABLE)
@@ -505,91 +602,95 @@
           .gte("created_at", floor)
           .lt("created_at", ceil)
           .order("created_at", { ascending: false })
-          .limit(800);
+          .limit(2000);
         if (res.error) {
           return {
             ok: false,
             error: res.error.message || "fetch_failed",
             rows: [],
-            days: days,
-            counts: {},
+            groups: [],
           };
         }
         var rows = (res.data || [])
           .filter(isLateFeedbackRow)
           .map(enrichLateRow)
           .filter(function (r) {
-            return days.indexOf(r._completed_day) >= 0;
+            var day = r._completed_day || "";
+            return day >= from && day <= to;
           });
-        var clearedMap = Object.create(null);
-        try {
-          var staffIds = [];
-          var seenStaff = Object.create(null);
-          rows.forEach(function (r) {
-            var uid = String(r.submitted_by_user_id || "").trim();
-            if (uid && !seenStaff[uid]) {
-              seenStaff[uid] = true;
-              staffIds.push(uid);
-            }
-          });
-          var sessDates = [];
-          var seenSess = Object.create(null);
-          rows.forEach(function (r) {
-            var sd = String(r.session_date || "").slice(0, 10);
-            if (/^\d{4}-\d{2}-\d{2}$/.test(sd) && !seenSess[sd]) {
-              seenSess[sd] = true;
-              sessDates.push(sd);
-            }
-          });
-          if (staffIds.length && sessDates.length) {
-            var clr = await c
-              .from(CLEAR_TABLE)
-              .select("staff_user_id,session_date,cleared_at")
-              .in("staff_user_id", staffIds)
-              .in("session_date", sessDates);
-            if (!clr.error && Array.isArray(clr.data)) {
-              clr.data.forEach(function (row) {
-                var k =
-                  String(row.staff_user_id || "").trim() +
-                  "|" +
-                  String(row.session_date || "").slice(0, 10);
-                clearedMap[k] = row;
-              });
-            }
-          }
-        } catch (_) {}
+        await attachPayClearanceFlags(c, rows);
+        var ids = [];
         rows.forEach(function (r) {
-          var k =
-            String(r.submitted_by_user_id || "").trim() +
-            "|" +
-            String(r.session_date || "").slice(0, 10);
-          r._pay_cleared = !!clearedMap[k];
-          r._clear_key = k;
+          var uid = String(r.submitted_by_user_id || "").trim();
+          if (uid && ids.indexOf(uid) < 0) ids.push(uid);
         });
+        var staffMap = await loadStaffNames(ids);
+        rows.forEach(function (r) {
+          var fromProfile = staffName(staffMap, r.submitted_by_user_id);
+          if (fromProfile && fromProfile !== "Staff") {
+            r._staff_name = fromProfile;
+          }
+        });
+        var groups = aggregateStaffGroups(rows);
         return {
           ok: true,
           rows: rows,
-          days: days,
-          monday: monday,
-          counts: countsByCompletedDay(rows),
-          londonToday: londonToday,
+          groups: groups,
+          rangeFrom: from,
+          rangeTo: to,
+          londonToday:
+            londonIsoDay(new Date().toISOString()) || portalFallbackToday(),
         };
       } catch (e) {
         return {
           ok: false,
           error: String(e && e.message ? e.message : e),
           rows: [],
-          days: days,
-          counts: {},
+          groups: [],
         };
       }
     },
 
-    /** @deprecated prefer fetchLateFeedbackForWeek */
-    fetchLateFeedback: async function () {
-      var today =
+    fetchLateFeedbackRecent: async function (days) {
+      var n = typeof days === "number" && days > 0 ? days : RECENT_DAYS;
+      var londonToday =
         londonIsoDay(new Date().toISOString()) || portalFallbackToday();
-      return this.fetchLateFeedbackForWeek(mondayOfWeekIso(today));
+      var from = addDaysIso(londonToday, -(n - 1));
+      return this.fetchLateFeedbackInRange(from, londonToday);
+    },
+
+    fetchLateFeedbackForWeek: async function (mondayIso) {
+      var londonToday =
+        londonIsoDay(new Date().toISOString()) || portalFallbackToday();
+      var monday = mondayOfWeekIso(mondayIso || londonToday);
+      var days = weekDaysMonSun(monday);
+      var res = await this.fetchLateFeedbackInRange(days[0], days[6]);
+      if (!res.ok) {
+        return {
+          ok: false,
+          error: res.error,
+          rows: [],
+          days: days,
+          counts: {},
+          monday: monday,
+        };
+      }
+      return {
+        ok: true,
+        rows: res.rows,
+        groups: res.groups,
+        days: days,
+        monday: monday,
+        counts: countsByCompletedDay(res.rows),
+        londonToday: res.londonToday,
+        rangeFrom: days[0],
+        rangeTo: days[6],
+      };
+    },
+
+    /** @deprecated prefer fetchLateFeedbackRecent */
+    fetchLateFeedback: async function () {
+      return this.fetchLateFeedbackRecent(RECENT_DAYS);
     },
 
     fetchRequests: async function (statusFilter) {
@@ -718,14 +819,11 @@
       return cards;
     },
 
-    renderLateFeedbackTableHtml: function (rows, selectedDay) {
+    renderLateFeedbackDetailRowsHtml: function (rows) {
       if (!rows || !rows.length) {
         return (
-          '<div class="portal-late-admin-msg">' +
-          "<strong>No late feedback on " +
-          _esc(formatSessionDate(selectedDay) || "this day") +
-          "</strong>" +
-          "<p style=\"margin:8px 0 0\">Late = completed after the session London day, or same day after 21:00. This day lists late rows for the <strong>session date</strong> and feedback <strong>delivered</strong> that day. Pick another day above, or another week.</p></div>"
+          '<div class="portal-late-admin-msg" style="padding:8px 0">' +
+          "<strong>No rows</strong></div>"
         );
       }
       var body = rows
@@ -742,12 +840,9 @@
               uid +
               '" data-late-release-date="' +
               sdate +
-              '">Release</button>';
+              '">Release day</button>';
           return (
             "<tr>" +
-            '<td class="portal-late-fb-staff"><div class="portal-late-fb-staff__name">' +
-            _esc(r._staff_name || "—") +
-            "</div></td>" +
             '<td class="portal-late-fb-when">' +
             '<div class="portal-late-fb-stack">' +
             '<span class="portal-late-fb-stack__svc">' +
@@ -774,10 +869,9 @@
         })
         .join("");
       return (
-        '<div class="portal-late-fb-wrap">' +
-        '<table class="tbl portal-late-fb-tbl">' +
+        '<div class="portal-late-fb-wrap portal-late-fb-wrap--detail">' +
+        '<table class="tbl portal-late-fb-tbl portal-late-fb-tbl--detail">' +
         "<thead><tr>" +
-        '<th scope="col">Staff</th>' +
         '<th scope="col">Service</th>' +
         '<th scope="col">Participant</th>' +
         '<th scope="col">Done</th>' +
@@ -788,29 +882,124 @@
       );
     },
 
+    /** @deprecated day view replaced by staff aggregation */
+    renderLateFeedbackTableHtml: function (rows, selectedDay) {
+      return this.renderLateFeedbackDetailRowsHtml(rows || []);
+    },
+
+    renderStaffPayQueueHtml: function (groups, expandedStaffId) {
+      if (!groups || !groups.length) {
+        return (
+          '<div class="portal-late-admin-msg">' +
+          "<strong>No late feedback in this range</strong>" +
+          "<p style=\"margin:8px 0 0\">Late = completed after the session London day, or same day after 21:00. Staff can submit late feedback without approval; use <strong>Release all</strong> here so those days become payable on the timesheet.</p></div>"
+        );
+      }
+      var exp = String(expandedStaffId || "").trim();
+      var cards = groups
+        .map(function (g) {
+          var uid = String(g.staff_user_id || "").trim();
+          var uidAttr = _escAttr(uid);
+          var isOpen = uid && uid === exp;
+          var uncleared = g.unclearedCount || 0;
+          var releaseBtn =
+            uid && uncleared > 0
+              ? '<button type="button" class="btn btn--pri btn--sm" data-late-release-all="' +
+                uidAttr +
+                '">Release all (' +
+                _esc(String(uncleared)) +
+                " day" +
+                (uncleared === 1 ? "" : "s") +
+                ")</button>"
+              : '<span class="chip chip--ok">All released</span>';
+          var detail = isOpen
+            ? '<div class="portal-late-staff-card__detail">' +
+              window.PortalAdminLateSubmissions.renderLateFeedbackDetailRowsHtml(
+                g.rows
+              ) +
+              "</div>"
+            : "";
+          return (
+            '<article class="portal-late-staff-card card card-pad' +
+            (uncleared > 0 ? " portal-late-staff-card--pending" : "") +
+            '" data-late-staff="' +
+            uidAttr +
+            '">' +
+            '<div class="portal-late-staff-card__head">' +
+            '<div class="portal-late-staff-card__who" style="min-width:0;flex:1">' +
+            '<button type="button" class="portal-late-staff-card__toggle" data-late-staff-expand="' +
+            uidAttr +
+            '" aria-expanded="' +
+            (isOpen ? "true" : "false") +
+            '">' +
+            '<span class="portal-late-staff-card__name">' +
+            _esc(g.staff_name || "Staff") +
+            "</span>" +
+            '<span class="portal-late-staff-card__chev" aria-hidden="true">' +
+            (isOpen ? "▾" : "▸") +
+            "</span>" +
+            "</button>" +
+            '<p class="portal-late-staff-card__meta muted">' +
+            _esc(String(g.lateRows || 0)) +
+            " late feedback · " +
+            _esc(String(uncleared)) +
+            " day" +
+            (uncleared === 1 ? "" : "s") +
+            " waiting · " +
+            _esc(String(g.clearedCount || 0)) +
+            " already released</p>" +
+            "</div>" +
+            '<div class="portal-late-staff-card__actions">' +
+            releaseBtn +
+            "</div></div>" +
+            detail +
+            "</article>"
+          );
+        })
+        .join("");
+      return '<div class="portal-late-staff-queue">' + cards + "</div>";
+    },
+
     releaseLateDayForPay: async function (staffUserId, sessionDate, note) {
+      return this.releaseLateDaysForPay(
+        staffUserId,
+        [sessionDate],
+        note
+      );
+    },
+
+    releaseLateDaysForPay: async function (staffUserId, sessionDates, note) {
       var c = await waitForClient();
       if (!c) return { ok: false, error: "not_signed_in" };
       var uid = String(staffUserId || "").trim();
-      var sdate = String(sessionDate || "").slice(0, 10);
-      if (!uid || !/^\d{4}-\d{2}-\d{2}$/.test(sdate)) {
-        return { ok: false, error: "bad_args" };
-      }
+      if (!uid) return { ok: false, error: "bad_args" };
+      var dates = [];
+      var seen = Object.create(null);
+      (sessionDates || []).forEach(function (d) {
+        var sdate = String(d || "").slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(sdate) || seen[sdate]) return;
+        seen[sdate] = true;
+        dates.push(sdate);
+      });
+      if (!dates.length) return { ok: false, error: "no_dates" };
       var adminUid = authUid() || null;
+      var noteVal = note ? String(note).slice(0, 500) : null;
+      var payload = dates.map(function (sdate) {
+        return {
+          staff_user_id: uid,
+          session_date: sdate,
+          cleared_by_user_id: adminUid,
+          note: noteVal,
+        };
+      });
       try {
-        var res = await c.from(CLEAR_TABLE).upsert(
-          [
-            {
-              staff_user_id: uid,
-              session_date: sdate,
-              cleared_by_user_id: adminUid,
-              note: note ? String(note).slice(0, 500) : null,
-            },
-          ],
-          { onConflict: "staff_user_id,session_date" }
-        );
-        if (res.error) return { ok: false, error: res.error.message || "upsert_failed" };
-        return { ok: true };
+        var res = await c
+          .from(CLEAR_TABLE)
+          .upsert(payload, { onConflict: "staff_user_id,session_date" });
+        if (res.error) {
+          return { ok: false, error: res.error.message || "upsert_failed" };
+        }
+        return { ok: true, count: dates.length };
       } catch (e) {
         return { ok: false, error: String(e && e.message ? e.message : e) };
       }
@@ -886,68 +1075,79 @@
       opts = opts || {};
       var root = rootEl || document.getElementById("portalLateAdminList");
       if (!root) return;
-      var stripEl = document.getElementById("portalLateDayStrip");
       var rangeEl = document.getElementById("portalLateWeekRange");
       var refreshBtn = document.getElementById("portalLateAdminRefresh");
       var prevBtn = document.getElementById("portalLateWeekPrev");
       var nextBtn = document.getElementById("portalLateWeekNext");
       var thisBtn = document.getElementById("portalLateWeekThis");
+      var recentBtn = document.getElementById("portalLateRecent60");
+      var stripEl = document.getElementById("portalLateDayStrip");
       var approvalFilterEl = document.getElementById("portalLateApprovalFilter");
       var approvalList = document.getElementById("portalLateApprovalList");
       var self = window.PortalAdminLateSubmissions;
 
-      function paintDayView() {
-        var day = _weekState.selectedDay;
-        var seenIds = Object.create(null);
-        var dayRows = (_weekState.weekRows || []).filter(function (r) {
-          var id = String(r.id || "");
-          var sess = String(r.session_date || "").slice(0, 10);
-          var match =
-            r._completed_day === day ||
-            sess === day;
-          if (!match) return false;
-          if (id && seenIds[id]) return false;
-          if (id) seenIds[id] = true;
-          return true;
-        });
-        // Prefer session-day rows first, then deliveries completed that day.
-        dayRows.sort(function (a, b) {
-          var aSess = String(a.session_date || "").slice(0, 10) === day ? 0 : 1;
-          var bSess = String(b.session_date || "").slice(0, 10) === day ? 0 : 1;
-          if (aSess !== bSess) return aSess - bSess;
-          return String(a.created_at || "").localeCompare(String(b.created_at || ""));
-        });
-        if (stripEl) {
-          stripEl.innerHTML = self.renderDayStripHtml(
-            _weekState.days || [],
-            _weekState.counts || {},
-            day
-          );
+      function syncModeButtons() {
+        var isRecent = _listState.mode !== "week";
+        if (recentBtn) {
+          recentBtn.classList.toggle("btn--sec", isRecent);
+          recentBtn.classList.toggle("btn--ghost", !isRecent);
         }
+        if (thisBtn) {
+          thisBtn.classList.toggle("btn--sec", !isRecent);
+          thisBtn.classList.toggle("btn--ghost", isRecent);
+        }
+        if (stripEl) stripEl.hidden = true;
+      }
+
+      function paintStaffView() {
+        syncModeButtons();
         if (rangeEl) {
-          rangeEl.textContent = weekRangeLabel(_weekState.monday);
+          if (_listState.mode === "week" && _listState.monday) {
+            rangeEl.textContent =
+              "Week " + weekRangeLabel(_listState.monday);
+          } else if (_listState.rangeFrom && _listState.rangeTo) {
+            rangeEl.textContent =
+              "Last " +
+              RECENT_DAYS +
+              " days · " +
+              formatDdMm(_listState.rangeFrom) +
+              " – " +
+              formatDdMm(_listState.rangeTo);
+          } else {
+            rangeEl.textContent = "Last " + RECENT_DAYS + " days";
+          }
         }
-        var n = dayRows.length;
-        var hint = roleHint();
-        var staffSet = {};
-        dayRows.forEach(function (r) {
-          var nm = String(r._staff_name || "").trim();
-          if (nm) staffSet[nm] = true;
+        var groups = _listState.groups || [];
+        var unclearedStaff = 0;
+        var unclearedDays = 0;
+        var lateTotal = 0;
+        groups.forEach(function (g) {
+          lateTotal += g.lateRows || 0;
+          if ((g.unclearedCount || 0) > 0) {
+            unclearedStaff += 1;
+            unclearedDays += g.unclearedCount;
+          }
         });
-        var staffN = Object.keys(staffSet).length;
-        var weekTotal = (_weekState.weekRows || []).length;
+        var hint = roleHint();
         setStatus(
           (hint ? hint + " — " : "") +
-            n +
-            " late on " +
-            formatSessionDate(day) +
-            (staffN ? " · " + staffN + " staff" : "") +
-            " · " +
-            weekTotal +
-            " late this week",
+            groups.length +
+            " staff · " +
+            lateTotal +
+            " late feedback · " +
+            unclearedDays +
+            " day" +
+            (unclearedDays === 1 ? "" : "s") +
+            " waiting across " +
+            unclearedStaff +
+            " worker" +
+            (unclearedStaff === 1 ? "" : "s"),
           false
         );
-        root.innerHTML = self.renderLateFeedbackTableHtml(dayRows, day);
+        root.innerHTML = self.renderStaffPayQueueHtml(
+          groups,
+          _listState.expandedStaffId
+        );
       }
 
       async function reloadApprovals() {
@@ -971,15 +1171,7 @@
         }
       }
 
-      async function reloadWeek(mondayIso, preferSelected) {
-        root.innerHTML =
-          '<div class="portal-late-admin-msg"><strong>Loading…</strong></div>';
-        setStatus("Loading late feedback…", false);
-        if (stripEl) {
-          stripEl.innerHTML =
-            '<div class="portal-late-admin-msg" style="grid-column:1/-1;padding:8px 0"><strong>Loading week…</strong></div>';
-        }
-        var res = await self.fetchLateFeedbackForWeek(mondayIso);
+      async function applyFetchResult(res, mode, monday) {
         if (!res.ok) {
           root.innerHTML =
             '<div class="portal-late-admin-msg is-error"><strong>Could not load</strong><p style="margin:8px 0 0">' +
@@ -988,23 +1180,42 @@
           setStatus(_esc(res.error || "error"), true);
           return;
         }
-        var keep =
-          preferSelected &&
-          res.days &&
-          res.days.indexOf(preferSelected) >= 0
-            ? preferSelected
-            : pickDefaultSelectedDay(
-                res.days,
-                res.counts,
-                res.londonToday
-              );
-        _weekState.monday = res.monday;
-        _weekState.days = res.days;
-        _weekState.counts = res.counts;
-        _weekState.weekRows = res.rows;
-        _weekState.selectedDay = keep;
-        paintDayView();
+        _listState.mode = mode;
+        _listState.monday = monday || res.monday || _listState.monday || "";
+        _listState.rangeFrom = res.rangeFrom || "";
+        _listState.rangeTo = res.rangeTo || "";
+        _listState.rows = res.rows || [];
+        _listState.groups = res.groups || aggregateStaffGroups(res.rows || []);
+        paintStaffView();
         await reloadApprovals();
+      }
+
+      async function reloadRecent() {
+        root.innerHTML =
+          '<div class="portal-late-admin-msg"><strong>Loading…</strong></div>';
+        setStatus("Loading late feedback (last " + RECENT_DAYS + " days)…", false);
+        var res = await self.fetchLateFeedbackRecent(RECENT_DAYS);
+        await applyFetchResult(res, "recent60", "");
+      }
+
+      async function reloadWeek(mondayIso) {
+        root.innerHTML =
+          '<div class="portal-late-admin-msg"><strong>Loading…</strong></div>';
+        setStatus("Loading late feedback for week…", false);
+        var res = await self.fetchLateFeedbackForWeek(mondayIso);
+        await applyFetchResult(res, "week", res.monday || mondayIso);
+      }
+
+      async function reloadCurrent() {
+        if (_listState.mode === "week") {
+          var mon =
+            _listState.monday ||
+            mondayOfWeekIso(
+              londonIsoDay(new Date().toISOString()) || portalFallbackToday()
+            );
+          return reloadWeek(mon);
+        }
+        return reloadRecent();
       }
 
       if (approvalFilterEl && !approvalFilterEl._portalLateBound) {
@@ -1014,19 +1225,35 @@
       if (refreshBtn && !refreshBtn._portalLateBound) {
         refreshBtn._portalLateBound = true;
         refreshBtn.addEventListener("click", function () {
-          void reloadWeek(_weekState.monday, _weekState.selectedDay);
+          void reloadCurrent();
+        });
+      }
+      if (recentBtn && !recentBtn._portalLateBound) {
+        recentBtn._portalLateBound = true;
+        recentBtn.addEventListener("click", function () {
+          void reloadRecent();
         });
       }
       if (prevBtn && !prevBtn._portalLateBound) {
         prevBtn._portalLateBound = true;
         prevBtn.addEventListener("click", function () {
-          void reloadWeek(addDaysIso(_weekState.monday || mondayOfWeekIso(portalFallbackToday()), -7));
+          var base =
+            _listState.monday ||
+            mondayOfWeekIso(
+              londonIsoDay(new Date().toISOString()) || portalFallbackToday()
+            );
+          void reloadWeek(addDaysIso(base, -7));
         });
       }
       if (nextBtn && !nextBtn._portalLateBound) {
         nextBtn._portalLateBound = true;
         nextBtn.addEventListener("click", function () {
-          void reloadWeek(addDaysIso(_weekState.monday || mondayOfWeekIso(portalFallbackToday()), 7));
+          var base =
+            _listState.monday ||
+            mondayOfWeekIso(
+              londonIsoDay(new Date().toISOString()) || portalFallbackToday()
+            );
+          void reloadWeek(addDaysIso(base, 7));
         });
       }
       if (thisBtn && !thisBtn._portalLateBound) {
@@ -1034,7 +1261,7 @@
         thisBtn.addEventListener("click", function () {
           var today =
             londonIsoDay(new Date().toISOString()) || portalFallbackToday();
-          void reloadWeek(mondayOfWeekIso(today), today);
+          void reloadWeek(mondayOfWeekIso(today));
         });
       }
 
@@ -1045,13 +1272,53 @@
       if (clickRoot && !clickRoot._portalLateClickBound) {
         clickRoot._portalLateClickBound = true;
         clickRoot.addEventListener("click", async function (ev) {
-          var dayBtn = ev.target.closest("[data-late-day]");
-          if (dayBtn && clickRoot.contains(dayBtn)) {
-            var day = dayBtn.getAttribute("data-late-day");
-            if (day && day !== _weekState.selectedDay) {
-              _weekState.selectedDay = day;
-              paintDayView();
+          var expandBtn = ev.target.closest("[data-late-staff-expand]");
+          if (expandBtn && clickRoot.contains(expandBtn)) {
+            var expandId = expandBtn.getAttribute("data-late-staff-expand") || "";
+            _listState.expandedStaffId =
+              _listState.expandedStaffId === expandId ? "" : expandId;
+            paintStaffView();
+            return;
+          }
+          var releaseAllBtn = ev.target.closest("[data-late-release-all]");
+          if (releaseAllBtn && clickRoot.contains(releaseAllBtn)) {
+            var allUid = releaseAllBtn.getAttribute("data-late-release-all");
+            if (!allUid) return;
+            var group = null;
+            (_listState.groups || []).forEach(function (g) {
+              if (String(g.staff_user_id || "") === allUid) group = g;
+            });
+            var dates = group ? group.unclearedSessionDays || [] : [];
+            if (!dates.length) return;
+            if (
+              !window.confirm(
+                "Release all late days for timesheet pay?\n\n" +
+                  (group && group.staff_name ? group.staff_name + "\n" : "") +
+                  dates.length +
+                  " session day" +
+                  (dates.length === 1 ? "" : "s") +
+                  " will become payable.\n\nNo penalty is applied — this only clears the pay hold."
+              )
+            ) {
+              return;
             }
+            releaseAllBtn.disabled = true;
+            var bulk = await self.releaseLateDaysForPay(allUid, dates, "");
+            releaseAllBtn.disabled = false;
+            if (!bulk.ok) {
+              if (_toast) _toast("Could not release: " + (bulk.error || "error"));
+              else if (window.alert)
+                window.alert("Could not release: " + (bulk.error || "error"));
+              return;
+            }
+            if (_toast) {
+              _toast(
+                "Released " +
+                  (bulk.count || dates.length) +
+                  " day(s) for pay."
+              );
+            }
+            await reloadCurrent();
             return;
           }
           var releaseBtn = ev.target.closest("[data-late-release-pay]");
@@ -1069,16 +1336,24 @@
               return;
             }
             releaseBtn.disabled = true;
-            var released = await self.releaseLateDayForPay(staffUid, sessDate, "");
+            var released = await self.releaseLateDayForPay(
+              staffUid,
+              sessDate,
+              ""
+            );
             releaseBtn.disabled = false;
             if (!released.ok) {
-              if (_toast) _toast("Could not release: " + (released.error || "error"));
+              if (_toast)
+                _toast("Could not release: " + (released.error || "error"));
               else if (window.alert)
-                window.alert("Could not release: " + (released.error || "error"));
+                window.alert(
+                  "Could not release: " + (released.error || "error")
+                );
               return;
             }
-            if (_toast) _toast("Released for pay — timesheet can include that day.");
-            await reloadWeek(_weekState.monday, _weekState.selectedDay);
+            if (_toast)
+              _toast("Released for pay — timesheet can include that day.");
+            await reloadCurrent();
             return;
           }
           var approveBtn = ev.target.closest("[data-late-approve]");
@@ -1093,7 +1368,7 @@
           var note = noteEl ? noteEl.value : "";
           var status = approveBtn ? "approved" : "rejected";
           var verb = approveBtn ? "Approve" : "Reject";
-          if (!window.confirm(verb + " this late submission request?")) return;
+          if (!window.confirm(verb + " this late incident request?")) return;
           btn.disabled = true;
           var out = await self.reviewRequest(id, status, note);
           btn.disabled = false;
@@ -1106,7 +1381,7 @@
           if (_toast) {
             _toast(
               status === "approved"
-                ? "Approved — staff can submit with the original session date."
+                ? "Approved — staff can submit the late incident."
                 : "Rejected."
             );
           }
@@ -1120,10 +1395,7 @@
       }
 
       function startReload() {
-        var today =
-          londonIsoDay(new Date().toISOString()) || portalFallbackToday();
-        var mon = _weekState.monday || mondayOfWeekIso(today);
-        return reloadWeek(mon, _weekState.selectedDay || today);
+        return reloadRecent();
       }
       if (!client()) {
         root.innerHTML =
