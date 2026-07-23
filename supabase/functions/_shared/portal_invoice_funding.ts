@@ -62,7 +62,8 @@ export type InvoiceFundingCategory =
 
 const FUNDING_CATEGORY_LABELS: Record<InvoiceFundingCategory, string> = {
   parent_private: "Privately",
-  parent_direct_payment: "Supported with Funds from the LA",
+  /** Parent pays; LA funds the package — VAT exempt (not Private 20%). */
+  parent_direct_payment: "Direct Payment Private",
   la_managed: "LA managed",
   nhs_managed: "NHS managed",
 };
@@ -73,8 +74,9 @@ export function invoiceFundingCategoryLabel(category: InvoiceFundingCategory): s
 
 /**
  * Funding first (not VAT):
- * Privately · Supported with Funds from the LA · LA managed · NHS managed.
- * Never infer Direct Payments from vat_mode=exempt alone (Private can be mis-stamped exempt).
+ * Privately · Direct Payment Private (exempt) · LA managed · NHS managed.
+ * Sheet DIRECT_PAYMENTS beats a wrong re-enrol "privately_funded" choice.
+ * Never infer DP from vat_mode=exempt alone.
  */
 export function invoiceFundingCategory(input: {
   vatMode?: PortalInvoiceVatMode;
@@ -92,6 +94,15 @@ export function invoiceFundingCategory(input: {
   const code = clean(input.fundingCode, 60).toLowerCase();
   const billing = clean(input.billingMode, 40).toLowerCase();
   const blob = `${code} ${billing} ${label}`;
+  const isDirectPaymentLabel =
+    /direct.?payment/.test(label) ||
+    label.includes("supported with funds") ||
+    label.includes("using funds from la") ||
+    label.includes("funds from the la") ||
+    label.includes("funds from la") ||
+    label.includes("parent (exempt") ||
+    label.includes("care package") ||
+    label.includes("ehcp");
 
   if (
     /\bnhs\b/.test(blob) ||
@@ -102,38 +113,33 @@ export function invoiceFundingCategory(input: {
     return "nhs_managed";
   }
 
+  // Office payment sheet is source of truth over re-enrol form mistakes.
+  if (sheet === "DIRECT_PAYMENTS" || billing === "direct_payments" || code === "la_direct_payments") {
+    return "parent_direct_payment";
+  }
+  if (isDirectPaymentLabel) {
+    return "parent_direct_payment";
+  }
+
   if (
     billing === "funder_invoice" ||
     code === "la_managed" ||
     hint === "la_funded" ||
-    (sheet === "LA" && !/direct.?payment/i.test(blob))
+    sheet === "LA"
   ) {
     return "la_managed";
-  }
-
-  if (
-    billing === "direct_payments" ||
-    code === "la_direct_payments" ||
-    sheet === "DIRECT_PAYMENTS" ||
-    label.includes("direct payment") ||
-    label.includes("supported with funds") ||
-    label.includes("care package") ||
-    label.includes("ehcp")
-  ) {
-    return "parent_direct_payment";
   }
 
   if (
     billing === "private" ||
     code === "privately_funded" ||
     code === "private" ||
-    label.includes("private") ||
+    (label.includes("private") && !isDirectPaymentLabel) ||
     sheet === "PARENTS"
   ) {
     return "parent_private";
   }
 
-  // Last resort: LA sheet / la_funded hint only — do not use vat exempt.
   if (hint === "la_funded" || sheet === "LA") return "la_managed";
   return "parent_private";
 }
@@ -342,41 +348,8 @@ export async function resolveParticipantInvoiceFunding(
 
   const fundingLabel = clean(contact?.funding_label, 120);
   const fl = fundingLabel.toLowerCase();
-  if (
-    fl &&
-    (fl.includes("la") ||
-      fl.includes("nhs") ||
-      fl.includes("ehcp") ||
-      fl.includes("exempt") ||
-      fl.includes("direct payment") ||
-      fl.includes("local authority") ||
-      fl.includes("care package") ||
-      fl.includes("cwd"))
-  ) {
-    return {
-      vatMode: "exempt",
-      fundingLabel,
-      clientId: contactId,
-      po: "",
-      source: "funding_label",
-      paymentSheet: "LA",
-    };
-  }
-  if (
-    fl &&
-    (fl.includes("private") || fl.includes("vat") || fl.includes("pf") || fl.includes("parent"))
-  ) {
-    return {
-      vatMode: "vat_20",
-      fundingLabel,
-      clientId: contactId,
-      po: "",
-      source: "funding_label",
-      paymentSheet: "",
-    };
-  }
 
-  /* Prefer fuzzy LA/PARENTS sheet match (short names like "Samer" vs "Samer Bakhiet"). */
+  /* Sheet first — short names (Eiji / Jack W / Yusef) beat contact funding_label. */
   const paymentRow = await loadLaPaymentRow(admin, displayName);
 
   if (paymentRow) {
@@ -409,6 +382,57 @@ export async function resolveParticipantInvoiceFunding(
       po: pickPo(data),
       source: "client_payments",
       paymentSheet: sheet,
+    };
+  }
+
+  // Parent uses LA package funds → Direct Payment Private (exempt), not LA-managed.
+  if (
+    fl &&
+    (/direct.?payment/.test(fl) ||
+      fl.includes("using funds from la") ||
+      fl.includes("funds from the la") ||
+      fl.includes("funds from la") ||
+      fl.includes("care package") ||
+      fl.includes("ehcp"))
+  ) {
+    return {
+      vatMode: "exempt",
+      fundingLabel,
+      clientId: contactId,
+      po: "",
+      source: "funding_label",
+      paymentSheet: "DIRECT_PAYMENTS",
+    };
+  }
+  if (
+    fl &&
+    (fl.includes("nhs") ||
+      fl.includes("local authority") ||
+      fl.includes("la managed") ||
+      fl.includes("la funded") ||
+      fl.includes("cwd") ||
+      (/\bla\b/.test(fl) && !fl.includes("private")))
+  ) {
+    return {
+      vatMode: "exempt",
+      fundingLabel,
+      clientId: contactId,
+      po: "",
+      source: "funding_label",
+      paymentSheet: "LA",
+    };
+  }
+  if (
+    fl &&
+    (fl.includes("private") || fl.includes("vat") || fl.includes("pf") || fl.includes("parent"))
+  ) {
+    return {
+      vatMode: "vat_20",
+      fundingLabel,
+      clientId: contactId,
+      po: "",
+      source: "funding_label",
+      paymentSheet: fl.includes("exempt") ? "" : "PARENTS",
     };
   }
 

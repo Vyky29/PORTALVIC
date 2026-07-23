@@ -484,26 +484,42 @@
   }
 
   /**
-   * Funding: Privately · Supported with Funds from the LA · LA managed · NHS managed.
-   * Prefer API category; never infer DP from vat_mode=exempt alone.
+   * Funding: Privately · Direct Payment Private (exempt) · LA managed · NHS managed.
+   * Payment sheet / API category beat a wrong re-enrol "privately_funded" choice.
    */
   function fundingCategoryLabel(inv) {
     var cat = String((inv && inv.funding_category) || '').toLowerCase();
+    var sheet = String((inv && inv.payment_sheet) || '').toUpperCase();
     var fundRaw = String((inv && inv.funding_label) || '').toLowerCase();
     var apiLabel = String((inv && inv.funding_category_label) || '').trim();
     var code = String((inv && inv.reenrol_funding_code) || '').toLowerCase();
     var billing = String((inv && inv.reenrol_billing_mode) || '').toLowerCase();
-    var blob = code + ' ' + billing + ' ' + fundRaw + ' ' + apiLabel.toLowerCase();
+    var isDpSheet = sheet === 'DIRECT_PAYMENTS';
+    var isDpLabel =
+      /direct.?payment/.test(fundRaw) ||
+      fundRaw.indexOf('supported with funds') >= 0 ||
+      fundRaw.indexOf('using funds from la') >= 0 ||
+      fundRaw.indexOf('funds from la') >= 0 ||
+      fundRaw.indexOf('parent (exempt') >= 0 ||
+      fundRaw.indexOf('care package') >= 0 ||
+      /ehcp/.test(fundRaw);
 
-    if (
-      cat === 'nhs_managed' ||
-      /\bnhs\b/.test(blob) ||
-      /\bsbs\b/.test(blob)
-    ) {
+    if (cat === 'nhs_managed' || /\bnhs\b/.test(fundRaw) || /\bsbs\b/.test(fundRaw)) {
       return 'NHS managed';
     }
     if (
+      cat === 'parent_direct_payment' ||
+      isDpSheet ||
+      billing === 'direct_payments' ||
+      code === 'la_direct_payments' ||
+      isDpLabel ||
+      /^direct payment/i.test(apiLabel)
+    ) {
+      return 'Direct Payment Private';
+    }
+    if (
       cat === 'la_managed' ||
+      sheet === 'LA' ||
       billing === 'funder_invoice' ||
       code === 'la_managed' ||
       /^la managed$/i.test(apiLabel)
@@ -511,20 +527,12 @@
       return 'LA managed';
     }
     if (
-      cat === 'parent_direct_payment' ||
-      billing === 'direct_payments' ||
-      code === 'la_direct_payments' ||
-      /direct payment|supported with funds|care package|ehcp/.test(blob)
-    ) {
-      return 'Supported with Funds from the LA';
-    }
-    if (
       cat === 'parent_private' ||
+      sheet === 'PARENTS' ||
       billing === 'private' ||
       code === 'privately_funded' ||
       code === 'private' ||
-      /private/i.test(apiLabel) ||
-      /private/.test(fundRaw)
+      /^privately$/i.test(apiLabel)
     ) {
       return 'Privately';
     }
@@ -542,6 +550,7 @@
       cat === 'parent_direct_payment' ||
       cat === 'la_managed' ||
       cat === 'nhs_managed' ||
+      fund.indexOf('direct payment') >= 0 ||
       fund.indexOf('supported with funds') >= 0 ||
       fund === 'la managed' ||
       fund === 'nhs managed'
@@ -550,10 +559,10 @@
     }
     var vat = String(inv.vat_mode || '').toLowerCase();
     if (vat === 'exempt' && cat && cat !== 'parent_private') return 'Exempt';
-    if (vat === 'vat_20') return 'Includes 20% VAT (in price)';
     if (cat === 'parent_private' || fund === 'privately') {
-      return 'Includes 20% VAT (in price)';
+      return vat === 'exempt' ? 'Exempt' : 'Includes 20% VAT (in price)';
     }
+    if (vat === 'vat_20') return 'Includes 20% VAT (in price)';
     if (vat === 'exempt') return 'Exempt';
     return '—';
   }
@@ -564,7 +573,7 @@
     if (s === 'la managed' || s.indexOf('la funded') >= 0) {
       return 'pp-inv-acc__fund--la';
     }
-    if (s.indexOf('supported with funds') >= 0 || s.indexOf('direct payment') >= 0) {
+    if (s.indexOf('direct payment') >= 0 || s.indexOf('supported with funds') >= 0) {
       return 'pp-inv-acc__fund--direct';
     }
     return 'pp-inv-acc__fund--private';
