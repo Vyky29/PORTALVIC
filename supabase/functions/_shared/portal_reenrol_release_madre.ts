@@ -3,6 +3,7 @@
  * are no longer kept for 26/27 so the public booking offer shows them as free.
  *
  * Idempotent: safe to re-run. Admin can later set CLOSED / re-name slots.
+ * Do not move participants between venues here — office handles venue changes.
  */
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import type { MadreDoc } from "./portal_madre_fold_logic.ts";
@@ -11,28 +12,35 @@ export const REENROL_RELEASE_DEADLINE_ISO = "2026-07-22";
 export const REENROL_RELEASE_LIVE_FROM_ISO = "2026-07-23";
 export const MADRE_TERM_KEY = "summer-2026";
 
+type SlotCtx = {
+  client: string;
+  day: string;
+  time: string;
+  venue: string;
+  service: string;
+};
+
 type ReleaseRule =
   | {
     kind: "all";
-    /** Match client_name (case-insensitive exact or starts-with token). */
     clients: string[];
     reason: string;
+    /** Default NO PARTICIPANT (bookable). CLOSED = hidden from public offer. */
+    setTo?: "NO PARTICIPANT" | "CLOSED";
   }
   | {
     kind: "filter";
     clients: string[];
     reason: string;
-    /** Return true to release this slot. */
-    match: (slot: {
-      client: string;
-      day: string;
-      time: string;
-      venue: string;
-      service: string;
-    }) => boolean;
+    setTo?: "NO PARTICIPANT" | "CLOSED";
+    match: (slot: SlotCtx) => boolean;
   };
 
-/** Confirmed post-deadline releases for Autumn 26/27 booking accuracy. */
+/**
+ * Post-deadline releases for Autumn 26/27.
+ * Thushyan / Yoan / Yossi / Mohammed stay CLOSED (office hold — not public).
+ * Mia is never touched here.
+ */
 export const REENROL_RELEASE_RULES: ReleaseRule[] = [
   {
     kind: "all",
@@ -52,22 +60,26 @@ export const REENROL_RELEASE_RULES: ReleaseRule[] = [
   {
     kind: "all",
     clients: ["Thushyan"],
-    reason: "unconfirmed_deadline",
+    reason: "office_hold_block",
+    setTo: "CLOSED",
   },
   {
     kind: "all",
     clients: ["Yoan"],
-    reason: "unconfirmed_deadline",
+    reason: "office_hold_block",
+    setTo: "CLOSED",
   },
   {
     kind: "all",
     clients: ["Yossi", "yossi"],
-    reason: "unconfirmed_deadline",
+    reason: "office_hold_block",
+    setTo: "CLOSED",
   },
   {
     kind: "all",
     clients: ["Mohammed", "Mohamed"],
-    reason: "unconfirmed_deadline",
+    reason: "office_hold_block",
+    setTo: "CLOSED",
   },
   {
     kind: "filter",
@@ -96,15 +108,50 @@ export const REENROL_RELEASE_RULES: ReleaseRule[] = [
       /acton/i.test(s.venue) &&
       /wed/i.test(s.day),
   },
+];
+
+/**
+ * Standing lines we opened for office-hold kids — keep CLOSED.
+ * Staff keys pin the exact instructor line (avoid closing Eiji’s freed Thu 5.30–6.30).
+ */
+const OFFICE_HOLD_CLOSED_BANDS: Array<{
+  label: string;
+  staff: RegExp;
+  day: RegExp;
+  time: RegExp;
+  venue: RegExp;
+  service?: RegExp;
+}> = [
   {
-    kind: "filter",
-    clients: ["Mia"],
-    reason: "reduced_to_30_acton_release_northolt_60",
-    match: (s) =>
-      /aquatic/i.test(s.service) &&
-      /northolt/i.test(s.venue) &&
-      /wed/i.test(s.day) &&
-      /5\.30\s*to\s*6\.30|5\.30\s*-\s*6\.30/i.test(s.time),
+    label: "Thushyan",
+    staff: /^simon$/i,
+    day: /thu/i,
+    time: /^4\.30\s*to\s*5$/i,
+    venue: /acton/i,
+    service: /aquatic/i,
+  },
+  {
+    label: "Yoan",
+    staff: /^roberto$/i,
+    day: /sun/i,
+    time: /2\.30\s*to\s*3\.30/i,
+    venue: /swimfarm|swim farm/i,
+    service: /aquatic/i,
+  },
+  {
+    label: "Yossi",
+    staff: /^roberto$/i,
+    day: /thu/i,
+    time: /^(5\s*to\s*5\.30|17\s*to\s*17\.30)$/i,
+    venue: /acton/i,
+  },
+  {
+    label: "Mohammed",
+    staff: /^roberto$/i,
+    day: /thu/i,
+    time: /5\.30\s*to\s*6\.30/i,
+    venue: /acton/i,
+    service: /aquatic/i,
   },
 ];
 
@@ -114,9 +161,7 @@ function norm(v: unknown): string {
 
 function clientMatches(slotClient: string, tokens: string[]): boolean {
   const c = norm(slotClient).toLowerCase();
-  if (!c || c === "no participant" || c === "closed" || c === "no client") {
-    return false;
-  }
+  if (!c) return false;
   return tokens.some((t) => {
     const tok = norm(t).toLowerCase();
     if (!tok) return false;
@@ -144,6 +189,96 @@ export type ReenrolReleaseApplyResult = {
   error: string;
 };
 
+/**
+ * One-time corrections after mistaken auto moves / opens:
+ * - Restore Mia to Northolt Wed 5.30–6.30 (dan line); clear Acton Wed 6–6.30 office place.
+ * - CLOSED any NO PARTICIPANT left on Thushyan/Yoan/Yossi/Mohammed bands.
+ */
+export function applyReenrolOfficeCorrectionsToMadre(doc: MadreDoc): {
+  changed: number;
+  notes: string[];
+} {
+  let changed = 0;
+  const notes: string[] = [];
+
+  for (const week of doc.weeks ?? []) {
+    for (const st of Object.values(week.staff || {}) as Array<Record<string, unknown>>) {
+      const staffKey = norm(st.staffKey || st.name).toLowerCase();
+      const days = (st.days as Array<Record<string, unknown>>) || [];
+      for (const day of days) {
+        const weekday = norm(day.weekday);
+        const slots = (day.slots as Array<Record<string, unknown>>) || [];
+        for (const slot of slots) {
+          const client = norm(slot.client_name);
+          const time = norm(slot.time_slot);
+          const venue = norm(slot.venue);
+          const service = norm(slot.service);
+          const info = norm(slot.participant_info);
+
+          // Undo Mia Acton placement → open again (office will place her).
+          if (
+            (/^mia$/i.test(client) || /re-enrol 26\/27.*acton|place_30/i.test(info)) &&
+            /acton/i.test(venue) &&
+            /wed/i.test(weekday) &&
+            /^6(\.00)?\s*to\s*6\.30/i.test(time) &&
+            /aquatic/i.test(service)
+          ) {
+            slot.client_name = "NO PARTICIPANT";
+            if ("participant_info" in slot) slot.participant_info = "";
+            changed += 1;
+            notes.push(`Mia Acton undo → NO PARTICIPANT · ${weekday} ${time}`);
+            continue;
+          }
+
+          // Restore Mia on Northolt Wed 5.30–6.30 (where she was).
+          if (
+            client.toUpperCase() === "NO PARTICIPANT" &&
+            /northolt/i.test(venue) &&
+            /wed/i.test(weekday) &&
+            /5\.30\s*to\s*6\.30|5\.30\s*-\s*6\.30/i.test(time) &&
+            /aquatic/i.test(service) &&
+            (staffKey === "dan" || !staffKey)
+          ) {
+            slot.client_name = "Mia";
+            if ("participant_info" in slot) slot.participant_info = "";
+            changed += 1;
+            notes.push(`Restore Mia · Northolt ${weekday} ${time} (${staffKey || "staff"})`);
+            continue;
+          }
+
+          // Office hold: keep these instructor lines CLOSED (not public).
+          for (const band of OFFICE_HOLD_CLOSED_BANDS) {
+            if (!band.staff.test(staffKey)) continue;
+            if (!band.day.test(weekday)) continue;
+            if (!band.time.test(time)) continue;
+            if (!band.venue.test(venue)) continue;
+            if (band.service && service && !band.service.test(service)) continue;
+            if (client.toUpperCase() === "CLOSED") continue;
+            if (
+              client.toUpperCase() !== "NO PARTICIPANT" &&
+              !clientMatches(client, [band.label])
+            ) {
+              continue;
+            }
+            slot.client_name = "CLOSED";
+            if ("participant_info" in slot) {
+              slot.participant_info =
+                `Office hold · ${band.label} · not released to booking portal`;
+            }
+            changed += 1;
+            notes.push(
+              `${client || "slot"} → CLOSED · ${staffKey} ${weekday} ${time} ${venue} (${band.label})`,
+            );
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  return { changed, notes };
+}
+
 /** Mutate MADRE doc in memory; returns change notes. */
 export function applyReenrolReleaseRulesToMadre(doc: MadreDoc): {
   changed: number;
@@ -152,7 +287,6 @@ export function applyReenrolReleaseRulesToMadre(doc: MadreDoc): {
 } {
   let changed = 0;
   const notes: string[] = [];
-  let miaPlacedOnActon = 0;
 
   for (const week of doc.weeks ?? []) {
     for (const st of Object.values(week.staff || {}) as Array<Record<string, unknown>>) {
@@ -170,41 +304,44 @@ export function applyReenrolReleaseRulesToMadre(doc: MadreDoc): {
           for (const rule of REENROL_RELEASE_RULES) {
             if (!clientMatches(client, rule.clients)) continue;
             if (rule.kind === "filter" && !rule.match(ctx)) continue;
-            if (client.toUpperCase() === "NO PARTICIPANT") continue;
-            slot.client_name = "NO PARTICIPANT";
-            if ("participant_info" in slot) slot.participant_info = "";
-            changed += 1;
-            notes.push(
-              `${client} → NO PARTICIPANT · ${weekday} ${time} ${venue} (${rule.reason})`,
-            );
-            break;
-          }
-
-          // Mia 30' Acton: claim one standing open Acton Wed 6–6.30 (youssef line).
-          // Kayden keeps the other Acton 6–6.30 instructor line.
-          if (
-            norm(slot.client_name).toUpperCase() === "NO PARTICIPANT" &&
-            /acton/i.test(venue) &&
-            /wed/i.test(weekday) &&
-            /^6(\.00)?\s*to\s*6\.30/i.test(time) &&
-            /aquatic/i.test(service)
-          ) {
-            slot.client_name = "Mia";
+            const target = rule.setTo || "NO PARTICIPANT";
+            if (client.toUpperCase() === target.toUpperCase()) continue;
+            // Re-block if we previously opened a hold kid as NO PARTICIPANT.
+            if (
+              target === "CLOSED" &&
+              client.toUpperCase() === "NO PARTICIPANT"
+            ) {
+              // handled in corrections via band match; skip here (name no longer matches)
+              continue;
+            }
+            if (
+              client.toUpperCase() === "NO PARTICIPANT" ||
+              client.toUpperCase() === "CLOSED"
+            ) {
+              continue;
+            }
+            slot.client_name = target;
             if ("participant_info" in slot) {
-              slot.participant_info = "Re-enrol 26/27 · 30' Acton (office)";
+              slot.participant_info = target === "CLOSED"
+                ? "Office hold · not released to booking portal"
+                : "";
             }
             changed += 1;
-            miaPlacedOnActon += 1;
             notes.push(
-              `NO PARTICIPANT → Mia · ${weekday} ${time} ${venue} (place_30)`,
+              `${client} → ${target} · ${weekday} ${time} ${venue} (${rule.reason})`,
             );
+            break;
           }
         }
       }
     }
   }
 
-  return { changed, notes, miaPlacedOnActon };
+  const fix = applyReenrolOfficeCorrectionsToMadre(doc);
+  changed += fix.changed;
+  notes.push(...fix.notes);
+
+  return { changed, notes, miaPlacedOnActon: 0 };
 }
 
 /**
@@ -236,7 +373,7 @@ export async function ensureReenrolUnconfirmedReleasedOnMadre(
 
   const doc = row.document as MadreDoc;
   const meta = (doc.meta || {}) as Record<string, unknown>;
-  const { changed, notes, miaPlacedOnActon } = applyReenrolReleaseRulesToMadre(doc);
+  const { changed, notes } = applyReenrolReleaseRulesToMadre(doc);
 
   if (changed <= 0) {
     return {
@@ -255,7 +392,7 @@ export async function ensureReenrolUnconfirmedReleasedOnMadre(
     reenrol_release_live_from: REENROL_RELEASE_LIVE_FROM_ISO,
     reenrol_release_applied_at: new Date().toISOString(),
     reenrol_release_changed: changed,
-    reenrol_release_mia_acton: miaPlacedOnActon,
+    reenrol_release_mia_acton: 0,
   };
 
   const nextRev = (Number(row.revision) || 0) + 1;
