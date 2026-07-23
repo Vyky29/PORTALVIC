@@ -1856,7 +1856,7 @@
         "</div>" +
         '<label class="portal-pnlog-composer__tpl-mid-lab muted" for="portalPnlogComposerInput">Editable {{1}}</label>';
       textareaPlaceholder =
-        "Write {{1}} here — short update for this family (line breaks become · on send)…";
+        "Write {{1}} here — use a blank line between paragraphs (Meta cannot keep real line breaks; preview shows them as separate lines)…";
       textareaMax = String(WA_TEMPLATE_BODY_MAX);
     } else if (openSession && !state.editing) {
       sessionNote =
@@ -2100,29 +2100,42 @@
     return false;
   }
 
+  /**
+   * Meta rejects newlines/tabs in template {{1}}.
+   * Blank line (paragraph) → " — " · single line break → " · "
+   * Preview re-expands those markers to real line breaks for the admin.
+   */
   function flattenForWhatsappTemplate(text) {
     return String(text || "")
       .replace(/\r\n/g, "\n")
       .replace(/\t+/g, " ")
-      .replace(/\n{2,}/g, " · ")
+      .replace(/\n{2,}/g, "\n<<P>>\n")
       .replace(/\n/g, " · ")
+      .replace(/(?:\s*·\s*)?<<P>>(?:\s*·\s*)?/g, " — ")
       .replace(/ {5,}/g, "    ")
       .replace(/\s{2,}/g, " ")
       .replace(/(?: · ){2,}/g, " · ")
+      .replace(/(?: — ){2,}/g, " — ")
       .trim()
       .slice(0, WA_TEMPLATE_BODY_MAX);
   }
 
+  /** Admin preview only: show Meta-safe markers as paragraphs/lines. */
+  function coldTemplateVarHtml(flat) {
+    return esc(flat || "…")
+      .replace(/ — /g, "<br><br>")
+      .replace(/ · /g, "<br>");
+  }
+
   function coldTemplatePreviewHtml(body) {
     var mid = flattenForWhatsappTemplate(body);
-    var shown = mid || "…";
     return (
       '<div class="portal-pnlog-composer__tpl-preview" id="portalPnlogTplPreview" aria-live="polite">' +
       '<div class="portal-pnlog-composer__tpl-preview-lab">WhatsApp will send</div>' +
       '<div class="portal-pnlog-composer__tpl-preview-body">' +
       esc(WA_COLD_TEMPLATE_PREFIX) +
       '<span class="portal-pnlog-composer__tpl-var">' +
-      esc(shown) +
+      coldTemplateVarHtml(mid) +
       "</span>" +
       esc(WA_COLD_TEMPLATE_SUFFIX) +
       "</div></div>"
@@ -2136,7 +2149,7 @@
     if (!ta || !prev) return;
     var flat = flattenForWhatsappTemplate(ta.value);
     var varEl = prev.querySelector(".portal-pnlog-composer__tpl-var");
-    if (varEl) varEl.textContent = flat || "…";
+    if (varEl) varEl.innerHTML = coldTemplateVarHtml(flat);
     if (lenEl) {
       var n = flat.length;
       lenEl.textContent =
