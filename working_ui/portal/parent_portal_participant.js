@@ -894,10 +894,7 @@
     var action = String(r.parent_action || "").toLowerCase() === "auto" ? "auto" : "required";
     var reasons = Array.isArray(r.parent_action_reasons) ? r.parent_action_reasons : [];
     var showInvoices =
-      r.show_invoices !== false &&
-      data &&
-      data.show_invoices !== false &&
-      reasons.indexOf("la_funded") < 0;
+      r.show_invoices !== false && data && data.show_invoices !== false;
     return {
       submitted: !!r.submitted,
       submitted_at: r.submitted_at || null,
@@ -912,7 +909,10 @@
           : "Confirm places for next year"),
       acat_confirm_notice: String(r.acat_confirm_notice || "").trim(),
       can_book_extras: r.can_book_extras !== false && data && data.can_book_extras !== false,
-      /** False for Ealing / H&F / NHS club-invoiced LA — My booking stays, My invoices hidden. */
+      /**
+       * My invoices: open for parent-pay shares (crash billed to family).
+       * Term LA/NHS invoices stay off the list (Edge filters them out).
+       */
       show_invoices: showInvoices,
     };
   }

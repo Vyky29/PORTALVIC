@@ -646,25 +646,69 @@ async function fetchRosterServiceLines(
   const lookupKeys = memberSlugs.length ? memberSlugs : slugs;
   if (!lookupKeys.length) return null;
 
+  // Payment sheet often splits one child across keys (e.g. tinashe Mon/Wed LA +
+  // tinashe-nhs Friday). Include hyphenated / *-nhs variants + same display name.
+  const rawKeys = [
+    ...new Set(
+      lookupKeys.flatMap((k) => {
+        const dashed = k.replace(/_/g, "-");
+        return [k, dashed, `${k}-nhs`, `${dashed}-nhs`, `${k}_nhs`];
+      }),
+    ),
+  ];
+
+  const nameNorm = clean(identityInput.displayName || "", 120)
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
   const { data, error } = await supabase
     .from("portal_participant_service_lines")
-    .select("client_name, sessions, services_count")
-    .in("client_key", lookupKeys)
-    .limit(6);
+    .select("client_key, client_name, client_name_norm, sessions, services_count")
+    .in("client_key", rawKeys)
+    .limit(12);
 
   if (error) {
     console.error("[parent-portal-participant-detail] service lines error", error);
     return null;
   }
 
-  let best: Record<string, unknown> | null = null;
-  for (const row of data || []) {
-    if (!best || Number(row.services_count || 0) > Number(best.services_count || 0)) best = row;
+  let rows = Array.isArray(data) ? [...data] : [];
+  if (nameNorm) {
+    const { data: byName, error: nameErr } = await supabase
+      .from("portal_participant_service_lines")
+      .select("client_key, client_name, client_name_norm, sessions, services_count")
+      .eq("client_name_norm", nameNorm)
+      .limit(12);
+    if (nameErr) {
+      console.error("[parent-portal-participant-detail] service lines by name", nameErr);
+    } else {
+      const seen = new Set(rows.map((r) => String(r.client_key || "")));
+      for (const row of byName || []) {
+        const key = String(row.client_key || "");
+        if (key && seen.has(key)) continue;
+        const slug = slugifyParticipantKey(key);
+        const related =
+          lookupKeys.some(
+            (k) => slug === k || slug.startsWith(k + "_") || slug === `${k}_nhs`,
+          ) || /-nhs$|_nhs$/i.test(key);
+        if (!related) continue;
+        rows.push(row);
+        if (key) seen.add(key);
+      }
+    }
   }
-  if (!best) return null;
 
-  const detail = buildServicesDetail(best.sessions);
-  return { count: detail.length || Number(best.services_count || 0), detail };
+  if (!rows.length) return null;
+
+  // Merge every matching row so Mon/Wed (LA) + Fri (NHS) all appear.
+  const mergedSessions: unknown[] = [];
+  for (const row of rows) {
+    if (Array.isArray(row.sessions)) mergedSessions.push(...row.sessions);
+  }
+  const detail = buildServicesDetail(mergedSessions);
+  return { count: detail.length, detail };
 }
 
 function formatDobDisplay(iso: unknown): string {
@@ -1525,16 +1569,20 @@ Deno.serve(async (req) => {
         can_book_extras: isFormerClient
           ? true
           : parentReenrolUi.can_book_extras !== false,
+        // LA/NHS term is office→funder; still show My invoices when a parent-pay
+        // crash (etc.) exists. List endpoint only returns those shares.
         show_invoices: isFormerClient
           ? false
-          : !parentReenrolUi.reasons.includes("la_funded"),
+          : !parentReenrolUi.reasons.includes("la_funded") ||
+            (crashCourse.dates && crashCourse.dates.length > 0),
       },
       can_book_extras: isFormerClient
         ? true
         : parentReenrolUi.can_book_extras !== false,
       show_invoices: isFormerClient
         ? false
-        : !parentReenrolUi.reasons.includes("la_funded"),
+        : !parentReenrolUi.reasons.includes("la_funded") ||
+          (crashCourse.dates && crashCourse.dates.length > 0),
       crash_course: isFormerClient ? { dates: [] } : crashCourse,
       pending_review_count: sessionsOut.filter((s) => s.message_pending).length,
       weekly_notes: weeklyNotes,

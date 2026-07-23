@@ -138,28 +138,15 @@ Deno.serve(async (req) => {
     [participant?.first_name, participant?.last_name].filter(Boolean).join(" ").trim() ||
     "participant";
 
-  // Ealing / H&F / NHS (club invoices the funder): no parent invoice surface.
+  // Ealing / H&F / NHS term invoices are office→funder. Parents may still see
+  // parent-pay shares (e.g. crash course billed to Pat), never la_funded rows.
   const funding = await resolveParticipantInvoiceFunding(supabase, {
     contactId,
     displayName,
   });
   const sheetLa = clean(funding.paymentSheet, 40).toUpperCase() === "LA";
-  if (sheetLa || fundingLabelIsClubInvoicedFunder(funding.fundingLabel)) {
-    return json(200, {
-      ok: true,
-      invoices: [],
-      show_invoices: false,
-      bank_transfer_available: false,
-      payments_enabled: false,
-      gocardless: {
-        api_available: false,
-        mandate_active: false,
-        mandate_status: null,
-        setup_available: false,
-        can_schedule: false,
-      },
-    });
-  }
+  const funderBilled =
+    sheetLa || fundingLabelIsClubInvoicedFunder(funding.fundingLabel);
 
   const { data: shares, error } = await supabase
     .from("portal_parent_invoice_share")
@@ -238,6 +225,16 @@ Deno.serve(async (req) => {
     const hintEarly = clean(share.payment_method_hint, 40) || "bank_transfer";
     // LA-funded only: office invoices the funder — parents do not pay in the portal.
     if (hintEarly === "la_funded") continue;
+    // Club invoices Ealing/H&F/NHS for term — parent hub only shows parent-pay
+    // extras (crash courses billed to the family), never funder term invoices.
+    if (funderBilled) {
+      const title = clean(doc.title, 240).toLowerCase();
+      const num = clean(share.invoice_number, 80).toLowerCase();
+      const ref = clean(share.reference_text, 160).toLowerCase();
+      const line = clean(share.line_description, 400).toLowerCase();
+      const blob = `${title} ${num} ${ref} ${line}`;
+      if (!/\bcrash\b/.test(blob)) continue;
+    }
     const { data: signed } = await supabase.storage
       .from(BUCKET)
       .createSignedUrl(String(doc.file_url), 3600);
@@ -346,6 +343,8 @@ Deno.serve(async (req) => {
   return json(200, {
     ok: true,
     invoices: out,
+    /** Funder-billed kids: true only when a parent-pay crash (etc.) exists. */
+    show_invoices: funderBilled ? out.length > 0 : true,
     bank_transfer_available: tide.available,
     payments_enabled: cardCheckoutAvailable,
     gocardless: {
