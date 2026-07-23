@@ -218,14 +218,23 @@
     }
     .dc-cal-term__weeks p { margin: 0; }
     .dc-cal-term__months {
-      display: grid;
-      /* Always 4 tracks so Spring (3 months) matches Autumn/Summer cell size. */
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      display: flex;
+      flex-wrap: wrap;
+      /* Keep month cards at 1/4 row width; Spring (3) stays centred. */
+      justify-content: center;
       gap: 14px;
     }
+    .dc-cal-term__months > .dc-cal-month {
+      flex: 0 1 calc((100% - 42px) / 4);
+      width: calc((100% - 42px) / 4);
+      max-width: calc((100% - 42px) / 4);
+      min-width: 0;
+    }
     @media (max-width: 720px) {
-      .dc-cal-term__months {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+      .dc-cal-term__months > .dc-cal-month {
+        flex: 0 1 calc((100% - 14px) / 2);
+        width: calc((100% - 14px) / 2);
+        max-width: calc((100% - 14px) / 2);
       }
     }
     .dc-cal-month {
