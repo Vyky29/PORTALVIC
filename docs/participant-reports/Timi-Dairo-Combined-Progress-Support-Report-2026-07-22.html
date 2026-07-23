@@ -716,17 +716,21 @@ li,
   orphans: 3;
   widows: 3;
  }
- li {
+ /* Avoid forcing whole tall blocks onto one page — that clips content. */
+ .section-intro,
+ .card,
+ .feedback-dashboard,
+ .weekly-quotes__grid,
+ table {
+  break-inside: auto;
+  page-break-inside: auto;
+ }
+ .callout {
   break-inside: avoid;
   page-break-inside: avoid;
  }
- .section-intro,
- .callout,
- .card,
- .feedback-dashboard,
- table,
- .weekly-quotes__grid {
-  break-inside: avoid-page;
+ tr, thead {
+  break-inside: avoid;
   page-break-inside: avoid;
  }
  .photo-story {
@@ -738,37 +742,51 @@ li,
   page-break-inside: auto;
  }
  .photo-grid {
-  gap: 6px;
+  gap: 5px;
   margin-top: 6px;
-  break-inside: avoid-page;
+  break-inside: auto;
+  page-break-inside: auto;
+ }
+ .photo-story figcaption {
+  break-inside: avoid;
   page-break-inside: avoid;
  }
  .photo-feature,
- .photo-story figcaption {
-  break-inside: avoid-page;
+ .photo-grid img {
+  break-inside: avoid;
   page-break-inside: avoid;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  background: #fff;
  }
  .photo-feature {
-  width: auto;
-  max-width: 100%;
-  max-height: 88mm;
-  margin: 0 auto;
+  display: block;
+  max-height: 95mm;
+  margin: 0 auto 6px;
  }
- .closing-block {
-  break-inside: avoid-page;
+ .photo-grid img {
+  max-height: 72mm;
+ }
+ .photo-grid--two img {
+  max-height: 88mm;
+ }
+ .photo-grid--gym-three img,
+ .photo-grid--portrait-pair img {
+  max-height: 68mm;
+ }
+ .closing-block,
+ .sign-row,
+ footer.doc-foot {
+  break-inside: avoid;
   page-break-inside: avoid;
  }
- .sign-row {
-   margin-top: 12px;
-   break-inside: avoid-page;
-   page-break-inside: avoid;
-  }
-  .sign-row .line { margin-top: 18px; }
-  footer.doc-foot {
+ .sign-row { margin-top: 12px; }
+ .sign-row .line { margin-top: 18px; }
+ footer.doc-foot {
    margin-top: 10px;
    padding-top: 6px;
-   break-inside: avoid-page;
-   page-break-inside: avoid;
   }
  }
 
@@ -1050,11 +1068,11 @@ li,
 
   <figure class="photo-story photo-story--portrait-grid">
   <p class="photo-story__label">Visual supports</p>
-  <img class="photo-feature" src="images/timi/visual-tablet-avatar.png" alt="Timi at the table with a tablet showing his digital visual routine" />
+  <img class="photo-feature" src="images/timi/visual-tablet-avatar.jpg" alt="Timi at the table with a tablet showing his digital visual routine" />
   <div class="photo-grid photo-grid--three">
-    <img src="images/timi/visual-schedule-bag.png" alt="Timi using a yellow task bag with a visual checklist" />
-    <img src="images/timi/visual-checklist-packaging.png" alt="Timi sorting sensory items with a laminated visual checklist" />
-    <img src="images/timi/class-matching-visual.png" alt="Timi completing a matching activity with a screen visual in the background" />
+    <img src="images/timi/visual-schedule-bag.jpg" alt="Timi using a yellow task bag with a visual checklist" />
+    <img src="images/timi/visual-checklist-packaging.jpg" alt="Timi sorting sensory items with a laminated visual checklist" />
+    <img src="images/timi/class-matching-visual.jpg" alt="Timi completing a matching activity with a screen visual in the background" />
   </div>
   <figcaption>Digital and printed visual aids in use: avatar-based routine on tablet, checked visual schedules, and matching activities that keep the Day Centre sequence predictable.</figcaption>
 </figure>
@@ -1165,10 +1183,10 @@ li,
   <figure class="photo-story photo-story--portrait-grid">
   <p class="photo-story__label">Hub engagement</p>
   <div class="photo-grid photo-grid--two">
-    <img src="images/timi/hub-ball-engagement.png" alt="Timi smiling while catching a soft ball on the Hub beanbag" />
-    <img src="images/timi/hub-puzzle-support.png" alt="Timi completing a fruit peg puzzle with staff support" />
-    <img src="images/timi/hub-sandwich-play.png" alt="Timi assembling toy food on the Hub turf" />
-    <img src="images/timi/hub-pegboard.png" alt="Timi concentrating on a colourful pegboard activity" />
+    <img src="images/timi/hub-ball-engagement.jpg" alt="Timi smiling while catching a soft ball on the Hub beanbag" />
+    <img src="images/timi/hub-puzzle-support.jpg" alt="Timi completing a fruit peg puzzle with staff support" />
+    <img src="images/timi/hub-sandwich-play.jpg" alt="Timi assembling toy food on the Hub turf" />
+    <img src="images/timi/hub-pegboard.jpg" alt="Timi concentrating on a colourful pegboard activity" />
   </div>
   <figcaption>Positive Hub moments during settling: shared play, puzzles with staff support, and joyful engagement that no longer ends in a rush back to the car.</figcaption>
 </figure>
@@ -1207,10 +1225,10 @@ li,
   <figure class="photo-story photo-story--portrait-grid">
   <p class="photo-story__label">Classroom, sorting and fine motor</p>
   <div class="photo-grid photo-grid--two">
-    <img src="images/timi/hub-colour-sorting.png" alt="Timi sorting coloured balls into matching rings" />
-    <img src="images/timi/hub-animal-sorting.png" alt="Timi sorting animal figures into coloured bowls" />
-    <img src="images/timi/class-fine-motor-rods.png" alt="Timi connecting coloured rods at the table" />
-    <img src="images/timi/class-connecting-rods.png" alt="Timi focused on a fine-motor connecting activity" />
+    <img src="images/timi/hub-colour-sorting.jpg" alt="Timi sorting coloured balls into matching rings" />
+    <img src="images/timi/hub-animal-sorting.jpg" alt="Timi sorting animal figures into coloured bowls" />
+    <img src="images/timi/class-fine-motor-rods.jpg" alt="Timi connecting coloured rods at the table" />
+    <img src="images/timi/class-connecting-rods.jpg" alt="Timi focused on a fine-motor connecting activity" />
   </div>
   <figcaption>Table work and structured Hub activities: colour sorting, matching, fine-motor sequences and vocational-style packaging tasks.</figcaption>
 </figure>
@@ -1218,9 +1236,9 @@ li,
   <figure class="photo-story photo-story--portrait-grid">
   <p class="photo-story__label">Motor coordination and sensory</p>
   <div class="photo-grid photo-grid--three">
-    <img src="images/timi/motor-block-stack.png" alt="Timi placing a ball into a bin on a foam-block tower" />
-    <img src="images/timi/motor-foam-blocks.png" alt="Timi carrying a foam block during a stacking activity" />
-    <img src="images/timi/sensory-turtles.png" alt="Timi arranging colourful turtle sensory toys on a mat" />
+    <img src="images/timi/motor-block-stack.jpg" alt="Timi placing a ball into a bin on a foam-block tower" />
+    <img src="images/timi/motor-foam-blocks.jpg" alt="Timi carrying a foam block during a stacking activity" />
+    <img src="images/timi/sensory-turtles.jpg" alt="Timi arranging colourful turtle sensory toys on a mat" />
   </div>
   <figcaption>Motor coordination and sensory exploration within the centre: foam-block challenges and tactile sequencing.</figcaption>
 </figure>
@@ -1241,12 +1259,12 @@ li,
   <figure class="photo-story photo-story--portrait-grid">
   <p class="photo-story__label">Aquatic familiarisation</p>
   <div class="photo-grid photo-grid--three">
-    <img src="images/timi/pool-toy-bag.png" alt="Timi in the pool receiving a toy bag from staff" />
-    <img src="images/timi/pool-dumbbells.png" alt="Timi using foam aquatic dumbbells at the pool edge" />
-    <img src="images/timi/pool-edge-toys.png" alt="Timi reaching for toys on a floating mat" />
-    <img src="images/timi/pool-supported-reach.png" alt="Timi reaching into the water with instructor support" />
-    <img src="images/timi/pool-foam-number.png" alt="Timi engaging with a foam number aid at the pool ledge" />
-    <img src="images/timi/pool-ledge-activity.png" alt="Timi leaning into the pool during a guided aquatic activity" />
+    <img src="images/timi/pool-toy-bag.jpg" alt="Timi in the pool receiving a toy bag from staff" />
+    <img src="images/timi/pool-dumbbells.jpg" alt="Timi using foam aquatic dumbbells at the pool edge" />
+    <img src="images/timi/pool-edge-toys.jpg" alt="Timi reaching for toys on a floating mat" />
+    <img src="images/timi/pool-supported-reach.jpg" alt="Timi reaching into the water with instructor support" />
+    <img src="images/timi/pool-foam-number.jpg" alt="Timi engaging with a foam number aid at the pool ledge" />
+    <img src="images/timi/pool-ledge-activity.jpg" alt="Timi leaning into the pool during a guided aquatic activity" />
   </div>
   <figcaption>Water familiarisation and adaptation in the hyperoxic pool: toy retrieval, supported reach, foam equipment and calm participation with staff.</figcaption>
 </figure>
