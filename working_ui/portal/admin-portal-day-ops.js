@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260716-register-fast';
+  var PORTAL_DAY_OPS_BUILD = '20260723-lead-view-open';
   function portalHubBuildToken() {
     return String(global.PORTAL_ADMIN_HUB_BUILD || PORTAL_DAY_OPS_BUILD || '').trim();
   }
@@ -971,91 +971,132 @@
     }
   }
 
+  function formsArrayForKind(kind) {
+    if (kind === 'lead') {
+      return (
+        payload.lead_session_reports ||
+        (global.__PORTAL_LEAD_SESSION_REPORTS__ || null) ||
+        []
+      );
+    }
+    if (kind === 'venue') return payload.venue_reviews || [];
+    if (kind === 'incident') {
+      return (
+        payload.incident_reports ||
+        (trackingHub && trackingHub.payload && trackingHub.payload.incident_reports) ||
+        []
+      );
+    }
+    if (kind === 'cancellation') {
+      return (
+        payload.cancellation_reports ||
+        (trackingHub && trackingHub.payload && trackingHub.payload.cancellation_reports) ||
+        []
+      );
+    }
+    return [];
+  }
+
   function openPortalFormsRecord(kind, idx, rowOverride) {
     kind = String(kind || '').trim();
     var i = Number(idx);
-    if (!kind || !Number.isFinite(i) || i < 0) return;
+    if (!kind) return;
     var modal = global.PortalFormRecordModal;
-    if (!modal) return;
-    var row = rowOverride || null;
-    if (!row) {
-      var arr =
-        kind === 'lead'
-          ? payload.lead_session_reports
-          : kind === 'venue'
-            ? payload.venue_reviews
-            : kind === 'incident'
-              ? payload.incident_reports
-              : kind === 'cancellation'
-                ? payload.cancellation_reports
-                : null;
-      row = arr && arr[i];
-      if (!row && kind === 'incident' && trackingHub && trackingHub.payload) {
-        row = (trackingHub.payload.incident_reports || [])[i];
-      }
-      if (!row && kind === 'cancellation' && trackingHub && trackingHub.payload) {
-        row = (trackingHub.payload.cancellation_reports || [])[i];
-      }
+    if (!modal) {
+      console.warn('[PortalDayOps] PortalFormRecordModal missing — cannot open', kind);
+      return;
     }
-    if (row && typeof modal.openWithRow === 'function') {
+    var row = rowOverride || null;
+    if (!row && Number.isFinite(i) && i >= 0) {
+      var arr = formsArrayForKind(kind);
+      row = arr[i] || null;
+    }
+    if (!row) {
+      console.warn('[PortalDayOps] no row for forms view', kind, idx);
+      return;
+    }
+    if (typeof modal.openWithRow === 'function') {
       modal.openWithRow(kind, row);
       return;
     }
-    if (typeof modal.open === 'function') modal.open(kind, i);
+    if (typeof modal.open === 'function' && Number.isFinite(i) && i >= 0) modal.open(kind, i);
+  }
+
+  function handlePortalFormsViewClick(ev) {
+    if (!ev || !ev.target || !ev.target.closest) return false;
+    var wkBtn = ev.target.closest('[data-ash-log-jump-week]');
+    if (wkBtn && cfg.onLogJumpWeek) {
+      ev.preventDefault();
+      cfg.onLogJumpWeek(wkBtn.getAttribute('data-ash-log-jump-week'));
+      return true;
+    }
+    var pfrmBtn = ev.target.closest('[data-pfrm-view]');
+    if (pfrmBtn) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      openPortalFormsRecord(
+        pfrmBtn.getAttribute('data-pfrm-view'),
+        pfrmBtn.getAttribute('data-portal-forms-idx'),
+      );
+      return true;
+    }
+    var viewBtn = ev.target.closest(
+      '.portal-forms-view-btn[data-portal-forms-kind], button[data-portal-forms-kind].portal-forms-view-btn',
+    );
+    if (viewBtn) {
+      var kind = viewBtn.getAttribute('data-portal-forms-kind');
+      var idx = parseInt(viewBtn.getAttribute('data-portal-forms-idx'), 10);
+      if (!kind || isNaN(idx)) return false;
+      var arr = formsArrayForKind(kind);
+      var row = arr[idx] || null;
+      if (!row) {
+        console.warn('[PortalDayOps] View click — missing row', kind, idx, (arr || []).length);
+        return false;
+      }
+      ev.preventDefault();
+      ev.stopPropagation();
+      openPortalFormsRecord(kind, idx, row);
+      return true;
+    }
+    return false;
   }
 
   function ensurePortalFormsShellClicks() {
-    var shell = document.querySelector('.portal-day-ops-embed');
-    if (!shell || shell._portalFormsBound) return;
-    shell._portalFormsBound = true;
-    shell.addEventListener('click', function (ev) {
-      var wkBtn = ev.target && ev.target.closest ? ev.target.closest('[data-ash-log-jump-week]') : null;
-      if (wkBtn && cfg.onLogJumpWeek) {
+    // Document-level once — survives Sessions hub re-renders that replace .portal-day-ops-embed.
+    if (!global.__PORTAL_FORMS_CLICKS_BOUND__) {
+      global.__PORTAL_FORMS_CLICKS_BOUND__ = true;
+      document.addEventListener(
+        'click',
+        function (ev) {
+          handlePortalFormsViewClick(ev);
+        },
+        true,
+      );
+      document.addEventListener('dblclick', function (ev) {
+        if (!ev || !ev.target || !ev.target.closest) return;
+        if (ev.target.closest('[data-pfrm-view], .portal-forms-view-btn')) return;
+        var row = ev.target.closest('.portal-forms-data-row[data-portal-forms-kind]');
+        if (!row) return;
+        // Only for lead/venue tables in the day-ops embed (incidents use hub handlers).
+        if (!row.closest('.portal-day-ops-embed, #c4kHubPanelLead, #c4kHubPanelVenue')) return;
+        var kind = row.getAttribute('data-portal-forms-kind');
+        var idx = parseInt(row.getAttribute('data-portal-forms-idx'), 10);
+        if (!kind || isNaN(idx)) return;
         ev.preventDefault();
-        cfg.onLogJumpWeek(wkBtn.getAttribute('data-ash-log-jump-week'));
-        return;
-      }
-      var pfrmBtn = ev.target && ev.target.closest ? ev.target.closest('[data-pfrm-view]') : null;
-      if (pfrmBtn) {
+        openPortalFormsRecord(kind, idx, formsArrayForKind(kind)[idx] || null);
+      });
+    }
+    // Also bind directly on current lead/venue View buttons (mobile-safe).
+    document.querySelectorAll('.portal-forms-view-btn[data-portal-forms-kind]').forEach(function (btn) {
+      if (btn._portalFormsDirectBound) return;
+      btn._portalFormsDirectBound = true;
+      btn.addEventListener('click', function (ev) {
         ev.preventDefault();
         ev.stopPropagation();
-        openPortalFormsRecord(
-          pfrmBtn.getAttribute('data-pfrm-view'),
-          pfrmBtn.getAttribute('data-portal-forms-idx')
-        );
-        return;
-      }
-      var btn = ev.target && ev.target.closest ? ev.target.closest('[data-portal-forms-kind]') : null;
-      if (!btn) return;
-      var kind = btn.getAttribute('data-portal-forms-kind');
-      var idx = parseInt(btn.getAttribute('data-portal-forms-idx'), 10);
-      if (isNaN(idx)) return;
-      var arr =
-        kind === 'lead'
-          ? payload.lead_session_reports
-          : kind === 'venue'
-            ? payload.venue_reviews
-            : kind === 'incident'
-              ? payload.incident_reports
-              : kind === 'cancellation'
-                ? payload.cancellation_reports
-                : null;
-      if (!arr || !arr[idx]) return;
-      ev.preventDefault();
-      openPortalFormsRecord(kind, idx, arr[idx]);
-    });
-    shell.addEventListener('dblclick', function (ev) {
-      if (ev.target && ev.target.closest && ev.target.closest('[data-pfrm-view]')) return;
-      var row =
-        ev.target && ev.target.closest
-          ? ev.target.closest('.portal-forms-data-row[data-portal-forms-kind]')
-          : null;
-      if (!row) return;
-      var kind = row.getAttribute('data-portal-forms-kind');
-      var idx = parseInt(row.getAttribute('data-portal-forms-idx'), 10);
-      if (isNaN(idx)) return;
-      ev.preventDefault();
-      openPortalFormsRecord(kind, idx);
+        var kind = btn.getAttribute('data-portal-forms-kind');
+        var idx = parseInt(btn.getAttribute('data-portal-forms-idx'), 10);
+        openPortalFormsRecord(kind, idx, formsArrayForKind(kind)[idx] || null);
+      });
     });
   }
 
@@ -1307,9 +1348,9 @@
               '">' +
               portalFormsLeadServiceHtml(r, esc) +
               '</td>' +
-              '<td class="col-actions"><button type="button" class="portal-forms-view-btn" data-portal-forms-kind="lead" data-portal-forms-idx="' +
+              '<td class="col-actions"><button type="button" class="portal-forms-view-btn" data-pfrm-view="lead" data-portal-forms-kind="lead" data-portal-forms-idx="' +
               i +
-              '">View</button></td>' +
+              '" aria-label="View lead report">View</button></td>' +
               '</tr>'
             );
           })
