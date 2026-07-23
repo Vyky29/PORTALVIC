@@ -4280,7 +4280,7 @@
       data,
       "sessions",
       '<h3 class="pp-pax-subview-title">Sessions Overview</h3>' +
-        '<p class="pp-muted pp-pax-subview-note">Term dates below, then date, service, venue, instructor, engagement, regulation and independence — shown separately for each activity when your child does more than one.</p>' +
+        '<p class="pp-muted pp-pax-subview-note">Term dates below, then date, service, instructor, engagement, regulation and independence — absents are listed as Absent. Shown separately for each activity when your child does more than one.</p>' +
         (termChips
           ? '<section class="pp-sessions-term-dates" aria-label="Term session dates">' +
             '<div class="pp-hub-ops__badge-row">' +

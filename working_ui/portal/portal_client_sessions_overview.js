@@ -983,7 +983,18 @@
       incidentsSectionHtml(incidents);
   }
 
+  function parentAbsentLabelHtml() {
+    return '<span class="pcso-absent-label">Absent</span>';
+  }
+
+  function parentRowIsAbsent(row) {
+    if (!row) return false;
+    if (row.parent_absent === true) return true;
+    return attendanceIsAbsent(row.attendance);
+  }
+
   function parentEngagementCell(row) {
+    if (parentRowIsAbsent(row)) return parentAbsentLabelHtml();
     if (row.engagement_rating == null || row.engagement_rating === "") {
       return '<span class="muted">—</span>';
     }
@@ -1011,10 +1022,12 @@
   }
 
   function parentRegulationCell(row) {
+    if (parentRowIsAbsent(row)) return parentAbsentLabelHtml();
     return emotionIconsCell(row.client_emotions);
   }
 
   function parentIndependenceCell(row) {
+    if (parentRowIsAbsent(row)) return parentAbsentLabelHtml();
     var swim = global.PortalSwimSessionAxes;
     if (swim && swim.isAquaticService(row.service)) {
       var lab = swim.independenceLabelForDisplay(row.engagement_patterns, row.service);
@@ -1047,22 +1060,26 @@
 
   function parentFeedbackTableRow(row) {
     const dateLine = formatDateLong(row.session_date);
-    const svc = displayProgrammeName(row.service);
-    const timeLine = formatServiceTime(row.session_time);
-    const venue = esc(clean(row.venue) || "—");
-    const instructor = esc(clean(row.instructor || row.feedback_by_name || row.completed_by_name) || "—");
+    const svc = displayProgrammeName(row.service) || "—";
+    const timeLine = parentRowIsAbsent(row) ? "" : formatServiceTime(row.session_time);
+    const instructor = esc(
+      clean(row.instructor || row.feedback_by_name || row.completed_by_name) || "—",
+    );
     const swimAdd =
-      global.PortalSwimSessionAxes && typeof global.PortalSwimSessionAxes.swimAxesDisplayHtml === "function"
+      !parentRowIsAbsent(row) &&
+      global.PortalSwimSessionAxes &&
+      typeof global.PortalSwimSessionAxes.swimAxesDisplayHtml === "function"
         ? global.PortalSwimSessionAxes.swimAxesDisplayHtml(row, esc)
         : "";
     return (
-      "<tr>" +
+      '<tr' +
+      (parentRowIsAbsent(row) ? ' class="pcso-tbl__row--absent"' : "") +
+      ">" +
       '<td class="pcso-tbl__date"><span class="pcso-tbl__date-main" title="' + esc(dateLine) + '">' + esc(dateLine) + "</span></td>" +
       '<td class="pcso-tbl__svc"><span class="pcso-tbl__svc-main" title="' + esc(svc) + '">' + esc(svc) + "</span>" +
       (timeLine ? '<span class="pcso-tbl__sub">' + esc(timeLine) + "</span>" : "") +
       swimAdd +
       "</td>" +
-      '<td class="pcso-tbl__venue"><span class="pcso-venue-text" title="' + venue + '">' + venue + "</span></td>" +
       '<td class="pcso-tbl__eng">' + parentEngagementCell(row) + "</td>" +
       '<td class="pcso-tbl__emo">' + parentRegulationCell(row) + "</td>" +
       '<td class="pcso-tbl__indep">' + parentIndependenceCell(row) + "</td>" +
@@ -1081,7 +1098,6 @@
       "<thead><tr>" +
       '<th scope="col" class="pcso-tbl__date">Date</th>' +
       '<th scope="col" class="pcso-tbl__svc">Service / time</th>' +
-      '<th scope="col" class="pcso-tbl__venue">Venue</th>' +
       '<th scope="col" class="pcso-tbl__eng">Engagement</th>' +
       '<th scope="col" class="pcso-tbl__emo">Regulation</th>' +
       '<th scope="col" class="pcso-tbl__indep">Independence</th>' +
@@ -1090,6 +1106,75 @@
       feedback.map(function (r) { return parentFeedbackTableRow(r); }).join("") +
       "</tbody></table></div>"
     );
+  }
+
+  function parentRowLooksAttended(row) {
+    if (!row || parentRowIsAbsent(row)) return false;
+    var eg = row.engagement_rating;
+    if (eg != null && String(eg).trim() !== "" && !Number.isNaN(Number(eg))) {
+      var n = Number(eg);
+      if (n >= 1 && n <= 5) return true;
+    }
+    if (clean(row.client_emotions) || clean(row.engagement_patterns)) return true;
+    return false;
+  }
+
+  /** Ensure absent dates from attendance chips also appear as Absent rows in the table. */
+  function mergeAbsentDatesIntoParentFeedback(feedback, attendanceSummary) {
+    var rows = (feedback || []).slice();
+    var dates = (attendanceSummary && attendanceSummary.absent_dates) || [];
+    if (!dates.length) return rows;
+    var absentSet = {};
+    dates.forEach(function (raw) {
+      var iso = isoFromAny(raw);
+      if (iso) absentSet[iso] = true;
+    });
+    var haveDate = {};
+    rows.forEach(function (r) {
+      var iso = isoFromAny(r && r.session_date);
+      if (!iso) return;
+      haveDate[iso] = true;
+      if (absentSet[iso] && !parentRowLooksAttended(r)) {
+        r.parent_absent = true;
+        if (!clean(r.attendance)) r.attendance = "Absent";
+      }
+    });
+    var fallbackService = "";
+    for (var i = 0; i < rows.length; i++) {
+      var svc = clean(rows[i] && rows[i].service);
+      if (svc) {
+        fallbackService = svc;
+        break;
+      }
+    }
+    Object.keys(absentSet)
+      .sort()
+      .forEach(function (iso) {
+        if (haveDate[iso]) return;
+        haveDate[iso] = true;
+        rows.push({
+          kind: "feedback",
+          session_date: iso,
+          service: fallbackService,
+          session_time: "",
+          venue: "",
+          instructor: "",
+          attendance: "Absent",
+          parent_absent: true,
+          engagement_rating: "",
+          client_emotions: "",
+          engagement_patterns: "",
+          feedback_by_name: "",
+          feedback_by_role: "",
+          comment: "",
+          parent_message: "",
+          message_pending: false,
+          positive_feedback: "",
+          relevant_information: "",
+        });
+      });
+    rows.sort(sortNewestFirst);
+    return rows;
   }
 
   function achievementPhotoAspect(a) {
@@ -1192,7 +1277,10 @@
     var achievements = (opts && opts.achievements) || [];
     var hideAchievements = !!(opts && opts.hideAchievements);
     var term = clean((opts && opts.term_label) || TERM_LABEL);
-    var feedback = parentFacingFeedbackRows(sessions.map(mapParentSessionRow));
+    var feedback = mergeAbsentDatesIntoParentFeedback(
+      parentFacingFeedbackRows(sessions.map(mapParentSessionRow)),
+      opts && opts.attendance_summary,
+    );
     hostEl.innerHTML =
       overviewByServiceHtml(feedback, term, {
         includeAttendance: true,

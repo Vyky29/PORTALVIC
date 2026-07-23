@@ -635,7 +635,6 @@ body.portal-force-landscape{
 }
 .pcso-table--parent .pcso-tbl__date,
 .pcso-table--parent .pcso-tbl__svc,
-.pcso-table--parent .pcso-tbl__venue,
 .pcso-table--parent .pcso-tbl__instructor,
 .pcso-table--parent .pcso-tbl__eng,
 .pcso-table--parent .pcso-tbl__emo,
@@ -648,9 +647,28 @@ body.portal-force-landscape{
   padding-left:10px;
   padding-right:10px;
 }
+.pcso-table--parent .pcso-tbl__venue{
+  display:none !important;
+}
 .pcso-table--parent .pcso-tbl__comments,
 .pcso-table--parent .pcso-tbl__author{
   display:none !important;
+}
+.pcso-table--parent .pcso-absent-label{
+  display:inline-block;
+  min-width:0;
+  max-width:100%;
+  padding:2px 8px;
+  border-radius:999px;
+  background:#fef2f2;
+  color:#b91c1c;
+  font-size:12px;
+  font-weight:700;
+  line-height:1.25;
+  overflow-wrap:break-word;
+}
+.pcso-table--parent tr.pcso-tbl__row--absent td{
+  color:#64748b;
 }
 .pcso-table--parent thead th{
   font-size:12px;
