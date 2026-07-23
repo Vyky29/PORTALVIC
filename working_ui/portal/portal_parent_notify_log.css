@@ -497,6 +497,56 @@
   min-width: 0;
 }
 
+.portal-pnlog-composer__tpl-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 8px;
+  min-width: 0;
+}
+
+.portal-pnlog-composer__tpl-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #c4b5fd;
+  background: #fff;
+  color: #5b21b6;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.portal-pnlog-composer__tpl-opt input {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.portal-pnlog-composer__tpl-opt.is-on {
+  background: #f5f3ff;
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.25);
+}
+
+.portal-pnlog-composer__tpl-opt--urgent {
+  border-color: #fca5a5;
+  color: #991b1b;
+}
+
+.portal-pnlog-composer__tpl-opt--urgent.is-on {
+  background: #fef2f2;
+  border-color: #dc2626;
+  box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.25);
+  color: #7f1d1d;
+}
+
 .portal-pnlog-composer__tpl-banner code {
   font-size: 11px;
   background: rgba(88, 28, 135, 0.08);
@@ -528,6 +578,7 @@
   font-weight: 700;
   color: #5b21b6;
   letter-spacing: 0.01em;
+  white-space: pre-line;
 }
 
 .portal-pnlog-composer__tpl-mid-lab {

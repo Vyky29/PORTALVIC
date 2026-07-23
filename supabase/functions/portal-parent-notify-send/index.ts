@@ -302,7 +302,8 @@ Deno.serve(async (req) => {
       }
     } else {
       // Free-text (custom/reply) only works inside Meta's 24h session window.
-      // Cold outbound without context must use the approved default template.
+      // Cold outbound without context must use an approved template
+      // (contact_update = Hello…, contact_update_urgent = Urgent information…).
       let effectiveKind = notifyKind;
       if (
         (notifyKind === "custom" || notifyKind === "reply" || notifyKind === "whatsapp_reply") &&
@@ -310,6 +311,10 @@ Deno.serve(async (req) => {
       ) {
         effectiveKind = "contact_update";
       }
+      const coldRetryKind =
+        effectiveKind === "contact_update_urgent"
+          ? "contact_update_urgent"
+          : "contact_update";
       const waOpts = notifyKind === "whatsapp_test"
         ? { templateName: "hello_world", templateLang: "en_US" }
         : {
@@ -326,7 +331,7 @@ Deno.serve(async (req) => {
         /131047|re-engagement/i.test(String(sent.error || ""))
       ) {
         sent = await sendParentMobileMessage(parentPhone!, whatsappBodyText, {
-          kind: "contact_update",
+          kind: coldRetryKind,
           instructorPhotoUrl: instructorPhotoUrl || undefined,
           instructorPhotoName: instructorPhotoName || undefined,
         });

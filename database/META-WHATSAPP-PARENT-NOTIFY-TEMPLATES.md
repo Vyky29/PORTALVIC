@@ -36,9 +36,12 @@ The portal appends “Thank you, ClubSENsational” in the draft; the API **remo
 In `local-secrets/secrets.env`:
 
 ```env
-PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE=portal_parent_update
-META_WHATSAPP_TEMPLATE_LANG=en_US
+PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE=portal_parent_update_v2
+PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_URGENT=portal_parent_urgent_v1
+META_WHATSAPP_TEMPLATE_LANG=en
 ```
+
+Family messages cold outbound offers a picker: **Hello…** (`portal_parent_update_v2`) or **Urgent information** (`portal_parent_urgent_v1`).
 
 Then:
 

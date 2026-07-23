@@ -111,14 +111,42 @@
     editing: null,
     /** When set, next send quotes this WhatsApp message (Meta context.message_id). */
     replyTo: null,
+    /** Cold Meta template picker: hello | urgent */
+    coldTemplateId: "hello",
   };
 
   var SEEN_STORE_KEY = "portal_pnlog_seen_v1";
-  /** Meta cold template shell (portal_parent_update_v2 · en). Only {{1}} is editable. */
-  var WA_COLD_TEMPLATE_NAME = "portal_parent_update_v2";
-  var WA_COLD_TEMPLATE_PREFIX = "Hello, ";
-  var WA_COLD_TEMPLATE_SUFFIX = " Thank you.";
+  /**
+   * Meta cold template shells (Utility · en). Only {{1}} is editable.
+   * hello → portal_parent_update_v2 · urgent → portal_parent_urgent_v1
+   */
+  var WA_COLD_TEMPLATES = [
+    {
+      id: "hello",
+      label: "Hello…",
+      kind: "contact_update",
+      metaName: "portal_parent_update_v2",
+      prefix: "Hello,\n",
+      suffix: "\nThank you.",
+    },
+    {
+      id: "urgent",
+      label: "Urgent information",
+      kind: "contact_update_urgent",
+      metaName: "portal_parent_urgent_v1",
+      prefix: "Urgent information:\n",
+      suffix: "\nThank you.",
+    },
+  ];
   var WA_TEMPLATE_BODY_MAX = 700;
+
+  function activeColdTemplate() {
+    var id = String(state.coldTemplateId || "hello");
+    for (var i = 0; i < WA_COLD_TEMPLATES.length; i++) {
+      if (WA_COLD_TEMPLATES[i].id === id) return WA_COLD_TEMPLATES[i];
+    }
+    return WA_COLD_TEMPLATES[0];
+  }
 
   function fileToBase64(file) {
     return new Promise(function (resolve, reject) {
@@ -1692,6 +1720,7 @@
         : "";
     var editKey = state.editing && state.editing.threadKey === (t && t.key) ? state.editing.logId || "" : "";
     var sessionKey = threadHasOpenWhatsappSession(t) ? "open" : "cold";
+    var tplKey = sessionKey === "cold" ? String(state.coldTemplateId || "hello") : "session";
     var nextSig =
       (t && t.key ? t.key : "") +
       "|" +
@@ -1700,6 +1729,8 @@
       (phoneKey ? "ok" : "none") +
       "|" +
       sessionKey +
+      "|tpl:" +
+      tplKey +
       "|r:" +
       replyKey +
       "|e:" +
@@ -1843,16 +1874,38 @@
     var templateShell = "";
     var textareaPlaceholder = "Type a WhatsApp reply…";
     var textareaMax = "4000";
+    var coldTpl = activeColdTemplate();
     if (needsTemplate) {
       sessionNote =
         '<div class="portal-pnlog-composer__tpl-banner" role="status">' +
         "<strong>Needs Meta template</strong> — no open 24h window. " +
-        "Edit only <code>{{1}}</code> below. <strong>Chat history stays above — scroll it to read.</strong>" +
+        "Choose a shell, then edit only <code>{{1}}</code>. <strong>Chat history stays above — scroll it to read.</strong>" +
+        "</div>";
+      var tplPick =
+        '<div class="portal-pnlog-composer__tpl-pick" role="radiogroup" aria-label="WhatsApp template">' +
+        WA_COLD_TEMPLATES.map(function (tpl) {
+          var on = tpl.id === coldTpl.id;
+          return (
+            '<label class="portal-pnlog-composer__tpl-opt' +
+            (on ? " is-on" : "") +
+            (tpl.id === "urgent" ? " portal-pnlog-composer__tpl-opt--urgent" : "") +
+            '">' +
+            '<input type="radio" name="portalPnlogColdTpl" value="' +
+            esc(tpl.id) +
+            '"' +
+            (on ? " checked" : "") +
+            " />" +
+            "<span>" +
+            esc(tpl.label) +
+            "</span></label>"
+          );
+        }).join("") +
         "</div>";
       templateShell =
+        tplPick +
         '<div class="portal-pnlog-composer__tpl-shell">' +
-        '<div class="portal-pnlog-composer__tpl-fixed" aria-hidden="true">' +
-        esc(WA_COLD_TEMPLATE_PREFIX.trim()) +
+        '<div class="portal-pnlog-composer__tpl-fixed" id="portalPnlogTplPrefix" aria-hidden="true">' +
+        esc(String(coldTpl.prefix || "").trim()) +
         "</div>" +
         '<label class="portal-pnlog-composer__tpl-mid-lab muted" for="portalPnlogComposerInput">Editable {{1}}</label>';
       textareaPlaceholder =
@@ -1863,8 +1916,8 @@
         '<p class="portal-pnlog-composer__session-open muted" role="status">24h window open — free-text reply (no Meta template).</p>';
     }
     var afterTextarea = needsTemplate
-      ? '<div class="portal-pnlog-composer__tpl-fixed" aria-hidden="true">' +
-        esc(WA_COLD_TEMPLATE_SUFFIX.trim()) +
+      ? '<div class="portal-pnlog-composer__tpl-fixed" id="portalPnlogTplSuffix" aria-hidden="true">' +
+        esc(String(coldTpl.suffix || "").trim()) +
         "</div></div>" +
         '<p id="portalPnlogTplLen" class="portal-pnlog-composer__tpl-len muted"></p>' +
         coldTemplatePreviewHtml(draft)
@@ -2128,16 +2181,19 @@
   }
 
   function coldTemplatePreviewHtml(body) {
+    var tpl = activeColdTemplate();
     var mid = flattenForWhatsappTemplate(body);
     return (
       '<div class="portal-pnlog-composer__tpl-preview" id="portalPnlogTplPreview" aria-live="polite">' +
-      '<div class="portal-pnlog-composer__tpl-preview-lab">WhatsApp will send</div>' +
+      '<div class="portal-pnlog-composer__tpl-preview-lab">WhatsApp will send · ' +
+      esc(tpl.label) +
+      "</div>" +
       '<div class="portal-pnlog-composer__tpl-preview-body">' +
-      esc(WA_COLD_TEMPLATE_PREFIX) +
+      esc(tpl.prefix) +
       '<span class="portal-pnlog-composer__tpl-var">' +
       coldTemplateVarHtml(mid) +
       "</span>" +
-      esc(WA_COLD_TEMPLATE_SUFFIX) +
+      esc(tpl.suffix) +
       "</div></div>"
     );
   }
@@ -2146,10 +2202,24 @@
     var ta = document.getElementById("portalPnlogComposerInput");
     var prev = document.getElementById("portalPnlogTplPreview");
     var lenEl = document.getElementById("portalPnlogTplLen");
+    var tpl = activeColdTemplate();
+    var prefixEl = document.getElementById("portalPnlogTplPrefix");
+    var suffixEl = document.getElementById("portalPnlogTplSuffix");
+    if (prefixEl) prefixEl.textContent = String(tpl.prefix || "").trim();
+    if (suffixEl) suffixEl.textContent = String(tpl.suffix || "").trim();
     if (!ta || !prev) return;
     var flat = flattenForWhatsappTemplate(ta.value);
-    var varEl = prev.querySelector(".portal-pnlog-composer__tpl-var");
-    if (varEl) varEl.innerHTML = coldTemplateVarHtml(flat);
+    var lab = prev.querySelector(".portal-pnlog-composer__tpl-preview-lab");
+    if (lab) lab.textContent = "WhatsApp will send · " + tpl.label;
+    var bodyEl = prev.querySelector(".portal-pnlog-composer__tpl-preview-body");
+    if (bodyEl) {
+      bodyEl.innerHTML =
+        esc(tpl.prefix) +
+        '<span class="portal-pnlog-composer__tpl-var">' +
+        coldTemplateVarHtml(flat) +
+        "</span>" +
+        esc(tpl.suffix);
+    }
     if (lenEl) {
       var n = flat.length;
       lenEl.textContent =
@@ -2303,7 +2373,9 @@
     }
     /* Cold outbound uses a Meta template; {{1}} must stay short (Meta #132005).
        Quote-corrections always use free-text with context (need open 24h window). */
-    var sendKind = editing || openSession ? "custom" : "contact_update";
+    var coldTpl = activeColdTemplate();
+    var sendKind =
+      editing || openSession ? "custom" : coldTpl.kind || "contact_update";
     var sendBody = msgBody;
     if (!openSession && !editing) {
       var flatLen = String(msgBody || "")
@@ -2342,7 +2414,9 @@
         ? "Sending quoted correction to " + (t.name || "parent") + " · " + threadPhoneForUi(t) + "…"
         : openSession
           ? "Sending to " + (t.name || "parent") + " · " + threadPhoneForUi(t) + "…"
-          : "No open WhatsApp session — sending via approved template to " +
+          : "No open WhatsApp session — sending via " +
+            (coldTpl.label || "approved template") +
+            " to " +
             (t.name || "parent") +
             " · " +
             threadPhoneForUi(t) +
@@ -2561,6 +2635,17 @@
     });
 
     host.addEventListener("change", function (e) {
+      if (
+        e.target &&
+        e.target.name === "portalPnlogColdTpl" &&
+        e.target.value
+      ) {
+        state.coldTemplateId = String(e.target.value);
+        captureComposerDraft();
+        var thr = findThread(state.selectedKey);
+        if (thr) mountComposer(thr, true);
+        return;
+      }
       if (!e.target || e.target.id !== "portalPnlogComposerFile") return;
       var file = e.target.files && e.target.files[0];
       if (file) {

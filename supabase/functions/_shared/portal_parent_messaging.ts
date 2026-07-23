@@ -484,6 +484,10 @@ export function resolveParentNotifyWhatsappTemplate(kind: string): string {
   if (k.startsWith("staff_")) {
     return "";
   }
+  if (k === "contact_update_urgent") {
+    const urgent = (Deno.env.get("PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_URGENT") ?? "").trim();
+    return urgent || "portal_parent_urgent_v1";
+  }
   const byKind: Record<string, string> = {
     weekly_note: "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_WEEKLY_NOTE",
     payment_due: "PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE_PAYMENT",
