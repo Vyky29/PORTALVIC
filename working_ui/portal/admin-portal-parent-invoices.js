@@ -1402,27 +1402,22 @@
       '.pp-inv-acc__amt{font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums;overflow-wrap:break-word}' +
       '.pp-inv-acc__year{font-weight:700;color:#475569;font-variant-numeric:tabular-nums;overflow-wrap:break-word}' +
       '.pp-inv-acc__methods{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0;flex:0 1 auto;max-width:100%}' +
-      /* Shared chip shell — colours are exclusive per role (no reused hues). */ +
+      // Chip shell + exclusive colours (never put /* */ between + — it injects NaN).
       '.pp-inv-acc__type,.pp-inv-acc__method,.pp-inv-acc__arrange,.pp-inv-acc__fund{display:inline-flex;align-items:center;font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid transparent}' +
-      /* TYPE */ +
       '.pp-inv-acc__type--termly{color:#1e3a8a;background:#dbeafe;border-color:#60a5fa}' +
       '.pp-inv-acc__type--auto{color:#5b21b6;background:#ede9fe;border-color:#a78bfa;letter-spacing:.03em}' +
-      /* FUNDING — Private ≠ Direct ≠ LA ≠ NHS (no unpaid-orange / paid-green) */ +
       '.pp-inv-acc__fund--private{color:#312e81;background:#e0e7ff;border-color:#818cf8}' +
       '.pp-inv-acc__fund--direct{color:#115e59;background:#ccfbf1;border-color:#2dd4bf}' +
       '.pp-inv-acc__fund--la{color:#86198f;background:#fae8ff;border-color:#e879f9}' +
       '.pp-inv-acc__fund--nhs{color:#9f1239;background:#ffe4e6;border-color:#fb7185}' +
-      /* METHOD channel — Bank ≠ GoCardless ≠ Card */ +
       '.pp-inv-acc__method--bank{color:#3f3f46;background:#f4f4f5;border-color:#a1a1aa}' +
       '.pp-inv-acc__method--gc{color:#9d174d;background:#fbcfe8;border-color:#ec4899}' +
       '.pp-inv-acc__method--card{color:#1e40af;background:#93c5fd;border-color:#2563eb}' +
       '.pp-inv-acc__method--la{color:#6b21a8;background:#ddd6fe;border-color:#8b5cf6}' +
       '.pp-inv-acc__method--admin{color:#334155;background:#e2e8f0;border-color:#94a3b8}' +
       '.pp-inv-acc__method--other{color:#4a6578;background:#eef2f5;border-color:#94a3b8}' +
-      /* ARRANGEMENT (Flexi / monthly / one-off) — yellow, not TYPE blue */ +
       '.pp-inv-acc__arrange{color:#854d0e;background:#fef08a;border-color:#eab308}' +
       '.pp-inv-acc__plan-dates{max-width:100%}' +
-      /* Payment status: green=paid, orange=unpaid only */ +
       '.pp-inv-acc__pay-chip{font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid transparent;display:inline-flex;align-items:center}' +
       '.pp-inv-acc__pay-chip--unpaid{color:#9a3412;background:#ffedd5;border-color:#fdba74}' +
       '.pp-inv-acc__pay-chip--pending{color:#1e40af;background:#dbeafe;border-color:#93c5fd}' +
@@ -1437,10 +1432,8 @@
       '.pp-inv-acc__cards{display:flex;flex-direction:column;gap:10px;min-width:0}' +
       '.pp-inv-acc__card{border:1px solid #e2eaf0;border-radius:8px;padding:10px;background:#fff;min-width:0}' +
       '.pp-inv-acc__card--paid{border-color:#86efac;background:#f0fdf4}' +
-      /* Filter chips are <button> — reset UA styles so paid green is not washed out. */ +
       '.pp-inv-acc__filter-chip{-webkit-appearance:none;appearance:none;margin:0;cursor:pointer;font:inherit;line-height:inherit}' +
       '.pp-inv-acc__filter-chip:hover{filter:brightness(.97)}' +
-      /* Paid last + button.selector so dashboard button resets cannot win. */ +
       'button.pp-inv-acc__pay-chip--paid,.pp-inv-acc__pay-chip--paid{color:#047857;background-color:#bbf7d0;background:#bbf7d0;border:1px solid #34d399}' +
       'button.pp-inv-acc__pay-chip--unpaid,.pp-inv-acc__pay-chip--unpaid{color:#9a3412;background-color:#ffedd5;background:#ffedd5;border:1px solid #fdba74}' +
       'button.pp-inv-acc__pay-chip--pending,.pp-inv-acc__pay-chip--pending{color:#1e40af;background-color:#dbeafe;background:#dbeafe;border:1px solid #93c5fd}' +
