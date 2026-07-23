@@ -1098,11 +1098,122 @@
     return String((inv && inv.payment_status) || "").toLowerCase() === "paid";
   }
 
+  function invoiceBlobText(inv) {
+    return [
+      inv && inv.billing_term,
+      inv && inv.reference_text,
+      inv && inv.title,
+      inv && inv.subtitle,
+      inv && inv.parent_facing_subtitle,
+      inv && inv.line_description,
+    ]
+      .map(function (x) {
+        return String(x || "");
+      })
+      .join(" ")
+      .toLowerCase();
+  }
+
+  /** autumn | spring | summer | null for 26/27 programme invoices. */
+  function invoiceTermBucket(inv) {
+    var blob = invoiceBlobText(inv);
+    var bt = String((inv && inv.billing_term) || "")
+      .trim()
+      .toLowerCase();
+    if (bt === "autumn" || bt === "spring" || bt === "summer") return bt;
+    if (/\bautumn\b/.test(blob)) return "autumn";
+    if (/\bspring\b/.test(blob)) return "spring";
+    if (/\bsummer\b/.test(blob)) return "summer";
+    return null;
+  }
+
+  function localDateIso(d) {
+    var x = d instanceof Date ? d : new Date();
+    var y = x.getFullYear();
+    var m = String(x.getMonth() + 1).padStart(2, "0");
+    var day = String(x.getDate()).padStart(2, "0");
+    return y + "-" + m + "-" + day;
+  }
+
+  /**
+   * Which 26/27 term invoice parents should settle now.
+   * Autumn ask runs until mid-Nov; spring until mid-Feb; then summer.
+   */
+  function activeProgrammeTermBucket(now) {
+    var iso = localDateIso(now || new Date());
+    if (iso < "2026-11-15") return "autumn";
+    if (iso < "2027-02-15") return "spring";
+    return "summer";
+  }
+
+  function invoiceEffectiveDueIso(inv) {
+    var due = String((inv && (inv.next_instalment_due || inv.due_date)) || "").slice(0, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(due) ? due : null;
+  }
+
+  /** Whole days from today (local) to due ISO — negative when overdue. */
+  function daysUntilDueIso(dueIso, now) {
+    if (!dueIso) return null;
+    var today = localDateIso(now || new Date());
+    var a = Date.parse(today + "T12:00:00");
+    var b = Date.parse(dueIso + "T12:00:00");
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+    return Math.round((b - a) / 86400000);
+  }
+
+  function isGoCardlessAutoCollect(inv) {
+    if (!inv) return false;
+    if (inv.gocardless_pending_collection) return true;
+    var hint = String(inv.payment_method_hint || "").toLowerCase();
+    // Mandate already active / collecting — parent must not be nagged to pay manually.
+    if (hint === "gocardless" && !inv.can_setup_gocardless) return true;
+    return false;
+  }
+
+  function invoiceScheduleLen(inv) {
+    var s = inv && inv.payment_schedule;
+    return Array.isArray(s) ? s.length : 0;
+  }
+
+  /**
+   * Hub red pulse + pay CTAs: only when the parent must act on the current
+   * month/term ask (or flexi instalment within 7 days of due). Future Spring/Summer
+   * term invoices and GoCardless auto-collection do not count.
+   */
   function invoiceNeedsParentPay(inv) {
     if (!inv) return false;
     var st = String(inv.payment_status || "").toLowerCase();
     if (st === "paid" || st === "void" || st === "cancelled") return false;
-    return true;
+    if (st === "pending_confirmation") return false;
+    if (inv.can_setup_gocardless) return true;
+    if (isGoCardlessAutoCollect(inv)) return false;
+
+    var dueIso = invoiceEffectiveDueIso(inv);
+    var days = dueIso != null ? daysUntilDueIso(dueIso) : null;
+    var overdue = days != null && days <= 0;
+    var withinFlexiRemind = days != null && days <= 7;
+
+    if (isCrashInvoice(inv)) return true;
+
+    if (isTermProgrammeInvoice(inv)) {
+      var bucket = invoiceTermBucket(inv);
+      var active = activeProgrammeTermBucket();
+      if (bucket && bucket !== active) {
+        // Past-due earlier term still needs attention; future terms do not.
+        return overdue;
+      }
+      // Flexi 2×: pulse from one week before the next instalment (and when overdue).
+      if (invoiceScheduleLen(inv) >= 2) {
+        if (days == null) return true;
+        return withinFlexiRemind;
+      }
+      // Termly (or single scheduled row): red until this term's invoice is paid.
+      return true;
+    }
+
+    // Monthly / other: remind in the week before due (GC already excluded above).
+    if (days == null) return true;
+    return withinFlexiRemind;
   }
 
   function applyHubInvoicesShortcutVisual(host, hasUnpaid) {
@@ -1117,17 +1228,22 @@
     }
   }
 
-  /** Current (autumn) term invoices if present; else any 26/27 programme invoices. */
+  /** Active term invoices (+ any overdue earlier term); else autumn; else any programme. */
   function termInvoicesForHubPay(invoices) {
     var term = termProgrammeInvoices(invoices);
+    var active = activeProgrammeTermBucket();
+    var matched = term.filter(function (inv) {
+      return invoiceTermBucket(inv) === active;
+    });
+    var overdueEarlier = term.filter(function (inv) {
+      var b = invoiceTermBucket(inv);
+      if (!b || b === active || isInvoiceFullyPaid(inv)) return false;
+      var due = invoiceEffectiveDueIso(inv);
+      return due != null && daysUntilDueIso(due) <= 0;
+    });
+    if (matched.length || overdueEarlier.length) return matched.concat(overdueEarlier);
     var autumn = term.filter(function (inv) {
-      var blob = [inv.billing_term, inv.reference_text, inv.title, inv.subtitle]
-        .map(function (x) {
-          return String(x || "");
-        })
-        .join(" ")
-        .toLowerCase();
-      return blob.indexOf("autumn") >= 0 || blob === "autumn" || /\bautumn\b/.test(blob);
+      return invoiceTermBucket(inv) === "autumn";
     });
     return autumn.length ? autumn : term;
   }
@@ -6953,6 +7069,13 @@
       canReport = false;
       canPay = false;
     }
+    // Future terms / auto-collect: keep the PDF, do not prompt to pay.
+    var payActionNeeded = invoiceNeedsParentPay(inv);
+    if (!payActionNeeded) {
+      canPay = false;
+      canReport = false;
+      pl = "";
+    }
     var pendingNote =
       status === "pending_confirmation"
         ? '<p class="pp-invoice-card__meta">Thanks — we will confirm when the payment appears' +
@@ -7021,7 +7144,7 @@
       !isPaid &&
       status !== "void" &&
       (status === "unpaid" || status === "partial" || status === "pending_confirmation");
-    var showBankPanel = !isPaid && !isGcInvoice && !isLaInvoice;
+    var showBankPanel = !isPaid && !isGcInvoice && !isLaInvoice && payActionNeeded;
     var previewBtnHtml = "";
     if (showDraftFlow && pdf) {
       previewBtnHtml =
@@ -7143,7 +7266,10 @@
         ? '<p class="pp-invoice-card__amount">' +
           (schedule.length ? "Total " : "") +
           esc(amount) +
-          (dueNow && (status === "partial" || status === "unpaid") && schedule.length
+          (dueNow &&
+          payActionNeeded &&
+          (status === "partial" || status === "unpaid") &&
+          schedule.length
             ? " · Due now " + esc(dueNow)
             : "") +
           (paidSoFar ? " · Paid " + esc(paidSoFar) : "") +
@@ -7172,8 +7298,16 @@
       (due ? '<p class="pp-invoice-card__meta muted">Due ' + esc(due) + "</p>" : "") +
       pendingNote +
       paidNote +
+      (!isPaid &&
+      !payActionNeeded &&
+      !gcPending &&
+      !isLaInvoice &&
+      !canSetupGc &&
+      (status === "unpaid" || status === "partial")
+        ? '<p class="pp-muted pp-invoice-pay__note">No payment needed yet — we will ask closer to this due date.</p>'
+        : "") +
       (showBankPanel ? invoiceBankPanelHtml(inv, previewBtnHtml) : "") +
-      (isPaid ? "" : creditHtml) +
+      (isPaid || !payActionNeeded ? "" : creditHtml) +
       (isPaid
         ? ""
         : gcPending
