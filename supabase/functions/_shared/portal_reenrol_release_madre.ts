@@ -190,9 +190,10 @@ export type ReenrolReleaseApplyResult = {
 };
 
 /**
- * One-time corrections after mistaken auto moves / opens:
- * - Restore Mia to Northolt Wed 5.30–6.30 (dan line); clear Acton Wed 6–6.30 office place.
- * - CLOSED any NO PARTICIPANT left on Thushyan/Yoan/Yossi/Mohammed bands.
+ * Office corrections kept idempotent on every release pass:
+ * - Mia stays Northolt Wed 6–6.30 only (not Acton; not 5.30–6.30).
+ * - First half Northolt Wed 5.30–6 on dan stays bookable (NO PARTICIPANT).
+ * - CLOSED hold lines for Thushyan / Yoan / Yossi / Mohammed.
  */
 export function applyReenrolOfficeCorrectionsToMadre(doc: MadreDoc): {
   changed: number;
@@ -208,6 +209,49 @@ export function applyReenrolOfficeCorrectionsToMadre(doc: MadreDoc): {
       for (const day of days) {
         const weekday = norm(day.weekday);
         const slots = (day.slots as Array<Record<string, unknown>>) || [];
+
+        // Mia: shrink / place Northolt Wed 6–6.30 on dan; free 5.30–6.
+        if (/wed/i.test(weekday) && staffKey === "dan") {
+          let miaSlot: Record<string, unknown> | null = null;
+          let halfOpen: Record<string, unknown> | null = null;
+          for (const slot of slots) {
+            const client = norm(slot.client_name);
+            const time = norm(slot.time_slot);
+            const venue = norm(slot.venue);
+            const service = norm(slot.service);
+            if (!/northolt/i.test(venue) || !/aquatic/i.test(service)) continue;
+            if (/^mia$/i.test(client) && /5\.30\s*to\s*6\.30/i.test(time)) {
+              miaSlot = slot;
+            }
+            if (/^mia$/i.test(client) && /^6(\.00)?\s*to\s*6\.30/i.test(time)) {
+              miaSlot = slot;
+            }
+            if (
+              /5\.30\s*to\s*6(?!\.30)/i.test(time) &&
+              (client.toUpperCase() === "NO PARTICIPANT" || !client)
+            ) {
+              halfOpen = slot;
+            }
+          }
+          if (miaSlot && /5\.30\s*to\s*6\.30/i.test(norm(miaSlot.time_slot))) {
+            miaSlot.time_slot = "6 to 6.30";
+            if ("participant_info" in miaSlot) miaSlot.participant_info = "";
+            changed += 1;
+            notes.push("Mia Northolt 5.30–6.30 → 6–6.30 (dan)");
+            if (!halfOpen) {
+              const open530: Record<string, unknown> = {
+                ...miaSlot,
+                client_name: "NO PARTICIPANT",
+                time_slot: "5.30 to 6",
+                participant_info: "",
+              };
+              slots.push(open530);
+              changed += 1;
+              notes.push("Add Northolt Wed 5.30–6 NO PARTICIPANT (dan)");
+            }
+          }
+        }
+
         for (const slot of slots) {
           const client = norm(slot.client_name);
           const time = norm(slot.time_slot);
@@ -215,7 +259,7 @@ export function applyReenrolOfficeCorrectionsToMadre(doc: MadreDoc): {
           const service = norm(slot.service);
           const info = norm(slot.participant_info);
 
-          // Undo Mia Acton placement → open again (office will place her).
+          // Never keep Mia on Acton from auto-place.
           if (
             (/^mia$/i.test(client) || /re-enrol 26\/27.*acton|place_30/i.test(info)) &&
             /acton/i.test(venue) &&
@@ -227,22 +271,6 @@ export function applyReenrolOfficeCorrectionsToMadre(doc: MadreDoc): {
             if ("participant_info" in slot) slot.participant_info = "";
             changed += 1;
             notes.push(`Mia Acton undo → NO PARTICIPANT · ${weekday} ${time}`);
-            continue;
-          }
-
-          // Restore Mia on Northolt Wed 5.30–6.30 (where she was).
-          if (
-            client.toUpperCase() === "NO PARTICIPANT" &&
-            /northolt/i.test(venue) &&
-            /wed/i.test(weekday) &&
-            /5\.30\s*to\s*6\.30|5\.30\s*-\s*6\.30/i.test(time) &&
-            /aquatic/i.test(service) &&
-            (staffKey === "dan" || !staffKey)
-          ) {
-            slot.client_name = "Mia";
-            if ("participant_info" in slot) slot.participant_info = "";
-            changed += 1;
-            notes.push(`Restore Mia · Northolt ${weekday} ${time} (${staffKey || "staff"})`);
             continue;
           }
 
