@@ -1295,7 +1295,10 @@ Deno.serve(async (req) => {
   let crashCourse: {
     dates: Array<{ iso: string; activity: string; slot_label: string }>;
     week_ids: string[];
-  } = { dates: [], week_ids: [] };
+    /** True when any active crash booking still awaits parent payment. */
+    awaiting_payment: boolean;
+    booking_statuses: string[];
+  } = { dates: [], week_ids: [], awaiting_payment: false, booking_statuses: [] };
   if (wantGeneral) {
     const { data: reenrolRow } = await supabase
       .from("portal_re_enrolment_submissions")
@@ -1402,7 +1405,13 @@ Deno.serve(async (req) => {
         activity: g.activity,
         slot_label: mergeCrashSlotLabels(g.labels),
       }));
-      crashCourse = { dates, week_ids: weekIds };
+      const bookingStatuses = activeCrash.map((b) => clean(b.status, 40)).filter(Boolean);
+      crashCourse = {
+        dates,
+        week_ids: weekIds,
+        awaiting_payment: bookingStatuses.some((st) => st === "awaiting_payment"),
+        booking_statuses: bookingStatuses,
+      };
     }
   }
 
@@ -1583,7 +1592,9 @@ Deno.serve(async (req) => {
         ? false
         : !parentReenrolUi.reasons.includes("la_funded") ||
           (crashCourse.dates && crashCourse.dates.length > 0),
-      crash_course: isFormerClient ? { dates: [] } : crashCourse,
+      crash_course: isFormerClient
+        ? { dates: [], week_ids: [], awaiting_payment: false, booking_statuses: [] }
+        : crashCourse,
       pending_review_count: sessionsOut.filter((s) => s.message_pending).length,
       weekly_notes: weeklyNotes,
       weekly_note_latest: weeklyNoteLatest,

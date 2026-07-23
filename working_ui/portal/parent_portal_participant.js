@@ -969,12 +969,30 @@
     );
   }
 
+  /** Crash booking still awaiting parent payment (Edge flag or cached invoice check). */
+  function crashCourseAwaitingPayment(data) {
+    var c = data && data.crash_course;
+    if (!c) return false;
+    if (c.awaiting_payment === true) return true;
+    var list = c.booking_statuses || c.statuses;
+    if (Array.isArray(list)) {
+      for (var i = 0; i < list.length; i++) {
+        if (String(list[i] || "").toLowerCase() === "awaiting_payment") return true;
+      }
+    }
+    return false;
+  }
+
+  function hasUnpaidCrashForHub(data) {
+    return crashCourseAwaitingPayment(data) || !!(data && data._hubCrashUnpaid);
+  }
+
   function hubReenrolledChipHtml(data) {
     var booking = bookingSummary(data);
-    var laAuto =
-      booking.parent_action === "auto" &&
-      (booking.parent_action_reasons || []).indexOf("la_funded") >= 0;
-    if (!booking.submitted && !laAuto) return "";
+    var officeAuto = booking.parent_action === "auto";
+    var crashUnpaid = hasUnpaidCrashForHub(data);
+    /* Submitted, office auto (LA/Day Centre), or unpaid crash place. */
+    if (!booking.submitted && !officeAuto && !crashUnpaid) return "";
 
     if (isOutstandingSummerAhmedSibling(data)) {
       return (
@@ -985,8 +1003,8 @@
       );
     }
 
-    /* LA / NHS office-billed: never show “(unpaid)” — parent is not the payer. */
-    if (isOfficeBilledLaOrNhs(data)) {
+    /* LA / NHS office-billed term: plain Re-enrolled — unless parent-pay crash is unpaid. */
+    if (isOfficeBilledLaOrNhs(data) && !crashUnpaid) {
       return (
         '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip" data-pp-hub-reenrol-chip role="status" title="Re-enrolled for 2026/27">' +
         '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
@@ -996,9 +1014,9 @@
     }
 
     var pay = hubReenrolPayState(data);
-    if (pay === "unpaid") {
+    if (crashUnpaid || pay === "unpaid") {
       return (
-        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--unpaid" data-pp-hub-reenrol-chip role="status" title="Re-enrolled for 2026/27 — payment outstanding">' +
+        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--unpaid" data-pp-hub-reenrol-chip role="status" title="Re-enrolled — payment outstanding">' +
         '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
         "<span>Re-enrolled (unpaid)</span>" +
         "</span>"
@@ -1098,12 +1116,17 @@
   function applyHubReenrolPayVisual(host, data, state) {
     if (!host || !data) return;
     data._hubReenrolPay = state;
+    var tmp = document.createElement("div");
+    tmp.innerHTML = hubReenrolledChipHtml(data);
+    var next = tmp.firstChild;
     var chip = host.querySelector("[data-pp-hub-reenrol-chip]");
     if (chip) {
-      var tmp = document.createElement("div");
-      tmp.innerHTML = hubReenrolledChipHtml(data);
-      var next = tmp.firstChild;
       if (next) chip.replaceWith(next);
+      else chip.remove();
+    } else if (next) {
+      var row = host.querySelector(".pp-hub-hero__title-row");
+      var nameEl = row && row.querySelector(".pp-hub-hero__name");
+      if (nameEl) nameEl.insertAdjacentElement("afterend", next);
     }
     var block = host.querySelector('[data-pp-term-chips="this"]');
     if (block) {
@@ -1129,7 +1152,16 @@
 
   function mountHubReenrolPaymentState(host, data, opts) {
     if (!host || !data || isFormerClient(data)) return;
-    if (!familyAcceptedNextYear(data)) {
+    var hasCrashDates =
+      !!(data.crash_course &&
+        Array.isArray(data.crash_course.dates) &&
+        data.crash_course.dates.length);
+    var crashPending = crashCourseAwaitingPayment(data);
+    if (crashPending) {
+      data._hubCrashUnpaid = true;
+      applyHubReenrolPayVisual(host, data, "unpaid");
+    }
+    if (!familyAcceptedNextYear(data) && !crashPending && !hasCrashDates) {
       applyHubReenrolPayVisual(host, data, "unconfirmed");
       return;
     }
@@ -1138,19 +1170,40 @@
       applyHubReenrolPayVisual(host, data, "unpaid");
       return;
     }
-    /* True office-billed LA / NHS: plain Re-enrolled (not unpaid). */
-    if (isOfficeBilledLaOrNhs(data)) {
-      applyHubReenrolPayVisual(host, data, "settled");
-      return;
+    if (familyAcceptedNextYear(data) || crashPending) {
+      /* True office-billed LA / NHS: plain Re-enrolled — unless crash still unpaid. */
+      if (isOfficeBilledLaOrNhs(data) && !crashPending) {
+        applyHubReenrolPayVisual(host, data, "settled");
+      } else if (!crashPending) {
+        /* Private / Direct Payments: orange until invoices prove paid. */
+        applyHubReenrolPayVisual(host, data, "unpaid");
+      }
+    } else {
+      /* Crash dates present but not yet flagged awaiting_payment — resolve via invoices. */
+      applyHubReenrolPayVisual(host, data, "unconfirmed");
     }
-    /* Private / Direct Payments: orange until invoices prove paid. */
-    applyHubReenrolPayVisual(host, data, "unpaid");
     if (typeof opts.listInvoices !== "function") return;
     void opts
       .listInvoices()
       .then(function (j) {
         if (!host.isConnected) return;
         var invoices = (j && j.invoices) || [];
+        var crashUnpaidInv = invoices.some(function (inv) {
+          return isCrashInvoice(inv) && !isInvoiceFullyPaid(inv);
+        });
+        data._hubCrashUnpaid = crashUnpaidInv || crashCourseAwaitingPayment(data);
+        if (data._hubCrashUnpaid) {
+          applyHubReenrolPayVisual(host, data, "unpaid");
+          return;
+        }
+        if (!familyAcceptedNextYear(data)) {
+          applyHubReenrolPayVisual(host, data, "unconfirmed");
+          return;
+        }
+        if (isOfficeBilledLaOrNhs(data)) {
+          applyHubReenrolPayVisual(host, data, "settled");
+          return;
+        }
         var term = termInvoicesForHubPay(invoices);
         var booking = bookingSummary(data);
         var nextState = "unpaid";
