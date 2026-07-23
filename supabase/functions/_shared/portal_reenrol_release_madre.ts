@@ -54,6 +54,11 @@ export const REENROL_RELEASE_RULES: ReleaseRule[] = [
   },
   {
     kind: "all",
+    clients: ["Joel"],
+    reason: "not_continuing",
+  },
+  {
+    kind: "all",
     clients: ["Ayden W", "Ayden"],
     reason: "unconfirmed_deadline",
   },
