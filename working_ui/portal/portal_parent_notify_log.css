@@ -9,46 +9,28 @@
   min-width: 0;
 }
 
-/* Page head: full-width intro under title (not a right-side column) */
+/* No cramped right-column intro — hide empty head intro if any */
 #workspace:has(#portalParentNotifyLogRoot) > .admin-page-head {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 6px;
   margin-bottom: 10px;
 }
 #workspace:has(#portalParentNotifyLogRoot) > .admin-page-head .admin-page-head__intro {
-  flex: 1 1 100%;
-  max-width: 100%;
-  text-align: left;
-  font-size: 13px;
-  line-height: 1.4;
+  display: none !important;
 }
 
-.portal-pnlog-howto {
+/* Full-width help under the title (left-aligned, wraps across the page) */
+.portal-pnlog-info {
   margin: 0 0 12px;
   padding: 10px 12px;
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #334155;
   border-radius: 12px;
   border: 1px solid rgba(45, 132, 179, 0.22);
   background: #f4f9fc;
-  min-width: 0;
-}
-.portal-pnlog-howto__title {
-  margin: 0 0 6px;
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--pnlog-ink);
-}
-.portal-pnlog-howto__steps {
-  margin: 0;
-  padding-left: 1.2rem;
-  display: grid;
-  gap: 4px;
-  font-size: 13px;
-  line-height: 1.4;
-  color: #334155;
-  min-width: 0;
-}
-.portal-pnlog-howto__steps li {
   min-width: 0;
   overflow-wrap: break-word;
 }
@@ -104,8 +86,8 @@
   grid-template-columns: minmax(240px, 340px) minmax(0, 1fr);
   gap: 0;
   min-width: 0;
-  height: min(78vh, 760px);
-  max-height: min(78vh, 760px);
+  height: min(84vh, 860px);
+  max-height: min(84vh, 860px);
   border: 1px solid rgba(45, 132, 179, 0.22);
   border-radius: 14px;
   overflow: hidden;
@@ -142,13 +124,18 @@
 }
 
 .portal-pnlog-pane-active {
-  display: flex;
-  flex-direction: column;
+  /* Grid keeps thread + composer as separate rows so Meta template cannot eat the chat */
+  display: grid;
+  grid-template-rows: auto minmax(260px, 1fr) minmax(0, 36%);
   flex: 1 1 auto;
   min-height: 0;
   min-width: 0;
   height: 100%;
   overflow: hidden;
+}
+
+.portal-pnlog-pane-active--tpl {
+  grid-template-rows: auto minmax(280px, 1fr) minmax(0, 34%);
 }
 
 .portal-pnlog-pane-active[hidden] {
@@ -346,19 +333,19 @@
   color: #334155;
 }
 
-/* Thread keeps a real share of the pane — Meta template composer must not cover it */
+/* Thread row — always tall enough to read history while Meta template is open */
 .portal-pnlog-thread-scroll {
-  flex: 1 1 55%;
-  min-height: min(220px, 42%);
+  min-height: 0;
+  height: 100%;
   overflow: auto;
   padding: 12px 14px 8px;
   -webkit-overflow-scrolling: touch;
+  background: #fafcff;
 }
 
 #portalPnlogComposerMount {
-  flex: 0 1 auto;
   min-height: 0;
-  max-height: 48%;
+  height: 100%;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   border-top: 2px solid var(--pnlog-yellow);
@@ -761,9 +748,23 @@
   z-index: 2;
 }
 
+.portal-pnlog-composer--tpl {
+  gap: 4px;
+  padding: 8px 10px 10px;
+}
+.portal-pnlog-composer--tpl .portal-pnlog-composer__to {
+  display: none;
+}
 .portal-pnlog-composer--tpl .portal-pnlog-composer__input {
-  min-height: 56px;
-  max-height: 12vh;
+  min-height: 44px;
+  max-height: 9vh;
+}
+.portal-pnlog-composer--tpl .portal-pnlog-composer__tpl-preview {
+  max-height: 3.6rem;
+}
+.portal-pnlog-composer--tpl .portal-pnlog-composer__tpl-shell {
+  padding: 6px 8px;
+  margin: 0 0 4px;
 }
 
 .portal-pnlog-composer--disabled {

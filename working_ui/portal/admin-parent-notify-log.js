@@ -1704,6 +1704,13 @@
       replyKey +
       "|e:" +
       editKey;
+    var paneActive = document.getElementById("portalPnlogPaneActive");
+    if (paneActive) {
+      paneActive.classList.toggle(
+        "portal-pnlog-pane-active--tpl",
+        !!(t && !threadHasOpenWhatsappSession(t) && phoneKey),
+      );
+    }
     if (!force && state.composerSig === nextSig && mount.querySelector("#portalPnlogComposerInput, .portal-pnlog-composer--disabled")) {
       syncComposerSendingState();
       return;
@@ -1839,8 +1846,8 @@
     if (needsTemplate) {
       sessionNote =
         '<div class="portal-pnlog-composer__tpl-banner" role="status">' +
-        "<strong>Needs Meta template</strong> — parent has not messaged in the last 24h. " +
-        "Edit only the middle box (<code>{{1}}</code>). Scroll up to read the full chat." +
+        "<strong>Needs Meta template</strong> — no open 24h window. " +
+        "Edit only <code>{{1}}</code> below. <strong>Chat history stays above — scroll it to read.</strong>" +
         "</div>";
       templateShell =
         '<div class="portal-pnlog-composer__tpl-shell">' +
@@ -2005,7 +2012,10 @@
 
     if (!selected) {
       if (emptyEl) emptyEl.hidden = false;
-      if (activeEl) activeEl.hidden = true;
+      if (activeEl) {
+        activeEl.hidden = true;
+        activeEl.classList.remove("portal-pnlog-pane-active--tpl");
+      }
       state.composerSig = "";
       var mountClear = document.getElementById("portalPnlogComposerMount");
       if (mountClear) mountClear.innerHTML = "";
@@ -2676,18 +2686,16 @@
   }
 
   function viewHtml() {
-    // Short page-intro for the admin head; full how-to sits in-body (left-aligned).
+    // No page-intro in the admin head (that column stays narrow/right). Full-width info lives in-body.
     return (
-      '<p class="page-intro">WhatsApp with families — pick a chat, read the thread, reply below. Delivery: Sent → Delivered → Read.</p>' +
       '<div id="portalParentNotifyLogRoot" class="portal-day-ops-embed portal-pnlog-root">' +
-      '<aside class="portal-pnlog-howto" aria-label="How to use Family messages">' +
-      '<p class="portal-pnlog-howto__title">How to use this screen</p>' +
-      '<ol class="portal-pnlog-howto__steps">' +
-      "<li><strong>Left:</strong> choose a family. Search works even if there is no WhatsApp history yet.</li>" +
-      "<li><strong>Centre:</strong> read the full chat thread (scroll if needed). This stays visible even when a Meta template is required.</li>" +
-      "<li><strong>Bottom:</strong> type your reply. If you see <em>Needs Meta template</em>, only the middle box is editable — then Send.</li>" +
-      "<li>Use <strong>Reply</strong> on a bubble to quote it. Photos/files only when the 24h window is open. Auto-refresh every 15s.</li>" +
-      "</ol></aside>" +
+      '<p class="portal-pnlog-info" role="note">' +
+      "WhatsApp conversations via the Business API — pick a family on the left, read the thread, and reply in the box below (no email on this screen). " +
+      "Use <strong>Reply</strong> on a bubble to quote that message (like swipe-to-reply). " +
+      "Search also finds families from Contacts even if there is no WhatsApp history yet. " +
+      "Delivery ticks: Sent → Delivered → Read. Refreshes every 15s. " +
+      "When you see <em>Needs Meta template</em>, scroll the chat above the purple box to read earlier messages." +
+      "</p>" +
       '<div class="portal-pnlog-toolbar">' +
       '<input type="search" id="portalParentNotifyLogSearch" class="inp portal-pnlog-toolbar__search" placeholder="Search parent, participant, phone…" autocomplete="off" />' +
       '<select id="portalParentNotifyLogOutcome" class="sel portal-pnlog-toolbar__sel" aria-label="Filter">' +
