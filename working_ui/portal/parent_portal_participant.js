@@ -7031,9 +7031,9 @@
       var extraActs = "";
       if (canSetupGc) {
         extraActs +=
-          '<button type="button" class="pp-btn pp-btn--primary pp-invoice-card__btn-full" data-pp-setup-gocardless="' +
+          '<button type="button" class="pp-btn pp-btn--gc-setup-needed pp-invoice-card__btn-full" data-pp-setup-gocardless="' +
           esc(inv.id) +
-          '">' +
+          '" aria-label="Set up Direct Payment — action required">' +
           invoiceBtnLabel("gocardless", "Set up Direct Payment") +
           "</button>";
       }
@@ -7225,13 +7225,16 @@
           if (gcMeta.mandate_active) {
             gcHost.hidden = false;
             gcHost.innerHTML =
-              '<p class="pp-muted pp-invoice-pay__note">Direct Payment mandate is active. Upcoming invoices are collected automatically.</p>';
+              '<button type="button" class="pp-btn pp-btn--gc-setup-done pp-invoice-card__btn-full" disabled aria-disabled="true">' +
+              invoiceBtnLabel("gocardless", "Direct Payment set up") +
+              "</button>" +
+              '<p class="pp-muted pp-invoice-pay__note">Mandate is active. Upcoming invoices are collected automatically.</p>';
           } else if (gcMeta.setup_available && !gcSetupOnCard) {
             gcHost.hidden = false;
             gcHost.innerHTML =
               '<p class="pp-invoice-pay__title">Direct Payment (GoCardless)</p>' +
               '<p class="pp-muted pp-invoice-pay__note">Authorise once with your bank. We then collect each Direct Payment invoice on its due date.</p>' +
-              '<button type="button" class="pp-btn pp-btn--primary" data-pp-setup-gocardless="">' +
+              '<button type="button" class="pp-btn pp-btn--gc-setup-needed" data-pp-setup-gocardless="" aria-label="Set up Direct Payment — action required">' +
               invoiceBtnLabel("gocardless", "Set up Direct Payment") +
               "</button>";
           } else {
