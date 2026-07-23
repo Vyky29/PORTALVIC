@@ -65,10 +65,35 @@
     }
   }
 
+  /** Parent table: day/month only, e.g. 16/7 */
+  function formatDateDayMonth(iso) {
+    const s = isoFromAny(iso);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return clean(iso) || "—";
+    try {
+      const p = s.split("-").map(Number);
+      if (!p[0] || !p[1] || !p[2]) return s;
+      return String(p[2]) + "/" + String(p[1]);
+    } catch (_) {
+      return s;
+    }
+  }
+
   function formatServiceTime(raw) {
     const t = clean(raw);
     if (!t) return "";
     return t.replace(/\./g, ":").replace(/\s*-\s*/g, " to ");
+  }
+
+  /** Split programme label for stacked parent table cells: Aquatic / Activity. */
+  function programmeNameLines(raw) {
+    var name = displayProgrammeName(raw);
+    if (!name || name === "—") return [];
+    if (/^multi[\s_-]*activity$/i.test(name)) return ["Multi", "Activity"];
+    var activityTail = name.match(/^(.+?)\s+Activity$/i);
+    if (activityTail) return [activityTail[1], "Activity"];
+    var parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) return [parts[0], parts.slice(1).join(" ")];
+    return [name];
   }
 
   /** Canonical programme label — Aquatic / Climbing / Physical / Multi-Activity only. */
@@ -1059,8 +1084,10 @@
   }
 
   function parentFeedbackTableRow(row) {
-    const dateLine = formatDateLong(row.session_date);
+    const dateFull = formatDateLong(row.session_date);
+    const dateLine = formatDateDayMonth(row.session_date);
     const svc = displayProgrammeName(row.service) || "—";
+    const svcLines = programmeNameLines(row.service);
     const timeLine = parentRowIsAbsent(row) ? "" : formatServiceTime(row.session_time);
     const instructor = esc(
       clean(row.instructor || row.feedback_by_name || row.completed_by_name) || "—",
@@ -1071,13 +1098,34 @@
       typeof global.PortalSwimSessionAxes.swimAxesDisplayHtml === "function"
         ? global.PortalSwimSessionAxes.swimAxesDisplayHtml(row, esc)
         : "";
+    const svcStack =
+      (svcLines.length
+        ? svcLines
+            .map(function (line, idx) {
+              return (
+                '<span class="pcso-tbl__svc-line' +
+                (idx === 0 ? " pcso-tbl__svc-main" : "") +
+                '">' +
+                esc(line) +
+                "</span>"
+              );
+            })
+            .join("")
+        : '<span class="pcso-tbl__svc-main">' + esc(svc) + "</span>") +
+      (timeLine ? '<span class="pcso-tbl__sub">' + esc(timeLine) + "</span>" : "");
     return (
       '<tr' +
       (parentRowIsAbsent(row) ? ' class="pcso-tbl__row--absent"' : "") +
       ">" +
-      '<td class="pcso-tbl__date"><span class="pcso-tbl__date-main" title="' + esc(dateLine) + '">' + esc(dateLine) + "</span></td>" +
-      '<td class="pcso-tbl__svc"><span class="pcso-tbl__svc-main" title="' + esc(svc) + '">' + esc(svc) + "</span>" +
-      (timeLine ? '<span class="pcso-tbl__sub">' + esc(timeLine) + "</span>" : "") +
+      '<td class="pcso-tbl__date"><span class="pcso-tbl__date-main" title="' +
+      esc(dateFull) +
+      '">' +
+      esc(dateLine) +
+      "</span></td>" +
+      '<td class="pcso-tbl__svc" title="' +
+      esc(svc + (timeLine ? " · " + timeLine : "")) +
+      '">' +
+      svcStack +
       swimAdd +
       "</td>" +
       '<td class="pcso-tbl__eng">' + parentEngagementCell(row) + "</td>" +
