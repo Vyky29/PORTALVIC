@@ -364,7 +364,8 @@ export async function createPortalFamilyInvoice(
       billToLines,
       participantName: displayName,
       paid: false,
-      isDraft: true,
+      isDraft: !isLaFunded,
+      showStamp: !isLaFunded,
       paymentSchedule: createSchedule,
       amountPaidGbp: 0,
     });
@@ -625,6 +626,7 @@ export async function regeneratePortalInvoiceSharePdf(
       participantName: displayName,
       paid: isPaid,
       isDraft: !isPaid,
+      showStamp: paymentMethodHint !== "la_funded",
       paymentSchedule,
       amountPaidGbp,
     });

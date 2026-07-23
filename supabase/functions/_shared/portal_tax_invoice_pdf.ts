@@ -41,6 +41,11 @@ export type PortalInvoicePdfInput = {
    * Paid invoices always get the green PAID stamp instead.
    */
   isDraft?: boolean;
+  /**
+   * When false, omit both DRAFT and PAID announcement stamps.
+   * Used for LA managed / NHS managed funder invoices.
+   */
+  showStamp?: boolean;
   amountPaidGbp?: number | null;
   creditAppliedGbp?: number | null;
   /** Instalment plan rows (re-enrolment term invoices). */
@@ -467,8 +472,10 @@ export async function buildPortalTaxInvoicePdf(
 
   // Announcements round stamp — BELOW totals (never over Subtotal/TOTAL figures).
   // Paid → green PAID INVOICE; otherwise red DRAFT INVOICE until paid.
-  const showPaidStamp = !!input.paid;
-  const showDraftStamp = !showPaidStamp && input.isDraft !== false;
+  // LA / NHS funder invoices: no stamp (showStamp: false).
+  const stampsEnabled = input.showStamp !== false;
+  const showPaidStamp = stampsEnabled && !!input.paid;
+  const showDraftStamp = stampsEnabled && !showPaidStamp && input.isDraft !== false;
   let stampReserveBottom = y;
   if (showPaidStamp || showDraftStamp) {
     try {

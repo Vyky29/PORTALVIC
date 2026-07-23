@@ -2644,7 +2644,7 @@
           enrolment_cadence_label: null,
           auto_continue: true,
           auto_continue_note:
-            "LA/NHS funded place — we invoice your funder. No parent payment cadence choice.",
+            "LA/NHS funded place — we invoice your funder in 11 monthly invoices (September–July). No parent payment cadence choice.",
         },
       };
     }

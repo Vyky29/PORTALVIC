@@ -1,5 +1,6 @@
 // portal-reenrolment-submit — save parent re-enrolment 2026/27 choices for admin review.
 // Parent-pays plans: auto-create INV-P instalment invoices from the chosen schedule.
+// LA/NHS funder (funder_invoice): 11 monthly INV-P (Sep→Jul), hidden until office shares.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
@@ -18,6 +19,7 @@ import {
   termTotalsFromWeeklySlots,
 } from "../_shared/reenrolment_auto_invoices.ts";
 import {
+  buildReenrolMonthlyLineItems,
   buildReenrolTermLineItems,
   lineItemsToDescription,
   loadProductMap,
@@ -187,9 +189,20 @@ Deno.serve(async (req) => {
             ? (weeklyChoices as Record<string, { choice?: string }>)
             : null;
 
+        const isFunderMonthly = plan.paymentMethodHint === "la_funded";
+
         for (const inv of plan.termInvoices) {
           let lineItems =
-            inv.term && weeklySlots.length && !inv.isAdminFee
+            inv.billingMonth && weeklySlots.length && !inv.isAdminFee
+              ? buildReenrolMonthlyLineItems({
+                slots: weeklySlots,
+                weeklyChoices: weeklyChoicesMap,
+                monthYm: inv.billingMonth,
+                monthAmountGbp: inv.amountGbp,
+                vatMode: plan.vatMode,
+                productMap,
+              })
+              : inv.term && weeklySlots.length && !inv.isAdminFee
               ? buildReenrolTermLineItems({
                 slots: weeklySlots,
                 weeklyChoices: weeklyChoicesMap,
@@ -212,13 +225,16 @@ Deno.serve(async (req) => {
             vatMode: plan.vatMode,
             lineDescription,
             reference: inv.reference,
-            notes: null,
+            notes: isFunderMonthly
+              ? "LA/NHS funder monthly invoice (Sep–Jul) — office shares with funder"
+              : null,
             title: `Invoice — ${participantName} · ${inv.label}`,
-            shareStatus: "ready",
+            // Funder invoices stay hidden until office is ready to send to LA/NHS.
+            shareStatus: isFunderMonthly ? "hidden" : "ready",
             paymentMethodHint: plan.paymentMethodHint,
             createdVia: "reenrolment",
             ownerUserId: ownerId,
-            readyBy: "reenrolment_auto",
+            readyBy: isFunderMonthly ? "reenrolment_funder_monthly" : "reenrolment_auto",
             paymentSchedule: inv.paymentSchedule,
             billingTerm: inv.term,
             lineItems,
@@ -237,6 +253,7 @@ Deno.serve(async (req) => {
             amount_gbp: inv.amountGbp,
             due_date: inv.dueDateIso,
             billing_term: inv.term,
+            billing_month: inv.billingMonth || null,
             instalments: inv.paymentSchedule.length,
           });
         }

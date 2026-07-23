@@ -202,15 +202,14 @@ function isoDateUtc(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-/** Compact exact dates for one weekly slot, grouped by month. */
-export function slotTermSessionDates(
+function collectTermSessionDates(
   term: ReenrolTerm,
   day: string,
-  expectedCount: number,
-): string | null {
+  expectedCount?: number,
+): Date[] {
   const dayKey = String(day || "").trim().toLowerCase().replace(/s$/, "");
   const dayIndex = DAY_INDEX[dayKey];
-  if (!Number.isInteger(dayIndex)) return null;
+  if (!Number.isInteger(dayIndex)) return [];
   const window = TERM_DATE_WINDOWS[term][dayIndex === 0 || dayIndex === 6 ? "weekend" : "weekday"];
   const start = new Date(`${window.start}T00:00:00Z`);
   const end = new Date(`${window.end}T00:00:00Z`);
@@ -222,10 +221,13 @@ export function slotTermSessionDates(
     dates.push(new Date(dt));
   }
   const count = Math.max(0, Math.round(Number(expectedCount) || 0));
-  const selected = count > 0 ? dates.slice(0, count) : dates;
-  if (!selected.length) return null;
+  return count > 0 ? dates.slice(0, count) : dates;
+}
+
+export function formatGroupedSessionDates(dates: Date[]): string | null {
+  if (!dates.length) return null;
   const grouped = new Map<string, number[]>();
-  for (const dt of selected) {
+  for (const dt of dates) {
     const month = dt.toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" });
     if (!grouped.has(month)) grouped.set(month, []);
     grouped.get(month)!.push(dt.getUTCDate());
@@ -236,6 +238,139 @@ export function slotTermSessionDates(
       .map(([month, days]) => `${days.join(", ")} ${month}`)
       .join("; ")
   );
+}
+
+/** Compact exact dates for one weekly slot, grouped by month. */
+export function slotTermSessionDates(
+  term: ReenrolTerm,
+  day: string,
+  expectedCount: number,
+): string | null {
+  return formatGroupedSessionDates(collectTermSessionDates(term, day, expectedCount));
+}
+
+/** All in-term session dates for a weekday across Autumn–Summer 26/27. */
+export function slotYearSessionDates(day: string): Date[] {
+  const terms: ReenrolTerm[] = ["autumn", "spring", "summer"];
+  const out: Date[] = [];
+  for (const term of terms) {
+    out.push(...collectTermSessionDates(term, day));
+  }
+  out.sort((a, b) => a.getTime() - b.getTime());
+  return out;
+}
+
+export type ReenrolMonthlyLineBuildInput = {
+  slots: ParsedSlot[];
+  weeklyChoices?: Record<string, { choice?: string }> | null;
+  /** Calendar month YYYY-MM (Sep 2026 → Jul 2027). */
+  monthYm: string;
+  /** Invoice total for this month (booking ÷ 11 share). */
+  monthAmountGbp: number;
+  vatMode: PortalInvoiceVatMode;
+  productMap: Map<string, ProductMapRow>;
+};
+
+/**
+ * Per-service lines for one LA/NHS monthly funder invoice (sessions in that month only).
+ * Amounts are scaled so lines sum to monthAmountGbp.
+ */
+export function buildReenrolMonthlyLineItems(
+  input: ReenrolMonthlyLineBuildInput,
+): PortalInvoiceLineItem[] {
+  const choices = input.weeklyChoices || {};
+  const monthYm = String(input.monthYm || "").slice(0, 7);
+  if (!/^\d{4}-\d{2}$/.test(monthYm)) return [];
+
+  type Agg = {
+    service_key: string;
+    description: string;
+    details: string[];
+    dates: Date[];
+    naturalGbp: number;
+  };
+  const byKey = new Map<string, Agg>();
+
+  for (const rawSlot of input.slots || []) {
+    if (!rawSlot) continue;
+    const slot = repairSlotDayTime(rawSlot);
+    const id = String(slot.id || "");
+    const choice = id && choices[id] ? String(choices[id].choice || "keep").toLowerCase() : "keep";
+    if (choice === "withdraw") continue;
+
+    const day =
+      weekdayFromText(slot.day || "") ||
+      weekdayFromText(slot.displayLabel || "") ||
+      String(slot.day || "").trim();
+    const monthDates = slotYearSessionDates(day).filter((d) => isoDateUtc(d).startsWith(monthYm));
+    if (!monthDates.length) continue;
+
+    const annualSessions = Math.max(1, Number(slot.sessions?.annual) || monthDates.length);
+    const annualTotal = Number(slot.termTotals?.annual) || 0;
+    const unit =
+      annualTotal > 0
+        ? annualTotal / annualSessions
+        : Number(slot.pricePerSession) || 0;
+    const naturalGbp = round2(unit * monthDates.length);
+
+    const service_key = serviceKeyFromSlot(slot);
+    const description = lineDescriptionForSlot(slot);
+    const detail = slotSessionDetail(slot);
+    const aggregateKey = `${service_key}\u0000${detail}`;
+    const prev = byKey.get(aggregateKey);
+    if (prev) {
+      prev.dates.push(...monthDates);
+      prev.naturalGbp = round2(prev.naturalGbp + naturalGbp);
+      if (description.length > prev.description.length) prev.description = description;
+      if (detail && !prev.details.includes(detail)) prev.details.push(detail);
+    } else {
+      byKey.set(aggregateKey, {
+        service_key,
+        description,
+        details: detail ? [detail] : [],
+        dates: [...monthDates],
+        naturalGbp,
+      });
+    }
+  }
+
+  const aggs = Array.from(byKey.values()).map((a) => {
+    a.dates.sort((x, y) => x.getTime() - y.getTime());
+    return a;
+  });
+  if (!aggs.length) return [];
+
+  const target = round2(Number(input.monthAmountGbp) || 0);
+  const naturalSum = round2(aggs.reduce((s, a) => s + a.naturalGbp, 0));
+  const lines: PortalInvoiceLineItem[] = [];
+  let allocated = 0;
+  for (let i = 0; i < aggs.length; i++) {
+    const agg = aggs[i];
+    const mapRow = input.productMap.get(agg.service_key);
+    const label = mapRow?.label || agg.description.split("—")[0].trim();
+    const qty = Math.max(1, agg.dates.length);
+    let amount =
+      i === aggs.length - 1
+        ? round2(target - allocated)
+        : naturalSum > 0
+          ? round2((target * agg.naturalGbp) / naturalSum)
+          : round2(target / aggs.length);
+    if (i < aggs.length - 1) allocated = round2(allocated + amount);
+    if (amount < 0) amount = 0;
+    lines.push({
+      service_key: agg.service_key,
+      description: label || agg.description,
+      detail: agg.details.join(" · ") || null,
+      dates: formatGroupedSessionDates(agg.dates),
+      quantity: qty,
+      unit_price_gbp: round4(amount / qty),
+      amount_gbp: amount,
+      xero_item_code: xeroItemCodeForService(mapRow, input.vatMode),
+    });
+  }
+
+  lines.sort((a, b) => a.service_key.localeCompare(b.service_key));
+  return lines;
 }
 
 export async function loadProductMap(

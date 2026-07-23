@@ -25,6 +25,8 @@ export type ReenrolTermInvoice = {
   reference: string;
   paymentSchedule: InvoicePaymentScheduleRow[];
   isAdminFee?: boolean;
+  /** LA/NHS funder monthly invoice — calendar month YYYY-MM (Sep→Jul). */
+  billingMonth?: string | null;
 };
 
 export type ReenrolTermTotals = {
@@ -398,6 +400,35 @@ export function reenrolmentSchedulePlanPhrase(args: {
   return "";
 }
 
+/** 11 funder months Sep 2026 → Jul 2027 (LA managed / NHS managed only). */
+const FUNDER_MONTHLY_11: Array<{
+  term: ReenrolTermKey;
+  label: string;
+  ym: string;
+  dueIso: string;
+}> = MONTHLY_TERM_PLAN.flatMap((block) =>
+  block.months.map((m) => {
+    const ym = String(m.dueIso || "").slice(0, 7);
+    return {
+      term: block.term as ReenrolTermKey,
+      label: m.label,
+      ym,
+      dueIso: m.dueIso,
+    };
+  }),
+);
+
+function splitEqualAcrossMonths(totalGbp: number, n: number): number[] {
+  const count = Math.max(1, Math.round(n) || 1);
+  const total = round2(totalGbp);
+  if (total <= 0) return Array.from({ length: count }, () => 0);
+  const per = round2(total / count);
+  const out = Array.from({ length: count }, () => per);
+  const head = round2(per * (count - 1));
+  out[count - 1] = round2(total - head);
+  return out;
+}
+
 export function buildReenrolmentInstalments(args: {
   funding: unknown;
   termTotals: ReenrolTermTotals | null;
@@ -408,7 +439,12 @@ export function buildReenrolmentInstalments(args: {
   /** @deprecated Flat list — use termInvoices. Kept for counts in parent copy. */
   instalments: ReenrolInstalment[];
   vatMode: PortalInvoiceVatMode;
-  paymentMethodHint: "bank_transfer" | "gocardless" | "payment_link" | "other";
+  paymentMethodHint:
+    | "bank_transfer"
+    | "gocardless"
+    | "payment_link"
+    | "la_funded"
+    | "other";
   scheduleCode: string | null;
   schedulePlanPhrase: string | null;
   skipReason: string | null;
@@ -434,8 +470,59 @@ export function buildReenrolmentInstalments(args: {
   }
   const choices = choicesRaw as Record<string, unknown>;
   const billingMode = clean(choices.billing_mode, 40).toLowerCase();
+
+  // LA managed / NHS managed: 11 monthly funder invoices (Sep→Jul).
+  // Privately funded + Direct Payments do not use funder_invoice — unchanged below.
   if (billingMode === "funder_invoice") {
-    return { ...empty, skipReason: "funder_invoice" };
+    const totals = args.termTotals;
+    const annual =
+      totals && totals.annual > 0
+        ? totals.annual
+        : totals
+          ? round2((totals.autumn || 0) + (totals.spring || 0) + (totals.summer || 0))
+          : num(choices.estimated_annual_total);
+    if (annual <= 0) {
+      return {
+        ...empty,
+        vatMode: "exempt",
+        paymentMethodHint: "la_funded",
+        scheduleCode: "funder_monthly_11",
+        skipReason: "zero_total",
+      };
+    }
+    const amounts = splitEqualAcrossMonths(annual, FUNDER_MONTHLY_11.length);
+    const termOut: ReenrolTermInvoice[] = [];
+    for (let i = 0; i < FUNDER_MONTHLY_11.length; i++) {
+      const m = FUNDER_MONTHLY_11[i];
+      const amountGbp = amounts[i] || 0;
+      if (amountGbp <= 0) continue;
+      termOut.push({
+        term: m.term,
+        label: m.label,
+        amountGbp,
+        dueDateIso: m.dueIso,
+        lineDescription: buildReenrolmentInvoiceLeadDescription(academicYear, m.label),
+        reference: instalmentInvoiceReference(m.label, academicYear),
+        paymentSchedule: [],
+        billingMonth: m.ym,
+      });
+    }
+    return {
+      termInvoices: termOut,
+      instalments: termOut.map((inv) => ({
+        label: inv.label,
+        dueDateIso: inv.dueDateIso,
+        amountGbp: inv.amountGbp,
+        lineDescription: inv.lineDescription,
+        reference: inv.reference,
+      })),
+      vatMode: "exempt",
+      paymentMethodHint: "la_funded",
+      scheduleCode: "funder_monthly_11",
+      schedulePlanPhrase:
+        "11 monthly funder invoices (September–July) — booking total split equally; sessions listed per month",
+      skipReason: termOut.length ? null : "no_instalments",
+    };
   }
 
   const payCode = clean(choices.payment_method_code, 40).toLowerCase();
