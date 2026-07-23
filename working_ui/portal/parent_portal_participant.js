@@ -3365,7 +3365,7 @@
       var nextDates = findTermSessionDates(data).filter(function (d) {
         return d.iso > summerTo;
       });
-      pushTermAccordionsFromDates(nextDates, true, " Term 26/27");
+      pushTermAccordionsFromDates(nextDates, true, " Term 26/27 · Re-enrolled");
     } else if (todayIso > summerTo) {
       // Summer 25/26 finished and still not confirmed → 26/27 chips in red.
       var pendingDates = findUnconfirmedNextYearSessionDates(data);
