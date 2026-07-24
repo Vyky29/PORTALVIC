@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Day Centre Rota &amp; Career Framework 2026–27 · clubSENsational</title>
+<title>Day Centre Rota 2026–27 · clubSENsational</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
@@ -46,7 +46,6 @@
       var(--paper);
   }
   .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 72px; }
-
   .hero {
     background: var(--card);
     border: 1px solid var(--line);
@@ -63,387 +62,159 @@
     width: 6px;
     background: linear-gradient(180deg, var(--gold), var(--teal));
   }
-  .hero-top {
-    display: flex;
-    gap: 18px;
-    align-items: center;
-    margin-bottom: 14px;
-  }
+  .hero-top { display: flex; gap: 18px; align-items: center; margin-bottom: 14px; }
   .hero-top img { width: 88px; height: auto; display: block; }
   .eyebrow {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--teal);
-    margin: 0 0 6px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--teal); margin: 0 0 6px;
   }
   h1 {
     font-family: Fraunces, Georgia, serif;
     font-size: clamp(1.45rem, 3.2vw, 2rem);
-    font-weight: 700;
-    line-height: 1.18;
-    margin: 0 0 8px;
-    color: var(--navy);
+    font-weight: 700; line-height: 1.18; margin: 0 0 8px; color: var(--navy);
   }
-  .hero-lead {
-    margin: 0 0 14px;
-    color: var(--muted);
-    max-width: 48rem;
-  }
-  .hero-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
+  .hero-lead { margin: 0 0 14px; color: var(--muted); max-width: 48rem; }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: 8px; }
   .pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--teal-soft);
-    color: var(--teal-deep);
-    border-radius: 999px;
-    padding: 4px 11px;
-    font-size: 12px;
-    font-weight: 600;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--teal-soft); color: var(--teal-deep);
+    border-radius: 999px; padding: 4px 11px; font-size: 12px; font-weight: 600;
   }
   .pill.warn { background: var(--amber-soft); color: var(--amber); }
   .pill.gold { background: var(--gold-soft); color: #8a6500; }
-
   .toc {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 14px 18px;
-    margin-bottom: 22px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 16px;
-    font-size: 13px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 14px 18px; margin-bottom: 22px; display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px;
   }
-  .toc a {
-    color: var(--teal-deep);
-    text-decoration: none;
-    font-weight: 600;
-  }
+  .toc a { color: var(--teal-deep); text-decoration: none; font-weight: 600; }
   .toc a:hover { text-decoration: underline; }
-
   section.block {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 22px 24px;
-    margin-bottom: 18px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 22px 24px; margin-bottom: 18px;
   }
+  .section-badge {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: #fff; background: var(--navy);
+    border-radius: 6px; padding: 3px 8px; margin: 0 0 8px;
+  }
+  .section-badge.have { background: var(--teal-deep); }
+  .section-badge.miss { background: var(--amber); }
+  .section-badge.hypo { background: #8a6500; }
+  .section-badge.still { background: var(--rose); }
+  .section-badge.app { background: #4a5a78; }
   h2 {
-    font-family: Fraunces, Georgia, serif;
-    font-size: 1.35rem;
-    margin: 0 0 6px;
-    color: var(--navy);
+    font-family: Fraunces, Georgia, serif; font-size: 1.35rem; margin: 0 0 6px; color: var(--navy);
   }
-  .section-lead {
-    margin: 0 0 16px;
-    color: var(--muted);
-    font-size: 0.95rem;
-  }
+  .section-lead { margin: 0 0 16px; color: var(--muted); font-size: 0.95rem; }
   h3 {
-    font-size: 0.95rem;
-    margin: 18px 0 8px;
-    color: var(--navy);
-    letter-spacing: 0.02em;
+    font-size: 0.95rem; margin: 18px 0 8px; color: var(--navy); letter-spacing: 0.02em;
   }
   h3:first-of-type { margin-top: 4px; }
-
-  .grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   @media (max-width: 760px) {
     .grid-2 { grid-template-columns: 1fr; }
     .hero-top { flex-direction: column; align-items: flex-start; }
   }
-
   .stat-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    margin-bottom: 16px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px;
   }
-  @media (max-width: 760px) {
-    .stat-row { grid-template-columns: 1fr 1fr; }
-  }
+  @media (max-width: 760px) { .stat-row { grid-template-columns: 1fr 1fr; } }
   .stat {
-    background: var(--paper);
-    border: 1px solid var(--line);
-    border-top: 3px solid var(--gold);
-    border-radius: 10px;
-    padding: 10px 12px;
+    background: var(--paper); border: 1px solid var(--line); border-top: 3px solid var(--gold);
+    border-radius: 10px; padding: 10px 12px;
   }
   .stat strong {
-    display: block;
-    font-family: Fraunces, Georgia, serif;
-    font-size: 1.35rem;
-    color: var(--navy);
-    line-height: 1.1;
+    display: block; font-family: Fraunces, Georgia, serif; font-size: 1.35rem;
+    color: var(--navy); line-height: 1.1;
   }
-  .stat span {
-    font-size: 12px;
-    color: var(--muted);
-    font-weight: 600;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-    margin: 8px 0 4px;
-  }
+  .stat span { font-size: 12px; color: var(--muted); font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0 4px; }
   th, td {
-    border: 1px solid var(--line);
-    padding: 8px 10px;
-    text-align: left;
-    vertical-align: top;
+    border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top;
   }
   th {
-    background: var(--navy);
-    color: #fff;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 600;
+    background: var(--navy); color: #fff; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.05em; font-weight: 600;
   }
   tbody tr:nth-child(even) { background: #fafbfc; }
   .muted { color: var(--muted); }
   .tbc {
-    display: inline-block;
-    background: var(--amber-soft);
-    color: var(--amber);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    padding: 1px 6px;
-    border-radius: 4px;
-    margin-left: 4px;
+    display: inline-block; background: var(--amber-soft); color: var(--amber);
+    font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+    padding: 1px 6px; border-radius: 4px; margin-left: 4px;
   }
-  .off {
-    color: var(--rose);
-    font-weight: 600;
-    background: var(--rose-soft);
-  }
+  .off { color: var(--rose); font-weight: 600; background: var(--rose-soft); }
   .ok-cell { background: var(--green-soft); }
   .soft-cell { background: var(--sky-soft); }
-
   .chip {
-    display: inline-block;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 999px;
-    margin: 1px 2px 1px 0;
-    white-space: nowrap;
+    display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px;
+    border-radius: 999px; margin: 1px 2px 1px 0; white-space: nowrap;
   }
   .chip-a { background: #d1f0f2; color: var(--band-a); }
   .chip-b { background: #dbeafe; color: var(--band-b); }
   .chip-c { background: #ede9fe; color: var(--band-c); }
   .chip-m { background: var(--gold-soft); color: #8a6500; }
-  .chip-client { background: #eef0f5; color: var(--navy); }
-
   .pair-legend {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 10px;
-    margin: 12px 0 18px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px; margin: 12px 0 18px;
   }
   .pair-card {
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 12px 14px;
-    background: #fafbfc;
+    border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: #fafbfc;
   }
-  .pair-card .who {
-    font-weight: 700;
-    font-size: 14px;
-    color: var(--navy);
-    margin: 0 0 6px;
-  }
-  .pair-card .goes {
-    font-size: 12.5px;
-    margin: 0;
-    line-height: 1.45;
-  }
+  .pair-card .who { font-weight: 700; font-size: 14px; color: var(--navy); margin: 0 0 6px; }
+  .pair-card .goes { font-size: 12.5px; margin: 0; line-height: 1.45; }
   .pair-card .goes strong { color: var(--teal-deep); }
   table.pair-matrix td { font-size: 12.5px; line-height: 1.35; }
-  table.pair-matrix .w {
-    display: block;
-    font-weight: 700;
-    color: var(--navy);
-  }
+  table.pair-matrix .w { display: block; font-weight: 700; color: var(--navy); }
   table.pair-matrix .gap-cell {
-    background: #fff1f2;
-    color: #be123c;
-    font-weight: 700;
-    font-size: 11.5px;
+    background: #fff1f2; color: #be123c; font-weight: 700; font-size: 11.5px;
   }
   .arrow { color: var(--teal); font-weight: 700; }
-
-
-  .day-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 10px;
-    margin-top: 12px;
-  }
-  @media (max-width: 900px) {
-    .day-grid { grid-template-columns: 1fr; }
-  }
-  .day-card {
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    overflow: hidden;
-    background: #fff;
-  }
-  .day-card header {
-    background: var(--navy);
-    color: #fff;
-    padding: 8px 12px;
-    font-weight: 700;
-    font-size: 13px;
-  }
-  .day-card header.heavy { background: var(--teal-deep); }
-  .day-card header.light { background: #4a5a78; }
-  .day-card header.tbc-day { background: var(--amber); }
-  .day-body { padding: 10px 12px 12px; font-size: 12.5px; }
-  .day-body h4 {
-    margin: 10px 0 4px;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--muted);
-  }
-  .day-body h4:first-child { margin-top: 0; }
-  .day-body ul {
-    margin: 0;
-    padding-left: 16px;
-  }
-  .day-body li { margin: 2px 0; }
-  .coverage {
-    margin-top: 8px;
-    padding: 6px 8px;
-    border-radius: 8px;
-    background: var(--teal-soft);
-    font-size: 11.5px;
-    font-weight: 600;
-    color: var(--teal-deep);
-  }
-  .coverage.gap {
-    background: var(--amber-soft);
-    color: var(--amber);
-  }
-
-  .timeline {
-    position: relative;
-    margin: 10px 0 4px;
-    font-size: 11px;
-  }
+  .gap-list { margin: 8px 0 0; padding-left: 18px; }
+  .gap-list li { margin: 6px 0; }
+  .timeline { position: relative; margin: 10px 0 4px; font-size: 11px; }
   .tl-row {
-    display: grid;
-    grid-template-columns: 72px 1fr;
-    gap: 8px;
-    align-items: center;
-    margin-bottom: 4px;
+    display: grid; grid-template-columns: 72px 1fr; gap: 8px; align-items: center; margin-bottom: 4px;
   }
   .tl-bar {
-    height: 18px;
-    border-radius: 4px;
-    position: relative;
-    background: #eef0f5;
-    overflow: hidden;
+    height: 18px; border-radius: 4px; position: relative; background: #eef0f5; overflow: hidden;
   }
   .tl-fill {
-    position: absolute;
-    top: 0; bottom: 0;
-    border-radius: 4px;
-    opacity: 0.92;
-    font-size: 9px;
-    font-weight: 700;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 4px;
-    white-space: nowrap;
-    overflow: hidden;
+    position: absolute; top: 0; bottom: 0; border-radius: 4px; opacity: 0.92;
+    font-size: 9px; font-weight: 700; color: #fff; display: flex; align-items: center;
+    justify-content: center; padding: 0 4px; white-space: nowrap; overflow: hidden;
   }
-  /* 11:00–16:00 = 5h window ◆ left% = (h-11)/5*100, width% = hours/5*100 */
   .c-ikram { background: #35415d; }
   .c-eman { background: #0e7c86; }
   .c-timi { background: #0369a1; }
   .c-fadi { background: #b45309; }
-
   .callout {
-    border-left: 4px solid var(--gold);
-    background: var(--gold-soft);
-    padding: 10px 14px;
-    border-radius: 0 10px 10px 0;
-    margin: 12px 0;
-    font-size: 13.5px;
+    border-left: 4px solid var(--gold); background: var(--gold-soft);
+    padding: 10px 14px; border-radius: 0 10px 10px 0; margin: 12px 0; font-size: 13.5px;
   }
-  .callout.note {
-    border-left-color: var(--teal);
-    background: var(--teal-soft);
-  }
-  .callout.warn {
-    border-left-color: var(--amber);
-    background: var(--amber-soft);
-  }
-
+  .callout.note { border-left-color: var(--teal); background: var(--teal-soft); }
+  .callout.warn { border-left-color: var(--amber); background: var(--amber-soft); }
+  .callout.danger { border-left-color: var(--rose); background: var(--rose-soft); }
   .band-card {
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 16px 18px;
-    margin-bottom: 12px;
-    border-top: 4px solid var(--band-a);
+    border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px;
+    margin-bottom: 12px; border-top: 4px solid var(--band-a);
   }
   .band-card.b { border-top-color: var(--band-b); }
   .band-card.c { border-top-color: var(--band-c); }
   .band-card h3 {
-    margin: 0 0 4px;
-    font-family: Fraunces, Georgia, serif;
-    font-size: 1.1rem;
-    letter-spacing: 0;
+    margin: 0 0 4px; font-family: Fraunces, Georgia, serif; font-size: 1.1rem; letter-spacing: 0;
   }
-  .band-purpose {
-    margin: 0 0 10px;
-    color: var(--muted);
-    font-size: 0.92rem;
-  }
-  .salary {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin: 10px 0 0;
-  }
+  .band-purpose { margin: 0 0 10px; color: var(--muted); font-size: 0.92rem; }
+  .salary { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
   .salary span {
-    background: var(--paper);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 6px 10px;
-    font-size: 12.5px;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 8px;
+    padding: 6px 10px; font-size: 12.5px;
   }
   .salary strong { color: var(--navy); }
-
-  ul.clean { margin: 6px 0 0; padding-left: 18px; }
-  ul.clean li { margin: 3px 0; }
-
-  .en { font-family: "DM Sans", sans-serif; }
+  ul.clean, ol.clean { margin: 6px 0 0; padding-left: 18px; }
+  ul.clean li, ol.clean li { margin: 3px 0; }
   footer.page-foot {
-    margin-top: 8px;
-    padding: 14px 4px;
-    font-size: 12px;
-    color: var(--muted);
-    text-align: center;
+    margin-top: 8px; padding: 14px 4px; font-size: 12px; color: var(--muted); text-align: center;
   }
   @media print {
     body { background: #fff; }
@@ -460,59 +231,66 @@
     <div class="hero-top">
       <img src="clubsensational-logo.png" alt="clubSENsational" />
       <div>
-        <p class="eyebrow">Planificación interna · Term-time 2026–27</p>
-        <h1>Day Centre — Rota semanal &amp; Career Framework</h1>
+        <p class="eyebrow">Internal planning · Term-time 2026–27</p>
+        <h1>Day Centre weekly rota</h1>
         <p class="hero-lead">
-          Borrador para ver con claridad la demanda de clientes, la cobertura de staff
-          y las bandas salariales del Day Centre. La rota es una propuesta alineada
-          con las restricciones que ya tenéis (Yousef, Michelle, Luliya, Roberto).
+          Plain-English staffing plan: what client demand requires, what core staff can cover,
+          what is still missing, and what changes if Victor supports on the floor (with Raúl).
         </p>
         <div class="hero-meta">
-          <span class="pill">Permanent Part-Time · Term-Time Only</span>
-          <span class="pill gold">43 semanas · salario anual / 12</span>
-          <span class="pill">Bandas: A £18 · B £20 · C £24 · Service Lead £30</span>
-          <span class="pill warn">Jueves Timi TBC</span>
-          <span class="pill">Ratios: Ikram/Timi/Fadi 2:1 · Emmanuel 1:1</span>
+          <span class="pill">Window 11:00–16:00</span>
+          <span class="pill gold">43 term-time weeks</span>
+          <span class="pill">Scales: A £18 · B £20 · C £24 · Service Lead £30</span>
+          <span class="pill warn">Thursday Timi TBC</span>
+          <span class="pill">Ratios: Ikram / Timi / Fadi 2:1 · Emmanuel 1:1</span>
         </div>
       </div>
     </div>
   </header>
 
-  <nav class="toc" aria-label="Contenido">
-    <a href="#demanda">1. Demanda</a>
-    <a href="#staff">2. Staff disponible</a>
-    <a href="#huecos">3. Horas por cubrir</a>
-    <a href="#raul-victor">4. Hipótesis Raúl + Victor</a>
-    <a href="#rota">5. Rota (solo core)</a>
-    <a href="#horas">6. Horas contrato</a>
-    <a href="#contratos">7. Contratos 2026–27</a>
-    <a href="#framework">8. Career Framework</a>
-    <a href="#abiertos">9. Abiertos</a>
+  <nav class="toc" aria-label="Contents">
+    <a href="#have">1. What we have</a>
+    <a href="#missing">2. What is missing</a>
+    <a href="#hypothesis">3. Hypothesis: Victor supporting</a>
+    <a href="#still-missing">4. Still missing under that hypothesis</a>
+    <a href="#appendix">Appendix: contracts &amp; career</a>
   </nav>
 
-  <!-- 1. DEMANDA -->
-  <section class="block" id="demanda">
-    <h2>1. Demanda de clientes</h2>
-    <p class="section-lead">Horarios fijos + ratios de apoyo. Ventana operativa: <strong>11:00–16:00</strong>. Ikram / Timi / Fadi <strong>2:1</strong> · Emmanuel <strong>1:1</strong>.</p>
+  <!-- 1. WHAT WE HAVE -->
+  <section class="block" id="have">
+    <span class="section-badge have">Section 1</span>
+    <h2>What we have</h2>
+    <p class="section-lead">
+      Confirmed client hours and ratios, how many staff each time band needs, and who is already
+      on the Day Centre books for core coverage. <strong>Raúl and Victor are not counted here</strong>
+      — they appear only in the hypothesis later.
+    </p>
 
     <div class="stat-row">
-      <div class="stat"><strong>7</strong><span>Staff en pico L/X/V (12:30–13:00)</span></div>
-      <div class="stat"><strong>5</strong><span>Staff 11:00–12:30 y 13:00–15:00</span></div>
-      <div class="stat"><strong>4</strong><span>Staff pico Martes / Jueves</span></div>
-      <div class="stat"><strong>Jue</strong><span>Timi pendiente (TBC)</span></div>
+      <div class="stat"><strong>7</strong><span>Staff needed at Mon/Wed/Fri peak (12:30–13:00)</span></div>
+      <div class="stat"><strong>5</strong><span>Staff needed 11:00–12:30 and 13:00–15:00</span></div>
+      <div class="stat"><strong>4</strong><span>Peak staff Tue / Thu</span></div>
+      <div class="stat"><strong>3</strong><span>Core staff counted (Michelle · Yousef · Roberto)</span></div>
     </div>
 
+    <div class="callout note">
+      <strong>How to read this page:</strong> one person working one hour = <strong>1 person-hour</strong>.
+      A 2:1 client needs two staff present for every hour they attend. Gaps are always
+      “staff needed − staff available” for that time band.
+    </div>
+
+    <h3>Client schedule</h3>
     <table>
       <thead>
         <tr>
-          <th>Cliente</th>
+          <th>Client</th>
           <th>Ratio</th>
-          <th>Lunes</th>
-          <th>Martes</th>
-          <th>Miércoles</th>
-          <th>Jueves</th>
-          <th>Viernes</th>
-          <th>h/sem</th>
+          <th>Mon</th>
+          <th>Tue</th>
+          <th>Wed</th>
+          <th>Thu</th>
+          <th>Fri</th>
+          <th>h/week</th>
         </tr>
       </thead>
       <tbody>
@@ -559,14 +337,14 @@
       </tbody>
     </table>
 
-    <h3>Staff requerido por franja (según ratio)</h3>
+    <h3>Staff required by time band (from ratios)</h3>
     <table>
       <thead>
         <tr>
-          <th>Franja</th>
-          <th>L / X / V</th>
-          <th>Martes</th>
-          <th>Jueves</th>
+          <th>Time band</th>
+          <th>Mon / Wed / Fri</th>
+          <th>Tuesday</th>
+          <th>Thursday</th>
         </tr>
       </thead>
       <tbody>
@@ -578,7 +356,7 @@
         </tr>
         <tr>
           <td><strong>12:30–13:00</strong></td>
-          <td style="background:#fff1f2;color:#be123c;font-weight:700">+ Fadi 2 = <strong>7</strong> ◆ pico crítico</td>
+          <td style="background:#fff1f2;color:#be123c;font-weight:700">+ Fadi 2 = <strong>7</strong> · critical peak</td>
           <td class="ok-cell">Ikram 2 + Fadi 2 = <strong>4</strong></td>
           <td class="ok-cell">Timi 2 + Fadi 2 = <strong>4</strong></td>
         </tr>
@@ -590,23 +368,17 @@
         </tr>
         <tr>
           <td><strong>15:00–16:00</strong></td>
-          <td>Ikram 2 + Emmanuel 1 = <strong>3</strong> <span class="muted">(sin Roberto L–X; sin Yousef L/V)</span></td>
+          <td>Ikram 2 + Emmanuel 1 = <strong>3</strong> <span class="muted">(Roberto leaves Mon–Wed; Yousef leaves Mon/Fri)</span></td>
           <td>Ikram 2 = <strong>2</strong></td>
           <td class="off">—</td>
         </tr>
       </tbody>
     </table>
 
-    <div class="callout warn" style="margin-top:12px">
-      <strong>Escenario de cálculo (esta versión):</strong> solo staff operativo disponible
-      (Michelle · Yousef · Roberto). <strong>Luliya fuera</strong> (no mañanas / fuera del esquema).
-      <strong>Raúl y Victor fuera</strong> del cómputo. Ver sección 3 ◆ horas-persona que faltan.
-    </div>
-
-    <h3>Solapamiento visual (ventana 11:00–16:00)</h3>
+    <h3>Overlap (11:00–16:00 window)</h3>
     <div class="grid-2">
       <div>
-        <p style="margin:0 0 6px;font-weight:700;font-size:13px">Lunes / Miércoles / Viernes — pico</p>
+        <p style="margin:0 0 6px;font-weight:700;font-size:13px">Mon / Wed / Fri — peak days</p>
         <div class="timeline">
           <div class="tl-row">
             <span>Ikram 2:1</span>
@@ -626,11 +398,11 @@
           </div>
         </div>
         <p class="muted" style="font-size:12px;margin:6px 0 0">
-          Pico staff 12:30–13:00: <strong>7</strong>. 11:00–12:30 y 13:00–15:00: <strong>5</strong>. 15:00–16:00: <strong>3</strong>.
+          Peak 12:30–13:00: <strong>7 staff</strong>. Mid bands: <strong>5</strong>. Close 15:00–16:00: <strong>3</strong>.
         </p>
       </div>
       <div>
-        <p style="margin:0 0 6px;font-weight:700;font-size:13px">Martes · Jueves</p>
+        <p style="margin:0 0 6px;font-weight:700;font-size:13px">Tuesday · Thursday</p>
         <div class="timeline">
           <div class="tl-row">
             <span>Ikram 2:1</span>
@@ -641,7 +413,7 @@
             <div class="tl-bar"><div class="tl-fill c-fadi" style="left:30%;width:50%">12:30–15</div></div>
           </div>
         </div>
-        <p class="muted" style="font-size:12px;margin:8px 0 4px">Jueves (TBC):</p>
+        <p class="muted" style="font-size:12px;margin:8px 0 4px">Thursday (TBC):</p>
         <div class="timeline">
           <div class="tl-row">
             <span>Timi 2:1</span>
@@ -652,307 +424,180 @@
             <div class="tl-bar"><div class="tl-fill c-fadi" style="left:30%;width:50%">12:30–15</div></div>
           </div>
         </div>
-        <p class="muted" style="font-size:12px;margin:6px 0 0">Pico Mar/Jue 12:30–13:00: <strong>4 staff</strong>.</p>
+        <p class="muted" style="font-size:12px;margin:6px 0 0">Tue/Thu peak 12:30–13:00: <strong>4 staff</strong>.</p>
       </div>
     </div>
-  </section>
 
-  <!-- 2. STAFF -->
-  <section class="block" id="staff">
-    <h2>2. Staff disponible (para el cálculo)</h2>
-    <p class="section-lead">
-      Quién cuenta para cubrir ratio. Fuera del esquema: <strong>Luliya</strong> (no mañanas),
-      <strong>Raúl</strong> y <strong>Victor</strong>.
-    </p>
-
+    <h3>Core team available for this calculation</h3>
     <table>
       <thead>
         <tr>
-          <th>Persona</th>
-          <th>Banda</th>
-          <th>Disponibilidad</th>
-          <th>En el cálculo</th>
+          <th>Person</th>
+          <th>Role / scale</th>
+          <th>Availability</th>
+          <th>Counted?</th>
         </tr>
       </thead>
       <tbody>
         <tr>
           <td><strong>Michelle</strong></td>
-          <td><span class="chip chip-c">Band C</span> £24</td>
-          <td>L · M · X · V · 11:00–16:00</td>
-          <td class="ok-cell"><strong>Sí</strong> · 20h</td>
+          <td><span class="chip chip-m">Service Lead</span> £30</td>
+          <td>Mon · Tue · Wed · Fri · 11:00–16:00</td>
+          <td class="ok-cell"><strong>Yes</strong> · 20h</td>
         </tr>
         <tr>
           <td><strong>Yousef</strong></td>
-          <td><span class="chip chip-a">A</span></td>
-          <td>L · V 11:00–15:00 · off Mar+Mié · jue 11–15 propuesto · turno siempre 11–x</td>
-          <td class="ok-cell"><strong>Sí</strong> · ~12h (con jue)</td>
+          <td><span class="chip chip-b">Scale 2</span> £20</td>
+          <td>Mon · Fri 11:00–15:00 · off Tue+Wed · Thu 11–15 proposed</td>
+          <td class="ok-cell"><strong>Yes</strong> · ~12h (with Thu)</td>
         </tr>
         <tr>
           <td><strong>Roberto</strong></td>
-          <td><span class="chip chip-b">Band B</span> £20</td>
-          <td>L–J hasta 15:00 · V hasta 16:00 · ~20h</td>
-          <td class="ok-cell"><strong>Sí</strong> · 20h</td>
+          <td><span class="chip chip-b">Scale 2</span> £20</td>
+          <td>Mon–Thu to 15:00 · Fri to 16:00 · ~20h</td>
+          <td class="ok-cell"><strong>Yes</strong> · 20h</td>
         </tr>
         <tr>
           <td><strong>Luliya</strong></td>
-          <td><span class="chip chip-b">Band B</span> £20</td>
-          <td>No está por las mañanas · si vuelve → Band B</td>
-          <td class="off"><strong>Fuera del esquema</strong> (cálculo rota)</td>
+          <td><span class="chip chip-b">Scale 2</span> £20</td>
+          <td>Not available mornings · if she returns → Scale 2</td>
+          <td class="off"><strong>Out of rota calc</strong></td>
         </tr>
         <tr>
           <td><strong>Raúl</strong></td>
-          <td><span class="chip chip-m">Mgt</span></td>
+          <td><span class="chip chip-m">Director</span></td>
           <td>—</td>
-          <td class="off"><strong>Fuera del cálculo</strong></td>
+          <td class="off"><strong>Out of calc</strong> (hypothesis only)</td>
         </tr>
         <tr>
           <td><strong>Victor</strong></td>
-          <td><span class="chip chip-m">Mgt</span></td>
+          <td><span class="chip chip-m">Director</span></td>
           <td>—</td>
-          <td class="off"><strong>Fuera del cálculo</strong></td>
+          <td class="off"><strong>Out of calc</strong> (hypothesis only)</td>
         </tr>
       </tbody>
     </table>
   </section>
 
-  <!-- 3. HUECOS -->
-  <section class="block" id="huecos">
-    <h2>3. Horas por cubrir (huecos)</h2>
+  <!-- 2. WHAT IS MISSING -->
+  <section class="block" id="missing">
+    <span class="section-badge miss">Section 2</span>
+    <h2>What is missing</h2>
     <p class="section-lead">
-      Diferencia franja a franja: <em>staff necesario − staff disponible</em>.
-      Unidad = <strong>horas-persona</strong> (1 persona × 1 hora = 1h).
-      Premisas: Luliya / Raúl / Victor = 0 · Yousef jueves sí · Roberto L–J 11–15, V 11–16.
+      With only Michelle, Yousef and Roberto on the floor (no Luliya, no Raúl, no Victor),
+      demand exceeds supply by <strong>43 person-hours per week</strong>.
     </p>
 
     <div class="stat-row">
-      <div class="stat"><strong>43h</strong><span>Horas-persona / semana sin cubrir</span></div>
-      <div class="stat"><strong>~8.6</strong><span>Equivalente a 1 persona @ 5h × 5 días… corto</span></div>
-      <div class="stat"><strong>~2.2</strong><span>Personas a jornada ~20h para cerrar el hueco</span></div>
-      <div class="stat"><strong>Mié</strong><span>Peor día · 15h-persona</span></div>
+      <div class="stat"><strong>43h</strong><span>Person-hours / week uncovered</span></div>
+      <div class="stat"><strong>~2.2</strong><span>People at ~20h needed to close the gap</span></div>
+      <div class="stat"><strong>Wed</strong><span>Worst day · 15 person-hours</span></div>
+      <div class="stat"><strong>Mon 11 · Fri 10</strong><span>Next heaviest gaps (person-hours)</span></div>
     </div>
 
     <table>
       <thead>
         <tr>
-          <th>Día</th>
-          <th>Franja</th>
-          <th>Necesita</th>
-          <th>Hay</th>
-          <th>Faltan</th>
-          <th>Horas-persona</th>
+          <th>Day</th>
+          <th>Time band</th>
+          <th>Need</th>
+          <th>Have</th>
+          <th>Short</th>
+          <th>Person-hours</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td rowspan="4"><strong>Lunes</strong><br><span class="muted">Michelle · Yousef · Roberto</span></td>
-          <td>11:00–12:30</td>
-          <td>5</td>
-          <td>3</td>
-          <td class="off">−2</td>
-          <td><strong>3.0h</strong></td>
+          <td rowspan="4"><strong>Monday</strong><br><span class="muted">Michelle · Yousef · Roberto</span></td>
+          <td>11:00–12:30</td><td>5</td><td>3</td><td class="off">−2</td><td><strong>3.0h</strong></td>
         </tr>
-        <tr>
-          <td>12:30–13:00</td>
-          <td>7</td>
-          <td>3</td>
-          <td class="off">−4</td>
-          <td><strong>2.0h</strong></td>
-        </tr>
-        <tr>
-          <td>13:00–15:00</td>
-          <td>5</td>
-          <td>3</td>
-          <td class="off">−2</td>
-          <td><strong>4.0h</strong></td>
-        </tr>
-        <tr>
-          <td>15:00–16:00</td>
-          <td>3</td>
-          <td>1</td>
-          <td class="off">−2</td>
-          <td><strong>2.0h</strong></td>
-        </tr>
-        <tr style="background:#fff1f2">
-          <td colspan="5"><strong>Total lunes</strong></td>
-          <td><strong>11.0h</strong></td>
-        </tr>
+        <tr><td>12:30–13:00</td><td>7</td><td>3</td><td class="off">−4</td><td><strong>2.0h</strong></td></tr>
+        <tr><td>13:00–15:00</td><td>5</td><td>3</td><td class="off">−2</td><td><strong>4.0h</strong></td></tr>
+        <tr><td>15:00–16:00</td><td>3</td><td>1</td><td class="off">−2</td><td><strong>2.0h</strong></td></tr>
+        <tr style="background:#fff1f2"><td colspan="5"><strong>Monday total</strong></td><td><strong>11.0h</strong></td></tr>
 
         <tr>
-          <td rowspan="4"><strong>Martes</strong><br><span class="muted">Michelle · Roberto · Yousef OFF</span></td>
-          <td>11:00–12:30</td>
-          <td>2</td>
-          <td>2</td>
-          <td class="ok-cell">0</td>
-          <td>0</td>
+          <td rowspan="4"><strong>Tuesday</strong><br><span class="muted">Michelle · Roberto · Yousef OFF</span></td>
+          <td>11:00–12:30</td><td>2</td><td>2</td><td class="ok-cell">0</td><td>0</td>
         </tr>
-        <tr>
-          <td>12:30–13:00</td>
-          <td>4</td>
-          <td>2</td>
-          <td class="off">−2</td>
-          <td><strong>1.0h</strong></td>
-        </tr>
-        <tr>
-          <td>13:00–15:00</td>
-          <td>4</td>
-          <td>2</td>
-          <td class="off">−2</td>
-          <td><strong>4.0h</strong></td>
-        </tr>
-        <tr>
-          <td>15:00–16:00</td>
-          <td>2</td>
-          <td>1</td>
-          <td class="off">−1</td>
-          <td><strong>1.0h</strong></td>
-        </tr>
-        <tr style="background:#fff1f2">
-          <td colspan="5"><strong>Total martes</strong></td>
-          <td><strong>6.0h</strong></td>
-        </tr>
+        <tr><td>12:30–13:00</td><td>4</td><td>2</td><td class="off">−2</td><td><strong>1.0h</strong></td></tr>
+        <tr><td>13:00–15:00</td><td>4</td><td>2</td><td class="off">−2</td><td><strong>4.0h</strong></td></tr>
+        <tr><td>15:00–16:00</td><td>2</td><td>1</td><td class="off">−1</td><td><strong>1.0h</strong></td></tr>
+        <tr style="background:#fff1f2"><td colspan="5"><strong>Tuesday total</strong></td><td><strong>6.0h</strong></td></tr>
 
         <tr>
-          <td rowspan="4"><strong>Miércoles</strong><br><span class="muted">Michelle · Roberto · Yousef OFF</span></td>
-          <td>11:00–12:30</td>
-          <td>5</td>
-          <td>2</td>
-          <td class="off">−3</td>
-          <td><strong>4.5h</strong></td>
+          <td rowspan="4"><strong>Wednesday</strong><br><span class="muted">Michelle · Roberto · Yousef OFF</span></td>
+          <td>11:00–12:30</td><td>5</td><td>2</td><td class="off">−3</td><td><strong>4.5h</strong></td>
         </tr>
-        <tr>
-          <td>12:30–13:00</td>
-          <td>7</td>
-          <td>2</td>
-          <td class="off">−5</td>
-          <td><strong>2.5h</strong></td>
-        </tr>
-        <tr>
-          <td>13:00–15:00</td>
-          <td>5</td>
-          <td>2</td>
-          <td class="off">−3</td>
-          <td><strong>6.0h</strong></td>
-        </tr>
-        <tr>
-          <td>15:00–16:00</td>
-          <td>3</td>
-          <td>1</td>
-          <td class="off">−2</td>
-          <td><strong>2.0h</strong></td>
-        </tr>
-        <tr style="background:#fff1f2">
-          <td colspan="5"><strong>Total miércoles</strong> ◆ peor día</td>
-          <td><strong>15.0h</strong></td>
-        </tr>
+        <tr><td>12:30–13:00</td><td>7</td><td>2</td><td class="off">−5</td><td><strong>2.5h</strong></td></tr>
+        <tr><td>13:00–15:00</td><td>5</td><td>2</td><td class="off">−3</td><td><strong>6.0h</strong></td></tr>
+        <tr><td>15:00–16:00</td><td>3</td><td>1</td><td class="off">−2</td><td><strong>2.0h</strong></td></tr>
+        <tr style="background:#fff1f2"><td colspan="5"><strong>Wednesday total</strong> · worst day</td><td><strong>15.0h</strong></td></tr>
 
         <tr>
-          <td rowspan="3"><strong>Jueves</strong><br><span class="muted">Yousef · Roberto · Michelle OFF</span></td>
-          <td>11:00–12:30</td>
-          <td>2</td>
-          <td>2</td>
-          <td class="ok-cell">0</td>
-          <td>0</td>
+          <td rowspan="3"><strong>Thursday</strong><br><span class="muted">Yousef · Roberto · Michelle OFF</span></td>
+          <td>11:00–12:30</td><td>2</td><td>2</td><td class="ok-cell">0</td><td>0</td>
         </tr>
-        <tr>
-          <td>12:30–13:00</td>
-          <td>4</td>
-          <td>2</td>
-          <td class="off">−2</td>
-          <td><strong>1.0h</strong></td>
-        </tr>
-        <tr>
-          <td>13:00–15:00</td>
-          <td>2</td>
-          <td>2</td>
-          <td class="ok-cell">0</td>
-          <td>0</td>
-        </tr>
-        <tr style="background:#fff1f2">
-          <td colspan="5"><strong>Total jueves</strong> <span class="tbc">Timi TBC</span></td>
-          <td><strong>1.0h</strong></td>
-        </tr>
+        <tr><td>12:30–13:00</td><td>4</td><td>2</td><td class="off">−2</td><td><strong>1.0h</strong></td></tr>
+        <tr><td>13:00–15:00</td><td>2</td><td>2</td><td class="ok-cell">0</td><td>0</td></tr>
+        <tr style="background:#fff1f2"><td colspan="5"><strong>Thursday total</strong> <span class="tbc">Timi TBC</span></td><td><strong>1.0h</strong></td></tr>
 
         <tr>
-          <td rowspan="4"><strong>Viernes</strong><br><span class="muted">Michelle · Yousef · Roberto→16</span></td>
-          <td>11:00–12:30</td>
-          <td>5</td>
-          <td>3</td>
-          <td class="off">−2</td>
-          <td><strong>3.0h</strong></td>
+          <td rowspan="4"><strong>Friday</strong><br><span class="muted">Michelle · Yousef · Roberto→16</span></td>
+          <td>11:00–12:30</td><td>5</td><td>3</td><td class="off">−2</td><td><strong>3.0h</strong></td>
         </tr>
-        <tr>
-          <td>12:30–13:00</td>
-          <td>7</td>
-          <td>3</td>
-          <td class="off">−4</td>
-          <td><strong>2.0h</strong></td>
-        </tr>
-        <tr>
-          <td>13:00–15:00</td>
-          <td>5</td>
-          <td>3</td>
-          <td class="off">−2</td>
-          <td><strong>4.0h</strong></td>
-        </tr>
-        <tr>
-          <td>15:00–16:00</td>
-          <td>3</td>
-          <td>2</td>
-          <td class="off">−1</td>
-          <td><strong>1.0h</strong></td>
-        </tr>
-        <tr style="background:#fff1f2">
-          <td colspan="5"><strong>Total viernes</strong></td>
-          <td><strong>10.0h</strong></td>
-        </tr>
+        <tr><td>12:30–13:00</td><td>7</td><td>3</td><td class="off">−4</td><td><strong>2.0h</strong></td></tr>
+        <tr><td>13:00–15:00</td><td>5</td><td>3</td><td class="off">−2</td><td><strong>4.0h</strong></td></tr>
+        <tr><td>15:00–16:00</td><td>3</td><td>2</td><td class="off">−1</td><td><strong>1.0h</strong></td></tr>
+        <tr style="background:#fff1f2"><td colspan="5"><strong>Friday total</strong></td><td><strong>10.0h</strong></td></tr>
 
         <tr style="background:var(--navy);color:#fff">
-          <td colspan="5"><strong>TOTAL SEMANA</strong></td>
+          <td colspan="5"><strong>WEEK TOTAL</strong></td>
           <td><strong>43.0h</strong></td>
         </tr>
       </tbody>
     </table>
 
-    <div class="callout warn" style="margin-top:14px">
-      <strong>Resumen:</strong> con Michelle + Yousef + Roberto (sin Luliya, sin Raúl, sin Victor)
-      faltan <strong>43 horas-persona / semana</strong>.
-      Eso es ~<strong>2 personas a 20h</strong> (o 1 a 20h + otra a ~23h), concentradas sobre todo en
-      <strong>miércoles (15h)</strong>, <strong>lunes (11h)</strong> y <strong>viernes (10h)</strong>.
+    <div class="callout warn">
+      <strong>Bottom line:</strong> core team alone cannot run safe ratios. You need roughly
+      <strong>two more people at ~20h</strong> (or equivalent bank / director floor time),
+      concentrated on <strong>Wednesday (15h)</strong>, <strong>Monday (11h)</strong> and <strong>Friday (10h)</strong>.
     </div>
     <div class="callout note">
-      Si Yousef <strong>no</strong> hace jueves: el hueco sube a <strong>47h</strong>/sem (+4h el jueves).
-      Si Fadi empezara a las 13:00 (sin cruce con Timi): el pico de 7 baja a 5 y se ahorran
-      ~2h-persona × 3 días (L/X/V) = <strong>~6h</strong>/sem ◆ total ~37h.
+      <strong>Levers that shrink the gap:</strong>
+      if Yousef does <em>not</em> work Thursday, the weekly gap rises to <strong>47h</strong>.
+      If Fadi started at 13:00 (no overlap with Timi), the Mon/Wed/Fri peak of 7 drops to 5 and
+      you save about <strong>~6 person-hours/week</strong> → total ~37h.
     </div>
   </section>
 
-
-  <!-- 4. HIPÓTESIS RAÚL + VICTOR -->
-  <section class="block" id="raul-victor">
-    <h2>4. Hipótesis: Raúl + Victor cubren horas</h2>
+  <!-- 3. HYPOTHESIS -->
+  <section class="block" id="hypothesis">
+    <span class="section-badge hypo">Section 3</span>
+    <h2>Hypothesis: Victor supporting on the floor (with Raúl)</h2>
     <p class="section-lead">
-      Escenario aparte: Michelle · Yousef · Roberto siguen como core.
-      Raúl y Victor entran en planta. Abajo: <strong>horas/día</strong> de cada uno y
-      <strong>a qué cliente</strong> harían support en cada tramo.
+      Same core team. Victor and Raúl join floor support so 2:1 pairs for Timi and Fadi are covered.
+      Victor ≈ <strong>15.5h/week</strong>; Raúl ≈ <strong>19h/week</strong>; together they cover
+      <strong>34 of the 43</strong> missing person-hours.
     </p>
 
     <div class="stat-row">
-      <div class="stat"><strong>19h</strong><span>Raúl / semana</span></div>
-      <div class="stat"><strong>15.5h</strong><span>Victor / semana</span></div>
-      <div class="stat"><strong>34h</strong><span>Del hueco de 43h cubiertas</span></div>
-      <div class="stat"><strong>9h</strong><span>Siguen abiertas</span></div>
+      <div class="stat"><strong>19h</strong><span>Raúl / week</span></div>
+      <div class="stat"><strong>15.5h</strong><span>Victor / week</span></div>
+      <div class="stat"><strong>34h</strong><span>Of the 43h gap covered</span></div>
+      <div class="stat"><strong>9h</strong><span>Still open → see Section 4</span></div>
     </div>
 
-    <h3>Horas / día que iría cada uno</h3>
+    <h3>Hours / day each director would work</h3>
     <table>
       <thead>
         <tr>
-          <th>Persona</th>
-          <th>Lunes</th>
-          <th>Martes</th>
-          <th>Miércoles</th>
-          <th>Jueves</th>
-          <th>Viernes</th>
+          <th>Person</th>
+          <th>Mon</th>
+          <th>Tue</th>
+          <th>Wed</th>
+          <th>Thu</th>
+          <th>Fri</th>
           <th>Total</th>
         </tr>
       </thead>
@@ -976,16 +621,11 @@
           <td><strong>15.5h</strong></td>
         </tr>
         <tr>
-          <td><strong>Suma cubierta</strong></td>
-          <td>9h</td>
-          <td>6h</td>
-          <td>9h</td>
-          <td>1h</td>
-          <td>9h</td>
-          <td><strong>34h</strong></td>
+          <td><strong>Hours covered</strong></td>
+          <td>9h</td><td>6h</td><td>9h</td><td>1h</td><td>9h</td><td><strong>34h</strong></td>
         </tr>
         <tr style="background:#fff1f2">
-          <td><strong>Hueco que queda</strong></td>
+          <td><strong>Gap remaining</strong></td>
           <td><strong>2h</strong></td>
           <td class="ok-cell"><strong>0</strong></td>
           <td><strong>6h</strong></td>
@@ -996,61 +636,57 @@
       </tbody>
     </table>
 
-    <h3>Regla clara: cada trabajador → con qué cliente</h3>
-    <p class="section-lead" style="margin-bottom:8px">
-      Así se lee: <strong>Trabajador</strong> <span class="arrow">→</span> <strong>Cliente</strong> (y con quién hace el 2:1).
-    </p>
-
+    <h3>Who supports whom (pairing rules)</h3>
     <div class="pair-legend">
       <div class="pair-card">
         <p class="who">Michelle</p>
-        <p class="goes"><span class="arrow">→</span> <strong>Ikram</strong> (casi siempre)<br>
-        Pareja 2:1: Roberto (hasta 15:00) o Raúl (cierre 15–16)</p>
+        <p class="goes"><span class="arrow">→</span> <strong>Ikram</strong> (almost always)<br>
+        2:1 pair: Roberto (until 15:00) or Raúl (close 15–16)</p>
       </div>
       <div class="pair-card">
         <p class="who">Roberto</p>
-        <p class="goes"><span class="arrow">→</span> <strong>Ikram</strong> con Michelle (L–V hasta 15:00)<br>
-        Jueves: <strong>Timi</strong> con Yousef, luego <strong>Fadi</strong></p>
+        <p class="goes"><span class="arrow">→</span> <strong>Ikram</strong> with Michelle (Mon–Fri until 15:00)<br>
+        Thursday: <strong>Timi</strong> with Yousef, then <strong>Fadi</strong></p>
       </div>
       <div class="pair-card">
         <p class="who">Yousef</p>
-        <p class="goes"><span class="arrow">→</span> <strong>Emmanuel</strong> 1:1 (Lunes y Viernes)<br>
-        Jueves: <strong>Timi</strong> con Roberto, luego <strong>Fadi</strong><br>
-        <span class="muted">Off Martes y Miércoles</span></p>
+        <p class="goes"><span class="arrow">→</span> <strong>Emmanuel</strong> 1:1 (Mon &amp; Fri)<br>
+        Thursday: <strong>Timi</strong> with Roberto, then <strong>Fadi</strong><br>
+        <span class="muted">Off Tuesday and Wednesday</span></p>
       </div>
       <div class="pair-card">
         <p class="who">Raúl</p>
-        <p class="goes"><span class="arrow">→</span> <strong>Timi</strong> con Victor (mañana L/X/V)<br>
-        luego <span class="arrow">→</span> <strong>Fadi</strong> con Victor (tarde)<br>
-        cierre <span class="arrow">→</span> <strong>Ikram</strong> (L/M/X) o <strong>Emmanuel</strong> (V)</p>
+        <p class="goes"><span class="arrow">→</span> <strong>Timi</strong> with Victor (morning Mon/Wed/Fri)<br>
+        then <span class="arrow">→</span> <strong>Fadi</strong> with Victor (afternoon)<br>
+        close <span class="arrow">→</span> <strong>Ikram</strong> (Mon/Tue/Wed) or <strong>Emmanuel</strong> (Fri)</p>
       </div>
       <div class="pair-card">
         <p class="who">Victor</p>
-        <p class="goes"><span class="arrow">→</span> <strong>Timi</strong> con Raúl (mañana L/X/V)<br>
-        luego <span class="arrow">→</span> <strong>Fadi</strong> con Raúl (tarde)<br>
-        <span class="muted">Sale a las 15:00</span></p>
+        <p class="goes"><span class="arrow">→</span> <strong>Timi</strong> with Raúl (morning Mon/Wed/Fri)<br>
+        then <span class="arrow">→</span> <strong>Fadi</strong> with Raúl (afternoon)<br>
+        <span class="muted">Leaves at 15:00</span></p>
       </div>
       <div class="pair-card" style="border-color:#f4bd2a;background:var(--gold-soft)">
-        <p class="who">Parejas fijas 2:1</p>
+        <p class="who">Fixed 2:1 pairs</p>
         <p class="goes">
           <strong>Ikram</strong> = Michelle + Roberto<br>
           <strong>Timi</strong> = Raúl + Victor<br>
           <strong>Fadi</strong> = Raúl + Victor<br>
-          <strong>Emmanuel</strong> = Yousef solo (1:1)
+          <strong>Emmanuel</strong> = Yousef alone (1:1)
         </p>
       </div>
     </div>
 
-    <h3>Por día: qué trabajador está con qué cliente</h3>
+    <h3>Day-by-day assignment</h3>
     <p class="muted" style="font-size:13px;margin:0 0 12px">
-      Cada celda = staff asignado a ese cliente en esa franja. Rojo = nadie / falta gente.
+      Each cell = staff with that client in that band. Red = uncovered (detail in Section 4).
     </p>
 
-    <h3 style="font-size:1rem;margin-top:14px">Lunes</h3>
+    <h3 style="font-size:1rem;margin-top:14px">Monday</h3>
     <table class="pair-matrix">
       <thead>
         <tr>
-          <th>Franja</th>
+          <th>Time band</th>
           <th>Ikram (2:1)</th>
           <th>Emmanuel (1:1)</th>
           <th>Timi (2:1)</th>
@@ -1070,7 +706,7 @@
           <td><span class="w">Michelle + Roberto</span></td>
           <td><span class="w">Yousef</span></td>
           <td><span class="w">Raúl + Victor</span></td>
-          <td class="gap-cell">NADIE (faltan 2)</td>
+          <td class="gap-cell">NOBODY (need 2)</td>
         </tr>
         <tr>
           <td><strong>13:00–15:00</strong></td>
@@ -1082,18 +718,18 @@
         <tr>
           <td><strong>15:00–16:00</strong></td>
           <td><span class="w">Michelle + Raúl</span></td>
-          <td class="gap-cell">NADIE (Yousef fuera)</td>
+          <td class="gap-cell">NOBODY (Yousef left)</td>
           <td class="off">—</td>
           <td class="off">—</td>
         </tr>
       </tbody>
     </table>
 
-    <h3 style="font-size:1rem;margin-top:18px">Martes</h3>
+    <h3 style="font-size:1rem;margin-top:18px">Tuesday</h3>
     <table class="pair-matrix">
       <thead>
         <tr>
-          <th>Franja</th>
+          <th>Time band</th>
           <th>Ikram (2:1)</th>
           <th>Fadi (2:1)</th>
         </tr>
@@ -1116,13 +752,13 @@
         </tr>
       </tbody>
     </table>
-    <p class="muted" style="font-size:12px;margin:6px 0 0">Yousef off · Emmanuel y Timi no vienen.</p>
+    <p class="muted" style="font-size:12px;margin:6px 0 0">Yousef off · Emmanuel and Timi not in.</p>
 
-    <h3 style="font-size:1rem;margin-top:18px">Miércoles</h3>
+    <h3 style="font-size:1rem;margin-top:18px">Wednesday</h3>
     <table class="pair-matrix">
       <thead>
         <tr>
-          <th>Franja</th>
+          <th>Time band</th>
           <th>Ikram (2:1)</th>
           <th>Emmanuel (1:1)</th>
           <th>Timi (2:1)</th>
@@ -1133,39 +769,39 @@
         <tr>
           <td><strong>11:00–12:30</strong></td>
           <td><span class="w">Michelle + Roberto</span></td>
-          <td class="gap-cell">NADIE (Yousef off)</td>
+          <td class="gap-cell">NOBODY (Yousef off)</td>
           <td><span class="w">Raúl + Victor</span></td>
           <td class="off">—</td>
         </tr>
         <tr>
           <td><strong>12:30–13:00</strong></td>
           <td><span class="w">Michelle + Roberto</span></td>
-          <td class="gap-cell">NADIE</td>
+          <td class="gap-cell">NOBODY</td>
           <td><span class="w">Raúl + Victor</span></td>
-          <td class="gap-cell">NADIE (faltan 2)</td>
+          <td class="gap-cell">NOBODY (need 2)</td>
         </tr>
         <tr>
           <td><strong>13:00–15:00</strong></td>
           <td><span class="w">Michelle + Roberto</span></td>
-          <td class="gap-cell">NADIE</td>
+          <td class="gap-cell">NOBODY</td>
           <td class="off">—</td>
           <td><span class="w">Raúl + Victor</span></td>
         </tr>
         <tr>
           <td><strong>15:00–16:00</strong></td>
           <td><span class="w">Michelle + Raúl</span></td>
-          <td class="gap-cell">NADIE</td>
+          <td class="gap-cell">NOBODY</td>
           <td class="off">—</td>
           <td class="off">—</td>
         </tr>
       </tbody>
     </table>
 
-    <h3 style="font-size:1rem;margin-top:18px">Jueves <span class="tbc">Timi TBC</span></h3>
+    <h3 style="font-size:1rem;margin-top:18px">Thursday <span class="tbc">Timi TBC</span></h3>
     <table class="pair-matrix">
       <thead>
         <tr>
-          <th>Franja</th>
+          <th>Time band</th>
           <th>Timi (2:1)</th>
           <th>Fadi (2:1)</th>
         </tr>
@@ -1188,13 +824,13 @@
         </tr>
       </tbody>
     </table>
-    <p class="muted" style="font-size:12px;margin:6px 0 0">Michelle off · Ikram y Emmanuel no vienen.</p>
+    <p class="muted" style="font-size:12px;margin:6px 0 0">Michelle off · Ikram and Emmanuel not in.</p>
 
-    <h3 style="font-size:1rem;margin-top:18px">Viernes</h3>
+    <h3 style="font-size:1rem;margin-top:18px">Friday</h3>
     <table class="pair-matrix">
       <thead>
         <tr>
-          <th>Franja</th>
+          <th>Time band</th>
           <th>Ikram (2:1)</th>
           <th>Emmanuel (1:1)</th>
           <th>Timi (2:1)</th>
@@ -1214,7 +850,7 @@
           <td><span class="w">Michelle + Roberto</span></td>
           <td><span class="w">Yousef</span></td>
           <td><span class="w">Raúl + Victor</span></td>
-          <td class="gap-cell">NADIE (faltan 2)</td>
+          <td class="gap-cell">NOBODY (need 2)</td>
         </tr>
         <tr>
           <td><strong>13:00–15:00</strong></td>
@@ -1233,26 +869,26 @@
       </tbody>
     </table>
 
-    <h3 style="margin-top:20px">Vista inversa · “si soy X, ¿con quién estoy?”</h3>
+    <h3 style="margin-top:20px">Staff view · “if I am X, who am I with?”</h3>
     <table class="pair-matrix">
       <thead>
         <tr>
-          <th>Trabajador</th>
-          <th>Lunes</th>
-          <th>Martes</th>
-          <th>Miércoles</th>
-          <th>Jueves</th>
-          <th>Viernes</th>
+          <th>Worker</th>
+          <th>Mon</th>
+          <th>Tue</th>
+          <th>Wed</th>
+          <th>Thu</th>
+          <th>Fri</th>
         </tr>
       </thead>
       <tbody>
         <tr>
           <td><strong>Michelle</strong></td>
-          <td>Ikram todo el día</td>
-          <td>Ikram todo el día</td>
-          <td>Ikram todo el día</td>
+          <td>Ikram all day</td>
+          <td>Ikram all day</td>
+          <td>Ikram all day</td>
           <td class="off">OFF</td>
-          <td>Ikram todo el día</td>
+          <td>Ikram all day</td>
         </tr>
         <tr>
           <td><strong>Roberto</strong></td>
@@ -1288,230 +924,199 @@
         </tr>
       </tbody>
     </table>
-
-    <div class="callout warn" style="margin-top:16px">
-      <strong>Conclusión:</strong> Raúl <strong>19h</strong> + Victor <strong>15.5h</strong> cubren
-      <strong>34 de 43h</strong>. Quedan <strong>9h/sem</strong> (celdas rojas):
-      sobre todo <strong>Emmanuel el miércoles</strong> y el <strong>cruce 12:30 Fadi</strong> en L/X/V.
-    </div>
   </section>
 
-  <!-- 5. ROTA -->
-  <section class="block" id="rota">
-    <h2>5. Rota con solo staff core</h2>
+  <!-- 4. STILL MISSING -->
+  <section class="block" id="still-missing">
+    <span class="section-badge still">Section 4</span>
+    <h2>Still missing under that hypothesis</h2>
     <p class="section-lead">
-      Sin Luliya · sin Raúl · sin Victor. Los huecos quedan visibles a propósito.
+      Even with Victor supporting (and Raúl), <strong>9 person-hours / week</strong> remain uncovered.
+      These are the red cells from Section 3 — listed here so the residual risk is obvious.
     </p>
 
-    <div class="day-grid">
-      <article class="day-card">
-        <header class="heavy">Lunes · hueco 11h</header>
-        <div class="day-body">
-          <h4>En planta</h4>
-          <ul>
-            <li>Michelle 11–16</li>
-            <li>Yousef 11–15</li>
-            <li>Roberto 11–15</li>
-          </ul>
-          <h4>Fuera</h4>
-          <ul>
-            <li class="off">Luliya · Raúl · Victor</li>
-          </ul>
-          <div class="coverage gap">Hay 3 · hace falta hasta 7 · faltan 11h-persona</div>
-        </div>
-      </article>
-
-      <article class="day-card">
-        <header class="light">Martes · hueco 6h</header>
-        <div class="day-body">
-          <h4>En planta</h4>
-          <ul>
-            <li>Michelle 11–16</li>
-            <li>Roberto 11–15</li>
-            <li class="off">Yousef OFF</li>
-          </ul>
-          <div class="coverage gap">Hay 2 · hace falta hasta 4 · faltan 6h-persona</div>
-        </div>
-      </article>
-
-      <article class="day-card">
-        <header class="heavy">Miércoles · hueco 15h</header>
-        <div class="day-body">
-          <h4>En planta</h4>
-          <ul>
-            <li>Michelle 11–16</li>
-            <li>Roberto 11–15</li>
-            <li class="off">Yousef OFF</li>
-          </ul>
-          <div class="coverage gap">Hay 2 · hace falta hasta 7 · peor día · 15h-persona</div>
-        </div>
-      </article>
-
-      <article class="day-card">
-        <header class="tbc-day">Jueves · hueco 1h · TBC</header>
-        <div class="day-body">
-          <h4>En planta</h4>
-          <ul>
-            <li class="off">Michelle OFF</li>
-            <li>Yousef 11–15</li>
-            <li>Roberto 11–15</li>
-          </ul>
-          <div class="coverage gap">Cruce 12:30–13:00 −2 · falta 1h-persona</div>
-        </div>
-      </article>
-
-      <article class="day-card">
-        <header class="heavy">Viernes · hueco 10h</header>
-        <div class="day-body">
-          <h4>En planta</h4>
-          <ul>
-            <li>Michelle 11–16</li>
-            <li>Yousef 11–15</li>
-            <li>Roberto 11–16</li>
-          </ul>
-          <div class="coverage gap">Hay 3 · hace falta hasta 7 · faltan 10h-persona</div>
-        </div>
-      </article>
+    <div class="stat-row">
+      <div class="stat"><strong>9h</strong><span>Person-hours still open / week</span></div>
+      <div class="stat"><strong>6h</strong><span>Of that on Wednesday</span></div>
+      <div class="stat"><strong>2h</strong><span>Monday residual</span></div>
+      <div class="stat"><strong>1h</strong><span>Friday residual</span></div>
     </div>
+
+    <div class="callout danger">
+      <strong>Where the 9 hours sit</strong>
+      <ul class="gap-list">
+        <li><strong>Monday 12:30–13:00 — Fadi:</strong> need 2 more staff for the critical peak (Timi still in; Raúl+Victor already on Timi).</li>
+        <li><strong>Monday 15:00–16:00 — Emmanuel:</strong> Yousef has left; nobody on 1:1.</li>
+        <li><strong>Wednesday all day — Emmanuel:</strong> Yousef off · nobody for 1:1 across 11:00–16:00 (≈5h of the Wednesday gap).</li>
+        <li><strong>Wednesday 12:30–13:00 — Fadi:</strong> same peak clash as Monday (need 2).</li>
+        <li><strong>Friday 12:30–13:00 — Fadi:</strong> same peak clash (need 2 for 0.5h = 1 person-hour in the weekly sum with other Fri residual).</li>
+      </ul>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Day</th>
+          <th>Gap after Victor+Raúl</th>
+          <th>Main cause</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Monday</strong></td>
+          <td><strong>2h</strong></td>
+          <td>Fadi peak 12:30 + Emmanuel close 15–16</td>
+        </tr>
+        <tr>
+          <td><strong>Tuesday</strong></td>
+          <td class="ok-cell"><strong>0</strong></td>
+          <td>Covered</td>
+        </tr>
+        <tr>
+          <td><strong>Wednesday</strong></td>
+          <td><strong>6h</strong></td>
+          <td>Emmanuel with no Yousef + Fadi peak</td>
+        </tr>
+        <tr>
+          <td><strong>Thursday</strong></td>
+          <td class="ok-cell"><strong>0</strong></td>
+          <td>Covered (Timi TBC)</td>
+        </tr>
+        <tr>
+          <td><strong>Friday</strong></td>
+          <td><strong>1h</strong></td>
+          <td>Fadi peak 12:30–13:00</td>
+        </tr>
+        <tr style="background:var(--navy);color:#fff">
+          <td><strong>Week</strong></td>
+          <td><strong>9h</strong></td>
+          <td>Still need bank / hire / Luliya afternoons / schedule change</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout warn">
+      <strong>Conclusion:</strong> Victor on the floor (with Raúl) closes most of the hole
+      (<strong>34 / 43h</strong>) but does <em>not</em> fully staff the service.
+      Closing the last <strong>9h</strong> needs one more lever: hire, Luliya afternoons,
+      move Fadi to 13:00, and/or cover Emmanuel on Wednesday.
+    </div>
+
+    <h3>Open decisions</h3>
+    <ol class="clean">
+      <li>How do we cover the remaining <strong>9 person-hours</strong>?</li>
+      <li><strong>Luliya</strong> — if she can do afternoons (13–16), how many hours return?</li>
+      <li><strong>Yousef Thursday</strong> — yes/no (affects Thu gap if hypothesis changes).</li>
+      <li><strong>Fadi → 13:00</strong> — removes the 12:30 peak clash (~6h/week in core-only; also helps residual peaks).</li>
+      <li><strong>Timi Thursday TBC</strong>.</li>
+    </ol>
   </section>
 
-  <!-- 4. HORAS -->
-  <section class="block" id="horas">
-    <h2>6. Horas de contrato (disponibles)</h2>
-    <p class="section-lead">Objetivo de contrato term-time: horas garantizadas / semana.</p>
+  <!-- APPENDIX -->
+  <section class="block" id="appendix">
+    <span class="section-badge app">Appendix</span>
+    <h2>Contracts &amp; career framework</h2>
+    <p class="section-lead">
+      Reference for issuing 2026–27 Day Centre contracts. Not part of the rota gap analysis above.
+    </p>
 
-        <table>
+    <div class="stat-row">
+      <div class="stat"><strong>4</strong><span>Nominated contracts</span></div>
+      <div class="stat"><strong>A £18</strong><span>New Day Centre hires only</span></div>
+      <div class="stat"><strong>B £20</strong><span>Roberto · Yousef · Luliya</span></div>
+      <div class="stat"><strong>SL £30</strong><span>Michelle Service Lead</span></div>
+    </div>
+
+    <h3>Contract hours (term-time target)</h3>
+    <table>
       <thead>
         <tr>
           <th>Staff</th>
-          <th>Lun</th>
-          <th>Mar</th>
-          <th>Mié</th>
-          <th>Jue</th>
-          <th>Vie</th>
+          <th>Mon</th>
+          <th>Tue</th>
+          <th>Wed</th>
+          <th>Thu</th>
+          <th>Fri</th>
           <th>Total</th>
-          <th>Estado</th>
+          <th>Status</th>
         </tr>
       </thead>
       <tbody>
         <tr>
           <td><strong>Michelle</strong></td>
-          <td>5</td>
-          <td>5</td>
-          <td>5</td>
-          <td class="off">—</td>
-          <td>5</td>
+          <td>5</td><td>5</td><td>5</td><td class="off">—</td><td>5</td>
           <td><strong>20h</strong></td>
           <td class="ok-cell">Service Lead £30</td>
         </tr>
         <tr>
           <td><strong>Yousef</strong></td>
-          <td>4</td>
-          <td class="off">—</td>
-          <td class="off">—</td>
-          <td>4*</td>
-          <td>4</td>
+          <td>4</td><td class="off">—</td><td class="off">—</td><td>4*</td><td>4</td>
           <td><strong>~12h</strong></td>
-          <td class="ok-cell">Band B £20</td>
+          <td class="ok-cell">Scale 2 £20</td>
         </tr>
         <tr>
           <td><strong>Roberto</strong></td>
-          <td>4</td>
-          <td>4</td>
-          <td>4</td>
-          <td>4</td>
-          <td>5</td>
+          <td>4</td><td>4</td><td>4</td><td>4</td><td>5</td>
           <td><strong>21h</strong> <span class="muted">→20</span></td>
-          <td class="ok-cell">Band B £20</td>
+          <td class="ok-cell">Scale 2 £20</td>
         </tr>
         <tr>
           <td><strong>Luliya</strong></td>
-          <td class="off" colspan="5">Fuera del esquema rota (no mañanas)</td>
+          <td class="off" colspan="5">Out of rota scheme (no mornings)</td>
           <td class="off">TBC</td>
-          <td class="ok-cell">Band B £20 si vuelve</td>
-        </tr>
-        <tr>
-          <td><strong>Raúl / Victor</strong></td>
-          <td class="off" colspan="5">Fuera del cálculo</td>
-          <td class="off">0</td>
-          <td class="off">No cuenta</td>
-        </tr>
-        <tr style="background:#fff1f2">
-          <td colspan="6"><strong>Hueco semanal a cubrir</strong></td>
-          <td colspan="2"><strong>43h-persona</strong></td>
+          <td class="ok-cell">Scale 2 £20 if she returns</td>
         </tr>
       </tbody>
     </table>
     <p class="muted" style="font-size:12px;margin:8px 0 0">
-      Roberto a 21h con Mar 11–15: recortar 1h (p. ej. Mar 12–15) para 20h exactas.
-      *Yousef jueves opcional; sin él el hueco semanal pasa a 47h-persona.
+      Roberto at 21h with Tue 11–15: trim 1h (e.g. Tue 12–15) for exact 20h.
+      *Yousef Thursday optional; without him the core-only weekly gap rises to 47 person-hours.
     </p>
 
-    <h3>Coste orientativo anual (20h · 43 semanas)</h3>
+    <h3>Indicative annual cost (20h · 43 weeks)</h3>
     <table>
       <thead>
         <tr>
-          <th>Nivel</th>
-          <th>£/hora</th>
-          <th>Salario anual (20h / 43 sem)</th>
+          <th>Level</th>
+          <th>£/hour</th>
+          <th>Annual salary (20h / 43 weeks)</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td><span class="chip chip-a">Band A</span> Support Worker</td>
+          <td><span class="chip chip-a">Scale 1</span> Support Worker</td>
           <td><strong>£18.00</strong></td>
           <td><strong>£15,480</strong></td>
         </tr>
         <tr>
-          <td><span class="chip chip-b">Band B</span> Experienced Support Worker</td>
+          <td><span class="chip chip-b">Scale 2</span> Experienced Support Worker</td>
           <td><strong>£20.00</strong></td>
           <td><strong>£17,200</strong></td>
         </tr>
         <tr>
-          <td><span class="chip chip-c">Band C</span> Senior Support Worker</td>
+          <td><span class="chip chip-c">Scale 3</span> Senior Support Worker</td>
           <td><strong>£24.00</strong></td>
           <td><strong>£20,640</strong></td>
         </tr>
         <tr>
-          <td><span class="chip chip-m">Service Lead</span> <span class="muted">(rol aparte)</span></td>
+          <td><span class="chip chip-m">Service Lead</span> <span class="muted">(separate role)</span></td>
           <td><strong>£30.00</strong></td>
           <td><strong>£25,800</strong></td>
         </tr>
       </tbody>
     </table>
-    <p class="muted" style="font-size:12px;margin:8px 0 0">
-      Progresión Day Centre: <strong>A → B → C</strong>.
-      Service Lead es un <strong>puesto / rol distinto</strong>, no una cuarta banda.
-    </p>
-  </section>
 
-
-  <!-- 7. CONTRATOS -->
-  <section class="block" id="contratos">
-    <h2>7. Contratos a hacer · term-time 2026–27</h2>
-    <p class="section-lead">
-      Placement acordado para el año que viene. Todos: Permanent Part-Time Term-Time Only,
-      salario anual / 12 meses, horas garantizadas.
-    </p>
-
-    <div class="stat-row">
-      <div class="stat"><strong>4</strong><span>Contratos nominados</span></div>
-      <div class="stat"><strong>A £18</strong><span>Solo gente nueva al Day Centre</span></div>
-      <div class="stat"><strong>B £20</strong><span>Roberto · Yousef · Luliya</span></div>
-      <div class="stat"><strong>Mgr £30</strong><span>Michelle</span></div>
-    </div>
-
-    <h3>Contratos nominados (hacer / renovar)</h3>
+    <h3>Nominated contracts to issue</h3>
     <table>
       <thead>
         <tr>
           <th>#</th>
-          <th>Persona</th>
-          <th>Rol / banda</th>
+          <th>Person</th>
+          <th>Role / scale</th>
           <th>£/h</th>
-          <th>Horas sem. (objetivo)</th>
-          <th>Salario anual orientativo*</th>
-          <th>Notas</th>
+          <th>Weekly hours (target)</th>
+          <th>Indicative annual*</th>
+          <th>Notes</th>
         </tr>
       </thead>
       <tbody>
@@ -1520,309 +1125,114 @@
           <td><strong>Michelle</strong></td>
           <td><span class="chip chip-m">Service Lead</span></td>
           <td><strong>£30.00</strong></td>
-          <td>20h (L M X V · 11–16)</td>
+          <td>20h (Mon Tue Wed Fri · 11–16)</td>
           <td><strong>£25,800</strong></td>
-          <td>Rol Service Lead (no banda). Liderazgo operativo Day Centre.</td>
+          <td>Operational Day Centre lead — separate role, not a scale.</td>
         </tr>
         <tr>
           <td><strong>2</strong></td>
           <td><strong>Roberto</strong></td>
-          <td><span class="chip chip-b">Band B</span> Experienced Support Worker</td>
+          <td><span class="chip chip-b">Scale 2</span></td>
           <td><strong>£20.00</strong></td>
-          <td>~20h (L–J hasta 15 · V hasta 16)</td>
+          <td>~20h (Mon–Thu to 15 · Fri to 16)</td>
           <td><strong>£17,200</strong></td>
-          <td>A partir del año que viene → Band B (experiencia).</td>
+          <td>Experienced → Scale 2 from next year.</td>
         </tr>
         <tr>
           <td><strong>3</strong></td>
           <td><strong>Yousef</strong></td>
-          <td><span class="chip chip-b">Band B</span> Experienced Support Worker</td>
+          <td><span class="chip chip-b">Scale 2</span></td>
           <td><strong>£20.00</strong></td>
-          <td>~12h si L+V+Jue (off Mar+Mié)</td>
-          <td>según horas fijadas</td>
-          <td>Si trabaja: Band B (ya tiene experiencia). Turno 11–x, sale 15 L/V.</td>
+          <td>~12h if Mon+Fri+Thu (off Tue+Wed)</td>
+          <td>pro-rata to hours</td>
+          <td>Experienced → Scale 2. Shift 11–x; leaves 15 Mon/Fri.</td>
         </tr>
         <tr>
           <td><strong>4</strong></td>
           <td><strong>Luliya</strong></td>
-          <td><span class="chip chip-b">Band B</span> Experienced Support Worker</td>
+          <td><span class="chip chip-b">Scale 2</span></td>
           <td><strong>£20.00</strong></td>
-          <td>TBC (no mañanas en este borrador)</td>
-          <td>según horas fijadas</td>
-          <td>Si trabaja: Band B (experiencia). Horario a confirmar (sin mañanas).</td>
+          <td>TBC (no mornings in this draft)</td>
+          <td>pro-rata to hours</td>
+          <td>Experienced → Scale 2 if she works. Hours TBC.</td>
         </tr>
       </tbody>
     </table>
     <p class="muted" style="font-size:12px;margin:8px 0 0">
-      *Anual a 20h × 43 semanas. Si las horas semanales son distintas, prorratear:
-      <em>horas/sem × 43 × £/h</em>.
+      *Annual at 20h × 43 weeks. Other weekly hours: <em>hours/week × 43 × £/h</em>.
     </p>
 
-    <h3>Regla para gente nueva</h3>
     <div class="callout note">
-      Cualquier <strong>persona nueva</strong> que entre al Day Centre entra siempre en
-      <strong>Band A — Support Worker · £18.00/h</strong> (£15,480 si 20h / 43 sem).
-      La progresión a Band B / C es por Performance Review, no por antigüedad sola.
-      Yousef y Luliya <strong>no</strong> entran como A: ya tienen experiencia → <strong>Band B</strong>.
+      <strong>New hires</strong> always start on <strong>Scale 1 — Support Worker · £18.00/h</strong>
+      (£15,480 at 20h / 43 weeks). Progression to Scale 2 / 3 is by Performance Review.
+      Yousef and Luliya do <strong>not</strong> start as Scale 1 — experience → <strong>Scale 2</strong>.
     </div>
 
-    <h3>Checklist de contratos</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>Acción</th>
-          <th>Detalle</th>
-          <th>Estado</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><strong>Contrato Michelle</strong></td>
-          <td>Permanent PT TTO · Day Centre <strong>Service Lead</strong> · £30/h · 20h</td>
-          <td class="off">Por redactar / firmar</td>
-        </tr>
-        <tr>
-          <td><strong>Contrato Roberto</strong></td>
-          <td>Permanent PT TTO · Band B · £20/h · ~20h · vigente año que viene</td>
-          <td class="off">Por redactar / firmar</td>
-        </tr>
-        <tr>
-          <td><strong>Contrato Yousef</strong></td>
-          <td>Permanent PT TTO · Band B · £20/h · horas L/V (+Jue TBC)</td>
-          <td class="off">Por redactar si confirma</td>
-        </tr>
-        <tr>
-          <td><strong>Contrato Luliya</strong></td>
-          <td>Permanent PT TTO · Band B · £20/h · horario sin mañanas TBC</td>
-          <td class="off">Por redactar si vuelve</td>
-        </tr>
-        <tr>
-          <td><strong>Plantilla nuevos</strong></td>
-          <td>Modelo contrato Band A · £18/h · para cualquier incorporación nueva</td>
-          <td class="off">Por tener listo</td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
-
-  <!-- 8. FRAMEWORK -->
-  <section class="block en" id="framework">
-    <h2>8. Day Centre Career Framework</h2>
-    <p class="section-lead">
-      Three progression bands (A / B / C) plus a separate Service Lead role.
-      English text for contracts / HR use.
-    </p>
-
-    <h3>Philosophy</h3>
+    <h3>Career structure (summary)</h3>
     <p>
-      The Day Centre Career Framework has been designed to recognise professional development,
-      leadership, accountability and service quality.
-    </p>
-    <p>
-      Salary progression is based on increasing responsibility, performance and contribution
-      to the organisation, rather than length of service alone.
-    </p>
-    <p>
-      Progression is never automatic and is reviewed through the annual Performance Review process.
+      Three progression scales (1 → 2 → 3) plus a separate <strong>Service Lead</strong> role
+      (not a fourth scale). Appointment to Service Lead is by post / vacancy.
     </p>
 
-    <div class="callout warn">
-      <strong>Length of service alone is not a criterion for promotion or a salary increase.</strong>
-      Tenure may be considered as an additional factor, but promotion depends on demonstrated
-      ability to perform the responsibilities of the next level.
-    </div>
-
-    <h3>Contract Structure</h3>
-    <p>All Day Centre employees will be employed under a:</p>
-    <ul class="clean">
-      <li>Permanent Part-Time (Term-Time Only) contract.</li>
-      <li>Guaranteed weekly hours.</li>
-      <li>Annual salary paid equally over 12 months.</li>
-      <li>Salary linked to Career Band rather than individual negotiation.</li>
-    </ul>
-
-    <h3>Career structure (confirmed)</h3>
-    <p>
-      Day Centre progression has <strong>three career bands</strong> (A → B → C).
-      Above that sits a separate <strong>Service Lead</strong> role (not a fourth band).
-    </p>
-
-    <!-- Band A -->
     <div class="band-card">
-      <h3>Band A — Day Centre Support Worker</h3>
-      <p class="band-purpose">
-        The entry / standard Day Centre support role. Provides high-quality person-centred
-        support while following clubSENsational procedures and standards.
-      </p>
-      <p style="margin:0 0 4px;font-weight:700;font-size:13px">Typical responsibilities</p>
-      <ul class="clean">
-        <li>Deliver individualised participant support.</li>
-        <li>Follow behaviour support plans.</li>
-        <li>Maintain safeguarding standards.</li>
-        <li>Complete session records accurately.</li>
-        <li>Communicate professionally with families and colleagues.</li>
-        <li>Maintain organisation and professionalism.</li>
-        <li>Work collaboratively within the team.</li>
-      </ul>
-      <p style="margin:12px 0 4px;font-weight:700;font-size:13px">Expected behaviour</p>
-      <p style="margin:0">Reliable · Professional · Safe practice · Consistent · Positive team member</p>
+      <h3>Scale 1 — Day Centre Support Worker</h3>
+      <p class="band-purpose">Entry / standard Day Centre support role.</p>
       <div class="salary">
         <span><strong>£18.00</strong> / hour</span>
         <span><strong>£15,480</strong> annual (20h / 43 weeks)</span>
       </div>
-      <p style="margin:10px 0 0;font-size:13px" class="muted">
-        Entry point for <strong>all new Day Centre staff</strong>.
-      </p>
+      <p style="margin:10px 0 0;font-size:13px" class="muted">Entry point for all new Day Centre staff.</p>
     </div>
 
-    <!-- Band B -->
     <div class="band-card b">
-      <h3>Band B — Experienced Day Centre Support Worker</h3>
-      <p class="band-purpose">
-        Mid progression between Support Worker and Senior. More autonomy and consistency
-        than Band A, without full senior ownership of the service.
-      </p>
-      <p style="margin:0 0 4px;font-weight:700;font-size:13px">Additional responsibilities</p>
-      <ul class="clean">
-        <li>Work with greater independence on familiar participants.</li>
-        <li>Support newer Band A colleagues in daily practice.</li>
-        <li>Handle routine behaviour and session decisions with confidence.</li>
-        <li>Maintain strong documentation and family communication.</li>
-        <li>Contribute ideas for small service improvements.</li>
-        <li>Model reliable, professional standards.</li>
-      </ul>
-      <p style="margin:12px 0 4px;font-weight:700;font-size:13px">Expected behaviour</p>
-      <p style="margin:0">Dependable · Growing autonomy · Clear communication · Steady quality · Team support</p>
+      <h3>Scale 2 — Experienced Day Centre Support Worker</h3>
+      <p class="band-purpose">More autonomy than Scale 1; not full senior ownership.</p>
       <div class="salary">
         <span><strong>£20.00</strong> / hour</span>
         <span><strong>£17,200</strong> annual (20h / 43 weeks)</span>
       </div>
       <p style="margin:10px 0 0;font-size:13px" class="muted">
-        Mid step between Band A and Senior (Band C).<br>
-        <strong>2026–27 contracts:</strong> Roberto · Yousef · Luliya (si trabajan).
+        <strong>2026–27:</strong> Roberto · Yousef · Luliya (if working).
       </p>
     </div>
 
-    <!-- Band C -->
     <div class="band-card c">
-      <h3>Band C — Senior Day Centre Support Worker</h3>
-      <p class="band-purpose">
-        The senior support progression within the Day Centre. Greater ownership of
-        participants, daily organisation and service quality. Mentors Bands A and B.
-      </p>
-      <p style="margin:0 0 4px;font-weight:700;font-size:13px">Additional responsibilities</p>
-      <ul class="clean">
-        <li>Mentor new staff and Band A / B colleagues.</li>
-        <li>Lead activities independently.</li>
-        <li>Support behaviour management.</li>
-        <li>Assist with staff induction.</li>
-        <li>Maintain excellent documentation.</li>
-        <li>Identify service improvements.</li>
-        <li>Model best practice.</li>
-        <li>Build positive relationships with families.</li>
-      </ul>
-      <p style="margin:12px 0 4px;font-weight:700;font-size:13px">Expected behaviour</p>
-      <p style="margin:0">Highly autonomous · Solution focused · Role model · Strong communication · Consistently high standards</p>
+      <h3>Scale 3 — Senior Day Centre Support Worker</h3>
+      <p class="band-purpose">Senior support progression; mentors Scales 1 and 2.</p>
       <div class="salary">
         <span><strong>£24.00</strong> / hour</span>
         <span><strong>£20,640</strong> annual (20h / 43 weeks)</span>
       </div>
       <p style="margin:10px 0 0;font-size:13px" class="muted">
-        Senior progression band. Not used for Michelle (she moves to Service Lead role).
+        Not used for Michelle (she moves to Service Lead).
       </p>
     </div>
 
-    <!-- Service Lead role -->
     <div class="band-card" style="border-top-color:#8a6500">
-      <h3>Day Centre Service Lead — separate role (not a career band)</h3>
+      <h3>Day Centre Service Lead — separate role</h3>
       <p class="band-purpose">
-        A distinct management post, outside the A → B → C progression.
-        Appointment is by role / vacancy, not automatic promotion from Band C.
+        Distinct operational lead post, outside Scale 1 → 2 → 3 progression.
       </p>
-      <p style="margin:0 0 4px;font-weight:700;font-size:13px">Role focus</p>
-      <ul class="clean">
-        <li>Lead the daily operation of the Day Centre.</li>
-        <li>Coordinate staff and allocate resources.</li>
-        <li>Coach and mentor the team (Bands A–C).</li>
-        <li>Support complex behaviours and safeguarding decisions.</li>
-        <li>Review participant programmes and documentation quality.</li>
-        <li>Contribute to recruitment, training and service development.</li>
-        <li>Act as the accountable senior when directors are unavailable.</li>
-      </ul>
-      <p style="margin:12px 0 4px;font-weight:700;font-size:13px">Expected behaviour</p>
-      <p style="margin:0">Leadership · Excellent judgement · High accountability · Decision making · Coaching others · Service improvement</p>
       <div class="salary">
         <span><strong>£30.00</strong> / hour</span>
         <span><strong>£25,800</strong> annual (20h / 43 weeks)</span>
       </div>
       <p style="margin:10px 0 0;font-size:13px" class="muted">
-        Not a fourth band. Separate contract / role title when appointed.<br>
-        <strong>2026–27 contract:</strong> Michelle · £30/h · ~20h.
+        <strong>2026–27:</strong> Michelle · £30/h · ~20h.
       </p>
     </div>
 
-    <h3>Progression Principles</h3>
-    <p>Promotion is based on demonstrated competence, not length of service.</p>
-    <p>Within the Day Centre career path, employees may:</p>
-    <ul class="clean">
-      <li>Remain on <strong>Band A (£18/h)</strong> — Support Worker.</li>
-      <li>Progress to <strong>Band B (£20/h)</strong> — Experienced Support Worker.</li>
-      <li>Progress to <strong>Band C (£24/h)</strong> — Senior Support Worker.</li>
-      <li>Apply for / be appointed to the separate <strong>Service Lead</strong> role (£30/h) when that post exists — not an automatic fourth band.</li>
-    </ul>
-    <p>Each step requires a successful Performance Review (or formal appointment for Service Lead).</p>
-
-    <h3>Annual Performance Review Criteria</h3>
-    <ul class="clean">
-      <li>Quality of participant support</li>
-      <li>Safeguarding compliance</li>
-      <li>Attendance and reliability</li>
-      <li>Professional conduct</li>
-      <li>Documentation quality</li>
-      <li>Communication</li>
-      <li>Initiative</li>
-      <li>Problem solving</li>
-      <li>Leadership</li>
-      <li>Team contribution</li>
-      <li>Service development</li>
-      <li>Family and stakeholder feedback</li>
-    </ul>
-
-    <h3>Salary Review Philosophy</h3>
-    <p>Annual salary reviews should consider:</p>
-    <ul class="clean">
-      <li>Individual performance</li>
-      <li>Increased responsibilities</li>
-      <li>Completion of internal training</li>
-      <li>Business growth</li>
-      <li>Financial sustainability</li>
-      <li>Market benchmarking</li>
-    </ul>
-    <p>
-      Salary progression is not guaranteed and remains subject to business performance
-      and the outcome of the annual review.
+    <p style="margin:14px 0 0;font-size:13px" class="muted">
+      Promotion is based on demonstrated competence and Performance Review, not length of service alone.
+      Salary progression is not guaranteed and remains subject to business performance.
     </p>
-  </section>
-
-  <!-- 6. ABIERTOS -->
-  <section class="block" id="abiertos">
-    <h2>9. Puntos abiertos</h2>
-    <ol class="clean">
-      <li><strong>¿Cómo se cubren las 43h-persona?</strong> ver §4 Raúl+Victor (dejan 9h) · o contratar / Luliya tardes / bank.</li>
-      <li><strong>Luliya</strong> — si puede tardes (13–16), ¿cuántas horas recupera? (L/X/V: ~3h × 3 días parciales… recalcular).</li>
-      <li><strong>Yousef jueves</strong> — sí/no (1h vs 5h de hueco ese día).</li>
-      <li><strong>Desfase Fadi → 13:00</strong> — ahorra ~6h-persona/sem en el pico.</li>
-      <li><strong>Timi jueves TBC</strong>.</li>
-      <li><strong>Contratos:</strong> Michelle Service Lead £30 · Roberto/Yousef/Luliya Band B £20 · nuevos = Band A £18.</li>
-      <li><strong>Firmar / redactar</strong> los 4 contratos + plantilla Band A (ver §7).</li>
-    </ol>
   </section>
 
   <footer class="page-foot">
     clubSENsational Ltd · Company no. 13755417 ·
     71-75 Shelton Street, Covent Garden, WC2H 9JQ, London ·
     www.clubsensational.org<br />
-    Day Centre Rota &amp; Career Framework · draft · July 2026
+    Day Centre rota · Term-time 2026–27 · Internal planning document
   </footer>
 
 </div>
