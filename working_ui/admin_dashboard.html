@@ -1127,7 +1127,7 @@
       }
     };
 
-    var state = { view:'nav_hub', navHubGroup:null, drawerClient:null, drawerStaff:null, drawerIsSynthetic:false, reportTargetClient:null, search:'', shiftModalCtx:null, pendingBookingsScroll:null, pendingBookingsSlotFocus:null, commsOrderDetailKey:'', sessionOverview:{ iso:'', overrides:[] }, sessionFeedback:{ anchorIso:'', selectedIso:null, rangeFrom:'', rangeTo:'', clientQ:'' }, navGroupsOpen:{ g_operator:false, g_c4k:false, g_zoho:false, g_supabase:false, g_xero:false, g_indeed:false, g_settings_portal:false }, c4kServicesRegisterOpen:false, registerSessionSlot:null, scrollToCapacityEmbed:false, portalLatePendingCount:0, financeTab:'payments' };
+    var state = { view:'nav_hub', navHubGroup:null, drawerClient:null, drawerStaff:null, drawerIsSynthetic:false, reportTargetClient:null, search:'', shiftModalCtx:null, pendingBookingsScroll:null, pendingBookingsSlotFocus:null, commsOrderDetailKey:'', sessionOverview:{ iso:'', overrides:[] }, sessionFeedback:{ anchorIso:'', selectedIso:null, rangeFrom:'', rangeTo:'', clientQ:'' }, navGroupsOpen:{ g_operator:false, g_c4k:false, g_zoho:false, g_supabase:false, g_xero:false, g_indeed:false, g_settings_portal:false }, c4kServicesRegisterOpen:false, registerSessionSlot:null, scrollToCapacityEmbed:false, portalLatePendingCount:0, financeTab:'payments', hrContractsTab:'create', hrContractsIssueDoc:'checklist' };
     var sched = { slotsById:{}, overrides:[], termEvents:[], rosterLogRows:[], activeSlot:null, lastMsg:'', waitingSupabaseRetryBound:false, weekAnchorIso:'' };
     /**
      * Schedule &amp; Covers + Sessions week window.
@@ -20738,7 +20738,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portal_parent_broadcast:'Send one message (email + optional WhatsApp) to many families at once — review, select, preview and send in batch.',
         staffhr:'Staff roster — open any person for full profile, HR notes and availability.',
         onboarding:'New-hire onboarding pipeline — forms, tasks and worker progress.',
-        staffhr_contracts:'Employment contracts (zero-hours, fixed-term and permanent part-time term-time) — create, send and track staff signatures.',
+        staffhr_contracts:'Employment contracts — create & send, plus the 2026-27 issue checklist (roles, scales, Sevitha path).',
         staffhr_training_records:'Training records — events, signatures, expiry watch, and certificate PDFs in My Documents.',
         portal_documents:'Timesheets, expense claims, onboarding uploads and files in Supabase storage.',
         portal_payslips:'Upload monthly payslip PDFs for each worker — visible in My Documents on the staff app.',
@@ -21920,19 +21920,96 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         (window.PortalWellbeingAdminActions ? window.PortalWellbeingAdminActions.viewHtml() : '');
     }
 
+    function hrContractsHubTabsHtml(active){
+      var tabs = [
+        { id:'create', label:'Create & send', iconId:'staffhr_contracts' },
+        { id:'issue', label:'Issue plan 2026-27', iconId:'policies' }
+      ];
+      return tabs.map(function(t){
+        var on = t.id === active;
+        var ico = adminNavIconHtml(t.iconId || t.id);
+        return '<button type="button" class="c4k-sessions-hub-tab'+(on?' is-active':'')+'" role="tab" data-hr-contracts-tab="'+esc(t.id)+'" aria-selected="'+(on?'true':'false')+'">'+
+          (ico ? '<span class="c4k-sessions-hub-tab__ico" aria-hidden="true">'+ico+'</span>' : '')+
+          '<span class="c4k-sessions-hub-tab__label">'+esc(t.label)+'</span></button>';
+      }).join('');
+    }
+    function hrContractsIssueDocUrl(doc){
+      var map = {
+        checklist: '/portal/hr/contratos-checklist-2026-27.html',
+        plan: '/portal/hr/contratos-a-emitir-2026-27.html',
+        rota: '/portal/hr/rota-career-framework-2026-27.html'
+      };
+      return map[doc] || map.checklist;
+    }
+    function hrContractsIssuePanelHtml(doc){
+      var cur = doc || 'checklist';
+      var docs = [
+        { id:'checklist', label:'Checklist (ES/EN)' },
+        { id:'plan', label:'Full plan' },
+        { id:'rota', label:'Day Centre rota' }
+      ];
+      var pills = docs.map(function(d){
+        var on = d.id === cur;
+        return '<button type="button" class="btn '+(on?'btn--pri':'btn--sec')+' btn--sm" data-hr-contracts-doc="'+esc(d.id)+'">'+esc(d.label)+'</button>';
+      }).join('');
+      var url = hrContractsIssueDocUrl(cur);
+      return (
+        '<div class="card" style="margin:0 0 12px">'+
+          '<div class="card-pad" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between">'+
+            '<div style="display:flex;flex-wrap:wrap;gap:8px">'+pills+'</div>'+
+            '<a class="btn btn--ghost btn--sm" href="'+esc(url)+'" target="_blank" rel="noopener">Open in new tab</a>'+
+          '</div>'+
+        '</div>'+
+        '<p class="page-intro" style="margin-top:0;max-width:48rem">Who needs a contract, scales/salary, Sevitha roles (clubSENsational + PIXTOLEARN) and salary milestones — for Sevitha to work through.</p>'+
+        '<div class="hr-contracts-issue-frame-wrap" style="border:1px solid var(--border,#d7e2e8);border-radius:14px;overflow:hidden;background:#fff;min-height:72vh">'+
+          '<iframe id="hrContractsIssueFrame" class="hr-contracts-issue-frame" title="Contracts issue plan 2026-27" src="'+esc(url)+'" loading="lazy" style="display:block;width:100%;min-height:72vh;height:72vh;border:0;background:#fff"></iframe>'+
+        '</div>'
+      );
+    }
     function viewStaffHRContracts(){
+      var tab = state.hrContractsTab || 'create';
+      var hide = function(id){ return tab === id ? '' : ' hidden'; };
       var embed = (typeof window.HRContractEmbedHtml === 'function')
         ? window.HRContractEmbedHtml()
         : '<div id="hrContractEmbed" class="hr-contract-embed"><p class="muted">Loading contract wizard…</p></div>';
+      var issueDoc = state.hrContractsIssueDoc || 'checklist';
       return (
         '<h1 class="page-title">Employment contracts</h1>'+
-        '<p class="page-intro">Create zero-hours or fixed-term employment contracts and send them to staff. They sign on their <strong>Portal dashboard</strong> (like an announcement); the signed PDF is saved under <strong>My Documents</strong>.</p>'+
+        '<p class="page-intro">Create contracts and send them for signature, or open the 2026-27 issue plan (checklist, roles and salary path).</p>'+
         '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr">Staff &amp; HR</button>'+
         '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr_training_records">Training records</button>'+
         '<button type="button" class="btn btn--sec btn--sm" data-view-target="onboarding">Onboarding</button></div>'+
-        embed
+        '<div class="c4k-sessions-hub-tabs" role="tablist" aria-label="Employment contracts">'+hrContractsHubTabsHtml(tab)+'</div>'+
+        '<div id="hrContractsPanelCreate" class="hr-contracts-hub-panel"'+hide('create')+'>'+embed+'</div>'+
+        '<div id="hrContractsPanelIssue" class="hr-contracts-hub-panel"'+hide('issue')+'>'+hrContractsIssuePanelHtml(issueDoc)+'</div>'
       );
+    }
+    function bindStaffHRContractsView(){
+      var tab = state.hrContractsTab || 'create';
+      document.querySelectorAll('[data-hr-contracts-tab]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var next = btn.getAttribute('data-hr-contracts-tab') || 'create';
+          if(next === tab) return;
+          state.hrContractsTab = next;
+          setView('staffhr_contracts');
+        });
+      });
+      document.querySelectorAll('[data-hr-contracts-doc]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var next = btn.getAttribute('data-hr-contracts-doc') || 'checklist';
+          if(next === (state.hrContractsIssueDoc || 'checklist')) return;
+          state.hrContractsIssueDoc = next;
+          setView('staffhr_contracts');
+        });
+      });
+      if(tab === 'create'){
+        ensureHRContractScripts(function(){
+          if(window.HRContractApp && typeof window.HRContractApp.init === 'function'){
+            window.HRContractApp.init();
+          }
+        });
+      }
     }
 
     function viewStaffHRTrainingRecords(){
@@ -23844,11 +23921,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }
       if(id==='staffhr_contracts'){
-        ensureHRContractScripts(function(){
-          if(window.HRContractApp && typeof window.HRContractApp.init === 'function'){
-            window.HRContractApp.init();
-          }
-        });
+        bindStaffHRContractsView();
       }
       if(id==='staffhr_training_records'){
         if(window.AdminTrainingRecords && $('trModuleRoot')){

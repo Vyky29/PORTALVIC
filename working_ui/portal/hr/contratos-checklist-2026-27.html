@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Contract issuance checklist 2026-27 · clubSENsational</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #1a2a3a; --muted: #5b7280; --line: #d7e2e8; --navy: #35415d;
+    --gold: #f4bd2a; --gold-soft: #fff6dc; --teal: #0e7c86; --teal-deep: #0a5c63;
+    --teal-soft: #e6f3f4; --green: #15803d; --green-soft: #ecfdf5;
+    --amber: #b45309; --amber-soft: #fffbeb; --paper: #f4f7f9; --card: #fff;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; color: var(--ink);
+    font-family: "DM Sans", Helvetica, Arial, sans-serif;
+    font-size: 15px; line-height: 1.55;
+    background:
+      radial-gradient(900px 420px at 0% -10%, rgba(14,124,134,.11), transparent 55%),
+      radial-gradient(700px 380px at 100% 0%, rgba(244,189,42,.14), transparent 50%),
+      var(--paper);
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 24px 18px 80px; }
+  .lang-bar {
+    position: sticky; top: 0; z-index: 40;
+    display: flex; justify-content: flex-end; gap: 8px;
+    padding: 10px 0 12px;
+    background: linear-gradient(180deg, var(--paper) 60%, transparent);
+  }
+  .lang-btn {
+    border: 1px solid var(--line); background: #fff; color: var(--muted);
+    font: inherit; font-size: 12px; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; padding: 7px 14px; border-radius: 999px; cursor: pointer;
+  }
+  .lang-btn.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .hero {
+    background: var(--card); border: 1px solid var(--line); border-radius: 22px;
+    padding: 28px 28px 24px; margin-bottom: 20px; position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
+    background: linear-gradient(180deg, var(--gold), var(--teal));
+  }
+  .hero-top { display: flex; gap: 18px; align-items: center; margin-bottom: 10px; }
+  .hero-top img { width: 84px; height: auto; display: block; }
+  .eyebrow {
+    margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--teal);
+  }
+  h1 {
+    margin: 0 0 8px; font-family: Fraunces, Georgia, serif;
+    font-size: clamp(1.45rem, 3.2vw, 2rem); line-height: 1.18; color: var(--navy);
+  }
+  .hero-lead { margin: 0 0 14px; color: var(--muted); max-width: 44rem; }
+  .pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill {
+    display: inline-flex; background: var(--teal-soft); color: var(--teal-deep);
+    border-radius: 999px; padding: 4px 11px; font-size: 12px; font-weight: 600;
+  }
+  .pill.gold { background: var(--gold-soft); color: #8a6500; }
+  .pill.warn { background: var(--amber-soft); color: var(--amber); }
+  .toc { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .toc a {
+    text-decoration: none; font-size: 12px; font-weight: 700; color: var(--teal-deep);
+    background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px;
+  }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+  @media (max-width: 720px) {
+    .stats { grid-template-columns: 1fr 1fr; }
+    .hero-top { flex-direction: column; align-items: flex-start; }
+  }
+  .stat {
+    background: #fff; border: 1px solid var(--line); border-top: 3px solid var(--gold);
+    border-radius: 12px; padding: 12px 14px;
+  }
+  .stat strong {
+    display: block; font-family: Fraunces, Georgia, serif; font-size: 1.35rem; color: var(--navy);
+  }
+  .stat span { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .service {
+    background: #fff; border: 1px solid var(--line); border-radius: 18px;
+    margin-bottom: 16px; overflow: hidden;
+  }
+  .service-head {
+    display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
+    gap: 10px; padding: 16px 18px 14px;
+    background: linear-gradient(180deg, #fbfcfd, #fff); border-bottom: 1px solid var(--line);
+  }
+  .service-head h2 {
+    margin: 0; font-family: Fraunces, Georgia, serif; font-size: 1.25rem; color: var(--navy);
+  }
+  .service-head p { margin: 4px 0 0; color: var(--muted); font-size: 13px; max-width: 40rem; }
+  .service-count {
+    font-size: 12px; font-weight: 700; color: var(--teal-deep); background: var(--teal-soft);
+    border-radius: 999px; padding: 5px 11px; white-space: nowrap;
+  }
+  .contract {
+    display: grid; grid-template-columns: 28px 1fr; gap: 12px;
+    padding: 16px 18px; border-bottom: 1px solid var(--line);
+  }
+  .contract:last-child { border-bottom: 0; }
+  .contract:nth-child(even) { background: #fafbfc; }
+  .contract input[type="checkbox"] {
+    width: 18px; height: 18px; margin-top: 4px; accent-color: var(--teal);
+  }
+  .contract-title { margin: 0 0 4px; font-size: 1.02rem; font-weight: 700; color: var(--navy); }
+  .contract-meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
+  .chip {
+    display: inline-block; font-size: 11px; font-weight: 700;
+    padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+  }
+  .chip-pt { background: #d1f0f2; color: #0a5c63; }
+  .chip-zh { background: #e0f2fe; color: #0369a1; }
+  .chip-ft { background: #ede9fe; color: #7c3aed; }
+  .chip-mgr { background: var(--gold-soft); color: #8a6500; }
+  .chip-scale { background: #eef0f5; color: var(--navy); }
+  .chip-skip { background: var(--green-soft); color: var(--green); }
+  .detail { margin: 0; color: var(--muted); font-size: 13.5px; }
+  .detail strong { color: var(--ink); }
+  .steps { margin: 8px 0 0; padding-left: 18px; color: var(--ink); font-size: 13px; }
+  .steps li { margin: 3px 0; }
+  .portal { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+  .portal code {
+    font-size: 11.5px; background: #eef2f6; padding: 1px 6px; border-radius: 4px;
+  }
+  .skip-note {
+    margin: 0; padding: 12px 18px; background: var(--green-soft);
+    color: var(--green); font-size: 13px; font-weight: 600;
+  }
+  .path-box {
+    margin-top: 10px; border: 1px solid var(--line); border-radius: 12px;
+    overflow: hidden; background: #fff;
+  }
+  .path-row {
+    display: grid; grid-template-columns: 140px 1fr; gap: 10px;
+    padding: 12px 14px; border-bottom: 1px solid var(--line); font-size: 13.5px;
+  }
+  .path-row:last-child { border-bottom: 0; }
+  .path-row:nth-child(even) { background: #fafbfc; }
+  .path-row strong { color: var(--navy); }
+
+  .role-box {
+    margin-top: 14px; border: 1px solid var(--line); border-radius: 12px;
+    overflow: hidden; background: #fff;
+  }
+  .role-company {
+    padding: 10px 14px; font-size: 12px; font-weight: 700; letter-spacing: .04em;
+    text-transform: uppercase; border-bottom: 1px solid var(--line);
+  }
+  .role-company.club { background: var(--teal-soft); color: var(--teal-deep); }
+  .role-company.pix { background: #f3e8ff; color: #6d28d9; }
+  .role-item {
+    padding: 12px 14px; border-bottom: 1px solid var(--line); font-size: 13.5px;
+  }
+  .role-item:last-child { border-bottom: 0; }
+  .role-item h4 {
+    margin: 0 0 6px; font-size: 14px; font-weight: 700; color: var(--navy);
+  }
+  .role-item p { margin: 0 0 6px; color: var(--muted); font-size: 13px; }
+  .role-item ul { margin: 0; padding-left: 18px; color: var(--ink); font-size: 13px; }
+  .role-item li { margin: 3px 0; }
+  .callout {
+    border-left: 4px solid var(--teal); background: var(--teal-soft);
+    padding: 12px 14px; border-radius: 0 12px 12px 0; margin: 8px 0 18px; font-size: 13.5px;
+  }
+  footer { margin-top: 10px; text-align: center; font-size: 12px; color: var(--muted); }
+  html[lang="en"] .es { display: none !important; }
+  html[lang="es"] .en { display: none !important; }
+  @media print {
+    .lang-bar, .toc { display: none; }
+    .contract { break-inside: avoid; }
+    body { background: #fff; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lang-bar" role="group" aria-label="Language">
+    <button type="button" class="lang-btn active" data-lang="es" id="btn-es">ES</button>
+    <button type="button" class="lang-btn" data-lang="en" id="btn-en">EN</button>
+  </div>
+
+  <header class="hero">
+    <div class="hero-top">
+      <img src="clubsensational-logo.png" alt="clubSENsational" />
+      <div>
+        <p class="eyebrow">
+          <span class="es">HR · Checklist de emision · 2026-27</span>
+          <span class="en">HR · Issuance checklist · 2026-27</span>
+        </p>
+        <h1>
+          <span class="es">Contratos que tenemos que hacer</span>
+          <span class="en">Contracts we need to issue</span>
+        </h1>
+        <p class="hero-lead">
+          <span class="es">Lista final por servicio para Sevitha: qué contrato, a quién, scales/salario y una breve explicación de cada trabajador.</span>
+          <span class="en">Final list by service for Sevitha: which contract, for whom, scales/salary, and a short note on each worker.</span>
+        </p>
+        <div class="pills">
+          <span class="pill"><span class="es">Por servicio</span><span class="en">By service</span></span>
+          <span class="pill gold">ES / EN</span>
+          <span class="pill warn"><span class="es">Pendiente emitir</span><span class="en">Pending issue</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <a href="#day-centre">Day Centre</a>
+    <a href="#swimming">Swimming</a>
+    <a href="#climbing">Climbing</a>
+    <a href="#fitness">Fitness</a>
+    <a href="#support">Support / Leads</a>
+    <a href="#admin">Admin / BD + PIXTOLEARN</a>
+  </nav>
+
+  <div class="stats">
+    <div class="stat"><strong>4</strong><span class="es">Contratos Day Centre</span><span class="en">Day Centre contracts</span></div>
+    <div class="stat"><strong>1</strong><span>Admin / BD + PIXTOLEARN</span></div>
+    <div class="stat"><strong>~12</strong><span class="es">Zero Hours Activity</span><span class="en">Zero Hours Activity</span></div>
+    <div class="stat"><strong>2</strong><span class="es">Sin contrato (de momento)</span><span class="en">No contract for now</span></div>
+  </div>
+
+  <div class="callout">
+    <span class="es"><strong>Como usarlo:</strong> marca cada casilla al emitir o firmar. Roberto, Youssef y Luliya tienen roles duales: lee bien cada ficha.</span>
+    <span class="en"><strong>How to use:</strong> tick each box when issued or signed. Roberto, Youssef and Luliya have dual roles: read each card carefully.</span>
+  </div>
+
+  <!-- DAY CENTRE -->
+  <section class="service" id="day-centre">
+    <div class="service-head">
+      <div>
+        <h2>Day Centre</h2>
+        <p class="es">Equipo cerrado: Michelle, Roberto, Youssef, Luliya.</p>
+        <p class="en">Closed team: Michelle, Roberto, Youssef, Luliya.</p>
+      </div>
+      <span class="service-count">4 <span class="es">contratos</span><span class="en">contracts</span></span>
+    </div>
+
+    <article class="contract">
+      <input type="checkbox" />
+      <div>
+        <p class="contract-title">Michelle</p>
+        <div class="contract-meta">
+          <span class="chip chip-pt">Part-Time TTO · 20h</span>
+          <span class="chip chip-mgr">Manager</span>
+          <span class="chip chip-scale">£30 / hour</span>
+        </div>
+        <p class="detail es"><strong>Quien es:</strong> lead operativa del Day Centre. Lidera el servicio dia a dia.</p>
+        <p class="detail en"><strong>Who she is:</strong> Day Centre operational lead. Runs the service day to day.</p>
+        <p class="detail es" style="margin-top:6px"><strong>Qué emitir:</strong> Permanent Part-Time Term-Time Only · Day Centre Manager · £30/h · ~20h (L-M-X-V 11:00-16:00). Anual orientativo £25,800.</p>
+        <p class="detail en" style="margin-top:6px"><strong>What to issue:</strong> Permanent Part-Time Term-Time Only · Day Centre Manager · £30/h · ~20h (Mon-Tue-Wed-Fri 11:00-16:00). Indicative annual £25,800.</p>
+        <p class="portal">Portal: <code>day_centre_part_time</code></p>
+      </div>
+    </article>
+
+    <article class="contract">
+      <input type="checkbox" />
+      <div>
+        <p class="contract-title">Roberto — <span class="es">contrato 1 de 2 (Day Centre)</span><span class="en">contract 1 of 2 (Day Centre)</span></p>
+        <div class="contract-meta">
+          <span class="chip chip-pt">Part-Time TTO · 20h</span>
+          <span class="chip chip-scale">Day Centre Scale 2 · £20/h</span>
+        </div>
+        <p class="detail es"><strong>Quien es:</strong> support experimentado del Day Centre. Tambien da swimming (segundo contrato).</p>
+        <p class="detail en"><strong>Who he is:</strong> experienced Day Centre support. Also delivers swimming (second contract).</p>
+        <p class="detail es" style="margin-top:6px"><strong>Qué emitir:</strong> Permanent Part-Time TTO · Scale 2 · £20/h · ~20h/sem. Anual orient. £17,200.</p>
+        <p class="detail en" style="margin-top:6px"><strong>What to issue:</strong> Permanent Part-Time TTO · Scale 2 · £20/h · ~20h/week. Indicative annual £17,200.</p>
+        <p class="portal">Portal: <code>day_centre_part_time</code></p>
+      </div>
+    </article>
+
+    <article class="contract">
+      <input type="checkbox" />
+      <div>
+        <p class="contract-title">Youssef</p>
+        <div class="contract-meta">
+          <span class="chip chip-zh">Zero Hours · dual</span>
+          <span class="chip chip-scale">DC Scale 2 · £20/h</span>
+          <span class="chip chip-scale">Swim Scale 2 · £24/h</span>
+        </div>
+        <p class="detail es"><strong>Quien es:</strong> trabaja Day Centre y swimming. Un solo Zero Hours con dos roles.</p>
+        <p class="detail en"><strong>Who he is:</strong> works Day Centre and swimming. One Zero Hours contract with two roles.</p>
+        <p class="detail es" style="margin-top:6px"><strong>Qué emitir:</strong> ZH dual — Day Centre hours at £20 · Swimming hours at £24.</p>
+        <p class="detail en" style="margin-top:6px"><strong>What to issue:</strong> ZH dual — Day Centre hours at £20 · Swimming hours at £24.</p>
+        <p class="portal">Portal: <code>zero_hours</code> multi-role</p>
+      </div>
+    </article>
+
+    <article class="contract">
+      <input type="checkbox" />
+      <div>
+        <p class="contract-title">Luliya</p>
+        <div class="contract-meta">
+          <span class="chip chip-zh">Zero Hours · dual</span>
+          <span class="chip chip-scale">DC Scale 1 · £18/h</span>
+          <span class="chip chip-scale">Swim Scale 2 · £24/h</span>
+        </div>
+        <p class="detail es"><strong>Quien es:</strong> Day Centre + swimming. En rota actual no esta por las mananas.</p>
+        <p class="detail en"><strong>Who she is:</strong> Day Centre + swimming. Current rota: not mornings.</p>
+        <p class="detail es" style="margin-top:6px"><strong>Qué emitir:</strong> ZH dual — Day Centre hours at £18 · Swimming hours at £24.</p>
+        <p class="detail en" style="margin-top:6px"><strong>What to issue:</strong> ZH dual — Day Centre hours at £18 · Swimming hours at £24.</p>
+        <p class="portal">Portal: <code>zero_hours</code> multi-role</p>
+      </div>
+    </article>
+  </section>
+
+  <!-- SWIMMING -->
+  <section class="service" id="swimming">
+    <div class="service-head">
+      <div>
+        <h2>Swimming</h2>
+        <p class="es">Weekends y after-school. Roberto tiene ZH aparte. Youssef/Luliya ya van en el dual DC.</p>
+        <p class="en">Weekends and after-school. Roberto has a separate ZH. Youssef/Luliya are already in the DC dual.</p>
+      </div>
+      <span class="service-count">5 <span class="es">contratos</span><span class="en">contracts</span></span>
+    </div>
+
+    <article class="contract">
+      <input type="checkbox" />
+      <div>
+        <p class="contract-title">Roberto — <span class="es">contrato 2 de 2 (Swimming)</span><span class="en">contract 2 of 2 (Swimming)</span></p>
+        <div class="contract-meta">
+          <span class="chip chip-zh">Zero Hours</span>
+          <span class="chip chip-scale">Swim Scale 3 · £28/h</span>
+        </div>
+        <p class="detail es"><strong>Qué emitir:</strong> ZH Swimming Instructor Scale 3 · £28/h (aparte del PT Day Centre).</p>
+        <p class="detail en"><strong>What to issue:</strong> ZH Swimming Instructor Scale 3 · £28/h (separate from Day Centre PT).</p>
+        <p class="portal">Portal: <code>zero_hours</code></p>
+      </div>
+    </article>
+
+    <article class="contract">
+      <input type="checkbox" />
+      <div>
+        <p class="contract-title">Dan</p>
+        <div class="contract-meta"><span class="chip chip-zh">Zero Hours</span><span class="chip chip-scale">Swim Scale 3 · £28/h</span></div>
+        <p class="detail es"><strong>Quien es:</strong> swimming instructor de fin de semana / after school.</p>
+        <p class="detail en"><strong>Who he is:</strong> weekend / after-school swimming instructor.</p>
+        <p class="detail es" style="margin-top:6px"><strong>Qué emitir:</strong> ZH Swim Scale 3 · £28.</p>
+        <p class="detail en" style="margin-top:6px"><strong>What to issue:</strong> ZH Swim Scale 3 · £28.</p>
+        <p class="portal">Portal: <code>zero_hours</code></p>
+      </div>
+    </article>
+
+    <article class="contract">
+      <input type="checkbox" />
+      <div>
+        <p class="contract-title">Javier</p>
+        <div class="contract-meta"><span class="chip chip-zh">Zero Hours</span><span class="chip chip-scale">Swim Scale 3 · £28/h</span></div>
+        <p class="detail es"><strong>Qué emitir:</strong> ZH Swim Scale 3 · £28.</p>
+        <p class="detail en"><strong>What to issue:</strong> ZH Swim Scale 3 · £28.</p>
+        <p class="portal">Portal: <code>zero_hours</code></p>
+      </div>
+    </article>
+
+    <article class="contract">
+      <input type="checkbox" />
+      <div>
+        <p class="contract-title">Aurora</p>
+        <div class="contract-meta"><span class="chip chip-zh">Zero Hours</span><span class="chip chip-scale">Swim Scale 3 · £28/h</span></div>
+        <p class="detail es"><strong>Qué emitir:</strong> ZH Swim Scale 3 · £28.</p>
+        <p class="detail en"><strong>What to issue:</strong> ZH Swim Scale 3 · £28.</p>
+        <p class="portal">Portal: <code>zero_hours</code></p>
+      </div>
+    </article>
+
+    <article class="contract">
+      <input type="checkbox" />
+      <div>
+        <p class="contract-title">Simon</p>
+        <div class="contract-meta"><span class="chip chip-zh">Zero Hours</span><span class="chip chip-scale">Swim Scale 2 · £24/h</span></div>
+        <p class="detail es"><strong>Qué emitir:</strong> ZH Swim Scale 2 · £24.</p>
+        <p class="detail en"><strong>What to issue:</strong> ZH Swim Scale 2 · £24.</p>
+        <p class="portal">Portal: <code>zero_hours</code></p>
+      </div>
+    </article>
+
+    <p class="skip-note es">Youssef y Luliya: swimming ya incluido en su ZH dual del Day Centre.</p>
+    <p class="skip-note en">Youssef and Luliya: swimming already included in their Day Centre dual ZH.</p>
+  </section>
+
+  <!-- CLIMBING -->
+  <section class="service" id="climbing">
+    <div class="service-head">
+      <div>
+        <h2>Climbing</h2>
+        <p class="es">Solo Alex y Carlos ahora. Angel y Andres sin contrato de momento.</p>
+        <p class="en">Only Alex and Carlos for now. Angel and Andres: no contract yet.</p>
+      </div>
+      <span class="service-count">2 <span class="es">contratos</span><span class="en">contracts</span></span>
+    </div>
+    <article class="contract">
+      <input type="checkbox" />
+      <div>
+        <p class="contract-title">Alex</p>
+        <div class="contract-meta"><span class="chip chip-zh">Zero Hours</span><span class="chip chip-scale">Climb Scale 3 · £30/h</span></div>
+        <p class="detail es"><strong>Qué emitir:</strong> ZH Climbing Instructor Scale 3 · £30.</p>
+        <p class="detail en"><strong>What to issue:</strong> ZH Climbing Instructor Scale 3 · £30.</p>
+        <p class="portal">Portal: <code>zero_hours</code></p>
+      </div>
+    </article>
+    <article class="contract">
+      <input type="checkbox" />
+      <div>
+        <p class="contract-title">Carlos</p>
+        <div class="contract-meta"><span class="chip chip-zh">Zero Hours</span><span class="chip chip-scale">Climb Scale 3 · £30/h</span></div>
+        <p class="detail es"><strong>Qué emitir:</strong> ZH Climbing Instructor Scale 3 · £30.</p>
+        <p class="detail en"><strong>What to issue:</strong> ZH Climbing Instructor Scale 3 · £30.</p>
+        <p class="portal">Portal: <code>zero_hours</code></p>
+      </div>
+    </article>
+    <p class="skip-note"><span class="chip chip-skip">No contract now</span> Angel · Andres</p>
+  </section>
+
+  <!-- FITNESS -->
+  <section class="service" id="fitness">
+    <div class="service-head">
+      <div>
+        <h2>Fitness</h2>
+        <p class="es">Confirmar £28 (Scale 2) antes de firmar.</p>
+        <p class="en">Confirm £28 (Scale 2) before signing.</p>
+      </div>
+      <span class="service-count">1</span>
+    </div>
+    <article class="contract">
+      <input type="checkbox" />
+      <div>
+        <p class="contract-title">Sandra</p>
+        <div class="contract-meta"><span class="chip chip-zh">Zero Hours</span><span class="chip chip-scale">Fitness · confirm £28</span></div>
+        <p class="detail es"><strong>Quien es:</strong> fitness instructor. Timesheet usa £28; seed antiguo tenia £24 — confirmar Scale 2 £28.</p>
+        <p class="detail en"><strong>Who she is:</strong> fitness instructor. Timesheet uses £28; older seed had £24 — confirm Scale 2 £28.</p>
+        <p class="detail es" style="margin-top:6px"><strong>Qué emitir:</strong> ZH Fitness Instructor (Scale 2 £28 una vez confirmado).</p>
+        <p class="detail en" style="margin-top:6px"><strong>What to issue:</strong> ZH Fitness Instructor (Scale 2 £28 once confirmed).</p>
+        <p class="portal">Portal: <code>zero_hours</code></p>
+      </div>
+    </article>
+  </section>
+
+  <!-- SUPPORT -->
+  <section class="service" id="support">
+    <div class="service-head">
+      <div>
+        <h2>Support Workers &amp; Service Leads</h2>
+        <p class="es">Activity / sessions. Giuseppe no es Day Centre.</p>
+        <p class="en">Activity / sessions. Giuseppe is not Day Centre.</p>
+      </div>
+      <span class="service-count">5</span>
+    </div>
+    <article class="contract">
+      <input type="checkbox" />
+      <div>
+        <p class="contract-title">Godsway</p>
+        <div class="contract-meta"><span class="chip chip-zh">Zero Hours</span><span class="chip chip-scale">Support Scale 1 · £18/h</span></div>
+        <p class="detail es"><strong>Qué emitir:</strong> ZH Support Worker Scale 1 · £18.</p>
+        <p class="detail en"><strong>What to issue:</strong> ZH Support Worker Scale 1 · £18.</p>
+        <p class="portal">Portal: <code>zero_hours</code></p>
+      </div>
+    </article>
+    <article class="contract">
+      <input type="checkbox" />
+      <div>
+        <p class="contract-title">Giuseppe</p>
+        <div class="contract-meta"><span class="chip chip-zh">Zero Hours</span><span class="chip chip-scale">Support Scale 2 · £20/h</span></div>
+        <p class="detail es"><strong>Quien es:</strong> support en Activity / sessions — no forma parte del equipo Day Centre.</p>
+        <p class="detail en"><strong>Who he is:</strong> Activity / sessions support — not part of the Day Centre team.</p>
+        <p class="detail es" style="margin-top:6px"><strong>Qué emitir:</strong> ZH Support Scale 2 · £20.</p>
+        <p class="detail en" style="margin-top:6px"><strong>What to issue:</strong> ZH Support Scale 2 · £20.</p>
+        <p class="portal">Portal: <code>zero_hours</code></p>
+      </div>
+    </article>
+    <article class="contract">
+      <input type="checkbox" />
+      <div>
+        <p class="contract-title">Bismark</p>
+        <div class="contract-meta">
+          <span class="chip chip-zh">Zero Hours · dual</span>
+          <span class="chip chip-scale">Support Scale 3 · £23/h</span>
+          <span class="chip chip-scale">Climb Scale 3 · £30/h</span>
+        </div>
+        <p class="detail es"><strong>Qué emitir:</strong> ZH dual Support + Climbing (rate segun servicio del dia).</p>
+        <p class="detail en"><strong>What to issue:</strong> ZH dual Support + Climbing (rate by that day's service).</p>
+        <p class="portal">Portal: <code>zero_hours</code> multi-role</p>
+      </div>
+    </article>
+    <article class="contract">
+      <input type="checkbox" />
+      <div>
+        <p class="contract-title">John</p>
+        <div class="contract-meta"><span class="chip chip-zh">Zero Hours</span><span class="chip chip-mgr">Service Lead · £30/h</span></div>
+        <p class="detail es"><strong>Qué emitir:</strong> ZH Service Lead · £30.</p>
+        <p class="detail en"><strong>What to issue:</strong> ZH Service Lead · £30.</p>
+        <p class="portal">Portal: <code>zero_hours</code></p>
+      </div>
+    </article>
+    <article class="contract">
+      <input type="checkbox" />
+      <div>
+        <p class="contract-title">Berta</p>
+        <div class="contract-meta"><span class="chip chip-zh">Zero Hours</span><span class="chip chip-mgr">Service Lead · £30/h</span></div>
+        <p class="detail es"><strong>Qué emitir:</strong> ZH Service Lead · £30.</p>
+        <p class="detail en"><strong>What to issue:</strong> ZH Service Lead · £30.</p>
+        <p class="portal">Portal: <code>zero_hours</code></p>
+      </div>
+    </article>
+  </section>
+
+  <!-- ADMIN / SEVITHA -->
+  <section class="service" id="admin">
+    <div class="service-head">
+      <div>
+        <h2>Admin / HR / Business Development + PIXTOLEARN</h2>
+        <p class="es">Sevitha: rol clásico clubSENsational (Admin, HR, BD) y también BD de PIXTOLEARN.</p>
+        <p class="en">Sevitha: classic clubSENsational role (Admin, HR, BD) and also BD for PIXTOLEARN.</p>
+      </div>
+      <span class="service-count">1</span>
+    </div>
+
+    <article class="contract">
+      <input type="checkbox" />
+      <div>
+        <p class="contract-title">Sevitha</p>
+        <div class="contract-meta">
+          <span class="chip chip-ft">Full-time</span>
+          <span class="chip chip-scale">£35,000 start</span>
+          <span class="chip chip-scale">£37,500 at 6 months</span>
+          <span class="chip chip-scale">£40,000 at 12 months</span>
+        </div>
+
+        <p class="detail es">
+          <strong>La historia del rol:</strong> Sevitha cubre el perfil clásico de clubSENsational —
+          <strong>Admin, HR y Business Development</strong> de la organización.
+          Además está al cargo del <strong>Business Development de PIXTOLEARN</strong>.
+          Abajo: descripción de cada área + achievements separados por compañía.
+        </p>
+        <p class="detail en">
+          <strong>Role story:</strong> Sevitha covers the classic clubSENsational profile —
+          <strong>Admin, HR and Business Development</strong> for the organisation.
+          She is also responsible for <strong>Business Development for PIXTOLEARN</strong>.
+          Below: description of each area + achievements split by company.
+        </p>
+
+        <p class="detail es" style="margin-top:8px"><strong>Qué emitir:</strong> Full-time · salario inicial <strong>£35,000</strong> + anexo de objetivos / revisiones (6 y 12 meses).</p>
+        <p class="detail en" style="margin-top:8px"><strong>What to issue:</strong> Full-time · starting salary <strong>£35,000</strong> + objectives / review annex (6 and 12 months).</p>
+
+        <p class="detail es" style="margin-top:14px"><strong>Descripción de roles por área</strong> (lo que cubre Sevitha en cada compañía):</p>
+        <p class="detail en" style="margin-top:14px"><strong>Role descriptions by area</strong> (what Sevitha covers in each company):</p>
+
+        <div class="role-box">
+          <div class="role-company club">clubSENsational</div>
+
+          <div class="role-item">
+            <h4>Administration</h4>
+            <p class="es"><strong>Propósito:</strong> operación administrativa del día a día con independencia — clientes, local authorities y portal.</p>
+            <p class="en"><strong>Purpose:</strong> day-to-day administration run independently — clients, local authorities and portal.</p>
+            <ul>
+              <li class="es">Gestión administrativa general (correo, documentación, calendarios, procesos)</li>
+              <li class="en">General administration (email, paperwork, calendars, processes)</li>
+              <li class="es">Contacto operativo con <strong>clientes</strong> y <strong>local authorities</strong></li>
+              <li class="en">Operational contact with <strong>clients</strong> and <strong>local authorities</strong></li>
+              <li class="es"><strong>Master del portal nuevo</strong> (uso completo y seguro del sistema)</li>
+              <li class="en"><strong>Mastery of the new portal</strong> (full, confident system use)</li>
+              <li class="es">Autonomía sin depender de dirección para lo rutinario</li>
+              <li class="en">Autonomy without relying on leadership for routine work</li>
+            </ul>
+          </div>
+
+          <div class="role-item">
+            <h4>HR / People</h4>
+            <p class="es"><strong>Propósito:</strong> procesos de people; emisión y seguimiento de contratos y documentación de personal.</p>
+            <p class="en"><strong>Purpose:</strong> people processes; issuing and tracking staff contracts and HR paperwork.</p>
+            <ul>
+              <li class="es">Contratos, onboarding y documentación de staff</li>
+              <li class="en">Contracts, onboarding and staff documentation</li>
+              <li class="es">Checklists, comunicaciones y recordatorios de revisión</li>
+              <li class="en">Checklists, comms and review reminders</li>
+              <li class="es">Información de personal ordenada en portal / archivos</li>
+              <li class="en">Staff info kept organised in portal / files</li>
+            </ul>
+          </div>
+
+          <div class="role-item">
+            <h4>Business Development</h4>
+            <p class="es"><strong>Propósito:</strong> visibilidad de marca, contratos y expansión de clubSENsational en Londres y otras áreas.</p>
+            <p class="en"><strong>Purpose:</strong> brand visibility, contracts and expansion of clubSENsational in London and other areas.</p>
+            <ul>
+              <li class="es"><strong>Visibilidad</strong> de la marca clubSENsational</li>
+              <li class="en"><strong>Visibility</strong> for the clubSENsational brand</li>
+              <li class="es"><strong>Crecimiento de redes sociales</strong> (LinkedIn y social media)</li>
+              <li class="en"><strong>Social media growth</strong> (LinkedIn and social overall)</li>
+              <li class="es">Avanzar <strong>contratos / acuerdos</strong> (familias, autoridades, partners)</li>
+              <li class="en">Progress <strong>contracts / agreements</strong> (families, authorities, partners)</li>
+              <li class="es">Formas de <strong>expandir en Londres y otras áreas</strong></li>
+              <li class="en">Ways to <strong>expand in London and other areas</strong></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="role-box" style="margin-top:10px">
+          <div class="role-company pix">PIXTOLEARN</div>
+
+          <div class="role-item">
+            <h4>Business Development</h4>
+            <p class="es"><strong>Propósito:</strong> lanzar, hacer rentable y expandir PIXTOLEARN (proyectos nuevos, marca internacional, deals corporativos).</p>
+            <p class="en"><strong>Purpose:</strong> launch, make profitable and expand PIXTOLEARN (new projects, international brand, corporate deals).</p>
+            <ul>
+              <li class="es"><strong>Lanzamiento</strong> de PIXTOLEARN</li>
+              <li class="en"><strong>Launch</strong> of PIXTOLEARN</li>
+              <li class="es">Llevar PIXTOLEARN a ser <strong>profitable</strong></li>
+              <li class="en">Drive PIXTOLEARN to become <strong>profitable</strong></li>
+              <li class="es">Nuevos proyectos (p. ej. <strong>PIXTOLEARN Around the World</strong>)</li>
+              <li class="en">New projects (e.g. <strong>PIXTOLEARN Around the World</strong>)</li>
+              <li class="es"><strong>Expansión internacional</strong> de la marca</li>
+              <li class="en"><strong>International brand expansion</strong></li>
+              <li class="es">Acuerdos con <strong>empresas y corporaciones</strong></li>
+              <li class="en">Deals with <strong>companies and corporations</strong></li>
+            </ul>
+          </div>
+        </div>
+
+        <p class="detail es" style="margin-top:14px"><strong>Progresión salarial / achievements</strong> (por compañía):</p>
+        <p class="detail en" style="margin-top:14px"><strong>Salary path / achievements</strong> (by company):</p>
+
+        <div class="path-box">
+          <div class="path-row">
+            <div><strong class="es">Inicio</strong><strong class="en">Start</strong></div>
+            <div>
+              <strong>£35,000</strong>
+              <span class="es"> — contrato de entrada. Admin + HR + BD clubSENsational + BD PIXTOLEARN.</span>
+              <span class="en"> — entry contract. Admin + HR + BD clubSENsational + BD PIXTOLEARN.</span>
+            </div>
+          </div>
+          <div class="path-row">
+            <div><strong class="es">6 meses</strong><strong class="en">6 months</strong></div>
+            <div>
+              <strong>£37,500</strong>
+              <span class="es"> si cumple (por compañía):</span>
+              <span class="en"> if achieved (by company):</span>
+              <p class="detail es" style="margin:8px 0 4px"><strong>clubSENsational</strong></p>
+              <p class="detail en" style="margin:8px 0 4px"><strong>clubSENsational</strong></p>
+              <ul class="steps">
+                <li class="es"><strong>Independencia operativa</strong>: clientes, local authorities y día a día sin depender de dirección</li>
+                <li class="en"><strong>Operational independence</strong>: clients, local authorities and day-to-day without relying on leadership</li>
+                <li class="es"><strong>Dominio del portal nuevo</strong> (master del uso del portal)</li>
+                <li class="en"><strong>Mastery of the new portal</strong></li>
+                <li class="es"><strong>Crecimiento de redes sociales</strong> (LinkedIn y social media)</li>
+                <li class="en"><strong>Social media growth</strong> (LinkedIn and social overall)</li>
+              </ul>
+              <p class="detail es" style="margin:10px 0 4px"><strong>PIXTOLEARN</strong></p>
+              <p class="detail en" style="margin:10px 0 4px"><strong>PIXTOLEARN</strong></p>
+              <ul class="steps">
+                <li class="es"><strong>Lanzamiento</strong> de PIXTOLEARN</li>
+                <li class="en"><strong>Launch</strong> of PIXTOLEARN</li>
+              </ul>
+            </div>
+          </div>
+          <div class="path-row">
+            <div><strong class="es">12 meses</strong><strong class="en">12 months</strong></div>
+            <div>
+              <strong>£40,000</strong>
+              <span class="es"> si sigue creciendo (por compañía):</span>
+              <span class="en"> if growth continues (by company):</span>
+              <p class="detail es" style="margin:8px 0 4px"><strong>clubSENsational</strong></p>
+              <p class="detail en" style="margin:8px 0 4px"><strong>clubSENsational</strong></p>
+              <ul class="steps">
+                <li class="es"><strong>Visibilidad y contratos</strong> de clubSENsational</li>
+                <li class="en"><strong>Visibility and contracts</strong> for clubSENsational</li>
+                <li class="es"><strong>Expansión</strong> en Londres y otras áreas</li>
+                <li class="en"><strong>Expansion</strong> in London and other areas</li>
+              </ul>
+              <p class="detail es" style="margin:10px 0 4px"><strong>PIXTOLEARN</strong></p>
+              <p class="detail en" style="margin:10px 0 4px"><strong>PIXTOLEARN</strong></p>
+              <ul class="steps">
+                <li class="es"><strong>PIXTOLEARN profitable</strong></li>
+                <li class="en"><strong>PIXTOLEARN profitable</strong></li>
+                <li class="es">Nuevos proyectos (p. ej. <strong>PIXTOLEARN Around the World</strong>)</li>
+                <li class="en">New projects (e.g. <strong>PIXTOLEARN Around the World</strong>)</li>
+                <li class="es"><strong>Expansión internacional</strong> de la marca</li>
+                <li class="en"><strong>International brand expansion</strong></li>
+                <li class="es">Firmas / acuerdos con empresas y corporaciones</li>
+                <li class="en">Deals / agreements with companies and corporations</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <p class="detail es" style="margin-top:10px">
+          Las subidas <strong>no son automáticas</strong>: dependen de la revisión y de demostrar estos hitos.
+          La retención de clientes no entra en esta ruta (depende del rendimiento de todo el equipo).
+        </p>
+        <p class="detail en" style="margin-top:10px">
+          Increases are <strong>not automatic</strong>: they depend on review and delivering these milestones.
+          Client retention is not part of this path (it depends on whole-team performance).
+        </p>
+        <p class="portal">Portal: <code>full_time</code> + objectives annex</p>
+      </div>
+    </article>
+  </section>
+
+  <div class="callout">
+    <span class="es">Contexto y scales completos: <a href="contratos-a-emitir-2026-27.html">contratos-a-emitir-2026-27.html</a></span>
+    <span class="en">Full context and scales: <a href="contratos-a-emitir-2026-27.html">contratos-a-emitir-2026-27.html</a></span>
+  </div>
+
+  <footer>
+    clubSENsational Ltd · Company no. 13755417 ·
+    71-75 Shelton Street, Covent Garden, WC2H 9JQ, London ·
+    www.clubsensational.org<br />
+    <span class="es">Checklist de emision · julio 2026</span>
+    <span class="en">Issuance checklist · July 2026</span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var buttons = document.querySelectorAll(".lang-btn");
+  function setLang(lang) {
+    root.setAttribute("lang", lang);
+    buttons.forEach(function (btn) {
+      btn.classList.toggle("active", btn.getAttribute("data-lang") === lang);
+    });
+    try { localStorage.setItem("cs-contracts-lang", lang); } catch (e) {}
+  }
+  buttons.forEach(function (btn) {
+    btn.addEventListener("click", function () { setLang(btn.getAttribute("data-lang")); });
+  });
+  var saved = null;
+  try { saved = localStorage.getItem("cs-contracts-lang"); } catch (e) {}
+  setLang(saved === "en" ? "en" : "es");
+})();
+</script>
+</body>
+</html>

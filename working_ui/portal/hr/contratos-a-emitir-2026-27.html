@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Contratos a emitir 2026–27 · clubSENsational</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #1a2a3a; --muted: #5b7280; --line: #d7e2e8; --navy: #35415d;
+    --gold: #f4bd2a; --gold-soft: #fff6dc; --teal: #0e7c86; --teal-deep: #0a5c63;
+    --teal-soft: #e6f3f4; --green-soft: #ecfdf5; --amber: #b45309; --amber-soft: #fffbeb;
+    --rose: #be123c; --rose-soft: #fff1f2; --paper: #f5f7f9; --card: #fff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; color: var(--ink);
+    font-family: "DM Sans", Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.55;
+    background:
+      radial-gradient(900px 420px at 0% -10%, rgba(14,124,134,.10), transparent 55%),
+      radial-gradient(700px 380px at 100% 0%, rgba(244,189,42,.12), transparent 50%),
+      var(--paper);
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 20px 72px; }
+  .hero {
+    background: var(--card); border: 1px solid var(--line); border-radius: 20px;
+    padding: 26px 28px 22px; margin-bottom: 22px; position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
+    background: linear-gradient(180deg, var(--gold), var(--teal));
+  }
+  .hero-top { display: flex; gap: 18px; align-items: center; margin-bottom: 12px; }
+  .hero-top img { width: 88px; height: auto; }
+  .eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--teal); margin: 0 0 6px;
+  }
+  h1 {
+    font-family: Fraunces, Georgia, serif; font-size: clamp(1.4rem, 3vw, 1.95rem);
+    margin: 0 0 8px; color: var(--navy); line-height: 1.2;
+  }
+  .hero-lead { margin: 0 0 12px; color: var(--muted); max-width: 48rem; }
+  .pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill {
+    display: inline-flex; background: var(--teal-soft); color: var(--teal-deep);
+    border-radius: 999px; padding: 4px 11px; font-size: 12px; font-weight: 600;
+  }
+  .pill.warn { background: var(--amber-soft); color: var(--amber); }
+  .pill.gold { background: var(--gold-soft); color: #8a6500; }
+  .toc {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 14px 18px; margin-bottom: 18px; display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px;
+  }
+  .toc a { color: var(--teal-deep); font-weight: 600; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  section.block {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 22px 24px; margin-bottom: 16px;
+  }
+  h2 { font-family: Fraunces, Georgia, serif; font-size: 1.3rem; margin: 0 0 6px; color: var(--navy); }
+  h3 { font-size: .95rem; margin: 16px 0 8px; color: var(--navy); }
+  .section-lead { margin: 0 0 14px; color: var(--muted); font-size: .95rem; }
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+  @media (max-width: 760px) { .stat-row { grid-template-columns: 1fr 1fr; } .hero-top { flex-direction: column; align-items: flex-start; } }
+  .stat {
+    background: var(--paper); border: 1px solid var(--line); border-top: 3px solid var(--gold);
+    border-radius: 10px; padding: 10px 12px;
+  }
+  .stat strong { display: block; font-family: Fraunces, Georgia, serif; font-size: 1.3rem; color: var(--navy); }
+  .stat span { font-size: 12px; color: var(--muted); font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0; }
+  th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th {
+    background: var(--navy); color: #fff; font-size: 11px; text-transform: uppercase;
+    letter-spacing: .05em; font-weight: 600;
+  }
+  tbody tr:nth-child(even) { background: #fafbfc; }
+  .muted { color: var(--muted); }
+  .ok { background: var(--green-soft); }
+  .todo { background: var(--rose-soft); color: var(--rose); font-weight: 600; }
+  .chip {
+    display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px;
+    border-radius: 999px; margin: 1px 2px 1px 0; white-space: nowrap;
+  }
+  .chip-zh { background: #e0f2fe; color: #0369a1; }
+  .chip-pt { background: #d1f0f2; color: #0a5c63; }
+  .chip-ft { background: #ede9fe; color: #7c3aed; }
+  .chip-mgr { background: var(--gold-soft); color: #8a6500; }
+  .chip-a { background: #d1f0f2; color: #0e7c86; }
+  .chip-b { background: #dbeafe; color: #0369a1; }
+  .chip-c { background: #ede9fe; color: #7c3aed; }
+  .callout {
+    border-left: 4px solid var(--gold); background: var(--gold-soft);
+    padding: 10px 14px; border-radius: 0 10px 10px 0; margin: 12px 0; font-size: 13.5px;
+  }
+  .callout.note { border-left-color: var(--teal); background: var(--teal-soft); }
+  .callout.warn { border-left-color: var(--amber); background: var(--amber-soft); }
+  footer {
+    margin-top: 8px; padding: 14px 4px; font-size: 12px; color: var(--muted); text-align: center;
+  }
+  @media print {
+    body { background: #fff; }
+    .toc { display: none; }
+    section.block, .hero { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="hero-top">
+      <img src="clubsensational-logo.png" alt="clubSENsational" />
+      <div>
+        <p class="eyebrow">HR · Plan de contratos · 2026–27</p>
+        <h1>Contratos a emitir — todo el equipo</h1>
+        <p class="hero-lead">
+          Listado operativo: Day Centre (part-time + zero hours), weekends / after-school
+          (Activity Services zero hours), Admin / Business Development, y directores.
+          Tarifas £/h tomadas del portal (timesheet fallbacks + seeds <code>staff_role_rates</code> /
+          <code>PAY_RATE_BY_ROSTER_KEY</code>). Sin secrets locales no se pudo refrescar desde Supabase live.
+        </p>
+        <div class="pills">
+          <span class="pill">Day Centre PT 20h + ZH</span>
+          <span class="pill gold">Scales por rol · ver leyenda</span>
+          <span class="pill warn">Pendiente firmar</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <a href="#scales">1. Leyenda Scales</a>
+    <a href="#resumen">2. Resumen</a>
+    <a href="#day-centre">3. Day Centre</a>
+    <a href="#activity">4. Weekends &amp; after school</a>
+    <a href="#admin">5. Admin / BD</a>
+    <a href="#directores">6. Directores</a>
+    <a href="#checklist">7. Checklist</a>
+    <a href="#fuentes">8. Fuentes</a>
+  </nav>
+
+
+  <section class="block" id="scales">
+    <h2>1. Leyenda de Scales por rol</h2>
+    <p class="section-lead">
+      En todo el documento usamos <strong>Scale</strong> (no “band”).
+      Cada rol tiene su escalera de £/hora.
+    </p>
+
+    <div class="stat-row">
+      <div class="stat"><strong>6</strong><span>Familias de scales</span></div>
+      <div class="stat"><strong>£18–£32</strong><span>Rango Activity / Support</span></div>
+      <div class="stat"><strong>£18–£30</strong><span>Day Centre + Managers</span></div>
+      <div class="stat"><strong>£35k+</strong><span>Admin/BD salaried (Sevitha)</span></div>
+    </div>
+
+    <h3>Day Centre Support</h3>
+    <table>
+      <thead>
+        <tr><th>Scale</th><th>Rol</th><th>£/hora</th><th>Anual orient. (20h × 43 sem)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="chip chip-a">Scale 1</span></td><td>Support Worker (entrada / nuevos)</td><td><strong>£18</strong></td><td>£15,480</td></tr>
+        <tr><td><span class="chip chip-b">Scale 2</span></td><td>Experienced Support Worker</td><td><strong>£20</strong></td><td>£17,200</td></tr>
+        <tr><td><span class="chip chip-c">Scale 3</span></td><td>Senior Support Worker</td><td><strong>£24</strong></td><td>£20,640</td></tr>
+        <tr><td><span class="chip chip-mgr">Manager</span></td><td>Day Centre Manager <span class="muted">(rol aparte)</span></td><td><strong>£30</strong></td><td>£25,800</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Swimming Instructor</h3>
+    <table>
+      <thead>
+        <tr><th>Scale</th><th>£/hora</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="chip chip-a">Scale 1</span></td><td><strong>£22</strong></td></tr>
+        <tr><td><span class="chip chip-b">Scale 2</span></td><td><strong>£24</strong></td></tr>
+        <tr><td><span class="chip chip-c">Scale 3</span></td><td><strong>£28</strong></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Support Worker <span class="muted">(Activity / sessions — RATE_TABLE portal)</span></h3>
+    <table>
+      <thead>
+        <tr><th>Scale</th><th>£/hora</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="chip chip-a">Scale 1</span></td><td><strong>£18</strong></td></tr>
+        <tr><td><span class="chip chip-b">Scale 2</span></td><td><strong>£20</strong></td></tr>
+        <tr><td><span class="chip chip-c">Scale 3</span></td><td><strong>£23</strong></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Climbing Instructor</h3>
+    <table>
+      <thead>
+        <tr><th>Scale</th><th>£/hora</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="chip chip-a">Scale 1</span></td><td><strong>£22</strong></td></tr>
+        <tr><td><span class="chip chip-b">Scale 2</span></td><td><strong>£24</strong></td></tr>
+        <tr><td><span class="chip chip-c">Scale 3</span></td><td><strong>£30</strong></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Fitness Instructor</h3>
+    <table>
+      <thead>
+        <tr><th>Scale</th><th>£/hora</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="chip chip-a">Scale 1</span></td><td><strong>£24</strong></td></tr>
+        <tr><td><span class="chip chip-b">Scale 2</span></td><td><strong>£28</strong></td></tr>
+        <tr><td><span class="chip chip-c">Scale 3</span></td><td><strong>£32</strong></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Managers / Service Leads</h3>
+    <table>
+      <thead>
+        <tr><th>Rol</th><th>£/hora</th><th>Notas</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="chip chip-mgr">Service Lead</span></td><td><strong>£30</strong></td><td>Weekends / after school (John, Berta)</td></tr>
+        <tr><td><span class="chip chip-mgr">Day Centre Manager</span></td><td><strong>£30</strong></td><td>Rol aparte (Michelle)</td></tr>
+        <tr><td><span class="chip chip-ft">Directors</span></td><td class="muted">Salario mensual / acuerdo</td><td>Raúl · Victor · Javi — no scales £/h Activity</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout note">
+      Day Centre Scale 1/2/3 alinean con £18/£20/£24.
+      Activity Support Scale 3 del portal es <strong>£23</strong> (RATE_TABLE) — distinto del Day Centre Scale 3 £24.
+    </div>
+  </section>
+
+  <section class="block" id="resumen">
+    <h2>2. Resumen — qué contratos hay que hacer</h2>
+    <div class="stat-row">
+      <div class="stat"><strong>2</strong><span>Day Centre Part-Time 20h</span></div>
+      <div class="stat"><strong>2</strong><span>Day Centre Zero Hours</span></div>
+      <div class="stat"><strong>~16</strong><span>Activity ZH (weekends / after school)</span></div>
+      <div class="stat"><strong>1</strong><span>Admin / Business Development</span></div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Bloque</th>
+          <th>Tipo de contrato</th>
+          <th>Personas</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Day Centre</strong></td>
+          <td><span class="chip chip-pt">Permanent Part-Time TTO · 20h</span></td>
+          <td>Michelle · Roberto <span class="muted">(Roberto también ZH Swim)</span></td>
+        </tr>
+        <tr>
+          <td><strong>Day Centre</strong></td>
+          <td><span class="chip chip-zh">Zero Hours</span></td>
+          <td>Youssef · Luliya <span class="muted">(ZH dual DC+Swim)</span></td>
+        </tr>
+        <tr>
+          <td><strong>Weekends / after school</strong></td>
+          <td><span class="chip chip-zh">Zero Hours · Activity Services</span></td>
+          <td>Swim · Climb · Fitness · Support · Leads (ver §3)</td>
+        </tr>
+        <tr>
+          <td><strong>Admin / BD</strong></td>
+          <td><span class="chip chip-ft">Full-time / acuerdo a definir</span></td>
+          <td>Sevitha · FT Admin/HR/BD + PIXTOLEARN · £35k → £37.5k (6m) → £40k (12m)</td>
+        </tr>
+        <tr>
+          <td><strong>Directores</strong></td>
+          <td><span class="chip chip-ft">Full-time / director</span></td>
+          <td>Raúl · Victor · Javi Palankas <span class="muted">(fuera de ZH)</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="block" id="day-centre">
+    <h2>3. Day Centre — contratos a emitir</h2>
+    <p class="section-lead">
+      Staff Day Centre = <strong>solo Michelle · Roberto · Youssef · Luliya</strong>.
+      Michelle y Roberto = <strong>part-time 20h</strong>.
+      Roberto además = <strong>Zero Hours Swim Scale 3 £28</strong>.
+      Youssef = ZH dual · DC <strong>Scale 2 £20</strong> + Swim Scale 2 £24.
+      Luliya = ZH dual · DC Scale 1 £18 + Swim Scale 2 £24.
+    </p>
+
+    <h3>3a. Permanent Part-Time · Term-Time Only · 20h</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Persona</th>
+          <th>Rol / scale</th>
+          <th>£/h contrato</th>
+          <th>Horas</th>
+          <th>Anual orient. (20h×43)</th>
+          <th>£/h portal hoy</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td><strong>Michelle</strong></td>
+          <td><span class="chip chip-mgr">Manager</span> Day Centre</td>
+          <td><strong>£30.00</strong></td>
+          <td>20h · L M X V 11–16</td>
+          <td><strong>£25,800</strong></td>
+          <td>£30 <span class="muted">(timesheet lead)</span></td>
+          <td class="todo">Por redactar</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td><strong>Roberto</strong></td>
+          <td><span class="chip chip-b">Scale 2</span> Experienced Support Worker (DC)</td>
+          <td><strong>£20.00</strong></td>
+          <td>~20h · L–J hasta 15 · V hasta 16</td>
+          <td><strong>£17,200</strong></td>
+          <td>DC £20 · + 2º contrato ZH Swim Scale 3 £28 (ver §4)</td>
+          <td class="todo">Por redactar PT DC</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>3b. Zero Hours dual · Day Centre + Swimming (Youssef &amp; Luliya)</h3>
+    <p class="section-lead" style="margin-top:0">
+      Un solo contrato <span class="chip chip-zh">Zero Hours</span> con <strong>dos roles</strong> cada uno.
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Persona</th>
+          <th>Rol 1 · Day Centre</th>
+          <th>Rol 2 · Swimming</th>
+          <th>Contrato</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>3</td>
+          <td><strong>Youssef</strong></td>
+          <td><span class="chip chip-b">Scale 2</span> · <strong>£20/h</strong></td>
+          <td><span class="chip chip-b">Scale 2</span> · <strong>£24/h</strong></td>
+          <td><span class="chip chip-zh">Zero Hours</span> dual DC + Swim</td>
+          <td class="todo">Por redactar</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td><strong>Luliya</strong></td>
+          <td><span class="chip chip-a">Scale 1</span> · <strong>£18/h</strong></td>
+          <td><span class="chip chip-b">Scale 2</span> · <strong>£24/h</strong></td>
+          <td><span class="chip chip-zh">Zero Hours</span> dual DC + Swim</td>
+          <td class="todo">Por redactar</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="callout note">
+      En timesheet: horas Day Centre → £18 · horas swimming → £24.
+      Portal hoy (referencia): Youssef £24 swim / £20 support.
+      Contrato: Youssef DC <strong>Scale 2 £20</strong> + Swim Scale 2 £24 · Luliya DC Scale 1 £18 + Swim Scale 2 £24.
+    </div>
+
+    <div class="callout note">
+      <strong>Gente nueva al Day Centre</strong> → siempre <span class="chip chip-a">Scale 1</span> <strong>£18/h</strong>.
+      Progresión Scale 1 → 2 → 3 por Performance Review.
+    </div>
+    <div class="callout note">
+      <strong>Equipo DC cerrado:</strong> Michelle (Manager PT) · Roberto (Scale 2 PT + Swim ZH Scale 3) ·
+      Youssef (ZH dual DC Scale 2 £20 + Swim Scale 2 £24) · Luliya (ZH dual DC Scale 1 £18 + Swim Scale 2 £24).
+      Giuseppe <strong>no</strong> es Day Centre.
+    </div>
+  </section>
+
+  <section class="block" id="activity">
+    <h2>4. Weekends &amp; after-school — Zero Hours Activity Services</h2>
+    <p class="section-lead">
+      Contrato tipo <strong>zero_hours</strong> (portal <code>contract-core.js</code>).
+      Tarifas actuales del portal (timesheet / role rates). Escala RATE_TABLE de referencia abajo.
+    </p>
+
+    <h3>3a. Swimming Instructors</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Persona</th>
+          <th>Track portal</th>
+          <th>£/h actual</th>
+          <th>Escala tipica</th>
+          <th>Contrato a hacer</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Dan</strong></td>
+          <td>swimming</td>
+          <td><strong>£28</strong></td>
+          <td>Swim Scale 3</td>
+          <td><span class="chip chip-zh">Zero Hours</span> Swimming Instructor</td>
+          <td class="todo">Por emitir / revisar</td>
+        </tr>
+        <tr>
+          <td><strong>Javier</strong></td>
+          <td>swimming</td>
+          <td><strong>£28</strong></td>
+          <td>Swim Scale 3</td>
+          <td><span class="chip chip-zh">Zero Hours</span></td>
+          <td class="todo">Por emitir / revisar</td>
+        </tr>
+        <tr>
+          <td><strong>Aurora</strong></td>
+          <td>swimming</td>
+          <td><strong>£28</strong></td>
+          <td>Swim Scale 3</td>
+          <td><span class="chip chip-zh">Zero Hours</span></td>
+          <td class="todo">Por emitir / revisar</td>
+        </tr>
+        <tr>
+          <td><strong>Youssef</strong></td>
+          <td>swimming + day centre</td>
+          <td><strong>£24</strong> swim · <strong>£20</strong> DC</td>
+          <td>Swim Scale 2 · DC Scale 2</td>
+          <td>Mismo ZH dual §3b</td>
+          <td class="ok">Cubierto en Day Centre dual</td>
+        </tr>
+        <tr>
+          <td><strong>Roberto</strong></td>
+          <td>swimming (+ DC PT)</td>
+          <td><strong>£28</strong> swim</td>
+          <td>Swim <strong>Scale 3</strong></td>
+          <td><span class="chip chip-zh">Zero Hours</span> Swim Scale 3 £28<br>
+            <span class="muted">+ PT Day Centre Scale 2 £20 (§3a)</span></td>
+          <td class="todo">Por redactar ZH Swim</td>
+        </tr>
+        <tr>
+          <td><strong>Simon</strong></td>
+          <td>swimming</td>
+          <td><strong>£24</strong></td>
+          <td>Swim <strong>Scale 2</strong></td>
+          <td><span class="chip chip-zh">Zero Hours</span> Swimming Instructor Scale 2</td>
+          <td class="todo">Por emitir</td>
+        </tr>
+        <tr>
+          <td><strong>Luliya</strong></td>
+          <td>swimming + day centre</td>
+          <td><strong>£24</strong> swim · <strong>£18</strong> DC</td>
+          <td>Swim Scale 2 · DC Scale 1</td>
+          <td>Mismo ZH dual §3b</td>
+          <td class="ok">Cubierto en Day Centre dual</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>3b. Climbing Instructors</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Persona</th>
+          <th>£/h actual</th>
+          <th>Escala</th>
+          <th>Contrato</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Alex</strong></td>
+          <td><strong>£30</strong></td>
+          <td>Climb Scale 3</td>
+          <td><span class="chip chip-zh">Zero Hours</span></td>
+          <td class="todo">Por emitir / revisar</td>
+        </tr>
+        <tr>
+          <td><strong>Carlos</strong></td>
+          <td><strong>£30</strong></td>
+          <td>Climb Scale 3</td>
+          <td><span class="chip chip-zh">Zero Hours</span></td>
+          <td class="todo">Por emitir / revisar</td>
+        </tr>
+        <tr>
+          <td><strong>Angel</strong></td>
+          <td class="muted">TBC (viene de swimming)</td>
+          <td>Climb — scale TBC</td>
+          <td><span class="muted">Sin contrato de momento</span></td>
+          <td class="ok">Fuera de emisión ahora<br><span class="muted">Track: climbing (dejó swimming)</span></td>
+        </tr>
+        <tr>
+          <td><strong>Andres</strong></td>
+          <td class="muted">Sin seed £/h</td>
+          <td>Climb — scale TBC</td>
+          <td><span class="muted">Sin contrato de momento</span></td>
+          <td class="ok">Fuera de emisión ahora</td>
+        </tr>
+        <tr>
+          <td><strong>Bismark</strong></td>
+          <td><strong>£30</strong> climb · <strong>£23</strong> support</td>
+          <td>Dual Climb 3 + Support 3</td>
+          <td><span class="chip chip-zh">Zero Hours</span> dual</td>
+          <td class="todo">Por emitir / revisar</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>3c. Fitness Instructor</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Persona</th>
+          <th>£/h actual</th>
+          <th>Nota</th>
+          <th>Contrato</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Sandra</strong></td>
+          <td><strong>£28</strong> <span class="muted">(timesheet)</span> / seed Scale 1 £24</td>
+          <td>Discrepancia seed vs timesheet — confirmar £28</td>
+          <td><span class="chip chip-zh">Zero Hours</span> Fitness</td>
+          <td class="todo">Confirmar rate + contrato</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>3d. Support Workers &amp; Service Leads (sessions / weekends)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Persona</th>
+          <th>Track</th>
+          <th>£/h actual</th>
+          <th>Contrato</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Godsway</strong></td>
+          <td>support</td>
+          <td><strong>£18</strong> Support 1</td>
+          <td><span class="chip chip-zh">Zero Hours</span> Support · Scale 1</td>
+          <td class="todo">Por emitir / revisar</td>
+        </tr>
+        <tr>
+          <td><strong>Giuseppe</strong></td>
+          <td>support</td>
+          <td><strong>£20</strong> Support 2</td>
+          <td>ZH Activity Support Scale 2 £20 · <strong>no</strong> Day Centre</td>
+          <td class="todo">Un contrato ZH (multi-rol OK)</td>
+        </tr>
+        <tr>
+          <td><strong>Bismark</strong></td>
+          <td>support + climbing</td>
+          <td><strong>£23</strong> / <strong>£30</strong></td>
+          <td>Ver §3b dual</td>
+          <td class="todo">Por emitir / revisar</td>
+        </tr>
+        <tr>
+          <td><strong>John</strong></td>
+          <td>support_lead</td>
+          <td><strong>£30</strong> Service Lead</td>
+          <td><span class="chip chip-zh">Zero Hours</span> Service Lead</td>
+          <td class="todo">Por emitir / revisar</td>
+        </tr>
+        <tr>
+          <td><strong>Berta</strong></td>
+          <td>support_lead</td>
+          <td><strong>£30</strong> Service Lead</td>
+          <td><span class="chip chip-zh">Zero Hours</span> Service Lead</td>
+          <td class="todo">Por emitir / revisar</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout note">
+      Leyenda completa de scales → <a href="#scales">§1</a>.
+      Angel: climbing (ya no swimming) · <strong>sin contrato de momento</strong>.
+      Teflon: fuera.
+    </div>
+  </section>
+
+  <section class="block" id="admin">
+    <h2>5. Admin / HR / Business Development + PIXTOLEARN — Sevitha</h2>
+    <p class="section-lead">
+      Sevitha tiene el rol clásico de clubSENsational (<strong>Admin, HR y Business Development</strong>)
+      y, además, está al cargo del <strong>Business Development de PIXTOLEARN</strong>.
+      Contrato full-time con ruta salarial condicionada a hitos.
+    </p>
+
+    <div class="stat-row">
+      <div class="stat"><strong>£35,000</strong><span>Entrada</span></div>
+      <div class="stat"><strong>£37,500</strong><span>6 meses (por compañía)</span></div>
+      <div class="stat"><strong>£40,000</strong><span>12 meses (por compañía)</span></div>
+      <div class="stat"><strong>FT</strong><span>Admin · HR · BD · PIXTOLEARN</span></div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Persona</th>
+          <th>Rol</th>
+          <th>Tipo</th>
+          <th>Salario inicio</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Sevitha</strong></td>
+          <td>Admin + HR + BD clubSENsational<br>+ BD PIXTOLEARN</td>
+          <td><span class="chip chip-ft">Full-time</span></td>
+          <td><strong>£35,000</strong> / año</td>
+          <td class="todo">Por redactar</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Historia del rol</h3>
+    <p>
+      Por un lado mantiene el trabajo clásico de clubSENsational: administración, HR y business development
+      de la organización. Por otro, lidera el business development de <strong>PIXTOLEARN</strong>.
+      La progresión salarial marca hitos claros en ambos lados (operación del club + crecimiento de PIXTOLEARN).
+    </p>
+
+    <h3>Ruta salarial y hitos (separados por compañía)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Momento</th>
+          <th>Salario</th>
+          <th>Hitos por compañía</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="ok">
+          <td><strong>Inicio</strong></td>
+          <td><strong>£35,000</strong></td>
+          <td>Contrato de entrada · Admin + HR + BD clubSENsational + BD PIXTOLEARN</td>
+        </tr>
+        <tr>
+          <td><strong>Revisión 6 meses</strong></td>
+          <td><strong>£37,500</strong></td>
+          <td>
+            <p style="margin:0 0 8px"><strong>clubSENsational</strong></p>
+            <ul class="clean" style="margin:0 0 12px;padding-left:18px">
+              <li><strong>Independencia operativa</strong>: clientes, local authorities y día a día sin depender de dirección</li>
+              <li><strong>Dominio del portal nuevo</strong> (master del uso del portal)</li>
+              <li><strong>Crecimiento de redes sociales</strong> (LinkedIn y social media)</li>
+            </ul>
+            <p style="margin:0 0 8px"><strong>PIXTOLEARN</strong></p>
+            <ul class="clean" style="margin:0;padding-left:18px">
+              <li><strong>Lanzamiento</strong> de PIXTOLEARN</li>
+            </ul>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Revisión 12 meses</strong></td>
+          <td><strong>£40,000</strong></td>
+          <td>
+            <p style="margin:0 0 8px"><strong>clubSENsational</strong></p>
+            <ul class="clean" style="margin:0 0 12px;padding-left:18px">
+              <li><strong>Visibilidad y contratos</strong> de clubSENsational</li>
+              <li><strong>Expansión</strong> en Londres y otras áreas</li>
+            </ul>
+            <p style="margin:0 0 8px"><strong>PIXTOLEARN</strong></p>
+            <ul class="clean" style="margin:0;padding-left:18px">
+              <li><strong>PIXTOLEARN profitable</strong></li>
+              <li>Nuevos proyectos (p. ej. <strong>PIXTOLEARN Around the World</strong>)</li>
+              <li><strong>Expansión internacional</strong> de la marca</li>
+              <li>Firmas / acuerdos con empresas y corporaciones</li>
+            </ul>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout note">
+      Las subidas <strong>no son automáticas</strong>: dependen de la revisión y de demostrar estos hitos.
+      La retención de clientes queda fuera de esta ruta (depende del rendimiento de todo el equipo).
+      Roles por área + achievements (dentro del checklist de Sevitha):
+      <a href="contratos-checklist-2026-27.html#admin"><strong>contratos-checklist-2026-27.html#admin</strong></a> (ES/EN).
+    </div>
+  </section>
+
+  <section class="block" id="directores">
+    <h2>6. Directores / management (fuera de Activity ZH)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Persona</th>
+          <th>Track</th>
+          <th>Notas pay</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Raúl</strong></td>
+          <td>manager / CEO</td>
+          <td>Import: ~£4,167/mes contract</td>
+          <td class="muted">Revisar si contrato director vigente</td>
+        </tr>
+        <tr>
+          <td><strong>Victor</strong></td>
+          <td>manager / CEO</td>
+          <td>Import: ~£4,167/mes contract</td>
+          <td class="muted">Revisar si contrato director vigente</td>
+        </tr>
+        <tr>
+          <td><strong>Javi Palankas</strong></td>
+          <td>manager</td>
+          <td>Sin hourly seed</td>
+          <td class="muted">Revisar acuerdo director</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="block" id="checklist">
+    <h2>7. Checklist de emisión</h2>
+    <p class="section-lead">
+      Checklist final por servicio, más detallada y con versión en inglés para Sevitha.
+    </p>
+    <div class="callout note">
+      <strong>Abrir la checklist bonita (ES / EN):</strong>
+      <a href="contratos-checklist-2026-27.html"><strong>contratos-checklist-2026-27.html</strong></a>
+      — toggle ES|EN arriba a la derecha. Separado por Day Centre, Swimming, Climbing, Fitness, Support y Admin/BD.
+      <br /><br />
+      <strong>Roles + achievements de Sevitha:</strong>
+      <a href="contratos-checklist-2026-27.html#admin"><strong>contratos-checklist-2026-27.html#admin</strong></a>
+    </div>
+  </section>
+
+  <section class="block" id="fuentes">
+    <h2>8. Fuentes de las tarifas</h2>
+    <ul>
+      <li><code>working_ui/timesheet.html</code> → <code>PAY_RATE_BY_ROSTER_KEY</code></li>
+      <li><code>database/migrations/20260606120000_portal_staff_role_rates.sql</code> seeds</li>
+      <li><code>working_ui/portal/staff_dashboard_spreadsheet_bundle.js</code> → roster tracks</li>
+      <li><code>working_ui/portal/contract-core.js</code> → <code>RATE_TABLE</code> + contract kinds</li>
+      <li>Day Centre scales: <code>docs/day-centre/rota-career-framework-2026-27.html</code> (A/B/C = Scale 1/2/3)</li>
+      <li>Michelle £30: timesheet patches / lead rate</li>
+    </ul>
+    <div class="callout warn">
+      No había <code>local-secrets/secrets.env</code> en esta máquina → no se consultó
+      <code>staff_timesheets.hourly_rate_used</code> en vivo. Cuando haya secrets, se puede
+      refrescar esta tabla desde Supabase.
+    </div>
+  </section>
+
+  <footer>
+    clubSENsational Ltd · Company no. 13755417 ·
+    71-75 Shelton Street, Covent Garden, WC2H 9JQ, London ·
+    www.clubsensational.org<br />
+    Contratos a emitir 2026–27 · draft · July 2026
+  </footer>
+
+</div>
+</body>
+</html>
