@@ -162,6 +162,22 @@
     return true;
   }
 
+  /** Youssef Saturday Acton mornings: flat 10:30–12:30 (2h), even if 10.30 client missing. */
+  function rowsAreYoussefActonSaturdayMorningBand(rows, iso) {
+    var dayName = dayNameFromIso(iso);
+    if (dayName !== "Saturday") return false;
+    var list = Array.isArray(rows) ? rows : [];
+    if (!list.length) return false;
+    for (var i = 0; i < list.length; i++) {
+      var r = list[i];
+      if (!isYoussefBandKey(r && r.anchor_staff_id)) return false;
+      if (normKey(r && r.anchor_venue).indexOf("acton") < 0) return false;
+      var range = rowAnchorHmRange(r);
+      if (!range || range.start >= 16 * 60) return false;
+    }
+    return true;
+  }
+
   function rowAnchorHmRange(row) {
     var t0 =
       typeof global.portalHmFromDbTime === "function"
@@ -199,6 +215,9 @@
     var isoNorm = normIso(iso);
     if (rowsAreYoussefActonAfternoonBand(list, isoNorm)) {
       return formatBandLabel("16:30", "18:30");
+    }
+    if (rowsAreYoussefActonSaturdayMorningBand(list, isoNorm)) {
+      return formatBandLabel("10:30", "12:30");
     }
     if (rowsAreWeekdayMaBespokeBand(list, isoNorm)) {
       return formatBandLabel("16:15", "18:15");
