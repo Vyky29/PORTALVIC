@@ -291,7 +291,7 @@
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260713-authoritative-week"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260705-live-madre-autorefresh"></script>
-  <script src="/portal/portal_staff_shift_window.js?v=20260724-late-hold"></script>
+  <script src="/portal/portal_staff_shift_window.js?v=20260724-role-codes"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260724-yusuf-merge"></script>
 </head>
 <body class="portal-timesheet-page portal-timesheet-vertical">
@@ -1779,9 +1779,9 @@
             seen[iso] = true;
             const dObj = parseIsoDate(iso);
             const reason = String(r.reason || "").trim();
-            const label = reason
-              ? (reason.toLowerCase().indexOf("time off") >= 0 ? reason : `Day off — ${reason}`)
-              : "Day off (Time Off Requested)";
+            const label = /time\s*off/i.test(reason) || !reason
+              ? "Time off requested"
+              : reason;
             return {
               date: iso,
               day: dObj ? WEEKDAY[dObj.getDay()] : "",
@@ -2258,6 +2258,20 @@
         state.primaryRate = Number(fb.hourly_rate);
         if (!state.primaryRole && fb.role_label) state.primaryRole = serviceToRole(fb.role_label) || fb.role_label;
       }
+      /* Pull scale digit from fallback labels like "Climbing Instructor 3" → CL3. */
+      const fbLabel = String(fb.role_label || "").trim();
+      const fbScale = fbLabel.match(
+        /^(support\s*worker|swimming\s*instructor|climbing\s*instructor|fitness\s*instructor)\s*(\d+)\s*$/i
+      );
+      if (fbScale) {
+        const canon =
+          /support/i.test(fbScale[1]) ? "Support Worker"
+            : /swim/i.test(fbScale[1]) ? "Swimming Instructor"
+              : /climb/i.test(fbScale[1]) ? "Climbing Instructor"
+                : "Fitness Instructor";
+        if (!state.roleScales[canon]) state.roleScales[canon] = `Scale ${fbScale[2]}`;
+        if (!state.primaryRole) state.primaryRole = canon;
+      }
       /* Authoritative roster-key rates (e.g. Youssef £24 swim) win over stale DB rows until migration lands. */
       if (key === "youssef" && fb.roleRates && typeof fb.roleRates === "object") {
         Object.keys(fb.roleRates).forEach((role) => {
@@ -2287,12 +2301,34 @@
       }
     }
 
+    /** Short timesheet codes: SW1, SI2, CL3, FI1, Lead. */
     function roleDisplayLabel(role, scale) {
-      const r = String(role || "").trim();
-      if (!r) return "";
-      const s = String(scale || state.roleScales && state.roleScales[r] || "").trim();
-      const m = s.match(/Scale\s*(\d+)/i);
-      return m ? `${r} ${m[1]}` : r;
+      const raw = String(role || "").trim();
+      if (!raw) return "";
+      if (/^(lead|service\s*lead)$/i.test(raw)) return "Lead";
+      const numbered = raw.match(
+        /^(support\s*worker|swimming\s*instructor|climbing\s*instructor|fitness\s*instructor)\s*(\d+)\s*$/i
+      );
+      let base = numbered ? numbered[1] : raw;
+      let num = numbered ? numbered[2] : "";
+      const s = String(scale || (state.roleScales && state.roleScales[raw]) || (state.roleScales && state.roleScales[base]) || "").trim();
+      const sm = s.match(/Scale\s*(\d+)/i) || s.match(/^(\d+)$/);
+      if (sm) num = sm[1];
+      const bl = String(base || "").toLowerCase();
+      let abbr = "";
+      if (/support\s*worker/.test(bl)) abbr = "SW";
+      else if (/swimming\s*instructor/.test(bl)) abbr = "SI";
+      else if (/climbing\s*instructor/.test(bl)) abbr = "CL";
+      else if (/fitness\s*instructor/.test(bl)) abbr = "FI";
+      if (abbr && num) return abbr + num;
+      if (abbr) return abbr;
+      return raw;
+    }
+
+    function timesheetDayOffServiceTitle(entry) {
+      const raw = String(timesheetEntryServiceLabel(entry) || "").trim();
+      if (!raw || /time\s*off/i.test(raw) || /^day\s*off/i.test(raw)) return "Time off requested";
+      return raw.replace(/^Day off\s*[—\-–]\s*/i, "").trim() || "Time off requested";
     }
 
     function sortedPayRoles() {
@@ -2488,11 +2524,11 @@
 
     function timesheetEntryServiceCellHtml(entry) {
       if (entry && entry.dayOff) {
-        const label = timesheetEntryServiceLabel(entry) || "Day off";
+        const label = timesheetDayOffServiceTitle(entry);
         return (
           '<div class="timesheet-service-cell">' +
           `<div class="timesheet-service-cell__service">${esc(label)}</div>` +
-          '<div class="timesheet-service-cell__role"><strong>Day off</strong></div>' +
+          '<div class="timesheet-service-cell__role"><strong>DAY OFF</strong></div>' +
           "</div>"
         );
       }
@@ -2545,13 +2581,14 @@
       }
       if (entry && entry.dayOff) {
         doc.setFontSize(8 * S);
-        doc.setTextColor(16, 34, 56);
-        doc.text(String(timesheetEntryServiceLabel(entry) || "Day off").slice(0, 28), cx, midY - 1.2 * S, {
+        doc.setTextColor(153, 27, 27);
+        doc.text(String(timesheetDayOffServiceTitle(entry)).slice(0, 28), cx, midY - 1.2 * S, {
           align: "center",
         });
         doc.setFont("helvetica", "bold");
-        doc.text("Day off", cx, midY + 2.2 * S, { align: "center" });
+        doc.text("DAY OFF", cx, midY + 2.2 * S, { align: "center" });
         doc.setFont("helvetica", "normal");
+        doc.setTextColor(16, 34, 56);
         return;
       }
       const timeRange = String(timesheetEntryTimeRangeLabel(entry) || "").slice(0, 16);
@@ -3753,8 +3790,10 @@
           note: e.note || "",
           manual: !!state.manual,
           service: e.service || "",
-          service_label: timesheetEntryServiceLabel(e),
-          service_name: e.serviceName || timesheetEntryServiceTitle(e),
+          service_label: e.dayOff ? timesheetDayOffServiceTitle(e) : timesheetEntryServiceLabel(e),
+          service_name: e.dayOff
+            ? timesheetDayOffServiceTitle(e)
+            : (e.serviceName || timesheetEntryServiceTitle(e)),
           venue: e.venue || "",
           time_range: e.timeRange || e.time_range || "",
           role: e.role || "",
