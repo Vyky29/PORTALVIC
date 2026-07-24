@@ -139,6 +139,19 @@
         }
       }
     });
+
+    // Day Centre runs across the three W10 6RP venues — select all together.
+    // After school & Weekends: select all listed venues together (not Other).
+    if (setting === "day_centre" || setting === "after_school_weekends") {
+      document.querySelectorAll("#placeCheckboxes .place-option").forEach((label) => {
+        if (label.classList.contains("hidden")) return;
+        const groups = (label.getAttribute("data-service") || "").split(/\s+/).filter(Boolean);
+        if (groups.indexOf(setting) < 0) return;
+        const cb = label.querySelector('input[type="checkbox"]');
+        if (cb && cb.value !== "Other") cb.checked = true;
+      });
+    }
+
     renderVenueHoursInputs();
   }
 
