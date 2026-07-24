@@ -88,10 +88,58 @@
     }
     if (dayCentre) {
       syncDayCentreHoursFromDays();
+      setServiceSetting("day_centre", { silent: true });
+    } else if (zeroHours) {
+      setServiceSetting("after_school_weekends", { silent: true });
+    } else {
+      syncServiceSettingPlaces();
     }
 
     const hint = $("concurrentHint");
     if (hint) hint.style.display = dayCentre ? "block" : "none";
+  }
+
+  function getServiceSetting() {
+    const checked = document.querySelector('input[name="serviceSetting"]:checked');
+    return checked ? checked.value : "";
+  }
+
+  function serviceSettingLabel(value) {
+    if (value === "day_centre") return "Day Centre";
+    if (value === "after_school_weekends") return "After school & Weekends";
+    return "";
+  }
+
+  function setServiceSetting(value, opts) {
+    const silent = opts && opts.silent;
+    const radio = document.querySelector('input[name="serviceSetting"][value="' + value + '"]');
+    if (radio) radio.checked = true;
+    syncServiceSettingPlaces();
+    if (!silent) updatePreview();
+  }
+
+  function syncServiceSettingPlaces() {
+    const setting = getServiceSetting() || "after_school_weekends";
+    const hintDc = $("placeHintDayCentre");
+    const hintAs = $("placeHintAfterSchool");
+    if (hintDc) hintDc.style.display = setting === "day_centre" ? "" : "none";
+    if (hintAs) hintAs.style.display = setting === "after_school_weekends" ? "" : "none";
+
+    document.querySelectorAll("#placeCheckboxes .place-option").forEach((label) => {
+      const groups = (label.getAttribute("data-service") || "").split(/\s+/).filter(Boolean);
+      const show = !groups.length || groups.indexOf(setting) >= 0;
+      label.classList.toggle("hidden", !show);
+      if (!show) {
+        const cb = label.querySelector('input[type="checkbox"]');
+        if (cb && cb.checked) {
+          cb.checked = false;
+          if (cb.id === "placeOther" && $("otherLocationWrap")) {
+            $("otherLocationWrap").classList.add("hidden");
+          }
+        }
+      }
+    });
+    renderVenueHoursInputs();
   }
 
   function selectContractType(kind) {
@@ -255,6 +303,14 @@
     return getSelectedVenues()
       .filter((v) => !v.key.startsWith("other:") || v.key !== "other:__pending__")
       .map((v) => v.name);
+  }
+
+  function formatPlaceOfWork() {
+    const places = getPlaces();
+    if (!places.length) return "";
+    const setting = serviceSettingLabel(getServiceSetting());
+    const list = places.map((p, i) => i + 1 + ". " + p).join("\n");
+    return setting ? setting + " services:\n" + list : list;
   }
 
   function getSelectedRoles() {
@@ -448,6 +504,7 @@
       jobTitleOverride: $("jobTitleOverride") ? $("jobTitleOverride").value.trim() : "",
       portalStaffLogin: getPortalStaffLogin(),
       portalAuthEmail: getPortalAuthEmail(),
+      serviceSetting: getServiceSetting(),
       places: getPlaces(),
       normalHours: getNormalHoursText(),
       directorName: $("directorName").value.trim(),
@@ -456,7 +513,6 @@
   }
 
   function buildTemplateDataForPreview() {
-    const places = getPlaces();
     if (!contractReference) refreshContractReference();
     return C.buildTemplateData({
       contractKind,
@@ -479,7 +535,7 @@
       jobTitleOverride: $("jobTitleOverride") ? $("jobTitleOverride").value.trim() : "",
       portalStaffLogin: getPortalStaffLogin(),
       portalAuthEmail: getPortalAuthEmail(),
-      placeOfWork: places.length ? places.map((p, i) => i + 1 + ". " + p).join("\n") : C.EM,
+      placeOfWork: formatPlaceOfWork() || C.EM,
       normalHoursOfWork: getNormalHoursText(),
       directorName: $("directorName").value.trim(),
       directorSignatureDataUrl: directorSignatureDataUrl,
@@ -581,8 +637,9 @@
       }
 
       const places = getPlaces();
-      $("fgPlace").classList.toggle("invalid", places.length === 0);
-      if (!places.length) valid = false;
+      const settingOk = !!getServiceSetting();
+      $("fgPlace").classList.toggle("invalid", !settingOk || places.length === 0);
+      if (!settingOk || !places.length) valid = false;
       show("fgDirector", $("directorName").value.trim().length > 0);
       $("fgDirectorSignature").classList.toggle("invalid", !directorSignatureDataUrl);
       if (!directorSignatureDataUrl) valid = false;
@@ -907,6 +964,12 @@
         });
       }
     );
+    document.querySelectorAll('input[name="serviceSetting"]').forEach((radio) => {
+      radio.addEventListener("change", () => {
+        syncServiceSettingPlaces();
+        updatePreview();
+      });
+    });
     document.querySelectorAll("#placeCheckboxes input").forEach((cb) => {
       cb.addEventListener("change", () => {
         $("otherLocationWrap").classList.toggle("hidden", !$("placeOther").checked);
@@ -918,6 +981,7 @@
       if ($("placeOther").checked) renderVenueHoursInputs();
       updatePreview();
     });
+    syncServiceSettingPlaces();
     $("clearDirectorSignature").addEventListener("click", clearDirectorSignature);
     $("btnNext").addEventListener("click", () => {
       if (currentStep < 4) {
