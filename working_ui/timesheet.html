@@ -36,7 +36,7 @@
     .head h1{margin:0;color:#0b2a5b;font-size:22px}
     .sub{margin-top:6px;color:#60758a;font-size:13px}
     .identity{padding:14px 16px 0;font-size:15px;line-height:1.5}
-    .table-wrap{padding:12px 16px 16px;overflow:auto}
+    .table-wrap{padding:12px 16px 16px;overflow-x:hidden;overflow-y:visible}
     table{width:100%;border-collapse:collapse;border:1px solid #dbe6f1;border-radius:12px;overflow:hidden}
     th,td{padding:10px;border-bottom:1px solid #dbe6f1;text-align:center;vertical-align:middle}
     th{background:#114f78;color:#fff;font-size:14px;text-align:center;vertical-align:middle}
@@ -51,6 +51,7 @@
     }
     td{font-size:14px}
     .td-date,.td-day,.td-service{min-width:0;text-align:center;vertical-align:middle}
+    .td-date{white-space:nowrap;font-weight:700}
     .td-hours,.td-daily{min-width:0;text-align:center;vertical-align:middle;white-space:nowrap;padding-left:2px;padding-right:2px}
     .timesheet-stack-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px;min-width:0;padding:2px 0;width:100%;line-height:1.2}
     .timesheet-stack-cell__top{font-weight:700;overflow-wrap:break-word;max-width:100%}
@@ -63,19 +64,53 @@
     .timesheet-service-cell__venue{font-size:12px;line-height:1.15;color:#334155;overflow-wrap:break-word;word-break:break-word;max-width:100%;text-align:center}
     .timesheet-service-cell__role{font-size:12px;line-height:1.15;max-width:100%;overflow-wrap:break-word;word-break:break-word;text-align:center}
     .num{text-align:center}
-    /* Auto timesheet: shrink Hours / Daily £, give width to Service */
-    #autoWrap table{table-layout:fixed;width:100%}
-    #autoWrap col.col-date{width:12%}
-    #autoWrap col.col-day{width:20%}
-    #autoWrap col.col-service{width:48%}
-    #autoWrap col.col-hours{width:9%}
-    #autoWrap col.col-daily{width:11%}
+    /* Auto timesheet: narrow Date (day number only); Service flexes */
+    #autoWrap table{table-layout:fixed;width:100%;max-width:100%}
+    #autoWrap col.col-date{width:8%}
+    #autoWrap col.col-day{width:18%}
+    #autoWrap col.col-service{width:46%}
+    #autoWrap col.col-hours{width:13%}
+    #autoWrap col.col-daily{width:15%}
     #autoWrap th.th-hours,
     #autoWrap th.th-daily,
     #autoWrap td.td-hours,
     #autoWrap td.td-daily{padding-left:2px;padding-right:2px}
-    .sum-row td{background:#f4f7fb;font-weight:700}
-    .sum-label{text-align:center}
+    .timesheet-summary{
+      margin:0 16px 12px;
+      border:1px solid #dbe6f1;
+      border-radius:12px;
+      overflow:hidden;
+      background:#f4f7fb;
+    }
+    .timesheet-summary__row{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap:12px;
+      padding:10px 12px;
+      border-bottom:1px solid #dbe6f1;
+      min-width:0;
+    }
+    .timesheet-summary__row:last-child{border-bottom:0}
+    .timesheet-summary__label{
+      flex:1 1 auto;
+      min-width:0;
+      font-weight:700;
+      font-size:13px;
+      line-height:1.35;
+      color:#102238;
+      overflow-wrap:break-word;
+    }
+    .timesheet-summary__value{
+      flex:0 0 auto;
+      font-weight:800;
+      font-size:14px;
+      line-height:1.2;
+      white-space:nowrap;
+      font-variant-numeric:tabular-nums;
+      color:#0b2a5b;
+      text-align:right;
+    }
     .th-mob{display:none}
     tbody tr.day-row--paid td{background:#eef9f1 !important}
     tbody tr.day-row--pending td{background:#fff5e8 !important}
@@ -159,11 +194,17 @@
       html.portal-timesheet-vertical .head h1{font-size:18px}
       html.portal-timesheet-vertical .identity{padding:10px 12px 0;font-size:13px}
       html.portal-timesheet-vertical .status-note{padding:0 10px 10px;font-size:12px}
-      html.portal-timesheet-vertical .table-wrap{padding:6px 4px 10px}
-      html.portal-timesheet-vertical table{width:100%;min-width:0;table-layout:fixed}
+      html.portal-timesheet-vertical .table-wrap{padding:6px 4px 8px;overflow-x:hidden}
+      html.portal-timesheet-vertical table{width:100%;min-width:0;max-width:100%;table-layout:fixed}
       html.portal-timesheet-vertical th,
-      html.portal-timesheet-vertical td{padding:5px 3px;font-size:11px;line-height:1.25;vertical-align:middle}
-      html.portal-timesheet-vertical td.td-date,
+      html.portal-timesheet-vertical td{padding:5px 2px;font-size:11px;line-height:1.25;vertical-align:middle}
+      html.portal-timesheet-vertical td.td-date{
+        font-size:13px;
+        font-weight:800;
+        white-space:nowrap;
+        padding-left:2px;
+        padding-right:2px;
+      }
       html.portal-timesheet-vertical td.td-day,
       html.portal-timesheet-vertical td.td-service{vertical-align:middle}
       html.portal-timesheet-vertical .timesheet-stack-cell__top{font-size:11px}
@@ -174,37 +215,39 @@
       html.portal-timesheet-vertical .timesheet-service-cell__service{font-size:10px}
       html.portal-timesheet-vertical .timesheet-service-cell__venue,
       html.portal-timesheet-vertical .timesheet-service-cell__role{font-size:10px}
-      html.portal-timesheet-vertical #autoWrap col.col-date{width:11%}
-      html.portal-timesheet-vertical #autoWrap col.col-day{width:22%}
-      html.portal-timesheet-vertical #autoWrap col.col-service{width:49%}
-      html.portal-timesheet-vertical #autoWrap col.col-hours{width:8%}
-      html.portal-timesheet-vertical #autoWrap col.col-daily{width:10%}
+      html.portal-timesheet-vertical #autoWrap col.col-date{width:7%}
+      html.portal-timesheet-vertical #autoWrap col.col-day{width:17%}
+      html.portal-timesheet-vertical #autoWrap col.col-service{width:44%}
+      html.portal-timesheet-vertical #autoWrap col.col-hours{width:14%}
+      html.portal-timesheet-vertical #autoWrap col.col-daily{width:18%}
       html.portal-timesheet-vertical #autoWrap th.th-hours,
       html.portal-timesheet-vertical #autoWrap th.th-daily,
       html.portal-timesheet-vertical #autoWrap td.td-hours,
-      html.portal-timesheet-vertical #autoWrap td.td-daily{padding-left:1px;padding-right:1px;font-size:10px}
+      html.portal-timesheet-vertical #autoWrap td.td-daily{padding-left:1px;padding-right:1px;font-size:11px;white-space:nowrap}
       html.portal-timesheet-vertical thead th{
-        --th-head-fs:12px;
+        --th-head-fs:11px;
         font-size:var(--th-head-fs);
-        line-height:1.25;
+        line-height:1.2;
         text-align:center;
         vertical-align:middle;
-        padding:6px 3px;
+        padding:6px 2px;
       }
       html.portal-timesheet-vertical thead th.th-compact{
-        font-size:calc(var(--th-head-fs) - 2px);
-        line-height:1.25;
+        font-size:10px;
+        line-height:1.2;
         text-align:center;
         vertical-align:middle;
         white-space:nowrap;
         overflow-wrap:normal;
         word-break:normal;
-        padding:6px 2px;
+        padding:6px 1px;
       }
       html.portal-timesheet-vertical .th-desk{display:none}
       html.portal-timesheet-vertical .th-mob{display:inline;white-space:nowrap}
-      html.portal-timesheet-vertical .sum-row td{font-size:10px;padding:5px 3px;line-height:1.2}
-      html.portal-timesheet-vertical .sum-label{text-align:left;font-weight:700}
+      html.portal-timesheet-vertical .timesheet-summary{margin:0 8px 10px}
+      html.portal-timesheet-vertical .timesheet-summary__row{padding:9px 10px;gap:10px}
+      html.portal-timesheet-vertical .timesheet-summary__label{font-size:12px}
+      html.portal-timesheet-vertical .timesheet-summary__value{font-size:13px}
       html.portal-timesheet-vertical .actions{padding:0 10px max(14px, env(safe-area-inset-bottom, 0px));flex-direction:column}
       html.portal-timesheet-vertical .actions .btn{width:100%}
     }
@@ -291,7 +334,7 @@
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260713-authoritative-week"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260705-live-madre-autorefresh"></script>
-  <script src="/portal/portal_staff_shift_window.js?v=20260724-role-codes"></script>
+  <script src="/portal/portal_staff_shift_window.js?v=20260724-mobile-date"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260724-yusuf-merge"></script>
 </head>
 <body class="portal-timesheet-page portal-timesheet-vertical">
@@ -368,14 +411,29 @@
           <tbody id="rowsBody">
             <tr><td colspan="5" class="muted">Loading shifts...</td></tr>
           </tbody>
-          <tfoot>
-            <tr class="sum-row"><td colspan="3" class="sum-label">Hours ready to pay now (green):</td><td class="num" id="totalHours">0.00</td><td></td></tr>
-            <tr class="sum-row"><td colspan="4" class="sum-label">Ready to pay now (GBP):</td><td class="num" id="totalCost">0.00</td></tr>
-            <tr class="sum-row"><td colspan="4" class="sum-label">Pending until feedback is completed (GBP):</td><td class="num" id="pendingCost">0.00</td></tr>
-            <tr class="sum-row"><td colspan="4" class="sum-label">Held — feedback submitted late (GBP):</td><td class="num" id="lateHoldCost">0.00</td></tr>
-            <tr class="sum-row"><td colspan="4" class="sum-label">Total if all feedback is completed (GBP):</td><td class="num" id="potentialCost">0.00</td></tr>
-          </tfoot>
         </table>
+      </div>
+      <div class="timesheet-summary" id="timesheetSummary" aria-label="Pay summary">
+        <div class="timesheet-summary__row">
+          <div class="timesheet-summary__label">Hours ready to pay now (green)</div>
+          <div class="timesheet-summary__value" id="totalHours">0.00</div>
+        </div>
+        <div class="timesheet-summary__row">
+          <div class="timesheet-summary__label">Ready to pay now (GBP)</div>
+          <div class="timesheet-summary__value" id="totalCost">0.00</div>
+        </div>
+        <div class="timesheet-summary__row">
+          <div class="timesheet-summary__label">Pending until feedback is completed (GBP)</div>
+          <div class="timesheet-summary__value" id="pendingCost">0.00</div>
+        </div>
+        <div class="timesheet-summary__row">
+          <div class="timesheet-summary__label">Held — feedback submitted late (GBP)</div>
+          <div class="timesheet-summary__value" id="lateHoldCost">0.00</div>
+        </div>
+        <div class="timesheet-summary__row">
+          <div class="timesheet-summary__label">Total if all feedback is completed (GBP)</div>
+          <div class="timesheet-summary__value" id="potentialCost">0.00</div>
+        </div>
       </div>
       <div class="actions">
         <button id="backBtn" class="btn btn-back" type="button">Back to Dashboard</button>
@@ -610,14 +668,8 @@
     function displayDateCellHtml(iso) {
       const d = parseIsoDate(iso);
       if (!d) return esc(String(iso || ""));
-      const dd = dayOrdinal(d.getDate());
-      const month = d.toLocaleDateString("en-GB", { month: "short" });
-      return (
-        '<div class="timesheet-stack-cell">' +
-        `<div class="timesheet-stack-cell__top">${esc(dd)}</div>` +
-        `<div class="timesheet-stack-cell__sub">${esc(month)}</div>` +
-        "</div>"
-      );
+      /* Day number only — month lives in the period header; keeps mobile Date column tight. */
+      return esc(String(d.getDate()));
     }
     function timesheetEntryStatusLine(entry) {
       if (!entry) return "";
@@ -3279,10 +3331,12 @@
         document.body.classList.remove("portal-force-landscape");
       } catch (_) {}
       const autoWrap = document.getElementById("autoWrap");
+      const summary = document.getElementById("timesheetSummary");
       const legend = document.querySelector(".legend");
       const manualForm = document.getElementById("manualForm");
       const manualWrap = document.getElementById("manualWrap");
       if (autoWrap) autoWrap.hidden = true;
+      if (summary) summary.hidden = true;
       if (legend) legend.style.display = "none";
       if (manualForm) manualForm.hidden = false;
       if (manualWrap) manualWrap.hidden = false;
