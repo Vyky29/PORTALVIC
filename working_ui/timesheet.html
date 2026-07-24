@@ -50,10 +50,10 @@
       word-break:normal;
     }
     td{font-size:14px}
-    .td-date,.td-day,.td-service{min-width:0;text-align:center;vertical-align:middle}
-    .td-date{white-space:nowrap;font-weight:700}
+    .td-date,.td-service{min-width:0;text-align:center;vertical-align:middle}
+    .td-date{min-width:0}
     .td-hours,.td-daily{min-width:0;text-align:center;vertical-align:middle;white-space:nowrap;padding-left:2px;padding-right:2px}
-    .timesheet-stack-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px;min-width:0;padding:2px 0;width:100%;line-height:1.2}
+    .timesheet-stack-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2px;min-width:0;padding:2px 0;width:100%;line-height:1.2}
     .timesheet-stack-cell__top{font-weight:700;overflow-wrap:break-word;max-width:100%}
     .timesheet-stack-cell__sub{font-size:0.92em;color:#334155;overflow-wrap:anywhere;max-width:100%}
     .timesheet-stack-cell__alert{font-size:0.92em;font-weight:800;color:#b91c1c;overflow-wrap:anywhere;max-width:100%}
@@ -64,11 +64,10 @@
     .timesheet-service-cell__venue{font-size:12px;line-height:1.15;color:#334155;overflow-wrap:break-word;word-break:break-word;max-width:100%;text-align:center}
     .timesheet-service-cell__role{font-size:12px;line-height:1.15;max-width:100%;overflow-wrap:break-word;word-break:break-word;text-align:center}
     .num{text-align:center}
-    /* Auto timesheet: narrow Date (day number only); Service flexes */
+    /* Auto timesheet: Date+Day merged; Service flexes */
     #autoWrap table{table-layout:fixed;width:100%;max-width:100%}
-    #autoWrap col.col-date{width:8%}
-    #autoWrap col.col-day{width:18%}
-    #autoWrap col.col-service{width:46%}
+    #autoWrap col.col-date{width:22%}
+    #autoWrap col.col-service{width:50%}
     #autoWrap col.col-hours{width:13%}
     #autoWrap col.col-daily{width:15%}
     #autoWrap th.th-hours,
@@ -199,15 +198,12 @@
       html.portal-timesheet-vertical th,
       html.portal-timesheet-vertical td{padding:5px 2px;font-size:11px;line-height:1.25;vertical-align:middle}
       html.portal-timesheet-vertical td.td-date{
-        font-size:13px;
-        font-weight:800;
-        white-space:nowrap;
         padding-left:2px;
         padding-right:2px;
+        vertical-align:middle;
       }
-      html.portal-timesheet-vertical td.td-day,
       html.portal-timesheet-vertical td.td-service{vertical-align:middle}
-      html.portal-timesheet-vertical .timesheet-stack-cell__top{font-size:11px}
+      html.portal-timesheet-vertical .timesheet-stack-cell__top{font-size:11px;font-weight:800}
       html.portal-timesheet-vertical .timesheet-stack-cell__sub{font-size:10px}
       html.portal-timesheet-vertical .timesheet-stack-cell__alert{font-size:10px}
       html.portal-timesheet-vertical .timesheet-stack-cell__hint{font-size:9px}
@@ -215,8 +211,7 @@
       html.portal-timesheet-vertical .timesheet-service-cell__service{font-size:10px}
       html.portal-timesheet-vertical .timesheet-service-cell__venue,
       html.portal-timesheet-vertical .timesheet-service-cell__role{font-size:10px}
-      html.portal-timesheet-vertical #autoWrap col.col-date{width:7%}
-      html.portal-timesheet-vertical #autoWrap col.col-day{width:17%}
+      html.portal-timesheet-vertical #autoWrap col.col-date{width:24%}
       html.portal-timesheet-vertical #autoWrap col.col-service{width:44%}
       html.portal-timesheet-vertical #autoWrap col.col-hours{width:14%}
       html.portal-timesheet-vertical #autoWrap col.col-daily{width:18%}
@@ -394,7 +389,6 @@
         <table>
           <colgroup>
             <col class="col-date" />
-            <col class="col-day" />
             <col class="col-service" />
             <col class="col-hours" />
             <col class="col-daily" />
@@ -402,14 +396,13 @@
           <thead>
             <tr>
               <th>Date</th>
-              <th>Day</th>
               <th>Service</th>
               <th class="num th-compact th-hours">Hours</th>
               <th class="num th-compact th-daily" title="Daily Total (GBP)"><span class="th-desk">Daily Total (GBP)</span><span class="th-mob">Daily £</span></th>
             </tr>
           </thead>
           <tbody id="rowsBody">
-            <tr><td colspan="5" class="muted">Loading shifts...</td></tr>
+            <tr><td colspan="4" class="muted">Loading shifts...</td></tr>
           </tbody>
         </table>
       </div>
@@ -672,30 +665,40 @@
       /* Day number only — month lives in the period header; keeps mobile Date column tight. */
       return esc(String(d.getDate()));
     }
+    /** e.g. "26th Friday" — day number + weekday (month is in the period header). */
+    function displayDateDayLine(iso, dayName) {
+      const d = parseIsoDate(iso);
+      const weekday =
+        String(dayName || "").trim() ||
+        (d ? d.toLocaleDateString("en-GB", { weekday: "long" }) : "");
+      if (!d) return weekday || String(iso || "");
+      return `${dayOrdinal(d.getDate())} ${weekday}`.trim();
+    }
     function timesheetEntryStatusLine(entry) {
       if (!entry) return "";
-      if (entry.dayOff) return "day off";
-      if (entry.upcoming) return "upcoming";
+      if (entry.dayOff) return "Day Off";
+      if (entry.upcoming) return "Upcoming";
       if (entry.lateHold) return "Submitted Late";
-      if (entry.completed) return "completed";
-      return "pending feedback";
+      if (entry.completed) return "Completed";
+      return "Pending Feedback";
     }
-    function displayDayStatusCellHtml(entry) {
-      const day = String((entry && entry.day) || "").trim() || "—";
+    function displayDateDayStatusCellHtml(entry) {
+      const top = displayDateDayLine(entry && entry.date, entry && entry.day);
       if (entry && entry.lateHold) {
         return (
           '<div class="timesheet-stack-cell">' +
-          `<div class="timesheet-stack-cell__top">${esc(day)}</div>` +
+          `<div class="timesheet-stack-cell__top">${esc(top)}</div>` +
           '<div class="timesheet-stack-cell__alert">Submitted Late</div>' +
           '<div class="timesheet-stack-cell__hint">Contact admin</div>' +
           "</div>"
         );
       }
       const status = timesheetEntryStatusLine(entry);
+      const statusCls = entry && entry.dayOff ? "timesheet-stack-cell__alert" : "timesheet-stack-cell__sub";
       return (
         '<div class="timesheet-stack-cell">' +
-        `<div class="timesheet-stack-cell__top">${esc(day)}</div>` +
-        `<div class="timesheet-stack-cell__sub">${esc(status)}</div>` +
+        `<div class="timesheet-stack-cell__top">${esc(top)}</div>` +
+        `<div class="${statusCls}">${esc(status)}</div>` +
         "</div>"
       );
     }
@@ -3303,7 +3306,7 @@
       const note = document.getElementById("statusNote");
       if (!body) return;
       if (!state.entries.length) {
-        body.innerHTML = `<tr><td colspan="5" class="muted">No shifts found for this period.</td></tr>`;
+        body.innerHTML = `<tr><td colspan="4" class="muted">No shifts found for this period.</td></tr>`;
         if (note) note.textContent = "No roster shifts detected for this period.";
       } else {
         body.innerHTML = state.entries.map((e) => {
@@ -3318,8 +3321,7 @@
                 ? "day-row--late"
                 : (e.completed ? "day-row--paid" : "day-row--pending")));
           return `<tr class="${cls}">
-            <td class="td-date">${displayDateCellHtml(e.date)}</td>
-            <td class="td-day">${displayDayStatusCellHtml(e)}</td>
+            <td class="td-date">${displayDateDayStatusCellHtml(e)}</td>
             <td class="td-service">${timesheetEntryServiceCellHtml(e)}</td>
             <td class="num td-hours">${money(e.hours)}</td>
             <td class="num td-daily">${money(daily)}</td>
@@ -4099,7 +4101,7 @@
     loadData().catch((err) => {
       console.error("[timesheet] loadData failed", err);
       const msg = err && err.message ? String(err.message) : "unknown";
-      document.getElementById("rowsBody").innerHTML = `<tr><td colspan="5" class="muted">Could not load shifts for this timesheet.</td></tr>`;
+      document.getElementById("rowsBody").innerHTML = `<tr><td colspan="4" class="muted">Could not load shifts for this timesheet.</td></tr>`;
       document.getElementById("statusNote").textContent =
         msg.indexOf("timeout") >= 0
           ? "Timed out loading profile/rates. Check your connection and refresh."
