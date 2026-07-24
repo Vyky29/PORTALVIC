@@ -575,9 +575,10 @@
     const PAY_RATE_BY_ROSTER_KEY = {
       youssef: {
         roleRates: { "Support Worker": 20, "Swimming Instructor": 24 },
+        roleScales: { "Support Worker": "Scale 2", "Swimming Instructor": "Scale 2" },
         primaryRole: "Swimming Instructor",
         hourly_rate: 20,
-        role_label: "Swimming Instructor"
+        role_label: "Swimming Instructor 2"
       },
       roberto: { hourly_rate: 24, role_label: "Swimming Instructor 2" },
       aurora: { hourly_rate: 28, role_label: "Swimming Instructor 3" },
@@ -1973,6 +1974,13 @@
       return `${minutesToClubHm(startMin)}-${minutesToClubHm(endMin)}`;
     }
 
+    function clubTimeRangeFromSegments(segments) {
+      return (segments || [])
+        .map((seg) => clubTimeRangeFromMinutes(seg.startMin, seg.endMin))
+        .filter(Boolean)
+        .join(" · ");
+    }
+
     function timesheetStripVenueSuffix(label) {
       return String(label || "")
         .replace(/\s*\([^)]*\)\s*$/g, "")
@@ -2154,11 +2162,60 @@
     const YOUSSEF_ACTON_SATURDAY_PAY_HOURS = 2;
     const YOUSSEF_ACTON_SATURDAY_START_MIN = 10 * 60 + 30;
     const YOUSSEF_ACTON_SATURDAY_END_MIN = 12 * 60 + 30;
+    /**
+     * Youssef SwimFarm Day Centre (Hub): Mon/Wed 11–12 + 1–3 (3h @ SW £20);
+     * Friday 11–12 + 1–4 (4h). Midday Big Pool 12–1 is a separate SI row (£24, no ±15).
+     */
+    function youssefSwimfarmDayCentrePaySpec(dayName) {
+      if (dayName === "Friday") {
+        return {
+          hours: 4,
+          segments: [
+            { startMin: 11 * 60, endMin: 12 * 60 },
+            { startMin: 13 * 60, endMin: 16 * 60 }
+          ]
+        };
+      }
+      if (dayName === "Monday" || dayName === "Wednesday") {
+        return {
+          hours: 3,
+          segments: [
+            { startMin: 11 * 60, endMin: 12 * 60 },
+            { startMin: 13 * 60, endMin: 15 * 60 }
+          ]
+        };
+      }
+      return null;
+    }
     function isYoussefRosterKey(rosterKey) {
       const k = String(rosterKey != null ? rosterKey : state.staffRosterKey || "")
         .trim()
         .toLowerCase();
       return k === "youssef" || k === "yousef" || k === "yusef";
+    }
+    function rowsAreYoussefSwimfarmDayCentre(dayName, rosterKey, role, dayRows) {
+      if (!youssefSwimfarmDayCentrePaySpec(dayName)) return false;
+      if (!isYoussefRosterKey(rosterKey)) return false;
+      if (String(role || "").trim() !== "Support Worker") return false;
+      const rows = dayRows || [];
+      if (!rows.length) return false;
+      return rows.every((s) => {
+        const venue = String((s && s.venue) || "").toLowerCase();
+        const svc = sessionServiceLower(s);
+        return venue.indexOf("swimfarm") >= 0 && /day\s*centre/.test(svc);
+      });
+    }
+    function isYoussefSwimfarmMiddayAquatic(dayName, rosterKey, role, dayRows) {
+      if (!isYoussefRosterKey(rosterKey)) return false;
+      if (String(role || "").trim() !== "Swimming Instructor") return false;
+      if (!dayName || dayName === "Sunday" || dayName === "Saturday") return false;
+      const rows = dayRows || [];
+      if (!rows.length) return false;
+      if (rows.every((s) => sessionIsActonAfternoon(s))) return false;
+      return rows.every((s) => {
+        const venue = String((s && s.venue) || "").toLowerCase();
+        return venue.indexOf("swimfarm") >= 0;
+      });
     }
     function sessionIsActonAfternoon(session) {
       const venue = String((session && session.venue) || "").toLowerCase();
@@ -2365,6 +2422,11 @@
       if (key === "youssef" && fb.roleRates && typeof fb.roleRates === "object") {
         Object.keys(fb.roleRates).forEach((role) => {
           state.roleRates[role] = Number(fb.roleRates[role]);
+        });
+      }
+      if (fb.roleScales && typeof fb.roleScales === "object") {
+        Object.keys(fb.roleScales).forEach((role) => {
+          state.roleScales[role] = String(fb.roleScales[role]).trim();
         });
       }
     }
@@ -2584,13 +2646,19 @@
 
     function timesheetEntryServiceTitle(entry) {
       const explicit = String((entry && (entry.serviceName || entry.service_name)) || "").trim();
+      if (explicit && /__youssef_acton_afternoon__/i.test(explicit)) return "Aquatic Activity";
       if (explicit) return explicit;
       const raw = timesheetEntryServiceLabel(entry);
       if (!raw) return "";
+      if (/__youssef_acton_afternoon__/i.test(raw)) return "Aquatic Activity";
       /* Legacy: "4.15-6.15 SwimFarm" or "Aquatic Activity (SwimFarm)" */
       const noVenue = timesheetStripVenueSuffix(raw);
       const m = noVenue.match(/^\d{1,2}[.:]\d{2}\s*-\s*\d{1,2}[.:]\d{2}\s+(.+)$/);
-      if (m) return String(m[1] || "").trim();
+      if (m) {
+        const title = String(m[1] || "").trim();
+        if (/__youssef_acton_afternoon__/i.test(title)) return "Aquatic Activity";
+        return title;
+      }
       return noVenue;
     }
 
@@ -2680,7 +2748,7 @@
         doc.setTextColor(16, 34, 56);
         return;
       }
-      const timeRange = String(timesheetEntryTimeRangeLabel(entry) || "").slice(0, 16);
+      const timeRange = String(timesheetEntryTimeRangeLabel(entry) || "").slice(0, 28);
       const title = String(timesheetEntryServiceTitle(entry) || "").slice(0, 28);
       const venue = String(timesheetEntryVenueLabel(entry) || "").slice(0, 24);
       const role = timesheetEntryRoleLabel(entry).slice(0, 24);
@@ -2763,9 +2831,13 @@
         dominantRole === "Swimming Instructor" &&
         !/day\s*centre/i.test(String(dominantService || "")) &&
         dayName &&
-        dayName !== "Sunday"
+        dayName !== "Sunday" &&
+        !isYoussefSwimfarmMiddayAquatic(dayName, rosterKey, dominantRole, rows)
       ) {
         applySupportBuffer = true;
+      }
+      if (isYoussefSwimfarmMiddayAquatic(dayName, rosterKey, dominantRole, rows)) {
+        applySupportBuffer = false;
       }
       if (
         applySupportBuffer &&
@@ -2791,8 +2863,17 @@
       const rate = rateForRole(role);
       const serviceName = timesheetServiceNameFromRows(rows, role);
       const venue = timesheetPrimaryVenueFromRows(rows);
-      const window = timesheetPaidWindowForRows(rows, dayName, rosterKey, role, hours);
-      const timeRange = window ? clubTimeRangeFromMinutes(window.startMin, window.endMin) : "";
+      let timeRange = "";
+      const dcSpec =
+        rowsAreYoussefSwimfarmDayCentre(dayName, rosterKey, role, rows) &&
+        youssefSwimfarmDayCentrePaySpec(dayName);
+      if (dcSpec) {
+        hours = dcSpec.hours;
+        timeRange = clubTimeRangeFromSegments(dcSpec.segments);
+      } else {
+        const window = timesheetPaidWindowForRows(rows, dayName, rosterKey, role, hours);
+        timeRange = window ? clubTimeRangeFromMinutes(window.startMin, window.endMin) : "";
+      }
       return {
         date: dateKey,
         day: dayName,
@@ -2827,7 +2908,10 @@
               rows: [],
               mins: 0,
               service: String(s.rosterService || s.service || s.activity || "").trim(),
-              serviceLabel: label === "__weekday_ma_bespoke__" ? "" : label
+              serviceLabel:
+                label === "__weekday_ma_bespoke__" || label === "__youssef_acton_afternoon__"
+                  ? ""
+                  : label
             };
           }
           const start = String(s.start || "").trim();
@@ -2850,8 +2934,17 @@
           let mins = Number(group.mins || 0);
           const svc = group.service || roleServices[role] || "";
           const isWeekdayMaBespokeGroup = key === "__weekday_ma_bespoke__";
+          const isYoussefActonAfternoonGroup = key === "__youssef_acton_afternoon__";
+          const skipYoussefMiddayBuffer = isYoussefSwimfarmMiddayAquatic(
+            dayName,
+            rosterKey,
+            role,
+            groupRows
+          );
           let applySupportBuffer =
             !isWeekdayMaBespokeGroup &&
+            !isYoussefActonAfternoonGroup &&
+            !skipYoussefMiddayBuffer &&
             ((role === "Support Worker" &&
               typeof portalStaffSupportShiftBufferApplies === "function" &&
               portalStaffSupportShiftBufferApplies(svc, dayName)) ||
@@ -2898,15 +2991,28 @@
                       .filter((v, i, arr) => arr.indexOf(v) === i)
                       .join(" · ")
                   : "") ||
+                (isYoussefActonAfternoonGroup ? "Aquatic Activity" : "") ||
                 svc,
             ) || svc;
-          const named =
+          let named =
             /bespoke/i.test(serviceName) && !/programme/i.test(serviceName)
               ? "Bespoke Programme"
               : serviceName;
+          if (isYoussefActonAfternoonGroup || /__youssef_acton_afternoon__/i.test(named)) {
+            named = "Aquatic Activity";
+          }
           const venue = timesheetPrimaryVenueFromRows(groupRows);
-          const window = timesheetPaidWindowForRows(groupRows, dayName, rosterKey, role, hours);
-          const timeRange = window ? clubTimeRangeFromMinutes(window.startMin, window.endMin) : "";
+          let timeRange = "";
+          const dcSpec =
+            rowsAreYoussefSwimfarmDayCentre(dayName, rosterKey, role, groupRows) &&
+            youssefSwimfarmDayCentrePaySpec(dayName);
+          if (dcSpec) {
+            hours = dcSpec.hours;
+            timeRange = clubTimeRangeFromSegments(dcSpec.segments);
+          } else {
+            const window = timesheetPaidWindowForRows(groupRows, dayName, rosterKey, role, hours);
+            timeRange = window ? clubTimeRangeFromMinutes(window.startMin, window.endMin) : "";
+          }
           entries.push({
             date: dateKey,
             day: dayName,
