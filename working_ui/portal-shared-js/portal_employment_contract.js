@@ -78,7 +78,7 @@ async function portalContractLoadModule() {
   const bases = ["./", "portal/"];
   for (const b of bases) {
     try {
-      const url = b + "contract-core.js?v=20260628-app-submit-fix";
+      const url = b + "contract-core.js?v=20260724-jd-feedback";
       if (typeof window !== "undefined" && window.ContractCore) return window.ContractCore;
       await import(/* @vite-ignore */ new URL(url, import.meta.url).href).catch(() => null);
       if (window.ContractCore) return window.ContractCore;
@@ -153,8 +153,15 @@ export async function portalCompleteEmploymentContract(opts) {
   const templateData = { ...(row.template_data || {}) };
   templateData.EMPLOYEE_SIGNATURE = "[Signed electronically]";
   templateData.EMPLOYEE_ACKNOWLEDGEMENT = "Confirmed";
+  templateData.JOB_DESCRIPTION_ACKNOWLEDGEMENT = o.jobDescriptionAcknowledged ? "Confirmed" : "Confirmed";
+  templateData.JOB_DESCRIPTION_ACKED_AT = now;
   templateData.SIGNED_TIMESTAMP = now;
   templateData.EMPLOYEE_SIGNATURE_DATE = templateData.EMPLOYEE_SIGNATURE_DATE || now;
+
+  const formPayload = { ...(row.form_payload || {}) };
+  formPayload.jobDescriptionAcknowledged = true;
+  formPayload.jobDescriptionAckedAt = now;
+  if (o.jobDescriptionVersion) formPayload.jobDescriptionVersion = o.jobDescriptionVersion;
 
   await portalEnsureHtml2Pdf();
   if (typeof html2pdf === "undefined" || !docsMod.portalUploadPdfAndCreateDocument) {
@@ -195,6 +202,7 @@ export async function portalCompleteEmploymentContract(opts) {
       employee_typed_name: employeeTypedName,
       employee_acknowledged: true,
       template_data: templateData,
+      form_payload: formPayload,
       completed_at: now,
       employee_signed_at: now,
       document_id: documentRow.id

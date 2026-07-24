@@ -9,7 +9,7 @@
    *  CONSTANTS
    * ================================================================ */
 
-  var CONTRACT_VERSION = '2.0';
+  var CONTRACT_VERSION = '2.1';
   var ADMIN_RATE = '13';
   var GBP = '\u00A3';
   var EM  = '\u2014';
@@ -37,6 +37,210 @@
     if (role && RATE_TABLE[role]) return Object.keys(RATE_TABLE[role]);
     return SCALE_OPTIONS.slice();
   }
+
+  var JOB_DESCRIPTION_VERSION = '2026-07';
+
+  var JOB_DESCRIPTIONS = {
+    'Support Worker': {
+      byKind: {
+        zero_hours: {
+          title: 'Support Worker — Activity Services',
+          summary: 'Provide high-quality, person-centred support in activity sessions (swimming, climbing, fitness and related programmes) outside the Day Centre.',
+          responsibilities: [
+            'Deliver individualised support during activity sessions in line with participant plans.',
+            'Follow behaviour support and safeguarding procedures at all times.',
+            'Prepare and tidy session areas; use equipment safely.',
+            'Complete required session feedback and attendance/session records promptly after each session (typically up to about 10 minutes per session).',
+            'Communicate professionally with families, carers and colleagues.',
+            'Attend planning, induction and supervision sessions as required.',
+            'Work collaboratively within the team and model clubSENsational standards.'
+          ],
+          behaviours: 'Reliable · Professional · Safe practice · Clear communication · Positive team member'
+        },
+        day_centre_part_time: {
+          title: 'Support Worker — Day Centre',
+          summary: 'Provide high-quality, person-centred support in the Day Centre during Normal Hours of Work.',
+          responsibilities: [
+            'Facilitate structured activities and programmes for Day Centre participants.',
+            'Assist with personal care and support needs as required and trained.',
+            'Maintain a safe, welcoming and organised environment.',
+            'Complete daily records, reports and required session/day feedback as part of the role.',
+            'Liaise professionally with families and external professionals.',
+            'Follow behaviour support and safeguarding procedures.',
+            'Work collaboratively with the Service Lead and the Day Centre team.'
+          ],
+          behaviours: 'Reliable · Professional · Safe practice · Clear communication · Positive team member'
+        }
+      }
+    },
+    'Service Lead': {
+      byKind: {
+        zero_hours: {
+          title: 'Service Lead — Activity / Weekend Services',
+          summary: 'Lead the operational delivery of assigned activity or weekend sessions, coaching the team and owning service quality on shift.',
+          responsibilities: [
+            'Lead and coordinate staff on assigned sessions.',
+            'Allocate support and escalate safeguarding or complex behaviour issues appropriately.',
+            'Coach and model best practice for Support Workers and instructors.',
+            'Ensure required session feedback and records are completed to standard.',
+            'Act as the accountable lead when directors are not on site.',
+            'Contribute to inductions, training and service improvement.'
+          ],
+          behaviours: 'Leadership · Judgement · Accountability · Coaching · Service improvement'
+        },
+        day_centre_part_time: {
+          title: 'Day Centre Service Lead',
+          summary: 'Lead the daily operation of the Day Centre, coordinating staff and owning service quality.',
+          responsibilities: [
+            'Lead the daily operation of the Day Centre within Normal Hours of Work.',
+            'Coordinate staff allocation and resources across venues as required.',
+            'Coach and mentor the Day Centre team.',
+            'Support complex behaviours and safeguarding decisions.',
+            'Review participant programmes and documentation quality, including required feedback/records.',
+            'Contribute to recruitment, training and service development.',
+            'Act as the accountable senior when directors are unavailable.'
+          ],
+          behaviours: 'Leadership · Judgement · Accountability · Coaching · Service improvement'
+        }
+      }
+    },
+    'Climbing Instructor': {
+      default: {
+        title: 'Climbing Instructor',
+        summary: 'Deliver safe, engaging climbing sessions for clubSENsational participants.',
+        responsibilities: [
+          'Plan and deliver climbing sessions appropriate to participant needs and ability.',
+          'Maintain equipment checks and a safe climbing environment.',
+          'Provide person-centred support and follow behaviour/safeguarding plans.',
+          'Complete required session feedback and records promptly after each session (typically up to about 10 minutes per session).',
+          'Communicate professionally with families and colleagues.',
+          'Attend required training, inductions and supervision.'
+        ],
+        behaviours: 'Safety-first · Clear instruction · Patient · Professional · Team-oriented'
+      }
+    },
+    'Fitness Instructor': {
+      default: {
+        title: 'Fitness Instructor',
+        summary: 'Deliver safe, engaging fitness sessions for clubSENsational participants.',
+        responsibilities: [
+          'Plan and deliver fitness sessions adapted to participant needs.',
+          'Maintain a safe session environment and correct use of equipment.',
+          'Provide person-centred support and follow behaviour/safeguarding plans.',
+          'Complete required session feedback and records promptly after each session (typically up to about 10 minutes per session).',
+          'Communicate professionally with families and colleagues.',
+          'Attend required training, inductions and supervision.'
+        ],
+        behaviours: 'Motivational · Safety-first · Adaptive · Professional · Team-oriented'
+      }
+    },
+    'Swimming Instructor': {
+      default: {
+        title: 'Swimming Instructor',
+        summary: 'Deliver safe, engaging swimming sessions for clubSENsational participants.',
+        responsibilities: [
+          'Plan and deliver swimming sessions appropriate to participant needs and ability.',
+          'Maintain poolside safety and follow venue and clubSENsational procedures.',
+          'Provide person-centred support and follow behaviour/safeguarding plans.',
+          'Complete required session feedback and records promptly after each session (typically up to about 10 minutes per session).',
+          'Communicate professionally with families and colleagues.',
+          'Attend required training, inductions and supervision.'
+        ],
+        behaviours: 'Safety-first · Clear instruction · Patient · Professional · Team-oriented'
+      }
+    },
+    'Business Development': {
+      default: {
+        title: 'Business Development',
+        summary: 'Drive growth, partnerships and commissioning opportunities for clubSENsational.',
+        responsibilities: [
+          'Identify and pursue new funding, contracts and partnership opportunities.',
+          'Build relationships with commissioners, local authorities and partners.',
+          'Prepare tenders, proposals and impact materials as required.',
+          'Support leadership with pipeline tracking and follow-up.',
+          'Complete required records and feedback on meetings/outcomes as directed.',
+          'Uphold confidentiality, safeguarding and professional standards.'
+        ],
+        behaviours: 'Proactive · Clear communicator · Organised · Relationship-focused · Accountable'
+      }
+    }
+  };
+
+  function resolveJobDescription(role, kind) {
+    var entry = JOB_DESCRIPTIONS[role];
+    if (!entry) return null;
+    var k = normalizeContractKind(kind);
+    if (entry.byKind) {
+      if (entry.byKind[k]) return entry.byKind[k];
+      if (entry.byKind.zero_hours) return entry.byKind.zero_hours;
+      var keys = Object.keys(entry.byKind);
+      if (keys.length) return entry.byKind[keys[0]];
+    }
+    return entry.default || null;
+  }
+
+  function buildJobDescriptionsForRoles(roles, kind) {
+    var list = [];
+    var seen = {};
+    (roles || []).forEach(function (role) {
+      var r = String(role || '').trim();
+      if (!r || seen[r]) return;
+      seen[r] = true;
+      var jd = resolveJobDescription(r, kind);
+      if (jd) list.push({ role: r, jd: jd });
+    });
+    return list;
+  }
+
+  function formatJobDescriptionsPlain(roles, kind) {
+    var items = buildJobDescriptionsForRoles(roles, kind);
+    if (!items.length) return '';
+    var lines = [];
+    items.forEach(function (item, idx) {
+      if (idx) lines.push('');
+      lines.push(item.jd.title || item.role);
+      if (item.jd.summary) lines.push(item.jd.summary);
+      lines.push('Typical responsibilities:');
+      (item.jd.responsibilities || []).forEach(function (r) { lines.push('- ' + r); });
+      if (item.jd.behaviours) lines.push('Expected behaviour: ' + item.jd.behaviours);
+    });
+    return lines.join('\n');
+  }
+
+  function formatJobDescriptionsHtml(roles, kind) {
+    var items = buildJobDescriptionsForRoles(roles, kind);
+    if (!items.length) {
+      return '<p class="muted">Select one or more roles to preview the job description.</p>';
+    }
+    return items.map(function (item) {
+      var jd = item.jd;
+      var lis = (jd.responsibilities || []).map(function (r) {
+        return '<li>' + String(r).replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</li>';
+      }).join('');
+      return (
+        '<article class="jd-card">' +
+        '<h4>' + String(jd.title || item.role).replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</h4>' +
+        '<p class="jd-summary">' + String(jd.summary || '').replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</p>' +
+        '<p class="jd-label">Typical responsibilities</p>' +
+        '<ul>' + lis + '</ul>' +
+        (jd.behaviours
+          ? '<p class="jd-behaviours"><strong>Expected behaviour:</strong> ' +
+            String(jd.behaviours).replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</p>'
+          : '') +
+        '</article>'
+      );
+    }).join('');
+  }
+
+  function clauseAnnexJobDescription() {
+    return [
+      'ANNEX B ' + EM + ' JOB DESCRIPTION(S)',
+      'The following job description(s) form part of this Agreement and describe the Employee\'s role. Duties may be updated by the Employer in line with the Job Title and Description section of this Agreement.',
+      'Job description version: ' + JOB_DESCRIPTION_VERSION,
+      '{{JOB_DESCRIPTIONS_PLAIN}}'
+    ];
+  }
+
 
   var ACTIVE_CONTRACT_KINDS = [
     'zero_hours',
@@ -91,7 +295,7 @@
     var t = (line || '').trim();
     if (!t) return false;
     if (SECTION_HEADERS.has(t)) return true;
-    return t.indexOf('WRITTEN PARTICULARS') === 0 || t.indexOf('ANNEX A') === 0;
+    return t.indexOf('WRITTEN PARTICULARS') === 0 || t.indexOf('ANNEX A') === 0 || t.indexOf('ANNEX B') === 0;
   }
 
   /* ================================================================
@@ -446,7 +650,7 @@
   function clauseSignatures() {
     return [
       'SIGNATURES',
-      'By signing below, the Employee confirms that they have read, understood and agreed to the terms of this Employment Contract, including the workplace pension information at Annex A.', '',
+      'By signing below, the Employee confirms that they have read, understood and agreed to the terms of this Employment Contract, including the workplace pension information at Annex A and the job description(s) at Annex B.', '',
       'EMPLOYEE SIGNATURE',
       'Name: {{EMPLOYEE_FULL_NAME}}',
       'Date: {{EMPLOYEE_SIGNATURE_DATE}}',
@@ -456,7 +660,7 @@
       'Date: {{DIRECTOR_SIGNATURE_DATE}}',
       'Signature: {{DIRECTOR_SIGNATURE}}', '',
       'ACKNOWLEDGEMENT',
-      'I confirm that I have read, understood and agree to the terms of this employment contract, and that I have received the workplace pension information at Annex A.'
+      'I confirm that I have read, understood and agree to the terms of this employment contract, that I have received the workplace pension information at Annex A, and that I have read and understood the job description(s) at Annex B.'
     ];
   }
 
@@ -545,6 +749,7 @@
         'Remuneration paid to the Employee for the services rendered by the Employee under this Agreement will consist of:', '',
         '{{DELIVERY_REMUNERATION}}',
         'The hourly rates stated above are inclusive rates. Each stated hourly rate already includes statutory rolled-up holiday pay calculated at 12.07% of the ordinary (basic) element of pay for hours worked. The Employer will not pay an additional 12.07% on top of the stated hourly rates. The breakdown between ordinary pay and rolled-up holiday pay will be itemised on payslips as set out under Holiday Entitlement.',
+        'Session feedback and records. Completing required session feedback and session records forms part of the Employee\'s duties. The Delivery Service hourly rate(s) stated above are inclusive of a reasonable period of post-session administration (typically up to about ten minutes per session). No additional payment is due for that administration unless the Employer authorises additional paid time in writing.',
         "If the Employer cancels a scheduled shift with at least 24 hours' notice, the Employee shall not be entitled to remuneration for that shift.",
         'If the cancellation occurs less than 24 hours before the scheduled start time, the Employee shall be entitled to full remuneration for the shift as originally scheduled.',
         'This remuneration will be payable once per month while this Agreement is in force.',
@@ -626,7 +831,8 @@
         'Policies: Disciplinary, Grievance, Equipment & Uniform, Safeguarding, H&S, Data Protection (Employee Manual).'
       ], [''],
       clauseSignatures(), [''],
-      clauseAnnexPension('zero_hours')
+      clauseAnnexPension('zero_hours'), [''],
+      clauseAnnexJobDescription()
     ).join('\n');
   }
 
@@ -668,6 +874,7 @@
         'Remuneration paid to the Employee for the services rendered by the Employee under this Agreement will consist of a salary of:', '',
         '{{ANNUAL_SALARY}} per year (gross), paid monthly in arrears via payroll on or around the last working day of the month. Statutory deductions will be made.',
         'The monthly salary is payable while this Agreement remains in force and is not reduced by individual session cancellations within the agreed Normal Hours of Work, provided the Employee remains available for work in accordance with this Agreement.',
+        'Session feedback and daily records form part of the Employee\'s duties under this Agreement. Where such records are completed during Normal Hours of Work, they are covered by the salary. Where the Employer requires reasonable post-session or end-of-day feedback/records outside Normal Hours of Work, that time is included within the overall remuneration for the role (typically up to about ten minutes per session or working day) unless the Employer authorises additional paid time in writing.',
         'This remuneration will be payable once per month while this Agreement is in force.',
         "The Employer is entitled to deduct from the Employee's remuneration, or from any other remuneration in whatever form, any applicable deductions and remittances as required by law.",
         "The Employer will reimburse the Employee for all reasonable expenses, in accordance with the Employer's lawful policies as in effect from time to time."
@@ -742,7 +949,8 @@
         'Policies: Disciplinary, Grievance, Equipment & Uniform, Safeguarding, H&S, Data Protection (Employee Manual).'
       ], [''],
       clauseSignatures(), [''],
-      clauseAnnexPension('day_centre_part_time')
+      clauseAnnexPension('day_centre_part_time'), [''],
+      clauseAnnexJobDescription()
     ).join('\n');
   }
 
@@ -1096,9 +1304,9 @@
     var k = normalizeContractKind(kind);
     switch (k) {
       case 'zero_hours':
-        return 'The Employee will perform any and all duties as requested by the Employer that are reasonable and customarily performed by a person holding a similar position in the industry or business of the Employer. Duties include delivering activity sessions (swimming, climbing, fitness or support work as applicable to the assigned role or roles), preparing and tidying session areas, completing attendance and session records, attending planning meetings and supervision sessions, and any other reasonable tasks related to the delivery of the Employer\'s Activity Services.';
+        return 'The Employee will perform any and all duties as requested by the Employer that are reasonable and customarily performed by a person holding a similar position in the industry or business of the Employer. Duties include delivering activity sessions (swimming, climbing, fitness or support work as applicable to the assigned role or roles), preparing and tidying session areas, completing attendance and session records, completing required session feedback after each session, attending planning meetings and supervision sessions, and any other reasonable tasks related to the delivery of the Employer\'s Activity Services. Session feedback and records form part of the role and are included in the Delivery Service hourly rate(s) as set out under Employee Remuneration.';
       case 'day_centre_part_time':
-        return 'The Employee will provide day centre support services including facilitating structured activities and programmes for participants, assisting with personal care and support needs as required, maintaining a safe and welcoming environment, completing daily records and reports, liaising with families and external professionals, and any other reasonable duties related to the operation of the Employer\'s Day Centre service.';
+        return 'The Employee will provide day centre support services including facilitating structured activities and programmes for participants, assisting with personal care and support needs as required, maintaining a safe and welcoming environment, completing daily records, reports and required session/day feedback, liaising with families and external professionals, and any other reasonable duties related to the operation of the Employer\'s Day Centre service. Session feedback and daily records form part of the role and are covered by the remuneration for this Agreement as set out under Employee Remuneration.';
       case 'full_time':
         return 'The Employee will drive business growth and partnership development, including identifying and securing new funding streams, developing relationships with commissioners, local authorities and partner organisations, preparing tenders, proposals and impact reports, supporting the senior leadership team with strategic planning, and any other reasonable duties related to the Employer\'s business development objectives.';
       case 'fixed_term':
@@ -1159,6 +1367,9 @@
       JOB_TITLE: jobTitle,
       PLACE_OF_WORK: o.placeOfWork || EM,
       DUTIES_DESCRIPTION: dutiesDescription(kind),
+      JOB_DESCRIPTIONS_PLAIN: formatJobDescriptionsPlain(roles, kind) || EM,
+      JOB_DESCRIPTIONS_HTML: formatJobDescriptionsHtml(roles, kind),
+      JOB_DESCRIPTION_VERSION: JOB_DESCRIPTION_VERSION,
       CONTINUOUS_EMPLOYMENT: continuousEmploymentLine,
       CONTINUOUS_EMPLOYMENT_SHORT: continuousEmploymentShort,
       CONCURRENT_CLAUSE: concurrentClause,
@@ -1369,7 +1580,7 @@
       }
 
       if (isSectionHeader(title)) {
-        var annexClass = title.indexOf('ANNEX A') === 0 ? ' contract-annex' : '';
+        var annexClass = (title.indexOf('ANNEX A') === 0 || title.indexOf('ANNEX B') === 0) ? ' contract-annex' : '';
         body += '<div class="contract-section' + annexClass + '"><h3>' + title + '</h3><p style="white-space:pre-wrap;">' + rest + '</p></div>';
       } else {
         body += '<div class="contract-section"><p style="white-space:pre-wrap;">' + block + '</p></div>';
@@ -1547,6 +1758,12 @@
     RATE_TABLE: RATE_TABLE,
     SCALE_OPTIONS: SCALE_OPTIONS,
     getScaleOptionsForRole: getScaleOptionsForRole,
+    JOB_DESCRIPTIONS: JOB_DESCRIPTIONS,
+    JOB_DESCRIPTION_VERSION: JOB_DESCRIPTION_VERSION,
+    resolveJobDescription: resolveJobDescription,
+    buildJobDescriptionsForRoles: buildJobDescriptionsForRoles,
+    formatJobDescriptionsPlain: formatJobDescriptionsPlain,
+    formatJobDescriptionsHtml: formatJobDescriptionsHtml,
     ACTIVE_CONTRACT_KINDS: ACTIVE_CONTRACT_KINDS,
     LOGO_PATH: LOGO_PATH,
     LOGO_DISPLAY: LOGO_DISPLAY,

@@ -466,3 +466,14 @@
 
 #hrContractEmbed .place-option.hidden{display:none !important;}
 #hrContractEmbed #serviceSettingRadios{margin-bottom:0.25rem;}
+
+
+#hrContractEmbed .jd-preview{margin-top:0.35rem;max-height:22rem;overflow:auto;border:1px solid var(--grey-200,#d7e2e8);border-radius:10px;background:#fafbfc;padding:0.75rem 0.9rem;}
+#hrContractEmbed .jd-card{margin:0 0 0.85rem;padding:0 0 0.75rem;border-bottom:1px solid var(--grey-200,#e2e8f0);}
+#hrContractEmbed .jd-card:last-child{margin-bottom:0;padding-bottom:0;border-bottom:0;}
+#hrContractEmbed .jd-card h4{margin:0 0 0.35rem;color:var(--navy);font-size:0.98rem;}
+#hrContractEmbed .jd-summary{margin:0 0 0.5rem;font-size:0.88rem;color:var(--grey-500,#5b7280);line-height:1.45;}
+#hrContractEmbed .jd-label{margin:0 0 0.25rem;font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--navy);}
+#hrContractEmbed .jd-card ul{margin:0 0 0.5rem;padding-left:1.1rem;font-size:0.86rem;}
+#hrContractEmbed .jd-card li{margin:0.2rem 0;}
+#hrContractEmbed .jd-behaviours{margin:0;font-size:0.86rem;}

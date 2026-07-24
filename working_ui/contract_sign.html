@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign employment contract | clubSENsational Portal</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="portal/contract-core.js?v=20260628-app-submit-fix"></script>
+  <script src="portal/contract-core.js?v=20260724-jd-feedback"></script>
   <script src="portal/portal_announcement_ack.js?v=20260623-contract-ack"></script>
   <link rel="stylesheet" href="portal/contract-preview.css?v=20260622-sign2">
   <style>
@@ -14,17 +14,26 @@
     body{margin:0;font-family:'Segoe UI',system-ui,sans-serif;background:var(--grey-100);color:#334155}
     .header{background:#fff;border-bottom:4px solid var(--gold);padding:1rem;text-align:center}
     .header img{max-width:200px;height:auto}
-    .wrap{max-width:1100px;margin:0 auto;padding:1rem 1.25rem 2rem}
+    .wrap{max-width:1180px;margin:0 auto;padding:1rem 1.25rem 2rem}
     .grid{display:grid;gap:1rem}
-    @media(min-width:900px){.grid{grid-template-columns:1fr 1.2fr}}
+    @media(min-width:960px){.grid{grid-template-columns:1fr 1.15fr}}
     .panel{background:#fff;border-radius:var(--radius);padding:1.25rem;box-shadow:0 2px 8px rgba(15,39,68,.08)}
-    .panel h2{margin:0 0 1rem;font-size:1.1rem;color:var(--navy);border-bottom:2px solid #e8f0f6;padding-bottom:.5rem}
+    .panel h2{margin:0 0 0.75rem;font-size:1.1rem;color:var(--navy);border-bottom:2px solid #e8f0f6;padding-bottom:.5rem}
+    .panel h3{margin:1rem 0 0.5rem;font-size:0.98rem;color:var(--navy)}
     canvas{width:100%;display:block;border:2px dashed var(--grey-200);border-radius:var(--radius);background:#f7f9fb;touch-action:none;cursor:crosshair}
     .btn{padding:.65rem 1.2rem;border:none;border-radius:var(--radius);font-weight:600;cursor:pointer;font-size:1rem}
     .btn-gold{background:var(--gold);color:var(--navy);width:100%}
     .btn-gold:disabled{opacity:.5;cursor:not-allowed}
     .btn-sec{background:var(--grey-200);color:var(--navy);margin-top:.5rem;width:100%}
-    .preview{padding:0}
+    .preview{padding:0;max-height:70vh;overflow:auto}
+    .jd-box{max-height:42vh;overflow:auto;border:1px solid var(--grey-200);border-radius:var(--radius);background:#fafbfc;padding:0.85rem 1rem;margin:0 0 0.75rem}
+    .jd-box .jd-card{margin:0 0 0.85rem;padding:0 0 0.75rem;border-bottom:1px solid var(--grey-200)}
+    .jd-box .jd-card:last-child{margin-bottom:0;padding-bottom:0;border-bottom:0}
+    .jd-box h4{margin:0 0 0.35rem;color:var(--navy);font-size:1rem}
+    .jd-box .jd-summary{margin:0 0 0.5rem;font-size:0.9rem;color:var(--grey-500);line-height:1.45}
+    .jd-box .jd-label{margin:0 0 0.25rem;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--navy)}
+    .jd-box ul{margin:0 0 0.5rem;padding-left:1.15rem;font-size:0.9rem}
+    .jd-box li{margin:0.25rem 0}
     .err{background:#fef2f2;border:1px solid #fecaca;padding:1rem;border-radius:var(--radius);color:#b91c1c}
     .ok{background:#ecfdf5;border:1px solid #86efac;padding:1rem;border-radius:var(--radius);color:#166534}
     .ok a{color:#0f2744;font-weight:600}
@@ -33,11 +42,12 @@
     .ok-actions .primary{background:var(--gold);color:var(--navy)}
     .ok-actions .secondary{background:var(--grey-200);color:var(--navy)}
     .hidden{display:none!important}
-    label.ack{display:flex;gap:.5rem;align-items:flex-start;margin:1rem 0;font-size:.95rem}
+    label.ack{display:flex;gap:.5rem;align-items:flex-start;margin:0.75rem 0;font-size:.95rem}
     input[type=text]{width:100%;padding:.6rem;border:1px solid var(--grey-200);border-radius:var(--radius);margin:.35rem 0 .5rem}
     .field-hint{margin:0 0 .75rem;font-size:.82rem;color:var(--grey-500);line-height:1.4}
     .submit-hint{margin:.75rem 0 0;font-size:.85rem;color:var(--grey-500);min-height:1.2em}
     .submit-hint.ready{color:#166534}
+    .step-note{margin:0 0 0.75rem;font-size:0.88rem;color:var(--grey-500);line-height:1.45}
   </style>
 </head>
 <body>
@@ -59,11 +69,16 @@
     </div>
     <div id="signGrid" class="grid hidden">
       <div class="panel">
-        <h2>Your signature</h2>
+        <h2>1. Job description</h2>
+        <p class="step-note">Read your job description(s) first. They also appear as Annex B in the contract PDF you will receive.</p>
+        <div id="jdPreview" class="jd-box" aria-live="polite"></div>
+        <label class="ack"><input type="checkbox" id="jdAck"> <span>I have read and understood the job description(s) for my role.</span></label>
+
+        <h3>2. Sign the contract</h3>
         <label for="typedName">Typed full name</label>
         <input type="text" id="typedName" autocomplete="name">
         <p class="field-hint" id="nameHint">Type your name as shown on the contract (first name is enough if it matches).</p>
-        <label class="ack"><input type="checkbox" id="ack"> <span>I have read and agree to this employment contract.</span></label>
+        <label class="ack"><input type="checkbox" id="ack"> <span>I have read and agree to this employment contract (including Annex A pension information and Annex B job description).</span></label>
         <canvas id="sigCanvas" height="150" aria-label="Signature"></canvas>
         <button type="button" class="btn-sec" id="clearSig">Clear signature</button>
         <p class="submit-hint" id="submitHint" aria-live="polite"></p>
@@ -82,14 +97,13 @@
       portalPersistContractAnnouncementAck,
       portalRepairCompletedContractDocument,
       portalEnsureHtml2Pdf
-    } from "./portal/portal_employment_contract.js?v=20260628-app-submit-fix";
+    } from "./portal/portal_employment_contract.js?v=20260724-jd-feedback";
 
     const C = window.ContractCore;
     const $ = (id) => document.getElementById(id);
     const params = new URLSearchParams(location.search);
     const contractId = params.get("contract_id") || "";
     const MY_DOCS_DOCUMENTS = "my_documents.html?category=documents&from=staff";
-    const MY_DOCS_ALL = "my_documents.html?from=staff";
 
     let sigUrl = "";
     let padApi = null;
@@ -106,8 +120,8 @@
     function showDoneState(alreadySigned) {
       $("doneTitle").textContent = alreadySigned ? "Contract already signed." : "Contract signed.";
       $("doneMessage").textContent = alreadySigned
-        ? "This contract was signed earlier. Open My Documents to view your PDF."
-        : "Your signed PDF has been saved to My Records → Documents.";
+        ? "This contract was signed earlier. Open My Documents to view your PDF (includes job description Annex B)."
+        : "Your signed PDF (contract + job description Annex B) has been saved to My Records → Documents.";
       $("doneMyDocsBtn").setAttribute("href", MY_DOCS_DOCUMENTS);
       show("doneBox");
     }
@@ -128,11 +142,8 @@
       const tParts = t.split(" ").filter(Boolean);
       const eParts = e.split(" ").filter(Boolean);
       if (!tParts.length || !eParts.length) return false;
-      // Legacy: typed is an in-order prefix of the expected name.
       if (tParts.length <= eParts.length && tParts.every((part, i) => eParts[i] === part)) return true;
-      // Lenient: every typed token appears somewhere in the expected name (any order).
       if (tParts.every((part) => eParts.indexOf(part) >= 0)) return true;
-      // First name or last name alone is acceptable.
       if (tParts.length === 1 && (tParts[0] === eParts[0] || tParts[0] === eParts[eParts.length - 1])) return true;
       return false;
     }
@@ -143,6 +154,23 @@
         directorSignatureDataUrl: contractRow.director_signature,
         employeeSignatureDataUrl: employeeSig || ""
       }, contractKind);
+    }
+
+    function renderJobDescriptions() {
+      const el = $("jdPreview");
+      if (!el) return;
+      const td = (contractRow && contractRow.template_data) || {};
+      if (td.JOB_DESCRIPTIONS_HTML) {
+        el.innerHTML = td.JOB_DESCRIPTIONS_HTML;
+        return;
+      }
+      const fp = (contractRow && contractRow.form_payload) || {};
+      const roles = Array.isArray(fp.roles) ? fp.roles : [];
+      if (C.formatJobDescriptionsHtml) {
+        el.innerHTML = C.formatJobDescriptionsHtml(roles, contractKind);
+      } else {
+        el.innerHTML = "<p>Job description not available. Contact HR.</p>";
+      }
     }
 
     function canvasHasInk(canvas) {
@@ -160,8 +188,6 @@
       }
     }
 
-    // Safety net: capture the signature straight from the canvas in case the
-    // pad's own pointer/touch callback does not fire on some mobile browsers.
     function captureSignatureFromCanvas() {
       const canvas = $("sigCanvas");
       if (!canvas) return;
@@ -176,14 +202,20 @@
       const missing = [];
       const typed = $("typedName").value.trim();
       const expected = contractRow ? contractRow.employee_name : "";
+      if (!$("jdAck").checked) missing.push("tick the job description box");
       if (!typed) missing.push("type your name");
       else if (!contractNamesMatch(typed, expected)) {
         missing.push('name must match "' + expected + '" (first name is OK)');
       }
       if (!sigUrl) missing.push("draw your signature");
-      if (!$("ack").checked) missing.push("tick the agreement box");
+      if (!$("ack").checked) missing.push("tick the contract agreement box");
       const hint = $("submitHint");
-      const ok = contractRow && sigUrl && $("ack").checked && contractNamesMatch(typed, expected);
+      const ok =
+        contractRow &&
+        sigUrl &&
+        $("jdAck").checked &&
+        $("ack").checked &&
+        contractNamesMatch(typed, expected);
       if (hint) {
         hint.textContent = ok ? "Ready to sign." : "Still needed: " + missing.join("; ") + ".";
         hint.classList.toggle("ready", ok);
@@ -215,6 +247,7 @@
           (contractRow.form_payload && contractRow.form_payload.contractKind) ||
           "zero_hours";
         filledText = C.fillTemplate(td, contractKind);
+        renderJobDescriptions();
         renderPreview("");
         $("typedName").placeholder = contractRow.employee_name;
         $("nameHint").textContent =
@@ -231,7 +264,6 @@
           const canvas = $("sigCanvas");
           ["pointerup", "mouseup", "touchend"].forEach((ev) => {
             canvas.addEventListener(ev, () => {
-              // Let the pad finish its own stroke handler first, then read the canvas.
               setTimeout(captureSignatureFromCanvas, 0);
             });
           });
@@ -245,6 +277,7 @@
 
     $("typedName").addEventListener("input", updateSubmit);
     $("ack").addEventListener("change", updateSubmit);
+    $("jdAck").addEventListener("change", updateSubmit);
     $("clearSig").addEventListener("click", () => {
       if (padApi) padApi.clear();
       sigUrl = "";
@@ -259,10 +292,13 @@
         hint.textContent = "Saving your signed contract… this can take a few seconds.";
       }
       try {
+        const td = (contractRow && contractRow.template_data) || {};
         await portalCompleteEmploymentContract({
           contractId,
           employeeSignature: sigUrl,
-          employeeTypedName: $("typedName").value.trim()
+          employeeTypedName: $("typedName").value.trim(),
+          jobDescriptionAcknowledged: true,
+          jobDescriptionVersion: td.JOB_DESCRIPTION_VERSION || ""
         });
         showDoneState(false);
       } catch (e) {

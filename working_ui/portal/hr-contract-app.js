@@ -394,6 +394,14 @@
 
   function syncScaleFromRoles() {
     renderRoleScaleInputs();
+    renderJobDescriptionPreview();
+  }
+
+  function renderJobDescriptionPreview() {
+    const el = $("jobDescriptionPreview");
+    if (!el || !C.formatJobDescriptionsHtml) return;
+    const roles = getSelectedRoles();
+    el.innerHTML = C.formatJobDescriptionsHtml(roles, contractKind);
   }
 
   function getRoleScales() {
