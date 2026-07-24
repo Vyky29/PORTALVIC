@@ -13969,10 +13969,10 @@
     {
       "client_name": "Yaqoub",
       "day": "Monday",
-      "instructors": "ROBERTO",
+      "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
       "area": "Big Pool",
-      "time_slot": "12 to 1",
+      "time_slot": "1 to 2",
       "venue": "SwimFarm",
       "session_date": "2026-07-27"
     },
@@ -14003,6 +14003,16 @@
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
+      "venue": "SwimFarm",
+      "session_date": "2026-07-28"
+    },
+    {
+      "client_name": "Yaqoub",
+      "day": "Tuesday",
+      "instructors": "YOUSSEF",
+      "service": "Aquatic Activity",
+      "area": "Big Pool",
+      "time_slot": "1 to 2",
       "venue": "SwimFarm",
       "session_date": "2026-07-28"
     },
@@ -14069,10 +14079,10 @@
     {
       "client_name": "Yaqoub",
       "day": "Wednesday",
-      "instructors": "ROBERTO",
+      "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
       "area": "Big Pool",
-      "time_slot": "12 to 1",
+      "time_slot": "1 to 2",
       "venue": "SwimFarm",
       "session_date": "2026-07-29"
     },
@@ -14193,16 +14203,6 @@
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-31"
-    },
-    {
-      "client_name": "Yaqoub",
-      "day": "Friday",
-      "instructors": "ROBERTO",
-      "service": "Aquatic Activity",
-      "area": "Big Pool",
-      "time_slot": "12 to 1",
       "venue": "SwimFarm",
       "session_date": "2026-07-31"
     },

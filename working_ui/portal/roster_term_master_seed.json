@@ -16826,16 +16826,6 @@
                   "participant_info": "1. Age: 5 years (born December 2019)\n2. Medical: No diagnosed medical conditions. No allergies. No regular medication. Health/Emergency Plan in place.\n3. Likes/Motivators: Building activities, Playdough, sensory play, Disney Cars.\n4. Dislikes/Avoids: Changing activities.\n5. Known Triggers: Waiting or delays.\n6. Regulation Strategies: Movement/space to pace or jump.\n7. Level of Support: Can self-regulate with minimal prompts.\n8. Communication: Verbal – limited words or scripts; uses gestures or non-verbal cues (pointing, taking adult to item); broken speech with gestures helps.\n9. Preferred Communication: Short, broken-up speech supported with gestures.\n10. Mobility: Walks independently.\n11. Personal Care: Fully independent (toileting, dressing).\n12. Task Engagement: Needs visual or verbal prompts to stay on task.\n13. Transitions/Flexibility: Needs preparation or countdowns for transitions.\n14. Safety: Understands basic safety rules (e.g. pool safety, not running off); may act impulsively – needs supervision.\n15. Other Notes: Generally cautious around water, but grows in confidence when supported by an adult."
                 },
                 {
-                  "area": "Big Pool",
-                  "venue": "SwimFarm",
-                  "service": "Aquatic Activity",
-                  "pool_note": "Big Pool",
-                  "time_slot": "12 to 1",
-                  "client_name": "Yaqoub",
-                  "instructors": "ROBERTO",
-                  "participant_info": ""
-                },
-                {
                   "area": "Hub Room",
                   "venue": "SwimFarm",
                   "service": "Day Centre",
@@ -16888,16 +16878,6 @@
                   "participant_info": "1. Age: 5 years (born December 2019)\n2. Medical: No diagnosed medical conditions. No allergies. No regular medication. Health/Emergency Plan in place.\n3. Likes/Motivators: Building activities, Playdough, sensory play, Disney Cars.\n4. Dislikes/Avoids: Changing activities.\n5. Known Triggers: Waiting or delays.\n6. Regulation Strategies: Movement/space to pace or jump.\n7. Level of Support: Can self-regulate with minimal prompts.\n8. Communication: Verbal – limited words or scripts; uses gestures or non-verbal cues (pointing, taking adult to item); broken speech with gestures helps.\n9. Preferred Communication: Short, broken-up speech supported with gestures.\n10. Mobility: Walks independently.\n11. Personal Care: Fully independent (toileting, dressing).\n12. Task Engagement: Needs visual or verbal prompts to stay on task.\n13. Transitions/Flexibility: Needs preparation or countdowns for transitions.\n14. Safety: Understands basic safety rules (e.g. pool safety, not running off); may act impulsively – needs supervision.\n15. Other Notes: Generally cautious around water, but grows in confidence when supported by an adult."
                 },
                 {
-                  "area": "Big Pool",
-                  "venue": "SwimFarm",
-                  "service": "Aquatic Activity",
-                  "pool_note": "Big Pool",
-                  "time_slot": "11 to 12",
-                  "client_name": "Yaqoub",
-                  "instructors": "ROBERTO",
-                  "participant_info": ""
-                },
-                {
                   "area": "Hub Room",
                   "venue": "SwimFarm",
                   "service": "Day Centre",
@@ -16948,16 +16928,6 @@
                   "client_name": "Zakariya",
                   "instructors": "ROBERTO",
                   "participant_info": "1. Age: 5 years (born December 2019)\n2. Medical: No diagnosed medical conditions. No allergies. No regular medication. Health/Emergency Plan in place.\n3. Likes/Motivators: Building activities, Playdough, sensory play, Disney Cars.\n4. Dislikes/Avoids: Changing activities.\n5. Known Triggers: Waiting or delays.\n6. Regulation Strategies: Movement/space to pace or jump.\n7. Level of Support: Can self-regulate with minimal prompts.\n8. Communication: Verbal – limited words or scripts; uses gestures or non-verbal cues (pointing, taking adult to item); broken speech with gestures helps.\n9. Preferred Communication: Short, broken-up speech supported with gestures.\n10. Mobility: Walks independently.\n11. Personal Care: Fully independent (toileting, dressing).\n12. Task Engagement: Needs visual or verbal prompts to stay on task.\n13. Transitions/Flexibility: Needs preparation or countdowns for transitions.\n14. Safety: Understands basic safety rules (e.g. pool safety, not running off); may act impulsively – needs supervision.\n15. Other Notes: Generally cautious around water, but grows in confidence when supported by an adult."
-                },
-                {
-                  "area": "Big Pool",
-                  "venue": "SwimFarm",
-                  "service": "Aquatic Activity",
-                  "pool_note": "Big Pool",
-                  "time_slot": "12 to 1",
-                  "client_name": "Yaqoub",
-                  "instructors": "ROBERTO",
-                  "participant_info": ""
                 },
                 {
                   "area": "Hub Room",
@@ -17077,12 +17047,34 @@
         {
           "days": [
             {
-              "slots": [],
+              "slots": [
+                {
+                  "area": "Big Pool",
+                  "venue": "SwimFarm",
+                  "service": "Aquatic Activity",
+                  "pool_note": "Big Pool",
+                  "time_slot": "1 to 2",
+                  "client_name": "Yaqoub",
+                  "instructors": "YOUSSEF",
+                  "participant_info": ""
+                }
+              ],
               "weekday": "Monday",
               "sessionDate": "2026-07-27"
             },
             {
-              "slots": [],
+              "slots": [
+                {
+                  "area": "Big Pool",
+                  "venue": "SwimFarm",
+                  "service": "Aquatic Activity",
+                  "pool_note": "Big Pool",
+                  "time_slot": "1 to 2",
+                  "client_name": "Yaqoub",
+                  "instructors": "YOUSSEF",
+                  "participant_info": ""
+                }
+              ],
               "weekday": "Wednesday",
               "sessionDate": "2026-07-29"
             },
@@ -17092,7 +17084,18 @@
               "sessionDate": "2026-07-31"
             },
             {
-              "slots": [],
+              "slots": [
+                {
+                  "area": "Big Pool",
+                  "venue": "SwimFarm",
+                  "service": "Aquatic Activity",
+                  "pool_note": "Big Pool",
+                  "time_slot": "1 to 2",
+                  "client_name": "Yaqoub",
+                  "instructors": "YOUSSEF",
+                  "participant_info": ""
+                }
+              ],
               "weekday": "Tuesday",
               "sessionDate": "2026-07-28"
             },
