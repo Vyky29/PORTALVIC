@@ -2355,12 +2355,33 @@
         return sessionIsActonSaturdayMorning(s);
       });
     }
+    /** True when every Acton Saturday morning client that day was admin-cancelled. */
+    function youssefActonSaturdayAllCancelled(dateKey, rosterKey, dayRows) {
+      if (!isYoussefRosterKey(rosterKey)) return false;
+      const iso = String(dateKey || "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+      const me = timesheetNormStaffKey(rosterKey);
+      const cancelOvs = (state.scheduleOverrides || []).filter((ov) => {
+        if (String(ov.status || "").trim().toLowerCase() === "cancelled") return false;
+        if (String(ov.session_date || "").trim().slice(0, 10) !== iso) return false;
+        if (timesheetNormStaffKey(ov.anchor_staff_id) !== me) return false;
+        if (String(ov.anchor_venue || "").toLowerCase().indexOf("acton") < 0) return false;
+        return timesheetOverrideCompletionFlag(ov) === "cancelled";
+      });
+      if (!cancelOvs.length) return false;
+      const morning = (dayRows || []).filter((s) => sessionIsActonSaturdayMorning(s));
+      if (!morning.length) return true;
+      return morning.every((s) =>
+        cancelOvs.some((ov) => sessionMatchesScheduleOverride(s, iso, ov))
+      );
+    }
     function youssefActonAfternoonPayableHours(dayName, rosterKey, role, computedHours, dayRows) {
       if (!isYoussefActonAfternoonBand(dayName, rosterKey, dayRows)) return computedHours;
       return YOUSSEF_ACTON_AFTERNOON_PAY_HOURS;
     }
-    function youssefActonSaturdayPayableHours(dayName, rosterKey, role, computedHours, dayRows) {
+    function youssefActonSaturdayPayableHours(dayName, rosterKey, role, computedHours, dayRows, dateKey) {
       if (!isYoussefActonSaturdayMorningBand(dayName, rosterKey, dayRows)) return computedHours;
+      if (youssefActonSaturdayAllCancelled(dateKey, rosterKey, dayRows)) return 0;
       return YOUSSEF_ACTON_SATURDAY_PAY_HOURS;
     }
 
@@ -2966,7 +2987,8 @@
       hours = sundayMaSupportPayableHours(dayName, rosterKey, dominantRole, dominantService, hours, rows);
       hours = sundaySwimPayableHours(dayName, rosterKey, dominantRole, dominantService, dateKey, hours, rows);
       hours = youssefActonAfternoonPayableHours(dayName, rosterKey, dominantRole, hours, rows);
-      hours = youssefActonSaturdayPayableHours(dayName, rosterKey, dominantRole, hours, rows);
+      hours = youssefActonSaturdayPayableHours(dayName, rosterKey, dominantRole, hours, rows, dateKey);
+      if (!(hours > 0)) return null;
       const role = dominantRole || "";
       const rate = rateForRole(role);
       const serviceName = timesheetServiceNameFromRows(rows, role);
@@ -3087,7 +3109,7 @@
           hours = sundayMaSupportPayableHours(dayName, rosterKey, role, svc, hours, groupRows);
           hours = sundaySwimPayableHours(dayName, rosterKey, role, svc, dateKey, hours, groupRows);
           hours = youssefActonAfternoonPayableHours(dayName, rosterKey, role, hours, groupRows);
-          hours = youssefActonSaturdayPayableHours(dayName, rosterKey, role, hours, groupRows);
+          hours = youssefActonSaturdayPayableHours(dayName, rosterKey, role, hours, groupRows, dateKey);
           if (!(hours > 0)) return;
           const serviceName =
             timesheetStripVenueSuffix(
