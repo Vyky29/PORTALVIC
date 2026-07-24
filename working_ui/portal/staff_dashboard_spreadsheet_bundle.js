@@ -14012,7 +14012,7 @@
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
       "area": "Teaching Pool",
-      "time_slot": "4.40 to 5",
+      "time_slot": "4.30 to 5",
       "venue": "Acton",
       "session_date": "2026-07-28"
     },
@@ -14102,7 +14102,7 @@
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
       "area": "Teaching Pool",
-      "time_slot": "4.40 to 5",
+      "time_slot": "4.30 to 5",
       "venue": "Acton",
       "session_date": "2026-07-29"
     },
