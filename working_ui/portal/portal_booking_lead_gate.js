@@ -194,7 +194,10 @@
   function setBusy(btn, busy, label) {
     if (!btn) return;
     btn.disabled = !!busy;
-    if (label) btn.textContent = label;
+    if (!label) return;
+    var span = btn.querySelector(".booking-gate__btn-label");
+    if (span) span.textContent = label;
+    else btn.textContent = label;
   }
 
   async function validateSession(tokenOverride) {

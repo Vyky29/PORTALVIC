@@ -1117,8 +1117,24 @@
       border-radius: 22px;
       border: 1px solid var(--line);
       box-shadow: 0 24px 60px rgba(23, 50, 71, 0.22);
-      padding: 22px 20px 18px;
+      padding: 18px 20px 18px;
       min-width: 0;
+    }
+    .booking-gate__brand {
+      margin: 0 0 8px;
+      text-align: center;
+    }
+    .booking-gate__logo-stage {
+      width: min(128px, 36vw);
+      margin: 0 auto 2px;
+    }
+    .booking-gate__logo-stage .brand-logo-shell {
+      max-width: 90px;
+      box-shadow:
+        0 0 0 2px rgba(249, 191, 46, 0.5),
+        0 0 14px rgba(249, 191, 46, 0.4),
+        0 0 28px rgba(244, 183, 64, 0.28),
+        0 0 40px rgba(45, 132, 179, 0.12);
     }
     .booking-gate__eyebrow {
       margin: 0 0 6px;
@@ -1138,7 +1154,7 @@
     .booking-gate__tab {
       min-width: 0;
       margin: 0;
-      padding: 8px 10px;
+      padding: 9px 8px;
       border: 1px solid rgba(23, 50, 71, 0.16);
       border-radius: 10px;
       background: #f4f7fa;
@@ -1149,11 +1165,34 @@
       line-height: 1.25;
       cursor: pointer;
       overflow-wrap: break-word;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .booking-gate__tab svg {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 auto;
+      color: currentColor;
     }
     .booking-gate__tab.is-active {
       background: #e8f1fb;
       border-color: rgba(31, 106, 148, 0.45);
       color: var(--blueDeep);
+    }
+    .booking-gate__cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+    }
+    .booking-gate__cta svg {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+      color: currentColor;
     }
     .booking-gate__optional {
       font-weight: 500;
@@ -1415,6 +1454,56 @@
       aria-labelledby="bookingLeadTitle"
       aria-describedby="bookingLeadLede"
     >
+      <header class="booking-gate__brand">
+        <div class="brand-logo-stage booking-gate__logo-stage" aria-hidden="true">
+          <svg class="brand-orbit-svg" viewBox="0 0 200 200" focusable="false">
+            <defs>
+              <filter id="gate-orb-soft" x="-40%" y="-40%" width="180%" height="180%">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="b"/>
+                <feMerge>
+                  <feMergeNode in="b"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+            <g transform="translate(100,100)">
+              <g class="orbit-layer orbit-layer--cw" filter="url(#gate-orb-soft)">
+                <circle cx="0" cy="-92" r="7" fill="var(--blue)"/>
+                <circle cx="79.67" cy="-46" r="6" fill="var(--sen-gold)"/>
+                <circle cx="79.67" cy="46" r="6" fill="var(--ink)"/>
+                <circle cx="0" cy="92" r="7" fill="var(--gold)"/>
+                <circle cx="-79.67" cy="46" r="6" fill="var(--blue)"/>
+                <circle cx="-79.67" cy="-46" r="6" fill="#5a9fc4"/>
+              </g>
+              <g class="orbit-layer orbit-layer--ccw" filter="url(#gate-orb-soft)">
+                <circle cx="0" cy="-82" r="5" fill="var(--sen-gold)"/>
+                <circle cx="71.01" cy="-41" r="5" fill="var(--blue)"/>
+                <circle cx="71.01" cy="41" r="5" fill="var(--gold)"/>
+                <circle cx="0" cy="82" r="5" fill="var(--ink)"/>
+                <circle cx="-71.01" cy="41" r="5" fill="#8ebfe0"/>
+                <circle cx="-71.01" cy="-41" r="5" fill="var(--sen-gold)"/>
+              </g>
+              <g class="orbit-layer orbit-layer--slow-ccw" filter="url(#gate-orb-soft)">
+                <circle cx="37.27" cy="-64" r="4" fill="var(--gold)"/>
+                <circle cx="74" cy="-8" r="4" fill="var(--blue)"/>
+                <circle cx="37.27" cy="64" r="4" fill="var(--sen-gold)"/>
+                <circle cx="-37.27" cy="64" r="4" fill="var(--ink)"/>
+                <circle cx="-74" cy="-8" r="4" fill="var(--blue)"/>
+                <circle cx="-37.27" cy="-64" r="4" fill="#f4d78a"/>
+              </g>
+            </g>
+          </svg>
+          <div class="brand-logo-shell">
+            <img
+              src="/portal/F-02-1.png"
+              alt=""
+              width="90"
+              height="90"
+              decoding="async"
+            />
+          </div>
+        </div>
+      </header>
       <div id="bookingLeadStepDetails">
         <p class="booking-gate__eyebrow">Parent / guardian</p>
         <div class="booking-gate__tabs" role="tablist" aria-label="Access type">
@@ -1426,7 +1515,13 @@
             aria-selected="true"
             data-booking-gate-flow="returning"
           >
-            Already with us
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            <span>Already with us</span>
           </button>
           <button
             type="button"
@@ -1436,7 +1531,13 @@
             aria-selected="false"
             data-booking-gate-flow="new"
           >
-            New visitor
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <line x1="19" y1="8" x2="19" y2="14"/>
+              <line x1="22" y1="11" x2="16" y2="11"/>
+            </svg>
+            <span>New visitor</span>
           </button>
         </div>
 
@@ -1480,7 +1581,13 @@
             </label>
             <p class="booking-gate__msg" id="bookingLeadReturningMsg" hidden></p>
             <div class="booking-gate__actions">
-              <button type="submit" class="btn btn--book" id="bookingLeadReturningSend">Send access code</button>
+              <button type="submit" class="btn btn--book booking-gate__cta" id="bookingLeadReturningSend">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="2" y="4" width="20" height="16" rx="2"/>
+                  <path d="m22 7-10 7L2 7"/>
+                </svg>
+                <span class="booking-gate__btn-label">Send access code</span>
+              </button>
             </div>
           </form>
         </div>
@@ -1542,7 +1649,13 @@
             </label>
             <p class="booking-gate__msg" id="bookingLeadDetailsMsg" hidden></p>
             <div class="booking-gate__actions">
-              <button type="submit" class="btn btn--book" id="bookingLeadSendCode">Request access code</button>
+              <button type="submit" class="btn btn--book booking-gate__cta" id="bookingLeadSendCode">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="2" y="4" width="20" height="16" rx="2"/>
+                  <path d="m22 7-10 7L2 7"/>
+                </svg>
+                <span class="booking-gate__btn-label">Request access code</span>
+              </button>
             </div>
           </form>
         </div>
@@ -1570,7 +1683,13 @@
           </div>
           <p class="booking-gate__msg" id="bookingLeadOtpMsg" hidden></p>
           <div class="booking-gate__actions">
-            <button type="submit" class="btn btn--book" id="bookingLeadVerify">Unlock booking</button>
+            <button type="submit" class="btn btn--book booking-gate__cta" id="bookingLeadVerify">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="11" width="18" height="11" rx="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              <span class="booking-gate__btn-label">Unlock booking</span>
+            </button>
           </div>
           <div class="booking-gate__secondary">
             <button type="button" class="booking-gate__linkbtn" id="bookingLeadBack">Edit details</button>
@@ -1583,7 +1702,7 @@
 
   <script src="/portal/portal_booking_offer.js?v=20260716-daycentre-info"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
-  <script src="/portal/portal_booking_lead_gate.js?v=20260724-otp-gate"></script>
+  <script src="/portal/portal_booking_lead_gate.js?v=20260724-gate-brand"></script>
   <script>
 (function () {
   "use strict";
