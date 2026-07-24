@@ -999,6 +999,50 @@
         if (res.error) {
           return { ok: false, error: res.error.message || "upsert_failed" };
         }
+        /* If they already submitted, clear late_hold on those days so payroll totals update. */
+        try {
+          var sheets = await c
+            .from("staff_timesheets")
+            .select("id,entries")
+            .eq("submitted_by_user_id", uid)
+            .order("created_at", { ascending: false })
+            .limit(6);
+          var dateSet = Object.create(null);
+          dates.forEach(function (d) {
+            dateSet[d] = true;
+          });
+          var list = sheets && !sheets.error && Array.isArray(sheets.data) ? sheets.data : [];
+          for (var si = 0; si < list.length; si++) {
+            var row = list[si];
+            var ents = Array.isArray(row.entries) ? row.entries : [];
+            var touched = false;
+            var next = ents.map(function (e) {
+              var ed = String((e && e.date) || "").slice(0, 10);
+              if (!dateSet[ed]) return e;
+              if (!(e && (e.late_hold || e.feedback_late || e.lateHold))) return e;
+              touched = true;
+              var copy = Object.assign({}, e);
+              copy.late_hold = false;
+              copy.feedback_late = false;
+              copy.lateHold = false;
+              return copy;
+            });
+            if (!touched) continue;
+            var up = await c
+              .from("staff_timesheets")
+              .update({ entries: next })
+              .eq("id", row.id);
+            if (up && up.error) {
+              console.warn(
+                "[late-pay] timesheet hold clear failed",
+                row.id,
+                up.error.message || up.error
+              );
+            }
+          }
+        } catch (sheetErr) {
+          console.warn("[late-pay] timesheet hold clear skipped", sheetErr);
+        }
         return { ok: true, count: dates.length };
       } catch (e) {
         return { ok: false, error: String(e && e.message ? e.message : e) };
