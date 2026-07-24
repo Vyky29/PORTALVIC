@@ -51,14 +51,28 @@
     }
     td{font-size:14px}
     .td-date,.td-day,.td-service{min-width:0;text-align:center;vertical-align:middle}
+    .td-hours,.td-daily{min-width:0;text-align:center;vertical-align:middle;white-space:nowrap;padding-left:2px;padding-right:2px}
     .timesheet-stack-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px;min-width:0;padding:2px 0;width:100%;line-height:1.2}
     .timesheet-stack-cell__top{font-weight:700;overflow-wrap:break-word;max-width:100%}
     .timesheet-stack-cell__sub{font-size:0.92em;color:#334155;overflow-wrap:anywhere;max-width:100%}
+    .timesheet-stack-cell__alert{font-size:0.92em;font-weight:800;color:#b91c1c;overflow-wrap:anywhere;max-width:100%}
+    .timesheet-stack-cell__hint{font-size:0.88em;color:#7f1d1d;overflow-wrap:anywhere;max-width:100%}
     .timesheet-service-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2px;min-width:0;padding:2px 0;width:100%}
     .timesheet-service-cell__service{font-size:13px;line-height:1.2;overflow-wrap:break-word;word-break:normal;max-width:100%;text-align:center}
     .timesheet-service-cell__venue{font-size:12px;line-height:1.15;color:#334155;overflow-wrap:break-word;word-break:break-word;max-width:100%;text-align:center}
     .timesheet-service-cell__role{font-size:12px;line-height:1.15;max-width:100%;overflow-wrap:break-word;word-break:break-word;text-align:center}
     .num{text-align:center}
+    /* Auto timesheet: shrink Hours / Daily £, give width to Service */
+    #autoWrap table{table-layout:fixed;width:100%}
+    #autoWrap col.col-date{width:12%}
+    #autoWrap col.col-day{width:20%}
+    #autoWrap col.col-service{width:48%}
+    #autoWrap col.col-hours{width:9%}
+    #autoWrap col.col-daily{width:11%}
+    #autoWrap th.th-hours,
+    #autoWrap th.th-daily,
+    #autoWrap td.td-hours,
+    #autoWrap td.td-daily{padding-left:2px;padding-right:2px}
     .sum-row td{background:#f4f7fb;font-weight:700}
     .sum-label{text-align:center}
     .th-mob{display:none}
@@ -153,9 +167,20 @@
       html.portal-timesheet-vertical td.td-service{vertical-align:middle}
       html.portal-timesheet-vertical .timesheet-stack-cell__top{font-size:11px}
       html.portal-timesheet-vertical .timesheet-stack-cell__sub{font-size:10px}
+      html.portal-timesheet-vertical .timesheet-stack-cell__alert{font-size:10px}
+      html.portal-timesheet-vertical .timesheet-stack-cell__hint{font-size:9px}
       html.portal-timesheet-vertical .timesheet-service-cell__service{font-size:11px}
       html.portal-timesheet-vertical .timesheet-service-cell__venue,
       html.portal-timesheet-vertical .timesheet-service-cell__role{font-size:10px}
+      html.portal-timesheet-vertical #autoWrap col.col-date{width:11%}
+      html.portal-timesheet-vertical #autoWrap col.col-day{width:22%}
+      html.portal-timesheet-vertical #autoWrap col.col-service{width:49%}
+      html.portal-timesheet-vertical #autoWrap col.col-hours{width:8%}
+      html.portal-timesheet-vertical #autoWrap col.col-daily{width:10%}
+      html.portal-timesheet-vertical #autoWrap th.th-hours,
+      html.portal-timesheet-vertical #autoWrap th.th-daily,
+      html.portal-timesheet-vertical #autoWrap td.td-hours,
+      html.portal-timesheet-vertical #autoWrap td.td-daily{padding-left:1px;padding-right:1px;font-size:10px}
       html.portal-timesheet-vertical thead th{
         --th-head-fs:12px;
         font-size:var(--th-head-fs);
@@ -322,13 +347,20 @@
       </div>
       <div class="table-wrap" id="autoWrap">
         <table>
+          <colgroup>
+            <col class="col-date" />
+            <col class="col-day" />
+            <col class="col-service" />
+            <col class="col-hours" />
+            <col class="col-daily" />
+          </colgroup>
           <thead>
             <tr>
               <th>Date</th>
               <th>Day</th>
               <th>Service</th>
-              <th class="num th-compact">Hours</th>
-              <th class="num th-compact" title="Daily Total (GBP)"><span class="th-desk">Daily Total (GBP)</span><span class="th-mob">Daily £</span></th>
+              <th class="num th-compact th-hours">Hours</th>
+              <th class="num th-compact th-daily" title="Daily Total (GBP)"><span class="th-desk">Daily Total (GBP)</span><span class="th-mob">Daily £</span></th>
             </tr>
           </thead>
           <tbody id="rowsBody">
@@ -589,12 +621,21 @@
       if (!entry) return "";
       if (entry.dayOff) return "day off";
       if (entry.upcoming) return "upcoming";
-      if (entry.lateHold) return "late — awaiting admin";
+      if (entry.lateHold) return "Submitted Late";
       if (entry.completed) return "completed";
       return "pending feedback";
     }
     function displayDayStatusCellHtml(entry) {
       const day = String((entry && entry.day) || "").trim() || "—";
+      if (entry && entry.lateHold) {
+        return (
+          '<div class="timesheet-stack-cell">' +
+          `<div class="timesheet-stack-cell__top">${esc(day)}</div>` +
+          '<div class="timesheet-stack-cell__alert">Submitted Late</div>' +
+          '<div class="timesheet-stack-cell__hint">Contact admin</div>' +
+          "</div>"
+        );
+      }
       const status = timesheetEntryStatusLine(entry);
       return (
         '<div class="timesheet-stack-cell">' +
@@ -3031,8 +3072,8 @@
             <td class="td-date">${displayDateCellHtml(e.date)}</td>
             <td class="td-day">${displayDayStatusCellHtml(e)}</td>
             <td class="td-service">${timesheetEntryServiceCellHtml(e)}</td>
-            <td class="num">${money(e.hours)}</td>
-            <td class="num">${money(daily)}</td>
+            <td class="num td-hours">${money(e.hours)}</td>
+            <td class="num td-daily">${money(daily)}</td>
           </tr>`;
         }).join("");
         if (note) {
