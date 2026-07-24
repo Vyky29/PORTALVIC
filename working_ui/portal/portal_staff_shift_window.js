@@ -145,11 +145,10 @@
     return n === "youssef" || n === "yousef" || n === "yusef";
   }
 
-  /** Youssef's Acton weekday afternoon shift is a flat 4:30–6:30 band (no ±15
-   *  buffer, No-Participant gaps stay inside), paid as 2h Swimming. */
+  /** Youssef Acton PM: Mon/Tue/Wed only, flat 4:30–6:30 (2h Swimming). */
   function rowsAreYoussefActonAfternoonBand(rows, iso) {
     var dayName = dayNameFromIso(iso);
-    if (!dayName || dayName === "Sunday" || dayName === "Saturday") return false;
+    if (dayName !== "Monday" && dayName !== "Tuesday" && dayName !== "Wednesday") return false;
     var list = Array.isArray(rows) ? rows : [];
     if (!list.length) return false;
     for (var i = 0; i < list.length; i++) {

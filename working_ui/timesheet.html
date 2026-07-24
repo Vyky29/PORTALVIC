@@ -329,7 +329,7 @@
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260713-authoritative-week"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260705-live-madre-autorefresh"></script>
-  <script src="/portal/portal_staff_shift_window.js?v=20260724-youssef-sat"></script>
+  <script src="/portal/portal_staff_shift_window.js?v=20260724-youssef-contract"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260724-yusuf-merge"></script>
 </head>
 <body class="portal-timesheet-page portal-timesheet-vertical">
@@ -2160,20 +2160,21 @@
       return WEEKDAY_MA_BESPOKE_PAY_HOURS;
     }
 
-    /** Youssef's Acton weekday afternoon shift: fixed 4:30–6:30 (2h), all at the
-     *  Swimming rate (£24). The 4–4.30 slot is excluded, No-Participant gaps
-     *  inside 4:30–6:30 stay paid, there is no ±15 buffer, and it never splits
-     *  into a Support-rate group (e.g. the Room 2 Multi-Activity slot on Wed). */
+    /** Youssef contract: Acton PM Mon/Tue/Wed 4:30–6:30 (2h @ SI £24). */
     const YOUSSEF_ACTON_AFTERNOON_PAY_HOURS = 2;
+    const YOUSSEF_ACTON_AFTERNOON_DAYS = new Set(["Monday", "Tuesday", "Wednesday"]);
     /** Youssef Saturday Acton mornings: fixed 10:30–12:30 (2h), even if 10.30 client is absent. */
     const YOUSSEF_ACTON_SATURDAY_PAY_HOURS = 2;
     const YOUSSEF_ACTON_SATURDAY_START_MIN = 10 * 60 + 30;
     const YOUSSEF_ACTON_SATURDAY_END_MIN = 12 * 60 + 30;
+    /** Day Centre SwimFarm only Mon/Wed (→3) and Fri (→4); never Tue/Thu mornings. */
+    const YOUSSEF_DAY_CENTRE_DAYS = new Set(["Monday", "Wednesday", "Friday"]);
     /**
      * Youssef SwimFarm Day Centre (Hub): Mon/Wed 11–12 + 1–3 (3h @ SW £20);
      * Friday 11–12 + 1–4 (4h). Midday Big Pool 12–1 is a separate SI row (£24, no ±15).
      */
     function youssefSwimfarmDayCentrePaySpec(dayName) {
+      if (!YOUSSEF_DAY_CENTRE_DAYS.has(String(dayName || ""))) return null;
       if (dayName === "Friday") {
         return {
           hours: 4,
@@ -2183,16 +2184,13 @@
           ]
         };
       }
-      if (dayName === "Monday" || dayName === "Wednesday") {
-        return {
-          hours: 3,
-          segments: [
-            { startMin: 11 * 60, endMin: 12 * 60 },
-            { startMin: 13 * 60, endMin: 15 * 60 }
-          ]
-        };
-      }
-      return null;
+      return {
+        hours: 3,
+        segments: [
+          { startMin: 11 * 60, endMin: 12 * 60 },
+          { startMin: 13 * 60, endMin: 15 * 60 }
+        ]
+      };
     }
     function isYoussefRosterKey(rosterKey) {
       const k = String(rosterKey != null ? rosterKey : state.staffRosterKey || "")
@@ -2311,12 +2309,41 @@
       return Number.isFinite(a) && a < 16 * 60;
     }
     function isYoussefActonAfternoonBand(dayName, rosterKey, dayRows) {
-      if (!dayName || dayName === "Sunday" || dayName === "Saturday") return false;
+      if (!YOUSSEF_ACTON_AFTERNOON_DAYS.has(String(dayName || ""))) return false;
       if (!isYoussefRosterKey(rosterKey)) return false;
       const rows = dayRows || [];
       if (!rows.length) return false;
       return rows.every(function (s) {
         return sessionIsActonAfternoon(s);
+      });
+    }
+    /**
+     * Drop ghost Day Centre on Tue/Thu (etc.) and Acton PM outside Mon–Wed.
+     * Keeps: DC Mon/Wed/Fri (+ midday swim), Acton PM Mon/Tue/Wed, Acton Sat AM, Sunday SwimFarm.
+     */
+    function filterYoussefContractEntries(entries, dateObj, rosterKey) {
+      if (!isYoussefRosterKey(rosterKey)) return entries || [];
+      const dayName = WEEKDAY[dateObj.getDay()];
+      return (entries || []).filter((e) => {
+        if (!e || e.dayOff) return true;
+        const venue = String(e.venue || "").toLowerCase();
+        const svc = String(e.serviceName || e.service || "").toLowerCase();
+        const role = String(e.role || "").trim();
+        const isSwimfarmDc =
+          venue.indexOf("swimfarm") >= 0 &&
+          (role === "Support Worker" || /day\s*centre/.test(svc));
+        const isSwimfarmMidSwim =
+          venue.indexOf("swimfarm") >= 0 &&
+          role === "Swimming Instructor" &&
+          dayName !== "Sunday";
+        if (isSwimfarmDc || isSwimfarmMidSwim) {
+          return YOUSSEF_DAY_CENTRE_DAYS.has(dayName);
+        }
+        if (venue.indexOf("acton") >= 0 && role === "Swimming Instructor") {
+          if (dayName === "Saturday") return true;
+          return YOUSSEF_ACTON_AFTERNOON_DAYS.has(dayName);
+        }
+        return true;
       });
     }
     function isYoussefActonSaturdayMorningBand(dayName, rosterKey, dayRows) {
@@ -3193,7 +3220,11 @@
       } else {
         built = dailyHoursMultiRoleFromSessions(rows, dateObj, reviewMap, staffKey, roleMinutes, roleServices);
       }
-      return ensureYoussefMiddayAquaticEntries(built || [], dateObj, rosterKey);
+      return filterYoussefContractEntries(
+        ensureYoussefMiddayAquaticEntries(built || [], dateObj, rosterKey),
+        dateObj,
+        rosterKey
+      );
     }
 
     /** @deprecated use dailyEntriesFromSessions — kept for callers expecting one object. */
