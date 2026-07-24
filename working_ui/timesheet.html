@@ -3242,11 +3242,36 @@
       } else {
         built = dailyHoursMultiRoleFromSessions(rows, dateObj, reviewMap, staffKey, roleMinutes, roleServices);
       }
-      return filterYoussefContractEntries(
+      let out = filterYoussefContractEntries(
         ensureYoussefMiddayAquaticEntries(built || [], dateObj, rosterKey),
         dateObj,
         rosterKey
       );
+      /* Fully cancelled Saturday Acton morning → Day Off row (Time off requested), not a blank day. */
+      if (
+        isYoussefRosterKey(rosterKey) &&
+        dayName === "Saturday" &&
+        (!out || !out.length) &&
+        youssefActonSaturdayAllCancelled(isoDate(dateObj), rosterKey, rows)
+      ) {
+        out = [
+          {
+            date: isoDate(dateObj),
+            day: dayName,
+            hours: 0,
+            completed: true,
+            dayOff: true,
+            service: "Day off",
+            serviceName: "Time off requested",
+            serviceLabel: "Time off requested",
+            role: "Day off",
+            rate: 0,
+            venue: "",
+            timeRange: ""
+          }
+        ];
+      }
+      return out;
     }
 
     /** @deprecated use dailyEntriesFromSessions — kept for callers expecting one object. */
