@@ -79,6 +79,7 @@
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260716-slot-hold"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260709-family-credits"></script>
+  <script src="/portal/admin-portal-booking-leads.js?v=20260724-booking-leads"></script>
   <script src="/portal/admin-portal-parent-credits.js?v=20260709-family-credits"></script>
   <script src="/portal/admin-portal-xero-products.js?v=20260716-add-product-rows"></script>
   <script src="/portal/admin-portal-parent-invoices.js?v=20260723-reenroll-intro-full"></script>
@@ -19766,7 +19767,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="sched-banner" role="status" style="margin-bottom:16px"><strong>Today’s intake (illustrative)</strong> — 2 WhatsApp threads awaiting reply · 1 LA email flagged · 3 follow-ups from last week. Mock counters only; open <strong>Services &amp; Participants → Ops comms &amp; log</strong> for the programme email log, or <strong>Day operations → Team → Notify</strong> for internal queues.</div>'+
         '<div class="grid-2" style="align-items:stretch;gap:14px">'+
         '<button type="button" class="card card-pad dash-link-card" data-view-target="comms_ops" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">✉</span><div class="dash-link-meta" style="min-width:0"><strong>Ops comms &amp; log</strong><p class="muted" style="margin:0;overflow-wrap:break-word">Programme email log, internal outbox, and comms history — under Services &amp; Participants in the sidebar.</p></div></div></button>'+
-        '<button type="button" class="card card-pad dash-link-card" data-view-target="leads" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">🧭</span><div class="dash-link-meta" style="min-width:0"><strong>Enquiries &amp; intake</strong><p class="muted" style="margin:0;overflow-wrap:break-word">New families, triage, programme intake capture.</p></div></div></button>'+
+        '<button type="button" class="card card-pad dash-link-card" data-view-target="leads" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">🧭</span><div class="dash-link-meta" style="min-width:0"><strong>Enquiries &amp; intake</strong><p class="muted" style="margin:0;overflow-wrap:break-word">Booking Portal OTP leads — name, email, phone, verification.</p></div></div></button>'+
         (portalAdminBookingsHidden()
           ? '<button type="button" class="card card-pad dash-link-card" data-view-target="c4k_services" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">◈</span><div class="dash-link-meta" style="min-width:0"><strong>Services</strong><p class="muted" style="margin:0;overflow-wrap:break-word">Weekly programme grid, capacity and registers.</p></div></div></button>'
           : '<button type="button" class="card card-pad dash-link-card" data-view-target="orders_all" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">◈</span><div class="dash-link-meta" style="min-width:0"><strong>Orders</strong><p class="muted" style="margin:0;overflow-wrap:break-word">All orders — filter outstanding balances on the page.</p></div></div></button>')+
@@ -22419,10 +22420,32 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       );
     }
     function viewLeads(){
-      if(typeof __OPWF_HTML==='undefined' || !__OPWF_HTML.viewLeads){
-        return '<h1 class="page-title">Leads &amp; Intake</h1><p class="page-intro">This section did not load — refresh the page.</p>';
+      if(window.PortalBookingLeads && typeof window.PortalBookingLeads.viewHtml === 'function'){
+        return window.PortalBookingLeads.viewHtml();
       }
-      return __OPWF_HTML.viewLeads;
+      return '<h1 class="page-title">Booking Portal leads</h1><p class="page-intro">This section did not load — refresh the page.</p>';
+    }
+    function portalBookingLeadsConfigureOnce(){
+      if(window.__portalBookingLeadsConfigured || !window.PortalBookingLeads) return;
+      window.__portalBookingLeadsConfigured = true;
+      window.PortalBookingLeads.configure({
+        esc: esc,
+        toast: portalAdminToast,
+        getClient: getSchedSupabaseClient,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        }
+      });
+    }
+    function bindPortalBookingLeadsModule(){
+      portalBookingLeadsConfigureOnce();
+      if(window.PortalBookingLeads && typeof window.PortalBookingLeads.bindModule === 'function'){
+        window.PortalBookingLeads.bindModule();
+      }
     }
     function viewServiceCap(){
       var strip = adminCapacityMonSunStripHtml();
@@ -23896,6 +23919,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else if(id==='portal_participant_documents') bindPortalParticipantDocumentsModule();
       else if(id==='portal_parent_consents') bindPortalParentConsentsModule();
       if(id==='absents_refunds') bindPortalParentAbsencesModule();
+      if(id==='leads') bindPortalBookingLeadsModule();
       if(id==='portal_activity') bindPortalActivityModule();
       if(id==='session_disruptions') portalSessionDisruptionsBind();
       if(id==='portal_training_progress') bindPortalTrainingProgressModule();
@@ -28247,6 +28271,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               }
             }, 400);
           }catch(_staffWaOpen){}
+        }
+        if(portalOpenParams.get('portal_open') === 'leads'){
+          try{ setView('leads'); }catch(_leadsOpen){}
         }
         if(portalOpenParams.get('portal_open') === 'cs_cliq' || portalOpenParams.get('portal_open') === 'new_chat' || portalOpenParams.get('portal_chat_thread') || portalOpenParams.get('portal_chat_group')){
           var portalCliqChannel = portalOpenParams.get('portal_cliq_channel');

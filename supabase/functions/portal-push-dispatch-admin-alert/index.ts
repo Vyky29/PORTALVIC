@@ -56,6 +56,7 @@ const ALLOWED_TABLES = new Set([
   "portal_staff_dm_messages",
   "portal_ceo_group_message",
   "portal_staff_whatsapp_inbound",
+  "portal_booking_leads",
 ]);
 
 /** Chat tables: DM recipients resolved per thread; groups still broadcast to admin/ceo. */
@@ -141,6 +142,14 @@ function buildLeaderWhatsappUrl(base: string, staffUsername: string): string {
 function buildAdminAlertsUrl(base: string): string {
   const root = String(base || "").replace(/\/$/, "");
   return `${root}?portalOpen=alerts`;
+}
+
+function buildBookingLeadsUrl(base: string): string {
+  const root = String(base || "").replace(/\/$/, "");
+  if (/admin_dashboard\.html/i.test(root)) {
+    return `${root}?portal_open=leads`;
+  }
+  return `${root}?portal_open=leads`;
 }
 
 function lateTypeLabel(t: string): string {
@@ -281,6 +290,21 @@ function buildAlert(
       // iOS lock banner: app name (CS Portal) + this title; body shows on expand/tap.
       title: "Notification",
       body: `Leader WhatsApp - ${who}`,
+    };
+  }
+
+  if (table === "portal_booking_leads") {
+    const name = String(record.parent_name ?? "Parent").trim() || "Parent";
+    const event = String(record.notify_event ?? "created").toLowerCase();
+    const phone = String(record.mobile ?? "").trim();
+    const mail = String(record.email ?? "").trim();
+    const verified = event === "verified";
+    return {
+      sourceId: id + (verified ? "-verified" : "-created"),
+      title: verified ? `Booking lead verified · ${name}` : `New booking lead · ${name}`,
+      body: clampPushBody(
+        [mail, phone].filter(Boolean).join(" · ") || "Booking Portal OTP",
+      ),
     };
   }
 
@@ -527,6 +551,9 @@ Deno.serve(async (req) => {
   } else if (table === "portal_staff_whatsapp_inbound") {
     portalOpen = "portal_staff_whatsapp";
     notifyUrl = buildLeaderWhatsappUrl(openBase, staffUsername);
+  } else if (table === "portal_booking_leads") {
+    portalOpen = "leads";
+    notifyUrl = buildBookingLeadsUrl(openBase);
   }
 
   const { data: profRows } = await admin
@@ -567,6 +594,8 @@ Deno.serve(async (req) => {
         ? buildChatNotifyUrl(userBase, threadId, groupId)
         : table === "portal_staff_whatsapp_inbound"
         ? buildLeaderWhatsappUrl(userBase, staffUsername)
+        : table === "portal_booking_leads"
+        ? buildBookingLeadsUrl(userBase)
         : buildAdminAlertsUrl(userBase);
       const pushPayload = JSON.stringify({
         ...pushPayloadBase,

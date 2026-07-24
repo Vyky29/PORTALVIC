@@ -29,6 +29,7 @@ import {
   readParentNotifySmtpConfig,
   sendParentEmailViaSmtp,
 } from "../_shared/portal_parent_messaging.ts";
+import { notifyOfficeNewBookingLead } from "../_shared/portal_booking_lead_office_notify.ts";
 
 function phoneLast10(raw: string): string {
   const digits = String(raw || "").replace(/\D/g, "");
@@ -246,6 +247,18 @@ Deno.serve(async (req) => {
       return bookingLeadJson({ ok: false, error: "lead_create_failed" }, 500);
     }
     leadId = inserted.id;
+    // Fire-and-forget office alert (email + admin push) for brand-new leads.
+    void notifyOfficeNewBookingLead({
+      leadId,
+      parentName,
+      email,
+      mobile,
+      source: recognition === "existing_client" ? "Existing Client" : "Booking Page",
+      clientStatus,
+      event: "created",
+    }).catch((e) =>
+      console.warn("[portal-booking-lead-otp-request] office notify failed", e)
+    );
   }
 
   const { count: emailCount } = await supabase

@@ -18,6 +18,7 @@ import {
   normalizeEmail,
   sha256Hex,
 } from "../_shared/booking_lead_auth.ts";
+import { notifyOfficeNewBookingLead } from "../_shared/portal_booking_lead_office_notify.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -53,7 +54,7 @@ Deno.serve(async (req) => {
   const { data: lead } = await supabase
     .from("portal_booking_leads")
     .select(
-      "id, parent_name, email, mobile, marketing_consent, privacy_notice_version, booking_status, registration_status, client_status",
+      "id, parent_name, email, mobile, marketing_consent, privacy_notice_version, booking_status, registration_status, client_status, email_verified_at, source",
     )
     .eq("email_norm", email)
     .maybeSingle();
@@ -120,6 +121,8 @@ Deno.serve(async (req) => {
   const nextStatus =
     lead.booking_status === "new_lead" ? "exploring_services" : lead.booking_status;
 
+  const firstVerify = !lead.email_verified_at;
+
   await supabase
     .from("portal_booking_leads")
     .update({
@@ -129,6 +132,20 @@ Deno.serve(async (req) => {
       updated_at: nowIso,
     })
     .eq("id", lead.id);
+
+  if (firstVerify) {
+    void notifyOfficeNewBookingLead({
+      leadId: String(lead.id),
+      parentName: String(lead.parent_name || ""),
+      email: String(lead.email || email),
+      mobile: String(lead.mobile || ""),
+      source: String(lead.source || "Booking Page"),
+      clientStatus: String(lead.client_status || "prospective"),
+      event: "verified",
+    }).catch((e) =>
+      console.warn("[portal-booking-lead-otp-verify] office notify failed", e)
+    );
+  }
 
   return bookingLeadJson({
     ok: true,
