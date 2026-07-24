@@ -25,12 +25,18 @@
 
   var RATE_TABLE = {
     'Support Worker':       { 'Scale 1': 18, 'Scale 2': 20, 'Scale 3': 23 },
+    'Service Lead':         { 'Service Lead': 30 },
     'Climbing Instructor':  { 'Scale 1': 22, 'Scale 2': 24, 'Scale 3': 30 },
     'Fitness Instructor':   { 'Scale 1': 24, 'Scale 2': 28, 'Scale 3': 32 },
     'Swimming Instructor':  { 'Scale 1': 22, 'Scale 2': 24, 'Scale 3': 28 },
     'Business Development': { 'Scale 1': 22, 'Scale 2': 26, 'Scale 3': 30 }
   };
   var SCALE_OPTIONS = ['Scale 1', 'Scale 2', 'Scale 3'];
+
+  function getScaleOptionsForRole(role) {
+    if (role && RATE_TABLE[role]) return Object.keys(RATE_TABLE[role]);
+    return SCALE_OPTIONS.slice();
+  }
 
   var ACTIVE_CONTRACT_KINDS = [
     'zero_hours',
@@ -1540,6 +1546,7 @@
     EM: EM,
     RATE_TABLE: RATE_TABLE,
     SCALE_OPTIONS: SCALE_OPTIONS,
+    getScaleOptionsForRole: getScaleOptionsForRole,
     ACTIVE_CONTRACT_KINDS: ACTIVE_CONTRACT_KINDS,
     LOGO_PATH: LOGO_PATH,
     LOGO_DISPLAY: LOGO_DISPLAY,

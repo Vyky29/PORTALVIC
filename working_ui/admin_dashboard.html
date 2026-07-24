@@ -68,8 +68,8 @@
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260703-v17-incident-view-fix" />
   <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260709-ops-hub-fullwidth" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
-  <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260702-permanent-part-time" />
-  <script src="/portal/hr-contract-embed-html.js?v=20260702-permanent-part-time"></script>
+  <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260724-service-lead" />
+  <script src="/portal/hr-contract-embed-html.js?v=20260724-service-lead"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260710-incident-followup"></script>
   <script src="/portal/admin-portal-incident-followup.js?v=20260710-isp-library"></script>
   <script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
@@ -21934,10 +21934,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }).join('');
     }
     function hrContractsIssueDocUrl(doc){
+      var bust = '20260724-service-lead';
       var map = {
-        checklist: '/portal/hr/contratos-checklist-2026-27.html',
-        plan: '/portal/hr/contratos-a-emitir-2026-27.html',
-        rota: '/portal/hr/rota-career-framework-2026-27.html'
+        checklist: '/portal/hr/contratos-checklist-2026-27.html?v=' + bust,
+        plan: '/portal/hr/contratos-a-emitir-2026-27.html?v=' + bust,
+        rota: '/portal/hr/rota-career-framework-2026-27.html?v=' + bust
       };
       return map[doc] || map.checklist;
     }
@@ -22050,8 +22051,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         document.body.appendChild(s);
       }
       window.__HR_CONTRACT_DEFER_INIT__ = true;
-      loadScript('portal/contract-core.js?v=20260703-contact-autofill', function(){
-        loadScript('portal/hr-contract-app.js?v=20260703-contact-autofill', function(){
+      loadScript('portal/contract-core.js?v=20260724-service-lead', function(){
+        loadScript('portal/hr-contract-app.js?v=20260724-service-lead', function(){
           delete window.__HR_CONTRACT_DEFER_INIT__;
           finish();
         });

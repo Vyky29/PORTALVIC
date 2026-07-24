@@ -16,6 +16,11 @@
   const venueHoursStore = {};
   const roleScaleStore = {};
   const SCALE_OPTIONS = C.SCALE_OPTIONS || ["Scale 1", "Scale 2", "Scale 3"];
+  function scaleOptionsForRole(role) {
+    if (C.getScaleOptionsForRole) return C.getScaleOptionsForRole(role);
+    if (C.RATE_TABLE && C.RATE_TABLE[role]) return Object.keys(C.RATE_TABLE[role]);
+    return SCALE_OPTIONS;
+  }
   const STAFF_LINK_MOD = "./hr-contract-staff-link.js?v=20260703-contact-autofill";
   let staffRoster = [];
   let portalLinkVerified = false;
@@ -134,15 +139,21 @@
     try {
       const mod = await import(STAFF_LINK_MOD);
       staffRoster = await mod.loadPortalStaffRoster(auth.supabase);
-      sel.innerHTML = '<option value="">Select staff (Portal login name)</option>';
-      staffRoster.forEach((s, i) => {
+      staffRoster = (staffRoster || []).slice().sort(function (a, b) {
+        return String(a.displayName || a.loginName || "").localeCompare(
+          String(b.displayName || b.loginName || ""),
+          undefined,
+          { sensitivity: "base" }
+        );
+      });
+      sel.innerHTML = '<option value="">Select staff</option>';
+      staffRoster.forEach(function (s, i) {
         const opt = document.createElement("option");
         opt.value = String(i);
-        const suffix = s.loginName && s.loginName !== s.displayName ? " — login: " + s.loginName : "";
-        opt.textContent = s.displayName + suffix;
-        opt.dataset.authEmail = s.authEmail;
-        opt.dataset.displayName = s.displayName;
-        opt.dataset.loginName = s.loginName;
+        opt.textContent = s.displayName || s.loginName || "Staff";
+        opt.dataset.authEmail = s.authEmail || "";
+        opt.dataset.displayName = s.displayName || "";
+        opt.dataset.loginName = s.loginName || "";
         sel.appendChild(opt);
       });
     } catch (err) {
@@ -283,14 +294,16 @@
     let html = '<p class="role-scale-intro">Select the pay scale for each role</p>';
     roles.forEach((role, i) => {
       const id = "role_scale_" + i;
-      const current = roleScaleStore[role] || "";
+      const options = scaleOptionsForRole(role);
+      let current = roleScaleStore[role] || "";
+      if (!current && options.length === 1) current = options[0];
       roleScaleStore[role] = current;
       html +=
         '<div class="role-scale-row">' +
         '<label for="' + id + '">' + esc(role) + "</label>" +
         '<select id="' + id + '" data-role-key="' + esc(role) + '" data-role-scale required>' +
         '<option value="">Select scale</option>' +
-        SCALE_OPTIONS.map(
+        options.map(
           (scale) =>
             '<option value="' + esc(scale) + '"' + (scale === current ? " selected" : "") + ">" + esc(scale) + "</option>"
         ).join("") +
