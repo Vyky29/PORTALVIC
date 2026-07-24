@@ -665,14 +665,13 @@
       /* Day number only — month lives in the period header; keeps mobile Date column tight. */
       return esc(String(d.getDate()));
     }
-    /** e.g. "26th Friday" — day number + weekday (month is in the period header). */
-    function displayDateDayLine(iso, dayName) {
+    /** 3-letter weekday: Fri, Sat, Mon… */
+    function displayWeekdayShort(iso, dayName) {
+      const raw = String(dayName || "").trim();
+      if (raw) return raw.slice(0, 3);
       const d = parseIsoDate(iso);
-      const weekday =
-        String(dayName || "").trim() ||
-        (d ? d.toLocaleDateString("en-GB", { weekday: "long" }) : "");
-      if (!d) return weekday || String(iso || "");
-      return `${dayOrdinal(d.getDate())} ${weekday}`.trim();
+      if (!d) return "";
+      return d.toLocaleDateString("en-GB", { weekday: "short" }).slice(0, 3);
     }
     function timesheetEntryStatusLine(entry) {
       if (!entry) return "";
@@ -682,12 +681,16 @@
       if (entry.completed) return "Completed";
       return "Pending Feedback";
     }
+    /** Three lines: 26th / Fri / Completed */
     function displayDateDayStatusCellHtml(entry) {
-      const top = displayDateDayLine(entry && entry.date, entry && entry.day);
+      const d = parseIsoDate(entry && entry.date);
+      const ordinal = d ? dayOrdinal(d.getDate()) : String((entry && entry.date) || "");
+      const weekday = displayWeekdayShort(entry && entry.date, entry && entry.day);
       if (entry && entry.lateHold) {
         return (
           '<div class="timesheet-stack-cell">' +
-          `<div class="timesheet-stack-cell__top">${esc(top)}</div>` +
+          `<div class="timesheet-stack-cell__top">${esc(ordinal)}</div>` +
+          `<div class="timesheet-stack-cell__top">${esc(weekday)}</div>` +
           '<div class="timesheet-stack-cell__alert">Submitted Late</div>' +
           '<div class="timesheet-stack-cell__hint">Contact admin</div>' +
           "</div>"
@@ -697,7 +700,8 @@
       const statusCls = entry && entry.dayOff ? "timesheet-stack-cell__alert" : "timesheet-stack-cell__sub";
       return (
         '<div class="timesheet-stack-cell">' +
-        `<div class="timesheet-stack-cell__top">${esc(top)}</div>` +
+        `<div class="timesheet-stack-cell__top">${esc(ordinal)}</div>` +
+        `<div class="timesheet-stack-cell__top">${esc(weekday)}</div>` +
         `<div class="${statusCls}">${esc(status)}</div>` +
         "</div>"
       );
