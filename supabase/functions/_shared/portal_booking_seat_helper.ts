@@ -26,6 +26,8 @@ export type OfferSlot = {
   capacity: number;
   taken: number;
   referenceDate: string | null;
+  /** Internal: booked client keys for band merge (stripped before public JSON). */
+  bookedKeys?: string[];
 };
 
 export type OfferService = {
@@ -204,6 +206,14 @@ function clientKind(clientName: string): "open" | "booked" | "skip" {
   return "booked";
 }
 
+function clientKey(clientName: string): string {
+  return norm(clientName)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
 /** Parse MADRE time_slot into 24h start + display label. */
 export function parseTimeSlot(raw: unknown): { sortTime: string; timeLabel: string } {
   const s = norm(raw);
@@ -347,7 +357,25 @@ function foldMultiActivityOfferSlots(slots: OfferSlot[]): OfferSlot[] {
     for (const band of bands) {
       if (!band.parts.length) continue;
       const cap = 6;
-      const taken = Math.min(cap, Math.max(0, ...band.parts.map((s) => s.taken)));
+      // Unique named clients across MADRE half-slot fragments (not max fragment taken).
+      // Irregular times (e.g. 9–10.15) otherwise leave a phantom "1 left".
+      const partsForRef = band.parts.filter(
+        (p) => !ref || !p.referenceDate || p.referenceDate === ref,
+      );
+      const useParts = partsForRef.length ? partsForRef : band.parts;
+      const keys = new Set<string>();
+      for (const part of useParts) {
+        for (const k of part.bookedKeys || []) {
+          if (k) keys.add(k);
+        }
+      }
+      const uniqueTaken = keys.size;
+      const fragMax = Math.max(0, ...useParts.map((s) => Number(s.taken) || 0));
+      const fragSum = useParts.reduce((n, s) => n + (Number(s.taken) || 0), 0);
+      const taken = Math.min(
+        cap,
+        uniqueTaken > 0 ? uniqueTaken : Math.max(fragMax, Math.min(cap, fragSum)),
+      );
       rest.push({
         id: slotId("multi", "SwimFarm", "Sunday", band.start, band.label),
         serviceId: "multi",
@@ -403,6 +431,7 @@ type DayBucket = {
   booked: number;
   open: number;
   instructors: Set<string>;
+  bookedKeys: Set<string>;
 };
 
 /**
@@ -470,13 +499,23 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
     }
     let bucket = dateMap.get(iso);
     if (!bucket) {
-      bucket = { booked: 0, open: 0, instructors: new Set() };
+      bucket = {
+        booked: 0,
+        open: 0,
+        instructors: new Set(),
+        bookedKeys: new Set(),
+      };
       dateMap.set(iso, bucket);
     }
     const inst = norm(row.instructors);
     if (inst) bucket.instructors.add(inst.toUpperCase());
-    if (kind === "booked") bucket.booked += 1;
-    else bucket.open += 1;
+    if (kind === "booked") {
+      bucket.booked += 1;
+      const key = clientKey(String(row.client_name || ""));
+      if (key) bucket.bookedKeys.add(key);
+    } else {
+      bucket.open += 1;
+    }
 
     let vs = venueSets.get(serviceId);
     if (!vs) {
@@ -510,7 +549,7 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
       lineCount,
       bucket.instructors.size,
     );
-    const taken = Math.min(bucket.booked, cap);
+    const taken = Math.min(bucket.bookedKeys.size || bucket.booked, cap);
     slots.push({
       id: slotId(serviceId, venue, day, sortTime, timeLabel),
       serviceId,
@@ -521,6 +560,7 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
       capacity: cap,
       taken,
       referenceDate: ref,
+      bookedKeys: [...bucket.bookedKeys],
     });
   }
 
@@ -533,6 +573,8 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
     (s) =>
       !(s.serviceId === "multi" && s.venue === "Acton" && s.day === "Wednesday"),
   );
+  // Never expose client keys on the public offer payload.
+  for (const s of folded) delete s.bookedKeys;
 
   folded.sort((a, b) => {
     const dayOrder: Record<string, number> = {
