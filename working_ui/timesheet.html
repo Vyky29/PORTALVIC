@@ -57,8 +57,9 @@
     .timesheet-stack-cell__sub{font-size:0.92em;color:#334155;overflow-wrap:anywhere;max-width:100%}
     .timesheet-stack-cell__alert{font-size:0.92em;font-weight:800;color:#b91c1c;overflow-wrap:anywhere;max-width:100%}
     .timesheet-stack-cell__hint{font-size:0.88em;color:#7f1d1d;overflow-wrap:anywhere;max-width:100%}
-    .timesheet-service-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2px;min-width:0;padding:2px 0;width:100%}
-    .timesheet-service-cell__service{font-size:13px;line-height:1.2;overflow-wrap:break-word;word-break:normal;max-width:100%;text-align:center}
+    .timesheet-service-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px;min-width:0;padding:2px 0;width:100%}
+    .timesheet-service-cell__time{font-size:13px;font-weight:700;line-height:1.2;overflow-wrap:break-word;word-break:normal;max-width:100%;text-align:center}
+    .timesheet-service-cell__service{font-size:12px;line-height:1.2;overflow-wrap:break-word;word-break:normal;max-width:100%;text-align:center}
     .timesheet-service-cell__venue{font-size:12px;line-height:1.15;color:#334155;overflow-wrap:break-word;word-break:break-word;max-width:100%;text-align:center}
     .timesheet-service-cell__role{font-size:12px;line-height:1.15;max-width:100%;overflow-wrap:break-word;word-break:break-word;text-align:center}
     .num{text-align:center}
@@ -169,7 +170,8 @@
       html.portal-timesheet-vertical .timesheet-stack-cell__sub{font-size:10px}
       html.portal-timesheet-vertical .timesheet-stack-cell__alert{font-size:10px}
       html.portal-timesheet-vertical .timesheet-stack-cell__hint{font-size:9px}
-      html.portal-timesheet-vertical .timesheet-service-cell__service{font-size:11px}
+      html.portal-timesheet-vertical .timesheet-service-cell__time{font-size:11px}
+      html.portal-timesheet-vertical .timesheet-service-cell__service{font-size:10px}
       html.portal-timesheet-vertical .timesheet-service-cell__venue,
       html.portal-timesheet-vertical .timesheet-service-cell__role{font-size:10px}
       html.portal-timesheet-vertical #autoWrap col.col-date{width:11%}
@@ -2492,14 +2494,18 @@
           "</div>"
         );
       }
-      const serviceLine = timesheetEntryServiceLine(entry);
+      const timeRange = timesheetEntryTimeRangeLabel(entry);
+      const title = timesheetEntryServiceTitle(entry);
       const venue = timesheetEntryVenueLabel(entry);
       const roleLabel = timesheetEntryRoleLabel(entry);
       const colorRole = timesheetEntryDisplayRole(entry) || (entry && entry.role);
       const roleHtml = roleLabel ? timesheetRoleHtml(colorRole, roleLabel) : "";
+      const fallback = !timeRange && !title ? timesheetEntryServiceLabel(entry) || "-" : "";
       return (
         '<div class="timesheet-service-cell">' +
-        `<div class="timesheet-service-cell__service">${esc(serviceLine || "-")}</div>` +
+        (timeRange ? `<div class="timesheet-service-cell__time">${esc(timeRange)}</div>` : "") +
+        (title ? `<div class="timesheet-service-cell__service">${esc(title)}</div>` : "") +
+        (fallback ? `<div class="timesheet-service-cell__service">${esc(fallback)}</div>` : "") +
         (venue ? `<div class="timesheet-service-cell__venue">${esc(venue)}</div>` : "") +
         (roleHtml ? `<div class="timesheet-service-cell__role">${roleHtml}</div>` : "") +
         "</div>"
@@ -2508,10 +2514,14 @@
 
     function pdfEntryRowHeightScale(entry) {
       if (entry && entry.dayOff) return 1.38;
+      const timeRange = timesheetEntryTimeRangeLabel(entry);
+      const title = timesheetEntryServiceTitle(entry);
       const venue = timesheetEntryVenueLabel(entry);
       const role = timesheetEntryRoleLabel(entry);
-      if (venue && role) return 1.62;
-      if (role || venue) return 1.38;
+      const lines = [timeRange, title, venue, role].filter(Boolean).length;
+      if (lines >= 4) return 1.9;
+      if (lines === 3) return 1.62;
+      if (lines === 2) return 1.38;
       return 1;
     }
 
@@ -2542,43 +2552,44 @@
         doc.setFont("helvetica", "normal");
         return;
       }
-      const serviceLine = String(timesheetEntryServiceLine(entry) || "-").slice(0, 32);
+      const timeRange = String(timesheetEntryTimeRangeLabel(entry) || "").slice(0, 16);
+      const title = String(timesheetEntryServiceTitle(entry) || "").slice(0, 28);
       const venue = String(timesheetEntryVenueLabel(entry) || "").slice(0, 24);
       const role = timesheetEntryRoleLabel(entry).slice(0, 24);
-      if (venue && role) {
-        doc.setFontSize(7.6 * S);
-        doc.setTextColor(16, 34, 56);
-        doc.text(serviceLine, cx, midY - 2.4 * S, { align: "center" });
-        doc.setFontSize(7 * S);
-        doc.setTextColor(51, 65, 85);
-        doc.text(venue, cx, midY + 0.2 * S, { align: "center" });
-        doc.setFontSize(7.2 * S);
-        doc.setFont("helvetica", "bold");
-        const [rr, gg, bb] = timesheetRolePdfRgb(
-          timesheetEntryDisplayRole(entry) || (entry && (entry.role || entry.roleLabel)),
-        );
-        doc.setTextColor(rr, gg, bb);
-        doc.text(role, cx, midY + 2.8 * S, { align: "center" });
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(16, 34, 56);
-        doc.setFontSize(8.5 * S);
-      } else if (role) {
-        doc.setFontSize(8 * S);
-        doc.setTextColor(16, 34, 56);
-        doc.text(serviceLine, cx, midY - 1.2 * S, { align: "center" });
-        doc.setFontSize(7.2 * S);
-        doc.setFont("helvetica", "bold");
-        const [rr, gg, bb] = timesheetRolePdfRgb(
-          timesheetEntryDisplayRole(entry) || (entry && (entry.role || entry.roleLabel)),
-        );
-        doc.setTextColor(rr, gg, bb);
-        doc.text(role, cx, midY + 2.2 * S, { align: "center" });
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(16, 34, 56);
-        doc.setFontSize(8.5 * S);
-      } else {
-        doc.text(serviceLine, cx, midY + 1.2 * S, { align: "center" });
+      const lines = [timeRange, title || (!timeRange ? String(timesheetEntryServiceLabel(entry) || "-").slice(0, 28) : ""), venue, role].filter(Boolean);
+      const n = lines.length || 1;
+      const step = 2.35 * S;
+      let ly = midY - ((n - 1) * step) / 2;
+      for (let i = 0; i < lines.length; i++) {
+        const text = lines[i];
+        const isRole = role && text === role;
+        const isTime = timeRange && text === timeRange;
+        if (isRole) {
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(7.2 * S);
+          const [rr, gg, bb] = timesheetRolePdfRgb(
+            timesheetEntryDisplayRole(entry) || (entry && (entry.role || entry.roleLabel)),
+          );
+          doc.setTextColor(rr, gg, bb);
+        } else if (isTime) {
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(7.6 * S);
+          doc.setTextColor(16, 34, 56);
+        } else if (venue && text === venue) {
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(7 * S);
+          doc.setTextColor(51, 65, 85);
+        } else {
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(7.2 * S);
+          doc.setTextColor(16, 34, 56);
+        }
+        doc.text(text, cx, ly, { align: "center" });
+        ly += step;
       }
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(16, 34, 56);
+      doc.setFontSize(8.5 * S);
     }
 
     /** Distinct pay groups within one role (e.g. Sunday Aquatic vs Multi-Activity on the same day). */
