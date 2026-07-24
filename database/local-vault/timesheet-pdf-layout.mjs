@@ -30,8 +30,8 @@ function displayDateFancy(iso) {
   const d = parseIsoDate(raw);
   if (!d) return "—";
   const dd = dayOrdinal(d.getDate());
-  const month = d.toLocaleDateString("en-GB", { month: "long" });
-  return `${dd}/${month}/${d.getFullYear()}`;
+  const month = d.toLocaleDateString("en-GB", { month: "short" });
+  return `${dd}\n${month}`;
 }
 
 export function formatIsoDmy(iso) {
@@ -369,7 +369,21 @@ export function buildFormattedTimesheetPdfBytes(opts) {
               : "Completed";
     if (isDayOff) doc.setTextColor(153, 27, 27);
     else doc.setTextColor(16, 34, 56);
-    doc.text(displayDateFancy(e.date), (colX[0] + colX[1]) / 2, midY, { align: "center" });
+    {
+      const dateCx = (colX[0] + colX[1]) / 2;
+      const dateParts = String(displayDateFancy(e.date) || "").split("\n").filter(Boolean);
+      if (dateParts.length >= 2) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8 * S);
+        doc.text(dateParts[0], dateCx, midY - 1.6 * S, { align: "center" });
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7.5 * S);
+        doc.text(dateParts[1], dateCx, midY + 1.8 * S, { align: "center" });
+        doc.setFontSize(8.5 * S);
+      } else {
+        doc.text(dateParts[0] || "—", dateCx, midY, { align: "center" });
+      }
+    }
     doc.text(midCol, (colX[1] + colX[2]) / 2, midY, { align: "center" });
     drawPdfServiceCell(doc, e, (colX[2] + colX[3]) / 2, y, cellBaseline, S, manual, thisRowH);
     doc.text(money(e.hours), (colX[3] + colX[4]) / 2, midY, { align: "center" });

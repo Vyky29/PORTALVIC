@@ -50,9 +50,12 @@
       word-break:normal;
     }
     td{font-size:14px}
-    .td-service{min-width:0;text-align:center}
+    .td-date,.td-day,.td-service{min-width:0;text-align:center;vertical-align:middle}
+    .timesheet-stack-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px;min-width:0;padding:2px 0;width:100%;line-height:1.2}
+    .timesheet-stack-cell__top{font-weight:700;overflow-wrap:break-word;max-width:100%}
+    .timesheet-stack-cell__sub{font-size:0.92em;color:#334155;overflow-wrap:anywhere;max-width:100%}
     .timesheet-service-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2px;min-width:0;padding:2px 0;width:100%}
-    .timesheet-service-cell__service{font-size:13px;line-height:1.2;overflow-wrap:break-word;word-break:break-word;max-width:100%;text-align:center}
+    .timesheet-service-cell__service{font-size:13px;line-height:1.2;overflow-wrap:break-word;word-break:normal;max-width:100%;text-align:center}
     .timesheet-service-cell__venue{font-size:12px;line-height:1.15;color:#334155;overflow-wrap:break-word;word-break:break-word;max-width:100%;text-align:center}
     .timesheet-service-cell__role{font-size:12px;line-height:1.15;max-width:100%;overflow-wrap:break-word;word-break:break-word;text-align:center}
     .num{text-align:center}
@@ -145,6 +148,14 @@
       html.portal-timesheet-vertical table{width:100%;min-width:0;table-layout:fixed}
       html.portal-timesheet-vertical th,
       html.portal-timesheet-vertical td{padding:5px 3px;font-size:11px;line-height:1.25;vertical-align:middle}
+      html.portal-timesheet-vertical td.td-date,
+      html.portal-timesheet-vertical td.td-day,
+      html.portal-timesheet-vertical td.td-service{vertical-align:middle}
+      html.portal-timesheet-vertical .timesheet-stack-cell__top{font-size:11px}
+      html.portal-timesheet-vertical .timesheet-stack-cell__sub{font-size:10px}
+      html.portal-timesheet-vertical .timesheet-service-cell__service{font-size:11px}
+      html.portal-timesheet-vertical .timesheet-service-cell__venue,
+      html.portal-timesheet-vertical .timesheet-service-cell__role{font-size:10px}
       html.portal-timesheet-vertical thead th{
         --th-head-fs:12px;
         font-size:var(--th-head-fs);
@@ -559,9 +570,38 @@
       const d = parseIsoDate(iso);
       if (!d) return String(iso || "");
       const dd = dayOrdinal(d.getDate());
-      const month = d.toLocaleDateString("en-GB", { month: "long" });
-      const yy = d.getFullYear();
-      return `${dd}/${month}/${yy}`;
+      const month = d.toLocaleDateString("en-GB", { month: "short" });
+      return `${dd}\n${month}`;
+    }
+    function displayDateCellHtml(iso) {
+      const d = parseIsoDate(iso);
+      if (!d) return esc(String(iso || ""));
+      const dd = dayOrdinal(d.getDate());
+      const month = d.toLocaleDateString("en-GB", { month: "short" });
+      return (
+        '<div class="timesheet-stack-cell">' +
+        `<div class="timesheet-stack-cell__top">${esc(dd)}</div>` +
+        `<div class="timesheet-stack-cell__sub">${esc(month)}</div>` +
+        "</div>"
+      );
+    }
+    function timesheetEntryStatusLine(entry) {
+      if (!entry) return "";
+      if (entry.dayOff) return "day off";
+      if (entry.upcoming) return "upcoming";
+      if (entry.lateHold) return "late — awaiting admin";
+      if (entry.completed) return "completed";
+      return "pending feedback";
+    }
+    function displayDayStatusCellHtml(entry) {
+      const day = String((entry && entry.day) || "").trim() || "—";
+      const status = timesheetEntryStatusLine(entry);
+      return (
+        '<div class="timesheet-stack-cell">' +
+        `<div class="timesheet-stack-cell__top">${esc(day)}</div>` +
+        `<div class="timesheet-stack-cell__sub">${esc(status)}</div>` +
+        "</div>"
+      );
     }
     function formatIsoDmy(iso) {
       const d = parseIsoDate(iso);
@@ -2987,16 +3027,9 @@
               : (e.lateHold
                 ? "day-row--late"
                 : (e.completed ? "day-row--paid" : "day-row--pending")));
-          const statusNote = e.dayOff
-            ? "day off"
-            : (e.upcoming
-              ? "upcoming"
-              : (e.lateHold
-                ? "submitted late — awaiting admin"
-                : (e.completed ? "completed" : "pending feedback")));
           return `<tr class="${cls}">
-            <td>${esc(displayDateFancy(e.date))}</td>
-            <td>${esc(e.day)} · ${statusNote}</td>
+            <td class="td-date">${displayDateCellHtml(e.date)}</td>
+            <td class="td-day">${displayDayStatusCellHtml(e)}</td>
             <td class="td-service">${timesheetEntryServiceCellHtml(e)}</td>
             <td class="num">${money(e.hours)}</td>
             <td class="num">${money(daily)}</td>
@@ -3074,7 +3107,7 @@
               ? esc(e.note)
               : `<span class="muted">${esc(e.day)}${e.start && e.end ? ` ${esc(e.start)}–${esc(e.end)}` : ""}</span>`;
             return `<tr>
-              <td>${esc(displayDateFancy(e.date))}</td>
+              <td class="td-date">${displayDateCellHtml(e.date)}</td>
               <td>${desc}</td>
               <td class="num">${money(e.hours)}</td>
               <td class="num">${money(daily)}</td>
@@ -3535,7 +3568,21 @@
             : (e.dayOff ? "Day off" : (isFlat ? "Completed" : (e.completed ? "Completed" : "Pending feedback")));
         if (e.dayOff) doc.setTextColor(153, 27, 27);
         else doc.setTextColor(16, 34, 56);
-        doc.text(displayDateFancy(e.date), (colX[0] + colX[1]) / 2, midY, { align: "center" });
+        {
+          const dateCx = (colX[0] + colX[1]) / 2;
+          const dateParts = String(displayDateFancy(e.date) || "").split("\n").filter(Boolean);
+          if (dateParts.length >= 2) {
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(8 * S);
+            doc.text(dateParts[0], dateCx, midY - 1.6 * S, { align: "center" });
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(7.5 * S);
+            doc.text(dateParts[1], dateCx, midY + 1.8 * S, { align: "center" });
+            doc.setFontSize(8.5 * S);
+          } else {
+            doc.text(dateParts[0] || "—", dateCx, midY, { align: "center" });
+          }
+        }
         doc.text(midCol, (colX[1] + colX[2]) / 2, midY, { align: "center" });
         drawPdfServiceCell(doc, e, (colX[2] + colX[3]) / 2, y, cellBaseline, S, state.manual, thisRowH);
         doc.text(money(e.hours), (colX[3] + colX[4]) / 2, midY, { align: "center" });
