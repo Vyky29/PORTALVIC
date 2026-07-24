@@ -2260,7 +2260,7 @@
       return SUNDAY_MA_LEAD_KEYS.has(key) ? SUNDAY_LEAD_MA_PAY_HOURS : SUNDAY_SUPPORT_MA_PAY_HOURS;
     }
 
-    /** Roberto Sunday SwimFarm pool lead: 8:45–3:15 (6.5h). Other swim instructors who give feedback: 6h. */
+    /** Roberto Sunday SwimFarm pool lead: 8:45–3:15 (6.5h). Other swim instructors: 9–3 (6h). */
     const SUNDAY_SWIM_PAY_HOURS = 6;
     const SUNDAY_ROBERTO_SWIM_PAY_HOURS = 6.5;
 
@@ -2268,6 +2268,14 @@
       const key = String(rosterKey || "").trim().toLowerCase();
       if (key === "roberto") return SUNDAY_ROBERTO_SWIM_PAY_HOURS;
       return SUNDAY_SWIM_PAY_HOURS;
+    }
+
+    function sundaySwimInstructorPaidWindow(rosterKey) {
+      const key = String(rosterKey || "").trim().toLowerCase();
+      if (key === "roberto") {
+        return { startMin: 8 * 60 + 45, endMin: 15 * 60 + 15 };
+      }
+      return { startMin: 9 * 60, endMin: 15 * 60 };
     }
 
     /** Sunday SwimFarm day where this worker is paid as swimming instructor (aquatic and/or pool MA). */
@@ -2964,7 +2972,8 @@
           single.service = "Aquatic Activity";
           single.serviceName = "Aquatic Activity";
           single.venue = "SwimFarm";
-          single.timeRange = clubTimeRangeFromMinutes(9 * 60 + 15, 15 * 60 + 15);
+          const swimWin = sundaySwimInstructorPaidWindow(rosterKey);
+          single.timeRange = clubTimeRangeFromMinutes(swimWin.startMin, swimWin.endMin);
           single.serviceLabel = `${single.timeRange} Aquatic Activity`;
           single.rate = rateForRole("Swimming Instructor");
           return [single];
