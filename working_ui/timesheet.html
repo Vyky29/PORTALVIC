@@ -329,7 +329,7 @@
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260713-authoritative-week"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260705-live-madre-autorefresh"></script>
-  <script src="/portal/portal_staff_shift_window.js?v=20260724-youssef-contract"></script>
+  <script src="/portal/portal_staff_shift_window.js?v=20260724-youssef-acton-end"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260724-yusuf-merge"></script>
 </head>
 <body class="portal-timesheet-page portal-timesheet-vertical">
@@ -2040,10 +2040,11 @@
       });
       const key = String(rosterKey || "").trim().toLowerCase();
       const r = String(role || "").trim();
-      if (isYoussefActonSaturdayMorningBand(dayName, key, rows)) {
+      const youssefDateKey = isoDateFromDayRows(rows);
+      if (isYoussefActonSaturdayMorningBand(dayName, key, rows, youssefDateKey)) {
         return { startMin: YOUSSEF_ACTON_SATURDAY_START_MIN, endMin: YOUSSEF_ACTON_SATURDAY_END_MIN };
       }
-      if (isYoussefActonAfternoonBand(dayName, key, rows)) {
+      if (isYoussefActonAfternoonBand(dayName, key, rows, youssefDateKey)) {
         return { startMin: 16 * 60 + 30, endMin: 18 * 60 + 30 };
       }
       /* Weekday MA/Bespoke Support only — not Day Centre / other morning support. */
@@ -2160,13 +2161,18 @@
       return WEEKDAY_MA_BESPOKE_PAY_HOURS;
     }
 
-    /** Youssef contract: Acton PM Mon/Tue/Wed 4:30–6:30 (2h @ SI £24). */
+    /** Youssef contract: Acton PM Mon/Tue/Wed 4:30–6:30 (2h @ SI £24). Term ended 15 Jul 2026. */
     const YOUSSEF_ACTON_AFTERNOON_PAY_HOURS = 2;
     const YOUSSEF_ACTON_AFTERNOON_DAYS = new Set(["Monday", "Tuesday", "Wednesday"]);
+    const YOUSSEF_ACTON_LAST_DATE = "2026-07-15";
     /** Youssef Saturday Acton mornings: fixed 10:30–12:30 (2h), even if 10.30 client is absent. */
     const YOUSSEF_ACTON_SATURDAY_PAY_HOURS = 2;
     const YOUSSEF_ACTON_SATURDAY_START_MIN = 10 * 60 + 30;
     const YOUSSEF_ACTON_SATURDAY_END_MIN = 12 * 60 + 30;
+    function youssefActonDateAllowed(dateKey) {
+      const iso = String(dateKey || "").slice(0, 10);
+      return /^\d{4}-\d{2}-\d{2}$/.test(iso) && iso <= YOUSSEF_ACTON_LAST_DATE;
+    }
     /** Day Centre SwimFarm only Mon/Wed (→3) and Fri (→4); never Tue/Thu mornings. */
     const YOUSSEF_DAY_CENTRE_DAYS = new Set(["Monday", "Wednesday", "Friday"]);
     /**
@@ -2308,22 +2314,29 @@
       const a = hmToMinutes(String((session && session.start) || "").trim());
       return Number.isFinite(a) && a < 16 * 60;
     }
-    function isYoussefActonAfternoonBand(dayName, rosterKey, dayRows) {
+    function isYoussefActonAfternoonBand(dayName, rosterKey, dayRows, dateKey) {
       if (!YOUSSEF_ACTON_AFTERNOON_DAYS.has(String(dayName || ""))) return false;
       if (!isYoussefRosterKey(rosterKey)) return false;
+      if (!youssefActonDateAllowed(dateKey != null ? dateKey : isoDateFromDayRows(dayRows))) return false;
       const rows = dayRows || [];
       if (!rows.length) return false;
       return rows.every(function (s) {
         return sessionIsActonAfternoon(s);
       });
     }
+    function isoDateFromDayRows(dayRows) {
+      const s = (dayRows || [])[0];
+      const raw = String((s && (s.date || s.sessionDate || s.session_date)) || "").slice(0, 10);
+      return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : "";
+    }
     /**
-     * Drop ghost Day Centre on Tue/Thu (etc.) and Acton PM outside Mon–Wed.
-     * Keeps: DC Mon/Wed/Fri (+ midday swim), Acton PM Mon/Tue/Wed, Acton Sat AM, Sunday SwimFarm.
+     * Drop ghost Day Centre on Tue/Thu (etc.) and Acton after term end (15 Jul 2026).
+     * Keeps: DC Mon/Wed/Fri (+ midday swim), Acton PM Mon/Tue/Wed ≤15 Jul, Acton Sat AM ≤15 Jul, Sunday SwimFarm.
      */
     function filterYoussefContractEntries(entries, dateObj, rosterKey) {
       if (!isYoussefRosterKey(rosterKey)) return entries || [];
       const dayName = WEEKDAY[dateObj.getDay()];
+      const dateKey = isoDate(dateObj);
       return (entries || []).filter((e) => {
         if (!e || e.dayOff) return true;
         const venue = String(e.venue || "").toLowerCase();
@@ -2340,15 +2353,17 @@
           return YOUSSEF_DAY_CENTRE_DAYS.has(dayName);
         }
         if (venue.indexOf("acton") >= 0 && role === "Swimming Instructor") {
+          if (!youssefActonDateAllowed(dateKey)) return false;
           if (dayName === "Saturday") return true;
           return YOUSSEF_ACTON_AFTERNOON_DAYS.has(dayName);
         }
         return true;
       });
     }
-    function isYoussefActonSaturdayMorningBand(dayName, rosterKey, dayRows) {
+    function isYoussefActonSaturdayMorningBand(dayName, rosterKey, dayRows, dateKey) {
       if (dayName !== "Saturday") return false;
       if (!isYoussefRosterKey(rosterKey)) return false;
+      if (!youssefActonDateAllowed(dateKey != null ? dateKey : isoDateFromDayRows(dayRows))) return false;
       const rows = dayRows || [];
       if (!rows.length) return false;
       return rows.every(function (s) {
@@ -2375,12 +2390,12 @@
         cancelOvs.some((ov) => sessionMatchesScheduleOverride(s, iso, ov))
       );
     }
-    function youssefActonAfternoonPayableHours(dayName, rosterKey, role, computedHours, dayRows) {
-      if (!isYoussefActonAfternoonBand(dayName, rosterKey, dayRows)) return computedHours;
+    function youssefActonAfternoonPayableHours(dayName, rosterKey, role, computedHours, dayRows, dateKey) {
+      if (!isYoussefActonAfternoonBand(dayName, rosterKey, dayRows, dateKey)) return computedHours;
       return YOUSSEF_ACTON_AFTERNOON_PAY_HOURS;
     }
     function youssefActonSaturdayPayableHours(dayName, rosterKey, role, computedHours, dayRows, dateKey) {
-      if (!isYoussefActonSaturdayMorningBand(dayName, rosterKey, dayRows)) return computedHours;
+      if (!isYoussefActonSaturdayMorningBand(dayName, rosterKey, dayRows, dateKey)) return computedHours;
       if (youssefActonSaturdayAllCancelled(dateKey, rosterKey, dayRows)) return 0;
       return YOUSSEF_ACTON_SATURDAY_PAY_HOURS;
     }
@@ -2986,7 +3001,7 @@
       hours = michelleDayCentrePayableHours(rosterKey, dateObj, dominantRole, hours, rows);
       hours = sundayMaSupportPayableHours(dayName, rosterKey, dominantRole, dominantService, hours, rows);
       hours = sundaySwimPayableHours(dayName, rosterKey, dominantRole, dominantService, dateKey, hours, rows);
-      hours = youssefActonAfternoonPayableHours(dayName, rosterKey, dominantRole, hours, rows);
+      hours = youssefActonAfternoonPayableHours(dayName, rosterKey, dominantRole, hours, rows, dateKey);
       hours = youssefActonSaturdayPayableHours(dayName, rosterKey, dominantRole, hours, rows, dateKey);
       if (!(hours > 0)) return null;
       const role = dominantRole || "";
@@ -3108,7 +3123,7 @@
           hours = michelleDayCentrePayableHours(rosterKey, dateObj, role, hours, groupRows);
           hours = sundayMaSupportPayableHours(dayName, rosterKey, role, svc, hours, groupRows);
           hours = sundaySwimPayableHours(dayName, rosterKey, role, svc, dateKey, hours, groupRows);
-          hours = youssefActonAfternoonPayableHours(dayName, rosterKey, role, hours, groupRows);
+          hours = youssefActonAfternoonPayableHours(dayName, rosterKey, role, hours, groupRows, dateKey);
           hours = youssefActonSaturdayPayableHours(dayName, rosterKey, role, hours, groupRows, dateKey);
           if (!(hours > 0)) return;
           const serviceName =

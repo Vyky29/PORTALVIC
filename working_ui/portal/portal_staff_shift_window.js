@@ -145,10 +145,19 @@
     return n === "youssef" || n === "yousef" || n === "yusef";
   }
 
-  /** Youssef Acton PM: Mon/Tue/Wed only, flat 4:30–6:30 (2h Swimming). */
+  /** Youssef Acton term last day (inclusive). */
+  var YOUSSEF_ACTON_LAST_DATE = "2026-07-15";
+
+  function youssefActonDateAllowed(iso) {
+    var d = normIso(iso);
+    return !!d && d <= YOUSSEF_ACTON_LAST_DATE;
+  }
+
+  /** Youssef Acton PM: Mon/Tue/Wed only through 15 Jul 2026, flat 4:30–6:30 (2h Swimming). */
   function rowsAreYoussefActonAfternoonBand(rows, iso) {
     var dayName = dayNameFromIso(iso);
     if (dayName !== "Monday" && dayName !== "Tuesday" && dayName !== "Wednesday") return false;
+    if (!youssefActonDateAllowed(iso)) return false;
     var list = Array.isArray(rows) ? rows : [];
     if (!list.length) return false;
     for (var i = 0; i < list.length; i++) {
@@ -161,10 +170,11 @@
     return true;
   }
 
-  /** Youssef Saturday Acton mornings: flat 10:30–12:30 (2h), even if 10.30 client missing. */
+  /** Youssef Saturday Acton mornings through 15 Jul 2026: flat 10:30–12:30 (2h). */
   function rowsAreYoussefActonSaturdayMorningBand(rows, iso) {
     var dayName = dayNameFromIso(iso);
     if (dayName !== "Saturday") return false;
+    if (!youssefActonDateAllowed(iso)) return false;
     var list = Array.isArray(rows) ? rows : [];
     if (!list.length) return false;
     for (var i = 0; i < list.length; i++) {
