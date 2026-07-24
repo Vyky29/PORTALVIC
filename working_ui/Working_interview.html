@@ -3472,17 +3472,17 @@
                     <div class="toggle-group">
                       <button type="button" class="toggle fail ${faceUnsuccessful ? "active-unsuccess" : ""}" id="btnFaceUnsuccessful">
                         <strong>Unsuccessful</strong>
-                        <span>Candidate does not move into onboarding. A reason will be required.</span>
+                        <span>Does not move to onboarding. Kept under Call back later so you can contact them again.</span>
                       </button>
 
                       <button type="button" class="toggle hold ${faceSuccessfulHold ? "active-hold" : ""}" id="btnFaceSuccessfulHold">
-                        <strong>Successful</strong>
-                        <span>Good interview result, but not ready for onboarding yet.</span>
+                        <strong>Successful (On hold)</strong>
+                        <span>Good result, not starting now — Call back later when a seat opens.</span>
                       </button>
 
                       <button type="button" class="toggle success ${faceSuccessfulReady ? "active-success" : ""}" id="btnFaceSuccessfulReady">
                         <strong>Successful (Ready for onboarding)</strong>
-                        <span>Candidate can move into onboarding and receive next steps.</span>
+                        <span>Moves into Onboarding for checklist and next steps.</span>
                       </button>
                     </div>
                   </div>
@@ -3625,6 +3625,19 @@
       } else {
         renderSearchResults(candidates);
       }
+
+      try {
+        const prefillQ = new URLSearchParams(window.location.search || "").get("q");
+        if (prefillQ && searchInput) {
+          searchInput.value = prefillQ;
+          const filtered = filterCandidates(prefillQ);
+          renderSearchResults(filtered);
+          if (filtered.length === 1) {
+            currentCandidateId = filtered[0].id;
+            renderCandidateDetail(filtered[0].id);
+          }
+        }
+      } catch (e) {}
 
       searchBtn.addEventListener("click", () => {
         const filtered = filterCandidates(searchInput.value);
