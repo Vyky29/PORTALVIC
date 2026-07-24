@@ -1412,23 +1412,64 @@
       } catch (e) { return []; }
     }
 
+    function candidateUpdatedMs(c) {
+      const t = Date.parse(String((c && c.updatedAt) || ""));
+      return Number.isFinite(t) ? t : 0;
+    }
+
+    /** Merge remote + localStorage so an empty cloud list never wipes interviews saved only in the browser. */
+    function mergeCandidateLists(remoteList, localList) {
+      const byId = new Map();
+      (remoteList || []).forEach(function (c) {
+        const shaped = ensureCandidateShape(c);
+        if (shaped && shaped.id) byId.set(shaped.id, shaped);
+      });
+      (localList || []).forEach(function (c) {
+        const shaped = ensureCandidateShape(c);
+        if (!shaped || !shaped.id) return;
+        const existing = byId.get(shaped.id);
+        if (!existing || candidateUpdatedMs(shaped) >= candidateUpdatedMs(existing)) {
+          byId.set(shaped.id, shaped);
+        }
+      });
+      return Array.from(byId.values()).sort(function (a, b) {
+        return candidateUpdatedMs(b) - candidateUpdatedMs(a);
+      });
+    }
+
     async function loadCandidatesFromSupabase() {
       const sb = getSupabase();
-      if (!sb) return [];
+      if (!sb) return { candidates: [], remoteIds: [] };
       const { data, error } = await sb.from("onboarding_candidates").select("id, data").order("updated_at", { ascending: false });
       if (error) {
         console.error("Supabase load error", error);
         throw error;
       }
       const remoteCandidates = (data || []).map(row => ensureCandidateShape({ ...row.data, id: row.id }));
-      candidates = remoteCandidates;
-      return candidates;
+      const remoteIds = remoteCandidates.map(function (c) { return c.id; });
+      const localCandidates = loadCandidatesFromStorage().map(ensureCandidateShape);
+      candidates = mergeCandidateLists(remoteCandidates, localCandidates);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(candidates));
+      return { candidates: candidates, remoteIds: remoteIds };
+    }
+
+    async function pushLocalOnlyCandidatesToSupabase(remoteIds) {
+      const remoteSet = new Set(remoteIds || []);
+      const localOnly = candidates.filter(function (c) { return c && c.id && !remoteSet.has(c.id); });
+      for (const c of localOnly) {
+        try {
+          await saveCandidateToSupabase(c);
+        } catch (e) {
+          console.error("Could not push local-only candidate", c && c.id, e);
+        }
+      }
     }
 
     async function refreshSharedCandidates(showError) {
       if (!portalUseSupabase) return;
       try {
-        await loadCandidatesFromSupabase();
+        const loaded = await loadCandidatesFromSupabase();
+        await pushLocalOnlyCandidatesToSupabase(loaded.remoteIds);
         renderSearchResults(filterCandidates(searchInput.value.trim()));
       } catch (error) {
         const fallbackLocal = loadCandidatesFromStorage().map(ensureCandidateShape);
