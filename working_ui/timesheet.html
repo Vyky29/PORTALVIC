@@ -2026,7 +2026,7 @@
       return uniq[0];
     }
 
-    function timesheetPaidWindowForRows(rows, dayName, rosterKey, role, hours) {
+    function timesheetPaidWindowForRows(rows, dayName, rosterKey, role, hours, dateKey) {
       let minStart = Infinity;
       let maxEnd = -Infinity;
       (rows || []).forEach((s) => {
@@ -2040,7 +2040,7 @@
       });
       const key = String(rosterKey || "").trim().toLowerCase();
       const r = String(role || "").trim();
-      const youssefDateKey = isoDateFromDayRows(rows);
+      const youssefDateKey = dateKey || isoDateFromDayRows(rows);
       if (isYoussefActonSaturdayMorningBand(dayName, key, rows, youssefDateKey)) {
         return { startMin: YOUSSEF_ACTON_SATURDAY_START_MIN, endMin: YOUSSEF_ACTON_SATURDAY_END_MIN };
       }
@@ -3016,7 +3016,7 @@
         hours = dcSpec.hours;
         timeRange = clubTimeRangeFromSegments(dcSpec.segments);
       } else {
-        const window = timesheetPaidWindowForRows(rows, dayName, rosterKey, role, hours);
+        const window = timesheetPaidWindowForRows(rows, dayName, rosterKey, role, hours, dateKey);
         timeRange = window ? clubTimeRangeFromMinutes(window.startMin, window.endMin) : "";
       }
       return {
@@ -3155,7 +3155,7 @@
             hours = dcSpec.hours;
             timeRange = clubTimeRangeFromSegments(dcSpec.segments);
           } else {
-            const window = timesheetPaidWindowForRows(groupRows, dayName, rosterKey, role, hours);
+            const window = timesheetPaidWindowForRows(groupRows, dayName, rosterKey, role, hours, dateKey);
             timeRange = window ? clubTimeRangeFromMinutes(window.startMin, window.endMin) : "";
           }
           entries.push({
