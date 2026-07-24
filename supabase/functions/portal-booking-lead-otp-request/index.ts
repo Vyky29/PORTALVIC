@@ -76,7 +76,8 @@ Deno.serve(async (req) => {
   if (!isValidEmail(email)) {
     return bookingLeadJson({ ok: false, error: "email_invalid" }, 400);
   }
-  if (!privacyAccepted) {
+  // New visitors must accept privacy; returning / existing clients already did at enrolment.
+  if (!isReturning && !privacyAccepted) {
     return bookingLeadJson({ ok: false, error: "privacy_required" }, 400);
   }
 

@@ -285,9 +285,6 @@
     var phone = String(
       ($("bookingLeadReturningMobile") && $("bookingLeadReturningMobile").value) || ""
     ).trim();
-    var privacy = !!(
-      $("bookingLeadReturningPrivacy") && $("bookingLeadReturningPrivacy").checked
-    );
     var btn = $("bookingLeadReturningSend");
 
     setMsg("bookingLeadReturningMsg", "", false);
@@ -295,13 +292,10 @@
       setMsg("bookingLeadReturningMsg", "Please enter a valid email address.", true);
       return;
     }
-    if (!privacy) {
-      setMsg("bookingLeadReturningMsg", "Please accept the Privacy Notice to continue.", true);
-      return;
-    }
 
     setBusy(btn, true, "Sending code…");
     try {
+      // Returning clients already accepted privacy at first enrolment — do not re-ask.
       var out = await api("portal-booking-lead-otp-request", {
         flow: "returning",
         parent_email: email,
@@ -315,13 +309,11 @@
         var human =
           err === "not_recognised"
             ? "We couldn’t find that email on file. Try your club email, add the phone on file, or use New visitor."
-            : err === "privacy_required"
-              ? "Please accept the Privacy Notice to continue."
-              : err === "email_invalid"
-                ? "Please enter a valid email address."
-                : err === "mobile_invalid"
-                  ? "Add the phone number on your club record, or use New visitor."
-                  : "We couldn’t send a code just now. Please try again.";
+            : err === "email_invalid"
+              ? "Please enter a valid email address."
+              : err === "mobile_invalid"
+                ? "Add the phone number on your club record, or use New visitor."
+                : "We couldn’t send a code just now. Please try again.";
         setMsg("bookingLeadReturningMsg", human, true);
         setBusy(btn, false, "Send access code");
         return;
