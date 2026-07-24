@@ -14012,7 +14012,7 @@
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
       "area": "Teaching Pool",
-      "time_slot": "4.30 to 5",
+      "time_slot": "4.40 to 5",
       "venue": "Acton",
       "session_date": "2026-07-28"
     },
@@ -14022,7 +14022,7 @@
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
       "area": "Teaching Pool",
-      "time_slot": "5 to 5.30",
+      "time_slot": "5 to 6.30",
       "venue": "Acton",
       "session_date": "2026-07-28"
     },
@@ -14098,23 +14098,23 @@
     },
     {
       "client_name": "Saaib",
-      "day": "Thursday",
+      "day": "Wednesday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
       "area": "Teaching Pool",
-      "time_slot": "4.30 to 5",
+      "time_slot": "4.40 to 5",
       "venue": "Acton",
-      "session_date": "2026-07-30"
+      "session_date": "2026-07-29"
     },
     {
       "client_name": "Adam P",
-      "day": "Thursday",
+      "day": "Wednesday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
       "area": "Teaching Pool",
-      "time_slot": "5 to 5.30",
+      "time_slot": "5 to 6.30",
       "venue": "Acton",
-      "session_date": "2026-07-30"
+      "session_date": "2026-07-29"
     },
     {
       "client_name": "Tinashe",
