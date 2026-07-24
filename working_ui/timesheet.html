@@ -1080,12 +1080,42 @@
         .replace(/[^a-z0-9]+/g, "");
     }
 
+    function timesheetOverridePayload(ov) {
+      let p = ov && ov.payload;
+      if (typeof p === "string") {
+        try {
+          p = JSON.parse(p);
+        } catch (_) {
+          p = {};
+        }
+      }
+      return p && typeof p === "object" ? p : {};
+    }
+
+    /** Admin cancel / no-pax / absence → timesheet treat as resolved (mirror staff dash). */
+    function timesheetOverrideCompletionFlag(ov) {
+      const t = String((ov && ov.override_type) || "").trim();
+      const p = timesheetOverridePayload(ov);
+      const res = String(p.feedback_resolution || "")
+        .trim()
+        .toLowerCase();
+      if (t === "client_absence_announced" || res === "absent") return "absent";
+      if (t === "slot_close" || t === "client_cancelled") return "cancelled";
+      if (t === "slot_clear_client") {
+        if (p.cancelled_by_admin || res === "cancelled") return "cancelled";
+        /* No participant (not a paid cancel): no feedback owed. */
+        return "feedbackDone";
+      }
+      return "";
+    }
+
     function sessionMatchesScheduleOverride(s, dateKey, ov) {
       if (String(ov.session_date || "").trim().slice(0, 10) !== dateKey) return false;
       const ovClient = String(ov.anchor_client_id || "").trim().toLowerCase();
       const sClient = String(s.clientId || "").trim().toLowerCase();
       if (ovClient && sClient && ovClient !== sClient) return false;
       const type = String(ov.override_type || "").trim();
+      const p = timesheetOverridePayload(ov);
       /* Admin absences are participant+day — every instructor on that client that day (mirror staff dash). */
       if (type === "client_absence_announced") {
         return !!(ovClient && sClient && ovClient === sClient);
@@ -1095,6 +1125,22 @@
         type === "slot_close" &&
         (timesheetSessionIsBespokeShared(s) || timesheetSessionIsDayCentre(s))
       ) {
+        return !!(ovClient && sClient && ovClient === sClient);
+      }
+      /*
+       * Paid admin cancel (slot_clear_client + cancelled_by_admin): same staff+client on the day
+       * is enough — roster often merges 16:00–17:30 while overrides are 30' slices.
+       */
+      if (
+        (type === "slot_clear_client" || type === "client_cancelled") &&
+        (p.cancelled_by_admin ||
+          String(p.feedback_resolution || "")
+            .trim()
+            .toLowerCase() === "cancelled")
+      ) {
+        if (normTimesheetStaffKey(ov.anchor_staff_id) !== normTimesheetStaffKey(s.staffId)) {
+          return false;
+        }
         return !!(ovClient && sClient && ovClient === sClient);
       }
       if (normTimesheetStaffKey(ov.anchor_staff_id) !== normTimesheetStaffKey(s.staffId)) return false;
@@ -1366,12 +1412,8 @@
       return me === "lulia" ? timesheetApplyLuliaIkramMorningCutoff(rows) : rows;
     }
 
-    /** Mirror dashboard: admin absence / slot close counts as done for timesheet pay. */
+    /** Mirror dashboard: admin absence / cancel / no-pax counts as done for timesheet pay. */
     function applyScheduleOverridesToReviewMap(memory, sessionsModel, dates, overrides) {
-      const completeByType = {
-        client_absence_announced: "absent",
-        slot_close: "cancelled",
-      };
       for (const dateObj of dates || []) {
         const dateKey = isoDate(dateObj);
         const rows = sessionsForCalendarDate(sessionsModel, dateObj).filter((s) => {
@@ -1383,7 +1425,7 @@
           if (!sk) return;
           for (let i = 0; i < (overrides || []).length; i += 1) {
             const ov = overrides[i];
-            const flag = completeByType[String(ov.override_type || "").trim()];
+            const flag = timesheetOverrideCompletionFlag(ov);
             if (!flag || !sessionMatchesScheduleOverride(s, dateKey, ov)) continue;
             const prev = memory[sk] || {
               feedbackDone: false,
@@ -1391,7 +1433,18 @@
               absent: false,
               cancelled: false,
             };
-            memory[sk] = Object.assign({}, prev, { [flag]: true, feedbackDone: false });
+            if (flag === "feedbackDone") {
+              memory[sk] = Object.assign({}, prev, {
+                feedbackDone: true,
+                absent: false,
+                cancelled: false,
+              });
+            } else {
+              memory[sk] = Object.assign({}, prev, {
+                [flag]: true,
+                feedbackDone: flag === "absent" || flag === "cancelled" ? false : prev.feedbackDone,
+              });
+            }
             break;
           }
         });
