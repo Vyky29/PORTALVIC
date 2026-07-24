@@ -45,7 +45,8 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   ],
   "termStaffAwayDatesByProfileKey": {
     "roberto": [
-      "2026-05-07"
+      "2026-05-07",
+      "2026-07-30"
     ],
     "javier": [
       "2026-06-18",
@@ -1201,7 +1202,6 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-07-27",
       "2026-07-28",
       "2026-07-29",
-      "2026-07-30",
       "2026-07-31"
     ],
     "sandra": [
