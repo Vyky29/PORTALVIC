@@ -13907,16 +13907,6 @@
       "session_date": "2026-07-27"
     },
     {
-      "client_name": "Zakariya",
-      "day": "Monday",
-      "instructors": "ROBERTO",
-      "service": "Aquatic Activity",
-      "area": "Big Pool",
-      "time_slot": "1 to 2",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-27"
-    },
-    {
       "client_name": "Emanuel",
       "day": "Monday",
       "instructors": "VICTOR",
@@ -13969,7 +13959,7 @@
     {
       "client_name": "Yaqoub",
       "day": "Monday",
-      "instructors": "YOUSSEF",
+      "instructors": "ROBERTO",
       "service": "Aquatic Activity",
       "area": "Big Pool",
       "time_slot": "1 to 2",
@@ -14009,7 +13999,7 @@
     {
       "client_name": "Yaqoub",
       "day": "Tuesday",
-      "instructors": "YOUSSEF",
+      "instructors": "ROBERTO",
       "service": "Aquatic Activity",
       "area": "Big Pool",
       "time_slot": "1 to 2",
@@ -14047,16 +14037,6 @@
       "session_date": "2026-07-29"
     },
     {
-      "client_name": "Zakariya",
-      "day": "Wednesday",
-      "instructors": "ROBERTO",
-      "service": "Aquatic Activity",
-      "area": "Big Pool",
-      "time_slot": "1 to 2",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-29"
-    },
-    {
       "client_name": "Emanuel",
       "day": "Wednesday",
       "instructors": "VICTOR",
@@ -14079,7 +14059,7 @@
     {
       "client_name": "Yaqoub",
       "day": "Wednesday",
-      "instructors": "YOUSSEF",
+      "instructors": "ROBERTO",
       "service": "Aquatic Activity",
       "area": "Big Pool",
       "time_slot": "1 to 2",
@@ -14143,16 +14123,6 @@
       "service": "Aquatic Activity",
       "area": "Big Pool",
       "time_slot": "1 to 1.30",
-      "venue": "SwimFarm",
-      "session_date": "2026-07-31"
-    },
-    {
-      "client_name": "Zakariya",
-      "day": "Friday",
-      "instructors": "ROBERTO",
-      "service": "Aquatic Activity",
-      "area": "Big Pool",
-      "time_slot": "1 to 2",
       "venue": "SwimFarm",
       "session_date": "2026-07-31"
     },
