@@ -20,10 +20,7 @@
   .eyebrow{margin:0 0 6px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--navy)}
   h1{margin:0 0 8px;font-family:Fraunces,Georgia,serif;font-size:clamp(1.45rem,3.2vw,2rem);line-height:1.18;color:var(--navy)}
   .hero-lead{margin:0 0 14px;color:var(--muted);max-width:44rem}
-  .pills{display:flex;flex-wrap:wrap;gap:8px}
-  .pill{display:inline-flex;background:var(--navy);color:#fff;border-radius:999px;padding:4px 11px;font-size:12px;font-weight:600}
-  .pill.gold{background:var(--gold);color:var(--navy)}.pill.warn{background:var(--amber-soft);color:var(--amber)}
-  .toc{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;justify-content:center}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;justify-content:center}
   .toc a{text-decoration:none;font-size:12px;font-weight:700;color:var(--navy);background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 12px}
   .toc a:hover{border-color:var(--gold);background:var(--gold-soft)}
   .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
@@ -60,6 +57,26 @@
   .role-item{padding:12px 14px;border-bottom:1px solid var(--line);font-size:13.5px}.role-item:last-child{border-bottom:0}
   .role-item h4{margin:0 0 6px;font-size:14px;font-weight:700;color:var(--navy)}
   .role-item p{margin:0 0 6px;color:var(--muted);font-size:13px}.role-item ul{margin:0;padding-left:18px;color:var(--ink);font-size:13px}.role-item li{margin:3px 0}
+  
+  .scale-legend{
+    background:#fff;border:1px solid var(--line);border-radius:14px;
+    padding:14px 16px;margin:0 0 18px;
+  }
+  .scale-legend__title{
+    margin:0 0 10px;font-size:11px;font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--navy);
+  }
+  .scale-legend__grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:10px 14px;
+  }
+  @media(max-width:720px){.scale-legend__grid{grid-template-columns:1fr}}
+  .scale-legend__grid strong{
+    display:block;font-size:12px;color:var(--navy);margin-bottom:2px;
+  }
+  .scale-legend__grid span{
+    display:block;font-size:12px;color:var(--muted);line-height:1.35;
+  }
+
   .callout{border-left:4px solid var(--gold);background:var(--gold-soft);padding:12px 14px;border-radius:0 12px 12px 0;margin:8px 0 18px;font-size:13.5px}
   footer{margin-top:10px;text-align:center;font-size:12px;color:var(--muted)}
   @media print{.toc{display:none}.contract{break-inside:avoid}body{background:#fff}}
@@ -76,8 +93,7 @@
         <p class="eyebrow">HR · Issuance checklist · 2026-27</p>
         <h1>Contracts we need to issue</h1>
         <p class="hero-lead">Final list by service for Sevitha: which contract, for whom, scales/salary, and a short note on each worker.</p>
-        <div class="pills"><span class="pill">By service</span><span class="pill gold">English</span><span class="pill warn">Pending issue</span></div>
-      </div>
+</div>
     </div>
   </header>
 
@@ -97,11 +113,36 @@
     <div class="stat"><strong>2</strong><span>No contract for now</span></div>
   </div>
 
-  <div class="callout">
-    Scales: Day Centre Scale 1 £18 · Scale 2 £20 · Scale 3 £24 · Manager £30.
-    Activity: Swim Scale 2 £24 / Scale 3 £28 · Climb Scale 3 £30.
-    Holiday for zero-hours: inclusive hourly rate (ordinary + 12.07% rolled-up holiday), itemised on payslips — no extra 12.07% on top.
+    <div class="scale-legend" aria-label="Pay scales by service">
+    <p class="scale-legend__title">Scales by service</p>
+    <div class="scale-legend__grid">
+      <div>
+        <strong>Day Centre</strong>
+        <span>Scale 1 £18 · Scale 2 £20 · Scale 3 £24 · Manager £30</span>
+      </div>
+      <div>
+        <strong>Swimming</strong>
+        <span>Scale 2 £24 · Scale 3 £28</span>
+      </div>
+      <div>
+        <strong>Climbing</strong>
+        <span>Scale 3 £30</span>
+      </div>
+      <div>
+        <strong>Fitness</strong>
+        <span>Scale 2 £28 (confirm)</span>
+      </div>
+      <div>
+        <strong>Support / Leads</strong>
+        <span>Scale 1 £18 · Scale 2 £20 · Scale 3 £23 · Service Lead £30</span>
+      </div>
+      <div>
+        <strong>Zero-hours holiday</strong>
+        <span>Inclusive rate (ordinary + 12.07% rolled-up), itemised on payslips</span>
+      </div>
+    </div>
   </div>
+
 
   <!-- DAY CENTRE -->
   <section class="service" id="day-centre">
@@ -570,7 +611,7 @@
     </article>
   </section>
 
-  <div class="callout">Full context and scales: <a href="contratos-a-emitir-2026-27.html">contratos-a-emitir-2026-27.html</a></div>
+  <p style="margin:8px 0 18px;font-size:12px;color:var(--muted)">Full context: <a href="contratos-a-emitir-2026-27.html">contratos-a-emitir-2026-27.html</a></p>
 
   <footer>
     clubSENsational Ltd · Company no. 13755417 ·
