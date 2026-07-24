@@ -2220,6 +2220,80 @@
         return venue.indexOf("swimfarm") >= 0;
       });
     }
+    function entryLooksYoussefMiddayAquatic(entry) {
+      if (!entry || entry.dayOff) return false;
+      if (String(entry.role || "").trim() !== "Swimming Instructor") return false;
+      if (String(entry.venue || "").toLowerCase().indexOf("swimfarm") < 0) return false;
+      if (/acton/i.test(String(entry.venue || ""))) return false;
+      const tr = String(entry.timeRange || entry.time_range || "").trim();
+      const m = tr.match(/^(\d{1,2})[.:](\d{2})\s*-\s*(\d{1,2})[.:](\d{2})/);
+      if (!m) return /aquatic|swim/i.test(String(entry.service || entry.serviceName || ""));
+      let sh = Number(m[1]);
+      const sm = Number(m[2]);
+      if (sh === 12 && sm <= 30) return true;
+      if (sh === 0 && sm === 0) return false;
+      /* club clock: 12.xx midday */
+      return sh === 12;
+    }
+    /** Mon/Wed/Fri SwimFarm Day Centre days always include a paid 12–1 pool hour (SI £24), even if MADRE omits Emanuel. */
+    function ensureYoussefMiddayAquaticEntries(entries, dateObj, rosterKey) {
+      const dayName = WEEKDAY[dateObj.getDay()];
+      if (!youssefSwimfarmDayCentrePaySpec(dayName)) return entries || [];
+      if (!isYoussefRosterKey(rosterKey)) return entries || [];
+      const list = Array.isArray(entries) ? entries.slice() : [];
+      if (!list.length || list.some((e) => e && e.dayOff)) return list;
+      const hasDc = list.some((e) => {
+        const role = String((e && e.role) || "").trim();
+        const svc = String((e && (e.serviceName || e.service)) || "").toLowerCase();
+        const venue = String((e && e.venue) || "").toLowerCase();
+        return role === "Support Worker" && /day\s*centre/.test(svc) && venue.indexOf("swimfarm") >= 0;
+      });
+      if (!hasDc) return list;
+      const dateKey = isoDate(dateObj);
+      const completed =
+        list.every((e) => e && e.completed) || timesheetDayMarkedComplete(dateKey, rosterKey);
+      const timeRange = clubTimeRangeFromMinutes(12 * 60, 13 * 60);
+      const swimRate = rateForRole("Swimming Instructor");
+      let found = false;
+      const next = list.map((e) => {
+        if (!entryLooksYoussefMiddayAquatic(e)) return e;
+        found = true;
+        return {
+          ...e,
+          hours: 1,
+          role: "Swimming Instructor",
+          rate: swimRate,
+          service: "Aquatic Activity",
+          serviceName: "Aquatic Activity",
+          serviceLabel: `${timeRange} Aquatic Activity`,
+          venue: "SwimFarm",
+          timeRange,
+          completed: e.completed || completed
+        };
+      });
+      if (!found) {
+        next.push({
+          date: dateKey,
+          day: dayName,
+          hours: 1,
+          completed,
+          service: "Aquatic Activity",
+          serviceName: "Aquatic Activity",
+          serviceLabel: `${timeRange} Aquatic Activity`,
+          venue: "SwimFarm",
+          timeRange,
+          role: "Swimming Instructor",
+          rate: swimRate,
+          blendedRate: null
+        });
+      }
+      next.sort((a, b) => {
+        const ta = String((a && (a.timeRange || a.time_range)) || "");
+        const tb = String((b && (b.timeRange || b.time_range)) || "");
+        return ta.localeCompare(tb);
+      });
+      return next;
+    }
     function sessionIsActonAfternoon(session) {
       const venue = String((session && session.venue) || "").toLowerCase();
       if (venue.indexOf("acton") < 0) return false;
@@ -3065,6 +3139,7 @@
       });
       const roleCount = Object.keys(rolesSeen).length;
       const dayName = WEEKDAY[dateObj.getDay()];
+      let built = null;
       /* Sunday SwimFarm swim instructors: one paid band (6h / Roberto 6.5) — never Aquatic 6 + Multi 5. */
       if (isSundaySwimfarmSwimInstructorDay(dayName, rosterKey, rows)) {
         const single = dailyHoursSingleRoleFromSessions(
@@ -3085,10 +3160,9 @@
           single.timeRange = clubTimeRangeFromMinutes(swimWin.startMin, swimWin.endMin);
           single.serviceLabel = `${single.timeRange} Aquatic Activity`;
           single.rate = rateForRole("Swimming Instructor");
-          return [single];
+          built = [single];
         }
-      }
-      if (roleCount <= 1) {
+      } else if (roleCount <= 1) {
         let dominantRole = "";
         let dominantService = "";
         let bestMin = -1;
@@ -3100,19 +3174,22 @@
           }
         });
         if (dominantRole && timesheetDistinctServiceGroupKeys(rows, dominantRole, dayName, rosterKey).size > 1) {
-          return dailyHoursMultiRoleFromSessions(rows, dateObj, reviewMap, staffKey, roleMinutes, roleServices);
+          built = dailyHoursMultiRoleFromSessions(rows, dateObj, reviewMap, staffKey, roleMinutes, roleServices);
+        } else {
+          const single = dailyHoursSingleRoleFromSessions(
+            rows,
+            dateObj,
+            reviewMap,
+            staffKey,
+            dominantRole,
+            dominantService
+          );
+          built = single ? [single] : [];
         }
-        const single = dailyHoursSingleRoleFromSessions(
-          rows,
-          dateObj,
-          reviewMap,
-          staffKey,
-          dominantRole,
-          dominantService
-        );
-        return single ? [single] : [];
+      } else {
+        built = dailyHoursMultiRoleFromSessions(rows, dateObj, reviewMap, staffKey, roleMinutes, roleServices);
       }
-      return dailyHoursMultiRoleFromSessions(rows, dateObj, reviewMap, staffKey, roleMinutes, roleServices);
+      return ensureYoussefMiddayAquaticEntries(built || [], dateObj, rosterKey);
     }
 
     /** @deprecated use dailyEntriesFromSessions — kept for callers expecting one object. */
