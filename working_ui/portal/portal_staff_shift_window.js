@@ -179,6 +179,13 @@
   }
 
   function resolveShiftBandBuffer(opts, spanMin, dayName) {
+    /* Compat: timesheet used to call (spanMin, dayName) without opts. */
+    if (typeof opts === "number") {
+      dayName = spanMin;
+      spanMin = opts;
+      opts = {};
+    }
+    opts = opts && typeof opts === "object" ? opts : {};
     if (opts.applyBuffer === false) return false;
     if (opts.applyBuffer === true) return true;
     /* 2h pay band: ±15 only when client-facing time is under 2h (e.g. one 1.5h session). */
