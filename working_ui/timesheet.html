@@ -246,7 +246,7 @@
   <script src="/portal/staff_roster_resolve.js?v=20260625-simon-stf016"></script>
   <script src="/portal/term_from_timetable.js?v=roster-ef7cab1b5e"></script>
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260625-payroll-june"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=roster-ef7cab1b5e"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260724-yusuf-merge"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260720-michelle-dayoff-31"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260622-canonical-roster"></script>
   <script src="/portal/portal_roster_canonical.js?v=20260614-madre-dedupe"></script>
@@ -254,7 +254,7 @@
   <script src="/portal/portal_madre_fold.js?v=20260713-authoritative-week"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260705-live-madre-autorefresh"></script>
   <script src="/portal/portal_staff_shift_window.js?v=20260707-youssef-acton-pm"></script>
-  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260630-daycentre-merge"></script>
+  <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260724-yusuf-merge"></script>
 </head>
 <body class="portal-timesheet-page portal-timesheet-vertical">
   <main class="page">
@@ -1506,7 +1506,7 @@
       const memory = parseReviewMap();
       try {
         const mod = await withTimeout(
-          import("/portal/supabase-client.js?v=20260720-bespoke-absent"),
+          import("/portal/supabase-client.js?v=20260724-yusuf-merge"),
           8000,
           "supabase_client_import"
         );

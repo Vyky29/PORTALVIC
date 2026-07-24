@@ -991,6 +991,62 @@ function portalFeedbackMergeKeyMatchesRosterKey(submittedKey, rosterKey, mergeRu
   return allowed.has(rTime);
 }
 
+/** London weekday long name for an ISO calendar date (e.g. Sunday). */
+function portalLondonWeekdayLongFromIso(iso) {
+  const d = String(iso || "")
+    .trim()
+    .slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return "";
+  try {
+    return new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/London",
+      weekday: "long",
+    }).format(new Date(`${d}T12:00:00`));
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Timed feedback for one slice of a sundayFeedbackMerges group covers every
+ * other roster slice in that group (e.g. Yusuf 09:00 big_pool covers 09:30).
+ */
+function portalTimedKeyCoversMergeGroupRosterKey(submittedKey, rosterKey, mergeRules) {
+  const s = String(submittedKey || "").trim();
+  const r = String(rosterKey || "").trim();
+  if (!s || !r) return false;
+  if (portalSubmittedKeyIsMergeFeedback(s)) return false;
+  const sDate = s.split("|")[0];
+  const rDate = r.split("|")[0];
+  if (sDate !== rDate || !/^\d{4}-\d{2}-\d{2}$/.test(sDate)) return false;
+  const sTime = portalSessionKeyTimeToken(s);
+  const rTime = portalSessionKeyTimeToken(r);
+  if (!sTime || !rTime || sTime === rTime) return false;
+  const sSlugs = portalFeedbackParticipantSlugTokensFromKey(s);
+  const rSlugs = portalFeedbackParticipantSlugTokensFromKey(r);
+  if (!sSlugs.length || !rSlugs.length) return false;
+  if (!sSlugs.some((ss) => rSlugs.some((rs) => portalClientSlugTokensEquivalent(ss, rs)))) {
+    return false;
+  }
+  const wd = portalLondonWeekdayLongFromIso(sDate);
+  const rules = Array.isArray(mergeRules) ? mergeRules : [];
+  for (let i = 0; i < rules.length; i++) {
+    const rule = rules[i];
+    if (!rule) continue;
+    if (rule.day && String(rule.day).trim() !== wd) continue;
+    const clientSlug = portalSlugifyFeedbackName(rule.client_name);
+    if (!clientSlug) continue;
+    if (!sSlugs.some((ss) => portalClientSlugTokensEquivalent(ss, clientSlug))) continue;
+    const allowed = new Set();
+    for (const slot of rule.slots || []) {
+      const hm = portalMergeRuleSlotStartHm(slot && slot.time_slot, rule.day);
+      if (hm) allowed.add(hm);
+    }
+    if (allowed.size >= 2 && allowed.has(sTime) && allowed.has(rTime)) return true;
+  }
+  return false;
+}
+
 /** Participant client slug tokens only (excludes aquatic, day_centre, pool area, …). */
 function portalFeedbackParticipantSlugTokensFromKey(key) {
   return clientSlugTokensFromPortalSessionKey(key).filter(
@@ -1190,7 +1246,11 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
   }
   const rTime = portalSessionKeyTimeToken(r);
   const sTime = portalSessionKeyTimeToken(s);
-  if (rTime && sTime && sTime !== rTime) return false;
+  if (rTime && sTime && sTime !== rTime) {
+    /* Yusuf Sun Aquatic+Multi (etc.): one timed submit covers every merge-group slice. */
+    if (portalTimedKeyCoversMergeGroupRosterKey(s, r, opts.feedbackMergeRules)) return true;
+    return false;
+  }
   /* date||client must not absorb a timed submission from another slot the same day. */
   if (sTime && !rTime && rParts[1] === "" && rParts[2] && !rParts[3]) return false;
   /* date||client feedback marks the timed roster row for the same participant (e.g. fitness). */

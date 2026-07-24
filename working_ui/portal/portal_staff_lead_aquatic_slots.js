@@ -592,6 +592,11 @@
       var last = list[list.length - 1];
       var startHm = hmFromBaseSession(rep.__portalBaseSession).start;
       var endHm = hmFromBaseSession(last.__portalBaseSession).end;
+      /*
+       * Yusuf Ah Sun with Roberto: admin/invoices keep Aquatic 9–9.30 + Multi to 11,
+       * but staff card is always one block 9–10.15 (hub from 10.15 is another instructor).
+       */
+      if (mg === "yusuf_ah_roberto_9am") endHm = "10:15";
       var merged = Object.assign({}, rep);
       merged.sessionEndTs = last.sessionEndTs;
       merged.time = formatSlotRangeUk(startHm, endHm) || rep.time;
