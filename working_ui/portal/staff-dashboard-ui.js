@@ -1287,8 +1287,31 @@
       if(adminScheduleAdjusted) return 'term-cal-day--ov-pulse-admin-shift';
       return '';
     }
-    /** Uncleared late-submitted feedback for this London day (timesheet pay hold). */
+    /** Day had late-submitted feedback (calendar mark). Includes days already pay-released. */
     function portalTermDayHasLateSubmittedFeedback(isoKey){
+      const iso = String(isoKey || '').slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+      try{
+        if(dashboardData && dashboardData.portalLatePayClearedDates
+          && dashboardData.portalLatePayClearedDates.has(iso)) return true;
+        if(dashboardData && dashboardData.portalLateFeedbackDates
+          && dashboardData.portalLateFeedbackDates.has(iso)) return true;
+      }catch(_){}
+      try{
+        const lateKeys = dashboardData && dashboardData.portalLateFeedbackKeys;
+        if(lateKeys && typeof lateKeys.forEach === 'function'){
+          let hit = false;
+          lateKeys.forEach(function(k){
+            if(hit) return;
+            if(String(k || '').slice(0, 10) === iso) hit = true;
+          });
+          if(hit) return true;
+        }
+      }catch(_){}
+      return false;
+    }
+    /** Late feedback still on timesheet pay hold (not yet admin-released). */
+    function portalTermDayLateFeedbackAwaitingPay(isoKey){
       const iso = String(isoKey || '').slice(0, 10);
       if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
       try{
@@ -2957,7 +2980,9 @@
               if(portalTermDayHasLateSubmittedFeedback(isoKey)){
                 cls = String(cls || '').replace(/\bterm-cal-day--ov-pulse-\S+/g, '').replace(/\s+/g, ' ').trim();
                 cls += ' term-cal-day--ov-pulse-late-submitted';
-                label = `${day}, feedback complete (submitted late — awaiting admin)`;
+                label = portalTermDayLateFeedbackAwaitingPay(isoKey)
+                  ? `${day}, feedback complete (submitted late — awaiting admin)`
+                  : `${day}, feedback complete (submitted late)`;
               }else{
                 label = `${day}, all feedback complete`;
               }
