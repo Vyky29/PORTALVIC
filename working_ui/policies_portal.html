@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <script src="/portal-static-bootstrap.js?v=20260727-policy-scope"></script>
-  <script src="/portal/policy-signoff-scope.js?v=20260727-dual-roles"></script>
+  <script src="/portal/policy-signoff-scope.js?v=20260727-ack-sync"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>clubSENsational Policy Portal (Staff)</title>
@@ -12129,21 +12129,45 @@
         profile: null,
       };
 
-      function persistStaffAckToDocuments(policyId, rec, canvas) {
-        try {
+      function ensurePoliciesSupabase() {
+        return new Promise(function (resolve) {
           var box = window.__PORTAL_SUPABASE__ || {};
+          if (box.client && box.session && box.session.user && box.session.user.id) {
+            resolve(box);
+            return;
+          }
+          import("/portal/auth-handler.js?v=20260727-ack-sync")
+            .then(function (mod) {
+              if (mod && typeof mod.bootstrapDashboardSupabase === "function") {
+                return mod.bootstrapDashboardSupabase({ page: "staff" });
+              }
+            })
+            .catch(function () {})
+            .then(function () {
+              resolve(window.__PORTAL_SUPABASE__ || {});
+            });
+        });
+      }
+
+      function persistStaffAckToDocuments(policyId, rec, canvas) {
+        return ensurePoliciesSupabase().then(function (box) {
           var client = box.client;
           var session = box.session;
           var user = session && session.user;
-          if (!client || !user || !user.id || !policyId) return Promise.resolve(null);
-          var p = getPolicyById(policyId);
+          if (!client || !user || !user.id || !policyId) {
+            return { ok: false, error: "Not signed in — open Policies from the Staff Portal so acknowledgments sync to the matrix." };
+          }
+          var pol = String(policyId).toUpperCase();
+          var p = getPolicyById(pol) || getPolicyById(policyId);
           var title =
             "Policy acknowledgment — " +
-            policyId +
+            pol +
             (p && p.title ? " · " + p.title : "");
           var relatedDate =
             (rec && rec.dateSigned) || new Date().toISOString().slice(0, 10);
-          var doInsert = function (fileUrl) {
+          var placeholder = user.id + "/policy_ack/" + pol + ".ack";
+
+          function doInsert(fileUrl) {
             return client
               .from("documents")
               .insert([
@@ -12153,63 +12177,85 @@
                   category: "training",
                   title: title.slice(0, 200),
                   related_date: relatedDate,
-                  related_session_key: String(policyId).toUpperCase(),
-                  file_url: fileUrl,
+                  related_session_key: pol,
+                  file_url: fileUrl || placeholder,
                   source_page: "policies_portal",
                 },
               ])
               .select("id")
-              .maybeSingle();
-          };
-          if (canvas && typeof canvas.toBlob === "function") {
-            return new Promise(function (resolve) {
-              canvas.toBlob(function (blob) {
-                if (!blob) {
-                  doInsert("policy_ack/" + user.id + "/" + policyId + ".ack")
-                    .then(function (r) {
-                      resolve(r && r.data);
-                    })
-                    .catch(function () {
-                      resolve(null);
-                    });
-                  return;
-                }
-                var path =
-                  user.id +
-                  "/policy_ack/" +
-                  String(policyId).toUpperCase() +
-                  "_" +
-                  Date.now() +
-                  ".png";
-                client.storage
-                  .from("documents")
-                  .upload(path, blob, { contentType: "image/png", upsert: false })
-                  .then(function (up) {
-                    if (up.error) throw up.error;
-                    return doInsert(path);
-                  })
-                  .then(function (r) {
-                    resolve(r && r.data);
-                  })
-                  .catch(function (err) {
-                    try {
-                      console.warn("[policies] ack document", err);
-                    } catch (_) {}
-                    resolve(null);
-                  });
-              }, "image/png");
-            });
+              .maybeSingle()
+              .then(function (r) {
+                if (r.error) throw r.error;
+                return { ok: true, id: r.data && r.data.id };
+              });
           }
-          return doInsert("policy_ack/" + user.id + "/" + policyId + ".ack")
-            .then(function (r) {
-              return r && r.data;
+
+          // Skip duplicate if already on server
+          return client
+            .from("documents")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("document_type", "staff_policy_ack")
+            .eq("related_session_key", pol)
+            .limit(1)
+            .then(function (ex) {
+              if (!ex.error && ex.data && ex.data.length) {
+                return { ok: true, id: ex.data[0].id, existing: true };
+              }
+              if (!(canvas && typeof canvas.toBlob === "function")) {
+                return doInsert(placeholder);
+              }
+              return new Promise(function (resolve) {
+                canvas.toBlob(function (blob) {
+                  if (!blob) {
+                    doInsert(placeholder).then(resolve).catch(function (err) {
+                      resolve({ ok: false, error: (err && err.message) || String(err) });
+                    });
+                    return;
+                  }
+                  var path = user.id + "/policy_ack/" + pol + "_" + Date.now() + ".png";
+                  client.storage
+                    .from("documents")
+                    .upload(path, blob, { contentType: "image/png", upsert: false })
+                    .then(function (up) {
+                      if (up.error) return doInsert(placeholder);
+                      return doInsert(path);
+                    })
+                    .then(resolve)
+                    .catch(function () {
+                      doInsert(placeholder).then(resolve).catch(function (err) {
+                        resolve({ ok: false, error: (err && err.message) || String(err) });
+                      });
+                    });
+                }, "image/png");
+              });
             })
-            .catch(function () {
-              return null;
+            .catch(function (err) {
+              return { ok: false, error: (err && err.message) || String(err) };
             });
-        } catch (e) {
-          return Promise.resolve(null);
-        }
+        });
+      }
+
+      /** Push browser-only acks to documents so the admin matrix can see them. */
+      function syncLocalAcksToServer() {
+        return ensurePoliciesSupabase().then(function (box) {
+          var client = box.client;
+          var user = box.session && box.session.user;
+          if (!client || !user || !user.id) return { synced: 0 };
+          var map = loadStaffAckMap();
+          var ids = Object.keys(map || {});
+          if (!ids.length) return { synced: 0 };
+          var chain = Promise.resolve({ synced: 0 });
+          ids.forEach(function (pid) {
+            chain = chain.then(function (acc) {
+              return persistStaffAckToDocuments(pid, map[pid], null).then(function (res) {
+                if (res && res.ok && !res.existing) acc.synced += 1;
+                return acc;
+              });
+            });
+          });
+          return chain;
+        });
       }
 
       function mergeServerAcksIntoLocal(rows) {
@@ -12741,32 +12787,37 @@
               alert("Please add your signature in the box.");
               return;
             }
-            setStaffAcknowledged(policyId, {
+            var ackRec = {
               signedAt: new Date().toISOString(),
               dateSigned: String(dateEl.value).trim()
-            });
-            persistStaffAckToDocuments(
-              policyId,
-              {
-                signedAt: new Date().toISOString(),
-                dateSigned: String(dateEl.value).trim()
-              },
-              canvas
-            );
+            };
+            setStaffAcknowledged(policyId, ackRec);
             if (mainHome) refreshIndexStats(mainHome);
             btnSubmit.disabled = true;
             btnClear.disabled = true;
             dateEl.readOnly = true;
             canvas.style.pointerEvents = "none";
             var wrap = overlayBody.querySelector(".pc-staff-ack-injected");
+            var okMsg = wrap && !wrap.querySelector(".pc-staff-ack-success") ? document.createElement("p") : wrap && wrap.querySelector(".pc-staff-ack-success");
             if (wrap && !wrap.querySelector(".pc-staff-ack-success")) {
-              var okMsg = document.createElement("p");
+              okMsg = document.createElement("p");
               okMsg.className = "pc-staff-ack-success";
               okMsg.setAttribute("role", "status");
-              okMsg.textContent =
-                "Thank you. Your acknowledgment has been saved. This document is now marked as Completed on your dashboard.";
+              okMsg.textContent = "Saving acknowledgment to the portal…";
               wrap.appendChild(okMsg);
             }
+            persistStaffAckToDocuments(policyId, ackRec, canvas).then(function (res) {
+              if (!okMsg) return;
+              if (res && res.ok) {
+                okMsg.textContent =
+                  "Thank you. Your acknowledgment is saved on the portal and will show as Completed in the admin matrix.";
+              } else {
+                okMsg.textContent =
+                  "Saved on this device, but portal sync failed" +
+                  (res && res.error ? " (" + res.error + ")" : "") +
+                  ". Sign in via Staff Portal and reopen Policies so it can sync.";
+              }
+            });
           });
         })();
         overlay.classList.add("is-open");
@@ -13090,6 +13141,11 @@
       mountHomePortal();
       loadStaffContractScope().then(function () {
         if (mainHome) refreshIndexStats(mainHome);
+        return syncLocalAcksToServer();
+      }).then(function (syncRes) {
+        if (syncRes && syncRes.synced) {
+          try { console.info("[policies] synced", syncRes.synced, "local acknowledgments to portal"); } catch (_) {}
+        }
       });
 
       (function initPolicyFromQuery() {

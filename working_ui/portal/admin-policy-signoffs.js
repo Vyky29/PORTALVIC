@@ -222,6 +222,7 @@
       "Managers (Victor, Palankas, Raul) must acknowledge <em>all</em> policies and procedures. " +
       "Each service role also requires the emergency procedures (and venue overviews) for its usual venues. " +
       "Pre-contract dual roles: Luliya, Youssef and Roberto = Swim + class support; Bismark = Climb + class support. " +
+      "Completions come from portal <code>staff_policy_ack</code> documents (not browser-only saves). " +
       "Grey <code>n/a</code> means not in scope for that person." +
       "</div></div>" +
       '<div class="c4k-sessions-hub-tabs" role="tablist" aria-label="Policy sign-off groups" style="margin-bottom:12px">' + tabHtml + "</div>" +
@@ -285,26 +286,37 @@
   }
 
   function loadAcks(client) {
-    return client
-      .from("documents")
-      .select("user_id, related_session_key, created_at, document_type")
-      .eq("document_type", "staff_policy_ack")
-      .limit(5000)
-      .then(function (res) {
-        if (res.error) {
-          try { console.warn("[policy-signoffs] documents:", res.error.message); } catch (_) {}
-          return {};
-        }
-        var map = {};
-        (res.data || []).forEach(function (row) {
-          var uid = String(row.user_id || "").trim();
-          var pid = String(row.related_session_key || "").trim().toUpperCase();
-          if (!uid || !pid) return;
-          if (!map[uid]) map[uid] = {};
-          map[uid][pid] = { at: row.created_at || null };
-        });
-        return map;
+    function mapRows(rows) {
+      var map = {};
+      (rows || []).forEach(function (row) {
+        var uid = String(row.user_id || "").trim();
+        var pid = String(row.related_session_key || "").trim().toUpperCase();
+        if (!uid || !pid) return;
+        if (!map[uid]) map[uid] = {};
+        map[uid][pid] = { at: row.created_at || null };
       });
+      return map;
+    }
+
+    return client
+      .rpc("portal_admin_list_staff_policy_acks")
+      .then(function (res) {
+        if (!res.error) return mapRows(res.data || []);
+        try { console.warn("[policy-signoffs] rpc acks:", res.error.message); } catch (_) {}
+        return client
+          .from("documents")
+          .select("user_id, related_session_key, created_at, document_type")
+          .eq("document_type", "staff_policy_ack")
+          .limit(5000)
+          .then(function (res2) {
+            if (res2.error) {
+              try { console.warn("[policy-signoffs] documents:", res2.error.message); } catch (_) {}
+              return {};
+            }
+            return mapRows(res2.data || []);
+          });
+      })
+      .catch(function () { return {}; });
   }
 
   function bindContractRefresh() {
