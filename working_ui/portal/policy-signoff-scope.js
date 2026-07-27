@@ -117,8 +117,40 @@
     if (s === "swimming" || s === "swim") addTag(set, "swim");
     else if (s === "climbing" || s === "climb") addTag(set, "climb");
     else if (s === "fitness" || s === "physical") addTag(set, "fitness");
-    else if (s === "support" || s === "support_lead" || s === "manager") addTag(set, "hub");
+    else if (s === "support" || s === "support_lead") addTag(set, "hub");
+    else if (s === "manager") addTag(set, "sign_all");
     else if (s === "admin") addTag(set, "office");
+  }
+
+  /** Directors / managers acknowledge the full policy + procedure set. */
+  function isCompanyManagerProfile(profile) {
+    profile = profile || {};
+    var app = String(profile.app_role || "").toLowerCase().trim();
+    if (app === "manager") return true;
+    var role = String(profile.staff_role || "").toLowerCase().trim();
+    if (role === "manager" || role === "director") return true;
+
+    function norm(s) {
+      return String(s || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+    }
+    var blob = norm(
+      [profile.full_name, profile.username, profile.email].filter(Boolean).join(" ")
+    );
+    if (!blob) return false;
+    // Victor Matilla, Raul Salvador Gallego, Javi Palankas (Javier Arranz Escorial)
+    if (blob === "victor" || blob === "raul" || blob === "javi") return true;
+    if (/\bvictor\b/.test(blob) && (/\bmatilla\b/.test(blob) || blob.indexOf("victor ") === 0)) return true;
+    if (/\braul\b/.test(blob) && (/\bsalvador\b/.test(blob) || /\bgallego\b/.test(blob) || blob.indexOf("raul ") === 0)) {
+      return true;
+    }
+    if (/\bpalankas\b/.test(blob)) return true;
+    if (/\bjavier\b/.test(blob) && /\barranz\b/.test(blob)) return true;
+    return false;
   }
 
   function isLiveContractStatus(status) {
@@ -131,10 +163,17 @@
   /**
    * Union of tags from all live contracts (+ staff_role / app_role fallback).
    * Multi-role workers get every procedure that matches any of their roles.
+   * Managers / directors get sign_all (every policy and procedure).
    */
   function deriveTagsForWorker(profile, contracts) {
     var set = ["core"];
     profile = profile || {};
+
+    if (isCompanyManagerProfile(profile)) {
+      addTag(set, "sign_all");
+      return set;
+    }
+
     var app = String(profile.app_role || "").toLowerCase();
     if (app === "admin" || app === "ceo") addTag(set, "office");
 
@@ -177,10 +216,11 @@
     if (!doc) return false;
     if (typeof doc === "string") doc = DOC_SCOPE[String(doc).toUpperCase()];
     if (!doc) return false;
+    var wt = workerTags || ["core"];
+    if (wt.indexOf("sign_all") >= 0) return true;
     if (doc.kind === "policy") return true;
     var tags = doc.tags || ["core"];
     if (tags.indexOf("all") >= 0) return true;
-    var wt = workerTags || ["core"];
     for (var i = 0; i < tags.length; i++) {
       if (wt.indexOf(tags[i]) >= 0) return true;
     }
@@ -188,8 +228,9 @@
   }
 
   function roleLabelFromTags(tags) {
-    var nice = [];
     var t = tags || [];
+    if (t.indexOf("sign_all") >= 0) return "Manager (all)";
+    var nice = [];
     if (t.indexOf("swim") >= 0) nice.push("Swim");
     if (t.indexOf("climb") >= 0) nice.push("Climb");
     if (t.indexOf("fitness") >= 0) nice.push("Fitness");
@@ -197,13 +238,14 @@
     if (t.indexOf("day_centre") >= 0) nice.push("Day Centre");
     if (t.indexOf("home_visit") >= 0) nice.push("Home visit");
     if (t.indexOf("office") >= 0) nice.push("Office");
-    return nice.join(" · ");
+    return nice.join(" ï¿½ ");
   }
 
   global.PortalPolicySignoffScope = {
     DOC_SCOPE: DOC_SCOPE,
     ACTIVE_CONTRACT_STATUSES: ACTIVE_CONTRACT_STATUSES,
     isLiveContractStatus: isLiveContractStatus,
+    isCompanyManagerProfile: isCompanyManagerProfile,
     deriveTagsForWorker: deriveTagsForWorker,
     docApplies: docApplies,
     roleLabelFromTags: roleLabelFromTags,

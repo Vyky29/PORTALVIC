@@ -79,10 +79,11 @@
       return api.docApplies(doc, workerTags);
     }
     if (!doc) return false;
+    var wt = workerTags || ["core"];
+    if (wt.indexOf("sign_all") >= 0) return true;
     if (doc.kind === "policy") return true;
     var tags = doc.tags || ["core"];
     if (tags.indexOf("all") >= 0) return true;
-    var wt = workerTags || ["core"];
     for (var i = 0; i < tags.length; i++) {
       if (wt.indexOf(tags[i]) >= 0) return true;
     }
@@ -100,6 +101,8 @@
   }
 
   function donePct(userId, cols) {
+    // Empty catalog (misconfigured tab) must not look like "fully done".
+    if (!cols || !cols.length) return null;
     var req = requiredCols(userId, cols);
     if (!req.length) return 100;
     var n = 0;
@@ -110,6 +113,7 @@
   }
 
   function chipClass(pct) {
+    if (pct == null) return "chip--pend";
     if (pct >= 100) return "chip--ok";
     if (pct >= 50) return "chip--info";
     return "chip--pend";
@@ -177,11 +181,12 @@
             "</td>"
           );
         }).join("");
+        var pctLabel = pct == null ? "—" : pct + "%";
         return (
           "<tr>" +
           '<td style="white-space:nowrap;position:sticky;left:0;background:#fff;z-index:1"><strong>' + esc(s.full_name || s.username || "Staff") + "</strong></td>" +
           '<td class="muted" style="white-space:nowrap;font-size:12px" title="' + esc(tags.join(", ")) + '">' + esc(roleLabel(s)) + "</td>" +
-          '<td style="text-align:center"><span class="chip ' + chipClass(pct) + '" title="' + reqN + ' required in this tab">' + pct + "%</span></td>" +
+          '<td style="text-align:center"><span class="chip ' + chipClass(pct) + '" title="' + reqN + ' required in this tab">' + pctLabel + "</span></td>" +
           cells +
           "</tr>"
         );
@@ -193,6 +198,7 @@
       "<strong>How this works:</strong> company <em>policies</em> are required for everyone. " +
       "<em>Procedures</em> are required only for the worker's contract roles and venues " +
       "(e.g. swimming-only staff do not get climbing, Hub/fitness or home-visit procedures marked as outstanding). " +
+      "Managers (Victor, Palankas, Raul) must acknowledge <em>all</em> policies and procedures. " +
       "Grey <code>n/a</code> means not in scope for that person." +
       "</div></div>" +
       '<div class="c4k-sessions-hub-tabs" role="tablist" aria-label="Policy sign-off groups" style="margin-bottom:12px">' + tabHtml + "</div>" +
