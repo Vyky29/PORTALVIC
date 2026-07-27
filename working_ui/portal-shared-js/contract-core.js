@@ -9,16 +9,19 @@
    *  CONSTANTS
    * ================================================================ */
 
-  var CONTRACT_VERSION = '2.1';
+  var CONTRACT_VERSION = '2.3';
   var ADMIN_RATE = '13';
   var GBP = '\u00A3';
   var EM  = '\u2014';
+  var BULLET = '\u2022 ';
 
   var COMPANY_LEGAL_NAME         = 'clubSENsational LTD';
   var COMPANY_NUMBER             = '13755417';
   var COMPANY_REGISTERED_ADDRESS = '71-75 Shelton Street, Covent Garden, WC2H 9JQ, London, United Kingdom';
   var COMPANY_FOOTER_ADDRESS     = '71-75 Shelton Street, Covent Garden, WC2H 9JQ, London';
   var HR_CONTACT_EMAIL           = 'hr@clubsensational.co.uk';
+  var PENSION_SCHEME_NAME        = 'NEST';
+  var PENSION_SCHEME_URL         = 'www.nestpensions.org.uk';
 
   var LOGO_PATH    = 'assets/clubsensational-logo-hq.png?v=3';
   var LOGO_DISPLAY = 'assets/clubsensational-logo-hq.png?v=3';
@@ -201,7 +204,7 @@
       lines.push(item.jd.title || item.role);
       if (item.jd.summary) lines.push(item.jd.summary);
       lines.push('Typical responsibilities:');
-      (item.jd.responsibilities || []).forEach(function (r) { lines.push('- ' + r); });
+      (item.jd.responsibilities || []).forEach(function (r) { lines.push(BULLET + r); });
       if (item.jd.behaviours) lines.push('Expected behaviour: ' + item.jd.behaviours);
     });
     return lines.join('\n');
@@ -296,6 +299,43 @@
     if (!t) return false;
     if (SECTION_HEADERS.has(t)) return true;
     return t.indexOf('WRITTEN PARTICULARS') === 0 || t.indexOf('ANNEX A') === 0 || t.indexOf('ANNEX B') === 0;
+  }
+
+  function isBulletLine(line) {
+    return /^\s*[\u2022\u00B7]\s+/.test(line || '') || /^\s*[-–]\s+/.test(line || '');
+  }
+
+  function stripBulletPrefix(line) {
+    return String(line || '')
+      .replace(/^\s*[\u2022\u00B7]\s+/, '')
+      .replace(/^\s*[-–]\s+/, '')
+      .trim();
+  }
+
+  /** Turn section body lines into paragraphs + <ul> for consecutive bullet lines. */
+  function renderSectionBodyHtml(rest) {
+    var lines = String(rest || '').split('\n');
+    var html = '';
+    var i = 0;
+    while (i < lines.length) {
+      var raw = lines[i];
+      if (!String(raw).trim()) {
+        i += 1;
+        continue;
+      }
+      if (isBulletLine(raw)) {
+        html += '<ul class="contract-bullets">';
+        while (i < lines.length && isBulletLine(lines[i])) {
+          html += '<li>' + stripBulletPrefix(lines[i]) + '</li>';
+          i += 1;
+        }
+        html += '</ul>';
+        continue;
+      }
+      html += '<p>' + raw + '</p>';
+      i += 1;
+    }
+    return html || '<p></p>';
   }
 
   /* ================================================================
@@ -521,7 +561,7 @@
   function clausePension() {
     return [
       'PENSION',
-      "The Employer will meet its automatic enrolment duties under the Pensions Act 2008. Where required by law, eligible employees will be automatically enrolled into the Employer's qualifying workplace pension scheme (or a scheme nominated by the Employer). Eligibility is assessed on earnings paid by this Employer only. Further details will be provided separately and are available on request."
+      "The Employer will meet its automatic enrolment duties under the Pensions Act 2008. The Employer's current qualifying workplace pension scheme is " + PENSION_SCHEME_NAME + " (" + PENSION_SCHEME_URL + "), or such other qualifying scheme as the Employer may nominate from time to time. Where required by law, eligible employees will be automatically enrolled into that scheme. Eligibility is assessed on earnings paid by this Employer only. Further details are set out in Annex A and are available from HR on request."
     ];
   }
 
@@ -542,60 +582,60 @@
   function clauseSicknessZeroHours() {
     return [
       'SICKNESS AND DISABILITY',
-      'If the Employee is unable to perform their duties as a result of illness or injury, the Employee will inform the Company Director by email no later than the night before, or not later than 7:00 am on the day of the absence.',
-      'If the Employee satisfies the qualifying conditions for Statutory Sick Pay (SSP) under UK law, they will be entitled to receive SSP for any period of sickness or injury during agreed hours. No contractual sick pay is payable unless stated in a separate policy.'
+      BULLET + 'If the Employee is unable to perform their duties as a result of illness or injury, the Employee will inform the Company Director by email no later than the night before, or not later than 7:00 am on the day of the absence.',
+      BULLET + 'If the Employee satisfies the qualifying conditions for Statutory Sick Pay (SSP) under UK law, they will be entitled to receive SSP for any period of sickness or injury during agreed hours. No contractual sick pay is payable unless stated in a separate policy.'
     ];
   }
 
   function clauseSicknessSalaried() {
     return [
       'SICKNESS AND DISABILITY',
-      'If the Employee is unable to perform their duties as a result of illness or injury, the Employee will inform the Company Director by email no later than 7:00 am on the day of the absence.',
-      "Subject to compliance with this Agreement and the Employer's Sickness Policy, the Employee shall receive sick pay in accordance with the Sickness Policy, which may be amended from time to time. Qualifying days for SSP purposes are Monday to Friday."
+      BULLET + 'If the Employee is unable to perform their duties as a result of illness or injury, the Employee will inform the Company Director by email no later than 7:00 am on the day of the absence.',
+      BULLET + "Subject to compliance with this Agreement and the Employer's Sickness Policy, the Employee shall receive sick pay in accordance with the Sickness Policy, which may be amended from time to time. Qualifying days for SSP purposes are Monday to Friday."
     ];
   }
 
   function clauseDisciplinary() {
     return [
       'DISCIPLINARY PROCEDURE',
-      "The Employer's disciplinary procedure, as amended from time to time, applies to the Employee.",
-      'The disciplinary procedure is set out in the Employee Manual and will be provided to the Employee or made available on request.'
+      BULLET + "The Employer's disciplinary procedure, as amended from time to time, applies to the Employee.",
+      BULLET + 'The disciplinary procedure is set out in the Employee Manual and will be provided to the Employee or made available on request.'
     ];
   }
 
   function clauseGrievance() {
     return [
       'GRIEVANCE PROCEDURE',
-      "The Employer's grievance procedure, as amended from time to time, applies to the Employee.",
-      'The grievance procedure is set out in the Employee Manual and will be provided to the Employee or made available on request.'
+      BULLET + "The Employer's grievance procedure, as amended from time to time, applies to the Employee.",
+      BULLET + 'The grievance procedure is set out in the Employee Manual and will be provided to the Employee or made available on request.'
     ];
   }
 
   function clauseSafeguardingDBS() {
     return [
       'SAFEGUARDING AND DBS',
-      "The Employee acknowledges that their role may involve regulated activity with children and/or vulnerable adults. The Employer will apply for an enhanced Disclosure and Barring Service (DBS) check (with barred-list check where applicable) before the Employee commences regulated duties, and may require further checks at intervals or where there is cause.",
-      'The Employee must disclose any relevant convictions, cautions, reprimands or warnings (including those that are not "protected" under the Rehabilitation of Offenders Act 1974 (Exceptions) Order) before starting work and promptly upon any change.',
-      'Employment is conditional on a satisfactory DBS disclosure. Failure to disclose relevant information, or an unsatisfactory disclosure, may result in withdrawal of any offer or summary dismissal.',
-      "The Employee will comply with the Employer's Safeguarding Policy and report any safeguarding concern to the Designated Safeguarding Lead without delay."
+      BULLET + "The Employee acknowledges that their role may involve regulated activity with children and/or vulnerable adults. The Employer will apply for an enhanced Disclosure and Barring Service (DBS) check (with barred-list check where applicable) before the Employee commences regulated duties, and may require further checks at intervals or where there is cause.",
+      BULLET + 'The Employee must disclose any relevant convictions, cautions, reprimands or warnings (including those that are not "protected" under the Rehabilitation of Offenders Act 1974 (Exceptions) Order) before starting work and promptly upon any change.',
+      BULLET + 'Employment is conditional on a satisfactory DBS disclosure. Failure to disclose relevant information, or an unsatisfactory disclosure, may result in withdrawal of any offer or summary dismissal.',
+      BULLET + "The Employee will comply with the Employer's Safeguarding Policy and report any safeguarding concern to the Designated Safeguarding Lead without delay."
     ];
   }
 
   function clauseDataProtection() {
     return [
       'DATA PROTECTION',
-      "The Employer will process personal data relating to the Employee in accordance with its Data Protection Policy and the UK General Data Protection Regulation (UK GDPR) and the Data Protection Act 2018.",
-      "The Employee consents to the Employer processing such data for the purposes of employment administration, payroll, pensions, DBS checks, health and safety, equal opportunities monitoring and any other lawful purpose connected with the employment.",
-      "Details of the personal data held, the purposes of processing, and the Employee's rights under data protection legislation are set out in the Employee Privacy Notice, available from HR on request."
+      BULLET + "The Employer will process personal data relating to the Employee in accordance with its Data Protection Policy and the UK General Data Protection Regulation (UK GDPR) and the Data Protection Act 2018.",
+      BULLET + "The Employee consents to the Employer processing such data for the purposes of employment administration, payroll, pensions, DBS checks, health and safety, equal opportunities monitoring and any other lawful purpose connected with the employment.",
+      BULLET + "Details of the personal data held, the purposes of processing, and the Employee's rights under data protection legislation are set out in the Employee Privacy Notice, available from HR on request."
     ];
   }
 
   function clauseConfidentiality() {
     return [
       'CONFIDENTIAL INFORMATION',
-      'The Employee acknowledges that, during employment, they may access confidential information belonging to the Employer.',
-      'The Employee agrees to keep all confidential information strictly confidential and not to disclose, use or share such information except as required for the proper performance of their duties or as authorised by the Employer.',
-      'This obligation will continue after the end of employment.', '',
+      BULLET + 'The Employee acknowledges that, during employment, they may access confidential information belonging to the Employer.',
+      BULLET + 'The Employee agrees to keep all confidential information strictly confidential and not to disclose, use or share such information except as required for the proper performance of their duties or as authorised by the Employer.',
+      BULLET + 'This obligation will continue after the end of employment.', '',
       'OWNERSHIP OF CONFIDENTIAL INFORMATION',
       'All confidential information, documents, materials, systems, resources and work-related information remain the property of the Employer.', '',
       'RETURN OF CONFIDENTIAL INFORMATION',
@@ -620,7 +660,9 @@
   function clauseTraining() {
     return [
       'TRAINING',
-      'The Employer may require the Employee to undertake training relevant to the role, including mandatory safeguarding, health and safety and equality training. Reasonable training costs will be met by the Employer. Details of any training obligation and any repayment clause will be notified in writing before the training commences.'
+      BULLET + 'The Employer may require the Employee to undertake training relevant to the role, including mandatory safeguarding, health and safety and equality training.',
+      BULLET + 'Reasonable training costs will be met by the Employer.',
+      BULLET + 'Details of any training obligation and any repayment clause will be notified in writing before the training commences.'
     ];
   }
 
@@ -641,9 +683,9 @@
   function clauseGeneralProvisions() {
     return [
       'GENERAL PROVISIONS',
-      '{{CONCURRENT_CLAUSE}}',
-      'Any amendment or modification to this Agreement will only be binding if evidenced in writing and signed by both parties or their authorised representatives.',
-      '{{SUPERSEDE_CLAUSE}}'
+      BULLET + '{{CONCURRENT_CLAUSE}}',
+      BULLET + 'Any amendment or modification to this Agreement will only be binding if evidenced in writing and signed by both parties or their authorised representatives.',
+      BULLET + '{{SUPERSEDE_CLAUSE}}'
     ];
   }
 
@@ -677,7 +719,7 @@
 
     var positionParagraph = (k === 'zero_hours')
       ? 'You are employed on a zero-hours contract. You may not be automatically enrolled when you start if your earnings from clubSENsational are below the automatic enrolment threshold. This is common where staff also work for other employers.'
-      : 'You are employed on a ' + kindLabel + ' salaried contract. If your qualifying earnings from clubSENsational exceed the automatic enrolment earnings trigger in a pay reference period, you will be automatically enrolled into our workplace pension scheme.';
+      : 'You are employed on a ' + kindLabel + ' salaried contract. If your qualifying earnings from clubSENsational exceed the automatic enrolment earnings trigger in a pay reference period, you will be automatically enrolled into our workplace pension scheme (' + PENSION_SCHEME_NAME + ').';
 
     return [
       'ANNEX A ' + EM + ' WORKPLACE PENSION (AUTO-ENROLMENT INFORMATION)',
@@ -686,22 +728,25 @@
       'From: ' + COMPANY_LEGAL_NAME + ', ' + COMPANY_REGISTERED_ADDRESS,
       'Dear {{EMPLOYEE_FULL_NAME}},',
       'This letter is issued with your ' + kindLabel + ' employment contract to explain how workplace pension automatic enrolment applies to your employment with clubSENsational Ltd. We are required by UK law (the Pensions Act 2008) to operate qualifying workplace pension arrangements and to give you this information within six weeks of starting work with us.',
+      'OUR WORKPLACE PENSION SCHEME',
+      'Our current qualifying workplace pension scheme is ' + PENSION_SCHEME_NAME + '. Further information about ' + PENSION_SCHEME_NAME + ' is available at ' + PENSION_SCHEME_URL + '. The Employer may nominate a different qualifying scheme from time to time; if that happens, we will tell you in writing.',
       'HOW AUTO-ENROLMENT WORKS',
       'Automatic enrolment means eligible workers are enrolled into a workplace pension scheme unless they choose to opt out within one month. Your eligibility is assessed using qualifying earnings paid by clubSENsational only. Earnings from any other employer are not counted, even if you have a higher salary elsewhere.',
       'For the current tax year, the main earnings threshold for automatic enrolment is ' + GBP + '10,000 per year from this Employer (' + GBP + '833 per month or ' + GBP + '192 per week). The lower qualifying earnings threshold is ' + GBP + '6,240 per year (' + GBP + '520 per month or ' + GBP + '120 per week).',
       'YOUR CURRENT POSITION',
       positionParagraph,
-      'We will assess your earnings from clubSENsational on each payday. If you meet the eligibility criteria in a pay reference period, we will automatically enrol you and write to you, unless a lawful postponement applies.',
+      'We will assess your earnings from clubSENsational on each payday. If you meet the eligibility criteria in a pay reference period, we will automatically enrol you into ' + PENSION_SCHEME_NAME + ' (or such other qualifying scheme as then applies) and write to you, unless a lawful postponement applies.',
       'YOUR RIGHTS',
-      '1. If you earn more than ' + GBP + '10,000 per year from clubSENsational and are aged at least 22 but under State Pension Age: we must automatically enrol you and pay employer pension contributions (minimum 3% of qualifying earnings, subject to scheme rules).',
-      '2. If you earn between ' + GBP + '6,240 and ' + GBP + '10,000 per year from clubSENsational: you may opt in to our workplace pension scheme. If you opt in, we must pay employer contributions.',
-      '3. If you earn below ' + GBP + '6,240 per year from clubSENsational: you may request to join our pension scheme, but we are not required to pay employer contributions.',
-      '4. If you are automatically enrolled: you may opt out within one month of enrolment and receive a refund of contributions paid in that period, in accordance with scheme rules.',
+      BULLET + 'If you earn more than ' + GBP + '10,000 per year from clubSENsational and are aged at least 22 but under State Pension Age: we must automatically enrol you and pay employer pension contributions (minimum 3% of qualifying earnings, subject to scheme rules).',
+      BULLET + 'If you earn between ' + GBP + '6,240 and ' + GBP + '10,000 per year from clubSENsational: you may opt in to our workplace pension scheme (' + PENSION_SCHEME_NAME + '). If you opt in, we must pay employer contributions.',
+      BULLET + 'If you earn below ' + GBP + '6,240 per year from clubSENsational: you may request to join our pension scheme, but we are not required to pay employer contributions.',
+      BULLET + 'If you are automatically enrolled: you may opt out within one month of enrolment and receive a refund of contributions paid in that period, in accordance with scheme rules.',
       'CONTRIBUTIONS',
-      'Where contributions apply, the minimum total contribution is ordinarily 8% of qualifying earnings between ' + GBP + '6,240 and ' + GBP + '50,270 per year, of which the employer pays at least 3% and the worker pays the remainder (with tax relief where applicable). Actual rates depend on the pension scheme rules.',
+      'Where contributions apply, the minimum total contribution is ordinarily 8% of qualifying earnings between ' + GBP + '6,240 and ' + GBP + '50,270 per year, of which the employer pays at least 3% and the worker pays the remainder (with tax relief where applicable). Actual rates depend on the ' + PENSION_SCHEME_NAME + ' scheme rules (or those of any replacement qualifying scheme).',
       'CONTACT AND FURTHER INFORMATION',
-      'To opt in, ask questions, or notify us of a change in circumstances, contact HR at ' + HR_CONTACT_EMAIL + '.',
-      'Independent guidance is available from The Pensions Regulator (www.thepensionsregulator.gov.uk) and MoneyHelper (www.moneyhelper.org.uk).',
+      BULLET + 'To opt in, ask questions, or notify us of a change in circumstances, contact HR at ' + HR_CONTACT_EMAIL + '.',
+      BULLET + 'Scheme information: ' + PENSION_SCHEME_NAME + ' ' + EM + ' ' + PENSION_SCHEME_URL + '.',
+      BULLET + 'Independent guidance is available from The Pensions Regulator (www.thepensionsregulator.gov.uk) and MoneyHelper (www.moneyhelper.org.uk).',
       'Yours sincerely,',
       '{{DIRECTOR_NAME}}',
       'For and on behalf of clubSENsational Ltd'
@@ -729,32 +774,32 @@
       ], [''],
       [
         'SCOPE OF THIS AGREEMENT',
-        'This Agreement covers Activity Services only (including swimming, climbing, fitness and related support sessions delivered outside the Day Centre).',
-        'This Agreement does not cover Day Centre Services. If the Employee also works in the Day Centre, that engagement must be set out in a separate Day Centre employment agreement. The two agreements may operate concurrently.'
+        BULLET + 'This Agreement covers Activity Services only (including swimming, climbing, fitness and related support sessions delivered outside the Day Centre).',
+        BULLET + 'This Agreement does not cover Day Centre Services. If the Employee also works in the Day Centre, that engagement must be set out in a separate Day Centre employment agreement. The two agreements may operate concurrently.'
       ], [''],
       [
         'JOB TITLE AND DESCRIPTION',
         'The initial job title of the Employee will be:',
         '{{JOB_TITLE}}',
-        'The Employee agrees to be employed on the terms and conditions set out in this Agreement.',
-        'The Employee agrees to be subject to the general supervision of and act pursuant to the orders, advice and direction of the Employer.',
         '{{DUTIES_DESCRIPTION}}',
-        "The Employee's job title or duties may be changed by agreement and with the approval of both the Employee and the Employer or after a notice period required under law.",
-        "The Employee agrees to abide by the Employer's rules, regulations, policies and practices, including those concerning work schedules, annual leave and sick leave, as they may from time to time be adopted or modified.",
-        "The Employee agrees to follow the Employer's Equipment and Uniform Policy and is responsible for the proper use, maintenance and care of any equipment, tools, uniforms and materials provided by the Employer for work purposes.",
-        'The Employee warrants that they are legally allowed to work in England.'
+        BULLET + 'The Employee agrees to be employed on the terms and conditions set out in this Agreement.',
+        BULLET + 'The Employee agrees to be subject to the general supervision of and act pursuant to the orders, advice and direction of the Employer.',
+        BULLET + "The Employee's job title or duties may be changed by agreement and with the approval of both the Employee and the Employer or after a notice period required under law.",
+        BULLET + "The Employee agrees to abide by the Employer's rules, regulations, policies and practices, including those concerning work schedules, annual leave and sick leave, as they may from time to time be adopted or modified.",
+        BULLET + "The Employee agrees to follow the Employer's Equipment and Uniform Policy and is responsible for the proper use, maintenance and care of any equipment, tools, uniforms and materials provided by the Employer for work purposes.",
+        BULLET + 'The Employee warrants that they are legally allowed to work in England.'
       ], [''],
       [
         'EMPLOYEE REMUNERATION',
         'Remuneration paid to the Employee for the services rendered by the Employee under this Agreement will consist of:', '',
         '{{DELIVERY_REMUNERATION}}',
-        'The hourly rates stated above are inclusive rates. Each stated hourly rate already includes statutory rolled-up holiday pay calculated at 12.07% of the ordinary (basic) element of pay for hours worked. The Employer will not pay an additional 12.07% on top of the stated hourly rates. The breakdown between ordinary pay and rolled-up holiday pay will be itemised on payslips as set out under Holiday Entitlement.',
-        'Session feedback and records. Completing required session feedback and session records forms part of the Employee\'s duties. The Delivery Service hourly rate(s) stated above are inclusive of a reasonable period of post-session administration (typically up to about ten minutes per session). No additional payment is due for that administration unless the Employer authorises additional paid time in writing.',
-        "If the Employer cancels a scheduled shift with at least 24 hours' notice, the Employee shall not be entitled to remuneration for that shift.",
-        'If the cancellation occurs less than 24 hours before the scheduled start time, the Employee shall be entitled to full remuneration for the shift as originally scheduled.',
-        'This remuneration will be payable once per month while this Agreement is in force.',
-        "The Employer is entitled to deduct from the Employee's remuneration, or from any other remuneration in whatever form, any applicable deductions and remittances as required by law.",
-        "The Employer will reimburse the Employee for all reasonable expenses, in accordance with the Employer's lawful policies as in effect from time to time."
+        BULLET + 'The hourly rates stated above are inclusive rates and already include statutory rolled-up holiday pay at 12.07% of the ordinary (basic) element. No additional 12.07% is paid on top. Payslips will itemise ordinary pay and rolled-up holiday pay as set out under Holiday Entitlement.',
+        BULLET + 'Session feedback and records form part of the Employee\'s duties. The Delivery Service hourly rate(s) stated above are inclusive of a reasonable period of post-session administration (typically up to about ten minutes per session). No additional payment is due for that administration unless the Employer authorises additional paid time in writing.',
+        BULLET + "If the Employer cancels a scheduled shift with at least 24 hours' notice, the Employee shall not be entitled to remuneration for that shift.",
+        BULLET + 'If the cancellation occurs less than 24 hours before the scheduled start time, the Employee shall be entitled to full remuneration for the shift as originally scheduled.',
+        BULLET + 'This remuneration will be payable once per month while this Agreement is in force.',
+        BULLET + "The Employer is entitled to deduct from the Employee's remuneration, or from any other remuneration in whatever form, any applicable deductions and remittances as required by law.",
+        BULLET + "The Employer will reimburse the Employee for all reasonable expenses, in accordance with the Employer's lawful policies as in effect from time to time."
       ], [''],
       clausePension(), [''],
       [
@@ -766,8 +811,8 @@
         'TIME OF WORK',
         "The Employee's normal hours of work, including breaks, are as follows:",
         '{{NORMAL_HOURS_OF_WORK}}',
-        'This is a zero-hours contract. The Employer does not guarantee any minimum hours of work. Hours will be offered as and when work is available and the Employee is not obliged to accept any hours offered.',
-        "However, the Employee will, on receiving reasonable notice from the Employer, work additional hours and/or hours outside of the Employee's normal hours of work as deemed necessary by the Employer to meet business needs, as permitted by law."
+        BULLET + 'This is a zero-hours contract. The Employer does not guarantee any minimum hours of work. Hours will be offered as and when work is available and the Employee is not obliged to accept any hours offered.',
+        BULLET + "However, the Employee will, on receiving reasonable notice from the Employer, work additional hours and/or hours outside of the Employee's normal hours of work as deemed necessary by the Employer to meet business needs, as permitted by law."
       ], [''],
       [
         'NO EXCLUSIVITY',
@@ -775,22 +820,18 @@
       ], [''],
       [
         'PROBATION PERIOD',
-        "The Employee's employment will be subject to a probationary period of three (3) months commencing from the Commencement Date.",
-        "During the probation period, the Employee's performance and conduct will be reviewed. At the end of the probationary period, the Employee will be informed in writing whether their employment is to be confirmed, extended, or terminated.",
-        "The Employer reserves the right to extend the probationary period by up to a further three months if additional time is needed to assess the Employee's performance."
+        BULLET + "The Employee's employment will be subject to a probationary period of three (3) months commencing from the Commencement Date.",
+        BULLET + "During the probation period, the Employee's performance and conduct will be reviewed. At the end of the probationary period, the Employee will be informed in writing whether their employment is to be confirmed, extended, or terminated.",
+        BULLET + "The Employer reserves the right to extend the probationary period by up to a further three months if additional time is needed to assess the Employee's performance."
       ], [''],
       clauseSicknessZeroHours(), [''],
       [
         'HOLIDAY ENTITLEMENT',
-        'The Employee is an irregular-hours worker for the purposes of the Working Time Regulations 1998 (as amended).',
-        "The Employer's holiday year runs between 1 January and 31 December.",
-        "Statutory holiday entitlement accrues at the rate of 12.07% of hours worked in each pay period, subject to the statutory maximum of 5.6 weeks' paid annual leave in each holiday year.",
-        'Inclusive hourly rates. The hourly rates set out under Employee Remuneration are inclusive of statutory rolled-up holiday pay. The total amount payable per hour already comprises both: (a) ordinary pay for work done; and (b) rolled-up holiday pay at the rate of 12.07% of the ordinary (basic) element of that pay. Accordingly, the Employer does not pay a further 12.07% in addition to the stated hourly rates.',
-        'Itemisation on payslips. For transparency and compliance with the Working Time Regulations 1998 (as amended), each payslip will itemise separately: (i) ordinary pay for hours worked in the pay period; and (ii) rolled-up holiday pay equal to 12.07% of qualifying ordinary pay for that pay period. Those two amounts together equal the inclusive hourly rate(s) multiplied by the hours worked in the pay period.',
-        'Worked example (illustrative only). If the inclusive hourly rate is £24.00, ordinary pay is approximately £21.41 per hour and rolled-up holiday pay is approximately £2.59 per hour. Ten hours worked would appear on the payslip as ordinary pay of approximately £214.10 and rolled-up holiday pay of approximately £25.84 (total £239.94, being 10 × £24.00). Actual figures will follow the rates and hours applicable to the Employee.',
-        'Payment timing. Rolled-up holiday pay is paid together with ordinary pay in each pay period. It is not paid again when holiday leave is taken. When the Employee takes approved holiday leave, the Employee will not receive a further holiday payment for those hours or days, because holiday pay has already been paid on a rolled-up basis.',
-        'Right to take leave. The Employee remains entitled to take holiday leave. Booking, notice and approval arrangements are set out in the Employee Manual (as amended from time to time).',
-        "On termination, any outstanding holiday pay due under statute will be calculated and paid in accordance with the Working Time Regulations 1998 and the Employer's lawful payroll practice."
+        BULLET + 'The Employee is an irregular-hours worker for the purposes of the Working Time Regulations 1998 (as amended).',
+        BULLET + "The Employer's holiday year runs between 1 January and 31 December.",
+        BULLET + "Statutory holiday entitlement accrues at 12.07% of hours worked in each pay period, subject to the statutory maximum of 5.6 weeks' paid annual leave in each holiday year.",
+        BULLET + 'The hourly rates in Employee Remuneration already include statutory rolled-up holiday pay at 12.07% of the ordinary (basic) element. No further 12.07% is paid on top. Payslips will itemise ordinary pay and rolled-up holiday pay separately; together they equal the inclusive hourly rate(s) for hours worked.',
+        BULLET + 'Rolled-up holiday pay is paid with ordinary pay each pay period and is not paid again when holiday leave is taken. The Employee remains entitled to take holiday leave (booking and approval: Employee Manual). On termination, any outstanding holiday pay due under statute will be paid in accordance with the Working Time Regulations 1998 and the Employer\'s lawful payroll practice.'
       ], [''],
       clauseWorkingTime(), [''],
       clauseOtherPaidLeave(), [''],
@@ -805,30 +846,30 @@
       clauseOtherBenefits(), [''],
       [
         'TERMINATION OF EMPLOYMENT',
-        "The Employer may terminate the Employee's employment by giving not less than two weeks' written notice, or such longer period of notice as required by statute, except where summary dismissal without notice is permitted by law for gross misconduct.",
-        "If the Employee wishes to terminate their employment, they must provide not less than two weeks' written notice, or such longer period of notice as required by statute.",
-        'Upon termination, the Employer will pay any outstanding remuneration and accrued holiday entitlement calculated up to the termination date.'
+        BULLET + "The Employer may terminate the Employee's employment by giving not less than two weeks' written notice, or such longer period of notice as required by statute, except where summary dismissal without notice is permitted by law for gross misconduct.",
+        BULLET + "If the Employee wishes to terminate their employment, they must provide not less than two weeks' written notice, or such longer period of notice as required by statute.",
+        BULLET + 'Upon termination, the Employer will pay any outstanding remuneration and accrued holiday entitlement calculated up to the termination date.'
       ], [''],
       clauseGoverningLaw(), [''],
       clauseGeneralProvisions(), [''],
       [
         'WRITTEN PARTICULARS (ERA 1996, s.1)',
-        'Employee: {{EMPLOYEE_FULL_NAME}}, {{EMPLOYEE_ADDRESS}}',
-        'Employer: clubSENsational Ltd, ' + COMPANY_REGISTERED_ADDRESS + ' (Company No. ' + COMPANY_NUMBER + ')',
-        'Job Title: {{JOB_TITLE}}',
-        'Start Date: {{COMMENCEMENT_DATE}} (zero-hours Activity Services; no fixed end date)',
-        'Continuous Employment: {{CONTINUOUS_EMPLOYMENT_SHORT}}',
-        'Pay: Inclusive hourly rates as set out in Employee Remuneration (ordinary pay plus rolled-up holiday pay at 12.07% of the ordinary element, itemised separately on payslips; no additional 12.07% on top of the stated rates), paid monthly.',
-        'Hours: Variable according to business need; no minimum guaranteed hours; days and hours vary according to offered and accepted shifts.',
-        'Place of Work: {{PLACE_OF_WORK}}',
-        'Holiday: Irregular-hours worker; accrual at 12.07%; rolled-up holiday pay included within the stated hourly rates and itemised on payslips as above.',
-        'Pension: Auto-enrolment if eligible under UK law (earnings assessed by this Employer only).',
-        'Notice: Not less than two weeks, or statutory minimum if greater.',
-        'Probation: Three months from commencement.',
-        'Obligatory training: Safeguarding and role-required training as directed.',
-        'Other benefits: None beyond those stated in this Agreement / statute.',
-        'Collective Agreements: None.',
-        'Policies: Disciplinary, Grievance, Equipment & Uniform, Safeguarding, H&S, Data Protection (Employee Manual).'
+        BULLET + 'Employee: {{EMPLOYEE_FULL_NAME}}, {{EMPLOYEE_ADDRESS}}',
+        BULLET + 'Employer: clubSENsational Ltd, ' + COMPANY_REGISTERED_ADDRESS + ' (Company No. ' + COMPANY_NUMBER + ')',
+        BULLET + 'Job Title: {{JOB_TITLE}}',
+        BULLET + 'Start Date: {{COMMENCEMENT_DATE}} (zero-hours Activity Services; no fixed end date)',
+        BULLET + 'Continuous Employment: {{CONTINUOUS_EMPLOYMENT_SHORT}}',
+        BULLET + 'Pay: Inclusive hourly rates as set out in Employee Remuneration (ordinary pay plus rolled-up holiday pay at 12.07% of the ordinary element, itemised separately on payslips; no additional 12.07% on top of the stated rates), paid monthly.',
+        BULLET + 'Hours: Variable according to business need; no minimum guaranteed hours; days and hours vary according to offered and accepted shifts.',
+        BULLET + 'Place of Work: {{PLACE_OF_WORK}}',
+        BULLET + 'Holiday: Irregular-hours worker; accrual at 12.07%; rolled-up holiday pay included within the stated hourly rates and itemised on payslips as above.',
+        BULLET + 'Pension: ' + PENSION_SCHEME_NAME + ' (or other qualifying scheme nominated by the Employer); auto-enrolment if eligible under UK law (earnings assessed by this Employer only).',
+        BULLET + 'Notice: Not less than two weeks, or statutory minimum if greater.',
+        BULLET + 'Probation: Three months from commencement.',
+        BULLET + 'Obligatory training: Safeguarding and role-required training as directed.',
+        BULLET + 'Other benefits: None beyond those stated in this Agreement / statute.',
+        BULLET + 'Collective Agreements: None.',
+        BULLET + 'Policies: Disciplinary, Grievance, Equipment & Uniform, Safeguarding, H&S, Data Protection (Employee Manual).'
       ], [''],
       clauseSignatures(), [''],
       clauseAnnexPension('zero_hours'), [''],
@@ -854,30 +895,30 @@
       ], [''],
       [
         'SCOPE OF THIS AGREEMENT',
-        'This Agreement covers Day Centre Services only (ordinarily Monday to Friday, 11:00 to 16:00).',
-        'This Agreement does not cover Activity Services delivered outside the Day Centre (such as evening swimming, climbing or related sessions). If the Employee also performs Activity Services, that engagement must be set out in a separate zero-hours Activity Services agreement. The two agreements may operate concurrently.'
+        BULLET + 'This Agreement covers Day Centre Services only (ordinarily Monday to Friday, 11:00 to 16:00).',
+        BULLET + 'This Agreement does not cover Activity Services delivered outside the Day Centre (such as evening swimming, climbing or related sessions). If the Employee also performs Activity Services, that engagement must be set out in a separate zero-hours Activity Services agreement. The two agreements may operate concurrently.'
       ], [''],
       [
         'JOB TITLE AND DESCRIPTION',
         'The initial job title of the Employee will be:',
         '{{JOB_TITLE}}',
-        'The Employee agrees to be employed on the terms and conditions set out in this Agreement.',
-        'The Employee agrees to be subject to the general supervision of and act pursuant to the orders, advice and direction of the Employer.',
         '{{DUTIES_DESCRIPTION}}',
-        "The Employee's job title or duties may be changed by agreement and with the approval of both the Employee and the Employer or after a notice period required under law.",
-        "The Employee agrees to abide by the Employer's rules, regulations, policies and practices, including those concerning work schedules, annual leave and sick leave, as they may from time to time be adopted or modified.",
-        "The Employee agrees to follow the Employer's Equipment and Uniform Policy and is responsible for the proper use, maintenance and care of any equipment, tools, uniforms and materials provided by the Employer for work purposes.",
-        'The Employee warrants that they are legally allowed to work in England.'
+        BULLET + 'The Employee agrees to be employed on the terms and conditions set out in this Agreement.',
+        BULLET + 'The Employee agrees to be subject to the general supervision of and act pursuant to the orders, advice and direction of the Employer.',
+        BULLET + "The Employee's job title or duties may be changed by agreement and with the approval of both the Employee and the Employer or after a notice period required under law.",
+        BULLET + "The Employee agrees to abide by the Employer's rules, regulations, policies and practices, including those concerning work schedules, annual leave and sick leave, as they may from time to time be adopted or modified.",
+        BULLET + "The Employee agrees to follow the Employer's Equipment and Uniform Policy and is responsible for the proper use, maintenance and care of any equipment, tools, uniforms and materials provided by the Employer for work purposes.",
+        BULLET + 'The Employee warrants that they are legally allowed to work in England.'
       ], [''],
       [
         'EMPLOYEE REMUNERATION',
         'Remuneration paid to the Employee for the services rendered by the Employee under this Agreement will consist of a salary of:', '',
         '{{ANNUAL_SALARY}} per year (gross), paid monthly in arrears via payroll on or around the last working day of the month. Statutory deductions will be made.',
-        'The monthly salary is payable while this Agreement remains in force and is not reduced by individual session cancellations within the agreed Normal Hours of Work, provided the Employee remains available for work in accordance with this Agreement.',
-        'Session feedback and daily records form part of the Employee\'s duties under this Agreement. Where such records are completed during Normal Hours of Work, they are covered by the salary. Where the Employer requires reasonable post-session or end-of-day feedback/records outside Normal Hours of Work, that time is included within the overall remuneration for the role (typically up to about ten minutes per session or working day) unless the Employer authorises additional paid time in writing.',
-        'This remuneration will be payable once per month while this Agreement is in force.',
-        "The Employer is entitled to deduct from the Employee's remuneration, or from any other remuneration in whatever form, any applicable deductions and remittances as required by law.",
-        "The Employer will reimburse the Employee for all reasonable expenses, in accordance with the Employer's lawful policies as in effect from time to time."
+        BULLET + 'The monthly salary is payable while this Agreement remains in force and is not reduced by individual session cancellations within the agreed Normal Hours of Work, provided the Employee remains available for work in accordance with this Agreement.',
+        BULLET + 'Session feedback and daily records form part of the Employee\'s duties under this Agreement. Where such records are completed during Normal Hours of Work, they are covered by the salary. Where the Employer requires reasonable post-session or end-of-day feedback/records outside Normal Hours of Work, that time is included within the overall remuneration for the role (typically up to about ten minutes per session or working day) unless the Employer authorises additional paid time in writing.',
+        BULLET + 'This remuneration will be payable once per month while this Agreement is in force.',
+        BULLET + "The Employer is entitled to deduct from the Employee's remuneration, or from any other remuneration in whatever form, any applicable deductions and remittances as required by law.",
+        BULLET + "The Employer will reimburse the Employee for all reasonable expenses, in accordance with the Employer's lawful policies as in effect from time to time."
       ], [''],
       clausePension(), [''],
       [
@@ -891,14 +932,14 @@
         'The Employee\'s normal hours of work ("Normal Hours of Work") are as follows:',
         '{{WEEKLY_HOURS}} hours per week.',
         '{{NORMAL_HOURS_OF_WORK}}',
-        'Each working day runs from 11:00 to 16:00, totalling 5 paid hours per day. A short comfort break of 10 to 15 minutes may be taken when operationally possible; this does not reduce the paid hours.',
-        "However, the Employee will, on receiving reasonable notice from the Employer, work additional hours and/or hours outside of the Employee's Normal Hours of Work as deemed necessary by the Employer to meet business needs, as permitted by law."
+        BULLET + 'Each working day runs from 11:00 to 16:00, totalling 5 paid hours per day. A short comfort break of 10 to 15 minutes may be taken when operationally possible; this does not reduce the paid hours.',
+        BULLET + "However, the Employee will, on receiving reasonable notice from the Employer, work additional hours and/or hours outside of the Employee's Normal Hours of Work as deemed necessary by the Employer to meet business needs, as permitted by law."
       ], [''],
       [
         'PROBATION PERIOD',
-        "The Employee's employment will be subject to a probationary period of six (6) months commencing from the Commencement Date.",
-        "During the probation period, the Employee's performance and conduct will be reviewed. At the end of the probationary period, the Employee will be informed in writing whether their employment is to be confirmed, extended, or terminated.",
-        "The Employer reserves the right to extend the probationary period by up to a further three months if additional time is needed to assess the Employee's performance."
+        BULLET + "The Employee's employment will be subject to a probationary period of six (6) months commencing from the Commencement Date.",
+        BULLET + "During the probation period, the Employee's performance and conduct will be reviewed. At the end of the probationary period, the Employee will be informed in writing whether their employment is to be confirmed, extended, or terminated.",
+        BULLET + "The Employer reserves the right to extend the probationary period by up to a further three months if additional time is needed to assess the Employee's performance."
       ], [''],
       [
         'PART-TIME WORKER TREATMENT',
@@ -907,10 +948,10 @@
       clauseSicknessSalaried(), [''],
       [
         'HOLIDAY ENTITLEMENT',
-        "The Employer's holiday year runs between 1 January and 31 December.",
-        "The Employee is entitled to paid annual leave calculated on a pro-rata basis against a full-time entitlement of 28 days plus the usual eight public holidays (bank holidays) in England and Wales (based on a 40-hour, five-day working week).",
-        "Holiday entitlement is pro-rated according to the Employee's contracted weekly hours and is taken as paid leave (it is not rolled up into salary). Holiday pay will be calculated in accordance with the Working Time Regulations 1998 and the Employer's lawful payroll practice.",
-        'Requests for annual leave must be submitted in writing and are subject to the approval of the Employer. The Employer may require the Employee to take holiday on specified dates, giving reasonable notice.'
+        BULLET + "The Employer's holiday year runs between 1 January and 31 December.",
+        BULLET + "The Employee is entitled to paid annual leave calculated on a pro-rata basis against a full-time entitlement of 28 days plus the usual eight public holidays (bank holidays) in England and Wales (based on a 40-hour, five-day working week).",
+        BULLET + "Holiday entitlement is pro-rated according to the Employee's contracted weekly hours and is taken as paid leave (it is not rolled up into salary). Holiday pay will be calculated in accordance with the Working Time Regulations 1998 and the Employer's lawful payroll practice.",
+        BULLET + 'Requests for annual leave must be submitted in writing and are subject to the approval of the Employer. The Employer may require the Employee to take holiday on specified dates, giving reasonable notice.'
       ], [''],
       clauseWorkingTime(), [''],
       clauseOtherPaidLeave(), [''],
@@ -925,28 +966,28 @@
       clauseOtherBenefits(), [''],
       [
         'TERMINATION OF EMPLOYMENT',
-        "The Employer may terminate the Employee's employment by giving not less than one month's written notice, or such longer period of notice as required by statute, except where summary dismissal without notice is permitted by law for gross misconduct.",
-        "If the Employee wishes to terminate their employment, they must provide not less than one month's written notice, or such longer period of notice as required by statute.",
-        'Upon termination, the Employer will pay any outstanding remuneration and accrued holiday entitlement calculated up to the termination date.'
+        BULLET + "The Employer may terminate the Employee's employment by giving not less than one month's written notice, or such longer period of notice as required by statute, except where summary dismissal without notice is permitted by law for gross misconduct.",
+        BULLET + "If the Employee wishes to terminate their employment, they must provide not less than one month's written notice, or such longer period of notice as required by statute.",
+        BULLET + 'Upon termination, the Employer will pay any outstanding remuneration and accrued holiday entitlement calculated up to the termination date.'
       ], [''],
       clauseGoverningLaw(), [''],
       clauseGeneralProvisions(), [''],
       [
         'WRITTEN PARTICULARS (ERA 1996, s.1)',
-        'Employee: {{EMPLOYEE_FULL_NAME}}, {{EMPLOYEE_ADDRESS}}',
-        'Employer: clubSENsational Ltd, ' + COMPANY_REGISTERED_ADDRESS + ' (Company No. ' + COMPANY_NUMBER + ')',
-        'Job Title: {{JOB_TITLE}}',
-        'Start Date: {{COMMENCEMENT_DATE}} (permanent part-time; no fixed end date)',
-        'Continuous Employment: {{CONTINUOUS_EMPLOYMENT_SHORT}}',
-        'Salary: {{ANNUAL_SALARY}} per annum (gross)',
-        'Hours: {{WEEKLY_HOURS}} hours per week; {{WORK_DAYS}}, 11:00' + EM + '16:00.',
-        'Place of Work: {{PLACE_OF_WORK}}',
-        'Holiday: Pro-rata of 28 days plus bank holidays against 40-hour FTE (see Holiday Entitlement).',
-        'Pension: Auto-enrolment if eligible under UK law (earnings assessed by this Employer only).',
-        'Notice: Not less than one month, or statutory minimum if greater.',
-        'Probation: Six months from commencement.',
-        'Collective Agreements: None.',
-        'Policies: Disciplinary, Grievance, Equipment & Uniform, Safeguarding, H&S, Data Protection (Employee Manual).'
+        BULLET + 'Employee: {{EMPLOYEE_FULL_NAME}}, {{EMPLOYEE_ADDRESS}}',
+        BULLET + 'Employer: clubSENsational Ltd, ' + COMPANY_REGISTERED_ADDRESS + ' (Company No. ' + COMPANY_NUMBER + ')',
+        BULLET + 'Job Title: {{JOB_TITLE}}',
+        BULLET + 'Start Date: {{COMMENCEMENT_DATE}} (permanent part-time; no fixed end date)',
+        BULLET + 'Continuous Employment: {{CONTINUOUS_EMPLOYMENT_SHORT}}',
+        BULLET + 'Salary: {{ANNUAL_SALARY}} per annum (gross)',
+        BULLET + 'Hours: {{WEEKLY_HOURS}} hours per week; {{WORK_DAYS}}, 11:00' + EM + '16:00.',
+        BULLET + 'Place of Work: {{PLACE_OF_WORK}}',
+        BULLET + 'Holiday: Pro-rata of 28 days plus bank holidays against 40-hour FTE (see Holiday Entitlement).',
+        BULLET + 'Pension: ' + PENSION_SCHEME_NAME + ' (or other qualifying scheme nominated by the Employer); auto-enrolment if eligible under UK law (earnings assessed by this Employer only).',
+        BULLET + 'Notice: Not less than one month, or statutory minimum if greater.',
+        BULLET + 'Probation: Six months from commencement.',
+        BULLET + 'Collective Agreements: None.',
+        BULLET + 'Policies: Disciplinary, Grievance, Equipment & Uniform, Safeguarding, H&S, Data Protection (Employee Manual).'
       ], [''],
       clauseSignatures(), [''],
       clauseAnnexPension('day_centre_part_time'), [''],
@@ -974,21 +1015,21 @@
         'JOB TITLE AND DESCRIPTION',
         'The initial job title of the Employee will be:',
         '{{JOB_TITLE}}',
-        'The Employee agrees to be employed on the terms and conditions set out in this Agreement.',
-        'The Employee agrees to be subject to the general supervision of and act pursuant to the orders, advice and direction of the Employer.',
         '{{DUTIES_DESCRIPTION}}',
-        "The Employee's job title or duties may be changed by agreement and with the approval of both the Employee and the Employer or after a notice period required under law.",
-        "The Employee agrees to abide by the Employer's rules, regulations, policies and practices, including those concerning work schedules, annual leave and sick leave, as they may from time to time be adopted or modified.",
-        "The Employee agrees to follow the Employer's Equipment and Uniform Policy and is responsible for the proper use, maintenance and care of any equipment, tools, uniforms and materials provided by the Employer for work purposes.",
-        'The Employee warrants that they are legally allowed to work in England.'
+        BULLET + 'The Employee agrees to be employed on the terms and conditions set out in this Agreement.',
+        BULLET + 'The Employee agrees to be subject to the general supervision of and act pursuant to the orders, advice and direction of the Employer.',
+        BULLET + "The Employee's job title or duties may be changed by agreement and with the approval of both the Employee and the Employer or after a notice period required under law.",
+        BULLET + "The Employee agrees to abide by the Employer's rules, regulations, policies and practices, including those concerning work schedules, annual leave and sick leave, as they may from time to time be adopted or modified.",
+        BULLET + "The Employee agrees to follow the Employer's Equipment and Uniform Policy and is responsible for the proper use, maintenance and care of any equipment, tools, uniforms and materials provided by the Employer for work purposes.",
+        BULLET + 'The Employee warrants that they are legally allowed to work in England.'
       ], [''],
       [
         'EMPLOYEE REMUNERATION',
         'Remuneration paid to the Employee for the services rendered by the Employee under this Agreement will consist of a salary of:', '',
         '{{ANNUAL_SALARY}} per year (gross), paid monthly in arrears via payroll on or around the last working day of the month. Statutory deductions will be made.',
-        'This remuneration will be payable once per month while this Agreement is in force.',
-        "The Employer is entitled to deduct from the Employee's remuneration, or from any other remuneration in whatever form, any applicable deductions and remittances as required by law.",
-        "The Employer will reimburse the Employee for all reasonable expenses, in accordance with the Employer's lawful policies as in effect from time to time."
+        BULLET + 'This remuneration will be payable once per month while this Agreement is in force.',
+        BULLET + "The Employer is entitled to deduct from the Employee's remuneration, or from any other remuneration in whatever form, any applicable deductions and remittances as required by law.",
+        BULLET + "The Employer will reimburse the Employee for all reasonable expenses, in accordance with the Employer's lawful policies as in effect from time to time."
       ], [''],
       clausePension(), [''],
       [
@@ -1002,21 +1043,21 @@
         'The Employee\'s normal hours of work, excluding unpaid breaks ("Normal Hours of Work"), are as follows:',
         '{{WEEKLY_HOURS}} hours per week.',
         '{{NORMAL_HOURS_OF_WORK}}',
-        "However, the Employee will, on receiving reasonable notice from the Employer, work additional hours and/or hours outside of the Employee's Normal Hours of Work as deemed necessary by the Employer to meet business needs, as permitted by law."
+        BULLET + "However, the Employee will, on receiving reasonable notice from the Employer, work additional hours and/or hours outside of the Employee's Normal Hours of Work as deemed necessary by the Employer to meet business needs, as permitted by law."
       ], [''],
       [
         'PROBATION PERIOD',
-        "The Employee's employment will be subject to a probationary period of six (6) months commencing from the Commencement Date.",
-        "During the probation period, the Employee's performance and conduct will be reviewed. At the end of the probationary period, the Employee will be informed in writing whether their employment is to be confirmed, extended, or terminated.",
-        "The Employer reserves the right to extend the probationary period by up to a further three months if additional time is needed to assess the Employee's performance."
+        BULLET + "The Employee's employment will be subject to a probationary period of six (6) months commencing from the Commencement Date.",
+        BULLET + "During the probation period, the Employee's performance and conduct will be reviewed. At the end of the probationary period, the Employee will be informed in writing whether their employment is to be confirmed, extended, or terminated.",
+        BULLET + "The Employer reserves the right to extend the probationary period by up to a further three months if additional time is needed to assess the Employee's performance."
       ], [''],
       clauseSicknessSalaried(), [''],
       [
         'HOLIDAY ENTITLEMENT',
-        "The Employer's holiday year runs between 1 January and 31 December.",
-        "The Employee is entitled to 28 days' paid annual leave per holiday year plus the usual eight public holidays in England and Wales.",
-        "Holiday pay will be calculated in accordance with the Working Time Regulations 1998 and the Employer's lawful payroll practice.",
-        'Requests for annual leave must be submitted in writing and are subject to the approval of the Employer. The Employer may require the Employee to take holiday on specified dates, giving reasonable notice.'
+        BULLET + "The Employer's holiday year runs between 1 January and 31 December.",
+        BULLET + "The Employee is entitled to 28 days' paid annual leave per holiday year plus the usual eight public holidays in England and Wales.",
+        BULLET + "Holiday pay will be calculated in accordance with the Working Time Regulations 1998 and the Employer's lawful payroll practice.",
+        BULLET + 'Requests for annual leave must be submitted in writing and are subject to the approval of the Employer. The Employer may require the Employee to take holiday on specified dates, giving reasonable notice.'
       ], [''],
       clauseWorkingTime(), [''],
       clauseOtherPaidLeave(), [''],
@@ -1031,28 +1072,28 @@
       clauseOtherBenefits(), [''],
       [
         'TERMINATION OF EMPLOYMENT',
-        "The Employer may terminate the Employee's employment by giving not less than one month's written notice, or such longer period of notice as required by statute, except where summary dismissal without notice is permitted by law for gross misconduct.",
-        "If the Employee wishes to terminate their employment, they must provide not less than one month's written notice, or such longer period of notice as required by statute.",
-        'Upon termination, the Employer will pay any outstanding remuneration and accrued holiday entitlement calculated up to the termination date.'
+        BULLET + "The Employer may terminate the Employee's employment by giving not less than one month's written notice, or such longer period of notice as required by statute, except where summary dismissal without notice is permitted by law for gross misconduct.",
+        BULLET + "If the Employee wishes to terminate their employment, they must provide not less than one month's written notice, or such longer period of notice as required by statute.",
+        BULLET + 'Upon termination, the Employer will pay any outstanding remuneration and accrued holiday entitlement calculated up to the termination date.'
       ], [''],
       clauseGoverningLaw(), [''],
       clauseGeneralProvisions(), [''],
       [
         'WRITTEN PARTICULARS (ERA 1996, s.1)',
-        'Employee: {{EMPLOYEE_FULL_NAME}}, {{EMPLOYEE_ADDRESS}}',
-        'Employer: clubSENsational Ltd, ' + COMPANY_REGISTERED_ADDRESS + ' (Company No. ' + COMPANY_NUMBER + ')',
-        'Job Title: {{JOB_TITLE}}',
-        'Start Date: {{COMMENCEMENT_DATE}} (permanent full-time; no fixed end date)',
-        'Continuous Employment: {{CONTINUOUS_EMPLOYMENT_SHORT}}',
-        'Salary: {{ANNUAL_SALARY}} per annum (gross)',
-        'Hours: {{WEEKLY_HOURS}} hours per week.',
-        'Place of Work: {{PLACE_OF_WORK}}',
-        'Holiday: 28 days plus bank holidays (see Holiday Entitlement).',
-        'Pension: Auto-enrolment if eligible under UK law (earnings assessed by this Employer only).',
-        'Notice: Not less than one month, or statutory minimum if greater.',
-        'Probation: Six months from commencement.',
-        'Collective Agreements: None.',
-        'Policies: Disciplinary, Grievance, Equipment & Uniform, Safeguarding, H&S, Data Protection (Employee Manual).'
+        BULLET + 'Employee: {{EMPLOYEE_FULL_NAME}}, {{EMPLOYEE_ADDRESS}}',
+        BULLET + 'Employer: clubSENsational Ltd, ' + COMPANY_REGISTERED_ADDRESS + ' (Company No. ' + COMPANY_NUMBER + ')',
+        BULLET + 'Job Title: {{JOB_TITLE}}',
+        BULLET + 'Start Date: {{COMMENCEMENT_DATE}} (permanent full-time; no fixed end date)',
+        BULLET + 'Continuous Employment: {{CONTINUOUS_EMPLOYMENT_SHORT}}',
+        BULLET + 'Salary: {{ANNUAL_SALARY}} per annum (gross)',
+        BULLET + 'Hours: {{WEEKLY_HOURS}} hours per week.',
+        BULLET + 'Place of Work: {{PLACE_OF_WORK}}',
+        BULLET + 'Holiday: 28 days plus bank holidays (see Holiday Entitlement).',
+        BULLET + 'Pension: ' + PENSION_SCHEME_NAME + ' (or other qualifying scheme nominated by the Employer); auto-enrolment if eligible under UK law (earnings assessed by this Employer only).',
+        BULLET + 'Notice: Not less than one month, or statutory minimum if greater.',
+        BULLET + 'Probation: Six months from commencement.',
+        BULLET + 'Collective Agreements: None.',
+        BULLET + 'Policies: Disciplinary, Grievance, Equipment & Uniform, Safeguarding, H&S, Data Protection (Employee Manual).'
       ], [''],
       clauseSignatures(), [''],
       clauseAnnexPension('full_time')
@@ -1079,21 +1120,21 @@
         'JOB TITLE AND DESCRIPTION',
         'The initial job title of the Employee will be:',
         '{{JOB_TITLE}}',
-        'The Employee agrees to be employed on the terms and conditions set out in this Agreement.',
-        'The Employee agrees to be subject to the general supervision of and act pursuant to the orders, advice and direction of the Employer.',
         '{{DUTIES_DESCRIPTION}}',
-        "The Employee's job title or duties may be changed by agreement and with the approval of both the Employee and the Employer or after a notice period required under law.",
-        "The Employee agrees to abide by the Employer's rules, regulations, policies and practices, including those concerning work schedules, annual leave and sick leave, as they may from time to time be adopted or modified.",
-        "The Employee agrees to follow the Employer's Equipment and Uniform Policy and is responsible for the proper use, maintenance and care of any equipment, tools, uniforms and materials provided by the Employer for work purposes.",
-        'The Employee warrants that they are legally allowed to work in England.'
+        BULLET + 'The Employee agrees to be employed on the terms and conditions set out in this Agreement.',
+        BULLET + 'The Employee agrees to be subject to the general supervision of and act pursuant to the orders, advice and direction of the Employer.',
+        BULLET + "The Employee's job title or duties may be changed by agreement and with the approval of both the Employee and the Employer or after a notice period required under law.",
+        BULLET + "The Employee agrees to abide by the Employer's rules, regulations, policies and practices, including those concerning work schedules, annual leave and sick leave, as they may from time to time be adopted or modified.",
+        BULLET + "The Employee agrees to follow the Employer's Equipment and Uniform Policy and is responsible for the proper use, maintenance and care of any equipment, tools, uniforms and materials provided by the Employer for work purposes.",
+        BULLET + 'The Employee warrants that they are legally allowed to work in England.'
       ], [''],
       [
         'EMPLOYEE REMUNERATION',
         'Remuneration paid to the Employee for the services rendered by the Employee under this Agreement will consist of a salary of:', '',
         '{{ANNUAL_SALARY}} per year (gross), paid monthly in arrears via payroll on or around the last working day of the month. Statutory deductions will be made.',
-        'This remuneration will be payable once per month while this Agreement is in force.',
-        "The Employer is entitled to deduct from the Employee's remuneration, or from any other remuneration in whatever form, any applicable deductions and remittances as required by law.",
-        "The Employer will reimburse the Employee for all reasonable expenses, in accordance with the Employer's lawful policies as in effect from time to time."
+        BULLET + 'This remuneration will be payable once per month while this Agreement is in force.',
+        BULLET + "The Employer is entitled to deduct from the Employee's remuneration, or from any other remuneration in whatever form, any applicable deductions and remittances as required by law.",
+        BULLET + "The Employer will reimburse the Employee for all reasonable expenses, in accordance with the Employer's lawful policies as in effect from time to time."
       ], [''],
       clausePension(), [''],
       [
@@ -1107,13 +1148,13 @@
         'The Employee\'s normal hours of work, excluding unpaid breaks ("Normal Hours of Work"), are as follows:',
         '{{WEEKLY_HOURS}} hours per week.',
         '{{NORMAL_HOURS_OF_WORK}}',
-        "However, the Employee will, on receiving reasonable notice from the Employer, work additional hours and/or hours outside of the Employee's Normal Hours of Work as deemed necessary by the Employer to meet business needs, as permitted by law."
+        BULLET + "However, the Employee will, on receiving reasonable notice from the Employer, work additional hours and/or hours outside of the Employee's Normal Hours of Work as deemed necessary by the Employer to meet business needs, as permitted by law."
       ], [''],
       [
         'PROBATION PERIOD',
-        "The Employee's employment will be subject to a probationary period of up to six (6) months commencing from the Commencement Date, or such shorter period as is proportionate to the length of this fixed-term contract.",
-        "During the probation period, the Employee's performance and conduct will be reviewed. At the end of the probationary period, the Employee will be informed in writing whether their employment is to be confirmed, extended, or terminated.",
-        "The Employer reserves the right to extend the probationary period if additional time is needed to assess the Employee's performance, subject to the overall fixed term."
+        BULLET + "The Employee's employment will be subject to a probationary period of up to six (6) months commencing from the Commencement Date, or such shorter period as is proportionate to the length of this fixed-term contract.",
+        BULLET + "During the probation period, the Employee's performance and conduct will be reviewed. At the end of the probationary period, the Employee will be informed in writing whether their employment is to be confirmed, extended, or terminated.",
+        BULLET + "The Employer reserves the right to extend the probationary period if additional time is needed to assess the Employee's performance, subject to the overall fixed term."
       ], [''],
       [
         'FIXED-TERM EMPLOYEE TREATMENT',
@@ -1122,10 +1163,10 @@
       clauseSicknessSalaried(), [''],
       [
         'HOLIDAY ENTITLEMENT',
-        "The Employer's holiday year runs between 1 January and 31 December.",
-        "The Employee is entitled to paid annual leave calculated on a pro-rata basis against a full-time entitlement of 28 days plus the usual eight public holidays in England and Wales (based on a 40-hour, five-day working week). For a part-year contract, entitlement is further pro-rated to the duration of the fixed term.",
-        "Holiday pay will be calculated in accordance with the Working Time Regulations 1998 and the Employer's lawful payroll practice.",
-        'Requests for annual leave must be submitted in writing and are subject to the approval of the Employer.'
+        BULLET + "The Employer's holiday year runs between 1 January and 31 December.",
+        BULLET + "The Employee is entitled to paid annual leave calculated on a pro-rata basis against a full-time entitlement of 28 days plus the usual eight public holidays in England and Wales (based on a 40-hour, five-day working week). For a part-year contract, entitlement is further pro-rated to the duration of the fixed term.",
+        BULLET + "Holiday pay will be calculated in accordance with the Working Time Regulations 1998 and the Employer's lawful payroll practice.",
+        BULLET + 'Requests for annual leave must be submitted in writing and are subject to the approval of the Employer.'
       ], [''],
       clauseWorkingTime(), [''],
       clauseOtherPaidLeave(), [''],
@@ -1140,29 +1181,29 @@
       clauseOtherBenefits(), [''],
       [
         'TERMINATION OF EMPLOYMENT',
-        "The Employer may terminate the Employee's employment before the End Date by giving not less than one month's written notice, or such longer period of notice as required by statute, except where summary dismissal without notice is permitted by law for gross misconduct.",
-        "If the Employee wishes to terminate their employment before the End Date, they must provide not less than one month's written notice, or such longer period of notice as required by statute.",
-        'Upon termination, the Employer will pay any outstanding remuneration and accrued holiday entitlement calculated up to the termination date.',
-        'Unless terminated earlier under this Agreement or by law, employment will end automatically on {{TERM_END_DATE}} without the need for further notice.'
+        BULLET + "The Employer may terminate the Employee's employment before the End Date by giving not less than one month's written notice, or such longer period of notice as required by statute, except where summary dismissal without notice is permitted by law for gross misconduct.",
+        BULLET + "If the Employee wishes to terminate their employment before the End Date, they must provide not less than one month's written notice, or such longer period of notice as required by statute.",
+        BULLET + 'Upon termination, the Employer will pay any outstanding remuneration and accrued holiday entitlement calculated up to the termination date.',
+        BULLET + 'Unless terminated earlier under this Agreement or by law, employment will end automatically on {{TERM_END_DATE}} without the need for further notice.'
       ], [''],
       clauseGoverningLaw(), [''],
       clauseGeneralProvisions(), [''],
       [
         'WRITTEN PARTICULARS (ERA 1996, s.1)',
-        'Employee: {{EMPLOYEE_FULL_NAME}}, {{EMPLOYEE_ADDRESS}}',
-        'Employer: clubSENsational Ltd, ' + COMPANY_REGISTERED_ADDRESS + ' (Company No. ' + COMPANY_NUMBER + ')',
-        'Job Title: {{JOB_TITLE}}',
-        'Start Date: {{COMMENCEMENT_DATE}} ' + EM + ' End Date: {{TERM_END_DATE}} (fixed term; automatic expiry on End Date)',
-        'Continuous Employment: {{CONTINUOUS_EMPLOYMENT_SHORT}}',
-        'Salary: {{ANNUAL_SALARY}} per annum (gross)',
-        'Hours: {{WEEKLY_HOURS}} hours per week.',
-        'Place of Work: {{PLACE_OF_WORK}}',
-        'Holiday: Pro-rata of 28 days plus bank holidays (see Holiday Entitlement).',
-        'Pension: Auto-enrolment if eligible under UK law (earnings assessed by this Employer only).',
-        'Notice: Not less than one month, or statutory minimum if greater.',
-        'Probation: Up to six months, or shorter if proportionate to contract length.',
-        'Collective Agreements: None.',
-        'Policies: Disciplinary, Grievance, Equipment & Uniform, Safeguarding, H&S, Data Protection (Employee Manual).'
+        BULLET + 'Employee: {{EMPLOYEE_FULL_NAME}}, {{EMPLOYEE_ADDRESS}}',
+        BULLET + 'Employer: clubSENsational Ltd, ' + COMPANY_REGISTERED_ADDRESS + ' (Company No. ' + COMPANY_NUMBER + ')',
+        BULLET + 'Job Title: {{JOB_TITLE}}',
+        BULLET + 'Start Date: {{COMMENCEMENT_DATE}} ' + EM + ' End Date: {{TERM_END_DATE}} (fixed term; automatic expiry on End Date)',
+        BULLET + 'Continuous Employment: {{CONTINUOUS_EMPLOYMENT_SHORT}}',
+        BULLET + 'Salary: {{ANNUAL_SALARY}} per annum (gross)',
+        BULLET + 'Hours: {{WEEKLY_HOURS}} hours per week.',
+        BULLET + 'Place of Work: {{PLACE_OF_WORK}}',
+        BULLET + 'Holiday: Pro-rata of 28 days plus bank holidays (see Holiday Entitlement).',
+        BULLET + 'Pension: ' + PENSION_SCHEME_NAME + ' (or other qualifying scheme nominated by the Employer); auto-enrolment if eligible under UK law (earnings assessed by this Employer only).',
+        BULLET + 'Notice: Not less than one month, or statutory minimum if greater.',
+        BULLET + 'Probation: Up to six months, or shorter if proportionate to contract length.',
+        BULLET + 'Collective Agreements: None.',
+        BULLET + 'Policies: Disciplinary, Grievance, Equipment & Uniform, Safeguarding, H&S, Data Protection (Employee Manual).'
       ], [''],
       clauseSignatures(), [''],
       clauseAnnexPension('fixed_term')
@@ -1207,7 +1248,7 @@
       'This remuneration will be payable once per month while this Agreement is in force.',
       "The Employer is entitled to deduct from the Employee's remuneration any applicable deductions and remittances as required by law.", '',
       'PENSION',
-      "The Employer will meet its automatic enrolment duties under the Pensions Act 2008.", '',
+      "The Employer will meet its automatic enrolment duties under the Pensions Act 2008. The Employer's current qualifying workplace pension scheme is " + PENSION_SCHEME_NAME + ".", '',
       'PLACE OF WORK',
       "The Employee's place of work will be:",
       '{{PLACE_OF_WORK}}', '',
@@ -1581,9 +1622,9 @@
 
       if (isSectionHeader(title)) {
         var annexClass = (title.indexOf('ANNEX A') === 0 || title.indexOf('ANNEX B') === 0) ? ' contract-annex' : '';
-        body += '<div class="contract-section' + annexClass + '"><h3>' + title + '</h3><p style="white-space:pre-wrap;">' + rest + '</p></div>';
+        body += '<div class="contract-section' + annexClass + '"><h3>' + title + '</h3>' + renderSectionBodyHtml(rest) + '</div>';
       } else {
-        body += '<div class="contract-section"><p style="white-space:pre-wrap;">' + block + '</p></div>';
+        body += '<div class="contract-section">' + renderSectionBodyHtml(block) + '</div>';
       }
     });
 
@@ -1646,6 +1687,8 @@
       '.contract-opening{text-align:center;font-weight:600;color:#0f2744;margin:0 0 14px;font-size:10pt;}' +
       '.contract-section h3{font-family:Arial,Helvetica,sans-serif;font-size:8.5pt;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#0f2744;margin:16px 0 6px;padding:0 0 4px 8px;border-left:3px solid #c9a227;border-bottom:1px solid #e6edf4;}' +
       '.contract-section p{margin:0 0 8px;font-size:9.5pt;line-height:1.5;text-align:justify;overflow-wrap:break-word;word-wrap:break-word;}' +
+      '.contract-section ul.contract-bullets{margin:0 0 10px;padding:0 0 0 1.15em;list-style:disc;}' +
+      '.contract-section ul.contract-bullets li{margin:0 0 5px;font-size:9.5pt;line-height:1.5;text-align:justify;overflow-wrap:break-word;word-wrap:break-word;}' +
       '.contract-parties{background:linear-gradient(180deg,#f3f7fb,#eaf1f7);border:1px solid #c5d6e3;border-left:4px solid #0f2744;padding:10px 12px;margin:8px 0 12px;font-size:9pt;box-sizing:border-box;max-width:100%;overflow-wrap:break-word;}' +
       '.contract-parties strong{display:block;font-family:Arial,Helvetica,sans-serif;font-size:8pt;letter-spacing:0.06em;text-transform:uppercase;color:#0f2744;margin-bottom:4px;}' +
       '.contract-parties p{overflow-wrap:break-word;word-wrap:break-word;}' +
@@ -1772,6 +1815,8 @@
     COMPANY_REGISTERED_ADDRESS: COMPANY_REGISTERED_ADDRESS,
     COMPANY_FOOTER_ADDRESS: COMPANY_FOOTER_ADDRESS,
     HR_CONTACT_EMAIL: HR_CONTACT_EMAIL,
+    PENSION_SCHEME_NAME: PENSION_SCHEME_NAME,
+    PENSION_SCHEME_URL: PENSION_SCHEME_URL,
     formatUKDate: formatUKDate,
     formatShortUKDate: formatShortUKDate,
     formatDateTime: formatDateTime,

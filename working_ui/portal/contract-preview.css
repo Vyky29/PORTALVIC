@@ -76,6 +76,8 @@
   border-bottom: 1px solid #c9a227;
 }
 .contract-section p { margin: 0 0 0.65rem; text-align: justify; overflow-wrap: break-word; word-wrap: break-word; }
+.contract-section ul.contract-bullets { margin: 0 0 0.75rem; padding: 0 0 0 1.2em; list-style: disc; }
+.contract-section ul.contract-bullets li { margin: 0 0 0.4rem; line-height: 1.5; text-align: justify; overflow-wrap: break-word; word-wrap: break-word; }
 .contract-parties {
   background: #e8f0f6;
   border: 1px solid rgba(74, 124, 155, 0.25);

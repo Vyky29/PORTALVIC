@@ -1,5 +1,5 @@
 /**
- * Staff employment contract signing  uses Portal auth + documents bucket.
+ * Staff employment contract signing Â uses Portal auth + documents bucket.
  */
 const PORTAL_CONTRACT_LOGO = "portal/portal_crest.svg";
 const PORTAL_CONTRACT_PDF_LAYOUT = "pdf_v3_layout";
@@ -78,7 +78,7 @@ async function portalContractLoadModule() {
   const bases = ["./", "portal/"];
   for (const b of bases) {
     try {
-      const url = b + "contract-core.js?v=20260724-jd-feedback";
+      const url = b + "contract-core.js?v=20260727-nest";
       if (typeof window !== "undefined" && window.ContractCore) return window.ContractCore;
       await import(/* @vite-ignore */ new URL(url, import.meta.url).href).catch(() => null);
       if (window.ContractCore) return window.ContractCore;

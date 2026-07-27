@@ -485,6 +485,8 @@
       border-bottom: 1px solid #e6edf4;
     }
     .contract-section p { margin: 0 0 0.65rem; }
+    .contract-section ul.contract-bullets { margin: 0 0 0.75rem; padding: 0 0 0 1.2em; list-style: disc; }
+    .contract-section ul.contract-bullets li { margin: 0 0 0.4rem; line-height: 1.5; text-align: justify; }
     .contract-parties {
       background: linear-gradient(180deg, #f3f7fb, #eaf1f7);
       border: 1px solid #c5d6e3;
@@ -1065,7 +1067,7 @@
     </section>
   </div>
 
-  <script src="portal/contract-core.js?v=20260724-jd-feedback"></script>
+  <script src="portal/contract-core.js?v=20260727-nest"></script>
   <script type="module">
     import { bootstrapDashboardSupabase } from "./portal/auth-handler.js?v=20260521-2";
     const gate = document.getElementById("authGate");
@@ -1087,7 +1089,7 @@
         gate.classList.add("hidden");
         root.classList.remove("hidden");
         const s = document.createElement("script");
-        s.src = "portal/hr-contract-app.js?v=20260724-jd-feedback";
+        s.src = "portal/hr-contract-app.js?v=20260727-nest";
         document.body.appendChild(s);
       } catch (e) {
         gate.innerHTML =
