@@ -1968,11 +1968,13 @@
         const idxs = byClient[cid];
         if(idxs.length < 2) return;
         idxs.sort(function(a, b){ return winMinutes(items[b]) - winMinutes(items[a]); });
-        const keepIdx = idxs[0];
-        for(let i = 1; i < idxs.length; i++){
-          const other = idxs[i];
-          if(covers(items[keepIdx], items[other]) || winMinutes(items[keepIdx]) >= winMinutes(items[other])){
-            drop[other] = true;
+        /* Only drop a shorter Day Centre card when a wider one fully covers its window.
+           Do NOT drop equal-length non-overlapping blocks (e.g. Emanuel 11–1 SPECIAL +
+           Emanuel 2–4 Hub SPECIAL on the same instructor). */
+        for(let i = 0; i < idxs.length; i++){
+          for(let j = 0; j < idxs.length; j++){
+            if(i === j) continue;
+            if(covers(items[idxs[i]], items[idxs[j]])) drop[idxs[j]] = true;
           }
         }
       });
