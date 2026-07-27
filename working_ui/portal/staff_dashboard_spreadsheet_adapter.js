@@ -93,8 +93,7 @@
 
   /**
    * Display-only merge of a participant's TWO same-day Day Centre blocks into ONE
-   * segmented card. Emanuel on Friday is split 11–1 + 3–4 (with Fadi 1–3 in between);
-   * the user wants a single Ikram-style card: name | 11 to 12 | 12 to 1 Big Pool | 3 to 4.
+   * segmented card. Emanuel Mon/Wed/Fri: Hub 11–12 · Big Pool 12–1 · Hub 2–4.
    * Pay is driven by the continuous shift band, so collapsing the two blocks for display
    * does not change hours; the merged slot is one feedback session (like other combined
    * Day Centre cards). Keyed by canonical clientId + weekday.
@@ -119,12 +118,12 @@
       ],
     },
     "emanuel|friday": {
-      blockStarts: ["11:00", "15:00"],
+      blockStarts: ["11:00", "14:00"],
       merged: { time_slot: "11 to 4", start: "11:00", end: "16:00" },
       segments: [
         { time_slot: "11 to 12", area: "Hub Room" },
         { time_slot: "12 to 1", area: "Big Pool" },
-        { time_slot: "3 to 4", area: "Hub Room" },
+        { time_slot: "2 to 4", area: "Hub Room" },
       ],
     },
   };
@@ -787,7 +786,7 @@
         const synthSegments = portalSynthesizeCombinedSegments(nameLower, rosterService, timeSlotLabel, day);
         if (synthSegments) baseSession.segments = synthSegments;
       }
-      /* Prefer current Emanuel Mon/Wed SPECIAL shape even if an older MADRE/bundle
+      /* Prefer current Emanuel Mon/Wed/Fri SPECIAL shape even if an older MADRE/bundle
          row still carries a stale 11–4 contiguous 1–4 Day Centre third segment. */
       if (
         nameLower === "emanuel" &&
@@ -795,7 +794,7 @@
         String(timeSlotLabel || "").replace(/\s+/g, "").toLowerCase() === "11to4"
       ) {
         const dayKey = String(day || "").trim().toLowerCase();
-        if (dayKey === "monday" || dayKey === "wednesday") {
+        if (dayKey === "monday" || dayKey === "wednesday" || dayKey === "friday") {
           const prefer = portalSynthesizeCombinedSegments(nameLower, rosterService, timeSlotLabel, day);
           if (prefer) baseSession.segments = prefer;
         }
