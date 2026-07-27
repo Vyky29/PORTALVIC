@@ -58,7 +58,7 @@
     preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260707-roberto-venues");
     preloadScript("/portal/staff-dashboard-dock-boot.js?v=20260625-lead-day-cards-nav");
     preloadScript("/portal/staff-dashboard-topbar.js?v=20260625-lead-day-cards-nav");
-    preloadScript("/portal/staff-dashboard-feedback.js?v=20260705-day-centre-peer");
+    preloadScript("/portal/staff-dashboard-feedback.js?v=20260727-fb-keys-perf");
   }
 
   if ("serviceWorker" in global.navigator) {

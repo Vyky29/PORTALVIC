@@ -313,11 +313,15 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
             .gte("session_date", sinceStr)
             .not("portal_session_key", "is", null)
         : Promise.resolve({ data: null, error: null }),
-    rosterSessionKeys.length
-      ? supabase.rpc("portal_feedback_submitted_keys_for_sessions", {
-          p_keys: rosterSessionKeys,
-        })
-      : Promise.resolve({ data: null, error: null }),
+    /* RPC only helps shared Day Centre / date||client units — per-slot results are
+       discarded below (submitter ownership). Passing hundreds of timed keys timed out. */
+    (function () {
+      const rpcKeys = portalSharedFeedbackUnitKeys(rosterSessionKeys).slice(0, 120);
+      if (!rpcKeys.length) return Promise.resolve({ data: null, error: null });
+      return supabase.rpc("portal_feedback_submitted_keys_for_sessions", {
+        p_keys: rpcKeys,
+      });
+    })(),
     supabase
       .from("portal_staff_session_quick_marks")
       .select("portal_session_key, mark_type")
@@ -537,7 +541,11 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
   const rpcKeys =
     fbSharedRpc && !fbSharedRpc.error ? feedbackKeysFromSharedRpc(fbSharedRpc.data) : [];
   if (fbSharedRpc && fbSharedRpc.error) {
-    console.warn("[portal] portal_feedback_submitted_keys_for_sessions skipped", fbSharedRpc.error);
+    const code = String(fbSharedRpc.error.code || "");
+    /* Timeout / cancel: peer date fetch above already covers co-instructor sync. */
+    if (code !== "57014" && code !== "57000") {
+      console.warn("[portal] portal_feedback_submitted_keys_for_sessions skipped", fbSharedRpc.error);
+    }
   }
   const rpcPresent = [];
   for (const rk of rpcKeys) {
