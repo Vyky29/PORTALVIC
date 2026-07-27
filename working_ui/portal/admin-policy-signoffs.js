@@ -104,6 +104,8 @@
   function donePct(userId, cols) {
     // Empty catalog (misconfigured tab) must not look like "fully done".
     if (!cols || !cols.length) return null;
+    var tags = state.tagsByUser[String(userId)] || ["core"];
+    if (tags.indexOf("sign_exempt") >= 0) return null;
     var req = requiredCols(userId, cols);
     if (!req.length) return 100;
     var n = 0;
@@ -203,12 +205,16 @@
             "</td>"
           );
         }).join("");
-        var pctLabel = pct == null ? "—" : pct + "%";
+        var pctLabel = pct == null ? "n/a" : pct + "%";
         return (
           "<tr>" +
           '<td style="white-space:nowrap;position:sticky;left:0;background:#fff;z-index:1"><strong>' + esc(staffName) + "</strong></td>" +
           '<td class="muted" style="white-space:nowrap;font-size:12px" title="' + esc(tags.join(", ")) + '">' + esc(roleLabel(s)) + "</td>" +
-          '<td style="text-align:center"><span class="chip ' + chipClass(pct) + '" title="' + reqN + ' required in this tab">' + pctLabel + "</span></td>" +
+          '<td style="text-align:center"><span class="chip ' + chipClass(pct) + '" title="' +
+          (tags.indexOf("sign_exempt") >= 0
+            ? "No sign-off required (home office)"
+            : reqN + " required in this tab") +
+          '">' + pctLabel + "</span></td>" +
           cells +
           "</tr>"
         );
@@ -222,7 +228,8 @@
       "(e.g. swimming-only staff do not get climbing, Hub/fitness or home-visit procedures marked as outstanding). " +
       "Managers (Victor, Palankas, Raul) must acknowledge <em>all</em> policies and procedures. " +
       "Each service role also requires the emergency procedures (and venue overviews) for its usual venues. " +
-      "Pre-contract dual roles: Luliya, Youssef and Roberto = Swim + class support; Bismark = Climb + class support. " +
+      "Pre-contract dual roles: Luliya, Youssef and Roberto = Swim + class support; Bismark = Climb + Hub. " +
+      "Sevitha is exempt (home office). Teflon is hidden from this matrix. " +
       "Completions come from portal <code>staff_policy_ack</code> documents (not browser-only saves). " +
       "Grey <code>n/a</code> means not in scope for that person." +
       "</div></div>" +
@@ -403,7 +410,17 @@
 
     Promise.all([loadStaff(client), loadContracts(client), loadAcks(client)])
       .then(function (parts) {
-        var staff = parts[0] || [];
+        var staff = (parts[0] || []).filter(function (s) {
+          var api = scopeApi();
+          if (api && typeof api.isHiddenFromSignoffMatrix === "function") {
+            return !api.isHiddenFromSignoffMatrix(s);
+          }
+          var blob = String(s.full_name || s.username || "")
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
+          return blob.indexOf("teflon") < 0;
+        });
         var contracts = parts[1] || [];
         var byUser = {};
         contracts.forEach(function (c) {

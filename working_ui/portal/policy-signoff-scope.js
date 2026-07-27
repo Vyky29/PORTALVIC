@@ -137,10 +137,15 @@
     );
   }
 
+  function removeTag(set, tag) {
+    var i = set.indexOf(tag);
+    if (i >= 0) set.splice(i, 1);
+  }
+
   /**
    * Pre-contract dual-role overrides (until employment contracts are issued).
    * Luliya / Youssef / Roberto: swimming + class support (Hub / Day Centre).
-   * Bismark: climbing + class support (Hub / Day Centre).
+   * Bismark: climbing + Hub only (not Day Centre).
    */
   function applyNamedDualRoleOverrides(profile, set) {
     var blob = profileNameBlob(profile);
@@ -166,8 +171,22 @@
     if (/\bbismark\b/.test(blob) || /\bbismarck\b/.test(blob)) {
       addTag(set, "climb");
       addTag(set, "hub");
-      addTag(set, "day_centre");
+      removeTag(set, "day_centre");
     }
+  }
+
+  /** Home-office / ops staff with no frontline sign-off requirement (e.g. Sevitha). */
+  function isSignOffExemptProfile(profile) {
+    var blob = profileNameBlob(profile);
+    if (!blob) return false;
+    return /\bsevitha\b/.test(blob);
+  }
+
+  /** Hide from the admin completion matrix entirely (e.g. Teflon test/demo account). */
+  function isHiddenFromSignoffMatrix(profile) {
+    var blob = profileNameBlob(profile);
+    if (!blob) return false;
+    return /\bteflon\b/.test(blob);
   }
 
   /** Directors / managers acknowledge the full policy + procedure set. */
@@ -237,6 +256,10 @@
     var set = ["core"];
     profile = profile || {};
 
+    if (isSignOffExemptProfile(profile)) {
+      return ["sign_exempt"];
+    }
+
     if (isCompanyManagerProfile(profile)) {
       addTag(set, "sign_all");
       return set;
@@ -291,6 +314,7 @@
     if (typeof doc === "string") doc = DOC_SCOPE[String(doc).toUpperCase()];
     if (!doc) return false;
     var wt = workerTags || ["core"];
+    if (wt.indexOf("sign_exempt") >= 0) return false;
     if (wt.indexOf("sign_all") >= 0) return true;
     if (doc.kind === "policy") return true;
     var tags = doc.tags || ["core"];
@@ -303,6 +327,7 @@
 
   function roleLabelFromTags(tags) {
     var t = tags || [];
+    if (t.indexOf("sign_exempt") >= 0) return "Exempt (home office)";
     if (t.indexOf("sign_all") >= 0) return "Manager (all)";
     var nice = [];
     if (t.indexOf("swim") >= 0) nice.push("Swim");
@@ -320,6 +345,8 @@
     ACTIVE_CONTRACT_STATUSES: ACTIVE_CONTRACT_STATUSES,
     isLiveContractStatus: isLiveContractStatus,
     isCompanyManagerProfile: isCompanyManagerProfile,
+    isSignOffExemptProfile: isSignOffExemptProfile,
+    isHiddenFromSignoffMatrix: isHiddenFromSignoffMatrix,
     deriveTagsForWorker: deriveTagsForWorker,
     docApplies: docApplies,
     roleLabelFromTags: roleLabelFromTags,
