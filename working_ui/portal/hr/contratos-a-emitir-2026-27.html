@@ -119,7 +119,7 @@
         <h1>Contratos a emitir — todo el equipo</h1>
         <p class="hero-lead">
           Listado operativo: Day Centre (part-time + zero hours), weekends / after-school
-          (Activity Services zero hours), Admin / Business Development, y directores.
+          (Activity Services zero hours), Admin / Business Development & Operations, y directores.
           Tarifas £/h tomadas del portal (timesheet fallbacks + seeds <code>staff_role_rates</code> /
           <code>PAY_RATE_BY_ROSTER_KEY</code>). Sin secrets locales no se pudo refrescar desde Supabase live.
         </p>
@@ -154,7 +154,7 @@
     <div class="stat-row">
       <div class="stat"><strong>6</strong><span>Familias de scales</span></div>
       <div class="stat"><strong>£18–£32</strong><span>Rango Activity / Support</span></div>
-      <div class="stat"><strong>£18–£30</strong><span>Day Centre + Service Leads</span></div>
+      <div class="stat"><strong>£18–£30</strong><span>Day Centre + Session Leads</span></div>
       <div class="stat"><strong>£35k+</strong><span>Admin/BD salaried (Sevitha)</span></div>
     </div>
 
@@ -164,10 +164,10 @@
         <tr><th>Scale</th><th>Rol</th><th>£/hora</th><th>Anual orient. (20h × 43 sem)</th></tr>
       </thead>
       <tbody>
-        <tr><td><span class="chip chip-a">Scale 1</span></td><td>Support Worker (entrada / nuevos)</td><td><strong>£18</strong></td><td>£15,480</td></tr>
-        <tr><td><span class="chip chip-b">Scale 2</span></td><td>Experienced Support Worker</td><td><strong>£20</strong></td><td>£17,200</td></tr>
-        <tr><td><span class="chip chip-c">Scale 3</span></td><td>Senior Support Worker</td><td><strong>£24</strong></td><td>£20,640</td></tr>
-        <tr><td><span class="chip chip-mgr">Service Lead</span></td><td>Day Centre Service Lead <span class="muted">(rol aparte)</span></td><td><strong>£30</strong></td><td>£25,800</td></tr>
+        <tr><td><span class="chip chip-a">Scale 1</span></td><td>Specialist Support Worker — Hub & Community (entrada / nuevos)</td><td><strong>£18</strong></td><td>£15,480</td></tr>
+        <tr><td><span class="chip chip-b">Scale 2</span></td><td>Experienced Hub & Community (Scale 2)</td><td><strong>£20</strong></td><td>£17,200</td></tr>
+        <tr><td><span class="chip chip-c">Scale 3</span></td><td>Senior Hub & Community (Scale 3)</td><td><strong>£24</strong></td><td>£20,640</td></tr>
+        <tr><td><span class="chip chip-mgr">Specialist Support Worker — Session Lead</span></td><td>Specialist Support Worker — Session Lead (Day Centre) <span class="muted">(rol aparte)</span></td><td><strong>£30</strong></td><td>£25,800</td></tr>
       </tbody>
     </table>
 
@@ -183,7 +183,7 @@
       </tbody>
     </table>
 
-    <h3>Support Worker <span class="muted">(Activity / sessions — RATE_TABLE portal)</span></h3>
+    <h3>Specialist Support Worker — Hub & Community <span class="muted">(Activity / sessions — RATE_TABLE portal)</span></h3>
     <table>
       <thead>
         <tr><th>Scale</th><th>£/hora</th></tr>
@@ -219,14 +219,14 @@
       </tbody>
     </table>
 
-    <h3>Service Leads</h3>
+    <h3>Session Leads</h3>
     <table>
       <thead>
         <tr><th>Rol</th><th>£/hora</th><th>Notas</th></tr>
       </thead>
       <tbody>
-        <tr><td><span class="chip chip-mgr">Service Lead</span></td><td><strong>£30</strong></td><td>Weekends / after school (John, Berta)</td></tr>
-        <tr><td><span class="chip chip-mgr">Day Centre Service Lead</span></td><td><strong>£30</strong></td><td>Rol aparte (Michelle)</td></tr>
+        <tr><td><span class="chip chip-mgr">Specialist Support Worker — Session Lead</span></td><td><strong>£30</strong></td><td>Weekends / after school (John, Berta)</td></tr>
+        <tr><td><span class="chip chip-mgr">Specialist Support Worker — Session Lead (Day Centre)</span></td><td><strong>£30</strong></td><td>Rol aparte (Michelle)</td></tr>
         <tr><td><span class="chip chip-ft">Directors</span></td><td class="muted">Salario mensual / acuerdo</td><td>Raúl · Victor · Javi — no scales £/h Activity</td></tr>
       </tbody>
     </table>
@@ -243,7 +243,7 @@
       <div class="stat"><strong>2</strong><span>Day Centre Part-Time 20h</span></div>
       <div class="stat"><strong>2</strong><span>Day Centre Zero Hours</span></div>
       <div class="stat"><strong>~16</strong><span>Activity ZH (weekends / after school)</span></div>
-      <div class="stat"><strong>1</strong><span>Admin / Business Development</span></div>
+      <div class="stat"><strong>1</strong><span>Admin / Business Development & Operations</span></div>
     </div>
     <table>
       <thead>
@@ -311,7 +311,7 @@
         <tr>
           <td>1</td>
           <td><strong>Michelle</strong></td>
-          <td><span class="chip chip-mgr">Service Lead</span> Day Centre</td>
+          <td><span class="chip chip-mgr">Specialist Support Worker — Session Lead</span> Day Centre</td>
           <td><strong>£30.00</strong></td>
           <td>20h · L M X V 11–16</td>
           <td><strong>£25,800</strong></td>
@@ -321,7 +321,7 @@
         <tr>
           <td>2</td>
           <td><strong>Roberto</strong></td>
-          <td><span class="chip chip-b">Scale 2</span> Experienced Support Worker (DC)</td>
+          <td><span class="chip chip-b">Scale 2</span> Experienced Hub & Community (Scale 2) (DC)</td>
           <td><strong>£20.00</strong></td>
           <td>~20h · L–J hasta 15 · V hasta 16</td>
           <td><strong>£17,200</strong></td>
@@ -376,7 +376,7 @@
       Progresión Scale 1 → 2 → 3 por Performance Review.
     </div>
     <div class="callout note">
-      <strong>Equipo DC cerrado:</strong> Michelle (Service Lead PT) · Roberto (Scale 2 PT + Swim ZH Scale 3) ·
+      <strong>Equipo DC cerrado:</strong> Michelle (Specialist Support Worker — Session Lead PT) · Roberto (Scale 2 PT + Swim ZH Scale 3) ·
       Youssef (ZH dual DC Scale 2 £20 + Swim Scale 2 £24) · Luliya (ZH dual DC Scale 1 £18 + Swim Scale 2 £24).
       Giuseppe <strong>no</strong> es Day Centre.
     </div>
@@ -394,7 +394,7 @@
       Swimming → Acton + Northolt + SwimFarm ·
       Climbing → Westway ·
       Fitness → Westway + Hub ·
-      Support Worker / Service Lead → Hub + Westway.
+      Specialist Support Worker — Hub & Community / Specialist Support Worker — Session Lead → Hub + Westway.
     </p>
 
     <h3>3a. Specialist Support Workers — Swimming</h3>
@@ -543,7 +543,7 @@
       </tbody>
     </table>
 
-    <h3>3d. Support Workers &amp; Service Leads (sessions / weekends)</h3>
+    <h3>3d. Hub &amp; Community &amp; Session Leads (sessions / weekends)</h3>
     <table>
       <thead>
         <tr>
@@ -579,15 +579,15 @@
         <tr>
           <td><strong>John</strong></td>
           <td>support_lead</td>
-          <td><strong>£30</strong> Service Lead</td>
-          <td><span class="chip chip-zh">Zero Hours</span> Service Lead</td>
+          <td><strong>£30</strong> Specialist Support Worker — Session Lead</td>
+          <td><span class="chip chip-zh">Zero Hours</span> Specialist Support Worker — Session Lead</td>
           <td class="todo">Por emitir / revisar</td>
         </tr>
         <tr>
           <td><strong>Berta</strong></td>
           <td>support_lead</td>
-          <td><strong>£30</strong> Service Lead</td>
-          <td><span class="chip chip-zh">Zero Hours</span> Service Lead</td>
+          <td><strong>£30</strong> Specialist Support Worker — Session Lead</td>
+          <td><span class="chip chip-zh">Zero Hours</span> Specialist Support Worker — Session Lead</td>
           <td class="todo">Por emitir / revisar</td>
         </tr>
       </tbody>
@@ -601,10 +601,10 @@
   </section>
 
   <section class="block" id="admin">
-    <h2>5. Admin / HR / Business Development + PIXTOLEARN — Sevitha</h2>
+    <h2>5. Business Development & Operations + PIXTOLEARN — Sevitha</h2>
     <p class="section-lead">
-      Sevitha tiene el rol clásico de clubSENsational (<strong>Admin, HR y Business Development</strong>)
-      y, además, está al cargo del <strong>Business Development de PIXTOLEARN</strong>.
+      Sevitha tiene el rol clásico de clubSENsational (<strong>Admin, HR y Business Development & Operations</strong>)
+      y, además, está al cargo del <strong>Business Development & Operations de PIXTOLEARN</strong>.
       Contrato full-time con ruta salarial condicionada a hitos.
     </p>
 

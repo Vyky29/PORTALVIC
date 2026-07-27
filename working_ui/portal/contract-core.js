@@ -27,13 +27,17 @@
   var LOGO_DISPLAY = 'assets/clubsensational-logo-hq.png?v=3';
 
   var RATE_TABLE = {
-    'Support Worker':                          { 'Scale 1': 18, 'Scale 2': 20, 'Scale 3': 23 },
-    'Specialist Support Worker — Climbing':    { 'Scale 1': 22, 'Scale 2': 24, 'Scale 3': 30 },
-    'Specialist Support Worker — Fitness':     { 'Scale 1': 24, 'Scale 2': 28, 'Scale 3': 32 },
-    'Specialist Support Worker — Swimming':    { 'Scale 1': 22, 'Scale 2': 24, 'Scale 3': 28 }
+    'Specialist Support Worker — Hub & Community': { 'Scale 1': 18, 'Scale 2': 20, 'Scale 3': 23 },
+    'Specialist Support Worker — Climbing':       { 'Scale 1': 22, 'Scale 2': 24, 'Scale 3': 30 },
+    'Specialist Support Worker — Fitness':        { 'Scale 1': 24, 'Scale 2': 28, 'Scale 3': 32 },
+    'Specialist Support Worker — Swimming':       { 'Scale 1': 22, 'Scale 2': 24, 'Scale 3': 28 }
   };
   /** Legacy role titles → current RATE_TABLE / JD keys (saved drafts, timesheets, older docs). */
   var ROLE_ALIASES = {
+    'Support Worker': 'Specialist Support Worker — Hub & Community',
+    'Service Lead': 'Specialist Support Worker — Session Lead',
+    'Day Centre Service Lead': 'Specialist Support Worker — Session Lead',
+    'Business Development': 'Business Development & Operations',
     'Climbing Instructor': 'Specialist Support Worker — Climbing',
     'Fitness Instructor': 'Specialist Support Worker — Fitness',
     'PT / Fitness Instructor': 'Specialist Support Worker — Fitness',
@@ -41,8 +45,8 @@
   };
   /** Flat hourly roles (no Scale 1/2/3 picker in the generator). */
   var FLAT_HOURLY_RATES = {
-    'Service Lead': 30,
-    'Business Development': 30
+    'Specialist Support Worker — Session Lead': 30,
+    'Business Development & Operations': 30
   };
   var SCALE_OPTIONS = ['Scale 1', 'Scale 2', 'Scale 3'];
 
@@ -70,15 +74,15 @@
   var JOB_DESCRIPTION_VERSION = '2026-07-27';
 
   var JOB_DESCRIPTIONS = {
-    'Support Worker': {
+    'Specialist Support Worker — Hub & Community': {
       byKind: {
         zero_hours: {
-          title: 'Support Worker — Activity Services',
+          title: 'Specialist Support Worker — Hub & Community',
           summary:
-            'Provide hands-on, person-centred support in clubSENsational activity sessions (swimming, climbing, fitness and related programmes) outside the Day Centre. Support is ordinarily delivered on a 1:1 or 2:1 basis in a physically active role that requires direct engagement throughout each session, promoting safety, participation, confidence and skill-building for participants with autism and/or learning disabilities.',
+            'Provide hands-on, person-centred support for children and young people with autism and/or learning disabilities at the clubSENsational Hub and in community activity sessions. Support is ordinarily delivered on a 1:1 or 2:1 basis in a physically active role that requires direct engagement throughout each session, promoting safety, participation, confidence and skill-building.',
           responsibilities: [
-            'Prepare and organise activity areas before each session so the environment is structured, safe and ready.',
-            'Support participants to engage in activities, adapting methods to individual abilities, sensory needs and learning styles.',
+            'Prepare and organise Hub and community activity areas before each session so the environment is structured, safe and ready.',
+            'Support participants to engage in Hub and community activities, adapting methods to individual abilities, sensory needs and learning styles.',
             'Provide 1:1 or 2:1 supervision as required, offering tailored attention and care throughout the session.',
             'Implement effective engagement and behaviour-support strategies, including for participants with challenging behaviour, while following agreed plans and safeguarding procedures.',
             'Conduct or support relevant health and safety checks before sessions and report concerns promptly.',
@@ -98,7 +102,7 @@
           behaviours: 'Reliable · Professional · Safe practice · Clear communication · Compassionate · Positive team member'
         },
         day_centre_part_time: {
-          title: 'Support Worker — Day Centre',
+          title: 'Specialist Support Worker — Day Centre',
           summary:
             'Provide high-quality, person-centred support in the Day Centre during Normal Hours of Work. The role supports adults with autism and/or learning disabilities through structured programmes, personal care as required, and a safe, welcoming environment. Support is typically delivered with close, individualised attention (including 1:1 or 2:1 where funded or required).',
           responsibilities: [
@@ -109,7 +113,7 @@
             'Implement effective engagement strategies, including for participants with complex or challenging behaviour.',
             'Complete daily records, reports and required session/day feedback as part of the role (covered by salary within Normal Hours; reasonable post-session/end-of-day admin typically up to about 10 minutes unless additional paid time is authorised).',
             'Liaise professionally with families, carers and external professionals.',
-            'Work collaboratively with the Service Lead and Day Centre team; attend induction, supervision and training as required.'
+            'Work collaboratively with the Session Lead and Day Centre team; attend induction, supervision and training as required.'
           ],
           requirements: [
             'Enhanced DBS check (satisfactory outcome required; barred-list check where applicable).',
@@ -122,15 +126,16 @@
         }
       }
     },
-    'Service Lead': {
+    'Specialist Support Worker — Session Lead': {
       byKind: {
         zero_hours: {
-          title: 'Service Lead — Activity / Weekend Services',
+          title: 'Specialist Support Worker — Session Lead',
           summary:
-            'Lead the operational delivery of assigned activity or weekend sessions for clubSENsational. Own service quality on shift, coach the team, and act as the accountable lead when directors are not on site, ensuring safe, inclusive and high-quality support for participants with autism and/or learning disabilities.',
+            'Provide hands-on, person-centred support for participants with autism and/or learning disabilities and lead the operational delivery of assigned Hub, community or weekend sessions. Work directly with participants as a support worker while owning service quality on shift, coaching the team, and acting as the accountable lead when directors are not on site.',
           responsibilities: [
+            'Provide direct 1:1 or 2:1 support to participants during sessions, adapting approaches to individual needs.',
             'Lead and coordinate staff on assigned sessions, including allocation of support and handover of key information.',
-            'Model best practice in person-centred support, safeguarding and behaviour support; coach Support Workers and instructors on shift.',
+            'Model best practice in person-centred support, safeguarding and behaviour support; coach Specialist Support Workers on shift.',
             'Escalate safeguarding concerns, complex behaviour or operational risks appropriately and without delay.',
             'Ensure session environments, equipment checks and health and safety standards are met before and during delivery.',
             'Ensure required session feedback and records are completed to standard (including own and team oversight where appropriate).',
@@ -144,14 +149,14 @@
             'Demonstrable leadership or shift-lead experience (or clear ability to lead a small team on session).',
             'Strong judgement, communication and de-escalation skills.',
             'First Aid at Work certification (or willingness to obtain as directed).',
-            'Relevant activity qualification where the lead role includes instructor duties (e.g. swimming, climbing or fitness).'
+            'Relevant activity qualification where the lead role includes specialist activity duties (e.g. swimming, climbing or fitness).'
           ],
-          behaviours: 'Leadership · Judgement · Accountability · Coaching · Calm under pressure · Service improvement'
+          behaviours: 'Leadership · Hands-on support · Judgement · Accountability · Coaching · Calm under pressure'
         },
         day_centre_part_time: {
-          title: 'Day Centre Service Lead',
+          title: 'Specialist Support Worker — Session Lead (Day Centre)',
           summary:
-            'Lead the daily operation of the Day Centre, coordinating staff and resources across venues as required, owning service quality, and supporting participants with autism and/or learning disabilities through a safe, structured and person-centred day programme.',
+            'Lead the daily operation of the Day Centre while providing hands-on support to participants, coordinating staff and resources across venues as required, owning service quality, and delivering a safe, structured and person-centred day programme for adults with autism and/or learning disabilities.',
           responsibilities: [
             'Lead the daily operation of the Day Centre within Normal Hours of Work, including staff allocation and venue coordination.',
             'Coach and mentor the Day Centre team; set clear expectations and model best practice.',
@@ -250,28 +255,30 @@
         behaviours: 'Safety-first · Clear instruction · Patient · Adaptive · Professional · Team-oriented'
       }
     },
-    'Business Development': {
+    'Business Development & Operations': {
       default: {
-        title: 'Business Development',
+        title: 'Business Development & Operations',
         summary:
-          'Drive growth, partnerships and commissioning opportunities for clubSENsational, supporting sustainable expansion of inclusive activity and Day Centre services for people with autism and/or learning disabilities.',
+          'Drive growth, partnerships and commissioning opportunities for clubSENsational, and lead core organisational operations including HR administration, people processes and day-to-day admin so the service can grow sustainably. The role also supports Business Development for PIXTOLEARN where assigned.',
         responsibilities: [
-          'Identify and pursue new funding, contracts and partnership opportunities.',
+          'Identify and pursue new funding, contracts and partnership opportunities for clubSENsational (and PIXTOLEARN where assigned).',
           'Build and maintain relationships with commissioners, local authorities, schools, venues and partner organisations.',
           'Prepare tenders, proposals, impact materials and follow-up communications as required.',
           'Support leadership with pipeline tracking, meetings and conversion of opportunities.',
-          'Complete required records and feedback on meetings and outcomes as directed.',
-          'Uphold confidentiality, safeguarding awareness and professional standards in all external engagement.',
+          'Coordinate HR and people operations (onboarding support, contract administration, staff records and related processes) as directed.',
+          'Manage day-to-day organisational administration, systems and follow-up so operations run smoothly.',
+          'Complete required records and feedback on meetings, people processes and outcomes as directed.',
+          'Uphold confidentiality, safeguarding awareness and professional standards in all internal and external engagement.',
           'Work collaboratively with operational leads so growth aligns with service capacity and quality.'
         ],
         requirements: [
           'Strong written and verbal communication skills; confident engaging external stakeholders.',
-          'Experience in business development, fundraising, commissioning, sales or partnership roles (or transferable equivalent).',
-          'Organised, self-directed working style with attention to deadlines and follow-up.',
+          'Experience in business development, fundraising, commissioning, sales, partnership, HR administration or operations roles (or transferable equivalent).',
+          'Organised, self-directed working style with attention to deadlines, confidentiality and follow-up.',
           'Ability to represent clubSENsational\'s mission and values professionally.',
           'Enhanced DBS check where the role involves regulated activity or as otherwise required by the Employer.'
         ],
-        behaviours: 'Proactive · Clear communicator · Organised · Relationship-focused · Accountable'
+        behaviours: 'Proactive · Clear communicator · Organised · Relationship-focused · Accountable · Discreet'
       }
     }
   };
@@ -625,9 +632,14 @@
     return [];
   }
 
-  function formatJobTitles(roles) {
+  function formatJobTitles(roles, kind) {
     if (!roles || !roles.length) return '';
-    return roles.join(' & ');
+    return roles
+      .map(function (role) {
+        var jd = resolveJobDescription(role, kind);
+        return (jd && jd.title) ? jd.title : canonicalRoleName(role);
+      })
+      .join(' & ');
   }
 
   function normalizeRoleScales(o, roles) {
@@ -1524,7 +1536,7 @@
       case 'day_centre_part_time':
         return 'The Employee will provide day centre support services including facilitating structured activities and programmes for participants, assisting with personal care and support needs as required, maintaining a safe and welcoming environment, completing daily records, reports and required session/day feedback, liaising with families and external professionals, and any other reasonable duties related to the operation of the Employer\'s Day Centre service. Session feedback and daily records form part of the role and are covered by the remuneration for this Agreement as set out under Employee Remuneration.';
       case 'full_time':
-        return 'The Employee will drive business growth and partnership development, including identifying and securing new funding streams, developing relationships with commissioners, local authorities and partner organisations, preparing tenders, proposals and impact reports, supporting the senior leadership team with strategic planning, and any other reasonable duties related to the Employer\'s business development objectives.';
+        return 'The Employee will drive business growth and partnership development, including identifying and securing new funding streams, developing relationships with commissioners, local authorities and partner organisations, preparing tenders, proposals and impact reports, coordinating HR and organisational administration as directed, supporting the senior leadership team with strategic planning and operations, and any other reasonable duties related to the Employer\'s business development and operations objectives.';
       case 'fixed_term':
         return 'The Employee will perform all duties as requested by the Employer that are reasonable and customarily performed by a person holding a similar position in the industry or business of the Employer. Specific duties will be communicated at or before the start of employment and may reasonably vary with service needs.';
       case 'permanent_part_time':
@@ -1544,7 +1556,7 @@
     var roles      = normalizeRoles(o);
     var roleScales = normalizeRoleScales(o, roles);
     var roleScaleSummary = formatRoleScaleSummary(roleScales, roles);
-    var jobTitle   = o.jobTitleOverride || formatJobTitles(roles) || (o.role ? String(o.role).trim() : '') || EM;
+    var jobTitle   = o.jobTitleOverride || formatJobTitles(roles, kind) || (o.role ? String(o.role).trim() : '') || EM;
     var today      = new Date().toISOString().slice(0, 10);
     var workDays   = Array.isArray(o.workDays) ? o.workDays.filter(Boolean) : [];
 

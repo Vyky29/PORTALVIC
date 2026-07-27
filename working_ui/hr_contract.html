@@ -895,11 +895,12 @@
               <fieldset>
                 <legend style="font-weight:500;margin-bottom:0.35rem;color:var(--navy);font-size:0.9rem;">Role(s) <span aria-hidden="true">*</span></legend>
                 <div class="checkbox-group" id="roleCheckboxes">
-                  <label class="place-option"><input type="checkbox" name="role" value="Support Worker"><span>Support Worker</span></label>
+                  <label class="place-option"><input type="checkbox" name="role" value="Specialist Support Worker — Hub & Community"><span>Specialist Support Worker — Hub &amp; Community</span></label>
+                  <label class="place-option"><input type="checkbox" name="role" value="Specialist Support Worker — Session Lead"><span>Specialist Support Worker — Session Lead</span></label>
                   <label class="place-option"><input type="checkbox" name="role" value="Specialist Support Worker — Climbing"><span>Specialist Support Worker — Climbing</span></label>
                   <label class="place-option"><input type="checkbox" name="role" value="Specialist Support Worker — Fitness"><span>Specialist Support Worker — Fitness</span></label>
                   <label class="place-option"><input type="checkbox" name="role" value="Specialist Support Worker — Swimming"><span>Specialist Support Worker — Swimming</span></label>
-                  <label class="place-option"><input type="checkbox" name="role" value="Business Development"><span>Business Development</span></label>
+                  <label class="place-option"><input type="checkbox" name="role" value="Business Development & Operations"><span>Business Development &amp; Operations</span></label>
                 </div>
                 <span class="error-msg">Select at least one role.</span>
               </fieldset>
@@ -1056,7 +1057,7 @@
     </section>
   </div>
 
-  <script src="portal/contract-core.js?v=20260727-both-settings"></script>
+  <script src="portal/contract-core.js?v=20260727-role-names"></script>
   <script type="module">
     import { bootstrapDashboardSupabase } from "./portal/auth-handler.js?v=20260521-2";
     const gate = document.getElementById("authGate");
@@ -1078,7 +1079,7 @@
         gate.classList.add("hidden");
         root.classList.remove("hidden");
         const s = document.createElement("script");
-        s.src = "portal/hr-contract-app.js?v=20260727-both-settings";
+        s.src = "portal/hr-contract-app.js?v=20260727-role-names";
         document.body.appendChild(s);
       } catch (e) {
         gate.innerHTML =

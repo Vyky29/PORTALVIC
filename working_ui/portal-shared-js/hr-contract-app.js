@@ -383,8 +383,8 @@
     "Specialist Support Worker — Swimming": [VENUE_ACTON, VENUE_SWIMFARM, VENUE_NORTHOLT],
     "Specialist Support Worker — Climbing": [VENUE_WESTWAY],
     "Specialist Support Worker — Fitness": [VENUE_WESTWAY, VENUE_HUB],
-    "Support Worker": [VENUE_HUB, VENUE_WESTWAY],
-    "Service Lead": [VENUE_HUB, VENUE_WESTWAY]
+    "Specialist Support Worker — Hub & Community": [VENUE_HUB, VENUE_WESTWAY],
+    "Specialist Support Worker — Session Lead": [VENUE_HUB, VENUE_WESTWAY]
   };
   var prevSelectedRoles = [];
 
@@ -394,6 +394,12 @@
     if (/swimming/i.test(r)) return ROLE_VENUE_DEFAULTS["Specialist Support Worker — Swimming"].slice();
     if (/climbing/i.test(r)) return ROLE_VENUE_DEFAULTS["Specialist Support Worker — Climbing"].slice();
     if (/fitness/i.test(r)) return ROLE_VENUE_DEFAULTS["Specialist Support Worker — Fitness"].slice();
+    if (/hub\s*&\s*community|support worker/i.test(r) && !/session lead/i.test(r)) {
+      return ROLE_VENUE_DEFAULTS["Specialist Support Worker — Hub & Community"].slice();
+    }
+    if (/session lead|service lead/i.test(r)) {
+      return ROLE_VENUE_DEFAULTS["Specialist Support Worker — Session Lead"].slice();
+    }
     return [];
   }
 
@@ -786,6 +792,22 @@
     return validateStep(1) && validateStep(2);
   }
 
+  function scrollActiveStepIntoView() {
+    const embed = document.getElementById("hrContractEmbed");
+    const progress = embed && embed.querySelector(".progress-bar");
+    const panel = embed && embed.querySelector(".step-panel.active");
+    const heading = panel && panel.querySelector("h2");
+    const target = progress || heading || panel || embed;
+    if (!target) return;
+    try {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (_) {
+      try {
+        target.scrollIntoView(true);
+      } catch (_2) {}
+    }
+  }
+
   function setStep(step) {
     currentStep = step;
     document.querySelectorAll(".step-panel").forEach((p) => {
@@ -818,6 +840,10 @@
         (isZeroHoursKind() ? " — " + formatRoleScaleLabel() : "");
       $("sendContractBtn").disabled = !canSendContract();
     }
+    /* Next sits at the bottom; after a step change scroll back to the wizard top. */
+    requestAnimationFrame(() => {
+      requestAnimationFrame(scrollActiveStepIntoView);
+    });
   }
 
   function ensureDirectorPad() {

@@ -317,8 +317,8 @@
 
     // Prefer dual tracks from roster when present (e.g. support + swimming).
     var chips = [];
-    if (hasSupport) chips.push("Support Worker");
-    if (hasLead) chips.push("Leader");
+    if (hasSupport) chips.push("Specialist Support Worker — Hub & Community");
+    if (hasLead) chips.push("Specialist Support Worker — Session Lead");
     if (hasSwim) chips.push("Specialist Support Worker — Swimming");
     if (hasClimb) chips.push("Specialist Support Worker — Climbing");
     if (hasFitness) chips.push("Specialist Support Worker — Fitness");
