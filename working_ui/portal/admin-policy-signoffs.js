@@ -220,6 +220,7 @@
       "<em>Procedures</em> are required only for the worker's contract roles and venues " +
       "(e.g. swimming-only staff do not get climbing, Hub/fitness or home-visit procedures marked as outstanding). " +
       "Managers (Victor, Palankas, Raul) must acknowledge <em>all</em> policies and procedures. " +
+      "Each service role also requires the emergency procedures (and venue overviews) for its usual venues. " +
       "Grey <code>n/a</code> means not in scope for that person." +
       "</div></div>" +
       '<div class="c4k-sessions-hub-tabs" role="tablist" aria-label="Policy sign-off groups" style="margin-bottom:12px">' + tabHtml + "</div>" +

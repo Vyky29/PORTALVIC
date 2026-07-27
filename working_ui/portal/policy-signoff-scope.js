@@ -160,6 +160,26 @@
     return ACTIVE_CONTRACT_STATUSES.indexOf(s) >= 0 || s.indexOf("await") >= 0 || s.indexOf("complet") >= 0;
   }
 
+  /** Default venues whose emergency (and overview) procedures follow each service role. */
+  function expandServiceVenueTags(set) {
+    if (set.indexOf("swim") >= 0) {
+      addTag(set, "venue_acton");
+      addTag(set, "venue_swimfarm");
+      addTag(set, "venue_northolt");
+    }
+    if (set.indexOf("climb") >= 0) {
+      addTag(set, "venue_westway");
+    }
+    if (set.indexOf("fitness") >= 0) {
+      addTag(set, "venue_westway");
+      addTag(set, "venue_hub");
+    }
+    if (set.indexOf("hub") >= 0 || set.indexOf("day_centre") >= 0) {
+      addTag(set, "venue_hub");
+      addTag(set, "venue_westway");
+    }
+  }
+
   /**
    * Union of tags from all live contracts (+ staff_role / app_role fallback).
    * Multi-role workers get every procedure that matches any of their roles.
@@ -209,6 +229,9 @@
       });
     });
 
+    // Role implies its usual venues, so venue emergency procedures are required too.
+    expandServiceVenueTags(set);
+
     return set;
   }
 
@@ -238,7 +261,7 @@
     if (t.indexOf("day_centre") >= 0) nice.push("Day Centre");
     if (t.indexOf("home_visit") >= 0) nice.push("Home visit");
     if (t.indexOf("office") >= 0) nice.push("Office");
-    return nice.join(" � ");
+    return nice.join(" · ");
   }
 
   global.PortalPolicySignoffScope = {
