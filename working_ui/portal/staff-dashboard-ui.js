@@ -2959,11 +2959,14 @@
             }
             const offWd = termStaffId && portalTermStaffOffWeekdayOnDate(isoKey, termStaffId);
             const afterTermEnd = (typeof portalTermCalendarToIso === 'function' ? portalTermCalendarToIso() : '') && isoKey > portalTermCalendarToIso();
+            const termClosedDay = portalTermClosedDates().indexOf(isoKey) >= 0;
             label = ovPulseHalf
               ? `${day}, schedule change — see quick menu`
               : (afterTermEnd
                 ? `${day}, term ended`
-                : (offWd ? `${day}, not scheduled this term` : (staffAway ? `${day}, not on duty` : `${day}, half term`)));
+                : (termClosedDay
+                  ? `${day}, day off`
+                  : (offWd ? `${day}, not scheduled this term` : (staffAway ? `${day}, not on duty` : `${day}, half term`))));
             if(ovPulseHalf && dayFlagsOff && dayFlagsOff.hasAbsentAnnounced){
               cls += ' term-cal-day--with-badge';
             }

@@ -41,12 +41,12 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   "termFeedbackAssumeCompleteThroughIso": "2026-06-22",
   "termFeedbackReminderFromIso": "2026-06-25",
   "termClosedDates": [
-    "2026-05-04"
+    "2026-05-04",
+    "2026-07-30"
   ],
   "termStaffAwayDatesByProfileKey": {
     "roberto": [
-      "2026-05-07",
-      "2026-07-30"
+      "2026-05-07"
     ],
     "javier": [
       "2026-06-18",
