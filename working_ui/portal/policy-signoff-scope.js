@@ -122,6 +122,54 @@
     else if (s === "admin") addTag(set, "office");
   }
 
+  function profileNameBlob(profile) {
+    profile = profile || {};
+    function norm(s) {
+      return String(s || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+    }
+    return norm(
+      [profile.full_name, profile.username, profile.email].filter(Boolean).join(" ")
+    );
+  }
+
+  /**
+   * Pre-contract dual-role overrides (until employment contracts are issued).
+   * Luliya / Youssef / Roberto: swimming + class support (Hub / Day Centre).
+   * Bismark: climbing + class support (Hub / Day Centre).
+   */
+  function applyNamedDualRoleOverrides(profile, set) {
+    var blob = profileNameBlob(profile);
+    if (!blob) return;
+    if (/\bluliya\b/.test(blob) || /\blulia\b/.test(blob)) {
+      addTag(set, "swim");
+      addTag(set, "hub");
+      addTag(set, "day_centre");
+      return;
+    }
+    if (/\byoussef\b/.test(blob) || /\byusef\b/.test(blob) || /\byusuf\b/.test(blob)) {
+      addTag(set, "swim");
+      addTag(set, "hub");
+      addTag(set, "day_centre");
+      return;
+    }
+    if (/\broberto\b/.test(blob)) {
+      addTag(set, "swim");
+      addTag(set, "hub");
+      addTag(set, "day_centre");
+      return;
+    }
+    if (/\bbismark\b/.test(blob) || /\bbismarck\b/.test(blob)) {
+      addTag(set, "climb");
+      addTag(set, "hub");
+      addTag(set, "day_centre");
+    }
+  }
+
   /** Directors / managers acknowledge the full policy + procedure set. */
   function isCompanyManagerProfile(profile) {
     profile = profile || {};
@@ -228,6 +276,9 @@
         tagsFromPlace(pl, set);
       });
     });
+
+    // Named dual roles before contracts are issued (union with staff_role / contracts).
+    applyNamedDualRoleOverrides(profile, set);
 
     // Role implies its usual venues, so venue emergency procedures are required too.
     expandServiceVenueTags(set);
