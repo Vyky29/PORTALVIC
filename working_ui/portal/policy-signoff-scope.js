@@ -1,0 +1,211 @@
+/**
+ * Shared policy / procedure sign-off scope.
+ * Policies = everyone. Procedures = union of tags from employment contract(s).
+ */
+(function (global) {
+  "use strict";
+
+  /** Statuses that count toward a worker's reading list (sent + signed). */
+  var ACTIVE_CONTRACT_STATUSES = [
+    "awaiting_employee",
+    "completed",
+    "active",
+    "signed",
+    "sent",
+    "pending",
+  ];
+
+  var DOC_SCOPE = {
+    "POL-001": { kind: "policy", tags: ["all"] },
+    "POL-002": { kind: "policy", tags: ["all"] },
+    "POL-003": { kind: "policy", tags: ["all"] },
+    "POL-004": { kind: "policy", tags: ["all"] },
+    "POL-005": { kind: "policy", tags: ["all"] },
+    "POL-006": { kind: "policy", tags: ["all"] },
+    "POL-007": { kind: "policy", tags: ["all"] },
+    "POL-008": { kind: "policy", tags: ["all"] },
+    "POL-009": { kind: "policy", tags: ["all"] },
+    "POL-010": { kind: "policy", tags: ["all"] },
+    "POL-011": { kind: "policy", tags: ["all"] },
+    "POL-012": { kind: "policy", tags: ["all"] },
+    "POL-014": { kind: "procedure", tags: ["core"] },
+    "POL-015": { kind: "procedure", tags: ["core"] },
+    "POL-016": { kind: "procedure", tags: ["core"] },
+    "POL-017": { kind: "procedure", tags: ["core"] },
+    "POL-018": { kind: "procedure", tags: ["core"] },
+    "POL-019": { kind: "procedure", tags: ["core"] },
+    "POL-020": { kind: "procedure", tags: ["core"] },
+    "POL-021": { kind: "procedure", tags: ["core"] },
+    "POL-022": { kind: "procedure", tags: ["office"] },
+    "POL-023": { kind: "procedure", tags: ["core"] },
+    "POL-024": { kind: "procedure", tags: ["swim"] },
+    "POL-025": { kind: "procedure", tags: ["climb"] },
+    "POL-026": { kind: "procedure", tags: ["hub", "day_centre"] },
+    "POL-027": { kind: "procedure", tags: ["fitness"] },
+    "POL-028": { kind: "procedure", tags: ["hub", "day_centre"] },
+    "POL-029": { kind: "procedure", tags: ["venue_acton"] },
+    "POL-030": { kind: "procedure", tags: ["venue_westway"] },
+    "POL-031": { kind: "procedure", tags: ["venue_swimfarm"] },
+    "POL-032": { kind: "procedure", tags: ["venue_northolt"] },
+    "POL-033": { kind: "procedure", tags: ["venue_acton"] },
+    "POL-034": { kind: "procedure", tags: ["venue_westway"] },
+    "POL-035": { kind: "procedure", tags: ["venue_swimfarm"] },
+    "POL-036": { kind: "procedure", tags: ["venue_northolt"] },
+    "POL-037": { kind: "procedure", tags: ["venue_hub", "hub", "day_centre"] },
+    "POL-038": { kind: "procedure", tags: ["venue_hub", "hub", "day_centre"] },
+    "POL-039": { kind: "procedure", tags: ["home_visit"] },
+    "POL-040": { kind: "procedure", tags: ["home_visit"] },
+    "POL-041": { kind: "procedure", tags: ["home_visit"] },
+    "POL-042": { kind: "procedure", tags: ["core"] },
+    "POL-043": { kind: "procedure", tags: ["core"] },
+    "POL-044": { kind: "procedure", tags: ["core"] },
+    "POL-045": { kind: "procedure", tags: ["core"] },
+    "POL-046": { kind: "procedure", tags: ["core"] },
+    "POL-047": { kind: "procedure", tags: ["swim"] },
+    "POL-048": { kind: "procedure", tags: ["core"] },
+    "POL-049": { kind: "policy", tags: ["all"] },
+    "POL-050": { kind: "policy", tags: ["all"] },
+    "POL-051": { kind: "policy", tags: ["all"] },
+    "POL-052": { kind: "policy", tags: ["all"] },
+    "POL-053": { kind: "policy", tags: ["all"] },
+    "POL-054": { kind: "policy", tags: ["all"] },
+    "POL-055": { kind: "policy", tags: ["all"] },
+    "POL-056": { kind: "policy", tags: ["all"] },
+    "POL-057": { kind: "policy", tags: ["all"] },
+    "POL-058": { kind: "policy", tags: ["all"] },
+    "POL-059": { kind: "policy", tags: ["all"] },
+    "POL-060": { kind: "policy", tags: ["all"] },
+    "POL-061": { kind: "policy", tags: ["all"] },
+    "POL-062": { kind: "policy", tags: ["all"] },
+    "POL-063": { kind: "policy", tags: ["all"] },
+  };
+
+  function addTag(set, tag) {
+    if (!tag) return;
+    if (set.indexOf(tag) < 0) set.push(tag);
+  }
+
+  function tagsFromRoleText(text, set) {
+    var t = String(text || "").toLowerCase();
+    if (!t) return;
+    if (/swimming|\bswim\b/.test(t)) addTag(set, "swim");
+    if (/climbing|\bclimb\b/.test(t)) addTag(set, "climb");
+    if (/fitness|physical/.test(t)) addTag(set, "fitness");
+    if (/hub\s*&\s*community|hub and community|\bhub\b|support worker|session lead/.test(t)) {
+      addTag(set, "hub");
+    }
+    if (/day\s*centre|day center/.test(t)) addTag(set, "day_centre");
+    if (/home\s*visit|lone\s*work|outreach/.test(t)) addTag(set, "home_visit");
+    if (/business development|\badmin\b|\boffice\b|operations/.test(t)) addTag(set, "office");
+  }
+
+  function tagsFromPlace(place, set) {
+    var p = String(place || "").toLowerCase();
+    if (!p) return;
+    if (/acton/.test(p)) addTag(set, "venue_acton");
+    if (/westway/.test(p)) addTag(set, "venue_westway");
+    if (/swimfarm|swim farm/.test(p)) addTag(set, "venue_swimfarm");
+    if (/northolt/.test(p)) addTag(set, "venue_northolt");
+    if (/hub/.test(p) || /clubsensational/.test(p)) {
+      addTag(set, "venue_hub");
+      addTag(set, "hub");
+    }
+  }
+
+  function tagsFromStaffRoleSlug(slug, set) {
+    var s = String(slug || "").toLowerCase().trim();
+    if (s === "swimming" || s === "swim") addTag(set, "swim");
+    else if (s === "climbing" || s === "climb") addTag(set, "climb");
+    else if (s === "fitness" || s === "physical") addTag(set, "fitness");
+    else if (s === "support" || s === "support_lead" || s === "manager") addTag(set, "hub");
+    else if (s === "admin") addTag(set, "office");
+  }
+
+  function isLiveContractStatus(status) {
+    var s = String(status || "").toLowerCase().trim();
+    if (!s) return false;
+    if (/cancel|void|delet|supersed|draft|expired|rejected/.test(s)) return false;
+    return ACTIVE_CONTRACT_STATUSES.indexOf(s) >= 0 || s.indexOf("await") >= 0 || s.indexOf("complet") >= 0;
+  }
+
+  /**
+   * Union of tags from all live contracts (+ staff_role / app_role fallback).
+   * Multi-role workers get every procedure that matches any of their roles.
+   */
+  function deriveTagsForWorker(profile, contracts) {
+    var set = ["core"];
+    profile = profile || {};
+    var app = String(profile.app_role || "").toLowerCase();
+    if (app === "admin" || app === "ceo") addTag(set, "office");
+
+    tagsFromStaffRoleSlug(profile.staff_role, set);
+
+    (contracts || []).forEach(function (c) {
+      if (c && c.status != null && !isLiveContractStatus(c.status)) return;
+      var fp = c.form_payload || {};
+      var kind = String(fp.contractKind || c.contract_kind || "").toLowerCase();
+      if (kind.indexOf("day_centre") >= 0) {
+        addTag(set, "day_centre");
+        addTag(set, "hub");
+      }
+      var roles = fp.roles;
+      if (!Array.isArray(roles) && fp.role) roles = [fp.role];
+      if (!Array.isArray(roles) && c.role) roles = String(c.role).split(/[,;|/]+/);
+      (roles || []).forEach(function (r) {
+        tagsFromRoleText(r, set);
+      });
+      tagsFromRoleText(c.role, set);
+
+      var ss = fp.serviceSettings;
+      if (!Array.isArray(ss) && fp.serviceSetting) ss = [fp.serviceSetting];
+      (ss || []).forEach(function (x) {
+        if (/day_centre/i.test(String(x))) {
+          addTag(set, "day_centre");
+          addTag(set, "hub");
+        }
+      });
+
+      (fp.places || []).forEach(function (pl) {
+        tagsFromPlace(pl, set);
+      });
+    });
+
+    return set;
+  }
+
+  function docApplies(doc, workerTags) {
+    if (!doc) return false;
+    if (typeof doc === "string") doc = DOC_SCOPE[String(doc).toUpperCase()];
+    if (!doc) return false;
+    if (doc.kind === "policy") return true;
+    var tags = doc.tags || ["core"];
+    if (tags.indexOf("all") >= 0) return true;
+    var wt = workerTags || ["core"];
+    for (var i = 0; i < tags.length; i++) {
+      if (wt.indexOf(tags[i]) >= 0) return true;
+    }
+    return false;
+  }
+
+  function roleLabelFromTags(tags) {
+    var nice = [];
+    var t = tags || [];
+    if (t.indexOf("swim") >= 0) nice.push("Swim");
+    if (t.indexOf("climb") >= 0) nice.push("Climb");
+    if (t.indexOf("fitness") >= 0) nice.push("Fitness");
+    if (t.indexOf("hub") >= 0) nice.push("Hub");
+    if (t.indexOf("day_centre") >= 0) nice.push("Day Centre");
+    if (t.indexOf("home_visit") >= 0) nice.push("Home visit");
+    if (t.indexOf("office") >= 0) nice.push("Office");
+    return nice.join(" · ");
+  }
+
+  global.PortalPolicySignoffScope = {
+    DOC_SCOPE: DOC_SCOPE,
+    ACTIVE_CONTRACT_STATUSES: ACTIVE_CONTRACT_STATUSES,
+    isLiveContractStatus: isLiveContractStatus,
+    deriveTagsForWorker: deriveTagsForWorker,
+    docApplies: docApplies,
+    roleLabelFromTags: roleLabelFromTags,
+  };
+})(typeof window !== "undefined" ? window : this);

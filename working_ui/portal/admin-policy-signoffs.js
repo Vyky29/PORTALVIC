@@ -34,6 +34,7 @@
     loading: false,
     error: null,
     loaded: false,
+    _boundContractRefresh: false,
   };
 
   function configure(opts) {
@@ -50,94 +51,31 @@
     return CATALOG.filter(function (d) { return d.kind === tab; });
   }
 
+  function scopeApi() {
+    return global.PortalPolicySignoffScope || null;
+  }
+
   function roleLabel(row) {
     var tags = state.tagsByUser[String(row.id)] || [];
-    var nice = [];
-    if (tags.indexOf("swim") >= 0) nice.push("Swim");
-    if (tags.indexOf("climb") >= 0) nice.push("Climb");
-    if (tags.indexOf("fitness") >= 0) nice.push("Fitness");
-    if (tags.indexOf("hub") >= 0) nice.push("Hub");
-    if (tags.indexOf("day_centre") >= 0) nice.push("Day Centre");
-    if (tags.indexOf("home_visit") >= 0) nice.push("Home visit");
-    if (nice.length) return nice.join(" · ");
+    var api = scopeApi();
+    var fromApi = api && api.roleLabelFromTags ? api.roleLabelFromTags(tags) : "";
+    if (fromApi) return fromApi;
     return String(row.staff_role || row.app_role || "Staff").trim() || "Staff";
   }
 
-  function addTag(set, tag) {
-    if (!tag) return;
-    if (set.indexOf(tag) < 0) set.push(tag);
-  }
-
-  function tagsFromRoleText(text, set) {
-    var t = String(text || "").toLowerCase();
-    if (!t) return;
-    if (/swimming|\bswim\b/.test(t)) addTag(set, "swim");
-    if (/climbing|\bclimb\b/.test(t)) addTag(set, "climb");
-    if (/fitness|physical/.test(t)) addTag(set, "fitness");
-    if (/hub\s*&\s*community|hub and community|\bhub\b|support worker|session lead/.test(t)) addTag(set, "hub");
-    if (/day\s*centre|day center/.test(t)) addTag(set, "day_centre");
-    if (/home\s*visit|lone\s*work|outreach/.test(t)) addTag(set, "home_visit");
-    if (/business development|\badmin\b|\boffice\b|operations/.test(t)) addTag(set, "office");
-  }
-
-  function tagsFromPlace(place, set) {
-    var p = String(place || "").toLowerCase();
-    if (!p) return;
-    if (/acton/.test(p)) addTag(set, "venue_acton");
-    if (/westway/.test(p)) addTag(set, "venue_westway");
-    if (/swimfarm|swim farm/.test(p)) addTag(set, "venue_swimfarm");
-    if (/northolt/.test(p)) addTag(set, "venue_northolt");
-    if (/hub/.test(p) || /clubsensational/.test(p)) {
-      addTag(set, "venue_hub");
-      addTag(set, "hub");
-    }
-  }
-
-  function tagsFromStaffRoleSlug(slug, set) {
-    var s = String(slug || "").toLowerCase().trim();
-    if (s === "swimming" || s === "swim") addTag(set, "swim");
-    else if (s === "climbing" || s === "climb") addTag(set, "climb");
-    else if (s === "fitness" || s === "physical") addTag(set, "fitness");
-    else if (s === "support" || s === "support_lead" || s === "manager") addTag(set, "hub");
-    else if (s === "admin") addTag(set, "office");
-  }
-
   function deriveTagsForWorker(profile, contracts) {
-    var set = ["core"];
-    var app = String(profile.app_role || "").toLowerCase();
-    if (app === "admin" || app === "ceo") addTag(set, "office");
-
-    tagsFromStaffRoleSlug(profile.staff_role, set);
-
-    (contracts || []).forEach(function (c) {
-      var fp = c.form_payload || {};
-      var kind = String(fp.contractKind || c.contract_kind || "").toLowerCase();
-      if (kind.indexOf("day_centre") >= 0) {
-        addTag(set, "day_centre");
-        addTag(set, "hub");
-      }
-      var roles = fp.roles;
-      if (!Array.isArray(roles) && fp.role) roles = [fp.role];
-      if (!Array.isArray(roles) && c.role) roles = String(c.role).split(/[,;|/]+/);
-      (roles || []).forEach(function (r) { tagsFromRoleText(r, set); });
-      tagsFromRoleText(c.role, set);
-
-      var ss = fp.serviceSettings;
-      if (!Array.isArray(ss) && fp.serviceSetting) ss = [fp.serviceSetting];
-      (ss || []).forEach(function (x) {
-        if (/day_centre/i.test(String(x))) {
-          addTag(set, "day_centre");
-          addTag(set, "hub");
-        }
-      });
-
-      (fp.places || []).forEach(function (pl) { tagsFromPlace(pl, set); });
-    });
-
-    return set;
+    var api = scopeApi();
+    if (api && typeof api.deriveTagsForWorker === "function") {
+      return api.deriveTagsForWorker(profile, contracts);
+    }
+    return ["core"];
   }
 
   function docAppliesToWorker(doc, workerTags) {
+    var api = scopeApi();
+    if (api && typeof api.docApplies === "function") {
+      return api.docApplies(doc, workerTags);
+    }
     if (!doc) return false;
     if (doc.kind === "policy") return true;
     var tags = doc.tags || ["core"];
@@ -261,8 +199,9 @@
       '<div class="card-pad" style="overflow:auto"><table class="tbl tbl--center" style="min-width:' + (300 + cols.length * 52) + 'px">' +
       "<thead><tr><th>Staff</th><th>Services</th><th>Done</th>" + th + "</tr></thead><tbody>" + body + "</tbody></table></div></div>" +
       '<p class="muted" style="margin:10px 0 0;font-size:12px;line-height:1.45;max-width:54rem">' +
-      "Scope comes from employment contract roles / places when available, otherwise from <code>staff_role</code>. " +
-      'Update contracts under H&amp;R → Employment contracts so the matrix stays accurate. ' +
+      "Scope updates automatically when you send or complete an employment contract " +
+      "(multi-role workers get the union of all roles and venues). " +
+      "Fallback is <code>staff_role</code> until a live contract exists. " +
       '<a href="/policies_portal.html" target="_blank" rel="noopener">Policies Portal</a>.' +
       "</p>";
 
@@ -290,17 +229,26 @@
   }
 
   function loadContracts(client) {
+    var api = scopeApi();
     return client
       .from("employment_contracts")
       .select("id, user_id, role, status, form_payload")
-      .in("status", ["sent", "completed", "draft", "pending", "active"])
       .limit(2000)
       .then(function (res) {
         if (res.error) {
           try { console.warn("[policy-signoffs] employment_contracts:", res.error.message); } catch (_) {}
           return [];
         }
-        return res.data || [];
+        var rows = res.data || [];
+        if (api && typeof api.isLiveContractStatus === "function") {
+          return rows.filter(function (c) {
+            return api.isLiveContractStatus(c && c.status);
+          });
+        }
+        return rows.filter(function (c) {
+          var s = String((c && c.status) || "").toLowerCase();
+          return s === "awaiting_employee" || s === "completed" || s === "active" || s === "sent" || s === "pending";
+        });
       })
       .catch(function () { return []; });
   }
@@ -328,10 +276,22 @@
       });
   }
 
+  function bindContractRefresh() {
+    if (state._boundContractRefresh || !global.addEventListener) return;
+    state._boundContractRefresh = true;
+    global.addEventListener("portal:employment-contract-published", function () {
+      if (state.rootEl) mount(state.rootEl);
+    });
+    global.addEventListener("portal:employment-contract-updated", function () {
+      if (state.rootEl) mount(state.rootEl);
+    });
+  }
+
   function mount(rootEl) {
     state.rootEl = rootEl;
     state.loading = true;
     state.error = null;
+    bindContractRefresh();
     renderMatrix();
 
     var client = cfg.getClient && cfg.getClient();
@@ -383,6 +343,9 @@
   global.AdminPolicySignoffs = {
     configure: configure,
     mount: mount,
+    remount: function () {
+      if (state.rootEl) mount(state.rootEl);
+    },
     catalog: CATALOG,
   };
 })(typeof window !== "undefined" ? window : this);

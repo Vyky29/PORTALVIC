@@ -898,7 +898,7 @@
       $("sendSuccess").classList.add("visible");
       $("signingUrlInput").value = result.portalSignUrl || "";
       $("sendEmailNote").textContent =
-        "Published on the employee Portal dashboard (same as an announcement). They sign at contract_sign; PDF goes to My Documents.";
+        "Published on the employee Portal dashboard. Their required policies and procedures update from this contract's roles and venues (multi-role = combined list). They sign at contract_sign; PDF goes to My Documents.";
 
       saveToLocalStorage({
         contractReference,
@@ -912,6 +912,17 @@
         signedStatus: "Awaiting employee",
         signingUrl: result.portalSignUrl
       });
+      try {
+        window.dispatchEvent(
+          new CustomEvent("portal:employment-contract-published", {
+            detail: {
+              contractId: result.contractId,
+              staffUserId: result.staffUserId,
+              roles: getSelectedRoles(),
+            },
+          })
+        );
+      } catch (_) {}
       renderRecent();
       loadRecentFromSupabase();
     } catch (err) {

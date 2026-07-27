@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="/portal-static-bootstrap.js?v=20260727-policy-scope"></script>
+  <script src="/portal/policy-signoff-scope.js?v=20260727-contract-sync"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>clubSENsational Policy Portal (Staff)</title>
@@ -461,6 +463,12 @@
   .cs-index .cs-card .warn{background:#fff7ed;color:#c2410c}
   .cs-index .cs-card .exp{background:#fef2f2;color:#b91c1c}
   .cs-index .cs-card .completed{background:#dcfce7;color:#166534}
+  .cs-index .cs-card .required{background:#fef3c7;color:#92400e}
+  .cs-index .cs-card .na{background:#f3f4f6;color:#6b7280}
+  .cs-index .cs-card.is-not-required{opacity:.55}
+  .cs-index .cs-card.is-not-required:hover{opacity:.85}
+  .cs-scope-banner{margin:0 0 14px;padding:12px 14px;border-radius:12px;border:1px solid #f4b942;background:#fffbeb;color:#374151;font-size:13px;line-height:1.45}
+  .cs-scope-banner strong{color:#2d3e50}
   .cs-index .cs-card .meta{font-size:12px;color:#6b7280;margin:0 0 10px}
   .cs-index .cs-card a.btn{margin-top:auto;background:#2d3e50;color:#fff;text-align:center;padding:10px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;transition:all .15s;display:block}
   .cs-index .cs-card a.btn:hover{background:#f4b942;color:#2d3e50}
@@ -12113,6 +12121,212 @@
         saveStaffAckMap(m);
       }
 
+      var staffScopeState = {
+        tags: ["core"],
+        label: "",
+        loaded: false,
+        userId: "",
+        profile: null,
+      };
+
+      function persistStaffAckToDocuments(policyId, rec, canvas) {
+        try {
+          var box = window.__PORTAL_SUPABASE__ || {};
+          var client = box.client;
+          var session = box.session;
+          var user = session && session.user;
+          if (!client || !user || !user.id || !policyId) return Promise.resolve(null);
+          var p = getPolicyById(policyId);
+          var title =
+            "Policy acknowledgment — " +
+            policyId +
+            (p && p.title ? " · " + p.title : "");
+          var relatedDate =
+            (rec && rec.dateSigned) || new Date().toISOString().slice(0, 10);
+          var doInsert = function (fileUrl) {
+            return client
+              .from("documents")
+              .insert([
+                {
+                  user_id: user.id,
+                  document_type: "staff_policy_ack",
+                  category: "training",
+                  title: title.slice(0, 200),
+                  related_date: relatedDate,
+                  related_session_key: String(policyId).toUpperCase(),
+                  file_url: fileUrl,
+                  source_page: "policies_portal",
+                },
+              ])
+              .select("id")
+              .maybeSingle();
+          };
+          if (canvas && typeof canvas.toBlob === "function") {
+            return new Promise(function (resolve) {
+              canvas.toBlob(function (blob) {
+                if (!blob) {
+                  doInsert("policy_ack/" + user.id + "/" + policyId + ".ack")
+                    .then(function (r) {
+                      resolve(r && r.data);
+                    })
+                    .catch(function () {
+                      resolve(null);
+                    });
+                  return;
+                }
+                var path =
+                  user.id +
+                  "/policy_ack/" +
+                  String(policyId).toUpperCase() +
+                  "_" +
+                  Date.now() +
+                  ".png";
+                client.storage
+                  .from("documents")
+                  .upload(path, blob, { contentType: "image/png", upsert: false })
+                  .then(function (up) {
+                    if (up.error) throw up.error;
+                    return doInsert(path);
+                  })
+                  .then(function (r) {
+                    resolve(r && r.data);
+                  })
+                  .catch(function (err) {
+                    try {
+                      console.warn("[policies] ack document", err);
+                    } catch (_) {}
+                    resolve(null);
+                  });
+              }, "image/png");
+            });
+          }
+          return doInsert("policy_ack/" + user.id + "/" + policyId + ".ack")
+            .then(function (r) {
+              return r && r.data;
+            })
+            .catch(function () {
+              return null;
+            });
+        } catch (e) {
+          return Promise.resolve(null);
+        }
+      }
+
+      function mergeServerAcksIntoLocal(rows) {
+        if (!rows || !rows.length) return;
+        var m = loadStaffAckMap();
+        var changed = false;
+        rows.forEach(function (row) {
+          var pid = String(row.related_session_key || "")
+            .trim()
+            .toUpperCase();
+          if (!pid || m[pid]) return;
+          m[pid] = {
+            policyId: pid,
+            signedAt: row.created_at || new Date().toISOString(),
+            dateSigned: row.related_date || String(row.created_at || "").slice(0, 10),
+            fromServer: true,
+          };
+          changed = true;
+        });
+        if (changed) saveStaffAckMap(m);
+      }
+
+      function updateScopeBanner(root) {
+        if (!root) return;
+        var host = root.querySelector(".cs-index") || root;
+        var existing = root.querySelector("#csScopeBanner");
+        var label = staffScopeState.label || "";
+        if (!staffScopeState.loaded) {
+          if (existing) existing.remove();
+          return;
+        }
+        var html =
+          "<strong>Your required reading</strong> is set from your employment contract" +
+          (label ? " (" + label + ")" : "") +
+          ". Items marked <strong>Required</strong> must be acknowledged. Grey <strong>Not required</strong> items stay available for reference if you work across services later.";
+        if (existing) {
+          existing.innerHTML = html;
+          return;
+        }
+        var el = document.createElement("div");
+        el.id = "csScopeBanner";
+        el.className = "cs-scope-banner";
+        el.setAttribute("role", "status");
+        el.innerHTML = html;
+        var first = host.firstElementChild;
+        if (first) host.insertBefore(el, first);
+        else host.appendChild(el);
+      }
+
+      function loadStaffContractScope() {
+        return new Promise(function (resolve) {
+          var run = async function () {
+            try {
+              var mod = await import("/portal/auth-handler.js?v=20260727-policy-scope");
+              if (mod && typeof mod.bootstrapDashboardSupabase === "function") {
+                await mod.bootstrapDashboardSupabase({ page: "staff" });
+              }
+            } catch (e) {
+              try {
+                console.warn("[policies] auth bootstrap", e);
+              } catch (_) {}
+            }
+            var box = window.__PORTAL_SUPABASE__ || {};
+            var client = box.client;
+            var session = box.session;
+            var profile = box.staff_profile || null;
+            if (!client || !session || !session.user || !session.user.id) {
+              staffScopeState.loaded = true;
+              staffScopeState.tags = ["core"];
+              staffScopeState.label = "";
+              resolve(staffScopeState);
+              return;
+            }
+            staffScopeState.userId = session.user.id;
+            staffScopeState.profile = profile;
+            try {
+              var acks = await client
+                .from("documents")
+                .select("related_session_key, created_at, related_date")
+                .eq("document_type", "staff_policy_ack")
+                .eq("user_id", session.user.id)
+                .limit(500);
+              if (!acks.error) mergeServerAcksIntoLocal(acks.data || []);
+            } catch (_) {}
+            var contracts = [];
+            try {
+              var res = await client
+                .from("employment_contracts")
+                .select("id, user_id, role, status, form_payload")
+                .eq("user_id", session.user.id)
+                .limit(50);
+              if (!res.error) contracts = res.data || [];
+            } catch (_) {}
+            var api = window.PortalPolicySignoffScope;
+            var live = contracts;
+            if (api && typeof api.isLiveContractStatus === "function") {
+              live = contracts.filter(function (c) {
+                return api.isLiveContractStatus(c && c.status);
+              });
+            }
+            var tags =
+              api && typeof api.deriveTagsForWorker === "function"
+                ? api.deriveTagsForWorker(profile || {}, live)
+                : ["core"];
+            staffScopeState.tags = tags;
+            staffScopeState.label =
+              api && api.roleLabelFromTags ? api.roleLabelFromTags(tags) : "";
+            staffScopeState.loaded = true;
+            resolve(staffScopeState);
+          };
+          run().catch(function () {
+            staffScopeState.loaded = true;
+            resolve(staffScopeState);
+          });
+        });
+      }
+
       function canvasHasSignature(cnv, ctx) {
         if (!cnv || !ctx) return false;
         try {
@@ -12131,7 +12345,10 @@
         var d = Math.ceil((review - now) / 86400000);
         var daysEl = root.querySelector("#cs-days");
         if (daysEl) daysEl.textContent = String(d);
+        updateScopeBanner(root);
         var ackMap = loadStaffAckMap();
+        var api = window.PortalPolicySignoffScope;
+        var workerTags = staffScopeState.tags || ["core"];
         var links = root.querySelectorAll(".cs-index a.btn[data-pc-policy]");
         for (var i = 0; i < links.length; i++) {
           var link = links[i];
@@ -12141,6 +12358,14 @@
           if (!st) continue;
           var pid = link.getAttribute("data-pc-policy") || "";
           if (!pid) continue;
+          var docMeta = api && api.DOC_SCOPE ? api.DOC_SCOPE[pid] : null;
+          var applies = !docMeta || !api || !api.docApplies || api.docApplies(docMeta, workerTags);
+          card.classList.toggle("is-not-required", !applies);
+          if (!applies) {
+            st.className = "status na";
+            st.textContent = "Not required";
+            continue;
+          }
           if (ackMap[pid]) {
             st.className = "status completed";
             st.textContent = "Completed";
@@ -12156,6 +12381,11 @@
               }
               metaAck.textContent = lineAck;
             }
+            continue;
+          }
+          if (docMeta) {
+            st.className = "status required";
+            st.textContent = "Required";
             continue;
           }
           if (pid === "POL-011") {
@@ -12515,6 +12745,14 @@
               signedAt: new Date().toISOString(),
               dateSigned: String(dateEl.value).trim()
             });
+            persistStaffAckToDocuments(
+              policyId,
+              {
+                signedAt: new Date().toISOString(),
+                dateSigned: String(dateEl.value).trim()
+              },
+              canvas
+            );
             if (mainHome) refreshIndexStats(mainHome);
             btnSubmit.disabled = true;
             btnClear.disabled = true;
@@ -12850,6 +13088,9 @@
 
       applyModeBar();
       mountHomePortal();
+      loadStaffContractScope().then(function () {
+        if (mainHome) refreshIndexStats(mainHome);
+      });
 
       (function initPolicyFromQuery() {
         try {
