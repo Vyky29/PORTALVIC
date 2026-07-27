@@ -444,7 +444,8 @@
       { id:'portal_docs_firstaid', label:'First aids' },
       { id:'portal_participant_documents', label:'Participant documents', hubLabel:'Participant docs' },
       { id:'portal_parent_consents', label:'Parent consents', hubLabel:'Parent consents' },
-      { id:'policies', label:'Documents & compliance' },
+      { id:'policies_portal', label:'Policies portal', externalUrl:'/policies_portal.html', skipBottomNav:true },
+      { id:'policies', label:'Policy sign-offs' },
       { id:'settings', label:'Settings' },
       { id:'portal_device_notifications', label:'Device notifications', navAction:'device_notifications', skipBottomNav:true },
       { id:'logs', label:'Activity log' },
@@ -465,7 +466,7 @@
       { id:'g_operator', label:'Operator', children:['dashboard','__h:Sessions','c4k_sessions','session_disruptions','operations_admin','operator'] },
       { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','__h:Participants','clients','portal_nav_client_services','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops','portal_parent_notify_log','portal_staff_whatsapp','portal_parent_broadcast'] },
       { id:'g_zoho', label:'H&R', children:['staffhr','onboarding','staffhr_contracts','staffhr_training_records','interviews'] },
-      { id:'g_supabase', label:'Documents', children:['__h:Participants','portal_participant_documents','portal_parent_consents','__h:Workers','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
+      { id:'g_supabase', label:'Documents', children:['__h:Policies','policies_portal','policies','__h:Participants','portal_participant_documents','portal_parent_consents','__h:Workers','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance', children:['reenrol_payments','commissioning_terms'] },
       { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','portal_device_notifications','logs','portal_nav_alerts','__h:Monitoring','portal_activity','portal_training_progress','portal_push_devices','staff_live_map','staff_ghost_teleport','__h:Other portals','portal_nav_staff','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
     ];
@@ -518,6 +519,7 @@
       staff_ghost_teleport:'<path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>',
       reports:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
       policies:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
+      policies_portal:'<path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><path d="M8 7h8M8 11h8M8 15h5"/>',
       settings:'<line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>',
       nav_hub:'<rect x="3" y="3" width="8" height="10" rx="1"/><rect x="13" y="3" width="8" height="5" rx="1"/><rect x="13" y="10" width="8" height="11" rx="1"/><rect x="3" y="15" width="8" height="6" rx="1"/>',
       nav_all_menu:'<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>',
@@ -20747,7 +20749,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portal_push_devices:'Who has Web Push registered on their phone or browser — real background alerts, not just the browser Allow flag.',
         staff_live_map:'Live map for all rostered staff: GPS from 15 min before first session until 15 min after last. The portal app must stay open on each worker\'s phone — push alerts do not replace GPS.',
         staff_ghost_teleport:'Open any worker dashboard in read-only ghost view — roster and TODAY mirror without their PIN or logging them out.',
-        policies:'Documents · sign-offs · compliance',
+        policies:'Who has signed which company policy — acknowledgement matrix.',
+        policies_portal:'Company policies and procedures library (How we work, What to open, emergency guides).',
         invoices:'Create, share and collect family invoices in Portal (Tide / Card). Same as Family invoices.',
         reenrol_payments:'Create invoices, track re-enrolment instalments, and review term payments (Summer 25/26 · Autumn 26/27).',
         commissioning_terms:'Local Authority and commissioning Terms — send acceptance links, orgs, placements and POs (separate from family T&Cs).',
@@ -20835,11 +20838,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         id:'documents',
         icon:'📄',
         title:'Documents & Compliance',
-        description:'Participant files and consents, plus worker payslips, timesheets, expenses and compliance uploads.',
-        preview:['Participant documents','Parent consents','Payslips','Timesheets','Expenses','Certificates'],
-        status:'Use this area to find participant records and worker documents.',
-        primary:['portal_participant_documents','portal_parent_consents','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_certificate'],
-        secondary:['portal_documents','portal_docs_portalpin','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid','policies']
+        description:'Company policies, participant files and consents, plus worker payslips, timesheets, expenses and compliance uploads.',
+        preview:['Policies portal','Policy sign-offs','Participant documents','Parent consents','Payslips','Certificates'],
+        status:'Use this area for policies, participant records and worker documents.',
+        primary:['policies_portal','policies','portal_participant_documents','portal_parent_consents','portal_payslips','portal_docs_certificate'],
+        secondary:['portal_documents','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid']
       },
       {
         id:'finance',
