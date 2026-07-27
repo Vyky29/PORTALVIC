@@ -3,108 +3,179 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>If this happens · clubSENsational Procedures Wall Poster</title>
+<title>If this happens Â· clubSENsational Procedures Wall Poster</title>
 <style>
-  @page { size: A3 portrait; margin: 12mm; }
+  @page { size: A3 portrait; margin: 10mm; }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
     color: #1f2937;
-    background: #e5e7eb;
+    background: #dbe3ea;
   }
   .sheet {
     max-width: 297mm;
     margin: 16px auto;
     background: #fff;
-    border: 1px solid #d1d5db;
     min-height: 400mm;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(30, 47, 64, .18);
   }
   .hero {
-    background: linear-gradient(135deg, #2d3e50 0%, #1e2f40 100%);
+    position: relative;
+    background: linear-gradient(145deg, #1e2f40 0%, #2d3e50 55%, #243746 100%);
     color: #fff;
-    padding: 28px 32px;
+    padding: 32px 36px 34px;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: "";
+    position: absolute;
+    right: -6%;
+    top: -45%;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(244,185,66,.3), transparent 68%);
+  }
+  .hero-inner {
+    position: relative;
+    z-index: 1;
     display: flex;
-    gap: 20px;
+    gap: 22px;
     align-items: center;
   }
   .logo {
-    flex: 0 0 88px;
-    width: 88px;
-    height: 88px;
+    flex: 0 0 96px;
+    width: 96px;
+    height: 96px;
     background: #fff;
-    border-radius: 14px;
-    padding: 8px;
+    border-radius: 18px;
+    padding: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
   }
-  .logo img { width: 100%; height: auto; }
+  .logo img { width: 100%; height: auto; display: block; }
   .brand {
-    font-size: 12px;
-    letter-spacing: .12em;
+    font-size: 11px;
+    letter-spacing: .16em;
     text-transform: uppercase;
     color: #f4b942;
     font-weight: 700;
-    margin: 0 0 6px;
+    margin: 0 0 8px;
   }
   h1 {
     margin: 0;
-    font-size: 34px;
-    line-height: 1.15;
+    font-size: 42px;
+    line-height: 1.05;
+    letter-spacing: -.02em;
     color: #fff;
+    font-weight: 800;
   }
-  .sub { margin: 8px 0 0; opacity: .85; font-size: 14px; color: #e5e7eb; }
-  .body { padding: 22px 28px 16px; flex: 1; }
+  .sub { margin: 10px 0 0; font-size: 15px; color: #d7e0e8; max-width: 36em; line-height: 1.45; }
+  .body { padding: 22px 28px 14px; flex: 1; background: linear-gradient(180deg, #f7f9fb 0%, #fff 24%); }
   .lead {
-    font-size: 15px;
     margin: 0 0 16px;
+    font-size: 14.5px;
     color: #374151;
+    line-height: 1.45;
   }
+  .flow {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .step {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 10px 8px;
+    text-align: center;
+    position: relative;
+  }
+  .step .n {
+    width: 24px;
+    height: 24px;
+    margin: 0 auto 6px;
+    border-radius: 50%;
+    background: #2d3e50;
+    color: #f4b942;
+    font-size: 12px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .step p { margin: 0; font-size: 11px; font-weight: 700; color: #2d3e50; line-height: 1.25; }
   table {
     width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13.5px;
+    overflow: hidden;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
   }
   th, td {
-    border: 1px solid #e5e7eb;
-    padding: 12px 14px;
+    padding: 11px 13px;
     text-align: left;
-    vertical-align: top;
+    vertical-align: middle;
+    border-bottom: 1px solid #eef2f6;
   }
   th {
     background: #2d3e50;
     color: #fff;
-    font-size: 12px;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: .05em;
+    letter-spacing: .08em;
   }
+  tr:last-child td { border-bottom: none; }
   tr:nth-child(even) td { background: #f9fafb; }
-  td.if { font-weight: 700; color: #2d3e50; width: 38%; }
-  td.then { color: #111827; }
+  td.if {
+    font-weight: 700;
+    color: #2d3e50;
+    width: 40%;
+  }
+  .ic {
+    display: inline-flex;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    align-items: center;
+    justify-content: center;
+    margin-right: 8px;
+    vertical-align: middle;
+    font-size: 14px;
+    background: #fef8e8;
+  }
   .code {
     display: inline-block;
     background: #fef8e8;
     border: 1px solid #f4b942;
     border-radius: 6px;
-    padding: 1px 7px;
-    font-size: 12px;
-    font-weight: 700;
+    padding: 2px 7px;
+    font-size: 11px;
+    font-weight: 800;
     color: #2d3e50;
-    margin-right: 4px;
+    margin-right: 5px;
   }
   .note {
-    margin-top: 16px;
+    margin-top: 14px;
     padding: 12px 14px;
-    background: #fef8e8;
-    border-left: 4px solid #f4b942;
-    font-size: 13px;
+    background: linear-gradient(90deg, #fff8e8, #fff);
+    border: 1px solid #f4b942;
+    border-radius: 12px;
+    font-size: 12.5px;
     color: #374151;
+    line-height: 1.45;
   }
   .foot {
-    padding: 16px 28px 22px;
+    padding: 14px 28px 18px;
     border-top: 1px solid #e5e7eb;
     display: flex;
     justify-content: space-between;
@@ -112,89 +183,100 @@
     align-items: center;
     font-size: 12px;
     color: #6b7280;
+    background: #fafbfc;
   }
   .cta {
-    background: #2d3e50;
-    color: #fff;
-    padding: 10px 14px;
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 13px;
+    background: #f4b942;
+    color: #1e2f40;
+    padding: 11px 16px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
   }
   @media print {
     body { background: #fff; }
-    .sheet { margin: 0; border: none; max-width: none; min-height: auto; }
+    .sheet { margin: 0; box-shadow: none; max-width: none; min-height: auto; }
   }
 </style>
 </head>
 <body>
   <div class="sheet">
     <div class="hero">
-      <div class="logo">
-        <img src="https://www.clubsensational.org/wp-content/uploads/2026/03/F-02-1.png" alt="clubSENsational" />
-      </div>
-      <div>
-        <p class="brand">clubSENsational · Autism Consultancy Services</p>
-        <h1>If this happens</h1>
-        <p class="sub">Open this procedure · Then report in the Staff Portal</p>
+      <div class="hero-inner">
+        <div class="logo">
+          <img src="https://www.clubsensational.org/wp-content/uploads/2026/03/F-02-1.png" alt="clubSENsational" />
+        </div>
+        <div>
+          <p class="brand">clubSENsational Â· Autism Consultancy Services</p>
+          <h1>If this happens</h1>
+          <p class="sub">Open this procedure. Then report in the Staff Portal. Keep laminated quick guides beside this poster.</p>
+        </div>
       </div>
     </div>
     <div class="body">
-      <p class="lead">Use this map under pressure. Laminated quick guides (Fire, Missing, Medical, Incident, Behaviour, Pool) sit beside this poster.</p>
+      <p class="lead">Use this map under pressure. Pocket cards cover Fire, Missing, Medical, Incident, Behaviour and Pool.</p>
+      <div class="flow" aria-label="Emergency hierarchy">
+        <div class="step"><div class="n">1</div><p>Keep people safe</p></div>
+        <div class="step"><div class="n">2</div><p>POL-017 principles</p></div>
+        <div class="step"><div class="n">3</div><p>Venue emergency pack</p></div>
+        <div class="step"><div class="n">4</div><p>Quick guide card</p></div>
+        <div class="step"><div class="n">5</div><p>Report in portal</p></div>
+      </div>
       <table>
         <thead>
           <tr><th>If this happens</th><th>Open this</th></tr>
         </thead>
         <tbody>
           <tr>
-            <td class="if">After every session: record progress / notes</td>
-            <td class="then"><span class="code">POL-014</span> Session Feedback &amp; Record Keeping</td>
+            <td class="if"><span class="ic" aria-hidden="true">??</span>After every session</td>
+            <td><span class="code">POL-014</span> Session Feedback &amp; Record Keeping</td>
           </tr>
           <tr>
-            <td class="if">Incident, accident, near miss</td>
-            <td class="then"><span class="code">POL-015</span> Incident Reporting · quick guide POL-045</td>
+            <td class="if"><span class="ic" aria-hidden="true">??</span>Incident / accident / near miss</td>
+            <td><span class="code">POL-015</span> Incident Reporting Â· quick guide POL-045</td>
           </tr>
           <tr>
-            <td class="if">Safeguarding concern</td>
-            <td class="then"><span class="code">POL-016</span> Safeguarding Reporting (+ Safeguarding Policy)</td>
+            <td class="if"><span class="ic" aria-hidden="true">???</span>Safeguarding concern</td>
+            <td><span class="code">POL-016</span> Safeguarding Reporting (+ Safeguarding Policy)</td>
           </tr>
           <tr>
-            <td class="if">Any emergency</td>
-            <td class="then"><span class="code">POL-017</span> Emergency Response Principles, then your venue emergency pack</td>
+            <td class="if"><span class="ic" aria-hidden="true">??</span>Any emergency</td>
+            <td><span class="code">POL-017</span> Emergency Response Principles, then venue pack</td>
           </tr>
           <tr>
-            <td class="if">Missing / unaccounted participant</td>
-            <td class="then"><span class="code">POL-018</span> Missing Service User · quick guide POL-043</td>
+            <td class="if"><span class="ic" aria-hidden="true">??</span>Missing / unaccounted participant</td>
+            <td><span class="code">POL-018</span> Missing Service User Â· quick guide POL-043</td>
           </tr>
           <tr>
-            <td class="if">Distressed behaviour / crisis</td>
-            <td class="then"><span class="code">POL-055</span> PBS Policy · quick guide POL-046 · Restrictive Practice if needed</td>
+            <td class="if"><span class="ic" aria-hidden="true">??</span>Distressed behaviour / crisis</td>
+            <td><span class="code">POL-055</span> PBS Â· quick guide POL-046</td>
           </tr>
           <tr>
-            <td class="if">Pool emergency</td>
-            <td class="then"><span class="code">POL-024</span> Aquatic Procedure · quick guide POL-047 · POL-017</td>
+            <td class="if"><span class="ic" aria-hidden="true">??</span>Pool emergency</td>
+            <td><span class="code">POL-024</span> Aquatic Â· quick guide POL-047 Â· POL-017</td>
           </tr>
           <tr>
-            <td class="if">Home visit emergency / unsafe environment</td>
-            <td class="then"><span class="code">POL-041</span> Home Visit Emergency &amp; Escalation</td>
+            <td class="if"><span class="ic" aria-hidden="true">??</span>Home visit emergency</td>
+            <td><span class="code">POL-041</span> Home Visit Emergency &amp; Escalation</td>
           </tr>
           <tr>
-            <td class="if">You cannot work a rota shift / need day off</td>
-            <td class="then"><span class="code">POL-048</span> Session Disruption Reporting</td>
+            <td class="if"><span class="ic" aria-hidden="true">???</span>Cannot work a rota shift</td>
+            <td><span class="code">POL-048</span> Session Disruption Reporting</td>
           </tr>
           <tr>
-            <td class="if">Complaint from family / commissioner</td>
-            <td class="then"><span class="code">POL-050</span> Complaints Policy</td>
+            <td class="if"><span class="ic" aria-hidden="true">??</span>Complaint from family / commissioner</td>
+            <td><span class="code">POL-050</span> Complaints Policy</td>
           </tr>
         </tbody>
       </table>
       <div class="note">
-        Hierarchy in an emergency: <strong>1)</strong> keep people safe · <strong>2)</strong> POL-017 principles ·
-        <strong>3)</strong> venue emergency pack · <strong>4)</strong> laminated quick guide · <strong>5)</strong> report in Staff Portal.
+        <strong>Remember:</strong> safety first, then follow the numbered flow above. Policies explain the standard when you have time to read. Procedures tell you what to open now.
       </div>
     </div>
     <div class="foot">
-      <div>clubSENsational LTD · Co. 13755417 · www.clubsensational.org</div>
+      <div>clubSENsational LTD Â· Co. 13755417 Â· www.clubsensational.org</div>
       <div class="cta">Policies Portal ? Procedures</div>
     </div>
   </div>
