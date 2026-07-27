@@ -1,0 +1,20 @@
+---
+description: Always write UTF-8 text files; never corrupt punctuation into ?
+alwaysApply: true
+---
+
+# Text encoding (never break characters)
+
+When creating or editing HTML, Markdown, JS string literals in docs, or any text file in this repo:
+
+1. **Save as UTF-8** (no Latin-1 / Windows-1252 / mixed encodings).
+2. Prefer **ASCII punctuation** in HTML/docs served in iframes or downloaded by staff:
+   - Use `-` instead of em/en dashes
+   - Use `'` and `"` instead of curly/smart quotes
+   - Use `...` instead of ellipsis character
+   - Use `/` or `|` instead of middle-dot `·` if unsure
+3. Always include `<meta charset="utf-8" />` at the top of HTML documents.
+4. After writing HTML/docs, **verify** the file decodes as UTF-8 (no `UnicodeDecodeError`, no replacement `` in the browser).
+5. Never copy-paste from Word/PDF into a file without checking encoding.
+
+If the user sees black-diamond `` or ``, treat it as a **P0 encoding bug** and rewrite the file cleanly.
