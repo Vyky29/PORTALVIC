@@ -110,7 +110,7 @@
   <script src="/portal/admin_ld_funding_review.js?v=20260714-ld-docs-rls"></script>
   <script src="/portal/admin-training-records.js?v=20260714-tr-p3"></script>
   <script src="/portal/admin-hr.js?v=20260722-days-off-history"></script>
-  <script src="/portal/admin-policy-signoffs.js?v=20260727-policy-matrix"></script>
+  <script src="/portal/admin-policy-signoffs.js?v=20260727-role-scoped"></script>
   <script src="/portal/admin-payments.js?v=20260723-funding-names"></script>
   <script src="/portal/admin-commissioning-terms.js?v=20260720-la-terms"></script>
   <script src="/portal/portal-comms-order-payments.js?v=20260617-cfk-order-enrich"></script>
@@ -21772,7 +21772,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function viewPoliciesSignoffs(){
       return '<h1 class="page-title">Policy sign-offs</h1>'+
-        '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">Live template for every active worker against company <strong>policies</strong> and <strong>procedures</strong> from the Policies Portal. Tick cells fill when acknowledgments are saved as portal documents.</p>'+
+        '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">Company <strong>policies</strong> for everyone. <strong>Procedures</strong> only where the worker’s contract roles / venues apply (e.g. swimming-only staff are not marked outstanding for climbing, Hub or fitness). Grey <em>n/a</em> = not in scope.</p>'+
         '<div id="policySignoffsModuleRoot"></div>'+
         '<div class="toolbar" style="margin-top:14px">'+
         '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr">Staff &amp; HR</button> '+

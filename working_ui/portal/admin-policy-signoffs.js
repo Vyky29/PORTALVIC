@@ -1,13 +1,17 @@
 /**
- * Admin — Policies & procedures acknowledgment matrix.
- * Staff from staff_profiles; columns from Policies Portal catalog.
- * Acknowledgments: documents.document_type = staff_policy_ack (related_session_key = POL-id)
- * when present; otherwise cells stay outstanding (template ready for live sign-offs).
+ * Admin — Policies & procedures acknowledgment matrix (role-scoped).
+ *
+ * - Company policies: mandatory for every worker.
+ * - Procedures: only those matching the worker's contract roles / venues
+ *   (or staff_role fallback). Non-applicable cells show N/A, not outstanding.
+ *
+ * Acknowledgments: documents.document_type = staff_policy_ack
+ * (related_session_key = POL-id) when present.
  */
 (function (global) {
   "use strict";
 
-  var CATALOG = [{"id": "POL-001", "title": "Anti-Slavery and Human Trafficking Policy", "short": "Anti-Slavery and Human Tra…", "kind": "policy", "category": "Legal and Compliance"}, {"id": "POL-002", "title": "Data Protection & GDPR Policy", "short": "Data Protection & GDPR", "kind": "policy", "category": "Legal and Compliance"}, {"id": "POL-003", "title": "Whistleblowing Policy", "short": "Whistleblowing", "kind": "policy", "category": "Legal and Compliance"}, {"id": "POL-004", "title": "Disciplinary Policy", "short": "Disciplinary", "kind": "policy", "category": "Employment and People"}, {"id": "POL-005", "title": "Grievance Policy", "short": "Grievance", "kind": "policy", "category": "Employment and People"}, {"id": "POL-006", "title": "Recruitment Policy", "short": "Recruitment", "kind": "policy", "category": "Employment and People"}, {"id": "POL-007", "title": "Diversity, Equality and Inclusion Policy", "short": "Diversity, Equality and In…", "kind": "policy", "category": "Employment and People"}, {"id": "POL-008", "title": "Safeguarding Policy", "short": "Safeguarding", "kind": "policy", "category": "Safeguarding and Wellbeing"}, {"id": "POL-009", "title": "Mental Health Policy", "short": "Mental Health", "kind": "policy", "category": "Safeguarding and Wellbeing"}, {"id": "POL-010", "title": "First Aid Policy", "short": "First Aid", "kind": "policy", "category": "Health, Safety and Operations"}, {"id": "POL-011", "title": "Health and Safety Policy", "short": "Health and Safety", "kind": "policy", "category": "Health, Safety and Operations"}, {"id": "POL-012", "title": "Equipment and Uniform Policy", "short": "Equipment and Uniform", "kind": "policy", "category": "Health, Safety and Operations"}, {"id": "POL-014", "title": "Session Feedback & Record Keeping", "short": "Session Feedback & Record …", "kind": "procedure", "category": "Health, Safety and Operations"}, {"id": "POL-015", "title": "Incident Reporting Procedure", "short": "Incident Reporting", "kind": "procedure", "category": "Health, Safety and Operations"}, {"id": "POL-016", "title": "Safeguarding Reporting Procedure", "short": "Safeguarding Reporting", "kind": "procedure", "category": "Safeguarding and Wellbeing"}, {"id": "POL-017", "title": "Emergency Response Principles", "short": "Emergency Response Princip…", "kind": "procedure", "category": "Health, Safety and Operations"}, {"id": "POL-018", "title": "Missing Service User Procedure (Global)", "short": "Missing Service User Proce…", "kind": "procedure", "category": "Health, Safety and Operations"}, {"id": "POL-019", "title": "Session Delivery Standards", "short": "Session Delivery Standards", "kind": "procedure", "category": "Health, Safety and Operations"}, {"id": "POL-020", "title": "Supervision & Ratios", "short": "Supervision & Ratios", "kind": "procedure", "category": "Health, Safety and Operations"}, {"id": "POL-021", "title": "Transitions & Handover Procedure", "short": "Transitions & Handover", "kind": "procedure", "category": "Health, Safety and Operations"}, {"id": "POL-022", "title": "Recruitment Procedure", "short": "Recruitment", "kind": "procedure", "category": "Employment and People"}, {"id": "POL-023", "title": "Internal Communication Procedure", "short": "Internal Communication", "kind": "procedure", "category": "Employment and People"}, {"id": "POL-024", "title": "Aquatic Activity Procedure", "short": "Aquatic Activity", "kind": "procedure", "category": "Health, Safety and Operations"}, {"id": "POL-025", "title": "Climbing Activity Procedure", "short": "Climbing Activity", "kind": "procedure", "category": "Health, Safety and Operations"}, {"id": "POL-026", "title": "Multi Activity Procedure", "short": "Multi Activity", "kind": "procedure", "category": "Health, Safety and Operations"}, {"id": "POL-027", "title": "Physical Activity Procedure", "short": "Physical Activity", "kind": "procedure", "category": "Health, Safety and Operations"}, {"id": "POL-028", "title": "Active Play & Movement Procedure", "short": "Active Play & Movement", "kind": "procedure", "category": "Health, Safety and Operations"}, {"id": "POL-029", "title": "Acton Centre: Venue Overview", "short": "Acton Centre: Venue Overview", "kind": "procedure", "category": "Venue"}, {"id": "POL-030", "title": "Westway Sports Centre: Venue Overview", "short": "Westway Sports Centre: Ven…", "kind": "procedure", "category": "Venue"}, {"id": "POL-031", "title": "SwimFarm Centre: Venue Overview", "short": "SwimFarm Centre: Venue Ove…", "kind": "procedure", "category": "Venue"}, {"id": "POL-032", "title": "Northolt Leisure Centre: Venue Overview", "short": "Northolt Leisure Centre: V…", "kind": "procedure", "category": "Venue"}, {"id": "POL-033", "title": "Acton Centre: Emergency Procedures", "short": "Acton Centre: Emergency Pr…", "kind": "procedure", "category": "Venue"}, {"id": "POL-034", "title": "Westway Sports Centre: Emergency Procedures", "short": "Westway Sports Centre: Eme…", "kind": "procedure", "category": "Venue"}, {"id": "POL-035", "title": "SwimFarm Centre: Emergency Procedures", "short": "SwimFarm Centre: Emergency…", "kind": "procedure", "category": "Venue"}, {"id": "POL-036", "title": "Northolt Leisure Centre: Emergency Procedures", "short": "Northolt Leisure Centre: E…", "kind": "procedure", "category": "Venue"}, {"id": "POL-037", "title": "clubSENsational Hub: Venue Overview", "short": "clubSENsational Hub: Venue…", "kind": "procedure", "category": "Venue"}, {"id": "POL-038", "title": "clubSENsational Hub: Emergency Procedures", "short": "clubSENsational Hub: Emerg…", "kind": "procedure", "category": "Venue"}, {"id": "POL-039", "title": "Home Visit Safety Procedure", "short": "Home Visit Safety", "kind": "procedure", "category": "Health, Safety and Operations"}, {"id": "POL-040", "title": "Lone Working Guidelines", "short": "Lone Working Guidelines", "kind": "procedure", "category": "Health, Safety and Operations"}, {"id": "POL-041", "title": "Home Visit Emergency & Escalation Protocol", "short": "Home Visit Emergency & Esc…", "kind": "procedure", "category": "Health, Safety and Operations"}, {"id": "POL-042", "title": "Fire Evacuation: Quick Guide", "short": "Fire Evacuation", "kind": "procedure", "category": "Health, Safety and Operations"}, {"id": "POL-043", "title": "Missing Service User: Quick Guide", "short": "Missing Service User", "kind": "procedure", "category": "Health, Safety and Operations"}, {"id": "POL-044", "title": "Medical Emergency: Quick Guide", "short": "Medical Emergency", "kind": "procedure", "category": "Health, Safety and Operations"}, {"id": "POL-045", "title": "Incident Reporting: Quick Guide", "short": "Incident Reporting", "kind": "procedure", "category": "Health, Safety and Operations"}, {"id": "POL-046", "title": "Behaviour: Quick Guide", "short": "Behaviour", "kind": "procedure", "category": "Health, Safety and Operations"}, {"id": "POL-047", "title": "Pool Emergency: Quick Guide", "short": "Pool Emergency", "kind": "procedure", "category": "Health, Safety and Operations"}, {"id": "POL-048", "title": "Session Disruption Reporting Procedure", "short": "Session Disruption Reporting", "kind": "procedure", "category": "Health, Safety and Operations"}, {"id": "POL-049", "title": "Learning & Development Funding Scheme", "short": "Learning & Development Fun…", "kind": "policy", "category": "Employment and People"}, {"id": "POL-050", "title": "Complaints Policy", "short": "Complaints", "kind": "policy", "category": "Legal and Compliance"}, {"id": "POL-051", "title": "Consent Policy & Procedure", "short": "Consent Policy", "kind": "policy", "category": "Safeguarding and Wellbeing"}, {"id": "POL-052", "title": "Governance & Quality Assurance Policy", "short": "Governance & Quality Assur…", "kind": "policy", "category": "Legal and Compliance"}, {"id": "POL-053", "title": "Infection Prevention & Control Policy", "short": "Infection Prevention & Con…", "kind": "policy", "category": "Health, Safety and Operations"}, {"id": "POL-054", "title": "Medicines Management Policy", "short": "Medicines Management", "kind": "policy", "category": "Health, Safety and Operations"}, {"id": "POL-055", "title": "Positive Behaviour Support (PBS) Policy", "short": "Positive Behaviour Support…", "kind": "policy", "category": "Safeguarding and Wellbeing"}, {"id": "POL-056", "title": "Restraint & Restrictive Practice Policy", "short": "Restraint & Restrictive Pr…", "kind": "policy", "category": "Safeguarding and Wellbeing"}, {"id": "POL-057", "title": "Accessible Information & Communication Policy", "short": "Accessible Information & C…", "kind": "policy", "category": "Safeguarding and Wellbeing"}, {"id": "POL-058", "title": "Mental Capacity & Best Interests Policy", "short": "Mental Capacity & Best Int…", "kind": "policy", "category": "Safeguarding and Wellbeing"}, {"id": "POL-059", "title": "Photography, Media & Social Media Policy", "short": "Photography, Media & Socia…", "kind": "policy", "category": "Legal and Compliance"}, {"id": "POL-060", "title": "Transport & Escort Policy", "short": "Transport & Escort", "kind": "policy", "category": "Health, Safety and Operations"}, {"id": "POL-061", "title": "Food, Allergies & Choking Policy", "short": "Food, Allergies & Choking", "kind": "policy", "category": "Health, Safety and Operations"}, {"id": "POL-062", "title": "Code of Conduct & Professional Boundaries Policy", "short": "Code of Conduct & Professi…", "kind": "policy", "category": "Employment and People"}, {"id": "POL-063", "title": "Business Continuity & IT Downtime Policy", "short": "Business Continuity & IT D…", "kind": "policy", "category": "Legal and Compliance"}];
+  var CATALOG = [{"id": "POL-001", "title": "Anti-Slavery and Human Trafficking Policy", "short": "Anti-Slavery and Human Tra…", "kind": "policy", "category": "Legal and Compliance", "tags": ["all"]}, {"id": "POL-002", "title": "Data Protection & GDPR Policy", "short": "Data Protection & GDPR", "kind": "policy", "category": "Legal and Compliance", "tags": ["all"]}, {"id": "POL-003", "title": "Whistleblowing Policy", "short": "Whistleblowing", "kind": "policy", "category": "Legal and Compliance", "tags": ["all"]}, {"id": "POL-004", "title": "Disciplinary Policy", "short": "Disciplinary", "kind": "policy", "category": "Employment and People", "tags": ["all"]}, {"id": "POL-005", "title": "Grievance Policy", "short": "Grievance", "kind": "policy", "category": "Employment and People", "tags": ["all"]}, {"id": "POL-006", "title": "Recruitment Policy", "short": "Recruitment", "kind": "policy", "category": "Employment and People", "tags": ["all"]}, {"id": "POL-007", "title": "Diversity, Equality and Inclusion Policy", "short": "Diversity, Equality and In…", "kind": "policy", "category": "Employment and People", "tags": ["all"]}, {"id": "POL-008", "title": "Safeguarding Policy", "short": "Safeguarding", "kind": "policy", "category": "Safeguarding and Wellbeing", "tags": ["all"]}, {"id": "POL-009", "title": "Mental Health Policy", "short": "Mental Health", "kind": "policy", "category": "Safeguarding and Wellbeing", "tags": ["all"]}, {"id": "POL-010", "title": "First Aid Policy", "short": "First Aid", "kind": "policy", "category": "Health, Safety and Operations", "tags": ["all"]}, {"id": "POL-011", "title": "Health and Safety Policy", "short": "Health and Safety", "kind": "policy", "category": "Health, Safety and Operations", "tags": ["all"]}, {"id": "POL-012", "title": "Equipment and Uniform Policy", "short": "Equipment and Uniform", "kind": "policy", "category": "Health, Safety and Operations", "tags": ["all"]}, {"id": "POL-014", "title": "Session Feedback & Record Keeping", "short": "Session Feedback & Record …", "kind": "procedure", "category": "Health, Safety and Operations", "tags": ["core"]}, {"id": "POL-015", "title": "Incident Reporting Procedure", "short": "Incident Reporting", "kind": "procedure", "category": "Health, Safety and Operations", "tags": ["core"]}, {"id": "POL-016", "title": "Safeguarding Reporting Procedure", "short": "Safeguarding Reporting", "kind": "procedure", "category": "Safeguarding and Wellbeing", "tags": ["core"]}, {"id": "POL-017", "title": "Emergency Response Principles", "short": "Emergency Response Princip…", "kind": "procedure", "category": "Health, Safety and Operations", "tags": ["core"]}, {"id": "POL-018", "title": "Missing Service User Procedure (Global)", "short": "Missing Service User Proce…", "kind": "procedure", "category": "Health, Safety and Operations", "tags": ["core"]}, {"id": "POL-019", "title": "Session Delivery Standards", "short": "Session Delivery Standards", "kind": "procedure", "category": "Health, Safety and Operations", "tags": ["core"]}, {"id": "POL-020", "title": "Supervision & Ratios", "short": "Supervision & Ratios", "kind": "procedure", "category": "Health, Safety and Operations", "tags": ["core"]}, {"id": "POL-021", "title": "Transitions & Handover Procedure", "short": "Transitions & Handover", "kind": "procedure", "category": "Health, Safety and Operations", "tags": ["core"]}, {"id": "POL-022", "title": "Recruitment Procedure", "short": "Recruitment", "kind": "procedure", "category": "Employment and People", "tags": ["office"]}, {"id": "POL-023", "title": "Internal Communication Procedure", "short": "Internal Communication", "kind": "procedure", "category": "Employment and People", "tags": ["core"]}, {"id": "POL-024", "title": "Aquatic Activity Procedure", "short": "Aquatic Activity", "kind": "procedure", "category": "Health, Safety and Operations", "tags": ["swim"]}, {"id": "POL-025", "title": "Climbing Activity Procedure", "short": "Climbing Activity", "kind": "procedure", "category": "Health, Safety and Operations", "tags": ["climb"]}, {"id": "POL-026", "title": "Multi Activity Procedure", "short": "Multi Activity", "kind": "procedure", "category": "Health, Safety and Operations", "tags": ["hub", "day_centre"]}, {"id": "POL-027", "title": "Physical Activity Procedure", "short": "Physical Activity", "kind": "procedure", "category": "Health, Safety and Operations", "tags": ["fitness"]}, {"id": "POL-028", "title": "Active Play & Movement Procedure", "short": "Active Play & Movement", "kind": "procedure", "category": "Health, Safety and Operations", "tags": ["hub", "day_centre"]}, {"id": "POL-029", "title": "Acton Centre: Venue Overview", "short": "Acton Centre: Venue Overview", "kind": "procedure", "category": "Venue", "tags": ["venue_acton"]}, {"id": "POL-030", "title": "Westway Sports Centre: Venue Overview", "short": "Westway Sports Centre: Ven…", "kind": "procedure", "category": "Venue", "tags": ["venue_westway"]}, {"id": "POL-031", "title": "SwimFarm Centre: Venue Overview", "short": "SwimFarm Centre: Venue Ove…", "kind": "procedure", "category": "Venue", "tags": ["venue_swimfarm"]}, {"id": "POL-032", "title": "Northolt Leisure Centre: Venue Overview", "short": "Northolt Leisure Centre: V…", "kind": "procedure", "category": "Venue", "tags": ["venue_northolt"]}, {"id": "POL-033", "title": "Acton Centre: Emergency Procedures", "short": "Acton Centre: Emergency Pr…", "kind": "procedure", "category": "Venue", "tags": ["venue_acton"]}, {"id": "POL-034", "title": "Westway Sports Centre: Emergency Procedures", "short": "Westway Sports Centre: Eme…", "kind": "procedure", "category": "Venue", "tags": ["venue_westway"]}, {"id": "POL-035", "title": "SwimFarm Centre: Emergency Procedures", "short": "SwimFarm Centre: Emergency…", "kind": "procedure", "category": "Venue", "tags": ["venue_swimfarm"]}, {"id": "POL-036", "title": "Northolt Leisure Centre: Emergency Procedures", "short": "Northolt Leisure Centre: E…", "kind": "procedure", "category": "Venue", "tags": ["venue_northolt"]}, {"id": "POL-037", "title": "clubSENsational Hub: Venue Overview", "short": "clubSENsational Hub: Venue…", "kind": "procedure", "category": "Venue", "tags": ["venue_hub", "hub", "day_centre"]}, {"id": "POL-038", "title": "clubSENsational Hub: Emergency Procedures", "short": "clubSENsational Hub: Emerg…", "kind": "procedure", "category": "Venue", "tags": ["venue_hub", "hub", "day_centre"]}, {"id": "POL-039", "title": "Home Visit Safety Procedure", "short": "Home Visit Safety", "kind": "procedure", "category": "Health, Safety and Operations", "tags": ["home_visit"]}, {"id": "POL-040", "title": "Lone Working Guidelines", "short": "Lone Working Guidelines", "kind": "procedure", "category": "Health, Safety and Operations", "tags": ["home_visit"]}, {"id": "POL-041", "title": "Home Visit Emergency & Escalation Protocol", "short": "Home Visit Emergency & Esc…", "kind": "procedure", "category": "Health, Safety and Operations", "tags": ["home_visit"]}, {"id": "POL-042", "title": "Fire Evacuation: Quick Guide", "short": "Fire Evacuation", "kind": "procedure", "category": "Health, Safety and Operations", "tags": ["core"]}, {"id": "POL-043", "title": "Missing Service User: Quick Guide", "short": "Missing Service User", "kind": "procedure", "category": "Health, Safety and Operations", "tags": ["core"]}, {"id": "POL-044", "title": "Medical Emergency: Quick Guide", "short": "Medical Emergency", "kind": "procedure", "category": "Health, Safety and Operations", "tags": ["core"]}, {"id": "POL-045", "title": "Incident Reporting: Quick Guide", "short": "Incident Reporting", "kind": "procedure", "category": "Health, Safety and Operations", "tags": ["core"]}, {"id": "POL-046", "title": "Behaviour: Quick Guide", "short": "Behaviour", "kind": "procedure", "category": "Health, Safety and Operations", "tags": ["core"]}, {"id": "POL-047", "title": "Pool Emergency: Quick Guide", "short": "Pool Emergency", "kind": "procedure", "category": "Health, Safety and Operations", "tags": ["swim"]}, {"id": "POL-048", "title": "Session Disruption Reporting Procedure", "short": "Session Disruption Reporting", "kind": "procedure", "category": "Health, Safety and Operations", "tags": ["core"]}, {"id": "POL-049", "title": "Learning & Development Funding Scheme", "short": "Learning & Development Fun…", "kind": "policy", "category": "Employment and People", "tags": ["all"]}, {"id": "POL-050", "title": "Complaints Policy", "short": "Complaints", "kind": "policy", "category": "Legal and Compliance", "tags": ["all"]}, {"id": "POL-051", "title": "Consent Policy & Procedure", "short": "Consent Policy", "kind": "policy", "category": "Safeguarding and Wellbeing", "tags": ["all"]}, {"id": "POL-052", "title": "Governance & Quality Assurance Policy", "short": "Governance & Quality Assur…", "kind": "policy", "category": "Legal and Compliance", "tags": ["all"]}, {"id": "POL-053", "title": "Infection Prevention & Control Policy", "short": "Infection Prevention & Con…", "kind": "policy", "category": "Health, Safety and Operations", "tags": ["all"]}, {"id": "POL-054", "title": "Medicines Management Policy", "short": "Medicines Management", "kind": "policy", "category": "Health, Safety and Operations", "tags": ["all"]}, {"id": "POL-055", "title": "Positive Behaviour Support (PBS) Policy", "short": "Positive Behaviour Support…", "kind": "policy", "category": "Safeguarding and Wellbeing", "tags": ["all"]}, {"id": "POL-056", "title": "Restraint & Restrictive Practice Policy", "short": "Restraint & Restrictive Pr…", "kind": "policy", "category": "Safeguarding and Wellbeing", "tags": ["all"]}, {"id": "POL-057", "title": "Accessible Information & Communication Policy", "short": "Accessible Information & C…", "kind": "policy", "category": "Safeguarding and Wellbeing", "tags": ["all"]}, {"id": "POL-058", "title": "Mental Capacity & Best Interests Policy", "short": "Mental Capacity & Best Int…", "kind": "policy", "category": "Safeguarding and Wellbeing", "tags": ["all"]}, {"id": "POL-059", "title": "Photography, Media & Social Media Policy", "short": "Photography, Media & Socia…", "kind": "policy", "category": "Legal and Compliance", "tags": ["all"]}, {"id": "POL-060", "title": "Transport & Escort Policy", "short": "Transport & Escort", "kind": "policy", "category": "Health, Safety and Operations", "tags": ["all"]}, {"id": "POL-061", "title": "Food, Allergies & Choking Policy", "short": "Food, Allergies & Choking", "kind": "policy", "category": "Health, Safety and Operations", "tags": ["all"]}, {"id": "POL-062", "title": "Code of Conduct & Professional Boundaries Policy", "short": "Code of Conduct & Professi…", "kind": "policy", "category": "Employment and People", "tags": ["all"]}, {"id": "POL-063", "title": "Business Continuity & IT Downtime Policy", "short": "Business Continuity & IT D…", "kind": "policy", "category": "Legal and Compliance", "tags": ["all"]}];
 
   var cfg = {
     getClient: function () { return null; },
@@ -25,6 +29,7 @@
     rootEl: null,
     tab: "policies",
     staff: [],
+    tagsByUser: {},
     acksByUser: {},
     loading: false,
     error: null,
@@ -46,25 +51,122 @@
   }
 
   function roleLabel(row) {
-    return String(row.staff_role || row.app_role || row.dashboard_route || "Staff").trim() || "Staff";
+    var tags = state.tagsByUser[String(row.id)] || [];
+    var nice = [];
+    if (tags.indexOf("swim") >= 0) nice.push("Swim");
+    if (tags.indexOf("climb") >= 0) nice.push("Climb");
+    if (tags.indexOf("fitness") >= 0) nice.push("Fitness");
+    if (tags.indexOf("hub") >= 0) nice.push("Hub");
+    if (tags.indexOf("day_centre") >= 0) nice.push("Day Centre");
+    if (tags.indexOf("home_visit") >= 0) nice.push("Home visit");
+    if (nice.length) return nice.join(" · ");
+    return String(row.staff_role || row.app_role || "Staff").trim() || "Staff";
   }
 
-  function ackSetForUser(userId) {
-    var m = state.acksByUser[String(userId)] || {};
-    return m;
+  function addTag(set, tag) {
+    if (!tag) return;
+    if (set.indexOf(tag) < 0) set.push(tag);
+  }
+
+  function tagsFromRoleText(text, set) {
+    var t = String(text || "").toLowerCase();
+    if (!t) return;
+    if (/swimming|\bswim\b/.test(t)) addTag(set, "swim");
+    if (/climbing|\bclimb\b/.test(t)) addTag(set, "climb");
+    if (/fitness|physical/.test(t)) addTag(set, "fitness");
+    if (/hub\s*&\s*community|hub and community|\bhub\b|support worker|session lead/.test(t)) addTag(set, "hub");
+    if (/day\s*centre|day center/.test(t)) addTag(set, "day_centre");
+    if (/home\s*visit|lone\s*work|outreach/.test(t)) addTag(set, "home_visit");
+    if (/business development|\badmin\b|\boffice\b|operations/.test(t)) addTag(set, "office");
+  }
+
+  function tagsFromPlace(place, set) {
+    var p = String(place || "").toLowerCase();
+    if (!p) return;
+    if (/acton/.test(p)) addTag(set, "venue_acton");
+    if (/westway/.test(p)) addTag(set, "venue_westway");
+    if (/swimfarm|swim farm/.test(p)) addTag(set, "venue_swimfarm");
+    if (/northolt/.test(p)) addTag(set, "venue_northolt");
+    if (/hub/.test(p) || /clubsensational/.test(p)) {
+      addTag(set, "venue_hub");
+      addTag(set, "hub");
+    }
+  }
+
+  function tagsFromStaffRoleSlug(slug, set) {
+    var s = String(slug || "").toLowerCase().trim();
+    if (s === "swimming" || s === "swim") addTag(set, "swim");
+    else if (s === "climbing" || s === "climb") addTag(set, "climb");
+    else if (s === "fitness" || s === "physical") addTag(set, "fitness");
+    else if (s === "support" || s === "support_lead" || s === "manager") addTag(set, "hub");
+    else if (s === "admin") addTag(set, "office");
+  }
+
+  function deriveTagsForWorker(profile, contracts) {
+    var set = ["core"];
+    var app = String(profile.app_role || "").toLowerCase();
+    if (app === "admin" || app === "ceo") addTag(set, "office");
+
+    tagsFromStaffRoleSlug(profile.staff_role, set);
+
+    (contracts || []).forEach(function (c) {
+      var fp = c.form_payload || {};
+      var kind = String(fp.contractKind || c.contract_kind || "").toLowerCase();
+      if (kind.indexOf("day_centre") >= 0) {
+        addTag(set, "day_centre");
+        addTag(set, "hub");
+      }
+      var roles = fp.roles;
+      if (!Array.isArray(roles) && fp.role) roles = [fp.role];
+      if (!Array.isArray(roles) && c.role) roles = String(c.role).split(/[,;|/]+/);
+      (roles || []).forEach(function (r) { tagsFromRoleText(r, set); });
+      tagsFromRoleText(c.role, set);
+
+      var ss = fp.serviceSettings;
+      if (!Array.isArray(ss) && fp.serviceSetting) ss = [fp.serviceSetting];
+      (ss || []).forEach(function (x) {
+        if (/day_centre/i.test(String(x))) {
+          addTag(set, "day_centre");
+          addTag(set, "hub");
+        }
+      });
+
+      (fp.places || []).forEach(function (pl) { tagsFromPlace(pl, set); });
+    });
+
+    return set;
+  }
+
+  function docAppliesToWorker(doc, workerTags) {
+    if (!doc) return false;
+    if (doc.kind === "policy") return true;
+    var tags = doc.tags || ["core"];
+    if (tags.indexOf("all") >= 0) return true;
+    var wt = workerTags || ["core"];
+    for (var i = 0; i < tags.length; i++) {
+      if (wt.indexOf(tags[i]) >= 0) return true;
+    }
+    return false;
   }
 
   function isAcked(userId, polId) {
-    return !!ackSetForUser(userId)[polId];
+    var m = state.acksByUser[String(userId)] || {};
+    return !!m[polId];
+  }
+
+  function requiredCols(userId, cols) {
+    var tags = state.tagsByUser[String(userId)] || ["core"];
+    return cols.filter(function (d) { return docAppliesToWorker(d, tags); });
   }
 
   function donePct(userId, cols) {
-    if (!cols.length) return 0;
+    var req = requiredCols(userId, cols);
+    if (!req.length) return 100;
     var n = 0;
-    for (var i = 0; i < cols.length; i++) {
-      if (isAcked(userId, cols[i].id)) n++;
+    for (var i = 0; i < req.length; i++) {
+      if (isAcked(userId, req[i].id)) n++;
     }
-    return Math.round((n / cols.length) * 100);
+    return Math.round((n / req.length) * 100);
   }
 
   function chipClass(pct) {
@@ -81,7 +183,7 @@
     var staff = state.staff || [];
 
     if (state.loading && !state.loaded) {
-      root.innerHTML = '<p class="muted" style="margin:0;padding:12px 0">Loading staff and acknowledgments…</p>';
+      root.innerHTML = '<p class="muted" style="margin:0;padding:12px 0">Loading staff, contracts and acknowledgments…</p>';
       return;
     }
     if (state.error) {
@@ -115,48 +217,53 @@
 
     var body;
     if (!staff.length) {
-      body = '<tr><td colspan="' + (3 + cols.length) + '" class="muted" style="padding:16px">No active staff profiles found. Check H&amp;R / staff_profiles.</td></tr>';
+      body = '<tr><td colspan="' + (3 + cols.length) + '" class="muted" style="padding:16px">No active staff profiles found.</td></tr>';
     } else {
       body = staff.map(function (s) {
         var uid = String(s.id);
+        var tags = state.tagsByUser[uid] || ["core"];
         var pct = donePct(uid, cols);
+        var reqN = requiredCols(uid, cols).length;
         var cells = cols.map(function (d) {
+          if (!docAppliesToWorker(d, tags)) {
+            return '<td style="text-align:center;padding:6px 4px"><span class="muted" title="Not required for this worker\'s roles / venues" style="font-size:11px">n/a</span></td>';
+          }
           var ok = isAcked(uid, d.id);
           return (
             '<td style="text-align:center;padding:6px 4px">' +
             (ok
               ? '<span class="chip chip--ok" title="Acknowledged">✓</span>'
-              : '<span class="chip chip--pend" title="Outstanding">—</span>') +
+              : '<span class="chip chip--pend" title="Required · outstanding">—</span>') +
             "</td>"
           );
         }).join("");
         return (
           "<tr>" +
           '<td style="white-space:nowrap;position:sticky;left:0;background:#fff;z-index:1"><strong>' + esc(s.full_name || s.username || "Staff") + "</strong></td>" +
-          '<td class="muted" style="white-space:nowrap">' + esc(roleLabel(s)) + "</td>" +
-          '<td style="text-align:center"><span class="chip ' + chipClass(pct) + '">' + pct + "%</span></td>" +
+          '<td class="muted" style="white-space:nowrap;font-size:12px" title="' + esc(tags.join(", ")) + '">' + esc(roleLabel(s)) + "</td>" +
+          '<td style="text-align:center"><span class="chip ' + chipClass(pct) + '" title="' + reqN + ' required in this tab">' + pct + "%</span></td>" +
           cells +
           "</tr>"
         );
       }).join("");
     }
 
-    var ackCount = 0;
-    Object.keys(state.acksByUser).forEach(function (uid) {
-      ackCount += Object.keys(state.acksByUser[uid] || {}).length;
-    });
-
     root.innerHTML =
+      '<div class="card" style="margin-bottom:12px"><div class="card-pad" style="font-size:13px;line-height:1.5;color:#374151">' +
+      "<strong>How this works:</strong> company <em>policies</em> are required for everyone. " +
+      "<em>Procedures</em> are required only for the worker's contract roles and venues " +
+      "(e.g. swimming-only staff do not get climbing, Hub/fitness or home-visit procedures marked as outstanding). " +
+      "Grey <code>n/a</code> means not in scope for that person." +
+      "</div></div>" +
       '<div class="c4k-sessions-hub-tabs" role="tablist" aria-label="Policy sign-off groups" style="margin-bottom:12px">' + tabHtml + "</div>" +
       '<div class="card"><div class="card-h"><h3>Completion matrix</h3>' +
-      '<span class="chip chip--info">' + esc(String(cols.length)) + " required · " + esc(String(staff.length)) + " staff</span></div>" +
-      '<div class="card-pad" style="overflow:auto"><table class="tbl tbl--center" style="min-width:' + (280 + cols.length * 52) + 'px">' +
-      "<thead><tr><th>Staff</th><th>Role</th><th>Done</th>" + th + "</tr></thead><tbody>" + body + "</tbody></table></div></div>" +
-      '<p class="muted" style="margin:10px 0 0;font-size:12px;line-height:1.45;max-width:52rem">' +
-      (ackCount
-        ? "Live acknowledgments loaded from portal documents (" + ackCount + " signed cells). Outstanding cells need a staff signature in the Policies Portal."
-        : "Template is live for all workers and documents. Acknowledgments appear here when saved as <code style=\"font-size:11px\">staff_policy_ack</code> in documents (or after staff sign in the Policies Portal once that write path is enabled). Until then every cell shows outstanding.") +
-      ' <a href="/policies_portal.html" target="_blank" rel="noopener">Open Policies Portal</a>.' +
+      '<span class="chip chip--info">' + esc(String(staff.length)) + " staff · scoped by role</span></div>" +
+      '<div class="card-pad" style="overflow:auto"><table class="tbl tbl--center" style="min-width:' + (300 + cols.length * 52) + 'px">' +
+      "<thead><tr><th>Staff</th><th>Services</th><th>Done</th>" + th + "</tr></thead><tbody>" + body + "</tbody></table></div></div>" +
+      '<p class="muted" style="margin:10px 0 0;font-size:12px;line-height:1.45;max-width:54rem">' +
+      "Scope comes from employment contract roles / places when available, otherwise from <code>staff_role</code>. " +
+      'Update contracts under H&amp;R → Employment contracts so the matrix stays accurate. ' +
+      '<a href="/policies_portal.html" target="_blank" rel="noopener">Policies Portal</a>.' +
       "</p>";
 
     root.querySelectorAll("[data-policy-signoff-tab]").forEach(function (btn) {
@@ -178,12 +285,24 @@
       .limit(500)
       .then(function (res) {
         if (res.error) throw res.error;
-        return (res.data || []).filter(function (r) {
-          var role = String(r.app_role || "").toLowerCase();
-          // Keep workers + leads; still include admin/ceo so directors can track their own reads if needed.
-          return true;
-        });
+        return res.data || [];
       });
+  }
+
+  function loadContracts(client) {
+    return client
+      .from("employment_contracts")
+      .select("id, user_id, role, status, form_payload")
+      .in("status", ["sent", "completed", "draft", "pending", "active"])
+      .limit(2000)
+      .then(function (res) {
+        if (res.error) {
+          try { console.warn("[policy-signoffs] employment_contracts:", res.error.message); } catch (_) {}
+          return [];
+        }
+        return res.data || [];
+      })
+      .catch(function () { return []; });
   }
 
   function loadAcks(client) {
@@ -194,7 +313,6 @@
       .limit(5000)
       .then(function (res) {
         if (res.error) {
-          // Table/RLS may block admin list — degrade to empty matrix template.
           try { console.warn("[policy-signoffs] documents:", res.error.message); } catch (_) {}
           return {};
         }
@@ -232,10 +350,24 @@
       return;
     }
 
-    Promise.all([loadStaff(client), loadAcks(client)])
+    Promise.all([loadStaff(client), loadContracts(client), loadAcks(client)])
       .then(function (parts) {
-        state.staff = parts[0] || [];
-        state.acksByUser = parts[1] || {};
+        var staff = parts[0] || [];
+        var contracts = parts[1] || [];
+        var byUser = {};
+        contracts.forEach(function (c) {
+          var uid = String(c.user_id || "").trim();
+          if (!uid) return;
+          if (!byUser[uid]) byUser[uid] = [];
+          byUser[uid].push(c);
+        });
+        var tagsByUser = {};
+        staff.forEach(function (s) {
+          tagsByUser[String(s.id)] = deriveTagsForWorker(s, byUser[String(s.id)] || []);
+        });
+        state.staff = staff;
+        state.tagsByUser = tagsByUser;
+        state.acksByUser = parts[2] || {};
         state.loading = false;
         state.loaded = true;
         state.error = null;
