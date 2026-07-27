@@ -78,6 +78,15 @@
 .contract-section p { margin: 0 0 0.65rem; text-align: justify; overflow-wrap: break-word; word-wrap: break-word; }
 .contract-section ul.contract-bullets { margin: 0 0 0.75rem; padding: 0 0 0 1.2em; list-style: disc; }
 .contract-section ul.contract-bullets li { margin: 0 0 0.4rem; line-height: 1.5; text-align: justify; overflow-wrap: break-word; word-wrap: break-word; }
+.contract-filled {
+  font-weight: 700;
+  color: #0f2744;
+  background: rgba(201, 162, 39, 0.2);
+  padding: 0 0.12em;
+  border-radius: 2px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
 .contract-parties {
   background: #e8f0f6;
   border: 1px solid rgba(74, 124, 155, 0.25);
@@ -89,7 +98,7 @@
   max-width: 100%;
   overflow-wrap: break-word;
 }
-.contract-parties strong {
+.contract-parties > strong {
   display: block;
   font-family: 'Segoe UI', system-ui, sans-serif;
   font-size: 0.72rem;

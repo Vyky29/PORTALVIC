@@ -28,17 +28,29 @@
 
   var RATE_TABLE = {
     'Support Worker':       { 'Scale 1': 18, 'Scale 2': 20, 'Scale 3': 23 },
-    'Service Lead':         { 'Service Lead': 30 },
     'Climbing Instructor':  { 'Scale 1': 22, 'Scale 2': 24, 'Scale 3': 30 },
     'Fitness Instructor':   { 'Scale 1': 24, 'Scale 2': 28, 'Scale 3': 32 },
-    'Swimming Instructor':  { 'Scale 1': 22, 'Scale 2': 24, 'Scale 3': 28 },
-    'Business Development': { 'Scale 1': 22, 'Scale 2': 26, 'Scale 3': 30 }
+    'Swimming Instructor':  { 'Scale 1': 22, 'Scale 2': 24, 'Scale 3': 28 }
+  };
+  /** Flat hourly roles (no Scale 1/2/3 picker in the generator). */
+  var FLAT_HOURLY_RATES = {
+    'Service Lead': 30,
+    'Business Development': 30
   };
   var SCALE_OPTIONS = ['Scale 1', 'Scale 2', 'Scale 3'];
 
+  function isFlatRateRole(role) {
+    return Object.prototype.hasOwnProperty.call(FLAT_HOURLY_RATES, role);
+  }
+
   function getScaleOptionsForRole(role) {
+    if (isFlatRateRole(role)) return [];
     if (role && RATE_TABLE[role]) return Object.keys(RATE_TABLE[role]);
     return SCALE_OPTIONS.slice();
+  }
+
+  function roleNeedsScalePicker(role) {
+    return getScaleOptionsForRole(role).length > 1;
   }
 
   var JOB_DESCRIPTION_VERSION = '2026-07-27';
@@ -421,16 +433,53 @@
       if (isBulletLine(raw)) {
         html += '<ul class="contract-bullets">';
         while (i < lines.length && isBulletLine(lines[i])) {
-          html += '<li>' + stripBulletPrefix(lines[i]) + '</li>';
+          html += '<li>' + applyFilledHtml(stripBulletPrefix(lines[i])) + '</li>';
           i += 1;
         }
         html += '</ul>';
         continue;
       }
-      html += '<p>' + raw + '</p>';
+      html += '<p>' + applyFilledHtml(raw) + '</p>';
       i += 1;
     }
     return html || '<p></p>';
+  }
+
+  /* Markers wrap filled template values so preview/PDF can emphasise them. */
+  var FILL_OPEN = '\uFFF0';
+  var FILL_CLOSE = '\uFFF1';
+  var FILL_SKIP_HIGHLIGHT = {
+    JOB_DESCRIPTIONS_HTML: true,
+    JOB_DESCRIPTIONS_PLAIN: true,
+    DUTIES_DESCRIPTION: true,
+    CONCURRENT_CLAUSE: true,
+    SUPERSEDE_CLAUSE: true,
+    EMPLOYEE_SIGNATURE: true,
+    DIRECTOR_SIGNATURE: true,
+    EMPLOYEE_ACKNOWLEDGEMENT: true,
+    CONTRACT_VERSION: true,
+    CONTRACT_KIND: true,
+    GENERATED_DATE: true,
+    _contractDateRaw: true
+  };
+
+  function markFilledValue(value) {
+    var v = String(value == null ? '' : value);
+    if (!v || v === EM) return v;
+    return v.split('\n').map(function (line) {
+      if (!String(line).trim()) return line;
+      return FILL_OPEN + line + FILL_CLOSE;
+    }).join('\n');
+  }
+
+  function stripFilledMarkers(text) {
+    return String(text || '').split(FILL_OPEN).join('').split(FILL_CLOSE).join('');
+  }
+
+  function applyFilledHtml(text) {
+    return String(text || '')
+      .split(FILL_OPEN).join('<span class="contract-filled">')
+      .split(FILL_CLOSE).join('</span>');
   }
 
   /* ================================================================
@@ -546,6 +595,7 @@
    * ================================================================ */
 
   function getDeliveryRate(role, scale) {
+    if (isFlatRateRole(role)) return FLAT_HOURLY_RATES[role];
     return (role && scale && RATE_TABLE[role]) ? RATE_TABLE[role][scale] : null;
   }
 
@@ -591,6 +641,9 @@
   function formatRoleScaleSummary(roleScales, roles) {
     return (roles || [])
       .map(function (role) {
+        if (isFlatRateRole(role)) {
+          return role + ' (' + GBP + FLAT_HOURLY_RATES[role] + '/h)';
+        }
         var scale = roleScales && roleScales[role];
         return scale ? role + ' (' + scale + ')' : role;
       })
@@ -604,6 +657,10 @@
       ? Object.fromEntries((roles || []).map(function (role) { return [role, scales]; }))
       : (scales || {});
     (roles || []).forEach(function (role) {
+      if (isFlatRateRole(role)) {
+        lines.push(GBP + FLAT_HOURLY_RATES[role] + '/h Delivery Service (' + role + ')');
+        return;
+      }
       var scale = scaleMap[role];
       var rate  = getDeliveryRate(role, scale);
       if (rate != null && scale) {
@@ -1427,7 +1484,10 @@
     var contractKind = normalizeContractKind(kind || (data && data.CONTRACT_KIND));
     var text = getMasterTemplate(contractKind);
     Object.keys(data || {}).forEach(function (k) {
-      text = text.split('{{' + k + '}}').join(data[k]);
+      if (k.charAt(0) === '_') return;
+      var raw = data[k];
+      var value = FILL_SKIP_HIGHLIGHT[k] ? String(raw == null ? '' : raw) : markFilledValue(raw);
+      text = text.split('{{' + k + '}}').join(value);
     });
     return sanitizeContractText(text);
   }
@@ -1676,7 +1736,7 @@
       }
 
       if (block.startsWith('THIS EMPLOYMENT CONTRACT')) {
-        body += '<p class="contract-opening">' + block + '</p>';
+        body += '<p class="contract-opening">' + applyFilledHtml(block) + '</p>';
         return;
       }
 
@@ -1687,7 +1747,7 @@
       var rest  = lines.slice(1).join('\n');
 
       if (PARTY_BLOCKS.indexOf(title) >= 0) {
-        body += '<div class="contract-parties"><strong>' + title.replace(':', '') + '</strong><p style="margin:0;white-space:pre-wrap;">' + rest + '</p></div>';
+        body += '<div class="contract-parties"><strong>' + title.replace(':', '') + '</strong><p style="margin:0;white-space:pre-wrap;">' + applyFilledHtml(rest) + '</p></div>';
         return;
       }
 
@@ -1702,7 +1762,7 @@
           extra = '<img src="' + s.directorSignatureDataUrl + '" alt="Director signature" style="max-width:200px;height:65px;display:block;margin-top:8px;">';
         }
         var restClean = rest.replace(/Signature: \[Signed electronically\]\s*/g, '').trim();
-        body += '<div class="contract-section contract-signature-block"><h3>' + title + '</h3><p style="margin:0;white-space:pre-wrap;">' + restClean + '</p>' + extra + '</div>';
+        body += '<div class="contract-section contract-signature-block"><h3>' + title + '</h3><p style="margin:0;white-space:pre-wrap;">' + applyFilledHtml(restClean) + '</p>' + extra + '</div>';
         return;
       }
 
@@ -1710,7 +1770,7 @@
         if (isSectionHeader(title)) {
           body += '<div class="contract-section"><h3>' + title + '</h3></div>';
         } else {
-          body += '<div class="contract-section"><p style="white-space:pre-wrap;">' + block + '</p></div>';
+          body += '<div class="contract-section"><p style="white-space:pre-wrap;">' + applyFilledHtml(block) + '</p></div>';
         }
         return;
       }
@@ -1775,8 +1835,10 @@
       '.contract-section p{margin:0 0 8px;font-size:9.5pt;line-height:1.5;text-align:justify;overflow-wrap:break-word;word-wrap:break-word;}' +
       '.contract-section ul.contract-bullets{margin:0 0 10px;padding:0 0 0 1.15em;list-style:disc;}' +
       '.contract-section ul.contract-bullets li{margin:0 0 5px;font-size:9.5pt;line-height:1.5;text-align:justify;overflow-wrap:break-word;word-wrap:break-word;}' +
+      '.contract-filled{font-weight:700;color:#0f2744;background:rgba(201,162,39,0.20);padding:0 0.12em;border-radius:2px;-webkit-box-decoration-break:clone;box-decoration-break:clone;}' +
       '.contract-parties{background:linear-gradient(180deg,#f3f7fb,#eaf1f7);border:1px solid #c5d6e3;border-left:4px solid #0f2744;padding:10px 12px;margin:8px 0 12px;font-size:9pt;box-sizing:border-box;max-width:100%;overflow-wrap:break-word;}' +
-      '.contract-parties strong{display:block;font-family:Arial,Helvetica,sans-serif;font-size:8pt;letter-spacing:0.06em;text-transform:uppercase;color:#0f2744;margin-bottom:4px;}' +
+      '.contract-parties > strong{display:block;font-family:Arial,Helvetica,sans-serif;font-size:8pt;letter-spacing:0.06em;text-transform:uppercase;color:#0f2744;margin-bottom:4px;}' +
+      '.contract-parties .contract-filled{font-weight:700;}' +
       '.contract-parties p{overflow-wrap:break-word;word-wrap:break-word;}' +
       '.contract-signature-block{border-top:1px dashed #c5d0db;padding-top:10px;margin-top:8px;}' +
       '.contract-annex{page-break-before:always;margin-top:20px;padding-top:14px;border-top:2px solid #c9a227;}' +
@@ -1885,8 +1947,11 @@
     GBP: GBP,
     EM: EM,
     RATE_TABLE: RATE_TABLE,
+    FLAT_HOURLY_RATES: FLAT_HOURLY_RATES,
     SCALE_OPTIONS: SCALE_OPTIONS,
     getScaleOptionsForRole: getScaleOptionsForRole,
+    isFlatRateRole: isFlatRateRole,
+    roleNeedsScalePicker: roleNeedsScalePicker,
     JOB_DESCRIPTIONS: JOB_DESCRIPTIONS,
     JOB_DESCRIPTION_VERSION: JOB_DESCRIPTION_VERSION,
     resolveJobDescription: resolveJobDescription,
@@ -1920,6 +1985,8 @@
     contractKindLabel: contractKindLabel,
     contractDocTitle: contractDocTitle,
     fillTemplate: fillTemplate,
+    stripFilledMarkers: stripFilledMarkers,
+    applyFilledHtml: applyFilledHtml,
     buildTemplateData: buildTemplateData,
     renderContractHtml: renderContractHtml,
     buildPdfHtml: buildPdfHtml,

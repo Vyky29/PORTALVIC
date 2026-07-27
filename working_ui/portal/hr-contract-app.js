@@ -21,6 +21,12 @@
     if (C.RATE_TABLE && C.RATE_TABLE[role]) return Object.keys(C.RATE_TABLE[role]);
     return SCALE_OPTIONS;
   }
+
+  function roleNeedsScalePicker(role) {
+    if (C.roleNeedsScalePicker) return C.roleNeedsScalePicker(role);
+    if (C.isFlatRateRole && C.isFlatRateRole(role)) return false;
+    return scaleOptionsForRole(role).length > 1;
+  }
   const STAFF_LINK_MOD = "./hr-contract-staff-link.js?v=20260703-contact-autofill";
   let staffRoster = [];
   let portalLinkVerified = false;
@@ -354,19 +360,20 @@
     if (!container) return;
     syncRoleScaleStoreFromInputs();
     const roles = getSelectedRoles();
-    if (!isZeroHoursKind() || !roles.length) {
+    const scaledRoles = roles.filter(roleNeedsScalePicker);
+    if (!isZeroHoursKind() || !scaledRoles.length) {
       container.innerHTML = "";
       container.closest(".form-group")?.classList.add("hidden");
       return;
     }
     container.closest(".form-group")?.classList.remove("hidden");
     Object.keys(roleScaleStore).forEach((role) => {
-      if (roles.indexOf(role) < 0) delete roleScaleStore[role];
+      if (roles.indexOf(role) < 0 || !roleNeedsScalePicker(role)) delete roleScaleStore[role];
     });
     const esc = (s) =>
       String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
     let html = '<p class="role-scale-intro">Select the pay scale for each role</p>';
-    roles.forEach((role, i) => {
+    scaledRoles.forEach((role, i) => {
       const id = "role_scale_" + i;
       const options = scaleOptionsForRole(role);
       let current = roleScaleStore[role] || "";
@@ -422,8 +429,9 @@
   }
 
   function allRoleScalesSelected() {
-    const roles = getSelectedRoles();
-    if (!roles.length) return false;
+    const roles = getSelectedRoles().filter(roleNeedsScalePicker);
+    if (!getSelectedRoles().length) return false;
+    if (!roles.length) return true;
     const scales = getRoleScales();
     return roles.every((role) => !!scales[role]);
   }
@@ -435,7 +443,11 @@
     const parts = roles
       .map((role) => {
         const rate = C.getDeliveryRate(role, scales[role]);
-        return rate != null ? C.GBP + rate + "/h - " + role + " (" + scales[role] + ")" : null;
+        if (rate == null) return null;
+        if (C.isFlatRateRole && C.isFlatRateRole(role)) {
+          return C.GBP + rate + "/h - " + role;
+        }
+        return C.GBP + rate + "/h - " + role + " (" + scales[role] + ")";
       })
       .filter(Boolean);
     if (!parts.length) return null;
