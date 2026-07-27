@@ -41,38 +41,58 @@
     return SCALE_OPTIONS.slice();
   }
 
-  var JOB_DESCRIPTION_VERSION = '2026-07';
+  var JOB_DESCRIPTION_VERSION = '2026-07-27';
 
   var JOB_DESCRIPTIONS = {
     'Support Worker': {
       byKind: {
         zero_hours: {
           title: 'Support Worker — Activity Services',
-          summary: 'Provide high-quality, person-centred support in activity sessions (swimming, climbing, fitness and related programmes) outside the Day Centre.',
+          summary:
+            'Provide hands-on, person-centred support in clubSENsational activity sessions (swimming, climbing, fitness and related programmes) outside the Day Centre. Support is ordinarily delivered on a 1:1 or 2:1 basis in a physically active role that requires direct engagement throughout each session, promoting safety, participation, confidence and skill-building for participants with autism and/or learning disabilities.',
           responsibilities: [
-            'Deliver individualised support during activity sessions in line with participant plans.',
-            'Follow behaviour support and safeguarding procedures at all times.',
-            'Prepare and tidy session areas; use equipment safely.',
-            'Complete required session feedback and attendance/session records promptly after each session (typically up to about 10 minutes per session).',
-            'Communicate professionally with families, carers and colleagues.',
-            'Attend planning, induction and supervision sessions as required.',
+            'Prepare and organise activity areas before each session so the environment is structured, safe and ready.',
+            'Support participants to engage in activities, adapting methods to individual abilities, sensory needs and learning styles.',
+            'Provide 1:1 or 2:1 supervision as required, offering tailored attention and care throughout the session.',
+            'Implement effective engagement and behaviour-support strategies, including for participants with challenging behaviour, while following agreed plans and safeguarding procedures.',
+            'Conduct or support relevant health and safety checks before sessions and report concerns promptly.',
+            'Assist with personal hygiene where necessary, maintaining dignity and respect.',
+            'Offer emotional and behavioural support so participants feel safe, valued and included.',
+            'Complete required session feedback, attendance/session records and incident reports promptly after each session (typically up to about 10 minutes per session; included in the Delivery Service rate).',
+            'Communicate professionally with families, carers and colleagues; attend induction, planning and supervision as required.',
             'Work collaboratively within the team and model clubSENsational standards.'
           ],
-          behaviours: 'Reliable · Professional · Safe practice · Clear communication · Positive team member'
+          requirements: [
+            'Enhanced DBS check (satisfactory outcome required; barred-list check where applicable).',
+            'First Aid at Work certification (or willingness to obtain before / shortly after starting, as directed).',
+            'Experience supporting individuals with autism, learning disabilities or special educational needs (ideally at least one year), or a clear willingness to learn autism-specific strategies.',
+            'Strong communication and interpersonal skills; ability to adapt support to a range of needs.',
+            'Physically able to engage actively throughout sessions.'
+          ],
+          behaviours: 'Reliable · Professional · Safe practice · Clear communication · Compassionate · Positive team member'
         },
         day_centre_part_time: {
           title: 'Support Worker — Day Centre',
-          summary: 'Provide high-quality, person-centred support in the Day Centre during Normal Hours of Work.',
+          summary:
+            'Provide high-quality, person-centred support in the Day Centre during Normal Hours of Work. The role supports adults with autism and/or learning disabilities through structured programmes, personal care as required, and a safe, welcoming environment. Support is typically delivered with close, individualised attention (including 1:1 or 2:1 where funded or required).',
           responsibilities: [
-            'Facilitate structured activities and programmes for Day Centre participants.',
-            'Assist with personal care and support needs as required and trained.',
-            'Maintain a safe, welcoming and organised environment.',
-            'Complete daily records, reports and required session/day feedback as part of the role.',
-            'Liaise professionally with families and external professionals.',
-            'Follow behaviour support and safeguarding procedures.',
-            'Work collaboratively with the Service Lead and the Day Centre team.'
+            'Facilitate structured Day Centre activities and programmes that promote engagement, independence and wellbeing.',
+            'Support participants throughout the day, adapting approaches to individual abilities, sensory needs and behaviour-support plans.',
+            'Assist with personal care and support needs as required and trained, maintaining dignity and respect.',
+            'Maintain a safe, welcoming and organised environment; follow health and safety and safeguarding procedures.',
+            'Implement effective engagement strategies, including for participants with complex or challenging behaviour.',
+            'Complete daily records, reports and required session/day feedback as part of the role (covered by salary within Normal Hours; reasonable post-session/end-of-day admin typically up to about 10 minutes unless additional paid time is authorised).',
+            'Liaise professionally with families, carers and external professionals.',
+            'Work collaboratively with the Service Lead and Day Centre team; attend induction, supervision and training as required.'
           ],
-          behaviours: 'Reliable · Professional · Safe practice · Clear communication · Positive team member'
+          requirements: [
+            'Enhanced DBS check (satisfactory outcome required; barred-list check where applicable).',
+            'First Aid at Work certification (or willingness to obtain as directed).',
+            'Experience supporting individuals with autism, learning disabilities or special educational needs (ideally at least one year), or a clear willingness to learn autism-specific strategies.',
+            'Strong communication and interpersonal skills; ability to adapt support to a range of needs.',
+            'Willingness to support personal care where required and trained.'
+          ],
+          behaviours: 'Reliable · Professional · Safe practice · Clear communication · Compassionate · Positive team member'
         }
       }
     },
@@ -80,59 +100,100 @@
       byKind: {
         zero_hours: {
           title: 'Service Lead — Activity / Weekend Services',
-          summary: 'Lead the operational delivery of assigned activity or weekend sessions, coaching the team and owning service quality on shift.',
+          summary:
+            'Lead the operational delivery of assigned activity or weekend sessions for clubSENsational. Own service quality on shift, coach the team, and act as the accountable lead when directors are not on site, ensuring safe, inclusive and high-quality support for participants with autism and/or learning disabilities.',
           responsibilities: [
-            'Lead and coordinate staff on assigned sessions.',
-            'Allocate support and escalate safeguarding or complex behaviour issues appropriately.',
-            'Coach and model best practice for Support Workers and instructors.',
-            'Ensure required session feedback and records are completed to standard.',
-            'Act as the accountable lead when directors are not on site.',
-            'Contribute to inductions, training and service improvement.'
+            'Lead and coordinate staff on assigned sessions, including allocation of support and handover of key information.',
+            'Model best practice in person-centred support, safeguarding and behaviour support; coach Support Workers and instructors on shift.',
+            'Escalate safeguarding concerns, complex behaviour or operational risks appropriately and without delay.',
+            'Ensure session environments, equipment checks and health and safety standards are met before and during delivery.',
+            'Ensure required session feedback and records are completed to standard (including own and team oversight where appropriate).',
+            'Support inductions, buddying and informal training of newer staff.',
+            'Contribute to service improvement, communication with families/venues and consistent clubSENsational standards.',
+            'Act as the accountable lead on site when directors are unavailable.'
           ],
-          behaviours: 'Leadership · Judgement · Accountability · Coaching · Service improvement'
+          requirements: [
+            'Enhanced DBS check (satisfactory outcome required; barred-list check where applicable).',
+            'Substantial experience supporting individuals with autism and/or learning disabilities in activity, education or care settings.',
+            'Demonstrable leadership or shift-lead experience (or clear ability to lead a small team on session).',
+            'Strong judgement, communication and de-escalation skills.',
+            'First Aid at Work certification (or willingness to obtain as directed).',
+            'Relevant activity qualification where the lead role includes instructor duties (e.g. swimming, climbing or fitness).'
+          ],
+          behaviours: 'Leadership · Judgement · Accountability · Coaching · Calm under pressure · Service improvement'
         },
         day_centre_part_time: {
           title: 'Day Centre Service Lead',
-          summary: 'Lead the daily operation of the Day Centre, coordinating staff and owning service quality.',
+          summary:
+            'Lead the daily operation of the Day Centre, coordinating staff and resources across venues as required, owning service quality, and supporting participants with autism and/or learning disabilities through a safe, structured and person-centred day programme.',
           responsibilities: [
-            'Lead the daily operation of the Day Centre within Normal Hours of Work.',
-            'Coordinate staff allocation and resources across venues as required.',
-            'Coach and mentor the Day Centre team.',
-            'Support complex behaviours and safeguarding decisions.',
-            'Review participant programmes and documentation quality, including required feedback/records.',
-            'Contribute to recruitment, training and service development.',
+            'Lead the daily operation of the Day Centre within Normal Hours of Work, including staff allocation and venue coordination.',
+            'Coach and mentor the Day Centre team; set clear expectations and model best practice.',
+            'Support complex behaviours and safeguarding decisions; escalate appropriately and record accurately.',
+            'Oversee participant programmes, daily structure and documentation quality, including required feedback and records.',
+            'Ensure health and safety, environment readiness and appropriate use of equipment and resources.',
+            'Liaise with families, carers and external professionals as required.',
+            'Contribute to recruitment support, inductions, training and service development.',
             'Act as the accountable senior when directors are unavailable.'
           ],
-          behaviours: 'Leadership · Judgement · Accountability · Coaching · Service improvement'
+          requirements: [
+            'Enhanced DBS check (satisfactory outcome required; barred-list check where applicable).',
+            'Substantial experience supporting adults with autism and/or learning disabilities in day services, education or care.',
+            'Proven ability to lead or supervise a staff team.',
+            'Strong safeguarding judgement, communication and organisational skills.',
+            'First Aid at Work certification (or willingness to obtain as directed).',
+            'Willingness to support and oversee personal care standards within the service.'
+          ],
+          behaviours: 'Leadership · Judgement · Accountability · Coaching · Calm under pressure · Service improvement'
         }
       }
     },
     'Climbing Instructor': {
       default: {
         title: 'Climbing Instructor',
-        summary: 'Deliver safe, engaging climbing sessions for clubSENsational participants.',
+        summary:
+          'Deliver high-quality, inclusive climbing sessions for clubSENsational participants, including individuals with autism and/or learning disabilities. Sessions are ordinarily 1:1 or 2:1. This is a physically active role requiring direct, hands-on instruction and support throughout each session in a safe, adaptive environment.',
         responsibilities: [
-          'Plan and deliver climbing sessions appropriate to participant needs and ability.',
-          'Maintain equipment checks and a safe climbing environment.',
-          'Provide person-centred support and follow behaviour/safeguarding plans.',
-          'Complete required session feedback and records promptly after each session (typically up to about 10 minutes per session).',
-          'Communicate professionally with families and colleagues.',
-          'Attend required training, inductions and supervision.'
+          'Prepare and organise the climbing area before sessions, ensuring equipment is set up and functional.',
+          'Deliver structured climbing sessions adapted to individual needs, progress and sensory preferences.',
+          'Use climbing aids and visual tools to support engagement and learning.',
+          'Implement health and safety guidelines; conduct equipment checks before each session and report safety concerns.',
+          'Provide 1:1 or 2:1 supervision and hands-on support throughout the session.',
+          'Support participants with challenging behaviour using effective engagement and behaviour-support strategies, following agreed plans.',
+          'Complete required session feedback, records and incident reports promptly after each session (typically up to about 10 minutes per session; included in the Delivery Service rate).',
+          'Communicate professionally with families and colleagues; attend required training, induction and supervision.'
         ],
-        behaviours: 'Safety-first · Clear instruction · Patient · Professional · Team-oriented'
+        requirements: [
+          'Recognised climbing instructor qualification (e.g. CWI, SPI or equivalent).',
+          'First Aid at Work certification.',
+          'Enhanced DBS check (satisfactory outcome required).',
+          'Experience working with individuals with autism, learning disabilities or SEN (or clear willingness to develop adaptive climbing practice).',
+          'Strong communication skills and ability to adapt teaching methods to a range of abilities.'
+        ],
+        behaviours: 'Safety-first · Clear instruction · Patient · Adaptive · Professional · Team-oriented'
       }
     },
     'Fitness Instructor': {
       default: {
-        title: 'Fitness Instructor',
-        summary: 'Deliver safe, engaging fitness sessions for clubSENsational participants.',
+        title: 'PT / Fitness Instructor',
+        summary:
+          'Deliver high-quality, inclusive fitness sessions for clubSENsational participants, including individuals with autism and/or learning disabilities. Sessions are ordinarily 1:1 or 2:1. This is a physically active role requiring direct, hands-on instruction and support throughout each session to promote health, confidence and engagement.',
         responsibilities: [
-          'Plan and deliver fitness sessions adapted to participant needs.',
-          'Maintain a safe session environment and correct use of equipment.',
-          'Provide person-centred support and follow behaviour/safeguarding plans.',
-          'Complete required session feedback and records promptly after each session (typically up to about 10 minutes per session).',
-          'Communicate professionally with families and colleagues.',
-          'Attend required training, inductions and supervision.'
+          'Prepare and organise the fitness area before sessions, ensuring equipment is set up and functional.',
+          'Deliver structured fitness sessions adapted to individual needs, progress levels and sensory preferences.',
+          'Use teaching aids and visual tools to enhance engagement.',
+          'Implement health and safety guidelines; conduct equipment checks before each session and report safety concerns.',
+          'Provide 1:1 or 2:1 supervision and hands-on support throughout the session.',
+          'Support participants with challenging behaviour using effective engagement and behaviour-support strategies, following agreed plans.',
+          'Complete required session feedback, records and incident reports promptly after each session (typically up to about 10 minutes per session; included in the Delivery Service rate).',
+          'Communicate professionally with families and colleagues; attend required training, induction and supervision.'
+        ],
+        requirements: [
+          'Recognised Level 2 Fitness Instructor or Personal Training qualification (or equivalent demonstrating ability to deliver fitness safely).',
+          'First Aid at Work certification.',
+          'Enhanced DBS check (satisfactory outcome required).',
+          'Experience working with individuals with autism, learning disabilities or SEN (or clear willingness to develop adaptive fitness practice).',
+          'Strong communication skills and ability to adapt routines to a range of abilities and learning styles.'
         ],
         behaviours: 'Motivational · Safety-first · Adaptive · Professional · Team-oriented'
       }
@@ -140,29 +201,49 @@
     'Swimming Instructor': {
       default: {
         title: 'Swimming Instructor',
-        summary: 'Deliver safe, engaging swimming sessions for clubSENsational participants.',
+        summary:
+          'Deliver high-quality, inclusive swimming lessons for clubSENsational participants, including individuals with autism and/or learning disabilities. Sessions are ordinarily 1:1 or 2:1. This is a physically active role: instructors are in the water for each session, providing direct, hands-on instruction and support.',
         responsibilities: [
-          'Plan and deliver swimming sessions appropriate to participant needs and ability.',
-          'Maintain poolside safety and follow venue and clubSENsational procedures.',
-          'Provide person-centred support and follow behaviour/safeguarding plans.',
-          'Complete required session feedback and records promptly after each session (typically up to about 10 minutes per session).',
-          'Communicate professionally with families and colleagues.',
-          'Attend required training, inductions and supervision.'
+          'Prepare and organise the swimming area before lessons.',
+          'Deliver structured lessons adapted to individual needs and progress levels.',
+          'Use teaching aids (including PIXTOLEARN Swimming where applicable) to enhance engagement.',
+          'Implement health and safety guidelines; conduct equipment checks before each session and report safety concerns.',
+          'Provide 1:1 or 2:1 in-water supervision and support throughout the session.',
+          'Support participants with challenging behaviour using effective engagement strategies, following agreed plans and safeguarding procedures.',
+          'Complete required session feedback, records and incident reports promptly after each session (typically up to about 10 minutes per session; included in the Delivery Service rate).',
+          'Communicate professionally with families and colleagues; attend required training, induction and supervision.'
         ],
-        behaviours: 'Safety-first · Clear instruction · Patient · Professional · Team-oriented'
+        requirements: [
+          'Swim England / STA Level 2 Swimming Teacher (or equivalent) qualification.',
+          'National Rescue Award for Swimming Teachers (NRASTC) or equivalent rescue award as required for teaching.',
+          'Enhanced DBS check (satisfactory outcome required).',
+          'Experience working with individuals with autism, learning disabilities or SEN (or clear willingness to develop adaptive swimming practice).',
+          'Strong communication skills and ability to adapt teaching methods to a range of abilities and learning styles.',
+          'Physically able to deliver sessions in the water.'
+        ],
+        behaviours: 'Safety-first · Clear instruction · Patient · Adaptive · Professional · Team-oriented'
       }
     },
     'Business Development': {
       default: {
         title: 'Business Development',
-        summary: 'Drive growth, partnerships and commissioning opportunities for clubSENsational.',
+        summary:
+          'Drive growth, partnerships and commissioning opportunities for clubSENsational, supporting sustainable expansion of inclusive activity and Day Centre services for people with autism and/or learning disabilities.',
         responsibilities: [
           'Identify and pursue new funding, contracts and partnership opportunities.',
-          'Build relationships with commissioners, local authorities and partners.',
-          'Prepare tenders, proposals and impact materials as required.',
-          'Support leadership with pipeline tracking and follow-up.',
-          'Complete required records and feedback on meetings/outcomes as directed.',
-          'Uphold confidentiality, safeguarding and professional standards.'
+          'Build and maintain relationships with commissioners, local authorities, schools, venues and partner organisations.',
+          'Prepare tenders, proposals, impact materials and follow-up communications as required.',
+          'Support leadership with pipeline tracking, meetings and conversion of opportunities.',
+          'Complete required records and feedback on meetings and outcomes as directed.',
+          'Uphold confidentiality, safeguarding awareness and professional standards in all external engagement.',
+          'Work collaboratively with operational leads so growth aligns with service capacity and quality.'
+        ],
+        requirements: [
+          'Strong written and verbal communication skills; confident engaging external stakeholders.',
+          'Experience in business development, fundraising, commissioning, sales or partnership roles (or transferable equivalent).',
+          'Organised, self-directed working style with attention to deadlines and follow-up.',
+          'Ability to represent clubSENsational\'s mission and values professionally.',
+          'Enhanced DBS check where the role involves regulated activity or as otherwise required by the Employer.'
         ],
         behaviours: 'Proactive · Clear communicator · Organised · Relationship-focused · Accountable'
       }
@@ -203,11 +284,19 @@
       if (idx) lines.push('');
       lines.push(item.jd.title || item.role);
       if (item.jd.summary) lines.push(item.jd.summary);
-      lines.push('Typical responsibilities:');
+      lines.push('Key responsibilities:');
       (item.jd.responsibilities || []).forEach(function (r) { lines.push(BULLET + r); });
+      if (item.jd.requirements && item.jd.requirements.length) {
+        lines.push('Essential requirements:');
+        item.jd.requirements.forEach(function (r) { lines.push(BULLET + r); });
+      }
       if (item.jd.behaviours) lines.push('Expected behaviour: ' + item.jd.behaviours);
     });
     return lines.join('\n');
+  }
+
+  function escapeJdHtml(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   function formatJobDescriptionsHtml(roles, kind) {
@@ -218,17 +307,23 @@
     return items.map(function (item) {
       var jd = item.jd;
       var lis = (jd.responsibilities || []).map(function (r) {
-        return '<li>' + String(r).replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</li>';
+        return '<li>' + escapeJdHtml(r) + '</li>';
+      }).join('');
+      var req = (jd.requirements || []).map(function (r) {
+        return '<li>' + escapeJdHtml(r) + '</li>';
       }).join('');
       return (
         '<article class="jd-card">' +
-        '<h4>' + String(jd.title || item.role).replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</h4>' +
-        '<p class="jd-summary">' + String(jd.summary || '').replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</p>' +
-        '<p class="jd-label">Typical responsibilities</p>' +
+        '<h4>' + escapeJdHtml(jd.title || item.role) + '</h4>' +
+        '<p class="jd-summary">' + escapeJdHtml(jd.summary || '') + '</p>' +
+        '<p class="jd-label">Key responsibilities</p>' +
         '<ul>' + lis + '</ul>' +
+        (req
+          ? '<p class="jd-label">Essential requirements</p><ul>' + req + '</ul>'
+          : '') +
         (jd.behaviours
           ? '<p class="jd-behaviours"><strong>Expected behaviour:</strong> ' +
-            String(jd.behaviours).replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</p>'
+            escapeJdHtml(jd.behaviours) + '</p>'
           : '') +
         '</article>'
       );

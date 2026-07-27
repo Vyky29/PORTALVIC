@@ -78,7 +78,7 @@ async function portalContractLoadModule() {
   const bases = ["./", "portal/"];
   for (const b of bases) {
     try {
-      const url = b + "contract-core.js?v=20260727-no-chips";
+      const url = b + "contract-core.js?v=20260727-jd-v2";
       if (typeof window !== "undefined" && window.ContractCore) return window.ContractCore;
       await import(/* @vite-ignore */ new URL(url, import.meta.url).href).catch(() => null);
       if (window.ContractCore) return window.ContractCore;
