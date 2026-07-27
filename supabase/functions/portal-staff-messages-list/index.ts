@@ -65,8 +65,14 @@ function resolveInboundReplySource(
 }
 
 /** Same labels as Family messages (parent notify log): Sent → Delivered → Read. */
-function outboundDeliveryLabel(status: string | null | undefined): string {
+function outboundDeliveryLabel(
+  status: string | null | undefined,
+  opts?: { seenInPortal?: boolean },
+): string {
   const st = String(status || "").trim().toLowerCase();
+  /* Meta often reports 131026 undeliverable while staff still gets the portal push
+     and replies in CS WhatsApp — don't scare admins with Failed in that case. */
+  if (st === "failed" && opts?.seenInPortal) return "Seen in portal";
   if (st === "read") return "Read";
   if (st === "delivered") return "Delivered";
   if (st === "sent") return "Sent";
@@ -374,6 +380,15 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
   }
 
   const readMs = new Date(readAt).getTime();
+  /** Latest portal (not Meta WhatsApp) staff reply — proves they saw the thread. */
+  let latestPortalInboundMs = 0;
+  for (const m of messages) {
+    if (m.direction !== "inbound") continue;
+    if (String(m.reply_source || "").toLowerCase() !== "portal") continue;
+    const ms = new Date(String(m.created_at || 0)).getTime();
+    if (Number.isFinite(ms) && ms > latestPortalInboundMs) latestPortalInboundMs = ms;
+  }
+
   let unread_messages_count = 0;
   (outboundRows || []).forEach((r) => {
     const createdMs = new Date(String(r.created_at || 0)).getTime();
@@ -383,15 +398,24 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
 
   const messagesWithFlags = messages.map((m) => {
     const createdMs = new Date(String(m.created_at || 0)).getTime();
-    const seenInPortal =
-      m.direction === "outbound" &&
+    const seenByReadCursor =
       Number.isFinite(createdMs) &&
       Number.isFinite(readMs) &&
       readMs > new Date(READ_EPOCH).getTime() &&
-      createdMs <= readMs &&
-      String(m.whatsapp_status || "").toLowerCase() !== "failed";
+      createdMs <= readMs;
+    const seenByPortalReply =
+      Number.isFinite(createdMs) &&
+      latestPortalInboundMs > 0 &&
+      createdMs <= latestPortalInboundMs;
+    const seenInPortal =
+      m.direction === "outbound" && (seenByReadCursor || seenByPortalReply);
+    const deliveryLabel =
+      m.direction === "outbound"
+        ? outboundDeliveryLabel(m.whatsapp_status, { seenInPortal: !!seenInPortal })
+        : m.delivery_label;
     return {
       ...m,
+      delivery_label: deliveryLabel ?? m.delivery_label,
       seen_in_portal: m.direction === "outbound" ? seenInPortal : undefined,
       is_unread:
         m.direction === "outbound" &&

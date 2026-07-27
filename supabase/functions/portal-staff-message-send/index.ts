@@ -160,6 +160,16 @@ Deno.serve(async (req) => {
   }
 
   if (inserted?.id) {
+    /* Replying in portal means they saw prior admin messages — advance read cursor
+       so admin UI can show Seen in portal even when Meta WhatsApp is undeliverable. */
+    try {
+      await admin.rpc("portal_staff_whatsapp_mark_read", {
+        p_staff_profile_id: me.id,
+        p_read_at: now,
+      });
+    } catch (e) {
+      console.warn("[portal-staff-message-send] mark_read failed", String(e));
+    }
     await notifyAdminsStaffWhatsappReply({
       id: String(inserted.id),
       staff_profile_id: String(me.id),

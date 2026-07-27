@@ -606,8 +606,10 @@
   function waDeliveryChip(m) {
     var st = String((m && m.whatsapp_status) || "").toLowerCase();
     var label = String((m && m.delivery_label) || "").trim();
+    var seenPortal = !!(m && m.seen_in_portal);
     if (!label) {
-      if (st === "read") label = "Read";
+      if (st === "failed" && seenPortal) label = "Seen in portal";
+      else if (st === "read") label = "Read";
       else if (st === "delivered") label = "Delivered";
       else if (st === "failed") label = "Failed";
       else if (st === "pending") label = "Sending…";
@@ -615,9 +617,13 @@
     }
     // Normalise legacy API label
     if (/^read on whatsapp$/i.test(label)) label = "Read";
+    var portalDelivery = /^seen in portal$/i.test(label) || (st === "failed" && seenPortal);
     var ticks = "";
     var cls = "portal-staff-wa-admin__chip";
-    if (st === "read") {
+    if (portalDelivery) {
+      cls += " is-portal";
+      label = "Seen in portal";
+    } else if (st === "read") {
       cls += " is-read";
       ticks = '<span class="portal-staff-wa-admin__ticks" aria-hidden="true">✓✓</span>';
     } else if (st === "delivered") {
@@ -631,6 +637,10 @@
       cls += " is-muted";
     }
     var titleBits = [];
+    if (portalDelivery) {
+      titleBits.push("Staff opened/replied in portal CS WhatsApp");
+      titleBits.push("WhatsApp phone delivery failed (Meta undeliverable)");
+    }
     if (m && m.whatsapp_delivered_at) titleBits.push("Delivered " + formatTime(m.whatsapp_delivered_at));
     if (m && m.whatsapp_read_at) titleBits.push("Read " + formatTime(m.whatsapp_read_at));
     return (
@@ -722,11 +732,16 @@
         var chips = [];
         if (dir === "out") {
           chips.push(waDeliveryChip(m));
-          if (m.seen_in_portal) {
+          var outLabel = String(m.delivery_label || "").toLowerCase();
+          var outFailedSeenPortal =
+            String(m.whatsapp_status || "").toLowerCase() === "failed" && !!m.seen_in_portal;
+          /* Already shown as primary "Seen in portal" chip when WA failed but portal-seen. */
+          if (m.seen_in_portal && !outFailedSeenPortal && outLabel !== "seen in portal") {
             chips.push(
               '<span class="portal-staff-wa-admin__chip is-portal" title="Opened CS WhatsApp in the staff portal">Opened in portal</span>'
             );
           } else if (
+            !m.seen_in_portal &&
             String(m.whatsapp_status || "").toLowerCase() !== "failed" &&
             String(m.whatsapp_status || "").toLowerCase() !== "read"
           ) {
