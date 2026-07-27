@@ -27,10 +27,17 @@
   var LOGO_DISPLAY = 'assets/clubsensational-logo-hq.png?v=3';
 
   var RATE_TABLE = {
-    'Support Worker':       { 'Scale 1': 18, 'Scale 2': 20, 'Scale 3': 23 },
-    'Climbing Instructor':  { 'Scale 1': 22, 'Scale 2': 24, 'Scale 3': 30 },
-    'Fitness Instructor':   { 'Scale 1': 24, 'Scale 2': 28, 'Scale 3': 32 },
-    'Swimming Instructor':  { 'Scale 1': 22, 'Scale 2': 24, 'Scale 3': 28 }
+    'Support Worker':                          { 'Scale 1': 18, 'Scale 2': 20, 'Scale 3': 23 },
+    'Specialist Support Worker — Climbing':    { 'Scale 1': 22, 'Scale 2': 24, 'Scale 3': 30 },
+    'Specialist Support Worker — Fitness':     { 'Scale 1': 24, 'Scale 2': 28, 'Scale 3': 32 },
+    'Specialist Support Worker — Swimming':    { 'Scale 1': 22, 'Scale 2': 24, 'Scale 3': 28 }
+  };
+  /** Legacy role titles → current RATE_TABLE / JD keys (saved drafts, timesheets, older docs). */
+  var ROLE_ALIASES = {
+    'Climbing Instructor': 'Specialist Support Worker — Climbing',
+    'Fitness Instructor': 'Specialist Support Worker — Fitness',
+    'PT / Fitness Instructor': 'Specialist Support Worker — Fitness',
+    'Swimming Instructor': 'Specialist Support Worker — Swimming'
   };
   /** Flat hourly roles (no Scale 1/2/3 picker in the generator). */
   var FLAT_HOURLY_RATES = {
@@ -39,13 +46,20 @@
   };
   var SCALE_OPTIONS = ['Scale 1', 'Scale 2', 'Scale 3'];
 
+  function canonicalRoleName(role) {
+    var r = String(role || '').trim();
+    return ROLE_ALIASES[r] || r;
+  }
+
   function isFlatRateRole(role) {
-    return Object.prototype.hasOwnProperty.call(FLAT_HOURLY_RATES, role);
+    var r = canonicalRoleName(role);
+    return Object.prototype.hasOwnProperty.call(FLAT_HOURLY_RATES, r);
   }
 
   function getScaleOptionsForRole(role) {
-    if (isFlatRateRole(role)) return [];
-    if (role && RATE_TABLE[role]) return Object.keys(RATE_TABLE[role]);
+    var r = canonicalRoleName(role);
+    if (isFlatRateRole(r)) return [];
+    if (r && RATE_TABLE[r]) return Object.keys(RATE_TABLE[r]);
     return SCALE_OPTIONS.slice();
   }
 
@@ -160,11 +174,11 @@
         }
       }
     },
-    'Climbing Instructor': {
+    'Specialist Support Worker — Climbing': {
       default: {
-        title: 'Climbing Instructor',
+        title: 'Specialist Support Worker — Climbing',
         summary:
-          'Deliver high-quality, inclusive climbing sessions for clubSENsational participants, including individuals with autism and/or learning disabilities. Sessions are ordinarily 1:1 or 2:1. This is a physically active role requiring direct, hands-on instruction and support throughout each session in a safe, adaptive environment.',
+          'Provide specialist, person-centred support through inclusive climbing sessions for clubSENsational participants, including individuals with autism and/or learning disabilities. Sessions are ordinarily 1:1 or 2:1. This is a physically active welfare support role requiring direct, hands-on engagement throughout each session in a safe, adaptive environment.',
         responsibilities: [
           'Prepare and organise the climbing area before sessions, ensuring equipment is set up and functional.',
           'Deliver structured climbing sessions adapted to individual needs, progress and sensory preferences.',
@@ -185,11 +199,11 @@
         behaviours: 'Safety-first · Clear instruction · Patient · Adaptive · Professional · Team-oriented'
       }
     },
-    'Fitness Instructor': {
+    'Specialist Support Worker — Fitness': {
       default: {
-        title: 'PT / Fitness Instructor',
+        title: 'Specialist Support Worker — Fitness',
         summary:
-          'Deliver high-quality, inclusive fitness sessions for clubSENsational participants, including individuals with autism and/or learning disabilities. Sessions are ordinarily 1:1 or 2:1. This is a physically active role requiring direct, hands-on instruction and support throughout each session to promote health, confidence and engagement.',
+          'Provide specialist, person-centred support through inclusive fitness sessions for clubSENsational participants, including individuals with autism and/or learning disabilities. Sessions are ordinarily 1:1 or 2:1. This is a physically active welfare support role requiring direct, hands-on engagement throughout each session to promote health, confidence and participation.',
         responsibilities: [
           'Prepare and organise the fitness area before sessions, ensuring equipment is set up and functional.',
           'Deliver structured fitness sessions adapted to individual needs, progress levels and sensory preferences.',
@@ -210,14 +224,14 @@
         behaviours: 'Motivational · Safety-first · Adaptive · Professional · Team-oriented'
       }
     },
-    'Swimming Instructor': {
+    'Specialist Support Worker — Swimming': {
       default: {
-        title: 'Swimming Instructor',
+        title: 'Specialist Support Worker — Swimming',
         summary:
-          'Deliver high-quality, inclusive swimming lessons for clubSENsational participants, including individuals with autism and/or learning disabilities. Sessions are ordinarily 1:1 or 2:1. This is a physically active role: instructors are in the water for each session, providing direct, hands-on instruction and support.',
+          'Provide specialist, person-centred support through inclusive swimming sessions for clubSENsational participants, including individuals with autism and/or learning disabilities. Sessions are ordinarily 1:1 or 2:1. This is a physically active welfare support role: the worker is in the water for each session, providing direct, hands-on support and adapted aquatic instruction.',
         responsibilities: [
-          'Prepare and organise the swimming area before lessons.',
-          'Deliver structured lessons adapted to individual needs and progress levels.',
+          'Prepare and organise the swimming area before sessions.',
+          'Deliver structured swimming sessions adapted to individual needs and progress levels.',
           'Use teaching aids (including PIXTOLEARN Swimming where applicable) to enhance engagement.',
           'Implement health and safety guidelines; conduct equipment checks before each session and report safety concerns.',
           'Provide 1:1 or 2:1 in-water supervision and support throughout the session.',
@@ -263,7 +277,7 @@
   };
 
   function resolveJobDescription(role, kind) {
-    var entry = JOB_DESCRIPTIONS[role];
+    var entry = JOB_DESCRIPTIONS[canonicalRoleName(role)];
     if (!entry) return null;
     var k = normalizeContractKind(kind);
     if (entry.byKind) {
@@ -595,17 +609,18 @@
    * ================================================================ */
 
   function getDeliveryRate(role, scale) {
-    if (isFlatRateRole(role)) return FLAT_HOURLY_RATES[role];
-    return (role && scale && RATE_TABLE[role]) ? RATE_TABLE[role][scale] : null;
+    var r = canonicalRoleName(role);
+    if (isFlatRateRole(r)) return FLAT_HOURLY_RATES[r];
+    return (r && scale && RATE_TABLE[r]) ? RATE_TABLE[r][scale] : null;
   }
 
   function normalizeRoles(o) {
     var src = o || {};
     if (Array.isArray(src.roles) && src.roles.length) {
-      return src.roles.map(function (r) { return String(r || '').trim(); }).filter(Boolean);
+      return src.roles.map(function (r) { return canonicalRoleName(r); }).filter(Boolean);
     }
     if (src.role && String(src.role).trim()) {
-      return String(src.role).split(/\s*&\s*/).map(function (r) { return r.trim(); }).filter(Boolean);
+      return String(src.role).split(/\s*&\s*/).map(function (r) { return canonicalRoleName(r); }).filter(Boolean);
     }
     return [];
   }
@@ -621,7 +636,12 @@
     var out = {};
     if (src.roleScales && typeof src.roleScales === 'object' && !Array.isArray(src.roleScales)) {
       roleList.forEach(function (role) {
-        var scale = src.roleScales[role];
+        var scale = src.roleScales[role] || src.roleScales[canonicalRoleName(role)];
+        if (!scale) {
+          Object.keys(ROLE_ALIASES).forEach(function (legacy) {
+            if (ROLE_ALIASES[legacy] === role && src.roleScales[legacy]) scale = src.roleScales[legacy];
+          });
+        }
         if (scale) out[role] = String(scale);
       });
       return out;
@@ -1947,6 +1967,8 @@
     GBP: GBP,
     EM: EM,
     RATE_TABLE: RATE_TABLE,
+    ROLE_ALIASES: ROLE_ALIASES,
+    canonicalRoleName: canonicalRoleName,
     FLAT_HOURLY_RATES: FLAT_HOURLY_RATES,
     SCALE_OPTIONS: SCALE_OPTIONS,
     getScaleOptionsForRole: getScaleOptionsForRole,

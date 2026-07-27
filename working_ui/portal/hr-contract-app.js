@@ -94,9 +94,9 @@
     }
     if (dayCentre) {
       syncDayCentreHoursFromDays();
-      setServiceSetting("day_centre", { silent: true });
+      setServiceSettings(["day_centre"], { silent: true });
     } else if (zeroHours) {
-      setServiceSetting("after_school_weekends", { silent: true });
+      setServiceSettings(["after_school_weekends"], { silent: true });
     } else {
       syncServiceSettingPlaces();
     }
@@ -105,9 +105,16 @@
     if (hint) hint.style.display = dayCentre ? "block" : "none";
   }
 
+  function getServiceSettings() {
+    return Array.from(document.querySelectorAll('input[name="serviceSetting"]:checked')).map(
+      (el) => el.value
+    );
+  }
+
+  /** @deprecated single value — prefer getServiceSettings(); returns first selected or "". */
   function getServiceSetting() {
-    const checked = document.querySelector('input[name="serviceSetting"]:checked');
-    return checked ? checked.value : "";
+    const all = getServiceSettings();
+    return all.length ? all.join(",") : "";
   }
 
   function serviceSettingLabel(value) {
@@ -116,24 +123,47 @@
     return "";
   }
 
-  function setServiceSetting(value, opts) {
+  function formatServiceSettingsLabel(settings) {
+    const labels = (settings || getServiceSettings())
+      .map(serviceSettingLabel)
+      .filter(Boolean);
+    if (!labels.length) return "";
+    if (labels.length === 1) return labels[0];
+    return labels.join(" and ");
+  }
+
+  function setServiceSettings(values, opts) {
     const silent = opts && opts.silent;
-    const radio = document.querySelector('input[name="serviceSetting"][value="' + value + '"]');
-    if (radio) radio.checked = true;
-    syncServiceSettingPlaces();
+    const wanted = new Set(Array.isArray(values) ? values : values ? [values] : []);
+    document.querySelectorAll('input[name="serviceSetting"]').forEach((el) => {
+      el.checked = wanted.has(el.value);
+    });
+    syncServiceSettingPlaces({ forceDayCentreSelect: wanted.has("day_centre") });
     if (!silent) updatePreview();
   }
 
-  function syncServiceSettingPlaces() {
-    const setting = getServiceSetting() || "after_school_weekends";
+  function setServiceSetting(value, opts) {
+    setServiceSettings(value ? [value] : [], opts);
+  }
+
+  let prevServiceSettings = null;
+
+  function syncServiceSettingPlaces(opts) {
+    const settings = getServiceSettings();
+    const forceDc = !!(opts && opts.forceDayCentreSelect);
     const hintDc = $("placeHintDayCentre");
     const hintAs = $("placeHintAfterSchool");
-    if (hintDc) hintDc.style.display = setting === "day_centre" ? "" : "none";
-    if (hintAs) hintAs.style.display = setting === "after_school_weekends" ? "" : "none";
+    const hasDc = settings.indexOf("day_centre") >= 0;
+    const hasAs = settings.indexOf("after_school_weekends") >= 0;
+    if (hintDc) hintDc.style.display = hasDc ? "" : "none";
+    if (hintAs) hintAs.style.display = hasAs ? "" : "none";
 
     document.querySelectorAll("#placeCheckboxes .place-option").forEach((label) => {
       const groups = (label.getAttribute("data-service") || "").split(/\s+/).filter(Boolean);
-      const show = !groups.length || groups.indexOf(setting) >= 0;
+      const show =
+        !settings.length
+          ? false
+          : !groups.length || groups.some((g) => settings.indexOf(g) >= 0);
       label.classList.toggle("hidden", !show);
       if (!show) {
         const cb = label.querySelector('input[type="checkbox"]');
@@ -146,9 +176,10 @@
       }
     });
 
-    // Day Centre runs across the three W10 6RP venues — select all together.
-    // After school & Weekends: start unchecked; user picks venues manually.
-    if (setting === "day_centre") {
+    const newlyDc =
+      forceDc ||
+      (hasDc && (!prevServiceSettings || prevServiceSettings.indexOf("day_centre") < 0));
+    if (newlyDc) {
       document.querySelectorAll("#placeCheckboxes .place-option").forEach((label) => {
         if (label.classList.contains("hidden")) return;
         const groups = (label.getAttribute("data-service") || "").split(/\s+/).filter(Boolean);
@@ -156,13 +187,9 @@
         const cb = label.querySelector('input[type="checkbox"]');
         if (cb && cb.value !== "Other") cb.checked = true;
       });
-    } else if (setting === "after_school_weekends") {
-      document.querySelectorAll("#placeCheckboxes input[type='checkbox']").forEach((cb) => {
-        cb.checked = false;
-      });
-      if ($("otherLocationWrap")) $("otherLocationWrap").classList.add("hidden");
     }
 
+    prevServiceSettings = settings.slice();
     renderVenueHoursInputs();
   }
 
@@ -332,7 +359,7 @@
   function formatPlaceOfWork() {
     const places = getPlaces();
     if (!places.length) return "";
-    const setting = serviceSettingLabel(getServiceSetting());
+    const setting = formatServiceSettingsLabel();
     const list = places.map((p, i) => i + 1 + ". " + p).join("\n");
     return setting ? setting + " services:\n" + list : list;
   }
@@ -343,6 +370,75 @@
       roles.push(cb.value);
     });
     return roles;
+  }
+
+  var VENUE_ACTON = "Acton Centre (W3 6LE)";
+  var VENUE_SWIMFARM = "SwimFarm Centre (W10 6RP)";
+  var VENUE_NORTHOLT = "Northolt Centre (UB5 4AB)";
+  var VENUE_HUB = "clubSENsational Hub (W10 6RP)";
+  var VENUE_WESTWAY = "Westway Sports Centre (W10 6RP)";
+
+  /** Default places of work when a role is newly ticked (ZH activity). */
+  var ROLE_VENUE_DEFAULTS = {
+    "Specialist Support Worker — Swimming": [VENUE_ACTON, VENUE_SWIMFARM, VENUE_NORTHOLT],
+    "Specialist Support Worker — Climbing": [VENUE_WESTWAY],
+    "Specialist Support Worker — Fitness": [VENUE_WESTWAY, VENUE_HUB],
+    "Support Worker": [VENUE_HUB, VENUE_WESTWAY],
+    "Service Lead": [VENUE_HUB, VENUE_WESTWAY]
+  };
+  var prevSelectedRoles = [];
+
+  function venuesForRole(role) {
+    var r = String(role || "").trim();
+    if (ROLE_VENUE_DEFAULTS[r]) return ROLE_VENUE_DEFAULTS[r].slice();
+    if (/swimming/i.test(r)) return ROLE_VENUE_DEFAULTS["Specialist Support Worker — Swimming"].slice();
+    if (/climbing/i.test(r)) return ROLE_VENUE_DEFAULTS["Specialist Support Worker — Climbing"].slice();
+    if (/fitness/i.test(r)) return ROLE_VENUE_DEFAULTS["Specialist Support Worker — Fitness"].slice();
+    return [];
+  }
+
+  function ensureAfterSchoolSettingForVenues() {
+    var asCb = document.querySelector(
+      'input[name="serviceSetting"][value="after_school_weekends"]'
+    );
+    if (asCb && !asCb.checked) {
+      asCb.checked = true;
+      syncServiceSettingPlaces();
+    }
+  }
+
+  /** When activity roles are newly ticked, select their default venues. */
+  function applyRoleVenueDefaults() {
+    var roles = getSelectedRoles();
+    var prev = new Set(prevSelectedRoles);
+    var venues = [];
+    var seen = {};
+    roles.forEach(function (role) {
+      if (prev.has(role)) return;
+      venuesForRole(role).forEach(function (v) {
+        if (!seen[v]) {
+          seen[v] = true;
+          venues.push(v);
+        }
+      });
+    });
+    if (!venues.length) {
+      prevSelectedRoles = roles.slice();
+      return;
+    }
+    ensureAfterSchoolSettingForVenues();
+    venues.forEach(function (value) {
+      var cb = document.querySelector(
+        '#placeCheckboxes input[type="checkbox"][value="' + value + '"]'
+      );
+      if (cb) cb.checked = true;
+    });
+    var otherWrap = $("otherLocationWrap");
+    if (otherWrap && $("placeOther") && !$("placeOther").checked) {
+      otherWrap.classList.add("hidden");
+    }
+    renderVenueHoursInputs();
+    prevSelectedRoles = roles.slice();
   }
 
   function formatRoleLabel(roles) {
@@ -543,6 +639,7 @@
       portalStaffLogin: getPortalStaffLogin(),
       portalAuthEmail: getPortalAuthEmail(),
       serviceSetting: getServiceSetting(),
+      serviceSettings: getServiceSettings(),
       places: getPlaces(),
       normalHours: getNormalHoursText(),
       directorName: $("directorName").value.trim(),
@@ -675,7 +772,7 @@
       }
 
       const places = getPlaces();
-      const settingOk = !!getServiceSetting();
+      const settingOk = getServiceSettings().length > 0;
       $("fgPlace").classList.toggle("invalid", !settingOk || places.length === 0);
       if (!settingOk || !places.length) valid = false;
       show("fgDirector", $("directorName").value.trim().length > 0);
@@ -969,10 +1066,12 @@
     }
     document.querySelectorAll("#roleCheckboxes input").forEach((cb) => {
       cb.addEventListener("change", () => {
+        applyRoleVenueDefaults();
         syncScaleFromRoles();
         updatePreview();
       });
     });
+    prevSelectedRoles = getSelectedRoles();
     document.querySelectorAll('#workDayCheckboxes input, input[name="workDay"]').forEach((cb) => {
       cb.addEventListener("change", () => {
         syncDayCentreHoursFromDays();
@@ -1002,8 +1101,8 @@
         });
       }
     );
-    document.querySelectorAll('input[name="serviceSetting"]').forEach((radio) => {
-      radio.addEventListener("change", () => {
+    document.querySelectorAll('input[name="serviceSetting"]').forEach((el) => {
+      el.addEventListener("change", () => {
         syncServiceSettingPlaces();
         updatePreview();
       });
@@ -1051,6 +1150,7 @@
     directorPadApi = null;
     Object.keys(venueHoursStore).forEach((k) => delete venueHoursStore[k]);
     Object.keys(roleScaleStore).forEach((k) => delete roleScaleStore[k]);
+    prevSelectedRoles = [];
     staffRoster = [];
     portalLinkVerified = false;
     selectedPortalLogin = "";
