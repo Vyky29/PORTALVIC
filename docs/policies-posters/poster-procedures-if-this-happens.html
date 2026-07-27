@@ -3,37 +3,43 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>If this happens · clubSENsational</title>
+<title>What to open · clubSENsational</title>
 <style>
   @page { size: A3 portrait; margin: 10mm; }
   * { box-sizing: border-box; }
   body { margin: 0; font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif; color: #1f2937; background: #dbe3ea; }
   .sheet { max-width: 297mm; margin: 16px auto; background: #fff; min-height: 400mm; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 12px 40px rgba(30, 47, 64, .18); }
-  .hero { position: relative; background: linear-gradient(145deg, #1e2f40 0%, #2d3e50 55%, #243746 100%); color: #fff; padding: 32px 36px 34px; overflow: hidden; }
+  .hero { position: relative; background: linear-gradient(145deg, #1e2f40 0%, #2d3e50 55%, #243746 100%); color: #fff; padding: 28px 32px 30px; overflow: hidden; }
   .hero::before { content: ""; position: absolute; right: -6%; top: -45%; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, rgba(244,185,66,.3), transparent 68%); }
-  .hero-inner { position: relative; z-index: 1; display: flex; gap: 22px; align-items: center; }
-  .logo { flex: 0 0 96px; width: 96px; height: 96px; background: #fff; border-radius: 18px; padding: 10px; display: flex; align-items: center; justify-content: center; }
+  .hero-inner { position: relative; z-index: 1; display: flex; gap: 20px; align-items: center; }
+  .logo { flex: 0 0 88px; width: 88px; height: 88px; background: #fff; border-radius: 16px; padding: 9px; display: flex; align-items: center; justify-content: center; }
   .logo img { width: 100%; height: auto; display: block; }
   .brand { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: #f4b942; font-weight: 700; margin: 0 0 8px; }
-  h1 { margin: 0; font-size: 42px; line-height: 1.05; letter-spacing: -.02em; color: #fff; font-weight: 800; }
-  .sub { margin: 10px 0 0; font-size: 15px; color: #d7e0e8; max-width: 38em; line-height: 1.45; }
-  .body { padding: 22px 28px 14px; flex: 1; background: linear-gradient(180deg, #f7f9fb 0%, #fff 24%); }
-  .lead { margin: 0 0 16px; font-size: 14.5px; color: #374151; line-height: 1.5; padding: 14px 16px; background: #fff; border: 1px solid #e5e7eb; border-left: 4px solid #f4b942; border-radius: 0 12px 12px 0; }
-  .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 18px; }
-  .step { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 10px 8px; text-align: center; }
-  .step .n { width: 24px; height: 24px; margin: 0 auto 6px; border-radius: 50%; background: #2d3e50; color: #f4b942; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
-  .step p { margin: 0; font-size: 11px; font-weight: 700; color: #2d3e50; line-height: 1.25; }
-  table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13.5px; overflow: hidden; border-radius: 14px; border: 1px solid #e5e7eb; background: #fff; }
-  th, td { padding: 11px 13px; text-align: left; vertical-align: middle; border-bottom: 1px solid #eef2f6; }
-  th { background: #2d3e50; color: #fff; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+  h1 { margin: 0; font-size: 38px; line-height: 1.05; letter-spacing: -.02em; color: #fff; font-weight: 800; }
+  .sub { margin: 10px 0 0; font-size: 15px; color: #d7e0e8; max-width: 40em; line-height: 1.45; }
+  .body { padding: 20px 26px 12px; flex: 1; background: linear-gradient(180deg, #f7f9fb 0%, #fff 24%); }
+  .lead { margin: 0 0 14px; font-size: 14.5px; color: #374151; line-height: 1.5; padding: 13px 15px; background: #fff; border: 1px solid #e5e7eb; border-left: 4px solid #f4b942; border-radius: 0 12px 12px 0; }
+  .how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+  .how-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px 12px 11px; }
+  .how-card .n { display: inline-flex; width: 22px; height: 22px; border-radius: 50%; background: #2d3e50; color: #f4b942; font-size: 12px; font-weight: 800; align-items: center; justify-content: center; margin-bottom: 6px; }
+  .how-card strong { display: block; font-size: 13px; color: #1e2f40; margin-bottom: 3px; }
+  .how-card p { margin: 0; font-size: 12px; color: #6b7280; line-height: 1.35; }
+  .sec { margin: 0 0 12px; }
+  .sec-h { margin: 0 0 8px; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; font-weight: 800; color: #6b7280; }
+  .sec-h--urgent { color: #9f1239; }
+  .sec-h--report { color: #9a3412; }
+  .sec-h--day { color: #1e3a5f; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; overflow: hidden; border-radius: 14px; border: 1px solid #e5e7eb; background: #fff; margin-bottom: 12px; }
+  th, td { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid #eef2f6; }
+  th { background: #2d3e50; color: #fff; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
   tr:last-child td { border-bottom: none; }
   tr:nth-child(even) td { background: #f9fafb; }
-  td.if { font-weight: 700; color: #2d3e50; width: 42%; }
-  .ic { display: inline-flex; width: 28px; height: 28px; border-radius: 8px; align-items: center; justify-content: center; margin-right: 8px; vertical-align: middle; font-size: 14px; background: #fef8e8; }
-  td.then { color: #111827; font-weight: 600; }
-  .hint { display: block; margin-top: 3px; font-size: 12px; font-weight: 500; color: #6b7280; }
-  .note { margin-top: 14px; padding: 12px 14px; background: linear-gradient(90deg, #fff8e8, #fff); border: 1px solid #f4b942; border-radius: 12px; font-size: 12.5px; color: #374151; line-height: 1.45; }
-  .foot { padding: 14px 28px 18px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; gap: 16px; align-items: center; font-size: 12px; color: #6b7280; background: #fafbfc; }
+  td.sit { font-weight: 700; color: #2d3e50; width: 34%; }
+  td.sit span.ex { display: block; margin-top: 3px; font-size: 11.5px; font-weight: 500; color: #6b7280; line-height: 1.35; }
+  td.open { color: #111827; font-weight: 700; width: 28%; }
+  td.next { color: #374151; font-weight: 500; font-size: 12.5px; line-height: 1.4; }
+  .note { margin-top: 4px; padding: 12px 14px; background: linear-gradient(90deg, #fff8e8, #fff); border: 1px solid #f4b942; border-radius: 12px; font-size: 12.5px; color: #374151; line-height: 1.45; }
+  .foot { padding: 14px 26px 18px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; gap: 16px; align-items: center; font-size: 12px; color: #6b7280; background: #fafbfc; }
   .cta { background: #f4b942; color: #1e2f40; padding: 11px 16px; border-radius: 999px; font-weight: 800; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
   @media print { body { background: #fff; } .sheet { margin: 0; box-shadow: none; max-width: none; min-height: auto; } }
 </style>
@@ -47,68 +53,104 @@
         </div>
         <div>
           <p class="brand">clubSENsational · Autism Consultancy Services</p>
-          <h1>If this happens</h1>
-          <p class="sub">A quick map to the right procedure in the Policies Portal. Then record what happened in the Staff Portal.</p>
+          <h1>What to open</h1>
+          <p class="sub">Use this when something happens or you are unsure which document to follow. It does not replace the procedure. It only points you to the right one in the Policies Portal.</p>
         </div>
       </div>
     </div>
     <div class="body">
-      <p class="lead">You do not need to memorise every document. Match the situation on the left, open the procedure on the right, follow the steps, and report in the Staff Portal.</p>
-      <div class="flow" aria-label="Emergency hierarchy">
-        <div class="step"><div class="n">1</div><p>Keep people safe</p></div>
-        <div class="step"><div class="n">2</div><p>Emergency Response Principles</p></div>
-        <div class="step"><div class="n">3</div><p>Your venue emergency pack</p></div>
-        <div class="step"><div class="n">4</div><p>Report in Staff Portal</p></div>
+      <p class="lead"><strong>How to use it:</strong> find your situation in the left column, open the named document in this portal, follow those steps, then record what happened in the Staff Portal. For fire, medical, missing person, behaviour crisis or pool emergency, you can also use the Emergency Guides on the right of the portal.</p>
+      <div class="how" aria-label="How to use this map">
+        <div class="how-card"><div class="n">1</div><strong>Match the situation</strong><p>Pick the row that is closest to what is happening now.</p></div>
+        <div class="how-card"><div class="n">2</div><strong>Open that document</strong><p>Find it under Policies or Procedures in this portal and follow it.</p></div>
+        <div class="how-card"><div class="n">3</div><strong>Report afterwards</strong><p>When people are safe, record the event in the Staff Portal.</p></div>
       </div>
-      <table>
-        <thead>
-          <tr><th>If this happens</th><th>Open this in the portal</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="if"><span class="ic" aria-hidden="true">📋</span>Unsure how to record session feedback</td>
-            <td class="then">Session Feedback &amp; Record Keeping<span class="hint">Only if you need a refresher. Day-to-day feedback still goes in the Staff Portal after sessions.</span></td>
-          </tr>
-          <tr>
-            <td class="if"><span class="ic" aria-hidden="true">⚠️</span>Incident, accident or near miss</td>
-            <td class="then">Incident Reporting Procedure</td>
-          </tr>
-          <tr>
-            <td class="if"><span class="ic" aria-hidden="true">🛡️</span>Safeguarding concern</td>
-            <td class="then">Safeguarding Reporting Procedure<span class="hint">Also follow the Safeguarding Policy.</span></td>
-          </tr>
-          <tr>
-            <td class="if"><span class="ic" aria-hidden="true">🚨</span>Any emergency</td>
-            <td class="then">Emergency Response Principles<span class="hint">Then open the emergency pack for your venue.</span></td>
-          </tr>
-          <tr>
-            <td class="if"><span class="ic" aria-hidden="true">🔎</span>Missing or unaccounted participant</td>
-            <td class="then">Missing Service User Procedure</td>
-          </tr>
-          <tr>
-            <td class="if"><span class="ic" aria-hidden="true">🧠</span>Distressed behaviour or crisis</td>
-            <td class="then">Positive Behaviour Support (PBS)<span class="hint">Use Restrictive Practice only if needed and authorised.</span></td>
-          </tr>
-          <tr>
-            <td class="if"><span class="ic" aria-hidden="true">💧</span>Pool emergency</td>
-            <td class="then">Aquatic Activity Procedure<span class="hint">Plus Emergency Response Principles.</span></td>
-          </tr>
-          <tr>
-            <td class="if"><span class="ic" aria-hidden="true">🏠</span>Home visit emergency or unsafe environment</td>
-            <td class="then">Home Visit Emergency &amp; Escalation</td>
-          </tr>
-          <tr>
-            <td class="if"><span class="ic" aria-hidden="true">🗓️</span>Cannot work a rota shift / need a day off</td>
-            <td class="then">Session Disruption Reporting</td>
-          </tr>
-          <tr>
-            <td class="if"><span class="ic" aria-hidden="true">📩</span>Complaint from family or commissioner</td>
-            <td class="then">Complaints Policy</td>
-          </tr>
-        </tbody>
-      </table>
+
+      <div class="sec">
+        <h2 class="sec-h sec-h--urgent">Urgent · keep people safe first</h2>
+        <table>
+          <thead>
+            <tr><th>Situation</th><th>Open this</th><th>Then do this</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="sit">Any emergency<span class="ex">Fire, serious injury, immediate danger</span></td>
+              <td class="open">Emergency Response Principles</td>
+              <td class="next">Keep people safe. Call 999 if needed. Then use your venue emergency pack and the matching Emergency Guide.</td>
+            </tr>
+            <tr>
+              <td class="sit">Someone is missing<span class="ex">Participant not where they should be</span></td>
+              <td class="open">Missing Service User Procedure</td>
+              <td class="next">Start the search steps at once. Tell the lead / on-call. Report when the person is found or after escalation.</td>
+            </tr>
+            <tr>
+              <td class="sit">Pool emergency<span class="ex">Distress in water, rescue, pool first aid</span></td>
+              <td class="open">Aquatic Activity Procedure</td>
+              <td class="next">Also follow Emergency Response Principles. Use the Pool Emergency Guide for the first actions.</td>
+            </tr>
+            <tr>
+              <td class="sit">Home visit feels unsafe<span class="ex">Environment risk, escalation, leave early</span></td>
+              <td class="open">Home Visit Emergency &amp; Escalation</td>
+              <td class="next">Leave if needed. Call for support. Report as soon as you are safe.</td>
+            </tr>
+            <tr>
+              <td class="sit">Distressed behaviour or crisis<span class="ex">Escalation, risk of harm, need for PBS</span></td>
+              <td class="open">Positive Behaviour Support (PBS)</td>
+              <td class="next">Stay calm and reduce triggers. Use Restrictive Practice only if needed and authorised. Report afterwards.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sec">
+        <h2 class="sec-h sec-h--report">Concerns · report and follow process</h2>
+        <table>
+          <thead>
+            <tr><th>Situation</th><th>Open this</th><th>Then do this</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="sit">Safeguarding concern<span class="ex">Abuse, neglect, unexplained injury, disclosure</span></td>
+              <td class="open">Safeguarding Reporting Procedure</td>
+              <td class="next">Do not investigate alone. Tell the DSL / manager. Also follow the Safeguarding Policy.</td>
+            </tr>
+            <tr>
+              <td class="sit">Incident, accident or near miss<span class="ex">Someone hurt, almost hurt, property damage</span></td>
+              <td class="open">Incident Reporting Procedure</td>
+              <td class="next">Make the area safe. Get first aid if needed. Complete the incident report in the Staff Portal.</td>
+            </tr>
+            <tr>
+              <td class="sit">Complaint from family or commissioner<span class="ex">Verbal or written complaint about the service</span></td>
+              <td class="open">Complaints Policy</td>
+              <td class="next">Listen, stay calm, do not argue. Pass it to the manager / complaints lead the same day.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sec">
+        <h2 class="sec-h sec-h--day">Day-to-day · only when you need guidance</h2>
+        <table>
+          <thead>
+            <tr><th>Situation</th><th>Open this</th><th>Then do this</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="sit">Cannot work a rota shift<span class="ex">Illness, emergency, need cover or a day off</span></td>
+              <td class="open">Session Disruption Reporting</td>
+              <td class="next">Tell the rota lead as early as you can. Follow the reporting steps so cover can be arranged.</td>
+            </tr>
+            <tr>
+              <td class="sit">Unsure how to write session feedback<span class="ex">Only if you need a refresher</span></td>
+              <td class="open">Session Feedback &amp; Record Keeping</td>
+              <td class="next">Day-to-day feedback still goes in the Staff Portal after sessions. Open this only if you are unsure what good recording looks like.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
       <div class="note">
-        <strong>In an emergency:</strong> keep people safe first, then follow steps 1 to 4 above. Policies explain our standards when you have time to read. This poster tells you which procedure to open now.
+        <strong>Remember:</strong> policies set our standards when you have time to read. Procedures tell you what to do in the moment. This map only helps you choose the right document.
       </div>
     </div>
     <div class="foot">
