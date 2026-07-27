@@ -457,8 +457,6 @@
 #hrContractEmbed .letterhead-legal{font-size:.78rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#0f2744;}
 #hrContractEmbed .letterhead-reg,#hrContractEmbed .letterhead-address{font-size:.72rem;color:#64748b;margin-top:.15rem;}
 #hrContractEmbed .letterhead-rule{height:1px;margin:.7rem 1.25rem .5rem;background:linear-gradient(90deg,transparent,#c9a227,#0f2744,#c9a227,transparent);}
-#hrContractEmbed .letterhead-docmeta{display:flex;flex-wrap:wrap;justify-content:center;gap:.35rem;padding:0 1rem .1rem;}
-#hrContractEmbed .letterhead-chip{display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#0f2744;background:#f3f6f9;border:1px solid #d7e0ea;border-radius:999px;padding:.2rem .6rem;}
 #hrContractEmbed .contract-doc-title{text-align:center;font-size:1.02rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#0f2744;margin:0 0 1rem;padding:.65rem .5rem;background:#f7fafc;border-top:2px solid #c9a227;border-bottom:2px solid #c9a227;}
 #hrContractEmbed .contract-section h3{border-left:3px solid #c9a227;border-bottom:1px solid #e6edf4;padding:0 0 .25rem .5rem;}
 #hrContractEmbed .contract-footer{background:linear-gradient(180deg,#fbfcfe,#f3f6f9);}

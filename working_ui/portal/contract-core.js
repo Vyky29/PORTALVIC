@@ -1628,8 +1628,6 @@
       }
     });
 
-    var refMeta = (s.contractReference && String(s.contractReference).trim()) || '';
-    var dateMeta = (s.contractDateLabel && String(s.contractDateLabel).trim()) || '';
     var logoImg = forPdf
       ? '<img src="' + logoSrc + '" alt="clubSENsational" class="contract-logo" width="280" height="202" style="' + (imgStyle || '') + 'max-width:280px;height:auto;">'
       : '<img src="' + logoSrc + '" srcset="' + LOGO_DISPLAY + ' 1x, assets/clubsensational-logo@2x.png?v=3 2x" alt="clubSENsational" class="contract-logo" width="280" height="202"' + (imgStyle ? ' style="' + imgStyle + 'max-width:280px;height:auto;"' : '') + '>';
@@ -1645,11 +1643,6 @@
             '<div class="letterhead-address">' + COMPANY_FOOTER_ADDRESS + '</div>' +
           '</div>' +
           '<div class="letterhead-rule" aria-hidden="true"></div>' +
-          '<div class="letterhead-docmeta">' +
-            (refMeta ? '<span class="letterhead-chip">Ref ' + refMeta + '</span>' : '') +
-            '<span class="letterhead-chip">Version ' + CONTRACT_VERSION + '</span>' +
-            (dateMeta ? '<span class="letterhead-chip">' + dateMeta + '</span>' : '') +
-          '</div>' +
         '</header>' +
         '<div class="contract-body">' +
           '<h1 class="contract-doc-title">' + contractDocTitle(contractKind) + '</h1>' +
@@ -1680,8 +1673,6 @@
       '.letterhead-reg{margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:7.5pt;color:#5b6b7c;letter-spacing:0.02em;}' +
       '.letterhead-address{margin:2px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:7.5pt;color:#5b6b7c;}' +
       '.letterhead-rule{height:1px;margin:10px 18px 8px;background:linear-gradient(90deg,transparent,#c9a227,#0f2744,#c9a227,transparent);}' +
-      '.letterhead-docmeta{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;padding:0 14px 2px;}' +
-      '.letterhead-chip{display:inline-block;font-family:Arial,Helvetica,sans-serif;font-size:7pt;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#0f2744;background:#f3f6f9;border:1px solid #d7e0ea;border-radius:999px;padding:3px 9px;}' +
       '.contract-body{padding:14px 16px 10px;box-sizing:border-box;}' +
       '.contract-doc-title{text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:12.5pt;font-weight:700;color:#0f2744;letter-spacing:0.08em;text-transform:uppercase;margin:0 0 14px;padding:10px 8px;background:#f7fafc;border-top:2px solid #c9a227;border-bottom:2px solid #c9a227;}' +
       '.contract-opening{text-align:center;font-weight:600;color:#0f2744;margin:0 0 14px;font-size:10pt;}' +
