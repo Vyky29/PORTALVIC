@@ -48,7 +48,9 @@
 
   function catalogForTab(tab) {
     if (tab === "all") return CATALOG.slice();
-    return CATALOG.filter(function (d) { return d.kind === tab; });
+    // Tab ids are plural ("policies" / "procedures"); catalog kinds are singular.
+    var kind = tab === "policies" ? "policy" : tab === "procedures" ? "procedure" : tab;
+    return CATALOG.filter(function (d) { return d.kind === kind; });
   }
 
   function scopeApi() {
