@@ -35,6 +35,7 @@
     error: null,
     loaded: false,
     _boundContractRefresh: false,
+    acksMeta: { count: 0, source: null, via: null },
   };
 
   function configure(opts) {
@@ -225,6 +226,28 @@
       "Completions come from portal <code>staff_policy_ack</code> documents (not browser-only saves). " +
       "Grey <code>n/a</code> means not in scope for that person." +
       "</div></div>" +
+      (function () {
+        var meta = state.acksMeta || {};
+        if (meta.via === "rpc" && meta.count > 0) {
+          return (
+            '<p class="muted" style="margin:0 0 12px;font-size:12px">Loaded <strong>' +
+            meta.count +
+            "</strong> acknowledgment(s) from the portal.</p>"
+          );
+        }
+        if (meta.count === 0) {
+          return (
+            '<div class="card" style="margin-bottom:12px;border-color:#f59e0b"><div class="card-pad" style="font-size:13px;line-height:1.5;color:#92400e">' +
+            "<strong>No portal acknowledgments loaded.</strong> " +
+            "If staff see Completed in Policies but this matrix stays empty, run the SQL in " +
+            "<code>working_ui/portal/APPLY-policy-ack-matrix.sql</code> in the Supabase SQL Editor, " +
+            "then ask the worker to open Policies once from the Staff Portal (signed in), and refresh this page." +
+            (meta.source ? " <span class=\"muted\">(" + esc(meta.source) + ")</span>" : "") +
+            "</div></div>"
+          );
+        }
+        return "";
+      })() +
       '<div class="c4k-sessions-hub-tabs" role="tablist" aria-label="Policy sign-off groups" style="margin-bottom:12px">' + tabHtml + "</div>" +
       '<div class="card"><div class="card-h"><h3>Completion matrix</h3>' +
       '<span class="chip chip--info">' + esc(String(staff.length)) + " staff · scoped by role</span></div>" +
@@ -298,10 +321,21 @@
       return map;
     }
 
+    state.acksMeta = { count: 0, source: null, via: null };
+
     return client
       .rpc("portal_admin_list_staff_policy_acks")
       .then(function (res) {
-        if (!res.error) return mapRows(res.data || []);
+        if (!res.error) {
+          var mapped = mapRows(res.data || []);
+          var n = 0;
+          Object.keys(mapped).forEach(function (uid) {
+            n += Object.keys(mapped[uid]).length;
+          });
+          state.acksMeta = { count: n, source: null, via: "rpc" };
+          return mapped;
+        }
+        state.acksMeta.source = res.error.message || "rpc_failed";
         try { console.warn("[policy-signoffs] rpc acks:", res.error.message); } catch (_) {}
         return client
           .from("documents")
@@ -310,13 +344,27 @@
           .limit(5000)
           .then(function (res2) {
             if (res2.error) {
+              state.acksMeta.source = res2.error.message || "documents_failed";
               try { console.warn("[policy-signoffs] documents:", res2.error.message); } catch (_) {}
               return {};
             }
-            return mapRows(res2.data || []);
+            var mapped2 = mapRows(res2.data || []);
+            var n2 = 0;
+            Object.keys(mapped2).forEach(function (uid) {
+              n2 += Object.keys(mapped2[uid]).length;
+            });
+            state.acksMeta = {
+              count: n2,
+              source: n2 === 0 ? "empty_or_rls" : null,
+              via: "documents",
+            };
+            return mapped2;
           });
       })
-      .catch(function () { return {}; });
+      .catch(function (err) {
+        state.acksMeta = { count: 0, source: (err && err.message) || "load_failed", via: null };
+        return {};
+      });
   }
 
   function bindContractRefresh() {
