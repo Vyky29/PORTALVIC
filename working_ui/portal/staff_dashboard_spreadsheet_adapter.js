@@ -33,24 +33,23 @@
       { time_slot: "12 to 1", area: "Big Pool" },
       { time_slot: "1 to 3", area: "Day Centre" },
     ],
-    // Emanuel Day Centre block (Mon/Wed/Fri): Day Centre + Big Pool hour + Day Centre.
+    // Emanuel (Roberto Mon/Wed): Hub 11–12 · swim 12–1 · Hub 2–4 (gap 1–2 = Yaqoub).
     "emanuel|11to4": [
-      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 1", area: "Big Pool" },
-      { time_slot: "1 to 4", area: "Day Centre" },
+      { time_slot: "2 to 4", area: "Hub Room" },
     ],
     "emanuel|11to3": [
-      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 1", area: "Big Pool" },
-      { time_slot: "1 to 3", area: "Day Centre" },
+      { time_slot: "2 to 3", area: "Hub Room" },
     ],
     "emanuel|11to2": [
-      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 1", area: "Big Pool" },
-      { time_slot: "1 to 2", area: "Day Centre" },
     ],
     "emanuel|11to1": [
-      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 1", area: "Big Pool" },
     ],
   };
@@ -101,13 +100,31 @@
    * Day Centre cards). Keyed by canonical clientId + weekday.
    */
   var PORTAL_COMBINED_MULTIBLOCK = {
+    "emanuel|monday": {
+      blockStarts: ["11:00", "14:00"],
+      merged: { time_slot: "11 to 4", start: "11:00", end: "16:00" },
+      segments: [
+        { time_slot: "11 to 12", area: "Hub Room" },
+        { time_slot: "12 to 1", area: "Big Pool" },
+        { time_slot: "2 to 4", area: "Hub Room" },
+      ],
+    },
+    "emanuel|wednesday": {
+      blockStarts: ["11:00", "14:00"],
+      merged: { time_slot: "11 to 4", start: "11:00", end: "16:00" },
+      segments: [
+        { time_slot: "11 to 12", area: "Hub Room" },
+        { time_slot: "12 to 1", area: "Big Pool" },
+        { time_slot: "2 to 4", area: "Hub Room" },
+      ],
+    },
     "emanuel|friday": {
       blockStarts: ["11:00", "15:00"],
       merged: { time_slot: "11 to 4", start: "11:00", end: "16:00" },
       segments: [
-        { time_slot: "11 to 12", area: "Day Centre" },
+        { time_slot: "11 to 12", area: "Hub Room" },
         { time_slot: "12 to 1", area: "Big Pool" },
-        { time_slot: "3 to 4", area: "Day Centre" },
+        { time_slot: "3 to 4", area: "Hub Room" },
       ],
     },
   };
@@ -769,6 +786,19 @@
         // regardless of source. The slot stays ONE session for feedback / pay.
         const synthSegments = portalSynthesizeCombinedSegments(nameLower, rosterService, timeSlotLabel, day);
         if (synthSegments) baseSession.segments = synthSegments;
+      }
+      /* Prefer current Emanuel Mon/Wed SPECIAL shape even if an older MADRE/bundle
+         row still carries a stale 11–4 contiguous 1–4 Day Centre third segment. */
+      if (
+        nameLower === "emanuel" &&
+        String(rosterService || "").trim().toLowerCase() === "day centre" &&
+        String(timeSlotLabel || "").replace(/\s+/g, "").toLowerCase() === "11to4"
+      ) {
+        const dayKey = String(day || "").trim().toLowerCase();
+        if (dayKey === "monday" || dayKey === "wednesday") {
+          const prefer = portalSynthesizeCombinedSegments(nameLower, rosterService, timeSlotLabel, day);
+          if (prefer) baseSession.segments = prefer;
+        }
       }
       const instructorsRaw = String(row.instructors || "").trim();
       if (
