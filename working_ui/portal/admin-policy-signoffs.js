@@ -150,11 +150,23 @@
 
     var th = cols.map(function (d) {
       var num = String(d.id).replace(/^POL-0?/, "");
+      var fullName = String(d.id) + " · " + String(d.title || d.short || "");
       return (
-        '<th scope="col" class="muted" style="font-size:10px;white-space:nowrap;padding:6px 4px;vertical-align:bottom;max-width:3.2rem" title="' +
-        esc(d.id + " · " + d.title) + '">' +
-        '<span style="display:block;font-weight:700;color:#2d3e50">' + esc(num) + "</span>" +
-        '<span style="display:block;font-weight:500;overflow:hidden;text-overflow:ellipsis">' + esc(d.short) + "</span>" +
+        '<th scope="col" class="muted" style="font-size:10px;white-space:nowrap;padding:6px 4px;vertical-align:bottom;max-width:3.2rem;cursor:help" title="' +
+        esc(fullName) +
+        '" aria-label="' +
+        esc(fullName) +
+        '">' +
+        '<span style="display:block;font-weight:700;color:#2d3e50" title="' +
+        esc(fullName) +
+        '">' +
+        esc(num) +
+        "</span>" +
+        '<span style="display:block;font-weight:500;overflow:hidden;text-overflow:ellipsis" title="' +
+        esc(fullName) +
+        '">' +
+        esc(d.short) +
+        "</span>" +
         "</th>"
       );
     }).join("");
@@ -168,23 +180,32 @@
         var tags = state.tagsByUser[uid] || ["core"];
         var pct = donePct(uid, cols);
         var reqN = requiredCols(uid, cols).length;
+        var staffName = s.full_name || s.username || "Staff";
         var cells = cols.map(function (d) {
+          var fullName = String(d.id) + " · " + String(d.title || d.short || "");
           if (!docAppliesToWorker(d, tags)) {
-            return '<td style="text-align:center;padding:6px 4px"><span class="muted" title="Not required for this worker\'s roles / venues" style="font-size:11px">n/a</span></td>';
+            return (
+              '<td style="text-align:center;padding:6px 4px;cursor:help" title="' +
+              esc(fullName + " — not required for " + staffName) +
+              '"><span class="muted" style="font-size:11px">n/a</span></td>'
+            );
           }
           var ok = isAcked(uid, d.id);
+          var tip = fullName + (ok ? " — acknowledged" : " — required · outstanding");
           return (
-            '<td style="text-align:center;padding:6px 4px">' +
+            '<td style="text-align:center;padding:6px 4px;cursor:help" title="' +
+            esc(tip) +
+            '">' +
             (ok
-              ? '<span class="chip chip--ok" title="Acknowledged">✓</span>'
-              : '<span class="chip chip--pend" title="Required · outstanding">—</span>') +
+              ? '<span class="chip chip--ok">✓</span>'
+              : '<span class="chip chip--pend">—</span>') +
             "</td>"
           );
         }).join("");
         var pctLabel = pct == null ? "—" : pct + "%";
         return (
           "<tr>" +
-          '<td style="white-space:nowrap;position:sticky;left:0;background:#fff;z-index:1"><strong>' + esc(s.full_name || s.username || "Staff") + "</strong></td>" +
+          '<td style="white-space:nowrap;position:sticky;left:0;background:#fff;z-index:1"><strong>' + esc(staffName) + "</strong></td>" +
           '<td class="muted" style="white-space:nowrap;font-size:12px" title="' + esc(tags.join(", ")) + '">' + esc(roleLabel(s)) + "</td>" +
           '<td style="text-align:center"><span class="chip ' + chipClass(pct) + '" title="' + reqN + ' required in this tab">' + pctLabel + "</span></td>" +
           cells +
