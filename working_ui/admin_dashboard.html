@@ -110,6 +110,7 @@
   <script src="/portal/admin_ld_funding_review.js?v=20260714-ld-docs-rls"></script>
   <script src="/portal/admin-training-records.js?v=20260714-tr-p3"></script>
   <script src="/portal/admin-hr.js?v=20260722-days-off-history"></script>
+  <script src="/portal/admin-policy-signoffs.js?v=20260727-policy-matrix"></script>
   <script src="/portal/admin-payments.js?v=20260723-funding-names"></script>
   <script src="/portal/admin-commissioning-terms.js?v=20260720-la-terms"></script>
   <script src="/portal/portal-comms-order-payments.js?v=20260617-cfk-order-enrich"></script>
@@ -20749,7 +20750,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portal_push_devices:'Who has Web Push registered on their phone or browser — real background alerts, not just the browser Allow flag.',
         staff_live_map:'Live map for all rostered staff: GPS from 15 min before first session until 15 min after last. The portal app must stay open on each worker\'s phone — push alerts do not replace GPS.',
         staff_ghost_teleport:'Open any worker dashboard in read-only ghost view — roster and TODAY mirror without their PIN or logging them out.',
-        policies:'Who has signed which company policy — acknowledgement matrix.',
+        policies:'Live matrix: every worker × company policies and procedures.',
         policies_portal:'Company policies and procedures library (How we work, What to open, emergency guides).',
         invoices:'Create, share and collect family invoices in Portal (Tide / Card). Same as Family invoices.',
         reenrol_payments:'Create invoices, track re-enrolment instalments, and review term payments (Summer 25/26 · Autumn 26/27).',
@@ -21770,30 +21771,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
     }
     function viewPoliciesSignoffs(){
-      var cols = MOCK.mandatoryPolicyIds || [];
-      var byStaff = MOCK.policySignoffDemoByStaff || {};
-      var th = cols.map(function(pid){
-        return '<th scope="col" class="muted" style="font-size:10px;white-space:nowrap;padding:6px 4px" title="'+esc(pid)+'">'+esc(pid.replace('POL-0',''))+'</th>';
-      }).join('');
-      var body = MOCK.staff.map(function(s){
-        var got = byStaff[s.id] || [];
-        var cells = cols.map(function(pid){
-          var ok = got.indexOf(pid) >= 0;
-          return '<td style="text-align:center;padding:6px 4px">'+(ok?'<span class="chip chip--ok" title="Signed">✓</span>':'<span class="chip chip--pend" title="Outstanding">—</span>')+'</td>';
-        }).join('');
-        var n = cols.length ? Math.round((got.length / cols.length) * 100) : 0;
-        return '<tr><td style="white-space:nowrap"><strong>'+esc(s.name)+'</strong></td><td class="muted" style="white-space:nowrap">'+esc(s.role)+'</td><td style="text-align:center"><span class="chip '+(n>=100?'chip--ok':(n>=50?'chip--info':'chip--pend'))+'">'+n+'%</span></td>'+cells+'</tr>';
-      }).join('');
-      return '<h1 class="page-title">Documents &amp; compliance</h1>'+
-        '<p class="page-intro">Track who has acknowledged which policy.</p>'+
-        '<div class="card" style="margin-bottom:14px"><div class="card-h"><h3>Production wiring (short)</h3></div><div class="card-pad"><ul class="muted" style="margin:0;padding-left:18px;line-height:1.55;font-size:13px">'+
-        '<li>Current staff portal can keep acknowledgments <strong>only in the browser</strong> (localStorage) with PDF download from the page; optional later: <code style="font-size:12px">document_type = staff_policy_ack</code> rows in <code style="font-size:12px">documents</code> for My Documents + admin queries.</li>'+
-        '<li>RLS on <code style="font-size:12px">documents</code> only allows each user to read their own rows — add an admin policy, RPC, or Edge Function to list acknowledgments across staff.</li>'+
-        '<li>Optional: dedicated table <code style="font-size:12px">staff_policy_acknowledgments</code> for faster matrices and versioning; can still mirror from documents.</li>'+
-        '</ul></div></div>'+
-        '<div class="card"><div class="card-h"><h3>Completion matrix (demo)</h3><span class="chip chip--info">'+esc(String(cols.length))+' required</span></div>'+
-        '<div class="card-pad" style="overflow:auto"><table class="tbl tbl--center" style="min-width:'+(260+cols.length*44)+'px"><thead><tr><th>Staff</th><th>Role</th><th>Done</th>'+th+'</tr></thead><tbody>'+body+'</tbody></table></div></div>'+
-        '<div class="toolbar" style="margin-top:14px"><button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr">Staff &amp; HR</button> <button type="button" class="btn btn--ghost btn--sm" data-act="settings">Settings</button></div>';
+      return '<h1 class="page-title">Policy sign-offs</h1>'+
+        '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">Live template for every active worker against company <strong>policies</strong> and <strong>procedures</strong> from the Policies Portal. Tick cells fill when acknowledgments are saved as portal documents.</p>'+
+        '<div id="policySignoffsModuleRoot"></div>'+
+        '<div class="toolbar" style="margin-top:14px">'+
+        '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr">Staff &amp; HR</button> '+
+        '<a class="btn btn--ghost btn--sm" href="/policies_portal.html" target="_blank" rel="noopener">Policies Portal</a>'+
+        '</div>';
     }
 
     function financeHubTabsHtml(active){
@@ -23871,6 +23855,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             closeModal: closeModal
           });
           window.AdminHR.mount($('hrModuleRoot'));
+        }
+      }
+      if(id==='policies'){
+        if(window.AdminPolicySignoffs && $('policySignoffsModuleRoot')){
+          window.AdminPolicySignoffs.configure({
+            getClient: getSchedSupabaseClient,
+            toast: portalAdminToast,
+            esc: esc
+          });
+          window.AdminPolicySignoffs.mount($('policySignoffsModuleRoot'));
         }
       }
       if(id==='onboarding'){
