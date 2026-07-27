@@ -3,193 +3,41 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Our Standards · clubSENsational Policies Wall Poster</title>
+<title>Our Standards · clubSENsational</title>
 <style>
   @page { size: A3 portrait; margin: 10mm; }
   * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
-    color: #1f2937;
-    background: #dbe3ea;
-  }
-  .sheet {
-    max-width: 297mm;
-    margin: 16px auto;
-    background: #fff;
-    min-height: 400mm;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    box-shadow: 0 12px 40px rgba(30, 47, 64, .18);
-  }
-  .hero {
-    position: relative;
-    background: linear-gradient(145deg, #1e2f40 0%, #2d3e50 55%, #243746 100%);
-    color: #fff;
-    padding: 32px 36px 36px;
-    overflow: hidden;
-  }
-  .hero::before {
-    content: "";
-    position: absolute;
-    right: -8%;
-    top: -40%;
-    width: 320px;
-    height: 320px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(244,185,66,.28), transparent 68%);
-  }
-  .hero::after {
-    content: "";
-    position: absolute;
-    left: 18%;
-    bottom: -60%;
-    width: 260px;
-    height: 260px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(255,255,255,.06), transparent 70%);
-  }
-  .hero-inner {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    gap: 22px;
-    align-items: center;
-  }
-  .logo {
-    flex: 0 0 96px;
-    width: 96px;
-    height: 96px;
-    background: #fff;
-    border-radius: 18px;
-    padding: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+  body { margin: 0; font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif; color: #1f2937; background: #dbe3ea; }
+  .sheet { max-width: 297mm; margin: 16px auto; background: #fff; min-height: 400mm; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 12px 40px rgba(30, 47, 64, .18); }
+  .hero { position: relative; background: linear-gradient(145deg, #1e2f40 0%, #2d3e50 55%, #243746 100%); color: #fff; padding: 32px 36px 36px; overflow: hidden; }
+  .hero::before { content: ""; position: absolute; right: -8%; top: -40%; width: 320px; height: 320px; border-radius: 50%; background: radial-gradient(circle, rgba(244,185,66,.28), transparent 68%); }
+  .hero-inner { position: relative; z-index: 1; display: flex; gap: 22px; align-items: center; }
+  .logo { flex: 0 0 96px; width: 96px; height: 96px; background: #fff; border-radius: 18px; padding: 10px; display: flex; align-items: center; justify-content: center; }
   .logo img { width: 100%; height: auto; display: block; }
-  .brand {
-    font-size: 11px;
-    letter-spacing: .16em;
-    text-transform: uppercase;
-    color: #f4b942;
-    font-weight: 700;
-    margin: 0 0 8px;
-  }
-  h1 {
-    margin: 0;
-    font-size: 42px;
-    line-height: 1.05;
-    letter-spacing: -.02em;
-    color: #fff;
-    font-weight: 800;
-  }
-  .sub { margin: 10px 0 0; font-size: 15px; color: #d7e0e8; max-width: 34em; line-height: 1.45; }
-  .body { padding: 26px 30px 18px; flex: 1; background:
-    linear-gradient(180deg, #f7f9fb 0%, #fff 28%); }
-  .lead-row {
-    display: flex;
-    gap: 14px;
-    align-items: stretch;
-    margin-bottom: 20px;
-  }
-  .lead {
-    flex: 1;
-    margin: 0;
-    font-size: 15px;
-    color: #374151;
-    line-height: 1.5;
-    padding: 14px 16px;
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-left: 4px solid #f4b942;
-    border-radius: 0 12px 12px 0;
-  }
-  .badge {
-    flex: 0 0 140px;
-    background: #2d3e50;
-    color: #fff;
-    border-radius: 12px;
-    padding: 14px 12px;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 4px;
-  }
+  .brand { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: #f4b942; font-weight: 700; margin: 0 0 8px; }
+  h1 { margin: 0; font-size: 42px; line-height: 1.05; letter-spacing: -.02em; color: #fff; font-weight: 800; }
+  .sub { margin: 10px 0 0; font-size: 15px; color: #d7e0e8; max-width: 36em; line-height: 1.45; }
+  .body { padding: 26px 30px 18px; flex: 1; background: linear-gradient(180deg, #f7f9fb 0%, #fff 28%); }
+  .lead-row { display: flex; gap: 14px; align-items: stretch; margin-bottom: 20px; }
+  .lead { flex: 1; margin: 0; font-size: 15px; color: #374151; line-height: 1.55; padding: 16px 18px; background: #fff; border: 1px solid #e5e7eb; border-left: 4px solid #f4b942; border-radius: 0 12px 12px 0; }
+  .badge { flex: 0 0 140px; background: #2d3e50; color: #fff; border-radius: 12px; padding: 14px 12px; text-align: center; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
   .badge strong { display: block; font-size: 22px; color: #f4b942; line-height: 1; }
   .badge span { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; opacity: .9; }
-  .grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-  }
-  .fam {
-    border: 1px solid #e5e7eb;
-    border-radius: 16px;
-    padding: 0;
-    background: #fff;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    min-height: 210px;
-  }
-  .fam-head {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
-    color: #fff;
-  }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .fam { border: 1px solid #e5e7eb; border-radius: 16px; padding: 0; background: #fff; overflow: hidden; display: flex; flex-direction: column; min-height: 210px; }
+  .fam-head { display: flex; align-items: center; gap: 12px; padding: 14px 16px; color: #fff; }
   .fam-head svg { flex: 0 0 28px; width: 28px; height: 28px; }
-  .fam-head h2 {
-    margin: 0;
-    font-size: 14px;
-    letter-spacing: .04em;
-    text-transform: uppercase;
-    font-weight: 800;
-    line-height: 1.25;
-  }
+  .fam-head h2 { margin: 0; font-size: 14px; letter-spacing: .04em; text-transform: uppercase; font-weight: 800; line-height: 1.25; }
   .fam-a .fam-head { background: linear-gradient(135deg, #0f766e, #0d9488); }
   .fam-b .fam-head { background: linear-gradient(135deg, #9a3412, #c2410c); }
   .fam-c .fam-head { background: linear-gradient(135deg, #1e3a5f, #2d3e50); }
   .fam-d .fam-head { background: linear-gradient(135deg, #713f12, #a16207); }
-  .fam ul {
-    margin: 0;
-    padding: 14px 16px 16px 34px;
-    font-size: 13.5px;
-    line-height: 1.5;
-    color: #374151;
-    flex: 1;
-  }
+  .fam ul { margin: 0; padding: 14px 16px 16px 34px; font-size: 13.5px; line-height: 1.5; color: #374151; flex: 1; }
   .fam li { margin-bottom: 6px; }
   .fam li::marker { color: #f4b942; }
-  .foot {
-    padding: 16px 30px 20px;
-    border-top: 1px solid #e5e7eb;
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    align-items: center;
-    font-size: 12px;
-    color: #6b7280;
-    background: #fafbfc;
-  }
-  .cta {
-    background: #f4b942;
-    color: #1e2f40;
-    padding: 11px 16px;
-    border-radius: 999px;
-    font-weight: 800;
-    font-size: 12px;
-    letter-spacing: .04em;
-    text-transform: uppercase;
-  }
-  @media print {
-    body { background: #fff; }
-    .sheet { margin: 0; box-shadow: none; max-width: none; min-height: auto; }
-  }
+  .foot { padding: 16px 30px 20px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; gap: 16px; align-items: center; font-size: 12px; color: #6b7280; background: #fafbfc; }
+  .cta { background: #f4b942; color: #1e2f40; padding: 11px 16px; border-radius: 999px; font-weight: 800; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+  @media print { body { background: #fff; } .sheet { margin: 0; box-shadow: none; max-width: none; min-height: auto; } }
 </style>
 </head>
 <body>
@@ -202,13 +50,13 @@
         <div>
           <p class="brand">clubSENsational · Autism Consultancy Services</p>
           <h1>Our standards</h1>
-          <p class="sub">Company policies at a glance. Full text lives in the Policies Portal on staff devices.</p>
+          <p class="sub">The company policies every team member works to. Full documents are in the Policies Portal.</p>
         </div>
       </div>
     </div>
     <div class="body">
       <div class="lead-row">
-        <p class="lead">Read these when you need the standard. For emergencies and what do I do now?, use the Procedures wall poster and the laminated quick guides.</p>
+        <p class="lead">These are our shared rules for how we support people, treat each other and run the company safely. Browse by family below, then open the full policy in the portal when you need the detail.</p>
         <div class="badge"><strong>4</strong><span>policy families</span></div>
       </div>
       <div class="grid">
@@ -267,7 +115,7 @@
     </div>
     <div class="foot">
       <div>clubSENsational LTD · Co. 13755417 · www.clubsensational.org</div>
-      <div class="cta">Policies Portal on staff devices</div>
+      <div class="cta">Open in Policies Portal</div>
     </div>
   </div>
 </body>
