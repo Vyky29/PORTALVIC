@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Business Plan — Personal Care 2026–28 · clubSENsational LTD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink:#1a2a3a; --muted:#5b7280; --line:#d7e2e8; --navy:#35415d;
+    --gold:#f4bd2a; --gold-soft:#fff6dc; --teal:#0e7c86; --teal-deep:#0a5c63;
+    --teal-soft:#e6f3f4; --sky:#0369a1; --paper:#f5f7f9; --card:#fff;
+    --green:#15803d; --green-soft:#ecfdf5; --amber:#b45309; --amber-soft:#fffbeb;
+  }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    margin:0; color:var(--ink); font-family:"DM Sans",Helvetica,Arial,sans-serif;
+    font-size:15px; line-height:1.55;
+    background:
+      radial-gradient(900px 420px at 0% -10%, rgba(14,124,134,.10), transparent 55%),
+      radial-gradient(700px 380px at 100% 0%, rgba(244,189,42,.12), transparent 50%),
+      var(--paper);
+  }
+  .wrap { max-width:980px; margin:0 auto; padding:28px 20px 72px; }
+  .lang-bar { display:flex; justify-content:flex-end; gap:8px; margin-bottom:12px; }
+  .lang-btn {
+    appearance:none; border:1px solid var(--line); background:var(--card);
+    color:var(--navy); font:inherit; font-size:13px; font-weight:700;
+    padding:6px 12px; border-radius:999px; cursor:pointer;
+  }
+  .lang-btn.active { background:var(--teal-deep); color:#fff; border-color:var(--teal-deep); }
+  html[lang="es"] .lang-en { display:none !important; }
+  html[lang="en"] .lang-es { display:none !important; }
+  .hero {
+    background:var(--card); border:1px solid var(--line); border-radius:20px;
+    padding:26px 28px; margin-bottom:18px; position:relative; overflow:hidden;
+  }
+  .hero::before {
+    content:""; position:absolute; left:0; top:0; bottom:0; width:6px;
+    background:linear-gradient(180deg,var(--gold),var(--teal));
+  }
+  .hero-top { display:flex; gap:16px; align-items:center; }
+  .hero-top img { width:80px; height:auto; }
+  .eyebrow {
+    font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--teal); margin:0 0 6px;
+  }
+  h1 {
+    font-family:Fraunces,Georgia,serif; font-size:clamp(1.45rem,3vw,2rem);
+    margin:0 0 8px; color:var(--navy); line-height:1.2;
+  }
+  .lead { margin:0; color:var(--muted); max-width:48rem; }
+  .meta { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+  .pill {
+    background:var(--teal-soft); color:var(--teal-deep); border-radius:999px;
+    padding:4px 11px; font-size:12px; font-weight:600;
+  }
+  .pill.gold { background:var(--gold-soft); color:#8a6500; }
+  .pill.warn { background:var(--amber-soft); color:var(--amber); }
+  .toc {
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:14px 18px; margin-bottom:18px; display:flex; flex-wrap:wrap; gap:8px 14px; font-size:13px;
+  }
+  .toc a { color:var(--teal-deep); text-decoration:none; font-weight:600; }
+  section.block {
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:22px 24px; margin-bottom:16px;
+  }
+  h2 { font-family:Fraunces,Georgia,serif; font-size:1.28rem; margin:0 0 8px; color:var(--navy); }
+  h3 { font-size:.98rem; margin:16px 0 8px; color:var(--navy); }
+  p { margin:0 0 12px; }
+  ul, ol { margin:0 0 12px; padding-left:1.2rem; }
+  li { margin:5px 0; }
+  .kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:12px 0 16px; }
+  @media (max-width:760px) {
+    .kpis { grid-template-columns:1fr 1fr; }
+    .hero-top { flex-direction:column; align-items:flex-start; }
+    .grid-2 { grid-template-columns:1fr !important; }
+  }
+  .kpi {
+    background:var(--paper); border:1px solid var(--line); border-top:3px solid var(--gold);
+    border-radius:10px; padding:10px 12px;
+  }
+  .kpi strong { display:block; font-family:Fraunces,Georgia,serif; font-size:1.25rem; color:var(--navy); }
+  .kpi span { font-size:12px; color:var(--muted); font-weight:600; }
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; margin:8px 0 4px; }
+  th, td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+  th { background:var(--navy); color:#fff; font-size:11px; text-transform:uppercase; letter-spacing:.04em; }
+  td.num, th.num { text-align:right; white-space:nowrap; }
+  tr.total td { font-weight:700; background:#f8fafc; }
+  tr.hilite td { background:var(--green-soft); font-weight:700; }
+  .callout {
+    border-left:4px solid var(--gold); background:var(--gold-soft);
+    padding:10px 14px; border-radius:0 10px 10px 0; margin:12px 0; font-size:13.5px;
+  }
+  .callout.note { border-left-color:var(--teal); background:var(--teal-soft); }
+  .callout.warn { border-left-color:var(--amber); background:var(--amber-soft); }
+  .tbc {
+    background:var(--amber-soft); border:1px dashed var(--amber); border-radius:8px;
+    padding:10px 12px; margin:10px 0; font-size:13px; color:#9a3412;
+  }
+  footer { margin-top:8px; padding:14px 4px; font-size:12px; color:var(--muted); text-align:center; }
+  a.ext { color:var(--teal-deep); font-weight:600; }
+  @media print {
+    body { background:#fff; } .lang-bar,.toc { display:none; }
+    section.block,.hero { break-inside:avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lang-bar" role="group" aria-label="Language">
+    <button type="button" class="lang-btn" data-lang="es">Español</button>
+    <button type="button" class="lang-btn active" data-lang="en">English</button>
+  </div>
+
+  <!-- ================= ENGLISH ================= -->
+  <div class="lang-en" lang="en">
+
+  <header class="hero">
+    <div class="hero-top">
+      <img src="https://www.clubsensational.org/wp-content/uploads/2026/03/F-02-1.png" alt="clubSENsational" />
+      <div>
+        <p class="eyebrow">CQC Day Centre · Business &amp; quality plan</p>
+        <h1>Day Centre business &amp; quality plan 2026–28</h1>
+        <p class="lead">
+          Operating and financial plan for our Day Centre model (~5-hour centre-based sessions with on-site personal care).
+          This is written for NHS / quality assurance. It is <strong>not</strong> a domiciliary home-care CQC application plan.
+        </p>
+        <div class="meta">
+          <span class="pill">Co. 13755417</span>
+          <span class="pill gold">Centre-based model</span>
+          <span class="pill warn">Figures = planning assumptions</span>
+          <span class="pill">July 2026</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <a href="#en-exec">1. Executive summary</a>
+    <a href="#en-market">2. Market need</a>
+    <a href="#en-model">3. Service model</a>
+    <a href="#en-ops">4. Operations</a>
+    <a href="#en-staff">5. Staffing</a>
+    <a href="#en-fin">6. Forecast</a>
+    <a href="#en-risk">7. Risks</a>
+    <a href="#en-next">8. Next steps</a>
+  </nav>
+
+  <section class="block" id="en-exec">
+    <h2>1. Executive summary</h2>
+    <div class="callout warn">
+      <strong>CORRECTION:</strong> Care delivery is at the Day Centre (clients attend ~5 hours).
+      Changing, medication if needed, and personal care happen <em>on site</em> — not as home visits.
+      CQC Personal care usually requires care where the person lives; day centres are generally out of scope.
+      Use this plan for NHS quality / commissioning conversations — do not file it as a domiciliary registration business case unless home care is added later.
+    </div>
+    <p>clubSENsational LTD already delivers specialist autism / SEN support in London, including Day Centre packages commissioned by the NHS and private / referred clients, plus after-school and weekend activity programmes. Demand from commissioners (including the NHS) for continuous 1:1 adult support and personal care has led the directors to pursue <strong>CQC registration for Personal care</strong> (Path B — domiciliary care agency).</p>
+    <div class="kpis">
+      <div class="kpi"><strong>~£367k</strong><span>Day Centre revenue base (est. 2026–27)</span></div>
+      <div class="kpi"><strong>~£300k</strong><span>After-school / weekend approx.</span></div>
+      <div class="kpi"><strong>Y1 PC</strong><span>£80–140k personal care target</span></div>
+      <div class="kpi"><strong>Y2 PC</strong><span>£150–220k personal care target</span></div>
+    </div>
+    <div class="callout note">
+      Day Centre and after-school figures are from internal planning (portal / socios briefing).
+      Optional “home personal care” (PC) lines below are <strong>only if you later add real domiciliary work</strong>; core business is Day Centre — conservative growth from existing relationships, not a guarantee of contract awards.
+    </div>
+    <p><strong>Aims of this plan:</strong> show local demand; describe a safe, small-scale autism/LD personal care model; demonstrate staffing, training and insurance readiness; and show financial viability alongside the existing business.</p>
+  </section>
+
+  <section class="block" id="en-market">
+    <h2>2. Market need &amp; demand evidence</h2>
+    <ul>
+      <li>Existing NHS Day Centre packages for high-support autistic children / young people (portal examples: multi-package cohort ~£367k estimated for 2026–27).</li>
+      <li>Commissioner feedback that CQC registration would strengthen ability to commission / expand support where personal care is required.</li>
+      <li>Private and non-NHS families already using the service who need consistent adult supervision and personal care support.</li>
+      <li>Local shortage of autism-specialist domiciliary providers who can work 1:1 / 2:1 with complex sensory and communication needs.</li>
+    </ul>
+    <h3>Target customers</h3>
+    <ul>
+      <li>NHS and local authority packages for personal care at home / in the community</li>
+      <li>Families using personal budgets / direct payments</li>
+      <li>Continuity packages linked to existing Day Centre clients where home personal care is assessed as needed</li>
+    </ul>
+  </section>
+
+  <section class="block" id="en-model">
+    <h2>3. Service model</h2>
+    <div class="grid-2">
+      <div>
+        <h3>In scope (CQC)</h3>
+        <ul>
+          <li>Usually <strong>outside CQC regulated activity</strong> while care stays centre-based</li>
+          <li>Service type: Day Centre / day support (not domiciliary home care)</li>
+          <li>Delivered at the Day Centre (~5h sessions) — on-site changing / meds as needed</li>
+          <li>Autism / LD specialist; PBS; accessible communication</li>
+          <li>1:1 or 2:1 where risk-assessed</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Out of scope / parallel</h3>
+        <ul>
+          <li>Day Centre (continues; not itself the regulated activity)</li>
+          <li>Swimming / climbing / Hub activities</li>
+          <li>No care home / overnight accommodation package</li>
+          <li>Housing remains separate from care agreements</li>
+        </ul>
+      </div>
+    </div>
+    <p>Quality system: Statement of Purpose, Service User Guide, policies POL-001–021, portal ISPs / incidents / training, Hiscox EL/PL insurance.</p>
+  </section>
+
+  <section class="block" id="en-ops">
+    <h2>4. Operations &amp; premises</h2>
+    <table>
+      <tr><th>Item</th><th>Detail</th></tr>
+      <tr><td>Registered / office base</td><td>71-75 Shelton Street, Covent Garden, WC2H 9JQ, London</td></tr>
+      <tr><td>Care delivery</td><td>At Day Centre — clients attend (~5h); changing / meds on site</td></tr>
+      <tr><td>Systems</td><td>Portal: care/support plans, incidents, training, HR, consents</td></tr>
+      <tr><td>Insurance</td><td>Hiscox EL + PL (policy PL-PSC10003126664/07) to 16/09/2026 — address update pending</td></tr>
+      <tr><td>Legal occupancy</td><td>Evidence of office lease / licence — TBC for pack</td></tr>
+    </table>
+  </section>
+
+  <section class="block" id="en-staff">
+    <h2>5. Staffing &amp; training plan</h2>
+    <p>Personal care will be delivered by support workers already experienced in autism / SEN 1:1 work, plus recruitment as packages grow. Day Centre career scales (Support Worker → Senior → Service Lead) provide a ready progression path; Service Lead may map to Registered Manager once fit &amp; proper checks are complete.</p>
+    <table>
+      <tr><th>Role</th><th>Y1 assumption</th><th>Notes</th></tr>
+      <tr><td>Nominated Individual</td><td>1 (director)</td><td>TBC name</td></tr>
+      <tr><td>Registered Manager</td><td>1</td><td>TBC — may be Service Lead</td></tr>
+      <tr><td>Personal care support workers</td><td>4–8 (flexible / ZH + core)</td><td>Grow with packages</td></tr>
+      <tr><td>Mandatory training</td><td>All PC staff</td><td>Safeguarding, IPC, medicines (if admin), PBS, Oliver McGowan, induction</td></tr>
+    </table>
+    <p>Safer recruitment and enhanced DBS before regulated duties (Recruitment Policy POL-006).</p>
+  </section>
+
+  <section class="block" id="en-fin">
+    <h2>6. Financial forecast (personal care line)</h2>
+    <div class="tbc">
+      <strong>Planning draft — not audited accounts.</strong> Directors / accountant must validate volumes, rates and overhead allocation before CQC submission. Attach official CQC financial viability template + management accounts.
+    </div>
+    <h3>Assumptions (base case)</h3>
+    <ul>
+      <li>Average package value: £800–£1,200 / week depending on hours and 1:1 vs 2:1</li>
+      <li>Y1: ramp from 2 → 6 active personal care packages by month 12</li>
+      <li>Y2: 8–12 packages average</li>
+      <li>Staff cost of sales ~65–70% of PC revenue (high support ratios)</li>
+      <li>Shared overhead (office, insurance, governance) partly covered by existing Day Centre / after business</li>
+      <li>Many LA/NHS packages VAT exempt (consistent with current practice)</li>
+    </ul>
+
+    <h3>Year 1 (first 12 months post-registration) — base</h3>
+    <table>
+      <tr><th>Line</th><th class="num">Low</th><th class="num">Base</th><th class="num">High</th></tr>
+      <tr><td>Personal care revenue</td><td class="num">£80,000</td><td class="num">£110,000</td><td class="num">£140,000</td></tr>
+      <tr><td>− Direct staff / agency</td><td class="num">−£56,000</td><td class="num">−£75,000</td><td class="num">−£95,000</td></tr>
+      <tr><td>− Training / DBS / PPE / travel</td><td class="num">−£6,000</td><td class="num">−£8,000</td><td class="num">−£10,000</td></tr>
+      <tr><td>− Allocated overhead (RM time, insurance share, admin)</td><td class="num">−£12,000</td><td class="num">−£15,000</td><td class="num">−£18,000</td></tr>
+      <tr class="hilite"><td>= PC contribution</td><td class="num">£6,000</td><td class="num">£12,000</td><td class="num">£17,000</td></tr>
+    </table>
+
+    <h3>Year 2 — base</h3>
+    <table>
+      <tr><th>Line</th><th class="num">Low</th><th class="num">Base</th><th class="num">High</th></tr>
+      <tr><td>Personal care revenue</td><td class="num">£150,000</td><td class="num">£185,000</td><td class="num">£220,000</td></tr>
+      <tr><td>− Direct staff / agency</td><td class="num">−£105,000</td><td class="num">−£128,000</td><td class="num">−£150,000</td></tr>
+      <tr><td>− Training / DBS / PPE / travel</td><td class="num">−£8,000</td><td class="num">−£10,000</td><td class="num">−£12,000</td></tr>
+      <tr><td>− Allocated overhead</td><td class="num">−£16,000</td><td class="num">−£18,000</td><td class="num">−£22,000</td></tr>
+      <tr class="hilite"><td>= PC contribution</td><td class="num">£21,000</td><td class="num">£29,000</td><td class="num">£36,000</td></tr>
+    </table>
+
+    <h3>Group context (viability)</h3>
+    <p>Personal care launches on top of an established trading company with material Day Centre and after-school income streams (internal estimates ~£367k DC + ~£300k after for 2026–27 planning). Even at the low Y1 PC scenario, fixed governance costs remain supportable by the wider business while packages ramp.</p>
+    <p>See also: <a class="ext" href="financial-viability-statement.html">Financial Viability Statement</a> (to be signed) and internal finance packs under <code>PORTALVIC/docs/finance/</code>.</p>
+  </section>
+
+  <section class="block" id="en-risk">
+    <h2>7. Risks &amp; mitigations</h2>
+    <table>
+      <tr><th>Risk</th><th>Mitigation</th></tr>
+      <tr><td>Slow commissioner onboarding</td><td>Start with continuity clients; keep Day Centre / after cashflow</td></tr>
+      <tr><td>Staffing for 2:1 packages</td><td>Career framework + ZH bank; do not oversell capacity</td></tr>
+      <tr><td>Insurance address mismatch</td><td>Hiscox endorsement to Shelton Street before submit</td></tr>
+      <tr><td>Regulatory / quality failure</td><td>Policies, RM oversight, incident/complaints cycles</td></tr>
+      <tr><td>Complex behaviour / restrictive practice</td><td>PBS + restrictive practice policies; training; escalation</td></tr>
+    </table>
+  </section>
+
+  <section class="block" id="en-next">
+    <h2>8. Implementation next steps</h2>
+    <ol>
+      <li>Write to the NHS clarifying the model: Day Centre ~5h on site (changing / meds), not home care</li>
+      <li>Ask whether they need CQC registration or a quality pack (policies + ISPs + training evidence)</li>
+      <li>Optionally seek written CQC / adviser confirmation that centre-based day care is out of scope</li>
+      <li>Correct Hiscox address to Shelton Street; keep EL/PL current</li>
+      <li>Only pursue domiciliary CQC registration if you decide to deliver personal care in people’s homes</li>
+    </ol>
+  </section>
+
+  <footer>
+    clubSENsational LTD · 13755417 · 71-75 Shelton Street, Covent Garden, WC2H 9JQ, London · www.clubsensational.org<br />
+    Business Plan CQC-BP-001 · Draft v0.1 · July 2026 · Not financial advice · Validate before submission
+  </footer>
+  </div>
+
+  <!-- ================= SPANISH ================= -->
+  <div class="lang-es" lang="es">
+
+  <header class="hero">
+    <div class="hero-top">
+      <img src="https://www.clubsensational.org/wp-content/uploads/2026/03/F-02-1.png" alt="clubSENsational" />
+      <div>
+        <p class="eyebrow">Day Centre · Plan de negocio y calidad</p>
+        <h1>Plan de negocio y calidad Day Centre 2026–28</h1>
+        <p class="lead">
+          Plan operativo y financiero del Day Centre (~5h en el centro, personal care on site).
+          Pensado para NHS / calidad. <strong>No</strong> es un plan de solicitud CQC de cuidado a domicilio.
+        </p>
+        <div class="meta">
+          <span class="pill">Co. 13755417</span>
+          <span class="pill gold">Modelo en centro</span>
+          <span class="pill warn">Cifras = hipótesis de planificación</span>
+          <span class="pill">Julio 2026</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <a href="#es-exec">1. Resumen</a>
+    <a href="#es-market">2. Demanda</a>
+    <a href="#es-model">3. Modelo</a>
+    <a href="#es-ops">4. Operación</a>
+    <a href="#es-staff">5. Staff</a>
+    <a href="#es-fin">6. Forecast</a>
+    <a href="#es-risk">7. Riesgos</a>
+    <a href="#es-next">8. Pasos</a>
+  </nav>
+
+  <section class="block" id="es-exec">
+    <h2>1. Resumen ejecutivo</h2>
+    <div class="callout warn">
+      <strong>CORRECCIÓN:</strong> El cuidado es en el Day Centre (los clientes vienen ~5 horas).
+      Changing, medicación si aplica y personal care son <em>en el centro</em> — no visitas a domicilio.
+      CQC Personal care suele exigir cuidado donde la persona vive; los day centres suelen estar fuera de alcance.
+      Usad este plan para calidad / NHS — no como business case de registro domiciliary salvo que más adelante haya cuidado en casa.
+    </div>
+    <p>clubSENsational LTD ya presta apoyo autism / SEN en Londres (Day Centre NHS y clientes privados/referidos, after-school y fines de semana). La demanda de soporte 1:1 continuo y personal care ha llevado a los directors a pedir <strong>registro CQC para Personal care</strong> (Camino B).</p>
+    <div class="kpis">
+      <div class="kpi"><strong>~£367k</strong><span>Ingreso Day Centre (est. 2026–27)</span></div>
+      <div class="kpi"><strong>~£300k</strong><span>After / weekend aprox.</span></div>
+      <div class="kpi"><strong>Año 1 PC</strong><span>£80–140k objetivo personal care</span></div>
+      <div class="kpi"><strong>Año 2 PC</strong><span>£150–220k objetivo personal care</span></div>
+    </div>
+    <div class="callout note">
+      Las cifras de Day Centre / after vienen de planning interno. Las líneas “personal care en casa” (PC) son
+      <strong>solo si más adelante añadís domiciliary real</strong>; el negocio core es Day Centre — crecimiento conservador desde relaciones actuales, no garantía de contratos.
+    </div>
+  </section>
+
+  <section class="block" id="es-market">
+    <h2>2. Demanda</h2>
+    <ul>
+      <li>Paquetes NHS Day Centre de alto soporte (~£367k estimado 2026–27).</li>
+      <li>Feedback del NHS: el registro CQC facilita encargar / ampliar donde haga falta personal care.</li>
+      <li>Familias privadas / no NHS que ya usan el servicio.</li>
+      <li>Escasez local de providers domiciliary especializados en autism con ratios 1:1 / 2:1.</li>
+    </ul>
+  </section>
+
+  <section class="block" id="es-model">
+    <h2>3. Modelo de servicio</h2>
+    <div class="grid-2">
+      <div>
+        <h3>En alcance CQC</h3>
+        <ul>
+          <li>Normalmente <strong>fuera de actividad regulada CQC</strong> mientras el cuidado sea en el centro</li>
+          <li>Tipo: Day Centre / day support (no cuidado a domicilio)</li>
+          <li>En el Day Centre (~5h) — changing / meds on site según necesidad</li>
+          <li>Especialista autism / LD; PBS; comunicación accesible</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Paralelo / fuera</h3>
+        <ul>
+          <li>Day Centre (sigue)</li>
+          <li>Natación / climbing / Hub</li>
+          <li>Sin care home / pernocta empaquetada</li>
+          <li>Vivienda separada del cuidado</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="es-ops">
+    <h2>4. Operación y sede</h2>
+    <table>
+      <tr><th>Ítem</th><th>Detalle</th></tr>
+      <tr><td>Base / registro</td><td>71-75 Shelton Street, Covent Garden, WC2H 9JQ, London</td></tr>
+      <tr><td>Entrega del cuidado</td><td>En el Day Centre — clientes asisten (~5h); changing / meds on site</td></tr>
+      <tr><td>Sistemas</td><td>Portal: planes, incidentes, formación, HR, consentimientos</td></tr>
+      <tr><td>Seguro</td><td>Hiscox EL + PL hasta 16/09/2026 — falta actualizar dirección</td></tr>
+      <tr><td>Occupancy oficina</td><td>Lease / licence — TBC</td></tr>
+    </table>
+  </section>
+
+  <section class="block" id="es-staff">
+    <h2>5. Staff y formación</h2>
+    <p>Personal care con support workers con experiencia autism / SEN 1:1, más contratación según paquetes. El framework Day Centre (Support Worker → Service Lead) puede alimentar el Registered Manager.</p>
+    <table>
+      <tr><th>Rol</th><th>Año 1</th><th>Notas</th></tr>
+      <tr><td>Nominated Individual</td><td>1 (director)</td><td>TBC nombre</td></tr>
+      <tr><td>Registered Manager</td><td>1</td><td>TBC</td></tr>
+      <tr><td>Support workers PC</td><td>4–8</td><td>Crece con paquetes</td></tr>
+      <tr><td>Formación obligatoria</td><td>Todo el staff PC</td><td>Safeguarding, IPC, medicines, PBS, Oliver McGowan, inducción</td></tr>
+    </table>
+  </section>
+
+  <section class="block" id="es-fin">
+    <h2>6. Forecast financiero (línea personal care)</h2>
+    <div class="tbc">
+      <strong>Borrador de planning — no son cuentas auditadas.</strong> Validar con directors / contable antes de CQC. Adjuntar plantilla oficial de financial viability + management accounts.
+    </div>
+    <h3>Hipótesis (caso base)</h3>
+    <ul>
+      <li>Paquete medio: £800–£1,200 / semana según horas y 1:1 vs 2:1</li>
+      <li>Año 1: de 2 a 6 paquetes activos al mes 12</li>
+      <li>Año 2: media 8–12 paquetes</li>
+      <li>Coste staff ~65–70% del ingreso PC</li>
+      <li>Overhead compartido con Day Centre / after</li>
+    </ul>
+    <h3>Año 1 — base</h3>
+    <table>
+      <tr><th>Línea</th><th class="num">Bajo</th><th class="num">Base</th><th class="num">Alto</th></tr>
+      <tr><td>Ingreso personal care</td><td class="num">£80,000</td><td class="num">£110,000</td><td class="num">£140,000</td></tr>
+      <tr><td>− Staff directo</td><td class="num">−£56,000</td><td class="num">−£75,000</td><td class="num">−£95,000</td></tr>
+      <tr><td>− Formación / DBS / PPE / travel</td><td class="num">−£6,000</td><td class="num">−£8,000</td><td class="num">−£10,000</td></tr>
+      <tr><td>− Overhead asignado</td><td class="num">−£12,000</td><td class="num">−£15,000</td><td class="num">−£18,000</td></tr>
+      <tr class="hilite"><td>= Contribución PC</td><td class="num">£6,000</td><td class="num">£12,000</td><td class="num">£17,000</td></tr>
+    </table>
+    <h3>Año 2 — base</h3>
+    <table>
+      <tr><th>Línea</th><th class="num">Bajo</th><th class="num">Base</th><th class="num">Alto</th></tr>
+      <tr><td>Ingreso personal care</td><td class="num">£150,000</td><td class="num">£185,000</td><td class="num">£220,000</td></tr>
+      <tr><td>− Staff directo</td><td class="num">−£105,000</td><td class="num">−£128,000</td><td class="num">−£150,000</td></tr>
+      <tr><td>− Formación / DBS / PPE / travel</td><td class="num">−£8,000</td><td class="num">−£10,000</td><td class="num">−£12,000</td></tr>
+      <tr><td>− Overhead asignado</td><td class="num">−£16,000</td><td class="num">−£18,000</td><td class="num">−£22,000</td></tr>
+      <tr class="hilite"><td>= Contribución PC</td><td class="num">£21,000</td><td class="num">£29,000</td><td class="num">£36,000</td></tr>
+    </table>
+    <p>Viabilidad grupal: el PC nace sobre un negocio ya operativo (DC ~£367k + after ~£300k en planning 2026–27). Ver <a class="ext" href="financial-viability-statement.html">Financial Viability Statement</a>.</p>
+  </section>
+
+  <section class="block" id="es-risk">
+    <h2>7. Riesgos y mitigación</h2>
+    <table>
+      <tr><th>Riesgo</th><th>Mitigación</th></tr>
+      <tr><td>Onboarding lento de comisionados</td><td>Clientes de continuidad; cashflow DC/after</td></tr>
+      <tr><td>Staff para 2:1</td><td>Career framework + banco ZH; no sobrevender capacidad</td></tr>
+      <tr><td>Dirección en seguro</td><td>Endoso Hiscox a Shelton Street</td></tr>
+      <tr><td>Calidad / regulación</td><td>Políticas, RM, incidentes / quejas</td></tr>
+      <tr><td>Conducta / restrictive practice</td><td>PBS + política restrictiva; formación</td></tr>
+    </table>
+  </section>
+
+  <section class="block" id="es-next">
+    <h2>8. Próximos pasos</h2>
+    <ol>
+      <li>Escribir al NHS aclarando el modelo: Day Centre ~5h en centro (changing / meds), no cuidado en casa</li>
+      <li>Preguntar si necesitan registro CQC o un pack de calidad (políticas + ISPs + formación)</li>
+      <li>Opcional: confirmación escrita CQC / asesor de que el day care en centro está fuera de alcance</li>
+      <li>Corregir dirección Hiscox a Shelton Street; mantener EL/PL al día</li>
+      <li>Solo pedir registro domiciliary CQC si decidís prestar personal care en domicilios</li>
+    </ol>
+  </section>
+
+  <footer>
+    clubSENsational LTD · 13755417 · 71-75 Shelton Street, Covent Garden, WC2H 9JQ, London · www.clubsensational.org<br />
+    Business Plan CQC-BP-001 · Borrador v0.1 · Julio 2026 · No es asesoramiento financiero · Validar antes de enviar
+  </footer>
+  </div>
+
+</div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var buttons = document.querySelectorAll('.lang-btn');
+  function setLang(lang) {
+    root.lang = lang;
+    buttons.forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+    });
+    try { localStorage.setItem('cqc-bp-lang', lang); } catch (e) {}
+  }
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function () { setLang(btn.getAttribute('data-lang')); });
+  });
+  var saved = null;
+  try { saved = localStorage.getItem('cqc-bp-lang'); } catch (e) {}
+  if (saved === 'en' || saved === 'es') setLang(saved);
+  else if ((navigator.language || '').toLowerCase().startsWith('es')) setLang('es');
+  else setLang('en');
+})();
+</script>
+</body>
+</html>

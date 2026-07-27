@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CQC Registration Readiness 2026 · ES/EN · clubSENsational</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #1a2a3a;
+    --muted: #5b7280;
+    --line: #d7e2e8;
+    --navy: #35415d;
+    --gold: #f4bd2a;
+    --gold-soft: #fff6dc;
+    --teal: #0e7c86;
+    --teal-deep: #0a5c63;
+    --teal-soft: #e6f3f4;
+    --sky: #0369a1;
+    --sky-soft: #e0f2fe;
+    --green: #15803d;
+    --green-soft: #ecfdf5;
+    --amber: #b45309;
+    --amber-soft: #fffbeb;
+    --rose: #be123c;
+    --rose-soft: #fff1f2;
+    --paper: #f5f7f9;
+    --card: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    color: var(--ink);
+    font-family: "DM Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    background:
+      radial-gradient(900px 420px at 0% -10%, rgba(14, 124, 134, 0.10), transparent 55%),
+      radial-gradient(700px 380px at 100% 0%, rgba(244, 189, 42, 0.12), transparent 50%),
+      var(--paper);
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 72px; }
+  .lang-bar {
+    display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 12px;
+  }
+  .lang-btn {
+    appearance: none; border: 1px solid var(--line); background: var(--card);
+    color: var(--navy); font: inherit; font-size: 13px; font-weight: 700;
+    padding: 6px 12px; border-radius: 999px; cursor: pointer;
+  }
+  .lang-btn:hover { border-color: var(--teal); color: var(--teal-deep); }
+  .lang-btn.active {
+    background: var(--teal-deep); color: #fff; border-color: var(--teal-deep);
+  }
+  html[lang="es"] .lang-en { display: none !important; }
+  html[lang="en"] .lang-es { display: none !important; }
+  .hero {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 26px 28px 22px;
+    margin-bottom: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 6px;
+    background: linear-gradient(180deg, var(--gold), var(--teal));
+  }
+  .hero-top { display: flex; gap: 18px; align-items: center; margin-bottom: 14px; }
+  .hero-top img { width: 88px; height: auto; display: block; }
+  .eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--teal); margin: 0 0 6px;
+  }
+  h1 {
+    font-family: Fraunces, Georgia, serif;
+    font-size: clamp(1.45rem, 3.2vw, 2rem);
+    font-weight: 700; line-height: 1.18; margin: 0 0 8px; color: var(--navy);
+  }
+  .hero-lead { margin: 0 0 14px; color: var(--muted); max-width: 52rem; }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--teal-soft); color: var(--teal-deep);
+    border-radius: 999px; padding: 4px 11px; font-size: 12px; font-weight: 600;
+  }
+  .pill.warn { background: var(--amber-soft); color: var(--amber); }
+  .pill.gold { background: var(--gold-soft); color: #8a6500; }
+  .pill.danger { background: var(--rose-soft); color: var(--rose); }
+  .toc {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 14px 18px; margin-bottom: 22px; display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px;
+  }
+  .toc a { color: var(--teal-deep); text-decoration: none; font-weight: 600; }
+  .toc a:hover { text-decoration: underline; }
+  section.block {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 22px 24px; margin-bottom: 18px;
+  }
+  .section-badge {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: #fff; background: var(--navy);
+    border-radius: 6px; padding: 3px 8px; margin: 0 0 8px;
+  }
+  .section-badge.have { background: var(--teal-deep); }
+  .section-badge.miss { background: var(--amber); }
+  .section-badge.warn { background: var(--rose); }
+  .section-badge.next { background: var(--sky); }
+  h2 {
+    font-family: Fraunces, Georgia, serif; font-size: 1.35rem; margin: 0 0 6px; color: var(--navy);
+  }
+  .section-lead { margin: 0 0 16px; color: var(--muted); font-size: 0.95rem; }
+  h3 {
+    font-size: 0.98rem; margin: 18px 0 8px; color: var(--navy); letter-spacing: 0.02em;
+  }
+  h3:first-of-type { margin-top: 4px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  @media (max-width: 760px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .hero-top { flex-direction: column; align-items: flex-start; }
+    .stat-row { grid-template-columns: 1fr 1fr; }
+  }
+  .stat-row {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px;
+  }
+  .stat {
+    background: var(--paper); border: 1px solid var(--line); border-top: 3px solid var(--gold);
+    border-radius: 10px; padding: 10px 12px;
+  }
+  .stat.ok { border-top-color: var(--green); }
+  .stat.partial { border-top-color: var(--amber); }
+  .stat.miss { border-top-color: var(--rose); }
+  .stat strong {
+    display: block; font-family: Fraunces, Georgia, serif; font-size: 1.35rem;
+    color: var(--navy); line-height: 1.1;
+  }
+  .stat span { font-size: 12px; color: var(--muted); font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0 4px; }
+  th, td {
+    border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top;
+  }
+  th {
+    background: var(--navy); color: #fff; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.05em; font-weight: 600;
+  }
+  tbody tr:nth-child(even) { background: #fafbfc; }
+  .path {
+    border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px;
+    background: #fafbfc; margin-bottom: 12px; border-top: 4px solid var(--teal);
+  }
+  .path.b { border-top-color: var(--sky); }
+  .path.c { border-top-color: var(--amber); }
+  .path h3 {
+    margin: 0 0 6px; font-family: Fraunces, Georgia, serif; font-size: 1.1rem; letter-spacing: 0;
+  }
+  .callout {
+    border-left: 4px solid var(--gold); background: var(--gold-soft);
+    padding: 10px 14px; border-radius: 0 10px 10px 0; margin: 12px 0; font-size: 13.5px;
+  }
+  .callout.note { border-left-color: var(--teal); background: var(--teal-soft); }
+  .callout.warn { border-left-color: var(--amber); background: var(--amber-soft); }
+  .callout.danger { border-left-color: var(--rose); background: var(--rose-soft); }
+  .status {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.03em;
+    text-transform: uppercase; padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+  }
+  .status.have { background: var(--green-soft); color: var(--green); }
+  .status.partial { background: var(--amber-soft); color: var(--amber); }
+  .status.miss { background: var(--rose-soft); color: var(--rose); }
+  .status.na { background: #eef0f5; color: var(--muted); }
+  ul.clean, ol.clean { margin: 6px 0 0; padding-left: 18px; }
+  ul.clean li, ol.clean li { margin: 5px 0; }
+  .mini { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  footer.page-foot {
+    margin-top: 8px; padding: 14px 4px; font-size: 12px; color: var(--muted); text-align: center;
+  }
+  a.ext { color: var(--teal-deep); font-weight: 600; }
+
+  .decision-banner {
+    background: linear-gradient(135deg, #e6f3f4 0%, #e0f2fe 100%);
+    border: 1px solid var(--line);
+    border-left: 6px solid var(--teal-deep);
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+  }
+  .decision-banner strong { color: var(--teal-deep); }
+  .path.chosen {
+    border-color: var(--teal-deep);
+    background: #f0fafb;
+    box-shadow: 0 0 0 2px rgba(14,124,134,0.12);
+  }
+  .path.chosen .chosen-tag {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.05em;
+    text-transform: uppercase; background: var(--teal-deep); color: #fff;
+    border-radius: 6px; padding: 2px 8px; margin-bottom: 8px;
+  }
+  .path.dimmed { opacity: 0.55; }
+
+  @media print {
+    body { background: #fff; }
+    .wrap { padding: 0; max-width: none; }
+    .toc, .lang-bar { display: none; }
+    section.block, .hero, .path { break-inside: avoid; box-shadow: none; }
+    html[lang="es"] .lang-en, html[lang="en"] .lang-es { display: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lang-bar" role="group" aria-label="Language">
+    <button type="button" class="lang-btn active" data-lang="es" id="btn-es">Español</button>
+    <button type="button" class="lang-btn" data-lang="en" id="btn-en">English</button>
+  </div>
+
+  <div class="lang-es" lang="es">
+
+  <div class="decision-banner" style="border-left-color:#be123c;background:#fff1f2;">
+    <strong style="color:#9f1239;">Corrección (27 Jul 2026): el cuidado NO es at home.</strong>
+    Los clientes vienen al Day Centre (~5h). Changing, medicación si aplica, y personal care se hacen
+    <em>en el centro</em>. Eso normalmente <strong>queda fuera del alcance CQC</strong> (Personal care = donde la persona vive).
+    <strong>No enviar</strong> una solicitud domiciliary describiendo cuidado en casa. Camino recomendado ahora:
+    <strong>A</strong> (confirmar scope por escrito) + <strong>C</strong> (pack calidad CQC-ready para el NHS).
+    Camino B solo si en el futuro ofrecéis personal care real en el domicilio.
+  </div>
+
+  <header class="hero">
+    <div class="hero-top">
+      <img src="clubsensational-logo.png" alt="clubSENsational" />
+      <div>
+        <p class="eyebrow">Pack interno de preparación · Julio 2026</p>
+        <h1>Preparación registro CQC</h1>
+        <p class="hero-lead">
+          Guía operativa para clubSENsational LTD: qué pide CQC, qué ya tenéis en portal/políticas,
+          y qué falta. Contexto: el NHS ha sugerido registro porque prestáis soporte 1:1 continuo
+          en el Day Centre a personas que necesitan supervisión adulta permanente.
+        </p>
+        <div class="hero-meta">
+          <span class="pill">Provider: clubSENsational LTD</span>
+          <span class="pill gold">Co. 13755417</span>
+          <span class="pill">Shelton Street, WC2H 9JQ</span>
+          <span class="pill danger">Centre-based model — not domiciliary</span>
+          <span class="pill danger">Reject-on-receipt from Feb 2026</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Contenidos">
+    <a href="#veredicto-es">1. Veredicto</a>
+    <a href="#contexto-es">2. Contexto NHS</a>
+    <a href="#alcance-es">3. Alcance legal</a>
+    <a href="#caminos-es">4. Tres caminos</a>
+    <a href="#tenemos-es">5. Qué tenemos</a>
+    <a href="#checklist-es">6. Checklist CQC</a>
+    <a href="#roles-es">7. Roles</a>
+    <a href="#autism-es">8. Autism / LD</a>
+    <a href="#proceso-es">9. Proceso 2026</a>
+    <a href="#acciones-es">10. Próximas acciones</a>
+  </nav>
+
+  <section class="block" id="veredicto-es">
+    <span class="section-badge warn">Critical</span>
+    <h2>1. Veredicto en una frase</h2>
+    <p class="section-lead">
+      El soporte 1:1 <strong>dentro del Day Centre</strong> explica por qué el NHS pide calidad regulada,
+      pero <strong>por sí solo normalmente no es una actividad regulada por CQC</strong>.
+      CQC no registra “day centres”; registra <em>actividades reguladas</em> (sobre todo
+      <em>Personal care</em> donde la persona vive).
+    </p>
+    <div class="stat-row">
+      <div class="stat ok"><strong>~13</strong><span>Políticas formales ya hechas</span></div>
+      <div class="stat ok"><strong>Strong</strong><span>Portal: ISP, incidentes, HR, formación</span></div>
+      <div class="stat ok"><strong>~80%</strong><span>Pack CQC listo (estimado)</span></div>
+      <div class="stat partial"><strong>Draft</strong><span>SoP creado — falta NI/RM</span></div>
+    </div>
+    <div class="callout danger">
+      <strong>No presentar aún.</strong> Desde el 9 febrero 2026 CQC rechaza de entrada
+      solicitudes incompletas o genéricas. Primero hay que decidir el <em>camino legal</em>
+      (sección 4) y cerrar el pack entero.
+    </div>
+  </section>
+
+  <section class="block" id="contexto-es">
+    <span class="section-badge">Why</span>
+    <h2>2. Por qué el NHS lo pide</h2>
+    <p class="section-lead">
+      Motivación de commissioning / calidad, no automáticamente obligación legal.
+      También tenéis clientes que no vienen vía NHS; el registro ayudaría a estandarizar
+      el servicio para todos.
+    </p>
+    <div class="grid-2">
+      <div>
+        <h3>Lo que hacéis hoy</h3>
+        <ul class="clean">
+          <li>Day Centre con ratios 1:1 / 2:1</li>
+          <li>Adulto siempre presente; supervisión continua</li>
+          <li>Personal care in situ (aseo, ducha post-natación, etc.)</li>
+          <li>Clientes privados y referidos (incl. no NHS)</li>
+          <li>Autism / SEN / high support needs</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Lo que suele querer el NHS</h3>
+        <ul class="clean">
+          <li>Proveedor en frameworks / contratos que exigen CQC</li>
+          <li>Señal de calidad / governance externa</li>
+          <li>Poder encargar paquetes de personal care</li>
+          <li>Claridad de Registered Manager y safeguarding</li>
+          <li>Evidencia documentada (no solo “buena práctica”)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout note">
+      <strong>Acción con el NHS:</strong> pedir por escrito qué exigen exactamente —
+      ¿registro CQC obligatorio para vuestro Day Centre, o para poder encargaros
+      <em>personal care en domicilio / community</em>? Esa respuesta define el camino.
+    </div>
+  </section>
+
+  <section class="block" id="alcance-es">
+    <span class="section-badge miss">Scope</span>
+    <h2>3. Alcance legal CQC (lo que importa)</h2>
+    <p class="section-lead">
+      Fuente: CQC <em>Scope of Registration</em> + definición de <em>Personal care</em>
+      (Health and Social Care Act 2008 Regulated Activities Regulations 2014).
+    </p>
+    <table>
+      <thead><tr><th>Situación</th><th>¿CQC?</th><th>Notas</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Day centre / day care con personal care <strong>en el centro</strong></td>
+          <td><span class="status na">Generalmente no</span></td>
+          <td>Históricamente excluido. El cuidado no se presta “donde la persona vive”.</td>
+        </tr>
+        <tr>
+          <td>Soporte 1:1 / supervisión adulta en Day Centre</td>
+          <td><span class="status na">Generalmente no</span></td>
+          <td>Es apoyo social / educativo / de actividad, no automáticamente actividad regulada.</td>
+        </tr>
+        <tr>
+          <td>Personal care en el <strong>domicilio</strong> (lavado, vestido, aseo…)</td>
+          <td><span class="status miss">Sí — obligatorio</span></td>
+          <td>Actividad regulada: <em>Personal care</em>. Tipo típico: domiciliary care.</td>
+        </tr>
+        <tr>
+          <td>Supported living con personal care (vivienda y cuidado separados)</td>
+          <td><span class="status miss">Sí — obligatorio</span></td>
+          <td>También <em>Personal care</em>; formularios y evidencias extra.</td>
+        </tr>
+        <tr>
+          <td>Respiro con pernocta + personal care (paquete único)</td>
+          <td><span class="status miss">Sí — care home</span></td>
+          <td>Actividad: Accommodation for persons who require nursing or personal care.</td>
+        </tr>
+        <tr>
+          <td>Natación / climbing / Hub sin personal care en casa</td>
+          <td><span class="status na">No CQC</span></td>
+          <td>Sigue aplicando safeguarding, H&amp;S, DBS, etc. (ya lo tenéis).</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="callout warn">
+      <strong>Implicación:</strong> no se puede “registrar el Day Centre como CQC” solo por los
+      ratios 1:1. O bien confirmáis por escrito que estáis fuera de alcance, o bien
+      registráis una actividad regulada real (casi siempre <em>Personal care</em> como
+      domiciliary care) y el Day Centre queda como servicio paralelo no regulado o base operativa.
+    </div>
+  </section>
+
+  <section class="block" id="caminos-es">
+    <span class="section-badge next">Strategy</span>
+    <h2>4. Tres caminos recomendados</h2>
+    <p class="section-lead">Modelo real = Day Centre en sede. Prioridad: Camino A + C. No presentar domiciliary at home.</p>
+    <div class="path chosen">
+      <div class="chosen-tag">Recomendado</div>
+      <h3>Camino A — Confirmar scope (rápido, bajo coste)</h3>
+      <p>Pedir a CQC / asesor confirmación escrita de si el modelo actual
+      (Day Centre + 1:1 + personal care in situ, sin cuidado en domicilio) está dentro
+      o fuera de registro. Responder al NHS con esa confirmación + pack de calidad interno.</p>
+      <p class="mini">Útil si el NHS solo quiere “seguridad” y no un framework CQC obligatorio.</p>
+    </div>
+    <div class="path b dimmed">
+      <div class="chosen-tag" style="background:#be123c;">Pausado — modelo incorrecto</div>
+      <h3>Camino B — Domiciliary (solo si hay cuidado en casa)</h3>
+      <p>Registrar clubSENsational LTD para <strong>Personal care</strong>,
+      service type <strong>domiciliary care agency</strong>, foco autism / learning disability.
+      El Day Centre sigue; además podéis ofrecer personal care donde la persona vive.</p>
+      <ul class="clean">
+        <li>Formularios provider + Registered Manager + additional personal care form</li>
+        <li>Right Support, Right Care, Right Culture (autism / LD)</li>
+        <li>PBS + restraint / restrictive practice (obligatorias desde feb 2026 para LD/autism)</li>
+        <li>Oliver McGowan Mandatory Training evidenciado</li>
+      </ul>
+      <p class="mini">Modelo corregido a Day Centre on-site. Pack de políticas sigue útil para el NHS (Camino C).</p>
+    </div>
+    <div class="path c chosen">
+      <div class="chosen-tag">Recomendado</div>
+      <h3>Camino C — Solo calidad “CQC-ready” sin registrar aún</h3>
+      <p>Completar políticas y governance al estándar CQC para satisfacer al NHS / LAs,
+      sin solicitar registro hasta que haya demanda real de personal care en domicilio.</p>
+      <p class="mini">Buena transición mientras se decide A o B.</p>
+    </div>
+  </section>
+
+  <section class="block" id="tenemos-es">
+    <span class="section-badge have">Have</span>
+    <h2>5. Qué ya tenéis (auditoría portal / docs)</h2>
+    <p class="section-lead">Inventario basado en Policies &amp; Compliance Portal + PORTALVIC (julio 2026).</p>
+    <h3>Empresa</h3>
+    <table>
+      <thead><tr><th>Campo</th><th>Valor</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr><td>Legal name</td><td>clubSENsational LTD</td><td><span class="status have">OK</span></td></tr>
+        <tr><td>Company number</td><td>13755417</td><td><span class="status have">OK</span></td></tr>
+        <tr><td>Registered address</td><td>71-75 Shelton Street, Covent Garden, WC2H 9JQ, London</td><td><span class="status have">OK</span></td></tr>
+        <tr><td>Website</td><td>www.clubsensational.org</td><td><span class="status have">OK</span></td></tr>
+        <tr><td>Code constants</td><td><code>contract-core.js</code> COMPANY_*</td><td><span class="status have">OK</span></td></tr>
+      </tbody>
+    </table>
+    <h3>Políticas existentes (POL-001–013)</h3>
+    <table>
+      <thead><tr><th>ID</th><th>Política</th><th>Útil para CQC</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr><td>POL-001</td><td>Anti-Slavery</td><td>Governance / ética</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-002</td><td>Data Protection &amp; GDPR</td><td>Sí</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-003</td><td>Whistleblowing</td><td>Sí (Freedom to speak up)</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-004</td><td>Disciplinary</td><td>HR / fit &amp; proper</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-005</td><td>Grievance</td><td>HR</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-006</td><td>Recruitment (DBS enhanced)</td><td>Sí — core</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-007</td><td>Diversity, Equality &amp; Inclusion</td><td>Sí — core (EDHR)</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-008</td><td>Safeguarding</td><td>Sí — core</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-009</td><td>Mental Health</td><td>Apoyo</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-010</td><td>First Aid</td><td>Apoyo H&amp;S</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-011</td><td>Health &amp; Safety</td><td>Sí</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-012</td><td>Equipment &amp; Uniform</td><td>Operativo</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-013</td><td>Feedback &amp; Incident Report</td><td>Parcial (no sustituye Complaints)</td><td><span class="status partial">Partial</span></td></tr>
+      </tbody>
+    </table>
+    <p class="mini">Ubicación: <code>Policies &amp; Compliance Portal/</code> · también <code>policies_portal.html</code></p>
+    <h3>Portal / operaciones</h3>
+    <table>
+      <thead><tr><th>Área</th><th>Qué hay</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr><td>Incidentes</td><td>Submit, follow-up, notificaciones, link a support plan</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>ISP / support plans</td><td>Planes individuales + behaviour strategy library</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>Formación</td><td>Progreso, eventos, firmas, caducidad</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>HR matrix</td><td>Inducción, safeguarding, first aid, docs</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>Contratos</td><td>Day Centre + personal care + DBS / regulated activity</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>Consentimientos</td><td>Padres / offsite / emergencia</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>Risk assessments</td><td>Piscinas, Hub, climbing, gym</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>Informes participantes</td><td>Evidencia 1:1 / 2:1 y personal care (incl. informes NHS)</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>Rota / career framework</td><td>Day Centre 2026–27 (ratios, Service Lead)</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>Inducción</td><td>6 módulos + Policies &amp; Protection</td><td><span class="status have">Have</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="block" id="checklist-es">
+    <span class="section-badge miss">Gaps</span>
+    <h2>6. Checklist CQC (Camino B — Personal care / domiciliary)</h2>
+    <p class="section-lead">
+      Documentos core + extras domiciliary + autism/LD. Fuentes: CQC supporting documents + cambios feb 2026.
+    </p>
+    <h3>A. Documentos core</h3>
+    <table>
+      <thead><tr><th>#</th><th>Documento</th><th>Estado</th><th>Acción</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Statement of Purpose</td><td><span class="status partial">Draft</span></td><td><a class="ext" href="statement-of-purpose.html">Borrador creado</a> — completar NI/RM/tel</td></tr>
+        <tr><td>2</td><td>Complaints policy</td><td><span class="status have">Have</span></td><td>POL-014 creada</td></tr>
+        <tr><td>3</td><td>Consent policy &amp; procedure</td><td><span class="status have">Have</span></td><td>POL-015 creada</td></tr>
+        <tr><td>4</td><td>Equality, diversity &amp; human rights</td><td><span class="status have">Have</span></td><td>Revisar POL-007</td></tr>
+        <tr><td>5</td><td>Governance &amp; quality assurance</td><td><span class="status have">Have</span></td><td>POL-016 creada</td></tr>
+        <tr><td>6</td><td>Infection prevention &amp; control</td><td><span class="status have">Have</span></td><td>POL-017 creada</td></tr>
+        <tr><td>7</td><td>Medicines management</td><td><span class="status have">Have</span></td><td>POL-018 creada — falta MAR operativo</td></tr>
+        <tr><td>8</td><td>Recruitment policy</td><td><span class="status have">Have</span></td><td>Alinear safer recruitment CQC</td></tr>
+        <tr><td>9</td><td>Safeguarding policy &amp; procedure</td><td><span class="status have">Have</span></td><td>Añadir contactos LA safeguarding</td></tr>
+        <tr><td>10</td><td>Public &amp; employer liability insurance</td><td><span class="status have">Have</span></td><td><a class="ext" href="insurance-evidence-checklist.html">Hiscox on file</a> — corregir Valetta Rd</td></tr>
+        <tr><td>11</td><td>Financial viability statement</td><td><span class="status partial">Draft</span></td><td><a class="ext" href="financial-viability-statement.html">Plantilla</a> — cifras + firma</td></tr>
+      </tbody>
+    </table>
+    <h3>B. Extras domiciliary care</h3>
+    <table>
+      <thead><tr><th>#</th><th>Documento / formulario</th><th>Estado</th><th>Acción</th></tr></thead>
+      <tbody>
+        <tr><td>12</td><td>Provider application form(s)</td><td><span class="status miss">Missing</span></td><td>Descargar CQC forms</td></tr>
+        <tr><td>13</td><td>Additional information — personal care</td><td><span class="status miss">Missing</span></td><td>Formulario extra obligatorio</td></tr>
+        <tr><td>14</td><td>Registered Manager application</td><td><span class="status miss">Missing</span></td><td>Persona + fit &amp; proper pack</td></tr>
+        <tr><td>15</td><td>Business plan &amp; financial forecast</td><td><span class="status have">Have</span></td><td><a class="ext" href="business-plan-personal-care-2026-28.html">CQC-BP-001</a> — validar cifras</td></tr>
+        <tr><td>16</td><td>Evidence of legal occupancy</td><td><span class="status miss">Missing</span></td><td>Lease / licence base operativa</td></tr>
+        <tr><td>17</td><td>Service user guide</td><td><span class="status have">Have</span></td><td><a class="ext" href="service-user-guide.html">CQC-SUG-001</a> — completar contactos TBC</td></tr>
+        <tr><td>18</td><td>Staff training plan</td><td><span class="status partial">Partial</span></td><td>Unificar inducción + portal training</td></tr>
+        <tr><td>19</td><td>Sample care plan / care contract</td><td><span class="status partial">Partial</span></td><td>ISP + contrato muestra anonimizado</td></tr>
+        <tr><td>20</td><td>Staffing structure &amp; rotas</td><td><span class="status have">Have</span></td><td>Usar rota-career-framework 2026–27</td></tr>
+      </tbody>
+    </table>
+    <h3>C. Autism / learning disability</h3>
+    <table>
+      <thead><tr><th>#</th><th>Documento</th><th>Estado</th><th>Acción</th></tr></thead>
+      <tbody>
+        <tr><td>21</td><td>Positive Behaviour Support (PBS) policy</td><td><span class="status have">Have</span></td><td>POL-019 creada</td></tr>
+        <tr><td>22</td><td>Restraint / restrictive practice policy</td><td><span class="status have">Have</span></td><td>POL-020 creada</td></tr>
+        <tr><td>23</td><td>Right Support, Right Care, Right Culture</td><td><span class="status miss">Missing</span></td><td>Formulario / narrativa + SoP</td></tr>
+        <tr><td>24</td><td>Accessible information / communication</td><td><span class="status have">Have</span></td><td>POL-021 creada</td></tr>
+        <tr><td>25</td><td>Oliver McGowan Mandatory Training</td><td><span class="status miss">Missing</span></td><td>Plan + registros HR / training</td></tr>
+      </tbody>
+    </table>
+    <h3>D. Tener listo si lo piden</h3>
+    <ul class="clean">
+      <li>Duty of candour policy</li>
+      <li>Person-centred care planning policy</li>
+      <li>Reportable incidents / risk management (ampliar POL-013)</li>
+      <li>Listado de risk assessments (ya hay venue RAs)</li>
+      <li>MCA / Mental Capacity / DoLS policy</li>
+      <li>DBS &lt; 12 meses para directors, Nominated Individual, Registered Manager</li>
+      <li>Referencias, CVs, proof of ID / address</li>
+    </ul>
+  </section>
+
+  <section class="block" id="roles-es">
+    <span class="section-badge next">People</span>
+    <h2>7. Roles que hay que nombrar</h2>
+    <p class="section-lead">Sin estas personas (fit &amp; proper) no hay registro.</p>
+    <div class="grid-3">
+      <div class="path">
+        <h3>Nominated Individual</h3>
+        <p>Representante legal de la LTD ante CQC. Suele ser director / CEO.</p>
+        <p class="mini">Estado: <span class="status miss">Por nombrar</span></p>
+      </div>
+      <div class="path b">
+        <h3>Registered Manager</h3>
+        <p>Responsable del día a día de la actividad regulada. Puede ser el Day Centre Service Lead.</p>
+        <p class="mini">Estado: <span class="status miss">Por nombrar + application</span></p>
+      </div>
+      <div class="path c">
+        <h3>Directors / fit &amp; proper</h3>
+        <p>DBS enhanced, refs, historial. Coherente con recruitment policy.</p>
+        <p class="mini">Estado: <span class="status partial">Parcial</span></p>
+      </div>
+    </div>
+    <div class="callout note">
+      El framework Day Centre ya contempla <strong>Service Lead</strong>
+      (<code>rota-career-framework-2026-27.html</code>). Puede mapearse a Registered Manager
+      con persona concreta, DBS reciente y formulario RM.
+    </div>
+  </section>
+
+  <section class="block" id="autism-es">
+    <span class="section-badge warn">Autism / LD</span>
+    <h2>8. Extras autism / learning disability</h2>
+    <p class="section-lead">
+      Con público autism / SEN, Personal care entra en régimen reforzado
+      (Right Support + PBS + restraint + formación).
+    </p>
+    <ul class="clean">
+      <li><strong>Right support, right care, right culture</strong> — modelo pequeño, person-centred.</li>
+      <li><strong>PBS</strong> — política + reflejo en ISPs del portal.</li>
+      <li><strong>Restrictive practice</strong> — least restrictive, registro, review.</li>
+      <li><strong>Oliver McGowan</strong> — formación obligatoria LD &amp; autism.</li>
+      <li><strong>Communication</strong> — easy read, visual supports, AAC (práctica sí; política no).</li>
+    </ul>
+    <div class="callout">
+      Ventaja: ya generáis informes (incl. NHS), ISPs y ratios 1:1/2:1.
+      Falta empaquetarlo al lenguaje CQC.
+    </div>
+  </section>
+
+  <section class="block" id="proceso-es">
+    <span class="section-badge">Process</span>
+    <h2>9. Cómo se presenta (2026)</h2>
+    <ol class="clean">
+      <li>Descargar formularios:
+        <a class="ext" href="https://www.cqc.org.uk/guidance-regulation/providers/registration/register-provider/provider-application-forms" target="_blank" rel="noopener">CQC provider application forms</a></li>
+      <li>Completar provider + RM + additional personal care (+ Right Support si autism/LD).</li>
+      <li>Adjuntar Statement of Purpose + políticas + seguros + financial viability + extras.</li>
+      <li>Revisar coherencia (nombre, address, service type, ratios).</li>
+      <li>Email a <strong>HSCA_Applications@cqc.org.uk</strong> (ZIP &lt; 25MB; si no, 1/2, 2/2…).</li>
+      <li>Incompleto / genérico = rechazo inmediato → nueva cola.</li>
+    </ol>
+    <p class="mini">
+      <a class="ext" href="https://www.cqc.org.uk/guidance-regulation/registration/applying-new-provider-guidance" target="_blank" rel="noopener">Applying as a new provider</a> ·
+      <a class="ext" href="https://www.cqc.org.uk/guidance-regulation/registration/supporting-documents-provider" target="_blank" rel="noopener">Supporting documents</a> ·
+      <a class="ext" href="https://www.cqc.org.uk/guidance-regulation/registration/statement-purpose" target="_blank" rel="noopener">Statement of purpose</a>
+    </p>
+  </section>
+
+  <section class="block" id="acciones-es">
+    <span class="section-badge next">Next</span>
+    <h2>10. Próximas acciones</h2>
+    <table>
+      <thead><tr><th>#</th><th>Acción</th><th>Owner</th><th>Prioridad</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Email al NHS: nuestro modelo es Day Centre (~5h en centro, changing/meds on site). ¿Necesitáis CQC o un pack de calidad?</td><td>Directors</td><td><span class="status miss">P0</span></td></tr>
+        <tr><td>2</td><td>Decidir Camino A / B / C</td><td>Directors</td><td><span class="status miss">P0</span></td></tr>
+        <tr><td>3</td><td>Nombrar Nominated Individual + Registered Manager</td><td>Directors</td><td><span class="status miss">P0</span></td></tr>
+        <tr><td>4</td><td>EL/PL on file — pedir a Hiscox dirección Shelton Street; falta lease oficina</td><td>Ops / finance</td><td><span class="status partial">P1</span></td></tr>
+        <tr><td>5</td><td>Statement of Purpose — completar NI/RM/contactos</td><td>Ops + legal</td><td><span class="status partial">P1</span></td></tr>
+        <tr><td>6</td><td>Policies 014–021 hechas (incl. PBS / Restrictive / Communication)</td><td>Compliance</td><td><span class="status have">Done</span></td></tr>
+        <tr><td>7</td><td>Business plan creado — validar + firmar financial viability</td><td>Finance</td><td><span class="status partial">P1</span></td></tr>
+        <tr><td>8</td><td>Plan formación CQC + Oliver McGowan en portal HR</td><td>HR / training</td><td><span class="status partial">P2</span></td></tr>
+        <tr><td>9</td><td>Service user guide creada — añadir NI/RM/tel</td><td>Ops</td><td><span class="status partial">P2</span></td></tr>
+        <tr><td>10</td><td>Pack fit &amp; proper (DBS, refs, CVs)</td><td>HR</td><td><span class="status miss">P1</span></td></tr>
+        <tr><td>11</td><td>Solo entonces: forms + envío a CQC</td><td>NI + RM</td><td><span class="status na">P3</span></td></tr>
+      </tbody>
+    </table>
+    <div class="callout note">
+      <strong>Siguiente entregable posible:</strong>
+      borrador Statement of Purpose + políticas que faltan (Complaints, Medicines, IPC, PBS, Restrictive practice)
+      en el estilo POL-001–013.
+    </div>
+  </section>
+
+  <footer class="page-foot">
+    clubSENsational LTD · Company no. 13755417 ·
+    71-75 Shelton Street, Covent Garden, WC2H 9JQ, London ·
+    www.clubsensational.org<br />
+    Documento interno de preparación · no es asesoramiento legal · verificar con CQC / solicitor
+  </footer>
+
+  </div>
+
+  <div class="lang-en" lang="en">
+
+  <div class="decision-banner" style="border-left-color:#be123c;background:#fff1f2;">
+    <strong style="color:#9f1239;">Correction (27 Jul 2026): care is NOT at home.</strong>
+    Clients attend the Day Centre (~5 hours). Changing, medication if needed, and personal care happen
+    <em>on site</em>. That is usually <strong>outside CQC scope</strong> (Personal care = where the person is living).
+    <strong>Do not</strong> submit a domiciliary application that describes home care. Recommended now:
+    <strong>Path A</strong> (confirm scope in writing) + <strong>Path C</strong> (CQC-ready quality pack for the NHS).
+    Path B only if you later deliver real personal care in people’s homes.
+  </div>
+
+  <header class="hero">
+    <div class="hero-top">
+      <img src="clubsensational-logo.png" alt="clubSENsational" />
+      <div>
+        <p class="eyebrow">Internal readiness pack · July 2026</p>
+        <h1>CQC registration readiness</h1>
+        <p class="hero-lead">
+          Operating guide for clubSENsational LTD: what CQC requires, what you already have
+          in the portal/policies, and what is missing. Context: the NHS has suggested registration
+          because you deliver continuous 1:1 support in the Day Centre for people who need
+          ongoing adult supervision.
+        </p>
+        <div class="hero-meta">
+          <span class="pill">Provider: clubSENsational LTD</span>
+          <span class="pill gold">Co. 13755417</span>
+          <span class="pill">Shelton Street, WC2H 9JQ</span>
+          <span class="pill danger">Centre-based model — not domiciliary</span>
+          <span class="pill danger">Reject-on-receipt from Feb 2026</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Contents">
+    <a href="#veredicto-en">1. Verdict</a>
+    <a href="#contexto-en">2. NHS context</a>
+    <a href="#alcance-en">3. Legal scope</a>
+    <a href="#caminos-en">4. Three paths</a>
+    <a href="#tenemos-en">5. What we have</a>
+    <a href="#checklist-en">6. CQC checklist</a>
+    <a href="#roles-en">7. Roles</a>
+    <a href="#autism-en">8. Autism / LD</a>
+    <a href="#proceso-en">9. 2026 process</a>
+    <a href="#acciones-en">10. Next actions</a>
+  </nav>
+
+  <section class="block" id="veredicto-en">
+    <span class="section-badge warn">Critical</span>
+    <h2>1. One-line verdict</h2>
+    <p class="section-lead">
+      Continuous <strong>1:1 support inside the Day Centre</strong> explains why the NHS wants
+      regulated-quality assurance, but <strong>on its own it is usually not a CQC-regulated activity</strong>.
+      CQC does not register “day centres”; it registers <em>regulated activities</em>
+      (mainly <em>Personal care</em> where the person lives).
+    </p>
+    <div class="stat-row">
+      <div class="stat ok"><strong>~13</strong><span>Formal policies already in place</span></div>
+      <div class="stat ok"><strong>Strong</strong><span>Portal: ISP, incidents, HR, training</span></div>
+      <div class="stat ok"><strong>~80%</strong><span>CQC pack ready (estimate)</span></div>
+      <div class="stat partial"><strong>Draft</strong><span>SoP created — NI/RM pending</span></div>
+    </div>
+    <div class="callout danger">
+      <strong>Do not submit yet.</strong> From 9 February 2026 CQC rejects incomplete or generic
+      applications on receipt. Decide the <em>legal path</em> (section 4) and close the full pack first.
+    </div>
+  </section>
+
+  <section class="block" id="contexto-en">
+    <span class="section-badge">Why</span>
+    <h2>2. Why the NHS is asking</h2>
+    <p class="section-lead">
+      This is a commissioning / quality driver, not automatically a legal duty.
+      You also support clients who are not NHS-referred; registration would help
+      standardise the offer for everyone.
+    </p>
+    <div class="grid-2">
+      <div>
+        <h3>What you do today</h3>
+        <ul class="clean">
+          <li>Day Centre with 1:1 / 2:1 ratios</li>
+          <li>Adult always present; continuous supervision</li>
+          <li>Personal care on site (toileting, post-swim shower, etc.)</li>
+          <li>Private and referred clients (including non-NHS)</li>
+          <li>Autism / SEN / high support needs</li>
+        </ul>
+      </div>
+      <div>
+        <h3>What the NHS usually wants</h3>
+        <ul class="clean">
+          <li>Providers on frameworks / contracts that require CQC</li>
+          <li>External quality / governance signal</li>
+          <li>Ability to commission personal care packages</li>
+          <li>Clear Registered Manager and safeguarding lines</li>
+          <li>Documented evidence (not just good practice)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout note">
+      <strong>Action with the NHS:</strong> ask in writing exactly what they require —
+      mandatory CQC registration for your Day Centre, or registration so they can commission
+      <em>personal care at home / in the community</em>? That answer sets the path.
+    </div>
+  </section>
+
+  <section class="block" id="alcance-en">
+    <span class="section-badge miss">Scope</span>
+    <h2>3. CQC legal scope (what matters)</h2>
+    <p class="section-lead">
+      Source: CQC <em>Scope of Registration</em> + definition of <em>Personal care</em>
+      (Health and Social Care Act 2008 Regulated Activities Regulations 2014).
+    </p>
+    <table>
+      <thead><tr><th>Situation</th><th>CQC?</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Day centre / day care with personal care <strong>at the centre</strong></td>
+          <td><span class="status na">Usually no</span></td>
+          <td>Historically excluded. Care is not provided “where the person is living”.</td>
+        </tr>
+        <tr>
+          <td>1:1 support / adult supervision in the Day Centre</td>
+          <td><span class="status na">Usually no</span></td>
+          <td>Social / educational / activity support — not automatically a regulated activity.</td>
+        </tr>
+        <tr>
+          <td>Personal care in the person’s <strong>home</strong> (washing, dressing, toileting…)</td>
+          <td><span class="status miss">Yes — mandatory</span></td>
+          <td>Regulated activity: <em>Personal care</em>. Typical service type: domiciliary care.</td>
+        </tr>
+        <tr>
+          <td>Supported living with personal care (housing and care separated)</td>
+          <td><span class="status miss">Yes — mandatory</span></td>
+          <td>Also <em>Personal care</em>; extra forms and evidence.</td>
+        </tr>
+        <tr>
+          <td>Overnight respite + personal care as one package</td>
+          <td><span class="status miss">Yes — care home</span></td>
+          <td>Activity: Accommodation for persons who require nursing or personal care.</td>
+        </tr>
+        <tr>
+          <td>Swimming / climbing / Hub without home personal care</td>
+          <td><span class="status na">Not CQC</span></td>
+          <td>Safeguarding, H&amp;S, DBS still apply (you already have these).</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="callout warn">
+      <strong>Implication:</strong> you cannot “register the Day Centre with CQC” just because of
+      1:1 ratios. Either confirm in writing that you are out of scope, or register a real
+      regulated activity (almost always <em>Personal care</em> as domiciliary care) and keep
+      the Day Centre as a parallel non-regulated service or operational base.
+    </div>
+  </section>
+
+  <section class="block" id="caminos-en">
+    <span class="section-badge next">Strategy</span>
+    <h2>4. Three recommended paths</h2>
+    <p class="section-lead">Real model = centre-based Day Centre. Priority: Paths A + C. Do not submit domiciliary at-home care.</p>
+    <div class="path chosen">
+      <div class="chosen-tag">Recommended</div>
+      <h3>Path A — Confirm scope (fast, low cost)</h3>
+      <p>Ask CQC / a specialist adviser for written confirmation whether the current model
+      (Day Centre + 1:1 + on-site personal care, no home care) is in or out of registration.
+      Reply to the NHS with that confirmation plus your internal quality pack.</p>
+      <p class="mini">Useful if the NHS only wants assurance, not a mandatory CQC framework.</p>
+    </div>
+    <div class="path b dimmed">
+      <div class="chosen-tag" style="background:#be123c;">Paused — wrong model</div>
+      <h3>Path B — Domiciliary (only if home care is real)</h3>
+      <p>Register clubSENsational LTD for <strong>Personal care</strong>,
+      service type <strong>domiciliary care agency</strong>, autism / learning disability focus.
+      The Day Centre continues; you can also offer personal care where the person lives.</p>
+      <ul class="clean">
+        <li>Provider + Registered Manager forms + additional personal care form</li>
+        <li>Right Support, Right Care, Right Culture (autism / LD)</li>
+        <li>PBS + restraint / restrictive practice (required from Feb 2026 for LD/autism)</li>
+        <li>Oliver McGowan Mandatory Training evidenced</li>
+      </ul>
+      <p class="mini">Model corrected to on-site Day Centre. Policy pack remains useful for NHS (Path C).</p>
+    </div>
+    <div class="path c chosen">
+      <div class="chosen-tag">Recommended</div>
+      <h3>Path C — “CQC-ready” quality only, no application yet</h3>
+      <p>Complete policies and governance to CQC standard to satisfy the NHS / LAs,
+      without applying until there is real demand for home personal care.</p>
+      <p class="mini">Good bridge while deciding A or B.</p>
+    </div>
+  </section>
+
+  <section class="block" id="tenemos-en">
+    <span class="section-badge have">Have</span>
+    <h2>5. What you already have (portal / docs audit)</h2>
+    <p class="section-lead">Inventory based on Policies &amp; Compliance Portal + PORTALVIC (July 2026).</p>
+    <h3>Company</h3>
+    <table>
+      <thead><tr><th>Field</th><th>Value</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Legal name</td><td>clubSENsational LTD</td><td><span class="status have">OK</span></td></tr>
+        <tr><td>Company number</td><td>13755417</td><td><span class="status have">OK</span></td></tr>
+        <tr><td>Registered address</td><td>71-75 Shelton Street, Covent Garden, WC2H 9JQ, London</td><td><span class="status have">OK</span></td></tr>
+        <tr><td>Website</td><td>www.clubsensational.org</td><td><span class="status have">OK</span></td></tr>
+        <tr><td>Code constants</td><td><code>contract-core.js</code> COMPANY_*</td><td><span class="status have">OK</span></td></tr>
+      </tbody>
+    </table>
+    <h3>Existing policies (POL-001–013)</h3>
+    <table>
+      <thead><tr><th>ID</th><th>Policy</th><th>Useful for CQC</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>POL-001</td><td>Anti-Slavery</td><td>Governance / ethics</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-002</td><td>Data Protection &amp; GDPR</td><td>Yes</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-003</td><td>Whistleblowing</td><td>Yes (Freedom to speak up)</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-004</td><td>Disciplinary</td><td>HR / fit &amp; proper</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-005</td><td>Grievance</td><td>HR</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-006</td><td>Recruitment (DBS enhanced)</td><td>Yes — core</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-007</td><td>Diversity, Equality &amp; Inclusion</td><td>Yes — core (EDHR)</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-008</td><td>Safeguarding</td><td>Yes — core</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-009</td><td>Mental Health</td><td>Supporting</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-010</td><td>First Aid</td><td>Supporting H&amp;S</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-011</td><td>Health &amp; Safety</td><td>Yes</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-012</td><td>Equipment &amp; Uniform</td><td>Operational</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>POL-013</td><td>Feedback &amp; Incident Report</td><td>Partial (does not replace Complaints)</td><td><span class="status partial">Partial</span></td></tr>
+      </tbody>
+    </table>
+    <p class="mini">Location: <code>Policies &amp; Compliance Portal/</code> · also <code>policies_portal.html</code></p>
+    <h3>Portal / operations</h3>
+    <table>
+      <thead><tr><th>Area</th><th>What exists</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Incidents</td><td>Submit, follow-up, notifications, support-plan link</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>ISP / support plans</td><td>Individual plans + behaviour strategy library</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>Training</td><td>Progress, events, signatures, expiry</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>HR matrix</td><td>Induction, safeguarding, first aid, docs</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>Contracts</td><td>Day Centre + personal care + DBS / regulated activity</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>Consents</td><td>Parents / offsite / emergency</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>Risk assessments</td><td>Pools, Hub, climbing, gym</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>Participant reports</td><td>Evidence of 1:1 / 2:1 and personal care (incl. NHS reports)</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>Rota / career framework</td><td>Day Centre 2026–27 (ratios, Service Lead)</td><td><span class="status have">Have</span></td></tr>
+        <tr><td>Induction</td><td>6 modules + Policies &amp; Protection</td><td><span class="status have">Have</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="block" id="checklist-en">
+    <span class="section-badge miss">Gaps</span>
+    <h2>6. CQC checklist (Path B — Personal care / domiciliary)</h2>
+    <p class="section-lead">
+      Core documents + domiciliary extras + autism/LD. Sources: CQC supporting documents + Feb 2026 changes.
+    </p>
+    <h3>A. Core documents</h3>
+    <table>
+      <thead><tr><th>#</th><th>Document</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Statement of Purpose</td><td><span class="status partial">Draft</span></td><td><a class="ext" href="statement-of-purpose.html">Draft created</a> — complete NI/RM/phone</td></tr>
+        <tr><td>2</td><td>Complaints policy</td><td><span class="status have">Have</span></td><td>POL-014 created</td></tr>
+        <tr><td>3</td><td>Consent policy &amp; procedure</td><td><span class="status have">Have</span></td><td>POL-015 created</td></tr>
+        <tr><td>4</td><td>Equality, diversity &amp; human rights</td><td><span class="status have">Have</span></td><td>Review POL-007</td></tr>
+        <tr><td>5</td><td>Governance &amp; quality assurance</td><td><span class="status have">Have</span></td><td>POL-016 created</td></tr>
+        <tr><td>6</td><td>Infection prevention &amp; control</td><td><span class="status have">Have</span></td><td>POL-017 created</td></tr>
+        <tr><td>7</td><td>Medicines management</td><td><span class="status have">Have</span></td><td>POL-018 created — MAR still needed</td></tr>
+        <tr><td>8</td><td>Recruitment policy</td><td><span class="status have">Have</span></td><td>Align to CQC safer recruitment</td></tr>
+        <tr><td>9</td><td>Safeguarding policy &amp; procedure</td><td><span class="status have">Have</span></td><td>Add local LA safeguarding contacts</td></tr>
+        <tr><td>10</td><td>Public &amp; employer liability insurance</td><td><span class="status have">Have</span></td><td><a class="ext" href="insurance-evidence-checklist.html">Hiscox on file</a> — fix Valetta Rd</td></tr>
+        <tr><td>11</td><td>Financial viability statement</td><td><span class="status partial">Draft</span></td><td><a class="ext" href="financial-viability-statement.html">Template</a> — figures + sign</td></tr>
+      </tbody>
+    </table>
+    <h3>B. Domiciliary care extras</h3>
+    <table>
+      <thead><tr><th>#</th><th>Document / form</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td>12</td><td>Provider application form(s)</td><td><span class="status miss">Missing</span></td><td>Download CQC forms</td></tr>
+        <tr><td>13</td><td>Additional information — personal care</td><td><span class="status miss">Missing</span></td><td>Mandatory extra form</td></tr>
+        <tr><td>14</td><td>Registered Manager application</td><td><span class="status miss">Missing</span></td><td>Person + fit &amp; proper pack</td></tr>
+        <tr><td>15</td><td>Business plan &amp; financial forecast</td><td><span class="status have">Have</span></td><td><a class="ext" href="business-plan-personal-care-2026-28.html">CQC-BP-001</a> — validate figures</td></tr>
+        <tr><td>16</td><td>Evidence of legal occupancy</td><td><span class="status miss">Missing</span></td><td>Lease / licence for office base</td></tr>
+        <tr><td>17</td><td>Service user guide</td><td><span class="status have">Have</span></td><td><a class="ext" href="service-user-guide.html">CQC-SUG-001</a> — complete TBC contacts</td></tr>
+        <tr><td>18</td><td>Staff training plan</td><td><span class="status partial">Partial</span></td><td>Unify induction + portal training</td></tr>
+        <tr><td>19</td><td>Sample care plan / care contract</td><td><span class="status partial">Partial</span></td><td>ISP + anonymised sample contract</td></tr>
+        <tr><td>20</td><td>Staffing structure &amp; rotas</td><td><span class="status have">Have</span></td><td>Use rota-career-framework 2026–27</td></tr>
+      </tbody>
+    </table>
+    <h3>C. Autism / learning disability</h3>
+    <table>
+      <thead><tr><th>#</th><th>Document</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td>21</td><td>Positive Behaviour Support (PBS) policy</td><td><span class="status have">Have</span></td><td>POL-019 created</td></tr>
+        <tr><td>22</td><td>Restraint / restrictive practice policy</td><td><span class="status have">Have</span></td><td>POL-020 created</td></tr>
+        <tr><td>23</td><td>Right Support, Right Care, Right Culture</td><td><span class="status miss">Missing</span></td><td>Form / narrative + SoP</td></tr>
+        <tr><td>24</td><td>Accessible information / communication</td><td><span class="status have">Have</span></td><td>POL-021 created</td></tr>
+        <tr><td>25</td><td>Oliver McGowan Mandatory Training</td><td><span class="status miss">Missing</span></td><td>Plan + HR / training records</td></tr>
+      </tbody>
+    </table>
+    <h3>D. Keep ready if requested</h3>
+    <ul class="clean">
+      <li>Duty of candour policy</li>
+      <li>Person-centred care planning policy</li>
+      <li>Reportable incidents / risk management (extend POL-013)</li>
+      <li>List of risk assessments (venue RAs already exist)</li>
+      <li>MCA / Mental Capacity / DoLS policy</li>
+      <li>DBS &lt; 12 months for directors, Nominated Individual, Registered Manager</li>
+      <li>References, CVs, proof of ID / address</li>
+    </ul>
+  </section>
+
+  <section class="block" id="roles-en">
+    <span class="section-badge next">People</span>
+    <h2>7. Roles you must name</h2>
+    <p class="section-lead">Without these fit &amp; proper people there is no registration.</p>
+    <div class="grid-3">
+      <div class="path">
+        <h3>Nominated Individual</h3>
+        <p>Legal representative of the LTD to CQC. Usually a director / CEO.</p>
+        <p class="mini">Status: <span class="status miss">To nominate</span></p>
+      </div>
+      <div class="path b">
+        <h3>Registered Manager</h3>
+        <p>Day-to-day lead for the regulated activity. Can be the Day Centre Service Lead.</p>
+        <p class="mini">Status: <span class="status miss">To nominate + application</span></p>
+      </div>
+      <div class="path c">
+        <h3>Directors / fit &amp; proper</h3>
+        <p>Enhanced DBS, refs, history. Aligned with recruitment policy.</p>
+        <p class="mini">Status: <span class="status partial">Partial</span></p>
+      </div>
+    </div>
+    <div class="callout note">
+      The Day Centre career framework already has a <strong>Service Lead</strong>
+      (<code>rota-career-framework-2026-27.html</code>). That can map to Registered Manager
+      with a named person, recent DBS and RM form.
+    </div>
+  </section>
+
+  <section class="block" id="autism-en">
+    <span class="section-badge warn">Autism / LD</span>
+    <h2>8. Autism / learning disability extras</h2>
+    <p class="section-lead">
+      With an autism / SEN cohort, Personal care applications fall under the strengthened regime
+      (Right Support + PBS + restraint + training).
+    </p>
+    <ul class="clean">
+      <li><strong>Right support, right care, right culture</strong> — small, person-centred model.</li>
+      <li><strong>PBS</strong> — policy + how it shows in portal ISPs.</li>
+      <li><strong>Restrictive practice</strong> — least restrictive, recording, review.</li>
+      <li><strong>Oliver McGowan</strong> — mandatory LD &amp; autism training.</li>
+      <li><strong>Communication</strong> — easy read, visual supports, AAC (practice yes; policy no).</li>
+    </ul>
+    <div class="callout">
+      Strength: you already produce progress reports (incl. NHS), ISPs and 1:1/2:1 ratios.
+      What is missing is packaging that into CQC language.
+    </div>
+  </section>
+
+  <section class="block" id="proceso-en">
+    <span class="section-badge">Process</span>
+    <h2>9. How to submit (2026)</h2>
+    <ol class="clean">
+      <li>Download forms:
+        <a class="ext" href="https://www.cqc.org.uk/guidance-regulation/providers/registration/register-provider/provider-application-forms" target="_blank" rel="noopener">CQC provider application forms</a></li>
+      <li>Complete provider + RM + additional personal care (+ Right Support if autism/LD).</li>
+      <li>Attach Statement of Purpose + policies + insurance + financial viability + extras.</li>
+      <li>Check consistency (name, address, service type, ratios).</li>
+      <li>Email <strong>HSCA_Applications@cqc.org.uk</strong> (ZIP &lt; 25MB; otherwise 1/2, 2/2…).</li>
+      <li>Incomplete / generic = immediate rejection → back of the queue.</li>
+    </ol>
+    <p class="mini">
+      <a class="ext" href="https://www.cqc.org.uk/guidance-regulation/registration/applying-new-provider-guidance" target="_blank" rel="noopener">Applying as a new provider</a> ·
+      <a class="ext" href="https://www.cqc.org.uk/guidance-regulation/registration/supporting-documents-provider" target="_blank" rel="noopener">Supporting documents</a> ·
+      <a class="ext" href="https://www.cqc.org.uk/guidance-regulation/registration/statement-purpose" target="_blank" rel="noopener">Statement of purpose</a>
+    </p>
+  </section>
+
+  <section class="block" id="acciones-en">
+    <span class="section-badge next">Next</span>
+    <h2>10. Next actions</h2>
+    <table>
+      <thead><tr><th>#</th><th>Action</th><th>Owner</th><th>Priority</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Email NHS: our model is Day Centre (~5h on site, changing/meds on site). Do you need CQC registration or a quality pack?</td><td>Directors</td><td><span class="status miss">P0</span></td></tr>
+        <tr><td>2</td><td>Choose Path A / B / C</td><td>Directors</td><td><span class="status miss">P0</span></td></tr>
+        <tr><td>3</td><td>Name Nominated Individual + Registered Manager</td><td>Directors</td><td><span class="status miss">P0</span></td></tr>
+        <tr><td>4</td><td>EL/PL on file — ask Hiscox for Shelton Street address; office lease still needed</td><td>Ops / finance</td><td><span class="status partial">P1</span></td></tr>
+        <tr><td>5</td><td>Statement of Purpose — complete NI/RM/contacts</td><td>Ops + legal</td><td><span class="status partial">P1</span></td></tr>
+        <tr><td>6</td><td>Policies 014–021 done (incl. PBS / Restrictive / Communication)</td><td>Compliance</td><td><span class="status have">Done</span></td></tr>
+        <tr><td>7</td><td>Business plan created — validate + sign financial viability</td><td>Finance</td><td><span class="status partial">P1</span></td></tr>
+        <tr><td>8</td><td>CQC training plan + Oliver McGowan in HR portal</td><td>HR / training</td><td><span class="status partial">P2</span></td></tr>
+        <tr><td>9</td><td>Service user guide created — add NI/RM/phone</td><td>Ops</td><td><span class="status partial">P2</span></td></tr>
+        <tr><td>10</td><td>Fit &amp; proper pack (DBS, refs, CVs)</td><td>HR</td><td><span class="status miss">P1</span></td></tr>
+        <tr><td>11</td><td>Only then: forms + submit to CQC</td><td>NI + RM</td><td><span class="status na">P3</span></td></tr>
+      </tbody>
+    </table>
+    <div class="callout note">
+      <strong>Possible next deliverable:</strong>
+      Statement of Purpose draft + missing policies (Complaints, Medicines, IPC, PBS, Restrictive practice)
+      in the POL-001–013 style.
+    </div>
+  </section>
+
+  <footer class="page-foot">
+    clubSENsational LTD · Company no. 13755417 ·
+    71-75 Shelton Street, Covent Garden, WC2H 9JQ, London ·
+    www.clubsensational.org<br />
+    Internal readiness document · not legal advice · always verify with CQC / a solicitor
+  </footer>
+
+  </div>
+
+</div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var buttons = document.querySelectorAll('.lang-btn');
+  function setLang(lang) {
+    root.lang = lang;
+    buttons.forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+    });
+    try { localStorage.setItem('cqc-readiness-lang', lang); } catch (e) {}
+  }
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      setLang(btn.getAttribute('data-lang'));
+    });
+  });
+  var saved = null;
+  try { saved = localStorage.getItem('cqc-readiness-lang'); } catch (e) {}
+  if (saved === 'en' || saved === 'es') setLang(saved);
+  else if ((navigator.language || '').toLowerCase().startsWith('en')) setLang('en');
+  else setLang('es');
+})();
+</script>
+</body>
+</html>

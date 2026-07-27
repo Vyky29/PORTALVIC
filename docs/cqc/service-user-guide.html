@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Service User Guide · clubSENsational LTD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #1a2a3a; --muted: #5b7280; --line: #d7e2e8; --navy: #35415d;
+    --gold: #f4bd2a; --gold-soft: #fff6dc; --teal: #0e7c86; --teal-deep: #0a5c63;
+    --teal-soft: #e6f3f4; --paper: #f5f7f9; --card: #fff;
+    --green: #15803d; --green-soft: #ecfdf5; --amber: #b45309; --amber-soft: #fffbeb;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; color: var(--ink);
+    font-family: "DM Sans", Helvetica, Arial, sans-serif;
+    font-size: 16px; line-height: 1.6;
+    background:
+      radial-gradient(900px 420px at 0% -10%, rgba(14,124,134,.10), transparent 55%),
+      radial-gradient(700px 380px at 100% 0%, rgba(244,189,42,.12), transparent 50%),
+      var(--paper);
+  }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 24px 18px 64px; }
+  .lang-bar { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 12px; }
+  .lang-btn {
+    appearance: none; border: 1px solid var(--line); background: var(--card);
+    color: var(--navy); font: inherit; font-size: 13px; font-weight: 700;
+    padding: 6px 12px; border-radius: 999px; cursor: pointer;
+  }
+  .lang-btn.active { background: var(--teal-deep); color: #fff; border-color: var(--teal-deep); }
+  html[lang="es"] .lang-en { display: none !important; }
+  html[lang="en"] .lang-es { display: none !important; }
+  .hero {
+    background: var(--card); border: 1px solid var(--line); border-radius: 20px;
+    padding: 24px 26px; margin-bottom: 18px; position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
+    background: linear-gradient(180deg, var(--gold), var(--teal));
+  }
+  .hero-top { display: flex; gap: 16px; align-items: center; }
+  .hero-top img { width: 80px; height: auto; display: block; }
+  .eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--teal); margin: 0 0 6px;
+  }
+  h1 {
+    font-family: Fraunces, Georgia, serif; font-size: clamp(1.5rem, 3vw, 2rem);
+    margin: 0 0 8px; color: var(--navy); line-height: 1.2;
+  }
+  .lead { margin: 0; color: var(--muted); max-width: 40rem; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .pill {
+    background: var(--teal-soft); color: var(--teal-deep); border-radius: 999px;
+    padding: 4px 11px; font-size: 12px; font-weight: 600;
+  }
+  .pill.gold { background: var(--gold-soft); color: #8a6500; }
+  .toc {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 14px 18px; margin-bottom: 18px; display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 13px;
+  }
+  .toc a { color: var(--teal-deep); text-decoration: none; font-weight: 600; }
+  .toc a:hover { text-decoration: underline; }
+  section.block {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 22px 24px; margin-bottom: 16px;
+  }
+  h2 {
+    font-family: Fraunces, Georgia, serif; font-size: 1.25rem;
+    margin: 0 0 10px; color: var(--navy);
+  }
+  h3 { font-size: 1rem; margin: 16px 0 8px; color: var(--navy); }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 12px; padding-left: 1.2rem; }
+  li { margin: 6px 0; }
+  .easy {
+    background: var(--green-soft); border: 1px solid #bbf7d0; border-radius: 14px;
+    padding: 16px 18px; margin: 12px 0;
+  }
+  .easy h3 { margin-top: 0; color: var(--green); }
+  .easy p, .easy li { font-size: 1.05rem; }
+  .callout {
+    border-left: 4px solid var(--gold); background: var(--gold-soft);
+    padding: 10px 14px; border-radius: 0 10px 10px 0; margin: 12px 0; font-size: 14.5px;
+  }
+  .callout.note { border-left-color: var(--teal); background: var(--teal-soft); }
+  .callout.warn { border-left-color: var(--amber); background: var(--amber-soft); }
+  .tbc {
+    background: var(--amber-soft); border: 1px dashed var(--amber);
+    border-radius: 8px; padding: 10px 12px; margin: 10px 0; font-size: 13.5px; color: #9a3412;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 10px 0 4px; }
+  th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--navy); color: #fff; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+  footer {
+    margin-top: 8px; padding: 14px 4px; font-size: 12px; color: var(--muted); text-align: center;
+  }
+  @media (max-width: 640px) {
+    .hero-top { flex-direction: column; align-items: flex-start; }
+  }
+  @media print {
+    body { background: #fff; }
+    .lang-bar, .toc { display: none; }
+    section.block, .hero { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lang-bar" role="group" aria-label="Language">
+    <button type="button" class="lang-btn" data-lang="es" id="btn-es">Español</button>
+    <button type="button" class="lang-btn active" data-lang="en" id="btn-en">English</button>
+  </div>
+
+  <!-- ================= ENGLISH ================= -->
+  <div class="lang-en" lang="en">
+
+  <header class="hero">
+    <div class="hero-top">
+      <img src="https://www.clubsensational.org/wp-content/uploads/2026/03/F-02-1.png" alt="clubSENsational" />
+      <div>
+        <p class="eyebrow">Service User &amp; Family Guide · Day Centre</p>
+        <h1>Welcome to clubSENsational</h1>
+        <p class="lead">
+          Plain-language guide for people who attend our Day Centre and their families.
+          It explains what happens in a typical ~5-hour day, including personal care on site, your rights, and how to get help.
+        </p>
+        <div class="meta">
+          <span class="pill">clubSENsational LTD · 13755417</span>
+          <span class="pill gold">Day Centre · ~5 hours on site</span>
+          <span class="pill">July 2026</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Contents">
+    <a href="#en-easy">Easy summary</a>
+    <a href="#en-who">Who we are</a>
+    <a href="#en-what">What we offer</a>
+    <a href="#en-start">Starting support</a>
+    <a href="#en-rights">Your rights</a>
+    <a href="#en-staff">Our staff</a>
+    <a href="#en-safety">Safety</a>
+    <a href="#en-complain">Complaints</a>
+    <a href="#en-contact">Contact</a>
+  </nav>
+
+  <section class="block" id="en-easy">
+    <h2>Easy summary</h2>
+    <div class="easy">
+      <h3>What this means for you</h3>
+      <ul>
+        <li>If you need it, we help with changing, toileting, washing after activities, and medicine only if it is in your plan.</li>
+        <li>You come to our Day Centre for about 5 hours. Staff you know support you there.</li>
+        <li>We write a plan with you and your family before we start.</li>
+        <li>You can say yes or no. We listen.</li>
+        <li>If something is wrong, you can tell us. We will help put it right.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="block" id="en-who">
+    <h2>1. Who we are</h2>
+    <p><strong>clubSENsational LTD</strong> supports autistic people and people with learning disabilities and related special educational needs.</p>
+    <table>
+      <tr><th>Detail</th><th>Information</th></tr>
+      <tr><td>Company</td><td>clubSENsational LTD · Company no. 13755417</td></tr>
+      <tr><td>Address</td><td>71-75 Shelton Street, Covent Garden, WC2H 9JQ, London</td></tr>
+      <tr><td>Website</td><td>www.clubsensational.org</td></tr>
+      <tr><td>Service type</td><td>Day Centre — autism / SEN day support</td></tr>
+    </table>
+    <div class="callout warn">
+      <strong>Important:</strong> This is a Day Centre service. It is not a domiciliary home-care service.
+    </div>
+    <div class="callout note">
+      Sessions may include classroom / Hub time and linked activities such as swimming.
+      Personal care (changing, hygiene, medication if agreed) happens <strong>at the centre</strong>, not in your home.
+    </div>
+  </section>
+
+  <section class="block" id="en-what">
+    <h2>2. What personal care means here</h2>
+    <p>During your day at the centre, support may include hands-on help you cannot manage safely alone, for example:</p>
+    <ul>
+      <li>Washing, bathing or showering</li>
+      <li>Dressing and undressing</li>
+      <li>Going to the toilet / continence support</li>
+      <li>Help with personal hygiene</li>
+      <li>Prompting or supporting medicines <em>only if this is written in your plan</em> (on site during the session)</li>
+    </ul>
+    <p>We also support communication, sensory needs and predictable routines. Staffing may be 1:1 or 2:1 when your assessment says you need continuous adult support.</p>
+    <p><strong>We do not</strong> provide overnight residential care, and we do not normally visit your home for personal care. Support is during the Day Centre session.</p>
+  </section>
+
+  <section class="block" id="en-start">
+    <h2>3. How support starts</h2>
+    <ol>
+      <li>We talk with you, your family and (if involved) the NHS or local authority.</li>
+      <li>We agree what help you need and write an <strong>individual support / care plan</strong>.</li>
+      <li>We collect consents and emergency contacts.</li>
+      <li>We match trained staff and explain who will support you.</li>
+      <li>We review the plan when needs change, or at least once a year.</li>
+    </ol>
+    <div class="callout">
+      You (or someone with parental responsibility / legal authority) must agree before personal care starts.
+      You can change your mind later.
+    </div>
+  </section>
+
+  <section class="block" id="en-rights">
+    <h2>4. Your rights</h2>
+    <ul>
+      <li>To be treated with dignity, respect and without discrimination</li>
+      <li>To be involved in decisions about your care, in a way you understand</li>
+      <li>To privacy during personal care</li>
+      <li>To say no to care (if you have capacity) — we will keep you safe and talk about options</li>
+      <li>To have information in accessible formats (easy read, visuals, AAC where needed)</li>
+      <li>To complain without fear</li>
+      <li>To have your personal information kept confidential under UK data protection law</li>
+    </ul>
+  </section>
+
+  <section class="block" id="en-staff">
+    <h2>5. Our staff</h2>
+    <ul>
+      <li>Enhanced DBS checks (with barred list where required) before regulated duties</li>
+      <li>Induction, safeguarding and role training</li>
+      <li>Training for autism / learning disability (including Oliver McGowan where required)</li>
+      <li>Follow your plan — they should not invent unsafe shortcuts</li>
+    </ul>
+    <p>If you are unhappy with a worker, tell us. We will listen and act fairly.</p>
+  </section>
+
+  <section class="block" id="en-safety">
+    <h2>6. Keeping you safe</h2>
+    <p>We follow our Safeguarding, Health &amp; Safety, Infection Prevention, Medicines and Positive Behaviour Support policies.</p>
+    <ul>
+      <li>We prefer calm, least-restrictive support. Restriction is only if necessary for safety and must be recorded.</li>
+      <li>Incidents are recorded and followed up.</li>
+      <li>If we worry you are at risk of harm, we may need to share information with safeguarding services.</li>
+    </ul>
+  </section>
+
+  <section class="block" id="en-complain">
+    <h2>7. If something is wrong</h2>
+    <p><strong>Talk to us first</strong> — your key worker or session lead can often fix things quickly.</p>
+    <p><strong>Formal complaint</strong> — email or write to the service manager / Nominated Individual. We aim to:</p>
+    <ul>
+      <li>Acknowledge within <strong>3 working days</strong></li>
+      <li>Give a written outcome within <strong>20 working days</strong> (or agree a longer timescale with you)</li>
+    </ul>
+    <p>You can also ask a family member, advocate, NHS or local authority contact to help you complain.</p>
+    <p>After we are registered with CQC, you can raise concerns about a registered service with the Care Quality Commission as well.</p>
+  </section>
+
+  <section class="block" id="en-contact">
+    <h2>8. How to contact us</h2>
+    <table>
+      <tr><th>Need</th><th>Contact</th></tr>
+      <tr><td>General / website</td><td>www.clubsensational.org</td></tr>
+      <tr><td>Registered address</td><td>71-75 Shelton Street, Covent Garden, WC2H 9JQ, London</td></tr>
+      <tr><td>Nominated Individual</td><td><em>TBC — name, email, phone</em></td></tr>
+      <tr><td>Registered Manager</td><td><em>TBC — name, email, phone</em></td></tr>
+      <tr><td>Out-of-hours emergency</td><td><em>TBC — or call 999 if someone is in immediate danger</em></td></tr>
+    </table>
+    <div class="tbc"><strong>Before CQC submission:</strong> replace all TBC contacts with named people and phone numbers.</div>
+    <p>Full policies (Complaints, Safeguarding, Consent, PBS, and others) are available on request and via our policies portal for staff.</p>
+  </section>
+
+  <footer>
+    clubSENsational LTD · Company no. 13755417 ·
+    71-75 Shelton Street, Covent Garden, WC2H 9JQ, London ·
+    www.clubsensational.org<br />
+    Service User Guide · CQC-SUG-001 · Version 1.0 · July 2026 · Accessible formats available on request
+  </footer>
+  </div>
+
+  <!-- ================= SPANISH ================= -->
+  <div class="lang-es" lang="es">
+
+  <header class="hero">
+    <div class="hero-top">
+      <img src="https://www.clubsensational.org/wp-content/uploads/2026/03/F-02-1.png" alt="clubSENsational" />
+      <div>
+        <p class="eyebrow">Guía para usuarios y familias · Day Centre</p>
+        <h1>Bienvenidos a clubSENsational</h1>
+        <p class="lead">
+          Guía en lenguaje claro para quien asiste al Day Centre y sus familias.
+          Explica el día típico (~5h), el cuidado personal en el centro, derechos y cómo pedir ayuda.
+        </p>
+        <div class="meta">
+          <span class="pill">clubSENsational LTD · 13755417</span>
+          <span class="pill gold">Day Centre · ~5 horas en el centro</span>
+          <span class="pill">Julio 2026</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Contenidos">
+    <a href="#es-easy">Resumen fácil</a>
+    <a href="#es-who">Quiénes somos</a>
+    <a href="#es-what">Qué ofrecemos</a>
+    <a href="#es-start">Cómo empieza</a>
+    <a href="#es-rights">Tus derechos</a>
+    <a href="#es-staff">Nuestro equipo</a>
+    <a href="#es-safety">Seguridad</a>
+    <a href="#es-complain">Quejas</a>
+    <a href="#es-contact">Contacto</a>
+  </nav>
+
+  <section class="block" id="es-easy">
+    <h2>Resumen fácil</h2>
+    <div class="easy">
+      <h3>Qué significa para ti</h3>
+      <ul>
+        <li>Si lo necesitas, te ayudamos con changing, ir al baño, higiene tras actividades, y medicación solo si está en tu plan.</li>
+        <li>Vienes a nuestro Day Centre unas 5 horas. Allí te apoyan adultos que te conocen.</li>
+        <li>Antes de empezar escribimos un plan contigo y tu familia.</li>
+        <li>Puedes decir sí o no. Te escuchamos.</li>
+        <li>Si algo va mal, puedes decírnoslo. Te ayudamos a arreglarlo.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="block" id="es-who">
+    <h2>1. Quiénes somos</h2>
+    <p><strong>clubSENsational LTD</strong> apoya a personas autistas y personas con discapacidad de aprendizaje y necesidades educativas especiales relacionadas.</p>
+    <table>
+      <tr><th>Dato</th><th>Información</th></tr>
+      <tr><td>Empresa</td><td>clubSENsational LTD · Nº 13755417</td></tr>
+      <tr><td>Dirección</td><td>71-75 Shelton Street, Covent Garden, WC2H 9JQ, London</td></tr>
+      <tr><td>Web</td><td>www.clubsensational.org</td></tr>
+      <tr><td>Tipo de servicio</td><td>Day Centre — apoyo diurno autism / SEN</td></tr>
+    </table>
+    <div class="callout warn">
+      <strong>Importante:</strong> Esto es un Day Centre. No es un servicio de cuidado a domicilio.
+    </div>
+    <div class="callout note">
+      La sesión puede incluir aula / Hub y actividades como natación.
+      El cuidado personal (changing, higiene, medicación si está acordada) es <strong>en el centro</strong>, no en tu casa.
+    </div>
+  </section>
+
+  <section class="block" id="es-what">
+    <h2>2. Qué es personal care aquí</h2>
+    <p>Durante el día en el centro, el apoyo puede incluir ayuda práctica que no puedes hacer con seguridad solo/a, por ejemplo:</p>
+    <ul>
+      <li>Lavarte, bañarte o ducharte</li>
+      <li>Vestirte y desvestirte</li>
+      <li>Ir al baño / apoyo de continencia</li>
+      <li>Higiene personal</li>
+      <li>Recordar o ayudar con medicación <em>solo si está en tu plan</em> (en el centro, durante la sesión)</li>
+    </ul>
+    <p>También apoyamos comunicación, necesidades sensoriales y rutinas predecibles. La ratio puede ser 1:1 o 2:1 si la evaluación dice que necesitas un adulto siempre.</p>
+    <p><strong>No</strong> damos cuidado residencial con pernocta, y normalmente no vamos a tu casa a hacer personal care. El apoyo es durante la sesión del Day Centre.</p>
+  </section>
+
+  <section class="block" id="es-start">
+    <h2>3. Cómo empieza el apoyo</h2>
+    <ol>
+      <li>Hablamos contigo, tu familia y (si aplica) el NHS o el ayuntamiento.</li>
+      <li>Acordamos la ayuda y escribimos un <strong>plan individual de apoyo / cuidado</strong>.</li>
+      <li>Recogemos consentimientos y contactos de emergencia.</li>
+      <li>Asignamos personal formado y te explicamos quién te apoyará.</li>
+      <li>Revisamos el plan cuando cambian las necesidades, o al menos una vez al año.</li>
+    </ol>
+    <div class="callout">
+      Tú (o quien tenga responsabilidad parental / autoridad legal) debe estar de acuerdo antes de empezar.
+      Más adelante puedes cambiar de opinión.
+    </div>
+  </section>
+
+  <section class="block" id="es-rights">
+    <h2>4. Tus derechos</h2>
+    <ul>
+      <li>Trato con dignidad, respeto y sin discriminación</li>
+      <li>Participar en las decisiones sobre tu cuidado, de forma que entiendas</li>
+      <li>Privacidad durante el cuidado personal</li>
+      <li>Decir no al cuidado (si tienes capacidad) — te mantendremos seguro/a y hablaremos de opciones</li>
+      <li>Información accesible (easy read, visuales, AAC si hace falta)</li>
+      <li>Quejarte sin miedo</li>
+      <li>Que tus datos se traten según la ley de protección de datos del Reino Unido</li>
+    </ul>
+  </section>
+
+  <section class="block" id="es-staff">
+    <h2>5. Nuestro equipo</h2>
+    <ul>
+      <li>DBS enhanced (con barred list cuando corresponda) antes de tareas reguladas</li>
+      <li>Inducción, safeguarding y formación del rol</li>
+      <li>Formación autism / learning disability (incl. Oliver McGowan cuando aplique)</li>
+      <li>Siguen tu plan — no deben inventar atajos inseguros</li>
+    </ul>
+    <p>Si no estás a gusto con un trabajador/a, dínoslo. Escuchamos y actuamos con justicia.</p>
+  </section>
+
+  <section class="block" id="es-safety">
+    <h2>6. Tu seguridad</h2>
+    <p>Seguimos las políticas de Safeguarding, Health &amp; Safety, Infection Prevention, Medicines y Positive Behaviour Support.</p>
+    <ul>
+      <li>Preferimos apoyo calmado y lo menos restrictivo posible. Cualquier restricción solo si es necesaria y debe registrarse.</li>
+      <li>Los incidentes se registran y se hace seguimiento.</li>
+      <li>Si creemos que hay riesgo de daño, puede que tengamos que informar a safeguarding.</li>
+    </ul>
+  </section>
+
+  <section class="block" id="es-complain">
+    <h2>7. Si algo va mal</h2>
+    <p><strong>Háblanos primero</strong> — tu key worker o el lead de sesión a menudo puede resolverlo rápido.</p>
+    <p><strong>Queja formal</strong> — email o carta al service manager / Nominated Individual. Objetivo:</p>
+    <ul>
+      <li>Acusar recibo en <strong>3 días laborables</strong></li>
+      <li>Respuesta escrita en <strong>20 días laborables</strong> (o plazo acordado contigo)</li>
+    </ul>
+    <p>También puede ayudarte un familiar, un advocate, o tu contacto del NHS / ayuntamiento.</p>
+    <p>Cuando estemos registrados en CQC, también podrás plantear preocupaciones a la Care Quality Commission.</p>
+  </section>
+
+  <section class="block" id="es-contact">
+    <h2>8. Contacto</h2>
+    <table>
+      <tr><th>Necesitas</th><th>Contacto</th></tr>
+      <tr><td>General / web</td><td>www.clubsensational.org</td></tr>
+      <tr><td>Dirección registrada</td><td>71-75 Shelton Street, Covent Garden, WC2H 9JQ, London</td></tr>
+      <tr><td>Nominated Individual</td><td><em>TBC — nombre, email, teléfono</em></td></tr>
+      <tr><td>Registered Manager</td><td><em>TBC — nombre, email, teléfono</em></td></tr>
+      <tr><td>Emergencia fuera de horario</td><td><em>TBC — o 999 si hay peligro inmediato</em></td></tr>
+    </table>
+    <div class="tbc"><strong>Antes de enviar a CQC:</strong> sustituir todos los TBC por personas y teléfonos reales.</div>
+    <p>Las políticas completas están disponibles bajo petición y en el portal de políticas para el staff.</p>
+  </section>
+
+  <footer>
+    clubSENsational LTD · Company no. 13755417 ·
+    71-75 Shelton Street, Covent Garden, WC2H 9JQ, London ·
+    www.clubsensational.org<br />
+    Service User Guide · CQC-SUG-001 · Versión 1.0 · Julio 2026 · Formatos accesibles bajo petición
+  </footer>
+  </div>
+
+</div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var buttons = document.querySelectorAll('.lang-btn');
+  function setLang(lang) {
+    root.lang = lang;
+    buttons.forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+    });
+    try { localStorage.setItem('cqc-sug-lang', lang); } catch (e) {}
+  }
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      setLang(btn.getAttribute('data-lang'));
+    });
+  });
+  var saved = null;
+  try { saved = localStorage.getItem('cqc-sug-lang'); } catch (e) {}
+  if (saved === 'en' || saved === 'es') setLang(saved);
+  else if ((navigator.language || '').toLowerCase().startsWith('es')) setLang('es');
+  else setLang('en');
+})();
+</script>
+</body>
+</html>
