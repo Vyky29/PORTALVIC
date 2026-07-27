@@ -1047,6 +1047,40 @@ function portalTimedKeyCoversMergeGroupRosterKey(submittedKey, rosterKey, mergeR
   return false;
 }
 
+/**
+ * Timed submit (e.g. 2026-07-05|09:00|yusuf_ah|big_pool) covers the Today merge card
+ * key (2026-07-05|merge|yusuf_ah_roberto_9am). Without this, outstanding feedback keeps
+ * nagging after Roberto already filed Yusuf Ah Sun.
+ */
+function portalTimedKeyCoversMergeCardRosterKey(submittedKey, mergeRosterKey, mergeRules) {
+  const s = String(submittedKey || "").trim();
+  const r = String(mergeRosterKey || "").trim();
+  if (!s || !r || portalSubmittedKeyIsMergeFeedback(s)) return false;
+  const m = r.match(/^(\d{4}-\d{2}-\d{2})\|merge\|(.+)$/i);
+  if (!m) return false;
+  const date = m[1];
+  const mergeKey = String(m[2] || "").trim();
+  if (s.split("|")[0] !== date) return false;
+  const sTime = portalSessionKeyTimeToken(s);
+  if (!sTime) return false;
+  const sSlugs = portalFeedbackParticipantSlugTokensFromKey(s);
+  if (!sSlugs.length) return false;
+  const rules = Array.isArray(mergeRules) ? mergeRules : [];
+  const rule = rules.find((x) => String(x && x.mergeKey ? x.mergeKey : "").trim() === mergeKey);
+  if (!rule) return false;
+  const clientSlug = portalSlugifyFeedbackName(rule.client_name);
+  if (!clientSlug) return false;
+  if (!sSlugs.some((ss) => portalClientSlugTokensEquivalent(ss, clientSlug))) return false;
+  const wd = portalLondonWeekdayLongFromIso(date);
+  if (rule.day && String(rule.day).trim() !== wd) return false;
+  const allowed = new Set();
+  for (const slot of rule.slots || []) {
+    const hm = portalMergeRuleSlotStartHm(slot && slot.time_slot, rule.day);
+    if (hm) allowed.add(hm);
+  }
+  return allowed.has(sTime);
+}
+
 /** Participant client slug tokens only (excludes aquatic, day_centre, pool area, …). */
 function portalFeedbackParticipantSlugTokensFromKey(key) {
   return clientSlugTokensFromPortalSessionKey(key).filter(
@@ -1229,6 +1263,10 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
   if (s === r) return true;
   if (portalSubmittedKeyIsMergeFeedback(s)) {
     return portalFeedbackMergeKeyMatchesRosterKey(s, r, opts.feedbackMergeRules);
+  }
+  /* Timed DB key → Today merged card (date|merge|…). */
+  if (portalSubmittedKeyIsMergeFeedback(r)) {
+    return portalTimedKeyCoversMergeCardRosterKey(s, r, opts.feedbackMergeRules);
   }
   const rParts = r.split("|");
   const sParts = s.split("|");

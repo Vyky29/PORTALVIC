@@ -920,16 +920,50 @@
     return /aquatic|multi[-\s]?activity/.test(act);
   }
 
+  function sundayMergeAllowedStartsForSession(iso, s, clientNotesById) {
+    const day = String(iso || "")
+      .trim()
+      .substring(0, 10);
+    const dow =
+      String(s && s.day ? s.day : "").trim() ||
+      new Date(day + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long" });
+    if (dow !== "Sunday") return null;
+    const rosterKey = rosterKeyForSession(s, clientNotesById);
+    if (!rosterKey) return null;
+    const rules = rosterFeedbackMergeRules();
+    for (let i = 0; i < rules.length; i++) {
+      const rule = rules[i];
+      if (!rule) continue;
+      if (rule.day && String(rule.day).trim() !== dow) continue;
+      const ruleClient = slug(rule.client_name);
+      if (!ruleClient || !clientSlugTokensEquivalent(ruleClient, rosterKey)) continue;
+      const allowed = new Set();
+      for (let j = 0; j < (rule.slots || []).length; j++) {
+        const hm = mergeRuleSlotStartHm(rule.slots[j] && rule.slots[j].time_slot);
+        if (hm) allowed.add(hm);
+      }
+      if (allowed.size >= 2) return allowed;
+    }
+    return null;
+  }
+
   function submittedSundaySwimfarmSiblingCovers(iso, staffId, s, clientNotesById) {
     if (!isSundaySwimfarmAquaticOrMultiSession(s, iso)) return false;
     const wantStart = normalizeHmToken(s.start);
     if (!wantStart) return false;
+    const mergeStarts = sundayMergeAllowedStartsForSession(iso, s, clientNotesById);
+    const rosterKey = rosterKeyForSession(s, clientNotesById);
     return submittedRowsForStaffDate(iso, staffId).some(function (r) {
       if (submittedRowMarksAbsent(r)) return false;
-      if (!submittedRowCoversRosterSession(r, s, clientNotesById)) return false;
+      const rKey = slug(r && r.clientName);
+      if (!rosterKey || !rKey || !clientSlugTokensEquivalent(rosterKey, rKey)) return false;
       const pk = String((r.portalSessionKey || r.portal_session_key) || "").trim();
       const rStart = portalRowTimeTokenFromKey(pk);
-      return !rStart || rStart === wantStart;
+      if (!rStart) return false;
+      if (rStart === wantStart) return true;
+      /* Yusuf Ah Roberto: 09:00 big_pool submit covers 09:30 multi slice in same merge. */
+      if (mergeStarts && mergeStarts.has(wantStart) && mergeStarts.has(rStart)) return true;
+      return false;
     });
   }
 
