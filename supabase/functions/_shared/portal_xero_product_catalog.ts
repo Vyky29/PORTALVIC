@@ -537,3 +537,111 @@ export function lineItemsToDescription(
       .join("\n")
   );
 }
+
+function cleanLine(v: unknown, max = 500): string {
+  return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function paymentChannelLabel(hint: string): string {
+  const h = hint.toLowerCase();
+  if (h === "gocardless") return "Direct Payment (GoCardless)";
+  if (h === "la_funded") return "LA funded";
+  if (h === "payment_link") return "Card / Apple Pay";
+  if (h === "other") return "Other";
+  return "Bank transfer";
+}
+
+/**
+ * Xero ACCREC line Description — same narrative shape as the parent Portal PDF:
+ * lead paragraph, participant / reference / payment method, then product + session + dates.
+ * Keeps ItemCode (SW2 etc.) separate; only the Description text is rewritten.
+ */
+export function buildXeroPushLines(input: {
+  lineItems: unknown;
+  lineDescription?: string | null;
+  vatMode?: string | null;
+  participantName?: string | null;
+  reference?: string | null;
+  paymentMethodHint?: string | null;
+  paymentMethodLabel?: string | null;
+}): Array<{
+  description: string;
+  quantity: number;
+  unitAmount: number;
+  itemCode: string | null;
+}> {
+  const vatMode = cleanLine(input.vatMode, 20).toLowerCase() || "vat_20";
+  const funded = vatMode === "exempt";
+  const raw = Array.isArray(input.lineItems) ? input.lineItems : [];
+  const parsed: PortalInvoiceLineItem[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== "object") continue;
+    const ln = row as Record<string, unknown>;
+    const qty = Number(ln.quantity) > 0 ? Number(ln.quantity) : 1;
+    const amt = Number(ln.amount_gbp);
+    const unit = Number(ln.unit_price_gbp);
+    const unitAmount =
+      Number.isFinite(unit) && unit !== 0
+        ? unit
+        : Number.isFinite(amt) && amt !== 0
+          ? amt / qty
+          : 0;
+    if (!Number.isFinite(unitAmount) || unitAmount === 0) continue;
+    parsed.push({
+      service_key: cleanLine(ln.service_key, 80),
+      description: cleanLine(ln.description, 800),
+      detail: cleanLine(ln.detail, 240) || null,
+      dates: cleanLine(ln.dates, 500) || null,
+      quantity: qty,
+      unit_price_gbp: unitAmount,
+      amount_gbp: Number.isFinite(amt) && amt !== 0 ? amt : unitAmount * qty,
+      xero_item_code: cleanLine(ln.xero_item_code, 80) || null,
+    });
+  }
+
+  const lead =
+    (parsed.length
+      ? funded
+        ? fundedProvisionDescriptionLead(parsed)
+        : "Structured activity support delivered for a SEND participant."
+      : "") ||
+    String(input.lineDescription || "")
+      .split(/\n/)
+      .map((s) => s.trim())
+      .find(Boolean) ||
+    (funded
+      ? "Structured activity support delivered within a structured activity environment for a SEND participant as part of funded provision."
+      : "Structured activity support delivered for a SEND participant.");
+
+  const participant = cleanLine(input.participantName, 120);
+  const reference = cleanLine(input.reference, 120);
+  const method =
+    cleanLine(input.paymentMethodLabel, 160) ||
+    paymentChannelLabel(cleanLine(input.paymentMethodHint, 40));
+
+  const metaBlock = [
+    participant ? `Participant's Name: ${participant}` : "",
+    reference ? `- Reference: ${reference}` : "",
+    method ? `- Payment Method: ${method}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  if (!parsed.length) return [];
+
+  return parsed.map((ln, idx) => {
+    const productBlock = [ln.description, ln.detail || "", ln.dates || ""]
+      .filter(Boolean)
+      .join("\n");
+    const description =
+      idx === 0
+        ? [lead, metaBlock, productBlock].filter(Boolean).join("\n\n").slice(0, 4000)
+        : productBlock.slice(0, 4000);
+    return {
+      description,
+      quantity: ln.quantity,
+      unitAmount: ln.unit_price_gbp,
+      itemCode: ln.xero_item_code,
+    };
+  });
+}
