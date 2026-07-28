@@ -633,10 +633,14 @@ export function buildXeroPushLines(input: {
     const productBlock = [ln.description, ln.detail || "", ln.dates || ""]
       .filter(Boolean)
       .join("\n");
+    /*
+     * Lead on every Xero line (multi-product invoices). Meta (participant /
+     * reference / payment) only on the first line to avoid repeating PII.
+     */
     const description =
       idx === 0
         ? [lead, metaBlock, productBlock].filter(Boolean).join("\n\n").slice(0, 4000)
-        : productBlock.slice(0, 4000);
+        : [lead, productBlock].filter(Boolean).join("\n\n").slice(0, 4000);
     return {
       description,
       quantity: ln.quantity,
