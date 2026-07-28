@@ -1022,6 +1022,14 @@
         "</span>"
       );
     }
+    if (pay === "pending") {
+      return (
+        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--pending" data-pp-hub-reenrol-chip role="status" title="Re-enrolled — waiting for the office to confirm payment">' +
+        '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
+        "<span>Re-enrolled (awaiting admin confirmation)</span>" +
+        "</span>"
+      );
+    }
     return (
       '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip" data-pp-hub-reenrol-chip role="status" title="Re-enrolled for 2026/27">' +
       '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
@@ -1033,7 +1041,8 @@
   /**
    * Hub visual for 2026/27 place:
    *  unconfirmed — not re-enrolled (red blink)
-   *  unpaid — re-enrolled, term invoice not fully paid (orange blink)
+   *  unpaid — re-enrolled, term invoice not paid yet (orange)
+   *  pending — parent tapped I've paid; office has not confirmed (amber)
    *  settled — term invoice(s) paid, or true office-billed LA/NHS with no parent term invoice
    *
    * Direct Payments / "Using Funds from LA" must stay orange until paid — do not
@@ -1042,6 +1051,7 @@
   function hubReenrolPayState(data) {
     if (!familyAcceptedNextYear(data)) return "unconfirmed";
     if (data && data._hubReenrolPay === "settled") return "settled";
+    if (data && data._hubReenrolPay === "pending") return "pending";
     if (data && data._hubReenrolPay === "unpaid") return "unpaid";
     /* Until invoices resolve, assume unpaid so orange shows immediately. */
     return "unpaid";
@@ -1051,6 +1061,7 @@
     var pay = hubReenrolPayState(data);
     if (pay === "unconfirmed") return " pp-hub-term-block--unconfirmed";
     if (pay === "unpaid") return " pp-hub-term-block--unpaid";
+    if (pay === "pending") return " pp-hub-term-block--pending";
     return " pp-hub-term-block--settled";
   }
 
@@ -1096,6 +1107,27 @@
 
   function isInvoiceFullyPaid(inv) {
     return String((inv && inv.payment_status) || "").toLowerCase() === "paid";
+  }
+
+  function isInvoicePendingConfirmation(inv) {
+    return String((inv && inv.payment_status) || "").toLowerCase() === "pending_confirmation";
+  }
+
+  /** Hub pay state from term invoices: settled | pending | unpaid | null (no term rows). */
+  function termInvoicesHubPayState(term) {
+    if (!term || !term.length) return null;
+    if (term.every(isInvoiceFullyPaid)) return "settled";
+    var hasOpen = false;
+    var hasPending = false;
+    for (var i = 0; i < term.length; i++) {
+      var st = String((term[i] && term[i].payment_status) || "").toLowerCase();
+      if (st === "paid" || st === "void") continue;
+      if (st === "pending_confirmation") hasPending = true;
+      else hasOpen = true;
+    }
+    if (hasOpen) return "unpaid";
+    if (hasPending) return "pending";
+    return "unpaid";
   }
 
   function invoiceBlobText(inv) {
@@ -1283,6 +1315,7 @@
       block.classList.remove(
         "pp-hub-term-block--unconfirmed",
         "pp-hub-term-block--unpaid",
+        "pp-hub-term-block--pending",
         "pp-hub-term-block--settled",
       );
       block.classList.add(
@@ -1290,7 +1323,9 @@
           ? "pp-hub-term-block--unconfirmed"
           : state === "unpaid"
             ? "pp-hub-term-block--unpaid"
-            : "pp-hub-term-block--settled",
+            : state === "pending"
+              ? "pp-hub-term-block--pending"
+              : "pp-hub-term-block--settled",
       );
       var acc = block.querySelector(".pp-hub-ops__term-accordion");
       if (acc) {
@@ -1361,7 +1396,7 @@
         var booking = bookingSummary(data);
         var nextState = "unpaid";
         if (term.length) {
-          nextState = term.every(isInvoiceFullyPaid) ? "settled" : "unpaid";
+          nextState = termInvoicesHubPayState(term) || "unpaid";
         } else if (!booking.show_invoices) {
           /* True office-billed LA/NHS: no parent term invoice to pay. */
           nextState = "settled";
@@ -7808,7 +7843,13 @@
                 (j && j.message) ||
                   "Thanks — the office will confirm when the payment appears.",
               );
-              return refreshList();
+              return refreshList().then(function () {
+                /* Hub chip: unpaid → awaiting admin confirmation for everyone. */
+                try {
+                  var shell = host.closest(".pp-pax-shell") || document;
+                  mountHubReenrolPaymentState(shell, data, opts);
+                } catch (_hub) {}
+              });
             })
             .catch(function (err) {
               btn.disabled = false;

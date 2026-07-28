@@ -1394,6 +1394,19 @@
     .pp-hub-term-block--this.pp-hub-term-block--unpaid .pp-hub-ops__term-accordion:not(.pp-hub-ops__term-accordion--completed) .pp-hub-ops__term-chevron {
       color: #ea580c;
     }
+    /* Parent tapped I've paid — waiting for office to mark paid (amber, no blink). */
+    .pp-hub-term-block--this.pp-hub-term-block--pending .pp-hub-ops__term-accordion:not(.pp-hub-ops__term-accordion--completed) {
+      background: rgba(254, 243, 199, 0.9);
+      border-color: rgba(217, 119, 6, 0.4);
+      animation: none;
+      box-shadow: none;
+    }
+    .pp-hub-term-block--this.pp-hub-term-block--pending .pp-hub-ops__term-accordion:not(.pp-hub-ops__term-accordion--completed) > .pp-hub-ops__term-summary {
+      color: #92400e;
+    }
+    .pp-hub-term-block--this.pp-hub-term-block--pending .pp-hub-ops__term-accordion:not(.pp-hub-ops__term-accordion--completed) .pp-hub-ops__term-chevron {
+      color: #d97706;
+    }
     @media (prefers-reduced-motion: reduce) {
       .pp-hub-term-block--this.pp-hub-term-block--unconfirmed .pp-hub-ops__term-accordion:not(.pp-hub-ops__term-accordion--completed) {
         animation: none;
@@ -2562,9 +2575,25 @@
       text-overflow: unset;
       overflow: visible;
     }
-    /* Tick stays green even on the orange unpaid chip. */
+    .pp-hub-reenrolled--pending {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #f59e0b;
+    }
+    .pp-hub-reenrolled--chip.pp-hub-reenrolled--pending {
+      background: #fef3c7;
+      color: #92400e;
+      border-color: #f59e0b;
+      white-space: normal;
+      overflow-wrap: break-word;
+      text-overflow: unset;
+      overflow: visible;
+    }
+    /* Tick stays green even on the orange unpaid / amber pending chip. */
     .pp-hub-reenrolled--unpaid .pp-hub-reenrolled__mark,
-    .pp-hub-reenrolled--chip.pp-hub-reenrolled--unpaid .pp-hub-reenrolled__mark {
+    .pp-hub-reenrolled--chip.pp-hub-reenrolled--unpaid .pp-hub-reenrolled__mark,
+    .pp-hub-reenrolled--pending .pp-hub-reenrolled__mark,
+    .pp-hub-reenrolled--chip.pp-hub-reenrolled--pending .pp-hub-reenrolled__mark {
       background: #16a34a;
       color: #fff;
     }
@@ -5117,7 +5146,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260723-date-svc-stack"></script>
   <script src="/portal/parent_portal_team.js?v=20260710-eiji-hazem-photos"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260715-crash-cal-first"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260728-book-more-services"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260728-awaiting-admin"></script>
   <script src="/portal/parent_portal_app.js?v=20260722-former-no-login"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
