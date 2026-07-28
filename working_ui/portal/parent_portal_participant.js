@@ -2325,7 +2325,7 @@
       var jsDow = day.getDay();
       var col = jsDow === 0 ? 6 : jsDow - 1;
       detail.forEach(function (s) {
-        if (dayNameToCalCol(s && s.day) !== col) return;
+        if (serviceDetailCalCol(s) !== col) return;
         var end = parseServiceEndMinutes(s.time);
         if (end != null) ends.push(end);
       });
@@ -2632,7 +2632,7 @@
     if (!detail.length) return [];
     var byCol = Object.create(null);
     detail.forEach(function (s) {
-      var col = dayNameToCalCol(s && s.day);
+      var col = serviceDetailCalCol(s);
       if (col == null) return;
       if (!byCol[col]) byCol[col] = [];
       byCol[col].push(s);
@@ -2763,7 +2763,7 @@
     var cols = Object.create(null);
     var dcCols = Object.create(null);
     detail.forEach(function (s) {
-      var col = dayNameToCalCol(s && s.day);
+      var col = serviceDetailCalCol(s);
       if (col == null) return;
       cols[col] = true;
       if (serviceIsDayCentre((s && (s.label || s.service)) || "")) dcCols[col] = true;
@@ -2827,7 +2827,7 @@
     if (!detail.length) return [];
     var cols = Object.create(null);
     detail.forEach(function (s) {
-      var col = dayNameToCalCol(s && s.day);
+      var col = serviceDetailCalCol(s);
       if (col != null) cols[col] = true;
     });
     if (!Object.keys(cols).length) return [];
@@ -2905,7 +2905,7 @@
     var cols = Object.create(null);
     var dcCols = Object.create(null);
     detail.forEach(function (s) {
-      var col = dayNameToCalCol(s && s.day);
+      var col = serviceDetailCalCol(s);
       if (col == null) return;
       cols[col] = true;
       if (serviceIsDayCentre((s && (s.label || s.service)) || "")) dcCols[col] = true;
@@ -3241,7 +3241,7 @@
         : [];
     var cols = Object.create(null);
     detail.forEach(function (s) {
-      var col = dayNameToCalCol(s && s.day);
+      var col = serviceDetailCalCol(s);
       if (col != null) cols[col] = true;
     });
     return cols;
@@ -3654,7 +3654,7 @@
     detail.forEach(function (s) {
       var lab = String((s && (s.label || s.service)) || "");
       if (!/day\s*centre/i.test(lab)) return;
-      var col = dayNameToCalCol(s && s.day);
+      var col = serviceDetailCalCol(s);
       if (col != null) cols[col] = true;
     });
     return cols;
@@ -4643,7 +4643,7 @@
     if (/aquatic|swim/.test(s)) return "#0d9488"; // teal
     if (/climb/.test(s)) return "#2d84b3"; // steel blue
     if (/physical/.test(s)) return "#4f46e5"; // indigo — not the same as climb
-    if (/multi/.test(s)) return "#15803d";
+    if (/multi/.test(s)) return "#2563eb"; // blue — matches My Calendar legend expectation
     if (/bespoke/.test(s)) return "#7c4dbf";
     if (/day\s*centre|daycentre/.test(s)) return "#b45309";
     return PP_CAL_SERVICE_TONES[fallbackIdx % PP_CAL_SERVICE_TONES.length];
@@ -4652,10 +4652,40 @@
   function dayNameToCalCol(day) {
     var s = String(day || "")
       .trim()
-      .toLowerCase()
-      .slice(0, 3);
-    var map = { mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6 };
-    return Object.prototype.hasOwnProperty.call(map, s) ? map[s] : null;
+      .toLowerCase();
+    if (!s) return null;
+    // Match weekday anywhere (roster often stores "Activity, Sunday - 12.30 to 2").
+    var pairs = [
+      ["sunday", 6],
+      ["monday", 0],
+      ["tuesday", 1],
+      ["wednesday", 2],
+      ["thursday", 3],
+      ["friday", 4],
+      ["saturday", 5],
+      ["sun", 6],
+      ["mon", 0],
+      ["tue", 1],
+      ["wed", 2],
+      ["thu", 3],
+      ["fri", 4],
+      ["sat", 5],
+    ];
+    for (var i = 0; i < pairs.length; i++) {
+      var word = pairs[i][0];
+      var re = new RegExp("\\b" + word + "\\b", "i");
+      if (re.test(s)) return pairs[i][1];
+    }
+    return null;
+  }
+
+  function serviceDetailCalCol(s) {
+    if (!s) return null;
+    var col = dayNameToCalCol(s.day);
+    if (col != null) return col;
+    col = dayNameToCalCol(s.time);
+    if (col != null) return col;
+    return dayNameToCalCol([s.day, s.time, s.label].filter(Boolean).join(" "));
   }
 
   /**
@@ -4671,7 +4701,7 @@
     var serviceTone = Object.create(null);
     var toneIdx = 0;
     detail.forEach(function (s) {
-      var col = dayNameToCalCol(s && s.day);
+      var col = serviceDetailCalCol(s);
       if (col == null) return;
       var label = String((s && s.label) || "Service").trim() || "Service";
       var toneKey = label.toLowerCase();
