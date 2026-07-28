@@ -7461,10 +7461,33 @@
 
     function receiptCardsHtml(receipts) {
       if (!receipts || !receipts.length) return "";
+      var hasRefund = receipts.some(function (r) {
+        return /refund/i.test(String((r && r.title) || ""));
+      });
+      var hasPayment = receipts.some(function (r) {
+        return !/refund/i.test(String((r && r.title) || ""));
+      });
+      var sectionTitle =
+        hasRefund && hasPayment
+          ? "Receipts & refunds"
+          : hasRefund
+            ? "Refunds"
+            : "Receipts";
+      var note =
+        hasRefund && hasPayment
+          ? "Payment receipts and refunds for "
+          : hasRefund
+            ? "Refunds for "
+            : "Payment receipts for ";
       return (
-        '<section class="pp-invoice-receipts" aria-label="Payment receipts">' +
-        '<h4 class="pp-invoice-pay__title">Receipts</h4>' +
-        '<p class="pp-muted pp-invoice-pay__note">Payment receipts for ' +
+        '<section class="pp-invoice-receipts" aria-label="' +
+        esc(sectionTitle) +
+        '">' +
+        '<h4 class="pp-invoice-pay__title">' +
+        esc(sectionTitle) +
+        "</h4>" +
+        '<p class="pp-muted pp-invoice-pay__note">' +
+        note +
         esc(firstNameOf(data)) +
         " — download like paid invoices.</p>" +
         '<div class="pp-invoice-receipts__list">' +
