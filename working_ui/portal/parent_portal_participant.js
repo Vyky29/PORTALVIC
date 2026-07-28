@@ -1176,9 +1176,9 @@
   }
 
   /**
-   * Hub red pulse + pay CTAs: only when the parent must act on the current
-   * month/term ask (or flexi instalment within 7 days of due). Future Spring/Summer
-   * term invoices and GoCardless auto-collection do not count.
+   * Hub red pulse: only when the parent must act soon (or flexi instalment
+   * within 7 days of due). Future Spring/Summer terms and GoCardless
+   * auto-collection do not pulse.
    */
   function invoiceNeedsParentPay(inv) {
     if (!inv) return false;
@@ -1214,6 +1214,21 @@
     // Monthly / other: remind in the week before due (GC already excluded above).
     if (days == null) return true;
     return withinFlexiRemind;
+  }
+
+  /**
+   * Pay / "I've paid" CTAs: allow early bank/card for unpaid invoices even
+   * before the hub remind window (parents often pay ahead of Aug/Oct halves).
+   * LA / GoCardless auto-collect still gated in invoiceCardHtml.
+   */
+  function invoiceShowsPayActions(inv) {
+    if (!inv) return false;
+    var st = String(inv.payment_status || "").toLowerCase();
+    if (st === "paid" || st === "void" || st === "cancelled") return false;
+    if (st === "pending_confirmation") return false;
+    if (inv.can_setup_gocardless) return true;
+    if (isGoCardlessAutoCollect(inv)) return false;
+    return st === "unpaid" || st === "partial";
   }
 
   function applyHubInvoicesShortcutVisual(host, hasUnpaid) {
@@ -7069,8 +7084,10 @@
       canReport = false;
       canPay = false;
     }
-    // Future terms / auto-collect: keep the PDF, do not prompt to pay.
-    var payActionNeeded = invoiceNeedsParentPay(inv);
+    // Future terms / auto-collect: keep the PDF; pay CTAs still allowed early
+    // for flexi halves (hub pulse stays on the 7-day window via invoiceNeedsParentPay).
+    var payRemindNow = invoiceNeedsParentPay(inv);
+    var payActionNeeded = invoiceShowsPayActions(inv);
     if (!payActionNeeded) {
       canPay = false;
       canReport = false;
@@ -7267,7 +7284,7 @@
           (schedule.length ? "Total " : "") +
           esc(amount) +
           (dueNow &&
-          payActionNeeded &&
+          payRemindNow &&
           (status === "partial" || status === "unpaid") &&
           schedule.length
             ? " · Due now " + esc(dueNow)
@@ -7298,6 +7315,15 @@
       (due ? '<p class="pp-invoice-card__meta muted">Due ' + esc(due) + "</p>" : "") +
       pendingNote +
       paidNote +
+      (!isPaid &&
+      !payRemindNow &&
+      payActionNeeded &&
+      !gcPending &&
+      !isLaInvoice &&
+      !canSetupGc &&
+      (status === "unpaid" || status === "partial")
+        ? '<p class="pp-muted pp-invoice-pay__note">Next instalment is due later — you can still pay early and tap <strong>I&apos;ve paid by bank transfer</strong>.</p>'
+        : "") +
       (!isPaid &&
       !payActionNeeded &&
       !gcPending &&
