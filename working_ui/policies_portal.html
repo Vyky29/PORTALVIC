@@ -12079,13 +12079,56 @@
         }
       }
 
-      function mountHomePortal() {
+      function disclosureSectionKey(det) {
+        if (!det) return "";
+        var sum = det.querySelector(":scope > summary");
+        if (!sum) return "";
+        var clone = sum.cloneNode(true);
+        var chev = clone.querySelector(".cs-disclosure-chev");
+        if (chev) chev.remove();
+        return String(clone.textContent || "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLowerCase();
+      }
+
+      function captureOpenDisclosures(root) {
+        var open = {};
+        if (!root) return open;
+        var dets = root.querySelectorAll("details.cs-idx-disclosure");
+        for (var i = 0; i < dets.length; i++) {
+          if (!dets[i].open) continue;
+          var key = disclosureSectionKey(dets[i]);
+          if (key) open[key] = true;
+        }
+        return open;
+      }
+
+      function restoreOpenDisclosures(root, openMap) {
+        if (!root || !openMap) return;
+        var dets = root.querySelectorAll("details.cs-idx-disclosure");
+        for (var i = 0; i < dets.length; i++) {
+          var key = disclosureSectionKey(dets[i]);
+          if (key && openMap[key]) dets[i].open = true;
+        }
+      }
+
+      function mountHomePortal(opts) {
         var tpl = getPolicyEmbedTemplate("POL-000");
         if (!tpl || !tpl.content || !mainHome) return;
+        var preserve = !(opts && opts.preserveOpenSections === false);
+        var openMap = preserve ? captureOpenDisclosures(mainHome) : null;
+        var scrollY = preserve ? (window.scrollY || window.pageYOffset || 0) : 0;
         mainHome.innerHTML = "";
         mainHome.appendChild(tpl.content.cloneNode(true));
         refreshIndexStats(mainHome);
         initIndexSearch(mainHome);
+        if (preserve && openMap) {
+          restoreOpenDisclosures(mainHome, openMap);
+          try {
+            window.scrollTo(0, scrollY);
+          } catch (eScroll) {}
+        }
       }
 
       var STAFF_ACK_LS_KEY = "clubsensational_pc_staff_ack_v1";
@@ -12850,7 +12893,9 @@
         overlayBody.innerHTML = "";
         document.body.style.overflow = "";
         openPolicyId = null;
-        mountHomePortal();
+        // Keep accordion sections open: refresh badges in place instead of remounting the index.
+        if (mainHome && mainHome.children.length) refreshIndexStats(mainHome);
+        else mountHomePortal();
       }
 
       function reloadOverlayPolicy() {
