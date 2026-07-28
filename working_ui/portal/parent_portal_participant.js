@@ -7369,9 +7369,52 @@
       return;
     }
 
+    function receiptCardsHtml(receipts) {
+      if (!receipts || !receipts.length) return "";
+      return (
+        '<section class="pp-invoice-receipts" aria-label="Payment receipts">' +
+        '<h4 class="pp-invoice-pay__title">Receipts</h4>' +
+        '<p class="pp-muted pp-invoice-pay__note">Payment receipts for ' +
+        esc(firstNameOf(data)) +
+        " — download like paid invoices.</p>" +
+        '<div class="pp-invoice-receipts__list">' +
+        receipts
+          .map(function (r) {
+            var title = String((r && r.title) || "Payment receipt");
+            var pdf = String((r && r.pdf_url) || "");
+            var fname = String((r && r.filename) || "receipt.pdf").replace(
+              /[^\w.-]+/g,
+              "_",
+            );
+            if (!pdf) return "";
+            return (
+              '<article class="pp-invoice-card pp-invoice-card--receipt">' +
+              '<div class="pp-invoice-card__head">' +
+              "<strong>" +
+              esc(title) +
+              "</strong>" +
+              "</div>" +
+              '<div class="pp-invoice-card__acts pp-invoice-card__acts--stack pp-invoice-card__acts--paid-only">' +
+              '<a class="pp-btn pp-btn--primary pp-invoice-card__btn-full" href="' +
+              esc(pdf) +
+              '" download="' +
+              esc(fname) +
+              '" target="_blank" rel="noopener noreferrer">' +
+              invoiceBtnLabel("download", "Download PDF") +
+              "</a>" +
+              "</div>" +
+              "</article>"
+            );
+          })
+          .join("") +
+        "</div></section>"
+      );
+    }
+
     function refreshList() {
       return opts.listInvoices().then(function (j) {
         var invoices = (j && j.invoices) || [];
+        var receipts = (j && j.receipts) || [];
         var gcMeta = (j && j.gocardless) || {};
         var gcHost = host.querySelector("#ppGocardlessSetupHost");
         var gcSetupOnCard = invoices.some(function (inv) {
@@ -7398,13 +7441,15 @@
             gcHost.innerHTML = "";
           }
         }
-        if (!invoices.length) {
+        var receiptsHtml = receiptCardsHtml(receipts);
+        if (!invoices.length && !receipts.length) {
           listHost.innerHTML =
             '<p class="pp-muted">No invoices shared yet for this participant.</p>';
           wireInvoiceActions();
           return;
         }
-        listHost.innerHTML = invoices.map(invoiceCardHtml).join("");
+        listHost.innerHTML =
+          receiptsHtml + (invoices.length ? invoices.map(invoiceCardHtml).join("") : "");
         wireInvoiceActions();
         try {
           var pendingReturn = sessionStorage.getItem("pp_invoice_return_pending");

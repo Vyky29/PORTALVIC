@@ -340,11 +340,38 @@ Deno.serve(async (req) => {
       (inv.payment_status === "unpaid" || inv.payment_status === "partial"),
   );
 
+  // Payment receipts (bank/card PDFs shared by office) — path encodes contact_id.
+  const receiptsOut: Array<Record<string, unknown>> = [];
+  const receiptPathNeedle = `/billing/receipts/${contactId}/`;
+  const { data: receiptDocs } = await supabase
+    .from("documents")
+    .select("id, title, file_url, related_date, created_at, source_page")
+    .eq("document_type", "payment_receipt")
+    .ilike("file_url", `%${receiptPathNeedle}%`)
+    .order("created_at", { ascending: true })
+    .limit(20);
+  for (const doc of receiptDocs || []) {
+    if (!doc?.file_url) continue;
+    const { data: signed } = await supabase.storage
+      .from(BUCKET)
+      .createSignedUrl(String(doc.file_url), 3600);
+    if (!signed?.signedUrl) continue;
+    const pathName = String(doc.file_url).split("/").pop() || "receipt.pdf";
+    receiptsOut.push({
+      id: doc.id,
+      title: clean(doc.title, 120) || "Payment receipt",
+      filename: pathName,
+      related_date: doc.related_date || null,
+      pdf_url: signed.signedUrl,
+    });
+  }
+
   return json(200, {
     ok: true,
     invoices: out,
+    receipts: receiptsOut,
     /** Funder-billed kids: true only when a parent-pay crash (etc.) exists. */
-    show_invoices: funderBilled ? out.length > 0 : true,
+    show_invoices: funderBilled ? out.length > 0 || receiptsOut.length > 0 : true,
     bank_transfer_available: tide.available,
     payments_enabled: cardCheckoutAvailable,
     gocardless: {
