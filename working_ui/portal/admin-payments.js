@@ -2268,10 +2268,11 @@
     return html;
   }
 
-  /** Support ratio chip: default 1to1; Ikram/Fadi/Timi = 2to1; Tinashe = 3to1. */
+  /** Support ratio chip: default 1to1; Ikram/Fadi/Timi = 2to1; Tinashe term = 3to1. */
   function supportRatioFor(r) {
     var name = String((r && r.client_name) || "").toLowerCase();
-    if (/\btinashe\b/.test(name)) return "3to1";
+    /* July crash aquatic is 1to1; weekday term support for Tinashe stays 3to1. */
+    if (/\btinashe\b/.test(name) && !(r && r._crash)) return "3to1";
     if (
       /\bikram\b/.test(name) ||
       /\bfadi\b/.test(name) ||
@@ -2506,6 +2507,13 @@
     ];
   }
 
+  /** Day Centre summer crash for Tinashe (3× 30' SwimFarm, Jul 27/29/31). */
+  function tinasheCrashServiceLines() {
+    return [
+      "30' AQUATIC ACTIVITY (JULY) - 1 pm to 1.30 pm",
+    ];
+  }
+
   function crashTitleFromHead(head) {
     var s = normalizeServiceDisplay(String(head || "").trim());
     s = s.replace(/\s*\(1\s*to\s*1\)|\s*\(1to1\)|\s*1to1\b/gi, "").trim();
@@ -2590,8 +2598,9 @@
     var hm = text.match(/[-–]\s*(\d+\s*['′']?[^\n]*?(?:Climbing|Aquatic|Swimming|Multi)[^\n]*)/i);
     if (hm) head = hm[1].trim();
     if (!head) {
-      if (/climb/i.test(text)) head = "60' Climbing Activity";
-      else if (/aquatic|swim/i.test(text)) head = "60' Aquatic Activity";
+      var durGuess = (text.match(/(\d+)\s*['′']/) || [])[1] || "";
+      if (/climb/i.test(text)) head = (durGuess || "60") + "' Climbing Activity";
+      else if (/aquatic|swim/i.test(text)) head = (durGuess || "60") + "' Aquatic Activity";
       else return [];
     }
     var dateM = text.match(
@@ -5295,7 +5304,7 @@
     var paidBy = PAID_BY.PRIVATE_FUNDS;
     if (hint === "la_funded") paidBy = PAID_BY.FUNDED_BY_LA;
     else if (vat === "exempt") paidBy = PAID_BY.FUNDS_FROM_LA;
-    var crashDesc = String(inv.line_description || inv.notes || "");
+    var crashDesc = [inv.line_description, inv.notes].filter(Boolean).join("\n");
     var row = {
       id: "crash-" + (inv.id || cid),
       _contactId: cid,
@@ -5330,8 +5339,11 @@
       mergeServiceLabelsIntoRow(row, inv);
       if (!row.data.Services) row.data.Services = crashServicesLabel(inv);
     }
-    if (paymentParticipantSlug(row) === "zakariya") {
+    var crashSlug = paymentParticipantSlug(row);
+    if (crashSlug === "zakariya") {
       row.data.Services = zakariyaCrashServiceLines().join("\n");
+    } else if (crashSlug === "tinashe") {
+      row.data.Services = tinasheCrashServiceLines().join("\n");
     }
     return row;
   }

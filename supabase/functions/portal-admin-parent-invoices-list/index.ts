@@ -594,8 +594,26 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     invoices = invoices.filter((inv) => {
       const cid = clean(inv.contact_id, 120);
       if (!cid || !multiLaPackContacts.has(cid)) return true;
-      // Drop family shares for multi-pack contacts; synthetics replace them in this list.
-      return inv.created_via === "la_office_auto";
+      // Keep office synthetics for multi-pack LA/NHS contacts.
+      if (inv.created_via === "la_office_auto") return true;
+      /*
+       * Also keep Summer crash family INV-Ps (e.g. Tinashe INV-P-0119 £187.50).
+       * Multi-pack filter used to drop them so Payments → Day Centre → Using Funds
+       * from LA never showed the July crash row.
+       */
+      const invNum = String(inv.invoice_number || "");
+      if (/crash/i.test(invNum)) return true;
+      const crashBlob = [
+        inv.line_description,
+        inv.reference_text,
+        inv.notes,
+        JSON.stringify(inv.line_items || []),
+      ]
+        .join(" ")
+        .toLowerCase();
+      if (/summer\s*crash|crash\s*course/.test(crashBlob)) return true;
+      // Drop other family shares for multi-pack contacts; synthetics replace them.
+      return false;
     });
   }
   const OFFICE_AUTO_SORT_TS = "2026-06-01T12:00:00.000Z";
