@@ -9,7 +9,7 @@
    *  CONSTANTS
    * ================================================================ */
 
-  var CONTRACT_VERSION = '2.3';
+  var CONTRACT_VERSION = '2.7';
   var ADMIN_RATE = '13';
   var GBP = '\u00A3';
   var EM  = '\u2014';
@@ -19,7 +19,7 @@
   var COMPANY_NUMBER             = '13755417';
   var COMPANY_REGISTERED_ADDRESS = '71-75 Shelton Street, Covent Garden, WC2H 9JQ, London, United Kingdom';
   var COMPANY_FOOTER_ADDRESS     = '71-75 Shelton Street, Covent Garden, WC2H 9JQ, London';
-  var HR_CONTACT_EMAIL           = 'hr@clubsensational.co.uk';
+  var HR_CONTACT_EMAIL           = 'admin@clubsensational.org';
   var PENSION_SCHEME_NAME        = 'NEST';
   var PENSION_SCHEME_URL         = 'www.nestpensions.org.uk';
 
@@ -745,7 +745,7 @@
   function clausePension() {
     return [
       'PENSION',
-      "The Employer will meet its automatic enrolment duties under the Pensions Act 2008. The Employer's current qualifying workplace pension scheme is " + PENSION_SCHEME_NAME + " (" + PENSION_SCHEME_URL + "), or such other qualifying scheme as the Employer may nominate from time to time. Where required by law, eligible employees will be automatically enrolled into that scheme. Eligibility is assessed on earnings paid by this Employer only. Further details are set out in Annex A and are available from HR on request."
+      "The Employer will meet its automatic enrolment duties under the Pensions Act 2008. The Employer's current qualifying workplace pension scheme is " + PENSION_SCHEME_NAME + " (" + PENSION_SCHEME_URL + "), or such other qualifying scheme as the Employer may nominate from time to time. Where required by law, eligible employees will be automatically enrolled into that scheme. Eligibility is assessed on earnings paid by this Employer only. Further details are set out in Annex A and are available via the Staff Portal or " + HR_CONTACT_EMAIL + "."
     ];
   }
 
@@ -759,7 +759,7 @@
   function clauseOtherPaidLeave() {
     return [
       'OTHER PAID LEAVE',
-      'Statutory entitlements to family-related leave (including maternity, paternity, adoption, shared parental and parental bereavement leave and pay) apply where the Employee meets the qualifying conditions. Details are set out in the Employee Manual or are available from HR on request.'
+      'Statutory entitlements to family-related leave (including maternity, paternity, adoption, shared parental and parental bereavement leave and pay) apply where the Employee meets the qualifying conditions. Further information is set out in the Staff Handbook and the Employer\'s policies (Policies Portal); questions via the Staff Portal or ' + HR_CONTACT_EMAIL + '.'
     ];
   }
 
@@ -783,7 +783,7 @@
     return [
       'DISCIPLINARY PROCEDURE',
       BULLET + "The Employer's disciplinary procedure, as amended from time to time, applies to the Employee.",
-      BULLET + 'The disciplinary procedure is set out in the Employee Manual and will be provided to the Employee or made available on request.'
+      BULLET + 'The disciplinary procedure is set out in the Employer\'s Disciplinary Policy (see also the Staff Handbook) and will be provided to the Employee or made available on request.'
     ];
   }
 
@@ -791,7 +791,7 @@
     return [
       'GRIEVANCE PROCEDURE',
       BULLET + "The Employer's grievance procedure, as amended from time to time, applies to the Employee.",
-      BULLET + 'The grievance procedure is set out in the Employee Manual and will be provided to the Employee or made available on request.'
+      BULLET + 'The grievance procedure is set out in the Employer\'s Grievance Policy (see also the Staff Handbook) and will be provided to the Employee or made available on request.'
     ];
   }
 
@@ -810,7 +810,7 @@
       'DATA PROTECTION',
       BULLET + "The Employer will process personal data relating to the Employee in accordance with its Data Protection Policy and the UK General Data Protection Regulation (UK GDPR) and the Data Protection Act 2018.",
       BULLET + "The Employee consents to the Employer processing such data for the purposes of employment administration, payroll, pensions, DBS checks, health and safety, equal opportunities monitoring and any other lawful purpose connected with the employment.",
-      BULLET + "Details of the personal data held, the purposes of processing, and the Employee's rights under data protection legislation are set out in the Employee Privacy Notice, available from HR on request."
+      BULLET + "Details of the personal data held, the purposes of processing, and the Employee's rights under data protection legislation are set out in the Employee Privacy Notice, available via the Staff Portal or " + HR_CONTACT_EMAIL + "."
     ];
   }
 
@@ -1015,7 +1015,7 @@
         BULLET + "The Employer's holiday year runs between 1 January and 31 December.",
         BULLET + "Statutory holiday entitlement accrues at 12.07% of hours worked in each pay period, subject to the statutory maximum of 5.6 weeks' paid annual leave in each holiday year.",
         BULLET + 'The hourly rates in Employee Remuneration already include statutory rolled-up holiday pay at 12.07% of the ordinary (basic) element. No further 12.07% is paid on top. Payslips will itemise ordinary pay and rolled-up holiday pay separately; together they equal the inclusive hourly rate(s) for hours worked.',
-        BULLET + 'Rolled-up holiday pay is paid with ordinary pay each pay period and is not paid again when holiday leave is taken. The Employee remains entitled to take holiday leave (booking and approval: Employee Manual). On termination, any outstanding holiday pay due under statute will be paid in accordance with the Working Time Regulations 1998 and the Employer\'s lawful payroll practice.'
+        BULLET + 'Rolled-up holiday pay is paid with ordinary pay each pay period and is not paid again when holiday leave is taken. The Employee remains entitled to take holiday leave; booking and approval arrangements are set out in the Staff Handbook; questions via the Staff Portal or ' + HR_CONTACT_EMAIL + '. On termination, any outstanding holiday pay due under statute will be paid in accordance with the Working Time Regulations 1998 and the Employer\'s lawful payroll practice.'
       ], [''],
       clauseWorkingTime(), [''],
       clauseOtherPaidLeave(), [''],
@@ -1053,7 +1053,7 @@
         BULLET + 'Obligatory training: Safeguarding and role-required training as directed.',
         BULLET + 'Other benefits: None beyond those stated in this Agreement / statute.',
         BULLET + 'Collective Agreements: None.',
-        BULLET + 'Policies: Disciplinary, Grievance, Equipment & Uniform, Safeguarding, H&S, Data Protection (Employee Manual).'
+        BULLET + 'Policies: Disciplinary, Grievance, Equipment & Uniform, Safeguarding, H&S, Data Protection. Full policy texts are in the Employer\'s Policies & Compliance Portal on the Staff Portal (and summarised in the Staff Handbook). All staff must read and sign the policies that apply to their role, as amended from time to time. Questions: Staff Portal or ' + HR_CONTACT_EMAIL + '.'
       ], [''],
       clauseSignatures(), [''],
       clauseAnnexPension('zero_hours'), [''],
@@ -1171,7 +1171,7 @@
         BULLET + 'Notice: Not less than one month, or statutory minimum if greater.',
         BULLET + 'Probation: Six months from commencement.',
         BULLET + 'Collective Agreements: None.',
-        BULLET + 'Policies: Disciplinary, Grievance, Equipment & Uniform, Safeguarding, H&S, Data Protection (Employee Manual).'
+        BULLET + 'Policies: Disciplinary, Grievance, Equipment & Uniform, Safeguarding, H&S, Data Protection. Full policy texts are in the Employer\'s Policies & Compliance Portal on the Staff Portal (and summarised in the Staff Handbook). All staff must read and sign the policies that apply to their role, as amended from time to time. Questions: Staff Portal or ' + HR_CONTACT_EMAIL + '.'
       ], [''],
       clauseSignatures(), [''],
       clauseAnnexPension('day_centre_part_time'), [''],
@@ -1277,7 +1277,7 @@
         BULLET + 'Notice: Not less than one month, or statutory minimum if greater.',
         BULLET + 'Probation: Six months from commencement.',
         BULLET + 'Collective Agreements: None.',
-        BULLET + 'Policies: Disciplinary, Grievance, Equipment & Uniform, Safeguarding, H&S, Data Protection (Employee Manual).'
+        BULLET + 'Policies: Disciplinary, Grievance, Equipment & Uniform, Safeguarding, H&S, Data Protection. Full policy texts are in the Employer\'s Policies & Compliance Portal on the Staff Portal (and summarised in the Staff Handbook). All staff must read and sign the policies that apply to their role, as amended from time to time. Questions: Staff Portal or ' + HR_CONTACT_EMAIL + '.'
       ], [''],
       clauseSignatures(), [''],
       clauseAnnexPension('full_time')
@@ -1387,7 +1387,7 @@
         BULLET + 'Notice: Not less than one month, or statutory minimum if greater.',
         BULLET + 'Probation: Up to six months, or shorter if proportionate to contract length.',
         BULLET + 'Collective Agreements: None.',
-        BULLET + 'Policies: Disciplinary, Grievance, Equipment & Uniform, Safeguarding, H&S, Data Protection (Employee Manual).'
+        BULLET + 'Policies: Disciplinary, Grievance, Equipment & Uniform, Safeguarding, H&S, Data Protection. Full policy texts are in the Employer\'s Policies & Compliance Portal on the Staff Portal (and summarised in the Staff Handbook). All staff must read and sign the policies that apply to their role, as amended from time to time. Questions: Staff Portal or ' + HR_CONTACT_EMAIL + '.'
       ], [''],
       clauseSignatures(), [''],
       clauseAnnexPension('fixed_term')

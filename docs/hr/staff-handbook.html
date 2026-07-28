@@ -1,0 +1,230 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Staff Handbook · clubSENsational</title>
+<style>
+  .cs-policy{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1f2937;line-height:1.55;max-width:880px;margin:0 auto;padding:16px}
+  .cs-policy .cs-header{background:linear-gradient(135deg,#2d3e50 0%,#1e2f40 100%);color:#fff;padding:28px 32px;border-radius:14px 14px 0 0;display:flex;align-items:center;gap:20px}
+  .cs-policy .cs-logo{flex:0 0 84px;width:84px;height:84px;background:#fff;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:8px;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+  .cs-policy .cs-logo img{width:100%;height:auto;max-height:84px;object-fit:contain;display:block}
+  .cs-policy .cs-brand{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#f4b942;font-weight:600;margin:0 0 6px}
+  .cs-policy .cs-header h1{font-size:26px;margin:0 0 4px;font-weight:700;color:#fff;line-height:1.2}
+  .cs-policy .cs-sub{font-size:13px;opacity:.85;margin:0;color:#e5e7eb}
+  .cs-policy .cs-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;background:#fef8e8;padding:14px 20px;border:1px solid #f4b942;border-top:none}
+  .cs-policy .cs-meta div{font-size:13px}
+  .cs-policy .cs-meta strong{display:block;text-transform:uppercase;font-size:11px;letter-spacing:.05em;color:#2d3e50;margin-bottom:2px}
+  .cs-policy .cs-body{background:#fff;padding:28px 32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 14px 14px}
+  .cs-policy .cs-body h2{font-size:19px;color:#2d3e50;margin:26px 0 10px;padding-bottom:6px;border-bottom:2px solid #f4b942}
+  .cs-policy .cs-body h2:first-child{margin-top:0}
+  .cs-policy .cs-num{display:inline-block;min-width:28px;color:#f4b942;font-weight:700}
+  .cs-policy .cs-body h3{font-size:15px;color:#2d3e50;margin:14px 0 6px}
+  .cs-policy .cs-body p{margin:0 0 10px}
+  .cs-policy .cs-body ul,.cs-policy .cs-body ol{margin:6px 0 12px;padding-left:20px}
+  .cs-policy .cs-body li{margin-bottom:5px}
+  .cs-box{background:#f8fafc;border:1px solid #e5e7eb;border-left:4px solid #f4b942;border-radius:0 10px 10px 0;padding:12px 14px;margin:12px 0}
+  .cs-box.navy{border-left-color:#2d3e50;background:#f1f5f9}
+  .cs-box.must{border-left-color:#b45309;background:#fff7ed}
+  .cs-box strong.label{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#2d3e50;margin-bottom:4px}
+  .cs-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 14px}
+  @media(max-width:640px){.cs-grid{grid-template-columns:1fr}.cs-policy .cs-header{flex-direction:column;text-align:center}}
+  .cs-card{border:1px solid #e5e7eb;border-radius:12px;padding:12px 14px;background:#fff;border-top:3px solid #f4b942}
+  .cs-card h3{margin:0 0 6px;font-size:15px;color:#2d3e50}
+  .cs-card p{margin:0;font-size:13.5px;color:#4b5563}
+  .cs-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:#fef8e8;color:#b45309;padding:2px 8px;border-radius:999px;margin-bottom:6px}
+  table.cs-table{width:100%;border-collapse:collapse;font-size:13.5px;margin:8px 0 12px}
+  table.cs-table th,table.cs-table td{border:1px solid #e5e7eb;padding:8px 10px;text-align:left;vertical-align:top}
+  table.cs-table th{background:#2d3e50;color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  table.cs-table tr:nth-child(even) td{background:#f9fafb}
+  .cs-toc{display:flex;flex-wrap:wrap;gap:6px 10px;margin:0 0 8px;padding:0;list-style:none}
+  .cs-toc a{font-size:12.5px;font-weight:600;color:#2d3e50;text-decoration:none;background:#fef8e8;border:1px solid #f4b942;border-radius:999px;padding:4px 10px}
+  .cs-toc a:hover{background:#f4b942}
+  .cs-steps{counter-reset:st;list-style:none;padding:0;margin:8px 0 12px}
+  .cs-steps li{counter-increment:st;position:relative;padding:8px 10px 8px 42px;margin-bottom:6px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;font-size:14px}
+  .cs-steps li::before{content:counter(st);position:absolute;left:10px;top:8px;width:24px;height:24px;border-radius:8px;background:#f4b942;color:#2d3e50;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .cs-sign{margin-top:24px;background:linear-gradient(135deg,#fef8e8,#fff);border:2px solid #f4b942;border-radius:14px;padding:20px 22px}
+  .cs-sign h3{color:#2d3e50;margin:0 0 8px;font-size:18px}
+  .cs-sign .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+  @media(max-width:640px){.cs-sign .row{grid-template-columns:1fr}}
+  .cs-sign label{display:block;font-size:12px;font-weight:700;color:#4b5563;margin-bottom:4px}
+  .cs-sign .line{border-bottom:1px solid #d1d5db;min-height:26px}
+  .cs-foot{text-align:center;color:#6b7280;font-size:12px;padding:16px 0 8px}
+  .cs-print{text-align:right;margin:0 0 10px}
+  .cs-print button{background:#2d3e50;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer}
+  @media print{.cs-print{display:none}.cs-policy{padding:0}}
+</style>
+</head>
+<body>
+<div class="cs-policy" id="cs-staff-handbook">
+
+  <div class="cs-print"><button type="button" onclick="window.print()">Print / PDF</button></div>
+
+  <div class="cs-header">
+    <div class="cs-logo">
+      <img src="clubsensational-logo.png" alt="clubSENsational"
+           onerror="this.onerror=null;this.src='https://www.clubsensational.org/wp-content/uploads/2026/03/F-02-1.png';" />
+    </div>
+    <div class="cs-title">
+      <p class="cs-brand">clubSENsational · Autism Consultancy Services</p>
+      <h1>Staff Handbook</h1>
+      <p class="cs-sub">How we work · Company No. 13755417 · www.clubsensational.org</p>
+    </div>
+  </div>
+
+  <div class="cs-meta">
+    <div><strong>Version</strong>2.0 · July 2026</div>
+    <div><strong>Applies to</strong>All staff</div>
+    <div><strong>Contact</strong>Staff Portal · admin@clubsensational.org</div>
+    <div><strong>Policies</strong>Policies Portal (read &amp; sign)</div>
+  </div>
+
+  <div class="cs-body">
+
+    <div class="cs-box must">
+      <strong class="label">Do this first</strong>
+      1) Read this handbook.<br />
+      2) Open <strong>Compliance → Policies</strong> in the Staff Portal and <strong>read &amp; sign</strong> every required policy.<br />
+      3) Questions? Use the <strong>Staff Portal</strong> first; if you need email, write to <strong>admin@clubsensational.org</strong>.
+    </div>
+
+    <ul class="cs-toc">
+      <li><a href="#h1">1. Basics</a></li>
+      <li><a href="#h2">2. Your contract</a></li>
+      <li><a href="#h3">3. Pay &amp; pension</a></li>
+      <li><a href="#h4">4. Hours &amp; venues</a></li>
+      <li><a href="#h5">5. Holiday</a></li>
+      <li><a href="#h6">6. Sick</a></li>
+      <li><a href="#h7">7. Safeguarding</a></li>
+      <li><a href="#h8">8. Conduct &amp; data</a></li>
+      <li><a href="#h9">9. Problems at work</a></li>
+      <li><a href="#h10">10. Leaving</a></li>
+      <li><a href="#h11">11. Sign</a></li>
+    </ul>
+
+    <h2 id="h1"><span class="cs-num">1.</span> Basics</h2>
+    <p>Your <strong>signed contract</strong> is the legal document. This handbook explains day-to-day rules in plain English.</p>
+    <table class="cs-table">
+      <tr><th>Need</th><th>Where</th></tr>
+      <tr><td>Policies (must read &amp; sign)</td><td>Staff Portal → Compliance → <strong>Policies</strong></td></tr>
+      <tr><td>Risk assessments</td><td>Staff Portal → Compliance → Risk Assessments</td></tr>
+      <tr><td>Staff incident</td><td>Staff Portal → Compliance → Staff incident</td></tr>
+      <tr><td>Payslips / documents</td><td>Staff Portal → My Records</td></tr>
+      <tr><td>Admin / HR questions</td><td>Portal message / email <strong>admin@clubsensational.org</strong></td></tr>
+      <tr><td>Rota / shift cover</td><td>Your Session Lead or line manager</td></tr>
+    </table>
+    <div class="cs-box navy">
+      <strong class="label">Company</strong>
+      clubSENsational LTD · 13755417 · 71-75 Shelton Street, Covent Garden, WC2H 9JQ, London
+    </div>
+
+    <h2 id="h2"><span class="cs-num">2.</span> Your contract</h2>
+    <div class="cs-grid">
+      <div class="cs-card">
+        <span class="cs-tag">Zero Hours</span>
+        <h3>Activity Services</h3>
+        <p>Swim / climb / sessions outside Day Centre. No guaranteed hours. Holiday pay rolled-up (12.07%) on payslip. Notice: usually 2 weeks.</p>
+      </div>
+      <div class="cs-card">
+        <span class="cs-tag">Part-Time</span>
+        <h3>Day Centre</h3>
+        <p>Salaried. Typical paid hours 11:00–16:00 on your days. Paid holiday (not rolled-up). Notice: usually 1 month.</p>
+      </div>
+    </div>
+    <p>Some people have <strong>both</strong> contracts. Use the right one for the work that day. Job duties: Annex B of your contract.</p>
+    <p>Probation and DBS rules are in your contract. Regulated work needs a satisfactory enhanced DBS.</p>
+
+    <h2 id="h3"><span class="cs-num">3.</span> Pay &amp; pension</h2>
+    <ul>
+      <li>Paid <strong>monthly</strong> (PAYE deductions as required).</li>
+      <li><strong>Zero Hours:</strong> hours worked (+ any cancellation pay in your contract). Inclusive rates already include 12.07% holiday pay — itemised on the payslip; not paid again when you take leave.</li>
+      <li><strong>Salaried:</strong> fixed salary while the contract runs.</li>
+      <li><strong>Pension:</strong> NEST auto-enrolment if eligible (earnings from clubSENsational only). See Annex A of your contract.</li>
+      <li>Expenses: only if authorised — keep receipts; ask admin via portal / admin@clubsensational.org.</li>
+    </ul>
+
+    <h2 id="h4"><span class="cs-num">4.</span> Hours &amp; venues</h2>
+    <ul>
+      <li>Work where your contract / rota says (pools, climbing, Day Centre, community).</li>
+      <li><strong>Zero Hours:</strong> accept only shifts you can do. Employer cancel ≥24h → no pay. Cancel &lt;24h → full shift pay (per contract).</li>
+      <li>You may work for other employers on Zero Hours (no exclusivity).</li>
+      <li>Complete session feedback / records as part of the job.</li>
+    </ul>
+
+    <h2 id="h5"><span class="cs-num">5.</span> Holiday</h2>
+    <p>Holiday year: <strong>1 Jan – 31 Dec</strong>.</p>
+    <ol class="cs-steps">
+      <li>Check cover with your Session Lead / manager.</li>
+      <li>Request in writing (email manager; copy admin@clubsensational.org if asked).</li>
+      <li>Wait for written approval before booking travel.</li>
+    </ol>
+    <p>Family leave (maternity, paternity, etc.): statutory rules if you qualify — ask via portal / admin@clubsensational.org.</p>
+
+    <h2 id="h6"><span class="cs-num">6.</span> Sick</h2>
+    <table class="cs-table">
+      <tr><th>You</th><th>Notify by</th></tr>
+      <tr><td>Zero Hours</td><td>Email a Company Director the night before, or by <strong>7:00 am</strong> that day — and tell your lead for cover.</td></tr>
+      <tr><td>Salaried</td><td>Email a Company Director by <strong>7:00 am</strong> that day — and tell your manager.</td></tr>
+    </table>
+    <p>SSP may apply if you qualify. No enhanced company sick pay unless a policy says so.</p>
+
+    <h2 id="h7"><span class="cs-num">7.</span> Safeguarding</h2>
+    <div class="cs-box must">
+      <strong class="label">Non-negotiable</strong>
+      Follow the Safeguarding Policy. Report concerns to the Designated Safeguarding Lead <strong>immediately</strong>.
+      Professional boundaries always. No unauthorised photos / social media of participants.
+    </div>
+    <p>Also follow Health &amp; Safety and venue rules. Report incidents in the Portal (Staff incident / participant processes as directed).</p>
+
+    <h2 id="h8"><span class="cs-num">8.</span> Conduct &amp; data</h2>
+    <ul>
+      <li>Keep participant and company information confidential — during and after employment.</li>
+      <li>Return kit, keys, ID and files when asked or when you leave.</li>
+      <li>Do not sign contracts for the company unless authorised in writing.</li>
+      <li>Complete required training (safeguarding, induction, role training).</li>
+    </ul>
+
+    <h2 id="h9"><span class="cs-num">9.</span> Problems at work</h2>
+    <div class="cs-grid">
+      <div class="cs-card">
+        <h3>Grievance</h3>
+        <p>Try informal talk with your manager first. Formal: write it down → Grievance Policy (Policies Portal).</p>
+      </div>
+      <div class="cs-card">
+        <h3>Disciplinary</h3>
+        <p>Conduct/performance: Disciplinary Policy. You can be accompanied at formal meetings. Gross misconduct can mean dismissal.</p>
+      </div>
+    </div>
+    <p>Serious wrongdoing: <strong>Whistleblowing Policy</strong> (Policies Portal).</p>
+
+    <h2 id="h10"><span class="cs-num">10.</span> Leaving</h2>
+    <p>Give written notice as in your contract (often 2 weeks Zero Hours; 1 month salaried). Return everything. Final pay and holiday pay as per statute / contract.</p>
+
+    <h2 id="h11"><span class="cs-num">11.</span> Policies you must sign</h2>
+    <p>Open <strong>Staff Portal → Compliance → Policies</strong> and sign the policies for your role (Safeguarding, Disciplinary, Grievance, Data Protection, H&amp;S, Equipment &amp; Uniform, and others listed there). Re-sign when we update them.</p>
+    <div class="cs-box">
+      <strong class="label">No portal access?</strong>
+      Email <strong>admin@clubsensational.org</strong> — we will send the documents and a sign-off form.
+    </div>
+
+    <div class="cs-sign" id="h-sign">
+      <h3>Acknowledgement</h3>
+      <p>I have read this Staff Handbook. I understand my contract comes first. I will read and sign required policies in the Policies Portal (or via admin@clubsensational.org if I cannot access the portal).</p>
+      <div class="row">
+        <div><label>Name</label><div class="line">&nbsp;</div></div>
+        <div><label>Role / contract type</label><div class="line">&nbsp;</div></div>
+        <div><label>Signature</label><div class="line">&nbsp;</div></div>
+        <div><label>Date</label><div class="line">&nbsp;</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="cs-foot">
+    © clubSENsational LTD · Staff Handbook v2.0 · July 2026<br />
+    Staff Portal · admin@clubsensational.org · www.clubsensational.org<br />
+    Aligns with HR Contract Portal (contract-core) · Policies &amp; Compliance Portal
+  </p>
+</div>
+</body>
+</html>

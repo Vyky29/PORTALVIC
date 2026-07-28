@@ -1,0 +1,1069 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Briefing socios — Extracción y estructura 2026–27 · clubSENsational</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #0f2733;
+    --muted: #5b7280;
+    --line: #d7e2e8;
+    --teal: #0e7c86;
+    --teal-deep: #0a5c63;
+    --teal-soft: #e6f3f4;
+    --sky: #0369a1;
+    --sky-soft: #e0f2fe;
+    --green: #15803d;
+    --green-soft: #ecfdf5;
+    --amber: #b45309;
+    --amber-soft: #fffbeb;
+    --paper: #f7fafb;
+    --card: #ffffff;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    color: var(--ink);
+    font-family: "DM Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    background:
+      radial-gradient(900px 420px at 0% -10%, rgba(14, 124, 134, 0.10), transparent 55%),
+      radial-gradient(700px 380px at 100% 0%, rgba(3, 105, 161, 0.08), transparent 50%),
+      var(--paper);
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 28px 20px 64px; }
+  .hero {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 28px 28px 24px;
+    margin-bottom: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 6px;
+    background: linear-gradient(180deg, var(--teal), var(--sky));
+  }
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin: 0 0 8px;
+  }
+  h1 {
+    font-family: Fraunces, Georgia, serif;
+    font-size: clamp(1.6rem, 3.5vw, 2.15rem);
+    font-weight: 700;
+    line-height: 1.15;
+    margin: 0 0 10px;
+    color: var(--ink);
+  }
+  .hero-lead {
+    margin: 0 0 18px;
+    color: var(--muted);
+    max-width: 46rem;
+    font-size: 1.02rem;
+  }
+  .hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--teal-soft);
+    color: var(--teal-deep);
+    border-radius: 999px;
+    padding: 4px 11px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .toc {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 22px;
+  }
+  .toc h2 {
+    font-size: 13px;
+    margin: 0 0 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    border: 0;
+    font-family: inherit;
+    font-weight: 700;
+  }
+  .toc ol {
+    margin: 0;
+    padding-left: 1.2rem;
+    columns: 2;
+    gap: 24px;
+  }
+  @media (max-width: 700px) { .toc ol { columns: 1; } }
+  .toc a { color: var(--ink); text-decoration: none; font-size: 14px; }
+  .toc a:hover { color: var(--teal); }
+  section {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px 24px 20px;
+    margin-bottom: 16px;
+  }
+  section > h2 {
+    font-family: Fraunces, Georgia, serif;
+    font-size: 1.35rem;
+    margin: 0 0 6px;
+    color: var(--teal-deep);
+    border: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--teal);
+    color: #fff;
+    font-family: "DM Sans", sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .section-intro {
+    margin: 0 0 16px;
+    color: var(--muted);
+    font-size: 14.5px;
+  }
+  h3 { font-size: 1rem; margin: 18px 0 8px; color: var(--ink); }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 12px; padding-left: 1.25rem; }
+  li { margin-bottom: 6px; }
+  strong { font-weight: 700; }
+  .callout {
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin: 12px 0;
+    font-size: 14px;
+  }
+  .callout.idea {
+    background: var(--teal-soft);
+    border-left: 4px solid var(--teal);
+  }
+  .callout.warn {
+    background: var(--amber-soft);
+    border-left: 4px solid #f59e0b;
+    color: #78350f;
+  }
+  .callout.ok {
+    background: var(--green-soft);
+    border-left: 4px solid #16a34a;
+    color: #14532d;
+  }
+  .callout .label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    opacity: 0.85;
+  }
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin: 14px 0;
+  }
+  @media (max-width: 800px) { .kpis { grid-template-columns: 1fr 1fr; } }
+  .kpi {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+  .kpi .v {
+    font-family: Fraunces, Georgia, serif;
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: var(--teal);
+    line-height: 1.1;
+  }
+  .kpi .l { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .kpi.green .v { color: var(--green); }
+  .kpi.sky .v { color: var(--sky); }
+  .kpi.amber .v { color: var(--amber); }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 12px 0;
+  }
+  @media (max-width: 700px) { .grid-2 { grid-template-columns: 1fr; } }
+  .card {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    background: #fff;
+  }
+  .card.dc { border-top: 4px solid var(--teal); }
+  .card.af { border-top: 4px solid var(--sky); }
+  .card h3 { margin-top: 0; }
+  .who {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 999px;
+    margin-bottom: 8px;
+  }
+  .who.dc { background: var(--teal-soft); color: var(--teal-deep); }
+  .who.af { background: var(--sky-soft); color: var(--sky); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin: 8px 0 12px;
+  }
+  th, td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: var(--teal-soft);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink);
+  }
+  td.num, th.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  tr.total td { font-weight: 700; background: #f8fafc; border-top: 2px solid #94a3b8; }
+  tr.hilite td { font-weight: 700; background: var(--green-soft); color: var(--green); }
+  tr.soft td { background: #f8fafc; }
+  .flow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: stretch;
+    margin: 14px 0;
+  }
+  .flow .box {
+    flex: 1;
+    min-width: 110px;
+    text-align: center;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 10px;
+  }
+  .flow .box strong {
+    display: block;
+    font-family: Fraunces, Georgia, serif;
+    font-size: 1.15rem;
+    color: var(--teal);
+    margin-bottom: 2px;
+  }
+  .flow .box span { font-size: 12px; color: var(--muted); }
+  .flow .arrow {
+    display: flex;
+    align-items: center;
+    color: #94a3b8;
+    font-weight: 700;
+    font-size: 18px;
+  }
+  .scenarios {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 14px 0;
+  }
+  @media (max-width: 850px) { .scenarios { grid-template-columns: 1fr; } }
+  .sc {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+  }
+  .sc.a { border-top: 5px solid #16a34a; }
+  .sc.b { border-top: 5px solid var(--teal); }
+  .sc.c { border-top: 5px solid var(--sky); }
+  .sc .when {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .sc h3 {
+    font-family: Fraunces, Georgia, serif;
+    font-size: 1.15rem;
+    margin: 0 0 8px;
+  }
+  .sc ul { flex: 1; font-size: 13.5px; }
+  .sc .cost {
+    margin-top: 10px;
+    font-size: 12.5px;
+    color: var(--muted);
+    padding-top: 10px;
+    border-top: 1px dashed var(--line);
+  }
+  .reco {
+    background: #e6f3f4;
+    color: #0f2733;
+    border: 1px solid #0e7c86;
+    border-left: 6px solid #0e7c86;
+    border-radius: 16px;
+    padding: 22px 24px;
+    margin: 8px 0 4px;
+  }
+  .reco h3 {
+    font-family: Fraunces, Georgia, serif;
+    color: #0a5c63;
+    margin: 0 0 12px;
+    font-size: 1.25rem;
+  }
+  .reco p { margin: 0 0 10px; color: #0f2733; }
+  .reco ol { margin: 0; padding-left: 1.2rem; color: #0f2733; }
+  .reco li { margin-bottom: 10px; color: #0f2733; line-height: 1.5; }
+  .reco strong { color: #0a5c63; }
+  .tl { list-style: none; padding: 0; margin: 12px 0 0; }
+  .tl li {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+    margin: 0;
+  }
+  @media (max-width: 600px) {
+    .tl li { grid-template-columns: 1fr; gap: 4px; }
+  }
+  .tl .when { font-weight: 700; color: var(--teal); font-size: 13px; }
+  .tl .what { font-size: 14px; }
+  .tl .who {
+    display: block;
+    margin: 4px 0 0;
+    background: none;
+    padding: 0;
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 12.5px;
+  }
+  .q-list li { margin-bottom: 10px; }
+  .foot {
+    margin-top: 18px;
+    padding: 16px 4px 0;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+  }
+  .print-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .btn {
+    appearance: none;
+    border: 0;
+    background: var(--teal);
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 9px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .btn:hover { background: var(--teal-deep); }
+  @media print {
+    body { background: #fff; }
+    .print-bar, .btn { display: none !important; }
+    .wrap { padding: 0; max-width: none; }
+    section, .hero, .toc, .sc, .card { break-inside: avoid; }
+    .reco { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #e6f3f4 !important; color: #0f2733 !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="print-bar">
+    <span>Briefing interno · compartir con socios y accountant</span>
+    <button class="btn" type="button" onclick="window.print()">Imprimir / Guardar PDF</button>
+  </div>
+
+  <header class="hero">
+    <p class="eyebrow">clubSENsational Ltd</p>
+    <h1>Cómo sacar el dinero de los dos pasteles — y cómo organizar la empresa</h1>
+    <p class="hero-lead">
+      Documento paso a paso de toda la conversación entre socios: situación, números estimados 2026–27,
+      opciones fiscales, escenarios de estructura, <strong>holding de grupo</strong> y <strong>PIXTOLEARN</strong>,
+      con <strong>recomendación clara</strong> para clubSENsational.
+      Pensado para que Raúl, Víctor y Javier lo discutan juntos y lo validen con el accountant.
+    </p>
+    <div class="hero-meta">
+      <span class="pill">Borrador 24 Jul 2026</span>
+      <span class="pill">No es asesoramiento fiscal formal</span>
+      <span>Company no. 13755417 · Shelton Street, London</span>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Índice">
+    <h2>Índice</h2>
+    <ol>
+      <li><a href="#s1">De qué va este briefing</a></li>
+      <li><a href="#s2">La situación de partida</a></li>
+      <li><a href="#s3">Los dos pasteles (números)</a></li>
+      <li><a href="#s4">El problema: cómo sacar el dinero</a></li>
+      <li><a href="#s5">Salario, bonus o dividendos</a></li>
+      <li><a href="#s6">El plan £100k (y por qué)</a></li>
+      <li><a href="#s7">Qué le toca a cada socio</a></li>
+      <li><a href="#s8">Tres escenarios de estructura (A / B / C)</a></li>
+      <li><a href="#s9">Recomendacion para clubSENsational</a></li>
+      <li><a href="#s10">Timeline + preguntas al accountant</a></li>
+      <li><a href="#s11">Holding + PIXTOLEARN (grupo)</a></li>
+    </ol>
+  </nav>
+
+  <section id="s1">
+    <h2><span class="step-num">1</span> De qué va este briefing</h2>
+    <p class="section-intro">
+      No es un P&amp;L auditado. Es el mapa mental que hemos construido para decidir
+      <strong>cómo repartir el beneficio</strong> y <strong>cómo sacarlo</strong> sin improvisar.
+    </p>
+    <div class="callout idea">
+      <span class="label">Idea central</span>
+      La empresa crece en dos vias distintas. Si tratamos todo como “un solo saco al tercio”,
+      o pagamos mal el impuesto, o alguien se siente injustamente tratado — o las dos cosas.
+    </div>
+    <p>Al final del documento hay:</p>
+    <ul>
+      <li>Una <strong>recomendación ordenada</strong> (qué hacer ya / después).</li>
+      <li>Una <strong>lista de preguntas</strong> para la reunión con el accountant.</li>
+    </ul>
+  </section>
+
+  <section id="s2">
+    <h2><span class="step-num">2</span> La situación de partida</h2>
+    <p class="section-intro">Así está montado clubSENsational hoy, en la práctica y en el papel.</p>
+    <div class="grid-2">
+      <div class="card">
+        <h3>En el papel (legal)</h3>
+        <ul>
+          <li>Una sola Ltd: <strong>clubSENsational</strong>.</li>
+          <li>Acciones al <strong>tercio</strong>: Raúl · Víctor · Javier.</li>
+          <li>Raúl y Víctor tienen salario de socio/director de <strong>£50,000</strong>/año cada uno.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>En la práctica (operativo)</h3>
+        <ul>
+          <li><strong>Day Centre</strong>: lo llevan Raúl y Víctor → pastel a <strong>dos</strong>.</li>
+          <li><strong>After School &amp; Weekends</strong>: los tres → pastel a <strong>tres</strong>.</li>
+          <li>Javier sigue con el colegio por las mañanas; el DC es la vía nueva que está creciendo fuerte.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout warn">
+      <span class="label">Tensión que hay que resolver</span>
+      El Day Centre puede generar mucho más beneficio que antes, pero si ese dinero se queda
+      en la Ltd sin sacarlo, <strong>1/3 del patrimonio retenido es de Javier</strong> aunque él no opere el DC.
+      Si se saca mal (dividendo igualitario), Javier cobraría del DC sin acuerdo.
+      Si se saca solo con más salario sin límite, Hacienda se lleva una parte enorme.
+    </div>
+  </section>
+
+  <section id="s3">
+    <h2><span class="step-num">3</span> Los dos pasteles — números estimados 2026–27</h2>
+    <p class="section-intro">
+      Cifras de trabajo para discutir. Day Centre: estimado portal (4 plazas NHS).
+      After: ~£300k acordado en conversación. Floors = % de gastos all-in (staff + alquiler + etc.).
+    </p>
+    <div class="kpis">
+      <div class="kpi"><div class="v">£367k</div><div class="l">Ingreso Day Centre est.</div></div>
+      <div class="kpi sky"><div class="v">£300k</div><div class="l">Ingreso After aprox.</div></div>
+      <div class="kpi green"><div class="v">30%</div><div class="l">Floor gastos DC (all-in)</div></div>
+      <div class="kpi amber"><div class="v">65%</div><div class="l">Floor gastos After (all-in)</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card dc">
+        <span class="who dc">Pastel A · Raúl + Víctor</span>
+        <h3>Day Centre</h3>
+        <table>
+          <tr><td>Ingreso estimado</td><td class="num">£366,755</td></tr>
+          <tr><td>− Gastos 30%</td><td class="num">−£110,027</td></tr>
+          <tr class="hilite"><td>= Pool 50/50</td><td class="num">£256,728</td></tr>
+          <tr class="total"><td>Cada uno (R / V)</td><td class="num">≈ £128,400</td></tr>
+        </table>
+        <p style="font-size:13px;color:var(--muted);margin:0">
+          Base portal: Emanuel £65k · Fadi £141k · Ikram £130.5k · Timi £30.1k (NHS exempt). Estado “Out” = aún estimado.
+        </p>
+      </div>
+      <div class="card af">
+        <span class="who af">Pastel B · Raúl + Víctor + Javier</span>
+        <h3>After School &amp; Weekends</h3>
+        <table>
+          <tr><td>Ingreso aprox.</td><td class="num">£300,000</td></tr>
+          <tr><td>− Gastos 65%</td><td class="num">−£195,000</td></tr>
+          <tr class="hilite"><td>= Remanente ÷3</td><td class="num">£105,000</td></tr>
+          <tr class="total"><td>Cada uno (R / V / J)</td><td class="num">£35,000</td></tr>
+        </table>
+        <p style="font-size:13px;color:var(--muted);margin:0">
+          Margen más fino (más staff y venues). El After es el pastel “histórico” de los tres.
+        </p>
+      </div>
+    </div>
+    <div class="callout idea">
+      <span class="label">Como leer el “floor”</span>
+      El % floor no es un impuesto: es el porcentaje de ingreso que estimamos se va en
+      <strong>todos los gastos del servicio</strong> (staff, alquiler, piscina, etc.) antes de repartir beneficio.
+      DC ~30% de costes → ~70% de margen bruto de pastel. After ~65% de costes → ~35% de remanente.
+    </div>
+  </section>
+
+  <section id="s4">
+    <h2><span class="step-num">4</span> El problema: cómo sacar el dinero</h2>
+    <p class="section-intro">
+      El pastel “existe” en la empresa. Pasarlo al bolsillo personal tiene coste fiscal.
+      La pregunta no es solo “cuánto hay”, sino “por qué tubería lo sacamos”.
+    </p>
+    <h3>Tres tuberías posibles</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Vía</th>
+          <th>¿Baja Corporation Tax?</th>
+          <th>¿Se puede dar solo a R+V?</th>
+          <th>Coste personal (orientativo)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Salario / bonus</strong> (nómina)</td>
+          <td>Sí — es gasto</td>
+          <td>Sí — fácil de justificar por rol</td>
+          <td>IRPF + NI; encima de £100k duele mucho</td>
+        </tr>
+        <tr>
+          <td><strong>Dividendos</strong></td>
+          <td>No — sale del beneficio post-CT</td>
+          <td>Solo si el equity / clases de acción lo permiten</td>
+          <td>A menudo mas barato en basic rate; en higher rate se acerca o empeora</td>
+        </tr>
+        <tr>
+          <td><strong>Pensión employer</strong></td>
+          <td>Si</td>
+          <td>Si</td>
+          <td>Sin IRPF/NI ahora; el dinero no esta en la cuenta corriente</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="callout warn">
+      <span class="label">Con acciones al tercio</span>
+      Un dividendo “normal” paga igual a los tres. Por eso <strong>no</strong> sirve para sacar el Day Centre
+      solo a Raúl y Víctor, salvo que cambiemos la estructura de acciones (escenario B) o la sociedad (escenario C).
+    </div>
+  </section>
+
+  <section id="s5">
+    <h2><span class="step-num">5</span> Salario fijo vs bonus vs “subir al 40%”</h2>
+    <p class="section-intro">
+      Raúl y Víctor ya están cerca del umbral del higher rate (~£50,270) con el salario de £50k.
+      Cualquier euro extra entra en tipos altos — da igual si lo llamamos salario o bonus.
+    </p>
+    <h3>¿Subir el contrato a £100k o pagar £50k de bonus?</h3>
+    <p>
+      <strong>Para Hacienda es casi lo mismo</strong> (mismo IRPF, mismo NI de empleado y de empresa).
+      La diferencia es de negocio:
+    </p>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Salario fijo £100k</h3>
+        <ul>
+          <li>Compromiso permanente.</li>
+          <li>Si el DC baja, seguís pagando £100k.</li>
+          <li>Más raro de justificar frente a Javier (cobráis el doble fijo).</li>
+          <li>Holiday / sick / etc. sobre base más alta.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>£50k salario + £50k bonus</h3>
+        <ul>
+          <li>Mismo impuesto este año.</li>
+          <li>El bonus sigue al beneficio del DC.</li>
+          <li>Más limpio como “profit share Day Centre”.</li>
+          <li><strong>Esta es la opción que recomendamos.</strong></li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout ok">
+      <span class="label">Razonamiento</span>
+      El tramo hasta £100k es variable de negocio, no sueldo estructural.
+      Por eso: salario estable + bonus anual (idealmente oct/nov, antes del CT del ejercicio), no contrato a £100k.
+    </div>
+  </section>
+
+  <section id="s6">
+    <h2><span class="step-num">6</span> El plan £100k — qué os queda limpio</h2>
+    <p class="section-intro">
+      Tope de nómina ~£100,000 gross por persona (Raúl / Víctor). Por encima, el tramo £100k–£125k
+      es especialmente caro (se pierde el Personal Allowance). Ahí mejor pensión / caja / estructura.
+    </p>
+    <div class="flow">
+      <div class="box"><strong>£50k</strong><span>Salario fijo</span></div>
+      <div class="arrow">→</div>
+      <div class="box"><strong>+ £50k</strong><span>Bonus 1× año</span></div>
+      <div class="arrow">→</div>
+      <div class="box"><strong>= £100k</strong><span>Tope nómina</span></div>
+      <div class="arrow">→</div>
+      <div class="box"><strong>≈ £68.6k</strong><span>Limpio / año</span></div>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Concepto (por persona)</th><th class="num">Al año</th><th class="num">Media / mes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Bruto (salario + bonus)</td><td class="num">£100,000</td><td class="num">£8,333</td></tr>
+        <tr><td>− Income Tax</td><td class="num">−£27,432</td><td class="num">−£2,286</td></tr>
+        <tr><td>− Employee NI</td><td class="num">−£4,011</td><td class="num">−£334</td></tr>
+        <tr class="hilite"><td>= Neto en cuenta</td><td class="num">£68,557</td><td class="num">≈ £5,713</td></tr>
+        <tr><td>Employer NI (paga la empresa)</td><td class="num">£14,250</td><td class="num">≈ £1,188</td></tr>
+        <tr class="total"><td>Coste total empresa</td><td class="num">£114,250</td><td class="num">≈ £9,521</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:14px;color:var(--muted)">
+      Tipos orientativos UK 2025/26 (Inglaterra). El bonus en un solo mes hace un payslip “gordo”;
+      la media anual sigue siendo ~£5.7k limpios/mes. Confirmar con payroll / accountant.
+    </p>
+    <h3>Si en vez de £50k de bonus metiéramos £80k</h3>
+    <p>
+      De esos £80k extra solo quedarían ~<strong>£41k limpios</strong> (~51%).
+      Los últimos £30k (de £100k a £130k) son especialmente ineficientes.
+      Por eso el techo en £100k + resto fuera de nómina.
+    </p>
+  </section>
+
+  <section id="s7">
+    <h2><span class="step-num">7</span> Qué le toca a cada socio (foto completa)</h2>
+    <p class="section-intro">Sumando Day Centre + After con las reglas acordadas en la conversación.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Persona</th>
+          <th class="num">Day Centre</th>
+          <th class="num">After ÷3</th>
+          <th class="num">Total pastel</th>
+          <th class="num">Nómina tope</th>
+          <th class="num">Sobrante</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Raúl</strong></td>
+          <td class="num">£128,400</td>
+          <td class="num">£35,000</td>
+          <td class="num"><strong>£163,400</strong></td>
+          <td class="num">£100,000</td>
+          <td class="num">≈ £63,400</td>
+        </tr>
+        <tr>
+          <td><strong>Víctor</strong></td>
+          <td class="num">£128,400</td>
+          <td class="num">£35,000</td>
+          <td class="num"><strong>£163,400</strong></td>
+          <td class="num">£100,000</td>
+          <td class="num">≈ £63,400</td>
+        </tr>
+        <tr class="soft">
+          <td><strong>Javier</strong></td>
+          <td class="num">—</td>
+          <td class="num">£35,000</td>
+          <td class="num"><strong>£35,000</strong></td>
+          <td class="num">Según su vía</td>
+          <td class="num">—</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="callout idea">
+      <span class="label">Qué hacer con el sobrante (~£63k por R/V)</span>
+      No empujarlo a más bonus. Mezcla razonable a discutir con el accountant:
+      <strong>pensión employer</strong> (eficiente) + <strong>dejar cash en la empresa</strong> (crecimiento / colchón)
+      + más adelante <strong>dividendo selectivo</strong> solo si hay alphabet shares o DC Ltd.
+    </div>
+  </section>
+
+  <section id="s8">
+    <h2><span class="step-num">8</span> Tres escenarios de estructura</h2>
+    <p class="section-intro">
+      Extraer por nómina resuelve el corto plazo. La estructura resuelve el medio plazo:
+      que el patrimonio del Day Centre no se diluya al tercio si no es eso lo acordado.
+    </p>
+    <div class="scenarios">
+      <article class="sc a">
+        <div class="when">Corto plazo · ya</div>
+        <h3>A · Sin reestructurar</h3>
+        <p style="font-size:14px;margin:0 0 8px">Misma Ltd. Acuerdo escrito de pasteles. Bonus + pensión + caja.</p>
+        <ul>
+          <li>Rápido y barato.</li>
+          <li>Bonus solo a R+V (Day Centre).</li>
+          <li>El cash retenido sigue siendo 1/3 de cada socio.</li>
+        </ul>
+        <div class="cost">Setup ≈ £0–1.5k · semanas</div>
+      </article>
+      <article class="sc b">
+        <div class="when">Medio plazo · invierno / primavera</div>
+        <h3>B · Alphabet shares</h3>
+        <p style="font-size:14px;margin:0 0 8px">Misma Ltd; clases de acción con derechos de dividendo distintos.</p>
+        <ul>
+          <li>DC → dividendo solo R+V.</li>
+          <li>After → los tres.</li>
+          <li>Sin abrir otra empresa ni romper contratos.</li>
+        </ul>
+        <div class="cost">Setup tip. £2.5–6k · 4–10 semanas</div>
+      </article>
+      <article class="sc c">
+        <div class="when">Cuando DC sea grande y estable</div>
+        <h3>C · DC Ltd ± holding</h3>
+        <p style="font-size:14px;margin:0 0 8px">Day Centre en sociedad 50/50. After en la Ltd actual (1/3). Holding opciónal.</p>
+        <ul>
+          <li>Equity alíneado con la realidad.</li>
+          <li>Mejor para activos / venta / protección.</li>
+          <li>Más coste y complejidad operativa.</li>
+        </ul>
+        <div class="cost">Setup tip. £5–20k+ · 3–6 meses</div>
+      </article>
+    </div>
+    <h3>Comparativa rápida</h3>
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th>A · Retener / bonus</th>
+          <th>B · Alphabet</th>
+          <th>C · DC Ltd ± HoldCo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>¿Sobrante DC solo a R+V?</td>
+          <td>No del todo (si queda en Ltd, 1/3 Javi)</td>
+          <td>Si (via dividendo clase)</td>
+          <td>Si (equity 50/50)</td>
+        </tr>
+        <tr>
+          <td>Complejidad</td>
+          <td>Baja</td>
+          <td>Media</td>
+          <td>Alta</td>
+        </tr>
+        <tr>
+          <td>Encaje con £367k DC</td>
+          <td>Bien para operar ya</td>
+          <td><strong>Prioridad 2026</strong></td>
+          <td>Cuando sea estructural</td>
+        </tr>
+        <tr>
+          <td>¿Holding sola arregla el tercio?</td>
+          <td colspan="3">No. Holding encima de una Ltd al 1/3 no separa el Day Centre de Javier.</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="callout warn">
+      <span class="label">Sobre crear una holding “ya”</span>
+      Una holding es útil para proteger caja, comprar un local o preparar una venta.
+      <strong>No es un atajo para pagar menos IRPF</strong> al sacar dinero a la cuenta personal.
+      Primero hay que alinear quién es dueño de cada pastel (B o C); la holding es capa opciónal encima.
+    </div>
+  </section>
+
+  <section id="s9">
+    <h2><span class="step-num">9</span> Recomendacion para clubSENsational</h2>
+    <p class="section-intro">
+      Qué creemos que es mejor para la empresa y para la relación entre los tres socios —
+      no solo “lo más agresivo fiscalmente”.
+    </p>
+    <div class="reco">
+      <h3>Lo mejor: cadena A → B → (C solo si hace falta)</h3>
+      <ol>
+        <li><strong>Ya:</strong> pacto escrito After = 3 / DC = 2. Extracción R+V por salario £50k + bonus hasta ~£100k (oct/nov). Sobrante a pensión + caja. Javier cobra su tercio del After, no del DC via dividendo improvisado.</li>
+        <li><strong>Este invierno / primavera:</strong> si el DC 26/27 se confirma cerca de estas cifras, encargar <strong>alphabet shares (B)</strong>. Es el mejor valor: resuelve dividendos desiguales sin romper la operación.</li>
+        <li><strong>Más adelante:</strong> spin-out Day Centre (C) y/o <strong>holding de grupo</strong> cuando haya sobrante serio, inversión en centro, o <strong>PIXTOLEARN</strong> live con necesidad de capital — ver sección 11.</li>
+      </ol>
+    </div>
+    <h3>Por qué esto es lo mejor para la empresa</h3>
+    <ul>
+      <li><strong>Justicia operativa:</strong> quien genera y gestiona cada línea cobra de esa línea.</li>
+      <li><strong>Caja sana:</strong> no vacíais la Ltd; dejáis colchón y capacidad de crecer.</li>
+      <li><strong>Impuesto sensato:</strong> usáis el tramo eficiente de nómina; no regaláis el 60% efectivo por encima de £100k.</li>
+      <li><strong>Paz entre socios:</strong> Javier no se ve sorprendido por un DC que “no es suyo” pero si diluye su equity; R+V no sienten que regalan el DC al tercio.</li>
+      <li><strong>Escalable:</strong> A os deja operar mañana; B arregla el equity sin drama; C espera a que el tamaño lo pida.</li>
+    </ul>
+    <h3>Qué no recomendamos</h3>
+    <ul>
+      <li>Subir el salario fijo a £100k+ de forma permanente.</li>
+      <li>Sacar £80k+ extra de bonus por encima del tope £100k “porque hay margen”.</li>
+      <li>Dividendos iguales a tres sobre beneficio del Day Centre.</li>
+      <li>Crear holding como primer paso mágico sin resolver A/B.</li>
+      <li>Director’s loans o transferencias fuera de payroll.</li>
+    </ul>
+  </section>
+
+  <section id="s10">
+    <h2><span class="step-num">10</span> Timeline y preguntas para el accountant</h2>
+    <h3>Timeline propuesto</h3>
+    <ul class="tl">
+      <li>
+        <div class="when">Ahora</div>
+        <div class="what">
+          Reunión socios: validar pasteles, floors (30% / 65%) y tope £100k.
+          <span class="who">Raúl · Víctor · Javier</span>
+        </div>
+      </li>
+      <li>
+        <div class="when">Esta semana / mes</div>
+        <div class="what">
+          Llevar este briefing al accountant. Confirmar year-end, CT, Employment Allowance, pensión.
+          <span class="who">R/V + accountant</span>
+        </div>
+      </li>
+      <li>
+        <div class="when">Oct / Nov</div>
+        <div class="what">
+          Bonus anual via payroll (acta / profit share Day Centre), alíneado al cierre contable.
+          <span class="who">Payroll + accountant</span>
+        </div>
+      </li>
+      <li>
+        <div class="when">Invierno–primavera</div>
+        <div class="what">
+          Si DC confirma: presupuesto solicitor para alphabet shares (escenario B).
+          <span class="who">Los tres + solicitor</span>
+        </div>
+      </li>
+      <li>
+        <div class="when">Revisión anual</div>
+        <div class="what">
+          ¿Hace falta C (DC Ltd / holding)? Solo con volumen estable o compra de activo.
+          <span class="who">Junta socios</span>
+        </div>
+      </li>
+    </ul>
+    <h3>Preguntas concretas para el accountant</h3>
+    <ol class="q-list">
+      <li>¿Cuál es la <strong>fecha de cierre</strong> de clubSENsational y cuándo hay que pagar el bonus para que reste en el CT de este ejercicio (regla de los 9 meses)?</li>
+      <li>Con profits previstos (DC + After), ¿estamos en CT <strong>19%</strong>, marginal relief o <strong>25%</strong>? ¿Cambia bonus vs dividendo?</li>
+      <li>¿Podéis montar <strong>pensión employer</strong> para Raúl y Víctor y cuánto cabe este año (annual allowance)?</li>
+      <li>¿El Employment Allowance de la Ltd ya se consume con el staff, o afecta al Employer NI de los directores?</li>
+      <li>Para escenario <strong>B (alphabet shares)</strong>: coste, plazos y riesgos HMRC / derechos reales de dividendo.</li>
+      <li>¿Tiene sentido valorar <strong>C</strong> ya, o esperamos a ver Autumn 26/27 facturado de verdad?</li>
+      <li>¿Cómo documentamos el <strong>profit share Day Centre</strong> (board minutes, policy) para que el bonus sea defendible?</li>
+      <li>Con <strong>PIXTOLEARN</strong> a punto de live: ¿cuándo tendría sentido una <strong>HoldCo de grupo</strong>? ¿Share exchange? ¿Impacto de associated companies en el CT?</li>
+      <li>Si HoldCo recibe dividendos de clubSENsational y financia PIXTOLEARN (préstamo / capital), ¿cuál es la vía más limpia?</li>
+    </ol>
+    <div class="callout ok">
+      <span class="label">Para la reunión entre los tres</span>
+      Validar en una frase cada uno:<br />
+      <strong>Javier</strong> — “After es de tres; Day Centre es de Raúl y Víctor.”<br />
+      <strong>Raúl / Víctor</strong> — “Sacamos hasta ~£100k por nómina; el resto no lo quemamos en IRPF.”<br />
+      <strong>Los tres</strong> — “Las cifras son estimaciones; el accountant cierra; la estructura B la miramos cuando el DC se confirme.”
+    </div>
+  </section>
+
+
+  <section id="s11">
+    <h2><span class="step-num">11</span> Holding + PIXTOLEARN — organización de grupo</h2>
+    <p class="section-intro">
+      Esta sección no va de “sacar el sueldo en un tramo u otro”. Va de
+      <strong>cómo organizar el crecimiento</strong>, proteger capital, invertir en centros
+      y alinear clubSENsational con <strong>PIXTOLEARN</strong> (app / producto tech),
+      donde Raúl, Víctor y Javier también sois directores.
+    </p>
+
+    <div class="callout idea">
+      <span class="label">Idea clave</span>
+      Una holding UK <strong>no elimina</strong> el Corporation Tax del negocio que factura.
+      Lo que sí permite es, <em>después</em> de ese CT, subir dividendo a la holding
+      <strong>sin un segundo CT</strong>, retener caja fuera del riesgo operativo y
+      reinvertir en el grupo (centro, PIXTOLEARN, colchón) <strong>sin pasar por IRPF personal</strong>.
+    </div>
+
+    <h3>Qué hace y qué no hace</h3>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Sí sirve para</h3>
+        <ul>
+          <li>Sacar cash del riesgo de la OpCo (staff, venues, contratos).</li>
+          <li>Retener capital en el grupo y reinvertir.</li>
+          <li>Financiar otra pata (p. ej. PIXTOLEARN) desde la caja del grupo.</li>
+          <li>Separar riesgos: servicios ≠ Day Centre ≠ producto tech.</li>
+          <li>Preparar venta o socio en <em>una</em> línea sin vender todo.</li>
+          <li>Comprar / aparcar un local o activo fuera de la empresa que opera.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>No sirve para</h3>
+        <ul>
+          <li>Evitar el CT anual del trading de clubSENsational.</li>
+          <li>Sustituir el plan £50k + bonus ~£100k.</li>
+          <li>Resolver sola la tensión DC vs Javier (eso es B / DC Ltd).</li>
+          <li>Montarla “vacía” antes de tener cash, activo o PIXTOLEARN live.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>El ecosistema (tres patas, mismos tres socios)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Pieza</th>
+          <th>Quién</th>
+          <th>Naturaleza</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>After School &amp; Weekends</strong></td>
+          <td>Raúl + Víctor + Javier</td>
+          <td>Servicios</td>
+        </tr>
+        <tr>
+          <td><strong>Day Centre</strong></td>
+          <td>Raúl + Víctor (operativo)</td>
+          <td>Servicios / commissioning</td>
+        </tr>
+        <tr class="hilite">
+          <td><strong>PIXTOLEARN</strong></td>
+          <td>Raúl + Víctor + Javier (directores)</td>
+          <td>Producto tech (app) — a punto de live</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout ok">
+      <span class="label">Dibujo de grupo (visión medio plazo)</span>
+      <strong>HoldCo</strong> (equity de los tres, % a acordar)<br />
+      → clubSENsational OpCo (After / servicios)<br />
+      → Day Centre OpCo (si se separa, p. ej. 50/50 R+V)<br />
+      → <strong>PIXTOLEARN Ltd</strong> (app)<br /><br />
+      Dividendos de las OpCo suben a HoldCo (sin 2º CT). HoldCo decide: reserva, centro/activo, financiar PIXTOLEARN, o dividendo personal solo cuando haga falta.
+    </div>
+
+    <h3>Cuándo la holding pasa a ser beneficiosa</h3>
+    <table>
+      <thead>
+        <tr><th>Señal</th><th>¿Tiene sentido?</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Solo optimizar salario / bonus</td>
+          <td>No — seguir con A (+ B)</td>
+        </tr>
+        <tr>
+          <td>Sobrante recurrente que queréis <strong>guardar</strong> fuera del riesgo del día a día</td>
+          <td><strong>Sí</strong></td>
+        </tr>
+        <tr>
+          <td>Inversión real en centro / fit-out / activo gordo</td>
+          <td><strong>Sí</strong></td>
+        </tr>
+        <tr>
+          <td>PIXTOLEARN live y necesita funding o caja del grupo</td>
+          <td><strong>Sí</strong></td>
+        </tr>
+        <tr>
+          <td>Queréis vender o abrir socio en una sola pata</td>
+          <td><strong>Sí</strong></td>
+        </tr>
+        <tr>
+          <td>PIXTOLEARN aún sin ventas / sin cash que mover</td>
+          <td>Todavía no (preparar, no montar en vacío)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Por qué PIXTOLEARN refuerza el caso (más adelante)</h3>
+    <ul>
+      <li>Misma gobernanza de los tres, pero <strong>riesgo distinto</strong> (producto SaaS vs cuidado regulado).</li>
+      <li>Si la app necesita runway, es más limpio que HoldCo <strong>preste o capitalice</strong> PIXTOLEARN con cash ya “limpio” del grupo.</li>
+      <li>Si entra un inversor en la app, es más fácil diluir o vender <strong>solo PIXTOLEARN</strong>.</li>
+      <li>La HoldCo al tercio (o el % que acordéis) es el sitio natural del “nosotros tres como grupo”, mientras el Day Centre puede seguir 50/50 debajo.</li>
+    </ul>
+
+    <h3>Cadena recomendada (actualizada con PIXTOLEARN)</h3>
+    <table>
+      <thead>
+        <tr><th>Fase</th><th>Qué</th><th>Por qué</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Ahora</strong></td>
+          <td>A: pasteles escritos + £50k + bonus ~£100k + pensión/caja</td>
+          <td>Liquidez y paz operativa</td>
+        </tr>
+        <tr>
+          <td><strong>Pronto</strong></td>
+          <td>B: alphabet shares en clubSENsational (DC vs After)</td>
+          <td>Justicia equity dentro de servicios</td>
+        </tr>
+        <tr class="hilite">
+          <td><strong>Cuando PIXTOLEARN facture, o haya centro / sobrante gordo</strong></td>
+          <td><strong>HoldCo de grupo</strong> + opcional DC Ltd</td>
+          <td>Organización, retención de capital, funding cruzado, protección</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout warn">
+      <span class="label">Para el accountant / solicitor</span>
+      Modelar <strong>associated companies</strong> (varias sociedades pueden apretar la banda del small profits rate).
+      Un share exchange a HoldCo hay que hacerlo bien. No montar HoldCo solo “por si acaso” antes de live de PIXTOLEARN o de una inversión concreta.
+    </div>
+
+    <div class="callout ok">
+      <span class="label">Frase para la reunión</span>
+      La holding no es para evadir rangos de IRPF: es para que clubSENsational + Day Centre + <strong>PIXTOLEARN</strong>
+      funcionen como <strong>grupo</strong> — retener e invertir capital sin sacarlo a personal cada año, y sin dejar el patrimonio dentro de la empresa que opera el riesgo.
+    </div>
+  </section>
+
+  <p class="foot">
+    clubSENsational Ltd · Company no. 13755417 · 71-75 Shelton Street, Covent Garden, WC2H 9JQ, London ·
+    www.clubsensational.org<br />
+    Briefing socios — extracción y estructura 2026–27 · Documento interno de trabajo ·
+    Archivo: PORTALVIC/docs/finance/briefing-socios-extracción-2026-27.html
+  </p>
+
+</div>
+</body>
+</html>
