@@ -1456,13 +1456,13 @@
     return (
       '<a class="pp-hub-shortcut pp-hub-shortcut--book-portal" href="' +
       esc(BOOKING_PORTAL_URL) +
-      '" target="_blank" rel="noopener noreferrer" aria-label="Book online">' +
+      '" target="_blank" rel="noopener noreferrer" aria-label="Book more services">' +
       '<span class="pp-hub-shortcut__ico" aria-hidden="true">' +
       icoFn(
         '<circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8l4 4-4 4"/>',
       ) +
       "</span>" +
-      '<span class="pp-hub-shortcut__label">Book online</span></a>'
+      '<span class="pp-hub-shortcut__label">Book more services</span></a>'
     );
   }
 
@@ -1892,7 +1892,6 @@
         : "") +
       reenrolQuickAccessBtnHtml(data, ico) +
       bookingPortalQuickAccessBtnHtml(data, ico) +
-      (canBookExtrasFor(data) ? crashQuickAccessBtnHtml(data, ico) : "") +
       "</div></section>"
     );
   }
