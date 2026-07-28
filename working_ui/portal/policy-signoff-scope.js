@@ -175,11 +175,25 @@
     }
   }
 
-  /** Home-office / ops staff with no frontline sign-off requirement (e.g. Sevitha). */
-  function isSignOffExemptProfile(profile) {
+  /** Home-office pack: GDPR, whistleblowing, H&S, code of conduct, IT continuity. */
+  var HOME_OFFICE_DOC_IDS = {
+    "POL-002": true,
+    "POL-003": true,
+    "POL-011": true,
+    "POL-062": true,
+    "POL-063": true,
+  };
+
+  /** Home-office / ops staff (e.g. Sevitha) — short pack only, not frontline procedures. */
+  function isHomeOfficeProfile(profile) {
     var blob = profileNameBlob(profile);
     if (!blob) return false;
     return /\bsevitha\b/.test(blob);
+  }
+
+  /** @deprecated use isHomeOfficeProfile */
+  function isSignOffExemptProfile(profile) {
+    return isHomeOfficeProfile(profile);
   }
 
   /** Hide from the admin completion matrix entirely (e.g. Teflon test/demo account). */
@@ -256,8 +270,8 @@
     var set = ["core"];
     profile = profile || {};
 
-    if (isSignOffExemptProfile(profile)) {
-      return ["sign_exempt"];
+    if (isHomeOfficeProfile(profile)) {
+      return ["home_office"];
     }
 
     if (isCompanyManagerProfile(profile)) {
@@ -314,6 +328,13 @@
     if (typeof doc === "string") doc = DOC_SCOPE[String(doc).toUpperCase()];
     if (!doc) return false;
     var wt = workerTags || ["core"];
+    if (wt.indexOf("home_office") >= 0) {
+      var hid =
+        typeof doc === "string"
+          ? String(doc).toUpperCase()
+          : String((doc && doc.id) || "").toUpperCase();
+      return !!HOME_OFFICE_DOC_IDS[hid];
+    }
     if (wt.indexOf("sign_exempt") >= 0) return false;
     if (wt.indexOf("sign_all") >= 0) return true;
     if (doc.kind === "policy") return true;
@@ -327,6 +348,7 @@
 
   function roleLabelFromTags(tags) {
     var t = tags || [];
+    if (t.indexOf("home_office") >= 0) return "Home office";
     if (t.indexOf("sign_exempt") >= 0) return "Exempt (home office)";
     if (t.indexOf("sign_all") >= 0) return "Manager (all)";
     var nice = [];
@@ -345,6 +367,8 @@
     ACTIVE_CONTRACT_STATUSES: ACTIVE_CONTRACT_STATUSES,
     isLiveContractStatus: isLiveContractStatus,
     isCompanyManagerProfile: isCompanyManagerProfile,
+    HOME_OFFICE_DOC_IDS: HOME_OFFICE_DOC_IDS,
+    isHomeOfficeProfile: isHomeOfficeProfile,
     isSignOffExemptProfile: isSignOffExemptProfile,
     isHiddenFromSignoffMatrix: isHiddenFromSignoffMatrix,
     deriveTagsForWorker: deriveTagsForWorker,

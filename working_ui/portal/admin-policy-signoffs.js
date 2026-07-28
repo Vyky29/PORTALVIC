@@ -81,6 +81,17 @@
     }
     if (!doc) return false;
     var wt = workerTags || ["core"];
+    if (wt.indexOf("home_office") >= 0) {
+      var hid = String(doc.id || "").toUpperCase();
+      return (
+        hid === "POL-002" ||
+        hid === "POL-003" ||
+        hid === "POL-011" ||
+        hid === "POL-062" ||
+        hid === "POL-063"
+      );
+    }
+    if (wt.indexOf("sign_exempt") >= 0) return false;
     if (wt.indexOf("sign_all") >= 0) return true;
     if (doc.kind === "policy") return true;
     var tags = doc.tags || ["core"];
@@ -229,7 +240,7 @@
       "Managers (Victor, Palankas, Raul) must acknowledge <em>all</em> policies and procedures. " +
       "Each service role also requires the emergency procedures (and venue overviews) for its usual venues. " +
       "Pre-contract dual roles: Luliya, Youssef and Roberto = Swim + class support; Bismark = Climb + Hub. " +
-      "Sevitha is exempt (home office). Teflon is hidden from this matrix. " +
+      "Sevitha = Home office pack only (POL-002, 003, 011, 062, 063). Teflon is hidden from this matrix. " +
       "Completions come from portal <code>staff_policy_ack</code> documents (not browser-only saves). " +
       "Grey <code>n/a</code> means not in scope for that person." +
       "</div></div>" +
