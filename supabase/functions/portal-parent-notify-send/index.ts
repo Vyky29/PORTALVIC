@@ -351,10 +351,27 @@ Deno.serve(async (req) => {
   const allFailed = !anySent;
 
   const sessionDate = str(payload.sessionDate, 10);
+  const loggedKind = str(payload.kind, 64) || "custom";
+  const bodyForLog =
+    bodyText || (hasMedia ? mediaPlaceholderBody(classifyWhatsappMediaMime(mediaMime)) : "");
+  let waClientBody: string | null = null;
+  let waTemplateKind: string | null = null;
+  if (loggedKind === "contact_update_urgent") {
+    waTemplateKind = "contact_update_urgent";
+    waClientBody = bodyForLog.trim()
+      ? `Urgent information:\n${bodyForLog.trim()}\nThank you.`
+      : null;
+  } else if (loggedKind === "contact_update") {
+    waTemplateKind = "contact_update";
+    waClientBody = bodyForLog.trim()
+      ? `Hello,\n${bodyForLog.trim()}\nThank you.`
+      : null;
+  }
+
   const logRow = {
     sent_by_user_id: verified.userId,
     sent_by_email: verified.email,
-    kind: str(payload.kind, 64) || "custom",
+    kind: loggedKind,
     channel,
     client_display: str(payload.clientDisplay, 200) || null,
     parent_name: str(payload.parentName, 200) || null,
@@ -364,7 +381,7 @@ Deno.serve(async (req) => {
     slot_id: str(payload.slotId, 120) || null,
     venue: str(payload.venue, 200) || null,
     subject: subject || null,
-    body_text: bodyText || (hasMedia ? mediaPlaceholderBody(classifyWhatsappMediaMime(mediaMime)) : ""),
+    body_text: bodyForLog,
     message_type: messageType,
     media_path: mediaPath,
     media_mime: storedMime,
@@ -383,6 +400,12 @@ Deno.serve(async (req) => {
       media_filename: mediaFilename || null,
       open_session: hasMedia ? openSession : null,
       context_wa_id: contextWaId || null,
+      ...(waTemplateKind
+        ? {
+          wa_template_kind: waTemplateKind,
+          wa_client_body: waClientBody,
+        }
+        : {}),
     },
   };
 
