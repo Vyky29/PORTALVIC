@@ -468,6 +468,9 @@
     const BUS = ASSET + "bus.png";
     const CAB = ASSET + "cab.png";
     const HOME_MUNCHY = ASSET + "home-with-munchy.png";
+    const KARAOKE = ASSET + "karaoke.png";
+    const TRAIN = ASSET + "train.png";
+    const SWING = ASSET + "swing.png";
 
     const STAFF_SEP = [
       { id: "michelle", name: "Michelle", img: ASSET + "staff/michelle.png" },
@@ -506,6 +509,24 @@
       { label: "Cab", img: CAB },
     ];
 
+    const SEPTEMBER_I_CAN_DO_DEFAULT = [
+      { label: "Gym", img: GYM },
+      { label: "Pool", img: POOL },
+      { label: "Vocational", img: VOCATIONAL },
+      { label: "Basketball", img: BASKETBALL },
+    ];
+
+    const SEPTEMBER_I_CAN_DO_IKRAM = [
+      { label: "Karaoke", img: KARAOKE },
+      { label: "Train", img: TRAIN },
+      { label: "Bus", img: BUS },
+      { label: "Cab", img: CAB },
+      { label: "Park", img: PARK },
+      { label: "Swing", img: SWING },
+      { label: "Cafe", img: CAFE },
+      { label: "Restaurant", img: RESTAURANT },
+    ];
+
     function pageHeader() {
       return (
         '<div class="who">' +
@@ -527,6 +548,7 @@
         sepFirstCome: 2,
         note: "Mon / Wed / Fri · first day back Wed 2 September",
         augustICanDo: AUGUST_I_CAN_DO_DEFAULT,
+        septemberICanDo: SEPTEMBER_I_CAN_DO_DEFAULT,
       },
       {
         id: "timi",
@@ -537,6 +559,7 @@
         sepFirstCome: 4,
         note: "Mon + Fri · first day back Fri 4 September",
         augustICanDo: [],
+        septemberICanDo: SEPTEMBER_I_CAN_DO_DEFAULT,
       },
       {
         id: "ikram",
@@ -547,6 +570,7 @@
         sepFirstCome: 1,
         note: "Mon / Tue / Wed / Fri · first day back Tue 1 September",
         augustICanDo: AUGUST_I_CAN_DO_IKRAM,
+        septemberICanDo: SEPTEMBER_I_CAN_DO_IKRAM,
       },
     ];
 
@@ -809,11 +833,14 @@
           '<div class="dow"><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span></div>' +
           '<div class="grid">' + sep + "</div></div>" +
           '<p class="with-mum">I can do</p>' +
-          '<div class="pecs acts">' +
-            pec({ label: "Gym", img: GYM, tone: "green" }) +
-            pec({ label: "Pool", img: POOL, tone: "green" }) +
-            pec({ label: "Vocational", img: VOCATIONAL, tone: "green" }) +
-            pec({ label: "Basketball", img: BASKETBALL, tone: "green" }) +
+          '<div class="pecs acts' +
+          (kid.septemberICanDo && kid.septemberICanDo.length === 6
+            ? " six"
+            : "") +
+          '">' +
+          (kid.septemberICanDo || SEPTEMBER_I_CAN_DO_DEFAULT)
+            .map((a) => pec({ label: a.label, img: a.img, tone: "green" }))
+            .join("") +
           "</div>" +
           '<p class="note">' + kid.note + " · VisualVic Hub Room</p>" +
         "</article>" +
