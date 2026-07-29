@@ -927,6 +927,24 @@
     };
   }
 
+  /** Aggregate NHS inflation uplift lines (INV-0389–0392) for Summer Total stack. */
+  function summerNhsUpliftInvoicesGbp(r) {
+    if (!isNhsInflationUpliftRow(r)) return null;
+    var d = (r && r.data) || {};
+    var io = Number(d["INV-0390 (Ikram Omar)"]);
+    var fa = Number(d["INV-0389 (Fadi)"]);
+    var ed = Number(d["INV-0391 (Emanuel Dodson)"]);
+    var td = Number(d["INV-0392 (Timi Dairo)"]);
+    if (!(io > 0) && !(fa > 0) && !(ed > 0) && !(td > 0)) return null;
+    return {
+      io: io > 0 ? io : 0,
+      fa: fa > 0 ? fa : 0,
+      ed: ed > 0 ? ed : 0,
+      td: td > 0 ? td : 0,
+      total: (io > 0 ? io : 0) + (fa > 0 ? fa : 0) + (ed > 0 ? ed : 0) + (td > 0 ? td : 0),
+    };
+  }
+
   function summerAprMayInvoicesGbp(r) {
     var d = (r && r.data) || {};
     var apr = Number(d["April invoice (25/26)"]);
@@ -1088,16 +1106,19 @@
     if (bucket === "summer_2526") {
       var aprMay = summerAprMayInvoicesGbp(r);
       var junJul = summerJunJulInvoicesGbp(r);
+      var uplift = summerNhsUpliftInvoicesGbp(r);
       var sessOnly = aprMay && termAmt > aprMay.total
         ? Math.round((termAmt - aprMay.total) * 100) / 100
         : 0;
-      if (!julyPay && !aprMay && !junJul) return main;
+      if (!julyPay && !aprMay && !junJul && !uplift) return main;
       return '<span class="pay-amt-stack" title="'
-        + (aprMay
-          ? "Jun–Jul sessions + April/May invoices"
-          : junJul
-            ? "June + July NHS invoices"
-            : "Summer term total")
+        + (uplift
+          ? "NHS inflation uplift invoices (2.03%)"
+          : aprMay
+            ? "Jun–Jul sessions + April/May invoices"
+            : junJul
+              ? "June + July NHS invoices"
+              : "Summer term total")
         + '">'
         + '<span class="pay-amt-term">' + main + "</span>"
         + (aprMay && sessOnly > 0
@@ -1115,6 +1136,18 @@
             + money(junJul.june)
             + " · Jul "
             + money(junJul.july)
+            + "</span>"
+          : "")
+        + (uplift
+          ? '<span class="pay-amt-season" title="INV-0390 Ikram · INV-0389 Fadi">IO '
+            + money(uplift.io)
+            + " · FA "
+            + money(uplift.fa)
+            + "</span>"
+            + '<span class="pay-amt-season" title="INV-0391 Emanuel · INV-0392 Timi">ED '
+            + money(uplift.ed)
+            + " · TD "
+            + money(uplift.td)
             + "</span>"
           : "")
         + (julyPay
@@ -1928,9 +1961,21 @@
     return /11\s*(?:to|-|–|:)\s*12/.test(s) && !/multi/i.test(s);
   }
 
+  function isNhsInflationUpliftRow(r) {
+    var key = String((r && r.client_key) || "").toLowerCase();
+    if (key.indexOf("nhs-inflation") === 0 || key.indexOf("nhs_inflation") === 0) return true;
+    var name = String((r && r.client_name) || "").toLowerCase();
+    return /inflationary\s*uplift|nhs\s*[·•\-]\s*inflation/.test(name);
+  }
+
   function isDayCentreRow(r) {
     var slug = paymentParticipantSlug(r);
     var s = rowServiceBlob(r);
+    var d = (r && r.data) || {};
+
+    /* Aggregate NHS Day Centre uplift invoices (INV-0389–0392) — not per child. */
+    if (isNhsInflationUpliftRow(r)) return true;
+    if (/day\s*centre/i.test(String(d.Stream || ""))) return true;
 
     /*
      * Tinashe: weekday 90' Bespoke stays Afterschool & Weekends.
@@ -2297,6 +2342,7 @@
 
   /** Support ratio chip: default 1to1; Ikram/Fadi/Timi = 2to1; Tinashe term = 3to1. */
   function supportRatioFor(r) {
+    if (isNhsInflationUpliftRow(r)) return "—";
     var name = String((r && r.client_name) || "").toLowerCase();
     /* July crash aquatic is 1to1; weekday term support for Tinashe stays 3to1. */
     if (/\btinashe\b/.test(name) && !(r && r._crash)) return "3to1";
@@ -2312,7 +2358,9 @@
   }
 
   function supportCellHtml(r) {
-    return '<span class="pay-chip pay-chip--muted">' + esc(supportRatioFor(r)) + "</span>";
+    var ratio = supportRatioFor(r);
+    if (ratio === "—") return '<span class="pay-chip pay-chip--muted">NHS</span>';
+    return '<span class="pay-chip pay-chip--muted">' + esc(ratio) + "</span>";
   }
 
   function paymentsTableHeadHtml(termId, colClient) {
