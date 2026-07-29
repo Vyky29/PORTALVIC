@@ -828,6 +828,7 @@
     statusFilter: "active", // active (re-enrolled) | all | outstanding | paid | notreenrolled
     sheetFilter: "",      // "" = all groups, else sheet name
     paidFilterByTerm: {}, // termBucketId -> Paid value ("" = all)
+    payStatusByTerm: {}, // termBucketId -> "" | "paid" | "outstanding" (table Status filter)
     serviceKindByTerm: {}, // termBucketId -> "afterschool" | "day_centre"
     termOpenById: {}, // termBucketId -> boolean (persist accordion open across re-renders)
     focusTermId: "", // after Paid chip click, keep this term open + in view
@@ -1171,6 +1172,9 @@
       ".pay-kpi--out .pay-kpi__ico{background:#fee2e2;color:#b91c1c}",
       ".pay-kpi--out span{color:#b91c1c}",
       ".pay-kpi--out b{color:#991b1b}",
+      "button.pay-kpi{font:inherit;cursor:pointer;text-align:center;width:100%}",
+      "button.pay-kpi:hover{filter:brightness(0.98)}",
+      "button.pay-kpi.pay-kpi--active{box-shadow:0 0 0 2px rgba(45,132,179,.35)}",
       "@media(max-width:520px){.pay-kpi--billed{width:100%}.pay-kpi b{font-size:18px}}",
       ".pay-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin:0 0 14px}",
       ".pay-grp{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;min-width:0}",
@@ -1214,6 +1218,8 @@
       ".pay-chip--private{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}",
       ".pay-chip--funded-la{background:#f5f3ff;color:#6d28d9;border-color:#ddd6fe}",
       ".pay-chip--funded-nhs{background:#ecfeff;color:#0e7490;border-color:#a5f3fc}",
+      ".pay-chip--out{background:#fef2f2;color:#b91c1c;border-color:#fecaca}",
+      ".pay-chip--paid-ok{background:#ecfdf5;color:#047857;border-color:#a7f3d0}",
       ".pay-chip--inv-parent-ex{background:#f0fdf4;color:#166534;border-color:#bbf7d0}",
       ".pay-chip--inv-parent-20{background:#fff7ed;color:#c2410c;border-color:#fed7aa}",
       ".pay-chip--inv-la{background:#faf5ff;color:#7c3aed;border-color:#e9d5ff}",
@@ -1401,6 +1407,12 @@
   function paidFilterForTerm(termId) {
     var map = state.paidFilterByTerm || {};
     return map[termId] || "";
+  }
+
+  function payStatusFilterForTerm(termId) {
+    var map = state.payStatusByTerm || {};
+    var v = map[termId] || "";
+    return v === "paid" || v === "outstanding" ? v : "";
   }
 
   function captureTermOpenState(root) {
@@ -1992,8 +2004,15 @@
 
   function paidFilterChipsHtml(termId) {
     var cur = paidFilterForTerm(termId);
+    var statusCur = payStatusFilterForTerm(termId);
     var stream = serviceKindForTerm(termId);
-    var html = '<div class="pay-chip-filters pay-chip-filters--tbl" role="group" aria-label="Paid filter for this term">'
+    var html = '<div class="pay-chip-filters pay-chip-filters--tbl" role="group" aria-label="Filters for this term">'
+      + '<div class="pay-chip-row">'
+      + '<span class="pay-chip-row__lab">Status</span>'
+      + filterChipBtn("paystatus", "", "All", !statusCur, "pay-chip--muted", termId)
+      + filterChipBtn("paystatus", "paid", "Paid", statusCur === "paid", "pay-chip--paid-ok", termId)
+      + filterChipBtn("paystatus", "outstanding", "Outstanding", statusCur === "outstanding", "pay-chip--out", termId)
+      + "</div>"
       + '<div class="pay-chip-row">'
       + '<span class="pay-chip-row__lab">Paid</span>'
       + filterChipBtn("paid", "", "All", !cur, "pay-chip--muted", termId);
@@ -2029,8 +2048,17 @@
     return (rows || []).filter(function (r) { return paidByFor(r) === paid; });
   }
 
+  function applyPayStatusFilter(rows, termId) {
+    var st = payStatusFilterForTerm(termId);
+    if (!st) return rows || [];
+    return (rows || []).filter(function (r) { return category(r) === st; });
+  }
+
   function applyTermTableFilters(rows, termId) {
-    return applyPaidFilter(applyServiceKindFilter(rows || [], termId), termId);
+    return applyPayStatusFilter(
+      applyPaidFilter(applyServiceKindFilter(rows || [], termId), termId),
+      termId,
+    );
   }
 
   function allRows() {
@@ -2396,12 +2424,13 @@
   function termSummaryBlockHtml(scopedRows, visibleRows, termId) {
     var stream = serviceKindForTerm(termId);
     var t = tallyRows(scopedRows, stream);
+    var statusCur = payStatusFilterForTerm(termId);
     var html = '<div class="pay-term-acc__body">';
     html += serviceKindToggleHtml(termId);
     html += '<div class="pay-kpis">'
-      + kpiCard("billed", "pay-kpi--billed", "Billed", money(t.billed))
-      + kpiCard("paid", "pay-kpi--paid", "Paid", money(t.paid))
-      + kpiCard("out", "pay-kpi--out", "Outstanding", money(t.outstanding))
+      + kpiCard("billed", "pay-kpi--billed", "Billed", money(t.billed), null, termId, !statusCur)
+      + kpiCard("paid", "pay-kpi--paid", "Paid", money(t.paid), "paid", termId, statusCur === "paid")
+      + kpiCard("out", "pay-kpi--out", "Outstanding", money(t.outstanding), "outstanding", termId, statusCur === "outstanding")
       + "</div>";
     if (state.mode === "payments") {
       html += '<div class="pay-groups">'
@@ -2438,10 +2467,11 @@
        * mid KPIs/groups and the Participants table for the active stream.
        */
       var headerRows = sg.rows;
+      /* Stream + funding chips scope KPIs; Status (Paid/Out) scopes the table. */
       var scoped = applyServiceKindFilter(applyPaidFilter(sg.rows, termId), termId);
       /* Always keep the term openable so stream / Paid filters stay reachable. */
       any = true;
-      var vis = scoped.filter(statusMatch);
+      var vis = applyPayStatusFilter(scoped, termId).filter(statusMatch);
       html += '<details class="pay-term-acc"' + termDetailsOpenAttr(termId) + ' data-pay-term="' + esc(termId) + '">'
         + '<summary class="pay-term-acc__sum">'
         + '<span><span class="pay-term-acc__title">' + esc(sg.bucket.title) + "</span>"
@@ -4004,11 +4034,23 @@
     return html;
   }
 
-  function kpiCard(ico, cls, label, value) {
-    return '<div class="pay-kpi ' + cls + '">'
+  function kpiCard(ico, cls, label, value, statusValue, termId, active) {
+    var filterable = statusValue === "paid" || statusValue === "outstanding" || statusValue === null;
+    if (!filterable || !termId) {
+      return '<div class="pay-kpi ' + cls + '">'
+        + '<span class="pay-kpi__ico">' + icon(ico, 20) + '</span>'
+        + '<span class="pay-kpi__txt"><span>' + esc(label) + '</span><b>' + value + '</b></span>'
+        + '</div>';
+    }
+    var pressed = active ? "true" : "false";
+    var val = statusValue == null ? "" : statusValue;
+    return '<button type="button" class="pay-kpi ' + cls + (active ? " pay-kpi--active" : "") + '"'
+      + ' data-pay-chip-kind="paystatus" data-pay-chip-value="' + esc(val) + '"'
+      + ' data-pay-chip-term="' + esc(termId) + '" aria-pressed="' + pressed + '"'
+      + ' title="Filter table: ' + esc(label) + '">'
       + '<span class="pay-kpi__ico">' + icon(ico, 20) + '</span>'
       + '<span class="pay-kpi__txt"><span>' + esc(label) + '</span><b>' + value + '</b></span>'
-      + '</div>';
+      + '</button>';
   }
 
   function grpCard(ico, cls, title, g) {
@@ -4043,6 +4085,15 @@
           if (!state.paidFilterByTerm) state.paidFilterByTerm = {};
           if (termId) state.paidFilterByTerm[termId] = val;
           if (termId) state.focusTermId = termId;
+        } else if (kind === "paystatus") {
+          if (!state.payStatusByTerm) state.payStatusByTerm = {};
+          if (termId) {
+            var curSt = payStatusFilterForTerm(termId);
+            /* Toggle off if clicking the same Paid/Outstanding again. */
+            state.payStatusByTerm[termId] =
+              val && curSt === val ? "" : (val === "paid" || val === "outstanding" ? val : "");
+            state.focusTermId = termId;
+          }
         }
         render();
       });
