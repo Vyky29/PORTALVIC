@@ -259,10 +259,15 @@ export default function RobertoCobradoSep25Jul26() {
         Pot manana DC Abr £632 vs May/Jun £1,000 (= £368 / ~23h @ £16). Explica
         recuperacion durante el contrato; no baja solo el £588.
       </Callout>
-      <Callout tone="neutral" title="Mayo Q6 (claim Roberto)">
-        Miercoles 11-12 Q6 × 6 dias (~6h). Payslip mayo = £0 extras. Si era
-        recuperacion → mayo OK. Si por encima y no pagado → credito ~£96 (@16)
-        contra offset (decision Victor).
+      <Callout tone="neutral" title="Q6 Abr+May (Victor: 3+3)">
+        Miercoles 11-12 Q6 = 3×1h Abr + 3×1h May (=6h). Abr ya en span mie
+        5.5h; May +3h al total mes. Payslip mayo = £0 extras. Si recuperacion
+        → mayo OK; si por encima → credito ~£96 (@16) contra offset.
+      </Callout>
+      <Callout tone="info" title="Horas trabajadas ene-17 jul">
+        Solidos: Abr 91.5 · May 142 (incl +3 Q6) · Jun 153 · Jul 1-17 80.5
+        (=467 Abr-17 Jul). Ene-Mar incompletos (solo pot manana Excel). Ver
+        briefing HTML tabla 3b.
       </Callout>
       <Callout tone="info" title="Desde el 17 = extras @ £16">
         Wording Victor: extras desde el 17 jul (dia completo). Ambiguidad si
