@@ -1501,6 +1501,41 @@
     );
   }
 
+  /** Day Centre summer social story — Emanuel, Timi, Ikram, Fadi. */
+  function summerSocialStoryKidSlug(data) {
+    var p = (data && data.participant) || {};
+    var blob = [p.contact_id, p.display_name, p.first_name, p.last_name, p.name]
+      .map(function (x) {
+        return String(x || "").toLowerCase();
+      })
+      .join(" ");
+    if (/\bemanuel\b/.test(blob) || /\bemmanuel\b/.test(blob)) return "emanuel";
+    if (/\btimi\b/.test(blob) || /oluwatimilehin/.test(blob)) return "timi";
+    if (/\bikram\b/.test(blob)) return "ikram";
+    if (/\bfadi\b/.test(blob)) return "fadi";
+    return "";
+  }
+
+  function summerSocialStoryQuickAccessBtnHtml(data, icoFn) {
+    var slug = summerSocialStoryKidSlug(data);
+    if (!slug) return "";
+    var href =
+      "/portal/day-centre-summer-break-social-story.html?kid=" +
+      encodeURIComponent(slug) +
+      "&parent=1";
+    return (
+      '<a class="pp-hub-shortcut pp-hub-shortcut--summer-story" href="' +
+      esc(href) +
+      '" target="_blank" rel="noopener noreferrer" aria-label="Summer holidays social story">' +
+      '<span class="pp-hub-shortcut__ico" aria-hidden="true">' +
+      icoFn(
+        '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+      ) +
+      "</span>" +
+      '<span class="pp-hub-shortcut__label">Summer holidays social story</span></a>'
+    );
+  }
+
   function unconfirmedSlotBannerHtml(data) {
     if (!needsUnconfirmedSlotBanner(data)) return "";
     var crash = canBookExtrasFor(data) ? crashBookBtnHtml(data) : "";
@@ -1927,6 +1962,7 @@
         : "") +
       reenrolQuickAccessBtnHtml(data, ico) +
       bookingPortalQuickAccessBtnHtml(data, ico) +
+      summerSocialStoryQuickAccessBtnHtml(data, ico) +
       "</div></section>"
     );
   }

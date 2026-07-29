@@ -514,14 +514,62 @@
       .pec.person .vis { max-height: 100px; }
       .pec.wide-cal .vis { max-height: 160px; }
     }
+    body.parent-view .toolbar .kids { display: none; }
+    body.parent-view .toolbar p {
+      max-width: none;
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 8mm;
+    }
     @media print {
-      body { background: #fff; }
+      body { background: #fff !important; }
       .toolbar { display: none !important; }
-      .story { display: none !important; margin: 0; max-width: none; padding: 0; }
-      .story.active { display: grid !important; gap: 0; }
-      .page { border: 0; border-radius: 0; min-height: 100vh; padding: 10mm; }
-      .pec .vis { max-height: 140px; }
-      .pec.person .vis { max-height: 90px; }
+      .story { display: none !important; margin: 0 !important; max-width: none !important; padding: 0 !important; }
+      .story.active {
+        display: block !important;
+        gap: 0 !important;
+      }
+      .page {
+        border: 0 !important;
+        border-radius: 0 !important;
+        min-height: 0 !important;
+        height: auto !important;
+        max-height: none !important;
+        padding: 0 0 4mm !important;
+        margin: 0 !important;
+        page-break-after: always;
+        break-after: page;
+        overflow: visible !important;
+        gap: 8px !important;
+      }
+      .page:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+      .pecs, .cal, .week, .friday-box, .stack, .legend {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      .pec .vis { max-height: 100px; }
+      .pec.person .vis { max-height: 70px; padding: 4px; }
+      .pec.wide-cal .vis { max-height: 110px; }
+      .pec.hero .vis { max-height: 160px; }
+      .cell { min-height: 34px; }
+      .cell .tag { font-size: 6px; }
+      .week { gap: 4px; }
+      .day { padding: 4px 2px 6px; }
+      .day .st img { max-width: 28px; max-height: 28px; }
+      .friday-box { padding: 8px; gap: 6px; }
+      .with-mum { margin: 6px 0 2px; font-size: 1rem; }
+      .note { margin-top: 6px; padding-top: 4px; font-size: 10px; }
+      .who strong { font-size: 1.25rem; }
+      .who img.brand { width: 48px; height: 48px; }
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
     }
   </style>
 </head>
@@ -529,7 +577,8 @@
   <div class="toolbar">
     <p>VisualVic Hub Room · PECS strips · Print / PDF</p>
     <div class="kids" id="kidButtons"></div>
-    <button type="button" class="print" onclick="window.print()">Print / PDF</button>
+    <a class="print" id="btnPdf" href="#" hidden>Download PDF</a>
+    <button type="button" class="print" id="btnPrint">Print / PDF</button>
   </div>
   <div id="stories"></div>
 
@@ -578,8 +627,8 @@
       { id: "emanuel", name: "Emanuel", img: ASSET + "avatar-emanuel.png" },
       { id: "timi", name: "Timi", img: ASSET + "avatar-timi.png" },
       { id: "ikram", name: "Ikram", img: ASSET + "avatar-ikram.png" },
-      { id: "tinashe", name: "Tinashe", img: ASSET + "avatar-tinashe.png" },
       { id: "fadi", name: "Fadi", img: ASSET + "avatar-fadi.png" },
+      { id: "tinashe", name: "Tinashe", img: ASSET + "avatar-tinashe.png" },
     ];
 
     const AUGUST_I_CAN_DO_DEFAULT = [
@@ -686,6 +735,17 @@
             { id: "michelle", label: "Michelle · Doctor", tone: "red", medical: true },
           ],
         },
+      },
+      {
+        id: "fadi",
+        name: "Fadi",
+        avatar: ASSET + "avatar-fadi.png",
+        weekdays: [1, 2, 3, 4, 5],
+        thisWeekCome: [1, 2, 3, 4, 5],
+        sepFirstCome: 1,
+        note: "Mon to Fri · first day back Tue 1 September",
+        augustICanDo: AUGUST_I_CAN_DO_DEFAULT,
+        septemberICanDo: SEPTEMBER_I_CAN_DO_DEFAULT,
       },
     ];
 
@@ -1007,6 +1067,27 @@
           '<div class="cal"><div class="cal-head sep"><span>September 2026</span><span>Autumn term</span></div>' +
           '<div class="dow"><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span></div>' +
           '<div class="grid">' + sep + "</div></div>" +
+          '<p class="note">' + kid.note + " · VisualVic Hub Room</p>" +
+        "</article>" +
+
+        /* Page 5b: September I can do (own page so Print/PDF does not clip) */
+        '<article class="page">' +
+          pageHeader() +
+          '<div class="pecs week-lead">' +
+            pec({ label: kid.name, img: kid.avatar, cover: true, tone: "blue" }) +
+            pec({
+              label: "September",
+              cal: {
+                top: "2026",
+                mid: "SEPTEMBER",
+                midClass: "july",
+                bot: "I can do",
+                tone: "green",
+              },
+              tone: "green",
+              wideCal: true,
+            }) +
+          "</div>" +
           '<p class="with-mum">I can do</p>' +
           '<div class="pecs acts' +
           (kid.septemberICanDo && kid.septemberICanDo.length === 6
@@ -1074,12 +1155,35 @@
       document.querySelectorAll(".kids button").forEach((b) => {
         b.classList.toggle("active", b.dataset.id === id);
       });
+      const pdfBtn = document.getElementById("btnPdf");
+      if (pdfBtn) {
+        pdfBtn.href =
+          ASSET + "pdf/summer-social-story-" + id + ".pdf";
+        pdfBtn.removeAttribute("hidden");
+        pdfBtn.setAttribute("download", "summer-social-story-" + id + ".pdf");
+      }
     }
     buttons.addEventListener("click", (e) => {
       const b = e.target.closest("button[data-id]");
       if (b) show(b.dataset.id);
     });
-    show(KIDS[0].id);
+
+    const params = new URLSearchParams(location.search);
+    const kidParam = String(params.get("kid") || "").toLowerCase().trim();
+    const parentMode =
+      params.get("parent") === "1" || params.get("from") === "parent";
+    const printNow = params.get("print") === "1";
+    const startKid = KIDS.some((k) => k.id === kidParam)
+      ? kidParam
+      : KIDS[0].id;
+    if (parentMode) document.body.classList.add("parent-view");
+    show(startKid);
+    document.getElementById("btnPrint").addEventListener("click", () => {
+      window.print();
+    });
+    if (printNow) {
+      setTimeout(() => window.print(), 400);
+    }
   </script>
 </body>
 </html>
