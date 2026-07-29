@@ -57,7 +57,7 @@
     .rule + .rule { margin-top: 8px; }
     .stats {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
       margin: 12px 0;
     }
@@ -183,7 +183,7 @@
       .tri { grid-template-columns: 1fr; }
     }
     @media (max-width: 720px) {
-      .stats { grid-template-columns: 1fr 1fr; }
+      .stats { grid-template-columns: 1fr; }
       .tri { grid-template-columns: 1fr; }
     }
   </style>
@@ -195,8 +195,9 @@
     <p class="sub">
       Short briefing | Jan -&gt; 17 Jul 2026 + settlement |
       updated 29 Jul 2026 |
-      overclaim £588 @ £24 | de menos 21h @ £16 | extras 17-31 DC@£18 + Acton@£24 |
-      owed <strong>£4,111.34</strong>
+      overclaim £588 @ £24 | de menos 21h (inside £26k / 32h package) |
+      extras 17-31 DC@£18 + Acton@£24 |
+      owed <strong>£4,447.34</strong>
     </p>
 
     <div class="stats">
@@ -205,15 +206,11 @@
         <span>Overclaim 24.5h @ £24</span>
       </div>
       <div class="stat">
-        <b>£336</b>
-        <span>De menos 21h @ £16</span>
+        <b>£114</b>
+        <span>Extras net (£702 − £588)</span>
       </div>
       <div class="stat">
-        <b>£702</b>
-        <span>Extras 17-31 (DC £18 + Acton £24)</span>
-      </div>
-      <div class="stat">
-        <b>£4,111.34</b>
+        <b>£4,447.34</b>
         <span>Settlement / liquidación</span>
       </div>
     </div>
@@ -221,13 +218,16 @@
     <div class="box ok">
       <strong>EN</strong> Contract: Sep 2025 £19k/yr (~24 h/wk) -&gt;
       Jan 2026 <strong>£26,000/yr</strong> (£2,166.67/mo) and <strong>32 h/wk</strong>.
-      Pro-rata 12 months -&gt; <strong>August YES</strong>.<br />
+      Pro-rata 12 months -&gt; <strong>August YES</strong>.
+      Shortfall hours sit inside this package (not priced separately).<br />
       <strong>ES</strong> Contrato: Sep 2025 £19k/año (~24 h/sem) -&gt;
       Ene 2026 <strong>£26,000/año</strong> (£2,166.67/mes) y <strong>32 h/sem</strong>.
-      Pro-rata 12 meses -&gt; <strong>Agosto SÍ</strong>.<br />
+      Pro-rata 12 meses -&gt; <strong>Agosto SÍ</strong>.
+      Las horas de menos van dentro de este paquete (no se cotizan aparte).<br />
       <strong>IT</strong> Contratto: set 2025 £19k/anno (~24 h/sett) -&gt;
       gen 2026 <strong>£26,000/anno</strong> (£2,166.67/mese) e <strong>32 h/sett</strong>.
       Pro-rata 12 mesi -&gt; <strong>Agosto SÌ</strong>.
+      Le ore in meno rientrano in questo pacchetto (non tariffe a parte).
     </div>
 
     <!-- ========== TABLA MAESTRA ========== -->
@@ -237,6 +237,7 @@
         Package / paquete / pacchetto: <strong>32 h/wk</strong> (non-HT).
         Surplus / de más / in più = max(0, h-32).
         Shortfall / de menos / in meno = max(0, 32-h) non-HT only; HT: shortfall = 0.
+        Shortfall hours are tracked in the table only (inside the £26k / 32h salary package).
         Sources: Jan-Mar admin (Sat 2h); Apr timesheet; May estimate; Jun-Jul MADRE.
       </p>
 
@@ -288,7 +289,7 @@
               <td class="num">6.0</td>
               <td class="num">21.0</td>
               <td></td>
-              <td class="src">surplus Apr 6h | shortfall May~13 + Jun 7.5 + Jul 0.5</td>
+              <td class="src">surplus Apr 6h | shortfall May~13 + Jun 7.5 + Jul 0.5 (hours only)</td>
             </tr>
           </tbody>
         </table>
@@ -428,9 +429,10 @@
       <div class="box ok" style="margin-top:10px;">
         <strong>Quick read:</strong>
         Real surplus = <strong>6.0 h (Apr only)</strong>.
-        Shortfall non-HT = <strong>21.0 h</strong> (full 21 @ £16; not netted to 15).
+        Shortfall non-HT = <strong>21.0 h</strong> (hours only; inside £26k / 32h package).
         Overclaim EXTRA payslip = <strong>£588</strong> (= 24.5h @ £24).
-        Extras 17-31 = <strong>£702</strong>.
+        Extras 17-31 = <strong>£702</strong> (DC@£18 + Acton@£24).
+        extras_net = £702 − £588 = <strong>£114</strong>.
       </div>
       <p class="print-hint">Print: Cmd+P - short section through the orange box.</p>
     </section>
@@ -460,9 +462,9 @@
           £588 = 24.5h × £24 (EXTRA claimed when not allowed).
         </li>
         <li>
-          <strong>2. De menos @ £16:</strong>
-          21h of the 32h package not worked × £16 = <strong>£336</strong>.
-          (£16 is only for this package shortfall discount - not a post-17 pay rate.)
+          <strong>2. De menos (hours only):</strong>
+          21h shortfall appears in the weekly table as hours.
+          It belongs inside the <strong>£26k / 32h</strong> salary package - not a separate cash discount line.
         </li>
         <li>
           <strong>3. From 17 July:</strong>
@@ -470,43 +472,43 @@
           (MADRE 17-31: DC 31h = £558 + Acton 6h = £144 -&gt; <strong>£702</strong>).
         </li>
         <li>
-          <strong>4. Formula (preferred):</strong><br />
-          extras_net = (DC_h × 18 + Acton_h × 24) − (overclaim_h × 24) − (demenos_h × 16)<br />
-          = £702 − £588 − £336 = <strong>−£222</strong><br />
+          <strong>4. Formula:</strong><br />
+          Jul + Aug fixed = £2,166.67 + £2,166.67 = <strong>£4,333.34</strong><br />
+          extras_net = (DC_h × 18 + Acton_h × 24) − (overclaim_h × 24)<br />
+          = £702 − £588 = <strong>£114</strong><br />
           total = Jul fixed + Aug fixed + extras_net
+          = £4,333.34 + £114 = <strong>£4,447.34</strong>
         </li>
       </ul>
 
       <div class="tri">
         <div class="lang">
           <strong>EN - Settlement</strong>
-          Jul fixed £2,166.67 + Aug fixed £2,166.67 + extras_net (−£222)
-          = <strong>£4,111.34</strong> owed.<br />
-          A) with max(0, extras_net): £4,333.34<br />
-          B) preferred (extras can go negative): <strong>£4,111.34</strong>
+          Jul fixed £2,166.67 + Aug fixed £2,166.67 + extras_net £114
+          = <strong>£4,447.34</strong> owed.<br />
+          Formula: £4,333.34 + (£702 − £588) = <strong>£4,447.34</strong>
         </div>
         <div class="lang">
           <strong>ES - Liquidación</strong>
-          Jul fijo £2,166.67 + Ago fijo £2,166.67 + extras_net (−£222)
-          = <strong>£4,111.34</strong> a pagar.<br />
-          A) con max(0, extras_net): £4,333.34<br />
-          B) preferida (extras puede ser negativo): <strong>£4,111.34</strong>
+          Jul fijo £2,166.67 + Ago fijo £2,166.67 + extras_net £114
+          = <strong>£4,447.34</strong> a pagar.<br />
+          Formula: £4,333.34 + (£702 − £588) = <strong>£4,447.34</strong>
         </div>
         <div class="lang">
           <strong>IT - Liquidazione</strong>
-          Lug fisso £2,166.67 + Ago fisso £2,166.67 + extras_net (−£222)
-          = <strong>£4,111.34</strong> dovuti.<br />
-          A) con max(0, extras_net): £4,333.34<br />
-          B) preferita (extras può essere negativo): <strong>£4,111.34</strong>
+          Lug fisso £2,166.67 + Ago fisso £2,166.67 + extras_net £114
+          = <strong>£4,447.34</strong> dovuti.<br />
+          Formula: £4,333.34 + (£702 − £588) = <strong>£4,447.34</strong>
         </div>
       </div>
     </div>
 
     <p class="foot">
       Sources: payslips | FIXED_MONTHLY 2166.67 | MADRE roster_term_master |
-      surplus Apr 6h | shortfall 21h @ £16 = £336 | overclaim £588 (24.5h @ £24) |
+      surplus Apr 6h | shortfall 21h (hours only, inside £26k/32h) |
+      overclaim £588 (24.5h @ £24) |
       from 17 Jul DC@£18 + Acton@£24 = £702 |
-      extras_net −£222 | settlement B £4,111.34 | A £4,333.34.
+      extras_net £114 | settlement £4,447.34.
       Short document; not a payslip.
     </p>
   </div>
