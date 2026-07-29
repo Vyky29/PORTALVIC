@@ -965,9 +965,11 @@
       var ra = invoiceSortRank(a);
       var rb = invoiceSortRank(b);
       if (ra !== rb) return ra - rb;
-      var da = String(a.updated_at || a.due_date || '');
-      var db = String(b.updated_at || b.due_date || '');
-      return db.localeCompare(da);
+      /* Earliest due first (Sep → Jul for monthly funder sets), not newest-updated. */
+      var da = String(a.due_date || a.next_instalment_due || a.created_at || '');
+      var db = String(b.due_date || b.next_instalment_due || b.created_at || '');
+      if (da !== db) return da.localeCompare(db);
+      return String(a.invoice_number || '').localeCompare(String(b.invoice_number || ''));
     });
   }
 
