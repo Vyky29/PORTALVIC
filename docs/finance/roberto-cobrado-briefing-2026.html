@@ -130,6 +130,12 @@
       </ul>
     </div>
 
+    <div class="box info">
+      <strong>Tabla clave:</strong>
+      <a href="#periodo-a-semanas">3b. Periodo A - horas por semana (ene -> 17 jul)</a>
+      | cada lunes | vs 32 | half-term | n/d si no hay MADRE/TS.
+    </div>
+
     <div class="box warn">
       <strong>Reglas Victor (29 jul, corregidas):</strong>
       <ul style="margin:8px 0 0;">
@@ -218,10 +224,11 @@
       <li>Si eran recuperacion del paquete -> correcto no pagarlas como EXTRA.</li>
     </ul>
 
-    <h2>3b. Periodo A - semana a semana (vs 32) | ene -> 17 jul</h2>
+    <h2 id="periodo-a-semanas">3b. Periodo A - semana a semana (vs 32) | ene -> 17 jul</h2>
     <p class="sub">
-      HT = half-term/Easter (shortfall N/A). Over = horas &gt;32 si hay datos.
-      Ene-mar n/d (sin MADRE/TS dia a dia). Abr 13+ TS; mayo estim.; jun-jul MADRE.
+      Una fila por lunes. HT = half-term/Easter (shortfall N/A).
+      Ene-mar n/d (sin MADRE/TS dia a dia). Abr 13+ TS; mayo = estimacion
+      (sin MADRE); jun-jul MADRE. No se inventan horas.
     </p>
     <table>
       <thead>
@@ -229,31 +236,39 @@
           <th>Semana (lun)</th>
           <th class="num">Horas</th>
           <th class="num">vs 32</th>
-          <th>HT</th>
-          <th class="num">Over</th>
-          <th>Notes</th>
+          <th>Half-term?</th>
+          <th>Notas</th>
         </tr>
       </thead>
       <tbody>
-        <tr><td>2026-01-05 ... 02-09</td><td class="num">n/d</td><td class="num">n/d</td><td>N</td><td class="num">-</td><td>sin rota/TS (5 semanas)</td></tr>
-        <tr><td>2026-02-16</td><td class="num">n/d</td><td class="num">n/d</td><td><strong>Y</strong></td><td class="num">-</td><td>Feb HT | shortfall N/A</td></tr>
-        <tr><td>2026-02-23 ... 03-23</td><td class="num">n/d</td><td class="num">n/d</td><td>N</td><td class="num">-</td><td>sin rota/TS (5 semanas)</td></tr>
-        <tr><td>2026-03-30</td><td class="num">n/d</td><td class="num">n/d</td><td><strong>Y</strong></td><td class="num">-</td><td>Easter | shortfall N/A</td></tr>
-        <tr><td>2026-04-06</td><td class="num">n/d</td><td class="num">n/d</td><td><strong>Y</strong></td><td class="num">-</td><td>Easter / cerrado | shortfall N/A</td></tr>
-        <tr><td>2026-04-13</td><td class="num"><strong>35.5</strong></td><td class="num"><strong>+3.5</strong></td><td>N</td><td class="num"><strong>+3.5</strong></td><td>TS portal | Dom 6</td></tr>
-        <tr><td>2026-04-20</td><td class="num"><strong>33.5</strong></td><td class="num"><strong>+1.5</strong></td><td>N</td><td class="num"><strong>+1.5</strong></td><td>TS + patron | Dom 6</td></tr>
-        <tr><td>2026-04-27</td><td class="num"><strong>33.0</strong></td><td class="num"><strong>+1.0</strong></td><td>N</td><td class="num"><strong>+1.0</strong></td><td>patron TS | Dom 6</td></tr>
-        <tr><td>2026-05-04</td><td class="num">26.0</td><td class="num">-6.0</td><td>N</td><td class="num">-</td><td>estim. | BH lun 4 (no HT)</td></tr>
-        <tr><td>2026-05-11</td><td class="num">31.5</td><td class="num">-0.5</td><td>N</td><td class="num">-</td><td>estim. + Q6</td></tr>
-        <tr><td>2026-05-18</td><td class="num">25.5</td><td class="num">-6.5</td><td>N</td><td class="num">-</td><td>estim. | Dom 24 en cierre HT</td></tr>
-        <tr><td>2026-05-25</td><td class="num">0</td><td class="num">n/d</td><td><strong>Y</strong></td><td class="num">-</td><td>May HT club 23-31 | shortfall N/A</td></tr>
-        <tr><td>2026-06-01</td><td class="num">31.0</td><td class="num">-1.0</td><td>N</td><td class="num">-</td><td>MADRE | Dom 6.5</td></tr>
-        <tr><td>2026-06-08</td><td class="num">30.5</td><td class="num">-1.5</td><td>N</td><td class="num">-</td><td>MADRE | Dom 6.5</td></tr>
-        <tr><td>2026-06-15</td><td class="num">31.0</td><td class="num">-1.0</td><td>N</td><td class="num">-</td><td>MADRE | Dom 6.5</td></tr>
-        <tr><td>2026-06-22</td><td class="num">31.0</td><td class="num">-1.0</td><td>N</td><td class="num">-</td><td>MADRE | Dom 6.5</td></tr>
-        <tr><td>2026-06-29</td><td class="num">29.0</td><td class="num">-3.0</td><td>N</td><td class="num">-</td><td>MADRE | mie 1 jul solo 2h</td></tr>
-        <tr><td>2026-07-06</td><td class="num">31.5</td><td class="num">-0.5</td><td>N</td><td class="num">-</td><td>MADRE | Dom 6.5</td></tr>
-        <tr><td>2026-07-13</td><td class="num">23.5</td><td class="num">-8.5</td><td>N</td><td class="num">-</td><td>contrato 13-17 (Dom 19 post-fin)</td></tr>
+        <tr><td>2026-01-05</td><td class="num">n/d</td><td class="num">n/d</td><td>N</td><td>sin rota/TS</td></tr>
+        <tr><td>2026-01-12</td><td class="num">n/d</td><td class="num">n/d</td><td>N</td><td>sin rota/TS</td></tr>
+        <tr><td>2026-01-19</td><td class="num">n/d</td><td class="num">n/d</td><td>N</td><td>sin rota/TS</td></tr>
+        <tr><td>2026-01-26</td><td class="num">n/d</td><td class="num">n/d</td><td>N</td><td>sin rota/TS</td></tr>
+        <tr><td>2026-02-02</td><td class="num">n/d</td><td class="num">n/d</td><td>N</td><td>sin rota/TS</td></tr>
+        <tr><td>2026-02-09</td><td class="num">n/d</td><td class="num">n/d</td><td>N</td><td>sin rota/TS</td></tr>
+        <tr><td>2026-02-16</td><td class="num">n/d</td><td class="num">n/d</td><td><strong>Y</strong></td><td>Feb HT 16-20 | shortfall N/A</td></tr>
+        <tr><td>2026-02-23</td><td class="num">n/d</td><td class="num">n/d</td><td>N</td><td>sin rota/TS</td></tr>
+        <tr><td>2026-03-02</td><td class="num">n/d</td><td class="num">n/d</td><td>N</td><td>sin rota/TS</td></tr>
+        <tr><td>2026-03-09</td><td class="num">n/d</td><td class="num">n/d</td><td>N</td><td>sin rota/TS</td></tr>
+        <tr><td>2026-03-16</td><td class="num">n/d</td><td class="num">n/d</td><td>N</td><td>sin rota/TS</td></tr>
+        <tr><td>2026-03-23</td><td class="num">n/d</td><td class="num">n/d</td><td>N</td><td>sin rota/TS</td></tr>
+        <tr><td>2026-03-30</td><td class="num">n/d</td><td class="num">n/d</td><td><strong>Y</strong></td><td>Easter | shortfall N/A</td></tr>
+        <tr><td>2026-04-06</td><td class="num">n/d</td><td class="num">n/d</td><td><strong>Y</strong></td><td>Easter / cerrado | shortfall N/A</td></tr>
+        <tr><td>2026-04-13</td><td class="num"><strong>35.5</strong></td><td class="num"><strong>+3.5</strong></td><td>N</td><td>TS portal | Dom 6</td></tr>
+        <tr><td>2026-04-20</td><td class="num"><strong>33.5</strong></td><td class="num"><strong>+1.5</strong></td><td>N</td><td>TS + patron | Dom 6</td></tr>
+        <tr><td>2026-04-27</td><td class="num"><strong>33.0</strong></td><td class="num"><strong>+1.0</strong></td><td>N</td><td>patron TS | Dom 6</td></tr>
+        <tr><td>2026-05-04</td><td class="num">26.0</td><td class="num">-6.0</td><td>N</td><td>estim. (sin MADRE) | BH lun 4</td></tr>
+        <tr><td>2026-05-11</td><td class="num">31.5</td><td class="num">-0.5</td><td>N</td><td>estim. + Q6 (sin MADRE)</td></tr>
+        <tr><td>2026-05-18</td><td class="num">25.5</td><td class="num">-6.5</td><td>N</td><td>estim. | Dom 24 en cierre HT</td></tr>
+        <tr><td>2026-05-25</td><td class="num">0</td><td class="num">n/d</td><td><strong>Y</strong></td><td>May HT club 23-31 | shortfall N/A</td></tr>
+        <tr><td>2026-06-01</td><td class="num">31.0</td><td class="num">-1.0</td><td>N</td><td>MADRE | Dom 6.5</td></tr>
+        <tr><td>2026-06-08</td><td class="num">30.5</td><td class="num">-1.5</td><td>N</td><td>MADRE | Dom 6.5</td></tr>
+        <tr><td>2026-06-15</td><td class="num">31.0</td><td class="num">-1.0</td><td>N</td><td>MADRE | Dom 6.5</td></tr>
+        <tr><td>2026-06-22</td><td class="num">31.0</td><td class="num">-1.0</td><td>N</td><td>MADRE | Dom 6.5</td></tr>
+        <tr><td>2026-06-29</td><td class="num">29.0</td><td class="num">-3.0</td><td>N</td><td>MADRE | mie 1 jul solo 2h</td></tr>
+        <tr><td>2026-07-06</td><td class="num">31.5</td><td class="num">-0.5</td><td>N</td><td>MADRE | Dom 6.5</td></tr>
+        <tr><td>2026-07-13</td><td class="num">23.5</td><td class="num">-8.5</td><td>N</td><td>contrato 13-17 (Dom 19 post-fin)</td></tr>
       </tbody>
     </table>
 
