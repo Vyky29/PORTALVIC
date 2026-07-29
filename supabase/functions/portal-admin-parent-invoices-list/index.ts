@@ -596,6 +596,8 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       if (!cid || !multiLaPackContacts.has(cid)) return true;
       // Keep office synthetics for multi-pack LA/NHS contacts.
       if (inv.created_via === "la_office_auto") return true;
+      // Keep real funder INV-Ps (PDF download / Mark paid) for LA + NHS packs.
+      if (clean(inv.payment_method_hint, 40) === "la_funded") return true;
       /*
        * Also keep Summer crash family INV-Ps (e.g. Tinashe INV-P-0119 £187.50).
        * Multi-pack filter used to drop them so Payments → Day Centre → Using Funds
@@ -617,6 +619,27 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     });
   }
   const OFFICE_AUTO_SORT_TS = "2026-06-01T12:00:00.000Z";
+  /** Real funder INV-Ps already covering a payment pack (by ready_by / notes marker). */
+  const funderCoveredPackKeys = new Set<string>();
+  for (const inv of invoices) {
+    if (clean(inv.payment_method_hint, 40) !== "la_funded") continue;
+    if (clean(inv.created_via, 40) === "la_office_auto") continue;
+    const cid = clean(inv.contact_id, 120);
+    if (!cid) continue;
+    const markerBlob = `${clean(inv.ready_by, 160)} ${clean(inv.notes, 800)}`;
+    const packs = laPayByContact.get(cid) || [];
+    for (const pack of packs) {
+      const clientKey = clean(pack.row.client_key, 80) || "row";
+      if (markerBlob.includes(`office_la_nhs_autumn_2627_${clientKey}`)) {
+        funderCoveredPackKeys.add(`${cid}::${clientKey}`);
+      }
+    }
+    // Single-pack contacts: any real autumn la_funded share covers the only pack.
+    if (packs.length === 1 && clean(inv.billing_term, 20) === "autumn") {
+      const clientKey = clean(packs[0].row.client_key, 80) || "row";
+      funderCoveredPackKeys.add(`${cid}::${clientKey}`);
+    }
+  }
   for (const [cid, packs] of laPayByContact) {
     const multiPack = packs.length > 1;
     if (invoiceContactIds.has(cid) && !multiPack) continue;
@@ -634,6 +657,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       fundingByContact.set(cid, funding);
     }
     const reenrol = reenrolByContact.get(cid) || null;
+    let emittedSynthetic = false;
     for (const pack of packs) {
       const data = (pack.row.data || {}) as Record<string, unknown>;
       const payFunding =
@@ -643,6 +667,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
         funding.fundingLabel ||
         "Local Authority";
       const clientKey = clean(pack.row.client_key, 80) || "row";
+      if (funderCoveredPackKeys.has(`${cid}::${clientKey}`)) continue;
       const fundingCategory = invoiceFundingCategory({
         vatMode: "exempt",
         paymentMethodHint: "la_funded",
@@ -700,8 +725,9 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
         xero_push_status: null,
         payment_client_key: clientKey,
       });
+      emittedSynthetic = true;
     }
-    invoiceContactIds.add(cid);
+    if (emittedSynthetic) invoiceContactIds.add(cid);
   }
 
   if (listFilter === "buffer_low") {
