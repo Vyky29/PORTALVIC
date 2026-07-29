@@ -1,6 +1,21 @@
+    /** CEOs + programme leads: My participants and All participants. Instructors: My (+ New) only. */
     function portalStaffCanBrowseAllParticipants(){
+      try{
+        if(typeof portalStaffIsCeoTopbarFullAccess === 'function' && portalStaffIsCeoTopbarFullAccess()) return true;
+        if(typeof portalStaffIsProgrammeLeadTopbar === 'function' && portalStaffIsProgrammeLeadTopbar()) return true;
+        if(typeof portalStaffHasLeadFieldToolsOnStaffShell === 'function' && portalStaffHasLeadFieldToolsOnStaffShell()) return true;
+        const box = window.__PORTAL_SUPABASE__ || {};
+        const prof = box.staff_profile;
+        const em = String((box.session && box.session.user && box.session.user.email) || '').trim();
+        if(typeof portalCanAccessCeoDashboard === 'function' && portalCanAccessCeoDashboard(prof, em)) return true;
+        if(typeof portalIsProgrammeLeadUser === 'function' && portalIsProgrammeLeadUser(prof, em)) return true;
+        if(typeof portalIsStaffHomeProgrammeLead === 'function' && portalIsStaffHomeProgrammeLead(prof, em)) return true;
+        const app = String((prof && prof.app_role) || '').trim().toLowerCase();
+        if(app === 'ceo' || app === 'lead') return true;
+      }catch(_){}
       return false;
     }
+    try{ window.portalStaffCanBrowseAllParticipants = portalStaffCanBrowseAllParticipants; }catch(_){}
     function portalNewParticipantsPack(){
       const P = window.PortalParticipantsSheet;
       if(!P || typeof P.collectNewParticipantIds !== 'function'){
@@ -14,24 +29,32 @@
       const pack = P.applyTabVisibility();
       const newBtn = document.getElementById('clientsTabNew');
       const myBtn = document.getElementById('clientsTabMy');
-      if(newBtn && newBtn.classList.contains('is-active')) renderClientsSheetList('new');
+      const allBtn = document.getElementById('clientsTabAll');
+      if(allBtn && !allBtn.hidden && allBtn.classList.contains('is-active')) refreshClientsAllTabUI();
+      else if(newBtn && newBtn.classList.contains('is-active')) renderClientsSheetList('new');
       else if(myBtn && myBtn.classList.contains('is-active')) renderClientsSheetList('my');
       return pack;
     }
     function portalApplyClientsDirectoryAccess(){
+      window.portalParticipantsSheetStaffOnly = !portalStaffCanBrowseAllParticipants();
       portalParticipantsSheetRefreshTabs();
+      const allBtn = document.getElementById('clientsTabAll');
+      const allActive = !!(allBtn && !allBtn.hidden && allBtn.classList.contains('is-active'));
       const tools = document.getElementById('clientsAllToolsWrap');
       if(tools){
-        tools.hidden = true;
-        const si = document.getElementById('clientsDirectorySearch');
-        if(si) si.value = '';
-        const sug = document.getElementById('clientsDirectorySuggest');
-        if(sug){
-          sug.hidden = true;
-          sug.innerHTML = '';
+        tools.hidden = !allActive;
+        if(!allActive){
+          const si = document.getElementById('clientsDirectorySearch');
+          if(si) si.value = '';
+          const sug = document.getElementById('clientsDirectorySuggest');
+          if(sug){
+            sug.hidden = true;
+            sug.innerHTML = '';
+          }
         }
       }
     }
+    try{ window.portalApplyClientsDirectoryAccess = portalApplyClientsDirectoryAccess; }catch(_){}
     function portalClientNoteForParticipantsSheet(clientId){
       const P = window.PortalParticipantsSheet;
       if(P && typeof P.clientNoteForSheet === 'function'){
@@ -157,7 +180,7 @@
           return n.toLowerCase().startsWith(q);
         });
       }
-      grid.setAttribute('aria-labelledby', isNew ? 'clientsTabNew' : 'clientsTabMy');
+      grid.setAttribute('aria-labelledby', isAll ? 'clientsTabAll' : isNew ? 'clientsTabNew' : 'clientsTabMy');
       if(!ids.length){
         grid.style.removeProperty('display');
         let emptyMsg;
@@ -251,19 +274,27 @@
       const myBtn = document.getElementById('clientsTabMy');
       const newBtn = document.getElementById('clientsTabNew');
       const allBtn = document.getElementById('clientsTabAll');
-      if(mode === 'all') mode = 'my';
+      const canAll = portalStaffCanBrowseAllParticipants();
+      if(mode === 'all' && (!canAll || (allBtn && allBtn.hidden))) mode = 'my';
       let isMy = mode === 'my';
       let isNew = mode === 'new';
+      let isAll = mode === 'all';
       if(isNew && newBtn && newBtn.hidden){ isNew = false; isMy = true; }
+      if(isAll && allBtn && allBtn.hidden){ isAll = false; isMy = true; }
+      if(isAll){ isMy = false; isNew = false; }
+      else if(isNew){ isMy = false; isAll = false; }
+      else { isMy = true; isNew = false; isAll = false; }
       const tools = document.getElementById('clientsAllToolsWrap');
       if(tools){
-        tools.hidden = true;
-        const si = document.getElementById('clientsDirectorySearch');
-        if(si) si.value = '';
-        const sug = document.getElementById('clientsDirectorySuggest');
-        if(sug){
-          sug.hidden = true;
-          sug.innerHTML = '';
+        tools.hidden = !isAll;
+        if(!isAll){
+          const si = document.getElementById('clientsDirectorySearch');
+          if(si) si.value = '';
+          const sug = document.getElementById('clientsDirectorySuggest');
+          if(sug){
+            sug.hidden = true;
+            sug.innerHTML = '';
+          }
         }
       }
       if(myBtn){
@@ -275,15 +306,16 @@
         newBtn.setAttribute('aria-selected', isNew ? 'true' : 'false');
       }
       if(allBtn){
-        allBtn.classList.remove('is-active');
-        allBtn.setAttribute('aria-selected', 'false');
+        allBtn.classList.toggle('is-active', isAll);
+        allBtn.setAttribute('aria-selected', isAll ? 'true' : 'false');
       }
       const grid = document.getElementById('clientsListGrid');
-      if(grid) grid.setAttribute('aria-labelledby', isNew ? 'clientsTabNew' : 'clientsTabMy');
+      if(grid) grid.setAttribute('aria-labelledby', isAll ? 'clientsTabAll' : isNew ? 'clientsTabNew' : 'clientsTabMy');
       if(isMy) renderClientsSheetList('my');
       else if(isNew) renderClientsSheetList('new');
       else refreshClientsAllTabUI();
     }
+    try{ window.setClientsSheetTab = setClientsSheetTab; }catch(_){}
 
     const POOL_TIER_META = {
       fish: {

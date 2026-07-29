@@ -579,10 +579,19 @@
     }
   }
 
-  /** Staff dashboards only: My + optional New. Lead/admin/CEO: All participants (no New tab). */
+  /**
+   * Instructors: My + optional New (All hidden).
+   * CEOs / programme leads: My + All (New hidden). Staff-only flag is set from
+   * portalApplyClientsDirectoryAccess via portalStaffCanBrowseAllParticipants.
+   */
   function participantsSheetStaffOnly() {
     if (typeof global.portalParticipantsSheetStaffOnly === "boolean") {
       return global.portalParticipantsSheetStaffOnly;
+    }
+    if (typeof global.portalStaffCanBrowseAllParticipants === "function") {
+      try {
+        return !global.portalStaffCanBrowseAllParticipants();
+      } catch (_) {}
     }
     return true;
   }
@@ -590,6 +599,7 @@
   function applyTabVisibility() {
     const allBtn = global.document && global.document.getElementById("clientsTabAll");
     const newBtn = global.document && global.document.getElementById("clientsTabNew");
+    const myBtn = global.document && global.document.getElementById("clientsTabMy");
     const pack = collectNewParticipantIds(buildContext());
     const hasNew = pack.ids.length > 0;
     const staffOnly = participantsSheetStaffOnly();
@@ -623,10 +633,15 @@
         newBtn.setAttribute("aria-hidden", "true");
         newBtn.classList.remove("is-active");
         newBtn.setAttribute("aria-selected", "false");
+        // Keep My as default for leads/CEOs; only bounce off New when it was active.
         if (wasActive && typeof global.setClientsSheetTab === "function") {
-          global.setClientsSheetTab("all");
+          global.setClientsSheetTab("my");
         }
       }
+    }
+
+    if (!staffOnly && myBtn && allBtn && !myBtn.classList.contains("is-active") && !allBtn.classList.contains("is-active")) {
+      if (typeof global.setClientsSheetTab === "function") global.setClientsSheetTab("my");
     }
 
     return pack;
