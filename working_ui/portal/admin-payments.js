@@ -1617,12 +1617,13 @@
   function cyrusPackageSeasonTotals() {
     var thuRate = 90;
     var multiRate = 120;
-    var aqRate = 50;
+    /* Wed Multi removed; Wed Aquatic is 60' (£100), Sun Multi kept. */
+    var aqRate = 100;
     var wd = { autumn: 14, spring: 11, summer: 13, annual: 38 };
     var we = { autumn: 13, spring: 9, summer: 11, annual: 33 };
     function term(period) {
       var dc = thuRate * wd[period];
-      var as = multiRate * wd[period] + multiRate * we[period] + aqRate * wd[period];
+      var as = multiRate * we[period] + aqRate * wd[period];
       return { dc: dc, as: as, total: dc + as };
     }
     return {
@@ -1685,9 +1686,8 @@
     var pack = cyrusPackageSeasonTotals();
     var thuSvcLabel = "90' Bespoke Programme, Thursday - 3.30 pm to 5 pm";
     var afterSvcLines = [
-      "90' Multi-Activity - 4.30 pm to 6 pm",
       "90' Multi-Activity - 11 am to 12.30 pm",
-      "30' Aquatic Activity, Wednesday - 4 pm to 4.30 pm",
+      "60' Aquatic Activity, Wednesday - 4 pm to 5 pm",
     ];
 
     function clonePart(part, idSuffix, amount, services, sessions, cost, seasons) {
@@ -1759,7 +1759,7 @@
           pack.autumn.as,
           afterSvcLines.join("\n"),
           "weekday 14/11/13 · weekend 13/9/11",
-          d.Cost || "Catalogue Multi £120 · Aquatic 30' £50",
+          d.Cost || "Catalogue Multi £120 · Aquatic 60' £100",
           {
             autumn: pack.autumn.as,
             spring: pack.spring.as,
@@ -2847,10 +2847,9 @@
   /** Cyrus package lines (paid together) — emphasis follows Day Centre vs Afterschool stream. */
   function cyrusPackageServiceLines() {
     return [
-      "90' Multi-Activity - 4.30 pm to 6 pm",
       "90' Multi-Activity - 11 am to 12.30 pm",
       "90' Bespoke Programme, Thursday - 3.30 pm to 5 pm",
-      "30' Aquatic Activity, Wednesday - 4 pm to 4.30 pm",
+      "60' Aquatic Activity, Wednesday - 4 pm to 5 pm",
       "Admin Fee (GoCardless)",
     ];
   }
