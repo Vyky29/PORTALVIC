@@ -204,11 +204,11 @@ function invoiceDescriptionLines(input: {
     ? descriptionFromInput.slice(0, firstBlank >= 0 ? firstBlank : 1)
     : descriptionFromInput.slice(0, 12);
   if (input.isLaFunded) {
+    /* LA / NHS funder invoices: never print participant or parent names. */
     return [
       ...descriptionBody,
       "",
-      `Participant's Name: ${input.displayName}`,
-      `Client ID: ${input.clientIdLabel}`,
+      `Client ID: ${input.clientIdLabel || "—"}`,
       `PO: ${input.poLabel || "—"}`,
       input.reference ? `- Reference: ${input.reference}` : null,
       `- Payment Method: ${input.modeLabel}`,
@@ -282,16 +282,18 @@ export async function createPortalFamilyInvoice(
   const paymentMethodHint =
     input.paymentMethodHint ||
     (vatMode === "exempt" ? "la_funded" : "bank_transfer");
-  let clientIdLabel = clean(input.clientIdLabel, 80) || contactId;
+  let clientIdLabel = clean(input.clientIdLabel, 80);
   let poLabel = clean(input.poLabel, 80);
   const now = new Date().toISOString();
   const readyBy = clean(input.readyBy, 120) || "portal";
 
-  if (paymentMethodHint === "la_funded" && (!clean(input.clientIdLabel, 80) || !poLabel)) {
-    if (!clean(input.clientIdLabel, 80) && fundingUpfront.clientId) {
-      clientIdLabel = clean(fundingUpfront.clientId, 80) || contactId;
+  if (paymentMethodHint === "la_funded") {
+    if (!clientIdLabel && fundingUpfront.clientId) {
+      clientIdLabel = clean(fundingUpfront.clientId, 80);
     }
     if (!poLabel && fundingUpfront.po) poLabel = clean(fundingUpfront.po, 80);
+  } else if (!clientIdLabel) {
+    clientIdLabel = contactId;
   }
 
   // LA-managed invoices are billed to the funding authority, never the parent.
@@ -581,7 +583,10 @@ export async function regeneratePortalInvoiceSharePdf(
     "Structured activity support delivered for a SEND participant.";
   const paymentMethodHint = clean(share.payment_method_hint, 40) || "bank_transfer";
   const invoiceNumber = clean(share.invoice_number, 80) || shareId.slice(0, 8);
-  const clientIdLabel = funding.clientId || contactId;
+  const clientIdLabel =
+    paymentMethodHint === "la_funded"
+      ? (funding.clientId || "")
+      : (funding.clientId || contactId);
   const poLabel = funding.po || "";
   const paymentSchedule = normalizePaymentSchedule(share.payment_schedule);
   const modeLabel = invoiceModeLabel(paymentMethodHint, vatMode, paymentSchedule, {

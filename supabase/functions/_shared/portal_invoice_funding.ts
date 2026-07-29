@@ -29,6 +29,16 @@ function pickPo(data: Record<string, unknown>): string {
   return "";
 }
 
+/** True when value looks like an authority Client ID (digits), not a sheet slug. */
+function looksLikeAuthorityClientId(v: string): boolean {
+  const s = clean(v, 80);
+  if (!s) return false;
+  /* H&F / Ealing / NHS IDs are numeric (sometimes with letters). Reject pure slugs. */
+  if (/^\d{4,}$/.test(s)) return true;
+  if (/\d{4,}/.test(s) && !/^[a-z]+(?:-[a-z0-9]+)*$/i.test(s)) return true;
+  return false;
+}
+
 function pickClientId(data: Record<string, unknown>, fallback: string): string {
   for (const key of [
     "Client Id",
@@ -39,9 +49,12 @@ function pickClientId(data: Record<string, unknown>, fallback: string): string {
     "cfk_id",
   ]) {
     const s = clean(data[key], 80);
-    if (s) return s;
+    if (s && looksLikeAuthorityClientId(s)) return s;
+    /* Accept explicit non-slug values from the sheet even if short. */
+    if (s && !/^[a-z]+(?:-[a-z0-9]+)*$/i.test(s)) return s;
   }
-  return fallback;
+  const fb = clean(fallback, 80);
+  return looksLikeAuthorityClientId(fb) ? fb : "";
 }
 
 export type ParticipantInvoiceFunding = {

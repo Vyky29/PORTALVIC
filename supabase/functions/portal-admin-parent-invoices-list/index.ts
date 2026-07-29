@@ -577,8 +577,8 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       booked_slots: mergedSlots,
       booked_service_raw: mergedServiceRaw || null,
       reenrolment_submitted_at: reenrol?.submitted_at || null,
-      is_la_office_auto:
-        (fundingCategory === "la_managed" || fundingCategory === "nhs_managed") && !reenrol,
+      /* Only true synthetics — never real INV-P rows (crash / Day Centre LA PDFs). */
+      is_la_office_auto: clean(share.created_via, 40) === "la_office_auto",
     });
   }
 

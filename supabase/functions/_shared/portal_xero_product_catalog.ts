@@ -618,12 +618,22 @@ export function buildXeroPushLines(input: {
   const method =
     cleanLine(input.paymentMethodLabel, 160) ||
     paymentChannelLabel(cleanLine(input.paymentMethodHint, 40));
+  const hint = cleanLine(input.paymentMethodHint, 40).toLowerCase();
+  /* LA / NHS funder invoices: Client ID + PO only (no participant name). */
+  const funderInvoice = hint === "la_funded";
 
-  const metaBlock = [
-    participant ? `Participant's Name: ${participant}` : "",
-    reference ? `- Reference: ${reference}` : "",
-    method ? `- Payment Method: ${method}` : "",
-  ]
+  const metaBlock = (
+    funderInvoice
+      ? [
+        reference ? `- Reference: ${reference}` : "",
+        method ? `- Payment Method: ${method}` : "",
+      ]
+      : [
+        participant ? `Participant's Name: ${participant}` : "",
+        reference ? `- Reference: ${reference}` : "",
+        method ? `- Payment Method: ${method}` : "",
+      ]
+  )
     .filter(Boolean)
     .join("\n");
 

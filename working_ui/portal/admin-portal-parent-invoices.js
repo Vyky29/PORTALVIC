@@ -982,7 +982,7 @@
     var xeroMissing = 0;
     (invoices || []).forEach(function (inv) {
       /* Office autos have no family payment status chip. */
-      if (inv.created_via === 'la_office_auto' || inv.is_la_office_auto) return;
+      if (inv.created_via === 'la_office_auto') return;
       var pay = String(inv.payment_status || 'unpaid');
       if (pay === 'void') return; /* void chips not shown */
       if (pay === 'paid') paid += 1;

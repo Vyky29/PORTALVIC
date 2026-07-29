@@ -1287,9 +1287,11 @@
       ".pay-amt-term{display:block;font-size:13px;font-weight:800;color:#173247;line-height:1.2}",
       ".pay-amt-season{display:block;font-size:10px;font-weight:600;color:#64748b;line-height:1.2;overflow-wrap:break-word}",
       ".pay-tbl th.pay-col-total,.pay-tbl td.pay-col-total{width:5.75rem;min-width:5.25rem;text-align:center;white-space:normal;font-variant-numeric:tabular-nums;font-size:13px;font-weight:700}",
-      ".pay-tbl th.pay-col-status,.pay-tbl td.pay-col-status{width:3rem;max-width:3rem;padding-left:2px;padding-right:2px;text-align:center;overflow:hidden;overflow-wrap:normal;word-break:normal}",
+      ".pay-tbl th.pay-col-status,.pay-tbl td.pay-col-status{width:3.6rem;max-width:3.6rem;padding-left:2px;padding-right:2px;text-align:center;overflow:hidden;overflow-wrap:normal;word-break:normal}",
       ".pay-tbl th.pay-col-status{font-size:9px;line-height:1.05}",
-      ".pay-tbl td.pay-col-status .pay-pill{font-size:9px;padding:3px 4px;white-space:nowrap}",
+      ".pay-tbl td.pay-col-status .pay-pill{display:inline-block;font-size:9px;padding:3px 4px;white-space:nowrap}",
+      ".pay-pdf-link{display:block;margin:4px auto 0;width:fit-content;max-width:100%;font-size:9px;font-weight:800;letter-spacing:.02em;color:#1d4ed8;text-decoration:none;padding:2px 5px;border-radius:6px;background:#eff6ff;border:1px solid #bfdbfe;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box}",
+      ".pay-pdf-link:hover{background:#dbeafe;color:#1e40af}",
       ".pay-tbl thead th{background:#f8fafc;color:#0f172a;font-size:10px;text-transform:uppercase;letter-spacing:.03em;white-space:normal;line-height:1.2;padding:8px 6px}",
       ".pay-tbl thead tr.pay-tbl__filter-row th{background:#fff;text-transform:none;letter-spacing:0;white-space:normal;font-weight:400;padding:10px 12px;vertical-align:middle}",
       ".pay-tbl tbody tr{cursor:pointer}",
@@ -1385,7 +1387,13 @@
     /* Compact table labels so Status column stays tiny. */
     var label = c === "paid" ? "Paid" : (c === "notreenrolled" ? "N/A" : "Out");
     var full = r.payment_status || (c === "paid" ? "Paid" : "Outstanding");
-    return '<span class="pay-pill ' + cls + '" title="' + esc(full) + '">' + esc(label) + "</span>";
+    var html = '<span class="pay-pill ' + cls + '" title="' + esc(full) + '">' + esc(label) + "</span>";
+    /* Admin-only PDF for funder / crash INV-Ps (parent hub stays invoice-free). */
+    if (r && r._pdfUrl) {
+      html += '<a class="pay-pdf-link" href="' + esc(r._pdfUrl) + '" target="_blank" rel="noopener" '
+        + 'data-pay-pdf="1" title="' + esc(r._invoiceNumber || "Invoice PDF") + '">PDF</a>';
+    }
+    return html;
   }
 
   function paidChipClass(label) {
@@ -2396,9 +2404,14 @@
       + paymentsTableHeadHtml(termId, colClient)
       + "<tbody>";
     rows.forEach(function (r, i) {
-      var attr = r._synthetic
-        ? ' data-pay-reenrol="' + esc(r._contactId || r.id) + '"'
-        : ' data-pay-id="' + esc(r._sourcePaymentId || r.id) + '"';
+      var attr = "";
+      if (r._pdfUrl) {
+        attr = ' data-pay-crash-pdf="' + esc(r._pdfUrl) + '"';
+      } else if (r._synthetic) {
+        attr = ' data-pay-reenrol="' + esc(r._contactId || r.id) + '"';
+      } else {
+        attr = ' data-pay-id="' + esc(r._sourcePaymentId || r.id) + '"';
+      }
       html += "<tr" + attr + ">"
         + '<td class="num pay-tbl__idx">' + (i + 1) + "</td>"
         + '<td class="pay-col-client">' + clientCellHtml(r) + "</td>"
@@ -4194,6 +4207,16 @@
     root.querySelectorAll("[data-pay-id]").forEach(function (tr) {
       tr.addEventListener("click", function () { openDetail(tr.getAttribute("data-pay-id")); });
     });
+    root.querySelectorAll("[data-pay-crash-pdf]").forEach(function (tr) {
+      tr.addEventListener("click", function (ev) {
+        if (ev.target && ev.target.closest && ev.target.closest("[data-pay-pdf]")) return;
+        var url = tr.getAttribute("data-pay-crash-pdf");
+        if (url) window.open(url, "_blank", "noopener");
+      });
+    });
+    root.querySelectorAll("[data-pay-pdf]").forEach(function (a) {
+      a.addEventListener("click", function (ev) { ev.stopPropagation(); });
+    });
     root.querySelectorAll("[data-pay-reenrol]").forEach(function (tr) {
       tr.addEventListener("click", function () {
         deps.toast("Autumn re-enrolment instalments — open Family invoices above for this family.");
@@ -5184,6 +5207,11 @@
       if (isLaAuto || (hint === "la_funded" && String(row.sheet || "").toUpperCase() === "LA")) {
         row._paymentMethodHint = "la_funded";
       }
+      var pdf = String(inv.pdf_url || "").trim();
+      if (pdf && (hint === "la_funded" || isLaAuto) && !row._pdfUrl) {
+        row._pdfUrl = pdf;
+        row._invoiceNumber = String(inv.invoice_number || "").trim();
+      }
       if (
         vat === "exempt"
         && row._vatMode !== "exempt"
@@ -5431,6 +5459,8 @@
       _crashLineDesc: crashDesc,
       _termBucket: "summer_2526",
       _invoiceIds: inv.id ? [inv.id] : [],
+      _invoiceNumber: String(inv.invoice_number || "").trim(),
+      _pdfUrl: String(inv.pdf_url || "").trim() || null,
       _paymentMethodHint: hint,
       _vatMode: vat || "vat_20",
       sheet: sheet,
