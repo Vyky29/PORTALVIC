@@ -89,7 +89,7 @@
     <h1>Roberto Reali - cobrado y contrato</h1>
     <p class="sub">
       Briefing interno · Sep 2025 a Jul 2026 · actualizado 29 jul 2026
-      (historial contrato, agosto SI, Mayo Q6, Abr shortfall, 17-31 jul)
+      (modelo Victor: contrato al 17 jul, Jul+Ago fijos, extras desde el 17 @ £16)
     </p>
 
     <div class="stats">
@@ -98,12 +98,12 @@
         <span>Total pagado Tide Sep-Jul</span>
       </div>
       <div class="stat">
-        <b>£2,166.67</b>
-        <span>Fijo / mes desde ene 2026</span>
+        <b>£592.00</b>
+        <span>Extras 17-31 jul (37h × £16)</span>
       </div>
       <div class="stat">
-        <b>£4,333.34</b>
-        <span>Jul + Ago bruto (antes offset)</span>
+        <b>£4,925.34</b>
+        <span>Jul + Ago + extras (antes offset)</span>
       </div>
     </div>
 
@@ -127,12 +127,17 @@
     </div>
 
     <div class="box warn">
-      <strong>Regla horas / overclaim:</strong>
+      <strong>Regla horas / overclaim (durante el contrato):</strong>
       £2,166.67/mes = paquete ~32 h/sem. Si hizo <strong>menos</strong>,
       recupera en otros meses <strong>dentro del fijo</strong> — no como EXTRA.
       Cuando reclamo recuperacion como EXTRA → sobrerreclamo.
       Calc 24-25 jul: <strong>£588</strong> (Mar £144 + Abr £36 + Jun £408).
       Cifra redonda Victor: ~£480.
+      <br /><br />
+      <strong>Tras el fin de contrato (17 jul):</strong> NO hay catch-up del
+      paquete 32h. Las horas trabajadas <strong>desde el 17 jul</strong> son
+      <strong>EXTRA a £16/h</strong> (decision Victor 29 jul). El fijo de
+      julio (mes 11) y agosto (mes 12) sigue debido aparte.
     </div>
 
     <h2>1. Calculo ya hecho (24-25 jul) — NO reinventar</h2>
@@ -233,107 +238,107 @@
       </li>
     </ul>
 
-    <h2>4. Contrato 17 jul vs trabajo hasta 31 jul</h2>
-    <div class="box warn">
-      <strong>Que hay documentado vs afirmacion Victor:</strong>
+    <h2>4. Modelo correcto (Victor 29 jul) — contrato 17 jul + extras</h2>
+    <div class="box ok">
+      <strong>Logica aclarada por Victor (no catch-up):</strong>
       <ul style="margin:8px 0 0;">
         <li>
-          En portal/admin: <strong>programas standard terminan vie 17 jul</strong>;
-          Day Centre + crash siguen hasta <strong>vie 31 jul</strong>.
+          El contrato <strong>terminaba el 17 de julio</strong>. Aun asi el
+          fijo anualizado incluye <strong>julio = mes 11</strong>
+          (£2,166.67) y <strong>agosto = mes 12</strong> (£2,166.67) del £26k.
         </li>
         <li>
-          Calc 25 jul ya decia: desde el 17 se acaba Acton tarde (solo crash + DC).
+          El paquete ~32 h/sem aplica <strong>solo hasta el contrato</strong>.
+          Victor: <em>&quot;desde el 17 de julio han sido horas extras&quot;</em>
+          a <strong>£16/h</strong> — <strong>no</strong> recuperacion del
+          paquete aunque no llegara a 32h.
         </li>
         <li>
-          <strong>Fin de contrato laboral el 17 jul</strong>: lo afirma Victor ahora;
-          <u>no</u> aparece como carta/HR/termination en transcripts ni payroll SQL
-          revisados. Tratarlo como decision operativa Victor hasta tener papel.
+          Por tanto: <strong>no</strong> absorber el overclaim £588 via
+          &quot;acordado=0 catch-up&quot; en 18-31. Las horas post-fin son
+          <strong>pay adicional</strong>; el £588 se decide aparte (offset o no).
+        </li>
+        <li>
+          Ambiguidad 17 vs 18: wording Victor = extras <strong>desde el 17</strong>
+          (dia completo MADRE). Si se prefiriera contrato hasta fin del 17 y
+          extras desde el 18, restar 4.5h / £72.
         </li>
       </ul>
     </div>
 
-    <h3>Horas MADRE Jul 18-31 (span diario, roster vivo)</h3>
-    <table>
-      <thead>
-        <tr><th>Semana</th><th class="num">h span</th><th>Nota</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>Lun 20 - vie 24</td><td class="num">13.5</td><td>Fadi/Zakariya DC; sin tardes Acton</td></tr>
-        <tr><td>Lun 27 - vie 31</td><td class="num">19.5</td><td>Emanuel/Yaqoub + crash Acton 28/29</td></tr>
-        <tr><td><strong>Total 18-31</strong></td><td class="num"><strong>33.0</strong></td><td>Sin domingos en esas 2 semanas</td></tr>
-        <tr><td>Paquete 32h × 2 sem</td><td class="num">64.0</td><td>Iria <strong>31 h por debajo</strong> del paquete</td></tr>
-      </tbody>
-    </table>
+    <div class="box info">
+      <strong>Contexto operativo (sigue valido):</strong>
+      programas standard terminan vie 17 jul; Day Centre + crash hasta vie 31 jul.
+      Fin de contrato laboral 17 jul = decision operativa Victor (sin papel HR
+      en repo).
+    </div>
 
-    <h3>Tres lecturas del offset £588 (aritmetica clara)</h3>
+    <h3>Horas MADRE extras desde el 17 jul (span diario, roster vivo)</h3>
     <table>
       <thead>
-        <tr><th>Si horas acordadas 18-31 son...</th><th class="num">Valor trabajo</th><th>Offset queda</th></tr>
+        <tr><th>Bloque</th><th class="num">h span</th><th>Nota</th></tr>
       </thead>
       <tbody>
-        <tr>
-          <td>Mismo paquete 32h/sem</td>
-          <td class="num">33 vs 64 → corto</td>
-          <td class="num"><strong>£588 sigue</strong> (no hay &quot;de mas&quot;)</td>
-        </tr>
-        <tr>
-          <td>Cero (contrato acabo 17; todo es catch-up)</td>
-          <td class="num">33 × £16 = <strong>£528</strong></td>
-          <td class="num"><strong>£60</strong> (588-528) o cancelar</td>
-        </tr>
-        <tr>
-          <td>Cero, valorado @ £24 SI2</td>
-          <td class="num">33 × £24 = <strong>£792</strong></td>
-          <td class="num"><strong>£0</strong> (absorbe y sobra ~£204)</td>
-        </tr>
+        <tr><td>Vie 17</td><td class="num">4.5</td><td>Fadi DC 12.30-3 + Acton tarde Adam/Amaar</td></tr>
+        <tr><td>Lun 20 - vie 24</td><td class="num">13.5</td><td>Fadi/Zakariya DC; sin tardes Acton</td></tr>
+        <tr><td>Lun 27 - vie 31</td><td class="num">19.0</td><td>Emanuel/Yaqoub; crash Acton 28/29; jue 30 vacio</td></tr>
+        <tr><td><strong>Total 17-31 (extras)</strong></td><td class="num"><strong>37.0</strong></td><td>× £16 = <strong>£592.00</strong></td></tr>
+        <tr><td>Solo 18-31 (si se excluye el 17)</td><td class="num">32.5</td><td>× £16 = £520.00</td></tr>
       </tbody>
     </table>
     <p class="sub">
-      Ojo: si Julio se paga el fijo completo £2,166.67 (mes anualizado), ese fijo
-      <strong>ya incluye</strong> 18-31. No se puede cobrar doble: o el mes fijo
-      cubre esas horas, o se prorratea julio al 17 y se pagan 18-31 aparte.
-      Victor debe elegir una logica.
+      Fuente: <code>working_ui/portal/roster_term_master.json</code> (span
+      fusionado de <code>time_slot</code>). Antes el briefing usaba 33.0h en
+      18-31 (semana 27 = 19.5); rota actual = 32.5h (jue 30 sin slots).
     </p>
 
-    <h2>5. Pendiente de pagar (Victor 29 jul)</h2>
+    <h2>5. Pendiente de pagar (modelo Victor)</h2>
     <div class="box ok">
-      <strong>Agosto = SI</strong> (pro-rata 12 meses / anualizado £26k).
-      Julio bruto contractual £2,166.67 aun no en Tide (CSV corte 25 jul;
-      ultimo salario = junio £2,147.14 neto).
+      <strong>Julio fijo (mes 11) + Agosto fijo (mes 12) + extras 17-31.</strong>
+      Julio/agosto bruto contractual aun no en Tide (CSV corte 25 jul;
+      ultimo salario = junio £2,147.14 neto). Agosto = SI (anualizado £26k).
     </div>
     <table>
       <thead>
-        <tr><th>Escenario</th><th class="num">Bruto</th><th>Nota</th></tr>
+        <tr><th>Concepto</th><th class="num">Bruto</th><th>Nota</th></tr>
       </thead>
       <tbody>
         <tr>
-          <td>Jul + Ago, sin tocar offset</td>
-          <td class="num"><strong>£4,333.34</strong></td>
-          <td>2 × 2,166.67</td>
+          <td>Julio fijo (mes 11)</td>
+          <td class="num">£2,166.67</td>
+          <td>Anualizado £26k — sigue debido</td>
         </tr>
         <tr>
-          <td>Jul + Ago − offset £588</td>
-          <td class="num"><strong>£3,745.34</strong></td>
-          <td>Offset clasico 25 jul intacto</td>
+          <td>Agosto fijo (mes 12)</td>
+          <td class="num">£2,166.67</td>
+          <td>Anualizado — SI</td>
         </tr>
         <tr>
-          <td>Jul + Ago − offset residual £60</td>
-          <td class="num"><strong>£4,273.34</strong></td>
-          <td>Si 18-31 @ £16 cancela £528 del £588</td>
+          <td>Extras 17-31 jul (37h × £16)</td>
+          <td class="num">£592.00</td>
+          <td>NO catch-up; pay adicional</td>
         </tr>
         <tr>
-          <td>Jul + Ago, offset cancelado</td>
-          <td class="num"><strong>£4,333.34</strong></td>
-          <td>Si Victor acepta 18-31 (y/o May Q6) como absorcion</td>
+          <td><strong>Subtotal debido</strong></td>
+          <td class="num"><strong>£4,925.34</strong></td>
+          <td>Jul + Ago + extras</td>
+        </tr>
+        <tr>
+          <td>Opcional − overclaim £588</td>
+          <td class="num"><strong>£4,337.34</strong></td>
+          <td>Offset aparte (Mar/Abr/Jun); decision Victor</td>
+        </tr>
+        <tr>
+          <td>Alternativa: extras solo 18-31</td>
+          <td class="num">£4,853.34 / £4,265.34</td>
+          <td>£520 extras; con/sin £588</td>
         </tr>
       </tbody>
     </table>
     <p class="sub">
-      Recomendacion operativa (no inventada): el caso mas limpio con
-      <strong>agosto SI + mes fijo julio</strong> es pagar
-      <strong>£4,333.34</strong> y decidir aparte si el £588 se descuenta,
-      se reduce a ~£60, o se perdona. Mezclar &quot;mes fijo&quot; + &quot;credito
-      por horas 18-31&quot; sin prorratear julio es doble conteo.
+      Modelo limpio: pagar fijo Jul+Ago <strong>y</strong> las extras a £16.
+      El £588 no se &quot;cancela&quot; automaticamente con esas horas; se
+      descuenta o no como decision separada.
     </p>
 
     <h2>6. Horas del paquete £26k (~32 h/sem)</h2>
@@ -382,9 +387,10 @@
     <p class="foot">
       Fuentes: Tide ops Sep25-Jul26 · FIXED_MONTHLY 2166.67 · calc overclaim
       b46559df (24-25 jul) + fotos TS re-leidas · pot manana DC canvas Abr £632 /
-      May-Jun £1000 · MADRE roster_term_master Jul 18-31 span 33h · programas
-      standard end 17 jul (admin_dashboard) · decisiones Victor 29 jul (Sep £19k/24h,
-      Ene £26k/32h, Agosto SI, claim Q6, hipotesis Abr). Briefing interno; no payslip.
+      May-Jun £1000 · MADRE roster_term_master Jul 17-31 span 37h (= £592 @ £16) ·
+      programas standard end 17 jul · decisiones Victor 29 jul (Sep £19k/24h,
+      Ene £26k/32h, Agosto SI mes 12, extras desde el 17 no catch-up, claim Q6,
+      hipotesis Abr). Briefing interno; no payslip.
     </p>
   </div>
 </body>

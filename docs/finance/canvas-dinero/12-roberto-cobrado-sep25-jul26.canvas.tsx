@@ -15,11 +15,11 @@ import {
 
 /**
  * Roberto Reali · cobrado Tide + contrato fijo £26k + extras / horas
- * Victor 29 jul: Sep £19k/24h → Ene £26k/32h · Agosto SI (pro-rata 12m)
- * PRIOR CALC (DO NOT REINVENT): b46559df · Mar £144 + Abr £36 + Jun £408 = £588
- * Abr shortfall (DC manana £632 vs £1000) NO estaba en "deberia"
- * May Q6 claim ~6h: payslip May = £0 extras (TS pedía £445.50 no pagado)
- * Jul 18-31 MADRE span = 33h · programas standard end 17 Jul
+ * Victor 29 jul: Sep £19k/24h → Ene £26k/32h · Agosto SI (mes 12)
+ * PRIOR CALC: b46559df · Mar £144 + Abr £36 + Jun £408 = £588
+ * MODELO CORRECTO: contrato termina 17 jul; fijo Jul+Ago sigue;
+ * horas desde el 17 = EXTRA @ £16 (NO catch-up del paquete 32h)
+ * MADRE 17-31 = 37.0h → £592
  */
 
 const gbp = (n: number) =>
@@ -51,13 +51,10 @@ const TIDE_PAYMENTS: Array<{
 ];
 
 const tideTotal = TIDE_PAYMENTS.reduce((s, r) => s + r.gbp, 0);
-/** Contrato confirmado Victor: £26k/yr desde ene 2026 — no Scala */
-const CONTRACT_YR = 26000;
 const CONTRACT_MO = 2166.67;
-/** Baseline h/sem del acuerdo (manana 13.5 + tarde 11 + dom 6 ≈ 30.5; ~32) */
 const CONTRACT_H_WEEK = 30.5;
+const EXTRA_RATE = 16;
 
-/** Payslip bruto extras vs base — from Victor table 24 Jul (b46559df) */
 const PAID_EXTRAS = [
   { m: "Sep 2025", gbp: 540, src: "payslip bruto (base parcial)" },
   { m: "Oct 2025", gbp: 368, src: "payslip bruto (base ~£1,583)" },
@@ -72,7 +69,6 @@ const PAID_EXTRAS = [
 ];
 const paidExtrasTot = PAID_EXTRAS.reduce((s, r) => s + r.gbp, 0);
 
-/** Cobrado vs deberia — agreed 25 Jul: "si julio = enero, cuanto nos deberia?" → £588 */
 const OVERCLAIM = [
   { m: "Ene", cobrado: 2166.67, debia: 2166.67, diff: 0, note: "Solo salario" },
   { m: "Feb", cobrado: 2206.67, debia: 2206.67, diff: 0, note: "OK Tinashe £40" },
@@ -84,12 +80,11 @@ const OVERCLAIM = [
 const overclaimTot = OVERCLAIM.reduce((s, r) => s + r.diff, 0);
 
 const CONTRACT_HOURS = [
-  { block: "Manana L–V", detail: "Lun 3.5 · mar–vie 2.5", h: 13.5 },
-  { block: "Tarde L–V", detail: "Lun/mie 2 · mar/jue 2.5 · vie 2", h: 11.0 },
+  { block: "Manana L-V", detail: "Lun 3.5 · mar-vie 2.5", h: 13.5 },
+  { block: "Tarde L-V", detail: "Lun/mie 2 · mar/jue 2.5 · vie 2", h: 11.0 },
   { block: "Domingo", detail: "6 h (desde jun 6.5)", h: 6.0 },
 ];
 
-/** Span hours from roster_term_master (re-checked 29 jul; Jul 27 week = 19.5) */
 const MADRE_WEEKS = [
   { week: "2026-06-01", total: 30.5, wd: 24.5, sun: 6.0 },
   { week: "2026-06-08", total: 30.0, wd: 24.0, sun: 6.0 },
@@ -99,9 +94,18 @@ const MADRE_WEEKS = [
   { week: "2026-07-06", total: 31.5, wd: 25.0, sun: 6.5 },
   { week: "2026-07-13", total: 23.5, wd: 23.5, sun: 0.0 },
   { week: "2026-07-20", total: 13.5, wd: 13.5, sun: 0.0 },
-  { week: "2026-07-27", total: 19.5, wd: 19.5, sun: 0.0 },
+  { week: "2026-07-27", total: 19.0, wd: 19.0, sun: 0.0 },
 ];
-const JUL_18_31_H = 33.0;
+
+/** Victor: extras desde el 17 jul (no catch-up). Roster vivo 29 jul. */
+const JUL_17_H = 4.5;
+const JUL_18_31_H = 32.5;
+const JUL_17_31_H = JUL_17_H + JUL_18_31_H;
+const JUL_EXTRAS_GBP = JUL_17_31_H * EXTRA_RATE;
+const JUL_AGO_FIXED = CONTRACT_MO * 2;
+const DUE_BEFORE_OFFSET = JUL_AGO_FIXED + JUL_EXTRAS_GBP;
+const DUE_AFTER_OFFSET = DUE_BEFORE_OFFSET - overclaimTot;
+
 const madreAvgTot =
   MADRE_WEEKS.reduce((s, w) => s + w.total, 0) / MADRE_WEEKS.length;
 const madreAvgWd =
@@ -116,55 +120,57 @@ export default function RobertoCobradoSep25Jul26() {
     <Stack gap={20}>
       <H1>Roberto Reali · cobrado, horas extras y contrato</H1>
       <Text tone="secondary">
-        Sep 2025 – Jul 2026 · contrato £26k desde ene (no Scala) · ~30.5–32
-        h/sem · Tide + extras + MADRE
+        Sep 2025 - Jul 2026 · contrato £26k desde ene (no Scala) · fin contrato
+        17 jul · extras desde el 17 @ £16
       </Text>
       <Row gap={8} wrap>
         <Pill tone="info">Contrato fijo £26k</Pill>
         <Pill tone="neutral">No Scala / Scale</Pill>
-        <Pill tone="info">Desde ene 2026</Pill>
-        <Pill tone="warning">Overclaim £588 (calc 24–25 jul)</Pill>
-        <Pill tone="neutral">~£480 cifra redonda Victor</Pill>
+        <Pill tone="info">Fin contrato 17 jul</Pill>
+        <Pill tone="warning">Overclaim £588</Pill>
+        <Pill tone="info">Extras 17-31 = £592</Pill>
       </Row>
 
       <Grid columns={4} gap={16}>
-        <Stat value={gbp(tideTotal)} label="Tide pagado (Sep–Jul)" />
+        <Stat value={gbp(tideTotal)} label="Tide pagado (Sep-Jul)" />
         <Stat value={gbp(CONTRACT_MO)} label="Fijo / mes (£26k)" tone="info" />
         <Stat
-          value={gbp(overclaimTot)}
-          label="Overclaim ene–jun (acordado)"
-          tone="warning"
+          value={gbp(JUL_EXTRAS_GBP)}
+          label={"Extras 17-31 (" + JUL_17_31_H + "h × £16)"}
+          tone="info"
         />
         <Stat
-          value={"~" + madreAvgTot.toFixed(0) + "h"}
-          label="Media h/sem MADRE Jun–Jul"
+          value={gbp(DUE_BEFORE_OFFSET)}
+          label="Jul+Ago+extras (antes offset)"
+          tone="warning"
         />
       </Grid>
 
-      <Callout tone="info" title="Historial contrato (Victor 29 jul)">
-        Sep: £19k / ~24h · Ene: £26k / ~32h (no Scala). Pro-rata 12 meses →
-        Agosto SI. Si hace menos de ~32h, recupera dentro del fijo — no EXTRA.
-        Overclaim calc: £588 (~£480 redondo).
+      <Callout tone="info" title="Modelo Victor 29 jul (CORRECTO)">
+        Contrato terminaba el 17 jul, pero el fijo anualizado sigue: julio =
+        mes 11 y agosto = mes 12 (£2,166.67 cada uno). Paquete ~32h/sem solo
+        hasta el contrato. Desde el 17 jul las horas son EXTRA a £16 — no
+        recuperacion del paquete. Overclaim £588 se decide aparte (no se
+        absorbe con catch-up 18-31).
       </Callout>
 
-      <Callout tone="warning" title="Calculo YA HECHO 24–25 jul — no reinventar">
-        Chat b46559df. Payslips Victor + fotos timesheet
-        (image-0159dc26, d7884336, 65331f41, f669b83b). Pregunta: &quot;si le
-        pagamos julio como enero, cuanto nos deberia?&quot; → {gbp(overclaimTot)}
-        (Mar £144 + Abr £36 + Jun £408).
+      <Callout tone="warning" title="Calculo YA HECHO 24-25 jul — no reinventar">
+        Chat b46559df. Payslips Victor + fotos timesheet. Pregunta: &quot;si le
+        pagamos julio como enero, cuanto nos deberia?&quot; →{" "}
+        {gbp(overclaimTot)} (Mar £144 + Abr £36 + Jun £408).
       </Callout>
 
-      <H2>0. Horas del contrato £26k</H2>
+      <H2>0. Horas del contrato £26k (hasta el 17 jul)</H2>
       <Table
         headers={["Bloque", "Detalle", "h / sem"]}
         columnAlign={["left", "left", "right"]}
         rows={[
           ...CONTRACT_HOURS.map((r) => [r.block, r.detail, r.h.toFixed(1)]),
-          ["Total", "Acuerdo ~32 h/sem", "~30.5–32"],
+          ["Total", "Acuerdo ~32 h/sem", "~30.5-32"],
         ]}
       />
 
-      <H2>1. Cobrado vs deberia (calc 24–25 jul)</H2>
+      <H2>1. Cobrado vs deberia (calc 24-25 jul)</H2>
       <Table
         headers={["Mes", "Cobrado", "Deberia", "De mas", "Nota"]}
         columnAlign={["left", "right", "right", "right", "left"]}
@@ -189,7 +195,7 @@ export default function RobertoCobradoSep25Jul26() {
         columnAlign={["left", "right", "left"]}
         rows={PAID_EXTRAS.map((r) => [
           r.m,
-          r.gbp ? gbp(r.gbp) : "—",
+          r.gbp ? gbp(r.gbp) : "-",
           r.src,
         ])}
         rowTone={PAID_EXTRAS.map((r) =>
@@ -197,25 +203,20 @@ export default function RobertoCobradoSep25Jul26() {
         )}
       />
       <Text weight="semibold">
-        Suma plus en bruto Sep–Jun: {gbp(paidExtrasTot)} (incluye hist. Sep–Dic)
+        Suma plus en bruto Sep-Jun: {gbp(paidExtrasTot)} (incluye hist. Sep-Dic)
       </Text>
 
       <H2>2. Rota MADRE vs acuerdo (~30.5 h/sem)</H2>
       <Text tone="secondary" size="small">
-        Fuente: roster_term_master.json · domingo = pay window 6h / 6.5h
+        Fuente: roster_term_master.json · domingo = pay window 6h / 6.5h ·
+        semana 27 jul = 19.0h (jue 30 vacio)
       </Text>
       <Grid columns={3} gap={12}>
-        <Stat
-          value={madreAvgTot.toFixed(1) + "h"}
-          label="Media total / sem"
-        />
-        <Stat
-          value={madreAvgWd.toFixed(1) + "h"}
-          label="Media entre semana"
-        />
+        <Stat value={madreAvgTot.toFixed(1) + "h"} label="Media total / sem" />
+        <Stat value={madreAvgWd.toFixed(1) + "h"} label="Media entre semana" />
         <Stat
           value={madreExcessTot.toFixed(0) + "h"}
-          label={"Suma (total−" + CONTRACT_H_WEEK + ") si >acuerdo"}
+          label={"Suma (total-" + CONTRACT_H_WEEK + ") si >acuerdo"}
         />
       </Grid>
       <Table
@@ -246,57 +247,76 @@ export default function RobertoCobradoSep25Jul26() {
         )}
       />
 
-      <H2>3. ~£480 / £588 = sobrerreclamo (no le debemos)</H2>
+      <H2>3. £588 = sobrerreclamo (no le debemos)</H2>
       <Callout tone="warning" title="Overclaim, no pago a Roberto">
-        Tide: sin loan formal. £588 = Mar £144 + Abr £36 + Jun £408 (calc
-        24–25 jul). ~£480 = redondo Victor. Misma logica: horas de recuperacion
-        del paquete 32h/sem cobradas como EXTRA. Julio = base £2,166.67 no
-        anade deuda (£2,166.67 − £588 = £1,578.67 si se descuenta).
+        £588 = Mar £144 + Abr £36 + Jun £408. Horas de recuperacion del
+        paquete cobradas como EXTRA. Se puede descontar del pendiente Jul/Ago/
+        extras — decision aparte, no automatica.
       </Callout>
 
-      <H2>4. Abril shortfall / Mayo Q6 / Jul 18-31 (29 jul)</H2>
-      <Callout tone="neutral" title="Abril shortfall — NO estaba en deberia">
-        Pot manana DC Abr £632 vs May/Jun £1,000 (= £368 / ~23h @ £16). Club
-        abrio ~13 abr. El calc solo miro extras; el corto de paquete explica
-        recuperacion, no baja solo el £588.
+      <H2>4. Fin contrato 17 jul + extras (NO catch-up)</H2>
+      <Callout tone="neutral" title="Abril shortfall — contexto">
+        Pot manana DC Abr £632 vs May/Jun £1,000 (= £368 / ~23h @ £16). Explica
+        recuperacion durante el contrato; no baja solo el £588.
       </Callout>
       <Callout tone="neutral" title="Mayo Q6 (claim Roberto)">
-        Miercoles 11-12 Q6 × 6 dias (~6h). Payslip mayo = £0 extras (TS pedía
-        £445.50 y no se pago). Si era recuperacion → mayo sigue OK. Si era por
-        encima y no pagado → credito ~£96 (@16) / ~£144 (@24) contra offset.
+        Miercoles 11-12 Q6 × 6 dias (~6h). Payslip mayo = £0 extras. Si era
+        recuperacion → mayo OK. Si por encima y no pagado → credito ~£96 (@16)
+        contra offset (decision Victor).
       </Callout>
-      <Callout tone="warning" title="17 jul vs 18-31">
-        Programas standard end 17 jul (documentado). Fin contrato laboral 17
-        jul = afirmacion Victor (sin papel HR en repo). MADRE 18-31 ={" "}
-        {JUL_18_31_H}h span vs 64h paquete (corto 31h). Si acordado=0:{" "}
-        {JUL_18_31_H}×£16=£528 → offset queda £60; @£24 absorbe £588.
-        Ojo: mes fijo julio ya cubre 18-31 si no se prorratea.
-      </Callout>
-
-      <H2>5. Pendiente pagar (Agosto SI)</H2>
-      <Callout tone="info" title="Banco + Agosto">
-        Ultimo salario Tide = junio. Julio + Agosto = 2 × £2,166.67 bruto
-        pendientes. Agosto SI (anualizado 12m — Victor 29 jul).
+      <Callout tone="info" title="Desde el 17 = extras @ £16">
+        Wording Victor: extras desde el 17 jul (dia completo). Ambiguidad si
+        el 17 fuera ultimo dia de contrato: entonces extras desde el 18 (−4.5h
+        / −£72). Modelo preferido = desde el 17.
       </Callout>
       <Table
-        headers={["Escenario", "Bruto", "Nota"]}
+        headers={["Bloque", "h span", "£ @ 16", "Nota"]}
+        columnAlign={["left", "right", "right", "left"]}
+        rows={[
+          ["Vie 17", "4.5", gbp(4.5 * EXTRA_RATE), "Fadi DC + Acton tarde"],
+          ["Lun 20 - vie 24", "13.5", gbp(13.5 * EXTRA_RATE), "DC; sin Acton"],
+          [
+            "Lun 27 - vie 31",
+            "19.0",
+            gbp(19.0 * EXTRA_RATE),
+            "Emanuel/Yaqoub; crash 28/29; jue 30=0",
+          ],
+          [
+            "Total 17-31",
+            String(JUL_17_31_H),
+            gbp(JUL_EXTRAS_GBP),
+            "Pay adicional (no catch-up)",
+          ],
+          [
+            "Solo 18-31 (alt.)",
+            String(JUL_18_31_H),
+            gbp(JUL_18_31_H * EXTRA_RATE),
+            "Si se excluye el 17",
+          ],
+        ]}
+      />
+
+      <H2>5. Pendiente pagar</H2>
+      <Table
+        headers={["Concepto", "Bruto", "Nota"]}
         columnAlign={["left", "right", "left"]}
         rows={[
-          ["Jul + Ago (sin offset)", gbp(CONTRACT_MO * 2), "2 × fijo"],
+          ["Julio fijo (mes 11)", gbp(CONTRACT_MO), "Anualizado £26k"],
+          ["Agosto fijo (mes 12)", gbp(CONTRACT_MO), "SI — Victor"],
           [
-            "Jul + Ago − £588",
-            gbp(CONTRACT_MO * 2 - overclaimTot),
-            "Offset clasico",
+            "Extras 17-31 (" + JUL_17_31_H + "h × £16)",
+            gbp(JUL_EXTRAS_GBP),
+            "NO absorcion del £588",
           ],
           [
-            "Jul + Ago − £60",
-            gbp(CONTRACT_MO * 2 - 60),
-            "Si 18-31 @ £16 cancela £528",
+            "Subtotal",
+            gbp(DUE_BEFORE_OFFSET),
+            "Jul + Ago + extras",
           ],
           [
-            "Jul + Ago offset £0",
-            gbp(CONTRACT_MO * 2),
-            "Si absorcion total (Victor)",
+            "Con offset −£588",
+            gbp(DUE_AFTER_OFFSET),
+            "Decision aparte",
           ],
         ]}
       />
@@ -324,15 +344,15 @@ export default function RobertoCobradoSep25Jul26() {
 
       <H3>Payslip = contrato £26k</H3>
       <Text tone="secondary" size="small">
-        Payslips ene–jun: base frecuente £2,166.67 + extras. Coincide con
-        contrato {gbp(CONTRACT_MO)}/mes desde enero. Oct–Dic era ~£1,583.33.
+        Payslips ene-jun: base frecuente £2,166.67 + extras. Oct-Dic era
+        ~£1,583.33 (£19k).
       </Text>
 
       <Divider />
       <Text tone="secondary" size="small">
         Carta: docs/finance/roberto-carta-sueldo-horas-2026.html · Briefing:
-        docs/finance/roberto-cobrado-briefing-2026.html · Horas: chat Victor
-        (LUNES 3.5 / resto manana 2.5 + tardes + domingo 6/6.5).
+        docs/finance/roberto-cobrado-briefing-2026.html · MADRE:
+        working_ui/portal/roster_term_master.json
       </Text>
     </Stack>
   );
