@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Roberto Reali | cobrado y contrato | briefing</title>
+  <title>Roberto Reali | settlement briefing | EN / ES / IT</title>
   <style>
     :root {
       --ink: #142033;
@@ -26,22 +26,24 @@
       line-height: 1.4;
     }
     .wrap { max-width: 960px; margin: 0 auto; padding: 20px 16px 28px; }
-    h1 { font-size: 1.4rem; margin: 0 0 4px; }
-    h2 { font-size: 1.1rem; margin: 0 0 6px; }
+    h1 { font-size: 1.35rem; margin: 0 0 4px; }
+    h2 { font-size: 1.05rem; margin: 0 0 6px; }
     h3 { font-size: 0.95rem; margin: 12px 0 6px; }
     .sub { color: var(--muted); font-size: 0.88rem; margin: 0 0 12px; }
+    .langs { color: var(--muted); font-size: 0.8rem; margin: 0 0 10px; }
     .box {
       border: 1px solid var(--line);
       border-radius: 12px;
       padding: 12px 14px;
       margin: 10px 0;
       background: var(--soft);
+      min-width: 0;
     }
     .box.warn { background: var(--warn-bg); border-color: #fdba74; color: var(--warn); }
     .box.ok { background: var(--ok-bg); border-color: #86efac; color: var(--ok); }
     .box.info { background: var(--info-bg); border-color: #93c5fd; color: var(--info); }
     .rule {
-      font-size: 1.05rem;
+      font-size: 1.02rem;
       line-height: 1.35;
       margin: 0 0 10px;
       padding: 10px 12px;
@@ -49,7 +51,10 @@
       background: #ffedd5;
       border: 2px solid #ea580c;
       color: #9a3412;
+      min-width: 0;
+      overflow-wrap: break-word;
     }
+    .rule + .rule { margin-top: 8px; }
     .stats {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -62,8 +67,8 @@
       padding: 10px;
       min-width: 0;
     }
-    .stat b { display: block; font-size: 1.1rem; overflow-wrap: break-word; }
-    .stat span { color: var(--muted); font-size: 0.75rem; }
+    .stat b { display: block; font-size: 1.05rem; overflow-wrap: break-word; }
+    .stat span { color: var(--muted); font-size: 0.72rem; }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -74,11 +79,13 @@
       text-align: left;
       padding: 5px 4px;
       vertical-align: top;
+      min-width: 0;
+      overflow-wrap: break-word;
     }
     th { color: var(--muted); font-size: 0.72rem; text-transform: uppercase; }
-    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
     ul { padding-left: 1.15rem; margin: 6px 0 0; }
-    li { margin: 5px 0; }
+    li { margin: 5px 0; overflow-wrap: break-word; }
     .foot {
       margin-top: 14px;
       padding-top: 8px;
@@ -137,6 +144,22 @@
       padding-top: 8px;
       padding-bottom: 8px;
     }
+    .tri {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .tri .lang {
+      border: 1px solid #fdba74;
+      border-radius: 10px;
+      padding: 10px;
+      background: #fff;
+      min-width: 0;
+      color: var(--warn);
+      font-size: 0.82rem;
+    }
+    .tri .lang strong { display: block; margin-bottom: 4px; color: #7c2d12; }
     .print-hint {
       color: var(--muted);
       font-size: 0.75rem;
@@ -157,133 +180,143 @@
       h1 { font-size: 14pt; }
       .stats { gap: 6px; }
       .stat b { font-size: 11pt; }
+      .tri { grid-template-columns: 1fr; }
     }
     @media (max-width: 720px) {
       .stats { grid-template-columns: 1fr 1fr; }
+      .tri { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Roberto Reali - cobrado y contrato</h1>
+    <h1>Roberto Reali - settlement / liquidación / liquidazione</h1>
+    <p class="langs">EN · ES · IT</p>
     <p class="sub">
-      Briefing corto | ene -> 17 jul 2026 + liquidacion |
-      actualizado 29 jul 2026 |
-      dto 15h neto @£24 | extras 20-31 DC@£18 + Acton@£24 | liq. £4,582.34
+      Short briefing | Jan -&gt; 17 Jul 2026 + settlement |
+      updated 29 Jul 2026 |
+      overclaim £588 @ £24 | de menos 21h @ £16 | extras 17-31 DC@£18 + Acton@£24 |
+      owed <strong>£4,111.34</strong>
     </p>
 
     <div class="stats">
       <div class="stat">
-        <b>£20,324.45</b>
-        <span>Bruto payslips Sep25-Jun26</span>
+        <b>£588</b>
+        <span>Overclaim 24.5h @ £24</span>
       </div>
       <div class="stat">
-        <b>£360</b>
-        <span>Dto 15h neto (21-6) @ £24</span>
+        <b>£336</b>
+        <span>De menos 21h @ £16</span>
       </div>
       <div class="stat">
-        <b>£609</b>
-        <span>Extras 20-31 (DC £18 + Acton £24)</span>
+        <b>£702</b>
+        <span>Extras 17-31 (DC £18 + Acton £24)</span>
       </div>
       <div class="stat">
-        <b>£4,582.34</b>
-        <span>Liquidacion (sin overclaim £588)</span>
+        <b>£4,111.34</b>
+        <span>Settlement / liquidación</span>
       </div>
     </div>
 
     <div class="box ok">
-      <strong>Contrato:</strong>
-      Sep 2025 £19k/ano (~24 h/sem) ->
-      Ene 2026 <strong>£26,000/ano</strong> (£2,166.67/mes) y <strong>32 h/sem</strong>.
-      Pro-rata 12 meses -> <strong>Agosto SI</strong>.
+      <strong>EN</strong> Contract: Sep 2025 £19k/yr (~24 h/wk) -&gt;
+      Jan 2026 <strong>£26,000/yr</strong> (£2,166.67/mo) and <strong>32 h/wk</strong>.
+      Pro-rata 12 months -&gt; <strong>August YES</strong>.<br />
+      <strong>ES</strong> Contrato: Sep 2025 £19k/año (~24 h/sem) -&gt;
+      Ene 2026 <strong>£26,000/año</strong> (£2,166.67/mes) y <strong>32 h/sem</strong>.
+      Pro-rata 12 meses -&gt; <strong>Agosto SÍ</strong>.<br />
+      <strong>IT</strong> Contratto: set 2025 £19k/anno (~24 h/sett) -&gt;
+      gen 2026 <strong>£26,000/anno</strong> (£2,166.67/mese) e <strong>32 h/sett</strong>.
+      Pro-rata 12 mesi -&gt; <strong>Agosto SÌ</strong>.
     </div>
 
     <!-- ========== TABLA MAESTRA ========== -->
     <section class="master" id="tabla-maestra">
-      <h2>TABLA MAESTRA - horas (ene -> 17 jul)</h2>
+      <h2>MASTER TABLE / TABLA MAESTRA / TABELLA - hours (Jan -&gt; 17 Jul)</h2>
       <p class="legend">
-        Paquete: <strong>32 h/sem</strong> (no HT). De mas = max(0, h-32).
-        De menos = max(0, 32-h) solo no-HT; HT: de menos = 0.
-        Fuentes: ene-mar admin (Sab 2h); Abr TS; May estimacion; Jun-Jul MADRE.
+        Package / paquete / pacchetto: <strong>32 h/wk</strong> (non-HT).
+        Surplus / de más / in più = max(0, h-32).
+        Shortfall / de menos / in meno = max(0, 32-h) non-HT only; HT: shortfall = 0.
+        Sources: Jan-Mar admin (Sat 2h); Apr timesheet; May estimate; Jun-Jul MADRE.
       </p>
 
-      <h3>A. Semana a semana</h3>
+      <h3>A. Week by week / Semana a semana / Settimana per settimana</h3>
       <div class="scroll">
         <table class="week">
           <thead>
             <tr>
-              <th>Semana (lun)</th>
-              <th class="num">Horas hechas</th>
-              <th class="num">De mas</th>
-              <th class="num">De menos</th>
+              <th>Week (Mon) / Semana / Sett.</th>
+              <th class="num">Hours / Horas / Ore</th>
+              <th class="num">Surplus / De más / In più</th>
+              <th class="num">Shortfall / De menos / In meno</th>
               <th>HT</th>
-              <th>Fuente / nota</th>
+              <th>Source / Fuente / Fonte</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td>2026-01-05</td><td class="num">32</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">admin: 32 (Sab 2h)</td></tr>
-            <tr><td>2026-01-12</td><td class="num">32</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">admin: 32 (Sab 2h)</td></tr>
-            <tr><td>2026-01-19</td><td class="num">32</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">admin: 32 (Sab 2h)</td></tr>
-            <tr><td>2026-01-26</td><td class="num">32</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">admin: 32 (Sab 2h)</td></tr>
-            <tr class="month-gap"><td>2026-02-02</td><td class="num">32</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">admin: 32 (Sab 2h)</td></tr>
-            <tr><td>2026-02-09</td><td class="num">32</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">admin: 32 (Sab 2h)</td></tr>
+            <tr><td>2026-01-05</td><td class="num">32</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">admin: 32 (Sat 2h)</td></tr>
+            <tr><td>2026-01-12</td><td class="num">32</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">admin: 32 (Sat 2h)</td></tr>
+            <tr><td>2026-01-19</td><td class="num">32</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">admin: 32 (Sat 2h)</td></tr>
+            <tr><td>2026-01-26</td><td class="num">32</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">admin: 32 (Sat 2h)</td></tr>
+            <tr class="month-gap"><td>2026-02-02</td><td class="num">32</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">admin: 32 (Sat 2h)</td></tr>
+            <tr><td>2026-02-09</td><td class="num">32</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">admin: 32 (Sat 2h)</td></tr>
             <tr class="ht"><td>2026-02-16</td><td class="num">HT</td><td class="num">0</td><td class="num">0</td><td>Y</td><td class="src">Feb HT 16-20 | shortfall N/A</td></tr>
-            <tr><td>2026-02-23</td><td class="num">32</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">admin: 32 (Sab 2h)</td></tr>
-            <tr class="month-gap"><td>2026-03-02</td><td class="num">32</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">admin: 32 (Sab 2h)</td></tr>
-            <tr><td>2026-03-09</td><td class="num">32</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">admin: 32 (Sab 2h)</td></tr>
-            <tr><td>2026-03-16</td><td class="num">32</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">admin: 32 (Sab 2h)</td></tr>
-            <tr><td>2026-03-23</td><td class="num">32</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">admin: 32 (Sab 2h)</td></tr>
-            <tr class="ht"><td>2026-03-30</td><td class="num">HT</td><td class="num">0</td><td class="num">0</td><td>Y</td><td class="src">Easter 30 mar-10 abr</td></tr>
-            <tr class="ht month-gap"><td>2026-04-06</td><td class="num">HT</td><td class="num">0</td><td class="num">0</td><td>Y</td><td class="src">Easter / cerrado</td></tr>
-            <tr class="surplus"><td>2026-04-13</td><td class="num">35.5</td><td class="num plus">3.5</td><td class="num minus">0</td><td>N</td><td class="src">TS | Dom 6 | Vie 2h</td></tr>
-            <tr class="surplus"><td>2026-04-20</td><td class="num">33.5</td><td class="num plus">1.5</td><td class="num minus">0</td><td>N</td><td class="src">TS + patron | Vie 2h</td></tr>
-            <tr class="surplus"><td>2026-04-27</td><td class="num">33.0</td><td class="num plus">1.0</td><td class="num minus">0</td><td>N</td><td class="src">patron TS | Vie 2h</td></tr>
-            <tr class="short month-gap"><td>2026-05-04</td><td class="num">26.0</td><td class="num plus">0</td><td class="num minus">6.0</td><td>N</td><td class="src">estim. | BH lun 4 | Adam vie</td></tr>
-            <tr class="short"><td>2026-05-11</td><td class="num">31.5</td><td class="num plus">0</td><td class="num minus">0.5</td><td>N</td><td class="src">estim. + Q6 | Amaar</td></tr>
-            <tr class="short"><td>2026-05-18</td><td class="num">25.5</td><td class="num plus">0</td><td class="num minus">6.5</td><td>N</td><td class="src">estim. | Dom 24 en cierre HT</td></tr>
+            <tr><td>2026-02-23</td><td class="num">32</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">admin: 32 (Sat 2h)</td></tr>
+            <tr class="month-gap"><td>2026-03-02</td><td class="num">32</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">admin: 32 (Sat 2h)</td></tr>
+            <tr><td>2026-03-09</td><td class="num">32</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">admin: 32 (Sat 2h)</td></tr>
+            <tr><td>2026-03-16</td><td class="num">32</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">admin: 32 (Sat 2h)</td></tr>
+            <tr><td>2026-03-23</td><td class="num">32</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">admin: 32 (Sat 2h)</td></tr>
+            <tr class="ht"><td>2026-03-30</td><td class="num">HT</td><td class="num">0</td><td class="num">0</td><td>Y</td><td class="src">Easter 30 Mar-10 Apr</td></tr>
+            <tr class="ht month-gap"><td>2026-04-06</td><td class="num">HT</td><td class="num">0</td><td class="num">0</td><td>Y</td><td class="src">Easter / closed</td></tr>
+            <tr class="surplus"><td>2026-04-13</td><td class="num">35.5</td><td class="num plus">3.5</td><td class="num minus">0</td><td>N</td><td class="src">TS | Sun 6 | Fri 2h</td></tr>
+            <tr class="surplus"><td>2026-04-20</td><td class="num">33.5</td><td class="num plus">1.5</td><td class="num minus">0</td><td>N</td><td class="src">TS + pattern | Fri 2h</td></tr>
+            <tr class="surplus"><td>2026-04-27</td><td class="num">33.0</td><td class="num plus">1.0</td><td class="num minus">0</td><td>N</td><td class="src">TS pattern | Fri 2h</td></tr>
+            <tr class="short month-gap"><td>2026-05-04</td><td class="num">26.0</td><td class="num plus">0</td><td class="num minus">6.0</td><td>N</td><td class="src">est. | BH Mon 4 | Adam Fri</td></tr>
+            <tr class="short"><td>2026-05-11</td><td class="num">31.5</td><td class="num plus">0</td><td class="num minus">0.5</td><td>N</td><td class="src">est. + Q6 | Amaar</td></tr>
+            <tr class="short"><td>2026-05-18</td><td class="num">25.5</td><td class="num plus">0</td><td class="num minus">6.5</td><td>N</td><td class="src">est. | Sun 24 in HT close</td></tr>
             <tr class="ht"><td>2026-05-25</td><td class="num">HT</td><td class="num">0</td><td class="num">0</td><td>Y</td><td class="src">May HT club 23-31</td></tr>
-            <tr class="short month-gap"><td>2026-06-01</td><td class="num">31.0</td><td class="num plus">0</td><td class="num minus">1.0</td><td>N</td><td class="src">MADRE | Dom 6.5</td></tr>
-            <tr class="short"><td>2026-06-08</td><td class="num">30.5</td><td class="num plus">0</td><td class="num minus">1.5</td><td>N</td><td class="src">MADRE | Dom 6.5</td></tr>
-            <tr class="short"><td>2026-06-15</td><td class="num">31.0</td><td class="num plus">0</td><td class="num minus">1.0</td><td>N</td><td class="src">MADRE | Dom 6.5</td></tr>
-            <tr class="short"><td>2026-06-22</td><td class="num">31.0</td><td class="num plus">0</td><td class="num minus">1.0</td><td>N</td><td class="src">MADRE | Dom 6.5</td></tr>
-            <tr class="short"><td>2026-06-29</td><td class="num">29.0</td><td class="num plus">0</td><td class="num minus">3.0</td><td>N</td><td class="src">MADRE | mie 1 jul solo 2h</td></tr>
-            <tr class="short month-gap"><td>2026-07-06</td><td class="num">31.5</td><td class="num plus">0</td><td class="num minus">0.5</td><td>N</td><td class="src">MADRE | Dom 6.5</td></tr>
-            <tr><td>2026-07-13</td><td class="num">23.5</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">MADRE | contrato 13-17 | sin domingo; fijo completo OK</td></tr>
+            <tr class="short month-gap"><td>2026-06-01</td><td class="num">31.0</td><td class="num plus">0</td><td class="num minus">1.0</td><td>N</td><td class="src">MADRE | Sun 6.5</td></tr>
+            <tr class="short"><td>2026-06-08</td><td class="num">30.5</td><td class="num plus">0</td><td class="num minus">1.5</td><td>N</td><td class="src">MADRE | Sun 6.5</td></tr>
+            <tr class="short"><td>2026-06-15</td><td class="num">31.0</td><td class="num plus">0</td><td class="num minus">1.0</td><td>N</td><td class="src">MADRE | Sun 6.5</td></tr>
+            <tr class="short"><td>2026-06-22</td><td class="num">31.0</td><td class="num plus">0</td><td class="num minus">1.0</td><td>N</td><td class="src">MADRE | Sun 6.5</td></tr>
+            <tr class="short"><td>2026-06-29</td><td class="num">29.0</td><td class="num plus">0</td><td class="num minus">3.0</td><td>N</td><td class="src">MADRE | Wed 1 Jul only 2h</td></tr>
+            <tr class="short month-gap"><td>2026-07-06</td><td class="num">31.5</td><td class="num plus">0</td><td class="num minus">0.5</td><td>N</td><td class="src">MADRE | Sun 6.5</td></tr>
+            <tr><td>2026-07-13</td><td class="num">23.5</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src">MADRE | contract 13-17 | no Sunday; fixed OK</td></tr>
             <tr class="totals">
-              <td>TOTAL (no HT)</td>
+              <td>TOTAL (non-HT)</td>
               <td class="num">-</td>
               <td class="num">6.0</td>
               <td class="num">21.0</td>
               <td></td>
-              <td class="src">de mas Abr 6h | de menos May~13 + Jun 7.5 + Jul 0.5</td>
+              <td class="src">surplus Apr 6h | shortfall May~13 + Jun 7.5 + Jul 0.5</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <h3>B. Resumen mensual</h3>
+      <h3>B. Monthly summary / Resumen mensual / Riepilogo mensile</h3>
       <div class="scroll">
         <table class="month">
           <thead>
             <tr>
-              <th>Mes</th>
-              <th class="num">Bruto payslip</th>
-              <th class="num">Extra reclamado</th>
-              <th class="num">Horas de mas</th>
-              <th class="num">Horas de menos</th>
+              <th>Month / Mes / Mese</th>
+              <th class="num">Gross payslip</th>
+              <th class="num">Extra claimed</th>
+              <th class="num">Surplus h</th>
+              <th class="num">Shortfall h</th>
               <th class="num">Overclaim £</th>
-              <th>Nota</th>
+              <th>Note</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>Ene 2026</td>
+              <td>Jan 2026</td>
               <td class="num">£2,166.67</td>
               <td class="num">£0</td>
               <td class="num">0</td>
               <td class="num">0</td>
               <td class="num">£0</td>
-              <td class="src">4 sem x 32 (admin)</td>
+              <td class="src">4 wk x 32 (admin)</td>
             </tr>
             <tr>
               <td>Feb 2026</td>
@@ -292,7 +325,7 @@
               <td class="num">0</td>
               <td class="num">0</td>
               <td class="num">£0</td>
-              <td class="src">Tinashe OK | 1 sem HT</td>
+              <td class="src">Tinashe OK | 1 wk HT</td>
             </tr>
             <tr>
               <td>Mar 2026</td>
@@ -301,10 +334,10 @@
               <td class="num">0</td>
               <td class="num">0</td>
               <td class="num"><strong>£144</strong></td>
-              <td class="src">Sabados como EXTRA; fire/jue OK</td>
+              <td class="src">Saturdays as EXTRA; fire/Thu OK</td>
             </tr>
             <tr>
-              <td>Abr 2026</td>
+              <td>Apr 2026</td>
               <td class="num">£2,274.67</td>
               <td class="num">£108</td>
               <td class="num"><strong>6.0</strong></td>
@@ -319,7 +352,7 @@
               <td class="num">0</td>
               <td class="num">13.0</td>
               <td class="num">£0</td>
-              <td class="src">estim. (no MADRE) | May HT</td>
+              <td class="src">est. (no MADRE) | May HT</td>
             </tr>
             <tr>
               <td>Jun 2026</td>
@@ -331,13 +364,13 @@
               <td class="src">MADRE &lt;=32 | 17h@£24 UI</td>
             </tr>
             <tr>
-              <td>Jul 2026 (a 17)</td>
-              <td class="num">n/d</td>
-              <td class="num">n/d</td>
+              <td>Jul 2026 (to 17)</td>
+              <td class="num">n/a</td>
+              <td class="num">n/a</td>
               <td class="num">0</td>
               <td class="num">0.5</td>
-              <td class="num">n/d</td>
-              <td class="src">MADRE | 0.5 (sem 6); sem 13 sin dom = OK</td>
+              <td class="num">n/a</td>
+              <td class="src">MADRE | 0.5 (wk 6); wk 13 no Sun = OK</td>
             </tr>
             <tr class="totals">
               <td>TOTAL</td>
@@ -346,66 +379,135 @@
               <td class="num">6.0</td>
               <td class="num">21.0</td>
               <td class="num">£588</td>
-              <td class="src">bruto ene-jun | overclaim 144+36+408</td>
+              <td class="src">gross Jan-Jun | overclaim 144+36+408</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>C. July 17-31 MADRE (day by day) - DC @ £18 | Acton @ £24</h3>
+      <div class="scroll">
+        <table class="month">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Day</th>
+              <th class="num">DC h</th>
+              <th class="num">£18</th>
+              <th class="num">Acton h</th>
+              <th class="num">£24</th>
+              <th class="num">Day £</th>
+              <th>Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>2026-07-17</td><td>Fri</td><td class="num">2.5</td><td class="num">£45</td><td class="num">2.0</td><td class="num">£48</td><td class="num">£93</td><td class="src">Fadi DC + Acton PM</td></tr>
+            <tr><td>2026-07-20</td><td>Mon</td><td class="num">2.5</td><td class="num">£45</td><td class="num">0</td><td class="num">£0</td><td class="num">£45</td><td class="src">Fadi + Zak</td></tr>
+            <tr><td>2026-07-21</td><td>Tue</td><td class="num">2.5</td><td class="num">£45</td><td class="num">0</td><td class="num">£0</td><td class="num">£45</td><td class="src">Fadi + Zak</td></tr>
+            <tr><td>2026-07-22</td><td>Wed</td><td class="num">3.5</td><td class="num">£63</td><td class="num">0</td><td class="num">£0</td><td class="num">£63</td><td class="src">Fadi/Zak + Ikram</td></tr>
+            <tr><td>2026-07-23</td><td>Thu</td><td class="num">2.5</td><td class="num">£45</td><td class="num">0</td><td class="num">£0</td><td class="num">£45</td><td class="src">Fadi + Zak</td></tr>
+            <tr><td>2026-07-24</td><td>Fri</td><td class="num">2.5</td><td class="num">£45</td><td class="num">0</td><td class="num">£0</td><td class="num">£45</td><td class="src">Fadi</td></tr>
+            <tr><td>2026-07-27</td><td>Mon</td><td class="num">5.0</td><td class="num">£90</td><td class="num">0</td><td class="num">£0</td><td class="num">£90</td><td class="src">Emanuel 11-4</td></tr>
+            <tr><td>2026-07-28</td><td>Tue</td><td class="num">0</td><td class="num">£0</td><td class="num">2.0</td><td class="num">£48</td><td class="num">£48</td><td class="src">Acton Saaib + Adam P</td></tr>
+            <tr><td>2026-07-29</td><td>Wed</td><td class="num">5.0</td><td class="num">£90</td><td class="num">2.0</td><td class="num">£48</td><td class="num">£138</td><td class="src">Emanuel 11-4 + Acton</td></tr>
+            <tr><td>2026-07-30</td><td>Thu</td><td class="num">0</td><td class="num">£0</td><td class="num">0</td><td class="num">£0</td><td class="num">£0</td><td class="src">no slots</td></tr>
+            <tr><td>2026-07-31</td><td>Fri</td><td class="num">5.0</td><td class="num">£90</td><td class="num">0</td><td class="num">£0</td><td class="num">£90</td><td class="src">Emanuel 11-4</td></tr>
+            <tr class="totals">
+              <td colspan="2">TOTAL 17-31</td>
+              <td class="num">31.0</td>
+              <td class="num">£558</td>
+              <td class="num">6.0</td>
+              <td class="num">£144</td>
+              <td class="num"><strong>£702</strong></td>
+              <td class="src">MADRE span hours</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <div class="box ok" style="margin-top:10px;">
-        <strong>Lectura rapida:</strong>
-        De mas reales = <strong>6.0 h (solo abril)</strong>.
-        De menos (no HT) = <strong>21.0 h</strong>.
-        Overclaim EXTRA payslip = <strong>£588</strong>.
+        <strong>Quick read:</strong>
+        Real surplus = <strong>6.0 h (Apr only)</strong>.
+        Shortfall non-HT = <strong>21.0 h</strong> (full 21 @ £16; not netted to 15).
+        Overclaim EXTRA payslip = <strong>£588</strong> (= 24.5h @ £24).
+        Extras 17-31 = <strong>£702</strong>.
       </div>
-      <p class="print-hint">Imprimir: Cmd+P - solo esta seccion corta (hasta el cuadro naranja).</p>
+      <p class="print-hint">Print: Cmd+P - short section through the orange box.</p>
     </section>
 
     <div class="box warn" id="liquidacion">
-      <strong>Reglas del acuerdo (liquidacion)</strong>
+      <strong>Settlement rules / Reglas / Regole</strong>
 
       <p class="rule">
-        <strong>REGLA CLAVE:</strong>
+        <strong>EN KEY RULE:</strong>
+        In weeks with a <strong>shortfall</strong> (hours under the 32h package),
+        EXTRA / surplus hours <strong>cannot</strong> be claimed.
+      </p>
+      <p class="rule">
+        <strong>ES REGLA CLAVE:</strong>
         En las semanas con <strong>horas de menos</strong> NO puede reclamar
-        <strong>horas de mas / EXTRA</strong>.
-        Eso tiene que quedar claro.
+        <strong>horas de más / EXTRA</strong>.
+      </p>
+      <p class="rule">
+        <strong>IT REGOLA CHIAVE:</strong>
+        Nelle settimane con <strong>ore in meno</strong> NON si possono reclamare
+        <strong>ore in più / EXTRA</strong>.
       </p>
 
       <ul>
         <li>
-          <strong>Descuento OK:</strong> 21h de menos - 6h de mas =
-          neto <strong>15h a descontar</strong> @ <strong>£24/h</strong> =
-          <strong>£360</strong>.
+          <strong>1. Overclaim @ £24:</strong>
+          £588 = 24.5h × £24 (EXTRA claimed when not allowed).
         </li>
         <li>
-          <strong>Desde el 20 de julio:</strong> Day Centre @ <strong>£18/h</strong>
-          | swimming Acton @ <strong>£24/h</strong>
-          (extras 20-31 MADRE: DC 28.5h = £513 + Acton 4h = £96 -> <strong>£609</strong>).
+          <strong>2. De menos @ £16:</strong>
+          21h of the 32h package not worked × £16 = <strong>£336</strong>.
+          (£16 is only for this package shortfall discount - not a post-17 pay rate.)
         </li>
         <li>
-          <strong>Formula:</strong> Jul fijo £2,166.67 + Ago fijo £2,166.67
-          - 15h@£24 + DC@£18 + Acton@£24.
+          <strong>3. From 17 July:</strong>
+          Day Centre @ <strong>£18/h</strong> | swimming Acton @ <strong>£24/h</strong>
+          (MADRE 17-31: DC 31h = £558 + Acton 6h = £144 -&gt; <strong>£702</strong>).
         </li>
         <li>
-          <strong>A) Liquidacion recomendada:</strong>
-          <strong>£4,582.34</strong> (solo dto 15h + extras).
-        </li>
-        <li>
-          <strong>B) Si tambien se descuenta overclaim £588:</strong>
-          <strong>£3,994.34</strong>.
-        </li>
-        <li>
-          Periodo A (ene -> 17 jul): paquete 32 h/sem; HT shortfall N/A;
-          ene-mar = 32 (admin, Sab 2h); unico surplus real Abr +6h.
+          <strong>4. Formula (preferred):</strong><br />
+          extras_net = (DC_h × 18 + Acton_h × 24) − (overclaim_h × 24) − (demenos_h × 16)<br />
+          = £702 − £588 − £336 = <strong>−£222</strong><br />
+          total = Jul fixed + Aug fixed + extras_net
         </li>
       </ul>
+
+      <div class="tri">
+        <div class="lang">
+          <strong>EN - Settlement</strong>
+          Jul fixed £2,166.67 + Aug fixed £2,166.67 + extras_net (−£222)
+          = <strong>£4,111.34</strong> owed.<br />
+          A) with max(0, extras_net): £4,333.34<br />
+          B) preferred (extras can go negative): <strong>£4,111.34</strong>
+        </div>
+        <div class="lang">
+          <strong>ES - Liquidación</strong>
+          Jul fijo £2,166.67 + Ago fijo £2,166.67 + extras_net (−£222)
+          = <strong>£4,111.34</strong> a pagar.<br />
+          A) con max(0, extras_net): £4,333.34<br />
+          B) preferida (extras puede ser negativo): <strong>£4,111.34</strong>
+        </div>
+        <div class="lang">
+          <strong>IT - Liquidazione</strong>
+          Lug fisso £2,166.67 + Ago fisso £2,166.67 + extras_net (−£222)
+          = <strong>£4,111.34</strong> dovuti.<br />
+          A) con max(0, extras_net): £4,333.34<br />
+          B) preferita (extras può essere negativo): <strong>£4,111.34</strong>
+        </div>
+      </div>
     </div>
 
     <p class="foot">
-      Fuentes: payslips | FIXED_MONTHLY 2166.67 | MADRE | admin ene-mar |
-      surplus Abr 6h | de menos 21h | dto 15h @£24 = £360 |
-      desde 20 jul DC@£18 + Acton@£24 = £609 |
-      A) £4,582.34 | B) £3,994.34. Documento corto; no payslip.
+      Sources: payslips | FIXED_MONTHLY 2166.67 | MADRE roster_term_master |
+      surplus Apr 6h | shortfall 21h @ £16 = £336 | overclaim £588 (24.5h @ £24) |
+      from 17 Jul DC@£18 + Acton@£24 = £702 |
+      extras_net −£222 | settlement B £4,111.34 | A £4,333.34.
+      Short document; not a payslip.
     </p>
   </div>
 </body>
