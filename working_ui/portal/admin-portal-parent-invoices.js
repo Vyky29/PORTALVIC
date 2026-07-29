@@ -396,15 +396,27 @@
       .join(' ')
       .toLowerCase();
     var notes = String(inv.notes || '').toLowerCase();
-    var hay = blob + ' ' + notes;
+    var readyBy = String(inv.ready_by || '').toLowerCase();
+    var ref = String(inv.reference_text || inv.reference || '').toLowerCase();
+    var hay = blob + ' ' + notes + ' ' + readyBy + ' ' + ref;
     var n = rows.length;
+    /* Office funder INV-Ps (LA/NHS) tagged in notes / ready_by. */
+    if (/schedule:monthly_11|_nhs_month_|_hf_month_/.test(hay)) {
+      return 'Monthly ×11 (Sep–Jul)';
+    }
+    if (/schedule:year_1|_ealing_year_/.test(hay)) {
+      return 'One-off payment (year)';
+    }
+    if (/schedule:term_3|_hf_term_/.test(hay)) {
+      return 'One-off payment (term)';
+    }
     if (/own way|own arrangement|own_term|minimum prepaid|top-?ups? as you go/.test(hay)) {
       return 'Own way';
     }
     if (!n) return '';
     if (
-      /yearly_1off|one[\s-]?off.*(year|annual)|full academic year|whole year/.test(hay) ||
-      (n === 1 && /\b(year|annual|full year)\b/.test(blob))
+      /yearly_1off|one[\s-]?off.*(year|annual)|full academic year|whole year|academic year 2026/.test(hay) ||
+      (n === 1 && /\b(year|annual|full year)\b/.test(blob + ' ' + ref))
     ) {
       return 'One-off payment (year)';
     }
