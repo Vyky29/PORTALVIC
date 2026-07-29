@@ -23,74 +23,80 @@
       color: var(--ink);
       font-family: "Avenir Next", "Segoe UI", Arial, sans-serif;
       background: #fff;
-      line-height: 1.45;
+      line-height: 1.4;
     }
-    .wrap { max-width: 960px; margin: 0 auto; padding: 28px 20px 48px; }
-    h1 { font-size: 1.55rem; margin: 0 0 6px; }
-    h2 { font-size: 1.15rem; margin: 28px 0 10px; }
-    .sub { color: var(--muted); font-size: 0.92rem; margin: 0 0 18px; }
+    .wrap { max-width: 960px; margin: 0 auto; padding: 20px 16px 28px; }
+    h1 { font-size: 1.4rem; margin: 0 0 4px; }
+    h2 { font-size: 1.1rem; margin: 0 0 6px; }
+    h3 { font-size: 0.95rem; margin: 12px 0 6px; }
+    .sub { color: var(--muted); font-size: 0.88rem; margin: 0 0 12px; }
     .box {
       border: 1px solid var(--line);
       border-radius: 12px;
-      padding: 14px 16px;
-      margin: 12px 0;
+      padding: 12px 14px;
+      margin: 10px 0;
       background: var(--soft);
     }
     .box.warn { background: var(--warn-bg); border-color: #fdba74; color: var(--warn); }
     .box.ok { background: var(--ok-bg); border-color: #86efac; color: var(--ok); }
     .box.info { background: var(--info-bg); border-color: #93c5fd; color: var(--info); }
+    .rule {
+      font-size: 1.05rem;
+      line-height: 1.35;
+      margin: 0 0 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #ffedd5;
+      border: 2px solid #ea580c;
+      color: #9a3412;
+    }
     .stats {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
-      margin: 16px 0;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin: 12px 0;
     }
     .stat {
       border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 12px;
+      border-radius: 10px;
+      padding: 10px;
       min-width: 0;
     }
-    .stat b { display: block; font-size: 1.25rem; overflow-wrap: break-word; }
-    .stat span { color: var(--muted); font-size: 0.8rem; }
+    .stat b { display: block; font-size: 1.1rem; overflow-wrap: break-word; }
+    .stat span { color: var(--muted); font-size: 0.75rem; }
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.92rem;
+      font-size: 0.88rem;
     }
     th, td {
       border-bottom: 1px solid var(--line);
       text-align: left;
-      padding: 8px 6px;
+      padding: 5px 4px;
       vertical-align: top;
     }
-    th { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; }
+    th { color: var(--muted); font-size: 0.72rem; text-transform: uppercase; }
     td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-    ol, ul { padding-left: 1.2rem; }
-    li { margin: 6px 0; }
+    ul { padding-left: 1.15rem; margin: 6px 0 0; }
+    li { margin: 5px 0; }
     .foot {
-      margin-top: 28px;
-      padding-top: 12px;
+      margin-top: 14px;
+      padding-top: 8px;
       border-top: 1px dashed var(--line);
       color: var(--muted);
-      font-size: 0.78rem;
+      font-size: 0.72rem;
     }
-    /* Master table: una vista clara ene -> 17 jul */
     .master {
       border: 2px solid var(--ink);
-      border-radius: 14px;
-      padding: 16px 14px 18px;
-      margin: 18px 0 22px;
+      border-radius: 12px;
+      padding: 12px 10px 14px;
+      margin: 12px 0 14px;
       background: #fff;
-    }
-    .master h2 {
-      margin: 0 0 6px;
-      font-size: 1.28rem;
     }
     .master .legend {
       color: var(--muted);
-      font-size: 0.86rem;
-      margin: 0 0 12px;
+      font-size: 0.8rem;
+      margin: 0 0 8px;
     }
     .master .scroll {
       overflow-x: auto;
@@ -98,62 +104,62 @@
       -webkit-overflow-scrolling: touch;
     }
     .master table.week {
-      font-size: 0.88rem;
-      min-width: 640px;
+      font-size: 0.82rem;
+      min-width: 620px;
     }
     .master table.week th,
     .master table.week td {
-      padding: 6px 5px;
+      padding: 4px 4px;
       white-space: nowrap;
     }
     .master table.week td.src {
       white-space: normal;
       min-width: 0;
-      max-width: 220px;
+      max-width: 200px;
       overflow-wrap: break-word;
       color: var(--muted);
-      font-size: 0.8rem;
+      font-size: 0.75rem;
     }
     .master tr.ht { background: #f8fafc; color: var(--muted); }
     .master tr.surplus td.plus { color: var(--ok); font-weight: 700; }
     .master tr.short td.minus { color: var(--warn); font-weight: 700; }
     .master tr.month-gap td {
       border-bottom: 2px solid var(--line);
-      padding-top: 10px;
+      padding-top: 8px;
     }
-    .master h3 {
-      font-size: 1rem;
-      margin: 18px 0 8px;
-    }
-    .master table.month { font-size: 0.9rem; }
+    .master table.month { font-size: 0.84rem; }
     .master tr.totals {
       background: var(--soft);
       font-weight: 700;
     }
     .master tr.totals td {
       border-bottom: none;
-      padding-top: 10px;
-      padding-bottom: 10px;
+      padding-top: 8px;
+      padding-bottom: 8px;
     }
     .print-hint {
       color: var(--muted);
-      font-size: 0.78rem;
-      margin: 8px 0 0;
+      font-size: 0.75rem;
+      margin: 6px 0 0;
     }
     @media print {
+      @page { margin: 10mm; }
       .wrap { padding: 0; max-width: none; }
-      .box.warn, .box.ok, .box.info, .master { break-inside: avoid; }
+      .box.warn, .box.ok, .box.info, .master, .rule { break-inside: avoid; }
       .master {
         border-color: #000;
-        padding: 8px 0;
+        padding: 6px 0;
       }
       .master .scroll { overflow: visible; }
-      .master table.week { min-width: 0; font-size: 9pt; }
+      .master table.week,
+      .master table.month { min-width: 0; font-size: 8pt; }
       .print-hint { display: none; }
-      .no-print { display: none; }
+      h1 { font-size: 14pt; }
+      .stats { gap: 6px; }
+      .stat b { font-size: 11pt; }
     }
-    @media (max-width: 640px) {
-      .stats { grid-template-columns: 1fr; }
+    @media (max-width: 720px) {
+      .stats { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
@@ -161,8 +167,9 @@
   <div class="wrap">
     <h1>Roberto Reali - cobrado y contrato</h1>
     <p class="sub">
-      Briefing interno | Sep 2025 a Jul 2026 | actualizado 29 jul 2026 (noche)
-      (21h de menos - 6h de mas = 15h neto @£24 | extras 20-31 DC@£18 + Acton@£24 | liq. £4,582.34)
+      Briefing corto | ene -> 17 jul 2026 + liquidacion |
+      actualizado 29 jul 2026 |
+      dto 15h neto @£24 | extras 20-31 DC@£18 + Acton@£24 | liq. £4,582.34
     </p>
 
     <div class="stats">
@@ -185,43 +192,19 @@
     </div>
 
     <div class="box ok">
-      <strong>Historial de contrato:</strong>
-      <ul style="margin:8px 0 0;">
-        <li>
-          <strong>Sep 2025:</strong> arranca a <strong>£19,000/ano</strong>
-          (~£1,583.33/mes) y <strong>~24 h/sem</strong>.
-          Cuadra con payslips Oct-Dic (base ~£1,583).
-        </li>
-        <li>
-          <strong>Ene 2026:</strong> pasa a <strong>£26,000/ano</strong>
-          (£2,166.67/mes) y <strong>32 h/sem</strong>. No Scala.
-        </li>
-        <li>
-          Se ha pagado en <strong>pro-rata de 12 meses</strong> ->
-          <strong>Agosto SI le corresponde</strong> (anualizado).
-        </li>
-      </ul>
-    </div>
-
-    <div class="box info">
-      <strong>Tablas clave:</strong>
-      <a href="#tabla-maestra">TABLA MAESTRA ene-17 jul</a>
-      |
-      <a href="#periodo-a-semanas">3b. detalle semanas</a>
-      |
-      <a href="#liquidacion">7. Liquidacion</a>
-      | dto 15h neto @£24 | extras 20-31 | liq. £4,582.34.
+      <strong>Contrato:</strong>
+      Sep 2025 £19k/ano (~24 h/sem) ->
+      Ene 2026 <strong>£26,000/ano</strong> (£2,166.67/mes) y <strong>32 h/sem</strong>.
+      Pro-rata 12 meses -> <strong>Agosto SI</strong>.
     </div>
 
     <!-- ========== TABLA MAESTRA ========== -->
     <section class="master" id="tabla-maestra">
-      <h2>TABLA MAESTRA - horas y cobrado (ene -> 17 jul)</h2>
+      <h2>TABLA MAESTRA - horas (ene -> 17 jul)</h2>
       <p class="legend">
-        Paquete esperado: <strong>32 h/sem</strong> en semanas no half-term.
-        De mas = max(0, h-32). De menos = max(0, 32-h) solo no-HT;
-        semanas HT: horas = HT, de menos = 0 (auditoria).
-        Fuentes: ene-mar admin (Sab 2h); Abr TS; May estimacion (sin MADRE);
-        Jun-Jul MADRE. Extra reclamado / overclaim = payslips.
+        Paquete: <strong>32 h/sem</strong> (no HT). De mas = max(0, h-32).
+        De menos = max(0, 32-h) solo no-HT; HT: de menos = 0.
+        Fuentes: ene-mar admin (Sab 2h); Abr TS; May estimacion; Jun-Jul MADRE.
       </p>
 
       <h3>A. Semana a semana</h3>
@@ -278,7 +261,7 @@
         </table>
       </div>
 
-      <h3>B. Resumen mensual (bruto + extras + horas)</h3>
+      <h3>B. Resumen mensual</h3>
       <div class="scroll">
         <table class="month">
           <thead>
@@ -369,37 +352,47 @@
         </table>
       </div>
 
-      <div class="box ok" style="margin-top:14px;">
+      <div class="box ok" style="margin-top:10px;">
         <strong>Lectura rapida:</strong>
-        Horas de mas reales = <strong>6.0 h (solo abril)</strong>.
-        Horas de menos (no HT) = <strong>21.0 h</strong> (May estim. 13 + Jun MADRE 7.5 + Jul 0.5)
-        - no bajan el fijo anualizado. Sem 13 jul: sin domingo, fijo completo OK (de menos = 0).
-        Extra cobrado de mas (overclaim) = <strong>£588</strong>.
-        Bruto payslips ene-jun = <strong>£13,742.02</strong>.
+        De mas reales = <strong>6.0 h (solo abril)</strong>.
+        De menos (no HT) = <strong>21.0 h</strong>.
+        Overclaim EXTRA payslip = <strong>£588</strong>.
       </div>
-      <p class="print-hint">Imprimir / PDF: Cmd+P - esta seccion va junta al principio.</p>
+      <p class="print-hint">Imprimir: Cmd+P - solo esta seccion corta (hasta el cuadro naranja).</p>
     </section>
 
-    <div class="box warn">
-      <strong>Reglas del acuerdo (liquidacion):</strong>
-      <ul style="margin:8px 0 0;">
+    <div class="box warn" id="liquidacion">
+      <strong>Reglas del acuerdo (liquidacion)</strong>
+
+      <p class="rule">
+        <strong>REGLA CLAVE:</strong>
+        En las semanas con <strong>horas de menos</strong> NO puede reclamar
+        <strong>horas de mas / EXTRA</strong>.
+        Eso tiene que quedar claro.
+      </p>
+
+      <ul>
         <li>
-          <strong>Descuento horas:</strong> 21h de menos y 6h de mas -> neto
-          <strong>15h a descontar</strong> @ <strong>£24/h</strong> =
+          <strong>Descuento OK:</strong> 21h de menos - 6h de mas =
+          neto <strong>15h a descontar</strong> @ <strong>£24/h</strong> =
           <strong>£360</strong>.
         </li>
         <li>
           <strong>Desde el 20 de julio:</strong> Day Centre @ <strong>£18/h</strong>
-          | swimming Acton @ <strong>£24/h</strong>.
-          Horas 20-31 (MADRE; span union, sin doble-contar solapes).
+          | swimming Acton @ <strong>£24/h</strong>
+          (extras 20-31 MADRE: DC 28.5h = £513 + Acton 4h = £96 -> <strong>£609</strong>).
         </li>
         <li>
           <strong>Formula:</strong> Jul fijo £2,166.67 + Ago fijo £2,166.67
-          - 15h@£24 + DC 20-31@£18 + Acton 20-31@£24.
+          - 15h@£24 + DC@£18 + Acton@£24.
         </li>
         <li>
-          <strong>£588 overclaim payslip</strong> (mar/abr/jun): linea aparte.
-          Dos escenarios abajo: solo dto 15h, o dto 15h + overclaim £588.
+          <strong>A) Liquidacion recomendada:</strong>
+          <strong>£4,582.34</strong> (solo dto 15h + extras).
+        </li>
+        <li>
+          <strong>B) Si tambien se descuenta overclaim £588:</strong>
+          <strong>£3,994.34</strong>.
         </li>
         <li>
           Periodo A (ene -> 17 jul): paquete 32 h/sem; HT shortfall N/A;
@@ -408,452 +401,11 @@
       </ul>
     </div>
 
-    <h2>1. Calculo payslip viejo (24-25 jul) - contexto</h2>
-    <p class="sub">
-      Chat <code>b46559df-b868-4060-a4b5-a77cadc0f87b</code> + fotos TS.
-      Calc "de mas" = <strong>£588</strong> (Mar £144 + Abr £36 + Jun £408).
-      Cifra redonda orientativa: ~£480. El test surplus (seccion 3c) lo revalida.
-    </p>
-    <table>
-      <thead>
-        <tr>
-          <th>Mes</th>
-          <th class="num">Bruto payslip</th>
-          <th class="num">Deberia (calc viejo)</th>
-          <th class="num">De mas</th>
-          <th>Nota</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td>Ene 2026</td><td class="num">£2,166.67</td><td class="num">£2,166.67</td><td class="num">£0</td><td>Solo salario</td></tr>
-        <tr><td>Feb 2026</td><td class="num">£2,206.67</td><td class="num">£2,206.67</td><td class="num">£0</td><td>OK: Tinashe £40</td></tr>
-        <tr><td>Mar 2026</td><td class="num">£2,352.67</td><td class="num">£2,208.67</td><td class="num"><strong>+£144</strong></td><td>Sabados no (fire/jue OK)</td></tr>
-        <tr><td>Abr 2026</td><td class="num">£2,274.67</td><td class="num">£2,238.67</td><td class="num"><strong>+£36</strong></td><td>Vie 24 no; 2x mie OK (£72)</td></tr>
-        <tr><td>May 2026</td><td class="num">£2,166.67</td><td class="num">£2,166.67</td><td class="num">£0</td><td>TS £445.50 NO se pago</td></tr>
-        <tr><td>Jun 2026</td><td class="num">£2,574.67</td><td class="num">£2,166.67</td><td class="num"><strong>+£408</strong></td><td>17h@£24 UI (casi todo mayo)</td></tr>
-        <tr><td><strong>Total</strong></td><td class="num"></td><td class="num"></td><td class="num"><strong>£588</strong></td><td>144+36+408</td></tr>
-      </tbody>
-    </table>
-
-    <h2>1b. Junio £408 - desglose UI</h2>
-    <table>
-      <thead>
-        <tr><th>Nota en entry</th><th class="num">h</th><th class="num">£ @24</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>Q6 29/4 | 6/5 | 13/5 | 20/5 (4x2h)</td><td class="num">8.0</td><td class="num">£192</td></tr>
-        <tr><td>Acton 1/5 | 8/5 | 15/5 | 22/5 (4x2h)</td><td class="num">8.0</td><td class="num">£192</td></tr>
-        <tr><td>Training Acton 19/5</td><td class="num">0.5</td><td class="num">£12</td></tr>
-        <tr><td>Swim Farm 21/6</td><td class="num">0.5</td><td class="num">£12</td></tr>
-        <tr><td><strong>Total</strong></td><td class="num"><strong>17.0</strong></td><td class="num"><strong>£408</strong></td></tr>
-      </tbody>
-    </table>
-
-    <h2>2. Half-term / Easter (exentos de shortfall)</h2>
-    <div class="box info">
-      <strong>Fuentes:</strong> Ealing 2025/26 +
-      <code>PORTAL_TERM_FROM_TIMETABLE</code> (May break club).
-    </div>
-    <table>
-      <thead>
-        <tr><th>Bloque</th><th>Fechas</th><th>Semana(s) lun</th><th>Nota</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>Feb HT</td><td>16-20 feb 2026</td><td>2026-02-16</td><td>Ealing</td></tr>
-        <tr><td>Easter (Abr)</td><td>30 mar - 10 abr</td><td>2026-03-30 | 2026-04-06</td><td>Club reabre 13 abr</td></tr>
-        <tr><td>May HT</td><td>23-31 may (club)</td><td>2026-05-25</td><td>Ealing 25-29; BH 25 may</td></tr>
-      </tbody>
-    </table>
-
-    <h2>3. Q6 - 3x1h Abr + 3x1h May</h2>
-    <ul>
-      <li>Notas admin: Q6 mie 11-12 = 3x1h abr (15/22/29) + 3x1h may (6/13/20).</li>
-      <li>Abr: ya dentro del span mie 5.5h del TS portal.</li>
-      <li>May: +3h en estimacion (sin MADRE mayo).</li>
-      <li>Si eran recuperacion del paquete -> correcto no pagarlas como EXTRA.</li>
-    </ul>
-
-    <h2 id="periodo-a-semanas">3b. Periodo A - semana a semana (vs 32) | ene -> 17 jul</h2>
-    <p class="sub">
-      Misma data que la <a href="#tabla-maestra">TABLA MAESTRA</a> (arriba).
-      De mas / de menos separados. HT: de menos = 0.
-      Ene-mar = <strong>32</strong> (admin, Sab 2h). Abr TS. May estimacion.
-      Jun-jul MADRE. No se inventa rota slot a slot.
-    </p>
-    <table>
-      <thead>
-        <tr>
-          <th>Semana (lun)</th>
-          <th class="num">Horas</th>
-          <th class="num">De mas</th>
-          <th class="num">De menos</th>
-          <th>HT</th>
-          <th>Notas</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td>2026-01-05</td><td class="num">32</td><td class="num">0</td><td class="num">0</td><td>N</td><td>admin: 32; Sab 2h</td></tr>
-        <tr><td>2026-01-12</td><td class="num">32</td><td class="num">0</td><td class="num">0</td><td>N</td><td>admin: 32; Sab 2h</td></tr>
-        <tr><td>2026-01-19</td><td class="num">32</td><td class="num">0</td><td class="num">0</td><td>N</td><td>admin: 32; Sab 2h</td></tr>
-        <tr><td>2026-01-26</td><td class="num">32</td><td class="num">0</td><td class="num">0</td><td>N</td><td>admin: 32; Sab 2h</td></tr>
-        <tr><td>2026-02-02</td><td class="num">32</td><td class="num">0</td><td class="num">0</td><td>N</td><td>admin: 32; Sab 2h</td></tr>
-        <tr><td>2026-02-09</td><td class="num">32</td><td class="num">0</td><td class="num">0</td><td>N</td><td>admin: 32; Sab 2h</td></tr>
-        <tr><td>2026-02-16</td><td class="num">HT</td><td class="num">0</td><td class="num">0</td><td><strong>Y</strong></td><td>Feb HT 16-20</td></tr>
-        <tr><td>2026-02-23</td><td class="num">32</td><td class="num">0</td><td class="num">0</td><td>N</td><td>admin: 32; Sab 2h</td></tr>
-        <tr><td>2026-03-02</td><td class="num">32</td><td class="num">0</td><td class="num">0</td><td>N</td><td>admin: 32; Sab 2h</td></tr>
-        <tr><td>2026-03-09</td><td class="num">32</td><td class="num">0</td><td class="num">0</td><td>N</td><td>admin: 32; Sab 2h</td></tr>
-        <tr><td>2026-03-16</td><td class="num">32</td><td class="num">0</td><td class="num">0</td><td>N</td><td>admin: 32; Sab 2h</td></tr>
-        <tr><td>2026-03-23</td><td class="num">32</td><td class="num">0</td><td class="num">0</td><td>N</td><td>admin: 32; Sab 2h</td></tr>
-        <tr><td>2026-03-30</td><td class="num">HT</td><td class="num">0</td><td class="num">0</td><td><strong>Y</strong></td><td>Easter</td></tr>
-        <tr><td>2026-04-06</td><td class="num">HT</td><td class="num">0</td><td class="num">0</td><td><strong>Y</strong></td><td>Easter / cerrado</td></tr>
-        <tr><td>2026-04-13</td><td class="num"><strong>35.5</strong></td><td class="num"><strong>3.5</strong></td><td class="num">0</td><td>N</td><td>TS | Dom 6 | Vie 2h</td></tr>
-        <tr><td>2026-04-20</td><td class="num"><strong>33.5</strong></td><td class="num"><strong>1.5</strong></td><td class="num">0</td><td>N</td><td>TS + patron | Vie 2h</td></tr>
-        <tr><td>2026-04-27</td><td class="num"><strong>33.0</strong></td><td class="num"><strong>1.0</strong></td><td class="num">0</td><td>N</td><td>patron TS | Vie 2h</td></tr>
-        <tr><td>2026-05-04</td><td class="num">26.0</td><td class="num">0</td><td class="num">6.0</td><td>N</td><td>estim. | BH lun 4</td></tr>
-        <tr><td>2026-05-11</td><td class="num">31.5</td><td class="num">0</td><td class="num">0.5</td><td>N</td><td>estim. + Q6</td></tr>
-        <tr><td>2026-05-18</td><td class="num">25.5</td><td class="num">0</td><td class="num">6.5</td><td>N</td><td>estim. | Dom 24 cierre HT</td></tr>
-        <tr><td>2026-05-25</td><td class="num">HT</td><td class="num">0</td><td class="num">0</td><td><strong>Y</strong></td><td>May HT club 23-31</td></tr>
-        <tr><td>2026-06-01</td><td class="num">31.0</td><td class="num">0</td><td class="num">1.0</td><td>N</td><td>MADRE | Dom 6.5</td></tr>
-        <tr><td>2026-06-08</td><td class="num">30.5</td><td class="num">0</td><td class="num">1.5</td><td>N</td><td>MADRE | Dom 6.5</td></tr>
-        <tr><td>2026-06-15</td><td class="num">31.0</td><td class="num">0</td><td class="num">1.0</td><td>N</td><td>MADRE | Dom 6.5</td></tr>
-        <tr><td>2026-06-22</td><td class="num">31.0</td><td class="num">0</td><td class="num">1.0</td><td>N</td><td>MADRE | Dom 6.5</td></tr>
-        <tr><td>2026-06-29</td><td class="num">29.0</td><td class="num">0</td><td class="num">3.0</td><td>N</td><td>MADRE | mie 1 jul 2h</td></tr>
-        <tr><td>2026-07-06</td><td class="num">31.5</td><td class="num">0</td><td class="num">0.5</td><td>N</td><td>MADRE | Dom 6.5</td></tr>
-        <tr><td>2026-07-13</td><td class="num">23.5</td><td class="num">0</td><td class="num">0</td><td>N</td><td>MADRE | contrato 13-17 | sin domingo; fijo completo OK</td></tr>
-        <tr>
-          <td><strong>TOTAL</strong></td>
-          <td class="num"></td>
-          <td class="num"><strong>6.0</strong></td>
-          <td class="num"><strong>21.0</strong></td>
-          <td></td>
-          <td>ver TABLA MAESTRA</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="box ok">
-      <strong>Surplus real (semanas &gt;32): solo 6.0 h en abril</strong>
-      (+3.5 + +1.5 + +1.0). Ene-mar = 0 surplus (32 exactas).
-      Jun-jul MADRE: <strong>ninguna semana &gt;32</strong>.
-    </div>
-    <div class="box info">
-      <strong>Horas de menos (no HT):</strong> may ~13h estim. + jun ~7.5h MADRE
-      + sem 6 jul 0.5h = <strong>21.0 h</strong>. Sem 13 jul (23.5h, sin domingo;
-      contrato acaba vie 17): de menos = 0 - fijo completo OK.
-      <strong>No bajan el fijo</strong> (sueldo anualizado). Shortfall HT = N/A.
-      No generan credito a Roberto ni deuda suya de horas.
-    </div>
-
-    <h2>3c. Test overclaim - EXTRA vs surplus de la semana</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Bloque</th>
-          <th class="num">£ reclamado</th>
-          <th>vs surplus semana</th>
-          <th>Veredicto</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Mar (fotos SI2/SW2)</td>
-          <td class="num">£186</td>
-          <td>semanas = 32 (Sab ya en paquete)</td>
-          <td>
-            <strong>Overclaim £144</strong> (sabados como EXTRA).
-            Fire/jue OK (= £42 del £186).
-          </td>
-        </tr>
-        <tr>
-          <td>Abr SI2 foto (£108)</td>
-          <td class="num">£108</td>
-          <td>surplus Abr 6h (~£144 @£24)</td>
-          <td>
-            Habia margen. Calc viejo: <strong>£36 de mas</strong> (Vie 24).
-            Resto £72 (2x mie) OK dentro del surplus.
-          </td>
-        </tr>
-        <tr>
-          <td>Jun UI £408 (17h@£24)</td>
-          <td class="num">£408</td>
-          <td>casi todo en sem mayo/jun &lt;=32</td>
-          <td><strong>Overclaim £408</strong> (ninguna sem jun &gt;32).</td>
-        </tr>
-        <tr>
-          <td><strong>Total overclaim</strong></td>
-          <td class="num"><strong>£588</strong></td>
-          <td>144 + 36 + 408</td>
-          <td>
-            Surplus legitimo solo Abr 6h. Reclamos &gt;&gt; surplus.
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <h2 id="periodo-b">3d. Extras 20->31 jul (DC £18 | Acton swim £24)</h2>
-    <div class="box warn">
-      <strong>Desde el 20 de julio:</strong> Day Centre @ <strong>£18/h</strong>
-      | swimming Acton @ <strong>£24/h</strong>.
-      Horas 20-31 (MADRE; span union, sin doble-contar solapes).
-      El 17 queda fuera de esta tabla.
-    </div>
-    <table>
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Dia</th>
-          <th class="num">DC h</th>
-          <th class="num">£18</th>
-          <th class="num">Acton h</th>
-          <th class="num">£24</th>
-          <th class="num">Dia £</th>
-          <th>Nota</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td>2026-07-20</td><td>Lun</td><td class="num">2.5</td><td class="num">£45</td><td class="num">0</td><td class="num">£0</td><td class="num">£45</td><td>Fadi 12.30-3 (+ Zak 1-2 solapa)</td></tr>
-        <tr><td>2026-07-21</td><td>Mar</td><td class="num">2.5</td><td class="num">£45</td><td class="num">0</td><td class="num">£0</td><td class="num">£45</td><td>Fadi + Zak; MADRE sin Acton</td></tr>
-        <tr><td>2026-07-22</td><td>Mie</td><td class="num">3.5</td><td class="num">£63</td><td class="num">0</td><td class="num">£0</td><td class="num">£63</td><td>Fadi/Zak/Fadi + Ikram 3-4</td></tr>
-        <tr><td>2026-07-23</td><td>Jue</td><td class="num">2.5</td><td class="num">£45</td><td class="num">0</td><td class="num">£0</td><td class="num">£45</td><td>Fadi + Zak</td></tr>
-        <tr><td>2026-07-24</td><td>Vie</td><td class="num">2.5</td><td class="num">£45</td><td class="num">0</td><td class="num">£0</td><td class="num">£45</td><td>Fadi 12.30-3</td></tr>
-        <tr><td>2026-07-27</td><td>Lun</td><td class="num">5.0</td><td class="num">£90</td><td class="num">0</td><td class="num">£0</td><td class="num">£90</td><td>Emanuel 11-4 (+ Yaqoub 1-2 solapa)</td></tr>
-        <tr><td>2026-07-28</td><td>Mar</td><td class="num">0</td><td class="num">£0</td><td class="num">2.0</td><td class="num">£48</td><td class="num">£48</td><td>Acton Saaib 4.30-5 + Adam P 5-6.30</td></tr>
-        <tr><td>2026-07-29</td><td>Mie</td><td class="num">5.0</td><td class="num">£90</td><td class="num">2.0</td><td class="num">£48</td><td class="num">£138</td><td>Emanuel 11-4 + Acton 4.30-6.30</td></tr>
-        <tr><td>2026-07-30</td><td>Jue</td><td class="num">0</td><td class="num">£0</td><td class="num">0</td><td class="num">£0</td><td class="num">£0</td><td>sin slots</td></tr>
-        <tr><td>2026-07-31</td><td>Vie</td><td class="num">5.0</td><td class="num">£90</td><td class="num">0</td><td class="num">£0</td><td class="num">£90</td><td>Emanuel 11-4 (+ Yaqoub solapa)</td></tr>
-        <tr>
-          <td><strong>Total 20-31 MADRE</strong></td>
-          <td></td>
-          <td class="num"><strong>28.5</strong></td>
-          <td class="num"><strong>£513</strong></td>
-          <td class="num"><strong>4.0</strong></td>
-          <td class="num"><strong>£96</strong></td>
-          <td class="num"><strong>£609</strong></td>
-          <td>excluye 17 jul</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <h2>4. Pendiente de pagar (detalle)</h2>
-    <div class="box ok">
-      Formula: Jul + Ago - 15h@£24 + extras 20-31 (DC@£18 + Acton@£24).
-      Ultimo salario Tide = junio. Agosto = SI.
-      Veredicto en <a href="#liquidacion">seccion 7</a>.
-    </div>
-    <table>
-      <thead>
-        <tr><th>Concepto</th><th class="num">Bruto</th><th>Nota</th></tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Julio fijo (mes 11)</td>
-          <td class="num">£2,166.67</td>
-          <td>Anualizado £26k</td>
-        </tr>
-        <tr>
-          <td>Agosto fijo (mes 12)</td>
-          <td class="num">£2,166.67</td>
-          <td>Anualizado - SI</td>
-        </tr>
-        <tr>
-          <td>Dto 15h neto (21 de menos - 6 de mas) @ £24</td>
-          <td class="num">-£360.00</td>
-          <td>21 - 6 = 15h</td>
-        </tr>
-        <tr>
-          <td>DC 20-31 (28.5h @ £18)</td>
-          <td class="num">£513.00</td>
-          <td>MADRE span union</td>
-        </tr>
-        <tr>
-          <td>Acton swim 20-31 (4h @ £24)</td>
-          <td class="num">£96.00</td>
-          <td>mar 28 + mie 29</td>
-        </tr>
-        <tr>
-          <td><strong>A) Con dto 15h only</strong></td>
-          <td class="num"><strong>£4,582.34</strong></td>
-          <td>2166.67x2 - 360 + 609</td>
-        </tr>
-        <tr>
-          <td><strong>B) Con dto 15h + overclaim £588</strong></td>
-          <td class="num"><strong>£3,994.34</strong></td>
-          <td>4582.34 - 588</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <h2>5. Paquete 32 h/sem</h2>
-    <table>
-      <thead>
-        <tr><th>Bloque</th><th>Detalle</th><th class="num">h / sem</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>Entre semana</td><td>DC + tardes (ene-mar: sin Vie 2h Acton)</td><td class="num">24</td></tr>
-        <tr><td>Sabado (ene-mar)</td><td>2h Acton</td><td class="num">2</td></tr>
-        <tr><td>Viernes PM (abr+)</td><td>2h Acton (ex-Sab); May+ Adam / Amaar</td><td class="num">2</td></tr>
-        <tr><td>Domingo</td><td>6h base | 6.5 jun->17 jul</td><td class="num">6.0-6.5</td></tr>
-        <tr><td><strong>Total paquete</strong></td><td>ene-mar: L-V + Dom 6 + Sab 2</td><td class="num"><strong>32</strong></td></tr>
-        <tr><td>Half-term</td><td>Feb / Easter-Abr / May</td><td class="num">pagado (shortfall N/A)</td></tr>
-      </tbody>
-    </table>
-
-    <h2>6. Septiembre - plan nuevo</h2>
-    <div class="box ok">
-      Part-time Day Centre + <strong>zero horas tardes</strong>, desde
-      <strong>septiembre</strong>. Estimacion pro-rata £2,166.67/32h:
-      solo manana ~£914 | manana+domingo ~£1,320. Falta cifra exacta.
-    </div>
-
-    <h2 id="liquidacion">7. Liquidacion - veredicto</h2>
-    <p class="sub">
-      Descontar neto 15h (21 de menos - 6 de mas) @ £24; desde el 20 jul
-      extras DC £18 + Acton £24; Jul+Ago fijos SI. £588 overclaim = escenario B.
-    </p>
-
-    <div class="box warn">
-      <strong>1. Horas de mas: 6 h | Horas de menos: 21 h | Neto a descontar: 15 h</strong>
-      <ul style="margin:8px 0 0;">
-        <li>De mas: Abr 13/20/27 = <strong>+6.0 h</strong> (unico surplus real).</li>
-        <li>
-          De menos (no HT): May estim. ~13h + Jun MADRE ~7.5h + Jul 0.5 =
-          <strong>21.0 h</strong>.
-        </li>
-        <li>
-          Neto: 21 - 6 = <strong>15 h</strong> x <strong>£24/h</strong> =
-          <strong>£360</strong> a descontar.
-        </li>
-      </ul>
-    </div>
-
-    <div class="box info">
-      <strong>2. Extras 20-31 jul (MADRE)</strong>
-      <ul style="margin:8px 0 0;">
-        <li>Day Centre: <strong>28.5 h x £18 = £513</strong>.</li>
-        <li>Swimming Acton: <strong>4.0 h x £24 = £96</strong> (28 + 29 jul).</li>
-        <li>Total extras: <strong>£609</strong>. El 17 jul <strong>no</strong> se paga.</li>
-      </ul>
-    </div>
-
-    <div class="box warn">
-      <strong>3. Overclaim payslip £588 (aparte - confirmar si aplica)</strong>
-      <table style="margin-top:8px;">
-        <thead>
-          <tr><th>Mes</th><th class="num">Cobrado extra</th><th class="num">De mas</th><th>Por que</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Feb</td><td class="num">£40</td><td class="num">£0</td><td>Tinashe OK</td></tr>
-          <tr><td>Mar</td><td class="num">£186</td><td class="num"><strong>£144</strong></td><td>Sabados = paquete, no EXTRA</td></tr>
-          <tr><td>Abr</td><td class="num">£108</td><td class="num"><strong>£36</strong></td><td>Vie 24; resto cabe en surplus 6h</td></tr>
-          <tr><td>May</td><td class="num">£0</td><td class="num">£0</td><td>TS £445.50 no se pago</td></tr>
-          <tr><td>Jun</td><td class="num">£408</td><td class="num"><strong>£408</strong></td><td>17h@£24 en sem &lt;=32</td></tr>
-          <tr><td><strong>Total</strong></td><td class="num"></td><td class="num"><strong>£588</strong></td><td>144+36+408</td></tr>
-        </tbody>
-      </table>
-      <p style="margin:8px 0 0;">
-        Esto es dinero EXTRA ya cobrado en payslip. Queda aparte del dto de
-        las <strong>15h</strong>. Escoger: solo 15h, o 15h + £588 (escenarios A/B).
-      </p>
-    </div>
-
-    <div class="box ok">
-      <strong>4. Cuanto le debemos (bruto)</strong>
-      <table style="margin-top:8px;">
-        <thead>
-          <tr><th>Concepto</th><th class="num">£</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Julio fijo</td><td class="num">£2,166.67</td></tr>
-          <tr><td>Agosto fijo</td><td class="num">£2,166.67</td></tr>
-          <tr><td>- 15h @ £24</td><td class="num">-£360.00</td></tr>
-          <tr><td>+ DC 20-31 (28.5h @ £18)</td><td class="num">£513.00</td></tr>
-          <tr><td>+ Acton 20-31 (4h @ £24)</td><td class="num">£96.00</td></tr>
-          <tr>
-            <td><strong>A) Con dto 15h only</strong></td>
-            <td class="num"><strong>£4,582.34</strong></td>
-          </tr>
-          <tr>
-            <td><strong>B) Con dto 15h + overclaim £588</strong></td>
-            <td class="num"><strong>£3,994.34</strong></td>
-          </tr>
-        </tbody>
-      </table>
-      <p style="margin:10px 0 0;">
-        <strong>Recomendado (A):</strong>
-        <strong>£4,582.34 bruto</strong>
-        (Jul+Ago - £360 + £609). Escenario B = A - £588 = <strong>£3,994.34</strong>.
-      </p>
-    </div>
-
-    <div class="box info">
-      <strong>Abiertos:</strong> aplicar escenario A (£4,582.34) o B (£3,994.34)?
-      Neto Tide vs bruto PAYE al pagar.
-    </div>
-
-    <h2>Bruto payslip vs neto Tide</h2>
-    <p class="sub">
-      Brutos = tabla payslips (chat b46559df, 24 jul). Netos =
-      pagos banco Tide. No se inventa bruto por reverse tax.
-    </p>
-    <table>
-      <thead>
-        <tr>
-          <th>Mes</th>
-          <th class="num">Bruto payslip</th>
-          <th class="num">Neto Tide</th>
-          <th>Nota</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td>Sep 2025</td><td class="num">£956.44</td><td class="num">£765.24</td><td>Tide 26 sep £432 + 1 oct £333.24</td></tr>
-        <tr><td>Oct 2025</td><td class="num">£1,951.33</td><td class="num">£1,488.66</td><td>Cuadra neto payslip</td></tr>
-        <tr><td>Nov 2025</td><td class="num">£1,907.33</td><td class="num">£1,457.18</td><td>Cuadra</td></tr>
-        <tr><td>Dec 2025</td><td class="num">£1,767.33</td><td class="num">£1,356.38</td><td>Cuadra</td></tr>
-        <tr><td>Ene 2026</td><td class="num">£2,166.67</td><td class="num">£1,643.78</td><td>Solo fijo £26k/12</td></tr>
-        <tr><td>Feb 2026</td><td class="num">£2,206.67</td><td class="num">£1,672.58</td><td>Fijo + £40 Tinashe</td></tr>
-        <tr><td>Mar 2026</td><td class="num">£2,352.67</td><td class="num">£1,777.90</td><td>Fijo + £186 extras</td></tr>
-        <tr><td>Abr 2026</td><td class="num">£2,274.67</td><td class="num">£1,721.74</td><td>Fijo + £108; Tide +£209.60 ajuste 5 may</td></tr>
-        <tr><td>May 2026</td><td class="num">£2,166.67</td><td class="num">£1,853.58</td><td>Solo fijo (TS £445.50 no pago)</td></tr>
-        <tr><td>Jun 2026</td><td class="num">£2,574.67</td><td class="num">£2,147.14</td><td>Fijo + £408 extras UI</td></tr>
-        <tr>
-          <td><strong>Total Sep-Jun</strong></td>
-          <td class="num"><strong>£20,324.45</strong></td>
-          <td class="num"><strong>£15,884.18</strong></td>
-          <td>Tide nomina + adj Abr = £16,093.78 (+ gastos £22.25 -> £16,116.03)</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <h2>Pagos Tide (banco)</h2>
-    <table>
-      <thead>
-        <tr><th>Fecha pago</th><th>Ref</th><th>Tipo</th><th class="num">Importe</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>2025-09-26</td><td>September</td><td>Nomina</td><td class="num">£432.00</td></tr>
-        <tr><td>2025-10-01</td><td>September</td><td>Nomina</td><td class="num">£333.24</td></tr>
-        <tr><td>2025-10-30</td><td>October</td><td>Nomina</td><td class="num">£1,488.66</td></tr>
-        <tr><td>2025-11-29</td><td>November</td><td>Nomina</td><td class="num">£1,457.18</td></tr>
-        <tr><td>2025-12-24</td><td>December</td><td>Nomina</td><td class="num">£1,356.38</td></tr>
-        <tr><td>2026-01-30</td><td>January</td><td>Nomina</td><td class="num">£1,643.78</td></tr>
-        <tr><td>2026-02-27</td><td>February</td><td>Nomina</td><td class="num">£1,672.58</td></tr>
-        <tr><td>2026-03-31</td><td>March</td><td>Nomina</td><td class="num">£1,777.90</td></tr>
-        <tr><td>2026-04-30</td><td>April</td><td>Nomina</td><td class="num">£1,721.74</td></tr>
-        <tr><td>2026-05-05</td><td>April (ajuste)</td><td>Nomina</td><td class="num">£209.60</td></tr>
-        <tr><td>2026-06-01</td><td>May</td><td>Nomina</td><td class="num">£1,853.58</td></tr>
-        <tr><td>2026-06-30</td><td>June</td><td>Nomina</td><td class="num">£2,147.14</td></tr>
-        <tr><td>2026-07-07</td><td>Expenses June</td><td>Gastos</td><td class="num">£22.25</td></tr>
-        <tr><td colspan="3"><strong>Total</strong></td><td class="num"><strong>£16,116.03</strong></td></tr>
-      </tbody>
-    </table>
-
     <p class="foot">
-      Fuentes: payslips | Tide | FIXED_MONTHLY 2166.67 | calc £588
-      b46559df + fotos TS | MADRE (portal_madre_document) |
-      Ealing HT Feb 16-20 / Easter 30 mar-10 abr / May HT club 23-31 |
-      ene-mar 32h admin (Sab 2h) | surplus Abr 6h | de menos 21.0h |
-      neto dto 15h @£24 = £360 | desde 20 jul DC 28.5h@£18 + Acton 4h@£24 = £609 |
-      A) £4,582.34 | B) £3,994.34 (con overclaim £588). Documento; no payslip.
+      Fuentes: payslips | FIXED_MONTHLY 2166.67 | MADRE | admin ene-mar |
+      surplus Abr 6h | de menos 21h | dto 15h @£24 = £360 |
+      desde 20 jul DC@£18 + Acton@£24 = £609 |
+      A) £4,582.34 | B) £3,994.34. Documento corto; no payslip.
     </p>
   </div>
 </body>
