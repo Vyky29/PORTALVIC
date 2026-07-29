@@ -433,7 +433,7 @@
       --avatar-core-size:82px;
       --avatar-orbit-outset:0px;
     }
-    .topbar-center--halo:has(.avatar-wrap:not(.avatar-wrap--portal-orbit-idle)) .topbar-name--under-halo{
+    .topbar-center--halo:has(.avatar-wrap:not(.avatar-wrap--portal-orbit-idle)) .topbar-staff-photo__edit--above-name{
       margin-top:calc(var(--avatar-orbit-outset, 16px) + 2px);
     }
     .avatar-wrap:hover{
@@ -515,12 +515,13 @@
     .avatar-wrap[data-gender="f"] .topbar-staff-photo--halo .topbar-staff-photo__initials{
       color:var(--topbar-profile-female-ink,#9c2756);
     }
-    .topbar-staff-photo--halo .topbar-staff-photo__edit{
-      top:4px;
-      right:4px;
-      width:24px;
-      height:24px;
-      z-index:4;
+    .topbar-center--halo .topbar-staff-photo__edit--above-name{
+      width:26px;
+      height:26px;
+      margin:3px auto 1px;
+    }
+    .topbar-center--halo .topbar-name--under-halo{
+      margin-top:0;
     }
     .topbar-staff-photo--halo .topbar-staff-photo__share-note{
       display:none;

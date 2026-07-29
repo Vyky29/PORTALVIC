@@ -116,7 +116,7 @@
   font-size:clamp(5.5px,1.4vw,6.5px);
   padding:2px 3px 3px;
 }
-.topbar-left--name.topbar-left--wa-compact .topbar-staff-photo__edit{
+.topbar-left--name.topbar-left--wa-compact .topbar-staff-photo__edit:not(.topbar-staff-photo__edit--above-name){
   width:24px;
   height:24px;
   top:4px;

@@ -155,9 +155,9 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script defer src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260722-topbar-edge" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260729-photo-edit-above-name" />
   <link rel="stylesheet" href="/portal/portal_staff_whatsapp.css?v=20260722-wa-fit" />
-  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260722-ico-label-up" />
+  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260729-photo-edit-above-name" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260709-overview-by-service" />
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260704-area-note-fixed" />
 </head>
@@ -306,12 +306,9 @@
             <div class="avatar-aura" aria-hidden="true"></div>
             <div class="avatar avatar--brand-default avatar--staff-halo" id="avatar">
               <img id="topbarBrandLogo" class="avatar-brand-logo" src="/portal/F-02-1.png" alt="" loading="eager" decoding="async" onerror="typeof portalBrandLogoOnError==='function'?portalBrandLogoOnError(this):(this.onerror=null,this.src='/portal/portal_crest.svg')" />
-              <div class="topbar-staff-photo topbar-staff-photo--halo topbar-staff-photo--editable" id="topbarStaffPhoto" aria-hidden="true">
+              <div class="topbar-staff-photo topbar-staff-photo--halo" id="topbarStaffPhoto" aria-hidden="true">
                 <img id="topbarStaffPhotoImg" alt="" hidden />
                 <span class="topbar-staff-photo__initials" id="topbarStaffPhotoInitials">…</span>
-                <button type="button" class="topbar-staff-photo__edit" id="topbarStaffPhotoEdit" aria-label="Change your profile photo">
-                  <span class="topbar-staff-photo__edit-ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
-                </button>
               </div>
               <span class="avatar-initials" id="avatarInitials" hidden aria-hidden="true"></span>
             </div>
@@ -347,6 +344,9 @@
               </svg>
             </div>
           </div>
+          <button type="button" class="topbar-staff-photo__edit topbar-staff-photo__edit--above-name" id="topbarStaffPhotoEdit" aria-label="Change your profile photo">
+            <span class="topbar-staff-photo__edit-ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
+          </button>
           <h1 class="topbar-name topbar-name--under-halo" id="staffName">
             <span class="topbar-name__given" id="staffNameGiven">…</span>
             <span class="topbar-name__surname" id="staffNameSurname" hidden></span>
