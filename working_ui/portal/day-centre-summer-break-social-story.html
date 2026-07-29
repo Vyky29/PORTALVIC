@@ -156,7 +156,7 @@
     .pecs.fri-staff {
       grid-template-columns: repeat(auto-fit, minmax(100px, 140px));
       justify-content: center;
-      max-width: 420px;
+      max-width: 520px;
       margin: 0 auto;
       width: 100%;
     }
@@ -625,8 +625,13 @@
         septemberICanDo: SEPTEMBER_I_CAN_DO_IKRAM,
         fridayNote: {
           title: "Friday 31 · last session",
-          msg: "Friday is my last session · I work with Luliya and Youssef",
-          staff: ["luliya", "youssef"],
+          msg:
+            "Friday is my last session · I work with Luliya and Youssef because Michelle has a doctor appointment",
+          staff: [
+            { id: "luliya" },
+            { id: "youssef" },
+            { id: "michelle", label: "Michelle · Doctor", tone: "red" },
+          ],
         },
       },
     ];
@@ -781,16 +786,24 @@
               "</p>" +
               '<div class="pecs fri-staff">' +
               kid.fridayNote.staff
-                .map((sid) => {
+                .map((entry) => {
+                  const sid = typeof entry === "string" ? entry : entry.id;
                   const s = STAFF_SEP.find((x) => x.id === sid);
-                  return s
-                    ? pec({
-                        label: s.name,
-                        img: s.img,
-                        tone: "green",
-                        person: true,
-                      })
-                    : "";
+                  if (!s) return "";
+                  const label =
+                    typeof entry === "string"
+                      ? s.name
+                      : entry.label || s.name;
+                  const tone =
+                    typeof entry === "string"
+                      ? "green"
+                      : entry.tone || "green";
+                  return pec({
+                    label: label,
+                    img: s.img,
+                    tone: tone,
+                    person: true,
+                  });
                 })
                 .join("") +
               "</div>" +
