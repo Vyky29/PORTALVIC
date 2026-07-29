@@ -563,19 +563,36 @@ export async function buildPortalTaxInvoicePdf(
     y = stampReserveBottom - 8;
   }
 
-  page.drawText("Manual Payment Details", {
-    x: left,
-    y,
-    size: 10,
-    font: fontBold,
-    color: ink,
-  });
-  y -= 14;
-  page.drawText("Bank details:", { x: left, y, size: 9, font, color: ink });
-  y -= 12;
-  for (const line of BANK_LINES) {
-    page.drawText(line, { x: left, y, size: 9, font, color: ink });
-    y -= 12;
+  // Title + "Bank details:" + bank lines (baselines). Must clear Registered Office at y=28.
+  const manualBlockDepth =
+    14 + 12 + Math.max(0, BANK_LINES.length - 1) * 12;
+  const footerClearance = 42;
+  const manualFitsOnPage1 = y - manualBlockDepth >= footerClearance;
+
+  const drawManualPaymentDetails = (
+    target: typeof page,
+    startY: number,
+  ): number => {
+    let yy = startY;
+    target.drawText("Manual Payment Details", {
+      x: left,
+      y: yy,
+      size: 10,
+      font: fontBold,
+      color: ink,
+    });
+    yy -= 14;
+    target.drawText("Bank details:", { x: left, y: yy, size: 9, font, color: ink });
+    yy -= 12;
+    for (const line of BANK_LINES) {
+      target.drawText(line, { x: left, y: yy, size: 9, font, color: ink });
+      yy -= 12;
+    }
+    return yy;
+  };
+
+  if (manualFitsOnPage1) {
+    drawManualPaymentDetails(page, y);
   }
 
   {
@@ -589,16 +606,21 @@ export async function buildPortalTaxInvoicePdf(
     });
   }
 
-  // Payment advice page
+  // Payment advice page (and Manual Payment Details when page 1 has no room)
   const page2 = pdf.addPage([595.28, 841.89]);
+  let y2 = height - 80;
+  if (!manualFitsOnPage1) {
+    y2 = drawManualPaymentDetails(page2, y2);
+    y2 -= 24;
+  }
   page2.drawText("PAYMENT ADVICE", {
     x: left,
-    y: height - 80,
+    y: y2,
     size: 16,
     font: fontBold,
     color: ink,
   });
-  let y2 = height - 120;
+  y2 -= 40;
   page2.drawText("To: ClubSENsational", { x: left, y: y2, size: 9, font, color: ink });
   y2 -= 12;
   for (const line of [
