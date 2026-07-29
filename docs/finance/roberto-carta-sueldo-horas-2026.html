@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Roberto Reali - sueldo y horas</title>
+  <style>
+    :root {
+      --ink: #1a2332;
+      --muted: #5a6574;
+      --line: #d0d7e0;
+      --soft: #f6f8fa;
+      --accent: #0f3d2e;
+      --accent-soft: #eef7f2;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Avenir Next", "Segoe UI", Arial, sans-serif;
+      background: #fff;
+      line-height: 1.5;
+      font-size: 15px;
+    }
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 32px 24px 40px;
+    }
+    h1 {
+      font-size: 1.45rem;
+      margin: 0 0 4px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin: 0 0 22px;
+    }
+    h2 {
+      font-size: 1.05rem;
+      margin: 26px 0 10px;
+      color: var(--accent);
+    }
+    p { margin: 0 0 12px; }
+    ul {
+      margin: 8px 0 14px;
+      padding-left: 1.25rem;
+    }
+    li { margin: 6px 0; }
+    .highlight {
+      background: var(--accent-soft);
+      border: 1px solid #c5e0d2;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin: 16px 0;
+    }
+    .highlight strong { color: var(--accent); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin: 16px 0 8px;
+    }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px 14px;
+      background: var(--soft);
+      min-width: 0;
+    }
+    .card b {
+      display: block;
+      font-size: 1.2rem;
+      margin-bottom: 2px;
+      overflow-wrap: break-word;
+    }
+    .card span {
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+      margin: 8px 0 4px;
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      padding: 8px 6px;
+      vertical-align: top;
+    }
+    th {
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    td.num, th.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .foot {
+      margin-top: 28px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--line);
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+    @media print {
+      body { font-size: 12.5pt; }
+      .wrap { padding: 0; max-width: none; }
+      .highlight, .card { break-inside: avoid; }
+      h2 { break-after: avoid; }
+    }
+    @media (max-width: 560px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Roberto Reali - sueldo y horas</h1>
+    <p class="sub">
+      Documento para explicar el contrato y los pagos · septiembre 2025 a julio 2026
+    </p>
+
+    <p>
+      Roberto: este papel resume de forma sencilla como funciona tu sueldo
+      y por que no hay un pago aparte por horas de manana o tarde.
+    </p>
+
+    <div class="grid">
+      <div class="card">
+        <b>£26,000</b>
+        <span>Contrato fijo al ano</span>
+      </div>
+      <div class="card">
+        <b>£2,166.67</b>
+        <span>Salario fijo al mes</span>
+      </div>
+      <div class="card">
+        <b>~20 h / sem</b>
+        <span>Horas orientativas del contrato</span>
+      </div>
+    </div>
+
+    <h2>1. Tu contrato</h2>
+    <ul>
+      <li>Tu contrato es de sueldo <strong>fijo</strong>, no por horas como otros trabajadores.</li>
+      <li>El importe acordado es <strong>£2,166.67 al mes</strong> (<strong>£26,000 al ano</strong>), a jornada parcial.</li>
+      <li>Ese fijo ya incluye tu trabajo de manana (Day Centre) y el de tarde / natacion, segun la rota (~20 horas a la semana en total: unas 14 h de manana y unas 6 h de tarde / swim).</li>
+    </ul>
+
+    <h2>2. Lo que has cobrado (pagos bancarios)</h2>
+    <p>
+      Entre septiembre 2025 y julio 2026, por transferencia bancaria, has recibido en total
+      <strong>£16,116.03</strong> (nominas + £22.25 de gastos de junio).
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Periodo reciente</th>
+          <th class="num">Importe</th>
+          <th>Nota</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Mayo (pagado 1 jun)</td>
+          <td class="num">£1,853.58</td>
+          <td>Por debajo del fijo mensual</td>
+        </tr>
+        <tr>
+          <td>Junio (pagado 30 jun)</td>
+          <td class="num">£2,147.14</td>
+          <td>Cerca del fijo £2,166.67</td>
+        </tr>
+        <tr>
+          <td>Gastos junio (7 jul)</td>
+          <td class="num">£22.25</td>
+          <td>Reembolso de gastos, no es salario</td>
+        </tr>
+        <tr>
+          <td>Nomina de julio</td>
+          <td class="num">—</td>
+          <td>Aun no figura en el extracto bancario</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>3. Por que no hay pago extra por horas</h2>
+    <div class="highlight">
+      <p style="margin:0 0 8px;">
+        <strong>Resumen claro:</strong> no te corresponde un pago aparte por
+        &quot;horas de mas&quot; de manana o tarde bajo este modelo de contrato fijo.
+      </p>
+      <ul style="margin-bottom:0;">
+        <li>Las horas de manana y de tarde / swim van <strong>dentro</strong> del sueldo fijo mensual.</li>
+        <li>En mayo–julio, las horas de manana (unas 62.5 a 66 h al mes) estan en linea con el patron habitual (~14 h/semana). No hay un pico grande de horas de mas que justifique un extra.</li>
+        <li>Por eso no sale un pago adicional aparte, como si cobrases por hora.</li>
+      </ul>
+    </div>
+
+    <h2>4. Adelantos o deudas</h2>
+    <p>
+      En los pagos bancarios y en la nomina <strong>no aparece</strong> ningun adelanto,
+      prestamo ni saldo de &quot;Roberto debe a la empresa&quot;.
+      Este documento <strong>no inventa ni reclama</strong> ninguna deuda tuya.
+    </p>
+
+    <h2>5. En pocas palabras</h2>
+    <ol>
+      <li>Contrato fijo: £2,166.67 / mes (£26,000 / ano).</li>
+      <li>Manana + tarde / swim van dentro de ese fijo (~20 h/semana).</li>
+      <li>Desde septiembre te hemos pagado por banco £16,116.03; junio ya esta cobrado.</li>
+      <li>No hay pago extra por overtime bajo este contrato fijo, porque las horas de verano no muestran un exceso grande respecto al patron normal.</li>
+      <li>No hay deuda registrada tuya hacia la empresa en estos pagos.</li>
+    </ol>
+
+    <p class="foot">
+      Documento informativo para conversar el sueldo y las horas.
+      No es una nomina oficial ni una carta legal.
+      Fecha de referencia: julio 2026.
+    </p>
+  </div>
+</body>
+</html>
