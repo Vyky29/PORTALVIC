@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dinero · hub canvas · clubSENsational</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #12262f;
+    --muted: #5a7280;
+    --line: #d5e1e7;
+    --teal: #0e7c86;
+    --teal-deep: #0a5c63;
+    --teal-soft: #e6f3f4;
+    --sky: #0369a1;
+    --sky-soft: #e0f2fe;
+    --amber: #b45309;
+    --amber-soft: #fffbeb;
+    --green: #15803d;
+    --green-soft: #ecfdf5;
+    --paper: #f4f8f9;
+    --card: #ffffff;
+    --nav-h: 58px;
+    --rail-w: 220px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: calc(var(--nav-h) + 16px); }
+  body {
+    margin: 0;
+    color: var(--ink);
+    font-family: "DM Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    background:
+      radial-gradient(900px 420px at 0% -10%, rgba(14, 124, 134, 0.10), transparent 55%),
+      radial-gradient(700px 380px at 100% 0%, rgba(3, 105, 161, 0.07), transparent 50%),
+      var(--paper);
+  }
+  a { color: var(--teal-deep); }
+  a:hover { color: var(--sky); }
+
+  .topnav {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    height: var(--nav-h);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    background: rgba(255, 255, 255, 0.92);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(8px);
+  }
+  .brand {
+    font-family: Fraunces, Georgia, serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .brand span { color: var(--teal); }
+  .chip-scroll {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    min-width: 0;
+    padding: 4px 0;
+    scrollbar-width: thin;
+  }
+  .chip {
+    flex: 0 0 auto;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 6px 11px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .chip:hover, .chip.is-active {
+    border-color: var(--teal);
+    background: var(--teal-soft);
+    color: var(--teal-deep);
+  }
+  .nav-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .btn {
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--ink);
+    border-radius: 10px;
+    padding: 7px 11px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn:hover { border-color: var(--teal); background: var(--teal-soft); }
+  .btn.primary {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: #fff;
+  }
+  .btn.primary:hover { background: var(--teal-deep); border-color: var(--teal-deep); }
+
+  .layout {
+    display: grid;
+    grid-template-columns: var(--rail-w) minmax(0, 1fr);
+    gap: 0;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+  .rail {
+    position: sticky;
+    top: var(--nav-h);
+    height: calc(100vh - var(--nav-h));
+    overflow: auto;
+    padding: 18px 12px 28px 16px;
+    border-right: 1px solid var(--line);
+    background: rgba(255,255,255,0.55);
+  }
+  .rail h2 {
+    margin: 0 0 8px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .rail a {
+    display: block;
+    text-decoration: none;
+    color: var(--ink);
+    padding: 8px 10px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 2px;
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+  .rail a small {
+    display: block;
+    color: var(--muted);
+    font-weight: 400;
+    font-size: 11px;
+    margin-top: 2px;
+  }
+  .rail a:hover, .rail a.is-active {
+    background: var(--teal-soft);
+    color: var(--teal-deep);
+  }
+  .rail .group { margin-top: 18px; }
+
+  .main { padding: 22px 22px 96px; min-width: 0; }
+
+  .hero {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 26px 26px 22px;
+    margin-bottom: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 6px;
+    background: linear-gradient(180deg, var(--teal), var(--sky));
+  }
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin: 0 0 8px;
+  }
+  h1 {
+    font-family: Fraunces, Georgia, serif;
+    font-size: clamp(1.55rem, 3.2vw, 2.1rem);
+    font-weight: 700;
+    line-height: 1.15;
+    margin: 0 0 10px;
+  }
+  .lead { margin: 0 0 16px; color: var(--muted); max-width: 46rem; }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .stat {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 12px 10px;
+    min-width: 0;
+  }
+  .stat b {
+    display: block;
+    font-size: 1.15rem;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+  .stat span {
+    display: block;
+    margin-top: 3px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .section {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 22px 22px 18px;
+    margin-bottom: 16px;
+    scroll-margin-top: calc(var(--nav-h) + 16px);
+  }
+  .section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 10px 14px;
+    margin-bottom: 12px;
+  }
+  .section-head h2 {
+    font-family: Fraunces, Georgia, serif;
+    font-size: 1.35rem;
+    margin: 0;
+    flex: 1 1 220px;
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    background: var(--sky-soft);
+    color: var(--sky);
+    white-space: nowrap;
+  }
+  .pill.teal { background: var(--teal-soft); color: var(--teal-deep); }
+  .pill.amber { background: var(--amber-soft); color: var(--amber); }
+  .pill.green { background: var(--green-soft); color: var(--green); }
+
+  .section p { margin: 0 0 12px; color: var(--muted); }
+  .section .body { color: var(--ink); }
+
+  .grid2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 12px 0;
+  }
+  .kv {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px;
+    background: var(--paper);
+    min-width: 0;
+  }
+  .kv strong {
+    display: block;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.05rem;
+    overflow-wrap: anywhere;
+  }
+  .kv span { color: var(--muted); font-size: 12px; }
+
+  .section-nav {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+  }
+  .section-nav .btn { flex: 0 1 auto; min-width: 0; }
+
+  .html-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .html-card {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px;
+    background: #fff;
+    text-decoration: none;
+    color: inherit;
+    min-width: 0;
+  }
+  .html-card:hover { border-color: var(--teal); background: var(--teal-soft); }
+  .html-card b { display: block; margin-bottom: 4px; overflow-wrap: break-word; }
+  .html-card span { color: var(--muted); font-size: 12px; }
+
+  .hint {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--amber-soft);
+    color: var(--amber);
+    font-size: 12px;
+  }
+  .code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+  }
+
+  .floater {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 50;
+    display: flex;
+    gap: 8px;
+  }
+  .floater .btn {
+    box-shadow: none;
+    min-width: 44px;
+    justify-content: center;
+  }
+
+  @media (max-width: 960px) {
+    .layout { grid-template-columns: 1fr; }
+    .rail { display: none; }
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid2, .html-list { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+  <nav class="topnav" aria-label="Navegacion rapida">
+    <div class="brand">Dinero <span>hub</span></div>
+    <div class="chip-scroll" id="chipBar"></div>
+    <div class="nav-actions">
+      <button type="button" class="btn" id="prevBtn" title="Anterior (←)">←</button>
+      <button type="button" class="btn" id="nextBtn" title="Siguiente (→)">→</button>
+      <a class="btn primary" href="#htmls">HTMLs</a>
+    </div>
+  </nav>
+
+  <div class="layout">
+    <aside class="rail" aria-label="Indice">
+      <h2>Canvas</h2>
+      <div id="railLinks"></div>
+      <div class="group">
+        <h2>Otros HTML</h2>
+        <a href="#htmls">docs/finance HTML</a>
+        <a href="../briefing-socios-extraccion-2026-27.html">Briefing socios</a>
+        <a href="../plan-extraccion-socios-2026-27.html">Plan extraccion</a>
+        <a href="../beneficio-servicios-2025-26.html">Beneficio servicios</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="hero" id="top">
+        <p class="eyebrow">clubSENsational · directores / Day Centre / afterschool + weekends</p>
+        <h1>Hub grande · gravita de canvas a canvas</h1>
+        <p class="lead">
+          Un solo HTML con los 12 documentos de dinero. Usa las chips de arriba,
+          el rail izquierdo, o las flechas ← → (tambien teclado) para saltar.
+          Los canvas vivos siguen en Cursor; aqui tienes el mapa y las cifras clave.
+        </p>
+        <div class="stats">
+          <div class="stat"><b>12</b><span>Canvas dinero</span></div>
+          <div class="stat"><b>£59,687</b><span>DC remanente V+R (antes cards, V neto tras −£19,833)</span></div>
+          <div class="stat"><b>£63,599</b><span>ASW remanente Dic–Jul</span></div>
+          <div class="stat"><b>£93,309</b><span>Portal unpaid+partial ready</span></div>
+        </div>
+        <p class="hint">
+          Tip: desde el canvas <strong>dinero-indice</strong> en Cursor hay botones
+          que abren este HTML y cada archivo fuente.
+        </p>
+      </header>
+
+      <!-- sections injected / static below -->
+
+      <section class="section" id="c01" data-label="01 Tide Jul22–Sep24">
+        <div class="section-head">
+          <h2>01 · Tide income vs gasto</h2>
+          <span class="pill">Jul 22 – Sep 24</span>
+        </div>
+        <p class="body">Historico Tide corriente: entradas, salidas, neto, takeout de los 3 directores y dividendos.</p>
+        <div class="grid2">
+          <div class="kv"><strong>Ver canvas</strong><span class="code">tide-income-spend-jul22-sep24.canvas.tsx</span></div>
+          <div class="kv"><strong>Uso</strong><span>Base del periodo largo antes de Oct 24</span></div>
+        </div>
+        <div class="section-nav">
+          <a class="btn" href="#top">Inicio</a>
+          <a class="btn primary" href="#c02">Siguiente →</a>
+        </div>
+      </section>
+
+      <section class="section" id="c02" data-label="02 Miriam Oct24–Jul26">
+        <div class="section-head">
+          <h2>02 · Tide bank · listas Miriam</h2>
+          <span class="pill teal">Oct 24 – Jul 26</span>
+        </div>
+        <p class="body">Puente Miriam × Tide Cleared. Ops IN/OUT mes a mes; personal vs tarjeta empresa.</p>
+        <div class="grid2">
+          <div class="kv"><strong>Ver canvas</strong><span class="code">tide-bank-miriam-oct24-jan26.canvas.tsx</span></div>
+          <div class="kv"><strong>Uso</strong><span>Fuente para tarjetas y ops desde Oct 24</span></div>
+        </div>
+        <div class="section-nav">
+          <a class="btn" href="#c01">← Anterior</a>
+          <a class="btn primary" href="#c03">Siguiente →</a>
+        </div>
+      </section>
+
+      <section class="section" id="c03" data-label="03 V&R + empresa Sep24">
+        <div class="section-head">
+          <h2>03 · V&amp;R mananas + resto empresa</h2>
+          <span class="pill">Desde Sep 24</span>
+        </div>
+        <p class="body">Esqueleto de dos potes: mananas Day Centre (V&amp;R) vs resto empresa. Apunta al detail Sep25–Jul26.</p>
+        <div class="grid2">
+          <div class="kv"><strong>Ver canvas</strong><span class="code">vr-mananas-empresa-sep24.canvas.tsx</span></div>
+          <div class="kv"><strong>Uso</strong><span>Mapa de estructura; detail en 05 y 07</span></div>
+        </div>
+        <div class="section-nav">
+          <a class="btn" href="#c02">← Anterior</a>
+          <a class="btn primary" href="#c04">Siguiente →</a>
+        </div>
+      </section>
+
+      <section class="section" id="c04" data-label="04 Raul remanente">
+        <div class="section-head">
+          <h2>04 · Raul remanente · mananas</h2>
+          <span class="pill amber">Sep 24 – Jul 26</span>
+        </div>
+        <p class="body">Hoja Sep24–Nov25 + mitad shared Day Centre Dic–Jul. Cierre Jul (antes/despues card DC).</p>
+        <div class="grid2">
+          <div class="kv"><strong>£38,842.79</strong><span>Remanente tras Jul (calculado)</span></div>
+          <div class="kv"><strong>£38,457.16</strong><span>Jul − DC card £385.63 (prov.)</span></div>
+        </div>
+        <p class="code">raul-remanente-mananas-sep24-nov25.canvas.tsx</p>
+        <div class="section-nav">
+          <a class="btn" href="#c03">← Anterior</a>
+          <a class="btn primary" href="#c05">Siguiente →</a>
+        </div>
+      </section>
+
+      <section class="section" id="c05" data-label="05 Day Centre principal">
+        <div class="section-head">
+          <h2>05 · Day Centre · Sep 25 – Jul 26</h2>
+          <span class="pill green">Principal</span>
+        </div>
+        <p class="body">P&amp;L manana: ingresos neto − staff manana − piscina → 50/50 → − PAYE £4,167/mes c/u. Admin £1k fuera a empresa.</p>
+        <div class="grid2">
+          <div class="kv"><strong>£4,167 × 11 × 2</strong><span>PAYE modelo V+R Sep–Jul</span></div>
+          <div class="kv"><strong>50 / 50</strong><span>Beneficio shared mananas</span></div>
+        </div>
+        <p class="code">day-centre-may-jul-2026.canvas.tsx</p>
+        <div class="section-nav">
+          <a class="btn" href="#c04">← Anterior</a>
+          <a class="btn primary" href="#c06">Siguiente →</a>
+        </div>
+      </section>
+
+      <section class="section" id="c06" data-label="06 Day Centre Jun–Jul">
+        <div class="section-head">
+          <h2>06 · Day Centre · Jun – Jul 2026</h2>
+          <span class="pill">Verano estrecho</span>
+        </div>
+        <p class="body">Snapshot rota + rates solo junio–julio. Util como chequeo; el ledger completo es el 05.</p>
+        <p class="code">day-centre-jun-jul-2026.canvas.tsx</p>
+        <div class="section-nav">
+          <a class="btn" href="#c05">← Anterior</a>
+          <a class="btn primary" href="#c07">Siguiente →</a>
+        </div>
+      </section>
+
+      <section class="section" id="c07" data-label="07 Empresa / ASW">
+        <div class="section-head">
+          <h2>07 · Empresa · Sep 25 – Jul 26</h2>
+          <span class="pill teal">Espejo pot manana</span>
+        </div>
+        <p class="body">Todo lo que no es Day Centre manana: afterschools, weekends, climbing, admin £1k, ops Tide.</p>
+        <div class="grid2">
+          <div class="kv"><strong>Ops Tide</strong><span>IN / OUT / neto del periodo</span></div>
+          <div class="kv"><strong>Admin £1k×2×11</strong><span>Victor + Raul fuera del pot DC</span></div>
+        </div>
+        <p class="code">empresa-ops-sep25-jul26.canvas.tsx</p>
+        <div class="section-nav">
+          <a class="btn" href="#c06">← Anterior</a>
+          <a class="btn primary" href="#c08">Siguiente →</a>
+        </div>
+      </section>
+
+      <section class="section" id="c08" data-label="08 Tide Sep–Jul">
+        <div class="section-head">
+          <h2>08 · Tide ops · Sep 25 – Jul 26</h2>
+          <span class="pill">Banco</span>
+        </div>
+        <p class="body">Rollup Tide sin transfers a Savings. PAYE, loans directores, HMRC, staff top.</p>
+        <div class="grid2">
+          <div class="kv"><strong>£105,212.30</strong><span>HMRC (PAYE/tax DD) en periodo</span></div>
+          <div class="kv"><strong>£91,674</strong><span>PAYE modelo V+R (£4,167×11×2)</span></div>
+        </div>
+        <p class="code">tide-sep-jul-2026.canvas.tsx</p>
+        <div class="section-nav">
+          <a class="btn" href="#c07">← Anterior</a>
+          <a class="btn primary" href="#c09">Siguiente →</a>
+        </div>
+      </section>
+
+      <section class="section" id="c09" data-label="09 Tarjetas VJR">
+        <div class="section-head">
+          <h2>09 · Gastos por tarjeta V / J / R</h2>
+          <span class="pill amber">Oct 24 – Jul 26</span>
+        </div>
+        <p class="body">Solo tarjeta personal + tarjeta empresa. Loans en canvas aparte (director-loans).</p>
+        <div class="grid2">
+          <div class="kv"><strong>£18,106.23</strong><span>Victor card personal</span></div>
+          <div class="kv"><strong>£18,786.46</strong><span>Raul card personal</span></div>
+          <div class="kv"><strong>£10,753.21</strong><span>Javier card personal</span></div>
+          <div class="kv"><strong>£31,483.68</strong><span>Tarjeta empresa</span></div>
+        </div>
+        <p class="code">tide-card-spend-vjr-sep-jul.canvas.tsx</p>
+        <div class="section-nav">
+          <a class="btn" href="#c08">← Anterior</a>
+          <a class="btn primary" href="#c09b">Loans →</a>
+        </div>
+      </section>
+
+      <section class="section" id="c09b" data-label="09b Director loans">
+        <div class="section-head">
+          <h2>09b · Director loans</h2>
+          <span class="pill">Sep25–Jul26</span>
+        </div>
+        <p class="body">Pagina aparte: solo transferencias etiquetadas loan. No mezclar con tarjetas.</p>
+        <div class="grid2">
+          <div class="kv"><strong>£8,000.00</strong><span>Victor · Loan Director (8 Oct 25)</span></div>
+          <div class="kv"><strong>£47,374.92</strong><span>Raul · bucket Director loan</span></div>
+          <div class="kv"><strong>£42,200.00</strong><span>Lumps claros (9.2k + 8k + 25k)</span></div>
+          <div class="kv"><strong>£13,174.92</strong><span>Tagged month Sep–Dic (~£3,293.68 ×4)</span></div>
+        </div>
+        <p class="code">director-loans-sep25-jul26.canvas.tsx</p>
+        <div class="section-nav">
+          <a class="btn" href="#c09">← Tarjetas</a>
+          <a class="btn primary" href="#c10">Siguiente →</a>
+        </div>
+      </section>
+
+      <section class="section" id="c10" data-label="10 Foto 2 mananas">
+        <div class="section-head">
+          <h2>10 · Foto 2 · mananas Sep25–Jun26</h2>
+          <span class="pill">Proyeccion</span>
+        </div>
+        <p class="body">Remanente Victor (y espejo Raul) mes a mes desde beneficio shared. Formula: Total = Mananas + Remanente; Remanente = Total − Nomina.</p>
+        <div class="grid2">
+          <div class="kv"><strong>£20,844.58</strong><span>Victor remanente → Jul neto (−£19,833 Michelle/quitado)</span></div>
+          <div class="kv"><strong>Arranque −£772.39</strong><span>Remanente inicial Foto 2</span></div>
+        </div>
+        <p class="code">foto2-mananas-sep25-jun26.canvas.tsx</p>
+        <div class="section-nav">
+          <a class="btn" href="#c09">← Anterior</a>
+          <a class="btn primary" href="#c11">Siguiente →</a>
+        </div>
+      </section>
+
+      <section class="section" id="c11" data-label="11 Afterschools remanente">
+        <div class="section-head">
+          <h2>11 · Remanente afterschools · venues</h2>
+          <span class="pill green">ASW</span>
+        </div>
+        <p class="body">Ingresos after Dic–Jul (neto) − salarios after − venues reales. Piscina manana SwimFarm va al ledger manana, no aqui.</p>
+        <div class="grid2">
+          <div class="kv"><strong>£184,452.15</strong><span>Ingresos after Dic–Jul (neto)</span></div>
+          <div class="kv"><strong>£63,598.64</strong><span>Remanente Dic–Jul</span></div>
+        </div>
+        <p class="code">beneficio-servicios-2025-26.canvas.tsx</p>
+        <div class="section-nav">
+          <a class="btn" href="#c10">← Anterior</a>
+          <a class="btn primary" href="#c12">Siguiente →</a>
+        </div>
+      </section>
+
+      <section class="section" id="c12" data-label="12 Reparto agosto">
+        <div class="section-head">
+          <h2>12 · August distribution · V / R / J</h2>
+          <span class="pill amber">Resumen</span>
+        </div>
+        <p class="body">Une casi todo: remanente DC, remanente ASW, equalizacion tarjetas, portal unpaid, Ealing summer still due.</p>
+        <div class="grid2">
+          <div class="kv"><strong>£59,687.37</strong><span>DC V+R before cards (V neto)</span></div>
+          <div class="kv"><strong>£63,598.64</strong><span>ASW remanente</span></div>
+          <div class="kv"><strong>£93,308.50</strong><span>Portal unpaid+partial ready</span></div>
+          <div class="kv"><strong>£12,092.56</strong><span>Ealing summer still due</span></div>
+        </div>
+        <p class="code">aug-distribution-vjr-2026.canvas.tsx</p>
+        <div class="section-nav">
+          <a class="btn" href="#c11">← Anterior</a>
+          <a class="btn primary" href="#htmls">Ver HTMLs →</a>
+        </div>
+      </section>
+
+      <section class="section" id="htmls" data-label="HTMLs finance">
+        <div class="section-head">
+          <h2>Otros HTML en docs/finance</h2>
+          <span class="pill">Abrir en navegador / Cursor</span>
+        </div>
+        <p class="body">Documentos HTML hermanos (no canvas). Clic para abrir.</p>
+        <div class="html-list">
+          <a class="html-card" href="./index.html">
+            <b>Este hub</b>
+            <span>canvas-dinero/index.html</span>
+          </a>
+          <a class="html-card" href="../briefing-socios-extraccion-2026-27.html">
+            <b>Briefing socios · extraccion 2026-27</b>
+            <span>briefing-socios-extraccion-2026-27.html</span>
+          </a>
+          <a class="html-card" href="../plan-extraccion-socios-2026-27.html">
+            <b>Plan extraccion socios 2026-27</b>
+            <span>plan-extraccion-socios-2026-27.html</span>
+          </a>
+          <a class="html-card" href="../beneficio-servicios-2025-26.html">
+            <b>Beneficio servicios 2025-26</b>
+            <span>beneficio-servicios-2025-26.html</span>
+          </a>
+        </div>
+        <div class="section-nav">
+          <a class="btn" href="#c12">← Anterior</a>
+          <a class="btn primary" href="#top">Volver al inicio</a>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="floater" aria-label="Navegacion">
+    <button type="button" class="btn" id="floatPrev" title="Anterior">←</button>
+    <button type="button" class="btn primary" id="floatNext" title="Siguiente">→</button>
+  </div>
+
+<script>
+(function () {
+  var sections = Array.prototype.slice.call(document.querySelectorAll("main .section[id]"));
+  var chipBar = document.getElementById("chipBar");
+  var railLinks = document.getElementById("railLinks");
+  var ids = sections.map(function (s) { return s.id; });
+
+  sections.forEach(function (sec, i) {
+    var label = sec.getAttribute("data-label") || sec.id;
+    var chip = document.createElement("a");
+    chip.className = "chip";
+    chip.href = "#" + sec.id;
+    chip.textContent = String(i + 1).padStart(2, "0");
+    chip.title = label;
+    chipBar.appendChild(chip);
+
+    if (sec.id !== "htmls") {
+      var a = document.createElement("a");
+      a.href = "#" + sec.id;
+      a.innerHTML = label + "<small>" + sec.id + "</small>";
+      railLinks.appendChild(a);
+    }
+  });
+
+  function currentIndex() {
+    var y = window.scrollY + 90;
+    var idx = 0;
+    for (var i = 0; i < sections.length; i++) {
+      if (sections[i].offsetTop <= y) idx = i;
+    }
+    return idx;
+  }
+
+  function go(delta) {
+    var i = Math.max(0, Math.min(sections.length - 1, currentIndex() + delta));
+    sections[i].scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function syncActive() {
+    var i = currentIndex();
+    var id = sections[i].id;
+    document.querySelectorAll(".chip, .rail a").forEach(function (el) {
+      var href = el.getAttribute("href") || "";
+      el.classList.toggle("is-active", href === "#" + id);
+    });
+  }
+
+  ["prevBtn", "floatPrev"].forEach(function (id) {
+    document.getElementById(id).addEventListener("click", function () { go(-1); });
+  });
+  ["nextBtn", "floatNext"].forEach(function (id) {
+    document.getElementById(id).addEventListener("click", function () { go(1); });
+  });
+
+  window.addEventListener("keydown", function (e) {
+    if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
+    if (e.key === "ArrowLeft") { e.preventDefault(); go(-1); }
+    if (e.key === "ArrowRight") { e.preventDefault(); go(1); }
+  });
+
+  window.addEventListener("scroll", syncActive, { passive: true });
+  syncActive();
+})();
+</script>
+</body>
+</html>
