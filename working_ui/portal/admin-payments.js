@@ -3787,8 +3787,24 @@
     if (curated === "NHS_INVOICE") return "NHS_INVOICE";
 
     /*
-     * Family Direct Payments before LA invoice labels.
-     * Summer workbook often tags DP families as sheet LA / "Funded by LA", but
+     * Explicit LA invoice (club bills LA/H&F) before Parent-Exempt DP.
+     * Summer crash INV-Ps for Adam/Saaib are la_funded + vat exempt — Invoice type
+     * used to be Parent (Exempt) and wrongly became "Using Funds from LA".
+     */
+    if (
+      paidRaw === PAID_BY.FUNDED_BY_LA ||
+      raw === INVOICE_TYPE.LA_EXEMPT ||
+      raw === PAYER_ROUTE.LA_INVOICE ||
+      raw === "Local Authority (invoice)" ||
+      hint === "la_funded" ||
+      (r && r._crash && hint === "la_funded")
+    ) {
+      return "LA_INVOICE";
+    }
+
+    /*
+     * Family Direct Payments before remaining LA sheet defaults.
+     * Summer workbook often tags DP families as sheet LA, but
      * re-enrol Parent (Exempt) + Using Funds from LA means the family still pays us.
      */
     if (
@@ -3806,10 +3822,6 @@
       if (!isExplicitNhsFunder(blob) && !/local authority \(exempt|local authority \(invoice/i.test(blob)) {
         return "FAMILY_DP";
       }
-    }
-
-    if (paidRaw === PAID_BY.FUNDED_BY_LA || raw === INVOICE_TYPE.LA_EXEMPT || raw === PAYER_ROUTE.LA_INVOICE || raw === "Local Authority (invoice)") {
-      return "LA_INVOICE";
     }
 
     if (curated) return curated;
@@ -5392,7 +5404,8 @@
   function buildCrashPaymentRow(inv) {
     var cid = String(inv.contact_id || "").trim();
     var fullName = String(inv.participant_display || inv.related_client || cid).trim();
-    var shortName = fullName.split(/\s+/)[0] || fullName;
+    /* Keep surname when present so Adam Pilcher ≠ Adam A in the table. */
+    var displayName = fullName || cid;
     var amt = Number(inv.amount_gbp) || 0;
     var st = String(inv.payment_status || "").toLowerCase();
     var paid = st === "paid";
@@ -5400,12 +5413,20 @@
     var hint = String(inv.payment_method_hint || "").toLowerCase();
     var invType = vat === "exempt" ? INVOICE_TYPE.PARENT_EXEMPT : INVOICE_TYPE.PARENT_20;
     var paidBy = PAID_BY.PRIVATE_FUNDS;
-    if (hint === "la_funded") paidBy = PAID_BY.FUNDED_BY_LA;
-    else if (vat === "exempt") paidBy = PAID_BY.FUNDS_FROM_LA;
+    var sheet = "PARENTS";
+    /* H&F / LA bill-to crash (Adam · Saaib · …): Funded by LA, not family DP. */
+    if (hint === "la_funded") {
+      paidBy = PAID_BY.FUNDED_BY_LA;
+      invType = INVOICE_TYPE.LA_EXEMPT;
+      sheet = "LA";
+    } else if (vat === "exempt") {
+      paidBy = PAID_BY.FUNDS_FROM_LA;
+    }
     var crashDesc = [inv.line_description, inv.notes].filter(Boolean).join("\n");
     var row = {
       id: "crash-" + (inv.id || cid),
       _contactId: cid,
+      client_key: cid === "354" ? "adam-p" : (cid === "gap-saaib-abdullah" ? "saaib" : ""),
       _synthetic: true,
       _crash: true,
       _crashLineDesc: crashDesc,
@@ -5413,8 +5434,8 @@
       _invoiceIds: inv.id ? [inv.id] : [],
       _paymentMethodHint: hint,
       _vatMode: vat || "vat_20",
-      sheet: "PARENTS",
-      client_name: shortName,
+      sheet: sheet,
+      client_name: displayName,
       parent_name: String(inv.parent_display || "").trim(),
       payment_status: paid ? "Paid" : "Outstanding",
       amount: amt,
@@ -5442,6 +5463,21 @@
       row.data.Services = zakariyaCrashServiceLines().join("\n");
     } else if (crashSlug === "tinashe") {
       row.data.Services = tinasheCrashServiceLines().join("\n");
+    } else if (crashSlug === "adam_p") {
+      row.data.Services = "90' Aquatic Activity (July crash) · Tue/Wed 5–6.30pm Acton";
+    } else if (crashSlug === "saaib") {
+      row.data.Services = "30' Aquatic Activity (July crash) · Tue/Wed 4.30–5pm Acton";
+    }
+    /* Day Centre stream cohort for Payments (Adam/Saaib/Tinashe/Zakariya/…). */
+    if (
+      crashSlug === "zakariya"
+      || crashSlug === "patrick"
+      || crashSlug === "tinashe"
+      || crashSlug === "yaqoub"
+      || crashSlug === "adam_p"
+      || crashSlug === "saaib"
+    ) {
+      row.data.Stream = "Day Centre";
     }
     return row;
   }
