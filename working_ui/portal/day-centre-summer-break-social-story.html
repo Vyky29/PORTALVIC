@@ -539,6 +539,19 @@
       { n: 31, w: "Fri", dow: 5 },
     ];
 
+    function dayOrdinal(n) {
+      const j = n % 10;
+      const k = n % 100;
+      if (j === 1 && k !== 11) return n + "st";
+      if (j === 2 && k !== 12) return n + "nd";
+      if (j === 3 && k !== 13) return n + "rd";
+      return n + "th";
+    }
+
+    function dateRangeLabel(from, to) {
+      return dayOrdinal(from) + " to " + dayOrdinal(to);
+    }
+
     function pec(opts) {
       const cls =
         "pec" +
@@ -731,7 +744,7 @@
                   top: "2026",
                   mid: "SEPTEMBER",
                   midClass: "july",
-                  bot: kid.sepFirstCome + "–30",
+                  bot: dateRangeLabel(kid.sepFirstCome, 30),
                   tone: "green",
                 },
                 tone: "green",
@@ -758,7 +771,7 @@
                 top: "2026",
                 mid: "SEPTEMBER",
                 midClass: "july",
-                bot: kid.sepFirstCome + "–30",
+                bot: dateRangeLabel(kid.sepFirstCome, 30),
                 tone: "green",
               },
               tone: "green",
