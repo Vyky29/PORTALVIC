@@ -102,6 +102,11 @@
       text-align: right;
       font-variant-numeric: tabular-nums;
     }
+    .note {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin: 8px 0 12px;
+    }
     .foot {
       margin-top: 28px;
       padding-top: 12px;
@@ -129,49 +134,52 @@
     </p>
 
     <p>
-      Roberto: este papel resume de forma sencilla como funciona tu sueldo,
-      cuando se han pagado horas extra, y como encaja la rota de verano con
-      las horas que cubre el contrato fijo.
+      Roberto: este papel resume como funciona tu sueldo, que horas cubre el
+      contrato fijo, cuando se han pagado horas extra, y como queda la rota de
+      verano frente a ese acuerdo.
     </p>
 
     <div class="grid">
       <div class="card">
-        <b>£26,000</b>
-        <span>Contrato fijo al ano (desde ene 2026)</span>
+        <b>£20,000</b>
+        <span>Contrato fijo al ano</span>
       </div>
       <div class="card">
-        <b>£2,166.67</b>
+        <b>£1,666.67</b>
         <span>Salario fijo al mes</span>
       </div>
       <div class="card">
-        <b>~32 h / sem</b>
-        <span>Horas que cubre ese fijo</span>
+        <b>~30.5–32 h / sem</b>
+        <span>Horas que cubre el contrato</span>
       </div>
     </div>
 
     <h2>1. Tu contrato</h2>
     <ul>
       <li>
-        Tu contrato es de sueldo <strong>fijo</strong> (acuerdo propio),
-        <strong>no</strong> la escala Scala (£/hora Scale 1 / 2 / 3) que usan
-        otros trabajadores.
+        Tu contrato es de sueldo <strong>fijo</strong> (acuerdo propio).
+        <strong>No</strong> se te paga por la escala Scala / Scale (£/hora)
+        del resto del staff.
       </li>
       <li>
-        Desde <strong>enero 2026</strong> el importe acordado es
-        <strong>£2,166.67 al mes</strong> (<strong>£26,000 al ano</strong>),
-        a jornada parcial.
+        El importe acordado es <strong>£1,666.67 al mes</strong>
+        (<strong>£20,000 al ano</strong>), a jornada parcial.
       </li>
       <li>
-        Ese fijo ya cubre unas <strong>~32 horas a la semana</strong> de trabajo
-        (manana Day Centre + tarde / natacion / domingo segun la rota).
+        Ese contrato part-time de £20k arranca en <strong>enero 2026</strong>
+        (no febrero). Febrero fue el primer mes con un plus de horas extra (£40).
       </li>
       <li>
-        Antes (oct–dic 2025) el fijo era mas bajo (~£1,583.33 / mes).
-        El cambio a £26,000 es desde enero, no desde febrero.
+        El fijo ya incluye manana (Day Centre), tarde y domingo, segun el
+        bloque de horas de abajo.
       </li>
     </ul>
 
-    <h2>1b. Horas que cubre el £26k</h2>
+    <h2>1b. Horas que cubre el £20k</h2>
+    <p>
+      Horas semanales que Victor indico como las que cubre el contrato
+      (chat operativo, desde enero):
+    </p>
     <table>
       <thead>
         <tr>
@@ -182,23 +190,23 @@
       </thead>
       <tbody>
         <tr>
-          <td>Manana L–V</td>
-          <td>Lun 3.5 · mar–vie 2.5</td>
+          <td>Manana (L–V)</td>
+          <td>Lunes 3.5 h · martes a viernes 2.5 h cada dia</td>
           <td class="num">13.5</td>
         </tr>
         <tr>
-          <td>Tarde L–V</td>
-          <td>Lun/mie 2 · mar/jue 2.5 · vie 2</td>
+          <td>Tarde (L–V)</td>
+          <td>Lun y mie 2 h · mar y jue 2.5 h · vie 2 h</td>
           <td class="num">11.0</td>
         </tr>
         <tr>
           <td>Domingo</td>
-          <td>6 h (desde jun 6.5)</td>
+          <td>6 h (desde junio 6.5 h)</td>
           <td class="num">6.0–6.5</td>
         </tr>
         <tr>
           <td><strong>Total</strong></td>
-          <td>Acuerdo ~32 h/sem</td>
+          <td>Acuerdo orientativo ~32 h/sem</td>
           <td class="num"><strong>~30.5–32</strong></td>
         </tr>
       </tbody>
@@ -206,8 +214,8 @@
 
     <h2>2. Lo que has cobrado (pagos bancarios)</h2>
     <p>
-      Entre septiembre 2025 y julio 2026, por transferencia bancaria, has recibido en total
-      <strong>£16,116.03</strong> (nominas + £22.25 de gastos de junio).
+      Entre septiembre 2025 y julio 2026, por transferencia bancaria, has recibido
+      en total <strong>£16,116.03</strong> (nominas + £22.25 de gastos de junio).
     </p>
     <table>
       <thead>
@@ -221,12 +229,12 @@
         <tr>
           <td>Mayo (pagado 1 jun)</td>
           <td class="num">£1,853.58</td>
-          <td>Por debajo del fijo mensual</td>
+          <td>Por encima del fijo £1,666.67</td>
         </tr>
         <tr>
           <td>Junio (pagado 30 jun)</td>
           <td class="num">£2,147.14</td>
-          <td>Cerca del fijo £2,166.67</td>
+          <td>Por encima del fijo £1,666.67</td>
         </tr>
         <tr>
           <td>Gastos junio (7 jul)</td>
@@ -240,12 +248,17 @@
         </tr>
       </tbody>
     </table>
+    <p class="note">
+      Nota: algunos payslips de ene–jun 2026 muestran un bruto base de
+      £2,166.67 (como si fuera £26k/ano). Eso es lo que salio en nomina/banco
+      esos meses; el <strong>contrato acordado</strong> a usar contigo es
+      £20k / £1,666.67 mes (confirmado por Victor, julio 2026).
+    </p>
 
     <h2>3. Horas extra que pediste / se pagaron</h2>
     <p>
       En varios meses anteriores <strong>si</strong> hubo un plus aparte por
-      horas extra (ademas del sueldo fijo). Eso queda en la nomina / imports
-      del portal:
+      horas extra (ademas del sueldo fijo):
     </p>
     <table>
       <thead>
@@ -256,73 +269,61 @@
         </tr>
       </thead>
       <tbody>
-        <tr><td>Sep–Dic 2025</td><td class="num">£540 + £368 + £324 + £184</td><td>Extras registrados en el reparto Day Centre</td></tr>
+        <tr><td>Sep–Dic 2025</td><td class="num">£540 + £368 + £324 + £184</td><td>Extras en reparto Day Centre</td></tr>
         <tr><td>Feb 2026</td><td class="num">£40</td><td>Extra hours (payroll)</td></tr>
         <tr><td>Mar 2026</td><td class="num">£186</td><td>Extra hours (payroll)</td></tr>
         <tr><td>Abr 2026</td><td class="num">£108</td><td>Extra hours (payroll)</td></tr>
-        <tr><td>May–Jul 2026</td><td class="num">£0</td><td>No hay linea de Extra hours aparte</td></tr>
+        <tr><td>May–Jul 2026</td><td class="num">£0</td><td>Sin linea Extra hours aparte</td></tr>
       </tbody>
     </table>
     <p>
-      Total de esos plus documentados (sep–abr): <strong>£1,750</strong>.
-      En mayo, junio y julio <strong>no</strong> aparece un pago aparte de
-      &quot;horas extra&quot; ademas del fijo.
-    </p>
-    <p>
-      Bajo el acuerdo del fijo (~32 h/sem), un plus solo tiene sentido si las
-      horas van <strong>por encima</strong> de esa semana, no si ya estan
-      dentro de la rota normal cubierta por el sueldo.
+      Total plus documentados (sep–abr): <strong>£1,750</strong>.
+      Mayo–julio: sin pago aparte de &quot;horas extra&quot; ademas del fijo.
     </p>
 
-    <h2>4. Te pasaste de las ~32 h / semana?</h2>
+    <h2>4. Te pasaste de las ~30.5–32 h / semana?</h2>
     <div class="highlight">
       <p style="margin:0 0 8px;">
-        <strong>Resumen claro:</strong> en la rota de verano (junio–julio),
-        muchas semanas tu trabajo planificado (manana + tarde + domingo)
-        esta <strong>alrededor o un poco por encima</strong> de las ~32 h
-        que cubre el fijo (tipico ~30 a 33 h).
+        <strong>Resumen:</strong> el contrato ya contempla unas
+        <strong>~30.5–32 h/sem</strong>. En junio–julio la rota suele estar
+        cerca o un poco por encima (tipico ~30–33 h).
       </p>
       <ul style="margin-bottom:0;">
-        <li>Semanas tipicas de junio / principios de julio: unas <strong>30 a 33 h</strong>.</li>
-        <li>Semana del 13 de julio: unas <strong>23.5 h</strong> (sin domingo) — por debajo.</li>
-        <li>Semana del 20 de julio (crash): unas <strong>13.5 h</strong> — por debajo.</li>
-        <li>Semana del 27 de julio: unas <strong>20 h</strong> — por debajo del ~32 h.</li>
+        <li>Semanas tipicas jun / principios jul: ~<strong>30–33 h</strong>.</li>
+        <li>Semana 13 jul: ~<strong>23.5 h</strong> (sin domingo).</li>
+        <li>Semana 20 jul (crash): ~<strong>13.5 h</strong> (por debajo).</li>
+        <li>Semana 27 jul: ~<strong>20 h</strong> (por debajo del acuerdo).</li>
       </ul>
     </div>
     <p>
-      Bajo tu contrato <strong>fijo</strong>, esas horas de la rota normal
-      van dentro del sueldo mensual, salvo que se acuerde un plus concreto
-      (como los de febrero–abril).
-    </p>
-    <p>
-      <strong>Importante:</strong> pasarte de horas <strong>no</strong> significa
-      que debas dinero a la empresa. Tampoco genera solo un pago automatico
-      extra: el plus se paga cuando se acuerda y se registra (como antes).
+      Bajo el fijo, las horas del bloque acordado van dentro del sueldo mensual.
+      Un plus aparte solo si se acuerda y se registra (como feb–abr).
     </p>
 
-    <h2>5. Adelantos o deudas</h2>
+    <h2>5. Adelantos / las &quot;£480&quot;</h2>
     <p>
-      En los pagos bancarios y en la nomina <strong>no aparece</strong> ningun adelanto,
-      prestamo ni saldo de &quot;Roberto debe a la empresa&quot;.
-      Este documento <strong>no inventa ni reclama</strong> ninguna deuda tuya.
+      En banco y nomina <strong>no aparece</strong> adelanto, prestamo ni saldo
+      formal de &quot;Roberto debe a la empresa&quot;. Este documento no inventa deuda.
+    </p>
+    <p>
+      La cifra ~£480 no es un pago pendiente a ti: encaja con el extra de junio
+      en payslip (~£408) / un calculo interno de sobrepago (~£588), u otras
+      lineas de otros staff (p. ej. Acton £480 de Youssef).
     </p>
 
     <h2>6. En pocas palabras</h2>
     <ol>
-      <li>Contrato fijo propio (no Scala): £2,166.67 / mes (£26,000 / ano) desde enero 2026.</li>
-      <li>Ese fijo cubre ~30.5–32 h / semana (manana + tarde / swim / domingo).</li>
-      <li>Desde septiembre te hemos pagado por banco £16,116.03; junio ya esta cobrado.</li>
-      <li>Si pediste horas extra en meses anteriores: hubo plus (£1,750 documentados hasta abril).</li>
-      <li>Mayo–julio: no hay plus de &quot;Extra hours&quot; registrado aparte del fijo.</li>
-      <li>En junio–julio la rota suele estar cerca de ~32 h/sem; eso va dentro del fijo salvo nuevo acuerdo.</li>
-      <li>No hay deuda registrada tuya hacia la empresa en estos pagos.</li>
+      <li>Contrato fijo (no Scala): £1,666.67 / mes (£20,000 / ano), desde enero 2026.</li>
+      <li>Cubre ~30.5–32 h/sem (manana + tarde + domingo).</li>
+      <li>Pagado por banco Sep–Jul: £16,116.03; junio ya cobrado.</li>
+      <li>Plus documentados hasta abril: £1,750. May–Jul: sin Extra hours aparte.</li>
+      <li>No hay £480 pendientes a tu favor ni deuda formal registrada.</li>
     </ol>
 
     <p class="foot">
-      Documento informativo para conversar el sueldo y las horas.
-      No es una nomina oficial ni una carta legal.
-      Horas de rota: roster MADRE junio–julio 2026 (estimacion por bloques de sesion).
-      Fecha de referencia: julio 2026.
+      Documento informativo. No es nomina oficial ni carta legal.
+      Horas de contrato: indicadas por Victor (chat operativo).
+      Rota verano: MADRE jun–jul 2026. Referencia: julio 2026.
     </p>
   </div>
 </body>
