@@ -92,6 +92,9 @@
     .pecs.acts {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
+    .pecs.acts.six {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
     .pecs.staff {
       grid-template-columns: repeat(6, minmax(0, 1fr));
     }
@@ -409,7 +412,7 @@
     @media (max-width: 700px) {
       .pecs.three { grid-template-columns: 1fr; }
       .pecs.week-lead { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); }
-      .pecs.two, .pecs.acts { grid-template-columns: 1fr 1fr; }
+      .pecs.two, .pecs.acts, .pecs.acts.six { grid-template-columns: 1fr 1fr; }
       .pecs.staff { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .pecs.friends { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .pecs.one { max-width: 100%; }
@@ -462,6 +465,9 @@
     const CAFE = ASSET + "cafe.png";
     const SPORTS = ASSET + "sports.png";
     const AEROPLANE = ASSET + "aeroplane.png";
+    const BUS = ASSET + "bus.png";
+    const CAB = ASSET + "cab.png";
+    const HOME_MUNCHY = ASSET + "home-with-munchy.png";
 
     const STAFF_SEP = [
       { id: "michelle", name: "Michelle", img: ASSET + "staff/michelle.png" },
@@ -480,7 +486,7 @@
       { id: "fadi", name: "Fadi", img: ASSET + "avatar-fadi.png" },
     ];
 
-    const AUGUST_I_CAN_DO = [
+    const AUGUST_I_CAN_DO_DEFAULT = [
       { label: "Church", img: CHURCH },
       { label: "Park", img: PARK },
       { label: "Restaurant", img: RESTAURANT },
@@ -489,6 +495,15 @@
       { label: "Beach", img: BEACH },
       { label: "Aeroplane", img: AEROPLANE },
       { label: "Pool", img: POOL_ICON },
+    ];
+
+    const AUGUST_I_CAN_DO_IKRAM = [
+      { label: "Home with Munchy", img: HOME_MUNCHY },
+      { label: "Bus", img: BUS },
+      { label: "Restaurant", img: RESTAURANT },
+      { label: "Cafe", img: CAFE },
+      { label: "Park", img: PARK },
+      { label: "Cab", img: CAB },
     ];
 
     function pageHeader() {
@@ -511,6 +526,7 @@
         thisWeekCome: [1, 3, 5],
         sepFirstCome: 2,
         note: "Mon / Wed / Fri · first day back Wed 2 September",
+        augustICanDo: AUGUST_I_CAN_DO_DEFAULT,
       },
       {
         id: "timi",
@@ -520,6 +536,7 @@
         thisWeekCome: [1, 5],
         sepFirstCome: 4,
         note: "Mon + Fri · first day back Fri 4 September",
+        augustICanDo: [],
       },
       {
         id: "ikram",
@@ -529,6 +546,7 @@
         thisWeekCome: [1, 2, 3, 5],
         sepFirstCome: 1,
         note: "Mon / Tue / Wed / Fri · first day back Tue 1 September",
+        augustICanDo: AUGUST_I_CAN_DO_IKRAM,
       },
     ];
 
@@ -726,12 +744,16 @@
               hero: true,
             }) +
           "</div>" +
-          '<p class="with-mum red">I can do</p>' +
-          '<div class="pecs acts">' +
-            AUGUST_I_CAN_DO.map((a) =>
-              pec({ label: a.label, img: a.img, tone: "red" })
-            ).join("") +
-          "</div>" +
+          (kid.augustICanDo && kid.augustICanDo.length
+            ? '<p class="with-mum red">I can do</p>' +
+              '<div class="pecs acts' +
+              (kid.augustICanDo.length === 6 ? " six" : "") +
+              '">' +
+              kid.augustICanDo
+                .map((a) => pec({ label: a.label, img: a.img, tone: "red" }))
+                .join("") +
+              "</div>"
+            : "") +
         "</article>" +
 
         /* Page 4: before September — SEPTEMBER + Hub/Open */
