@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Roberto Reali · cobrado y contrato · briefing</title>
+  <style>
+    :root {
+      --ink: #142033;
+      --muted: #5b6b7c;
+      --line: #d5dde6;
+      --soft: #f4f7fa;
+      --warn: #9a3412;
+      --warn-bg: #fff7ed;
+      --ok: #14532d;
+      --ok-bg: #ecfdf5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Avenir Next", "Segoe UI", Arial, sans-serif;
+      background: #fff;
+      line-height: 1.45;
+    }
+    .wrap { max-width: 820px; margin: 0 auto; padding: 28px 20px 48px; }
+    h1 { font-size: 1.55rem; margin: 0 0 6px; }
+    h2 { font-size: 1.15rem; margin: 28px 0 10px; }
+    .sub { color: var(--muted); font-size: 0.92rem; margin: 0 0 18px; }
+    .box {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin: 12px 0;
+      background: var(--soft);
+    }
+    .box.warn { background: var(--warn-bg); border-color: #fdba74; color: var(--warn); }
+    .box.ok { background: var(--ok-bg); border-color: #86efac; color: var(--ok); }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      min-width: 0;
+    }
+    .stat b { display: block; font-size: 1.25rem; }
+    .stat span { color: var(--muted); font-size: 0.8rem; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      padding: 8px 6px;
+      vertical-align: top;
+    }
+    th { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    ol { padding-left: 1.2rem; }
+    li { margin: 6px 0; }
+    .foot {
+      margin-top: 28px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--line);
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+    @media print {
+      .wrap { padding: 0; max-width: none; }
+      .box.warn, .box.ok { break-inside: avoid; }
+    }
+    @media (max-width: 640px) {
+      .stats { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Roberto Reali - cobrado y contrato</h1>
+    <p class="sub">
+      Briefing interno · Sep 2025 a Jul 2026 · fuente Tide (banco) + contrato portal £26,000/año
+    </p>
+
+    <div class="stats">
+      <div class="stat">
+        <b>£16,116.03</b>
+        <span>Total pagado Tide Sep–Jul</span>
+      </div>
+      <div class="stat">
+        <b>£2,166.67</b>
+        <span>Salario fijo / mes (portal)</span>
+      </div>
+      <div class="stat">
+        <b>£26,000</b>
+        <span>Contrato fijo / año · part-time</span>
+      </div>
+    </div>
+
+    <div class="box warn">
+      <strong>Deuda a la empresa:</strong> en los extractos Tide, payroll del portal,
+      loans de directores y remanente <u>no aparece</u> ningun adelanto, prestamo
+      ni linea de &quot;Roberto debe a la empresa&quot;. Si hay una deuda, tiene que
+      estar fuera de estos registros (WhatsApp / caja / acuerdo verbal).
+    </div>
+
+    <div class="box warn">
+      <strong>Horas extra / se paso?:</strong> Si pidio y cobro plus documentados
+      (Sep–Apr ~£1,750; Feb £40 / Mar £186 / Apr £108 en SQL). May–Jul: £0 de
+      &quot;Extra hours&quot; aparte. Rota MADRE Jun–Jul suele ~30–33h/sem
+      (vs ~20h contrato); semana 20 jul baja (~13.5h). Pasarse de horas no crea
+      deuda; el plus solo si se acuerda como antes. Carta actualizada:
+      roberto-carta-sueldo-horas-2026.html
+    </div>
+    <div class="box ok">
+      <strong>Modelo fijo:</strong> Roberto no esta en timesheet por horas para el
+      base. El sueldo fijo cubre Day Centre + tarde / swim salvo plus acordado.
+      Las horas de rota por encima de ~20h no generan pago automatico como al
+      staff hourly.
+    </div>
+
+    <h2>Donde estaba en los canvas</h2>
+    <p class="sub">
+      <strong>day-centre-may-jul-2026</strong> — tabla &quot;Roberto · mes a mes (salario + extras − pot manana)&quot;
+      y coste manana. <strong>day-centre-jun-jul-2026</strong> — &quot;£16/h · solo manana (Lun 4h, resto 2.5h)&quot;.
+      Eso es el reparto contable manana vs tarde, no un timesheet hora a hora de todo el dia.
+    </p>
+
+    <h2>Horas manana Day Centre (verano) — del canvas @ £16/h</h2>
+    <p class="sub">
+      Patron semanal del canvas: Lun 4h + resto 2.5h ≈ <strong>14 h/sem manana</strong>.
+      Contrato orientativo ~20 h/sem → ~6 h/sem tarde/swim dentro del fijo.
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Mes</th>
+          <th class="num">£ pot manana</th>
+          <th class="num">Horas manana</th>
+          <th>vs ~14 h/sem</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Apr</td><td class="num">£632</td><td class="num">39.5 h</td><td>mes corto</td></tr>
+        <tr><td>May</td><td class="num">£1,000</td><td class="num">62.5 h</td><td>en linea (~14.5 h/sem)</td></tr>
+        <tr><td>Jun</td><td class="num">£1,000</td><td class="num">62.5 h</td><td>en linea (~14.5 h/sem)</td></tr>
+        <tr><td>Jul</td><td class="num">£1,056</td><td class="num">66.0 h</td><td>en linea (~15.3 h/sem)</td></tr>
+      </tbody>
+    </table>
+    <div class="box warn">
+      <strong>Horas de mas / de menos:</strong> en manana May–Jul no hay un bloque
+      grande de horas de mas respecto al patron ~14 h/sem. El fijo £2,166.67 ya
+      incluye manana + tarde/empresa. Por eso no sale pago extra aparte, salvo plus
+      documentado (como Feb £40 / Mar £186 / Apr £108 en payroll).
+    </div>
+
+    <h2>Como explicarselo (guion corto)</h2>
+    <ol>
+      <li>Tu contrato es fijo: £2,166.67 al mes (£26,000 al año), no por horas.</li>
+      <li>Desde septiembre te hemos pagado por banco £16,116.03 (nominas + £22.25 de gastos junio).</li>
+      <li>Junio ya esta cobrado (£2,147.14). Julio nomina aun no figura en el extracto Tide.</li>
+      <li>Por eso no hay pago extra aparte: lo que haces (manana DC, tarde, domingo swim segun rota) va dentro del fijo.</li>
+      <li>No hay en contabilidad un saldo tuyo de &quot;debes a la empresa&quot;. Si hubiera un adelanto concreto, habria que documentarlo aparte.</li>
+    </ol>
+
+    <h2>Pagos Tide (banco) - Roberto Reali</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha pago</th>
+          <th>Ref</th>
+          <th>Tipo</th>
+          <th class="num">Importe</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>2025-09-26</td><td>September</td><td>Nomina</td><td class="num">£432.00</td></tr>
+        <tr><td>2025-10-01</td><td>September</td><td>Nomina</td><td class="num">£333.24</td></tr>
+        <tr><td>2025-10-30</td><td>October</td><td>Nomina</td><td class="num">£1,488.66</td></tr>
+        <tr><td>2025-11-29</td><td>November</td><td>Nomina</td><td class="num">£1,457.18</td></tr>
+        <tr><td>2025-12-24</td><td>December</td><td>Nomina</td><td class="num">£1,356.38</td></tr>
+        <tr><td>2026-01-30</td><td>January</td><td>Nomina</td><td class="num">£1,643.78</td></tr>
+        <tr><td>2026-02-27</td><td>February</td><td>Nomina</td><td class="num">£1,672.58</td></tr>
+        <tr><td>2026-03-31</td><td>March</td><td>Nomina</td><td class="num">£1,777.90</td></tr>
+        <tr><td>2026-04-30</td><td>April</td><td>Nomina</td><td class="num">£1,721.74</td></tr>
+        <tr><td>2026-05-05</td><td>April (ajuste)</td><td>Nomina</td><td class="num">£209.60</td></tr>
+        <tr><td>2026-06-01</td><td>May</td><td>Nomina</td><td class="num">£1,853.58</td></tr>
+        <tr><td>2026-06-30</td><td>June</td><td>Nomina</td><td class="num">£2,147.14</td></tr>
+        <tr><td>2026-07-07</td><td>Expenses June</td><td>Gastos</td><td class="num">£22.25</td></tr>
+        <tr>
+          <td colspan="3"><strong>Total</strong></td>
+          <td class="num"><strong>£16,116.03</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Verano reciente</h2>
+    <table>
+      <thead>
+        <tr><th>Concepto</th><th class="num">Importe</th><th>Nota</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>May (pagado 1 Jun)</td><td class="num">£1,853.58</td><td>Por debajo del fijo</td></tr>
+        <tr><td>June (pagado 30 Jun)</td><td class="num">£2,147.14</td><td>Cerca del fijo £2,166.67</td></tr>
+        <tr><td>Expenses June (7 Jul)</td><td class="num">£22.25</td><td>Gastos, no salario</td></tr>
+        <tr><td>July nomina</td><td class="num">—</td><td>Aun no en extracto Tide</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Split contable Day Centre (no es deuda)</h2>
+    <p class="sub">
+      Como se reparte el coste del salario en P&amp;L manana vs tarde empresa.
+      La parte &quot;tarde/empresa&quot; es gasto del club, no un saldo a devolver por Roberto.
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Mes</th>
+          <th class="num">Salario contable</th>
+          <th class="num">→ DC manana</th>
+          <th class="num">→ Tarde/empresa</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>May</td><td class="num">£2,166.67</td><td class="num">£1,000.00</td><td class="num">£1,166.67</td></tr>
+        <tr><td>Jun (est.)</td><td class="num">£2,166.67</td><td class="num">£1,000.00</td><td class="num">£1,166.67</td></tr>
+        <tr><td>Jul (est.)</td><td class="num">£2,166.67</td><td class="num">£1,056.00</td><td class="num">£1,110.67</td></tr>
+      </tbody>
+    </table>
+
+    <p class="foot">
+      Fuentes: Tide ops Sep 2025–Jul 2026 (payee Roberto Reali) · portal FIXED_MONTHLY_SALARY
+      roberto = 2166.67 · canvas Day Centre may–jul 2026. Documento generado para briefing interno.
+      No es un payslip oficial ni carta legal.
+    </p>
+  </div>
+</body>
+</html>
