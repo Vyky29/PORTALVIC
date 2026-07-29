@@ -14,6 +14,8 @@
       --warn-bg: #fff7ed;
       --ok: #14532d;
       --ok-bg: #ecfdf5;
+      --info: #1e3a5f;
+      --info-bg: #eff6ff;
     }
     * { box-sizing: border-box; }
     body {
@@ -36,6 +38,7 @@
     }
     .box.warn { background: var(--warn-bg); border-color: #fdba74; color: var(--warn); }
     .box.ok { background: var(--ok-bg); border-color: #86efac; color: var(--ok); }
+    .box.info { background: var(--info-bg); border-color: #93c5fd; color: var(--info); }
     .stats {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -48,7 +51,7 @@
       padding: 12px;
       min-width: 0;
     }
-    .stat b { display: block; font-size: 1.25rem; }
+    .stat b { display: block; font-size: 1.25rem; overflow-wrap: break-word; }
     .stat span { color: var(--muted); font-size: 0.8rem; }
     table {
       width: 100%;
@@ -63,7 +66,7 @@
     }
     th { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; }
     td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-    ol { padding-left: 1.2rem; }
+    ol, ul { padding-left: 1.2rem; }
     li { margin: 6px 0; }
     .foot {
       margin-top: 28px;
@@ -74,7 +77,7 @@
     }
     @media print {
       .wrap { padding: 0; max-width: none; }
-      .box.warn, .box.ok { break-inside: avoid; }
+      .box.warn, .box.ok, .box.info { break-inside: avoid; }
     }
     @media (max-width: 640px) {
       .stats { grid-template-columns: 1fr; }
@@ -85,54 +88,62 @@
   <div class="wrap">
     <h1>Roberto Reali - cobrado y contrato</h1>
     <p class="sub">
-      Briefing interno · Sep 2025 a Jul 2026 · Tide + contrato fijo £26,000/ano
-      desde enero 2026 (no Scala)
+      Briefing interno · Sep 2025 a Jul 2026 · actualizado 29 jul 2026
+      (historial contrato, agosto SI, Mayo Q6, Abr shortfall, 17-31 jul)
     </p>
 
     <div class="stats">
       <div class="stat">
         <b>£16,116.03</b>
-        <span>Total pagado Tide Sep–Jul</span>
+        <span>Total pagado Tide Sep-Jul</span>
       </div>
       <div class="stat">
         <b>£2,166.67</b>
-        <span>Salario fijo / mes desde ene 2026</span>
+        <span>Fijo / mes desde ene 2026</span>
       </div>
       <div class="stat">
-        <b>£26,000</b>
-        <span>Contrato fijo / ano · ~32 h/sem</span>
+        <b>£4,333.34</b>
+        <span>Jul + Ago bruto (antes offset)</span>
       </div>
     </div>
 
     <div class="box ok">
-      <strong>Confirmacion Victor (jul 2026):</strong> &quot;ERAN 26 DESDE ENERO&quot;.
-      Contrato fijo propio <strong>£26,000/ano</strong> (£2,166.67/mes) desde
-      <strong>enero 2026</strong>. <u>No</u> se paga en Scala / Scale £/h.
-      El &quot;20k&quot; dicho antes fue lapsus / tarifa vieja Oct–Dic
-      (~£1,583.33/mes ≈ £19k) o el takeout socios de otro canvas — no el
-      contrato actual. Febrero no es el inicio: es el primer mes con plus (+£40).
-      Payslips / payroll SQL / portal FIXED_MONTHLY coinciden con £2,166.67.
+      <strong>Historial de contrato (Victor 29 jul):</strong>
+      <ul style="margin:8px 0 0;">
+        <li>
+          <strong>Sep 2025:</strong> arranca a <strong>£19,000/ano</strong>
+          (~£1,583.33/mes) y <strong>~24 h/sem</strong>.
+          Cuadra con payslips Oct-Dic (base ~£1,583).
+        </li>
+        <li>
+          <strong>Ene 2026:</strong> pasa a <strong>£26,000/ano</strong>
+          (£2,166.67/mes) y <strong>~32 h/sem</strong>. No Scala.
+        </li>
+        <li>
+          Se ha pagado en <strong>pro-rata de 12 meses</strong> →
+          <strong>Agosto SI le corresponde</strong> (anualizado; decision Victor).
+        </li>
+      </ul>
     </div>
 
     <div class="box warn">
-      <strong>Regla Victor (29 jul):</strong>
-      £2,166.67/mes = paquete ~<strong>32 h/sem</strong>. Si hizo
-      <strong>menos</strong>, esas horas se <strong>recuperan en otros meses
-      dentro del fijo</strong> — no como extra. Cuando las reclamo como EXTRA
-      (en vez de recuperacion), eso es el sobrerreclamo. No es dinero adeudado
-      A el. Cifra redonda Victor: ~£480. Calculo detallado ya hecho 24–25 jul:
-      <strong>£588</strong> (abajo).
+      <strong>Regla horas / overclaim:</strong>
+      £2,166.67/mes = paquete ~32 h/sem. Si hizo <strong>menos</strong>,
+      recupera en otros meses <strong>dentro del fijo</strong> — no como EXTRA.
+      Cuando reclamo recuperacion como EXTRA → sobrerreclamo.
+      Calc 24-25 jul: <strong>£588</strong> (Mar £144 + Abr £36 + Jun £408).
+      Cifra redonda Victor: ~£480.
     </div>
 
-    <h2>Calculo ya hecho (24–25 jul 2026) — NO reinventar</h2>
+    <h2>1. Calculo ya hecho (24-25 jul) — NO reinventar</h2>
     <p class="sub">
-      Chat agent <code>b46559df-b868-4060-a4b5-a77cadc0f87b</code>.
-      Fuente: tabla de payslips que Victor pegó (bruto/neto Sep25–Jun26) +
-      fotos timesheet extras mar/abr/may en assets
+      Chat <code>b46559df-b868-4060-a4b5-a77cadc0f87b</code>.
+      Fotos timesheet:
       <code>image-0159dc26…</code>, <code>image-d7884336…</code>,
-      <code>image-65331f41…</code>, <code>image-f669b83b…</code>.
+      <code>image-65331f41…</code>, <code>image-f669b83b…</code>
+      (assets Cursor; re-leidas 29 jul).
       Pregunta Victor: &quot;si le pagamos julio como enero, cuanto nos deberia?&quot;
-      → respuesta acordada: <strong>£588</strong>.
+      → <strong>£588</strong>.
     </p>
 
     <table>
@@ -142,83 +153,213 @@
           <th class="num">Bruto payslip</th>
           <th class="num">Deberia</th>
           <th class="num">De mas</th>
-          <th>Nota (calc 24–25 jul)</th>
+          <th>Nota (calc 24-25 jul)</th>
         </tr>
       </thead>
       <tbody>
         <tr><td>Ene 2026</td><td class="num">£2,166.67</td><td class="num">£2,166.67</td><td class="num">£0</td><td>Solo salario</td></tr>
-        <tr><td>Feb 2026</td><td class="num">£2,206.67</td><td class="num">£2,206.67</td><td class="num">£0</td><td>OK: Tinashe £40 fuera</td></tr>
-        <tr><td>Mar 2026</td><td class="num">£2,352.67</td><td class="num">£2,208.67</td><td class="num"><strong>+£144</strong></td><td>Sabados no debían ir como extra</td></tr>
-        <tr><td>Abr 2026</td><td class="num">£2,274.67</td><td class="num">£2,238.67</td><td class="num"><strong>+£36</strong></td><td>Vie 24 no; fire+30' OK</td></tr>
-        <tr><td>May 2026</td><td class="num">£2,166.67</td><td class="num">£2,166.67</td><td class="num">£0</td><td>Solo salario</td></tr>
-        <tr><td>Jun 2026</td><td class="num">£2,574.67</td><td class="num">£2,166.67</td><td class="num"><strong>+£408</strong></td><td>Extra mezclado en bruto; junio = 0 extras</td></tr>
-        <tr><td><strong>Total ene–jun</strong></td><td class="num"></td><td class="num"></td><td class="num"><strong>£588</strong></td><td>144+36+408. Julio = base no añade deuda</td></tr>
+        <tr><td>Feb 2026</td><td class="num">£2,206.67</td><td class="num">£2,206.67</td><td class="num">£0</td><td>OK: Tinashe £40</td></tr>
+        <tr><td>Mar 2026</td><td class="num">£2,352.67</td><td class="num">£2,208.67</td><td class="num"><strong>+£144</strong></td><td>Sabados no (fire/jue OK)</td></tr>
+        <tr><td>Abr 2026</td><td class="num">£2,274.67</td><td class="num">£2,238.67</td><td class="num"><strong>+£36</strong></td><td>Vie 24 no; 2× mie fire+30' OK (£72)</td></tr>
+        <tr><td>May 2026</td><td class="num">£2,166.67</td><td class="num">£2,166.67</td><td class="num">£0</td><td>Payslip = solo fijo (TS pedía £445.50 y NO se pago)</td></tr>
+        <tr><td>Jun 2026</td><td class="num">£2,574.67</td><td class="num">£2,166.67</td><td class="num"><strong>+£408</strong></td><td>0 extras debidos</td></tr>
+        <tr><td><strong>Total</strong></td><td class="num"></td><td class="num"></td><td class="num"><strong>£588</strong></td><td>144+36+408</td></tr>
       </tbody>
     </table>
-    <p class="sub">
-      Payslip extras mezclados en bruto (misma sesion): Sep +£540 · Oct +£368 ·
-      Nov +£324 · Dec +£184 · Feb +£40 · Mar +£186 · Abr +£108 · Jun +£408.
-      Ene/May: £0. ~£480 = cifra redonda de Victor sobre ese sobrerreclamo
-      (no un segundo calculo nuevo). Tide: sin loan formal.
-    </p>
 
-    <h2>Horas que cubre el £26k (chat operativo previo)</h2>
-    <p class="sub">
-      Bloque tipico reconstruido del chat de payslips / rota (~30.5–32 h/sem).
-      HR a veces dice &quot;PT 20h / Scale 2&quot; — eso es otro modelo; Victor
-      confirma fijo custom £26k, no Scala.
-    </p>
+    <h2>2. Abril — shortfall del paquete (hipotesis Victor)</h2>
+    <div class="box info">
+      <strong>Confirmado: el shortfall de abril NO estaba en la columna &quot;deberia&quot;.</strong>
+      El calc solo miro extras reclamados vs extras legitimos, no si el mes
+      completo quedo por debajo de ~32 h/sem.
+    </div>
     <table>
       <thead>
-        <tr>
-          <th>Bloque</th>
-          <th>Detalle</th>
-          <th class="num">h / sem</th>
-        </tr>
+        <tr><th>Senal</th><th class="num">Cifra</th><th>Nota</th></tr>
       </thead>
       <tbody>
         <tr>
-          <td>Manana L–V</td>
-          <td>Lun 3.5 · mar–vie 2.5</td>
-          <td class="num">13.5</td>
+          <td>Pot manana DC Abr (canvas £16/h)</td>
+          <td class="num">£632</td>
+          <td>~39.5 h manana · club abrio ~13 abr</td>
         </tr>
         <tr>
-          <td>Tarde L–V</td>
-          <td>Lun/mie 2 · mar/jue 2.5 · vie 2</td>
-          <td class="num">11.0</td>
+          <td>Pot manana DC May / Jun</td>
+          <td class="num">£1,000</td>
+          <td>~62.5 h manana</td>
         </tr>
         <tr>
-          <td>Domingo</td>
-          <td>6 h (desde jun 6.5)</td>
-          <td class="num">6.0–6.5</td>
+          <td>Menos vs May (solo manana)</td>
+          <td class="num">£368 / ~23 h</td>
+          <td>No reduce el £588 solo; <u>explica</u> recuperacion</td>
         </tr>
         <tr>
-          <td><strong>Total</strong></td>
-          <td>£2,166.67 ≈ ~135 h/mes @ £16 ≈ ~31–32 h/sem</td>
-          <td class="num"><strong>~30.5–32</strong></td>
+          <td>Salario Abr pagado</td>
+          <td class="num">£2,166.67 + £108</td>
+          <td>Fijo completo pese a menos horas + extras</td>
         </tr>
       </tbody>
     </table>
+    <p class="sub">
+      Bajo la regla Victor: abril corto ya iba pagado en el fijo; las horas de
+      recuperacion posteriores no debían cobrarse como EXTRA. Meter el shortfall
+      en &quot;deberia&quot; bajando el salario de abril <strong>aumentaria</strong>
+      el de-mas, no lo bajaria. El £588 sigue siendo el overclaim de extras.
+    </p>
 
-    <h2>Como explicarselo (guion corto)</h2>
-    <ol>
-      <li>Tu contrato es fijo custom (no Scala): £2,166.67 al mes (£26,000 al ano) desde enero 2026.</li>
-      <li>Ese fijo cubre ~30.5–32 h/semana (manana + tarde + domingo del acuerdo).</li>
-      <li>Si un mes haces menos de ~32h, esas horas se recuperan en otros meses dentro del mismo fijo — no como extra.</li>
-      <li>Desde septiembre te hemos pagado por banco £16,116.03 (nominas + £22.25 gastos junio).</li>
-      <li>Junio ya esta cobrado (£2,147.14). Julio nomina aun no figura en el extracto Tide.</li>
-      <li>La ~£480 no te la debemos: sobrerreclamo (horas de recuperacion cobradas como extra). Calc 24–25 jul: £588 (Mar £144 + Abr £36 + Jun £408); ~£480 = cifra redonda Victor.</li>
-    </ol>
+    <h2>3. Mayo — claim Roberto Q6 miercoles 11-12 × 6 dias</h2>
+    <div class="box info">
+      <strong>Payslip mayo = OK (£0 extras).</strong>
+      Foto TS mayo pedía ~£445.50 (patron lun 0.5 / mie 2 / vie 2 @ £24 + 1h training)
+      y <strong>no entro en nomina</strong>.
+    </div>
+    <ul>
+      <li>
+        Claim verbal Roberto (29 jul): miercoles <strong>11-12 con Q6</strong>,
+        <strong>6 dias</strong> → ~<strong>6 h</strong>.
+      </li>
+      <li>
+        Roster master en repo empieza jun; no hay MADRE mayo para verificar Q6
+        en BD desde aqui. La foto TS muestra miercoles con 2 h SI2 (29 abr + 6/13/20 may
+        en el tramo del PDF), no una linea &quot;Q6&quot; separada.
+      </li>
+      <li>
+        Si esas ~6 h eran <strong>dentro / recuperacion</strong> del paquete →
+        correcto que no se pagaran como EXTRA → mayo sigue OK; <strong>no cambia £588</strong>.
+      </li>
+      <li>
+        Si eran <strong>por encima</strong> del paquete y no pagadas → credito
+        orientativo ~£96 (@ £16) o ~£144 (@ £24 SI2) contra el offset (decision Victor).
+      </li>
+    </ul>
 
-    <h2>Pagos Tide (banco) - Roberto Reali</h2>
+    <h2>4. Contrato 17 jul vs trabajo hasta 31 jul</h2>
+    <div class="box warn">
+      <strong>Que hay documentado vs afirmacion Victor:</strong>
+      <ul style="margin:8px 0 0;">
+        <li>
+          En portal/admin: <strong>programas standard terminan vie 17 jul</strong>;
+          Day Centre + crash siguen hasta <strong>vie 31 jul</strong>.
+        </li>
+        <li>
+          Calc 25 jul ya decia: desde el 17 se acaba Acton tarde (solo crash + DC).
+        </li>
+        <li>
+          <strong>Fin de contrato laboral el 17 jul</strong>: lo afirma Victor ahora;
+          <u>no</u> aparece como carta/HR/termination en transcripts ni payroll SQL
+          revisados. Tratarlo como decision operativa Victor hasta tener papel.
+        </li>
+      </ul>
+    </div>
+
+    <h3>Horas MADRE Jul 18-31 (span diario, roster vivo)</h3>
     <table>
       <thead>
+        <tr><th>Semana</th><th class="num">h span</th><th>Nota</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Lun 20 - vie 24</td><td class="num">13.5</td><td>Fadi/Zakariya DC; sin tardes Acton</td></tr>
+        <tr><td>Lun 27 - vie 31</td><td class="num">19.5</td><td>Emanuel/Yaqoub + crash Acton 28/29</td></tr>
+        <tr><td><strong>Total 18-31</strong></td><td class="num"><strong>33.0</strong></td><td>Sin domingos en esas 2 semanas</td></tr>
+        <tr><td>Paquete 32h × 2 sem</td><td class="num">64.0</td><td>Iria <strong>31 h por debajo</strong> del paquete</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Tres lecturas del offset £588 (aritmetica clara)</h3>
+    <table>
+      <thead>
+        <tr><th>Si horas acordadas 18-31 son...</th><th class="num">Valor trabajo</th><th>Offset queda</th></tr>
+      </thead>
+      <tbody>
         <tr>
-          <th>Fecha pago</th>
-          <th>Ref</th>
-          <th>Tipo</th>
-          <th class="num">Importe</th>
+          <td>Mismo paquete 32h/sem</td>
+          <td class="num">33 vs 64 → corto</td>
+          <td class="num"><strong>£588 sigue</strong> (no hay &quot;de mas&quot;)</td>
         </tr>
+        <tr>
+          <td>Cero (contrato acabo 17; todo es catch-up)</td>
+          <td class="num">33 × £16 = <strong>£528</strong></td>
+          <td class="num"><strong>£60</strong> (588-528) o cancelar</td>
+        </tr>
+        <tr>
+          <td>Cero, valorado @ £24 SI2</td>
+          <td class="num">33 × £24 = <strong>£792</strong></td>
+          <td class="num"><strong>£0</strong> (absorbe y sobra ~£204)</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="sub">
+      Ojo: si Julio se paga el fijo completo £2,166.67 (mes anualizado), ese fijo
+      <strong>ya incluye</strong> 18-31. No se puede cobrar doble: o el mes fijo
+      cubre esas horas, o se prorratea julio al 17 y se pagan 18-31 aparte.
+      Victor debe elegir una logica.
+    </p>
+
+    <h2>5. Pendiente de pagar (Victor 29 jul)</h2>
+    <div class="box ok">
+      <strong>Agosto = SI</strong> (pro-rata 12 meses / anualizado £26k).
+      Julio bruto contractual £2,166.67 aun no en Tide (CSV corte 25 jul;
+      ultimo salario = junio £2,147.14 neto).
+    </div>
+    <table>
+      <thead>
+        <tr><th>Escenario</th><th class="num">Bruto</th><th>Nota</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Jul + Ago, sin tocar offset</td>
+          <td class="num"><strong>£4,333.34</strong></td>
+          <td>2 × 2,166.67</td>
+        </tr>
+        <tr>
+          <td>Jul + Ago − offset £588</td>
+          <td class="num"><strong>£3,745.34</strong></td>
+          <td>Offset clasico 25 jul intacto</td>
+        </tr>
+        <tr>
+          <td>Jul + Ago − offset residual £60</td>
+          <td class="num"><strong>£4,273.34</strong></td>
+          <td>Si 18-31 @ £16 cancela £528 del £588</td>
+        </tr>
+        <tr>
+          <td>Jul + Ago, offset cancelado</td>
+          <td class="num"><strong>£4,333.34</strong></td>
+          <td>Si Victor acepta 18-31 (y/o May Q6) como absorcion</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="sub">
+      Recomendacion operativa (no inventada): el caso mas limpio con
+      <strong>agosto SI + mes fijo julio</strong> es pagar
+      <strong>£4,333.34</strong> y decidir aparte si el £588 se descuenta,
+      se reduce a ~£60, o se perdona. Mezclar &quot;mes fijo&quot; + &quot;credito
+      por horas 18-31&quot; sin prorratear julio es doble conteo.
+    </p>
+
+    <h2>6. Horas del paquete £26k (~32 h/sem)</h2>
+    <table>
+      <thead>
+        <tr><th>Bloque</th><th>Detalle</th><th class="num">h / sem</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Manana L-V</td><td>Lun 3.5 · mar-vie 2.5</td><td class="num">13.5</td></tr>
+        <tr><td>Tarde L-V</td><td>Lun/mie 2 · mar/jue 2.5 · vie 2</td><td class="num">11.0</td></tr>
+        <tr><td>Domingo</td><td>6 h (desde jun 6.5)</td><td class="num">6.0-6.5</td></tr>
+        <tr><td><strong>Total</strong></td><td>£2,166.67 ≈ ~135 h/mes @ £16</td><td class="num"><strong>~30.5-32</strong></td></tr>
+      </tbody>
+    </table>
+
+    <h2>7. Septiembre - plan nuevo</h2>
+    <div class="box ok">
+      Part-time Day Centre + <strong>zero horas tardes</strong>, desde
+      <strong>septiembre</strong> (vuelta kids). Estimacion pro-rata £2,166.67/32h:
+      solo manana ~£914 · manana+domingo ~£1,320. Falta cifra exacta Victor.
+    </div>
+
+    <h2>Pagos Tide (banco)</h2>
+    <table>
+      <thead>
+        <tr><th>Fecha pago</th><th>Ref</th><th>Tipo</th><th class="num">Importe</th></tr>
       </thead>
       <tbody>
         <tr><td>2025-09-26</td><td>September</td><td>Nomina</td><td class="num">£432.00</td></tr>
@@ -234,88 +375,16 @@
         <tr><td>2026-06-01</td><td>May</td><td>Nomina</td><td class="num">£1,853.58</td></tr>
         <tr><td>2026-06-30</td><td>June</td><td>Nomina</td><td class="num">£2,147.14</td></tr>
         <tr><td>2026-07-07</td><td>Expenses June</td><td>Gastos</td><td class="num">£22.25</td></tr>
-        <tr>
-          <td colspan="3"><strong>Total</strong></td>
-          <td class="num"><strong>£16,116.03</strong></td>
-        </tr>
+        <tr><td colspan="3"><strong>Total</strong></td><td class="num"><strong>£16,116.03</strong></td></tr>
       </tbody>
     </table>
-
-    <h2>Verano reciente</h2>
-    <table>
-      <thead>
-        <tr><th>Concepto</th><th class="num">Importe</th><th>Nota</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>May (pagado 1 Jun)</td><td class="num">£1,853.58</td><td>Por debajo del fijo £2,166.67</td></tr>
-        <tr><td>June (pagado 30 Jun)</td><td class="num">£2,147.14</td><td>Cerca del fijo £2,166.67</td></tr>
-        <tr><td>Expenses June (7 Jul)</td><td class="num">£22.25</td><td>Gastos, no salario</td></tr>
-        <tr><td>July nomina</td><td class="num">—</td><td>Aun no en Tide (CSV corte 25 Jul)</td></tr>
-        <tr><td>August nomina</td><td class="num">—</td><td>Sin pago; Day Centre cerrado kids</td></tr>
-      </tbody>
-    </table>
-
-    <h2>Pendiente de pagar (29 jul 2026) - NO inventar Agosto</h2>
-    <div class="box warn">
-      <strong>Solido en banco:</strong> ultimo salario Tide = junio (£2,147.14 neto, 30 jun).
-      Julio bruto contractual <strong>£2,166.67</strong> aun no transferido. Agosto: <u>no hay
-      decision documentada</u> de si cobra fijo / holiday / £0 (club cerrado kids en agosto).
-    </div>
-    <table>
-      <thead>
-        <tr><th>Escenario</th><th class="num">Bruto</th><th>Nota</th></tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Solo julio (base, sin offset)</td>
-          <td class="num"><strong>£2,166.67</strong></td>
-          <td>Como ene; calc 25 jul</td>
-        </tr>
-        <tr>
-          <td>Julio minus overclaim £588</td>
-          <td class="num"><strong>£1,578.67</strong></td>
-          <td>Acordado 25 jul: 2166.67 - 588</td>
-        </tr>
-        <tr>
-          <td>Julio + agosto (si Victor decide pagar ago a fijo)</td>
-          <td class="num">£4,333.34 / £3,745.34</td>
-          <td>Sin / con offset en julio. Agosto = decision Victor</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <h2>Septiembre - plan nuevo (Victor 29 jul)</h2>
-    <div class="box ok">
-      <strong>Plan:</strong> part-time para Day Centre + <strong>zero horas tardes</strong>.
-      Empieza el modelo nuevo en <strong>septiembre</strong> (vuelta kids), no "en agosto
-      con el fijo viejo" salvo que Victor diga lo contrario.
-    </div>
-    <p class="sub">
-      Paquete actual del £26k (~32 h/sem): manana 13.5 + tarde 11 + domingo 6-6.5.
-      Si se quitan solo las tardes, falta decidir si el domingo sigue.
-      Estimacion orientativa (pro-rata del £2,166.67 / 32h) - Victor debe fijar cifra:
-    </p>
-    <table>
-      <thead>
-        <tr><th>Modelo Sep (estimacion)</th><th class="num">h/sem</th><th class="num">£/mes est.</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>Solo manana DC (sin tarde, sin domingo)</td><td class="num">13.5</td><td class="num">~£914</td></tr>
-        <tr><td>Manana DC + domingo (sin tarde)</td><td class="num">19.5</td><td class="num">~£1,320</td></tr>
-        <tr><td>Referencia pot DC canvas May-Jun</td><td class="num">~14 manana</td><td class="num">~£1,000</td></tr>
-        <tr><td>A £16/h solo manana (~13.5 x 4.33)</td><td class="num">~58.5 h/mes</td><td class="num">~£935</td></tr>
-      </tbody>
-    </table>
-    <p class="sub">
-      Decisiones abiertas: (1) agosto si/no; (2) offset £588 en julio si/no;
-      (3) domingo Sep si/no; (4) fijo nuevo mensual exacto vs £/h.
-    </p>
 
     <p class="foot">
-      Fuentes: Tide ops Sep 2025–Jul 2026 (CSV 25 Jul) · FIXED_MONTHLY 2166.67 · calc
-      overclaim chat b46559df (24–25 jul) payslips + fotos timesheet · regla
-      recuperacion horas (29 jul) · plan Sep DC PT + zero tardes (29 jul).
-      Briefing interno; no es payslip oficial.
+      Fuentes: Tide ops Sep25-Jul26 · FIXED_MONTHLY 2166.67 · calc overclaim
+      b46559df (24-25 jul) + fotos TS re-leidas · pot manana DC canvas Abr £632 /
+      May-Jun £1000 · MADRE roster_term_master Jul 18-31 span 33h · programas
+      standard end 17 jul (admin_dashboard) · decisiones Victor 29 jul (Sep £19k/24h,
+      Ene £26k/32h, Agosto SI, claim Q6, hipotesis Abr). Briefing interno; no payslip.
     </p>
   </div>
 </body>
