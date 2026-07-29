@@ -153,12 +153,66 @@
       line-height: 1.25;
       overflow-wrap: break-word;
     }
-    .pecs.fri-staff {
-      grid-template-columns: repeat(auto-fit, minmax(100px, 140px));
+    .fri-staff-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
       justify-content: center;
-      max-width: 520px;
+      gap: 12px 28px;
+      max-width: 640px;
       margin: 0 auto;
       width: 100%;
+      min-width: 0;
+    }
+    .fri-staff-row .fri-group {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(100px, 140px));
+      gap: 10px;
+      min-width: 0;
+      flex: 0 1 auto;
+    }
+    .fri-staff-row .fri-group.one {
+      grid-template-columns: minmax(100px, 140px);
+    }
+    .fri-staff-row .fri-sep {
+      width: 2px;
+      align-self: stretch;
+      min-height: 80px;
+      background: var(--line);
+      margin: 0 4px;
+      flex-shrink: 0;
+    }
+    .pec.person.medical {
+      position: relative;
+    }
+    .pec.person.medical .med-cross {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      z-index: 2;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2.5px solid var(--home);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+    }
+    .pec.person.medical .med-cross::before,
+    .pec.person.medical .med-cross::after {
+      content: "";
+      position: absolute;
+      background: var(--home);
+      border-radius: 2px;
+    }
+    .pec.person.medical .med-cross::before {
+      width: 14px;
+      height: 5px;
+    }
+    .pec.person.medical .med-cross::after {
+      width: 5px;
+      height: 14px;
     }
     .pec.red .lab { color: var(--home); }
     .pec {
@@ -260,7 +314,8 @@
     .page > .stack,
     .page > .legend,
     .page > .friday-box,
-    .page > .week {
+    .page > .week,
+    .friday-box > .fri-staff-row {
       position: relative;
       z-index: 0;
       flex-shrink: 0;
@@ -625,12 +680,10 @@
         septemberICanDo: SEPTEMBER_I_CAN_DO_IKRAM,
         fridayNote: {
           title: "Friday 31 · last session",
-          msg:
-            "Friday is my last session · I work with Luliya and Youssef because Michelle has a doctor appointment",
-          staff: [
-            { id: "luliya" },
-            { id: "youssef" },
-            { id: "michelle", label: "Michelle · Doctor", tone: "red" },
+          msg: "On Friday, I will work with Luliya and Youssef.",
+          withStaff: ["luliya", "youssef"],
+          asideStaff: [
+            { id: "michelle", label: "Michelle · Doctor", tone: "red", medical: true },
           ],
         },
       },
@@ -664,7 +717,8 @@
         (opts.wide ? " wide" : "") +
         (opts.wideCal ? " wide-cal" : "") +
         (opts.hero ? " hero" : "") +
-        (opts.person ? " person" : "");
+        (opts.person ? " person" : "") +
+        (opts.medical ? " medical" : "");
       let vis;
       if (opts.cal) {
         const midCls = "mid" + (opts.cal.midClass ? " " + opts.cal.midClass : "");
@@ -685,10 +739,32 @@
         vis =
           '<div class="vis' + visMod + '"><img src="' + opts.img + '" alt=""/></div>';
       }
+      const badge = opts.medical
+        ? '<span class="med-cross" aria-hidden="true"></span>'
+        : "";
       return (
-        '<div class="' + cls + '">' + vis +
+        '<div class="' + cls + '">' + badge + vis +
         '<div class="lab">' + opts.label + "</div></div>"
       );
+    }
+
+    function fridayStaffPec(entry) {
+      const sid = typeof entry === "string" ? entry : entry.id;
+      const s = STAFF_SEP.find((x) => x.id === sid);
+      if (!s) return "";
+      const label =
+        typeof entry === "string" ? s.name : entry.label || s.name;
+      const tone =
+        typeof entry === "string" ? "green" : entry.tone || "green";
+      const medical =
+        typeof entry === "string" ? false : !!entry.medical;
+      return pec({
+        label: label,
+        img: s.img,
+        tone: tone,
+        person: true,
+        medical: medical,
+      });
     }
 
     function monthCells(year, month, paint) {
@@ -784,29 +860,28 @@
               '<p class="friday-msg">' +
               kid.fridayNote.msg +
               "</p>" +
-              '<div class="pecs fri-staff">' +
-              kid.fridayNote.staff
-                .map((entry) => {
-                  const sid = typeof entry === "string" ? entry : entry.id;
-                  const s = STAFF_SEP.find((x) => x.id === sid);
-                  if (!s) return "";
-                  const label =
-                    typeof entry === "string"
-                      ? s.name
-                      : entry.label || s.name;
-                  const tone =
-                    typeof entry === "string"
-                      ? "green"
-                      : entry.tone || "green";
-                  return pec({
-                    label: label,
-                    img: s.img,
-                    tone: tone,
-                    person: true,
-                  });
-                })
-                .join("") +
-              "</div>" +
+              (function () {
+                const withList =
+                  kid.fridayNote.withStaff || kid.fridayNote.staff || [];
+                const asideList = kid.fridayNote.asideStaff || [];
+                const withHtml =
+                  '<div class="fri-group' +
+                  (withList.length === 1 ? " one" : "") +
+                  '">' +
+                  withList.map(fridayStaffPec).join("") +
+                  "</div>";
+                if (!asideList.length) {
+                  return '<div class="fri-staff-row">' + withHtml + "</div>";
+                }
+                return (
+                  '<div class="fri-staff-row">' +
+                  withHtml +
+                  '<div class="fri-sep" aria-hidden="true"></div>' +
+                  '<div class="fri-group one">' +
+                  asideList.map(fridayStaffPec).join("") +
+                  "</div></div>"
+                );
+              })() +
               "</div>"
             : "") +
           '<p class="note">This week · green = Day Centre · red = home</p>' +
