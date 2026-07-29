@@ -86,8 +86,8 @@ function money(n: unknown): string {
 // lowercase username / first name. A real import row for the month wins.
 type FixedSalarySpec = { amount: number; contractType: string; role?: string };
 const FIXED_MONTHLY_SALARY_BY_KEY: Record<string, FixedSalarySpec> = {
-  // Acuerdo Victor: £20k/yr fijo propio (no Scala). Not £26k.
-  roberto: { amount: 1666.67, contractType: "Part time" },
+  // Roberto: fijo custom £26k/yr desde ene 2026 (no Scala £/h).
+  roberto: { amount: 2166.67, contractType: "Part time" },
   raul: { amount: 4167, contractType: "Full time", role: "Director" },
   victor: { amount: 4167, contractType: "Full time", role: "Director" },
 };
