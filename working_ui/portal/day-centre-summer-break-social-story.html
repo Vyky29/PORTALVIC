@@ -182,37 +182,31 @@
       margin: 0 4px;
       flex-shrink: 0;
     }
-    .pec.person.medical {
+    .pec.person.holiday {
       position: relative;
     }
-    .pec.person.medical .med-cross {
+    .pec.person.holiday .hol-badge {
       position: absolute;
       top: 6px;
       right: 6px;
       z-index: 2;
-      width: 34px;
-      height: 34px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       background: #fff;
       border: 2.5px solid var(--home);
-      display: grid;
-      place-items: center;
-      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 3px;
+      box-sizing: border-box;
     }
-    .pec.person.medical .med-cross::before,
-    .pec.person.medical .med-cross::after {
-      content: "";
-      position: absolute;
-      background: var(--home);
-      border-radius: 2px;
-    }
-    .pec.person.medical .med-cross::before {
-      width: 14px;
-      height: 5px;
-    }
-    .pec.person.medical .med-cross::after {
-      width: 5px;
-      height: 14px;
+    .pec.person.holiday .hol-badge img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
     }
     .pec.red .lab { color: var(--home); }
     .pec {
@@ -514,8 +508,11 @@
       .pec.person .vis { max-height: 100px; }
       .pec.wide-cal .vis { max-height: 160px; }
     }
-    body.parent-view .toolbar .kids { display: none; }
-    body.parent-view .toolbar p {
+    /* Parent portal or deep link ?kid=… — one child only, no switcher */
+    body.parent-view .toolbar .kids,
+    body.individual-kid .toolbar .kids { display: none; }
+    body.parent-view .toolbar p,
+    body.individual-kid .toolbar p {
       max-width: none;
     }
 
@@ -732,7 +729,12 @@
           msg: "On Friday, I will work with Luliya and Youssef.",
           withStaff: ["luliya", "youssef"],
           asideStaff: [
-            { id: "michelle", label: "Michelle · Doctor", tone: "red", medical: true },
+            {
+              id: "michelle",
+              label: "Michelle is on holidays",
+              tone: "red",
+              holiday: true,
+            },
           ],
         },
       },
@@ -778,7 +780,7 @@
         (opts.wideCal ? " wide-cal" : "") +
         (opts.hero ? " hero" : "") +
         (opts.person ? " person" : "") +
-        (opts.medical ? " medical" : "");
+        (opts.holiday ? " holiday" : "");
       let vis;
       if (opts.cal) {
         const midCls = "mid" + (opts.cal.midClass ? " " + opts.cal.midClass : "");
@@ -799,8 +801,10 @@
         vis =
           '<div class="vis' + visMod + '"><img src="' + opts.img + '" alt=""/></div>';
       }
-      const badge = opts.medical
-        ? '<span class="med-cross" aria-hidden="true"></span>'
+      const badge = opts.holiday
+        ? '<span class="hol-badge" aria-hidden="true"><img src="' +
+          SUMMER +
+          '" alt=""/></span>'
         : "";
       return (
         '<div class="' + cls + '">' + badge + vis +
@@ -816,14 +820,14 @@
         typeof entry === "string" ? s.name : entry.label || s.name;
       const tone =
         typeof entry === "string" ? "green" : entry.tone || "green";
-      const medical =
-        typeof entry === "string" ? false : !!entry.medical;
+      const holiday =
+        typeof entry === "string" ? false : !!entry.holiday;
       return pec({
         label: label,
         img: s.img,
         tone: tone,
         person: true,
-        medical: medical,
+        holiday: holiday,
       });
     }
 
@@ -1142,8 +1146,23 @@
 
     const stories = document.getElementById("stories");
     const buttons = document.getElementById("kidButtons");
-    stories.innerHTML = KIDS.map(renderKid).join("");
-    buttons.innerHTML = KIDS.map((k, i) =>
+
+    const params = new URLSearchParams(location.search);
+    const kidParam = String(params.get("kid") || "").toLowerCase().trim();
+    const parentMode =
+      params.get("parent") === "1" || params.get("from") === "parent";
+    const printNow = params.get("print") === "1";
+    const kidLocked = KIDS.some((k) => k.id === kidParam);
+    const startKid = kidLocked ? kidParam : KIDS[0].id;
+    const kidsToRender = kidLocked
+      ? KIDS.filter((k) => k.id === kidParam)
+      : KIDS;
+
+    if (parentMode) document.body.classList.add("parent-view");
+    if (kidLocked) document.body.classList.add("individual-kid");
+
+    stories.innerHTML = kidsToRender.map(renderKid).join("");
+    buttons.innerHTML = kidsToRender.map((k, i) =>
       '<button type="button" data-id="' + k.id + '" class="' + (i === 0 ? "active" : "") + '">' +
       k.name + "</button>"
     ).join("");
@@ -1168,15 +1187,6 @@
       if (b) show(b.dataset.id);
     });
 
-    const params = new URLSearchParams(location.search);
-    const kidParam = String(params.get("kid") || "").toLowerCase().trim();
-    const parentMode =
-      params.get("parent") === "1" || params.get("from") === "parent";
-    const printNow = params.get("print") === "1";
-    const startKid = KIDS.some((k) => k.id === kidParam)
-      ? kidParam
-      : KIDS[0].id;
-    if (parentMode) document.body.classList.add("parent-view");
     show(startKid);
     document.getElementById("btnPrint").addEventListener("click", () => {
       window.print();
