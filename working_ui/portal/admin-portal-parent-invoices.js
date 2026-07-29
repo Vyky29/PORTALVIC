@@ -401,10 +401,16 @@
     var hay = blob + ' ' + notes + ' ' + readyBy + ' ' + ref;
     var n = rows.length;
     /* Office funder INV-Ps (LA/NHS) tagged in notes / ready_by. */
-    if (/schedule:monthly_11|_nhs_month_|_hf_month_/.test(hay)) {
+    if (/schedule:monthly_11|_hf_month_/.test(hay)) {
       return 'Monthly ×11 (Sep–Jul)';
     }
-    if (/schedule:year_1|_ealing_year_/.test(hay)) {
+    if (/schedule:year_1_bacs_12|_ealing_year_/.test(hay)) {
+      return 'Year · 12 BACS';
+    }
+    if (/schedule:year_1_monthly_11|_nhs_year_/.test(hay)) {
+      return 'Year · monthly ×11';
+    }
+    if (/schedule:year_1/.test(hay)) {
       return 'One-off payment (year)';
     }
     if (/schedule:term_3|_hf_term_/.test(hay)) {
