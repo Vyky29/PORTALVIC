@@ -2006,15 +2006,14 @@
     var cur = paidFilterForTerm(termId);
     var statusCur = payStatusFilterForTerm(termId);
     var stream = serviceKindForTerm(termId);
+    /* Status label only. Funding chips sit below with no second title. */
     var html = '<div class="pay-chip-filters pay-chip-filters--tbl" role="group" aria-label="Filters for this term">'
       + '<div class="pay-chip-row">'
       + '<span class="pay-chip-row__lab">Status</span>'
-      + filterChipBtn("paystatus", "", "All", !statusCur, "pay-chip--muted", termId)
       + filterChipBtn("paystatus", "paid", "Paid", statusCur === "paid", "pay-chip--paid-ok", termId)
       + filterChipBtn("paystatus", "outstanding", "Outstanding", statusCur === "outstanding", "pay-chip--out", termId)
       + "</div>"
-      + '<div class="pay-chip-row">'
-      + '<span class="pay-chip-row__lab">Paid</span>'
+      + '<div class="pay-chip-row" role="group" aria-label="Funding filter">'
       + filterChipBtn("paid", "", "All", !cur, "pay-chip--muted", termId);
     PAID_BY_OPTIONS.forEach(function (l) {
       /* Afterschool: no NHS chip — NHS Day Centre is on the other stream. */
