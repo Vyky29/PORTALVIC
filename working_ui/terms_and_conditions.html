@@ -157,8 +157,44 @@
     address { font-style: normal; margin: 0 0 12px; font-size: .92rem; min-width: 0; overflow-wrap: break-word; }
     @media print {
       body { background: #fff; }
-      article.tc { border: 0; }
+      article.tc { border: 0; border-radius: 0; }
+      .wrap { max-width: none; padding: 12mm 14mm 16mm; }
       .tc-logo-shell { box-shadow: none; }
+      .tc-print-break {
+        break-before: page;
+        page-break-before: always;
+      }
+      /* Keep headings with the content that follows; reduce orphan cuts. */
+      h2, h3 {
+        break-after: avoid-page;
+        page-break-after: avoid;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      h2 + *,
+      h3 + * {
+        break-before: avoid-page;
+        page-break-before: avoid;
+      }
+      .tc-keep,
+      .note,
+      address {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      table {
+        break-inside: auto;
+        page-break-inside: auto;
+      }
+      thead { display: table-header-group; }
+      tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      p, li {
+        orphans: 3;
+        widows: 3;
+      }
     }
 
   </style>
@@ -205,7 +241,7 @@
         Website: <a href="https://www.clubsensational.org">www.clubsensational.org</a>
       </address>
 
-      <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span class="tc-h__txt">How to contact us</span></h3>
+      <h3 class="tc-print-break"><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span class="tc-h__txt">How to contact us</span></h3>
       <table>
         <thead>
           <tr>
@@ -252,13 +288,16 @@
           responsible adult.</li>
       </ul>
 
+      <div class="tc-keep">
       <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="tc-h__txt">1.3 Supervision Before and After Sessions</span></h3>
       <ul>
         <li>Outside of scheduled sessions, the parent, guardian, or accompanying adult is fully responsible for
           supervising the participant and any other children in their care. clubSENsational is not liable for any
           incidents occurring before the session begins or after it has ended.</li>
       </ul>
+      </div>
 
+      <div class="tc-keep tc-print-break">
       <h3><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span><span class="tc-h__txt">1.4 Venue Rules and Safety Compliance</span></h3>
       <ul>
         <li>All parents, guardians, and accompanying adults must adhere to the health and safety policies set by both
@@ -266,6 +305,7 @@
         <li>It is your responsibility to ensure that anyone attending with you also follows these rules. Venue-specific
           information is available on our website and/or in enrolment materials.</li>
       </ul>
+      </div>
 
       <h2><span class="tc-h__ico"><svg class="tc-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span class="tc-h__txt">2. BOOKING &amp; RE-ENROLMENT</span></h2>
 
