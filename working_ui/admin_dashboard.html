@@ -91,7 +91,7 @@
   <script src="/portal/admin-training-progress.js?v=20260608-device-attribution"></script>
   <script src="/portal/admin-push-devices.js?v=20260619-push-devices"></script>
   <script src="/portal/portal_wellbeing_admin_actions.js?v=20260604-wb-flow-refine"></script>
-  <script src="/portal/admin-portal-parent-contact-edit.js?v=20260723-funding-names"></script>
+  <script src="/portal/admin-portal-parent-contact-edit.js?v=20260730-add-contact"></script>
   <script src="/portal/portal_announcement_media.js?v=20260713-ann-photos-ceo"></script>
   <script src="/portal/portal_participant_photos.js?v=20260720-zakariya-photo"></script>
   <!-- Roster bundle lazy-loaded via admin_heavy_scripts_loader.js (c4k_sessions, scheduling, …) -->
@@ -9212,7 +9212,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       try{
         var res = await client
           .from('portal_parent_contacts')
-          .select('contact_id,parent_display,parent_first_name,parent_last_name,child_display,email,mobile,address_line1,address_line2,city,postcode,registration_date,funding_label,payment_method_label')
+          .select('contact_id,parent_person_id,parent_display,parent_first_name,parent_last_name,child_display,child_first_name,child_last_name,email,mobile,address_line1,address_line2,city,postcode,dob_iso,in_class,on_waiting_list,registration_date,funding_label,payment_method_label')
           .limit(5000);
         if(res.error || !res.data || !res.data.length) return false;
         var byId = Object.create(null);
@@ -9221,11 +9221,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(cid) byId[cid] = row;
         });
         var src = typeof window !== 'undefined' ? window.PARTICIPANTS_PARENTS_PORTAL_SOURCE : null;
-        var rows = src && Array.isArray(src.rows) ? src.rows : [];
+        if(!src || !Array.isArray(src.rows)){
+          window.PARTICIPANTS_PARENTS_PORTAL_SOURCE = { rows: [] };
+          src = window.PARTICIPANTS_PARENTS_PORTAL_SOURCE;
+        }
+        var rows = src.rows;
         var changed = false;
         var mergeFn = window.AdminParentContactEdit && window.AdminParentContactEdit.mergeLiveContactIntoPortalRow;
+        var upsertFn = window.AdminParentContactEdit && window.AdminParentContactEdit.upsertLiveContactIntoParentsSource;
+        var seen = Object.create(null);
         for(var i = 0; i < rows.length; i++){
           var cid2 = String(rows[i].contactId || '').trim();
+          if(cid2) seen[cid2] = true;
           var live = cid2 ? byId[cid2] : null;
           if(!live) continue;
           if(typeof mergeFn === 'function'){
@@ -9240,6 +9247,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
           changed = true;
         }
+        /* Portal-only contacts (created in admin, not yet in the static export). */
+        Object.keys(byId).forEach(function(cid3){
+          if(seen[cid3]) return;
+          var live2 = byId[cid3];
+          if(!live2) return;
+          if(typeof upsertFn === 'function'){
+            upsertFn(live2);
+            changed = true;
+          }
+        });
         return changed;
       }catch(_e){
         return false;
@@ -9260,6 +9277,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         },
         getAnonKey: function(){
           return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        },
+        onCreated: function(cid){
+          try{
+            state.openPaxContactId = 'pp-' + String(cid || '').trim();
+          }catch(_id){}
+          try{
+            var bk = $('paxContactsBookingStatus');
+            if(bk) bk.value = 'all';
+          }catch(_bk){}
+          try{
+            if(typeof state.rebuildPaxContactsList === 'function') state.rebuildPaxContactsList();
+          }catch(_list){}
+          try{
+            if(typeof state.refreshPaxContactsFilters === 'function') state.refreshPaxContactsFilters();
+          }catch(_rf){}
+          try{
+            if(typeof state.reopenPaxDetail === 'function') state.reopenPaxDetail();
+          }catch(_open){}
         },
         onSaved: function(cid, fields, meta){
           try{
@@ -15235,7 +15270,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var pn = adminPortalNormalizedPersonName(adminParticipantsParentsChildDisplayName(r));
         if(!pn || seen[pn]) continue;
         var inCls = String(r.inClass || '').trim().toLowerCase();
-        if(inCls && inCls !== 'yes' && inCls !== 'y') continue;
+        var wlRow = r.onWaitingList === true || String(r.onWaitingList || '').toLowerCase() === 'true';
+        var liveCreated = r._livePortalCreated === true;
+        if(inCls && inCls !== 'yes' && inCls !== 'y' && !wlRow && !liveCreated) continue;
         catalog.push(r);
         seen[pn] = true;
       }
@@ -15381,7 +15418,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var i;
       if(catalog.length){
         for(i = 0; i < catalog.length; i++){
-          out.push(paxContactsPortalRowToPax(catalog[i], i, 'programme_in'));
+          var catRow = catalog[i];
+          var wlCat = catRow && (catRow.onWaitingList === true || String(catRow.onWaitingList || '').toLowerCase() === 'true');
+          var forceSt = wlCat ? 'waiting_list' : 'programme_in';
+          out.push(paxContactsPortalRowToPax(catRow, i, forceSt));
         }
       } else {
         var portal = adminParticipantsParentsPortalRows();
@@ -24191,6 +24231,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               });
             }
           };
+          state.refreshPaxContactsFilters = paxContactsRefreshFilters;
           state.reopenPaxDetail = function(){
             if(!state.openPaxContactId) return;
             var pp = paxContactsFindById(state.openPaxContactId);
@@ -24214,8 +24255,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var addB = $('paxContactsAddBtn');
           if(addB) addB.onclick = function(){
             try{
-              if(typeof portalAdminToast === 'function') portalAdminToast('Add contact will open your CRM flow when connected (demo).');
-              else if(window.alert) window.alert('Add contact — connect your CRM (demo).');
+              if(window.AdminParentContactEdit && typeof window.AdminParentContactEdit.openCreateModal === 'function'){
+                portalParentContactEditConfigureOnce();
+                window.AdminParentContactEdit.openCreateModal();
+                return;
+              }
+              if(typeof portalAdminToast === 'function') portalAdminToast('Add contact is not available right now.', 'warn');
             }catch(_a){}
           };
           root2.querySelectorAll('[data-pax-contacts-open]').forEach(function(bo){
