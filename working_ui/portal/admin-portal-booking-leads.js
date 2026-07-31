@@ -130,6 +130,32 @@
     var services = Array.isArray(r.services_viewed) && r.services_viewed.length
       ? esc(r.services_viewed.slice(0, 4).join(", "))
       : '<span class="muted">—</span>';
+    var formBits = [];
+    if (r.form_pdf_url) {
+      formBits.push(
+        '<button type="button" class="btn btn--pri btn--sm bk-lead-open-doc" data-url="' +
+          esc(r.form_pdf_url) +
+          '">Open PDF</button>'
+      );
+    }
+    if (r.form_photo_url) {
+      formBits.push(
+        '<button type="button" class="btn btn--ghost btn--sm bk-lead-open-doc" data-url="' +
+          esc(r.form_photo_url) +
+          '">Photo</button>'
+      );
+    }
+    if (!formBits.length) {
+      formBits.push(
+        '<button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_participant_documents">Forms folder</button>'
+      );
+    }
+    var formSub = r.form_participant_name
+      ? '<div class="muted" style="font-size:11px;margin-top:4px;overflow-wrap:break-word">' +
+        esc(r.form_participant_name) +
+        (r.form_type ? " · " + esc(String(r.form_type).replace(/_/g, " ")) : "") +
+        "</div>"
+      : "";
     return (
       "<tr>" +
       "<td><strong>" +
@@ -154,6 +180,12 @@
       "<td>" +
       verified +
       "</td>" +
+      "<td style=\"min-width:7rem\">" +
+      '<div class="toolbar" style="margin:0;flex-wrap:wrap;gap:6px">' +
+      formBits.join("") +
+      "</div>" +
+      formSub +
+      "</td>" +
       "<td>" +
       services +
       "</td>" +
@@ -169,14 +201,14 @@
     var meta = state.meta || {};
     var rows = state.leads || [];
     var body = state.loading
-      ? '<tr><td colspan="8" class="muted">Loading booking leads…</td></tr>'
+      ? '<tr><td colspan="9" class="muted">Loading booking leads…</td></tr>'
       : state.error
-        ? '<tr><td colspan="8" class="muted">Could not load leads (' +
+        ? '<tr><td colspan="9" class="muted">Could not load leads (' +
           esc(state.error) +
           ").</td></tr>"
         : rows.length
           ? rows.map(rowHtml).join("")
-          : '<tr><td colspan="8" class="muted">No booking leads match this filter. Try <strong>All</strong> or clear the search.</td></tr>';
+          : '<tr><td colspan="9" class="muted">No booking leads match this filter. Try <strong>All</strong> or clear the search.</td></tr>';
 
     host.innerHTML =
       '<div class="filter-row" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px">' +
@@ -221,7 +253,7 @@
       '<div class="card"><div class="card-pad" style="overflow:auto;padding:0">' +
       '<table class="tbl tbl--center tbl--dense" id="bkLeadTable">' +
       "<thead><tr>" +
-      "<th>Parent / carer</th><th>Email</th><th>Phone</th><th>Client</th><th>Booking / reg</th><th>OTP</th><th>Services viewed</th><th>Last activity</th>" +
+      "<th>Parent / carer</th><th>Email</th><th>Phone</th><th>Client</th><th>Booking / reg</th><th>OTP</th><th>Form PDF</th><th>Services viewed</th><th>Last activity</th>" +
       "</tr></thead><tbody>" +
       body +
       "</tbody></table></div></div>";
@@ -273,6 +305,29 @@
         void reload(host);
       });
     }
+    host.querySelectorAll(".bk-lead-open-doc").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var url = String(btn.getAttribute("data-url") || "")
+          .replace(/&amp;/g, "&")
+          .trim();
+        if (!url) {
+          cfg.toast("No PDF linked for this lead yet.");
+          return;
+        }
+        var win = window.open(url, "_blank", "noopener,noreferrer");
+        if (!win) {
+          cfg.toast("Pop-up blocked — allow pop-ups, or use Documents → Participant documents.");
+        }
+      });
+    });
+    host.querySelectorAll("[data-view-target]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-view-target");
+        if (id && typeof window.portalAdminSetView === "function") {
+          window.portalAdminSetView(id);
+        }
+      });
+    });
   }
 
   function viewHtml() {
@@ -281,9 +336,9 @@
       '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">' +
       "Families who requested an access code on the public Booking Portal. " +
       "Sidebar: <strong>Operator → Enquiries &amp; intake</strong>. " +
-      "Default list shows <strong>all</strong> leads — change the filter if you only want prospective visitors. " +
-      "Verified means they entered the OTP and can browse the offer. " +
-      "Registration starts when they press Book and submit the form." +
+      "Use <strong>Open PDF</strong> when the parent already submitted a registration form (matched by email). " +
+      "All forms also live under <strong>Documents → Participant documents</strong>. " +
+      "Verified means they entered the OTP and can browse the offer." +
       "</p>" +
       '<div id="bkLeadHost"></div>'
     );

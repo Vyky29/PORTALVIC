@@ -90,6 +90,69 @@ Deno.serve(async (req) => {
     });
   }
 
+  /* Attach newest registration PDF/photo per parent email (Participant documents). */
+  const emails = [
+    ...new Set(
+      leads
+        .map((r) => String(r.email || "").trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  ];
+  /** @type {Record<string, { pdf_signed_url: string | null, photo_signed_url: string | null, participant_name: string | null, submitted_at: string | null, form_type: string | null }>} */
+  const docsByEmail = {};
+  if (emails.length) {
+    const { data: docs, error: docsErr } = await admin
+      .from("portal_participant_documents")
+      .select(
+        "parent_email, participant_name, form_type, pdf_storage_path, photo_storage_path, submitted_at",
+      )
+      .order("submitted_at", { ascending: false })
+      .limit(400);
+    if (docsErr) {
+      console.warn("[portal-admin-booking-leads-list] docs", docsErr.message);
+    } else {
+      const emailSet = new Set(emails);
+      for (const doc of docs || []) {
+        const em = String(doc.parent_email || "").trim().toLowerCase();
+        if (!em || !emailSet.has(em) || docsByEmail[em]) continue;
+        let pdfSigned = null;
+        let photoSigned = null;
+        if (doc.pdf_storage_path) {
+          const { data: pdfUrl } = await admin.storage
+            .from("participant-documents")
+            .createSignedUrl(doc.pdf_storage_path, 3600);
+          pdfSigned = pdfUrl?.signedUrl ?? null;
+        }
+        if (doc.photo_storage_path) {
+          const { data: photoUrl } = await admin.storage
+            .from("participant-documents")
+            .createSignedUrl(doc.photo_storage_path, 3600);
+          photoSigned = photoUrl?.signedUrl ?? null;
+        }
+        docsByEmail[em] = {
+          pdf_signed_url: pdfSigned,
+          photo_signed_url: photoSigned,
+          participant_name: doc.participant_name || null,
+          submitted_at: doc.submitted_at || null,
+          form_type: doc.form_type || null,
+        };
+      }
+    }
+  }
+
+  leads = leads.map((row) => {
+    const em = String(row.email || "").trim().toLowerCase();
+    const doc = em ? docsByEmail[em] : null;
+    return {
+      ...row,
+      form_pdf_url: doc?.pdf_signed_url || null,
+      form_photo_url: doc?.photo_signed_url || null,
+      form_participant_name: doc?.participant_name || null,
+      form_submitted_at: doc?.submitted_at || null,
+      form_type: doc?.form_type || null,
+    };
+  });
+
   const since24 = Date.now() - 24 * 60 * 60 * 1000;
   const new24h = leads.filter((r) => {
     const t = new Date(String(r.created_at || "")).getTime();

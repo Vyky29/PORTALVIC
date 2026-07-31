@@ -102,10 +102,14 @@
         var formLab = FORM_LABELS[d.form_type] || d.form_type || '—';
         var parentLine = [d.parent_name, d.parent_email].filter(Boolean).join(' · ') || '—';
         var pdfLink = d.pdf_signed_url
-          ? '<a href="' + esc(d.pdf_signed_url) + '" target="_blank" rel="noopener">Open PDF</a>'
+          ? '<button type="button" class="btn btn--pri btn--sm portal-pax-doc-open" data-url="' +
+            esc(d.pdf_signed_url) +
+            '">Open PDF</button>'
           : '—';
         var photoLink = d.photo_signed_url
-          ? '<a href="' + esc(d.photo_signed_url) + '" target="_blank" rel="noopener">View photo</a>'
+          ? '<button type="button" class="btn btn--ghost btn--sm portal-pax-doc-open" data-url="' +
+            esc(d.photo_signed_url) +
+            '">View photo</button>'
           : '—';
         var slotLine = '—';
         try {
@@ -164,6 +168,20 @@
       ? '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">Matched to <strong>' + esc(participantName) + '</strong> (' + esc(String((res.documents || []).length)) + ').</p>'
       : '<p class="muted" style="margin:0 0 10px">' + esc(String((res.documents || []).length)) + ' submission(s).</p>';
     hostEl.innerHTML = intro + documentsTableHtml(res.documents, participantName ? 'No parent forms matched this participant yet.' : 'No parent forms submitted yet.');
+    hostEl.querySelectorAll('.portal-pax-doc-open').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var url = String(btn.getAttribute('data-url') || '')
+          .replace(/&amp;/g, '&')
+          .trim();
+        if (!url) return;
+        var win = global.open(url, '_blank', 'noopener,noreferrer');
+        if (!win) {
+          try {
+            global.location.href = url;
+          } catch (_e) {}
+        }
+      });
+    });
   }
 
   function bindModule() {
