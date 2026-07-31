@@ -21,7 +21,8 @@
   };
 
   var state = {
-    filter: "prospective",
+    /* Default all — prospective-only hid registered / waiting-list new families. */
+    filter: "all",
     q: "",
     leads: [],
     meta: {},
@@ -100,7 +101,12 @@
         apikey: cfg.getAnonKey(),
       },
       body: JSON.stringify({
-        client_status: state.filter === "all" ? "all" : state.filter,
+        client_status:
+          state.filter === "all" || state.filter === "reg_started"
+            ? "all"
+            : state.filter,
+        booking_status:
+          state.filter === "reg_started" ? "registration_submitted" : "all",
         q: state.q,
         limit: 200,
       }),
@@ -170,26 +176,32 @@
           ").</td></tr>"
         : rows.length
           ? rows.map(rowHtml).join("")
-          : '<tr><td colspan="8" class="muted">No booking leads match this filter.</td></tr>';
+          : '<tr><td colspan="8" class="muted">No booking leads match this filter. Try <strong>All</strong> or clear the search.</td></tr>';
 
     host.innerHTML =
       '<div class="filter-row" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px">' +
       '<input class="inp" id="bkLeadSearch" type="search" placeholder="Search name, email, phone…" value="' +
       esc(state.q) +
       '" style="max-width:260px;min-width:0" />' +
-      '<select class="inp" id="bkLeadFilter" style="max-width:200px">' +
+      '<select class="inp" id="bkLeadFilter" style="max-width:220px">' +
+      '<option value="all"' +
+      (state.filter === "all" ? " selected" : "") +
+      ">All leads</option>" +
       '<option value="prospective"' +
       (state.filter === "prospective" ? " selected" : "") +
-      ">Prospective (new)</option>" +
-      '<option value="active_client"' +
-      (state.filter === "active_client" ? " selected" : "") +
-      ">Existing clients</option>" +
+      ">Prospective (new visitors)</option>" +
       '<option value="registered"' +
       (state.filter === "registered" ? " selected" : "") +
       ">Registered</option>" +
-      '<option value="all"' +
-      (state.filter === "all" ? " selected" : "") +
-      ">All</option>" +
+      '<option value="reg_started"' +
+      (state.filter === "reg_started" ? " selected" : "") +
+      ">Registration submitted</option>" +
+      '<option value="active_client"' +
+      (state.filter === "active_client" ? " selected" : "") +
+      ">Existing clients</option>" +
+      '<option value="waiting_list"' +
+      (state.filter === "waiting_list" ? " selected" : "") +
+      ">Waiting list</option>" +
       "</select>" +
       '<button type="button" class="btn btn--sec btn--sm" id="bkLeadRefresh">Refresh</button>' +
       "</div>" +
@@ -265,10 +277,11 @@
 
   function viewHtml() {
     return (
-      '<h1 class="page-title">Booking Portal leads</h1>' +
+      '<h1 class="page-title">Enquiries &amp; intake</h1>' +
       '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">' +
       "Families who requested an access code on the public Booking Portal. " +
-      "<strong>New visitor</strong> needs name, email and phone. " +
+      "Sidebar: <strong>Operator → Enquiries &amp; intake</strong>. " +
+      "Default list shows <strong>all</strong> leads — change the filter if you only want prospective visitors. " +
       "Verified means they entered the OTP and can browse the offer. " +
       "Registration starts when they press Book and submit the form." +
       "</p>" +

@@ -79,7 +79,7 @@
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260716-slot-hold"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260709-family-credits"></script>
-  <script src="/portal/admin-portal-booking-leads.js?v=20260724-booking-leads"></script>
+  <script src="/portal/admin-portal-booking-leads.js?v=20260731-leads-nav"></script>
   <script src="/portal/admin-portal-parent-credits.js?v=20260709-family-credits"></script>
   <script src="/portal/admin-portal-xero-products.js?v=20260716-add-product-rows"></script>
   <script src="/portal/admin-portal-parent-invoices.js?v=20260729-inv-due-asc"></script>
@@ -466,7 +466,7 @@
     var ADMIN_MOBILE_MAX_WIDTH = 899;
     var MOBILE_BOTTOM_NAV_IDS = ['nav_hub', 'dashboard', 'operations_admin', 'nav_all_menu'];
     var NAV_GROUPS = [
-      { id:'g_operator', label:'Operator', children:['dashboard','__h:Sessions','c4k_sessions','session_disruptions','operations_admin','operator'] },
+      { id:'g_operator', label:'Operator', children:['dashboard','__h:Sessions','c4k_sessions','session_disruptions','operations_admin','operator','__h:Intake','leads','receptionist'] },
       { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','__h:Participants','clients','portal_nav_client_services','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops','portal_parent_notify_log','portal_staff_whatsapp','portal_parent_broadcast'] },
       { id:'g_zoho', label:'H&R', children:['staffhr','onboarding','staffhr_contracts','staffhr_training_records','interviews'] },
       { id:'g_supabase', label:'Documents', children:['__h:Policies','policies_portal','policies','__h:Day Centre','day_centre_documents','__h:Participants','portal_participant_documents','portal_parent_consents','__h:Workers','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
