@@ -142,6 +142,16 @@
       } catch (_eSess) {
         /* ignore */
       }
+      try {
+        var leadTok =
+          (global.PortalBookingLeadGate &&
+            typeof global.PortalBookingLeadGate.getSessionToken === "function" &&
+            global.PortalBookingLeadGate.getSessionToken()) ||
+          "";
+        if (leadTok) fd.append("booking_lead_session", String(leadTok));
+      } catch (_eLead) {
+        /* ignore */
+      }
       return fd;
     }
 
@@ -157,6 +167,16 @@
         "";
       if (tokHdr) headers["x-booking-service-session"] = String(tokHdr);
     } catch (_eHdr) {
+      /* ignore */
+    }
+    try {
+      var leadHdr =
+        (global.PortalBookingLeadGate &&
+          typeof global.PortalBookingLeadGate.getSessionToken === "function" &&
+          global.PortalBookingLeadGate.getSessionToken()) ||
+        "";
+      if (leadHdr) headers["x-booking-lead-session"] = String(leadHdr);
+    } catch (_eLeadHdr) {
       /* ignore */
     }
 

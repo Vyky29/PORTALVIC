@@ -98,6 +98,117 @@ async function sha256Hex(value: string): Promise<string> {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+function phoneLast10(raw: string | null): string {
+  const digits = String(raw || "").replace(/\D/g, "");
+  return digits.length >= 10 ? digits.slice(-10) : digits;
+}
+
+function emailNorm(raw: string | null): string {
+  return String(raw || "").trim().toLowerCase();
+}
+
+const BOOKING_STATUS_RANK: Record<string, number> = {
+  new_lead: 0,
+  exploring_services: 1,
+  waiting_list: 2,
+  no_booking: 1,
+  registration_started: 3,
+  booking_started: 3,
+  registration_submitted: 4,
+  booking_completed: 5,
+};
+
+const REG_STATUS_RANK: Record<string, number> = {
+  not_started: 0,
+  started: 1,
+  submitted: 2,
+};
+
+/** Mark matching booking-portal leads as registration submitted (email, phone, or lead session). */
+async function markBookingLeadsSubmitted(
+  admin: ReturnType<typeof createClient>,
+  opts: {
+    parentEmail: string | null;
+    parentPhone: string | null;
+    leadSessionToken: string | null;
+  },
+): Promise<number> {
+  const leadIds = new Set<string>();
+  const token = String(opts.leadSessionToken || "").trim();
+  if (/^[a-f0-9]{32,128}$/i.test(token)) {
+    const tokenHash = await sha256Hex(token);
+    const { data: sess } = await admin
+      .from("portal_booking_lead_sessions")
+      .select("lead_id, expires_at, revoked_at")
+      .eq("token_hash", tokenHash)
+      .maybeSingle();
+    if (
+      sess?.lead_id &&
+      !sess.revoked_at &&
+      new Date(String(sess.expires_at)).getTime() >= Date.now()
+    ) {
+      leadIds.add(String(sess.lead_id));
+    }
+  }
+
+  const email = emailNorm(opts.parentEmail);
+  if (email) {
+    const { data: byEmail } = await admin
+      .from("portal_booking_leads")
+      .select("id")
+      .eq("email_norm", email)
+      .limit(5);
+    for (const row of byEmail || []) {
+      if (row?.id) leadIds.add(String(row.id));
+    }
+  }
+
+  const phone = phoneLast10(opts.parentPhone);
+  if (phone.length >= 10) {
+    const { data: byPhone } = await admin
+      .from("portal_booking_leads")
+      .select("id")
+      .eq("phone_lookup", phone)
+      .limit(5);
+    for (const row of byPhone || []) {
+      if (row?.id) leadIds.add(String(row.id));
+    }
+  }
+
+  if (!leadIds.size) return 0;
+
+  const nowIso = new Date().toISOString();
+  let updated = 0;
+  for (const id of leadIds) {
+    const { data: lead } = await admin
+      .from("portal_booking_leads")
+      .select("id, booking_status, registration_status")
+      .eq("id", id)
+      .maybeSingle();
+    if (!lead) continue;
+
+    const patch: Record<string, unknown> = {
+      last_activity_at: nowIso,
+      updated_at: nowIso,
+    };
+    const curBook = BOOKING_STATUS_RANK[String(lead.booking_status)] ?? 0;
+    if (curBook < BOOKING_STATUS_RANK.registration_submitted) {
+      patch.booking_status = "registration_submitted";
+    }
+    const curReg = REG_STATUS_RANK[String(lead.registration_status)] ?? 0;
+    if (curReg < REG_STATUS_RANK.submitted) {
+      patch.registration_status = "submitted";
+    }
+    const { error } = await admin.from("portal_booking_leads").update(patch).eq("id", id);
+    if (error) {
+      console.warn("[portal-parent-form-submit] lead status", id, error.message);
+    } else {
+      updated += 1;
+    }
+  }
+  return updated;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { ok: false, error: "method_not_allowed" });
@@ -175,6 +286,10 @@ Deno.serve(async (req) => {
     String(form.get("booking_service_session") || req.headers.get("x-booking-service-session") || ""),
     200,
   );
+  const bookingLeadSessionToken = sanitizePart(
+    String(form.get("booking_lead_session") || req.headers.get("x-booking-lead-session") || ""),
+    200,
+  );
 
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const safeName = sanitizeFilenamePart(participantName);
@@ -249,6 +364,17 @@ Deno.serve(async (req) => {
     } catch (syncErr) {
       console.warn("[portal-parent-form-submit] avatar sync", syncErr);
     }
+  }
+
+  try {
+    const n = await markBookingLeadsSubmitted(admin, {
+      parentEmail,
+      parentPhone,
+      leadSessionToken: bookingLeadSessionToken,
+    });
+    if (n) console.log("[portal-parent-form-submit] marked leads submitted", n);
+  } catch (leadErr) {
+    console.warn("[portal-parent-form-submit] lead status update", leadErr);
   }
 
   let reservationId: string | null = null;

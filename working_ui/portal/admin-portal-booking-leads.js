@@ -175,7 +175,10 @@
       "<td>" +
       chip(String(r.booking_status || "").replace(/_/g, " "), statusTone(r.booking_status)) +
       "<div style=\"margin-top:4px\">" +
-      chip(String(r.registration_status || "").replace(/_/g, " "), "info") +
+      chip(
+        String(r.registration_status || "").replace(/_/g, " "),
+        String(r.registration_status || "").toLowerCase() === "submitted" ? "ok" : "info"
+      ) +
       "</div></td>" +
       "<td>" +
       verified +
