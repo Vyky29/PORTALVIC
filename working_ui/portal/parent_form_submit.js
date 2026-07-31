@@ -155,30 +155,12 @@
       return fd;
     }
 
+    // Keep tokens in FormData only (not custom request headers) so CORS preflight
+    // stays on authorization/apikey and cannot block submit as a fake "network" error.
     var headers = {
       Authorization: "Bearer " + key,
       apikey: key,
     };
-    try {
-      var tokHdr =
-        (global.PortalBookingServicePresence &&
-          typeof global.PortalBookingServicePresence.getToken === "function" &&
-          global.PortalBookingServicePresence.getToken()) ||
-        "";
-      if (tokHdr) headers["x-booking-service-session"] = String(tokHdr);
-    } catch (_eHdr) {
-      /* ignore */
-    }
-    try {
-      var leadHdr =
-        (global.PortalBookingLeadGate &&
-          typeof global.PortalBookingLeadGate.getSessionToken === "function" &&
-          global.PortalBookingLeadGate.getSessionToken()) ||
-        "";
-      if (leadHdr) headers["x-booking-lead-session"] = String(leadHdr);
-    } catch (_eLeadHdr) {
-      /* ignore */
-    }
 
     return doFetch(base, key, buildFormData(), headers)
       .catch(function (err) {

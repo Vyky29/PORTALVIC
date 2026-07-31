@@ -6,7 +6,10 @@ import { syncParentFormPhotoToParticipantAvatar } from "../_shared/participant_a
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  // Custom booking headers must be listed or browsers fail the preflight as "Failed to fetch"
+  // (shown to parents as a generic network error).
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-booking-lead-session, x-booking-service-session",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
