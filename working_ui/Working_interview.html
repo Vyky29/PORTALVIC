@@ -985,6 +985,37 @@
       display:none !important;
     }
 
+    .auth-status-bar{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      gap:10px 14px;
+      margin:0 0 14px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(185,28,28,.35);
+      background:rgba(185,28,28,.1);
+      color:var(--text);
+      font-size:14px;
+      line-height:1.45;
+      max-width:100%;
+      min-width:0;
+    }
+    .auth-status-bar.is-ok{
+      border-color:rgba(22,163,74,.35);
+      background:rgba(22,163,74,.1);
+    }
+    .auth-status-bar a{
+      color:inherit;
+      font-weight:700;
+      text-decoration:underline;
+    }
+    .auth-status-bar .auth-status-msg{
+      flex:1 1 220px;
+      min-width:0;
+      overflow-wrap:anywhere;
+    }
+
     .phase-block{
       border-radius:18px;
       padding:16px 16px 18px;
@@ -1279,13 +1310,17 @@
   <div class="page">
 
     <div id="mainPortal">
+    <div id="interviewAuthStatus" class="auth-status-bar" role="status" aria-live="polite">
+      <span class="auth-status-msg" id="interviewAuthStatusMsg">Checking staff login…</span>
+      <a id="interviewAuthLoginLink" class="hidden" href="/login.html">Sign in to staff portal</a>
+    </div>
     <section class="topbar">
       <div class="topbar-grid">
         <div class="brand">
           <h1>Interview and Onboarding Portal</h1>
           <p>Search candidates, create records, continue interview stages, complete onboarding, and review a saved history log from the same page.</p>
           <p id="portalOnboardingSupabaseHint" class="hidden" style="margin-top:10px;font-size:13px;line-height:1.5;color:var(--muted);max-width:720px;">
-            Browser-only mode: sign in with your staff portal account (same site as the dashboards), or add <code style="font-size:12px;color:var(--text);">onboarding_portal_config.js</code> for local Supabase (see <code style="font-size:12px;color:var(--text);">onboarding_portal_config.example.js</code>). Shared data requires login; do not commit config files with real keys.
+            Not signed in: this page will not load or save shared interviews (including smoke tests and recordings). Sign in on the staff portal first, then open Interviews again from Admin.
           </p>
         </div>
 
@@ -1357,11 +1392,40 @@
     let sharedRefreshTimer = null;
     let sharedRealtimeChannel = null;
 
+    function interviewLoginUrl() {
+      try {
+        return "/login.html?next=" + encodeURIComponent(window.location.href);
+      } catch (_e) {
+        return "/login.html";
+      }
+    }
+
+    function setInterviewAuthStatus(ok, message) {
+      const bar = document.getElementById("interviewAuthStatus");
+      const msg = document.getElementById("interviewAuthStatusMsg");
+      const link = document.getElementById("interviewAuthLoginLink");
+      if (msg) msg.textContent = message || "";
+      if (bar) bar.classList.toggle("is-ok", !!ok);
+      if (link) {
+        link.href = interviewLoginUrl();
+        if (ok) link.classList.add("hidden");
+        else link.classList.remove("hidden");
+      }
+    }
+
     function syncPortalOnboardingHintVisibility() {
       const hint = document.getElementById("portalOnboardingSupabaseHint");
       if (!hint) return;
       if (portalUseSupabase) hint.classList.add("hidden");
       else hint.classList.remove("hidden");
+      if (portalUseSupabase) {
+        setInterviewAuthStatus(true, "Signed in — interviews and recordings sync to the club database.");
+      } else {
+        setInterviewAuthStatus(
+          false,
+          "Not signed in — nothing is saved to the shared Interviews list. Sign in first, then reopen this page from Admin → Interviews."
+        );
+      }
     }
 
     async function bootstrapPortalOnboardingSupabase() {
@@ -1372,8 +1436,23 @@
         if (mod && typeof mod.getSupabaseClient === "function") {
           const c = mod.getSupabaseClient();
           if (c && c.auth) {
-            const { data: authData } = await c.auth.getUser();
-            if (authData && authData.user) {
+            // Prefer local session (fast/reliable). getUser() alone can fail transiently and leave the page in browser-only mode.
+            let user = null;
+            try {
+              const sess = await c.auth.getSession();
+              user = sess && sess.data && sess.data.session && sess.data.session.user;
+            } catch (_eSess) {
+              /* ignore */
+            }
+            if (!user) {
+              try {
+                const gu = await c.auth.getUser();
+                user = gu && gu.data && gu.data.user;
+              } catch (_eUser) {
+                /* ignore */
+              }
+            }
+            if (user) {
               supabaseClient = c;
               portalUseSupabase = true;
               return;
@@ -1388,13 +1467,40 @@
         supabaseClient = window.supabase.createClient(cfg.url, cfg.anonKey, {
           auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
         });
-        portalUseSupabase = true;
+        try {
+          const sess = await supabaseClient.auth.getSession();
+          if (sess && sess.data && sess.data.session && sess.data.session.user) {
+            portalUseSupabase = true;
+            return;
+          }
+        } catch (_eCfg) {
+          /* ignore */
+        }
+        // Config present but no staff session — do not pretend cloud sync works.
+        supabaseClient = null;
+        portalUseSupabase = false;
       }
     }
 
     function getSupabase() {
       if (!portalUseSupabase || !supabaseClient) return null;
       return supabaseClient;
+    }
+
+    function notifySaveFailure(err, context) {
+      const raw = String((err && (err.message || err.error_description || err.code)) || err || "unknown").trim();
+      console.error("Save error", context || "", err);
+      const hint =
+        /jwt|auth|row-level|rls|permission|not authenticated/i.test(raw)
+          ? " Sign in to the staff portal and try again."
+          : /payload|too large|413|statement timeout|bytes/i.test(raw)
+            ? " A recording may be too large — stop/restart the recording shorter, then Save again."
+            : "";
+      try {
+        alert("Could not save interview to the club database (" + raw + ")." + hint);
+      } catch (_e) {
+        /* ignore */
+      }
     }
 
     function loadCandidatesFromStorage() {
@@ -1519,13 +1625,18 @@
         return;
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(candidates));
-      if (candidateId) {
-        const target = candidates.find(c => c.id === candidateId);
-        if (target) await saveCandidateToSupabase(target);
-        return;
-      }
-      for (const c of candidates) {
-        await saveCandidateToSupabase(c);
+      try {
+        if (candidateId) {
+          const target = candidates.find(c => c.id === candidateId);
+          if (target) await saveCandidateToSupabase(target);
+          return;
+        }
+        for (const c of candidates) {
+          await saveCandidateToSupabase(c);
+        }
+      } catch (e) {
+        notifySaveFailure(e, candidateId || "all");
+        throw e;
       }
     }
 
@@ -2036,6 +2147,11 @@
     }
 
     function addNewCandidateFromInput() {
+      if (!portalUseSupabase) {
+        alert("Sign in to the staff portal first. Without login, interviews are not saved to the shared list (Admin → Interviews).");
+        window.location.href = interviewLoginUrl();
+        return;
+      }
       const name = searchInput.value.trim();
 
       if (!name) {
@@ -2057,7 +2173,7 @@
       const candidate = createCandidate(name);
       addHistoryEntry(candidate, "Candidate profile created.");
       candidates.push(candidate);
-      saveCandidates(candidate.id).catch(e => console.error("Save error", e));
+      saveCandidates(candidate.id).catch(function () {});
       currentCandidateId = candidate.id;
       renderSearchResults(filterCandidates(searchInput.value.trim()));
       renderCandidateDetail(candidate.id);
@@ -2296,7 +2412,7 @@
 
       candidate.updatedAt = new Date().toISOString();
       if (!silent) addHistoryEntry(candidate, buildHistorySummary(candidate));
-      saveCandidates(candidate.id).catch(e => console.error("Save error", e));
+      saveCandidates(candidate.id).catch(function () {});
 
       if (silent) {
         renderSearchResults(filterCandidates(searchInput.value.trim()));
@@ -2478,7 +2594,7 @@
 
       addHistoryEntry(candidate, `Face to Face outcome completed: ${status}`);
       candidate.updatedAt = new Date().toISOString();
-      saveCandidates(candidate.id).catch(e => console.error("Save error", e));
+      saveCandidates(candidate.id).catch(function () {});
       renderSearchResults(filterCandidates(searchInput.value.trim()));
       renderCandidateDetail(candidate.id);
       alert("Outcome completed and saved.");
@@ -2777,7 +2893,7 @@
       const candidate = findCandidateById(candidateId);
       if (!candidate) return;
       candidate.updatedAt = new Date().toISOString();
-      saveCandidates(candidate.id).catch(e => console.error("Save error", e));
+      saveCandidates(candidate.id).catch(function () {});
       if (currentCandidateId === candidateId) {
         renderSearchResults(filterCandidates(searchInput.value.trim()));
       }
@@ -2810,7 +2926,7 @@
             if (textPreview) textPreview.innerHTML = renderUploadedDocPreview(dataUrl, file.name || "", "text file");
           }
           candidate.updatedAt = new Date().toISOString();
-          saveCandidates(candidate.id).catch(e => console.error("Save error", e));
+          saveCandidates(candidate.id).catch(function () {});
           renderSearchResults(filterCandidates(searchInput.value.trim()));
         };
         reader.readAsDataURL(file);
