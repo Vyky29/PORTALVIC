@@ -1320,7 +1320,7 @@
           <h1>Interview and Onboarding Portal</h1>
           <p>Search candidates, create records, continue interview stages, complete onboarding, and review a saved history log from the same page.</p>
           <p id="portalOnboardingSupabaseHint" class="hidden" style="margin-top:10px;font-size:13px;line-height:1.5;color:var(--muted);max-width:720px;">
-            Not signed in on this tab. Go to <strong>Admin</strong> (same browser), then <strong>Interviews → Start a new interview</strong>. Bookmarking this page alone will not keep you signed in for shared saves.
+            Open this page from <strong>Admin → Interviews → Start a new interview</strong> (same browser). You should not need to sign in again.
           </p>
         </div>
 
@@ -1422,8 +1422,9 @@
         if (ok) {
           link.classList.add("hidden");
         } else {
-          link.href = interviewAdminUrl();
-          link.textContent = "Open Admin dashboard";
+          // Never send to login when the user is already in Admin — that felt like a loop.
+          link.href = interviewAdminUrl() + "#interviews";
+          link.textContent = "Back to Admin → Interviews";
           link.classList.remove("hidden");
         }
       }
@@ -1435,11 +1436,11 @@
       if (portalUseSupabase) hint.classList.add("hidden");
       else hint.classList.remove("hidden");
       if (portalUseSupabase) {
-        setInterviewAuthStatus(true, "Signed in — interviews and recordings sync to the club database.");
+        setInterviewAuthStatus(true, "Signed in with your Admin session — interviews save to the shared list.");
       } else {
         setInterviewAuthStatus(
           false,
-          "Not signed in here. Open Admin (same browser), then Interviews → Start a new interview. Do not use this page alone after login."
+          "This tab did not pick up your Admin login. Use Back to Admin → Interviews, then Start / Open again (same browser)."
         );
       }
     }
@@ -1450,9 +1451,46 @@
       });
     }
 
+    function readInterviewAuthHandoff() {
+      try {
+        const raw = sessionStorage.getItem("portal_interview_auth_handoff_v1");
+        if (!raw) return null;
+        sessionStorage.removeItem("portal_interview_auth_handoff_v1");
+        const data = JSON.parse(raw);
+        if (!data || !data.access_token || !data.refresh_token) return null;
+        if (data.at && Date.now() - Number(data.at) > 5 * 60 * 1000) return null;
+        return data;
+      } catch (_e) {
+        return null;
+      }
+    }
+
+    async function applySessionToClient(client, sess) {
+      if (!client || !client.auth || !sess || !sess.access_token || !sess.refresh_token) return null;
+      try {
+        const restored = await client.auth.setSession({
+          access_token: sess.access_token,
+          refresh_token: sess.refresh_token,
+        });
+        if (restored && restored.data && restored.data.session && restored.data.session.user) {
+          return restored.data.session.user;
+        }
+      } catch (_e) {
+        /* ignore */
+      }
+      return null;
+    }
+
     async function resolveStaffSession(client, helpers) {
       if (!client || !client.auth) return null;
-      // Supabase can need a tick after redirect before localStorage hydrates.
+
+      const handoff = readInterviewAuthHandoff();
+      if (handoff) {
+        const fromHandoff = await applySessionToClient(client, handoff);
+        if (fromHandoff) return fromHandoff;
+      }
+
+      // Supabase can need a tick after navigation before localStorage hydrates.
       for (let i = 0; i < 8; i++) {
         try {
           const sess = await client.auth.getSession();
@@ -1464,16 +1502,8 @@
         if (helpers && typeof helpers.portalReadPersistedSupabaseSession === "function") {
           try {
             const persisted = helpers.portalReadPersistedSupabaseSession();
-            if (persisted && persisted.access_token && persisted.refresh_token) {
-              const restored = await client.auth.setSession({
-                access_token: persisted.access_token,
-                refresh_token: persisted.refresh_token,
-              });
-              const user =
-                (restored && restored.data && restored.data.session && restored.data.session.user) ||
-                (persisted.user || null);
-              if (user) return user;
-            }
+            const fromPersisted = await applySessionToClient(client, persisted);
+            if (fromPersisted) return fromPersisted;
           } catch (_e2) {
             /* ignore */
           }

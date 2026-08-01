@@ -149,6 +149,62 @@
     return "/Working_interview.html" + q;
   }
 
+  async function readAdminSessionForHandoff() {
+    var box = global.__PORTAL_SUPABASE__ || {};
+    if (box.session && box.session.access_token && box.session.refresh_token) {
+      return box.session;
+    }
+    if (typeof global.portalAdminReadStoredAuthSession === "function") {
+      var stored = global.portalAdminReadStoredAuthSession();
+      if (stored && stored.access_token && stored.refresh_token) return stored;
+    }
+    var sb = client();
+    if (sb && sb.auth && typeof sb.auth.getSession === "function") {
+      try {
+        var res = await sb.auth.getSession();
+        if (res && res.data && res.data.session && res.data.session.access_token) {
+          return res.data.session;
+        }
+      } catch (_e) {
+        /* ignore */
+      }
+    }
+    return null;
+  }
+
+  async function openInterviewWithSession(url) {
+    var target = String(url || "/Working_interview.html");
+    try {
+      var sess = await readAdminSessionForHandoff();
+      if (sess && sess.access_token && sess.refresh_token) {
+        global.sessionStorage.setItem(
+          "portal_interview_auth_handoff_v1",
+          JSON.stringify({
+            access_token: sess.access_token,
+            refresh_token: sess.refresh_token,
+            expires_at: sess.expires_at || null,
+            user: sess.user || null,
+            at: Date.now()
+          })
+        );
+      }
+    } catch (_e) {
+      /* still navigate — interview page may already have localStorage session */
+    }
+    global.location.href = target;
+  }
+
+  function bindInterviewOpenLinks() {
+    if (!root) return;
+    root.querySelectorAll("[data-interview-open]").forEach(function (el) {
+      el.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        var href = el.getAttribute("data-interview-open") || openHref("");
+        openInterviewWithSession(href);
+      });
+    });
+  }
+
   function tableFor(list) {
     if (!list.length) {
       return '<div class="ai-empty">None in this bucket yet.</div>';
@@ -183,6 +239,8 @@
           esc(nextStep(c, phase)) +
           "</td>" +
           '<td class="toolbar"><a class="btn btn--pri btn--sm" href="' +
+          esc(openHref(c.name || "")) +
+          '" data-interview-open="' +
           esc(openHref(c.name || "")) +
           '">Open</a></td>' +
           "</tr>"
@@ -235,7 +293,7 @@
     root.innerHTML =
       '<div class="ai-wrap">' +
       '<div class="ai-toolbar">' +
-      '<a class="btn btn--pri" href="/Working_interview.html">' +
+      '<a class="btn btn--pri" href="/Working_interview.html" data-interview-open="/Working_interview.html">' +
       playIco +
       "Start a new interview</a>" +
       '<button type="button" class="ai-refresh" id="aiRefreshBtn">' +
@@ -265,6 +323,7 @@
         load();
       });
     }
+    bindInterviewOpenLinks();
   }
 
   async function load() {
