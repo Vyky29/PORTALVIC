@@ -1312,7 +1312,7 @@
     <div id="mainPortal">
     <div id="interviewAuthStatus" class="auth-status-bar" role="status" aria-live="polite">
       <span class="auth-status-msg" id="interviewAuthStatusMsg">Checking staff login…</span>
-      <a id="interviewAuthLoginLink" class="hidden" href="/admin_dashboard.html">Open Admin dashboard</a>
+      <a id="interviewAuthLoginLink" class="hidden" href="/admin_dashboard.html#interviews">Back to Admin → Interviews</a>
     </div>
     <section class="topbar">
       <div class="topbar-grid">
@@ -1436,12 +1436,24 @@
       if (portalUseSupabase) hint.classList.add("hidden");
       else hint.classList.remove("hidden");
       if (portalUseSupabase) {
-        setInterviewAuthStatus(true, "Signed in with your Admin session — interviews save to the shared list.");
+        setInterviewAuthStatus(true, "Using your Admin login — interviews save to the shared list.");
+      } else if (isInterviewEmbedded()) {
+        setInterviewAuthStatus(false, "Connecting to your Admin login…");
+        const link = document.getElementById("interviewAuthLoginLink");
+        if (link) link.classList.add("hidden");
       } else {
         setInterviewAuthStatus(
           false,
-          "This tab did not pick up your Admin login. Use Back to Admin → Interviews, then Start / Open again (same browser)."
+          "Open Interviews from Admin with Start / Open — stay inside Admin (do not open this page alone)."
         );
+      }
+    }
+
+    function isInterviewEmbedded() {
+      try {
+        return new URLSearchParams(window.location.search || "").get("embedded") === "1";
+      } catch (_e) {
+        return false;
       }
     }
 
@@ -1455,9 +1467,8 @@
       try {
         const raw = sessionStorage.getItem("portal_interview_auth_handoff_v1");
         if (!raw) return null;
-        sessionStorage.removeItem("portal_interview_auth_handoff_v1");
         const data = JSON.parse(raw);
-        if (!data || !data.access_token || !data.refresh_token) return null;
+        if (!data || !data.access_token) return null;
         if (data.at && Date.now() - Number(data.at) > 5 * 60 * 1000) return null;
         return data;
       } catch (_e) {
@@ -1465,32 +1476,128 @@
       }
     }
 
-    async function applySessionToClient(client, sess) {
-      if (!client || !client.auth || !sess || !sess.access_token || !sess.refresh_token) return null;
+    function clearInterviewAuthHandoff() {
       try {
-        const restored = await client.auth.setSession({
-          access_token: sess.access_token,
-          refresh_token: sess.refresh_token,
-        });
-        if (restored && restored.data && restored.data.session && restored.data.session.user) {
-          return restored.data.session.user;
-        }
+        sessionStorage.removeItem("portal_interview_auth_handoff_v1");
       } catch (_e) {
+        /* ignore */
+      }
+    }
+
+    async function applySessionToClient(client, sess) {
+      if (!client || !client.auth || !sess || !sess.access_token) return null;
+      if (sess.refresh_token) {
+        try {
+          const restored = await client.auth.setSession({
+            access_token: sess.access_token,
+            refresh_token: sess.refresh_token,
+          });
+          if (restored && restored.data && restored.data.session && restored.data.session.user) {
+            return restored.data.session.user;
+          }
+        } catch (_e) {
+          /* ignore */
+        }
+      }
+      try {
+        if (client.rest && client.rest.headers) {
+          client.rest.headers["Authorization"] = "Bearer " + sess.access_token;
+        }
+      } catch (_eHdr) {
+        /* ignore */
+      }
+      if (sess.user && sess.user.id) return sess.user;
+      try {
+        const gu = await client.auth.getUser(sess.access_token);
+        if (gu && gu.data && gu.data.user) return gu.data.user;
+      } catch (_eUser) {
         /* ignore */
       }
       return null;
     }
 
+    let pendingParentSession = null;
+    let parentAuthWaiters = [];
+
+    function notifyParentAuthWaiters(sess) {
+      const waiters = parentAuthWaiters.slice();
+      parentAuthWaiters = [];
+      waiters.forEach(function (fn) {
+        try {
+          fn(sess);
+        } catch (_e) {
+          /* ignore */
+        }
+      });
+    }
+
+    function waitForParentAuth(timeoutMs) {
+      if (pendingParentSession && pendingParentSession.access_token) {
+        return Promise.resolve(pendingParentSession);
+      }
+      return new Promise(function (resolve) {
+        const timer = setTimeout(function () {
+          resolve(pendingParentSession);
+        }, timeoutMs || 4000);
+        parentAuthWaiters.push(function (sess) {
+          clearTimeout(timer);
+          resolve(sess);
+        });
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: "portal-interview-auth-request" }, window.location.origin);
+          }
+        } catch (_e) {
+          /* ignore */
+        }
+      });
+    }
+
+    window.addEventListener("message", function (ev) {
+      try {
+        if (!ev || ev.origin !== window.location.origin) return;
+        const data = ev.data || {};
+        if (data.type !== "portal-interview-auth" || !data.session || !data.session.access_token) return;
+        pendingParentSession = data.session;
+        notifyParentAuthWaiters(pendingParentSession);
+        if (!portalUseSupabase && supabaseClient) {
+          applySessionToClient(supabaseClient, pendingParentSession).then(function (user) {
+            if (!user) return;
+            portalUseSupabase = true;
+            syncPortalOnboardingHintVisibility();
+            refreshSharedCandidates(true);
+            startSharedRealtimeSync();
+            if (sharedRefreshTimer) clearInterval(sharedRefreshTimer);
+            sharedRefreshTimer = setInterval(function () {
+              refreshSharedCandidates(false);
+            }, 15000);
+          });
+        }
+      } catch (_eMsg) {
+        /* ignore */
+      }
+    });
+
     async function resolveStaffSession(client, helpers) {
       if (!client || !client.auth) return null;
+
+      if (isInterviewEmbedded()) {
+        const fromParent = await waitForParentAuth(5000);
+        if (fromParent && fromParent.access_token) {
+          const user = await applySessionToClient(client, fromParent);
+          if (user) return user;
+        }
+      }
 
       const handoff = readInterviewAuthHandoff();
       if (handoff) {
         const fromHandoff = await applySessionToClient(client, handoff);
-        if (fromHandoff) return fromHandoff;
+        if (fromHandoff) {
+          clearInterviewAuthHandoff();
+          return fromHandoff;
+        }
       }
 
-      // Supabase can need a tick after navigation before localStorage hydrates.
       for (let i = 0; i < 8; i++) {
         try {
           const sess = await client.auth.getSession();
@@ -2236,8 +2343,19 @@
 
     function addNewCandidateFromInput() {
       if (!portalUseSupabase) {
-        alert("Open Admin first (same browser), then Interviews → Start a new interview. This page alone does not keep a staff login for shared saves.");
-        window.location.href = interviewAdminUrl();
+        if (isInterviewEmbedded()) {
+          alert("Still connecting to your Admin login — wait a second and try again.");
+          try {
+            if (window.parent && window.parent !== window) {
+              window.parent.postMessage({ type: "portal-interview-auth-request" }, window.location.origin);
+            }
+          } catch (_e) {
+            /* ignore */
+          }
+          return;
+        }
+        alert("Open Admin → Interviews → Start a new interview (stay inside Admin).");
+        window.location.href = interviewAdminUrl() + "#interviews";
         return;
       }
       const name = searchInput.value.trim();
