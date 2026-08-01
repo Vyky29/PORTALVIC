@@ -215,7 +215,7 @@
     closeInterviewOverlay();
 
     var sep = target.indexOf("?") >= 0 ? "&" : "?";
-    var src = target + sep + "embedded=1";
+    var src = target + sep + "embedded=1&v=20260801-auth-fix";
 
     var ov = document.createElement("div");
     ov.id = "aiInterviewOverlay";

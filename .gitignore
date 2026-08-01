@@ -4,7 +4,8 @@
 !.env.example
 *.local.env
 database/local-vault/*.local.sql
-working_ui/onboarding_portal_config.js
+# Optional local override with real keys (copy from onboarding_portal_config.example.js).
+# Production ships a safe stub at working_ui/onboarding_portal_config.js.
 
 # Private finance docs — never commit, never share
 database/local-vault/private/
