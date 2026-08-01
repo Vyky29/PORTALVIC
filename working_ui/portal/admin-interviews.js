@@ -184,7 +184,7 @@
           "</td>" +
           '<td class="toolbar"><a class="btn btn--pri btn--sm" href="' +
           esc(openHref(c.name || "")) +
-          '" target="_blank" rel="noopener">Open</a></td>' +
+          '">Open</a></td>' +
           "</tr>"
         );
       })
@@ -235,7 +235,7 @@
     root.innerHTML =
       '<div class="ai-wrap">' +
       '<div class="ai-toolbar">' +
-      '<a class="btn btn--pri" href="/Working_interview.html" target="_blank" rel="noopener">' +
+      '<a class="btn btn--pri" href="/Working_interview.html">' +
       playIco +
       "Start a new interview</a>" +
       '<button type="button" class="ai-refresh" id="aiRefreshBtn">' +
