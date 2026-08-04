@@ -1051,7 +1051,8 @@
         const extDay = onTimeDeadlineDayForPeriodEnd(isoDate(closingEnd), rosterKey);
         if (extDay > ONTIME_DEADLINE_DAY && day <= extDay) {
           start = new Date(y, m - 1, 25);
-          end = closingEnd;
+          /* Period runs through the extended last working day (e.g. 31 Jul), not the 24th. */
+          end = new Date(y, m, extDay);
           return { start, end };
         }
         start = new Date(y, m, 25);
@@ -1059,6 +1060,16 @@
       } else {
         start = new Date(y, m - 1, 25);
         end = new Date(y, m, 24);
+        /*
+         * If the previous closing month was extended past the 24th (Luliya/Michelle/Roberto
+         * July → 31), those days already belong to THAT month. Next cycle starts on the 1st
+         * so August does not re-show 25–31 July.
+         */
+        const prevClosing = new Date(y, m - 1, 24);
+        const prevExt = onTimeDeadlineDayForPeriodEnd(isoDate(prevClosing), rosterKey);
+        if (prevExt > ONTIME_DEADLINE_DAY) {
+          start = new Date(y, m, 1);
+        }
       }
       return { start, end };
     }
@@ -1071,7 +1082,11 @@
       const periodLabel = document.getElementById("periodLabel");
       if (monthTop) monthTop.textContent = monthLabel || "-";
       if (periodLabel) {
-        periodLabel.textContent = `Period: ${state.periodStart} to ${state.periodEnd} (25 -> 24)`;
+        const cycleNote =
+          state.periodStart && state.periodStart.slice(8) === "01"
+            ? " (1 → 24 after extended close)"
+            : " (25 → 24)";
+        periodLabel.textContent = `Period: ${state.periodStart} to ${state.periodEnd}${cycleNote}`;
       }
       renderDeadlineBanner();
     }
