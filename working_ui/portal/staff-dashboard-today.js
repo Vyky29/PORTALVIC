@@ -1704,7 +1704,71 @@
         const prev = bySlot[slotKey];
         if(!prev || new Date(ov.created_at || 0) > new Date(prev.created_at || 0)) bySlot[slotKey] = ov;
       });
-      return Object.keys(bySlot).map(function(k){ return bySlot[k]; });
+      return portalCoalesceContiguousInstructorCoverOverrides(
+        Object.keys(bySlot).map(function(k){ return bySlot[k]; })
+      );
+    }
+    /**
+     * Admin often stores a 60' aquatic cover as two instructor_reassign halves.
+     * Without coalescing, Today injects two cards (orange+green) for the same client.
+     */
+    function portalCoalesceContiguousInstructorCoverOverrides(ovs){
+      if(!Array.isArray(ovs) || ovs.length < 2) return ovs || [];
+      const hmMin = function(hm){
+        if(typeof portalHmToMinutes === 'function') return portalHmToMinutes(hm);
+        const m = String(hm || '').trim().match(/^(\d{1,2}):(\d{2})$/);
+        if(!m) return NaN;
+        return Number(m[1]) * 60 + Number(m[2]);
+      };
+      const sorted = ovs.slice().sort(function(a, b){
+        const ca = String(a && a.anchor_client_id || '').trim().toLowerCase();
+        const cb = String(b && b.anchor_client_id || '').trim().toLowerCase();
+        if(ca !== cb) return ca < cb ? -1 : 1;
+        const va = portalNormKeyStr(a && a.anchor_venue);
+        const vb = portalNormKeyStr(b && b.anchor_venue);
+        if(va !== vb) return va < vb ? -1 : 1;
+        return hmMin(portalHmFromDbTime(a && a.anchor_start)) - hmMin(portalHmFromDbTime(b && b.anchor_start));
+      });
+      const out = [];
+      let cur = null;
+      sorted.forEach(function(ov){
+        if(!ov) return;
+        const cid = String(ov.anchor_client_id || '').trim().toLowerCase();
+        const venue = portalNormKeyStr(ov.anchor_venue);
+        const cov = portalInstructorCoverStaffKeyFromOverride(ov);
+        const st = portalHmFromDbTime(ov.anchor_start) || '';
+        const en = portalHmFromDbTime(ov.anchor_end) || st;
+        if(!cur){
+          cur = Object.assign({}, ov, {
+            anchor_start: ov.anchor_start,
+            anchor_end: ov.anchor_end,
+            __portalCoalescedCoverStarts: st ? [st] : []
+          });
+          return;
+        }
+        const curCid = String(cur.anchor_client_id || '').trim().toLowerCase();
+        const curVenue = portalNormKeyStr(cur.anchor_venue);
+        const curCov = portalInstructorCoverStaffKeyFromOverride(cur);
+        const curEnd = portalHmFromDbTime(cur.anchor_end) || portalHmFromDbTime(cur.anchor_start) || '';
+        const curEndM = hmMin(curEnd);
+        const stM = hmMin(st);
+        const consecutive = Number.isFinite(curEndM) && Number.isFinite(stM) && curEndM === stM;
+        if(cid && cid === curCid && venue === curVenue && cov && cov === curCov && consecutive){
+          cur = Object.assign({}, cur, {
+            anchor_end: ov.anchor_end,
+            __portalCoalescedCoverStarts: (cur.__portalCoalescedCoverStarts || []).concat(st ? [st] : [])
+          });
+          return;
+        }
+        out.push(cur);
+        cur = Object.assign({}, ov, {
+          anchor_start: ov.anchor_start,
+          anchor_end: ov.anchor_end,
+          __portalCoalescedCoverStarts: st ? [st] : []
+        });
+      });
+      if(cur) out.push(cur);
+      return out;
     }
     /** Luliya Day Centre (Ikram) ends at 15:00 when she covers aquatic sessions that afternoon. */
     function portalStaffKeyIsLulia(staffId){
@@ -2646,7 +2710,7 @@
       const extra = [];
       portalPickLatestInstructorCoverOverridesForStaff(staffId, sessionDateKey).forEach(function(ov){
         const cov = portalInstructorCoverStaffKeyFromOverride(ov) || portalNormKeyStr(staffId);
-        const base = portalFindSpreadsheetSessionMatchingOverride(ov, anchorDayWord) || {
+        const baseFound = portalFindSpreadsheetSessionMatchingOverride(ov, anchorDayWord) || {
           day: anchorDayWord,
           start: portalHmFromDbTime(ov.anchor_start) || '09:00',
           end: portalHmFromDbTime(ov.anchor_end) || portalHmFromDbTime(ov.anchor_start) || '10:00',
@@ -2658,8 +2722,14 @@
           rosterService: String(portalScheduleOverridePayload(ov).service || '').trim(),
           session_date: sessionDateKey
         };
-        const coverWinStart = portalHmFromDbTime(ov.anchor_start) || base.start;
-        const coverWinEnd = portalHmFromDbTime(ov.anchor_end) || base.end || coverWinStart;
+        const coverWinStart = portalHmFromDbTime(ov.anchor_start) || baseFound.start;
+        const coverWinEnd = portalHmFromDbTime(ov.anchor_end) || baseFound.end || coverWinStart;
+        /* Always pin the card to the override window (coalesced halves → one 60' card). */
+        const base = Object.assign({}, baseFound, {
+          start: coverWinStart,
+          end: coverWinEnd,
+          clientId: String(ov.anchor_client_id || baseFound.clientId || '').toLowerCase() || baseFound.clientId
+        });
         const s = Object.assign({}, base, { staffId: cov });
         let st2 = sessionModelStatus(s);
         /* Admin absence / cancellation on a covered slot can be anchored to EITHER the
@@ -2828,6 +2898,17 @@
         const coverTs = portalSessionRowTimestamps(sessionDateKey, s.start, s.end, anchor);
         const coverItemProbe = { sessionEndTs: coverTs.sessionEndTs, sessionKey };
         const makeUpPinkCover = !isInstructorCoverOv && !isTrialCoverOv && hasReplaceCoverOv && !isSessionEndedForFeedback(coverItemProbe);
+        const coverMemberKeys = [];
+        if(isInstructorCoverOv && Array.isArray(ov.__portalCoalescedCoverStarts) && ov.__portalCoalescedCoverStarts.length > 1){
+          const seenCk = Object.create(null);
+          ov.__portalCoalescedCoverStarts.forEach(function(stHalf){
+            const hm = typeof portalCanonicalHmToken === 'function' ? portalCanonicalHmToken(stHalf) : String(stHalf || '').trim();
+            if(!hm || seenCk[hm]) return;
+            seenCk[hm] = true;
+            coverMemberKeys.push(sessionDateKey + '|' + hm + '|' + String(effCoverId || '').toLowerCase());
+          });
+          if(sessionKey) coverMemberKeys.push(sessionKey);
+        }
         extra.push({
           time,
           kind: 'client',
@@ -2855,7 +2936,8 @@
           portalOverrideAlertPill: '',
           sessionVenue: String(s.venue || '').trim() || '—',
           __portalBaseSession: base,
-          __portalScheduleOverride: ov
+          __portalScheduleOverride: ov,
+          __portalFeedbackMergeMemberKeys: coverMemberKeys.length ? coverMemberKeys : undefined
         });
       });
       // Admin-added Training / Shadowing sessions (override_type='session_add').
@@ -2951,22 +3033,42 @@
           if(!cid || cid === 'available' || cid === 'closed') return;
           occupied.push({ clientId: cid, win: portalTodayItemSlotWindow(it), dedupeKey: k });
         });
-        return extraItems.filter(function(it){
+        const kept = [];
+        extraItems.forEach(function(it){
           const ov = it && it.__portalScheduleOverride;
-          if(!ov || String(ov.override_type || '').trim() !== 'instructor_reassign') return true;
+          if(!ov || String(ov.override_type || '').trim() !== 'instructor_reassign'){
+            kept.push(it);
+            return;
+          }
           const k = portalTodayItemClientSlotDedupeKey(it);
-          if(k && seenExact[k]) return false;
+          if(k && seenExact[k]) return;
           const win = portalTodayItemSlotWindow(it);
           const cid = String(it.clientId || '').trim().toLowerCase();
-          if(!cid || cid === 'available' || cid === 'closed') return true;
+          if(!cid || cid === 'available' || cid === 'closed'){
+            kept.push(it);
+            return;
+          }
           for(let i = 0; i < occupied.length; i++){
             const o = occupied[i];
             if(o.clientId !== cid) continue;
-            if(k && o.dedupeKey && k === o.dedupeKey) return false;
-            if(portalTodaySlotWindowsOverlap(o.win, win)) return false;
+            if(k && o.dedupeKey && k === o.dedupeKey) return;
+            if(portalTodaySlotWindowsOverlap(o.win, win)) return;
           }
-          return true;
+          /* Also collapse duplicate cover injects against each other (same client overlap). */
+          for(let j = 0; j < kept.length; j++){
+            const kIt = kept[j];
+            if(!kIt || kIt.kind !== 'client') continue;
+            const kCid = String(kIt.clientId || '').trim().toLowerCase();
+            if(kCid !== cid) continue;
+            const kExact = portalTodayItemClientSlotDedupeKey(kIt);
+            if(k && kExact && k === kExact) return;
+            if(portalTodaySlotWindowsOverlap(portalTodayItemSlotWindow(kIt), win)) return;
+          }
+          if(k) seenExact[k] = true;
+          occupied.push({ clientId: cid, win: win, dedupeKey: k });
+          kept.push(it);
         });
+        return kept;
       }
       function portalSuppressAvailableWhenSlotFilled(items){
         if(!Array.isArray(items) || !items.length) return items || [];
@@ -3043,6 +3145,18 @@
     var buildTodayFromLauraModel = buildSelectedDayViewFromLauraModel;
     try{ window.buildTodayFromLauraModel = buildTodayFromLauraModel; }catch(_){}
     try{ window.buildSelectedDayViewFromLauraModel = buildSelectedDayViewFromLauraModel; }catch(_){}
+    /* Aquatic merge used to load only in deferred chunks (3.5s later on phones) — rebuild Today once ready. */
+    try{
+      if(typeof window !== 'undefined' && !window.__PORTAL_AQUATIC_MERGE_RERENDER_BOUND__){
+        window.__PORTAL_AQUATIC_MERGE_RERENDER_BOUND__ = true;
+        window.addEventListener('portal:staff-deferred-dashboard-ready', function(){
+          try{
+            if(typeof portalMergeStaffLeadTodayAquaticCards !== 'function') return;
+            if(typeof renderToday === 'function') renderToday();
+          }catch(_r){}
+        });
+      }
+    }catch(_b){}
 
     function portalFormatNextSessionSectionHeading(sessionDate){
       const d = sessionDate instanceof Date && !isNaN(sessionDate.getTime()) ? sessionDate : null;

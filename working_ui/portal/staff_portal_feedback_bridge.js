@@ -859,6 +859,41 @@
     return allowed.has(rosterTime);
   }
 
+  function isAquaticRosterSession(s) {
+    const act = String((s && (s.activity || s.rosterService || s.service)) || "")
+      .toLowerCase()
+      .replace(/[\s_-]+/g, " ");
+    return (
+      act.indexOf("aquatic") >= 0 ||
+      act.indexOf("swimming") >= 0 ||
+      act.indexOf("swim ") >= 0 ||
+      act === "swim"
+    );
+  }
+
+  function hmTokenToMinutes(hm) {
+    const n = normalizeHmToken(hm);
+    const m = String(n || "").match(/^(\d{2}):(\d{2})$/);
+    if (!m) return NaN;
+    return Number(m[1]) * 60 + Number(m[2]);
+  }
+
+  /**
+   * Cover / roster often splits a 60' aquatic into 2×30'. Staff submit once (any half).
+   * Treat a same-client aquatic submit within 60 minutes as covering sibling halves.
+   */
+  function aquaticTimedSubmitCoversRosterStart(rTime, rosterTime, rosterEnd) {
+    const a = hmTokenToMinutes(rTime);
+    const b = hmTokenToMinutes(rosterTime);
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return false;
+    if (a === b) return true;
+    const diff = Math.abs(a - b);
+    if (diff > 0 && diff <= 60) return true;
+    const e = hmTokenToMinutes(rosterEnd);
+    if (Number.isFinite(e) && a >= b && a < e) return true;
+    return false;
+  }
+
   function submittedRowCoversRosterSession(r, s, clientNotesById) {
     const rosterKey = rosterKeyForSession(s, clientNotesById);
     const rKey = slug(r && r.clientName);
@@ -874,7 +909,16 @@
     }
     if (!rosterTime) return true;
     const rTime = portalRowTimeTokenFromKey(pk);
-    if (rTime && rosterTime && rTime !== rosterTime) return false;
+    if (rTime && rosterTime && rTime !== rosterTime) {
+      if (
+        isAquaticRosterSession(s) &&
+        aquaticTimedSubmitCoversRosterStart(rTime, rosterTime, s && s.end)
+      ) {
+        /* keep going — aquatic sibling half */
+      } else {
+        return false;
+      }
+    }
     // Day Centre / Bespoke-shared are whole-day shared units: one feedback per client
     // per day with no per-slot time. Their submitted key (e.g. "DATE|fadi|day_centre")
     // has no time token, so it must still cover the timed roster row.

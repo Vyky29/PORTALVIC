@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260727-fb-keys-perf";
+  var VER = "20260805-cover-half-coalesce";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260724-roberto-off-0730",
@@ -23,7 +23,7 @@
     "/portal/clients_info_embed.js?v=20260608-anas-ismail",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
     "/portal/portal_participants_sheet.js?v=20260614-roster-day-group",
-    "/portal/portal_staff_lead_aquatic_slots.js?v=20260724-yusuf-merge",
+    "/portal/portal_staff_lead_aquatic_slots.js?v=20260805-cover-half-merge",
     "/portal/portal_participant_identity.js?v=20260712-rayyan-f",
     "/portal/portal_participant_catalog.js?v=20260606-next-dedupe",
     "/portal/staff_roster_resolve.js?v=20260630-staff-display-names",

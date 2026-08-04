@@ -676,6 +676,35 @@
       m.time = formatSlotRangeUk(startHm, endHm) || rep.time;
       m.sessionKey = buildAquaticSessionReviewKey(iso, cid, rep.__portalBaseSession || {}, dayWord);
       m.__portalAquaticMergedCount = list.length;
+      /* Member keys so a submit on any 30' half (e.g. 17:00|aqsa) marks the merged card done. */
+      var memberKeys = memberSessionReviewKeys(list, iso, dayWord);
+      var seenMk = Object.create(null);
+      memberKeys.forEach(function (k) {
+        seenMk[k] = true;
+      });
+      function addMemberKey(k) {
+        k = String(k || "").trim();
+        if (!k || seenMk[k]) return;
+        seenMk[k] = true;
+        memberKeys.push(k);
+      }
+      for (var mi = 0; mi < list.length; mi++) {
+        var half = list[mi];
+        var halfStart = canonicalHmToken(hmFromBaseSession(half.__portalBaseSession).start);
+        if (halfStart) {
+          addMemberKey(String(iso || "").slice(0, 10) + "|" + halfStart + "|" + cid);
+          addMemberKey(String(iso || "").slice(0, 10) + "|" + cid + "|" + halfStart + "|aquatic");
+        }
+        addMemberKey(half.sessionKey);
+      }
+      addMemberKey(m.sessionKey);
+      m.__portalFeedbackMergeMemberKeys = memberKeys;
+      if (m.__portalBaseSession) {
+        m.__portalBaseSession = Object.assign({}, m.__portalBaseSession, {
+          start: startHm || m.__portalBaseSession.start,
+          end: endHm || m.__portalBaseSession.end,
+        });
+      }
       merged.push(m);
     });
     merged.sort(function (a, b) {
