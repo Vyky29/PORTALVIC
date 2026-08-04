@@ -182,7 +182,7 @@ begin
 
   v_july_dc_ext := v_uname in (
     'lulia', 'luliya', 'aida', 'stf021',
-    'michelle', 'roberto', 'giuseppe'
+    'michelle'
   );
 
   -- June 2026 one-off: on-time through the 25th; late from the 26th.
