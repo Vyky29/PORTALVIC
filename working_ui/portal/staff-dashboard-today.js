@@ -1327,7 +1327,7 @@
       const openedClosed = typeof portalSessionHasSlotOpenOverride === 'function' && portalSessionHasSlotOpenOverride(s, iso);
       if(st === 'Closed' && !openedClosed) return false;
       const ov = portalTodayScheduleOverrideForSession(s, iso);
-      if(ov && ov.override_type === 'instructor_reassign' && String(ov.payload && ov.payload.covering_staff_id || '').trim()) return false;
+      if(portalInstructorReassignShouldHideForViewer(ov, sid)) return false;
       if(ov && ov.override_type === 'client_replace_in_slot'){
         const repId = portalOverrideReplacementClientId(ov.payload);
         const anchorId = String(s.clientId || '').trim().toLowerCase();
@@ -1367,8 +1367,18 @@
         const cov = String(ov.payload && ov.payload.covering_staff_id || '').trim().toLowerCase();
         if(!cov || cov !== sid) return;
         const base = typeof portalFindSpreadsheetSessionMatchingOverride === 'function' ? portalFindSpreadsheetSessionMatchingOverride(ov, dayName) : null;
-        if(!base) return;
-        const s = Object.assign({}, base, { staffId: cov });
+        const s = Object.assign({}, base || {
+          day: dayName,
+          start: typeof portalHmFromDbTime === 'function' ? (portalHmFromDbTime(ov.anchor_start) || '09:00') : '09:00',
+          end: typeof portalHmFromDbTime === 'function'
+            ? (portalHmFromDbTime(ov.anchor_end) || portalHmFromDbTime(ov.anchor_start) || '10:00')
+            : '10:00',
+          venue: ov.anchor_venue || '',
+          clientId: String(ov.anchor_client_id || '').toLowerCase(),
+          staffId: cov,
+          status: 'Scheduled',
+          activity: 'Swimming'
+        }, { staffId: cov });
         if(typeof window.portalWeekStripSessionCountKey === 'function' && seenCount){
           const countKey = window.portalWeekStripSessionCountKey(s, dayName, sid);
           if(!countKey) return;
@@ -1401,7 +1411,7 @@
           }
         }
         const ov0 = typeof portalTodayScheduleOverrideForSession === 'function' ? portalTodayScheduleOverrideForSession(s, sessionDateIso) : null;
-        if(ov0 && ov0.override_type === 'instructor_reassign' && String(ov0.payload && ov0.payload.covering_staff_id || '').trim()) return;
+        if(portalInstructorReassignShouldHideForViewer(ov0, sid)) return;
         if(typeof portalSessionStaffReassignedOff === 'function' && portalSessionStaffReassignedOff(s, sessionDateIso)) return;
         const eid = typeof portalEffectiveClientIdForReview === 'function' ? portalEffectiveClientIdForReview(s, sessionDateIso) : String(s.clientId || '').trim().toLowerCase();
         const eff = eid !== String(s.clientId || '').trim().toLowerCase()
@@ -1651,6 +1661,32 @@
         : portalNormKeyStr(pl.covering_staff_name);
       return fromName || '';
     }
+    /** True when this instructor_reassign hands the slot to `staffId` (they are the cover). */
+    function portalInstructorReassignCoverIsStaff(ov, staffId){
+      if(!ov || String(ov.override_type || '').trim() !== 'instructor_reassign') return false;
+      const cov = portalInstructorCoverStaffKeyFromOverride(ov);
+      if(!cov) return false;
+      const me = typeof portalCanonicalStaffKeyForMatch === 'function'
+        ? portalCanonicalStaffKeyForMatch(staffId)
+        : portalNormKeyStr(staffId);
+      return !!(me && cov === me);
+    }
+    /**
+     * Drop a roster card for instructor_reassign only when someone ELSE is covering.
+     * If we are the cover (sunday replace / dated CSV already lists us on the slot), keep it —
+     * otherwise the last Sunday aquatic cards (e.g. Luliya→Shaan 2.30–3) vanished from Today.
+     */
+    function portalInstructorReassignShouldHideForViewer(ov, staffId){
+      if(!ov || String(ov.override_type || '').trim() !== 'instructor_reassign') return false;
+      const cov = portalInstructorCoverStaffKeyFromOverride(ov);
+      if(!cov) return false;
+      return !portalInstructorReassignCoverIsStaff(ov, staffId);
+    }
+    try{
+      window.portalInstructorCoverStaffKeyFromOverride = portalInstructorCoverStaffKeyFromOverride;
+      window.portalInstructorReassignCoverIsStaff = portalInstructorReassignCoverIsStaff;
+      window.portalInstructorReassignShouldHideForViewer = portalInstructorReassignShouldHideForViewer;
+    }catch(_){}
     function portalPickLatestInstructorCoverOverridesForStaff(staffId, sessionDateKey){
       const sid = typeof portalCanonicalStaffKeyForMatch === 'function'
         ? portalCanonicalStaffKeyForMatch(staffId)
@@ -2138,13 +2174,11 @@
             __portalScheduleOverride: replaceNotSameCalendarDay ? null : (ov || null)
           };
           if(portalSpreadsheetSlotClosedLike(s) && !portalSessionHasSlotOpenOverride(s, sessionDateKey) && !portalSessionHasReplaceMakeupOverride(s, sessionDateKey)) return null;
-          if(ov && ov.override_type === 'instructor_reassign'){
-            const cov = String(ov.payload && ov.payload.covering_staff_id || '').trim().toLowerCase();
-            if(cov) return null;
-          }
+          if(portalInstructorReassignShouldHideForViewer(ov, staffId)) return null;
           // The slot was reassigned to a cover instructor — drop it even when a
           // higher-priority override (e.g. a client absence) outranked the reassign
           // in the picker, so the original worker does not see a slot they're off.
+          // (Cover instructor keeps the card — see portalInstructorReassignShouldHideForViewer.)
           if(typeof portalSessionStaffReassignedOff === 'function' && portalSessionStaffReassignedOff(s, sessionDateKey)) return null;
           let st = sessionModelStatus(s);
           const time = rosterSlotTimeLabel(s);

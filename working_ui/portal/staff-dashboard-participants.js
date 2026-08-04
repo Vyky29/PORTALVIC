@@ -4003,26 +4003,46 @@
     function portalFindSpreadsheetSessionMatchingOverride(ov, viewDay){
       const list = Array.isArray(sessionsModel) ? sessionsModel : [];
       const aid = portalNormKeyStr(ov && ov.anchor_staff_id);
+      const coverId = (typeof portalInstructorCoverStaffKeyFromOverride === 'function'
+        ? portalInstructorCoverStaffKeyFromOverride(ov)
+        : (typeof window !== 'undefined' && typeof window.portalInstructorCoverStaffKeyFromOverride === 'function'
+          ? window.portalInstructorCoverStaffKeyFromOverride(ov)
+          : '')) || portalNormKeyStr(ov && ov.payload && (ov.payload.covering_staff_id || ov.payload.covering_staff_name));
       const vw = String(viewDay || '').trim();
       const iso = normaliseIsoDate(ov && ov.session_date);
+      function rowMatchesOverrideWindow(s){
+        if(!s) return false;
+        if(String(s.day || '').trim() !== vw) return false;
+        if(!portalSpreadsheetSessionMatchesOverrideIso(s, iso)) return false;
+        if(portalNormKeyStr(s.venue) !== portalNormKeyStr(ov.anchor_venue)) return false;
+        if(!portalRosterClientIdsMatch(s.clientId, ov.anchor_client_id)) return false;
+        if(!portalTimeAnchorsMatch(ov.anchor_start, s.start)) return false;
+        if(!portalTimeAnchorsMatch(ov.anchor_end, s.end)) return false;
+        if(!portalOverrideSlotLabelMatchesRow(ov, s)) return false;
+        return true;
+      }
       for(let i = 0; i < list.length; i++){
         const s = list[i];
-        if(!s) continue;
         if(!portalOverrideAnchorStaffKeysMatch(aid, s.staffId)) continue;
-        if(String(s.day || '').trim() !== vw) continue;
-        if(!portalSpreadsheetSessionMatchesOverrideIso(s, iso)) continue;
-        if(portalNormKeyStr(s.venue) !== portalNormKeyStr(ov.anchor_venue)) continue;
-        if(!portalRosterClientIdsMatch(s.clientId, ov.anchor_client_id)) continue;
-        if(!portalTimeAnchorsMatch(ov.anchor_start, s.start)) continue;
-        if(!portalTimeAnchorsMatch(ov.anchor_end, s.end)) continue;
-        if(!portalOverrideSlotLabelMatchesRow(ov, s)) continue;
+        if(!rowMatchesOverrideWindow(s)) continue;
         return s;
+      }
+      /* Sunday replace / dated CSV often already lists the COVER as staffId. Match that
+         too so inject/find still works after JAVIER→LULIYA (etc.) rewrites the roster. */
+      if(coverId){
+        for(let ic = 0; ic < list.length; ic++){
+          const sc = list[ic];
+          if(!portalStaffKeysMatch(coverId, sc.staffId)) continue;
+          if(!rowMatchesOverrideWindow(sc)) continue;
+          return sc;
+        }
       }
       if(portalScheduleOverrideAnchorIsOpenSlot(ov && ov.anchor_client_id)){
         for(let k = 0; k < list.length; k++){
           const s2 = list[k];
           if(!s2) continue;
-          if(!portalOverrideAnchorStaffKeysMatch(aid, s2.staffId)) continue;
+          if(!portalOverrideAnchorStaffKeysMatch(aid, s2.staffId)
+            && !(coverId && portalStaffKeysMatch(coverId, s2.staffId))) continue;
           if(String(s2.day || '').trim() !== vw) continue;
           if(!portalSpreadsheetSessionMatchesOverrideIso(s2, iso)) continue;
           if(portalNormKeyStr(s2.venue) !== portalNormKeyStr(ov.anchor_venue)) continue;
