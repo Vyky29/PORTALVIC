@@ -2,13 +2,15 @@
  * After re-enrol deadline (Wed 22 Jul 2026), release standing MADRE seats that
  * are no longer kept for 26/27 so the public booking offer shows them as free.
  *
- * Renames matching slots to NO PARTICIPANT (or CLOSED for office holds) on:
+ * Renames matching slots to NO PARTICIPANT on:
  * - Autumn 26/27 sessions (REENROL_RELEASE_SESSION_FROM_ISO and later), and
  * - the standing-template day per weekday (latest non-crash session date),
  *   because the booking offer / open-places capacity still reads that summer
  *   template until autumn weeks exist in MADRE.
  *
  * Earlier summer history (older weeks) keeps real names for feedback.
+ * Former office-hold lines (Thushyan / Yoan / Yossi / Mohammed) are opened
+ * the same way (CLOSED → NO PARTICIPANT on template / autumn).
  *
  * Idempotent: safe to re-run. Admin can later set CLOSED / re-name slots.
  * Do not move participants between venues here — office handles venue changes.
@@ -50,7 +52,7 @@ type ReleaseRule =
 
 /**
  * Post-deadline releases for Autumn 26/27.
- * Thushyan / Yoan / Yossi / Mohammed stay CLOSED (office hold — not public).
+ * Former office holds (Thushyan / Yoan / Yossi / Mohammed) → NO PARTICIPANT.
  * Mia is never touched here.
  */
 export const REENROL_RELEASE_RULES: ReleaseRule[] = [
@@ -118,26 +120,22 @@ export const REENROL_RELEASE_RULES: ReleaseRule[] = [
   {
     kind: "all",
     clients: ["Thushyan"],
-    reason: "office_hold_block",
-    setTo: "CLOSED",
+    reason: "office_hold_release",
   },
   {
     kind: "all",
     clients: ["Yoan"],
-    reason: "office_hold_block",
-    setTo: "CLOSED",
+    reason: "office_hold_release",
   },
   {
     kind: "all",
     clients: ["Yossi", "yossi"],
-    reason: "office_hold_block",
-    setTo: "CLOSED",
+    reason: "office_hold_release",
   },
   {
     kind: "all",
     clients: ["Mohammed", "Mohamed"],
-    reason: "office_hold_block",
-    setTo: "CLOSED",
+    reason: "office_hold_release",
   },
   {
     kind: "filter",
@@ -169,10 +167,10 @@ export const REENROL_RELEASE_RULES: ReleaseRule[] = [
 ];
 
 /**
- * Standing lines we opened for office-hold kids — keep CLOSED.
- * Staff keys pin the exact instructor line (avoid closing Eiji’s freed Thu 5.30–6.30).
+ * Standing lines previously held CLOSED for office-hold kids — open as NO PARTICIPANT.
+ * Staff keys pin the exact instructor line (avoid touching Eiji’s freed Thu 5.30–6.30).
  */
-const OFFICE_HOLD_CLOSED_BANDS: Array<{
+const OFFICE_HOLD_OPEN_BANDS: Array<{
   label: string;
   staff: RegExp;
   day: RegExp;
@@ -251,7 +249,7 @@ export type ReenrolReleaseApplyResult = {
  * Office corrections kept idempotent on every release pass:
  * - Mia stays Northolt Wed 6–6.30 only (not Acton; not 5.30–6.30).
  * - First half Northolt Wed 5.30–6 on dan stays bookable (NO PARTICIPANT).
- * - CLOSED hold lines for Thushyan / Yoan / Yossi / Mohammed.
+ * - Former office-hold bands: CLOSED / hold name → NO PARTICIPANT (public).
  */
 export function applyReenrolOfficeCorrectionsToMadre(doc: MadreDoc): {
   changed: number;
@@ -259,13 +257,16 @@ export function applyReenrolOfficeCorrectionsToMadre(doc: MadreDoc): {
 } {
   let changed = 0;
   const notes: string[] = [];
+  const templateByWeekday = buildStandingTemplateDatesByWeekday(doc);
 
   for (const week of doc.weeks ?? []) {
+    const weekRec = week as unknown as Record<string, unknown>;
     for (const st of Object.values(week.staff || {}) as Array<Record<string, unknown>>) {
       const staffKey = norm(st.staffKey || st.name).toLowerCase();
       const days = (st.days as Array<Record<string, unknown>>) || [];
       for (const day of days) {
         const weekday = norm(day.weekday);
+        const sessionIso = slotSessionIso(day, weekRec);
         const slots = (day.slots as Array<Record<string, unknown>>) || [];
 
         // Mia: shrink / place Northolt Wed 6–6.30 on dan; free 5.30–6.
@@ -332,28 +333,31 @@ export function applyReenrolOfficeCorrectionsToMadre(doc: MadreDoc): {
             continue;
           }
 
-          // Office hold: keep these instructor lines CLOSED (not public).
-          for (const band of OFFICE_HOLD_CLOSED_BANDS) {
+          // Former office holds: open CLOSED / named hold seats on template + autumn.
+          if (
+            !reenrolReleaseAppliesToStandingSlot(
+              sessionIso,
+              weekday,
+              templateByWeekday,
+            )
+          ) {
+            continue;
+          }
+          for (const band of OFFICE_HOLD_OPEN_BANDS) {
             if (!band.staff.test(staffKey)) continue;
             if (!band.day.test(weekday)) continue;
             if (!band.time.test(time)) continue;
             if (!band.venue.test(venue)) continue;
             if (band.service && service && !band.service.test(service)) continue;
-            if (client.toUpperCase() === "CLOSED") continue;
-            if (
-              client.toUpperCase() !== "NO PARTICIPANT" &&
-              !clientMatches(client, [band.label])
-            ) {
-              continue;
-            }
-            slot.client_name = "CLOSED";
-            if ("participant_info" in slot) {
-              slot.participant_info =
-                `Office hold · ${band.label} · not released to booking portal`;
-            }
+            const isClosed = client.toUpperCase() === "CLOSED";
+            const isHoldName = clientMatches(client, [band.label]);
+            if (!isClosed && !isHoldName) continue;
+            if (client.toUpperCase() === "NO PARTICIPANT") continue;
+            slot.client_name = "NO PARTICIPANT";
+            if ("participant_info" in slot) slot.participant_info = "";
             changed += 1;
             notes.push(
-              `${client || "slot"} → CLOSED · ${staffKey} ${weekday} ${time} ${venue} (${band.label})`,
+              `${client || "CLOSED"} → NO PARTICIPANT · ${staffKey} ${weekday} ${time} ${venue} (${band.label})`,
             );
             break;
           }
