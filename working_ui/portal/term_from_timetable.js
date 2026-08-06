@@ -347,9 +347,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-04": [
         "fadi",
         "tom",
-        "yassir",
-        "yossi",
-        "mohammed"
+        "yassir"
       ],
       "2026-06-05": [
         "fadi",
@@ -363,7 +361,6 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "arthur_mo",
         "amaar_ah",
         "rodin",
-        "yoan",
         "yusuf_ah"
       ],
       "2026-06-08": [
@@ -389,7 +386,6 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "fadi",
         "tom",
         "yassir",
-        "yossi",
         "mohammed"
       ],
       "2026-06-12": [
@@ -404,7 +400,6 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "arthur_mo",
         "amaar_ah",
         "rodin",
-        "yoan",
         "yusuf_ah"
       ],
       "2026-06-15": [
@@ -430,9 +425,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-06-18": [
         "fadi",
         "tom",
-        "yassir",
-        "yossi",
-        "mohammed"
+        "yassir"
       ],
       "2026-06-19": [
         "fadi",
@@ -446,7 +439,6 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "arthur_mo",
         "amaar_ah",
         "rodin",
-        "yoan",
         "yusuf_ah"
       ],
       "2026-06-22": [
