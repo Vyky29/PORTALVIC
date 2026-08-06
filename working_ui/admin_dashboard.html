@@ -131,7 +131,7 @@
   <script src="/portal/admin-parent-notify-log.js?v=20260728-wa-tpl-display"></script>
   <script src="/portal/admin-staff-whatsapp.js?v=20260727-portal-seen-chip"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260718-pin-login"></script>
-  <script src="/portal/admin-open-places-2627.js?v=20260806-open-places"></script>
+  <script src="/portal/admin-open-places-2627.js?v=20260806-open-places-place"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260723-wa-tpl-picker" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260716-wa-no-dup-intro" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260707-cancel-reason-policy"></script>
@@ -21654,6 +21654,33 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.PortalParentBroadcast.bindModule();
       }
     }
+    function portalOpenPlaces2627NextAnchorForDay(dayName){
+      var want = String(dayName || '').trim();
+      var DAY_NUM = { Sunday:0, Monday:1, Tuesday:2, Wednesday:3, Thursday:4, Friday:5, Saturday:6 };
+      var wantN = DAY_NUM[want];
+      if(wantN == null) return '2026-09-07';
+      var start = new Date(Date.UTC(2026, 8, 5));
+      for(var i=0;i<14;i++){
+        var d = new Date(start.getTime());
+        d.setUTCDate(start.getUTCDate() + i);
+        if(d.getUTCDay() === wantN){
+          return d.toISOString().slice(0, 10);
+        }
+      }
+      return '2026-09-07';
+    }
+    function portalOpenPlaces2627ServiceLabel(slot){
+      var id = String((slot && slot.serviceId) || '').toLowerCase();
+      var map = {
+        aquatic: 'Aquatic Activity',
+        climbing: 'Climbing',
+        physical: 'Physical Activity',
+        multi: 'Multi-Activity',
+        bespoke: 'Bespoke Programme',
+        day_centre: 'Day Centre'
+      };
+      return String((slot && slot.serviceName) || map[id] || id || '').trim();
+    }
     function portalOpenPlaces2627ConfigureOnce(){
       if(window.__portalOpenPlaces2627Configured || !window.PortalAdminOpenPlaces2627) return;
       window.__portalOpenPlaces2627Configured = true;
@@ -21661,6 +21688,31 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         esc: esc,
         toast: portalAdminToast,
         openView: function(viewId){ setView(String(viewId || '')); },
+        placeExisting: function(slot){
+          var prefill = {
+            anchorDate: portalOpenPlaces2627NextAnchorForDay(slot && slot.day),
+            client_name: '',
+            service: portalOpenPlaces2627ServiceLabel(slot),
+            time_slot: String((slot && slot.timeLabel) || '').trim(),
+            venue: String((slot && slot.venue) || '').trim(),
+            scope: 'rest_of_term',
+            action: 'update'
+          };
+          if(typeof window.portalAdminOpenTermSlotEdit === 'function'){
+            window.portalAdminOpenTermSlotEdit(prefill);
+          }else{
+            window.__PORTAL_TERM_SLOT_PREFILL__ = prefill;
+            setView('term_roster_edit');
+          }
+        },
+        placeNew: function(slot){
+          try{
+            window.__OP2627_PENDING_SLOT__ = slot || null;
+            sessionStorage.setItem('op2627_pending_slot', JSON.stringify(slot || {}));
+          }catch(_e){}
+          openDayOpsNewParticipantModal();
+          portalAdminToast('New participant — after save, place them on '+String((slot && slot.day) || '')+' '+String((slot && slot.timeLabel) || '')+' via Edit term slot if needed.', 'ok');
+        },
         getSupabaseUrl: function(){
           var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
           return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
