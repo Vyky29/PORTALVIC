@@ -2,9 +2,13 @@
  * After re-enrol deadline (Wed 22 Jul 2026), release standing MADRE seats that
  * are no longer kept for 26/27 so the public booking offer shows them as free.
  *
- * Only renames slots on/after Autumn 26/27 (REENROL_RELEASE_SESSION_FROM_ISO).
- * Summer/July history must keep real client names so staff can still open
- * feedback / cancellations for sessions already delivered.
+ * Renames matching slots to NO PARTICIPANT (or CLOSED for office holds) on:
+ * - Autumn 26/27 sessions (REENROL_RELEASE_SESSION_FROM_ISO and later), and
+ * - the standing-template day per weekday (latest non-crash session date),
+ *   because the booking offer / open-places capacity still reads that summer
+ *   template until autumn weeks exist in MADRE.
+ *
+ * Earlier summer history (older weeks) keeps real names for feedback.
  *
  * Idempotent: safe to re-run. Admin can later set CLOSED / re-name slots.
  * Do not move participants between venues here — office handles venue changes.
@@ -14,8 +18,10 @@ import type { MadreDoc } from "./portal_madre_fold_logic.ts";
 
 export const REENROL_RELEASE_DEADLINE_ISO = "2026-07-22";
 export const REENROL_RELEASE_LIVE_FROM_ISO = "2026-07-23";
-/** Do not wipe client names on sessions before this ISO (keep July history). */
+/** Autumn sessions: always eligible for rename. */
 export const REENROL_RELEASE_SESSION_FROM_ISO = "2026-09-01";
+/** Crash / holiday ops weeks — not used as Autumn weekly standing template. */
+export const REENROL_RELEASE_CRASH_FROM_ISO = "2026-07-20";
 export const MADRE_TERM_KEY = "summer-2026";
 
 type SlotCtx = {
@@ -65,7 +71,48 @@ export const REENROL_RELEASE_RULES: ReleaseRule[] = [
   },
   {
     kind: "all",
+    clients: ["Rayyan Fi", "Rayyan Fida", "Rayyan F", "Rayyan"],
+    reason: "not_continuing_withdraw",
+  },
+  {
+    kind: "all",
     clients: ["Ayden W", "Ayden"],
+    reason: "unconfirmed_deadline",
+  },
+  {
+    kind: "all",
+    clients: ["Amir"],
+    reason: "unconfirmed_deadline",
+  },
+  {
+    kind: "all",
+    clients: ["Anas"],
+    reason: "unconfirmed_deadline",
+  },
+  {
+    kind: "all",
+    clients: ["Jad"],
+    reason: "unconfirmed_deadline",
+  },
+  {
+    kind: "all",
+    clients: ["Kamy"],
+    reason: "unconfirmed_deadline",
+  },
+  {
+    kind: "all",
+    clients: ["Kate"],
+    reason: "unconfirmed_deadline",
+  },
+  {
+    kind: "all",
+    clients: ["Patrick"],
+    reason: "unconfirmed_deadline",
+  },
+  {
+    /** Private Mohamed Yusuf (contact 56) — not the Roberto Thu office-hold Mohammed. */
+    kind: "all",
+    clients: ["Mohamed Yu", "Mohammed Yu", "Yusuf Mo"],
     reason: "unconfirmed_deadline",
   },
   {
@@ -335,6 +382,45 @@ export function reenrolReleaseAppliesToSessionIso(sessionIso: string): boolean {
   return iso >= REENROL_RELEASE_SESSION_FROM_ISO;
 }
 
+/**
+ * Latest non-crash session date per weekday — the standing template the booking
+ * offer still reads while MADRE has no autumn weeks yet.
+ */
+export function buildStandingTemplateDatesByWeekday(
+  doc: MadreDoc,
+): Map<string, string> {
+  const latest = new Map<string, string>();
+  for (const week of doc.weeks ?? []) {
+    const weekRec = week as unknown as Record<string, unknown>;
+    for (const st of Object.values(week.staff || {}) as Array<Record<string, unknown>>) {
+      const days = (st.days as Array<Record<string, unknown>>) || [];
+      for (const day of days) {
+        const weekday = norm(day.weekday);
+        if (!weekday) continue;
+        const sessionIso = slotSessionIso(day, weekRec);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(sessionIso)) continue;
+        if (sessionIso >= REENROL_RELEASE_CRASH_FROM_ISO) continue;
+        if (sessionIso >= REENROL_RELEASE_SESSION_FROM_ISO) continue;
+        const prev = latest.get(weekday);
+        if (!prev || sessionIso > prev) latest.set(weekday, sessionIso);
+      }
+    }
+  }
+  return latest;
+}
+
+export function reenrolReleaseAppliesToStandingSlot(
+  sessionIso: string,
+  weekday: string,
+  templateByWeekday: Map<string, string>,
+): boolean {
+  const iso = String(sessionIso || "").slice(0, 10);
+  if (reenrolReleaseAppliesToSessionIso(iso)) return true;
+  const day = norm(weekday);
+  if (!day || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+  return templateByWeekday.get(day) === iso;
+}
+
 /** Mutate MADRE doc in memory; returns change notes. */
 export function applyReenrolReleaseRulesToMadre(doc: MadreDoc): {
   changed: number;
@@ -343,6 +429,7 @@ export function applyReenrolReleaseRulesToMadre(doc: MadreDoc): {
 } {
   let changed = 0;
   const notes: string[] = [];
+  const templateByWeekday = buildStandingTemplateDatesByWeekday(doc);
 
   for (const week of doc.weeks ?? []) {
     const weekRec = week as unknown as Record<string, unknown>;
@@ -351,8 +438,10 @@ export function applyReenrolReleaseRulesToMadre(doc: MadreDoc): {
       for (const day of days) {
         const weekday = norm(day.weekday);
         const sessionIso = slotSessionIso(day, weekRec);
-        // Keep summer / July history intact for staff feedback.
-        if (!reenrolReleaseAppliesToSessionIso(sessionIso)) continue;
+        // Autumn + standing-template day only (keep older summer history).
+        if (!reenrolReleaseAppliesToStandingSlot(sessionIso, weekday, templateByWeekday)) {
+          continue;
+        }
         const slots = (day.slots as Array<Record<string, unknown>>) || [];
         for (const slot of slots) {
           const client = norm(slot.client_name);
