@@ -17,6 +17,7 @@ import {
 import { resolveParentGeo, parentGeoToDbFields } from "../_shared/parent_geo.ts";
 import { resolveParticipantAvatarUrls } from "../_shared/participant_avatar.ts";
 import { REENROL_ACADEMIC_YEAR } from "../_shared/reenrolment_catalog.ts";
+import { buildReenrolmentParentSummary } from "../_shared/reenrolment_parent_summary.ts";
 import {
   applyUnreadFlagsToMessages,
   countUnreadOutboundMessages,
@@ -173,29 +174,54 @@ Deno.serve(async (req) => {
   const contactIds = childrenOut
     .map((c) => String(c.contact_id || "").trim())
     .filter(Boolean);
-  const reenrolLatestByContact = new Map<string, string>();
+  const reenrolLatestByContact = new Map<
+    string,
+    {
+      submitted_at: string;
+      continuing: boolean;
+      not_continuing: boolean;
+      summary_hint: string;
+    }
+  >();
   if (contactIds.length) {
     const { data: reenrolRows } = await supabase
       .from("portal_re_enrolment_submissions")
-      .select("participant_contact_id, submitted_at")
+      .select("participant_contact_id, submitted_at, payload")
       .eq("academic_year", REENROL_ACADEMIC_YEAR)
       .in("participant_contact_id", contactIds)
       .order("submitted_at", { ascending: false });
     for (const row of reenrolRows || []) {
       const cid = String(row.participant_contact_id || "").trim();
       if (cid && !reenrolLatestByContact.has(cid)) {
-        reenrolLatestByContact.set(cid, String(row.submitted_at || ""));
+        const payload = row.payload && typeof row.payload === "object"
+          ? (row.payload as Record<string, unknown>)
+          : null;
+        const summary = buildReenrolmentParentSummary(
+          payload,
+          String(row.submitted_at || "") || null,
+        );
+        reenrolLatestByContact.set(cid, {
+          submitted_at: String(row.submitted_at || ""),
+          continuing: summary.continuing,
+          not_continuing: summary.not_continuing,
+          summary_hint: summary.summary_hint,
+        });
       }
     }
   }
   const childrenWithReenrol = childrenOut.map((c) => {
     const cid = String(c.contact_id || "").trim();
-    const submittedAt = reenrolLatestByContact.get(cid) || null;
+    const row = reenrolLatestByContact.get(cid) || null;
+    const submittedAt = row?.submitted_at || null;
     return {
       ...c,
       reenrolment: {
         submitted: !!submittedAt,
         submitted_at: submittedAt,
+        continuing: !!row?.continuing,
+        not_continuing: !!row?.not_continuing,
+        summary_hint: row?.summary_hint ||
+          (submittedAt ? "Submitted" : "Not submitted yet"),
       },
     };
   });

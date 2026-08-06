@@ -77,9 +77,61 @@ export type ReenrolmentSummaryItem = {
 export type ReenrolmentParentSummary = {
   submitted: boolean;
   submitted_at: string | null;
+  /** True when the family kept / changed at least one place for 2026/27. */
+  continuing: boolean;
+  /** True when the form says they are leaving (full withdraw / not_continuing). */
+  not_continuing: boolean;
   summary_hint: string;
   items: ReenrolmentSummaryItem[];
 };
+
+/** Parent kept or changed at least one weekly / Day Centre place. */
+export function reenrolmentPayloadIsContinuing(
+  payload: Record<string, unknown> | null | undefined,
+): boolean {
+  if (!payload || typeof payload !== "object") return false;
+  if (reenrolmentPayloadIsNotContinuing(payload)) return false;
+  const choices = (payload.choices && typeof payload.choices === "object"
+    ? payload.choices
+    : {}) as Record<string, unknown>;
+  const weeklyChoices = (choices.weekly && typeof choices.weekly === "object"
+    ? choices.weekly
+    : {}) as Record<string, WeeklyChoice>;
+  const weeklyVals = Object.values(weeklyChoices);
+  if (
+    weeklyVals.some((c) => {
+      const k = clean(c?.choice, 40).toLowerCase();
+      return k === "keep" || k === "change";
+    })
+  ) {
+    return true;
+  }
+  const dayCentreChoice = clean(choices.day_centre, 40).toLowerCase();
+  return dayCentreChoice === "continue" || dayCentreChoice === "discuss";
+}
+
+/** Full opt-out: not_continuing flag, cadence, or every weekly choice is withdraw. */
+export function reenrolmentPayloadIsNotContinuing(
+  payload: Record<string, unknown> | null | undefined,
+): boolean {
+  if (!payload || typeof payload !== "object") return false;
+  if (payload.not_continuing === true || payload.not_continuing === "true") {
+    return true;
+  }
+  const choices = (payload.choices && typeof payload.choices === "object"
+    ? payload.choices
+    : {}) as Record<string, unknown>;
+  const cadence = clean(choices.enrolment_cadence, 40).toLowerCase();
+  if (cadence === "not_continuing") return true;
+  const weeklyChoices = (choices.weekly && typeof choices.weekly === "object"
+    ? choices.weekly
+    : {}) as Record<string, WeeklyChoice>;
+  const weeklyVals = Object.values(weeklyChoices);
+  if (!weeklyVals.length) return false;
+  return weeklyVals.every((c) =>
+    clean(c?.choice, 40).toLowerCase() === "withdraw"
+  );
+}
 
 export function buildReenrolmentParentSummary(
   payload: Record<string, unknown> | null | undefined,
@@ -89,6 +141,8 @@ export function buildReenrolmentParentSummary(
     return {
       submitted: false,
       submitted_at: null,
+      continuing: false,
+      not_continuing: false,
       summary_hint: "Not submitted yet",
       items: [],
     };
@@ -101,7 +155,8 @@ export function buildReenrolmentParentSummary(
     ? choices.weekly
     : {}) as Record<string, WeeklyChoice>;
   const dayCentreChoice = clean(choices.day_centre, 40).toLowerCase();
-
+  const notContinuing = reenrolmentPayloadIsNotContinuing(payload);
+  const continuing = reenrolmentPayloadIsContinuing(payload);
   const slotsRaw = payload.weekly_slots_snapshot;
   const slots: SlotSnapshot[] = Array.isArray(slotsRaw)
     ? (slotsRaw as SlotSnapshot[])
@@ -175,7 +230,9 @@ export function buildReenrolmentParentSummary(
 
   const submitted = !!submittedAt;
   let summaryHint = "Not submitted yet";
-  if (submitted && items.length) {
+  if (submitted && notContinuing) {
+    summaryHint = "Not continuing for 2026/27";
+  } else if (submitted && items.length) {
     const keeps = Object.values(weeklyChoices).filter((c) =>
       clean(c?.choice, 40).toLowerCase() === "keep" || !clean(c?.choice, 40)
     ).length;
@@ -200,6 +257,8 @@ export function buildReenrolmentParentSummary(
   return {
     submitted,
     submitted_at: submittedAt,
+    continuing,
+    not_continuing: notContinuing,
     summary_hint: summaryHint,
     items,
   };

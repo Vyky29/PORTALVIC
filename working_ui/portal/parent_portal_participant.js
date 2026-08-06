@@ -898,6 +898,8 @@
     return {
       submitted: !!r.submitted,
       submitted_at: r.submitted_at || null,
+      continuing: r.continuing === true,
+      not_continuing: r.not_continuing === true,
       hint: String(r.summary_hint || "").trim() || "Not submitted yet",
       items: Array.isArray(r.items) ? r.items : [],
       parent_action: action,
@@ -991,8 +993,15 @@
     var booking = bookingSummary(data);
     var officeAuto = booking.parent_action === "auto";
     var crashUnpaid = hasUnpaidCrashForHub(data);
-    /* Submitted, office auto (LA/Day Centre), or unpaid crash place. */
-    if (!booking.submitted && !officeAuto && !crashUnpaid) return "";
+    if (booking.not_continuing) {
+      return (
+        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--former" data-pp-hub-reenrol-chip role="status" title="Not continuing for 2026/27">' +
+        "<span>Not continuing</span>" +
+        "</span>"
+      );
+    }
+    /* Continuing place: submitted keep/change, office auto (LA/Day Centre), or unpaid crash. */
+    if (!booking.continuing && !officeAuto && !crashUnpaid) return "";
 
     if (isOutstandingSummerAhmedSibling(data)) {
       return (
@@ -2500,12 +2509,20 @@
       : CURRENT_YEAR_TERM_TO;
   }
 
-  /** Hub / Absent use 2026/27 closed dates after Booking submit or office-auto (LA / Day Centre). */
+  /** Hub / Absent use 2026/27 closed dates after a continuing Booking submit or office-auto (LA / Day Centre). */
   function familyAcceptedNextYear(data) {
     var booking = bookingSummary(data);
+    if (booking.not_continuing) return false;
     if (booking.parent_action === "auto") return true;
+    if (booking.continuing) return true;
     var r = (data && data.reenrolment) || {};
-    return !!r.submitted;
+    /* Legacy payloads without continuing flags: only treat as accepted if submitted and not a full withdraw. */
+    if (r.not_continuing === true) return false;
+    if (r.continuing === true) return true;
+    if (!r.submitted) return false;
+    var hint = String(r.summary_hint || "").toLowerCase();
+    if (/not continuing|withdrawn/.test(hint) && !/kept|change/.test(hint)) return false;
+    return true;
   }
 
   function isNextYearClubClosedIso(iso) {

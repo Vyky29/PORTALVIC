@@ -1046,11 +1046,29 @@
   function childReenrolBtnHtml(c) {
     var cid = String(c.contact_id || "");
     var href = "/parent/re-enrolment?from=portal&contact_id=" + encodeURIComponent(cid);
-    var submitted = !!(c.reenrolment && c.reenrolment.submitted);
-    var label = submitted ? "Re-enrol 2026/27 · Saved" : "Re-enrol 2026/27";
+    var re = (c && c.reenrolment) || {};
+    var submitted = !!re.submitted;
+    var notContinuing = re.not_continuing === true;
+    var continuing = re.continuing === true;
+    var label = "Re-enrol 2026/27";
+    var sub = "";
+    var savedClass = "";
+    if (submitted && notContinuing) {
+      label = "Not continuing 2026/27";
+      sub = "Form saved — place not renewed";
+      savedClass = " pp-child-reenrol-btn--saved pp-child-reenrol-btn--not-continuing";
+    } else if (submitted && continuing) {
+      label = "Re-enrol 2026/27 · Saved";
+      sub = "Tap to edit — office notified";
+      savedClass = " pp-child-reenrol-btn--saved";
+    } else if (submitted) {
+      label = "Re-enrol 2026/27 · Saved";
+      sub = "Tap to edit — office notified";
+      savedClass = " pp-child-reenrol-btn--saved";
+    }
     return (
       '<a class="pp-child-action-btn pp-child-reenrol-btn' +
-      (submitted ? " pp-child-reenrol-btn--saved" : "") +
+      savedClass +
       '" href="' +
       esc(href) +
       '">' +
@@ -1060,8 +1078,8 @@
       '<span class="pp-child-action-label">' +
       esc(label) +
       "</span>" +
-      (submitted
-        ? '<span class="pp-child-action-sub">Tap to edit — office notified</span>'
+      (sub
+        ? '<span class="pp-child-action-sub">' + esc(sub) + "</span>"
         : "") +
       "</a>"
     );
