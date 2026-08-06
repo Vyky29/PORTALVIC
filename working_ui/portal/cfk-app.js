@@ -47,6 +47,9 @@
     collectCoaches: function () {
       return [];
     },
+    collectParticipants: function () {
+      return [];
+    },
   };
 
   function configure(options) {
@@ -61,6 +64,7 @@
     var classEl = deps.$("c4kSvcFilterClass");
     var venueEl = deps.$("c4kSvcFilterVenue");
     var coachEl = deps.$("c4kSvcFilterInstructor");
+    var paxEl = deps.$("c4kSvcFilterParticipant");
     var spaceEl = deps.$("c4kSvcFilterSpace");
     var waitEl = deps.$("c4kSvcFilterWait");
     return {
@@ -68,6 +72,7 @@
       class: classEl ? String(classEl.value || "").trim() : "",
       venue: venueEl ? String(venueEl.value || "").trim() : "",
       coach: coachEl ? String(coachEl.value || "").trim().toLowerCase() : "",
+      participant: paxEl ? String(paxEl.value || "").trim().toLowerCase() : "",
       spaceOnly: !!(spaceEl && spaceEl.checked),
       waitOnly: !!(waitEl && waitEl.checked),
     };
@@ -77,11 +82,22 @@
     var classEl = deps.$("c4kSvcFilterClass");
     var venueEl = deps.$("c4kSvcFilterVenue");
     var coachEl = deps.$("c4kSvcFilterInstructor");
+    var paxEl = deps.$("c4kSvcFilterParticipant");
     if (!classEl || !venueEl || !coachEl) return;
     if (!deps.spreadsheetAvailable()) {
       classEl.innerHTML = '<option value="">Any class</option>';
       venueEl.innerHTML = '<option value="">Any venue</option>';
       coachEl.innerHTML = '<option value="">Any instructor</option>';
+      if (global.PortalAdminSearchCombo) {
+        global.PortalAdminSearchCombo.ensure({
+          id: "c4kSvcFilterParticipant",
+          placeholder: "Any participant",
+          allLabel: "Any participant",
+        });
+        global.PortalAdminSearchCombo.setOptions("c4kSvcFilterParticipant", [], {
+          keepValue: false,
+        });
+      }
       return;
     }
     var pack = deps.mergeSessions();
@@ -91,6 +107,7 @@
     });
     var venues = deps.collectVenues(pack);
     var coaches = deps.collectCoaches(pack);
+    var participants = deps.collectParticipants(pack);
     var cVal = classEl.value;
     var vVal = venueEl.value;
     var coVal = coachEl.value;
@@ -141,6 +158,58 @@
       })
         ? coVal
         : "";
+    if (global.PortalAdminSearchCombo && paxEl) {
+      var paxCur = String(paxEl.value || "").trim().toLowerCase();
+      global.PortalAdminSearchCombo.ensure({
+        id: "c4kSvcFilterParticipant",
+        placeholder: "Any participant",
+        allLabel: "Any participant",
+        maxVisible: 20,
+      });
+      global.PortalAdminSearchCombo.setOptions(
+        "c4kSvcFilterParticipant",
+        participants.map(function (p) {
+          return { value: p.id, label: p.name };
+        }),
+        { keepValue: true },
+      );
+      if (
+        paxCur &&
+        participants.some(function (p) {
+          return p.id === paxCur;
+        })
+      ) {
+        var hit = participants.filter(function (p) {
+          return p.id === paxCur;
+        })[0];
+        global.PortalAdminSearchCombo.setValue(
+          "c4kSvcFilterParticipant",
+          hit.id,
+          hit.name,
+        );
+      }
+    } else if (paxEl && paxEl.tagName === "SELECT") {
+      var pVal = paxEl.value;
+      paxEl.innerHTML =
+        '<option value="">Any participant</option>' +
+        participants
+          .map(function (p) {
+            return (
+              '<option value="' +
+              deps.esc(p.id) +
+              '">' +
+              deps.esc(p.name) +
+              "</option>"
+            );
+          })
+          .join("");
+      paxEl.value =
+        pVal && participants.some(function (p) {
+          return p.id === pVal;
+        })
+          ? pVal
+          : "";
+    }
   }
 
   function ensureFiltersDelegated() {
@@ -151,6 +220,7 @@
       c4kSvcFilterClass: 1,
       c4kSvcFilterVenue: 1,
       c4kSvcFilterInstructor: 1,
+      c4kSvcFilterParticipant: 1,
       c4kSvcFilterSpace: 1,
       c4kSvcFilterWait: 1,
     };
@@ -188,7 +258,7 @@
       "Go to Services &amp; capacity</button></div>" +
       '<div id="c4kServicesRegisterHost" class="c4k-services-register-host" hidden></div>' +
       '<details class="c4k-svc-filters" id="c4kServicesFiltersPanel" open>' +
-      '<summary class="c4k-svc-filters__sum"><span class="c4k-svc-filters__chev" aria-hidden="true"></span> Filter by day, time, venue, class or instructor</summary>' +
+      '<summary class="c4k-svc-filters__sum"><span class="c4k-svc-filters__chev" aria-hidden="true"></span> Filter by day, time, venue, class, instructor or participant</summary>' +
       '<div class="c4k-svc-filters__body">' +
       '<div class="c4k-svc-filters__grid">' +
       '<div class="c4k-svc-filters__field"><label class="c4k-svc-filters__lbl" for="c4kSvcFilterDay">Day</label>' +
@@ -203,6 +273,15 @@
       '<select class="sel c4k-svc-filters__sel" id="c4kSvcFilterVenue" aria-label="Filter by venue"><option value="">Any venue</option></select></div>' +
       '<div class="c4k-svc-filters__field"><label class="c4k-svc-filters__lbl" for="c4kSvcFilterInstructor">Instructor</label>' +
       '<select class="sel c4k-svc-filters__sel" id="c4kSvcFilterInstructor" aria-label="Filter by instructor"><option value="">Any instructor</option></select></div>' +
+      '<div class="c4k-svc-filters__field"><label class="c4k-svc-filters__lbl" for="c4kSvcFilterParticipant">Participant</label>' +
+      (global.PortalAdminSearchCombo && global.PortalAdminSearchCombo.comboHtml
+        ? global.PortalAdminSearchCombo.comboHtml(
+            "c4kSvcFilterParticipant",
+            "Any participant",
+            "100%",
+          )
+        : '<select class="sel c4k-svc-filters__sel" id="c4kSvcFilterParticipant" aria-label="Filter by participant"><option value="">Any participant</option></select>') +
+      "</div>" +
       "</div>" +
       '<div class="c4k-svc-filters__row2">' +
       '<button type="button" class="btn btn--sec btn--sm" id="c4kServicesRefreshBtn">Refresh</button>' +

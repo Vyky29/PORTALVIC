@@ -135,7 +135,7 @@
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260723-wa-tpl-picker" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260716-wa-no-dup-intro" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260707-cancel-reason-policy"></script>
-  <script src="/portal/cfk-app.js?v=20260614-cfk-services"></script>
+  <script src="/portal/cfk-app.js?v=20260806-svc-pax-filter"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
   <script src="/portal/admin-scheduling-module.js?v=20260704-search-combo"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
@@ -156,7 +156,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260723-late-pay-staff" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260806-svc-pax-filter" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
@@ -12913,7 +12913,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           mergeSessions: adminMergeSpreadsheetSessions,
           programmeVenueBlocks: adminProgrammeVenueBlocksFromPack,
           collectVenues: adminCollectVenuesFromPack,
-          collectCoaches: adminCollectCoachesFromPack
+          collectCoaches: adminCollectCoachesFromPack,
+          collectParticipants: adminCollectParticipantsFromPack
         });
       }
       if(window.PortalAdminSchedulingModule && typeof window.PortalAdminSchedulingModule.configure === 'function'){
@@ -16477,6 +16478,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return Object.keys(seen).sort(function(a, b){ return a.localeCompare(b, undefined, { sensitivity: 'base' }); });
     }
+    /** Named booked participants from merged roster sessions (skips open/closed/duty placeholders). */
+    function adminCollectParticipantsFromPack(pack){
+      var notes = (pack && pack.notes) || {};
+      var seen = {};
+      var list = [];
+      var sessions = (pack && pack.sessions) || [];
+      for(var i = 0; i < sessions.length; i++){
+        var cid = String(sessions[i].clientId || '').trim().toLowerCase();
+        if(!bookingIsBookedClientSlug(cid) || seen[cid]) continue;
+        if(cid === 'home' || cid === 'casa' || cid === 'manager') continue;
+        seen[cid] = true;
+        var cn = notes[cid] || notes[sessions[i].clientId];
+        var nm = (cn && cn.name) ? String(cn.name).trim() : '';
+        if(!nm) nm = cid;
+        list.push({ id: cid, name: nm });
+      }
+      list.sort(function(a, b){ return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }); });
+      return list;
+    }
     /** True if any parallel roster line hints waitlist (slug, status, or display). */
     function adminServiceLineGrpHasWaitHint(grp){
       for(var i = 0; i < (grp && grp.length) || 0; i++){
@@ -16488,7 +16508,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return false;
     }
-    /** Row-level filters (coach / space / wait) after merge; structural filters applied by caller. */
+    /** Row-level filters (coach / participant / space / wait) after merge; structural filters applied by caller. */
     function adminServiceLineGroupPassesFilters(lineGrp, filt){
       if(!filt) return true;
       if(filt.coach){
@@ -16498,6 +16518,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(String(lineGrp[i].staffRosterId || '').trim().toLowerCase() === ck){ okCoach = true; break; }
         }
         if(!okCoach) return false;
+      }
+      if(filt.participant){
+        var pk = String(filt.participant).trim().toLowerCase();
+        var okPax = false;
+        for(var pi = 0; pi < (lineGrp && lineGrp.length) || 0; pi++){
+          var sl = lineGrp[pi];
+          var slug = String(sl.clientSlug || '').trim().toLowerCase();
+          var disp = String(sl.clientDisplay || '').trim().toLowerCase();
+          if(slug === pk || disp === pk){ okPax = true; break; }
+        }
+        if(!okPax) return false;
       }
       if(filt.spaceOnly){
         var okSp = false;
@@ -16515,7 +16546,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(window.PortalCfkApp && typeof window.PortalCfkApp.readFiltersFromDom === 'function'){
         return window.PortalCfkApp.readFiltersFromDom();
       }
-      return { day:'', class:'', venue:'', coach:'', spaceOnly:false, waitOnly:false };
+      return { day:'', class:'', venue:'', coach:'', participant:'', spaceOnly:false, waitOnly:false };
     }
     function fillC4kServicesFilterSelects(){
       if(window.PortalCfkApp && typeof window.PortalCfkApp.fillFilterSelects === 'function'){
@@ -16865,7 +16896,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var termStart = SERVICES_ROSTER_CALENDAR_START_ISO;
       var termEnd = SERVICES_ROSTER_CALENDAR_END_ISO;
       var dowOrder = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
-      var hasFilt = !!(filt && (filt.day || filt.class || filt.venue || filt.coach || filt.spaceOnly || filt.waitOnly));
+      var hasFilt = !!(filt && (filt.day || filt.class || filt.venue || filt.coach || filt.participant || filt.spaceOnly || filt.waitOnly));
       var cardsHtml = grouped.map(function(block, pidx){
         if(filt && filt.class && String(block.programme) !== String(filt.class)) return '';
         var weekSlots = adminCollectSlotsForProgrammeWeek(block.programme, weekIso);
@@ -17150,7 +17181,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return (
           '<div class="card card-pad" style="margin-bottom:10px">'+
           '<p class="muted" style="margin:0;max-width:48rem;min-width:0;overflow-wrap:break-word">'+
-          (hasFilt ? 'No sessions match the current filters. Try clearing day, class, venue, or instructor, or uncheck the availability options.' : 'No roster to display.')+
+          (hasFilt ? 'No sessions match the current filters. Try clearing day, class, venue, instructor, or participant, or uncheck the availability options.' : 'No roster to display.')+
           '</p></div>'
         );
       }
