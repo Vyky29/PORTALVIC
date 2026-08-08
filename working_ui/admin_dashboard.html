@@ -7147,8 +7147,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 source_module: 'c4k_services_schedule_class'
               }).then(function(foldRes){
                 var note = foldRes && (foldRes.note || foldRes.message);
-                if(foldRes && foldRes.ok === false){
-                  madreNotes.push(instr.name + ': MADRE ' + String(note || 'no week/staff match'));
+                if(foldRes && (foldRes.folded === false || foldRes.ok === false)){
+                  madreNotes.push(instr.name + ': MADRE ' + String(note || 'no week/staff match — pick an instructor already on that week'));
                 }else{
                   madreNotes.push(instr.name + ': open seat on Booking Portal');
                 }
