@@ -156,7 +156,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260808-svc-table" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260808-svc-table-v3" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
@@ -6919,25 +6919,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-top:14px;min-width:0">'+
         '<input type="checkbox" id="editClassPrivate" name="private" style="margin-top:3px;flex-shrink:0"/>'+
         '<span style="min-width:0;overflow-wrap:break-word"><strong>Private:</strong><span class="muted" style="display:block;font-weight:500;margin-top:4px;font-size:12px;line-height:1.45">Keep this band off the public Booking Portal offer (roster only).</span></span></label>'+
-        '<div class="edit-class-sec">'+
-        '<h3>Payment options</h3>'+
-        '<div class="edit-class-radio-grp">'+
-        '<label><input type="radio" name="editClassPay" value="pro_rata" checked/><span><strong>Full term &amp; pro-rata</strong><span class="muted">(pay full term or remaining sessions)</span></span></label>'+
-        '<label><input type="radio" name="editClassPay" value="full_only"/><span><strong>Full term only</strong><span class="muted">(pay full term price only)</span></span></label>'+
-        '</div>'+
-        '<label class="lbl" for="editClassTermPrice">Term price</label>'+
-        '<div class="edit-class-currency"><span>£</span><input class="inp" type="text" id="editClassTermPrice" inputmode="decimal" value="650.00"/></div>'+
-        '<label class="lbl" for="editClassSessionPrice">Session price</label>'+
-        '<div class="edit-class-currency"><span>£</span><input class="inp" type="text" id="editClassSessionPrice" inputmode="decimal" value="50.00"/></div>'+
-        '</div>'+
-        '<div class="edit-class-sec">'+
-        '<h3>Trial options</h3>'+
-        '<div class="edit-class-radio-grp">'+
-        '<label><input type="radio" name="editClassTrial" value="none" checked/><span><strong>I don&apos;t offer trials</strong></span></label>'+
-        '<label><input type="radio" name="editClassTrial" value="offer"/><span><strong>I offer a trial</strong></span></label>'+
-        '</div></div>'+
         '<p class="muted" style="margin:14px 0 0;font-size:11px;line-height:1.45;max-width:48rem;overflow-wrap:break-word">'+
-        'Each instructor line becomes one open seat. The instructor must already exist on the MADRE week grid (same names as Schedule &amp; Covers). Pricing fields are stored for admin reference only for now.'+
+        'Each instructor line becomes one open seat. The instructor must already exist on the MADRE week grid (same names as Schedule &amp; Covers).'+
         '</p>'+
         '</form></div>'+
         '<div class="modal-f modal-f--edit-class">'+
@@ -17559,7 +17542,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 ' data-c4k-svc-line-count="' + esc(String(mergedLines.length)) + '" data-c4k-svc-programme="' + esc(B.programme) + '"' +
                 ' data-c4k-svc-seg-start="' + esc(B.segA) + '" data-c4k-svc-seg-end="' + esc(B.segB) + '"' +
                 ' data-c4k-svc-staff-ids="' + esc(staffIdList.join('|')) + '"';
-              var classMain = esc(adminServiceSlotClassDisplayLabel(B.programme));
               var cnt = adminServiceSlotRegisterCounts(mergedLines, B.programme, B.venue, B.dk);
               var waitN = cnt.waitOverflow || 0;
               for(var wi = 0; wi < mergedLines.length; wi++){
@@ -17598,7 +17580,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 '<tr class="c4k-svc-slot-tr" ' + dataSlot + '>' +
                 '<td class="c4k-svc-slot-td c4k-svc-slot-td--time">' + esc(timeRange) + '</td>' +
                 '<td class="c4k-svc-slot-td c4k-svc-slot-td--venue">' + esc(B.venue) + '</td>' +
-                '<td class="c4k-svc-slot-td c4k-svc-slot-td--class"><strong class="c4k-svc-slot-class-name">' + classMain + '</strong></td>' +
                 '<td class="c4k-svc-slot-td c4k-svc-slot-td--instr">' + instrCell + '</td>' +
                 '<td class="c4k-svc-slot-td c4k-svc-slot-td--pax">' + paxCell + '</td>' +
                 '<td class="c4k-svc-slot-td c4k-svc-slot-td--wait">' + waitInner + '</td>' +
@@ -17610,18 +17591,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var hoursHtml = (dayHoursRaw && dayHoursRaw !== '—')
               ? '<span class="c4k-svc-day-acc__hours" title="Earliest to latest rostered time this weekday at this venue (merged sheet, after filters).">'+esc(dayHoursRaw)+'</span>'
               : '';
-            var tableHtml =
-              '<div class="c4k-svc-day-sched-bar toolbar" style="justify-content:flex-end;flex-wrap:wrap;gap:8px;margin:0 0 8px;min-width:0">'+
+            var schedAddBtn =
               '<button type="button" class="btn btn--pri btn--sm c4k-svc-schedule-class-head-btn" data-novo-sched-add-class="1" '+
-              'data-c4k-svc-programme="'+esc(block.programme)+'" data-venue="'+esc(vn.venue)+'" data-day="'+esc(dk)+'" data-session-date="'+esc(pickIso0 || '')+'">'+
-              '+ Schedule a Class</button></div>'+
+              'data-c4k-svc-programme="'+esc(block.programme)+'" data-venue="'+esc(vn.venue)+'" data-day="'+esc(dk)+'" data-session-date="'+esc(pickIso0 || '')+'" '+
+              'title="Add an open seat band to Booking Portal for this day">'+
+              '+ Schedule a Class</button>';
+            var tableHtml =
               '<table class="c4k-svc-slot-table" aria-label="'+esc(dowTitle)+' sessions">'+
               '<thead><tr>'+
-              '<th scope="col">Time</th><th scope="col">Venue</th><th scope="col">Class</th>'+
+              '<th scope="col">Time</th><th scope="col">Venue</th>'+
               '<th scope="col" class="c4k-svc-slot-th-instr">Instructor</th>'+
               '<th scope="col" class="c4k-svc-slot-th-pax">Participant/s</th>'+
               '<th scope="col">Waiting</th>'+
-              '</tr></thead><tbody>'+rowChunks.join('')+'</tbody></table>';
+              '</tr></thead><tbody>'+rowChunks.join('')+'</tbody></table>'+
+              '<div class="c4k-svc-day-sched-bar">'+schedAddBtn+'</div>';
             var body = '<div class="c4k-svc-slots" style="min-width:0;overflow:auto"><div class="novo-sched__list novo-sched__list--svc-table">'+tableHtml+'</div></div>';
             dowParts.push(
               '<details class="c4k-svc-day-acc">'+
