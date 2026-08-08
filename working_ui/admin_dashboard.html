@@ -6864,6 +6864,40 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return opts;
     }
+    function servicesClampEditClassCapacity(raw){
+      var n = parseInt(String(raw == null ? '' : raw), 10);
+      if(!Number.isFinite(n) || n < 1) n = 1;
+      if(n > 12) n = 12;
+      return n;
+    }
+    function buildEditClassInstructorFieldsHtml(cap, staffIds){
+      cap = servicesClampEditClassCapacity(cap);
+      staffIds = Array.isArray(staffIds) ? staffIds.slice() : [];
+      while(staffIds.length < cap) staffIds.push('');
+      if(staffIds.length > cap) staffIds = staffIds.slice(0, cap);
+      var html = '';
+      for(var si = 0; si < cap; si++){
+        var sid = String(staffIds[si] || '').trim().toLowerCase();
+        html +=
+          '<label class="lbl" for="editClassInstr'+si+'">Instructor'+(cap > 1 ? (' ' + String(si + 1)) : '')+'</label>'+
+          '<select class="sel" id="editClassInstr'+si+'" name="instructor_'+si+'" data-edit-class-instr="1">'+
+          buildEditClassScheduleStaffOptions(sid ? [sid] : [])+
+          '</select>';
+      }
+      return html;
+    }
+    function servicesSyncEditClassInstructorFieldsFromCapacity(){
+      var capEl = $('editClassCap');
+      var wrap = $('editClassInstrFields');
+      if(!capEl || !wrap) return;
+      var cap = servicesClampEditClassCapacity(capEl.value);
+      if(String(capEl.value) !== String(cap)) capEl.value = String(cap);
+      var kept = [];
+      wrap.querySelectorAll('[data-edit-class-instr]').forEach(function(sel){
+        kept.push(String(sel.value || '').trim().toLowerCase());
+      });
+      wrap.innerHTML = buildEditClassInstructorFieldsHtml(cap, kept);
+    }
     function buildEditClassScheduleModalHtml(slot, programmeName, lineCount, opts){
       opts = opts || {};
       var mode = String(opts.mode || 'edit');
@@ -6872,7 +6906,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var dowKey = adminServiceNormalizeDowKey(slot.sheetDay || novoSchedSlotDayFull(slot) || 'monday');
       var sh = novoSchedSplitAnchorHm(slot.anchorStart || '16:00:00');
       var eh = novoSchedSplitAnchorHm(slot.anchorEnd || '16:30:00');
-      var cap = Math.max(1, parseInt(String(lineCount != null ? lineCount : 1), 10) || 1);
+      var cap = servicesClampEditClassCapacity(lineCount != null ? lineCount : 1);
       var dowOpts = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].map(function(k){
         return '<option value="'+k+'"'+(k === dowKey ? ' selected' : '')+'>'+esc(adminServiceDowTitleFromNorm(k))+'</option>';
       }).join('');
@@ -6882,17 +6916,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }else if(slot && slot.staffRosterId){
         staffIds = [String(slot.staffRosterId).trim().toLowerCase()];
       }
-      while(staffIds.length < cap) staffIds.push('');
-      if(staffIds.length > Math.max(cap, 4)) staffIds = staffIds.slice(0, Math.max(cap, 4));
-      var instrFields = '';
-      for(var si = 0; si < Math.max(cap, 1); si++){
-        var sid = staffIds[si] || '';
-        instrFields +=
-          '<label class="lbl" for="editClassInstr'+si+'">Instructor'+(cap > 1 ? (' ' + String(si + 1)) : '')+'</label>'+
-          '<select class="sel" id="editClassInstr'+si+'" name="instructor_'+si+'" data-edit-class-instr="1">'+
-          buildEditClassScheduleStaffOptions(sid ? [sid] : [])+
-          '</select>';
-      }
+      var instrFields = buildEditClassInstructorFieldsHtml(cap, staffIds);
       var title = isAdd ? 'Schedule a class' : 'Edit class schedule';
       return (
         '<div class="modal-h"><h2 id="modalTitle" class="edit-class-title">'+esc(title)+'</h2>'+
@@ -6908,8 +6932,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<label class="lbl" for="editClassVenue">Venue</label>'+
         '<select class="sel" id="editClassVenue" name="venue">'+buildEditClassScheduleVenueOptions(String(slot.venue || ''))+'</select>'+
         '<label class="lbl" for="editClassCap">Class capacity</label>'+
-        '<input class="inp" type="number" id="editClassCap" name="capacity" min="1" max="99" value="'+esc(String(cap))+'"/>'+
-        instrFields+
+        '<input class="inp" type="number" id="editClassCap" name="capacity" min="1" max="12" step="1" inputmode="numeric" value="'+esc(String(cap))+'" title="One instructor line per seat (max 12)"/>'+
+        '<div id="editClassInstrFields" class="edit-class-instr-fields" style="min-width:0">'+instrFields+'</div>'+
         '<div class="lbl" style="margin-top:16px">Times</div>'+
         '<div class="edit-class-times-row">'+
         '<div class="edit-class-field"><label class="lbl" for="editClassDay" style="margin-top:0">Day</label><select class="sel" id="editClassDay" name="day">'+dowOpts+'</select></div>'+
@@ -7176,7 +7200,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var save = $('btnEditClassSave');
       var cancel = $('btnEditClassCancel');
       var goBook = $('btnEditClassOpenBooking');
+      var capEl = $('editClassCap');
       function done(){ closeModal(); }
+      if(capEl && !capEl.__editClassCapBound){
+        capEl.__editClassCapBound = true;
+        capEl.addEventListener('input', servicesSyncEditClassInstructorFieldsFromCapacity);
+        capEl.addEventListener('change', servicesSyncEditClassInstructorFieldsFromCapacity);
+      }
+      servicesSyncEditClassInstructorFieldsFromCapacity();
       if(cancel) cancel.onclick = done;
       if(goBook) goBook.onclick = function(){
         done();
