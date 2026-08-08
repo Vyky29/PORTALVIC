@@ -14,7 +14,7 @@
   var PRODUCT_NAME = "CFK";
   var PAGE_TITLE = "Services";
   var PAGE_INTRO =
-    "Programmes and time bands — filter to see who is rostered and where places are free. Capacity overview only; manage bookings in Booking Portal and attendance on Staff.";
+    "Roster overview by programme and venue — who is booked, open places, and waiting demand. Live booking and covers are in Booking Portal / Scheduling.";
 
   var deps = {
     $: function (id) {

@@ -135,7 +135,7 @@
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260723-wa-tpl-picker" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260716-wa-no-dup-intro" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260707-cancel-reason-policy"></script>
-  <script src="/portal/cfk-app.js?v=20260808-svc-whosin"></script>
+  <script src="/portal/cfk-app.js?v=20260808-svc-table"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
   <script src="/portal/admin-scheduling-module.js?v=20260704-search-combo"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
@@ -156,7 +156,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260808-svc-whosin" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260808-svc-table" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
@@ -6833,17 +6833,71 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return '<option value="'+esc(x)+'"'+(x === chosen ? ' selected' : '')+'>'+esc(x)+'</option>';
       }).join('');
     }
-    function buildEditClassScheduleModalHtml(slot, programmeName, lineCount){
+    function buildEditClassScheduleStaffOptions(selectedIds){
+      var selected = {};
+      (selectedIds || []).forEach(function(id){
+        var k = String(id || '').trim().toLowerCase();
+        if(k) selected[k] = true;
+      });
+      var list = [];
+      try{
+        if(typeof adminCollectCoachesFromPack === 'function' && typeof adminMergeSpreadsheetSessions === 'function'){
+          list = adminCollectCoachesFromPack(adminMergeSpreadsheetSessions()) || [];
+        }
+      }catch(_e){ list = []; }
+      if(!list.length){
+        var prof = (window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.staffProfiles) || {};
+        Object.keys(prof).forEach(function(k){
+          if(String(k || '').trim().toLowerCase() === 'teflon') return;
+          var p = prof[k];
+          var id = String((p && p.staffId) || k).trim().toLowerCase();
+          if(!id) return;
+          list.push({ id: id, name: (p && p.staffName) || id });
+        });
+        list.sort(function(a, b){ return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }); });
+      }
+      var opts = '<option value="">— Select instructor —</option>';
+      for(var i = 0; i < list.length; i++){
+        var it = list[i];
+        var sel = selected[String(it.id).toLowerCase()] ? ' selected' : '';
+        opts += '<option value="'+esc(it.id)+'"'+sel+'>'+esc(it.name)+'</option>';
+      }
+      return opts;
+    }
+    function buildEditClassScheduleModalHtml(slot, programmeName, lineCount, opts){
+      opts = opts || {};
+      var mode = String(opts.mode || 'edit');
+      var isAdd = mode === 'add';
       var prog = String(programmeName || slot.programme || 'Session').trim();
       var dowKey = adminServiceNormalizeDowKey(slot.sheetDay || novoSchedSlotDayFull(slot) || 'monday');
-      var sh = novoSchedSplitAnchorHm(slot.anchorStart);
-      var eh = novoSchedSplitAnchorHm(slot.anchorEnd);
+      var sh = novoSchedSplitAnchorHm(slot.anchorStart || '16:00:00');
+      var eh = novoSchedSplitAnchorHm(slot.anchorEnd || '16:30:00');
       var cap = Math.max(1, parseInt(String(lineCount != null ? lineCount : 1), 10) || 1);
       var dowOpts = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].map(function(k){
         return '<option value="'+k+'"'+(k === dowKey ? ' selected' : '')+'>'+esc(adminServiceDowTitleFromNorm(k))+'</option>';
       }).join('');
+      var staffIds = [];
+      if(Array.isArray(opts.staffIds) && opts.staffIds.length){
+        staffIds = opts.staffIds.slice();
+      }else if(slot && slot.staffRosterId){
+        staffIds = [String(slot.staffRosterId).trim().toLowerCase()];
+      }
+      while(staffIds.length < cap) staffIds.push('');
+      if(staffIds.length > Math.max(cap, 4)) staffIds = staffIds.slice(0, Math.max(cap, 4));
+      var instrFields = '';
+      for(var si = 0; si < Math.max(cap, 1); si++){
+        var sid = staffIds[si] || '';
+        instrFields +=
+          '<label class="lbl" for="editClassInstr'+si+'">Instructor'+(cap > 1 ? (' ' + String(si + 1)) : '')+'</label>'+
+          '<select class="sel" id="editClassInstr'+si+'" name="instructor_'+si+'" data-edit-class-instr="1">'+
+          buildEditClassScheduleStaffOptions(sid ? [sid] : [])+
+          '</select>';
+      }
+      var title = isAdd ? 'Schedule a class' : 'Edit class schedule';
       return (
-        '<div class="modal-h"><h2 id="modalTitle" class="edit-class-title">Edit a class schedule</h2></div>'+
+        '<div class="modal-h"><h2 id="modalTitle" class="edit-class-title">'+esc(title)+'</h2>'+
+        '<p class="muted" style="margin:6px 0 0;font-size:12px;line-height:1.45;max-width:40rem;overflow-wrap:break-word">'+
+        'Services overview is informational (roster offer). Live place assignment and instructor covers sit in <strong>Booking Portal / Scheduling</strong> — use this form to plan a class band, then apply it there.</p></div>'+
         '<div class="modal-b">'+
         '<form class="edit-class-form" id="formEditClassSchedule" onsubmit="return false">'+
         '<label class="lbl" for="editClassProg">Class</label>'+
@@ -6852,6 +6906,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<select class="sel" id="editClassVenue" name="venue">'+buildEditClassScheduleVenueOptions(String(slot.venue || ''))+'</select>'+
         '<label class="lbl" for="editClassCap">Class capacity</label>'+
         '<input class="inp" type="number" id="editClassCap" name="capacity" min="1" max="99" value="'+esc(String(cap))+'"/>'+
+        instrFields+
         '<div class="lbl" style="margin-top:16px">Times</div>'+
         '<div class="edit-class-times-row">'+
         '<div class="edit-class-field"><label class="lbl" for="editClassDay" style="margin-top:0">Day</label><select class="sel" id="editClassDay" name="day">'+dowOpts+'</select></div>'+
@@ -6878,25 +6933,47 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<label><input type="radio" name="editClassTrial" value="none" checked/><span><strong>I don&apos;t offer trials</strong></span></label>'+
         '<label><input type="radio" name="editClassTrial" value="offer"/><span><strong>I offer a trial</strong></span></label>'+
         '</div></div>'+
-        '<p class="muted" style="margin:14px 0 0;font-size:11px;line-height:1.45;max-width:48rem;overflow-wrap:break-word">Demo form — values pre-filled from this roster slot. <strong>Save</strong> does not yet write to the spreadsheet; use <strong>Scheduling &amp; Cover</strong> for live edits until the API is wired.</p>'+
+        '<p class="muted" style="margin:14px 0 0;font-size:11px;line-height:1.45;max-width:48rem;overflow-wrap:break-word">'+
+        (isAdd
+          ? 'Add a planned class band for this service. Saving drafts the plan here; apply instructor and place changes in <strong>Booking Portal / Scheduling</strong>.'
+          : 'Update capacity, times, or instructors for this band. Apply live roster / cover changes in <strong>Booking Portal / Scheduling</strong>.')+
+        '</p>'+
         '</form></div>'+
         '<div class="modal-f modal-f--edit-class">'+
-        '<button type="button" class="btn btn--pri" id="btnEditClassSave">Save</button>'+
+        '<button type="button" class="btn btn--pri" id="btnEditClassSave">'+(isAdd ? 'Add class' : 'Save')+'</button>'+
+        '<button type="button" class="btn btn--sec" id="btnEditClassOpenBooking">Open Booking / Scheduling</button>'+
         '<button type="button" class="btn btn--ghost" id="btnEditClassCancel">Cancel</button></div>'
       );
     }
-    function bindEditClassScheduleModal(slot){
+    function bindEditClassScheduleModal(slot, opts){
+      opts = opts || {};
       var save = $('btnEditClassSave');
       var cancel = $('btnEditClassCancel');
+      var goBook = $('btnEditClassOpenBooking');
       function done(){ closeModal(); }
       if(cancel) cancel.onclick = done;
+      if(goBook) goBook.onclick = function(){
+        done();
+        portalNavigateToBookingsSlot({
+          demoId: String(slot && slot.demoId || '').trim(),
+          iso: String(slot && slot.sessionDate || '').trim() || isoDateLocal(new Date()),
+          venue: String(($('editClassVenue') && $('editClassVenue').value) || (slot && slot.venue) || '').trim()
+        });
+      };
       if(save) save.onclick = function(){
+        var instrNames = [];
+        document.querySelectorAll('[data-edit-class-instr]').forEach(function(sel){
+          var v = String(sel.value || '').trim();
+          if(!v) return;
+          var lab = sel.options && sel.selectedIndex >= 0 ? String(sel.options[sel.selectedIndex].text || '').trim() : v;
+          if(lab) instrNames.push(lab);
+        });
+        var msg = (opts.mode === 'add' ? 'Class planned' : 'Class schedule updated') +
+          (instrNames.length ? (' · instructors: ' + instrNames.join(', ')) : '') +
+          '. Apply live in Booking Portal / Scheduling.';
         try{
-          if(typeof portalAdminToast === 'function'){
-            portalAdminToast('Class schedule saved (demo). Connect this form to your roster API or export when ready.');
-          }else if(window.alert){
-            window.alert('Demo save — wire this form to your backend or spreadsheet.');
-          }
+          if(typeof portalAdminToast === 'function') portalAdminToast(msg);
+          else if(window.alert) window.alert(msg);
         }catch(_e){}
         done();
       };
@@ -6909,54 +6986,60 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var lineCount = parseInt(String(el.getAttribute('data-c4k-svc-line-count') || '1'), 10) || 1;
       var programmeName = el.getAttribute('data-c4k-svc-programme') || '';
-      openModal(buildEditClassScheduleModalHtml(r.slot, programmeName, lineCount), {});
-      bindEditClassScheduleModal(r.slot);
+      var staffAttr = String(el.getAttribute('data-c4k-svc-staff-ids') || '').trim();
+      var staffIds = staffAttr ? staffAttr.split('|').map(function(s){ return String(s || '').trim().toLowerCase(); }).filter(Boolean) : [];
+      if(!staffIds.length && r.slot.staffRosterId) staffIds = [String(r.slot.staffRosterId).trim().toLowerCase()];
+      openModal(buildEditClassScheduleModalHtml(r.slot, programmeName, lineCount, { mode: 'edit', staffIds: staffIds }), {});
+      bindEditClassScheduleModal(r.slot, { mode: 'edit' });
       var bd = $('modalBackdrop');
       if(bd) bd.onclick = function(e){ if(e.target === bd) closeModal(); };
     }
-    /** One delegated listener: Register opens attendance modal; Edit opens class schedule form; Delete demo toast; View all → Bookings. */
+    function openScheduleClassModalAddFromEl(el){
+      var prog = String(el.getAttribute('data-c4k-svc-programme') || '').trim() || 'Session';
+      var venue = String(el.getAttribute('data-venue') || '').trim();
+      var day = String(el.getAttribute('data-day') || 'monday').trim().toLowerCase();
+      var iso = String(el.getAttribute('data-session-date') || '').trim() || isoDateLocal(new Date());
+      var slot = {
+        demoId: '',
+        programme: prog,
+        venue: venue,
+        sheetDay: day,
+        sessionDate: iso,
+        anchorStart: '16:00:00',
+        anchorEnd: '16:30:00',
+        staffRosterId: '',
+        staffName: ''
+      };
+      openModal(buildEditClassScheduleModalHtml(slot, prog, 1, { mode: 'add', staffIds: [] }), {});
+      bindEditClassScheduleModal(slot, { mode: 'add' });
+      var bd = $('modalBackdrop');
+      if(bd) bd.onclick = function(e){ if(e.target === bd) closeModal(); };
+    }
+    /** Services table: Schedule a Class / edit instructors via class-schedule form (Booking Portal for live roster). */
     function bindNovoDashboardSchedule(){
       var root = $('workspace');
       if(!root || root.__novoSchedSlotDeleg) return;
       root.__novoSchedSlotDeleg = true;
       root.addEventListener('click', function(e){
+        var addBtn = e.target.closest('[data-novo-sched-add-class]');
+        if(addBtn && root.contains(addBtn)){
+          e.preventDefault();
+          openScheduleClassModalAddFromEl(addBtn);
+          return;
+        }
         var editBtn = e.target.closest('[data-novo-edit-sched-slot]');
         if(editBtn && root.contains(editBtn)){
           e.preventDefault();
           openEditClassScheduleModalFromEl(editBtn);
           return;
         }
-        var delBtn = e.target.closest('[data-novo-delete-sched-slot]');
-        if(delBtn && root.contains(delBtn)){
-          e.preventDefault();
-          try{
-            if(typeof portalAdminToast === 'function'){
-              portalAdminToast('Delete class: demo only — remove or close the slot in Scheduling & Cover / roster.');
-            }else if(window.alert){
-              window.alert('Demo only. Remove or close the slot from the roster spreadsheet or Scheduling & Cover.');
-            }
-          }catch(_t){}
-          return;
-        }
-        var slotBtn = e.target.closest('[data-novo-open-sched-slot]');
-        if(slotBtn && root.contains(slotBtn)){
-          e.preventDefault();
-          var r = novoSchedResolveSlotFromEl(slotBtn);
-          if(r.slot) void openRegisterSessionModal(r.slot);
-          else portalNavigateToBookingsSlot({ demoId: r.tryIds[0] || '', iso: r.iso, venue: r.venue });
-          return;
-        }
-        var trSlot = e.target.closest('tr.c4k-svc-slot-tr[data-sched-demo-id]');
-        if(trSlot && root.contains(trSlot) && !e.target.closest('button')){
-          e.preventDefault();
-          var rT = novoSchedResolveSlotFromEl(trSlot);
-          if(rT.slot) void openRegisterSessionModal(rT.slot);
-          else portalNavigateToBookingsSlot({ demoId: rT.tryIds[0] || '', iso: rT.iso, venue: rT.venue });
-          return;
-        }
         var full = e.target.closest('[data-novo-sched-view-all]');
         if(full && root.contains(full)){
           e.preventDefault();
+          if(full.getAttribute('data-novo-sched-add-class') != null || full.hasAttribute('data-c4k-svc-programme')){
+            openScheduleClassModalAddFromEl(full);
+            return;
+          }
           portalNavigateToBookingsSlot({});
         }
       });
@@ -17216,15 +17299,32 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               var demoIdMerged = uniq.join('|');
               var demoId = uniq[0] || '';
               var slot0 = mergedLines[0];
-              var title = esc(dowTitle) + ' · Who’s in (' + esc(String(mergedLines.length)) + ' roster line' + (mergedLines.length === 1 ? '' : 's') + ' in this time band).';
+              var instrList = [];
+              var staffIdList = [];
+              var paxList = [];
+              var openSeatN = 0;
+              for(var ini = 0; ini < mergedLines.length; ini++){
+                var ml = mergedLines[ini];
+                var snm = String((ml && ml.staffName) || '').trim();
+                var snmL = snm.toLowerCase();
+                if(snm && snmL !== 'no participant' && snmL !== 'closed' && snmL !== 'available' && instrList.indexOf(snm) < 0) instrList.push(snm);
+                var sid = String((ml && ml.staffRosterId) || '').trim().toLowerCase();
+                if(sid && staffIdList.indexOf(sid) < 0) staffIdList.push(sid);
+                var pSlug = String((ml && ml.clientSlug) || '').trim().toLowerCase();
+                if(bookingIsBookedClientSlug(pSlug)){
+                  var pNm = String((ml && ml.clientDisplay) || '').trim() || pSlug;
+                  if(pNm && paxList.indexOf(pNm) < 0) paxList.push(pNm);
+                }else if(pSlug !== 'closed'){
+                  openSeatN++;
+                }
+              }
               var dataSlot =
                 'data-sched-demo-id="' + esc(demoId) + '" data-c4k-svc-merged-demos="' + esc(demoIdMerged) + '" data-session-date="' + esc(B.pickIso) + '" data-venue="' + esc(B.venue) + '"' +
                 ' data-c4k-svc-line-count="' + esc(String(mergedLines.length)) + '" data-c4k-svc-programme="' + esc(B.programme) + '"' +
-                ' data-c4k-svc-seg-start="' + esc(B.segA) + '" data-c4k-svc-seg-end="' + esc(B.segB) + '"';
+                ' data-c4k-svc-seg-start="' + esc(B.segA) + '" data-c4k-svc-seg-end="' + esc(B.segB) + '"' +
+                ' data-c4k-svc-staff-ids="' + esc(staffIdList.join('|')) + '"';
               var classMain = esc(adminServiceSlotClassDisplayLabel(B.programme));
               var cnt = adminServiceSlotRegisterCounts(mergedLines, B.programme, B.venue, B.dk);
-              var regDisabled = cnt.allClosed ? ' disabled' : '';
-              var regLabel = cnt.allClosed ? 'Closed' : ('Who’s in (' + cnt.booked + '/' + cnt.total + ') ›');
               var waitN = cnt.waitOverflow || 0;
               for(var wi = 0; wi < mergedLines.length; wi++){
                 var wv = adminServiceSlotWaitListDisplayCount(mergedLines[wi]);
@@ -17239,30 +17339,34 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 : '<span class="c4k-svc-wait-empty" aria-hidden="true"></span>';
               var pseudoSeg = { anchorStart: B.segA, anchorEnd: B.segB, sessionDate: B.pickIso, venue: B.venue, programme: String(slot0.programme || B.programme || '') };
               var timeRange = novoSchedSlotTimeRangeOnly(pseudoSeg);
-              var instrList = [];
-              for(var ini = 0; ini < mergedLines.length; ini++){
-                var snm = String((mergedLines[ini] && mergedLines[ini].staffName) || '').trim();
-                var snmL = snm.toLowerCase();
-                if(snm && snmL !== 'no participant' && snmL !== 'closed' && snmL !== 'available' && instrList.indexOf(snm) < 0) instrList.push(snm);
+              var instrLabel = instrList.length ? instrList.join(', ') : '—';
+              var instrCell =
+                '<button type="button" class="c4k-svc-slot-instr-btn" data-novo-edit-sched-slot="1" ' + dataSlot +
+                ' title="Change instructor(s) for this class band">' +
+                (instrList.length ? esc(instrLabel) : '<span class="muted">—</span>') +
+                '</button>';
+              var paxCell;
+              if(cnt.allClosed){
+                paxCell = '<span class="muted">Closed</span>';
+              }else if(paxList.length){
+                paxCell = esc(paxList.join(', '));
+                if(openSeatN > 0){
+                  paxCell += ' <span class="muted">· ' + esc(String(openSeatN)) + ' open</span>';
+                }
+              }else if(openSeatN > 0){
+                paxCell = '<span class="muted">Open (' + esc(String(openSeatN)) + ')</span>';
+              }else{
+                paxCell = '<span class="muted">—</span>';
               }
-              var instrCell = instrList.length ? esc(instrList.join(', ')) : '<span class="muted">—</span>';
               rowChunks.push(
                 '<tr class="c4k-svc-slot-tr" ' + dataSlot + '>' +
                 '<td class="c4k-svc-slot-td c4k-svc-slot-td--time">' + esc(timeRange) + '</td>' +
                 '<td class="c4k-svc-slot-td c4k-svc-slot-td--venue">' + esc(B.venue) + '</td>' +
                 '<td class="c4k-svc-slot-td c4k-svc-slot-td--class"><strong class="c4k-svc-slot-class-name">' + classMain + '</strong></td>' +
                 '<td class="c4k-svc-slot-td c4k-svc-slot-td--instr">' + instrCell + '</td>' +
-                '<td class="c4k-svc-slot-td c4k-svc-slot-td--act">' +
-                '<span class="c4k-svc-slot-act" role="group" aria-label="Edit or delete slot">' +
-                '<button type="button" class="c4k-svc-slot-icon-btn" title="Edit class schedule (capacity, times, prices)" aria-label="Edit class schedule" data-novo-edit-sched-slot="1" ' + dataSlot + '>' +
-                '<svg class="c4k-svc-slot-ico" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>' +
-                '<button type="button" class="c4k-svc-slot-icon-btn" title="Remove class from roster (demo — use Scheduling & Cover live)" aria-label="Delete class" data-novo-delete-sched-slot="1" ' + dataSlot + '>' +
-                '<svg class="c4k-svc-slot-ico" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>' +
-                '</span></td>' +
+                '<td class="c4k-svc-slot-td c4k-svc-slot-td--pax">' + paxCell + '</td>' +
                 '<td class="c4k-svc-slot-td c4k-svc-slot-td--wait">' + waitInner + '</td>' +
-                '<td class="c4k-svc-slot-td c4k-svc-slot-td--reg">' +
-                '<button type="button" class="btn c4k-svc-slot-reg-btn"' + regDisabled + ' data-novo-open-sched-slot="1" ' + dataSlot + ' title="' + title + '">' + esc(regLabel) + '</button>' +
-                '</td></tr>'
+                '</tr>'
               );
             }
             if(!rowChunks.length) continue;
@@ -17271,14 +17375,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               ? '<span class="c4k-svc-day-acc__hours" title="Earliest to latest rostered time this weekday at this venue (merged sheet, after filters).">'+esc(dayHoursRaw)+'</span>'
               : '';
             var tableHtml =
+              '<div class="c4k-svc-day-sched-bar toolbar" style="justify-content:flex-end;flex-wrap:wrap;gap:8px;margin:0 0 8px;min-width:0">'+
+              '<button type="button" class="btn btn--pri btn--sm c4k-svc-schedule-class-head-btn" data-novo-sched-add-class="1" '+
+              'data-c4k-svc-programme="'+esc(block.programme)+'" data-venue="'+esc(vn.venue)+'" data-day="'+esc(dk)+'" data-session-date="'+esc(pickIso0 || '')+'">'+
+              '+ Schedule a Class</button></div>'+
               '<table class="c4k-svc-slot-table" aria-label="'+esc(dowTitle)+' sessions">'+
               '<thead><tr>'+
               '<th scope="col">Time</th><th scope="col">Venue</th><th scope="col">Class</th>'+
               '<th scope="col" class="c4k-svc-slot-th-instr">Instructor</th>'+
-              '<th scope="col" class="c4k-svc-slot-th-actions">Actions</th><th scope="col">Waiting</th>'+
-              '<th scope="col" class="c4k-svc-slot-th-schedule">'+
-              '<button type="button" class="btn btn--pri btn--sm c4k-svc-schedule-class-head-btn" data-novo-sched-view-all="1">+ Schedule a Class</button>'+
-              '</th></tr></thead><tbody>'+rowChunks.join('')+'</tbody></table>';
+              '<th scope="col" class="c4k-svc-slot-th-pax">Participant/s</th>'+
+              '<th scope="col">Waiting</th>'+
+              '</tr></thead><tbody>'+rowChunks.join('')+'</tbody></table>';
             var body = '<div class="c4k-svc-slots" style="min-width:0;overflow:auto"><div class="novo-sched__list novo-sched__list--svc-table">'+tableHtml+'</div></div>';
             dowParts.push(
               '<details class="c4k-svc-day-acc">'+

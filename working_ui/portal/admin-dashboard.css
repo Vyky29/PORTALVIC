@@ -2292,18 +2292,17 @@
       column-gap:8px;
       border-radius:8px;
     }
-    /* Services weekday: table (time · venue · class · actions · waiting · register). Aquatic splits into 30′ steps; other programmes one row per merged anchor. */
+    /* Services weekday: time · venue · class · instructor · participant/s · waiting */
     .c4k-svc-slots .novo-sched__list--svc-table{display:block;padding:0 0 8px !important;gap:0 !important}
     .c4k-svc-slot-table{width:100%;min-width:0;border-collapse:collapse;font-size:13px;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:0 1px 0 rgba(15,23,42,.04)}
     .c4k-svc-slot-table thead th{
       background:#e8edf3;color:var(--ink);font-weight:800;font-size:11px;text-transform:none;letter-spacing:.02em;
       padding:10px 10px;text-align:center;vertical-align:middle;white-space:nowrap;border-bottom:1px solid var(--line);
     }
-    .c4k-svc-slot-table thead th.c4k-svc-slot-th-actions{width:1%;text-align:center}
     .c4k-svc-slot-table thead th.c4k-svc-slot-th-schedule{text-align:center;min-width:0;vertical-align:middle}
-    .c4k-svc-schedule-class-head-btn{font-size:11px !important;padding:6px 10px !important;border-radius:8px !important;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;margin:0 auto}
+    .c4k-svc-schedule-class-head-btn{font-size:11px !important;padding:6px 10px !important;border-radius:8px !important;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;margin:0}
     .c4k-svc-slot-tr:nth-child(even){background:#f8fafc}
-    .c4k-svc-slot-tr{cursor:pointer}
+    .c4k-svc-slot-tr{cursor:default}
     .c4k-svc-slot-tr:hover{background:#eef2f7}
     .card.c4k-svc-card--aquatic .c4k-svc-slot-tr:hover{background:var(--blueSoft) !important}
     .card.c4k-svc-card--climb .c4k-svc-slot-tr:hover{background:#e8edf4 !important}
@@ -2316,30 +2315,22 @@
     .c4k-svc-slot-td--venue{color:var(--text);text-align:center}
     .c4k-svc-slot-td--class{color:var(--text);text-align:center}
     .c4k-svc-slot-td--instr{color:var(--text);text-align:center;font-size:12px;max-width:14rem;min-width:0;overflow-wrap:break-word;word-break:break-word}
-    .c4k-svc-slot-class-name{font-weight:700;display:inline-block;max-width:100%;text-align:center}
-    .c4k-svc-slot-td--act{width:1%;text-align:center}
-    .c4k-svc-slot-td--wait{width:1%;text-align:center;white-space:nowrap}
-    .c4k-svc-slot-td--reg{min-width:140px;text-align:center}
-    .c4k-svc-slot-act{display:inline-flex;gap:4px;align-items:center;justify-content:center;flex-wrap:nowrap}
-    .c4k-svc-slot-icon-btn{
-      display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;border-radius:8px;
-      border:1px solid #cbd5e1;background:#f1f5f9;color:#1d4ed8;cursor:pointer;flex-shrink:0;
+    .c4k-svc-slot-td--pax{color:var(--text);text-align:center;font-size:12px;max-width:16rem;min-width:0;overflow-wrap:break-word;word-break:break-word}
+    .c4k-svc-slot-instr-btn{
+      appearance:none;-webkit-appearance:none;border:0;background:transparent;padding:0;margin:0;
+      font:inherit;font-size:12px;font-weight:600;color:var(--blue);cursor:pointer;max-width:100%;
+      overflow-wrap:break-word;word-break:break-word;text-align:center;text-decoration:underline;text-underline-offset:2px;
     }
-    .c4k-svc-slot-icon-btn:hover{background:#e0f2fe;border-color:#7dd3fc;color:#0f172a}
-    .c4k-svc-slot-icon-btn:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
-    .c4k-svc-slot-ico{display:block}
+    .c4k-svc-slot-instr-btn:hover{color:#1d4ed8}
+    .c4k-svc-slot-instr-btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:4px}
+    .c4k-svc-slot-class-name{font-weight:700;display:inline-block;max-width:100%;text-align:center}
+    .c4k-svc-slot-td--wait{width:1%;text-align:center;white-space:nowrap}
     .c4k-svc-wait-lbl{
       display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:800;
       background:#f59e0b;color:#fff;border:1px solid rgba(15,23,42,.08);line-height:1.2;max-width:100%;
     }
     .c4k-svc-wait-ico{font-size:11px;opacity:.95}
     .c4k-svc-wait-empty{font-size:12px}
-    .c4k-svc-slot-reg-btn{
-      width:100%;max-width:100%;display:inline-flex;align-items:center;justify-content:center;text-align:center;font-weight:700;font-size:12px;padding:10px 12px;border-radius:8px;
-      border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;min-width:0;overflow-wrap:break-word;
-    }
-    .c4k-svc-slot-reg-btn:hover:not(:disabled){background:#e2e8f0;border-color:#94a3b8}
-    .c4k-svc-slot-reg-btn:disabled{opacity:.55;cursor:not-allowed}
     .card.c4k-svc-card--aquatic .c4k-svc-slot-table tbody .c4k-svc-slot-tr:hover,
     .card.c4k-svc-card--climb .c4k-svc-slot-table tbody .c4k-svc-slot-tr:hover,
     .card.c4k-svc-card--phys .c4k-svc-slot-table tbody .c4k-svc-slot-tr:hover,
