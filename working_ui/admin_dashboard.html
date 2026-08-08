@@ -135,7 +135,7 @@
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260723-wa-tpl-picker" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260716-wa-no-dup-intro" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260707-cancel-reason-policy"></script>
-  <script src="/portal/cfk-app.js?v=20260806-svc-pax-filter"></script>
+  <script src="/portal/cfk-app.js?v=20260808-svc-whosin"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
   <script src="/portal/admin-scheduling-module.js?v=20260704-search-combo"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
@@ -156,7 +156,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260806-svc-pax-filter" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260808-svc-whosin" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
@@ -7880,31 +7880,219 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(fp) fp.hidden = false;
       try{ renderNav(); }catch(_rn){}
     }
+    /**
+     * Services “Who’s in” panel — roster places for this time band only.
+     * No Summer Term attendance grid (that was not Booking Portal / staff PDA).
+     */
+    function buildServicesWhosInPanelHtml(slot){
+      var act = String(slot.programme || 'Session').trim();
+      var venue = String(slot.venue || '').trim();
+      var timeLine = novoSchedSlotTimeLabel(slot);
+      var iso = String(slot.sessionDate || '').trim();
+      var dayLbl = '';
+      try{
+        var d = bookingParseIsoLocal(iso);
+        if(d) dayLbl = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+      }catch(_d){}
+      var lines = registerMergedRosterLinesForModalSlot(slot);
+      var paxPack = registerParticipantsForSlot(slot);
+      var openN = 0;
+      var closedN = 0;
+      var lineRows = [];
+      for(var i = 0; i < (lines ? lines.length : 0); i++){
+        var sl = lines[i];
+        var slug = String(sl.clientSlug || '').trim().toLowerCase();
+        if(slug === 'closed'){
+          closedN++;
+          lineRows.push({ kind: 'closed', name: 'Closed', staff: String(sl.staffName || '').trim() });
+          continue;
+        }
+        if(!bookingIsBookedClientSlug(slug)){
+          openN++;
+          lineRows.push({ kind: 'open', name: 'No participant', staff: String(sl.staffName || '').trim() });
+          continue;
+        }
+        var nm = String(sl.clientDisplay || '').trim() || slug;
+        lineRows.push({
+          kind: 'booked',
+          name: nm,
+          staff: String(sl.staffName || '').trim(),
+          slug: slug
+        });
+      }
+      if(!lineRows.length && paxPack.length){
+        for(var pi = 0; pi < paxPack.length; pi++){
+          var rw = paxPack[pi] && paxPack[pi].row;
+          if(!rw) continue;
+          lineRows.push({ kind: 'booked', name: String(rw.name || '').trim() || String(rw.id || ''), staff: '', slug: String(rw.slug || rw.id || '') });
+        }
+      }
+      var listHtml;
+      if(!lineRows.length){
+        listHtml = '<p class="muted" style="margin:0;padding:12px 14px;min-width:0;overflow-wrap:break-word">No roster rows in this time band for this programme and venue.</p>';
+      }else{
+        listHtml =
+          '<ul class="c4k-whosin-list" role="list">' +
+          lineRows.map(function(row){
+            var chip =
+              row.kind === 'booked' ? '<span class="chip chip--ok">Booked</span>' :
+              row.kind === 'open' ? '<span class="chip chip--info">Open</span>' :
+              '<span class="chip">Closed</span>';
+            var staffLine = row.staff
+              ? '<div class="muted c4k-whosin-list__staff" style="font-size:12px;min-width:0;overflow-wrap:break-word">Instructor: '+esc(row.staff)+'</div>'
+              : '';
+            var nameBtn = row.kind === 'booked'
+              ? '<button type="button" class="reg-pax-pill c4k-whosin-list__name" data-reg-pax-pill="1" data-pax-name="'+esc(row.name)+'" title="Open participant sheet"><span class="reg-pax-pill__txt">'+esc(row.name)+'</span></button>'
+              : '<span class="c4k-whosin-list__name-plain">'+esc(row.name)+'</span>';
+            return (
+              '<li class="c4k-whosin-list__item c4k-whosin-list__item--'+esc(row.kind)+'">'+
+              '<div class="c4k-whosin-list__main" style="min-width:0">'+nameBtn+staffLine+'</div>'+
+              '<div class="c4k-whosin-list__chip">'+chip+'</div>'+
+              '</li>'
+            );
+          }).join('') +
+          '</ul>';
+      }
+      var openHint = openN > 0
+        ? '<p class="muted" style="margin:8px 0 0;font-size:12px;min-width:0;overflow-wrap:break-word">'+esc(String(openN))+' open place'+(openN === 1 ? '' : 's')+' in this band.</p>'
+        : '';
+      if(closedN && !openN && !paxPack.length){
+        openHint = '<p class="muted" style="margin:8px 0 0;font-size:12px">This band is closed.</p>';
+      }
+      return (
+        '<div class="modal-h reg-modal-h">'+
+        '<div style="min-width:0"><h2 id="modalTitle">Who’s in this slot</h2>'+
+        '<p class="muted" style="margin:6px 0 0;font-size:12px;line-height:1.45;max-width:52rem;overflow-wrap:break-word">'+
+        'Roster offer for this band — who is booked and which places are free. '+
+        '<strong>Manage places in Booking Portal</strong>. Attendance is not edited here (staff PDA / session feedback stays on Staff).</p></div>'+
+        '</div>'+
+        '<div class="modal-b reg-modal-b">'+
+        '<div class="reg-grid3">'+
+        '<div class="reg-card"><h4>Activity</h4><p><strong style="color:#0f7669">'+esc(act)+'</strong></p>'+
+        '<p class="muted" style="margin-top:8px;font-size:12px">'+esc(timeLine)+'</p>'+
+        '<p class="muted" style="margin-top:8px;font-size:12px">'+esc(venue)+'</p>'+
+        (dayLbl ? '<p class="muted" style="margin-top:8px;font-size:12px">'+esc(dayLbl)+'</p>' : '')+
+        '</div>'+
+        '<div class="reg-card" style="min-width:0"><h4>Places</h4>'+
+        registerModalBookingsCoverBadgesHtml(slot)+
+        openHint+
+        '<div class="reg-term-nav reg-slot-nav toolbar" style="margin-top:12px">'+
+        '<button type="button" class="btn btn--ghost reg-slot-btn" id="btnRegSlotPrev" aria-label="Previous roster slot this day">&#8249; Prev slot</button>'+
+        '<button type="button" class="btn btn--ghost reg-slot-btn" id="btnRegSlotNext" aria-label="Next roster slot this day">Next slot &#8250;</button>'+
+        '</div></div>'+
+        '<div class="reg-card" style="min-width:0"><h4>Booking</h4>'+
+        '<p class="muted" style="margin:0;font-size:12px;line-height:1.45;overflow-wrap:break-word">Assign, move, or free places in Booking Portal / Scheduling — not on this screen.</p>'+
+        '<div class="toolbar" style="margin-top:10px;flex-wrap:wrap;gap:8px">'+
+        '<button type="button" class="btn btn--pri btn--sm" id="btnRegBookings">Open Booking / Scheduling</button>'+
+        '</div></div>'+
+        '</div>'+
+        '<div class="card" style="margin-top:14px;min-width:0;overflow:hidden">'+
+        '<div class="card-h"><h3 style="font-size:14px;margin:0">Participants in this band</h3></div>'+
+        '<div class="card-pad" style="padding:0;min-width:0">'+listHtml+'</div></div>'+
+        '</div>'
+      );
+    }
+    function bindServicesWhosInPanel(slot){
+      var demoId = String(slot.demoId || '').trim();
+      var root = registerModalMountEl();
+      if(!root) return;
+      var navSeq = registerNavBandDescriptors(slot);
+      var navIx = registerNavSlotIndex(slot, navSeq);
+      var prevB = $('btnRegSlotPrev');
+      var nextB = $('btnRegSlotNext');
+      var bk = $('btnRegBookings');
+      if(bk) bk.onclick = function(){
+        closeRegisterSessionView();
+        portalNavigateToBookingsSlot({
+          demoId: demoId,
+          iso: String(slot.sessionDate || '').trim() || isoDateLocal(new Date()),
+          venue: String(slot.venue || '').trim()
+        });
+      };
+      function openNavSlot(nx){
+        if(!nx || !String(nx.demoId || '').trim()){
+          try{
+            if(typeof portalAdminToast === 'function') portalAdminToast('No roster row for that slot.');
+            else if(window.alert) window.alert('No roster row for that slot.');
+          }catch(_t0){}
+          return;
+        }
+        void openRegisterSessionModal(nx);
+      }
+      function goNav(delta){
+        if(delta > 0 && navSeq.length && navIx >= 0 && navIx >= navSeq.length - 1){
+          var nd = registerFirstBandNextDaySameProgVenue(slot);
+          if(nd){
+            openNavSlot(registerFullSlotFromBandDescriptor(nd));
+            return;
+          }
+          try{
+            if(typeof portalAdminToast === 'function') portalAdminToast('No later day with this programme at this venue in the roster window.');
+          }catch(_t1){}
+          return;
+        }
+        if(delta < 0 && navSeq.length && navIx <= 0){
+          var pd = registerLastBandPrevDaySameProgVenue(slot);
+          if(pd){
+            openNavSlot(registerFullSlotFromBandDescriptor(pd));
+            return;
+          }
+          try{
+            if(typeof portalAdminToast === 'function') portalAdminToast('No earlier day with this programme at this venue in the roster window.');
+          }catch(_t2){}
+          return;
+        }
+        if(!navSeq.length || navIx < 0) return;
+        var j = navIx + delta;
+        if(j < 0 || j >= navSeq.length) return;
+        openNavSlot(registerFullSlotFromBandDescriptor(navSeq[j]));
+      }
+      var hasNextDay = !!registerFirstBandNextDaySameProgVenue(slot);
+      var hasPrevDay = !!registerLastBandPrevDaySameProgVenue(slot);
+      if(prevB){
+        prevB.disabled = navIx < 0 || (navIx <= 0 && !hasPrevDay);
+        prevB.onclick = function(){ goNav(-1); };
+      }
+      if(nextB){
+        nextB.disabled = navIx < 0 || (navIx >= navSeq.length - 1 && !hasNextDay);
+        nextB.onclick = function(){ goNav(1); };
+      }
+      root.onclick = function(ev){
+        var t = ev.target;
+        var pill = t && t.closest ? t.closest('[data-reg-pax-pill]') : null;
+        if(!pill || !root.contains(pill)) return;
+        var cidP = pill.getAttribute('data-client');
+        if(cidP && MOCK.clientsById && MOCK.clientsById[cidP]){
+          openClientDrawer(cidP);
+          return;
+        }
+        var nmP = pill.getAttribute('data-pax-name');
+        if(nmP) openClientDrawerSynthetic({ name: nmP });
+      };
+    }
     function mountRegisterSessionInline(slot){
       var host = $('c4kServicesRegisterHost');
       var rp = $('c4kServicesRosterRoot');
       var fp = $('c4kServicesFiltersPanel');
       if(!host){
         try{
-          if(typeof portalAdminToast === 'function') portalAdminToast('Register panel missing — open Services and try again.');
+          if(typeof portalAdminToast === 'function') portalAdminToast('Slot panel missing — open Services and try again.');
         }catch(_t){}
         return;
       }
       if(rp) rp.hidden = true;
       if(fp) fp.hidden = true;
       host.hidden = false;
-      var demoId = String(slot.demoId || '').trim();
-      var st = registerLoadState(demoId);
       host.innerHTML =
         '<div class="c4k-register-inline-head toolbar" style="justify-content:flex-end;flex-wrap:wrap;gap:8px;margin:0 0 12px;min-width:0">'+
-        '<button type="button" class="btn btn--sec" id="btnC4kRegisterClose" aria-label="Close register and return to Services">Close register</button></div>'+
-        '<div class="card c4k-register-inline-card" style="min-width:0;overflow:hidden;border:1px solid var(--line)">'+
+        '<button type="button" class="btn btn--sec" id="btnC4kRegisterClose" aria-label="Back to Services overview">Back to Services</button></div>'+
+        '<div class="card c4k-register-inline-card c4k-whosin-panel" style="min-width:0;overflow:hidden;border:1px solid var(--line)">'+
         '<div class="modal c4k-register-inline-modal" id="c4kRegisterInlineModalRoot" role="region" aria-labelledby="modalTitle" style="box-shadow:none;margin:0;border:0;max-width:none;width:100%">'+
-        buildRegisterModalHtml(slot, st)+
+        buildServicesWhosInPanelHtml(slot)+
         '</div></div>';
       var bc = $('btnC4kRegisterClose');
       if(bc) bc.onclick = function(){ closeRegisterSessionView(); };
-      bindRegisterModal(slot);
+      bindServicesWhosInPanel(slot);
     }
     function bindRegisterModal(slot){
       var demoId = String(slot.demoId || '').trim();
@@ -8052,10 +8240,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!slot) return;
       var demoId = String(slot.demoId || '').trim();
       if(!demoId) return;
-      var st = registerLoadState(demoId);
-      var datesVis = registerVisibleDates(slot, st);
-      await registerHydrateFeedbackMirrorFromServer(slot, datesVis, st);
-      registerSaveState(demoId, st);
+      // Services opens the Who’s-in roster panel only (no attendance / Summer Term grid).
       state.registerSessionSlot = slot;
       state.c4kServicesRegisterOpen = true;
       if(state.view !== 'c4k_services'){
@@ -17008,7 +17193,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               var demoIdMerged = uniq.join('|');
               var demoId = uniq[0] || '';
               var slot0 = mergedLines[0];
-              var title = esc(dowTitle) + ' · Register (' + esc(String(mergedLines.length)) + ' roster line' + (mergedLines.length === 1 ? '' : 's') + ' in this time band).';
+              var title = esc(dowTitle) + ' · Who’s in (' + esc(String(mergedLines.length)) + ' roster line' + (mergedLines.length === 1 ? '' : 's') + ' in this time band).';
               var dataSlot =
                 'data-sched-demo-id="' + esc(demoId) + '" data-c4k-svc-merged-demos="' + esc(demoIdMerged) + '" data-session-date="' + esc(B.pickIso) + '" data-venue="' + esc(B.venue) + '"' +
                 ' data-c4k-svc-line-count="' + esc(String(mergedLines.length)) + '" data-c4k-svc-programme="' + esc(B.programme) + '"' +
@@ -17016,7 +17201,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               var classMain = esc(adminServiceSlotClassDisplayLabel(B.programme));
               var cnt = adminServiceSlotRegisterCounts(mergedLines, B.programme, B.venue, B.dk);
               var regDisabled = cnt.allClosed ? ' disabled' : '';
-              var regLabel = cnt.allClosed ? 'Closed' : ('Register (' + cnt.booked + '/' + cnt.total + ') ›');
+              var regLabel = cnt.allClosed ? 'Closed' : ('Who’s in (' + cnt.booked + '/' + cnt.total + ') ›');
               var waitN = cnt.waitOverflow || 0;
               for(var wi = 0; wi < mergedLines.length; wi++){
                 var wv = adminServiceSlotWaitListDisplayCount(mergedLines[wi]);

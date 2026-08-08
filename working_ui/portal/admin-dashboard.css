@@ -2418,6 +2418,21 @@
       box-shadow:none;border:0;margin:0;border-radius:0;background:transparent;
     }
     .c4k-register-inline-card .reg-modal-b{flex:1;min-height:0;overflow-y:auto;max-height:none}
+    .c4k-whosin-list{
+      list-style:none;margin:0;padding:0;min-width:0;
+    }
+    .c4k-whosin-list__item{
+      display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+      padding:10px 14px;border-bottom:1px solid var(--line);min-width:0;
+    }
+    .c4k-whosin-list__item:last-child{border-bottom:0}
+    .c4k-whosin-list__main{flex:1;min-width:0}
+    .c4k-whosin-list__chip{flex-shrink:0}
+    .c4k-whosin-list__name-plain{
+      display:block;font-weight:600;font-size:13px;min-width:0;overflow-wrap:break-word;
+    }
+    .c4k-whosin-list__item--open .c4k-whosin-list__name-plain{color:var(--muted);font-weight:500}
+    .c4k-whosin-list__staff{margin-top:4px}
     .reg-date-h{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;max-width:100%}
     .reg-date-h__d{font-size:11px;font-weight:800;color:var(--ink);line-height:1.1;overflow-wrap:break-word;max-width:100%}
     .reg-date-h small{font-weight:700;color:var(--muted);font-size:10px;line-height:1.1}

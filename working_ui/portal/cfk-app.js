@@ -1,7 +1,7 @@
 /**
  * CFK — ClassForKids parent-facing application (weekly services, booking surface).
  *
- * `c4k_services` is the primary CFK screen: programme grid, filters, registers.
+ * `c4k_services` is the primary CFK screen: programme grid, filters, places.
  * Admin mounts it today; the same module will power the dedicated parent portal.
  *
  * Heavy roster rendering stays on the admin host until fully decoupled — this file
@@ -14,7 +14,7 @@
   var PRODUCT_NAME = "CFK";
   var PAGE_TITLE = "Services";
   var PAGE_INTRO =
-    "Programmes and time bands for this week — filter, open registers, and spot spare capacity.";
+    "Programmes and time bands — filter to see who is rostered and where places are free. Capacity overview only; manage bookings in Booking Portal and attendance on Staff.";
 
   var deps = {
     $: function (id) {
