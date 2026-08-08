@@ -7953,12 +7953,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }).join('') +
           '</ul>';
       }
-      var openHint = openN > 0
-        ? '<p class="muted" style="margin:8px 0 0;font-size:12px;min-width:0;overflow-wrap:break-word">'+esc(String(openN))+' open place'+(openN === 1 ? '' : 's')+' in this band.</p>'
+      var newWaitN = adminCapacityWaitCountForProgVenue(act, venue);
+      var openHintParts = [];
+      if(openN > 0) openHintParts.push(esc(String(openN))+' open place'+(openN === 1 ? '' : 's'));
+      if(newWaitN > 0) openHintParts.push(esc(String(newWaitN))+' new on waiting list');
+      var openHint = openHintParts.length
+        ? '<p class="muted" style="margin:8px 0 0;font-size:12px;min-width:0;overflow-wrap:break-word">'+openHintParts.join(' · ')+' in this programme / venue.</p>'
         : '';
-      if(closedN && !openN && !paxPack.length){
+      if(closedN && !openN && !paxPack.length && !newWaitN){
         openHint = '<p class="muted" style="margin:8px 0 0;font-size:12px">This band is closed.</p>';
       }
+      var placesBadgesExtra =
+        '<div class="reg-bookings-cover-badges" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px;min-width:0">'+
+        '<span class="novo-sched-badge" title="Unbooked roster lines in this time band">Open '+esc(String(openN))+'</span>'+
+        '<span class="novo-sched-badge'+(newWaitN ? ' novo-sched-badge--book' : '')+'" title="Waiting-list matches for this programme and venue (new demand)">New '+esc(String(newWaitN))+'</span>'+
+        '</div>';
       return (
         '<div class="modal-h reg-modal-h">'+
         '<div style="min-width:0"><h2 id="modalTitle">Who’s in this slot</h2>'+
@@ -7975,6 +7984,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>'+
         '<div class="reg-card" style="min-width:0"><h4>Places</h4>'+
         registerModalBookingsCoverBadgesHtml(slot)+
+        placesBadgesExtra+
         openHint+
         '<div class="reg-term-nav reg-slot-nav toolbar" style="margin-top:12px">'+
         '<button type="button" class="btn btn--ghost reg-slot-btn" id="btnRegSlotPrev" aria-label="Previous roster slot this day">&#8249; Prev slot</button>'+
@@ -16763,18 +16773,31 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       );
     }
     /** One-line hint from the waiting list (portal export or `MOCK.c4kWaitlist`) — heuristic match on service/venue text. */
-    function adminCapacityWaitMatchForProgVenue(prog, venue){
+    function adminCapacityWaitMatchRowsForProgVenue(prog, venue){
       var pv = (String(prog || '') + ' ' + String(venue || '')).toLowerCase();
       var out = [];
       (adminC4kWaitlistRows() || []).forEach(function(w){
         var bag = (String(w.service || '') + ' ' + String(w.loc || '') + ' ' + String(w.match || '') + ' ' + String(w.slotTime || '') + ' ' + String(w.pref || '')).toLowerCase();
         var hit = false;
-        if(pv.indexOf('swim') >= 0 && (bag.indexOf('swim') >= 0 || bag.indexOf('pool') >= 0 || bag.indexOf('water') >= 0)) hit = true;
+        if(pv.indexOf('swim') >= 0 && (bag.indexOf('swim') >= 0 || bag.indexOf('pool') >= 0 || bag.indexOf('water') >= 0 || bag.indexOf('aquatic') >= 0)) hit = true;
+        else if(pv.indexOf('aquatic') >= 0 && (bag.indexOf('swim') >= 0 || bag.indexOf('pool') >= 0 || bag.indexOf('water') >= 0 || bag.indexOf('aquatic') >= 0)) hit = true;
         else if(pv.indexOf('climb') >= 0 && bag.indexOf('climb') >= 0) hit = true;
         else if((pv.indexOf('dc') >= 0 || pv.indexOf('day') >= 0) && (bag.indexOf('dc') >= 0 || bag.indexOf('complex') >= 0 || bag.indexOf('day centre') >= 0)) hit = true;
         else if((pv.indexOf('therapy') >= 0 || pv.indexOf('mdt') >= 0) && (bag.indexOf('ot') >= 0 || bag.indexOf('mdt') >= 0)) hit = true;
         else if(pv.indexOf('outreach') >= 0 && bag.indexOf('outreach') >= 0) hit = true;
-        if(hit) out.push(String(w.pax || '').trim() + ': ' + String(w.match || '—').trim());
+        else if(pv.indexOf('multi') >= 0 && (bag.indexOf('multi') >= 0 || bag.indexOf('splash') >= 0)) hit = true;
+        else if(pv.indexOf('physical') >= 0 && (bag.indexOf('fitness') >= 0 || bag.indexOf('physical') >= 0)) hit = true;
+        if(hit) out.push(w);
+      });
+      return out;
+    }
+    function adminCapacityWaitCountForProgVenue(prog, venue){
+      return adminCapacityWaitMatchRowsForProgVenue(prog, venue).length;
+    }
+    function adminCapacityWaitMatchForProgVenue(prog, venue){
+      var matched = adminCapacityWaitMatchRowsForProgVenue(prog, venue);
+      var out = matched.map(function(w){
+        return String(w.pax || '').trim() + ': ' + String(w.match || '—').trim();
       });
       if(out.length) return out.slice(0, 2).join(' · ');
       var n = (adminC4kWaitlistRows() || []).length;
@@ -17305,6 +17328,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Unbooked places left across the term at this venue.">'+
             '<span class="c4k-svc-venue-acc__pill-lbl">Open (term): </span>'+
             '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venueSt.open))+'</strong>'+
+            '</span></span>'+
+            '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-new">'+
+            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="People on the Waiting list matched to this programme and venue (new demand — same queue as Wait match on the capacity board).">'+
+            '<span class="c4k-svc-venue-acc__pill-lbl">New (wait): </span>'+
+            '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(adminCapacityWaitCountForProgVenue(block.programme, vn.venue)))+'</strong>'+
             '</span></span>'+
             '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-inst">'+
             '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Distinct instructors working this service at this venue across the term.">'+
