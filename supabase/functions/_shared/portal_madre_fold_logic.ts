@@ -131,12 +131,17 @@ function foldParticipantCancel(madre: MadreDoc, iso: string, payload: Record<str
   const timeSlot = norm(payload.time_slot).toLowerCase();
   if (!client || !iso) return false;
 
+  const instrRaw = norm(payload.instructors);
+
   for (const week of madre.weeks ?? []) {
     const start = String(week.start ?? "").slice(0, 10);
     const end = String(week.end ?? "").slice(0, 10);
     if (iso < start || iso > end) continue;
 
-    for (const st of week.staff ?? []) {
+    const scoped = instrRaw ? findStaffColumn(week, instrRaw) : null;
+    const staffList = scoped ? [scoped] : (week.staff ?? []);
+
+    for (const st of staffList) {
       const day = findDay(st, iso);
       if (!day?.slots) continue;
       const before = day.slots.length;
