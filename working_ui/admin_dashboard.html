@@ -6897,7 +6897,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         '<div class="modal-h"><h2 id="modalTitle" class="edit-class-title">'+esc(title)+'</h2>'+
         '<p class="muted" style="margin:6px 0 0;font-size:12px;line-height:1.45;max-width:40rem;overflow-wrap:break-word">'+
-        'Services overview is informational (roster offer). Live place assignment and instructor covers sit in <strong>Booking Portal / Scheduling</strong> — use this form to plan a class band, then apply it there.</p></div>'+
+        (isAdd
+          ? 'Adds an <strong>open place</strong> (NO PARTICIPANT) on the live roster / MADRE so it appears as a bookable seat in <strong>Booking Portal</strong> (and Schedule &amp; Covers).'
+          : 'Updates this class band. Changing instructors writes open seats under the selected staff on MADRE / Booking Portal.')+
+        '</p></div>'+
         '<div class="modal-b">'+
         '<form class="edit-class-form" id="formEditClassSchedule" onsubmit="return false">'+
         '<label class="lbl" for="editClassProg">Class</label>'+
@@ -6915,7 +6918,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>'+
         '<label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-top:14px;min-width:0">'+
         '<input type="checkbox" id="editClassPrivate" name="private" style="margin-top:3px;flex-shrink:0"/>'+
-        '<span style="min-width:0;overflow-wrap:break-word"><strong>Private:</strong><span class="muted" style="display:block;font-weight:500;margin-top:4px;font-size:12px;line-height:1.45">This hides the class from the public-facing pages where parents book.</span></span></label>'+
+        '<span style="min-width:0;overflow-wrap:break-word"><strong>Private:</strong><span class="muted" style="display:block;font-weight:500;margin-top:4px;font-size:12px;line-height:1.45">Keep this band off the public Booking Portal offer (roster only).</span></span></label>'+
         '<div class="edit-class-sec">'+
         '<h3>Payment options</h3>'+
         '<div class="edit-class-radio-grp">'+
@@ -6934,16 +6937,256 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<label><input type="radio" name="editClassTrial" value="offer"/><span><strong>I offer a trial</strong></span></label>'+
         '</div></div>'+
         '<p class="muted" style="margin:14px 0 0;font-size:11px;line-height:1.45;max-width:48rem;overflow-wrap:break-word">'+
-        (isAdd
-          ? 'Add a planned class band for this service. Saving drafts the plan here; apply instructor and place changes in <strong>Booking Portal / Scheduling</strong>.'
-          : 'Update capacity, times, or instructors for this band. Apply live roster / cover changes in <strong>Booking Portal / Scheduling</strong>.')+
+        'Each instructor line becomes one open seat. The instructor must already exist on the MADRE week grid (same names as Schedule &amp; Covers). Pricing fields are stored for admin reference only for now.'+
         '</p>'+
         '</form></div>'+
         '<div class="modal-f modal-f--edit-class">'+
-        '<button type="button" class="btn btn--pri" id="btnEditClassSave">'+(isAdd ? 'Add class' : 'Save')+'</button>'+
+        '<button type="button" class="btn btn--pri" id="btnEditClassSave">'+(isAdd ? 'Add to Booking Portal' : 'Save to Booking Portal')+'</button>'+
         '<button type="button" class="btn btn--sec" id="btnEditClassOpenBooking">Open Booking / Scheduling</button>'+
         '<button type="button" class="btn btn--ghost" id="btnEditClassCancel">Cancel</button></div>'
       );
+    }
+    function servicesFormatMadreTimeSlot(startH, startM, endH, endM){
+      function tok(h, m){
+        var hh = parseInt(h, 10);
+        var mm = parseInt(m, 10);
+        if(!Number.isFinite(hh)) hh = 0;
+        if(!Number.isFinite(mm)) mm = 0;
+        return String(hh) + '.' + (mm < 10 ? '0' : '') + String(mm);
+      }
+      return tok(startH, startM) + ' to ' + tok(endH, endM);
+    }
+    function servicesClassLabelToService(raw){
+      var t = String(raw || '').trim();
+      t = t.replace(/\s*\([^)]*yrs[^)]*\)\s*$/i, '').trim();
+      return portalDisplayProgrammeFromSheet(t) || t || 'Session';
+    }
+    function servicesNormalizeOfferVenue(raw){
+      var v = String(raw || '').trim();
+      var low = v.toLowerCase();
+      if(low.indexOf('acton') >= 0) return 'Acton';
+      if(low.indexOf('northolt') >= 0) return 'Northolt';
+      if(low.indexOf('swimfarm') >= 0 || low.indexOf('swim farm') >= 0) return 'SwimFarm';
+      if(low.indexOf('westway') >= 0) return 'Westway';
+      return v.replace(/\s+Centre$/i, '').replace(/\s+Center$/i, '').trim() || v;
+    }
+    function servicesNextIsoForDowKey(dowKey, fromIso){
+      var order = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+      var want = order.indexOf(String(dowKey || '').trim().toLowerCase());
+      if(want < 0) want = 1;
+      var d = bookingParseIsoLocal(String(fromIso || '').trim()) || new Date();
+      var cur = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0);
+      for(var i = 0; i < 14; i++){
+        if(cur.getDay() === want) return isoDateLocal(cur);
+        cur.setDate(cur.getDate() + 1);
+      }
+      return isoDateLocal(new Date());
+    }
+    function servicesPickMadreAnchorIso(dowKey, preferredIso){
+      var fallback = servicesNextIsoForDowKey(dowKey, preferredIso || isoDateLocal(new Date()));
+      return Promise.resolve().then(function(){
+        if(!window.PortalMadreFold || typeof window.PortalMadreFold.loadLiveMadre !== 'function'){
+          return fallback;
+        }
+        var client = getSchedSupabaseClient();
+        if(!client) return fallback;
+        return window.PortalMadreFold.loadLiveMadre(client, false).then(function(doc){
+          var weeks = (doc && doc.weeks) || [];
+          var want = String(dowKey || '').trim().toLowerCase();
+          var pref = String(preferredIso || '').trim().slice(0, 10);
+          var candidates = [];
+          for(var wi = 0; wi < weeks.length; wi++){
+            var w = weeks[wi];
+            var staff = (w && w.staff) || [];
+            for(var si = 0; si < staff.length; si++){
+              var days = (staff[si] && staff[si].days) || [];
+              for(var di = 0; di < days.length; di++){
+                var iso = String(days[di].sessionDate || '').slice(0, 10);
+                if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) continue;
+                var wd = String(days[di].weekday || '').trim().toLowerCase();
+                if(wd && wd !== want && wd.indexOf(want.slice(0, 3)) < 0){
+                  var dObj = bookingParseIsoLocal(iso);
+                  if(!dObj) continue;
+                  var names = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+                  if(names[dObj.getDay()] !== want) continue;
+                }
+                candidates.push(iso);
+              }
+            }
+          }
+          candidates.sort();
+          if(pref && candidates.indexOf(pref) >= 0) return pref;
+          for(var ci = 0; ci < candidates.length; ci++){
+            if(candidates[ci] >= fallback) return candidates[ci];
+          }
+          if(candidates.length) return candidates[candidates.length - 1];
+          return fallback;
+        }).catch(function(){ return fallback; });
+      });
+    }
+    function servicesUpsertOpenRosterRow(client, row){
+      var payload = {
+        client_name: 'NO PARTICIPANT',
+        day: row.day,
+        time_slot: row.time_slot,
+        instructors: row.instructors,
+        service: row.service,
+        area: row.area || '',
+        venue: row.venue,
+        session_date: null,
+        status: 'active'
+      };
+      return client
+        .from('portal_roster_rows')
+        .select('id')
+        .eq('status', 'active')
+        .eq('client_name', 'NO PARTICIPANT')
+        .eq('time_slot', payload.time_slot)
+        .eq('day', payload.day)
+        .eq('instructors', payload.instructors)
+        .is('session_date', null)
+        .maybeSingle()
+        .then(function(res){
+          if(res.error && res.error.code !== 'PGRST116') throw res.error;
+          if(res.data && res.data.id){
+            return client.from('portal_roster_rows').update(payload).eq('id', res.data.id).select('id').single();
+          }
+          return client.from('portal_roster_rows').insert([payload]).select('id').single();
+        })
+        .then(function(res){
+          if(res.error) throw res.error;
+          return res.data || null;
+        });
+    }
+    function servicesCollectClassScheduleForm(){
+      var progRaw = String(($('editClassProg') && $('editClassProg').value) || '').trim();
+      var venueRaw = String(($('editClassVenue') && $('editClassVenue').value) || '').trim();
+      var dayKey = String(($('editClassDay') && $('editClassDay').value) || 'monday').trim().toLowerCase();
+      var sh = String(($('editClassStartH') && $('editClassStartH').value) || '16');
+      var sm = String(($('editClassStartM') && $('editClassStartM').value) || '00');
+      var eh = String(($('editClassEndH') && $('editClassEndH').value) || '16');
+      var em = String(($('editClassEndM') && $('editClassEndM').value) || '30');
+      var isPrivate = !!($('editClassPrivate') && $('editClassPrivate').checked);
+      var instrs = [];
+      var seen = {};
+      document.querySelectorAll('[data-edit-class-instr]').forEach(function(sel){
+        var v = String(sel.value || '').trim();
+        if(!v || seen[v.toLowerCase()]) return;
+        seen[v.toLowerCase()] = true;
+        var lab = sel.options && sel.selectedIndex >= 0 ? String(sel.options[sel.selectedIndex].text || '').trim() : v;
+        instrs.push({ id: v.toLowerCase(), name: lab || v });
+      });
+      return {
+        service: servicesClassLabelToService(progRaw),
+        venue: servicesNormalizeOfferVenue(venueRaw),
+        dayKey: dayKey,
+        dayLong: adminServiceDowTitleFromNorm(dayKey),
+        timeSlot: servicesFormatMadreTimeSlot(sh, sm, eh, em),
+        isPrivate: isPrivate,
+        instructors: instrs,
+        termPrice: String(($('editClassTermPrice') && $('editClassTermPrice').value) || '').trim(),
+        sessionPrice: String(($('editClassSessionPrice') && $('editClassSessionPrice').value) || '').trim()
+      };
+    }
+    function servicesSaveClassScheduleToBookingPortal(slot, opts){
+      opts = opts || {};
+      var form = servicesCollectClassScheduleForm();
+      if(!form.instructors.length){
+        if(typeof portalAdminToast === 'function') portalAdminToast('Select at least one instructor (must already exist on the MADRE week).');
+        return Promise.reject(new Error('no instructor'));
+      }
+      if(!form.service || !form.venue || !form.timeSlot){
+        if(typeof portalAdminToast === 'function') portalAdminToast('Class, venue, and times are required.');
+        return Promise.reject(new Error('incomplete'));
+      }
+      var client = getSchedSupabaseClient();
+      if(!client){
+        if(typeof portalAdminToast === 'function') portalAdminToast('Sign in to Supabase first.');
+        return Promise.reject(new Error('no client'));
+      }
+      var preferredIso = String((slot && slot.sessionDate) || '').trim().slice(0, 10) || isoDateLocal(new Date());
+      var saveBtn = $('btnEditClassSave');
+      if(saveBtn){ saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
+      return servicesPickMadreAnchorIso(form.dayKey, preferredIso).then(function(anchorIso){
+        var chain = Promise.resolve();
+        var madreNotes = [];
+        form.instructors.forEach(function(instr){
+          chain = chain.then(function(){
+            var row = {
+              day: form.dayLong,
+              time_slot: form.timeSlot,
+              instructors: instr.name,
+              service: form.service,
+              venue: form.venue,
+              area: ''
+            };
+            return servicesUpsertOpenRosterRow(client, row).then(function(rowRef){
+              if(form.isPrivate){
+                madreNotes.push(instr.name + ': roster only (private)');
+                return rowRef;
+              }
+              if(!window.PortalMadreFold || typeof window.PortalMadreFold.queueParticipantSlotChange !== 'function'){
+                madreNotes.push(instr.name + ': roster saved (MADRE fold unavailable)');
+                return rowRef;
+              }
+              return window.PortalMadreFold.queueParticipantSlotChange(client, {
+                after: {
+                  client_name: 'NO PARTICIPANT',
+                  day: form.dayLong,
+                  time_slot: form.timeSlot,
+                  instructors: instr.name,
+                  service: form.service,
+                  venue: form.venue,
+                  area: '',
+                  status: 'active'
+                },
+                session_date: anchorIso,
+                action: 'update',
+                term_action: 'update',
+                roster_row_id: rowRef && rowRef.id ? rowRef.id : null,
+                source_module: 'c4k_services_schedule_class'
+              }).then(function(foldRes){
+                var note = foldRes && (foldRes.note || foldRes.message);
+                if(foldRes && foldRes.ok === false){
+                  madreNotes.push(instr.name + ': MADRE ' + String(note || 'no week/staff match'));
+                }else{
+                  madreNotes.push(instr.name + ': open seat on Booking Portal');
+                }
+                return rowRef;
+              }).catch(function(err){
+                madreNotes.push(instr.name + ': MADRE error ' + String((err && err.message) || err));
+                return rowRef;
+              });
+            });
+          });
+        });
+        return chain.then(function(){
+          if(typeof window.portalRefreshStaffDashboardSourceFromPortal === 'function'){
+            try{ window.portalRefreshStaffDashboardSourceFromPortal(); }catch(_r){}
+          }
+          if(typeof portalNotifyAdminRosterDataChanged === 'function'){
+            portalNotifyAdminRosterDataChanged({ refreshScheduling: true });
+          }
+          try{
+            if(window.PortalCfkApp && typeof window.PortalCfkApp.fillFilterSelects === 'function'){
+              window.PortalCfkApp.fillFilterSelects();
+            }
+            if(window.PortalCfkApp && typeof window.PortalCfkApp.refreshPartial === 'function'){
+              window.PortalCfkApp.refreshPartial();
+            }
+          }catch(_cfk){}
+          var msg = (opts.mode === 'add' ? 'Class added' : 'Class updated') +
+            ' · ' + form.service + ' · ' + form.dayLong + ' ' + form.timeSlot + ' · ' + form.venue +
+            '. ' + madreNotes.join(' · ');
+          if(typeof portalAdminToast === 'function') portalAdminToast(msg);
+          return { anchorIso: anchorIso, form: form, notes: madreNotes };
+        });
+      }).finally(function(){
+        if(saveBtn){
+          saveBtn.disabled = false;
+          saveBtn.textContent = opts.mode === 'add' ? 'Add to Booking Portal' : 'Save to Booking Portal';
+        }
+      });
     }
     function bindEditClassScheduleModal(slot, opts){
       opts = opts || {};
@@ -6961,21 +7204,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         });
       };
       if(save) save.onclick = function(){
-        var instrNames = [];
-        document.querySelectorAll('[data-edit-class-instr]').forEach(function(sel){
-          var v = String(sel.value || '').trim();
-          if(!v) return;
-          var lab = sel.options && sel.selectedIndex >= 0 ? String(sel.options[sel.selectedIndex].text || '').trim() : v;
-          if(lab) instrNames.push(lab);
-        });
-        var msg = (opts.mode === 'add' ? 'Class planned' : 'Class schedule updated') +
-          (instrNames.length ? (' · instructors: ' + instrNames.join(', ')) : '') +
-          '. Apply live in Booking Portal / Scheduling.';
-        try{
-          if(typeof portalAdminToast === 'function') portalAdminToast(msg);
-          else if(window.alert) window.alert(msg);
-        }catch(_e){}
-        done();
+        void servicesSaveClassScheduleToBookingPortal(slot, opts).then(function(res){
+          done();
+          if(res && !res.form.isPrivate){
+            try{
+              if(typeof setView === 'function') setView('open_places_2627');
+            }catch(_v){}
+          }
+        }).catch(function(){ /* toast already shown */ });
       };
     }
     function openEditClassScheduleModalFromEl(el){
