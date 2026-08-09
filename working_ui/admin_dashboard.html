@@ -6652,6 +6652,47 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return best;
     }
+    /**
+     * Services capacity tables: use the standing term weekday (latest non-crash date),
+     * not crash-course weeks (from 20 Jul) that only have temporary staff (e.g. Roberto Wed Acton).
+     */
+    var SERVICES_STANDING_CRASH_FROM_ISO = '2026-07-20';
+    function adminServiceIsCrashWeekIso(iso){
+      var s = String(iso || '').trim().slice(0, 10);
+      return !!(s && s >= SERVICES_STANDING_CRASH_FROM_ISO);
+    }
+    function adminPickServicesStandingIsoForDow(dowNorm, slotsWd, weekAnchorIso, termStart, termEnd){
+      var want = adminServiceNormalizeDowKey(dowNorm);
+      var dates = [];
+      var seen = {};
+      var i, iso, d;
+      for(i = 0; i < (slotsWd && slotsWd.length) || 0; i++){
+        iso = String(slotsWd[i].sessionDate || '').trim().slice(0, 10);
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) continue;
+        if(termStart && iso < termStart) continue;
+        if(termEnd && iso > termEnd) continue;
+        if(adminServiceIsCrashWeekIso(iso)) continue;
+        d = adminServiceNormalizeDowKey(slotsWd[i].sheetDay || portalWeekdayLongFromIsoDate(iso));
+        if(want && d && d !== want) continue;
+        if(seen[iso]) continue;
+        seen[iso] = true;
+        dates.push(iso);
+      }
+      dates.sort();
+      if(dates.length) return dates[dates.length - 1];
+      // No non-crash dated rows — fall back to calendar pick, still avoiding crash when possible.
+      var cal = adminPickIsoForSheetWeekdayNearAnchor(weekAnchorIso, want || dowNorm, termStart, termEnd);
+      if(cal && !adminServiceIsCrashWeekIso(cal)) return cal;
+      var all = adminEnumerateIsosInclusive(termStart, termEnd);
+      var best = '';
+      for(i = 0; i < all.length; i++){
+        iso = all[i];
+        if(adminServiceNormalizeDowKey(portalWeekdayLongFromIsoDate(iso)) !== want) continue;
+        if(adminServiceIsCrashWeekIso(iso)) continue;
+        if(!best || iso > best) best = iso;
+      }
+      return best || cal || '';
+    }
     /** Pick roster lines for one calendar date from a merged anchor-time group (parallel instructors). */
     function adminServiceLineGroupForWeek(grp, weekAnchorIso, termStart, termEnd){
       var slot0 = grp[0];
@@ -18008,12 +18049,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(!groups.length) continue;
             var did = 'c4k-svc-dow-'+pidx+'-'+vix+'-'+dix;
             var dowTitle = adminServiceDowTitleFromNorm(dk);
-            var pickIso0 = '';
-            var gix;
-            for(gix = 0; gix < groups.length; gix++){
-              var slPick = adminServiceLineGroupForWeek(groups[gix], weekIso, termStart, termEnd);
-              var pIso = String(slPick.pickIso || '').trim();
-              if(pIso){ pickIso0 = pIso; break; }
+            var pickIso0 = adminPickServicesStandingIsoForDow(dk, slotsWd, weekIso, termStart, termEnd);
+            if(!pickIso0){
+              for(gix = 0; gix < groups.length; gix++){
+                var slPick = adminServiceLineGroupForWeek(groups[gix], weekIso, termStart, termEnd);
+                var pIso = String(slPick.pickIso || '').trim();
+                if(pIso && !adminServiceIsCrashWeekIso(pIso)){ pickIso0 = pIso; break; }
+                if(pIso && !pickIso0) pickIso0 = pIso;
+              }
             }
             if(!pickIso0){
               var slFirst = adminServiceLineGroupForWeek(groups[0], weekIso, termStart, termEnd);
