@@ -218,6 +218,8 @@
       if (String(raw.status || "active") !== "active" && String(raw.status || "") !== "cancelled") return;
       var row = dbToAdapter(raw);
       if (!row.client_name || !row.time_slot) return;
+      // Demo / portal-guide account — never merge into live staff roster views.
+      if (/teflon/i.test(String(row.instructors || ""))) return;
       if (String(raw.status || "") === "cancelled") {
         if (row.session_date) {
           cancelledDated[datedSlotKey(row)] = true;
