@@ -2328,6 +2328,12 @@
       font-weight:800;color:var(--ink);text-align:center !important;
       padding:10px 8px !important;white-space:nowrap;overflow:visible;text-overflow:clip
     }
+    .c4k-svc-slot-th-slots,
+    .c4k-svc-slot-td--slots{
+      width:3.5rem;min-width:3.25rem;max-width:4rem;
+      font-weight:800;color:var(--ink);text-align:center !important;
+      padding:10px 4px !important;font-variant-numeric:tabular-nums;white-space:nowrap
+    }
     .c4k-svc-slot-td--venue{color:var(--text);text-align:center}
     .c4k-svc-slot-td--instr{color:var(--text);text-align:center;font-size:12px;min-width:0;overflow-wrap:break-word;word-break:break-word}
     .c4k-svc-slot-td--pax{color:var(--text);text-align:center;font-size:12px;min-width:0;overflow-wrap:break-word;word-break:break-word}

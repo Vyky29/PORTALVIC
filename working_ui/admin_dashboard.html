@@ -17835,6 +17835,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               rowChunks.push(
                 '<tr class="c4k-svc-slot-tr" ' + DR.dataSlot + '>' +
                 '<td class="c4k-svc-slot-td c4k-svc-slot-td--time">' + esc(DR.timeRange) + '</td>' +
+                '<td class="c4k-svc-slot-td c4k-svc-slot-td--slots" title="Instructor seats in this time band">' +
+                esc(String(DR.seats.length || 0)) +
+                '</td>' +
                 seatCells +
                 '<td class="c4k-svc-slot-td c4k-svc-slot-td--wait">' + DR.waitInner + '</td>' +
                 '</tr>'
@@ -17853,6 +17856,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               '<table class="c4k-svc-slot-table" aria-label="'+esc(dowTitle)+' sessions">'+
               '<thead><tr>'+
               '<th scope="col" class="c4k-svc-slot-th-time">Time</th>'+
+              '<th scope="col" class="c4k-svc-slot-th-slots" title="Instructor seats in each time band">Slots</th>'+
               seatHead +
               '<th scope="col" class="c4k-svc-slot-th-wait">Waiting</th>'+
               '</tr></thead><tbody>'+rowChunks.join('')+'</tbody></table>'+
