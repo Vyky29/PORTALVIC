@@ -2324,20 +2324,20 @@
     .c4k-svc-slot-td{padding:10px 10px;vertical-align:middle;border-bottom:1px solid var(--line);min-width:0;overflow-wrap:break-word;word-break:break-word;text-align:center}
     .c4k-svc-slot-th-time,
     .c4k-svc-slot-td--time{
-      width:7.25rem;max-width:8rem;min-width:6.5rem;
-      font-weight:800;color:var(--ink);text-align:left !important;padding-left:12px !important;padding-right:8px !important;
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+      width:11.5rem;min-width:11.5rem;max-width:12.5rem;
+      font-weight:800;color:var(--ink);text-align:center !important;
+      padding:10px 8px !important;white-space:nowrap;overflow:visible;text-overflow:clip
     }
     .c4k-svc-slot-td--venue{color:var(--text);text-align:center}
     .c4k-svc-slot-td--instr{color:var(--text);text-align:center;font-size:12px;min-width:0;overflow-wrap:break-word;word-break:break-word}
     .c4k-svc-slot-td--pax{color:var(--text);text-align:center;font-size:12px;min-width:0;overflow-wrap:break-word;word-break:break-word}
     .c4k-svc-slot-th-seat{
       width:auto;min-width:0;max-width:none;padding:8px 6px !important;
-      white-space:normal !important;line-height:1.15;vertical-align:middle;text-align:center
+      white-space:normal !important;line-height:1.15;vertical-align:middle;text-align:center !important
     }
     .c4k-svc-slot-th-seat__stack{
       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
-      min-width:0;max-width:100%;margin:0 auto
+      min-width:0;max-width:100%;width:100%;margin:0 auto;text-align:center
     }
     .c4k-svc-slot-th-seat__line{
       display:block;min-width:0;max-width:100%;overflow-wrap:break-word;text-align:center;font-size:10px;font-weight:800
@@ -2346,15 +2346,15 @@
       width:auto;min-width:0;max-width:none;text-align:center !important;padding:8px 6px !important;white-space:nowrap
     }
     .c4k-svc-slot-td--seat{
-      width:auto;min-width:0;max-width:none;color:var(--text);text-align:center;font-size:11px;
+      width:auto;min-width:0;max-width:none;color:var(--text);text-align:center !important;font-size:11px;
       padding:8px 6px;overflow-wrap:break-word;word-break:break-word;vertical-align:middle
     }
     .c4k-svc-seat{
       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
-      min-width:0;max-width:100%;box-sizing:border-box
+      min-width:0;max-width:100%;width:100%;box-sizing:border-box;margin:0 auto;text-align:center
     }
     .c4k-svc-seat__instr,.c4k-svc-seat__pax{
-      min-width:0;max-width:100%;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:3px
+      min-width:0;max-width:100%;width:100%;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:3px;text-align:center
     }
     .c4k-svc-pax-chips{
       display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:center;
@@ -2381,14 +2381,14 @@
     .c4k-svc-slot-instr-btn:hover{color:#1d4ed8}
     .c4k-svc-slot-instr-btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:4px}
     .c4k-svc-slot-td--wait{
-      width:auto;min-width:0;max-width:none;text-align:center;white-space:nowrap;vertical-align:middle
+      width:auto;min-width:0;max-width:none;text-align:center !important;white-space:nowrap;vertical-align:middle
     }
     .c4k-svc-wait-lbl{
       display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:800;
-      background:#f59e0b;color:#fff;border:1px solid rgba(15,23,42,.08);line-height:1.2;max-width:100%;
+      background:#f59e0b;color:#fff;border:1px solid rgba(15,23,42,.08);line-height:1.2;max-width:100%;margin:0 auto;
     }
     .c4k-svc-wait-ico{font-size:11px;opacity:.95}
-    .c4k-svc-wait-empty{font-size:12px}
+    .c4k-svc-wait-empty{font-size:12px;display:block;text-align:center}
     .card.c4k-svc-card--aquatic .c4k-svc-slot-table tbody .c4k-svc-slot-tr:hover,
     .card.c4k-svc-card--climb .c4k-svc-slot-table tbody .c4k-svc-slot-tr:hover,
     .card.c4k-svc-card--phys .c4k-svc-slot-table tbody .c4k-svc-slot-tr:hover,
