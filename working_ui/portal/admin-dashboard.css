@@ -2294,7 +2294,11 @@
     }
     /* Services weekday: time · venue · instructor · participant/s · waiting */
     .c4k-svc-slots .novo-sched__list--svc-table{display:block;padding:0 0 8px !important;gap:0 !important}
-    .c4k-svc-slot-table{width:100%;min-width:0;border-collapse:collapse;font-size:13px;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:0 1px 0 rgba(15,23,42,.04)}
+    .c4k-svc-slot-table{
+      width:100%;min-width:0;table-layout:fixed;border-collapse:collapse;font-size:13px;
+      background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;
+      box-shadow:0 1px 0 rgba(15,23,42,.04)
+    }
     .c4k-svc-slot-table thead th{
       background:#e8edf3;color:var(--ink);font-weight:800;font-size:11px;text-transform:none;letter-spacing:.02em;
       padding:10px 10px;text-align:center;vertical-align:middle;white-space:nowrap;border-bottom:1px solid var(--line);
@@ -2318,13 +2322,18 @@
     .card.c4k-svc-card--bespoke .c4k-svc-slot-tr:hover{background:#ede9fe !important}
     .card.c4k-svc-card--neutral .c4k-svc-slot-tr:hover{background:#e8eef5 !important}
     .c4k-svc-slot-td{padding:10px 10px;vertical-align:middle;border-bottom:1px solid var(--line);min-width:0;overflow-wrap:break-word;word-break:break-word;text-align:center}
-    .c4k-svc-slot-td--time{font-weight:800;color:var(--ink);text-align:center}
+    .c4k-svc-slot-th-time,
+    .c4k-svc-slot-td--time{
+      width:7.25rem;max-width:8rem;min-width:6.5rem;
+      font-weight:800;color:var(--ink);text-align:left !important;padding-left:12px !important;padding-right:8px !important;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+    }
     .c4k-svc-slot-td--venue{color:var(--text);text-align:center}
-    .c4k-svc-slot-td--instr{color:var(--text);text-align:center;font-size:12px;max-width:14rem;min-width:0;overflow-wrap:break-word;word-break:break-word}
-    .c4k-svc-slot-td--pax{color:var(--text);text-align:center;font-size:12px;max-width:16rem;min-width:0;overflow-wrap:break-word;word-break:break-word}
+    .c4k-svc-slot-td--instr{color:var(--text);text-align:center;font-size:12px;min-width:0;overflow-wrap:break-word;word-break:break-word}
+    .c4k-svc-slot-td--pax{color:var(--text);text-align:center;font-size:12px;min-width:0;overflow-wrap:break-word;word-break:break-word}
     .c4k-svc-slot-th-seat{
-      min-width:4.75rem;max-width:6.75rem;width:6.25rem;padding:8px 4px !important;
-      white-space:normal !important;line-height:1.15;vertical-align:middle
+      width:auto;min-width:0;max-width:none;padding:8px 6px !important;
+      white-space:normal !important;line-height:1.15;vertical-align:middle;text-align:center
     }
     .c4k-svc-slot-th-seat__stack{
       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
@@ -2333,10 +2342,12 @@
     .c4k-svc-slot-th-seat__line{
       display:block;min-width:0;max-width:100%;overflow-wrap:break-word;text-align:center;font-size:10px;font-weight:800
     }
-    .c4k-svc-slot-th-wait{text-align:center !important;min-width:3.5rem;width:1%;padding:8px 6px !important}
+    .c4k-svc-slot-th-wait{
+      width:auto;min-width:0;max-width:none;text-align:center !important;padding:8px 6px !important;white-space:nowrap
+    }
     .c4k-svc-slot-td--seat{
-      color:var(--text);text-align:center;font-size:11px;min-width:4.75rem;max-width:6.75rem;width:6.25rem;
-      padding:8px 4px;overflow-wrap:break-word;word-break:break-word;vertical-align:middle
+      width:auto;min-width:0;max-width:none;color:var(--text);text-align:center;font-size:11px;
+      padding:8px 6px;overflow-wrap:break-word;word-break:break-word;vertical-align:middle
     }
     .c4k-svc-seat{
       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
@@ -2369,7 +2380,9 @@
     }
     .c4k-svc-slot-instr-btn:hover{color:#1d4ed8}
     .c4k-svc-slot-instr-btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:4px}
-    .c4k-svc-slot-td--wait{width:1%;text-align:center;white-space:nowrap;vertical-align:middle}
+    .c4k-svc-slot-td--wait{
+      width:auto;min-width:0;max-width:none;text-align:center;white-space:nowrap;vertical-align:middle
+    }
     .c4k-svc-wait-lbl{
       display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:800;
       background:#f59e0b;color:#fff;border:1px solid rgba(15,23,42,.08);line-height:1.2;max-width:100%;
