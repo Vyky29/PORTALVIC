@@ -53,6 +53,38 @@ function norm(s: unknown): string {
   return String(s ?? "").replace(/\s+/g, " ").trim();
 }
 
+/** Parse sheet-style "4.30 to 5" / "16.30 to 17.00" into start/end minutes (0–24h). */
+function parseTimeSlotMinutes(raw: string): { start: number; end: number } | null {
+  const normalized = norm(raw).replace(/\s*-\s*/g, " to ").toLowerCase();
+  const parts = normalized.split(/\s+to\s+/i);
+  if (parts.length < 2) return null;
+  function tok(p: string): number | null {
+    const m = String(p || "").trim().match(/^(\d{1,2})(?:[.:](\d{2}))?$/);
+    if (!m) return null;
+    let h = parseInt(m[1], 10);
+    const min = m[2] != null ? parseInt(m[2], 10) : 0;
+    if (!Number.isFinite(h) || !Number.isFinite(min)) return null;
+    // Sheet afternoon hours are often 1–9 meaning 13–21.
+    if (h >= 1 && h <= 9) h += 12;
+    return h * 60 + min;
+  }
+  const a = tok(parts[0]);
+  const b = tok(parts[1]);
+  if (a == null || b == null) return null;
+  return { start: a, end: b };
+}
+
+function timeSlotsEquivalent(a: string, b: string): boolean {
+  const na = norm(a).toLowerCase();
+  const nb = norm(b).toLowerCase();
+  if (!na || !nb) return !na && !nb;
+  if (na === nb) return true;
+  const ma = parseTimeSlotMinutes(na);
+  const mb = parseTimeSlotMinutes(nb);
+  if (!ma || !mb) return false;
+  return ma.start === mb.start && ma.end === mb.end;
+}
+
 function staffSlug(name: string): string {
   return norm(name).toLowerCase().replace(/\s+/g, "_");
 }
@@ -77,9 +109,9 @@ function findDay(st: MadreStaffCol, iso: string): MadreDay | null {
 
 function slotMatch(slots: MadreSlot[], client: string, timeSlot: string): MadreSlot | null {
   const c = norm(client).toLowerCase();
-  const t = norm(timeSlot).toLowerCase();
+  const t = norm(timeSlot);
   for (const s of slots) {
-    if (norm(s.client_name).toLowerCase() === c && norm(s.time_slot).toLowerCase() === t) {
+    if (norm(s.client_name).toLowerCase() === c && timeSlotsEquivalent(String(s.time_slot ?? ""), t)) {
       return s;
     }
   }
@@ -128,7 +160,7 @@ function foldParticipantUpsert(madre: MadreDoc, iso: string, payload: Record<str
 
 function foldParticipantCancel(madre: MadreDoc, iso: string, payload: Record<string, unknown>): boolean {
   const client = norm(payload.client_name).toLowerCase();
-  const timeSlot = norm(payload.time_slot).toLowerCase();
+  const timeSlot = norm(payload.time_slot);
   if (!client || !iso) return false;
 
   const instrRaw = norm(payload.instructors);
@@ -149,7 +181,7 @@ function foldParticipantCancel(madre: MadreDoc, iso: string, payload: Record<str
         (s) =>
           !(
             norm(s.client_name).toLowerCase() === client &&
-            (!timeSlot || norm(s.time_slot).toLowerCase() === timeSlot)
+            (!timeSlot || timeSlotsEquivalent(String(s.time_slot ?? ""), timeSlot))
           ),
       );
       if (day.slots.length < before) return true;

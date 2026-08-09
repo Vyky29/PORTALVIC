@@ -156,7 +156,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260809-svc-center-time" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260809-svc-slots-col" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
@@ -6945,7 +6945,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<input type="checkbox" id="editClassPrivate" name="private" style="margin-top:3px;flex-shrink:0"/>'+
         '<span style="min-width:0;overflow-wrap:break-word"><strong>Private:</strong><span class="muted" style="display:block;font-weight:500;margin-top:4px;font-size:12px;line-height:1.45">Keep this band off the public Booking Portal offer (roster only).</span></span></label>'+
         '<p class="muted" style="margin:14px 0 0;font-size:11px;line-height:1.45;max-width:48rem;overflow-wrap:break-word">'+
-        'Each instructor line is one seat. Raising capacity and adding instructors opens seats on Booking Portal for this same band; lowering capacity releases open seats only (named participants stay). Instructors must already exist on the MADRE week grid.'+
+        'Each instructor line is one seat. Capacity N keeps only those N instructors on this band — extras are removed. Named participants on a removed instructor move to a remaining/new seat when possible. Instructors must already exist on the MADRE week grid.'+
         '</p>'+
         '</form></div>'+
         '<div class="modal-f modal-f--edit-class">'+
@@ -6954,15 +6954,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<button type="button" class="btn btn--ghost" id="btnEditClassCancel">Cancel</button></div>'
       );
     }
-    function servicesFormatMadreTimeSlot(startH, startM, endH, endM){
-      function tok(h, m){
-        var hh = parseInt(h, 10);
-        var mm = parseInt(m, 10);
-        if(!Number.isFinite(hh)) hh = 0;
-        if(!Number.isFinite(mm)) mm = 0;
-        return String(hh) + '.' + (mm < 10 ? '0' : '') + String(mm);
+    function servicesFormatMadreTimeSlot(startH, startM, endH, endM, dayLong){
+      function pad2(n){
+        var v = parseInt(n, 10);
+        if(!Number.isFinite(v)) v = 0;
+        return (v < 10 ? '0' : '') + String(v);
       }
-      return tok(startH, startM) + ' to ' + tok(endH, endM);
+      var start = pad2(startH) + ':' + pad2(startM);
+      var end = pad2(endH) + ':' + pad2(endM);
+      var sheet = rosterBandLabelFromPg(start, end, dayLong || '');
+      if(sheet) return sheet;
+      return start.replace(':', '.') + ' to ' + end.replace(':', '.');
     }
     function servicesClassLabelToService(raw){
       var t = String(raw || '').trim();
@@ -7069,32 +7071,49 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         });
     }
     function servicesCancelOpenRosterRow(client, row){
+      var instrU = servicesInstrNameKey(row.instructors);
+      var dayLong = row.day;
       var q = client
         .from('portal_roster_rows')
-        .select('id')
+        .select('id,time_slot,instructors,day,venue')
         .eq('status', 'active')
         .eq('client_name', 'NO PARTICIPANT')
-        .eq('time_slot', row.time_slot)
-        .eq('day', row.day)
-        .eq('instructors', row.instructors)
+        .eq('day', dayLong)
+        .eq('instructors', instrU)
         .is('session_date', null);
-      if(row.venue) q = q.eq('venue', row.venue);
-      return q
-        .maybeSingle()
-        .then(function(res){
-          if(res.error && res.error.code !== 'PGRST116') throw res.error;
-          if(!res.data || !res.data.id) return null;
-          return client
-            .from('portal_roster_rows')
-            .update({ status: 'cancelled' })
-            .eq('id', res.data.id)
-            .select('id')
-            .single()
-            .then(function(u){
-              if(u.error) throw u.error;
-              return u.data || null;
-            });
-        });
+      if(row.venue) q = q.ilike('venue', '%' + row.venue + '%');
+      return q.then(function(res){
+        if(res.error) throw res.error;
+        var rows = res.data || [];
+        var wantExact = String(row.time_slot || '').trim();
+        var bounds = null;
+        try{
+          var t0 = adminRosterParseTimeSlot(wantExact, dayLong);
+          bounds = {
+            startMin: adminServiceMinutesFromAnchor(String(t0.start || '') + ':00'),
+            endMin: adminServiceMinutesFromAnchor(String(t0.end || '') + ':00')
+          };
+        }catch(_b){ bounds = null; }
+        var ids = [];
+        for(var i = 0; i < rows.length; i++){
+          var r = rows[i];
+          if(wantExact && String(r.time_slot || '').trim() === wantExact){
+            ids.push(r.id);
+            continue;
+          }
+          if(!bounds || !Number.isFinite(bounds.startMin) || !Number.isFinite(bounds.endMin)) continue;
+          var t = adminRosterParseTimeSlot(r.time_slot, r.day || dayLong);
+          var a = adminServiceMinutesFromAnchor(String(t.start || '') + ':00');
+          var b = adminServiceMinutesFromAnchor(String(t.end || '') + ':00');
+          if(!Number.isFinite(a) || !Number.isFinite(b)) continue;
+          if(a < bounds.endMin && b > bounds.startMin) ids.push(r.id);
+        }
+        if(!ids.length) return null;
+        return client.from('portal_roster_rows').update({ status: 'cancelled' }).in('id', ids);
+      }).then(function(u){
+        if(u && u.error) throw u.error;
+        return u || null;
+      });
     }
     function servicesResolveStaffDisplayName(staffId){
       var id = String(staffId || '').trim().toLowerCase();
@@ -7176,12 +7195,158 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         venue: servicesNormalizeOfferVenue(venueRaw),
         dayKey: dayKey,
         dayLong: adminServiceDowTitleFromNorm(dayKey),
-        timeSlot: servicesFormatMadreTimeSlot(sh, sm, eh, em),
+        timeSlot: servicesFormatMadreTimeSlot(sh, sm, eh, em, adminServiceDowTitleFromNorm(dayKey)),
         isPrivate: isPrivate,
         instructors: instrs,
         termPrice: String(($('editClassTermPrice') && $('editClassTermPrice').value) || '').trim(),
         sessionPrice: String(($('editClassSessionPrice') && $('editClassSessionPrice').value) || '').trim()
       };
+    }
+    function servicesInstrNameKey(name){
+      return String(name || '').trim().toUpperCase();
+    }
+    function servicesBandBoundsFromForm(form){
+      var t = adminRosterParseTimeSlot(form.timeSlot, form.dayLong);
+      return {
+        startMin: adminServiceMinutesFromAnchor(String(t.start || '') + ':00'),
+        endMin: adminServiceMinutesFromAnchor(String(t.end || '') + ':00'),
+        start: t.start,
+        end: t.end
+      };
+    }
+    /** Live seats overlapping this class band (venue + programme + time). */
+    function servicesLiveSeatsOnBand(form, iso){
+      var bounds = servicesBandBoundsFromForm(form);
+      var out = [];
+      if(!Number.isFinite(bounds.startMin) || !Number.isFinite(bounds.endMin)) return out;
+      var slots = [];
+      try{ slots = slotsForSelectedDate(String(iso || '').slice(0, 10)) || []; }catch(_e){ slots = []; }
+      var wantVen = servicesNormalizeOfferVenue(form.venue);
+      var wantProg = adminServiceProgrammeNormKey(form.service);
+      for(var i = 0; i < slots.length; i++){
+        var s = slots[i];
+        if(servicesNormalizeOfferVenue(s.venue) !== wantVen) continue;
+        if(adminServiceProgrammeNormKey(s.programme || s.rosterService || '') !== wantProg) continue;
+        if(!adminServiceSlotOverlapsBand(s, bounds.startMin, bounds.endMin)) continue;
+        var slug = String(s.clientSlug || '').trim().toLowerCase();
+        var label = String(s.timeSlotLabel || s.anchorTimeLabel || '').trim();
+        if(!label && s.anchorStart && s.anchorEnd){
+          label = rosterBandLabelFromPg(normTimeShort(s.anchorStart), normTimeShort(s.anchorEnd), form.dayLong) || '';
+        }
+        out.push({
+          staffId: String(s.staffRosterId || '').trim().toLowerCase(),
+          staffName: String(s.staffName || '').trim(),
+          clientSlug: slug,
+          clientDisplay: String(s.clientDisplay || '').trim(),
+          open: slug !== 'closed' && !bookingIsBookedClientSlug(slug),
+          closed: slug === 'closed',
+          timeSlotLabel: label
+        });
+      }
+      return out;
+    }
+    function servicesPreferBandTimeLabel(form, liveSeats){
+      var seats = liveSeats || [];
+      for(var i = 0; i < seats.length; i++){
+        var lab = String(seats[i].timeSlotLabel || '').trim();
+        if(lab) return lab;
+      }
+      return String(form.timeSlot || '').trim();
+    }
+    function servicesCancelNamedRosterOnBand(client, form, instrName, clientName){
+      var instrU = servicesInstrNameKey(instrName);
+      var q = client
+        .from('portal_roster_rows')
+        .select('id,client_name,time_slot,instructors,day,venue')
+        .eq('status', 'active')
+        .eq('day', form.dayLong)
+        .eq('client_name', clientName);
+      if(form.venue) q = q.ilike('venue', '%' + form.venue + '%');
+      return q.then(function(res){
+        if(res.error) throw res.error;
+        var rows = res.data || [];
+        var bounds = servicesBandBoundsFromForm(form);
+        var ids = [];
+        for(var i = 0; i < rows.length; i++){
+          var r = rows[i];
+          if(servicesInstrNameKey(r.instructors) !== instrU) continue;
+          var t = adminRosterParseTimeSlot(r.time_slot, r.day || form.dayLong);
+          var a = adminServiceMinutesFromAnchor(String(t.start || '') + ':00');
+          var b = adminServiceMinutesFromAnchor(String(t.end || '') + ':00');
+          if(!Number.isFinite(a) || !Number.isFinite(b)) continue;
+          if(!(a < bounds.endMin && b > bounds.startMin)) continue;
+          ids.push(r.id);
+        }
+        if(!ids.length) return null;
+        return client.from('portal_roster_rows').update({ status: 'cancelled' }).in('id', ids);
+      }).then(function(u){
+        if(u && u.error) throw u.error;
+        return u || null;
+      });
+    }
+    function servicesUpsertNamedRosterOnBand(client, form, instrName, clientName){
+      var payload = {
+        client_name: clientName,
+        day: form.dayLong,
+        time_slot: form.timeSlot,
+        instructors: servicesInstrNameKey(instrName),
+        service: form.service,
+        area: '',
+        venue: form.venue,
+        session_date: null,
+        status: 'active'
+      };
+      var q = client
+        .from('portal_roster_rows')
+        .select('id')
+        .eq('status', 'active')
+        .eq('client_name', payload.client_name)
+        .eq('time_slot', payload.time_slot)
+        .eq('day', payload.day)
+        .eq('instructors', payload.instructors)
+        .is('session_date', null);
+      if(payload.venue) q = q.eq('venue', payload.venue);
+      return q.maybeSingle().then(function(res){
+        if(res.error && res.error.code !== 'PGRST116') throw res.error;
+        if(res.data && res.data.id){
+          return client.from('portal_roster_rows').update(payload).eq('id', res.data.id).select('id').single();
+        }
+        return client.from('portal_roster_rows').insert([payload]).select('id').single();
+      }).then(function(res){
+        if(res.error) throw res.error;
+        return res.data || null;
+      });
+    }
+    function servicesFoldNamedSeat(client, form, instrName, clientName, anchorIso, action){
+      if(form.isPrivate) return Promise.resolve({ skipped: true });
+      if(!window.PortalMadreFold || typeof window.PortalMadreFold.queueParticipantSlotChange !== 'function'){
+        return Promise.resolve({ skipped: true });
+      }
+      var isCancel = action === 'cancel';
+      return window.PortalMadreFold.queueParticipantSlotChange(client, {
+        after: {
+          client_name: clientName,
+          day: form.dayLong,
+          time_slot: form.timeSlot,
+          instructors: servicesInstrNameKey(instrName),
+          service: form.service,
+          venue: form.venue,
+          area: '',
+          status: isCancel ? 'cancelled' : 'active'
+        },
+        session_date: anchorIso,
+        action: isCancel ? 'cancel' : 'update',
+        term_action: isCancel ? 'cancel_service' : 'update',
+        source_module: 'c4k_services_schedule_class'
+      }).then(function(foldRes){
+        var note = foldRes && (foldRes.note || foldRes.message);
+        if(foldRes && (foldRes.folded === false || foldRes.ok === false)){
+          return { ok: false, note: clientName + ' → ' + instrName + ': MADRE ' + String(note || 'no match') };
+        }
+        return { ok: true, note: (isCancel ? 'cleared ' : 'moved ') + clientName + ' → ' + instrName };
+      }).catch(function(err){
+        return { ok: false, note: clientName + ': MADRE error ' + String((err && err.message) || err) };
+      });
     }
     function servicesSaveClassScheduleToBookingPortal(slot, opts){
       opts = opts || {};
@@ -7229,15 +7394,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }
       var nextIdSet = {};
+      var nextInstrById = {};
       form.instructors.forEach(function(instr){
-        nextIdSet[String(instr.id || '').trim().toLowerCase()] = true;
+        var id = String(instr.id || '').trim().toLowerCase();
+        nextIdSet[id] = true;
+        nextInstrById[id] = instr;
       });
       var toAdd = [];
       form.instructors.forEach(function(instr){
         var id = String(instr.id || '').trim().toLowerCase();
-        // Add mode: every selected instructor becomes an open seat.
-        // Edit mode: only NEW instructor lines add Booking Portal open seats
-        // (existing lines keep their named participant / open seat as-is).
         if(!isEdit || prevIds.indexOf(id) < 0) toAdd.push(instr);
       });
       var toRelease = [];
@@ -7247,32 +7412,115 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           toRelease.push({ id: id, name: servicesResolveStaffDisplayName(id) || id });
         });
       }
+      var liveSeats = isEdit ? servicesLiveSeatsOnBand(form, preferredIso) : [];
+      // Prefer the sheet/MADRE label already on the band (e.g. "4.30 to 5") so folds match.
+      form.timeSlot = servicesPreferBandTimeLabel(form, liveSeats) || form.timeSlot;
+      var receivedNamed = {};
       return servicesPickMadreAnchorIso(form.dayKey, preferredIso).then(function(anchorIso){
         var chain = Promise.resolve();
         var madreNotes = [];
+        // 1) Remove instructors no longer in capacity: reassign named pax, then clear their open seats.
         toRelease.forEach(function(instr){
           chain = chain.then(function(){
-            var row = {
-              day: form.dayLong,
-              time_slot: form.timeSlot,
-              instructors: String(instr.name || '').trim().toUpperCase() || String(instr.id || '').toUpperCase(),
-              service: form.service,
-              venue: form.venue,
-              area: ''
-            };
-            return servicesCancelOpenRosterRow(client, row).then(function(){
-              return servicesFoldOpenSeat(client, form, row.instructors || instr.name, anchorIso, 'cancel');
-            }).then(function(res){
-              if(res && res.note) madreNotes.push(res.note);
+            var instrU = servicesInstrNameKey(instr.name || instr.id);
+            var named = [];
+            for(var li = 0; li < liveSeats.length; li++){
+              var seat = liveSeats[li];
+              if(String(seat.staffId || '').toLowerCase() !== instr.id &&
+                 servicesInstrNameKey(seat.staffName) !== instrU) continue;
+              if(seat.open || seat.closed) continue;
+              if(seat.clientDisplay) named.push(seat);
+            }
+            var recip = null;
+            // Prefer a newly added instructor, else an existing next instructor with an open seat.
+            for(var ai = 0; ai < toAdd.length; ai++){
+              if(!receivedNamed[toAdd[ai].id]){ recip = toAdd[ai]; break; }
+            }
+            if(!recip){
+              for(var ni = 0; ni < form.instructors.length; ni++){
+                var cand = form.instructors[ni];
+                if(receivedNamed[cand.id]) continue;
+                var hasOpen = false;
+                for(var sj = 0; sj < liveSeats.length; sj++){
+                  var s2 = liveSeats[sj];
+                  if(String(s2.staffId || '').toLowerCase() !== cand.id &&
+                     servicesInstrNameKey(s2.staffName) !== servicesInstrNameKey(cand.name)) continue;
+                  if(s2.open){ hasOpen = true; break; }
+                }
+                if(hasOpen || toAdd.some(function(a){ return a.id === cand.id; })){
+                  recip = cand;
+                  break;
+                }
+              }
+            }
+            if(!recip && form.instructors.length) recip = form.instructors[0];
+            var step = Promise.resolve();
+            named.forEach(function(paxSeat){
+              step = step.then(function(){
+                var label = String(paxSeat.timeSlotLabel || form.timeSlot || '').trim();
+                if(label) form.timeSlot = label;
+                if(!recip){
+                  return servicesCancelNamedRosterOnBand(client, form, instr.name, paxSeat.clientDisplay).then(function(){
+                    return servicesFoldNamedSeat(client, form, instr.name, paxSeat.clientDisplay, anchorIso, 'cancel');
+                  }).then(function(res){
+                    if(res && res.note) madreNotes.push(res.note);
+                  });
+                }
+                receivedNamed[recip.id] = paxSeat.clientDisplay;
+                return servicesCancelNamedRosterOnBand(client, form, instr.name, paxSeat.clientDisplay).then(function(){
+                  // Free the recipient's open seat so we don't leave NO PARTICIPANT + named.
+                  var clearOpen = {
+                    day: form.dayLong,
+                    time_slot: form.timeSlot,
+                    instructors: servicesInstrNameKey(recip.name),
+                    service: form.service,
+                    venue: form.venue,
+                    area: ''
+                  };
+                  return servicesCancelOpenRosterRow(client, clearOpen).then(function(){
+                    return servicesFoldOpenSeat(client, form, clearOpen.instructors, anchorIso, 'cancel');
+                  });
+                }).then(function(){
+                  return servicesUpsertNamedRosterOnBand(client, form, recip.name, paxSeat.clientDisplay);
+                }).then(function(){
+                  return servicesFoldNamedSeat(client, form, instr.name, paxSeat.clientDisplay, anchorIso, 'cancel');
+                }).then(function(){
+                  return servicesFoldNamedSeat(client, form, recip.name, paxSeat.clientDisplay, anchorIso, 'upsert');
+                }).then(function(res){
+                  if(res && res.note) madreNotes.push(res.note);
+                  else madreNotes.push(paxSeat.clientDisplay + ' moved to ' + recip.name);
+                });
+              });
+            });
+            return step.then(function(){
+              var row = {
+                day: form.dayLong,
+                time_slot: form.timeSlot,
+                instructors: instrU,
+                service: form.service,
+                venue: form.venue,
+                area: ''
+              };
+              return servicesCancelOpenRosterRow(client, row).then(function(){
+                return servicesFoldOpenSeat(client, form, instrU, anchorIso, 'cancel');
+              }).then(function(res){
+                if(res && res.note) madreNotes.push(res.note);
+                madreNotes.push(instrU + ' removed from this band (capacity ' + String(capWant) + ')');
+              });
             });
           });
         });
+        // 2) New instructors: open seat only if they did not receive a reassigned participant.
         toAdd.forEach(function(instr){
           chain = chain.then(function(){
+            if(receivedNamed[instr.id]){
+              madreNotes.push(instr.name + ': kept ' + receivedNamed[instr.id] + ' (no extra open seat)');
+              return null;
+            }
             var row = {
               day: form.dayLong,
               time_slot: form.timeSlot,
-              instructors: String(instr.name || '').trim().toUpperCase() || String(instr.id || '').toUpperCase(),
+              instructors: servicesInstrNameKey(instr.name || instr.id),
               service: form.service,
               venue: form.venue,
               area: ''
@@ -7288,6 +7536,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           madreNotes.push('Capacity/instructors unchanged — no Booking Portal seat changes');
         }
         return chain.then(function(){
+          try{
+            if(window.PortalMadreFold && typeof window.PortalMadreFold.invalidateLiveMadreCache === 'function'){
+              window.PortalMadreFold.invalidateLiveMadreCache();
+            }
+          }catch(_inv){}
           if(typeof window.portalRefreshStaffDashboardSourceFromPortal === 'function'){
             try{ window.portalRefreshStaffDashboardSourceFromPortal(); }catch(_r){}
           }
@@ -7304,6 +7557,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }catch(_cfk){}
           var msg = (isEdit ? 'Class updated' : 'Class added') +
             ' · ' + form.service + ' · ' + form.dayLong + ' ' + form.timeSlot + ' · ' + form.venue +
+            ' · capacity ' + String(capWant) +
             '. ' + madreNotes.join(' · ');
           if(typeof portalAdminToast === 'function') portalAdminToast(msg);
           return { anchorIso: anchorIso, form: form, notes: madreNotes };
