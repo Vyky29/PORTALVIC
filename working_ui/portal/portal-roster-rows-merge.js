@@ -198,8 +198,15 @@
     return false;
   }
 
+  function isTeflonDemoInstructorRow(row) {
+    return /teflon/i.test(String((row && row.instructors) || ""));
+  }
+
   function mergePortalRosterRows(baseRows, dbRows) {
-    var base = Array.isArray(baseRows) ? baseRows : [];
+    var base = (Array.isArray(baseRows) ? baseRows : []).filter(function (r) {
+      // Demo / portal-guide account — never merge into live staff roster views.
+      return !isTeflonDemoInstructorRow(r);
+    });
     var db = Array.isArray(dbRows) ? dbRows : [];
     if (!db.length) {
       return base.filter(function (r) {
@@ -218,8 +225,7 @@
       if (String(raw.status || "active") !== "active" && String(raw.status || "") !== "cancelled") return;
       var row = dbToAdapter(raw);
       if (!row.client_name || !row.time_slot) return;
-      // Demo / portal-guide account — never merge into live staff roster views.
-      if (/teflon/i.test(String(row.instructors || ""))) return;
+      if (isTeflonDemoInstructorRow(row)) return;
       if (String(raw.status || "") === "cancelled") {
         if (row.session_date) {
           cancelledDated[datedSlotKey(row)] = true;
