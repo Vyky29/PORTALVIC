@@ -2322,6 +2322,18 @@
     .c4k-svc-slot-td--venue{color:var(--text);text-align:center}
     .c4k-svc-slot-td--instr{color:var(--text);text-align:center;font-size:12px;max-width:14rem;min-width:0;overflow-wrap:break-word;word-break:break-word}
     .c4k-svc-slot-td--pax{color:var(--text);text-align:center;font-size:12px;max-width:16rem;min-width:0;overflow-wrap:break-word;word-break:break-word}
+    .c4k-svc-slot-th-seat{min-width:7.5rem;max-width:12rem}
+    .c4k-svc-slot-td--seat{
+      color:var(--text);text-align:center;font-size:12px;min-width:7.5rem;max-width:12rem;
+      overflow-wrap:break-word;word-break:break-word;vertical-align:middle
+    }
+    .c4k-svc-seat{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+      min-width:0;max-width:100%;box-sizing:border-box
+    }
+    .c4k-svc-seat__instr,.c4k-svc-seat__pax{
+      min-width:0;max-width:100%;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px
+    }
     .c4k-svc-pax-chips{
       display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:center;
       min-width:0;max-width:100%;box-sizing:border-box

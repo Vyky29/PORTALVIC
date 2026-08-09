@@ -156,7 +156,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260809-svc-pax-open-yellow" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260809-svc-seat-cols" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
@@ -17605,7 +17605,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             }
             var resolvedGroups = adminServiceResolvedWeekLineGroups(block.programme, vn.venue, dk, groups, weekIso, termStart, termEnd);
             if(!resolvedGroups.length) continue;
-            var rowChunks = [];
             var statsSlots = slotsForBands.slice();
             var bandMap = {};
             for(gix = 0; gix < resolvedGroups.length; gix++){
@@ -17635,6 +17634,35 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 adminServiceBandLinesMergeUnique(bandMap[bk].lines, subL);
               }
             }
+            /* Aquatic: fill every 30′ step from earliest→latest so mid bands (e.g. 4:30–5) are not skipped. */
+            if(adminServiceProgrammeNormKey(block.programme) === 'aquatic'){
+              var flatDayLines = [];
+              for(gix = 0; gix < resolvedGroups.length; gix++){
+                var rgFlat = resolvedGroups[gix];
+                if(!rgFlat.lineGrp || !rgFlat.lineGrp.length) continue;
+                if(pickIso0 && String(rgFlat.pickIso || '').trim() !== pickIso0) continue;
+                if(!adminServiceLineGroupPassesFilters(rgFlat.lineGrp, filt)) continue;
+                adminServiceBandLinesMergeUnique(flatDayLines, rgFlat.lineGrp);
+              }
+              var dayBands = adminServiceDayVenueThirtyMinuteBands(flatDayLines);
+              for(var dbi = 0; dbi < dayBands.length; dbi++){
+                var dSegA = dayBands[dbi].anchorStart;
+                var dSegB = dayBands[dbi].anchorEnd;
+                var dam = adminServiceMinutesFromAnchor(dSegA);
+                var dbm = adminServiceMinutesFromAnchor(dSegB);
+                if(!Number.isFinite(dam) || !Number.isFinite(dbm) || dbm <= dam) continue;
+                var dSub = [];
+                for(var dli = 0; dli < flatDayLines.length; dli++){
+                  if(adminServiceSlotOverlapsBand(flatDayLines[dli], dam, dbm)) dSub.push(flatDayLines[dli]);
+                }
+                if(!dSub.length) continue;
+                var dVenue = String((dSub[0] && dSub[0].venue) || vn.venue || '').trim();
+                var dPick = String((dSub[0] && dSub[0].sessionDate) || pickIso0 || '').trim();
+                var dbk = dPick + '|' + dVenue.toLowerCase() + '|aquatic|' + String(dSegA) + '|' + String(dSegB);
+                if(!bandMap[dbk]) bandMap[dbk] = { pickIso: dPick, venue: dVenue, programme: block.programme, dk: dk, segA: dSegA, segB: dSegB, lines: [] };
+                adminServiceBandLinesMergeUnique(bandMap[dbk].lines, dSub);
+              }
+            }
             var bandKeys = Object.keys(bandMap).sort(function(ka, kb){
               var pa = String(bandMap[ka].pickIso || '').localeCompare(String(bandMap[kb].pickIso || ''));
               if(pa) return pa;
@@ -17643,8 +17671,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               if(Number.isFinite(ta) && Number.isFinite(tb) && ta !== tb) return ta - tb;
               return ka.localeCompare(kb);
             });
+            var dayBandRows = [];
+            var maxSeats = 0;
             for(var bi = 0; bi < bandKeys.length; bi++){
-              rowsInVenue++;
               var B = bandMap[bandKeys[bi]];
               var mergedLines = B.lines;
               if(!mergedLines.length) continue;
@@ -17668,25 +17697,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               var demoIdMerged = uniq.join('|');
               var demoId = uniq[0] || '';
               var slot0 = mergedLines[0];
-              var instrList = [];
               var staffIdList = [];
-              var paxList = [];
-              var openSeatN = 0;
+              var seats = [];
               for(var ini = 0; ini < mergedLines.length; ini++){
                 var ml = mergedLines[ini];
                 var snm = String((ml && ml.staffName) || '').trim();
-                var snmL = snm.toLowerCase();
-                if(snm && !adminServiceIsExcludedInstructorName(snm) && instrList.indexOf(snm) < 0) instrList.push(snm);
+                if(snm && adminServiceIsExcludedInstructorName(snm)) continue;
                 var sid = String((ml && ml.staffRosterId) || '').trim().toLowerCase();
                 if(sid && staffIdList.indexOf(sid) < 0) staffIdList.push(sid);
                 var pSlug = String((ml && ml.clientSlug) || '').trim().toLowerCase();
-                if(bookingIsBookedClientSlug(pSlug)){
-                  var pNm = String((ml && ml.clientDisplay) || '').trim() || pSlug;
-                  if(pNm && paxList.indexOf(pNm) < 0) paxList.push(pNm);
-                }else if(pSlug !== 'closed'){
-                  openSeatN++;
-                }
+                var isClosed = pSlug === 'closed';
+                var isBooked = bookingIsBookedClientSlug(pSlug);
+                seats.push({
+                  staffName: snm,
+                  staffId: sid,
+                  demoId: String((ml && ml.demoId) || '').trim(),
+                  closed: isClosed,
+                  open: !isClosed && !isBooked,
+                  paxName: isBooked ? (String((ml && ml.clientDisplay) || '').trim() || pSlug) : ''
+                });
               }
+              if(!seats.length && !mergedLines.length) continue;
+              if(seats.length > maxSeats) maxSeats = seats.length;
               var dataSlot =
                 'data-sched-demo-id="' + esc(demoId) + '" data-c4k-svc-merged-demos="' + esc(demoIdMerged) + '" data-session-date="' + esc(B.pickIso) + '" data-venue="' + esc(B.venue) + '"' +
                 ' data-c4k-svc-line-count="' + esc(String(mergedLines.length)) + '" data-c4k-svc-programme="' + esc(B.programme) + '"' +
@@ -17707,51 +17739,66 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 : '<span class="c4k-svc-wait-empty" aria-hidden="true"></span>';
               var pseudoSeg = { anchorStart: B.segA, anchorEnd: B.segB, sessionDate: B.pickIso, venue: B.venue, programme: String(slot0.programme || B.programme || '') };
               var timeRange = novoSchedSlotTimeRangeOnly(pseudoSeg);
-              var instrLabel = instrList.length ? instrList.join(', ') : '—';
-              var instrCell =
-                '<button type="button" class="c4k-svc-slot-instr-btn" data-novo-edit-sched-slot="1" ' + dataSlot +
-                ' title="Change instructor(s) for this class band">' +
-                (instrList.length ? esc(instrLabel) : '<span class="muted">—</span>') +
-                '</button>';
-              var paxCell;
-              if(cnt.allClosed){
-                paxCell = '<span class="muted">Closed</span>';
-              }else if(paxList.length || openSeatN > 0){
-                var paxChips = [];
-                for(var pxi = 0; pxi < paxList.length; pxi++){
-                  var pNmChip = paxList[pxi];
-                  var pCid = resolveAdminClientDrawerIdFromDisplayName(pNmChip);
+              dayBandRows.push({
+                dataSlot: dataSlot,
+                timeRange: timeRange,
+                seats: seats,
+                waitInner: waitInner,
+                allClosed: !!cnt.allClosed
+              });
+              rowsInVenue++;
+            }
+            if(!dayBandRows.length) continue;
+            if(maxSeats < 1) maxSeats = 1;
+            var seatHead = '';
+            for(var shi = 0; shi < maxSeats; shi++){
+              seatHead += '<th scope="col" class="c4k-svc-slot-th-seat">Instructor · Participant</th>';
+            }
+            var rowChunks = [];
+            for(var dri = 0; dri < dayBandRows.length; dri++){
+              var DR = dayBandRows[dri];
+              var seatCells = '';
+              for(var si = 0; si < maxSeats; si++){
+                var seat = DR.seats[si];
+                if(!seat){
+                  seatCells += '<td class="c4k-svc-slot-td c4k-svc-slot-td--seat"><span class="muted">—</span></td>';
+                  continue;
+                }
+                var instrBtn = seat.staffName
+                  ? ('<button type="button" class="c4k-svc-slot-instr-btn" data-novo-edit-sched-slot="1" ' + DR.dataSlot +
+                    ' title="Change instructor(s) for this class band">' + esc(seat.staffName) + '</button>')
+                  : '<span class="muted">—</span>';
+                var paxHtml;
+                if(DR.allClosed || seat.closed){
+                  paxHtml = '<span class="muted">Closed</span>';
+                }else if(seat.open){
+                  paxHtml = '<span class="chip chip--pend c4k-svc-pax-pill c4k-svc-pax-pill--open" title="Open seat — no participant / available">No participant</span>';
+                }else if(seat.paxName){
+                  var pCid = resolveAdminClientDrawerIdFromDisplayName(seat.paxName);
                   var pAttrs = pCid
                     ? 'data-client="' + esc(pCid) + '"'
-                    : 'data-pax-name="' + escAttr(pNmChip) + '"';
-                  paxChips.push(
+                    : 'data-pax-name="' + escAttr(seat.paxName) + '"';
+                  paxHtml =
                     '<button type="button" class="chip chip--info c4k-svc-pax-pill" ' + pAttrs +
-                    ' title="Open participant info (side panel)">' + esc(pNmChip) + '</button>'
-                  );
+                    ' title="Open participant info (side panel)">' + esc(seat.paxName) + '</button>';
+                }else{
+                  paxHtml = '<span class="muted">—</span>';
                 }
-                if(openSeatN > 0){
-                  var openLbl = paxList.length
-                    ? (String(openSeatN) + ' open')
-                    : (openSeatN === 1 ? 'No participant' : (String(openSeatN) + ' open'));
-                  paxChips.push(
-                    '<span class="chip chip--pend c4k-svc-pax-pill c4k-svc-pax-pill--open" title="Open seat — no participant / available">' +
-                    esc(openLbl) + '</span>'
-                  );
-                }
-                paxCell = '<span class="c4k-svc-pax-chips">' + paxChips.join('') + '</span>';
-              }else{
-                paxCell = '<span class="muted">—</span>';
+                seatCells +=
+                  '<td class="c4k-svc-slot-td c4k-svc-slot-td--seat">' +
+                  '<div class="c4k-svc-seat">' +
+                  '<div class="c4k-svc-seat__instr">' + instrBtn + '</div>' +
+                  '<div class="c4k-svc-seat__pax">' + paxHtml + '</div>' +
+                  '</div></td>';
               }
               rowChunks.push(
-                '<tr class="c4k-svc-slot-tr" ' + dataSlot + '>' +
-                '<td class="c4k-svc-slot-td c4k-svc-slot-td--time">' + esc(timeRange) + '</td>' +
-                '<td class="c4k-svc-slot-td c4k-svc-slot-td--instr">' + instrCell + '</td>' +
-                '<td class="c4k-svc-slot-td c4k-svc-slot-td--pax">' + paxCell + '</td>' +
-                '<td class="c4k-svc-slot-td c4k-svc-slot-td--wait">' + waitInner + '</td>' +
+                '<tr class="c4k-svc-slot-tr" ' + DR.dataSlot + '>' +
+                '<td class="c4k-svc-slot-td c4k-svc-slot-td--time">' + esc(DR.timeRange) + '</td>' +
+                seatCells +
+                '<td class="c4k-svc-slot-td c4k-svc-slot-td--wait">' + DR.waitInner + '</td>' +
                 '</tr>'
               );
             }
-            if(!rowChunks.length) continue;
             var dayHoursRaw = adminServiceDowSlotHoursLabel(statsSlots);
             var hoursHtml = (dayHoursRaw && dayHoursRaw !== '—')
               ? '<span class="c4k-svc-day-acc__hours" title="Earliest to latest rostered time this weekday at this venue (merged sheet, after filters).">'+esc(dayHoursRaw)+'</span>'
@@ -17765,8 +17812,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               '<table class="c4k-svc-slot-table" aria-label="'+esc(dowTitle)+' sessions">'+
               '<thead><tr>'+
               '<th scope="col">Time</th>'+
-              '<th scope="col" class="c4k-svc-slot-th-instr">Instructor</th>'+
-              '<th scope="col" class="c4k-svc-slot-th-pax">Participant/s</th>'+
+              seatHead +
               '<th scope="col">Waiting</th>'+
               '</tr></thead><tbody>'+rowChunks.join('')+'</tbody></table>'+
               '<div class="c4k-svc-day-sched-bar">'+schedAddBtn+'</div>';
