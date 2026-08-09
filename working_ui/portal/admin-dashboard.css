@@ -2322,6 +2322,18 @@
     .c4k-svc-slot-td--venue{color:var(--text);text-align:center}
     .c4k-svc-slot-td--instr{color:var(--text);text-align:center;font-size:12px;max-width:14rem;min-width:0;overflow-wrap:break-word;word-break:break-word}
     .c4k-svc-slot-td--pax{color:var(--text);text-align:center;font-size:12px;max-width:16rem;min-width:0;overflow-wrap:break-word;word-break:break-word}
+    .c4k-svc-pax-chips{
+      display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:center;
+      min-width:0;max-width:100%;box-sizing:border-box
+    }
+    .c4k-svc-pax-chips .c4k-svc-pax-pill{
+      margin:0;max-width:100%;min-width:0;box-sizing:border-box;
+      border:0;cursor:pointer;font:inherit;line-height:1.25;
+      white-space:normal;overflow-wrap:break-word;text-align:center
+    }
+    .c4k-svc-pax-chips .c4k-svc-pax-pill:hover{filter:brightness(0.96)}
+    .c4k-svc-pax-chips .c4k-svc-pax-pill:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+    .c4k-svc-pax-open{font-size:11px;min-width:0;overflow-wrap:break-word}
     .c4k-svc-slot-instr-btn{
       appearance:none;-webkit-appearance:none;border:0;background:transparent;padding:0;margin:0;
       font:inherit;font-size:12px;font-weight:600;color:var(--blue);cursor:pointer;max-width:100%;

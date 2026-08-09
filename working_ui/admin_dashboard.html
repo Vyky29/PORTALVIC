@@ -156,7 +156,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260808-svc-table-v3" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260809-svc-pax-chips" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
@@ -7369,6 +7369,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!root || root.__novoSchedSlotDeleg) return;
       root.__novoSchedSlotDeleg = true;
       root.addEventListener('click', function(e){
+        var paxPill = e.target.closest('.c4k-svc-pax-pill');
+        if(paxPill && root.contains(paxPill)){
+          e.preventDefault();
+          e.stopPropagation();
+          var cidP = paxPill.getAttribute('data-client');
+          if(cidP && MOCK.clientsById && MOCK.clientsById[cidP]){
+            openClientDrawer(cidP);
+            return;
+          }
+          var nmP = paxPill.getAttribute('data-pax-name') || String(paxPill.textContent || '').trim();
+          if(nmP) openClientDrawerSynthetic({ name: nmP });
+          return;
+        }
         var addBtn = e.target.closest('[data-novo-sched-add-class]');
         if(addBtn && root.contains(addBtn)){
           e.preventDefault();
@@ -17704,10 +17717,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               if(cnt.allClosed){
                 paxCell = '<span class="muted">Closed</span>';
               }else if(paxList.length){
-                paxCell = esc(paxList.join(', '));
-                if(openSeatN > 0){
-                  paxCell += ' <span class="muted">· ' + esc(String(openSeatN)) + ' open</span>';
+                var paxChips = [];
+                for(var pxi = 0; pxi < paxList.length; pxi++){
+                  var pNmChip = paxList[pxi];
+                  var pCid = resolveAdminClientDrawerIdFromDisplayName(pNmChip);
+                  var pAttrs = pCid
+                    ? 'data-client="' + esc(pCid) + '"'
+                    : 'data-pax-name="' + escAttr(pNmChip) + '"';
+                  paxChips.push(
+                    '<button type="button" class="chip chip--info c4k-svc-pax-pill" ' + pAttrs +
+                    ' title="Open participant info (side panel)">' + esc(pNmChip) + '</button>'
+                  );
                 }
+                paxCell = '<span class="c4k-svc-pax-chips">' + paxChips.join('') +
+                  (openSeatN > 0
+                    ? '<span class="muted c4k-svc-pax-open">· ' + esc(String(openSeatN)) + ' open</span>'
+                    : '') +
+                  '</span>';
               }else if(openSeatN > 0){
                 paxCell = '<span class="muted">Open (' + esc(String(openSeatN)) + ')</span>';
               }else{
