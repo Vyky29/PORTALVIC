@@ -156,7 +156,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260809-svc-seat-cols" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260809-svc-seat-th-stack" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
@@ -17788,7 +17788,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(maxSeats < 1) maxSeats = 1;
             var seatHead = '';
             for(var shi = 0; shi < maxSeats; shi++){
-              seatHead += '<th scope="col" class="c4k-svc-slot-th-seat">Instructor · Participant</th>';
+              seatHead +=
+                '<th scope="col" class="c4k-svc-slot-th-seat">'+
+                '<span class="c4k-svc-slot-th-seat__stack">'+
+                '<span class="c4k-svc-slot-th-seat__line">Instructor</span>'+
+                '<span class="c4k-svc-slot-th-seat__line">Participant</span>'+
+                '</span></th>';
             }
             var rowChunks = [];
             for(var dri = 0; dri < dayBandRows.length; dri++){
@@ -17849,7 +17854,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               '<thead><tr>'+
               '<th scope="col">Time</th>'+
               seatHead +
-              '<th scope="col">Waiting</th>'+
+              '<th scope="col" class="c4k-svc-slot-th-wait">Waiting</th>'+
               '</tr></thead><tbody>'+rowChunks.join('')+'</tbody></table>'+
               '<div class="c4k-svc-day-sched-bar">'+schedAddBtn+'</div>';
             var body = '<div class="c4k-svc-slots" style="min-width:0;overflow:auto"><div class="novo-sched__list novo-sched__list--svc-table">'+tableHtml+'</div></div>';

@@ -2322,17 +2322,28 @@
     .c4k-svc-slot-td--venue{color:var(--text);text-align:center}
     .c4k-svc-slot-td--instr{color:var(--text);text-align:center;font-size:12px;max-width:14rem;min-width:0;overflow-wrap:break-word;word-break:break-word}
     .c4k-svc-slot-td--pax{color:var(--text);text-align:center;font-size:12px;max-width:16rem;min-width:0;overflow-wrap:break-word;word-break:break-word}
-    .c4k-svc-slot-th-seat{min-width:7.5rem;max-width:12rem}
+    .c4k-svc-slot-th-seat{
+      min-width:4.75rem;max-width:6.75rem;width:6.25rem;padding:8px 4px !important;
+      white-space:normal !important;line-height:1.15;vertical-align:middle
+    }
+    .c4k-svc-slot-th-seat__stack{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+      min-width:0;max-width:100%;margin:0 auto
+    }
+    .c4k-svc-slot-th-seat__line{
+      display:block;min-width:0;max-width:100%;overflow-wrap:break-word;text-align:center;font-size:10px;font-weight:800
+    }
+    .c4k-svc-slot-th-wait{text-align:center !important;min-width:3.5rem;width:1%;padding:8px 6px !important}
     .c4k-svc-slot-td--seat{
-      color:var(--text);text-align:center;font-size:12px;min-width:7.5rem;max-width:12rem;
-      overflow-wrap:break-word;word-break:break-word;vertical-align:middle
+      color:var(--text);text-align:center;font-size:11px;min-width:4.75rem;max-width:6.75rem;width:6.25rem;
+      padding:8px 4px;overflow-wrap:break-word;word-break:break-word;vertical-align:middle
     }
     .c4k-svc-seat{
-      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
       min-width:0;max-width:100%;box-sizing:border-box
     }
     .c4k-svc-seat__instr,.c4k-svc-seat__pax{
-      min-width:0;max-width:100%;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px
+      min-width:0;max-width:100%;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:3px
     }
     .c4k-svc-pax-chips{
       display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:center;
@@ -2358,7 +2369,7 @@
     }
     .c4k-svc-slot-instr-btn:hover{color:#1d4ed8}
     .c4k-svc-slot-instr-btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:4px}
-    .c4k-svc-slot-td--wait{width:1%;text-align:center;white-space:nowrap}
+    .c4k-svc-slot-td--wait{width:1%;text-align:center;white-space:nowrap;vertical-align:middle}
     .c4k-svc-wait-lbl{
       display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:800;
       background:#f59e0b;color:#fff;border:1px solid rgba(15,23,42,.08);line-height:1.2;max-width:100%;
