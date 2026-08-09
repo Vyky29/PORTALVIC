@@ -7606,13 +7606,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         });
       };
       if(save) save.onclick = function(){
-        void servicesSaveClassScheduleToBookingPortal(slot, opts).then(function(res){
+        void servicesSaveClassScheduleToBookingPortal(slot, opts).then(function(){
+          // Stay on Services (or whatever view was open) so more class edits can continue.
           done();
-          if(res && !res.form.isPrivate){
-            try{
-              if(typeof setView === 'function') setView('open_places_2627');
-            }catch(_v){}
-          }
         }).catch(function(){ /* toast already shown */ });
       };
     }
