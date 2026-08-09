@@ -2333,7 +2333,12 @@
     }
     .c4k-svc-pax-chips .c4k-svc-pax-pill:hover{filter:brightness(0.96)}
     .c4k-svc-pax-chips .c4k-svc-pax-pill:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
-    .c4k-svc-pax-open{font-size:11px;min-width:0;overflow-wrap:break-word}
+    .c4k-svc-pax-chips .c4k-svc-pax-pill--open{
+      cursor:default;background:#fef3c7;color:#b45309;border:1px solid #fcd34d
+    }
+    .c4k-svc-pax-chips .chip.chip--pend.c4k-svc-pax-pill--open{
+      background:#fef3c7;color:#b45309
+    }
     .c4k-svc-slot-instr-btn{
       appearance:none;-webkit-appearance:none;border:0;background:transparent;padding:0;margin:0;
       font:inherit;font-size:12px;font-weight:600;color:var(--blue);cursor:pointer;max-width:100%;

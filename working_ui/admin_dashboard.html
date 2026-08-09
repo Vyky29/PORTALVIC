@@ -156,7 +156,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260809-svc-pax-chips" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260809-svc-pax-open-yellow" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
@@ -17716,7 +17716,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               var paxCell;
               if(cnt.allClosed){
                 paxCell = '<span class="muted">Closed</span>';
-              }else if(paxList.length){
+              }else if(paxList.length || openSeatN > 0){
                 var paxChips = [];
                 for(var pxi = 0; pxi < paxList.length; pxi++){
                   var pNmChip = paxList[pxi];
@@ -17729,13 +17729,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                     ' title="Open participant info (side panel)">' + esc(pNmChip) + '</button>'
                   );
                 }
-                paxCell = '<span class="c4k-svc-pax-chips">' + paxChips.join('') +
-                  (openSeatN > 0
-                    ? '<span class="muted c4k-svc-pax-open">· ' + esc(String(openSeatN)) + ' open</span>'
-                    : '') +
-                  '</span>';
-              }else if(openSeatN > 0){
-                paxCell = '<span class="muted">Open (' + esc(String(openSeatN)) + ')</span>';
+                if(openSeatN > 0){
+                  var openLbl = paxList.length
+                    ? (String(openSeatN) + ' open')
+                    : (openSeatN === 1 ? 'No participant' : (String(openSeatN) + ' open'));
+                  paxChips.push(
+                    '<span class="chip chip--pend c4k-svc-pax-pill c4k-svc-pax-pill--open" title="Open seat — no participant / available">' +
+                    esc(openLbl) + '</span>'
+                  );
+                }
+                paxCell = '<span class="c4k-svc-pax-chips">' + paxChips.join('') + '</span>';
               }else{
                 paxCell = '<span class="muted">—</span>';
               }
