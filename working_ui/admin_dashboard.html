@@ -4175,11 +4175,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function adminSessionDedupeKey(s){
       var sd = adminNormIsoDate(s.session_date || s.sessionDate);
+      var prog = '';
+      try{
+        prog = String(portalDisplayProgrammeFromSheet(s.rosterService || s.activity || '') || '')
+          .trim()
+          .toLowerCase();
+      }catch(_p){
+        prog = String(s.rosterService || s.activity || '').trim().toLowerCase();
+      }
       return (sd ? sd + '|' : '')
         + normDayLabel(s.day) + '|' + String(s.start || '') + '|' + String(s.end || '')
         + '|' + String(s.venue || '').trim().toLowerCase()
         + '|' + adminCanonicalClientSlug(s.clientId || '')
-        + '|' + String(s.staffId || '').toLowerCase();
+        + '|' + String(s.staffId || '').toLowerCase()
+        + '|' + prog;
     }
     function adminAppendSessionsFromRowsAllInstructors(merged, notes, src){
       var profiles = src.staffProfiles || {};
@@ -17166,6 +17175,46 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
      */
     var SERVICES_ROSTER_CALENDAR_START_ISO = '2026-04-13';
     var SERVICES_ROSTER_CALENDAR_END_ISO = SCHED_COVER_TERM_END;
+    /**
+     * Re-enrol releases that Services must honour even on summer history weeks.
+     * Matches portal_reenrol_release_madre REENROL_RELEASE_RULES (display-side).
+     */
+    function adminServiceReenrolReleasedAquaticActon(name){
+      var n = String(name || '').trim().toLowerCase();
+      if(!n) return false;
+      return n === 'eiji' || n.indexOf('eiji ') === 0 ||
+        n === 'hazem' || n.indexOf('hazem ') === 0;
+    }
+    function adminServiceReenrolReleasedEverywhere(name){
+      var n = String(name || '').trim().toLowerCase();
+      if(!n) return false;
+      var all = [
+        'adam me', 'adam memy', 'scott', 'joel',
+        'rayyan fi', 'rayyan fida', 'rayyan f', 'rayyan',
+        'ayden w', 'ayden', 'amir', 'anas', 'jad', 'kamy', 'kate', 'patrick',
+        'mohamed yu', 'mohammed yu', 'yusuf mo',
+        'thushyan', 'yoan', 'yossi', 'mohammed', 'mohamed'
+      ];
+      for(var i = 0; i < all.length; i++){
+        var t = all[i];
+        if(n === t || n.indexOf(t + ' ') === 0) return true;
+      }
+      return false;
+    }
+    /** True when a named seat should render as open because re-enrol withdrew that place. */
+    function adminServicePaxReleasedByReenrol(paxName, programme, venue, dowNorm){
+      var name = String(paxName || '').trim();
+      if(!name || !bookingIsBookedClientSlug(adminRosterSlugify(name))) return false;
+      if(adminServiceReenrolReleasedEverywhere(name)) return true;
+      var prog = adminServiceProgrammeNormKey(programme);
+      var ven = String(venue || '').toLowerCase();
+      if(adminServiceReenrolReleasedAquaticActon(name) &&
+         prog === 'aquatic' &&
+         ven.indexOf('acton') >= 0){
+        return true;
+      }
+      return false;
+    }
     function adminEnumerateIsosInclusive(startIso, endIso){
       var out = [];
       var ds = bookingParseIsoLocal(String(startIso || '').trim());
@@ -18057,6 +18106,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 var plSlug = String((pl && pl.clientSlug) || '').trim().toLowerCase();
                 if(!bookingIsBookedClientSlug(plSlug)) continue;
                 var plCd = String((pl && pl.clientDisplay) || '').trim();
+                if(plCd && adminServicePaxReleasedByReenrol(plCd, B.programme, B.venue, B.dk)) continue;
                 if(plCd) venuePaxSet[plCd.toLowerCase()] = 1;
                 var plSn = String((pl && pl.staffName) || '').trim();
                 var plSnL = plSn.toLowerCase();
@@ -18082,14 +18132,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 if(sid && staffIdList.indexOf(sid) < 0) staffIdList.push(sid);
                 var pSlug = String((ml && ml.clientSlug) || '').trim().toLowerCase();
                 var isClosed = pSlug === 'closed';
-                var isBooked = bookingIsBookedClientSlug(pSlug);
+                var paxName = bookingIsBookedClientSlug(pSlug)
+                  ? (String((ml && ml.clientDisplay) || '').trim() || pSlug)
+                  : '';
+                if(paxName && adminServicePaxReleasedByReenrol(paxName, B.programme, B.venue, B.dk)){
+                  paxName = '';
+                  pSlug = 'no_participant';
+                }
+                var isBooked = !!paxName && bookingIsBookedClientSlug(pSlug);
                 seats.push({
                   staffName: snm,
                   staffId: sid,
+                  staffKey: sid || String(snm || '').trim().toLowerCase(),
                   demoId: String((ml && ml.demoId) || '').trim(),
                   closed: isClosed,
                   open: !isClosed && !isBooked,
-                  paxName: isBooked ? (String((ml && ml.clientDisplay) || '').trim() || pSlug) : ''
+                  paxName: isBooked ? paxName : ''
                 });
               }
               if(!seats.length && !mergedLines.length) continue;
@@ -18124,6 +18182,66 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               rowsInVenue++;
             }
             if(!dayBandRows.length) continue;
+            // One stable instructor column for the whole weekday table (no jumping columns).
+            var dayStaffOrder = [];
+            var dayStaffSeen = {};
+            for(var dso = 0; dso < dayBandRows.length; dso++){
+              var seatsScan = dayBandRows[dso].seats || [];
+              for(var ssi = 0; ssi < seatsScan.length; ssi++){
+                var seat0 = seatsScan[ssi];
+                if(!seat0) continue;
+                var key0 = String(seat0.staffKey || seat0.staffId || '').trim().toLowerCase();
+                if(!key0 && seat0.staffName) key0 = String(seat0.staffName).trim().toLowerCase();
+                if(!key0 || dayStaffSeen[key0]) continue;
+                if(seat0.staffName && adminServiceIsExcludedInstructorName(seat0.staffName)) continue;
+                dayStaffSeen[key0] = true;
+                dayStaffOrder.push({
+                  key: key0,
+                  staffId: String(seat0.staffId || '').trim().toLowerCase(),
+                  staffName: String(seat0.staffName || '').trim()
+                });
+              }
+            }
+            dayStaffOrder.sort(function(a, b){
+              return String(a.staffName || a.key).localeCompare(String(b.staffName || b.key), undefined, { sensitivity: 'base' });
+            });
+            maxSeats = Math.max(1, dayStaffOrder.length || maxSeats);
+            for(var drm = 0; drm < dayBandRows.length; drm++){
+              var rowSeats = dayBandRows[drm].seats || [];
+              var byKey = {};
+              for(var rsk = 0; rsk < rowSeats.length; rsk++){
+                var rs = rowSeats[rsk];
+                var rk = String(rs.staffKey || rs.staffId || '').trim().toLowerCase();
+                if(!rk && rs.staffName) rk = String(rs.staffName).trim().toLowerCase();
+                if(rk) byKey[rk] = rs;
+              }
+              var aligned = [];
+              var alignedIds = [];
+              for(var dsi = 0; dsi < dayStaffOrder.length; dsi++){
+                var col = dayStaffOrder[dsi];
+                var hit = byKey[col.key];
+                if(hit){
+                  aligned.push(hit);
+                  if(hit.staffId && alignedIds.indexOf(hit.staffId) < 0) alignedIds.push(hit.staffId);
+                }else{
+                  aligned.push({
+                    staffName: col.staffName,
+                    staffId: col.staffId,
+                    staffKey: col.key,
+                    demoId: '',
+                    closed: false,
+                    open: false,
+                    paxName: '',
+                    emptyCol: true
+                  });
+                  if(col.staffId && alignedIds.indexOf(col.staffId) < 0) alignedIds.push(col.staffId);
+                }
+              }
+              dayBandRows[drm].seats = aligned;
+              dayBandRows[drm].dataSlot = String(dayBandRows[drm].dataSlot || '')
+                .replace(/data-c4k-svc-staff-ids="[^"]*"/, 'data-c4k-svc-staff-ids="' + esc(alignedIds.join('|')) + '"')
+                .replace(/data-c4k-svc-line-count="[^"]*"/, 'data-c4k-svc-line-count="' + esc(String(aligned.length)) + '"');
+            }
             if(maxSeats < 1) maxSeats = 1;
             var seatHead = '';
             for(var shi = 0; shi < maxSeats; shi++){
@@ -18140,7 +18258,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               var seatCells = '';
               for(var si = 0; si < maxSeats; si++){
                 var seat = DR.seats[si];
-                if(!seat){
+                if(!seat || seat.emptyCol){
                   seatCells += '<td class="c4k-svc-slot-td c4k-svc-slot-td--seat"><span class="muted">—</span></td>';
                   continue;
                 }
@@ -18175,7 +18293,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 '<tr class="c4k-svc-slot-tr" ' + DR.dataSlot + '>' +
                 '<td class="c4k-svc-slot-td c4k-svc-slot-td--time">' + esc(DR.timeRange) + '</td>' +
                 '<td class="c4k-svc-slot-td c4k-svc-slot-td--slots" title="Instructor seats in this time band">' +
-                esc(String(DR.seats.length || 0)) +
+                esc(String((DR.seats || []).filter(function(s){ return s && !s.emptyCol; }).length || 0)) +
                 '</td>' +
                 seatCells +
                 '<td class="c4k-svc-slot-td c4k-svc-slot-td--wait">' + DR.waitInner + '</td>' +

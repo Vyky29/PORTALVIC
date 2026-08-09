@@ -143,8 +143,7 @@ export const REENROL_RELEASE_RULES: ReleaseRule[] = [
     reason: "withdrew_aquatic_acton",
     match: (s) =>
       /aquatic/i.test(s.service) &&
-      /acton/i.test(s.venue) &&
-      /tue|thu/i.test(s.day),
+      /acton/i.test(s.venue),
   },
   {
     kind: "filter",
@@ -152,8 +151,7 @@ export const REENROL_RELEASE_RULES: ReleaseRule[] = [
     reason: "withdrew_aquatic_acton",
     match: (s) =>
       /aquatic/i.test(s.service) &&
-      /acton/i.test(s.venue) &&
-      /tue|thu/i.test(s.day),
+      /acton/i.test(s.venue),
   },
   {
     kind: "filter",
