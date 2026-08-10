@@ -2026,13 +2026,26 @@
     }
     .c4k-svc-day-acc__sum{
       cursor:pointer;list-style:none;display:grid;
-      grid-template-columns:minmax(0,1fr);
-      column-gap:0;row-gap:6px;align-items:center;
+      grid-template-columns:minmax(0,1fr) auto;
+      column-gap:10px;row-gap:6px;align-items:center;
       padding:12px 14px;font-size:15px;color:var(--ink);min-width:0;
       transition:background .12s ease;
     }
     .c4k-svc-day-acc__lead{
       display:flex;align-items:center;gap:8px;min-width:0;max-width:100%;justify-self:start;text-align:left;
+    }
+    .c4k-svc-day-acc__avail{
+      box-sizing:border-box;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;
+      gap:2px;min-width:0;max-width:min(11rem,42vw);justify-self:end;text-align:right;
+      padding:6px 10px;line-height:1.2;pointer-events:none;
+    }
+    .c4k-svc-day-acc__avail-count{
+      font-size:11px;font-weight:800;letter-spacing:.02em;min-width:0;max-width:100%;
+      overflow-wrap:break-word;
+    }
+    .c4k-svc-day-acc__avail-instr{
+      font-size:11px;font-weight:700;min-width:0;max-width:100%;
+      overflow-wrap:break-word;opacity:.92;
     }
     .c4k-svc-day-acc__sum:hover{background:#f8fafc;}
     .c4k-svc-day-acc__sum::-webkit-details-marker{display:none}
@@ -2166,6 +2179,73 @@
     .card.c4k-svc-card--neutral .c4k-svc-venue-acc__body .c4k-svc-day-acc{border-color:#c5ceda;background:#f1f5f9;}
     .card.c4k-svc-card--neutral .c4k-svc-venue-acc__body .c4k-svc-day-acc__sum:hover{background:#e8edf4;}
     .card.c4k-svc-card--neutral .c4k-svc-venue-acc__body .c4k-svc-day-acc .c4k-svc-slots{background:#e8eef5;border-top-color:#c5ceda;}
+    /* Day Centre — distinct from aquatic 1:1 grid; Michelle-style staff board. */
+    .card.c4k-svc-card--daycentre{border-left-color:#0f766e;}
+    .card.c4k-svc-card--daycentre .c4k-svc-ico--prog{background:#ccfbf1;color:#0f766e;border-color:rgba(15,118,110,.35);}
+    .card.c4k-svc-card--daycentre > .card-pad{background:#f0fdfa;}
+    .card.c4k-svc-card--daycentre details.c4k-svc-venue-acc{
+      background:#ccfbf1;border-color:#99f6e4;border-left-color:#0d9488;
+    }
+    .card.c4k-svc-card--daycentre details.c4k-svc-venue-acc .c4k-svc-ico--venue{
+      color:#0f766e;background:#99f6e4;border-color:rgba(13,148,136,.4);
+    }
+    .card.c4k-svc-card--daycentre .c4k-svc-venue-acc__body .c4k-svc-day-acc{border-color:#99f6e4;background:#ecfdf9;}
+    .card.c4k-svc-card--daycentre .c4k-svc-venue-acc__body .c4k-svc-day-acc__sum:hover{background:#d1fae5;}
+    .card.c4k-svc-card--daycentre .c4k-svc-venue-acc__body .c4k-svc-day-acc .c4k-svc-slots{background:#e6fffa;border-top-color:#99f6e4;}
+    .card.c4k-svc-card--daycentre .card-h--c4k-svc .toolbar .chip.chip--info,
+    .card.c4k-svc-card--daycentre details.c4k-svc-venue-acc .c4k-svc-venue-acc__pill.chip{
+      background:#f0fdfa;color:#0f766e;border:1px solid rgba(13,148,136,.32);
+    }
+    .card.c4k-svc-card--daycentre details.c4k-svc-venue-acc .c4k-svc-venue-acc__pill .c4k-svc-venue-acc__pill-lbl,
+    .card.c4k-svc-card--daycentre details.c4k-svc-venue-acc .c4k-svc-venue-acc__pill .c4k-svc-venue-acc__pill-strong,
+    .card.c4k-svc-card--daycentre details.c4k-svc-venue-acc .c4k-svc-venue-acc__pill .c4k-svc-venue-acc__pill-sub{
+      color:#0f766e;
+    }
+    .c4k-svc-dc-hint{
+      margin:0 0 10px;font-size:12px;line-height:1.4;max-width:48rem;min-width:0;overflow-wrap:break-word;
+    }
+    .c4k-svc-dc-scroll{
+      overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px 8px;min-width:0;
+    }
+    .c4k-svc-dc-board{
+      display:grid;grid-template-columns:repeat(auto-fit,minmax(7.5rem,1fr));gap:8px;min-width:0;align-items:start;
+    }
+    @media (max-width:420px){
+      .c4k-svc-dc-board{grid-template-columns:repeat(2,minmax(0,1fr));}
+    }
+    .c4k-svc-dc-col{
+      min-width:0;border:1px solid rgba(13,148,136,.22);border-radius:12px;background:#f7fffd;
+      padding:8px 7px 10px;overflow:hidden;
+    }
+    .c4k-svc-dc-col-head{
+      margin:0 0 8px;display:flex;flex-direction:column;align-items:center;gap:6px;
+      font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#115e59;
+      text-align:center;overflow-wrap:break-word;min-width:0;
+    }
+    .c4k-svc-dc-avatar{
+      width:36px;height:36px;border-radius:50%;font-size:11px;
+      border:1px solid rgba(13,148,136,.28);box-shadow:0 1px 2px rgba(15,23,42,.06);
+      display:inline-flex;align-items:center;justify-content:center;background:#ccfbf1;color:#0f766e;font-weight:800;
+    }
+    .c4k-svc-dc-col-name{
+      display:block;min-width:0;max-width:100%;overflow-wrap:break-word;line-height:1.2;
+    }
+    .c4k-svc-dc-col-body{display:flex;flex-direction:column;gap:10px;min-width:0;}
+    .c4k-svc-dc-client{
+      min-width:0;padding-top:8px;border-top:1px dashed rgba(23,50,71,.14);
+    }
+    .c4k-svc-dc-client:first-child{padding-top:0;border-top:0;}
+    .c4k-svc-dc-client-name{
+      margin:0 0 3px;font-size:13px;font-weight:800;color:var(--ink);overflow-wrap:break-word;line-height:1.2;
+      background:none;border:none;padding:0;font:inherit;font-weight:800;text-align:left;cursor:pointer;color:var(--ink);
+      max-width:100%;
+    }
+    button.c4k-svc-dc-client-name:hover{text-decoration:underline;color:#0f766e;}
+    .c4k-svc-dc-line{
+      font-size:10px;font-weight:600;line-height:1.35;color:#475569;overflow-wrap:anywhere;letter-spacing:.01em;
+    }
+    .c4k-svc-dc-blank{margin:0;color:#94a3b8;text-align:center;font-size:12px;}
+    .c4k-svc-dc-empty{margin:8px 4px;font-size:13px;}
     .c4k-svc-venue-acc__sum{
       cursor:pointer;list-style:none;display:grid;
       /* Metrics band uses a clamped % of row width so every venue lines up; name uses the rest. */
@@ -2347,6 +2427,44 @@
     }
     .c4k-svc-slot-th-seat__line{
       display:block;min-width:0;max-width:100%;overflow-wrap:break-word;text-align:center;font-size:10px;font-weight:800
+    }
+    .c4k-svc-slot-th-seat__role{
+      display:block;min-width:0;max-width:100%;overflow-wrap:break-word;text-align:center;
+      font-size:9px;font-weight:600;color:#64748b;margin-top:1px
+    }
+    .c4k-svc-slot-cap{
+      display:block;font-size:10px;font-weight:600;margin-top:2px;min-width:0;overflow-wrap:break-word;color:#64748b
+    }
+    .c4k-svc-slots--multi-sun .c4k-svc-slot-th-seat{
+      min-width:5.5rem;vertical-align:bottom
+    }
+    .c4k-svc-multi-group{
+      margin:12px 0 0;padding:10px 10px 8px;border:1px solid #e2e8f0;border-radius:10px;
+      background:#f8fafc;min-width:0
+    }
+    .c4k-svc-multi-group__head{
+      display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 12px;
+      margin:0 0 8px;min-width:0
+    }
+    .c4k-svc-multi-group__title{
+      margin:0;font-size:14px;font-weight:800;color:#0f172a;min-width:0;overflow-wrap:break-word
+    }
+    .c4k-svc-multi-group__meta{
+      font-size:11px;font-weight:600;color:#64748b;min-width:0;overflow-wrap:break-word
+    }
+    .c4k-svc-slot-table--multi-half .c4k-svc-slot-th-time,
+    .c4k-svc-slot-table--multi-half .c4k-svc-slot-td--time{
+      text-align:left !important;min-width:6.5rem;max-width:8.5rem;white-space:nowrap;
+      font-weight:800;color:#0f172a;vertical-align:middle
+    }
+    .c4k-svc-multi-half-time{
+      display:block;font-size:12px;font-weight:800;color:#0f172a;min-width:0;overflow-wrap:break-word
+    }
+    .c4k-svc-slot-table--multi-half .c4k-svc-slot-th-seat{
+      text-align:center !important;vertical-align:bottom;min-width:5.5rem;max-width:9rem
+    }
+    .c4k-svc-slot-table--multi-half .c4k-svc-slot-td--seat{
+      text-align:center !important;vertical-align:middle
     }
     .c4k-svc-slot-th-wait{
       width:auto;min-width:0;max-width:none;text-align:center !important;padding:8px 6px !important;white-space:nowrap

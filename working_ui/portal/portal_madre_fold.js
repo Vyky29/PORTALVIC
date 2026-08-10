@@ -105,12 +105,23 @@
     return day >= start && day <= end;
   }
 
+  function madreStaffList(week) {
+    var staff = week && week.staff;
+    if (!staff) return [];
+    if (Array.isArray(staff)) return staff;
+    if (typeof staff === "object") return Object.keys(staff).map(function (k) {
+      return staff[k];
+    });
+    return [];
+  }
+
   function madreToAdapterRows(madre) {
     var rows = [];
     var weeks = (madre && madre.weeks) || [];
     weeks.forEach(function (w) {
-      (w.staff || []).forEach(function (st) {
-        var staffName = String(st.staffName || st.staffKey || "")
+      madreStaffList(w).forEach(function (st) {
+        if (!st) return;
+        var staffName = String(st.staffName || st.staffKey || st.name || "")
           .trim()
           .toUpperCase();
         (st.days || []).forEach(function (d) {

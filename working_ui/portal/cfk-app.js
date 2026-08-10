@@ -14,7 +14,7 @@
   var PRODUCT_NAME = "CFK";
   var PAGE_TITLE = "Services";
   var PAGE_INTRO =
-    "Roster overview by programme and venue — who is booked, open places, and waiting demand. Live booking and covers are in Booking Portal / Scheduling.";
+    "Autumn 26/27 standing roster by programme and venue — who is booked, open places, and waiting demand (same occupancy bridge as Booking Portal). Live covers stay in Scheduling.";
 
   var deps = {
     $: function (id) {
@@ -251,7 +251,8 @@
       deps.esc(PAGE_INTRO) +
       ' <span class="chip chip--info" style="vertical-align:middle;margin-left:4px">' +
       deps.esc(PRODUCT_NAME) +
-      "</span></p>" +
+      "</span>" +
+      ' <span class="chip" style="vertical-align:middle;margin-left:4px">Autumn 26/27</span></p>' +
       '<div class="c4k-svc-jumpbar" style="margin:0 0 12px">' +
       '<button type="button" class="btn btn--sec btn--sm" id="c4kServicesJumpCapacity" title="Jump to the Services &amp; capacity board lower on this page">' +
       '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" style="vertical-align:-2px;margin-right:6px"><path fill="currentColor" d="M12 16l-6-6 1.41-1.41L12 13.17l4.59-4.58L18 10z"/></svg>' +

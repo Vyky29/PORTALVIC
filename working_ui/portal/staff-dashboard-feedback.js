@@ -1745,9 +1745,13 @@
           .replace(/[^a-z0-9]+/g, '');
       }
       function isPlaceholderClient(nm){
-        const k = String(nm || '').trim().toLowerCase().replace(/\s+/g, ' ');
+        const k = String(nm || '').trim().toLowerCase().replace(/\s+/g, ' ').replace(/[–—]/g, '-');
         if(!k) return true;
-        return /^(no participant|no client|noclient|closed|available|open|n\/a|—|-)$/i.test(k);
+        if(/^(no participant|no client|noclient|closed|available|open|n\/a|—|-)$/i.test(k)) return true;
+        // Office hold / waitlist probe seats (Climbing Westway Tue–Thu 4–6, etc.).
+        if(/^hold(\s|-)*(waitlist|office|seat)?$/i.test(k)) return true;
+        if(/^(waitlist|office)\s*hold$/i.test(k)) return true;
+        return false;
       }
       function add(nm){
         const t = String(nm || '').trim();

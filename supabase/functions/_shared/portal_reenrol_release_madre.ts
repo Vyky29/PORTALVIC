@@ -71,11 +71,8 @@ export const REENROL_RELEASE_RULES: ReleaseRule[] = [
     clients: ["Joel"],
     reason: "not_continuing",
   },
-  {
-    kind: "all",
-    clients: ["Rayyan Fi", "Rayyan Fida", "Rayyan F", "Rayyan"],
-    reason: "not_continuing_withdraw",
-  },
+  // Rayyan Fi / Huma — confirmed 10 Aug 2026 (booking registration Multi Sun 12.30–2 + office invoice).
+  // Do not auto-release.
   {
     kind: "all",
     clients: ["Ayden W", "Ayden"],
@@ -84,11 +81,6 @@ export const REENROL_RELEASE_RULES: ReleaseRule[] = [
   {
     kind: "all",
     clients: ["Amir"],
-    reason: "unconfirmed_deadline",
-  },
-  {
-    kind: "all",
-    clients: ["Anas"],
     reason: "unconfirmed_deadline",
   },
   {
@@ -122,11 +114,8 @@ export const REENROL_RELEASE_RULES: ReleaseRule[] = [
     clients: ["Thushyan"],
     reason: "office_hold_release",
   },
-  {
-    kind: "all",
-    clients: ["Yoan"],
-    reason: "office_hold_release",
-  },
+  // Yoan Bekele / Hanna — confirmed continuing Direct Payments (office reenrol 23 Jul + MADRE restore 10 Aug).
+  // Do not auto-release.
   {
     kind: "all",
     clients: ["Yossi", "yossi"],
@@ -184,14 +173,7 @@ const OFFICE_HOLD_OPEN_BANDS: Array<{
     venue: /acton/i,
     service: /aquatic/i,
   },
-  {
-    label: "Yoan",
-    staff: /^roberto$/i,
-    day: /sun/i,
-    time: /2\.30\s*to\s*3\.30/i,
-    venue: /swimfarm|swim farm/i,
-    service: /aquatic/i,
-  },
+  // Yoan Bekele restored 10 Aug 2026 (Hanna continuing DP) — do not open this band.
   {
     label: "Yossi",
     staff: /^roberto$/i,

@@ -8,6 +8,24 @@
   }
 
   /**
+   * Office hold seats (e.g. Climbing Westway Tue/Thu 4–6 waitlist probe).
+   * Count as booked in Admin Services / Booking Portal, but must not appear on
+   * instructor Today/Week dashboards until replaced with a real client name.
+   */
+  function isOfficeHoldWaitlistClient(name) {
+    const k = String(name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[–—]/g, "-")
+      .replace(/\s+/g, " ");
+    if (!k) return false;
+    if (/^hold(\s|-)*(waitlist|office|seat)?$/.test(k)) return true;
+    if (/^(waitlist|office)\s*hold$/.test(k)) return true;
+    if (/^hold waitlist$/.test(k)) return true;
+    return false;
+  }
+
+  /**
    * Display-only breakdown for combined Day Centre slots (pool hour + centre),
    * e.g. Fadi: Big Pool 12.30–1 + Day Centre 1–3; Ikram: Day Centre + Big Pool +
    * Day Centre across 11–4. The static bundle carries `segments`, but the live
@@ -704,6 +722,8 @@
         nameLower === "no participant" ||
         nameLower === "noclient" ||
         nameLower === "no_participant";
+      // Fictitious office holds stay off the worker dashboard (waitlist probe seats).
+      if (isOfficeHoldWaitlistClient(nameRaw)) return;
       const timeSlotLabel = String(row.time_slot || "").trim();
       const rosterService = String(row.service || "").trim();
       const rosterArea =
