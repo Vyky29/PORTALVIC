@@ -2497,6 +2497,16 @@
     .c4k-svc-pax-chips .chip.chip--pend.c4k-svc-pax-pill--open{
       background:#fef3c7;color:#b45309
     }
+    .c4k-svc-seat__pax .c4k-svc-pax-pill,
+    .c4k-svc-slot-td--seat .c4k-svc-pax-pill{
+      margin:0;max-width:100%;min-width:0;box-sizing:border-box;
+      border:0;font:inherit;line-height:1.25;
+      white-space:normal;overflow-wrap:break-word;text-align:center
+    }
+    .c4k-svc-pax-pill--closed,
+    .chip.chip--urg.c4k-svc-pax-pill--closed{
+      cursor:default;background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;font-weight:700
+    }
     .c4k-svc-slot-instr-btn{
       appearance:none;-webkit-appearance:none;border:0;background:transparent;padding:0;margin:0;
       font:inherit;font-size:12px;font-weight:600;color:var(--blue);cursor:pointer;max-width:100%;
