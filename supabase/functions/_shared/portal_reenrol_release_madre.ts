@@ -241,7 +241,8 @@ export function applyReenrolOfficeCorrectionsToMadre(doc: MadreDoc): {
 
   for (const week of doc.weeks ?? []) {
     const weekRec = week as unknown as Record<string, unknown>;
-    for (const st of Object.values(week.staff || {}) as Array<Record<string, unknown>>) {
+    for (const st of Object.values(week.staff || {}) as Array<Record<string, unknown> | null>) {
+      if (!st || typeof st !== "object") continue;
       const staffKey = norm(st.staffKey || st.name).toLowerCase();
       const days = (st.days as Array<Record<string, unknown>>) || [];
       for (const day of days) {
@@ -376,7 +377,8 @@ export function buildStandingTemplateDatesByWeekday(
   const latest = new Map<string, string>();
   for (const week of doc.weeks ?? []) {
     const weekRec = week as unknown as Record<string, unknown>;
-    for (const st of Object.values(week.staff || {}) as Array<Record<string, unknown>>) {
+    for (const st of Object.values(week.staff || {}) as Array<Record<string, unknown> | null>) {
+      if (!st || typeof st !== "object") continue;
       const days = (st.days as Array<Record<string, unknown>>) || [];
       for (const day of days) {
         const weekday = norm(day.weekday);
@@ -417,7 +419,8 @@ export function applyReenrolReleaseRulesToMadre(doc: MadreDoc): {
 
   for (const week of doc.weeks ?? []) {
     const weekRec = week as unknown as Record<string, unknown>;
-    for (const st of Object.values(week.staff || {}) as Array<Record<string, unknown>>) {
+    for (const st of Object.values(week.staff || {}) as Array<Record<string, unknown> | null>) {
+      if (!st || typeof st !== "object") continue;
       const days = (st.days as Array<Record<string, unknown>>) || [];
       for (const day of days) {
         const weekday = norm(day.weekday);

@@ -1692,9 +1692,9 @@
     </div>
   </div>
 
-  <script src="/portal/portal_booking_offer.js?v=20260716-daycentre-info"></script>
+  <script src="/portal/portal_booking_offer.js?v=20260810-madre-null-staff"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
-  <script src="/portal/portal_booking_lead_gate.js?v=20260810-parent-handoff"></script>
+  <script src="/portal/portal_booking_lead_gate.js?v=20260810-preview-after-load"></script>
   <script>
 (function () {
   "use strict";
@@ -1787,6 +1787,14 @@
   var offerBanner = document.getElementById("offerBanner");
   var offerBannerText = document.getElementById("offerBannerText");
 
+  // Soft-lock seats/prices while the live roster loads; the OTP gate preview
+  // timer starts only after load settles (see .finally below).
+  try {
+    document.documentElement.classList.add("booking-gated");
+    document.body.classList.add("booking-gated");
+  } catch (_gateEarly) {
+    /* ignore */
+  }
   function fillFilterSelects() {
     var opts = mock.filterOptions();
     fillSelect(fService, opts.services, "All services");
@@ -2625,19 +2633,23 @@
         "error",
         "Couldn’t load live availability. Refresh to try again, or contact the office."
       );
+    })
+    .finally(function () {
+      // Start the access-gate preview clock only once the roster (or error) is on screen,
+      // so the first seconds actually show weekly times instead of a blank/error flash.
+      try {
+        if (window.PortalBookingLeadGate) {
+          window.PortalBookingLeadGate.guardClicks(document.getElementById("timetableHost"));
+          window.PortalBookingLeadGate.guardClicks(document.getElementById("serviceCards"));
+          void window.PortalBookingLeadGate.boot();
+        }
+      } catch (_e2) {
+        /* ignore */
+      }
     });
   try {
     if (window.PortalBookingServicePresence) window.PortalBookingServicePresence.bootOffer();
   } catch (_e) {
-    /* ignore */
-  }
-  try {
-    if (window.PortalBookingLeadGate) {
-      window.PortalBookingLeadGate.guardClicks(document.getElementById("timetableHost"));
-      window.PortalBookingLeadGate.guardClicks(document.getElementById("serviceCards"));
-      void window.PortalBookingLeadGate.boot();
-    }
-  } catch (_e2) {
     /* ignore */
   }
 })();

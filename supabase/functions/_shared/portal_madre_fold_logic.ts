@@ -93,6 +93,7 @@ function findStaffColumn(week: MadreWeek, instructors: string): MadreStaffCol | 
   const key = norm(instructors).split(",")[0]?.toLowerCase() ?? "";
   if (!key) return null;
   for (const st of week.staff ?? []) {
+    if (!st) continue;
     const sk = String(st.staffKey ?? "").toLowerCase();
     const sn = String(st.staffName ?? "").toLowerCase();
     if (key === sk || key === sn || sk.includes(key) || sn.includes(key)) return st;
@@ -328,6 +329,7 @@ export function madreToAdapterRows(madre: MadreDoc): Record<string, unknown>[] {
     const weekStart = norm(w.start).slice(0, 10);
     const weekEnd = norm(w.end).slice(0, 10);
     for (const st of w.staff ?? []) {
+      if (!st) continue;
       const staffName = norm(st.staffName ?? st.staffKey).toUpperCase();
       for (const d of st.days ?? []) {
         const iso = norm(d.sessionDate).slice(0, 10);
