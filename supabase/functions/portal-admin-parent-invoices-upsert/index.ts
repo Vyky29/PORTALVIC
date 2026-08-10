@@ -164,6 +164,216 @@ Deno.serve(async (req) => {
     });
   }
 
+  /**
+   * Change re-enrolment funding route for a participant (Private ↔ Direct Payments ↔ LA managed).
+   * Updates latest 2026/27 submission payload, contact labels, and unpaid INV-P VAT + PDF.
+   */
+  if (action === "set_reenrol_funding") {
+    const contactId = clean(fields.contact_id, 120);
+    const fundingRaw = clean(fields.funding, 40).toLowerCase();
+    if (!contactId) return portalAdminJson(400, { ok: false, error: "contact_id_required" });
+
+    type FundingKey = "direct_payments" | "private" | "la_managed";
+    const fundingKey: FundingKey | null =
+      fundingRaw === "direct_payments" || fundingRaw === "dp" || fundingRaw === "parent_direct_payment"
+        ? "direct_payments"
+        : fundingRaw === "private" || fundingRaw === "privately" || fundingRaw === "parent_private"
+          ? "private"
+          : fundingRaw === "la_managed" || fundingRaw === "la" || fundingRaw === "funder_invoice"
+            ? "la_managed"
+            : null;
+    if (!fundingKey) {
+      return portalAdminJson(400, {
+        ok: false,
+        error: "funding_invalid",
+        message: "Use direct_payments, private, or la_managed",
+      });
+    }
+
+    const presets: Record<
+      FundingKey,
+      {
+        billing_mode: string;
+        funding_code: string;
+        funding_label: string;
+        invoice_type_code: string;
+        invoice_type_label: string;
+        contact_funding_label: string;
+        contact_payment_method_label: string;
+        vat_mode: "exempt" | "vat_20";
+        payment_method_hint: string | null;
+        current_funding: string;
+        current_invoice_type: string;
+      }
+    > = {
+      direct_payments: {
+        billing_mode: "direct_payments",
+        funding_code: "la_direct_payments",
+        funding_label: "Using funds from LA (Direct Payments from your EHCP care package)",
+        invoice_type_code: "exempt",
+        invoice_type_label: "EXEMPT VAT",
+        contact_funding_label: "Direct Payments (LA)",
+        contact_payment_method_label: "Parent invoice (EXEMPT)",
+        vat_mode: "exempt",
+        payment_method_hint: null,
+        current_funding: "Funded · Direct Payments",
+        current_invoice_type: "Parent (Exempt invoice)",
+      },
+      private: {
+        billing_mode: "private",
+        funding_code: "privately_funded",
+        funding_label: "Privately",
+        invoice_type_code: "vat_included",
+        invoice_type_label: "Includes 20% VAT (in price)",
+        contact_funding_label: "Private",
+        contact_payment_method_label: "Parent invoice (20% VAT)",
+        vat_mode: "vat_20",
+        payment_method_hint: "bank_transfer",
+        current_funding: "Private",
+        current_invoice_type: "Parent (20% VAT)",
+      },
+      la_managed: {
+        billing_mode: "funder_invoice",
+        funding_code: "la_managed",
+        funding_label: "LA managed (invoice to Local Authority)",
+        invoice_type_code: "exempt",
+        invoice_type_label: "EXEMPT VAT",
+        contact_funding_label: "LA / NHS",
+        contact_payment_method_label: "LA invoice (BACS)",
+        vat_mode: "exempt",
+        payment_method_hint: "la_funded",
+        current_funding: "LA managed",
+        current_invoice_type: "LA invoice (EXEMPT)",
+      },
+    };
+    const preset = presets[fundingKey];
+
+    const { data: sub, error: subErr } = await admin
+      .from("portal_re_enrolment_submissions")
+      .select("id, payload, participant_name")
+      .eq("participant_contact_id", contactId)
+      .order("submitted_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (subErr) {
+      console.error("[portal-admin-parent-invoices-upsert] set_reenrol_funding sub", subErr);
+      return portalAdminJson(500, { ok: false, error: "submission_lookup_failed" });
+    }
+    if (!sub?.id) {
+      return portalAdminJson(404, { ok: false, error: "reenrol_submission_not_found" });
+    }
+
+    const payload =
+      sub.payload && typeof sub.payload === "object"
+        ? structuredClone(sub.payload as Record<string, unknown>)
+        : {};
+    const fundingRoot =
+      payload.funding && typeof payload.funding === "object"
+        ? (payload.funding as Record<string, unknown>)
+        : {};
+    const choices =
+      fundingRoot.choices_2627 && typeof fundingRoot.choices_2627 === "object"
+        ? { ...(fundingRoot.choices_2627 as Record<string, unknown>) }
+        : {};
+
+    Object.assign(choices, {
+      billing_mode: preset.billing_mode,
+      funding_code: preset.funding_code,
+      funding_label: preset.funding_label,
+      invoice_type_code: preset.invoice_type_code,
+      invoice_type_label: preset.invoice_type_label,
+    });
+    if (!choices.payment_method_code) choices.payment_method_code = "bank_transfer";
+    if (!choices.payment_method_label) {
+      choices.payment_method_label = "Bank Transfer / Card / Apple Pay (fixed due dates)";
+    }
+
+    fundingRoot.choices_2627 = choices;
+    const current =
+      fundingRoot.current_2526 && typeof fundingRoot.current_2526 === "object"
+        ? { ...(fundingRoot.current_2526 as Record<string, unknown>) }
+        : {};
+    current.funding = preset.current_funding;
+    current.invoice_type = preset.current_invoice_type;
+    current.invoice_type_code = preset.invoice_type_code;
+    fundingRoot.current_2526 = current;
+    payload.funding = fundingRoot;
+    payload.office_note = clean(
+      `Office funding change → ${fundingKey} by ${readyBy} at ${now}`,
+      400,
+    );
+
+    const { error: upSubErr } = await admin
+      .from("portal_re_enrolment_submissions")
+      .update({ payload })
+      .eq("id", sub.id);
+    if (upSubErr) {
+      console.error("[portal-admin-parent-invoices-upsert] set_reenrol_funding update", upSubErr);
+      return portalAdminJson(500, { ok: false, error: "submission_update_failed" });
+    }
+
+    await admin
+      .from("portal_parent_contacts")
+      .update({
+        funding_label: preset.contact_funding_label,
+        payment_method_label: preset.contact_payment_method_label,
+      })
+      .eq("contact_id", contactId);
+
+    const { data: invRows } = await admin
+      .from("portal_parent_invoice_share")
+      .select("id, payment_status, vat_mode, payment_method_hint")
+      .eq("contact_id", contactId)
+      .neq("payment_status", "void");
+
+    const pdfResults: Array<{ id: string; ok: boolean; error?: string }> = [];
+    for (const inv of invRows || []) {
+      if (String(inv.payment_status || "") === "paid") continue;
+      const invPatch: Record<string, unknown> = {
+        vat_mode: preset.vat_mode,
+        updated_at: now,
+      };
+      if (preset.payment_method_hint) {
+        invPatch.payment_method_hint = preset.payment_method_hint;
+      } else if (fundingKey === "direct_payments") {
+        // DP parents still pay by bank/card from their DP account — keep bank_transfer unless LA-funded.
+        if (String(inv.payment_method_hint || "") === "la_funded") {
+          invPatch.payment_method_hint = "bank_transfer";
+        }
+      }
+      const { error: invErr } = await admin
+        .from("portal_parent_invoice_share")
+        .update(invPatch)
+        .eq("id", inv.id);
+      if (invErr) {
+        pdfResults.push({ id: String(inv.id), ok: false, error: invErr.message });
+        continue;
+      }
+      try {
+        const regen = await regeneratePortalInvoiceSharePdf(admin, String(inv.id));
+        pdfResults.push({
+          id: String(inv.id),
+          ok: regen.ok,
+          error: regen.ok ? undefined : regen.error,
+        });
+      } catch (e) {
+        pdfResults.push({
+          id: String(inv.id),
+          ok: false,
+          error: e instanceof Error ? e.message : String(e),
+        });
+      }
+    }
+
+    return portalAdminJson(200, {
+      ok: true,
+      funding: fundingKey,
+      participant_name: sub.participant_name,
+      submission_id: sub.id,
+      invoices_updated: pdfResults,
+    });
+  }
+
   if (action === "create_portal") {
     // Create invoice in Portal (generate TAX INVOICE PDF) — no Xero upload.
     const contactId = clean(fields.contact_id, 120);

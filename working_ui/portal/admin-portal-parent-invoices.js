@@ -1437,6 +1437,13 @@
     var countLabel = group.is_la_office_auto && !n
       ? 'Auto re-enrolled · no INV-P'
       : String(n) + ' invoice' + (n === 1 ? '' : 's');
+    var fundNow = fundingCategoryLabel(invoices[0] || {});
+    var fundVal =
+      fundNow === 'Funds from the LA'
+        ? 'direct_payments'
+        : fundNow === 'LA managed' || fundNow === 'NHS managed'
+          ? 'la_managed'
+          : 'private';
     return (
       '<details class="pp-inv-acc__item pp-inv-acc__item--pax" data-contact-id="' +
       contactId +
@@ -1463,6 +1470,30 @@
       '</span>' +
       '</summary>' +
       '<div class="pp-inv-acc__body">' +
+      '<div class="pp-inv-acc__funding-edit" style="margin:0 0 12px;padding:10px 12px;border:1px solid var(--line,#e5e7eb);border-radius:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-width:0">' +
+      '<label class="muted" style="font-size:12px;font-weight:700;min-width:0" for="ppFund-' +
+      contactId +
+      '">Re-enrol funding</label>' +
+      '<select class="sel" id="ppFund-' +
+      contactId +
+      '" data-reenrol-funding-select="' +
+      contactId +
+      '" style="max-width:16rem;min-width:0">' +
+      '<option value="private"' +
+      (fundVal === 'private' ? ' selected' : '') +
+      '>Privately (20% VAT)</option>' +
+      '<option value="direct_payments"' +
+      (fundVal === 'direct_payments' ? ' selected' : '') +
+      '>Direct Payments / Funds from the LA (EXEMPT)</option>' +
+      '<option value="la_managed"' +
+      (fundVal === 'la_managed' ? ' selected' : '') +
+      '>LA managed (invoice to LA)</option>' +
+      '</select>' +
+      '<button type="button" class="btn btn--sm btn--sec" data-reenrol-funding-save="' +
+      contactId +
+      '">Update funding</button>' +
+      '<span class="muted" style="font-size:11px;min-width:0;overflow-wrap:break-word">Changes the parent\'s re-enrol choice + unpaid INV-P VAT label/PDF. Amounts stay the same.</span>' +
+      '</div>' +
       '<div class="pp-inv-acc__cards">' +
       cards +
       '</div></div></details>'
@@ -1863,6 +1894,48 @@
             return;
           }
           cfg.toast(r.message || 'Hold updated', 'ok');
+          void renderHost(global.document.getElementById('portalParentInvoicesHost'));
+        });
+      });
+    });
+    host.querySelectorAll('[data-reenrol-funding-save]').forEach(function (btn) {
+      btn.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var contactId = btn.getAttribute('data-reenrol-funding-save');
+        if (!contactId) return;
+        var sel = host.querySelector(
+          '[data-reenrol-funding-select="' + contactId.replace(/"/g, '') + '"]',
+        );
+        var funding = sel && sel.value ? String(sel.value) : '';
+        if (!funding) return;
+        var label =
+          funding === 'direct_payments'
+            ? 'Direct Payments (Funds from the LA)'
+            : funding === 'la_managed'
+              ? 'LA managed'
+              : 'Privately';
+        if (
+          !global.confirm(
+            'Set re-enrol funding for this family to “' +
+              label +
+              '”? Unpaid invoices will switch VAT label and regenerate PDFs (amounts unchanged).',
+          )
+        ) {
+          return;
+        }
+        btn.disabled = true;
+        void api('portal-admin-parent-invoices-upsert', {
+          action: 'set_reenrol_funding',
+          contact_id: contactId,
+          funding: funding,
+        }).then(function (r) {
+          if (r.error) {
+            cfg.toast(r.message || r.error || 'Funding update failed', 'error');
+            btn.disabled = false;
+            return;
+          }
+          cfg.toast('Funding updated to ' + label, 'ok');
           void renderHost(global.document.getElementById('portalParentInvoicesHost'));
         });
       });
