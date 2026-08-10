@@ -1429,8 +1429,8 @@
     </section>
 
     <p class="foot">
-      Already with us?
-      <a href="/parent">Open the parent portal</a>
+      Browse times freely — a code is only needed to book or enquire (skip it if you’re already signed in to the
+      <a href="/parent">family portal</a>).
       · Office: <a href="mailto:info@clubsensational.org">info@clubsensational.org</a>
     </p>
   </main>
@@ -1544,10 +1544,10 @@
         <div id="bookingLeadReturningBlock">
           <h2 class="booking-gate__title" id="bookingLeadTitle">Welcome back</h2>
           <p class="booking-gate__lede" id="bookingLeadLede">
-            Existing club families and anyone who has already registered on this booking portal can enter with email
-            and a one-time code — no need to request access again.
-            Active family portal users can also
-            <a href="/parent" style="color:var(--blueDeep);font-weight:700">open the family portal</a>.
+            You can browse open places without a code. To book or enquire, enter the email on file for a one-time
+            code — or
+            <a href="/parent" style="color:var(--blueDeep);font-weight:700">sign in to the family portal</a>
+            first and we’ll recognise you automatically.
           </p>
           <form id="bookingLeadReturningForm" novalidate>
             <div class="booking-gate__field">
@@ -1587,7 +1587,7 @@
         <div id="bookingLeadNewBlock" hidden>
           <h2 class="booking-gate__title">Tell us who is looking</h2>
           <p class="booking-gate__lede">
-            New to ClubSENsational? Enter parent/carer details to request access, explore availability, and begin a booking.
+            New to ClubSENsational? Browse times freely. Enter parent/carer details only when you’re ready to book or enquire.
           </p>
           <form id="bookingLeadDetailsForm" novalidate>
             <div class="booking-gate__field">
@@ -1657,7 +1657,7 @@
         <p class="booking-gate__eyebrow">Almost there</p>
         <h2 class="booking-gate__title">Enter your access code</h2>
         <p class="booking-gate__hint" id="bookingLeadOtpHint">
-          We’ve sent a 6-digit code to your email. Enter it below to explore availability.
+          We’ve sent a 6-digit code to your email. Enter it below to book or enquire.
         </p>
         <form id="bookingLeadOtpForm" novalidate>
           <div class="booking-gate__field">
@@ -1680,7 +1680,7 @@
                 <rect x="3" y="11" width="18" height="11" rx="2"/>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
               </svg>
-              <span class="booking-gate__btn-label">Unlock booking</span>
+              <span class="booking-gate__btn-label">Continue</span>
             </button>
           </div>
           <div class="booking-gate__secondary">
@@ -1694,7 +1694,7 @@
 
   <script src="/portal/portal_booking_offer.js?v=20260716-daycentre-info"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
-  <script src="/portal/portal_booking_lead_gate.js?v=20260724-returning-no-privacy"></script>
+  <script src="/portal/portal_booking_lead_gate.js?v=20260810-browse-free"></script>
   <script>
 (function () {
   "use strict";
@@ -2394,72 +2394,80 @@
     return path;
   }
 
-  function goToRegistration(slot) {
-    if (window.PortalBookingLeadGate && !window.PortalBookingLeadGate.isUnlocked()) {
-      window.PortalBookingLeadGate.openGate();
+  function withLeadSession(thenFn) {
+    if (!window.PortalBookingLeadGate || !window.PortalBookingLeadGate.ensureLeadSession) {
+      thenFn();
       return;
     }
-    try {
-      if (window.PortalBookingServicePresence) {
-        var bits = [slot && slot.id, slot && slot.serviceId, slot && slot.day, slot && slot.timeLabel]
-          .filter(Boolean)
-          .join(" · ")
-          .slice(0, 160);
-        void window.PortalBookingServicePresence.ping("book_cta", bits || null);
+    void window.PortalBookingLeadGate.ensureLeadSession().then(function (ok) {
+      if (ok) thenFn();
+    });
+  }
+
+  function goToRegistration(slot) {
+    withLeadSession(function () {
+      try {
+        if (window.PortalBookingServicePresence) {
+          var bits = [slot && slot.id, slot && slot.serviceId, slot && slot.day, slot && slot.timeLabel]
+            .filter(Boolean)
+            .join(" · ")
+            .slice(0, 160);
+          void window.PortalBookingServicePresence.ping("book_cta", bits || null);
+        }
+      } catch (_e) {
+        /* ignore */
       }
-    } catch (_e) {
-      /* ignore */
-    }
-    try {
-      if (window.PortalBookingLeadGate) {
-        void window.PortalBookingLeadGate.pingActivity({
-          booking_status: "registration_started",
-          registration_status: "started",
-          service_viewed: (slot && slot.serviceId) || "",
-        });
+      try {
+        if (window.PortalBookingLeadGate) {
+          void window.PortalBookingLeadGate.pingActivity({
+            booking_status: "registration_started",
+            registration_status: "started",
+            service_viewed: (slot && slot.serviceId) || "",
+          });
+        }
+      } catch (_e2) {
+        /* ignore */
       }
-    } catch (_e2) {
-      /* ignore */
-    }
-    window.location.href = registrationUrlForSlot(slot);
+      window.location.href = registrationUrlForSlot(slot);
+    });
   }
 
   function openDayCentreEnquire(svc) {
-    if (window.PortalBookingLeadGate && !window.PortalBookingLeadGate.isUnlocked()) {
-      window.PortalBookingLeadGate.openGate();
-      return;
-    }
-    var sheet = document.getElementById("actionSheet");
-    var title = document.getElementById("sheetTitle");
-    var body = document.getElementById("sheetBody");
-    var mail = document.getElementById("sheetMail");
-    title.textContent = "Enquire about Day Centre";
-    body.textContent =
-      "Day Centre at SwimFarm · Monday to Friday, 11am – 4pm. Places are arranged with the office (not booked online) so we can explain the day, funding, and support needs.";
-    var subject = encodeURIComponent("Day Centre enquiry — SwimFarm · Mon–Fri 11am–4pm");
-    var text = encodeURIComponent(
-      "Hello,\n\nI’d like to enquire about a Day Centre place at SwimFarm (Monday–Friday, 11am–4pm).\n\nChild name:\nParent name:\nPhone:\nFunding / notes:\n\nThanks"
-    );
-    mail.href = "mailto:info@clubsensational.org?subject=" + subject + "&body=" + text;
-    mail.innerHTML = ICONS.mail + " Email the office";
-    sheet.hidden = false;
-    try {
-      if (window.PortalBookingServicePresence) {
-        void window.PortalBookingServicePresence.ping(
-          "enquire_cta",
-          (svc && svc.id) || "day_centre"
-        );
+    withLeadSession(function () {
+      var sheet = document.getElementById("actionSheet");
+      var title = document.getElementById("sheetTitle");
+      var body = document.getElementById("sheetBody");
+      var mail = document.getElementById("sheetMail");
+      title.textContent = "Enquire about Day Centre";
+      body.textContent =
+        "Day Centre at SwimFarm · Monday to Friday, 11am – 4pm. Places are arranged with the office (not booked online) so we can explain the day, funding, and support needs.";
+      var subject = encodeURIComponent("Day Centre enquiry — SwimFarm · Mon–Fri 11am–4pm");
+      var text = encodeURIComponent(
+        "Hello,\n\nI’d like to enquire about a Day Centre place at SwimFarm (Monday–Friday, 11am–4pm).\n\nChild name:\nParent name:\nPhone:\nFunding / notes:\n\nThanks"
+      );
+      mail.href = "mailto:info@clubsensational.org?subject=" + subject + "&body=" + text;
+      mail.innerHTML = ICONS.mail + " Email the office";
+      sheet.hidden = false;
+      try {
+        if (window.PortalBookingServicePresence) {
+          void window.PortalBookingServicePresence.ping(
+            "enquire_cta",
+            (svc && svc.id) || "day_centre"
+          );
+        }
+      } catch (_e) {
+        /* ignore */
       }
-    } catch (_e) {
-      /* ignore */
-    }
+    });
   }
 
   function openSheet(slot) {
-    if (window.PortalBookingLeadGate && !window.PortalBookingLeadGate.isUnlocked()) {
-      window.PortalBookingLeadGate.openGate();
-      return;
-    }
+    withLeadSession(function () {
+      openSheetReady(slot);
+    });
+  }
+
+  function openSheetReady(slot) {
     var svc = mock.serviceById(slot.serviceId);
     if (svc && svc.id === "day_centre") {
       openDayCentreEnquire(svc);

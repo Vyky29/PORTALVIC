@@ -1,20 +1,20 @@
 /**
- * Booking Portal access gate — aligned with registration parent/carer fields
- * (parent_name, parent_email, parent_phone) + family portal session handoff.
+ * Booking Portal access gate — browse free; OTP (or parent-portal handoff)
+ * only when Book / Enquire / Wait needs a lead session.
  */
 (function (global) {
   "use strict";
 
   var STORAGE_KEY = "clubsens_booking_lead_session_v1";
+  var PARENT_SESSION_KEY = "clubsens_parent_portal_session_v1";
   var PRIVACY_VERSION = "2026-07-v1";
-  var PREVIEW_MS = 5000;
   var state = {
     unlocked: false,
     lead: null,
     token: "",
     pendingEmail: "",
-    timer: null,
     flow: "returning",
+    ensuring: false,
   };
 
   function cfg() {
@@ -96,6 +96,20 @@
     }
   }
 
+  function readParentPortalToken() {
+    try {
+      var raw = global.localStorage.getItem(PARENT_SESSION_KEY);
+      if (!raw) return "";
+      var j = JSON.parse(raw);
+      if (!j || !j.token) return "";
+      var exp = Number(j.expiresAt || j.expires_at || 0);
+      if (exp && exp <= Date.now()) return "";
+      return String(j.token);
+    } catch (_e) {
+      return "";
+    }
+  }
+
   function adoptTokenFromUrl() {
     try {
       var q = new URLSearchParams(global.location.search || "");
@@ -103,7 +117,10 @@
       if (!/^[a-f0-9]{32,128}$/i.test(tok)) return false;
       saveStored(tok, null, null);
       q.delete("lead_session");
-      var next = global.location.pathname + (q.toString() ? "?" + q.toString() : "") + (global.location.hash || "");
+      var next =
+        global.location.pathname +
+        (q.toString() ? "?" + q.toString() : "") +
+        (global.location.hash || "");
       if (global.history && global.history.replaceState) {
         global.history.replaceState({}, "", next);
       }
@@ -221,17 +238,34 @@
     return false;
   }
 
-  function unlock() {
-    if (state.timer) {
-      clearTimeout(state.timer);
-      state.timer = null;
+  async function tryParentPortalHandoff() {
+    var parentTok = readParentPortalToken();
+    if (!parentTok) return false;
+    try {
+      var out = await api(
+        "portal-booking-lead-from-parent-session",
+        {
+          first_page_visited: (global.location && global.location.pathname) || "/bookingportal",
+        },
+        { "x-parent-portal-session": parentTok }
+      );
+      if (out.res.ok && out.data && out.data.ok && out.data.session_token) {
+        saveStored(out.data.session_token, out.data.expires_at, out.data.lead);
+        return true;
+      }
+    } catch (_e) {
+      /* ignore */
     }
+    return false;
+  }
+
+  function unlock() {
     setLocked(false);
     showModal(false);
   }
 
+  /** OTP modal for Book/Enquire — does not re-lock browse. */
   function openGate() {
-    setLocked(true);
     showStep("details");
     setFlow(state.flow || "returning");
     showModal(true);
@@ -248,6 +282,24 @@
     }
   }
 
+  /**
+   * Ensure a booking lead session exists before Book / Enquire / Wait.
+   * Uses existing lead session, then parent-portal handoff, else OTP modal.
+   * @returns {Promise<boolean>}
+   */
+  async function ensureLeadSession() {
+    if (await validateSession()) {
+      unlock();
+      return true;
+    }
+    if (await tryParentPortalHandoff()) {
+      unlock();
+      return true;
+    }
+    openGate();
+    return false;
+  }
+
   function afterOtpSent(email, out, msgId, btn, idleLabel) {
     state.pendingEmail = email;
     var hint = (out.data && out.data.email_hint) || email;
@@ -261,7 +313,10 @@
             ? "Welcome back. "
             : "";
       otpHint.textContent =
-        prefix + "We sent a 6-digit code to " + hint + ". Enter it below to explore availability.";
+        prefix +
+        "We sent a 6-digit code to " +
+        hint +
+        ". Enter it below to book or enquire.";
     }
     showStep("otp");
     var codeEl = $("bookingLeadCode");
@@ -417,7 +472,7 @@
               ? "Too many attempts. Request a new code."
               : "That code didn’t match. Please try again.";
         setMsg("bookingLeadOtpMsg", human, true);
-        setBusy(btn, false, "Unlock booking");
+        setBusy(btn, false, "Continue");
         return;
       }
       saveStored(out.data.session_token, out.data.expires_at, out.data.lead);
@@ -425,7 +480,7 @@
     } catch (_e) {
       setMsg("bookingLeadOtpMsg", "Network error — please try again.", true);
     }
-    setBusy(btn, false, "Unlock booking");
+    setBusy(btn, false, "Continue");
   }
 
   function wireUi() {
@@ -470,15 +525,32 @@
     root.addEventListener(
       "click",
       function (e) {
-        if (state.unlocked) return;
         var t =
           e.target && e.target.closest
-            ? e.target.closest("[data-book], [data-enquire], [data-dc-enquire], .btn--book, .btn--wait")
+            ? e.target.closest(
+                "[data-book], [data-enquire], [data-dc-enquire], .btn--book, .btn--wait"
+              )
             : null;
         if (!t) return;
+        if (getSessionToken()) return;
         e.preventDefault();
         e.stopPropagation();
-        openGate();
+        if (state.ensuring) return;
+        state.ensuring = true;
+        void ensureLeadSession()
+          .then(function (ok) {
+            if (!ok) return;
+            try {
+              t.dispatchEvent(
+                new MouseEvent("click", { bubbles: true, cancelable: true, view: global })
+              );
+            } catch (_e) {
+              /* ignore */
+            }
+          })
+          .finally(function () {
+            state.ensuring = false;
+          });
       },
       true
     );
@@ -532,11 +604,14 @@
   async function boot(opts) {
     opts = opts || {};
     wireUi();
-    setLocked(true);
-    showModal(false);
+    // Browse free for everyone — no forced OTP modal.
+    unlock();
     adoptTokenFromUrl();
 
     var ok = await validateSession();
+    if (ok) return true;
+
+    ok = await tryParentPortalHandoff();
     if (ok) {
       unlock();
       return true;
@@ -546,10 +621,6 @@
       openGate();
       return false;
     }
-
-    state.timer = setTimeout(function () {
-      if (!state.unlocked) openGate();
-    }, PREVIEW_MS);
     return false;
   }
 
@@ -560,8 +631,12 @@
     getLeadForPrefill: getLeadForPrefill,
     getSessionToken: getSessionToken,
     appendSessionToUrl: appendSessionToUrl,
+    ensureLeadSession: ensureLeadSession,
     isUnlocked: function () {
       return !!state.unlocked;
+    },
+    hasLeadSession: function () {
+      return !!getSessionToken();
     },
     openGate: openGate,
     privacyVersion: PRIVACY_VERSION,
