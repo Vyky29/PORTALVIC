@@ -364,7 +364,7 @@
   /**
    * Arrangement:
    * One-off payment (year|term) · Flexi: 2 per term · Flexi: 6 per year ·
-   * GoCardless (one per term ×3 / monthly ×10) · £1.50 / instalment · Own way
+   * GoCardless (one per term / monthly ×N · term) · £1.50 / instalment · Own way
    */
   function schedulePlanShort(inv) {
     var code = String(inv.reenrol_payment_schedule_code || '').toLowerCase();
@@ -380,11 +380,11 @@
       return yearCadence ? 'Flexi: 6 per year' : 'Flexi: 2 per term';
     }
     if (code === 'monthly_10' || code === 'monthly_term') {
-      return 'GoCardless (monthly ×10) · £1.50 / instalment';
+      return 'GoCardless (monthly · term) · £1.50 / instalment';
     }
     if (code === 'term_3') {
       return isGc
-        ? 'GoCardless (one per term ×3) · £1.50 / instalment'
+        ? 'GoCardless (one per term) · £1.50 / instalment'
         : 'One-off payment (term)';
     }
 
@@ -432,11 +432,11 @@
     if (n >= 2 && /\b(half|1st|2nd|flexi)\b/.test(hay)) {
       return 'Flexi: 2 per term';
     }
-    if (isGc && n >= 3) return 'GoCardless (monthly ×10) · £1.50 / instalment';
-    if (isGc && n === 1) return 'GoCardless (one per term ×3) · £1.50 / instalment';
+    if (isGc && n >= 3) return 'GoCardless (monthly ×' + n + ' · term) · £1.50 / instalment';
+    if (isGc && n === 1) return 'GoCardless (one per term) · £1.50 / instalment';
     if (!isGc && n === 1) return 'One-off payment (term)';
     if (!isGc) return 'Flexi: 2 per term';
-    return 'GoCardless (monthly ×10) · £1.50 / instalment';
+    return 'GoCardless (monthly ×' + n + ' · term) · £1.50 / instalment';
   }
 
   function isAutoReenrolledInv(inv) {

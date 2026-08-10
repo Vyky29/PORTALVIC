@@ -104,22 +104,22 @@ export function paymentSchedulePlanShortLabel(
       /payment\s*\d|january|february|march|april|may|june|july|august|september|october|november|december/
         .test(hay))
   ) {
-    return "GoCardless (monthly ×10) · £1.50 / instalment";
+    return `GoCardless (monthly ×${n} · term) · £1.50 / instalment`;
   }
   if (n === 1 && /full payment|one payment|pay in full/.test(hay)) {
     return isGc
-      ? "GoCardless (one per term ×3) · £1.50 / instalment"
+      ? "GoCardless (one per term) · £1.50 / instalment"
       : "One-off payment (term)";
   }
   if (n === 1) {
     return isGc
-      ? "GoCardless (one per term ×3) · £1.50 / instalment"
+      ? "GoCardless (one per term) · £1.50 / instalment"
       : "One-off payment (term)";
   }
   if (n === 2) return "Flexi: 2 per term";
   if (n > 2) {
     return isGc
-      ? "GoCardless (monthly ×10) · £1.50 / instalment"
+      ? `GoCardless (monthly ×${n} · term) · £1.50 / instalment`
       : "Flexi: 2 per term";
   }
   return null;

@@ -48,7 +48,7 @@ const FLEXI_TERM: Array<{
     term: "autumn",
     termLabel: "Autumn term",
     halves: [
-      { halfLabel: "1st half", dueIso: "2026-09-01" },
+      { halfLabel: "1st half", dueIso: "2026-08-15" },
       { halfLabel: "2nd half", dueIso: "2026-10-26" },
     ],
   },
@@ -361,20 +361,22 @@ export function reenrolmentSchedulePlanPhrase(args: {
 
   if (termOnly) {
     if (code === "term_3") {
-      return `1 ${unit} scheduled for ${termLabel} term (term-by-term — later terms when you reconfirm)`;
+      return `1 ${unit} for ${termLabel} term (term-by-term — later terms when you reconfirm)`;
     }
     if (code === "term_flexi") {
-      return `2 ${units} scheduled for ${termLabel} term (term-by-term)`;
+      return `1 ${unit} for ${termLabel} term with 2 instalments (term-by-term)`;
     }
     if (code === "monthly_10" || code === "monthly_term") {
       const months = monthlyCountForTerm(args.billingTerm!, code);
-      return `${n || months} ${units} scheduled for ${termLabel} term (monthly · term-by-term)`;
+      return `1 ${unit} for ${termLabel} term with ${n || months} monthly instalments (term-by-term)`;
     }
     if (code === "own_term") {
       return `${n || 2} ${units} due on re-enrolment for ${termLabel} (minimum 2 session days + admin fee; top-ups as you go)`;
     }
-    if (n === 1) return `1 ${unit} scheduled for ${termLabel} term (term-by-term)`;
-    if (n > 1) return `${n} ${units} scheduled for ${termLabel} term (term-by-term)`;
+    if (n === 1) return `1 ${unit} for ${termLabel} term (term-by-term)`;
+    if (n > 1) {
+      return `1 ${unit} for ${termLabel} term with ${n} instalments (term-by-term)`;
+    }
   }
 
   if (code === "yearly_1off") {
@@ -384,13 +386,13 @@ export function reenrolmentSchedulePlanPhrase(args: {
     return `3 ${units} scheduled (one per term — Autumn, Spring, Summer)`;
   }
   if (code === "term_flexi") {
-    return `6 ${units} scheduled (two per term)`;
+    return `3 ${units} scheduled (one per term, each with 2 instalments)`;
   }
   if (code === "monthly_10") {
-    return `10 ${units} scheduled (monthly Sep–Jun: Autumn 4 · Spring 3 · Summer 3)`;
+    return `3 ${units} scheduled (one per term with monthly instalments: Autumn 4 · Spring 3 · Summer 3)`;
   }
   if (code === "monthly_term") {
-    return `${n || 11} ${units} scheduled (monthly by term)`;
+    return `3 ${units} scheduled (one per term with monthly instalments: Autumn 4 · Spring 3 · Summer 4)`;
   }
   if (code === "own_term") {
     return `${n || 6} ${units} (minimum 2 session days + admin each term on re-enrol / term start; top-ups as you go)`;
