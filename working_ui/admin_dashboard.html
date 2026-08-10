@@ -7436,7 +7436,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function adminServicesMultiSundayInstrCellHtml(half, dataSlot){
       if(!half || !half.staffName){
-        return '<span class="muted">—</span>';
+        return '<span class="muted c4k-svc-seat-closed" title="No instructor on this 45′ half">CLOSED</span>';
       }
       return '<button type="button" class="c4k-svc-slot-instr-btn" data-novo-edit-sched-slot="1" '+dataSlot+
         ' title="Change instructor for this 45′ Multi-Activity half">'+esc(half.staffName)+'</button>';
@@ -19097,6 +19097,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               for(var ssi = 0; ssi < seatsScan.length; ssi++){
                 var seat0 = seatsScan[ssi];
                 if(!seat0) continue;
+                // Space-available filter: columns only for instructors with an open seat.
+                if(filt && filt.spaceOnly && !seat0.open) continue;
                 var key0 = String(seat0.staffKey || seat0.staffId || '').trim().toLowerCase();
                 if(!key0 && seat0.staffName) key0 = String(seat0.staffName).trim().toLowerCase();
                 if(!key0 || dayStaffSeen[key0]) continue;
@@ -19166,16 +19168,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               for(var si = 0; si < maxSeats; si++){
                 var seat = DR.seats[si];
                 if(!seat || seat.emptyCol){
-                  seatCells += '<td class="c4k-svc-slot-td c4k-svc-slot-td--seat"><span class="muted">—</span></td>';
+                  seatCells +=
+                    '<td class="c4k-svc-slot-td c4k-svc-slot-td--seat">'+
+                    '<span class="muted c4k-svc-seat-closed" title="No roster line for this instructor at this time">CLOSED</span>'+
+                    '</td>';
                   continue;
                 }
                 var instrBtn = seat.staffName
                   ? ('<button type="button" class="c4k-svc-slot-instr-btn" data-novo-edit-sched-slot="1" ' + DR.dataSlot +
                     ' title="Change instructor(s) for this class band">' + esc(seat.staffName) + '</button>')
-                  : '<span class="muted">—</span>';
+                  : '<span class="muted c4k-svc-seat-closed" title="No instructor on this seat">CLOSED</span>';
                 var paxHtml;
                 if(DR.allClosed || seat.closed){
-                  paxHtml = '<span class="muted">Closed</span>';
+                  paxHtml = '<span class="muted c4k-svc-seat-closed" title="Roster line closed — no bookings on this instructor slot">CLOSED</span>';
                 }else if(seat.open){
                   paxHtml = '<span class="chip chip--pend c4k-svc-pax-pill c4k-svc-pax-pill--open" title="Open seat — no participant / available">No participant</span>';
                 }else if(seat.paxName){
@@ -19187,7 +19192,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                     '<button type="button" class="chip chip--info c4k-svc-pax-pill" ' + pAttrs +
                     ' title="Open participant info (side panel)">' + esc(seat.paxName) + '</button>';
                 }else{
-                  paxHtml = '<span class="muted">—</span>';
+                  paxHtml = '<span class="muted c4k-svc-seat-closed" title="No participant on this seat">CLOSED</span>';
                 }
                 seatCells +=
                   '<td class="c4k-svc-slot-td c4k-svc-slot-td--seat">' +
