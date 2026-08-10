@@ -8462,6 +8462,11 @@
         var view = btn.getAttribute("data-pp-open");
         var section = sectionByView[view];
         closeHubMenuSheet();
+        /* Booking + invoices need fresh reenrolment / pay flags from the server. */
+        var refreshGeneral =
+          (view === "booking" || view === "invoices") &&
+          opts &&
+          typeof opts.loadSection === "function";
         if (
           section &&
           opts &&
@@ -8478,6 +8483,23 @@
             })
             .catch(function () {
               if (typeof opts.onSectionError === "function") opts.onSectionError(section);
+            })
+            .finally(function () {
+              btn.disabled = false;
+              btn.removeAttribute("aria-busy");
+            });
+          return;
+        }
+        if (refreshGeneral) {
+          btn.disabled = true;
+          btn.setAttribute("aria-busy", "true");
+          void opts
+            .loadSection("general", true)
+            .then(function (fresh) {
+              openSubview(host, fresh || data, opts, view);
+            })
+            .catch(function () {
+              openSubview(host, data, opts, view);
             })
             .finally(function () {
               btn.disabled = false;

@@ -173,8 +173,8 @@
       isSectionLoaded: function (section) {
         return !!state.participant.loaded[section];
       },
-      loadSection: function (section) {
-        if (state.participant.loaded[section]) {
+      loadSection: function (section, force) {
+        if (!force && state.participant.loaded[section]) {
           return Promise.resolve(state.participant.data);
         }
         return fetchParticipantSections(contactId, [section]).then(function (patch) {
