@@ -219,8 +219,8 @@
     <h1 data-i18n="title">Roberto Reali - liquidacion</h1>
     <p class="sub" data-i18n-html="subtitle">
       Resumen corto | ene -&gt; 17 jul 2026 + liquidacion |
-      actualizado 29 jul 2026 |
-      overclaim £588 @ £24 | de menos 21h (dentro del paquete £26k / 32h) |
+      actualizado 30 jul 2026 |
+      overclaim £588 @ £24 | de menos 14.5h (dentro del paquete £26k / 32h) |
       extras 17-31 DC@£18 + Acton@£24 |
       a pagar <strong>£4,447.34</strong>
     </p>
@@ -266,6 +266,7 @@
         Paquete: <strong>32 h/sem</strong> (no-HT).
         De mas = max(0, h-32).
         De menos = max(0, 32-h) solo no-HT; HT: de menos = 0.
+        Ultima semana de termino (sin domingo): cuenta 32.
         Las horas de menos solo se registran en la tabla (dentro del paquete salarial £26k / 32h).
         Fuentes: ene-mar admin (Sab 2h); abr timesheet; may estimacion; jun-jul MADRE.
       </p>
@@ -303,7 +304,7 @@
             <tr class="surplus"><td>2026-04-27</td><td class="num">33.0</td><td class="num plus">1.0</td><td class="num minus">0</td><td>N</td><td class="src" data-i18n="src_apr27">TS patron | Vie 2h</td></tr>
             <tr class="short month-gap"><td>2026-05-04</td><td class="num">26.0</td><td class="num plus">0</td><td class="num minus">6.0</td><td>N</td><td class="src" data-i18n="src_may04">est. | BH Lun 4 May | Adam Vie</td></tr>
             <tr class="short"><td>2026-05-11</td><td class="num">31.5</td><td class="num plus">0</td><td class="num minus">0.5</td><td>N</td><td class="src" data-i18n="src_may11">est. + Q6 | Amaar</td></tr>
-            <tr class="short"><td>2026-05-18</td><td class="num">25.5</td><td class="num plus">0</td><td class="num minus">6.5</td><td>N</td><td class="src" data-i18n="src_may18">est. | Dom 24 May inicio HT</td></tr>
+            <tr><td>2026-05-18</td><td class="num">25.5</td><td class="num plus">0</td><td class="num minus">0</td><td>N</td><td class="src" data-i18n="src_may18">est. | ultima sem termino (sin Dom) = cuenta 32</td></tr>
             <tr class="ht"><td>2026-05-25</td><td class="num">HT</td><td class="num">0</td><td class="num">0</td><td>Y</td><td class="src" data-i18n="src_may_ht">May HT club 23-31</td></tr>
             <tr class="short month-gap"><td>2026-06-01</td><td class="num">31.0</td><td class="num plus">0</td><td class="num minus">1.0</td><td>N</td><td class="src" data-i18n="src_madre_sun">MADRE | Dom 6.5</td></tr>
             <tr class="short"><td>2026-06-08</td><td class="num">30.5</td><td class="num plus">0</td><td class="num minus">1.5</td><td>N</td><td class="src" data-i18n="src_madre_sun">MADRE | Dom 6.5</td></tr>
@@ -316,9 +317,9 @@
               <td data-i18n="total_non_ht">TOTAL (no-HT)</td>
               <td class="num">-</td>
               <td class="num">6.0</td>
-              <td class="num">21.0</td>
+              <td class="num">14.5</td>
               <td></td>
-              <td class="src" data-i18n="src_week_total">de mas abr 6h | de menos may~13 + jun 7.5 + jul 0.5 (solo horas)</td>
+              <td class="src" data-i18n="src_week_total">de mas abr 6h | de menos may 6.5 + jun 7.5 + jul 0.5 (solo horas; May 18 = 0 ultima sem)</td>
             </tr>
           </tbody>
         </table>
@@ -380,9 +381,9 @@
               <td class="num">£2,166.67</td>
               <td class="num">£0</td>
               <td class="num">0</td>
-              <td class="num">13.0</td>
+              <td class="num">6.5</td>
               <td class="num">£0</td>
-              <td class="src" data-i18n="note_may">est. (sin MADRE) | May HT</td>
+              <td class="src" data-i18n="note_may">est. | May 4 = 6h | May 18 ultima sem = 0 | HT</td>
             </tr>
             <tr>
               <td data-i18n="m_jun">Jun 2026</td>
@@ -407,9 +408,9 @@
               <td class="num">£13,742.02</td>
               <td class="num">£742</td>
               <td class="num">6.0</td>
-              <td class="num">21.0</td>
+              <td class="num">14.5</td>
               <td class="num">£588</td>
-              <td class="src" data-i18n="note_month_total">bruto ene-jun | overclaim 144+36+408</td>
+              <td class="src" data-i18n="note_month_total">bruto ene-jun | overclaim 144+36+408 | May 18 no cuenta de menos</td>
             </tr>
           </tbody>
         </table>
@@ -458,7 +459,7 @@
       <div class="box ok" style="margin-top:10px;" data-i18n-html="quick_read">
         <strong>Lectura rapida:</strong>
         De mas real = <strong>6.0 h (solo abr)</strong>.
-        De menos no-HT = <strong>21.0 h</strong> (solo horas; dentro del paquete £26k / 32h).
+        De menos no-HT = <strong>14.5 h</strong> (solo horas; dentro del paquete £26k / 32h; May 18 ultima sem = cuenta 32).
         Overclaim EXTRA nomina = <strong>£588</strong> (= 24.5h @ £24).
         Extras 17-31 = <strong>£702</strong> (DC@£18 + Acton@£24).
         extras_net = £702 - £588 = <strong>£114</strong>.
@@ -482,7 +483,7 @@
         </li>
         <li data-i18n-html="rule_2">
           <strong>2. De menos (solo horas):</strong>
-          21h de menos aparecen en la tabla semanal como horas.
+          14.5h de menos aparecen en la tabla semanal como horas.
           Van dentro del paquete salarial <strong>£26k / 32h</strong> - no es una linea de descuento en efectivo aparte.
         </li>
         <li data-i18n-html="rule_3">
@@ -510,7 +511,7 @@
 
     <p class="foot" data-i18n="foot">
       Fuentes: nominas | FIXED_MONTHLY 2166.67 | MADRE roster_term_master |
-      de mas abr 6h | de menos 21h (solo horas, dentro de £26k/32h) |
+      de mas abr 6h | de menos 14.5h (solo horas, dentro de £26k/32h) |
       overclaim £588 (24.5h @ £24) |
       desde 17 jul DC@£18 + Acton@£24 = £702 |
       extras_net £114 | liquidacion £4,447.34.
@@ -524,14 +525,14 @@
         en: {
           doc_title: "Roberto Reali | settlement briefing",
           title: "Roberto Reali - settlement",
-          subtitle: "Short briefing | Jan -&gt; 17 Jul 2026 + settlement | updated 29 Jul 2026 | overclaim £588 @ £24 | shortfall 21h (inside £26k / 32h package) | extras 17-31 DC@£18 + Acton@£24 | owed <strong>£4,447.34</strong>",
+          subtitle: "Short briefing | Jan -&gt; 17 Jul 2026 + settlement | updated 30 Jul 2026 | overclaim £588 @ £24 | shortfall 14.5h (inside £26k / 32h package) | extras 17-31 DC@£18 + Acton@£24 | owed <strong>£4,447.34</strong>",
           stat_overclaim: "Overclaim 24.5h @ £24",
           stat_extras_net: "Extras net (£702 - £588)",
           stat_settlement: "Settlement",
           contract: "Contract: Sep 2025 £19k/yr (~24 h/wk) -&gt; Jan 2026 <strong>£26,000/yr</strong> (£2,166.67/mo) and <strong>32 h/wk</strong>. Pro-rata 12 months -&gt; <strong>August YES</strong>. Shortfall hours sit inside this package (not priced separately).",
           may_ts_note: "<strong>May TS £445.50 (photo 30 Jul):</strong> 18h SI2 @ £24 + 1h Training @ £13.50. Pattern: Mon 0.5 = Amaar 17:30-18; Wed 2h = Acton swim (afternoon package); Fri 2h = Adam Pilcher (Fri 2h from Apr). Almost all = 32h package hours claimed as EXTRA - not real Q6 (Q6 = Wed 11-12 ×1h, not on this TS). BH Mon 4 May 0.5 = odd (holiday; week already 6h short). May payslip £0 extras; June paid 17h @ £24 = £408 (nearly this TS minus 4×0.5 Mon, training 0.5@24, + Swim Farm 21/6 0.5). June portal mislabeled Wed=Q6 and Fri=Acton.",
           master_title: "MASTER TABLE - hours (Jan -&gt; 17 Jul)",
-          master_legend: "Package: <strong>32 h/wk</strong> (non-HT). Surplus = max(0, h-32). Shortfall = max(0, 32-h) non-HT only; HT: shortfall = 0. Shortfall hours are tracked in the table only (inside the £26k / 32h salary package). Sources: Jan-Mar admin (Sat 2h); Apr timesheet; May estimate; Jun-Jul MADRE.",
+          master_legend: "Package: <strong>32 h/wk</strong> (non-HT). Surplus = max(0, h-32). Shortfall = max(0, 32-h) non-HT only; HT: shortfall = 0. Last week of each term (no Sunday): count as 32 — missing Sunday is not shortfall. Shortfall hours are tracked in the table only (inside the £26k / 32h salary package). Sources: Jan-Mar admin (Sat 2h); Apr timesheet; May estimate; Jun-Jul MADRE.",
           section_a: "A. Week by week",
           th_week: "Week (Mon)",
           th_hours: "Hours",
@@ -547,13 +548,13 @@
           src_apr27: "TS pattern | Fri 2h",
           src_may04: "est. | BH Mon 4 May | Adam Fri",
           src_may11: "est. + Q6 | Amaar",
-          src_may18: "est. | Sun 24 May HT start",
+          src_may18: "est. | last term week (no Sun) = count 32",
           src_may_ht: "May HT club 23-31",
           src_madre_sun: "MADRE | Sun 6.5",
           src_jun29: "MADRE | Wed 1 Jul only 2h",
           src_jul13: "MADRE | contract 13-17 | no Sunday; fixed OK",
           total_non_ht: "TOTAL (non-HT)",
-          src_week_total: "surplus Apr 6h | shortfall May~13 + Jun 7.5 + Jul 0.5 (hours only)",
+          src_week_total: "surplus Apr 6h | shortfall May 6.5 + Jun 7.5 + Jul 0.5 (hours only; May 18 = 0 last week)",
           section_b: "B. Monthly summary",
           th_month: "Month",
           th_gross: "Gross payslip",
@@ -573,11 +574,11 @@
           note_feb: "Tinashe OK | 1 wk HT",
           note_mar: "Saturdays as EXTRA; fire/Thu OK",
           note_apr: "surplus 3.5+1.5+1; Easter HT",
-          note_may: "est. (no MADRE) | May HT",
+          note_may: "est. | May 4 = 6h | May 18 last week = 0 | HT",
           note_jun: "MADRE &lt;=32 | 17h@£24 UI",
           note_jul: "MADRE | 0.5 (wk 6); wk 13 no Sun = OK",
           total: "TOTAL",
-          note_month_total: "gross Jan-Jun | overclaim 144+36+408",
+          note_month_total: "gross Jan-Jun | overclaim 144+36+408 | May 18 not shortfall",
           section_c: "C. July 17-31 MADRE (day by day) - DC @ £18 | Acton @ £24",
           th_date: "Date",
           th_day: "Day",
@@ -592,28 +593,28 @@
           note_no_slots: "no slots",
           total_17_31: "TOTAL 17-31",
           note_madre_span: "MADRE span hours",
-          quick_read: "<strong>Quick read:</strong> Real surplus = <strong>6.0 h (Apr only)</strong>. Shortfall non-HT = <strong>21.0 h</strong> (hours only; inside £26k / 32h package). Overclaim EXTRA payslip = <strong>£588</strong> (= 24.5h @ £24). Extras 17-31 = <strong>£702</strong> (DC@£18 + Acton@£24). extras_net = £702 - £588 = <strong>£114</strong>.",
+          quick_read: "<strong>Quick read:</strong> Real surplus = <strong>6.0 h (Apr only)</strong>. Shortfall non-HT = <strong>14.5 h</strong> (hours only; inside £26k / 32h package; May 18 last week counts as 32). Overclaim EXTRA payslip = <strong>£588</strong> (= 24.5h @ £24). Extras 17-31 = <strong>£702</strong> (DC@£18 + Acton@£24). extras_net = £702 - £588 = <strong>£114</strong>.",
           print_hint: "Print: Cmd+P - short document through the orange box.",
           settlement_rules_title: "Settlement rules",
           key_rule: "<strong>KEY RULE:</strong> In weeks with a <strong>shortfall</strong> (hours under the 32h package), EXTRA / surplus hours <strong>cannot</strong> be claimed.",
           rule_1: "<strong>1. Overclaim @ £24:</strong> £588 = 24.5h x £24 (EXTRA claimed when not allowed).",
-          rule_2: "<strong>2. Shortfall (hours only):</strong> 21h shortfall appears in the weekly table as hours. It belongs inside the <strong>£26k / 32h</strong> salary package - not a separate cash discount line.",
+          rule_2: "<strong>2. Shortfall (hours only):</strong> 14.5h shortfall appears in the weekly table as hours. It belongs inside the <strong>£26k / 32h</strong> salary package - not a separate cash discount line.",
           rule_3: "<strong>3. From 17 July:</strong> Day Centre @ <strong>£18/h</strong> | swimming Acton @ <strong>£24/h</strong> (MADRE 17-31: DC 31h = £558 + Acton 6h = £144 -&gt; <strong>£702</strong>).",
           rule_4: "<strong>4. Formula:</strong><br />Jul + Aug fixed = £2,166.67 + £2,166.67 = <strong>£4,333.34</strong><br />extras_net = (DC_h x 18 + Acton_h x 24) - (overclaim_h x 24)<br />= £702 - £588 = <strong>£114</strong><br />total = Jul fixed + Aug fixed + extras_net = £4,333.34 + £114 = <strong>£4,447.34</strong>",
           settlement_box: "<strong>Settlement</strong><br />Jul fixed £2,166.67 + Aug fixed £2,166.67 + extras_net £114 = <strong>£4,447.34</strong> owed.<br />Formula: £4,333.34 + (£702 - £588) = <strong>£4,447.34</strong>",
-          foot: "Sources: payslips | FIXED_MONTHLY 2166.67 | MADRE roster_term_master | surplus Apr 6h | shortfall 21h (hours only, inside £26k/32h) | overclaim £588 (24.5h @ £24) | from 17 Jul DC@£18 + Acton@£24 = £702 | extras_net £114 | settlement £4,447.34. Short document; not a payslip."
+          foot: "Sources: payslips | FIXED_MONTHLY 2166.67 | MADRE roster_term_master | surplus Apr 6h | shortfall 14.5h (hours only, inside £26k/32h) | overclaim £588 (24.5h @ £24) | from 17 Jul DC@£18 + Acton@£24 = £702 | extras_net £114 | settlement £4,447.34. Short document; not a payslip."
         },
         es: {
           doc_title: "Roberto Reali | liquidacion",
           title: "Roberto Reali - liquidacion",
-          subtitle: "Resumen corto | ene -&gt; 17 jul 2026 + liquidacion | actualizado 29 jul 2026 | overclaim £588 @ £24 | de menos 21h (dentro del paquete £26k / 32h) | extras 17-31 DC@£18 + Acton@£24 | a pagar <strong>£4,447.34</strong>",
+          subtitle: "Resumen corto | ene -&gt; 17 jul 2026 + liquidacion | actualizado 30 jul 2026 | overclaim £588 @ £24 | de menos 14.5h (dentro del paquete £26k / 32h) | extras 17-31 DC@£18 + Acton@£24 | a pagar <strong>£4,447.34</strong>",
           stat_overclaim: "Overclaim 24.5h @ £24",
           stat_extras_net: "Extras netos (£702 - £588)",
           stat_settlement: "Liquidacion",
           contract: "Contrato: sep 2025 £19k/ano (~24 h/sem) -&gt; ene 2026 <strong>£26,000/ano</strong> (£2,166.67/mes) y <strong>32 h/sem</strong>. Pro-rata 12 meses -&gt; <strong>Agosto SI</strong>. Las horas de menos van dentro de este paquete (no se cotizan aparte).",
           may_ts_note: "<strong>May TS £445.50 (foto 30 jul):</strong> 18h SI2 @ £24 + 1h Training @ £13.50. Patron: Lun 0.5 = Amaar 17:30-18; Mie 2h = Acton swim (tarde paquete); Vie 2h = Adam Pilcher (vie 2h desde abr). Casi todo = horas del paquete 32h reclamadas como EXTRA - no Q6 real (Q6 = Mie 11-12 ×1h, no esta en este TS). BH Lun 4 May 0.5 = raro (festivo; semana ya de menos 6h). Mayo payslip £0 extras; junio pago 17h @ £24 = £408 (= este TS casi entero sin los 4×0.5 Lun, training 0.5@24, + Swim Farm 21/6 0.5). Portal junio etiqueto mal Mie=Q6 y Vie=Acton.",
           master_title: "TABLA MAESTRA - horas (ene -&gt; 17 jul)",
-          master_legend: "Paquete: <strong>32 h/sem</strong> (no-HT). De mas = max(0, h-32). De menos = max(0, 32-h) solo no-HT; HT: de menos = 0. Las horas de menos solo se registran en la tabla (dentro del paquete salarial £26k / 32h). Fuentes: ene-mar admin (Sab 2h); abr timesheet; may estimacion; jun-jul MADRE.",
+          master_legend: "Paquete: <strong>32 h/sem</strong> (no-HT). De mas = max(0, h-32). De menos = max(0, 32-h) solo no-HT; HT: de menos = 0. Ultima semana de cada termino (sin domingo): cuenta 32 — el domingo que falta no es de menos. Las horas de menos solo se registran en la tabla (dentro del paquete salarial £26k / 32h). Fuentes: ene-mar admin (Sab 2h); abr timesheet; may estimacion; jun-jul MADRE.",
           section_a: "A. Semana a semana",
           th_week: "Semana (lun)",
           th_hours: "Horas",
@@ -629,13 +630,13 @@
           src_apr27: "TS patron | Vie 2h",
           src_may04: "est. | BH Lun 4 May | Adam Vie",
           src_may11: "est. + Q6 | Amaar",
-          src_may18: "est. | Dom 24 May inicio HT",
+          src_may18: "est. | ultima sem termino (sin Dom) = cuenta 32",
           src_may_ht: "May HT club 23-31",
           src_madre_sun: "MADRE | Dom 6.5",
           src_jun29: "MADRE | Mie 1 Jul solo 2h",
           src_jul13: "MADRE | contrato 13-17 | sin domingo; fijo OK",
           total_non_ht: "TOTAL (no-HT)",
-          src_week_total: "de mas abr 6h | de menos may~13 + jun 7.5 + jul 0.5 (solo horas)",
+          src_week_total: "de mas abr 6h | de menos may 6.5 + jun 7.5 + jul 0.5 (solo horas; May 18 = 0 ultima sem)",
           section_b: "B. Resumen mensual",
           th_month: "Mes",
           th_gross: "Nomina bruta",
@@ -655,11 +656,11 @@
           note_feb: "Tinashe OK | 1 sem HT",
           note_mar: "Sabados como EXTRA; fire/Jue OK",
           note_apr: "de mas 3.5+1.5+1; Pascua HT",
-          note_may: "est. (sin MADRE) | May HT",
+          note_may: "est. | May 4 = 6h | May 18 ultima sem = 0 | HT",
           note_jun: "MADRE &lt;=32 | 17h@£24 UI",
           note_jul: "MADRE | 0.5 (sem 6); sem 13 sin Dom = OK",
           total: "TOTAL",
-          note_month_total: "bruto ene-jun | overclaim 144+36+408",
+          note_month_total: "bruto ene-jun | overclaim 144+36+408 | May 18 no cuenta de menos",
           section_c: "C. Julio 17-31 MADRE (dia a dia) - DC @ £18 | Acton @ £24",
           th_date: "Fecha",
           th_day: "Dia",
@@ -674,28 +675,28 @@
           note_no_slots: "sin slots",
           total_17_31: "TOTAL 17-31",
           note_madre_span: "Horas MADRE del periodo",
-          quick_read: "<strong>Lectura rapida:</strong> De mas real = <strong>6.0 h (solo abr)</strong>. De menos no-HT = <strong>21.0 h</strong> (solo horas; dentro del paquete £26k / 32h). Overclaim EXTRA nomina = <strong>£588</strong> (= 24.5h @ £24). Extras 17-31 = <strong>£702</strong> (DC@£18 + Acton@£24). extras_net = £702 - £588 = <strong>£114</strong>.",
+          quick_read: "<strong>Lectura rapida:</strong> De mas real = <strong>6.0 h (solo abr)</strong>. De menos no-HT = <strong>14.5 h</strong> (solo horas; dentro del paquete £26k / 32h; May 18 ultima sem = cuenta 32). Overclaim EXTRA nomina = <strong>£588</strong> (= 24.5h @ £24). Extras 17-31 = <strong>£702</strong> (DC@£18 + Acton@£24). extras_net = £702 - £588 = <strong>£114</strong>.",
           print_hint: "Imprimir: Cmd+P - documento corto hasta la caja naranja.",
           settlement_rules_title: "Reglas de liquidacion",
           key_rule: "<strong>REGLA CLAVE:</strong> En las semanas con <strong>horas de menos</strong> NO puede reclamar <strong>horas de mas / EXTRA</strong>.",
           rule_1: "<strong>1. Overclaim @ £24:</strong> £588 = 24.5h x £24 (EXTRA reclamado cuando no procedia).",
-          rule_2: "<strong>2. De menos (solo horas):</strong> 21h de menos aparecen en la tabla semanal como horas. Van dentro del paquete salarial <strong>£26k / 32h</strong> - no es una linea de descuento en efectivo aparte.",
+          rule_2: "<strong>2. De menos (solo horas):</strong> 14.5h de menos aparecen en la tabla semanal como horas. Van dentro del paquete salarial <strong>£26k / 32h</strong> - no es una linea de descuento en efectivo aparte.",
           rule_3: "<strong>3. Desde el 17 de julio:</strong> Day Centre @ <strong>£18/h</strong> | natacion Acton @ <strong>£24/h</strong> (MADRE 17-31: DC 31h = £558 + Acton 6h = £144 -&gt; <strong>£702</strong>).",
           rule_4: "<strong>4. Formula:</strong><br />Jul + Ago fijo = £2,166.67 + £2,166.67 = <strong>£4,333.34</strong><br />extras_net = (DC_h x 18 + Acton_h x 24) - (overclaim_h x 24)<br />= £702 - £588 = <strong>£114</strong><br />total = Jul fijo + Ago fijo + extras_net = £4,333.34 + £114 = <strong>£4,447.34</strong>",
           settlement_box: "<strong>Liquidacion</strong><br />Jul fijo £2,166.67 + Ago fijo £2,166.67 + extras_net £114 = <strong>£4,447.34</strong> a pagar.<br />Formula: £4,333.34 + (£702 - £588) = <strong>£4,447.34</strong>",
-          foot: "Fuentes: nominas | FIXED_MONTHLY 2166.67 | MADRE roster_term_master | de mas abr 6h | de menos 21h (solo horas, dentro de £26k/32h) | overclaim £588 (24.5h @ £24) | desde 17 jul DC@£18 + Acton@£24 = £702 | extras_net £114 | liquidacion £4,447.34. Documento corto; no es una nomina."
+          foot: "Fuentes: nominas | FIXED_MONTHLY 2166.67 | MADRE roster_term_master | de mas abr 6h | de menos 14.5h (solo horas, dentro de £26k/32h) | overclaim £588 (24.5h @ £24) | desde 17 jul DC@£18 + Acton@£24 = £702 | extras_net £114 | liquidacion £4,447.34. Documento corto; no es una nomina."
         },
         it: {
           doc_title: "Roberto Reali | liquidazione",
           title: "Roberto Reali - liquidazione",
-          subtitle: "Briefing breve | gen -&gt; 17 lug 2026 + liquidazione | aggiornato 29 lug 2026 | overclaim £588 @ £24 | ore in meno 21h (nel pacchetto £26k / 32h) | extras 17-31 DC@£18 + Acton@£24 | dovuti <strong>£4,447.34</strong>",
+          subtitle: "Briefing breve | gen -&gt; 17 lug 2026 + liquidazione | aggiornato 30 lug 2026 | overclaim £588 @ £24 | ore in meno 14.5h (nel pacchetto £26k / 32h) | extras 17-31 DC@£18 + Acton@£24 | dovuti <strong>£4,447.34</strong>",
           stat_overclaim: "Overclaim 24.5h @ £24",
           stat_extras_net: "Extras netti (£702 - £588)",
           stat_settlement: "Liquidazione",
           contract: "Contratto: set 2025 £19k/anno (~24 h/sett) -&gt; gen 2026 <strong>£26,000/anno</strong> (£2,166.67/mese) e <strong>32 h/sett</strong>. Pro-rata 12 mesi -&gt; <strong>Agosto SI</strong>. Le ore in meno rientrano in questo pacchetto (non tariffe a parte).",
           may_ts_note: "<strong>May TS £445.50 (foto 30 lug):</strong> 18h SI2 @ £24 + 1h Training @ £13.50. Schema: Lun 0.5 = Amaar 17:30-18; Mer 2h = Acton swim (pomeriggio pacchetto); Ven 2h = Adam Pilcher (ven 2h da apr). Quasi tutto = ore del pacchetto 32h reclamate come EXTRA - non Q6 reale (Q6 = Mer 11-12 ×1h, non su questo TS). BH Lun 4 May 0.5 = strano (festivo; settimana gia 6h in meno). Maggio payslip £0 extras; giugno ha pagato 17h @ £24 = £408 (quasi questo TS senza i 4×0.5 Lun, training 0.5@24, + Swim Farm 21/6 0.5). Portale giugno ha etichettato male Mer=Q6 e Ven=Acton.",
           master_title: "TABELLA MAESTRA - ore (gen -&gt; 17 lug)",
-          master_legend: "Pacchetto: <strong>32 h/sett</strong> (non-HT). In piu = max(0, h-32). In meno = max(0, 32-h) solo non-HT; HT: in meno = 0. Le ore in meno sono solo nella tabella (nel pacchetto salariale £26k / 32h). Fonti: gen-mar admin (Sab 2h); apr timesheet; mag stima; giu-lug MADRE.",
+          master_legend: "Pacchetto: <strong>32 h/sett</strong> (non-HT). In piu = max(0, h-32). In meno = max(0, 32-h) solo non-HT; HT: in meno = 0. Ultima settimana di ogni termine (senza domenica): conta 32 — la domenica mancante non e in meno. Le ore in meno sono solo nella tabella (nel pacchetto salariale £26k / 32h). Fonti: gen-mar admin (Sab 2h); apr timesheet; mag stima; giu-lug MADRE.",
           section_a: "A. Settimana per settimana",
           th_week: "Settimana (lun)",
           th_hours: "Ore",
@@ -711,13 +712,13 @@
           src_apr27: "TS schema | Ven 2h",
           src_may04: "stima | BH Lun 4 May | Adam Ven",
           src_may11: "stima + Q6 | Amaar",
-          src_may18: "stima | Dom 24 May inizio HT",
+          src_may18: "stima | ultima sett termine (senza Dom) = conta 32",
           src_may_ht: "Mag HT club 23-31",
           src_madre_sun: "MADRE | Dom 6.5",
           src_jun29: "MADRE | Mer 1 Lug solo 2h",
           src_jul13: "MADRE | contratto 13-17 | senza domenica; fisso OK",
           total_non_ht: "TOTALE (non-HT)",
-          src_week_total: "in piu apr 6h | in meno mag~13 + giu 7.5 + lug 0.5 (solo ore)",
+          src_week_total: "in piu apr 6h | in meno mag 6.5 + giu 7.5 + lug 0.5 (solo ore; May 18 = 0 ultima sett)",
           section_b: "B. Riepilogo mensile",
           th_month: "Mese",
           th_gross: "Busta paga lorda",
@@ -737,11 +738,11 @@
           note_feb: "Tinashe OK | 1 sett HT",
           note_mar: "Sabati come EXTRA; fire/Gio OK",
           note_apr: "in piu 3.5+1.5+1; Pasqua HT",
-          note_may: "stima (senza MADRE) | Mag HT",
+          note_may: "stima | May 4 = 6h | May 18 ultima sett = 0 | HT",
           note_jun: "MADRE &lt;=32 | 17h@£24 UI",
           note_jul: "MADRE | 0.5 (sett 6); sett 13 senza Dom = OK",
           total: "TOTALE",
-          note_month_total: "lordo gen-giu | overclaim 144+36+408",
+          note_month_total: "lordo gen-giu | overclaim 144+36+408 | May 18 non conta in meno",
           section_c: "C. Luglio 17-31 MADRE (giorno per giorno) - DC @ £18 | Acton @ £24",
           th_date: "Data",
           th_day: "Giorno",
@@ -756,16 +757,16 @@
           note_no_slots: "nessuno slot",
           total_17_31: "TOTALE 17-31",
           note_madre_span: "Ore MADRE del periodo",
-          quick_read: "<strong>Lettura rapida:</strong> In piu reale = <strong>6.0 h (solo apr)</strong>. In meno non-HT = <strong>21.0 h</strong> (solo ore; nel pacchetto £26k / 32h). Overclaim EXTRA busta = <strong>£588</strong> (= 24.5h @ £24). Extras 17-31 = <strong>£702</strong> (DC@£18 + Acton@£24). extras_net = £702 - £588 = <strong>£114</strong>.",
+          quick_read: "<strong>Lettura rapida:</strong> In piu reale = <strong>6.0 h (solo apr)</strong>. In meno non-HT = <strong>14.5 h</strong> (solo ore; nel pacchetto £26k / 32h; May 18 ultima sett = conta 32). Overclaim EXTRA busta = <strong>£588</strong> (= 24.5h @ £24). Extras 17-31 = <strong>£702</strong> (DC@£18 + Acton@£24). extras_net = £702 - £588 = <strong>£114</strong>.",
           print_hint: "Stampa: Cmd+P - documento breve fino al riquadro arancione.",
           settlement_rules_title: "Regole di liquidazione",
           key_rule: "<strong>REGOLA CHIAVE:</strong> Nelle settimane con <strong>ore in meno</strong> NON si possono reclamare <strong>ore in piu / EXTRA</strong>.",
           rule_1: "<strong>1. Overclaim @ £24:</strong> £588 = 24.5h x £24 (EXTRA reclamato quando non consentito).",
-          rule_2: "<strong>2. Ore in meno (solo ore):</strong> 21h in meno compaiono nella tabella settimanale come ore. Rientrano nel pacchetto salariale <strong>£26k / 32h</strong> - non una riga di sconto in denaro a parte.",
+          rule_2: "<strong>2. Ore in meno (solo ore):</strong> 14.5h in meno compaiono nella tabella settimanale come ore. Rientrano nel pacchetto salariale <strong>£26k / 32h</strong> - non una riga di sconto in denaro a parte.",
           rule_3: "<strong>3. Dal 17 luglio:</strong> Day Centre @ <strong>£18/h</strong> | nuoto Acton @ <strong>£24/h</strong> (MADRE 17-31: DC 31h = £558 + Acton 6h = £144 -&gt; <strong>£702</strong>).",
           rule_4: "<strong>4. Formula:</strong><br />Lug + Ago fisso = £2,166.67 + £2,166.67 = <strong>£4,333.34</strong><br />extras_net = (DC_h x 18 + Acton_h x 24) - (overclaim_h x 24)<br />= £702 - £588 = <strong>£114</strong><br />totale = Lug fisso + Ago fisso + extras_net = £4,333.34 + £114 = <strong>£4,447.34</strong>",
           settlement_box: "<strong>Liquidazione</strong><br />Lug fisso £2,166.67 + Ago fisso £2,166.67 + extras_net £114 = <strong>£4,447.34</strong> dovuti.<br />Formula: £4,333.34 + (£702 - £588) = <strong>£4,447.34</strong>",
-          foot: "Fonti: buste paga | FIXED_MONTHLY 2166.67 | MADRE roster_term_master | in piu apr 6h | in meno 21h (solo ore, nel £26k/32h) | overclaim £588 (24.5h @ £24) | dal 17 lug DC@£18 + Acton@£24 = £702 | extras_net £114 | liquidazione £4,447.34. Documento breve; non e una busta paga."
+          foot: "Fonti: buste paga | FIXED_MONTHLY 2166.67 | MADRE roster_term_master | in piu apr 6h | in meno 14.5h (solo ore, nel £26k/32h) | overclaim £588 (24.5h @ £24) | dal 17 lug DC@£18 + Acton@£24 = £702 | extras_net £114 | liquidazione £4,447.34. Documento breve; non e una busta paga."
         }
       };
 

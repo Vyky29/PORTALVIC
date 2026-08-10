@@ -30,14 +30,14 @@ const FILES = [
   },
   {
     src: "/Users/victor/Downloads/attachment 3.pdf",
-    title: "Payment receipt 3",
-    filename: "Serine_payment_receipt_3.pdf",
+    title: "Refund 1",
+    filename: "Serine_refund_1.pdf",
     sort: 3,
   },
   {
     src: "/Users/victor/Downloads/attachment 4.pdf",
-    title: "Payment receipt 4",
-    filename: "Serine_payment_receipt_4.pdf",
+    title: "Refund 2",
+    filename: "Serine_refund_2.pdf",
     sort: 4,
   },
 ];

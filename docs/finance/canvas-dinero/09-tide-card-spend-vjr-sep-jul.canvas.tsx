@@ -1,0 +1,1 @@
+/Users/victor/.cursor/projects/Users-victor-cursor-PORTALVIC/canvases/tide-card-spend-vjr-sep-jul.canvas.tsx

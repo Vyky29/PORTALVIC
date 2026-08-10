@@ -1,0 +1,1 @@
+/Users/victor/.cursor/projects/Users-victor-cursor-PORTALVIC/canvases/tide-income-spend-jul22-sep24.canvas.tsx

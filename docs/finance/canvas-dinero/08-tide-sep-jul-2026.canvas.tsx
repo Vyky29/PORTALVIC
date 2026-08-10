@@ -1,0 +1,1 @@
+/Users/victor/.cursor/projects/Users-victor-cursor-PORTALVIC/canvases/tide-sep-jul-2026.canvas.tsx

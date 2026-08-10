@@ -1,0 +1,1 @@
+/Users/victor/.cursor/projects/Users-victor-cursor-PORTALVIC/canvases/beneficio-servicios-2025-26.canvas.tsx

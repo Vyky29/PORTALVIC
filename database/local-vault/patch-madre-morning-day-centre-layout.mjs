@@ -3,9 +3,9 @@
  *
  * Roberto: NO ACAT · Fadi 12.30–3 special (12.30–1 pool/DC + 1–3 Day Centre).
  *          No Zakariya midweek (crash week Zak is Alex climb + SwimFarm special).
- * Youssef: Emanuel 11–2 special (with swimming) · Fadi 2–3
+ * Youssef: Emanuel 11–2 special (with swimming) · Fadi 2–3 — Mon/Wed/Fri only
  * Michelle / Lulia: Ikram 11–4
- * Victor: Timi 11–1 · Fadi 1–2 · Emanuel 2–4
+ * Victor: Timi 11–1 · Fadi 1–2 · Emanuel 2–4 — Mon/Wed/Fri only (Emanuel is never Tue/Thu)
  *
  * Applies to MADRE weeks from 2026-07-13 through 2026-07-31 (incl. crash).
  *
@@ -163,10 +163,10 @@ for (const week of weeks) {
       }
     }
 
-    // --- Youssef ---
+    // --- Youssef (Emanuel is Mon/Wed/Fri only — never Tue/Thu) ---
     {
       const st = findStaff(week, "youssef");
-      if (st) {
+      if (st && (wd === 1 || wd === 3 || wd === 5)) {
         const d = ensureDay(st, iso, dayName);
         const afternoon = (d.slots || []).filter((s) => keepAfternoon(s) && !isMorningDcClient(s.client_name));
         const morningKeep = (d.slots || []).filter(
@@ -251,10 +251,10 @@ for (const week of weeks) {
       }
     }
 
-    // --- Victor ---
+    // --- Victor (Emanuel Mon/Wed/Fri only) ---
     {
       const st = findStaff(week, "victor");
-      if (st) {
+      if (st && (wd === 1 || wd === 3 || wd === 5)) {
         const d = ensureDay(st, iso, dayName);
         const afternoon = (d.slots || []).filter(
           (s) => keepAfternoon(s) && !isMorningDcClient(s.client_name)
