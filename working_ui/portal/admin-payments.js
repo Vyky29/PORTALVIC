@@ -1180,6 +1180,9 @@
   function category(r) {
     var s = String(r.payment_status || "").toLowerCase();
     if (s.indexOf("re-enrol") >= 0 || s.indexOf("reenrol") >= 0) return "notreenrolled";
+    if (s.indexOf("partial") === 0 || s.indexOf("flexi") === 0 || s.indexOf("instalment") === 0) {
+      return "partial";
+    }
     if (s.indexOf("paid") === 0) return "paid"; // "Paid"
     return "outstanding"; // Outstanding / Not paid / Pending / blank
   }
@@ -1253,6 +1256,7 @@
       ".pay-chip--funded-nhs{background:#ecfeff;color:#0e7490;border-color:#a5f3fc}",
       ".pay-chip--out{background:#fef2f2;color:#b91c1c;border-color:#fecaca}",
       ".pay-chip--paid-ok{background:#ecfdf5;color:#047857;border-color:#a7f3d0}",
+      ".pay-chip--flexi{background:#fff7ed;color:#c2410c;border-color:#fdba74}",
       ".pay-chip--inv-parent-ex{background:#f0fdf4;color:#166534;border-color:#bbf7d0}",
       ".pay-chip--inv-parent-20{background:#fff7ed;color:#c2410c;border-color:#fed7aa}",
       ".pay-chip--inv-la{background:#faf5ff;color:#7c3aed;border-color:#e9d5ff}",
@@ -1305,6 +1309,7 @@
       ".pay-tbl .pay-pill{margin:0 auto;font-size:10px;padding:3px 8px}",
       ".pay-pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}",
       ".pay-pill--paid{background:#e7f6ee;color:#15803d}",
+      ".pay-pill--partial{background:#fff7ed;color:#c2410c}",
       ".pay-pill--out{background:#fef2f2;color:#b91c1c}",
       ".pay-pill--na{background:#eef2f7;color:#475569}",
       ".pay-empty{color:#64748b;padding:18px;text-align:center;font-size:14px}",
@@ -1383,10 +1388,20 @@
 
   function pillFor(r) {
     var c = category(r);
-    var cls = c === "paid" ? "pay-pill--paid" : (c === "notreenrolled" ? "pay-pill--na" : "pay-pill--out");
+    var cls =
+      c === "paid"
+        ? "pay-pill--paid"
+        : c === "partial"
+          ? "pay-pill--partial"
+          : c === "notreenrolled"
+            ? "pay-pill--na"
+            : "pay-pill--out";
     /* Compact table labels so Status column stays tiny. */
-    var label = c === "paid" ? "Paid" : (c === "notreenrolled" ? "N/A" : "Out");
-    var full = r.payment_status || (c === "paid" ? "Paid" : "Outstanding");
+    var label =
+      c === "paid" ? "Paid" : c === "partial" ? "Flexi" : c === "notreenrolled" ? "N/A" : "Out";
+    var full =
+      r.payment_status ||
+      (c === "paid" ? "Paid" : c === "partial" ? "Flexi instalment paid" : "Outstanding");
     var html = '<span class="pay-pill ' + cls + '" title="' + esc(full) + '">' + esc(label) + "</span>";
     /* Admin-only PDF for funder / crash INV-Ps (parent hub stays invoice-free). */
     if (r && r._pdfUrl) {
@@ -1453,7 +1468,7 @@
   function payStatusFilterForTerm(termId) {
     var map = state.payStatusByTerm || {};
     var v = map[termId] || "";
-    return v === "paid" || v === "outstanding" ? v : "";
+    return v === "paid" || v === "outstanding" || v === "partial" ? v : "";
   }
 
   function captureTermOpenState(root) {
@@ -2064,6 +2079,7 @@
       + '<div class="pay-chip-row">'
       + '<span class="pay-chip-row__lab">Status</span>'
       + filterChipBtn("paystatus", "paid", "Paid", statusCur === "paid", "pay-chip--paid-ok", termId)
+      + filterChipBtn("paystatus", "partial", "Flexi paid", statusCur === "partial", "pay-chip--flexi", termId)
       + filterChipBtn("paystatus", "outstanding", "Outstanding", statusCur === "outstanding", "pay-chip--out", termId)
       + "</div>"
       + '<div class="pay-chip-row" role="group" aria-label="Funding filter">'
@@ -2103,7 +2119,13 @@
   function applyPayStatusFilter(rows, termId) {
     var st = payStatusFilterForTerm(termId);
     if (!st) return rows || [];
-    return (rows || []).filter(function (r) { return category(r) === st; });
+    return (rows || []).filter(function (r) {
+      var c = category(r);
+      if (st === "paid") return c === "paid" || c === "partial";
+      if (st === "partial") return c === "partial";
+      if (st === "outstanding") return c === "outstanding";
+      return c === st;
+    });
   }
 
   function applyTermTableFilters(rows, termId) {
@@ -2466,16 +2488,28 @@
     };
     (rows || []).forEach(function (r) {
       var a = Number(r.amount) || 0;
+      var paidPart = Number(r._amountPaid);
+      if (!(paidPart > 0)) paidPart = 0;
+      var outPart = Number(r.amount_out);
+      if (!(outPart >= 0)) outPart = a;
       var c = category(r);
       if (c !== "notreenrolled") billed += a;
       if (c === "paid") { paid += a; paidN++; }
-      else if (c === "outstanding") { outstanding += a; outN++; }
+      else if (c === "partial") {
+        paid += paidPart > 0 ? paidPart : Math.max(0, a - outPart);
+        paidN++;
+        outstanding += outPart > 0 ? outPart : 0;
+      } else if (c === "outstanding") { outstanding += a; outN++; }
       else if (c === "notreenrolled") naN++;
       var key = fundGroupKey(r, streamKind);
       var g = grp[key];
       if (g && c !== "notreenrolled") {
         g.billed += a; g.n++;
-        if (c === "paid") g.paid += a; else g.out += a;
+        if (c === "paid") g.paid += a;
+        else if (c === "partial") {
+          g.paid += paidPart > 0 ? paidPart : Math.max(0, a - outPart);
+          g.out += outPart > 0 ? outPart : 0;
+        } else g.out += a;
       }
     });
     return { billed: billed, paid: paid, outstanding: outstanding, paidN: paidN, outN: outN, naN: naN, grp: grp };
@@ -2566,6 +2600,10 @@
     if (state.statusFilter === "all") return true;
     // "Active" = currently re-enrolled (everyone except the Not re-enrolled list).
     if (state.statusFilter === "active") return category(r) !== "notreenrolled";
+    if (state.statusFilter === "paid") {
+      var cPaid = category(r);
+      return cPaid === "paid" || cPaid === "partial";
+    }
     return category(r) === state.statusFilter;
   }
 
@@ -4002,6 +4040,7 @@
           orders: [],
           total: 0,
           anyOut: false,
+          anyPartial: false,
         };
         order.push(key);
       }
@@ -4009,7 +4048,9 @@
       g.orders.push(r);
       serviceOneLinersFor(r).forEach(function (line) { g.services[line] = 1; });
       g.total += Number(r.amount) || 0;
-      if (category(r) === "outstanding") g.anyOut = true;
+      var cat = category(r);
+      if (cat === "outstanding") g.anyOut = true;
+      if (cat === "partial") g.anyPartial = true;
     });
     var people = order.map(function (k) { return byName[k]; }).sort(function (a, b) {
       return String(a.name).localeCompare(String(b.name));
@@ -4039,7 +4080,9 @@
         : "—";
       var pill = g.anyOut
         ? '<span class="pay-pill pay-pill--out">Outstanding</span>'
-        : '<span class="pay-pill pay-pill--paid">Paid</span>';
+        : g.anyPartial
+          ? '<span class="pay-pill pay-pill--partial" title="Flexi instalment paid — later half still due">Flexi</span>'
+          : '<span class="pay-pill pay-pill--paid">Paid</span>';
       var rowAttr;
       if (first && first._synthetic) {
         rowAttr = 'data-pay-reenrol="' + esc(first._contactId || first.id) + '"';
@@ -4074,7 +4117,7 @@
       /* Header chips stay full-term; Paid/stream filters only scope the table. */
       var headerRows = g.rows;
       var paidScoped = applyServiceKindFilter(applyPaidFilter(g.rows, termId), termId);
-      var scoped = paidScoped.filter(statusMatch);
+      var scoped = applyPayStatusFilter(paidScoped, termId).filter(statusMatch);
       var keys = {};
       scoped.forEach(function (r) {
         var k = String(r.client_name || "").toLowerCase().trim() || ("id:" + r.id);
@@ -4160,9 +4203,11 @@
           if (!state.payStatusByTerm) state.payStatusByTerm = {};
           if (termId) {
             var curSt = payStatusFilterForTerm(termId);
-            /* Toggle off if clicking the same Paid/Outstanding again. */
+            /* Toggle off if clicking the same status chip again. */
             state.payStatusByTerm[termId] =
-              val && curSt === val ? "" : (val === "paid" || val === "outstanding" ? val : "");
+              val && curSt === val
+                ? ""
+                : (val === "paid" || val === "outstanding" || val === "partial" ? val : "");
             state.focusTermId = termId;
           }
         }
@@ -5234,14 +5279,24 @@
       }
       if (st === "paid") {
         /* Paid Autumn INV-P — clear outstanding unless a later autumn sibling is open. */
-        if (!(Number(row.amount_out) > 0)) {
+        if (!(Number(row.amount_out) > 0) && String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0) {
           row.amount_out = 0;
           row.payment_status = "Paid";
         }
+      } else if (st === "partial") {
+        /* Flexi / instalment: current half paid, later half still due. */
+        var paidAmt = Number(inv.amount_paid_gbp) || 0;
+        var face = amt > 0 ? amt : Number(row.amount_billed) || 0;
+        var remain = Math.max(0, Math.round((face - paidAmt) * 100) / 100);
+        row._amountPaid = Math.max(Number(row._amountPaid) || 0, paidAmt);
+        row.amount_out = remain;
+        row.payment_status = "Partial";
       } else if (st !== "void") {
         /* Outstanding: catalogue autumn still unpaid (don't stack instalment GBP). */
-        row.amount_out = Math.max(Number(row.amount_out) || 0, amt);
-        row.payment_status = "Outstanding";
+        if (String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0) {
+          row.amount_out = Math.max(Number(row.amount_out) || 0, amt);
+          row.payment_status = "Outstanding";
+        }
       }
     });
 
@@ -5294,12 +5349,27 @@
       if (Number(row._amountAutumn) > 0) {
         row.amount = row._amountAutumn;
         row.amount_billed = Math.max(Number(row.amount_billed) || 0, row._amountAutumn);
-        if (Number(row.amount_out) > 0) row.amount_out = row._amountAutumn;
+        if (
+          String(row.payment_status || "").toLowerCase().indexOf("partial") === 0
+          && Number(row._amountPaid) > 0
+        ) {
+          row.amount_out = Math.max(
+            0,
+            Math.round((row._amountAutumn - Number(row._amountPaid)) * 100) / 100,
+          );
+        } else if (Number(row.amount_out) > 0) {
+          row.amount_out = row._amountAutumn;
+        }
       } else {
         row.amount = row.amount_out > 0 ? row.amount_out : row.amount_billed;
       }
-      if (row.amount_out <= 0 && row.amount_billed > 0) row.payment_status = "Paid";
-      else if (row.amount_out > 0) row.payment_status = "Outstanding";
+      if (String(row.payment_status || "").toLowerCase().indexOf("partial") === 0) {
+        /* Keep Flexi / instalment status — do not collapse to Paid/Outstanding. */
+      } else if (row.amount_out <= 0 && row.amount_billed > 0) {
+        row.payment_status = "Paid";
+      } else if (row.amount_out > 0) {
+        row.payment_status = "Outstanding";
+      }
       row.sheet = classifyPayGroup({
         sheet: row.sheet,
         payment_method_hint: row._paymentMethodHint,
