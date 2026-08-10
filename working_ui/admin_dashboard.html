@@ -19036,6 +19036,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                   paxName: isBooked ? paxName : ''
                 });
               }
+              // "Space available" filter: only show open instructor seats — hide columns
+              // that already have a named participant (or closed).
+              if(filt && filt.spaceOnly){
+                seats = seats.filter(function(s){ return s && s.open; });
+                if(!seats.length) continue;
+              }
               if(!seats.length && !mergedLines.length) continue;
               if(seats.length > maxSeats) maxSeats = seats.length;
               var dataSlot =
