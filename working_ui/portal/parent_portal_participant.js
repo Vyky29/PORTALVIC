@@ -4205,9 +4205,12 @@
     var nextBody;
     if (!hasServices && !hasCrash) {
       var summerEndedEmpty = isoDateLocal(new Date()) > currentYearTermToIso(data);
-      var emptyMsg = summerEndedEmpty
-        ? "Summer term has ended and this place has no current roster days yet. Re-enrol for 2026/27 (or open Crash course July) from Quick access."
-        : "No weekly services on the current roster yet — next sessions will show here when days are assigned.";
+      var acceptedNextEmpty = familyAcceptedNextYear(data);
+      var emptyMsg = acceptedNextEmpty
+        ? "Your 2026/27 place is on file. Open Booking to see kept services — weekly days appear here once the Autumn roster is published (from early September)."
+        : summerEndedEmpty
+          ? "Summer term has ended and this place has no current roster days yet. Re-enrol for 2026/27 (or open Crash course July) from Quick access."
+          : "No weekly services on the current roster yet — next sessions will show here when days are assigned.";
       nextBody =
         '<div class="pp-hub-ops__empty-wrap">' +
         calIco +

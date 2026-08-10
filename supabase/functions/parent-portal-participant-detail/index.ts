@@ -535,6 +535,52 @@ function parseSlotTokens(
  * see the same service once per day, spanning the outer time bounds
  * (e.g. "150' Day Centre · Monday · 12.30 to 3"). Instructor omitted; venue/area kept for the hub card.
  */
+/**
+ * When summer roster rows are gone but the family kept 2026/27 places, seed
+ * hub Calendar / Next session from the re-enrolment weekly snapshot.
+ */
+function sessionsFromReenrolKeptSlots(
+  payload: Record<string, unknown> | null | undefined,
+): Array<Record<string, unknown>> {
+  if (!payload || typeof payload !== "object") return [];
+  const choices = (payload.choices && typeof payload.choices === "object"
+    ? payload.choices
+    : {}) as Record<string, unknown>;
+  const weeklyChoices = (choices.weekly && typeof choices.weekly === "object"
+    ? choices.weekly
+    : {}) as Record<string, { choice?: unknown }>;
+  const slotsRaw = payload.weekly_slots_snapshot;
+  const slots = Array.isArray(slotsRaw) ? slotsRaw : [];
+  const byId = new Map<string, Record<string, unknown>>();
+  for (const raw of slots) {
+    if (!raw || typeof raw !== "object") continue;
+    const s = raw as Record<string, unknown>;
+    const id = clean(s.id, 80);
+    if (id) byId.set(id, s);
+  }
+  const out: Array<Record<string, unknown>> = [];
+  for (const [slotId, choice] of Object.entries(weeklyChoices)) {
+    const key = clean(choice?.choice, 40).toLowerCase();
+    if (key !== "keep" && key !== "change") continue;
+    const slot = byId.get(slotId);
+    if (!slot) continue;
+    const svc =
+      canonicalProgrammeName(slot.serviceType) ||
+      clean(slot.serviceType, 80) ||
+      "Aquatic Activity";
+    out.push({
+      day: clean(slot.day, 20),
+      service: svc,
+      timeSlot: clean(slot.timeSlot, 40),
+      durationMin: Number(slot.durationMin) || undefined,
+      venue: clean(slot.venue, 80),
+      instructor: clean(slot.instructor, 40),
+      area: clean(slot.area, 80),
+    });
+  }
+  return out;
+}
+
 function buildServicesDetail(
   sessions: unknown,
 ): Array<{ label: string; day: string; time: string; venue: string; area: string }> {
@@ -1313,6 +1359,16 @@ Deno.serve(async (req) => {
       ? (reenrolRow.payload as Record<string, unknown>)
       : null;
     reenrolmentSummary = buildReenrolmentParentSummary(payload, submittedAt);
+
+    // Re-enrolled families with no summer/payment-sheet roster yet still need
+    // weekday chips (Next session / Calendar) from kept 2026/27 slots.
+    if (!rosterServicesDetail.length && reenrolmentSummary.continuing) {
+      const fromReenrol = buildServicesDetail(sessionsFromReenrolKeptSlots(payload));
+      if (fromReenrol.length) {
+        rosterServicesDetail = fromReenrol;
+        rosterServicesCount = fromReenrol.length;
+      }
+    }
 
     const hasDayCentre = servicesDetailHasDayCentre(
       rosterServicesDetail as Array<{ label?: string; service?: string }>,
