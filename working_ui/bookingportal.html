@@ -1514,7 +1514,7 @@
           <p class="booking-gate__eyebrow">Parent / guardian</p>
           <h2 class="booking-gate__title" id="bookingLeadTitle">Welcome</h2>
           <p class="booking-gate__lede" id="bookingLeadLede">
-            Choose how you’d like to continue. Existing families unlock with the participant’s name and family PIN.
+            Choose how you’d like to continue. Existing families unlock with parent/carer name, participant name and family PIN.
           </p>
           <div class="booking-gate__tabs" role="tablist" aria-label="Access type">
             <button
@@ -1556,9 +1556,21 @@
           <p class="booking-gate__eyebrow">Already with us</p>
           <h2 class="booking-gate__title">Family PIN</h2>
           <p class="booking-gate__lede">
-            Enter the participant’s name and your 4-digit family PIN. Access unlocks only when both match our records — no email code needed.
+            Enter the parent/carer name, the participant’s name and your 4-digit family PIN. Access unlocks only when they match our records — no email code needed.
           </p>
           <form id="bookingLeadPinForm" novalidate>
+            <div class="booking-gate__field">
+              <label for="bookingLeadPinParentName">Parent / carer name <span aria-hidden="true">*</span></label>
+              <input
+                id="bookingLeadPinParentName"
+                name="parent_name"
+                type="text"
+                autocomplete="name"
+                required
+                maxlength="120"
+                placeholder="Parent / carer name on file"
+              />
+            </div>
             <div class="booking-gate__field">
               <label for="bookingLeadChildName">Participant name <span aria-hidden="true">*</span></label>
               <input
@@ -1760,7 +1772,7 @@
 
   <script src="/portal/portal_booking_offer.js?v=20260810-madre-null-staff"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
-  <script src="/portal/portal_booking_lead_gate.js?v=20260810-participant-pin-new"></script>
+  <script src="/portal/portal_booking_lead_gate.js?v=20260810-pin-parent-name"></script>
   <script>
 (function () {
   "use strict";

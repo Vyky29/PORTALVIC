@@ -256,7 +256,7 @@
 
   function focusFlowField() {
     var el = null;
-    if (state.flow === "pin") el = $("bookingLeadChildName");
+    if (state.flow === "pin") el = $("bookingLeadPinParentName") || $("bookingLeadChildName");
     else if (state.flow === "returning") el = $("bookingLeadReturningEmail");
     else if (state.flow === "new") el = $("bookingLeadParentName") || $("bookingLeadFirstName");
     else el = $("bookingLeadTabReturning");
@@ -358,8 +358,31 @@
     setBusy(btn, false, idleLabel);
   }
 
+  function normalizePersonName(raw) {
+    return String(raw || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .replace(/\s+/g, " ");
+  }
+
+  /** Parent/carer name must match the family record (full or first token). */
+  function parentNameMatchesRecord(entered, onFile) {
+    var a = normalizePersonName(entered);
+    var b = normalizePersonName(onFile);
+    if (!a || !b) return false;
+    if (a === b) return true;
+    if (a.indexOf(b) >= 0 || b.indexOf(a) >= 0) return true;
+    var aFirst = a.split(" ")[0] || "";
+    var bFirst = b.split(" ")[0] || "";
+    return aFirst.length >= 2 && aFirst === bFirst;
+  }
+
   async function submitPin(ev) {
     if (ev) ev.preventDefault();
+    var parentName = String(
+      ($("bookingLeadPinParentName") && $("bookingLeadPinParentName").value) || ""
+    ).trim();
     var firstName = String(
       ($("bookingLeadChildName") && $("bookingLeadChildName").value) || ""
     ).trim();
@@ -368,10 +391,10 @@
     var btn = $("bookingLeadPinUnlock");
 
     setMsg("bookingLeadPinMsg", "", false);
-    if (!firstName || (pinRaw.length !== 4 && pinRaw.length !== 6)) {
+    if (parentName.length < 2 || !firstName || (pinRaw.length !== 4 && pinRaw.length !== 6)) {
       setMsg(
         "bookingLeadPinMsg",
-        "Enter the participant’s name and your 4-digit family PIN.",
+        "Enter the parent/carer name, participant’s name and your 4-digit family PIN.",
         true
       );
       return;
@@ -396,11 +419,24 @@
         var errCode = sign.data && sign.data.error;
         var human =
           errCode === "former_client"
-            ? "Family portal access has ended for this place. Use email access below, or contact the office."
+            ? "Family portal access has ended for this place. Contact the office."
             : errCode === "ambiguous_name"
-              ? "That first name matches more than one family. Contact the office."
-              : "We could not unlock. Participant name and PIN must both match our records.";
+              ? "That participant name matches more than one family. Contact the office."
+              : "We could not unlock. Check the names and PIN, then try again.";
         setMsg("bookingLeadPinMsg", human, true);
+        setBusy(btn, false, "Unlock booking");
+        return;
+      }
+
+      var onFileParent =
+        (sign.data.parent && (sign.data.parent.display_name || sign.data.parent.parent_display)) ||
+        "";
+      if (!parentNameMatchesRecord(parentName, onFileParent)) {
+        setMsg(
+          "bookingLeadPinMsg",
+          "Parent/carer name doesn’t match this family. Check the spelling on file and try again.",
+          true
+        );
         setBusy(btn, false, "Unlock booking");
         return;
       }
