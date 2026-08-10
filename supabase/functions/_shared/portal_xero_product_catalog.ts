@@ -202,7 +202,7 @@ function isoDateUtc(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-function collectTermSessionDates(
+export function collectTermSessionDates(
   term: ReenrolTerm,
   day: string,
   expectedCount?: number,
@@ -222,6 +222,20 @@ function collectTermSessionDates(
   }
   const count = Math.max(0, Math.round(Number(expectedCount) || 0));
   return count > 0 ? dates.slice(0, count) : dates;
+}
+
+/** Session dates still due on/after asOf (booking / start day) for mid-term joiners. */
+export function remainingTermSessionDates(
+  term: ReenrolTerm,
+  day: string,
+  asOfIso: string,
+  expectedCount?: number,
+): Date[] {
+  const asOf = String(asOfIso || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(asOf)) return [];
+  return collectTermSessionDates(term, day, expectedCount).filter(
+    (d) => isoDateUtc(d) >= asOf,
+  );
 }
 
 export function formatGroupedSessionDates(dates: Date[]): string | null {

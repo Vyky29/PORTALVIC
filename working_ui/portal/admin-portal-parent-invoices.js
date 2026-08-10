@@ -2076,6 +2076,128 @@
     }
   }
 
+  function midtermBodyFromForm(action) {
+    var contactId = String(
+      (global.document.getElementById('portalParentInvoiceContactId') || {}).value || ''
+    ).trim();
+    var termEl = global.document.getElementById('portalMidtermTerm');
+    var dayEl = global.document.getElementById('portalMidtermDay');
+    var unitEl = global.document.getElementById('portalMidtermUnit');
+    var asOfEl = global.document.getElementById('portalMidtermAsOf');
+    var planEl = global.document.getElementById('portalMidtermPlan');
+    var svcEl = global.document.getElementById('portalMidtermService');
+    var detEl = global.document.getElementById('portalMidtermDetail');
+    var vatEl = global.document.getElementById('portalParentInvoiceVatMode');
+    return {
+      action: action,
+      contact_id: contactId,
+      billing_term: termEl && termEl.value ? termEl.value : 'autumn',
+      day: dayEl && dayEl.value ? dayEl.value : 'Monday',
+      unit_price_gbp: unitEl && unitEl.value ? Number(unitEl.value) : NaN,
+      as_of: asOfEl && asOfEl.value ? asOfEl.value : null,
+      pay_plan: planEl && planEl.value ? planEl.value : 'gocardless_monthly',
+      service_label: svcEl && svcEl.value ? svcEl.value : 'Aquatic Activity',
+      detail: detEl && detEl.value ? detEl.value : '',
+      vat_mode: vatEl && vatEl.value === 'exempt' ? 'exempt' : 'vat_20',
+      share_status: vatEl && vatEl.value === 'exempt' ? 'hidden' : 'ready',
+      payment_method_hint:
+        planEl && planEl.value === 'gocardless_monthly' ? 'gocardless' : 'bank_transfer'
+    };
+  }
+
+  function renderMidtermPreview(quote) {
+    var host = global.document.getElementById('portalMidtermPreview');
+    if (!host) return;
+    if (!quote) {
+      host.textContent = '';
+      return;
+    }
+    var sched = quote.payment_schedule || quote.paymentSchedule || [];
+    var lines = sched
+      .map(function (r) {
+        return (
+          '#' +
+          r.seq +
+          ' ' +
+          (r.label || '') +
+          ' · ' +
+          (r.due_date || '—') +
+          ' · £' +
+          Number(r.amount_gbp || 0).toFixed(2)
+        );
+      })
+      .join('\n');
+    var sessions = quote.remaining_sessions != null ? quote.remaining_sessions : quote.remainingSessions;
+    var prog = Number(quote.programme_total_gbp != null ? quote.programme_total_gbp : quote.programmeTotalGbp || 0);
+    var invTot = Number(quote.invoice_total_gbp != null ? quote.invoice_total_gbp : quote.invoiceTotalGbp || 0);
+    var dates = quote.session_dates_label || quote.sessionDatesLabel || '';
+    host.textContent =
+      String(sessions || '') +
+      ' sessions left · programme £' +
+      prog.toFixed(2) +
+      ' · invoice £' +
+      invTot.toFixed(2) +
+      (dates ? '\n' + dates : '') +
+      (lines ? '\n\n' + lines : '');
+    host.style.whiteSpace = 'pre-wrap';
+  }
+
+  function bindMidtermForm() {
+    var form = global.document.getElementById('portalParentInvoiceMidtermForm');
+    if (!form || form.getAttribute('data-bound') === '1') return;
+    form.setAttribute('data-bound', '1');
+    var asOfEl = global.document.getElementById('portalMidtermAsOf');
+    if (asOfEl && !asOfEl.value) {
+      asOfEl.value = new Date().toISOString().slice(0, 10);
+    }
+    var previewBtn = global.document.getElementById('portalMidtermPreviewBtn');
+    if (previewBtn) {
+      previewBtn.addEventListener('click', function () {
+        var body = midtermBodyFromForm('preview_portal_midterm');
+        if (!isFinite(body.unit_price_gbp) || body.unit_price_gbp <= 0) {
+          cfg.toast('Enter £ / session', 'error');
+          return;
+        }
+        previewBtn.disabled = true;
+        void api('portal-admin-parent-invoices-upsert', body, false).then(function (r) {
+          previewBtn.disabled = false;
+          if (r.error) {
+            cfg.toast(r.message || r.error || 'Preview failed', 'error');
+            renderMidtermPreview(null);
+            return;
+          }
+          renderMidtermPreview(r.quote || null);
+        });
+      });
+    }
+    form.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var body = midtermBodyFromForm('create_portal_midterm');
+      if (!body.contact_id) {
+        cfg.toast('Pick a participant first', 'error');
+        return;
+      }
+      if (!isFinite(body.unit_price_gbp) || body.unit_price_gbp <= 0) {
+        cfg.toast('Enter £ / session', 'error');
+        return;
+      }
+      var submitBtn = form.querySelector('[type="submit"]');
+      if (submitBtn) submitBtn.disabled = true;
+      void api('portal-admin-parent-invoices-upsert', body, false).then(function (r) {
+        if (submitBtn) submitBtn.disabled = false;
+        if (r.error) {
+          cfg.toast(r.message || r.error || 'Create failed', 'error');
+          return;
+        }
+        renderMidtermPreview(r.quote || null);
+        var num =
+          r.invoice && r.invoice.invoice_number ? String(r.invoice.invoice_number) : 'Invoice';
+        cfg.toast(num + ' mid-term created & shared', 'ok');
+        void renderHost(global.document.getElementById('portalParentInvoicesHost'));
+      });
+    });
+  }
+
   function bindUploadForm() {
     var createForm = global.document.getElementById('portalParentInvoiceCreateForm');
     var form = global.document.getElementById('portalParentInvoiceUploadForm');
@@ -2160,6 +2282,7 @@
         });
       });
     }
+    bindMidtermForm();
 
     var search = global.document.getElementById('portalParentInvoiceSearch');
     var searchTimer = null;
@@ -2275,6 +2398,27 @@
       '<label style="min-width:0">Notes (optional)<input class="inp" id="portalParentInvoiceNotes" style="width:100%;max-width:28rem" /></label>' +
       '<div><button type="submit" class="btn btn--primary btn--sm">Create &amp; share</button></div>' +
       '</form>' +
+      '<details style="margin:0 0 18px;padding:12px;border:1px solid var(--line,#e5e7eb);border-radius:10px;max-width:100%;min-width:0">' +
+      '<summary style="cursor:pointer;font-weight:700">New Booking Portal client · mid-term pro-rata</summary>' +
+      '<p class="muted" style="margin:8px 0 10px;max-width:48rem;overflow-wrap:break-word">For <strong>new</strong> places confirmed from Booking Portal after the term has started (or starting mid-term). Builds <strong>1 invoice</strong> for remaining sessions. First instalment is due <strong>on booking day</strong>. GoCardless continues on the <strong>1st of each remaining month</strong>; Flexi keeps a second half on the fixed mid-term date when still ahead.</p>' +
+      '<form id="portalParentInvoiceMidtermForm" class="toolbar" style="flex-direction:column;align-items:stretch;gap:10px">' +
+      '<p class="muted" style="margin:0;font-size:12px">Uses the participant selected above.</p>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
+      '<label style="flex:1 1 120px;min-width:0">Term<select class="inp" id="portalMidtermTerm" style="width:100%"><option value="autumn">Autumn</option><option value="spring">Spring</option><option value="summer">Summer</option></select></label>' +
+      '<label style="flex:1 1 120px;min-width:0">Weekday<select class="inp" id="portalMidtermDay" style="width:100%"><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select></label>' +
+      '<label style="flex:1 1 110px;min-width:0">£ / session<input class="inp" id="portalMidtermUnit" type="number" min="0.01" step="0.01" value="50" required style="width:100%" /></label>' +
+      '<label style="flex:1 1 140px;min-width:0">Booking / start date<input class="inp" id="portalMidtermAsOf" type="date" style="width:100%" /></label>' +
+      '</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
+      '<label style="flex:1 1 220px;min-width:0">Pay plan<select class="inp" id="portalMidtermPlan" style="width:100%"><option value="gocardless_monthly">GoCardless · monthly (1st due today)</option><option value="flexi_bank">Flexi bank · 2 instalments</option><option value="one_off_bank">Bank · one-off (due today)</option></select></label>' +
+      '<label style="flex:1 1 160px;min-width:0">Service label<input class="inp" id="portalMidtermService" value="Aquatic Activity 30\'" style="width:100%" /></label>' +
+      '<label style="flex:1 1 140px;min-width:0">Detail (time · venue)<input class="inp" id="portalMidtermDetail" placeholder="e.g. Tuesday 6–6.30 · Acton" style="width:100%" /></label>' +
+      '</div>' +
+      '<div id="portalMidtermPreview" class="muted" style="margin:0;max-width:48rem;overflow-wrap:break-word;font-size:13px;line-height:1.45"></div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="portalMidtermPreviewBtn">Preview schedule</button>' +
+      '<button type="submit" class="btn btn--primary btn--sm">Create mid-term invoice &amp; share</button>' +
+      '</div></form></details>' +
       '<details style="margin:0">' +
       '<summary class="muted" style="cursor:pointer;font-weight:600">Or upload a Xero / office PDF</summary>' +
       '<form id="portalParentInvoiceUploadForm" class="toolbar" style="flex-direction:column;align-items:stretch;gap:10px;margin-top:10px">' +

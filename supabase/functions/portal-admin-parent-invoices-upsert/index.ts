@@ -18,6 +18,12 @@ import {
   applyInstalmentPayment,
   normalizePaymentSchedule,
 } from "../_shared/portal_invoice_payment_schedule.ts";
+import {
+  parseBookingTermKey,
+  parseNewClientPayPlan,
+  quoteNewClientMidTermInvoice,
+} from "../_shared/booking_portal_term_invoices.ts";
+import { loadProductMap } from "../_shared/portal_xero_product_catalog.ts";
 
 const BUCKET = "documents";
 const MAX_BYTES = 12 * 1024 * 1024;
@@ -371,6 +377,105 @@ Deno.serve(async (req) => {
       participant_name: sub.participant_name,
       submission_id: sub.id,
       invoices_updated: pdfResults,
+    });
+  }
+
+  if (action === "preview_portal_midterm" || action === "create_portal_midterm") {
+    if (!userId) {
+      return portalAdminJson(401, { ok: false, error: "admin_user_required" });
+    }
+    const contactId = clean(fields.contact_id, 120);
+    const term = parseBookingTermKey(fields.billing_term || fields.term);
+    const plan = parseNewClientPayPlan(fields.pay_plan || fields.payment_schedule_code);
+    const day = clean(fields.day || fields.weekday, 40);
+    const unit = parseAmount(fields.unit_price_gbp ?? fields.price_per_session);
+    const asOf = parseDate(fields.as_of || fields.start_date || fields.booking_date) ||
+      new Date().toISOString().slice(0, 10);
+    if (action === "create_portal_midterm" && !contactId) {
+      return portalAdminJson(400, { ok: false, error: "contact_id_required" });
+    }
+    if (!term) return portalAdminJson(400, { ok: false, error: "billing_term_required" });
+    if (!plan) return portalAdminJson(400, { ok: false, error: "pay_plan_required" });
+    if (!day) return portalAdminJson(400, { ok: false, error: "day_required" });
+    if (unit == null || unit <= 0) {
+      return portalAdminJson(400, { ok: false, error: "unit_price_required" });
+    }
+
+    const vatRaw = clean(fields.vat_mode, 20).toLowerCase();
+    const vatMode: PortalInvoiceVatMode = vatRaw === "exempt" ? "exempt" : "vat_20";
+    let productMap = null;
+    try {
+      productMap = await loadProductMap(admin);
+    } catch {
+      productMap = null;
+    }
+    const quote = quoteNewClientMidTermInvoice({
+      term,
+      day,
+      unitPriceGbp: unit,
+      plan,
+      asOfIso: asOf,
+      serviceKey: clean(fields.service_key, 40) || null,
+      serviceLabel: clean(fields.service_label || fields.service, 120) || null,
+      detail: clean(fields.detail, 160) || null,
+      vatMode,
+      productMap,
+    });
+    if ("error" in quote) {
+      return portalAdminJson(400, { ok: false, error: quote.error });
+    }
+
+    if (action === "preview_portal_midterm") {
+      return portalAdminJson(200, { ok: true, quote });
+    }
+
+    const shareStatus =
+      parseShareStatus(fields.share_status) ||
+      (vatMode === "exempt" || quote.paymentMethodHint === "la_funded" ? "hidden" : "ready");
+    const lineDescription =
+      String(fields.line_description == null ? "" : fields.line_description).trim() ||
+      quote.lineDescription;
+    const created = await createPortalFamilyInvoice(admin, {
+      contactId,
+      amountGbp: quote.invoiceTotalGbp,
+      dueDateIso: quote.paymentSchedule[0]?.due_date || asOf,
+      invoiceDateIso: asOf,
+      vatMode,
+      lineDescription,
+      reference: clean(fields.reference, 120) || quote.reference,
+      service: clean(fields.service, 80) || clean(fields.service_label, 80) || null,
+      notes:
+        clean(fields.notes, 800) ||
+        `New Booking Portal · mid-term pro-rata · ${plan} · ${quote.remainingSessions} session(s) from ${asOf}`,
+      title: clean(fields.title, 200) || null,
+      quantity: quote.remainingSessions,
+      shareStatus,
+      paymentMethodHint: quote.paymentMethodHint,
+      createdVia: "portal",
+      ownerUserId: userId,
+      readyBy: readyBy || "office_new_client_midterm",
+      invoiceNumber: clean(fields.invoice_number, 80) || null,
+      clientIdLabel: clean(fields.client_id_label, 80) || contactId,
+      poLabel: clean(fields.po_label, 80) || null,
+      paymentSchedule: quote.paymentSchedule,
+      billingTerm: quote.term,
+      lineItems: quote.lineItems,
+      descriptionComplete: false,
+    });
+    if (!created.ok) {
+      const status =
+        created.error === "participant_not_found"
+          ? 404
+          : created.error === "amount_required" || created.error === "contact_id_required"
+            ? 400
+            : 500;
+      return portalAdminJson(status, { ok: false, error: created.error });
+    }
+    return portalAdminJson(200, {
+      ok: true,
+      invoice: created.invoice,
+      quote,
+      created_via: "portal_midterm",
     });
   }
 
