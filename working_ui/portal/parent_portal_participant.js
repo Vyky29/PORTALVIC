@@ -5113,7 +5113,7 @@
       body =
         '<p class="pp-muted">Submitted ' +
         esc(formatDate(booking.submitted_at)) +
-        ". The office will review your choices.</p>" +
+        ". Your 2026/27 place is on file.</p>" +
         (activityItems.length
           ? '<ul class="pp-booking-list">' +
             activityItems.map(bookingActivityItemHtml).join("") +
@@ -5125,6 +5125,17 @@
             esc(reenrolHref) +
             '">Update booking choices</a>');
     }
+    var invoiceBlock = showInvoicesFor(data)
+      ? '<div class="pp-card pp-booking-card pp-booking-invoices" style="margin-top:14px">' +
+        '<h4 class="pp-pax-subview-title" style="font-size:1.05rem;margin:0 0 6px">Invoice</h4>' +
+        '<p class="pp-muted pp-pax-subview-note" style="margin-top:0">Autumn 2026/27 payment for ' +
+        esc(firstNameOf(data)) +
+        ". Prefer bank transfer (green button) or Card / Apple Pay.</p>" +
+        '<div id="ppInvoicesNotice" class="pp-notice" hidden></div>' +
+        '<div id="ppGocardlessSetupHost" class="pp-invoice-gc-setup" hidden></div>' +
+        '<div id="ppInvoicesListHost"><p class="pp-muted">Loading invoice…</p></div>' +
+        "</div>"
+      : "";
     host.innerHTML = subviewShell(
       data,
       "booking",
@@ -5134,9 +5145,11 @@
         "</p>" +
         '<div class="pp-card pp-booking-card">' +
         body +
-        "</div>",
+        "</div>" +
+        invoiceBlock,
     );
     bindBack(host, data, opts);
+    if (showInvoicesFor(data)) bindInvoices(host, data, opts);
   }
 
   function renderSwim(host, data, opts) {
