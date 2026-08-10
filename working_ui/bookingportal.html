@@ -1514,7 +1514,7 @@
           <p class="booking-gate__eyebrow">Parent / guardian</p>
           <h2 class="booking-gate__title" id="bookingLeadTitle">Welcome</h2>
           <p class="booking-gate__lede" id="bookingLeadLede">
-            Choose how you’d like to continue. Existing families can unlock with their child’s name and family PIN.
+            Choose how you’d like to continue. Existing families unlock with the participant’s name and family PIN.
           </p>
           <div class="booking-gate__tabs" role="tablist" aria-label="Access type">
             <button
@@ -1539,7 +1539,7 @@
               id="bookingLeadTabNew"
               role="tab"
               aria-selected="false"
-              data-booking-gate-flow="returning"
+              data-booking-gate-flow="new"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
@@ -1556,11 +1556,11 @@
           <p class="booking-gate__eyebrow">Already with us</p>
           <h2 class="booking-gate__title">Family PIN</h2>
           <p class="booking-gate__lede">
-            Enter your child’s first name and your 4-digit family PIN to unlock booking. We’ll recognise your family — no email code needed.
+            Enter the participant’s name and your 4-digit family PIN. Access unlocks only when both match our records — no email code needed.
           </p>
           <form id="bookingLeadPinForm" novalidate>
             <div class="booking-gate__field">
-              <label for="bookingLeadChildName">Child’s first name <span aria-hidden="true">*</span></label>
+              <label for="bookingLeadChildName">Participant name <span aria-hidden="true">*</span></label>
               <input
                 id="bookingLeadChildName"
                 name="participant_first_name"
@@ -1568,7 +1568,7 @@
                 autocomplete="given-name"
                 required
                 maxlength="80"
-                placeholder="As on your club record"
+                placeholder="Participant’s first name on file"
               />
             </div>
             <div class="booking-gate__field">
@@ -1598,16 +1598,15 @@
             </div>
             <div class="booking-gate__secondary">
               <button type="button" class="booking-gate__linkbtn" id="bookingLeadPinBack">Back</button>
-              <button type="button" class="booking-gate__linkbtn" id="bookingLeadPinToEmail">Use email instead</button>
             </div>
           </form>
         </div>
 
         <div id="bookingLeadReturningBlock" hidden>
-          <p class="booking-gate__eyebrow">New visitor</p>
-          <h2 class="booking-gate__title">Email access</h2>
+          <p class="booking-gate__eyebrow">Email access</p>
+          <h2 class="booking-gate__title">Email on file</h2>
           <p class="booking-gate__lede">
-            Enter the email on file (or the one you use with the club) and we’ll send a one-time access code.
+            Enter the email on file and we’ll send a one-time access code.
           </p>
           <form id="bookingLeadReturningForm" novalidate>
             <div class="booking-gate__field">
@@ -1643,20 +1642,19 @@
             </div>
             <div class="booking-gate__secondary">
               <button type="button" class="booking-gate__linkbtn" id="bookingLeadReturningBack">Back</button>
-              <button type="button" class="booking-gate__linkbtn" id="bookingLeadRegisterLink">First time here? Register</button>
             </div>
           </form>
         </div>
 
         <div id="bookingLeadNewBlock" hidden>
-          <p class="booking-gate__eyebrow">Register</p>
+          <p class="booking-gate__eyebrow">New visitor</p>
           <h2 class="booking-gate__title">Tell us who is looking</h2>
           <p class="booking-gate__lede">
-            New to ClubSENsational? Enter parent/carer details to request access, explore availability, and begin a booking.
+            Enter the parent/carer name, email and phone. We’ll send a one-time access code to continue.
           </p>
           <form id="bookingLeadDetailsForm" novalidate>
             <div class="booking-gate__field">
-              <label for="bookingLeadParentName">Name <span aria-hidden="true">*</span></label>
+              <label for="bookingLeadParentName">Parent / carer name <span aria-hidden="true">*</span></label>
               <input
                 id="bookingLeadParentName"
                 name="parent_name"
@@ -1711,7 +1709,7 @@
                   <rect x="2" y="4" width="20" height="16" rx="2"/>
                   <path d="m22 7-10 7L2 7"/>
                 </svg>
-                <span class="booking-gate__btn-label">Request access code</span>
+                <span class="booking-gate__btn-label">Send access code</span>
               </button>
             </div>
             <div class="booking-gate__secondary">
@@ -1762,7 +1760,7 @@
 
   <script src="/portal/portal_booking_offer.js?v=20260810-madre-null-staff"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
-  <script src="/portal/portal_booking_lead_gate.js?v=20260810-welcome-pin"></script>
+  <script src="/portal/portal_booking_lead_gate.js?v=20260810-participant-pin-new"></script>
   <script>
 (function () {
   "use strict";

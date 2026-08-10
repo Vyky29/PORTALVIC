@@ -249,8 +249,8 @@
       tabR.setAttribute("aria-selected", next === "pin" ? "true" : "false");
     }
     if (tabN) {
-      tabN.classList.toggle("is-active", next === "returning");
-      tabN.setAttribute("aria-selected", next === "returning" ? "true" : "false");
+      tabN.classList.toggle("is-active", next === "new");
+      tabN.setAttribute("aria-selected", next === "new" ? "true" : "false");
     }
   }
 
@@ -371,7 +371,7 @@
     if (!firstName || (pinRaw.length !== 4 && pinRaw.length !== 6)) {
       setMsg(
         "bookingLeadPinMsg",
-        "Enter your child’s first name and your 4-digit family PIN.",
+        "Enter the participant’s name and your 4-digit family PIN.",
         true
       );
       return;
@@ -399,7 +399,7 @@
             ? "Family portal access has ended for this place. Use email access below, or contact the office."
             : errCode === "ambiguous_name"
               ? "That first name matches more than one family. Contact the office."
-              : "We could not unlock. Check the child’s first name and PIN, then try again.";
+              : "We could not unlock. Participant name and PIN must both match our records.";
         setMsg("bookingLeadPinMsg", human, true);
         setBusy(btn, false, "Unlock booking");
         return;
@@ -542,15 +542,15 @@
                   ? "Please enter the parent/carer name."
                   : "We couldn’t send a code just now. Please try again.";
         setMsg("bookingLeadDetailsMsg", human, true);
-        setBusy(btn, false, "Request access code");
+        setBusy(btn, false, "Send access code");
         return;
       }
-      afterOtpSent(email, out, "bookingLeadDetailsMsg", btn, "Request access code");
+      afterOtpSent(email, out, "bookingLeadDetailsMsg", btn, "Send access code");
       return;
     } catch (_e3) {
       setMsg("bookingLeadDetailsMsg", "Network error — please try again.", true);
     }
-    setBusy(btn, false, "Request access code");
+    setBusy(btn, false, "Send access code");
   }
 
   async function submitOtp(ev) {
@@ -602,9 +602,7 @@
     var tabR = $("bookingLeadTabReturning");
     var tabN = $("bookingLeadTabNew");
     var pinBack = $("bookingLeadPinBack");
-    var pinToEmail = $("bookingLeadPinToEmail");
     var returningBack = $("bookingLeadReturningBack");
-    var registerLink = $("bookingLeadRegisterLink");
     var registerBack = $("bookingLeadRegisterBack");
     var pinInput = $("bookingLeadFamilyPin");
 
@@ -623,7 +621,7 @@
     if (tabN) {
       tabN.addEventListener("click", function () {
         showStep("details");
-        setFlow("returning");
+        setFlow("new");
         focusFlowField();
       });
     }
@@ -633,27 +631,15 @@
         focusFlowField();
       });
     }
-    if (pinToEmail) {
-      pinToEmail.addEventListener("click", function () {
-        setFlow("returning");
-        focusFlowField();
-      });
-    }
     if (returningBack) {
       returningBack.addEventListener("click", function () {
         setFlow("choice");
         focusFlowField();
       });
     }
-    if (registerLink) {
-      registerLink.addEventListener("click", function () {
-        setFlow("new");
-        focusFlowField();
-      });
-    }
     if (registerBack) {
       registerBack.addEventListener("click", function () {
-        setFlow("returning");
+        setFlow("choice");
         focusFlowField();
       });
     }
@@ -661,17 +647,17 @@
       backBtn.addEventListener("click", function () {
         showStep("details");
         setMsg("bookingLeadOtpMsg", "", false);
-        if (state.flow !== "returning" && state.flow !== "new") setFlow("returning");
+        if (state.flow !== "new" && state.flow !== "returning") setFlow("new");
         focusFlowField();
       });
     }
     if (resendBtn) {
       resendBtn.addEventListener("click", function () {
         showStep("details");
-        if (state.flow === "new") submitDetails();
+        if (state.flow === "returning") submitReturning();
         else {
-          setFlow("returning");
-          submitReturning();
+          setFlow("new");
+          submitDetails();
         }
       });
     }
