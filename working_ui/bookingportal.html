@@ -1228,7 +1228,8 @@
     }
     .booking-gate__field input[type="text"],
     .booking-gate__field input[type="email"],
-    .booking-gate__field input[type="tel"] {
+    .booking-gate__field input[type="tel"],
+    .booking-gate__field input[type="password"] {
       width: 100%;
       min-width: 0;
       border: 1px solid var(--line);
@@ -1238,6 +1239,10 @@
       font-size: 1rem;
       color: var(--ink);
       background: #fbfdff;
+    }
+    .booking-gate__field input.booking-gate__pin {
+      letter-spacing: 0.35em;
+      font-variant-numeric: tabular-nums;
     }
     .booking-gate__field input:focus {
       outline: 2px solid rgba(45, 132, 179, 0.35);
@@ -1505,49 +1510,104 @@
         </div>
       </header>
       <div id="bookingLeadStepDetails">
-        <p class="booking-gate__eyebrow">Parent / guardian</p>
-        <div class="booking-gate__tabs" role="tablist" aria-label="Access type">
-          <button
-            type="button"
-            class="booking-gate__tab is-active"
-            id="bookingLeadTabReturning"
-            role="tab"
-            aria-selected="true"
-            data-booking-gate-flow="returning"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-            <span>Already with us</span>
-          </button>
-          <button
-            type="button"
-            class="booking-gate__tab"
-            id="bookingLeadTabNew"
-            role="tab"
-            aria-selected="false"
-            data-booking-gate-flow="new"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <line x1="19" y1="8" x2="19" y2="14"/>
-              <line x1="22" y1="11" x2="16" y2="11"/>
-            </svg>
-            <span>New visitor</span>
-          </button>
+        <div id="bookingLeadChoiceBlock">
+          <p class="booking-gate__eyebrow">Parent / guardian</p>
+          <h2 class="booking-gate__title" id="bookingLeadTitle">Welcome</h2>
+          <p class="booking-gate__lede" id="bookingLeadLede">
+            Choose how you’d like to continue. Existing families can unlock with their child’s name and family PIN.
+          </p>
+          <div class="booking-gate__tabs" role="tablist" aria-label="Access type">
+            <button
+              type="button"
+              class="booking-gate__tab"
+              id="bookingLeadTabReturning"
+              role="tab"
+              aria-selected="false"
+              data-booking-gate-flow="pin"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+              <span>Already with us</span>
+            </button>
+            <button
+              type="button"
+              class="booking-gate__tab"
+              id="bookingLeadTabNew"
+              role="tab"
+              aria-selected="false"
+              data-booking-gate-flow="returning"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <line x1="19" y1="8" x2="19" y2="14"/>
+                <line x1="22" y1="11" x2="16" y2="11"/>
+              </svg>
+              <span>New visitor</span>
+            </button>
+          </div>
         </div>
 
-        <div id="bookingLeadReturningBlock">
-          <h2 class="booking-gate__title" id="bookingLeadTitle">Welcome back</h2>
-          <p class="booking-gate__lede" id="bookingLeadLede">
-            Existing club families and anyone who has already registered on this booking portal can enter with email
-            and a one-time code. If you’re already signed in to the
-            <a href="/parent" style="color:var(--blueDeep);font-weight:700">family portal</a>,
-            you won’t need a second code here.
+        <div id="bookingLeadPinBlock" hidden>
+          <p class="booking-gate__eyebrow">Already with us</p>
+          <h2 class="booking-gate__title">Family PIN</h2>
+          <p class="booking-gate__lede">
+            Enter your child’s first name and your 4-digit family PIN to unlock booking. We’ll recognise your family — no email code needed.
+          </p>
+          <form id="bookingLeadPinForm" novalidate>
+            <div class="booking-gate__field">
+              <label for="bookingLeadChildName">Child’s first name <span aria-hidden="true">*</span></label>
+              <input
+                id="bookingLeadChildName"
+                name="participant_first_name"
+                type="text"
+                autocomplete="given-name"
+                required
+                maxlength="80"
+                placeholder="As on your club record"
+              />
+            </div>
+            <div class="booking-gate__field">
+              <label for="bookingLeadFamilyPin">Family PIN <span aria-hidden="true">*</span></label>
+              <input
+                id="bookingLeadFamilyPin"
+                name="login_pin"
+                class="booking-gate__pin"
+                type="password"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                required
+                maxlength="6"
+                pattern="[0-9]*"
+                placeholder="4 digits"
+              />
+            </div>
+            <p class="booking-gate__msg" id="bookingLeadPinMsg" hidden></p>
+            <div class="booking-gate__actions">
+              <button type="submit" class="btn btn--book booking-gate__cta" id="bookingLeadPinUnlock">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <span class="booking-gate__btn-label">Unlock booking</span>
+              </button>
+            </div>
+            <div class="booking-gate__secondary">
+              <button type="button" class="booking-gate__linkbtn" id="bookingLeadPinBack">Back</button>
+              <button type="button" class="booking-gate__linkbtn" id="bookingLeadPinToEmail">Use email instead</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="bookingLeadReturningBlock" hidden>
+          <p class="booking-gate__eyebrow">New visitor</p>
+          <h2 class="booking-gate__title">Email access</h2>
+          <p class="booking-gate__lede">
+            Enter the email on file (or the one you use with the club) and we’ll send a one-time access code.
           </p>
           <form id="bookingLeadReturningForm" novalidate>
             <div class="booking-gate__field">
@@ -1581,10 +1641,15 @@
                 <span class="booking-gate__btn-label">Send access code</span>
               </button>
             </div>
+            <div class="booking-gate__secondary">
+              <button type="button" class="booking-gate__linkbtn" id="bookingLeadReturningBack">Back</button>
+              <button type="button" class="booking-gate__linkbtn" id="bookingLeadRegisterLink">First time here? Register</button>
+            </div>
           </form>
         </div>
 
         <div id="bookingLeadNewBlock" hidden>
+          <p class="booking-gate__eyebrow">Register</p>
           <h2 class="booking-gate__title">Tell us who is looking</h2>
           <p class="booking-gate__lede">
             New to ClubSENsational? Enter parent/carer details to request access, explore availability, and begin a booking.
@@ -1649,6 +1714,9 @@
                 <span class="booking-gate__btn-label">Request access code</span>
               </button>
             </div>
+            <div class="booking-gate__secondary">
+              <button type="button" class="booking-gate__linkbtn" id="bookingLeadRegisterBack">Back</button>
+            </div>
           </form>
         </div>
       </div>
@@ -1694,7 +1762,7 @@
 
   <script src="/portal/portal_booking_offer.js?v=20260810-madre-null-staff"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
-  <script src="/portal/portal_booking_lead_gate.js?v=20260810-preview-after-load"></script>
+  <script src="/portal/portal_booking_lead_gate.js?v=20260810-welcome-pin"></script>
   <script>
 (function () {
   "use strict";

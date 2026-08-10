@@ -1,6 +1,7 @@
 /**
- * Booking Portal access gate — OTP for visitors; Family Portal parents
- * (signed-in session) unlock without a second code.
+ * Booking Portal access gate —
+ * Welcome → Already with us (child + PIN) | New visitor (email OTP).
+ * Family Portal parents (signed-in session) unlock without a second code.
  */
 (function (global) {
   "use strict";
@@ -8,14 +9,16 @@
   var STORAGE_KEY = "clubsens_booking_lead_session_v1";
   var PARENT_SESSION_KEY = "clubsens_parent_portal_session_v1";
   var PRIVACY_VERSION = "2026-07-v1";
-  var PREVIEW_MS = 5000;
+  var PREVIEW_MS = 10000;
   var state = {
     unlocked: false,
     lead: null,
     token: "",
     pendingEmail: "",
     timer: null,
-    flow: "returning",
+    /** choice | pin | returning | new */
+    flow: "choice",
+    wired: false,
   };
 
   function cfg() {
@@ -97,6 +100,23 @@
     }
   }
 
+  function saveParentPortalSession(token, expiresAt) {
+    if (!token) return;
+    try {
+      global.localStorage.setItem(
+        PARENT_SESSION_KEY,
+        JSON.stringify({
+          token: String(token),
+          expiresAt: expiresAt
+            ? new Date(expiresAt).getTime()
+            : Date.now() + 24 * 60 * 60 * 1000,
+        })
+      );
+    } catch (_e) {
+      /* ignore */
+    }
+  }
+
   function readParentPortalToken() {
     try {
       var raw = global.localStorage.getItem(PARENT_SESSION_KEY);
@@ -118,7 +138,10 @@
       if (!/^[a-f0-9]{32,128}$/i.test(tok)) return false;
       saveStored(tok, null, null);
       q.delete("lead_session");
-      var next = global.location.pathname + (q.toString() ? "?" + q.toString() : "") + (global.location.hash || "");
+      var next =
+        global.location.pathname +
+        (q.toString() ? "?" + q.toString() : "") +
+        (global.location.hash || "");
       if (global.history && global.history.replaceState) {
         global.history.replaceState({}, "", next);
       }
@@ -203,20 +226,45 @@
   }
 
   function setFlow(flow) {
-    state.flow = flow === "new" ? "new" : "returning";
+    var next = flow || "choice";
+    if (next === "returning" || next === "email") next = "returning";
+    else if (next === "pin") next = "pin";
+    else if (next === "new" || next === "register") next = "new";
+    else next = "choice";
+    state.flow = next;
+
+    var choice = $("bookingLeadChoiceBlock");
+    var pin = $("bookingLeadPinBlock");
     var ret = $("bookingLeadReturningBlock");
     var neu = $("bookingLeadNewBlock");
+    if (choice) choice.hidden = next !== "choice";
+    if (pin) pin.hidden = next !== "pin";
+    if (ret) ret.hidden = next !== "returning";
+    if (neu) neu.hidden = next !== "new";
+
     var tabR = $("bookingLeadTabReturning");
     var tabN = $("bookingLeadTabNew");
-    if (ret) ret.hidden = state.flow !== "returning";
-    if (neu) neu.hidden = state.flow !== "new";
     if (tabR) {
-      tabR.classList.toggle("is-active", state.flow === "returning");
-      tabR.setAttribute("aria-selected", state.flow === "returning" ? "true" : "false");
+      tabR.classList.toggle("is-active", next === "pin");
+      tabR.setAttribute("aria-selected", next === "pin" ? "true" : "false");
     }
     if (tabN) {
-      tabN.classList.toggle("is-active", state.flow === "new");
-      tabN.setAttribute("aria-selected", state.flow === "new" ? "true" : "false");
+      tabN.classList.toggle("is-active", next === "returning");
+      tabN.setAttribute("aria-selected", next === "returning" ? "true" : "false");
+    }
+  }
+
+  function focusFlowField() {
+    var el = null;
+    if (state.flow === "pin") el = $("bookingLeadChildName");
+    else if (state.flow === "returning") el = $("bookingLeadReturningEmail");
+    else if (state.flow === "new") el = $("bookingLeadParentName") || $("bookingLeadFirstName");
+    else el = $("bookingLeadTabReturning");
+    if (!el) return;
+    try {
+      el.focus();
+    } catch (_e) {
+      /* ignore */
     }
   }
 
@@ -268,7 +316,6 @@
   }
 
   function openGate() {
-    // Late handoff if Family Portal session appeared after boot.
     void tryParentPortalHandoff().then(function (ok) {
       if (ok) {
         unlock();
@@ -276,19 +323,9 @@
       }
       setLocked(true);
       showStep("details");
-      setFlow(state.flow || "returning");
+      setFlow("choice");
       showModal(true);
-      var focusEl =
-        state.flow === "new"
-          ? $("bookingLeadParentName") || $("bookingLeadFirstName")
-          : $("bookingLeadReturningEmail");
-      if (focusEl) {
-        try {
-          focusEl.focus();
-        } catch (_e) {
-          /* ignore */
-        }
-      }
+      focusFlowField();
     });
   }
 
@@ -321,6 +358,86 @@
     setBusy(btn, false, idleLabel);
   }
 
+  async function submitPin(ev) {
+    if (ev) ev.preventDefault();
+    var firstName = String(
+      ($("bookingLeadChildName") && $("bookingLeadChildName").value) || ""
+    ).trim();
+    var pinRaw = String(($("bookingLeadFamilyPin") && $("bookingLeadFamilyPin").value) || "")
+      .replace(/\D/g, "");
+    var btn = $("bookingLeadPinUnlock");
+
+    setMsg("bookingLeadPinMsg", "", false);
+    if (!firstName || (pinRaw.length !== 4 && pinRaw.length !== 6)) {
+      setMsg(
+        "bookingLeadPinMsg",
+        "Enter your child’s first name and your 4-digit family PIN.",
+        true
+      );
+      return;
+    }
+
+    setBusy(btn, true, "Checking…");
+    try {
+      var sign = await api("parent-portal-sign-in", {
+        participant_first_name: firstName,
+        login_pin: pinRaw,
+      });
+      if (sign.res.status === 429) {
+        setMsg(
+          "bookingLeadPinMsg",
+          "Too many attempts. Please wait a little and try again.",
+          true
+        );
+        setBusy(btn, false, "Unlock booking");
+        return;
+      }
+      if (!sign.res.ok || !sign.data || !sign.data.ok || !sign.data.session_token) {
+        var errCode = sign.data && sign.data.error;
+        var human =
+          errCode === "former_client"
+            ? "Family portal access has ended for this place. Use email access below, or contact the office."
+            : errCode === "ambiguous_name"
+              ? "That first name matches more than one family. Contact the office."
+              : "We could not unlock. Check the child’s first name and PIN, then try again.";
+        setMsg("bookingLeadPinMsg", human, true);
+        setBusy(btn, false, "Unlock booking");
+        return;
+      }
+
+      saveParentPortalSession(sign.data.session_token, sign.data.expires_at);
+
+      var leadOut = await api(
+        "portal-booking-lead-from-parent-session",
+        {
+          first_page_visited: (global.location && global.location.pathname) || "/bookingportal",
+        },
+        { "x-parent-portal-session": String(sign.data.session_token) }
+      );
+      if (
+        !leadOut.res.ok ||
+        !leadOut.data ||
+        !leadOut.data.ok ||
+        !leadOut.data.session_token
+      ) {
+        setMsg(
+          "bookingLeadPinMsg",
+          "Signed in, but we couldn’t open booking just now. Please try again.",
+          true
+        );
+        setBusy(btn, false, "Unlock booking");
+        return;
+      }
+
+      saveStored(leadOut.data.session_token, leadOut.data.expires_at, leadOut.data.lead);
+      unlock();
+      return;
+    } catch (_e) {
+      setMsg("bookingLeadPinMsg", "Network error — please try again.", true);
+    }
+    setBusy(btn, false, "Unlock booking");
+  }
+
   async function submitReturning(ev) {
     if (ev) ev.preventDefault();
     var email = String(
@@ -339,7 +456,6 @@
 
     setBusy(btn, true, "Sending code…");
     try {
-      // Returning clients already accepted privacy at first enrolment — do not re-ask.
       var out = await api("portal-booking-lead-otp-request", {
         flow: "returning",
         parent_email: email,
@@ -352,11 +468,11 @@
         var err = (out.data && out.data.error) || "send_failed";
         var human =
           err === "not_recognised"
-            ? "We couldn’t find that email on file. Try your club email, add the phone on file, or use New visitor."
+            ? "We couldn’t find that email on file. Try your club email, add the phone on file, or register below."
             : err === "email_invalid"
               ? "Please enter a valid email address."
               : err === "mobile_invalid"
-                ? "Add the phone number on your club record, or use New visitor."
+                ? "Add the phone number on your club record, or register below."
                 : "We couldn’t send a code just now. Please try again.";
         setMsg("bookingLeadReturningMsg", human, true);
         setBusy(btn, false, "Send access code");
@@ -441,6 +557,7 @@
     if (ev) ev.preventDefault();
     var email =
       state.pendingEmail ||
+      String(($("bookingLeadReturningEmail") && $("bookingLeadReturningEmail").value) || "").trim() ||
       String(($("bookingLeadEmail") && $("bookingLeadEmail").value) || "").trim();
     var code = String(($("bookingLeadCode") && $("bookingLeadCode").value) || "").trim();
     var btn = $("bookingLeadVerify");
@@ -473,6 +590,10 @@
   }
 
   function wireUi() {
+    if (state.wired) return;
+    state.wired = true;
+
+    var pinForm = $("bookingLeadPinForm");
     var detailsForm = $("bookingLeadDetailsForm");
     var returningForm = $("bookingLeadReturningForm");
     var otpForm = $("bookingLeadOtpForm");
@@ -480,33 +601,87 @@
     var resendBtn = $("bookingLeadResend");
     var tabR = $("bookingLeadTabReturning");
     var tabN = $("bookingLeadTabNew");
+    var pinBack = $("bookingLeadPinBack");
+    var pinToEmail = $("bookingLeadPinToEmail");
+    var returningBack = $("bookingLeadReturningBack");
+    var registerLink = $("bookingLeadRegisterLink");
+    var registerBack = $("bookingLeadRegisterBack");
+    var pinInput = $("bookingLeadFamilyPin");
+
+    if (pinForm) pinForm.addEventListener("submit", submitPin);
     if (detailsForm) detailsForm.addEventListener("submit", submitDetails);
     if (returningForm) returningForm.addEventListener("submit", submitReturning);
     if (otpForm) otpForm.addEventListener("submit", submitOtp);
+
     if (tabR) {
       tabR.addEventListener("click", function () {
-        setFlow("returning");
+        showStep("details");
+        setFlow("pin");
+        focusFlowField();
       });
     }
     if (tabN) {
       tabN.addEventListener("click", function () {
+        showStep("details");
+        setFlow("returning");
+        focusFlowField();
+      });
+    }
+    if (pinBack) {
+      pinBack.addEventListener("click", function () {
+        setFlow("choice");
+        focusFlowField();
+      });
+    }
+    if (pinToEmail) {
+      pinToEmail.addEventListener("click", function () {
+        setFlow("returning");
+        focusFlowField();
+      });
+    }
+    if (returningBack) {
+      returningBack.addEventListener("click", function () {
+        setFlow("choice");
+        focusFlowField();
+      });
+    }
+    if (registerLink) {
+      registerLink.addEventListener("click", function () {
         setFlow("new");
+        focusFlowField();
+      });
+    }
+    if (registerBack) {
+      registerBack.addEventListener("click", function () {
+        setFlow("returning");
+        focusFlowField();
       });
     }
     if (backBtn) {
       backBtn.addEventListener("click", function () {
         showStep("details");
         setMsg("bookingLeadOtpMsg", "", false);
+        if (state.flow !== "returning" && state.flow !== "new") setFlow("returning");
+        focusFlowField();
       });
     }
     if (resendBtn) {
       resendBtn.addEventListener("click", function () {
         showStep("details");
-        if (state.flow === "returning") submitReturning();
-        else submitDetails();
+        if (state.flow === "new") submitDetails();
+        else {
+          setFlow("returning");
+          submitReturning();
+        }
       });
     }
-    setFlow(state.flow || "returning");
+    if (pinInput) {
+      pinInput.addEventListener("input", function () {
+        pinInput.value = String(pinInput.value || "").replace(/\D/g, "").slice(0, 6);
+      });
+    }
+
+    setFlow("choice");
   }
 
   function guardClicks(root) {
@@ -517,7 +692,9 @@
         if (state.unlocked) return;
         var t =
           e.target && e.target.closest
-            ? e.target.closest("[data-book], [data-enquire], [data-dc-enquire], .btn--book, .btn--wait")
+            ? e.target.closest(
+                "[data-book], [data-enquire], [data-dc-enquire], .btn--book, .btn--wait"
+              )
             : null;
         if (!t) return;
         e.preventDefault();
@@ -586,7 +763,6 @@
       return true;
     }
 
-    // Already signed into Family Portal → unlock without a second OTP.
     ok = await tryParentPortalHandoff();
     if (ok) {
       unlock();
