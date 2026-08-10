@@ -413,6 +413,12 @@
     if (/schedule:year_1/.test(hay)) {
       return 'One-off payment (year)';
     }
+    if (/schedule:term_flexi|flexi\s*2\s*\/\s*term|flexi term/.test(hay)) {
+      return yearCadence ? 'Flexi: 6 per year' : 'Flexi: 2 per term';
+    }
+    if (/schedule:monthly_term|gocardless monthly/.test(hay) || (isGc && n >= 3 && /payment\s*·|september|october|november|december/.test(hay))) {
+      return 'GoCardless (monthly ×' + Math.max(n, 1) + ' · term) · £1.50 / instalment';
+    }
     if (/schedule:term_3|_hf_term_/.test(hay)) {
       return 'One-off payment (term)';
     }
