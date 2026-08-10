@@ -1180,8 +1180,11 @@
   function category(r) {
     var s = String(r.payment_status || "").toLowerCase();
     if (s.indexOf("re-enrol") >= 0 || s.indexOf("reenrol") >= 0) return "notreenrolled";
+    /* Flexi / instalment paid only when money is actually on the share. */
     if (s.indexOf("partial") === 0 || s.indexOf("flexi") === 0 || s.indexOf("instalment") === 0) {
-      return "partial";
+      var paidAmt = Number(r._amountPaid != null ? r._amountPaid : r.amount_paid_gbp) || 0;
+      if (paidAmt > 0) return "partial";
+      return "outstanding";
     }
     if (s.indexOf("paid") === 0) return "paid"; // "Paid"
     return "outstanding"; // Outstanding / Not paid / Pending / blank
@@ -5284,13 +5287,20 @@
           row.payment_status = "Paid";
         }
       } else if (st === "partial") {
-        /* Flexi / instalment: current half paid, later half still due. */
+        /* Flexi / instalment: only when amount_paid > 0 (ignore false GC partials). */
         var paidAmt = Number(inv.amount_paid_gbp) || 0;
-        var face = amt > 0 ? amt : Number(row.amount_billed) || 0;
-        var remain = Math.max(0, Math.round((face - paidAmt) * 100) / 100);
-        row._amountPaid = Math.max(Number(row._amountPaid) || 0, paidAmt);
-        row.amount_out = remain;
-        row.payment_status = "Partial";
+        if (!(paidAmt > 0)) {
+          row.amount_out = Math.max(Number(row.amount_out) || 0, amt);
+          if (String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0) {
+            row.payment_status = "Outstanding";
+          }
+        } else {
+          var face = amt > 0 ? amt : Number(row.amount_billed) || 0;
+          var remain = Math.max(0, Math.round((face - paidAmt) * 100) / 100);
+          row._amountPaid = Math.max(Number(row._amountPaid) || 0, paidAmt);
+          row.amount_out = remain;
+          row.payment_status = "Partial";
+        }
       } else if (st !== "void") {
         /* Outstanding: catalogue autumn still unpaid (don't stack instalment GBP). */
         if (String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0) {
