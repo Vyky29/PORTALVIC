@@ -16,6 +16,7 @@ import { xeroEnsurePaidShareInBooks } from "../_shared/xero_payments.ts";
 import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
 import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
 import { recordInvoiceInstalmentPayment } from "../_shared/portal_create_family_invoice.ts";
+import { tryCompleteBookingAfterInvoicePayment } from "../_shared/portal_booking_finish.ts";
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -145,6 +146,14 @@ async function markInvoicePaid(
     } catch (e) {
       console.error("[gc-webhook] consolidated hold", e instanceof Error ? e.message : String(e));
     }
+    try {
+      await tryCompleteBookingAfterInvoicePayment(supabase, String(target.id));
+    } catch (e) {
+      console.error(
+        "[gc-webhook] finish booking consolidated",
+        e instanceof Error ? e.message : String(e),
+      );
+    }
     return {
       ok: true as const,
       invoice_id: target.id,
@@ -197,6 +206,11 @@ async function markInvoicePaid(
     await confirmCrashSummerBookingsForInvoice(supabase, String(data.id));
   } catch (e) {
     console.error("[gc-webhook] crash confirm", e instanceof Error ? e.message : String(e));
+  }
+  try {
+    await tryCompleteBookingAfterInvoicePayment(supabase, String(data.id));
+  } catch (e) {
+    console.error("[gc-webhook] finish booking", e instanceof Error ? e.message : String(e));
   }
   return { ok: true as const, invoice_id: data.id, xero, hold };
 }

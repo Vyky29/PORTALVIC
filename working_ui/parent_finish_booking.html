@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f4f8fb" />
+  <title>Finish booking — clubSENsational</title>
+  <script src="/portal-static-bootstrap.js"></script>
+  <script src="/portal/portal_brand.js?v=20260811-finish"></script>
+  <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
+  <style>
+    :root {
+      --blue: #2d84b3;
+      --ink: #173247;
+      --text: #314555;
+      --muted: #728290;
+      --line: rgba(23, 50, 71, .12);
+      --white: #ffffff;
+      --bg: #f4f8fb;
+      --radius: 18px;
+      --danger: #c0392b;
+      --dangerSoft: #fff1f1;
+      --success: #157347;
+      --successSoft: #e8f7ef;
+      --max: min(560px, 100%);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    [hidden] { display: none !important; }
+    html, body {
+      margin: 0;
+      min-height: 100dvh;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #f7fbff 0%, #edf4fb 100%);
+      line-height: 1.45;
+    }
+    .page {
+      width: 100%;
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: max(16px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
+      min-width: 0;
+    }
+    .brand { text-align: center; margin-bottom: 16px; }
+    .brand img { width: 72px; height: 72px; object-fit: contain; border-radius: 14px; }
+    .brand h1 { margin: 8px 0 4px; font-size: 1.15rem; color: var(--ink); font-weight: 800; }
+    .brand p { margin: 0; font-size: .88rem; color: var(--muted); }
+    .card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin: 0 0 14px;
+      min-width: 0;
+    }
+    .card h2 { margin: 0 0 8px; font-size: 1rem; color: var(--ink); font-weight: 800; }
+    .muted { color: var(--muted); font-size: .88rem; }
+    .notice {
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin: 0 0 14px;
+      font-size: .9rem;
+      overflow-wrap: break-word;
+    }
+    .notice--error { background: var(--dangerSoft); color: var(--danger); border: 1px solid #f0c2c2; }
+    .notice--ok { background: var(--successSoft); color: var(--success); border: 1px solid #b7e0c6; }
+    .choice {
+      display: block;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      margin: 0 0 10px;
+      min-width: 0;
+    }
+    .choice input { margin-right: 8px; }
+    .choice strong { display: inline; color: var(--ink); }
+    .choice .hint { display: block; margin-top: 4px; color: var(--muted); font-size: .82rem; overflow-wrap: break-word; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: 0;
+      font-weight: 700;
+      font-size: .95rem;
+      cursor: pointer;
+      text-decoration: none;
+      width: 100%;
+    }
+    .btn--pri { background: var(--blue); color: #fff; }
+    .btn--pri:disabled { opacity: .6; cursor: wait; }
+    .card-inner {
+      background: #f7fbff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: .9rem;
+      overflow-wrap: break-word;
+    }
+    .card-inner div { margin: 0 0 4px; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="brand">
+      <img src="/portal/F-02-1.png" alt="clubSENsational" width="72" height="72" />
+      <h1>Finish your booking</h1>
+      <p>Choose funding, payment, and pay the first instalment</p>
+    </div>
+
+    <div id="fbNotice" class="notice" hidden></div>
+
+    <div class="card" id="fbSlot" style="overflow-wrap:break-word"></div>
+
+    <div id="fbStepFunding" class="card" hidden>
+      <h2>1. Funding</h2>
+      <p class="muted">How will sessions be funded?</p>
+      <form id="fbFundingForm">
+        <label class="choice">
+          <input type="radio" name="funding" value="privately_funded" checked />
+          <strong>Privately</strong>
+          <span class="hint">You pay by bank transfer or GoCardless.</span>
+        </label>
+        <label class="choice">
+          <input type="radio" name="funding" value="la_direct_payments" />
+          <strong>LA Direct Payments / NHS</strong>
+          <span class="hint">Office will complete funder paperwork with you. No online invoice in this step.</span>
+        </label>
+        <button type="submit" class="btn btn--pri">Continue</button>
+      </form>
+    </div>
+
+    <div id="fbStepPay" class="card" hidden>
+      <h2>2. Payment method</h2>
+      <p class="muted">Choose how you will pay the first instalment for the remaining sessions this term.</p>
+      <form id="fbPayForm">
+        <label class="choice">
+          <input type="radio" name="pay_plan" value="gocardless_monthly" />
+          <strong>GoCardless monthly</strong>
+          <span class="hint" data-plan-hint="gocardless_monthly"></span>
+        </label>
+        <label class="choice">
+          <input type="radio" name="pay_plan" value="flexi_bank" checked />
+          <strong>Flexi bank (2 instalments)</strong>
+          <span class="hint" data-plan-hint="flexi_bank"></span>
+        </label>
+        <label class="choice">
+          <input type="radio" name="pay_plan" value="one_off_bank" />
+          <strong>One-off bank</strong>
+          <span class="hint" data-plan-hint="one_off_bank"></span>
+        </label>
+        <button type="submit" class="btn btn--pri">Create invoice &amp; pay</button>
+      </form>
+    </div>
+
+    <div id="fbStepInvoice" class="card" hidden>
+      <h2>3. Pay first instalment</h2>
+      <div id="fbInvoiceBox"></div>
+    </div>
+
+    <div id="fbStepLa" class="card" hidden>
+      <h2>LA / NHS noted</h2>
+      <p class="muted" style="margin:0;overflow-wrap:break-word">
+        Thanks — the office has been notified. Your place stays held while we complete Direct Payments / NHS paperwork with you.
+        Parent Portal access will be arranged by the office when ready.
+      </p>
+    </div>
+
+    <div id="fbStepDone" class="card" hidden>
+      <h2>You’re in</h2>
+      <p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">
+        Payment recorded. Check your email or WhatsApp for your Parent Portal PIN
+        (sign in with your child’s first name + PIN).
+      </p>
+      <a class="btn btn--pri" href="/parent">Open Parent Portal</a>
+    </div>
+  </div>
+  <script src="/portal/portal_finish_booking.js?v=20260811-finish"></script>
+</body>
+</html>

@@ -76,7 +76,7 @@
     return { documents: j.documents || [], meta: j.meta || {} };
   }
 
-  async function acceptDocument(documentId) {
+  async function acceptDocument(documentId, action) {
     var token = await portalAuthToken();
     if (!token) return { ok: false, error: 'session_expired' };
     var res = await fetch(supabaseBase() + '/functions/v1/portal-admin-participant-document-review', {
@@ -86,7 +86,7 @@
         Authorization: 'Bearer ' + token,
         apikey: cfg.getAnonKey()
       },
-      body: JSON.stringify({ document_id: documentId, action: 'accept' })
+      body: JSON.stringify({ document_id: documentId, action: action || 'accept' })
     });
     var j = null;
     try {
@@ -154,7 +154,14 @@
         }
         var reviewed = String(d.status || '').toLowerCase() === 'reviewed';
         var reviewCell = reviewed
-          ? '<span class="chip chip--ok">Accepted</span>'
+          ? '<div class="toolbar" style="margin:0;flex-wrap:wrap;gap:6px">' +
+            '<span class="chip chip--ok">Accepted</span>' +
+            '<button type="button" class="btn btn--ghost btn--sm portal-pax-doc-resend" data-id="' +
+            esc(d.id) +
+            '" data-name="' +
+            esc(d.participant_name || '') +
+            '">Resend finish link</button>' +
+            '</div>'
           : '<button type="button" class="btn btn--sec btn--sm portal-pax-doc-accept" data-id="' +
             esc(d.id) +
             '" data-name="' +
@@ -182,7 +189,7 @@
     return (
       '<div class="portal-participant-docs-embed">' +
       '<h1 class="page-title">Participant documents</h1>' +
-      '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">New-client flow: Booking Portal slot → registration form → <strong>Accept</strong> here → then set funding and payment and confirm the place. Open the PDF first, then Accept to validate any soft hold.</p>' +
+      '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">New-client flow: Booking Portal slot → registration form → <strong>Accept</strong> (emails/WhatsApps the parent a finish-booking link) → parent chooses funding &amp; payment and pays the first instalment → Parent Portal PIN. Use <strong>Resend finish link</strong> if needed.</p>' +
       '<div class="toolbar" style="margin-bottom:12px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParticipantDocsRefresh">Refresh</button>' +
       '</div>' +
@@ -226,14 +233,14 @@
           !global.confirm(
             'Accept registration for ' +
               name +
-              '?\n\nThis marks the form reviewed and validates any held slot. Next: set funding and payment, then confirm the place.'
+              '?\n\nThis validates the held slot and sends the parent an email/WhatsApp link to choose funding, payment method, and pay the first instalment.'
           )
         ) {
           return;
         }
         btn.disabled = true;
         btn.textContent = '…';
-        void acceptDocument(id).then(function (out) {
+        void acceptDocument(id, 'accept').then(function (out) {
           if (!out || !out.ok) {
             btn.disabled = false;
             btn.textContent = 'Accept';
@@ -242,17 +249,44 @@
           }
           if (typeof cfg.toast === 'function') {
             cfg.toast(
-              'Accepted · next set funding & payment' +
-                (out.reservations_validated
-                  ? ' · hold validated'
-                  : '')
+              'Accepted · finish link ' +
+                (out.finish_url_sent ? 'sent' : 'queued') +
+                (out.email_ok ? ' · email' : '') +
+                (out.wa_ok ? ' · WhatsApp' : '')
             );
           } else {
             global.alert(
-              'Accepted. Next: set funding and payment, then confirm the place on the roster.'
+              'Accepted. Parent was sent a finish-booking link (email/WhatsApp when configured).'
             );
           }
           void renderHost(hostEl, participantName);
+        });
+      });
+    });
+    hostEl.querySelectorAll('.portal-pax-doc-resend').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = String(btn.getAttribute('data-id') || '').trim();
+        var name = String(btn.getAttribute('data-name') || '').trim() || 'this participant';
+        if (!id) return;
+        if (!global.confirm('Resend finish-booking link to parent for ' + name + '?')) return;
+        btn.disabled = true;
+        btn.textContent = '…';
+        void acceptDocument(id, 'resend_finish_link').then(function (out) {
+          btn.disabled = false;
+          btn.textContent = 'Resend finish link';
+          if (!out || !out.ok) {
+            global.alert('Could not resend (' + ((out && out.error) || 'failed') + ').');
+            return;
+          }
+          if (typeof cfg.toast === 'function') {
+            cfg.toast(
+              'Finish link resent' +
+                (out.email_ok ? ' · email' : '') +
+                (out.wa_ok ? ' · WhatsApp' : '')
+            );
+          } else {
+            global.alert('Finish-booking link resent.');
+          }
         });
       });
     });

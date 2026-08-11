@@ -504,6 +504,9 @@ verify_jwt = false
 [functions.portal-admin-participant-document-review]
 verify_jwt = false
 
+[functions.portal-booking-finish]
+verify_jwt = false
+
 [functions.portal-admin-session-feedback-list]
 verify_jwt = false
 

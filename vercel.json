@@ -112,6 +112,8 @@
     { "source": "/commissioning/terms-accept", "destination": "/commissioning_terms_accept.html" },
     { "source": "/la/terms-accept", "destination": "/commissioning_terms_accept.html" },
     { "source": "/parent/registration", "destination": "/parent_registration.html" },
+    { "source": "/parent/finish-booking", "destination": "/parent_finish_booking.html" },
+    { "source": "/finish-booking", "destination": "/parent_finish_booking.html" },
     { "source": "/bookingportal", "destination": "/bookingportal.html" },
     { "source": "/bookingportal/", "destination": "/bookingportal.html" },
     { "source": "/booking-portal", "destination": "/bookingportal.html" },
