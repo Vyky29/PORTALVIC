@@ -121,12 +121,12 @@
         <label class="choice">
           <input type="radio" name="funding" value="privately_funded" checked />
           <strong>Using Private Funds (own money)</strong>
-          <span class="hint">You choose how to pay (bank transfer or GoCardless) and pay the first instalment.</span>
+          <span class="hint">You pay for sessions yourself (bank transfer or GoCardless).</span>
         </label>
         <label class="choice">
           <input type="radio" name="funding" value="la_direct_payments" />
           <strong>Using Funds from Local Authority (Direct Payments)</strong>
-          <span class="hint">The office will complete Direct Payments paperwork with you. No online invoice in this step.</span>
+          <span class="hint">You use Local Authority Direct Payments money for activities approved in the participant’s EHCP. You still receive an invoice and pay the first instalment here.</span>
         </label>
         <button type="submit" class="btn btn--pri">Continue</button>
       </form>
@@ -160,14 +160,6 @@
       <div id="fbInvoiceBox"></div>
     </div>
 
-    <div id="fbStepLa" class="card" hidden>
-      <h2>Local Authority Direct Payments noted</h2>
-      <p class="muted" style="margin:0;overflow-wrap:break-word">
-        Thanks — the office has been notified. Your place stays held while we complete Direct Payments paperwork with you.
-        Parent Portal access will be arranged by the office when ready.
-      </p>
-    </div>
-
     <div id="fbStepDone" class="card" hidden>
       <h2>You’re in</h2>
       <p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">
@@ -177,6 +169,6 @@
       <a class="btn btn--pri" href="/parent">Open Parent Portal</a>
     </div>
   </div>
-  <script src="/portal/portal_finish_booking.js?v=20260811-funding-labels"></script>
+  <script src="/portal/portal_finish_booking.js?v=20260811-funding-copy2"></script>
 </body>
 </html>

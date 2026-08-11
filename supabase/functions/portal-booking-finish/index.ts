@@ -29,9 +29,6 @@ import {
   gocardlessCreateBillingRequest,
   gocardlessCreateBillingRequestFlow,
 } from "../_shared/gocardless.ts";
-import {
-  notifyOfficeRegistrationSubmitted,
-} from "../_shared/portal_booking_lead_office_notify.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -395,46 +392,28 @@ Deno.serve(async (req) => {
     const funding = parseFundingCode(body.funding_code);
     if (!funding) return json(400, { ok: false, error: "funding_required" });
 
-    if (funding === "la_direct_payments") {
+    // Funding only (Continue on step 1) — both private and LA DP continue to pay + invoice.
+    const planOnly = parseNewClientPayPlan(body.pay_plan);
+    if (!planOnly) {
       const now = new Date().toISOString();
       await admin
         .from("portal_booking_completion_tokens")
         .update({
           funding_code: funding,
           pay_plan: null,
-          status: "la_office",
+          status: "pending",
           choices_json: { funding_code: funding, saved_at: now },
           updated_at: now,
         })
         .eq("id", token.id);
-
-      try {
-        await notifyOfficeRegistrationSubmitted({
-          documentId: String(token.document_id || doc.id),
-          formType: "client_registration",
-          participantName: String(doc.participant_name || ""),
-          parentName: (doc.parent_name as string) || null,
-          parentEmail: (doc.parent_email as string) || null,
-          parentPhone: (doc.parent_phone as string) || null,
-          leadId: token.lead_id,
-          slotHeld: true,
-          bookingSummary:
-            `LA Direct Payments finish-booking · ${[serviceName, venue, day, timeLabel].filter(Boolean).join(" · ")}`,
-        });
-      } catch (e) {
-        console.warn("[portal-booking-finish] office la notify", e);
-      }
-
       return json(200, {
         ok: true,
-        status: "la_office",
-        message:
-          "Thanks — we have noted Local Authority Direct Payments. The office will contact you to complete funding paperwork. Your place remains held.",
+        status: "funding_saved",
+        funding_code: funding,
       });
     }
 
-    const plan = parseNewClientPayPlan(body.pay_plan);
-    if (!plan) return json(400, { ok: false, error: "pay_plan_required" });
+    const plan = planOnly;
     const now = new Date().toISOString();
     await admin
       .from("portal_booking_completion_tokens")
@@ -464,8 +443,8 @@ Deno.serve(async (req) => {
       parseFundingCode(token.funding_code);
     const plan = parseNewClientPayPlan(body.pay_plan) ||
       parseNewClientPayPlan(token.pay_plan);
-    if (funding !== "privately_funded") {
-      return json(400, { ok: false, error: "private_funding_required" });
+    if (!funding) {
+      return json(400, { ok: false, error: "funding_required" });
     }
     if (!plan) return json(400, { ok: false, error: "pay_plan_required" });
 
@@ -486,7 +465,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    const fundingLabel = "Using Private Funds (own money)";
+    const fundingLabel =
+      funding === "la_direct_payments"
+        ? "Using Funds from Local Authority (Direct Payments)"
+        : "Using Private Funds (own money)";
     const paymentLabel =
       plan === "gocardless_monthly"
         ? "GoCardless monthly"
@@ -521,7 +503,7 @@ Deno.serve(async (req) => {
       lineDescription: quote.lineDescription,
       reference: quote.reference,
       service: serviceName,
-      notes: `Finish booking · ${plan} · token ${token.id}`,
+      notes: `Finish booking · ${funding} · ${plan} · token ${token.id}`,
       quantity: quote.remainingSessions,
       shareStatus: "ready",
       paymentMethodHint: quote.paymentMethodHint,

@@ -98,7 +98,7 @@
   }
 
   function setStep(name) {
-    ["fbStepFunding", "fbStepPay", "fbStepInvoice", "fbStepDone", "fbStepLa"].forEach(function (id) {
+    ["fbStepFunding", "fbStepPay", "fbStepInvoice", "fbStepDone"].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.hidden = true;
     });
@@ -119,10 +119,6 @@
       );
       return;
     }
-    if (data.status === "la_office") {
-      setStep("fbStepLa");
-      return;
-    }
     if (data.status === "awaiting_payment" && data.invoice) {
       showInvoice(data);
       return;
@@ -139,23 +135,11 @@
           showNotice(notice, "Please choose how you fund sessions.", "error");
           return;
         }
-        showNotice(notice, "Saving…", "");
-        void api("save_choices", { funding_code: funding })
-          .then(function (out) {
-            if (out.status === "la_office") {
-              setStep("fbStepLa");
-              showNotice(notice, "", "");
-              return;
-            }
-            data.funding_code = funding;
-            data.pay_plan = null;
-            setStep("fbStepPay");
-            updatePayHints(data);
-            showNotice(notice, "", "");
-          })
-          .catch(function (err) {
-            showNotice(notice, err.message || "Could not save.", "error");
-          });
+        data.funding_code = funding;
+        data.pay_plan = null;
+        setStep("fbStepPay");
+        updatePayHints(data);
+        showNotice(notice, "", "");
       };
     }
 
@@ -164,18 +148,19 @@
       payForm.onsubmit = function (ev) {
         ev.preventDefault();
         var plan = (payForm.querySelector('input[name="pay_plan"]:checked') || {}).value;
+        var funding = data.funding_code || "privately_funded";
         if (!plan) {
           showNotice(notice, "Please choose a payment method.", "error");
           return;
         }
         showNotice(notice, "Creating your invoice…", "");
         void api("save_choices", {
-          funding_code: "privately_funded",
+          funding_code: funding,
           pay_plan: plan,
         })
           .then(function () {
             return api("create_invoice", {
-              funding_code: "privately_funded",
+              funding_code: funding,
               pay_plan: plan,
             });
           })
