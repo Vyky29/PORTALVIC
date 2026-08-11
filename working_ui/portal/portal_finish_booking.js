@@ -34,6 +34,9 @@
   }
 
   async function api(action, extra) {
+    if (qs("demo") === "1") {
+      return demoApi(action, extra || {});
+    }
     var token = qs("t");
     var body = Object.assign({ action: action, token: token }, extra || {});
     var res = await fetch(SUPABASE_URL + "/functions/v1/portal-booking-finish", {
@@ -59,6 +62,146 @@
       throw e;
     }
     return j;
+  }
+
+  var demoState = {
+    status: "pending",
+    funding_code: null,
+    booking_scope: null,
+    pay_plan: null,
+  };
+
+  function demoPayload() {
+    var unit = 50;
+    var termSessions = 14;
+    var remaining = 14;
+    var termTotal = unit * termSessions;
+    var payable = unit * remaining;
+    function quote(plan) {
+      var first =
+        plan === "gocardless_monthly"
+          ? Math.round((payable / 3) * 100) / 100 + 1
+          : plan === "flexi_bank"
+            ? Math.round((payable / 2) * 100) / 100
+            : payable;
+      return {
+        remaining_sessions: remaining,
+        programme_total_gbp: payable,
+        invoice_total_gbp: plan === "gocardless_monthly" ? payable + 3 : payable,
+        first_due_gbp: first,
+        first_due_date: new Date().toISOString().slice(0, 10),
+        schedule: [{ amount_gbp: first, due_date: new Date().toISOString().slice(0, 10), status: "pending" }],
+        payment_method_hint: plan === "gocardless_monthly" ? "gocardless" : "bank_transfer",
+      };
+    }
+    return {
+      ok: true,
+      status: demoState.status,
+      funding_code: demoState.funding_code,
+      booking_scope: demoState.booking_scope,
+      pay_plan: demoState.pay_plan,
+      participant_name: "Mhd Malaz Bouz Alasal (demo)",
+      parent_name: "Ahmad Bouz Alasal",
+      slot: {
+        service_name: "Aquatic Activity",
+        venue: "Acton",
+        day: "Wednesday",
+        time: "4.00 – 4.30",
+        slot_id: "demo-aquatic-acton-wed",
+      },
+      term: "autumn",
+      term_label: "Autumn",
+      unit_price_gbp: unit,
+      pricing: {
+        unit_price_gbp: unit,
+        term: "autumn",
+        term_label: "Autumn",
+        term_sessions: termSessions,
+        term_total_gbp: termTotal,
+        remaining_sessions: remaining,
+        payable_term_gbp: payable,
+      },
+      quotes: {
+        gocardless_monthly: quote("gocardless_monthly"),
+        flexi_bank: quote("flexi_bank"),
+        one_off_bank: quote("one_off_bank"),
+      },
+      invoice:
+        demoState.status === "awaiting_payment" || demoState.status === "completed"
+          ? {
+              id: "demo-inv",
+              invoice_number: "INV-P-DEMO",
+              amount_gbp: payable,
+              amount_paid_gbp: 0,
+              payment_status: "unpaid",
+              payment_schedule: [
+                {
+                  amount_gbp: payable,
+                  due_date: new Date().toISOString().slice(0, 10),
+                  status: "pending",
+                },
+              ],
+              payment_method_hint:
+                demoState.pay_plan === "gocardless_monthly" ? "gocardless" : "bank_transfer",
+              gocardless_url:
+                demoState.pay_plan === "gocardless_monthly" ? "https://example.com/gocardless-demo" : null,
+              due_date: new Date().toISOString().slice(0, 10),
+            }
+          : null,
+      bank: {
+        payee_name: "clubSENsational (demo)",
+        sort_code: "00-00-00",
+        account_number: "00000000",
+      },
+      transfer_reference: "MALAZ-DEMO",
+      gocardless_url:
+        demoState.pay_plan === "gocardless_monthly" ? "https://example.com/gocardless-demo" : null,
+      completed: demoState.status === "completed",
+    };
+  }
+
+  function demoApi(action, extra) {
+    if (action === "load") {
+      return Promise.resolve(demoPayload());
+    }
+    if (action === "save_choices") {
+      if (extra.funding_code) demoState.funding_code = extra.funding_code;
+      if (extra.booking_scope) demoState.booking_scope = extra.booking_scope;
+      if (extra.pay_plan) {
+        demoState.pay_plan = extra.pay_plan;
+        demoState.status = "choices_saved";
+      } else if (extra.booking_scope) {
+        demoState.status = "scope_saved";
+      } else {
+        demoState.status = "funding_saved";
+      }
+      return Promise.resolve({
+        ok: true,
+        status: demoState.status,
+        funding_code: demoState.funding_code,
+        booking_scope: demoState.booking_scope,
+        pay_plan: demoState.pay_plan,
+      });
+    }
+    if (action === "create_invoice") {
+      demoState.funding_code = extra.funding_code || demoState.funding_code;
+      demoState.booking_scope = extra.booking_scope || demoState.booking_scope;
+      demoState.pay_plan = extra.pay_plan || demoState.pay_plan;
+      demoState.status = "awaiting_payment";
+      var p = demoPayload();
+      return Promise.resolve({
+        ok: true,
+        invoice: p.invoice,
+        bank: p.bank,
+        transfer_reference: p.transfer_reference,
+        gocardless_url: p.gocardless_url,
+      });
+    }
+    if (action === "confirm_paid") {
+      demoState.status = "completed";
+      return Promise.resolve({ ok: true, status: "completed", completed: true });
+    }
+    return Promise.reject(new Error("demo_unknown_action"));
   }
 
   function showNotice(el, text, kind) {
@@ -360,6 +503,17 @@
 
   function boot() {
     var notice = document.getElementById("fbNotice");
+    if (qs("demo") === "1") {
+      showNotice(notice, "Demo mode — click through the full flow (no real booking).", "ok");
+      void api("load")
+        .then(function (data) {
+          bind(data);
+        })
+        .catch(function (err) {
+          showNotice(notice, err.message || "Demo failed.", "error");
+        });
+      return;
+    }
     if (!qs("t")) {
       showNotice(notice, "Missing booking link. Open the link from your email or WhatsApp.", "error");
       return;
