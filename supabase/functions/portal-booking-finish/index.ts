@@ -23,6 +23,7 @@ import {
   parseFundingCode,
   parseNewClientPayPlan,
   quoteNewClientMidTermInvoice,
+  quoteNewClientTrialInvoice,
   tryCompleteBookingAfterInvoicePayment,
   type CompletionTokenRow,
 } from "../_shared/portal_booking_finish.ts";
@@ -120,6 +121,48 @@ async function loadContext(
     reservation = data;
   }
   return { doc, reservation };
+}
+
+function bookingKindFromContext(
+  reservation: Record<string, unknown> | null,
+  doc: Record<string, unknown> | null,
+): "trial" | "term" {
+  const notes = String(reservation?.notes || "");
+  if (/booking_kind\s*=\s*trial/i.test(notes)) {
+    return "trial";
+  }
+  const payload = doc?.payload_json;
+  if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+    const br = (payload as Record<string, unknown>).booking_request;
+    if (br && typeof br === "object" && !Array.isArray(br)) {
+      const kind = String((br as Record<string, unknown>).booking_kind || "")
+        .trim()
+        .toLowerCase();
+      if (kind === "trial" || kind === "trial_session" || kind === "taster") {
+        return "trial";
+      }
+    }
+  }
+  return "term";
+}
+
+function trialQuotePayload(q: {
+  remainingSessions: number;
+  programmeTotalGbp: number;
+  invoiceTotalGbp: number;
+  paymentSchedule: Array<{ amount_gbp: number; due_date: string | null }>;
+  paymentMethodHint: string;
+}) {
+  return {
+    remaining_sessions: q.remainingSessions,
+    programme_total_gbp: q.programmeTotalGbp,
+    invoice_total_gbp: q.invoiceTotalGbp,
+    first_due_gbp: q.paymentSchedule[0]?.amount_gbp ?? null,
+    first_due_date: q.paymentSchedule[0]?.due_date ?? null,
+    schedule: q.paymentSchedule,
+    payment_method_hint: q.paymentMethodHint,
+    is_trial: true,
+  };
 }
 
 async function ensureContact(
@@ -327,6 +370,8 @@ Deno.serve(async (req) => {
   });
   const term = inferBillingTerm();
   const serviceKey = inferServiceKey(serviceName, timeLabel);
+  const portalBookingKind = bookingKindFromContext(reservation, doc);
+  const detailLine = [day, timeLabel, venue].filter(Boolean).join(" · ");
 
   const quotePlans = [
     "gocardless_monthly",
@@ -343,7 +388,7 @@ Deno.serve(async (req) => {
       plan,
       serviceKey,
       serviceLabel: serviceName,
-      detail: [day, timeLabel, venue].filter(Boolean).join(" · "),
+      detail: detailLine,
     });
     if (!("error" in q)) {
       quotes[plan] = {
@@ -356,6 +401,16 @@ Deno.serve(async (req) => {
         payment_method_hint: q.paymentMethodHint,
       };
     }
+  }
+  const trialQ = quoteNewClientTrialInvoice({
+    unitPriceGbp: unit,
+    serviceKey,
+    serviceLabel: serviceName,
+    detail: detailLine,
+    day,
+  });
+  if (!("error" in trialQ)) {
+    quotes.trial_one_off = trialQuotePayload(trialQ);
   }
 
   const weekend = /saturday|sunday/i.test(day);
@@ -375,7 +430,8 @@ Deno.serve(async (req) => {
     token.choices_json && typeof token.choices_json === "object"
       ? token.choices_json as Record<string, unknown>
       : {};
-  const savedScope = parseBookingScope(savedChoices.booking_scope);
+  const savedScope = parseBookingScope(savedChoices.booking_scope) ||
+    (portalBookingKind === "trial" ? "trial_session" : null);
 
   if (action === "load") {
     let invoice: Record<string, unknown> | null = null;
@@ -395,6 +451,8 @@ Deno.serve(async (req) => {
       funding_code: token.funding_code,
       pay_plan: token.pay_plan,
       booking_scope: savedScope,
+      booking_kind: portalBookingKind,
+      is_trial_intent: portalBookingKind === "trial",
       participant_name: doc.participant_name,
       parent_name: doc.parent_name,
       slot: {
@@ -415,6 +473,7 @@ Deno.serve(async (req) => {
         term_total_gbp: termTotalFull,
         remaining_sessions: remainingSessions,
         payable_term_gbp: termTotalPayable,
+        trial_session_gbp: unit,
       },
       quotes,
       invoice,
@@ -519,14 +578,17 @@ Deno.serve(async (req) => {
     }
     const funding = parseFundingCode(body.funding_code) ||
       parseFundingCode(token.funding_code);
-    const plan = parseNewClientPayPlan(body.pay_plan) ||
-      parseNewClientPayPlan(token.pay_plan);
-    const scope = parseBookingScope(body.booking_scope) || savedScope;
     if (!funding) {
       return json(400, { ok: false, error: "funding_required" });
     }
-    if (!plan) return json(400, { ok: false, error: "pay_plan_required" });
+    let plan = parseNewClientPayPlan(body.pay_plan) ||
+      parseNewClientPayPlan(token.pay_plan);
+    const scope = parseBookingScope(body.booking_scope) || savedScope;
     if (!scope) return json(400, { ok: false, error: "booking_scope_required" });
+    if (scope === "trial_session") {
+      plan = "one_off_bank";
+    }
+    if (!plan) return json(400, { ok: false, error: "pay_plan_required" });
     if (plan === "own_way" && funding === "la_direct_payments") {
       return json(400, { ok: false, error: "own_way_not_for_la" });
     }
@@ -544,7 +606,10 @@ Deno.serve(async (req) => {
         already: true,
         invoice: existing,
         bank: tideBankDetailsFromEnv(),
-        quote: quotes[plan] || null,
+        quote:
+          scope === "trial_session"
+            ? quotes.trial_one_off || null
+            : quotes[plan] || null,
       });
     }
 
@@ -553,30 +618,43 @@ Deno.serve(async (req) => {
         ? "Using LA money (Participant EHCP funds)"
         : "Using Own money (private family funds)";
     const paymentLabel =
-      plan === "gocardless_monthly"
-        ? "GoCardless (monthly)"
-        : plan === "flexi_bank"
-          ? "Bank transfer · Flexi (2 per term)"
-          : plan === "own_way"
-            ? "Own way — 2 sessions prepaid + £50 / term"
-            : "Bank transfer · One-off payment";
+      scope === "trial_session"
+        ? "Trial session · pay now"
+        : plan === "gocardless_monthly"
+          ? "GoCardless (monthly)"
+          : plan === "flexi_bank"
+            ? "Bank transfer · Flexi (2 per term)"
+            : plan === "own_way"
+              ? "Own way — 2 sessions prepaid + £50 / term"
+              : "Bank transfer · One-off payment";
     const scopeLabel =
-      scope === "auto_reenroll_year"
-        ? "Auto re-enrol by term (all year)"
-        : "This term only";
+      scope === "trial_session"
+        ? "Trial session (pay now)"
+        : scope === "auto_reenroll_year"
+          ? "Auto re-enrol by term (all year)"
+          : "This term only";
 
     const ensured = await ensureContact(admin, token, doc, fundingLabel, paymentLabel);
     if ("error" in ensured) return json(400, { ok: false, error: ensured.error });
 
-    const quote = quoteNewClientMidTermInvoice({
-      term,
-      day,
-      unitPriceGbp: unit,
-      plan,
-      serviceKey,
-      serviceLabel: serviceName,
-      detail: [day, timeLabel, venue].filter(Boolean).join(" · "),
-    });
+    const quote =
+      scope === "trial_session"
+        ? quoteNewClientTrialInvoice({
+          unitPriceGbp: unit,
+          serviceKey,
+          serviceLabel: serviceName,
+          detail: detailLine,
+          day,
+        })
+        : quoteNewClientMidTermInvoice({
+          term,
+          day,
+          unitPriceGbp: unit,
+          plan,
+          serviceKey,
+          serviceLabel: serviceName,
+          detail: detailLine,
+        });
     if ("error" in quote) return json(400, { ok: false, error: quote.error });
 
     const ownerId = await resolvePortalInvoiceOwnerUserId(admin);

@@ -20,6 +20,7 @@ import {
   parseBookingTermKey,
   parseNewClientPayPlan,
   quoteNewClientMidTermInvoice,
+  quoteNewClientTrialInvoice,
 } from "./booking_portal_term_invoices.ts";
 
 export const FINISH_TOKEN_TTL_DAYS = 14;
@@ -498,5 +499,6 @@ export {
   parseBookingTermKey,
   parseNewClientPayPlan,
   quoteNewClientMidTermInvoice,
+  quoteNewClientTrialInvoice,
 };
 export type { BookingTermKey, NewClientPayPlan };

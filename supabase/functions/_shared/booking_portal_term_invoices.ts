@@ -115,7 +115,12 @@ export function parseNewClientPayPlan(raw: unknown): NewClientPayPlan | null {
   return null;
 }
 
-export function parseBookingScope(raw: unknown): "auto_reenroll_year" | "this_term_only" | null {
+export type BookingScope =
+  | "auto_reenroll_year"
+  | "this_term_only"
+  | "trial_session";
+
+export function parseBookingScope(raw: unknown): BookingScope | null {
   const s = String(raw || "").trim().toLowerCase();
   if (
     s === "auto_reenroll_year" ||
@@ -133,6 +138,14 @@ export function parseBookingScope(raw: unknown): "auto_reenroll_year" | "this_te
     s === "single_term"
   ) {
     return "this_term_only";
+  }
+  if (
+    s === "trial_session" ||
+    s === "trial" ||
+    s === "taster" ||
+    s === "trial_pay_now"
+  ) {
+    return "trial_session";
   }
   return null;
 }
@@ -377,5 +390,70 @@ export function quoteNewClientMidTermInvoice(args: {
       `${planPhrase}.\n\n` +
       "Structured activity support delivered for a SEND participant.",
     lineItems,
+  };
+}
+
+/** Single trial session — pay in full now (Booking Portal trial option). */
+export function quoteNewClientTrialInvoice(args: {
+  unitPriceGbp: number;
+  asOfIso?: string | null;
+  serviceKey?: string | null;
+  serviceLabel?: string | null;
+  detail?: string | null;
+  day?: string | null;
+  vatMode?: PortalInvoiceVatMode;
+  productMap?: Map<string, ProductMapRow> | null;
+}): NewClientProRataQuote | { error: string } {
+  const asOf = isoToday(args.asOfIso);
+  const unit = round2(Number(args.unitPriceGbp) || 0);
+  if (!(unit > 0)) return { error: "unit_price_required" };
+
+  const day = clean(args.day, 40) || "Trial";
+  const serviceKey = clean(args.serviceKey, 40) || "AQUATIC_30";
+  const serviceLabel = clean(args.serviceLabel, 120) || "Aquatic Activity";
+  const detail = clean(args.detail, 160) || day;
+  const vatMode = args.vatMode === "exempt" ? "exempt" : "vat_20";
+  const mapRow = args.productMap?.get(serviceKey) || null;
+
+  const schedule: InvoicePaymentScheduleRow[] = [
+    {
+      seq: 1,
+      label: "Trial session · pay now",
+      due_date: asOf,
+      amount_gbp: unit,
+      status: "pending",
+    },
+  ];
+
+  return {
+    term: "autumn",
+    day,
+    asOfIso: asOf,
+    remainingSessions: 1,
+    unitPriceGbp: unit,
+    programmeTotalGbp: unit,
+    invoiceTotalGbp: unit,
+    sessionDatesLabel: "1 trial session",
+    remainingDateIsos: [asOf],
+    plan: "one_off_bank",
+    paymentSchedule: schedule,
+    paymentMethodHint: "bank_transfer",
+    reference: "Trial session",
+    lineDescription:
+      `Booking Portal trial session · pay now.\n\n` +
+      `One session at £${unit.toFixed(2)}. Place is held as a trial after payment.\n\n` +
+      "Structured activity support delivered for a SEND participant.",
+    lineItems: [
+      {
+        service_key: serviceKey,
+        description: serviceLabel,
+        detail: `${detail} · Trial (1 session)`,
+        dates: "1 trial session",
+        quantity: 1,
+        unit_price_gbp: unit,
+        amount_gbp: unit,
+        xero_item_code: xeroItemCodeForService(mapRow || undefined, vatMode),
+      },
+    ],
   };
 }

@@ -64,6 +64,7 @@ type BookingRequest = {
   block_id: string | null;
   date_iso: string | null;
   pack: string | null;
+  booking_kind: "trial" | "term";
 };
 
 function asTrimmed(value: unknown, max = 200): string | null {
@@ -79,6 +80,11 @@ function extractBookingRequest(payload: Record<string, unknown>): BookingRequest
   if (!slotId) return null;
   const dateRaw = asTrimmed(br.date || br.date_iso, 32);
   const dateIso = dateRaw && /^\d{4}-\d{2}-\d{2}$/.test(dateRaw) ? dateRaw : null;
+  const kindRaw = String(br.booking_kind || "").trim().toLowerCase();
+  const bookingKind =
+    kindRaw === "trial" || kindRaw === "trial_session" || kindRaw === "taster"
+      ? "trial"
+      : "term";
   return {
     from: asTrimmed(br.from, 40) || "bookingportal",
     slot_id: slotId,
@@ -93,6 +99,7 @@ function extractBookingRequest(payload: Record<string, unknown>): BookingRequest
     block_id: asTrimmed(br.block_id, 40),
     date_iso: dateIso,
     pack: asTrimmed(br.pack || br.pack_label, 80),
+    booking_kind: bookingKind,
   };
 }
 
@@ -434,6 +441,10 @@ Deno.serve(async (req) => {
           booking_session_token_hash: tokenHash,
           status: "pending",
           hold_expires_at: holdExpires,
+          notes:
+            bookingRequest.booking_kind === "trial"
+              ? "booking_kind=trial"
+              : "booking_kind=term",
         })
         .select("id")
         .single();
@@ -455,6 +466,7 @@ Deno.serve(async (req) => {
         bookingRequest.day,
         bookingRequest.time,
         bookingRequest.activity,
+        bookingRequest.booking_kind === "trial" ? "TRIAL" : null,
       ]
         .filter(Boolean)
         .join(" · ")

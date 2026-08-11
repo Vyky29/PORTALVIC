@@ -1014,7 +1014,11 @@
           booking_mode: String(q.get('booking_mode') || '').trim() || null,
           week_id: String(q.get('week_id') || '').trim() || null,
           block_id: String(q.get('block_id') || '').trim() || null,
-          date: String(q.get('date') || '').trim() || null
+          date: String(q.get('date') || '').trim() || null,
+          booking_kind: (function () {
+            var k = String(q.get('booking_kind') || '').trim().toLowerCase();
+            return k === 'trial' || k === 'trial_session' || k === 'taster' ? 'trial' : 'term';
+          })()
         };
       } catch (_e) {
         return null;
@@ -1112,7 +1116,11 @@
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;');
         }).join(' · ') +
-        '</strong>. When you submit this form, that place is held for you while clubSENsational reviews your details. After approval you will get Parent Portal access (booking, invoice, calendar).';
+        '</strong>' +
+        (bookingRequest.booking_kind === 'trial'
+          ? ' · <strong>Trial (pay 1 session after approval)</strong>'
+          : ' · term place') +
+        '. When you submit this form, that place is held for you while clubSENsational reviews your details. After approval you will get Parent Portal access (booking, invoice, calendar).';
       el.removeAttribute('hidden');
     })();
 

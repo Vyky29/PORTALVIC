@@ -134,7 +134,7 @@
 
     <div id="fbStepScope" class="card" hidden>
       <h2>2. Booking length</h2>
-      <p class="muted">Do you want to auto re-enrol each term for the whole year, or book this term only?</p>
+      <p class="muted">Book the standing term place, or try one session first (pay now).</p>
       <form id="fbScopeForm">
         <label class="choice">
           <input type="radio" name="booking_scope" value="auto_reenroll_year" checked />
@@ -145,6 +145,11 @@
           <input type="radio" name="booking_scope" value="this_term_only" />
           <strong>This term only</strong>
           <span class="hint">Book and pay for the current term only. You can re-enrol later if a place is still available.</span>
+        </label>
+        <label class="choice">
+          <input type="radio" name="booking_scope" value="trial_session" />
+          <strong>Trial session (pay now)</strong>
+          <span class="hint">One session only at the session price. Pay now after this step — ideal if you want to try first before committing to the term.</span>
         </label>
         <button type="submit" class="btn btn--pri">Continue</button>
       </form>
@@ -197,6 +202,6 @@
       <a class="btn btn--pri" href="/parent">Open Parent Portal</a>
     </div>
   </div>
-  <script src="/portal/portal_finish_booking.js?v=20260811-pay-cascade1"></script>
+  <script src="/portal/portal_finish_booking.js?v=20260811-trial-paynow"></script>
 </body>
 </html>

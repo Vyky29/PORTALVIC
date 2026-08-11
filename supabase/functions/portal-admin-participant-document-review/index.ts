@@ -223,7 +223,7 @@ Deno.serve(async (req) => {
   let reservationsValidated = 0;
   const { data: holds, error: holdErr } = await admin
     .from("portal_booking_slot_reservations")
-    .select("id, status")
+    .select("id, status, notes")
     .eq("document_id", documentId)
     .eq("status", "pending");
 
@@ -231,13 +231,18 @@ Deno.serve(async (req) => {
     console.warn("[portal-admin-participant-document-review] holds", holdErr.message);
   } else {
     for (const hold of holds || []) {
+      const prevNotes = String(hold.notes || "").trim();
+      const keepTrial = /booking_kind\s*=\s*trial/i.test(prevNotes);
+      const nextNotes = keepTrial
+        ? "accepted_by_admin|booking_kind=trial"
+        : "accepted_by_admin";
       const { error: vErr } = await admin
         .from("portal_booking_slot_reservations")
         .update({
           status: "validated",
           validated_at: nowIso,
           updated_at: nowIso,
-          notes: "accepted_by_admin",
+          notes: nextNotes,
         })
         .eq("id", hold.id)
         .eq("status", "pending");

@@ -138,6 +138,22 @@
         flexi_bank: quote("flexi_bank"),
         one_off_bank: quote("one_off_bank"),
         own_way: quote("own_way"),
+        trial_one_off: {
+          remaining_sessions: 1,
+          programme_total_gbp: unit,
+          invoice_total_gbp: unit,
+          first_due_gbp: unit,
+          first_due_date: new Date().toISOString().slice(0, 10),
+          schedule: [
+            {
+              amount_gbp: unit,
+              due_date: new Date().toISOString().slice(0, 10),
+              status: "pending",
+            },
+          ],
+          payment_method_hint: "bank_transfer",
+          is_trial: true,
+        },
       },
       invoice:
         demoState.status === "awaiting_payment" || demoState.status === "completed"
@@ -145,13 +161,17 @@
               id: "demo-inv",
               invoice_number: "INV-P-DEMO",
               amount_gbp:
-                (demoState.pay_plan && quote(demoState.pay_plan).invoice_total_gbp) || payable,
+                demoState.booking_scope === "trial_session"
+                  ? unit
+                  : (demoState.pay_plan && quote(demoState.pay_plan).invoice_total_gbp) || payable,
               amount_paid_gbp: 0,
               payment_status: "unpaid",
               payment_schedule: [
                 {
                   amount_gbp:
-                    (demoState.pay_plan && quote(demoState.pay_plan).first_due_gbp) || payable,
+                    demoState.booking_scope === "trial_session"
+                      ? unit
+                      : (demoState.pay_plan && quote(demoState.pay_plan).first_due_gbp) || payable,
                   due_date: new Date().toISOString().slice(0, 10),
                   status: "pending",
                 },
@@ -171,6 +191,8 @@
       transfer_reference: "MALAZ-DEMO",
       gocardless_url:
         demoState.pay_plan === "gocardless_monthly" ? "https://example.com/gocardless-demo" : null,
+      booking_kind: demoState.booking_scope === "trial_session" ? "trial" : "term",
+      is_trial_intent: demoState.booking_scope === "trial_session",
       completed: demoState.status === "completed",
     };
   }
@@ -290,6 +312,9 @@
         " due now (2 sessions prepaid + £50 admin · top up as you go)"
       );
     }
+    if (plan === "trial_one_off" || q.is_trial) {
+      return money(q.first_due_gbp) + " due now (1 trial session)";
+    }
     return (
       money(q.first_due_gbp) +
       " due first (" +
@@ -298,6 +323,49 @@
       money(q.invoice_total_gbp) +
       ")"
     );
+  }
+
+  function preselectScope(data) {
+    var preferred =
+      data.booking_scope ||
+      (data.is_trial_intent || data.booking_kind === "trial"
+        ? "trial_session"
+        : "");
+    if (!preferred) return;
+    var input = document.querySelector(
+      'input[name="booking_scope"][value="' + preferred + '"]',
+    );
+    if (input) input.checked = true;
+  }
+
+  function startTrialPayNow(data, notice) {
+    var funding = data.funding_code || "privately_funded";
+    data.booking_scope = "trial_session";
+    data.pay_plan = "one_off_bank";
+    showNotice(notice, "Creating trial invoice…", "");
+    return api("save_choices", {
+      funding_code: funding,
+      booking_scope: "trial_session",
+      pay_plan: "one_off_bank",
+    })
+      .then(function () {
+        return api("create_invoice", {
+          funding_code: funding,
+          booking_scope: "trial_session",
+          pay_plan: "one_off_bank",
+        });
+      })
+      .then(function (out) {
+        data.invoice = out.invoice || data.invoice;
+        data.bank = out.bank || data.bank;
+        data.status = "awaiting_payment";
+        showInvoice(data);
+        showNotice(
+          notice,
+          "Trial invoice ready — pay now to confirm your session.",
+          "ok",
+        );
+      });
   }
 
   function setStep(name) {
@@ -426,10 +494,19 @@
       data.funding_code &&
       data.booking_scope
     ) {
-      setStep("fbStepPay");
-      showPayChannel(data);
+      if (data.booking_scope === "trial_session") {
+        void startTrialPayNow(data, notice).catch(function (err) {
+          showNotice(notice, err.message || "Could not create trial invoice.", "error");
+          setStep("fbStepScope");
+          preselectScope(data);
+        });
+      } else {
+        setStep("fbStepPay");
+        showPayChannel(data);
+      }
     } else if (data.status === "funding_saved" && data.funding_code) {
       setStep("fbStepScope");
+      preselectScope(data);
     } else {
       setStep("fbStepFunding");
     }
@@ -449,6 +526,7 @@
         void api("save_choices", { funding_code: funding })
           .then(function () {
             setStep("fbStepScope");
+            preselectScope(data);
             showNotice(notice, "", "");
           })
           .catch(function (err) {
@@ -459,6 +537,7 @@
 
     var scopeForm = document.getElementById("fbScopeForm");
     if (scopeForm) {
+      preselectScope(data);
       scopeForm.onsubmit = function (ev) {
         ev.preventDefault();
         var scope = (scopeForm.querySelector('input[name="booking_scope"]:checked') || {})
@@ -469,6 +548,12 @@
           return;
         }
         data.booking_scope = scope;
+        if (scope === "trial_session") {
+          void startTrialPayNow(data, notice).catch(function (err) {
+            showNotice(notice, err.message || "Could not create trial invoice.", "error");
+          });
+          return;
+        }
         showNotice(notice, "Saving…", "");
         void api("save_choices", {
           funding_code: funding,

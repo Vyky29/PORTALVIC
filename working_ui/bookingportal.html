@@ -1072,6 +1072,45 @@
     }
     .sheet__actions { display: flex; flex-wrap: wrap; gap: 8px; }
     .sheet__actions .btn { flex: 1 1 140px; }
+    .sheet__choices {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 14px 0 4px;
+      min-width: 0;
+    }
+    .sheet__choice {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--line, #d7e0e8);
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      cursor: pointer;
+      min-width: 0;
+    }
+    .sheet__choice:hover { border-color: var(--blue, #2d84b3); }
+    .sheet__choice--pri {
+      background: #0f7a4a;
+      border-color: #0f7a4a;
+      color: #fff;
+    }
+    .sheet__choice--pri:hover { background: #0f5c38; border-color: #0f5c38; }
+    .sheet__choice strong {
+      display: block;
+      font-size: 15px;
+      overflow-wrap: break-word;
+    }
+    .sheet__choice span {
+      display: block;
+      margin-top: 4px;
+      font-size: 12px;
+      line-height: 1.4;
+      opacity: 0.88;
+      overflow-wrap: break-word;
+    }
+    .sheet__choice--pri span { opacity: 0.92; }
 
     /* —— Access gate: preview OK, seats / prices / book locked until verified —— */
     html.booking-gated,
@@ -1444,6 +1483,7 @@
     <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
       <h3 id="sheetTitle">Enquire</h3>
       <p id="sheetBody"></p>
+      <div class="sheet__choices" id="sheetChoices" hidden></div>
       <div class="sheet__actions">
         <a class="btn" id="sheetMail" href="mailto:info@clubsensational.org">Email the office</a>
         <button type="button" class="btn btn--soft" id="sheetClose">Close</button>
@@ -2429,7 +2469,10 @@
     host.innerHTML = html;
   }
 
-  function registrationUrlForSlot(slot) {
+  function registrationUrlForSlot(slot, opts) {
+    opts = opts || {};
+    var bookingKind = String(opts.bookingKind || "term").trim().toLowerCase();
+    if (bookingKind !== "trial") bookingKind = "term";
     var svc = mock.serviceById(slot.serviceId);
     var q = new URLSearchParams();
     q.set("from", "bookingportal");
@@ -2446,6 +2489,7 @@
     if (slot.weekId) q.set("week_id", slot.weekId);
     if (slot.blockId) q.set("block_id", slot.blockId);
     if (slot.dateIso) q.set("date", slot.dateIso);
+    q.set("booking_kind", bookingKind);
     try {
       if (window.PortalBookingLeadGate) {
         var tok = window.PortalBookingLeadGate.getSessionToken();
@@ -2480,14 +2524,23 @@
     return path;
   }
 
-  function goToRegistration(slot) {
+  function goToRegistration(slot, opts) {
     if (window.PortalBookingLeadGate && !window.PortalBookingLeadGate.isUnlocked()) {
       window.PortalBookingLeadGate.openGate();
       return;
     }
+    opts = opts || {};
+    var bookingKind = String(opts.bookingKind || "term").trim().toLowerCase();
+    if (bookingKind !== "trial") bookingKind = "term";
     try {
       if (window.PortalBookingServicePresence) {
-        var bits = [slot && slot.id, slot && slot.serviceId, slot && slot.day, slot && slot.timeLabel]
+        var bits = [
+          slot && slot.id,
+          slot && slot.serviceId,
+          slot && slot.day,
+          slot && slot.timeLabel,
+          bookingKind,
+        ]
           .filter(Boolean)
           .join(" · ")
           .slice(0, 160);
@@ -2507,7 +2560,58 @@
     } catch (_e2) {
       /* ignore */
     }
-    window.location.href = registrationUrlForSlot(slot);
+    window.location.href = registrationUrlForSlot(slot, { bookingKind: bookingKind });
+  }
+
+  function openBookChoiceSheet(slot) {
+    if (window.PortalBookingLeadGate && !window.PortalBookingLeadGate.isUnlocked()) {
+      window.PortalBookingLeadGate.openGate();
+      return;
+    }
+    var svc = mock.serviceById(slot.serviceId);
+    var sheet = document.getElementById("actionSheet");
+    var title = document.getElementById("sheetTitle");
+    var body = document.getElementById("sheetBody");
+    var mail = document.getElementById("sheetMail");
+    var choices = document.getElementById("sheetChoices");
+    var price =
+      svc && mock.formatPounds
+        ? mock.formatPounds(svc.pricePerSession)
+        : "";
+    title.textContent = "How would you like to book?";
+    body.textContent =
+      (svc ? svc.name : "Session") +
+      " · " +
+      slot.day +
+      " · " +
+      slot.timeLabel +
+      " · " +
+      mock.venueLabel(slot.venue) +
+      (price ? " · " + price + " / session" : "");
+    if (mail) mail.hidden = true;
+    if (choices) {
+      choices.hidden = false;
+      choices.innerHTML =
+        '<button type="button" class="sheet__choice sheet__choice--pri" data-book-kind="term" data-slot-id="' +
+        esc(slot.id) +
+        '"><strong>Book term place</strong><span>Secure the standing place for the rest of the term (or year). After approval you’ll choose funding and payment plan.</span></button>' +
+        '<button type="button" class="sheet__choice" data-book-kind="trial" data-slot-id="' +
+        esc(slot.id) +
+        '"><strong>Book a trial</strong><span>One session only — pay now' +
+        (price ? " (" + esc(price) + ")" : "") +
+        ". Great if you want to try first.</span></button>";
+    }
+    sheet.hidden = false;
+  }
+
+  function resetActionSheetChrome() {
+    var mail = document.getElementById("sheetMail");
+    var choices = document.getElementById("sheetChoices");
+    if (mail) mail.hidden = false;
+    if (choices) {
+      choices.hidden = true;
+      choices.innerHTML = "";
+    }
   }
 
   function openDayCentreEnquire(svc) {
@@ -2546,6 +2650,7 @@
       window.PortalBookingLeadGate.openGate();
       return;
     }
+    resetActionSheetChrome();
     var svc = mock.serviceById(slot.serviceId);
     if (svc && svc.id === "day_centre") {
       openDayCentreEnquire(svc);
@@ -2656,7 +2761,13 @@
       var bookSlot = mock.MOCK_SLOTS.find(function (s) {
         return s.id === bookId;
       });
-      if (bookSlot) goToRegistration(bookSlot);
+      if (!bookSlot) return;
+      // Crash / week packs stay direct; standing weekly places offer Term vs Trial.
+      if (bookSlot.bookingMode === "weekly_pack" || bookSlot.blockId || bookSlot.weekId) {
+        goToRegistration(bookSlot, { bookingKind: "term" });
+      } else {
+        openBookChoiceSheet(bookSlot);
+      }
       return;
     }
     var btn = e.target && e.target.closest && e.target.closest("[data-enquire]");
@@ -2669,10 +2780,26 @@
   });
 
   document.getElementById("sheetClose").addEventListener("click", function () {
+    resetActionSheetChrome();
     document.getElementById("actionSheet").hidden = true;
   });
   document.getElementById("actionSheet").addEventListener("click", function (e) {
-    if (e.target === e.currentTarget) e.currentTarget.hidden = true;
+    var kindBtn = e.target && e.target.closest && e.target.closest("[data-book-kind]");
+    if (kindBtn) {
+      var kind = kindBtn.getAttribute("data-book-kind") || "term";
+      var sid = kindBtn.getAttribute("data-slot-id");
+      var slot = mock.MOCK_SLOTS.find(function (s) {
+        return s.id === sid;
+      });
+      resetActionSheetChrome();
+      document.getElementById("actionSheet").hidden = true;
+      if (slot) goToRegistration(slot, { bookingKind: kind });
+      return;
+    }
+    if (e.target === e.currentTarget) {
+      resetActionSheetChrome();
+      e.currentTarget.hidden = true;
+    }
   });
 
   document.getElementById("btnClearFilters").addEventListener("click", function () {
