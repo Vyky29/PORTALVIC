@@ -18479,39 +18479,50 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div></div></section>'
       );
     }
-    /** Capacity rows from today’s merged roster (`slotsForSelectedDate`). */
-    function adminServiceCapacityBoardRowsFromRoster(iso){
+    /** Capacity rows from standing-template roster (one ISO per weekday, all week). */
+    function adminServiceCapacityBoardRowsFromRoster(isoOrIsos){
       if(!adminSpreadsheetAdapterAvailable()) return null;
-      var slots = [];
-      try{
-        slots = slotsForSelectedDate(String(iso || '').trim() || isoDateLocal(new Date())) || [];
-      }catch(_e){
-        slots = [];
-      }
-      if(!slots.length) return null;
+      var isos = Array.isArray(isoOrIsos)
+        ? isoOrIsos
+        : [String(isoOrIsos || '').trim() || isoDateLocal(new Date())];
+      isos = isos.filter(function(x){ return /^\d{4}-\d{2}-\d{2}$/.test(String(x || '').trim()); });
+      if(!isos.length) return null;
       var by = {};
-      for(var i = 0; i < slots.length; i++){
-        var sl = slots[i];
-        var prog = String(portalDisplayProgrammeFromSheet(String(sl.programme || '')).trim() || String(sl.programme || '').trim() || '—');
-        var v = String(sl.venue || '').trim() || '—';
-        var dayFull = String(sl.sheetDay || '').trim() || portalWeekdayLongFromIsoDate(iso) || '—';
-        var dayShort = dayFull.length > 3 ? dayFull.slice(0, 3) : dayFull;
-        var tm = String(sl.anchorTimeLabel || '').trim() || (normTimeShort(sl.anchorStart) + '\u2013' + normTimeShort(sl.anchorEnd));
-        var ak = prog + '\u0001' + v + '\u0001' + String(sl.anchorStart || '') + '\u0001' + String(sl.anchorEnd || '');
-        if(!by[ak]){
-          by[ak] = { prog: prog, venue: v, dayShort: dayShort, time: tm, open: 0, booked: 0, closed: 0, lines: 0 };
+      for(var di = 0; di < isos.length; di++){
+        var iso = String(isos[di]).trim().slice(0, 10);
+        var slots = [];
+        try{
+          slots = slotsForSelectedDate(iso) || [];
+        }catch(_e){
+          slots = [];
         }
-        var g = by[ak];
-        g.lines++;
-        var slug = String(sl.clientSlug || '').trim().toLowerCase();
-        if(slug === 'closed') g.closed++;
-        else if(bookingIsBookedClientSlug(slug)) g.booked++;
-        else g.open++;
+        for(var i = 0; i < slots.length; i++){
+          var sl = slots[i];
+          var prog = String(portalDisplayProgrammeFromSheet(String(sl.programme || '')).trim() || String(sl.programme || '').trim() || '—');
+          var v = String(sl.venue || '').trim() || '—';
+          var dayFull = String(sl.sheetDay || '').trim() || portalWeekdayLongFromIsoDate(iso) || '—';
+          var dayShort = dayFull.length > 3 ? dayFull.slice(0, 3) : dayFull;
+          var tm = String(sl.anchorTimeLabel || '').trim() || (normTimeShort(sl.anchorStart) + '\u2013' + normTimeShort(sl.anchorEnd));
+          var ak = prog + '\u0001' + v + '\u0001' + dayShort + '\u0001' + String(sl.anchorStart || '') + '\u0001' + String(sl.anchorEnd || '');
+          if(!by[ak]){
+            by[ak] = { prog: prog, venue: v, dayShort: dayShort, time: tm, open: 0, booked: 0, closed: 0, lines: 0 };
+          }
+          var g = by[ak];
+          g.lines++;
+          var slug = String(sl.clientSlug || '').trim().toLowerCase();
+          if(slug === 'closed') g.closed++;
+          else if(bookingIsBookedClientSlug(slug)) g.booked++;
+          else g.open++;
+        }
       }
-      var keys = Object.keys(by).sort(function(a, b){
+      var keys = Object.keys(by);
+      if(!keys.length) return null;
+      var dowRank = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 };
+      keys.sort(function(a, b){
         var A = by[a], B = by[b];
         return String(A.prog).localeCompare(String(B.prog), undefined, { sensitivity: 'base' })
           || String(A.venue).localeCompare(String(B.venue), undefined, { sensitivity: 'base' })
+          || ((dowRank[A.dayShort] || 99) - (dowRank[B.dayShort] || 99))
           || String(A.time).localeCompare(String(B.time), undefined, { sensitivity: 'base' });
       });
       var rows = [];
