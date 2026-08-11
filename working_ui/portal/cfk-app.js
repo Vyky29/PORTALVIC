@@ -237,6 +237,11 @@
     var root = deps.$("c4kServicesRosterRoot");
     var filt = readFiltersFromDom();
     if (root) root.innerHTML = deps.renderRosterHtml(a, a, filt);
+    if (typeof deps.afterRosterRefresh === "function") {
+      try {
+        deps.afterRosterRefresh(root || null);
+      } catch (_e) {}
+    }
   }
 
   function viewHtml() {

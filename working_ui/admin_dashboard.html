@@ -1137,7 +1137,7 @@
       }
     };
 
-    var state = { view:'nav_hub', navHubGroup:null, drawerClient:null, drawerStaff:null, drawerIsSynthetic:false, reportTargetClient:null, search:'', shiftModalCtx:null, pendingBookingsScroll:null, pendingBookingsSlotFocus:null, commsOrderDetailKey:'', sessionOverview:{ iso:'', overrides:[] }, sessionFeedback:{ anchorIso:'', selectedIso:null, rangeFrom:'', rangeTo:'', clientQ:'' }, navGroupsOpen:{ g_operator:false, g_c4k:false, g_zoho:false, g_supabase:false, g_xero:false, g_indeed:false, g_settings_portal:false }, c4kServicesRegisterOpen:false, registerSessionSlot:null, scrollToCapacityEmbed:false, portalLatePendingCount:0, financeTab:'payments', hrContractsTab:'create', hrContractsIssueDoc:'checklist' };
+    var state = { view:'nav_hub', navHubGroup:null, drawerClient:null, drawerStaff:null, drawerIsSynthetic:false, reportTargetClient:null, search:'', shiftModalCtx:null, pendingBookingsScroll:null, pendingBookingsSlotFocus:null, commsOrderDetailKey:'', sessionOverview:{ iso:'', overrides:[] }, sessionFeedback:{ anchorIso:'', selectedIso:null, rangeFrom:'', rangeTo:'', clientQ:'' }, navGroupsOpen:{ g_operator:false, g_c4k:false, g_zoho:false, g_supabase:false, g_xero:false, g_indeed:false, g_settings_portal:false }, c4kServicesRegisterOpen:false, registerSessionSlot:null, scrollToCapacityEmbed:false, capAvailFilter:'open', capVenueFilter:'', portalLatePendingCount:0, financeTab:'payments', hrContractsTab:'create', hrContractsIssueDoc:'checklist' };
     var sched = { slotsById:{}, overrides:[], termEvents:[], rosterLogRows:[], activeSlot:null, lastMsg:'', waitingSupabaseRetryBound:false, weekAnchorIso:'' };
     /**
      * Schedule &amp; Covers + Sessions week window.
@@ -14629,9 +14629,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           programmeVenueBlocks: adminProgrammeVenueBlocksFromPack,
           collectVenues: adminCollectVenuesFromPack,
           collectCoaches: adminCollectCoachesFromPack,
-          collectParticipants: adminCollectParticipantsFromPack
-        });
-      }
+          collectParticipants: adminCollectParticipantsFromPack,
+          afterRosterRefresh: function(root){
+            bindCapacityBoardFilters(root || document.getElementById('c4kServicesRosterRoot') || document.getElementById('workspace') || document);
+          }
       if(window.PortalAdminSchedulingModule && typeof window.PortalAdminSchedulingModule.configure === 'function'){
         window.PortalAdminSchedulingModule.configure({
           esc: esc,
@@ -18634,7 +18635,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(o.open === 0 && wlN) riskN++;
         var wait = adminCapacityWaitMatchForProgVenue(o.prog, o.venue);
         rows.push(
-          '<tr><td style="min-width:0;overflow-wrap:break-word">'+esc(o.prog)+'</td>'+
+          '<tr data-cap-open="'+esc(String(o.open))+'" data-cap-venue="'+esc(o.venue)+'">'+
+          '<td style="min-width:0;overflow-wrap:break-word">'+esc(o.prog)+'</td>'+
           '<td style="min-width:0;overflow-wrap:break-word">'+esc(o.venue)+'</td>'+
           '<td style="white-space:nowrap">'+esc(o.dayShort)+'</td>'+
           '<td style="white-space:nowrap;min-width:0">'+esc(o.time)+'</td>'+
@@ -18645,7 +18647,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<td style="min-width:0">'+adminCapacityQuickActionsTpl(o)+'</td></tr>'
         );
       }
-      return { html: rows.join(''), offerN: offerN, riskN: riskN, source: 'roster' };
+      var venues = [];
+      var seenV = {};
+      for(var vi = 0; vi < keys.length; vi++){
+        var vv = String(by[keys[vi]].venue || '').trim();
+        if(!vv || seenV[vv]) continue;
+        seenV[vv] = true;
+        venues.push(vv);
+      }
+      venues.sort(function(a, b){ return a.localeCompare(b, undefined, { sensitivity: 'base' }); });
+      return { html: rows.join(''), offerN: offerN, riskN: riskN, source: 'roster', venues: venues };
     }
     /** Capacity rows from programme mock (`MOCK.c4kServicesList`) when roster is not loaded. */
     function adminServiceCapacityBoardRowsFromMockServicesList(){
@@ -18677,7 +18688,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             };
             var wait = adminCapacityWaitMatchForProgVenue(s.name, z.venue);
             rows.push(
-              '<tr><td style="min-width:0;overflow-wrap:break-word">'+esc(s.name)+'</td>'+
+              '<tr data-cap-open="'+esc(String(Number.isFinite(openV) ? openV : 0))+'" data-cap-venue="'+esc(bandZ.venue)+'">'+
+              '<td style="min-width:0;overflow-wrap:break-word">'+esc(s.name)+'</td>'+
               '<td style="min-width:0;overflow-wrap:break-word">'+esc(bandZ.venue)+'</td>'+
               '<td style="white-space:nowrap">'+esc(bandZ.dayShort)+'</td>'+
               '<td style="white-space:nowrap;min-width:0">'+esc(bandZ.time)+'</td>'+
@@ -18700,8 +18712,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             open: s.open
           };
           var wait2 = adminCapacityWaitMatchForProgVenue(s.name, s.venue);
+          var openS = Number(s.open);
           rows.push(
-            '<tr><td style="min-width:0;overflow-wrap:break-word">'+esc(s.name)+'</td>'+
+            '<tr data-cap-open="'+esc(String(Number.isFinite(openS) ? openS : 0))+'" data-cap-venue="'+esc(bandS.venue)+'">'+
+            '<td style="min-width:0;overflow-wrap:break-word">'+esc(s.name)+'</td>'+
             '<td style="min-width:0;overflow-wrap:break-word">'+esc(bandS.venue)+'</td>'+
             '<td style="white-space:nowrap">'+esc(bandS.dayShort)+'</td>'+
             '<td style="white-space:nowrap;min-width:0">'+esc(bandS.time)+'</td>'+
@@ -18713,7 +18727,104 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           );
         }
       }
-      return { html: rows.join(''), offerN: offerN, riskN: riskN, source: 'mock' };
+      var venuesM = [];
+      var seenVM = {};
+      (MOCK.c4kServicesList || []).forEach(function(sv){
+        (sv.slots || [{ venue: sv.venue }]).forEach(function(zz){
+          var vn = String((zz && zz.venue) || sv.venue || '').trim();
+          if(!vn || seenVM[vn]) return;
+          seenVM[vn] = true;
+          venuesM.push(vn);
+        });
+      });
+      venuesM.sort(function(a, b){ return a.localeCompare(b, undefined, { sensitivity: 'base' }); });
+      return { html: rows.join(''), offerN: offerN, riskN: riskN, source: 'mock', venues: venuesM };
+    }
+    function adminCapacityBoardFilterBarHtml(pack){
+      pack = pack || {};
+      var avail = String(state.capAvailFilter || 'open');
+      if(avail !== 'all' && avail !== 'open' && avail !== 'full') avail = 'open';
+      var venueSel = String(state.capVenueFilter || '');
+      var venues = Array.isArray(pack.venues) ? pack.venues : [];
+      var venueOpts = '<option value="">All venues</option>';
+      for(var i = 0; i < venues.length; i++){
+        var v = String(venues[i] || '');
+        venueOpts += '<option value="'+esc(v)+'"'+(v === venueSel ? ' selected' : '')+'>'+esc(v)+'</option>';
+      }
+      function availBtn(key, label){
+        var on = avail === key;
+        return '<button type="button" class="btn btn--sm '+(on ? 'btn--pri' : 'btn--sec')+'" data-cap-avail="'+key+'" aria-pressed="'+(on ? 'true' : 'false')+'">'+label+'</button>';
+      }
+      return (
+        '<div class="filter-row cap-map-filters" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;align-items:center;min-width:0">'+
+        '<span class="muted" style="font-size:12px;flex:0 0 auto">Show</span>'+
+        '<div class="toolbar" style="flex-wrap:wrap;gap:4px;min-width:0" role="group" aria-label="Availability filter">'+
+        availBtn('open', 'Available ('+esc(String(pack.offerN || 0))+')')+
+        availBtn('full', 'Full ('+esc(String(pack.riskN || 0))+')')+
+        availBtn('all', 'All')+
+        '</div>'+
+        '<label class="muted" style="font-size:12px;flex:0 0 auto">Venue</label>'+
+        '<select class="sel js-cap-venue" style="max-width:220px;min-width:0" aria-label="Filter by venue">'+venueOpts+'</select>'+
+        '<span class="muted js-cap-filter-count" style="font-size:12px;min-width:0;overflow-wrap:break-word"></span>'+
+        '</div>'
+      );
+    }
+    function bindCapacityBoardFilters(scope){
+      scope = scope || document;
+      var bars = scope.querySelectorAll ? scope.querySelectorAll('.cap-map-filters') : [];
+      for(var bi = 0; bi < bars.length; bi++){
+        (function(bar){
+          var host = bar.parentElement || bar;
+          var table = host.querySelector ? host.querySelector('table.cap-map') : null;
+          if(!table) return;
+          function syncAvailButtons(){
+            var avail = String(state.capAvailFilter || 'open');
+            bar.querySelectorAll('[data-cap-avail]').forEach(function(btn){
+              var on = btn.getAttribute('data-cap-avail') === avail;
+              btn.className = 'btn btn--sm ' + (on ? 'btn--pri' : 'btn--sec');
+              btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+            });
+          }
+          function apply(){
+            var avail = String(state.capAvailFilter || 'open');
+            var venue = String(state.capVenueFilter || '');
+            var shown = 0;
+            var total = 0;
+            table.querySelectorAll('tbody tr').forEach(function(tr){
+              total++;
+              var openN = Number(tr.getAttribute('data-cap-open') || 0);
+              if(!Number.isFinite(openN)) openN = 0;
+              var rowVenue = String(tr.getAttribute('data-cap-venue') || '');
+              var okAvail = avail === 'all' || (avail === 'open' && openN > 0) || (avail === 'full' && openN <= 0);
+              var okVenue = !venue || rowVenue === venue;
+              var ok = okAvail && okVenue;
+              tr.style.display = ok ? '' : 'none';
+              if(ok) shown++;
+            });
+            var countEl = bar.querySelector('.js-cap-filter-count');
+            if(countEl){
+              countEl.textContent = 'Showing ' + shown + ' of ' + total;
+            }
+          }
+          bar.querySelectorAll('[data-cap-avail]').forEach(function(btn){
+            btn.onclick = function(){
+              state.capAvailFilter = btn.getAttribute('data-cap-avail') || 'open';
+              syncAvailButtons();
+              apply();
+            };
+          });
+          var sel = bar.querySelector('.js-cap-venue');
+          if(sel){
+            sel.value = String(state.capVenueFilter || '');
+            sel.onchange = function(){
+              state.capVenueFilter = String(sel.value || '');
+              apply();
+            };
+          }
+          syncAvailButtons();
+          apply();
+        })(bars[bi]);
+      }
     }
     /** Title + explainer + table for Services &amp; capacity (embed + full-page). */
     function adminServiceCapacityBoardInnerHtml(opts){
@@ -18757,12 +18868,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return (
         headBlock+
-        '<div class="filter-row" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;align-items:center">'+
-        '<label class="muted" style="font-size:12px">Venue</label> '+
-        '<select class="sel" style="max-width:220px" disabled title="Filter not wired yet"><option>All sites ('+esc(srcLabel)+')</option></select> '+
-        '<span class="chip chip--ok">'+esc(String(pack.offerN))+' with openings</span> '+
-        '<span class="chip chip--pend">'+esc(String(pack.riskN))+' full / wait pressure</span>'+
-        '</div>'+
+        adminCapacityBoardFilterBarHtml(pack)+
         '<div class="card card--premium" style="overflow:auto">'+
         '<div class="card-pad" style="padding:0">'+
         '<table class="tbl tbl--dense cap-map" aria-label="Services and capacity">'+
@@ -19530,6 +19636,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var root = $('c4kServicesRosterRoot');
       var filt = readC4kServicesFiltersFromDom();
       if(root) root.innerHTML = viewC4kRosterServicesFromSlotsHtml(a, a, filt);
+      bindCapacityBoardFilters(root || document.getElementById('workspace') || document);
     }
     function viewC4kServices(){
       if(window.PortalCfkApp && typeof window.PortalCfkApp.viewHtml === 'function'){
@@ -26832,6 +26939,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(capEl) capEl.scrollIntoView({ block:'start', behavior:'smooth' });
         };
         portalAdminForceServicesRosterRefresh();
+        bindCapacityBoardFilters(document.getElementById('workspace') || document);
         if(state.scrollToCapacityEmbed){
           state.scrollToCapacityEmbed = false;
           setTimeout(function(){
@@ -26842,6 +26950,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(state.registerSessionSlot){
           mountRegisterSessionInline(state.registerSessionSlot);
         }
+      }
+      if(id==='servicecap'){
+        bindCapacityBoardFilters(document.getElementById('workspace') || document);
       }
     }
 
