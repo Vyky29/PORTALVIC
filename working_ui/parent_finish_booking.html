@@ -120,13 +120,13 @@
       <form id="fbFundingForm">
         <label class="choice">
           <input type="radio" name="funding" value="privately_funded" checked />
-          <strong>Privately</strong>
-          <span class="hint">You pay by bank transfer or GoCardless.</span>
+          <strong>Using Private Funds (own money)</strong>
+          <span class="hint">You choose how to pay (bank transfer or GoCardless) and pay the first instalment.</span>
         </label>
         <label class="choice">
           <input type="radio" name="funding" value="la_direct_payments" />
-          <strong>LA Direct Payments / NHS</strong>
-          <span class="hint">Office will complete funder paperwork with you. No online invoice in this step.</span>
+          <strong>Using Funds from Local Authority (Direct Payments)</strong>
+          <span class="hint">The office will complete Direct Payments paperwork with you. No online invoice in this step.</span>
         </label>
         <button type="submit" class="btn btn--pri">Continue</button>
       </form>
@@ -161,9 +161,9 @@
     </div>
 
     <div id="fbStepLa" class="card" hidden>
-      <h2>LA / NHS noted</h2>
+      <h2>Local Authority Direct Payments noted</h2>
       <p class="muted" style="margin:0;overflow-wrap:break-word">
-        Thanks — the office has been notified. Your place stays held while we complete Direct Payments / NHS paperwork with you.
+        Thanks — the office has been notified. Your place stays held while we complete Direct Payments paperwork with you.
         Parent Portal access will be arranged by the office when ready.
       </p>
     </div>
@@ -177,6 +177,6 @@
       <a class="btn btn--pri" href="/parent">Open Parent Portal</a>
     </div>
   </div>
-  <script src="/portal/portal_finish_booking.js?v=20260811-finish"></script>
+  <script src="/portal/portal_finish_booking.js?v=20260811-funding-labels"></script>
 </body>
 </html>

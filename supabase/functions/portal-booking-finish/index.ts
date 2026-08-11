@@ -419,7 +419,7 @@ Deno.serve(async (req) => {
           leadId: token.lead_id,
           slotHeld: true,
           bookingSummary:
-            `LA/NHS finish-booking · ${[serviceName, venue, day, timeLabel].filter(Boolean).join(" · ")}`,
+            `LA Direct Payments finish-booking · ${[serviceName, venue, day, timeLabel].filter(Boolean).join(" · ")}`,
         });
       } catch (e) {
         console.warn("[portal-booking-finish] office la notify", e);
@@ -429,7 +429,7 @@ Deno.serve(async (req) => {
         ok: true,
         status: "la_office",
         message:
-          "Thanks — we have noted LA / NHS Direct Payments. The office will contact you to complete funding paperwork. Your place remains held.",
+          "Thanks — we have noted Local Authority Direct Payments. The office will contact you to complete funding paperwork. Your place remains held.",
       });
     }
 
@@ -486,7 +486,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const fundingLabel = "Privately funded";
+    const fundingLabel = "Using Private Funds (own money)";
     const paymentLabel =
       plan === "gocardless_monthly"
         ? "GoCardless monthly"
