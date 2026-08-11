@@ -147,7 +147,7 @@
   <script src="/portal/portal_madre_fold.js?v=20260809-staff-map"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
   <script src="/portal-shared-js/portal_field_autocomplete.js?v=20260609-term-slot-autofill"></script>
-  <script src="/portal/admin-portal-term-slot.js?v=20260610-aquatic-half-hour-b"></script>
+  <script src="/portal/admin-portal-term-slot.js?v=20260811-autumn-preserve"></script>
   <script src="/portal/portal-staff-timetable-merge.js?v=20260614-changelog"></script>
   <script src="/portal/spreadsheet_reference_data.js?v=20260616-day-centre-hours"></script>
   <script src="/portal/admin-roster-spreadsheet-reference.js?v=20260614-changelog"></script>
@@ -1140,14 +1140,13 @@
     var state = { view:'nav_hub', navHubGroup:null, drawerClient:null, drawerStaff:null, drawerIsSynthetic:false, reportTargetClient:null, search:'', shiftModalCtx:null, pendingBookingsScroll:null, pendingBookingsSlotFocus:null, commsOrderDetailKey:'', sessionOverview:{ iso:'', overrides:[] }, sessionFeedback:{ anchorIso:'', selectedIso:null, rangeFrom:'', rangeTo:'', clientQ:'' }, navGroupsOpen:{ g_operator:false, g_c4k:false, g_zoho:false, g_supabase:false, g_xero:false, g_indeed:false, g_settings_portal:false }, c4kServicesRegisterOpen:false, registerSessionSlot:null, scrollToCapacityEmbed:false, capAvailFilter:'open', capVenueFilter:'', portalLatePendingCount:0, financeTab:'payments', hrContractsTab:'create', hrContractsIssueDoc:'checklist' };
     var sched = { slotsById:{}, overrides:[], termEvents:[], rosterLogRows:[], activeSlot:null, lastMsg:'', waitingSupabaseRetryBound:false, weekAnchorIso:'' };
     /**
-     * Schedule &amp; Covers + Sessions week window.
-     * Standard programmes end Fri 17 Jul; Day Centre + crash continue through Fri 31 Jul.
-     * Prefer PORTAL_TERM_FROM_TIMETABLE.lastDate so admin stays in sync with the MADRE calendar.
+     * Schedule &amp; Covers + Sessions week window — Autumn Term 2026 (full first term).
+     * Standing occupancy still projects from summer MADRE pre-crash weeks when a calendar
+     * day has no autumn-dated roster rows yet (same bridge as Services / Booking Portal).
      */
-    var SCHED_COVER_TERM_START = '2026-06-01';
-    var SCHED_COVER_TERM_END =
-      (window.PORTAL_TERM_FROM_TIMETABLE && String(PORTAL_TERM_FROM_TIMETABLE.lastDate || '').slice(0, 10)) ||
-      '2026-07-31';
+    var SCHED_COVER_TERM_START = '2026-09-01';
+    var SCHED_COVER_TERM_END = '2026-12-18';
+    var SCHED_COVER_HALF_TERM = { start: '2026-10-26', end: '2026-10-30' };
     var booking = { slotsById:{}, overrides:[], waitingSupabaseRetryBound:false, selectedDate:'', metaById:{}, financeById:{}, activeTab:'master', ordersScope:'all', ordersTimePreset:'today', ordersClientFilter:'', portalOrdersPage:1, portalOrdersRows:[] };
     var invoices = { lines:[{ description:'', quantity:1, unitPrice:0, taxType:'vat20' }] };
     var KEY_MOBILE = 'adminDashDevMobilePreview';
@@ -4405,27 +4404,40 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         clientName = cn && cn.name ? cn.name : nid;
       }
       var tm = schedAnchorTimeLabelFromSession(s);
+      var rosterService = String(s.rosterService || s.activity || '').trim();
+      var programme = schedEffectiveProgrammeForSlot({
+        rosterService: rosterService,
+        rosterArea: String(s.rosterArea || ''),
+        clientSlug: String(s.clientId || '').toLowerCase()
+      });
+      var venue = String(s.venue||'');
+      var sheetDay = String(s.day || '');
+      var clientSlug = String(s.clientId||'').toLowerCase();
+      /* Autumn Schedules & Covers: honour re-enrol releases (same rules as Services). */
+      if(adminSchedUsesStandingProjection(sessionDateIso) &&
+         bookingIsBookedClientSlug(clientSlug) &&
+         typeof adminServicePaxReleasedByReenrol === 'function' &&
+         adminServicePaxReleasedByReenrol(clientName, programme || rosterService, venue, sheetDay)){
+        clientName = 'No participant';
+        clientSlug = 'no_participant';
+      }
       return {
         demoId: schedEncodeRowId(sessionDateIso, s),
         whenLabel: String(s.day||'')+' · '+tm,
         sessionDate: sessionDateIso,
         rosterStartRaw: String(s.start || '').trim(),
-        venue: String(s.venue||''),
+        venue: venue,
         rosterArea: String(s.rosterArea || ''),
-        sheetDay: String(s.day || ''),
+        sheetDay: sheetDay,
         anchorStart: toPgTime(s.start),
         anchorEnd: toPgTime(s.end),
         anchorTimeLabel: tm,
         staffRosterId: String(s.staffId||'').toLowerCase(),
         staffName: staffName,
-        clientSlug: String(s.clientId||'').toLowerCase(),
+        clientSlug: clientSlug,
         clientDisplay: clientName,
-        rosterService: String(s.rosterService || s.activity || '').trim(),
-        programme: schedEffectiveProgrammeForSlot({
-          rosterService: String(s.rosterService || s.activity || ''),
-          rosterArea: String(s.rosterArea || ''),
-          clientSlug: String(s.clientId || '').toLowerCase()
-        }),
+        rosterService: rosterService,
+        programme: programme,
         status: String(s.status||''),
         rosterSheetLabel: schedRosterSheetLabelFromSession(s),
         notesPreview: schedNotesPreviewOneLine(nid, notesById),
@@ -4770,12 +4782,34 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var bucket = idx[days[0]];
       return !!(bucket && bucket[cid]);
     }
+    function adminSchedUsesStandingProjection(iso){
+      var s = adminNormIsoDate(iso);
+      return !!(s && s >= '2026-09-01');
+    }
+    function adminSchedStandingSourceIso(iso){
+      var want = adminNormIsoDate(iso);
+      if(!want || !adminSchedUsesStandingProjection(want)) return want;
+      var wd = portalWeekdayLongFromIsoDate(want);
+      var stand = '';
+      try{ stand = adminServicesLatestStandingIsoForDow(wd); }catch(_e){ stand = ''; }
+      return stand || want;
+    }
     function adminSessionMatchesCalendarIso(s, iso, weekdayLong, sessions){
       var wantIso = adminNormIsoDate(iso);
       var rowIso = adminNormIsoDate(s.session_date || s.sessionDate);
-      if(rowIso) return rowIso === wantIso;
+      var project = adminSchedUsesStandingProjection(wantIso);
+      var standIso = project ? adminSchedStandingSourceIso(wantIso) : wantIso;
+      if(rowIso){
+        if(rowIso === wantIso) return true;
+        /* Autumn calendar day with its own dated rows — do not also pull summer standing. */
+        if(project && adminRosterHasDatedSessionsForIso(wantIso, sessions)) return false;
+        if(project && standIso && standIso !== wantIso && rowIso === standIso) return true;
+        return false;
+      }
       if(adminRosterHasDatedSessionsForIso(wantIso, sessions)) return false;
+      if(project && standIso && standIso !== wantIso && adminRosterHasDatedSessionsForIso(standIso, sessions)) return false;
       if(adminClientHasDatedRosterInWeek(wantIso, s.clientId)) return false;
+      if(project && standIso && standIso !== wantIso && adminClientHasDatedRosterInWeek(standIso, s.clientId)) return false;
       return normDayLabel(s.day) === normDayLabel(weekdayLong);
     }
     function schedClampIsoToTerm(iso){
@@ -5033,7 +5067,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<div class="c4k-hub-weekbar__left">' +
             '<span class="c4k-hub-weekbar__lbl">WEEK (MON–SUN)</span>' +
             '<span class="c4k-hub-weekbar__range" id="schedWeekRange">' + esc(schedWeekRangeLabel(anchorIso)) + '</span>' +
-            '<span class="muted" style="display:block;font-size:11px;margin-top:4px;overflow-wrap:break-word">Summer term 2 · Day Centre + crash · ' + esc(bookingFormatDdMmYyyy(SCHED_COVER_TERM_START)) + ' – ' + esc(bookingFormatDdMmYyyy(SCHED_COVER_TERM_END)) + '</span>' +
+            '<span class="muted" style="display:block;font-size:11px;margin-top:4px;overflow-wrap:break-word">Autumn Term 2026 · ' + esc(bookingFormatDdMmYyyy(SCHED_COVER_TERM_START)) + ' – ' + esc(bookingFormatDdMmYyyy(SCHED_COVER_TERM_END)) + '</span>' +
           '</div>' +
           '<div class="c4k-hub-weekbar__btns">' +
             '<button type="button" class="btn btn--ghost btn--sm" id="schedWeekPrev"' + (canPrev ? '' : ' disabled') + '>← Past week</button>' +
@@ -5052,6 +5086,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       for(di = 0; di < days.length; di++){
         var dIso = String(days[di] || '').trim().substring(0, 10);
         var outOfTerm = dIso < SCHED_COVER_TERM_START || dIso > SCHED_COVER_TERM_END;
+        if(!outOfTerm && SCHED_COVER_HALF_TERM &&
+           dIso >= SCHED_COVER_HALF_TERM.start && dIso <= SCHED_COVER_HALF_TERM.end){
+          outOfTerm = true;
+        }
         var pal = BOOKING_WEEK_CAP_PALETTE[di] || BOOKING_WEEK_CAP_PALETTE[0];
         var dParse = bookingParseIsoLocal(dIso);
         var dayLong = dParse ? dParse.toLocaleDateString('en-GB', { weekday: 'long' }) : '—';
@@ -6699,7 +6737,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     /**
      * Services overview display window = Autumn 26/27 (Booking Portal / open places).
      * Occupancy still resolves from summer standing template above.
-     * Scheduling & Cover keeps SCHED_COVER_TERM_* (summer ops) unchanged.
+     * Scheduling & Cover uses SCHED_COVER_TERM_* (Autumn 2026 full term).
      */
     var SERVICES_ROSTER_CALENDAR_START_ISO = '2026-09-05';
     var SERVICES_ROSTER_CALENDAR_END_ISO = '2026-12-18';
@@ -26444,11 +26482,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               toast: portalAdminToast,
               esc: esc,
               setView: setView,
-              getTermBounds: function(){
+              getTermBounds: function(anchorIso){
+                var a = String(anchorIso || '').trim().slice(0, 10);
+                if(a && a >= '2026-09-01'){
+                  return {
+                    firstDate: '2026-09-05',
+                    lastDate: '2026-12-18',
+                    termBreakFrom: '2026-10-26',
+                    termBreakTo: '2026-10-30',
+                  };
+                }
                 var t = window.PORTAL_TERM_FROM_TIMETABLE || {};
                 return {
                   firstDate: String(t.firstDate || '2026-04-13').slice(0, 10),
-                  lastDate: String(t.lastDate || '2026-07-17').slice(0, 10),
+                  lastDate: String(t.lastDate || '2026-07-31').slice(0, 10),
                   termBreakFrom: String(t.termBreakFrom || '').slice(0, 10),
                   termBreakTo: String(t.termBreakTo || '').slice(0, 10),
                 };
