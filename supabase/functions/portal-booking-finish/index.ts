@@ -542,8 +542,8 @@ Deno.serve(async (req) => {
 
     const fundingLabel =
       funding === "la_direct_payments"
-        ? "Using Funds from Local Authority (Direct Payments)"
-        : "Using Private Funds (own money)";
+        ? "Using LA money (Participant EHCP funds)"
+        : "Using Own money (private family funds)";
     const paymentLabel =
       plan === "gocardless_monthly"
         ? "GoCardless"
