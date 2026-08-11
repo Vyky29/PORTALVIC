@@ -98,11 +98,7 @@ export const REENROL_RELEASE_RULES: ReleaseRule[] = [
     clients: ["Kate"],
     reason: "unconfirmed_deadline",
   },
-  {
-    kind: "all",
-    clients: ["Patrick"],
-    reason: "unconfirmed_deadline",
-  },
+  // Patrick Dhennin — office reassigned Climbing Sun 12–1 · Alex (11 Aug 2026). Do not auto-release.
   {
     /** Private Mohamed Yusuf (contact 56) — not the Roberto Thu office-hold Mohammed. */
     kind: "all",

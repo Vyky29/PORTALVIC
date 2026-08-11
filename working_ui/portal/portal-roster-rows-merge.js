@@ -51,7 +51,10 @@
       .replace(/\s+/g, " ")
       .trim();
     if (!s) return "";
-    return s.replace(/\s*-\s*/g, " to ").replace(/(\d)\.(\d)/g, "$1:$2");
+    return s
+      .replace(/[–—−]/g, "-")
+      .replace(/\s*-\s*/g, " to ")
+      .replace(/(\d)\.(\d)/g, "$1:$2");
   }
 
   function parseHmToken(token) {
@@ -79,6 +82,7 @@
 
   function parseTimeSlotBounds(timeSlot, day) {
     var parts = String(timeSlot || "")
+      .replace(/[–—−]/g, "-")
       .replace(/\s*-\s*/g, " to ")
       .split(/\s+to\s+/i);
     if (parts.length < 2) return { start: "16:30", end: "17:00" };
