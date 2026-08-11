@@ -7053,7 +7053,7 @@
   function invoiceStatusLabel(status) {
     var s = String(status || "unpaid").toLowerCase();
     if (s === "paid") return "Paid";
-    if (s === "partial") return "Partial";
+    if (s === "partial") return "Partially paid";
     if (s === "void") return "Void";
     if (s === "pending_confirmation") return "Pending confirmation";
     return "Unpaid";

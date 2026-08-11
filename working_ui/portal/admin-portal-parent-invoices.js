@@ -281,6 +281,14 @@
     });
   }
 
+  function paymentStatusLabel(payment) {
+    var pay = String(payment || 'unpaid').toLowerCase();
+    if (pay === 'partial') return 'partially paid';
+    if (pay === 'pending_confirmation') return 'pending confirmation';
+    if (pay === 'awaiting_office_payment') return 'awaiting office confirmation';
+    return pay.replace(/_/g, ' ');
+  }
+
   function statusChip(payment, share) {
     var pay = String(payment || 'unpaid');
     var sh = String(share || 'hidden');
@@ -288,22 +296,117 @@
     var payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--other';
     if (pay === 'paid') payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--paid';
     else if (pay === 'unpaid') payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--unpaid';
-    else if (pay === 'pending_confirmation') payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--pending';
-    else if (pay === 'partial') payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--pending';
+    else if (pay === 'pending_confirmation' || pay === 'awaiting_office_payment') {
+      payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--pending';
+    } else if (pay === 'partial') {
+      payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--partial';
+    }
     var shareCls =
       'pp-inv-acc__pay-chip ' +
       (sh === 'ready' ? 'pp-inv-acc__pay-chip--shared' : 'pp-inv-acc__pay-chip--hidden');
     return (
       '<span class="' +
       payCls +
+      '" title="' +
+      esc(pay === 'partial' ? 'One or more instalments paid; balance still due' : paymentStatusLabel(pay)) +
       '">' +
-      esc(pay.replace(/_/g, ' ')) +
+      esc(paymentStatusLabel(pay)) +
       '</span> ' +
       '<span class="' +
       shareCls +
       '">' +
       esc(sh) +
       '</span>'
+    );
+  }
+
+  function amountPaidGbp(inv) {
+    var fromField = Number(inv && inv.amount_paid_gbp);
+    if (Number.isFinite(fromField) && fromField > 0) return Math.round(fromField * 100) / 100;
+    var rows = scheduleRows(inv);
+    if (!rows.length) return 0;
+    return (
+      Math.round(
+        rows.reduce(function (s, r) {
+          return s + (String(r.status || '').toLowerCase() === 'paid' ? Number(r.amount_gbp) || 0 : 0);
+        }, 0) * 100,
+      ) / 100
+    );
+  }
+
+  function invoiceAmountBlockHtml(inv) {
+    var total = Number(inv.amount_gbp) || 0;
+    var paid = amountPaidGbp(inv);
+    var pay = String(inv.payment_status || 'unpaid').toLowerCase();
+    var remaining = Math.max(0, Math.round((total - paid) * 100) / 100);
+    var html =
+      '<div><span class="muted">Amount</span><br><strong>' +
+      esc(formatMoney(total)) +
+      '</strong></div>';
+    if (pay === 'partial' || (paid > 0 && pay !== 'paid' && remaining > 0.009)) {
+      html +=
+        '<div class="pp-inv-acc__paid-split" style="margin-top:6px;font-size:12px;line-height:1.4;min-width:0;overflow-wrap:break-word">' +
+        '<div style="color:#065f46"><strong>Paid</strong> ' +
+        esc(formatMoney(paid)) +
+        '</div>' +
+        '<div style="color:#9a3412"><strong>Still due</strong> ' +
+        esc(formatMoney(remaining)) +
+        '</div>' +
+        '</div>';
+    } else if (pay === 'paid') {
+      html +=
+        '<div style="margin-top:4px;font-size:11px;color:#065f46;min-width:0;overflow-wrap:break-word">Fully paid' +
+        (inv.paid_via ? ' · ' + esc(String(inv.paid_via)) : '') +
+        '</div>';
+    }
+    return html;
+  }
+
+  function instalmentScheduleHtml(inv) {
+    var rows = scheduleRows(inv);
+    if (!rows.length) return '';
+    var items = rows
+      .map(function (r, i) {
+        var st = String(r.status || 'pending').toLowerCase() === 'paid' ? 'paid' : 'pending';
+        var label =
+          String(r.label || '').trim() ||
+          'Instalment ' + String(r.seq || i + 1);
+        var due = formatDate(r.due_date);
+        var tone =
+          st === 'paid'
+            ? 'color:#065f46;background:#ecfdf5;border-color:#6ee7b7'
+            : 'color:#9a3412;background:#fff7ed;border-color:#fdba74';
+        var stLab = st === 'paid' ? 'Paid' : 'Due';
+        var meta = [];
+        if (due) meta.push(due);
+        meta.push(formatMoney(r.amount_gbp));
+        if (st === 'paid' && r.paid_at) meta.push(formatDate(r.paid_at));
+        if (st === 'paid' && r.paid_via) meta.push(String(r.paid_via));
+        return (
+          '<li class="pp-inv-acc__inst-row" style="min-width:0;margin:0 0 4px;padding:6px 8px;border:1px solid;border-radius:8px;' +
+          tone +
+          '">' +
+          '<div style="display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline;justify-content:space-between;min-width:0">' +
+          '<span style="font-weight:700;min-width:0;overflow-wrap:break-word">' +
+          esc(label) +
+          '</span>' +
+          '<span style="font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:uppercase">' +
+          esc(stLab) +
+          '</span>' +
+          '</div>' +
+          '<div class="muted" style="font-size:11px;margin-top:2px;min-width:0;overflow-wrap:break-word">' +
+          esc(meta.join(' · ')) +
+          '</div>' +
+          '</li>'
+        );
+      })
+      .join('');
+    return (
+      '<div style="margin-top:10px;min-width:0">' +
+      '<div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;margin-bottom:4px">Instalments</div>' +
+      '<ul class="pp-inv-acc__inst-list" style="list-style:none;margin:0;padding:0;min-width:0">' +
+      items +
+      '</ul></div>'
     );
   }
 
@@ -545,21 +648,6 @@
     }
     if (plan && !(plan === 'TERMLY' && cadence === 'TERMLY')) {
       html += ' ' + arrangementChipHtml(plan);
-    }
-    var rows = scheduleRows(inv);
-    if (rows.length) {
-      var dates = rows
-        .map(function (r) {
-          return formatDate(r.due_date);
-        })
-        .filter(Boolean)
-        .join(' · ');
-      if (dates) {
-        html +=
-          '<div class="muted pp-inv-acc__plan-dates" style="font-size:11px;margin-top:4px;line-height:1.35;min-width:0;overflow-wrap:break-word">' +
-          esc(dates) +
-          '</div>';
-      }
     }
     return html;
   }
@@ -1214,7 +1302,11 @@
 
     return (
       '<article class="pp-inv-acc__card' +
-      (inv.payment_status === 'paid' ? ' pp-inv-acc__card--paid' : '') +
+      (inv.payment_status === 'paid'
+        ? ' pp-inv-acc__card--paid'
+        : inv.payment_status === 'partial'
+          ? ' pp-inv-acc__card--partial'
+          : '') +
       '" data-invoice-id="' +
       id +
       '">' +
@@ -1242,15 +1334,17 @@
         : '') +
       '</div></div>' +
       '<div class="pp-inv-acc__col">' +
-      '<div><span class="muted">Amount</span><br><strong>' +
-      esc(formatMoney(inv.amount_gbp)) +
-      '</strong></div>' +
+      invoiceAmountBlockHtml(inv) +
       '<div style="margin-top:8px"><span class="muted">Due</span><br>' +
-      esc(formatDate(inv.due_date)) +
+      esc(formatDate(inv.next_instalment_due || inv.due_date)) +
+      (String(inv.payment_status || '').toLowerCase() === 'partial' && inv.next_instalment_due
+        ? '<div class="muted" style="font-size:11px;margin-top:2px">Next instalment</div>'
+        : '') +
       '</div>' +
       '<div style="margin-top:8px"><span class="muted">Type · funding · arrangement</span><br>' +
       methodChipsHtml(inv) +
       '</div>' +
+      instalmentScheduleHtml(inv) +
       '<div style="margin-top:8px"><span class="muted">VAT</span><br>' +
       esc(vatDisplayLabel(inv)) +
       '</div>' +
@@ -1604,6 +1698,7 @@
       '.pp-inv-acc__pay-chip{font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid transparent;display:inline-flex;align-items:center}' +
       '.pp-inv-acc__pay-chip--unpaid{color:#9a3412;background:#ffedd5;border-color:#fb923c}' +
       '.pp-inv-acc__pay-chip--pending{color:#9a3412;background:#fed7aa;border-color:#fb923c}' +
+      '.pp-inv-acc__pay-chip--partial{color:#9a3412;background:#ffedd5;border-color:#f97316}' +
       '.pp-inv-acc__pay-chip--shared{color:#047857;background:#bbf7d0;border-color:#34d399}' +
       '.pp-inv-acc__pay-chip--hidden{color:#475569;background:#e2e8f0;border-color:#94a3b8}' +
       '.pp-inv-acc__pay-chip--other{color:#4a6578;background:#eef2f5;border-color:#d5dee6}' +
@@ -1615,12 +1710,14 @@
       '.pp-inv-acc__cards{display:flex;flex-direction:column;gap:10px;min-width:0}' +
       '.pp-inv-acc__card{border:1px solid #e2eaf0;border-radius:8px;padding:10px;background:#fff;min-width:0}' +
       '.pp-inv-acc__card--paid{border-color:#86efac;background:#f0fdf4}' +
+      '.pp-inv-acc__card--partial{border-color:#fdba74;background:#fffbeb}' +
       '.pp-inv-acc__filter-chip{-webkit-appearance:none;appearance:none;margin:0;cursor:pointer;font:inherit;line-height:inherit}' +
       '.pp-inv-acc__filter-chip:hover{filter:brightness(.97)}' +
       'button.pp-inv-acc__pay-chip--paid,.pp-inv-acc__pay-chip--paid{color:#047857;background-color:#bbf7d0;background:#bbf7d0;border:1px solid #34d399}' +
       'button.pp-inv-acc__pay-chip--shared,.pp-inv-acc__pay-chip--shared{color:#047857;background-color:#bbf7d0;background:#bbf7d0;border:1px solid #34d399}' +
       'button.pp-inv-acc__pay-chip--unpaid,.pp-inv-acc__pay-chip--unpaid{color:#9a3412;background-color:#ffedd5;background:#ffedd5;border:1px solid #fb923c}' +
       'button.pp-inv-acc__pay-chip--pending,.pp-inv-acc__pay-chip--pending{color:#9a3412;background-color:#fed7aa;background:#fed7aa;border:1px solid #fb923c}' +
+      'button.pp-inv-acc__pay-chip--partial,.pp-inv-acc__pay-chip--partial{color:#9a3412;background-color:#ffedd5;background:#ffedd5;border:1px solid #f97316}' +
       'button.pp-inv-acc__pay-chip--hidden,.pp-inv-acc__pay-chip--hidden{color:#475569;background-color:#e2e8f0;background:#e2e8f0;border:1px solid #94a3b8}' +
       'button.pp-inv-acc__pay-chip--other,.pp-inv-acc__pay-chip--other{color:#4a6578;background-color:#eef2f5;background:#eef2f5;border:1px solid #d5dee6}' +
       '.pp-inv-acc__grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.7fr) minmax(0,.9fr);gap:12px;min-width:0}' +
@@ -1633,6 +1730,8 @@
       '.pp-inv-acc__svc-name{font-size:13px;font-weight:700;color:#0f172a;overflow-wrap:break-word}' +
       '.pp-inv-acc__svc-meta{margin-top:2px;font-size:12px;color:#475569;overflow-wrap:break-word}' +
       '.pp-inv-acc__svc-dates{margin-top:4px;font-size:11px;color:#64748b;overflow-wrap:break-word}' +
+      '.pp-inv-acc__inst-list{min-width:0}' +
+      '.pp-inv-acc__inst-row{min-width:0}' +
       '</style>'
     );
   }
