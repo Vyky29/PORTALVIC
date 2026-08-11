@@ -18327,16 +18327,113 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       // sits directly below Physical Activity instead of below the capacity board.
       return cardHtml;
     }
-    /** Quick action pills — same mock handler as legacy `viewServiceCap` (`cap-act .btn`). */
-    function adminCapacityQuickActionsTpl(){
+    /** Quick action pills for a capacity band (live → Edit term slot / waitlist / Scheduling). */
+    function adminCapacityQuickActionsTpl(band){
+      band = band || {};
+      var meta =
+        ' data-cap-prog="'+esc(String(band.prog || ''))+'"'+
+        ' data-cap-venue="'+esc(String(band.venue || ''))+'"'+
+        ' data-cap-day="'+esc(String(band.dayShort || band.day || ''))+'"'+
+        ' data-cap-time="'+esc(String(band.time || ''))+'"'+
+        ' data-cap-open="'+esc(String(band.open != null ? band.open : ''))+'"';
       return (
-        '<div class="toolbar cap-act" style="flex-wrap:wrap;gap:4px;min-width:0">'+
-        '<button type="button" class="btn btn--pri btn--sm">Offer</button>'+
-        '<button type="button" class="btn btn--sec btn--sm">Assign</button>'+
-        '<button type="button" class="btn btn--sec btn--sm">No pax</button>'+
-        '<button type="button" class="btn btn--ghost btn--sm">Cover</button>'+
+        '<div class="toolbar cap-act" style="flex-wrap:wrap;gap:4px;min-width:0"'+meta+'>'+
+        '<button type="button" class="btn btn--pri btn--sm" data-cap-act="offer" title="Open matching waiting-list rows">Offer</button>'+
+        '<button type="button" class="btn btn--sec btn--sm" data-cap-act="assign" title="Place an existing participant on this open band (Edit term slot)">Assign</button>'+
+        '<button type="button" class="btn btn--sec btn--sm" data-cap-act="nopax" title="Open lines are already No participant">No pax</button>'+
+        '<button type="button" class="btn btn--ghost btn--sm" data-cap-act="cover" title="Open Scheduling &amp; Cover for staff cover">Cover</button>'+
         '</div>'
       );
+    }
+    function adminCapacityDayLongFromShort(dayShort){
+      var s = String(dayShort || '').trim().toLowerCase();
+      var map = {
+        mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday',
+        fri: 'Friday', sat: 'Saturday', sun: 'Sunday',
+        monday: 'Monday', tuesday: 'Tuesday', wednesday: 'Wednesday', thursday: 'Thursday',
+        friday: 'Friday', saturday: 'Saturday', sunday: 'Sunday'
+      };
+      if(map[s]) return map[s];
+      if(s.length >= 3){
+        var k = s.slice(0, 3);
+        if(map[k]) return map[k];
+      }
+      return String(dayShort || '').trim();
+    }
+    function adminCapacityAssignExistingToBand(band){
+      band = band || {};
+      var dayLong = adminCapacityDayLongFromShort(band.dayShort || band.day);
+      var openN = Number(band.open);
+      if(Number.isFinite(openN) && openN <= 0){
+        if(typeof portalAdminToast === 'function'){
+          portalAdminToast('This band has no open roster lines. Pick a row with Open > 0, or use Open places 2026/27.', 'err');
+        }
+        return;
+      }
+      var anchor =
+        (typeof portalOpenPlaces2627NextAnchorForDay === 'function' && dayLong
+          ? portalOpenPlaces2627NextAnchorForDay(dayLong)
+          : '') ||
+        adminServicesLatestStandingIsoForDow(dayLong) ||
+        adminServicesOverviewAnchorIso();
+      var prefill = {
+        anchorDate: anchor,
+        client_name: '',
+        service: String(band.prog || '').trim(),
+        time_slot: String(band.time || '').trim(),
+        venue: String(band.venue || '').trim(),
+        scope: 'rest_of_term',
+        action: 'update'
+      };
+      if(typeof window.portalAdminOpenTermSlotEdit === 'function'){
+        window.portalAdminOpenTermSlotEdit(prefill);
+        if(typeof portalAdminToast === 'function'){
+          portalAdminToast('Edit term slot — pick the existing participant for '+prefill.service+' · '+dayLong+' · '+prefill.time_slot, 'ok');
+        }
+      }else{
+        window.__PORTAL_TERM_SLOT_PREFILL__ = prefill;
+        setView('term_roster_edit');
+      }
+    }
+    function adminCapacityOfferFromBand(band){
+      band = band || {};
+      var matches = adminCapacityWaitMatchRowsForProgVenue(band.prog, band.venue);
+      state.scrollToCapacityEmbed = false;
+      setView('c4k_waitlist');
+      if(typeof portalAdminToast === 'function'){
+        portalAdminToast(
+          matches.length
+            ? (matches.length + ' waiting-list match(es) for '+String(band.prog || '')+' · '+String(band.venue || '')+' — review and then Assign from capacity / Open places.')
+            : ('Opened Waiting list. No heuristic matches for '+String(band.prog || '')+' · '+String(band.venue || '')+'.'),
+          matches.length ? 'ok' : ''
+        );
+      }
+    }
+    function adminCapacityHandleQuickAction(act, band){
+      act = String(act || '').toLowerCase();
+      if(act === 'assign'){
+        adminCapacityAssignExistingToBand(band);
+        return;
+      }
+      if(act === 'offer'){
+        adminCapacityOfferFromBand(band);
+        return;
+      }
+      if(act === 'nopax'){
+        if(typeof portalAdminToast === 'function'){
+          portalAdminToast(
+            'Open = roster lines with No participant. Use Assign to place someone, or Open places 2026/27 for live Booking Portal seats.',
+            'ok'
+          );
+        }
+        return;
+      }
+      if(act === 'cover'){
+        setView('scheduling');
+        if(typeof portalAdminToast === 'function'){
+          portalAdminToast('Scheduling & Cover — pick the session to set staff cover.', 'ok');
+        }
+      }
     }
     /** One-line hint from the waiting list (portal export or `MOCK.c4kWaitlist`) — heuristic match on service/venue text. */
     function adminCapacityWaitMatchRowsForProgVenue(prog, venue){
@@ -18545,7 +18642,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<td class="muted" style="min-width:0;overflow-wrap:break-word">'+esc(ratioCell)+'</td>'+
           '<td>'+esc(String(o.open))+'</td>'+
           '<td class="muted" style="min-width:0;max-width:240px;overflow-wrap:break-word">'+esc(wait)+'</td>'+
-          '<td style="min-width:0">'+adminCapacityQuickActionsTpl()+'</td></tr>'
+          '<td style="min-width:0">'+adminCapacityQuickActionsTpl(o)+'</td></tr>'
         );
       }
       return { html: rows.join(''), offerN: offerN, riskN: riskN, source: 'roster' };
@@ -18571,34 +18668,48 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(String(rat).toLowerCase().indexOf('staff') >= 0 || String(rat).toLowerCase().indexOf('mock') >= 0){
               ratioCell = rat + ' · demo';
             }
+            var bandZ = {
+              prog: s.name,
+              venue: String(z.venue || s.venue || '—'),
+              dayShort: String(z.day || '—'),
+              time: String(z.time || '—'),
+              open: z.open
+            };
             var wait = adminCapacityWaitMatchForProgVenue(s.name, z.venue);
             rows.push(
               '<tr><td style="min-width:0;overflow-wrap:break-word">'+esc(s.name)+'</td>'+
-              '<td style="min-width:0;overflow-wrap:break-word">'+esc(String(z.venue || s.venue || '—'))+'</td>'+
-              '<td style="white-space:nowrap">'+esc(String(z.day || '—'))+'</td>'+
-              '<td style="white-space:nowrap;min-width:0">'+esc(String(z.time || '—'))+'</td>'+
+              '<td style="min-width:0;overflow-wrap:break-word">'+esc(bandZ.venue)+'</td>'+
+              '<td style="white-space:nowrap">'+esc(bandZ.dayShort)+'</td>'+
+              '<td style="white-space:nowrap;min-width:0">'+esc(bandZ.time)+'</td>'+
               '<td class="muted" style="min-width:0;overflow-wrap:break-word">'+esc(String(z.pax != null ? z.pax + ' pax' : '—'))+'</td>'+
               '<td class="muted" style="min-width:0;overflow-wrap:break-word">'+esc(ratioCell)+'</td>'+
               '<td>'+esc(String(z.open != null ? z.open : '—'))+'</td>'+
               '<td class="muted" style="min-width:0;max-width:240px;overflow-wrap:break-word">'+esc(wait)+'</td>'+
-              '<td style="min-width:0">'+adminCapacityQuickActionsTpl()+'</td></tr>'
+              '<td style="min-width:0">'+adminCapacityQuickActionsTpl(bandZ)+'</td></tr>'
             );
           }
         }else{
           var d0 = String(s.days || '').split(/[–-]/)[0] || '—';
           if(s.open > 0) offerN++;
           if(!s.open) riskN++;
+          var bandS = {
+            prog: s.name,
+            venue: String(s.venue || '—'),
+            dayShort: d0,
+            time: String(s.time || '—'),
+            open: s.open
+          };
           var wait2 = adminCapacityWaitMatchForProgVenue(s.name, s.venue);
           rows.push(
             '<tr><td style="min-width:0;overflow-wrap:break-word">'+esc(s.name)+'</td>'+
-            '<td style="min-width:0;overflow-wrap:break-word">'+esc(String(s.venue || '—'))+'</td>'+
-            '<td style="white-space:nowrap">'+esc(d0)+'</td>'+
-            '<td style="white-space:nowrap;min-width:0">'+esc(String(s.time || '—'))+'</td>'+
+            '<td style="min-width:0;overflow-wrap:break-word">'+esc(bandS.venue)+'</td>'+
+            '<td style="white-space:nowrap">'+esc(bandS.dayShort)+'</td>'+
+            '<td style="white-space:nowrap;min-width:0">'+esc(bandS.time)+'</td>'+
             '<td class="muted" style="min-width:0;overflow-wrap:break-word">cap '+esc(String(s.cap != null ? s.cap : '—'))+'</td>'+
             '<td class="muted" style="min-width:0;overflow-wrap:break-word">'+esc(String(s.ratioOffer || '—'))+'</td>'+
             '<td>'+esc(String(s.open != null ? s.open : '—'))+'</td>'+
             '<td class="muted" style="min-width:0;max-width:240px;overflow-wrap:break-word">'+esc(wait2)+'</td>'+
-            '<td style="min-width:0">'+adminCapacityQuickActionsTpl()+'</td></tr>'
+            '<td style="min-width:0">'+adminCapacityQuickActionsTpl(bandS)+'</td></tr>'
           );
         }
       }
@@ -18607,10 +18718,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     /** Title + explainer + table for Services &amp; capacity (embed + full-page). */
     function adminServiceCapacityBoardInnerHtml(opts){
       opts = opts || {};
-      var overviewIso = adminServicesOverviewAnchorIso();
-      var dow = adminServiceNormalizeDowKey(portalWeekdayLongFromIsoDate(overviewIso));
-      var standIso = adminServicesLatestStandingIsoForDow(dow) || overviewIso;
-      var pack = adminServiceCapacityBoardRowsFromRoster(standIso);
+      var dowOrder = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+      var standIsos = [];
+      for(var di = 0; di < dowOrder.length; di++){
+        var standIso = adminServicesLatestStandingIsoForDow(dowOrder[di]);
+        if(standIso) standIsos.push(standIso);
+      }
+      var pack = standIsos.length ? adminServiceCapacityBoardRowsFromRoster(standIsos) : null;
       if(!pack || !pack.html) pack = adminServiceCapacityBoardRowsFromMockServicesList();
       if(!pack || !pack.html){
         if(typeof __OPWF_HTML !== 'undefined' && __OPWF_HTML.viewServiceCap){
@@ -18619,12 +18733,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return '';
       }
       var srcLabel = pack.source === 'roster'
-        ? ('autumn standing · ' + standIso + ' (summer template)')
+        ? ('autumn standing · all weekdays (summer template)')
         : 'MOCK.c4kServicesList';
       var headDesc =
-        'Autumn 26/27 standing bands (same occupancy bridge as <strong>Booking Portal</strong> / Open places). Each row is a <strong>schedulable band</strong> (service · venue · day · time). '+
+        'Autumn 26/27 standing bands (same occupancy bridge as <strong>Booking Portal</strong> / Open places). Each row is a <strong>schedulable band</strong> (service · venue · day · time) across <strong>Mon–Sun</strong>. '+
         '<strong>Open</strong> counts roster lines without a named participant. '+
-        '<strong>Wait match</strong> links to <button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_waitlist">Waiting list</button>. '+
+        '<strong>Assign</strong> opens Edit term slot for that band (existing participant). '+
+        '<strong>Offer</strong> jumps to matching waitlist rows. '+
+        'Also: <button type="button" class="btn btn--ghost btn--sm" data-view-target="open_places_2627">Open places 2026/27</button> · '+
+        '<button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_waitlist">Waiting list</button>. '+
         'Data source: <strong>'+esc(srcLabel)+'</strong>.';
       var headBlock = '';
       if(opts.bare){
@@ -30240,7 +30357,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(ms){ ms.classList.add('btn--mock-sent'); ms.textContent = 'Sent (mock)'; opShowToast('Send queued (mock)'); return; }
       });
       document.addEventListener('click', function(e){
-        if(e.target.closest('.cap-map .cap-act .btn, .cap-act .btn')){ opShowToast('Action recorded (mock)'); return; }
+        var capBtn = e.target.closest('.cap-map .cap-act .btn, .cap-act .btn[data-cap-act]');
+        if(capBtn){
+          var wrap = capBtn.closest('.cap-act');
+          var act = String(capBtn.getAttribute('data-cap-act') || '').trim();
+          if(act && typeof adminCapacityHandleQuickAction === 'function'){
+            e.preventDefault();
+            adminCapacityHandleQuickAction(act, {
+              prog: wrap ? wrap.getAttribute('data-cap-prog') : '',
+              venue: wrap ? wrap.getAttribute('data-cap-venue') : '',
+              dayShort: wrap ? wrap.getAttribute('data-cap-day') : '',
+              time: wrap ? wrap.getAttribute('data-cap-time') : '',
+              open: wrap ? wrap.getAttribute('data-cap-open') : ''
+            });
+            return;
+          }
+          opShowToast('Action recorded (mock)');
+          return;
+        }
         if(e.target.closest('#opwfBookingsBlock .btn') && !e.target.closest('#mockPathStep')){ opShowToast('Booking action (mock)'); return; }
       });
       if(opB) opB.addEventListener('click', opwfCloseDrawer);
