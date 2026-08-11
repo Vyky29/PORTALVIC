@@ -23,6 +23,7 @@
     sending: false,
     cancel: false,
     query: "",
+    payFilter: "",         // "" | "bank" | "gocardless"
   };
 
   var DEFAULT_SUBJECT = "Welcome to your Family portal — re-enrol by 22 July & crash courses are open";
@@ -124,12 +125,16 @@
 
   function filteredRecipients() {
     var q = String(state.query || "").trim().toLowerCase();
-    if (!q) return state.recipients;
+    var pay = String(state.payFilter || "");
     return state.recipients.filter(function (r) {
+      if (pay === "bank" && r.paymentMethod !== "bank") return false;
+      if (pay === "gocardless" && r.paymentMethod !== "gocardless") return false;
+      if (!q) return true;
       return (
         String(r.parentName || "").toLowerCase().indexOf(q) >= 0 ||
         String(r.children || "").toLowerCase().indexOf(q) >= 0 ||
         String(r.email || "").toLowerCase().indexOf(q) >= 0 ||
+        String(r.paymentMethodLabel || "").toLowerCase().indexOf(q) >= 0 ||
         phoneDigits(r.mobile).indexOf(q) >= 0
       );
     });
@@ -138,14 +143,35 @@
   function updateCounts() {
     var sel = selectedRecipients();
     var selWa = sel.filter(function (r) { return r.hasMobile; }).length;
+    var selBank = sel.filter(function (r) { return r.paymentMethod === "bank"; }).length;
+    var selGc = sel.filter(function (r) { return r.paymentMethod === "gocardless"; }).length;
     var el = $("pbcastCounts");
     if (el) {
       el.textContent =
         state.recipients.length + " inboxes loaded · " +
-        sel.length + " selected (" + selWa + " with WhatsApp, " + (sel.length - selWa) + " email-only)";
+        sel.length + " selected (" + selWa + " with WhatsApp, " + (sel.length - selWa) + " email-only" +
+        " · " + selBank + " bank · " + selGc + " GoCardless)";
     }
     var btn = $("pbcastSend");
     if (btn) btn.disabled = state.sending || !sel.length;
+    syncPayFilterButtons();
+  }
+
+  function syncPayFilterButtons() {
+    ["", "bank", "gocardless"].forEach(function (key) {
+      var id =
+        key === "bank"
+          ? "pbcastFilterBank"
+          : key === "gocardless"
+            ? "pbcastFilterGc"
+            : "pbcastFilterPayAll";
+      var el = $(id);
+      if (!el) return;
+      var on = state.payFilter === key;
+      el.style.background = on ? "#173247" : "";
+      el.style.color = on ? "#fff" : "";
+      el.style.borderColor = on ? "#173247" : "";
+    });
   }
 
   function renderTable() {
@@ -162,15 +188,25 @@
       var wa = r.hasMobile
         ? '<span class="portal-pnlog-chip portal-pnlog-chip--ok">WhatsApp</span>'
         : '<span class="portal-pnlog-chip portal-pnlog-chip--muted">email only</span>';
+      var payChip =
+        r.paymentMethod === "gocardless"
+          ? '<span class="portal-pnlog-chip" style="background:#fecdd3;color:#9f1239;border:1px solid #f43f5e">GoCardless</span>'
+          : r.paymentMethod === "bank"
+            ? '<span class="portal-pnlog-chip" style="background:#f4f4f5;color:#3f3f46;border:1px solid #a1a1aa">Bank</span>'
+            : r.paymentMethod === "other"
+              ? '<span class="portal-pnlog-chip portal-pnlog-chip--muted">Other</span>'
+              : '<span class="portal-pnlog-chip portal-pnlog-chip--muted">Pay ?</span>';
       return (
-        '<label class="pbcast-row" style="display:grid;grid-template-columns:26px 1.2fr 1.4fr 110px;gap:10px;align-items:center;padding:8px 10px;border-bottom:1px solid #e2e8f0;min-width:0">' +
+        '<label class="pbcast-row" style="display:grid;grid-template-columns:26px minmax(0,1.2fr) minmax(0,1.2fr) auto;gap:10px;align-items:center;padding:8px 10px;border-bottom:1px solid #e2e8f0;min-width:0">' +
         '<input type="checkbox" class="pbcast-cb" data-email="' + esc(r.email) + '"' + checked + " />" +
         '<span style="min-width:0;overflow-wrap:anywhere"><strong>' + esc(r.parentName) + "</strong>" +
         (r.children ? '<br><span class="muted" style="font-size:12px">' + esc(r.children) + "</span>" : "") +
         "</span>" +
         '<span class="muted" style="min-width:0;overflow-wrap:anywhere;font-size:13px">' + esc(r.email) +
         (r.mobile ? '<br><span style="font-size:12px">' + esc(r.mobile) + "</span>" : "") + "</span>" +
-        '<span style="justify-self:end">' + wa + "</span>" +
+        '<span style="justify-self:end;display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;min-width:0">' +
+        payChip + wa +
+        "</span>" +
         "</label>"
       );
     }).join("");
@@ -207,15 +243,20 @@
         children: String(r.children || "").trim(),
         mobile: String(r.mobile || "").trim(),
         hasMobile: !!r.hasMobile,
+        paymentMethod: String(r.paymentMethod || "unknown"),
+        paymentMethodLabel: String(r.paymentMethodLabel || ""),
       };
     }).filter(function (r) { return r.email; });
     // Default: select everyone.
     state.selected = {};
+    state.payFilter = "";
     state.recipients.forEach(function (r) { state.selected[r.email] = true; });
     if (statusEl) {
       statusEl.textContent =
         res.data.count + " inboxes · " + res.data.withMobile + " with WhatsApp · " +
-        res.data.emailOnly + " email-only. Review and untick anyone who should not receive this.";
+        res.data.emailOnly + " email-only · " +
+        (res.data.withBank || 0) + " bank · " +
+        (res.data.withGocardless || 0) + " GoCardless. Review and untick anyone who should not receive this.";
       statusEl.className = "portal-forms-status";
     }
     renderTable();
@@ -352,6 +393,42 @@
       state.recipients.forEach(function (r) { if (r.hasMobile) state.selected[r.email] = true; });
       renderTable();
     });
+    function applyPayFilter(key) {
+      state.payFilter = key;
+      state.selected = {};
+      filteredRecipients().forEach(function (r) { state.selected[r.email] = true; });
+      renderTable();
+    }
+    var filterBank = $("pbcastFilterBank");
+    if (filterBank) filterBank.addEventListener("click", function () {
+      applyPayFilter(state.payFilter === "bank" ? "" : "bank");
+    });
+    var filterGc = $("pbcastFilterGc");
+    if (filterGc) filterGc.addEventListener("click", function () {
+      applyPayFilter(state.payFilter === "gocardless" ? "" : "gocardless");
+    });
+    var filterPayAll = $("pbcastFilterPayAll");
+    if (filterPayAll) filterPayAll.addEventListener("click", function () {
+      applyPayFilter("");
+    });
+    var selectBank = $("pbcastSelectBank");
+    if (selectBank) selectBank.addEventListener("click", function () {
+      state.payFilter = "bank";
+      state.selected = {};
+      state.recipients.forEach(function (r) {
+        if (r.paymentMethod === "bank") state.selected[r.email] = true;
+      });
+      renderTable();
+    });
+    var selectGc = $("pbcastSelectGc");
+    if (selectGc) selectGc.addEventListener("click", function () {
+      state.payFilter = "gocardless";
+      state.selected = {};
+      state.recipients.forEach(function (r) {
+        if (r.paymentMethod === "gocardless") state.selected[r.email] = true;
+      });
+      renderTable();
+    });
     var refresh = $("pbcastRefresh");
     if (refresh) refresh.addEventListener("click", function () { void loadRecipients(); });
     var send = $("pbcastSend");
@@ -393,8 +470,16 @@
       '<input type="search" id="pbcastSearch" class="inp" style="flex:1;min-width:160px" placeholder="Search name, child, email, phone…" autocomplete="off" />' +
       '<button type="button" class="btn btn--sec btn--sm" id="pbcastSelectAll">Select all</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="pbcastSelectWa">Only WhatsApp</button>' +
+      '<button type="button" class="btn btn--sec btn--sm" id="pbcastSelectBank">Only Bank</button>' +
+      '<button type="button" class="btn btn--sec btn--sm" id="pbcastSelectGc">Only GoCardless</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="pbcastSelectNone">Clear</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="pbcastRefresh">Reload</button>' +
+      "</div>" +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px">' +
+      '<span class="muted" style="font-size:12px">Payment method:</span>' +
+      '<button type="button" class="btn btn--sec btn--sm" id="pbcastFilterPayAll">All</button>' +
+      '<button type="button" class="btn btn--sec btn--sm" id="pbcastFilterBank">Bank</button>' +
+      '<button type="button" class="btn btn--sec btn--sm" id="pbcastFilterGc">GoCardless</button>' +
       "</div>" +
       '<p id="pbcastCounts" class="muted" style="margin:0 0 8px"></p>' +
       '<div id="pbcastList" style="border:1px solid #e2e8f0;border-radius:8px;max-height:420px;overflow:auto;min-width:0"></div>' +
