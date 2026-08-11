@@ -1011,19 +1011,28 @@
   }
 
   /**
-   * Nested: re-enrolment completion date → participants.
-   * Newest re-enrolment days first; undated at the end.
+   * Nested: re-enrolment / invoice day → participants.
+   * Newest days first; undated at the end.
+   * Same contact keeps ALL their invoices together under their latest day
+   * (so Summer crash + Autumn term both show under Patrick, not split across days).
    */
   function groupInvoicesByDayThenParticipant(invoices) {
+    var byContact = groupInvoicesByParticipant(invoices || []);
     var byDay = Object.create(null);
     var dayOrder = [];
-    (invoices || []).forEach(function (inv) {
-      var key = reenrolDateKey(inv) || '_none';
-      if (!byDay[key]) {
-        byDay[key] = [];
-        dayOrder.push(key);
+    byContact.forEach(function (g) {
+      var best = '';
+      (g.invoices || []).forEach(function (inv) {
+        var k = reenrolDateKey(inv);
+        if (!k) return;
+        if (!best || String(k) > String(best)) best = k;
+      });
+      var dayKey = best || '_none';
+      if (!byDay[dayKey]) {
+        byDay[dayKey] = [];
+        dayOrder.push(dayKey);
       }
-      byDay[key].push(inv);
+      byDay[dayKey].push(g);
     });
     dayOrder.sort(function (a, b) {
       if (a === '_none') return 1;
@@ -1031,15 +1040,16 @@
       return String(b).localeCompare(String(a));
     });
     return dayOrder.map(function (key) {
-      var list = byDay[key] || [];
-      var participants = groupInvoicesByParticipant(list);
+      var participants = byDay[key] || [];
       var invIds = Object.create(null);
       var invN = 0;
-      list.forEach(function (inv) {
-        var id = String(inv.id || inv.invoice_number || '');
-        if (!id || invIds[id]) return;
-        invIds[id] = 1;
-        invN += 1;
+      participants.forEach(function (g) {
+        (g.invoices || []).forEach(function (inv) {
+          var id = String(inv.id || inv.invoice_number || '');
+          if (!id || invIds[id]) return;
+          invIds[id] = 1;
+          invN += 1;
+        });
       });
       return {
         day: key === '_none' ? 'No re-enrolment date' : formatReenrolDayLabel(key),
