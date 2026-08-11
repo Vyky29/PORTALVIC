@@ -53,9 +53,12 @@ function norm(s: unknown): string {
   return String(s ?? "").replace(/\s+/g, " ").trim();
 }
 
-/** Parse sheet-style "4.30 to 5" / "16.30 to 17.00" into start/end minutes (0–24h). */
+/** Parse sheet-style "4.30 to 5" / "16.30 to 17.00" / "12.00 – 1.00" into start/end minutes (0–24h). */
 function parseTimeSlotMinutes(raw: string): { start: number; end: number } | null {
-  const normalized = norm(raw).replace(/\s*-\s*/g, " to ").toLowerCase();
+  const normalized = norm(raw)
+    .replace(/[–—−]/g, "-")
+    .replace(/\s*-\s*/g, " to ")
+    .toLowerCase();
   const parts = normalized.split(/\s+to\s+/i);
   if (parts.length < 2) return null;
   function tok(p: string): number | null {
@@ -157,6 +160,30 @@ function findOpenSeatOnBand(
   return null;
 }
 
+/** Prefer named instructor; else staff column that already has this open/named band. */
+function resolveStaffForUpsert(
+  week: MadreWeek,
+  iso: string,
+  payload: Record<string, unknown>,
+  replaceOpen: boolean,
+): MadreStaffCol | null {
+  const named = findStaffColumn(week, String(payload.instructors ?? ""));
+  if (named) return named;
+  const timeSlot = norm(payload.time_slot);
+  const venue = String(payload.venue ?? "");
+  const client = norm(payload.client_name).toLowerCase();
+  for (const st of week.staff ?? []) {
+    if (!st) continue;
+    const day = findDay(st, iso);
+    if (!day?.slots?.length) continue;
+    if (slotMatch(day.slots, String(payload.client_name ?? ""), timeSlot)) return st;
+    if (replaceOpen && findOpenSeatOnBand(day.slots, timeSlot, venue)) return st;
+    // Same client any time on that day (normalize label later).
+    if (client && day.slots.some((s) => norm(s.client_name).toLowerCase() === client)) return st;
+  }
+  return null;
+}
+
 function foldParticipantUpsert(madre: MadreDoc, iso: string, payload: Record<string, unknown>): boolean {
   const client = norm(payload.client_name);
   const timeSlot = norm(payload.time_slot);
@@ -172,7 +199,7 @@ function foldParticipantUpsert(madre: MadreDoc, iso: string, payload: Record<str
     const end = String(week.end ?? "").slice(0, 10);
     if (iso < start || iso > end) continue;
 
-    const st = findStaffColumn(week, String(payload.instructors ?? ""));
+    const st = resolveStaffForUpsert(week, iso, payload, replaceOpen);
     if (!st) continue;
 
     let day = findDay(st, iso);
@@ -187,11 +214,24 @@ function foldParticipantUpsert(madre: MadreDoc, iso: string, payload: Record<str
     let slot = slotMatch(slots, client, timeSlot);
     if (!slot && replaceOpen) {
       slot = findOpenSeatOnBand(slots, timeSlot, String(payload.venue ?? ""));
-      if (slot) slot.client_name = client;
+      if (slot) {
+        slot.client_name = client;
+        // Prefer the open seat's existing sheet time label so Services capacity matches.
+        if (slot.time_slot) {
+          /* keep open band label */
+        } else {
+          slot.time_slot = timeSlot;
+        }
+      }
     }
     if (!slot) {
       slot = { client_name: client, time_slot: timeSlot };
       slots.push(slot);
+    } else if (timeSlotsEquivalent(String(slot.time_slot ?? ""), timeSlot)) {
+      // Keep sheet-style label when already equivalent (e.g. "12 to 1" vs "12.00 – 1.00").
+      if (!slot.time_slot) slot.time_slot = timeSlot;
+    } else {
+      slot.time_slot = timeSlot;
     }
     if (payload.service) slot.service = norm(payload.service);
     if (payload.venue) slot.venue = norm(payload.venue);
