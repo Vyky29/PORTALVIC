@@ -4,7 +4,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
   createPortalFamilyInvoice,
-  recordInvoiceInstalmentPayment,
   resolvePortalInvoiceOwnerUserId,
 } from "../_shared/portal_create_family_invoice.ts";
 import { normalizeParentPhoneE164 } from "../_shared/portal_parent_messaging.ts";
@@ -24,7 +23,6 @@ import {
   parseNewClientPayPlan,
   quoteNewClientMidTermInvoice,
   quoteNewClientTrialInvoice,
-  tryCompleteBookingAfterInvoicePayment,
   type CompletionTokenRow,
 } from "../_shared/portal_booking_finish.ts";
 import { SESSION_COUNTS } from "../_shared/reenrolment_catalog.ts";
@@ -792,55 +790,54 @@ Deno.serve(async (req) => {
         message: "Already completed. Check email / WhatsApp for your PIN.",
       });
     }
+    if (token.status === "awaiting_office_payment") {
+      return json(200, {
+        ok: true,
+        completed: false,
+        awaiting_office: true,
+        status: "awaiting_office_payment",
+        message:
+          "Thanks — we already have your payment report. The office will confirm it and then send your Parent Portal PIN.",
+      });
+    }
     if (!token.invoice_share_id) {
       return json(400, { ok: false, error: "invoice_required" });
     }
     const { data: inv } = await admin
       .from("portal_parent_invoice_share")
-      .select("id, payment_status, amount_paid_gbp, payment_schedule, invoice_number")
+      .select("id, payment_status, invoice_number")
       .eq("id", token.invoice_share_id)
       .maybeSingle();
     if (!inv) return json(404, { ok: false, error: "invoice_not_found" });
 
-    const schedule = Array.isArray(inv.payment_schedule) ? inv.payment_schedule : [];
-    const firstPending = schedule.find(
-      (r: { status?: string }) => String(r?.status || "pending").toLowerCase() !== "paid",
-    ) as { amount_gbp?: number } | undefined;
-    const amount =
-      Number(firstPending?.amount_gbp) ||
-      Number((schedule[0] as { amount_gbp?: number } | undefined)?.amount_gbp) ||
-      0;
-
-    if (amount > 0 && String(inv.payment_status).toLowerCase() !== "paid") {
-      const rolled = await recordInvoiceInstalmentPayment(admin, String(inv.id), {
-        amountGbp: amount,
-        paidVia: "bank_transfer_parent_finish",
-      });
-      if (!rolled.ok) {
-        return json(500, { ok: false, error: rolled.error || "payment_record_failed" });
-      }
-    }
-
+    const now = new Date().toISOString();
+    // Parent self-report only — do NOT mark invoice paid and do NOT issue PIN.
+    // PIN is sent after office validates payment (admin mark paid / Tide / GoCardless).
     await admin
       .from("portal_parent_invoice_share")
       .update({
-        parent_reported_paid_at: new Date().toISOString(),
+        parent_reported_paid_at: now,
         parent_reported_method: "bank_transfer",
         parent_reported_ref: clean(body.payment_ref, 80) || null,
-        updated_at: new Date().toISOString(),
+        updated_at: now,
       })
       .eq("id", token.invoice_share_id);
 
-    const done = await tryCompleteBookingAfterInvoicePayment(admin, token.invoice_share_id);
-    if (!done.completed) {
-      return json(500, { ok: false, error: done.reason || "complete_failed" });
-    }
+    await admin
+      .from("portal_booking_completion_tokens")
+      .update({
+        status: "awaiting_office_payment",
+        updated_at: now,
+      })
+      .eq("id", token.id);
 
     return json(200, {
       ok: true,
-      completed: true,
+      completed: false,
+      awaiting_office: true,
+      status: "awaiting_office_payment",
       message:
-        "Payment recorded. Check your email / WhatsApp for your Parent Portal PIN.",
+        "Thanks — payment reported. The office will confirm it and then send your Parent Portal PIN by email / WhatsApp.",
     });
   }
 

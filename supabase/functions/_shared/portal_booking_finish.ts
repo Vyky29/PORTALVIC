@@ -149,6 +149,7 @@ export async function mintFinishBookingToken(
       "scope_saved",
       "choices_saved",
       "awaiting_payment",
+      "awaiting_office_payment",
       "la_office",
     ]);
 
@@ -253,7 +254,7 @@ export async function notifyParentFinishBooking(opts: {
     `clubSENsational accepted the registration for ${participant}. ` +
     (slot ? `Place: ${slot}. ` : "") +
     `Finish booking (funding, payment, first instalment): ${link} ` +
-    `After payment we send your Parent Portal PIN.`;
+    `After the office confirms your payment we send your Parent Portal PIN.`;
 
   let emailOk = false;
   let waOk = false;
@@ -274,7 +275,7 @@ export async function notifyParentFinishBooking(opts: {
         `clubSENsational has accepted the registration for ${participant}.\n\n` +
         (slot ? `Requested place: ${slot}\n\n` : "") +
         `Please finish your booking:\n${link}\n\n` +
-        `After payment we will send your Parent Portal PIN.\n\n— clubSENsational`,
+        `After you pay, the office confirms the payment and then we send your Parent Portal PIN.\n\n— clubSENsational`,
     });
     emailOk = mail.ok;
     if (!mail.ok) console.warn("[finish-booking-notify] email", mail.error);

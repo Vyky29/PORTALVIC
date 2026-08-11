@@ -1869,7 +1869,9 @@
           cfg.toast(
             r.hold && r.hold.restored
               ? 'Invoice paid — held session restored'
-              : 'Invoice updated',
+              : act === 'paid'
+                ? 'Invoice marked paid — PIN sent if finish-booking was waiting'
+                : 'Invoice updated',
             'ok',
           );
           void renderHost(global.document.getElementById('portalParentInvoicesHost'));

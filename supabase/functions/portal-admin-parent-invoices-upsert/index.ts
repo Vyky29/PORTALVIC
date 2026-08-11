@@ -14,6 +14,7 @@ import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
 import { type PortalInvoiceVatMode } from "../_shared/portal_tax_invoice_pdf.ts";
 import { createPortalFamilyInvoice, regeneratePortalInvoiceSharePdf } from "../_shared/portal_create_family_invoice.ts";
 import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
+import { tryCompleteBookingAfterInvoicePayment } from "../_shared/portal_booking_finish.ts";
 import {
   applyInstalmentPayment,
   normalizePaymentSchedule,
@@ -793,6 +794,14 @@ Deno.serve(async (req) => {
       } catch (e) {
         console.error(
           "[portal-admin-parent-invoices-upsert] crash confirm",
+          e instanceof Error ? e.message : String(e),
+        );
+      }
+      try {
+        await tryCompleteBookingAfterInvoicePayment(admin, String(updated.id));
+      } catch (e) {
+        console.error(
+          "[portal-admin-parent-invoices-upsert] finish-booking pin",
           e instanceof Error ? e.message : String(e),
         );
       }

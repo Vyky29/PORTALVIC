@@ -13,6 +13,7 @@ import {
 import { xeroEnsurePaidShareInBooks } from "../_shared/xero_payments.ts";
 import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
 import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
+import { tryCompleteBookingAfterInvoicePayment } from "../_shared/portal_booking_finish.ts";
 
 function clean(v: unknown, max = 120): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -217,6 +218,14 @@ Deno.serve(async (req) => {
   } catch (e) {
     console.error(
       "[portal-admin-tide-match-confirm] crash",
+      e instanceof Error ? e.message : String(e),
+    );
+  }
+  try {
+    await tryCompleteBookingAfterInvoicePayment(admin, invoiceId);
+  } catch (e) {
+    console.error(
+      "[portal-admin-tide-match-confirm] finish-booking pin",
       e instanceof Error ? e.message : String(e),
     );
   }

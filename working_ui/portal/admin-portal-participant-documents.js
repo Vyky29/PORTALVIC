@@ -189,7 +189,7 @@
     return (
       '<div class="portal-participant-docs-embed">' +
       '<h1 class="page-title">Participant documents</h1>' +
-      '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">New-client flow: Booking Portal slot → registration form → <strong>Accept</strong> (emails/WhatsApps the parent a finish-booking link) → parent chooses funding &amp; payment and pays the first instalment → Parent Portal PIN. Use <strong>Resend finish link</strong> if needed.</p>' +
+      '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">New-client flow: Booking Portal slot → registration form → <strong>Accept</strong> (finish-booking link) → parent chooses funding &amp; payment and pays → parent reports paid → <strong>office marks invoice paid</strong> → Parent Portal PIN. Use <strong>Resend finish link</strong> if needed.</p>' +
       '<div class="toolbar" style="margin-bottom:12px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParticipantDocsRefresh">Refresh</button>' +
       '</div>' +

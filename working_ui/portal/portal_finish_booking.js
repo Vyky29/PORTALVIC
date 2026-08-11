@@ -252,8 +252,15 @@
       });
     }
     if (action === "confirm_paid") {
-      demoState.status = "completed";
-      return Promise.resolve({ ok: true, status: "completed", completed: true });
+      demoState.status = "awaiting_office_payment";
+      return Promise.resolve({
+        ok: true,
+        completed: false,
+        awaiting_office: true,
+        status: "awaiting_office_payment",
+        message:
+          "Thanks — payment reported. The office will confirm it and then send your Parent Portal PIN.",
+      });
     }
     return Promise.reject(new Error("demo_unknown_action"));
   }
@@ -386,7 +393,7 @@
   }
 
   function setStep(name) {
-    ["fbStepFunding", "fbStepScope", "fbStepPay", "fbStepInvoice", "fbStepDone"].forEach(
+    ["fbStepFunding", "fbStepScope", "fbStepPay", "fbStepInvoice", "fbStepAwaitingOffice", "fbStepDone"].forEach(
       function (id) {
         var el = document.getElementById(id);
         if (el) el.hidden = true;
@@ -497,6 +504,15 @@
       showNotice(
         notice,
         "Booking complete. Check email / WhatsApp for your Parent Portal PIN.",
+        "ok",
+      );
+      return;
+    }
+    if (data.status === "awaiting_office_payment") {
+      setStep("fbStepAwaitingOffice");
+      showNotice(
+        notice,
+        "Payment reported — waiting for the office to confirm before your PIN is sent.",
         "ok",
       );
       return;
@@ -689,14 +705,14 @@
     if (gcUrl && (data.pay_plan === "gocardless_monthly" || inv.payment_method_hint === "gocardless")) {
       if (isDemoMode()) {
         html +=
-          '<button type="button" class="btn btn--pri" id="fbConfirmPaid">Demo: simulate GoCardless paid</button>' +
-          '<p class="muted" style="margin:10px 0 0">In production parents open GoCardless; here click to finish the demo and see the PIN step.</p>';
+          '<button type="button" class="btn btn--pri" id="fbConfirmPaid">Demo: I’ve paid — report to office</button>' +
+          '<p class="muted" style="margin:10px 0 0">PIN is only sent after office confirms payment (not on this click).</p>';
       } else {
         html +=
           '<a class="btn btn--pri" href="' +
           esc(gcUrl) +
           '">Set up GoCardless</a>' +
-          '<p class="muted" style="margin:10px 0 0">After Direct Debit is set up and the first payment clears, we email / WhatsApp your Parent Portal PIN.</p>';
+          '<p class="muted" style="margin:10px 0 0">When the first Direct Debit payment clears, the office can confirm and we send your Parent Portal PIN.</p>';
       }
     } else {
       html +=
@@ -715,7 +731,7 @@
         "</div>" +
         "</div>" +
         '<button type="button" class="btn btn--pri" id="fbConfirmPaid">I’ve paid the first instalment</button>' +
-        '<p class="muted" style="margin:10px 0 0">We will send your Parent Portal PIN by email / WhatsApp once this is recorded.</p>';
+        '<p class="muted" style="margin:10px 0 0">This tells the office you paid. Your Parent Portal PIN is sent only after they confirm the payment.</p>';
     }
     if (host) host.innerHTML = html;
 
@@ -723,9 +739,19 @@
     if (btn) {
       btn.onclick = function () {
         btn.disabled = true;
-        btn.textContent = "Confirming…";
+        btn.textContent = "Sending…";
         void api("confirm_paid", {})
-          .then(function () {
+          .then(function (out) {
+            if (out && out.awaiting_office) {
+              setStep("fbStepAwaitingOffice");
+              showNotice(
+                document.getElementById("fbNotice"),
+                out.message ||
+                  "Payment reported. The office will confirm and then send your PIN.",
+                "ok",
+              );
+              return;
+            }
             setStep("fbStepDone");
             showNotice(
               document.getElementById("fbNotice"),

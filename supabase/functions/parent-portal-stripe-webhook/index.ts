@@ -9,6 +9,7 @@ import { xeroEnsurePaidShareInBooks } from "../_shared/xero_payments.ts";
 import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
 import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
 import { recordInvoiceInstalmentPayment } from "../_shared/portal_create_family_invoice.ts";
+import { tryCompleteBookingAfterInvoicePayment } from "../_shared/portal_booking_finish.ts";
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -169,6 +170,15 @@ Deno.serve(async (req) => {
       e instanceof Error ? e.message : String(e),
     );
     }
+  }
+
+  try {
+    await tryCompleteBookingAfterInvoicePayment(supabase, String(data.id));
+  } catch (e) {
+    console.error(
+      "[parent-portal-stripe-webhook] finish-booking pin",
+      e instanceof Error ? e.message : String(e),
+    );
   }
 
   return json(200, {

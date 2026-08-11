@@ -193,15 +193,23 @@
       <div id="fbInvoiceBox"></div>
     </div>
 
+    <div id="fbStepAwaitingOffice" class="card" hidden>
+      <h2>Waiting for office confirmation</h2>
+      <p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">
+        Thanks — we have your payment report. The office will check the payment
+        and then email / WhatsApp your Parent Portal PIN. You do not need to do anything else now.
+      </p>
+    </div>
+
     <div id="fbStepDone" class="card" hidden>
       <h2>You’re in</h2>
       <p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">
-        Payment recorded. Check your email or WhatsApp for your Parent Portal PIN
+        Payment confirmed by the office. Check your email or WhatsApp for your Parent Portal PIN
         (sign in with your child’s first name + PIN).
       </p>
       <a class="btn btn--pri" href="/parent">Open Parent Portal</a>
     </div>
   </div>
-  <script src="/portal/portal_finish_booking.js?v=20260811-demo-flow"></script>
+  <script src="/portal/portal_finish_booking.js?v=20260811-pin-after-office"></script>
 </body>
 </html>
