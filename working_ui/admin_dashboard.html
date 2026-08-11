@@ -82,7 +82,7 @@
   <script src="/portal/admin-portal-booking-leads.js?v=20260731-leads-pdf"></script>
   <script src="/portal/admin-portal-parent-credits.js?v=20260709-family-credits"></script>
   <script src="/portal/admin-portal-xero-products.js?v=20260716-add-product-rows"></script>
-  <script src="/portal/admin-portal-parent-invoices.js?v=20260810-reenrol-funding"></script>
+  <script src="/portal/admin-portal-parent-invoices.js?v=20260811-pin-after-office"></script>
   <script src="/portal/admin-portal-parent-makeups.js?v=20260709-makeup-roster"></script>
   <script src="/portal/admin-portal-parent-consents.js?v=20260709-offsite-annual"></script>
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
@@ -18376,15 +18376,47 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         ' data-cap-venue="'+esc(String(band.venue || ''))+'"'+
         ' data-cap-day="'+esc(String(band.dayShort || band.day || ''))+'"'+
         ' data-cap-time="'+esc(String(band.time || ''))+'"'+
-        ' data-cap-open="'+esc(String(band.open != null ? band.open : ''))+'"';
+        ' data-cap-open="'+esc(String(band.open != null ? band.open : ''))+'"'+
+        ' data-cap-instr="'+esc(String(band.instructors || band.inst || ''))+'"';
       return (
         '<div class="toolbar cap-act" style="flex-wrap:wrap;gap:4px;min-width:0"'+meta+'>'+
         '<button type="button" class="btn btn--pri btn--sm" data-cap-act="offer" title="Open matching waiting-list rows">Offer</button>'+
-        '<button type="button" class="btn btn--sec btn--sm" data-cap-act="assign" title="Place an existing participant on this open band (Edit term slot)">Assign</button>'+
+        '<button type="button" class="btn btn--sec btn--sm" data-cap-act="assign" title="Place an existing participant on this open band (Edit term slot). Consumes the Booking Portal seat and mounts an unpaid invoice.">Assign</button>'+
         '<button type="button" class="btn btn--sec btn--sm" data-cap-act="nopax" title="Open lines are already No participant">No pax</button>'+
         '<button type="button" class="btn btn--ghost btn--sm" data-cap-act="cover" title="Open Scheduling &amp; Cover for staff cover">Cover</button>'+
         '</div>'
       );
+    }
+    function adminCapacityResolveOpenInstructors(dayLong, timeLabel, venue){
+      var wantDay = String(dayLong || '').trim().toLowerCase();
+      var wantTime = String(timeLabel || '').toLowerCase().replace(/\s+/g, ' ').trim();
+      var wantVen = String(venue || '').toLowerCase();
+      function timeClose(a, b){
+        var na = String(a || '').toLowerCase().replace(/\s+/g, ' ').replace(/\s*[–—-]\s*/g, ' to ').trim();
+        var nb = String(b || '').toLowerCase().replace(/\s+/g, ' ').replace(/\s*[–—-]\s*/g, ' to ').trim();
+        if(!na || !nb) return !na && !nb;
+        return na === nb || na.indexOf(nb) >= 0 || nb.indexOf(na) >= 0;
+      }
+      try{
+        var rows = (window.PORTAL_MADRE_LIVE && window.PORTAL_MADRE_LIVE.rows) || [];
+        for(var i = 0; i < rows.length; i++){
+          var r = rows[i];
+          if(!r) continue;
+          var cn = String(r.client_name || '').trim();
+          // Open seats in adapter may be blank or NO PARTICIPANT.
+          if(cn && !/^no\s*participant$/i.test(cn) && !/^no\s*client$/i.test(cn) && !/^(open|available|free)$/i.test(cn)) continue;
+          var day = String(r.day || '').trim().toLowerCase();
+          if(wantDay && day && day !== wantDay && day.indexOf(wantDay.slice(0, 3)) < 0) continue;
+          if(wantVen){
+            var rv = String(r.venue || '').toLowerCase();
+            if(rv && rv.indexOf(wantVen) < 0 && wantVen.indexOf(rv) < 0) continue;
+          }
+          if(wantTime && !timeClose(r.time_slot, wantTime)) continue;
+          var inst = String(r.instructors || '').trim();
+          if(inst) return inst;
+        }
+      }catch(_e){}
+      return '';
     }
     function adminCapacityDayLongFromShort(dayShort){
       var s = String(dayShort || '').trim().toLowerCase();
@@ -18417,19 +18449,27 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           : '') ||
         adminServicesLatestStandingIsoForDow(dayLong) ||
         adminServicesOverviewAnchorIso();
+      var instr = String(band.instructors || band.inst || '').trim();
+      if(!instr && typeof adminCapacityResolveOpenInstructors === 'function'){
+        instr = adminCapacityResolveOpenInstructors(dayLong, band.time, band.venue) || '';
+      }
       var prefill = {
         anchorDate: anchor,
         client_name: '',
         service: String(band.prog || '').trim(),
         time_slot: String(band.time || '').trim(),
         venue: String(band.venue || '').trim(),
+        instructors: instr,
         scope: 'rest_of_term',
         action: 'update'
       };
       if(typeof window.portalAdminOpenTermSlotEdit === 'function'){
         window.portalAdminOpenTermSlotEdit(prefill);
         if(typeof portalAdminToast === 'function'){
-          portalAdminToast('Edit term slot — pick the existing participant for '+prefill.service+' · '+dayLong+' · '+prefill.time_slot, 'ok');
+          portalAdminToast(
+            'Assign — pick the participant. On Save: seat leaves Booking Portal / Open places and an unpaid INV-P is mounted for Parent Portal.',
+            'ok'
+          );
         }
       }else{
         window.__PORTAL_TERM_SLOT_PREFILL__ = prefill;
@@ -18643,14 +18683,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var tm = String(sl.anchorTimeLabel || '').trim() || (normTimeShort(sl.anchorStart) + '\u2013' + normTimeShort(sl.anchorEnd));
           var ak = prog + '\u0001' + v + '\u0001' + dayShort + '\u0001' + String(sl.anchorStart || '') + '\u0001' + String(sl.anchorEnd || '');
           if(!by[ak]){
-            by[ak] = { prog: prog, venue: v, dayShort: dayShort, time: tm, open: 0, booked: 0, closed: 0, lines: 0 };
+            by[ak] = { prog: prog, venue: v, dayShort: dayShort, time: tm, open: 0, booked: 0, closed: 0, lines: 0, instructors: '' };
           }
           var g = by[ak];
           g.lines++;
           var slug = String(sl.clientSlug || '').trim().toLowerCase();
           if(slug === 'closed') g.closed++;
           else if(bookingIsBookedClientSlug(slug)) g.booked++;
-          else g.open++;
+          else {
+            g.open++;
+            if(!g.instructors){
+              var openInst = String(sl.staffName || sl.staffRosterId || '').trim();
+              if(openInst) g.instructors = openInst;
+            }
+          }
         }
       }
       var keys = Object.keys(by);
@@ -24198,17 +24244,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         toast: portalAdminToast,
         openView: function(viewId){ setView(String(viewId || '')); },
         placeExisting: function(slot){
+          var instrList = Array.isArray(slot && slot.instructors) ? slot.instructors : [];
+          var instr = instrList.length ? String(instrList[0] || '').trim() : '';
+          if(!instr && typeof adminCapacityResolveOpenInstructors === 'function'){
+            instr = adminCapacityResolveOpenInstructors(slot && slot.day, slot && slot.timeLabel, slot && slot.venue) || '';
+          }
           var prefill = {
             anchorDate: portalOpenPlaces2627NextAnchorForDay(slot && slot.day),
             client_name: '',
             service: portalOpenPlaces2627ServiceLabel(slot),
             time_slot: String((slot && slot.timeLabel) || '').trim(),
             venue: String((slot && slot.venue) || '').trim(),
+            instructors: instr,
             scope: 'rest_of_term',
             action: 'update'
           };
           if(typeof window.portalAdminOpenTermSlotEdit === 'function'){
             window.portalAdminOpenTermSlotEdit(prefill);
+            portalAdminToast('Assign — on Save the open seat leaves the offer and an unpaid INV-P is ready in Parent Portal.', 'ok');
           }else{
             window.__PORTAL_TERM_SLOT_PREFILL__ = prefill;
             setView('term_roster_edit');
@@ -30528,7 +30581,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               venue: wrap ? wrap.getAttribute('data-cap-venue') : '',
               dayShort: wrap ? wrap.getAttribute('data-cap-day') : '',
               time: wrap ? wrap.getAttribute('data-cap-time') : '',
-              open: wrap ? wrap.getAttribute('data-cap-open') : ''
+              open: wrap ? wrap.getAttribute('data-cap-open') : '',
+              instructors: wrap ? wrap.getAttribute('data-cap-instr') : ''
             });
             return;
           }

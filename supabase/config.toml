@@ -536,6 +536,10 @@ verify_jwt = false
 [functions.portal-admin-makeup-offer]
 verify_jwt = false
 
+# After Assign (Edit term slot): ensure unpaid INV-P for parent pay button.
+[functions.portal-admin-term-slot-assign-complete]
+verify_jwt = false
+
 [functions.parent-portal-makeup-list]
 verify_jwt = false
 

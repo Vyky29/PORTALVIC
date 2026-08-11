@@ -26,6 +26,8 @@ export type OfferSlot = {
   capacity: number;
   taken: number;
   referenceDate: string | null;
+  /** Instructor keys on the reference open/booked band (office Assign prefill). */
+  instructors?: string[];
   /** Internal: booked client keys for band merge (stripped before public JSON). */
   bookedKeys?: string[];
 };
@@ -386,6 +388,13 @@ function foldMultiActivityOfferSlots(slots: OfferSlot[]): OfferSlot[] {
         capacity: cap,
         taken,
         referenceDate: ref,
+        instructors: [
+          ...new Set(
+            useParts.flatMap((p) =>
+              Array.isArray(p.instructors) ? p.instructors : [],
+            ),
+          ),
+        ].sort(),
       });
     }
   }
@@ -560,6 +569,7 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
       capacity: cap,
       taken,
       referenceDate: ref,
+      instructors: [...bucket.instructors].sort(),
       bookedKeys: [...bucket.bookedKeys],
     });
   }

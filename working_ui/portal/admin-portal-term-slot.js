@@ -811,6 +811,30 @@
   }
 
   var NO_CLIENT_PARTICIPANT = "No client";
+  var OPEN_SEAT_NAMES = [
+    "NO PARTICIPANT",
+    "No client",
+    "NO CLIENT",
+    "OPEN",
+    "AVAILABLE",
+    "FREE",
+  ];
+
+  function isOpenSeatParticipantName(name) {
+    var up = String(name || "")
+      .trim()
+      .toUpperCase()
+      .replace(/[_\s-]+/g, " ");
+    if (!up) return true;
+    return (
+      up === "NO PARTICIPANT" ||
+      up === "NO CLIENT" ||
+      up === "NOPARTICIPANT" ||
+      up === "OPEN" ||
+      up === "AVAILABLE" ||
+      up === "FREE"
+    );
+  }
 
   function normSlotTime(v) {
     var s = String(v || "")
@@ -883,8 +907,20 @@
   function noClientRowInScope(row, p) {
     if (normSlotTime(row.time_slot) !== normSlotTime(p.time_slot)) return false;
     if (!slotInstructorsMatch(row.instructors, p.instructors)) return false;
+    if (p.venue) {
+      var rv = String(row.venue || "").toLowerCase();
+      var pv = String(p.venue || "").toLowerCase();
+      if (rv && pv && rv.indexOf(pv) < 0 && pv.indexOf(rv) < 0) return false;
+    }
     var sd = normIso(row.session_date);
-    if (!sd) return p.scope === "weekday_term";
+    // Standing template (null session_date) is the Autumn offer source — always clear for term scopes.
+    if (!sd) {
+      return (
+        p.scope === "weekday_term" ||
+        p.scope === "rest_of_term" ||
+        !p.scope
+      );
+    }
     if (p.scope === "single_day") return sd === p.anchorDate;
     if (p.scope === "pick_sessions") {
       var picked = Object.create(null);
@@ -900,14 +936,14 @@
   function cancelNoClientRowsForScope(client, p) {
     return client
       .from("portal_roster_rows")
-      .select("id, client_name, day, time_slot, instructors, session_date, status")
+      .select("id, client_name, day, time_slot, instructors, session_date, venue, status")
       .eq("status", "active")
-      .eq("client_name", NO_CLIENT_PARTICIPANT)
       .eq("day", p.day)
+      .in("client_name", OPEN_SEAT_NAMES)
       .then(function (res) {
         if (res.error) throw res.error;
         var rows = (res.data || []).filter(function (row) {
-          return noClientRowInScope(row, p);
+          return isOpenSeatParticipantName(row.client_name) && noClientRowInScope(row, p);
         });
         if (!rows.length) return;
         return client
@@ -988,7 +1024,7 @@
     var beforeName = before ? String(before.client_name || "").trim() : "";
     var isNewTermParticipant =
       !beforeName ||
-      /^no[\s_-]*client$/i.test(beforeName) ||
+      isOpenSeatParticipantName(beforeName) ||
       rosterSlug(beforeName) === rosterSlug(NO_CLIENT_PARTICIPANT);
     var scope = String(p.scope || "").trim();
     var notifyDates = dates;
@@ -1347,6 +1383,28 @@
   }
 
   function finishTermSlotSave(chain, root, p, before, afterSnap, eventAction, client, toastMsg) {
+    var assignNamed =
+      eventAction === "update" || eventAction === "create" || String(p.action || "").trim() === "update";
+    var isCancelish =
+      eventAction === "cancel" ||
+      String(afterSnap.action || "") === "cancel_service" ||
+      String(afterSnap.action || "") === "no_participant" ||
+      isOpenSeatParticipantName(afterSnap.client_name || p.client_name);
+    var beforeName = before ? String(before.client_name || "").trim() : "";
+    var pre = state.prefill || {};
+    var fromAssignPrefill =
+      !String(pre.client_name || "").trim() &&
+      !!(String(pre.time_slot || "").trim() || String(pre.instructors || "").trim());
+    // Unpaid INV-P only when placing someone onto a vacant/open band (Assign / new),
+    // not when tweaking an already-named standing slot.
+    var shouldBill =
+      assignNamed &&
+      !isCancelish &&
+      !!String(p.client_name || "").trim() &&
+      (fromAssignPrefill || !beforeName || isOpenSeatParticipantName(beforeName));
+    // Always try to consume open MADRE seats when saving a named client.
+    var shouldConsumeOpen = assignNamed && !isCancelish && !!String(p.client_name || "").trim();
+
     chain
       .then(function (rowRef) {
         return writeScheduleOverridesForTermEdit(client, p, before, afterSnap, eventAction).then(function () {
@@ -1388,9 +1446,9 @@
         if (typeof global.portalNotifyAdminRosterDataChanged === "function") {
           global.portalNotifyAdminRosterDataChanged({ refreshScheduling: true });
         }
-        deps.toast(toastMsg || "Term slot saved.");
-        if (global.PortalMadreFold && typeof global.PortalMadreFold.queueParticipantSlotChange === "function") {
-          global.PortalMadreFold.queueParticipantSlotChange(client, {
+        var foldPromise = Promise.resolve(null);
+        if (global.PortalMadreFold) {
+          var foldOpts = {
             after: afterSnap,
             before: before,
             session_date: p.anchorDate,
@@ -1398,12 +1456,63 @@
             term_action: p.action,
             roster_row_id: rowRef && rowRef.id ? rowRef.id : null,
             source_module: "term_roster_edit",
-          }).then(function () {
+            replace_open: shouldConsumeOpen,
+          };
+          if (
+            shouldConsumeOpen &&
+            typeof global.PortalMadreFold.queueParticipantAssignConsumeOpen === "function"
+          ) {
+            foldPromise = global.PortalMadreFold.queueParticipantAssignConsumeOpen(client, foldOpts);
+          } else if (typeof global.PortalMadreFold.queueParticipantSlotChange === "function") {
+            foldPromise = global.PortalMadreFold.queueParticipantSlotChange(client, foldOpts);
+          }
+        }
+        return foldPromise
+          .then(function () {
             if (typeof global.portalRefreshStaffDashboardSourceFromPortal === "function") {
               global.portalRefreshStaffDashboardSourceFromPortal();
             }
+            return rowRef;
+          })
+          .catch(function (err) {
+            console.warn("[term-slot] MADRE fold", err);
+            return rowRef;
           });
+      })
+      .then(function (rowRef) {
+        if (!shouldBill) {
+          deps.toast(toastMsg || "Term slot saved.");
+          return rowRef;
         }
+        return ensureAssignUnpaidInvoice(client, p).then(function (invRes) {
+          var base = "Slot filled · offer seat consumed";
+          if (invRes && invRes.skipped === "existing") {
+            deps.toast(
+              base +
+                " · invoice already unpaid (" +
+                String(invRes.invoice_number || "INV-P") +
+                ")",
+            );
+          } else if (invRes && invRes.ok) {
+            deps.toast(
+              base +
+                " · invoice unpaid ready (" +
+                String(invRes.invoice_number || "INV-P") +
+                ")",
+            );
+          } else if (invRes && invRes.error) {
+            deps.toast(
+              (toastMsg || "Term slot saved.") +
+                " · invoice not created: " +
+                String(invRes.error),
+            );
+          } else {
+            deps.toast(base + " · " + (toastMsg || "Term slot saved."));
+          }
+          return rowRef;
+        });
+      })
+      .then(function () {
         if (global.PortalChangeLog && typeof global.PortalChangeLog.record === "function") {
           var logAction = eventAction === "cancel" ? "cancel" : before ? "update" : "create";
           global.PortalChangeLog.record({
@@ -1439,8 +1548,67 @@
       })
       .finally(function () {
         state.saving = false;
+        state.prefill = null;
         render(root);
       });
+  }
+
+  function ensureAssignUnpaidInvoice(client, p) {
+    var base = String(
+      (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.url) ||
+        global.SUPABASE_URL ||
+        "",
+    ).replace(/\/$/, "");
+    var anon =
+      (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.anonKey) ||
+      global.SUPABASE_ANON_KEY ||
+      "";
+    if (!base || !anon) {
+      return Promise.resolve({ ok: false, error: "supabase_not_configured" });
+    }
+    var headers = {
+      apikey: anon,
+      "Content-Type": "application/json",
+    };
+    var sessionPromise =
+      client && client.auth && typeof client.auth.getSession === "function"
+        ? client.auth.getSession()
+        : Promise.resolve({ data: { session: null } });
+    return sessionPromise.then(function (sessRes) {
+      var tok =
+        sessRes &&
+        sessRes.data &&
+        sessRes.data.session &&
+        sessRes.data.session.access_token;
+      if (tok) headers.Authorization = "Bearer " + tok;
+      return fetch(base + "/functions/v1/portal-admin-term-slot-assign-complete", {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify({
+          client_name: p.client_name,
+          day: p.day,
+          time_slot: p.time_slot,
+          venue: p.venue,
+          instructors: p.instructors,
+          service: p.service,
+          anchor_date: p.anchorDate,
+          scope: p.scope,
+          pay_plan: "flexi_bank",
+        }),
+      }).then(function (res) {
+        return res.json().catch(function () {
+          return { ok: false, error: "bad_json" };
+        }).then(function (data) {
+          if (!res.ok) {
+            return {
+              ok: false,
+              error: (data && data.error) || "http_" + res.status,
+            };
+          }
+          return data || { ok: false, error: "empty" };
+        });
+      });
+    });
   }
 
   function saveTermSlot(root) {

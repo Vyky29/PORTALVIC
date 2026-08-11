@@ -222,6 +222,7 @@
       capacity: Number(slot.capacity || 0),
       taken: Number(slot.taken || 0),
       free: freeOf(slot),
+      instructors: Array.isArray(slot.instructors) ? slot.instructors.slice() : [],
     };
   }
 

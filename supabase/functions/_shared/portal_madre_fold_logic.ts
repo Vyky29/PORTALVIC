@@ -119,10 +119,53 @@ function slotMatch(slots: MadreSlot[], client: string, timeSlot: string): MadreS
   return null;
 }
 
+/** Open / bookable placeholders — Assign must rename these, not stack a named client beside them. */
+export function isOpenMadreClientName(name: unknown): boolean {
+  const up = norm(name)
+    .toUpperCase()
+    .replace(/[_\s-]+/g, " ")
+    .trim();
+  return (
+    !up ||
+    up === "NO PARTICIPANT" ||
+    up === "NO CLIENT" ||
+    up === "NOPARTICIPANT" ||
+    up === "OPEN" ||
+    up === "AVAILABLE" ||
+    up === "FREE"
+  );
+}
+
+function venuesCompatible(a: unknown, b: unknown): boolean {
+  const va = norm(a).toLowerCase();
+  const vb = norm(b).toLowerCase();
+  if (!va || !vb) return true;
+  return va === vb || va.includes(vb) || vb.includes(va);
+}
+
+function findOpenSeatOnBand(
+  slots: MadreSlot[],
+  timeSlot: string,
+  venue: string,
+): MadreSlot | null {
+  for (const s of slots) {
+    if (!isOpenMadreClientName(s.client_name)) continue;
+    if (!timeSlotsEquivalent(String(s.time_slot ?? ""), timeSlot)) continue;
+    if (!venuesCompatible(s.venue, venue)) continue;
+    return s;
+  }
+  return null;
+}
+
 function foldParticipantUpsert(madre: MadreDoc, iso: string, payload: Record<string, unknown>): boolean {
   const client = norm(payload.client_name);
   const timeSlot = norm(payload.time_slot);
   if (!client || !timeSlot || !iso) return false;
+
+  // Named Assign: consume an open seat on this band (do not leave NO PARTICIPANT + named).
+  const replaceOpen =
+    payload.replace_open !== false &&
+    !isOpenMadreClientName(client);
 
   for (const week of madre.weeks ?? []) {
     const start = String(week.start ?? "").slice(0, 10);
@@ -142,6 +185,10 @@ function foldParticipantUpsert(madre: MadreDoc, iso: string, payload: Record<str
     day.slots = slots;
 
     let slot = slotMatch(slots, client, timeSlot);
+    if (!slot && replaceOpen) {
+      slot = findOpenSeatOnBand(slots, timeSlot, String(payload.venue ?? ""));
+      if (slot) slot.client_name = client;
+    }
     if (!slot) {
       slot = { client_name: client, time_slot: timeSlot };
       slots.push(slot);
