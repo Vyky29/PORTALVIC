@@ -594,7 +594,11 @@ export async function regeneratePortalInvoiceSharePdf(
     dueDateIso: dueDate,
   });
   const amountPaidGbp = round2(Number(share.amount_paid_gbp) || 0);
-  const isPaid = String(share.payment_status || "").toLowerCase() === "paid";
+  const payStatus = String(share.payment_status || "").toLowerCase();
+  const isPaid = payStatus === "paid";
+  const isPartial =
+    payStatus === "partial" ||
+    (!isPaid && amountPaidGbp > 0.009);
   // Stored descriptions that already carry Client Id / PO / client name blocks
   // must not get a second metadata block appended on regeneration.
   const storedDescriptionComplete =
@@ -630,7 +634,8 @@ export async function regeneratePortalInvoiceSharePdf(
       billToLines,
       participantName: displayName,
       paid: isPaid,
-      isDraft: !isPaid,
+      partiallyPaid: isPartial,
+      isDraft: !isPaid && !isPartial,
       showStamp: paymentMethodHint !== "la_funded",
       paymentSchedule,
       amountPaidGbp,

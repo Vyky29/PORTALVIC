@@ -807,9 +807,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Same PDF as parent hub: red Draft Invoice → green PAID when status flips.
+    // Same PDF as parent hub: red Draft → amber PARTIALLY PAID → green PAID.
     const payChanged = !!pay && pay !== String(existing.payment_status || "").toLowerCase();
-    if (payChanged && (pay === "paid" || pay === "unpaid")) {
+    if (payChanged && (pay === "paid" || pay === "unpaid" || pay === "partial")) {
       try {
         const regen = await regeneratePortalInvoiceSharePdf(admin, invoiceId);
         pdf = regen.ok

@@ -5,6 +5,7 @@
 import { PDFDocument, StandardFonts, rgb } from "https://esm.sh/pdf-lib@1.17.1";
 import { CLUBSENSATIONAL_LOGO_PNG_B64 } from "./clubsensational_logo_b64.ts";
 import {
+  ANNOUNCEMENTS_LOGO_AMBER_PNG_B64,
   ANNOUNCEMENTS_LOGO_GREEN_PNG_B64,
   ANNOUNCEMENTS_LOGO_RED_PNG_B64,
 } from "./announcements_stamp_logo_b64.ts";
@@ -39,10 +40,13 @@ export type PortalInvoicePdfInput = {
   /**
    * Red Draft Invoice stamp (announcements logo). Defaults to unpaid.
    * Paid invoices always get the green PAID stamp instead.
+   * Partially paid (Flexi / GoCardless instalments) get amber PARTIALLY PAID.
    */
   isDraft?: boolean;
+  /** Amber PARTIALLY PAID stamp — instalments in progress (not fully paid). */
+  partiallyPaid?: boolean;
   /**
-   * When false, omit both DRAFT and PAID announcement stamps.
+   * When false, omit DRAFT / PARTIALLY PAID / PAID announcement stamps.
    * Used for LA managed / NHS managed funder invoices.
    */
   showStamp?: boolean;
@@ -471,16 +475,23 @@ export async function buildPortalTaxInvoicePdf(
   }
 
   // Announcements round stamp — BELOW totals (never over Subtotal/TOTAL figures).
-  // Paid → green PAID INVOICE; otherwise red DRAFT INVOICE until paid.
+  // Paid → green PAID INVOICE; partial → amber PARTIALLY PAID; else red DRAFT INVOICE.
   // LA / NHS funder invoices: no stamp (showStamp: false).
   const stampsEnabled = input.showStamp !== false;
   const showPaidStamp = stampsEnabled && !!input.paid;
-  const showDraftStamp = stampsEnabled && !showPaidStamp && input.isDraft !== false;
+  const showPartialStamp =
+    stampsEnabled && !showPaidStamp && !!input.partiallyPaid;
+  const showDraftStamp =
+    stampsEnabled && !showPaidStamp && !showPartialStamp && input.isDraft !== false;
   let stampReserveBottom = y;
-  if (showPaidStamp || showDraftStamp) {
+  if (showPaidStamp || showPartialStamp || showDraftStamp) {
     try {
       const stampBytes = b64ToBytes(
-        showPaidStamp ? ANNOUNCEMENTS_LOGO_GREEN_PNG_B64 : ANNOUNCEMENTS_LOGO_RED_PNG_B64,
+        showPaidStamp
+          ? ANNOUNCEMENTS_LOGO_GREEN_PNG_B64
+          : showPartialStamp
+            ? ANNOUNCEMENTS_LOGO_AMBER_PNG_B64
+            : ANNOUNCEMENTS_LOGO_RED_PNG_B64,
       );
       const stampLogo = await pdf.embedPng(stampBytes);
       const stampW = 72;
