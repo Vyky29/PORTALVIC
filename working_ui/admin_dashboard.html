@@ -77,7 +77,7 @@
   <script src="/portal/portal_swim_session_axes.js?v=20260714-one-feedback"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260723-lead-view-by-id"></script>
   <script src="/portal/admin-portal-documents.js?v=20260630-doc-delete"></script>
-  <script src="/portal/admin-portal-participant-documents.js?v=20260731-open-pdf"></script>
+  <script src="/portal/admin-portal-participant-documents.js?v=20260811-accept"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260709-family-credits"></script>
   <script src="/portal/admin-portal-booking-leads.js?v=20260731-leads-pdf"></script>
   <script src="/portal/admin-portal-parent-credits.js?v=20260709-family-credits"></script>
@@ -23532,6 +23532,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       window.__portalParticipantDocumentsConfigured = true;
       window.PortalParticipantDocuments.configure({
         esc: esc,
+        toast: portalAdminToast,
         getClient: getSchedSupabaseClient,
         getSupabaseUrl: function(){
           var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';

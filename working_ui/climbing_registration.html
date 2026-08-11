@@ -1607,7 +1607,6 @@
           row2_p2(doc, 'Signature of Parent/Legal Guardian (Junior Test):', data.junior_test_signature);
           row2_p2(doc, 'Date (Junior Test):', fmtDate(data.junior_test_date));
 
-          doc.save(filename);
           var pdfBlob = doc.output('blob');
           var participantName = [data.junior_first_name, data.junior_surname].filter(Boolean).join(' ').trim();
           var parentName = [data.guardian_first_name, data.guardian_surname].filter(Boolean).join(' ').trim();
@@ -1630,12 +1629,19 @@
             pdf_filename: filename,
             payload: data
           }).then(function(){
+            try {
+              doc.save(filename);
+            } catch (_saveErr) {
+              console.warn(_saveErr);
+            }
             if (window.portalFinishParentSubmit) {
               window.portalFinishParentSubmit({
                 formEl: form,
                 successEl: document.getElementById('parentSubmitDone'),
                 noticeEl: document.getElementById('formNotice'),
-                submitBtn: submitBtn
+                submitBtn: submitBtn,
+                message:
+                  'Your climbing form was sent to clubSENsational for review. A PDF copy was also saved on your device.'
               });
             }
           }).catch(function(err){
@@ -1644,7 +1650,18 @@
               submitBtn.disabled = false;
               submitBtn.textContent = 'Submit form';
             }
-            alert('Could not send your form to clubSENsational. Please check your connection and try again, or email the downloaded PDF to the club.');
+            try {
+              doc.save(filename);
+            } catch (_dlErr) {
+              console.warn(_dlErr);
+            }
+            var friendly = window.portalParentFormFriendlyError
+              ? window.portalParentFormFriendlyError(err)
+              : null;
+            alert(
+              (friendly || 'Could not send your form to clubSENsational.') +
+                '\n\nA PDF copy was downloaded so you can email it to info@clubsensational.org if retry still fails.'
+            );
           });
         } catch (pdfErr) {
           console.error(pdfErr);

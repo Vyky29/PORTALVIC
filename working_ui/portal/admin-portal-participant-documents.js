@@ -8,6 +8,7 @@
     esc: function (s) {
       return String(s == null ? '' : s);
     },
+    toast: function () {},
     getClient: function () {
       return null;
     },
@@ -27,6 +28,7 @@
   function configure(options) {
     if (!options) return;
     if (options.esc) cfg.esc = options.esc;
+    if (options.toast) cfg.toast = options.toast;
     if (options.getClient) cfg.getClient = options.getClient;
     if (options.getSupabaseUrl) cfg.getSupabaseUrl = options.getSupabaseUrl;
     if (options.getAnonKey) cfg.getAnonKey = options.getAnonKey;
@@ -74,6 +76,30 @@
     return { documents: j.documents || [], meta: j.meta || {} };
   }
 
+  async function acceptDocument(documentId) {
+    var token = await portalAuthToken();
+    if (!token) return { ok: false, error: 'session_expired' };
+    var res = await fetch(supabaseBase() + '/functions/v1/portal-admin-participant-document-review', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token,
+        apikey: cfg.getAnonKey()
+      },
+      body: JSON.stringify({ document_id: documentId, action: 'accept' })
+    });
+    var j = null;
+    try {
+      j = await res.json();
+    } catch (_e) {
+      j = null;
+    }
+    if (!res.ok || !j || !j.ok) {
+      return { ok: false, error: (j && j.error) || 'request_failed' };
+    }
+    return j;
+  }
+
   function formatDate(iso) {
     if (!iso) return '—';
     try {
@@ -96,7 +122,7 @@
     return (
       '<div class="card" style="margin-top:0"><div class="card-pad" style="overflow:auto;padding:0">' +
       '<table class="tbl tbl--center tbl--dense"><thead><tr>' +
-      '<th>Submitted</th><th>Form</th><th>Participant</th><th>Parent</th><th>Requested slot</th><th>Status</th><th>PDF</th><th>Photo</th>' +
+      '<th>Submitted</th><th>Form</th><th>Participant</th><th>Parent</th><th>Requested slot</th><th>Status</th><th>PDF</th><th>Photo</th><th>Review</th>' +
       '</tr></thead><tbody>' +
       docs.map(function (d) {
         var formLab = FORM_LABELS[d.form_type] || d.form_type || '—';
@@ -126,6 +152,14 @@
         } catch (_e) {
           slotLine = '—';
         }
+        var reviewed = String(d.status || '').toLowerCase() === 'reviewed';
+        var reviewCell = reviewed
+          ? '<span class="chip chip--ok">Accepted</span>'
+          : '<button type="button" class="btn btn--sec btn--sm portal-pax-doc-accept" data-id="' +
+            esc(d.id) +
+            '" data-name="' +
+            esc(d.participant_name || '') +
+            '">Accept</button>';
         return (
           '<tr>' +
           '<td class="muted" style="white-space:nowrap">' + esc(formatDate(d.submitted_at)) + '</td>' +
@@ -133,9 +167,10 @@
           '<td style="min-width:0;overflow-wrap:break-word"><strong>' + esc(d.participant_name || '—') + '</strong></td>' +
           '<td class="muted" style="min-width:0;max-width:14rem;overflow-wrap:break-word">' + esc(parentLine) + '</td>' +
           '<td class="muted" style="min-width:0;max-width:16rem;overflow-wrap:break-word">' + esc(slotLine) + '</td>' +
-          '<td><span class="chip chip--' + (d.status === 'reviewed' ? 'ok' : 'info') + '">' + esc(d.status || 'new') + '</span></td>' +
+          '<td><span class="chip chip--' + (reviewed ? 'ok' : 'pend') + '">' + esc(reviewed ? 'reviewed' : (d.status || 'new')) + '</span></td>' +
           '<td>' + pdfLink + '</td>' +
           '<td>' + photoLink + '</td>' +
+          '<td style="min-width:0">' + reviewCell + '</td>' +
           '</tr>'
         );
       }).join('') +
@@ -147,7 +182,7 @@
     return (
       '<div class="portal-participant-docs-embed">' +
       '<h1 class="page-title">Participant documents</h1>' +
-      '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">Registration forms submitted by parents from the public Vercel pages (climbing consent and client registration with photo).</p>' +
+      '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">New-client flow: Booking Portal slot → registration form → <strong>Accept</strong> here → then set funding and payment and confirm the place. Open the PDF first, then Accept to validate any soft hold.</p>' +
       '<div class="toolbar" style="margin-bottom:12px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParticipantDocsRefresh">Refresh</button>' +
       '</div>' +
@@ -180,6 +215,45 @@
             global.location.href = url;
           } catch (_e) {}
         }
+      });
+    });
+    hostEl.querySelectorAll('.portal-pax-doc-accept').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = String(btn.getAttribute('data-id') || '').trim();
+        var name = String(btn.getAttribute('data-name') || '').trim() || 'this participant';
+        if (!id) return;
+        if (
+          !global.confirm(
+            'Accept registration for ' +
+              name +
+              '?\n\nThis marks the form reviewed and validates any held slot. Next: set funding and payment, then confirm the place.'
+          )
+        ) {
+          return;
+        }
+        btn.disabled = true;
+        btn.textContent = '…';
+        void acceptDocument(id).then(function (out) {
+          if (!out || !out.ok) {
+            btn.disabled = false;
+            btn.textContent = 'Accept';
+            global.alert('Could not accept (' + ((out && out.error) || 'failed') + ').');
+            return;
+          }
+          if (typeof cfg.toast === 'function') {
+            cfg.toast(
+              'Accepted · next set funding & payment' +
+                (out.reservations_validated
+                  ? ' · hold validated'
+                  : '')
+            );
+          } else {
+            global.alert(
+              'Accepted. Next: set funding and payment, then confirm the place on the roster.'
+            );
+          }
+          void renderHost(hostEl, participantName);
+        });
       });
     });
   }

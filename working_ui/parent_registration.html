@@ -363,8 +363,8 @@
   </style>
   <script src="/portal-static-bootstrap.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="/portal/parent_form_submit.js?v=20260731-cors-fix"></script>
-  <script src="/portal/parent_registration_portal.js?v=20260715-prefill-review"></script>
+  <script src="/portal/parent_form_submit.js?v=20260811-submit-first"></script>
+  <script src="/portal/parent_registration_portal.js?v=20260811-submit-first"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-bookingportal"></script>
   <script src="/portal/portal_booking_lead_gate.js?v=20260724-returning-no-privacy"></script>
   <script>
@@ -417,7 +417,7 @@
     <div class="topbar">
       <div class="title-block">
         <h1>Client details &amp; support form</h1>
-        <p>Complete at home, then submit to download a PDF for clubSENsational.</p>
+        <p>Choose a session on the Booking Portal, then complete this form. When you submit successfully, clubSENsational receives it for review before your place is confirmed.</p>
       </div>
       <div class="brand-logo">
         <div class="brand-logo-stage">
@@ -1347,7 +1347,8 @@
         var safeName = (val('participant_name') || 'Participant').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_');
         var filename = 'ClubSENsational_Registration_' + safeName + '.pdf';
         var pdfBlob = doc.output('blob');
-        doc.save(filename);
+        // Do NOT download until the club server confirms save — otherwise parents
+        // keep a local PDF while Enquiries never receives the form.
 
         if (!window.portalSubmitParentForm) {
           throw new Error('Portal upload is not configured.');
@@ -1378,12 +1379,17 @@
           photo_filename: photoFile ? 'participant-photo.jpg' : undefined,
           payload: submitPayload
         }).then(function(res){
+          try {
+            doc.save(filename);
+          } catch (_saveErr) {
+            console.warn(_saveErr);
+          }
           if (portalMode && typeof portalMode.afterSubmitSuccess === 'function') {
             return portalMode.afterSubmitSuccess();
           }
           if (window.portalFinishParentSubmit) {
             var holdMsg = (res && res.slot_held)
-              ? ' Your selected session place is held for review — the office will confirm Parent Portal access next.'
+              ? ' Your selected session is held while the office reviews this form. After they accept you, they will set funding and payment and confirm your place.'
               : (bookingRequest
                 ? ' Your selected session was sent with this form for the office to review.'
                 : '');
@@ -1401,7 +1407,7 @@
               noticeEl: document.getElementById('formNotice'),
               submitBtn: btn,
               message:
-                'Your form was sent to clubSENsational. A PDF copy was saved on your device.' +
+                'Your form was sent to clubSENsational for review. A PDF copy was also saved on your device.' +
                 holdMsg +
                 ' You do not need to email us — you can close this page.'
             });
@@ -1413,9 +1419,19 @@
           var friendly = window.portalParentFormFriendlyError
             ? window.portalParentFormFriendlyError(err)
             : null;
-          alert(portalMode
-            ? (friendly || 'Could not save your updates. Please check your connection and try again.')
-            : (friendly || 'Could not send your form to clubSENsational. Please check your connection and try again, or email the downloaded PDF to the club.'));
+          if (!portalMode) {
+            try {
+              doc.save(filename);
+            } catch (_dlErr) {
+              console.warn(_dlErr);
+            }
+            alert(
+              (friendly || 'Could not send your form to clubSENsational.') +
+                '\n\nA PDF copy was downloaded so you can email it to info@clubsensational.org if retry still fails.'
+            );
+            return;
+          }
+          alert(friendly || 'Could not save your updates. Please check your connection and try again.');
         });
       } catch (err) {
         console.error(err);

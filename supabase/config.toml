@@ -501,6 +501,9 @@ verify_jwt = false
 [functions.portal-admin-participant-documents-list]
 verify_jwt = false
 
+[functions.portal-admin-participant-document-review]
+verify_jwt = false
+
 [functions.portal-admin-session-feedback-list]
 verify_jwt = false
 

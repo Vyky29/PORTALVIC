@@ -3,6 +3,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { syncParentFormPhotoToParticipantAvatar } from "../_shared/participant_avatar.ts";
+import { notifyOfficeRegistrationSubmitted } from "../_shared/portal_booking_lead_office_notify.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -135,8 +136,9 @@ async function markBookingLeadsSubmitted(
     parentPhone: string | null;
     leadSessionToken: string | null;
   },
-): Promise<number> {
+): Promise<{ updated: number; primaryLeadId: string | null }> {
   const leadIds = new Set<string>();
+  let sessionLeadId: string | null = null;
   const token = String(opts.leadSessionToken || "").trim();
   if (/^[a-f0-9]{32,128}$/i.test(token)) {
     const tokenHash = await sha256Hex(token);
@@ -150,7 +152,8 @@ async function markBookingLeadsSubmitted(
       !sess.revoked_at &&
       new Date(String(sess.expires_at)).getTime() >= Date.now()
     ) {
-      leadIds.add(String(sess.lead_id));
+      sessionLeadId = String(sess.lead_id);
+      leadIds.add(sessionLeadId);
     }
   }
 
@@ -178,7 +181,7 @@ async function markBookingLeadsSubmitted(
     }
   }
 
-  if (!leadIds.size) return 0;
+  if (!leadIds.size) return { updated: 0, primaryLeadId: null };
 
   const nowIso = new Date().toISOString();
   let updated = 0;
@@ -209,7 +212,8 @@ async function markBookingLeadsSubmitted(
       updated += 1;
     }
   }
-  return updated;
+  const primaryLeadId = sessionLeadId || [...leadIds][0] || null;
+  return { updated, primaryLeadId };
 }
 
 Deno.serve(async (req) => {
@@ -369,13 +373,20 @@ Deno.serve(async (req) => {
     }
   }
 
+  let primaryLeadId: string | null = null;
   try {
-    const n = await markBookingLeadsSubmitted(admin, {
+    const leadMark = await markBookingLeadsSubmitted(admin, {
       parentEmail,
       parentPhone,
       leadSessionToken: bookingLeadSessionToken,
     });
-    if (n) console.log("[portal-parent-form-submit] marked leads submitted", n);
+    primaryLeadId = leadMark.primaryLeadId;
+    if (leadMark.updated) {
+      console.log(
+        "[portal-parent-form-submit] marked leads submitted",
+        leadMark.updated,
+      );
+    }
   } catch (leadErr) {
     console.warn("[portal-parent-form-submit] lead status update", leadErr);
   }
@@ -435,6 +446,34 @@ Deno.serve(async (req) => {
     } catch (holdCatch) {
       console.warn("[portal-parent-form-submit] slot reservation", holdCatch);
     }
+  }
+
+  const bookingSummary = bookingRequest
+    ? [
+        bookingRequest.service_name,
+        bookingRequest.venue,
+        bookingRequest.day,
+        bookingRequest.time,
+        bookingRequest.activity,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : null;
+
+  try {
+    await notifyOfficeRegistrationSubmitted({
+      documentId: String(row.id),
+      formType,
+      participantName,
+      parentName,
+      parentEmail,
+      parentPhone,
+      leadId: primaryLeadId,
+      slotHeld: !!reservationId,
+      bookingSummary,
+    });
+  } catch (notifyErr) {
+    console.warn("[portal-parent-form-submit] office notify", notifyErr);
   }
 
   return json(200, {
