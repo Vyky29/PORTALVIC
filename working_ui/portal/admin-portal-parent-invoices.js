@@ -362,21 +362,41 @@
     return html;
   }
 
+  /** YYYY-MM-DD local today for instalment due vs scheduled. */
+  function todayIsoLocal() {
+    var d = new Date();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() + '-' + m + '-' + day;
+  }
+
+  function instalmentDueIso(raw) {
+    var s = String(raw || '').trim();
+    if (!s) return '';
+    var m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+    return m ? m[1] : '';
+  }
+
   function instalmentScheduleHtml(inv) {
     var rows = scheduleRows(inv);
     if (!rows.length) return '';
+    var today = todayIsoLocal();
     var items = rows
       .map(function (r, i) {
         var st = String(r.status || 'pending').toLowerCase() === 'paid' ? 'paid' : 'pending';
         var label =
           String(r.label || '').trim() ||
           'Instalment ' + String(r.seq || i + 1);
+        var dueIso = instalmentDueIso(r.due_date);
         var due = formatDate(r.due_date);
+        var isDueNow = !dueIso || dueIso <= today;
         var tone =
           st === 'paid'
             ? 'color:#065f46;background:#ecfdf5;border-color:#6ee7b7'
-            : 'color:#9a3412;background:#fff7ed;border-color:#fdba74';
-        var stLab = st === 'paid' ? 'Paid' : 'Due';
+            : isDueNow
+              ? 'color:#9a3412;background:#fff7ed;border-color:#fdba74'
+              : 'color:#334155;background:#f8fafc;border-color:#cbd5e1';
+        var stLab = st === 'paid' ? 'Paid' : isDueNow ? 'Due' : 'Scheduled';
         var meta = [];
         if (due) meta.push(due);
         meta.push(formatMoney(r.amount_gbp));
@@ -1969,7 +1989,9 @@
             r.hold && r.hold.restored
               ? 'Invoice paid — held session restored'
               : act === 'paid'
-                ? 'Invoice marked paid — PIN sent if finish-booking was waiting'
+                ? r.booking_pin && r.booking_pin.pinSent
+                  ? 'Invoice marked paid — Parent Portal PIN sent (new finish-booking)'
+                  : 'Invoice marked paid'
                 : 'Invoice updated',
             'ok',
           );

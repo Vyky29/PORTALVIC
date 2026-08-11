@@ -11,7 +11,7 @@ import {
   sendParentMobileMessage,
 } from "./portal_parent_messaging.ts";
 import { hashFamilyPin, newRandomFamilyPin } from "./parent_portal_pin.ts";
-import { upsertFamilyPin } from "./parent_portal_pin_family.ts";
+import { familyPersonIdsForParent, upsertFamilyPin } from "./parent_portal_pin_family.ts";
 import {
   type BookingTermKey,
   type NewClientPayPlan,
@@ -429,7 +429,7 @@ export async function issueParentPortalPinForCompletion(
 export async function tryCompleteBookingAfterInvoicePayment(
   admin: SupabaseClient,
   invoiceShareId: string,
-): Promise<{ completed: boolean; reason?: string }> {
+): Promise<{ completed: boolean; pinSent?: boolean; reason?: string }> {
   const invId = clean(invoiceShareId, 80);
   if (!invId) return { completed: false, reason: "no_invoice" };
 
@@ -440,7 +440,7 @@ export async function tryCompleteBookingAfterInvoicePayment(
     .maybeSingle();
   if (!token) return { completed: false, reason: "no_token" };
   if (String(token.status) === "completed") {
-    return { completed: true, reason: "already_completed" };
+    return { completed: true, pinSent: false, reason: "already_completed" };
   }
 
   const { data: inv } = await admin
@@ -467,6 +467,42 @@ export async function tryCompleteBookingAfterInvoicePayment(
     .eq("contact_id", String(inv.contact_id || token.contact_id || ""))
     .maybeSingle();
 
+  const parentPersonId =
+    clean(token.parent_person_id, 80) || clean(contact?.parent_person_id, 80);
+  if (parentPersonId) {
+    const familyIds = await familyPersonIdsForParent(admin, parentPersonId);
+    const { data: existingCreds } = await admin
+      .from("portal_parent_portal_credentials")
+      .select("parent_person_id, pin_hash")
+      .in("parent_person_id", familyIds.length ? familyIds : [parentPersonId]);
+    const hasPin = (existingCreds || []).some((c) => String(c.pin_hash || "").trim().length > 0);
+    if (hasPin) {
+      // Existing family — they already have a Parent Portal PIN. Complete the
+      // booking token without rotating or re-sending a PIN.
+      const now = new Date().toISOString();
+      await admin
+        .from("portal_booking_completion_tokens")
+        .update({
+          status: "completed",
+          consumed_at: now,
+          updated_at: now,
+        })
+        .eq("id", token.id);
+      if (token.lead_id) {
+        await admin
+          .from("portal_booking_leads")
+          .update({
+            booking_status: "booking_completed",
+            client_status: "active_client",
+            last_activity_at: now,
+            updated_at: now,
+          })
+          .eq("id", token.lead_id);
+      }
+      return { completed: true, pinSent: false, reason: "existing_pin_no_resend" };
+    }
+  }
+
   const result = await issueParentPortalPinForCompletion(admin, token as CompletionTokenRow, {
     parentName: contact?.parent_display || null,
     parentEmail: contact?.email || null,
@@ -474,7 +510,7 @@ export async function tryCompleteBookingAfterInvoicePayment(
     participantName: contact?.child_display || "Participant",
   });
   if ("error" in result) return { completed: false, reason: result.error };
-  return { completed: true };
+  return { completed: true, pinSent: true };
 }
 
 export function parseFundingCode(raw: unknown): "privately_funded" | "la_direct_payments" | null {

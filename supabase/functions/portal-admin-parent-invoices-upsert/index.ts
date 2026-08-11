@@ -778,6 +778,7 @@ Deno.serve(async (req) => {
     let xero = null;
     let hold = null;
     let pdf = null;
+    let bookingPin = null;
     if (updated.payment_status === "paid") {
       xero = await xeroEnsurePaidShareInBooks(admin, updated);
       try {
@@ -798,7 +799,7 @@ Deno.serve(async (req) => {
         );
       }
       try {
-        await tryCompleteBookingAfterInvoicePayment(admin, String(updated.id));
+        bookingPin = await tryCompleteBookingAfterInvoicePayment(admin, String(updated.id));
       } catch (e) {
         console.error(
           "[portal-admin-parent-invoices-upsert] finish-booking pin",
@@ -837,7 +838,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return portalAdminJson(200, { ok: true, invoice: updated, xero, hold, pdf });
+    return portalAdminJson(200, { ok: true, invoice: updated, xero, hold, pdf, booking_pin: bookingPin });
   }
 
   return portalAdminJson(400, { ok: false, error: "action_required" });
