@@ -19,6 +19,23 @@
     }
   }
 
+  function isLocalHost() {
+    try {
+      var h = String(global.location.hostname || "").toLowerCase();
+      return h === "localhost" || h === "127.0.0.1" || h === "[::1]";
+    } catch (_e) {
+      return false;
+    }
+  }
+
+  /** Interactive walkthrough without a live Accept token. */
+  function isDemoMode() {
+    if (qs("demo") === "1") return true;
+    // Local preview: open finish page without ?t= → auto demo so office can click through.
+    if (isLocalHost() && !qs("t")) return true;
+    return false;
+  }
+
   function esc(s) {
     return String(s == null ? "" : s)
       .replace(/&/g, "&amp;")
@@ -34,7 +51,7 @@
   }
 
   async function api(action, extra) {
-    if (qs("demo") === "1") {
+    if (isDemoMode()) {
       return demoApi(action, extra || {});
     }
     var token = qs("t");
@@ -670,11 +687,17 @@
       "</strong></p>";
 
     if (gcUrl && (data.pay_plan === "gocardless_monthly" || inv.payment_method_hint === "gocardless")) {
-      html +=
-        '<a class="btn btn--pri" href="' +
-        esc(gcUrl) +
-        '">Set up GoCardless</a>' +
-        '<p class="muted" style="margin:10px 0 0">After Direct Debit is set up and the first payment clears, we email / WhatsApp your Parent Portal PIN.</p>';
+      if (isDemoMode()) {
+        html +=
+          '<button type="button" class="btn btn--pri" id="fbConfirmPaid">Demo: simulate GoCardless paid</button>' +
+          '<p class="muted" style="margin:10px 0 0">In production parents open GoCardless; here click to finish the demo and see the PIN step.</p>';
+      } else {
+        html +=
+          '<a class="btn btn--pri" href="' +
+          esc(gcUrl) +
+          '">Set up GoCardless</a>' +
+          '<p class="muted" style="margin:10px 0 0">After Direct Debit is set up and the first payment clears, we email / WhatsApp your Parent Portal PIN.</p>';
+      }
     } else {
       html +=
         '<div class="card-inner" style="margin:0 0 12px">' +
@@ -719,10 +742,46 @@
     }
   }
 
+  function ensureDemoChrome() {
+    if (!isDemoMode()) return;
+    var page = document.querySelector(".page");
+    if (!page || document.getElementById("fbDemoChrome")) return;
+    var bar = document.createElement("div");
+    bar.id = "fbDemoChrome";
+    bar.style.cssText =
+      "margin:0 0 14px;padding:12px 14px;border-radius:14px;background:#173247;color:#fff;min-width:0;overflow-wrap:break-word";
+    bar.innerHTML =
+      "<div style=\"font-weight:800;margin:0 0 4px\">DEMO — Finish booking after Accept</div>" +
+      "<div style=\"font-size:.88rem;opacity:.92;margin:0 0 10px\">" +
+      "Office accepted the registration → parent opens this link. Choose funding, booking length, payment, then pay. No real invoice." +
+      "</div>" +
+      '<button type="button" id="fbDemoRestart" class="btn" style="background:#fff;color:#173247;width:auto;min-width:0;padding:8px 14px">Restart from step 1</button>';
+    page.insertBefore(bar, page.firstChild);
+    var restart = document.getElementById("fbDemoRestart");
+    if (restart) {
+      restart.onclick = function () {
+        try {
+          var u = new URL(global.location.href);
+          u.searchParams.set("demo", "1");
+          u.searchParams.delete("t");
+          u.searchParams.delete("gc");
+          global.location.href = u.pathname + "?" + u.searchParams.toString();
+        } catch (_e) {
+          global.location.href = "/parent_finish_booking.html?demo=1";
+        }
+      };
+    }
+  }
+
   function boot() {
     var notice = document.getElementById("fbNotice");
-    if (qs("demo") === "1") {
-      showNotice(notice, "Demo mode — click through the full flow (no real booking).", "ok");
+    ensureDemoChrome();
+    if (isDemoMode()) {
+      showNotice(
+        notice,
+        "Demo ready — pick each option and Continue to walk the parent flow.",
+        "ok",
+      );
       void api("load")
         .then(function (data) {
           bind(data);
