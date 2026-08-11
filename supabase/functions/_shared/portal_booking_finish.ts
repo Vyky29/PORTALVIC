@@ -142,7 +142,14 @@ export async function mintFinishBookingToken(
       updated_at: new Date().toISOString(),
     })
     .eq("document_id", opts.documentId)
-    .in("status", ["pending", "choices_saved", "awaiting_payment", "la_office"]);
+    .in("status", [
+      "pending",
+      "funding_saved",
+      "scope_saved",
+      "choices_saved",
+      "awaiting_payment",
+      "la_office",
+    ]);
 
   const rawToken = newRawFinishToken();
   const tokenHash = await sha256Hex(rawToken);
