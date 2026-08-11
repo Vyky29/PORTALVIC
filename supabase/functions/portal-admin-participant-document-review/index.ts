@@ -109,6 +109,7 @@ async function mintAndNotify(
     participantName: doc.participant_name,
     slotSummary,
     rawToken: minted.rawToken,
+    admin,
   });
   const nowIso = new Date().toISOString();
   await admin

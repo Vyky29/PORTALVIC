@@ -3,10 +3,12 @@
  */
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
+  maskEmailForLog,
+  maskPhoneForLog,
   normalizeParentPhoneE164,
   readParentNotifySmtpConfig,
   sendParentEmailViaSmtp,
-  sendParentMessageViaWhatsapp,
+  sendParentMobileMessage,
 } from "./portal_parent_messaging.ts";
 import { hashFamilyPin, newRandomFamilyPin } from "./parent_portal_pin.ts";
 import { upsertFamilyPin } from "./parent_portal_pin_family.ts";
@@ -163,6 +165,66 @@ export async function mintFinishBookingToken(
   return { tokenId: String(data.id), rawToken, expiresAt };
 }
 
+async function logFinishBookingNotify(
+  admin: SupabaseClient | null | undefined,
+  opts: {
+    kind: string;
+    parentName: string;
+    parentEmail: string | null;
+    parentPhone: string | null;
+    participantName: string;
+    subject: string;
+    bodyText: string;
+    emailOk: boolean;
+    wa: { ok: boolean; id?: string; channel?: string; error?: string };
+  },
+): Promise<void> {
+  if (!admin) return;
+  try {
+    const waStatus = opts.wa.ok
+      ? (opts.wa.channel === "sms" ? "sent_sms" : "sent")
+      : (opts.parentPhone ? "failed" : "skipped");
+    const channel =
+      opts.emailOk && opts.wa.ok
+        ? "both"
+        : opts.wa.ok
+          ? "whatsapp"
+          : opts.emailOk
+            ? "email"
+            : "whatsapp";
+    await admin.from("portal_parent_notify_log").insert({
+      sent_by_user_id: null,
+      sent_by_email: "system@finish-booking",
+      kind: opts.kind,
+      channel,
+      client_display: opts.participantName,
+      parent_name: opts.parentName,
+      parent_email: opts.parentEmail,
+      parent_phone: opts.parentPhone,
+      subject: opts.subject,
+      body_text: opts.bodyText,
+      message_type: "text",
+      email_status: opts.emailOk ? "sent" : opts.parentEmail ? "failed" : "skipped",
+      whatsapp_status: waStatus,
+      whatsapp_message_id: opts.wa.ok ? opts.wa.id || null : null,
+      error_detail: opts.wa.ok
+        ? null
+        : (opts.wa.error || null),
+      meta: {
+        source: "finish_booking",
+        parent_email_masked: opts.parentEmail ? maskEmailForLog(opts.parentEmail) : null,
+        parent_phone_masked: opts.parentPhone ? maskPhoneForLog(opts.parentPhone) : null,
+        wa_template_kind: "contact_update",
+        wa_client_body: opts.bodyText.trim()
+          ? `Hello,\n${opts.bodyText.trim()}\nThank you.`
+          : null,
+      },
+    });
+  } catch (e) {
+    console.warn("[finish-booking-notify] log failed", e);
+  }
+}
+
 export async function notifyParentFinishBooking(opts: {
   parentName: string | null;
   parentEmail: string | null;
@@ -170,22 +232,25 @@ export async function notifyParentFinishBooking(opts: {
   participantName: string;
   slotSummary: string | null;
   rawToken: string;
-}): Promise<{ emailOk: boolean; waOk: boolean }> {
+  admin?: SupabaseClient | null;
+}): Promise<{ emailOk: boolean; waOk: boolean; waError?: string }> {
   const name = clean(opts.parentName, 120) || "Parent / carer";
   const participant = clean(opts.participantName, 120) || "your child";
   const link = finishBookingUrl(opts.rawToken);
   const slot = clean(opts.slotSummary, 200);
+  // Flat body for Meta contact_update template (newlines are stripped).
   const bodyText =
-    `Hi ${name},\n\n` +
-    `clubSENsational has accepted the registration for ${participant}.\n\n` +
-    (slot ? `Requested place: ${slot}\n\n` : "") +
-    `Please finish your booking (choose funding and payment, then pay the first instalment):\n` +
-    `${link}\n\n` +
-    `After payment we will send your Parent Portal PIN so you can use the Family Portal.\n\n` +
-    `— clubSENsational`;
+    `clubSENsational accepted the registration for ${participant}. ` +
+    (slot ? `Place: ${slot}. ` : "") +
+    `Finish booking (funding, payment, first instalment): ${link} ` +
+    `After payment we send your Parent Portal PIN.`;
 
   let emailOk = false;
   let waOk = false;
+  let waError: string | undefined;
+  let waResult: { ok: boolean; id?: string; channel?: string; error?: string } = {
+    ok: false,
+  };
 
   const smtp = readParentNotifySmtpConfig();
   const email = clean(opts.parentEmail, 200);
@@ -194,7 +259,12 @@ export async function notifyParentFinishBooking(opts: {
       config: smtp,
       to: email,
       subject: `Finish booking · ${participant}`,
-      bodyText,
+      bodyText:
+        `Hi ${name},\n\n` +
+        `clubSENsational has accepted the registration for ${participant}.\n\n` +
+        (slot ? `Requested place: ${slot}\n\n` : "") +
+        `Please finish your booking:\n${link}\n\n` +
+        `After payment we will send your Parent Portal PIN.\n\n— clubSENsational`,
     });
     emailOk = mail.ok;
     if (!mail.ok) console.warn("[finish-booking-notify] email", mail.error);
@@ -204,15 +274,31 @@ export async function notifyParentFinishBooking(opts: {
 
   const phone = normalizeParentPhoneE164(String(opts.parentPhone || ""));
   if (phone) {
-    const wa = await sendParentMessageViaWhatsapp(phone, bodyText, {
-      kind: "finish_booking",
-      templateName: "", // free-text session message
+    // Cold outreach must use approved Meta template (contact_update), not free-text.
+    const wa = await sendParentMobileMessage(phone, bodyText, {
+      kind: "contact_update",
     });
     waOk = wa.ok;
-    if (!wa.ok) console.warn("[finish-booking-notify] whatsapp", wa.error);
+    waResult = wa;
+    if (!wa.ok) {
+      waError = wa.error;
+      console.warn("[finish-booking-notify] whatsapp", wa.error);
+    }
   }
 
-  return { emailOk, waOk };
+  await logFinishBookingNotify(opts.admin, {
+    kind: "finish_booking",
+    parentName: name,
+    parentEmail: email || null,
+    parentPhone: phone,
+    participantName: participant,
+    subject: `Finish booking · ${participant}`,
+    bodyText,
+    emailOk,
+    wa: waResult,
+  });
+
+  return { emailOk, waOk, waError };
 }
 
 export async function notifyParentPortalPin(opts: {
@@ -221,19 +307,19 @@ export async function notifyParentPortalPin(opts: {
   parentPhone: string | null;
   participantName: string;
   pin4: string;
+  admin?: SupabaseClient | null;
 }): Promise<void> {
   const name = clean(opts.parentName, 120) || "Parent / carer";
   const participant = clean(opts.participantName, 120) || "your child";
   const first = participant.split(/\s+/)[0] || participant;
   const portalUrl = `${portalPublicOrigin()}/parent`;
   const bodyText =
-    `Hi ${name},\n\n` +
-    `Your Parent Portal is ready for ${participant}.\n\n` +
-    `Sign in at ${portalUrl}\n` +
-    `Child first name: ${first}\n` +
-    `Family PIN: ${opts.pin4}\n\n` +
-    `Keep this PIN private. You can change it after login.\n\n` +
-    `— clubSENsational`;
+    `Parent Portal ready for ${participant}. Sign in at ${portalUrl} — child first name: ${first} — Family PIN: ${opts.pin4}. Keep this PIN private.`;
+
+  let emailOk = false;
+  let waResult: { ok: boolean; id?: string; channel?: string; error?: string } = {
+    ok: false,
+  };
 
   const smtp = readParentNotifySmtpConfig();
   const email = clean(opts.parentEmail, 200);
@@ -242,19 +328,38 @@ export async function notifyParentPortalPin(opts: {
       config: smtp,
       to: email,
       subject: `Parent Portal PIN · ${participant}`,
-      bodyText,
+      bodyText:
+        `Hi ${name},\n\n` +
+        `Your Parent Portal is ready for ${participant}.\n\n` +
+        `Sign in at ${portalUrl}\n` +
+        `Child first name: ${first}\n` +
+        `Family PIN: ${opts.pin4}\n\n` +
+        `Keep this PIN private. You can change it after login.\n\n— clubSENsational`,
     });
+    emailOk = mail.ok;
     if (!mail.ok) console.warn("[finish-booking-pin] email", mail.error);
   }
 
   const phone = normalizeParentPhoneE164(String(opts.parentPhone || ""));
   if (phone) {
-    const wa = await sendParentMessageViaWhatsapp(phone, bodyText, {
-      kind: "portal_pin",
-      templateName: "",
+    const wa = await sendParentMobileMessage(phone, bodyText, {
+      kind: "contact_update",
     });
+    waResult = wa;
     if (!wa.ok) console.warn("[finish-booking-pin] whatsapp", wa.error);
   }
+
+  await logFinishBookingNotify(opts.admin, {
+    kind: "portal_pin",
+    parentName: name,
+    parentEmail: email || null,
+    parentPhone: phone,
+    participantName: participant,
+    subject: `Parent Portal PIN · ${participant}`,
+    bodyText,
+    emailOk,
+    wa: waResult,
+  });
 }
 
 export async function issueParentPortalPinForCompletion(
@@ -303,6 +408,7 @@ export async function issueParentPortalPinForCompletion(
     parentPhone: parentMeta.parentPhone,
     participantName: parentMeta.participantName,
     pin4,
+    admin,
   });
 
   return { pin4 };
