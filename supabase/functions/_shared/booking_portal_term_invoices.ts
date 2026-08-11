@@ -17,9 +17,16 @@ import {
 } from "./portal_xero_product_catalog.ts";
 
 export type BookingTermKey = "autumn" | "spring" | "summer";
-export type NewClientPayPlan = "gocardless_monthly" | "flexi_bank" | "one_off_bank";
+export type NewClientPayPlan =
+  | "gocardless_monthly"
+  | "flexi_bank"
+  | "one_off_bank"
+  | "own_way";
 
 const GC_FEE = 1.5;
+/** Own way: always keep 2 sessions prepaid + £50 admin / term. */
+const OWN_WAY_ADMIN_FEE = 50;
+const OWN_WAY_PREPAID_SESSIONS = 2;
 
 const FLEXI_SECOND_DUE: Record<BookingTermKey, string> = {
   autumn: "2026-10-26",
@@ -86,23 +93,24 @@ export function parseNewClientPayPlan(raw: unknown): NewClientPayPlan | null {
   ) {
     return "gocardless_monthly";
   }
-  if (
-    s === "flexi_bank" ||
-    s === "term_flexi" ||
-    s === "flexi" ||
-    s === "own_way" ||
-    s === "own_way_flexible"
-  ) {
+  if (s === "flexi_bank" || s === "term_flexi" || s === "flexi") {
     return "flexi_bank";
   }
   if (
     s === "one_off_bank" ||
     s === "term_3" ||
     s === "one_off" ||
-    s === "bank_transfer" ||
-    s === "bank"
+    s === "bank_transfer_one_off"
   ) {
     return "one_off_bank";
+  }
+  if (
+    s === "own_way" ||
+    s === "own_way_flexible" ||
+    s === "own_term" ||
+    s === "own_arrangement"
+  ) {
+    return "own_way";
   }
   return null;
 }
@@ -203,6 +211,13 @@ export function buildNewClientPaymentSchedule(args: {
     slots = buildNewClientGcMonthDueSlots(args.term, asOf);
   } else if (args.plan === "flexi_bank") {
     slots = buildNewClientFlexiDueSlots(args.term, asOf);
+  } else if (args.plan === "own_way") {
+    slots = [
+      {
+        label: `${bookingTermDisplayLabel(args.term)} term · Own way minimum (due on booking)`,
+        dueIso: asOf,
+      },
+    ];
   } else {
     slots = [
       {
@@ -261,7 +276,12 @@ export function quoteNewClientMidTermInvoice(args: {
   const remaining = remainingTermSessionDates(term, day, asOf);
   if (!remaining.length) return { error: "no_remaining_sessions" };
 
-  const programmeTotal = round2(unit * remaining.length);
+  const fullProgramme = round2(unit * remaining.length);
+  const ownWaySessions = Math.min(OWN_WAY_PREPAID_SESSIONS, remaining.length);
+  const ownWayProgramme = round2(unit * ownWaySessions);
+  const ownWayAdmin = OWN_WAY_ADMIN_FEE;
+  const programmeTotal =
+    args.plan === "own_way" ? round2(ownWayProgramme + ownWayAdmin) : fullProgramme;
   const schedule = buildNewClientPaymentSchedule({
     plan: args.plan,
     term,
@@ -279,18 +299,40 @@ export function quoteNewClientMidTermInvoice(args: {
   const mapRow = args.productMap?.get(serviceKey) || null;
   const datesLabel = formatGroupedSessionDates(remaining);
 
-  const lineItems: PortalInvoiceLineItem[] = [
-    {
+  const lineItems: PortalInvoiceLineItem[] = [];
+  if (args.plan === "own_way") {
+    lineItems.push({
+      service_key: serviceKey,
+      description: serviceLabel,
+      detail: `${detail} · Own way prepaid (${ownWaySessions} sessions)`,
+      dates: datesLabel,
+      quantity: ownWaySessions,
+      unit_price_gbp: unit,
+      amount_gbp: ownWayProgramme,
+      xero_item_code: xeroItemCodeForService(mapRow || undefined, vatMode),
+    });
+    lineItems.push({
+      service_key: "OWN_WAY_ADMIN",
+      description: "Own way admin fee",
+      detail: "£50 / term · keep 2 sessions prepaid",
+      dates: null,
+      quantity: 1,
+      unit_price_gbp: ownWayAdmin,
+      amount_gbp: ownWayAdmin,
+      xero_item_code: null,
+    });
+  } else {
+    lineItems.push({
       service_key: serviceKey,
       description: serviceLabel,
       detail,
       dates: datesLabel,
       quantity: remaining.length,
       unit_price_gbp: unit,
-      amount_gbp: programmeTotal,
+      amount_gbp: fullProgramme,
       xero_item_code: xeroItemCodeForService(mapRow || undefined, vatMode),
-    },
-  ];
+    });
+  }
   if (args.plan === "gocardless_monthly") {
     const feeTotal = round2(invoiceTotal - programmeTotal);
     if (feeTotal > 0) {
@@ -311,8 +353,10 @@ export function quoteNewClientMidTermInvoice(args: {
     args.plan === "gocardless_monthly"
       ? `GoCardless monthly · first instalment due on booking day, then 1st of each remaining month`
       : args.plan === "flexi_bank"
-        ? `Flexi bank · 2 instalments (first due on booking day)`
-        : `One-off bank · due on booking day`;
+        ? `Bank transfer · Flexi (2 instalments this term; first due on booking day)`
+        : args.plan === "own_way"
+          ? `Own way · pay ${ownWaySessions} sessions prepaid + £${OWN_WAY_ADMIN_FEE} admin now; top up as you go to keep 2 sessions prepaid`
+          : `Bank transfer · one-off full term (due on booking day)`;
 
   return {
     term,

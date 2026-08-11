@@ -152,24 +152,34 @@
 
     <div id="fbStepPay" class="card" hidden>
       <h2>3. Payment method</h2>
-      <p class="muted">Choose how you will pay the first instalment for the remaining sessions this term.</p>
+      <p class="muted">First choose how you pay. Then pick the plan for that method.</p>
       <form id="fbPayForm">
-        <label class="choice">
-          <input type="radio" name="pay_plan" value="one_off_bank" checked />
-          <strong>Bank transfer</strong>
-          <span class="hint" data-plan-hint="one_off_bank"></span>
-        </label>
-        <label class="choice">
-          <input type="radio" name="pay_plan" value="gocardless_monthly" />
-          <strong>GoCardless</strong>
-          <span class="hint" data-plan-hint="gocardless_monthly"></span>
-        </label>
-        <label class="choice">
-          <input type="radio" name="pay_plan" value="flexi_bank" />
-          <strong>Own way</strong>
-          <span class="hint" data-plan-hint="flexi_bank"></span>
-        </label>
-        <button type="submit" class="btn btn--pri">Create invoice &amp; pay</button>
+        <div id="fbPayChannelBox">
+          <label class="choice">
+            <input type="radio" name="pay_channel" value="bank_transfer" checked />
+            <strong>Bank transfer</strong>
+            <span class="hint">Fixed due dates. Next: one-off payment or flexi (2 payments this term). No admin fee if on time.</span>
+          </label>
+          <label class="choice">
+            <input type="radio" name="pay_channel" value="gocardless" />
+            <strong>GoCardless</strong>
+            <span class="hint">Automatic Direct Debit. Next: monthly plan (+ £1.50 per instalment).</span>
+          </label>
+          <label class="choice" id="fbOwnWayChannel">
+            <input type="radio" name="pay_channel" value="own_way" />
+            <strong>Own way</strong>
+            <span class="hint">If you cannot meet fixed due dates: keep 2 sessions prepaid + £50 / term. Not available with LA funds.</span>
+          </label>
+          <button type="button" class="btn btn--pri" id="fbPayChannelNext">Continue</button>
+        </div>
+        <div id="fbPayPlanBox" hidden>
+          <p class="muted" id="fbPayPlanIntro" style="margin:0 0 10px;overflow-wrap:break-word"></p>
+          <div id="fbPayPlanChoices"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+            <button type="button" class="btn" id="fbPayPlanBack" style="background:#eef3f7;color:var(--ink)">Back</button>
+            <button type="submit" class="btn btn--pri">Create invoice &amp; pay</button>
+          </div>
+        </div>
       </form>
     </div>
 
@@ -187,6 +197,6 @@
       <a class="btn btn--pri" href="/parent">Open Parent Portal</a>
     </div>
   </div>
-  <script src="/portal/portal_finish_booking.js?v=20260811-demo1"></script>
+  <script src="/portal/portal_finish_booking.js?v=20260811-pay-cascade1"></script>
 </body>
 </html>

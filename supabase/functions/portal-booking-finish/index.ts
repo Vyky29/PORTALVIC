@@ -328,7 +328,12 @@ Deno.serve(async (req) => {
   const term = inferBillingTerm();
   const serviceKey = inferServiceKey(serviceName, timeLabel);
 
-  const quotePlans = ["gocardless_monthly", "flexi_bank", "one_off_bank"] as const;
+  const quotePlans = [
+    "gocardless_monthly",
+    "flexi_bank",
+    "one_off_bank",
+    "own_way",
+  ] as const;
   const quotes: Record<string, unknown> = {};
   for (const plan of quotePlans) {
     const q = quoteNewClientMidTermInvoice({
@@ -522,6 +527,9 @@ Deno.serve(async (req) => {
     }
     if (!plan) return json(400, { ok: false, error: "pay_plan_required" });
     if (!scope) return json(400, { ok: false, error: "booking_scope_required" });
+    if (plan === "own_way" && funding === "la_direct_payments") {
+      return json(400, { ok: false, error: "own_way_not_for_la" });
+    }
 
     if (token.invoice_share_id) {
       const { data: existing } = await admin
@@ -546,10 +554,12 @@ Deno.serve(async (req) => {
         : "Using Own money (private family funds)";
     const paymentLabel =
       plan === "gocardless_monthly"
-        ? "GoCardless"
+        ? "GoCardless (monthly)"
         : plan === "flexi_bank"
-          ? "Own way"
-          : "Bank transfer";
+          ? "Bank transfer · Flexi (2 per term)"
+          : plan === "own_way"
+            ? "Own way — 2 sessions prepaid + £50 / term"
+            : "Bank transfer · One-off payment";
     const scopeLabel =
       scope === "auto_reenroll_year"
         ? "Auto re-enrol by term (all year)"

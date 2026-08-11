@@ -78,16 +78,28 @@
     var termTotal = unit * termSessions;
     var payable = unit * remaining;
     function quote(plan) {
+      if (plan === "own_way") {
+        var own = unit * 2 + 50;
+        return {
+          remaining_sessions: remaining,
+          programme_total_gbp: own,
+          invoice_total_gbp: own,
+          first_due_gbp: own,
+          first_due_date: new Date().toISOString().slice(0, 10),
+          schedule: [{ amount_gbp: own, due_date: new Date().toISOString().slice(0, 10), status: "pending" }],
+          payment_method_hint: "bank_transfer",
+        };
+      }
       var first =
         plan === "gocardless_monthly"
-          ? Math.round((payable / 3) * 100) / 100 + 1
+          ? Math.round((payable / 3) * 100) / 100 + 1.5
           : plan === "flexi_bank"
             ? Math.round((payable / 2) * 100) / 100
             : payable;
       return {
         remaining_sessions: remaining,
         programme_total_gbp: payable,
-        invoice_total_gbp: plan === "gocardless_monthly" ? payable + 3 : payable,
+        invoice_total_gbp: plan === "gocardless_monthly" ? payable + 4.5 : payable,
         first_due_gbp: first,
         first_due_date: new Date().toISOString().slice(0, 10),
         schedule: [{ amount_gbp: first, due_date: new Date().toISOString().slice(0, 10), status: "pending" }],
@@ -125,18 +137,21 @@
         gocardless_monthly: quote("gocardless_monthly"),
         flexi_bank: quote("flexi_bank"),
         one_off_bank: quote("one_off_bank"),
+        own_way: quote("own_way"),
       },
       invoice:
         demoState.status === "awaiting_payment" || demoState.status === "completed"
           ? {
               id: "demo-inv",
               invoice_number: "INV-P-DEMO",
-              amount_gbp: payable,
+              amount_gbp:
+                (demoState.pay_plan && quote(demoState.pay_plan).invoice_total_gbp) || payable,
               amount_paid_gbp: 0,
               payment_status: "unpaid",
               payment_schedule: [
                 {
-                  amount_gbp: payable,
+                  amount_gbp:
+                    (demoState.pay_plan && quote(demoState.pay_plan).first_due_gbp) || payable,
                   due_date: new Date().toISOString().slice(0, 10),
                   status: "pending",
                 },
@@ -269,6 +284,12 @@
   function quoteBlurb(data, plan) {
     var q = (data.quotes && data.quotes[plan]) || null;
     if (!q) return "";
+    if (plan === "own_way") {
+      return (
+        money(q.first_due_gbp) +
+        " due now (2 sessions prepaid + £50 admin · top up as you go)"
+      );
+    }
     return (
       money(q.first_due_gbp) +
       " due first (" +
@@ -290,6 +311,98 @@
     if (show) show.hidden = false;
   }
 
+  function showPayChannel(data) {
+    var channelBox = document.getElementById("fbPayChannelBox");
+    var planBox = document.getElementById("fbPayPlanBox");
+    if (channelBox) channelBox.hidden = false;
+    if (planBox) planBox.hidden = true;
+    var own = document.getElementById("fbOwnWayChannel");
+    if (own) {
+      own.hidden = data.funding_code === "la_direct_payments";
+      if (own.hidden) {
+        var checked = document.querySelector('input[name="pay_channel"]:checked');
+        if (checked && checked.value === "own_way") {
+          var bank = document.querySelector('input[name="pay_channel"][value="bank_transfer"]');
+          if (bank) bank.checked = true;
+        }
+      }
+    }
+  }
+
+  function plansForChannel(channel) {
+    if (channel === "gocardless") {
+      return [
+        {
+          value: "gocardless_monthly",
+          title: "GoCardless monthly",
+          hint:
+            "First payment on booking day, then the 1st of each remaining month this term. £1.50 per instalment.",
+        },
+      ];
+    }
+    if (channel === "own_way") {
+      return [
+        {
+          value: "own_way",
+          title: "Own way — 2 sessions prepaid + £50 / term",
+          hint:
+            "Pay the minimum now to hold the place. Keep 2 sessions prepaid and top up as you go. Not a full-term invoice up front.",
+        },
+      ];
+    }
+    return [
+      {
+        value: "one_off_bank",
+        title: "One-off payment (whole term)",
+        hint: "Pay the full term amount now by bank transfer.",
+      },
+      {
+        value: "flexi_bank",
+        title: "Flexi (2 payments this term)",
+        hint: "Half now, half later this term — fixed due dates, bank transfer.",
+      },
+    ];
+  }
+
+  function showPayPlans(data, channel) {
+    var channelBox = document.getElementById("fbPayChannelBox");
+    var planBox = document.getElementById("fbPayPlanBox");
+    var intro = document.getElementById("fbPayPlanIntro");
+    var host = document.getElementById("fbPayPlanChoices");
+    if (channelBox) channelBox.hidden = true;
+    if (planBox) planBox.hidden = false;
+    data.pay_channel = channel;
+    if (intro) {
+      intro.textContent =
+        channel === "bank_transfer"
+          ? "Bank transfer — choose one-off or flexi:"
+          : channel === "gocardless"
+            ? "GoCardless — choose your collection plan:"
+            : "Own way — confirm the prepaid minimum:";
+    }
+    if (!host) return;
+    host.innerHTML = plansForChannel(channel)
+      .map(function (p, i) {
+        return (
+          '<label class="choice">' +
+          '<input type="radio" name="pay_plan" value="' +
+          esc(p.value) +
+          '"' +
+          (i === 0 ? " checked" : "") +
+          " />" +
+          "<strong>" +
+          esc(p.title) +
+          "</strong>" +
+          '<span class="hint">' +
+          esc(p.hint) +
+          (quoteBlurb(data, p.value) ? " · " + quoteBlurb(data, p.value) : "") +
+          "</span>" +
+          "</label>"
+        );
+      })
+      .join("");
+  }
+
   function bind(data) {
     renderSlot(data);
     var notice = document.getElementById("fbNotice");
@@ -308,16 +421,13 @@
       return;
     }
 
-    if (data.status === "choices_saved" && data.funding_code && data.booking_scope) {
-      setStep("fbStepPay");
-      updatePayHints(data);
-    } else if (
+    if (
       (data.status === "scope_saved" || data.status === "choices_saved") &&
       data.funding_code &&
       data.booking_scope
     ) {
       setStep("fbStepPay");
-      updatePayHints(data);
+      showPayChannel(data);
     } else if (data.status === "funding_saved" && data.funding_code) {
       setStep("fbStepScope");
     } else {
@@ -366,12 +476,38 @@
         })
           .then(function () {
             setStep("fbStepPay");
-            updatePayHints(data);
+            showPayChannel(data);
             showNotice(notice, "", "");
           })
           .catch(function (err) {
             showNotice(notice, err.message || "Could not save booking length.", "error");
           });
+      };
+    }
+
+    var channelNext = document.getElementById("fbPayChannelNext");
+    if (channelNext) {
+      channelNext.onclick = function () {
+        var channel = (
+          document.querySelector('input[name="pay_channel"]:checked') || {}
+        ).value;
+        if (!channel) {
+          showNotice(notice, "Please choose a payment method.", "error");
+          return;
+        }
+        if (channel === "own_way" && data.funding_code === "la_direct_payments") {
+          showNotice(notice, "Own way is not available with LA funds.", "error");
+          return;
+        }
+        showPayPlans(data, channel);
+        showNotice(notice, "", "");
+      };
+    }
+    var planBack = document.getElementById("fbPayPlanBack");
+    if (planBack) {
+      planBack.onclick = function () {
+        showPayChannel(data);
+        showNotice(notice, "", "");
       };
     }
 
@@ -388,7 +524,7 @@
           return;
         }
         if (!plan) {
-          showNotice(notice, "Please choose a payment method.", "error");
+          showNotice(notice, "Please choose a payment plan.", "error");
           return;
         }
         showNotice(notice, "Creating your invoice…", "");
@@ -421,11 +557,8 @@
     }
   }
 
-  function updatePayHints(data) {
-    ["gocardless_monthly", "flexi_bank", "one_off_bank"].forEach(function (plan) {
-      var el = document.querySelector('[data-plan-hint="' + plan + '"]');
-      if (el) el.textContent = quoteBlurb(data, plan);
-    });
+  function updatePayHints(_data) {
+    /* Plan hints are rendered inside showPayPlans. */
   }
 
   function showInvoice(data) {
