@@ -22,6 +22,7 @@ import {
 import {
   inferServiceKey,
   inferUnitPriceGbp,
+  DEFAULT_SESSION_GBP,
 } from "../_shared/portal_booking_finish.ts";
 import { normalizeParticipantLookupName } from "../_shared/participant_avatar.ts";
 import { loadProductMap } from "../_shared/portal_xero_product_catalog.ts";
@@ -137,7 +138,7 @@ Deno.serve(async (req) => {
   const { data: existingRows } = await admin
     .from("portal_parent_invoice_share")
     .select(
-      "id, invoice_number, payment_status, share_status, billing_term, service, notes, amount_gbp, created_at",
+      "id, invoice_number, payment_status, share_status, billing_term, service, notes, line_description, amount_gbp, created_at",
     )
     .eq("contact_id", contactId)
     .in("payment_status", [
@@ -150,15 +151,23 @@ Deno.serve(async (req) => {
     .limit(20);
 
   const existing = (existingRows || []).find((row) => {
+    const invNo = String(row.invoice_number || "").toUpperCase();
+    // Never treat summer crash / one-off packs as the Autumn Assign invoice.
+    if (invNo.includes("CRASH")) return false;
+    const blob = `${row.notes || ""} ${row.service || ""} ${row.line_description || ""}`.toLowerCase();
+    if (/\bcrash\b/.test(blob)) return false;
+
     const bt = String(row.billing_term || "").toLowerCase();
     if (bt && bt !== term) return false;
     const st = String(row.payment_status || "").toLowerCase();
     if (st === "paid" || st === "void") return false;
-    if (!bt && term === "autumn") {
-      // Older rows may lack billing_term — accept recent unpaid with matching service hint.
-      const notes = `${row.notes || ""} ${row.service || ""}`.toLowerCase();
-      if (service && notes && !notes.includes(service.toLowerCase().slice(0, 8))) {
-        return false;
+    if (!bt) {
+      // Require a normal INV-P-#### share for this term; do not reuse unlabeled packs.
+      if (!/^INV-P-\d{3,}$/i.test(invNo)) return false;
+      if (term === "autumn") {
+        if (service && blob && !blob.includes(service.toLowerCase().slice(0, 8))) {
+          return false;
+        }
       }
     }
     return true;
@@ -178,10 +187,17 @@ Deno.serve(async (req) => {
   const unit =
     Number(body.unit_price_gbp) > 0
       ? Number(body.unit_price_gbp)
-      : inferUnitPriceGbp({
-          serviceName: service,
-          timeLabel: timeSlot,
-        });
+      : (() => {
+          const inferred = inferUnitPriceGbp({
+            serviceName: service,
+            timeLabel: timeSlot,
+          });
+          // Climbing 60' band is £75 private (catalog) — time labels rarely include "60".
+          if (/climb/i.test(service) && inferred <= DEFAULT_SESSION_GBP) {
+            return 75;
+          }
+          return inferred;
+        })();
   const serviceKey =
     clean(body.service_key, 40) || inferServiceKey(service, timeSlot);
   const detailLine = [day, timeSlot, venue, instructors].filter(Boolean).join(" · ");
