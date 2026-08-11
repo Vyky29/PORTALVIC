@@ -15,6 +15,8 @@ import { upsertFamilyPin } from "./parent_portal_pin_family.ts";
 import {
   type BookingTermKey,
   type NewClientPayPlan,
+  bookingTermDisplayLabel,
+  parseBookingScope,
   parseBookingTermKey,
   parseNewClientPayPlan,
   quoteNewClientMidTermInvoice,
@@ -483,5 +485,11 @@ export function parseFundingCode(raw: unknown): "privately_funded" | "la_direct_
   return null;
 }
 
-export { parseBookingTermKey, parseNewClientPayPlan, quoteNewClientMidTermInvoice };
+export {
+  bookingTermDisplayLabel,
+  parseBookingScope,
+  parseBookingTermKey,
+  parseNewClientPayPlan,
+  quoteNewClientMidTermInvoice,
+};
 export type { BookingTermKey, NewClientPayPlan };

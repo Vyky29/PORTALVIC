@@ -107,7 +107,7 @@
     <div class="brand">
       <img src="/portal/F-02-1.png" alt="clubSENsational" width="72" height="72" />
       <h1>Finish your booking</h1>
-      <p>Choose funding, payment, and pay the first instalment</p>
+      <p>Choose funding, booking length, payment, and pay the first instalment</p>
     </div>
 
     <div id="fbNotice" class="notice" hidden></div>
@@ -132,31 +132,49 @@
       </form>
     </div>
 
+    <div id="fbStepScope" class="card" hidden>
+      <h2>2. Booking length</h2>
+      <p class="muted">Do you want to auto re-enrol each term for the whole year, or book this term only?</p>
+      <form id="fbScopeForm">
+        <label class="choice">
+          <input type="radio" name="booking_scope" value="auto_reenroll_year" checked />
+          <strong>Auto re-enrol by term (whole year)</strong>
+          <span class="hint">We keep the place for Autumn, Spring and Summer and invoice each term. You can cancel before a term if needed.</span>
+        </label>
+        <label class="choice">
+          <input type="radio" name="booking_scope" value="this_term_only" />
+          <strong>This term only</strong>
+          <span class="hint">Book and pay for the current term only. You can re-enrol later if a place is still available.</span>
+        </label>
+        <button type="submit" class="btn btn--pri">Continue</button>
+      </form>
+    </div>
+
     <div id="fbStepPay" class="card" hidden>
-      <h2>2. Payment method</h2>
+      <h2>3. Payment method</h2>
       <p class="muted">Choose how you will pay the first instalment for the remaining sessions this term.</p>
       <form id="fbPayForm">
         <label class="choice">
+          <input type="radio" name="pay_plan" value="one_off_bank" checked />
+          <strong>Bank transfer</strong>
+          <span class="hint" data-plan-hint="one_off_bank"></span>
+        </label>
+        <label class="choice">
           <input type="radio" name="pay_plan" value="gocardless_monthly" />
-          <strong>GoCardless monthly</strong>
+          <strong>GoCardless</strong>
           <span class="hint" data-plan-hint="gocardless_monthly"></span>
         </label>
         <label class="choice">
-          <input type="radio" name="pay_plan" value="flexi_bank" checked />
-          <strong>Flexi bank (2 instalments)</strong>
+          <input type="radio" name="pay_plan" value="flexi_bank" />
+          <strong>Own way</strong>
           <span class="hint" data-plan-hint="flexi_bank"></span>
-        </label>
-        <label class="choice">
-          <input type="radio" name="pay_plan" value="one_off_bank" />
-          <strong>One-off bank</strong>
-          <span class="hint" data-plan-hint="one_off_bank"></span>
         </label>
         <button type="submit" class="btn btn--pri">Create invoice &amp; pay</button>
       </form>
     </div>
 
     <div id="fbStepInvoice" class="card" hidden>
-      <h2>3. Pay first instalment</h2>
+      <h2>4. Pay first instalment</h2>
       <div id="fbInvoiceBox"></div>
     </div>
 
@@ -169,6 +187,6 @@
       <a class="btn btn--pri" href="/parent">Open Parent Portal</a>
     </div>
   </div>
-  <script src="/portal/portal_finish_booking.js?v=20260811-funding-copy2"></script>
+  <script src="/portal/portal_finish_booking.js?v=20260811-scope-pricing1"></script>
 </body>
 </html>

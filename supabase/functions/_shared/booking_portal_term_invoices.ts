@@ -79,11 +79,53 @@ export function parseBookingTermKey(raw: unknown): BookingTermKey | null {
 
 export function parseNewClientPayPlan(raw: unknown): NewClientPayPlan | null {
   const s = String(raw || "").trim().toLowerCase();
-  if (s === "gocardless_monthly" || s === "gocardless" || s === "monthly_term") {
+  if (
+    s === "gocardless_monthly" ||
+    s === "gocardless" ||
+    s === "monthly_term"
+  ) {
     return "gocardless_monthly";
   }
-  if (s === "flexi_bank" || s === "term_flexi" || s === "flexi") return "flexi_bank";
-  if (s === "one_off_bank" || s === "term_3" || s === "one_off") return "one_off_bank";
+  if (
+    s === "flexi_bank" ||
+    s === "term_flexi" ||
+    s === "flexi" ||
+    s === "own_way" ||
+    s === "own_way_flexible"
+  ) {
+    return "flexi_bank";
+  }
+  if (
+    s === "one_off_bank" ||
+    s === "term_3" ||
+    s === "one_off" ||
+    s === "bank_transfer" ||
+    s === "bank"
+  ) {
+    return "one_off_bank";
+  }
+  return null;
+}
+
+export function parseBookingScope(raw: unknown): "auto_reenroll_year" | "this_term_only" | null {
+  const s = String(raw || "").trim().toLowerCase();
+  if (
+    s === "auto_reenroll_year" ||
+    s === "auto_reenrol_year" ||
+    s === "year" ||
+    s === "all_year" ||
+    s === "annual"
+  ) {
+    return "auto_reenroll_year";
+  }
+  if (
+    s === "this_term_only" ||
+    s === "one_term" ||
+    s === "term_only" ||
+    s === "single_term"
+  ) {
+    return "this_term_only";
+  }
   return null;
 }
 

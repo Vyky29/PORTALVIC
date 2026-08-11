@@ -72,6 +72,44 @@
     var host = document.getElementById("fbSlot");
     if (!host || !data) return;
     var s = data.slot || {};
+    var p = data.pricing || {};
+    var unit = p.unit_price_gbp != null ? p.unit_price_gbp : data.unit_price_gbp;
+    var termSessions = p.term_sessions;
+    var termTotal = p.term_total_gbp;
+    var remaining = p.remaining_sessions;
+    var payable = p.payable_term_gbp;
+    var termLabel = p.term_label || data.term_label || data.term || "Term";
+
+    var priceRows = "";
+    if (unit != null || termSessions != null || termTotal != null) {
+      priceRows =
+        '<div class="card-inner" style="margin-top:10px">' +
+        "<div><strong>Price per session</strong> " +
+        esc(money(unit)) +
+        "</div>" +
+        "<div><strong>Sessions this term</strong> " +
+        esc(String(termSessions != null ? termSessions : "—")) +
+        " · " +
+        esc(String(termLabel)) +
+        "</div>" +
+        "<div><strong>Price per term</strong> " +
+        esc(money(termTotal)) +
+        "</div>";
+      if (
+        remaining != null &&
+        termSessions != null &&
+        Number(remaining) !== Number(termSessions)
+      ) {
+        priceRows +=
+          '<div class="muted" style="margin-top:6px">Payable from today: ' +
+          esc(String(remaining)) +
+          " sessions · " +
+          esc(money(payable)) +
+          "</div>";
+      }
+      priceRows += "</div>";
+    }
+
     host.innerHTML =
       "<strong>" +
       esc(data.participant_name || "Participant") +
@@ -81,7 +119,8 @@
         [s.service_name, s.venue, s.day, s.time].filter(Boolean).join(" · ") ||
           "Accepted place",
       ) +
-      "</div>";
+      "</div>" +
+      priceRows;
   }
 
   function quoteBlurb(data, plan) {
@@ -98,10 +137,12 @@
   }
 
   function setStep(name) {
-    ["fbStepFunding", "fbStepPay", "fbStepInvoice", "fbStepDone"].forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) el.hidden = true;
-    });
+    ["fbStepFunding", "fbStepScope", "fbStepPay", "fbStepInvoice", "fbStepDone"].forEach(
+      function (id) {
+        var el = document.getElementById(id);
+        if (el) el.hidden = true;
+      },
+    );
     var show = document.getElementById(name);
     if (show) show.hidden = false;
   }
@@ -124,7 +165,21 @@
       return;
     }
 
-    setStep("fbStepFunding");
+    if (data.status === "choices_saved" && data.funding_code && data.booking_scope) {
+      setStep("fbStepPay");
+      updatePayHints(data);
+    } else if (
+      (data.status === "scope_saved" || data.status === "choices_saved") &&
+      data.funding_code &&
+      data.booking_scope
+    ) {
+      setStep("fbStepPay");
+      updatePayHints(data);
+    } else if (data.status === "funding_saved" && data.funding_code) {
+      setStep("fbStepScope");
+    } else {
+      setStep("fbStepFunding");
+    }
 
     var fundForm = document.getElementById("fbFundingForm");
     if (fundForm) {
@@ -137,9 +192,43 @@
         }
         data.funding_code = funding;
         data.pay_plan = null;
-        setStep("fbStepPay");
-        updatePayHints(data);
-        showNotice(notice, "", "");
+        showNotice(notice, "Saving…", "");
+        void api("save_choices", { funding_code: funding })
+          .then(function () {
+            setStep("fbStepScope");
+            showNotice(notice, "", "");
+          })
+          .catch(function (err) {
+            showNotice(notice, err.message || "Could not save funding.", "error");
+          });
+      };
+    }
+
+    var scopeForm = document.getElementById("fbScopeForm");
+    if (scopeForm) {
+      scopeForm.onsubmit = function (ev) {
+        ev.preventDefault();
+        var scope = (scopeForm.querySelector('input[name="booking_scope"]:checked') || {})
+          .value;
+        var funding = data.funding_code || "privately_funded";
+        if (!scope) {
+          showNotice(notice, "Please choose booking length.", "error");
+          return;
+        }
+        data.booking_scope = scope;
+        showNotice(notice, "Saving…", "");
+        void api("save_choices", {
+          funding_code: funding,
+          booking_scope: scope,
+        })
+          .then(function () {
+            setStep("fbStepPay");
+            updatePayHints(data);
+            showNotice(notice, "", "");
+          })
+          .catch(function (err) {
+            showNotice(notice, err.message || "Could not save booking length.", "error");
+          });
       };
     }
 
@@ -149,6 +238,12 @@
         ev.preventDefault();
         var plan = (payForm.querySelector('input[name="pay_plan"]:checked') || {}).value;
         var funding = data.funding_code || "privately_funded";
+        var scope = data.booking_scope;
+        if (!scope) {
+          showNotice(notice, "Please choose booking length first.", "error");
+          setStep("fbStepScope");
+          return;
+        }
         if (!plan) {
           showNotice(notice, "Please choose a payment method.", "error");
           return;
@@ -156,11 +251,13 @@
         showNotice(notice, "Creating your invoice…", "");
         void api("save_choices", {
           funding_code: funding,
+          booking_scope: scope,
           pay_plan: plan,
         })
           .then(function () {
             return api("create_invoice", {
               funding_code: funding,
+              booking_scope: scope,
               pay_plan: plan,
             });
           })

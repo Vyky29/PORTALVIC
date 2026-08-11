@@ -13,17 +13,20 @@ import {
   tideBankDetailsFromEnv,
 } from "../_shared/tide_bank_details.ts";
 import {
+  bookingTermDisplayLabel,
   clientKeyFromName,
   inferBillingTerm,
   inferServiceKey,
   inferUnitPriceGbp,
   loadCompletionByRawToken,
+  parseBookingScope,
   parseFundingCode,
   parseNewClientPayPlan,
   quoteNewClientMidTermInvoice,
   tryCompleteBookingAfterInvoicePayment,
   type CompletionTokenRow,
 } from "../_shared/portal_booking_finish.ts";
+import { SESSION_COUNTS } from "../_shared/reenrolment_catalog.ts";
 import {
   gocardlessConfigured,
   gocardlessCreateBillingRequest,
@@ -350,6 +353,25 @@ Deno.serve(async (req) => {
     }
   }
 
+  const weekend = /saturday|sunday/i.test(day);
+  const termCounts = weekend ? SESSION_COUNTS.weekend : SESSION_COUNTS.weekday;
+  const termSessionsFull = Number(termCounts[term] || 0) || 0;
+  const baseQuote = quotes.one_off_bank as
+    | { remaining_sessions?: number; programme_total_gbp?: number }
+    | undefined;
+  const remainingSessions =
+    Number(baseQuote?.remaining_sessions) || termSessionsFull;
+  const termTotalPayable =
+    Number(baseQuote?.programme_total_gbp) ||
+    Math.round(unit * remainingSessions * 100) / 100;
+  const termTotalFull = Math.round(unit * termSessionsFull * 100) / 100;
+  const termLabel = bookingTermDisplayLabel(term);
+  const savedChoices =
+    token.choices_json && typeof token.choices_json === "object"
+      ? token.choices_json as Record<string, unknown>
+      : {};
+  const savedScope = parseBookingScope(savedChoices.booking_scope);
+
   if (action === "load") {
     let invoice: Record<string, unknown> | null = null;
     if (token.invoice_share_id) {
@@ -367,6 +389,7 @@ Deno.serve(async (req) => {
       status: token.status,
       funding_code: token.funding_code,
       pay_plan: token.pay_plan,
+      booking_scope: savedScope,
       participant_name: doc.participant_name,
       parent_name: doc.parent_name,
       slot: {
@@ -377,7 +400,17 @@ Deno.serve(async (req) => {
         slot_id: reservation?.slot_id || null,
       },
       term,
+      term_label: termLabel,
       unit_price_gbp: unit,
+      pricing: {
+        unit_price_gbp: unit,
+        term,
+        term_label: termLabel,
+        term_sessions: termSessionsFull,
+        term_total_gbp: termTotalFull,
+        remaining_sessions: remainingSessions,
+        payable_term_gbp: termTotalPayable,
+      },
       quotes,
       invoice,
       bank: tideBankDetailsFromEnv(),
@@ -392,16 +425,18 @@ Deno.serve(async (req) => {
     const funding = parseFundingCode(body.funding_code);
     if (!funding) return json(400, { ok: false, error: "funding_required" });
 
-    // Funding only (Continue on step 1) — both private and LA DP continue to pay + invoice.
+    const scope = parseBookingScope(body.booking_scope) || savedScope;
     const planOnly = parseNewClientPayPlan(body.pay_plan);
-    if (!planOnly) {
+
+    // Funding only (step 1) — continue to booking scope.
+    if (!scope && !planOnly) {
       const now = new Date().toISOString();
       await admin
         .from("portal_booking_completion_tokens")
         .update({
           funding_code: funding,
           pay_plan: null,
-          status: "pending",
+          status: "funding_saved",
           choices_json: { funding_code: funding, saved_at: now },
           updated_at: now,
         })
@@ -413,6 +448,38 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Funding + scope (step 2) — continue to payment method.
+    if (scope && !planOnly) {
+      const now = new Date().toISOString();
+      await admin
+        .from("portal_booking_completion_tokens")
+        .update({
+          funding_code: funding,
+          pay_plan: null,
+          status: "scope_saved",
+          choices_json: {
+            funding_code: funding,
+            booking_scope: scope,
+            saved_at: now,
+          },
+          updated_at: now,
+        })
+        .eq("id", token.id);
+      return json(200, {
+        ok: true,
+        status: "scope_saved",
+        funding_code: funding,
+        booking_scope: scope,
+      });
+    }
+
+    if (!planOnly) {
+      return json(400, { ok: false, error: "pay_plan_required" });
+    }
+    if (!scope) {
+      return json(400, { ok: false, error: "booking_scope_required" });
+    }
+
     const plan = planOnly;
     const now = new Date().toISOString();
     await admin
@@ -421,7 +488,12 @@ Deno.serve(async (req) => {
         funding_code: funding,
         pay_plan: plan,
         status: "choices_saved",
-        choices_json: { funding_code: funding, pay_plan: plan, saved_at: now },
+        choices_json: {
+          funding_code: funding,
+          booking_scope: scope,
+          pay_plan: plan,
+          saved_at: now,
+        },
         updated_at: now,
       })
       .eq("id", token.id);
@@ -430,6 +502,7 @@ Deno.serve(async (req) => {
       ok: true,
       status: "choices_saved",
       funding_code: funding,
+      booking_scope: scope,
       pay_plan: plan,
       quote: quotes[plan] || null,
     });
@@ -443,10 +516,12 @@ Deno.serve(async (req) => {
       parseFundingCode(token.funding_code);
     const plan = parseNewClientPayPlan(body.pay_plan) ||
       parseNewClientPayPlan(token.pay_plan);
+    const scope = parseBookingScope(body.booking_scope) || savedScope;
     if (!funding) {
       return json(400, { ok: false, error: "funding_required" });
     }
     if (!plan) return json(400, { ok: false, error: "pay_plan_required" });
+    if (!scope) return json(400, { ok: false, error: "booking_scope_required" });
 
     if (token.invoice_share_id) {
       const { data: existing } = await admin
@@ -471,10 +546,14 @@ Deno.serve(async (req) => {
         : "Using Private Funds (own money)";
     const paymentLabel =
       plan === "gocardless_monthly"
-        ? "GoCardless monthly"
+        ? "GoCardless"
         : plan === "flexi_bank"
-          ? "Flexi bank (2 instalments)"
-          : "One-off bank";
+          ? "Own way"
+          : "Bank transfer";
+    const scopeLabel =
+      scope === "auto_reenroll_year"
+        ? "Auto re-enrol by term (all year)"
+        : "This term only";
 
     const ensured = await ensureContact(admin, token, doc, fundingLabel, paymentLabel);
     if ("error" in ensured) return json(400, { ok: false, error: ensured.error });
@@ -503,7 +582,7 @@ Deno.serve(async (req) => {
       lineDescription: quote.lineDescription,
       reference: quote.reference,
       service: serviceName,
-      notes: `Finish booking · ${funding} · ${plan} · token ${token.id}`,
+      notes: `Finish booking · ${funding} · ${scope} · ${plan} · token ${token.id}`,
       quantity: quote.remainingSessions,
       shareStatus: "ready",
       paymentMethodHint: quote.paymentMethodHint,
@@ -569,6 +648,13 @@ Deno.serve(async (req) => {
         contact_id: ensured.contactId,
         parent_person_id: ensured.parentPersonId,
         status: "awaiting_payment",
+        choices_json: {
+          funding_code: funding,
+          booking_scope: scope,
+          pay_plan: plan,
+          scope_label: scopeLabel,
+          saved_at: now,
+        },
         updated_at: now,
       })
       .eq("id", token.id);
