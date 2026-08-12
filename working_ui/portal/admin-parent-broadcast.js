@@ -167,10 +167,23 @@
       var el = $(pair.id);
       if (!el) return;
       var on = activeKey === pair.key;
-      el.style.background = on ? "#e0f2fe" : "";
-      el.style.color = on ? "#075985" : "";
-      el.style.borderColor = on ? "#38bdf8" : "";
+      if (on) {
+        el.style.setProperty("background", "#f0f9ff", "important");
+        el.style.setProperty("background-color", "#f0f9ff", "important");
+        el.style.setProperty("color", "#0c4a6e", "important");
+        el.style.setProperty("border-color", "#0ea5e9", "important");
+        el.style.setProperty("box-shadow", "inset 0 0 0 1px #0ea5e9", "important");
+        el.style.setProperty("font-weight", "600", "important");
+      } else {
+        el.style.removeProperty("background");
+        el.style.removeProperty("background-color");
+        el.style.removeProperty("color");
+        el.style.removeProperty("border-color");
+        el.style.removeProperty("box-shadow");
+        el.style.removeProperty("font-weight");
+      }
       el.setAttribute("aria-pressed", on ? "true" : "false");
+      el.classList.toggle("pbcast-tog--on", on);
     });
   }
 
@@ -497,6 +510,12 @@
       state.recipients.forEach(function (r) { if (r.hasMobile) state.selected[r.email] = true; });
       renderTable();
     });
+    var selEmail = $("pbcastSelectEmail");
+    if (selEmail) selEmail.addEventListener("click", function () {
+      state.selected = {};
+      state.recipients.forEach(function (r) { if (!r.hasMobile) state.selected[r.email] = true; });
+      renderTable();
+    });
     function applyPayFilter(key) {
       state.payFilter = key;
       state.selected = {};
@@ -558,6 +577,9 @@
   function viewHtml() {
     return (
       '<div id="pbcastRoot" class="portal-day-ops-embed">' +
+      '<style id="pbcastTogCss">' +
+      ".pbcast-tog--on{background:#f0f9ff!important;background-color:#f0f9ff!important;color:#0c4a6e!important;border-color:#0ea5e9!important;box-shadow:inset 0 0 0 1px #0ea5e9!important;font-weight:600!important}" +
+      "</style>" +
       '<h1 class="page-title">Family broadcast</h1>' +
       '<p class="page-intro">Send one message to many families at once — <strong>email</strong> and/or <strong>WhatsApp</strong>. Choose <strong>In class</strong>, <strong>Waiting list</strong>, or <strong>All</strong> under Recipients. Every send is logged in <strong>Family messages</strong>. Replies to +44 7886 292726 arrive there automatically. You can also seed this list from <strong>Operator → Enquiries &amp; intake</strong>.</p>' +
       '<div id="pbcastEnquiryBanner" class="card card-pad" style="display:none;margin:0 0 12px;border-color:rgba(21,128,61,.35);background:rgba(34,197,94,.08);font-size:13px;line-height:1.45;overflow-wrap:break-word" role="status"></div>' +
@@ -596,6 +618,7 @@
       '<input type="search" id="pbcastSearch" class="inp" style="flex:1;min-width:160px" placeholder="Search name, child, email, phone…" autocomplete="off" />' +
       '<button type="button" class="btn btn--sec btn--sm" id="pbcastSelectAll">Select all</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="pbcastSelectWa">Only WhatsApp</button>' +
+      '<button type="button" class="btn btn--sec btn--sm" id="pbcastSelectEmail">Only Email</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="pbcastSelectBank">Only Bank</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="pbcastSelectGc">Only GoCardless</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="pbcastSelectNone">Clear</button>' +
