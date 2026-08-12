@@ -390,6 +390,45 @@
       object-fit: cover;
       object-position: center;
     }
+    .svc-card__media--split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+    .svc-card__media--split .svc-card__media-pane {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .svc-card__media--split .svc-card__media-pane + .svc-card__media-pane {
+      border-left: 2px solid #fff;
+    }
+    .svc-card__media--split img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+    .svc-card__media-label {
+      position: absolute;
+      left: 8px;
+      bottom: 8px;
+      z-index: 1;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(15, 35, 52, 0.72);
+      color: #fff;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      line-height: 1.2;
+      max-width: calc(100% - 16px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      pointer-events: none;
+    }
     .svc-card__body {
       display: flex;
       flex-direction: column;
@@ -1926,8 +1965,36 @@
     if (id === "multi") return base + "multi.jpg";
     if (id === "bespoke") return base + "bespoke.jpg";
     if (id === "day_centre") return base + "daycentre.jpg";
-    if (id === "intensive") return base + "intensive.jpg";
     return base + "aquatic.jpg";
+  }
+
+  function serviceMediaHtml(id) {
+    var base = "/portal/booking-photos/";
+    if (id === "intensive") {
+      return (
+        '<span class="svc-card__media svc-card__media--split" aria-hidden="true">' +
+        '<span class="svc-card__media-pane">' +
+        '<img src="' +
+        esc(base + "intensive-swim.jpg") +
+        '" alt="" loading="lazy" decoding="async" width="320" height="400" />' +
+        '<span class="svc-card__media-label">Swimming</span>' +
+        "</span>" +
+        '<span class="svc-card__media-pane">' +
+        '<img src="' +
+        esc(base + "intensive-climb.jpg") +
+        '" alt="" loading="lazy" decoding="async" width="320" height="400" />' +
+        '<span class="svc-card__media-label">Climbing</span>' +
+        "</span>" +
+        "</span>"
+      );
+    }
+    return (
+      '<span class="svc-card__media" aria-hidden="true">' +
+      '<img src="' +
+      esc(servicePhoto(id)) +
+      '" alt="" loading="lazy" decoding="async" width="640" height="400" />' +
+      "</span>"
+    );
   }
 
   function fillSelect(sel, values, allLabel) {
@@ -2053,11 +2120,7 @@
       '" aria-controls="timetable-' +
       esc(s.id) +
       '">' +
-      '<span class="svc-card__media" aria-hidden="true">' +
-      '<img src="' +
-      esc(servicePhoto(s.id)) +
-      '" alt="" loading="lazy" decoding="async" width="640" height="400" />' +
-      "</span>" +
+      serviceMediaHtml(s.id) +
       '<div class="svc-card__body">' +
       '<div class="svc__icon ' +
       pack.cls +
