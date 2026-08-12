@@ -273,6 +273,10 @@ Deno.serve(async (req) => {
     }
     photoBlob = photoFile;
   }
+  /* Client registration must always land in Documents with a participant photo. */
+  if (formType === "client_registration" && !photoBlob) {
+    return json(400, { ok: false, error: "missing_photo" });
+  }
 
   let payload: Record<string, unknown> = {};
   const payloadRaw = String(form.get("payload") || "").trim();

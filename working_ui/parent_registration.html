@@ -402,8 +402,8 @@
   </style>
   <script src="/portal-static-bootstrap.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="/portal/parent_form_submit.js?v=20260812-no-fake-submit"></script>
-  <script src="/portal/parent_registration_portal.js?v=20260812-no-fake-submit"></script>
+  <script src="/portal/parent_form_submit.js?v=20260812-pdf-and-photo"></script>
+  <script src="/portal/parent_registration_portal.js?v=20260812-pdf-and-photo"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-bookingportal"></script>
   <script src="/portal/portal_booking_lead_gate.js?v=20260724-returning-no-privacy"></script>
   <script>
@@ -493,7 +493,7 @@
 
     <div class="notice" id="formNotice">
       Fill in <strong>all</strong> sections below (every question is required). You must add a <strong>photo of the participant</strong> (face or ID document).
-      Tap <strong>Submit form</strong> and wait for the green <strong>Thank you</strong> screen — that is the only confirmation the club received your form. A PDF download alone does <strong>not</strong> mean it was sent.
+      Tap <strong>Submit form</strong> once: the club receives the form <strong>and photo</strong> in Documents, and a PDF copy downloads to your phone at the same time. Wait for the green <strong>Thank you</strong> screen — that confirms both happened.
     </div>
 
     <form id="regForm" novalidate>
@@ -1409,6 +1409,13 @@
           throw new Error('Portal upload is not configured.');
         }
         var photoFile = photoUploadBlob || (photoInput.files && photoInput.files[0]) || null;
+        if (!photoFile) {
+          alert('Please add a participant photo (face or ID) before submitting.');
+          btn.disabled = false;
+          btn.textContent = 'Submit form';
+          photoInput.focus();
+          return;
+        }
         var submitPayload = window.ParentRegistrationPortal
           ? ParentRegistrationPortal.collectFullPayload(form, formHelpers)
           : {
@@ -1421,6 +1428,31 @@
         if (bookingRequest) {
           submitPayload.booking_request = bookingRequest;
         }
+        function downloadParentPdfCopy() {
+          try {
+            doc.save(filename);
+            return;
+          } catch (_saveErr) {
+            console.warn(_saveErr);
+          }
+          try {
+            var url = URL.createObjectURL(pdfBlob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.rel = 'noopener';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(function () {
+              try {
+                URL.revokeObjectURL(url);
+              } catch (_rev) {}
+            }, 2000);
+          } catch (_aErr) {
+            console.warn(_aErr);
+          }
+        }
         window.portalSubmitParentForm({
           form_type: 'client_registration',
           participant_name: val('participant_name'),
@@ -1430,17 +1462,14 @@
           parent_phone: val('parent_phone'),
           pdf: pdfBlob,
           pdf_filename: filename,
-          photo: photoFile || null,
-          photo_filename: photoFile ? 'participant-photo.jpg' : undefined,
+          photo: photoFile,
+          photo_filename: 'participant-photo.jpg',
           payload: submitPayload
         }).then(function(res){
           var failEl = document.getElementById('parentSubmitFail');
           if (failEl) failEl.hidden = true;
-          try {
-            doc.save(filename);
-          } catch (_saveErr) {
-            console.warn(_saveErr);
-          }
+          /* Same moment: club already has PDF+photo in Documents; parent gets their copy now. */
+          downloadParentPdfCopy();
           if (portalMode && typeof portalMode.afterSubmitSuccess === 'function') {
             return portalMode.afterSubmitSuccess();
           }
@@ -1464,7 +1493,7 @@
               noticeEl: document.getElementById('formNotice'),
               submitBtn: btn,
               message:
-                'Your form was sent to clubSENsational for review. A PDF copy was also saved on your device.' +
+                'Form and photo were sent to clubSENsational Documents. A PDF copy also downloaded to your device.' +
                 holdMsg +
                 ' You do not need to email us — you can close this page.'
             });

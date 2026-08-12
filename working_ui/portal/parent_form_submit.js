@@ -24,6 +24,9 @@
     ) {
       return "Could not reach clubSENsational (network). Stay on Wi‑Fi/4G, keep this tab open, and try again.";
     }
+    if (code === "missing_photo") {
+      return "Please add a participant photo (face or ID), then submit again.";
+    }
     if (code === "photo_too_large" || code.indexOf("photo too large") >= 0) {
       return "The photo is too large. Choose a smaller JPEG/PNG (under 8 MB), or take a new photo.";
     }
