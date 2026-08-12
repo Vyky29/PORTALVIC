@@ -4,11 +4,13 @@
 // bulk broadcast (e.g. the WhatsApp contact-number change email).
 //
 // POST JSON (optional):
-//   { audience?: "in_class" | "waiting_list" | "enquiries" | "all" }
-//     in_class     — default; families currently in class
-//     waiting_list — on_waiting_list = true (prospects / not yet placed)
-//     enquiries    — booking-portal leads with verified email (OTP done)
-//     all          — in class + waiting list + verified enquiries (deduped by email)
+//   { audience?: "in_class" | "waiting_list" | "enquiries" | "otp_no_booking" | "all" }
+//     in_class        — default; families currently in class
+//     waiting_list    — on_waiting_list = true (prospects / not yet placed)
+//     enquiries       — alias of otp_no_booking
+//     otp_no_booking  — booking-portal leads: email OTP verified, but no registration /
+//                       booking completed yet (chase list)
+//     all             — in class + waiting list + otp_no_booking (deduped by email)
 //
 // One row per email inbox: children names are aggregated, a parent display
 // name is chosen, and the first mobile on file (if any) is returned. The demo
@@ -26,7 +28,7 @@ import {
 const DEMO_EMAIL = "victor.matilla.demo@clubsensational.org";
 const REENROL_YEAR = "2026-27";
 
-type Audience = "in_class" | "waiting_list" | "enquiries" | "all";
+type Audience = "in_class" | "waiting_list" | "enquiries" | "otp_no_booking" | "all";
 
 type ContactRow = {
   contact_id: string | null;
@@ -52,6 +54,9 @@ type Recipient = {
   payChannels: Set<PayChannel>;
   inClass: boolean;
   onWaitingList: boolean;
+  bookingStatus?: string;
+  registrationStatus?: string;
+  leadStage?: string;
 };
 
 function clean(v: unknown, max = 200): string {
@@ -61,11 +66,33 @@ function clean(v: unknown, max = 200): string {
 function parseAudience(raw: unknown): Audience {
   const s = String(raw ?? "").trim().toLowerCase();
   if (s === "waiting_list" || s === "waitlist" || s === "waiting") return "waiting_list";
-  if (s === "enquiries" || s === "enquiry" || s === "leads" || s === "booking_leads") {
-    return "enquiries";
+  if (
+    s === "otp_no_booking" ||
+    s === "otp_only" ||
+    s === "verified_no_booking" ||
+    s === "enquiries" ||
+    s === "enquiry" ||
+    s === "leads" ||
+    s === "booking_leads"
+  ) {
+    return "otp_no_booking";
   }
   if (s === "all") return "all";
   return "in_class";
+}
+
+/** OTP done, but never finished a booking / registration submit. */
+function isOtpNoBookingLead(lead: {
+  email_verified_at?: unknown;
+  booking_status?: unknown;
+  registration_status?: unknown;
+}): boolean {
+  if (!lead.email_verified_at) return false;
+  const book = clean(lead.booking_status, 40).toLowerCase();
+  const reg = clean(lead.registration_status, 40).toLowerCase();
+  if (book === "registration_submitted" || book === "booking_completed") return false;
+  if (reg === "submitted") return false;
+  return true;
 }
 
 function classifyPay(raw: unknown): PayChannel {
@@ -162,6 +189,9 @@ Deno.serve(async (req) => {
     onWaitingList?: boolean;
     payLabel?: string;
     listKindHint?: string;
+    bookingStatus?: string;
+    registrationStatus?: string;
+    leadStage?: string;
   }) {
     const email = clean(opts.email, 200);
     const norm = email.toLowerCase();
@@ -180,6 +210,9 @@ Deno.serve(async (req) => {
         payChannels: new Set(),
         inClass: false,
         onWaitingList: false,
+        bookingStatus: "",
+        registrationStatus: "",
+        leadStage: "",
       };
       byInbox.set(norm, rec);
     }
@@ -196,9 +229,11 @@ Deno.serve(async (req) => {
     if (cid && rec.contactIds.indexOf(cid) < 0) rec.contactIds.push(cid);
     if (opts.inClass === true) rec.inClass = true;
     if (opts.onWaitingList === true) rec.onWaitingList = true;
-    if (opts.listKindHint === "enquiry" && !rec.inClass && !rec.onWaitingList) {
-      /* tagged later */
+    if (opts.bookingStatus && !rec.bookingStatus) rec.bookingStatus = clean(opts.bookingStatus, 40);
+    if (opts.registrationStatus && !rec.registrationStatus) {
+      rec.registrationStatus = clean(opts.registrationStatus, 40);
     }
+    if (opts.leadStage && !rec.leadStage) rec.leadStage = clean(opts.leadStage, 40);
     const ch = classifyPay(opts.payLabel);
     if (ch && ch !== "unknown") rec.payChannels.add(ch);
     else if (!rec.payChannels.size) rec.payChannels.add("unknown");
@@ -206,7 +241,7 @@ Deno.serve(async (req) => {
 
   const includeContacts = audience === "in_class" || audience === "waiting_list" ||
     audience === "all";
-  const includeEnquiries = audience === "enquiries" || audience === "all";
+  const includeOtpNoBooking = audience === "otp_no_booking" || audience === "all";
 
   if (includeContacts) {
     let query = admin
@@ -287,11 +322,13 @@ Deno.serve(async (req) => {
     }
   }
 
-  /** Verified booking-portal leads (OTP done) — e.g. Rawda Said before enrolment. */
-  if (includeEnquiries) {
+  /** Booking-portal leads: OTP verified, but never completed a booking/registration. */
+  if (includeOtpNoBooking) {
     const { data: leads, error: leadErr } = await admin
       .from("portal_booking_leads")
-      .select("parent_name, email, mobile, email_verified_at, booking_status, last_activity_at")
+      .select(
+        "parent_name, email, mobile, email_verified_at, booking_status, registration_status, last_activity_at",
+      )
       .not("email_verified_at", "is", null)
       .order("last_activity_at", { ascending: false })
       .limit(2000);
@@ -299,11 +336,15 @@ Deno.serve(async (req) => {
       console.error("[portal-parent-broadcast-recipients] leads", leadErr.message);
     } else {
       for (const lead of leads || []) {
+        if (!isOtpNoBookingLead(lead)) continue;
         upsertRecipient({
           email: String(lead.email || "").trim(),
           parentName: String(lead.parent_name || "").trim(),
           mobile: String(lead.mobile || "").trim(),
-          listKindHint: "enquiry",
+          listKindHint: "otp_no_booking",
+          bookingStatus: String(lead.booking_status || "").trim(),
+          registrationStatus: String(lead.registration_status || "").trim(),
+          leadStage: "otp_no_booking",
         });
       }
     }
@@ -316,7 +357,9 @@ Deno.serve(async (req) => {
       if (r.onWaitingList && !r.inClass) listKind = "waiting_list";
       else if (r.inClass && r.onWaitingList) listKind = "in_class_and_waiting";
       else if (r.inClass) listKind = "in_class";
-      else if (!r.inClass && !r.onWaitingList) listKind = "enquiry";
+      else if (r.leadStage === "otp_no_booking" || (!r.inClass && !r.onWaitingList)) {
+        listKind = "otp_no_booking";
+      }
       return {
         email: r.email,
         parentName: r.parentName || r.children[0] || r.email,
@@ -328,6 +371,9 @@ Deno.serve(async (req) => {
         inClass: r.inClass,
         onWaitingList: r.onWaitingList,
         listKind,
+        bookingStatus: r.bookingStatus || "",
+        registrationStatus: r.registrationStatus || "",
+        leadStage: r.leadStage || "",
       };
     })
     .sort((a, b) => a.parentName.localeCompare(b.parentName));
@@ -342,6 +388,7 @@ Deno.serve(async (req) => {
     withBank: recipients.filter((r) => r.paymentMethod === "bank").length,
     withGocardless: recipients.filter((r) => r.paymentMethod === "gocardless").length,
     waitingList: recipients.filter((r) => r.onWaitingList).length,
-    enquiries: recipients.filter((r) => r.listKind === "enquiry").length,
+    enquiries: recipients.filter((r) => r.listKind === "otp_no_booking").length,
+    otpNoBooking: recipients.filter((r) => r.listKind === "otp_no_booking").length,
   });
 });

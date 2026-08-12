@@ -26,7 +26,7 @@
     cancel: false,
     query: "",
     payFilter: "",         // "" | "bank" | "gocardless"
-    audience: "in_class",  // "in_class" | "waiting_list" | "enquiries" | "all"
+    audience: "in_class",  // "in_class" | "waiting_list" | "otp_no_booking" | "all"
     seededFromEnquiries: false,
   };
 
@@ -139,6 +139,8 @@
         String(r.children || "").toLowerCase().indexOf(q) >= 0 ||
         String(r.email || "").toLowerCase().indexOf(q) >= 0 ||
         String(r.paymentMethodLabel || "").toLowerCase().indexOf(q) >= 0 ||
+        String(r.bookingStatus || "").toLowerCase().indexOf(q) >= 0 ||
+        String(r.leadStage || "").toLowerCase().indexOf(q) >= 0 ||
         phoneDigits(r.mobile).indexOf(q) >= 0
       );
     });
@@ -203,7 +205,7 @@
       [
         { id: "pbcastAudInClass", key: "in_class" },
         { id: "pbcastAudWait", key: "waiting_list" },
-        { id: "pbcastAudEnquiries", key: "enquiries" },
+        { id: "pbcastAudEnquiries", key: "otp_no_booking" },
         { id: "pbcastAudAll", key: "all" },
       ],
       state.audience
@@ -227,8 +229,8 @@
       var listChip =
         r.listKind === "waiting_list" || (r.onWaitingList && !r.inClass)
           ? '<span class="portal-pnlog-chip" style="background:#e0f2fe;color:#075985;border:1px solid #38bdf8">Waiting list</span>'
-          : r.listKind === "enquiry"
-            ? '<span class="portal-pnlog-chip" style="background:#f3e8ff;color:#6b21a8;border:1px solid #c084fc">Enquiry</span>'
+          : r.listKind === "otp_no_booking" || r.listKind === "enquiry"
+            ? '<span class="portal-pnlog-chip" style="background:#f3e8ff;color:#6b21a8;border:1px solid #c084fc">OTP · no booking</span>'
           : r.listKind === "in_class_and_waiting" || (r.inClass && r.onWaitingList)
             ? '<span class="portal-pnlog-chip" style="background:#fef3c7;color:#92400e;border:1px solid #fbbf24">In class + wait</span>'
             : "";
@@ -312,8 +314,8 @@
 
   function audienceLabel(a) {
     if (a === "waiting_list") return "Waiting list";
-    if (a === "enquiries") return "Enquiries";
-    if (a === "all") return "All (class + wait + enquiries)";
+    if (a === "otp_no_booking" || a === "enquiries") return "OTP · no booking";
+    if (a === "all") return "All (class + wait + OTP no booking)";
     return "In class";
   }
 
