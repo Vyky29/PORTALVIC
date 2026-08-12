@@ -51,7 +51,13 @@ Deno.serve(async (req) => {
     return portalAdminJson(500, { ok: false, error: "server_misconfigured" });
   }
 
-  let body: { participant_name?: string; limit?: number; include_consents?: boolean } = {};
+  let body: {
+    participant_name?: string;
+    limit?: number;
+    include_consents?: boolean;
+    form_type?: string;
+    form_types?: string[];
+  } = {};
   try {
     body = await req.json();
   } catch {
@@ -60,8 +66,33 @@ Deno.serve(async (req) => {
 
   const participantFilter = String(body.participant_name || "").trim();
   const limit = Math.min(Math.max(Number(body.limit) || 200, 1), 500);
-  /* Default: new-client registration forms only (not annual_consents — those live under Parent consents). */
+  /* Default: client registration forms only (climbing has its own admin screen; consents elsewhere). */
   const includeConsents = body.include_consents === true;
+
+  const ALLOWED = new Set([
+    "client_registration",
+    "climbing_registration",
+    "annual_consents",
+  ]);
+  let formTypes: string[] = [];
+  if (includeConsents) {
+    formTypes = [];
+  } else if (Array.isArray(body.form_types) && body.form_types.length) {
+    formTypes = body.form_types
+      .map((t) => String(t || "").trim().toLowerCase())
+      .filter((t) => ALLOWED.has(t));
+  } else {
+    const one = String(body.form_type || "").trim().toLowerCase();
+    if (one === "climbing_registration" || one === "climbing") {
+      formTypes = ["climbing_registration"];
+    } else if (one === "client_registration" || one === "client" || one === "registration") {
+      formTypes = ["client_registration"];
+    } else if (one === "all_registrations" || one === "both") {
+      formTypes = ["client_registration", "climbing_registration"];
+    } else {
+      formTypes = ["client_registration"];
+    }
+  }
 
   const admin = createClient(baseUrl, serviceRole, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -76,7 +107,7 @@ Deno.serve(async (req) => {
     .limit(includeConsents ? limit : Math.min(limit * 2, 500));
 
   if (!includeConsents) {
-    query = query.in("form_type", ["client_registration", "climbing_registration"]);
+    query = query.in("form_type", formTypes.length ? formTypes : ["client_registration"]);
   }
 
   const { data, error } = await query;
@@ -130,7 +161,7 @@ Deno.serve(async (req) => {
     meta: {
       count: out.length,
       filtered: Boolean(filterNorm),
-      form_scope: includeConsents ? "all" : "registration_only",
+      form_scope: includeConsents ? "all" : formTypes.join(",") || "client_registration",
     },
   });
 });

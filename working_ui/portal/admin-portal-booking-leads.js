@@ -194,7 +194,7 @@
     }
     if (!formBits.length) {
       formBits.push(
-        '<button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_participant_documents">Forms folder</button>'
+        '<button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_participant_documents">Registration forms</button>'
       );
     }
     var formSub = r.form_participant_name
@@ -657,7 +657,7 @@
           try {
             window.open(url, "_blank");
           } catch (_e2) {
-            cfg.toast("Pop-up blocked — allow pop-ups, or use Documents → Participant documents.");
+            cfg.toast("Pop-up blocked — allow pop-ups, or use Documents → Registration forms.");
           }
         }
       });

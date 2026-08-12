@@ -1,5 +1,6 @@
 /**
- * Admin — participant documents from parent registration forms.
+ * Admin — registration forms from Booking Portal leads
+ * (client registration vs climbing registration — separate screens).
  */
 (function (global) {
   'use strict';
@@ -30,6 +31,44 @@
     climbing_registration: true
   };
 
+  var SCOPE = {
+    client: {
+      form_type: 'client_registration',
+      title: 'Registration forms',
+      intro:
+        '<strong>New-client registration</strong> — PDF + photo from Booking Portal leads (not climbing). ' +
+        'Flow: slot → registration form → <strong>Accept</strong> (finish-booking link) → funding &amp; payment → office marks invoice paid → Parent Portal PIN. ' +
+        'Climbing forms: <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_climbing_registrations">Climbing registrations</button>. ' +
+        'Annual consents: <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_parent_consents">Parent consents</button>.',
+      empty: 'No client registration forms yet.',
+      emptyFiltered: 'No client registration forms matched this participant yet.',
+      hostId: 'portalParticipantDocsHost',
+      refreshId: 'portalParticipantDocsRefresh',
+      rootClass: 'portal-participant-docs-embed',
+      siblingBtn: {
+        target: 'portal_climbing_registrations',
+        label: 'Open Climbing registrations'
+      }
+    },
+    climbing: {
+      form_type: 'climbing_registration',
+      title: 'Climbing registrations',
+      intro:
+        '<strong>Climbing registration forms</strong> — PDF + photo from the climbing registration flow. ' +
+        'Client / lead registration forms are under <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_participant_documents">Registration forms</button>. ' +
+        'Annual consents: <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_parent_consents">Parent consents</button>.',
+      empty: 'No climbing registration forms yet.',
+      emptyFiltered: 'No climbing registration forms matched this participant yet.',
+      hostId: 'portalClimbingRegsHost',
+      refreshId: 'portalClimbingRegsRefresh',
+      rootClass: 'portal-climbing-regs-embed',
+      siblingBtn: {
+        target: 'portal_participant_documents',
+        label: 'Open Registration forms'
+      }
+    }
+  };
+
   function configure(options) {
     if (!options) return;
     if (options.esc) cfg.esc = options.esc;
@@ -41,6 +80,17 @@
 
   function esc(s) {
     return cfg.esc(s);
+  }
+
+  function resolveScope(scopeOrOpts) {
+    var key = 'client';
+    if (typeof scopeOrOpts === 'string') {
+      key = scopeOrOpts;
+    } else if (scopeOrOpts && scopeOrOpts.scope) {
+      key = scopeOrOpts.scope;
+    }
+    if (key === 'climbing' || key === 'climbing_registration') return SCOPE.climbing;
+    return SCOPE.client;
   }
 
   function supabaseBase() {
@@ -55,10 +105,13 @@
     return session && session.access_token ? session.access_token : null;
   }
 
-  async function fetchDocuments(participantName) {
+  async function fetchDocuments(participantName, opts) {
     var token = await portalAuthToken();
     if (!token) return { error: 'session_expired', documents: [] };
-    var body = {};
+    var scope = resolveScope(opts);
+    var body = { form_type: scope.form_type };
+    if (opts && opts.form_type) body.form_type = opts.form_type;
+    if (opts && opts.form_types) body.form_types = opts.form_types;
     if (participantName) body.participant_name = String(participantName).trim();
     var res = await fetch(supabaseBase() + '/functions/v1/portal-admin-participant-documents-list', {
       method: 'POST',
@@ -152,9 +205,9 @@
               br.service_name || br.service || br.service_id,
               br.venue,
               br.day || br.day_label,
-              br.time || br.time_label,
+              br.time || br.time_label
             ].filter(Boolean);
-            slotLine = bits.length ? bits.join(' · ') : (br.slot_id || '—');
+            slotLine = bits.length ? bits.join(' · ') : br.slot_id || '—';
           }
         } catch (_e) {
           slotLine = '—';
@@ -183,15 +236,35 @@
         }
         return (
           '<tr>' +
-          '<td class="muted" style="white-space:nowrap">' + esc(formatDate(d.submitted_at)) + '</td>' +
-          '<td style="min-width:0;overflow-wrap:break-word">' + esc(formLab) + '</td>' +
-          '<td style="min-width:0;overflow-wrap:break-word"><strong>' + esc(d.participant_name || '—') + '</strong></td>' +
-          '<td class="muted" style="min-width:0;max-width:14rem;overflow-wrap:break-word">' + esc(parentLine) + '</td>' +
-          '<td class="muted" style="min-width:0;max-width:16rem;overflow-wrap:break-word">' + esc(slotLine) + '</td>' +
-          '<td><span class="chip chip--' + (reviewed ? 'ok' : 'pend') + '">' + esc(reviewed ? 'reviewed' : (d.status || 'new')) + '</span></td>' +
-          '<td>' + pdfLink + '</td>' +
-          '<td>' + photoLink + '</td>' +
-          '<td style="min-width:0">' + reviewCell + '</td>' +
+          '<td class="muted" style="white-space:nowrap">' +
+          esc(formatDate(d.submitted_at)) +
+          '</td>' +
+          '<td style="min-width:0;overflow-wrap:break-word">' +
+          esc(formLab) +
+          '</td>' +
+          '<td style="min-width:0;overflow-wrap:break-word"><strong>' +
+          esc(d.participant_name || '—') +
+          '</strong></td>' +
+          '<td class="muted" style="min-width:0;max-width:14rem;overflow-wrap:break-word">' +
+          esc(parentLine) +
+          '</td>' +
+          '<td class="muted" style="min-width:0;max-width:16rem;overflow-wrap:break-word">' +
+          esc(slotLine) +
+          '</td>' +
+          '<td><span class="chip chip--' +
+          (reviewed ? 'ok' : 'pend') +
+          '">' +
+          esc(reviewed ? 'reviewed' : d.status || 'new') +
+          '</span></td>' +
+          '<td>' +
+          pdfLink +
+          '</td>' +
+          '<td>' +
+          photoLink +
+          '</td>' +
+          '<td style="min-width:0">' +
+          reviewCell +
+          '</td>' +
           '</tr>'
         );
       }).join('') +
@@ -199,36 +272,66 @@
     );
   }
 
-  function viewHtml() {
+  function viewHtml(opts) {
+    var scope = resolveScope(opts);
     return (
-      '<div class="portal-participant-docs-embed">' +
-      '<h1 class="page-title">Participant documents</h1>' +
+      '<div class="' +
+      scope.rootClass +
+      '" data-docs-scope="' +
+      (scope.form_type === 'climbing_registration' ? 'climbing' : 'client') +
+      '">' +
+      '<h1 class="page-title">' +
+      esc(scope.title) +
+      '</h1>' +
       '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">' +
-      '<strong>New clients only</strong> — Client registration forms (PDF + photo) from the Booking Portal. ' +
-      'Flow: slot → registration form → <strong>Accept</strong> (finish-booking link) → funding &amp; payment → office marks invoice paid → Parent Portal PIN. ' +
-      'Annual consents from existing families are <strong>not</strong> listed here — use <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_parent_consents">Parent consents</button>.' +
+      scope.intro +
       '</p>' +
       '<div class="toolbar" style="margin-bottom:12px;flex-wrap:wrap;gap:8px">' +
-      '<button type="button" class="btn btn--sec btn--sm" id="portalParticipantDocsRefresh">Refresh</button>' +
+      '<button type="button" class="btn btn--sec btn--sm" id="' +
+      scope.refreshId +
+      '">Refresh</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" data-view-target="' +
+      scope.siblingBtn.target +
+      '">' +
+      esc(scope.siblingBtn.label) +
+      '</button>' +
       '<button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_parent_consents">Open Parent consents</button>' +
       '</div>' +
-      '<div id="portalParticipantDocsHost"><p class="muted">Loading…</p></div>' +
+      '<div id="' +
+      scope.hostId +
+      '"><p class="muted">Loading…</p></div>' +
       '</div>'
     );
   }
 
-  async function renderHost(hostEl, participantName) {
+  async function renderHost(hostEl, participantName, opts) {
     if (!hostEl) return;
+    var scope = resolveScope(opts || hostEl.getAttribute('data-docs-scope') || 'client');
+    hostEl.setAttribute('data-docs-scope', scope.form_type === 'climbing_registration' ? 'climbing' : 'client');
     hostEl.innerHTML = '<p class="muted">Loading…</p>';
-    var res = await fetchDocuments(participantName);
+    var fetchOpts = opts && (opts.form_type || opts.form_types) ? opts : { form_type: scope.form_type };
+    var res = await fetchDocuments(participantName, fetchOpts);
     if (res.error) {
-      hostEl.innerHTML = '<p class="muted" style="color:var(--danger,#c62828)">Could not load documents (' + esc(res.error) + ').</p>';
+      hostEl.innerHTML =
+        '<p class="muted" style="color:var(--danger,#c62828)">Could not load documents (' + esc(res.error) + ').</p>';
       return;
     }
+    var emptyMsg = participantName ? scope.emptyFiltered : scope.empty;
+    if (opts && opts.form_types) {
+      emptyMsg = participantName
+        ? 'No registration forms matched this participant yet.'
+        : 'No registration forms yet.';
+    }
     var intro = participantName
-      ? '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">Matched to <strong>' + esc(participantName) + '</strong> (' + esc(String((res.documents || []).length)) + ').</p>'
-      : '<p class="muted" style="margin:0 0 10px">' + esc(String((res.documents || []).length)) + ' submission(s).</p>';
-    hostEl.innerHTML = intro + documentsTableHtml(res.documents, participantName ? 'No registration forms matched this participant yet.' : 'No new-client registration forms yet.');
+      ? '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">Matched to <strong>' +
+        esc(participantName) +
+        '</strong> (' +
+        esc(String((res.documents || []).length)) +
+        ').</p>'
+      : '<p class="muted" style="margin:0 0 10px">' +
+        esc(String((res.documents || []).length)) +
+        ' submission(s).</p>';
+    hostEl.innerHTML = intro + documentsTableHtml(res.documents, emptyMsg);
     hostEl.querySelectorAll('.portal-pax-doc-open').forEach(function (btn) {
       btn.addEventListener('click', function (ev) {
         if (ev && typeof ev.preventDefault === 'function') ev.preventDefault();
@@ -237,8 +340,6 @@
           .replace(/&amp;/g, '&')
           .trim();
         if (!url) return;
-        /* Prefer <a target=_blank>: window.open(..., "noopener") often returns null
-           even when the tab opened, and a location.href fallback would replace this admin tab. */
         try {
           var a = global.document.createElement('a');
           a.href = url;
@@ -296,11 +397,9 @@
                 (out.wa_ok ? ' · WhatsApp' : '')
             );
           } else {
-            global.alert(
-              'Accepted. Parent was sent a finish-booking link (email/WhatsApp when configured).'
-            );
+            global.alert('Accepted. Parent was sent a finish-booking link (email/WhatsApp when configured).');
           }
-          void renderHost(hostEl, participantName);
+          void renderHost(hostEl, participantName, { scope: hostEl.getAttribute('data-docs-scope') || 'client' });
         });
       });
     });
@@ -321,9 +420,7 @@
           }
           if (typeof cfg.toast === 'function') {
             cfg.toast(
-              'Finish link resent' +
-                (out.email_ok ? ' · email' : '') +
-                (out.wa_ok ? ' · WhatsApp' : '')
+              'Finish link resent' + (out.email_ok ? ' · email' : '') + (out.wa_ok ? ' · WhatsApp' : '')
             );
           } else {
             global.alert('Finish-booking link resent.');
@@ -333,17 +430,18 @@
     });
   }
 
-  function bindModule() {
-    var host = global.document.getElementById('portalParticipantDocsHost');
-    if (host) void renderHost(host, '');
-    var btn = global.document.getElementById('portalParticipantDocsRefresh');
+  function bindModule(opts) {
+    var scope = resolveScope(opts);
+    var host = global.document.getElementById(scope.hostId);
+    if (host) void renderHost(host, '', { scope: scope.form_type === 'climbing_registration' ? 'climbing' : 'client' });
+    var btn = global.document.getElementById(scope.refreshId);
     if (btn) {
       btn.addEventListener('click', function () {
-        var h = global.document.getElementById('portalParticipantDocsHost');
-        void renderHost(h, '');
+        var h = global.document.getElementById(scope.hostId);
+        void renderHost(h, '', { scope: scope.form_type === 'climbing_registration' ? 'climbing' : 'client' });
       });
     }
-    var root = global.document.querySelector('.portal-participant-docs-embed');
+    var root = global.document.querySelector('.' + scope.rootClass);
     if (root) {
       root.querySelectorAll('[data-view-target]').forEach(function (b) {
         b.addEventListener('click', function () {
@@ -359,9 +457,11 @@
   function workspacePanelHtml(participantName) {
     return (
       '<div class="pax-contacts-more-inner">' +
-      '<div class="card card-pad"><h3 style="margin:0 0 8px">New-client registration</h3>' +
-      '<p class="muted" style="margin:0;max-width:48rem;overflow-wrap:break-word">Client / climbing registration PDF + photo only. Annual consents are under Documents → Parent consents.</p></div>' +
-      '<div id="paxWorkspaceDocsHost" data-pax-docs-name="' + esc(participantName || '') + '"><p class="muted">Loading…</p></div>' +
+      '<div class="card card-pad"><h3 style="margin:0 0 8px">Registration forms</h3>' +
+      '<p class="muted" style="margin:0;max-width:48rem;overflow-wrap:break-word">Client and climbing registration PDF + photo. Annual consents are under Documents → Parent consents.</p></div>' +
+      '<div id="paxWorkspaceDocsHost" data-pax-docs-name="' +
+      esc(participantName || '') +
+      '"><p class="muted">Loading…</p></div>' +
       '</div>'
     );
   }
@@ -370,7 +470,9 @@
     var host = root ? root.querySelector('#paxWorkspaceDocsHost') : global.document.getElementById('paxWorkspaceDocsHost');
     if (!host) return;
     var name = host.getAttribute('data-pax-docs-name') || '';
-    void renderHost(host, name);
+    void renderHost(host, name, {
+      form_types: ['client_registration', 'climbing_registration']
+    });
   }
 
   global.PortalParticipantDocuments = {
