@@ -2,6 +2,7 @@
 //
 // portal-admin-booking-leads-list
 // Admin: Booking Portal OTP leads (name / email / phone / status).
+// Clarifies portal visitors vs office email-interest imports (not real visits).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
@@ -9,6 +10,21 @@ import {
   portalAdminJson,
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
+
+function isEmailInterestImport(row: {
+  source?: unknown;
+  privacy_notice_version?: unknown;
+  first_page_visited?: unknown;
+}): boolean {
+  const src = String(row.source || "").toLowerCase();
+  const priv = String(row.privacy_notice_version || "").toLowerCase();
+  const page = String(row.first_page_visited || "").toLowerCase();
+  return (
+    src.includes("email interest") ||
+    priv.includes("email-interest-import") ||
+    page.includes("email interest")
+  );
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -34,6 +50,7 @@ Deno.serve(async (req) => {
   let body: {
     client_status?: string;
     booking_status?: string;
+    origin?: string;
     q?: string;
     limit?: number;
   } = {};
@@ -45,6 +62,7 @@ Deno.serve(async (req) => {
 
   const clientStatus = String(body.client_status || "").trim().toLowerCase();
   const bookingStatus = String(body.booking_status || "").trim().toLowerCase();
+  const origin = String(body.origin || "portal").trim().toLowerCase();
   const q = String(body.q || "").trim().toLowerCase();
   const limit = Math.min(Math.max(Number(body.limit) || 150, 1), 400);
 
@@ -52,19 +70,50 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
+  /* Global truth counts (not limited to the current page). */
+  const [
+    { count: portalVisitorsTotal },
+    { count: leadsAll },
+    { count: emailInterestImported },
+    { count: portalOtpVerified },
+  ] = await Promise.all([
+    admin
+      .from("portal_booking_service_sessions")
+      .select("id", { count: "exact", head: true }),
+    admin.from("portal_booking_leads").select("id", { count: "exact", head: true }),
+    admin
+      .from("portal_booking_leads")
+      .select("id", { count: "exact", head: true })
+      .ilike("source", "%Email Interest%"),
+    admin
+      .from("portal_booking_leads")
+      .select("id", { count: "exact", head: true })
+      .not("email_verified_at", "is", null)
+      .not("source", "ilike", "%Email Interest%"),
+  ]);
+
+  const emailImportN = emailInterestImported || 0;
+  const allLeadsN = leadsAll || 0;
+  const portalContactRows = Math.max(0, allLeadsN - emailImportN);
+
   let query = admin
     .from("portal_booking_leads")
     .select(
-      "id, parent_name, email, mobile, source, first_page_visited, services_viewed, booking_status, registration_status, client_status, marketing_consent, email_verified_at, last_activity_at, created_at, updated_at",
+      "id, parent_name, email, mobile, source, first_page_visited, privacy_notice_version, services_viewed, booking_status, registration_status, client_status, marketing_consent, email_verified_at, last_activity_at, created_at, updated_at",
     )
     .order("last_activity_at", { ascending: false })
-    .limit(limit);
+    .limit(Math.min(limit * 3, 800));
 
   if (clientStatus && clientStatus !== "all") {
     query = query.eq("client_status", clientStatus);
   }
   if (bookingStatus && bookingStatus !== "all") {
     query = query.eq("booking_status", bookingStatus);
+  }
+  if (origin === "email_interest") {
+    query = query.ilike("source", "%Email Interest%");
+  } else if (origin === "portal") {
+    query = query.not("source", "ilike", "%Email Interest%");
   }
 
   const { data, error } = await query;
@@ -73,7 +122,11 @@ Deno.serve(async (req) => {
     return portalAdminJson(500, { ok: false, error: "query_failed" });
   }
 
-  let leads = data || [];
+  let leads = (data || []).map((row) => ({
+    ...row,
+    origin: isEmailInterestImport(row) ? "email_interest" : "portal",
+  }));
+
   if (q) {
     leads = leads.filter((row) => {
       const blob = [
@@ -83,12 +136,15 @@ Deno.serve(async (req) => {
         row.source,
         row.booking_status,
         row.client_status,
+        row.origin,
       ]
         .map((x) => String(x || "").toLowerCase())
         .join(" ");
       return blob.includes(q);
     });
   }
+
+  leads = leads.slice(0, limit);
 
   /* Attach newest registration PDF/photo per parent email (Participant documents). */
   const emails = [
@@ -175,6 +231,13 @@ Deno.serve(async (req) => {
       verified: verifiedN,
       prospective,
       registration_started: regStarted,
+      /* Global clarification (ignore current filter/page). */
+      portal_visitors_total: portalVisitorsTotal || 0,
+      portal_otp_contacts: portalContactRows,
+      portal_otp_verified: portalOtpVerified || 0,
+      email_interest_imported: emailImportN,
+      leads_all_rows: allLeadsN,
+      origin_filter: origin || "portal",
     },
   });
 });

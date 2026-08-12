@@ -163,9 +163,11 @@
 
   function render(data) {
     var sum = (data && data.summary) || {};
+    var totalEl = $("cbsTotalCount");
     var onlineEl = $("cbsOnlineCount");
     var dayEl = $("cbsDayCount");
     var activeEl = $("cbsActiveCount");
+    if (totalEl) totalEl.textContent = String(sum.visits_all_time != null ? sum.visits_all_time : "-");
     if (onlineEl) onlineEl.textContent = String(sum.online_now != null ? sum.online_now : "-");
     if (dayEl) dayEl.textContent = String(sum.visits_today != null ? sum.visits_today : "-");
     if (activeEl) activeEl.textContent = String(sum.active_last_24h != null ? sum.active_last_24h : "-");

@@ -1,5 +1,6 @@
 /**
  * Admin — Booking Portal OTP leads (live portal_booking_leads).
+ * Distinguishes real /bookingportal visitors from office email-interest imports.
  */
 (function (global) {
   "use strict";
@@ -21,8 +22,9 @@
   };
 
   var state = {
-    /* Default all — prospective-only hid registered / waiting-list new families. */
+    /* Default portal-only — email interest import is outreach list, not visits. */
     filter: "all",
+    origin: "portal",
     q: "",
     leads: [],
     meta: {},
@@ -90,6 +92,10 @@
     return "info";
   }
 
+  function isImportRow(r) {
+    return String(r && r.origin || "").toLowerCase() === "email_interest";
+  }
+
   async function fetchLeads() {
     var token = await portalAuthToken();
     if (!token) return { error: "session_expired", leads: [] };
@@ -107,6 +113,7 @@
             : state.filter,
         booking_status:
           state.filter === "reg_started" ? "registration_submitted" : "all",
+        origin: state.origin || "portal",
         q: state.q,
         limit: 200,
       }),
@@ -124,9 +131,12 @@
   }
 
   function rowHtml(r) {
-    var verified = r.email_verified_at
-      ? chip("Verified", "ok")
-      : chip("Code sent / pending", "pend");
+    var imported = isImportRow(r);
+    var verified = imported
+      ? chip("Import — not a portal visit", "warn")
+      : r.email_verified_at
+        ? chip("Verified", "ok")
+        : chip("Code sent / pending", "pend");
     var services = Array.isArray(r.services_viewed) && r.services_viewed.length
       ? esc(r.services_viewed.slice(0, 4).join(", "))
       : '<span class="muted">—</span>';
@@ -156,17 +166,25 @@
         (r.form_type ? " · " + esc(String(r.form_type).replace(/_/g, " ")) : "") +
         "</div>"
       : "";
+    var sourceLine = imported
+      ? chip("Email interest list", "warn") +
+        '<div class="muted" style="font-size:11px;margin-top:4px;overflow-wrap:break-word">' +
+        esc(r.source || "Email interest import") +
+        " — office outreach list, not someone who opened Booking Portal</div>"
+      : '<div class="muted" style="font-size:11px;margin-top:2px;overflow-wrap:break-word">' +
+        esc(r.source || "Booking Page") +
+        "</div>";
     return (
       "<tr>" +
-      "<td><strong>" +
+      "<td style=\"min-width:0\"><strong style=\"overflow-wrap:break-word\">" +
       esc(r.parent_name || "—") +
-      "</strong><div class=\"muted\" style=\"font-size:11px;margin-top:2px\">" +
-      esc(r.source || "") +
-      "</div></td>" +
-      "<td style=\"overflow-wrap:anywhere\">" +
+      "</strong>" +
+      sourceLine +
+      "</td>" +
+      "<td style=\"overflow-wrap:anywhere;min-width:0\">" +
       esc(r.email || "—") +
       "</td>" +
-      "<td>" +
+      "<td style=\"min-width:0;overflow-wrap:break-word\">" +
       esc(r.mobile || "—") +
       "</td>" +
       "<td>" +
@@ -189,13 +207,43 @@
       "</div>" +
       formSub +
       "</td>" +
-      "<td>" +
+      "<td style=\"min-width:0;overflow-wrap:break-word\">" +
       services +
       "</td>" +
       "<td>" +
       esc(formatWhen(r.last_activity_at || r.created_at)) +
       "</td>" +
       "</tr>"
+    );
+  }
+
+  function clarifyBanner(meta) {
+    var visitors = meta.portal_visitors_total != null ? meta.portal_visitors_total : "—";
+    var portalContacts = meta.portal_otp_contacts != null ? meta.portal_otp_contacts : "—";
+    var imported = meta.email_interest_imported != null ? meta.email_interest_imported : "—";
+    var allRows = meta.leads_all_rows != null ? meta.leads_all_rows : "—";
+    return (
+      '<div class="card" style="margin:0 0 14px;border-color:rgba(180,120,20,.35);background:rgba(255,196,60,.08)">' +
+      '<div class="card-pad" style="min-width:0">' +
+      '<p style="margin:0 0 8px;font-weight:700;overflow-wrap:break-word">Do not read the big lead list as “visitors”.</p>' +
+      '<p class="muted" style="margin:0;font-size:13px;line-height:1.5;overflow-wrap:break-word">' +
+      "Real Booking Portal visitors (people who opened <code>/bookingportal</code>): about <strong>" +
+      esc(visitors) +
+      "</strong> sessions since tracking started. " +
+      "OTP contacts from the portal itself: <strong>" +
+      esc(portalContacts) +
+      "</strong>. " +
+      "The other <strong>" +
+      esc(imported) +
+      "</strong> rows are an office <em>email interest</em> import for outreach — they never visited the portal. " +
+      "Total rows in this table if you choose All origins: " +
+      esc(allRows) +
+      "." +
+      "</p>" +
+      '<p class="muted" style="margin:8px 0 0;font-size:12px;line-height:1.45;overflow-wrap:break-word">' +
+      'Live presence (online now / last 24h) is on <a href="/ceo_booking_service_portal.html" target="_blank" rel="noopener">CEO → Booking Portal visitors</a>.' +
+      "</p>" +
+      "</div></div>"
     );
   }
 
@@ -211,20 +259,32 @@
           ").</td></tr>"
         : rows.length
           ? rows.map(rowHtml).join("")
-          : '<tr><td colspan="9" class="muted">No booking leads match this filter. Try <strong>All</strong> or clear the search.</td></tr>';
+          : '<tr><td colspan="9" class="muted">No portal OTP leads match this filter. Try <strong>All origins</strong> only if you need the email-interest outreach list.</td></tr>';
 
     host.innerHTML =
+      clarifyBanner(meta) +
       '<div class="filter-row" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px">' +
       '<input class="inp" id="bkLeadSearch" type="search" placeholder="Search name, email, phone…" value="' +
       esc(state.q) +
       '" style="max-width:260px;min-width:0" />' +
-      '<select class="inp" id="bkLeadFilter" style="max-width:220px">' +
+      '<select class="inp" id="bkLeadOrigin" style="max-width:260px;min-width:0" title="Portal visits vs email interest import">' +
+      '<option value="portal"' +
+      (state.origin === "portal" ? " selected" : "") +
+      ">Origin: Portal OTP only</option>" +
+      '<option value="email_interest"' +
+      (state.origin === "email_interest" ? " selected" : "") +
+      ">Origin: Email interest import</option>" +
+      '<option value="all"' +
+      (state.origin === "all" ? " selected" : "") +
+      ">Origin: All (includes import)</option>" +
+      "</select>" +
+      '<select class="inp" id="bkLeadFilter" style="max-width:220px;min-width:0">' +
       '<option value="all"' +
       (state.filter === "all" ? " selected" : "") +
-      ">All leads</option>" +
+      ">All statuses</option>" +
       '<option value="prospective"' +
       (state.filter === "prospective" ? " selected" : "") +
-      ">Prospective (new visitors)</option>" +
+      ">Prospective</option>" +
       '<option value="registered"' +
       (state.filter === "registered" ? " selected" : "") +
       ">Registered</option>" +
@@ -241,19 +301,21 @@
       '<button type="button" class="btn btn--sec btn--sm" id="bkLeadRefresh">Refresh</button>' +
       "</div>" +
       '<div class="grid-kpi" style="margin:0 0 14px">' +
-      '<div class="kpi"><div class="kpi-l">Shown</div><div class="kpi-v">' +
+      '<div class="kpi"><div class="kpi-l">Portal visitors</div><div class="kpi-v">' +
+      esc(meta.portal_visitors_total != null ? meta.portal_visitors_total : "—") +
+      '</div><div class="muted" style="font-size:11px;margin-top:4px;line-height:1.35;overflow-wrap:break-word">Real /bookingportal sessions</div></div>' +
+      '<div class="kpi"><div class="kpi-l">Portal OTP contacts</div><div class="kpi-v">' +
+      esc(meta.portal_otp_contacts != null ? meta.portal_otp_contacts : "—") +
+      '</div><div class="muted" style="font-size:11px;margin-top:4px;line-height:1.35;overflow-wrap:break-word">Asked for a code on the portal</div></div>' +
+      '<div class="kpi"><div class="kpi-l">Email interest import</div><div class="kpi-v">' +
+      esc(meta.email_interest_imported != null ? meta.email_interest_imported : "—") +
+      '</div><div class="muted" style="font-size:11px;margin-top:4px;line-height:1.35;overflow-wrap:break-word">Not visitors — outreach list</div></div>' +
+      '<div class="kpi"><div class="kpi-l">Shown now</div><div class="kpi-v">' +
       esc(meta.total != null ? meta.total : rows.length) +
-      '</div></div>' +
-      '<div class="kpi"><div class="kpi-l">New (24h)</div><div class="kpi-v">' +
-      esc(meta.new_24h != null ? meta.new_24h : "—") +
-      '</div></div>' +
-      '<div class="kpi"><div class="kpi-l">Email verified</div><div class="kpi-v">' +
-      esc(meta.verified != null ? meta.verified : "—") +
-      '</div></div>' +
-      '<div class="kpi"><div class="kpi-l">Registration started</div><div class="kpi-v">' +
-      esc(meta.registration_started != null ? meta.registration_started : "—") +
+      '</div><div class="muted" style="font-size:11px;margin-top:4px;line-height:1.35;overflow-wrap:break-word">OTP verified (portal): ' +
+      esc(meta.portal_otp_verified != null ? meta.portal_otp_verified : "—") +
       "</div></div></div>" +
-      '<div class="card"><div class="card-pad" style="overflow:auto;padding:0">' +
+      '<div class="card"><div class="card-pad" style="overflow:auto;padding:0;min-width:0">' +
       '<table class="tbl tbl--center tbl--dense" id="bkLeadTable">' +
       "<thead><tr>" +
       "<th>Parent / carer</th><th>Email</th><th>Phone</th><th>Client</th><th>Booking / reg</th><th>OTP</th><th>Form PDF</th><th>Services viewed</th><th>Last activity</th>" +
@@ -284,6 +346,7 @@
     if (!host) return;
     var search = host.querySelector("#bkLeadSearch");
     var filter = host.querySelector("#bkLeadFilter");
+    var origin = host.querySelector("#bkLeadOrigin");
     var refresh = host.querySelector("#bkLeadRefresh");
     if (search) {
       search.addEventListener("keydown", function (ev) {
@@ -294,6 +357,12 @@
       });
       search.addEventListener("change", function () {
         state.q = String(search.value || "").trim();
+        void reload(host);
+      });
+    }
+    if (origin) {
+      origin.addEventListener("change", function () {
+        state.origin = String(origin.value || "portal");
         void reload(host);
       });
     }
@@ -337,11 +406,10 @@
     return (
       '<h1 class="page-title">Enquiries &amp; intake</h1>' +
       '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">' +
-      "Families who requested an access code on the public Booking Portal. " +
-      "Sidebar: <strong>Operator → Enquiries &amp; intake</strong>. " +
-      "Use <strong>Open PDF</strong> when the parent already submitted a registration form (matched by email). " +
-      "All forms also live under <strong>Documents → Participant documents</strong>. " +
-      "Verified means they entered the OTP and can browse the offer." +
+      "This screen mixes two different things: (1) families who requested an access code on the public Booking Portal, and " +
+      "(2) an office email-interest list imported for future outreach. " +
+      "Only (1) counts as Booking Portal activity — roughly the <strong>Portal visitors</strong> KPI (~70), not the full row count. " +
+      "Default filter is <strong>Portal OTP only</strong>." +
       "</p>" +
       '<div id="bkLeadHost"></div>'
     );

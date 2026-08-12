@@ -195,10 +195,15 @@ Deno.serve(async (req) => {
     };
   });
 
-  const { count: visitsToday } = await admin
-    .from("portal_booking_service_sessions")
-    .select("id", { count: "exact", head: true })
-    .gte("issued_at", dayStart.toISOString());
+  const [{ count: visitsToday }, { count: visitsAllTime }] = await Promise.all([
+    admin
+      .from("portal_booking_service_sessions")
+      .select("id", { count: "exact", head: true })
+      .gte("issued_at", dayStart.toISOString()),
+    admin
+      .from("portal_booking_service_sessions")
+      .select("id", { count: "exact", head: true }),
+  ]);
 
   return portalAdminJson(200, {
     ok: true,
@@ -208,6 +213,7 @@ Deno.serve(async (req) => {
       online_now: online.length,
       active_last_24h: online.length + recent.length,
       visits_today: visitsToday || 0,
+      visits_all_time: visitsAllTime || 0,
       geo: geoSummary,
     },
     online,
