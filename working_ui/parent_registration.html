@@ -1178,36 +1178,73 @@
       return p[2]+'/'+p[1]+'/'+p[0];
     }
 
-    function addSection(doc, y, title, lines, pageW, M, maxY){
-      if (y > maxY - 20) { doc.addPage(); y = 18; }
-      doc.setFontSize(11);
-      doc.setFont(undefined, 'bold');
-      doc.setTextColor(45, 132, 179);
-      doc.text(title, M, y);
-      y += 6;
-      doc.setFont(undefined, 'normal');
-      doc.setTextColor(0, 0, 0);
-      doc.setFontSize(9);
-      lines.forEach(function(row){
-        if (!row[1]) return;
-        var label = row[0] + ': ';
-        var text = doc.splitTextToSize(label + row[1], pageW - M * 2);
-        if (y + text.length * 4 > maxY) { doc.addPage(); y = 18; doc.setFontSize(9); }
-        doc.text(text, M, y);
-        y += text.length * 4 + 2;
-      });
-      return y + 4;
+    /* PDF helpers — keep text/photo fully on-page (no clipping / below-the-fold loss). */
+    var PDF_LINE = 5;
+    function pdfEnsureSpace(doc, y, need, M, maxY) {
+      if (y + need <= maxY) return y;
+      doc.addPage();
+      return 18;
     }
-
-    function addParticipantSection(doc, y, lines, photoDataUrl, pageW, M, maxY){
+    function pdfDrawWrapped(doc, text, x, y, maxWidth, lineH, M, maxY) {
+      var lines = doc.splitTextToSize(String(text || ''), Math.max(20, maxWidth));
+      if (!lines.length) return y;
+      for (var i = 0; i < lines.length; i++) {
+        y = pdfEnsureSpace(doc, y, lineH + 1, M, maxY);
+        doc.text(lines[i], x, y);
+        y += lineH;
+      }
+      return y;
+    }
+    function pdfFitImageInBox(doc, dataUrl, boxX, boxY, boxW, boxH) {
+      if (!dataUrl) return;
+      try {
+        var props = doc.getImageProperties(dataUrl);
+        var iw = Number(props.width) || 1;
+        var ih = Number(props.height) || 1;
+        var scale = Math.min(boxW / iw, boxH / ih);
+        var dw = Math.max(1, iw * scale);
+        var dh = Math.max(1, ih * scale);
+        var dx = boxX + (boxW - dw) / 2;
+        var dy = boxY + (boxH - dh) / 2;
+        var imgFmt = dataUrl.indexOf('image/png') >= 0 ? 'PNG' : 'JPEG';
+        doc.addImage(dataUrl, imgFmt, dx, dy, dw, dh);
+      } catch (imgErr) {
+        console.warn(imgErr);
+      }
+    }
+    function addSection(doc, y, title, lines, pageW, M, maxY) {
+      var contentW = pageW - M * 2;
+      y = pdfEnsureSpace(doc, y, 16, M, maxY);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(45, 132, 179);
+      y = pdfDrawWrapped(doc, title, M, y, contentW, 5.5, M, maxY);
+      y += 2;
+      doc.setTextColor(0, 0, 0);
+      lines.forEach(function (row) {
+        var value = row[1] == null ? '' : String(row[1]).trim();
+        if (!value) return;
+        var label = String(row[0] || '').trim();
+        y = pdfEnsureSpace(doc, y, PDF_LINE * 2 + 2, M, maxY);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        y = pdfDrawWrapped(doc, label, M, y, contentW, PDF_LINE, M, maxY);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        y = pdfDrawWrapped(doc, value, M, y, contentW, PDF_LINE, M, maxY);
+        y += 2.5;
+      });
+      return y + 3;
+    }
+    function addParticipantSection(doc, y, lines, photoDataUrl, pageW, M, maxY) {
       var photoSize = 46;
-      var gap = 10;
+      var gap = 8;
       var textW = pageW - M * 2 - photoSize - gap;
       var photoX = pageW - M - photoSize;
-      if (y > maxY - 30) { doc.addPage(); y = 18; }
+      y = pdfEnsureSpace(doc, y, photoSize + 14, M, maxY);
 
+      doc.setFont('helvetica', 'bold');
       doc.setFontSize(11);
-      doc.setFont(undefined, 'bold');
       doc.setTextColor(45, 132, 179);
       doc.text('Participant', M, y);
       y += 7;
@@ -1217,33 +1254,50 @@
       doc.setLineWidth(0.35);
       doc.setFillColor(255, 255, 255);
       doc.rect(photoX, boxY, photoSize, photoSize, 'FD');
-      if (photoDataUrl) {
-        try {
-          var imgFmt = photoDataUrl.indexOf('image/png') >= 0 ? 'PNG' : 'JPEG';
-          doc.addImage(photoDataUrl, imgFmt, photoX + 1.5, boxY + 1.5, photoSize - 3, photoSize - 3);
-        } catch (imgErr) {
-          console.warn(imgErr);
-        }
-      }
+      pdfFitImageInBox(doc, photoDataUrl, photoX + 1.5, boxY + 1.5, photoSize - 3, photoSize - 3);
 
-      doc.setFont(undefined, 'normal');
       doc.setTextColor(0, 0, 0);
-      doc.setFontSize(9);
       var lineY = y;
-      lines.forEach(function(row){
-        if (!row[1]) return;
-        var label = row[0] + ': ';
-        var text = doc.splitTextToSize(label + row[1], textW);
-        if (lineY + text.length * 4 > maxY) {
-          doc.addPage();
-          lineY = 18;
-          doc.setFontSize(9);
+      var pageBefore = doc.internal.getNumberOfPages();
+      lines.forEach(function (row) {
+        var value = row[1] == null ? '' : String(row[1]).trim();
+        if (!value) return;
+        var label = String(row[0] || '').trim();
+        /* Keep name/DOB beside photo while still on the first participant page. */
+        var besidePhoto =
+          doc.internal.getNumberOfPages() === pageBefore && lineY < boxY + photoSize - 2;
+        var x = M;
+        var w = besidePhoto ? textW : pageW - M * 2;
+        lineY = pdfEnsureSpace(doc, lineY, PDF_LINE * 2 + 2, M, maxY);
+        if (doc.internal.getNumberOfPages() !== pageBefore) {
+          w = pageW - M * 2;
         }
-        doc.text(text, M, lineY);
-        lineY += text.length * 4 + 2;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        lineY = pdfDrawWrapped(doc, label, x, lineY, w, PDF_LINE, M, maxY);
+        doc.setFont('helvetica', 'normal');
+        lineY = pdfDrawWrapped(doc, value, x, lineY, w, PDF_LINE, M, maxY);
+        lineY += 2.5;
       });
 
-      return Math.max(lineY, boxY + photoSize) + 6;
+      var endY = lineY;
+      if (doc.internal.getNumberOfPages() === pageBefore) {
+        endY = Math.max(lineY, boxY + photoSize + 4);
+      }
+      return endY + 4;
+    }
+    function pdfStampPageNumbers(doc, M) {
+      var total = doc.internal.getNumberOfPages();
+      var pageH = doc.internal.pageSize.getHeight();
+      var pageW = doc.internal.pageSize.getWidth();
+      for (var p = 1; p <= total; p++) {
+        doc.setPage(p);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(120, 120, 120);
+        doc.text('Page ' + p + ' of ' + total, pageW - M, pageH - 8, { align: 'right' });
+      }
+      doc.setTextColor(0, 0, 0);
     }
 
     var pdfBrandLogoDataUrl = null;
@@ -1325,14 +1379,24 @@
         }
 
         doc.setFontSize(16);
-        doc.setFont(undefined, 'bold');
+        doc.setFont('helvetica', 'bold');
         doc.setTextColor(45, 132, 179);
-        doc.text('ClubSENsational — Client Registration', M, y);
-        y += 10;
+        y = pdfDrawWrapped(doc, 'ClubSENsational — Client Registration', M, y, pageW - M * 2, 7, M, maxY);
+        y += 4;
         doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
         doc.setTextColor(80, 80, 80);
-        doc.text('Prepared (send only after club confirms): ' + new Date().toLocaleString('en-GB'), M, y);
-        y += 10;
+        y = pdfDrawWrapped(
+          doc,
+          'Prepared (send only after club confirms): ' + new Date().toLocaleString('en-GB'),
+          M,
+          y,
+          pageW - M * 2,
+          5,
+          M,
+          maxY
+        );
+        y += 6;
 
         doc.setTextColor(0, 0, 0);
         if (bookingRequest) {
@@ -1398,6 +1462,8 @@
           ['Risk awareness', radio('risk_awareness')],
           ['Anything else', val('anything_else')]
         ], pageW, M, maxY);
+
+        pdfStampPageNumbers(doc, M);
 
         var safeName = (val('participant_name') || 'Participant').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_');
         var filename = 'ClubSENsational_Registration_' + safeName + '.pdf';
