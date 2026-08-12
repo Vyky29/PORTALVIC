@@ -167,9 +167,9 @@
       var el = $(pair.id);
       if (!el) return;
       var on = activeKey === pair.key;
-      el.style.background = on ? "#173247" : "";
-      el.style.color = on ? "#fff" : "";
-      el.style.borderColor = on ? "#173247" : "";
+      el.style.background = on ? "#e0f2fe" : "";
+      el.style.color = on ? "#075985" : "";
+      el.style.borderColor = on ? "#38bdf8" : "";
       el.setAttribute("aria-pressed", on ? "true" : "false");
     });
   }
