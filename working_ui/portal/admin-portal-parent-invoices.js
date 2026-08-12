@@ -1159,10 +1159,16 @@
       if (inv.created_via === 'la_office_auto') return;
       var pay = String(inv.payment_status || 'unpaid');
       if (pay === 'void') return; /* void chips not shown */
+      var isHidden = String(inv.share_status || '') === 'hidden';
+      if (isHidden) hidden += 1;
       if (pay === 'paid') paid += 1;
-      else if (pay === 'pending_confirmation') pending += 1;
-      else unpaid += 1;
-      if (String(inv.share_status || '') === 'hidden') hidden += 1;
+      else if (pay === 'pending_confirmation') {
+        /* Pending confirmation is always actionable (even if somehow hidden). */
+        pending += 1;
+      } else if (!isHidden) {
+        /* Unpaid chip = ready/shared only — future monthly/flexi halves stay in Hidden. */
+        unpaid += 1;
+      }
       /* Xero chips: paid Portal INV-Ps only */
       if (pay !== 'paid') return;
       if (inv.xero_invoice_id) return;
