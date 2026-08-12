@@ -337,6 +337,45 @@
       color:var(--ink);
       font-size:1.25rem;
     }
+    .parent-submit-fail{
+      display:none;
+      margin:16px 0 0;
+      padding:16px 14px;
+      border-radius:var(--radius);
+      background:#fff5f5;
+      border:1px solid #fecaca;
+      color:#7f1d1d;
+      max-width:560px;
+      margin-left:auto;
+      margin-right:auto;
+      text-align:left;
+      overflow-wrap:break-word;
+    }
+    .parent-submit-fail:not([hidden]){display:block;}
+    .parent-submit-fail h2{
+      margin:0 0 8px;
+      font-size:1.05rem;
+      color:#991b1b;
+    }
+    .parent-submit-fail p{margin:0 0 12px;font-size:14px;line-height:1.45;color:#7f1d1d;}
+    .parent-submit-fail__actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      min-width:0;
+    }
+    .parent-submit-fail__actions button{
+      appearance:none;
+      border:0;
+      border-radius:10px;
+      padding:10px 14px;
+      font:inherit;
+      font-weight:700;
+      cursor:pointer;
+      min-width:0;
+    }
+    .parent-submit-fail__retry{background:var(--blue);color:#fff;}
+    .parent-submit-fail__draft{background:#fff;color:#991b1b;border:1px solid #fecaca !important;}
     .parent-submit-done p{
       margin:0;
       color:var(--text);
@@ -363,8 +402,8 @@
   </style>
   <script src="/portal-static-bootstrap.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="/portal/parent_form_submit.js?v=20260811-submit-first"></script>
-  <script src="/portal/parent_registration_portal.js?v=20260811-submit-first"></script>
+  <script src="/portal/parent_form_submit.js?v=20260812-no-fake-submit"></script>
+  <script src="/portal/parent_registration_portal.js?v=20260812-no-fake-submit"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-bookingportal"></script>
   <script src="/portal/portal_booking_lead_gate.js?v=20260724-returning-no-privacy"></script>
   <script>
@@ -454,7 +493,7 @@
 
     <div class="notice" id="formNotice">
       Fill in <strong>all</strong> sections below (every question is required). You must add a <strong>photo of the participant</strong> (face or ID document).
-      Tap <strong>Submit form</strong> — your answers are sent to clubSENsational automatically and a PDF is saved on your device.
+      Tap <strong>Submit form</strong> and wait for the green <strong>Thank you</strong> screen — that is the only confirmation the club received your form. A PDF download alone does <strong>not</strong> mean it was sent.
     </div>
 
     <form id="regForm" novalidate>
@@ -758,6 +797,14 @@
       <div class="parent-submit-done__icon" aria-hidden="true">✓</div>
       <h2>Thank you — you&apos;re all set</h2>
       <p data-parent-submit-msg></p>
+    </div>
+    <div id="parentSubmitFail" class="parent-submit-fail" hidden role="alert" aria-live="assertive">
+      <h2>Not sent to the club yet</h2>
+      <p data-parent-submit-fail-msg>Your answers are still only on this phone. Please tap Try again and keep this page open until you see the green Thank you screen.</p>
+      <div class="parent-submit-fail__actions">
+        <button type="button" class="parent-submit-fail__retry" id="parentSubmitFailRetry">Try again</button>
+        <button type="button" class="parent-submit-fail__draft" id="parentSubmitFailDraft" hidden>Download draft PDF to email the office</button>
+      </div>
     </div>
   </div>
 
@@ -1284,7 +1331,7 @@
         y += 10;
         doc.setFontSize(10);
         doc.setTextColor(80, 80, 80);
-        doc.text('Submitted: ' + new Date().toLocaleString('en-GB'), M, y);
+        doc.text('Prepared (send only after club confirms): ' + new Date().toLocaleString('en-GB'), M, y);
         y += 10;
 
         doc.setTextColor(0, 0, 0);
@@ -1387,6 +1434,8 @@
           photo_filename: photoFile ? 'participant-photo.jpg' : undefined,
           payload: submitPayload
         }).then(function(res){
+          var failEl = document.getElementById('parentSubmitFail');
+          if (failEl) failEl.hidden = true;
           try {
             doc.save(filename);
           } catch (_saveErr) {
@@ -1428,14 +1477,45 @@
             ? window.portalParentFormFriendlyError(err)
             : null;
           if (!portalMode) {
-            try {
-              doc.save(filename);
-            } catch (_dlErr) {
-              console.warn(_dlErr);
+            /* Do NOT auto-download on failure — parents treat a PDF as “submitted”. */
+            var failPanel = document.getElementById('parentSubmitFail');
+            var failMsg = failPanel && failPanel.querySelector('[data-parent-submit-fail-msg]');
+            var draftBtn = document.getElementById('parentSubmitFailDraft');
+            var retryBtn = document.getElementById('parentSubmitFailRetry');
+            if (failMsg) {
+              failMsg.textContent =
+                (friendly || 'Could not send your form to clubSENsational.') +
+                ' Keep this page open, stay on Wi‑Fi or strong mobile data, and tap Try again. Only the green Thank you screen means the club received it.';
+            }
+            if (failPanel) {
+              failPanel.hidden = false;
+              try {
+                failPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              } catch (_scrollErr) {}
+            }
+            if (draftBtn) {
+              draftBtn.hidden = false;
+              draftBtn.onclick = function () {
+                try {
+                  doc.save(filename.replace(/\.pdf$/i, '_DRAFT_NOT_SENT.pdf'));
+                } catch (_dlErr) {
+                  console.warn(_dlErr);
+                }
+              };
+            }
+            if (retryBtn) {
+              retryBtn.onclick = function () {
+                if (failPanel) failPanel.hidden = true;
+                try {
+                  btn.click();
+                } catch (_retryErr) {
+                  form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                }
+              };
             }
             alert(
               (friendly || 'Could not send your form to clubSENsational.') +
-                '\n\nA PDF copy was downloaded so you can email it to info@clubsensational.org if retry still fails.'
+                '\n\nThis was NOT sent. Please tap Try again and wait for the green Thank you screen.'
             );
             return;
           }

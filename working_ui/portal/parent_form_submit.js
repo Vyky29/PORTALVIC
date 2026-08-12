@@ -42,7 +42,7 @@
     if (code.indexOf("http 5") === 0 || code.indexOf("http 4") === 0) {
       return "Upload failed (" + raw + "). Please try again.";
     }
-    return "Could not send your form (" + raw + "). Please try again, or email the downloaded PDF to info@clubsensational.org.";
+    return "Could not send your form (" + raw + "). Please try again. A PDF on your phone alone does not mean the club received it.";
   }
 
   function finishParentSubmit(opts) {
