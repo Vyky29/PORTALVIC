@@ -451,7 +451,7 @@
       {
         value: "flexi_bank",
         title: "Flexi (2 payments this term)",
-        hint: "Half now, half later this term — fixed due dates, bank transfer.",
+        hint: "Half on the fixed due date (Autumn 15 Aug), half mid-term — bank transfer.",
       },
     ];
   }

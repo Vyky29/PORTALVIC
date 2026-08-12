@@ -1,9 +1,10 @@
 /**
  * New Booking Portal clients (mid-term / term already started):
- * one INV-P per term, first instalment due on booking day, amount = remaining sessions.
+ * one INV-P per term, amount = remaining sessions.
  *
- * GoCardless: first due today, then 1st of each remaining month in the term.
- * Flexi (bank): two halves — first today, second on the fixed mid-term date if still future.
+ * GoCardless: first due on booking day, then 1st of each remaining month in the term.
+ * Flexi (bank): two halves — first on the fixed term due (e.g. Autumn 15 Aug), or booking
+ * day if that date has already passed; second on the fixed mid-term date if still future.
  * One-off (bank): single instalment due today.
  */
 import type { InvoicePaymentScheduleRow } from "./portal_invoice_payment_schedule.ts";
@@ -27,6 +28,13 @@ const GC_FEE = 1.5;
 /** Own way: always keep 2 sessions prepaid + £50 admin / term. */
 const OWN_WAY_ADMIN_FEE = 50;
 const OWN_WAY_PREPAID_SESSIONS = 2;
+
+/** Same fixed first-half dues as re-enrolment bank flexi (not booking day). */
+const FLEXI_FIRST_DUE: Record<BookingTermKey, string> = {
+  autumn: "2026-08-15",
+  spring: "2027-01-01",
+  summer: "2027-04-01",
+};
 
 const FLEXI_SECOND_DUE: Record<BookingTermKey, string> = {
   autumn: "2026-10-26",
@@ -192,21 +200,26 @@ export function buildNewClientGcMonthDueSlots(
   ];
 }
 
-/** Flexi bank: first today; second on fixed mid-term date when still in the future. */
+/**
+ * Flexi bank: first on fixed term due (Autumn = 15 Aug); if booking after that date,
+ * first falls due on booking day. Second stays on the fixed mid-term date when future.
+ */
 export function buildNewClientFlexiDueSlots(
   term: BookingTermKey,
   asOfIso: string,
 ): Array<{ label: string; dueIso: string }> {
   const asOf = isoToday(asOfIso);
+  const fixedFirst = FLEXI_FIRST_DUE[term];
   const second = FLEXI_SECOND_DUE[term];
   const termLabel = bookingTermDisplayLabel(term);
-  if (second && second > asOf) {
+  const firstDue = fixedFirst && fixedFirst >= asOf ? fixedFirst : asOf;
+  if (second && second > firstDue) {
     return [
-      { label: `${termLabel} term · 1st half (due on booking)`, dueIso: asOf },
+      { label: `${termLabel} term · 1st half`, dueIso: firstDue },
       { label: `${termLabel} term · 2nd half`, dueIso: second },
     ];
   }
-  return [{ label: `${termLabel} term · balance due on booking`, dueIso: asOf }];
+  return [{ label: `${termLabel} term · balance`, dueIso: firstDue }];
 }
 
 export function buildNewClientPaymentSchedule(args: {
@@ -366,7 +379,7 @@ export function quoteNewClientMidTermInvoice(args: {
     args.plan === "gocardless_monthly"
       ? `GoCardless monthly · first instalment due on booking day, then 1st of each remaining month`
       : args.plan === "flexi_bank"
-        ? `Bank transfer · Flexi (2 instalments this term; first due on booking day)`
+        ? `Bank transfer · Flexi (2 instalments this term; first on fixed due date e.g. Autumn 15 Aug)`
         : args.plan === "own_way"
           ? `Own way · pay ${ownWaySessions} sessions prepaid + £${OWN_WAY_ADMIN_FEE} admin now; top up as you go to keep 2 sessions prepaid`
           : `Bank transfer · one-off full term (due on booking day)`;

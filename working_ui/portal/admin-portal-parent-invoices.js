@@ -2577,7 +2577,7 @@
       '</form>' +
       '<details style="margin:0 0 18px;padding:12px;border:1px solid var(--line,#e5e7eb);border-radius:10px;max-width:100%;min-width:0">' +
       '<summary style="cursor:pointer;font-weight:700">New Booking Portal client · mid-term pro-rata</summary>' +
-      '<p class="muted" style="margin:8px 0 10px;max-width:48rem;overflow-wrap:break-word">For <strong>new</strong> places confirmed from Booking Portal after the term has started (or starting mid-term). Builds <strong>1 invoice</strong> for remaining sessions. First instalment is due <strong>on booking day</strong>. GoCardless continues on the <strong>1st of each remaining month</strong>; Flexi keeps a second half on the fixed mid-term date when still ahead.</p>' +
+      '<p class="muted" style="margin:8px 0 10px;max-width:48rem;overflow-wrap:break-word">For <strong>new</strong> places confirmed from Booking Portal after the term has started (or starting mid-term). Builds <strong>1 invoice</strong> for remaining sessions. GoCardless / one-off: first instalment due <strong>on booking day</strong>. <strong>Flexi</strong>: first half on the fixed term due (Autumn <strong>15 August</strong>), second on the mid-term date. GoCardless continues on the <strong>1st of each remaining month</strong>.</p>' +
       '<form id="portalParentInvoiceMidtermForm" class="toolbar" style="flex-direction:column;align-items:stretch;gap:10px">' +
       '<p class="muted" style="margin:0;font-size:12px">Uses the participant selected above.</p>' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
