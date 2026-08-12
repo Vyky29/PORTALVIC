@@ -626,11 +626,17 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     if (clean(inv.created_via, 40) === "la_office_auto") continue;
     const cid = clean(inv.contact_id, 120);
     if (!cid) continue;
-    const markerBlob = `${clean(inv.ready_by, 160)} ${clean(inv.notes, 800)}`;
+    const markerBlob = `${clean(inv.ready_by, 160)} ${clean(inv.notes, 800)} ${clean(inv.reference_text, 160)}`;
     const packs = laPayByContact.get(cid) || [];
     for (const pack of packs) {
       const clientKey = clean(pack.row.client_key, 80) || "row";
       if (markerBlob.includes(`office_la_nhs_autumn_2627_${clientKey}`)) {
+        funderCoveredPackKeys.add(`${cid}::${clientKey}`);
+      }
+      if (
+        markerBlob.includes(`_${clientKey}`) &&
+        /office_funder_2627_nhs_(month|year)_/.test(markerBlob)
+      ) {
         funderCoveredPackKeys.add(`${cid}::${clientKey}`);
       }
     }
@@ -638,6 +644,14 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     if (packs.length === 1 && clean(inv.billing_term, 20) === "autumn") {
       const clientKey = clean(packs[0].row.client_key, 80) || "row";
       funderCoveredPackKeys.add(`${cid}::${clientKey}`);
+    }
+    // Monthly/year NHS funder schedule already issued: cover every pack for this
+    // contact so AUTO synthetic annual cards do not duplicate (e.g. Timi).
+    if (/office_funder_2627_nhs_(month|year)_/.test(markerBlob)) {
+      for (const pack of packs) {
+        const clientKey = clean(pack.row.client_key, 80) || "row";
+        funderCoveredPackKeys.add(`${cid}::${clientKey}`);
+      }
     }
   }
   for (const [cid, packs] of laPayByContact) {
