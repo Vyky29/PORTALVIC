@@ -52,7 +52,7 @@
       priceHint: "From £50 / 30 min session",
       pricePerSession: 50,
       blurb:
-        "1:1 or small-group swimming sessions with sensory-aware instructors. We work at the child’s pace — water confidence, regulation, and independence.",
+        "Swimming and hydrotherapy with autism specialists — more than a standard pool lesson. Person-centred sessions with visual supports, focused on water confidence, communication, emotional regulation, and independence at the participant’s pace.",
       venues: ["Acton", "Northolt", "SwimFarm"],
     },
     {
@@ -64,7 +64,7 @@
       priceHint: "From £75 / 60 min session",
       pricePerSession: 75,
       blurb:
-        "Supported climbing sessions that build strength, focus, and confidence. Routes and support levels are matched to each child.",
+        "Structured climbing led by autism specialists. Builds agility, balance, coordination, and confidence, with 1:1 support, clear routines, and visual aids so each participant can progress safely.",
       venues: ["Westway"],
     },
     {
@@ -76,7 +76,7 @@
       priceHint: "From £75 / 60 min session",
       pricePerSession: 75,
       blurb:
-        "Active sessions focused on movement, coordination, and stamina — adapted so every child can take part safely and with clear structure.",
+        "Fitness with personal trainers from our autism specialists team — strength, cardio, and movement circuits. Improves motor skills, energy regulation, and confidence in a structured session every participant can succeed in.",
       venues: ["SwimFarm", "Acton"],
     },
     {
@@ -88,7 +88,7 @@
       priceHint: "From £120 / 90 min session",
       pricePerSession: 120,
       blurb:
-        "Longer blocks that combine activities in one visit (for example pool plus land-based work). Ideal when families want variety in a single session.",
+        "Splash & Connect: a 90-minute multidisciplinary block — land-based learning (communication, social skills, independence) plus swimming. One visit that supports mind and body for the participant.",
       venues: ["SwimFarm", "Northolt"],
     },
     {
@@ -100,7 +100,7 @@
       priceHint: "From £125 / 60 min session",
       pricePerSession: 125,
       blurb:
-        "A tailored programme built around your child’s goals and support needs. Enquire with the office — we do not publish bookable Bespoke slots online.",
+        "An individualised 1:1 programme around the participant’s goals — social communication, independence, and emotional and physical well-being. Arranged with the office after enquiry; we do not publish bookable Bespoke slots online.",
       venues: ["SwimFarm", "Acton", "Westway"],
       enquireOnly: true,
     },
@@ -112,7 +112,7 @@
       durationHint: "Mon–Fri · 11am – 4pm",
       priceHint: "Funding / bespoke quote",
       blurb:
-        "A weekday daytime programme at SwimFarm. We do not publish bookable slots online — places are arranged with families through the office so we can explain the day, funding, and support needs properly.",
+        "A weekday daytime programme at SwimFarm (Mon–Fri, 11am–4pm): table work, sensory time, gym, swimming, life skills, and more. Places are arranged with the office so we can discuss the day, funding, and the participant’s support needs — not self-booked online.",
       venues: ["SwimFarm"],
       enquireOnly: true,
       infoHours: "Open Monday to Friday, 11am – 4pm at SwimFarm.",
@@ -135,7 +135,7 @@
       durationHint: "Summer + half-term blocks",
       priceHint: "Course packs — ask the office",
       blurb:
-        "Holiday intensives and camps: summer crash weeks in July, then October, February and May half terms. Limited daily places — weekly packs often have priority.",
+        "Holiday crash courses and camps for continuity outside term time — swimming, climbing, and more in short intensive blocks (summer and half terms). Predictable routines, specialist staff, and limited daily places for participants.",
       venues: ["Westway", "Acton"],
       intensiveBlocks: true,
     },

@@ -1815,7 +1815,7 @@
     </div>
   </div>
 
-  <script src="/portal/portal_booking_offer.js?v=20260812-bespoke-short"></script>
+  <script src="/portal/portal_booking_offer.js?v=20260812-service-blurbs"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
   <script src="/portal/portal_booking_lead_gate.js?v=20260812-preview-5s-clear"></script>
   <script>
@@ -2046,7 +2046,7 @@
       return (
         '<div class="dc-info">' +
         '<p class="dc-info__lead">' +
-        "Tailored sessions arranged with the office. We do not publish Bespoke slots for online booking." +
+        "An individualised 1:1 programme around the participant’s goals — social communication, independence, and well-being. Arranged with the office; we do not publish Bespoke slots for online booking." +
         "</p>" +
         '<div class="dc-info__actions">' +
         '<button type="button" class="btn btn--wait" data-dc-enquire="' +
@@ -2079,7 +2079,7 @@
       esc(hours) +
       "</p>" +
       '<p class="dc-info__lead">' +
-      "We do not offer online slots for Day Centre. Places are arranged with the office so we can talk through the day, funding, and the support your child needs." +
+      "We do not offer online slots for Day Centre. Places are arranged with the office so we can talk through the day, funding, and the support the participant needs." +
       "</p>" +
       '<p class="dc-info__label">A typical day may include</p>' +
       '<ul class="dc-info__list">' +
@@ -2661,8 +2661,8 @@
     );
     var text = encodeURIComponent(
       isDc
-        ? "Hello,\n\nI’d like to enquire about a Day Centre place at SwimFarm (Monday–Friday, 11am–4pm).\n\nChild name:\nParent name:\nPhone:\nFunding / notes:\n\nThanks"
-        : "Hello,\n\nI’d like to enquire about a Bespoke Programme place. I understand you’ll assess my child before offering times.\n\nChild name:\nParent name:\nPhone:\nGoals / support needs / notes:\n\nThanks"
+        ? "Hello,\n\nI’d like to enquire about a Day Centre place at SwimFarm (Monday–Friday, 11am–4pm).\n\nParticipant name:\nParent / carer name:\nPhone:\nFunding / notes:\n\nThanks"
+        : "Hello,\n\nI’d like to enquire about a Bespoke Programme place for a participant.\n\nParticipant name:\nParent / carer name:\nPhone:\nGoals / support needs / notes:\n\nThanks"
     );
     mail.href = "mailto:info@clubsensational.org?subject=" + subject + "&body=" + text;
     mail.innerHTML = ICONS.mail + " Email the office";
@@ -2742,7 +2742,7 @@
         slot.id +
         "\nStatus: " +
         (enquireOnly ? "Enquire / half-term interest" : "Fully booked / waiting list") +
-        "\n\nChild name:\nParent name:\nPhone:\n\nThanks"
+        "\n\nParticipant name:\nParent / carer name:\nPhone:\n\nThanks"
     );
     mail.href = "mailto:info@clubsensational.org?subject=" + subject + "&body=" + text;
     mail.innerHTML = ICONS.mail + " Email the office";
