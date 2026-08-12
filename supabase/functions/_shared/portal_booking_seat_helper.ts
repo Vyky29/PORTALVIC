@@ -122,11 +122,19 @@ const SERVICE_META: Record<PublicServiceId, Omit<OfferService, "venues">> = {
     name: "Bespoke Programme",
     tier: "more",
     ageHint: "From 3 years+",
-    durationHint: "Agreed with the office",
+    durationHint: "Agreed after assessment",
     priceHint: "From £125 / 60 min session",
     pricePerSession: 125,
+    enquireOnly: true,
+    infoHours: "Times and venues are agreed with the office after we meet your child.",
+    infoActivities: [
+      "Office review of goals, support needs, and funding",
+      "Meet / assess the participant before offering a place",
+      "Tailored session plan (activity, ratio, venue)",
+      "A suitable slot from our available timetable — not published for self-booking",
+    ],
     blurb:
-      "A tailored programme built around your child’s goals, support needs, and schedule. Planned with the family and delivery team — enquire to start.",
+      "A tailored programme built around your child’s goals and support needs. We do not publish bookable slots online — first we learn about the participant (after your enquiry), then we agree what we can offer and when.",
   },
   day_centre: {
     id: "day_centre",
@@ -576,8 +584,8 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
 
   let folded = foldMultiActivityOfferSlots(slots);
   folded = ensureClimbingSundayOpenBand(folded);
-  /* Day Centre is office-arranged only — never expose MADRE capacity as bookable slots. */
-  folded = folded.filter((s) => s.serviceId !== "day_centre");
+  /* Day Centre + Bespoke are office-arranged only — never expose MADRE capacity as bookable slots. */
+  folded = folded.filter((s) => s.serviceId !== "day_centre" && s.serviceId !== "bespoke");
   /* Defence in depth: Wed Acton Multi stays off the public offer. */
   folded = folded.filter(
     (s) =>

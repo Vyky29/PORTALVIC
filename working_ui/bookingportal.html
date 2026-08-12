@@ -1815,7 +1815,7 @@
     </div>
   </div>
 
-  <script src="/portal/portal_booking_offer.js?v=20260810-madre-null-staff"></script>
+  <script src="/portal/portal_booking_offer.js?v=20260812-bespoke-office"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
   <script src="/portal/portal_booking_lead_gate.js?v=20260812-preview-5s-clear"></script>
   <script>
@@ -1954,17 +1954,27 @@
     return map[day] || day;
   }
 
+  function isOfficeEnquireService(s) {
+    if (!s) return false;
+    if (s.id === "day_centre" || s.id === "bespoke") return true;
+    return !!s.enquireOnly && !(s.intensiveBlocks || s.tier === "core");
+  }
+
   function serviceCardHtml(s, active) {
     var pack = serviceIconPack(s.id);
     var allSlots = mock.filterSlots({ serviceId: s.id, hideFull: false });
     var openN = allSlots.filter(function (slot) {
       return !mock.isFull(slot);
     }).length;
+    var officeEnquire = isOfficeEnquireService(s);
     var enquireOnly = !!s.enquireOnly;
     var hint;
     var ctaLabel;
-    if (s.id === "day_centre" || (enquireOnly && !allSlots.length)) {
-      hint = "Places arranged with the office · Mon–Fri 11am–4pm";
+    if (officeEnquire) {
+      hint =
+        s.id === "day_centre"
+          ? "Places arranged with the office · Mon–Fri 11am–4pm"
+          : "Enquire with the office · assessment before any offer";
       ctaLabel = "How it works";
     } else if (enquireOnly) {
       hint = "Enquire with the office · no online booking";
@@ -2029,23 +2039,38 @@
     );
   }
 
-  function dayCentreInfoHtml(s) {
-    var hours =
-      String(s.infoHours || "").trim() ||
-      "Open Monday to Friday, 11am – 4pm at SwimFarm.";
+  function officeEnquireInfoHtml(s) {
+    var isDc = s && s.id === "day_centre";
+    var hours = String(s.infoHours || "").trim();
+    if (!hours) {
+      hours = isDc
+        ? "Open Monday to Friday, 11am – 4pm at SwimFarm."
+        : "Times and venues are agreed with the office after we meet your child.";
+    }
     var acts = Array.isArray(s.infoActivities) ? s.infoActivities : [];
     if (!acts.length) {
-      acts = [
-        "Table work (maths, puzzles, handwriting)",
-        "Sensory room and quiet regulation",
-        "Gym and trampoline",
-        "Swimming / pool time",
-        "Lunch and life skills",
-        "Relaxation",
-        "Music and karaoke",
-        "Community trips (cafe, park, shops) when staffing allows",
-      ];
+      acts = isDc
+        ? [
+            "Table work (maths, puzzles, handwriting)",
+            "Sensory room and quiet regulation",
+            "Gym and trampoline",
+            "Swimming / pool time",
+            "Lunch and life skills",
+            "Relaxation",
+            "Music and karaoke",
+            "Community trips (cafe, park, shops) when staffing allows",
+          ]
+        : [
+            "Office review of goals, support needs, and funding",
+            "Meet / assess the participant before offering a place",
+            "Tailored session plan (activity, ratio, venue)",
+            "A suitable slot from our available timetable — not published for self-booking",
+          ];
     }
+    var lead = isDc
+      ? "We do not offer online slots for Day Centre. Places are arranged with the office so we can talk through the day, funding, and the support your child needs."
+      : "We do not publish Bespoke slots online. After your enquiry, the office reviews the participant and only then agrees what we can offer and which available time fits — not a self-book timetable.";
+    var listLabel = isDc ? "A typical day may include" : "What happens next";
     return (
       '<div class="dc-info">' +
       '<p class="dc-info__hours">' +
@@ -2054,9 +2079,11 @@
       esc(hours) +
       "</p>" +
       '<p class="dc-info__lead">' +
-      "We do not offer online slots for Day Centre. Places are arranged with the office so we can talk through the day, funding, and the support your child needs." +
+      lead +
       "</p>" +
-      '<p class="dc-info__label">A typical day may include</p>' +
+      '<p class="dc-info__label">' +
+      listLabel +
+      "</p>" +
       '<ul class="dc-info__list">' +
       acts
         .map(function (a) {
@@ -2411,8 +2438,8 @@
           return renderIntensiveTimetable(s, filters, pack);
         }
         var body;
-        if (s.id === "day_centre") {
-          body = dayCentreInfoHtml(s);
+        if (isOfficeEnquireService(s)) {
+          body = officeEnquireInfoHtml(s);
         } else {
           var slots = mock.filterSlots({
             serviceId: s.id,
@@ -2445,7 +2472,7 @@
           "</div>" +
           "<h3>" +
           esc(s.name) +
-          (filters.venue && s.id !== "day_centre"
+          (filters.venue && !isOfficeEnquireService(s)
             ? " (" + esc(mock.venueLabel(filters.venue)) + ")"
             : "") +
           "</h3>" +
@@ -2455,7 +2482,9 @@
           esc(
             s.id === "day_centre"
               ? "Tue 1 September 2026 – Fri 18 December 2026 · Mon–Fri 11am–4pm"
-              : mock.TERM_RANGE || "Sat 5 September 2026 – Fri 18 December 2026"
+              : s.id === "bespoke"
+                ? "Arranged with the office after assessment · times from our available timetable"
+                : mock.TERM_RANGE || "Sat 5 September 2026 – Fri 18 December 2026"
           ) +
           "</p></div>" +
           body +
@@ -2612,7 +2641,7 @@
     }
   }
 
-  function openDayCentreEnquire(svc) {
+  function openOfficeEnquire(svc) {
     if (window.PortalBookingLeadGate && !window.PortalBookingLeadGate.isUnlocked()) {
       window.PortalBookingLeadGate.openGate();
       return;
@@ -2621,12 +2650,21 @@
     var title = document.getElementById("sheetTitle");
     var body = document.getElementById("sheetBody");
     var mail = document.getElementById("sheetMail");
-    title.textContent = "Enquire about Day Centre";
-    body.textContent =
-      "Day Centre at SwimFarm · Monday to Friday, 11am – 4pm. Places are arranged with the office (not booked online) so we can explain the day, funding, and support needs.";
-    var subject = encodeURIComponent("Day Centre enquiry — SwimFarm · Mon–Fri 11am–4pm");
+    var isDc = !svc || svc.id === "day_centre";
+    var name = (svc && svc.name) || (isDc ? "Day Centre" : "Bespoke Programme");
+    title.textContent = "Enquire about " + name;
+    body.textContent = isDc
+      ? "Day Centre at SwimFarm · Monday to Friday, 11am – 4pm. Places are arranged with the office (not booked online) so we can explain the day, funding, and support needs."
+      : "Bespoke Programme — no online slots. After you enquire, the office reviews the participant and then agrees what we can offer and which available time fits.";
+    var subject = encodeURIComponent(
+      isDc
+        ? "Day Centre enquiry — SwimFarm · Mon–Fri 11am–4pm"
+        : "Bespoke Programme enquiry — assessment / office"
+    );
     var text = encodeURIComponent(
-      "Hello,\n\nI’d like to enquire about a Day Centre place at SwimFarm (Monday–Friday, 11am–4pm).\n\nChild name:\nParent name:\nPhone:\nFunding / notes:\n\nThanks"
+      isDc
+        ? "Hello,\n\nI’d like to enquire about a Day Centre place at SwimFarm (Monday–Friday, 11am–4pm).\n\nChild name:\nParent name:\nPhone:\nFunding / notes:\n\nThanks"
+        : "Hello,\n\nI’d like to enquire about a Bespoke Programme place. I understand you’ll assess my child before offering times.\n\nChild name:\nParent name:\nPhone:\nGoals / support needs / notes:\n\nThanks"
     );
     mail.href = "mailto:info@clubsensational.org?subject=" + subject + "&body=" + text;
     mail.innerHTML = ICONS.mail + " Email the office";
@@ -2650,8 +2688,8 @@
     }
     resetActionSheetChrome();
     var svc = mock.serviceById(slot.serviceId);
-    if (svc && svc.id === "day_centre") {
-      openDayCentreEnquire(svc);
+    if (isOfficeEnquireService(svc)) {
+      openOfficeEnquire(svc);
       return;
     }
     var enquireOnly = !!(slot.enquireOnly || (svc && svc.enquireOnly));
@@ -2750,7 +2788,7 @@
     var dcBtn = e.target && e.target.closest && e.target.closest("[data-dc-enquire]");
     if (dcBtn) {
       var dcId = dcBtn.getAttribute("data-dc-enquire") || "day_centre";
-      openDayCentreEnquire(mock.serviceById(dcId) || { id: "day_centre", name: "Day Centre" });
+      openOfficeEnquire(mock.serviceById(dcId) || { id: "day_centre", name: "Day Centre" });
       return;
     }
     var bookBtn = e.target && e.target.closest && e.target.closest("[data-book]");

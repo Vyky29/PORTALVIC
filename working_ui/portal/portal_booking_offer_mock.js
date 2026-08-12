@@ -96,13 +96,20 @@
       name: "Bespoke Programme",
       tier: "more",
       ageHint: "From 3 years+",
-      durationHint: "Agreed with the office",
+      durationHint: "Agreed after assessment",
       priceHint: "From £125 / 60 min session",
       pricePerSession: 125,
       blurb:
-        "A tailored programme built around your child’s goals, support needs, and schedule. Planned with the family and delivery team — enquire to start.",
+        "A tailored programme built around your child’s goals and support needs. We do not publish bookable slots online — first we learn about the participant (after your enquiry), then we agree what we can offer and when.",
       venues: ["SwimFarm", "Acton", "Westway"],
       enquireOnly: true,
+      infoHours: "Times and venues are agreed with the office after we meet your child.",
+      infoActivities: [
+        "Office review of goals, support needs, and funding",
+        "Meet / assess the participant before offering a place",
+        "Tailored session plan (activity, ratio, venue)",
+        "A suitable slot from our available timetable — not published for self-booking",
+      ],
     },
     {
       id: "day_centre",
@@ -237,9 +244,7 @@
     { id: "ma-nor-sat-0930", serviceId: "multi", venue: "Northolt", day: "Saturday", timeLabel: "9.30 – 11.00", sortTime: "09:30", capacity: 2, taken: 0 },
     { id: "ma-nor-sat-1130", serviceId: "multi", venue: "Northolt", day: "Saturday", timeLabel: "11.30 – 1.00", sortTime: "11:30", capacity: 2, taken: 2 },
 
-    { id: "bs-sf-tue-1000", serviceId: "bespoke", venue: "SwimFarm", day: "Tuesday", timeLabel: "10.00 – 11.00", sortTime: "10:00", capacity: 1, taken: 1 },
-    { id: "bs-act-thu-1500", serviceId: "bespoke", venue: "Acton", day: "Thursday", timeLabel: "3.00 – 4.00", sortTime: "15:00", capacity: 1, taken: 0 },
-    { id: "bs-ww-fri-1100", serviceId: "bespoke", venue: "Westway", day: "Friday", timeLabel: "11.00 – 12.00", sortTime: "11:00", capacity: 1, taken: 1 },
+    /* Bespoke + Day Centre: no public slots (office enquire / assess first). */
 
     /* Summer crash · Week 1 (Tue–Fri 21–24 July) */
     { id: "in-s1-ww-tue", serviceId: "intensive", blockId: "summer_july", venue: "Westway", day: "Week 1 · Tue 21 Jul", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 2 },
