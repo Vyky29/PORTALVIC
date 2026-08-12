@@ -26,7 +26,7 @@
     cancel: false,
     query: "",
     payFilter: "",         // "" | "bank" | "gocardless"
-    audience: "in_class",  // "in_class" | "waiting_list" | "all"
+    audience: "in_class",  // "in_class" | "waiting_list" | "enquiries" | "all"
     seededFromEnquiries: false,
   };
 
@@ -203,6 +203,7 @@
       [
         { id: "pbcastAudInClass", key: "in_class" },
         { id: "pbcastAudWait", key: "waiting_list" },
+        { id: "pbcastAudEnquiries", key: "enquiries" },
         { id: "pbcastAudAll", key: "all" },
       ],
       state.audience
@@ -226,6 +227,8 @@
       var listChip =
         r.listKind === "waiting_list" || (r.onWaitingList && !r.inClass)
           ? '<span class="portal-pnlog-chip" style="background:#e0f2fe;color:#075985;border:1px solid #38bdf8">Waiting list</span>'
+          : r.listKind === "enquiry"
+            ? '<span class="portal-pnlog-chip" style="background:#f3e8ff;color:#6b21a8;border:1px solid #c084fc">Enquiry</span>'
           : r.listKind === "in_class_and_waiting" || (r.inClass && r.onWaitingList)
             ? '<span class="portal-pnlog-chip" style="background:#fef3c7;color:#92400e;border:1px solid #fbbf24">In class + wait</span>'
             : "";
@@ -309,7 +312,8 @@
 
   function audienceLabel(a) {
     if (a === "waiting_list") return "Waiting list";
-    if (a === "all") return "All contacts";
+    if (a === "enquiries") return "Enquiries";
+    if (a === "all") return "All (class + wait + enquiries)";
     return "In class";
   }
 
@@ -566,6 +570,8 @@
     if (audIn) audIn.addEventListener("click", function () { setAudience("in_class"); });
     var audWait = $("pbcastAudWait");
     if (audWait) audWait.addEventListener("click", function () { setAudience("waiting_list"); });
+    var audEnq = $("pbcastAudEnquiries");
+    if (audEnq) audEnq.addEventListener("click", function () { setAudience("enquiries"); });
     var audAll = $("pbcastAudAll");
     if (audAll) audAll.addEventListener("click", function () { setAudience("all"); });
     var send = $("pbcastSend");
@@ -581,7 +587,7 @@
       ".pbcast-tog--on{background:#f0f9ff!important;background-color:#f0f9ff!important;color:#0c4a6e!important;border-color:#0ea5e9!important;box-shadow:inset 0 0 0 1px #0ea5e9!important;font-weight:600!important}" +
       "</style>" +
       '<h1 class="page-title">Family broadcast</h1>' +
-      '<p class="page-intro">Send one message to many families at once — <strong>email</strong> and/or <strong>WhatsApp</strong>. Choose <strong>In class</strong>, <strong>Waiting list</strong>, or <strong>All</strong> under Recipients. Every send is logged in <strong>Family messages</strong>. Replies to +44 7886 292726 arrive there automatically. You can also seed this list from <strong>Operator → Enquiries &amp; intake</strong>.</p>' +
+      '<p class="page-intro">Send one message to many families at once — <strong>email</strong> and/or <strong>WhatsApp</strong>. Choose <strong>In class</strong>, <strong>Waiting list</strong>, <strong>Enquiries</strong> (booking-portal leads who verified email), or <strong>All</strong>. Every send is logged in <strong>Family messages</strong>. Replies to +44 7886 292726 arrive there automatically. You can also seed this list from <strong>Operator → Enquiries &amp; intake</strong>.</p>' +
       '<div id="pbcastEnquiryBanner" class="card card-pad" style="display:none;margin:0 0 12px;border-color:rgba(21,128,61,.35);background:rgba(34,197,94,.08);font-size:13px;line-height:1.45;overflow-wrap:break-word" role="status"></div>' +
       '<div id="pbcastStatus" class="portal-forms-status" role="status"></div>' +
 
@@ -612,6 +618,7 @@
       '<span class="muted" style="font-size:12px">Audience:</span>' +
       '<button type="button" class="btn btn--sec btn--sm" id="pbcastAudInClass" aria-pressed="true">In class</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="pbcastAudWait" aria-pressed="false">Waiting list</button>' +
+      '<button type="button" class="btn btn--sec btn--sm" id="pbcastAudEnquiries" aria-pressed="false">Enquiries</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="pbcastAudAll" aria-pressed="false">All</button>' +
       "</div>" +
       '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px">' +

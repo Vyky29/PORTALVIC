@@ -4,10 +4,11 @@
 // bulk broadcast (e.g. the WhatsApp contact-number change email).
 //
 // POST JSON (optional):
-//   { audience?: "in_class" | "waiting_list" | "all" }
+//   { audience?: "in_class" | "waiting_list" | "enquiries" | "all" }
 //     in_class     — default; families currently in class
 //     waiting_list — on_waiting_list = true (prospects / not yet placed)
-//     all          — both (deduped by email)
+//     enquiries    — booking-portal leads with verified email (OTP done)
+//     all          — in class + waiting list + verified enquiries (deduped by email)
 //
 // One row per email inbox: children names are aggregated, a parent display
 // name is chosen, and the first mobile on file (if any) is returned. The demo
@@ -25,7 +26,7 @@ import {
 const DEMO_EMAIL = "victor.matilla.demo@clubsensational.org";
 const REENROL_YEAR = "2026-27";
 
-type Audience = "in_class" | "waiting_list" | "all";
+type Audience = "in_class" | "waiting_list" | "enquiries" | "all";
 
 type ContactRow = {
   contact_id: string | null;
@@ -60,6 +61,9 @@ function clean(v: unknown, max = 200): string {
 function parseAudience(raw: unknown): Audience {
   const s = String(raw ?? "").trim().toLowerCase();
   if (s === "waiting_list" || s === "waitlist" || s === "waiting") return "waiting_list";
+  if (s === "enquiries" || s === "enquiry" || s === "leads" || s === "booking_leads") {
+    return "enquiries";
+  }
   if (s === "all") return "all";
   return "in_class";
 }
@@ -146,74 +150,23 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  let query = admin
-    .from("portal_parent_contacts")
-    .select(
-      "contact_id, email, email_norm, parent_display, child_display, mobile, in_class, on_waiting_list, payment_method_label",
-    )
-    .limit(5000);
-
-  if (audience === "in_class") {
-    query = query.eq("in_class", true);
-  } else if (audience === "waiting_list") {
-    query = query.eq("on_waiting_list", true);
-  }
-  // audience === "all" → no class/wait filter
-
-  const { data, error } = await query;
-
-  if (error) {
-    console.error("[portal-parent-broadcast-recipients]", error.message);
-    return portalAdminJson(500, { ok: false, error: "query_failed" });
-  }
-
-  const contactIds = [
-    ...new Set(
-      ((data || []) as ContactRow[])
-        .map((r) => clean(r.contact_id, 40))
-        .filter(Boolean),
-    ),
-  ];
-
-  const payByContact = new Map<string, PayChannel>();
-
-  if (contactIds.length) {
-    const { data: reenrolRows } = await admin
-      .from("portal_re_enrolment_submissions")
-      .select("participant_contact_id, payload, submitted_at")
-      .eq("academic_year", REENROL_YEAR)
-      .in("participant_contact_id", contactIds)
-      .order("submitted_at", { ascending: false })
-      .limit(2000);
-    for (const row of reenrolRows || []) {
-      const cid = clean(row.participant_contact_id, 40);
-      if (!cid || payByContact.has(cid)) continue;
-      const code = reenrolPayCode(row.payload);
-      const ch = classifyPay(code);
-      if (ch !== "unknown") payByContact.set(cid, ch);
-    }
-
-    const { data: invRows } = await admin
-      .from("portal_parent_invoice_share")
-      .select("contact_id, payment_method_hint, updated_at")
-      .in("contact_id", contactIds)
-      .order("updated_at", { ascending: false })
-      .limit(4000);
-    for (const row of invRows || []) {
-      const cid = clean(row.contact_id, 40);
-      if (!cid || payByContact.has(cid)) continue;
-      const hint = clean(row.payment_method_hint, 40);
-      if (!hint || hint === "la_funded") continue;
-      payByContact.set(cid, classifyPay(hint));
-    }
-  }
-
   const byInbox = new Map<string, Recipient>();
-  for (const raw of (data || []) as ContactRow[]) {
-    const email = String(raw.email || "").trim();
-    const norm = String(raw.email_norm || email).trim().toLowerCase();
-    if (!norm || norm.indexOf("@") < 1) continue;
-    if (norm === DEMO_EMAIL) continue;
+
+  function upsertRecipient(opts: {
+    email: string;
+    parentName?: string;
+    child?: string;
+    mobile?: string;
+    contactId?: string;
+    inClass?: boolean;
+    onWaitingList?: boolean;
+    payLabel?: string;
+    listKindHint?: string;
+  }) {
+    const email = clean(opts.email, 200);
+    const norm = email.toLowerCase();
+    if (!norm || norm.indexOf("@") < 1) return;
+    if (norm === DEMO_EMAIL) return;
 
     let rec = byInbox.get(norm);
     if (!rec) {
@@ -230,26 +183,130 @@ Deno.serve(async (req) => {
       };
       byInbox.set(norm, rec);
     }
-    const parent = String(raw.parent_display || "").trim();
+    const parent = clean(opts.parentName, 120);
     if (parent && !rec.parentName) rec.parentName = parent;
-    const child = String(raw.child_display || "").trim();
+    const child = clean(opts.child, 120);
     if (child && rec.children.indexOf(child) < 0) rec.children.push(child);
-    const mobile = String(raw.mobile || "").trim();
+    const mobile = clean(opts.mobile, 40);
     if (mobile && !rec.mobile) {
       rec.mobile = mobile;
       rec.hasMobile = true;
     }
-    const cid = clean(raw.contact_id, 40);
+    const cid = clean(opts.contactId, 40);
     if (cid && rec.contactIds.indexOf(cid) < 0) rec.contactIds.push(cid);
-    if (raw.in_class === true) rec.inClass = true;
-    if (raw.on_waiting_list === true) rec.onWaitingList = true;
-
-    let ch = cid ? payByContact.get(cid) : undefined;
-    if (!ch || ch === "unknown") {
-      ch = classifyPay(raw.payment_method_label);
+    if (opts.inClass === true) rec.inClass = true;
+    if (opts.onWaitingList === true) rec.onWaitingList = true;
+    if (opts.listKindHint === "enquiry" && !rec.inClass && !rec.onWaitingList) {
+      /* tagged later */
     }
+    const ch = classifyPay(opts.payLabel);
     if (ch && ch !== "unknown") rec.payChannels.add(ch);
     else if (!rec.payChannels.size) rec.payChannels.add("unknown");
+  }
+
+  const includeContacts = audience === "in_class" || audience === "waiting_list" ||
+    audience === "all";
+  const includeEnquiries = audience === "enquiries" || audience === "all";
+
+  if (includeContacts) {
+    let query = admin
+      .from("portal_parent_contacts")
+      .select(
+        "contact_id, email, email_norm, parent_display, child_display, mobile, in_class, on_waiting_list, payment_method_label",
+      )
+      .limit(5000);
+
+    if (audience === "in_class") {
+      query = query.eq("in_class", true);
+    } else if (audience === "waiting_list") {
+      query = query.eq("on_waiting_list", true);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error("[portal-parent-broadcast-recipients]", error.message);
+      return portalAdminJson(500, { ok: false, error: "query_failed" });
+    }
+
+    const contactIds = [
+      ...new Set(
+        ((data || []) as ContactRow[])
+          .map((r) => clean(r.contact_id, 40))
+          .filter(Boolean),
+      ),
+    ];
+
+    const payByContact = new Map<string, PayChannel>();
+
+    if (contactIds.length) {
+      const { data: reenrolRows } = await admin
+        .from("portal_re_enrolment_submissions")
+        .select("participant_contact_id, payload, submitted_at")
+        .eq("academic_year", REENROL_YEAR)
+        .in("participant_contact_id", contactIds)
+        .order("submitted_at", { ascending: false })
+        .limit(2000);
+      for (const row of reenrolRows || []) {
+        const cid = clean(row.participant_contact_id, 40);
+        if (!cid || payByContact.has(cid)) continue;
+        const code = reenrolPayCode(row.payload);
+        const ch = classifyPay(code);
+        if (ch !== "unknown") payByContact.set(cid, ch);
+      }
+
+      const { data: invRows } = await admin
+        .from("portal_parent_invoice_share")
+        .select("contact_id, payment_method_hint, updated_at")
+        .in("contact_id", contactIds)
+        .order("updated_at", { ascending: false })
+        .limit(4000);
+      for (const row of invRows || []) {
+        const cid = clean(row.contact_id, 40);
+        if (!cid || payByContact.has(cid)) continue;
+        const hint = clean(row.payment_method_hint, 40);
+        if (!hint || hint === "la_funded") continue;
+        payByContact.set(cid, classifyPay(hint));
+      }
+    }
+
+    for (const raw of (data || []) as ContactRow[]) {
+      const email = String(raw.email || "").trim();
+      const cid = clean(raw.contact_id, 40);
+      let pay = cid ? payByContact.get(cid) : undefined;
+      if (!pay || pay === "unknown") pay = classifyPay(raw.payment_method_label);
+      upsertRecipient({
+        email,
+        parentName: String(raw.parent_display || "").trim(),
+        child: String(raw.child_display || "").trim(),
+        mobile: String(raw.mobile || "").trim(),
+        contactId: cid,
+        inClass: raw.in_class === true,
+        onWaitingList: raw.on_waiting_list === true,
+        payLabel: pay,
+      });
+    }
+  }
+
+  /** Verified booking-portal leads (OTP done) — e.g. Rawda Said before enrolment. */
+  if (includeEnquiries) {
+    const { data: leads, error: leadErr } = await admin
+      .from("portal_booking_leads")
+      .select("parent_name, email, mobile, email_verified_at, booking_status, last_activity_at")
+      .not("email_verified_at", "is", null)
+      .order("last_activity_at", { ascending: false })
+      .limit(2000);
+    if (leadErr) {
+      console.error("[portal-parent-broadcast-recipients] leads", leadErr.message);
+    } else {
+      for (const lead of leads || []) {
+        upsertRecipient({
+          email: String(lead.email || "").trim(),
+          parentName: String(lead.parent_name || "").trim(),
+          mobile: String(lead.mobile || "").trim(),
+          listKindHint: "enquiry",
+        });
+      }
+    }
   }
 
   const recipients = Array.from(byInbox.values())
@@ -259,6 +316,7 @@ Deno.serve(async (req) => {
       if (r.onWaitingList && !r.inClass) listKind = "waiting_list";
       else if (r.inClass && r.onWaitingList) listKind = "in_class_and_waiting";
       else if (r.inClass) listKind = "in_class";
+      else if (!r.inClass && !r.onWaitingList) listKind = "enquiry";
       return {
         email: r.email,
         parentName: r.parentName || r.children[0] || r.email,
@@ -284,5 +342,6 @@ Deno.serve(async (req) => {
     withBank: recipients.filter((r) => r.paymentMethod === "bank").length,
     withGocardless: recipients.filter((r) => r.paymentMethod === "gocardless").length,
     waitingList: recipients.filter((r) => r.onWaitingList).length,
+    enquiries: recipients.filter((r) => r.listKind === "enquiry").length,
   });
 });

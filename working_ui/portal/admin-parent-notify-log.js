@@ -262,10 +262,15 @@
     } catch (_e) {}
   }
 
+  function waOutboundCountsAsReply(status) {
+    var st = String(status || "").toLowerCase();
+    return st === "sent" || st === "delivered" || st === "read";
+  }
+
   function isThreadUnread(t) {
     if (!t || t.channel !== "whatsapp" || !t.hasInbound || !t.lastInboundAt) return false;
-    // Staff already messaged after the parent's last reply — not waiting on you.
-    if (t.lastOutboundAt && String(t.lastOutboundAt) >= String(t.lastInboundAt)) return false;
+    // Only a successful club WhatsApp reply clears unread — failed API sends must not.
+    if (t.lastOutboundOkAt && String(t.lastOutboundOkAt) >= String(t.lastInboundAt)) return false;
     var seen = readSeenMap()[t.key] || "";
     return String(t.lastInboundAt) > seen;
   }
@@ -1107,6 +1112,7 @@
           lastInboundId: "",
           lastInboundAt: "",
           lastOutboundAt: "",
+          lastOutboundOkAt: "",
           lastInboundWaId: "",
         };
       }
@@ -1174,6 +1180,9 @@
       });
       var outAt = String(row.created_at || "");
       if (outAt > wt.lastOutboundAt) wt.lastOutboundAt = outAt;
+      if (waOutboundCountsAsReply(row.whatsapp_status) && outAt > wt.lastOutboundOkAt) {
+        wt.lastOutboundOkAt = outAt;
+      }
       var pname = String(row.parent_name || "").trim();
       var cname = String(row.client_display || "").trim();
       var ovOut = knownWaThreadOverride(wkey);
@@ -2070,6 +2079,9 @@
         " · latest first";
       countEl.classList.toggle("portal-pnlog-count--has-unread", unreadCount > 0);
     }
+    try {
+      global.dispatchEvent(new CustomEvent("portal:family-msg-seen"));
+    } catch (_badgeEv) {}
 
     if (state.selectedKey && !findThread(state.selectedKey)) {
       // Keep selection if filtered out of list but still in full threads.
@@ -2924,6 +2936,14 @@
     client = client || (cfg.getClient && cfg.getClient());
     if (!client || typeof client.from !== "function") return 0;
     try {
+      /* Prefer the same thread model as the inbox once it has loaded. */
+      if (state.threads && state.threads.length) {
+        var fromThreads = 0;
+        state.threads.forEach(function (t) {
+          if (isThreadUnread(t)) fromThreads += 1;
+        });
+        return fromThreads;
+      }
       var res = await client
         .from("portal_parent_whatsapp_inbound")
         .select("id, from_phone, created_at")
@@ -2947,6 +2967,7 @@
         (outRes.data || []).forEach(function (r) {
           var ch = String((r && r.channel) || "").toLowerCase();
           if (ch !== "whatsapp" && ch !== "both") return;
+          if (!waOutboundCountsAsReply(r && r.whatsapp_status)) return;
           var pk = phoneMatchKey(r && r.parent_phone) || phoneDigits(r && r.parent_phone);
           if (!pk) return;
           var at = String((r && r.created_at) || "");
