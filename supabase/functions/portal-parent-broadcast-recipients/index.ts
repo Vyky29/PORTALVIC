@@ -3,9 +3,15 @@
 // Admin-only: returns the de-duplicated list of parent/carer inboxes for a
 // bulk broadcast (e.g. the WhatsApp contact-number change email).
 //
+// POST JSON (optional):
+//   { audience?: "in_class" | "waiting_list" | "all" }
+//     in_class     — default; families currently in class
+//     waiting_list — on_waiting_list = true (prospects / not yet placed)
+//     all          — both (deduped by email)
+//
 // One row per email inbox: children names are aggregated, a parent display
 // name is chosen, and the first mobile on file (if any) is returned. The demo
-// row and out-of-class contacts are excluded. No OTP/session PII is returned.
+// row is excluded. No OTP/session PII is returned.
 // Also returns a best-effort paymentMethod: bank | gocardless | other | unknown
 // (re-enrol → contact label → latest invoice hint).
 
@@ -19,6 +25,8 @@ import {
 const DEMO_EMAIL = "victor.matilla.demo@clubsensational.org";
 const REENROL_YEAR = "2026-27";
 
+type Audience = "in_class" | "waiting_list" | "all";
+
 type ContactRow = {
   contact_id: string | null;
   email: string | null;
@@ -27,6 +35,7 @@ type ContactRow = {
   child_display: string | null;
   mobile: string | null;
   in_class: boolean | null;
+  on_waiting_list: boolean | null;
   payment_method_label: string | null;
 };
 
@@ -40,10 +49,19 @@ type Recipient = {
   hasMobile: boolean;
   contactIds: string[];
   payChannels: Set<PayChannel>;
+  inClass: boolean;
+  onWaitingList: boolean;
 };
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function parseAudience(raw: unknown): Audience {
+  const s = String(raw ?? "").trim().toLowerCase();
+  if (s === "waiting_list" || s === "waitlist" || s === "waiting") return "waiting_list";
+  if (s === "all") return "all";
+  return "in_class";
 }
 
 function classifyPay(raw: unknown): PayChannel {
@@ -92,8 +110,8 @@ function reenrolPayCode(payload: unknown): string {
   const c2627 = (funding && funding.choices_2627 && typeof funding.choices_2627 === "object")
     ? funding.choices_2627 as Record<string, unknown>
     : (p.choices_2627 && typeof p.choices_2627 === "object")
-      ? p.choices_2627 as Record<string, unknown>
-      : null;
+    ? p.choices_2627 as Record<string, unknown>
+    : null;
   return clean(
     c2627?.payment_method_code ||
       funding?.payment_method_code ||
@@ -116,17 +134,33 @@ Deno.serve(async (req) => {
   const serviceRole = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "").trim();
   if (!baseUrl || !serviceRole) return portalAdminJson(500, { ok: false, error: "server_misconfigured" });
 
+  let body: Record<string, unknown> = {};
+  try {
+    body = (await req.json()) as Record<string, unknown>;
+  } catch {
+    body = {};
+  }
+  const audience = parseAudience(body.audience);
+
   const admin = createClient(baseUrl, serviceRole, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const { data, error } = await admin
+  let query = admin
     .from("portal_parent_contacts")
     .select(
-      "contact_id, email, email_norm, parent_display, child_display, mobile, in_class, payment_method_label",
+      "contact_id, email, email_norm, parent_display, child_display, mobile, in_class, on_waiting_list, payment_method_label",
     )
-    .eq("in_class", true)
     .limit(5000);
+
+  if (audience === "in_class") {
+    query = query.eq("in_class", true);
+  } else if (audience === "waiting_list") {
+    query = query.eq("on_waiting_list", true);
+  }
+  // audience === "all" → no class/wait filter
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("[portal-parent-broadcast-recipients]", error.message);
@@ -191,6 +225,8 @@ Deno.serve(async (req) => {
         hasMobile: false,
         contactIds: [],
         payChannels: new Set(),
+        inClass: false,
+        onWaitingList: false,
       };
       byInbox.set(norm, rec);
     }
@@ -205,6 +241,8 @@ Deno.serve(async (req) => {
     }
     const cid = clean(raw.contact_id, 40);
     if (cid && rec.contactIds.indexOf(cid) < 0) rec.contactIds.push(cid);
+    if (raw.in_class === true) rec.inClass = true;
+    if (raw.on_waiting_list === true) rec.onWaitingList = true;
 
     let ch = cid ? payByContact.get(cid) : undefined;
     if (!ch || ch === "unknown") {
@@ -217,6 +255,10 @@ Deno.serve(async (req) => {
   const recipients = Array.from(byInbox.values())
     .map((r) => {
       const paymentMethod = pickChannel(r.payChannels);
+      let listKind = "other";
+      if (r.onWaitingList && !r.inClass) listKind = "waiting_list";
+      else if (r.inClass && r.onWaitingList) listKind = "in_class_and_waiting";
+      else if (r.inClass) listKind = "in_class";
       return {
         email: r.email,
         parentName: r.parentName || r.children[0] || r.email,
@@ -225,17 +267,22 @@ Deno.serve(async (req) => {
         hasMobile: r.hasMobile,
         paymentMethod,
         paymentMethodLabel: payLabel(paymentMethod),
+        inClass: r.inClass,
+        onWaitingList: r.onWaitingList,
+        listKind,
       };
     })
     .sort((a, b) => a.parentName.localeCompare(b.parentName));
 
   return portalAdminJson(200, {
     ok: true,
+    audience,
     recipients,
     count: recipients.length,
     withMobile: recipients.filter((r) => r.hasMobile).length,
     emailOnly: recipients.filter((r) => !r.hasMobile).length,
     withBank: recipients.filter((r) => r.paymentMethod === "bank").length,
     withGocardless: recipients.filter((r) => r.paymentMethod === "gocardless").length,
+    waitingList: recipients.filter((r) => r.onWaitingList).length,
   });
 });
