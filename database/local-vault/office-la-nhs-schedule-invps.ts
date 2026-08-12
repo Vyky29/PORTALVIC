@@ -2,9 +2,11 @@
  * Office funder INV-Ps for re-enrolments 2026/27 — downloadable like Crash (PDF / Hide / Mark paid).
  *
  * Schedules by funder (client_payments.sheet = LA · data.Funder):
- *   - NHS / NHS·SBS / NHS (ILA)  → 11 monthly (Sep 2026 – Jul 2027)
- *   - Ealing                     → 1 whole-year invoice
- *   - H&F                        → 3 term + 11 monthly (office picks which to send)
+ *   - NHS / NHS·SBS / NHS (ILA)     → 11 monthly INV-Ps (Sep 2026 – Jul 2027)
+ *                                    Only September shared (ready); later months hidden
+ *                                    until due (arrears — September paid in October).
+ *   - Ealing Local Authority         → 1 annual INV-P with 11 instalments (Sep → Jul)
+ *   - H&F (Hammersmith & Fulham)     → 11 monthly INV-Ps (same share rule as NHS)
  *
  * Parent hub never lists la_funded. share_status = ready so admin matches private cards.
  *
@@ -332,20 +334,7 @@ for (const p of packs) {
       marker: `${READY_ROOT}_ealing_year_${p.clientKey}`,
     });
   } else if (p.bucket === "hf") {
-    for (const t of TERMS) {
-      const amount = p.totals[t.term];
-      if (amount <= 0) continue;
-      jobs.push({
-        pack: p,
-        kind: "term",
-        term: t.term,
-        label: t.label,
-        amount,
-        dueIso: t.dueIso,
-        monthYm: null,
-        marker: `${READY_ROOT}_hf_term_${t.term}_${p.clientKey}`,
-      });
-    }
+    // H&F Local Authority: one INV-P per month (Sep–Jul), same as NHS.
     const amounts = splitEqualAcrossMonths(p.totals.annual, MONTHS_11.length);
     for (let i = 0; i < MONTHS_11.length; i++) {
       const m = MONTHS_11[i];
