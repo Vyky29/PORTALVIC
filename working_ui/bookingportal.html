@@ -342,18 +342,19 @@
       background: var(--white);
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      padding: 20px 14px 16px;
+      padding: 0 0 16px;
       min-width: 0;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 10px;
+      align-items: stretch;
+      gap: 0;
       box-shadow: 0 6px 18px rgba(23, 50, 71, 0.04);
       width: 100%;
       text-align: center;
       cursor: pointer;
       font: inherit;
       color: inherit;
+      overflow: hidden;
       transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
     }
     .svc-card:hover {
@@ -373,22 +374,50 @@
       .svc-card { transition: none; }
       .svc-card:hover { transform: none; }
     }
+    .svc-card__media {
+      position: relative;
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      min-height: 0;
+      overflow: hidden;
+      background: linear-gradient(145deg, #d7ebf5, #eef4f8 55%, #f7fafc);
+    }
+    .svc-card__media img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+    .svc-card__body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 14px 4px;
+      min-width: 0;
+    }
     .svc__icon {
       flex: 0 0 auto;
-      width: 56px;
-      height: 56px;
+      width: 44px;
+      height: 44px;
+      margin-top: -30px;
+      border: 2px solid #fff;
+      box-shadow: 0 6px 14px rgba(23, 50, 71, 0.12);
+      position: relative;
+      z-index: 1;
       border-radius: 16px;
       display: grid;
       place-items: center;
-      margin: 0 auto;
       background: var(--blueSoft);
       color: var(--blueDeep);
     }
     .svc__icon svg {
-      width: 28px !important;
-      height: 28px !important;
-      max-width: 28px !important;
-      max-height: 28px !important;
+      width: 22px !important;
+      height: 22px !important;
+      max-width: 22px !important;
+      max-height: 22px !important;
     }
     .svc__icon--climb { background: #fff6e5; color: #b7791f; }
     .svc__icon--physical { background: #f3e8ff; color: #7c3aed; }
@@ -1890,6 +1919,17 @@
     return { svg: ICONS.swim, cls: "" };
   }
 
+  function servicePhoto(id) {
+    var base = "/portal/booking-photos/";
+    if (id === "climbing") return base + "climbing.jpg";
+    if (id === "physical") return base + "physical.webp";
+    if (id === "multi") return base + "multi.jpg";
+    if (id === "bespoke") return base + "bespoke.jpg";
+    if (id === "day_centre") return base + "daycentre.jpg";
+    if (id === "intensive") return base + "intensive.jpg";
+    return base + "aquatic.jpg";
+  }
+
   function fillSelect(sel, values, allLabel) {
     var keep = sel.value;
     sel.innerHTML = '<option value="">' + esc(allLabel) + "</option>";
@@ -2013,6 +2053,12 @@
       '" aria-controls="timetable-' +
       esc(s.id) +
       '">' +
+      '<span class="svc-card__media" aria-hidden="true">' +
+      '<img src="' +
+      esc(servicePhoto(s.id)) +
+      '" alt="" loading="lazy" decoding="async" width="640" height="400" />' +
+      "</span>" +
+      '<div class="svc-card__body">' +
       '<div class="svc__icon ' +
       pack.cls +
       '">' +
@@ -2035,6 +2081,7 @@
       " " +
       ICONS.arrow +
       "</span>" +
+      "</div>" +
       "</button>"
     );
   }
