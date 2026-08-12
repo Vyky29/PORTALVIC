@@ -184,6 +184,15 @@ Deno.serve(async (req) => {
     return portalAdminJson(404, { ok: false, error: "not_found" });
   }
 
+  const formType = String(doc.form_type || "").toLowerCase();
+  if (formType !== "client_registration" && formType !== "climbing_registration") {
+    return portalAdminJson(400, {
+      ok: false,
+      error: "not_a_new_client_registration",
+      hint: "Accept / finish-booking is only for Client registration forms. Annual consents are under Documents → Parent consents.",
+    });
+  }
+
   if (action === "resend_finish_link") {
     if (String(doc.status || "").toLowerCase() !== "reviewed") {
       return portalAdminJson(400, { ok: false, error: "not_accepted_yet" });

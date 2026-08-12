@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
     return portalAdminJson(500, { ok: false, error: "server_misconfigured" });
   }
 
-  let body: { participant_name?: string; limit?: number } = {};
+  let body: { participant_name?: string; limit?: number; include_consents?: boolean } = {};
   try {
     body = await req.json();
   } catch {
@@ -60,6 +60,8 @@ Deno.serve(async (req) => {
 
   const participantFilter = String(body.participant_name || "").trim();
   const limit = Math.min(Math.max(Number(body.limit) || 200, 1), 500);
+  /* Default: new-client registration forms only (not annual_consents — those live under Parent consents). */
+  const includeConsents = body.include_consents === true;
 
   const admin = createClient(baseUrl, serviceRole, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -71,7 +73,11 @@ Deno.serve(async (req) => {
       "id, form_type, participant_name, participant_dob, parent_name, parent_email, parent_phone, pdf_storage_path, photo_storage_path, payload_json, status, submitted_at",
     )
     .order("submitted_at", { ascending: false })
-    .limit(limit);
+    .limit(includeConsents ? limit : Math.min(limit * 2, 500));
+
+  if (!includeConsents) {
+    query = query.in("form_type", ["client_registration", "climbing_registration"]);
+  }
 
   const { data, error } = await query;
   if (error) {
@@ -93,8 +99,10 @@ Deno.serve(async (req) => {
       })
     : rows;
 
+  const capped = filtered.slice(0, limit);
+
   const out: DocRow[] = [];
-  for (const row of filtered) {
+  for (const row of capped) {
     let pdfSigned: string | null = null;
     let photoSigned: string | null = null;
     if (row.pdf_storage_path) {
@@ -119,6 +127,10 @@ Deno.serve(async (req) => {
   return portalAdminJson(200, {
     ok: true,
     documents: out,
-    meta: { count: out.length, filtered: Boolean(filterNorm) },
+    meta: {
+      count: out.length,
+      filtered: Boolean(filterNorm),
+      form_scope: includeConsents ? "all" : "registration_only",
+    },
   });
 });

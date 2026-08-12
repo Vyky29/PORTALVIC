@@ -25,6 +25,11 @@
     client_registration: 'Client registration'
   };
 
+  var REGISTRATION_TYPES = {
+    client_registration: true,
+    climbing_registration: true
+  };
+
   function configure(options) {
     if (!options) return;
     if (options.esc) cfg.esc = options.esc;
@@ -125,7 +130,9 @@
       '<th>Submitted</th><th>Form</th><th>Participant</th><th>Parent</th><th>Requested slot</th><th>Status</th><th>PDF</th><th>Photo</th><th>Review</th>' +
       '</tr></thead><tbody>' +
       docs.map(function (d) {
-        var formLab = FORM_LABELS[d.form_type] || d.form_type || '—';
+        var formType = String(d.form_type || '').toLowerCase();
+        var isReg = !!REGISTRATION_TYPES[formType];
+        var formLab = FORM_LABELS[formType] || d.form_type || '—';
         var parentLine = [d.parent_name, d.parent_email].filter(Boolean).join(' · ') || '—';
         var pdfLink = d.pdf_signed_url
           ? '<button type="button" class="btn btn--pri btn--sm portal-pax-doc-open" data-url="' +
@@ -136,7 +143,7 @@
           ? '<button type="button" class="btn btn--ghost btn--sm portal-pax-doc-open" data-url="' +
             esc(d.photo_signed_url) +
             '">View photo</button>'
-          : '—';
+          : '<span class="muted">No photo</span>';
         var slotLine = '—';
         try {
           var br = d.payload_json && d.payload_json.booking_request;
@@ -153,20 +160,27 @@
           slotLine = '—';
         }
         var reviewed = String(d.status || '').toLowerCase() === 'reviewed';
-        var reviewCell = reviewed
-          ? '<div class="toolbar" style="margin:0;flex-wrap:wrap;gap:6px">' +
+        var reviewCell;
+        if (!isReg) {
+          reviewCell = '<span class="muted" style="font-size:12px">Consents — use Parent consents</span>';
+        } else if (reviewed) {
+          reviewCell =
+            '<div class="toolbar" style="margin:0;flex-wrap:wrap;gap:6px">' +
             '<span class="chip chip--ok">Accepted</span>' +
             '<button type="button" class="btn btn--ghost btn--sm portal-pax-doc-resend" data-id="' +
             esc(d.id) +
             '" data-name="' +
             esc(d.participant_name || '') +
             '">Resend finish link</button>' +
-            '</div>'
-          : '<button type="button" class="btn btn--sec btn--sm portal-pax-doc-accept" data-id="' +
+            '</div>';
+        } else {
+          reviewCell =
+            '<button type="button" class="btn btn--sec btn--sm portal-pax-doc-accept" data-id="' +
             esc(d.id) +
             '" data-name="' +
             esc(d.participant_name || '') +
             '">Accept</button>';
+        }
         return (
           '<tr>' +
           '<td class="muted" style="white-space:nowrap">' + esc(formatDate(d.submitted_at)) + '</td>' +
@@ -189,9 +203,14 @@
     return (
       '<div class="portal-participant-docs-embed">' +
       '<h1 class="page-title">Participant documents</h1>' +
-      '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">New-client flow: Booking Portal slot → registration form → <strong>Accept</strong> (finish-booking link) → parent chooses funding &amp; payment and pays → parent reports paid → <strong>office marks invoice paid</strong> → Parent Portal PIN. Use <strong>Resend finish link</strong> if needed.</p>' +
+      '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">' +
+      '<strong>New clients only</strong> — Client registration forms (PDF + photo) from the Booking Portal. ' +
+      'Flow: slot → registration form → <strong>Accept</strong> (finish-booking link) → funding &amp; payment → office marks invoice paid → Parent Portal PIN. ' +
+      'Annual consents from existing families are <strong>not</strong> listed here — use <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_parent_consents">Parent consents</button>.' +
+      '</p>' +
       '<div class="toolbar" style="margin-bottom:12px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParticipantDocsRefresh">Refresh</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_parent_consents">Open Parent consents</button>' +
       '</div>' +
       '<div id="portalParticipantDocsHost"><p class="muted">Loading…</p></div>' +
       '</div>'
@@ -209,7 +228,7 @@
     var intro = participantName
       ? '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">Matched to <strong>' + esc(participantName) + '</strong> (' + esc(String((res.documents || []).length)) + ').</p>'
       : '<p class="muted" style="margin:0 0 10px">' + esc(String((res.documents || []).length)) + ' submission(s).</p>';
-    hostEl.innerHTML = intro + documentsTableHtml(res.documents, participantName ? 'No parent forms matched this participant yet.' : 'No parent forms submitted yet.');
+    hostEl.innerHTML = intro + documentsTableHtml(res.documents, participantName ? 'No registration forms matched this participant yet.' : 'No new-client registration forms yet.');
     hostEl.querySelectorAll('.portal-pax-doc-open').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var url = String(btn.getAttribute('data-url') || '')
@@ -221,6 +240,14 @@
           try {
             global.location.href = url;
           } catch (_e) {}
+        }
+      });
+    });
+    hostEl.querySelectorAll('[data-view-target]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-view-target');
+        if (id && typeof global.portalAdminSetView === 'function') {
+          global.portalAdminSetView(id);
         }
       });
     });
@@ -302,13 +329,24 @@
         void renderHost(h, '');
       });
     }
+    var root = global.document.querySelector('.portal-participant-docs-embed');
+    if (root) {
+      root.querySelectorAll('[data-view-target]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var id = b.getAttribute('data-view-target');
+          if (id && typeof global.portalAdminSetView === 'function') {
+            global.portalAdminSetView(id);
+          }
+        });
+      });
+    }
   }
 
   function workspacePanelHtml(participantName) {
     return (
       '<div class="pax-contacts-more-inner">' +
-      '<div class="card card-pad"><h3 style="margin:0 0 8px">Parent-submitted documents</h3>' +
-      '<p class="muted" style="margin:0;max-width:48rem;overflow-wrap:break-word">Climbing registration PDFs and client registration forms (with ID/face photo) sent from the public parent links on Vercel.</p></div>' +
+      '<div class="card card-pad"><h3 style="margin:0 0 8px">New-client registration</h3>' +
+      '<p class="muted" style="margin:0;max-width:48rem;overflow-wrap:break-word">Client / climbing registration PDF + photo only. Annual consents are under Documents → Parent consents.</p></div>' +
       '<div id="paxWorkspaceDocsHost" data-pax-docs-name="' + esc(participantName || '') + '"><p class="muted">Loading…</p></div>' +
       '</div>'
     );
