@@ -230,16 +230,30 @@
       : '<p class="muted" style="margin:0 0 10px">' + esc(String((res.documents || []).length)) + ' submission(s).</p>';
     hostEl.innerHTML = intro + documentsTableHtml(res.documents, participantName ? 'No registration forms matched this participant yet.' : 'No new-client registration forms yet.');
     hostEl.querySelectorAll('.portal-pax-doc-open').forEach(function (btn) {
-      btn.addEventListener('click', function () {
+      btn.addEventListener('click', function (ev) {
+        if (ev && typeof ev.preventDefault === 'function') ev.preventDefault();
+        if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
         var url = String(btn.getAttribute('data-url') || '')
           .replace(/&amp;/g, '&')
           .trim();
         if (!url) return;
-        var win = global.open(url, '_blank', 'noopener,noreferrer');
-        if (!win) {
+        /* Prefer <a target=_blank>: window.open(..., "noopener") often returns null
+           even when the tab opened, and a location.href fallback would replace this admin tab. */
+        try {
+          var a = global.document.createElement('a');
+          a.href = url;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          a.style.display = 'none';
+          global.document.body.appendChild(a);
+          a.click();
+          if (a.parentNode) a.parentNode.removeChild(a);
+        } catch (_e) {
           try {
-            global.location.href = url;
-          } catch (_e) {}
+            global.open(url, '_blank');
+          } catch (_e2) {
+            cfg.toast('Could not open document — allow pop-ups for this site.', 'err');
+          }
         }
       });
     });

@@ -346,7 +346,20 @@
     }
     if (frame) frame.src = url;
     var openBtn = document.getElementById('portalDocumentsPreviewOpen');
-    if (openBtn) openBtn.onclick = function () { window.open(url, '_blank', 'noopener,noreferrer'); };
+    if (openBtn) openBtn.onclick = function () {
+      try {
+        var a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        if (a.parentNode) a.parentNode.removeChild(a);
+      } catch (_e) {
+        try { window.open(url, '_blank'); } catch (_e2) {}
+      }
+    };
     var dlBtn = document.getElementById('portalDocumentsPreviewDownload');
     if (dlBtn) dlBtn.onclick = function () {
       var a = document.createElement('a');

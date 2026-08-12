@@ -634,7 +634,9 @@
     }
 
     host.querySelectorAll(".bk-lead-open-doc").forEach(function (btn) {
-      btn.addEventListener("click", function () {
+      btn.addEventListener("click", function (ev) {
+        if (ev && typeof ev.preventDefault === "function") ev.preventDefault();
+        if (ev && typeof ev.stopPropagation === "function") ev.stopPropagation();
         var url = String(btn.getAttribute("data-url") || "")
           .replace(/&amp;/g, "&")
           .trim();
@@ -642,9 +644,21 @@
           cfg.toast("No PDF linked for this lead yet.");
           return;
         }
-        var win = window.open(url, "_blank", "noopener,noreferrer");
-        if (!win) {
-          cfg.toast("Pop-up blocked — allow pop-ups, or use Documents → Participant documents.");
+        try {
+          var a = document.createElement("a");
+          a.href = url;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          a.style.display = "none";
+          document.body.appendChild(a);
+          a.click();
+          if (a.parentNode) a.parentNode.removeChild(a);
+        } catch (_e) {
+          try {
+            window.open(url, "_blank");
+          } catch (_e2) {
+            cfg.toast("Pop-up blocked — allow pop-ups, or use Documents → Participant documents.");
+          }
         }
       });
     });
