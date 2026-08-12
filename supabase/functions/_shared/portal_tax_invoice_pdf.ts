@@ -32,6 +32,7 @@ export type PortalInvoicePdfInput = {
     quantity: number;
     unit_price_gbp: number;
     amount_gbp: number;
+    service_key?: string | null;
   }>;
   billToName: string;
   billToLines: string[];
@@ -165,6 +166,19 @@ export function splitVat20(totalIncl: number): { net: number; vat: number; total
   const net = Math.round((total / 1.2) * 100) / 100;
   const vat = Math.round((total - net) * 100) / 100;
   return { net, vat, total };
+}
+
+/** Family / session credits: show full £ removed, not VAT-split. */
+export function isPortalCreditLineItem(line: {
+  description?: string | null;
+  service_key?: string | null;
+  amount_gbp?: number | null;
+}): boolean {
+  const key = String(line.service_key || "").trim().toUpperCase();
+  if (key === "CREDIT" || key === "CREDITS" || key === "FAMILY_CREDIT") return true;
+  const desc = String(line.description || "").trim().toLowerCase();
+  if (/^credits?\b/.test(desc)) return true;
+  return false;
 }
 
 export async function buildPortalTaxInvoicePdf(
@@ -326,10 +340,52 @@ export async function buildPortalTaxInvoicePdf(
   const qty = Number(input.quantity) > 0 ? Number(input.quantity) : 1;
   const total = Math.round(Number(input.totalGbp) * 100) / 100;
   const isExempt = input.vatMode === "exempt";
-  const split = isExempt
-    ? { net: total, vat: 0, total }
-    : splitVat20(total);
-  const unitNet = Math.round((split.net / qty) * 10000) / 10000;
+  const vatLabel = isExempt ? "Exempt" : "Incl. 20%";
+  const rawLineItems = (input.lineItems || [])
+    .map((line) => ({
+      description: pdfSafeText(line?.description || "Service"),
+      detail: pdfSafeText(line?.detail || ""),
+      dates: pdfSafeText(line?.dates || ""),
+      quantity: Number(line?.quantity),
+      unit_price_gbp: Number(line?.unit_price_gbp),
+      amount_gbp: Number(line?.amount_gbp),
+      service_key: String(line?.service_key || ""),
+      isCredit: isPortalCreditLineItem(line || {}),
+    }))
+    .filter(
+      (line) =>
+        line.description &&
+        Number.isFinite(line.quantity) &&
+        line.quantity > 0 &&
+        Number.isFinite(line.amount_gbp) &&
+        line.amount_gbp !== 0,
+    );
+
+  let taxableGross = 0;
+  let creditGross = 0;
+  for (const line of rawLineItems) {
+    if (line.isCredit) creditGross = roundMoney(creditGross + line.amount_gbp);
+    else taxableGross = roundMoney(taxableGross + line.amount_gbp);
+  }
+  const splitBase =
+    rawLineItems.length > 0
+      ? isExempt
+        ? taxableGross
+        : taxableGross
+      : total;
+  const taxSplit = isExempt
+    ? { net: roundMoney(splitBase), vat: 0, total: roundMoney(splitBase) }
+    : splitVat20(splitBase);
+  /* Credits stay outside VAT — parent sees the £ taken off the session. */
+  const split = {
+    net: roundMoney(taxSplit.net + creditGross),
+    vat: taxSplit.vat,
+    total: rawLineItems.length > 0
+      ? roundMoney(taxableGross + creditGross)
+      : total,
+  };
+  const unitNet =
+    qty > 0 ? Math.round((taxSplit.net / qty) * 10000) / 10000 : taxSplit.net;
 
   // Air under header line before description body
   y -= 28;
@@ -357,32 +413,23 @@ export async function buildPortalTaxInvoicePdf(
     y -= 12;
   }
   const descEndY = y;
-  const vatLabel = isExempt ? "Exempt" : "Incl. 20%";
-  const rawLineItems = (input.lineItems || [])
-    .map((line) => ({
-      description: pdfSafeText(line?.description || "Service"),
-      detail: pdfSafeText(line?.detail || ""),
-      dates: pdfSafeText(line?.dates || ""),
-      quantity: Number(line?.quantity),
-      unit_price_gbp: Number(line?.unit_price_gbp),
-      amount_gbp: Number(line?.amount_gbp),
-    }))
-    .filter(
-      (line) =>
-        line.description &&
-        Number.isFinite(line.quantity) &&
-        line.quantity > 0 &&
-        Number.isFinite(line.amount_gbp) &&
-        line.amount_gbp !== 0,
-    );
 
   if (rawLineItems.length) {
     y = descEndY - 4;
     for (const line of rawLineItems.slice(0, 12)) {
-      const rowSplit = isExempt
+      const rowIsCredit = !!line.isCredit;
+      const rowSplit = rowIsCredit || isExempt
         ? { net: roundMoney(line.amount_gbp), vat: 0, total: roundMoney(line.amount_gbp) }
         : splitVat20(line.amount_gbp);
-      const rowUnitNet = round4Money(rowSplit.net / line.quantity);
+      const rowUnit =
+        rowIsCredit || isExempt
+          ? round4Money(
+            Number.isFinite(line.unit_price_gbp) && line.unit_price_gbp !== 0
+              ? line.unit_price_gbp
+              : line.amount_gbp / line.quantity,
+          )
+          : round4Money(rowSplit.net / line.quantity);
+      const rowVatLabel = rowIsCredit ? "No VAT" : vatLabel;
       const rowDesc = wrapPdfLines(line.description, 34).slice(0, 3);
       const rowDetail = line.detail ? wrapPdfLines(line.detail, 40).slice(0, 2) : [];
       const rowDates = line.dates ? wrapPdfLines(line.dates, 55).slice(0, 2) : [];
@@ -406,8 +453,8 @@ export async function buildPortalTaxInvoicePdf(
       // Keep all values on the same baseline as the service name.
       const rowValueY = rowTop;
       drawCentered(money(line.quantity), colQtyX, colQtyW, rowValueY, 8.5, font);
-      drawCentered(money(rowUnitNet), colUnitX, colUnitW, rowValueY, 8.5, font);
-      drawCentered(vatLabel, colVatX, colVatW, rowValueY, 8.5, font);
+      drawCentered(money(rowUnit), colUnitX, colUnitW, rowValueY, 8.5, font);
+      drawCentered(rowVatLabel, colVatX, colVatW, rowValueY, 8.5, font);
       drawCentered(money(rowSplit.net), colAmtX, colAmtW, rowValueY, 8.5, font);
       y = rowTop - rowHeight;
     }

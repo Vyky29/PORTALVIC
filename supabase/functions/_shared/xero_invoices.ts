@@ -40,6 +40,8 @@ export type XeroInvoicePushInput = {
     quantity: number;
     unitAmount: number;
     itemCode?: string | null;
+    /** Session / family credit lines — no VAT. */
+    taxExempt?: boolean;
   }>;
 };
 
@@ -288,6 +290,7 @@ export async function xeroCreateAccrecInvoice(
           quantity: Number(ln.quantity) > 0 ? round2(Number(ln.quantity)) : 1,
           unitAmount: round4(Number(ln.unitAmount)),
           itemCode: cleanXero(ln.itemCode, 80) || null,
+          taxExempt: !!ln.taxExempt,
         }))
         .filter((ln) => Number.isFinite(ln.unitAmount) && ln.unitAmount !== 0)
     : [];
@@ -298,8 +301,12 @@ export async function xeroCreateAccrecInvoice(
           Description: ln.description,
           Quantity: ln.quantity,
           UnitAmount: ln.unitAmount,
-          AccountCode: salesCode,
-          TaxType: taxType,
+          AccountCode: ln.taxExempt
+            ? (cleanXero(Deno.env.get("XERO_SALES_ACCOUNT_CODE_EXEMPT"), 40) || "202")
+            : salesCode,
+          TaxType: ln.taxExempt
+            ? (cleanXero(Deno.env.get("XERO_TAX_TYPE_EXEMPT"), 40) || "EXEMPTOUTPUT")
+            : taxType,
           ...(ln.itemCode ? { ItemCode: ln.itemCode } : {}),
         }))
       : [

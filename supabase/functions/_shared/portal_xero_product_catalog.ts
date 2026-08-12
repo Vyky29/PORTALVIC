@@ -3,6 +3,7 @@
  */
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import type { PortalInvoiceVatMode } from "./portal_tax_invoice_pdf.ts";
+import { isPortalCreditLineItem } from "./portal_tax_invoice_pdf.ts";
 import {
   formatServiceTypeLabel,
   formatTimeSlotLabel,
@@ -583,6 +584,8 @@ export function buildXeroPushLines(input: {
   quantity: number;
   unitAmount: number;
   itemCode: string | null;
+  /** Credits: no VAT so parents / Xero see the session £ removed. */
+  taxExempt?: boolean;
 }> {
   const vatMode = cleanLine(input.vatMode, 20).toLowerCase() || "vat_20";
   const funded = vatMode === "exempt";
@@ -670,6 +673,7 @@ export function buildXeroPushLines(input: {
       quantity: ln.quantity,
       unitAmount: ln.unit_price_gbp,
       itemCode: ln.xero_item_code,
+      taxExempt: isPortalCreditLineItem(ln),
     };
   });
 }
