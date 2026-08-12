@@ -527,11 +527,11 @@
     if (/schedule:monthly_11|_hf_month_/.test(hay)) {
       return 'Monthly ×11 (Sep–Jul)';
     }
-    if (/schedule:year_1_bacs_12|_ealing_year_/.test(hay)) {
+    if (/schedule:year_1_bacs_12/.test(hay)) {
       return 'Year · 12 BACS';
     }
-    if (/schedule:year_1_monthly_11|_nhs_year_/.test(hay)) {
-      return 'Year · monthly ×11';
+    if (/schedule:year_1_monthly_11|_nhs_year_|_ealing_year_|ealing.*11|11 instalments/.test(hay)) {
+      return 'Year · 11 instalments (Sep–Jul)';
     }
     if (/schedule:year_1/.test(hay)) {
       return 'One-off payment (year)';
