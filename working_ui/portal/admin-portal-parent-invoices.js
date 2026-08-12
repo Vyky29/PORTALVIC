@@ -511,6 +511,49 @@
     });
   }
 
+  function instalmentMatchKey(due, amount) {
+    var d = String(due || '').slice(0, 10);
+    var a = Math.round((Number(amount) || 0) * 100) / 100;
+    return d + '|' + a.toFixed(2);
+  }
+
+  /**
+   * GoCardless monthly “slice” INV-Ps (Oct/Nov/…) that only exist so GC can collect
+   * each instalment, while the real term invoice already holds the full schedule.
+   * Hide from office counts/cards so TERMLY shows 1 invoice, AUTO year shows 1 per term.
+   */
+  function isScheduleShadowInvoice(inv, siblings) {
+    if (!inv || inv.created_via === 'la_office_auto') return false;
+    var pay = String(inv.payment_status || '').toLowerCase();
+    if (pay === 'void' || pay === 'paid') return false;
+    if (scheduleRows(inv).length > 0) return false;
+    var due = String(inv.due_date || inv.next_instalment_due || '').slice(0, 10);
+    var amt = Number(inv.amount_gbp) || 0;
+    if (!due || !(amt > 0.009)) return false;
+    var key = instalmentMatchKey(due, amt);
+    var id = String(inv.id || '');
+    var list = siblings || [];
+    for (var i = 0; i < list.length; i++) {
+      var sib = list[i];
+      if (String(sib.id || '') === id) continue;
+      var sched = scheduleRows(sib);
+      if (sched.length < 2) continue;
+      for (var j = 0; j < sched.length; j++) {
+        if (instalmentMatchKey(sched[j].due_date, sched[j].amount_gbp) === key) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  function canonicalInvoices(invoices) {
+    var list = invoices || [];
+    return list.filter(function (inv) {
+      return !isScheduleShadowInvoice(inv, list);
+    });
+  }
+
   var OWN_WAY_TITLE =
     'Own way — pay on your own dates; always keep 2 sessions prepaid; remind when buffer drops; £50 admin fee per term';
 
@@ -1074,7 +1117,7 @@
       var invIds = Object.create(null);
       var invN = 0;
       participants.forEach(function (g) {
-        (g.invoices || []).forEach(function (inv) {
+        canonicalInvoices(g.invoices || []).forEach(function (inv) {
           var id = String(inv.id || inv.invoice_number || '');
           if (!id || invIds[id]) return;
           invIds[id] = 1;
@@ -1154,7 +1197,7 @@
     var hidden = 0;
     var xeroFail = 0;
     var xeroMissing = 0;
-    (invoices || []).forEach(function (inv) {
+    (canonicalInvoices(invoices) || []).forEach(function (inv) {
       /* Office autos have no family payment status chip. */
       if (inv.created_via === 'la_office_auto') return;
       var pay = String(inv.payment_status || 'unpaid');
@@ -1558,7 +1601,7 @@
   }
 
   function participantAccordionHtml(group) {
-    var invoices = sortInvoicesForDisplay(group.invoices || []);
+    var invoices = sortInvoicesForDisplay(canonicalInvoices(group.invoices || []));
     var realInvoices = invoices.filter(function (inv) {
       return inv.created_via !== 'la_office_auto';
     });
@@ -1671,13 +1714,18 @@
     var dayKey = dayGroup.day_key || '';
     var participants = dayGroup.participants || [];
     var paxN = dayGroup.participant_count != null ? dayGroup.participant_count : participants.length;
-    var invN = dayGroup.invoice_count != null ? dayGroup.invoice_count : 0;
     var allInvs = [];
     participants.forEach(function (g) {
-      (g.invoices || []).forEach(function (inv) {
+      canonicalInvoices(g.invoices || []).forEach(function (inv) {
         allInvs.push(inv);
       });
     });
+    var invN =
+      dayGroup.invoice_count != null
+        ? dayGroup.invoice_count
+        : allInvs.filter(function (inv) {
+            return inv.created_via !== 'la_office_auto';
+          }).length;
     var sub =
       'Re-enrolled · ' +
       String(paxN) +
