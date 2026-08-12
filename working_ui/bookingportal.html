@@ -1815,7 +1815,7 @@
     </div>
   </div>
 
-  <script src="/portal/portal_booking_offer.js?v=20260812-bespoke-office"></script>
+  <script src="/portal/portal_booking_offer.js?v=20260812-bespoke-short"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
   <script src="/portal/portal_booking_lead_gate.js?v=20260812-preview-5s-clear"></script>
   <script>
@@ -2041,36 +2041,36 @@
 
   function officeEnquireInfoHtml(s) {
     var isDc = s && s.id === "day_centre";
-    var hours = String(s.infoHours || "").trim();
-    if (!hours) {
-      hours = isDc
-        ? "Open Monday to Friday, 11am – 4pm at SwimFarm."
-        : "Times and venues are agreed with the office after we meet your child.";
+    /* Bespoke: short parent copy only — no internal “meet your child / what happens next” notes. */
+    if (!isDc) {
+      return (
+        '<div class="dc-info">' +
+        '<p class="dc-info__lead">' +
+        "Tailored sessions arranged with the office. We do not publish Bespoke slots for online booking." +
+        "</p>" +
+        '<div class="dc-info__actions">' +
+        '<button type="button" class="btn btn--wait" data-dc-enquire="' +
+        esc(s.id) +
+        '">' +
+        ICONS.mail +
+        " Enquire with the office</button>" +
+        "</div></div>"
+      );
     }
+    var hours = String(s.infoHours || "").trim() || "Open Monday to Friday, 11am – 4pm at SwimFarm.";
     var acts = Array.isArray(s.infoActivities) ? s.infoActivities : [];
     if (!acts.length) {
-      acts = isDc
-        ? [
-            "Table work (maths, puzzles, handwriting)",
-            "Sensory room and quiet regulation",
-            "Gym and trampoline",
-            "Swimming / pool time",
-            "Lunch and life skills",
-            "Relaxation",
-            "Music and karaoke",
-            "Community trips (cafe, park, shops) when staffing allows",
-          ]
-        : [
-            "Office review of goals, support needs, and funding",
-            "Meet / assess the participant before offering a place",
-            "Tailored session plan (activity, ratio, venue)",
-            "A suitable slot from our available timetable — not published for self-booking",
-          ];
+      acts = [
+        "Table work (maths, puzzles, handwriting)",
+        "Sensory room and quiet regulation",
+        "Gym and trampoline",
+        "Swimming / pool time",
+        "Lunch and life skills",
+        "Relaxation",
+        "Music and karaoke",
+        "Community trips (cafe, park, shops) when staffing allows",
+      ];
     }
-    var lead = isDc
-      ? "We do not offer online slots for Day Centre. Places are arranged with the office so we can talk through the day, funding, and the support your child needs."
-      : "We do not publish Bespoke slots online. After your enquiry, the office reviews the participant and only then agrees what we can offer and which available time fits — not a self-book timetable.";
-    var listLabel = isDc ? "A typical day may include" : "What happens next";
     return (
       '<div class="dc-info">' +
       '<p class="dc-info__hours">' +
@@ -2079,11 +2079,9 @@
       esc(hours) +
       "</p>" +
       '<p class="dc-info__lead">' +
-      lead +
+      "We do not offer online slots for Day Centre. Places are arranged with the office so we can talk through the day, funding, and the support your child needs." +
       "</p>" +
-      '<p class="dc-info__label">' +
-      listLabel +
-      "</p>" +
+      '<p class="dc-info__label">A typical day may include</p>' +
       '<ul class="dc-info__list">' +
       acts
         .map(function (a) {
@@ -2483,7 +2481,7 @@
             s.id === "day_centre"
               ? "Tue 1 September 2026 – Fri 18 December 2026 · Mon–Fri 11am–4pm"
               : s.id === "bespoke"
-                ? "Arranged with the office after assessment · times from our available timetable"
+                ? "Contact the office to enquire"
                 : mock.TERM_RANGE || "Sat 5 September 2026 – Fri 18 December 2026"
           ) +
           "</p></div>" +

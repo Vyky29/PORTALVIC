@@ -96,20 +96,13 @@
       name: "Bespoke Programme",
       tier: "more",
       ageHint: "From 3 years+",
-      durationHint: "Agreed after assessment",
+      durationHint: "Agreed with the office",
       priceHint: "From £125 / 60 min session",
       pricePerSession: 125,
       blurb:
-        "A tailored programme built around your child’s goals and support needs. We do not publish bookable slots online — first we learn about the participant (after your enquiry), then we agree what we can offer and when.",
+        "A tailored programme built around your child’s goals and support needs. Enquire with the office — we do not publish bookable Bespoke slots online.",
       venues: ["SwimFarm", "Acton", "Westway"],
       enquireOnly: true,
-      infoHours: "Times and venues are agreed with the office after we meet your child.",
-      infoActivities: [
-        "Office review of goals, support needs, and funding",
-        "Meet / assess the participant before offering a place",
-        "Tailored session plan (activity, ratio, venue)",
-        "A suitable slot from our available timetable — not published for self-booking",
-      ],
     },
     {
       id: "day_centre",
