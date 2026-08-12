@@ -16,6 +16,8 @@
     getAnonKey: function () { return ""; },
   };
 
+  var ENQUIRY_SEED_KEY = "portal_broadcast_seed_v1";
+
   var state = {
     recipients: [],
     selected: {},          // email -> true
@@ -24,6 +26,7 @@
     cancel: false,
     query: "",
     payFilter: "",         // "" | "bank" | "gocardless"
+    seededFromEnquiries: false,
   };
 
   var DEFAULT_SUBJECT = "Welcome to your Family portal — re-enrol by 22 July & crash courses are open";
@@ -220,10 +223,72 @@
     updateCounts();
   }
 
-  async function loadRecipients() {
+  function consumeEnquirySeed() {
+    try {
+      var raw = sessionStorage.getItem(ENQUIRY_SEED_KEY);
+      if (!raw) return null;
+      sessionStorage.removeItem(ENQUIRY_SEED_KEY);
+      var parsed = JSON.parse(raw);
+      if (!parsed || !Array.isArray(parsed.recipients) || !parsed.recipients.length) return null;
+      return parsed;
+    } catch (_e) {
+      try { sessionStorage.removeItem(ENQUIRY_SEED_KEY); } catch (_e2) { /* ignore */ }
+      return null;
+    }
+  }
+
+  function applyRecipientList(list, opts) {
+    opts = opts || {};
+    state.recipients = (list || []).map(function (r) {
+      var email = String(r.email || "").trim().toLowerCase();
+      var mobile = String(r.mobile || "").trim();
+      return {
+        email: email,
+        parentName: String(r.parentName || "").trim() || email,
+        children: String(r.children || "").trim(),
+        mobile: mobile,
+        hasMobile: r.hasMobile != null ? !!r.hasMobile : phoneDigits(mobile).length >= 10,
+        paymentMethod: String(r.paymentMethod || "unknown"),
+        paymentMethodLabel: String(r.paymentMethodLabel || ""),
+      };
+    }).filter(function (r) { return r.email; });
+    state.selected = {};
+    state.payFilter = "";
+    state.recipients.forEach(function (r) { state.selected[r.email] = true; });
+    state.seededFromEnquiries = !!opts.fromEnquiries;
+    var banner = $("pbcastEnquiryBanner");
+    if (banner) {
+      banner.style.display = state.seededFromEnquiries ? "" : "none";
+      banner.textContent = state.seededFromEnquiries
+        ? "Loaded " + state.recipients.length + " contact(s) from Enquiries & intake. Edit the message, review ticks, then Send. Reload restores the normal in-class family list."
+        : "";
+    }
+    renderTable();
+  }
+
+  async function loadRecipients(opts) {
+    opts = opts || {};
     if (state.loading) return;
-    state.loading = true;
     var statusEl = $("pbcastStatus");
+
+    if (!opts.forceClassList) {
+      var seed = consumeEnquirySeed();
+      if (seed) {
+        applyRecipientList(seed.recipients, { fromEnquiries: true });
+        if (statusEl) {
+          statusEl.textContent =
+            seed.recipients.length + " contacts from Enquiries — selected and ready to message.";
+          statusEl.className = "portal-forms-status";
+        }
+        var subj = $("pbcastSubject");
+        if (subj && (!subj.value || /Welcome to your Family portal/i.test(subj.value))) {
+          subj.value = "clubSENsational — places & services update";
+        }
+        return;
+      }
+    }
+
+    state.loading = true;
     if (statusEl) { statusEl.textContent = "Loading recipients…"; statusEl.className = "portal-forms-status"; }
     var res = await edgePost("portal-parent-broadcast-recipients", {});
     state.loading = false;
@@ -236,21 +301,7 @@
       }
       return;
     }
-    state.recipients = (res.data.recipients || []).map(function (r) {
-      return {
-        email: String(r.email || "").trim(),
-        parentName: String(r.parentName || "").trim(),
-        children: String(r.children || "").trim(),
-        mobile: String(r.mobile || "").trim(),
-        hasMobile: !!r.hasMobile,
-        paymentMethod: String(r.paymentMethod || "unknown"),
-        paymentMethodLabel: String(r.paymentMethodLabel || ""),
-      };
-    }).filter(function (r) { return r.email; });
-    // Default: select everyone.
-    state.selected = {};
-    state.payFilter = "";
-    state.recipients.forEach(function (r) { state.selected[r.email] = true; });
+    applyRecipientList(res.data.recipients || [], { fromEnquiries: false });
     if (statusEl) {
       statusEl.textContent =
         res.data.count + " inboxes · " + res.data.withMobile + " with WhatsApp · " +
@@ -259,7 +310,6 @@
         (res.data.withGocardless || 0) + " GoCardless. Review and untick anyone who should not receive this.";
       statusEl.className = "portal-forms-status";
     }
-    renderTable();
   }
 
   function setSendProgress(html) {
@@ -430,7 +480,9 @@
       renderTable();
     });
     var refresh = $("pbcastRefresh");
-    if (refresh) refresh.addEventListener("click", function () { void loadRecipients(); });
+    if (refresh) refresh.addEventListener("click", function () {
+      void loadRecipients({ forceClassList: true });
+    });
     var send = $("pbcastSend");
     if (send) send.addEventListener("click", function () { void runBatch(); });
     var stop = $("pbcastStop");
@@ -441,7 +493,8 @@
     return (
       '<div id="pbcastRoot" class="portal-day-ops-embed">' +
       '<h1 class="page-title">Family broadcast</h1>' +
-      '<p class="page-intro">Send one message to many families at once — <strong>email</strong> (always) and optionally <strong>WhatsApp</strong> for those with a mobile on file. Every send is logged in <strong>Family messages</strong>. Replies to +44 7886 292726 arrive there automatically.</p>' +
+      '<p class="page-intro">Send one message to many families at once — <strong>email</strong> (always) and optionally <strong>WhatsApp</strong> for those with a mobile on file. Every send is logged in <strong>Family messages</strong>. Replies to +44 7886 292726 arrive there automatically. You can also seed this list from <strong>Operator → Enquiries &amp; intake</strong> (select people → Send via Family broadcast).</p>' +
+      '<div id="pbcastEnquiryBanner" class="card card-pad" style="display:none;margin:0 0 12px;border-color:rgba(21,128,61,.35);background:rgba(34,197,94,.08);font-size:13px;line-height:1.45;overflow-wrap:break-word" role="status"></div>' +
       '<div id="pbcastStatus" class="portal-forms-status" role="status"></div>' +
 
       '<div style="display:grid;grid-template-columns:1fr;gap:14px;margin-top:12px">' +

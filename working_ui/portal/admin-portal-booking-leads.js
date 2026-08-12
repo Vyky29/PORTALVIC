@@ -1,9 +1,12 @@
 /**
  * Admin — Booking Portal OTP leads (live portal_booking_leads).
  * Distinguishes real /bookingportal visitors from office email-interest imports.
+ * Select contacts → copy emails/phones or send via Family broadcast.
  */
 (function (global) {
   "use strict";
+
+  var BROADCAST_SEED_KEY = "portal_broadcast_seed_v1";
 
   var cfg = {
     esc: function (s) {
@@ -30,6 +33,7 @@
     meta: {},
     loading: false,
     error: "",
+    selected: {}, // email -> true
   };
 
   function configure(options) {
@@ -47,6 +51,40 @@
 
   function supabaseBase() {
     return String(cfg.getSupabaseUrl() || "").replace(/\/$/, "");
+  }
+
+  function emailKey(r) {
+    return String((r && r.email) || "")
+      .trim()
+      .toLowerCase();
+  }
+
+  function phoneDigits(p) {
+    return String(p || "").replace(/\D/g, "");
+  }
+
+  function hasServices(r) {
+    return Array.isArray(r.services_viewed) && r.services_viewed.length > 0;
+  }
+
+  function isExistingClient(r) {
+    var s = String(r.client_status || "").toLowerCase();
+    return s === "active_client" || s === "registered";
+  }
+
+  function isImportRow(r) {
+    return String((r && r.origin) || "").toLowerCase() === "email_interest";
+  }
+
+  function selectedLeads() {
+    return (state.leads || []).filter(function (r) {
+      var em = emailKey(r);
+      return em && state.selected[em];
+    });
+  }
+
+  function selectedCount() {
+    return selectedLeads().length;
   }
 
   async function portalAuthToken() {
@@ -92,13 +130,10 @@
     return "info";
   }
 
-  function isImportRow(r) {
-    return String(r && r.origin || "").toLowerCase() === "email_interest";
-  }
-
   async function fetchLeads() {
     var token = await portalAuthToken();
     if (!token) return { error: "session_expired", leads: [] };
+    var limit = state.origin === "portal" ? 200 : 400;
     var res = await fetch(supabaseBase() + "/functions/v1/portal-admin-booking-leads-list", {
       method: "POST",
       headers: {
@@ -115,7 +150,7 @@
           state.filter === "reg_started" ? "registration_submitted" : "all",
         origin: state.origin || "portal",
         q: state.q,
-        limit: 200,
+        limit: limit,
       }),
     });
     var j = null;
@@ -131,7 +166,9 @@
   }
 
   function rowHtml(r) {
+    var em = emailKey(r);
     var imported = isImportRow(r);
+    var checked = em && state.selected[em] ? " checked" : "";
     var verified = imported
       ? chip("Import — not a portal visit", "warn")
       : r.email_verified_at
@@ -176,15 +213,26 @@
         "</div>";
     return (
       "<tr>" +
-      "<td style=\"min-width:0\"><strong style=\"overflow-wrap:break-word\">" +
+      '<td style="width:2.2rem;vertical-align:middle">' +
+      (em
+        ? '<input type="checkbox" class="bk-lead-cb" data-email="' +
+          esc(em) +
+          '"' +
+          checked +
+          ' aria-label="Select ' +
+          esc(r.parent_name || em) +
+          '" />'
+        : "") +
+      "</td>" +
+      '<td style="min-width:0"><strong style="overflow-wrap:break-word">' +
       esc(r.parent_name || "—") +
       "</strong>" +
       sourceLine +
       "</td>" +
-      "<td style=\"overflow-wrap:anywhere;min-width:0\">" +
+      '<td style="overflow-wrap:anywhere;min-width:0">' +
       esc(r.email || "—") +
       "</td>" +
-      "<td style=\"min-width:0;overflow-wrap:break-word\">" +
+      '<td style="min-width:0;overflow-wrap:break-word">' +
       esc(r.mobile || "—") +
       "</td>" +
       "<td>" +
@@ -192,7 +240,7 @@
       "</td>" +
       "<td>" +
       chip(String(r.booking_status || "").replace(/_/g, " "), statusTone(r.booking_status)) +
-      "<div style=\"margin-top:4px\">" +
+      '<div style="margin-top:4px">' +
       chip(
         String(r.registration_status || "").replace(/_/g, " "),
         String(r.registration_status || "").toLowerCase() === "submitted" ? "ok" : "info"
@@ -201,13 +249,13 @@
       "<td>" +
       verified +
       "</td>" +
-      "<td style=\"min-width:7rem\">" +
+      '<td style="min-width:7rem">' +
       '<div class="toolbar" style="margin:0;flex-wrap:wrap;gap:6px">' +
       formBits.join("") +
       "</div>" +
       formSub +
       "</td>" +
-      "<td style=\"min-width:0;overflow-wrap:break-word\">" +
+      '<td style="min-width:0;overflow-wrap:break-word">' +
       services +
       "</td>" +
       "<td>" +
@@ -241,10 +289,44 @@
       "." +
       "</p>" +
       '<p class="muted" style="margin:8px 0 0;font-size:12px;line-height:1.45;overflow-wrap:break-word">' +
-      'Live presence (online now / last 24h) is on <a href="/ceo_booking_service_portal.html" target="_blank" rel="noopener">CEO → Booking Portal visitors</a>.' +
+      'Tick people below → <strong>Send via Family broadcast</strong> to email/WhatsApp them. Live presence: <a href="/ceo_booking_service_portal.html" target="_blank" rel="noopener">CEO → Booking Portal visitors</a>.' +
       "</p>" +
       "</div></div>"
     );
+  }
+
+  function selectionBarHtml() {
+    var n = selectedCount();
+    var withSvc = (state.leads || []).filter(hasServices).length;
+    var existing = (state.leads || []).filter(isExistingClient).length;
+    return (
+      '<div class="card" style="margin:0 0 14px">' +
+      '<div class="card-pad" style="min-width:0">' +
+      '<p style="margin:0 0 8px;font-weight:600;overflow-wrap:break-word">Contact selection</p>' +
+      '<p class="muted" style="margin:0 0 10px;font-size:12px;line-height:1.45;overflow-wrap:break-word">' +
+      '<strong id="bkLeadSelCount">' +
+      esc(n) +
+      "</strong> selected · " +
+      esc(withSvc) +
+      " on this list viewed services · " +
+      esc(existing) +
+      " existing clients shown. Use Origin / status filters first, then select." +
+      "</p>" +
+      '<div class="toolbar" style="margin:0;flex-wrap:wrap;gap:8px">' +
+      '<button type="button" class="btn btn--sec btn--sm" id="bkLeadSelAll">Select all shown</button>' +
+      '<button type="button" class="btn btn--sec btn--sm" id="bkLeadSelServices">Select viewed services</button>' +
+      '<button type="button" class="btn btn--sec btn--sm" id="bkLeadSelExisting">Select existing clients</button>' +
+      '<button type="button" class="btn btn--sec btn--sm" id="bkLeadSelClear">Clear</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="bkLeadCopyEmails">Copy emails</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="bkLeadCopyPhones">Copy phones</button>' +
+      '<button type="button" class="btn btn--pri btn--sm" id="bkLeadSendBroadcast">Send via Family broadcast</button>' +
+      "</div></div></div>"
+    );
+  }
+
+  function updateSelCount() {
+    var el = document.getElementById("bkLeadSelCount");
+    if (el) el.textContent = String(selectedCount());
   }
 
   function renderHost(host) {
@@ -252,17 +334,18 @@
     var meta = state.meta || {};
     var rows = state.leads || [];
     var body = state.loading
-      ? '<tr><td colspan="9" class="muted">Loading booking leads…</td></tr>'
+      ? '<tr><td colspan="10" class="muted">Loading booking leads…</td></tr>'
       : state.error
-        ? '<tr><td colspan="9" class="muted">Could not load leads (' +
+        ? '<tr><td colspan="10" class="muted">Could not load leads (' +
           esc(state.error) +
           ").</td></tr>"
         : rows.length
           ? rows.map(rowHtml).join("")
-          : '<tr><td colspan="9" class="muted">No portal OTP leads match this filter. Try <strong>All origins</strong> only if you need the email-interest outreach list.</td></tr>';
+          : '<tr><td colspan="10" class="muted">No portal OTP leads match this filter. Try <strong>All origins</strong> or <strong>Email interest import</strong> for outreach lists.</td></tr>';
 
     host.innerHTML =
       clarifyBanner(meta) +
+      selectionBarHtml() +
       '<div class="filter-row" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px">' +
       '<input class="inp" id="bkLeadSearch" type="search" placeholder="Search name, email, phone…" value="' +
       esc(state.q) +
@@ -318,10 +401,81 @@
       '<div class="card"><div class="card-pad" style="overflow:auto;padding:0;min-width:0">' +
       '<table class="tbl tbl--center tbl--dense" id="bkLeadTable">' +
       "<thead><tr>" +
+      '<th style="width:2.2rem" title="Select"></th>' +
       "<th>Parent / carer</th><th>Email</th><th>Phone</th><th>Client</th><th>Booking / reg</th><th>OTP</th><th>Form PDF</th><th>Services viewed</th><th>Last activity</th>" +
       "</tr></thead><tbody>" +
       body +
       "</tbody></table></div></div>";
+  }
+
+  async function copyText(label, text) {
+    var t = String(text || "").trim();
+    if (!t) {
+      cfg.toast("Nothing to copy — select rows first.");
+      return;
+    }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(t);
+      } else {
+        var ta = document.createElement("textarea");
+        ta.value = t;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      cfg.toast("Copied " + label + " (" + t.split(/\n/).filter(Boolean).length + ")");
+    } catch (_e) {
+      cfg.toast("Could not copy — check browser permissions.");
+    }
+  }
+
+  function sendViaBroadcast() {
+    var sel = selectedLeads();
+    if (!sel.length) {
+      cfg.toast("Select at least one person first.");
+      return;
+    }
+    var recipients = [];
+    var seen = {};
+    sel.forEach(function (r) {
+      var em = emailKey(r);
+      if (!em || seen[em]) return;
+      seen[em] = true;
+      var mobile = String(r.mobile || "").trim();
+      var svc = Array.isArray(r.services_viewed) ? r.services_viewed.filter(Boolean).join(", ") : "";
+      recipients.push({
+        email: em,
+        parentName: String(r.parent_name || "").trim() || em,
+        children: svc ? "Services viewed: " + svc : "",
+        mobile: mobile,
+        hasMobile: phoneDigits(mobile).length >= 10,
+        paymentMethod: "unknown",
+        paymentMethodLabel: "",
+        marketingConsent: !!r.marketing_consent,
+        origin: isImportRow(r) ? "email_interest" : "portal",
+      });
+    });
+    try {
+      sessionStorage.setItem(
+        BROADCAST_SEED_KEY,
+        JSON.stringify({
+          source: "enquiries",
+          at: new Date().toISOString(),
+          recipients: recipients,
+        })
+      );
+    } catch (_e) {
+      cfg.toast("Could not prepare recipients — try Copy emails instead.");
+      return;
+    }
+    cfg.toast(recipients.length + " ready — opening Family broadcast…");
+    if (typeof global.portalAdminSetView === "function") {
+      global.portalAdminSetView("portal_parent_broadcast");
+    } else {
+      cfg.toast("Open Communications → Family broadcast to send.");
+    }
   }
 
   async function reload(host) {
@@ -337,6 +491,13 @@
     } else {
       state.leads = out.leads || [];
       state.meta = out.meta || {};
+      /* Drop selections that are no longer in the list. */
+      var keep = {};
+      (state.leads || []).forEach(function (r) {
+        var em = emailKey(r);
+        if (em && state.selected[em]) keep[em] = true;
+      });
+      state.selected = keep;
     }
     renderHost(host);
     wire(host);
@@ -363,12 +524,14 @@
     if (origin) {
       origin.addEventListener("change", function () {
         state.origin = String(origin.value || "portal");
+        state.selected = {};
         void reload(host);
       });
     }
     if (filter) {
       filter.addEventListener("change", function () {
         state.filter = String(filter.value || "all");
+        state.selected = {};
         void reload(host);
       });
     }
@@ -377,6 +540,99 @@
         void reload(host);
       });
     }
+
+    host.querySelectorAll(".bk-lead-cb").forEach(function (cb) {
+      cb.addEventListener("change", function () {
+        var em = String(cb.getAttribute("data-email") || "").toLowerCase();
+        if (!em) return;
+        if (cb.checked) state.selected[em] = true;
+        else delete state.selected[em];
+        updateSelCount();
+      });
+    });
+
+    var selAll = host.querySelector("#bkLeadSelAll");
+    if (selAll) {
+      selAll.addEventListener("click", function () {
+        (state.leads || []).forEach(function (r) {
+          var em = emailKey(r);
+          if (em) state.selected[em] = true;
+        });
+        renderHost(host);
+        wire(host);
+      });
+    }
+    var selSvc = host.querySelector("#bkLeadSelServices");
+    if (selSvc) {
+      selSvc.addEventListener("click", function () {
+        state.selected = {};
+        (state.leads || []).forEach(function (r) {
+          if (!hasServices(r)) return;
+          var em = emailKey(r);
+          if (em) state.selected[em] = true;
+        });
+        renderHost(host);
+        wire(host);
+        cfg.toast(selectedCount() + " with services viewed");
+      });
+    }
+    var selEx = host.querySelector("#bkLeadSelExisting");
+    if (selEx) {
+      selEx.addEventListener("click", function () {
+        state.selected = {};
+        (state.leads || []).forEach(function (r) {
+          if (!isExistingClient(r)) return;
+          var em = emailKey(r);
+          if (em) state.selected[em] = true;
+        });
+        renderHost(host);
+        wire(host);
+        cfg.toast(selectedCount() + " existing clients");
+      });
+    }
+    var selClear = host.querySelector("#bkLeadSelClear");
+    if (selClear) {
+      selClear.addEventListener("click", function () {
+        state.selected = {};
+        renderHost(host);
+        wire(host);
+      });
+    }
+    var copyEm = host.querySelector("#bkLeadCopyEmails");
+    if (copyEm) {
+      copyEm.addEventListener("click", function () {
+        void copyText(
+          "emails",
+          selectedLeads()
+            .map(function (r) {
+              return emailKey(r);
+            })
+            .filter(Boolean)
+            .join("\n")
+        );
+      });
+    }
+    var copyPh = host.querySelector("#bkLeadCopyPhones");
+    if (copyPh) {
+      copyPh.addEventListener("click", function () {
+        void copyText(
+          "phones",
+          selectedLeads()
+            .map(function (r) {
+              return String(r.mobile || "").trim();
+            })
+            .filter(Boolean)
+            .join("\n")
+        );
+      });
+    }
+    var sendBtn = host.querySelector("#bkLeadSendBroadcast");
+    if (sendBtn) {
+      sendBtn.addEventListener("click", function () {
+        sendViaBroadcast();
+      });
+    }
+
     host.querySelectorAll(".bk-lead-open-doc").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var url = String(btn.getAttribute("data-url") || "")
@@ -395,8 +651,8 @@
     host.querySelectorAll("[data-view-target]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var id = btn.getAttribute("data-view-target");
-        if (id && typeof window.portalAdminSetView === "function") {
-          window.portalAdminSetView(id);
+        if (id && typeof global.portalAdminSetView === "function") {
+          global.portalAdminSetView(id);
         }
       });
     });
@@ -406,10 +662,9 @@
     return (
       '<h1 class="page-title">Enquiries &amp; intake</h1>' +
       '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">' +
-      "This screen mixes two different things: (1) families who requested an access code on the public Booking Portal, and " +
-      "(2) an office email-interest list imported for future outreach. " +
-      "Only (1) counts as Booking Portal activity — roughly the <strong>Portal visitors</strong> KPI (~70), not the full row count. " +
-      "Default filter is <strong>Portal OTP only</strong>." +
+      "Portal OTP contacts and the email-interest outreach list. " +
+      "Tick people who viewed services or existing clients, then <strong>Send via Family broadcast</strong> (or copy emails/phones). " +
+      "Only Portal OTP counts as Booking Portal activity (~<strong>Portal visitors</strong> KPI), not the import." +
       "</p>" +
       '<div id="bkLeadHost"></div>'
     );
