@@ -452,7 +452,7 @@ Deno.serve(async (req) => {
     priceHint: "Course packs — ask the office",
     pricePerSession: null,
     blurb:
-      "Holiday intensives and camps: summer crash weeks in July (live seats), then October, February and May half terms. Limited daily places — weekly packs often have priority.",
+      "Holiday crash courses and camps for continuity outside term time — swimming, climbing, and more in short intensive blocks (summer and half terms). Predictable routines, specialist staff, and limited daily places for participants.",
     venues: ["Westway", "Acton"],
     intensiveBlocks: true,
   };
