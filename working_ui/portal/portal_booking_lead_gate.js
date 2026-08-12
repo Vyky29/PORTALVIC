@@ -9,7 +9,7 @@
   var STORAGE_KEY = "clubsens_booking_lead_session_v1";
   var PARENT_SESSION_KEY = "clubsens_parent_portal_session_v1";
   var PRIVACY_VERSION = "2026-07-v1";
-  var PREVIEW_MS = 10000;
+  var PREVIEW_MS = 5000;
   var state = {
     unlocked: false,
     lead: null,
@@ -211,11 +211,7 @@
     gate.setAttribute("aria-hidden", show ? "false" : "true");
     document.documentElement.classList.toggle("booking-gate-open", !!show);
     document.body.classList.toggle("booking-gate-open", !!show);
-    try {
-      document.body.style.overflow = show ? "hidden" : "";
-    } catch (_e) {
-      /* ignore */
-    }
+    // Keep page scrollable under the gate so visitors can browse (blurred) while registering.
   }
 
   function showStep(step) {
@@ -775,7 +771,8 @@
   async function boot(opts) {
     opts = opts || {};
     wireUi();
-    setLocked(true);
+    // Clear preview first — blur + registration modal only after PREVIEW_MS (or on book/enquire).
+    setLocked(false);
     showModal(false);
     adoptTokenFromUrl();
 
