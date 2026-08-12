@@ -2001,7 +2001,9 @@
               : act === 'paid'
                 ? r.booking_pin && r.booking_pin.pinSent
                   ? 'Invoice marked paid — Parent Portal PIN sent (new finish-booking)'
-                  : 'Invoice marked paid'
+                  : r.invoice && String(r.invoice.payment_status || '').toLowerCase() === 'partial'
+                    ? 'Instalment confirmed — next half still due later'
+                    : 'Invoice marked paid'
                 : 'Invoice updated',
             'ok',
           );

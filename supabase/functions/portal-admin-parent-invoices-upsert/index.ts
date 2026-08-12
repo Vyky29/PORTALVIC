@@ -714,21 +714,43 @@ Deno.serve(async (req) => {
     if (pay) {
       patch.payment_status = pay;
       if (pay === "paid") {
-        patch.paid_at = now;
-        patch.paid_via = clean(fields.paid_via, 40) || "admin";
         const totalGbp = parseAmount(existing.amount_gbp) || 0;
         const schedule = normalizePaymentSchedule(existing.payment_schedule);
+        const forceAll =
+          fields.mark_all_instalments === true ||
+          fields.mark_all_instalments === "1" ||
+          fields.mark_all_instalments === 1;
+        // Flexi / multi-instalment: Confirm paid / Mark paid clears the NEXT due
+        // instalment only. Full settle requires mark_all_instalments=true.
+        const markAll = forceAll || schedule.length <= 1;
         if (schedule.length) {
+          const next = schedule.find((r) => r.status !== "paid");
           const applied = applyInstalmentPayment(schedule, {
-            amountGbp: totalGbp,
+            amountGbp: markAll ? totalGbp : Number(next?.amount_gbp) || totalGbp,
             paidAt: now,
-            paidVia: String(patch.paid_via),
-            markAll: true,
+            paidVia: clean(fields.paid_via, 40) || "admin",
+            markAll,
           });
           patch.payment_schedule = applied.schedule;
           patch.amount_paid_gbp = applied.amount_paid_gbp;
-          patch.next_instalment_due = null;
+          patch.payment_status = applied.payment_status;
+          patch.next_instalment_due = applied.next_instalment_due;
+          if (applied.payment_status === "paid") {
+            patch.paid_at = now;
+            patch.paid_via = clean(fields.paid_via, 40) || "admin";
+          } else {
+            // Partial: keep invoice open for later halves.
+            patch.paid_at = null;
+            patch.paid_via = null;
+          }
+          // Parent "I've paid" confirmed — clear the pending report flags.
+          patch.parent_reported_paid_at = null;
+          patch.parent_reported_ref = null;
+          patch.parent_reported_method = null;
+          patch.parent_reported_notes = null;
         } else {
+          patch.paid_at = now;
+          patch.paid_via = clean(fields.paid_via, 40) || "admin";
           patch.amount_paid_gbp = totalGbp;
           patch.next_instalment_due = null;
         }
@@ -753,6 +775,11 @@ Deno.serve(async (req) => {
           }));
           patch.next_instalment_due = schedule[0]?.due_date || existing.due_date || null;
         }
+      }
+      if (pay === "partial") {
+        // Allow office to force partial without wiping already-paid halves.
+        patch.paid_at = null;
+        patch.paid_via = null;
       }
     }
     const share = parseShareStatus(fields.share_status);
