@@ -5752,7 +5752,41 @@
             client_name: line.client_name,
           });
           if (!slug) return;
-          bySlug[slug] = line;
+          var sessions = Array.isArray(line.sessions) ? line.sessions.slice() : [];
+          if (!bySlug[slug]) {
+            bySlug[slug] = {
+              client_key: line.client_key,
+              client_name: line.client_name,
+              sessions: sessions,
+            };
+            return;
+          }
+          /*
+           * Same participant can appear as jack_s + jacks / Jack Stratton.
+           * Never let a short Aquatic-only row overwrite Aquatic+Multi.
+           */
+          var prev = bySlug[slug].sessions || [];
+          var seen = Object.create(null);
+          var merged = [];
+          function pushSess(s) {
+            if (!s || typeof s !== "object") return;
+            var key = [
+              String(s.service || "").toLowerCase(),
+              String(s.day || "").toLowerCase(),
+              String(s.timeSlot || s.time || "").toLowerCase(),
+              String(s.durationMin || ""),
+            ].join("|");
+            if (seen[key]) return;
+            seen[key] = 1;
+            merged.push(s);
+          }
+          prev.forEach(pushSess);
+          sessions.forEach(pushSess);
+          bySlug[slug].sessions = merged;
+          if (sessions.length > prev.length) {
+            bySlug[slug].client_key = line.client_key;
+            bySlug[slug].client_name = line.client_name;
+          }
         });
         rows.forEach(function (r) {
           if (!r) return;

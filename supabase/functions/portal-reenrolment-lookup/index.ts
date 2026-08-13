@@ -524,6 +524,30 @@ async function fetchPublishedServiceLines(
   if (slug) {
     tryKeys.add(slug);
     tryKeys.add(slug.replace(/_/g, "-"));
+    /* ACAT Jack Stratton aliases: jacks / jack_s / jack-s */
+    if (slug === "jack_stratton" || slug === "jack_s" || slug === "jacks") {
+      tryKeys.add("jacks");
+      tryKeys.add("jack_s");
+      tryKeys.add("jack-s");
+    }
+  }
+
+  const mergedSessions: unknown[] = [];
+  const seenSess = new Set<string>();
+  function pushMerged(sessions: unknown[]) {
+    for (const s of sessions) {
+      if (!s || typeof s !== "object") continue;
+      const o = s as Record<string, unknown>;
+      const key = [
+        String(o.service || "").toLowerCase(),
+        String(o.day || "").toLowerCase(),
+        String(o.timeSlot || o.time || "").toLowerCase(),
+        String(o.durationMin || ""),
+      ].join("|");
+      if (seenSess.has(key)) continue;
+      seenSess.add(key);
+      mergedSessions.push(s);
+    }
   }
 
   for (const key of tryKeys) {
@@ -536,9 +560,12 @@ async function fetchPublishedServiceLines(
     const sessions = data && Array.isArray((data as Record<string, unknown>).sessions)
       ? (data as { sessions: unknown[] }).sessions
       : null;
-    if (sessions && sessions.length) {
-      return slotsFromPublishedSessions(sessions as Parameters<typeof slotsFromPublishedSessions>[0]);
-    }
+    if (sessions && sessions.length) pushMerged(sessions);
+  }
+  if (mergedSessions.length) {
+    return slotsFromPublishedSessions(
+      mergedSessions as Parameters<typeof slotsFromPublishedSessions>[0],
+    );
   }
 
   // Fuzzy fallback: match published rows by normalized-name prefix.
