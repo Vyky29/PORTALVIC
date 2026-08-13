@@ -9,6 +9,7 @@ import { parentPortalCorsHeaders } from "../_shared/parent_portal_auth.ts";
 import type { MadreDoc } from "../_shared/portal_madre_fold_logic.ts";
 import { buildWeeklyOfferFromMadre } from "../_shared/portal_booking_seat_helper.ts";
 import { ensureReenrolUnconfirmedReleasedOnMadre } from "../_shared/portal_reenrol_release_madre.ts";
+import { runUnpaidAug15PlaceRelease } from "../_shared/portal_reenrol_release_unpaid_aug15.ts";
 import {
   CRASH_HOLD_MINUTES,
   CRASH_INDIVIDUAL_WINDOWS,
@@ -382,6 +383,23 @@ Deno.serve(async (req) => {
     }
   } catch (err) {
     console.error("[portal-booking-offer] reenrol MADRE release", err);
+  }
+
+  // Sun 16 Aug 2026 00:00 London+: unpaid first Autumn bank payment → free seats.
+  try {
+    const unpaid = await runUnpaidAug15PlaceRelease(supabase, {});
+    if (unpaid.ok && !unpaid.skipped && unpaid.madre_changed > 0) {
+      console.log(
+        "[portal-booking-offer] unpaid Aug15 MADRE release",
+        unpaid.madre_changed,
+        "contacts",
+        unpaid.release_contacts?.length || 0,
+      );
+    } else if (!unpaid.ok) {
+      console.error("[portal-booking-offer] unpaid Aug15 MADRE release", unpaid.error);
+    }
+  } catch (err) {
+    console.error("[portal-booking-offer] unpaid Aug15 MADRE release", err);
   }
 
   const { data: madreRow, error: madreErr } = await supabase

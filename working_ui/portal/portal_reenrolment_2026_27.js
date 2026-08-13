@@ -11,7 +11,8 @@
   var RE_ENROL_DEADLINE_LABEL = "Wednesday 22 July 2026";
   /** Day after deadline: unconfirmed places released to new-client booking. */
   var RE_ENROL_RELEASE_LABEL = "Thursday 23 July 2026";
-  /** Bank transfer: the first Autumn payment must reach us before term starts. */
+  /** Bank transfer: first Autumn payment due Sat 15 Aug 2026 (inclusive, London end of day).
+   *  Unpaid seats auto-release from Sun 16 Aug 2026 00:00 Europe/London onto Booking Portal. */
   var RE_BANK_FIRST_DUE = "by 15 August 2026";
   var RE_BANK_FIRST_DUE_SHORT = "15 August 2026";
   /** Direct Payment (GoCardless): always on the 1st — Autumn starts 1 September. */
@@ -2061,7 +2062,7 @@
       esc(RE_ENROL_DEADLINE_LABEL) +
       " (last day to respond). From " +
       esc(RE_ENROL_RELEASE_LABEL) +
-      ", unconfirmed places may be released to new clients on our booking website. First Bank Transfer / Apple Pay due dates from mid-August (first Autumn payment by 15 August); GoCardless collections on the 1st from 1 September — see schedule above.</p>" +
+      ", unconfirmed places may be released to new clients on our booking website. First Bank Transfer / Apple Pay due dates from mid-August (first Autumn payment by Saturday 15 August inclusive — places unpaid after that night are released from Sunday 16 August 00:00 onto Booking Portal); GoCardless collections on the 1st from 1 September — see schedule above.</p>" +
       "</div></div>" +
       renderReenrolFarewellHtml(data) +
       "</div>"
