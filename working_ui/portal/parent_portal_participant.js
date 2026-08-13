@@ -1080,8 +1080,8 @@
     var pay = hubReenrolPayState(data);
     if (pay === "unconfirmed") return " pp-hub-term-block--unconfirmed";
     if (pay === "unpaid") return " pp-hub-term-block--unpaid";
-    if (pay === "partial") return " pp-hub-term-block--partial";
     if (pay === "pending") return " pp-hub-term-block--pending";
+    /* partial (1st flexi paid) uses the same calm block look as fully paid. */
     return " pp-hub-term-block--settled";
   }
 
@@ -1348,16 +1348,17 @@
           ? "pp-hub-term-block--unconfirmed"
           : state === "unpaid"
             ? "pp-hub-term-block--unpaid"
-            : state === "partial"
-              ? "pp-hub-term-block--partial"
-              : state === "pending"
-                ? "pp-hub-term-block--pending"
-                : "pp-hub-term-block--settled",
+            : state === "pending"
+              ? "pp-hub-term-block--pending"
+              : "pp-hub-term-block--settled",
       );
       var acc = block.querySelector(".pp-hub-ops__term-accordion");
       if (acc) {
-        if (state === "settled") acc.classList.add("pp-hub-ops__term-accordion--completed");
-        else acc.classList.remove("pp-hub-ops__term-accordion--completed");
+        if (state === "settled" || state === "partial") {
+          acc.classList.add("pp-hub-ops__term-accordion--completed");
+        } else {
+          acc.classList.remove("pp-hub-ops__term-accordion--completed");
+        }
       }
     }
   }
