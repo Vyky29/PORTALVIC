@@ -2386,6 +2386,15 @@
     return k.indexOf("day centre") !== -1 || k.indexOf("day_centre") !== -1 || k.indexOf("daycentre") !== -1;
   }
 
+  /** 2026/27: 1–4 Sep Day Centre only; ASW/Climb/Multi from Sat 5 Sep. */
+  var AUTUMN_DC_ONLY_FROM = "2026-09-01";
+  var AUTUMN_ASW_FROM = "2026-09-05";
+  function rosterServiceAllowedOnAutumnDate(service, isoDate) {
+    var iso = String(isoDate || "").trim().substring(0, 10);
+    if (!iso || iso < AUTUMN_DC_ONLY_FROM || iso >= AUTUMN_ASW_FROM) return true;
+    return isDayCentreService(service);
+  }
+
   function slotInstructorCount(slot) {
     return slotInstructors(slot).length;
   }
