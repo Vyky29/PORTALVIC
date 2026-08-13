@@ -78,13 +78,13 @@
   <script src="/portal/admin-portal-day-ops.js?v=20260723-lead-view-by-id"></script>
   <script src="/portal/admin-portal-documents.js?v=20260812-open-tab"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260812-open-tab"></script>
-  <script src="/portal/admin-portal-parent-absences.js?v=20260709-family-credits"></script>
+  <script src="/portal/admin-portal-parent-absences.js?v=20260813-office-phone-create"></script>
   <script src="/portal/admin-portal-booking-leads.js?v=20260812-open-tab"></script>
   <script src="/portal/admin-portal-waitlist.js?v=20260813-live-waitlist"></script>
-  <script src="/portal/admin-portal-parent-credits.js?v=20260709-family-credits"></script>
+  <script src="/portal/admin-portal-parent-credits.js?v=20260813-office-phone-create"></script>
   <script src="/portal/admin-portal-xero-products.js?v=20260716-add-product-rows"></script>
   <script src="/portal/admin-portal-parent-invoices.js?v=20260813-inst-paid-label"></script>
-  <script src="/portal/admin-portal-parent-makeups.js?v=20260709-makeup-roster"></script>
+  <script src="/portal/admin-portal-parent-makeups.js?v=20260813-office-phone-create"></script>
   <script src="/portal/admin-portal-parent-consents.js?v=20260709-offsite-annual"></script>
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
   <script src="/portal/admin-portal-pins.js?v=20260718-family-pins"></script>
@@ -23200,7 +23200,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--sec" data-view-target="dashboard">Day operations</button> <button type="button" class="btn btn--sec" data-view-target="bookings">Bookings</button> <button type="button" class="btn btn--ghost" data-view-target="communications">Comms log</button></div>'+
         parentQueue+
         '<div class="card" style="margin-bottom:14px"><div class="card-h"><h3>Workbook / legacy queue</h3><span class="chip '+(pend?'chip--pend':'chip--ok')+'">'+esc(String(pend))+' pending · '+esc(String(total))+' rows ('+srcChip+')</span></div>'+
-        '<div class="card-pad" style="overflow:auto"><table class="tbl tbl--center"><thead><tr><th>Participant</th><th>Time / value</th><th>Date</th><th>Service</th><th>Reason</th><th>Notice</th><th>Policy</th><th>Resolution</th><th>Status</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'+
+        '<div class="card-pad" style="overflow:auto"><table class="tbl tbl--center"><thead><tr><th>Participant</th><th>Time / value</th><th>Date</th><th>Service</th><th>Reason</th><th>Notice</th><th>Policy</th><th>Resolution</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'+
         '<p class="muted" style="margin:0;font-size:12px;line-height:1.5;max-width:48rem;overflow-wrap:break-word"><strong>Note:</strong> '+
         (usePortal
           ? 'Resolution text comes from the workbook <strong>Status</strong> column. Roster changes (cover, replace-in-slot, closed slot) stay in <strong>Scheduling &amp; Cover</strong>.'
@@ -24002,6 +24002,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         esc: esc,
         toast: portalAdminToast,
         getClient: getSchedSupabaseClient,
+        openModal: openModal,
+        closeModal: closeModal,
         getSupabaseUrl: function(){
           var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
           return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
@@ -24034,6 +24036,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         esc: esc,
         toast: portalAdminToast,
         getClient: getSchedSupabaseClient,
+        openModal: openModal,
+        closeModal: closeModal,
         getSupabaseUrl: function(){
           var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
           return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
@@ -24050,6 +24054,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         esc: esc,
         toast: portalAdminToast,
         getClient: getSchedSupabaseClient,
+        openModal: openModal,
+        closeModal: closeModal,
         getSupabaseUrl: function(){
           var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
           return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
