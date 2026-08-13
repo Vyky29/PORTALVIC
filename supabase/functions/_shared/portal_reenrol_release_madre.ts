@@ -71,6 +71,11 @@ export const REENROL_RELEASE_RULES: ReleaseRule[] = [
     clients: ["Joel"],
     reason: "not_continuing",
   },
+  {
+    kind: "all",
+    clients: ["Jibril"],
+    reason: "not_continuing",
+  },
   // Rayyan Fi / Huma — confirmed 10 Aug 2026 (booking registration Multi Sun 12.30–2 + office invoice).
   // Do not auto-release.
   {
