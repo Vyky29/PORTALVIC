@@ -2705,6 +2705,7 @@
     for (var i = 0; i < rows.length; i++) {
       var r = rows[i];
       if (!rosterRowAppliesOnDate(rows, r, iso, wd)) continue;
+      if (!rosterServiceAllowedOnAutumnDate(r.service, iso)) continue;
       if (!isRosterClient(r.client_name)) continue;
       out.push(rosterRowToSlotLite(iso, wd, r));
     }
@@ -5477,6 +5478,7 @@
     for (var i = 0; i < this.rosterRows.length; i++) {
       var r = this.rosterRows[i];
       if (!rosterRowAppliesOnDate(this.rosterRows, r, isoDate, wd)) continue;
+      if (!rosterServiceAllowedOnAutumnDate(r.service, isoDate)) continue;
       if (!isRosterClient(r.client_name) && !isOpenRosterSlot(r.client_name)) continue;
       if (!clientAllowedOnWeekday(r.client_name, wd)) continue;
       if (!clientAllowedOnDate(r.client_name, isoDate)) continue;

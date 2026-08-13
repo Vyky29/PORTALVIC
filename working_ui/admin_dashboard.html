@@ -1144,8 +1144,9 @@
     var sched = { slotsById:{}, overrides:[], termEvents:[], rosterLogRows:[], activeSlot:null, lastMsg:'', waitingSupabaseRetryBound:false, weekAnchorIso:'' };
     /**
      * Schedule &amp; Covers + Sessions week window — Autumn Term 2026 (full first term).
-     * Standing occupancy still projects from summer MADRE pre-crash weeks when a calendar
-     * day has no autumn-dated roster rows yet (same bridge as Services / Booking Portal).
+     * Cover opens Tue 1 Sep for Day Centre. After-schools / weekend services (Aquatic,
+     * Climbing, Multi) only project from Sat 5 Sep — see SERVICES_ROSTER_* below and
+     * adminSessionAllowedOnAutumnCalendarIso (same rule as parent portal 1–4 Sep).
      */
     var SCHED_COVER_TERM_START = '2026-09-01';
     var SCHED_COVER_TERM_END = '2026-12-18';
@@ -4800,6 +4801,37 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var s = adminNormIsoDate(iso);
       return !!(s && s >= '2026-09-01');
     }
+    /**
+     * 2026/27: Tue 1 – Fri 4 Sep = Day Centre only.
+     * Aquatic / Climbing / Multi (and office holds) start Sat 5 Sep.
+     * Same rule as parent portal nextYearDateBeforeServiceStart.
+     */
+    function adminSessionAllowedOnAutumnCalendarIso(sessionOrProgramme, iso){
+      var want = adminNormIsoDate(iso);
+      if(!want) return true;
+      var aswFrom =
+        typeof SERVICES_ROSTER_CALENDAR_START_ISO === 'string' && SERVICES_ROSTER_CALENDAR_START_ISO
+          ? SERVICES_ROSTER_CALENDAR_START_ISO
+          : '2026-09-05';
+      var dcFrom =
+        typeof SERVICES_ROSTER_DAY_CENTRE_START_ISO === 'string' && SERVICES_ROSTER_DAY_CENTRE_START_ISO
+          ? SERVICES_ROSTER_DAY_CENTRE_START_ISO
+          : '2026-09-01';
+      if(want < dcFrom || want >= aswFrom) return true;
+      var prog = '';
+      if(sessionOrProgramme && typeof sessionOrProgramme === 'object'){
+        prog = String(
+          sessionOrProgramme.programme ||
+          sessionOrProgramme.service ||
+          sessionOrProgramme.service_name ||
+          sessionOrProgramme.displayProgramme ||
+          ''
+        );
+      }else{
+        prog = String(sessionOrProgramme || '');
+      }
+      return adminServicesIsDayCentreProgramme(prog);
+    }
     function adminSchedStandingSourceIso(iso){
       var want = adminNormIsoDate(iso);
       if(!want || !adminSchedUsesStandingProjection(want)) return want;
@@ -4810,6 +4842,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function adminSessionMatchesCalendarIso(s, iso, weekdayLong, sessions){
       var wantIso = adminNormIsoDate(iso);
+      if(!adminSessionAllowedOnAutumnCalendarIso(s, wantIso)) return false;
       var rowIso = adminNormIsoDate(s.session_date || s.sessionDate);
       var project = adminSchedUsesStandingProjection(wantIso);
       var standIso = project ? adminSchedStandingSourceIso(wantIso) : wantIso;
@@ -20984,7 +21017,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260723-lead-view-by-id';
+    var PORTAL_ADMIN_HUB_BUILD = '20260813-sept-dc-only';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
