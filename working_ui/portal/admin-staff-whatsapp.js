@@ -1102,6 +1102,27 @@
     var form = document.getElementById("portalStaffWaForm");
     if (form) form.addEventListener("submit", sendMessage);
 
+    var draftEl = document.getElementById("portalStaffWaDraft");
+    if (draftEl && draftEl.getAttribute("data-enter-bound") !== "1") {
+      draftEl.setAttribute("data-enter-bound", "1");
+      draftEl.setAttribute("enterkeyhint", "send");
+      draftEl.addEventListener("keydown", function (ev) {
+        if (ev.key === " " || ev.code === "Space" || ev.key === "Spacebar") return;
+        if (ev.isComposing || ev.keyCode === 229) return;
+        if (
+          (ev.key === "Enter" || ev.key === "NumpadEnter") &&
+          !ev.shiftKey &&
+          !ev.altKey &&
+          !ev.ctrlKey &&
+          !ev.metaKey
+        ) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          sendMessage(ev);
+        }
+      });
+    }
+
     var fileInput = document.getElementById("portalStaffWaFile");
     var photoBtn = document.getElementById("portalStaffWaAttachPhoto");
     var docBtn = document.getElementById("portalStaffWaAttachDoc");

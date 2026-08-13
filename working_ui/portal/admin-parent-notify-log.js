@@ -2018,7 +2018,7 @@
       esc(textareaPlaceholder) +
       '" maxlength="' +
       textareaMax +
-      '" autocomplete="off" spellcheck="true"' +
+      '" autocomplete="off" spellcheck="true" enterkeyhint="send"' +
       disabled +
       ">" +
       esc(draft) +
@@ -2679,6 +2679,13 @@
       }
     });
 
+    /* Keep focus in the textarea when tapping Send (Space must never activate Send). */
+    host.addEventListener("mousedown", function (e) {
+      var sendBtn = e.target && e.target.closest && e.target.closest("#portalPnlogComposerSend");
+      if (!sendBtn) return;
+      e.preventDefault();
+    });
+
     host.addEventListener("input", function (e) {
       if (e.target && e.target.id === "portalPnlogComposerInput" && state.selectedKey) {
         state.draftByKey[state.selectedKey] = e.target.value;
@@ -2697,7 +2704,17 @@
         state.coldTemplateId = String(e.target.value);
         captureComposerDraft();
         var thr = findThread(state.selectedKey);
-        if (thr) mountComposer(thr, true);
+        if (thr) {
+          mountComposer(thr, true);
+          global.requestAnimationFrame(function () {
+            var ta = document.getElementById("portalPnlogComposerInput");
+            if (ta) {
+              try {
+                ta.focus();
+              } catch (_f) {}
+            }
+          });
+        }
         return;
       }
       if (!e.target || e.target.id !== "portalPnlogComposerFile") return;
@@ -2708,9 +2725,21 @@
     });
 
     host.addEventListener("keydown", function (e) {
+      /* If focus somehow lands on Send, Space must not fire the button (legacy browser behaviour). */
+      if (e.target && e.target.id === "portalPnlogComposerSend") {
+        if (e.key === " " || e.code === "Space" || e.key === "Spacebar") {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+      }
       if (!e.target || e.target.id !== "portalPnlogComposerInput") return;
-      if (e.key === "Enter" && !e.shiftKey) {
+      /* Space must insert a space — never send (same as Staff WhatsApp). */
+      if (e.key === " " || e.code === "Space" || e.key === "Spacebar") return;
+      if (e.isComposing || e.keyCode === 229) return;
+      if ((e.key === "Enter" || e.key === "NumpadEnter") && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
+        e.stopPropagation();
         sendComposerReply();
       }
     });
