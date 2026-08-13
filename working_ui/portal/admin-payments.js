@@ -910,6 +910,13 @@
     return Number.isFinite(n) && n > 0 ? n : 0;
   }
 
+  /** Ealing LA — surplus still on file after Summer was cleared (e.g. Tinashe overpay). */
+  function ealingCreditBalanceGbp(r) {
+    var d = (r && r.data) || {};
+    var n = Number(d["Ealing credit balance (25/26)"]);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  }
+
   /**
    * Day Centre Summer — separate April / May NHS invoices (e.g. Timi £500 + £500)
    * folded into the term Total. Stored as explicit data keys or Extras text.
@@ -1084,6 +1091,7 @@
 
   function amountCellHtml(r) {
     var julyPay = ealingJulyPaymentGbp(r);
+    var ealingCreditBal = ealingCreditBalanceGbp(r);
     var termAmt = Number(r.amount) || 0;
     var main = money(r.amount);
     var yearAmt = resolveYearProgrammeGbp(r);
@@ -1142,7 +1150,7 @@
       var sessOnly = aprMay && termAmt > aprMay.total
         ? Math.round((termAmt - aprMay.total) * 100) / 100
         : 0;
-      if (!julyPay && !aprMay && !junJul && !uplift) return main;
+      if (!julyPay && !ealingCreditBal && !aprMay && !junJul && !uplift) return main;
       return '<span class="pay-amt-stack" title="'
         + (uplift
           ? "NHS inflation uplift invoices (2.03%)"
@@ -1183,8 +1191,12 @@
             + "</span>"
           : "")
         + (julyPay
-          ? '<span class="pay-amt-july" title="Last payment received in July (Ealing LA)">−'
-            + money(julyPay) + " July paid</span>"
+          ? '<span class="pay-amt-july" title="Ealing LA payments applied against Summer">−'
+            + money(julyPay) + " Ealing paid</span>"
+          : "")
+        + (ealingCreditBal
+          ? '<span class="pay-amt-credit" title="Ealing surplus still on file after Summer cleared">+'
+            + money(ealingCreditBal) + " Ealing credit</span>"
           : "")
         + "</span>";
     }
@@ -1194,12 +1206,16 @@
       yearNote = '<span class="pay-amt-year" title="Full-year programme (not this term alone)">Year '
         + money(yearAmt) + "</span>";
     }
-    if (!julyPay && !yearNote) return main;
+    if (!julyPay && !ealingCreditBal && !yearNote) return main;
     return '<span class="pay-amt-stack">'
       + "<span>" + main + "</span>"
       + (julyPay
-        ? '<span class="pay-amt-july" title="Last payment received in July (Ealing LA)">−'
-          + money(julyPay) + " July paid</span>"
+        ? '<span class="pay-amt-july" title="Ealing LA payments applied against Summer">−'
+          + money(julyPay) + " Ealing paid</span>"
+        : "")
+      + (ealingCreditBal
+        ? '<span class="pay-amt-credit" title="Ealing surplus still on file after Summer cleared">+'
+          + money(ealingCreditBal) + " Ealing credit</span>"
         : "")
       + yearNote
       + "</span>";
