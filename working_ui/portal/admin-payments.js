@@ -4947,9 +4947,16 @@
 
     function enrichFromPayments(r) {
       if (!r.data) r.data = {};
-      /* Always fill a missing named Funder — Paid / generic Invoice type alone must not block. */
-      if (r.data.Funder && String(r.data.Funder).trim()) {
-        r._fundingLabel = r._fundingLabel || String(r.data.Funder).trim();
+      var existingFunder = String(r.data.Funder || "").trim();
+      var funderIsNamed =
+        existingFunder
+        && !/^local\s*authority(\s*\(|$)/i.test(existingFunder)
+        && !isGenericLaNhsUmbrella(existingFunder);
+      /* Always fill a missing / generic Funder — Paid / umbrella Invoice type alone must not block. */
+      if (funderIsNamed) {
+        r._fundingLabel = r._fundingLabel || existingFunder;
+        var already = laCouncilShortFor(r);
+        if (already) r._laCouncilShort = already;
         return;
       }
       var nk = normClientNameKey(r.client_name);
@@ -4957,9 +4964,24 @@
       var hits = payFunderByNorm[nk];
       if (!hits) {
         var first = nk.split(" ")[0];
+        var wantLast = nk.split(" ").filter(Boolean);
+        wantLast = wantLast.length > 1 ? wantLast[wantLast.length - 1] : "";
         Object.keys(payFunderByNorm).forEach(function (k) {
-          if (hits) return;
-          if (k === nk || k.indexOf(first) === 0 || nk.indexOf(k) === 0) hits = payFunderByNorm[k];
+          if (hits && hits._score >= 500) return;
+          var kTok = k.split(" ").filter(Boolean);
+          var candLast = kTok.length > 1 ? kTok[kTok.length - 1] : (kTok[0] || "");
+          var score = 0;
+          if (k === nk) score = 1000;
+          else if (first && first.length >= 3 && (k === first || k.indexOf(first + " ") === 0 || first.indexOf(k) === 0)) {
+            score = 200;
+            if (wantLast && candLast && wantLast.charAt(0) === candLast.charAt(0) && (wantLast === candLast || candLast.length === 1 || wantLast.indexOf(candLast) === 0)) {
+              score += 400;
+            }
+          }
+          if (score > 0 && (!hits || score > (hits._score || 0))) {
+            hits = payFunderByNorm[k];
+            if (hits) hits._score = score;
+          }
         });
       }
       if (!hits || !hits.length) return;
@@ -4975,15 +4997,58 @@
         }
       }
       r._fundingLabel = pick.fund;
-      if (!r.data) r.data = {};
-      if (!r.data.Funder) r.data.Funder = pick.fund;
+      if (!r.data.Funder || !funderIsNamed) r.data.Funder = pick.fund;
       var src = pick.row && pick.row.data;
       if (src) {
         if (src.Paid && !r.data.Paid) r.data.Paid = src.Paid;
-        if (src["Invoice type"] && !r.data["Invoice type"]) r.data["Invoice type"] = src["Invoice type"];
+        if (src.Funding && (!r.data.Funding || /local\s*authority/i.test(String(r.data.Funding)))) {
+          r.data.Funding = src.Funding;
+        }
+        if (src["Invoice type"] && /local\s*authority/i.test(String(r.data["Invoice type"] || ""))) {
+          r.data["Invoice type"] = src["Invoice type"];
+        }
         if (src.Services && !r.data.Services) r.data.Services = src.Services;
         if (pick.row.parent_name && !r.parent_name) r.parent_name = pick.row.parent_name;
       }
+      var resolved = laCouncilShortFor(r);
+      if (resolved) {
+        r._laCouncilShort = resolved;
+        r.data["Invoice type"] = resolved + " (Exempt invoice)";
+      }
+    }
+
+    function stampLaCouncilOnRow(r) {
+      if (!r || String(r.sheet || "").toUpperCase() !== "LA") return;
+      var fundBlob = [
+        r.data && r.data.Funder,
+        r.data && r.data.Funding,
+        r._fundingLabel,
+        r.parent_name,
+      ].map(function (x) { return String(x || ""); }).join(" ");
+      if (/nhs|sbs|\bila\b/i.test(fundBlob) && !/ealing|h\s*&\s*f|hammer|fulham/i.test(fundBlob)) {
+        return;
+      }
+      if (!r.data) r.data = {};
+      if (!r.data.Funder || /^local\s*authority/i.test(String(r.data.Funder)) || isGenericLaNhsUmbrella(r.data.Funder)) {
+        enrichFromPayments(r);
+      }
+      var summer = findSummerRow(r);
+      if (summer && summer.data) {
+        if (!r.data.Funder || /^local\s*authority/i.test(String(r.data.Funder))) {
+          if (summer.data.Funder) r.data.Funder = summer.data.Funder;
+          if (summer.data.Funding) r.data.Funding = summer.data.Funding;
+        }
+      }
+      var stamped = laCouncilShortFor(r) || (summer ? laCouncilShortFor(summer) : "");
+      if (!stamped) return;
+      r._laCouncilShort = stamped;
+      if (!r.data.Funder || /^local\s*authority/i.test(String(r.data.Funder))) {
+        r.data.Funder = stamped === "H&F" ? "H&F (Hammersmith & Fulham)" : stamped;
+      }
+      if (!r._fundingLabel || /^local\s*authority/i.test(String(r._fundingLabel)) || isGenericLaNhsUmbrella(r._fundingLabel)) {
+        r._fundingLabel = r.data.Funder;
+      }
+      r.data["Invoice type"] = stamped + " (Exempt invoice)";
     }
 
     (reenrol || []).forEach(function (r) {
@@ -5063,6 +5128,25 @@
             }
           }
         }
+      } else if (summer && r._laOfficeAuto && String(summer.sheet || "").toUpperCase() === "LA") {
+        /* LA office-auto keeps Autumn sheet/route, but still inherits named council from Summer. */
+        if (!r.data) r.data = {};
+        var autoData = summer.data || {};
+        if (autoData.Funder) r.data.Funder = autoData.Funder;
+        if (autoData.Funding) r.data.Funding = autoData.Funding;
+        var autoLa = laCouncilShortFor({
+          data: r.data,
+          parent_name: summer.parent_name || r.parent_name,
+          _fundingLabel: autoData.Funder || r._fundingLabel,
+        });
+        if (autoLa) {
+          r._laCouncilShort = autoLa;
+          r._fundingLabel = autoData.Funder || r._fundingLabel || autoLa;
+          r.data["Invoice type"] = autoLa + " (Exempt invoice)";
+          if (String(r.data.Paid || "") !== PAID_BY.FUNDED_BY_NHS) {
+            r.data.Paid = PAID_BY.FUNDED_BY_LA;
+          }
+        }
       }
 
       if (String(r.sheet || "").toUpperCase() !== "PARENTS") {
@@ -5081,12 +5165,18 @@
       var fromRow = String(r._fundingLabel || "").trim();
       var fromContact = String((info && info.funding_label) || "").trim();
       var label = fromRow;
-      if (!label || isGenericLaNhsUmbrella(label)) {
-        if (fromContact && !isGenericLaNhsUmbrella(fromContact)) label = fromContact;
-        else if (fromRow) label = fromRow;
-        else label = fromContact;
+      if (!label || isGenericLaNhsUmbrella(label) || /^local\s*authority/i.test(label)) {
+        if (fromContact && !isGenericLaNhsUmbrella(fromContact) && !/^local\s*authority/i.test(fromContact)) {
+          label = fromContact;
+        } else if (fromRow && !/^local\s*authority/i.test(fromRow) && !isGenericLaNhsUmbrella(fromRow)) {
+          label = fromRow;
+        } else if (r.data && r.data.Funder && !/^local\s*authority/i.test(String(r.data.Funder))) {
+          label = String(r.data.Funder);
+        } else {
+          label = fromContact;
+        }
       }
-      if (isGenericLaNhsUmbrella(label)) label = "";
+      if (isGenericLaNhsUmbrella(label) || /^local\s*authority(\s*\(|$)/i.test(String(label || ""))) label = "";
       if (String(r.sheet || "").toUpperCase() === "PARENTS") {
         label = label && !isLaInvoiceFundingLabel(label) ? label : "Private";
       }
@@ -5101,6 +5191,7 @@
         invoice_type: r.data && r.data["Invoice type"],
         _reenrol: true,
       });
+      stampLaCouncilOnRow(r);
     });
 
     (payments || []).forEach(function (r) {
@@ -5127,20 +5218,15 @@
         });
       }
       /* Stamp named council on LA rows so chips never fall back to bare "Local Authority". */
-      if (sheetUp === "LA") {
-        var stamped = laCouncilShortFor(r);
-        if (stamped) {
-          r._laCouncilShort = stamped;
-          if (!r.data) r.data = {};
-          if (!r.data.Funder) r.data.Funder = stamped === "H&F" ? "H&F (Hammersmith & Fulham)" : stamped;
-          if (!r._fundingLabel) r._fundingLabel = r.data.Funder;
-        }
-      }
+      if (sheetUp === "LA") stampLaCouncilOnRow(r);
     });
 
     /* Replace workbook funder/stream labels (Day Centre / Prasher) with real parents. */
     (reenrol || []).forEach(applyPortalParent);
     (payments || []).forEach(applyPortalParent);
+    /* After portal parent overwrite (strips "Ealing ·" / "H&F ·"), re-stamp Autumn LA chips. */
+    (reenrol || []).forEach(stampLaCouncilOnRow);
+    (payments || []).forEach(stampLaCouncilOnRow);
   }
 
   function isAutumnReenrolInvoice(inv) {
