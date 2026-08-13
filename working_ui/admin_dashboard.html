@@ -81,6 +81,7 @@
   <script src="/portal/admin-portal-parent-absences.js?v=20260813-office-phone-create"></script>
   <script src="/portal/admin-portal-booking-leads.js?v=20260812-open-tab"></script>
   <script src="/portal/admin-portal-waitlist.js?v=20260813-live-waitlist"></script>
+  <script src="/portal/admin-office-calendar.js?v=20260813-office-cal"></script>
   <script src="/portal/admin-portal-parent-credits.js?v=20260813-office-phone-create"></script>
   <script src="/portal/admin-portal-xero-products.js?v=20260716-add-product-rows"></script>
   <script src="/portal/admin-portal-parent-invoices.js?v=20260813-pay-method-filter"></script>
@@ -423,6 +424,7 @@
       { id:'c4k_sessions', label:'Sessions overview' },
       { id:'session_disruptions', label:'Session disruptions' },
       { id:'c4k_waitlist', label:'Waiting list' },
+      { id:'office_calendar', label:'Office calendar', hubLabel:'Office calendar' },
       { id:'open_places_2627', label:'Open places 2026/27' },
       { id:'c4k_reviews', label:'Reviews' },
       { id:'c4k_reports', label:'Report requests' },
@@ -470,7 +472,7 @@
     var ADMIN_MOBILE_MAX_WIDTH = 899;
     var MOBILE_BOTTOM_NAV_IDS = ['nav_hub', 'dashboard', 'operations_admin', 'nav_all_menu'];
     var NAV_GROUPS = [
-      { id:'g_operator', label:'Operator', children:['dashboard','__h:Sessions','c4k_sessions','session_disruptions','operations_admin','operator','__h:Intake','leads','receptionist'] },
+      { id:'g_operator', label:'Operator', children:['dashboard','__h:Sessions','c4k_sessions','session_disruptions','operations_admin','operator','office_calendar','__h:Intake','leads','receptionist'] },
       { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','open_places_2627','__h:Participants','clients','portal_nav_client_services','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops','portal_parent_notify_log','portal_staff_whatsapp','portal_parent_broadcast'] },
       { id:'g_zoho', label:'H&R', children:['staffhr','onboarding','staffhr_contracts','staffhr_training_records','interviews'] },
       { id:'g_supabase', label:'Documents', children:['__h:Policies','policies_portal','policies','__h:Day Centre','day_centre_documents','__h:Participants','portal_participant_documents','portal_climbing_registrations','portal_parent_consents','__h:Workers','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
@@ -498,6 +500,7 @@
       reenrol_payments:'<text x="12" y="17" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor" stroke="none" font-family="system-ui,Segoe UI,sans-serif">£</text>',
       commissioning_terms:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>',
       c4k_waitlist:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+      office_calendar:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>',
       open_places_2627:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><circle cx="9" cy="15" r="1.5"/><circle cx="15" cy="15" r="1.5"/>',
       c4k_registers:'<path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/>',
       c4k_late_submissions:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/><line x1="12" y1="2" x2="12" y2="4"/>',
@@ -22703,6 +22706,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else if(id==='reenrol_payments') html = viewReenrolPayments();
       else if(id==='logs') html = viewLogs();
       else if(id==='c4k_waitlist') html = viewC4kWaitlistView();
+      else if(id==='office_calendar') html = viewOfficeCalendar();
       else if(id==='open_places_2627') html = viewOpenPlaces2627();
       else if(id==='c4k_registers'){
         sessionsHubEnsureState().tab = 'feedback';
@@ -23881,6 +23885,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDashTileHtml('staffhr_training_records', '', 'staffhr_training_records', 'Training records', 'Evacuation, induction, shadowing &amp; briefings', false, 'feedback')+
         portalDashTileHtml('portal_documents', '', 'portal_documents', 'Documents', 'Timesheets, expenses &amp; uploads', false, 'scheduling')+
         portalDashTileHtml('portal_payslips', '', 'portal_payslips', 'Payslips', 'Upload worker payslip PDFs', false, 'payments')+
+        portalDashTileHtml('office_calendar', '', 'office_calendar', 'Office calendar', 'Meetings, notes &amp; events', false, 'scheduling')+
         portalDashTileHtml('', '', 'invoices', 'Payroll report', 'Monthly PDF · preview &amp; send', false, 'payments', '', '', '/payroll-report.html')+
         portalDashTileHtml('', '', 'c4k_payments', 'Pay rates', 'Hourly rates by role &amp; scale', false, 'payments', '', '', '/pay-rates.html')+
         portalDashTileHtml('c4k_late_submissions', '', 'c4k_late_submissions', 'Late feedback', 'Release late days for timesheet pay', state.portalLatePendingCount > 0, 'feedback');
@@ -24141,6 +24146,34 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
         }
       });
+    }
+    function portalOfficeCalendarConfigureOnce(){
+      if(window.__portalOfficeCalendarConfigured || !window.PortalOfficeCalendar) return;
+      window.__portalOfficeCalendarConfigured = true;
+      window.PortalOfficeCalendar.configure({
+        esc: esc,
+        toast: portalAdminToast,
+        getClient: getSchedSupabaseClient,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        }
+      });
+    }
+    function viewOfficeCalendar(){
+      portalOfficeCalendarConfigureOnce();
+      return window.PortalOfficeCalendar
+        ? window.PortalOfficeCalendar.viewHtml()
+        : '<p class="page-intro">Office calendar module failed to load.</p>';
+    }
+    function bindOfficeCalendarModule(){
+      portalOfficeCalendarConfigureOnce();
+      if(window.PortalOfficeCalendar && typeof window.PortalOfficeCalendar.bindModule === 'function'){
+        window.PortalOfficeCalendar.bindModule();
+      }
     }
     function viewPortalPayslips(){
       portalPayslipsConfigureOnce();
@@ -26457,7 +26490,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.querySelectorAll('[data-act]').forEach(function(b){
         b.addEventListener('click', function(){
           var v = b.getAttribute('data-act');
-          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='open_places_2627'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='staffhr_training_records'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='reenrol_payments'||v==='commissioning_terms'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='day_centre_documents'||v==='portal_participant_documents'||v==='portal_climbing_registrations'||v==='portal_parent_consents'||v==='portal_payslips'||v==='portal_activity'||v==='portal_training_progress'||v==='portal_push_devices'||v==='participant_achievements'||v==='portal_parent_notify_log'||v==='portal_staff_whatsapp'||v==='portal_parent_broadcast'||v==='staff_live_map'||v==='staff_ghost_teleport'||v==='cs_cliq'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
+          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='office_calendar'||v==='open_places_2627'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='staffhr_training_records'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='reenrol_payments'||v==='commissioning_terms'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='day_centre_documents'||v==='portal_participant_documents'||v==='portal_climbing_registrations'||v==='portal_parent_consents'||v==='portal_payslips'||v==='portal_activity'||v==='portal_training_progress'||v==='portal_push_devices'||v==='participant_achievements'||v==='portal_parent_notify_log'||v==='portal_staff_whatsapp'||v==='portal_parent_broadcast'||v==='staff_live_map'||v==='staff_ghost_teleport'||v==='cs_cliq'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
           closeSidebarMob();
         });
       });
@@ -26816,6 +26849,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         refreshBookingWaitlistPipelineTable();
         bindPortalAdminWaitlistModule();
       }
+      if(id==='office_calendar') bindOfficeCalendarModule();
       if(id==='bookings' || id==='orders_all' || id==='c4k_payments'){
         portalLoadLivePaymentsSource(function(changed){ if(changed && state.view===id) setView(id); });
         bindBookingModule();
