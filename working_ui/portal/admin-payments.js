@@ -1743,7 +1743,7 @@
     var pack = cyrusPackageSeasonTotals();
     var thuSvcLabel = "90' Bespoke Programme, Thursday - 3.30 pm to 5 pm";
     var afterSvcLines = [
-      "90' Multi-Activity - 11 am to 12.30 pm",
+      "90' Multi-Activity, Sunday - 11 am to 12.30 pm",
       "60' Aquatic Activity, Wednesday - 4 pm to 5 pm",
     ];
 
@@ -2932,7 +2932,7 @@
   /** Cyrus package lines (paid together) — emphasis follows Day Centre vs Afterschool stream. */
   function cyrusPackageServiceLines() {
     return [
-      "90' Multi-Activity - 11 am to 12.30 pm",
+      "90' Multi-Activity, Sunday - 11 am to 12.30 pm",
       "90' Bespoke Programme, Thursday - 3.30 pm to 5 pm",
       "60' Aquatic Activity, Wednesday - 4 pm to 5 pm",
       "Admin Fee (GoCardless)",
