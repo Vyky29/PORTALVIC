@@ -1031,6 +1031,14 @@
         "</span>"
       );
     }
+    if (pay === "partial") {
+      return (
+        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--partial" data-pp-hub-reenrol-chip role="status" title="Re-enrolled — first instalment paid; later half still due">' +
+        '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
+        "<span>Re-enrolled (partially paid)</span>" +
+        "</span>"
+      );
+    }
     if (pay === "pending") {
       return (
         '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--pending" data-pp-hub-reenrol-chip role="status" title="Re-enrolled — waiting for the office to confirm payment">' +
@@ -1051,6 +1059,7 @@
    * Hub visual for 2026/27 place:
    *  unconfirmed — not re-enrolled (red blink)
    *  unpaid — re-enrolled, term invoice not paid yet (orange)
+   *  partial — flexi / instalments: at least one half paid, balance later (amber)
    *  pending — parent tapped I've paid; office has not confirmed (amber)
    *  settled — term invoice(s) paid, or true office-billed LA/NHS with no parent term invoice
    *
@@ -1061,6 +1070,7 @@
     if (!familyAcceptedNextYear(data)) return "unconfirmed";
     if (data && data._hubReenrolPay === "settled") return "settled";
     if (data && data._hubReenrolPay === "pending") return "pending";
+    if (data && data._hubReenrolPay === "partial") return "partial";
     if (data && data._hubReenrolPay === "unpaid") return "unpaid";
     /* Until invoices resolve, assume unpaid so orange shows immediately. */
     return "unpaid";
@@ -1070,6 +1080,7 @@
     var pay = hubReenrolPayState(data);
     if (pay === "unconfirmed") return " pp-hub-term-block--unconfirmed";
     if (pay === "unpaid") return " pp-hub-term-block--unpaid";
+    if (pay === "partial") return " pp-hub-term-block--partial";
     if (pay === "pending") return " pp-hub-term-block--pending";
     return " pp-hub-term-block--settled";
   }
@@ -1122,20 +1133,24 @@
     return String((inv && inv.payment_status) || "").toLowerCase() === "pending_confirmation";
   }
 
-  /** Hub pay state from term invoices: settled | pending | unpaid | null (no term rows). */
+  /** Hub pay state from term invoices: settled | pending | partial | unpaid | null (no term rows). */
   function termInvoicesHubPayState(term) {
     if (!term || !term.length) return null;
     if (term.every(isInvoiceFullyPaid)) return "settled";
-    var hasOpen = false;
+    var hasUnpaid = false;
+    var hasPartial = false;
     var hasPending = false;
     for (var i = 0; i < term.length; i++) {
       var st = String((term[i] && term[i].payment_status) || "").toLowerCase();
       if (st === "paid" || st === "void") continue;
       if (st === "pending_confirmation") hasPending = true;
-      else hasOpen = true;
+      else if (st === "partial") hasPartial = true;
+      else hasUnpaid = true;
     }
-    if (hasOpen) return "unpaid";
+    /* Worst open status wins: unpaid > pending confirm > partial. */
+    if (hasUnpaid) return "unpaid";
     if (hasPending) return "pending";
+    if (hasPartial) return "partial";
     return "unpaid";
   }
 
@@ -1324,6 +1339,7 @@
       block.classList.remove(
         "pp-hub-term-block--unconfirmed",
         "pp-hub-term-block--unpaid",
+        "pp-hub-term-block--partial",
         "pp-hub-term-block--pending",
         "pp-hub-term-block--settled",
       );
@@ -1332,9 +1348,11 @@
           ? "pp-hub-term-block--unconfirmed"
           : state === "unpaid"
             ? "pp-hub-term-block--unpaid"
-            : state === "pending"
-              ? "pp-hub-term-block--pending"
-              : "pp-hub-term-block--settled",
+            : state === "partial"
+              ? "pp-hub-term-block--partial"
+              : state === "pending"
+                ? "pp-hub-term-block--pending"
+                : "pp-hub-term-block--settled",
       );
       var acc = block.querySelector(".pp-hub-ops__term-accordion");
       if (acc) {
