@@ -1412,6 +1412,7 @@
       ".pay-name-parent{font-size:11px;font-weight:600;color:#64748b;overflow-wrap:anywhere;word-break:break-word;min-width:0;max-width:100%;text-align:center;line-height:1.2}",
       ".pay-amt-stack{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:0;margin:0 auto}",
       ".pay-amt-july{font-size:10px;font-weight:700;color:#047857;white-space:nowrap}",
+      ".pay-amt-credit{font-size:10px;font-weight:800;color:#047857;white-space:nowrap}",
       ".pay-tbl .pay-pill{margin:0 auto;font-size:10px;padding:3px 8px}",
       ".pay-pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}",
       ".pay-pill--paid{background:#e7f6ee;color:#15803d}",
@@ -1543,11 +1544,62 @@
   }
 
   function invoiceChipClass(label) {
-    if (label === INVOICE_TYPE.PARENT_EXEMPT) return "pay-chip--inv-parent-ex";
-    if (label === INVOICE_TYPE.PARENT_20) return "pay-chip--inv-parent-20";
-    if (label === INVOICE_TYPE.LA_EXEMPT) return "pay-chip--inv-la";
-    if (label === INVOICE_TYPE.NHS_EXEMPT) return "pay-chip--inv-nhs";
+    var s = String(label || "").trim();
+    if (label === INVOICE_TYPE.PARENT_EXEMPT || /^Parent\s*\(Exempt/i.test(s)) {
+      return "pay-chip--inv-parent-ex";
+    }
+    if (label === INVOICE_TYPE.PARENT_20 || /^Parent\s*\(20%/i.test(s)) {
+      return "pay-chip--inv-parent-20";
+    }
+    if (label === INVOICE_TYPE.NHS_EXEMPT || /^NHS\s*\(/i.test(s)) {
+      return "pay-chip--inv-nhs";
+    }
+    /* Generic LA or named council: "Ealing (Exempt invoice)", "Hammersmith & Fulham (Exempt invoice)". */
+    if (label === INVOICE_TYPE.LA_EXEMPT || /\(Exempt invoice\)\s*$/i.test(s)) {
+      return "pay-chip--inv-la";
+    }
     return "pay-chip--muted";
+  }
+
+  /**
+   * Named Local Authority for Exempt invoice chips (Ealing, H&F, Westminster…).
+   * Reads Funder / Funding / parent "LA · …" prefix — not the generic umbrella label.
+   */
+  function laCouncilShortFor(r) {
+    if (!r) return "";
+    var d = r.data || {};
+    var blob = [
+      d.Funder,
+      d.Funding,
+      d["Local Authority"],
+      d.LA,
+      d.Council,
+      d.Authority,
+      r._fundingLabel,
+      r.parent_name,
+    ]
+      .map(function (x) { return String(x || ""); })
+      .join(" ");
+    var low = blob.toLowerCase();
+    if (/westminster/.test(low)) return "Westminster";
+    if (/kensington|chelsea|\brbkc\b/.test(low)) return "Kensington & Chelsea";
+    if (/h\s*&\s*f|hammersmith|fulham|\blbhf\b/.test(low)) return "Hammersmith & Fulham";
+    if (/\bealing\b/.test(low)) return "Ealing";
+    if (/\bbrent\b/.test(low)) return "Brent";
+    if (/\bharrow\b/.test(low)) return "Harrow";
+    if (/\bhounslow\b/.test(low)) return "Hounslow";
+    if (/\bbarnet\b/.test(low)) return "Barnet";
+    if (/\bcroydon\b/.test(low)) return "Croydon";
+    if (/richmond/.test(low)) return "Richmond";
+    if (/wandsworth/.test(low)) return "Wandsworth";
+    if (/lambeth/.test(low)) return "Lambeth";
+    if (/southwark/.test(low)) return "Southwark";
+    if (/islington/.test(low)) return "Islington";
+    if (/hackney/.test(low)) return "Hackney";
+    if (/camden/.test(low)) return "Camden";
+    if (/newham/.test(low)) return "Newham";
+    if (/tower\s*hamlets/.test(low)) return "Tower Hamlets";
+    return "";
   }
 
   function paidChipHtml(label) {
@@ -2283,6 +2335,9 @@
       reenrolByTermSlug[term][slug] = true;
     });
     var filteredPayments = payments.filter(function (r) {
+      /* Archived / cancelled workbook rows must not appear as live Outstanding. */
+      if (/^ARCHIVED/i.test(String(r.sheet || ""))) return false;
+      if (/^cancelled$/i.test(String(r.payment_status || "").trim())) return false;
       var term = termBucketFor(r);
       var slug = paymentParticipantSlug(r);
       if (slug && reenrolByTermSlug[term] && reenrolByTermSlug[term][slug]) return false;
@@ -4069,7 +4124,10 @@
     var route = payerRouteFor(r);
     if (route === "FAMILY_DP") return INVOICE_TYPE.PARENT_EXEMPT;
     if (route === "FAMILY_PRIVATE") return INVOICE_TYPE.PARENT_20;
-    if (route === "LA_INVOICE") return INVOICE_TYPE.LA_EXEMPT;
+    if (route === "LA_INVOICE") {
+      var la = laCouncilShortFor(r);
+      return la ? la + " (Exempt invoice)" : INVOICE_TYPE.LA_EXEMPT;
+    }
     if (route === "NHS_INVOICE" || route === "NEN") return INVOICE_TYPE.NHS_EXEMPT;
     return "";
   }
@@ -5669,10 +5727,15 @@
     var paidBy = PAID_BY.PRIVATE_FUNDS;
     var sheet = "PARENTS";
     /* H&F / LA bill-to crash (Adam · Saaib · …): Funded by LA, not family DP. */
+    var crashFunder = "";
     if (hint === "la_funded") {
       paidBy = PAID_BY.FUNDED_BY_LA;
       invType = INVOICE_TYPE.LA_EXEMPT;
       sheet = "LA";
+      /* Adam Pilcher / Saaib crash bill-to H&F — name the council on the chip. */
+      if (cid === "354" || cid === "gap-saaib-abdullah") {
+        crashFunder = "H&F (Hammersmith & Fulham)";
+      }
     } else if (vat === "exempt") {
       paidBy = PAID_BY.FUNDS_FROM_LA;
     }
@@ -5703,6 +5766,8 @@
         Paid: paidBy,
         "Invoice type": invType,
         Invoice: String(inv.invoice_number || "").trim(),
+        Funder: crashFunder || undefined,
+        Funding: crashFunder ? "Local authority · H&F" : undefined,
       },
       _serviceParts: Object.create(null),
     };
