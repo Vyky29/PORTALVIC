@@ -1179,6 +1179,28 @@
       overflow-wrap: break-word;
     }
     .sheet__choice--pri span { opacity: 0.92; }
+    .wl-join { min-width: 0; }
+    .wl-join__label {
+      display: block;
+      margin: 10px 0 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-soft, #3a4a58);
+    }
+    .wl-join__input {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      min-width: 0;
+      border: 1px solid var(--line, #d7e0e8);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font: inherit;
+      font-size: 15px;
+      background: #fff;
+    }
+    .wl-join__textarea { resize: vertical; min-height: 64px; }
+    .wl-join__submit { border: none; cursor: pointer; font: inherit; font-weight: 600; padding: 12px 14px; border-radius: 12px; }
 
     /* —— Access gate: 5s clear preview, then blur + register modal (page stays scrollable) —— */
     html.booking-gated,
@@ -1886,6 +1908,7 @@
   <script src="/portal/portal_booking_offer.js?v=20260812-service-blurbs"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
   <script src="/portal/portal_booking_lead_gate.js?v=20260812-preview-5s-clear"></script>
+  <script src="/portal/portal_booking_waitlist.js?v=20260813-waitlist-join"></script>
   <script>
 (function () {
   "use strict";
@@ -2742,10 +2765,112 @@
   function resetActionSheetChrome() {
     var mail = document.getElementById("sheetMail");
     var choices = document.getElementById("sheetChoices");
-    if (mail) mail.hidden = false;
+    if (mail) {
+      mail.hidden = false;
+      mail.removeAttribute("aria-disabled");
+    }
     if (choices) {
       choices.hidden = true;
       choices.innerHTML = "";
+    }
+  }
+
+  function showWaitlistSuccess(slot, svc, already) {
+    var sheet = document.getElementById("actionSheet");
+    var title = document.getElementById("sheetTitle");
+    var body = document.getElementById("sheetBody");
+    var mail = document.getElementById("sheetMail");
+    var choices = document.getElementById("sheetChoices");
+    var label = (svc && svc.name) || "this session";
+    var when = [slot && slot.day, slot && slot.timeLabel].filter(Boolean).join(" ");
+    title.textContent = already ? "You’re already on the list" : "You’re on the waiting list";
+    body.textContent =
+      "You’re on the waiting list for " +
+      label +
+      (when ? " · " + when : "") +
+      ". We’ll contact you if a place opens.";
+    if (choices) {
+      choices.hidden = true;
+      choices.innerHTML = "";
+    }
+    if (mail) mail.hidden = true;
+    if (sheet) sheet.hidden = false;
+  }
+
+  async function submitWaitlistJoin(slot) {
+    var errEl = document.getElementById("wlJoinErr");
+    var btn = document.getElementById("wlJoinSubmit");
+    var nameEl = document.getElementById("wlParticipantName");
+    var noteEl = document.getElementById("wlNote");
+    var participant = nameEl ? String(nameEl.value || "").trim() : "";
+    var note = noteEl ? String(noteEl.value || "").trim() : "";
+    if (errEl) {
+      errEl.hidden = true;
+      errEl.textContent = "";
+    }
+    if (!participant || participant.length < 2) {
+      if (errEl) {
+        errEl.textContent = "Please enter the participant’s full name.";
+        errEl.hidden = false;
+      }
+      if (nameEl) nameEl.focus();
+      return;
+    }
+    if (!window.PortalBookingWaitlist || typeof window.PortalBookingWaitlist.join !== "function") {
+      if (errEl) {
+        errEl.textContent = "Waiting list isn’t available right now. Please email the office.";
+        errEl.hidden = false;
+      }
+      return;
+    }
+    var svc = mock.serviceById(slot.serviceId);
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Joining…";
+    }
+    try {
+      var out = await window.PortalBookingWaitlist.join({
+        slot_id: slot.id,
+        service_key: (slot && slot.serviceId) || "",
+        service_label: (svc && svc.name) || "",
+        venue: mock.venueLabel(slot.venue),
+        day_name: slot.day || "",
+        time_label: slot.timeLabel || "",
+        participant_name: participant,
+        note: note,
+      });
+      if (!out.res.ok || !out.data || !out.data.ok) {
+        var code = (out.data && out.data.error) || "join_failed";
+        if (errEl) {
+          errEl.textContent =
+            code === "unauthorized"
+              ? "Your session expired — close and unlock the offer again."
+              : "Couldn’t join just now. Please try again or email the office.";
+          errEl.hidden = false;
+        }
+        return;
+      }
+      try {
+        if (window.PortalBookingLeadGate) {
+          void window.PortalBookingLeadGate.pingActivity({
+            booking_status: "waiting_list",
+            service_viewed: (slot && slot.serviceId) || "",
+          });
+        }
+      } catch (_ePing) {
+        /* ignore */
+      }
+      showWaitlistSuccess(slot, svc, !!out.data.already_joined);
+    } catch (_eJoin) {
+      if (errEl) {
+        errEl.textContent = "Couldn’t join just now. Please try again or email the office.";
+        errEl.hidden = false;
+      }
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "Join waiting list";
+      }
     }
   }
 
@@ -2805,30 +2930,89 @@
     var title = document.getElementById("sheetTitle");
     var body = document.getElementById("sheetBody");
     var mail = document.getElementById("sheetMail");
-    title.textContent = enquireOnly
-      ? "Enquire about this course"
-      : "Join waiting list / enquire";
-    try {
-      if (window.PortalBookingLeadGate) {
-        void window.PortalBookingLeadGate.pingActivity({
-          booking_status: enquireOnly ? "exploring_services" : "waiting_list",
-          service_viewed: (slot && slot.serviceId) || "",
-        });
-      }
-    } catch (_e) {
-      /* ignore */
-    }
-    body.textContent =
+    var choices = document.getElementById("sheetChoices");
+    var slotLine =
       (svc ? svc.name : "Session") +
       " · " +
       slot.day +
       " · " +
       slot.timeLabel +
       " · " +
-      mock.venueLabel(slot.venue) +
-      (enquireOnly
-        ? " — email the office to register interest. Times open closer to the dates."
-        : " — currently fully booked. Tell us you’d like to join the waiting list.");
+      mock.venueLabel(slot.venue);
+
+    /* Capacity-full bookable slots → real waitlist join (not mailto). */
+    if (!enquireOnly) {
+      title.textContent = "Join waiting list";
+      body.textContent = slotLine + " — currently fully booked.";
+      try {
+        if (window.PortalBookingLeadGate) {
+          void window.PortalBookingLeadGate.pingActivity({
+            booking_status: "waiting_list",
+            service_viewed: (slot && slot.serviceId) || "",
+          });
+        }
+      } catch (_e) {
+        /* ignore */
+      }
+      if (mail) mail.hidden = true;
+      if (choices && window.PortalBookingWaitlist && window.PortalBookingWaitlist.formHtml) {
+        choices.hidden = false;
+        choices.innerHTML = window.PortalBookingWaitlist.formHtml({
+          lede: "Add the participant’s name. We’ll use the parent contact from your Booking Portal unlock.",
+        });
+        choices.setAttribute("data-wl-slot-id", slot.id);
+        var submitBtn = document.getElementById("wlJoinSubmit");
+        if (submitBtn) {
+          submitBtn.onclick = function () {
+            void submitWaitlistJoin(slot);
+          };
+        }
+      } else if (choices) {
+        choices.hidden = false;
+        choices.innerHTML =
+          '<p class="muted" style="margin:0;font-size:13px">Waiting list form didn’t load. Please email the office.</p>';
+        if (mail) {
+          mail.hidden = false;
+          var subjectFb = encodeURIComponent(
+            "Waiting list enquiry — " +
+              (svc ? svc.name : "session") +
+              " · " +
+              slot.day +
+              " " +
+              slot.timeLabel
+          );
+          mail.href =
+            "mailto:info@clubsensational.org?subject=" +
+            subjectFb +
+            "&body=" +
+            encodeURIComponent(
+              "Hello,\n\nI’d like to join the waiting list for:\n" +
+                slotLine +
+                "\nSlot ref: " +
+                slot.id +
+                "\n\nParticipant name:\n\nThanks"
+            );
+          mail.innerHTML = ICONS.mail + " Email the office";
+        }
+      }
+      sheet.hidden = false;
+      return;
+    }
+
+    /* enquireOnly (half-term / office interest) — keep mailto. */
+    title.textContent = "Enquire about this course";
+    try {
+      if (window.PortalBookingLeadGate) {
+        void window.PortalBookingLeadGate.pingActivity({
+          booking_status: "exploring_services",
+          service_viewed: (slot && slot.serviceId) || "",
+        });
+      }
+    } catch (_e2) {
+      /* ignore */
+    }
+    body.textContent =
+      slotLine + " — email the office to register interest. Times open closer to the dates.";
     var subject = encodeURIComponent(
       "Waiting list enquiry — " +
         (svc ? svc.name : "session") +
@@ -2840,7 +3024,7 @@
         mock.venueLabel(slot.venue)
     );
     var text = encodeURIComponent(
-      "Hello,\n\nI’d like to join the waiting list / enquire about:\n" +
+      "Hello,\n\nI’d like to enquire about:\n" +
         (svc ? svc.name : "Session") +
         "\n" +
         slot.day +
@@ -2850,12 +3034,13 @@
         mock.venueLabel(slot.venue) +
         "\nSlot ref: " +
         slot.id +
-        "\nStatus: " +
-        (enquireOnly ? "Enquire / half-term interest" : "Fully booked / waiting list") +
-        "\n\nParticipant name:\nParent / carer name:\nPhone:\n\nThanks"
+        "\nStatus: Enquire / half-term interest\n\nParticipant name:\nParent / carer name:\nPhone:\n\nThanks"
     );
-    mail.href = "mailto:info@clubsensational.org?subject=" + subject + "&body=" + text;
-    mail.innerHTML = ICONS.mail + " Email the office";
+    if (mail) {
+      mail.hidden = false;
+      mail.href = "mailto:info@clubsensational.org?subject=" + subject + "&body=" + text;
+      mail.innerHTML = ICONS.mail + " Email the office";
+    }
     sheet.hidden = false;
   }
 
@@ -2971,7 +3156,7 @@
         "Live places from the club roster" +
           (weekly != null ? " · " + weekly + " weekly times" : n ? " · " + n + " times" : "") +
           (mock.TERM_LABEL ? " · " + mock.TERM_LABEL : "") +
-          ". Book opens the registration questionnaire; full slots can join a waiting list by email."
+          ". Book opens the registration questionnaire; full slots can join the waiting list online."
       );
     })
     .catch(function () {

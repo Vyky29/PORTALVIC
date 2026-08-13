@@ -80,6 +80,7 @@
   <script src="/portal/admin-portal-participant-documents.js?v=20260812-open-tab"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260709-family-credits"></script>
   <script src="/portal/admin-portal-booking-leads.js?v=20260812-open-tab"></script>
+  <script src="/portal/admin-portal-waitlist.js?v=20260813-live-waitlist"></script>
   <script src="/portal/admin-portal-parent-credits.js?v=20260709-family-credits"></script>
   <script src="/portal/admin-portal-xero-products.js?v=20260716-add-product-rows"></script>
   <script src="/portal/admin-portal-parent-invoices.js?v=20260813-inst-paid-label"></script>
@@ -2496,10 +2497,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!src || !Array.isArray(src.rows) || !src.rows.length) return [];
       return src.rows;
     }
-    /** Waiting list: `waiting_list_portal_data.js` when present, else `MOCK.c4kWaitlist`. */
+    function adminLiveWaitlistRows(){
+      var live = typeof window !== 'undefined' ? window.__PORTAL_WAITLIST_LIVE_ROWS__ : null;
+      return Array.isArray(live) ? live : [];
+    }
+    /** Waiting list: live Booking Portal joins first, then workbook export, else demo mock. */
     function adminC4kWaitlistRows(){
-      var pr = adminWaitingListPortalRows();
-      if(pr.length) return pr;
+      var live = adminLiveWaitlistRows();
+      var pr = adminWaitingListPortalRows().map(function(w){
+        var row = Object.assign({}, w);
+        if(!row.sourceTag) row.sourceTag = 'Workbook';
+        if(!row.source || row.source === 'Waiting list (Portal)') row.source = 'Waiting list (workbook)';
+        row._live = false;
+        return row;
+      });
+      if(live.length || pr.length) return live.concat(pr);
       return MOCK.c4kWaitlist || [];
     }
     function adminSfStr(v){
@@ -10388,24 +10400,41 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }).join('');
     }
     function bookingWaitlistRowsHtml(){
+      var live = adminLiveWaitlistRows();
       var pl = adminWaitingListPortalRows();
-      if(pl.length){
-        return pl.slice(0, 12).map(function(w){
-          var stage = (w.last && String(w.last).trim() && String(w.last).trim() !== '—') ? 'Has booking history' : 'Waiting';
-          return '<tr data-booking-waitlist-portal="1">'+
-            '<td style="min-width:0;max-width:220px;overflow-wrap:break-word"><strong>'+esc(w.pax)+'</strong></td>'+
-            '<td>Waiting list (Portal)</td>'+
+      var rows = [];
+      live.slice(0, 20).forEach(function(w){
+        var stage = String(w.liveStatus || 'active');
+        stage = stage.charAt(0).toUpperCase() + stage.slice(1);
+        rows.push(
+          '<tr data-booking-waitlist-live="1">'+
+            '<td style="min-width:0;max-width:220px;overflow-wrap:break-word"><strong>'+esc(w.pax)+'</strong>'+
+            (w.parentLine ? '<div class="muted" style="font-size:11px;margin-top:3px;overflow-wrap:break-word">'+esc(w.parentLine)+'</div>' : '')+
+            '</td>'+
+            '<td><span class="chip chip--ok">Booking Portal</span></td>'+
             '<td><span class="chip chip--pend">'+esc(stage)+'</span></td>'+
             '<td class="muted" style="min-width:0;max-width:140px;overflow-wrap:break-word">'+esc(w.since || '—')+'</td>'+
-            '</tr>';
-        }).join('');
-      }
+          '</tr>'
+        );
+      });
+      pl.slice(0, 12).forEach(function(w){
+        var stage = (w.last && String(w.last).trim() && String(w.last).trim() !== '—') ? 'Has booking history' : 'Waiting';
+        rows.push(
+          '<tr data-booking-waitlist-portal="1">'+
+            '<td style="min-width:0;max-width:220px;overflow-wrap:break-word"><strong>'+esc(w.pax)+'</strong></td>'+
+            '<td><span class="chip chip--info">Workbook</span></td>'+
+            '<td><span class="chip chip--pend">'+esc(stage)+'</span></td>'+
+            '<td class="muted" style="min-width:0;max-width:140px;overflow-wrap:break-word">'+esc(w.since || '—')+'</td>'+
+          '</tr>'
+        );
+      });
+      if(rows.length) return rows.join('');
       var list = (MOCK.referralsPipeline || []).filter(function(x){
         var st = String(x && x.stage || '').toLowerCase();
         return st.indexOf('active') >= 0 || st.indexOf('enquiry') >= 0 || st.indexOf('trial') >= 0;
       }).slice(0, 8);
       if(!list.length){
-        return '<tr><td colspan="4" class="muted">No waiting list items in demo data.</td></tr>';
+        return '<tr><td colspan="4" class="muted">No waiting list joins yet — full slots on the Booking Portal create live rows here.</td></tr>';
       }
       return list.map(function(x){
         return '<tr data-booking-client="'+esc(String(x.client||''))+'">'+
@@ -21965,12 +21994,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       );
     }
     function viewC4kWaitlistView(){
+      var live = adminLiveWaitlistRows();
       var wlPortal = adminWaitingListPortalRows();
       var list = adminC4kWaitlistRows();
       var meta = wlPortal.length && window.WAITING_LIST_PORTAL_SOURCE && window.WAITING_LIST_PORTAL_SOURCE.meta;
-      var metaLine = wlPortal.length
-        ? ('<span class="chip chip--ok">Waiting list workbook</span> <span class="muted" style="font-size:12px">' + esc(String(meta && meta.sourceFile ? meta.sourceFile : 'Watiting List (Portal).xlsx')) + ' · ' + String(list.length) + ' rows</span>')
-        : '<span class="chip chip--info">Demo queue</span>';
+      var liveMeta = window.__PORTAL_WAITLIST_LIVE_META__ || {};
+      var chips = [];
+      if(live.length){
+        chips.push('<span class="chip chip--ok">Live Booking Portal · '+String(liveMeta.active != null ? liveMeta.active : live.length)+'</span>');
+      }
+      if(wlPortal.length){
+        chips.push('<span class="chip chip--info">Workbook · '+String(wlPortal.length)+'</span>');
+      }
+      if(!chips.length){
+        chips.push('<span class="chip chip--info">Demo queue</span>');
+      }
+      var metaLine = chips.join(' ');
       var optHint = '';
       if(meta && meta.optionalColumns && (!meta.optionalColumns.desiredService || !meta.optionalColumns.slotTime)){
         optHint = '<p class="muted" style="margin:8px 0 0;font-size:12px;max-width:52rem;min-width:0;overflow-wrap:break-word">Add <strong>desiredService</strong> and <strong>slotTime</strong> to the workbook (aliases: <em>Service</em>, <em>Slot time</em>, <em>preferredSlot</em>), then run <code>database/export_waiting_list_portal_js.py</code>.</p>';
@@ -21979,9 +22018,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var slot = (w.slotTime != null && String(w.slotTime).trim()) ? String(w.slotTime).trim() : '—';
         var pri = String(w.pri != null ? w.pri : '—').trim() || '—';
         var par = (w.parentLine != null && String(w.parentLine).trim() && String(w.parentLine).trim() !== '—') ? String(w.parentLine).trim() : '';
+        var srcChip = w._live
+          ? '<span class="chip chip--ok" style="margin-top:4px;display:inline-block">Booking Portal</span>'
+          : (w.sourceTag === 'Workbook' || !w._live
+            ? '<span class="chip chip--info" style="margin-top:4px;display:inline-block">Workbook</span>'
+            : '');
         return '<tr>'+
           '<td style="min-width:0;max-width:220px;overflow-wrap:break-word"><strong>'+esc(w.pax)+'</strong>'+
           (par ? '<div class="muted" style="font-size:11px;margin-top:3px;overflow-wrap:break-word">'+esc(par)+'</div>' : '')+
+          srcChip+
           '</td>'+
           '<td style="min-width:0;max-width:180px;overflow-wrap:break-word">'+esc(String(w.service != null ? w.service : '—'))+'</td>'+
           '<td class="muted" style="min-width:0;max-width:180px;overflow-wrap:break-word">'+esc(slot)+'</td>'+
@@ -21994,16 +22039,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<td class="muted" style="white-space:nowrap">'+esc(String(w.last != null ? w.last : '—'))+'</td>'+
           '<td class="toolbar"><button type="button" class="btn btn--pri btn--sm c4k-mock-act" data-c4k-mock="woffer">Offer</button> <button type="button" class="btn btn--sec btn--sm c4k-mock-act" data-c4k-mock="wkeep">Keep</button> <button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_services">Match</button></td></tr>';
       }).join('');
-      var foot = wlPortal.length
-        ? '<p class="muted" style="margin:10px 0 0;font-size:12px;max-width:52rem;min-width:0;overflow-wrap:break-word">Loaded from <code>waiting_list_portal_data.js</code>. If service or slot show "—", add those columns to <code>Watiting List (Portal).xlsx</code> and re-export.</p>'
-        : '';
+      if(!rows){
+        rows = '<tr><td colspan="11" class="muted" style="padding:16px;overflow-wrap:break-word">No waiting list rows yet. Joins from Booking Portal full slots appear here automatically; older workbook rows stay tagged as Workbook.</td></tr>';
+      }
+      var foot = '<p class="muted" style="margin:10px 0 0;font-size:12px;max-width:52rem;min-width:0;overflow-wrap:break-word">Live rows come from Booking Portal <strong>Join waiting list</strong>. Workbook history loads from <code>waiting_list_portal_data.js</code>.</p>';
       return (
         '<h1 class="page-title">Waiting list</h1>'+
         '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Families waiting for a place — triage, match, and progress offers. '+metaLine+' Day context: <button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_services">Services</button>.</p>'+optHint+
-        '<div class="section"><div class="section-h"><h2>Waiting list (pipeline)</h2><p>Quick snapshot; with the portal export the source is the workbook (not only demo referrals).</p></div>'+
+        '<div class="section"><div class="section-h"><h2>Waiting list (pipeline)</h2><p>Live Booking Portal joins first; workbook history kept below.</p></div>'+
         '<div class="card"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center" id="bookingWaitlistTable"><thead><tr><th>Participant</th><th>Source</th><th>Stage</th><th>Since</th></tr></thead><tbody></tbody></table></div></div></div>'+
-        '<div class="section" style="margin-top:22px"><div class="section-h"><h2>Service matching queue</h2><p>Desired service, <code>slotTime</code>, and preferences when present in the sheet.</p></div>'+
-        '<div class="card"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center" style="min-width:1120px"><thead><tr><th>Participant</th><th>Service</th><th>Slot time</th><th>Pref. time</th><th>Ratio</th><th>Location</th><th>Pri</th><th>Possible match</th><th>Contact</th><th>Last booking</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'+foot+'</div></div>'
+        '<div class="section" style="margin-top:22px"><div class="section-h"><h2>Service matching queue</h2><p>Desired service, slot time, and preferences when present.</p></div>'+
+        '<div class="card"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center" id="c4kWaitlistMatchTable" style="min-width:1120px"><thead><tr><th>Participant</th><th>Service</th><th>Slot time</th><th>Pref. time</th><th>Ratio</th><th>Location</th><th>Pri</th><th>Possible match</th><th>Contact</th><th>Last booking</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'+foot+'</div></div>'
       );
     }
     function sessionFeedbackEnsureState(){
@@ -25233,6 +25279,38 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       });
     }
+    function portalAdminWaitlistConfigureOnce(){
+      if(window.__portalAdminWaitlistConfigured || !window.PortalAdminWaitlist) return;
+      window.__portalAdminWaitlistConfigured = true;
+      window.PortalAdminWaitlist.configure({
+        esc: esc,
+        toast: portalAdminToast,
+        getClient: getSchedSupabaseClient,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        }
+      });
+    }
+    function bindPortalAdminWaitlistModule(){
+      portalAdminWaitlistConfigureOnce();
+      if(!window.PortalAdminWaitlist || typeof window.PortalAdminWaitlist.refresh !== 'function') return;
+      if(state._waitlistSkipFetch) return;
+      if(state._waitlistRefreshing) return;
+      state._waitlistRefreshing = true;
+      void window.PortalAdminWaitlist.refresh().then(function(){
+        state._waitlistRefreshing = false;
+        if(state.view !== 'c4k_waitlist') return;
+        state._waitlistSkipFetch = true;
+        try{ setView('c4k_waitlist'); }
+        finally{ state._waitlistSkipFetch = false; }
+      }).catch(function(){
+        state._waitlistRefreshing = false;
+      });
+    }
     function bindPortalBookingLeadsModule(){
       portalBookingLeadsConfigureOnce();
       if(window.PortalBookingLeads && typeof window.PortalBookingLeads.bindModule === 'function'){
@@ -26669,6 +26747,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(id==='c4k_waitlist'){
         refreshBookingWaitlistPipelineTable();
+        bindPortalAdminWaitlistModule();
       }
       if(id==='bookings' || id==='orders_all' || id==='c4k_payments'){
         portalLoadLivePaymentsSource(function(changed){ if(changed && state.view===id) setView(id); });

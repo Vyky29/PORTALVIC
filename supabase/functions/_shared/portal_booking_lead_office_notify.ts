@@ -338,3 +338,110 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
     console.warn("[registration-office-notify] push error", e);
   }
 }
+
+/** Office alert when a family joins a Booking Portal full-slot waiting list. */
+export async function notifyOfficeWaitlistJoin(opts: {
+  entryId: string;
+  leadId?: string | null;
+  participantName: string;
+  parentName: string;
+  email: string;
+  mobile: string;
+  serviceLabel: string;
+  dayName: string;
+  timeLabel: string;
+  venue: string;
+  slotId: string;
+  note?: string | null;
+  alreadyJoined?: boolean;
+}): Promise<void> {
+  const participant = String(opts.participantName || "").trim() || "Participant";
+  const parent = String(opts.parentName || "").trim() || "Parent / carer";
+  const email = String(opts.email || "").trim();
+  const mobile = String(opts.mobile || "").trim();
+  const service = String(opts.serviceLabel || "").trim() || "Session";
+  const when = [opts.dayName, opts.timeLabel].map((x) => String(x || "").trim()).filter(Boolean).join(" · ");
+  const venue = String(opts.venue || "").trim();
+  const note = String(opts.note || "").trim();
+  const eventLabel = opts.alreadyJoined
+    ? "re-confirmed waiting list interest"
+    : "joined a waiting list";
+
+  const smtp = readParentNotifySmtpConfig();
+  const tos = officeNotifyEmails();
+  if (smtp && tos.length) {
+    const subject = `Waiting list · ${participant} · ${service}`;
+    const bodyText =
+      `Booking Portal: family ${eventLabel}.\n\n` +
+      `Participant: ${participant}\n` +
+      `Parent / carer: ${parent}\n` +
+      `Email: ${email}\n` +
+      `Phone: ${mobile}\n` +
+      `Service: ${service}\n` +
+      `Slot: ${when || "—"}${venue ? ` · ${venue}` : ""}\n` +
+      `Slot ref: ${opts.slotId}\n` +
+      (note ? `Note: ${note}\n` : "") +
+      `Entry id: ${opts.entryId}\n` +
+      (opts.leadId ? `Lead id: ${opts.leadId}\n` : "") +
+      `\nOpen Admin → Waiting list.\n` +
+      `— clubSENsational portal`;
+    for (const to of tos) {
+      const mail = await sendParentEmailViaSmtp({
+        config: smtp,
+        to,
+        subject,
+        bodyText,
+      });
+      if (!mail.ok) {
+        console.warn("[waitlist-office-notify] email failed", to, mail.error);
+      }
+    }
+  } else {
+    console.log(
+      `[waitlist-office-notify] entry=${opts.entryId} participant=${participant} service=${service} email=${email}`,
+    );
+  }
+
+  const baseUrl = (Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
+  const secret = (Deno.env.get("PORTAL_PUSH_WEBHOOK_SECRET") || "").trim();
+  if (!baseUrl || !secret) return;
+
+  try {
+    const res = await fetch(
+      `${baseUrl}/functions/v1/portal-push-dispatch-admin-alert`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-portal-webhook-secret": secret,
+        },
+        body: JSON.stringify({
+          type: "INSERT",
+          table: "portal_waitlist_entries",
+          record: {
+            id: opts.entryId,
+            lead_id: opts.leadId || null,
+            parent_name: parent,
+            email,
+            mobile,
+            participant_name: participant,
+            service_label: service,
+            slot_id: opts.slotId,
+            notify_event: opts.alreadyJoined ? "already_joined" : "joined",
+            created_at: new Date().toISOString(),
+          },
+        }),
+      },
+    );
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      console.warn(
+        "[waitlist-office-notify] push failed",
+        res.status,
+        t.slice(0, 200),
+      );
+    }
+  } catch (e) {
+    console.warn("[waitlist-office-notify] push error", e);
+  }
+}
