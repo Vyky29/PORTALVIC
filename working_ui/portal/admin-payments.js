@@ -1223,10 +1223,10 @@
   }
 
   /**
-   * How a partial Autumn invoice is being paid down:
+   * Payment plan on the Autumn term invoice (not the same as Paid/Out):
    * - flexi: bank transfer, 2 payments on one term invoice
    * - gc: GoCardless, one term invoice + monthly instalments (e.g. Autumn Sep–Dec)
-   * - oneoff: bank one-off (normally never partial once paid)
+   * - oneoff: bank one-off (single payment on the invoice)
    */
   function instalmentCountFor(r) {
     if (!r) return 0;
@@ -1236,20 +1236,39 @@
   }
 
   function isGoCardlessPaymentRow(r) {
-    var hint = String((r && r._paymentMethodHint) || "").toLowerCase();
+    if (!r) return false;
+    var hint = String(r._paymentMethodHint || "").toLowerCase();
     if (hint === "gocardless") return true;
-    return typeof rowHasGoCardlessFee === "function" && rowHasGoCardlessFee(r);
+    if (typeof rowHasGoCardlessFee === "function" && rowHasGoCardlessFee(r)) return true;
+    /* Unpaid GC packs often only show the fee line in Services. */
+    try {
+      var lines = typeof serviceOneLinersFor === "function" ? serviceOneLinersFor(r) : [];
+      if (lines.some(function (s) { return typeof isGoCardlessFeeLabel === "function" && isGoCardlessFeeLabel(s); })) {
+        return true;
+      }
+    } catch (_e) { /* ignore */ }
+    return false;
   }
 
-  function partialPlanKind(r) {
-    if (!r) return "flexi";
+  function payPlanKind(r) {
+    if (!r) return "";
     var n = instalmentCountFor(r);
-    if (isGoCardlessPaymentRow(r)) return "gc";
-    /* Monthly term schedules (≥3) are GoCardless even if hint lagged. */
-    if (n >= 3) return "gc";
+    if (isGoCardlessPaymentRow(r) || n >= 3) return "gc";
+    if (n === 2) return "flexi";
     if (n === 1) return "oneoff";
-    /* Bank flexi = 2 payments on the term invoice; default legacy partials to flexi. */
-    return "flexi";
+    var hint = String(r._paymentMethodHint || "").toLowerCase();
+    if (hint === "bank_transfer" || hint === "bank" || hint === "tide") {
+      /* No schedule yet: part-paid bank ⇒ flexi; otherwise unknown one-off. */
+      if (category(r) === "partial") return "flexi";
+      return "oneoff";
+    }
+    if (category(r) === "partial") return "flexi";
+    return "";
+  }
+
+  /** @deprecated alias — prefer payPlanKind */
+  function partialPlanKind(r) {
+    return payPlanKind(r) || "flexi";
   }
 
   function injectStyleOnce() {
@@ -2167,7 +2186,7 @@
     /* Status label only. Funding chips sit below with no second title. */
     var html = '<div class="pay-chip-filters pay-chip-filters--tbl" role="group" aria-label="Filters for this term">'
       + '<div class="pay-chip-row">'
-      + '<span class="pay-chip-row__lab">Status</span>'
+      + '<span class="pay-chip-row__lab">Status / plan</span>'
       + filterChipBtn("paystatus", "paid", "Paid", statusCur === "paid", "pay-chip--paid-ok", termId)
       + filterChipBtn("paystatus", "flexi", "Flexi", statusCur === "flexi", "pay-chip--flexi", termId)
       + filterChipBtn("paystatus", "gc", "GC", statusCur === "gc", "pay-chip--gc", termId)
@@ -2212,11 +2231,13 @@
     if (!st) return rows || [];
     return (rows || []).filter(function (r) {
       var c = category(r);
+      if (c === "notreenrolled") return false;
       if (st === "paid") return c === "paid" || c === "partial";
       /* Legacy "partial" chip → any part-paid (Flexi or GC). */
       if (st === "partial") return c === "partial";
-      if (st === "flexi") return c === "partial" && partialPlanKind(r) === "flexi";
-      if (st === "gc") return c === "partial" && partialPlanKind(r) === "gc";
+      /* Flexi / GC chips = payment plan on the term invoice (incl. unpaid Out). */
+      if (st === "flexi") return payPlanKind(r) === "flexi";
+      if (st === "gc") return payPlanKind(r) === "gc";
       if (st === "outstanding") return c === "outstanding";
       return c === st;
     });
