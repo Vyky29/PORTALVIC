@@ -3,6 +3,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { syncParentFormPhotoToParticipantAvatar } from "../_shared/participant_avatar.ts";
+import { ensureInterestedClientFromRegistration } from "../_shared/portal_interested_client.ts";
 import { notifyOfficeRegistrationSubmitted } from "../_shared/portal_booking_lead_office_notify.ts";
 
 const corsHeaders: Record<string, string> = {
@@ -195,7 +196,7 @@ async function markBookingLeadsSubmitted(
   for (const id of leadIds) {
     const { data: lead } = await admin
       .from("portal_booking_leads")
-      .select("id, booking_status, registration_status")
+      .select("id, booking_status, registration_status, client_status")
       .eq("id", id)
       .maybeSingle();
     if (!lead) continue;
@@ -211,6 +212,11 @@ async function markBookingLeadsSubmitted(
     const curReg = REG_STATUS_RANK[String(lead.registration_status)] ?? 0;
     if (curReg < REG_STATUS_RANK.submitted) {
       patch.registration_status = "submitted";
+    }
+    /* Interested in our services — do not overwrite active clients. */
+    const curClient = String(lead.client_status || "");
+    if (curClient !== "active_client" && curClient !== "closed") {
+      patch.client_status = "registered";
     }
     const { error } = await admin.from("portal_booking_leads").update(patch).eq("id", id);
     if (error) {
@@ -368,6 +374,35 @@ Deno.serve(async (req) => {
     if (photoPath) removePaths.push(photoPath);
     await admin.storage.from(BUCKET).remove(removePaths);
     return json(500, { ok: false, error: "save_failed" });
+  }
+
+  /* Every completed Client Registration → Interested client record (not waitlist-only). */
+  if (formType === "client_registration") {
+    try {
+      const parentBits = payload && typeof payload === "object" ? payload as Record<string, unknown> : {};
+      await ensureInterestedClientFromRegistration(admin, {
+        participantName,
+        participantDob,
+        parentName,
+        parentEmail,
+        parentPhone,
+        addressLine1: sanitizePart(String(parentBits.parent_address || parentBits.address || ""), 200) || null,
+        postcode: sanitizePart(String(parentBits.parent_postcode || parentBits.postcode || ""), 20) || null,
+        registrationDate: String(row.submitted_at || "").slice(0, 10) || null,
+        generalInfoLines: [
+          bookingRequest
+            ? `Requested booking\t${bookingRequest.service_name} · ${bookingRequest.venue} · ${bookingRequest.day} · ${bookingRequest.time}`
+            : "Requested booking\tNone (registration only — Interested in our services)",
+          parentBits.ehcp ? `EHCP\t${sanitizePart(String(parentBits.ehcp), 40)}` : "",
+          parentBits.ehcp_details ? `EHCP details\t${sanitizePart(String(parentBits.ehcp_details), 400)}` : "",
+          parentBits.motivators ? `Motivators\t${sanitizePart(String(parentBits.motivators), 400)}` : "",
+          parentBits.dislikes ? `Dislikes\t${sanitizePart(String(parentBits.dislikes), 400)}` : "",
+          `Registration document\t${row.id}`,
+        ].filter(Boolean),
+      });
+    } catch (ensureErr) {
+      console.warn("[portal-parent-form-submit] ensure interested client", ensureErr);
+    }
   }
 
   if (photoBytes && photoBytes.length) {

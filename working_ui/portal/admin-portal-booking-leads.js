@@ -120,9 +120,20 @@
     );
   }
 
+  function clientStatusLabel(raw) {
+    var s = String(raw || "").toLowerCase();
+    if (s === "registered") return "Interested in our services";
+    if (s === "active_client") return "Existing client";
+    if (s === "waiting_list") return "Waiting list";
+    if (s === "prospective") return "Prospective";
+    if (s === "closed") return "Closed";
+    return String(raw || "—").replace(/_/g, " ");
+  }
+
   function statusTone(status) {
     var s = String(status || "").toLowerCase();
     if (s === "prospective" || s === "new_lead") return "pend";
+    if (s === "registered") return "ok";
     if (s === "active_client" || s === "registration_submitted" || s === "booking_completed")
       return "ok";
     if (s === "waiting_list" || s === "exploring_services") return "info";
@@ -236,7 +247,7 @@
       esc(r.mobile || "—") +
       "</td>" +
       "<td>" +
-      chip(String(r.client_status || "").replace(/_/g, " "), statusTone(r.client_status)) +
+      chip(clientStatusLabel(r.client_status), statusTone(r.client_status)) +
       "</td>" +
       "<td>" +
       chip(String(r.booking_status || "").replace(/_/g, " "), statusTone(r.booking_status)) +
@@ -370,7 +381,7 @@
       ">Prospective</option>" +
       '<option value="registered"' +
       (state.filter === "registered" ? " selected" : "") +
-      ">Registered</option>" +
+      ">Interested in our services</option>" +
       '<option value="reg_started"' +
       (state.filter === "reg_started" ? " selected" : "") +
       ">Registration submitted</option>" +
