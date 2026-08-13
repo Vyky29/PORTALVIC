@@ -1088,13 +1088,39 @@
     var main = money(r.amount);
     var yearAmt = resolveYearProgrammeGbp(r);
     var bucket = typeof termBucketFor === "function" ? termBucketFor(r) : "";
+    var payCat = category(r);
+    var paidSoFar = Number(r._amountPaid != null ? r._amountPaid : r.amount_paid_gbp) || 0;
 
-    /* Autumn 26/27 Total column: Autumn (bold) → Spring → Summer → Year. */
+    /* Autumn 26/27 Total column: Autumn (bold) → Spring → Summer → Year.
+       Paid → green Autumn total; Flexi → green paid / orange face (£350/£700). */
     if (bucket === "autumn_2627") {
       var split = autumnCatalogSeasonTotals(r);
       if (split.year > 0 || split.autumn > 0) {
+        var autumnFace = Number(split.autumn) || termAmt || 0;
+        var autumnMain;
+        if (payCat === "partial" && paidSoFar > 0 && autumnFace > 0) {
+          autumnMain =
+            '<span class="pay-amt-term pay-amt-term--flexi" title="Flexi: paid / Autumn total">'
+            + "Autumn "
+            + '<span class="pay-amt-paid">' + money(paidSoFar) + "</span>"
+            + '<span class="pay-amt-slash">/</span>'
+            + '<span class="pay-amt-face">' + money(autumnFace) + "</span>"
+            + "</span>";
+        } else if (payCat === "paid") {
+          autumnMain =
+            '<span class="pay-amt-term pay-amt-term--paid" title="Autumn paid in full">'
+            + "Autumn "
+            + money(autumnFace)
+            + "</span>";
+        } else {
+          autumnMain =
+            '<span class="pay-amt-term" title="Autumn total">'
+            + "Autumn "
+            + money(autumnFace)
+            + "</span>";
+        }
         return '<span class="pay-amt-stack" title="Catalogue Autumn / Spring / Summer / Year">'
-          + '<span class="pay-amt-term">' + money(split.autumn) + "</span>"
+          + autumnMain
           + '<span class="pay-amt-season">Spring ' + money(split.spring) + "</span>"
           + '<span class="pay-amt-season">Summer ' + money(split.summer) + "</span>"
           + '<span class="pay-amt-year">Year ' + money(split.year > 0 ? split.year : (split.autumn + split.spring + split.summer)) + "</span>"
@@ -1291,7 +1317,12 @@
       ".pay-tbl th.pay-col-term,.pay-tbl td.pay-col-term{width:5.5rem;text-align:center}",
       ".pay-term-pill{display:inline-block;max-width:100%;padding:3px 7px;border-radius:999px;background:#eef6fb;color:#1e5a7a;border:1px solid rgba(45,132,179,.28);font-size:10px;font-weight:700;line-height:1.2;overflow-wrap:break-word}",
       ".pay-amt-year{display:block;font-size:10px;font-weight:600;color:#64748b;line-height:1.2;overflow-wrap:break-word}",
-      ".pay-amt-term{display:block;font-size:13px;font-weight:800;color:#173247;line-height:1.2}",
+      ".pay-amt-term{display:block;font-size:13px;font-weight:800;color:#173247;line-height:1.25;overflow-wrap:break-word;min-width:0}",
+      ".pay-amt-term--paid{color:#047857}",
+      ".pay-amt-term--flexi{color:#173247}",
+      ".pay-amt-paid{color:#047857;font-weight:800}",
+      ".pay-amt-face{color:#c2410c;font-weight:800}",
+      ".pay-amt-slash{color:#94a3b8;font-weight:700;margin:0 1px}",
       ".pay-amt-season{display:block;font-size:10px;font-weight:600;color:#64748b;line-height:1.2;overflow-wrap:break-word}",
       ".pay-tbl th.pay-col-total,.pay-tbl td.pay-col-total{width:5.75rem;min-width:5.25rem;text-align:center;white-space:normal;font-variant-numeric:tabular-nums;font-size:13px;font-weight:700}",
       ".pay-tbl th.pay-col-status,.pay-tbl td.pay-col-status{width:3.6rem;max-width:3.6rem;padding-left:2px;padding-right:2px;text-align:center;overflow:hidden;overflow-wrap:normal;word-break:normal}",
