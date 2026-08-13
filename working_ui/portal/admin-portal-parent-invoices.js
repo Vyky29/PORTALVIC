@@ -435,16 +435,23 @@
   function instalmentScheduleHtml(inv) {
     var rows = scheduleRows(inv);
     if (!rows.length) return '';
+    var invoicePaid = String(inv.payment_status || '').toLowerCase() === 'paid';
+    var invoicePaidAt = inv.paid_at || null;
+    var invoicePaidVia = inv.paid_via || null;
     var firstUnpaidIdx = -1;
-    for (var fi = 0; fi < rows.length; fi++) {
-      if (String(rows[fi].status || 'pending').toLowerCase() !== 'paid') {
-        firstUnpaidIdx = fi;
-        break;
+    if (!invoicePaid) {
+      for (var fi = 0; fi < rows.length; fi++) {
+        if (String(rows[fi].status || 'pending').toLowerCase() !== 'paid') {
+          firstUnpaidIdx = fi;
+          break;
+        }
       }
     }
     var items = rows
       .map(function (r, i) {
-        var st = String(r.status || 'pending').toLowerCase() === 'paid' ? 'paid' : 'pending';
+        var rowPaid = String(r.status || 'pending').toLowerCase() === 'paid';
+        /* Fully paid invoice → every instalment shows Paid (even if schedule row was left pending). */
+        var st = invoicePaid || rowPaid ? 'paid' : 'pending';
         var label =
           String(r.label || '').trim() ||
           'Instalment ' + String(r.seq || i + 1);
@@ -471,11 +478,13 @@
             : isScheduledNext
               ? 'Scheduled'
               : 'Hidden';
+        var paidAtShow = r.paid_at || (invoicePaid ? invoicePaidAt : null);
+        var paidViaShow = r.paid_via || (invoicePaid ? invoicePaidVia : null);
         var meta = [];
         if (due) meta.push(due);
         meta.push(formatMoney(r.amount_gbp));
-        if (st === 'paid' && r.paid_at) meta.push(formatDate(r.paid_at));
-        if (st === 'paid' && r.paid_via) meta.push(String(r.paid_via));
+        if (st === 'paid' && paidAtShow) meta.push(formatDate(paidAtShow));
+        if (st === 'paid' && paidViaShow) meta.push(String(paidViaShow));
         if (isScheduledNext || isLaterHidden) meta.push('not due yet');
         return (
           '<li class="pp-inv-acc__inst-row" style="min-width:0;margin:0 0 4px;padding:6px 8px;border:1px solid;border-radius:8px;' +
