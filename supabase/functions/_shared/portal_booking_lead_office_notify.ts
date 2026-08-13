@@ -10,28 +10,15 @@ import {
 import { adminPushOpenBase } from "./portal_webpush_util.ts";
 
 function officeNotifyEmails(): string[] {
-  const defaults = [
-    "info@clubsensational.org",
-    "victor@clubsensational.org",
-  ];
   const raw = String(
     Deno.env.get("BOOKING_LEAD_OFFICE_EMAIL") ||
       Deno.env.get("PORTAL_OFFICE_NOTIFY_EMAIL") ||
-      "",
+      "info@clubsensational.org",
   ).trim();
-  const fromEnv = raw
+  return raw
     .split(/[,;\s]+/)
     .map((x) => x.trim())
     .filter((x) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x));
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const addr of [...fromEnv, ...defaults]) {
-    const key = addr.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(addr);
-  }
-  return out;
 }
 
 function bytesToBase64(bytes: Uint8Array): string {
