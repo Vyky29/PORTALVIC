@@ -41,23 +41,43 @@
 
   async function join(payload) {
     var c = cfg();
-    if (!c.url || !c.anon) throw new Error("missing_config");
+    if (!c.url || !c.anon) {
+      return {
+        res: { ok: false, status: 0 },
+        data: { ok: false, error: "missing_config" },
+      };
+    }
     var tok = sessionToken();
-    if (!tok) throw new Error("unauthorized");
-    var res = await fetch(c.url + "/functions/v1/portal-booking-waitlist-join", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + c.anon,
-        apikey: c.anon,
-        "x-booking-lead-session": tok,
-      },
-      body: JSON.stringify(payload || {}),
-    });
-    var data = await res.json().catch(function () {
-      return {};
-    });
-    return { res: res, data: data };
+    if (!tok) {
+      return {
+        res: { ok: false, status: 401 },
+        data: { ok: false, error: "unauthorized" },
+      };
+    }
+    try {
+      var res = await fetch(c.url + "/functions/v1/portal-booking-waitlist-join", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + c.anon,
+          apikey: c.anon,
+          "x-booking-lead-session": tok,
+        },
+        body: JSON.stringify(payload || {}),
+      });
+      var data = await res.json().catch(function () {
+        return {};
+      });
+      if (!data || typeof data !== "object") data = {};
+      if (data.ok == null && !res.ok) data.ok = false;
+      if (!data.error && !res.ok) data.error = "join_failed";
+      return { res: res, data: data };
+    } catch (_err) {
+      return {
+        res: { ok: false, status: 0 },
+        data: { ok: false, error: "network_error" },
+      };
+    }
   }
 
   function formHtml(opts) {

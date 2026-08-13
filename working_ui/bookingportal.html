@@ -1908,7 +1908,7 @@
   <script src="/portal/portal_booking_offer.js?v=20260812-service-blurbs"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
   <script src="/portal/portal_booking_lead_gate.js?v=20260812-preview-5s-clear"></script>
-  <script src="/portal/portal_booking_waitlist.js?v=20260813-waitlist-join"></script>
+  <script src="/portal/portal_booking_waitlist.js?v=20260813-waitlist-session"></script>
   <script>
 (function () {
   "use strict";
@@ -2914,11 +2914,22 @@
     }
   }
 
-  function openSheet(slot) {
-    if (window.PortalBookingLeadGate && !window.PortalBookingLeadGate.isUnlocked()) {
+  function requireBookingLeadSession() {
+    if (!window.PortalBookingLeadGate) return false;
+    var tok =
+      typeof window.PortalBookingLeadGate.getSessionToken === "function"
+        ? String(window.PortalBookingLeadGate.getSessionToken() || "").trim()
+        : "";
+    /* Preview mode sets unlocked=true without OTP — waitlist needs a real session. */
+    if (!tok) {
       window.PortalBookingLeadGate.openGate();
-      return;
+      return false;
     }
+    return true;
+  }
+
+  function openSheet(slot) {
+    if (!requireBookingLeadSession()) return;
     resetActionSheetChrome();
     var svc = mock.serviceById(slot.serviceId);
     if (isOfficeEnquireService(svc)) {
