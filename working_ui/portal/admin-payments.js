@@ -1554,7 +1554,7 @@
     if (label === INVOICE_TYPE.NHS_EXEMPT || /^NHS\s*\(/i.test(s)) {
       return "pay-chip--inv-nhs";
     }
-    /* Generic LA or named council: "Ealing (Exempt invoice)", "Hammersmith & Fulham (Exempt invoice)". */
+    /* Generic LA or named council: "Ealing (Exempt invoice)", "H&F (Exempt invoice)". */
     if (label === INVOICE_TYPE.LA_EXEMPT || /\(Exempt invoice\)\s*$/i.test(s)) {
       return "pay-chip--inv-la";
     }
@@ -1567,6 +1567,7 @@
    */
   function laCouncilShortFor(r) {
     if (!r) return "";
+    if (r._laCouncilShort) return String(r._laCouncilShort);
     var d = r.data || {};
     var blob = [
       d.Funder,
@@ -1575,15 +1576,20 @@
       d.LA,
       d.Council,
       d.Authority,
+      d["Funding origin"],
       r._fundingLabel,
       r.parent_name,
+      /* Named invoice types already resolved (never the generic umbrella). */
+      /local\s*authority\s*\(/i.test(String(d["Invoice type"] || ""))
+        ? ""
+        : d["Invoice type"],
     ]
       .map(function (x) { return String(x || ""); })
       .join(" ");
     var low = blob.toLowerCase();
     if (/westminster/.test(low)) return "Westminster";
     if (/kensington|chelsea|\brbkc\b/.test(low)) return "Kensington & Chelsea";
-    if (/h\s*&\s*f|hammersmith|fulham|\blbhf\b/.test(low)) return "Hammersmith & Fulham";
+    if (/h\s*&\s*f|hammersmith|fulham|\blbhf\b/.test(low)) return "H&F";
     if (/\bealing\b/.test(low)) return "Ealing";
     if (/\bbrent\b/.test(low)) return "Brent";
     if (/\bharrow\b/.test(low)) return "Harrow";
@@ -4126,7 +4132,11 @@
     if (route === "FAMILY_PRIVATE") return INVOICE_TYPE.PARENT_20;
     if (route === "LA_INVOICE") {
       var la = laCouncilShortFor(r);
-      return la ? la + " (Exempt invoice)" : INVOICE_TYPE.LA_EXEMPT;
+      if (la) {
+        r._laCouncilShort = la;
+        return la + " (Exempt invoice)";
+      }
+      return INVOICE_TYPE.LA_EXEMPT;
     }
     if (route === "NHS_INVOICE" || route === "NEN") return INVOICE_TYPE.NHS_EXEMPT;
     return "";
@@ -4936,7 +4946,12 @@
     });
 
     function enrichFromPayments(r) {
-      if (r.data && (r.data.Funder || r.data.Paid || r.data["Invoice type"])) return;
+      if (!r.data) r.data = {};
+      /* Always fill a missing named Funder — Paid / generic Invoice type alone must not block. */
+      if (r.data.Funder && String(r.data.Funder).trim()) {
+        r._fundingLabel = r._fundingLabel || String(r.data.Funder).trim();
+        return;
+      }
       var nk = normClientNameKey(r.client_name);
       if (!nk) return;
       var hits = payFunderByNorm[nk];
@@ -5027,7 +5042,24 @@
               r.sheet = "LA";
               r._vatMode = "exempt";
               r.data.Paid = PAID_BY.FUNDED_BY_LA;
-              r.data["Invoice type"] = INVOICE_TYPE.LA_EXEMPT;
+              /* Keep named council (Ealing / H&F) — never leave only the generic umbrella. */
+              if (sData.Funder) r.data.Funder = sData.Funder;
+              if (sData.Funding) r.data.Funding = sData.Funding;
+              if (sData["Funding origin"] && !r.data["Funding origin"]) {
+                r.data["Funding origin"] = sData["Funding origin"];
+              }
+              var laShort = laCouncilShortFor({
+                data: r.data,
+                parent_name: summer.parent_name || r.parent_name,
+                _fundingLabel: sData.Funder || r._fundingLabel,
+              });
+              if (laShort) {
+                r._laCouncilShort = laShort;
+                r._fundingLabel = sData.Funder || r._fundingLabel || laShort;
+                r.data["Invoice type"] = laShort + " (Exempt invoice)";
+              } else {
+                r.data["Invoice type"] = INVOICE_TYPE.LA_EXEMPT;
+              }
             }
           }
         }
@@ -5093,6 +5125,16 @@
           funding_label: label,
           _reenrol: false,
         });
+      }
+      /* Stamp named council on LA rows so chips never fall back to bare "Local Authority". */
+      if (sheetUp === "LA") {
+        var stamped = laCouncilShortFor(r);
+        if (stamped) {
+          r._laCouncilShort = stamped;
+          if (!r.data) r.data = {};
+          if (!r.data.Funder) r.data.Funder = stamped === "H&F" ? "H&F (Hammersmith & Fulham)" : stamped;
+          if (!r._fundingLabel) r._fundingLabel = r.data.Funder;
+        }
       }
     });
 
