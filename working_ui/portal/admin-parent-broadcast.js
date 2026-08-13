@@ -366,6 +366,9 @@
         aud + ": " + res.data.count + " inboxes · " + res.data.withMobile + " with WhatsApp · " +
         res.data.emailOnly + " email-only" +
         (res.data.waitingList != null ? " · " + res.data.waitingList + " waitlisted" : "") +
+        (res.data.otpNoBooking != null || res.data.enquiries != null
+          ? " · " + (res.data.otpNoBooking != null ? res.data.otpNoBooking : res.data.enquiries) + " OTP · no booking"
+          : "") +
         " · " + (res.data.withBank || 0) + " bank · " +
         (res.data.withGocardless || 0) + " GoCardless. Review and untick anyone who should not receive this.";
       statusEl.className = "portal-forms-status";
@@ -573,7 +576,7 @@
     var audWait = $("pbcastAudWait");
     if (audWait) audWait.addEventListener("click", function () { setAudience("waiting_list"); });
     var audEnq = $("pbcastAudEnquiries");
-    if (audEnq) audEnq.addEventListener("click", function () { setAudience("enquiries"); });
+    if (audEnq) audEnq.addEventListener("click", function () { setAudience("otp_no_booking"); });
     var audAll = $("pbcastAudAll");
     if (audAll) audAll.addEventListener("click", function () { setAudience("all"); });
     var send = $("pbcastSend");
@@ -589,7 +592,7 @@
       ".pbcast-tog--on{background:#f0f9ff!important;background-color:#f0f9ff!important;color:#0c4a6e!important;border-color:#0ea5e9!important;box-shadow:inset 0 0 0 1px #0ea5e9!important;font-weight:600!important}" +
       "</style>" +
       '<h1 class="page-title">Family broadcast</h1>' +
-      '<p class="page-intro">Send one message to many families at once — <strong>email</strong> and/or <strong>WhatsApp</strong>. Choose <strong>In class</strong>, <strong>Waiting list</strong>, <strong>Enquiries</strong> (booking-portal leads who verified email), or <strong>All</strong>. Every send is logged in <strong>Family messages</strong>. Replies to +44 7886 292726 arrive there automatically. You can also seed this list from <strong>Operator → Enquiries &amp; intake</strong>.</p>' +
+      '<p class="page-intro">Send one message to many families at once — <strong>email</strong> and/or <strong>WhatsApp</strong>. Choose <strong>In class</strong>, <strong>Waiting list</strong>, <strong>OTP · no booking</strong> (Booking Portal leads who verified email but never finished a booking), or <strong>All</strong>. Every send is logged in <strong>Family messages</strong>.</p>' +
       '<div id="pbcastEnquiryBanner" class="card card-pad" style="display:none;margin:0 0 12px;border-color:rgba(21,128,61,.35);background:rgba(34,197,94,.08);font-size:13px;line-height:1.45;overflow-wrap:break-word" role="status"></div>' +
       '<div id="pbcastStatus" class="portal-forms-status" role="status"></div>' +
 
@@ -620,7 +623,7 @@
       '<span class="muted" style="font-size:12px">Audience:</span>' +
       '<button type="button" class="btn btn--sec btn--sm" id="pbcastAudInClass" aria-pressed="true">In class</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="pbcastAudWait" aria-pressed="false">Waiting list</button>' +
-      '<button type="button" class="btn btn--sec btn--sm" id="pbcastAudEnquiries" aria-pressed="false">Enquiries</button>' +
+      '<button type="button" class="btn btn--sec btn--sm" id="pbcastAudEnquiries" aria-pressed="false" title="Booking Portal leads: email OTP verified, no registration/booking completed">OTP · no booking</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="pbcastAudAll" aria-pressed="false">All</button>' +
       "</div>" +
       '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px">' +
