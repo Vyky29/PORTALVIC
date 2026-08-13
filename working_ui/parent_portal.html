@@ -2000,18 +2000,31 @@
       overflow-wrap: break-word;
     }
     .pp-invoice-card__schedule {
+      list-style: none;
       margin: 6px 0 0;
-      padding-left: 18px;
+      padding: 0;
       font-size: 12px;
       min-width: 0;
+      color: var(--muted, #64748b);
     }
-    .pp-invoice-card__schedule li {
+    .pp-invoice-card__sched-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 4px 6px;
+      margin: 0 0 4px;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .pp-invoice-card__sched-copy {
+      min-width: 0;
       overflow-wrap: break-word;
     }
     .pp-invoice-card__sched-paid {
-      color: #16a34a;
+      color: #16a34a !important;
       font-weight: 800;
-      margin-left: 2px;
+      flex: 0 0 auto;
+      line-height: 1;
     }
     .pp-invoice-card__meta { margin: 6px 0 0; font-size: 12px; overflow-wrap: break-word; }
     .pp-invoice-card__acts {

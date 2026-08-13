@@ -7495,22 +7495,26 @@
           "</p>"
         : "") +
       (schedule.length && !isPaid
-        ? '<ul class="pp-invoice-card__schedule pp-muted">' +
+        ? '<ul class="pp-invoice-card__schedule">' +
           schedule
             .map(function (row) {
-              var st = String(row.status || "").toLowerCase();
-              var paidTick =
-                st === "paid"
-                  ? ' <span class="pp-invoice-card__sched-paid" aria-label="Paid">✓</span>'
-                  : "";
+              var st = String(row.status || "").toLowerCase() === "paid";
+              var label = String(row.label || "Payment").replace(/^[\s✓✔︎✔]+/, "").trim();
+              var amt = formatInvoiceMoney(row.amount_gbp);
               return (
-                "<li>" +
-                esc(row.label || "Payment") +
+                '<li class="pp-invoice-card__sched-row' +
+                (st ? " pp-invoice-card__sched-row--paid" : "") +
+                '">' +
+                '<span class="pp-invoice-card__sched-copy">' +
+                esc(label) +
                 " · " +
                 esc(formatDocWhen(row.due_date)) +
                 " · " +
-                esc(formatInvoiceMoney(row.amount_gbp)) +
-                paidTick +
+                esc(amt) +
+                "</span>" +
+                (st
+                  ? '<span class="pp-invoice-card__sched-paid" aria-label="Paid" style="color:#16a34a;font-weight:800">✓</span>'
+                  : "") +
                 "</li>"
               );
             })
