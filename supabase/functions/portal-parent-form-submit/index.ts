@@ -487,6 +487,8 @@ Deno.serve(async (req) => {
       leadId: primaryLeadId,
       slotHeld: !!reservationId,
       bookingSummary,
+      pdfBytes,
+      pdfFilename: `${safeName}_${formType}.pdf`,
     });
   } catch (notifyErr) {
     console.warn("[portal-parent-form-submit] office notify", notifyErr);

@@ -1,21 +1,73 @@
 /**
- * Office alert when a new Booking Portal lead is created / first verifies.
+ * Office alert when a new Booking Portal lead is created / first verifies,
+ * or when a Client / Climbing registration form is submitted for review.
  */
 import {
   readParentNotifySmtpConfig,
+  sendEmailWithAttachmentViaSmtp,
   sendParentEmailViaSmtp,
 } from "./portal_parent_messaging.ts";
+import { adminPushOpenBase } from "./portal_webpush_util.ts";
 
 function officeNotifyEmails(): string[] {
+  const defaults = [
+    "info@clubsensational.org",
+    "victor@clubsensational.org",
+  ];
   const raw = String(
     Deno.env.get("BOOKING_LEAD_OFFICE_EMAIL") ||
       Deno.env.get("PORTAL_OFFICE_NOTIFY_EMAIL") ||
-      "info@clubsensational.org",
+      "",
   ).trim();
-  return raw
+  const fromEnv = raw
     .split(/[,;\s]+/)
     .map((x) => x.trim())
     .filter((x) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x));
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const addr of [...fromEnv, ...defaults]) {
+    const key = addr.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(addr);
+  }
+  return out;
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+  const chunk = 0x2000;
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += chunk) {
+    const slice = bytes.subarray(i, i + chunk);
+    binary += String.fromCharCode.apply(
+      null,
+      Array.from(slice) as unknown as number[],
+    );
+  }
+  return btoa(binary);
+}
+
+function escapeHtml(s: string): string {
+  return String(s || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function registrationReviewUrl(): string {
+  const adminBase = adminPushOpenBase().replace(/\/$/, "");
+  const origin = String(Deno.env.get("PORTAL_PUBLIC_ORIGIN") || "")
+    .trim()
+    .replace(/\/$/, "");
+  const base =
+    adminBase ||
+    (origin ? `${origin}/admin_dashboard.html` : "");
+  if (!base) return "";
+  if (/[?&]view=/.test(base)) return base;
+  return base.includes("?")
+    ? `${base}&view=portal_participant_documents`
+    : `${base}?view=portal_participant_documents`;
 }
 
 export async function notifyOfficeNewBookingLead(opts: {
@@ -128,6 +180,9 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
   leadId?: string | null;
   slotHeld?: boolean;
   bookingSummary?: string | null;
+  /** Optional PDF bytes so office can open the form from the email. */
+  pdfBytes?: Uint8Array | null;
+  pdfFilename?: string | null;
 }): Promise<void> {
   const participant = String(opts.participantName || "").trim() || "Participant";
   const parent = String(opts.parentName || "").trim() || "Parent / carer";
@@ -142,41 +197,114 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
   const holdLine = opts.slotHeld
     ? "Selected session place is on a soft hold pending office review."
     : "";
+  const reviewUrl = registrationReviewUrl();
+  const pdfName =
+    String(opts.pdfFilename || "").trim() ||
+    `${formType}_${participant.replace(/\s+/g, "_").slice(0, 40)}.pdf`;
 
   const smtp = readParentNotifySmtpConfig();
   const tos = officeNotifyEmails();
   if (smtp && tos.length) {
     const subject = `${formLabel} submitted · ${participant} (${parent})`;
-    const bodyText =
-      `${formLabel} received — review and accept before confirming the place.\n\n` +
-      `Participant: ${participant}\n` +
-      `Parent: ${parent}\n` +
-      `Email: ${email || "—"}\n` +
-      `Phone: ${mobile || "—"}\n` +
-      (bookingLine ? `Requested slot: ${bookingLine}\n` : "") +
-      (holdLine ? `${holdLine}\n` : "") +
-      `Document id: ${opts.documentId}\n` +
-      (opts.leadId ? `Lead id: ${opts.leadId}\n` : "") +
-      `\nNext: Admin → Enquiries & intake / Participant documents → review PDF → accept client → set funding & payment.\n` +
-      `— clubSENsational portal`;
-    for (const to of tos) {
-      const mail = await sendParentEmailViaSmtp({
-        config: smtp,
-        to,
-        subject,
-        bodyText,
-      });
-      if (!mail.ok) {
-        console.warn(
-          "[registration-office-notify] email failed",
+    const lines = [
+      `${formLabel} received — review in Documents and Accept before confirming the place.`,
+      "",
+      `Participant: ${participant}`,
+      `Parent: ${parent}`,
+      `Email: ${email || "—"}`,
+      `Phone: ${mobile || "—"}`,
+    ];
+    if (bookingLine) lines.push(`Requested slot: ${bookingLine}`);
+    if (holdLine) lines.push(holdLine);
+    lines.push(`Document id: ${opts.documentId}`);
+    if (opts.leadId) lines.push(`Lead id: ${opts.leadId}`);
+    lines.push("");
+    if (reviewUrl) {
+      lines.push(`Open Registration forms (validate / Accept):`);
+      lines.push(reviewUrl);
+      lines.push("");
+    } else {
+      lines.push(
+        "Next: Admin → Documents → Registration forms → review PDF → Accept.",
+      );
+      lines.push("");
+    }
+    if (opts.pdfBytes && opts.pdfBytes.length) {
+      lines.push("The submitted PDF is attached to this email.");
+      lines.push("");
+    }
+    lines.push("— clubSENsational portal");
+    const bodyText = lines.join("\n");
+
+    const html =
+      `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:15px;line-height:1.5;color:#0f172a">` +
+      `<p><strong>${escapeHtml(formLabel)}</strong> received — also saved under Documents → Registration forms for Accept / validate.</p>` +
+      `<p>` +
+      `Participant: <strong>${escapeHtml(participant)}</strong><br/>` +
+      `Parent: ${escapeHtml(parent)}<br/>` +
+      `Email: ${escapeHtml(email || "—")}<br/>` +
+      `Phone: ${escapeHtml(mobile || "—")}` +
+      (bookingLine ? `<br/>Requested slot: ${escapeHtml(bookingLine)}` : "") +
+      (holdLine ? `<br/>${escapeHtml(holdLine)}` : "") +
+      `</p>` +
+      (reviewUrl
+        ? `<p><a href="${escapeHtml(reviewUrl)}" style="display:inline-block;padding:10px 14px;background:#1d4ed8;color:#fff;text-decoration:none;border-radius:8px;font-weight:700">Open Registration forms</a></p>`
+        : `<p>Admin → Documents → Registration forms → review PDF → Accept.</p>`) +
+      (opts.pdfBytes && opts.pdfBytes.length
+        ? `<p style="color:#64748b;font-size:13px">PDF attached.</p>`
+        : "") +
+      `<p style="color:#64748b;font-size:12px">Document id: ${escapeHtml(opts.documentId)}</p>` +
+      `</div>`;
+
+    const attachment =
+      opts.pdfBytes && opts.pdfBytes.length
+        ? {
+          filename: pdfName.replace(/[^\w.\-]+/g, "_").slice(0, 120) ||
+            "registration.pdf",
+          contentBase64: bytesToBase64(opts.pdfBytes),
+          mimeType: "application/pdf",
+        }
+        : undefined;
+
+    const mail = await sendEmailWithAttachmentViaSmtp({
+      config: smtp,
+      to: tos,
+      subject,
+      html,
+      replyTo: email || undefined,
+      attachment,
+    });
+    if (!mail.ok) {
+      console.warn("[registration-office-notify] email failed", mail.error);
+      /* Fallback: plain text per recipient without attachment. */
+      for (const to of tos) {
+        const plain = await sendParentEmailViaSmtp({
+          config: smtp,
           to,
-          mail.error,
-        );
+          subject,
+          bodyText,
+          replyTo: email || undefined,
+        });
+        if (!plain.ok) {
+          console.warn(
+            "[registration-office-notify] plain email failed",
+            to,
+            plain.error,
+          );
+        }
       }
+    } else {
+      console.log(
+        "[registration-office-notify] emailed",
+        tos.join(","),
+        "doc=",
+        opts.documentId,
+        attachment ? "with-pdf" : "no-pdf",
+      );
     }
   } else {
     console.log(
-      `[registration-office-notify] doc=${opts.documentId} participant=${participant} parent=${parent} email=${email}`,
+      `[registration-office-notify] doc=${opts.documentId} participant=${participant} parent=${parent} email=${email} tos=${tos.join(",") || "none"} smtp=${smtp ? "yes" : "no"}`,
     );
   }
 
