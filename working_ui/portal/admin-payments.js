@@ -5232,7 +5232,16 @@
   function isAutumnReenrolInvoice(inv) {
     var via = String((inv && inv.created_via) || "");
     // Family re-enrol INV-Ps + LA office-auto booked places (no family INV-P yet).
-    return via === "reenrolment" || via === "la_office_auto";
+    if (via === "reenrolment" || via === "la_office_auto") return true;
+    /*
+     * Office/manual autumn INV-Ps sometimes keep created_via=portal
+     * (e.g. Anas INV-P-0340 after share edits). Still show under Autumn Payments.
+     */
+    if (via === "portal") {
+      var term = String((inv && inv.billing_term) || "").toLowerCase();
+      return term === "autumn" || term === "year";
+    }
+    return false;
   }
 
   function isLaManagedAutumnCandidate(inv) {
