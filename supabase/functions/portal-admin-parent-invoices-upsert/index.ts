@@ -725,6 +725,36 @@ Deno.serve(async (req) => {
         const markAll = forceAll || schedule.length <= 1;
         if (schedule.length) {
           const next = schedule.find((r) => r.status !== "paid");
+          const allowEarly =
+            fields.allow_early_instalment === true ||
+            fields.allow_early_instalment === "1" ||
+            fields.allow_early_instalment === 1;
+          const confirmingParentReport =
+            String(existing.payment_status || "").toLowerCase() === "pending_confirmation";
+          // Block Mark paid on a far-future half (e.g. Oct while Aug window is live)
+          // unless office explicitly confirms early pay. Parent "I've paid" confirm
+          // always clears the next unpaid half.
+          if (!markAll && next?.due_date && !allowEarly && !confirmingParentReport) {
+            const dueIso = String(next.due_date).slice(0, 10);
+            const today = now.slice(0, 10);
+            const t0 = Date.parse(`${today}T12:00:00Z`);
+            const t1 = Date.parse(`${dueIso}T12:00:00Z`);
+            const days =
+              Number.isFinite(t0) && Number.isFinite(t1)
+                ? Math.round((t1 - t0) / 86400000)
+                : null;
+            if (days != null && days > 7) {
+              return json(409, {
+                ok: false,
+                error: "instalment_not_due_yet",
+                message:
+                  `Next instalment (£${Number(next.amount_gbp).toFixed(2)}) is not due until ${dueIso}. ` +
+                  "Confirm again only if they paid this half early.",
+                next_instalment_due: dueIso,
+                next_amount_gbp: next.amount_gbp,
+              });
+            }
+          }
           const applied = applyInstalmentPayment(schedule, {
             amountGbp: markAll ? totalGbp : Number(next?.amount_gbp) || totalGbp,
             paidAt: now,

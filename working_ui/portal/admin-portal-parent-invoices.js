@@ -349,8 +349,7 @@
     }
     var nextAmt = nextInst ? Number(nextInst.amount_gbp) || 0 : 0;
     var nextDueIso = nextInst ? instalmentDueIso(nextInst.due_date) : '';
-    var todayIso = todayIsoLocal();
-    var nextIsDueNow = !nextDueIso || nextDueIso <= todayIso;
+    var nextIsDueNow = instalmentIsCollectingNow(nextDueIso);
     var html =
       '<div><span class="muted">Amount</span><br><strong>' +
       esc(formatMoney(total)) +
@@ -412,6 +411,27 @@
     return m ? m[1] : '';
   }
 
+  /** Whole days until due (negative = overdue). Null if no date. */
+  function daysUntilDueIso(dueIso) {
+    if (!dueIso) return null;
+    var a = Date.parse(todayIsoLocal() + 'T12:00:00');
+    var b = Date.parse(dueIso + 'T12:00:00');
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+    return Math.round((b - a) / 86400000);
+  }
+
+  /**
+   * Current unpaid half is "due now" for office when overdue, due today, or
+   * within 7 days (same window as parent hub pulse). Far-future halves
+   * (e.g. Oct while collecting Aug) stay scheduled — not Due.
+   */
+  function instalmentIsCollectingNow(dueIso) {
+    if (!dueIso) return true;
+    var days = daysUntilDueIso(dueIso);
+    if (days == null) return true;
+    return days <= 7;
+  }
+
   function instalmentScheduleHtml(inv) {
     var rows = scheduleRows(inv);
     if (!rows.length) return '';
@@ -430,12 +450,11 @@
           'Instalment ' + String(r.seq || i + 1);
         var due = formatDate(r.due_date);
         var dueIso = instalmentDueIso(r.due_date);
-        var todayIso = todayIsoLocal();
-        /* Flexi: next unpaid is "Due" only when its due_date is today/overdue.
-           Future next half (e.g. Oct) stays Scheduled — not Due — so Mark paid is not tempting. */
+        /* Flexi: next unpaid is "Due" in the collect window (due ≤ +7 days).
+           Far-future next half (e.g. Oct while collecting Aug) stays Scheduled. */
         var isNextUnpaid = st !== 'paid' && i === firstUnpaidIdx;
-        var isCurrentDue = isNextUnpaid && (!dueIso || dueIso <= todayIso);
-        var isScheduledNext = isNextUnpaid && !!dueIso && dueIso > todayIso;
+        var isCurrentDue = isNextUnpaid && instalmentIsCollectingNow(dueIso);
+        var isScheduledNext = isNextUnpaid && !isCurrentDue;
         var isLaterHidden = st !== 'paid' && firstUnpaidIdx >= 0 && i > firstUnpaidIdx;
         var tone =
           st === 'paid'
@@ -2086,6 +2105,7 @@
         var act = btn.getAttribute('data-inv-act');
         var id = btn.getAttribute('data-inv-id');
         if (!id) return;
+        var allowEarlyInstalment = false;
         if (act === 'paid') {
           var invEarly = (state.invoices || []).find(function (x) {
             return String(x.id) === String(id);
@@ -2099,7 +2119,7 @@
             }
           }
           var nextDueEarly = nextEarly ? instalmentDueIso(nextEarly.due_date) : '';
-          if (nextDueEarly && nextDueEarly > todayIsoLocal()) {
+          if (nextDueEarly && !instalmentIsCollectingNow(nextDueEarly)) {
             var whenLab = formatDate(nextDueEarly) || nextDueEarly;
             var amtLab = formatMoney(nextEarly.amount_gbp);
             if (
@@ -2113,6 +2133,7 @@
             ) {
               return;
             }
+            allowEarlyInstalment = true;
           }
         }
         btn.disabled = true;
@@ -2122,6 +2143,7 @@
         else if (act === 'paid') {
           body.payment_status = 'paid';
           body.paid_via = 'admin';
+          if (allowEarlyInstalment) body.allow_early_instalment = true;
         }
         else if (act === 'unpaid') body.payment_status = 'unpaid';
         else {
