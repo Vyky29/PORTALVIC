@@ -1092,15 +1092,21 @@
     var paidSoFar = Number(r._amountPaid != null ? r._amountPaid : r.amount_paid_gbp) || 0;
 
     /* Autumn 26/27 Total column: Autumn (bold) → Spring → Summer → Year.
-       Paid → green Autumn total; Flexi → green paid / orange face (£350/£700). */
+       Paid → green Autumn total; Flexi/GC partial → green paid / orange face (£x/£Autumn). */
     if (bucket === "autumn_2627") {
       var split = autumnCatalogSeasonTotals(r);
       if (split.year > 0 || split.autumn > 0) {
         var autumnFace = Number(split.autumn) || termAmt || 0;
         var autumnMain;
         if (payCat === "partial" && paidSoFar > 0 && autumnFace > 0) {
+          var plan = partialPlanKind(r);
+          var ratioTitle = plan === "gc"
+            ? "GoCardless: paid so far / Autumn invoice total (monthly instalments)"
+            : plan === "oneoff"
+              ? "Paid so far / Autumn invoice total"
+              : "Flexi (bank): paid so far / Autumn invoice total (2 payments)";
           autumnMain =
-            '<span class="pay-amt-term pay-amt-term--flexi" title="Flexi: paid / Autumn total">'
+            '<span class="pay-amt-term pay-amt-term--flexi" title="' + esc(ratioTitle) + '">'
             + "Autumn "
             + '<span class="pay-amt-paid">' + money(paidSoFar) + "</span>"
             + '<span class="pay-amt-slash">/</span>'
@@ -1206,7 +1212,7 @@
   function category(r) {
     var s = String(r.payment_status || "").toLowerCase();
     if (s.indexOf("re-enrol") >= 0 || s.indexOf("reenrol") >= 0) return "notreenrolled";
-    /* Flexi / instalment paid only when money is actually on the share. */
+    /* Partial = money on invoice, balance still due (Flexi 2-pay or GC monthly). */
     if (s.indexOf("partial") === 0 || s.indexOf("flexi") === 0 || s.indexOf("instalment") === 0) {
       var paidAmt = Number(r._amountPaid != null ? r._amountPaid : r.amount_paid_gbp) || 0;
       if (paidAmt > 0) return "partial";
@@ -1214,6 +1220,36 @@
     }
     if (s.indexOf("paid") === 0) return "paid"; // "Paid"
     return "outstanding"; // Outstanding / Not paid / Pending / blank
+  }
+
+  /**
+   * How a partial Autumn invoice is being paid down:
+   * - flexi: bank transfer, 2 payments on one term invoice
+   * - gc: GoCardless, one term invoice + monthly instalments (e.g. Autumn Sep–Dec)
+   * - oneoff: bank one-off (normally never partial once paid)
+   */
+  function instalmentCountFor(r) {
+    if (!r) return 0;
+    if (Number(r._instalmentCount) > 0) return Math.floor(Number(r._instalmentCount));
+    var sched = r._paymentSchedule;
+    return Array.isArray(sched) ? sched.length : 0;
+  }
+
+  function isGoCardlessPaymentRow(r) {
+    var hint = String((r && r._paymentMethodHint) || "").toLowerCase();
+    if (hint === "gocardless") return true;
+    return typeof rowHasGoCardlessFee === "function" && rowHasGoCardlessFee(r);
+  }
+
+  function partialPlanKind(r) {
+    if (!r) return "flexi";
+    var n = instalmentCountFor(r);
+    if (isGoCardlessPaymentRow(r)) return "gc";
+    /* Monthly term schedules (≥3) are GoCardless even if hint lagged. */
+    if (n >= 3) return "gc";
+    if (n === 1) return "oneoff";
+    /* Bank flexi = 2 payments on the term invoice; default legacy partials to flexi. */
+    return "flexi";
   }
 
   function injectStyleOnce() {
@@ -1286,6 +1322,7 @@
       ".pay-chip--out{background:#fef2f2;color:#b91c1c;border-color:#fecaca}",
       ".pay-chip--paid-ok{background:#ecfdf5;color:#047857;border-color:#a7f3d0}",
       ".pay-chip--flexi{background:#fff7ed;color:#c2410c;border-color:#fdba74}",
+      ".pay-chip--gc{background:#eff6ff;color:#1d4ed8;border-color:#93c5fd}",
       ".pay-chip--inv-parent-ex{background:#f0fdf4;color:#166534;border-color:#bbf7d0}",
       ".pay-chip--inv-parent-20{background:#fff7ed;color:#c2410c;border-color:#fed7aa}",
       ".pay-chip--inv-la{background:#faf5ff;color:#7c3aed;border-color:#e9d5ff}",
@@ -1344,6 +1381,7 @@
       ".pay-pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}",
       ".pay-pill--paid{background:#e7f6ee;color:#15803d}",
       ".pay-pill--partial{background:#fff7ed;color:#c2410c}",
+      ".pay-pill--gc{background:#eff6ff;color:#1d4ed8}",
       ".pay-pill--out{background:#fef2f2;color:#b91c1c}",
       ".pay-pill--na{background:#eef2f7;color:#475569}",
       ".pay-empty{color:#64748b;padding:18px;text-align:center;font-size:14px}",
@@ -1422,20 +1460,36 @@
 
   function pillFor(r) {
     var c = category(r);
+    var plan = c === "partial" ? partialPlanKind(r) : "";
     var cls =
       c === "paid"
         ? "pay-pill--paid"
         : c === "partial"
-          ? "pay-pill--partial"
+          ? (plan === "gc" ? "pay-pill--gc" : "pay-pill--partial")
           : c === "notreenrolled"
             ? "pay-pill--na"
             : "pay-pill--out";
     /* Compact table labels so Status column stays tiny. */
     var label =
-      c === "paid" ? "Paid" : c === "partial" ? "Flexi" : c === "notreenrolled" ? "N/A" : "Out";
+      c === "paid"
+        ? "Paid"
+        : c === "partial"
+          ? (plan === "gc" ? "GC" : plan === "oneoff" ? "Part" : "Flexi")
+          : c === "notreenrolled"
+            ? "N/A"
+            : "Out";
     var full =
-      r.payment_status ||
-      (c === "paid" ? "Paid" : c === "partial" ? "Flexi instalment paid" : "Outstanding");
+      c === "paid"
+        ? "Paid"
+        : c === "partial"
+          ? (plan === "gc"
+            ? "GoCardless — monthly instalments paid toward Autumn invoice"
+            : plan === "oneoff"
+              ? "Part paid toward term invoice"
+              : "Flexi (bank) — first of two payments on term invoice")
+          : c === "notreenrolled"
+            ? "Not re-enrolled"
+            : "Outstanding";
     var html = '<span class="pay-pill ' + cls + '" title="' + esc(full) + '">' + esc(label) + "</span>";
     /* Admin-only PDF for funder / crash INV-Ps (parent hub stays invoice-free). */
     if (r && r._pdfUrl) {
@@ -1502,7 +1556,9 @@
   function payStatusFilterForTerm(termId) {
     var map = state.payStatusByTerm || {};
     var v = map[termId] || "";
-    return v === "paid" || v === "outstanding" || v === "partial" ? v : "";
+    return v === "paid" || v === "outstanding" || v === "partial" || v === "flexi" || v === "gc"
+      ? v
+      : "";
   }
 
   function captureTermOpenState(root) {
@@ -2113,7 +2169,8 @@
       + '<div class="pay-chip-row">'
       + '<span class="pay-chip-row__lab">Status</span>'
       + filterChipBtn("paystatus", "paid", "Paid", statusCur === "paid", "pay-chip--paid-ok", termId)
-      + filterChipBtn("paystatus", "partial", "Flexi paid", statusCur === "partial", "pay-chip--flexi", termId)
+      + filterChipBtn("paystatus", "flexi", "Flexi", statusCur === "flexi", "pay-chip--flexi", termId)
+      + filterChipBtn("paystatus", "gc", "GC", statusCur === "gc", "pay-chip--gc", termId)
       + filterChipBtn("paystatus", "outstanding", "Outstanding", statusCur === "outstanding", "pay-chip--out", termId)
       + "</div>"
       + '<div class="pay-chip-row" role="group" aria-label="Funding filter">'
@@ -2156,7 +2213,10 @@
     return (rows || []).filter(function (r) {
       var c = category(r);
       if (st === "paid") return c === "paid" || c === "partial";
+      /* Legacy "partial" chip → any part-paid (Flexi or GC). */
       if (st === "partial") return c === "partial";
+      if (st === "flexi") return c === "partial" && partialPlanKind(r) === "flexi";
+      if (st === "gc") return c === "partial" && partialPlanKind(r) === "gc";
       if (st === "outstanding") return c === "outstanding";
       return c === st;
     });
@@ -4075,6 +4135,8 @@
           total: 0,
           anyOut: false,
           anyPartial: false,
+          anyFlexi: false,
+          anyGc: false,
         };
         order.push(key);
       }
@@ -4084,7 +4146,12 @@
       g.total += Number(r.amount) || 0;
       var cat = category(r);
       if (cat === "outstanding") g.anyOut = true;
-      if (cat === "partial") g.anyPartial = true;
+      if (cat === "partial") {
+        g.anyPartial = true;
+        var plan = partialPlanKind(r);
+        if (plan === "gc") g.anyGc = true;
+        else g.anyFlexi = true;
+      }
     });
     var people = order.map(function (k) { return byName[k]; }).sort(function (a, b) {
       return String(a.name).localeCompare(String(b.name));
@@ -4114,9 +4181,11 @@
         : "—";
       var pill = g.anyOut
         ? '<span class="pay-pill pay-pill--out">Outstanding</span>'
-        : g.anyPartial
-          ? '<span class="pay-pill pay-pill--partial" title="Flexi instalment paid — later half still due">Flexi</span>'
-          : '<span class="pay-pill pay-pill--paid">Paid</span>';
+        : g.anyGc
+          ? '<span class="pay-pill pay-pill--gc" title="GoCardless — monthly instalments toward term invoice">GC</span>'
+          : g.anyFlexi
+            ? '<span class="pay-pill pay-pill--partial" title="Flexi (bank) — first of two payments on term invoice">Flexi</span>'
+            : '<span class="pay-pill pay-pill--paid">Paid</span>';
       var rowAttr;
       if (first && first._synthetic) {
         rowAttr = 'data-pay-reenrol="' + esc(first._contactId || first.id) + '"';
@@ -4241,7 +4310,8 @@
             state.payStatusByTerm[termId] =
               val && curSt === val
                 ? ""
-                : (val === "paid" || val === "outstanding" || val === "partial" ? val : "");
+                : (val === "paid" || val === "outstanding" || val === "partial"
+                  || val === "flexi" || val === "gc" ? val : "");
             state.focusTermId = termId;
           }
         }
@@ -5285,6 +5355,15 @@
       var vat = String(inv.vat_mode || "").toLowerCase();
       if (isLaAuto || (hint === "la_funded" && String(row.sheet || "").toUpperCase() === "LA")) {
         row._paymentMethodHint = "la_funded";
+      } else if (hint === "gocardless" || hint === "bank_transfer" || hint === "payment_link") {
+        row._paymentMethodHint = hint;
+      }
+      if (season === "autumn" || season === "year") {
+        var sched = Array.isArray(inv.payment_schedule) ? inv.payment_schedule : [];
+        if (sched.length) {
+          row._paymentSchedule = sched;
+          row._instalmentCount = sched.length;
+        }
       }
       var pdf = String(inv.pdf_url || "").trim();
       if (pdf && (hint === "la_funded" || isLaAuto) && !row._pdfUrl) {
@@ -5318,7 +5397,7 @@
           row.payment_status = "Paid";
         }
       } else if (st === "partial") {
-        /* Flexi / instalment: only when amount_paid > 0 (ignore false GC partials). */
+        /* Flexi (2 bank) or GC monthly: only when amount_paid > 0 (ignore false GC partials). */
         var paidAmt = Number(inv.amount_paid_gbp) || 0;
         if (!(paidAmt > 0)) {
           row.amount_out = Math.max(Number(row.amount_out) || 0, amt);
@@ -5405,7 +5484,7 @@
         row.amount = row.amount_out > 0 ? row.amount_out : row.amount_billed;
       }
       if (String(row.payment_status || "").toLowerCase().indexOf("partial") === 0) {
-        /* Keep Flexi / instalment status — do not collapse to Paid/Outstanding. */
+        /* Keep Flexi / GoCardless partial — do not collapse to Paid/Outstanding. */
       } else if (row.amount_out <= 0 && row.amount_billed > 0) {
         row.payment_status = "Paid";
       } else if (row.amount_out > 0) {
