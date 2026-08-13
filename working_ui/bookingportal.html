@@ -2816,9 +2816,23 @@
       if (nameEl) nameEl.focus();
       return;
     }
+    if (!requireBookingLeadSession()) {
+      if (errEl) {
+        errEl.textContent = "Please unlock with your email code first, then join the waiting list.";
+        errEl.hidden = false;
+      }
+      return;
+    }
     if (!window.PortalBookingWaitlist || typeof window.PortalBookingWaitlist.join !== "function") {
       if (errEl) {
         errEl.textContent = "Waiting list isn’t available right now. Please email the office.";
+        errEl.hidden = false;
+      }
+      return;
+    }
+    if (!slot || !slot.id) {
+      if (errEl) {
+        errEl.textContent = "Missing slot — close and try again from the timetable.";
         errEl.hidden = false;
       }
       return;
@@ -2839,14 +2853,21 @@
         participant_name: participant,
         note: note,
       });
-      if (!out.res.ok || !out.data || !out.data.ok) {
-        var code = (out.data && out.data.error) || "join_failed";
+      if (!out || !out.data || !out.data.ok) {
+        var code = (out && out.data && out.data.error) || "join_failed";
         if (errEl) {
           errEl.textContent =
             code === "unauthorized"
-              ? "Your session expired — close and unlock the offer again."
-              : "Couldn’t join just now. Please try again or email the office.";
+              ? "Please unlock with your email code first, then join again."
+              : code === "network_error" || code === "missing_config"
+                ? "Connection problem — check your network and try again."
+                : code === "participant_name_required"
+                  ? "Please enter the participant’s full name."
+                  : "Couldn’t join just now. Please try again or email the office.";
           errEl.hidden = false;
+        }
+        if (code === "unauthorized" && window.PortalBookingLeadGate) {
+          window.PortalBookingLeadGate.openGate();
         }
         return;
       }
