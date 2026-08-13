@@ -76,7 +76,7 @@
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260714-one-feedback"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260723-lead-view-by-id"></script>
-  <script src="/portal/admin-portal-documents.js?v=20260812-open-tab"></script>
+  <script src="/portal/admin-portal-documents.js?v=20260813-admin-attach"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260812-open-tab"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260813-office-phone-create"></script>
   <script src="/portal/admin-portal-booking-leads.js?v=20260812-open-tab"></script>
@@ -24111,6 +24111,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       window.__portalDocumentsConfigured = true;
       window.PortalDocuments.configure({
         esc: esc,
+        toast: portalAdminToast,
         getClient: getSchedSupabaseClient,
         getSupabaseUrl: function(){
           var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';

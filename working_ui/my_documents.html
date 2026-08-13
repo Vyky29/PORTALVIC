@@ -950,7 +950,15 @@
       const cat = String((doc && doc.category) || "").toLowerCase();
       if (cat === categoryKey) return true;
       const t = String((doc && doc.document_type) || "").toLowerCase();
-      if (categoryKey === "documents" && (t === "employment_contract" || t === "calendar_2026_27" || cat === "documents" || cat === "hr")) return true;
+      if (categoryKey === "documents" && (
+        t === "employment_contract" ||
+        t === "calendar_2026_27" ||
+        t === "passport" ||
+        t === "checklist" ||
+        t === "other" ||
+        cat === "documents" ||
+        cat === "hr"
+      )) return true;
       if (categoryKey === "finance" && (t === "timesheet" || t === "expense" || t === "payslip")) return true;
       if (categoryKey === "reports" && (t === "swim_term_review" || t.includes("report"))) return true;
       if (
@@ -960,9 +968,14 @@
           t === "ld_funding_letter" ||
           t === "training_attendance_record" ||
           t === "training_external_certificate" ||
+          t === "certificate" ||
+          t === "firstaid" ||
+          t === "safeguarding" ||
           t.includes("train") ||
           t.includes("induction") ||
-          t.includes("safeguard"))
+          t.includes("safeguard") ||
+          t.includes("firstaid") ||
+          t.includes("first_aid"))
       ) {
         return true;
       }
