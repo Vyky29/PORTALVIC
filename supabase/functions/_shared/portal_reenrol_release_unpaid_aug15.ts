@@ -26,13 +26,13 @@ export const UNPAID_AUG15_RELEASE_LIVE_FROM_ISO = "2026-08-16";
 export const UNPAID_AUG15_REASON = "unpaid_autumn_first_2026-08-15";
 
 /** Never auto-release these invoices (office exceptions). */
-export const UNPAID_AUG15_EXCLUDE_INVOICES = new Set([
-  "INV-P-0097", // Yamik — office
+export const UNPAID_AUG15_EXCLUDE_INVOICES = new Set<string>([
+  // add invoice numbers here only for true office holds
 ]);
 
 /** Never auto-release these contact_ids. */
 export const UNPAID_AUG15_EXCLUDE_CONTACTS = new Set<string>([
-  // add office holds here if needed
+  // add contact_ids here only for true office holds
 ]);
 
 function clean(v: unknown, max = 200): string {
