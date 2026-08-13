@@ -7122,6 +7122,52 @@
     return invoiceActIco(kind) + '<span class="pp-invoice-act-label">' + text + "</span>";
   }
 
+  /**
+   * Green "I've paid" label from the next unpaid flexi/monthly row.
+   * 2-half flexi: first vs second-and-last. Else generic bank-transfer copy.
+   */
+  function invoicePaidReportBtnLabel(inv) {
+    var schedule = (inv && inv.payment_schedule) || [];
+    if (!Array.isArray(schedule) || schedule.length < 2) {
+      return "I&apos;ve paid by bank transfer";
+    }
+    var nextIdx = -1;
+    for (var i = 0; i < schedule.length; i++) {
+      if (String(schedule[i].status || "pending").toLowerCase() !== "paid") {
+        nextIdx = i;
+        break;
+      }
+    }
+    if (nextIdx < 0) return "I&apos;ve paid by bank transfer";
+    var n = schedule.length;
+    if (n === 2) {
+      if (nextIdx === 0) {
+        return "I&apos;ve paid the first installment towards my booking";
+      }
+      return "I&apos;ve paid the second and last installment towards my booking";
+    }
+    if (nextIdx === 0) {
+      return "I&apos;ve paid the first installment towards my booking";
+    }
+    if (nextIdx === n - 1) {
+      return "I&apos;ve paid the last installment towards my booking";
+    }
+    return (
+      "I&apos;ve paid installment " +
+      String(nextIdx + 1) +
+      " of " +
+      String(n) +
+      " towards my booking"
+    );
+  }
+
+  /** Plain-text form of the green button (for helper notes). */
+  function invoicePaidReportBtnPlain(inv) {
+    return invoicePaidReportBtnLabel(inv)
+      .replace(/&apos;/g, "'")
+      .replace(/&amp;/g, "&");
+  }
+
   function invoiceBankPanelHtml(inv, previewBtnHtml) {
     var bank = inv && inv.bank_transfer;
     if (!bank) return "";
@@ -7384,6 +7430,8 @@
     }
     var payPairHtml = "";
     if (showDraftFlow && (canPay || canReport)) {
+      var paidReportLabel = invoicePaidReportBtnLabel(inv);
+      var paidReportPlain = invoicePaidReportBtnPlain(inv);
       var payBtn = canPay
         ? '<button type="button" class="pp-btn pp-btn--sec pp-invoice-pay-pair__btn" data-pp-pay-invoice="' +
           esc(inv.id) +
@@ -7400,7 +7448,7 @@
           '" data-pp-pay-ref-default="' +
           esc(suggestedRef) +
           '">' +
-          invoiceBtnLabel("bank", "I&apos;ve paid by bank transfer") +
+          invoiceBtnLabel("bank", paidReportLabel) +
           "</button>"
         : "";
       payPairHtml =
@@ -7409,7 +7457,9 @@
         reportBtn +
         "</div>" +
         (canReport
-          ? '<p class="pp-muted pp-invoice-pay__note pp-invoice-pay__notify">Tap <strong>I&apos;ve paid by bank transfer</strong> after you send the Tide transfer <em>or</em> pay with Card / Apple Pay — this alerts the office to validate the payment and release the slot.</p>'
+          ? '<p class="pp-muted pp-invoice-pay__note pp-invoice-pay__notify">Tap <strong>' +
+            esc(paidReportPlain) +
+            "</strong> after you send the Tide transfer <em>or</em> pay with Card / Apple Pay — this alerts the office to validate the payment and release the slot.</p>"
           : "");
     }
     return (
@@ -7473,7 +7523,9 @@
       !isLaInvoice &&
       !canSetupGc &&
       (status === "unpaid" || status === "partial")
-        ? '<p class="pp-muted pp-invoice-pay__note">Next instalment is due later — you can still pay early and tap <strong>I&apos;ve paid by bank transfer</strong>.</p>'
+        ? '<p class="pp-muted pp-invoice-pay__note">Next instalment is due later — you can still pay early and tap <strong>' +
+          esc(invoicePaidReportBtnPlain(inv)) +
+          "</strong>.</p>"
         : "") +
       (!isPaid &&
       !payActionNeeded &&
