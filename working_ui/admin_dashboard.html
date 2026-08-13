@@ -4850,12 +4850,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var standIso = project ? adminSchedStandingSourceIso(wantIso) : wantIso;
       if(rowIso){
         if(rowIso === wantIso) return true;
-        /* Autumn calendar day with its own dated rows — do not also pull summer standing. */
-        if(project && adminRosterHasDatedSessionsForIso(wantIso, sessions)) return false;
-        if(project && standIso && standIso !== wantIso && rowIso === standIso) return true;
+        /*
+         * Autumn: project summer standing onto the calendar day, then merge sparse
+         * dated overlays (new bookings / office exceptions). A few portal_roster_rows
+         * for one child (e.g. Patrick on Sun 6 Sep) must NOT hide the rest of the
+         * standing Sunday — only that client's standing copy is suppressed below.
+         */
+        if(project && standIso && standIso !== wantIso && rowIso === standIso){
+          if(adminClientHasDatedRosterInWeek(wantIso, s.clientId)) return false;
+          return true;
+        }
+        /* Pre-autumn: a fully dated calendar day replaces weekday/standing templates. */
+        if(!project && adminRosterHasDatedSessionsForIso(wantIso, sessions)) return false;
         return false;
       }
-      if(adminRosterHasDatedSessionsForIso(wantIso, sessions)) return false;
+      if(!project && adminRosterHasDatedSessionsForIso(wantIso, sessions)) return false;
       if(project && standIso && standIso !== wantIso && adminRosterHasDatedSessionsForIso(standIso, sessions)) return false;
       if(adminClientHasDatedRosterInWeek(wantIso, s.clientId)) return false;
       if(project && standIso && standIso !== wantIso && adminClientHasDatedRosterInWeek(standIso, s.clientId)) return false;
@@ -19890,12 +19899,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return n;
     }
     /**
-     * Sessions hub day tile: use dated roster for that ISO day when present.
-     * Do not fall back to weekday template (inflates Sundays to ~130+). Status CSV is fallback only.
+     * Sessions hub day tile count.
+     * Pre-autumn: prefer exact dated rows for that ISO (avoid weekday-template inflation).
+     * Autumn: standing projection + dated overlays — sparse overlays alone must not
+     * collapse the tile to one new booking (e.g. only Patrick on Sun 6 Sep).
      */
     function bookingSessionsCountForIso(iso){
       var want = String(iso || '').trim().substring(0, 10);
       var datedN = adminDatedRosterBookedCountForIso(iso);
+      if(datedN > 0 && !adminSchedUsesStandingProjection(want)) return datedN;
+      if(adminSchedUsesStandingProjection(want)){
+        try{
+          if(typeof slotsForSelectedDate === 'function'){
+            var slots = slotsForSelectedDate(want) || [];
+            var booked = 0;
+            for(var si = 0; si < slots.length; si++){
+              var slug = adminRosterSlugify(slots[si].clientDisplay || slots[si].clientSlug || '');
+              if(bookingIsBookedClientSlug(slug)) booked++;
+            }
+            if(booked > 0) return booked;
+          }
+        }catch(_cnt){}
+      }
       if(datedN > 0) return datedN;
       var statusDay = adminSessionFeedbackStatusByDate()[want];
       if(statusDay && statusDay.length) return statusDay.length;
@@ -21019,7 +21044,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260813-sept-dc-only';
+    var PORTAL_ADMIN_HUB_BUILD = '20260813-autumn-merge-standing';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
