@@ -22,6 +22,7 @@
 
   var state = {
     filter: 'all',
+    methodFilter: 'all',
     amountPeriod: 'autumn',
     invoices: [],
     meta: {},
@@ -521,6 +522,7 @@
     var reenrolPay = String(inv.reenrol_payment_method_code || '').toLowerCase();
     var hint = String(inv.payment_method_hint || '').toLowerCase();
     var via = String(inv.paid_via || '').toLowerCase();
+    if (reenrolPay === 'own_way_flexible') return 'Own way';
     if (hint === 'la_funded') return 'LA funded';
     if (
       reenrolPay === 'gocardless' ||
@@ -556,6 +558,36 @@
     }
     if (via === 'admin') return 'Admin / Office';
     return 'Bank Transfer';
+  }
+
+  /** Filter key for Re-enrolments payment-method chips (Payments-style). */
+  function methodFilterKey(inv) {
+    var payCode = String((inv && inv.reenrol_payment_method_code) || '').toLowerCase();
+    if (payCode === 'own_way_flexible') return 'own_way';
+    var ch = methodChannelLabel(inv);
+    if (ch === 'GoCardless') return 'gc';
+    if (ch === 'Own way') return 'own_way';
+    if (ch === 'LA funded') return 'la';
+    if (ch === 'Payment link' || ch === 'Apple Pay') return 'link';
+    if (ch === 'Admin / Office') return 'admin';
+    return 'bank';
+  }
+
+  function paymentMethodSelectValue(inv) {
+    var code = String((inv && inv.reenrol_payment_method_code) || '').toLowerCase();
+    if (code === 'gocardless' || code === 'own_way_flexible' || code === 'bank_transfer') return code;
+    var key = methodFilterKey(inv);
+    if (key === 'gc') return 'gocardless';
+    if (key === 'own_way') return 'own_way_flexible';
+    return 'bank_transfer';
+  }
+
+  function invoicesForMethodFilter(list) {
+    var mf = String(state.methodFilter || 'all');
+    if (!mf || mf === 'all') return list || [];
+    return (list || []).filter(function (inv) {
+      return methodFilterKey(inv) === mf;
+    });
   }
 
   function scheduleRows(inv) {
@@ -933,6 +965,9 @@
 
   function methodToneClass(label) {
     var s = String(label || '').toLowerCase();
+    if (s.indexOf('own way') >= 0) {
+      return 'pp-inv-acc__method--admin';
+    }
     if (s.indexOf('la funded') >= 0 || s === 'la') {
       return 'pp-inv-acc__method--la';
     }
@@ -1707,6 +1742,7 @@
         : fundNow === 'LA managed' || fundNow === 'NHS managed'
           ? 'la_managed'
           : 'private';
+    var payVal = paymentMethodSelectValue(invoices[0] || {});
     return (
       '<details class="pp-inv-acc__item pp-inv-acc__item--pax" data-contact-id="' +
       contactId +
@@ -1755,7 +1791,28 @@
       '<button type="button" class="btn btn--sm btn--sec" data-reenrol-funding-save="' +
       contactId +
       '">Update funding</button>' +
-      '<span class="muted" style="font-size:11px;min-width:0;overflow-wrap:break-word">Changes the parent\'s re-enrol choice + unpaid INV-P VAT label/PDF. Amounts stay the same.</span>' +
+      '<label class="muted" style="font-size:12px;font-weight:700;min-width:0;margin-left:4px" for="ppPay-' +
+      contactId +
+      '">Method of payment</label>' +
+      '<select class="sel" id="ppPay-' +
+      contactId +
+      '" data-reenrol-pay-select="' +
+      contactId +
+      '" style="max-width:18rem;min-width:0">' +
+      '<option value="bank_transfer"' +
+      (payVal === 'bank_transfer' ? ' selected' : '') +
+      '>Bank Transfer / Apple Pay</option>' +
+      '<option value="gocardless"' +
+      (payVal === 'gocardless' ? ' selected' : '') +
+      '>GoCardless</option>' +
+      '<option value="own_way_flexible"' +
+      (payVal === 'own_way_flexible' ? ' selected' : '') +
+      '>Own way (prepaid buffer)</option>' +
+      '</select>' +
+      '<button type="button" class="btn btn--sm btn--sec" data-reenrol-pay-save="' +
+      contactId +
+      '">Update payment method</button>' +
+      '<span class="muted" style="font-size:11px;min-width:0;overflow-wrap:break-word;flex:1 1 100%">Funding changes VAT on unpaid INV-Ps. Payment method updates the re-enrol choice + unpaid invoice channel (Bank / GC / Own way) — does not rebuild the instalment schedule amounts.</span>' +
       '</div>' +
       '<div class="pp-inv-acc__cards">' +
       cards +
@@ -1888,6 +1945,18 @@
       'button.pp-inv-acc__pay-chip--partial,.pp-inv-acc__pay-chip--partial{color:#9a3412;background-color:#ffedd5;background:#ffedd5;border:1px solid #f97316}' +
       'button.pp-inv-acc__pay-chip--hidden,.pp-inv-acc__pay-chip--hidden{color:#475569;background-color:#e2e8f0;background:#e2e8f0;border:1px solid #94a3b8}' +
       'button.pp-inv-acc__pay-chip--other,.pp-inv-acc__pay-chip--other{color:#4a6578;background-color:#eef2f5;background:#eef2f5;border:1px solid #d5dee6}' +
+      '.pp-inv-method-filters{display:flex;flex-direction:column;gap:8px;width:100%;min-width:0;margin:0 0 10px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;box-sizing:border-box}' +
+      '.pp-inv-method-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}' +
+      '.pp-inv-method-row__lab{flex:0 0 auto;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#64748b;margin-right:2px}' +
+      '.pp-inv-method-chip{display:inline-flex;align-items:center;justify-content:center;max-width:100%;padding:5px 11px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.25;border:1px solid #e2e8f0;background:#fff;color:#475569;cursor:pointer;font:inherit;overflow-wrap:anywhere;text-align:center}' +
+      '.pp-inv-method-chip:hover{border-color:#94a3b8}' +
+      '.pp-inv-method-chip--on,.pp-inv-method-chip[aria-pressed=true]{box-shadow:0 0 0 2px rgba(45,132,179,.25)}' +
+      '.pp-inv-method-chip--bank{background:#f5f3ff;color:#5b21b6;border-color:#c4b5fd}' +
+      '.pp-inv-method-chip--gc{background:#eff6ff;color:#1d4ed8;border-color:#93c5fd}' +
+      '.pp-inv-method-chip--own{background:#0f172a;color:#fff;border-color:#020617}' +
+      '.pp-inv-method-chip--la{background:#ecfdf5;color:#047857;border-color:#a7f3d0}' +
+      '.pp-inv-method-chip--link{background:#fef2f2;color:#b91c1c;border-color:#fecaca}' +
+      '.pp-inv-method-chip--muted{background:#f1f5f9;color:#64748b;border-color:#e2e8f0}' +
       '.pp-inv-acc__grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.7fr) minmax(0,.9fr);gap:12px;min-width:0}' +
       '@media (max-width:820px){.pp-inv-acc__grid{grid-template-columns:1fr}}' +
       '.pp-inv-acc__actions{display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;min-width:0}' +
@@ -2067,10 +2136,17 @@
         host.innerHTML = '<p class="muted">No invoices yet. Upload a PDF below to share with a family.</p>';
         return;
       }
+      var displayInvoices = invoicesForMethodFilter(state.invoices);
+      if (!displayInvoices.length) {
+        host.innerHTML =
+          accordionListStyles() +
+          '<p class="muted" style="margin:0;max-width:48rem;overflow-wrap:break-word">No families match this payment method filter. Try <strong>All</strong> or another method chip.</p>';
+        return;
+      }
       host.innerHTML =
         accordionListStyles() +
         '<div class="pp-inv-acc" role="list">' +
-        groupInvoicesByDayThenParticipant(state.invoices).map(dayAccordionHtml).join('') +
+        groupInvoicesByDayThenParticipant(displayInvoices).map(dayAccordionHtml).join('') +
         '</div>';
       bindRowActions(host);
       /* Day + participant accordions stay closed until opened. */
@@ -2087,6 +2163,15 @@
     global.document.querySelectorAll('.toolbar [data-inv-filter]').forEach(function (b) {
       var on = b.getAttribute('data-inv-filter') === state.filter;
       b.classList.toggle('btn--ghost', !on);
+    });
+  }
+
+  function setMethodFilter(filter) {
+    state.methodFilter = filter || 'all';
+    global.document.querySelectorAll('[data-inv-method]').forEach(function (b) {
+      var on = b.getAttribute('data-inv-method') === state.methodFilter;
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      b.classList.toggle('pp-inv-method-chip--on', on);
     });
   }
 
@@ -2247,6 +2332,48 @@
             return;
           }
           cfg.toast('Funding updated to ' + label, 'ok');
+          void renderHost(global.document.getElementById('portalParentInvoicesHost'));
+        });
+      });
+    });
+    host.querySelectorAll('[data-reenrol-pay-save]').forEach(function (btn) {
+      btn.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var contactId = btn.getAttribute('data-reenrol-pay-save');
+        if (!contactId) return;
+        var sel = host.querySelector(
+          '[data-reenrol-pay-select="' + contactId.replace(/"/g, '') + '"]',
+        );
+        var method = sel && sel.value ? String(sel.value) : '';
+        if (!method) return;
+        var label =
+          method === 'gocardless'
+            ? 'GoCardless'
+            : method === 'own_way_flexible'
+              ? 'Own way'
+              : 'Bank Transfer / Apple Pay';
+        if (
+          !global.confirm(
+            'Set method of payment for this family to “' +
+              label +
+              '”? Updates the re-enrol choice and unpaid invoice payment channel. Instalment amounts stay as they are.',
+          )
+        ) {
+          return;
+        }
+        btn.disabled = true;
+        void api('portal-admin-parent-invoices-upsert', {
+          action: 'set_reenrol_payment_method',
+          contact_id: contactId,
+          payment_method: method,
+        }).then(function (r) {
+          if (r.error) {
+            cfg.toast(r.message || r.error || 'Payment method update failed', 'error');
+            btn.disabled = false;
+            return;
+          }
+          cfg.toast('Payment method updated to ' + label, 'ok');
           void renderHost(global.document.getElementById('portalParentInvoicesHost'));
         });
       });
@@ -2745,6 +2872,29 @@
     );
   }
 
+  function methodFilterChip(id, label, tone) {
+    var on = String(state.methodFilter || 'all') === id;
+    var cls = 'pp-inv-method-chip';
+    if (tone === 'bank') cls += ' pp-inv-method-chip--bank';
+    else if (tone === 'gc') cls += ' pp-inv-method-chip--gc';
+    else if (tone === 'own') cls += ' pp-inv-method-chip--own';
+    else if (tone === 'la') cls += ' pp-inv-method-chip--la';
+    else if (tone === 'link') cls += ' pp-inv-method-chip--link';
+    else cls += ' pp-inv-method-chip--muted';
+    if (on) cls += ' pp-inv-method-chip--on';
+    return (
+      '<button type="button" class="' +
+      cls +
+      '" data-inv-method="' +
+      esc(id) +
+      '" aria-pressed="' +
+      (on ? 'true' : 'false') +
+      '">' +
+      esc(label) +
+      '</button>'
+    );
+  }
+
   function reenrolmentsEmbedHtml() {
     return (
       '<div class="card" style="margin-bottom:14px">' +
@@ -2773,6 +2923,16 @@
       '<button type="button" class="btn btn--sm btn--primary" id="portalParentInvoicesPushXero" title="Creates ACCREC in Xero for paid Portal invoices (awaiting payment)">Push paid to Xero</button>' +
       '<button type="button" class="btn btn--sm" id="portalParentInvoicesExportXero">Export to Xero CSV</button>' +
       '</div>' +
+      '<div class="pp-inv-method-filters" role="group" aria-label="Payment method filter">' +
+      '<div class="pp-inv-method-row">' +
+      '<span class="pp-inv-method-row__lab">Method</span>' +
+      methodFilterChip('all', 'All', 'muted') +
+      methodFilterChip('bank', 'Bank Transfer', 'bank') +
+      methodFilterChip('gc', 'GoCardless', 'gc') +
+      methodFilterChip('own_way', 'Own way', 'own') +
+      methodFilterChip('la', 'LA funded', 'la') +
+      methodFilterChip('link', 'Payment link', 'link') +
+      '</div></div>' +
       '<details style="margin:0 0 14px;padding:12px;border:1px solid var(--line,#e5e7eb);border-radius:10px;max-width:100%;min-width:0">' +
       '<summary style="cursor:pointer;font-weight:700">Match Tide bank CSV</summary>' +
       '<p class="muted" style="margin:8px 0 10px;max-width:48rem;overflow-wrap:break-word">Export inbound payments from Tide → upload here. Portal suggests INV-P matches by reference + amount. <strong>Confirm</strong> marks paid and creates the Xero ACCREC if missing (awaiting payment). Mark Paid + reconcile the bank line in Xero.</p>' +
@@ -2794,6 +2954,7 @@
 
   function bindListEmbed() {
     state.filter = 'all';
+    state.methodFilter = 'all';
     state.amountPeriod = 'autumn';
     bindTideMatchPanel();
     var host = global.document.getElementById('portalParentInvoicesHost');
@@ -2822,6 +2983,12 @@
         void renderHost(global.document.getElementById('portalParentInvoicesHost'));
       });
     });
+    global.document.querySelectorAll('[data-inv-method]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        setMethodFilter(btn.getAttribute('data-inv-method') || 'all');
+        void renderHost(global.document.getElementById('portalParentInvoicesHost'));
+      });
+    });
     global.document.querySelectorAll('.toolbar [data-inv-amount]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         setAmountPeriod(btn.getAttribute('data-inv-amount') || 'autumn');
@@ -2829,6 +2996,7 @@
       });
     });
     setAmountPeriod(state.amountPeriod);
+    setMethodFilter(state.methodFilter);
     void renderHost(host);
   }
 
