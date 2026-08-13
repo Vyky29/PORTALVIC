@@ -348,6 +348,9 @@
       }
     }
     var nextAmt = nextInst ? Number(nextInst.amount_gbp) || 0 : 0;
+    var nextDueIso = nextInst ? instalmentDueIso(nextInst.due_date) : '';
+    var todayIso = todayIsoLocal();
+    var nextIsDueNow = !nextDueIso || nextDueIso <= todayIso;
     var html =
       '<div><span class="muted">Amount</span><br><strong>' +
       esc(formatMoney(total)) +
@@ -358,12 +361,22 @@
       sched.length >= 2 &&
       Math.abs(nextAmt - total) > 0.009
     ) {
-      html +=
-        '<div style="margin-top:6px;font-size:12px;line-height:1.4;min-width:0;overflow-wrap:break-word;color:#9a3412">' +
-        '<strong>Due now</strong> ' +
-        esc(formatMoney(nextAmt)) +
-        '<div class="muted" style="font-size:11px;margin-top:2px;color:#64748b">Later instalments stay hidden until due</div>' +
-        '</div>';
+      if (nextIsDueNow) {
+        html +=
+          '<div style="margin-top:6px;font-size:12px;line-height:1.4;min-width:0;overflow-wrap:break-word;color:#9a3412">' +
+          '<strong>Due now</strong> ' +
+          esc(formatMoney(nextAmt)) +
+          '<div class="muted" style="font-size:11px;margin-top:2px;color:#64748b">Later instalments stay hidden until due</div>' +
+          '</div>';
+      } else {
+        html +=
+          '<div style="margin-top:6px;font-size:12px;line-height:1.4;min-width:0;overflow-wrap:break-word;color:#475569">' +
+          '<strong>Next due</strong> ' +
+          esc(formatMoney(nextAmt)) +
+          (nextDueIso ? ' · ' + esc(formatDate(nextDueIso)) : '') +
+          '<div class="muted" style="font-size:11px;margin-top:2px;color:#64748b">Not due yet — do not Mark paid unless they paid early</div>' +
+          '</div>';
+      }
     }
     if (pay === 'partial' || (paid > 0 && pay !== 'paid' && remaining > 0.009)) {
       html +=
@@ -416,22 +429,35 @@
           String(r.label || '').trim() ||
           'Instalment ' + String(r.seq || i + 1);
         var due = formatDate(r.due_date);
-        /* Flexi / monthly: only the current unpaid instalment is Due; later ones stay Hidden. */
-        var isCurrentDue = st !== 'paid' && i === firstUnpaidIdx;
+        var dueIso = instalmentDueIso(r.due_date);
+        var todayIso = todayIsoLocal();
+        /* Flexi: next unpaid is "Due" only when its due_date is today/overdue.
+           Future next half (e.g. Oct) stays Scheduled — not Due — so Mark paid is not tempting. */
+        var isNextUnpaid = st !== 'paid' && i === firstUnpaidIdx;
+        var isCurrentDue = isNextUnpaid && (!dueIso || dueIso <= todayIso);
+        var isScheduledNext = isNextUnpaid && !!dueIso && dueIso > todayIso;
         var isLaterHidden = st !== 'paid' && firstUnpaidIdx >= 0 && i > firstUnpaidIdx;
         var tone =
           st === 'paid'
             ? 'color:#065f46;background:#ecfdf5;border-color:#6ee7b7'
             : isCurrentDue
               ? 'color:#9a3412;background:#fff7ed;border-color:#fdba74'
-              : 'color:#475569;background:#e2e8f0;border-color:#94a3b8';
-        var stLab = st === 'paid' ? 'Paid' : isCurrentDue ? 'Due' : 'Hidden';
+              : isScheduledNext
+                ? 'color:#334155;background:#f1f5f9;border-color:#94a3b8'
+                : 'color:#475569;background:#e2e8f0;border-color:#94a3b8';
+        var stLab = st === 'paid'
+          ? 'Paid'
+          : isCurrentDue
+            ? 'Due'
+            : isScheduledNext
+              ? 'Scheduled'
+              : 'Hidden';
         var meta = [];
         if (due) meta.push(due);
         meta.push(formatMoney(r.amount_gbp));
         if (st === 'paid' && r.paid_at) meta.push(formatDate(r.paid_at));
         if (st === 'paid' && r.paid_via) meta.push(String(r.paid_via));
-        if (isLaterHidden) meta.push('not due yet');
+        if (isScheduledNext || isLaterHidden) meta.push('not due yet');
         return (
           '<li class="pp-inv-acc__inst-row" style="min-width:0;margin:0 0 4px;padding:6px 8px;border:1px solid;border-radius:8px;' +
           tone +
@@ -2060,6 +2086,35 @@
         var act = btn.getAttribute('data-inv-act');
         var id = btn.getAttribute('data-inv-id');
         if (!id) return;
+        if (act === 'paid') {
+          var invEarly = (state.invoices || []).find(function (x) {
+            return String(x.id) === String(id);
+          });
+          var schedEarly = invEarly ? scheduleRows(invEarly) : [];
+          var nextEarly = null;
+          for (var ei = 0; ei < schedEarly.length; ei++) {
+            if (String(schedEarly[ei].status || 'pending').toLowerCase() !== 'paid') {
+              nextEarly = schedEarly[ei];
+              break;
+            }
+          }
+          var nextDueEarly = nextEarly ? instalmentDueIso(nextEarly.due_date) : '';
+          if (nextDueEarly && nextDueEarly > todayIsoLocal()) {
+            var whenLab = formatDate(nextDueEarly) || nextDueEarly;
+            var amtLab = formatMoney(nextEarly.amount_gbp);
+            if (
+              !global.confirm(
+                'Next instalment (' +
+                  amtLab +
+                  ') is not due until ' +
+                  whenLab +
+                  '.\n\nOnly continue if they paid this half early. Cancel if you only meant to confirm the previous payment.',
+              )
+            ) {
+              return;
+            }
+          }
+        }
         btn.disabled = true;
         var body = { action: 'update', invoice_id: id };
         if (act === 'share') body.share_status = 'ready';
