@@ -522,7 +522,7 @@ export function buildReenrolmentInstalments(args: {
       paymentMethodHint: "la_funded",
       scheduleCode: "funder_monthly_11",
       schedulePlanPhrase:
-        "11 monthly funder invoices (September–July) — booking total split equally; sessions listed per month",
+        "11 monthly funder invoices (September–July) — each month = sessions × session fee (not equal split)",
       skipReason: termOut.length ? null : "no_instalments",
     };
   }

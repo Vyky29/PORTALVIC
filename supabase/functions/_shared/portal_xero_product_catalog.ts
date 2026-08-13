@@ -280,15 +280,19 @@ export type ReenrolMonthlyLineBuildInput = {
   weeklyChoices?: Record<string, { choice?: string }> | null;
   /** Calendar month YYYY-MM (Sep 2026 → Jul 2027). */
   monthYm: string;
-  /** Invoice total for this month (booking ÷ 11 share). */
-  monthAmountGbp: number;
+  /**
+   * @deprecated Equal-split monthly share. Ignored — months bill sessions × unit fee
+   * so 3-session and 4-session months differ (e.g. Aboodi £100/session).
+   */
+  monthAmountGbp?: number;
   vatMode: PortalInvoiceVatMode;
   productMap: Map<string, ProductMapRow>;
 };
 
 /**
  * Per-service lines for one LA/NHS monthly funder invoice (sessions in that month only).
- * Amounts are scaled so lines sum to monthAmountGbp.
+ * Amount = session count × unit fee (from annual ÷ annual sessions). Months with more
+ * sessions cost more — do not equal-split the year across 11 invoices.
  */
 export function buildReenrolMonthlyLineItems(
   input: ReenrolMonthlyLineBuildInput,
@@ -355,23 +359,12 @@ export function buildReenrolMonthlyLineItems(
   });
   if (!aggs.length) return [];
 
-  const target = round2(Number(input.monthAmountGbp) || 0);
-  const naturalSum = round2(aggs.reduce((s, a) => s + a.naturalGbp, 0));
   const lines: PortalInvoiceLineItem[] = [];
-  let allocated = 0;
-  for (let i = 0; i < aggs.length; i++) {
-    const agg = aggs[i];
+  for (const agg of aggs) {
     const mapRow = input.productMap.get(agg.service_key);
     const label = mapRow?.label || agg.description.split("—")[0].trim();
     const qty = Math.max(1, agg.dates.length);
-    let amount =
-      i === aggs.length - 1
-        ? round2(target - allocated)
-        : naturalSum > 0
-          ? round2((target * agg.naturalGbp) / naturalSum)
-          : round2(target / aggs.length);
-    if (i < aggs.length - 1) allocated = round2(allocated + amount);
-    if (amount < 0) amount = 0;
+    const amount = round2(agg.naturalGbp);
     lines.push({
       service_key: agg.service_key,
       description: label || agg.description,

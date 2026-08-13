@@ -38,6 +38,10 @@ function json(status: number, body: Record<string, unknown>) {
   });
 }
 
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
 function sanitize(raw: unknown, max = 200): string {
   return String(raw ?? "").trim().slice(0, max);
 }
@@ -218,9 +222,15 @@ Deno.serve(async (req) => {
                 })
               : inv.lineDescription;
 
+          const amountFromLines = round2(
+            lineItems.reduce((s, li) => s + (Number(li.amount_gbp) || 0), 0),
+          );
+          const amountGbp =
+            amountFromLines > 0.009 ? amountFromLines : inv.amountGbp;
+
           const created = await createPortalFamilyInvoice(supabase, {
             contactId: participantContactId,
-            amountGbp: inv.amountGbp,
+            amountGbp,
             dueDateIso: inv.dueDateIso,
             vatMode: plan.vatMode,
             lineDescription,
@@ -235,7 +245,12 @@ Deno.serve(async (req) => {
             createdVia: "reenrolment",
             ownerUserId: ownerId,
             readyBy: isFunderMonthly ? "reenrolment_funder_monthly" : "reenrolment_auto",
-            paymentSchedule: inv.paymentSchedule,
+            paymentSchedule: inv.paymentSchedule?.length
+              ? inv.paymentSchedule.map((row) => ({
+                  ...row,
+                  amount_gbp: amountGbp,
+                }))
+              : inv.paymentSchedule,
             billingTerm: inv.term,
             lineItems,
           });
@@ -250,7 +265,7 @@ Deno.serve(async (req) => {
           }
           invoicesCreated.push({
             invoice_number: created.invoiceNumber,
-            amount_gbp: inv.amountGbp,
+            amount_gbp: amountGbp,
             due_date: inv.dueDateIso,
             billing_term: inv.term,
             billing_month: inv.billingMonth || null,
