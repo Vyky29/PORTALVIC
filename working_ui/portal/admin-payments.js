@@ -828,7 +828,7 @@
     statusFilter: "active", // active (re-enrolled) | all | outstanding | paid | notreenrolled
     sheetFilter: "",      // "" = all groups, else sheet name
     paidFilterByTerm: {}, // termBucketId -> Paid value ("" = all)
-    payStatusByTerm: {}, // termBucketId -> "" | "paid" | "outstanding" (table Status filter)
+    payStatusByTerm: {}, // termBucketId -> "" | "paid" | "flexi" | "gc" | "outstanding" | "partial"
     serviceKindByTerm: {}, // termBucketId -> "afterschool" | "day_centre"
     termOpenById: {}, // termBucketId -> boolean (persist accordion open across re-renders)
     focusTermId: "", // after Paid chip click, keep this term open + in view
