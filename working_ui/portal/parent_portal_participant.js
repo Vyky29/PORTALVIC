@@ -7162,11 +7162,33 @@
     );
   }
 
-  /** Plain-text form of the green button (for helper notes). */
+  var PAID_REPORT_VALIDATE_HINT =
+    "First complete the payment, then validate the payment";
+
+  /** Plain-text form of the green button (for helper notes / aria). */
   function invoicePaidReportBtnPlain(inv) {
-    return invoicePaidReportBtnLabel(inv)
-      .replace(/&apos;/g, "'")
-      .replace(/&amp;/g, "&");
+    return (
+      invoicePaidReportBtnLabel(inv)
+        .replace(/&apos;/g, "'")
+        .replace(/&amp;/g, "&") +
+      " — " +
+      PAID_REPORT_VALIDATE_HINT
+    );
+  }
+
+  /** Icon + two-line label (action + pay-then-validate hint). */
+  function invoicePaidReportBtnHtml(inv) {
+    return (
+      invoiceActIco("bank") +
+      '<span class="pp-invoice-act-label">' +
+      '<span class="pp-invoice-paid-report__main">' +
+      invoicePaidReportBtnLabel(inv) +
+      "</span>" +
+      '<span class="pp-invoice-paid-report__hint">' +
+      esc(PAID_REPORT_VALIDATE_HINT) +
+      "</span>" +
+      "</span>"
+    );
   }
 
   function invoiceBankPanelHtml(inv, previewBtnHtml) {
@@ -7431,7 +7453,6 @@
     }
     var payPairHtml = "";
     if (showDraftFlow && (canPay || canReport)) {
-      var paidReportLabel = invoicePaidReportBtnLabel(inv);
       var paidReportPlain = invoicePaidReportBtnPlain(inv);
       var payBtn = canPay
         ? '<button type="button" class="pp-btn pp-btn--sec pp-invoice-pay-pair__btn" data-pp-pay-invoice="' +
@@ -7448,8 +7469,10 @@
           esc(inv.id) +
           '" data-pp-pay-ref-default="' +
           esc(suggestedRef) +
+          '" aria-label="' +
+          esc(paidReportPlain) +
           '">' +
-          invoiceBtnLabel("bank", paidReportLabel) +
+          invoicePaidReportBtnHtml(inv) +
           "</button>"
         : "";
       payPairHtml =
@@ -7458,9 +7481,7 @@
         reportBtn +
         "</div>" +
         (canReport
-          ? '<p class="pp-muted pp-invoice-pay__note pp-invoice-pay__notify">Tap <strong>' +
-            esc(paidReportPlain) +
-            "</strong> after you send the Tide transfer <em>or</em> pay with Card / Apple Pay — this alerts the office to validate the payment and release the slot.</p>"
+          ? '<p class="pp-muted pp-invoice-pay__note pp-invoice-pay__notify"><strong>Two steps:</strong> first complete the payment (Tide transfer or Card / Apple Pay), then tap the green button to <strong>validate the payment</strong> so the office can confirm and release the slot.</p>'
           : "");
     }
     return (
