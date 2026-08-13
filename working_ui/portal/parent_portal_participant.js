@@ -7495,19 +7495,22 @@
           "</p>"
         : "") +
       (schedule.length && !isPaid
-        ? '<ul class="pp-invoice-card__schedule pp-muted" style="margin:6px 0 0;padding-left:18px;font-size:12px">' +
+        ? '<ul class="pp-invoice-card__schedule pp-muted">' +
           schedule
             .map(function (row) {
               var st = String(row.status || "").toLowerCase();
-              var mark = st === "paid" ? "✓ " : "";
+              var paidTick =
+                st === "paid"
+                  ? ' <span class="pp-invoice-card__sched-paid" aria-label="Paid">✓</span>'
+                  : "";
               return (
                 "<li>" +
-                mark +
                 esc(row.label || "Payment") +
                 " · " +
                 esc(formatDocWhen(row.due_date)) +
                 " · " +
                 esc(formatInvoiceMoney(row.amount_gbp)) +
+                paidTick +
                 "</li>"
               );
             })

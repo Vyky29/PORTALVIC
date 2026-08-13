@@ -1989,12 +1989,29 @@
     .pp-invoice-card--paid .pp-invoice-card__amount {
       color: #047857;
     }
+    .pp-invoice-card--partial .pp-invoice-card__amount {
+      color: #047857;
+    }
     .pp-invoice-card__amount {
       margin: 8px 0 0;
       font-size: 22px;
       font-weight: 800;
       color: #92400e;
       overflow-wrap: break-word;
+    }
+    .pp-invoice-card__schedule {
+      margin: 6px 0 0;
+      padding-left: 18px;
+      font-size: 12px;
+      min-width: 0;
+    }
+    .pp-invoice-card__schedule li {
+      overflow-wrap: break-word;
+    }
+    .pp-invoice-card__sched-paid {
+      color: #16a34a;
+      font-weight: 800;
+      margin-left: 2px;
     }
     .pp-invoice-card__meta { margin: 6px 0 0; font-size: 12px; overflow-wrap: break-word; }
     .pp-invoice-card__acts {
@@ -5164,7 +5181,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260723-date-svc-stack"></script>
   <script src="/portal/parent_portal_team.js?v=20260710-eiji-hazem-photos"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260715-crash-cal-first"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260813-instalment-paid-btn"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260813-sched-tick-green"></script>
   <script src="/portal/parent_portal_app.js?v=20260811-anas-service-days"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
