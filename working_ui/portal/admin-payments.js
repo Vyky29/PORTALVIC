@@ -3073,7 +3073,24 @@
       }
     }
 
-    stitchServiceFragments(splitServiceList(raw)).forEach(push);
+    /* Always expand with Sessions so "Aquatic Activity 60'" picks up day/time. */
+    stitchServiceFragments(splitServiceList(raw)).forEach(function (piece) {
+      var rich = typeof parseRichServiceFragment === "function"
+        ? parseRichServiceFragment(piece)
+        : "";
+      if (rich) {
+        push(rich);
+        return;
+      }
+      var expanded = expandRawServiceToCanonLines(piece, sessions);
+      if (expanded.length) {
+        expanded.forEach(push);
+        return;
+      }
+      var one = formatServicePieceOneLiner(piece, sessions);
+      if (one) push(one);
+      else push(piece);
+    });
     if (out.length) return dedupeCanonServiceOneLiners(out);
 
     splitServiceList(raw).forEach(function (piece) {
@@ -3262,6 +3279,18 @@
       /* Still show flipped duration + name if it looks like a programme */
       if (!dur && !time && !days.length) {
         return known;
+      }
+    }
+
+    /* Flip trailing duration that survived earlier (e.g. "Multi-Activity 90'") */
+    if (!dur) {
+      var endOnly = known.match(/^(.*?)[\s,]+(\d{1,3})\s*['′']\s*$/i);
+      if (endOnly) {
+        var dEnd = parseInt(endOnly[2], 10) || 0;
+        if (dEnd >= 15 && dEnd <= 480) {
+          dur = dEnd;
+          known = kindTitleFromText(endOnly[1]) || endOnly[1].trim();
+        }
       }
     }
 
@@ -3691,7 +3720,13 @@
       title = normalizeServiceDisplay(stripped) || stripped;
     }
     var days = collectDayTokensFromText(s);
-    var time = extractTimeFromSessions(sessionsHint) || extractTimeFromText(s);
+    var hintDays = collectDayTokensFromText(sessionsHint);
+    /* Only borrow Sessions day when unambiguous (one day) — avoid tagging Aquatic with every weekday. */
+    if (!days.length && hintDays.length === 1) days = hintDays;
+    var time = normalizeSessionTimeRange(s) || extractTimeFromText(s);
+    if (!time && hintDays.length <= 1) {
+      time = extractTimeFromSessions(sessionsHint);
+    }
     if (!days.length) {
       var line = formatCanonServiceLine({ durMin: dur, service: title, day: "", time: time });
       return line ? [line] : [];
