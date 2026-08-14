@@ -1890,10 +1890,10 @@
     if (bucket === "summer_2526" && !hasOther) return null;
 
     var pack = cyrusPackageSeasonTotals();
-    var thuSvcLabel = "90' Bespoke Programme, Thursday - 3.30 pm to 5 pm";
+    var thuSvcLabel = "90' Bespoke Programme - 3.30 pm to 5 pm - Thursday";
     var afterSvcLines = [
-      "90' Multi-Activity, Sunday - 11 am to 12.30 pm",
-      "60' Aquatic Activity, Wednesday - 4 pm to 5 pm",
+      "90' Multi-Activity - 11 am to 12.30 pm - Sunday",
+      "60' Aquatic Activity - 4 pm to 5 pm - Wednesday",
     ];
 
     function clonePart(part, idSuffix, amount, services, sessions, cost, seasons) {
@@ -2052,8 +2052,8 @@
       asSeasons.autumn = billed;
     }
 
-    var dcSvc = "60' Aquatic Activity, Monday - 11 am to 12 pm";
-    var asSvc = "90' Multi-Activity, Sunday - 9.30 am to 11 am";
+    var dcSvc = "60' Aquatic Activity - 11 am to 12 pm - Monday";
+    var asSvc = "90' Multi-Activity - 9.30 am to 11 am - Sunday";
     var dcName = String(r.client_name || "").trim() || "Jack W";
     if (!/\(\s*acat\s*\)/i.test(dcName)) dcName = dcName.replace(/\s*\*$/, "").trim() + " (ACAT)";
 
@@ -2805,7 +2805,10 @@
     return /re-?enrolment\s*2026|booked place 2026|la office auto/i.test(t);
   }
 
-  /** "2h30 DAY CENTRE" + "MON to FRI" + "12.30 pm to 3 pm" → one display line. */
+  /** "2h30 DAY CENTRE" + "MON to FRI" + "12.30 pm to 3 pm" → one display line.
+   *  Norm: {dur}' {Service} - {slot} - {day}
+   *  e.g. 90' Multi-Activity - 9.30 am to 11 am - Sunday
+   */
   function formatServiceOneLiner(parts) {
     if (!parts || !parts.line1 || parts.line1 === "—" || isPlaceholderServiceLabel(parts.line1)) {
       return "";
@@ -2813,17 +2816,17 @@
     var title = String(parts.line1).trim();
     var days = String(parts.line2 || "").trim();
     var hours = String(parts.line3 || "").trim();
-    if (days && hours) return title + ", " + days + " - " + hours;
-    if (days) return title + ", " + days;
+    if (hours && days) return title + " - " + hours + " - " + days;
     if (hours) return title + " - " + hours;
+    if (days) return title + " - " + days;
     return title;
   }
 
   /** Day Centre summer crash for Zakariya (Mon–Thu week of 20 Jul). */
   function zakariyaCrashServiceLines() {
     return [
-      "60' Climbing Activity, July 20th to 23rd - 12 pm to 1 pm",
-      "60' Aquatic Activity, July 20th to 23rd - 1 pm to 2 pm",
+      "60' Climbing Activity - 12 pm to 1 pm - July 20th to 23rd",
+      "60' Aquatic Activity - 1 pm to 2 pm - July 20th to 23rd",
     ];
   }
 
@@ -3014,7 +3017,7 @@
     if (r && (r._cyrusPart || paymentParticipantSlug(r) === "cyrus")) {
       if (termBucketFor(r) === "autumn_2627" || termBucketFor(r) === "summer_2526") {
         cyrusPackageServiceLines().forEach(push);
-        if (out.length) return out;
+        if (out.length) return dedupeCanonServiceOneLiners(out);
       }
     }
 
@@ -3022,7 +3025,7 @@
     if (r && r._crash) {
       if (paymentParticipantSlug(r) === "zakariya") {
         zakariyaCrashServiceLines().forEach(push);
-        if (out.length) return out;
+        if (out.length) return dedupeCanonServiceOneLiners(out);
       }
       if (r._crashLineDesc) {
         parseBulletCrashOneLiners(r._crashLineDesc).forEach(push);
@@ -3031,7 +3034,7 @@
         while ((m = inlineRe.exec(String(r._crashLineDesc || "")))) {
           push(formatCrashParenBundle(m[1], m[2]));
         }
-        if (out.length) return out;
+        if (out.length) return dedupeCanonServiceOneLiners(out);
       }
     }
 
@@ -3053,33 +3056,33 @@
       if (rowHasGoCardlessFee(r) || (r._serviceParts && r._serviceParts["Admin Fee (GoCardless)"])) {
         push("Admin Fee (GoCardless)");
       }
-      if (out.length) return out;
+      if (out.length) return dedupeCanonServiceOneLiners(out);
     }
 
     var raw = String(d.Services || d.Service || "").trim();
     if (!raw || isPlaceholderServiceLabel(raw)) {
       push(formatServiceOneLiner(serviceDisplayParts(r)));
-      return out;
+      return dedupeCanonServiceOneLiners(out);
     }
 
     if (/day\s*centre/i.test(raw)) {
       var dcWhole = formatServicePieceOneLiner(raw.replace(/\s*·\s*/g, " "), sessions)
         || formatServiceOneLiner(normalizeServiceParts(raw, sessions));
       if (dcWhole && looksLikeDayCentreLine(dcWhole) && !isBogusDayCentreLine(dcWhole)) {
-        return [dcWhole];
+        return dedupeCanonServiceOneLiners([dcWhole]);
       }
     }
 
     stitchServiceFragments(splitServiceList(raw)).forEach(push);
-    if (out.length) return out;
+    if (out.length) return dedupeCanonServiceOneLiners(out);
 
     splitServiceList(raw).forEach(function (piece) {
       expandRawServiceToCanonLines(piece, sessions).forEach(push);
     });
-    if (out.length) return out;
+    if (out.length) return dedupeCanonServiceOneLiners(out);
 
     push(formatServiceOneLiner(serviceDisplayParts(r)));
-    return out;
+    return dedupeCanonServiceOneLiners(out);
   }
 
   function isCyrusBespokeServiceLine(line) {
@@ -3090,9 +3093,9 @@
   /** Cyrus package lines (paid together) — emphasis follows Day Centre vs Afterschool stream. */
   function cyrusPackageServiceLines() {
     return [
-      "90' Multi-Activity, Sunday - 11 am to 12.30 pm",
-      "90' Bespoke Programme, Thursday - 3.30 pm to 5 pm",
-      "60' Aquatic Activity, Wednesday - 4 pm to 5 pm",
+      "90' Multi-Activity - 11 am to 12.30 pm - Sunday",
+      "90' Bespoke Programme - 3.30 pm to 5 pm - Thursday",
+      "60' Aquatic Activity - 4 pm to 5 pm - Wednesday",
       "Admin Fee (GoCardless)",
     ];
   }
@@ -3180,7 +3183,71 @@
     var rm = s.match(/\b(\d)\s*[:to]+\s*(\d)\b/i);
     if (rm) ratio = rm[1] + "to" + rm[2];
     var mult = (s.match(/\b(\d)\s*x\b/i) || [])[1] || "";
-    return [dur, kind, days.join("+"), ratio, mult].join("|");
+    var timeKey = "";
+    var tm = normalizeSessionTimeRange(s);
+    if (tm) timeKey = tm.toLowerCase().replace(/\s+/g, "");
+    return [dur, kind, days.join("+"), ratio, mult, timeKey].join("|");
+  }
+
+  /**
+   * Collapse duplicate service lines (e.g. Multi with no day + Multi Sunday)
+   * and reformat to: 90' Multi-Activity - 9.30 am to 11 am - Sunday
+   */
+  function dedupeCanonServiceOneLiners(lines) {
+    var groups = Object.create(null);
+    var order = [];
+    (lines || []).forEach(function (raw) {
+      var line = String(raw || "").trim();
+      if (!line || isPlaceholderServiceLabel(line)) return;
+      if (isGoCardlessFeeLabel(line)) {
+        var feeKey = "fee";
+        if (!groups[feeKey]) {
+          groups[feeKey] = { line: "Admin Fee (GoCardless)", fee: true };
+          order.push(feeKey);
+        }
+        return;
+      }
+      var dur = (line.match(/^(\d+)\s*['′']/) || [])[1] || "";
+      var kind = "";
+      if (/day\s*centre/i.test(line)) kind = "daycentre";
+      else if (/aquatic|swim/i.test(line)) kind = "aquatic";
+      else if (/climb/i.test(line)) kind = "climb";
+      else if (/multi/i.test(line)) kind = "multi";
+      else if (/bespoke|\bff\b/i.test(line)) kind = "bespoke";
+      else if (/physical|fitness|\bft\b/i.test(line)) kind = "physical";
+      var days = collectDayTokensFromText(line);
+      var time = normalizeSessionTimeRange(line) || extractTimeFromText(line) || "";
+      time = normalizeSessionTimeRange(time) || time;
+      var key = kind && dur
+        ? (dur + "|" + kind + "|" + (time || "").toLowerCase().replace(/\s+/g, ""))
+        : ("raw:" + line.toLowerCase().replace(/\s+/g, " "));
+      var score = (days.length ? 4 : 0) + (time ? 2 : 0) + Math.min(line.length, 80) * 0.01;
+      if (!groups[key]) {
+        groups[key] = { line: line, dur: dur, kind: kind, days: days, time: time, score: score };
+        order.push(key);
+      } else if (score > groups[key].score) {
+        groups[key] = { line: line, dur: dur, kind: kind, days: days, time: time, score: score };
+      } else if (days.length && !groups[key].days.length) {
+        groups[key].days = days;
+        groups[key].score = score;
+      }
+    });
+    return order.map(function (k) {
+      var g = groups[k];
+      if (g.fee) return g.line;
+      if (g.kind && g.dur) {
+        var title = serviceKindTitle(g.kind);
+        if (title) {
+          return formatCanonServiceLine({
+            durMin: parseInt(g.dur, 10) || 0,
+            service: title,
+            day: g.days[0] || "",
+            time: g.time || "",
+          }) || g.line;
+        }
+      }
+      return g.line;
+    }).filter(Boolean);
   }
 
   function preferServiceLabel(a, b) {
@@ -3189,7 +3256,9 @@
       var n = 0;
       if (/\([^)]*\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(s)) n += 4;
       if (/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s*&\s*(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(s)) n += 5;
+      if (/-\s*(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s*$/i.test(s)) n += 6;
       if (/,\s*(Mondays?|Tuesdays?|Wednesdays?|Thursdays?|Fridays?|Saturdays?|Sundays?)\b/i.test(s)) n += 1;
+      if (/\d{1,2}(?:[.:]\d{2})?\s*(am|pm)\s+to\s+\d{1,2}/i.test(s)) n += 3;
       if (/\bdemo\b/i.test(s)) n -= 8;
       if (/client'?s\s*name/i.test(s)) n -= 12;
       if (/^[-–]/.test(s.trim())) n -= 4;
@@ -3225,7 +3294,7 @@
     return map[tok] || String(d || "").trim();
   }
 
-  /** Canonical: 60' Climbing Activity, Sunday - 11 am to 12 pm */
+  /** Canonical: 90' Multi-Activity - 9.30 am to 11 am - Sunday */
   function formatCanonServiceLine(opts) {
     opts = opts || {};
     var dur = Number(opts.durMin) || 0;
@@ -3238,9 +3307,9 @@
     head = head.replace(/\s+/g, " ").trim();
     var day = opts.day ? dayTitleFull(opts.day) : "";
     var time = normalizeSessionTimeRange(opts.time);
-    if (day && time) return head + ", " + day + " - " + time;
-    if (day) return head + ", " + day;
+    if (time && day) return head + " - " + time + " - " + day;
     if (time) return head + " - " + time;
+    if (day) return head + " - " + day;
     return head;
   }
 
@@ -3325,13 +3394,21 @@
       var dur2 = parseInt(std[1], 10) || 0;
       var title2 = std[2].trim();
       var inside = String(std[3] || "").trim();
-      /* Also support ", Sunday - 12.30 pm to 2 pm" after the title. */
+      /* Also support ", Sunday - 12.30 pm to 2 pm" and
+       * " - 9.30 am to 11 am - Sunday" after the title. */
       var dayFromTitle = "";
       var timeFromTitle = "";
+      var newCanon = title2.match(
+        /^(.*?)\s*-\s*(\d{1,2}(?:[.:]\d{2})?\s*(?:am|pm)?\s*(?:[–\-—]|to)\s*\d{1,2}(?:[.:]\d{2})?\s*(?:am|pm)?)\s*(?:-\s*)?((?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*)?\s*$/i
+      );
       var tail = title2.match(
         /^(.*?)(?:,\s*)?((?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*)\s*(?:-\s*)?(.+)$/i
       );
-      if (!inside && tail) {
+      if (!inside && newCanon) {
+        title2 = newCanon[1].trim().replace(/[,\s\-]+$/, "");
+        timeFromTitle = newCanon[2];
+        dayFromTitle = newCanon[3] || "";
+      } else if (!inside && tail) {
         title2 = tail[1].trim().replace(/,\s*$/, "");
         dayFromTitle = tail[2];
         timeFromTitle = tail[3];
@@ -4273,7 +4350,7 @@
       + "<tbody>";
     people.forEach(function (g, i) {
       var first = g.orders[0];
-      var svcLines = Object.keys(g.services).filter(Boolean);
+      var svcLines = dedupeCanonServiceOneLiners(Object.keys(g.services).filter(Boolean));
       var svcHtml = svcLines.length
         ? ('<span class="pay-svc-lines">'
           + svcLines.map(function (line) {
