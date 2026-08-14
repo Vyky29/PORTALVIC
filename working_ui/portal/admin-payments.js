@@ -3629,18 +3629,45 @@
     return m ? h + "." + (m < 10 ? "0" + m : String(m)) : String(h);
   }
 
+  /**
+   * Roster sometimes stores day inside timeSlot, e.g.
+   * day="" time="Activity, Sunday - 11 to 12.30" → day=Sunday, time="11 to 12.30".
+   */
+  function normalizeParticipantSessionFields(s) {
+    var day = String((s && s.day) || "").trim();
+    var timeSlot = String((s && (s.timeSlot || s.time)) || "").trim();
+    var service = String((s && s.service) || "").trim();
+    if (!day) {
+      var fromTime = collectDayTokensFromText(timeSlot);
+      var fromSvc = collectDayTokensFromText(service);
+      day = dayTitleFull(fromTime[0] || fromSvc[0] || "") || "";
+    }
+    if (timeSlot) {
+      /* Strip "Activity, Sunday - " / repeated "Activity -" junk before the clock range. */
+      timeSlot = timeSlot
+        .replace(/^(?:activity\s*[–,|-]\s*)+/ig, "")
+        .replace(/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s*[–,|-]\s*/i, "")
+        .replace(/,\s*(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s*[–,|-]\s*/i, " ")
+        .replace(/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s*[–,|-]\s*/i, "")
+        .replace(/\s+/g, " ")
+        .trim();
+      var norm = normalizeSessionTimeRange(timeSlot);
+      if (norm) timeSlot = norm;
+    }
+    return {
+      day: day,
+      service: service,
+      timeSlot: timeSlot,
+      durationMin: Number((s && s.durationMin) || 0) || 0,
+      venue: s && s.venue,
+      instructor: s && s.instructor,
+    };
+  }
+
   /** Merge consecutive same-day same-service slots (e.g. 5.30–6 + 6–6.30 → 60'). */
   function coalesceParticipantSessions(sessions) {
-    var list = (sessions || []).map(function (s) {
-      return {
-        day: String(s.day || "").trim(),
-        service: String(s.service || "").trim(),
-        timeSlot: String(s.timeSlot || s.time || "").trim(),
-        durationMin: Number(s.durationMin) || 0,
-        venue: s.venue,
-        instructor: s.instructor,
-      };
-    }).filter(function (s) { return s.service; });
+    var list = (sessions || []).map(normalizeParticipantSessionFields)
+      .filter(function (s) { return s.service; });
 
     list.sort(function (a, b) {
       var da = dayShortToken(a.day);
