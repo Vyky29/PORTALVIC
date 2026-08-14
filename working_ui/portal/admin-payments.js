@@ -3152,6 +3152,15 @@
     if (/^credits?$/i.test(s)) return "";
     if (/^structured activity support/i.test(s)) return "";
     if (/^demo\b/i.test(s) && !/\d+\s*['′']/.test(s)) return "";
+    /* Invoice noise mistaken for services */
+    if (/^(january|february|march|april|may|june|july|august|september|october|november|december)\s*$/i.test(s)) {
+      return "";
+    }
+    if (/^\d{4}\s*['′']?\s*payment/i.test(s)) return "";
+    if (/^payment\b/i.test(s) && !/aquatic|climb|multi|bespoke|physical|day\s*centre/i.test(s)) {
+      return "";
+    }
+    if (/^gocardless\s*$/i.test(s)) return "";
     s = s.replace(/\s*[—–-]\s*GBP\s*[\d,.]+.*$/i, "").trim();
     s = s.replace(/\s*·\s*demo\b.*$/i, "").trim();
     return s;
@@ -3191,18 +3200,89 @@
 
   /**
    * Collapse duplicate service lines (e.g. Multi with no day + Multi Sunday)
-   * and reformat to: 90' Multi-Activity - 9.30 am to 11 am - Sunday
+   * and reformat ALL to: 90' Multi-Activity - 9.30 am to 11 am - Sunday
    */
+  function forceCanonServiceLine(raw) {
+    var cleaned = cleanServiceLabelJunk(raw);
+    if (!cleaned) return "";
+    if (isGoCardlessFeeLabel(cleaned) || /^admin\s*fee/i.test(cleaned)) {
+      return "Admin Fee (GoCardless)";
+    }
+    if (isPlaceholderServiceLabel(cleaned) || isVenueOnlyLabel(cleaned)) return "";
+    if (isBogusDayCentreLine(cleaned)) return "";
+
+    var s = normalizeServiceDisplay(cleaned).replace(/\s+/g, " ").trim();
+
+    /* Flip "Aquatic Activity 60'" → duration first */
+    var endDur = s.match(/^(.*?)[\s,]+(\d{1,3})\s*['′']\s*$/i);
+    if (endDur && !/^\d+\s*['′']/i.test(s)) {
+      var maybeDur = parseInt(endDur[2], 10);
+      if (maybeDur >= 15 && maybeDur <= 480) {
+        s = maybeDur + "' " + endDur[1].trim();
+      }
+    }
+
+    /* Reject year-looking durations (2026' Payment already cleaned; belt+braces) */
+    var durHead = s.match(/^(\d+)\s*['′']/);
+    if (durHead) {
+      var d0 = parseInt(durHead[1], 10);
+      if (d0 > 480 || d0 < 15) {
+        /* Keep Day Centre hour labels like 2h30 via other paths; drop year junk */
+        if (d0 >= 1900) return "";
+      }
+    }
+
+    var dur = 0;
+    var dm = s.match(/(\d+)\s*['′']/);
+    if (dm) dur = parseInt(dm[1], 10) || 0;
+    if (dur > 0 && dur < 15) return "";
+    if (dur >= 1900) return "";
+
+    var title = kindTitleFromText(s);
+    if (!title) {
+      var stripped = s
+        .replace(/^\d+\s*['′']?\s*/, "")
+        .replace(/\s+\d+\s*['′']\s*$/, "")
+        .replace(/\([^)]*\)/g, "")
+        .replace(/\s*-\s*\d{1,2}(?:[.:]\d{2})?\s*(am|pm)?\s*(?:[–\-—]|to)\s*\d{1,2}.*/i, "")
+        .replace(/\s*-\s*(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday).*$/i, "")
+        .replace(/,\s*(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday).*$/i, "")
+        .trim();
+      title = normalizeServiceDisplay(stripped) || stripped;
+    }
+    if (!title || /^admin\b/i.test(title)) return "";
+
+    var days = collectDayTokensFromText(s);
+    var time = normalizeSessionTimeRange(s) || extractTimeFromText(s) || "";
+    time = normalizeSessionTimeRange(time) || time;
+
+    /* Prefer known programme titles */
+    var known = kindTitleFromText(title) || title;
+    if (!kindTitleFromText(known) && !/day\s*centre/i.test(known)) {
+      /* Still show flipped duration + name if it looks like a programme */
+      if (!dur && !time && !days.length) {
+        return known;
+      }
+    }
+
+    return formatCanonServiceLine({
+      durMin: dur,
+      service: known,
+      day: days[0] || "",
+      time: time,
+    });
+  }
+
   function dedupeCanonServiceOneLiners(lines) {
     var groups = Object.create(null);
     var order = [];
     (lines || []).forEach(function (raw) {
-      var line = String(raw || "").trim();
-      if (!line || isPlaceholderServiceLabel(line)) return;
-      if (isGoCardlessFeeLabel(line)) {
+      var line = forceCanonServiceLine(raw);
+      if (!line) return;
+      if (line === "Admin Fee (GoCardless)") {
         var feeKey = "fee";
         if (!groups[feeKey]) {
-          groups[feeKey] = { line: "Admin Fee (GoCardless)", fee: true };
+          groups[feeKey] = { line: line, fee: true, score: 1 };
           order.push(feeKey);
         }
         return;
@@ -3229,6 +3309,7 @@
         groups[key] = { line: line, dur: dur, kind: kind, days: days, time: time, score: score };
       } else if (days.length && !groups[key].days.length) {
         groups[key].days = days;
+        groups[key].line = line;
         groups[key].score = score;
       }
     });
