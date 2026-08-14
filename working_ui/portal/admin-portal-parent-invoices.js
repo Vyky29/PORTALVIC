@@ -290,7 +290,7 @@
     return pay.replace(/_/g, ' ');
   }
 
-  function statusChip(payment, share) {
+  function statusChip(payment, share, inv) {
     var pay = String(payment || 'unpaid');
     var sh = String(share || 'hidden');
     /* Green = paid only; orange = unpaid only. Everything else uses neutral tones. */
@@ -305,11 +305,19 @@
     var shareCls =
       'pp-inv-acc__pay-chip ' +
       (sh === 'ready' ? 'pp-inv-acc__pay-chip--shared' : 'pp-inv-acc__pay-chip--hidden');
+    var tip = paymentStatusLabel(pay);
+    if (pay === 'partial') {
+      var nextTip = nextUnpaidInstalment(inv);
+      var nextTipDue = nextTip ? instalmentDueIso(nextTip.due_date) : '';
+      tip = instalmentIsCollectingNow(nextTipDue)
+        ? 'One or more instalments paid; balance due now'
+        : 'One or more instalments paid; next half scheduled (not due yet)';
+    }
     return (
       '<span class="' +
       payCls +
       '" title="' +
-      esc(pay === 'partial' ? 'One or more instalments paid; balance still due' : paymentStatusLabel(pay)) +
+      esc(tip) +
       '">' +
       esc(paymentStatusLabel(pay)) +
       '</span> ' +
@@ -319,6 +327,14 @@
       esc(sh) +
       '</span>'
     );
+  }
+
+  function nextUnpaidInstalment(inv) {
+    var rows = scheduleRows(inv);
+    for (var i = 0; i < rows.length; i++) {
+      if (String(rows[i].status || 'pending').toLowerCase() !== 'paid') return rows[i];
+    }
+    return null;
   }
 
   function amountPaidGbp(inv) {
@@ -341,13 +357,7 @@
     var pay = String(inv.payment_status || 'unpaid').toLowerCase();
     var remaining = Math.max(0, Math.round((total - paid) * 100) / 100);
     var sched = scheduleRows(inv);
-    var nextInst = null;
-    for (var si = 0; si < sched.length; si++) {
-      if (String(sched[si].status || 'pending').toLowerCase() !== 'paid') {
-        nextInst = sched[si];
-        break;
-      }
-    }
+    var nextInst = nextUnpaidInstalment(inv);
     var nextAmt = nextInst ? Number(nextInst.amount_gbp) || 0 : 0;
     var nextDueIso = nextInst ? instalmentDueIso(nextInst.due_date) : '';
     var nextIsDueNow = instalmentIsCollectingNow(nextDueIso);
@@ -371,10 +381,10 @@
       } else {
         html +=
           '<div style="margin-top:6px;font-size:12px;line-height:1.4;min-width:0;overflow-wrap:break-word;color:#475569">' +
-          '<strong>Next due</strong> ' +
+          '<strong>Next half</strong> ' +
           esc(formatMoney(nextAmt)) +
           (nextDueIso ? ' · ' + esc(formatDate(nextDueIso)) : '') +
-          '<div class="muted" style="font-size:11px;margin-top:2px;color:#64748b">Not due yet — do not Mark paid unless they paid early</div>' +
+          '<div class="muted" style="font-size:11px;margin-top:2px;color:#64748b">Scheduled — not due yet</div>' +
           '</div>';
       }
     }
@@ -383,11 +393,20 @@
         '<div class="pp-inv-acc__paid-split" style="margin-top:6px;font-size:12px;line-height:1.4;min-width:0;overflow-wrap:break-word">' +
         '<div style="color:#065f46"><strong>Paid</strong> ' +
         esc(formatMoney(paid)) +
-        '</div>' +
-        '<div style="color:#9a3412"><strong>Still due</strong> ' +
-        esc(formatMoney(remaining)) +
-        '</div>' +
         '</div>';
+      if (nextIsDueNow) {
+        html +=
+          '<div style="color:#9a3412"><strong>Still due</strong> ' +
+          esc(formatMoney(remaining)) +
+          '</div>';
+      } else {
+        html +=
+          '<div style="color:#475569"><strong>Balance scheduled</strong> ' +
+          esc(formatMoney(remaining)) +
+          (nextDueIso ? ' · ' + esc(formatDate(nextDueIso)) : '') +
+          '</div>';
+      }
+      html += '</div>';
     } else if (pay === 'paid') {
       html +=
         '<div style="margin-top:4px;font-size:11px;color:#065f46;min-width:0;overflow-wrap:break-word">Fully paid' +
@@ -1417,18 +1436,28 @@
     var linkBits = [];
     if (inv.gocardless_url) linkBits.push('GoCardless');
     if (inv.payment_link_url) linkBits.push('Payment link');
+    var nextForPay = nextUnpaidInstalment(inv);
+    var nextForPayDue = nextForPay ? instalmentDueIso(nextForPay.due_date) : '';
+    var nextHalfCollecting =
+      String(inv.payment_status || '').toLowerCase() === 'partial' &&
+      nextForPayDue &&
+      !instalmentIsCollectingNow(nextForPayDue);
     var confirmBtn =
       inv.payment_status === 'pending_confirmation'
         ? '<button type="button" class="btn btn--sm btn--primary" data-inv-act="paid" data-inv-id="' +
           id +
           '">Confirm paid</button> '
-        : inv.payment_status !== 'paid'
-          ? '<button type="button" class="btn btn--sm btn--sec" data-inv-act="paid" data-inv-id="' +
+        : inv.payment_status === 'paid'
+          ? '<button type="button" class="btn btn--sm btn--ghost" data-inv-act="unpaid" data-inv-id="' +
             id +
-            '">Mark paid</button> '
-          : '<button type="button" class="btn btn--sm btn--ghost" data-inv-act="unpaid" data-inv-id="' +
-            id +
-            '">Mark unpaid</button> ';
+            '">Mark unpaid</button> '
+          : nextHalfCollecting
+            ? '<button type="button" class="btn btn--sm btn--ghost" data-inv-act="paid" data-inv-id="' +
+              id +
+              '" title="Next half is not due yet — only use if they paid early">Record early half</button> '
+            : '<button type="button" class="btn btn--sm btn--sec" data-inv-act="paid" data-inv-id="' +
+              id +
+              '">Mark paid</button> ';
     var hold = inv.payment_hold || null;
     var holdChip = '';
     var holdBtns = '';
@@ -1550,12 +1579,26 @@
       '</div></div>' +
       '<div class="pp-inv-acc__col">' +
       invoiceAmountBlockHtml(inv) +
-      '<div style="margin-top:8px"><span class="muted">Due</span><br>' +
-      esc(formatDate(inv.next_instalment_due || inv.due_date)) +
-      (String(inv.payment_status || '').toLowerCase() === 'partial' && inv.next_instalment_due
-        ? '<div class="muted" style="font-size:11px;margin-top:2px">Next instalment</div>'
-        : '') +
-      '</div>' +
+      (function () {
+        var dueIsoShow = instalmentDueIso(inv.next_instalment_due || inv.due_date);
+        var dueCollecting = instalmentIsCollectingNow(dueIsoShow);
+        var dueLabel =
+          String(inv.payment_status || '').toLowerCase() === 'partial' && dueIsoShow && !dueCollecting
+            ? 'Scheduled'
+            : 'Due';
+        return (
+          '<div style="margin-top:8px"><span class="muted">' +
+          dueLabel +
+          '</span><br>' +
+          esc(formatDate(inv.next_instalment_due || inv.due_date)) +
+          (String(inv.payment_status || '').toLowerCase() === 'partial' && inv.next_instalment_due
+            ? '<div class="muted" style="font-size:11px;margin-top:2px">' +
+              (dueCollecting ? 'Next instalment' : 'Next half — not due yet') +
+              '</div>'
+            : '') +
+          '</div>'
+        );
+      })() +
       '<div style="margin-top:8px"><span class="muted">Type · funding · arrangement</span><br>' +
       methodChipsHtml(inv) +
       '</div>' +
@@ -1564,7 +1607,7 @@
       esc(vatDisplayLabel(inv)) +
       '</div>' +
       '<div style="margin-top:8px">' +
-      statusChip(inv.payment_status, inv.share_status) +
+      statusChip(inv.payment_status, inv.share_status, inv) +
       '</div></div>' +
       '<div class="pp-inv-acc__col pp-inv-acc__actions">' +
       (inv.pdf_url
