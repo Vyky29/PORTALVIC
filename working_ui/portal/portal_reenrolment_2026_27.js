@@ -815,7 +815,7 @@
               " monthly Direct Payments for " +
               termLabel +
               " only. Later terms when you reconfirm. First collection 1 September when billing Autumn."
-          : "Same programme total — ten Direct Payments (Autumn 4, Spring 3, Summer 3). First collection 1 September 2026; then on the 1st of each month through June.";
+          : "Same programme total — eleven Direct Payments (Autumn 4, Spring 3, Summer 4). First collection 1 September 2026; then on the 1st of each month through July.";
       }
       if (schedCode === "monthly_term") {
         return termOnly
@@ -1548,8 +1548,9 @@
     }
     if (scheduleCode === "monthly_10") {
       if (term === "autumn") return 4;
-      if (term === "spring" || term === "summer") return 3;
-      return 10;
+      if (term === "spring") return 3;
+      if (term === "summer") return 4;
+      return 11;
     }
     if (scheduleCode === "term_flexi") return termOnly ? 2 : 6;
     if (scheduleCode === "term_3") return termOnly ? 1 : 3;
@@ -1651,7 +1652,7 @@
           if (o.code !== "monthly_10") return o;
           return {
             code: o.code,
-            label: "GoCardless (monthly ×10) · £1.50 / instalment",
+            label: "GoCardless (monthly ×11) · £1.50 / instalment",
           };
         })
         .sort(function (a, b) {
@@ -2119,7 +2120,7 @@
       { code: "term_flexi", label: "Flexi: 2 per term" },
       {
         code: "monthly_10",
-        label: "GoCardless (monthly ×10) · £1.50 / instalment",
+        label: "GoCardless (monthly ×11) · £1.50 / instalment",
       },
     ],
     own_way_flexible: [
@@ -2162,8 +2163,8 @@
               " only. First due by 15 August 2026 when billing Autumn. Later terms when you reconfirm.";
       }
       return isGc
-        ? "Regular plan: ten Direct Payments — Autumn 4, Spring 3, Summer 3. First collection 1 September 2026; then on the 1st of each month through June. Same programme total; £1.50 fee per instalment."
-        : "Regular plan: ten invoices — Autumn 4, Spring 3, Summer 3 (September–June). First due by 15 August 2026; then on the 1st. Pay each month from the parent portal by bank transfer (no fee) or Card / Apple Pay (small fee). Same programme total; no admin fee if you pay on time.";
+        ? "Regular plan: eleven Direct Payments — Autumn 4, Spring 3, Summer 4. First collection 1 September 2026; then on the 1st of each month through July. Same programme total; £1.50 fee per instalment."
+        : "Regular plan: eleven invoices — Autumn 4, Spring 3, Summer 4 (September–July). First due by 15 August 2026; then on the 1st. Pay each month from the parent portal by bank transfer (no fee) or Card / Apple Pay (small fee). Same programme total; no admin fee if you pay on time.";
     }
     if (code === "monthly_term") {
       return isGc

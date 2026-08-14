@@ -106,6 +106,7 @@ const MONTHLY_TERM_PLAN: Array<{
   },
 ];
 
+/** Whole-year monthly: 11 Direct Payments Sep→Jul (4 / 3 / 4). Code stays `monthly_10` for stored submissions. */
 const MONTHLY_10 = [
   { label: "September 2026", dueIso: "2026-09-01" },
   { label: "October 2026", dueIso: "2026-10-01" },
@@ -117,6 +118,7 @@ const MONTHLY_10 = [
   { label: "April 2027", dueIso: "2027-04-01" },
   { label: "May 2027", dueIso: "2027-05-01" },
   { label: "June 2027", dueIso: "2027-06-01" },
+  { label: "July 2027", dueIso: "2027-07-01" },
 ];
 
 function round2(n: number): number {
@@ -332,11 +334,9 @@ export function reenrolTermDisplayLabel(term: ReenrolTermKey): string {
 }
 
 function monthlyCountForTerm(term: ReenrolTermKey, scheduleCode: string): number {
-  if (scheduleCode === "monthly_term") {
-    return term === "autumn" ? 4 : term === "spring" ? 3 : 4;
-  }
-  /* monthly_10: 4 / 3 / 3 */
-  return term === "autumn" ? 4 : 3;
+  /* monthly_10 + monthly_term: 4 / 3 / 4 (11 across the year) */
+  void scheduleCode;
+  return term === "autumn" ? 4 : term === "spring" ? 3 : 4;
 }
 
 /** Short plan line for parent-facing thank-you / confirmation copy. */
@@ -389,7 +389,7 @@ export function reenrolmentSchedulePlanPhrase(args: {
     return `3 ${units} scheduled (one per term, each with 2 instalments)`;
   }
   if (code === "monthly_10") {
-    return `3 ${units} scheduled (one per term with monthly instalments: Autumn 4 · Spring 3 · Summer 3)`;
+    return `3 ${units} scheduled (one per term with monthly instalments: Autumn 4 · Spring 3 · Summer 4)`;
   }
   if (code === "monthly_term") {
     return `3 ${units} scheduled (one per term with monthly instalments: Autumn 4 · Spring 3 · Summer 4)`;
@@ -685,7 +685,7 @@ export function buildReenrolmentInstalments(args: {
     const plan10 = [
       { term: "autumn" as const, label: "Autumn", months: MONTHLY_10.slice(0, 4) },
       { term: "spring" as const, label: "Spring", months: MONTHLY_10.slice(4, 7) },
-      { term: "summer" as const, label: "Summer", months: MONTHLY_10.slice(7, 10) },
+      { term: "summer" as const, label: "Summer", months: MONTHLY_10.slice(7, 11) },
     ];
     for (const t of plan10) {
       if (!includeTerm(t.term)) continue;

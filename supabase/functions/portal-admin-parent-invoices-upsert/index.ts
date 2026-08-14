@@ -432,7 +432,7 @@ Deno.serve(async (req) => {
         contact_payment_method_label: "GoCardless",
         payment_method_hint: "gocardless",
         default_schedule_code: "monthly_10",
-        default_schedule_label: "GoCardless (monthly ×10) · £1.50 / instalment",
+        default_schedule_label: "GoCardless (monthly ×11) · £1.50 / instalment",
       },
       own_way_flexible: {
         payment_method_code: "own_way_flexible",
