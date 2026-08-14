@@ -333,7 +333,13 @@
     }
     @media (min-width: 640px) {
       .services__grid--core { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .services__grid--pair { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      /* Same card width as core (2 of 3 columns), centred in the row. */
+      .services__grid--pair {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 100%;
+        max-width: calc((2 * (100% - 28px) / 3) + 14px);
+        margin-inline: auto;
+      }
     }
     .services__grid--solo {
       display: grid;
@@ -342,7 +348,13 @@
     }
     .services__grid--solo .svc-card {
       width: 100%;
-      max-width: min(100%, 560px);
+      /* Match one core column width on wide layouts. */
+      max-width: min(100%, calc((100% - 28px) / 3));
+    }
+    @media (max-width: 639px) {
+      .services__grid--solo .svc-card {
+        max-width: 100%;
+      }
     }
     .svc-card {
       background: var(--white);
