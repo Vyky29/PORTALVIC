@@ -333,10 +333,16 @@
     }
     @media (min-width: 640px) {
       .services__grid--core { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .services__grid--more { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .services__grid--pair { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
-    @media (min-width: 960px) {
-      .services__grid--more { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .services__grid--solo {
+      display: grid;
+      grid-template-columns: 1fr;
+      justify-items: center;
+    }
+    .services__grid--solo .svc-card {
+      width: 100%;
+      max-width: min(100%, 560px);
     }
     .svc-card {
       background: var(--white);
@@ -526,6 +532,7 @@
     .svc__icon--multi { background: #e8f0fe; color: #1d4ed8; }
     .svc__icon--bespoke { background: #fff1e8; color: #c2410c; }
     .svc__icon--dc { background: #eef6f2; color: #1f6b4a; }
+    .svc__icon--counsel { background: #eef2ff; color: #4338ca; }
     .svc__icon--intensive { background: #fce7f3; color: #be185d; }
     .svc-card h3 {
       margin: 0;
@@ -831,6 +838,7 @@
     .timetable__icon.svc__icon--multi { background: #e8f0fe; color: #1d4ed8; }
     .timetable__icon.svc__icon--bespoke { background: #fff1e8; color: #c2410c; }
     .timetable__icon.svc__icon--dc { background: #eef6f2; color: #1f6b4a; }
+    .timetable__icon.svc__icon--counsel { background: #eef2ff; color: #4338ca; }
     .timetable__icon.svc__icon--intensive { background: #fce7f3; color: #be185d; }
     .timetable__head h3 {
       margin: 0;
@@ -2073,6 +2081,8 @@
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
     bespoke:
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+    counsel:
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></svg>',
     intensive:
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>',
     clock:
@@ -2115,6 +2125,7 @@
     if (id === "multi") return { svg: ICONS.multi, cls: "svc__icon--multi" };
     if (id === "bespoke") return { svg: ICONS.bespoke, cls: "svc__icon--bespoke" };
     if (id === "day_centre") return { svg: ICONS.dc, cls: "svc__icon--dc" };
+    if (id === "counselling") return { svg: ICONS.counsel, cls: "svc__icon--counsel" };
     if (id === "intensive") return { svg: ICONS.intensive, cls: "svc__icon--intensive" };
     return { svg: ICONS.swim, cls: "" };
   }
@@ -2126,6 +2137,7 @@
     if (id === "multi") return base + "multi.jpg?v=20260812-table";
     if (id === "bespoke") return base + "bespoke.jpg";
     if (id === "day_centre") return base + "daycentre.jpg?v=20260812-hub";
+    if (id === "counselling") return base + "counselling.jpg?v=20260814";
     return base + "aquatic.jpg";
   }
 
@@ -2287,7 +2299,7 @@
 
   function isOfficeEnquireService(s) {
     if (!s) return false;
-    if (s.id === "day_centre" || s.id === "bespoke") return true;
+    if (s.id === "day_centre" || s.id === "bespoke" || s.id === "counselling") return true;
     return !!s.enquireOnly && !(s.intensiveBlocks || s.tier === "core");
   }
 
@@ -2305,7 +2317,9 @@
       hint =
         s.id === "day_centre"
           ? "Places arranged with the office · Mon–Fri 11am–4pm"
-          : "Enquire with the office · assessment before any offer";
+          : s.id === "counselling"
+            ? "Enquire with the office · sessions by arrangement"
+            : "Enquire with the office · assessment before any offer";
       ctaLabel = "How it works";
     } else if (enquireOnly) {
       hint = "Enquire with the office · no online booking";
@@ -2437,26 +2451,37 @@
   function renderServiceCards() {
     var host = document.getElementById("serviceCards");
     var active = fService.value || "";
-    var core = mock.SERVICES.filter(function (s) {
-      return s.tier !== "more";
+    var byId = {};
+    (mock.SERVICES || []).forEach(function (s) {
+      byId[s.id] = s;
     });
-    var more = mock.SERVICES.filter(function (s) {
-      return s.tier === "more";
-    });
+    function row(ids) {
+      return ids
+        .map(function (id) {
+          return byId[id] ? serviceCardHtml(byId[id], active) : "";
+        })
+        .join("");
+    }
     host.innerHTML =
       '<div class="services__group">' +
       '<p class="services__label">Core services</p>' +
       '<div class="services__grid services__grid--core">' +
-      core.map(function (s) {
-        return serviceCardHtml(s, active);
-      }).join("") +
+      row(["aquatic", "climbing", "physical"]) +
       "</div></div>" +
       '<div class="services__group">' +
-      '<p class="services__label">Programmes &amp; extras</p>' +
-      '<div class="services__grid services__grid--more">' +
-      more.map(function (s) {
-        return serviceCardHtml(s, active);
-      }).join("") +
+      '<p class="services__label">Programmes</p>' +
+      '<div class="services__grid services__grid--pair">' +
+      row(["multi", "bespoke"]) +
+      "</div></div>" +
+      '<div class="services__group">' +
+      '<p class="services__label">Day support</p>' +
+      '<div class="services__grid services__grid--pair">' +
+      row(["day_centre", "counselling"]) +
+      "</div></div>" +
+      '<div class="services__group">' +
+      '<p class="services__label">Crash courses</p>' +
+      '<div class="services__grid services__grid--solo">' +
+      row(["intensive"]) +
       "</div></div>";
   }
 

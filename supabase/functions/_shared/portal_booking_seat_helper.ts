@@ -14,7 +14,8 @@ export type PublicServiceId =
   | "physical"
   | "multi"
   | "bespoke"
-  | "day_centre";
+  | "day_centre"
+  | "counselling";
 
 export type OfferSlot = {
   id: string;

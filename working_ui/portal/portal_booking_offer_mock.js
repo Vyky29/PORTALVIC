@@ -128,6 +128,18 @@
       ],
     },
     {
+      id: "counselling",
+      name: "Counselling",
+      tier: "more",
+      ageHint: "By arrangement",
+      durationHint: "Sessions by arrangement",
+      priceHint: "Enquire with the office",
+      blurb:
+        "Specialist counselling support for participants and families — arranged with the office so we can match needs, timing, and the right practitioner. Not self-booked online.",
+      venues: ["SwimFarm"],
+      enquireOnly: true,
+    },
+    {
       id: "intensive",
       name: "Intensive Courses & Camps",
       tier: "more",
