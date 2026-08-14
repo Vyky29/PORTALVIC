@@ -467,7 +467,6 @@ Deno.serve(async (req) => {
     tier: "more",
     ageHint: "From 3 years+",
     durationHint: "Summer crash + half-term blocks",
-    priceHint: "Course packs — ask the office",
     pricePerSession: null,
     blurb:
       "Holiday crash courses and camps for continuity outside term time — swimming, climbing, and more in short intensive blocks (summer and half terms). Predictable routines, specialist staff, and limited daily places for participants.",
