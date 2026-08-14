@@ -688,6 +688,33 @@
       min-width: 0;
       width: 100%;
     }
+    .timetable__photo {
+      width: 100%;
+      max-width: 200px;
+      aspect-ratio: 16 / 10;
+      border-radius: 14px;
+      overflow: hidden;
+      margin: 2px 0 0;
+      background: #e8eef3;
+      border: 1px solid var(--line);
+      flex: 0 0 auto;
+    }
+    .timetable__photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .timetable__photo--split {
+      max-width: 260px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+    }
+    .timetable__photo--split img {
+      min-width: 0;
+      min-height: 0;
+    }
     .timetable__icon {
       flex: 0 0 auto;
       width: 44px;
@@ -2036,6 +2063,30 @@
     );
   }
 
+  /** Compact service photo under timetable title (same assets as service cards). */
+  function timetablePhotoHtml(id) {
+    var base = "/portal/booking-photos/";
+    if (id === "intensive") {
+      return (
+        '<div class="timetable__photo timetable__photo--split" aria-hidden="true">' +
+        '<img src="' +
+        esc(base + "intensive-swim.jpg?v=20260812-pool") +
+        '" alt="" loading="lazy" decoding="async" width="200" height="125" />' +
+        '<img src="' +
+        esc(base + "intensive-climb.jpg") +
+        '" alt="" loading="lazy" decoding="async" width="200" height="125" />' +
+        "</div>"
+      );
+    }
+    return (
+      '<div class="timetable__photo" aria-hidden="true">' +
+      '<img src="' +
+      esc(servicePhoto(id)) +
+      '" alt="" loading="lazy" decoding="async" width="400" height="250" />' +
+      "</div>"
+    );
+  }
+
   function fillSelect(sel, values, allLabel) {
     var keep = sel.value;
     sel.innerHTML = '<option value="">' + esc(allLabel) + "</option>";
@@ -2560,6 +2611,7 @@
       esc(s.name) +
       "</h3>" +
       "</div></div>" +
+      timetablePhotoHtml(s.id) +
       '<p class="timetable__range">July weeks open first, then each half term.</p>' +
       "</div>" +
       body +
@@ -2626,6 +2678,7 @@
           "</h3>" +
           "</div>" +
           "</div>" +
+          timetablePhotoHtml(s.id) +
           '<p class="timetable__range">' +
           esc(
             s.id === "day_centre"
