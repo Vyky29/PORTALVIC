@@ -676,7 +676,8 @@
       min-width: 0;
       display: flex;
       flex-direction: column;
-      align-items: flex-start;
+      align-items: center;
+      text-align: center;
       gap: 10px;
     }
     .term-badge {
@@ -765,6 +766,7 @@
       display: flex;
       flex-wrap: wrap;
       align-items: center;
+      justify-content: center;
       gap: 10px 12px;
       min-width: 0;
       margin: 0;
@@ -773,9 +775,10 @@
     .timetable__title-main {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 10px;
       min-width: 0;
-      width: 100%;
+      max-width: 100%;
     }
     .timetable__photo {
       width: 100%;
@@ -783,7 +786,7 @@
       aspect-ratio: 16 / 10;
       border-radius: 14px;
       overflow: hidden;
-      margin: 0;
+      margin: 0 auto;
       background: #e8eef3;
       border: 1px solid var(--line);
       flex: 0 0 auto;
@@ -866,6 +869,7 @@
       font-weight: 800;
       overflow-wrap: break-word;
       min-width: 0;
+      text-align: center;
     }
     .timetable__range {
       margin: 0;
@@ -873,10 +877,10 @@
       color: var(--muted);
       font-weight: 600;
       overflow-wrap: break-word;
-      padding-left: 54px;
-    }
-    @media (max-width: 480px) {
-      .timetable__range { padding-left: 0; }
+      padding-left: 0;
+      text-align: center;
+      max-width: 36rem;
+      width: 100%;
     }
     .venue-block {
       margin: 18px 0 0;
@@ -893,13 +897,17 @@
       display: flex;
       align-items: center;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 8px 10px;
       margin: 0 0 10px;
       font-size: clamp(1.15rem, 2.4vw, 1.35rem);
       font-weight: 800;
       color: var(--ink);
       min-width: 0;
       overflow-wrap: break-word;
+    }
+    .venue-block__title .term-badge {
+      font-size: 0.68rem;
+      padding: 4px 10px;
     }
     .venue-block__title svg { width: 22px; height: 22px; max-width: 22px; max-height: 22px; color: var(--blue); flex: 0 0 auto; }
     .venue-block__activity {
@@ -2706,6 +2714,17 @@
           ICONS.pin +
           esc(vg.venueLabel) +
           (function () {
+            var badge = String((mock && mock.TERM_BADGE) || "AUTUMN TERM 2026").trim();
+            if (!badge || (s && s.intensiveBlocks)) return "";
+            return (
+              '<span class="term-badge term-badge--leaf">' +
+              ICONS.leaf +
+              " " +
+              esc(badge) +
+              "</span>"
+            );
+          })() +
+          (function () {
             var act = "";
             (vg.days || []).some(function (dg) {
               return (dg.slots || []).some(function (slot) {
@@ -2852,11 +2871,6 @@
           esc(s.id) +
           '">' +
           '<div class="timetable__head">' +
-          '<span class="term-badge term-badge--leaf">' +
-          ICONS.leaf +
-          " " +
-          esc(mock.TERM_BADGE || "AUTUMN TERM 2026") +
-          "</span>" +
           timetablePhotoHtml(s.id) +
           '<div class="timetable__title-row">' +
           '<div class="timetable__title-main">' +
