@@ -1471,6 +1471,32 @@ Deno.serve(async (req) => {
     }
   }
 
+  /*
+   * Funder-billed places (LA / NHS) have no parent term invoice, but the office can
+   * still bill an extra to the family in the child's name — e.g. a summer crash
+   * course. Crash *bookings* are not a reliable signal: for no-extra-booking clients
+   * (Tinashe, Ikram, Fadi, Timi) the office raises the invoice by hand and no booking
+   * row exists, so the hub used to hide My invoices even though money was owed.
+   * Look for the parent-pay share itself, the way parent-portal-invoices-list does.
+   */
+  let hasParentPayExtraShare = false;
+  if (wantGeneral && parentReenrolUi.reasons.includes("la_funded")) {
+    const { data: parentShares } = await supabase
+      .from("portal_parent_invoice_share")
+      .select("invoice_number, reference_text, line_description, billing_term")
+      .eq("contact_id", contactId)
+      .eq("share_status", "ready")
+      .neq("payment_method_hint", "la_funded")
+      .limit(50);
+    hasParentPayExtraShare = (parentShares || []).some((share) =>
+      /\bcrash\b/i.test(
+        [share.invoice_number, share.reference_text, share.line_description, share.billing_term]
+          .map((x) => String(x || ""))
+          .join(" "),
+      )
+    );
+  }
+
   let swimTermReviewAvailable = false;
   if (wantGeneral) {
     const { count: swimShareCount } = await supabase
@@ -1639,6 +1665,7 @@ Deno.serve(async (req) => {
         show_invoices: isFormerClient
           ? false
           : !parentReenrolUi.reasons.includes("la_funded") ||
+            hasParentPayExtraShare ||
             (crashCourse.dates && crashCourse.dates.length > 0),
       },
       can_book_extras: isFormerClient
@@ -1647,6 +1674,7 @@ Deno.serve(async (req) => {
       show_invoices: isFormerClient
         ? false
         : !parentReenrolUi.reasons.includes("la_funded") ||
+          hasParentPayExtraShare ||
           (crashCourse.dates && crashCourse.dates.length > 0),
       crash_course: isFormerClient
         ? { dates: [], week_ids: [], awaiting_payment: false, booking_statuses: [] }

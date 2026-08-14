@@ -1012,8 +1012,12 @@
       );
     }
 
-    /* LA / NHS office-billed term: plain Re-enrolled — unless parent-pay crash is unpaid. */
-    if (isOfficeBilledLaOrNhs(data) && !crashUnpaid) {
+    /*
+     * LA / NHS office-billed term: plain Re-enrolled. An unpaid parent-pay extra
+     * (e.g. a crash course billed to the family in the child's name) is chased on
+     * the Invoices shortcut — it must not make the term place look unpaid.
+     */
+    if (isOfficeBilledLaOrNhs(data)) {
       return (
         '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip" data-pp-hub-reenrol-chip role="status" title="Re-enrolled for 2026/27">' +
         '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
@@ -1370,22 +1374,27 @@
         Array.isArray(data.crash_course.dates) &&
         data.crash_course.dates.length);
     var crashPending = crashCourseAwaitingPayment(data);
+    var officeBilled = isOfficeBilledLaOrNhs(data);
+    /*
+     * The term place state is decided here; some cases are final. The invoice fetch
+     * below still runs for every child, because the Invoices shortcut must turn red
+     * whenever something is owed — including places that are not re-enrolled yet.
+     */
+    var payStateFinal = false;
     if (crashPending) {
       data._hubCrashUnpaid = true;
-      applyHubReenrolPayVisual(host, data, "unpaid");
+      /* LA / NHS term stays plain Re-enrolled; the crash is chased on Invoices. */
+      if (!officeBilled) applyHubReenrolPayVisual(host, data, "unpaid");
     }
     if (!familyAcceptedNextYear(data) && !crashPending && !hasCrashDates) {
       applyHubReenrolPayVisual(host, data, "unconfirmed");
-      return;
-    }
-    /* Adaam / Aydaan / Amaar: keep Summer 2026 outstanding chip. */
-    if (isOutstandingSummerAhmedSibling(data)) {
+      payStateFinal = true;
+    } else if (isOutstandingSummerAhmedSibling(data)) {
+      /* Adaam / Aydaan / Amaar: keep Summer 2026 outstanding chip. */
       applyHubReenrolPayVisual(host, data, "unpaid");
-      return;
-    }
-    if (familyAcceptedNextYear(data) || crashPending) {
-      /* True office-billed LA / NHS: plain Re-enrolled — unless crash still unpaid. */
-      if (isOfficeBilledLaOrNhs(data) && !crashPending) {
+      payStateFinal = true;
+    } else if (familyAcceptedNextYear(data) || crashPending) {
+      if (officeBilled) {
         applyHubReenrolPayVisual(host, data, "settled");
       } else if (!crashPending) {
         /* Private / Direct Payments: orange until invoices prove paid. */
@@ -1408,7 +1417,9 @@
           return isCrashInvoice(inv) && !isInvoiceFullyPaid(inv);
         });
         data._hubCrashUnpaid = crashUnpaidInv || crashCourseAwaitingPayment(data);
-        if (data._hubCrashUnpaid) {
+        /* Term place already decided above (not confirmed / Summer outstanding). */
+        if (payStateFinal) return;
+        if (data._hubCrashUnpaid && !isOfficeBilledLaOrNhs(data)) {
           applyHubReenrolPayVisual(host, data, "unpaid");
           return;
         }
