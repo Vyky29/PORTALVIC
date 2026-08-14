@@ -153,6 +153,18 @@ const SERVICE_META: Record<PublicServiceId, Omit<OfferService, "venues">> = {
     blurb:
       "A weekday daytime programme at SwimFarm (Mon–Fri, 11am–4pm): table work, sensory time, gym, swimming, life skills, and more. Places are arranged with the office so we can discuss the day, funding, and the participant’s support needs.",
   },
+  counselling: {
+    id: "counselling",
+    name: "Counselling",
+    tier: "more",
+    ageHint: "By arrangement",
+    durationHint: "Sessions by arrangement",
+    priceHint: "Enquire with the office",
+    pricePerSession: null,
+    enquireOnly: true,
+    blurb:
+      "Specialist counselling support for participants and families — arranged with the office so we can match needs, timing, and the right practitioner.",
+  },
 };
 
 function norm(s: unknown): string {
@@ -173,6 +185,7 @@ export function mapServiceId(raw: unknown): PublicServiceId | null {
   if (canon.includes("PHYSICAL") || canon.includes("FITNESS")) return "physical";
   if (canon.includes("MULTI") || canon.includes("S&C")) return "multi";
   if (canon.includes("BESPOKE")) return "bespoke";
+  if (canon.includes("COUNSEL")) return "counselling";
   return null;
 }
 
@@ -612,6 +625,7 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
     multi: ["SwimFarm", "Northolt"],
     bespoke: ["SwimFarm", "Acton", "Westway"],
     day_centre: ["SwimFarm"],
+    counselling: ["SwimFarm"],
   };
   const always: PublicServiceId[] = [
     "aquatic",
@@ -620,6 +634,7 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
     "multi",
     "bespoke",
     "day_centre",
+    "counselling",
   ];
   const fullServices: OfferService[] = always.map((id) => {
     let fromMadre = [...(venueSets.get(id) || [])].sort();

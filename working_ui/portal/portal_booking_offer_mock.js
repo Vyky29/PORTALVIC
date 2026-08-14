@@ -135,7 +135,7 @@
       durationHint: "Sessions by arrangement",
       priceHint: "Enquire with the office",
       blurb:
-        "Specialist counselling support for participants and families — arranged with the office so we can match needs, timing, and the right practitioner. Not self-booked online.",
+        "Specialist counselling support for participants and families — arranged with the office so we can match needs, timing, and the right practitioner.",
       venues: ["SwimFarm"],
       enquireOnly: true,
     },
