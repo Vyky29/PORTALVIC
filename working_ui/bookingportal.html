@@ -435,16 +435,17 @@
       object-fit: cover;
       object-position: center;
     }
-    /* Two photos with a diagonal cut (Multi-Activity). */
+    /* Two photos with a diagonal cut (Multi-Activity).
+       Each photo only fills ~half the card (not full-bleed + clip), so subjects
+       are not overly zoomed. */
     .svc-card__media--diagonal {
       display: grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: 1fr 1fr;
       grid-template-rows: 1fr;
-      /* Taller frame so Land / Swimming show more scene (less crop zoom). */
-      aspect-ratio: 5 / 4;
+      aspect-ratio: 16 / 10;
+      gap: 0;
     }
     .svc-card__media--diagonal .svc-card__media-pane {
-      grid-area: 1 / 1;
       position: relative;
       min-width: 0;
       min-height: 0;
@@ -452,18 +453,28 @@
       background: linear-gradient(145deg, #d7ebf5, #eef4f8 55%, #f7fafc);
     }
     .svc-card__media--diagonal .svc-card__media-pane:first-child {
-      clip-path: polygon(0 0, 62% 0, 38% 100%, 0 100%);
+      clip-path: polygon(0 0, 100% 0, 78% 100%, 0 100%);
       z-index: 1;
     }
     .svc-card__media--diagonal .svc-card__media-pane:last-child {
-      clip-path: polygon(64% 0, 100% 0, 100% 100%, 40% 100%);
+      margin-left: -22%;
+      width: calc(100% + 22%);
+      clip-path: polygon(22% 0, 100% 0, 100% 100%, 0 100%);
       z-index: 0;
+      border-left: 3px solid #fff;
     }
     .svc-card__media--diagonal img {
+      display: block;
       width: 100%;
       height: 100%;
-      object-fit: contain;
+      object-fit: cover;
       object-position: center;
+    }
+    .svc-card__media--diagonal .svc-card__media-pane:first-child img {
+      object-position: 35% center;
+    }
+    .svc-card__media--diagonal .svc-card__media-pane:last-child img {
+      object-position: 55% center;
     }
     .svc-card__media--diagonal .svc-card__media-pane:first-child .svc-card__media-label {
       left: 8px;
