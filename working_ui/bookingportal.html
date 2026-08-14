@@ -340,14 +340,21 @@
         max-width: calc((2 * (100% - 28px) / 3) + 14px);
         margin-inline: auto;
       }
-      /* Same 3-column tracks as core: Crash = 2 cols, Counselling = 1 col. */
+      /* Crash = 2 core columns wide, Counselling = 1 (never larger than Crash). */
       .services__grid--crash-pair {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns:
+          minmax(0, calc((2 * (100% - 28px) / 3) + 14px))
+          minmax(0, calc((100% - 28px) / 3));
         width: 100%;
         max-width: 100%;
+        align-items: stretch;
       }
-      .services__grid--crash-pair .svc-card:first-child {
-        grid-column: span 2;
+      .services__grid--crash-pair .svc-card[data-jump-service="intensive"] {
+        grid-column: 1;
+      }
+      .services__grid--crash-pair .svc-card[data-jump-service="counselling"] {
+        grid-column: 2;
+        max-width: 100%;
       }
     }
     .services__grid--solo {
