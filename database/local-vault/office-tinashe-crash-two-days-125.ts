@@ -11,12 +11,11 @@
  * Dry run (prints the share, its line items and the dates line):
  *   npx -y deno run -A database/local-vault/office-tinashe-crash-two-days-125.ts
  *
- * Apply. Pass the two days he actually attended so the PDF dates line is rebuilt
- * (the dry run prints the current dates):
- *   KEEP_DATES=2026-07-22,2026-07-23 APPLY=1 npx -y deno run -A \
- *     database/local-vault/office-tinashe-crash-two-days-125.ts
+ * Apply (the two attended days are already the default):
+ *   APPLY=1 npx -y deno run -A database/local-vault/office-tinashe-crash-two-days-125.ts
  *
- * Overrides: INVOICE (default INV-P-0119), QUANTITY (2), TARGET_TOTAL (125).
+ * Overrides: INVOICE (default INV-P-0119), QUANTITY (2), TARGET_TOTAL (125),
+ * KEEP_DATES (default 2026-07-27,2026-07-29).
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { existsSync, readFileSync } from "node:fs";
@@ -27,7 +26,8 @@ const APPLY = (Deno.env.get("APPLY") || "") === "1";
 const INVOICE = (Deno.env.get("INVOICE") || "INV-P-0119").trim();
 const QUANTITY = Number(Deno.env.get("QUANTITY") || "2");
 const TARGET_TOTAL = Number(Deno.env.get("TARGET_TOTAL") || "125");
-const KEEP_DATES = (Deno.env.get("KEEP_DATES") || "").trim();
+/** Days actually attended, confirmed by the office: Mon 27 + Wed 29 July 2026. */
+const KEEP_DATES = (Deno.env.get("KEEP_DATES") || "2026-07-27,2026-07-29").trim();
 
 function loadEnv(p: string) {
   if (!existsSync(p)) return;
