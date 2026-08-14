@@ -39,7 +39,7 @@
     Acton: "Acton Centre",
     Northolt: "Northolt Centre",
     SwimFarm: "SwimFarm Centre",
-    Westway: "Westway",
+    Westway: "Westway Centre",
   };
 
   var SERVICES = [
