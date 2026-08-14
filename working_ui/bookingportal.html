@@ -340,12 +340,14 @@
         max-width: calc((2 * (100% - 28px) / 3) + 14px);
         margin-inline: auto;
       }
-      /* Crash narrower so Counselling fits beside it (full core width). */
+      /* Same 3-column tracks as core: Crash = 2 cols, Counselling = 1 col. */
       .services__grid--crash-pair {
-        grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         width: 100%;
         max-width: 100%;
-        margin-inline: auto;
+      }
+      .services__grid--crash-pair .svc-card:first-child {
+        grid-column: span 2;
       }
     }
     .services__grid--solo {
