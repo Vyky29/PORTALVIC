@@ -36,8 +36,8 @@ export async function pushPortalInvoiceShareToXero(
   shareId: string,
   opts?: {
     /**
-     * Office/scripts only. Production paths must push only after Confirm paid
-     * (payment_status === "paid"). Unpaid re-enrol / booking drafts stay Portal-only.
+     * Office/scripts only. Unpaid / draft INV-Ps stay Portal-only unless set.
+     * Normal push: `paid` or `partial` (full ACCREC amount; instalments reconcile in Xero).
      */
     allowUnpaid?: boolean;
   },
@@ -62,11 +62,13 @@ export async function pushPortalInvoiceShareToXero(
   }
 
   const payStatus = clean(share.payment_status, 40).toLowerCase();
-  if (payStatus !== "paid" && !opts?.allowUnpaid) {
+  const pushable = payStatus === "paid" || payStatus === "partial";
+  if (!pushable && !opts?.allowUnpaid) {
     return {
       ok: false,
-      error: "xero_push_requires_paid",
-      detail: "Create in Xero only after Confirm paid (AUTHORISED awaiting payment).",
+      error: "xero_push_requires_paid_or_partial",
+      detail:
+        "Create in Xero after Confirm paid or first instalment (full invoice amount; reconcile halves in Xero).",
     };
   }
 

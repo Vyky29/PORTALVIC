@@ -1315,8 +1315,8 @@
         /* Unpaid chip = ready/shared only — future monthly/flexi halves stay in Hidden. */
         unpaid += 1;
       }
-      /* Xero chips: paid Portal INV-Ps only */
-      if (pay !== 'paid') return;
+      /* Xero chips: full or first-instalment paid, not yet in Xero */
+      if (pay !== 'paid' && pay !== 'partial') return;
       if (inv.xero_invoice_id) return;
       if (inv.xero_push_status === 'failed') xeroFail += 1;
       else if (inv.created_via === 'portal' || inv.created_via === 'reenrolment') xeroMissing += 1;
@@ -1501,15 +1501,18 @@
         '…' +
         (inv.xero_payment_id ? ' · paid in Xero' : '') +
         '</div>'
-      : inv.payment_status === 'paid' && inv.xero_push_status === 'failed'
+      : (inv.payment_status === 'paid' || inv.payment_status === 'partial') &&
+          inv.xero_push_status === 'failed'
         ? '<div class="muted" style="font-size:11px;color:#b91c1c">Xero push failed' +
           (inv.xero_push_error
             ? ': ' + esc(String(inv.xero_push_error).slice(0, 60))
             : '') +
           '</div>'
-        : inv.payment_status === 'paid' &&
+        : (inv.payment_status === 'paid' || inv.payment_status === 'partial') &&
             (inv.created_via === 'portal' || inv.created_via === 'reenrolment')
-          ? '<div class="muted" style="font-size:11px;color:#92400e">Paid · not in Xero yet</div>'
+          ? '<div class="muted" style="font-size:11px;color:#92400e">' +
+            (inv.payment_status === 'partial' ? 'Partial' : 'Paid') +
+            ' · not in Xero yet</div>'
           : '';
 
     return (
@@ -2139,7 +2142,7 @@
           parts.push(String(state.meta.buffer_low_contacts) + ' buffer low');
         }
         if (state.meta.xero_unsynced) {
-          parts.push(String(state.meta.xero_unsynced) + ' paid not in Xero');
+          parts.push(String(state.meta.xero_unsynced) + ' ready for Xero');
         }
         if (state.meta.la_office_auto) {
           parts.push(String(state.meta.la_office_auto) + ' auto re-enrolled');
@@ -2915,7 +2918,7 @@
       '<div class="card-h"><h3>Re-enrolments &amp; shared invoices</h3>' +
       '<span class="pp-inv-acc__pay-chip pp-inv-acc__pay-chip--other" id="portalParentInvoicesMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;width:100%;max-width:none;text-align:left;overflow-wrap:break-word">Track instalments after re-enrolment. Use <strong>Year / Term</strong> filters to switch booked totals. Rows are sorted by re-enrol date. LA sheet clients appear as office auto even without a family invoice. Day Centre places start 1 Sept (no half-term; Christmas closed). <strong>Push paid to Xero</strong> sends only <em>paid</em> Portal INV-Ps (creates the ACCREC <em>awaiting payment</em> — mark Paid + reconcile in Xero). Unpaid drafts stay in Portal until you mark paid. <a href="/admin_finance_guide.html" target="_blank" rel="noopener">Finance guide (EN/ES)</a>.</p>' +
+      '<p class="muted" style="margin:0 0 10px;width:100%;max-width:none;text-align:left;overflow-wrap:break-word">Track instalments after re-enrolment. Use <strong>Year / Term</strong> filters to switch booked totals. Rows are sorted by re-enrol date. LA sheet clients appear as office auto even without a family invoice. Day Centre places start 1 Sept (no half-term; Christmas closed). <strong>Push to Xero</strong> creates the full ACCREC (<em>awaiting payment</em>) for <em>paid</em> or <em>partial</em> Portal INV-Ps — allocate bank/card amounts in Xero (full settle or instalment). Unpaid drafts stay in Portal. <a href="/admin_finance_guide.html" target="_blank" rel="noopener">Finance guide (EN/ES)</a>.</p>' +
       '<div class="toolbar" style="margin-bottom:8px;flex-wrap:wrap;gap:8px;align-items:center">' +
       '<span class="muted" style="font-size:12px;font-weight:700">Amount</span>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-amount="year">Year 26/27</button>' +
@@ -2931,10 +2934,10 @@
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="paid">Paid</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="pending">Pending confirmation</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="buffer_low">Buffer low</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="xero_unsynced">Paid not in Xero</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="xero_unsynced">Not in Xero yet</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="hidden">Hidden</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParentInvoicesRefreshEmbed">Refresh</button>' +
-      '<button type="button" class="btn btn--sm btn--primary" id="portalParentInvoicesPushXero" title="Creates ACCREC in Xero for paid Portal invoices (awaiting payment)">Push paid to Xero</button>' +
+      '<button type="button" class="btn btn--sm btn--primary" id="portalParentInvoicesPushXero" title="Creates full ACCREC in Xero for paid or partial Portal invoices (awaiting payment; reconcile halves in Xero)">Push to Xero</button>' +
       '<button type="button" class="btn btn--sm" id="portalParentInvoicesExportXero">Export to Xero CSV</button>' +
       '</div>' +
       '<div class="pp-inv-method-filters" role="group" aria-label="Payment method filter">' +

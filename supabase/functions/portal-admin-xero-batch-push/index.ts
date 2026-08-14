@@ -1,9 +1,10 @@
 // @ts-nocheck — Edge Function (Deno).
 //
 // portal-admin-xero-batch-push
-// Push PAID Portal-created family invoices (INV-P) into Xero as AUTHORISED
-// ACCREC invoices (awaiting payment). Unpaid drafts stay Portal-only.
-// Does **not** post Xero Payments — staff mark Paid + reconcile in Xero UI.
+// Push PAID or PARTIAL Portal-created family invoices (INV-P) into Xero as
+// AUTHORISED ACCREC invoices for the **full** amount (awaiting payment).
+// Unpaid drafts stay Portal-only. Does **not** post Xero Payments — staff
+// allocate bank/card lines (full or instalment) against that invoice in Xero.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
@@ -91,7 +92,7 @@ Deno.serve(async (req) => {
     .is("xero_invoice_id", null)
     .in("created_via", ["portal", "reenrolment"])
     .eq("share_status", "ready")
-    .eq("payment_status", "paid")
+    .in("payment_status", ["paid", "partial"])
     .order("created_at", { ascending: true })
     .limit(limit);
 

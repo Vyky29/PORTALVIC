@@ -1006,8 +1006,12 @@ Deno.serve(async (req) => {
     let hold = null;
     let pdf = null;
     let bookingPin = null;
-    if (updated.payment_status === "paid") {
+    const payNow = String(updated.payment_status || "").toLowerCase();
+    // Full ACCREC in Xero on first money (partial) or full Confirm paid — instalments reconcile in Xero.
+    if (payNow === "paid" || payNow === "partial") {
       xero = await xeroEnsurePaidShareInBooks(admin, updated);
+    }
+    if (payNow === "paid") {
       try {
         const cid = clean(updated.contact_id, 120);
         if (cid) hold = await clearPaymentHoldForContact(admin, cid, "admin", verified.userId || null);
