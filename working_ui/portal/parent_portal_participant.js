@@ -1000,8 +1000,13 @@
         "</span>"
       );
     }
-    /* Continuing place: submitted keep/change, office auto (LA/Day Centre), or unpaid crash. */
-    if (!booking.continuing && !officeAuto && !crashUnpaid) return "";
+    /*
+     * Continuing place: submitted keep/change, office auto (LA/Day Centre), an office
+     * term invoice, or an unpaid crash.
+     */
+    if (!booking.continuing && !officeAuto && !crashUnpaid && !familyAcceptedNextYear(data)) {
+      return "";
+    }
 
     if (isOutstandingSummerAhmedSibling(data)) {
       return (
@@ -2546,6 +2551,12 @@
     if (booking.parent_action === "auto") return true;
     if (booking.continuing) return true;
     var r = (data && data.reenrolment) || {};
+    /*
+     * Office already raised the 26/27 term invoice, so the place exists even without a
+     * submitted form. Without this the hub asked for payment and called the same place
+     * "not confirmed" on the row above.
+     */
+    if (r.office_term_invoice === true) return true;
     /* Legacy payloads without continuing flags: only treat as accepted if submitted and not a full withdraw. */
     if (r.not_continuing === true) return false;
     if (r.continuing === true) return true;
@@ -3688,6 +3699,12 @@
       var nextDates = findTermSessionDates(data).filter(function (d) {
         return d.iso > summerTo;
       });
+      /*
+       * A place confirmed by an office invoice has no kept-slot payload, so the roster
+       * lookup finds nothing. Fall back to the usual weekday dates so those families
+       * still get their term days instead of an empty accordion.
+       */
+      if (!nextDates.length) nextDates = findUnconfirmedNextYearSessionDates(data);
       pushTermAccordionsFromDates(nextDates, true, " Term 26/27 · Re-enrolled");
     } else if (todayIso > summerTo) {
       // Summer 25/26 finished and still not confirmed → 26/27 chips in red.

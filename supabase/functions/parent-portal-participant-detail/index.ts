@@ -1472,29 +1472,48 @@ Deno.serve(async (req) => {
   }
 
   /*
-   * Funder-billed places (LA / NHS) have no parent term invoice, but the office can
-   * still bill an extra to the family in the child's name — e.g. a summer crash
-   * course. Crash *bookings* are not a reliable signal: for no-extra-booking clients
-   * (Tinashe, Ikram, Fadi, Timi) the office raises the invoice by hand and no booking
-   * row exists, so the hub used to hide My invoices even though money was owed.
-   * Look for the parent-pay share itself, the way parent-portal-invoices-list does.
+   * Two things the hub cannot learn from re-enrolment submissions alone. Both are read
+   * from the family's own invoice shares:
+   *
+   *  - A parent-pay extra on a funder-billed place (LA / NHS), e.g. a summer crash
+   *    course. Crash *bookings* are not a reliable signal: for no-extra-booking clients
+   *    (Tinashe, Ikram, Fadi, Timi) the office raises the invoice by hand and no booking
+   *    row exists, so My invoices stayed hidden while money was owed.
+   *  - A 2026/27 term invoice the office raised without the parent submitting the form.
+   *    The place exists — the family is being asked to pay for it — so the hub must not
+   *    keep calling it "not confirmed" and quoting a confirm-by date that has passed.
    */
   let hasParentPayExtraShare = false;
-  if (wantGeneral && parentReenrolUi.reasons.includes("la_funded")) {
+  let hasOfficeTermInvoice = false;
+  if (wantGeneral) {
     const { data: parentShares } = await supabase
       .from("portal_parent_invoice_share")
-      .select("invoice_number, reference_text, line_description, billing_term")
+      .select(
+        "invoice_number, reference_text, line_description, billing_term, due_date, payment_method_hint",
+      )
       .eq("contact_id", contactId)
       .eq("share_status", "ready")
-      .neq("payment_method_hint", "la_funded")
       .limit(50);
-    hasParentPayExtraShare = (parentShares || []).some((share) =>
-      /\bcrash\b/i.test(
-        [share.invoice_number, share.reference_text, share.line_description, share.billing_term]
-          .map((x) => String(x || ""))
-          .join(" "),
-      )
-    );
+    for (const share of parentShares || []) {
+      const blob = [
+        share.invoice_number,
+        share.reference_text,
+        share.line_description,
+        share.billing_term,
+      ]
+        .map((x) => String(x || ""))
+        .join(" ");
+      const isCrash = /\bcrash\b/i.test(blob);
+      const hint = clean(share.payment_method_hint, 40);
+      if (isCrash && hint !== "la_funded") hasParentPayExtraShare = true;
+      if (isCrash) continue;
+      const termish =
+        !!clean(share.billing_term, 40) || /\b(autumn|spring|summer|re-?enrol)/i.test(blob);
+      /* Year guard so a Summer 25/26 row cannot pass as a 26/27 term place. */
+      const dueIso = share.due_date ? String(share.due_date).slice(0, 10) : "";
+      const isNextYear = /26\s*\/\s*27|2026[-/]27|2026\/2027/.test(blob) || dueIso >= "2026-08-01";
+      if (termish && isNextYear) hasOfficeTermInvoice = true;
+    }
   }
 
   let swimTermReviewAvailable = false;
@@ -1660,6 +1679,12 @@ Deno.serve(async (req) => {
         can_book_extras: isFormerClient
           ? true
           : parentReenrolUi.can_book_extras !== false,
+        /*
+         * Office raised a 26/27 term invoice for this child. The hub treats that as a
+         * confirmed place: asking a family to pay for a place while telling them it is
+         * "not confirmed" contradicts itself.
+         */
+        office_term_invoice: isFormerClient ? false : hasOfficeTermInvoice,
         // LA/NHS term is office→funder; still show My invoices when a parent-pay
         // crash (etc.) exists. List endpoint only returns those shares.
         show_invoices: isFormerClient
