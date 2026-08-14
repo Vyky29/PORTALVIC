@@ -2600,6 +2600,7 @@
       esc(s.id) +
       '">' +
       '<div class="timetable__head">' +
+      timetablePhotoHtml(s.id) +
       '<div class="timetable__title-row">' +
       '<div class="timetable__title-main">' +
       '<div class="timetable__icon ' +
@@ -2611,7 +2612,6 @@
       esc(s.name) +
       "</h3>" +
       "</div></div>" +
-      timetablePhotoHtml(s.id) +
       '<p class="timetable__range">July weeks open first, then each half term.</p>' +
       "</div>" +
       body +
@@ -2663,6 +2663,7 @@
           " " +
           esc(mock.TERM_BADGE || "AUTUMN TERM 2026") +
           "</span>" +
+          timetablePhotoHtml(s.id) +
           '<div class="timetable__title-row">' +
           '<div class="timetable__title-main">' +
           '<div class="timetable__icon ' +
@@ -2678,7 +2679,6 @@
           "</h3>" +
           "</div>" +
           "</div>" +
-          timetablePhotoHtml(s.id) +
           '<p class="timetable__range">' +
           esc(
             s.id === "day_centre"
