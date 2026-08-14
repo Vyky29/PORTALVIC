@@ -340,11 +340,11 @@
         max-width: calc((2 * (100% - 28px) / 3) + 14px);
         margin-inline: auto;
       }
-      /* Same overall width as a core pair; Crash only slightly wider (triple photo). */
+      /* Full row width (grow sideways, not taller). Crash a bit wider for triple photos. */
       .services__grid--crash-pair {
-        grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
         width: 100%;
-        max-width: calc((2 * (100% - 28px) / 3) + 14px);
+        max-width: 100%;
         margin-inline: auto;
         align-items: stretch;
       }
