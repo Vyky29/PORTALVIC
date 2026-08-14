@@ -150,7 +150,7 @@ const SERVICE_META: Record<PublicServiceId, Omit<OfferService, "venues">> = {
       "Community trips (cafe, park, shops) when staffing allows",
     ],
     blurb:
-      "A weekday daytime programme at SwimFarm (Mon–Fri, 11am–4pm): table work, sensory time, gym, swimming, life skills, and more. Places are arranged with the office so we can discuss the day, funding, and the participant’s support needs — not self-booked online.",
+      "A weekday daytime programme at SwimFarm (Mon–Fri, 11am–4pm): table work, sensory time, gym, swimming, life skills, and more. Places are arranged with the office so we can discuss the day, funding, and the participant’s support needs.",
   },
 };
 
