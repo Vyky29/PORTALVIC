@@ -40,6 +40,7 @@
     Northolt: "Northolt Centre",
     SwimFarm: "SwimFarm Centre",
     Westway: "Westway Centre",
+    Chiswick: "Chiswick / Zoom",
   };
 
   var SERVICES = [
@@ -131,12 +132,12 @@
       id: "counselling",
       name: "Counselling",
       tier: "more",
-      ageHint: "By arrangement",
-      durationHint: "Sessions by arrangement",
+      ageHint: "Young people & adults",
+      durationHint: "Face to face or Zoom",
       priceHint: "Enquire with the office",
       blurb:
-        "Specialist counselling support for participants and families — arranged with the office so we can match needs, timing, and the right practitioner.",
-      venues: ["SwimFarm"],
+        "Counselling for young people and adults with autism and their families. Person-centred sessions to explore what concerns you — face to face in Chiswick or online via Zoom. Short-term (4–6 weeks) or longer; starts with a short assessment call.",
+      venues: ["Chiswick"],
       enquireOnly: true,
     },
     {

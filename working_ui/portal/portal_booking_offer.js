@@ -20,6 +20,7 @@
     Northolt: "Northolt Centre",
     SwimFarm: "SwimFarm Centre",
     Westway: "Westway Centre",
+    Chiswick: "Chiswick / Zoom",
   };
 
   var DAY_ORDER = {

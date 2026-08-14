@@ -340,6 +340,13 @@
         max-width: calc((2 * (100% - 28px) / 3) + 14px);
         margin-inline: auto;
       }
+      /* Crash narrower so Counselling fits beside it (full core width). */
+      .services__grid--crash-pair {
+        grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+        width: 100%;
+        max-width: 100%;
+        margin-inline: auto;
+      }
     }
     .services__grid--solo {
       display: grid;
@@ -348,7 +355,7 @@
     }
     .services__grid--solo .svc-card {
       width: 100%;
-      /* A bit wider than one core column so the triple photo reads better. */
+      /* Match pair width (2 of 3 core columns). */
       max-width: min(100%, calc((2 * (100% - 28px) / 3) + 14px));
     }
     @media (max-width: 639px) {
@@ -2063,7 +2070,7 @@
     </div>
   </div>
 
-  <script src="/portal/portal_booking_offer.js?v=20260814-westway-centre"></script>
+  <script src="/portal/portal_booking_offer.js?v=20260814-counsel-layout"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
   <script src="/portal/portal_booking_lead_gate.js?v=20260812-preview-5s-clear"></script>
   <script src="/portal/portal_booking_waitlist.js?v=20260813-waitlist-session"></script>
@@ -2149,7 +2156,7 @@
     if (id === "multi") return base + "multi.jpg?v=20260812-table";
     if (id === "bespoke") return base + "bespoke.jpg";
     if (id === "day_centre") return base + "daycentre.jpg?v=20260812-hub";
-    if (id === "counselling") return base + "counselling.jpg?v=20260814";
+    if (id === "counselling") return base + "counselling.jpg?v=20260814-web";
     return base + "aquatic.jpg";
   }
 
@@ -2330,7 +2337,7 @@
         s.id === "day_centre"
           ? "Places arranged with the office · Mon–Fri 11am–4pm"
           : s.id === "counselling"
-            ? "Enquire with the office · sessions by arrangement"
+            ? "Enquire with the office · Chiswick or Zoom"
             : "Enquire with the office · assessment before any offer";
       ctaLabel = "How it works";
     } else if (enquireOnly) {
@@ -2402,6 +2409,22 @@
 
   function officeEnquireInfoHtml(s) {
     var isDc = s && s.id === "day_centre";
+    var isCounsel = s && s.id === "counselling";
+    if (isCounsel) {
+      return (
+        '<div class="dc-info">' +
+        '<p class="dc-info__lead">' +
+        "Counselling for young people and adults with autism and their families. Person-centred sessions — face to face in Chiswick or online via Zoom — short-term (4–6 weeks) or longer. Starts with a short assessment phone call." +
+        "</p>" +
+        '<div class="dc-info__actions">' +
+        '<button type="button" class="btn btn--wait" data-dc-enquire="' +
+        esc(s.id) +
+        '">' +
+        ICONS.mail +
+        " Enquire with the office</button>" +
+        "</div></div>"
+      );
+    }
     /* Bespoke: short parent copy only — no internal “meet your child / what happens next” notes. */
     if (!isDc) {
       return (
@@ -2481,19 +2504,19 @@
       row(["aquatic", "climbing", "physical"]) +
       "</div></div>" +
       '<div class="services__group">' +
-      '<p class="services__label">Programmes</p>' +
-      '<div class="services__grid services__grid--pair">' +
-      row(["multi", "bespoke"]) +
-      "</div></div>" +
-      '<div class="services__group">' +
       '<p class="services__label">Day support</p>' +
       '<div class="services__grid services__grid--pair">' +
-      row(["day_centre", "counselling"]) +
+      row(["multi", "day_centre"]) +
       "</div></div>" +
       '<div class="services__group">' +
-      '<p class="services__label">Crash courses</p>' +
+      '<p class="services__label">Crash courses &amp; counselling</p>' +
+      '<div class="services__grid services__grid--crash-pair">' +
+      row(["intensive", "counselling"]) +
+      "</div></div>" +
+      '<div class="services__group">' +
+      '<p class="services__label">Programmes</p>' +
       '<div class="services__grid services__grid--solo">' +
-      row(["intensive"]) +
+      row(["bespoke"]) +
       "</div></div>";
   }
 
@@ -3145,21 +3168,31 @@
     var title = document.getElementById("sheetTitle");
     var body = document.getElementById("sheetBody");
     var mail = document.getElementById("sheetMail");
-    var isDc = !svc || svc.id === "day_centre";
-    var name = (svc && svc.name) || (isDc ? "Day Centre" : "Bespoke Programme");
+    var sid = svc && svc.id;
+    var isDc = !svc || sid === "day_centre";
+    var isCounsel = sid === "counselling";
+    var name =
+      (svc && svc.name) ||
+      (isDc ? "Day Centre" : isCounsel ? "Counselling" : "Bespoke Programme");
     title.textContent = "Enquire about " + name;
     body.textContent = isDc
       ? "Day Centre at SwimFarm · Monday to Friday, 11am – 4pm. Places are arranged with the office (not booked online) so we can explain the day, funding, and support needs."
-      : "Bespoke Programme — no online slots. After you enquire, the office reviews the participant and then agrees what we can offer and which available time fits.";
+      : isCounsel
+        ? "Counselling for young people and adults with autism and their families. Person-centred sessions in Chiswick or online via Zoom. We start with a short assessment phone call to match time and commitment."
+        : "Bespoke Programme — no online slots. After you enquire, the office reviews the participant and then agrees what we can offer and which available time fits.";
     var subject = encodeURIComponent(
       isDc
         ? "Day Centre enquiry — SwimFarm · Mon–Fri 11am–4pm"
-        : "Bespoke Programme enquiry — assessment / office"
+        : isCounsel
+          ? "Counselling enquiry — assessment call"
+          : "Bespoke Programme enquiry — assessment / office"
     );
     var text = encodeURIComponent(
       isDc
         ? "Hello,\n\nI’d like to enquire about a Day Centre place at SwimFarm (Monday–Friday, 11am–4pm).\n\nParticipant name:\nParent / carer name:\nPhone:\nFunding / notes:\n\nThanks"
-        : "Hello,\n\nI’d like to enquire about a Bespoke Programme place for a participant.\n\nParticipant name:\nParent / carer name:\nPhone:\nGoals / support needs / notes:\n\nThanks"
+        : isCounsel
+          ? "Hello,\n\nI’d like to enquire about counselling (young people / adults / families).\n\nName:\nPhone:\nPrefer face to face (Chiswick) or Zoom:\nWhat you’d like support with:\n\nThanks"
+          : "Hello,\n\nI’d like to enquire about a Bespoke Programme place for a participant.\n\nParticipant name:\nParent / carer name:\nPhone:\nGoals / support needs / notes:\n\nThanks"
     );
     mail.href = "mailto:info@clubsensational.org?subject=" + subject + "&body=" + text;
     mail.innerHTML = ICONS.mail + " Email the office";

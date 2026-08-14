@@ -157,13 +157,13 @@ const SERVICE_META: Record<PublicServiceId, Omit<OfferService, "venues">> = {
     id: "counselling",
     name: "Counselling",
     tier: "more",
-    ageHint: "By arrangement",
-    durationHint: "Sessions by arrangement",
+    ageHint: "Young people & adults",
+    durationHint: "Face to face or Zoom",
     priceHint: "Enquire with the office",
     pricePerSession: null,
     enquireOnly: true,
     blurb:
-      "Specialist counselling support for participants and families — arranged with the office so we can match needs, timing, and the right practitioner.",
+      "Counselling for young people and adults with autism and their families. Person-centred sessions to explore what concerns you — face to face in Chiswick or online via Zoom. Short-term (4–6 weeks) or longer; starts with a short assessment call.",
   },
 };
 
@@ -625,7 +625,7 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
     multi: ["SwimFarm", "Northolt"],
     bespoke: ["SwimFarm", "Acton", "Westway"],
     day_centre: ["SwimFarm"],
-    counselling: ["SwimFarm"],
+    counselling: ["Chiswick"],
   };
   const always: PublicServiceId[] = [
     "aquatic",
@@ -640,6 +640,13 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
     let fromMadre = [...(venueSets.get(id) || [])].sort();
     if (id === "multi") {
       fromMadre = fromMadre.filter((v) => v !== "Acton");
+    }
+    // Counselling is office-arranged (Chiswick / Zoom) — never MADRE venues.
+    if (id === "counselling") {
+      return {
+        ...SERVICE_META[id],
+        venues: defaults.counselling,
+      };
     }
     return {
       ...SERVICE_META[id],
