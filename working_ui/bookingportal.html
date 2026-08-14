@@ -340,18 +340,13 @@
         max-width: calc((2 * (100% - 28px) / 3) + 14px);
         margin-inline: auto;
       }
-      /* Full row width (grow sideways, not taller). Crash a bit wider for triple photos. */
+      /* Full row width. Crash a bit wider for triple photos. */
       .services__grid--crash-pair {
         grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
         width: 100%;
         max-width: 100%;
         margin-inline: auto;
         align-items: stretch;
-      }
-      /* Cap photo height so widening does not explode; still a bit taller than core. */
-      .services__grid--crash-pair .svc-card__media {
-        aspect-ratio: auto;
-        height: clamp(160px, 14vw, 210px);
       }
     }
     .services__grid--solo {
