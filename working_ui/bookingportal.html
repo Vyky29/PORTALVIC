@@ -348,10 +348,10 @@
         margin-inline: auto;
         align-items: stretch;
       }
-      /* Cap photo height ≈ core cards so widening does not stretch the cards down. */
+      /* Cap photo height so widening does not explode; still a bit taller than core. */
       .services__grid--crash-pair .svc-card__media {
         aspect-ratio: auto;
-        height: clamp(132px, 11.5vw, 168px);
+        height: clamp(160px, 14vw, 210px);
       }
     }
     .services__grid--solo {
