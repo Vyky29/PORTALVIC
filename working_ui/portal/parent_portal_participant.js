@@ -7349,6 +7349,11 @@
             : "") +
           ".</p>"
         : "";
+    var priorBlock = inv && inv.pay_blocked_by_prior;
+    var sequenceNote =
+      priorBlock && priorBlock.message
+        ? '<p class="pp-invoice-card__meta">' + esc(String(priorBlock.message)) + "</p>"
+        : "";
     var paidNote =
       status === "paid"
         ? '<p class="pp-invoice-card__meta">Paid' +
@@ -7572,6 +7577,7 @@
         : "") +
       (due ? '<p class="pp-invoice-card__meta muted">Due ' + esc(due) + "</p>" : "") +
       pendingNote +
+      sequenceNote +
       paidNote +
       (!isPaid &&
       !payRemindNow &&
@@ -7910,9 +7916,11 @@
                   ? "Card checkout is not available. Use bank transfer or contact the office."
                   : code === "already_paid"
                     ? "This invoice is already marked paid."
-                    : code === "amount_required"
-                      ? "This invoice has no amount for card payment. Contact the office."
-                      : "Could not start card payment — please try bank transfer or contact the office.");
+                    : code === "prior_invoice_unconfirmed"
+                      ? "Please wait for the office to confirm your earlier invoice before paying this one."
+                      : code === "amount_required"
+                        ? "This invoice has no amount for card payment. Contact the office."
+                        : "Could not start card payment — please try bank transfer or contact the office.");
               showNotice("error", msg);
             });
         });
@@ -8079,7 +8087,9 @@
                 (err && err.messageText) ||
                   (code === "already_paid"
                     ? "This invoice is already marked paid."
-                    : "Could not save — please try again."),
+                    : code === "prior_invoice_unconfirmed"
+                      ? "Please wait for the office to confirm your earlier invoice before reporting this one."
+                      : "Could not save — please try again."),
               );
             });
         });

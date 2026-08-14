@@ -21,6 +21,10 @@ import {
 } from "../_shared/tide_bank_details.ts";
 import { resolveParticipantInvoiceFunding } from "../_shared/portal_invoice_funding.ts";
 import { fundingLabelIsClubInvoicedFunder } from "../_shared/parent_reenrol_ui.ts";
+import {
+  findPriorUnconfirmedInvoice,
+  type PaySequenceShare,
+} from "../_shared/portal_invoice_pay_sequence.ts";
 
 const BUCKET = "documents";
 
@@ -217,6 +221,18 @@ Deno.serve(async (req) => {
     })
     .filter(Boolean);
 
+  const sequenceShares: PaySequenceShare[] = (shares || []).map((s) => ({
+    id: s.id,
+    invoice_number: s.invoice_number,
+    billing_term: s.billing_term,
+    due_date: s.due_date,
+    next_instalment_due: s.next_instalment_due,
+    payment_status: s.payment_status,
+    share_status: s.share_status,
+    payment_method_hint: s.payment_method_hint,
+    created_at: s.created_at,
+  }));
+
   const out = [];
   for (const share of shares || []) {
     const doc = docsById.get(String(share.document_id));
@@ -244,10 +260,13 @@ Deno.serve(async (req) => {
     const status = share.payment_status || "unpaid";
     const openForPay = status === "unpaid" || status === "partial";
     const suggestedRef = suggestedTransferReference(share.invoice_number, displayName);
+    const priorBlock = findPriorUnconfirmedInvoice(sequenceShares, String(share.id));
+    const sequenceLocked = !!priorBlock;
     const canPayCard =
       cardCheckoutAvailable &&
       openForPay &&
-      dueNow > 0;
+      dueNow > 0 &&
+      !sequenceLocked;
     const cardPricing =
       canPayCard ? stripeGrossUpFromGbp(dueNow) : null;
     const hint = hintEarly;
@@ -258,13 +277,14 @@ Deno.serve(async (req) => {
       gcApiAvailable &&
       isGcHint &&
       openForPay &&
-      !gcMandateActive;
+      !gcMandateActive &&
+      !sequenceLocked;
     const gcPendingCollection =
       isGcHint && openForPay && (gcMandateActive || hasGcPayment);
     // Mandated Direct Payment + LA funded invoices are not paid by parent card/bank UI.
     const hideManualPay = isGcHint || isLaFunded;
     const applicableCredits =
-      openForPay && amount != null && Number.isFinite(amount) && amount > 0
+      openForPay && amount != null && Number.isFinite(amount) && amount > 0 && !sequenceLocked
         ? usableCredits
         : [];
     out.push({
@@ -289,10 +309,10 @@ Deno.serve(async (req) => {
       gocardless_payment_id: clean(share.gocardless_payment_id, 80) || null,
       can_setup_gocardless: canSetupGc,
       gocardless_pending_collection: gcPendingCollection && !canSetupGc,
-      payment_link_url: hideManualPay
+      payment_link_url: hideManualPay || sequenceLocked
         ? null
         : clean(share.payment_link_url, 500) || null,
-      payment_link_surcharge_note: hideManualPay
+      payment_link_surcharge_note: hideManualPay || sequenceLocked
         ? null
         : clean(share.payment_link_surcharge_note, 200) || null,
       parent_reported_paid_at: share.parent_reported_paid_at || null,
@@ -301,7 +321,7 @@ Deno.serve(async (req) => {
       paid_via: share.paid_via || null,
       suggested_reference: suggestedRef,
       bank_transfer:
-        hideManualPay || !(openForPay || status === "pending_confirmation")
+        hideManualPay || sequenceLocked || !(openForPay || status === "pending_confirmation")
           ? null
           : {
               available: tide.available,
@@ -314,8 +334,16 @@ Deno.serve(async (req) => {
                 ? null
                 : "Contact the office for bank transfer details.",
             },
-      can_report_paid: hideManualPay ? false : openForPay,
-      can_pay: hideManualPay ? false : canPayCard,
+      can_report_paid: hideManualPay || sequenceLocked ? false : openForPay,
+      can_pay: hideManualPay || sequenceLocked ? false : canPayCard,
+      pay_blocked_by_prior: priorBlock
+        ? {
+            invoice_number: priorBlock.prior.invoice_number,
+            billing_term: priorBlock.prior.billing_term,
+            payment_status: priorBlock.prior.payment_status,
+            message: priorBlock.message,
+          }
+        : null,
       card_checkout:
         hideManualPay || !cardPricing
           ? null

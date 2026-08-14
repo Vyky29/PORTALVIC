@@ -18,6 +18,7 @@ import {
   hasPaymentSchedule,
 } from "../_shared/portal_invoice_payment_schedule.ts";
 import { regeneratePortalInvoiceSharePdf } from "../_shared/portal_create_family_invoice.ts";
+import { assertNoPriorUnconfirmedInvoice } from "../_shared/portal_invoice_pay_sequence.ts";
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -97,6 +98,16 @@ Deno.serve(async (req) => {
   }
   if (inv.payment_status === "void" || inv.payment_status === "pending_confirmation") {
     return json(409, { ok: false, error: "invoice_not_open" });
+  }
+
+  const priorBlock = await assertNoPriorUnconfirmedInvoice(supabase, contactId, invoiceId);
+  if (priorBlock) {
+    return json(409, {
+      ok: false,
+      error: priorBlock.error,
+      message: priorBlock.message,
+      prior_invoice: priorBlock.prior,
+    });
   }
 
   const invoiceAmount = money(Number(inv.amount_gbp));

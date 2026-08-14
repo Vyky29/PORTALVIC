@@ -6,6 +6,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
 import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
+import { assertNoPriorUnconfirmedInvoice } from "../_shared/portal_invoice_pay_sequence.ts";
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -101,6 +102,16 @@ Deno.serve(async (req) => {
   }
   if (inv.payment_status !== "unpaid" && inv.payment_status !== "partial") {
     return json(409, { ok: false, error: "not_open_for_report" });
+  }
+
+  const priorBlock = await assertNoPriorUnconfirmedInvoice(supabase, contactId, invoiceId);
+  if (priorBlock) {
+    return json(409, {
+      ok: false,
+      error: priorBlock.error,
+      message: priorBlock.message,
+      prior_invoice: priorBlock.prior,
+    });
   }
 
   const now = new Date().toISOString();

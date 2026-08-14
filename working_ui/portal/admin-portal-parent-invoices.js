@@ -1236,6 +1236,16 @@
     return labels.length ? labels.join(' · ') : 'Bank transfer';
   }
 
+  function billingTermSortRank(inv) {
+    var t = String((inv && inv.billing_term) || '')
+      .trim()
+      .toLowerCase();
+    if (t === 'autumn') return 0;
+    if (t === 'spring') return 1;
+    if (t === 'summer') return 2;
+    return 5;
+  }
+
   function invoiceSortRank(inv) {
     var pay = String((inv && inv.payment_status) || 'unpaid').toLowerCase();
     if (pay === 'paid') return 0;
@@ -1248,13 +1258,17 @@
 
   function sortInvoicesForDisplay(invoices) {
     return (invoices || []).slice().sort(function (a, b) {
-      var ra = invoiceSortRank(a);
-      var rb = invoiceSortRank(b);
-      if (ra !== rb) return ra - rb;
-      /* Earliest due first (Sep → Jul for monthly funder sets), not newest-updated. */
+      /* Term order Autumn → Spring → Summer first (not paid-first). */
+      var ta = billingTermSortRank(a);
+      var tb = billingTermSortRank(b);
+      if (ta !== tb) return ta - tb;
+      /* Earliest due first within the same term. */
       var da = String(a.due_date || a.next_instalment_due || a.created_at || '');
       var db = String(b.due_date || b.next_instalment_due || b.created_at || '');
       if (da !== db) return da.localeCompare(db);
+      var ra = invoiceSortRank(a);
+      var rb = invoiceSortRank(b);
+      if (ra !== rb) return ra - rb;
       return String(a.invoice_number || '').localeCompare(String(b.invoice_number || ''));
     });
   }
