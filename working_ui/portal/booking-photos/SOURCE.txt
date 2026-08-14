@@ -11,5 +11,5 @@ Photos copied from www.clubsensational.org (same assets as the public website):
 - counselling.jpg      ← /counselling/ page hero (wp-content/uploads/2024/11/3-e1732384925820.jpg)
 
 Card layouts:
-- Multi-Activity: diagonal split — multi.jpg (Land) + aquatic.jpg (Swimming)
+- Multi-Activity: diagonal split — multi.jpg (Land) + multi-swim.jpg / Swimming-13 (Swimming)
 - Intensive: triple — intensive-swim / intensive-climb / multi.jpg (Activities)
