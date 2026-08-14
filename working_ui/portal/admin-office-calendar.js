@@ -401,7 +401,8 @@
       "<style>" +
       "#portalOfficeCalRoot{min-width:0}" +
       "#portalOfficeCalRoot .poc-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 14px;min-width:0}" +
-      "#portalOfficeCalRoot .poc-toolbar h2{margin:0;font-size:18px;min-width:0;overflow-wrap:break-word;flex:1 1 auto}" +
+      "#portalOfficeCalRoot .poc-toolbar__nav{display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-width:0}" +
+      "#portalOfficeCalRoot .poc-toolbar h2{margin:0;font-size:18px;min-width:0;overflow-wrap:break-word;flex:0 1 auto}" +
       "#portalOfficeCalRoot .poc-legend{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}" +
       "#portalOfficeCalRoot .poc-legend span{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--muted,#64748b)}" +
       "#portalOfficeCalRoot .poc-dot{width:10px;height:10px;border-radius:999px;flex:0 0 auto}" +
@@ -448,6 +449,7 @@
     ensureMonth();
     host.innerHTML =
       '<div class="poc-toolbar">' +
+      '<div class="poc-toolbar__nav" role="group" aria-label="Month navigation">' +
       '<button type="button" class="btn btn--sec btn--sm" id="pocPrev" aria-label="Previous month">←</button>' +
       "<h2>" +
       esc(monthLabel()) +
@@ -455,6 +457,7 @@
       '<button type="button" class="btn btn--sec btn--sm" id="pocNext" aria-label="Next month">→</button>' +
       '<button type="button" class="btn btn--ghost btn--sm" id="pocToday">Today</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="pocRefresh">Refresh</button>' +
+      "</div>" +
       "</div>" +
       '<div class="poc-legend">' +
       '<span><i class="poc-dot" style="background:#1d4ed8"></i> Meeting</span>' +
