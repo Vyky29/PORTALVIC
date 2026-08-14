@@ -348,8 +348,8 @@
     }
     .services__grid--solo .svc-card {
       width: 100%;
-      /* Match one core column width on wide layouts. */
-      max-width: min(100%, calc((100% - 28px) / 3));
+      /* A bit wider than one core column so the triple photo reads better. */
+      max-width: min(100%, calc((2 * (100% - 28px) / 3) + 14px));
     }
     @media (max-width: 639px) {
       .services__grid--solo .svc-card {
