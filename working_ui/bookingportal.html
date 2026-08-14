@@ -2142,10 +2142,9 @@
       ICONS.clock +
       esc(s.durationHint) +
       "</span>" +
-      '<span class="chip">' +
-      ICONS.pound +
-      esc(s.priceHint) +
-      "</span>" +
+      (s.priceHint
+        ? '<span class="chip">' + ICONS.pound + esc(s.priceHint) + "</span>"
+        : "") +
       "</div>" +
       (s.venues && s.venues.length
         ? '<div class="svc-meta__row svc-meta__venues"><span class="chip">' +

@@ -133,7 +133,6 @@
       tier: "more",
       ageHint: "From 3 years+",
       durationHint: "Summer + half-term blocks",
-      priceHint: "Course packs — ask the office",
       blurb:
         "Holiday crash courses and camps for continuity outside term time — swimming, climbing, and more in short intensive blocks (summer and half terms). Predictable routines, specialist staff, and limited daily places for participants.",
       venues: ["Westway", "Acton"],
