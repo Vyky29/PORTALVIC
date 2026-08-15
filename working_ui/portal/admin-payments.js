@@ -828,7 +828,8 @@
     statusFilter: "active", // active (re-enrolled) | all | outstanding | paid | notreenrolled
     sheetFilter: "",      // "" = all groups, else sheet name
     paidFilterByTerm: {}, // termBucketId -> Paid value ("" = all)
-    payStatusByTerm: {}, // termBucketId -> "" | "paid" | "flexi" | "gc" | "outstanding" | "partial"
+    payStatusByTerm: {}, // termBucketId -> "" | "paid" | "outstanding" | "partial"
+    payPlanByTerm: {}, // termBucketId -> "" | "flexi" | "gc" (combinable with status)
     serviceKindByTerm: {}, // termBucketId -> "afterschool" | "day_centre"
     termOpenById: {}, // termBucketId -> boolean (persist accordion open across re-renders)
     focusTermId: "", // after Paid chip click, keep this term open + in view
@@ -1801,9 +1802,20 @@
   function payStatusFilterForTerm(termId) {
     var map = state.payStatusByTerm || {};
     var v = map[termId] || "";
-    return v === "paid" || v === "outstanding" || v === "partial" || v === "flexi" || v === "gc"
-      ? v
-      : "";
+    /* Migrate legacy Status/plan chips: Flexi/GC used to live in payStatusByTerm. */
+    if (v === "flexi" || v === "gc") {
+      if (!state.payPlanByTerm) state.payPlanByTerm = {};
+      if (!state.payPlanByTerm[termId]) state.payPlanByTerm[termId] = v;
+      map[termId] = "";
+      return "";
+    }
+    return v === "paid" || v === "outstanding" || v === "partial" ? v : "";
+  }
+
+  function payPlanFilterForTerm(termId) {
+    var map = state.payPlanByTerm || {};
+    var v = map[termId] || "";
+    return v === "flexi" || v === "gc" ? v : "";
   }
 
   function captureTermOpenState(root) {
@@ -2408,17 +2420,18 @@
   function paidFilterChipsHtml(termId) {
     var cur = paidFilterForTerm(termId);
     var statusCur = payStatusFilterForTerm(termId);
+    var planCur = payPlanFilterForTerm(termId);
     var stream = serviceKindForTerm(termId);
-    /* Status label only. Funding chips sit below with no second title. */
+    /* Status alone on row 1; Flexi/GC + funding on row 2 (combinable with Paid/Out). */
     var html = '<div class="pay-chip-filters pay-chip-filters--tbl" role="group" aria-label="Filters for this term">'
       + '<div class="pay-chip-row">'
-      + '<span class="pay-chip-row__lab">Status / plan</span>'
+      + '<span class="pay-chip-row__lab">Status</span>'
       + filterChipBtn("paystatus", "paid", "Paid", statusCur === "paid", "pay-chip--paid-ok", termId)
-      + filterChipBtn("paystatus", "flexi", "Flexi", statusCur === "flexi", "pay-chip--flexi", termId)
-      + filterChipBtn("paystatus", "gc", "GC", statusCur === "gc", "pay-chip--gc", termId)
       + filterChipBtn("paystatus", "outstanding", "Outstanding", statusCur === "outstanding", "pay-chip--out", termId)
       + "</div>"
-      + '<div class="pay-chip-row" role="group" aria-label="Funding filter">'
+      + '<div class="pay-chip-row" role="group" aria-label="Plan and funding filter">'
+      + filterChipBtn("payplan", "flexi", "Flexi", planCur === "flexi", "pay-chip--flexi", termId)
+      + filterChipBtn("payplan", "gc", "GC", planCur === "gc", "pay-chip--gc", termId)
       + filterChipBtn("paid", "", "All", !cur, "pay-chip--muted", termId);
     PAID_BY_OPTIONS.forEach(function (l) {
       /* Afterschool: no NHS chip — NHS Day Centre is on the other stream. */
@@ -2461,17 +2474,26 @@
       if (st === "paid") return c === "paid" || c === "partial";
       /* Legacy "partial" chip → any part-paid (Flexi or GC). */
       if (st === "partial") return c === "partial";
-      /* Flexi / GC chips = payment plan on the term invoice (incl. unpaid Out). */
-      if (st === "flexi") return payPlanKind(r) === "flexi";
-      if (st === "gc") return payPlanKind(r) === "gc";
       if (st === "outstanding") return c === "outstanding";
       return c === st;
     });
   }
 
+  function applyPayPlanFilter(rows, termId) {
+    var plan = payPlanFilterForTerm(termId);
+    if (!plan) return rows || [];
+    return (rows || []).filter(function (r) {
+      if (category(r) === "notreenrolled") return false;
+      return payPlanKind(r) === plan;
+    });
+  }
+
   function applyTermTableFilters(rows, termId) {
-    return applyPayStatusFilter(
-      applyPaidFilter(applyServiceKindFilter(rows || [], termId), termId),
+    return applyPayPlanFilter(
+      applyPayStatusFilter(
+        applyPaidFilter(applyServiceKindFilter(rows || [], termId), termId),
+        termId,
+      ),
       termId,
     );
   }
@@ -4803,8 +4825,15 @@
             state.payStatusByTerm[termId] =
               val && curSt === val
                 ? ""
-                : (val === "paid" || val === "outstanding" || val === "partial"
-                  || val === "flexi" || val === "gc" ? val : "");
+                : (val === "paid" || val === "outstanding" || val === "partial" ? val : "");
+            state.focusTermId = termId;
+          }
+        } else if (kind === "payplan") {
+          if (!state.payPlanByTerm) state.payPlanByTerm = {};
+          if (termId) {
+            var curPlan = payPlanFilterForTerm(termId);
+            state.payPlanByTerm[termId] =
+              val && curPlan === val ? "" : (val === "flexi" || val === "gc" ? val : "");
             state.focusTermId = termId;
           }
         }
