@@ -988,9 +988,34 @@
   }
 
   /**
-   * Day Centre Summer NHS rows often store paid £ in data (Year received /
-   * “Jul … PAID”) without amount_paid_gbp on client_payments.
+   * True when this calendar month’s NHS £ is marked paid in office notes.
+   * Stops at + / · so “Jun unpaid + Jul PAID” and “Jul … (May … paid)” stay correct.
    */
+  function nhsMonthMarkedPaid(blob, monthStem) {
+    var text = String(blob || "");
+    var stem = String(monthStem || "").toLowerCase();
+    if (!stem) return false;
+    var re = new RegExp(
+      "\\b" + stem + "(?:e|y)?\\b\\s*£\\s*[\\d,]+(?:\\.\\d+)?([^|+·\\n]{0,60})",
+      "ig",
+    );
+    var m;
+    while ((m = re.exec(text))) {
+      var tail = String(m[1] || "");
+      if (/\bunpaid\b/i.test(tail)) return false;
+      var paidAt = tail.search(/\bpaid\b/i);
+      if (paidAt < 0) continue;
+      var beforePaid = tail.slice(0, paidAt);
+      /* “Jul £x (May £y paid)” — paid belongs to May, not July. */
+      if (/\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/i.test(beforePaid)) {
+        continue;
+      }
+      if (/\bdue\b/i.test(beforePaid)) continue;
+      return true;
+    }
+    return false;
+  }
+
   function summerNhsPaidOutFromData(r) {
     var d = (r && r.data) || {};
     var face = Number(r && r.amount) || 0;
@@ -998,8 +1023,8 @@
     var jul = Number(d["July invoice (25/26)"]) || 0;
     var blob = [d["NHS due months"], d["Summer basis"], d.Next].join(" ");
     var paid = 0;
-    if (jun > 0 && /\bjun(?:e)?\b[^\n]{0,48}\bpaid\b/i.test(blob)) paid += jun;
-    if (jul > 0 && /\bjul(?:y)?\b[^\n]{0,48}\bpaid\b/i.test(blob)) paid += jul;
+    if (jun > 0 && nhsMonthMarkedPaid(blob, "jun")) paid += jun;
+    if (jul > 0 && nhsMonthMarkedPaid(blob, "jul")) paid += jul;
     /*
      * Year received is safe when it fits this term face (Emanuel £7,500 of £11k).
      * Skip when it is a full-year figure (Fadi £97k vs summer £29k).
@@ -1012,7 +1037,10 @@
     var out = 0;
     if (paid > 0 && face > 0) {
       out = Math.max(0, Math.round((face - paid) * 100) / 100);
-      if (outHint > 0 && outHint <= face + 0.05) out = outHint;
+      if (outHint > 0 && outHint <= face + 0.05) {
+        out = outHint;
+        paid = Math.max(0, Math.round((face - out) * 100) / 100);
+      }
     } else if (
       String((r && r.payment_status) || "").toLowerCase().indexOf("partial") === 0
       && outHint > 0
@@ -1266,8 +1294,8 @@
       }
       if (junJul) {
         var junBlob = [((r && r.data) || {})["NHS due months"], ((r && r.data) || {})["Summer basis"]].join(" ");
-        var junPaid = junJul.june > 0 && /\bjun(?:e)?\b[^\n]{0,48}\bpaid\b/i.test(junBlob);
-        var julPaid = junJul.july > 0 && /\bjul(?:y)?\b[^\n]{0,48}\bpaid\b/i.test(junBlob);
+        var junPaid = junJul.june > 0 && nhsMonthMarkedPaid(junBlob, "jun");
+        var julPaid = junJul.july > 0 && nhsMonthMarkedPaid(junBlob, "jul");
         monthBits +=
           '<span class="pay-amt-season" title="NHS invoices June &amp; July">Jun '
           + money(junJul.june)
