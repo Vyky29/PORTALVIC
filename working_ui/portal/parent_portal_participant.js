@@ -759,25 +759,40 @@
 
   function formerClientNoticeHtml(data) {
     var hasFb = formerHasFeedback(data);
+    var unpaidRelease = isUnpaidAug15Released(data);
+    var title = unpaidRelease ? "Place released" : "Former client";
+    var body = unpaidRelease
+      ? "Your Autumn place was released because the first payment was not received by 15 August. You do not need to register again — use Booking services below to book a new place, or contact the office."
+      : hasFb
+        ? "Family portal access for this place has ended. You can still open past session notes below. To book again, use Booking services, or contact admin."
+        : "Family portal access for this place has ended. To book again, use Booking services, or contact admin.";
     return (
-      '<aside class="pp-hub-reenrol pp-hub-reenrol--former" role="status" aria-label="Former client">' +
+      '<aside class="pp-hub-reenrol pp-hub-reenrol--former" role="status" aria-label="' +
+      esc(title) +
+      '">' +
       '<div class="pp-hub-reenrol__copy">' +
-      "<strong>Former client</strong>" +
+      "<strong>" +
+      esc(title) +
+      "</strong>" +
       '<span class="pp-muted">' +
-      (hasFb
-        ? "Family portal access for this place has ended. You can still open past session notes below. To book again, use the booking portal, or contact admin."
-        : "Family portal access for this place has ended. To book again, use the booking portal, or contact admin.") +
+      esc(body) +
       "</span>" +
       "</div>" +
       '<div class="pp-hub-reenrol__actions">' +
       '<a class="pp-btn pp-btn--primary" href="' +
       esc(BOOKING_PORTAL_URL) +
-      '" target="_blank" rel="noopener noreferrer">Book online</a>' +
+      '" target="_blank" rel="noopener noreferrer">Booking services</a>' +
       '<a class="pp-btn pp-btn--ghost" href="' +
       esc(OFFICE_CONTACT_MAILTO) +
-      '">Contact admin</a>' +
+      '">Contact the office</a>' +
       "</div></aside>"
     );
+  }
+
+  function isUnpaidAug15Released(data) {
+    if (!isFormerClient(data)) return false;
+    /* Re-enrolled for 26/27 but seat cleared for unpaid Aug-15 first payment. */
+    return familyAcceptedNextYear(data);
   }
 
   function hubHeroHtml(data, opts) {
@@ -798,7 +813,9 @@
       "</h3>" +
       reenrolChip +
       (isFormerClient(data)
-        ? '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--former" role="status">Former</span>'
+        ? '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--former" role="status">' +
+          (isUnpaidAug15Released(data) ? "Place released" : "Former") +
+          "</span>"
         : "") +
       "</div>" +
       hubIdentityMetaInlineHtml(p) +
@@ -1541,7 +1558,7 @@
         '<circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8l4 4-4 4"/>',
       ) +
       "</span>" +
-      '<span class="pp-hub-shortcut__label">Book more services</span></a>'
+      '<span class="pp-hub-shortcut__label">Booking services</span></a>'
     );
   }
 

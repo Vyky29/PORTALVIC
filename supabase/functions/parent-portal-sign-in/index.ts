@@ -139,16 +139,20 @@ Deno.serve(async (req) => {
   };
 
   const master = isMasterPin(pinDigits);
-  /** Former = in_class false — no family PIN login. Office master PIN still allowed. */
-  const matchedRows = master ? nameMatched : nameMatched.filter(isActiveRow);
+  /**
+   * Prefer active (in_class) matches when both exist for the same first name.
+   * Former / seat-released families (in_class false) may still sign in with PIN —
+   * hub hides My booking / My invoices and points them to Booking services.
+   */
+  const activeMatched = nameMatched.filter(isActiveRow);
+  const matchedRows = master
+    ? nameMatched
+    : activeMatched.length
+    ? activeMatched
+    : nameMatched;
   if (!matchedRows.length) {
     await recordFail();
-    return json(403, {
-      ok: false,
-      error: "former_client",
-      message:
-        "Family portal access has ended for this place. Please use the booking portal or contact admin.",
-    });
+    return parentPortalJsonInvalid();
   }
 
   let matchedParentId: string | null = null;

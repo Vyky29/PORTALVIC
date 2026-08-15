@@ -171,7 +171,6 @@ export function collectStandingMadreClientNames(doc: MadreDoc): string[] {
 
 /** Madre short names that must never be cleared by this unpaid-payment job. */
 export const UNPAID_AUG15_NEVER_RELEASE_MADRE = [
-  "Mia",
   "Rayyan Fi",
   "Rayyan",
   "Patrick",
@@ -651,18 +650,18 @@ export async function runUnpaidAug15PlaceRelease(
     .update({ in_class: false, updated_at: new Date().toISOString() })
     .in("contact_id", contactIds);
 
-  // Flag invoices (notes marker keeps re-runs idempotent)
+  // Flag + hide invoices from parent hub (no My invoices); keep rows for office audit.
   let invoicesFlagged = 0;
   const nowIso = new Date().toISOString();
   for (const cand of toRelease.values()) {
     const { data: cur } = await admin
       .from("portal_parent_invoice_share")
-      .select("id, notes")
+      .select("id, notes, share_status")
       .eq("id", cand.invoice_id)
       .maybeSingle();
     if (!cur) continue;
     const noteLine =
-      `Auto-released ${nowIso.slice(0, 10)} · ${UNPAID_AUG15_REASON} · unpaid first Autumn payment due ${UNPAID_AUG15_DUE_ISO}`;
+      `Auto-released ${nowIso.slice(0, 10)} · ${UNPAID_AUG15_REASON} · unpaid first Autumn payment due ${UNPAID_AUG15_DUE_ISO} · seat released to booking portal; parent My invoices / My booking hidden`;
     const notesText = clean(cur.notes, 2000);
     if (notesText.includes(UNPAID_AUG15_REASON)) {
       invoicesFlagged += 1;
@@ -671,6 +670,8 @@ export async function runUnpaidAug15PlaceRelease(
     const { error } = await admin
       .from("portal_parent_invoice_share")
       .update({
+        share_status: "hidden",
+        ready_at: null,
         notes: [notesText, noteLine].filter(Boolean).join("\n").slice(0, 4000),
         updated_at: nowIso,
       })
