@@ -5490,8 +5490,13 @@
     }
     /* Prefer catalogue Autumn once — never use raw amount_gbp (instalments stack). */
     var autumn = Number(inv && inv.booked_autumn_gbp) || 0;
+    var crash = crashCourseGbpFromInvoice(inv);
     if (autumn > 0) {
       var face = Number(inv && inv.amount_gbp) || 0;
+      /* Merged crash on Autumn INV-P: Autumn Payments = face − crash (Patrick £975). */
+      if (crash > 0.009 && face > crash) {
+        face = Math.round((face - crash) * 100) / 100;
+      }
       var annual = Number(inv && inv.booked_annual_gbp) || 0;
       /* Face amount matching year is not Autumn. */
       if (face > 0 && annual > 0 && Math.abs(face - annual) < 0.05) return autumn;
@@ -5501,9 +5506,17 @@
     if (via === "reenrolment") {
       autumn = autumnTermAmountFromInvoice(inv);
       if (autumn > 0) return autumn;
-      return Number(inv && inv.amount_gbp) || 0;
+      var raw = Number(inv && inv.amount_gbp) || 0;
+      if (crash > 0.009 && raw > crash) return Math.round((raw - crash) * 100) / 100;
+      return raw;
     }
-    return autumnTermAmountFromInvoice(inv);
+    var fromSlots = autumnTermAmountFromInvoice(inv);
+    if (fromSlots > 0) return fromSlots;
+    var faceOnly = Number(inv && inv.amount_gbp) || 0;
+    if (crash > 0.009 && faceOnly > crash) {
+      return Math.round((faceOnly - crash) * 100) / 100;
+    }
+    return faceOnly;
   }
 
   /**
@@ -5549,6 +5562,11 @@
     if (!row || !inv) return;
     var season = reenrolInvoiceSeason(inv);
     var face = Number(inv.amount_gbp) || 0;
+    var crash = crashCourseGbpFromInvoice(inv);
+    /* Merged crash on Autumn INV-P must not inflate Autumn billed (Patrick £1275 → £975). */
+    if (crash > 0.009 && face > crash) {
+      face = Math.round((face - crash) * 100) / 100;
+    }
     var autumn = Number(inv.booked_autumn_gbp) || 0;
     var spring = Number(inv.booked_spring_gbp) || 0;
     var summer = Number(inv.booked_summer_gbp) || 0;
@@ -5851,7 +5869,18 @@
       } else if (st === "partial") {
         /* Flexi (2 bank) or GC monthly: only when amount_paid > 0 (ignore false GC partials). */
         var paidAmt = Number(inv.amount_paid_gbp) || 0;
-        if (!(paidAmt > 0)) {
+        var crashPaid = crashCourseGbpFromInvoice(inv);
+        /* Paid £ that belongs to crash line is Summer 25/26 — not Autumn outstanding. */
+        if (crashPaid > 0.009 && paidAmt > 0) {
+          paidAmt = Math.max(0, Math.round((paidAmt - crashPaid) * 100) / 100);
+        }
+        if (!(paidAmt > 0) && !(Number(inv.amount_paid_gbp) > 0)) {
+          row.amount_out = Math.max(Number(row.amount_out) || 0, amt);
+          if (String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0) {
+            row.payment_status = "Outstanding";
+          }
+        } else if (!(paidAmt > 0) && Number(inv.amount_paid_gbp) > 0 && crashPaid > 0.009) {
+          /* Only crash portion paid so far — Autumn flexi still fully outstanding. */
           row.amount_out = Math.max(Number(row.amount_out) || 0, amt);
           if (String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0) {
             row.payment_status = "Outstanding";
@@ -6079,6 +6108,7 @@
     if (st === "void") return false;
     var num = String(inv.invoice_number || "");
     if (/crash/i.test(num)) return true;
+    if (crashCourseGbpFromInvoice(inv) > 0.009) return true;
     var blob = [
       inv.line_description,
       inv.reference_text,
@@ -6090,13 +6120,58 @@
     return /summer\s*crash|crash\s*course/.test(blob);
   }
 
+  /**
+   * Crash / intensive £ on an INV-P (Year 25/26 day centre).
+   * Used when crash was merged into an Autumn family invoice (Patrick £300).
+   */
+  function crashCourseGbpFromInvoice(inv) {
+    if (!inv) return 0;
+    var api = Number(inv.crash_course_gbp);
+    if (api > 0.009) return Math.round(api * 100) / 100;
+    var items = Array.isArray(inv.line_items) ? inv.line_items : [];
+    var sum = 0;
+    items.forEach(function (it) {
+      if (!it || typeof it !== "object") return;
+      var blob = [it.description, it.service_key, it.detail, it.label]
+        .map(function (x) { return String(x || "").toLowerCase(); })
+        .join(" ");
+      if (/crash|climbing_crash|summer\s*crash/.test(blob)) {
+        sum += Number(it.amount_gbp) || 0;
+      }
+    });
+    if (sum > 0.009) return Math.round(sum * 100) / 100;
+    /* Standalone crash INV-P with no structured lines — whole face amount. */
+    var num = String(inv.invoice_number || "");
+    if (/crash/i.test(num)) return Math.round((Number(inv.amount_gbp) || 0) * 100) / 100;
+    return 0;
+  }
+
+  function afterschoolWeekendGbpFromInvoice(inv) {
+    var total = Math.round((Number(inv && inv.amount_gbp) || 0) * 100) / 100;
+    var crash = crashCourseGbpFromInvoice(inv);
+    if (!(crash > 0.009)) return total;
+    return Math.round(Math.max(0, total - crash) * 100) / 100;
+  }
+
   function crashServicesLabel(inv) {
+    /* Prefer crash line item only (merged Autumn+crash INV-Ps like Patrick). */
+    var crashBits = [];
+    (Array.isArray(inv && inv.line_items) ? inv.line_items : []).forEach(function (it) {
+      if (!it || typeof it !== "object") return;
+      var blob = [it.description, it.service_key, it.detail, it.label]
+        .map(function (x) { return String(x || "").toLowerCase(); })
+        .join(" ");
+      if (!/crash|climbing_crash|summer\s*crash/.test(blob)) return;
+      var label = String(it.description || it.label || it.detail || "").trim();
+      if (label) crashBits.push(label);
+    });
+    if (crashBits.length) return crashBits.join(" · ");
     var desc = String((inv && inv.line_description) || "");
     var tmp = { _crash: true, _crashLineDesc: desc, data: { Services: "" } };
     var ones = serviceOneLinersFor(tmp);
     if (ones.length) return ones.join(" · ");
     var labels = serviceLabelsFromInvoice(inv).filter(function (s) {
-      return s && !/^summer\s*crash|^westway|^dates?:?$|^week\s*\d|^summer\s*term|\bsessions?\b$/i.test(s);
+      return s && /crash/i.test(s) && !/^westway|^dates?:?$|^week\s*\d|\bsessions?\b$/i.test(s);
     });
     if (labels.length) return labels.join(" · ");
     if (/aquatic|swimming|swim/i.test(desc)) return "60' Aquatic Activity (July crash)";
@@ -6109,9 +6184,16 @@
     var fullName = String(inv.participant_display || inv.related_client || cid).trim();
     /* Keep surname when present so Adam Pilcher ≠ Adam A in the table. */
     var displayName = fullName || cid;
-    var amt = Number(inv.amount_gbp) || 0;
+    var crashAmt = crashCourseGbpFromInvoice(inv);
+    var face = Number(inv.amount_gbp) || 0;
+    /* Merged Autumn+crash INV-P (Patrick): Summer 25/26 only counts the crash line. */
+    var amt = crashAmt > 0.009 ? crashAmt : face;
     var st = String(inv.payment_status || "").toLowerCase();
-    var paid = st === "paid";
+    var paidTotal = Number(inv.amount_paid_gbp) || 0;
+    var paid =
+      st === "paid" ||
+      (crashAmt > 0.009 && paidTotal + 0.009 >= crashAmt) ||
+      (crashAmt <= 0 && st === "paid");
     var vat = String(inv.vat_mode || "").toLowerCase();
     var hint = String(inv.payment_method_hint || "").toLowerCase();
     var invType = vat === "exempt" ? INVOICE_TYPE.PARENT_EXEMPT : INVOICE_TYPE.PARENT_20;
