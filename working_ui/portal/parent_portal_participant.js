@@ -5180,7 +5180,7 @@
         '<h4 class="pp-pax-subview-title" style="font-size:1.05rem;margin:0 0 6px">Invoice</h4>' +
         '<p class="pp-muted pp-pax-subview-note" style="margin-top:0">Autumn 2026/27 payment for ' +
         esc(firstNameOf(data)) +
-        ". Prefer bank transfer (green button) or Card / Apple Pay.</p>" +
+        ". Prefer bank transfer or Card / Apple Pay, then message the office after you pay.</p>" +
         '<div id="ppInvoicesNotice" class="pp-notice" hidden></div>' +
         '<div id="ppGocardlessSetupHost" class="pp-invoice-gc-setup" hidden></div>' +
         '<div id="ppInvoicesListHost"><p class="pp-muted">Loading invoice…</p></div>' +
@@ -7309,7 +7309,7 @@
     var due = formatDocWhen(inv && inv.due_date);
     var status = String((inv && inv.payment_status) || "unpaid").toLowerCase();
     var pdf = (inv && inv.pdf_url) || "";
-    var canReport = !!(inv && inv.can_report_paid);
+    var canReport = false; /* Green button removed — parents notify admin after paying. */
     var canPay = !!(inv && inv.can_pay);
     var card = inv && inv.card_checkout;
     var cardCharge = card ? formatInvoiceMoney(card.charge_gbp) : "";
@@ -7327,7 +7327,7 @@
       : String((inv && inv.payment_link_url) || "").trim();
     var surcharge = String((inv && inv.payment_link_surcharge_note) || "").trim();
     var suggestedRef = String((inv && inv.suggested_reference) || "").trim();
-    // Direct Payment (mandate) / LA funded: no Tide / card / "I've paid by bank transfer".
+    // Direct Payment (mandate) / LA funded: no Tide / card pay CTAs.
     if (isGcInvoice || isLaInvoice) {
       canReport = false;
       canPay = false;
@@ -7485,8 +7485,7 @@
       pdfActs = '<p class="pp-muted">PDF not available yet.</p>';
     }
     var payPairHtml = "";
-    if (showDraftFlow && (canPay || canReport)) {
-      var paidReportPlain = invoicePaidReportBtnPlain(inv);
+    if (showDraftFlow && (canPay || showBankPanel)) {
       var payBtn = canPay
         ? '<button type="button" class="pp-btn pp-btn--sec pp-invoice-pay-pair__btn" data-pp-pay-invoice="' +
           esc(inv.id) +
@@ -7497,25 +7496,9 @@
           ) +
           "</button>"
         : "";
-      var reportBtn = canReport
-        ? '<button type="button" class="pp-btn pp-btn--paid-report pp-invoice-pay-pair__btn" data-pp-report-paid="' +
-          esc(inv.id) +
-          '" data-pp-pay-ref-default="' +
-          esc(suggestedRef) +
-          '" aria-label="' +
-          esc(paidReportPlain) +
-          '">' +
-          invoicePaidReportBtnHtml(inv) +
-          "</button>"
-        : "";
       payPairHtml =
-        '<div class="pp-invoice-pay-pair">' +
-        payBtn +
-        reportBtn +
-        "</div>" +
-        (canReport
-          ? '<p class="pp-muted pp-invoice-pay__note pp-invoice-pay__notify"><strong>Two steps:</strong> first complete the payment (Tide transfer or Card / Apple Pay), then tap the green button to <strong>validate the payment</strong> so the office can confirm and release the slot.</p>'
-          : "");
+        (payBtn ? '<div class="pp-invoice-pay-pair">' + payBtn + "</div>" : "") +
+        '<p class="pp-muted pp-invoice-pay__note pp-invoice-pay__notify">After you pay by bank transfer (or card), please <strong>message admin / the office</strong> so they can check Tide and mark the invoice paid. You do not need to tap anything else in the portal.</p>';
     }
     return (
       '<article class="pp-invoice-card pp-invoice-card--' +
@@ -7586,9 +7569,7 @@
       !isLaInvoice &&
       !canSetupGc &&
       (status === "unpaid" || status === "partial")
-        ? '<p class="pp-muted pp-invoice-pay__note">Next instalment is due later — you can still pay early and tap <strong>' +
-          esc(invoicePaidReportBtnPlain(inv)) +
-          "</strong>.</p>"
+        ? '<p class="pp-muted pp-invoice-pay__note">Next instalment is due later — you can still pay early. After paying, message the office so they can confirm.</p>'
         : "") +
       (!isPaid &&
       !payActionNeeded &&

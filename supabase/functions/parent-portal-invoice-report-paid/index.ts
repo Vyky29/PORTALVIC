@@ -137,6 +137,15 @@ Deno.serve(async (req) => {
     });
   }
 
+  // Parents no longer report paid via green button — notify admin after transfer;
+  // office Mark paid after Tide check. Keep endpoint for old clients / crash pages.
+  return json(410, {
+    ok: false,
+    error: "report_paid_disabled",
+    message:
+      "Please message the office after you pay. They will confirm when the transfer appears — no need to tap I've paid in the portal.",
+  });
+
   const now = new Date().toISOString();
   const patch = {
     payment_status: "pending_confirmation",
