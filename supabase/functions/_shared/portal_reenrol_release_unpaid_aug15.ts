@@ -27,12 +27,16 @@ export const UNPAID_AUG15_REASON = "unpaid_autumn_first_2026-08-15";
 
 /** Never auto-release these invoices (office exceptions). */
 export const UNPAID_AUG15_EXCLUDE_INVOICES = new Set<string>([
-  // add invoice numbers here only for true office holds
+  "INV-P-0115", // Jack Stratton — office hold to 29 Aug
+  "INV-P-0098", // Stephanie Ng — office hold to 29 Aug
+  "INV-P-0349", // Tom Eriksson — travelling, due 29 Aug
 ]);
 
 /** Never auto-release these contact_ids. */
 export const UNPAID_AUG15_EXCLUDE_CONTACTS = new Set<string>([
-  // add contact_ids here only for true office holds
+  "170", // Jack Stratton
+  "186", // Stephanie Ng
+  "89", // Tom Eriksson
 ]);
 
 function clean(v: unknown, max = 200): string {
