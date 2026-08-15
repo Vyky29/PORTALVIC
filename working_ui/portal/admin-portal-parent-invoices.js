@@ -1427,37 +1427,47 @@
     opts = opts || {};
     var showHoldOnce = !!opts.showHoldOnce;
     var id = esc(inv.id);
+    var nextForPay = nextUnpaidInstalment(inv);
+    var nextForPayDue = nextForPay ? instalmentDueIso(nextForPay.due_date) : '';
+    var nextHalfNotDueYet = !!(nextForPayDue && !instalmentIsCollectingNow(nextForPayDue));
+    var payStatus = String(inv.payment_status || '').toLowerCase();
+    var hasGreenReport = !!inv.parent_reported_paid_at;
     var reportBits = [];
     if (inv.parent_reported_paid_at) {
       reportBits.push('Reported ' + formatDate(inv.parent_reported_paid_at));
+      if (nextHalfNotDueYet) reportBits.push('early — not due yet');
     }
     if (inv.parent_reported_ref) reportBits.push('ref ' + inv.parent_reported_ref);
     if (inv.parent_reported_method) reportBits.push(inv.parent_reported_method);
     var linkBits = [];
     if (inv.gocardless_url) linkBits.push('GoCardless');
     if (inv.payment_link_url) linkBits.push('Payment link');
-    var nextForPay = nextUnpaidInstalment(inv);
-    var nextForPayDue = nextForPay ? instalmentDueIso(nextForPay.due_date) : '';
-    var nextHalfCollecting =
-      String(inv.payment_status || '').toLowerCase() === 'partial' &&
-      nextForPayDue &&
-      !instalmentIsCollectingNow(nextForPayDue);
-    var confirmBtn =
-      inv.payment_status === 'pending_confirmation'
-        ? '<button type="button" class="btn btn--sm btn--primary" data-inv-act="paid" data-inv-id="' +
-          id +
-          '">Confirm paid</button> '
-        : inv.payment_status === 'paid'
-          ? '<button type="button" class="btn btn--sm btn--ghost" data-inv-act="unpaid" data-inv-id="' +
-            id +
-            '">Mark unpaid</button> '
-          : nextHalfCollecting
-            ? '<button type="button" class="btn btn--sm btn--ghost" data-inv-act="paid" data-inv-id="' +
-              id +
-              '" title="Next half is not due yet — only use if they paid early">Record early half</button> '
-            : '<button type="button" class="btn btn--sm btn--sec" data-inv-act="paid" data-inv-id="' +
-              id +
-              '">Mark paid</button> ';
+    /* Confirm paid only when parent pressed green AND the next half is in the collect window. */
+    var showConfirmPaid =
+      payStatus === 'pending_confirmation' && hasGreenReport && !nextHalfNotDueYet;
+    var confirmBtn = '';
+    if (payStatus === 'paid') {
+      confirmBtn =
+        '<button type="button" class="btn btn--sm btn--ghost" data-inv-act="unpaid" data-inv-id="' +
+        id +
+        '">Mark unpaid</button> ';
+    } else if (showConfirmPaid) {
+      confirmBtn =
+        '<button type="button" class="btn btn--sm btn--primary" data-inv-act="paid" data-inv-id="' +
+        id +
+        '">Confirm paid</button> ';
+    } else if (nextHalfNotDueYet) {
+      /* Far-future half (or early green report): no Confirm paid — optional early record only. */
+      confirmBtn =
+        '<button type="button" class="btn btn--sm btn--ghost" data-inv-act="paid" data-inv-id="' +
+        id +
+        '" title="Next half is not due yet — only use if they paid early">Record early half</button> ';
+    } else if (payStatus !== 'pending_confirmation' || !hasGreenReport) {
+      confirmBtn =
+        '<button type="button" class="btn btn--sm btn--sec" data-inv-act="paid" data-inv-id="' +
+        id +
+        '">Mark paid</button> ';
+    }
     var hold = inv.payment_hold || null;
     var holdChip = '';
     var holdBtns = '';
