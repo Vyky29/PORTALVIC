@@ -52,9 +52,20 @@
 </head>
 <body>
   <main>
-    <h1>Thank you — payment received</h1>
-    <p>You can close this page. No need to sign in to the parent portal.</p>
+    <h1 id="title">Thank you — payment received</h1>
+    <p id="body">You can close this page. No need to sign in to the parent portal.</p>
     <p>ClubSENsational will confirm the payment on the booking shortly.</p>
   </main>
+  <script>
+    (function () {
+      var q = new URLSearchParams(location.search);
+      if (q.get("cancelled") === "1") {
+        document.getElementById("title").textContent = "Payment cancelled";
+        document.getElementById("title").style.color = "#9a3412";
+        document.getElementById("body").textContent =
+          "No charge was made. You can close this page or ask the office for a new link.";
+      }
+    })();
+  </script>
 </body>
 </html>
