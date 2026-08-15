@@ -1414,7 +1414,12 @@
       var pay = String(inv.payment_status || 'unpaid');
       if (pay === 'void') return; /* void chips not shown */
       var isHidden = String(inv.share_status || '') === 'hidden';
-      if (isHidden) hidden += 1;
+      if (isHidden) {
+        /* Only count Hidden for re-enrolled clients still in class (future instalments). */
+        var inClass = inv.in_class !== false;
+        var hasReenrol = Boolean(inv.reenrolment_submitted_at);
+        if (inClass && hasReenrol) hidden += 1;
+      }
       if (pay === 'paid') paid += 1;
       else if (pay === 'partial') {
         /* Flexi: at least one half paid — not "unpaid". */

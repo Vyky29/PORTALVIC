@@ -375,10 +375,11 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
   const contactIds = [...new Set((shares || []).map((s) => clean(s.contact_id, 120)).filter(Boolean))];
   const nameByContact = new Map<string, string>();
   const parentByContact = new Map<string, string>();
+  const inClassByContact = new Map<string, boolean>();
   if (contactIds.length) {
     const { data: pax } = await admin
       .from("portal_participants")
-      .select("contact_id, display_name, first_name, last_name")
+      .select("contact_id, display_name, first_name, last_name, in_class")
       .in("contact_id", contactIds);
     for (const p of pax || []) {
       const id = clean(p.contact_id, 120);
@@ -386,6 +387,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
         clean(p.display_name, 120) ||
         [p.first_name, p.last_name].filter(Boolean).join(" ").trim();
       if (id && name) nameByContact.set(id, name);
+      if (id) inClassByContact.set(id, p.in_class === true);
     }
     const { data: parents } = await admin
       .from("portal_parent_contacts")
@@ -663,6 +665,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       booked_slots: mergedSlots,
       booked_service_raw: mergedServiceRaw || null,
       reenrolment_submitted_at: reenrol?.submitted_at || null,
+      in_class: cid ? inClassByContact.get(cid) === true : false,
       programme_year: programme.programme_year,
       crash_course_gbp: programme.crash_course_gbp,
       afterschool_weekend_gbp: programme.afterschool_weekend_gbp,
@@ -824,6 +827,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
         booked_slots: pack.slots || [],
         booked_service_raw: pack.service_raw || null,
         reenrolment_submitted_at: reenrol?.submitted_at || OFFICE_AUTO_SORT_TS,
+        in_class: true,
         is_la_office_auto: true,
         xero_invoice_id: null,
         xero_push_status: null,
@@ -833,6 +837,26 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     }
     if (emittedSynthetic) invoiceContactIds.add(cid);
   }
+
+  /*
+   * Hidden chip / list: only future instalments (and LA office autos) for clients who
+   * still hold a re-enrolled place. Place-released / out-of-class shares stay in DB
+   * for audit but must not appear in admin Finance.
+   */
+  invoices = invoices.filter((inv) => {
+    const share = clean(inv.share_status, 20).toLowerCase();
+    if (share !== "hidden") return true;
+    if (inv.is_la_office_auto === true || clean(inv.created_via, 40) === "la_office_auto") {
+      return true;
+    }
+    const cid = clean(inv.contact_id, 120);
+    const inClass = cid ? inClassByContact.get(cid) === true : inv.in_class === true;
+    if (!inClass) return false;
+    const hasReenrol =
+      Boolean(inv.reenrolment_submitted_at) ||
+      (cid ? reenrolByContact.has(cid) : false);
+    return hasReenrol;
+  });
 
   if (listFilter === "buffer_low") {
     invoices = invoices.filter((inv) => inv.buffer_status && (inv.buffer_status as { is_low?: boolean }).is_low);
