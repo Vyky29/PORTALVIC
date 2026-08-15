@@ -39,6 +39,7 @@ function round2(n: number): number {
 
 function termLabel(term: string): string {
   const t = clean(term, 20).toLowerCase();
+  if (t === "year_2526" || t === "2526" || t === "summer_2526") return "Year 25/26";
   if (t === "year" || t === "annual") return "Year 26/27";
   if (t === "autumn") return "Autumn 26/27";
   if (t === "spring") return "Spring 27";
@@ -46,12 +47,90 @@ function termLabel(term: string): string {
   return t || "Term";
 }
 
-function normalizeBillingAmountKey(raw: unknown): "year" | "autumn" | "spring" | "summer" {
+function normalizeBillingAmountKey(
+  raw: unknown,
+): "year" | "year_2526" | "autumn" | "spring" | "summer" {
   const t = clean(raw, 20).toLowerCase();
+  if (t === "year_2526" || t === "2526" || t === "summer_2526" || t === "year2526") {
+    return "year_2526";
+  }
   if (t === "year" || t === "annual") return "year";
   if (t === "spring") return "spring";
   if (t === "summer") return "summer";
   return "autumn";
+}
+
+/** Sum line amounts tagged as summer crash / intensive (Year 25/26 day-centre pot). */
+function crashCourseGbpFromShare(share: Record<string, unknown>): number {
+  const items = Array.isArray(share.line_items) ? share.line_items : [];
+  let sum = 0;
+  for (const raw of items) {
+    if (!raw || typeof raw !== "object") continue;
+    const it = raw as Record<string, unknown>;
+    const blob = `${clean(it.description, 200)} ${clean(it.service_key, 80)} ${clean(it.detail, 200)}`.toLowerCase();
+    if (
+      /crash/.test(blob) ||
+      /climbing_crash/.test(blob) ||
+      /summer crash/.test(blob)
+    ) {
+      sum += num(it.amount_gbp);
+    }
+  }
+  return round2(sum);
+}
+
+/**
+ * Standalone Jul 2026 crash / intensive invoices (Adam, Saaib, Tinashe, Yaqoub, INV-P-CRASH-*).
+ * Not Autumn/Spring/Summer re-enrol 26/27 term rows.
+ */
+function isStandaloneYear2526Invoice(
+  share: Record<string, unknown>,
+  doc: Record<string, unknown> | null,
+): boolean {
+  const numStr = clean(share.invoice_number, 80);
+  if (/crash/i.test(numStr)) return true;
+  const term = clean(share.billing_term, 20).toLowerCase();
+  if (term === "autumn" || term === "spring" || term === "summer" || term === "year") {
+    return false;
+  }
+  const blob = [
+    clean(doc?.title, 200),
+    clean(share.line_description, 800),
+    clean(share.notes, 800),
+    clean(share.reference_text, 200),
+    numStr,
+  ]
+    .join(" ")
+    .toLowerCase();
+  if (/summer crash|crash course|inv-p-crash/.test(blob)) return true;
+  // Office summer intensive 1:1 rows (null billing_term) e.g. Adam/Saaib/Tinashe/Yaqoub.
+  if (!term && /(1\s*to\s*1|1to1)/i.test(blob) && /aquatic|climbing|multi/i.test(blob)) {
+    return true;
+  }
+  return false;
+}
+
+function programmeSplitForShare(
+  share: Record<string, unknown>,
+  doc: Record<string, unknown> | null,
+): {
+  programme_year: "2526" | "2627";
+  crash_course_gbp: number;
+  afterschool_weekend_gbp: number;
+  is_standalone_year_2526: boolean;
+} {
+  const standalone = isStandaloneYear2526Invoice(share, doc);
+  const crash = standalone
+    ? round2(num(share.amount_gbp)) || crashCourseGbpFromShare(share)
+    : crashCourseGbpFromShare(share);
+  const total = round2(num(share.amount_gbp));
+  const afterschool = standalone ? 0 : round2(Math.max(0, total - crash));
+  return {
+    programme_year: standalone ? "2526" : "2627",
+    crash_course_gbp: crash,
+    afterschool_weekend_gbp: afterschool,
+    is_standalone_year_2526: standalone,
+  };
 }
 
 function payloadTermTotals(payload: unknown): {
@@ -106,14 +185,14 @@ function termTotalsFromPaymentContext(ctx: ReturnType<typeof paymentRowToContext
 
 function bookedFieldsFromTotals(
   totals: { autumn: number; spring: number; summer: number; annual: number } | null | undefined,
-  amountKey: "year" | "autumn" | "spring" | "summer",
+  amountKey: "year" | "year_2526" | "autumn" | "spring" | "summer",
 ) {
   const autumn = totals?.autumn || 0;
   const spring = totals?.spring || 0;
   const summer = totals?.summer || 0;
   const annual = totals?.annual || 0;
   const selected =
-    amountKey === "year"
+    amountKey === "year" || amountKey === "year_2526"
       ? annual
       : amountKey === "spring"
         ? spring
@@ -125,9 +204,13 @@ function bookedFieldsFromTotals(
     booked_autumn_gbp: autumn || null,
     booked_spring_gbp: spring || null,
     booked_summer_gbp: summer || null,
-    booked_term_gbp: amountKey === "year" ? annual || null : selected || null,
-    billing_term: amountKey === "year" ? "year" : amountKey,
-    billing_term_label: termLabel(amountKey === "year" ? "year" : amountKey),
+    booked_term_gbp:
+      amountKey === "year" || amountKey === "year_2526" ? annual || null : selected || null,
+    billing_term:
+      amountKey === "year" ? "year" : amountKey === "year_2526" ? "year_2526" : amountKey,
+    billing_term_label: termLabel(
+      amountKey === "year" ? "year" : amountKey === "year_2526" ? "year_2526" : amountKey,
+    ),
     amount_selected_gbp: selected || null,
   };
 }
@@ -146,9 +229,10 @@ type BookedSlotSummary = {
 
 function bookedSlotsFromPaymentContext(
   ctx: ReturnType<typeof paymentRowToContext>,
-  amountKey: "year" | "autumn" | "spring" | "summer",
+  amountKey: "year" | "year_2526" | "autumn" | "spring" | "summer",
 ): BookedSlotSummary[] {
-  const termKey = amountKey === "year" ? "annual" : amountKey;
+  const termKey =
+    amountKey === "year" || amountKey === "year_2526" ? "annual" : amountKey;
   const out: BookedSlotSummary[] = [];
   const all = [...(ctx.weeklySlots || []), ...(ctx.dayCentreSlots || [])];
   for (const slot of all) {
@@ -551,6 +635,8 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
           : shareTerm
         : "";
 
+    const programme = programmeSplitForShare(share as Record<string, unknown>, doc);
+
     invoices.push({
       ...share,
       title: clean(doc.title, 200) || "Invoice",
@@ -577,6 +663,10 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       booked_slots: mergedSlots,
       booked_service_raw: mergedServiceRaw || null,
       reenrolment_submitted_at: reenrol?.submitted_at || null,
+      programme_year: programme.programme_year,
+      crash_course_gbp: programme.crash_course_gbp,
+      afterschool_weekend_gbp: programme.afterschool_weekend_gbp,
+      is_standalone_year_2526: programme.is_standalone_year_2526,
       /* Only true synthetics — never real INV-P rows (crash / Day Centre LA PDFs). */
       is_la_office_auto: clean(share.created_via, 40) === "la_office_auto",
     });
@@ -757,6 +847,24 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     );
   }
 
+  /*
+   * Amount filter buckets:
+   * - year_2526: summer crash / intensive (Adam, Saaib, …) + any invoice that still
+   *   carries a crash line (Patrick merged crash stays visible here for day-centre £).
+   * - year / autumn / spring / summer 26/27: hide standalone Year 25/26 crash INV-Ps
+   *   so re-enrol lists stay clean; Patrick autumn keeps showing (full invoice).
+   */
+  if (amountKey === "year_2526") {
+    invoices = invoices.filter(
+      (inv) =>
+        inv.is_la_office_auto !== true &&
+        (inv.is_standalone_year_2526 === true ||
+          (Number(inv.crash_course_gbp) || 0) > 0.009),
+    );
+  } else {
+    invoices = invoices.filter((inv) => inv.is_standalone_year_2526 !== true);
+  }
+
   // Newest re-enrol first (LA office autos share a cohort timestamp).
   invoices.sort((a, b) => {
     const ta = String(a.reenrolment_submitted_at || a.updated_at || "");
@@ -805,7 +913,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       billing_term: amountKey === "year" ? "year" : amountKey,
       billing_term_label: termLabel(amountKey === "year" ? "year" : amountKey),
       billing_amount: amountKey,
-      academic_year: REENROL_ACADEMIC_YEAR,
+      academic_year: amountKey === "year_2526" ? "2025-26" : REENROL_ACADEMIC_YEAR,
     },
   });
 }

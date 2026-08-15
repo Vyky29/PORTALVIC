@@ -847,7 +847,39 @@
     if (plan && !(plan === 'TERMLY' && cadence === 'TERMLY')) {
       html += ' ' + arrangementChipHtml(plan);
     }
+    html += programmeSplitChipsHtml(inv);
     return html;
+  }
+
+  /**
+   * Year 25/26 crash (day centre) vs afterschools/weekends split — e.g. Patrick
+   * merged crash £300 on Autumn INV-P while Sunday climb stays weekends.
+   */
+  function programmeSplitChipsHtml(inv) {
+    var crash = Number(inv && inv.crash_course_gbp);
+    var after = Number(inv && inv.afterschool_weekend_gbp);
+    var standalone = !!(inv && inv.is_standalone_year_2526);
+    var bits = [];
+    if (standalone) {
+      bits.push(
+        '<span class="pp-inv-acc__prog pp-inv-acc__prog--2526" title="Summer crash / intensive — Year 25/26 (day centre)">Year 25/26 crash</span>',
+      );
+    } else if (Number.isFinite(crash) && crash > 0.009) {
+      bits.push(
+        '<span class="pp-inv-acc__prog pp-inv-acc__prog--2526" title="Crash / intensive portion — Year 25/26 day centre (Raul / Victor)">' +
+          esc('Crash ' + formatMoney(crash) + ' · 25/26 day centre') +
+          '</span>',
+      );
+      if (Number.isFinite(after) && after > 0.009) {
+        bits.push(
+          '<span class="pp-inv-acc__prog pp-inv-acc__prog--weekend" title="Afterschools / weekends (e.g. Sunday climbing)">' +
+            esc('Weekends ' + formatMoney(after)) +
+            '</span>',
+        );
+      }
+    }
+    if (!bits.length) return '';
+    return ' ' + bits.join(' ');
   }
 
   /**
@@ -1385,6 +1417,7 @@
 
   function amountPeriodLabel(period) {
     var p = String(period || 'autumn').toLowerCase();
+    if (p === 'year_2526' || p === '2526') return 'Year 25/26';
     if (p === 'year' || p === 'annual') return 'Year 26/27';
     if (p === 'spring') return 'Spring 27';
     if (p === 'summer') return 'Summer 27';
@@ -1393,6 +1426,18 @@
 
   function groupAmountForPeriod(group, period) {
     var p = String(period || state.amountPeriod || 'autumn').toLowerCase();
+    if (p === 'year_2526' || p === '2526') {
+      var crashSum = 0;
+      (group.invoices || []).forEach(function (inv) {
+        var c = Number(inv.crash_course_gbp);
+        if (Number.isFinite(c) && c > 0) crashSum += c;
+        else if (inv.is_standalone_year_2526) {
+          var a = Number(inv.amount_gbp);
+          if (Number.isFinite(a)) crashSum += a;
+        }
+      });
+      return crashSum > 0 ? crashSum : null;
+    }
     if (p === 'year' || p === 'annual') return Number(group.booked_annual_gbp);
     if (p === 'spring') return Number(group.booked_spring_gbp);
     if (p === 'summer') return Number(group.booked_summer_gbp);
@@ -1408,7 +1453,20 @@
     var invTotal = groupTotalGbp(group.invoices || []);
     var termLabel = amountPeriodLabel(period);
     var parts = [];
-    if (period === 'year' || period === 'annual') {
+    if (period === 'year_2526' || period === '2526') {
+      var crashAmt = Number(selected);
+      if (!(Number.isFinite(crashAmt) && crashAmt > 0) && invTotal > 0) crashAmt = invTotal;
+      if (Number.isFinite(crashAmt) && crashAmt > 0) {
+        parts.push(
+          '<span class="pp-inv-acc__term">' +
+            esc(termLabel) +
+            '</span><span class="pp-inv-acc__amt">' +
+            esc(formatMoney(crashAmt)) +
+            '</span>' +
+            '<span class="pp-inv-acc__year" title="Summer crash / intensive — day centre pot (Raul / Victor)">Crash / intensive</span>',
+        );
+      }
+    } else if (period === 'year' || period === 'annual') {
       var yearAmt = Number.isFinite(selected) && selected > 0 ? selected : annual;
       if (!(Number.isFinite(yearAmt) && yearAmt > 0) && invTotal > 0) yearAmt = invTotal;
       if (Number.isFinite(yearAmt) && yearAmt > 0) {
@@ -2003,6 +2061,9 @@
       '.pp-inv-acc__arrange--gc{color:#9d174d;background:#fce7f3;border-color:#f9a8d4}' +
       '.pp-inv-acc__arrange--own{color:#fff;background:#0f172a;border-color:#020617}' +
       '.pp-inv-acc__arrange--other{color:#5b21b6;background:#ede9fe;border-color:#c4b5fd}' +
+      '.pp-inv-acc__prog{font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;display:inline-flex;align-items:center;max-width:100%;overflow-wrap:break-word;border:1px solid transparent}' +
+      '.pp-inv-acc__prog--2526{color:#9a3412;background:#ffedd5;border-color:#fdba74}' +
+      '.pp-inv-acc__prog--weekend{color:#1e3a8a;background:#dbeafe;border-color:#93c5fd}' +
       '.pp-inv-acc__plan-dates{max-width:100%}' +
       '.pp-inv-acc__pay-chip{font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid transparent;display:inline-flex;align-items:center}' +
       '.pp-inv-acc__pay-chip--unpaid{color:#9a3412;background:#ffedd5;border-color:#fb923c}' +
@@ -2990,9 +3051,10 @@
       '<div class="card-h"><h3>Re-enrolments &amp; shared invoices</h3>' +
       '<span class="pp-inv-acc__pay-chip pp-inv-acc__pay-chip--other" id="portalParentInvoicesMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;width:100%;max-width:none;text-align:left;overflow-wrap:break-word">Track instalments after re-enrolment. Use <strong>Year / Term</strong> filters to switch booked totals. Rows are sorted by re-enrol date. LA sheet clients appear as office auto even without a family invoice. Day Centre places start 1 Sept (no half-term; Christmas closed). <strong>Push to Xero</strong> creates the full ACCREC (<em>awaiting payment</em>) for <em>paid</em> or <em>partial</em> Portal INV-Ps — allocate bank/card amounts in Xero (full settle or instalment). Unpaid drafts stay in Portal. <a href="/admin_finance_guide.html" target="_blank" rel="noopener">Finance guide (EN/ES)</a>.</p>' +
+      '<p class="muted" style="margin:0 0 10px;width:100%;max-width:none;text-align:left;overflow-wrap:break-word">Track instalments after re-enrolment. <strong>Year 25/26</strong> = summer crash / intensive (day centre). <strong>Year 26/27 · Autumn / Spring / Summer</strong> = re-enrol terms. Merged crash lines (e.g. Patrick) stay on Autumn for the family bill, but crash £ counts in Year 25/26 for Raul/Victor; Sunday climbing stays afterschools/weekends. Use filters to switch booked totals. <strong>Push to Xero</strong> creates the full ACCREC (<em>awaiting payment</em>) for <em>paid</em> or <em>partial</em> Portal INV-Ps. <a href="/admin_finance_guide.html" target="_blank" rel="noopener">Finance guide (EN/ES)</a>.</p>' +
       '<div class="toolbar" style="margin-bottom:8px;flex-wrap:wrap;gap:8px;align-items:center">' +
       '<span class="muted" style="font-size:12px;font-weight:700">Amount</span>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-inv-amount="year_2526">Year 25/26</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-amount="year">Year 26/27</button>' +
       '<button type="button" class="btn btn--sm" data-inv-amount="autumn">Autumn</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-amount="spring">Spring</button>' +
