@@ -12,6 +12,7 @@ import {
   amountDueNow,
   normalizePaymentSchedule,
   parentFacingSchedule,
+  shareNextInstalmentIsCollectingNow,
 } from "../_shared/portal_invoice_payment_schedule.ts";
 import { gocardlessConfigured } from "../_shared/gocardless.ts";
 import { mandateIsActive } from "../_shared/gocardless_portal.ts";

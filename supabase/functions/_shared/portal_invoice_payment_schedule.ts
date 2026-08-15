@@ -163,6 +163,58 @@ export function nextInstalmentDueDate(schedule: InvoicePaymentScheduleRow[]): st
   return next?.due_date || null;
 }
 
+/** YYYY-MM-DD in Europe/London (club office day). */
+export function todayIsoLondon(): string {
+  try {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/London",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+  } catch {
+    return new Date().toISOString().slice(0, 10);
+  }
+}
+
+/** Whole days until due (negative = overdue). Null if no date. */
+export function daysUntilDueIso(dueIso: string | null | undefined, todayIso?: string): number | null {
+  const due = dueIso ? String(dueIso).slice(0, 10) : "";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(due)) return null;
+  const today = todayIso || todayIsoLondon();
+  const a = Date.parse(today + "T12:00:00Z");
+  const b = Date.parse(due + "T12:00:00Z");
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+  return Math.round((b - a) / 86400000);
+}
+
+/**
+ * Office/parent "collect now" window: overdue, due today, or within `withinDays`
+ * (default 7 — same as admin Confirm paid / hub pulse). No due date → allow.
+ */
+export function instalmentDueIsCollectingNow(
+  dueIso: string | null | undefined,
+  withinDays = 7,
+): boolean {
+  const days = daysUntilDueIso(dueIso);
+  if (days == null) return true;
+  return days <= withinDays;
+}
+
+/** Next unpaid half is in the collect window (or invoice has no schedule). */
+export function shareNextInstalmentIsCollectingNow(share: {
+  payment_schedule?: unknown;
+  next_instalment_due?: unknown;
+  due_date?: unknown;
+}): boolean {
+  const schedule = normalizePaymentSchedule(share.payment_schedule);
+  const nextDue =
+    nextInstalmentDueDate(schedule) ||
+    (share.next_instalment_due ? String(share.next_instalment_due).slice(0, 10) : null) ||
+    (share.due_date ? String(share.due_date).slice(0, 10) : null);
+  return instalmentDueIsCollectingNow(nextDue);
+}
+
 export type ApplyInstalmentPaymentResult = {
   schedule: InvoicePaymentScheduleRow[];
   amount_paid_gbp: number;
