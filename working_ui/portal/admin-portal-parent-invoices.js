@@ -24,6 +24,7 @@
     filter: 'all',
     methodFilter: 'all',
     amountPeriod: 'autumn',
+    clientQuery: '',
     invoices: [],
     meta: {},
     searchHits: [],
@@ -607,6 +608,60 @@
     return (list || []).filter(function (inv) {
       return methodFilterKey(inv) === mf;
     });
+  }
+
+  function invoicesForClientQuery(list) {
+    var q = String(state.clientQuery || '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ');
+    if (!q) return list || [];
+    return (list || []).filter(function (inv) {
+      var blob = [
+        inv.participant_display,
+        inv.parent_display,
+        inv.related_client,
+        inv.contact_id,
+        inv.invoice_number,
+        inv.client_key,
+      ]
+        .map(function (x) {
+          return String(x || '').toLowerCase();
+        })
+        .join(' ');
+      return blob.indexOf(q) >= 0;
+    });
+  }
+
+  function paintInvoiceList(host, invoices) {
+    var displayInvoices = invoicesForClientQuery(invoicesForMethodFilter(invoices || []));
+    if (!displayInvoices.length) {
+      var emptyMsg = String(state.clientQuery || '').trim()
+        ? 'No invoices match <strong>' +
+          esc(String(state.clientQuery).trim()) +
+          '</strong> with the current filters. Clear the search or switch Year / Method.'
+        : 'No families match this payment method filter. Try <strong>All</strong> or another method chip.';
+      host.innerHTML =
+        accordionListStyles() +
+        '<p class="muted" style="margin:0;max-width:48rem;overflow-wrap:break-word">' +
+        emptyMsg +
+        '</p>';
+      return;
+    }
+    host.innerHTML =
+      accordionListStyles() +
+      '<div class="pp-inv-acc" role="list">' +
+      groupInvoicesByDayThenParticipant(displayInvoices).map(dayAccordionHtml).join('') +
+      '</div>';
+    bindRowActions(host);
+    /* When searching a client, open day + person so Mark paid is one click away. */
+    if (String(state.clientQuery || '').trim().length >= 2) {
+      host.querySelectorAll('details.pp-inv-acc__item--day, details.pp-inv-acc__item--pax').forEach(
+        function (d) {
+          d.open = true;
+        },
+      );
+    }
   }
 
   function scheduleRows(inv) {
@@ -2286,20 +2341,8 @@
         host.innerHTML = '<p class="muted">No invoices yet. Upload a PDF below to share with a family.</p>';
         return;
       }
-      var displayInvoices = invoicesForMethodFilter(state.invoices);
-      if (!displayInvoices.length) {
-        host.innerHTML =
-          accordionListStyles() +
-          '<p class="muted" style="margin:0;max-width:48rem;overflow-wrap:break-word">No families match this payment method filter. Try <strong>All</strong> or another method chip.</p>';
-        return;
-      }
-      host.innerHTML =
-        accordionListStyles() +
-        '<div class="pp-inv-acc" role="list">' +
-        groupInvoicesByDayThenParticipant(displayInvoices).map(dayAccordionHtml).join('') +
-        '</div>';
-      bindRowActions(host);
-      /* Day + participant accordions stay closed until opened. */
+      paintInvoiceList(host, state.invoices);
+      /* Day + participant accordions stay closed until opened (unless client search). */
     } catch (err) {
       host.innerHTML =
         '<p class="muted">Could not load invoices (' +
@@ -3075,6 +3118,12 @@
       '<button type="button" class="btn btn--sm btn--primary" id="portalParentInvoicesPushXero" title="Creates full ACCREC in Xero for paid or partial Portal invoices (awaiting payment; reconcile halves in Xero)">Push to Xero</button>' +
       '<button type="button" class="btn btn--sm" id="portalParentInvoicesExportXero">Export to Xero CSV</button>' +
       '</div>' +
+      '<div class="pp-inv-client-search" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;width:100%;min-width:0;margin:0 0 10px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;box-sizing:border-box">' +
+      '<label for="portalParentInvoicesClientSearch" class="pp-inv-method-row__lab" style="margin:0">Client</label>' +
+      '<input class="inp" id="portalParentInvoicesClientSearch" type="search" autocomplete="off" placeholder="Search name, parent, invoice #… (then Mark paid)" style="flex:1 1 14rem;min-width:0;max-width:28rem" />' +
+      '<button type="button" class="btn btn--sm btn--ghost" id="portalParentInvoicesClientSearchClear" title="Clear client search">Clear</button>' +
+      '<span class="muted" id="portalParentInvoicesClientSearchHint" style="font-size:12px;min-width:0;overflow-wrap:break-word;flex:1 1 100%">Find a family, open their INV-P, then <strong>Mark paid</strong> / Confirm paid to validate Tide.</span>' +
+      '</div>' +
       '<div class="pp-inv-method-filters" role="group" aria-label="Payment method filter">' +
       '<div class="pp-inv-method-row">' +
       '<span class="pp-inv-method-row__lab">Method</span>' +
@@ -3108,6 +3157,7 @@
     state.filter = 'all';
     state.methodFilter = 'all';
     state.amountPeriod = 'autumn';
+    state.clientQuery = '';
     bindTideMatchPanel();
     var host = global.document.getElementById('portalParentInvoicesHost');
     var refresh = global.document.getElementById('portalParentInvoicesRefreshEmbed');
@@ -3127,6 +3177,46 @@
     if (pushBtn) {
       pushBtn.addEventListener('click', function () {
         void pushUnsyncedToXero();
+      });
+    }
+    var searchEl = global.document.getElementById('portalParentInvoicesClientSearch');
+    var searchClear = global.document.getElementById('portalParentInvoicesClientSearchClear');
+    var searchTimer = null;
+    function applyClientSearchNow() {
+      state.clientQuery = searchEl ? String(searchEl.value || '') : '';
+      var hint = global.document.getElementById('portalParentInvoicesClientSearchHint');
+      if (hint) {
+        var q = String(state.clientQuery || '').trim();
+        hint.innerHTML = q
+          ? 'Showing matches for <strong>' +
+            esc(q) +
+            '</strong> — open the invoice and use <strong>Mark paid</strong> to validate.'
+          : 'Find a family, open their INV-P, then <strong>Mark paid</strong> / Confirm paid to validate Tide.';
+      }
+      if (host && state.invoices && state.invoices.length) {
+        paintInvoiceList(host, state.invoices);
+      }
+    }
+    if (searchEl && searchEl.getAttribute('data-bound') !== '1') {
+      searchEl.setAttribute('data-bound', '1');
+      searchEl.addEventListener('input', function () {
+        if (searchTimer) global.clearTimeout(searchTimer);
+        searchTimer = global.setTimeout(applyClientSearchNow, 180);
+      });
+      searchEl.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          if (searchTimer) global.clearTimeout(searchTimer);
+          applyClientSearchNow();
+        }
+      });
+    }
+    if (searchClear && searchClear.getAttribute('data-bound') !== '1') {
+      searchClear.setAttribute('data-bound', '1');
+      searchClear.addEventListener('click', function () {
+        if (searchEl) searchEl.value = '';
+        applyClientSearchNow();
+        if (searchEl) searchEl.focus();
       });
     }
     global.document.querySelectorAll('.toolbar [data-inv-filter]').forEach(function (btn) {
