@@ -137,11 +137,19 @@
     }
     .brand .lede {
       margin: 0;
-      max-width: 42rem;
+      max-width: min(56rem, 100%);
       width: 100%;
       color: var(--muted);
-      font-size: clamp(0.95rem, 2vw, 1.05rem);
+      font-size: clamp(0.9rem, 1.7vw, 1.05rem);
       overflow-wrap: break-word;
+      min-width: 0;
+    }
+    /* Keep the lede on one line when the viewport is wide enough. */
+    @media (min-width: 860px) {
+      .brand .lede {
+        white-space: nowrap;
+        overflow-wrap: normal;
+      }
     }
 
     .offer-banner {
