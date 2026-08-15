@@ -335,7 +335,10 @@ Deno.serve(async (req) => {
                 ? null
                 : "Contact the office for bank transfer details.",
             },
-      can_report_paid: hideManualPay || sequenceLocked ? false : openForPay,
+      can_report_paid:
+        hideManualPay || sequenceLocked || !shareNextInstalmentIsCollectingNow(share)
+          ? false
+          : openForPay,
       can_pay: hideManualPay || sequenceLocked ? false : canPayCard,
       pay_blocked_by_prior: priorBlock
         ? {
