@@ -293,7 +293,7 @@
   function statusChip(payment, share, inv) {
     var pay = String(payment || 'unpaid');
     var sh = String(share || 'hidden');
-    /* Green = paid only; orange = unpaid only. Everything else uses neutral tones. */
+    /* Green = paid; soft green = partial (flexi half paid); orange = unpaid only. */
     var payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--other';
     if (pay === 'paid') payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--paid';
     else if (pay === 'unpaid') payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--unpaid';
@@ -1295,6 +1295,7 @@
   function summaryFilterChip(filter, label, payTone) {
     var cls = 'pp-inv-acc__pay-chip pp-inv-acc__filter-chip';
     if (payTone === 'paid') cls += ' pp-inv-acc__pay-chip--paid';
+    else if (payTone === 'partial') cls += ' pp-inv-acc__pay-chip--partial';
     else if (payTone === 'unpaid') cls += ' pp-inv-acc__pay-chip--unpaid';
     else if (payTone === 'pending') cls += ' pp-inv-acc__pay-chip--pending';
     else if (payTone === 'hidden') cls += ' pp-inv-acc__pay-chip--hidden';
@@ -1314,6 +1315,7 @@
 
   function groupStatusSummary(invoices) {
     var unpaid = 0;
+    var partial = 0;
     var paid = 0;
     var pending = 0;
     var hidden = 0;
@@ -1327,7 +1329,10 @@
       var isHidden = String(inv.share_status || '') === 'hidden';
       if (isHidden) hidden += 1;
       if (pay === 'paid') paid += 1;
-      else if (pay === 'pending_confirmation') {
+      else if (pay === 'partial') {
+        /* Flexi: at least one half paid — not "unpaid". */
+        if (!isHidden) partial += 1;
+      } else if (pay === 'pending_confirmation') {
         /* Pending confirmation is always actionable (even if somehow hidden). */
         pending += 1;
       } else if (!isHidden) {
@@ -1343,6 +1348,15 @@
     var chips = [];
     if (unpaid) {
       chips.push(summaryFilterChip('unpaid', unpaid + ' unpaid', 'unpaid'));
+    }
+    if (partial) {
+      chips.push(
+        summaryFilterChip(
+          'partial',
+          partial === 1 ? '1 partially paid' : partial + ' partially paid',
+          'partial',
+        ),
+      );
     }
     if (pending) {
       chips.push(summaryFilterChip('pending', pending + ' pending', 'pending'));
@@ -1993,7 +2007,8 @@
       '.pp-inv-acc__pay-chip{font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid transparent;display:inline-flex;align-items:center}' +
       '.pp-inv-acc__pay-chip--unpaid{color:#9a3412;background:#ffedd5;border-color:#fb923c}' +
       '.pp-inv-acc__pay-chip--pending{color:#9a3412;background:#fed7aa;border-color:#fb923c}' +
-      '.pp-inv-acc__pay-chip--partial{color:#9a3412;background:#ffedd5;border-color:#f97316}' +
+      /* Soft green — less saturated than full paid (#bbf7d0 / #047857). */
+      '.pp-inv-acc__pay-chip--partial{color:#15803d;background:#ecfdf5;border-color:#86efac}' +
       '.pp-inv-acc__pay-chip--shared{color:#047857;background:#bbf7d0;border-color:#34d399}' +
       '.pp-inv-acc__pay-chip--hidden{color:#475569;background:#e2e8f0;border-color:#94a3b8}' +
       '.pp-inv-acc__pay-chip--other{color:#4a6578;background:#eef2f5;border-color:#d5dee6}' +
@@ -2005,14 +2020,14 @@
       '.pp-inv-acc__cards{display:flex;flex-direction:column;gap:10px;min-width:0}' +
       '.pp-inv-acc__card{border:1px solid #e2eaf0;border-radius:8px;padding:10px;background:#fff;min-width:0}' +
       '.pp-inv-acc__card--paid{border-color:#86efac;background:#f0fdf4}' +
-      '.pp-inv-acc__card--partial{border-color:#fdba74;background:#fffbeb}' +
+      '.pp-inv-acc__card--partial{border-color:#a7f3d0;background:#f7fef9}' +
       '.pp-inv-acc__filter-chip{-webkit-appearance:none;appearance:none;margin:0;cursor:pointer;font:inherit;line-height:inherit}' +
       '.pp-inv-acc__filter-chip:hover{filter:brightness(.97)}' +
       'button.pp-inv-acc__pay-chip--paid,.pp-inv-acc__pay-chip--paid{color:#047857;background-color:#bbf7d0;background:#bbf7d0;border:1px solid #34d399}' +
       'button.pp-inv-acc__pay-chip--shared,.pp-inv-acc__pay-chip--shared{color:#047857;background-color:#bbf7d0;background:#bbf7d0;border:1px solid #34d399}' +
       'button.pp-inv-acc__pay-chip--unpaid,.pp-inv-acc__pay-chip--unpaid{color:#9a3412;background-color:#ffedd5;background:#ffedd5;border:1px solid #fb923c}' +
       'button.pp-inv-acc__pay-chip--pending,.pp-inv-acc__pay-chip--pending{color:#9a3412;background-color:#fed7aa;background:#fed7aa;border:1px solid #fb923c}' +
-      'button.pp-inv-acc__pay-chip--partial,.pp-inv-acc__pay-chip--partial{color:#9a3412;background-color:#ffedd5;background:#ffedd5;border:1px solid #f97316}' +
+      'button.pp-inv-acc__pay-chip--partial,.pp-inv-acc__pay-chip--partial{color:#15803d;background-color:#ecfdf5;background:#ecfdf5;border:1px solid #86efac}' +
       'button.pp-inv-acc__pay-chip--hidden,.pp-inv-acc__pay-chip--hidden{color:#475569;background-color:#e2e8f0;background:#e2e8f0;border:1px solid #94a3b8}' +
       'button.pp-inv-acc__pay-chip--other,.pp-inv-acc__pay-chip--other{color:#4a6578;background-color:#eef2f5;background:#eef2f5;border:1px solid #d5dee6}' +
       '.pp-inv-method-filters{display:flex;flex-direction:column;gap:8px;width:100%;min-width:0;margin:0 0 10px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;box-sizing:border-box}' +
@@ -2156,6 +2171,10 @@
       if (state.filter === 'unpaid') {
         body.share_status = 'ready';
         body.payment_status = 'unpaid';
+      }
+      if (state.filter === 'partial') {
+        body.share_status = 'ready';
+        body.payment_status = 'partial';
       }
       if (state.filter === 'paid') {
         body.payment_status = 'paid';
@@ -2984,6 +3003,7 @@
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="la_auto">Auto re-enrolled</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="ready">Shared</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="unpaid">Ready unpaid</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="partial">Partially paid</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="paid">Paid</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="pending">Pending confirmation</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="buffer_low">Buffer low</button>' +
