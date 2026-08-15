@@ -527,6 +527,11 @@
       object-fit: cover;
       object-position: center;
     }
+    /* Activities pane (multi.jpg): favour the child on the left; crop the adult on the right. */
+    .svc-card__media--triple .svc-card__media-pane:nth-child(3) img,
+    .svc-card__media-img--activities-focus {
+      object-position: 12% 42%;
+    }
     .svc-card__media--triple .svc-card__media-label {
       left: 4px;
       bottom: 6px;
@@ -852,6 +857,10 @@
     .timetable__photo--triple img {
       min-width: 0;
       min-height: 0;
+    }
+    .timetable__photo--triple img:nth-child(3),
+    .timetable__photo--triple .svc-card__media-img--activities-focus {
+      object-position: 12% 42%;
     }
     .timetable__photo--diagonal {
       max-width: 260px;
@@ -2231,8 +2240,8 @@
         '<span class="svc-card__media-label">Climbing</span>' +
         "</span>" +
         '<span class="svc-card__media-pane">' +
-        '<img src="' +
-        esc(base + "multi.jpg?v=20260812-table") +
+        '<img class="svc-card__media-img--activities-focus" src="' +
+        esc(base + "multi.jpg?v=20260815-act-left") +
         '" alt="" loading="lazy" decoding="async" width="240" height="400" />' +
         '<span class="svc-card__media-label">Activities</span>' +
         "</span>" +
@@ -2278,8 +2287,8 @@
         '<img src="' +
         esc(base + "intensive-climb.jpg?v=20260814-climb03") +
         '" alt="" loading="lazy" decoding="async" width="160" height="125" />' +
-        '<img src="' +
-        esc(base + "multi.jpg?v=20260812-table") +
+        '<img class="svc-card__media-img--activities-focus" src="' +
+        esc(base + "multi.jpg?v=20260815-act-left") +
         '" alt="" loading="lazy" decoding="async" width="160" height="125" />' +
         "</div>"
       );
