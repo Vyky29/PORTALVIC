@@ -282,6 +282,15 @@ Deno.serve(async (req) => {
   const logBody = bodyText ||
     (hasMedia ? mediaPlaceholderBody(classifyWhatsappMediaMime(mediaMime)) : "");
 
+  const clientFacingBody = usedTemplate
+    ? (() => {
+      const mid = String(logBody || "").trim();
+      if (!mid) return logBody;
+      if (/^Hello,\s*\n/i.test(logBody) || /^Hello,/i.test(mid)) return logBody;
+      return `Hello,\n${mid}\nThank you.`;
+    })()
+    : logBody;
+
   const logRow = {
     sent_by_user_id: verified.userId,
     sent_by_email: verified.email,
@@ -305,6 +314,7 @@ Deno.serve(async (req) => {
       media_filename: mediaFilename || null,
       open_session: openSession,
       used_template: usedTemplate,
+      wa_client_body: usedTemplate ? clientFacingBody : null,
       media_skipped_outside_session: mediaSkippedOutsideSession || null,
     },
   };
@@ -331,7 +341,7 @@ Deno.serve(async (req) => {
   await pushStaffLeaderWhatsappMessage(admin, {
     staffProfileId: leader.id,
     staffUsername: normalizeStaffUsernameKey(leader.username),
-    bodyText: logBody,
+    bodyText: clientFacingBody,
     logId: inserted?.id || null,
     senderUserId: verified.userId,
   });

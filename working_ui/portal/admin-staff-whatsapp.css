@@ -569,3 +569,83 @@ body:has(#portalStaffWaAdmin) .topbar-tools-grid{
   border:1px solid rgba(15,23,42,.15);
   box-sizing:border-box;
 }
+
+/* Cold Meta template shell (same idea as Family messages). */
+.portal-staff-wa-admin__composer--tpl{
+  gap:6px;
+}
+.portal-staff-wa-admin__tpl-banner{
+  margin:0;
+  padding:8px 10px;
+  border-radius:10px;
+  border:1px solid rgba(124,58,237,.28);
+  background:rgba(243,232,255,.9);
+  color:#3b0764;
+  font-size:12px;
+  line-height:1.4;
+  overflow-wrap:anywhere;
+  min-width:0;
+}
+.portal-staff-wa-admin__tpl-banner code{
+  font-size:11px;
+}
+.portal-staff-wa-admin__tpl-shell{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  min-width:0;
+}
+.portal-staff-wa-admin__tpl-fixed{
+  margin:0;
+  padding:6px 10px;
+  border-radius:8px;
+  background:#f1f5f9;
+  color:#334155;
+  font-size:13px;
+  font-weight:600;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  min-width:0;
+}
+.portal-staff-wa-admin__tpl-mid-lab{
+  margin:0;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.03em;
+  text-transform:uppercase;
+}
+.portal-staff-wa-admin__tpl-len{
+  margin:0;
+  font-size:11px;
+}
+.portal-staff-wa-admin__tpl-len.is-over{
+  color:#b91c1c;
+  font-weight:700;
+}
+.portal-staff-wa-admin__tpl-preview{
+  margin:0;
+  padding:8px 10px;
+  border-radius:10px;
+  border:1px solid rgba(15,23,42,.1);
+  background:#f8fafc;
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+.portal-staff-wa-admin__tpl-preview-lab{
+  font-size:11px;
+  font-weight:700;
+  color:#64748b;
+  margin:0 0 4px;
+}
+.portal-staff-wa-admin__tpl-preview-body{
+  font-size:13px;
+  color:#0f172a;
+  line-height:1.45;
+  white-space:pre-wrap;
+}
+.portal-staff-wa-admin__tpl-var{
+  display:inline;
+  background:rgba(249,191,46,.28);
+  border-radius:3px;
+  padding:0 2px;
+}

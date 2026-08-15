@@ -31,6 +31,8 @@ type ThreadMessage = {
   direction: "outbound" | "inbound";
   created_at: string;
   body_text: string;
+  kind?: string | null;
+  used_template?: boolean;
   whatsapp_status?: string | null;
   message_type?: string | null;
   media_path?: string | null;
@@ -47,6 +49,29 @@ type ThreadMessage = {
   whatsapp_delivered_at?: string | null;
   whatsapp_read_at?: string | null;
 };
+
+/** Reconstruct what staff saw on WhatsApp (Hello + {{1}} + Thank you). */
+function staffClientFacingOutboundBody(
+  body: string,
+  kind: string | null | undefined,
+  meta: unknown,
+): string {
+  const mid = String(body || "");
+  const m =
+    meta && typeof meta === "object" && !Array.isArray(meta)
+      ? (meta as Record<string, unknown>)
+      : {};
+  if (m.wa_client_body) return String(m.wa_client_body);
+  const used = m.used_template === true;
+  const k = String(kind || "").toLowerCase();
+  if (!used && k !== "staff_contact_update" && k !== "staff_update") return mid;
+  const t = mid.trim();
+  if (!t) return mid;
+  if (/^Hello,\s*\n/i.test(mid) || /^Hello,/i.test(t) || /^Urgent information:/i.test(t)) {
+    return mid;
+  }
+  return `Hello,\n${t}\nThank you.`;
+}
 
 function resolveInboundReplySource(
   meta: unknown,
@@ -286,7 +311,7 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
   const { data: outboundRows } = await admin
     .from("portal_staff_notify_log")
     .select(
-      "id, created_at, body_text, whatsapp_status, whatsapp_message_id, whatsapp_delivered_at, whatsapp_read_at, staff_profile_id, staff_phone, message_type, media_path, media_mime",
+      "id, created_at, body_text, kind, meta, whatsapp_status, whatsapp_message_id, whatsapp_delivered_at, whatsapp_read_at, staff_profile_id, staff_phone, message_type, media_path, media_mime",
     )
     .eq("staff_profile_id", leader.id)
     .order("created_at", { ascending: true })
@@ -324,11 +349,20 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
   const messages: ThreadMessage[] = [];
   (outboundRows || []).forEach((r) => {
     const status = r.whatsapp_status != null ? String(r.whatsapp_status) : null;
+    const kind = r.kind != null ? String(r.kind) : null;
+    const meta = r.meta;
+    const usedTpl =
+      !!(meta && typeof meta === "object" && !Array.isArray(meta) &&
+        (meta as Record<string, unknown>).used_template === true) ||
+      kind === "staff_contact_update" ||
+      kind === "staff_update";
     messages.push({
       id: `out:${r.id}`,
       direction: "outbound",
       created_at: String(r.created_at || ""),
-      body_text: String(r.body_text || ""),
+      body_text: staffClientFacingOutboundBody(String(r.body_text || ""), kind, meta),
+      kind,
+      used_template: usedTpl,
       whatsapp_status: status,
       delivery_label: outboundDeliveryLabel(status),
       read_on_whatsapp: String(status || "").toLowerCase() === "read",

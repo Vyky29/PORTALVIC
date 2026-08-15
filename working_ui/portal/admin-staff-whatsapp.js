@@ -9,6 +9,13 @@
 
   var SEEN_STORE_KEY = "portalStaffWaAdminSeenV1";
   var MAX_ATTACH_BYTES = 4 * 1024 * 1024;
+  var WA_TEMPLATE_BODY_MAX = 700;
+  /** Same Meta Utility shell as Family cold outbound (portal_parent_update / staff template). */
+  var STAFF_COLD_TPL = {
+    prefix: "Hello,\n",
+    suffix: "\nThank you.",
+    label: "Hello…",
+  };
 
   var state = {
     directory: [],
@@ -364,7 +371,8 @@
       '<div class="portal-staff-wa-admin__chat-head" id="portalStaffWaHead">Select a staff member</div>' +
       '<div class="portal-staff-wa-admin__thread" id="portalStaffWaMsgs"></div>' +
       '<form class="portal-staff-wa-admin__composer" id="portalStaffWaForm">' +
-      '<div class="portal-staff-wa-admin__tools">' +
+      '<div id="portalStaffWaTplBanner" class="portal-staff-wa-admin__tpl-banner" hidden></div>' +
+      '<div class="portal-staff-wa-admin__tools" id="portalStaffWaTools">' +
       '<input type="file" id="portalStaffWaFile" accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" hidden />' +
       toolBtnHtml("portalStaffWaAttachPhoto", "Photo", ICO_PHOTO, false) +
       toolBtnHtml("portalStaffWaAttachDoc", "File", ICO_FILE, false) +
@@ -372,7 +380,14 @@
       toolBtnHtml("portalStaffWaClearAttach", "Clear", ICO_CLEAR, true) +
       '<span class="portal-staff-wa-admin__attach-preview muted" id="portalStaffWaAttachPreview"></span>' +
       "</div>" +
+      '<div class="portal-staff-wa-admin__tpl-shell" id="portalStaffWaTplShell" hidden>' +
+      '<div class="portal-staff-wa-admin__tpl-fixed" id="portalStaffWaTplPrefix" aria-hidden="true"></div>' +
+      '<label class="portal-staff-wa-admin__tpl-mid-lab muted" for="portalStaffWaDraft">Editable {{1}}</label>' +
+      "</div>" +
       '<textarea id="portalStaffWaDraft" rows="2" placeholder="Message…" maxlength="4000"></textarea>' +
+      '<div class="portal-staff-wa-admin__tpl-fixed" id="portalStaffWaTplSuffix" hidden aria-hidden="true"></div>' +
+      '<p class="portal-staff-wa-admin__tpl-len muted" id="portalStaffWaTplLen" hidden></p>' +
+      '<div class="portal-staff-wa-admin__tpl-preview" id="portalStaffWaTplPreview" hidden></div>' +
       '<button type="submit" class="btn" id="portalStaffWaSend">Send WhatsApp</button>' +
       "</form>" +
       "</section>" +
@@ -703,6 +718,7 @@
     if (!host) return;
     if (!state.selected) {
       host.innerHTML = '<p class="muted">Choose a staff member on the left.</p>';
+      refreshComposer();
       return;
     }
     if (state.loading) {
@@ -712,6 +728,7 @@
     if (!state.messages.length) {
       host.innerHTML = '<p class="muted">No messages yet.</p>';
       state.threadRefresh.sig = "";
+      refreshComposer();
       return;
     }
     var savedScroll = host.scrollTop;
@@ -801,6 +818,7 @@
     }
     if (updated) host.scrollTop = host.scrollHeight;
     else host.scrollTop = savedScroll;
+    refreshComposer();
   }
 
   async function loadDirectory(opts) {
@@ -923,6 +941,93 @@
     return false;
   }
 
+  function staffTplPreviewHtml(mid) {
+    var body = String(mid || "").trim() || "…";
+    return (
+      '<div class="portal-staff-wa-admin__tpl-preview-lab">WhatsApp will send · ' +
+      esc(STAFF_COLD_TPL.label) +
+      "</div>" +
+      '<div class="portal-staff-wa-admin__tpl-preview-body">' +
+      esc(String(STAFF_COLD_TPL.prefix || "").trim()) +
+      '<span class="portal-staff-wa-admin__tpl-var">' +
+      esc(body).replace(/\r\n/g, "\n").replace(/\n/g, "<br>") +
+      "</span>" +
+      esc(String(STAFF_COLD_TPL.suffix || "").trim()) +
+      "</div>"
+    );
+  }
+
+  function updateStaffTplPreview() {
+    var draftEl = document.getElementById("portalStaffWaDraft");
+    var prev = document.getElementById("portalStaffWaTplPreview");
+    var lenEl = document.getElementById("portalStaffWaTplLen");
+    if (!prev || prev.hidden) return;
+    var mid = draftEl ? String(draftEl.value || "") : "";
+    prev.innerHTML = staffTplPreviewHtml(mid);
+    if (lenEl && !lenEl.hidden) {
+      var n = mid.trim().length;
+      lenEl.textContent = n + " / " + WA_TEMPLATE_BODY_MAX + " characters in {{1}}";
+      lenEl.classList.toggle("is-over", n > WA_TEMPLATE_BODY_MAX);
+    }
+  }
+
+  function refreshComposer() {
+    var needsTpl = !!state.selected && !threadHasOpenWhatsappSession();
+    var form = document.getElementById("portalStaffWaForm");
+    var banner = document.getElementById("portalStaffWaTplBanner");
+    var shell = document.getElementById("portalStaffWaTplShell");
+    var prefix = document.getElementById("portalStaffWaTplPrefix");
+    var suffix = document.getElementById("portalStaffWaTplSuffix");
+    var lenEl = document.getElementById("portalStaffWaTplLen");
+    var prev = document.getElementById("portalStaffWaTplPreview");
+    var draftEl = document.getElementById("portalStaffWaDraft");
+    var sendBtn = document.getElementById("portalStaffWaSend");
+    var tools = document.getElementById("portalStaffWaTools");
+    if (form) form.classList.toggle("portal-staff-wa-admin__composer--tpl", needsTpl);
+    if (banner) {
+      banner.hidden = !needsTpl;
+      if (needsTpl) {
+        banner.innerHTML =
+          "<strong>Needs Meta template</strong> — no open 24h WhatsApp window. " +
+          "Edit only <code>{{1}}</code> below; Hello / Thank you are fixed. " +
+          "The full message appears in the chat after send (same as parents).";
+      }
+    }
+    if (shell) shell.hidden = !needsTpl;
+    if (prefix) {
+      prefix.hidden = !needsTpl;
+      prefix.textContent = String(STAFF_COLD_TPL.prefix || "").trim();
+    }
+    if (suffix) {
+      suffix.hidden = !needsTpl;
+      suffix.textContent = String(STAFF_COLD_TPL.suffix || "").trim();
+    }
+    if (lenEl) lenEl.hidden = !needsTpl;
+    if (prev) {
+      prev.hidden = !needsTpl;
+      if (needsTpl) updateStaffTplPreview();
+    }
+    if (draftEl) {
+      draftEl.maxLength = needsTpl ? WA_TEMPLATE_BODY_MAX : 4000;
+      draftEl.placeholder = needsTpl
+        ? "Write {{1}} here — blank line between paragraphs…"
+        : "Message…";
+      draftEl.rows = needsTpl ? 4 : 2;
+    }
+    if (sendBtn) {
+      sendBtn.textContent = needsTpl ? "Send template" : "Send WhatsApp";
+    }
+    if (tools) {
+      tools.querySelectorAll("button").forEach(function (b) {
+        if (b.id === "portalStaffWaClearAttach") return;
+        b.disabled = needsTpl || state.sending;
+        b.title = needsTpl
+          ? "Media only delivers after staff reply on WhatsApp (24h window)"
+          : "";
+      });
+    }
+  }
+
   function latestInboundContextWaId() {
     for (var i = state.messages.length - 1; i >= 0; i--) {
       var m = state.messages[i];
@@ -959,6 +1064,14 @@
       sendBody = "[media]";
     }
     if (!openSession) {
+      if (sendBody.trim().length > WA_TEMPLATE_BODY_MAX) {
+        cfg.toast(
+          "Message too long for WhatsApp template — keep {{1}} under " +
+            WA_TEMPLATE_BODY_MAX +
+            " characters",
+        );
+        return;
+      }
       cfg.toast("No open WhatsApp session — sending via approved template…");
     }
     state.sending = true;
@@ -1106,6 +1219,9 @@
     if (draftEl && draftEl.getAttribute("data-enter-bound") !== "1") {
       draftEl.setAttribute("data-enter-bound", "1");
       draftEl.setAttribute("enterkeyhint", "send");
+      draftEl.addEventListener("input", function () {
+        updateStaffTplPreview();
+      });
       draftEl.addEventListener("keydown", function (ev) {
         if (ev.key === " " || ev.code === "Space" || ev.key === "Spacebar") return;
         if (ev.isComposing || ev.keyCode === 229) return;
