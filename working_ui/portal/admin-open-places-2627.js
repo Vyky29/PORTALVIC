@@ -45,6 +45,7 @@
     madreUpdatedAt: null,
     servicesById: {},
     slots: [],
+    bandHint: "",
     filters: {
       day: "",
       service: "",
@@ -93,10 +94,11 @@
     return String(cfg.getAnonKey() || global.SUPABASE_ANON_KEY || "").trim();
   }
 
-  function viewHtml() {
+  function stylesHtml() {
     return (
       '<style id="op2627Styles">' +
       ".op2627{min-width:0}" +
+      ".op2627-embed{margin-top:28px;padding-top:20px;border-top:1px solid var(--line,#d8dee8)}" +
       ".op2627-tbl-wrap{overflow-x:auto;min-width:0;width:100%}" +
       ".op2627-tbl{table-layout:fixed;width:100%;min-width:0}" +
       ".op2627-tbl th.op2627-th,.op2627-tbl td.op2627-td{" +
@@ -111,17 +113,153 @@
       ".op2627-tbl .op2627-td--free .chip{justify-content:center;margin:0 auto}" +
       ".op2627-place{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;min-width:0}" +
       ".op2627-place .btn{white-space:nowrap}" +
-      "</style>" +
-      '<div class="page-head" style="min-width:0">' +
-      "<h2 class=\"page-title\" style=\"min-width:0;overflow-wrap:break-word\">Open places 2026/27</h2>" +
-      '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">' +
-      "Live Autumn Term places for families who call or email — same data as the Booking Portal. " +
-      "Use <strong>Existing</strong> / <strong>New</strong> on a free band to place someone via Edit term slot or New participant." +
-      "</p></div>" +
+      ".op2627-band-hint{margin:0 0 10px;font-size:13px;min-width:0;overflow-wrap:break-word}" +
+      "</style>"
+    );
+  }
+
+  /**
+   * @param {{ embedded?: boolean }} [opts]
+   * embedded: section under Services (no standalone page chrome).
+   */
+  function viewHtml(opts) {
+    var embedded = !!(opts && opts.embedded);
+    var head = embedded
+      ? '<div id="op2627Anchor" class="op2627-embed" style="min-width:0">' +
+        '<h2 class="page-title" style="font-size:1.25rem;margin:0 0 6px;min-width:0;overflow-wrap:break-word">Open places 2026/27</h2>' +
+        '<p class="page-intro" style="max-width:52rem;margin:0 0 12px;min-width:0;overflow-wrap:break-word">' +
+        "Live free seats (same source as the Booking Portal). Filter from Services above, or use " +
+        "<strong>Existing</strong> / <strong>New</strong> to place someone." +
+        "</p>"
+      : '<div class="page-head" style="min-width:0">' +
+        '<h2 class="page-title" style="min-width:0;overflow-wrap:break-word">Open places 2026/27</h2>' +
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">' +
+        "Live Autumn Term places for families who call or email — same data as the Booking Portal. " +
+        "Prefer <strong>Services</strong> for the full roster + this board together. " +
+        "Use <strong>Existing</strong> / <strong>New</strong> on a free band to place someone." +
+        "</p></div>";
+    var close = embedded ? "</div>" : "";
+    return (
+      stylesHtml() +
+      head +
       '<div id="op2627Root" class="op2627" style="min-width:0">' +
       '<p class="muted" style="margin:0">Loading live places…</p>' +
-      "</div>"
+      "</div>" +
+      close
     );
+  }
+
+  function titleCaseDay(day) {
+    var s = String(day || "").trim();
+    if (!s) return "";
+    var lower = s.toLowerCase();
+    var map = {
+      monday: "Monday",
+      tuesday: "Tuesday",
+      wednesday: "Wednesday",
+      thursday: "Thursday",
+      friday: "Friday",
+      saturday: "Saturday",
+      sunday: "Sunday",
+    };
+    if (map[lower]) return map[lower];
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  function resolveServiceId(nameOrId) {
+    var raw = String(nameOrId || "").trim();
+    if (!raw) return "";
+    if (state.servicesById[raw]) return raw;
+    var want = raw.toLowerCase().replace(/\s+/g, " ");
+    var ids = Object.keys(state.servicesById);
+    var i;
+    for (i = 0; i < ids.length; i++) {
+      var n = String((state.servicesById[ids[i]] && state.servicesById[ids[i]].name) || "")
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+      if (n === want) return ids[i];
+    }
+    for (i = 0; i < ids.length; i++) {
+      var n2 = String((state.servicesById[ids[i]] && state.servicesById[ids[i]].name) || "")
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+      if (n2.indexOf(want) >= 0 || want.indexOf(n2) >= 0) return ids[i];
+    }
+    var first = want.split(" ")[0];
+    if (first.length >= 4) {
+      for (i = 0; i < ids.length; i++) {
+        var n3 = String((state.servicesById[ids[i]] && state.servicesById[ids[i]].name) || "").toLowerCase();
+        if (n3.indexOf(first) >= 0) return ids[i];
+      }
+    }
+    return "";
+  }
+
+  /**
+   * Filter open-places board to a Services band and scroll into view.
+   * @param {{ day?: string, venue?: string, serviceId?: string, serviceName?: string, programme?: string, openOnly?: boolean }} band
+   */
+  function applyBandFilter(band) {
+    band = band || {};
+    var day = titleCaseDay(band.day || "");
+    var venue = String(band.venue || "").trim();
+    var svc =
+      String(band.serviceId || "").trim() ||
+      resolveServiceId(band.serviceName || band.programme || "");
+    state.filters.day = day;
+    state.filters.venue = venue;
+    state.filters.service = svc;
+    if (band.openOnly === false) state.filters.openOnly = false;
+    else state.filters.openOnly = true;
+    state.bandHint = [day, venue, svc ? serviceName(svc) : String(band.programme || band.serviceName || "").trim()]
+      .filter(Boolean)
+      .join(" · ");
+    render();
+    var anchor = $("op2627Anchor") || $("op2627Root");
+    if (anchor && typeof anchor.scrollIntoView === "function") {
+      try {
+        anchor.scrollIntoView({ block: "start", behavior: "smooth" });
+      } catch (_e) {
+        try {
+          anchor.scrollIntoView(true);
+        } catch (_e2) {
+          /* ignore */
+        }
+      }
+    }
+  }
+
+  /** Sync day/venue from Services filter bar (shared filters). */
+  function syncFromServicesFilters(filt) {
+    filt = filt || {};
+    var day = titleCaseDay(filt.day || "");
+    var venue = String(filt.venue || "").trim();
+    var programme = String(filt.class || filt.programme || "").trim();
+    var changed = false;
+    if (state.filters.day !== day) {
+      state.filters.day = day;
+      changed = true;
+    }
+    if (state.filters.venue !== venue) {
+      state.filters.venue = venue;
+      changed = true;
+    }
+    if (programme) {
+      var sid = resolveServiceId(programme);
+      if (sid && state.filters.service !== sid) {
+        state.filters.service = sid;
+        changed = true;
+      }
+    } else if (!programme && filt.clearService) {
+      if (state.filters.service) {
+        state.filters.service = "";
+        changed = true;
+      }
+    }
+    if (changed) {
+      state.bandHint = "";
+      render();
+    }
   }
 
   function uniqueSorted(values) {
@@ -399,7 +537,15 @@
       '<button type="button" class="btn btn--pri btn--sm" data-op2627-refresh>Refresh</button>' +
       '<a class="btn btn--ghost btn--sm" href="/bookingportal" target="_blank" rel="noopener">Open Booking Portal</a>' +
       '<button type="button" class="btn btn--ghost btn--sm" data-op2627-waitlist>Waiting list</button>' +
+      (state.bandHint
+        ? '<button type="button" class="btn btn--ghost btn--sm" data-op2627-clear-band>Clear band filter</button>'
+        : "") +
       "</div>" +
+      (state.bandHint
+        ? '<p class="op2627-band-hint muted">Showing band from Services: <strong>' +
+          esc(state.bandHint) +
+          "</strong></p>"
+        : "") +
       (metaBits.length
         ? '<p class="muted" style="margin:0 0 10px;max-width:52rem;min-width:0;overflow-wrap:break-word">' +
           esc(metaBits.join(" · ")) +
@@ -450,6 +596,15 @@
       void load({ toastOnSuccess: true });
       return;
     }
+    if (t.closest("[data-op2627-clear-band]")) {
+      state.bandHint = "";
+      state.filters.day = "";
+      state.filters.venue = "";
+      state.filters.service = "";
+      state.filters.openOnly = true;
+      render();
+      return;
+    }
     if (t.closest("[data-op2627-waitlist]")) {
       try {
         cfg.openView("c4k_waitlist");
@@ -482,6 +637,7 @@
       t.id === "op2627OpenOnly"
     ) {
       applyFiltersFromDom();
+      state.bandHint = "";
       render();
     }
   }
@@ -560,5 +716,8 @@
     viewHtml: viewHtml,
     bindModule: bindModule,
     load: load,
+    applyBandFilter: applyBandFilter,
+    syncFromServicesFilters: syncFromServicesFilters,
+    resolveServiceId: resolveServiceId,
   };
 })(typeof window !== "undefined" ? window : globalThis);

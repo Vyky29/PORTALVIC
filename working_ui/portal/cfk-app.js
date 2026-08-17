@@ -14,7 +14,7 @@
   var PRODUCT_NAME = "CFK";
   var PAGE_TITLE = "Services";
   var PAGE_INTRO =
-    "Autumn 26/27 standing roster by programme and venue — who is booked, open places, and waiting demand (same occupancy bridge as Booking Portal). Live covers stay in Scheduling.";
+    "Autumn 26/27 standing roster by programme and venue — who is booked, instructors, and open places. Live Booking Portal seats sit below for placing people. Covers stay in Scheduling.";
 
   var deps = {
     $: function (id) {
@@ -228,8 +228,36 @@
       var t = ev.target;
       if (!t || !t.id || !ids[t.id]) return;
       var st = deps.getState();
-      if (st && st.view === VIEW_ID) refreshPartial();
+      if (st && st.view === VIEW_ID) {
+        refreshPartial();
+        syncOpenPlacesFromFilters();
+      }
     });
+  }
+
+  function syncOpenPlacesFromFilters() {
+    var op = global.PortalAdminOpenPlaces2627;
+    if (!op || typeof op.syncFromServicesFilters !== "function") return;
+    var filt = readFiltersFromDom();
+    try {
+      op.syncFromServicesFilters({
+        day: filt.day,
+        venue: filt.venue,
+        class: filt.class,
+        clearService: !filt.class,
+      });
+    } catch (_e) {}
+  }
+
+  function openPlacesEmbedHtml() {
+    var op = global.PortalAdminOpenPlaces2627;
+    if (op && typeof op.viewHtml === "function") {
+      return op.viewHtml({ embedded: true });
+    }
+    return (
+      '<div id="op2627Anchor" class="op2627-embed" style="margin-top:28px;min-width:0">' +
+      '<p class="muted">Open places module failed to load.</p></div>'
+    );
   }
 
   function refreshPartial() {
@@ -258,10 +286,12 @@
       deps.esc(PRODUCT_NAME) +
       "</span>" +
       ' <span class="chip" style="vertical-align:middle;margin-left:4px">Autumn 26/27</span></p>' +
-      '<div class="c4k-svc-jumpbar" style="margin:0 0 12px">' +
+      '<div class="c4k-svc-jumpbar" style="margin:0 0 12px;display:flex;flex-wrap:wrap;gap:8px;min-width:0">' +
       '<button type="button" class="btn btn--sec btn--sm" id="c4kServicesJumpCapacity" title="Jump to the Services &amp; capacity board lower on this page">' +
       '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" style="vertical-align:-2px;margin-right:6px"><path fill="currentColor" d="M12 16l-6-6 1.41-1.41L12 13.17l4.59-4.58L18 10z"/></svg>' +
-      "Go to Services &amp; capacity</button></div>" +
+      "Go to Services &amp; capacity</button>" +
+      '<button type="button" class="btn btn--pri btn--sm" id="c4kServicesJumpOpenPlaces" title="Jump to live Open places board">' +
+      "Go to Open places</button></div>" +
       '<div id="c4kServicesRegisterHost" class="c4k-services-register-host" hidden></div>' +
       '<details class="c4k-svc-filters" id="c4kServicesFiltersPanel" open>' +
       '<summary class="c4k-svc-filters__sum"><span class="c4k-svc-filters__chev" aria-hidden="true"></span> Filter by day, time, venue, class, instructor or participant</summary>' +
@@ -296,7 +326,8 @@
       "</div></div></details>" +
       '<div id="c4kServicesRosterRoot" style="min-width:0;margin-top:4px">' +
       rosterPart +
-      "</div>"
+      "</div>" +
+      openPlacesEmbedHtml()
     );
   }
 

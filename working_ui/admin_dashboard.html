@@ -133,11 +133,11 @@
   <script src="/portal/admin-parent-notify-log.js?v=20260813-wa-space-mobile"></script>
   <script src="/portal/admin-staff-whatsapp.js?v=20260815-staff-tpl-ui"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260813-otp-no-book"></script>
-  <script src="/portal/admin-open-places-2627.js?v=20260806-open-places-place"></script>
+  <script src="/portal/admin-open-places-2627.js?v=20260817-unified-services"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260813-wa-space-mobile" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260815-staff-tpl-ui" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260707-cancel-reason-policy"></script>
-  <script src="/portal/cfk-app.js?v=20260811-cap-avail-filter"></script>
+  <script src="/portal/cfk-app.js?v=20260817-unified-services"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
   <script src="/portal/admin-scheduling-module.js?v=20260704-search-combo"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
@@ -425,7 +425,7 @@
       { id:'session_disruptions', label:'Session disruptions' },
       { id:'c4k_waitlist', label:'Waiting list' },
       { id:'office_calendar', label:'Office calendar', hubLabel:'Office calendar' },
-      { id:'open_places_2627', label:'Open places 2026/27' },
+      { id:'open_places_2627', label:'Open places (in Services)' },
       { id:'c4k_reviews', label:'Reviews' },
       { id:'c4k_reports', label:'Report requests' },
       { id:'servicecap', label:'Services & capacity (full page)' },
@@ -473,7 +473,7 @@
     var MOBILE_BOTTOM_NAV_IDS = ['nav_hub', 'dashboard', 'operations_admin', 'nav_all_menu'];
     var NAV_GROUPS = [
       { id:'g_operator', label:'Operator', children:['dashboard','__h:Sessions','c4k_sessions','session_disruptions','operations_admin','operator','office_calendar','__h:Intake','leads','receptionist'] },
-      { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','open_places_2627','__h:Participants','clients','portal_nav_client_services','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops','portal_parent_notify_log','portal_staff_whatsapp','portal_parent_broadcast'] },
+      { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','__h:Participants','clients','portal_nav_client_services','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops','portal_parent_notify_log','portal_staff_whatsapp','portal_parent_broadcast'] },
       { id:'g_zoho', label:'H&R', children:['staffhr','onboarding','staffhr_contracts','staffhr_training_records','interviews'] },
       { id:'g_supabase', label:'Documents', children:['__h:Policies','policies_portal','policies','__h:Day Centre','day_centre_documents','__h:Participants','portal_participant_documents','portal_climbing_registrations','portal_parent_consents','__h:Workers','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance', children:['reenrol_payments','commissioning_terms'] },
@@ -2035,6 +2035,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(id === 'novo_dashboard') id = 'dashboard';
       if(id === 'novo_schedule') id = 'c4k_services';
+      if(id === 'open_places_2627'){
+        state.scrollToOpenPlaces = true;
+        id = 'c4k_services';
+      }
       if(id === 'novo_orders') id = portalAdminBookingsHidden() ? 'c4k_services' : 'orders_all';
       if(typeof portalAdminRedirectView === 'function') id = portalAdminRedirectView(id);
       try{
@@ -8522,6 +8526,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(addBtn && root.contains(addBtn)){
           e.preventDefault();
           openScheduleClassModalAddFromEl(addBtn);
+          return;
+        }
+        var opBandBtn = e.target.closest('[data-c4k-filter-open-places]');
+        if(opBandBtn && root.contains(opBandBtn)){
+          e.preventDefault();
+          e.stopPropagation();
+          portalAdminFilterOpenPlacesFromServicesBand(opBandBtn);
           return;
         }
         var editBtn = e.target.closest('[data-novo-edit-sched-slot]');
@@ -19016,7 +19027,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<strong>Open</strong> counts roster lines without a named participant. '+
         '<strong>Assign</strong> opens Edit term slot for that band (existing participant). '+
         '<strong>Offer</strong> jumps to matching waitlist rows. '+
-        'Also: <button type="button" class="btn btn--ghost btn--sm" data-view-target="open_places_2627">Open places 2026/27</button> · '+
+        'Also: <button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_services">Services (Open places below)</button> · '+
         '<button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_waitlist">Waiting list</button>. '+
         'Data source: <strong>'+esc(srcLabel)+'</strong>.';
       var headBlock = '';
@@ -19052,6 +19063,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         inner+'</section>';
     }
     /** Services page: roster by programme → venue accordion → weekday accordion → unique time-slot rows (week of selected date for Register). */
+    /** Button on each Services day band → filter + scroll Open places embed below. */
+    function adminServicesOpenPlacesFilterBtnHtml(programme, venue, dayNorm){
+      return '<button type="button" class="btn btn--sec btn--sm" data-c4k-filter-open-places="1" '+
+        'data-c4k-svc-programme="'+esc(programme || '')+'" data-venue="'+esc(venue || '')+'" data-day="'+esc(dayNorm || '')+'" '+
+        'title="Filter Open places below to this day, venue and service">Open places ↓</button>';
+    }
     function viewC4kRosterServicesFromSlotsHtml(dayIso, weekAnchorIso, filt){
       var iso = String(dayIso || '').trim() || isoDateLocal(new Date());
       var weekIso = String(weekAnchorIso || '').trim() || iso;
@@ -19189,7 +19206,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 '+ Schedule a Class</button>';
               var bodyMu =
                 adminServicesMultiSundayBoardHtml(muBoard, block.programme, vn.venue, pickIsoMu)+
-                '<div class="c4k-svc-day-sched-bar">'+schedAddBtnMu+'</div>';
+                '<div class="c4k-svc-day-sched-bar">'+schedAddBtnMu+adminServicesOpenPlacesFilterBtnHtml(block.programme, vn.venue, dk)+'</div>';
               dowParts.push(
                 '<details class="c4k-svc-day-acc c4k-svc-day-acc--multi-sun" open>'+
                 '<summary class="c4k-svc-day-acc__sum" id="'+esc(didMu)+'">'+
@@ -19246,7 +19263,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 '<div class="c4k-svc-slots c4k-svc-slots--dc" style="min-width:0;overflow:auto">'+
                 '<p class="c4k-svc-dc-hint muted">Staff board · standing week 13–17 Jul (everyone can work with everyone — columns show who is rostered with whom).</p>'+
                 adminServicesDayCentreStaffBoardHtml(dcBoard)+
-                '<div class="c4k-svc-day-sched-bar">'+schedAddBtnDc+'</div>'+
+                '<div class="c4k-svc-day-sched-bar">'+schedAddBtnDc+adminServicesOpenPlacesFilterBtnHtml(block.programme, vn.venue, dk)+'</div>'+
                 '</div>';
               dowParts.push(
                 '<details class="c4k-svc-day-acc c4k-svc-day-acc--dc" open>'+
@@ -19663,7 +19680,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               seatHead +
               '<th scope="col" class="c4k-svc-slot-th-wait">Waiting</th>'+
               '</tr></thead><tbody>'+rowChunks.join('')+'</tbody></table>'+
-              '<div class="c4k-svc-day-sched-bar">'+schedAddBtn+'</div>';
+              '<div class="c4k-svc-day-sched-bar">'+schedAddBtn+adminServicesOpenPlacesFilterBtnHtml(block.programme, vn.venue, dk)+'</div>';
             var body = '<div class="c4k-svc-slots" style="min-width:0;overflow:auto"><div class="novo-sched__list novo-sched__list--svc-table">'+tableHtml+'</div></div>';
             dowParts.push(
               '<details class="c4k-svc-day-acc">'+
@@ -23446,7 +23463,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         dashboard:'Live sessions on site — feedback, incidents, venue checks and day tools for staff on the rota.',
         operations_admin:'Participants (orders, finance, reports) and staff (HR, contracts, documents).',
         operator:'Control centre · KPIs · suggestions · new leads',
-        c4k_services:'Weekly CFK programme grid — parent portal target; filters, registers and capacity.',
+        c4k_services:'Weekly CFK programme grid — roster, instructors, and live Open places 2026/27 below for placement.',
         c4k_sessions:'Live roster grid — who worked today, pending feedback, absents and flags.',
         roster_spreadsheets:'Read-only group session grids and staff hours timetable (spreadsheet layout).',
         term_roster_edit:'Change a recurring term slot from the anchor date or for one day only.',
@@ -23456,7 +23473,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portal_parent_notify_log:'Outbound sends and inbound WhatsApp replies to the API number.',
         portal_staff_whatsapp:'CS WhatsApp threads with staff (portal + phone).',
         portal_parent_broadcast:'Send one message (email + optional WhatsApp) to many families at once — review, select, preview and send in batch.',
-        open_places_2627:'Live Autumn 2026/27 free seats by day, venue and time — same source as the Booking Portal, for office placement.',
+        open_places_2627:'Opens Services — live Autumn free seats sit under the roster for office placement.',
         staffhr:'Staff roster — open any person for full profile, HR notes and availability.',
         onboarding:'New-hire onboarding pipeline — forms, tasks and worker progress.',
         staffhr_contracts:'Employment contracts — create & send, plus Issue plan (checklist + NEST notices).',
@@ -23539,9 +23556,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         icon:'🎯',
         title:'Services & Participants',
         description:'Manage services, session capacity, participants, reviews, report requests and ClassForKids-related operational information.',
-        preview:['Services and capacity','Participant profiles','Waiting list','Open places 2026/27','Reviews and reports'],
+        preview:['Services and open places','Participant profiles','Waiting list','Reviews and reports'],
         status:'Use this area to review clients, services, scheduling and session progress.',
-        primary:['c4k_services','clients','c4k_waitlist','open_places_2627','c4k_reviews'],
+        primary:['c4k_services','clients','c4k_waitlist','c4k_reviews'],
         secondary:['scheduling','c4k_reports','servicecap','comms_ops']
       },
       {
@@ -23928,7 +23945,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var tiles =
         portalDashTileHtml('', '', 'new_participant', 'New participant', 'Name, age &amp; open slot', false, 'new_participant', 'new_participant')+
         portalDashTileHtml('c4k_waitlist', '', 'c4k_waitlist', 'Waiting list', 'Offers &amp; matching queue', false, 'waitlist')+
-        portalDashTileHtml('open_places_2627', '', 'open_places_2627', 'Open places 2026/27', 'Autumn free seats (live)', false, 'open_places')+
+        portalDashTileHtml('open_places_2627', '', 'open_places_2627', 'Open places 2026/27', 'On Services — live seats + place', false, 'open_places')+
         portalDashTileHtml('leads', '', 'leads', 'Enquiries &amp; intake', 'New families &amp; triage', false, 'leads')+
         portalDashTileHtml('servicecap', '', 'servicecap', 'Capacity', 'Mon–Sun snapshot &amp; tables', false, 'servicecap');
       return (
@@ -24445,16 +24462,30 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
     }
     function viewOpenPlaces2627(){
-      portalOpenPlaces2627ConfigureOnce();
-      return window.PortalAdminOpenPlaces2627
-        ? window.PortalAdminOpenPlaces2627.viewHtml()
-        : '<p class="page-intro">Open places module failed to load.</p>';
+      /* Legacy nav target — Services now embeds Open places. */
+      state.scrollToOpenPlaces = true;
+      return viewC4kServices();
     }
     function bindOpenPlaces2627Module(){
       portalOpenPlaces2627ConfigureOnce();
       if(window.PortalAdminOpenPlaces2627 && typeof window.PortalAdminOpenPlaces2627.bindModule === 'function'){
         window.PortalAdminOpenPlaces2627.bindModule();
       }
+    }
+    function portalAdminFilterOpenPlacesFromServicesBand(el){
+      if(!el) return;
+      portalOpenPlaces2627ConfigureOnce();
+      var op = window.PortalAdminOpenPlaces2627;
+      if(!op || typeof op.applyBandFilter !== 'function'){
+        portalAdminToast('Open places board is still loading — try again in a moment.', 'err');
+        return;
+      }
+      op.applyBandFilter({
+        day: el.getAttribute('data-day') || '',
+        venue: el.getAttribute('data-venue') || '',
+        programme: el.getAttribute('data-c4k-svc-programme') || '',
+        openOnly: true
+      });
     }
     function bindPortalParentNotifyLogModule(){
       portalParentNotifyLogConfigureOnce();
@@ -26884,7 +26915,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='portal_parent_notify_log') bindPortalParentNotifyLogModule();
       if(id==='portal_staff_whatsapp') bindPortalStaffWhatsappModule();
       if(id==='portal_parent_broadcast') bindPortalParentBroadcastModule();
-      if(id==='open_places_2627') bindOpenPlaces2627Module();
       if(id==='participant_achievements') bindParticipantAchievementsModule();
       if(id==='staff_live_map') bindStaffLiveMapModule();
       if(id==='staff_ghost_teleport') bindStaffGhostTeleportModule();
@@ -27235,8 +27265,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var capEl = $('c4kServicesCapacityEmbed');
           if(capEl) capEl.scrollIntoView({ block:'start', behavior:'smooth' });
         };
+        var btnJumpOp = $('c4kServicesJumpOpenPlaces');
+        if(btnJumpOp) btnJumpOp.onclick = function(){
+          var opEl = $('op2627Anchor') || $('op2627Root');
+          if(opEl) opEl.scrollIntoView({ block:'start', behavior:'smooth' });
+        };
         portalAdminForceServicesRosterRefresh();
         bindCapacityBoardFilters(document.getElementById('workspace') || document);
+        bindOpenPlaces2627Module();
         if(state.scrollToCapacityEmbed){
           state.scrollToCapacityEmbed = false;
           setTimeout(function(){
@@ -27244,9 +27280,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(capEl) capEl.scrollIntoView({ block:'nearest', behavior:'smooth' });
           }, 80);
         }
+        if(state.scrollToOpenPlaces){
+          state.scrollToOpenPlaces = false;
+          setTimeout(function(){
+            var opEl = $('op2627Anchor') || $('op2627Root');
+            if(opEl) opEl.scrollIntoView({ block:'start', behavior:'smooth' });
+          }, 120);
+        }
         if(state.registerSessionSlot){
           mountRegisterSessionInline(state.registerSessionSlot);
         }
+      }
+      if(id==='open_places_2627'){
+        /* Redirected to c4k_services in setView; keep bind for safety if renderView called directly. */
+        bindOpenPlaces2627Module();
       }
       if(id==='servicecap'){
         bindCapacityBoardFilters(document.getElementById('workspace') || document);
