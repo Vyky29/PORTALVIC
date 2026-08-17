@@ -7515,7 +7515,9 @@
         : "";
       payPairHtml =
         (payBtn ? '<div class="pp-invoice-pay-pair">' + payBtn + "</div>" : "") +
-        '<p class="pp-muted pp-invoice-pay__note pp-invoice-pay__notify">After you pay by bank transfer (or card), please <strong>message admin / the office</strong> so they can check Tide and mark the invoice paid. You do not need to tap anything else in the portal.</p>';
+        '<p class="pp-muted pp-invoice-pay__note pp-invoice-pay__notify">After you pay by bank transfer (or card), please <strong>message the office on WhatsApp or email</strong> (<a href="' +
+        esc(OFFICE_CONTACT_MAILTO) +
+        '">info@clubsensational.org</a>) so they can check Tide and mark the invoice paid. Attach a photo or screenshot of the payment if you can. There is no “I’ve paid” button in the portal.</p>';
     }
     return (
       '<article class="pp-invoice-card pp-invoice-card--' +
@@ -7586,7 +7588,7 @@
       !isLaInvoice &&
       !canSetupGc &&
       (status === "unpaid" || status === "partial")
-        ? '<p class="pp-muted pp-invoice-pay__note">Next instalment is due later — you can still pay early. After paying, message the office so they can confirm.</p>'
+        ? '<p class="pp-muted pp-invoice-pay__note">Next instalment is due later — you can still pay early. After paying, WhatsApp or email the office (photo/screenshot welcome) so they can confirm.</p>'
         : "") +
       (!isPaid &&
       !payActionNeeded &&

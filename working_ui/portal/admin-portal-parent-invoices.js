@@ -1585,9 +1585,9 @@
         '">Mark unpaid</button> ';
     } else if (showConfirmPaid) {
       confirmBtn =
-        '<button type="button" class="btn btn--sm btn--primary" data-inv-act="paid" data-inv-id="' +
+        '<button type="button" class="btn btn--sm btn--sec" data-inv-act="paid" data-inv-id="' +
         id +
-        '">Confirm paid</button> ';
+        '">Mark paid</button> ';
     } else {
       /* Soft-hold due date is place-release timing, not “cannot pay yet” — always Mark paid. */
       confirmBtn =
@@ -3122,7 +3122,7 @@
       '<label for="portalParentInvoicesClientSearch" class="pp-inv-method-row__lab" style="margin:0">Client</label>' +
       '<input class="inp" id="portalParentInvoicesClientSearch" type="search" autocomplete="off" placeholder="Search name, parent, invoice #… (then Mark paid)" style="flex:1 1 14rem;min-width:0;max-width:28rem" />' +
       '<button type="button" class="btn btn--sm btn--ghost" id="portalParentInvoicesClientSearchClear" title="Clear client search">Clear</button>' +
-      '<span class="muted" id="portalParentInvoicesClientSearchHint" style="font-size:12px;min-width:0;overflow-wrap:break-word;flex:1 1 100%">Find a family, open their INV-P, then <strong>Mark paid</strong> / Confirm paid to validate Tide.</span>' +
+      '<span class="muted" id="portalParentInvoicesClientSearchHint" style="font-size:12px;min-width:0;overflow-wrap:break-word;flex:1 1 100%">Find a family, open their INV-P, then <strong>Mark paid</strong> when Tide (or WhatsApp/email proof) matches.</span>' +
       '</div>' +
       '<div class="pp-inv-method-filters" role="group" aria-label="Payment method filter">' +
       '<div class="pp-inv-method-row">' +
@@ -3191,7 +3191,7 @@
           ? 'Showing matches for <strong>' +
             esc(q) +
             '</strong> — open the invoice and use <strong>Mark paid</strong> to validate.'
-          : 'Find a family, open their INV-P, then <strong>Mark paid</strong> / Confirm paid to validate Tide.';
+          : 'Find a family, open their INV-P, then <strong>Mark paid</strong> when Tide (or WhatsApp/email proof) matches.';
       }
       if (host && state.invoices && state.invoices.length) {
         paintInvoiceList(host, state.invoices);
