@@ -2909,6 +2909,7 @@
 
   function termSummaryBlockHtml(scopedRows, visibleRows, termId) {
     var stream = serviceKindForTerm(termId);
+    /* KPIs / group cards follow the same filtered set as the table caption. */
     var t = tallyRows(scopedRows, stream);
     var statusCur = payStatusFilterForTerm(termId);
     var html = '<div class="pay-term-acc__body">';
@@ -2933,7 +2934,7 @@
     html += '<div class="pay-card-h" style="display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;flex-wrap:wrap">'
       + '<h3 style="margin:0;font-size:15px;color:#0f172a;display:flex;align-items:center;gap:8px;min-width:0">'
       + icon("clients", 17) + "Participants</h3>"
-      + tableOrdersCaptionHtml(scopedRows)
+      + tableOrdersCaptionHtml(visibleRows)
       + "</div>";
     html += paymentsTableBodyHtml(visibleRows.slice().sort(sortPaymentRows), termId);
     html += "</div>";
@@ -2953,18 +2954,22 @@
        * mid KPIs/groups and the Participants table for the active stream.
        */
       var headerRows = sg.rows;
-      /* Stream + funding chips scope KPIs; Status (Paid/Out) scopes the table. */
+      /* Stream + funding chips scope the base set. */
       var scoped = applyServiceKindFilter(applyPaidFilter(sg.rows, termId), termId);
+      /* Status + Flexi/GC refine both KPIs/caption and the Participants table. */
+      var filtered = applyTermTableFilters(scoped, termId).filter(statusMatch);
+      var hasRefine =
+        !!payStatusFilterForTerm(termId) || !!payPlanFilterForTerm(termId);
+      var kpiRows = hasRefine ? filtered : scoped;
       /* Always keep the term openable so stream / Paid filters stay reachable. */
       any = true;
-      var vis = applyPayStatusFilter(scoped, termId).filter(statusMatch);
       html += '<details class="pay-term-acc"' + termDetailsOpenAttr(termId) + ' data-pay-term="' + esc(termId) + '">'
         + '<summary class="pay-term-acc__sum">'
         + '<span><span class="pay-term-acc__title">' + esc(sg.bucket.title) + "</span>"
         + '<span class="pay-term-acc__sub">' + esc(sg.bucket.subtitle) + "</span></span>"
         + termAccordionMetaHtml({ rows: headerRows, termId: termId })
         + "</summary>"
-        + termSummaryBlockHtml(scoped, vis, termId)
+        + termSummaryBlockHtml(kpiRows, filtered, termId)
         + "</details>";
     });
     if (!any) {
