@@ -43,17 +43,23 @@ export function portalExecWorkspaceSwitchTargets(currentMode, profile, authEmail
   const mode = String(currentMode || "").trim().toLowerCase();
   const key = portalInferStaffKey(profile, authEmail);
   const opsAdmin = OPS_ADMIN_KEYS.has(key);
+  const loc =
+    typeof window !== "undefined" &&
+    window.PortalUiLocale &&
+    typeof window.PortalUiLocale.t === "function"
+      ? window.PortalUiLocale.t
+      : (s) => s;
   const all = [
     {
       mode: "staff",
-      label: "Staff Portal",
-      sub: "Your roster, sessions and field tools",
+      label: loc("Staff Portal"),
+      sub: loc("Your roster, sessions and field tools"),
       url: publishedUrl("staff_dashboard.html?portalStayWorker=1", "PORTAL_STAFF_DASHBOARD_URL"),
     },
     {
       mode: "lead",
-      label: "Lead Portal",
-      sub: "Lead report, team tools — same as Michelle, John and Berta",
+      label: loc("Lead Portal"),
+      sub: loc("Lead report, team tools — same as Michelle, John and Berta"),
       url: publishedUrl(
         "staff_dashboard.html?portalStayWorker=1&portalLeadHome=1",
         "PORTAL_LEAD_DASHBOARD_URL"
@@ -61,14 +67,14 @@ export function portalExecWorkspaceSwitchTargets(currentMode, profile, authEmail
     },
     {
       mode: "admin",
-      label: "Admin Portal",
-      sub: "Day operations, roster, feedback and admin tools",
+      label: loc("Admin Portal"),
+      sub: loc("Day operations, roster, feedback and admin tools"),
       url: publishedUrl("admin_dashboard.html", "PORTAL_ADMIN_DASHBOARD_URL"),
     },
     {
       mode: "ceo",
-      label: "CEO Portal",
-      sub: "Strategic snapshot, finance trends and company insights",
+      label: loc("CEO Portal"),
+      sub: loc("Strategic snapshot, finance trends and company insights"),
       url: publishedUrl("ceo_dashboard.html", "PORTAL_CEO_DASHBOARD_URL"),
     },
   ];
