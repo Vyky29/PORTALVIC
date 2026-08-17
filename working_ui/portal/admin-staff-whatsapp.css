@@ -589,6 +589,18 @@ body:has(#portalStaffWaAdmin) .topbar-tools-grid{
 .portal-staff-wa-admin__tpl-banner code{
   font-size:11px;
 }
+.portal-staff-wa-admin__attach-blocked{
+  margin:0;
+  padding:8px 10px;
+  border-radius:10px;
+  border:1px solid rgba(180,83,9,.28);
+  background:rgba(255,247,237,.95);
+  color:#9a3412;
+  font-size:12px;
+  line-height:1.4;
+  overflow-wrap:anywhere;
+  min-width:0;
+}
 .portal-staff-wa-admin__tpl-shell{
   display:flex;
   flex-direction:column;

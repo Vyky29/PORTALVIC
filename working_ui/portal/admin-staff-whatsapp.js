@@ -380,6 +380,7 @@
       toolBtnHtml("portalStaffWaClearAttach", "Clear", ICO_CLEAR, true) +
       '<span class="portal-staff-wa-admin__attach-preview muted" id="portalStaffWaAttachPreview"></span>' +
       "</div>" +
+      '<p class="portal-staff-wa-admin__attach-blocked muted" id="portalStaffWaAttachBlocked" hidden role="status"></p>' +
       '<div class="portal-staff-wa-admin__tpl-shell" id="portalStaffWaTplShell" hidden>' +
       '<div class="portal-staff-wa-admin__tpl-fixed" id="portalStaffWaTplPrefix" aria-hidden="true"></div>' +
       '<label class="portal-staff-wa-admin__tpl-mid-lab muted" for="portalStaffWaDraft">Editable {{1}}</label>' +
@@ -983,6 +984,7 @@
     var draftEl = document.getElementById("portalStaffWaDraft");
     var sendBtn = document.getElementById("portalStaffWaSend");
     var tools = document.getElementById("portalStaffWaTools");
+    var attachBlocked = document.getElementById("portalStaffWaAttachBlocked");
     if (form) form.classList.toggle("portal-staff-wa-admin__composer--tpl", needsTpl);
     if (banner) {
       banner.hidden = !needsTpl;
@@ -990,7 +992,7 @@
         banner.innerHTML =
           "<strong>Needs Meta template</strong> — no open 24h WhatsApp window. " +
           "Edit only <code>{{1}}</code> below; Hello / Thank you are fixed. " +
-          "The full message appears in the chat after send (same as parents).";
+          "<strong>PDF / photo / voice cannot be attached on a cold template</strong> — Meta only allows free attachments after they reply (or send the file by email).";
       }
     }
     if (shell) shell.hidden = !needsTpl;
@@ -1017,14 +1019,25 @@
     if (sendBtn) {
       sendBtn.textContent = needsTpl ? "Send template" : "Send WhatsApp";
     }
+    if (needsTpl && state.attach) {
+      clearAttach();
+      syncClearAttachBtn();
+    }
     if (tools) {
+      tools.hidden = !!needsTpl;
       tools.querySelectorAll("button").forEach(function (b) {
         if (b.id === "portalStaffWaClearAttach") return;
-        b.disabled = needsTpl || state.sending;
-        b.title = needsTpl
-          ? "Media only delivers after staff reply on WhatsApp (24h window)"
-          : "";
+        b.disabled = !!state.sending;
+        b.title = "";
       });
+    }
+    if (attachBlocked) {
+      attachBlocked.hidden = !needsTpl;
+      if (needsTpl) {
+        attachBlocked.innerHTML =
+          "No Photo / File / Voice here until they message you back (opens the 24h window). " +
+          "To send a <strong>PDF now</strong>: email it, or ask them to reply “Hi” on WhatsApp first, then attach.";
+      }
     }
   }
 
