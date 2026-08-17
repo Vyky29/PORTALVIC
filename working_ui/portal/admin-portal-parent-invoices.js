@@ -1589,19 +1589,11 @@
         id +
         '">Confirm paid</button> ';
     } else {
-      /* Always offer Mark paid for unpaid bank / office validation (incl. before due date). */
-      var earlyTitle = nextHalfNotDueYet
-        ? 'Next instalment is not due yet — use if they already paid by bank transfer'
-        : 'Mark this invoice (or next instalment) as paid';
-      var earlyLabel = nextHalfNotDueYet ? 'Mark paid (early)' : 'Mark paid';
+      /* Soft-hold due date is place-release timing, not “cannot pay yet” — always Mark paid. */
       confirmBtn =
         '<button type="button" class="btn btn--sm btn--sec" data-inv-act="paid" data-inv-id="' +
         id +
-        '" title="' +
-        esc(earlyTitle) +
-        '">' +
-        earlyLabel +
-        '</button> ';
+        '" title="Mark this invoice (or next instalment) as paid — bank / office">Mark paid</button> ';
     }
     var hold = inv.payment_hold || null;
     var holdChip = '';
